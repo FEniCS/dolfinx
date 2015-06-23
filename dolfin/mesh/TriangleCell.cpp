@@ -154,9 +154,9 @@ double TriangleCell::volume(const MeshEntity& triangle) const
 
   // Get the coordinates of the three vertices
   const unsigned int* vertices = triangle.entities(0);
-  const double* x0 = geometry.x(vertices[0]);
-  const double* x1 = geometry.x(vertices[1]);
-  const double* x2 = geometry.x(vertices[2]);
+  const Point x0 = geometry.point(vertices[0]);
+  const Point x1 = geometry.point(vertices[1]);
+  const Point x2 = geometry.point(vertices[2]);
 
   if (geometry.dim() == 2)
   {
@@ -409,18 +409,10 @@ double TriangleCell::facet_area(const Cell& cell, std::size_t facet) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the two vertices
-  const double* p0 = geometry.x(v0);
-  const double* p1 = geometry.x(v1);
+  const Point p0 = geometry.point(v0);
+  const Point p1 = geometry.point(v1);
 
-  // Compute distance between vertices
-  double d = 0.0;
-  for (std::size_t i = 0; i < geometry.dim(); i++)
-  {
-    const double dp = p0[i] - p1[i];
-    d += dp*dp;
-  }
-
-  return std::sqrt(d);
+  return p1.distance(p0);
 }
 //-----------------------------------------------------------------------------
 void TriangleCell::order(

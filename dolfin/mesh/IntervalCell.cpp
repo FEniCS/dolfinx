@@ -131,18 +131,10 @@ double IntervalCell::volume(const MeshEntity& interval) const
 
   // Get the coordinates of the two vertices
   const unsigned int* vertices = interval.entities(0);
-  const double* x0 = geometry.x(vertices[0]);
-  const double* x1 = geometry.x(vertices[1]);
+  const Point x0 = geometry.point(vertices[0]);
+  const Point x1 = geometry.point(vertices[1]);
 
-  // Compute length of interval (line segment)
-  double sum = 0.0;
-  for (std::size_t i = 0; i < geometry.dim(); ++i)
-  {
-    const double dx = x1[i] - x0[i];
-    sum += dx*dx;
-  }
-
-  return std::sqrt(sum);
+  return x1.distance(x0);
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::diameter(const MeshEntity& interval) const
