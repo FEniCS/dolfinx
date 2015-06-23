@@ -463,14 +463,14 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   // Note: should have >= to allow for 2 meshes, 2 elements each, rotation 100
   for (std::size_t i = 0; i < 3; ++i)
   {
-    if (s1*orient2d(t1[0], t1[1], t0[i]) >= 0 and
-  	s1*orient2d(t1[1], t1[2], t0[i]) >= 0 and
-  	s1*orient2d(t1[2], t1[0], t0[i]) >= 0)
+    if (s1*orient2d(t1[0], t1[1], t0[i]) >= 0. and
+  	s1*orient2d(t1[1], t1[2], t0[i]) >= 0. and
+  	s1*orient2d(t1[2], t1[0], t0[i]) >= 0.)
       points.push_back(tri_0[i]);
 
-    if (s0*orient2d(t0[0], t0[1], t1[i]) >= 0 and
-  	s0*orient2d(t0[1], t0[2], t1[i]) >= 0 and
-  	s0*orient2d(t0[2], t0[0], t1[i]) >= 0)
+    if (s0*orient2d(t0[0], t0[1], t1[i]) >= 0. and
+  	s0*orient2d(t0[1], t0[2], t1[i]) >= 0. and
+  	s0*orient2d(t0[2], t0[0], t1[i]) >= 0.)
       points.push_back(tri_1[i]);
   }
 
@@ -1414,12 +1414,14 @@ IntersectionTriangulation::intersection_edge_edge_2d(const Point& a,
     // Robustness).
 
     // Robust determinant calculation (see orient2d routine). This is
-    // way more involved, but skip for now.
+    // way more involved, but skip for now.  Even Shewchuk (Lecture
+    // Notes on Geometric Robustness, Apr 15, 2013) says this is a
+    // difficult computation and may need exact arithmetic.
     const double detleft = (b[0]-a[0]) * (d[1]-c[1]);
     const double detright = (b[1]-a[1]) * (d[0]-c[0]);
     const double det = detleft - detright;
 
-    if (std::abs(det) < DOLFIN_EPS) // if exactly zero then ab || cd
+    if (std::abs(det) < 1.1*DOLFIN_EPS) // if exactly zero then ab || cd
       return false;
 
     const double alpha = cda / det;
