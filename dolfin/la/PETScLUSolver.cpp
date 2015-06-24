@@ -317,6 +317,18 @@ std::size_t PETScLUSolver::solve_transpose(const PETScMatrix& A,
   return solve_transpose(x, b);
 }
 //-----------------------------------------------------------------------------
+void PETScLUSolver::set_options_prefix(std::string options_prefix)
+{
+  if (_ksp)
+  {
+    dolfin_error("PETScLUSolver.cpp",
+                 "setting PETSc options prefix",
+                 "Cannot set options prefix since PETSc KSP has already been initialized");
+  }
+  else
+    _petsc_options_prefix = options_prefix;
+}
+//-----------------------------------------------------------------------------
 std::string PETScLUSolver::str(bool verbose) const
 {
   std::stringstream s;
@@ -438,6 +450,13 @@ void PETScLUSolver::init_solver(std::string& method)
     ierr = KSPCreate(PETSC_COMM_SELF, &_ksp);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
   }
+
+  // Set options prefix (if any)
+  ierr = KSPSetOptionsPrefix(_ksp, _petsc_options_prefix.c_str());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
+
+  // Set from PETSc options
+  KSPSetFromOptions(_ksp);
 
   // Make solver preconditioner only
   ierr = KSPSetType(_ksp, KSPPREONLY);

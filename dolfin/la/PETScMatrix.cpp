@@ -117,7 +117,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
 
     // Set options prefix (if any)
-    set_options_prefix(_petsc_options_prefix);
+    PetscErrorCode ierr = MatSetOptionsPrefix(_matA, _petsc_options_prefix.c_str());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
 
     // Set size
     ierr = MatSetSizes(_matA, M, N, M, N);
@@ -208,7 +209,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
 
     // Set options prefix (if any)
-    set_options_prefix(_petsc_options_prefix);
+    PetscErrorCode ierr = MatSetOptionsPrefix(_matA, _petsc_options_prefix.c_str());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
 
     // Set size
     ierr = MatSetSizes(_matA, m, n, M, N);
@@ -674,16 +676,13 @@ void PETScMatrix::set_options_prefix(std::string options_prefix)
 {
   if (_matA)
   {
-    PetscErrorCode ierr = MatSetOptionsPrefix(_matA, options_prefix.c_str());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
+    dolfin_error("PETScMatrix.cpp",
+                 "setting PETSc options prefix",
+                 "Cannot set options prefix since PETSc Mat has already been initialized");
+
   }
   else
-  {
-    // Cannot set prefix until object is created, so cache prefix and
-    // set later
     _petsc_options_prefix = options_prefix;
-  }
-
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)

@@ -820,7 +820,8 @@ void PETScVector::_init(MPI_Comm comm,
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecCreateGhost");
 
   // Set options prefix
-  set_options_prefix(_petsc_options_prefix);
+  ierr = VecSetOptionsPrefix(_x, _petsc_options_prefix.c_str());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetOptionsPrefix");
 
   // Set from PETSc options
   VecSetFromOptions(_x);
@@ -854,15 +855,12 @@ void PETScVector::set_options_prefix(std::string options_prefix)
 {
   if (_x)
   {
-    PetscErrorCode ierr = VecSetOptionsPrefix(_x, options_prefix.c_str());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetOptionsPrefix");
+    dolfin_error("PETScVector.cpp",
+                 "setting PETSc options prefix",
+                 "Cannot set options prefix since PETSc Vec has already been initialized");
   }
   else
-  {
-    // Cannot set prefix until object is created, so cache prefix and
-    // set later
     _petsc_options_prefix = options_prefix;
-  }
 }
 //-----------------------------------------------------------------------------
 Vec PETScVector::vec() const

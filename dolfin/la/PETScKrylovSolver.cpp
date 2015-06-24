@@ -459,16 +459,12 @@ void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
 {
   if (_ksp)
   {
-    PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, options_prefix.c_str());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "setting PETSc options prefix",
+                 "Cannot set options prefix since PETSc KSP has already been initialized");
   }
   else
-  {
-    // Cannot set prefix until object is created, so cache prefix and
-    // set later during init()
     _petsc_options_prefix = options_prefix;
-  }
-
 }
 //-----------------------------------------------------------------------------
 KSP PETScKrylovSolver::ksp() const
@@ -505,7 +501,8 @@ void PETScKrylovSolver::init(const std::string& method)
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
 
   // Set options prefix (if any)
-  set_options_prefix(_petsc_options_prefix);
+  ierr = KSPSetOptionsPrefix(_ksp, _petsc_options_prefix.c_str());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
 
   // Set from options database
   ierr = KSPSetFromOptions(_ksp);
