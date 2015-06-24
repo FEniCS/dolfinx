@@ -174,10 +174,11 @@ void MeshSmoothing::snap_boundary(Mesh& mesh,
   MeshGeometry& geometry = boundary.geometry();
   for (std::size_t i = 0; i < boundary.num_vertices(); i++)
   {
-    Array<double> x(dim);
+    Point p = geometry.point(i);
+    Array<double> x(dim, p.coordinates());
     sub_domain.snap(x);
     for (unsigned int j = 0; j < dim; ++j)
-      geometry.x(i, j) = x[j];
+      geometry.x(i, j) = p[j];
   }
 
   // Move interior vertices
