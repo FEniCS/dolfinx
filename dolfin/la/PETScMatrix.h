@@ -58,7 +58,7 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    PETScMatrix(bool use_gpu=false);
+    PETScMatrix();
 
     /// Create a wrapper around a PETSc Mat pointer
     explicit PETScMatrix(Mat A);
@@ -202,6 +202,10 @@ namespace dolfin
 
     //--- Special PETSc Functions ---
 
+    /// Sets the prefix used by PETSc when searching the options
+    /// database
+    void set_options_prefix(std::string options_prefix);
+
     /// Assignment operator
     const PETScMatrix& operator= (const PETScMatrix& A);
 
@@ -213,11 +217,11 @@ namespace dolfin
 
   private:
 
+    // Prefix for PETSc options database
+    std::string _petsc_options_prefix;
+
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;
-
-    // PETSc matrix architecture
-    const bool _use_gpu;
 
   };
 

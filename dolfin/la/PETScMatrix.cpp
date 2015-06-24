@@ -33,7 +33,6 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
 #include "GenericSparsityPattern.h"
-#include "PETScCuspFactory.h"
 #include "PETScFactory.h"
 #include "PETScVector.h"
 #include "SparsityPattern.h"
@@ -49,28 +48,17 @@ const std::map<std::string, NormType> PETScMatrix::norm_types
     {"frobenius", NORM_FROBENIUS} };
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(bool use_gpu) : PETScBaseMatrix(NULL),
-                                         _use_gpu(use_gpu)
+PETScMatrix::PETScMatrix() : PETScBaseMatrix(NULL)
 {
-#ifndef HAS_PETSC_CUSP
-  if (use_gpu)
-  {
-    dolfin_error("PETScMatrix.cpp",
-                 "create GPU matrix",
-                 "PETSc not compiled with Cusp support");
-  }
-#endif
-
-  // Do nothing else
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(Mat A) : PETScBaseMatrix(A), _use_gpu(false)
+PETScMatrix::PETScMatrix(Mat A) : PETScBaseMatrix(A)
 {
   // Do nothing (reference count to A is incremented in base class)
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScBaseMatrix(NULL),
-                                                 _use_gpu(false)
+PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScBaseMatrix(NULL)
 {
   if (A.mat())
   {
@@ -128,23 +116,16 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     ierr = MatCreate(PETSC_COMM_SELF, &_matA);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
 
+    // Set options prefix (if any)
+    set_options_prefix(_petsc_options_prefix);
+
     // Set size
     ierr = MatSetSizes(_matA, M, N, M, N);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetSizes");
 
     // Set matrix type according to chosen architecture
-    if (!_use_gpu)
-    {
-      ierr = MatSetType(_matA, MATSEQAIJ);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
-    }
-    #ifdef HAS_PETSC_CUSP
-    else
-    {
-      ierr = MatSetType(_matA, MATSEQAIJCUSP);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
-    }
-    #endif
+    ierr = MatSetType(_matA, MATSEQAIJ);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
 
     // Set block size
     if (tensor_layout.block_size > 1)
@@ -216,12 +197,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   }
   else
   {
-    if (_use_gpu)
-    {
-      not_working_in_parallel("Due to limitations in PETSc, "
-                              "distributed PETSc Cusp matrices");
-    }
-
     // Get number of nonzeros for each row from sparsity pattern
     std::vector<std::size_t> num_nonzeros_diagonal;
     std::vector<std::size_t> num_nonzeros_off_diagonal;
@@ -231,6 +206,9 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // Create matrix
     ierr = MatCreate(PETSC_COMM_WORLD, &_matA);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
+
+    // Set options prefix (if any)
+    set_options_prefix(_petsc_options_prefix);
 
     // Set size
     ierr = MatSetSizes(_matA, m, n, M, N);
@@ -689,16 +667,23 @@ bool PETScMatrix::is_symmetric(double tol) const
 //-----------------------------------------------------------------------------
 GenericLinearAlgebraFactory& PETScMatrix::factory() const
 {
-  if (!_use_gpu)
-    return PETScFactory::instance();
-  #ifdef HAS_PETSC_CUSP
-  else
-    return PETScCuspFactory::instance();
-  #endif
-
-  // Return something to keep the compiler happy. Code will never be
-  // reached.
   return PETScFactory::instance();
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::set_options_prefix(std::string options_prefix)
+{
+  if (_matA)
+  {
+    PetscErrorCode ierr = MatSetOptionsPrefix(_matA, options_prefix.c_str());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
+  }
+  else
+  {
+    // Cannot set prefix until object is created, so cache prefix and
+    // set later
+    _petsc_options_prefix = options_prefix;
+  }
+
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)

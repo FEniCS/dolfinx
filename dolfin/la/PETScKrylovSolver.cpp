@@ -76,13 +76,6 @@ PETScKrylovSolver::preconditioners()
   return PETScPreconditioner::preconditioners();
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_options_prefix(std::string prefix)
-{
-  dolfin_assert(_ksp);
-  PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, prefix.c_str());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
-}
-//-----------------------------------------------------------------------------
 Parameters PETScKrylovSolver::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters());
@@ -349,13 +342,6 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     preconditioner_set = true;
   }
 
-  // Check whether we need a work-around for a bug in PETSc-stable.
-  // This has been fixed in PETSc-dev, see
-  // https://bugs.launchpad.net/dolfin/+bug/988494
-  const bool use_petsc_cusp_hack = parameters["use_petsc_cusp_hack"];
-  if (use_petsc_cusp_hack)
-    info("Using hack to get around PETScCusp bug: ||b|| = %g", b.norm("l2"));
-
   // Set convergence norm type
   if (parameters["convergence_norm_type"].is_set())
   {
@@ -469,6 +455,22 @@ void PETScKrylovSolver::set_reuse_preconditioner(bool reuse_pc)
 #endif
 }
 //-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
+{
+  if (_ksp)
+  {
+    PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, options_prefix.c_str());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
+  }
+  else
+  {
+    // Cannot set prefix until object is created, so cache prefix and
+    // set later during init()
+    _petsc_options_prefix = options_prefix;
+  }
+
+}
+//-----------------------------------------------------------------------------
 KSP PETScKrylovSolver::ksp() const
 {
   return _ksp;
@@ -501,6 +503,13 @@ void PETScKrylovSolver::init(const std::string& method)
   // Set up solver environment
   ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
+
+  // Set options prefix (if any)
+  set_options_prefix(_petsc_options_prefix);
+
+  // Set from options database
+  ierr = KSPSetFromOptions(_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetFronmOptions");
 
   // Set solver type
   if (method != "default")
