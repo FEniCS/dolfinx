@@ -72,7 +72,6 @@ void MeshSmoothing::smooth(Mesh& mesh, std::size_t num_iterations)
         continue;
 
       // Get coordinates of vertex
-      double* x = mesh.geometry().x(v->index());
       const Point p = v->point();
 
       // Compute center of mass of neighboring vertices
@@ -128,7 +127,7 @@ void MeshSmoothing::smooth(Mesh& mesh, std::size_t num_iterations)
       double r = 0.0;
       for (std::size_t i = 0; i < d; i++)
       {
-        const double dx = xx[i] - x[i];
+        const double dx = xx[i] - p[i];
         r += dx*dx;
       }
       r = std::sqrt(r);
@@ -136,7 +135,7 @@ void MeshSmoothing::smooth(Mesh& mesh, std::size_t num_iterations)
         continue;
       rmin = std::min(0.5*rmin, r);
       for (std::size_t i = 0; i < d; i++)
-        x[i] += rmin*(xx[i] - x[i])/r;
+        mesh.geometry().x(v->index(), i) += rmin*(xx[i] - p[i])/r;
     }
   }
 
@@ -175,8 +174,10 @@ void MeshSmoothing::snap_boundary(Mesh& mesh,
   MeshGeometry& geometry = boundary.geometry();
   for (std::size_t i = 0; i < boundary.num_vertices(); i++)
   {
-    Array<double> x(dim, geometry.x(i));
+    Array<double> x(dim);
     sub_domain.snap(x);
+    for (unsigned int j = 0; j < dim; ++j)
+      geometry.x(i, j) = x[j];
   }
 
   // Move interior vertices
@@ -198,9 +199,9 @@ void MeshSmoothing::move_interior_vertices(Mesh& mesh,
     for (VertexIterator v(boundary); !v.end(); ++v)
     {
       const double* xb = v->x();
-      double* xm = mesh.geometry().x(vertex_map[*v]);
+      const std::size_t vi = vertex_map[*v];
       for (std::size_t i = 0; i < d; i++)
-        xm[i] = xb[i];
+        mesh.geometry().x(vi, i) = xb[i];
     }
   }
 }

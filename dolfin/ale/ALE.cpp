@@ -98,9 +98,9 @@ std::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh0, const Mesh& mesh1)
     const std::size_t boundary_index_0 = it->second;
 
     // Update vertex coordinate
-    double* x = boundary0.geometry().x(boundary_index_0);
+    MeshGeometry& geom = boundary0.geometry();
     for (std::size_t i = 0; i < dim; i++)
-      x[i] = v->x()[i];
+      geom.x(boundary_index_0, i) = v->x()[i];
   }
 
   // Move mesh

@@ -81,11 +81,11 @@ namespace dolfin
     }
 
     /// Return array of values for coordinate with local index n
-    double* x(std::size_t n)
-    {
-      dolfin_assert(n < local_index_to_position.size());
-      return &coordinates[local_index_to_position[n]*_dim];
-    }
+    //    double* x(std::size_t n)
+    //    {
+    //      dolfin_assert(n < local_index_to_position.size());
+    //      return &coordinates[local_index_to_position[n]*_dim];
+    //    }
 
     /// Return array of values for coordinate with local index n
     const double* x(std::size_t n) const

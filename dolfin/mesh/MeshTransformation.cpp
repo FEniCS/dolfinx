@@ -39,9 +39,8 @@ void MeshTransformation::translate(Mesh& mesh, const Point& point)
   // Displace all points
   for (std::size_t i = 0; i < geometry.size(); i++)
   {
-    double* x = geometry.x(i);
     for (std::size_t j = 0; j < gdim; j++)
-      x[j] += dx[j];
+      geometry.x(i, j) += dx[j];
   }
 }
 //-----------------------------------------------------------------------------
@@ -108,7 +107,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
     for (std::size_t i = 0; i < geometry.size(); i++)
     {
       // Get coordinate
-      double* x = geometry.x(i);
+      const double* x = geometry.x(i);
 
       // Compute vector from rotation point
       const double dx0 = x[0] - c[0];
@@ -119,8 +118,8 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
       const double x1 = c[1] + S10*dx0 + S11*dx1;
 
       // Store coordinate
-      x[0] = x0;
-      x[1] = x1;
+      geometry.x(i, 0) = x0;
+      geometry.x(i, 1) = x1;
     }
   }
   else if (gdim == 3)
@@ -157,7 +156,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
     for (std::size_t i = 0; i < geometry.size(); i++)
     {
       // Get coordinate
-      double* x = geometry.x(i);
+      const double* x = geometry.x(i);
 
       // Compute vector from rotation point
       const double dx0 = x[0] - c[0];
@@ -170,9 +169,9 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
       const double x2 = c[2] + R20*dx0 + R21*dx1 + R22*dx2;
 
       // Store coordinate
-      x[0] = x0;
-      x[1] = x1;
-      x[2] = x2;
+      geometry.x(i, 0) = x0;
+      geometry.x(i, 1) = x1;
+      geometry.x(i, 2) = x2;
     }
   }
   else
