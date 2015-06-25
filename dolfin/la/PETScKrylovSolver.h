@@ -26,8 +26,9 @@
 #ifdef HAS_PETSC
 
 #include <map>
-#include <petscksp.h>
 #include <memory>
+#include <string>
+#include <petscksp.h>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
 #include "PETScObject.h"
@@ -117,6 +118,10 @@ namespace dolfin
     /// Sets the prefix used by PETSc when searching the options
     /// database
     void set_options_prefix(std::string options_prefix);
+
+    /// Returns the prefix used by PETSc when searching the options
+    /// database
+    std::string get_options_prefix() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;

@@ -30,8 +30,9 @@
 #ifdef HAS_PETSC
 
 #include <map>
-#include <string>
 #include <memory>
+#include <string>
+
 #include <petscmat.h>
 #include <petscsys.h>
 
@@ -205,6 +206,10 @@ namespace dolfin
     /// Sets the prefix used by PETSc when searching the options
     /// database
     void set_options_prefix(std::string options_prefix);
+
+    /// Returns the prefix used by PETSc when searching the options
+    /// database
+    std::string get_options_prefix() const;
 
     /// Assignment operator
     const PETScMatrix& operator= (const PETScMatrix& A);

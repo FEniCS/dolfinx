@@ -29,24 +29,37 @@ from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel
 def test_options_prefix():
     "Test set/get prefix option for PETSc objects"
 
-    # Create empty vector
-    x = PETScVector()
+    def run_test(A, init_function):
+        # Prefix
+        prefix = "test_foo_"
 
-    # Prefix
-    prefix = "test_vector_"
+        # Set prefix
+        A.set_options_prefix(prefix)
 
-    # Set prefix
-    x.set_options_prefix(prefix)
+        # Get prefix (should be empty since vector has been initialised)
+        assert not A.get_options_prefix()
 
-    # Get prefix (should be empty since vector has been initialised)
-    assert not x.get_options_prefix()
+        # Initialise vector
+        init_function(A)
 
-    # Initialise vector
-    x.init(mpi_comm_world(), 100)
+        # Check prefix
+        assert A.get_options_prefix() == prefix
 
-    # Check prefix
-    assert x.get_options_prefix() == prefix
+        # Try changing prefix post-intialisation (should throw error)
+        with pytest.raises(RuntimeError):
+            A.set_options_prefix("test")
 
-    # Try changing prefix post-intialisation (should throw error)
-    with pytest.raises(RuntimeError):
-        x.set_options_prefix("test")
+
+        # Test vector vector
+        x = PETScVector()
+        def init_vector(x):
+            x.init(mpi_comm_world(), 100)
+        run_test(a, init_vector)
+
+        # Test matrix vector
+        A = PETScMatrix()
+        def init_matrix(x):
+            print("aa")
+            #x.init(mpi_comm_world(), 100)
+
+        run_test(A, init_matrix)

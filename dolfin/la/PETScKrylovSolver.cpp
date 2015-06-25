@@ -467,6 +467,21 @@ void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
     _petsc_options_prefix = options_prefix;
 }
 //-----------------------------------------------------------------------------
+std::string PETScKrylovSolver::get_options_prefix() const
+{
+  if (_ksp)
+  {
+    const char* prefix = NULL;
+    KSPGetOptionsPrefix(_ksp, &prefix);
+    return std::string(prefix);
+  }
+  else
+  {
+    warning("PETSc KSP object has not been initialised, therefore prefix has not been set");
+    return std::string();
+  }
+}
+//-----------------------------------------------------------------------------
 KSP PETScKrylovSolver::ksp() const
 {
   return _ksp;
