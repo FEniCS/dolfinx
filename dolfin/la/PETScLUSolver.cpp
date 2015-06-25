@@ -38,6 +38,9 @@
 
 using namespace dolfin;
 
+// FIXME: Remove these defines now that we have dropped support for
+// older version of PETSc
+
 #define MAT_SOLVER_UMFPACK      MATSOLVERUMFPACK
 #define MAT_SOLVER_MUMPS        MATSOLVERMUMPS
 #define MAT_SOLVER_PASTIX       MATSOLVERPASTIX
@@ -470,12 +473,12 @@ void PETScLUSolver::init_solver(std::string& method)
   ierr = KSPSetOptionsPrefix(_ksp, _petsc_options_prefix.c_str());
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
 
-  // Set from PETSc options
-  KSPSetFromOptions(_ksp);
-
   // Make solver preconditioner only
   ierr = KSPSetType(_ksp, KSPPREONLY);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+
+  // Set from PETSc options
+  KSPSetFromOptions(_ksp);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::configure_ksp(const MatSolverPackage solver_package)
