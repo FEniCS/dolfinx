@@ -863,6 +863,21 @@ void PETScVector::set_options_prefix(std::string options_prefix)
     _petsc_options_prefix = options_prefix;
 }
 //-----------------------------------------------------------------------------
+std::string PETScVector::get_options_prefix() const
+{
+  if (_x)
+  {
+    const char* prefix = NULL;
+    VecGetOptionsPrefix(_x, &prefix);
+    return std::string(prefix);
+  }
+  else
+  {
+    warning("PETSc Vec object has not been initialised, therefore prefix has not been set");
+    return std::string();
+  }
+}
+//-----------------------------------------------------------------------------
 Vec PETScVector::vec() const
 {
   return _x;

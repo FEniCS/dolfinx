@@ -236,6 +236,10 @@ namespace dolfin
     /// database
     void set_options_prefix(std::string options_prefix);
 
+    /// Returns the prefix used by PETSc when searching the options
+    /// database
+    std::string get_options_prefix() const;
+
     /// Return pointer to PETSc Vec object
     Vec vec() const;
 
