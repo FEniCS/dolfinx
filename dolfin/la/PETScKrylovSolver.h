@@ -26,8 +26,9 @@
 #ifdef HAS_PETSC
 
 #include <map>
-#include <petscksp.h>
 #include <memory>
+#include <string>
+#include <petscksp.h>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
 #include "PETScObject.h"
@@ -109,10 +110,18 @@ namespace dolfin
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                       const GenericVector& b);
 
-    /// Reuse preconditioner if true, other do not, even if matrix
+    /// Reuse preconditioner if true, otherwise do not, even if matrix
     /// operator changes (by default preconditioner is re-built if the
     /// matrix changes)
     void set_reuse_preconditioner(bool reuse_pc);
+
+    /// Sets the prefix used by PETSc when searching the options
+    /// database
+    void set_options_prefix(std::string options_prefix);
+
+    /// Returns the prefix used by PETSc when searching the options
+    /// database
+    std::string get_options_prefix() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -125,9 +134,6 @@ namespace dolfin
 
     /// Return a list of available preconditioners
     static std::map<std::string, std::string> preconditioners();
-
-    /// Set options prefix
-    void set_options_prefix(std::string prefix);
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -159,6 +165,9 @@ namespace dolfin
 
     void check_dimensions(const PETScBaseMatrix& A, const GenericVector& x,
                           const GenericVector& b) const;
+
+    // Prefix for PETSc options database
+    std::string _petsc_options_prefix;
 
     // Available solvers
     static const std::map<std::string, const KSPType> _methods;

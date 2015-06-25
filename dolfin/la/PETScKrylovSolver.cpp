@@ -76,13 +76,6 @@ PETScKrylovSolver::preconditioners()
   return PETScPreconditioner::preconditioners();
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_options_prefix(std::string prefix)
-{
-  dolfin_assert(_ksp);
-  PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, prefix.c_str());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
-}
-//-----------------------------------------------------------------------------
 Parameters PETScKrylovSolver::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters());
@@ -94,11 +87,6 @@ Parameters PETScKrylovSolver::default_parameters()
   allowed_norm_types.insert("true");
   allowed_norm_types.insert("none");
   p.add("convergence_norm_type", allowed_norm_types);
-
-  // Control PETSc performance profiling
-  p.add<bool>("profile");
-
-  p.add("options_prefix", "default");
 
   return p;
 }
@@ -349,13 +337,6 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     preconditioner_set = true;
   }
 
-  // Check whether we need a work-around for a bug in PETSc-stable.
-  // This has been fixed in PETSc-dev, see
-  // https://bugs.launchpad.net/dolfin/+bug/988494
-  const bool use_petsc_cusp_hack = parameters["use_petsc_cusp_hack"];
-  if (use_petsc_cusp_hack)
-    info("Using hack to get around PETScCusp bug: ||b|| = %g", b.norm("l2"));
-
   // Set convergence norm type
   if (parameters["convergence_norm_type"].is_set())
   {
@@ -378,19 +359,6 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     }
   }
 
-  std::string prefix = std::string(parameters["options_prefix"]);
-  if (prefix != "default")
-  {
-    // Make sure that the prefix has a '_' at the end if the user
-    // didn't provide it
-    char lastchar = *prefix.rbegin();
-    if (lastchar != '_')
-      prefix += "_";
-
-    KSPSetOptionsPrefix(_ksp, prefix.c_str());
-  }
-  KSPSetFromOptions(_ksp);
-
   // Solve linear system
   if (MPI::rank(PETSC_COMM_WORLD) == 0)
   {
@@ -398,22 +366,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
         _matA->size(0), _matA->size(1));
   }
 
-  if (parameters["profile"].is_set())
-  {
-    const bool profile_performance = parameters["profile"];
-    if (profile_performance)
-    {
-      PetscLogBegin();
-      ierr = KSPSolve(_ksp, b.vec(), x.vec());
-      if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
-      PetscLogView(PETSC_VIEWER_STDOUT_WORLD);
-    }
-  }
-  else
-  {
-    ierr =  KSPSolve(_ksp, b.vec(), x.vec());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
-  }
+  ierr =  KSPSolve(_ksp, b.vec(), x.vec());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
 
   // Update ghost values
   x.update_ghost_values();
@@ -469,6 +423,33 @@ void PETScKrylovSolver::set_reuse_preconditioner(bool reuse_pc)
 #endif
 }
 //-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
+{
+  if (_ksp)
+  {
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "setting PETSc options prefix",
+                 "Cannot set options prefix since PETSc KSP has already been initialized");
+  }
+  else
+    _petsc_options_prefix = options_prefix;
+}
+//-----------------------------------------------------------------------------
+std::string PETScKrylovSolver::get_options_prefix() const
+{
+  if (_ksp)
+  {
+    const char* prefix = NULL;
+    KSPGetOptionsPrefix(_ksp, &prefix);
+    return std::string(prefix);
+  }
+  else
+  {
+    warning("PETSc KSP object has not been initialised, therefore prefix has not been set");
+    return std::string();
+  }
+}
+//-----------------------------------------------------------------------------
 KSP PETScKrylovSolver::ksp() const
 {
   return _ksp;
@@ -502,12 +483,20 @@ void PETScKrylovSolver::init(const std::string& method)
   ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
 
+  // Set options prefix (if any)
+  ierr = KSPSetOptionsPrefix(_ksp, _petsc_options_prefix.c_str());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
+
   // Set solver type
   if (method != "default")
   {
     ierr = KSPSetType(_ksp, _methods.find(method)->second);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
   }
+
+  // Set from options database
+  ierr = KSPSetFromOptions(_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetFromOptions");
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::_set_operator(std::shared_ptr<const PETScBaseMatrix> A)

@@ -101,11 +101,6 @@ Parameters BelosKrylovSolver::default_parameters()
   // allowed_norm_types.insert("none");
   // p.add("convergence_norm_type", allowed_norm_types);
 
-  // // Control PETSc performance profiling
-  // p.add<bool>("profile");
-
-  // p.add("options_prefix", "default");
-
   return p;
 }
 //-----------------------------------------------------------------------------

@@ -38,6 +38,9 @@
 
 using namespace dolfin;
 
+// FIXME: Remove these defines now that we have dropped support for
+// older version of PETSc
+
 #define MAT_SOLVER_UMFPACK      MATSOLVERUMFPACK
 #define MAT_SOLVER_MUMPS        MATSOLVERMUMPS
 #define MAT_SOLVER_PASTIX       MATSOLVERPASTIX
@@ -317,6 +320,33 @@ std::size_t PETScLUSolver::solve_transpose(const PETScMatrix& A,
   return solve_transpose(x, b);
 }
 //-----------------------------------------------------------------------------
+void PETScLUSolver::set_options_prefix(std::string options_prefix)
+{
+  if (_ksp)
+  {
+    dolfin_error("PETScLUSolver.cpp",
+                 "setting PETSc options prefix",
+                 "Cannot set options prefix since PETSc KSP has already been initialized");
+  }
+  else
+    _petsc_options_prefix = options_prefix;
+}
+//-----------------------------------------------------------------------------
+std::string PETScLUSolver::get_options_prefix() const
+{
+  if (_ksp)
+  {
+    const char* prefix = NULL;
+    KSPGetOptionsPrefix(_ksp, &prefix);
+    return std::string(prefix);
+  }
+  else
+  {
+    warning("PETSc KSP object has not been initialised, therefore prefix has not been set");
+    return std::string();
+  }
+}
+//-----------------------------------------------------------------------------
 std::string PETScLUSolver::str(bool verbose) const
 {
   std::stringstream s;
@@ -439,9 +469,16 @@ void PETScLUSolver::init_solver(std::string& method)
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
   }
 
+  // Set options prefix (if any)
+  ierr = KSPSetOptionsPrefix(_ksp, _petsc_options_prefix.c_str());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
+
   // Make solver preconditioner only
   ierr = KSPSetType(_ksp, KSPPREONLY);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+
+  // Set from PETSc options
+  KSPSetFromOptions(_ksp);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::configure_ksp(const MatSolverPackage solver_package)

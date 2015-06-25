@@ -67,15 +67,6 @@ PETScPreconditioner::_methods_descr
     {"icc",              "Incomplete Cholesky factorization"},
     {"sor",              "Successive over-relaxation"},
     {"petsc_amg",        "PETSc algebraic multigrid"},
-#if HAS_PETSC_CUSP
-    {"jacobi",           "Jacobi iteration (GPU enabled)"},
-    {"bjacobi",          "Block Jacobi iteration (GPU enabled)"},
-    {"additive_schwarz", "Additive Schwarz (GPU enabled)"},
-    #else
-    {"jacobi",           "Jacobi iteration"},
-    {"bjacobi",          "Block Jacobi iteration"},
-    {"additive_schwarz", "Additive Schwarz"},
-#endif
 #if PETSC_HAVE_HYPRE
     {"amg",              "Algebraic multigrid"},
     {"hypre_amg",        "Hypre algebraic multigrid (BoomerAMG)"},
