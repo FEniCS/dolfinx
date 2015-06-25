@@ -366,22 +366,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
         _matA->size(0), _matA->size(1));
   }
 
-  if (parameters["profile"].is_set())
-  {
-    const bool profile_performance = parameters["profile"];
-    if (profile_performance)
-    {
-      PetscLogBegin();
-      ierr = KSPSolve(_ksp, b.vec(), x.vec());
-      if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
-      PetscLogView(PETSC_VIEWER_STDOUT_WORLD);
-    }
-  }
-  else
-  {
-    ierr =  KSPSolve(_ksp, b.vec(), x.vec());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
-  }
+  ierr =  KSPSolve(_ksp, b.vec(), x.vec());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
 
   // Update ghost values
   x.update_ghost_values();
