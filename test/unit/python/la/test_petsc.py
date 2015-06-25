@@ -49,17 +49,34 @@ def test_options_prefix():
         with pytest.raises(RuntimeError):
             A.set_options_prefix("test")
 
+    # Test vector
+    def init_vector(x):
+        x.init(mpi_comm_world(), 100)
+    x = PETScVector()
+    run_test(x, init_vector)
 
-        # Test vector vector
-        x = PETScVector()
-        def init_vector(x):
-            x.init(mpi_comm_world(), 100)
-        run_test(a, init_vector)
+    # Test matrix
+    def init_matrix(A):
+        mesh = UnitSquareMesh(12, 12)
+        V = FunctionSpace(mesh, "Lagrange", 1)
+        u, v = TrialFunction(V), TestFunction(V)
+        assemble(u*v*dx, tensor=A)
+    A = PETScMatrix()
+    run_test(A, init_matrix)
 
-        # Test matrix vector
-        A = PETScMatrix()
-        def init_matrix(x):
-            print("aa")
-            #x.init(mpi_comm_world(), 100)
+    # FIXME: Need to straighten out the calls to PETSc
+    # FooSetFromOptions calls in the solver wrapers
 
-        run_test(A, init_matrix)
+    # Test solvers
+    #def init_solver(A, solver):
+    #    A = PETScMatrix()
+    #    init_matrix(A)
+    #    solver.set_operator(A)
+
+    # Test Krylov solver
+    #solver = PETScKrylovSolver()
+    #run_test(solver, init_solver)
+
+    # Test KY solver
+    #solver = PETScLUSolver()
+    #run_test(solver, init_solver)
