@@ -37,7 +37,7 @@ namespace dolfin
   /// (sparse) tensor. It is used by the linear algebra backends to
   /// initialise tensors.
 
-  class TensorLayout
+  class TensorLayout : public Variable
   {
 
   public:
