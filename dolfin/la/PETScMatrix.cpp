@@ -271,6 +271,15 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
     MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
                                petsc_local_to_global1);
+
+#if PETSC_VERSION_GE(3, 6, 0)
+    // Note: This should be called after having set the l2g map for
+    // MATIS (this is a dummy call if _matA is not of type MATIS)
+    ierr = MatISSetPreallocation(_matA, 0, _num_nonzeros_diagonal.data(),
+                                 0, _num_nonzeros_off_diagonal.data());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatISSetPreallocation");
+#endif
+
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
   }
