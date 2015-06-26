@@ -71,6 +71,7 @@ def test_tabulate_coord(mesh, V, W):
         assert (coord4[:3] == coord0).all()
         assert (coord4[3:] == coord0).all()
 
+
 def test_tabulate_all_coordinates(mesh, V, W):
     D = mesh.geometry().dim()
     V_dofmap = V.dofmap()
@@ -136,6 +137,7 @@ def test_tabulate_dofs(mesh, W):
         assert len(np.intersect1d(dofs1, dofs2)) == 0
         assert np.array_equal(np.append(dofs1, dofs2), dofs3)
 
+
 def test_tabulate_coord_periodic():
 
     class PeriodicBoundary2(SubDomain):
@@ -178,6 +180,7 @@ def test_tabulate_coord_periodic():
         assert (coord0 == coord3).all()
         assert (coord4[:3] == coord0).all()
         assert (coord4[3:] == coord0).all()
+
 
 def test_tabulate_dofs_periodic():
 
@@ -228,6 +231,7 @@ def test_tabulate_dofs_periodic():
         assert len(np.intersect1d(dofs0, dofs2)) == 0
         assert len(np.intersect1d(dofs1, dofs2)) == 0
         assert np.array_equal(np.append(dofs1, dofs2), dofs3)
+
 
 def test_global_dof_builder():
 
@@ -354,6 +358,7 @@ def test_clear_sub_map_data_scalar(mesh):
     with pytest.raises(RuntimeError):
         V.sub(0)
 
+
 def test_clear_sub_map_data_vector(mesh):
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
@@ -408,7 +413,6 @@ def test_mpi_dofmap_stats(mesh):
         assert owner in neighbours
 
 
-
 def test_local_dimension(V, Q, W):
     for space in [V, Q, W]:
         dofmap = space.dofmap()
@@ -422,3 +426,33 @@ def test_local_dimension(V, Q, W):
         assert dim1 + dim2 == dim3
         with pytest.raises(RuntimeError):
             dofmap.local_dimension('foo')
+
+
+@skip_in_parallel
+def test_dofs_dim(mesh, V, Q, W):
+    """Test function GenericDofMap::dofs(mesh, dim)"""
+    meshes = [UnitIntervalMesh(10),
+              UnitSquareMesh(6, 6),
+              UnitCubeMesh(2, 2, 2)]
+
+    for mesh in meshes:
+        tdim = mesh.topology().dim()
+        spaces = [FunctionSpace(mesh, "Discontinuous Lagrange", 1),
+                  FunctionSpace(mesh, "Discontinuous Lagrange", 2),
+                  FunctionSpace(mesh, "Lagrange", 1),
+                  FunctionSpace(mesh, "Lagrange", 2),
+                  FunctionSpace(mesh, "Lagrange", 3)]
+
+        if tdim > 1:
+            vspaces = [VectorFunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1),
+                       VectorFunctionSpace(mesh, "Nedelec 1st kind H(curl)", 2),
+                       VectorFunctionSpace(mesh, "RT", 1)]
+            spaces = spaces + vspaces
+
+        for V in spaces:
+            dofmap = V.dofmap()
+            for dim in range(0, mesh.topology().dim()):
+                edofs = dofmap.dofs(mesh, dim)
+                num_mesh_entities = mesh.num_entities(dim)
+                dofs_per_entity = dofmap.num_entity_dofs(dim)
+                assert len(edofs) == dofs_per_entity*num_mesh_entities
