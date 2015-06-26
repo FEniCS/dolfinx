@@ -23,7 +23,6 @@
 #include <dolfin/parameter/GlobalParameters.h>
 #include "EigenFactory.h"
 #include "PETScFactory.h"
-#include "PETScCuspFactory.h"
 #include "STLFactory.h"
 #include "TpetraFactory.h"
 #include "DefaultFactory.h"
@@ -102,16 +101,6 @@ GenericLinearAlgebraFactory& DefaultFactory::factory()
     dolfin_error("DefaultFactory.cpp",
                  "access linear algebra backend",
                  "PETSc linear algebra backend is not available");
-    #endif
-  }
-  else if (backend == "PETScCusp")
-  {
-    #ifdef HAS_PETSC_CUSP
-    return PETScCuspFactory::instance();
-    #else
-    dolfin_error("DefaultFactory.cpp",
-                 "access linear algebra backend",
-                 "PETScCusp linear algebra backend is not available");
     #endif
   }
   else if (backend == "STL")
