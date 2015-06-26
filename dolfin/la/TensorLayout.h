@@ -78,7 +78,7 @@ namespace dolfin
     { return _sparsity_pattern; }
 
     /// Return informal string representation (pretty-print)
-    std::string str() const;
+    std::string str(bool verbose) const;
 
     /// Primary storage dim (e.g., 0=row major, 1=column major)
     const std::size_t primary_dim;
