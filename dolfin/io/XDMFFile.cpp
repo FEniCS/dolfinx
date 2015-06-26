@@ -585,13 +585,13 @@ void XDMFFile::write_point_xml(const std::string group_name,
 
     // Describe geometric coordinates
     // FIXME: assumes 3D
-    xml.mesh_geometry(num_global_points, 3, current_mesh_name);
+    boost::filesystem::path p(hdf5_filename);
+    xml.mesh_geometry(num_global_points, 3,
+                      p.filename().string() + ":/Points");
 
     if(value_size != 0)
     {
       dolfin_assert(value_size == 1 || value_size == 3);
-
-      boost::filesystem::path p(hdf5_filename);
       xml.data_attribute("point_values", 1, true,
                          num_global_points, num_global_points, value_size,
                          p.filename().string() + ":" + group_name + "/values");
