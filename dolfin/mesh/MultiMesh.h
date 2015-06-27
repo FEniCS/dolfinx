@@ -445,6 +445,9 @@ namespace dolfin
     // Build quadrature rules for the overlap
     void _build_quadrature_rules_overlap();
 
+    // FIXME
+    void _build_quadrature_rules_interface();
+
     // Add quadrature rule for simplices in the triangulation
     // array. Returns the number of points generated for each simplex.
     std::vector<std::size_t>
@@ -554,8 +557,9 @@ namespace dolfin
     }
 
     // FIXME:
-    double minimum_angle(const Simplex& s) const;
-    bool maximize_minimum_angle(Polyhedron& p) const;
+    //double minimum_angle(double* a, double* b, double* c) const;
+    //double minimum_angle(const Simplex& s) const;
+    //bool maximize_minimum_angle(Polyhedron& p) const;
 
 
   };

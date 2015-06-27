@@ -595,96 +595,100 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
 
 
 
-  // // Find left-most point (smallest x-coordinate)
-  // std::size_t i_min = 0;
-  // double x_min = points[0].x();
-  // for (std::size_t i = 1; i < points.size(); i++)
-  // {
-  //   const double x = points[i].x();
-  //   if (x < x_min)
-  //   {
-  //     x_min = x;
-  //     i_min = i;
-  //   }
-  // }
-
-  // // Compute signed squared cos of angle with (0, 1) from i_min to all points
-  // std::vector<std::pair<double, std::size_t>> order;
-  // for (std::size_t i = 0; i < points.size(); i++)
-  // {
-  //   // Skip left-most point used as origin
-  //   if (i == i_min)
-  //     continue;
-
-  //   // Compute vector to point
-  //   const Point v = points[i] - points[i_min];
-
-  //   // Compute square cos of angle
-  //   const double cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_norm();
-
-  //   // Store for sorting
-  //   order.push_back(std::make_pair(cos2, i));
-  // }
-
-  // // Sort points based on angle
-  // std::sort(order.begin(), order.end());
-
-  // // Triangulate polygon by connecting i_min with the ordered points
-  // triangulation.reserve((points.size() - 2)*3*2);
-  // const Point& p0 = points[i_min];
-  // for (std::size_t i = 0; i < points.size() - 2; i++)
-  // {
-  //   const Point& p1 = points[order[i].second];
-  //   const Point& p2 = points[order[i + 1].second];
-  //   triangulation.push_back(p0.x());
-  //   triangulation.push_back(p0.y());
-  //   triangulation.push_back(p1.x());
-  //   triangulation.push_back(p1.y());
-  //   triangulation.push_back(p2.x());
-  //   triangulation.push_back(p2.y());
-  // }
-
-  // return triangulation;
-
-
-  // Create triangulation using center point.
-  Point c = points[0];
-  for (std::size_t i = 1; i < points.size(); ++i)
-    c += points[i];
-  c /= points.size();
-
-  // Calculate and store angles
-  std::vector<std::pair<double, std::size_t>> order(points.size());
-  for (std::size_t i = 0; i < points.size(); ++i)
+  // Find left-most point (smallest x-coordinate)
+  std::size_t i_min = 0;
+  double x_min = points[0].x();
+  for (std::size_t i = 1; i < points.size(); i++)
   {
-    const Point v = points[i] - c;
-    const double alpha = atan2(v.y(), v.x());
-    order[i] = std::make_pair(alpha, i);
+    const double x = points[i].x();
+    if (x < x_min)
+    {
+      x_min = x;
+      i_min = i;
+    }
+  }
+
+  // Compute signed squared cos of angle with (0, 1) from i_min to all points
+  std::vector<std::pair<double, std::size_t>> order;
+  for (std::size_t i = 0; i < points.size(); i++)
+  {
+    // Skip left-most point used as origin
+    if (i == i_min)
+      continue;
+
+    // Compute vector to point
+    const Point v = points[i] - points[i_min];
+
+    // Compute square cos of angle
+    const double cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_norm();
+
+    // Store for sorting
+    order.push_back(std::make_pair(cos2, i));
   }
 
   // Sort points based on angle
   std::sort(order.begin(), order.end());
 
-  // Put first points last for cyclic use
-  order.push_back(order.front());
-
-  // Form the triangulation
-  //triangulation.reserve(2*3*points.size());
-  triangulation.resize(2*3*points.size());
-
-  for (std::size_t i = 0; i < points.size(); ++i)
+  // Triangulate polygon by connecting i_min with the ordered points
+  triangulation.reserve((points.size() - 2)*3*2);
+  const Point& p0 = points[i_min];
+  for (std::size_t i = 0; i < points.size() - 2; i++)
   {
     const Point& p1 = points[order[i].second];
     const Point& p2 = points[order[i + 1].second];
-    triangulation[6*i] = c.x();
-    triangulation[6*i+1] = c.y();
-    triangulation[6*i+2] = p1.x();
-    triangulation[6*i+3] = p1.y();
-    triangulation[6*i+4] = p2.x();
-    triangulation[6*i+5] = p2.y();
+    triangulation.push_back(p0.x());
+    triangulation.push_back(p0.y());
+    triangulation.push_back(p1.x());
+    triangulation.push_back(p1.y());
+    triangulation.push_back(p2.x());
+    triangulation.push_back(p2.y());
   }
 
+  // std::cout << "min angle " << minimum_angle(&triangulation[0], &triangulation[2], &triangulation[4]) << std::endl;
+
   return triangulation;
+
+
+  // // Create triangulation using center point.
+  // Point c = points[0];
+  // for (std::size_t i = 1; i < points.size(); ++i)
+  //   c += points[i];
+  // c /= points.size();
+
+  // // Calculate and store angles
+  // std::vector<std::pair<double, std::size_t>> order(points.size());
+  // for (std::size_t i = 0; i < points.size(); ++i)
+  // {
+  //   const Point v = points[i] - c;
+  //   const double alpha = atan2(v.y(), v.x());
+  //   order[i] = std::make_pair(alpha, i);
+  // }
+
+  // // Sort points based on angle
+  // std::sort(order.begin(), order.end());
+
+  // // Put first points last for cyclic use
+  // order.push_back(order.front());
+
+  // // Form the triangulation
+  // //triangulation.reserve(2*3*points.size());
+  // triangulation.resize(2*3*points.size());
+
+  // for (std::size_t i = 0; i < points.size(); ++i)
+  // {
+  //   const Point& p1 = points[order[i].second];
+  //   const Point& p2 = points[order[i + 1].second];
+  //   triangulation[6*i] = c.x();
+  //   triangulation[6*i+1] = c.y();
+  //   triangulation[6*i+2] = p1.x();
+  //   triangulation[6*i+3] = p1.y();
+  //   triangulation[6*i+4] = p2.x();
+  //   triangulation[6*i+5] = p2.y();
+
+  //   //std::cout << "min angle " << minimum_angle(&triangulation[6*i+0], &triangulation[6*i+2], &triangulation[6*i+4]) << std::endl;
+  // }
+
+  // return triangulation;
 
 }
 //-----------------------------------------------------------------------------
@@ -1641,5 +1645,22 @@ IntersectionTriangulation::intersection_face_edge(const Point& r,
     return false;
 
   return true;
+}
+//------------------------------------------------------------------------------
+double IntersectionTriangulation::minimum_angle(double* a, double* b, double* c)
+{
+  // See Shewchuk: Lecture Notes on Geometric Robustness, April 15, 2013
+  const double ab[2] = {a[0]-b[0], a[1]-b[1]};
+  const double ac[2] = {a[0]-c[0], a[1]-c[1]};
+  const double bc[2] = {b[0]-c[0], b[1]-c[1]};
+  double l1 = std::sqrt(ab[0]*ab[0] + ab[1]*ab[1]);
+  double l2 = std::sqrt(ac[0]*ac[0] + ac[1]*ac[1]);
+  double l3 = std::sqrt(bc[0]*bc[0] + bc[1]*bc[1]);
+  // Sort 3-way with l3 smallest
+  if (l2 > l1) std::swap(l1, l2);
+  if (l3 > l2) std::swap(l2, l3);
+  if (l2 > l1) std::swap(l1, l2);
+  const double sin_alpha = orient2d(a, b, c) / (l1 * l2);
+  return asin(sin_alpha);
 }
 //------------------------------------------------------------------------------

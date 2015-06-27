@@ -32,15 +32,14 @@ class MultiMeshes : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(MultiMeshes);
   //CPPUNIT_TEST(test_multiple_meshes_with_rotation);
-  CPPUNIT_TEST(test_multiple_meshes_with_dynamic_rotation);
+  //CPPUNIT_TEST(test_multiple_meshes_with_dynamic_rotation);
   //CPPUNIT_TEST(test_exclusion_inclusion);
   //CPPUNIT_TEST(test_exclusion_inclusion_small_angle);
   //CPPUNIT_TEST(test_multiple_meshes_quadrature);
-  //CPPUNIT_TEST(test_multiple_meshes_interface_quadrature);
+  CPPUNIT_TEST(test_multiple_meshes_interface_quadrature);
   CPPUNIT_TEST_SUITE_END();
 
 public:
-
 
   //------------------------------------------------------------------------------
   double rotate(double x, double y, double cx, double cy, double w,
@@ -55,7 +54,7 @@ public:
     const double dy = y-cy;
     xr = cx + dx*cos(v) - dy*sin(v);
     yr = cy + dx*sin(v) + dy*cos(v);
-    // std::cout << "plot("<<xr<<','<<yr<<",'r.');"<<std::endl;
+    //std::cout << "plot("<<xr<<','<<yr<<",'r.');"<<std::endl;
   }
 
   bool rotation_inside(double x,double y, double cx, double cy, double w,
@@ -69,8 +68,9 @@ public:
   struct MeshData
   {
     MeshData() {}
-    MeshData(double xa, double ya, double xb, double yb, std::size_t i, std::size_t j, double w)
-      : x0(xa), x1(xb), y0(ya), y1(yb), m(i), n(j), v(w), cx(0.5*(xa+xb)), cy(0.5*(ya+yb)) {}
+    MeshData(double xa, double ya, double xb, double yb, std::size_t i, std::size_t j, double w, double s)
+      : x0(xa), x1(xb), y0(ya), y1(yb), v(w), cx(0.5*(xa+xb)), cy(0.5*(ya+yb)), speed(s),
+	m(i), n(j) {}
     // void update(double w)
     // {
     //   const double cx = (x0+x1) / 2;
@@ -82,10 +82,10 @@ public:
     // }
     friend std::ostream& operator<<(std::ostream &out, const MeshData& md)
     {
-      out<<md.x0<<' '<<md.y0<<' '<<md.x1<<' '<<md.y1<<' '<<md.m<<' '<<md.n<<' '<<md.v;
+      out<<md.x0<<' '<<md.y0<<' '<<md.x1<<' '<<md.y1<<' '<<md.m<<' '<<md.n<<' '<<md.v<<' '<<md.speed;
       return out;
     }
-    double x0, y0, x1, y1, v, cx, cy;
+    double x0, y0, x1, y1, v, cx, cy, speed;
     std::size_t m, n;
   };
 
@@ -115,6 +115,7 @@ public:
       double y1 = dolfin::rand();
       if (y0 > y1) std::swap(y0, y1);
       const double v = dolfin::rand()*90; // initial rotation
+      const double speed = dolfin::rand()-0.5; // initial speed
       const double cx = (x0+x1) / 2;
       const double cy = (y0+y1) / 2;
       double xr, yr;
@@ -133,8 +134,8 @@ public:
 	      md[i] = MeshData(x0, y0, x1, y1,
 			       std::max((int)std::round((x1-x0)/h), 1),
 			       std::max((int)std::round((y1-y0)/h), 1),
-			       v);
-	      std::cout << i << ' ' << md[i] << std::endl;
+			       v, speed);
+	      //std::cout << i << ' ' << md[i] << std::endl;
 	      i++;
 	    }
 	  }
@@ -462,16 +463,17 @@ public:
 			 double v,
 			 MeshData& mdnew)
   {
-    // std::cout << "try rotate " << md << " with angle " << v << std::endl;
+    //std::cout << "try rotate " << md << " with angle " << md.speed*v << std::endl;
 
     double x0,y0,x1,y1,b,c,d,e,f;
-    if (rotation_inside(md.x0, md.y0, md.cx, md.cy, v, x0,y0) and
-	rotation_inside(md.x0, md.y1, md.cx, md.cy, v, c,d) and
-	rotation_inside(md.x1, md.y0, md.cx, md.cy, v, e,f) and
-	rotation_inside(md.x1, md.y1, md.cx, md.cy, v, x1,y1))
+    const double w = md.v+md.speed*v;
+    if (rotation_inside(md.x0, md.y0, md.cx, md.cy, w, x0,y0) and
+	rotation_inside(md.x0, md.y1, md.cx, md.cy, w, c,d) and
+	rotation_inside(md.x1, md.y0, md.cx, md.cy, w, e,f) and
+	rotation_inside(md.x1, md.y1, md.cx, md.cy, w, x1,y1))
     {
-      mdnew = MeshData(md.x0,md.y0, md.x1,md.y1, md.m, md.n, md.v+v);
-      // std::cout << "rotated mesh found"<<std::endl;
+      mdnew = MeshData(md.x0,md.y0, md.x1,md.y1, md.m, md.n, w, md.speed);
+      //std::cout << "rotated mesh found"<<std::endl;
       return true;
     }
     else return false;
@@ -479,18 +481,21 @@ public:
 
   void test_multiple_meshes_with_dynamic_rotation()
   {
+    exactinit();
+
     //set_log_level(DEBUG);
     dolfin::seed(0);
 
+    double max_error = -1;
     const double h = 0.1;
     UnitSquareMesh background_mesh((int)std::round(1./h),
 				   (int)std::round(1./h));
 
     // Create data for Nmeshes
-    const std::size_t Nmeshes = 10;
+    const std::size_t Nmeshes = 20;
     std::vector<MeshData> md(Nmeshes);
     std::size_t i = 0;
-    std::cout << "Create initial meshes\n";
+    //std::cout << "Create initial meshes\n";
     while (i < Nmeshes)
     {
       const double x0 = dolfin::rand();
@@ -498,57 +503,24 @@ public:
       const double y0 = dolfin::rand();
       const double y1 = dolfin::rand();
       const double v = dolfin::rand()*90; // initial rotation
+      const double speed = dolfin::rand()-0.5;
       MeshData mdold(x0,y0, x1,y1,
 		     std::max((int)std::round((x1-x0)/h), 1),
 		     std::max((int)std::round((y1-y0)/h), 1),
-		     v);
+		     v, speed);
       bool mesh_ok = find_rotated_mesh(mdold, v, md[i]);
       if (mesh_ok)
       {
-	std::cout << i << ' ' << md[i] << std::endl;
+	//std::cout << i << ' ' << md[i] << std::endl;
 	i++;
       }
-      else{std::cout << "try again\n"; }
-
-      // rotate(x0, y0, cx, cy, v, xr, yr);
-      // if (xr > 0 and xr < 1 and yr > 0 and yr < 1)
-      // {
-      // 	rotate(x0, y1, cx, cy, v, xr, yr);
-      // 	if (xr > 0 and xr < 1 and yr > 0 and yr < 1)
-      // 	{
-      // 	  rotate(x1, y0, cx, cy, v, xr, yr);
-      // 	  if (xr > 0 and xr < 1 and yr > 0 and yr < 1)
-      // 	  {
-      // 	    rotate(x1, y1, cx, cy, v, xr, yr);
-      // 	    if (xr > 0 and xr < 1 and yr > 0 and yr < 1)
-      // 	    {
-      // 	      md[i] = MeshData(x0, x1, y0, y1,
-      // 			       std::max((int)std::round((x1-x0)/h), 1),
-      // 			       std::max((int)std::round((y1-y0)/h), 1),
-      // 			       v);
-      // 	      std::cout << i << ' ' << md[i] << std::endl;
-      // 	      i++;
-      // 	    }
-      // 	  }
-      // 	}
-      // }
+      //else{std::cout << "try again\n"; }
     }
 
-
-    // {
-    //   MultiMesh multimesh;
-    //   multimesh.add(background_mesh);
-    //   RectangleMesh mesh_0(md[0].x0, md[0].y0, md[0].x1, md[0].y1, md[0].m, md[0].n);
-    //   mesh_0.rotate(md[0].v);
-    //   multimesh.add(mesh_0);
-    //   multimesh.build();
-    //   tools::dolfin_write_medit_triangles("before_multimesh",multimesh, 0);
-    //   PPause;
-    // }
-
     // Create rotations
-    const std::size_t Nangles = 180;
-    const double angle_step = 180. / Nangles;
+    const std::size_t Nangles = 5*180;
+    const double angle_step = 5*180. / Nangles;
+    std::size_t cnt = 0;
 
     for (std::size_t j = 0; j < Nangles; ++j)
     {
@@ -564,7 +536,9 @@ public:
 	bool mesh_ok = find_rotated_mesh(md[i], angle_step, mdnew);
 	if (!mesh_ok) // try -v
 	{
-	  mesh_ok = find_rotated_mesh(md[i], -angle_step, mdnew);
+	  //std::cout << "flip speed\n";
+	  md[i].speed *= -1;
+	  mesh_ok = find_rotated_mesh(md[i], angle_step, mdnew);
 	}
 
 	if (!mesh_ok)
@@ -579,43 +553,79 @@ public:
 
       RectangleMesh mesh_0(md[0].x0, md[0].y0, md[0].x1, md[0].y1, md[0].m, md[0].n);
       mesh_0.rotate(md[0].v);
+      multimesh.add(mesh_0);
       RectangleMesh mesh_1(md[1].x0, md[1].y0, md[1].x1, md[1].y1, md[1].m, md[1].n);
       mesh_1.rotate(md[1].v);
+      multimesh.add(mesh_1);
       RectangleMesh mesh_2(md[2].x0, md[2].y0, md[2].x1, md[2].y1, md[2].m, md[2].n);
       mesh_2.rotate(md[2].v);
+      multimesh.add(mesh_2);
       RectangleMesh mesh_3(md[3].x0, md[3].y0, md[3].x1, md[3].y1, md[3].m, md[3].n);
       mesh_3.rotate(md[3].v);
+      multimesh.add(mesh_3);
       RectangleMesh mesh_4(md[4].x0, md[4].y0, md[4].x1, md[4].y1, md[4].m, md[4].n);
       mesh_4.rotate(md[4].v);
+      multimesh.add(mesh_4);
       RectangleMesh mesh_5(md[5].x0, md[5].y0, md[5].x1, md[5].y1, md[5].m, md[5].n);
       mesh_5.rotate(md[5].v);
+      multimesh.add(mesh_5);
       RectangleMesh mesh_6(md[6].x0, md[6].y0, md[6].x1, md[6].y1, md[6].m, md[6].n);
       mesh_6.rotate(md[6].v);
+      multimesh.add(mesh_6);
       RectangleMesh mesh_7(md[7].x0, md[7].y0, md[7].x1, md[7].y1, md[7].m, md[7].n);
       mesh_7.rotate(md[7].v);
-      RectangleMesh mesh_8(md[8].x0, md[8].y0, md[8].x1, md[8].y1, md[8].m, md[8].n);
-      mesh_8.rotate(md[8].v);
-      RectangleMesh mesh_9(md[9].x0, md[9].y0, md[9].x1, md[9].y1, md[9].m, md[9].n);
-      mesh_9.rotate(md[9].v);
-
-      multimesh.add(mesh_0);
-      multimesh.add(mesh_1);
-      multimesh.add(mesh_2);
-      multimesh.add(mesh_3);
-      // multimesh.add(mesh_4);
-      // multimesh.add(mesh_5);
-      // multimesh.add(mesh_6);
-      // multimesh.add(mesh_7);
+      multimesh.add(mesh_7);
+      // RectangleMesh mesh_8(md[8].x0, md[8].y0, md[8].x1, md[8].y1, md[8].m, md[8].n);
+      // mesh_8.rotate(md[8].v);
       // multimesh.add(mesh_8);
+      // RectangleMesh mesh_9(md[9].x0, md[9].y0, md[9].x1, md[9].y1, md[9].m, md[9].n);
+      // mesh_9.rotate(md[9].v);
       // multimesh.add(mesh_9);
+      // RectangleMesh mesh_10(md[10].x0, md[10].y0, md[10].x1, md[10].y1, md[10].m, md[10].n);
+      // mesh_10.rotate(md[10].v);
+      // multimesh.add(mesh_10);
+      // RectangleMesh mesh_11(md[11].x0, md[11].y0, md[11].x1, md[11].y1, md[11].m, md[11].n);
+      // mesh_11.rotate(md[11].v);
+      // multimesh.add(mesh_11);
+      // RectangleMesh mesh_12(md[12].x0, md[12].y0, md[12].x1, md[12].y1, md[12].m, md[12].n);
+      // mesh_12.rotate(md[12].v);
+      // multimesh.add(mesh_12);
+      // RectangleMesh mesh_13(md[13].x0, md[13].y0, md[13].x1, md[13].y1, md[13].m, md[13].n);
+      // mesh_13.rotate(md[13].v);
+      // multimesh.add(mesh_13);
+      // RectangleMesh mesh_14(md[14].x0, md[14].y0, md[14].x1, md[14].y1, md[14].m, md[14].n);
+      // mesh_14.rotate(md[14].v);
+      // multimesh.add(mesh_14);
+      // RectangleMesh mesh_15(md[15].x0, md[15].y0, md[15].x1, md[15].y1, md[15].m, md[15].n);
+      // mesh_15.rotate(md[15].v);
+      // multimesh.add(mesh_15);
+      // RectangleMesh mesh_16(md[16].x0, md[16].y0, md[16].x1, md[16].y1, md[16].m, md[16].n);
+      // mesh_16.rotate(md[16].v);
+      // multimesh.add(mesh_16);
+      // RectangleMesh mesh_17(md[17].x0, md[17].y0, md[17].x1, md[17].y1, md[17].m, md[17].n);
+      // mesh_17.rotate(md[17].v);
+      // multimesh.add(mesh_17);
+      // RectangleMesh mesh_18(md[18].x0, md[18].y0, md[18].x1, md[18].y1, md[18].m, md[18].n);
+      // mesh_18.rotate(md[18].v);
+      // multimesh.add(mesh_18);
+      // RectangleMesh mesh_19(md[19].x0, md[19].y0, md[19].x1, md[19].y1, md[19].m, md[19].n);
+      // mesh_19.rotate(md[19].v);
+      // multimesh.add(mesh_19);
 
       multimesh.build();
 
-      tools::dolfin_write_medit_triangles("after_multimesh",multimesh, j);
+      if (j%10==0)
+	tools::dolfin_write_medit_triangles("after_multimesh",multimesh, cnt++);
 
       // Exact volume is known
       const double exact_volume = 1;
       const double volume = compute_volume(multimesh, exact_volume);
+      const double e = std::abs(volume - exact_volume);
+      max_error = std::max(e, max_error);
+      std::cout << std::setprecision(15)
+		<< "volume = " << volume << '\n'
+		<< "current error = " << e << '\n'
+		<< "max_error = " << max_error << '\n';
 
       //CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
     }
@@ -1164,196 +1174,91 @@ public:
   // }
 
 
-//   void test_multiple_meshes_interface_quadrature()
-//   {
-//     // // These three meshes are ok
-//     // UnitSquareMesh mesh_0(1, 1);
-//     // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
-//     // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
-//     // double exact_volume = 4*(0.9-0.1); // mesh0 and mesh1
-//     // exact_volume += 4*(0.8-0.2); // mesh1 and mesh2
+  void test_multiple_meshes_interface_quadrature()
+  {
+    MultiMesh multimesh;
+    UnitSquareMesh mesh_0(1, 1);
+    multimesh.add(mesh_0);
+    File("mesh_0.xml") << mesh_0;
 
+    RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
+    multimesh.add(mesh_1);
+    double exact_area = 4*(0.9-0.1); // mesh0 and mesh1
+    File("mesh_1.xml") << mesh_1;
 
-//     // UnitCubeMesh mesh_0(1, 2, 3);
-//     // BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   2,3,4);//2, 3, 4);
-//     // BoxMesh mesh_2(-0.1, -0.1, -0.1,    0.7, 0.7, 0.7,   4, 3, 2);
-//     // BoxMesh mesh_3(0.51, 0.51, 0.51,    0.7, 0.7, 0.7,   1,1,1);//4, 3, 2);
-//     // BoxMesh mesh_4(0.3, 0.3, 0.3,    0.7, 0.7, 0.7,   1,1,1);
-//     // double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
-//     // exact_volume += 0.4*0.4*6; // for mesh_1 and mesh_4
+    RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
+    multimesh.add(mesh_2);
+    exact_area += 4*(0.8-0.2); // mesh1 and mesh2
+    File("mesh_2.xml") << mesh_2;
 
+    multimesh.build();
 
-//     UnitCubeMesh mesh_0(1, 1, 1);
-//     BoxMesh mesh_1(0.1, 0.1, 0.1,    0.9, 0.9, 0.9,   1, 1, 1);
-//     BoxMesh mesh_2(0.2, 0.2, 0.2,    0.8, 0.8, 0.8,   1, 1, 1);
-//     // BoxMesh mesh_3(0.51, 0.51, 0.51,    0.7, 0.7, 0.7,   1,1,1);//4, 3, 2);
-//     // BoxMesh mesh_4(0.3, 0.3, 0.3,    0.7, 0.7, 0.7,   1,1,1);
-//     double exact_volume = (0.9-0.1)*(0.9-0.1)*6; // for mesh_0 and mesh_1
-//     exact_volume += (0.8-0.2)*(0.8-0.2)*6; // mesh_1 and mesh_2
-
-
-
-//     // UnitCubeMesh mesh_0(1, 1, 1);
-//     // MeshEditor editor;
-//     // Mesh mesh_1;
-//     // editor.open(mesh_1, 3, 3);
-//     // editor.init_vertices(4);
-//     // editor.init_cells(1);
-//     // editor.add_vertex(0, Point(0.7, 0.1, -0.1));
-//     // editor.add_vertex(1, Point(0.7, 0.3, -0.1));
-//     // editor.add_vertex(2, Point(0.5, 0.1, -0.1));
-//     // editor.add_vertex(3, Point(0.7, 0.1, 0.1));
-//     // editor.add_cell(0, 0,1,2,3);
-//     // editor.close();
-
-//     // Mesh mesh_2;
-//     // editor.open(mesh_2, 3,3);
-//     // editor.init_vertices(4);
-//     // editor.init_cells(1);
-//     // editor.add_vertex(0, Point(0.7, 0.1, -0.2));
-//     // editor.add_vertex(1, Point(0.7, 0.3, -0.2));
-//     // editor.add_vertex(2, Point(0.5, 0.1, -0.2));
-//     // editor.add_vertex(3, Point(0.7, 0.1, 0.05));
-//     // editor.add_cell(0, 0,1,2,3);
-//     // editor.close();
-
-//     //double exact_volume = 0.8*0.8*6; // for mesh_0 and mesh_1
-//     //exact_volume += 0.4*0.4*6; // for mesh_1 and mesh_4
-
-
-//     // MeshEditor editor;
-//     // Mesh mesh_0;
-//     // editor.open(mesh_0, 2, 2);
-//     // editor.init_vertices(3);
-//     // editor.init_cells(1);
-//     // editor.add_vertex(0, Point(0.,0.));
-//     // editor.add_vertex(1, Point(2.,0.));
-//     // editor.add_vertex(2, Point(1.,2.));
-//     // editor.add_cell(0, 0,1,2);
-//     // editor.close();
-
-//     // Mesh mesh_1;
-//     // editor.open(mesh_1, 2, 2);
-//     // editor.init_vertices(3);
-//     // editor.init_cells(1);
-//     // editor.add_vertex(0, Point(0.,-0.5));
-//     // editor.add_vertex(1, Point(2.,-0.5));
-//     // editor.add_vertex(2, Point(1.,1.5));
-//     // editor.add_cell(0, 0,1,2);
-//     // editor.close();
-
-//     // Mesh mesh_2;
-//     // editor.open(mesh_2, 2, 2);
-//     // editor.init_vertices(3);
-//     // editor.init_cells(1);
-//     // editor.add_vertex(0, Point(0.,-1.));
-//     // editor.add_vertex(1, Point(2.,-1.));
-//     // editor.add_vertex(2, Point(1.,1.));
-//     // editor.add_cell(0, 0,1,2);
-//     // editor.close();
-
-//     // double exact_volume = 2*std::sqrt(0.75*0.75 + 1.5*1.5); // mesh_0 and mesh_1
-//     // exact_volume += 2*std::sqrt(0.5*0.5 + 1*1); // mesh_0 and mesh_2
-//     // exact_volume += 2*std::sqrt(0.75*0.75 + 1.5*1.5); // mesh_1and mesh_2
-//     // double volume = 0;
+    const double area = compute_interface_area(multimesh, exact_area);
+    const double e = std::abs(area - exact_area);
+    std::cout << std::setprecision(15)
+	      << "area = " << area << '\n'
+	      << "error = " << e << '\n';
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_area, area, DOLFIN_EPS_LARGE);
 
 
 
-//     // // These three meshes are ok.
-//     // MeshEditor editor;
-//     // Mesh mesh_0;
-//     // editor.open(mesh_0, 2, 2);
-//     // editor.init_vertices(3);
-//     // editor.init_cells(1);
-//     // editor.add_vertex(0, Point(0.,0.));
-//     // editor.add_vertex(1, Point(2.,0.));
-//     // editor.add_vertex(2, Point(1.,2.));
-//     // editor.add_cell(0, 0,1,2);
-//     // editor.close();
+    // // Sum contribution from all parts
+    // std::cout << "\n\n Sum up\n\n";
+    // double volume = 0;
+    // for (std::size_t part = 0; part < multimesh.num_parts(); part++)
+    // {
+    //   std::cout << "% part " << part << '\n';
+    //   double part_volume = 0;
 
-//     // Mesh mesh_1;
-//     // editor.open(mesh_1, 2, 2);
-//     // editor.init_vertices(3);
-//     // editor.init_cells(1);
-//     // editor.add_vertex(0, Point(1.5,-2.));
-//     // editor.add_vertex(1, Point(4.,0.));
-//     // editor.add_vertex(2, Point(1.5,2));
-//     // editor.add_cell(0, 0,1,2);
-//     // editor.close();
+    //   const auto& quadrature_rules = multimesh.quadrature_rule_interface(part);
 
-//     // Mesh mesh_2;
-//     // editor.open(mesh_2, 2, 2);
-//     // editor.init_vertices(3);
-//     // editor.init_cells(1);
-//     // editor.add_vertex(0, Point(3.,0.5));
-//     // editor.add_vertex(1, Point(-1.,0.5));
-//     // editor.add_vertex(2, Point(1.,-1.5));
-//     // editor.add_cell(0, 0,1,2);
-//     // editor.close();
+    //   // Get collision map
+    //   const auto& cmap = multimesh.collision_map_cut_cells(part);
+    //   for (auto it = cmap.begin(); it != cmap.end(); ++it)
+    //   {
+    //     const unsigned int cut_cell_index = it->first;
 
-//     // double exact_volume = (1.5-0.25) + (1-0.5); // mesh_0, mesh_1 and mesh_2
-//     // exact_volume += (3-1.5) + std::sqrt(1.5*1.5 + 1.5*1.5); // mesh_1 and mesh_2
+    //     // Iterate over cutting cells
+    //     const auto& cutting_cells = it->second;
+    //     for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
+    //     {
+    //       //const std::size_t cutting_part = jt->first;
+    //       //const std::size_t cutting_cell_index = jt->second;
+
+    //       // Get quadrature rule for interface part defined by
+    //       // intersection of the cut and cutting cells
+    //       const std::size_t k = jt - cutting_cells.begin();
+    //       dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
+    //       const auto& qr = quadrature_rules.at(cut_cell_index)[k];
+
+    //       for (std::size_t j = 0; j < qr.second.size(); ++j)
+    //       {
+    //         volume += qr.second[j];
+    //         part_volume += qr.second[j];
+    //       }
+
+    //     }
+    //   }
+
+    //   const double volume = compute_volume(multimesh, exact_volume);
+    //   const double e = std::abs(volume - exact_volume);
+    //   max_error = std::max(e, max_error);
+    //   std::cout << std::setprecision(15)
+    // 		<< "v = " << v << '\n'
+    // 		<< "m = " << m << '\n'
+    // 		<< "n = " << n << '\n'
+    // 		<< "volume = " << volume << '\n'
+    // 		<< "error = " << e << '\n'
+    // 		<< "max error = " << max_error << '\n';
+
+    //   std::cout<<"part volume " << part_volume<<std::endl;
+    // }
 
 
-//     File("mesh_0.xml") << mesh_0;
-//     File("mesh_1.xml") << mesh_1;
-//     File("mesh_2.xml") << mesh_2;
-
-//     // Build the multimesh
-//     MultiMesh multimesh;
-//     multimesh.add(mesh_0);
-//     multimesh.add(mesh_1);
-//     multimesh.add(mesh_2);
-//     //multimesh.add(mesh_3);
-//     //multimesh.add(mesh_4);
-//     multimesh.build();
-
-
-//     // Sum contribution from all parts
-//     std::cout << "\n\n Sum up\n\n";
-//     double volume = 0;
-//     for (std::size_t part = 0; part < multimesh.num_parts(); part++)
-//     {
-//       std::cout << "% part " << part << '\n';
-//       double part_volume = 0;
-
-//       const auto& quadrature_rules = multimesh.quadrature_rule_interface(part);
-
-//       // Get collision map
-//       const auto& cmap = multimesh.collision_map_cut_cells(part);
-//       for (auto it = cmap.begin(); it != cmap.end(); ++it)
-//       {
-//         const unsigned int cut_cell_index = it->first;
-
-//         // Iterate over cutting cells
-//         const auto& cutting_cells = it->second;
-//         for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
-//         {
-//           //const std::size_t cutting_part = jt->first;
-//           //const std::size_t cutting_cell_index = jt->second;
-
-//           // Get quadrature rule for interface part defined by
-//           // intersection of the cut and cutting cells
-//           const std::size_t k = jt - cutting_cells.begin();
-//           dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
-//           const auto& qr = quadrature_rules.at(cut_cell_index)[k];
-
-//           for (std::size_t j = 0; j < qr.second.size(); ++j)
-//           {
-//             volume += qr.second[j];
-//             part_volume += qr.second[j];
-//           }
-
-//         }
-//       }
-
-//       std::cout<<"part volume " << part_volume<<std::endl;
-//     }
-
-//     std::cout << "exact volume " << exact_volume<<'\n'
-//               << "volume " << volume<<std::endl;
-//     CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
-//   }
+    // std::cout << "exact volume " << exact_volume<<'\n'
+    //           << "volume " << volume<<std::endl;
+    // CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
+  }
 
 
 
@@ -1365,78 +1270,59 @@ public:
 
     exactinit();
 
-    // UnitSquareMesh mesh_0(1, 1);
-    // RectangleMesh mesh_1(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
-    // mesh_1.rotate(1e-14, 2);
+    std::stringstream ss;
+    ss << "angle_output_90.txt";
+    std::ofstream file(ss.str());
+    if (!file.good()) { std::cout << ss.str() << " not ok" << std::endl; exit(0); }
+    file.precision(15);
 
-    // MultiMesh multimesh;
-    // multimesh.add(mesh_0);
-    // multimesh.add(mesh_1);
-    // multimesh.build();
-
-    // tools::dolfin_write_medit_triangles("multimesh",multimesh);
-
-    // const double exact_volume = 1;
-    // const double volume = compute_volume(multimesh, exact_volume);
-
+    std::vector<double> angles;
+    double v = 100;
+    while (v > 1e-17)
     {
-
-      std::stringstream ss;
-      ss << "angle_output_90.txt";
-      std::ofstream file(ss.str());
-      if (!file.good()) { std::cout << ss.str() << " not ok" << std::endl; exit(0); }
-      file.precision(15);
-
-      std::vector<double> angles;
-      // double v = 100;
-      // while (v > 1e-17)
-      // {
-      // 	angles.push_back(v);
-      // 	v /= 10;
-      // }
-      angles.push_back(1e-7);
-      // for (std::size_t i = 1; i < 90; ++i)
-      // 	angles.push_back(i);
-
-      double max_error = -1;
-
-      for (const auto v: angles)
-      {
-	std::cout << "--------------------------------------\n"
-		  << "try v = " << v << std::endl;
-	for (std::size_t m = 3; m <= 3; ++m)
-	  for (std::size_t n = 9; n <= 9; ++n)
-	  {
-	    UnitSquareMesh mesh_0(m, n);
-	    RectangleMesh mesh_1(0.2, 0.2, 0.8, 0.8, m, n);
-	    mesh_1.rotate(v, 2);
-
-	    MultiMesh multimesh;
-	    multimesh.add(mesh_0);
-	    multimesh.add(mesh_1);
-	    multimesh.build();
-
-	    tools::dolfin_write_medit_triangles("multimesh",multimesh);
-
-	    const double exact_volume = 1;
-	    const double volume = compute_volume(multimesh, exact_volume);
-	    const double e = std::abs(volume - exact_volume);
-	    max_error = std::max(e, max_error);
-	    std::cout << std::setprecision(15)
-	    	      << "v = " << v << '\n'
-	    	      << "m = " << m << '\n'
-	    	      << "n = " << n << '\n'
-	    	      << "volume = " << volume << '\n'
-	    	      << "error = " << e << '\n'
-		      << "max error = " << max_error << '\n';
-	    file << v <<' '<< m<<' '<<n<<' '<<volume << ' '<<e << std::endl;
-
-	    //CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
-	  }
-	//exit(0);
-      }
+      angles.push_back(v);
+      v /= 10;
     }
+    //angles.push_back(1e-7);
+    // for (std::size_t i = 1; i < 90; ++i)
+    // 	angles.push_back(i);
 
+    double max_error = -1;
+
+    for (const auto v: angles)
+    {
+      std::cout << "--------------------------------------\n"
+		<< "try v = " << v << std::endl;
+      for (std::size_t m = 1; m <= 100; ++m)
+	for (std::size_t n = 1; n <= 100; ++n)
+	{
+	  UnitSquareMesh mesh_0(m, n);
+	  RectangleMesh mesh_1(0.2, 0.2, 0.8, 0.8, m, n);
+	  mesh_1.rotate(v, 2);
+
+	  MultiMesh multimesh;
+	  multimesh.add(mesh_0);
+	  multimesh.add(mesh_1);
+	  multimesh.build();
+
+	  tools::dolfin_write_medit_triangles("multimesh",multimesh);
+
+	  const double exact_volume = 1;
+	  const double volume = compute_volume(multimesh, exact_volume);
+	  const double e = std::abs(volume - exact_volume);
+	  max_error = std::max(e, max_error);
+	  std::cout << std::setprecision(15)
+		    << "v = " << v << '\n'
+		    << "m = " << m << '\n'
+		    << "n = " << n << '\n'
+		    << "volume = " << volume << '\n'
+		    << "error = " << e << '\n'
+		    << "max error = " << max_error << '\n';
+	  file << v <<' '<< m<<' '<<n<<' '<<volume << ' '<<e << std::endl;
+
+	  //CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
+	}
+    }
   }
 
 
@@ -1469,6 +1355,7 @@ public:
 	//std::cout << std::setprecision(20) << cell.volume() <<'\n';
         part_volume += cell.volume();
 	status[*it] = 1;
+	//file << "0 0 "<< cell.volume() << '\n';
       }
 
       std::cout << "\t uncut volume "<< part_volume << ' ';
@@ -1495,19 +1382,74 @@ public:
     }
     file.close();
 
-    // std::cout << "a=[";
-    // for (const auto v: all_volumes)
-    //   std::cout << std::setprecision(13)<< v <<' ';
-    // std::cout << "]; plot(diff(a(2:end-1)),'x-');\n";
-
-
-    // std::cout << std::setprecision(13)
-    // 	      << "exact volume " << exact_volume << '\n'
-    // 	      << "volume " << volume << '\n'
-    // 	      << "error " << exact_volume - volume << '\n'
-    // 	      << std::endl;
-
     return volume;
+  }
+
+  double compute_interface_area(const MultiMesh& multimesh,
+				double exact_area) const
+  {
+    std::cout << '\n';
+
+    double area = 0;
+    std::vector<double> all_areas;
+
+    std::ofstream file("quadrature.txt");
+    if (!file.good()) { std::cout << "file not good\n"; exit(0); }
+    file.precision(20);
+
+    // Sum contribution from all parts
+    std::cout << "Sum contributions\n";
+    for (std::size_t part = 0; part < multimesh.num_parts(); part++)
+    {
+      std::cout << "% part " << part;
+      double part_area = 0;
+      const auto& quadrature_rules = multimesh.quadrature_rule_interface(part);
+
+      // // Uncut cell area given by function area
+      // const auto uncut_cells = multimesh.uncut_cells(part);
+      // for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
+      // {
+      //   const Cell cell(*multimesh.part(part), *it);
+      //   area += cell.area();
+      // 	//std::cout << std::setprecision(20) << cell.area() <<'\n';
+      //   part_area += cell.area();
+      // 	status[*it] = 1;
+      // 	//file << "0 0 "<< cell.area() << '\n';
+      // }
+
+      // std::cout << "\t uncut area "<< part_area << ' ';
+
+
+      // Get collision map
+      const auto& cmap = multimesh.collision_map_cut_cells(part);
+      for (auto it = cmap.begin(); it != cmap.end(); ++it)
+      {
+	const unsigned int cut_cell_index = it->first;
+	const auto& cutting_cells = it->second;
+
+	// Iterate over cutting cells
+	for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
+	{
+	  // Get quadrature rule for interface part defined by
+	  // intersection of the cut and cutting cells
+	  const std::size_t k = jt - cutting_cells.begin();
+	  dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
+	  const auto& qr = quadrature_rules.at(cut_cell_index)[k];
+	  for (std::size_t i = 0; i < qr.second.size(); ++i)
+	  {
+	    file << qr.first[2*i]<<' '<<qr.first[2*i+1]<<' '<<qr.second[i]<<'\n';
+	    area += qr.second[i];
+	    part_area += qr.second[i];
+	    //std::cout << qr.first[2*i]<<' '<<qr.first[2*i+1]<<'\n';
+	  }
+	}
+      }
+      std::cout << "\ttotal area " << part_area << std::endl;
+      all_areas.push_back(part_area);
+    }
+    file.close();
+
+    return area;
   }
 
 

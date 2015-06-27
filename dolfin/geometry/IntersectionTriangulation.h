@@ -225,6 +225,8 @@ namespace dolfin
 				       const Point& b,
 				       Point& pt);
 
+    static double minimum_angle(double* a, double* b, double* c);
+
   };
 
 }

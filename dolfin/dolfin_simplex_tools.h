@@ -9,6 +9,8 @@
 #include "geometry/predicates.h"
 namespace tools
 {
+#define PPause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
+
   // this sorts such that a >= b >= c
   template<class T>
     inline void sort3(T &a, T &b, T &c)
@@ -35,27 +37,49 @@ namespace tools
 
 
 
-  inline double area(const std::vector<dolfin::Point> &tri)
+  inline double area(const std::vector<dolfin::Point> &simplex)
   {
     /* const dolfin::Point et=tri[1]-tri[0]; */
     /* const dolfin::Point es=tri[2]-tri[0]; */
     /* return Heron(et.norm(), es.norm(), (et-es).norm()); */
-    double a[2]={tri[0][0],tri[0][1]};
-    double b[2]={tri[1][0],tri[1][1]};
-    double c[2]={tri[2][0],tri[2][1]};
-    return 0.5*orient2d(a,b,c);
+
+    if (simplex.size() == 3)
+    {
+      double a[2]={simplex[0][0],simplex[0][1]};
+      double b[2]={simplex[1][0],simplex[1][1]};
+      double c[2]={simplex[2][0],simplex[2][1]};
+      return 0.5*orient2d(a,b,c);
+    }
+    else if (simplex.size() == 2)
+    {
+      return (simplex[0]-simplex[1]).norm();
+    }
+    else
+    {
+      PPause;
+      return -9e99;
+    }
   }
 
 
-  inline std::string drawtriangle(const std::vector<dolfin::Point> &tri,
+  inline std::string drawtriangle(const std::vector<dolfin::Point> &simplex,
 				  const std::string& color = "'b'")
   {
     std::stringstream ss; ss.precision(15);
-    ss << "drawtriangle("
-       << "["<<tri[0][0]<<' '<<tri[0][1]<<"],"
-       << "["<<tri[1][0]<<' '<<tri[1][1]<<"],"
-       << "["<<tri[2][0]<<' '<<tri[2][1]<<"],"
-       << color << ");";
+    if (simplex.size() == 3)
+    {
+      ss << "drawtriangle("
+	 << "["<<simplex[0][0]<<' '<<simplex[0][1]<<"],"
+	 << "["<<simplex[1][0]<<' '<<simplex[1][1]<<"],"
+	 << "["<<simplex[2][0]<<' '<<simplex[2][1]<<"],"
+	 << color << ");";
+    }
+    else if (simplex.size() == 2)
+    {
+      ss << "hline = line([" << simplex[0][0] << ' ' << simplex[1][0] << "],"
+	 << "[" << simplex[0][1] << ' ' << simplex[1][1] << "]);"
+	 << "set(hline,'color'," << color << ");";
+    }
     return ss.str();
   }
 
@@ -75,8 +99,6 @@ namespace tools
     ss<<"plot("<<p[0]<<','<<p[1]<<','<<m<<");";
     return ss.str();
   }
-
-#define PPause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
 
   //void Pause() { char apa; std::cin >> apa; }
 
