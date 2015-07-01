@@ -226,6 +226,13 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
       ierr = MatSetBlockSize(_matA, tensor_layout.block_size);
       if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetBlockSize");
     }
+
+    // Apply PETSc options from the options database to the matrix
+    // (this includes changing the matrix type to one specified by the
+    // user)
+    ierr = MatSetFromOptions(_matA);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetFromOptions");
+
     // Allocate space (using data from sparsity pattern)
     const std::vector<PetscInt>
       _num_nonzeros_diagonal(num_nonzeros_diagonal.begin(),
@@ -292,9 +299,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
   ierr = MatSetOption(_matA, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOption");
-
-  ierr = MatSetFromOptions(_matA);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetFromOptions");
 
   ierr = MatSetUp(_matA);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetUp");
