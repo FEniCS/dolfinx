@@ -23,7 +23,7 @@
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
 //FIXME August
-#include <dolfin_simplex_tools.h>
+#include <dolfin/geometry/dolfin_simplex_tools.h>
 #include <dolfin/geometry/predicates.h>
 
 using namespace dolfin;
@@ -91,7 +91,7 @@ public:
 
   void test_multiple_meshes_with_rotation()
   {
-    set_log_level(DEBUG);
+    set_log_level(DBG);
 
     dolfin::seed(0);
 
@@ -635,7 +635,7 @@ public:
   //------------------------------------------------------------------------------
   void test_exclusion_inclusion()
   {
-    set_log_level(DEBUG);
+    set_log_level(DBG);
 
     const double v = 1e-16;
 

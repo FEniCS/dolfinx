@@ -1,12 +1,14 @@
 #ifndef DOLFIN_SIMPLEX_TOOLS_H
 #define DOLFIN_SIMPLEX_TOOLS_H
 
+#include <dolfin.h>
+#include "predicates.h"
+
 #include <string>
 #include <sstream>
 #include <fstream>
 #include <vector>
-#include "dolfin.h"
-#include "geometry/predicates.h"
+
 namespace tools
 {
 #define PPause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
