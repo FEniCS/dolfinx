@@ -281,6 +281,10 @@ namespace dolfin
     /// Clear multimesh
     void clear();
 
+    // Create matplotlib string to plot 2D multimesh
+    // Only suitable for smaller meshes
+    std::string plot_matplotlib(double delta_z=1) const;
+
     /// Default parameter values
     static Parameters default_parameters()
     {
