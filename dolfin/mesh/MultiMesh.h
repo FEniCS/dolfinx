@@ -458,6 +458,22 @@ namespace dolfin
                          std::size_t quadrature_order,
                          double factor) const;
 
+    // FIXME: since IntersectionTriangulation uses mostly std::vector<Point> create this function while fixing the interface to all functions
+    std::vector<std::size_t>
+      _add_quadrature_rule(quadrature_rule& qr,
+			   const std::vector<Point>& triangulation,
+			   std::size_t tdim,
+			   std::size_t gdim,
+			   std::size_t quadrature_order,
+			   double factor) const
+      {
+	std::vector<double> flat((tdim+1)*gdim);
+	for (std::size_t i = 0; i < triangulation.size(); ++i)
+	  for (std::size_t d = 0; d < gdim; ++d)
+	    flat[i*gdim+d] = triangulation[i][d];
+	return _add_quadrature_rule(qr, flat, tdim, gdim, quadrature_order, factor);
+      }
+    
     // Add quadrature rule to existing quadrature rule (append dqr to
     // qr). Returns number of points added.
     std::size_t _add_quadrature_rule(quadrature_rule& qr,
