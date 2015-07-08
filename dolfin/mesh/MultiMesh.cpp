@@ -32,7 +32,7 @@
 #include "MeshFunction.h"
 #include "MultiMesh.h"
 // FIXME August
-#include <dolfin/dolfin_simplex_tools.h>
+#include <dolfin/geometry/dolfin_simplex_tools.h>
 #define Augustdebug
 
 using namespace dolfin;
@@ -195,6 +195,51 @@ void MultiMesh::clear()
   _quadrature_rules_cut_cells.clear();
   _quadrature_rules_overlap.clear();
   _quadrature_rules_interface.clear();
+}
+//-----------------------------------------------------------------------------
+std::string MultiMesh::plot_matplotlib(double delta_z) const
+{
+  dolfin_assert(num_parts() > 0);
+  dolfin_assert(part(0)->geometry()->dim() == 2);
+
+  std::stringstream ss;
+
+  ss << "def plot_multimesh() :\n";
+  ss << "    from mpl_toolkits.mplot3d import Axes3D\n";
+  ss << "    from matplotlib import cm\n";
+  ss << "    import matplotlib.pyplot as plt\n";
+  ss << "    import numpy as np\n";
+  ss << "    fig = plt.figure()\n";
+  ss << "    ax = fig.gca(projection='3d')\n";
+
+  for (std::size_t p = 0; p < num_parts(); p++)
+  {
+    std::shared_ptr<const Mesh> current = part(p);
+    std::stringstream x, y;
+    x << "    x = np.array((";
+    y << "    y = np.array((";
+    for (std::size_t i = 0; i < current->num_vertices(); i++)
+    {
+      x << current->coordinates()[i*2] << ", ";
+      y << current->coordinates()[i*2 + 1] << ",";
+    }
+    x << "))\n";
+    y << "))\n";
+    ss << x.str() << y.str();
+
+    ss << "    facets = np.array((";
+    for (CellIterator cit(*current); !cit.end(); ++cit)
+    {
+      const unsigned int* vertices = cit->entities(0);
+      ss << "(" << vertices[0] << ", " << vertices[1] << ", " << vertices[2] << "), ";
+    }
+
+    ss << "), dtype=int)\n";
+    ss << "    z = np.zeros(x.shape) + " << (p*delta_z) << "\n";
+    ss << "    ax.plot_trisurf(x, y, z, triangles=facets, alpha=.4)\n";
+  }
+  ss << "    plt.show()\n";
+  return ss.str();
 }
 //-----------------------------------------------------------------------------
 void MultiMesh::_build_boundary_meshes()
