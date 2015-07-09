@@ -221,7 +221,7 @@ std::string MultiMesh::plot_matplotlib(double delta_z) const
     for (std::size_t i = 0; i < current->num_vertices(); i++)
     {
       x << current->coordinates()[i*2] << ", ";
-      y << current->coordinates()[i*2 + 1] << ",";
+      y << current->coordinates()[i*2 + 1] << ", ";
     }
     x << "))\n";
     y << "))\n";
@@ -238,6 +238,10 @@ std::string MultiMesh::plot_matplotlib(double delta_z) const
     ss << "    z = np.zeros(x.shape) + " << (p*delta_z) << "\n";
     ss << "    ax.plot_trisurf(x, y, z, triangles=facets, alpha=.4)\n";
   }
+  ss << "    ax.set_xlabel('$x$')\n";
+  ss << "    ax.set_ylabel('$y$')\n";
+  ss << "    ax.set_zlabel('part')\n";
+
   ss << "    plt.show()\n";
   return ss.str();
 }
