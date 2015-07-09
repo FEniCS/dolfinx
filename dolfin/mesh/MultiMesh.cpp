@@ -200,7 +200,7 @@ void MultiMesh::clear()
 std::string MultiMesh::plot_matplotlib(double delta_z) const
 {
   dolfin_assert(num_parts() > 0);
-  dolfin_assert(part(0)->geometry()->dim() == 2);
+  dolfin_assert(part(0)->geometry().dim() == 2);
 
   std::stringstream ss;
 
