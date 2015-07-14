@@ -159,7 +159,8 @@ namespace dolfin
       const Cell& cell,
       const Facet& facet,
       const std::array<const ufc::cell_integral*, 2>& cell_integrals,
-      const std::array<const ufc::exterior_facet_integral*, 2>& exterior_facet_integrals);
+      const std::array<const ufc::exterior_facet_integral*, 2>& exterior_facet_integrals,
+      const bool compute_cell_tensor);
 
     // Compute interior facet (and possibly connected cell)
     // contribution
@@ -175,8 +176,8 @@ namespace dolfin
       const std::array<const ufc::cell_integral*, 2>& cell_integrals,
       const std::array<const ufc::interior_facet_integral*, 2>& interior_facet_integrals,
       const std::array<std::size_t, 2>& matrix_size,
-      const std::size_t vector_size
-      );
+      const std::size_t vector_size,
+      const std::array<bool, 2> compute_cell_tensor);
 
     // Modified matrix insertion for case when rhs has facet integrals
     // and lhs has no facet integrals
@@ -185,7 +186,7 @@ namespace dolfin
       std::vector<double>& Ae,
       std::vector<double>& macro_A,
       const bool tensor_required_cell,
-      const std::array<std::size_t, 2>& local_facet,
+      const std::array<bool, 2>& add_local_tensor,
       const std::vector<ArrayView<const la_index> >& cell_dofs);
 
     static void apply_bc(double* A, double* b,

@@ -562,6 +562,7 @@ void SystemAssembler::facet_wise_assembly(
   std::array<bool, 2> tensor_required_cell, tensor_required_facet;
 
   // Track whether or not cell contribution has been computed
+  std::array<bool, 2> compute_cell_tensor = {true, true};
   std::vector<bool> cell_tensor_computed(mesh.num_cells(), false);
 
   // Iterate over facets
@@ -600,7 +601,14 @@ void SystemAssembler::facet_wise_assembly(
         local_facet[c] = cell[c].index(*facet);
         cell[c].get_vertex_coordinates(vertex_coordinates[c]);
         cell[c].get_cell_data(ufc_cell[c], local_facet[c]);
+
+        compute_cell_tensor[c] = !cell_tensor_computed[cell_index[c]];
       }
+
+      if (compute_cell_tensor[0])
+        std::cout << "Adding cell (A): " << cell_index[0] << std::endl;
+      if (compute_cell_tensor[1])
+        std::cout << "Adding cell (B): " << cell_index[1] << std::endl;
 
       const bool process_facet = (cell[0].is_ghost() != cell[1].is_ghost());
       bool facet_owner = true;
@@ -658,7 +666,7 @@ void SystemAssembler::facet_wise_assembly(
         }
 
         // Check if facet tensor is required
-        if (form == 0)
+        if (rank == 2)
         {
           for (std::size_t c = 0; c < 2; ++c)
           {
@@ -677,11 +685,10 @@ void SystemAssembler::facet_wise_assembly(
             = (tensors[form] && interior_facet_integrals[form]);
         }
 
-        // Get cell integrals
+        // Get cell integrals (if required)
         for (std::size_t c = 0; c < 2; ++c)
         {
-          //if (local_facet[c] == 0)
-          if (!cell_tensor_computed[cell_index[c]])
+          if (compute_cell_tensor[c])
           {
             // Get cell integrals for sub domain (if any)
             if (use_cell_domains)
@@ -714,15 +721,14 @@ void SystemAssembler::facet_wise_assembly(
       std::size_t c_index = 0;
       for (std::size_t c = 0; c < num_cells; ++c)
       {
-        if (!cell_tensor_computed[cell_index[c]])
-          //if (local_facet[c] == 0)
+        if (compute_cell_tensor[c])
         {
           matrix_size[0] = cell_dofs[0][c][0].size();
           matrix_size[1] = cell_dofs[0][c][1].size();
           vector_size = cell_dofs[1][c][0].size();
           c_index = c;
 
-          cell_tensor_computed[cell_index[c]] = true;
+          //cell_tensor_computed[cell_index[c]] = true;
         }
       }
       compute_interior_facet_tensor(ufc, ufc_cell,
@@ -734,7 +740,8 @@ void SystemAssembler::facet_wise_assembly(
                                     cell_integrals,
                                     interior_facet_integrals,
                                     matrix_size,
-                                    vector_size);
+                                    vector_size,
+                                    compute_cell_tensor);
 
       // Modify local tensors for bcs
       ArrayView<const la_index> mdofs0(macro_dofs[0][0]);
@@ -766,9 +773,12 @@ void SystemAssembler::facet_wise_assembly(
         // instead extract back out the diagonal cell blocks and add
         // them individually
         matrix_block_add(*tensors[0], data.Ae[0], ufc[0]->macro_A,
-                         tensor_required_cell[0], local_facet,
+                         tensor_required_cell[0], compute_cell_tensor,
                          cell_dofs[0][c_index]);
       }
+
+      cell_tensor_computed[cell_index[0]] = true;
+      cell_tensor_computed[cell_index[1]] = true;
     }
     else // Exterior facet
     {
@@ -776,7 +786,13 @@ void SystemAssembler::facet_wise_assembly(
       // there is only one)
       Cell cell(mesh, facet->entities(mesh.topology().dim())[0]);
 
-      // Decide if tensor needs to be computed
+      compute_cell_tensor[0] = !cell_tensor_computed[cell.index()];
+
+      if (compute_cell_tensor[0])
+        std::cout << "Adding cell (V): " << cell.index() << std::endl;
+
+
+       // Decide if tensor needs to be computed
       for (std::size_t form = 0; form < 2; ++form)
       {
         // Get rank (lhs=2, rhs=1)
@@ -834,7 +850,8 @@ void SystemAssembler::facet_wise_assembly(
                                     tensor_required_facet,
                                     cell, *facet,
                                     cell_integrals,
-                                    exterior_facet_integrals);
+                                    exterior_facet_integrals,
+                                    compute_cell_tensor[0]);
 
       // Modify local matrix/element for Dirichlet boundary conditions
       apply_bc(data.Ae[0].data(), data.Ae[1].data(), boundary_values,
@@ -846,6 +863,8 @@ void SystemAssembler::facet_wise_assembly(
         if (tensors[form])
           tensors[form]->add_local(data.Ae[form].data(), cell_dofs[form][0]);
       }
+
+      cell_tensor_computed[cell.index()] = true;
     }
     p++;
   }
@@ -861,7 +880,8 @@ void SystemAssembler:: compute_exterior_facet_tensor(
   const Cell& cell,
   const Facet& facet,
   const std::array<const ufc::cell_integral*, 2>& cell_integrals,
-  const std::array<const ufc::exterior_facet_integral*, 2>& exterior_facet_integrals)
+  const std::array<const ufc::exterior_facet_integral*, 2>& exterior_facet_integrals,
+  const bool compute_cell_tensor)
 {
   // Get local index of facet with respect to the cell
   const std::size_t local_facet = cell.index(facet);
@@ -892,8 +912,8 @@ void SystemAssembler:: compute_exterior_facet_tensor(
         Ae[form][i] += ufc[form]->A[i];
     }
 
-    // If we have local facet 0, assemble cell integral
-    if (local_facet == 0)
+    // Assemble cell integral (if required)
+    if (compute_cell_tensor)
     {
       dolfin_assert(!cell.is_ghost());
 
@@ -925,7 +945,8 @@ void SystemAssembler::compute_interior_facet_tensor(
   const std::array<const ufc::cell_integral*, 2>& cell_integrals,
   const std::array<const ufc::interior_facet_integral*, 2>& interior_facet_integrals,
   const std::array<std::size_t, 2>& matrix_size,
-  const std::size_t vector_size)
+  const std::size_t vector_size,
+  const std::array<bool, 2> compute_cell_tensor)
 {
   // Compute facet contribution to tensor, if required
   // Loop over lhs and then rhs facet contributions
@@ -952,7 +973,7 @@ void SystemAssembler::compute_interior_facet_tensor(
     // Compute cell contribution
     for (std::size_t c = 0; c < 2; ++c)
     {
-      if (local_facet[c] == 0)
+      if (compute_cell_tensor[c])
       {
         // Compute cell tensor, if required
         if (tensor_required_cell[form] and !cell[c].is_ghost())
@@ -994,12 +1015,12 @@ void SystemAssembler::matrix_block_add(
   std::vector<double>& Ae,
   std::vector<double>& macro_A,
   const bool tensor_required_cell,
-  const std::array<std::size_t, 2>& local_facet,
+  const std::array<bool, 2>& add_local_tensor,
   const std::vector<ArrayView<const la_index>>& cell_dofs)
 {
   for (std::size_t c = 0; c < 2; ++c)
   {
-    if (local_facet[c] == 0)
+    if (add_local_tensor[c])
     {
       // Add cell tensor, if required
       if (tensor_required_cell)
