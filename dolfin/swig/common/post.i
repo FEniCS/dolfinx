@@ -35,6 +35,38 @@ typedef struct {
 
 
 //-----------------------------------------------------------------------------
+// Wrapper of std::terminate, installed into Python exception hook
+//-----------------------------------------------------------------------------
+%noexception dolfin::std__terminate();
+%inline %{
+  namespace dolfin {
+    void std__terminate() noexcept
+    {
+      std::terminate();
+    }
+  }
+%}
+
+%pythoncode %{
+# Install C++ terminate handler into Python (if not interactive)
+# This ensures that std::terminate (which is likely to be appropriately
+# interpreted by MPI implementations) is called by sys.excepthook thus
+# avoiding parallel deadlocks when one process raises
+import sys
+def _is_interactive():
+    return hasattr(sys, "ps1") or sys.flags.interactive
+if not _is_interactive():
+    def _new_excepthook(*args):
+        import sys
+        sys.__excepthook__(*args)
+        std__terminate()
+    sys.excepthook = _new_excepthook
+    del _new_excepthook
+del _is_interactive, sys
+%}
+
+
+//-----------------------------------------------------------------------------
 // Instantiate some DOLFIN MPI templates
 //-----------------------------------------------------------------------------
 
