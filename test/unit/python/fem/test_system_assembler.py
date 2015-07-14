@@ -366,4 +366,4 @@ def test_facet_assembly_cellwise_insertion():
 
     # FIXME: Need to fix issue #494
     # (https://bitbucket.org/fenics-project/dolfin/issues/494)
-    #run_test(Mesh("gmsh_unit_interval.xml"))
+    run_test(Mesh("gmsh_unit_interval.xml"))
