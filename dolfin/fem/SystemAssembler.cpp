@@ -605,10 +605,10 @@ void SystemAssembler::facet_wise_assembly(
         compute_cell_tensor[c] = !cell_tensor_computed[cell_index[c]];
       }
 
-      if (compute_cell_tensor[0])
-        std::cout << "Adding cell (A): " << cell_index[0] << std::endl;
-      if (compute_cell_tensor[1])
-        std::cout << "Adding cell (B): " << cell_index[1] << std::endl;
+      //if (compute_cell_tensor[0])
+      //  std::cout << "Adding cell (A): " << cell_index[0] << std::endl;
+      //if (compute_cell_tensor[1])
+      //  std::cout << "Adding cell (B): " << cell_index[1] << std::endl;
 
       const bool process_facet = (cell[0].is_ghost() != cell[1].is_ghost());
       bool facet_owner = true;
@@ -718,15 +718,15 @@ void SystemAssembler::facet_wise_assembly(
       // Compute cell/facet tensor for lhs and rhs
       std::array<std::size_t, 2> matrix_size;
       std::size_t vector_size = 0;
-      std::size_t c_index = 0;
+      //std::size_t c_index = 0;
       for (std::size_t c = 0; c < num_cells; ++c)
       {
-        if (compute_cell_tensor[c])
+        //if (compute_cell_tensor[c])
         {
           matrix_size[0] = cell_dofs[0][c][0].size();
           matrix_size[1] = cell_dofs[0][c][1].size();
           vector_size = cell_dofs[1][c][0].size();
-          c_index = c;
+          //c_index = c;
 
           //cell_tensor_computed[cell_index[c]] = true;
         }
@@ -769,12 +769,14 @@ void SystemAssembler::facet_wise_assembly(
       }
       else if (tensors[0] && !add_macro_element)
       {
+        std::cout << "*****" << std::endl;
+
         // The sparsity pattern may not support the macro element so
         // instead extract back out the diagonal cell blocks and add
         // them individually
         matrix_block_add(*tensors[0], data.Ae[0], ufc[0]->macro_A,
                          tensor_required_cell[0], compute_cell_tensor,
-                         cell_dofs[0][c_index]);
+                         cell_dofs[0]);
       }
 
       cell_tensor_computed[cell_index[0]] = true;
@@ -788,9 +790,8 @@ void SystemAssembler::facet_wise_assembly(
 
       compute_cell_tensor[0] = !cell_tensor_computed[cell.index()];
 
-      if (compute_cell_tensor[0])
-        std::cout << "Adding cell (V): " << cell.index() << std::endl;
-
+      //if (compute_cell_tensor[0])
+      //  std::cout << "Adding cell (V): " << cell.index() << std::endl;
 
        // Decide if tensor needs to be computed
       for (std::size_t form = 0; form < 2; ++form)
@@ -920,6 +921,7 @@ void SystemAssembler:: compute_exterior_facet_tensor(
       // Compute cell integral, if required
       if (tensor_required_cell[form])
       {
+        std::cout << "Adding cell contrib (ext): " << cell.index() << std::endl;
         ufc[form]->update(cell, vertex_coordinates, ufc_cell,
                           cell_integrals[form]->enabled_coefficients());
         cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
@@ -978,6 +980,7 @@ void SystemAssembler::compute_interior_facet_tensor(
         // Compute cell tensor, if required
         if (tensor_required_cell[form] and !cell[c].is_ghost())
         {
+          std::cout << "Adding cell contrib (int): " << cell[c].index() << std::endl;
           ufc[form]->update(cell[c], vertex_coordinates[c], ufc_cell[c],
                             cell_integrals[form]->enabled_coefficients());
           cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
@@ -994,6 +997,8 @@ void SystemAssembler::compute_interior_facet_tensor(
             {
               for (std::size_t j = 0; j < nn; j++)
               {
+                std::cout << "Test indices: " << 2*nn*mm*c + 2*i*nn + nn*c + j
+                          << ", " << i*nn + j << std::endl;
                 ufc[form]->macro_A[2*nn*mm*c + 2*i*nn + nn*c + j]
                   += ufc[form]->A[i*nn + j];
               }
@@ -1016,26 +1021,28 @@ void SystemAssembler::matrix_block_add(
   std::vector<double>& macro_A,
   const bool tensor_required_cell,
   const std::array<bool, 2>& add_local_tensor,
-  const std::vector<ArrayView<const la_index>>& cell_dofs)
+  const std::array<std::vector<ArrayView<const la_index>>, 2>& cell_dofs)
 {
   for (std::size_t c = 0; c < 2; ++c)
   {
     if (add_local_tensor[c])
     {
+      std::cout << "Cell: " << c << std::endl;
       // Add cell tensor, if required
       if (tensor_required_cell)
       {
         std::fill(Ae.begin(), Ae.end(), 0.0);
-        const std::size_t nn = cell_dofs[0].size();
-        const std::size_t mm = cell_dofs[1].size();
+        const std::size_t nn = cell_dofs[c][0].size();
+        const std::size_t mm = cell_dofs[c][1].size();
         for (std::size_t i = 0; i < mm; i++)
         {
           for (std::size_t j = 0; j < nn; j++)
             Ae[i*nn + j] = macro_A[2*nn*mm*c + 2*i*nn + nn*c +j];
         }
-        tensor.add_local(Ae.data(), cell_dofs);
+        tensor.add_local(Ae.data(), cell_dofs[c]);
       }
     }
+    std::cout << "Ready for next cell: " << c << std::endl;
   }
 }
 //-----------------------------------------------------------------------------

@@ -135,17 +135,17 @@ namespace dolfin
       std::array<UFC*, 2>& ufc,
       Scratch& data,
       const DirichletBC::Map& boundary_values,
-      std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
-      std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains);
+      std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
+      std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains);
 
     static void facet_wise_assembly(
       std::array<GenericTensor*, 2>& tensors,
       std::array<UFC*, 2>& ufc,
       Scratch& data,
       const DirichletBC::Map& boundary_values,
-      std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
-      std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains,
-      std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains);
+      std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
+      std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains,
+      std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains);
 
     // Compute exterior facet (and possibly connected cell)
     // contribution
@@ -187,7 +187,7 @@ namespace dolfin
       std::vector<double>& macro_A,
       const bool tensor_required_cell,
       const std::array<bool, 2>& add_local_tensor,
-      const std::vector<ArrayView<const la_index> >& cell_dofs);
+      const std::array<std::vector<ArrayView<const la_index>>, 2>& cell_dofs);
 
     static void apply_bc(double* A, double* b,
                          const DirichletBC::Map& boundary_values,
