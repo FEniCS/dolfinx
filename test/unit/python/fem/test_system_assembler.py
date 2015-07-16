@@ -24,6 +24,7 @@
 
 import pytest
 import numpy
+import os
 from dolfin import *
 from dolfin_utils.test import *
 
@@ -363,9 +364,4 @@ def test_facet_assembly_cellwise_insertion():
 
     # Run tests
     run_test(UnitIntervalMesh(10))
-
-    print("\n")
-
-    # FIXME: Need to fix issue #494
-    # (https://bitbucket.org/fenics-project/dolfin/issues/494)
-    run_test(Mesh("gmsh_unit_interval.xml"))
+    run_test(Mesh(os.path.join(filedir, "gmsh_unit_interval.xml"))

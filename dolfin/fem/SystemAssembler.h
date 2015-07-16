@@ -185,7 +185,6 @@ namespace dolfin
       GenericTensor& tensor,
       std::vector<double>& Ae,
       std::vector<double>& macro_A,
-      const bool tensor_required_cell,
       const std::array<bool, 2>& add_local_tensor,
       const std::array<std::vector<ArrayView<const la_index>>, 2>& cell_dofs);
 
