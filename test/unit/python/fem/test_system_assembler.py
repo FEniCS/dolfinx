@@ -309,7 +309,7 @@ def test_domains():
 
 
 @skip_in_parallel
-def test_facet_assembly_cellwise_insertion():
+def test_facet_assembly_cellwise_insertion(filedir):
 
     def run_test(mesh):
         c_f = FunctionSpace(mesh, "DG", 0)
@@ -364,4 +364,4 @@ def test_facet_assembly_cellwise_insertion():
 
     # Run tests
     run_test(UnitIntervalMesh(10))
-    run_test(Mesh(os.path.join(filedir, "gmsh_unit_interval.xml"))
+    run_test(Mesh(os.path.join(filedir, "gmsh_unit_interval.xml")))
