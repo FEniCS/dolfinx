@@ -18,9 +18,6 @@
 from __future__ import print_function
 from dolfin import *
 
-print("This demo requires fixing. See https://bitbucket.org/fenics-project/dolfin/issues/549.")
-exit(0)
-
 # Let's solve some variational problem to get non-trivial timings
 mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "Lagrange", 1)

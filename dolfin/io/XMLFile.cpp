@@ -430,12 +430,13 @@ which is not scalable. Use XMDF/HDF5 for scalable IO in parallel",
   else
     result = xml_doc.load_file(_filename.c_str());
 
-  // Check the XML file was opened successfully
-  if (!result)
+  // Check the XML file was opened successfully, allow empty file
+  if (!result && result.status != pugi::status_no_document_element)
   {
     dolfin_error("XMLFile.cpp",
                  "read data from XML file",
-                 "Error while parsing XML");
+                 "Error while parsing XML with status \"%s\"",
+                 result.description());
   }
 }
 //-----------------------------------------------------------------------------
