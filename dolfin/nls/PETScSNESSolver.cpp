@@ -21,7 +21,7 @@
 // First added:  2012-10-13
 // Last changed: 2013-11-21
 
-#ifdef ENABLE_PETSC_SNES
+#ifdef HAS_PETSC
 
 #include <map>
 #include <string>
@@ -110,7 +110,7 @@ Parameters PETScSNESSolver::default_parameters()
   p.remove("relaxation_parameter");
   p.remove("method");
   p.add("method", "default");
-  p.add("line_search", "basic",  {"basic", "bt", "l2", "cp" });
+  p.add("line_search", "basic",  {"basic", "bt", "l2", "cp", "nleqerr"});
   p.add("sign", "default", {"default", "nonnegative", "nonpositive"});
 
   return p;
@@ -244,19 +244,38 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
   set_bounds(x);
 
   // Set the method
-  if (std::string(parameters["method"]) != "default")
+  const std::string method = parameters["method"];
+  if (method != "default")
   {
-    auto it = _methods.find(std::string(parameters["method"]));
+    auto it = _methods.find(method);
     dolfin_assert(it != _methods.end());
     SNESSetType(_snes, it->second.second);
-  // If
-  //      a) the user has set bounds (is_vi())
-  // AND  b) the user has not set a solver (method == default)
-  // THEN set a good method that supports bounds
-  // (most methods do not support bounds)
+
+    // Check if bounds/sign are set when VI method requested
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3
+    if ((method == "virs" || method == "viss") && !is_vi())
+    {
+      dolfin_error("PETScSNESSolver.cpp",
+                   "set up SNES VI solver",
+                   "Need to set bounds or sign for virs or viss methods");
+    }
+    #else
+    if ((method == "vinewtonrsls" || method == "vinewtonssls") && !is_vi())
+    {
+      dolfin_error("PETScSNESSolver.cpp",
+                   "set up SNES VI solver",
+                   "Need to set bounds or sign for vinewtonrsls or vinewtonssls"
+                   " methods");
+    }
+    #endif
   }
-  else if (std::string(parameters["method"]) == "default" && is_vi())
+  else if (method == "default" && is_vi())
   {
+    // If
+    //      a) the user has set bounds (is_vi())
+    // AND  b) the user has not set a solver (method == default)
+    // THEN set a good method that supports bounds
+    // (most methods do not support bounds)
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3 && PETSC_VERSION_RELEASE
     auto it = _methods.find("viss");
     #else

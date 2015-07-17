@@ -31,8 +31,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/log/log.h>
-#include "BinaryFile.h"
-#include "ExodusFile.h"
 #include "RAWFile.h"
 #include "SVGFile.h"
 #include "VTKFile.h"
@@ -168,8 +166,6 @@ void File::init(MPI_Comm comm, const std::string filename,
       boost::filesystem::extension(boost::filesystem::basename(path));
     if (ext == ".xml")
       file.reset(new XMLFile(comm, filename));
-    else if (ext == ".bin")
-      file.reset(new BinaryFile(filename));
     else
     {
       dolfin_error("File.cpp",
@@ -184,18 +180,10 @@ void File::init(MPI_Comm comm, const std::string filename,
     file.reset(new XMLFile(comm, filename));
   else if (extension == ".pvd")
     file.reset(new VTKFile(filename, encoding));
-#ifdef HAS_VTK
-#ifdef HAS_VTK_EXODUS
-  else if (extension == ".e")
-    file.reset(new ExodusFile(filename));
-#endif
-#endif
   else if (extension == ".raw")
     file.reset(new RAWFile(filename));
   else if (extension == ".xyz")
     file.reset(new XYZFile(filename));
-  else if (extension == ".bin")
-    file.reset(new BinaryFile(filename));
 #ifdef HAS_HDF5
   else if (extension == ".xdmf")
     file.reset(new XDMFFile(comm, filename));
@@ -235,9 +223,6 @@ void File::init(MPI_Comm comm, const std::string filename, Type type,
     break;
   case xyz:
     file.reset(new XYZFile(filename));
-    break;
-  case binary:
-    file.reset(new BinaryFile(filename));
     break;
   default:
     dolfin_error("File.cpp",

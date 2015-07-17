@@ -198,7 +198,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   new_mesh_data.num_global_cells = mesh_data.num_global_cells;
   new_mesh_data.num_vertices_per_cell
     = mesh_data.num_vertices_per_cell;
-
+  new_mesh_data.cell_type = mesh_data.cell_type;
   new_mesh_data.num_global_vertices = mesh_data.num_global_vertices;
 
   // Keep tabs on ghost cell ownership
@@ -1017,7 +1017,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Open mesh for editing
   mesh.clear();
   MeshEditor editor;
-  editor.open(mesh, tdim, gdim);
+  editor.open(mesh, new_mesh_data.cell_type, tdim, gdim);
 
   // Add vertices
   editor.init_vertices_global(vertex_coordinates.size(),
@@ -1034,7 +1034,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Add cells
   editor.init_cells_global(cell_global_vertices.size(),
                            new_mesh_data.num_global_cells);
-  const std::size_t num_cell_vertices = tdim + 1;
+  const std::size_t num_cell_vertices = new_mesh_data.num_vertices_per_cell;
   std::vector<std::size_t> cell(num_cell_vertices);
   for (std::size_t i = 0; i < cell_global_vertices.size(); ++i)
   {

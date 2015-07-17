@@ -28,10 +28,10 @@ Jianming Jin [7.2.1 - 7.2.2]
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Anders Logg, 2008.
+# Modified by Anders Logg 2008, 2015
 #
 # First added:  2008-08-22
-# Last changed: 2008-12-17
+# Last changed: 2015-06-15
 
 from __future__ import print_function
 from dolfin import *
@@ -51,7 +51,7 @@ parameters["linear_algebra_backend"] = "PETSc"
 # Create mesh
 width = 1.0
 height = 0.5
-mesh = RectangleMesh(0, 0, width, height, 4, 2)
+mesh = RectangleMesh(Point(0, 0), Point(width, height), 4, 2)
 
 # Define the function space
 V = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 3)

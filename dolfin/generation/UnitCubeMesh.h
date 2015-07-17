@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2006 Anders Logg
+// Copyright (C) 2005-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Benjamin Kehlet 2012
-// Modified by Mikael Mortensen, 2014
+// Modified by Mikael Mortensen 2014
 //
 // First added:  2005-12-02
-// Last changed: 2014-02-17
+// Last changed: 2015-06-15
 
 #ifndef __UNIT_CUBE_MESH_H
 #define __UNIT_CUBE_MESH_H
@@ -57,7 +57,7 @@ namespace dolfin
     ///         UnitCubeMesh mesh(32, 32, 32);
     ///
     UnitCubeMesh(std::size_t nx, std::size_t ny, std::size_t nz)
-        : BoxMesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz) {}
+      : BoxMesh(Point(0.0, 0.0, 0.0), Point(1.0, 1.0, 1.0), nx, ny, nz) {}
 
     /// Create a uniform finite element _Mesh_ over the unit cube
     /// [0,1] x [0,1] x [0,1].
@@ -78,7 +78,7 @@ namespace dolfin
     ///         UnitCubeMesh mesh(MPI_COMM_WORLD, 32, 32, 32);
     ///
     UnitCubeMesh(MPI_Comm comm, std::size_t nx, std::size_t ny, std::size_t nz)
-      : BoxMesh(comm, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz) {}
+      : BoxMesh(comm, Point(0.0, 0.0, 0.0), Point(1.0, 1.0, 1.0), nx, ny, nz) {}
 
   };
 

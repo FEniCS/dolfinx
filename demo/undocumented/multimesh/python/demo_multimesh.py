@@ -1,4 +1,4 @@
-# Copyright (C) 2014 Anders Logg
+# Copyright (C) 2014-2015 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-04-07
-# Last changed: 2014-06-05
+# Last changed: 2015-06-15
 
 from __future__ import print_function
 from dolfin import *
@@ -76,7 +76,7 @@ num_frames = 3
 #num_frames = 360
 
 # Create and load meshes
-mesh = RectangleMesh(-R, -R, R, R, N, N)
+mesh = RectangleMesh(Point(-R, -R), Point(R, R), N, N)
 propeller = Mesh("../propeller_2d_coarse.xml.gz")
 
 # Iterate over rotations

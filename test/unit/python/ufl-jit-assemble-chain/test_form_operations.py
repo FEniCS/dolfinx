@@ -29,7 +29,7 @@ def test_lhs_rhs_simple():
     """Test taking lhs/rhs of DOLFIN specific forms (constants
     without cell). """
 
-    mesh = RectangleMesh(0, 0, 2, 1, 3, 5)
+    mesh = RectangleMesh(Point(0, 0), Point(2, 1), 3, 5)
     V = FunctionSpace(mesh, "CG", 1)
     f = Constant(2.0)
     g = Constant(3.0)

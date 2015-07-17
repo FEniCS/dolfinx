@@ -47,7 +47,7 @@ Progress::Progress(std::string title, unsigned int n)
   _t = time();
 
   // When log level is TRACE or lower, always display at least the 100% message
-  if (LogManager::logger.get_log_level() <= TRACE )
+  if (LogManager::logger().get_log_level() <= TRACE )
     always = true;
 }
 //-----------------------------------------------------------------------------
@@ -59,7 +59,7 @@ Progress::Progress(std::string title)
   _t = time();
 
   // When log level is TRACE or lower, always display at least the 100% message
-  if (LogManager::logger.get_log_level() <= TRACE )
+  if (LogManager::logger().get_log_level() <= TRACE )
     always = true;
 }
 //-----------------------------------------------------------------------------
@@ -67,7 +67,7 @@ Progress::~Progress()
 {
   // Display last progress bar if not displayed
   if (displayed && !finished)
-    LogManager::logger.progress(_title, 1.0);
+    LogManager::logger().progress(_title, 1.0);
 }
 //-----------------------------------------------------------------------------
 void Progress::operator=(double p)
@@ -158,7 +158,7 @@ void Progress::update(double p)
   // Only update when the increase is significant
   if (do_log_update)
   {
-    LogManager::logger.progress(_title, p);
+    LogManager::logger().progress(_title, p);
     displayed = true;
   }
 }

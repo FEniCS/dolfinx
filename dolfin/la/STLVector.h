@@ -14,25 +14,20 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2012-03-27
-// Last changed:
 
 #ifndef __DOLFIN_STLVECTOR_H
 #define __DOLFIN_STLVECTOR_H
 
 #include "PETScVector.h"
-#include "uBLASVector.h"
+#include "EigenVector.h"
 
 namespace dolfin
 {
-
   #ifdef HAS_PETSC
     typedef PETScVector STLVector;
   #else
-    typedef uBLASVector STLVector;
+    typedef EigenVector STLVector;
   #endif
-
 }
 
 #endif

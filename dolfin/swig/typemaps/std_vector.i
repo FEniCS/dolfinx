@@ -363,7 +363,7 @@ const std::vector<TYPE>&  ARG_NAME
   tmp_vec.reserve(pyseq_length);
   for (i = 0; i < pyseq_length; i++)
   {
-    item = PySequence_GetItem($input, i);
+    item = PySequence_ITEM($input, i);
     if(!SWIG_IsOK(Py_convert_ ## TYPE_NAME(item, value)))
     {
       Py_DECREF(item);
@@ -507,7 +507,7 @@ const std::vector<TYPE>&  ARG_NAME
   tmp_vec.reserve(pyseq_length_0);
   for (i = 0; i < pyseq_length_0; i++)
   {
-    inner_list = PySequence_GetItem($input, i);
+    inner_list = PySequence_ITEM($input, i);
 
     // Check type of inner list
     if (!PySequence_Check(inner_list))
@@ -522,7 +522,7 @@ const std::vector<TYPE>&  ARG_NAME
     inner_vec.reserve(pyseq_length_1);
     for (j = 0; j < pyseq_length_1; j++)
     {
-      item = PySequence_GetItem(inner_list, j);
+      item = PySequence_ITEM(inner_list, j);
 
       if(!SWIG_IsOK(Py_convert_ ## TYPE_NAME(item, value)))
       {
@@ -538,6 +538,68 @@ const std::vector<TYPE>&  ARG_NAME
     tmp_vec.push_back(inner_vec);
     inner_vec.clear();
     Py_DECREF(inner_list);
+  }
+  $1 = &tmp_vec;
+}
+%enddef
+
+//-----------------------------------------------------------------------------
+// Macro for defining an in typemap for const std::vector<ArrayView<TYPE> >&
+// where TYPE is a primitive
+//
+// TYPE       : The primitive type
+// TYPE_UPPER : The SWIG specific name of the type used in the array type checks
+//              values SWIG use: INT32 for integer, DOUBLE for double aso.
+// ARG_NAME   : The name of the argument that will be maped as an 'argout' argument
+// NUMPY_TYPE : The type of the NumPy array that is accepted
+// DESCR      : The char descriptor of the NumPy type
+//-----------------------------------------------------------------------------
+%define IN_TYPEMAP_STD_VECTOR_OF_ARRAYVIEW_OF_PRIMITIVES(TYPE, TYPE_UPPER, \
+                                                         ARG_NAME, NUMPY_TYPE, \
+                                                         DESCR)
+
+%typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY) const std::vector<dolfin::ArrayView<TYPE> >& ARG_NAME
+{
+  $1 = PySequence_Check($input) ? 1 : 0;
+}
+
+%typemap (in) const std::vector<dolfin::ArrayView<TYPE> >& ARG_NAME (std::vector<dolfin::ArrayView<TYPE> > tmp_vec, PyObject* inner_arr, PyArrayObject* xa, std::size_t i, TYPE* data, npy_intp size)
+{
+  // IN_TYPEMAP_STD_VECTOR_OF_ARRAYVIEW_OF_PRIMITIVES(TYPE, TYPE_UPPER,
+  //            ARG_NAME, NUMPY_TYPE, DESCR)
+
+  // A first sequence test
+  if (!PySequence_Check($input))
+  {
+    SWIG_exception(SWIG_TypeError, "expected a sequence for argument $argnum");
+  }
+
+  // Get outer sequence length
+  Py_ssize_t pyseq_length_0 = PySequence_Size($input);
+
+  tmp_vec.reserve(pyseq_length_0);
+  for (i = 0; i < pyseq_length_0; i++)
+  {
+    inner_arr = PySequence_ITEM($input, i);
+    xa = reinterpret_cast<PyArrayObject*>(inner_arr);
+
+    // Check type
+    if (!PyArray_Check(xa) || PyArray_NDIM(xa) != 1 ||
+        !PyArray_ISCONTIGUOUS(xa) || PyArray_TYPE(xa) != NUMPY_TYPE)
+    {
+      Py_DECREF(inner_arr);
+      SWIG_exception(SWIG_TypeError,
+        "expected a sequence of contiguous NumPy arrays of dim=1 and "
+        "dtype=DESCR for argument $argnum");
+    }
+
+    // Get pointer to array data and length
+    data = reinterpret_cast<TYPE*>(PyArray_DATA(xa));
+    size = PyArray_DIM(xa, 0);
+    Py_DECREF(inner_arr);
+
+    // Construct and insert ArrayView
+    tmp_vec.emplace_back(size, data);
   }
   $1 = &tmp_vec;
 }
@@ -561,13 +623,13 @@ const std::vector<TYPE>&  ARG_NAME
 }
 
 //-----------------------------------------------------------------------------
-// Out typemap for std::vector<std::pair<std:string, std:string>
+// Out typemap for std::vector<std:string>
 //-----------------------------------------------------------------------------
 %typemap(out) std::vector< std::string >
 (std::vector< std::string >::const_iterator it,
  PyObject* tmp_Py_str, Py_ssize_t ind)
 {
-  // std::vector<std::pair<std:string, std:string> >
+  // std::vector<std:string>
   $result = PyList_New((&$1)->size());
   ind = 0;
   for (it = (&$1)->begin(); it !=(&$1)->end(); ++it)
@@ -599,11 +661,13 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, cells, NPY_UINTP)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, columns, NPY_UINTP)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, dofs, NPY_UINTP)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, local_to_global_map, NPY_UINTP)
+ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, num_nonzeros, NPY_UINTP)
 #else
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, cells, NPY_UINTP)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, columns, NPY_UINTP)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, dofs, NPY_UINTP)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, local_to_global_map, NPY_UINTP)
+ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, num_nonzeros, NPY_UINTP)
 #endif
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE)
 
@@ -682,6 +746,27 @@ IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, facets,
 #else
 IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, facets,
                                                   std_size_t)
+#endif
+
+// Typemaps for GenericSparsityPattern interface
+#if (DOLFIN_SIZE_T==4)
+IN_TYPEMAP_STD_VECTOR_OF_ARRAYVIEW_OF_PRIMITIVES(const std::size_t, INT32,
+                                                 local_to_global, NPY_UINTP,
+                                                 uintp)
+#else
+IN_TYPEMAP_STD_VECTOR_OF_ARRAYVIEW_OF_PRIMITIVES(const std::size_t, INT64,
+                                                 local_to_global, NPY_UINTP,
+                                                 uintp)
+#endif
+IN_TYPEMAP_STD_VECTOR_OF_ARRAYVIEW_OF_PRIMITIVES(const int, INT32,
+                                                 off_process_owner, NPY_INT,
+                                                 intc)
+#if (DOLFIN_LA_INDEX_SIZE==4)
+IN_TYPEMAP_STD_VECTOR_OF_ARRAYVIEW_OF_PRIMITIVES(const dolfin::la_index, INT32,
+                                                 entries, NPY_INT, int32)
+#else
+IN_TYPEMAP_STD_VECTOR_OF_ARRAYVIEW_OF_PRIMITIVES(const dolfin::la_index, INT64,
+                                                 entries, NPY_INT64, int64)
 #endif
 
 
