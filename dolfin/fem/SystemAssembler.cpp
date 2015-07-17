@@ -563,7 +563,7 @@ void SystemAssembler::facet_wise_assembly(
   std::array<bool, 2> tensor_required_cell, tensor_required_facet;
 
   // Track whether or not cell contribution has been computed
-  std::array<bool, 2> compute_cell_tensor = {true, true};
+  std::array<bool, 2> compute_cell_tensor = {{true, true}};
   std::vector<bool> cell_tensor_computed(mesh.num_cells(), false);
 
   // Iterate over facets
