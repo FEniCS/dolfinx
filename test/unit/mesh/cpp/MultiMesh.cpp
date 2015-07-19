@@ -44,8 +44,8 @@ class MultiMeshes : public CppUnit::TestFixture
 public:
 
   //------------------------------------------------------------------------------
-  double rotate(double x, double y, double cx, double cy, double w,
-		double& xr, double& yr)
+  void rotate(double x, double y, double cx, double cy, double w,
+	      double& xr, double& yr)
   {
     // std::cout << "rotate:\n"
     // 	      << "\t"
@@ -889,10 +889,10 @@ public:
     double exact_area = 4*(0.9-0.1); // mesh0 and mesh1
     File("mesh_1.xml") << mesh_1;
 
-    RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
-    multimesh.add(mesh_2);
-    exact_area += 4*(0.8-0.2); // mesh1 and mesh2
-    File("mesh_2.xml") << mesh_2;
+    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // multimesh.add(mesh_2);
+    // exact_area += 4*(0.8-0.2); // mesh1 and mesh2
+    // File("mesh_2.xml") << mesh_2;
 
     multimesh.build();
 
@@ -1104,7 +1104,7 @@ public:
     std::cout << "Sum contributions\n";
     for (std::size_t part = 0; part < multimesh.num_parts(); part++)
     {
-      std::cout << "% part " << part;
+      std::cout << "% part " << part << std::endl;
       double part_area = 0;
       const auto& quadrature_rules = multimesh.quadrature_rule_interface(part);
 
@@ -1136,6 +1136,7 @@ public:
 	  // Get quadrature rule for interface part defined by
 	  // intersection of the cut and cutting cells
 	  const std::size_t k = jt - cutting_cells.begin();
+	  std::cout << k << ' ' << cut_cell_index <<' ' << std::flush << quadrature_rules.size() << ' ' << quadrature_rules.at(cut_cell_index).size() << std::endl;
 	  dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
 	  const auto& qr = quadrature_rules.at(cut_cell_index)[k];
 	  for (std::size_t i = 0; i < qr.second.size(); ++i)
