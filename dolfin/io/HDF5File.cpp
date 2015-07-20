@@ -1409,6 +1409,13 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
                  "Dataset \"%s\" not found", coordinates_name.c_str());
   }
 
+  read(input_mesh, topology_name, coordinates_name, use_partition_from_file);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
+                    const std::string geometry_name,
+                    bool use_partition_from_file) const
+{
   // Structure to store local mesh
   LocalMeshData mesh_data(_mpi_comm);
 

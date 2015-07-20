@@ -447,7 +447,8 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
   xml.read();
 
   // Try to read the mesh from the associated HDF5 file
-  hdf5_file->read(mesh, "/Mesh/" + xml.meshname(), use_partition_from_file);
+  hdf5_file->read(mesh, xml.topology_name(),
+                  xml.geometry_name(), use_partition_from_file);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
@@ -691,16 +692,10 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
 
   XDMFxml xml(_filename);
   xml.read();
-  const std::string mesh_name = xml.meshname();
   const std::string data_name = xml.dataname();
 
-  if (mesh_name != data_name)
-    dolfin_error("XMDFFile.cpp",
-                 "read MeshFunction",
-                 "Data and Mesh names do not match in XDMF");
-
   // Try to read the meshfunction from the associated HDF5 file
-  hdf5_file->read(meshfunction, "/Mesh/" + mesh_name);
+  hdf5_file->read(meshfunction, "/Mesh/" + data_name);
 }
 //----------------------------------------------------------------------------
 #endif

@@ -64,7 +64,7 @@ void XDMFxml::read()
   }
 }
 //-----------------------------------------------------------------------------
-std::string XDMFxml::meshname() const
+std::string XDMFxml::topology_name() const
 {
   // Topology - check format and get dataset name
   pugi::xml_node xdmf_topology
@@ -87,34 +87,28 @@ std::string XDMFxml::meshname() const
   }
 
   const std::string topo_ref(xdmf_topology.first_child().value());
-  std::vector<std::string> topo_bits;
-  boost::split(topo_bits, topo_ref, boost::is_any_of(":/"));
 
-  // Should have 5 elements "filename.h5", "", "Mesh", "meshname", "topology"
-  dolfin_assert(topo_bits.size() == 5);
-  dolfin_assert(topo_bits[2] == "Mesh");
-  dolfin_assert(topo_bits[4] == "topology");
-
+  return topo_ref;
+}
+//-----------------------------------------------------------------------------
+std::string XDMFxml::geometry_name() const
+{
   // Geometry - check format and get dataset name
   pugi::xml_node xdmf_geometry =
     xml_doc.child("Xdmf").child("Domain").child("Grid").child("Geometry").child("DataItem");
   dolfin_assert(xdmf_geometry);
 
   const std::string geom_fmt(xdmf_geometry.attribute("Format").value());
-  dolfin_assert(geom_fmt == "HDF");
+  if (geom_fmt != "HDF")
+  {
+    dolfin_error("XDMFxml.cpp",
+                 "read mesh from XDMF/H5 files",
+                 "XML parsing error. Wrong dataset format (not HDF5)");
+  }
 
   const std::string geom_ref(xdmf_geometry.first_child().value());
-  std::vector<std::string> geom_bits;
-  boost::split(geom_bits, geom_ref, boost::is_any_of(":/"));
 
-  // Should have 5 elements "filename.h5", "", "Mesh", "meshname",
-  // "coordinates"
-  dolfin_assert(geom_bits.size() == 5);
-  dolfin_assert(geom_bits[2] == "Mesh");
-  dolfin_assert(geom_bits[3] == topo_bits[3]);
-  dolfin_assert(geom_bits[4] == "coordinates");
-
-  return geom_bits[3];
+  return geom_ref;
 }
 //-----------------------------------------------------------------------------
 std::string XDMFxml::dataname() const

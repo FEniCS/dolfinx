@@ -100,6 +100,11 @@ namespace dolfin
     void read(Mesh& mesh, const std::string name,
               bool use_partition_from_file) const;
 
+    /// Read in Mesh with given topology and geometry datasets
+    void read(Mesh& input_mesh, const std::string topology_name,
+              const std::string geometry_name,
+              bool use_partition_from_file) const;
+
     /// Write MeshFunction to file in a format suitable for re-reading
     void write(const MeshFunction<std::size_t>& meshfunction,
                const std::string name);
