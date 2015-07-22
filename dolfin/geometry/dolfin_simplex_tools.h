@@ -70,17 +70,22 @@ namespace tools
     std::stringstream ss; ss.precision(15);
     if (simplex.size() == 3)
     {
-      ss << "drawtriangle("
-	 << "["<<simplex[0][0]<<' '<<simplex[0][1]<<"],"
-	 << "["<<simplex[1][0]<<' '<<simplex[1][1]<<"],"
-	 << "["<<simplex[2][0]<<' '<<simplex[2][1]<<"],"
-	 << color << ");";
+      ss << "drawtriangle2("
+	 << "["<<simplex[0][0]<<','<<simplex[0][1]<<"],"
+	 << "["<<simplex[1][0]<<','<<simplex[1][1]<<"],"
+	 << "["<<simplex[2][0]<<','<<simplex[2][1]<<"],"
+	 << "color=" << color << ',' //<< ");";
+	 << "plt=plt,axis=gca()"
+	 << ");";
     }
     else if (simplex.size() == 2)
     {
-      ss << "hline = line([" << simplex[0][0] << ' ' << simplex[1][0] << "],"
-	 << "[" << simplex[0][1] << ' ' << simplex[1][1] << "]);"
-	 << "set(hline,'color'," << color << ");";
+      /* ss << "hline = line([" << simplex[0][0] << ',' << simplex[1][0] << "]," */
+      /* 	 << "[" << simplex[0][1] << ',' << simplex[1][1] << "]);" */
+      /* 	 << "set(hline,'color'," << color << ");"; */
+      ss << "drawline2([" << simplex[0][0] << ',' << simplex[1][0] << "],"
+	 <<  "[" << simplex[0][1] << ',' << simplex[1][1] << "],"
+	 << "plt=plt,color="<< color << ",linewidth=5.0);";
     }
     return ss.str();
   }
