@@ -889,10 +889,10 @@ public:
     double exact_area = 4*(0.9-0.1); // mesh0 and mesh1
     File("mesh_1.xml") << mesh_1;
 
-    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
-    // multimesh.add(mesh_2);
-    // exact_area += 4*(0.8-0.2); // mesh1 and mesh2
-    // File("mesh_2.xml") << mesh_2;
+    RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
+    multimesh.add(mesh_2);
+    exact_area += 4*(0.8-0.2); // mesh1 and mesh2
+    File("mesh_2.xml") << mesh_2;
 
     multimesh.build();
 
