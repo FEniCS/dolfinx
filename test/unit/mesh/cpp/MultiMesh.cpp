@@ -894,6 +894,11 @@ public:
     exact_area += 4*(0.8-0.2); // mesh1 and mesh2
     File("mesh_2.xml") << mesh_2;
 
+    RectangleMesh mesh_3(0.3, 0.3, 0.7, 0.7, 1, 1);
+    multimesh.add(mesh_3);
+    exact_area += 4*(0.7-0.3); // mesh2 and mesh3
+    File("mesh_3.xml") << mesh_3;
+
     multimesh.build();
 
     const double area = compute_interface_area(multimesh, exact_area);
@@ -1136,16 +1141,21 @@ public:
 	  // Get quadrature rule for interface part defined by
 	  // intersection of the cut and cutting cells
 	  const std::size_t k = jt - cutting_cells.begin();
-	  std::cout << k << ' ' << cut_cell_index <<' ' << std::flush << quadrature_rules.size() << ' ' << quadrature_rules.at(cut_cell_index).size() << std::endl;
+	  std::cout << cut_cell_index << ' ' << k <<' ' << std::flush
+		    << quadrature_rules.size() << ' '
+		    << quadrature_rules.at(cut_cell_index).size() << "   " << std::flush;
 	  dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
 	  const auto& qr = quadrature_rules.at(cut_cell_index)[k];
+	  std::stringstream ss;
 	  for (std::size_t i = 0; i < qr.second.size(); ++i)
 	  {
 	    file << qr.first[2*i]<<' '<<qr.first[2*i+1]<<' '<<qr.second[i]<<'\n';
+	    std::cout << qr.second[i]<<' ';
 	    area += qr.second[i];
 	    part_area += qr.second[i];
 	    //std::cout << qr.first[2*i]<<' '<<qr.first[2*i+1]<<'\n';
 	  }
+	  std::cout << std::endl;
 	}
       }
       std::cout << "\ttotal area " << part_area << std::endl;

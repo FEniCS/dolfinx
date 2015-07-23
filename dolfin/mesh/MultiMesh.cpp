@@ -1519,19 +1519,22 @@ void MultiMesh::_build_quadrature_rules_interface()
 	  // inclusion-exclusion
 	  for (auto kt = it->second.begin(); kt != it->second.end(); kt++)
 	  {
-	    if (kt != jt)
+	    //if (kt != jt)
 	    {
 	      const std::size_t cutting_part_k = kt->first;
-	      //if (cutting_part_k > cutting_part_j)
+	      if (cutting_part_k != cutting_part_j) // ignore all cells in same part
 	      {
 		const std::size_t cutting_cell_index_k = kt->second;
 		const Cell cutting_cell_k(*(_meshes[cutting_part_k]), cutting_cell_index_k);
 		initial_cells.push_back(std::make_pair(initial_cells.size(), cutting_cell_k));
+		std::cout << tools::drawtriangle(cutting_cell_k);
 	      }
 	    }
 	  }
 
 	  const std::size_t N = initial_cells.size();
+	  std::cout << "initial_cells.size() = #stages = " << N << std::endl;
+
 	  if (N > 0)
 	  {
 	    std::vector<std::pair<std::vector<std::size_t>, Polyhedron> > previous_intersections(N);
@@ -1546,12 +1549,12 @@ void MultiMesh::_build_quadrature_rules_interface()
 
 	    // Add quadrature rule for stage 0. These are composed of E \cap K_i
 	    {
-	      std::cout << "\n\nstage 0\n";
+	      std::cout << "\nstage 0" << std::endl;
 	      const double sign = -1;
 	      //quadrature_rule qr;
 	      for (const auto cell: initial_cells)
 	      {
-		std::cout << tools::drawtriangle(cell.second);
+		std::cout << tools::drawtriangle(cell.second) << std::endl;
 		for (const auto polyhedron: cut_cutting_interface)
 		{
 		  for (const auto simplex: polyhedron)
@@ -1573,6 +1576,7 @@ void MultiMesh::_build_quadrature_rules_interface()
 	    // Now do the inclusion-exclusion
 	    for (std::size_t stage = 1; stage < N; ++stage)
 	    {
+	      std::cout << "\nstage " << stage << std::endl;
 	      // Structure for storing new intersections
 	      std::vector<std::pair<std::vector<std::size_t>, Polyhedron> > new_intersections;
 
@@ -1641,6 +1645,8 @@ void MultiMesh::_build_quadrature_rules_interface()
 		      {
 			std::cout << "# deep inside inc exc\n";
 			_add_quadrature_rule(cut_cutting_interface_qr, ii, tdim-1, gdim, quadrature_order, sign);
+			std::cout << "the collision was:\n";
+			std::cout << tools::drawtriangle(simplex)<<tools::drawtriangle(interface_simplex)<<std::endl;
 			PPause;
 		      }
 		    }
@@ -1657,11 +1663,15 @@ void MultiMesh::_build_quadrature_rules_interface()
 #ifdef Augustdebug
       std::cout << "summary for cut part and cut cell index " << cut_part << " " << cut_cell_index << std::endl;
       std::cout << "interface_qr.size() = " << interface_qr.size() << std::endl;
+      std::size_t cnt = 0;
       for (const auto dqr: interface_qr)
+      {
+	std::cout << cnt++ << std::endl;
 	for (std::size_t i = 0; i < dqr.second.size(); ++i)
 	{
 	  std::cout << "plot(" << dqr.first[2*i]<<","<<dqr.first[2*i+1]<<",'ro'); # "<<dqr.second[i]<<' '<<i<<std::endl;
 	}
+      }
       PPause;
 #endif
 
