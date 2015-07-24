@@ -64,13 +64,15 @@ void XDMFxml::read()
   }
 }
 //-----------------------------------------------------------------------------
-std::string XDMFxml::topology_name() const
+std::vector<std::string> XDMFxml::topology_name() const
 {
   // Topology - check format and get dataset name
   pugi::xml_node xdmf_topology
     = xml_doc.child("Xdmf").child("Domain")
-             .child("Grid").child("Topology").child("DataItem");
-  if (!xdmf_topology)
+             .child("Grid").child("Topology");
+  pugi::xml_node xdmf_topology_data = xdmf_topology.child("DataItem");
+
+  if (!xdmf_topology or !xdmf_topology_data)
   {
     dolfin_error("XDMFxml.cpp",
                  "read mesh from XDMF/H5 files",
@@ -78,7 +80,7 @@ std::string XDMFxml::topology_name() const
   }
 
   const std::string
-    topological_data_format(xdmf_topology.attribute("Format").value());
+    topological_data_format(xdmf_topology_data.attribute("Format").value());
   if (topological_data_format != "HDF")
   {
     dolfin_error("XDMFxml.cpp",
@@ -86,19 +88,30 @@ std::string XDMFxml::topology_name() const
                  "XML parsing error. Wrong dataset format (not HDF5)");
   }
 
-  const std::string topo_ref(xdmf_topology.first_child().value());
+  // Usually, the DOLFIN CellType is just the lower case of the VTK name
+  // FIXME: this will fail for 1D and quadratic topology
+  std::string cell_type(xdmf_topology.attribute("TopologyType").value());
+  boost::to_lower(cell_type);
 
-  return topo_ref;
+  const std::string topo_ref(xdmf_topology_data.first_child().value());
+  std::vector<std::string> topo_vec;
+  boost::split(topo_vec, topo_ref, boost::is_any_of(":"));
+  dolfin_assert(topo_vec.size() == 2);
+
+  // Add cell type to topology data
+  topo_vec.push_back(cell_type);
+
+  return topo_vec;
 }
 //-----------------------------------------------------------------------------
-std::string XDMFxml::geometry_name() const
+std::vector<std::string> XDMFxml::geometry_name() const
 {
   // Geometry - check format and get dataset name
-  pugi::xml_node xdmf_geometry =
+  pugi::xml_node xdmf_geometry_data =
     xml_doc.child("Xdmf").child("Domain").child("Grid").child("Geometry").child("DataItem");
-  dolfin_assert(xdmf_geometry);
+  dolfin_assert(xdmf_geometry_data);
 
-  const std::string geom_fmt(xdmf_geometry.attribute("Format").value());
+  const std::string geom_fmt(xdmf_geometry_data.attribute("Format").value());
   if (geom_fmt != "HDF")
   {
     dolfin_error("XDMFxml.cpp",
@@ -106,9 +119,12 @@ std::string XDMFxml::geometry_name() const
                  "XML parsing error. Wrong dataset format (not HDF5)");
   }
 
-  const std::string geom_ref(xdmf_geometry.first_child().value());
+  const std::string geom_ref(xdmf_geometry_data.first_child().value());
 
-  return geom_ref;
+  std::vector<std::string> geom_vec;
+  boost::split(geom_vec, geom_ref, boost::is_any_of(":"));
+  dolfin_assert(geom_vec.size() == 2);
+  return geom_vec;
 }
 //-----------------------------------------------------------------------------
 std::string XDMFxml::dataname() const

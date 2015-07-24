@@ -46,11 +46,13 @@ namespace dolfin
     /// Read from a file
     void read();
 
-    /// Get the (unique) Mesh topology name from the current XML
-    std::string topology_name() const;
+    /// Get the (unique) Mesh topology name, split into three parts (file name, dataset name, CellType)
+    /// from the current XML
+    std::vector<std::string> topology_name() const;
 
-    /// Get the (unique) Mesh geometry name from the current XML
-    std::string geometry_name() const;
+    /// Get the (unique) Mesh geometry name, split into two parts (file name, dataset name)
+    /// from the current XML
+    std::vector<std::string> geometry_name() const;
 
     /// Get the (unique) dataset name for a MeshFunction in current XML
     std::string dataname() const;
