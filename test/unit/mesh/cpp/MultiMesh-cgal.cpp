@@ -94,6 +94,7 @@ public:
 
       std::shared_ptr<const Mesh> current_mesh = multimesh.part(part);
       current_cells_status.resize(current_mesh->num_cells());
+      std::cout << "Number of cells: " << current_cells_status.size() << std::endl;
 
       // Uncut cell volume given by function volume
       {
@@ -110,10 +111,10 @@ public:
         const std::vector<unsigned int>& cut_cells = multimesh.cut_cells(part);
         for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
         {
-          // std::cout << "Cut cell in part " << part << ": " << *it << std::endl;
+          std::cout << "Cut cell in part " << part << ": " << *it << std::endl;
           double volume = 0;
           const quadrature_rule& qr = multimesh.quadrature_rule_cut_cell(part, *it);
-          // std::cout << "QR: " << qr.first.size() << ", " << qr.second.size() << std::endl;
+          std::cout << "QR: " << qr.first.size() << ", " << qr.second.size() << std::endl;
           for (std::size_t i = 0; i < qr.second.size(); ++i)
           {
             volume += qr.second[i];
@@ -137,8 +138,9 @@ public:
   {
     typedef CGAL::Exact_predicates_exact_constructions_kernel ExactKernel;
     //typedef CGAL::Exact_predicates_inexact_constructions_kernel ExactKernel;
-    typedef CGAL::Triangle_2<ExactKernel>             Triangle_2;
     typedef CGAL::Point_2<ExactKernel>                Point_2;
+    typedef CGAL::Triangle_2<ExactKernel>             Triangle_2;
+    typedef CGAL::Line_2<ExactKernel>                 Line_2;
     typedef CGAL::Polygon_2<ExactKernel>              Polygon_2;
     typedef Polygon_2::Vertex_const_iterator          Vertex_const_iterator;
     typedef CGAL::Polygon_with_holes_2<ExactKernel>   Polygon_with_holes_2;
@@ -177,12 +179,9 @@ public:
         Polygon_set_2 polygon_set;
         {
           std::vector<Point_2> vertices;
-          vertices.push_back(Point_2(current_geometry.x(cit->entities(0)[0], 0),
-                                     current_geometry.x(cit->entities(0)[0], 1)));
-          vertices.push_back(Point_2(current_geometry.x(cit->entities(0)[1], 0),
-                                     current_geometry.x(cit->entities(0)[1], 1)));
-          vertices.push_back(Point_2(current_geometry.x(cit->entities(0)[2], 0),
-                                     current_geometry.x(cit->entities(0)[2], 1)));
+          vertices.push_back(current_cell[0]);
+          vertices.push_back(current_cell[1]);
+          vertices.push_back(current_cell[2]);
 
           Polygon_2 p(vertices.begin(), vertices.end());
           polygon_set.insert(p);
@@ -198,13 +197,24 @@ public:
           for (CellIterator cit_other(*other_mesh); !cit_other.end(); ++cit_other)
           {
             std::vector<Point_2> vertices;
-            vertices.push_back(Point_2(other_geometry.x(cit_other->entities(0)[0], 0),
-                                       other_geometry.x(cit_other->entities(0)[0], 1)));
-            vertices.push_back(Point_2(other_geometry.x(cit_other->entities(0)[1], 0),
-                                       other_geometry.x(cit_other->entities(0)[1], 1)));
-            vertices.push_back(Point_2(other_geometry.x(cit_other->entities(0)[2], 0),
-                                       other_geometry.x(cit_other->entities(0)[2], 1)));
+            Point_2 p0(other_geometry.x(cit_other->entities(0)[0], 0),
+                       other_geometry.x(cit_other->entities(0)[0], 1));
+            Point_2 p1(other_geometry.x(cit_other->entities(0)[1], 0),
+                       other_geometry.x(cit_other->entities(0)[1], 1));
+            Point_2 p2(other_geometry.x(cit_other->entities(0)[2], 0),
+                       other_geometry.x(cit_other->entities(0)[2], 1));
 
+            vertices.push_back(p0);
+            if (Line_2(p0, p1).has_on_positive_side(p2))
+            {
+              vertices.push_back(p1);
+              vertices.push_back(p2);
+            }
+            else
+            {
+              vertices.push_back(p2);
+              vertices.push_back(p1);
+            }
             Polygon_2 p(vertices.begin(), vertices.end());
             polygon_set.difference(p);
           }
@@ -277,6 +287,7 @@ public:
 
     const std::size_t Nmeshes = 8;
 
+    /* ---------------- Create multimesh ------------------------- */
     std::size_t i = 0;
     while (i < Nmeshes)
     {
@@ -317,12 +328,22 @@ public:
     }
 
     multimesh.build();
+    
+    std::cout << multimesh.plot_matplotlib() << std::endl;
+    std::cout << "Done building multimesh" << std::endl;
+    if (!multimesh.is_built())
+      std::cout << "Problem! Multimesh not built" << std::endl;
+    /* ---------------- Done creating multimesh ----------------------- */
 
+    // Compute volume of each cell using cgal
     std::vector<std::vector<std::pair<CELL_STATUS, double>>> cell_status_cgal;
-    get_cells_status_cgal(multimesh, cell_status_cgal);
+    // get_cells_status_cgal(multimesh, cell_status_cgal);
+    // std::cout << "Done computing volumes with cgal" << std::endl;
 
+    // Compute volume of each cell using dolfin::MultiMesh
     std::vector<std::vector<std::pair<CELL_STATUS, double> > > cell_status_multimesh;
     compute_volume(multimesh, cell_status_multimesh);
+    std::cout << "Done computing volumes with multimesh" << std::endl;
     
     double cgal_volume = 0.;
     double multimesh_volume = 0.;
