@@ -327,8 +327,8 @@ void compute_volume(const MultiMesh& multimesh,
 
     // Compute volume of each cell using cgal
     std::vector<std::vector<std::pair<CELL_STATUS, double>>> cell_status_cgal;
-    // get_cells_status_cgal(multimesh, cell_status_cgal);
-    // std::cout << "Done computing volumes with cgal" << std::endl;
+    get_cells_status_cgal(multimesh, cell_status_cgal);
+    std::cout << "Done computing volumes with cgal" << std::endl;
 
     // Compute volume of each cell using dolfin::MultiMesh
     std::vector<std::vector<std::pair<CELL_STATUS, double> > > cell_status_multimesh;
