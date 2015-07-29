@@ -78,13 +78,13 @@ void compute_volume(const MultiMesh& multimesh,
   // Sum contribution from all parts
   for (std::size_t part = 0; part < multimesh.num_parts(); part++)
   {
-    std::cout << "Testing part " << part << std::endl;
+    // std::cout << "Testing part " << part << std::endl;
     cells_status.push_back(std::vector<std::pair<CELL_STATUS, double> >());
     std::vector<std::pair<CELL_STATUS, double> >& current_cells_status = cells_status.back();
 
     std::shared_ptr<const Mesh> current_mesh = multimesh.part(part);
     current_cells_status.resize(current_mesh->num_cells());
-    std::cout << "Number of cells: " << current_cells_status.size() << std::endl;
+    // std::cout << "Number of cells: " << current_cells_status.size() << std::endl;
 
     // Uncut cell volume given by function volume
     {
@@ -101,10 +101,10 @@ void compute_volume(const MultiMesh& multimesh,
         const std::vector<unsigned int>& cut_cells = multimesh.cut_cells(part);
         for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
         {
-          std::cout << "Cut cell in part " << part << ": " << *it << std::endl;
+          // std::cout << "Cut cell in part " << part << ": " << *it << std::endl;
           double volume = 0;
           const quadrature_rule& qr = multimesh.quadrature_rule_cut_cell(part, *it);
-          std::cout << "QR: " << qr.first.size() << ", " << qr.second.size() << std::endl;
+          // std::cout << "QR: " << qr.first.size() << ", " << qr.second.size() << std::endl;
           for (std::size_t i = 0; i < qr.second.size(); ++i)
           {
             volume += qr.second[i];
@@ -144,7 +144,7 @@ void compute_volume(const MultiMesh& multimesh,
 
     for (std::size_t i = 0; i < multimesh.num_parts(); i++)
     {
-      std::cout << "Testing part " << i << std::endl;
+      // std::cout << "Testing part " << i << std::endl;
       cells_status.push_back(std::vector<std::pair<CELL_STATUS, double> >());
       std::vector<std::pair<CELL_STATUS, double> >& current_cells_status = cells_status.back();
 
@@ -177,11 +177,11 @@ void compute_volume(const MultiMesh& multimesh,
           polygon_set.insert(p);
         }
 
-        std::cout << "  Testing cell: " << current_cell << std::endl;
+        // std::cout << "  Testing cell: " << current_cell << std::endl;
         bool is_uncut = true;
         for (std::size_t j = i+1; j < multimesh.num_parts(); j++)
         {
-          std::cout << "    Testing against part " << j << std::endl;
+          // std::cout << "    Testing against part " << j << std::endl;
           std::shared_ptr<const Mesh> other_mesh = multimesh.part(j);
           const MeshGeometry& other_geometry = other_mesh->geometry();
           for (CellIterator cit_other(*other_mesh); !cit_other.end(); ++cit_other)
@@ -216,12 +216,12 @@ void compute_volume(const MultiMesh& multimesh,
         if (result.size() == 0)
         {
           current_cells_status.push_back(std::make_pair(COVERED, 0.0));
-          std::cout << "    Covered" << std::endl;
+          //std::cout << "    Covered" << std::endl;
         }
         else
         {
-          if (result.size() > 1)
-            std::cout << "!!!!!!!! Several polygons !!!!!!!" << std::endl;
+          // if (result.size() > 1)
+          //   std::cout << "!!!!!!!! Several polygons !!!!!!!" << std::endl;
 
           Polygon_2::Vertex_const_iterator v = result[0].outer_boundary().vertices_begin();
           Polygon_2::Vertex_const_iterator v_end = result[0].outer_boundary().vertices_end();
@@ -237,7 +237,7 @@ void compute_volume(const MultiMesh& multimesh,
           {
             current_cells_status.push_back(std::make_pair(UNCUT,
                                                           CGAL::to_double(result[0].outer_boundary().area())));
-            std::cout << "    Uncut" << std::endl;
+            // std::cout << "    Uncut" << std::endl;
           }
           else
           {
@@ -247,15 +247,15 @@ void compute_volume(const MultiMesh& multimesh,
             {
               const Polygon_2& outerboundary = pit->outer_boundary();
               current_volume += outerboundary.area();
-              std::cout << "    Polygon ";
-              for (auto it = outerboundary.vertices_begin(); it != outerboundary.vertices_end(); it++) std::cout << *it << ", ";
-              std::cout << std::endl;
+              // std::cout << "    Polygon ";
+              // for (auto it = outerboundary.vertices_begin(); it != outerboundary.vertices_end(); it++) std::cout << *it << ", ";
+              // std::cout << std::endl;
 
               for (auto it = pit->holes_begin(); it != pit->holes_end(); it++)
                 current_volume -= it->area();
             }
             current_cells_status.push_back(std::make_pair(CUT, CGAL::to_double(current_volume)));
-            std::cout << "    Cut" << std::endl;
+            // std::cout << "    Cut" << std::endl;
           }
         }
       }
@@ -321,8 +321,6 @@ void compute_volume(const MultiMesh& multimesh,
     
     std::cout << multimesh.plot_matplotlib() << std::endl;
     std::cout << "Done building multimesh" << std::endl;
-    if (!multimesh.is_built())
-      std::cout << "Problem! Multimesh not built" << std::endl;
     /* ---------------- Done creating multimesh ----------------------- */
 
     // Compute volume of each cell using cgal
@@ -352,19 +350,22 @@ void compute_volume(const MultiMesh& multimesh,
         std::cout << "  Cell " << j << std::endl;
         std::cout << "    Multimesh: " << current_multimesh[j].first << " (" << current_multimesh[j].second << ")" << std::endl;
         std::cout << "    CGAL:      " << current_cgal[j].first << " (" << current_cgal[j].second << ")" << std::endl;
+        std::cout << "      Diff:    " << std::abs(current_cgal[j].second - current_multimesh[j].second) << std::endl;
+        cgal_volume += current_cgal[j].second;
+        multimesh_volume += current_multimesh[j].second;
         // dolfin_assert(near(current_cgal[j].second, current_multimesh[j].second, DOLFIN_EPS_LARGE));
         // dolfin_assert(current_cgal[j].first == current_multimesh[j].first);
       }
       std::cout << std::endl;
     }
 
-    if (MULTIMESH_DEBUG_OUTPUT)
-    {
-      std::cout << multimesh.plot_matplotlib() << std::endl;
-    }
-
     // Exact volume is known
-    //const double exact_volume = 1;
+    const double exact_volume = 1;
+    
+    std::cout << "Total volume" << std::endl;
+    std::cout << "------------" << std::endl;
+    std::cout << "Multimesh: " << multimesh_volume << ", error: " << std::abs(exact_volume-multimesh_volume) << std::endl;
+    std::cout << "CGAL:      " << cgal_volume << ", error: " << std::abs(exact_volume-cgal_volume) << std::endl;
 
     //dolfin_assert(near(exact_volume, volume, DOLFIN_EPS_LARGE));
   }

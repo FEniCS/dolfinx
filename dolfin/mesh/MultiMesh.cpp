@@ -33,7 +33,7 @@
 #include "MultiMesh.h"
 // FIXME August
 #include <dolfin/geometry/dolfin_simplex_tools.h>
-#define Augustdebug
+//#define Augustdebug
 
 using namespace dolfin;
 
