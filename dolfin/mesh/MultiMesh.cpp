@@ -171,10 +171,10 @@ void MultiMesh::build()
 
   // Build quadrature rules of the cut cells' overlap. Do this before
   // we build the quadrature rules of the cut cells
-  //_build_quadrature_rules_overlap();
+  _build_quadrature_rules_overlap();
 
   // Build quadrature rules of the cut cells
-  //_build_quadrature_rules_cut_cells();
+  _build_quadrature_rules_cut_cells();
 
   // FIXME:
   _build_quadrature_rules_interface();
@@ -334,7 +334,9 @@ void MultiMesh::_build_collision_maps()
       std::fill(collides_with_boundary.begin(), collides_with_boundary.end(), false);
 
       // Compute domain-boundary collisions
-      const auto& boundary_collisions = _trees[i]->compute_collisions(*_boundary_trees[j]);
+      const std::pair<std::vector<unsigned int>,
+                      std::vector<unsigned int> > boundary_collisions =
+        _trees[i]->compute_collisions(*_boundary_trees[j]);
 
       // Iterate over boundary collisions
       for (auto it = boundary_collisions.first.begin();
