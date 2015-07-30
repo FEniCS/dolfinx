@@ -45,6 +45,21 @@ enum CELL_STATUS
   UNCUT
 };
 
+std::string cell_status_str(CELL_STATUS cs)
+{
+  switch(cs)
+  {
+   case UNKNOWN :
+    return "UNKNOWN";
+   case COVERED :
+    return "COVERED";
+   case CUT :
+    return "CUT    ";
+   case UNCUT :
+    return "UNCUT  ";
+  }
+}
+
 //------------------------------------------------------------------------------
 double rotate(double x, double y, double cx, double cy, double w,
               double& xr, double& yr)
@@ -75,7 +90,7 @@ void compute_volume(const MultiMesh& multimesh,
 {
   cells_status.reserve(multimesh.num_parts());    
 
-  // Sum contribution from all parts
+  // Compute contribution from all parts
   for (std::size_t part = 0; part < multimesh.num_parts(); part++)
   {
     // std::cout << "Testing part " << part << std::endl;
@@ -308,8 +323,11 @@ void compute_volume(const MultiMesh& multimesh,
               std::shared_ptr<Mesh> mesh(new RectangleMesh(x0, y0, x1, y1,
                                                            std::max((int)std::round((x1-x0)/h), 1),
                                                            std::max((int)std::round((y1-y0)/h), 1)));
-              mesh->rotate(v);              
-              multimesh.add(mesh);
+              mesh->rotate(v);
+
+              // The error happends in mesh from mesh 2 and up
+              if (i > 1)
+                multimesh.add(mesh);
 	      i++;
 	    }
 	  }
@@ -348,8 +366,8 @@ void compute_volume(const MultiMesh& multimesh,
       for (std::size_t j = 0; j < current_cgal.size(); j++)
       {
         std::cout << "  Cell " << j << std::endl;
-        std::cout << "    Multimesh: " << current_multimesh[j].first << " (" << current_multimesh[j].second << ")" << std::endl;
-        std::cout << "    CGAL:      " << current_cgal[j].first << " (" << current_cgal[j].second << ")" << std::endl;
+        std::cout << "    Multimesh: " << cell_status_str(current_multimesh[j].first) << " (" << current_multimesh[j].second << ")" << std::endl;
+        std::cout << "    CGAL:      " << cell_status_str(current_cgal[j].first) << " (" << current_cgal[j].second << ")" << std::endl;
         std::cout << "      Diff:    " << std::abs(current_cgal[j].second - current_multimesh[j].second) << std::endl;
         cgal_volume += current_cgal[j].second;
         multimesh_volume += current_multimesh[j].second;
