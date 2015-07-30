@@ -41,9 +41,11 @@ include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
 add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME}2 main2.cpp)
 
 ###### Link to cgal
 list(APPEND DOLFIN_LIBRARIES "/usr/lib/x86_64-linux-gnu/libCGAL.so;/usr/lib/x86_64-linux-gnu/libgmp.so;/usr/lib/x86_64-linux-gnu/libmpfr.so")
 
 # Target libraries
 target_link_libraries(${PROJECT_NAME} ${DOLFIN_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}2 ${DOLFIN_LIBRARIES})
