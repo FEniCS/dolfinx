@@ -32,6 +32,8 @@
 #include <CGAL/Boolean_set_operations_2.h>
 #include <CGAL/Polygon_set_2.h>
 
+typedef CGAL::Exact_predicates_exact_constructions_kernel ExactKernel;
+typedef ExactKernel::FT ExactNumber;
 
 #define MULTIMESH_DEBUG_OUTPUT 0
 
@@ -139,7 +141,7 @@ void compute_volume(const MultiMesh& multimesh,
 }
 //------------------------------------------------------------------------------
 void get_cells_status_cgal(const MultiMesh& multimesh,
-                           std::vector<std::vector<std::pair<CELL_STATUS, double> > >& cells_status)
+                           std::vector<std::vector<std::pair<CELL_STATUS, ExactNumber> > >& cells_status)
 {
   typedef CGAL::Exact_predicates_exact_constructions_kernel ExactKernel;
   //typedef CGAL::Exact_predicates_inexact_constructions_kernel ExactKernel;
@@ -159,8 +161,8 @@ void get_cells_status_cgal(const MultiMesh& multimesh,
   for (std::size_t i = 0; i < multimesh.num_parts(); i++)
   {
     // std::cout << "Testing part " << i << std::endl;
-    cells_status.push_back(std::vector<std::pair<CELL_STATUS, double> >());
-    std::vector<std::pair<CELL_STATUS, double> >& current_cells_status = cells_status.back();
+    cells_status.push_back(std::vector<std::pair<CELL_STATUS, ExactNumber> >());
+    std::vector<std::pair<CELL_STATUS, ExactNumber> >& current_cells_status = cells_status.back();
 
     std::shared_ptr<const Mesh> current_mesh = multimesh.part(i);
     const MeshGeometry& current_geometry = current_mesh->geometry();
@@ -250,7 +252,7 @@ void get_cells_status_cgal(const MultiMesh& multimesh,
             Triangle_2(v0, v1, v2) == current_cell)
         {
           current_cells_status.push_back(std::make_pair(UNCUT,
-                                                        CGAL::to_double(result[0].outer_boundary().area())));
+                                                        result[0].outer_boundary().area()));
           // std::cout << "    Uncut" << std::endl;
         }
         else
@@ -268,7 +270,7 @@ void get_cells_status_cgal(const MultiMesh& multimesh,
             for (auto it = pit->holes_begin(); it != pit->holes_end(); it++)
               current_volume -= it->area();
           }
-          current_cells_status.push_back(std::make_pair(CUT, CGAL::to_double(current_volume)));
+          current_cells_status.push_back(std::make_pair(CUT, current_volume));
           // std::cout << "    Cut" << std::endl;
         }
       }
@@ -341,7 +343,7 @@ void test_multiple_meshes_with_rotation()
   /* ---------------- Done creating multimesh ----------------------- */
 
   // Compute volume of each cell using cgal
-  std::vector<std::vector<std::pair<CELL_STATUS, double>>> cell_status_cgal;
+  std::vector<std::vector<std::pair<CELL_STATUS, ExactNumber>>> cell_status_cgal;
   get_cells_status_cgal(multimesh, cell_status_cgal);
   std::cout << "Done computing volumes with cgal" << std::endl;
 
@@ -350,13 +352,13 @@ void test_multiple_meshes_with_rotation()
   compute_volume(multimesh, cell_status_multimesh);
   std::cout << "Done computing volumes with multimesh" << std::endl;
   
-  double cgal_volume = 0.;
+  ExactNumber cgal_volume = 0.;
   double multimesh_volume = 0.;
 
   dolfin_assert(cell_status_cgal.size() == cell_status_multimesh.size());
   for (std::size_t i = 0; i < cell_status_cgal.size(); i++)
   {
-    const std::vector<std::pair<CELL_STATUS, double> >& current_cgal = cell_status_cgal[i];
+    const std::vector<std::pair<CELL_STATUS, ExactNumber> >& current_cgal = cell_status_cgal[i];
     const std::vector<std::pair<CELL_STATUS, double> >& current_multimesh = cell_status_multimesh[i];
 
     dolfin_assert(current_cgal.size() == current_multimesh.size());
@@ -367,7 +369,7 @@ void test_multiple_meshes_with_rotation()
       std::cout << "  Cell " << j << std::endl;
       std::cout << "    Multimesh: " << cell_status_str(current_multimesh[j].first) << " (" << current_multimesh[j].second << ")" << std::endl;
       std::cout << "    CGAL:      " << cell_status_str(current_cgal[j].first) << " (" << current_cgal[j].second << ")" << std::endl;
-      std::cout << "      Diff:    " << std::abs(current_cgal[j].second - current_multimesh[j].second) << std::endl;
+      std::cout << "      Diff:    " << (current_cgal[j].second - current_multimesh[j].second) << std::endl;
       cgal_volume += current_cgal[j].second;
       multimesh_volume += current_multimesh[j].second;
       // dolfin_assert(near(current_cgal[j].second, current_multimesh[j].second, DOLFIN_EPS_LARGE));
@@ -377,12 +379,12 @@ void test_multiple_meshes_with_rotation()
   }
 
   // Exact volume is known
-  const double exact_volume = 1;
+  const ExactNumber exact_volume = 1;
     
   std::cout << "Total volume" << std::endl;
   std::cout << "------------" << std::endl;
-  std::cout << "Multimesh: " << multimesh_volume << ", error: " << std::abs(exact_volume-multimesh_volume) << std::endl;
-  std::cout << "CGAL:      " << cgal_volume << ", error: " << std::abs(exact_volume-cgal_volume) << std::endl;
+  std::cout << "Multimesh: " << multimesh_volume << ", error: " << (exact_volume-multimesh_volume) << std::endl;
+  std::cout << "CGAL:      " << cgal_volume << ", error: " << (exact_volume-cgal_volume) << std::endl;
 
   //dolfin_assert(near(exact_volume, volume, DOLFIN_EPS_LARGE));
 }
