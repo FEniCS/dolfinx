@@ -162,6 +162,9 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
   
   qr_rules_overlap.clear();
 
+  std::ofstream debug_file("cgal-output.txt");
+  debug_file << std::setprecision(20);
+
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < multimesh.num_parts(); cut_part++)
   {
@@ -188,7 +191,6 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
         std::shared_ptr<const Mesh> cutting_mesh = multimesh.part(cutting_part);
         const MeshGeometry& cutting_mesh_geometry = cutting_mesh->geometry();
 
-        // Iterate over cut cells for current part
         for (CellIterator cutting_it(*cutting_mesh); !cutting_it.end(); ++cutting_it)
         {
           // Test every cell against every cell in overlaying meshes
@@ -223,19 +225,23 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
             else if (const Triangle_2* t = boost::get<Triangle_2>(&*cell_intersection))
             {
               // handle triangle intersection
-              std::cout << "  Triangle" << std::endl;
+              debug_file <<  "(" << cut_part << "," << cut_it->index() << ") (" << cutting_part << "," << cutting_it->index() << ") : " << t->vertex(0) << ", " << t->vertex(1) << ", " << t->vertex(2) << std::endl;
             }
             else 
             {
               const std::vector<Point_2>* polygon = boost::get<std::vector<Point_2>>(&*cell_intersection);
               dolfin_assert(polygon);
-              std::cout << "  Polygon" << std::endl;
+              debug_file <<  "(" << cut_part << "," << cut_it->index() << ") (" << cutting_part << "," << cutting_it->index() << ") : ";
+              for (const Point_2& p : *polygon)
+                debug_file << p << ", ";
+              debug_file << std::endl;
             }
           }
         }
       }
     }
   }
+  debug_file.close();
 }
 //------------------------------------------------------------------------------
 void compute_volume_cgal(const MultiMesh& multimesh,
