@@ -33,12 +33,12 @@ using namespace dolfin;
 class MultiMeshes : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(MultiMeshes);
-  //CPPUNIT_TEST(test_multiple_meshes_with_rotation);
+  CPPUNIT_TEST(test_multiple_meshes_with_rotation);
   //CPPUNIT_TEST(test_multiple_meshes_with_dynamic_rotation);
   //CPPUNIT_TEST(test_exclusion_inclusion);
   //CPPUNIT_TEST(test_exclusion_inclusion_small_angle);
   //CPPUNIT_TEST(test_multiple_meshes_quadrature);
-  CPPUNIT_TEST(test_multiple_meshes_interface_quadrature);
+  //CPPUNIT_TEST(test_multiple_meshes_interface_quadrature);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -95,72 +95,89 @@ public:
   {
     set_log_level(DBG);
 
-    dolfin::seed(0);
 
-    const double h = 0.5;
+    const double h = 0.05;
     UnitSquareMesh background_mesh((int)std::round(1./h),
 				   (int)std::round(1./h));
-    MultiMesh multimesh;
-    multimesh.add(background_mesh);
 
-    const std::size_t Nmeshes = 8;
-
-    std::size_t i = 0;
-    while (i < Nmeshes)
+    //const std::size_t Nmeshes = 20;
+    for (std::size_t Nmeshes = 2; Nmeshes < 3; ++Nmeshes)
     {
-      double x0 = dolfin::rand();
-      double x1 = dolfin::rand();
-      if (x0 > x1) std::swap(x0, x1);
-      double y0 = dolfin::rand();
-      double y1 = dolfin::rand();
-      if (y0 > y1) std::swap(y0, y1);
-      const double v = dolfin::rand()*90; // initial rotation
-      const double speed = dolfin::rand()-0.5; // initial speed
-      const double cx = (x0+x1) / 2;
-      const double cy = (y0+y1) / 2;
-      double xr, yr;
-      rotate(x0, y0, cx, cy, v, xr, yr);
-      if (xr > 0 and xr < 1 and yr > 0 and yr < 1)
+      MultiMesh multimesh;
+      multimesh.add(background_mesh);
+
+      std::size_t s = 316572;//1e6*dolfin::rand();
+      dolfin::seed(s);// 0 for Nmeshes = 8, 10 for Nmeshes = 20
+      std::cout << "seed " << s << std::endl;
+
+      std::size_t i = 0;
+      while (i < Nmeshes)
       {
-	rotate(x0, y1, cx, cy, v, xr, yr);
+	double x0 = dolfin::rand();
+	double x1 = dolfin::rand();
+	std::cout << x0<<' '<<x1<<'\n';
+	if (x0 > x1) std::swap(x0, x1);
+	double y0 = dolfin::rand();
+	double y1 = dolfin::rand();
+	if (y0 > y1) std::swap(y0, y1);
+	const double v = dolfin::rand()*90; // initial rotation
+	const double speed = dolfin::rand()-0.5; // initial speed
+	const double cx = (x0+x1) / 2;
+	const double cy = (y0+y1) / 2;
+	double xr, yr;
+	rotate(x0, y0, cx, cy, v, xr, yr);
 	if (xr > 0 and xr < 1 and yr > 0 and yr < 1)
 	{
-	  rotate(x1, y0, cx, cy, v, xr, yr);
+	  rotate(x0, y1, cx, cy, v, xr, yr);
 	  if (xr > 0 and xr < 1 and yr > 0 and yr < 1)
 	  {
-	    rotate(x1, y1, cx, cy, v, xr, yr);
+	    rotate(x1, y0, cx, cy, v, xr, yr);
 	    if (xr > 0 and xr < 1 and yr > 0 and yr < 1)
 	    {
-              std::shared_ptr<Mesh> mesh(new RectangleMesh(x0, y0, x1, y1,
-                                                           std::max((int)std::round((x1-x0)/h), 1),
-                                                           std::max((int)std::round((y1-y0)/h), 1)));
-              mesh->rotate(v);
+	      rotate(x1, y1, cx, cy, v, xr, yr);
+	      if (xr > 0 and xr < 1 and yr > 0 and yr < 1)
+	      {
+		std::cout<<std::setprecision(20) << x0 <<' '<<y0<<' '<<x1<<' '<<y1<<std::endl;
+		std::shared_ptr<Mesh> mesh(new RectangleMesh(x0, y0, x1, y1,
+							     std::max((int)std::round((x1-x0)/h), 1),
+							     std::max((int)std::round((y1-y0)/h), 1)));
+		mesh->rotate(v);
 
-              multimesh.add(mesh);
+		multimesh.add(mesh);
 
-	      i++;
+		i++;
+	      }
 	    }
 	  }
 	}
       }
+
+      multimesh.build();
+
+      if (MULTIMESH_DEBUG_OUTPUT)
+      {
+	tools::dolfin_write_medit_triangles("multimesh",multimesh);
+	std::cout << multimesh.plot_matplotlib() << std::endl;
+      }
+
+      // // Exact volume is known
+      // const double exact_volume = 1;
+      // const double volume = compute_volume(multimesh, exact_volume);
+
+
+      // Exact volume is known
+      const double exact_volume = 1;
+      const double volume = compute_volume(multimesh, exact_volume);
+      const double e = std::abs(volume - exact_volume);
+      std::cout //<< std::setprecision(15)
+	<< "volume = " << volume << '\n'
+	<< "error = " << e << '\n';
+      CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
+
+
     }
-
-    multimesh.build();
-
-    if (MULTIMESH_DEBUG_OUTPUT)
-    {
-      tools::dolfin_write_medit_triangles("multimesh",multimesh);
-      std::cout << multimesh.plot_matplotlib() << std::endl;
-    }
-
-    // Exact volume is known
-    const double exact_volume = 1;
-    const double volume = compute_volume(multimesh, exact_volume);
-
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
 
   }
-
   //------------------------------------------------------------------------------
   bool find_rotated_mesh(const MeshData& md,
 			 double v,
@@ -325,7 +342,7 @@ public:
       const double volume = compute_volume(multimesh, exact_volume);
       const double e = std::abs(volume - exact_volume);
       max_error = std::max(e, max_error);
-      std::cout << std::setprecision(15)
+      std::cout //<< std::setprecision(15)
 		<< "volume = " << volume << '\n'
 		<< "current error = " << e << '\n'
 		<< "max_error = " << max_error << '\n';
@@ -880,30 +897,78 @@ public:
   void test_multiple_meshes_interface_quadrature()
   {
     MultiMesh multimesh;
-    UnitSquareMesh mesh_0(1, 1);
-    multimesh.add(mesh_0);
-    File("mesh_0.xml") << mesh_0;
 
-    RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
-    multimesh.add(mesh_1);
-    double exact_area = 4*(0.9-0.1); // mesh0 and mesh1
-    File("mesh_1.xml") << mesh_1;
+    MeshEditor me;
+    const std::size_t Nmeshes = 5;
+    std::vector<Mesh> mesh(Nmeshes);
+    double exact_area = 0;
+    for (std::size_t i = 0; i < mesh.size(); ++i)
+    {
+      me.open(mesh[i], 2, 2);
+      me.init_vertices(3);
+      me.init_cells(1);
 
-    RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
-    multimesh.add(mesh_2);
-    exact_area += 4*(0.8-0.2); // mesh1 and mesh2
-    File("mesh_2.xml") << mesh_2;
+      me.add_vertex(0, 0.05*i, 0.05*i);
+      me.add_vertex(1, 1-0.1*i, 0.05*i);
+      me.add_vertex(2, 0.05*i, 1-0.1*i);
+      me.add_cell(0, 0, 1, 2);
+      me.close();
+      tools::dolfin_write_medit_triangles("me", mesh[i], i);
+      multimesh.add(mesh[i]);
+      if (i > 0)
+      {
+	const double area = (2+std::sqrt(2))*(1-0.1*i-0.05*i);
+	std::cout << " mesh " << i << " area = " << area <<  std::endl;
+	exact_area += area;
+      }
+    }
 
-    RectangleMesh mesh_3(0.3, 0.3, 0.7, 0.7, 1, 1);
-    multimesh.add(mesh_3);
-    exact_area += 4*(0.7-0.3); // mesh2 and mesh3
-    File("mesh_3.xml") << mesh_3;
+
+    // UnitSquareMesh mesh_0(1, 1);
+    // multimesh.add(mesh_0);
+    // File("mesh_0.xml") << mesh_0;
+    // double exact_area = 0;
+
+    // const std::size_t Nmeshes = 0; // excluding mesh_0
+    // for (std::size_t i = 1; i <= Nmeshes; ++i)
+    // {
+    //   // const double x0 = 0.1*i;
+    //   // const double y0 = 0.05*i;
+    //   // const double side = 1-0.222*i;
+
+    //   // // const double x0 = 0.1*i;
+    //   // // const double y0 = x0;
+    //   // // const double side = 1-0.2*i;
+
+    //   // const double x1 = x0+side;
+    //   // const double y1 = y0+side;
+    //   // if (x0 >= x1 or y0 >= y1) { std::cout << "mesh size error\n"; exit(1); }
+    //   // std::shared_ptr<Mesh> mesh(new RectangleMesh(x0, y0, x1, y1, 1, 1));
+    //   // exact_area += 4*side;
+
+    //   MeshEditor me;
+    //   std::shared_ptr<Mesh> mesh;
+    //   me.open(*mesh, 2, 2);
+    //   me.init_vertices(3);
+    //   me.init_cells(1);
+    //   me.add_vertex(0, 0.1*i, 0.1*i);
+    //   me.add_vertex(1, 1-0.1*i, 0.1*i);
+    //   me.add_vertex(2, 0.5, 1-0.1*i);
+    //   me.add_cell(0, 0, 1, 2);
+    //   me.close();
+
+    //   multimesh.add(mesh);
+    //   std::stringstream ss; ss << i;
+    //   std::string name = "mesh_" + ss.str() + ".xml";
+    //   File(name.c_str()) << (*mesh);
+    // }
 
     multimesh.build();
+    tools::dolfin_write_medit_triangles("multimesh", multimesh);
 
     const double area = compute_interface_area(multimesh, exact_area);
     const double e = std::abs(area - exact_area);
-    std::cout << std::setprecision(15)
+    std::cout //<< std::setprecision(15)
 	      << "area = " << area << '\n'
 	      << "error = " << e << '\n';
     CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_area, area, DOLFIN_EPS_LARGE);
@@ -1019,7 +1084,7 @@ public:
 	  const double volume = compute_volume(multimesh, exact_volume);
 	  const double e = std::abs(volume - exact_volume);
 	  max_error = std::max(e, max_error);
-	  std::cout << std::setprecision(15)
+	  std::cout //<< std::setprecision(15)
 		    << "v = " << v << '\n'
 		    << "m = " << m << '\n'
 		    << "n = " << n << '\n'

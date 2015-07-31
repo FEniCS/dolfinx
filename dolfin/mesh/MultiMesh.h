@@ -477,7 +477,7 @@ namespace dolfin
 	    flat[i*gdim+d] = triangulation[i][d];
 	return _add_quadrature_rule(qr, flat, tdim, gdim, quadrature_order, factor);
       }
-    
+
     // Add quadrature rule to existing quadrature rule (append dqr to
     // qr). Returns number of points added.
     std::size_t _add_quadrature_rule(quadrature_rule& qr,
@@ -575,6 +575,7 @@ namespace dolfin
 
       return triangulation;
     }
+
 
     // FIXME:
     //double minimum_angle(double* a, double* b, double* c) const;
