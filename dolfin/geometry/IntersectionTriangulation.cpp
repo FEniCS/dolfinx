@@ -574,11 +574,26 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   // If the number of points are three, then these form the triangulation
   if (points.size() == 3)
   {
+    // Add the points to the triangulation in a reproducible order
+    std::vector<std::pair<std::pair<double, double>, std::size_t>> v{ std::make_pair(std::make_pair(points[0][0], points[0][1]), 0),
+                                                                      std::make_pair(std::make_pair(points[1][0], points[1][1]), 1),
+                                                                      std::make_pair(std::make_pair(points[2][0], points[2][1]), 2)};
+    std::sort(v.begin(), v.end());
+
     triangulation.resize(6);
 
-    for (std::size_t i = 0; i < 3; ++i)
-      for (std::size_t j = 0; j < 2; ++j)
-	triangulation[2*i+j] = points[i][j];
+    triangulation[0] = points[v[0].second][0];
+    triangulation[1] = points[v[0].second][1];
+
+    triangulation[2] = points[v[1].second][0];
+    triangulation[3] = points[v[1].second][1];
+
+    triangulation[4] = points[v[2].second][0];
+    triangulation[5] = points[v[2].second][1];
+
+    // for (std::size_t i = 0; i < 3; ++i)
+    //   for (std::size_t j = 0; j < 2; ++j)
+    //     triangulation[2*i+j] = points[i][j];
 
     return triangulation;
   }
@@ -596,14 +611,17 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
 
 
   // Find left-most point (smallest x-coordinate)
+  // Use y-coordinate if x-coordinates are exactly equal.
+  // TODO: Does this work in 3D? Then also include z-coordinate in the
+  // comparison.
   std::size_t i_min = 0;
-  double x_min = points[0].x();
+  Point point_min = points[0];
   for (std::size_t i = 1; i < points.size(); i++)
   {
-    const double x = points[i].x();
-    if (x < x_min)
+    //const double x = points[i].x();
+    if (point_min.x() < points[i].x() || (point_min.x() == points[i].x() && point_min.y() < points[i].y()))
     {
-      x_min = x;
+      point_min = points[i];
       i_min = i;
     }
   }

@@ -35,7 +35,8 @@
 typedef CGAL::Exact_predicates_exact_constructions_kernel ExactKernel;
 //typedef CGAL::Exact_predicates_inexact_constructions_kernel ExactKernel;
 typedef CGAL::Point_2<ExactKernel>                Point_2;
-typedef CGAL::Segment_2<ExactKernel>                Segment_2;
+typedef CGAL::Vector_2<ExactKernel>               Vector_2;
+typedef CGAL::Segment_2<ExactKernel>              Segment_2;
 typedef CGAL::Triangle_2<ExactKernel>             Triangle_2;
 typedef CGAL::Line_2<ExactKernel>                 Line_2;
 typedef CGAL::Polygon_2<ExactKernel>              Polygon_2;
@@ -225,15 +226,78 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
             else if (const Triangle_2* t = boost::get<Triangle_2>(&*cell_intersection))
             {
               // handle triangle intersection
-              debug_file <<  "(" << cut_part << "," << cut_it->index() << ") (" << cutting_part << "," << cutting_it->index() << ") : " << t->vertex(0) << ", " << t->vertex(1) << ", " << t->vertex(2) << std::endl;
+              // Print the triangles in a reproducible order
+              std::vector<std::pair<std::pair<ExactKernel::FT, ExactKernel::FT>, std::size_t>> v{ std::make_pair(std::make_pair(t->vertex(0)[0], t->vertex(0)[1]), 0),
+                                                                                                  std::make_pair(std::make_pair(t->vertex(1)[0], t->vertex(1)[1]), 1),
+                                                                                                  std::make_pair(std::make_pair(t->vertex(2)[0], t->vertex(2)[1]), 2)};
+              std::sort(v.begin(), v.end());
+              debug_file <<  "(" << cut_part << "," << cut_it->index() << ") (" << cutting_part << "," << cutting_it->index() << ") : "
+                         << t->vertex(v[0].second) << ", "
+                         << t->vertex(v[1].second) << ", "
+                         << t->vertex(v[2].second) << std::endl;
             }
             else 
             {
               const std::vector<Point_2>* polygon = boost::get<std::vector<Point_2>>(&*cell_intersection);
               dolfin_assert(polygon);
+
+              // Now triangulate polygon the same way as multimesh does it
+              // geometry/IntersectionTriangulation.cpp:598
+
+              // Find left-most point (smallest x-coordinate)
+              // Use y-coordinate if x-coordinates are exactly equal.
+              // TODO: Does this work in 3D? Then also include z-coordinate in the
+              // comparison.
+              std::size_t i_min = 0;
+              Point_2 point_min = (*polygon)[0];
+              for (std::size_t i = 1; i < polygon->size(); i++)
+              {
+                //const double x = points[i].x();
+                if (point_min.x() < (*polygon)[i].x() || (point_min.x() == (*polygon)[i].x() && point_min.y() < (*polygon)[i].y()))
+                {
+                  point_min = (*polygon)[i];
+                  i_min = i;
+                }
+              }
+
+              // Compute signed squared cos of angle with (0, 1) from i_min to all points
+              std::vector<std::pair<ExactKernel::FT, std::size_t>> order;
+              for (std::size_t i = 0; i < polygon->size(); i++)
+              {
+                // Skip left-most point used as origin
+                if (i == i_min)
+                  continue;
+
+                // Compute vector to point
+                const Vector_2 v = (*polygon)[i] - (*polygon)[i_min];
+
+                // Compute square cos of angle
+                const ExactKernel::FT cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_length();
+
+                // Store for sorting
+                order.push_back(std::make_pair(cos2, i));
+              }
+
+              // Sort points based on angle
+              std::sort(order.begin(), order.end());
+
+              std::cout << "Order: ";
+              for(const std::pair<ExactKernel::FT, std::size_t>& item : order)
+              {
+                std::cout << item.second << " ";
+              }
+              std::cout << std::endl;
+
+              // Triangulate polygon by connecting i_min with the ordered points
+              //triangulation.reserve((points.size() - 2)*3*2);
               debug_file <<  "(" << cut_part << "," << cut_it->index() << ") (" << cutting_part << "," << cutting_it->index() << ") : ";
-              for (const Point_2& p : *polygon)
-                debug_file << p << ", ";
+              const Point_2& p0 = (*polygon)[i_min];
+              for (std::size_t i = 0; i < polygon->size() - 2; i++)
+              {
+                const Point_2& p1 = (*polygon)[order[i].second];
+                const Point_2& p2 = (*polygon)[order[i + 1].second];
+                debug_file << p0 << ", " << p1 << ", " << p2 << ", ";
+              }
               debug_file << std::endl;
             }
           }
@@ -468,8 +532,6 @@ void test_multiple_meshes_with_rotation()
       std::cout << "      Diff:    " << std::abs(current_cgal[j].second - current_multimesh[j].second) << std::endl;
       cgal_volume += current_cgal[j].second;
       multimesh_volume += current_multimesh[j].second;
-      // dolfin_assert(near(current_cgal[j].second, current_multimesh[j].second, DOLFIN_EPS_LARGE));
-      // dolfin_assert(current_cgal[j].first == current_multimesh[j].first);
     }
     std::cout << std::endl;
   }
@@ -481,8 +543,6 @@ void test_multiple_meshes_with_rotation()
   std::cout << "------------" << std::endl;
   std::cout << "Multimesh: " << multimesh_volume << ", error: " << std::abs(exact_volume-multimesh_volume) << std::endl;
   std::cout << "CGAL:      " << cgal_volume << ", error: " << std::abs(exact_volume-cgal_volume) << std::endl;
-
-  //dolfin_assert(near(exact_volume, volume, DOLFIN_EPS_LARGE));
 }
 
 int main(int argc, char** argv)
