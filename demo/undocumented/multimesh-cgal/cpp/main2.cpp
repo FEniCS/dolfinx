@@ -20,10 +20,8 @@
 //
 
 #include <dolfin/mesh/MultiMesh.h>
-#include <dolfin/mesh/Mesh.h>
 #include <dolfin/math/basic.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/generation/UnitSquareMesh.h>
 
 #include <CGAL/Triangle_2.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
@@ -31,6 +29,8 @@
 #include <CGAL/intersection_2.h>
 #include <CGAL/Boolean_set_operations_2.h>
 #include <CGAL/Polygon_set_2.h>
+
+#include "common.h"
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel ExactKernel;
 //typedef CGAL::Exact_predicates_inexact_constructions_kernel ExactKernel;
@@ -46,8 +46,7 @@ typedef Polygon_with_holes_2::Hole_const_iterator Hole_const_iterator;
 typedef CGAL::Polygon_set_2<ExactKernel>          Polygon_set_2;
 typedef std::pair<Point_2, ExactKernel::FT> cgal_QR;
 
-// typedef std::vector<Point> Simplex;
-// typedef std::vector<Simplex> Polyhedron;
+typedef std::vector<Triangle_2> Polygon;
 
 
 #define MULTIMESH_DEBUG_OUTPUT 0
@@ -77,29 +76,6 @@ std::string cell_status_str(CELL_STATUS cs)
   }
 }
 
-//------------------------------------------------------------------------------
-double rotate(double x, double y, double cx, double cy, double w,
-              double& xr, double& yr)
-{
-  // std::cout << "rotate:\n"
-  // 	      << "\t"
-  // 	      << "plot("<<x<<','<<y<<",'b.');plot("<<cx<<','<<cy<<",'o');";
-
-  const double v = w*DOLFIN_PI/180.;
-  const double dx = x-cx;
-  const double dy = y-cy;
-  xr = cx + dx*cos(v) - dy*sin(v);
-  yr = cy + dx*sin(v) + dy*cos(v);
-  //std::cout << "plot("<<xr<<','<<yr<<",'r.');"<<std::endl;
-}
-//------------------------------------------------------------------------------
-bool rotation_inside(double x,double y, double cx, double cy, double w,
-                     double& xr, double& yr)
-{
-  rotate(x,y,cx,cy,w, xr,yr);
-  if (xr>0 and xr<1 and yr>0 and yr<1) return true;
-  else return false;
-}
 //------------------------------------------------------------------------------
 // Compute volume contributions from each cell
 void compute_volume(const MultiMesh& multimesh,
@@ -155,10 +131,14 @@ void compute_volume(const MultiMesh& multimesh,
   }
 }
 //------------------------------------------------------------------------------
+void cgal_add_quadrature_rule(cgal_QR& qr, Triangle_2 t, std::size_t sign)
+{
+
+}
+//------------------------------------------------------------------------------
 void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
                                            std::vector<std::map<unsigned int, cgal_QR>>& qr_rules_overlap)
 {
-
   std::cout << "Computing overlap quadrature rules" << std::endl;
   
   qr_rules_overlap.clear();
@@ -166,17 +146,25 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
   std::ofstream debug_file("cgal-output.txt");
   debug_file << std::setprecision(20);
 
+  // Store the intersection from the lower layers as sum of (disjoint) triangles
+  // (which together form a polygon).
+  // The key (first part of pair) are the layer numbers, eg. [0, 1, 3] is the
+  // intersection of parts 0, 1 and 3. 
+  
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < multimesh.num_parts(); cut_part++)
   {
+    // Data structure for the overlap quadrature rule
+    std::vector<cgal_QR> overlap_qr;
+
     std::cout << "----- cut part: " << cut_part << std::endl;
     std::shared_ptr<const Mesh> cut_mesh = multimesh.part(cut_part);
     const MeshGeometry& cut_mesh_geometry = cut_mesh->geometry();
     
-
     // Iterate over cut cells for current part
     for (CellIterator cut_it(*cut_mesh); !cut_it.end(); ++cut_it)
     {
+      std::cout << "------- cut cell: " << cut_it->index() << std::endl;
       // Test every cell against every cell in overlaying meshes
       Triangle_2 cut_cell(Point_2(cut_mesh_geometry.x(cut_it->entities(0)[0], 0),
                                   cut_mesh_geometry.x(cut_it->entities(0)[0], 1)),
@@ -187,6 +175,11 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
       if (cut_cell.orientation() == CGAL::CLOCKWISE)
         cut_cell = cut_cell.opposite();
 
+      // Store the initial polygon which are the elements used in the
+      // inclusion-exclusion principle
+      std::vector<Polygon> initial_polygons;
+
+      
       for (std::size_t cutting_part = cut_part+1; cutting_part < multimesh.num_parts(); cutting_part++)
       {
         std::shared_ptr<const Mesh> cutting_mesh = multimesh.part(cutting_part);
@@ -207,9 +200,6 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
           if (CGAL::do_intersect(cut_cell, cutting_cell))
           {
             std::cout << "Intersects: (" << cut_part << ", " << cut_it->index() << ") and (" << cutting_part << ", " << cutting_it->index() << ")" << std::endl;
-
-            // Data structure for the overlap quadrature rule
-            std::vector<cgal_QR> overlap_qr;
 
             auto cell_intersection = CGAL::intersection(cut_cell, cutting_cell);
             dolfin_assert(cell_intersection);
@@ -235,6 +225,9 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
                          << t->vertex(v[0].second) << ", "
                          << t->vertex(v[1].second) << ", "
                          << t->vertex(v[2].second) << std::endl;
+              initial_polygons.push_back(Polygon{Triangle_2(t->vertex(v[0].second),
+                                                            t->vertex(v[1].second),
+                                                            t->vertex(v[2].second))});
             }
             else 
             {
@@ -281,15 +274,17 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
               // Sort points based on angle
               std::sort(order.begin(), order.end());
 
-              std::cout << "Order: ";
-              for(const std::pair<ExactKernel::FT, std::size_t>& item : order)
-              {
-                std::cout << item.second << " ";
-              }
-              std::cout << std::endl;
+              // std::cout << "Order: ";
+              // for(const std::pair<ExactKernel::FT, std::size_t>& item : order)
+              // {
+              //   std::cout << item.second << " ";
+              // }
+              // std::cout << std::endl;
 
               // Triangulate polygon by connecting i_min with the ordered points
               //triangulation.reserve((points.size() - 2)*3*2);
+              initial_polygons.push_back(Polygon());
+              Polygon& current_polygon = initial_polygons.back();
               debug_file <<  "(" << cut_part << "," << cut_it->index() << ") (" << cutting_part << "," << cutting_it->index() << ") : ";
               const Point_2& p0 = (*polygon)[i_min];
               for (std::size_t i = 0; i < polygon->size() - 2; i++)
@@ -297,11 +292,30 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
                 const Point_2& p1 = (*polygon)[order[i].second];
                 const Point_2& p2 = (*polygon)[order[i + 1].second];
                 debug_file << p0 << ", " << p1 << ", " << p2 << ", ";
+                current_polygon.push_back(Triangle_2(p0, p1, p2));
               }
               debug_file << std::endl;
+
+              dolfin_assert(current_polygon.size() == polygon->size()-2);
+              std::cout << "Initial polygon: " << current_polygon.size() << std::endl;
             }
           }
         }
+      }
+      // Done computing initial polygons
+      std::cout << "Computed " << initial_polygons.size() << " initial polygons" << std::endl;
+      
+      // Add initial stage of inc-exc principle
+      cgal_QR overlap_part_qr;
+      for (const Polygon& p : initial_polygons)
+      {
+        for (const Triangle_2& simplex : p)
+        {
+          cgal_add_quadrature_rule(overlap_part_qr, simplex, 1);
+        }
+
+	// Add quadrature rule for overlap part
+	overlap_qr.push_back(overlap_part_qr);
       }
     }
   }
@@ -311,6 +325,7 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
 void compute_volume_cgal(const MultiMesh& multimesh,
                          std::vector<std::vector<std::pair<CELL_STATUS, double> > >& cells_status)
 {
+  std::cout << "Computing reference volume with CGAL" << std::endl;
   std::vector<std::map<unsigned int, cgal_QR>> qr_rules_overlap;
   compute_quadrature_rules_overlap_cgal(multimesh, qr_rules_overlap);
   
@@ -449,54 +464,7 @@ void test_multiple_meshes_with_rotation()
                                  (int)std::round(1./h));
 
   MultiMesh multimesh;
-  multimesh.add(background_mesh);
-
-  const std::size_t Nmeshes = 8;
-
-  /* ---------------- Create multimesh ------------------------- */
-  std::size_t i = 0;
-  while (i < Nmeshes)
-  {
-    double x0 = dolfin::rand();
-    double x1 = dolfin::rand();
-    if (x0 > x1) std::swap(x0, x1);
-    double y0 = dolfin::rand();
-    double y1 = dolfin::rand();
-    if (y0 > y1) std::swap(y0, y1);
-    const double v = dolfin::rand()*90; // initial rotation
-    const double speed = dolfin::rand()-0.5; // initial speed
-       
-    const double cx = (x0+x1) / 2;
-    const double cy = (y0+y1) / 2;
-    double xr, yr;
-    rotate(x0, y0, cx, cy, v, xr, yr);
-    if (xr > 0 and xr < 1 and yr > 0 and yr < 1)
-    {
-      rotate(x0, y1, cx, cy, v, xr, yr);
-      if (xr > 0 and xr < 1 and yr > 0 and yr < 1)
-      {
-        rotate(x1, y0, cx, cy, v, xr, yr);
-        if (xr > 0 and xr < 1 and yr > 0 and yr < 1)
-        {
-          rotate(x1, y1, cx, cy, v, xr, yr);
-          if (xr > 0 and xr < 1 and yr > 0 and yr < 1)
-          {
-            std::shared_ptr<Mesh> mesh(new RectangleMesh(x0, y0, x1, y1,
-                                                         std::max((int)std::round((x1-x0)/h), 1),
-                                                         std::max((int)std::round((y1-y0)/h), 1)));
-            mesh->rotate(v);
-
-            // The error happends in mesh from mesh 2 and up
-            if (i > 1)
-              multimesh.add(mesh);
-            i++;
-          }
-        }
-      }
-    }
-  }
-
-  multimesh.build();
+  build_multimesh(multimesh);
   
   // std::cout << multimesh.plot_matplotlib() << std::endl;
   std::cout << "Done building multimesh" << std::endl;
@@ -515,8 +483,8 @@ void test_multiple_meshes_with_rotation()
   double cgal_volume = 0.;
   double multimesh_volume = 0.;
 
-  dolfin_assert(cell_status_cgal.size() == cell_status_multimesh.size());
-  for (std::size_t i = 0; i < cell_status_cgal.size(); i++)
+  //dolfin_assert(cell_status_cgal.size() == cell_status_multimesh.size());
+  for (std::size_t i = 0; i < cell_status_multimesh.size(); i++)
   {
     const std::vector<std::pair<CELL_STATUS, double> >& current_cgal = cell_status_cgal[i];
     const std::vector<std::pair<CELL_STATUS, double> >& current_multimesh = cell_status_multimesh[i];
@@ -524,7 +492,7 @@ void test_multiple_meshes_with_rotation()
     dolfin_assert(current_cgal.size() == current_multimesh.size());
       
     std::cout << "Cells in part " << i << ": " << std::endl;
-    for (std::size_t j = 0; j < current_cgal.size(); j++)
+    for (std::size_t j = 0; j < current_multimesh.size(); j++)
     {
       std::cout << "  Cell " << j << std::endl;
       std::cout << "    Multimesh: " << cell_status_str(current_multimesh[j].first) << " (" << current_multimesh[j].second << ")" << std::endl;
