@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2011 Anders Logg
+// Copyright (C) 2005-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Mikael Mortensen, 2014.
 //
 // First added:  2005-12-02
-// Last changed: 2014-02-17
+// Last changed: 2015-06-15
 
 #ifndef __BOX_H
 #define __BOX_H
@@ -31,89 +31,81 @@
 namespace dolfin
 {
 
-  /// Tetrahedral mesh of the 3D rectangular prism [x0, x1] x [y0, y1]
-  /// x [z0, z1].  Given the number of cells (nx, ny, nz) in each
-  /// direction, the total number of tetrahedra will be 6*nx*ny*nz and
-  /// the total number of vertices will be (nx + 1)*(ny + 1)*(nz + 1).
+  /// Tetrahedral mesh of the 3D rectangular prism spanned by two
+  /// points p0 and p1. Given the number of cells (nx, ny, nz) in
+  /// each direction, the total number of tetrahedra will be
+  /// 6*nx*ny*nz and the total number of vertices will be
+  /// (nx + 1)*(ny + 1)*(nz + 1).
 
   class BoxMesh : public Mesh
   {
   public:
 
-    /// Create a uniform finite element _Mesh_ over the rectangular prism
-    /// [x0, x1] x [y0, y1] x [z0, z1].
+    /// Create a uniform finite element _Mesh_ over the rectangular
+    /// prism spanned by the two _Point_s p0 and p1. The order of the
+    /// two points is not important in terms of minimum and maximum
+    /// coordinates.
     ///
     /// *Arguments*
-    ///     x0 (double)
-    ///         :math:`x`-min.
-    ///     y0 (double)
-    ///         :math:`y`-min.
-    ///     z0 (double)
-    ///         :math:`z`-min.
-    ///     x1 (double)
-    ///         :math:`x`-max.
-    ///     y1 (double)
-    ///         :math:`y`-max.
-    ///     z1 (double)
-    ///         :math:`z`-max.
-    ///     xn (double)
+    ///     p0 (_Point_)
+    ///         First point.
+    ///     p1 (_Point_)
+    ///         Second point.
+    ///     nx (double)
     ///         Number of cells in :math:`x`-direction.
-    ///     yn (double)
+    ///     ny (double)
     ///         Number of cells in :math:`y`-direction.
-    ///     zn (double)
+    ///     nz (double)
     ///         Number of cells in :math:`z`-direction.
     ///
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         // Mesh with 6 cells in each direction on the
+    ///         // Mesh with 8 cells in each direction on the
     ///         // set [-1,2] x [-1,2] x [-1,2].
-    ///         BoxMesh mesh(-1, -1, -1, 2, 2, 2, 6, 6, 6);
+    ///         Point p0(-1, -1, -1);
+    ///         Point p1(2, 2, 2);
+    ///         BoxMesh mesh(p0, p1, 8, 8, 8);
     ///
-    BoxMesh(double x0, double y0, double z0, double x1, double y1, double z1,
+    BoxMesh(const Point& p0, const Point& p1,
             std::size_t nx, std::size_t ny, std::size_t nz);
 
-    /// Create a uniform finite element _Mesh_ over the rectangular prism
-    /// [x0, x1] x [y0, y1] x [z0, z1].
+    /// Create a uniform finite element _Mesh_ over the rectangular
+    /// prism spanned by the two _Point_s p0 and p1. The order of the
+    /// two points is not important in terms of minimum and maximum
+    /// coordinates.
     ///
     /// *Arguments*
     ///     comm (MPI_Comm)
     ///         MPI communicator
-    ///     x0 (double)
-    ///         :math:`x`-min.
-    ///     y0 (double)
-    ///         :math:`y`-min.
-    ///     z0 (double)
-    ///         :math:`z`-min.
-    ///     x1 (double)
-    ///         :math:`x`-max.
-    ///     y1 (double)
-    ///         :math:`y`-max.
-    ///     z1 (double)
-    ///         :math:`z`-max.
-    ///     xn (double)
+    ///     p0 (_Point_)
+    ///         First point.
+    ///     p1 (_Point_)
+    ///         Second point.
+    ///     nx (double)
     ///         Number of cells in :math:`x`-direction.
-    ///     yn (double)
+    ///     ny (double)
     ///         Number of cells in :math:`y`-direction.
-    ///     zn (double)
+    ///     nz (double)
     ///         Number of cells in :math:`z`-direction.
     ///
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         // Mesh with 6 cells in each direction on the
+    ///         // Mesh with 8 cells in each direction on the
     ///         // set [-1,2] x [-1,2] x [-1,2].
-    ///         BoxMesh mesh(MPI_COMM_WORLD, -1, -1, -1, 2, 2, 
-    ///                      2, 6, 6, 6);
+    ///         Point p0(-1, -1, -1);
+    ///         Point p1(2, 2, 2);
+    ///         BoxMesh mesh(MPI_COMM_WORLD, p0, p1, 8, 8, 8);
     ///
     BoxMesh(MPI_Comm comm,
-            double x0, double y0, double z0, double x1, double y1, double z1,
+            const Point& p0, const Point& p1,
             std::size_t nx, std::size_t ny, std::size_t nz);
 
   private:
 
     // Build mesh
-    void build(double x0, double y0, double z0, double x1, double y1, double z1,
+    void build(const Point& p0, const Point& p1,
                std::size_t nx, std::size_t ny, std::size_t nz);
 
   };

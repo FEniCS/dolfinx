@@ -38,6 +38,9 @@
 
 using namespace dolfin;
 
+// FIXME: Remove these defines now that we have dropped support for
+// older version of PETSc
+
 #define MAT_SOLVER_UMFPACK      MATSOLVERUMFPACK
 #define MAT_SOLVER_MUMPS        MATSOLVERMUMPS
 #define MAT_SOLVER_PASTIX       MATSOLVERPASTIX
@@ -161,12 +164,16 @@ void PETScLUSolver::set_operator(std::shared_ptr<const PETScMatrix> A)
 {
   _matA = A;
   dolfin_assert(_matA);
-
   dolfin_assert(_ksp);
-  dolfin_assert(_matA->mat());
+
+  if (!_matA->mat())
+  {
+    dolfin_error("PETScLUSolver.cpp",
+                 "set operator (PETScLUSolver::set_operator)",
+                 "cannot set operator if matrix has not been initialized");
+  }
 
   PetscErrorCode ierr;
-
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
   ierr = KSPSetOperators(_ksp, _matA->mat(), _matA->mat(),
                          DIFFERENT_NONZERO_PATTERN);
@@ -313,6 +320,33 @@ std::size_t PETScLUSolver::solve_transpose(const PETScMatrix& A,
   return solve_transpose(x, b);
 }
 //-----------------------------------------------------------------------------
+void PETScLUSolver::set_options_prefix(std::string options_prefix)
+{
+  if (_ksp)
+  {
+    dolfin_error("PETScLUSolver.cpp",
+                 "setting PETSc options prefix",
+                 "Cannot set options prefix since PETSc KSP has already been initialized");
+  }
+  else
+    _petsc_options_prefix = options_prefix;
+}
+//-----------------------------------------------------------------------------
+std::string PETScLUSolver::get_options_prefix() const
+{
+  if (_ksp)
+  {
+    const char* prefix = NULL;
+    KSPGetOptionsPrefix(_ksp, &prefix);
+    return std::string(prefix);
+  }
+  else
+  {
+    warning("PETSc KSP object has not been initialised, therefore prefix has not been set");
+    return std::string();
+  }
+}
+//-----------------------------------------------------------------------------
 std::string PETScLUSolver::str(bool verbose) const
 {
   std::stringstream s;
@@ -435,9 +469,16 @@ void PETScLUSolver::init_solver(std::string& method)
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
   }
 
+  // Set options prefix (if any)
+  ierr = KSPSetOptionsPrefix(_ksp, _petsc_options_prefix.c_str());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
+
   // Make solver preconditioner only
   ierr = KSPSetType(_ksp, KSPPREONLY);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+
+  // Set from PETSc options
+  KSPSetFromOptions(_ksp);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::configure_ksp(const MatSolverPackage solver_package)

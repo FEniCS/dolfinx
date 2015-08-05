@@ -70,6 +70,7 @@ test/unit/**/cpp/*.xml
 test/unit/function/cpp/Projection.h
 test/unit/la/cpp/forms/ReactionDiffusion.h
 test/unit/la/cpp/forms/ReactionDiffusionAction.h
+test/unit/multimesh/cpp/MultiMeshStokes2D.h
 
 # FFC generated demo files
 demo/**/**/cpp/*.h

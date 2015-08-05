@@ -288,6 +288,8 @@ void ParallelRefinement::partition(Mesh& new_mesh, bool redistribute) const
   mesh_data.tdim = _mesh.topology().dim();
   const std::size_t gdim = _mesh.geometry().dim();
   mesh_data.gdim = gdim;
+
+  mesh_data.cell_type = _mesh.type().cell_type();
   mesh_data.num_vertices_per_cell = mesh_data.tdim + 1;
 
   // Copy data to LocalMeshData structures

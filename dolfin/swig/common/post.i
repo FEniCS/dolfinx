@@ -15,9 +15,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2008-12-16
-// Last changed: 2012-03-28
 
 //-----------------------------------------------------------------------------
 // MPI communicator wrappers (deliberately very lightweight)
@@ -155,3 +152,19 @@ ARRAY_EXTENSIONS(int, Int, int)
     return self->str(false);
   }
 }
+
+//-----------------------------------------------------------------------------
+// Fixup docstrings
+//-----------------------------------------------------------------------------
+%pythoncode
+%{
+for f in [timings, list_timings, dump_timings_to_xml, timing]:
+    doc = f.__doc__
+    doc = doc.replace("TimingType::", "TimingType_")
+    doc = doc.replace("TimingClear::", "TimingClear_")
+    doc = doc.replace("std::set<TimingType>", "list")
+    doc = doc.replace("{ ", "[")
+    doc = doc.replace(" }", "]")
+    f.__doc__ = doc
+    del doc
+%}

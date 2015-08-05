@@ -68,6 +68,11 @@ namespace dolfin
         pos_end = mesh.topology().ghost_offset(dim);
       else if (opt == "ghost")
         _pos = mesh.topology().ghost_offset(dim);
+      else if (opt != "all")
+        dolfin_error("MeshEntityIterator.h",
+                     "initialize MeshEntityIterator",
+                     "unknown opt=\"%s\", choose from "
+                     "opt=[\"regular\", \"ghost\", \"all\"]", opt.c_str());
     }
 
     /// Create iterator for entities of given dimension connected to given entity

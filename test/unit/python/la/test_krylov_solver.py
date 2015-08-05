@@ -19,9 +19,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from dolfin import *
+from __future__ import print_function
 import pytest
-from dolfin_utils.test import skip_if_not_PETSc
+from dolfin import *
+from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel
 
 @skip_if_not_PETSc
 def test_krylov_samg_solver_elasticity():
@@ -63,7 +64,7 @@ def test_krylov_samg_solver_elasticity():
 
         # Define problem
         mesh = UnitSquareMesh(N, N)
-        V = VectorFunctionSpace(mesh, 'CG', 1)
+        V = VectorFunctionSpace(mesh, 'Lagrange', 1)
         bc = DirichletBC(V, Constant((0.0, 0.0)),
                          lambda x, on_boundary: on_boundary)
         u = TrialFunction(V)
@@ -123,3 +124,83 @@ def test_krylov_samg_solver_elasticity():
             assert niter < 12
 
     parameters["linear_algebra_backend"] = previous_backend
+
+
+@skip_if_not_PETSc
+def test_krylov_reuse_pc():
+    "Test preconditioner re-use with PETScKrylovSolver"
+
+    # Test requires PETSc version 3.5 or later. Use petsc4py to check
+    # version number.
+    try:
+        from petsc4py import PETSc
+    except ImportError:
+        pytest.skip("petsc4py required to check PETSc version")
+    else:
+        if not PETSc.Sys.getVersion() >= (3, 5, 0):
+            pytest.skip("PETSc version must be 3.5  of higher")
+
+    # Define problem
+    mesh = UnitSquareMesh(8, 8)
+    V = FunctionSpace(mesh, 'Lagrange', 1)
+    bc = DirichletBC(V, Constant(0.0), lambda x, on_boundary: on_boundary)
+    u = TrialFunction(V)
+    v = TestFunction(V)
+
+    # Forms
+    a, L = inner(grad(u), grad(v))*dx, dot(Constant(1.0), v)*dx
+
+    A, P = PETScMatrix(), PETScMatrix()
+    b = PETScVector()
+
+    # Assemble linear algebra objects
+    assemble(a, tensor=A)
+    assemble(a, tensor=P)
+    assemble(L, tensor=b)
+
+    # Apply boundary conditions
+    bc.apply(A)
+    bc.apply(P)
+    bc.apply(b)
+
+    # Create Krysolv solver and set operators
+    solver = PETScKrylovSolver("gmres", "bjacobi")
+    solver.set_operators(A, P)
+
+    # Solve
+    x = PETScVector()
+    num_iter_ref = solver.solve(x, b)
+
+    # Change preconditioner matrix (bad matrix) and solve (PC will be
+    # updated)
+    a_p = u*v*dx
+    assemble(a_p, tensor=P)
+    bc.apply(P)
+    x = PETScVector()
+    num_iter_mod = solver.solve(x, b)
+    assert num_iter_mod > num_iter_ref
+
+    # Change preconditioner matrix (good matrix) and solve (PC will be
+    # updated)
+    a_p = a
+    assemble(a_p, tensor=P)
+    bc.apply(P)
+    x = PETScVector()
+    num_iter = solver.solve(x, b)
+    assert num_iter == num_iter_ref
+
+    # Change preconditioner matrix (bad matrix) and solve (PC will not
+    # be updated)
+    solver.set_reuse_preconditioner(True)
+    a_p = u*v*dx
+    assemble(a_p, tensor=P)
+    bc.apply(P)
+    x = PETScVector()
+    num_iter = solver.solve(x, b)
+    assert num_iter == num_iter_ref
+
+    # Update preconditioner (bad PC, will increase iteration count)
+    solver.set_reuse_preconditioner(False)
+    x = PETScVector()
+    num_iter = solver.solve(x, b)
+    assert num_iter == num_iter_mod

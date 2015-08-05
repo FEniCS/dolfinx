@@ -165,7 +165,7 @@ namespace dolfin
 
     // Friend
     friend class XDMFFile;
-    friend class TimeSeriesHDF5;
+    friend class TimeSeries;
 
     // Write a MeshFunction to file
     template <typename T>

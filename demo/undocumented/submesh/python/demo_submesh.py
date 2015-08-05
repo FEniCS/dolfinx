@@ -1,7 +1,7 @@
 """This demo program demonstrates how to extract matching sub meshes
 from a common mesh."""
 
-# Copyright (C) 2009 Anders Logg
+# Copyright (C) 2009, 2015 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -19,7 +19,7 @@ from a common mesh."""
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2009-02-11
-# Last changed: 2009-03-02
+# Last changed: 2015-06-15
 
 from __future__ import print_function
 from dolfin import *
@@ -31,7 +31,7 @@ class Structure(SubDomain):
             + DOLFIN_EPS and x[1] < 0.6 + DOLFIN_EPS
 
 # Create mesh
-mesh = RectangleMesh(0.0, 0.0, 3.0, 1.0, 60, 20)
+mesh = RectangleMesh(Point(0.0, 0.0), Point(3.0, 1.0), 60, 20)
 
 # Create sub domain markers and mark everaything as 0
 sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim())

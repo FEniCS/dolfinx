@@ -182,6 +182,8 @@ def test_homogenize_consistency():
     mesh = UnitIntervalMesh(10)
     V = FunctionSpace(mesh, "CG", 1)
 
-    bc = DirichletBC(V, Constant(0), "on_boundary", method="pointwise")
-    bc_new = homogenize(bc)
-    assert bc_new.method() == bc.method()
+    for method in ['topological', 'geometric', 'pointwise']:
+        bc = DirichletBC(V, Constant(0), "on_boundary", method=method)
+        bc_new = DirichletBC(bc)
+        bc_new.homogenize()
+        assert bc_new.method() == bc.method()

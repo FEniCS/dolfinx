@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2009 Anders Logg
+// Copyright (C) 2005-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Mikael Mortensen, 2014
 //
 // First added:  2005-12-02
-// Last changed: 2014-02-17
+// Last changed: 2015-06-15
 
 #ifndef __UNIT_SQUARE_MESH_H
 #define __UNIT_SQUARE_MESH_H
@@ -60,7 +60,7 @@ namespace dolfin
     ///         UnitSquareMesh mesh2(32, 32, "crossed");
     ///
     UnitSquareMesh(std::size_t nx, std::size_t ny, std::string diagonal="right")
-      : RectangleMesh(0.0, 0.0, 1.0, 1.0, nx, ny, diagonal) {}
+      : RectangleMesh(Point(0.0, 0.0), Point(1.0, 1.0), nx, ny, diagonal) {}
 
     /// Create a uniform finite element _Mesh_ over the unit square
     /// [0,1] x [0,1].
@@ -84,7 +84,7 @@ namespace dolfin
     ///
     UnitSquareMesh(MPI_Comm comm, std::size_t nx, std::size_t ny,
                    std::string diagonal="right")
-      : RectangleMesh(comm, 0.0, 0.0, 1.0, 1.0, nx, ny, diagonal) {}
+      : RectangleMesh(comm, Point(0.0, 0.0), Point(1.0, 1.0), nx, ny, diagonal) {}
 
   };
 

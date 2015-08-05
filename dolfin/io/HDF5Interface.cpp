@@ -21,8 +21,6 @@
 // Last Changed: 2013-10-24
 
 #include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
-
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include "HDF5File.h"

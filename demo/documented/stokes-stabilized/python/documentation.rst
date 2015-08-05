@@ -62,11 +62,8 @@ conditions and define boundary conditions:
 	# Inflow boundary condition for velocity
 	bc1 = DirichletBC(system.sub(0), inflow, sub_domains, 1)
 
-	# Boundary condition for pressure at outflow
-	bc2 = DirichletBC(system.sub(1), zero, sub_domains, 2)
-
 	# Collect boundary conditions
-	bcs = [bc0, bc1, bc2]
+	bcs = [bc0, bc1]
 
 Here, we have given four arguments to :py:class:`DirichletBC
 <dolfin.cpp.fem.DirichletBC>`. The first specifies the

@@ -280,12 +280,12 @@ void PlazaRefinementND::refine(Mesh& new_mesh, const Mesh& mesh,
                                bool redistribute,
                                bool calculate_parent_facets)
 {
-  const std::size_t tdim = mesh.topology().dim();
-  if (tdim != 2 and tdim != 3)
+  if (mesh.type().cell_type() != CellType::Type::triangle
+      and mesh.type().cell_type() != CellType::Type::tetrahedron)
   {
     dolfin_error("PlazaRefinementND.cpp",
                  "refine mesh",
-                 "Topological dimension %d not supported", tdim);
+                 "Cell type %s not supported", mesh.type().description(false).c_str());
   }
 
   Timer t0("PLAZA: refine");
@@ -304,12 +304,12 @@ void PlazaRefinementND::refine(Mesh& new_mesh, const Mesh& mesh,
                                bool redistribute,
                                bool calculate_parent_facets)
 {
-  const std::size_t tdim = mesh.topology().dim();
-  if (tdim != 2 and tdim != 3)
+  if (mesh.type().cell_type() != CellType::Type::triangle
+      and mesh.type().cell_type() != CellType::Type::tetrahedron)
   {
     dolfin_error("PlazaRefinementND.cpp",
                  "refine mesh",
-                 "Topological dimension %d not supported", tdim);
+                 "Cell type %s not supported", mesh.type().description(false).c_str());
   }
 
   Timer t0("PLAZA: refine");
@@ -330,12 +330,12 @@ void PlazaRefinementND::refine(Mesh& new_mesh, const Mesh& mesh,
                                bool calculate_parent_facets,
                                MeshRelation& mesh_relation)
 {
-  const std::size_t tdim = mesh.topology().dim();
-  if (tdim != 2 and tdim != 3)
+  if (mesh.type().cell_type() != CellType::Type::triangle
+      and mesh.type().cell_type() != CellType::Type::tetrahedron)
   {
     dolfin_error("PlazaRefinementND.cpp",
                  "refine mesh",
-                 "Topological dimension %d not supported", tdim);
+                 "Cell type %s not supported", mesh.type().description(false).c_str());
   }
 
   Timer t0("PLAZA: refine");
@@ -505,26 +505,12 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
       for (VertexIterator v(*f); !v.end(); ++v)
         vset.insert(v->global_index());
 
-      if (tdim == 2)
+      for (EdgeIterator e(*f); !e.end(); ++e)
       {
         // If edge was divided, add new vertex to set
-        const auto e_it = new_vertex_map.find(f->index());
+        const auto e_it = new_vertex_map.find(e->index());
         if (e_it != new_vertex_map.end())
           vset.insert(e_it->second);
-      }
-      else if (tdim == 3)
-      {
-        // FIXME: yet another example of where EdgeIterator(edge)
-        // does not make sense - i.e. if EdgeIterator(edge) just
-        // returned the edge itself rather than all its neighbours
-        // then this switch for tdim would not be needed
-        for (EdgeIterator e(*f); !e.end(); ++e)
-        {
-          // If edge was divided, add new vertex to set
-          const auto e_it = new_vertex_map.find(e->index());
-          if (e_it != new_vertex_map.end())
-            vset.insert(e_it->second);
-        }
       }
       facet_sets.push_back(vset);
     }

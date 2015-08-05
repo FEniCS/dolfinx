@@ -40,13 +40,12 @@ no_data_backends = ["PETSc"]
 if MPI.size(mpi_comm_world()) == 1:
     # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't
     # used in the old test.
-    data_backends += ["uBLAS"]
+    data_backends += ["Eigen"]
     no_data_backends += ["PETScCusp"]
-    no_data_backends = ["Eigen"]
 
 # If we have PETSc, STL Vector gets typedefed to one of these and data
 # test will not work. If none of these backends are available
-# STLVector defaults to uBLASVEctor, which data will work
+# STLVector defaults to EigenVEctor, which data will work
 if has_linear_algebra_backend("PETSc"):
     no_data_backends += ["STL"]
 else:
@@ -340,10 +339,11 @@ class TestVectorForAnyBackend:
 
 
     # Test the access of the raw data through pointers
-    # This is only available for uBLAS backend
+    # This is only available for Eigen backend
     def test_vector_data(self, data_backend):
         # Test for ordinary Vector
         v = Vector(mpi_comm_world(), 301)
+        v = as_backend_type(v)
         array = v.array()
         data = v.data()
         assert (data == array).all()
@@ -359,14 +359,3 @@ class TestVectorForAnyBackend:
         v = as_backend_type(v)
         data = v.data()
         assert (data==array).all()
-
-    def test_vector_data_exceptions(self, no_data_backend):
-        v = Vector(mpi_comm_world(), 301)
-        with pytest.raises(RuntimeError):
-            v.data()
-
-        v = as_backend_type(v)
-        def no_attribute():
-            v.data()
-        with pytest.raises(AttributeError):
-            no_attribute()

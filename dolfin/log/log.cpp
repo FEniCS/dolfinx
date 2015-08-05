@@ -71,15 +71,15 @@ void allocate_buffer(std::string msg)
 //-----------------------------------------------------------------------------
 void dolfin::info(std::string msg, ...)
 {
-  if (!LogManager::logger.is_active())
+  if (!LogManager::logger().is_active())
     return; // optimization
   read(buffer.get(), msg);
-  LogManager::logger.log(buffer.get());
+  LogManager::logger().log(buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::info(const Variable& variable, bool verbose)
 {
-  if (!LogManager::logger.is_active())
+  if (!LogManager::logger().is_active())
     return; // optimization
   info(variable.str(verbose));
 }
@@ -89,41 +89,41 @@ void dolfin::info(const Parameters& parameters, bool verbose)
   // Need separate function for Parameters since we can't make Parameters
   // a subclass of Variable (gives cyclic dependencies)
 
-  if (!LogManager::logger.is_active())
+  if (!LogManager::logger().is_active())
     return; // optimization
   info(parameters.str(verbose));
 }
 //-----------------------------------------------------------------------------
 void dolfin::info_stream(std::ostream& out, std::string msg)
 {
-  if (!LogManager::logger.is_active())
+  if (!LogManager::logger().is_active())
     return; // optimization
-  std::ostream& old_out = LogManager::logger.get_output_stream();
-  LogManager::logger.set_output_stream(out);
-  LogManager::logger.log(msg);
-  LogManager::logger.set_output_stream(old_out);
+  std::ostream& old_out = LogManager::logger().get_output_stream();
+  LogManager::logger().set_output_stream(out);
+  LogManager::logger().log(msg);
+  LogManager::logger().set_output_stream(old_out);
 }
 //-----------------------------------------------------------------------------
 void dolfin::info_underline(std::string msg, ...)
 {
-  if (!LogManager::logger.is_active())
+  if (!LogManager::logger().is_active())
     return; // optimization
   read(buffer.get(), msg);
-  LogManager::logger.log_underline(buffer.get());
+  LogManager::logger().log_underline(buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::warning(std::string msg, ...)
 {
-  if (!LogManager::logger.is_active())
+  if (!LogManager::logger().is_active())
     return; // optimization
   read(buffer.get(), msg);
-  LogManager::logger.warning(buffer.get());
+  LogManager::logger().warning(buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::error(std::string msg, ...)
 {
   read(buffer.get(), msg);
-  LogManager::logger.error(buffer.get());
+  LogManager::logger().error(buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_error(std::string location,
@@ -131,7 +131,7 @@ void dolfin::dolfin_error(std::string location,
                           std::string reason, ...)
 {
   read(buffer.get(), reason);
-  LogManager::logger.dolfin_error(location, task, buffer.get());
+  LogManager::logger().dolfin_error(location, task, buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::deprecation(std::string feature,
@@ -140,63 +140,63 @@ void dolfin::deprecation(std::string feature,
                          std::string message, ...)
 {
   read(buffer.get(), message);
-  LogManager::logger.deprecation(feature, version_deprecated, version_remove,
+  LogManager::logger().deprecation(feature, version_deprecated, version_remove,
                                  buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::log(int log_level, std::string msg, ...)
 {
-  if (!LogManager::logger.is_active())
+  if (!LogManager::logger().is_active())
     return; // optimization
   read(buffer.get(), msg);
-  LogManager::logger.log(buffer.get(), log_level);
+  LogManager::logger().log(buffer.get(), log_level);
 }
 //-----------------------------------------------------------------------------
 void dolfin::begin(std::string msg, ...)
 {
-  if (!LogManager::logger.is_active())
+  if (!LogManager::logger().is_active())
     return; // optimization
   read(buffer.get(), msg);
-  LogManager::logger.begin(buffer.get());
+  LogManager::logger().begin(buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::begin(int log_level, std::string msg, ...)
 {
-  if (!LogManager::logger.is_active()) return; // optimization
+  if (!LogManager::logger().is_active()) return; // optimization
   read(buffer.get(), msg);
-  LogManager::logger.begin(buffer.get(), log_level);
+  LogManager::logger().begin(buffer.get(), log_level);
 }
 //-----------------------------------------------------------------------------
 void dolfin::end()
 {
-  if (!LogManager::logger.is_active())
+  if (!LogManager::logger().is_active())
     return; // optimization
-  LogManager::logger.end();
+  LogManager::logger().end();
 }
 //-----------------------------------------------------------------------------
 void dolfin::set_log_active(bool active)
 {
-  LogManager::logger.set_log_active(active);
+  LogManager::logger().set_log_active(active);
 }
 //-----------------------------------------------------------------------------
 void dolfin::set_log_level(int level)
 {
-  LogManager::logger.set_log_level(level);
+  LogManager::logger().set_log_level(level);
 }
 //-----------------------------------------------------------------------------
 void dolfin::set_output_stream(std::ostream& out)
 {
-  LogManager::logger.set_output_stream(out);
+  LogManager::logger().set_output_stream(out);
 }
 //-----------------------------------------------------------------------------
 int dolfin::get_log_level()
 {
-  return LogManager::logger.get_log_level();
+  return LogManager::logger().get_log_level();
 }
 //-----------------------------------------------------------------------------
 void dolfin::monitor_memory_usage()
 {
-  LogManager::logger.monitor_memory_usage();
+  LogManager::logger().monitor_memory_usage();
 }
 //-----------------------------------------------------------------------------
 void dolfin::not_working_in_parallel(std::string what)
@@ -217,14 +217,14 @@ void dolfin::__debug(std::string file, unsigned long line,
   read(buffer.get(), format);
   std::ostringstream ost;
   ost << "[at " << file << ":" << line << " in " << function << "()]";
-  LogManager::logger.__debug(ost.str());
+  LogManager::logger().__debug(ost.str());
   std::string msg = std::string(buffer.get());
-  LogManager::logger.__debug(msg);
+  LogManager::logger().__debug(msg);
 }
 //-----------------------------------------------------------------------------
 void dolfin::__dolfin_assert(std::string file, unsigned long line,
                       std::string function, std::string check)
 {
-  LogManager::logger.__dolfin_assert(file, line, function, check);
+  LogManager::logger().__dolfin_assert(file, line, function, check);
 }
 //-----------------------------------------------------------------------------
