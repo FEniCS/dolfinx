@@ -44,7 +44,7 @@ typedef Polygon_2::Vertex_const_iterator          Vertex_const_iterator;
 typedef CGAL::Polygon_with_holes_2<ExactKernel>   Polygon_with_holes_2;
 typedef Polygon_with_holes_2::Hole_const_iterator Hole_const_iterator;
 typedef CGAL::Polygon_set_2<ExactKernel>          Polygon_set_2;
-typedef std::pair<Point_2, ExactKernel::FT> cgal_QR;
+typedef std::vector<std::pair<Point_2, ExactKernel::FT>> cgal_QR;
 
 typedef std::vector<Triangle_2> Polygon;
 
@@ -131,9 +131,19 @@ void compute_volume(const MultiMesh& multimesh,
   }
 }
 //------------------------------------------------------------------------------
-void cgal_add_quadrature_rule(cgal_QR& qr, Triangle_2 t, std::size_t sign)
+cgal_QR cgal_compute_quadrature_rule(Triangle_2 t, ExactKernel::FT factor)
 {
+  const Vector_2 a = t[1]-t[0];
+  const Vector_2 b = t[2]-t[0];
 
+  // Compute double the area of the triangle
+  const ExactKernel::FT det = CGAL::abs(a.x()*b.y() - a.y()*b.x());
+
+  cgal_QR qr;
+  // qr.push_back(std::make_pair( CGAL::ORIGIN + (t[0]-CGAL::ORIGIN)/3 + (t[1]-CGAL::ORIGIN)/3 + (t[2]-CGAL::ORIGIN)/3,
+  qr.push_back(std::make_pair( CGAL::centroid(t),
+                               factor*det/2 ));
+  return qr;
 }
 //------------------------------------------------------------------------------
 void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
@@ -154,8 +164,10 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < multimesh.num_parts(); cut_part++)
   {
+    std::map<unsigned int, cgal_QR> qr_overlap_current_part;
+
     // Data structure for the overlap quadrature rule
-    std::vector<cgal_QR> overlap_qr;
+    cgal_QR overlap_qr;
 
     std::cout << "----- cut part: " << cut_part << std::endl;
     std::shared_ptr<const Mesh> cut_mesh = multimesh.part(cut_part);
@@ -165,6 +177,9 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
     for (CellIterator cut_it(*cut_mesh); !cut_it.end(); ++cut_it)
     {
       std::cout << "------- cut cell: " << cut_it->index() << std::endl;
+      
+      std::vector<cgal_QR> overlap_qr_current_cell;
+      
       // Test every cell against every cell in overlaying meshes
       Triangle_2 cut_cell(Point_2(cut_mesh_geometry.x(cut_it->entities(0)[0], 0),
                                   cut_mesh_geometry.x(cut_it->entities(0)[0], 1)),
@@ -178,7 +193,6 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
       // Store the initial polygon which are the elements used in the
       // inclusion-exclusion principle
       std::vector<Polygon> initial_polygons;
-
       
       for (std::size_t cutting_part = cut_part+1; cutting_part < multimesh.num_parts(); cutting_part++)
       {
@@ -304,19 +318,29 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
       }
       // Done computing initial polygons
       std::cout << "Computed " << initial_polygons.size() << " initial polygons" << std::endl;
-      
+
       // Add initial stage of inc-exc principle
-      cgal_QR overlap_part_qr;
+
+      std::size_t i = 0;
       for (const Polygon& p : initial_polygons)
       {
+        std::cout << "Adding quadrature rule of initial polygon: " << i++ << std::endl;
         for (const Triangle_2& simplex : p)
         {
-          cgal_add_quadrature_rule(overlap_part_qr, simplex, 1);
+          overlap_qr_current_cell.push_back(cgal_compute_quadrature_rule(simplex, 1));
+          cgal_QR& current = overlap_qr_current_cell.back();
+          for (const std::pair<Point_2, ExactKernel::FT>& qr : current)
+            std::cout << "(" << qr.first << ") : " << qr.second << ", ";
+          std::cout << std::endl;
         }
-
-	// Add quadrature rule for overlap part
-	overlap_qr.push_back(overlap_part_qr);
       }
+    }
+
+    // Initialize intersections from stage 0 for the inc-exc loop
+    
+    for (std::size_t inc_exc_stage = 1; inc_exc_stage < initial_polygons.size(); inc_exc_stage++)
+    {
+      std::cout << "----------------- stage " << inc_exc_stage << std::endl;
     }
   }
   debug_file.close();
