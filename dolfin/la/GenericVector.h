@@ -257,24 +257,6 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericVector& operator= (double a) = 0;
 
-    /// Return pointer to underlying data (const version)
-    virtual const double* data() const
-    {
-      dolfin_error("GenericVector.h",
-                   "return pointer to underlying vector data",
-                   "Not implemented by current linear algebra backend");
-      return 0;
-    }
-
-    /// Return pointer to underlying data
-    virtual double* data()
-    {
-      dolfin_error("GenericVector.h",
-                   "return pointer to underlying vector data",
-                   "Not implemented by current linear algebra backend");
-      return 0;
-    }
-
     //--- Convenience functions ---
 
     /// Get value of given entry

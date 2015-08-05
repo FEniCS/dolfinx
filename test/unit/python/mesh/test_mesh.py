@@ -83,7 +83,7 @@ def square():
 
 @fixture
 def rectangle():
-    return RectangleMesh(0, 0, 2, 2, 5, 5)
+    return RectangleMesh(Point(0, 0), Point(2, 2), 5, 5)
 
 @fixture
 def cube():
@@ -91,7 +91,7 @@ def cube():
 
 @fixture
 def box():
-    return BoxMesh(0, 0, 0, 2, 2, 2, 2, 2, 5)
+    return BoxMesh(Point(0, 0, 0), Point(2, 2, 2), 2, 2, 5)
 
 @fixture
 def mesh():
@@ -178,6 +178,15 @@ def test_UnitCubeMeshDistributedLocal():
     assert mesh.num_vertices() == 480
     assert mesh.num_cells() == 1890
 
+def test_UnitQuadMesh():
+    mesh = UnitQuadMesh(5, 7)
+    assert mesh.size_global(0) == 48
+    assert mesh.size_global(2) == 35
+
+def test_UnitHexMesh():
+    mesh = UnitHexMesh(5, 7, 9)
+    assert mesh.size_global(0) == 480
+    assert mesh.size_global(3) == 315
 
 @skip_in_parallel
 def test_LocalRefineUnitIntervalMesh():

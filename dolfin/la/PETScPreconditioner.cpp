@@ -22,7 +22,6 @@
 
 #ifdef HAS_PETSC
 
-#include <boost/lexical_cast.hpp>
 #include <petscksp.h>
 #include <petscmat.h>
 
@@ -46,9 +45,7 @@ const std::map<std::string, const PCType> PETScPreconditioner::_methods
     {"bjacobi",          PCBJACOBI},
     {"sor",              PCSOR},
     {"additive_schwarz", PCASM},
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
     {"petsc_amg",        PCGAMG},
-#endif
 #if PETSC_HAVE_HYPRE
     {"hypre_amg",        PCHYPRE},
     {"hypre_euclid",     PCHYPRE},
@@ -69,18 +66,7 @@ PETScPreconditioner::_methods_descr
     {"ilu",              "Incomplete LU factorization"},
     {"icc",              "Incomplete Cholesky factorization"},
     {"sor",              "Successive over-relaxation"},
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
     {"petsc_amg",        "PETSc algebraic multigrid"},
-#endif
-#if HAS_PETSC_CUSP
-    {"jacobi",           "Jacobi iteration (GPU enabled)"},
-    {"bjacobi",          "Block Jacobi iteration (GPU enabled)"},
-    {"additive_schwarz", "Additive Schwarz (GPU enabled)"},
-    #else
-    {"jacobi",           "Jacobi iteration"},
-    {"bjacobi",          "Block Jacobi iteration"},
-    {"additive_schwarz", "Additive Schwarz"},
-#endif
 #if PETSC_HAVE_HYPRE
     {"amg",              "Algebraic multigrid"},
     {"hypre_amg",        "Hypre algebraic multigrid (BoomerAMG)"},
@@ -220,14 +206,9 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
   if (!_coordinates.empty())
   {
     dolfin_assert(gdim > 0);
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 3
-    ierr = PCSetCoordinates(pc, gdim, _coordinates.data());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetCoordinates");
-    #else
     ierr = PCSetCoordinates(pc, gdim, _coordinates.size()/gdim,
                             _coordinates.data());
     if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetCoordinates");
-    #endif
   }
 
   // Clear memory

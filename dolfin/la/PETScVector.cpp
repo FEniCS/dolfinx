@@ -33,9 +33,7 @@
 #include <dolfin/common/Set.h>
 #include <dolfin/log/log.h>
 #include "PETScVector.h"
-#include "uBLASVector.h"
 #include "PETScFactory.h"
-#include "PETScCuspFactory.h"
 #include <dolfin/common/MPI.h>
 
 using namespace dolfin;
@@ -44,30 +42,13 @@ const std::map<std::string, NormType> PETScVector::norm_types
 = { {"l1",   NORM_1}, {"l2",   NORM_2},  {"linf", NORM_INFINITY} };
 
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector() : _x(NULL), _use_gpu(false)
+PETScVector::PETScVector() : _x(NULL)
 {
-#ifndef HAS_PETSC_CUSP
-  if (_use_gpu)
-  {
-    dolfin_error("PETScVector.cpp",
-                 "create empty GPU vector",
-                 "PETSc not compiled with Cusp support");
-  }
-#endif
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(MPI_Comm comm, std::size_t N, bool use_gpu)
-  : _x(NULL), _use_gpu(use_gpu)
+PETScVector::PETScVector(MPI_Comm comm, std::size_t N) : _x(NULL)
 {
-  #ifndef HAS_PETSC_CUSP
-  if (_use_gpu)
-  {
-    dolfin_error("PETScVector.cpp",
-                 "create GPU vector",
-                 "PETSc not compiled with Cusp support");
-  }
-  #endif
-
   // Empty ghost indices vector
   const std::vector<la_index> ghost_indices;
   const std::vector<std::size_t> local_to_global_map;
@@ -78,7 +59,7 @@ PETScVector::PETScVector(MPI_Comm comm, std::size_t N, bool use_gpu)
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern)
-  : _x(NULL), _use_gpu(false)
+  : _x(NULL)
 {
   std::vector<la_index> ghost_indices;
   std::vector<std::size_t> local_to_global_map;
@@ -86,13 +67,13 @@ PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern)
         local_to_global_map, ghost_indices);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(Vec x): _x(x), _use_gpu(false)
+PETScVector::PETScVector(Vec x): _x(x)
 {
   // Increase reference count
   PetscObjectReference((PetscObject)_x);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const PETScVector& v) : _x(NULL), _use_gpu(false)
+PETScVector::PETScVector(const PETScVector& v) : _x(NULL)
 {
   PetscErrorCode ierr;
 
@@ -103,9 +84,6 @@ PETScVector::PETScVector(const PETScVector& v) : _x(NULL), _use_gpu(false)
   // Copy data
   ierr = VecCopy(v._x, _x);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecCopy");
-
-  // Copy ghost data
-  ghost_global_to_local = v.ghost_global_to_local;
 
   // Update ghost values
   update_ghost_values();
@@ -122,11 +100,7 @@ bool PETScVector::distributed() const
   dolfin_assert(_x);
 
   // Get type
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
-  const VecType petsc_type;
-  #else
   VecType petsc_type;
-  #endif
   PetscErrorCode ierr = VecGetType(_x, &petsc_type);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetType");
 
@@ -136,13 +110,6 @@ bool PETScVector::distributed() const
     _distributed = true;
   else if (strcmp(petsc_type, VECSEQ) == 0)
     _distributed =  false;
-  #ifdef HAS_PETSC_CUSP
-  // TODO: Uncomment these two lines after implementing MPI Cusp vectors
-  //else if (strcmp(petsc_type, VECMPICUSP) == 0)
-  //  _distributed = true;
-  else if (strcmp(petsc_type, VECSEQCUSP) == 0)
-    _distributed = false;
-  #endif
   else
   {
     dolfin_error("PETScVector.cpp",
@@ -474,27 +441,22 @@ void PETScVector::update_ghost_values()
   dolfin_assert(_x);
   PetscErrorCode ierr;
 
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
-  if (dolfin::MPI::size(mpi_comm()) > 1)
-  #endif
+  // Check of vector is ghosted
+  Vec xg;
+  ierr = VecGhostGetLocalForm(_x, &xg);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostGetLocalForm");
+
+  // If ghosted, update
+  if (xg)
   {
-    // Check of vector is ghosted
-    Vec xg;
-    ierr = VecGhostGetLocalForm(_x, &xg);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostGetLocalForm");
-
-    // If ghosted, update
-    if (xg)
-    {
-      ierr = VecGhostUpdateBegin(_x, INSERT_VALUES, SCATTER_FORWARD);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateBegin");
-      ierr = VecGhostUpdateEnd(_x, INSERT_VALUES, SCATTER_FORWARD);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateEnd");
-    }
-
-    ierr = VecGhostRestoreLocalForm(_x, &xg);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostRestoreLocalForm");
+    ierr = VecGhostUpdateBegin(_x, INSERT_VALUES, SCATTER_FORWARD);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateBegin");
+    ierr = VecGhostUpdateEnd(_x, INSERT_VALUES, SCATTER_FORWARD);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostUpdateEnd");
   }
+
+  ierr = VecGhostRestoreLocalForm(_x, &xg);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecGhostRestoreLocalForm");
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator+= (const GenericVector& x)
@@ -718,11 +680,7 @@ std::string PETScVector::str(bool verbose) const
   if (verbose)
   {
     // Get vector type
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
-    const VecType petsc_type;
-    #else
     VecType petsc_type;
-    #endif
     dolfin_assert(_x);
     ierr = VecGetType(_x, &petsc_type);
     if (ierr != 0) petsc_error(ierr, __FILE__, "VecGet");
@@ -737,16 +695,6 @@ std::string PETScVector::str(bool verbose) const
       ierr = VecView(_x, PETSC_VIEWER_STDOUT_WORLD);
       if (ierr != 0) petsc_error(ierr, __FILE__, "VecView");
     }
-    #ifdef HAS_PETSC_CUSP
-    else if (strcmp(petsc_type, VECSEQCUSP) == 0)
-    {
-      ierr = VecView(*_x, PETSC_VIEWER_STDOUT_SELF);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "VecView");
-    // TODO: Uncomment these two lines after implementing MPI Cusp vectors
-    //else if (strcmp(petsc_type, VECMPICUSP) == 0)
-    //  VecView(*x, PETSC_VIEWER_STDOUT_WORLD);
-    }
-    #endif
   }
   else
     s << "<PETScVector of size " << size() << ">";
@@ -863,18 +811,6 @@ void PETScVector::_init(MPI_Comm comm,
   if (_x)
     error("PETScVector cannot be initialized more than once.");
 
-  // GPU support does not work in parallel
-  if (_use_gpu && MPI::size(comm) > 1)
-  {
-    not_working_in_parallel("Due to limitations in PETSc, "
-                            "distributed PETSc Cusp vectors");
-  }
-
-  #ifdef HAS_PETSC_CUSP
-  ierr = VecSetType(_x, VECSEQCUSP);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetType");
-  #endif
-
   const std::size_t local_size = range.second - range.first;
   dolfin_assert(range.second >= range.first);
 
@@ -883,13 +819,12 @@ void PETScVector::_init(MPI_Comm comm,
                         ghost_indices.size(), ghost_indices.data(), &_x);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecCreateGhost");
 
-  // Build global-to-local map for ghost indices
-  ghost_global_to_local.clear();
-  for (std::size_t i = 0; i < ghost_indices.size(); ++i)
-  {
-    ghost_global_to_local.insert(std::pair<std::size_t,
-                                 std::size_t>(ghost_indices[i], i));
-  }
+  // Set options prefix
+  ierr = VecSetOptionsPrefix(_x, _petsc_options_prefix.c_str());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetOptionsPrefix");
+
+  // Set from PETSc options
+  VecSetFromOptions(_x);
 
   ISLocalToGlobalMapping petsc_local_to_global;
   std::vector<PetscInt> _map;
@@ -916,6 +851,33 @@ void PETScVector::_init(MPI_Comm comm,
   ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
 }
 //-----------------------------------------------------------------------------
+void PETScVector::set_options_prefix(std::string options_prefix)
+{
+  if (_x)
+  {
+    dolfin_error("PETScVector.cpp",
+                 "setting PETSc options prefix",
+                 "Cannot set options prefix since PETSc Vec has already been initialized");
+  }
+  else
+    _petsc_options_prefix = options_prefix;
+}
+//-----------------------------------------------------------------------------
+std::string PETScVector::get_options_prefix() const
+{
+  if (_x)
+  {
+    const char* prefix = NULL;
+    VecGetOptionsPrefix(_x, &prefix);
+    return std::string(prefix);
+  }
+  else
+  {
+    warning("PETSc Vec object has not been initialised, therefore prefix has not been set");
+    return std::string();
+  }
+}
+//-----------------------------------------------------------------------------
 Vec PETScVector::vec() const
 {
   return _x;
@@ -923,14 +885,6 @@ Vec PETScVector::vec() const
 //-----------------------------------------------------------------------------
 GenericLinearAlgebraFactory& PETScVector::factory() const
 {
-  if (!_use_gpu)
-    return PETScFactory::instance();
-  #ifdef HAS_PETSC_CUSP
-  else
-    return PETScCuspFactory::instance();
-  #endif
-
-  // Return something to keep the compiler happy. Code will never be reached.
   return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------

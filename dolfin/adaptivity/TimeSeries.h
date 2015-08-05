@@ -14,15 +14,15 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2009-11-11
-// Last changed: 2012-05-07
 
 #ifndef __TIME_SERIES_H
 #define __TIME_SERIES_H
 
+#ifdef HAS_HDF5
+
 #include <string>
 #include <vector>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -50,14 +50,11 @@ namespace dolfin
     /// Create empty time series
     ///
     /// *Arguments*
+    ///     mpi_comm (MPI_Comm)
+    ///         An MPI communicator
     ///     name (std::string)
     ///         The time series name
-    ///     compressed (bool)
-    ///         Use compressed file format (default false)
-    ///     store_connectivity (bool)
-    ///         Store all computed connectivity (default false)
-    TimeSeries(std::string name, bool compressed=false,
-	       bool store_connectivity=false);
+    TimeSeries(MPI_Comm mpi_comm, std::string name);
 
     /// Destructor
     ~TimeSeries();
@@ -119,43 +116,6 @@ namespace dolfin
     /// Clear time series
     void clear();
 
-    /// Return filename for data
-    ///
-    /// *Arguments*
-    ///     series_name (std::string)
-    ///         The time series name
-    ///     type_name (std::string)
-    ///         The type of data
-    ///     index (std::size_t)
-    ///         The index
-    ///     compressed (bool)
-    ///         True if compressed file format
-    ///
-    /// *Returns*
-    ///     std::string
-    ///         The filename
-    static std::string filename_data(std::string series_name,
-                                     std::string type_name,
-                                     std::size_t index,
-				     bool compressed);
-
-    /// Return filename for times
-    ///
-    /// *Arguments*
-    ///     series_name (std::string)
-    ///         The time series name
-    ///     type_name (std::string)
-    ///         The type of data
-    ///     compressed (bool)
-    ///         True if compressed file format
-    ///
-    /// *Returns*
-    ///     std::string
-    ///         The filename
-    static std::string filename_times(std::string series_name,
-                                      std::string type_name,
-				      bool compressed);
-
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
@@ -169,14 +129,20 @@ namespace dolfin
 
   private:
 
+    template <typename T>
+      void store_object(MPI_Comm comm, const T& object, double t,
+                        std::vector<double>& times,
+                        std::string series_name,
+                        std::string group_name);
+
     // Check if values are strictly increasing
     static bool monotone(const std::vector<double>& times);
 
     // Find index closest to given time
     static std::size_t find_closest_index(double t,
-                                   const std::vector<double>& times,
-                                   std::string series_name,
-                                   std::string type_name);
+                                          const std::vector<double>& times,
+                                          std::string series_name,
+                                          std::string type_name);
 
     // Find index pair closest to given time
     static std::pair<std::size_t, std::size_t>
@@ -193,14 +159,9 @@ namespace dolfin
     // True if series has been cleared
     bool _cleared;
 
-    // True if storing using gzipped file
-    bool _compressed;
-
-    // True if all connectivity in a mesh should be stored
-    bool _store_connectivity;
-
   };
 
 }
 
+#endif
 #endif

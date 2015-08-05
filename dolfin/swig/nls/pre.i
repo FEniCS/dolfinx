@@ -31,6 +31,7 @@
 //-----------------------------------------------------------------------------
 %feature("director") dolfin::NonlinearProblem;
 %feature("director") dolfin::OptimisationProblem;
+%feature("director") dolfin::NewtonSolver;
 
 //-----------------------------------------------------------------------------
 // Director typemaps for dolfin::GenericFoo

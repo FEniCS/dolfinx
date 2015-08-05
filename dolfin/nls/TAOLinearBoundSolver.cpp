@@ -437,10 +437,11 @@ PetscErrorCode TAOLinearBoundSolver::__TAOMonitor(Tao tao, void *ctx)
   PetscReal f, gnorm, cnorm, xdiff;
   TaoConvergedReason reason;
   TaoGetSolutionStatus(tao, &its, &f, &gnorm, &cnorm, &xdiff, &reason);
-  if (!(its%5))
-    PetscPrintf(PETSC_COMM_WORLD,"iteration=%D\tf=%g\n",its,(double)f);
+  if (!(its % 5))
+    PetscPrintf(PETSC_COMM_WORLD,"iteration=%D\tf=%g\n", its, (double)f);
 
   return 0;
 }
 //------------------------------------------------------------------------------
+
 #endif

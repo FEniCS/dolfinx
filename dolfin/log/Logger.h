@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2013 Anders Logg
+// Copyright (C) 2003-2013 Anders Logg, 2015 Jan Blechta
 //
 // This file is part of DOLFIN.
 //
@@ -18,9 +18,6 @@
 // Thanks to Jim Tilander for many helpful hints.
 //
 // Modified by Ola Skavhaug 2007, 2009
-//
-// First added:  2003-03-13
-// Last changed: 2013-01-07
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -108,22 +105,22 @@ namespace dolfin
     void register_timing(std::string task,
                          std::tuple<double, double, double> elapsed);
 
-    /// Return a summary of timings and tasks as a Table, optionally
-    /// clearing stored timings
+    /// Return a summary of timings and tasks in a Table, optionally clearing
+    /// stored timings
     Table timings(TimingClear clear, std::set<TimingType> type);
 
-    /// DEPRECATED: List a summary of timings and tasks, optionally clearing
-    /// stored timings. MPI_AVG reduction is printed. Collective on
-    /// MPI_COMM_WORLD.
+    /// **DEPRECATED**: List a summary of timings and tasks, optionally clearing
+    /// stored timings. ``MPI_AVG`` reduction is printed. Collective on
+    /// ``Logger::mpi_comm()``. Only wall time is printed.
     void list_timings(bool reset=false);
 
-    /// List a summary of timings and tasks, optionally clearing stored
-    /// timings. MPI_AVG reduction is printed. Collective on MPI_COMM_WORLD.
+    /// List a summary of timings and tasks, optionally clearing stored timings.
+    /// ``MPI_AVG`` reduction is printed. Collective on ``Logger::mpi_comm()``.
     void list_timings(TimingClear clear, std::set<TimingType> type);
 
     /// Dump a summary of timings and tasks to XML file, optionally clearing
-    /// stored timings. MPI_MAX, MPI_MIN and MPI_AVG reductions are stored.
-    /// Collective on MPI_COMM_WORLD.
+    /// stored timings. ``MPI_MAX``, ``MPI_MIN`` and ``MPI_AVG`` reductions are
+    /// stored. Collective on ``Logger::mpi_comm()``.
     void dump_timings_to_xml(std::string filename, TimingClear clear);
 
     /// Return timing (count, total wall time, total user time,
@@ -136,6 +133,10 @@ namespace dolfin
     /// program to continuously monitor the memory usage of the
     /// process.
     void monitor_memory_usage();
+
+    /// Return MPI Communicator of Logger
+    MPI_Comm mpi_comm()
+    { return _mpi_comm; }
 
     /// Helper function for reporting memory usage
     void _report_memory_usage(size_t num_mb);
@@ -150,7 +151,7 @@ namespace dolfin
   private:
 
     // Write message
-    void write(int log_level, std::string msg, int rank) const;
+    void write(int log_level, std::string msg) const;
 
     // True iff logging is active
     bool _active;
@@ -175,8 +176,11 @@ namespace dolfin
     // Maximum memory usage so far
     long int _maximum_memory_usage;
 
-    // Map for strigifying TimingType
+    // Map for stringifying TimingType
     static std::map<TimingType, std::string> _TimingType_descr;
+
+    // MPI Communicator
+    MPI_Comm _mpi_comm;
 
   };
 

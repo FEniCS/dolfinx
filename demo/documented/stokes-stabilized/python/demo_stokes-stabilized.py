@@ -51,11 +51,8 @@ bc0 = DirichletBC(system.sub(0), noslip, sub_domains, 0)
 # Inflow boundary condition for velocity
 bc1 = DirichletBC(system.sub(0), inflow, sub_domains, 1)
 
-# Boundary condition for pressure at outflow
-bc2 = DirichletBC(system.sub(1), zero, sub_domains, 2)
-
 # Collect boundary conditions
-bcs = [bc0, bc1, bc2]
+bcs = [bc0, bc1]
 
 # Define variational problem
 (v, q) = TestFunctions(system)

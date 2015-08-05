@@ -20,7 +20,7 @@
 #ifndef __PETSC_SNES_SOLVER_H
 #define __PETSC_SNES_SOLVER_H
 
-#ifdef ENABLE_PETSC_SNES
+#ifdef HAS_PETSC
 
 #include <map>
 #include <petscsnes.h>

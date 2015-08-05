@@ -18,6 +18,7 @@
 // First added:  2013-05-29
 // Last changed: 2013-05-29
 
+#include <cmath>
 #include <dolfin/common/constants.h>
 #include "VectorSpaceBasis.h"
 
