@@ -146,6 +146,110 @@ cgal_QR cgal_compute_quadrature_rule(Triangle_2 t, ExactKernel::FT factor)
   return qr;
 }
 //------------------------------------------------------------------------------
+Polygon compute_intersection_triangulation(Triangle_2 t1, Triangle_2 t2)
+{
+  Polygon intersection;
+  if (CGAL::do_intersect(t1, t2))
+  {
+    auto cell_intersection = CGAL::intersection(t1, t2);
+    dolfin_assert(cell_intersection);
+
+    if (const Segment_2* s = boost::get<Segment_2>(&*cell_intersection))
+    {
+      // segment intersection
+      // do nothing
+    }
+    else if (const Point_2* p = boost::get<Point_2>(&*cell_intersection))
+    {
+      // point intersection
+      // do nothing
+    }
+    else if (const Triangle_2* t = boost::get<Triangle_2>(&*cell_intersection))
+    {
+      // handle triangle intersection
+      // Print the triangles in a reproducible order
+      std::vector<std::pair<std::pair<ExactKernel::FT, ExactKernel::FT>, std::size_t>> v{ std::make_pair(std::make_pair(t->vertex(0)[0], t->vertex(0)[1]), 0),
+                                                                                          std::make_pair(std::make_pair(t->vertex(1)[0], t->vertex(1)[1]), 1),
+                                                                                          std::make_pair(std::make_pair(t->vertex(2)[0], t->vertex(2)[1]), 2)};
+      std::sort(v.begin(), v.end());
+      // debug_file <<  "(" << cut_part << "," << cut_it->index() << ") (" << cutting_part << "," << cutting_it->index() << ") : "
+      //            << t->vertex(v[0].second) << ", "
+      //            << t->vertex(v[1].second) << ", "
+      //            << t->vertex(v[2].second) << std::endl;
+      intersection.push_back(Triangle_2(t->vertex(v[0].second),
+                                        t->vertex(v[1].second),
+                                        t->vertex(v[2].second)));
+    }
+    else 
+    {
+      const std::vector<Point_2>* polygon = boost::get<std::vector<Point_2>>(&*cell_intersection);
+      dolfin_assert(polygon);
+
+      // Now triangulate polygon the same way as multimesh does it
+      // geometry/IntersectionTriangulation.cpp:598
+
+      // Find left-most point (smallest x-coordinate)
+      // Use y-coordinate if x-coordinates are exactly equal.
+      // TODO: Does this work in 3D? Then also include z-coordinate in the
+      // comparison.
+      std::size_t i_min = 0;
+      Point_2 point_min = (*polygon)[0];
+      for (std::size_t i = 1; i < polygon->size(); i++)
+      {
+        //const double x = points[i].x();
+        if (point_min.x() < (*polygon)[i].x() || (point_min.x() == (*polygon)[i].x() && point_min.y() < (*polygon)[i].y()))
+        {
+          point_min = (*polygon)[i];
+          i_min = i;
+        }
+      }
+
+      // Compute signed squared cos of angle with (0, 1) from i_min to all points
+      std::vector<std::pair<ExactKernel::FT, std::size_t>> order;
+      for (std::size_t i = 0; i < polygon->size(); i++)
+      {
+        // Skip left-most point used as origin
+        if (i == i_min)
+          continue;
+
+        // Compute vector to point
+        const Vector_2 v = (*polygon)[i] - (*polygon)[i_min];
+
+        // Compute square cos of angle
+        const ExactKernel::FT cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_length();
+
+        // Store for sorting
+        order.push_back(std::make_pair(cos2, i));
+      }
+
+      // Sort points based on angle
+      std::sort(order.begin(), order.end());
+
+      // std::cout << "Order: ";
+      // for(const std::pair<ExactKernel::FT, std::size_t>& item : order)
+      // {
+      //   std::cout << item.second << " ";
+      // }
+      // std::cout << std::endl;
+
+      // Triangulate polygon by connecting i_min with the ordered points
+
+      // debug_file <<  "(" << cut_part << "," << cut_it->index() << ") (" << cutting_part << "," << cutting_it->index() << ") : ";
+      const Point_2& p0 = (*polygon)[i_min];
+      for (std::size_t i = 0; i < polygon->size() - 2; i++)
+      {
+        const Point_2& p1 = (*polygon)[order[i].second];
+        const Point_2& p2 = (*polygon)[order[i + 1].second];
+        // debug_file << p0 << ", " << p1 << ", " << p2 << ", ";
+        intersection.push_back(Triangle_2(p0, p1, p2));
+      }
+      // debug_file << std::endl;
+    }
+  }
+  return intersection;
+}
+
+//------------------------------------------------------------------------------
 void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
                                            std::vector<std::map<unsigned int, cgal_QR>>& qr_rules_overlap)
 {
@@ -164,10 +268,8 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < multimesh.num_parts(); cut_part++)
   {
-    std::map<unsigned int, cgal_QR> qr_overlap_current_part;
-
-    // Data structure for the overlap quadrature rule
-    cgal_QR overlap_qr;
+    qr_rules_overlap.push_back(std::map<unsigned int, std::vector<cgal_QR>);
+    std::map<unsigned int, std::vector<cgal_QR>> qr_overlap_current_part;
 
     std::cout << "----- cut part: " << cut_part << std::endl;
     std::shared_ptr<const Mesh> cut_mesh = multimesh.part(cut_part);
@@ -178,7 +280,7 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
     {
       std::cout << "------- cut cell: " << cut_it->index() << std::endl;
       
-      std::vector<cgal_QR> overlap_qr_current_cell;
+      std::vector<cgal_QR> overlap_qr_current_cut_cell;
       
       // Test every cell against every cell in overlaying meshes
       Triangle_2 cut_cell(Point_2(cut_mesh_geometry.x(cut_it->entities(0)[0], 0),
@@ -199,6 +301,8 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
         std::shared_ptr<const Mesh> cutting_mesh = multimesh.part(cutting_part);
         const MeshGeometry& cutting_mesh_geometry = cutting_mesh->geometry();
 
+        cgal_QR qr_current_cutting_cell;
+
         for (CellIterator cutting_it(*cutting_mesh); !cutting_it.end(); ++cutting_it)
         {
           // Test every cell against every cell in overlaying meshes
@@ -211,113 +315,20 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
           if (cutting_cell.orientation() == CGAL::CLOCKWISE)
             cutting_cell = cutting_cell.opposite();
 
-          if (CGAL::do_intersect(cut_cell, cutting_cell))
-          {
-            std::cout << "Intersects: (" << cut_part << ", " << cut_it->index() << ") and (" << cutting_part << ", " << cutting_it->index() << ")" << std::endl;
-
-            auto cell_intersection = CGAL::intersection(cut_cell, cutting_cell);
-            dolfin_assert(cell_intersection);
-              // alternatively:
-            if (const Segment_2* s = boost::get<Segment_2>(&*cell_intersection)) {
-              // handle segment
-              std::cout << "  Segment" << std::endl;
-            }
-            else if (const Point_2* p = boost::get<Point_2>(&*cell_intersection))
-            {
-              // handle point
-              std::cout << "  Point" << std::endl;
-            }
-            else if (const Triangle_2* t = boost::get<Triangle_2>(&*cell_intersection))
-            {
-              // handle triangle intersection
-              // Print the triangles in a reproducible order
-              std::vector<std::pair<std::pair<ExactKernel::FT, ExactKernel::FT>, std::size_t>> v{ std::make_pair(std::make_pair(t->vertex(0)[0], t->vertex(0)[1]), 0),
-                                                                                                  std::make_pair(std::make_pair(t->vertex(1)[0], t->vertex(1)[1]), 1),
-                                                                                                  std::make_pair(std::make_pair(t->vertex(2)[0], t->vertex(2)[1]), 2)};
-              std::sort(v.begin(), v.end());
-              debug_file <<  "(" << cut_part << "," << cut_it->index() << ") (" << cutting_part << "," << cutting_it->index() << ") : "
-                         << t->vertex(v[0].second) << ", "
-                         << t->vertex(v[1].second) << ", "
-                         << t->vertex(v[2].second) << std::endl;
-              initial_polygons.push_back(Polygon{Triangle_2(t->vertex(v[0].second),
-                                                            t->vertex(v[1].second),
-                                                            t->vertex(v[2].second))});
-            }
-            else 
-            {
-              const std::vector<Point_2>* polygon = boost::get<std::vector<Point_2>>(&*cell_intersection);
-              dolfin_assert(polygon);
-
-              // Now triangulate polygon the same way as multimesh does it
-              // geometry/IntersectionTriangulation.cpp:598
-
-              // Find left-most point (smallest x-coordinate)
-              // Use y-coordinate if x-coordinates are exactly equal.
-              // TODO: Does this work in 3D? Then also include z-coordinate in the
-              // comparison.
-              std::size_t i_min = 0;
-              Point_2 point_min = (*polygon)[0];
-              for (std::size_t i = 1; i < polygon->size(); i++)
-              {
-                //const double x = points[i].x();
-                if (point_min.x() < (*polygon)[i].x() || (point_min.x() == (*polygon)[i].x() && point_min.y() < (*polygon)[i].y()))
-                {
-                  point_min = (*polygon)[i];
-                  i_min = i;
-                }
-              }
-
-              // Compute signed squared cos of angle with (0, 1) from i_min to all points
-              std::vector<std::pair<ExactKernel::FT, std::size_t>> order;
-              for (std::size_t i = 0; i < polygon->size(); i++)
-              {
-                // Skip left-most point used as origin
-                if (i == i_min)
-                  continue;
-
-                // Compute vector to point
-                const Vector_2 v = (*polygon)[i] - (*polygon)[i_min];
-
-                // Compute square cos of angle
-                const ExactKernel::FT cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_length();
-
-                // Store for sorting
-                order.push_back(std::make_pair(cos2, i));
-              }
-
-              // Sort points based on angle
-              std::sort(order.begin(), order.end());
-
-              // std::cout << "Order: ";
-              // for(const std::pair<ExactKernel::FT, std::size_t>& item : order)
-              // {
-              //   std::cout << item.second << " ";
-              // }
-              // std::cout << std::endl;
-
-              // Triangulate polygon by connecting i_min with the ordered points
-              //triangulation.reserve((points.size() - 2)*3*2);
-              initial_polygons.push_back(Polygon());
-              Polygon& current_polygon = initial_polygons.back();
-              debug_file <<  "(" << cut_part << "," << cut_it->index() << ") (" << cutting_part << "," << cutting_it->index() << ") : ";
-              const Point_2& p0 = (*polygon)[i_min];
-              for (std::size_t i = 0; i < polygon->size() - 2; i++)
-              {
-                const Point_2& p1 = (*polygon)[order[i].second];
-                const Point_2& p2 = (*polygon)[order[i + 1].second];
-                debug_file << p0 << ", " << p1 << ", " << p2 << ", ";
-                current_polygon.push_back(Triangle_2(p0, p1, p2));
-              }
-              debug_file << std::endl;
-
-              dolfin_assert(current_polygon.size() == polygon->size()-2);
-              std::cout << "Initial polygon: " << current_polygon.size() << std::endl;
-            }
-          }
+          Polygon intersection = compute_intersection_triangulation(cut_cell, cutting_cell);
+          if (intersection.size() > 0)
+            initial_polygons.push_back(intersection);
         }
       }
       // Done computing initial polygons
       std::cout << "Computed " << initial_polygons.size() << " initial polygons" << std::endl;
+      for (const Polygon& p : initial_polygons)
+      {
+        std::cout << "Initial polygon: ";
+        for (const Triangle_2& t : p)
+          std::cout << "(" << t[0] << ", " << t[1] << ", " << t[2] << ") ";
+        std::cout << std::endl;
+      }
 
       // Add initial stage of inc-exc principle
 
@@ -335,11 +346,97 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
         }
       }
 
+      std::vector<std::pair<std::vector<std::size_t>,
+			    Polygon> > previous_intersections;
+
       // Initialize intersections from stage 0 for the inc-exc loop
-    
-      for (std::size_t inc_exc_stage = 1; inc_exc_stage < initial_polygons.size(); inc_exc_stage++)
+      for (std::size_t i = 0; i < initial_polygons.size(); i++)
       {
-        std::cout << "----------------- stage " << inc_exc_stage << std::endl;
+        std::cout << "----------------- stage " << i << std::endl;
+        previous_intersections.push_back(std::make_pair(std::vector<std::size_t>(1, i),
+                                                        initial_polygons[i]));
+      }
+
+      // The stage loop
+      for (std::size_t stage = 1; stage < initial_polygons.size(); stage++)
+      {
+        std::cout << "Stage " << stage << std::endl;
+        
+        std::vector<std::pair<std::vector<std::size_t>,
+                              Polygon> > new_intersections;
+
+        // Loop over all intersections from the previous stage
+      	for (const std::pair<const std::vector<std::size_t>,
+                             Polygon>& previous_polygon : previous_intersections)
+      	{
+      	  // Loop over all initial polyhedra.
+          for (std::size_t init_p = 0; init_p < initial_polygons.size(); init_p++)
+      	  {
+            const Polygon& initial_polygon = initial_polygons[init_p];
+            if (init_p < previous_polygon.first[0])
+	    {
+              std::cout << "  Previous polygon ";
+              for (const std::size_t& i : previous_polygon.first)
+                std::cout << i;
+
+              std::cout << " with " << init_p << std::endl;
+
+              // We want to save the intersection of the previous
+              // polyhedron and the initial polyhedron in one single
+	      // polyhedron.
+              Polygon new_polygon;
+              std::vector<std::size_t> new_keys;
+
+              // Loop over all simplices in the initial_polyhedron and
+              // the previous_polyhedron and append the intersection of
+              // these to the new_polyhedron
+              bool any_intersections = false;
+
+              for (const Triangle_2& previous_simplex: previous_polygon.second)
+              {
+                for (const Triangle_2& initial_simplex: initial_polygon)
+                {
+                  // Compute the intersection
+                  Polygon ii = compute_intersection_triangulation(previous_simplex, initial_simplex);
+                  for (const Triangle_2& t : ii)
+                  {
+                    any_intersections = true;
+                    new_polygon.push_back(t);
+                  }
+                }
+              }
+
+              if (any_intersections)
+              {                
+                new_keys.push_back(init_p);
+                new_keys.insert(new_keys.end(),
+                                previous_polygon.first.begin(),
+                                previous_polygon.first.end());
+
+                // Save data
+                new_intersections.push_back(std::make_pair(new_keys, new_polygon));
+              }
+            }
+          }
+        }
+
+	// Add quadrature rule with correct sign
+	const double sign = std::pow(-1, stage);
+        quadrature_rule overlap_part_qr;
+        
+	for (const std::pair<std::vector<std::size_t>, Polygon>& p : new_intersections)
+        {
+	  for (const Triangle_2& t : p.second)
+	  {
+            cgal_QR qr = cgal_compute_quadrature_rule(t, sign);
+            qr_current_part.insert(qr_current_part.end(), qr.begin(), qr.end());
+	  }
+        }
+
+        // Add quadrature rule for overlap part
+        overlap_qr.push_back(qr_current_part);
+
+        previous_intersections = new_intersections;
       }
     }
   }
