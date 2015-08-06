@@ -5,6 +5,8 @@ namespace dolfin
 {
 void build_failing_case(MultiMesh& multimesh)
 {
+  const double h = 0.5;
+
   {
     std::shared_ptr<Mesh> background_mesh(new UnitSquareMesh((int)std::round(1./h),
                                                              (int)std::round(1./h)));

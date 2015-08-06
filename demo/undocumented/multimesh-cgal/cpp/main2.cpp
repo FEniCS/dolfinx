@@ -334,13 +334,13 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
           std::cout << std::endl;
         }
       }
-    }
 
-    // Initialize intersections from stage 0 for the inc-exc loop
+      // Initialize intersections from stage 0 for the inc-exc loop
     
-    for (std::size_t inc_exc_stage = 1; inc_exc_stage < initial_polygons.size(); inc_exc_stage++)
-    {
-      std::cout << "----------------- stage " << inc_exc_stage << std::endl;
+      for (std::size_t inc_exc_stage = 1; inc_exc_stage < initial_polygons.size(); inc_exc_stage++)
+      {
+        std::cout << "----------------- stage " << inc_exc_stage << std::endl;
+      }
     }
   }
   debug_file.close();
