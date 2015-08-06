@@ -488,7 +488,7 @@ void test_multiple_meshes_with_rotation()
                                  (int)std::round(1./h));
 
   MultiMesh multimesh;
-  build_multimesh(multimesh);
+  build_failing_case(multimesh);
   
   // std::cout << multimesh.plot_matplotlib() << std::endl;
   std::cout << "Done building multimesh" << std::endl;
