@@ -487,7 +487,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
       const std::size_t gdim = cut_cell.mesh().geometry().dim();
 
       // Data structure for the overlap quadrature rule of the current cut cell
-      std::vector<quadrature_rule> overlap_qr;
+      std::vector<quadrature_rule> qr_overlap_current_cut_cell;
       // std::vector<quadrature_rule> interface_qr;
 
       // Data structure for the first intersections (this is the first
@@ -587,7 +587,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
         }
 
 	// Add quadrature rule for overlap part
-	overlap_qr.push_back(overlap_part_qr);
+	qr_overlap_current_cut_cell.push_back(overlap_part_qr);
       }
 
       for (std::size_t stage = 1; stage < N; ++stage)
@@ -729,6 +729,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
         quadrature_rule overlap_part_qr;
 
 	for (const auto polyhedron: new_intersections)
+        {
 	  for (const auto simplex: polyhedron.second)
 	  {
 	    // if (std::abs(sign-1)<1e-10)
@@ -739,10 +740,11 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	    _add_quadrature_rule(overlap_part_qr, x,
 				 tdim, gdim, quadrature_order, sign);
 	  }
+        }
 
         // Add quadrature rule for overlap part
-        overlap_qr.push_back(overlap_part_qr);
-      }
+        qr_overlap_current_cut_cell.push_back(overlap_part_qr);
+      } // end stage
 
 
 
@@ -784,7 +786,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
 
 
       // Store quadrature rules for cut cell
-      _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
+      _quadrature_rules_overlap[cut_part][cut_cell_index] = qr_overlap_current_cut_cell;
       //_quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
 
       // Store facet normals for cut cell
