@@ -251,7 +251,7 @@ Polygon compute_intersection_triangulation(Triangle_2 t1, Triangle_2 t2)
 
 //------------------------------------------------------------------------------
 void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
-                                           std::vector<std::map<unsigned int, cgal_QR>>& qr_rules_overlap)
+                                           std::vector<std::map<unsigned int, std::vector<cgal_QR>>>& qr_rules_overlap)
 {
   std::cout << "Computing overlap quadrature rules" << std::endl;
   
@@ -268,8 +268,8 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < multimesh.num_parts(); cut_part++)
   {
-    qr_rules_overlap.push_back(std::map<unsigned int, std::vector<cgal_QR>);
-    std::map<unsigned int, std::vector<cgal_QR>> qr_overlap_current_part;
+    qr_rules_overlap.push_back(std::map<unsigned int, std::vector<cgal_QR>>());
+    std::map<unsigned int, std::vector<cgal_QR>>& qr_overlap_current_part = qr_rules_overlap.back();
 
     std::cout << "----- cut part: " << cut_part << std::endl;
     std::shared_ptr<const Mesh> cut_mesh = multimesh.part(cut_part);
@@ -279,9 +279,7 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
     for (CellIterator cut_it(*cut_mesh); !cut_it.end(); ++cut_it)
     {
       std::cout << "------- cut cell: " << cut_it->index() << std::endl;
-      
-      std::vector<cgal_QR> overlap_qr_current_cut_cell;
-      
+
       // Test every cell against every cell in overlaying meshes
       Triangle_2 cut_cell(Point_2(cut_mesh_geometry.x(cut_it->entities(0)[0], 0),
                                   cut_mesh_geometry.x(cut_it->entities(0)[0], 1)),
@@ -301,8 +299,6 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
         std::shared_ptr<const Mesh> cutting_mesh = multimesh.part(cutting_part);
         const MeshGeometry& cutting_mesh_geometry = cutting_mesh->geometry();
 
-        cgal_QR qr_current_cutting_cell;
-
         for (CellIterator cutting_it(*cutting_mesh); !cutting_it.end(); ++cutting_it)
         {
           // Test every cell against every cell in overlaying meshes
@@ -317,129 +313,142 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
 
           Polygon intersection = compute_intersection_triangulation(cut_cell, cutting_cell);
           if (intersection.size() > 0)
+          {
             initial_polygons.push_back(intersection);
+          }
         }
       }
+
       // Done computing initial polygons
       std::cout << "Computed " << initial_polygons.size() << " initial polygons" << std::endl;
-      for (const Polygon& p : initial_polygons)
-      {
-        std::cout << "Initial polygon: ";
-        for (const Triangle_2& t : p)
-          std::cout << "(" << t[0] << ", " << t[1] << ", " << t[2] << ") ";
-        std::cout << std::endl;
-      }
 
-      // Add initial stage of inc-exc principle
-
-      std::size_t i = 0;
-      for (const Polygon& p : initial_polygons)
+      if (initial_polygons.size() > 0)
       {
-        std::cout << "Adding quadrature rule of initial polygon: " << i++ << std::endl;
-        for (const Triangle_2& simplex : p)
+        std::vector<cgal_QR> overlap_qr_current_cut_cell;
+        //overlap_qr_current_cut_cell.resize(initial_polygons.size());
+
+        // Add initial stage (0) of inc-exc principle
+
+        for (std::size_t i = 0; i < initial_polygons.size(); i++)
         {
-          overlap_qr_current_cell.push_back(cgal_compute_quadrature_rule(simplex, 1));
-          cgal_QR& current = overlap_qr_current_cell.back();
-          for (const std::pair<Point_2, ExactKernel::FT>& qr : current)
-            std::cout << "(" << qr.first << ") : " << qr.second << ", ";
+          const Polygon& p = initial_polygons[i];
+          std::cout << "  Adding quadrature rule of initial polygon: " << i << std::endl;
+
+          // Add a new quadrature rule corresponding to the overlap in initial_polygons[i]
+          cgal_QR overlap_part_qr;
+          for (const Triangle_2& t : p)
+          {
+            std::cout << "    (" << t[0] << ", " << t[1] << ", " << t[2] << ") ";
+            const cgal_QR qr_current_triangle = cgal_compute_quadrature_rule(t, 1);
+            overlap_part_qr.insert(overlap_part_qr.end(),
+                                   qr_current_triangle.begin(),
+                                   qr_current_triangle.end());
+          }
+
+          for (const std::pair<Point_2, ExactKernel::FT>& qr : overlap_part_qr)
+            std::cout << "qr rule:   (" << qr.first << ") : " << qr.second << ", ";
           std::cout << std::endl;
+
+          // overlap_part_qr.insert(overlap_part_qr.end(),
+          //                        qr_current_triangle.begin(),
+          //                        qr_current_triangle.end());
         }
-      }
 
-      std::vector<std::pair<std::vector<std::size_t>,
-			    Polygon> > previous_intersections;
-
-      // Initialize intersections from stage 0 for the inc-exc loop
-      for (std::size_t i = 0; i < initial_polygons.size(); i++)
-      {
-        std::cout << "----------------- stage " << i << std::endl;
-        previous_intersections.push_back(std::make_pair(std::vector<std::size_t>(1, i),
-                                                        initial_polygons[i]));
-      }
-
-      // The stage loop
-      for (std::size_t stage = 1; stage < initial_polygons.size(); stage++)
-      {
-        std::cout << "Stage " << stage << std::endl;
-        
         std::vector<std::pair<std::vector<std::size_t>,
-                              Polygon> > new_intersections;
+                              Polygon> > previous_intersections;
 
-        // Loop over all intersections from the previous stage
-      	for (const std::pair<const std::vector<std::size_t>,
-                             Polygon>& previous_polygon : previous_intersections)
-      	{
-      	  // Loop over all initial polyhedra.
-          for (std::size_t init_p = 0; init_p < initial_polygons.size(); init_p++)
-      	  {
-            const Polygon& initial_polygon = initial_polygons[init_p];
-            if (init_p < previous_polygon.first[0])
-	    {
-              std::cout << "  Previous polygon ";
-              for (const std::size_t& i : previous_polygon.first)
-                std::cout << i;
+        // Initialize intersections from stage 0 for the inc-exc loop
+        for (std::size_t i = 0; i < initial_polygons.size(); i++)
+        {
+          std::cout << "----------------- stage " << i << std::endl;
+          previous_intersections.push_back(std::make_pair(std::vector<std::size_t>(1, i),
+                                                          initial_polygons[i]));
+        }
 
-              std::cout << " with " << init_p << std::endl;
+        // The stage loop
+        for (std::size_t stage = 1; stage < initial_polygons.size(); stage++)
+        {
+          std::cout << "Stage " << stage << std::endl;
 
-              // We want to save the intersection of the previous
-              // polyhedron and the initial polyhedron in one single
-	      // polyhedron.
-              Polygon new_polygon;
-              std::vector<std::size_t> new_keys;
+          std::vector<std::pair<std::vector<std::size_t>,
+                                Polygon> > new_intersections;
 
-              // Loop over all simplices in the initial_polyhedron and
-              // the previous_polyhedron and append the intersection of
-              // these to the new_polyhedron
-              bool any_intersections = false;
-
-              for (const Triangle_2& previous_simplex: previous_polygon.second)
+          // Loop over all intersections from the previous stage
+          for (const std::pair<const std::vector<std::size_t>,
+                               Polygon>& previous_polygon : previous_intersections)
+          {
+            // Loop over all initial polyhedra.
+            for (std::size_t init_p = 0; init_p < initial_polygons.size(); init_p++)
+            {
+              const Polygon& initial_polygon = initial_polygons[init_p];
+              if (init_p < previous_polygon.first[0])
               {
-                for (const Triangle_2& initial_simplex: initial_polygon)
+                std::cout << "  Previous polygon ";
+                for (const std::size_t& i : previous_polygon.first)
+                  std::cout << i;
+
+                std::cout << " with " << init_p << std::endl;
+
+                // We want to save the intersection of the previous
+                // polyhedron and the initial polyhedron in one single
+                // polyhedron.
+                Polygon new_polygon;
+                std::vector<std::size_t> new_keys;
+
+                // Loop over all simplices in the initial_polyhedron and
+                // the previous_polyhedron and append the intersection of
+                // these to the new_polyhedron
+                bool any_intersections = false;
+
+                for (const Triangle_2& previous_simplex: previous_polygon.second)
                 {
-                  // Compute the intersection
-                  Polygon ii = compute_intersection_triangulation(previous_simplex, initial_simplex);
-                  for (const Triangle_2& t : ii)
+                  for (const Triangle_2& initial_simplex: initial_polygon)
                   {
-                    any_intersections = true;
-                    new_polygon.push_back(t);
+                    // Compute the intersection
+                    Polygon ii = compute_intersection_triangulation(previous_simplex, initial_simplex);
+                    for (const Triangle_2& t : ii)
+                    {
+                      any_intersections = true;
+                      new_polygon.push_back(t);
+                    }
                   }
                 }
-              }
 
-              if (any_intersections)
-              {                
-                new_keys.push_back(init_p);
-                new_keys.insert(new_keys.end(),
-                                previous_polygon.first.begin(),
-                                previous_polygon.first.end());
+                if (any_intersections)
+                {
+                  new_keys.push_back(init_p);
+                  new_keys.insert(new_keys.end(),
+                                  previous_polygon.first.begin(),
+                                  previous_polygon.first.end());
 
-                // Save data
-                new_intersections.push_back(std::make_pair(new_keys, new_polygon));
+                  // Save data
+                  new_intersections.push_back(std::make_pair(new_keys, new_polygon));
+                }
               }
             }
           }
+
+          // Add quadrature rule with correct sign
+          const double sign = std::pow(-1, stage);
+          // quadrature_rule overlap_part_qr;
+          cgal_QR overlap_part_qr;
+          for (const std::pair<std::vector<std::size_t>, Polygon>& p : new_intersections)
+          {
+            for (const Triangle_2& t : p.second)
+            {
+              cgal_QR qr = cgal_compute_quadrature_rule(t, sign);
+              overlap_part_qr.insert(overlap_part_qr.end(), qr.begin(), qr.end());
+            }
+          }
+
+          // Add quadrature rule for overlap part
+          overlap_qr_current_cut_cell.push_back(overlap_part_qr);
+
+          previous_intersections = new_intersections;
         }
-
-	// Add quadrature rule with correct sign
-	const double sign = std::pow(-1, stage);
-        quadrature_rule overlap_part_qr;
-        
-	for (const std::pair<std::vector<std::size_t>, Polygon>& p : new_intersections)
-        {
-	  for (const Triangle_2& t : p.second)
-	  {
-            cgal_QR qr = cgal_compute_quadrature_rule(t, sign);
-            qr_current_part.insert(qr_current_part.end(), qr.begin(), qr.end());
-	  }
-        }
-
-        // Add quadrature rule for overlap part
-        overlap_qr.push_back(qr_current_part);
-
-        previous_intersections = new_intersections;
-      }
-    }
-  }
+      } // end if current_cell is cut
+    } // end cut cell iterator
+  } // end part loop
   debug_file.close();
 }
 //------------------------------------------------------------------------------
@@ -447,7 +456,7 @@ void compute_volume_cgal(const MultiMesh& multimesh,
                          std::vector<std::vector<std::pair<CELL_STATUS, double> > >& cells_status)
 {
   std::cout << "Computing reference volume with CGAL" << std::endl;
-  std::vector<std::map<unsigned int, cgal_QR>> qr_rules_overlap;
+  std::vector<std::map<unsigned int, std::vector<cgal_QR>>> qr_rules_overlap;
   compute_quadrature_rules_overlap_cgal(multimesh, qr_rules_overlap);
   
   cells_status.reserve(multimesh.num_parts());
