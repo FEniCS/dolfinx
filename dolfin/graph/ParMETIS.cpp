@@ -116,7 +116,7 @@ void ParMETIS::partition(
   std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
   ParMETISDualGraph& g)
 {
-  Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS)");
+  Timer timer("Compute graph partition (ParMETIS)");
 
   // Options for ParMETIS
   idx_t options[3];
@@ -129,6 +129,7 @@ void ParMETIS::partition(
   dolfin_assert(!g.ubvec.empty());
 
   // Call ParMETIS to partition graph
+  Timer timer1("Call ParMETIS to parition graph");
   const std::size_t num_local_cells = g.eptr.size() - 1;
   std::vector<idx_t> part(num_local_cells);
   dolfin_assert(!part.empty());
@@ -139,6 +140,9 @@ void ParMETIS::partition(
                                  &g.edgecut, part.data(),
                                  &mpi_comm);
   dolfin_assert(err == METIS_OK);
+  timer1.stop();
+
+  Timer timer2("Compute graph halo data (ParMETIS)");
 
   // Work out halo cells for current division of dual graph
   const unsigned int num_processes = MPI::size(mpi_comm);
@@ -236,6 +240,8 @@ void ParMETIS::partition(
       }
     }
   }
+
+  timer2.stop();
 
   // Copy cell partition data
   cell_partition = std::vector<std::size_t>(part.begin(), part.end());

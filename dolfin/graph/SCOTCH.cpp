@@ -203,7 +203,7 @@ void SCOTCH::partition(
   std::vector<std::size_t>& cell_partition,
   std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs)
 {
-  Timer timer("Partition graph (calling SCOTCH)");
+  Timer timer("Partition graph (SCOTCH)");
 
   // C-style array indexing
   const SCOTCH_Num baseval = 0;
@@ -288,6 +288,7 @@ void SCOTCH::partition(
   }
 
   // Build SCOTCH distributed graph
+  Timer timer1("Build SCOTCH distributed graph");
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
                               &vertloctab[0], NULL, veloloctab, NULL,
                               edgelocnbr, edgelocnbr,
@@ -297,6 +298,7 @@ void SCOTCH::partition(
                  "partition mesh using SCOTCH",
                  "Error building SCOTCH graph");
   }
+  timer1.stop();
 
   // Check graph data for consistency
   #ifdef DEBUG
@@ -332,12 +334,14 @@ void SCOTCH::partition(
   SCOTCH_randomReset();
 
   // Partition graph
+  Timer timer2("Call SCOTCH partitioner");
   if (SCOTCH_dgraphPart(&dgrafdat, npart, &strat, _cell_partition.data()))
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
                  "Error during partitioning");
   }
+  timer2.stop();
 
   // Exchange halo with cell_partition data for ghosts
   // FIXME: check MPI type compatibility with SCOTCH_Num. Getting this
@@ -346,7 +350,7 @@ void SCOTCH::partition(
   MPI_Datatype MPI_SCOTCH_Num;
   if (sizeof(SCOTCH_Num) == 4)
     MPI_SCOTCH_Num = MPI_INT;
-  else if (sizeof(SCOTCH_Num)==8)
+  else if (sizeof(SCOTCH_Num) == 8)
     MPI_SCOTCH_Num = MPI_LONG_LONG_INT;
 
   // Double check size is correct
@@ -354,6 +358,7 @@ void SCOTCH::partition(
   MPI_Type_size(MPI_SCOTCH_Num, &tsize);
   dolfin_assert(tsize == sizeof(SCOTCH_Num));
 
+  Timer timer3("Get SCOTCH halo data");
   if (SCOTCH_dgraphHalo(&dgrafdat, (void *)_cell_partition.data(),
                         MPI_SCOTCH_Num))
   {
@@ -361,16 +366,20 @@ void SCOTCH::partition(
                  "partition mesh using SCOTCH",
                  "Error during halo exchange");
   }
+  timer3.stop();
 
   // Get SCOTCH's locally indexed graph
+  Timer timer4("Get SCOTCH graph data");
   SCOTCH_Num* edge_ghost_tab;
   SCOTCH_dgraphData(&dgrafdat,
                     NULL, NULL, NULL, NULL, NULL, NULL,
                     NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                     &edge_ghost_tab, NULL, (MPI_Comm *)&mpi_comm);
+  timer4.stop();
 
   // Iterate through SCOTCH's local compact graph to find partition
   // boundaries and save to map
+  Timer timer5("Extract partition boundaries from SCOTCH graph");
   for(SCOTCH_Num i = 0; i < vertlocnbr; ++i)
   {
     const std::size_t proc_this =  _cell_partition[i];
@@ -394,6 +403,7 @@ void SCOTCH::partition(
       }
     }
   }
+  timer5.stop();
 
   // Clean up SCOTCH objects
   SCOTCH_dgraphExit(&dgrafdat);

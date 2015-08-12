@@ -41,7 +41,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
 {
-  Timer timer("Build mesh number mesh entities");
+  Timer timer("Number distributed mesh entities");
 
   // Return if global entity indices have already been calculated
   if (mesh.topology().have_global_indices(d))
@@ -96,7 +96,7 @@ std::size_t DistributedMeshTools::number_entities(
   // global numbering, e.g. when computing mesh entity numbering for
   // problems with periodic boundary conditions.
 
-  Timer timer("PARALLEL x: Number mesh entities");
+  Timer timer("Number mesh entities for distributed mesh");
 
   // Check that we're not re-numbering vertices (these are fixed at
   // mesh construction)
@@ -163,7 +163,7 @@ std::size_t DistributedMeshTools::number_entities(
 
   // Get shared vertices (local index, [sharing processes])
   const std::map<unsigned int, std::set<unsigned int>>& shared_vertices_local
-                            = mesh.topology().shared_entities(0);
+    = mesh.topology().shared_entities(0);
 
   // Compute ownership of entities of dimension d ([entity vertices], data):
   //  [0]: owned and shared (will be numbered by this process, and number
@@ -183,7 +183,7 @@ std::size_t DistributedMeshTools::number_entities(
 
   // Number of entities 'owned' by this process
   const std::size_t num_local_entities = owned_entities.size()
-                                       + owned_shared_entities.size();
+    + owned_shared_entities.size();
 
   // Compute global number of entities and local process offset
   const std::pair<std::size_t, std::size_t> num_global_entities
@@ -195,7 +195,8 @@ std::size_t DistributedMeshTools::number_entities(
 
   // Prepare list of global entity numbers. Check later that nothing
   // is equal to std::numeric_limits<std::size_t>::max()
-  global_entity_indices = std::vector<std::size_t>(mesh.size(d),
+  global_entity_indices
+    = std::vector<std::size_t>(mesh.size(d),
                                std::numeric_limits<std::size_t>::max());
 
   std::map<Entity, EntityData>::const_iterator it;

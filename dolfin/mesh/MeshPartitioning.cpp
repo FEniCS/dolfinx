@@ -187,7 +187,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
      const std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs)
 {
   // Distribute cells
-  Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
+  Timer timer("Distribute mesh (cells and vertices)");
 
   // Structure to hold received data about local mesh
   LocalMeshData new_mesh_data(mesh.mpi_comm());
@@ -1000,7 +1000,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   const std::map<std::size_t, std::size_t>& vertex_global_to_local,
   const LocalMeshData& new_mesh_data)
 {
-  Timer timer("PARALLEL 3: Build mesh (from local mesh data)");
+  Timer timer("Build local part of distributed mesh (from local mesh data)");
 
   const std::vector<std::size_t>& global_cell_indices
     = new_mesh_data.global_cell_indices;
