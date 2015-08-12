@@ -92,7 +92,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
                                 std::vector<int>& inverse_permutation,
                                 std::string scotch_strategy)
 {
-  Timer timer("SCOTCH graph ordering");
+  Timer timer("Compute SCOTCH graph re-ordering");
 
   // Number of local graph vertices (cells)
   const SCOTCH_Num vertnbr = graph.size();
@@ -132,6 +132,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
   }
 
   // Build SCOTCH graph
+  Timer timer1("SCOTCH: call SCOTCH_graphBuild");
   if (SCOTCH_graphBuild(&scotch_graph, baseval,
                         vertnbr, &verttab[0], &verttab[1], NULL, NULL,
                         edgenbr, &edgetab[0], NULL))
@@ -140,6 +141,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
                  "partition mesh using SCOTCH",
                  "Error building SCOTCH graph");
   }
+  timer1.stop();
 
   // Check graph data for consistency
   /*
@@ -172,6 +174,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
   SCOTCH_randomReset();
 
   // Compute re-ordering
+  Timer timer2("SCOTCH: call SCOTCH_graphOrder");
   if (SCOTCH_graphOrder(&scotch_graph, &strat, permutation_indices.data(),
                         inverse_permutation_indices.data(), NULL, NULL, NULL))
   {
@@ -179,6 +182,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
                  "re-order graph using SCOTCH",
                  "Error during re-ordering");
   }
+  timer2.stop();
 
   // Clean up SCOTCH objects
   SCOTCH_graphExit(&scotch_graph);
@@ -203,7 +207,7 @@ void SCOTCH::partition(
   std::vector<std::size_t>& cell_partition,
   std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs)
 {
-  Timer timer("Partition graph (SCOTCH)");
+  Timer timer("Compute graph partition (SCOTCH)");
 
   // C-style array indexing
   const SCOTCH_Num baseval = 0;
@@ -288,7 +292,7 @@ void SCOTCH::partition(
   }
 
   // Build SCOTCH distributed graph
-  Timer timer1("Build SCOTCH distributed graph");
+  Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
                               &vertloctab[0], NULL, veloloctab, NULL,
                               edgelocnbr, edgelocnbr,
@@ -337,7 +341,7 @@ void SCOTCH::partition(
   SCOTCH_randomReset();
 
   // Partition graph
-  Timer timer2("Call SCOTCH partitioner");
+  Timer timer2("SCOTCH: call SCOTCH_dgraphPart");
   if (SCOTCH_dgraphPart(&dgrafdat, npart, &strat, _cell_partition.data()))
   {
     dolfin_error("SCOTCH.cpp",
@@ -361,7 +365,7 @@ void SCOTCH::partition(
   MPI_Type_size(MPI_SCOTCH_Num, &tsize);
   dolfin_assert(tsize == sizeof(SCOTCH_Num));
 
-  Timer timer3("Get SCOTCH halo data");
+  Timer timer3("SCOTCH: call SCOTCH_dgraphHalo");
   if (SCOTCH_dgraphHalo(&dgrafdat, (void *)_cell_partition.data(),
                         MPI_SCOTCH_Num))
   {
