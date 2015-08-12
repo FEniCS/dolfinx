@@ -108,6 +108,8 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
                                               const LocalMeshData& local_data)
 {
+  Timer timer("Build distributed mesh from local mesh data");
+
   // Compute cell partitioning or use partitioning provided in local_data
   std::vector<std::size_t> cell_partition;
   std::map<std::size_t, dolfin::Set<unsigned int>> ghost_procs;
@@ -291,7 +293,7 @@ void MeshPartitioning::reorder_cells_gps(
   std::map<unsigned int, std::set<unsigned int>>& shared_cells,
   LocalMeshData& new_mesh_data)
 {
-  Timer t("Reorder cells GPS");
+  Timer timer("Reorder cells using GPS ordering");
 
   // Make dual graph from vertex indices, using GraphBuilder
   // FIXME: this should be reused later to add the facet-cell topology
@@ -364,7 +366,7 @@ void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
      std::map<std::size_t, std::size_t>& vertex_global_to_local,
      LocalMeshData& new_mesh_data)
 {
-  Timer t("Reorder vertices GPS");
+  Timer timer("Reorder vertices using GPS ordering");
 
   const unsigned int num_cell_vertices
     = new_mesh_data.num_vertices_per_cell;
@@ -834,7 +836,7 @@ void MeshPartitioning::distribute_vertices(
   // then distributed so that each process learns where it needs to
   // send its vertices.
 
-  Timer t("Distribute vertices");
+  Timer timer("Distribute vertices");
 
   std::vector<std::size_t>& vertex_indices
     = new_mesh_data.vertex_indices;

@@ -21,13 +21,13 @@
 // First added:  2010-02-10
 // Last changed: 2014-01-09
 
-#include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
-#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/mesh/LocalMeshData.h>
-#include "ParMETIS.h"
+#include <dolfin/parameter/GlobalParameters.h>
 #include "GraphBuilder.h"
+#include "ParMETIS.h"
 
 #ifdef HAS_PARMETIS
 #include <parmetis.h>
@@ -71,7 +71,6 @@ namespace dolfin
     idx_t* elmwgt;
     idx_t wgtflag;
     idx_t edgecut;
-
   };
 }
 //-----------------------------------------------------------------------------
@@ -129,7 +128,7 @@ void ParMETIS::partition(
   dolfin_assert(!g.ubvec.empty());
 
   // Call ParMETIS to partition graph
-  Timer timer1("Call ParMETIS to parition graph");
+  Timer timer1("ParMETIS: call ParMETIS_V3_PartKway");
   const std::size_t num_local_cells = g.eptr.size() - 1;
   std::vector<idx_t> part(num_local_cells);
   dolfin_assert(!part.empty());
@@ -251,7 +250,7 @@ void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
                                     std::vector<std::size_t>& cell_partition,
                                     ParMETISDualGraph& g)
 {
-  Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS Adaptive Repartition)");
+  Timer timer("Compute graph partition (ParMETIS Adaptive Repartition)");
 
   // Options for ParMETIS
   idx_t options[4];
@@ -268,6 +267,7 @@ void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
   dolfin_assert(!g.ubvec.empty());
 
   // Call ParMETIS to partition graph
+  Timer timer1("ParMETIS: call ParMETIS_V3_AdaptiveRepart");
   const double itr = parameters["ParMETIS_repartitioning_weight"];
   real_t _itr = itr;
   std::vector<idx_t> part(g.eptr.size() - 1);
@@ -280,6 +280,7 @@ void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
                                        options, &g.edgecut, part.data(),
                                        &mpi_comm);
   dolfin_assert(err == METIS_OK);
+  timer1.stop();
 
   // Copy cell partition data
   cell_partition = std::vector<std::size_t>(part.begin(), part.end());
@@ -289,7 +290,7 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
                       std::vector<std::size_t>& cell_partition,
                       ParMETISDualGraph& g)
 {
-  Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS Refine)");
+  Timer timer("Compute graph partition (ParMETIS Refine)");
 
   // Get some MPI data
   const std::size_t process_number = MPI::rank(mpi_comm);
@@ -316,12 +317,14 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
   dolfin_assert(!part.empty());
 
   // Call ParMETIS to partition graph
+  Timer timer1("ParMETIS: call ParMETIS_V3_RefineKway");
   int err = ParMETIS_V3_RefineKway(g.elmdist.data(), g.xadj, g.adjncy, g.elmwgt,
                                    NULL, &g.wgtflag, &g.numflag, &g.ncon,
                                    &g.nparts,
                                    g.tpwgts.data(), g.ubvec.data(), options,
                                    &g.edgecut, part.data(), &mpi_comm);
   dolfin_assert(err == METIS_OK);
+  timer1.stop();
 
   // Copy cell partition data
   cell_partition = std::vector<std::size_t>(part.begin(), part.end());
@@ -330,6 +333,8 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
 ParMETISDualGraph::ParMETISDualGraph(MPI_Comm mpi_comm,
                                      const LocalMeshData& mesh_data)
 {
+  Timer timer("Build mesh dual graph (ParMETIS)");
+
   // Get number of processes and process number
   const std::size_t num_processes = MPI::size(mpi_comm);
 
@@ -378,12 +383,13 @@ ParMETISDualGraph::ParMETISDualGraph(MPI_Comm mpi_comm,
   dolfin_assert(!eind.empty());
 
   // Could use GraphBuilder::compute_dual_graph() instead
+  Timer timer1("ParMETIS: call ParMETIS_V3_Mesh2Dual");
   int err = ParMETIS_V3_Mesh2Dual(elmdist.data(), eptr.data(), eind.data(),
                                   &numflag, &ncommonnodes,
                                   &xadj, &adjncy,
                                   &mpi_comm);
   dolfin_assert(err == METIS_OK);
-
+  timer1.stop();
 
   // Number of partitions (one for each process)
   nparts = num_processes;
@@ -407,12 +413,12 @@ ParMETISDualGraph::~ParMETISDualGraph()
 }
 //-----------------------------------------------------------------------------
 #else
-void ParMETIS::compute_partition(
-  const MPI_Comm mpi_comm,
-  std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
-  const LocalMeshData& data,
-  std::string mode)
+void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
+                                 std::vector<std::size_t>& cell_partition,
+                                 std::map<std::size_t,
+                                 dolfin::Set<unsigned int>>& ghost_procs,
+                                 const LocalMeshData& data,
+                                 std::string mode)
 {
   dolfin_error("ParMETIS.cpp",
                "compute mesh partitioning using ParMETIS",

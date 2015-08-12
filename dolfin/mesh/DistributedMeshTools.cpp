@@ -90,13 +90,13 @@ std::size_t DistributedMeshTools::number_entities(
   std::map<unsigned int, std::set<unsigned int>>& shared_entities,
   std::size_t d)
 {
-  // Developer note: This function should use global_vertex_indices for
-  // the global mesh indices and *not* access these through the mesh. In
-  // some cases special numbering is passed in which differs from mesh
-  // global numbering, e.g. when computing mesh entity numbering for
-  // problems with periodic boundary conditions.
+  // Developer note: This function should use global_vertex_indices
+  // for the global mesh indices and *not* access these through the
+  // mesh. In some cases special numbering is passed in which differs
+  // from mesh global numbering, e.g. when computing mesh entity
+  // numbering for problems with periodic boundary conditions.
 
-  Timer timer("Number mesh entities for distributed mesh");
+  Timer timer("Number mesh entities for distributed mesh (for specified vertex ids)");
 
   // Check that we're not re-numbering vertices (these are fixed at
   // mesh construction)
@@ -361,6 +361,8 @@ DistributedMeshTools::locate_off_process_entities(const std::vector<std::size_t>
                                                   std::size_t dim,
                                                   const Mesh& mesh)
 {
+  Timer timer("Locate off-process entities");
+
   if (dim == 0)
   {
     warning("DistributedMeshTools::host_processes has not been tested for vertices.");
@@ -508,6 +510,8 @@ std::unordered_map<unsigned int,
                    std::vector<std::pair<unsigned int, unsigned int>>>
   DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
 {
+  Timer timer("Computed shared mesh entities");
+
   // MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
   const unsigned int comm_size = MPI::size(mpi_comm);
@@ -656,6 +660,8 @@ void DistributedMeshTools::compute_entity_ownership(
   std::vector<std::size_t>& owned_entities,
   std::array<std::map<Entity, EntityData>, 2>& shared_entities)
 {
+  Timer timer("Compute mesh entity ownership");
+
   // Build global-to-local indices map for shared vertices
   std::map<std::size_t, std::set<unsigned int>> shared_vertices;
   std::map<unsigned int, std::set<unsigned int>>::const_iterator v;
@@ -848,8 +854,8 @@ void DistributedMeshTools::compute_final_entity_ownership(
       for (std::size_t j = 0; j < entity_size; ++j)
         entity.push_back(received_common_entity_values[p][i++]);
 
-      // Check if received really is an entity on this process (in which
-      // case it will be in owned or unowned entities)
+      // Check if received really is an entity on this process (in
+      // which case it will be in owned or unowned entities)
       bool is_entity = false;
       if (unowned_shared_entities.find(entity) != unowned_shared_entities.end()
           || owned_shared_entities.find(entity) != owned_shared_entities.end())
@@ -866,7 +872,8 @@ void DistributedMeshTools::compute_final_entity_ownership(
     }
   }
 
-  // Send data back (list of requested entities that are really entities)
+  // Send data back (list of requested entities that are really
+  // entities)
   std::vector<std::vector<std::size_t>> received_is_entity_values;
   MPI::all_to_all(mpi_comm, send_is_entity_values, received_is_entity_values);
 
@@ -1062,7 +1069,8 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
 
       if (f->is_ghost() && n_cells == 1)
       {
-        // Singly attached ghost facet - check with owner of attached cell
+        // Singly attached ghost facet - check with owner of attached
+        // cell
         const Cell c(mesh, f->entities(D)[0]);
         dolfin_assert(c.is_ghost());
         send_facet[c.owner()].push_back(f->global_index());
@@ -1134,7 +1142,8 @@ void DistributedMeshTools::reorder_values_by_global_indices(const Mesh& mesh,
   std::set<unsigned int> non_local_vertices;
   if (mesh.topology().size(tdim) == mesh.topology().ghost_offset(tdim))
   {
-    // No ghost cells - exclude shared entities which are on lower rank processes
+    // No ghost cells - exclude shared entities which are on lower
+    // rank processes
     for (auto sh = shared_vertices.begin(); sh != shared_vertices.end(); ++sh)
     {
       const unsigned int lowest_proc = *(sh->second.begin());
@@ -1144,8 +1153,9 @@ void DistributedMeshTools::reorder_values_by_global_indices(const Mesh& mesh,
   }
   else
   {
-    // Iterate through ghost cells, adding non-ghost vertices which are
-    // in lower rank process cells to a set for exclusion from output
+    // Iterate through ghost cells, adding non-ghost vertices which
+    // are in lower rank process cells to a set for exclusion from
+    // output
     for (CellIterator c(mesh, "ghost"); !c.end(); ++c)
     {
       const unsigned int cell_owner = c->owner();
