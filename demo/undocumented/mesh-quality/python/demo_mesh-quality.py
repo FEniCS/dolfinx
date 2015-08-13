@@ -33,7 +33,7 @@ print('Maximal radius ratio:', qmax)
 
 # Show histogram using matplotlib
 hist = MeshQuality.radius_ratio_matplotlib_histogram(mesh)
-hist = hist.replace('import pylab', 'import matplotlib\n    matplotlib.use(\'Agg\')\n    import pylab')
+hist = hist.replace('import pylab', 'import matplotlib\n    matplotlib.use(\'Agg\')\n    import matplotlib.pylab as pylab')
 hist = hist.replace('pylab.show()', 'pylab.savefig("mesh-quality.pdf")')
 print(hist)
 exec(hist)
