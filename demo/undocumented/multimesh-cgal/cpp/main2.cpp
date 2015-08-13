@@ -434,22 +434,20 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
           // Add quadrature rule with correct sign
           const double sign = std::pow(-1, stage);
           // quadrature_rule overlap_part_qr;
-          cgal_QR& qr_cutting_cell = overlap_qr_current_cut_cell[init_p];
+          cgal_QR qr_current_stage;
           for (const std::pair<std::vector<std::size_t>, Polygon>& p : new_intersections)
           {
             for (const Triangle_2& t : p.second)
             {
               cgal_QR qr = cgal_compute_quadrature_rule(t, sign);
-              qr_cutting_cell.insert(qr_cutting_cell.end(), qr.begin(), qr.end());
+              qr_current_stage.insert(qr_current_stage.end(), qr.begin(), qr.end());
             }
           }
 
           // Add quadrature rule for overlap part
-          //overlap_qr_current_cut_cell.push_back(overlap_part_qr);
-
+          overlap_qr_current_cut_cell.push_back(qr_current_stage);
           previous_intersections = new_intersections;
         }
-        qr_overlap_current_part[cut_it->index()] = overlap_qr_current_cut_cell;
       } // end if current_cell is cut
     } // end cut cell iterator
   } // end part loop
