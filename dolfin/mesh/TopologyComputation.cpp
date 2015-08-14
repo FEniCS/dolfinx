@@ -207,7 +207,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
     return;
 
   // Start timer
-  Timer timer("Bompute connectivity " + to_string(d0) + "-" + to_string(d1));
+  Timer timer("Compute connectivity " + to_string(d0) + "-" + to_string(d1));
 
   // Decide how to compute the connectivity
   if (d0 == d1)
