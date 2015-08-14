@@ -315,18 +315,15 @@ void SCOTCH::partition(
   // Number of partitions (set equal to number of processes)
   const SCOTCH_Num npart = num_processes;
 
-  // Partitioning strategy
+  // Initialise partitioning strategy
   SCOTCH_Strat strat;
   SCOTCH_stratInit(&strat);
 
-  // Set strategy (SCOTCH uses very cryptic strings for this, and they
-  // can change between versions)
-  std::string strategy = "r{sep=m{asc=b{width=3,bnd=(d{pass=40,dif=1,rem=0,type=b}|)q{strat=f{move=80,pass=-1,bal=0.01,type=b}}x{sbbt=5,bal=0.05},org=q{strat=f{move=80,pass=-1,bal=0.01,type=b}}x{sbbt=5,bal=0.05}},low=q{strat=(m{asc=b{bnd=(d{pass=40,type=b}|)f{move=80,pass=-1,bal=0.05,type=b},org=f{move=80,pass=-1,bal=0.05,type=b},width=3},low=h{pass=10}f{move=80,pass=-1,bal=0.05,type=b},vert=80,rat=0.8}|m{asc=b{bnd=(d{pass=40,type=b}|)f{move=80,pass=-1,bal=0.05,type=b},org=f{move=80,pass=-1,bal=0.05,type=b},width=3},low=h{pass=10}f{move=80,pass=-1,bal=0.05,type=b},vert=80,rat=0.8})},seq=q{strat=(m{asc=b{bnd=(d{pass=40,type=b}|)f{move=80,pass=-1,bal=0.05,type=b},org=f{move=80,pass=-1,bal=0.05,type=b},width=3},low=h{pass=10}f{move=80,pass=-1,bal=0.05,type=b},vert=80,rat=0.8}|m{asc=b{bnd=(d{pass=40,type=b}|)f{move=80,pass=-1,bal=0.05,type=b},org=f{move=80,pass=-1,bal=0.05,type=b},width=3},low=h{pass=10}f{move=80,pass=-1,bal=0.05,type=b},vert=80,rat=0.8})},pass=5,vert=12000,dvert=1000,fold=d,rat=0.8},seq=r{job=t,bal=0.05,map=t,poli=S,sep=(m{asc=b{bnd=(d{pass=40,type=b}|)f{move=80,pass=-1,bal=0.05,type=b},org=f{move=80,pass=-1,bal=0.05,type=b},width=3},low=h{pass=10}f{move=80,pass=-1,bal=0.05,type=b},vert=80,rat=0.8}|m{asc=b{bnd=(d{pass=40,type=b}|)f{move=80,pass=-1,bal=0.05,type=b},org=f{move=80,pass=-1,bal=0.05,type=b},width=3},low=h{pass=10}f{move=80,pass=-1,bal=0.05,type=b},vert=80,rat=0.8})},bal=0.05}";
-
-// Reference string:
-//                       "r{sep=m{asc=b{width=3,bnd=(d{pass=40,dif=1,rem=0,type=b}|)q{strat=f{move=80,pass=-1,bal=0.01,type=b}}x{sbbt=5,bal=0.05},org=q{strat=f{move=80,pass=-1,bal=0.01,type=b}}x{sbbt=5,bal=0.05}},low=q{strat=(m{asc=b{bnd=(d{pass=40,type=b}|)f{move=80,pass=-1,bal=0.05,type=b},org=f{move=80,pass=-1,bal=0.05,type=b},width=3},low=h{pass=10}f{move=80,pass=-1,bal=0.05,type=b},vert=80,rat=0.8}|m{asc=b{bnd=(d{pass=40,type=b}|)f{move=80,pass=-1,bal=0.05,type=b},org=f{move=80,pass=-1,bal=0.05,type=b},width=3},low=h{pass=10}f{move=80,pass=-1,bal=0.05,type=b},vert=80,rat=0.8})},seq=q{strat=(m{asc=b{bnd=(d{pass=40,type=b}|)f{move=80,pass=-1,bal=0.05,type=b},org=f{move=80,pass=-1,bal=0.05,type=b},width=3},low=h{pass=10}f{move=80,pass=-1,bal=0.05,type=b},vert=80,rat=0.8}|m{asc=b{bnd=(d{pass=40,type=b}|)f{move=80,pass=-1,bal=0.05,type=b},org=f{move=80,pass=-1,bal=0.05,type=b},width=3},low=h{pass=10}f{move=80,pass=-1,bal=0.05,type=b},vert=80,rat=0.8})},pass=5,vert=12000,dvert=1000,fold=d,rat=0.8},seq=r{job=t,bal=0.05,map=t,poli=S,sep=(m{asc=b{bnd=(d{pass=40,type=b}|)f{move=80,pass=-1,bal=0.05,type=b},org=f{move=80,pass=-1,bal=0.05,type=b},width=3},low=h{pass=10}f{move=80,pass=-1,bal=0.05,type=b},vert=80,rat=0.8}|m{asc=b{bnd=(d{pass=40,type=b}|)f{move=80,pass=-1,bal=0.05,type=b},org=f{move=80,pass=-1,bal=0.05,type=b},width=3},low=h{pass=10}f{move=80,pass=-1,bal=0.05,type=b},vert=80,rat=0.8})},bal=0.05}";
-
-  SCOTCH_stratDgraphMap(&strat, strategy.c_str());
+  // Set SCOTCH strategy
+  //SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATDEFAULT, npart, npart, 0.05);
+  SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATSPEED, npart, npart, 0.05);
+  //SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATQUALITY, npart, npart, 0.05);
+  //SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATSCALABILITY, npart, npart, 0.15);
 
   // Resize vector to hold cell partition indices with enough extra
   // space for ghost cell partition information too When there are no
@@ -348,6 +345,17 @@ void SCOTCH::partition(
                  "Error during partitioning");
   }
   timer2.stop();
+
+  /*
+  // Write SCOTCH strategy to file
+  if (dolfin::MPI::rank(MPI_COMM_WORLD) == 0)
+  {
+    FILE* fp;
+    fp = fopen("test.txt", "w");
+    SCOTCH_stratSave(&strat, fp);
+    fclose(fp);
+  }
+  */
 
   // Exchange halo with cell_partition data for ghosts
   // FIXME: check MPI type compatibility with SCOTCH_Num. Getting this
@@ -398,8 +406,8 @@ void SCOTCH::partition(
         if (map_it == ghost_procs.end())
         {
           dolfin::Set<unsigned int> sharing_processes;
-          // Owning process goes first into dolfin::Set
-          // (unordered set) so will always be first.
+          // Owning process goes first into dolfin::Set (unordered
+          // set) so will always be first.
           sharing_processes.insert(proc_this);
           sharing_processes.insert(proc_other);
           ghost_procs.insert(std::make_pair(i, sharing_processes));
