@@ -506,7 +506,7 @@ void compute_volume_cgal(const MultiMesh& multimesh,
             status_current_cell.second -= qr_point_and_weight.second;
           }
         }
-        status_current_cell.first = COVERED;
+        status_current_cell.first = CUT;
       }
     }
   }
