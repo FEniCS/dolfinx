@@ -7,25 +7,19 @@ import pytest
 from dolfin_utils.test import set_parameters_fixture
 from ufl.classes import CellOrientation, CellNormal, CellCoordinate, CellOrigin, Jacobian, JacobianInverse, JacobianDeterminant
 
-# FIXME: Use expr.domain() to get mesh in project()
+
+# This was for debugging, don't enable this permanently here in tests
+#parameters["reorder_dofs_serial"] = False
 
 
-# FIXME: Don't include this when checking in
-print "WARNING: Setting instand dir, remove after debugging."
-import os
-os.environ["INSTANT_CACHE_DIR"] = os.path.abspath("instant-cache-local")
-os.environ["INSTANT_ERROR_DIR"] = os.path.abspath("instant-error-local")
-
-
-# FIXME: Don't enable this permanently here in tests
-parameters["reorder_dofs_serial"] = False
-
-
-
-#any_representation = set_parameters_fixture("form_compiler.representation", ["quadrature"])
-any_representation = set_parameters_fixture("form_compiler.representation", ["quadrature", "uflacs"])
-uflacs_representation_only = set_parameters_fixture("form_compiler.representation", ["uflacs"])
-
+# Hack to skip uflacs parameter if not installed. There's probably a cleaner way to do this with pytest.
+try:
+    import uflacs
+    _uflacs = ["uflacs"]
+except:
+    _uflacs = []
+any_representation = set_parameters_fixture("form_compiler.representation", ["quadrature"] + _uflacs)
+uflacs_representation_only = set_parameters_fixture("form_compiler.representation", _uflacs)
 
 
 def create_mesh(vertices, cells, cellname="simplex"):
