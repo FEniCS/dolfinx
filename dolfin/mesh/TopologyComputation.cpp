@@ -68,6 +68,11 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
                  "Connectivity for topological dimension %d exists but entities are missing", dim);
   }
 
+  // Optimisation for common case where facets lie between two cells
+  bool erase_visited_facets = false;
+  if (mesh.geometry().dim() == topology.dim() and dim == topology.dim() - 1)
+    erase_visited_facets = true;
+
   // Start timer
   Timer timer("Compute entities dim = " + to_string(dim));
 
@@ -80,13 +85,12 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   boost::multi_array<unsigned int, 2> e_vertices(boost::extents[m][n]);
 
   // List of entity e indices connected to cell
-  std::vector<std::vector<unsigned int>> connectivity_ce(mesh.num_cells());
+  std::vector<std::size_t> connectivity_ce;
+  connectivity_ce.reserve(mesh.num_cells()*m);
 
   // List of vertex indices connected to entity e
-  std::vector<boost::multi_array<unsigned int , 1>> connectivity_ev;
+  std::vector<boost::multi_array<unsigned int, 1>> connectivity_ev;
 
-  std::size_t current_entity = 0;
-  std::size_t max_ce_connections = 1;
   boost::unordered_map<std::vector<unsigned int>, unsigned int>
     evertices_to_index;
 
@@ -100,31 +104,28 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   evertices_to_index.reserve(max_elements);
   #endif
 
-  const std::size_t tdim = mesh.topology().dim();
+  unsigned int current_entity = 0;
   unsigned int num_regular_entities = 0;
 
+  // Reserve space for vector of vertex indices for each entity
+  std::vector<unsigned int> evec(n);
+
   // Loop over cells
-  for (MeshEntityIterator c(mesh, tdim, "all"); !c.end(); ++c)
+  for (CellIterator c(mesh, "all"); !c.end(); ++c)
   {
-    // Cell index
-    const std::size_t cell_index = c->index();
-
-    // Reserve space to reduce dynamic allocations
-    connectivity_ce[cell_index].reserve(max_ce_connections);
-
     // Get vertices from cell
     const unsigned int* vertices = c->entities(0);
     dolfin_assert(vertices);
 
-    // Create entities
+    // Create entities from vertices
     cell_type.create_entities(e_vertices, dim, vertices);
 
     // Iterate over the given list of entities
-    for (auto entity = e_vertices.begin(); entity != e_vertices.end(); ++entity)
+    for (auto const &entity : e_vertices)
     {
       // Sort entities (to use as map key)
-      std::vector<unsigned int> evec(entity->begin(), entity->end());
-      std::sort(evec.begin(), evec.end());
+      std::partial_sort_copy(entity.begin(), entity.end(),
+                             evec.begin(), evec.end());
 
       // Insert into map
       auto it = evertices_to_index.insert({evec, current_entity});
@@ -133,22 +134,23 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
       std::size_t e_index = it.first->second;
 
       // Add entity index to cell - e connectivity
-      connectivity_ce[cell_index].push_back(e_index);
+      connectivity_ce.push_back(e_index);
 
       // If new key was inserted, increment entity counter
       if (it.second)
       {
         // Add list of new entity vertices
-        connectivity_ev.push_back(*entity);
-
-        // Update max vector size (used to reserve space for performance);
-        max_ce_connections = std::max(max_ce_connections,
-                                      connectivity_ce[cell_index].size());
+        connectivity_ev.push_back(entity);
 
         // Increase counter
         ++current_entity;
         if (!c->is_ghost())
           num_regular_entities = current_entity;
+      }
+      else
+      {
+        if (erase_visited_facets) // reduce map size for efficiency
+          evertices_to_index.erase(it.first);
       }
     }
   }
@@ -160,7 +162,14 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   topology.init_ghost(dim, num_regular_entities);
 
   // Copy connectivity data into static MeshTopology data structures
-  ce.set(connectivity_ce);
+  std::size_t* connectivity_ce_ptr = connectivity_ce.data();
+  ce.init(mesh.num_cells(), m);
+  for (unsigned int i = 0; i != mesh.num_cells(); ++i)
+  {
+    ce.set(i, connectivity_ce_ptr);
+    connectivity_ce_ptr += m;
+  }
+
   ev.set(connectivity_ev);
 
   return current_entity;
