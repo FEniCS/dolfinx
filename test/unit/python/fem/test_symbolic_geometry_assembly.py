@@ -4,7 +4,8 @@ import ufl
 import numpy
 import sys
 import pytest
-from dolfin_utils.test import set_parameters_fixture
+from dolfin_utils.test import set_parameters_fixture, skip_in_parallel
+
 from ufl.classes import CellOrientation, CellNormal, CellCoordinate, CellOrigin, Jacobian, JacobianInverse, JacobianDeterminant
 
 
@@ -201,6 +202,7 @@ def square3d(request):
 
     return mesh
 
+@skip_in_parallel
 def test_line_meshes(line1d, line2d, line3d, rline1d, rline2d, rline3d):#, uflacs_representation_only):
     "Check some properties of the meshes created for these tests."
     assert line1d.geometry().dim() == 1
@@ -210,6 +212,7 @@ def test_line_meshes(line1d, line2d, line3d, rline1d, rline2d, rline3d):#, uflac
     assert line2d.topology().dim() == 1
     assert line3d.topology().dim() == 1
 
+@skip_in_parallel
 def test_write_line_meshes_to_files(line1d, line2d, line3d, rline1d, rline2d, rline3d, uflacs_representation_only):
     # Enable to write meshes to file for inspection (plot doesn't work for 1d in 2d/3d)
     # CellNormal is only supported by uflacs
@@ -223,6 +226,7 @@ def test_write_line_meshes_to_files(line1d, line2d, line3d, rline1d, rline2d, rl
         File("line2dnormal.xdmf") << project(CellNormal(line2d), VectorFunctionSpace(line2d, "DG", 0))
         File("rline2dnormal.xdmf") << project(CellNormal(rline2d), VectorFunctionSpace(rline2d, "DG", 0))
 
+@skip_in_parallel
 @pytest.mark.parametrize("mesh", [
     line1d(None),
     line2d(None),
@@ -312,6 +316,7 @@ def test_manifold_line_geometry(mesh, uflacs_representation_only):
             assert round(assemble(up[2]*dx(1)), 7) > 0.0
         mf[i] = 0 # unmark this cell
 
+@skip_in_parallel
 def test_manifold_area(square3d, any_representation):
     "Integrate literal expressions over manifold cells, no function spaces involved."
     mesh = square3d
@@ -322,6 +327,7 @@ def test_manifold_area(square3d, any_representation):
     assert round(assemble(1.0*dx(mesh)) - 1.0*area, 7) == 0.0
     assert round(assemble(3.0*dx(mesh)) - 3.0*area, 7) == 0.0
 
+@skip_in_parallel
 def test_manifold_dg0_functions(square3d, any_representation):
     mesh = square3d
     area = sqrt(3.0) # known area of mesh
@@ -369,6 +375,7 @@ def test_manifold_dg0_functions(square3d, any_representation):
     for point in points:
         assert round(sum( (v0(point) - numpy.asarray(v0v))**2 ), 7) == 0.0
 
+@skip_in_parallel
 def test_manifold_cg1_functions(square3d, any_representation):
     mesh = square3d
     area = sqrt(3.0) # known area of mesh
@@ -408,6 +415,7 @@ def test_manifold_cg1_functions(square3d, any_representation):
     assert round(assemble(v1[1]*dx(1)) - mp[1][1]) == 0.0
     assert round(assemble(v1[2]*dx(1)) - mp[1][2]) == 0.0
 
+@skip_in_parallel
 def test_manifold_coordinate_projection(square3d, any_representation):
     mesh = square3d
 
@@ -428,6 +436,7 @@ def test_manifold_coordinate_projection(square3d, any_representation):
     assert round(assemble((v1[1]-x[1])**2*dx(1)), 7) == 0.0
     assert round(assemble((v1[2]-x[2])**2*dx(1)), 7) == 0.0
 
+@skip_in_parallel
 def test_manifold_point_evaluation(square3d, any_representation):
     mesh = square3d
 
@@ -463,6 +472,7 @@ def test_manifold_point_evaluation(square3d, any_representation):
 
 
 # Some symbolic quantities are only available through uflacs
+@skip_in_parallel
 def test_manifold_symbolic_geometry(square3d, uflacs_representation_only):
     mesh = square3d
     area = sqrt(3.0) # known area of mesh
@@ -567,6 +577,7 @@ def test_manifold_symbolic_geometry(square3d, uflacs_representation_only):
     assert round(assemble( (X - K*(x-x0))**2*dx ), 7) == 0.0
     assert round(assemble( (K*J - Identity(2))**2/A*dx ), 7) == 0.0
 
+@skip_in_parallel
 def test_manifold_piola_mapped_functions(square3d, any_representation):
     mesh = square3d
     area = sqrt(3.0) # known area of mesh
@@ -666,6 +677,7 @@ def test_manifold_piola_mapped_functions(square3d, any_representation):
 
 
 # Some symbolic quantities are only available through uflacs
+@skip_in_parallel
 def test_tetrahedron_symbolic_geometry(uflacs_representation_only):
     mesh = UnitCubeMesh(1, 1, 1)
     assert mesh.num_cells() == 6
@@ -744,6 +756,7 @@ def test_tetrahedron_symbolic_geometry(uflacs_representation_only):
 
 
 # Some symbolic quantities are only available through uflacs
+@skip_in_parallel
 def test_triangle_symbolic_geometry(uflacs_representation_only):
     mesh = UnitSquareMesh(1, 1)
     assert mesh.num_cells() == 2
