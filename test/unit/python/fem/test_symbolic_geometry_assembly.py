@@ -422,10 +422,10 @@ def test_manifold_coordinate_projection(square3d, any_representation):
     # Project x to a CG1 Function, i.e. setting up for v1(x) = x
     V1 = VectorFunctionSpace(mesh, "CG", 1)
     x = SpatialCoordinate(mesh)
-    v1 = project(x, V1) # This sometimes fails for "quadrature", something becomes inf
+    v1 = project(x, V1)
 
     # Check that v1(x) = x holds component-wise in squared l2 norm
-    assert round(assemble((v1-x)**2*dx), 7) == 0.0 # This sometimes fails for "quadrature", something becomes inf
+    assert round(assemble((v1-x)**2*dx), 7) == 0.0
     assert round(assemble((v1[0]-x[0])**2*dx), 7) == 0.0
     assert round(assemble((v1[1]-x[1])**2*dx), 7) == 0.0
     assert round(assemble((v1[2]-x[2])**2*dx), 7) == 0.0
