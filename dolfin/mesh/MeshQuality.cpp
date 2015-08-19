@@ -99,6 +99,7 @@ MeshQuality::radius_ratio_matplotlib_histogram(const Mesh& mesh,
   // Create Matplotlib string
   std::stringstream matplotlib;
   matplotlib << "def plot_histogram():" << std::endl;
+  matplotlib << "    import matplotlib.pyplot" << std::endl;
   std::stringstream bins, values;
   bins   << "    bins = [" << data.first[0];
   values << "    values = [" << data.second[0];
@@ -114,19 +115,20 @@ MeshQuality::radius_ratio_matplotlib_histogram(const Mesh& mesh,
   matplotlib << values.str()  << std::endl;
   matplotlib << std::endl;
 
-  matplotlib << "    pylab.xlim([0, 1])" <<  std::endl;
+  matplotlib << "    matplotlib.pylab.xlim([0, 1])" <<  std::endl;
   matplotlib << "    width = 0.7*(bins[1] - bins[0])" << std::endl;
-  matplotlib << "    pylab.xlabel('radius ratio')" << std::endl;
-  matplotlib << "    pylab.ylabel('number of cells')" << std::endl;
-  matplotlib << "    pylab.bar(bins, values, align='center', width=width)"
+  matplotlib << "    matplotlib.pylab.xlabel('radius ratio')" << std::endl;
+  matplotlib << "    matplotlib.pylab.ylabel('number of cells')" << std::endl;
+  matplotlib << "    matplotlib.pylab.bar(bins, values, align='center', width=width)"
              << std::endl;
-  matplotlib << "    pylab.show()" << std::endl;
+  matplotlib << "    matplotlib.pylab.show()" << std::endl;
 
   matplotlib << std::endl;
   matplotlib << "try:" << std::endl;
-  matplotlib << "    import pylab"  << std::endl;
+  matplotlib << "    import matplotlib.pylab"  << std::endl;
   matplotlib << "except ImportError:" << std::endl;
-  matplotlib << "    print(\"Plotting mesh quality histogram requires Matplotlib\")" << std::endl;
+  matplotlib << "    print(\"Plotting mesh quality histogram requires Matplotlib\")"
+             << std::endl;
   matplotlib << "else:" << std::endl;
   matplotlib << "    plot_histogram()" << std::endl;
 
