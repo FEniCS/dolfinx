@@ -489,6 +489,7 @@ def ufl_id(self):
 
 def ufl_cell(self):
     """Returns the ufl cell of the mesh."""
+    import ufl
     gdim = self.geometry().dim()
     cellname = self.type().description(False)
     return ufl.Cell(cellname, geometric_dimension=gdim)
@@ -528,6 +529,7 @@ def ufl_id(self):
 
 def ufl_cell(self):
     """Returns the ufl cell of the mesh."""
+    import ufl
     gdim = self.geometry().dim()
     cellname = self.type().description(False)
     return ufl.Cell(cellname, geometric_dimension=gdim)
