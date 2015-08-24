@@ -498,6 +498,19 @@ def ufl_domain(self):
     import ufl
     label = "dolfin_mesh_with_id_%d" % self.id()
     return ufl.Domain(self.ufl_cell(), label=label, data=self)
+
+def ufl_coordinate_element(self):
+    "Return the finite element of the coordinate vector field of this domain."
+    from ufl import VectorElement
+    degree = 1
+
+    # FIXME: To support FE parameterized mesh, return the parameterization element here
+    # Minimum viable representation is to add degree to MeshGeometry
+    #degree = self.geometry().degree()
+
+    gdim = self.geometry().dim()
+    return VectorElement("Lagrange", self.ufl_domain(), degree, dim=gdim)
+
 %}
 }
 
@@ -524,6 +537,19 @@ def ufl_domain(self):
     import ufl
     label = "dolfin_mesh_with_id_%d" % self.id()
     return ufl.Domain(self.ufl_cell(), label=label, data=self)
+
+def ufl_coordinate_element(self):
+    "Return the finite element of the coordinate vector field of this domain."
+    from ufl import VectorElement
+    degree = 1
+
+    # FIXME: To support FE parameterized mesh, return the parameterization element here
+    # Minimum viable representation is to add degree to MeshGeometry
+    #degree = self.geometry().degree()
+
+    gdim = self.geometry().dim()
+    return VectorElement("Lagrange", self.ufl_domain(), degree, dim=gdim)
+
 %}
 }
 
