@@ -478,6 +478,7 @@ def cells(self):
 //-----------------------------------------------------------------------------
 // Extend Mesh interface with some ufl_* methods
 //-----------------------------------------------------------------------------
+// TODO: Make sure to keep this up to date with SubMesh extensions below!
 %extend dolfin::Mesh
 {
 %pythoncode
@@ -487,19 +488,9 @@ def ufl_id(self):
     return self.id()
 
 def ufl_cell(self):
-    """
-    Returns the ufl cell of the mesh.
-
-    The cell corresponds to the topological dimension of the mesh.
-    """
-    import ufl
-    tdim = self.topology().dim()
+    """Returns the ufl cell of the mesh."""
     gdim = self.geometry().dim()
-    dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
-    cellname = dim2domain[tdim]
-
-    cellname = CellType.type2string(self.type().cell_type())
-
+    cellname = self.type().description(False)
     return ufl.Cell(cellname, geometric_dimension=gdim)
 
 def ufl_domain(self):
@@ -513,7 +504,7 @@ def ufl_domain(self):
 //-----------------------------------------------------------------------------
 // Extend SubMesh interface with some ufl_* methods
 //-----------------------------------------------------------------------------
-// TODO: It would be nice if this was inherited from the Mesh extension above!
+// TODO: It would be nice if this was automatically inherited from the Mesh extension above!
 %extend dolfin::SubMesh
 {
 %pythoncode
@@ -523,16 +514,9 @@ def ufl_id(self):
     return self.id()
 
 def ufl_cell(self):
-    """
-    Returns the ufl cell of the mesh.
-
-    The cell corresponds to the topological dimension of the mesh.
-    """
-    import ufl
-    tdim = self.topology().dim()
+    """Returns the ufl cell of the mesh."""
     gdim = self.geometry().dim()
-    dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
-    cellname = dim2domain[tdim]
+    cellname = self.type().description(False)
     return ufl.Cell(cellname, geometric_dimension=gdim)
 
 def ufl_domain(self):
