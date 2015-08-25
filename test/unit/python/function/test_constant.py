@@ -42,10 +42,10 @@ def testConstantInit():
     c3 = Constant(array([2,3]), tetrahedron)
 
     # FIXME:
-    assert c0.cell() is None
-    assert c1.cell() == interval
-    assert c2.cell() == triangle
-    assert c3.cell() == tetrahedron
+    assert c0.ufl_cell() is None
+    assert c1.ufl_cell() == interval
+    assert c2.ufl_cell() == triangle
+    assert c3.ufl_cell() == tetrahedron
 
     assert c0.shape() == ()
     assert c1.shape() == (2,)
