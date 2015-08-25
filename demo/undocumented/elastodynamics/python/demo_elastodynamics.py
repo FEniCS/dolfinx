@@ -138,7 +138,7 @@ dss = ds[boundary_subdomains]
 
 # Stress tensor
 def sigma(r):
-    return 2.0*mu*sym(grad(r)) + lmbda*tr(sym(grad(r)))*Identity(r.geometric_dimension())
+    return 2.0*mu*sym(grad(r)) + lmbda*tr(sym(grad(r)))*Identity(len(r))
 
 # Forms
 a = factor_m1*inner(u, r)*dx + factor_d1*inner(u, r)*dx \

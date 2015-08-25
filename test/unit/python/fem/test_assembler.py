@@ -316,13 +316,13 @@ def test_subdomain_assembly_form_1():
 
     dxs = dx[subdomains]
     dss = ds[boundaries]
-    assert dxs.domain() == None
-    assert dss.domain() == None
+    assert dxs.ufl_domain() == None
+    assert dss.ufl_domain() == None
     assert dxs.subdomain_data() == subdomains
     assert dss.subdomain_data() == boundaries
 
     M = f*f*dxs(0) + g*f*dxs(1) + f*f*dss(1)
-    assert M.domains() == (mesh.ufl_domain(),)
+    assert M.ufl_domains() == (mesh.ufl_domain(),)
     sd = M.subdomain_data()[mesh.ufl_domain()]
     assert sd["cell"] == subdomains
     assert sd["exterior_facet"] == boundaries
@@ -387,13 +387,13 @@ def test_subdomain_assembly_form_1_multithreaded():
 
     dxs = dx[subdomains]
     dss = ds[boundaries]
-    assert dxs.domain() == None
-    assert dss.domain() == None
+    assert dxs.ufl_domain() == None
+    assert dss.ufl_domain() == None
     assert dxs.subdomain_data() == subdomains
     assert dss.subdomain_data() == boundaries
 
     M = f*f*dxs(0) + g*f*dxs(1) + f*f*dss(1)
-    assert M.domains() == (mesh.ufl_domain(),)
+    assert M.ufl_domains() == (mesh.ufl_domain(),)
     sd = M.subdomain_data()[mesh.ufl_domain()]
     assert sd["cell"] == subdomains
     assert sd["exterior_facet"] == boundaries
