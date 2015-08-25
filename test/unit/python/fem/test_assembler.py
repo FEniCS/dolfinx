@@ -316,8 +316,8 @@ def test_subdomain_assembly_form_1():
 
     dxs = dx[subdomains]
     dss = ds[boundaries]
-    assert dxs.domain() == None
-    assert dss.domain() == None
+    assert dxs.ufl_domain() == None
+    assert dss.ufl_domain() == None
     assert dxs.subdomain_data() == subdomains
     assert dss.subdomain_data() == boundaries
 
@@ -387,8 +387,8 @@ def test_subdomain_assembly_form_1_multithreaded():
 
     dxs = dx[subdomains]
     dss = ds[boundaries]
-    assert dxs.domain() == None
-    assert dss.domain() == None
+    assert dxs.ufl_domain() == None
+    assert dss.ufl_domain() == None
     assert dxs.subdomain_data() == subdomains
     assert dss.subdomain_data() == boundaries
 
