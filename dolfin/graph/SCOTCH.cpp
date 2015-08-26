@@ -160,8 +160,6 @@ void SCOTCH::compute_reordering(const Graph& graph,
   SCOTCH_stratInit(&strat);
 
   // Set SCOTCH strategy (if provided)
-  //SCOTCH_stratGraphOrderBuild(&strat, SCOTCH_STRATQUALITY, 0, 0);
-  //SCOTCH_stratGraphOrderBuild(&strat, SCOTCH_STRATSPEED, 0, 0);
   if (!scotch_strategy.empty())
     SCOTCH_stratGraphOrder(&strat, scotch_strategy.c_str());
 
@@ -317,14 +315,15 @@ void SCOTCH::partition(
   // Number of partitions (set equal to number of processes)
   const SCOTCH_Num npart = num_processes;
 
-  // Partitioning strategy
+  // Initialise partitioning strategy
   SCOTCH_Strat strat;
   SCOTCH_stratInit(&strat);
 
-  // Set strategy (SCOTCH uses very cryptic strings for this, and they
-  // can change between versions)
-  //std::string strategy = "b{sep=m{asc=b{bnd=q{strat=f},org=q{strat=f}},low=q{strat=m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}|m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}},seq=q{strat=m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}|m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}}},seq=b{job=t,map=t,poli=S,sep=m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}|m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}}}";
-  //SCOTCH_stratDgraphMap (&strat, strategy.c_str());
+  // Set SCOTCH strategy
+  //SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATDEFAULT, npart, npart, 0.05);
+  SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATSPEED, npart, npart, 0.05);
+  //SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATQUALITY, npart, npart, 0.05);
+  //SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATSCALABILITY, npart, npart, 0.15);
 
   // Resize vector to hold cell partition indices with enough extra
   // space for ghost cell partition information too When there are no
@@ -346,6 +345,17 @@ void SCOTCH::partition(
                  "Error during partitioning");
   }
   timer2.stop();
+
+  /*
+  // Write SCOTCH strategy to file
+  if (dolfin::MPI::rank(MPI_COMM_WORLD) == 0)
+  {
+    FILE* fp;
+    fp = fopen("test.txt", "w");
+    SCOTCH_stratSave(&strat, fp);
+    fclose(fp);
+  }
+  */
 
   // Exchange halo with cell_partition data for ghosts
   // FIXME: check MPI type compatibility with SCOTCH_Num. Getting this
@@ -396,8 +406,8 @@ void SCOTCH::partition(
         if (map_it == ghost_procs.end())
         {
           dolfin::Set<unsigned int> sharing_processes;
-          // Owning process goes first into dolfin::Set
-          // (unordered set) so will always be first.
+          // Owning process goes first into dolfin::Set (unordered
+          // set) so will always be first.
           sharing_processes.insert(proc_this);
           sharing_processes.insert(proc_other);
           ghost_procs.insert(std::make_pair(i, sharing_processes));
