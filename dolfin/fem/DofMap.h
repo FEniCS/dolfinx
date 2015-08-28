@@ -318,6 +318,12 @@ namespace dolfin
       collapse(std::unordered_map<std::size_t, std::size_t>&
                collapsed_map, const Mesh& mesh) const;
 
+    // FIXME: Document this function properly
+    /// Return list of dof indices on this process that belong to mesh
+    /// entities of dimension dim
+    std::vector<dolfin::la_index> dofs(const Mesh& mesh,
+                                       std::size_t dim) const;
+
     // FIXME: Document this function
     std::vector<dolfin::la_index> dofs() const;
 

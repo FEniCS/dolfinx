@@ -139,10 +139,14 @@ void SLEPcEigenSolver::solve(std::size_t n)
   {
     KSP ksp;
     ST st;
-    EPSMonitorSet(_eps, EPSMonitorAll, NULL, NULL);
+    EPSMonitorSet(_eps, EPSMonitorAll,
+                  PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_eps)),
+                  NULL);
     EPSGetST(_eps, &st);
     STGetKSP(st, &ksp);
-    KSPMonitorSet(ksp, KSPMonitorDefault, NULL, NULL);
+    KSPMonitorSet(ksp, KSPMonitorDefault,
+                  PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
+                  NULL);
     EPSView(_eps, PETSC_VIEWER_STDOUT_SELF);
   }
 
@@ -159,11 +163,7 @@ void SLEPcEigenSolver::solve(std::size_t n)
   dolfin::la_index num_iterations = 0;
   EPSGetIterationNumber(_eps, &num_iterations);
 
-  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR < 4
-  const EPSType eps_type = NULL;
-  #else
   EPSType eps_type = NULL;
-  #endif
   EPSGetType(_eps, &eps_type);
   log(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.",
       eps_type, num_iterations);

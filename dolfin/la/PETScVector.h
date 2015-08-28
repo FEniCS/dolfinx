@@ -1,4 +1,5 @@
-// Copyright (C) 2004-2010 Johan Hoffman, Johan Jansson and Anders Logg
+// Copyright (C) 2004-2015 Johan Hoffman, Johan Jansson, Anders Logg
+// and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -20,9 +21,6 @@
 // Modified by Ola Skavhaug, 2008.
 // Modified by Martin Alnæs, 2008.
 // Modified by Fredrik Valdmanis, 2011.
-//
-// First added:  2004-01-01
-// Last changed: 2011-09-29
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -65,7 +63,7 @@ namespace dolfin
     PETScVector();
 
     /// Create vector of size N
-    PETScVector(MPI_Comm comm, std::size_t N, bool use_gpu=false);
+    PETScVector(MPI_Comm comm, std::size_t N);
 
     /// Create vector
     explicit PETScVector(const GenericSparsityPattern& sparsity_pattern);
@@ -234,6 +232,14 @@ namespace dolfin
 
     //--- Special PETSc functions ---
 
+    /// Sets the prefix used by PETSc when searching the options
+    /// database
+    void set_options_prefix(std::string options_prefix);
+
+    /// Returns the prefix used by PETSc when searching the options
+    /// database
+    std::string get_options_prefix() const;
+
     /// Return pointer to PETSc Vec object
     Vec vec() const;
 
@@ -253,17 +259,14 @@ namespace dolfin
     // Return true if vector is distributed
     bool distributed() const;
 
+    // Prefix for PETSc options database
+    std::string _petsc_options_prefix;
+
     // PETSc Vec pointer
     Vec _x;
 
-    // Global-to-local map for ghost values
-    std::unordered_map<std::size_t, std::size_t> ghost_global_to_local;
-
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;
-
-    // PETSc vector architecture
-    const bool _use_gpu;
 
   };
 

@@ -80,8 +80,7 @@ lmbda = E*nu/((1.0 + nu)*(1.0 - 2.0*nu))
 
 # Stress computation
 def sigma(v):
-    gdim = v.geometric_dimension()
-    return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(gdim)
+    return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(len(v))
 
 # Create function space
 V = VectorFunctionSpace(mesh, "Lagrange", 1)

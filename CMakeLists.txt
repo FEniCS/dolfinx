@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 2.8)
 project(DOLFIN)
 set(DOLFIN_VERSION_RELEASE 0)
 set(DOLFIN_VERSION_MAJOR "1")
-set(DOLFIN_VERSION_MINOR "6")
+set(DOLFIN_VERSION_MINOR "7")
 set(DOLFIN_VERSION_MICRO "0")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 if (NOT DOLFIN_VERSION_RELEASE)
@@ -83,10 +83,6 @@ option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 option(DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py." OFF)
-#------------------------------------------------------------------------------
-# This should be removed when petsc version > 3.4 is out
-
-option(DOLFIN_ENABLE_TAO "Enable TAO solver." OFF)
 
 #------------------------------------------------------------------------------
 # This should be removed when Clang support OpenMP is ready
@@ -329,10 +325,10 @@ set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
-find_package(UFC 1.6.0 QUIET HINTS ${UFC_DIR})
+find_package(UFC 1.7.0 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 1.6.0.\n"
+    "compatible with requested version 1.7.0.\n"
     "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
 else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
@@ -413,7 +409,7 @@ endif()
 
 # Check for PETSc, SLEPc and petsc4py, slepc4py
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc 3.3)
+  find_package(PETSc 3.4)
 
   if (PETSC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_PETSC4PY)
     find_package(PETSc4py)
@@ -427,13 +423,13 @@ if (DOLFIN_ENABLE_PETSC)
   endif()
 
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc 3.3)
+    find_package(SLEPc 3.4)
 
     if (SLEPC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_SLEPC4PY)
       find_package(SLEPc4py 3.5.1)
       if (SLEPC4PY_FOUND)
         if (NOT ("${SLEPC4PY_VERSION_MAJOR}" EQUAL "${SLEPC_VERSION_MAJOR}"
-                 AND "${SLEPC4PY_VERSION_MINOR}" EQUAL "${SLEPC_VERSION_MINOR}"))
+              AND "${SLEPC4PY_VERSION_MINOR}" EQUAL "${SLEPC_VERSION_MINOR}"))
           message(WARNING "SLEPc version ${SLEPC_VERSION} and slepc4py version ${SLEPC4PY_VERSION} do not match.  Disabling slepc4py support")
           set(SLEPC4PY_FOUND FALSE)
         endif()
@@ -441,14 +437,9 @@ if (DOLFIN_ENABLE_PETSC)
     endif()
   endif()
 
-  # Enable PETSc SNES for PETSc verion > 3.3
-  if (PETSC_VERSION VERSION_GREATER 3.3.100)
-    set(PETSC_ENABLE_SNES TRUE)
-  endif()
-
-  # Enable TAO from PETSc for PETSc verion > 3.4
-  if ((PETSC_VERSION VERSION_GREATER 3.4.100) OR (DOLFIN_ENABLE_TAO))
-    set(PETSC_ENABLE_TAO TRUE)
+  # Enable TAO for PETSc version > 3.4
+  if ((PETSC_VERSION VERSION_GREATER 3.4.100))
+    set(PETSC_HAS_TAO TRUE)
   endif()
 
 endif()
@@ -1104,7 +1095,7 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "run_unittests_py_mpi" for running Python unit tests with mpi
   add_custom_target(run_unittests_py_mpi
-    COMMAND ${MPIEXEC} "-np" "3" ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-vs"
+    COMMAND ${MPIEXEC} "-np" "3" "./mpipipe.sh" ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-vs"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 

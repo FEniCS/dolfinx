@@ -108,7 +108,7 @@ void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
   Vec x = NULL;
   if (dim == 0)
   {
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 5 && PETSC_VERSION_RELEASE == 1
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 5
     ierr = MatGetVecs(_matA, PETSC_NULL, &x);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetVecs");
     #else
@@ -118,7 +118,7 @@ void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
   }
   else if (dim == 1)
   {
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 5 && PETSC_VERSION_RELEASE == 1
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 5
     ierr = MatGetVecs(_matA, &x, PETSC_NULL);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetVecs");
     #else

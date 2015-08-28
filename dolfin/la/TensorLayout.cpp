@@ -98,7 +98,7 @@ TensorLayout::local_range(std::size_t dim) const
   return _ownership_range[dim];
 }
 //-----------------------------------------------------------------------------
-std::string TensorLayout::str() const
+std::string TensorLayout::str(bool verbose) const
 {
   std::stringstream s;
   s << "<TensorLayout for tensor of rank " << rank() << ">" << std::endl;

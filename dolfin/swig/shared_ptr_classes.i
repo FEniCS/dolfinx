@@ -203,6 +203,7 @@
 %shared_ptr(dolfin::KrylovSolver)
 %shared_ptr(dolfin::LUSolver)
 
+%shared_ptr(dolfin::TensorLayout)
 %shared_ptr(dolfin::GenericSparsityPattern)
 %shared_ptr(dolfin::SparsityPattern)
 
@@ -221,7 +222,7 @@
 // nls
 %shared_ptr(dolfin::NewtonSolver)
 %shared_ptr(dolfin::PETScSNESSolver)
-#ifdef ENABLE_PETSC_TAO
+#ifdef HAS_PETSC
 %shared_ptr(dolfin::TAOLinearBoundSolver)
 %shared_ptr(dolfin::PETScTAOSolver)
 #endif
