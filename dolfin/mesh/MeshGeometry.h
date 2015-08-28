@@ -128,9 +128,6 @@ namespace dolfin
 
   private:
 
-    // Friends
-    friend class BinaryFile;
-
     // Euclidean dimension
     std::size_t _dim;
 
