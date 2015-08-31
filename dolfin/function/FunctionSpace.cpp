@@ -158,6 +158,84 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   }
   expansion_coefficients.zero();
 
+  std::shared_ptr<const FunctionSpace> v_fs = v.function_space();
+  if (v_fs == NULL)
+    // Non-FunctionSpace GenericFunction, e.g. Expression
+    std::cout << "v.function_space() == NULL\n";
+  else
+  {
+    if (v_fs->mesh()->id() == _mesh->id())
+    {
+      std::cout << "Interpolate on same mesh\n";
+      if (v_fs->id() == id())
+        std::cout << "Same function space - just copy\n";
+    }
+    // Interpolate from child to parent
+    else if (v_fs->mesh()->has_parent()
+             and v_fs->mesh()->parent().id() == _mesh->id())
+      std::cout << "Interpolate from child to parent\n";
+    // Interpolate from parent to child
+    // should also work in parallel provided "parent_cell" data exists
+    else if (_mesh->has_parent()
+             and v_fs->mesh()->id() == _mesh->parent().id()
+             and _mesh->data().exists("parent_cell", _mesh->topology().dim()))
+    {
+      std::cout << "Interpolate from parent to child\n";
+      // Initialize local arrays
+      std::vector<double> cell_coefficients(_dofmap->max_element_dofs());
+
+      // Iterate over mesh and interpolate on each cell
+      ufc::cell ufc_cell;
+      std::vector<double> vertex_coordinates;
+      std::size_t tdim = _mesh->topology().dim();
+      for (CellIterator cell(*_mesh); !cell.end(); ++cell)
+      {
+        // Update to current cell
+        cell->get_vertex_coordinates(vertex_coordinates);
+
+        // Get cell orientation
+        int cell_orientation = -1;
+        if (!_mesh->cell_orientations().empty())
+        {
+          dolfin_assert(cell->index() < _mesh->cell_orientations().size());
+          cell_orientation = _mesh->cell_orientations()[cell->index()];
+        }
+
+        Cell parent_cell(*v_fs->mesh(),
+                         _mesh->data().array("parent_cell", tdim)
+                         [cell->index()]);
+        ufc::cell ufc_parent;
+        parent_cell.get_cell_data(ufc_parent);
+
+        // Evaluate on parent cell on which v is defined
+        _element->evaluate_dofs(cell_coefficients.data(), v,
+                                vertex_coordinates.data(),
+                                cell_orientation,
+                                ufc_parent);
+
+        // Tabulate dofs - map from cell to vector
+        const ArrayView<const dolfin::la_index> cell_dofs
+          = _dofmap->cell_dofs(cell->index());
+
+        // Copy dofs to vector
+        expansion_coefficients.set_local(cell_coefficients.data(),
+                         _dofmap->num_element_dofs(cell->index()),
+                         cell_dofs.data());
+      }
+
+      // Finalise changes
+      expansion_coefficients.apply("insert");
+      return;
+    }
+    // Probably not very useful
+    else if (_mesh->has_parent() and v_fs->mesh()->has_parent()
+        and v_fs->mesh()->parent().id() == _mesh->parent().id())
+      std::cout << "Interpolate between meshes with common parent\n";
+    // General case
+    else
+      std::cout << "Interpolate between unrelated meshes\n";
+  }
+
   // Initialize local arrays
   std::vector<double> cell_coefficients(_dofmap->max_element_dofs());
 
