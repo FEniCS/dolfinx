@@ -65,7 +65,7 @@ def test_butcher_schemes_scalar_time(Scheme, optimize):
 
     u = Function(V)
     compound_time_expr = Expression("weight*time*time", weight=weight, \
-                                    element=time.element(), time=time)
+                                    element=time.ufl_element(), time=time)
     form = (2+time+compound_time_expr-time**4)*v*dP
 
     scheme = Scheme(form, u, time)
@@ -88,7 +88,7 @@ def test_butcher_schemes_scalar(Scheme, optimize):
 
     if Scheme in scalar_excludes:
         return
-    
+
     mesh = UnitSquareMesh(10, 10)
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
@@ -100,7 +100,7 @@ def test_butcher_schemes_scalar(Scheme, optimize):
     form = (1-u)*v*dP
 
     scheme = Scheme(form, u)
-        
+
     info(scheme)
     u_errors = []
     solver = PointIntegralSolver(scheme)
@@ -139,7 +139,7 @@ def test_butcher_schemes_vector(Scheme, optimize):
     form = (-u[1]*v[0]+u[0]*v[1])*dP
 
     scheme = Scheme(form, u)
-        
+
     info(scheme)
     solver = PointIntegralSolver(scheme)
     u_errors = []
