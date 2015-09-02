@@ -41,7 +41,7 @@
 //-----------------------------------------------------------------------------
 // Modifying the interface of Function
 //-----------------------------------------------------------------------------
-%rename(_function_space) dolfin::Function::function_space;
+%rename(_function_space) dolfin::GenericFunction::function_space;
 %rename(sub) dolfin::Function::operator[];
 %rename(_assign) dolfin::Function::operator=;
 %rename(_in) dolfin::Function::in;
@@ -217,4 +217,3 @@ IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(Function)
 //-----------------------------------------------------------------------------
 %template (HierarchicalFunctionSpace) dolfin::Hierarchical<dolfin::FunctionSpace>;
 %template (HierarchicalFunction) dolfin::Hierarchical<dolfin::Function>;
-
