@@ -449,10 +449,9 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
   const std::vector<std::string> topo_name = xml.topology_name();
   const std::vector<std::string> geom_name = xml.geometry_name();
   boost::filesystem::path topo_path(topo_name[0]);
-  if (topo_path.filename() != hdf5_filename or geom_name[0] != topo_name[0])
+  boost::filesystem::path hdf5_path(hdf5_filename);
+  if (topo_path.filename() != hdf5_path.filename() or geom_name[0] != topo_name[0])
   {
-    std::cout << topo_path.filename() << " " << hdf5_filename << "\n";
-
     dolfin_error("XDMFFile.cpp",
                  "read XDMF mesh",
                  "Topology and geometry file names do not match");
