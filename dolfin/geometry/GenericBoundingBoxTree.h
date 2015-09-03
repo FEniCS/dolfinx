@@ -47,8 +47,8 @@ namespace dolfin
     /// Destructor
     virtual ~GenericBoundingBoxTree() {}
 
-    /// Factory function returning tree of appropriate dimension
-    std::shared_ptr<GenericBoundingBoxTree> create(unsigned int dim) const;
+    /// Factory function returning (empty) tree of appropriate dimension
+    static std::shared_ptr<GenericBoundingBoxTree> create(unsigned int dim);
 
     /// Build bounding box tree for mesh entities of given dimension
     void build(const Mesh& mesh, std::size_t tdim);

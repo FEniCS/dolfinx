@@ -250,7 +250,7 @@ namespace dolfin
     void _check_built() const;
 
     // Dimension-dependent implementation
-    std::unique_ptr<GenericBoundingBoxTree> _tree;
+    std::shared_ptr<GenericBoundingBoxTree> _tree;
 
     // Pointer to the mesh. We all know that we don't really want
     // to store a pointer to the mesh here, but without it we will

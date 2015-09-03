@@ -43,7 +43,7 @@ GenericBoundingBoxTree::GenericBoundingBoxTree() : _tdim(0)
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericBoundingBoxTree>
-GenericBoundingBoxTree::create(unsigned int gdim) const
+GenericBoundingBoxTree::create(unsigned int gdim)
 {
   std::shared_ptr<GenericBoundingBoxTree> tree;
 
