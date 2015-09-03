@@ -23,7 +23,7 @@
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
-#include "DiscreteGradient.h"
+#include "DiscreteOperator.h"
 
 using namespace dolfin;
 
