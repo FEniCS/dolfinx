@@ -233,6 +233,20 @@ void EigenMatrix::mult(const GenericVector& x, GenericVector& y) const
   yy.vec() = _matA*xx.vec();
 }
 //-----------------------------------------------------------------------------
+void EigenMatrix::get_diagonal(GenericVector& x) const
+{
+  if (size(1) != size(0) || size(0) != x.size())
+  {
+    dolfin_error("EigenMatrix.h",
+                 "Get diagonal of a Eigen Matrix",
+                 "Matrix and vector dimensions don't match");
+  }
+
+  Eigen::VectorXd& xx = x.down_cast<EigenVector>().vec();
+  for (std::size_t i = 0; i != x.size(); ++i)
+    xx[i] = _matA.coeff(i, i);
+}
+//-----------------------------------------------------------------------------
 void EigenMatrix::set_diagonal(const GenericVector& x)
 {
   if (size(1) != size(0) || size(0) != x.size())

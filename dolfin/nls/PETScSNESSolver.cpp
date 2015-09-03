@@ -238,7 +238,11 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
 
   // Set some options from the parameters
   if (report)
-    SNESMonitorSet(_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
+  {
+    SNESMonitorSet(_snes, SNESMonitorDefault,
+                   PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes)),
+                   NULL);
+  }
 
   // Set the bounds, if any
   set_bounds(x);
@@ -482,8 +486,11 @@ void PETScSNESSolver::set_linear_solver_parameters()
   PetscObjectGetComm((PetscObject)_snes, &comm);
 
   if (parameters["report"])
-    KSPMonitorSet(ksp, KSPMonitorDefault, PETSC_NULL, PETSC_NULL);
-
+  {
+    KSPMonitorSet(ksp, KSPMonitorDefault,
+                   PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
+                   NULL);
+  }
   const std::string linear_solver  = parameters["linear_solver"];
   const std::string preconditioner = parameters["preconditioner"];
 
@@ -518,7 +525,11 @@ void PETScSNESSolver::set_linear_solver_parameters()
       KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
 
     if (krylov_parameters["monitor_convergence"])
-      KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
+    {
+      KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm,
+                       PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
+                       NULL);
+    }
 
     // Set tolerances
     const int max_iters = krylov_parameters["maximum_iterations"];

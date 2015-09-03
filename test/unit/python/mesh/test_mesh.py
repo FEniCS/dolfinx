@@ -117,8 +117,8 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
         domain = mesh.ufl_domain()
         assert mesh.geometry().dim() == domain.geometric_dimension()
         assert mesh.topology().dim() == domain.topological_dimension()
-        assert mesh.ufl_cell() == domain.cell()
-        assert str(mesh.id()) in domain.label()
+        assert mesh.ufl_cell() == domain.ufl_cell()
+        assert str(mesh.id()) in domain.ufl_label()
 
     _check_ufl_domain(interval)
     _check_ufl_domain(square)

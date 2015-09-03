@@ -1,5 +1,6 @@
+1.6.0 [2015-07-28]
 - Remove redundant pressure boundary condition in Stokes demos
-- Require Point in RectangleMesh and BoxMesh constructors 
+- Require Point in RectangleMesh and BoxMesh constructors
 - Remove BinaryFile (TimeSeries now requires HDF5)
 - Add (highly experimental) support for Tpetra matrices and
 	vectors from Trilinos, interfacing to Belos, Amesos2, IfPack2 and

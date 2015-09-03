@@ -585,7 +585,9 @@ void PETScKrylovSolver::set_petsc_ksp_options()
   const bool monitor_convergence = parameters["monitor_convergence"];
   if (monitor_convergence)
   {
-    ierr = KSPMonitorSet(_ksp, KSPMonitorTrueResidualNorm, 0, 0);
+    ierr=KSPMonitorSet(_ksp, KSPMonitorTrueResidualNorm,
+                       PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_ksp)),
+                       NULL);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
   }
 

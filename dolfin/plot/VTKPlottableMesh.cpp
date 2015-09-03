@@ -170,13 +170,13 @@ void VTKPlottableMesh::update(std::shared_ptr<const Variable> var,
   else
   {
     // Iterate vertices and add to point array
-    for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex)
+    for (VertexIterator vertex(*_mesh, "all"); !vertex.end(); ++vertex)
     {
       const Point point = vertex->point();
       points->SetPoint(vertex->index(), point.x(), point.y(), point.z());
     }
   }
-  
+
   // Insert points, vertex labels and cells in VTK unstructured grid
   _full_grid->SetPoints(points);
 
