@@ -121,6 +121,88 @@ std::size_t FunctionSpace::dim() const
   return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
+void
+FunctionSpace::interpolate_from_parent(GenericVector& expansion_coefficients,
+                                       const GenericFunction& v) const
+{
+  info("Interpolate from parent to child");
+
+  std::shared_ptr<const FunctionSpace> v_fs = v.function_space();
+
+  // Initialize local arrays
+  std::vector<double> cell_coefficients(_dofmap->max_element_dofs());
+
+  // Iterate over mesh and interpolate on each cell
+  std::vector<double> vertex_coordinates;
+  std::size_t tdim = _mesh->topology().dim();
+  const std::vector<std::size_t>& child_to_parent = _mesh->data().array("parent_cell", tdim);
+
+  for (CellIterator cell(*_mesh); !cell.end(); ++cell)
+  {
+    // Update to current cell
+    cell->get_vertex_coordinates(vertex_coordinates);
+
+    // Get cell orientation
+    int cell_orientation = -1;
+    if (!_mesh->cell_orientations().empty())
+    {
+      dolfin_assert(cell->index() < _mesh->cell_orientations().size());
+      cell_orientation = _mesh->cell_orientations()[cell->index()];
+    }
+
+    Cell parent_cell(*v_fs->mesh(), child_to_parent[cell->index()]);
+    ufc::cell ufc_parent;
+    parent_cell.get_cell_data(ufc_parent);
+
+    // Evaluate on parent cell on which v is defined
+    _element->evaluate_dofs(cell_coefficients.data(), v,
+                            vertex_coordinates.data(),
+                            cell_orientation,
+                            ufc_parent);
+
+    // Tabulate dofs - map from cell to vector
+    const ArrayView<const dolfin::la_index> cell_dofs
+      = _dofmap->cell_dofs(cell->index());
+
+    // Copy dofs to vector
+    expansion_coefficients.set_local(cell_coefficients.data(),
+                                     _dofmap->num_element_dofs(cell->index()),
+                                     cell_dofs.data());
+  }
+
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::interpolate_from_any(GenericVector& expansion_coefficients,
+                                         const GenericFunction& v) const
+{
+  // Initialize local arrays
+  std::vector<double> cell_coefficients(_dofmap->max_element_dofs());
+
+  // Iterate over mesh and interpolate on each cell
+  ufc::cell ufc_cell;
+  std::vector<double> vertex_coordinates;
+  for (CellIterator cell(*_mesh); !cell.end(); ++cell)
+  {
+    // Update to current cell
+    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_cell_data(ufc_cell);
+
+    // Restrict function to cell
+    v.restrict(cell_coefficients.data(), *_element, *cell,
+               vertex_coordinates.data(), ufc_cell);
+
+    // Tabulate dofs
+    const ArrayView<const dolfin::la_index> cell_dofs
+      = _dofmap->cell_dofs(cell->index());
+
+    // Copy dofs to vector
+    expansion_coefficients.set_local(cell_coefficients.data(),
+                                     _dofmap->num_element_dofs(cell->index()),
+                                     cell_dofs.data());
+  }
+
+}
+//-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
                                 const GenericFunction& v) const
 {
@@ -162,84 +244,14 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
 
   // Interpolate from parent to child
   // should also work in parallel provided "parent_cell" data exists
-  if (v_fs != NULL
-      and _mesh->has_parent()
+  if (v_fs != NULL and _mesh->has_parent()
       and v_fs->mesh()->id() == _mesh->parent().id()
       and _mesh->data().exists("parent_cell", _mesh->topology().dim()))
   {
-    info("Interpolate from parent to child");
-
-    // Initialize local arrays
-    std::vector<double> cell_coefficients(_dofmap->max_element_dofs());
-
-    // Iterate over mesh and interpolate on each cell
-    std::vector<double> vertex_coordinates;
-    std::size_t tdim = _mesh->topology().dim();
-    const std::vector<std::size_t>& child_to_parent = _mesh->data().array("parent_cell", tdim);
-
-    for (CellIterator cell(*_mesh); !cell.end(); ++cell)
-    {
-      // Update to current cell
-      cell->get_vertex_coordinates(vertex_coordinates);
-
-      // Get cell orientation
-      int cell_orientation = -1;
-      if (!_mesh->cell_orientations().empty())
-      {
-        dolfin_assert(cell->index() < _mesh->cell_orientations().size());
-        cell_orientation = _mesh->cell_orientations()[cell->index()];
-      }
-
-      Cell parent_cell(*v_fs->mesh(), child_to_parent[cell->index()]);
-      ufc::cell ufc_parent;
-      parent_cell.get_cell_data(ufc_parent);
-
-      // Evaluate on parent cell on which v is defined
-      _element->evaluate_dofs(cell_coefficients.data(), v,
-                              vertex_coordinates.data(),
-                              cell_orientation,
-                              ufc_parent);
-
-      // Tabulate dofs - map from cell to vector
-      const ArrayView<const dolfin::la_index> cell_dofs
-        = _dofmap->cell_dofs(cell->index());
-
-      // Copy dofs to vector
-      expansion_coefficients.set_local(cell_coefficients.data(),
-                        _dofmap->num_element_dofs(cell->index()),
-                        cell_dofs.data());
-    }
-
-    // Finalise changes
-    expansion_coefficients.apply("insert");
-    return;
+    interpolate_from_parent(expansion_coefficients, v);
   }
-
-  // Initialize local arrays
-  std::vector<double> cell_coefficients(_dofmap->max_element_dofs());
-
-  // Iterate over mesh and interpolate on each cell
-  ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
-  for (CellIterator cell(*_mesh); !cell.end(); ++cell)
-  {
-    // Update to current cell
-    cell->get_vertex_coordinates(vertex_coordinates);
-    cell->get_cell_data(ufc_cell);
-
-    // Restrict function to cell
-    v.restrict(cell_coefficients.data(), *_element, *cell,
-               vertex_coordinates.data(), ufc_cell);
-
-    // Tabulate dofs
-    const ArrayView<const dolfin::la_index> cell_dofs
-      = _dofmap->cell_dofs(cell->index());
-
-    // Copy dofs to vector
-    expansion_coefficients.set_local(cell_coefficients.data(),
-                                     _dofmap->num_element_dofs(cell->index()),
-                                     cell_dofs.data());
-  }
+  else
+    interpolate_from_any(expansion_coefficients, v);
 
   // Finalise changes
   expansion_coefficients.apply("insert");
