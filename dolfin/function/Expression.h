@@ -156,6 +156,17 @@ namespace dolfin
     virtual void compute_vertex_values(std::vector<double>& vertex_values,
                                        const Mesh& mesh) const;
 
+    /// Return shared pointer to function space (NULL)
+    /// Expression does not have a FunctionSpace
+    ///
+    /// *Returns*
+    ///     _FunctionSpace_
+    ///         Return the shared pointer.
+    virtual std::shared_ptr<const FunctionSpace> function_space() const
+    {
+      return std::shared_ptr<const FunctionSpace>(NULL);
+    }
+
   protected:
 
     // Value shape

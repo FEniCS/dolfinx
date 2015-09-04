@@ -99,6 +99,7 @@
 %feature("nodirector") dolfin::Expression::value_rank;
 %feature("nodirector") dolfin::Expression::str;
 %feature("nodirector") dolfin::Expression::compute_vertex_values;
+%feature("nodirector") dolfin::Expression::function_space;
 
 //-----------------------------------------------------------------------------
 // Macro for defining an in typemap for a const std::vector<std::pair<double, TYPE*> >&

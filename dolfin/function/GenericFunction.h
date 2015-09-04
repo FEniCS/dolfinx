@@ -128,7 +128,7 @@ namespace dolfin
                           const ufc::cell& cell) const;
 
     // Pointer to FunctionSpace, if appropriate, otherwise NULL
-    virtual std::shared_ptr<const FunctionSpace> function_space() const;
+    virtual std::shared_ptr<const FunctionSpace> function_space() const = 0;
 
   protected:
 
