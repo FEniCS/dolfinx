@@ -199,6 +199,15 @@ GenericBoundingBoxTree::compute_entity_collisions(const Point& point,
   return entities;
 }
 //-----------------------------------------------------------------------------
+std::vector<unsigned int>
+GenericBoundingBoxTree::compute_process_collisions(const Point& point) const
+{
+  if (_global_tree)
+    return _global_tree->compute_collisions(point);
+
+  return std::vector<unsigned int>(1, 0);
+}
+//-----------------------------------------------------------------------------
 std::pair<std::vector<unsigned int>, std::vector<unsigned int>>
 GenericBoundingBoxTree::compute_entity_collisions(
   const GenericBoundingBoxTree& tree,

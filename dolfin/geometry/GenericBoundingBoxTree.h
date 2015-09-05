@@ -69,6 +69,10 @@ namespace dolfin
     compute_entity_collisions(const Point& point,
                               const Mesh& mesh) const;
 
+    /// Compute all collisions between processes and _Point_
+    std::vector<unsigned int>
+    compute_process_collisions(const Point& point) const;
+
     /// Compute all collisions between entities and _BoundingBoxTree_
     std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
     compute_entity_collisions(const GenericBoundingBoxTree& tree,

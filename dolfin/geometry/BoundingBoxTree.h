@@ -129,6 +129,21 @@ namespace dolfin
     std::vector<unsigned int>
     compute_entity_collisions(const Point& point) const;
 
+    /// Compute all collisions between process bounding boxes
+    /// and _Point_. Effectively a list of processes which may
+    /// contain the _Point_.
+    ///
+    /// *Returns*
+    ///     std::vector<unsigned int>
+    ///         A list of process numbers where the _Mesh_
+    ///         may collide with (intersect) the given point.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point.
+    std::vector<unsigned int>
+    compute_process_collisions(const Point& point) const;
+
     /// Compute all collisions between entities and _BoundingBoxTree_.
     ///
     /// *Returns*

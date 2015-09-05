@@ -119,6 +119,17 @@ BoundingBoxTree::compute_entity_collisions(const Point& point) const
   return _tree->compute_entity_collisions(point, *_mesh);
 }
 //-----------------------------------------------------------------------------
+std::vector<unsigned int>
+BoundingBoxTree::compute_process_collisions(const Point& point) const
+{
+  // Check that tree has been built
+  _check_built();
+
+  // Delegate call to implementation
+  dolfin_assert(_tree);
+  return _tree->compute_process_collisions(point);
+}
+//-----------------------------------------------------------------------------
 std::pair<std::vector<unsigned int>, std::vector<unsigned int>>
   BoundingBoxTree::compute_entity_collisions(const BoundingBoxTree& tree) const
 {
