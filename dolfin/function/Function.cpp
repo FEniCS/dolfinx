@@ -517,17 +517,9 @@ void Function::restrict(double* w, const FiniteElement& element,
     const ArrayView<const dolfin::la_index> dofs
       = dofmap.cell_dofs(dolfin_cell.index());
 
-    if (!dofs.empty())
-    {
-      // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
-      // Pick values from vector(s)
-      _vector->get_local(w, dofs.size(), dofs.data());
-    }
-    else
-    {
-      // Set dofs to zero (zero extension of function space on a Restriction)
-      memset(w, 0, sizeof(*w)*dofmap.max_element_dofs());
-    }
+    // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
+    // Pick values from vector(s)
+    _vector->get_local(w, dofs.size(), dofs.data());
   }
   else
   {
