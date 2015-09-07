@@ -202,7 +202,3 @@ void GenericFunction::restrict_as_ufc_function(double* w,
                         ufc_cell);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FunctionSpace> GenericFunction::function_space() const
-{
-  return std::shared_ptr<const FunctionSpace>();
-}
