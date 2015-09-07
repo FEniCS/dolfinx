@@ -162,7 +162,7 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionSpace_
     ///         Return the shared pointer.
-    virtual std::shared_ptr<const FunctionSpace> function_space() const;
+    std::shared_ptr<const FunctionSpace> function_space() const;
 
   protected:
 
