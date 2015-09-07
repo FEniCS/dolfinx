@@ -192,55 +192,6 @@ void PETScKrylovSolver::set_operators(
                  as_type<const PETScBaseMatrix>(P));
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
-{
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 5
-
-  deprecation("PETScKrylovSolver::set_nullspace",
-              "1.6.0", "1.7.0",
-              "Attach the null space to the matrix insetad");
-
-  PetscErrorCode ierr;
-
-  // Copy vectors
-  for (std::size_t i = 0; i < nullspace.dim(); ++i)
-  {
-    dolfin_assert(nullspace[i]);
-    const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
-
-    // Copy vector
-    _nullspace.push_back(x);
-  }
-
-  // Get pointers to underlying PETSc objects and normalize vectors
-  std::vector<Vec> petsc_vec(nullspace.dim());
-  for (std::size_t i = 0; i < nullspace.dim(); ++i)
-  {
-    petsc_vec[i] = _nullspace[i].vec();
-    PetscReal val = 0.0;
-    ierr = VecNormalize(_nullspace[i].vec(), &val);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "VecNormalize");
-  }
-
-  // Create null space
-  if (petsc_nullspace)
-    MatNullSpaceDestroy(&petsc_nullspace);
-  ierr = MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.dim(),
-                            petsc_vec.data(), &petsc_nullspace);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
-
-  // Set null space
-  dolfin_assert(_ksp);
-  ierr = KSPSetNullSpace(_ksp, petsc_nullspace);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetNullSpace");
-
-#else
-  dolfin_error("PETScKrylovSolver.cpp",
-               "set null space for solver",
-               "For PETSc version > 3.5 nullspace must be attached to matrix");
-#endif
-}
-//-----------------------------------------------------------------------------
 const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
 {
   if (!_matA)
