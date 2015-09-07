@@ -144,7 +144,7 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
   }
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FunctionSpace> function_space() const
+std::shared_ptr<const FunctionSpace> Expression::function_space() const
 {
   return std::shared_ptr<const FunctionSpace>(NULL);
 }
