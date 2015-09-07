@@ -240,7 +240,9 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   }
   expansion_coefficients.zero();
 
+  std::cout << "Try to get v_fs\n";
   std::shared_ptr<const FunctionSpace> v_fs = v.function_space();
+  std::cout << "v_fs is NULL? " << (v_fs == NULL) << "\n";
 
   // Interpolate from parent to child
   // should also work in parallel provided "parent_cell" data exists
