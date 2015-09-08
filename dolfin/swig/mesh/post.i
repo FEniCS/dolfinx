@@ -1,5 +1,5 @@
 /* -*- C -*- */
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,9 +20,7 @@
 // Modified by Ola Skavhaug 2006-2007
 // Modified by Garth Wells 2007-2010
 // Modified by Johan Hake 2008-2009
-//
-// First added:  2006-09-20
-// Last changed: 2011-03-11
+// Modified by Martin Alnaes 2013-2015
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (post)
@@ -478,37 +476,39 @@ def cells(self):
 //-----------------------------------------------------------------------------
 // Extend Mesh interface with some ufl_* methods
 //-----------------------------------------------------------------------------
+// TODO: This was intended as steps toward letting dolfin.Mesh inherit from ufl.Mesh.
+//       That seems to be harder than anticipated, because fundamental properties
+//       of dolfin::Mesh are mutable and undefined at construction time.
+//       This work is therefore on hold. May not be a big problem.
 // TODO: Make sure to keep this up to date with SubMesh extensions below!
 %extend dolfin::Mesh
 {
 %pythoncode
 %{
-def ufl_id(self): # TODO: Will be inherited from ufl.Mesh
+def ufl_id(self):
     "Returns an id that UFL can use to decide if two objects are the same."
     return self.id()
 
-def ufl_cell(self): # TODO: Will be inherited from ufl.Mesh
+def ufl_cell(self):
     """Returns the ufl cell of the mesh."""
-    import ufl
     gdim = self.geometry().dim()
     cellname = self.type().description(False)
     return ufl.Cell(cellname, geometric_dimension=gdim)
 
-def ufl_domain(self): # TODO: This will become just 'return self' when inheriting from ufl.Mesh
-    """Returns the ufl Domain corresponding to the mesh."""
-    import ufl
-    label = "dolfin_mesh_with_id_%d" % self.id()
-    return ufl.Domain(self.ufl_cell(), label=label, data=self)
-
-def ufl_coordinate_element(self): # TODO: Will be inherited from ufl.Mesh
+def ufl_coordinate_element(self):
     "Return the finite element of the coordinate vector field of this domain."
-    from ufl import VectorElement
+    degree = 1 # self.geometry().degree() # FIXME: Define degree in MeshGeometry
 
-    # TODO: To support FE parameterized mesh, return the parameterization element here
-    # Minimum viable representation is to add degree to MeshGeometry
-    degree = 1 # self.geometry().degree()
+    cell = self.ufl_cell()
+    gdim = self.geometry().dim()
+    return ufl.VectorElement("Lagrange", cell, degree, dim=gdim)
 
-    return VectorElement("Lagrange", self.ufl_cell(), degree, dim=self.geometry().dim())
+def ufl_domain(self):
+    """Returns the ufl domain corresponding to the mesh."""
+    # Cache object to avoid recreating it a lot
+    if self._ufl_domain is None:
+        self._ufl_domain = ufl.Mesh(self.ufl_coordinate_element(), ufl_id=self.ufl_id(), cargo=self)
+    return self._ufl_domain
 
 %}
 }
@@ -521,32 +521,30 @@ def ufl_coordinate_element(self): # TODO: Will be inherited from ufl.Mesh
 {
 %pythoncode
 %{
-def ufl_id(self): # TODO: Will be inherited from ufl.Mesh
+def ufl_id(self):
     "Returns an id that UFL can use to decide if two objects are the same."
     return self.id()
 
-def ufl_cell(self): # TODO: Will be inherited from ufl.Mesh
+def ufl_cell(self):
     """Returns the ufl cell of the mesh."""
-    import ufl
     gdim = self.geometry().dim()
     cellname = self.type().description(False)
     return ufl.Cell(cellname, geometric_dimension=gdim)
 
-def ufl_domain(self):
-    """Returns the ufl Domain corresponding to the mesh."""
-    import ufl
-    label = "dolfin_mesh_with_id_%d" % self.id()
-    return ufl.Domain(self.ufl_cell(), label=label, data=self)
-
-def ufl_coordinate_element(self): # TODO: Will be inherited from ufl.Mesh
+def ufl_coordinate_element(self):
     "Return the finite element of the coordinate vector field of this domain."
-    from ufl import VectorElement
+    degree = 1 # self.geometry().degree() # FIXME: Define degree in MeshGeometry
 
-    # TODO: To support FE parameterized mesh, return the parameterization element here
-    # Minimum viable representation is to add degree to MeshGeometry
-    degree = 1 #self.geometry().degree()
+    cell = self.ufl_cell()
+    gdim = self.geometry().dim()
+    return ufl.VectorElement("Lagrange", cell, degree, dim=gdim)
 
-    return VectorElement("Lagrange", self.ufl_cell(), degree, dim=self.geometry().dim())
+def ufl_domain(self):
+    """Returns the ufl domain corresponding to the mesh."""
+    # Cache object to avoid recreating it a lot
+    if self._ufl_domain is None:
+        self._ufl_domain = ufl.Mesh(self.ufl_coordinate_element(), ufl_id=self.ufl_id(), cargo=self)
+    return self._ufl_domain
 
 %}
 }

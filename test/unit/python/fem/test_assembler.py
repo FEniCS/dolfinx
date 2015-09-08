@@ -624,7 +624,7 @@ def test_ways_to_pass_mesh_to_assembler():
     e = Expression("x[0]") # nothing
     e2 = Expression("x[0]", cell=mesh.ufl_cell()) # cell
     e3 = Expression("x[0]", element=V.ufl_element()) # ufl element
-    e4 = Expression("x[0]", domain=mesh) # ufl.Domain (this one holds mesh reference)
+    e4 = Expression("x[0]", domain=mesh) # mesh
 
     # Provide mesh in measure:
     dx2 = Measure("dx", domain=mesh)
