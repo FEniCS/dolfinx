@@ -58,19 +58,12 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   }
 
   // Check that V1 is a linear nodal basis
-  std::cout << "Test dim: " << V1.dim() << std::endl;
   if (V1.dim() != mesh.size_global(0))
   {
     dolfin_error("DiscreteGradient.cpp",
                  "compute discrete gradient operator",
                  "function space is not a linear nodal function space");
   }
-
-
-  // Build tensor layout
-  //const std::vector<std::size_t> dims = {mesh.size_global(D - 1),
-  //                                       mesh.size_global(0)};
-  //TensorLayout layout(mesh.mpi_comm(), dims, 0, 1, . . ., true);
 
   // Build maps from entities to local dof indices
   const std::vector<dolfin::la_index> edge_to_dof = V0.dofmap()->dofs(mesh, 1);
@@ -83,14 +76,12 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   V0.dofmap()->tabulate_local_to_global_dofs(local_to_global_map0);
   V1.dofmap()->tabulate_local_to_global_dofs(local_to_global_map1);
 
-  // FIXME: This should not be PETSc-specific
-
   // Declare matrix
-  Matrix A;
+  auto A = std::make_shared<Matrix>();
 
   // Create layout for initialising tensor
   std::shared_ptr<TensorLayout> tensor_layout;
-  tensor_layout = A.factory().create_layout(2);
+  tensor_layout = A->factory().create_layout(2);
   dolfin_assert(tensor_layout);
 
   //std::vector<std::size_t> block_sizes = {1, 1};
@@ -103,23 +94,6 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   tensor_layout->init(mesh.mpi_comm(), global_dimensions, 1,
                       local_range);
 
-  // Create matrix
-  //auto G = std::make_shared<PETScMatrix>();
-  //Mat _G = G->mat();
-  //Mat _G;
-
-  // Get local ranges
-  //std::size_t num_local_rows = V0.dofmap()->local_dimension("owned");
-  //std::size_t num_local_cols = V1.dofmap()->local_dimension("owned");
-
-  // Initialize matrix
-  //MatCreate(mesh.mpi_comm(), &_G);
-  //MatSetSizes(_G, num_local_rows, num_local_cols, PETSC_DECIDE, PETSC_DECIDE);
-  //MatSetType(_G, MATAIJ);
-  //MatSeqAIJSetPreallocation(_G, 2, NULL);
-  //MatMPIAIJSetPreallocation(_G, 2, NULL, 2, NULL);
-  //MatSetUp(_G);
-
   // Initialize edge -> vertex connections
   mesh.init(1, 0);
 
@@ -131,22 +105,36 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
     for (EdgeIterator edge(mesh); !edge.end(); ++edge)
     {
       // Row index (global indices)
-      const int row = local_to_global_map0[edge_to_dof[edge->index()]];
+      const std::size_t row = local_to_global_map0[edge_to_dof[edge->index()]];
 
-      // Column indices (global indices)
-      const Vertex v0(mesh, edge->entities(0)[0]);
-      const Vertex v1(mesh, edge->entities(0)[1]);
-      const int col0 = local_to_global_map1[vertex_to_dof[v0.index()]];
-      const int col1 = local_to_global_map1[vertex_to_dof[v1.index()]];
+      if (row >= local_range[0].first and row < local_range[0].second)
+      {
+        // Column indices (global indices)
+        const Vertex v0(mesh, edge->entities(0)[0]);
+        const Vertex v1(mesh, edge->entities(0)[1]);
+        const int col0 = local_to_global_map1[vertex_to_dof[v0.index()]];
+        const int col1 = local_to_global_map1[vertex_to_dof[v1.index()]];
 
-      sparsity_entries[0].push_back(row);
-      sparsity_entries[1].push_back(col0);
+        sparsity_entries[0].push_back(row);
+        sparsity_entries[1].push_back(col0);
 
-      sparsity_entries[0].push_back(row);
-      sparsity_entries[1].push_back(col1);
+        sparsity_entries[0].push_back(row);
+        sparsity_entries[1].push_back(col1);
+      }
     }
+    std::vector<ArrayView<const std::size_t>> local_to_global(2);
+    std::vector<ArrayView<const int>> off_process_owner(2);
+    std::vector<std::size_t> block_sizes = {1, 1};
+    local_to_global[0].set(V0.dofmap()->local_to_global_unowned());
+    local_to_global[1].set(V1.dofmap()->local_to_global_unowned());
+    off_process_owner[0].set(V0.dofmap()->off_process_owner());
+    off_process_owner[1].set(V1.dofmap()->off_process_owner());
 
     GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+    pattern.init(mesh.mpi_comm(), global_dimensions, local_range,
+                 local_to_global,
+                 off_process_owner, block_sizes);
+
     std::vector<ArrayView<const dolfin::la_index>> _sparsity_entries
       = {{ArrayView<const la_index>(sparsity_entries[0]),
           ArrayView<const la_index>(sparsity_entries[1])}};
@@ -155,7 +143,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   }
 
   // Initialise matrix
-  A.init(*tensor_layout);
+  A->init(*tensor_layout);
 
   // Build discrete gradient operator/matrix
   for (EdgeIterator edge(mesh); !edge.end(); ++edge)
@@ -183,12 +171,12 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
     }
 
     // Set values in matrix
-    A.set(values, 1, &row, 2, cols);
+    A->set(values, 1, &row, 2, cols);
   }
 
   // Finalise matrix
-  A.apply("insert");
+  A->apply("insert");
 
-  return std::make_shared<Matrix>(A);
+  return A;
 }
 //-----------------------------------------------------------------------------
