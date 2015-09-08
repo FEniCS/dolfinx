@@ -32,11 +32,34 @@ def test_gradient():
     AMG pre conditioners
     """
 
-    mesh = UnitCubeMesh(4, 3, 7)
+    def compute_discrete_gradient(mesh):
+        V = FunctionSpace(mesh, "Lagrange", 1)
+        W = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1)
+
+        G = DiscreteOperators.build_gradient(W, V)
+        num_edges = mesh.size_global(1)
+        assert G.size(0) == num_edges
+        assert G.size(1) == mesh.size_global(0)
+        assert round(G.norm("frobenius") - sqrt(2.0*num_edges), 8) == 0.0
+
+        meshes = [UnitSquareMesh(11, 6), UnitCubeMesh(4, 3, 7)]
+        for mesh in meshes:
+            compute_discrete_gradient(mesh)
+
+
+def test_incompatible_spaces():
+    "Test that error is thrown when function spaces are not compatible"
+
+    mesh = UnitSquareMesh(13, 7)
     V = FunctionSpace(mesh, "Lagrange", 1)
     W = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1)
+    with pytest.raises(RuntimeError):
+        G = DiscreteOperators.build_gradient(V, W)
+    with pytest.raises(RuntimeError):
+        G = DiscreteOperators.build_gradient(V, V)
+    with pytest.raises(RuntimeError):
+        G = DiscreteOperators.build_gradient(W, W)
 
-    G = DiscreteOperators.build_gradient(W, V)
-    assert G.size(0) == mesh.size_global(1)
-    assert G.size(1) == mesh.size_global(0)
-    assert round(G.norm("frobenius") - sqrt(2*mesh.size_global(1)), 8) == 0.0
+    V = FunctionSpace(mesh, "Lagrange", 2)
+    with pytest.raises(RuntimeError):
+        G = DiscreteOperators.build_gradient(W, V)
