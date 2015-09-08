@@ -446,8 +446,21 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
   XDMFxml xml(_filename);
   xml.read();
 
+  const std::vector<std::string> topo_name = xml.topology_name();
+  const std::vector<std::string> geom_name = xml.geometry_name();
+  boost::filesystem::path topo_path(topo_name[0]);
+  boost::filesystem::path hdf5_path(hdf5_filename);
+  if (topo_path.filename() != hdf5_path.filename() or geom_name[0] != topo_name[0])
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "read XDMF mesh",
+                 "Topology and geometry file names do not match");
+  }
+
   // Try to read the mesh from the associated HDF5 file
-  hdf5_file->read(mesh, "/Mesh/" + xml.meshname(), use_partition_from_file);
+  hdf5_file->read(mesh, topo_name[1],
+                  geom_name[1],
+                  topo_name[2], use_partition_from_file);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
@@ -691,16 +704,10 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
 
   XDMFxml xml(_filename);
   xml.read();
-  const std::string mesh_name = xml.meshname();
   const std::string data_name = xml.dataname();
 
-  if (mesh_name != data_name)
-    dolfin_error("XMDFFile.cpp",
-                 "read MeshFunction",
-                 "Data and Mesh names do not match in XDMF");
-
   // Try to read the meshfunction from the associated HDF5 file
-  hdf5_file->read(meshfunction, "/Mesh/" + mesh_name);
+  hdf5_file->read(meshfunction, "/Mesh/" + data_name);
 }
 //----------------------------------------------------------------------------
 #endif

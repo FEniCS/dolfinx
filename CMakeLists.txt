@@ -1063,22 +1063,9 @@ if (DOLFIN_ENABLE_TESTING)
     DEPENDS copy_data_test_demo demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
-  # Add target "run_systemtests" for running system tests
-  add_custom_target(run_systemtests
-    COMMAND echo "System tests are removed.")
-
-  # TODO: Make buildbot run the dependencies here separately?
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
-    DEPENDS run_unittests_2)
-
-  # ... attempt at controlling dependency execution order ...
-  add_custom_target(run_unittests_2
-    DEPENDS run_unittests_py_mpi run_unittests_1)
-  add_custom_target(run_unittests_1
-    DEPENDS run_unittests_cpp run_unittests_0)
-  add_custom_target(run_unittests_0
-    DEPENDS run_unittests_py)
+    DEPENDS run_unittests_cpp run_unittests_py run_unittests_py_mpi)
 
   # TODO: Use google test for C++ unit tests?
   # Add target "run_unittests_cpp" for running only C++ unit tests

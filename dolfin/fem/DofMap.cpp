@@ -515,7 +515,10 @@ std::string DofMap::str(bool verbose) const
   if (verbose)
   {
     // Cell loop
-    for (std::size_t i = 0; i < _dofmap.size(); i += _cell_dimension)
+    dolfin_assert(_dofmap.size()%_cell_dimension == 0);
+    const std::size_t ncells = _dofmap.size()/_cell_dimension;
+
+    for (std::size_t i = 0; i < ncells; ++i)
     {
       s << "Local cell index, cell dofmap dimension: " << i
         << ", " << _cell_dimension << std::endl;
