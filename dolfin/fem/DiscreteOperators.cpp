@@ -16,10 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 #include <vector>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/Matrix.h>
 #include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/TensorLayout.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
@@ -69,7 +72,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   //                                       mesh.size_global(0)};
   //TensorLayout layout(mesh.mpi_comm(), dims, 0, 1, . . ., true);
 
-  // Build ,aps from entities to local dof indices
+  // Build maps from entities to local dof indices
   const std::vector<dolfin::la_index> edge_to_dof = V0.dofmap()->dofs(mesh, 1);
   const std::vector<dolfin::la_index> vertex_to_dof
     = V1.dofmap()->dofs(mesh, 0);
@@ -82,27 +85,79 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
 
   // FIXME: This should not be PETSc-specific
 
+  // Declare matrix
+  Matrix A;
+
+  // Create layout for initialising tensor
+  std::shared_ptr<TensorLayout> tensor_layout;
+  tensor_layout = A.factory().create_layout(2);
+  dolfin_assert(tensor_layout);
+
+  //std::vector<std::size_t> block_sizes = {1, 1};
+  std::vector<std::size_t> global_dimensions
+    = {V0.dofmap()->global_dimension(), V1.dofmap()->global_dimension()};
+  std::vector<std::pair<std::size_t, std::size_t>> local_range
+    = { V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
+
+  // Initialise tensor layout
+  tensor_layout->init(mesh.mpi_comm(), global_dimensions, 1,
+                      local_range);
+
   // Create matrix
   //auto G = std::make_shared<PETScMatrix>();
   //Mat _G = G->mat();
-  Mat _G;
+  //Mat _G;
 
   // Get local ranges
-  std::size_t num_local_rows = V0.dofmap()->local_dimension("owned");
-  std::size_t num_local_cols = V1.dofmap()->local_dimension("owned");
+  //std::size_t num_local_rows = V0.dofmap()->local_dimension("owned");
+  //std::size_t num_local_cols = V1.dofmap()->local_dimension("owned");
 
   // Initialize matrix
-  MatCreate(mesh.mpi_comm(), &_G);
-  MatSetSizes(_G, num_local_rows, num_local_cols, PETSC_DECIDE, PETSC_DECIDE);
-  MatSetType(_G, MATAIJ);
-  MatSeqAIJSetPreallocation(_G, 2, NULL);
-  MatMPIAIJSetPreallocation(_G, 2, NULL, 2, NULL);
-  MatSetUp(_G);
+  //MatCreate(mesh.mpi_comm(), &_G);
+  //MatSetSizes(_G, num_local_rows, num_local_cols, PETSC_DECIDE, PETSC_DECIDE);
+  //MatSetType(_G, MATAIJ);
+  //MatSeqAIJSetPreallocation(_G, 2, NULL);
+  //MatMPIAIJSetPreallocation(_G, 2, NULL, 2, NULL);
+  //MatSetUp(_G);
 
   // Initialize edge -> vertex connections
   mesh.init(1, 0);
 
-  // Build discrete gradient operator
+  // Build sparsity pattern
+  if (tensor_layout->sparsity_pattern())
+  {
+    std::vector<std::vector<dolfin::la_index>>
+      sparsity_entries(2);
+    for (EdgeIterator edge(mesh); !edge.end(); ++edge)
+    {
+      // Row index (global indices)
+      const int row = local_to_global_map0[edge_to_dof[edge->index()]];
+
+      // Column indices (global indices)
+      const Vertex v0(mesh, edge->entities(0)[0]);
+      const Vertex v1(mesh, edge->entities(0)[1]);
+      const int col0 = local_to_global_map1[vertex_to_dof[v0.index()]];
+      const int col1 = local_to_global_map1[vertex_to_dof[v1.index()]];
+
+      sparsity_entries[0].push_back(row);
+      sparsity_entries[1].push_back(col0);
+
+      sparsity_entries[0].push_back(row);
+      sparsity_entries[1].push_back(col1);
+    }
+
+    GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+    std::vector<ArrayView<const dolfin::la_index>> _sparsity_entries
+      = {{ArrayView<const la_index>(sparsity_entries[0]),
+          ArrayView<const la_index>(sparsity_entries[1])}};
+    pattern.insert_global(_sparsity_entries);
+    pattern.apply();
+  }
+
+  // Initialise matrix
+  A.init(*tensor_layout);
+
+  // Build discrete gradient operator/matrix
   for (EdgeIterator edge(mesh); !edge.end(); ++edge)
   {
     dolfin::la_index row;
@@ -126,11 +181,14 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
       values[0] = -1.0;
       values[1] =  1.0;
     }
-    MatSetValues(_G, 1, &row, 2, cols, values, INSERT_VALUES);
-  }
-  MatAssemblyBegin(_G, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(_G, MAT_FINAL_ASSEMBLY);
 
-  return std::make_shared<PETScMatrix>(_G);
+    // Set values in matrix
+    A.set(values, 1, &row, 2, cols);
+  }
+
+  // Finalise matrix
+  A.apply("insert");
+
+  return std::make_shared<Matrix>(A);
 }
 //-----------------------------------------------------------------------------
