@@ -217,7 +217,11 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionSpace_
     ///         Return the shared pointer.
-    std::shared_ptr<const FunctionSpace> function_space() const;
+    std::shared_ptr<const FunctionSpace> function_space() const
+    {
+      dolfin_assert(_function_space);
+      return _function_space;
+    }
 
     /// Return vector of expansion coefficients (non-const version)
     ///

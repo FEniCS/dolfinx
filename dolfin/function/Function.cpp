@@ -321,12 +321,6 @@ void Function::operator=(const FunctionAXPY& axpy)
     _vector->axpy(it->first, *(it->second->vector()));
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FunctionSpace> Function::function_space() const
-{
-  dolfin_assert(_function_space);
-  return _function_space;
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> Function::vector()
 {
   dolfin_assert(_vector);
