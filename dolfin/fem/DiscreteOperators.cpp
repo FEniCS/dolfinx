@@ -35,6 +35,9 @@ std::shared_ptr<GenericMatrix>
 DiscreteOperators::build_gradient(const FunctionSpace& V0,
                                   const FunctionSpace& V1)
 {
+  // TODO: This function would be significantly simplified if it was
+  // easier to build matrix sparsity patterns.
+
   // Get mesh
   dolfin_assert(V0.mesh());
   const Mesh& mesh = *(V0.mesh());
