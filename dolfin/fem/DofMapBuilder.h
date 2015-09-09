@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Anders Logg, Ola Skavhaug and Garth N. Wells
+// Copyright (C) 2008-2015 Anders Logg, Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,9 +18,7 @@
 // Modified by Niclas Jansson 2009.
 // Modified by Garth Wells 2009-2012
 // Modified by Mikael Mortensen 2012.
-//
-// First added:  2008-08-12
-// Last changed: 2012-11-05
+// Modified by Martin Alnaes, 2015
 
 #ifndef __DOF_MAP_BUILDER_H
 #define __DOF_MAP_BUILDER_H
@@ -186,11 +184,23 @@ namespace dolfin
       const std::set<std::size_t>& global_nodes,
       const MPI_Comm mpi_comm);
 
+    static void get_cell_entities_local(const Cell& cell,
+      std::vector<std::vector<std::size_t>>& entity_indices,
+      const std::vector<bool>& needs_mesh_entities);
+
+    static void get_cell_entities_global(const Cell& cell,
+      std::vector<std::vector<std::size_t>>& entity_indices,
+      const std::vector<bool>& needs_mesh_entities);
+
+    static void get_cell_entities_global_constrained(const Cell& cell,
+      std::vector<std::vector<std::size_t>>& entity_indices,
+      const std::vector<std::vector<std::size_t>>& global_entity_indices,
+      const std::vector<bool>& needs_mesh_entities);
+
     // Compute number of mesh entities for dimensions required by
     // dofmap
-    static std::vector<std::size_t>
-      compute_num_mesh_entities_local(const Mesh& mesh,
-                                      const ufc::dofmap& ufc_dofmap);
+    static std::vector<std::size_t> compute_num_mesh_entities_local(
+      const Mesh& mesh, const std::vector<bool>& needs_mesh_entities);
 
   };
 }
