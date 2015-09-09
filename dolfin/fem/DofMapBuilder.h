@@ -186,13 +186,6 @@ namespace dolfin
       const std::set<std::size_t>& global_nodes,
       const MPI_Comm mpi_comm);
 
-    static void get_cell_data_local(ufc::cell& ufc_cell,
-                                    const Cell& cell);
-
-    static void get_cell_data_global_constrained(
-      ufc::cell& ufc_cell, const Cell& cell,
-      const std::vector<std::vector<std::size_t>>& global_entity_indices);
-
     // Compute number of mesh entities for dimensions required by
     // dofmap
     static std::vector<std::size_t>

@@ -50,6 +50,63 @@
 
 using namespace dolfin;
 
+
+//-----------------------------------------------------------------------------
+void get_cell_entities_local(const Cell& cell,
+  std::vector<std::vector<std::size_t>>& entity_indices)
+{
+  const std::size_t D = cell.mesh().topology().dim();
+  for (std::size_t d = 0; d < D; ++d)
+    for (std::size_t i = 0; i < cell.num_entities(d); ++i)
+      entity_indices[d][i] = cell.entities(d)[i];
+  entity_indices[D][0] = cell.index();
+}
+//-----------------------------------------------------------------------------
+void get_cell_entities_global(const Cell& cell,
+  std::vector<std::vector<std::size_t>>& entity_indices)
+{
+  const MeshTopology& topology = cell.mesh().topology();
+  const std::size_t D = topology.dim();
+  for (std::size_t d = 0; d < D; ++d)
+  {
+    if (topology.have_global_indices(d)) // TODO: Check if this ever will be false in here
+    {
+      const std::vector<std::size_t>& global_indices
+        = topology.global_indices(d);
+      for (std::size_t i = 0; i < cell.num_entities(d); ++i)
+        entity_indices[d][i] = global_indices[cell.entities(d)[i]];
+    }
+    else
+    {
+      for (std::size_t i = 0; i < cell.num_entities(d); ++i)
+        entity_indices[d][i] = cell.entities(d)[i];
+    }
+  }
+  entity_indices[D][0] = cell.index(); // TODO: Shouldn't this be cell.global_index()?
+}
+//-----------------------------------------------------------------------------
+void get_cell_entities_global_constrained(const Cell& cell,
+  std::vector<std::vector<std::size_t>>& entity_indices,
+  const std::vector<std::vector<std::size_t>>& global_entity_indices)
+{
+  const std::size_t D = cell.mesh().topology().dim();
+  for (std::size_t d = 0; d < D; ++d)
+  {
+    if (!global_entity_indices[d].empty())
+    {
+      const std::vector<std::size_t>& global_indices
+        = global_entity_indices[d];
+      for (std::size_t i = 0; i < cell.num_entities(d); ++i)
+      {
+        entity_indices[d][i]
+          = global_indices[cell.entities(d)[i]];
+      }
+    }
+  }
+  entity_indices[D][0] = cell.index(); // TODO: Shouldn't this be cell.global_index()?
+}
+
+
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
                           std::shared_ptr<const SubDomain> constrained_domain)
@@ -599,9 +656,10 @@ void DofMapBuilder::build_local_ufc_dofmap(
     }
   }
 
-  // Create UFC cell and allocate memory
-  ufc::cell ufc_cell;
-  ufc_cell.entity_indices.resize(D + 1);
+  // Allocate entity indices array
+  std::vector<std::vector<std::size_t>> entity_indices(D+1);
+  for (std::size_t d = 0; d <= D; ++d)
+    entity_indices[d].resize(mesh.type().num_entities(d));
 
   // Build dofmap from ufc::dofmap
   dofmap.resize(mesh.num_cells(),
@@ -609,34 +667,16 @@ void DofMapBuilder::build_local_ufc_dofmap(
   std::vector<std::size_t> dof_holder(ufc_dofmap.num_element_dofs());
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
-    const std::size_t cell_index = cell->index();
-    ufc_cell.orientation = -1;
-    if (!cell->mesh().cell_orientations().empty())
-    {
-      dolfin_assert(cell_index < cell->mesh().cell_orientations().size());
-      ufc_cell.orientation = cell->mesh().cell_orientations()[cell_index];
-    }
-    ufc_cell.topological_dimension = D;
-
-    for (std::size_t d = 0; d < D; d++)
-    {
-      ufc_cell.entity_indices[d].resize(cell->num_entities(d));
-      for (std::size_t i = 0; i < cell->num_entities(d); ++i)
-        ufc_cell.entity_indices[d][i] = cell->entities(d)[i];
-    }
-
-    // Cell index
-    ufc_cell.entity_indices[D].resize(1);
-    ufc_cell.entity_indices[D][0] = cell_index;
-
-    // Local cell index short-cut
-    ufc_cell.index = ufc_cell.entity_indices[D][0];
+    // Fill entity indices array
+    get_cell_entities_local(*cell, entity_indices);
 
     // Tabulate dofs for cell
     ufc_dofmap.tabulate_dofs(dof_holder.data(), num_mesh_entities,
-                             ufc_cell.entity_indices);
+                             entity_indices);
     std::copy(dof_holder.begin(), dof_holder.end(),
-              dofmap[cell_index].begin());
+              dofmap[entity_indices[D][0]].begin());
+    // TODO: Why not write directly and avoid the copy?
+    //ufc_dofmap.tabulate_dofs(dofmap[entity_indices[D][0]].data(), num_mesh_entities, entity_indices);
   }
 }
 //-----------------------------------------------------------------------------
@@ -1107,16 +1147,17 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   node_dofmap.clear();
   node_dofmap.resize(mesh.num_cells());
 
-  // Holder for UFC 64-bit dofmap integers
-  std::vector<std::size_t> ufc_nodes_global, ufc_nodes_local;
-
   // Get standard local elem2ent dimension
   const std::size_t local_dim = dofmaps[0]->num_element_dofs();
 
-  // Create UFC cell and allocate memory
-  ufc::cell ufc_cell_global, ufc_cell_local;
-  ufc_cell_global.entity_indices.resize(D + 1);
-  ufc_cell_local.entity_indices.resize(D + 1);
+  // Holder for UFC 64-bit dofmap integers
+  std::vector<std::size_t> ufc_nodes_global(local_dim);
+  std::vector<std::size_t> ufc_nodes_local(local_dim);
+
+  // Allocate entity indices array
+  std::vector<std::vector<std::size_t>> entity_indices(D+1);
+  for (std::size_t d = 0; d <= D; ++d)
+    entity_indices[d].resize(mesh.type().num_entities(d));
 
   // Resize local-to-global map
   node_local_to_global.resize(offset_local[1]);
@@ -1124,49 +1165,25 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   // Build dofmaps from ufc::dofmap
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
-    // Set cell orientation
-    int cell_orientation = -1;
-    if(!cell->mesh().cell_orientations().empty())
-    {
-      dolfin_assert(cell->index() < cell->mesh().cell_orientations().size());
-     cell_orientation = cell->mesh().cell_orientations()[cell->index()];
-    }
-    ufc_cell_global.orientation = cell_orientation;
-    ufc_cell_local.orientation = cell_orientation;
-
-    // Get cell data (local)
-    for (std::size_t d = 0; d < D; ++d)
-    {
-      // Get cell local entities
-      ufc_cell_local.entity_indices[d].resize(cell->num_entities(d));
-      for (std::size_t i = 0; i < cell->num_entities(d); ++i)
-        ufc_cell_local.entity_indices[d][i] = cell->entities(d)[i];
-    }
-    ufc_cell_local.entity_indices[D].resize(1);
-    ufc_cell_local.entity_indices[D][0] = cell->index();
-    ufc_cell_local.index = cell->index();
-
-    // Get global cell entities/data (global)
-    cell->get_cell_data(ufc_cell_global);
-    cell->get_cell_topology(ufc_cell_global);
-
     // Get reference to container for cell dofs
     std::vector<la_index>& cell_nodes = node_dofmap[cell->index()];
     cell_nodes.resize(local_dim);
 
     // Tabulate standard UFC dof map for first space (local)
-    ufc_nodes_local.resize(local_dim);
+    get_cell_entities_local(*cell, entity_indices);
     dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
                               num_mesh_entities_local,
-                              ufc_cell_local.entity_indices);
+                              entity_indices);
     std::copy(ufc_nodes_local.begin(), ufc_nodes_local.end(),
               cell_nodes.begin());
+    // TODO: Why not write directly and avoid the copy?
+    //dofmaps[0]->tabulate_dofs(cell_nodes.data(), num_mesh_entities_local, entity_indices);
 
     // Tabulate standard UFC dof map for first space (global)
-    ufc_nodes_global.resize(local_dim);
+    get_cell_entities_global(*cell, entity_indices);
     dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
                               num_mesh_entities_global_unconstrained,
-                              ufc_cell_global.entity_indices);
+                              entity_indices);
 
     // Build local-to-global map for nodes
     for (std::size_t i = 0; i < local_dim; ++i)
@@ -1250,15 +1267,17 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   node_dofmap.clear();
   node_dofmap.resize(mesh.num_cells());
 
-  // Holder for UFC 64-bit dofmap integers
-  std::vector<std::size_t> ufc_nodes_local, ufc_nodes_global,
-    ufc_nodes_global_constrained;
-
   // Get standard local element dimension
   const std::size_t local_dim = dofmaps[0]->num_element_dofs();
 
-  // Create UFC cell and allocate memory
-  ufc::cell ufc_cell;
+  // Holder for UFC 64-bit dofmap integers
+  std::vector<std::size_t> ufc_nodes_local(local_dim);
+  std::vector<std::size_t> ufc_nodes_global_constrained(local_dim);
+
+  // Allocate entity indices array
+  std::vector<std::vector<std::size_t>> entity_indices(D+1);
+  for (std::size_t d = 0; d <= D; ++d)
+    entity_indices[d].resize(mesh.type().num_entities(d));
 
   // Resize local-to-global map
   std::vector<std::size_t> node_local_to_global_constrained(offset_local[1]);
@@ -1272,29 +1291,22 @@ DofMapBuilder::build_ufc_node_graph_constrained(
     cell_nodes.resize(local_dim);
 
     // Tabulate standard UFC dof map for first space (local)
-    ufc_nodes_local.resize(local_dim);
-    get_cell_data_local(ufc_cell, *cell);
+    get_cell_entities_local(*cell, entity_indices);
     dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
                               num_mesh_entities_local,
-                              ufc_cell.entity_indices);
+                              entity_indices);
     std::copy(ufc_nodes_local.begin(), ufc_nodes_local.end(),
               cell_nodes.begin());
-
-    // Tabulate standard UFC dof map for first space (global)
-    ufc_nodes_global.resize(local_dim);
-    cell->get_cell_data(ufc_cell);
-    cell->get_cell_topology(ufc_cell);
-    dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
-                              num_mesh_entities_global_unconstrained,
-                              ufc_cell.entity_indices);
+    // TODO: Why not write directly and avoid the copy?
+    //dofmaps[0]->tabulate_dofs(cell_nodes.data(), num_mesh_entities_local, entity_indices);
 
     // Tabulate standard UFC dof map for first space (global, constrained)
-    ufc_nodes_global_constrained.resize(local_dim);
-    get_cell_data_global_constrained(ufc_cell, *cell,
-                                     global_entity_indices);
+    get_cell_entities_global_constrained(*cell,
+                                         entity_indices,
+                                         global_entity_indices);
     dofmaps[0]->tabulate_dofs(ufc_nodes_global_constrained.data(),
                               num_mesh_entities_global,
-                              ufc_cell.entity_indices);
+                              entity_indices);
 
     // Build local-to-global map for nodes
     for (std::size_t i = 0; i < local_dim; ++i)
@@ -1713,53 +1725,6 @@ void DofMapBuilder::build_dofmap(
       }
     }
   }
-}
-//-----------------------------------------------------------------------------
-void DofMapBuilder::get_cell_data_local(ufc::cell& ufc_cell,
-                                        const Cell& cell)
-{
-  const std::size_t D = cell.mesh().topology().dim();
-  ufc_cell.entity_indices.resize(D + 1);
-
-  // Set cell orientation
-  ufc_cell.orientation = cell.orientation();
-
-  // Set data
-  for (std::size_t d = 0; d < D; ++d)
-  {
-    // Get cell local entities
-    ufc_cell.entity_indices[d].resize(cell.num_entities(d));
-    for (std::size_t i = 0; i < cell.num_entities(d); ++i)
-      ufc_cell.entity_indices[d][i] = cell.entities(d)[i];
-  }
-  ufc_cell.entity_indices[D].resize(1);
-  ufc_cell.entity_indices[D][0] = cell.index();
-  ufc_cell.index = cell.index();
-}
-//-----------------------------------------------------------------------------
-void DofMapBuilder::get_cell_data_global_constrained(
-  ufc::cell& ufc_cell, const Cell& cell,
-  const std::vector<std::vector<std::size_t>>& global_entity_indices)
-{
-  const std::size_t D = cell.mesh().topology().dim();
-  ufc_cell.entity_indices.resize(D + 1);
-
-  for (std::size_t d = 0; d < D; ++d)
-  {
-    ufc_cell.entity_indices[d].resize(cell.num_entities(d));
-    if (!global_entity_indices[d].empty())
-    {
-      ufc_cell.entity_indices[d].resize(cell.num_entities(d));
-      for (std::size_t i = 0; i < cell.num_entities(d); ++i)
-      {
-        ufc_cell.entity_indices[d][i]
-          = global_entity_indices[d][cell.entities(d)[i]];
-      }
-    }
-  }
-  ufc_cell.entity_indices[D].resize(1);
-  ufc_cell.entity_indices[D][0] = cell.index();
-  ufc_cell.index = cell.index();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>
