@@ -479,8 +479,10 @@ def cells(self):
 // TODO: This was intended as steps toward letting dolfin.Mesh inherit from ufl.Mesh.
 //       That seems to be harder than anticipated, because fundamental properties
 //       of dolfin::Mesh are mutable and undefined at construction time.
-//       This work is therefore on hold. May not be a big problem.
-// TODO: Make sure to keep this up to date with SubMesh extensions below!
+//       This work is therefore on hold. I don't think this is a showstopper,
+//       it mainly means the code won't be as clean as I wanted.
+// Note: The extensions to the C++ dolfin::Mesh class here are added to
+//       all C++ subclasses of Mesh by swig, e.g. SubMesh, RectangleMesh, UnitSquareMesh
 %extend dolfin::Mesh
 {
 %pythoncode
@@ -491,61 +493,25 @@ def ufl_id(self):
 
 def ufl_cell(self):
     """Returns the ufl cell of the mesh."""
+    import ufl
     gdim = self.geometry().dim()
     cellname = self.type().description(False)
     return ufl.Cell(cellname, geometric_dimension=gdim)
 
 def ufl_coordinate_element(self):
     "Return the finite element of the coordinate vector field of this domain."
-    degree = 1 # self.geometry().degree() # FIXME: Define degree in MeshGeometry
-
+    import ufl
     cell = self.ufl_cell()
-    gdim = self.geometry().dim()
-    return ufl.VectorElement("Lagrange", cell, degree, dim=gdim)
+    degree = self.geometry().degree()
+    return ufl.VectorElement("Lagrange", cell, degree, dim=cell.geometric_dimension())
 
 def ufl_domain(self):
     """Returns the ufl domain corresponding to the mesh."""
+    import ufl
     # Cache object to avoid recreating it a lot
-    if self._ufl_domain is None:
+    if not hasattr(self, "_ufl_domain"):
         self._ufl_domain = ufl.Mesh(self.ufl_coordinate_element(), ufl_id=self.ufl_id(), cargo=self)
     return self._ufl_domain
-
-%}
-}
-
-//-----------------------------------------------------------------------------
-// Extend SubMesh interface with some ufl_* methods
-//-----------------------------------------------------------------------------
-// TODO: It would be nice if this was automatically inherited from the Mesh extension above!
-%extend dolfin::SubMesh
-{
-%pythoncode
-%{
-def ufl_id(self):
-    "Returns an id that UFL can use to decide if two objects are the same."
-    return self.id()
-
-def ufl_cell(self):
-    """Returns the ufl cell of the mesh."""
-    gdim = self.geometry().dim()
-    cellname = self.type().description(False)
-    return ufl.Cell(cellname, geometric_dimension=gdim)
-
-def ufl_coordinate_element(self):
-    "Return the finite element of the coordinate vector field of this domain."
-    degree = 1 # self.geometry().degree() # FIXME: Define degree in MeshGeometry
-
-    cell = self.ufl_cell()
-    gdim = self.geometry().dim()
-    return ufl.VectorElement("Lagrange", cell, degree, dim=gdim)
-
-def ufl_domain(self):
-    """Returns the ufl domain corresponding to the mesh."""
-    # Cache object to avoid recreating it a lot
-    if self._ufl_domain is None:
-        self._ufl_domain = ufl.Mesh(self.ufl_coordinate_element(), ufl_id=self.ufl_id(), cargo=self)
-    return self._ufl_domain
-
 %}
 }
 
