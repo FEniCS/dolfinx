@@ -25,6 +25,7 @@
 #include <dolfin/mesh/MeshHierarchy.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include "UniformMeshRefinement.h"
+#include "BisectionRefinement1D.h"
 #include "LocalMeshRefinement.h"
 #include "PlazaRefinementND.h"
 #include "refine.h"
@@ -53,22 +54,17 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh, bool redistribute)
 
   const std::string refinement_algorithm = parameters["refinement_algorithm"];
   bool parent_facets = (refinement_algorithm == "plaza_with_parent_facets");
-  bool serial = (MPI::size(mesh.mpi_comm()) == 1);
 
   // Dispatch to appropriate refinement function
-  if (serial and (D == 1 or refinement_algorithm == "regular_cut"))
-    UniformMeshRefinement::refine(refined_mesh, mesh);
+  if (D == 1)
+    BisectionRefinement1D::refine(refined_mesh, mesh, redistribute);
   else if(D == 2 or D == 3)
-  {
-    if (refinement_algorithm == "regular_cut")
-      warning("Using Plaza algorithm in parallel");
     PlazaRefinementND::refine(refined_mesh, mesh, redistribute, parent_facets);
-  }
   else
   {
     dolfin_error("refine.cpp",
                  "refine mesh",
-                 "Cannot refine mesh of topological dimension %d in parallel. Only 2D and 3D supported", D);
+                 "Cannot refine mesh of topological dimension %d", D);
   }
 }
 //-----------------------------------------------------------------------------
@@ -89,24 +85,18 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh,
 
   const std::string refinement_algorithm = parameters["refinement_algorithm"];
   bool parent_facets = (refinement_algorithm == "plaza_with_parent_facets");
-  bool serial = (MPI::size(mesh.mpi_comm()) == 1);
 
   // Dispatch to appropriate refinement function
-  if (serial and (D == 1 or refinement_algorithm == "regular_cut"))
-    LocalMeshRefinement::refine(refined_mesh, mesh, cell_markers);
+  if (D == 1)
+    BisectionRefinement1D::refine(refined_mesh, mesh, cell_markers, redistribute);
   else if (D == 2 or D == 3)
-  {
-    if (refinement_algorithm == "regular_cut")
-      warning("Using Plaza algorithm in parallel");
-
     PlazaRefinementND::refine(refined_mesh, mesh, cell_markers,
                               redistribute, parent_facets);
-  }
   else
   {
     dolfin_error("refine.cpp",
                  "refine mesh",
-                 "Cannot refine mesh of topological dimension %d in parallel. Only 2D and 3D supported", D);
+                 "Cannot refine mesh of topological dimension %d", D);
   }
 }
 //-----------------------------------------------------------------------------

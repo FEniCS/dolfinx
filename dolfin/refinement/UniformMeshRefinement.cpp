@@ -97,8 +97,8 @@ void UniformMeshRefinement::refine(Mesh& refined_mesh,
 
   // Add cells
   std::size_t current_cell = 0;
-  for (CellIterator c(mesh); !c.end(); ++c)
-    cell_type.refine_cell(*c, editor, current_cell);
+  //  for (CellIterator c(mesh); !c.end(); ++c)
+  //    cell_type.refine_cell(*c, editor, current_cell);
 
   // Close editor
   editor.close();
