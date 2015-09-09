@@ -314,8 +314,8 @@ def test_subdomain_assembly_form_1():
     assert mesh1.id() == mesh2.id()
     assert mesh1.ufl_domain().ufl_id() == mesh2.ufl_domain().ufl_id()
 
-    dxs = dx[subdomains]
-    dss = ds[boundaries]
+    dxs = dx(subdomain_data=subdomains)
+    dss = ds(subdomain_data=boundaries)
     assert dxs.ufl_domain() == None
     assert dss.ufl_domain() == None
     assert dxs.subdomain_data() == subdomains
@@ -385,8 +385,8 @@ def test_subdomain_assembly_form_1_multithreaded():
     assert mesh1.id() == mesh2.id()
     assert mesh1.ufl_domain().ufl_id() == mesh2.ufl_domain().ufl_id()
 
-    dxs = dx[subdomains]
-    dss = ds[boundaries]
+    dxs = dx(subdomain_data=subdomains)
+    dss = ds(subdomain_data=boundaries)
     assert dxs.ufl_domain() == None
     assert dss.ufl_domain() == None
     assert dxs.subdomain_data() == subdomains
