@@ -1714,8 +1714,7 @@ void DofMapBuilder::get_cell_entities_global(const Cell& cell,
     {
       if (topology.have_global_indices(d)) // TODO: Check if this ever will be false in here
       {
-        const std::vector<std::size_t>& global_indices
-          = topology.global_indices(d);
+        const std::vector<std::size_t>& global_indices = topology.global_indices(d);
         for (std::size_t i = 0; i < cell.num_entities(d); ++i)
           entity_indices[d][i] = global_indices[cell.entities(d)[i]];
       }
@@ -1726,8 +1725,12 @@ void DofMapBuilder::get_cell_entities_global(const Cell& cell,
       }
     }
   }
-  entity_indices[D][0] = cell.index(); // TODO: Shouldn't this be cell.global_index()?
+  if (topology.have_global_indices(D))
+    entity_indices[D][0] = cell.global_index();
+  else
+    entity_indices[D][0] = cell.index();
 }
+// TODO: The above and below functions are _very_ similar, can they be combined?
 //-----------------------------------------------------------------------------
 void DofMapBuilder::get_cell_entities_global_constrained(const Cell& cell,
   std::vector<std::vector<std::size_t>>& entity_indices,
@@ -1741,17 +1744,14 @@ void DofMapBuilder::get_cell_entities_global_constrained(const Cell& cell,
     {
       if (!global_entity_indices[d].empty())
       {
-        const std::vector<std::size_t>& global_indices
-          = global_entity_indices[d];
+        const std::vector<std::size_t>& global_indices = global_entity_indices[d];
         for (std::size_t i = 0; i < cell.num_entities(d); ++i)
-        {
-          entity_indices[d][i]
-            = global_indices[cell.entities(d)[i]];
-        }
+          entity_indices[d][i] = global_indices[cell.entities(d)[i]];
       }
     }
   }
-  entity_indices[D][0] = cell.index(); // TODO: Shouldn't this be cell.global_index()?
+  // FIXME: Should this be cell.global_index() or global_entity_indices[D][cell.index()]? Was just cell.index() before as well.
+  entity_indices[D][0] = cell.index();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> DofMapBuilder::compute_num_mesh_entities_local(
