@@ -634,7 +634,7 @@ void DofMapBuilder::build_local_ufc_dofmap(
 
     // Tabulate dofs for cell
     ufc_dofmap.tabulate_dofs(dof_holder.data(), num_mesh_entities,
-                             ufc_cell);
+                             ufc_cell.entity_indices);
     std::copy(dof_holder.begin(), dof_holder.end(),
               dofmap[cell_index].begin());
   }
@@ -900,11 +900,11 @@ void DofMapBuilder::compute_global_dofs(
                      "Global degree of freedom has dimension != 1");
       }
 
-      // Create dummy cell argument to tabulate single global dof
-      std::unique_ptr<ufc::cell> ufc_cell(new ufc::cell);
+      // Create dummy entity_indices argument to tabulate single global dof
+      std::vector<std::vector<std::size_t>> dummy_entity_indices;
       std::size_t dof_local = 0;
       ufc_dofmap->tabulate_dofs(&dof_local, num_mesh_entities_local,
-                                *ufc_cell);
+                                dummy_entity_indices);
 
       // Insert global dof index
       std::pair<std::set<std::size_t>::iterator, bool> ret
@@ -1158,7 +1158,7 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
     ufc_nodes_local.resize(local_dim);
     dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
                               num_mesh_entities_local,
-                              ufc_cell_local);
+                              ufc_cell_local.entity_indices);
     std::copy(ufc_nodes_local.begin(), ufc_nodes_local.end(),
               cell_nodes.begin());
 
@@ -1166,7 +1166,7 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
     ufc_nodes_global.resize(local_dim);
     dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
                               num_mesh_entities_global_unconstrained,
-                              ufc_cell_global);
+                              ufc_cell_global.entity_indices);
 
     // Build local-to-global map for nodes
     for (std::size_t i = 0; i < local_dim; ++i)
@@ -1276,7 +1276,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
     get_cell_data_local(ufc_cell, *cell);
     dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
                               num_mesh_entities_local,
-                              ufc_cell);
+                              ufc_cell.entity_indices);
     std::copy(ufc_nodes_local.begin(), ufc_nodes_local.end(),
               cell_nodes.begin());
 
@@ -1286,7 +1286,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
     cell->get_cell_topology(ufc_cell);
     dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
                               num_mesh_entities_global_unconstrained,
-                              ufc_cell);
+                              ufc_cell.entity_indices);
 
     // Tabulate standard UFC dof map for first space (global, constrained)
     ufc_nodes_global_constrained.resize(local_dim);
@@ -1294,7 +1294,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
                                      global_entity_indices);
     dofmaps[0]->tabulate_dofs(ufc_nodes_global_constrained.data(),
                               num_mesh_entities_global,
-                              ufc_cell);
+                              ufc_cell.entity_indices);
 
     // Build local-to-global map for nodes
     for (std::size_t i = 0; i < local_dim; ++i)
