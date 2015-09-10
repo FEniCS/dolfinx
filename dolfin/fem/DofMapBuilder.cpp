@@ -1699,7 +1699,9 @@ void DofMapBuilder::get_cell_entities_local(const Cell& cell,
     if (needs_mesh_entities[d])
       for (std::size_t i = 0; i < cell.num_entities(d); ++i)
         entity_indices[d][i] = cell.entities(d)[i];
-  entity_indices[D][0] = cell.index();
+  // Handle cell index separately because cell.entities(D) doesn't work.
+  if (needs_mesh_entities[D])
+    entity_indices[D][0] = cell.index();
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::get_cell_entities_global(const Cell& cell,
@@ -1725,10 +1727,14 @@ void DofMapBuilder::get_cell_entities_global(const Cell& cell,
       }
     }
   }
-  if (topology.have_global_indices(D))
-    entity_indices[D][0] = cell.global_index();
-  else
-    entity_indices[D][0] = cell.index();
+  // Handle cell index separately because cell.entities(D) doesn't work.
+  if (needs_mesh_entities[D])
+  {
+    if (topology.have_global_indices(D))
+      entity_indices[D][0] = cell.global_index();
+    else
+      entity_indices[D][0] = cell.index();
+  }
 }
 // TODO: The above and below functions are _very_ similar, can they be combined?
 //-----------------------------------------------------------------------------
@@ -1742,7 +1748,13 @@ void DofMapBuilder::get_cell_entities_global_constrained(const Cell& cell,
   {
     if (needs_mesh_entities[d])
     {
-      if (!global_entity_indices[d].empty())
+      if (global_entity_indices[d].empty())
+      {
+        dolfin_error("DofMapBuilder.cpp",
+                     "get_cell_entities_global_constrained",
+                     "Missing global entity indices needed for cell entity tabulation.");
+      }
+      if (!global_entity_indices[d].empty()) // TODO: Can this be false? If so the entity_indices array will contain garbage
       {
         const std::vector<std::size_t>& global_indices = global_entity_indices[d];
         for (std::size_t i = 0; i < cell.num_entities(d); ++i)
@@ -1750,8 +1762,19 @@ void DofMapBuilder::get_cell_entities_global_constrained(const Cell& cell,
       }
     }
   }
-  // FIXME: Should this be cell.global_index() or global_entity_indices[D][cell.index()]? Was just cell.index() before as well.
-  entity_indices[D][0] = cell.index();
+  // Handle cell index separately because cell.entities(D) doesn't work.
+  if (needs_mesh_entities[D])
+  {
+    if (global_entity_indices[D].empty())
+    {
+      dolfin_error("DofMapBuilder.cpp",
+                   "get_cell_entities_global_constrained",
+                   "Missing global cell index needed for cell index tabulation.");
+    }
+    // FIXME: Should this be cell.global_index() or global_entity_indices[D][cell.index()]? Was just cell.index() before as well.
+    //entity_indices[D][0] = cell.index();
+    entity_indices[D][0] = global_entity_indices[D][cell.index()];
+  }
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> DofMapBuilder::compute_num_mesh_entities_local(
