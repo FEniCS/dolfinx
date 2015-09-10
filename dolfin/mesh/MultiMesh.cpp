@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-06-03
+// Last changed: 2015-09-02
 
 
 #include <dolfin/log/log.h>
@@ -33,7 +33,7 @@
 #include "MultiMesh.h"
 // FIXME August
 #include <dolfin/geometry/dolfin_simplex_tools.h>
-#define Augustdebug
+//#define Augustdebug
 
 using namespace dolfin;
 
@@ -1554,12 +1554,16 @@ void MultiMesh::_build_quadrature_rules_interface()
 	      //quadrature_rule qr;
 	      for (const auto cell: initial_cells)
 	      {
+#ifdef Augustdebug
 		std::cout << tools::drawtriangle(cell.second) << std::endl;
+#endif
 		for (const auto polyhedron: cut_cutting_interface)
 		{
 		  for (const auto simplex: polyhedron)
 		  {
+#ifdef Augustdebug
 		    std::cout << tools::drawtriangle(simplex);
+#endif
 		    // Compute intersection between the initial
 		    // polyhedra (simple simplices) and
 		    // cut_cutting_interface
@@ -1569,7 +1573,9 @@ void MultiMesh::_build_quadrature_rules_interface()
 		    //std::cout << "stage 0 qr " << qr.first.size() << std::endl; PPause;
 		  }
 		}
+#ifdef Augustdebug
 		PPause;
+#endif
 	      }
 	    }
 
@@ -1643,11 +1649,15 @@ void MultiMesh::_build_quadrature_rules_interface()
 		      const std::vector<double> ii = IntersectionTriangulation::triangulate_intersection(simplex, tdim, interface_simplex, tdim-1, gdim);
 		      if (ii.size())
 		      {
+#ifdef Augustdebug
 			std::cout << "# deep inside inc exc\n";
+#endif
 			_add_quadrature_rule(cut_cutting_interface_qr, ii, tdim-1, gdim, quadrature_order, sign);
-			std::cout << "the collision was:\n";
-			std::cout << tools::drawtriangle(simplex)<<tools::drawtriangle(interface_simplex)<<std::endl;
+#ifdef Augustdebug
+			std::cout << "the collision was:\n"
+				  << tools::drawtriangle(simplex)<<tools::drawtriangle(interface_simplex)<<std::endl;
 			PPause;
+#endif
 		      }
 		    }
 	    }
@@ -1739,13 +1749,14 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
     //std::cout << std::setprecision(20) <<factor*dqr.second[i] << '\n';
   }
 
+#ifdef Augustdebug
   std::cout << "# display quadrature rule:"<< std::endl;
   for (std::size_t i = 0; i < qr.second.size(); ++i)
   {
     std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') # "<<qr.second[i]<<std::endl;
     //std::cout  << dqr.first[2*i]<<' '<<dqr.first[2*i+1]<< std::endl;
   }
-
+#endif
 
   return num_points;
 }

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2015-06-08
+// Last changed: 2015-09-02
 //
 // Unit tests for MultiMesh
 
@@ -879,27 +879,52 @@ public:
 
   void test_multiple_meshes_interface_quadrature()
   {
+    // MultiMesh multimesh;
+    // UnitSquareMesh mesh_0(1, 1);
+    // multimesh.add(mesh_0);
+    // File("mesh_0.xml") << mesh_0;
+
+    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
+    // multimesh.add(mesh_1);
+    // double exact_area = 4*(0.9-0.1); // mesh0 and mesh1
+    // File("mesh_1.xml") << mesh_1;
+
+    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
+    // multimesh.add(mesh_2);
+    // exact_area += 4*(0.8-0.2); // mesh1 and mesh2
+    // File("mesh_2.xml") << mesh_2;
+
+    // RectangleMesh mesh_3(0.3, 0.3, 0.7, 0.7, 1, 1);
+    // multimesh.add(mesh_3);
+    // exact_area += 4*(0.7-0.3); // mesh2 and mesh3
+    // File("mesh_3.xml") << mesh_3;
+
     MultiMesh multimesh;
-    UnitSquareMesh mesh_0(1, 1);
-    multimesh.add(mesh_0);
-    File("mesh_0.xml") << mesh_0;
-
-    RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
-    multimesh.add(mesh_1);
-    double exact_area = 4*(0.9-0.1); // mesh0 and mesh1
-    File("mesh_1.xml") << mesh_1;
-
-    RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
-    multimesh.add(mesh_2);
-    exact_area += 4*(0.8-0.2); // mesh1 and mesh2
-    File("mesh_2.xml") << mesh_2;
-
-    RectangleMesh mesh_3(0.3, 0.3, 0.7, 0.7, 1, 1);
-    multimesh.add(mesh_3);
-    exact_area += 4*(0.7-0.3); // mesh2 and mesh3
-    File("mesh_3.xml") << mesh_3;
-
+    MeshEditor me;
+    const std::size_t N = 10;
+    std::vector<Mesh> meshes(N);
+    double exact_area = 0;
+    for (std::size_t i = 0; i < N; ++i)
+    {
+      me.open(meshes[i], 2, 2);
+      me.init_vertices(3);
+      me.init_cells(1);
+      const double a = 0.01;
+      const Point p0(a*i, a*i);
+      const Point p1(1-2*a*i, a*i);
+      const Point p2(a*i, 1-2*a*i);
+      me.add_vertex(0, p0);
+      me.add_vertex(1, p1);
+      me.add_vertex(2, p2);
+      me.add_cell(0, 0, 1, 2);
+      me.close();
+      multimesh.add(meshes[i]);
+      const std::vector<double>& x=meshes[i].coordinates();
+      if (i > 0)
+	exact_area += p0.distance(p1) + p0.distance(p2) + p1.distance(p2);
+    }
     multimesh.build();
+    tools::dolfin_write_medit_triangles("multimesh",multimesh);
 
     const double area = compute_interface_area(multimesh, exact_area);
     const double e = std::abs(area - exact_area);
