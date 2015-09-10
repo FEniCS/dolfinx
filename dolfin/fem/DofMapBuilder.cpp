@@ -634,7 +634,7 @@ void DofMapBuilder::build_local_ufc_dofmap(
                              num_mesh_entities,
                              entity_indices);
     std::copy(dof_holder.begin(), dof_holder.end(),
-              dofmap[entity_indices[D][0]].begin());
+              dofmap[cell->index()].begin());
   }
 }
 //-----------------------------------------------------------------------------
