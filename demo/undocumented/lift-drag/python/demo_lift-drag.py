@@ -52,7 +52,7 @@ markers = FacetFunctionSizet(mesh, 1)
 Fish().mark(markers, 1);
 
 # Define functionals for drag and lift
-ds = ds[markers]
+ds = ds(subdomain_data=markers)
 n = FacetNormal(mesh)
 D = -p*n[0]*ds(1)
 L = p*n[1]*ds(1)

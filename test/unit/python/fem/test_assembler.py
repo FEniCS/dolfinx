@@ -312,10 +312,10 @@ def test_subdomain_assembly_form_1():
     mesh1 = subdomains.mesh()
     mesh2 = boundaries.mesh()
     assert mesh1.id() == mesh2.id()
-    assert mesh1.ufl_domain().ufl_label() == mesh2.ufl_domain().ufl_label()
+    assert mesh1.ufl_domain().ufl_id() == mesh2.ufl_domain().ufl_id()
 
-    dxs = dx[subdomains]
-    dss = ds[boundaries]
+    dxs = dx(subdomain_data=subdomains)
+    dss = ds(subdomain_data=boundaries)
     assert dxs.ufl_domain() == None
     assert dss.ufl_domain() == None
     assert dxs.subdomain_data() == subdomains
@@ -383,10 +383,10 @@ def test_subdomain_assembly_form_1_multithreaded():
     mesh1 = subdomains.mesh()
     mesh2 = boundaries.mesh()
     assert mesh1.id() == mesh2.id()
-    assert mesh1.ufl_domain().ufl_label() == mesh2.ufl_domain().ufl_label()
+    assert mesh1.ufl_domain().ufl_id() == mesh2.ufl_domain().ufl_id()
 
-    dxs = dx[subdomains]
-    dss = ds[boundaries]
+    dxs = dx(subdomain_data=subdomains)
+    dss = ds(subdomain_data=boundaries)
     assert dxs.ufl_domain() == None
     assert dss.ufl_domain() == None
     assert dxs.subdomain_data() == subdomains
@@ -624,7 +624,7 @@ def test_ways_to_pass_mesh_to_assembler():
     e = Expression("x[0]") # nothing
     e2 = Expression("x[0]", cell=mesh.ufl_cell()) # cell
     e3 = Expression("x[0]", element=V.ufl_element()) # ufl element
-    e4 = Expression("x[0]", domain=mesh) # ufl.Domain (this one holds mesh reference)
+    e4 = Expression("x[0]", domain=mesh) # mesh
 
     # Provide mesh in measure:
     dx2 = Measure("dx", domain=mesh)

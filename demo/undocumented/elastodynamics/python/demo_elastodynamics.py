@@ -134,7 +134,7 @@ force_boundary = AutoSubDomain(right)
 force_boundary.mark(boundary_subdomains, 3)
 
 # Define measure for boundary condition integral
-dss = ds[boundary_subdomains]
+dss = ds(subdomain_data=boundary_subdomains)
 
 # Stress tensor
 def sigma(r):
