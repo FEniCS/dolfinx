@@ -1771,8 +1771,7 @@ void DofMapBuilder::get_cell_entities_global_constrained(const Cell& cell,
                    "get_cell_entities_global_constrained",
                    "Missing global cell index needed for cell index tabulation.");
     }
-    // FIXME: Should this be cell.global_index() or global_entity_indices[D][cell.index()]? Was just cell.index() before as well.
-    //entity_indices[D][0] = cell.index();
+    //entity_indices[D][0] = cell.index(); // This was the line here before, don't understand how that didn't fail miserably.
     entity_indices[D][0] = global_entity_indices[D][cell.index()];
   }
 }
