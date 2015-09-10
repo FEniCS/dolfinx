@@ -121,7 +121,7 @@ def test_krylov_samg_solver_elasticity():
         for N in [4, 8, 16, 32, 64]:
             print("Testing method '{}' with {} x {} mesh".format(method, N, N))
             niter = amg_solve(N, method)
-            assert niter < 12
+            assert niter < 18
 
     parameters["linear_algebra_backend"] = previous_backend
 
