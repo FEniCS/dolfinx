@@ -42,28 +42,6 @@
 
 using namespace dolfin;
 
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3
-// Mapping from method string to PETSc
-const std::map<std::string, std::pair<std::string, const SNESType>>
-PETScSNESSolver::_methods
-= { {"default",     {"default SNES method", ""}},
-    {"ls",          {"Line search method", SNESLS}},
-    ("tr",          {"Trust region method",  SNESTR}},
-    {"test",        {"Tool to verify Jacobian approximation", SNESTEST}},
-    {"ngmres",      {"Nonlinear generalised minimum residual method",
-                     SNESNGMRES}},
-    {"nrichardson", {"Richardson nonlinear method (Picard iteration)",
-                     SNESNRICHARDSON}},
-    {"virs",        {"Reduced space active set solver method (for bounds)",
-                     SNESVIRS}},
-    {"viss",        {"Reduced space active set solver method (for bounds)",
-                     SNESVISS}},
-    {"qn",          {"Limited memory quasi-Newton", SNESQN}},
-    {"ncg",         {"Nonlinear conjugate gradient method", SNESNCG}},
-    {"fas",         {"Full Approximation Scheme nonlinear multigrid method",
-                     SNESFAS}},
-    {"ms",          {"Multistage smoothers", SNESMS}} };
-#elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 4
 // Mapping from method string to PETSc
 const std::map<std::string, std::pair<std::string, const SNESType>>
 PETScSNESSolver::_methods
@@ -88,7 +66,6 @@ PETScSNESSolver::_methods
     {"aspin",        {"Additive-Schwarz Preconditioned Inexact Newton",
                       SNESASPIN}},
     {"ms",           {"Multistage smoothers", SNESMS}} };
-#endif
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string>> PETScSNESSolver::methods()
@@ -256,14 +233,6 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
     SNESSetType(_snes, it->second.second);
 
     // Check if bounds/sign are set when VI method requested
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3
-    if ((method == "virs" || method == "viss") && !is_vi())
-    {
-      dolfin_error("PETScSNESSolver.cpp",
-                   "set up SNES VI solver",
-                   "Need to set bounds or sign for virs or viss methods");
-    }
-    #else
     if ((method == "vinewtonrsls" || method == "vinewtonssls") && !is_vi())
     {
       dolfin_error("PETScSNESSolver.cpp",
@@ -271,7 +240,6 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
                    "Need to set bounds or sign for vinewtonrsls or vinewtonssls"
                    " methods");
     }
-    #endif
   }
   else if (method == "default" && is_vi())
   {
@@ -280,22 +248,13 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
     // AND  b) the user has not set a solver (method == default)
     // THEN set a good method that supports bounds
     // (most methods do not support bounds)
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3 && PETSC_VERSION_RELEASE
-    auto it = _methods.find("viss");
-    #else
     auto it = _methods.find("vinewtonssls");
-    #endif
     dolfin_assert(it != _methods.end());
     SNESSetType(_snes, it->second.second);
   }
 
   SNESLineSearch linesearch;
-
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 4
-  SNESGetSNESLineSearch(_snes, &linesearch);
-  #else
   SNESGetLineSearch(_snes, &linesearch);
-  #endif
 
   if (report)
     SNESLineSearchSetMonitor(linesearch, PETSC_TRUE);
@@ -410,37 +369,6 @@ PetscErrorCode PETScSNESSolver::FormObjective(SNES snes, Vec x,
   return 0;
 }
 //-----------------------------------------------------------------------------
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* P,
-                                             MatStructure* flag, void* ctx)
-{
-  // Interface does not presently support a preconditioner that
-  // differs from operator A
-  if (*A != *P)
-  {
-    dolfin_error("PETScSNESSolver.cpp",
-                 "for Jacobian",
-                 "Matrix object incompatibility. The Jacobian matrix must not be reset when using PETSc SNES.");
-  }
-
-  // Get nonlinear problem object
-  auto snes_ctx = static_cast<struct snes_ctx_t*>(ctx);
-  NonlinearProblem* nonlinear_problem = snes_ctx->nonlinear_problem;
-
-  // Wrap the PETSc objects
-  PETScMatrix A_wrap(*P);
-  PETScVector x_wrap(x);
-
-  // Form Jacobian
-  PETScVector f;
-  nonlinear_problem->form(A_wrap, f, x_wrap);
-  nonlinear_problem->J(A_wrap, x_wrap);
-
-  *flag = SAME_NONZERO_PATTERN;
-
-  return 0;
-}
-#else
 PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat A, Mat P,
                                              void* ctx)
 {
@@ -468,7 +396,6 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat A, Mat P,
 
   return 0;
 }
-#endif
 //-----------------------------------------------------------------------------
 void PETScSNESSolver::set_linear_solver_parameters()
 {
@@ -602,21 +529,12 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
     dolfin_assert(_snes);
     const std::string sign   = parameters["sign"];
     const std::string method = parameters["method"];
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3
-    if (method != "virs" && method != "viss" && method != "default")
-    {
-      dolfin_error("PETScSNESSolver.cpp",
-                   "set variational inequality bounds",
-                   "Need to use virs or viss methods if bounds are set");
-    }
-    #else
     if (method != "vinewtonrsls" && method != "vinewtonssls" && method != "default")
     {
       dolfin_error("PETScSNESSolver.cpp",
                    "set variational inequality bounds",
                    "Need to use vinewtonrsls or vinewtonssls methods if bounds are set");
     }
-    #endif
 
     if (sign != "default")
     {
@@ -629,24 +547,13 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
       VecDuplicate(_x.vec(), &lb);
       if (sign == "nonnegative")
       {
-        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-        VecSet(ub, SNES_VI_INF);
-        #else
         VecSet(ub, PETSC_INFINITY);
-        #endif
-
         VecSet(lb, 0.0);
       }
       else if (sign == "nonpositive")
       {
         VecSet(ub, 0.0);
-
-        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-        VecSet(lb, SNES_VI_INF);
-        #else
         VecSet(lb, PETSC_INFINITY);
-        #endif
-
       }
       else
       {

@@ -409,7 +409,7 @@ endif()
 
 # Check for PETSc, SLEPc and petsc4py, slepc4py
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc 3.4)
+  find_package(PETSc 3.6)
 
   if (PETSC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_PETSC4PY)
     find_package(PETSc4py)
@@ -423,10 +423,10 @@ if (DOLFIN_ENABLE_PETSC)
   endif()
 
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc 3.4)
+    find_package(SLEPc 3.6)
 
     if (SLEPC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_SLEPC4PY)
-      find_package(SLEPc4py 3.5.1)
+      find_package(SLEPc4py)
       if (SLEPC4PY_FOUND)
         if (NOT ("${SLEPC4PY_VERSION_MAJOR}" EQUAL "${SLEPC_VERSION_MAJOR}"
               AND "${SLEPC4PY_VERSION_MINOR}" EQUAL "${SLEPC_VERSION_MINOR}"))
@@ -437,10 +437,7 @@ if (DOLFIN_ENABLE_PETSC)
     endif()
   endif()
 
-  # Enable TAO for PETSc version > 3.4
-  if ((PETSC_VERSION VERSION_GREATER 3.4.100))
-    set(PETSC_HAS_TAO TRUE)
-  endif()
+  set(PETSC_HAS_TAO TRUE)
 
 endif()
 
