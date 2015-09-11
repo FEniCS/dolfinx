@@ -140,6 +140,8 @@ void SparsityPattern::insert_global(
     map_j = entries[0];
   }
 
+  dolfin_assert(_primary_dim < _local_range.size());
+  dolfin_assert(primary_codim < _local_range.size());
   const std::pair<dolfin::la_index, dolfin::la_index>
     local_range0(_local_range[_primary_dim].first,
                  _local_range[_primary_dim].second);
@@ -152,7 +154,10 @@ void SparsityPattern::insert_global(
   {
     // Sequential mode, do simple insertion
     for (auto i_index = map_i.begin(); i_index != map_i.end(); ++i_index)
+    {
+      dolfin_assert((int) *i_index < (int) diagonal.size());
       diagonal[*i_index].insert(map_j.begin(), map_j.end());
+    }
   }
   else
   {
