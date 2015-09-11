@@ -35,7 +35,7 @@ def test_issue_97():
 
     N = 2
     L = 1000
-    mesh = BoxMesh(0, 0, 0, L, L, L, N, N, N)
+    mesh = BoxMesh(Point(0, 0, 0), Point(L, L, L), N, N, N)
     V = FunctionSpace(mesh, 'CG', 1)
     v = interpolate(Expression('x[0]'), V)
     x = Point(0.5*L, 0.5*L, 0.5*L)

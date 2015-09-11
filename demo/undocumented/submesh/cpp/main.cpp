@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg
+// Copyright (C) 2009, 2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-02-11
-// Last changed: 2012-07-05
+// Last changed: 2015-06-15
 //
 // This demo program demonstrates how to extract matching sub meshes
 // from a common mesh.
@@ -37,7 +37,7 @@ int main()
   };
 
   // Create mesh
-  RectangleMesh mesh(0.0, 0.0, 3.0, 1.0, 60, 20);
+  RectangleMesh mesh(Point(0.0, 0.0), Point(3.0, 1.0), 60, 20);
 
   // Create sub domain markers and mark everything as 0
   MeshFunction<std::size_t> sub_domains(mesh, mesh.topology().dim());

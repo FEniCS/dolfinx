@@ -455,20 +455,24 @@ const std::vector<int>& Mesh::cell_orientations() const
 //-----------------------------------------------------------------------------
 void Mesh::init_cell_orientations(const Expression& global_normal)
 {
-  // Check that global_normal has the right size
-  if (global_normal.value_size() != 3)
+  std::size_t gdim = geometry().dim();
+  std::size_t ndim = global_normal.value_size();
+
+  // Check that global_normal has the "right" size
+  // Allowing 3 if gdim < 3 to avoid breaking legacy code.
+  if (ndim < gdim && ndim <= 3)
   {
      dolfin_error("Mesh.cpp",
                   "initialize cell orientations",
-                  "Global normal value size is assumed to be 3 (not %d)",
-                  global_normal.value_size());
+                  "Global normal value size is %d, smaller than gdim (%d)",
+                  ndim, gdim);
   }
 
   // Resize storage
   _cell_orientations.resize(num_cells());
 
   // Set orientation
-  Array<double> values(3);
+  Array<double> values(ndim);
   Point up;
   for (CellIterator cell(*this); !cell.end(); ++cell)
   {
@@ -479,8 +483,10 @@ void Mesh::init_cell_orientations(const Expression& global_normal)
     global_normal.eval(values, x);
 
     // Extract values as Point
-    for (unsigned int i = 0; i < 3; i++)
+    for (unsigned int i = 0; i < ndim; i++)
       up[i] = values[i];
+    for (unsigned int i = ndim; i < gdim; i++)
+      up[i] = 0.0;
 
     // Set orientation as orientation relative to up direction.
     dolfin_assert(cell->index() < _cell_orientations.size());

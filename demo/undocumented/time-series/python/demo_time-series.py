@@ -21,8 +21,13 @@
 from dolfin import *
 from numpy import ones
 
+# TimeSeries requires DOLFIN to be configured with HDF5
+if has_hdf5() is False:
+    print("This demo requires DOLFIN to be configured with HDF5")
+    exit()
+
 # Create empty time series
-series = TimeSeries("primal")
+series = TimeSeries(mpi_comm_world(), "primal")
 
 # Create a mesh and a vector
 mesh = UnitSquareMesh(2, 2)

@@ -21,11 +21,10 @@
 // Last changed: 2011-11-11
 
 #include <dolfin/parameter/GlobalParameters.h>
-#include "uBLASFactory.h"
 #include "EigenFactory.h"
 #include "PETScFactory.h"
-#include "PETScCuspFactory.h"
 #include "STLFactory.h"
+#include "TpetraFactory.h"
 #include "DefaultFactory.h"
 
 using namespace dolfin;
@@ -87,15 +86,12 @@ GenericLinearAlgebraFactory& DefaultFactory::factory()
 {
   // Fallback
   const std::string default_backend = "Eigen";
-  typedef uBLASFactory<> DefaultFactory;
 
   // Get backend from parameter system
   const std::string backend = dolfin::parameters["linear_algebra_backend"];
 
   // Choose backend
-  if (backend == "uBLAS")
-    return uBLASFactory<>::instance();
-  else if (backend == "Eigen")
+  if (backend == "Eigen")
     return EigenFactory::instance();
   else if (backend == "PETSc")
   {
@@ -107,24 +103,22 @@ GenericLinearAlgebraFactory& DefaultFactory::factory()
                  "PETSc linear algebra backend is not available");
     #endif
   }
-  else if (backend == "PETScCusp")
+  else if (backend == "STL")
+    return STLFactory::instance();
+  else if (backend == "Tpetra")
   {
-    #ifdef HAS_PETSC_CUSP
-    return PETScCuspFactory::instance();
+    #ifdef HAS_TRILINOS
+    return TpetraFactory::instance();
     #else
     dolfin_error("DefaultFactory.cpp",
                  "access linear algebra backend",
-                 "PETScCusp linear algebra backend is not available");
+                 "Tpetra linear algebra backend is not available");
     #endif
-  }
-  else if (backend == "STL")
-  {
-    return STLFactory::instance();
   }
 
   // Fallback
   log(WARNING, "Linear algebra backend \"" + backend
       + "\" not available, using " + default_backend + ".");
-  return DefaultFactory::instance();
+  return EigenFactory::instance();
 }
 //-----------------------------------------------------------------------------

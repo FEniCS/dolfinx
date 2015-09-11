@@ -69,25 +69,36 @@ void XMLParameters::write(const Parameters& parameters, pugi::xml_node xml_node)
   // Write each parameter item
   for (std::size_t i = 0; i < parameter_keys.size(); ++i)
   {
+    // Get parameter
     const Parameter& parameter = parameters[parameter_keys[i]];
 
-    pugi::xml_node parameter_node = parameters_node.append_child("parameter");
-    parameter_node.append_attribute("key") = parameter.key().c_str();
-    parameter_node.append_attribute("type") = parameter.type_str().c_str();
-    if (parameter.type_str() == "int")
-      parameter_node.append_attribute("value") = static_cast<int>(parameter);
-    else if (parameter.type_str() == "double")
-      parameter_node.append_attribute("value") = static_cast<double>(parameter);
-    else if (parameter.type_str() == "bool")
-      parameter_node.append_attribute("value") = static_cast<bool>(parameter);
-    else if (parameter.type_str() == "string")
-      parameter_node.append_attribute("value") = static_cast<std::string>(parameter).c_str();
-    else
+    // Add parameter, if set
+    if (parameter.is_set())
     {
-      dolfin_error("XMLParameters.cpp",
-                   "write parameters to XML file",
-                   "Unknown type (\"%s\") of parameters \"%s\"",
-                   parameter.type_str().c_str(), parameter.key().c_str());
+      pugi::xml_node parameter_node = parameters_node.append_child("parameter");
+      parameter_node.append_attribute("key") = parameter.key().c_str();
+      parameter_node.append_attribute("type") = parameter.type_str().c_str();
+      if (parameter.type_str() == "int")
+        parameter_node.append_attribute("value") = static_cast<int>(parameter);
+      else if (parameter.type_str() == "double")
+      {
+        parameter_node.append_attribute("value")
+          = static_cast<double>(parameter);
+      }
+      else if (parameter.type_str() == "bool")
+        parameter_node.append_attribute("value") = static_cast<bool>(parameter);
+      else if (parameter.type_str() == "string")
+      {
+        parameter_node.append_attribute("value")
+          = static_cast<std::string>(parameter).c_str();
+      }
+      else
+      {
+        dolfin_error("XMLParameters.cpp",
+                     "write parameters to XML file",
+                     "Unknown type (\"%s\") of parameters \"%s\"",
+                     parameter.type_str().c_str(), parameter.key().c_str());
+      }
     }
   }
 
@@ -102,7 +113,7 @@ void XMLParameters::read_parameter_nest(Parameters& p,
                                         const pugi::xml_node xml_node)
 {
   // Iterate over parameters
-  for (pugi::xml_node_iterator it = xml_node.begin(); it != xml_node.end(); ++it)
+  for (auto it = xml_node.begin(); it != xml_node.end(); ++it)
   {
     // Get name (parameters or parameter)
     const std::string node_name = it->name();

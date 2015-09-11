@@ -50,26 +50,31 @@ NonlinearVariationalSolver(std::shared_ptr<NonlinearVariationalProblem> problem)
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(const Function& lb,
-                                                               const Function& ub)
+std::pair<std::size_t, bool>
+NonlinearVariationalSolver::solve(const Function& lb,
+                                  const Function& ub)
 {
   return solve(lb.vector(), ub.vector());
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(std::shared_ptr<const Function> lb,
-                                       std::shared_ptr<const Function> ub)
+std::pair<std::size_t, bool>
+NonlinearVariationalSolver::solve(std::shared_ptr<const Function> lb,
+                                  std::shared_ptr<const Function> ub)
 {
   return solve(*lb,*ub);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(const GenericVector& lb,
-                                                               const GenericVector& ub)
+std::pair<std::size_t, bool>
+NonlinearVariationalSolver::solve(const GenericVector& lb,
+                                  const GenericVector& ub)
 {
-  return solve(reference_to_no_delete_pointer(lb),reference_to_no_delete_pointer(ub));
+  return solve(reference_to_no_delete_pointer(lb),
+               reference_to_no_delete_pointer(ub));
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(std::shared_ptr<const GenericVector> lb,
-                                       std::shared_ptr<const GenericVector> ub)
+std::pair<std::size_t, bool>
+NonlinearVariationalSolver::solve(std::shared_ptr<const GenericVector> lb,
+                                  std::shared_ptr<const GenericVector> ub)
 {
   // Set bounds and solve
   this->_problem->set_bounds(lb,ub);
@@ -104,8 +109,8 @@ std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
   // Create nonlinear problem
   if (!nonlinear_problem)
   {
-    nonlinear_problem = std::shared_ptr<NonlinearDiscreteProblem>(new NonlinearDiscreteProblem(_problem,
-                                             reference_to_no_delete_pointer(*this)));
+    nonlinear_problem = std::make_shared<NonlinearDiscreteProblem>(_problem,
+                                                    reference_to_no_delete_pointer(*this));
   }
 
   std::pair<std::size_t, bool> ret;
@@ -129,14 +134,14 @@ std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
     dolfin_assert(nonlinear_problem);
     ret = newton_solver->solve(*nonlinear_problem, *u->vector());
   }
-  #ifdef ENABLE_PETSC_SNES
+  #ifdef HAS_PETSC
   else if (std::string(parameters["nonlinear_solver"]) == "snes")
   {
     // Create SNES solver and set parameters
     if (!snes_solver)
     {
       // Create Newton solver and set parameters
-      snes_solver = std::shared_ptr<PETScSNESSolver>(new PETScSNESSolver());
+      snes_solver = std::make_shared<PETScSNESSolver>();
     }
     snes_solver->parameters.update(parameters("snes_solver"));
 
@@ -208,7 +213,7 @@ NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
 //-----------------------------------------------------------------------------
 void
 NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
-                                                             const GenericVector& x)
+                                                        const GenericVector& x)
 {
   // Get problem data
   dolfin_assert(_problem);

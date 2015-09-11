@@ -123,11 +123,11 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
     for (auto entity = e_vertices.begin(); entity != e_vertices.end(); ++entity)
     {
       // Sort entities (to use as map key)
-      std::sort(entity->begin(), entity->end());
+      std::vector<unsigned int> evec(entity->begin(), entity->end());
+      std::sort(evec.begin(), evec.end());
 
       // Insert into map
-      auto it = evertices_to_index.insert({std::vector<unsigned int>(entity->begin(), entity->end()),
-            current_entity});
+      auto it = evertices_to_index.insert({evec, current_entity});
 
       // Entity index
       std::size_t e_index = it.first->second;

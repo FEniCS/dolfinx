@@ -82,10 +82,13 @@ std::size_t IntervalCell::orientation(const Cell& cell) const
 void IntervalCell::create_entities(boost::multi_array<unsigned int, 2>& e,
                                    std::size_t dim, const unsigned int* v) const
 {
-  // We don't need to create any entities
-  dolfin_error("IntervalCell.cpp",
-               "create entities of interval cell",
-               "Don't know how to create entities of topological dimension %d", dim);
+  // For completeness, IntervalCell has two 'edges'
+  dolfin_assert(dim == 0);
+
+  // Resize data structure
+  e.resize(boost::extents[2][1]);
+  // Create the three edges
+  e[0][0] = v[0]; e[1][0] = v[1];
 }
 //-----------------------------------------------------------------------------
 void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,

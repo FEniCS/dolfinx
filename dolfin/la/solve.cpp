@@ -208,21 +208,11 @@ double dolfin::normalize(GenericVector& x, std::string normalization_type)
 //-----------------------------------------------------------------------------
 bool dolfin::has_linear_algebra_backend(std::string backend)
 {
-  if (backend == "uBLAS")
-    return true;
-  else if (backend == "Eigen")
+  if (backend == "Eigen")
     return true;
   else if (backend == "PETSc")
   {
     #ifdef HAS_PETSC
-    return true;
-    #else
-    return false;
-    #endif
-  }
-  else if (backend == "PETScCusp")
-  {
-    #ifdef HAS_PETSC_CUSP
     return true;
     #else
     return false;
@@ -250,21 +240,18 @@ std::map<std::string, std::string> dolfin::linear_algebra_backends()
   std::map<std::string, std::string> backends;
 
   std::map<std::string, std::string> default_backend
-    = { {"uBLAS",  " (default)"},  {"PETSc", ""} };
+    = { {"Eigen",  " (default)"}, {"PETSc", ""} };
   #ifdef HAS_PETSC
-  default_backend["uBLAS"] = "";
+  default_backend["Eigen"] = "";
   default_backend["PETSc"] = " (default)";
   #else
-  default_backend["uBLAS"] = " (default)";
+  default_backend["Eigen"] = " (default)";
   #endif
 
   // Add available backends
   backends.insert(std::make_pair("Eigen",
                                  "Template-based linear algebra "
                                  " library" + default_backend["Eigen"]));
-  backends.insert(std::make_pair("uBLAS",
-                                 "Template based basic linear algebra "
-                                 "from boost" + default_backend["uBLAS"]));
   backends.insert(std::make_pair("STL",
                                  "Light weight storage backend for Tensors"));
 
@@ -272,10 +259,6 @@ std::map<std::string, std::string> dolfin::linear_algebra_backends()
   backends.insert(std::make_pair("PETSc",
                                  "Powerful MPI parallel linear algebra"
                                  " library" + default_backend["PETSc"]));
-  #endif
-  #ifdef HAS_PETSC_CUSP
-  backends.insert(std::make_pair("PETScCusp",
-    "GPU-accelerated build of PETSc"));
   #endif
 
   return backends;

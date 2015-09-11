@@ -20,14 +20,15 @@
 
 #ifdef ENABLE_PETSC_TAO
 
-#include <memory>
-
-#include <dolfin/common/NoDeleter.h>
-#include <dolfin/common/types.h>
 #include <map>
+#include <memory>
 #include <petscksp.h>
 #include <petscpc.h>
+
 #include <petsctao.h>
+#include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/types.h>
+
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/KrylovSolver.h>
 
@@ -214,5 +215,4 @@ namespace dolfin
 }
 
 #endif
-
 #endif

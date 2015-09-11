@@ -21,13 +21,12 @@
 
 #include <cstdio>
 #include <fstream>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+#include <string>
 #include <boost/unordered_map.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/multi_array.hpp>
-
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
@@ -257,6 +256,11 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 {
   Timer t0("HDF5: write mesh to file");
 
+  CellType::Type cell_type = mesh.type().entity_type(cell_dim);
+
+  std::unique_ptr<CellType> celltype(CellType::create(cell_type));
+  std::size_t num_cell_verts = celltype->num_entities(0);
+
   dolfin_assert(hdf5_file_open);
 
   // ---------- Vertices (coordinates)
@@ -282,15 +286,32 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
   {
     // Get/build topology data
     std::vector<std::size_t> topological_data;
-    topological_data.reserve(mesh.num_entities(cell_dim)*(cell_dim + 1));
+    topological_data.reserve(mesh.num_entities(cell_dim)*(num_cell_verts));
+
+    const std::vector<std::size_t>& global_vertices
+      = mesh.topology().global_indices(0);
+
+    // Permutation to VTK ordering
+    const std::vector<unsigned int> perm = celltype->vtk_mapping();
 
     if (cell_dim == mesh.topology().dim() || MPI::size(_mpi_comm) == 1)
     {
       // Usual case, with cell output, and/or none shared with another
       // process.
-      for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
-        for (VertexIterator v(*c); !v.end(); ++v)
+      if (cell_dim == 0)
+      {
+        for (VertexIterator v(mesh); !v.end(); ++v)
           topological_data.push_back(v->global_index());
+      }
+      else
+      {
+        for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+          for (unsigned int i = 0; i != c->num_entities(0); ++i)
+          {
+            const unsigned int local_idx = c->entities(0)[perm[i]];
+            topological_data.push_back(global_vertices[local_idx]);
+          }
+      }
     }
     else
     {
@@ -332,13 +353,30 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         }
       }
 
-      for (MeshEntityIterator ent(mesh, cell_dim); !ent.end(); ++ent)
+      if (cell_dim == 0)
       {
-        // If not excluded, add to topology
-        if (non_local_entities.find(ent->index()) == non_local_entities.end())
+        // Special case for mesh of points
+        for (VertexIterator v(mesh); !v.end(); ++v)
         {
-          for (VertexIterator v(*ent); !v.end(); ++v)
+          if (non_local_entities.find(v->index())
+              == non_local_entities.end())
             topological_data.push_back(v->global_index());
+        }
+      }
+      else
+      {
+        for (MeshEntityIterator ent(mesh, cell_dim); !ent.end(); ++ent)
+        {
+          // If not excluded, add to topology
+          if (non_local_entities.find(ent->index())
+              == non_local_entities.end())
+          {
+            for (unsigned int i = 0; i != ent->num_entities(0); ++i)
+            {
+              const unsigned int local_idx = ent->entities(0)[perm[i]];
+              topological_data.push_back(global_vertices[local_idx]);
+            }
+          }
         }
       }
     }
@@ -347,8 +385,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     const std::string topology_dataset =  name + "/topology";
     std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(_mpi_comm,
-                              topological_data.size()/(cell_dim + 1));
-    global_size[1] = cell_dim + 1;
+                              topological_data.size()/num_cell_verts);
+    global_size[1] = num_cell_verts;
     dolfin_assert(global_size[0] == mesh.size_global(cell_dim));
     const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
     write_data(topology_dataset, topological_data, global_size, mpi_io);
@@ -368,7 +406,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 
     // Add cell type attribute
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset, "celltype",
-                    CellType::type2string((CellType::Type)cell_dim));
+                                 CellType::type2string(cell_type));
 
     // Add partitioning attribute to dataset
     std::vector<std::size_t> partitions;
@@ -393,7 +431,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       for (it = domain.begin(); it != domain.end(); ++it)
         collection.set_value(it->first, it->second);
       const std::string marker_dataset
-        = name + "/domain_" + boost::lexical_cast<std::string>(d);
+        = name + "/domain_" + std::to_string(d);
       write_mesh_value_collection(collection, marker_dataset);
     }
 
@@ -697,7 +735,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   {
     // No duplicates - ignore ghost cells if present
     data_values.assign(meshfunction.values(),
-                       meshfunction.values() + mesh.topology().ghost_offset(cell_dim));
+       meshfunction.values() + mesh.topology().ghost_offset(cell_dim));
   }
   else
   {
@@ -775,8 +813,7 @@ void HDF5File::write(const Function& u,  const std::string name,
     // Get count of vectors in dataset, and increment
     std::size_t vec_count;
     attr.get("count", vec_count);
-    std::string vec_name = name
-      + "/vector_" + boost::lexical_cast<std::string>(vec_count);
+    std::string vec_name = name + "/vector_" + std::to_string(vec_count);
     ++vec_count;
     attr.set("count", vec_count);
 
@@ -848,6 +885,9 @@ void HDF5File::write(const Function& u, const std::string name)
 
   global_size[0] = mesh.size_global(tdim);
   write_data(name + "/cells", cells, global_size, mpi_io);
+
+  HDF5Interface::add_attribute(hdf5_file_id, name, "signature",
+                               u.function_space()->element()->signature());
 
   // Save vector
   write(*u.vector(), name + "/vector_0");
@@ -1378,14 +1418,23 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
   std::vector<std::size_t> topology_dim
     = HDF5Interface::get_dataset_size(hdf5_file_id, topology_name);
 
+  std::string cell_type_str;
+  HDF5Interface::get_attribute(hdf5_file_id, topology_name, "celltype", cell_type_str);
+
+  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
+
+  const std::size_t num_vertices_per_cell
+    = cell_type->num_entities(0);
+
+  mesh_data.tdim = cell_type->dim();
+  mesh_data.cell_type = cell_type->cell_type();
+
   // Get total number of cells, as number of rows in topology dataset
   const std::size_t num_global_cells = topology_dim[0];
   mesh_data.num_global_cells = num_global_cells;
 
-  // Set vertices-per-cell from number of columns
-  const std::size_t num_vertices_per_cell = topology_dim[1];
+  dolfin_assert(num_vertices_per_cell == topology_dim[1]);
   mesh_data.num_vertices_per_cell = num_vertices_per_cell;
-  mesh_data.tdim = topology_dim[1] - 1;
 
   // Get partition from file
   std::vector<std::size_t> partitions;
@@ -1441,8 +1490,15 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
 
   // Copy to boost::multi_array
   mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
-  std::copy(topology_data.begin(), topology_data.end(),
-            mesh_data.cell_vertices.data());
+  boost::multi_array_ref<std::size_t, 2>
+    topo_data_array(topology_data.data(), boost::extents[num_local_cells][num_vertices_per_cell]);
+
+  // Remap vertices to DOLFIN ordering from VTK/XDMF
+  std::vector<unsigned int> perm = cell_type->vtk_mapping();
+
+  for (std::size_t i = 0; i != num_local_cells; ++i)
+    for (std::size_t j = 0; j != num_vertices_per_cell; ++j)
+      mesh_data.cell_vertices[i][j] = topo_data_array[i][perm[j]];
 
   // --- Coordinates ---
   // Get dimensions of coordinate dataset
@@ -1485,8 +1541,8 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
   // Check if we have any domains
   for (std::size_t d = 0; d <= input_mesh.topology().dim(); ++d)
   {
-    const std::string marker_dataset
-      = mesh_name + "/domain_" + boost::lexical_cast<std::string>(d);
+    const std::string marker_dataset = mesh_name + "/domain_"
+      + std::to_string(d);
     if (!has_dataset(marker_dataset))
       continue;
 

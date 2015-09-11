@@ -52,27 +52,27 @@ double dolfin::time()
 //-----------------------------------------------------------------------------
 Table dolfin::timings(TimingClear clear, std::set<TimingType> type)
 {
-  return LogManager::logger.timings(clear, type);
+  return LogManager::logger().timings(clear, type);
 }
 //-----------------------------------------------------------------------------
 void dolfin::list_timings(bool reset)
 {
-  LogManager::logger.list_timings(reset);
+  LogManager::logger().list_timings(reset);
 }
 //-----------------------------------------------------------------------------
 void dolfin::list_timings(TimingClear clear, std::set<TimingType> type)
 {
-  LogManager::logger.list_timings(clear, type);
+  LogManager::logger().list_timings(clear, type);
 }
 //-----------------------------------------------------------------------------
 void dolfin::dump_timings_to_xml(std::string filename, TimingClear clear)
 {
-  LogManager::logger.dump_timings_to_xml(filename, clear);
+  LogManager::logger().dump_timings_to_xml(filename, clear);
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::size_t, double, double, double>
   dolfin::timing(std::string task, TimingClear clear)
 {
-  return LogManager::logger.timing(task, clear);
+  return LogManager::logger().timing(task, clear);
 }
 //-----------------------------------------------------------------------------

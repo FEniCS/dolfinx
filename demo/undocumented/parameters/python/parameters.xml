@@ -3,7 +3,7 @@
 <dolfin xmlns:dolfin="http://fenicsproject.org">
   <parameters name="parameters">
     <parameter key="floating_point_precision" type="int" value="64"/>
-    <parameter key="linear_algebra_backend" type="string" value="uBLAS"/>
+    <parameter key="linear_algebra_backend" type="string" value="Eigen"/>
     <parameter key="optimize" type="bool" value="false"/>
     <parameter key="optimize_form" type="bool" value="false"/>
     <parameter key="optimize_use_dof_map_cache" type="bool" value="false"/>

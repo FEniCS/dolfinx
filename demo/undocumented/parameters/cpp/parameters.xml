@@ -2,7 +2,7 @@
 
 <dolfin xmlns:dolfin="http://fenicsproject.org/">
   <parameters name="parameters">
-    <parameter key="linear_algebra_backend" type="string" value="uBLAS"/>
+    <parameter key="linear_algebra_backend" type="string" value="Eigen"/>
     <parameter key="optimize" type="bool" value="false"/>
   </parameters>
 </dolfin>
