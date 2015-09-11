@@ -48,10 +48,6 @@ namespace dolfin
   /// Return true if DOLFIN is compiled with PETSc
   bool has_petsc();
 
-  /// Return true if DOLFIN is compiled with PETSc and PETSc version
-  /// provides TAO
-  bool has_tao();
-
   /// Return true if DOLFIN is compiled with SLEPc
   bool has_slepc();
 

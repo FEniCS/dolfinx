@@ -436,9 +436,6 @@ if (DOLFIN_ENABLE_PETSC)
       endif()
     endif()
   endif()
-
-  set(PETSC_HAS_TAO TRUE)
-
 endif()
 
 # Check for ParMETIS and SCOTCH
