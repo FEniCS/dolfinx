@@ -55,11 +55,6 @@ Table dolfin::timings(TimingClear clear, std::set<TimingType> type)
   return LogManager::logger().timings(clear, type);
 }
 //-----------------------------------------------------------------------------
-void dolfin::list_timings(bool reset)
-{
-  LogManager::logger().list_timings(reset);
-}
-//-----------------------------------------------------------------------------
 void dolfin::list_timings(TimingClear clear, std::set<TimingType> type)
 {
   LogManager::logger().list_timings(clear, type);

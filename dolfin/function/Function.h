@@ -326,20 +326,6 @@ namespace dolfin
     virtual void eval(Array<double>& values, const Array<double>& x,
                       const ufc::cell& cell) const;
 
-    /// Evaluate function for given data (non-matching meshes)
-    /// This method is deprecated as of dolfin 1.6.0.
-    /// Please use eval(values, x) instead.
-    ///
-    /// *Arguments*
-    ///     values (_Array_ <double>)
-    ///         The values at the point.
-    ///     x (_Array_ <double>)
-    ///         The coordinates of the point.
-    ///     cell (ufc::cell)
-    ///         The cell.
-    void non_matching_eval(Array<double>& values, const Array<double>& x,
-                           const ufc::cell& ufc_cell) const;
-
     /// Restrict function to local cell (compute expansion coefficients w)
     ///
     /// *Arguments*
