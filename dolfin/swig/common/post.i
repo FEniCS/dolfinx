@@ -37,11 +37,22 @@ typedef struct {
 //-----------------------------------------------------------------------------
 // Wrapper of std::terminate, installed into Python exception hook
 //-----------------------------------------------------------------------------
-%noexception dolfin::std__terminate();
+%noexception dolfin::dolfin_terminate();
 %inline %{
+  #include <signal.h>
+
   namespace dolfin {
-    void std__terminate() noexcept
+    void dolfin_terminate() noexcept
     {
+      // Uninstall signal handlers of OpenMPI cluttering stderr
+      struct sigaction act;
+      memset(&act, 0, sizeof(act));
+      act.sa_handler = SIG_IGN;
+      sigaction(SIGABRT, &act, NULL);
+
+      // We don't bother with MPI_Abort. This would require taking care of
+      // MPI state. We just assume mpirun catches SIGABRT and sends SIGTERM
+      // to other ranks.
       std::terminate();
     }
   }
@@ -59,7 +70,7 @@ if not _is_interactive():
     def _new_excepthook(*args):
         import sys
         sys.__excepthook__(*args)
-        std__terminate()
+        dolfin_terminate()
     sys.excepthook = _new_excepthook
     del _new_excepthook
 del _is_interactive, sys
