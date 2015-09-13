@@ -29,6 +29,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <dolfin/la/RangeMap.h>
 
 namespace ufc
 {
@@ -174,8 +175,7 @@ namespace dolfin
       const Mesh& mesh);
 
     static void compute_node_reordering(
-      std::vector<std::size_t>& local_to_global_unowned,
-      std::vector<int>& off_process_owner,
+                                        RangeMap& range_map,
       std::vector<int>& old_to_new_local,
       const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
       const std::vector<std::size_t>& old_local_to_global,

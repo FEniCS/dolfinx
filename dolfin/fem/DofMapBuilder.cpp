@@ -194,13 +194,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
                                node_local_to_global0, mesh,
                                dofmap._global_dimension/bs);
 
-    // Set global offset for dofs owned by this process, and the local
-    // ownership size
-    const std::size_t node_offset_global = MPI::global_offset(mesh.mpi_comm(),
-                                                              num_owned_nodes,
-                                                              true);
-    dofmap._global_offset = bs*node_offset_global;
-    dofmap._local_ownership_size = bs*num_owned_nodes;
+    dofmap.range_map().init(num_owned_nodes, bs);
 
     // Sanity check
     dolfin_assert(MPI::sum(mesh.mpi_comm(),
@@ -214,8 +208,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
     // (c) New local node index to new global node index
     // (d) Old local node index to new local node index
     std::vector<int> node_old_to_new_local;
-    compute_node_reordering(dofmap._local_to_global_unowned,
-                           dofmap._off_process_owner,
+    compute_node_reordering(dofmap.range_map(),
                            node_old_to_new_local,
                            shared_node_to_processes0,
                            node_local_to_global0,
@@ -267,11 +260,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
         dofmap._ufc_local_to_local[i] = i;
     }
 
-    dofmap._global_offset = 0;
-    dofmap._local_ownership_size = dofmap._global_dimension;
-
-    dofmap._local_to_global_unowned.clear();
-    dofmap._off_process_owner.clear();
+    dofmap.range_map().init(dofmap._global_dimension, bs);
     dofmap._shared_nodes.clear();
   }
 
@@ -343,8 +332,7 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
     = sub_dofmap._ufc_dofmap->global_dimension(sub_dofmap._num_mesh_entities_global);
 
   // Copy data from parent
-  sub_dofmap._local_to_global_unowned = parent_dofmap._local_to_global_unowned;
-  sub_dofmap._off_process_owner = parent_dofmap._off_process_owner;
+  sub_dofmap.range_map() =  parent_dofmap.range_map();
   sub_dofmap._shared_nodes = parent_dofmap._shared_nodes;
   sub_dofmap._neighbours = parent_dofmap._neighbours;
   sub_dofmap.block_size = parent_dofmap.block_size;
@@ -1472,8 +1460,7 @@ void DofMapBuilder::compute_shared_nodes(
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_node_reordering(
-  std::vector<std::size_t>& local_to_global_unowned,
-  std::vector<int>& off_process_owner,
+                                            RangeMap& range_map,
   std::vector<int>& old_to_new_local,
   const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
   const std::vector<std::size_t>& old_local_to_global,
@@ -1631,8 +1618,8 @@ void DofMapBuilder::compute_node_reordering(
 
   MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
 
-  local_to_global_unowned.resize(unowned_local_size);
-  off_process_owner.resize(unowned_local_size);
+  std::vector<std::size_t> local_to_global_unowned(unowned_local_size);
+  //  off_process_owner.resize(unowned_local_size);
   std::size_t off_process_node_counter = 0;
 
   for (std::size_t src = 0; src != mpi_size; ++src)
@@ -1649,13 +1636,15 @@ void DofMapBuilder::compute_node_reordering(
       const int received_old_node_index_local = it->second;
       local_to_global_unowned[off_process_node_counter]
         = received_new_node_index_global;
-      off_process_owner[off_process_node_counter] = src;
+      // off_process_owner[off_process_node_counter] = src;
 
       const int new_index_local = owned_local_size + off_process_node_counter;
       dolfin_assert(old_to_new_local[received_old_node_index_local] < 0);
       old_to_new_local[received_old_node_index_local] = new_index_local;
       off_process_node_counter++;
     }
+
+  range_map.set_local_to_global(local_to_global_unowned);
 
   // Sanity check
   for (auto it : old_to_new_local)

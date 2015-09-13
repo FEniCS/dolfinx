@@ -23,6 +23,7 @@
 #ifndef __SPARSITY_PATTERN_H
 #define __SPARSITY_PATTERN_H
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -35,6 +36,8 @@
 
 namespace dolfin
 {
+
+  class RangeMap;
 
   /// This class implements the GenericSparsityPattern interface.  It
   /// is used by most linear algebra backends.
@@ -56,10 +59,7 @@ namespace dolfin
     SparsityPattern(
       const MPI_Comm mpi_comm,
       const std::vector<std::size_t>& dims,
-      const std::vector<std::pair<std::size_t,
-      std::size_t> >& ownership_range,
-      const std::vector<ArrayView<const std::size_t> >& local_to_global,
-      const std::vector<ArrayView<const int> >& off_process_owner,
+      const std::vector<std::shared_ptr<const RangeMap>> range_maps,
       const std::vector<std::size_t>& block_sizes,
       const std::size_t primary_dim);
 
@@ -67,11 +67,11 @@ namespace dolfin
     void init(
       const MPI_Comm mpi_comm,
       const std::vector<std::size_t>& dims,
-      const std::vector<std::pair<std::size_t,
-      std::size_t> >& ownership_range,
-      const std::vector<ArrayView<const std::size_t> >& local_to_global,
-      const std::vector<ArrayView<const int> >& off_process_owner,
+      const std::vector<std::shared_ptr<const RangeMap>> range_maps,
       const std::vector<std::size_t>& block_sizes);
+
+    /// Insert a global entry - will be fixed by apply()
+    void insert_global(dolfin::la_index i, dolfin::la_index j);
 
     /// Insert non-zero entries using global indices
     void insert_global(const std::vector<
@@ -133,7 +133,10 @@ namespace dolfin
     MPI_Comm _mpi_comm;
 
     // Ownership range for each dimension
-    std::vector<std::pair<std::size_t, std::size_t> > _local_range;
+    //    std::vector<std::pair<std::size_t, std::size_t> > _local_range;
+
+    // RangeMaps for each dimension
+    std::vector<std::shared_ptr<const RangeMap>> _range_maps;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;
@@ -143,10 +146,10 @@ namespace dolfin
     std::vector<std::size_t> non_local;
 
     // Array map from un-owned local indices to global indices
-    std::vector<std::vector<std::size_t> > _local_to_global;
+    //    std::vector<std::vector<std::size_t> > _local_to_global;
 
     // Map from non-local vertex to owning process index
-    std::vector<std::vector<int> > _off_process_owner;
+    //    std::vector<std::vector<int> > _off_process_owner;
 
     // Block size
     std::vector<std::size_t> _block_size;

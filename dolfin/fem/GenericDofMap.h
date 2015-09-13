@@ -34,6 +34,7 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/la/RangeMap.h>
 #include <dolfin/log/log.h>
 
 namespace ufc
@@ -178,6 +179,10 @@ namespace dolfin
     /// Return the map from unowned local dofmap nodes to global dofmap
     /// nodes. Dofmap node is dof index modulo block size.
     virtual const std::vector<std::size_t>& local_to_global_unowned() const = 0;
+
+    /// Range map
+    virtual const RangeMap& range_map() const = 0;
+
 
     /// Tabulate map between local (process) and global dof indices
     virtual void tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const = 0;

@@ -52,16 +52,9 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Get global dimensions and local range
   const std::size_t rank = dofmaps.size();
   std::vector<std::size_t> global_dimensions(rank);
-  std::vector<std::pair<std::size_t, std::size_t>> local_range(rank);
-  std::vector<ArrayView<const std::size_t>> local_to_global(rank);
-  std::vector<ArrayView<const int>> off_process_owner(rank);
+  std::vector<std::shared_ptr<const RangeMap>> range_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
-  {
-    global_dimensions[i] = dofmaps[i]->global_dimension();
-    local_range[i]       = dofmaps[i]->ownership_range();
-    local_to_global[i].set(dofmaps[i]->local_to_global_unowned());
-    off_process_owner[i].set(dofmaps[i]->off_process_owner());
-  }
+    range_maps[i] = std::make_shared<const RangeMap>(dofmaps[i]->range_map());
 
   dolfin_assert(!dofmaps.empty());
   dolfin_assert(dofmaps[0]);
@@ -72,8 +65,8 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Initialise sparsity pattern
   if (init)
   {
-    sparsity_pattern.init(mesh.mpi_comm(), global_dimensions, local_range,
-                          local_to_global, off_process_owner, block_sizes);
+    sparsity_pattern.init(mesh.mpi_comm(), global_dimensions, range_maps,
+                          block_sizes);
   }
 
   // Only build for rank >= 2 (matrices and higher order tensors) that
@@ -241,8 +234,8 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   if (diagonal)
   {
-    const std::size_t local_size0 = local_range[0].second-local_range[0].first;
-    const std::size_t local_size1 = local_range[1].second-local_range[1].first;
+    const std::size_t local_size0 = range_maps[0]->size();
+    const std::size_t local_size1 = range_maps[1]->size();
     const std::size_t local_size = std::min(local_size0, local_size1);
 
     Progress p("Building sparsity pattern over diagonal", local_size);
@@ -274,8 +267,11 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
   std::vector<std::pair<std::size_t, std::size_t>> local_range(rank);
   std::vector<ArrayView<const std::size_t>> local_to_global(rank);
   std::vector<ArrayView<const int>> off_process_owner(rank);
+  std::vector<std::shared_ptr<const RangeMap>> range_maps;
   for (std::size_t i = 0; i < rank; ++i)
   {
+    range_maps[i].reset(new RangeMap(MPI_COMM_WORLD));
+    // FIXME - fill in RangeMaps
     global_dimensions[i] = form.function_space(i)->dofmap()->global_dimension();
     local_range[i]       = form.function_space(i)->dofmap()->ownership_range();
     off_process_owner[i].set(form.function_space(i)->dofmap()->off_process_owner());
@@ -285,8 +281,7 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
   const std::vector<std::size_t> block_sizes(rank, 1);
   sparsity_pattern.init(form.function_space(0)->part(0)->mesh()->mpi_comm(),
                         global_dimensions,
-                        local_range, local_to_global,
-                        off_process_owner, block_sizes);
+                        range_maps, block_sizes);
 
   // Iterate over each part
   for (std::size_t part = 0; part < form.num_parts(); part++)

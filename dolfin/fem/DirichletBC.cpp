@@ -241,7 +241,7 @@ void DirichletBC::gather(Map& boundary_values) const
       for (auto proc = shared_node->second.begin();
            proc != shared_node->second.end(); ++proc)
       {
-        proc_map0[*proc].push_back(dofmap.local_to_global_index(bv->first));
+        proc_map0[*proc].push_back(dofmap.range_map().local_to_global(bv->first));
         proc_map1[*proc].push_back(bv->second);
       }
     }
@@ -278,12 +278,13 @@ void DirichletBC::gather(Map& boundary_values) const
         const std::imaxdiv_t div = std::imaxdiv(_vec[i].first, bs);
         const std::size_t node = div.quot;
         const int component = div.rem;
+        const std::vector<std::size_t>& local_to_global = dofmap.range_map().local_to_global_unowned();
 
         // Case 1: dof is not owned by this process
-        auto it = std::find(dofmap.local_to_global_unowned().begin(),
-                            dofmap.local_to_global_unowned().end(),
+        auto it = std::find(local_to_global.begin(),
+                            local_to_global.end(),
                             node);
-        if (it == dofmap.local_to_global_unowned().end())
+        if (it == local_to_global.end())
         {
           // Throw error if dof is not in local map
           error("Cannot find dof in local_to_global_unowned array");
@@ -291,7 +292,7 @@ void DirichletBC::gather(Map& boundary_values) const
         else
         {
           const std::size_t pos
-            = std::distance(dofmap.local_to_global_unowned().begin(), it);
+            = std::distance(local_to_global.begin(), it);
           _vec[i].first = owned_size + bs*pos + component;
         }
       }

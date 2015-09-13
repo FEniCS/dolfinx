@@ -125,18 +125,15 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
         sparsity_entries[1].push_back(col1);
       }
     }
-    std::vector<ArrayView<const std::size_t>> local_to_global(2);
-    std::vector<ArrayView<const int>> off_process_owner(2);
     std::vector<std::size_t> block_sizes = {1, 1};
-    local_to_global[0].set(V0.dofmap()->local_to_global_unowned());
-    local_to_global[1].set(V1.dofmap()->local_to_global_unowned());
-    off_process_owner[0].set(V0.dofmap()->off_process_owner());
-    off_process_owner[1].set(V1.dofmap()->off_process_owner());
+
+    std::vector<std::shared_ptr<const RangeMap>> range_maps;
+    range_maps.push_back(std::make_shared<const RangeMap>(V0.dofmap()->range_map()));
+    range_maps.push_back(std::make_shared<const RangeMap>(V1.dofmap()->range_map()));
 
     GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
-    pattern.init(mesh.mpi_comm(), global_dimensions, local_range,
-                 local_to_global,
-                 off_process_owner, block_sizes);
+    pattern.init(mesh.mpi_comm(), global_dimensions,
+                 range_maps, block_sizes);
 
     std::vector<ArrayView<const dolfin::la_index>> _sparsity_entries
       = {{ArrayView<const la_index>(sparsity_entries[0]),

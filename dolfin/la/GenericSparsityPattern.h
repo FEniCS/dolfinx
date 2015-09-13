@@ -28,6 +28,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <memory>
 
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
@@ -36,6 +37,7 @@
 
 namespace dolfin
 {
+  class RangeMap;
 
   /// Base class (interface) for generic tensor sparsity patterns.
   /// Currently, this interface is mostly limited to matrices.
@@ -57,9 +59,7 @@ namespace dolfin
     virtual void
       init(const MPI_Comm mpi_comm,
            const std::vector<std::size_t>& dims,
-           const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-           const std::vector<ArrayView<const std::size_t> >& local_to_global,
-           const std::vector<ArrayView<const int> >& off_process_owner,
+           const std::vector<std::shared_ptr<const RangeMap>> range_maps,
            const std::vector<std::size_t>& block_sizes) = 0;
 
     /// Insert non-zero entries using global indices
