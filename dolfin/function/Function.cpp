@@ -321,12 +321,6 @@ void Function::operator=(const FunctionAXPY& axpy)
     _vector->axpy(it->first, *(it->second->vector()));
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FunctionSpace> Function::function_space() const
-{
-  dolfin_assert(_function_space);
-  return _function_space;
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> Function::vector()
 {
   dolfin_assert(_vector);
@@ -487,16 +481,6 @@ void Function::eval(Array<double>& values,
   }
   else
     eval(values, x);
-}
-//-----------------------------------------------------------------------------
-void Function::non_matching_eval(Array<double>& values,
-                                 const Array<double>& x,
-                                 const ufc::cell& ufc_cell) const
-{
-  deprecation("Function::non_matching_eval(values, x, ufc_cell)", "1.6.0", "1.7.0",
-              "Please use Function::eval(values, x) instead");
-
-  eval(values, x);
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(double* w, const FiniteElement& element,

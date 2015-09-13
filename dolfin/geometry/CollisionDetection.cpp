@@ -483,14 +483,9 @@ bool CollisionDetection::collides_interval_point(const Point& p0,
   v /= vnorm;
   const double a = v.dot(w) / wnorm;
 
-  // Cosine should be 1
-  if (std::abs(1-a) < DOLFIN_EPS_LARGE)
-  {
-    // Check if projected point is between p0 and p1
-    const double t = v.dot(w);
-    if (t >= 0 and t <= 1)
-      return true;
-  }
+  // Cosine should be 1, and point should lie between p0 and p1
+  if (std::abs(1-a) < DOLFIN_EPS_LARGE and wnorm <= vnorm)
+    return true;
 
   return false;
 }

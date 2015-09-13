@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 2.8)
 project(DOLFIN)
 set(DOLFIN_VERSION_RELEASE 0)
 set(DOLFIN_VERSION_MAJOR "1")
-set(DOLFIN_VERSION_MINOR "6")
+set(DOLFIN_VERSION_MINOR "7")
 set(DOLFIN_VERSION_MICRO "0")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 if (NOT DOLFIN_VERSION_RELEASE)
@@ -325,10 +325,10 @@ set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
-find_package(UFC 1.6.0 QUIET HINTS ${UFC_DIR})
+find_package(UFC 1.7.0 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 1.6.0.\n"
+    "compatible with requested version 1.7.0.\n"
     "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
 else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
@@ -1063,22 +1063,9 @@ if (DOLFIN_ENABLE_TESTING)
     DEPENDS copy_data_test_demo demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
-  # Add target "run_systemtests" for running system tests
-  add_custom_target(run_systemtests
-    COMMAND echo "System tests are removed.")
-
-  # TODO: Make buildbot run the dependencies here separately?
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
-    DEPENDS run_unittests_2)
-
-  # ... attempt at controlling dependency execution order ...
-  add_custom_target(run_unittests_2
-    DEPENDS run_unittests_py_mpi run_unittests_1)
-  add_custom_target(run_unittests_1
-    DEPENDS run_unittests_cpp run_unittests_0)
-  add_custom_target(run_unittests_0
-    DEPENDS run_unittests_py)
+    DEPENDS run_unittests_cpp run_unittests_py run_unittests_py_mpi)
 
   # TODO: Use google test for C++ unit tests?
   # Add target "run_unittests_cpp" for running only C++ unit tests
@@ -1095,7 +1082,7 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "run_unittests_py_mpi" for running Python unit tests with mpi
   add_custom_target(run_unittests_py_mpi
-    COMMAND ${MPIEXEC} "-np" "3" ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-vs"
+    COMMAND ${MPIEXEC} "-np" "3" "./mpipipe.sh" ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-vs"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 

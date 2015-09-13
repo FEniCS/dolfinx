@@ -1,5 +1,5 @@
 /* -*- C -*- */
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,9 +20,7 @@
 // Modified by Ola Skavhaug 2006-2007
 // Modified by Garth Wells 2007-2010
 // Modified by Johan Hake 2008-2009
-//
-// First added:  2006-09-20
-// Last changed: 2011-03-11
+// Modified by Martin Alnaes 2013-2015
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (post)
@@ -478,6 +476,13 @@ def cells(self):
 //-----------------------------------------------------------------------------
 // Extend Mesh interface with some ufl_* methods
 //-----------------------------------------------------------------------------
+// TODO: This was intended as steps toward letting dolfin.Mesh inherit from ufl.Mesh.
+//       That seems to be harder than anticipated, because fundamental properties
+//       of dolfin::Mesh are mutable and undefined at construction time.
+//       This work is therefore on hold. I don't think this is a showstopper,
+//       it mainly means the code won't be as clean as I wanted.
+// Note: The extensions to the C++ dolfin::Mesh class here are added to
+//       all C++ subclasses of Mesh by swig, e.g. SubMesh, RectangleMesh, UnitSquareMesh
 %extend dolfin::Mesh
 {
 %pythoncode
@@ -487,59 +492,26 @@ def ufl_id(self):
     return self.id()
 
 def ufl_cell(self):
-    """
-    Returns the ufl cell of the mesh.
-
-    The cell corresponds to the topological dimension of the mesh.
-    """
+    """Returns the ufl cell of the mesh."""
     import ufl
-    tdim = self.topology().dim()
     gdim = self.geometry().dim()
-    dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
-    cellname = dim2domain[tdim]
-
-    cellname = CellType.type2string(self.type().cell_type())
-
+    cellname = self.type().description(False)
     return ufl.Cell(cellname, geometric_dimension=gdim)
 
-def ufl_domain(self):
-    """Returns the ufl Domain corresponding to the mesh."""
+def ufl_coordinate_element(self):
+    "Return the finite element of the coordinate vector field of this domain."
     import ufl
-    label = "dolfin_mesh_with_id_%d" % self.id()
-    return ufl.Domain(self.ufl_cell(), label=label, data=self)
-%}
-}
-
-//-----------------------------------------------------------------------------
-// Extend SubMesh interface with some ufl_* methods
-//-----------------------------------------------------------------------------
-// TODO: It would be nice if this was inherited from the Mesh extension above!
-%extend dolfin::SubMesh
-{
-%pythoncode
-%{
-def ufl_id(self):
-    "Returns an id that UFL can use to decide if two objects are the same."
-    return self.id()
-
-def ufl_cell(self):
-    """
-    Returns the ufl cell of the mesh.
-
-    The cell corresponds to the topological dimension of the mesh.
-    """
-    import ufl
-    tdim = self.topology().dim()
-    gdim = self.geometry().dim()
-    dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
-    cellname = dim2domain[tdim]
-    return ufl.Cell(cellname, geometric_dimension=gdim)
+    cell = self.ufl_cell()
+    degree = self.geometry().degree()
+    return ufl.VectorElement("Lagrange", cell, degree, dim=cell.geometric_dimension())
 
 def ufl_domain(self):
-    """Returns the ufl Domain corresponding to the mesh."""
+    """Returns the ufl domain corresponding to the mesh."""
     import ufl
-    label = "dolfin_mesh_with_id_%d" % self.id()
-    return ufl.Domain(self.ufl_cell(), label=label, data=self)
+    # Cache object to avoid recreating it a lot
+    if not hasattr(self, "_ufl_domain"):
+        self._ufl_domain = ufl.Mesh(self.ufl_coordinate_element(), ufl_id=self.ufl_id(), cargo=self)
+    return self._ufl_domain
 %}
 }
 

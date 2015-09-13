@@ -21,14 +21,11 @@
 #
 # Modified by Marie E. Rognes 2011
 # Modified by Anders Logg 2011
-#
-# First added:  2011-10-04
-# Last changed: 2014-05-28
 
 import pytest
 import numpy
+import os
 from dolfin import *
-
 from dolfin_utils.test import *
 
 
@@ -73,6 +70,7 @@ def test_cell_assembly():
 
     assembler.assemble(b)
     assert round(b.norm("l2") - b_l2_norm, 10) == 0
+
 
 def test_cell_assembly_bc():
 
@@ -120,6 +118,7 @@ def test_cell_assembly_bc():
     # Assemble RHS only (second time time)
     assembler.assemble(b)
     assert round(b.norm("l2") - b_l2_norm, 10) == 0
+
 
 def test_facet_assembly():
 
@@ -183,6 +182,7 @@ def test_facet_assembly():
 
     parameters["ghost_mode"] = "none"
 
+
 def test_vertex_assembly():
 
     # Create mesh and define function space
@@ -200,7 +200,7 @@ def test_vertex_assembly():
     center_domain = VertexFunction("size_t", mesh, 0)
     center = AutoSubDomain(center_func)
     center.mark(center_domain, 1)
-    dPP = dP[center_domain]
+    dPP = dP(subdomain_data=center_domain)
 
     # Define variational problem
     u = TrialFunction(V)
@@ -211,6 +211,7 @@ def test_vertex_assembly():
 
     with pytest.raises(RuntimeError):
         A, b = assemble_system(a, L)
+
 
 def test_incremental_assembly():
 
@@ -248,6 +249,7 @@ def test_incremental_assembly():
         u.vector()[:] -= u_true.vector()[:]
         error = norm(u.vector(), 'linf')
         assert round(error - 0.0, 7) == 0
+
 
 @skip_in_parallel
 def test_domains():
@@ -305,41 +307,61 @@ def test_domains():
     error = norm(x.vector(), 'linf')
     assert round(error - 0.0, 7) == 0
 
+
 @skip_in_parallel
-def test_facet_assembly_cellwise_insertion():
+def test_facet_assembly_cellwise_insertion(filedir):
 
-    mesh = UnitIntervalMesh(10)
+    def run_test(mesh):
+        c_f = FunctionSpace(mesh, "DG", 0)
+        v = Constant((-1.0,))
+        dt = Constant(1.0)
 
-    c_f = FunctionSpace(mesh, "DG", 0)
-    v = Constant((-1.0,))
-    dt = Constant(1.0)
+        c_t = TestFunction(c_f)
+        c_a = TrialFunction(c_f)
 
-    c_t = TestFunction(c_f)
-    c_a = TrialFunction(c_f)
+        n = FacetNormal(mesh)
+        vn = dot(v, n)
+        vout = 0.5*(vn + abs(vn))
 
-    n = FacetNormal(mesh)
-    vn = dot(v, n)
-    vout = 0.5*(vn + abs(vn))
+        # forms:
+        # a has no facet integrals
+        a = c_t*c_a*dx
+        # L has facet integrals so we end up in facet wise assembly
+        L = c_t('+')*vout('+')*dt('+')*dS + c_t('-')*vout('-')*dt('-')*dS  \
+            + c_t*vout*dt*ds
+        # but have to use cell wise insertion because the sparsity
+        # pattern doesn't support the macro element
 
-    # forms:
-    # a has no facet integrals
-    a = c_t*c_a*dx
-    # L has facet integrals so we end up in facet wise assembly
-    L = c_t('+')*vout('+')*dt('+')*dS + c_t('-')*vout('-')*dt('-')*dS  \
-        + c_t*vout*dt*ds
-    # but have to use cell wise insertion because the sparsity
-    # pattern doesn't support the macro element
+        A = Matrix()
+        b = Vector()
 
-    A = Matrix()
-    b = Vector()
+        assembler = SystemAssembler(a, L)
+        assembler.assemble(A, b)
 
-    assembler = SystemAssembler(a, L)
-    assembler.assemble(A, b)
+        A_frobenius_norm = ((0.1**2)*10)**0.5
+        A_linf_norm = 0.1
+        b_l2_norm = 10.0**0.5
+        b_linf_norm = 1.0
 
-    x = Function(c_f)
-    x.vector()[:] = 30.0
-    solve(A, x.vector(), b)
+        assert round(A.norm("frobenius") - A_frobenius_norm, 10) == 0
+        assert round(b.norm("l2") - b_l2_norm, 10) == 0
+        assert round(A.norm("linf") - A_linf_norm, 10) == 0
+        assert round(b.norm("linf") - b_linf_norm, 10) == 0
 
-    x.vector()[:] -= 10.0
-    error = norm(x.vector(), 'linf')
-    assert round(error - 0.0, 7) == 0
+        x = Function(c_f)
+        x.vector()[:] = 30.0
+
+        solver_worked = True
+        try:
+            solve(A, x.vector(), b)
+        except:
+            solver_worked = False
+        assert solver_worked
+
+        x.vector()[:] -= 10.0
+        error = norm(x.vector(), 'linf')
+        assert round(error - 0.0, 7) == 0
+
+    # Run tests
+    run_test(UnitIntervalMesh(10))
+    run_test(Mesh(os.path.join(filedir, "gmsh_unit_interval.xml")))
