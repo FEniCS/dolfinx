@@ -31,6 +31,9 @@ namespace dolfin
   class RangeMap
   {
   public:
+    /// Constructor
+    RangeMap()
+    {}
 
     /// Range map with no data
     explicit RangeMap(MPI_Comm mpi_comm)
@@ -38,7 +41,7 @@ namespace dolfin
     {}
 
     /// Range map with local size on each process
-  RangeMap(MPI_Comm mpi_comm, std::size_t local_size, std::size_t block_size)
+    RangeMap(MPI_Comm mpi_comm, std::size_t local_size, std::size_t block_size)
       : _mpi_comm(mpi_comm)
     {
       init(local_size, block_size);
@@ -55,19 +58,17 @@ namespace dolfin
     std::pair<std::size_t, std::size_t> local_range() const
     {
       const std::size_t rank = MPI::rank(_mpi_comm);
-      return std::make_pair(_all_ranges[rank],
-                            _all_ranges[rank + 1]);
+      return std::make_pair(_block_size*_all_ranges[rank],
+                            _block_size*_all_ranges[rank + 1]);
     }
-    // return _local_range; }
 
     /// Number of local indices
     std::size_t size() const
     {
       const std::size_t rank = MPI::rank(_mpi_comm);
-      return (_all_ranges[rank + 1]
-              - _all_ranges[rank]);
+      return _block_size*(_all_ranges[rank + 1]
+                          - _all_ranges[rank]);
     }
-    //return _local_range.second - _local_range.first; }
 
     /// Global size of map
     std::size_t size_global() const

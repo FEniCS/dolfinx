@@ -181,8 +181,7 @@ namespace dolfin
     virtual const std::vector<std::size_t>& local_to_global_unowned() const = 0;
 
     /// Range map
-    virtual const RangeMap& range_map() const = 0;
-
+    virtual std::shared_ptr<RangeMap> range_map() const = 0;
 
     /// Tabulate map between local (process) and global dof indices
     virtual void tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const = 0;

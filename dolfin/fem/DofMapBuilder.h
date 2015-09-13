@@ -175,7 +175,7 @@ namespace dolfin
       const Mesh& mesh);
 
     static void compute_node_reordering(
-                                        RangeMap& range_map,
+                                        std::shared_ptr<RangeMap> range_map,
       std::vector<int>& old_to_new_local,
       const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
       const std::vector<std::size_t>& old_local_to_global,

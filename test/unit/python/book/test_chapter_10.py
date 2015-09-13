@@ -35,6 +35,8 @@ def create_data(A=None):
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = TrialFunction(V)
     v = TestFunction(V)
+    print (V.dofmap().range_map().local_to_global_unowned())
+    print ("opo:",V.dofmap().range_map().off_process_owner())
     if A is None:
         A = assemble(u*v*dx)
     else:

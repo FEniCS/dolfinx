@@ -16,6 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <algorithm>
 #include "RangeMap.h"
 
 using namespace dolfin;
@@ -46,8 +47,9 @@ void RangeMap::set_local_to_global(std::vector<std::size_t> indices)
   const std::size_t mpi_rank = MPI::rank(_mpi_comm);
   for (const auto &node : _local_to_global)
   {
-    const std::size_t p = *std::lower_bound(_all_ranges.begin(),
-                                            _all_ranges.end(), node);
+    const std::size_t p = std::upper_bound(_all_ranges.begin(),
+                                           _all_ranges.end(), node)
+                                - _all_ranges.begin() - 1;
     dolfin_assert(p != mpi_rank);
     _off_process_owner.push_back(p);
   }

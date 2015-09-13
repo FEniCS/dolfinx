@@ -160,6 +160,7 @@
 %shared_ptr(dolfin::Matrix)
 %shared_ptr(dolfin::Vector)
 %shared_ptr(dolfin::LinearOperator)
+%shared_ptr(dolfin::RangeMap)
 
 %shared_ptr(dolfin::STLMatrix)
 

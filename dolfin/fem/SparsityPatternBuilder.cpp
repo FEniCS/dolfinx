@@ -54,7 +54,7 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   std::vector<std::size_t> global_dimensions(rank);
   std::vector<std::shared_ptr<const RangeMap>> range_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
-    range_maps[i] = std::make_shared<const RangeMap>(dofmaps[i]->range_map());
+    range_maps[i] = dofmaps[i]->range_map();
 
   dolfin_assert(!dofmaps.empty());
   dolfin_assert(dofmaps[0]);

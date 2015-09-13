@@ -179,7 +179,7 @@ namespace dolfin
     ///     std::vector<unsigned int>
     ///         The map from non-local dofs.
     const std::vector<int>& off_process_owner() const
-    { return _range_map.off_process_owner(); }
+    { return _range_map->off_process_owner(); }
 
     /// Return map from all shared nodes to the sharing processes (not
     /// including the current process) that share it.
@@ -360,11 +360,7 @@ namespace dolfin
                const Mesh& mesh) const;
 
     /// Return the map
-    const RangeMap& range_map() const
-    { return _range_map; }
-
-    /// Return the map - non-const version
-    RangeMap& range_map()
+    std::shared_ptr<RangeMap> range_map() const
     { return _range_map; }
 
     /// Compute the map from local (this process) dof indices to
@@ -385,11 +381,11 @@ namespace dolfin
     ///     std::size_t
     ///         The global dof index.
     std::size_t local_to_global_index(int local_index) const
-    { return _range_map.local_to_global(local_index); }
+    { return _range_map->local_to_global(local_index); }
 
 
     const std::vector<std::size_t>& local_to_global_unowned() const
-    { return _range_map.local_to_global_unowned(); }
+    { return _range_map->local_to_global_unowned(); }
 
     /// Return informal string representation (pretty-print)
     ///
@@ -446,7 +442,7 @@ namespace dolfin
     std::size_t _ufc_offset;
 
     // Object containing information about dof distribution across processes
-    RangeMap _range_map;
+    std::shared_ptr<RangeMap> _range_map;
 
     // Number of dofs owned by this process
     //    std::size_t _global_offset;

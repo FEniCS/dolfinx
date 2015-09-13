@@ -428,13 +428,13 @@ void FunctionAssigner::_check_and_build_indices(
     const std::size_t assigning_range
       = assigning_dofmap.ownership_range().second
       - assigning_dofmap.ownership_range().first
-      + bs_assigning*assigning_dofmap.range_map().local_to_global_unowned().size();
+      + bs_assigning*assigning_dofmap.range_map()->local_to_global_unowned().size();
 
     const std::size_t bs_receiving = receiving_dofmap.block_size;
     const std::size_t receiving_range
       = (receiving_dofmap.ownership_range().second
          - receiving_dofmap.ownership_range().first)
-      + bs_receiving*receiving_dofmap.range_map().local_to_global_unowned().size();
+      + bs_receiving*receiving_dofmap.range_map()->local_to_global_unowned().size();
 
     // Create a map between receiving and assigning dofs
     std::map<std::size_t, std::size_t> receiving_assigning_map;

@@ -128,8 +128,8 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
     std::vector<std::size_t> block_sizes = {1, 1};
 
     std::vector<std::shared_ptr<const RangeMap>> range_maps;
-    range_maps.push_back(std::make_shared<const RangeMap>(V0.dofmap()->range_map()));
-    range_maps.push_back(std::make_shared<const RangeMap>(V1.dofmap()->range_map()));
+    range_maps.push_back(V0.dofmap()->range_map());
+    range_maps.push_back(V1.dofmap()->range_map());
 
     GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
     pattern.init(mesh.mpi_comm(), global_dimensions,

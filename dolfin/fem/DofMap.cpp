@@ -42,7 +42,7 @@ using namespace dolfin;
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh)
   : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0), _range_map(mesh.mpi_comm())
+    _global_dimension(0), _ufc_offset(0), _range_map(new RangeMap(mesh.mpi_comm()))
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -54,7 +54,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh,
                std::shared_ptr<const SubDomain> constrained_domain)
   : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0), _range_map(mesh.mpi_comm())
+    _global_dimension(0), _ufc_offset(0), _range_map(new RangeMap(mesh.mpi_comm()))
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -68,7 +68,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
 DofMap::DofMap(const DofMap& parent_dofmap,
                const std::vector<std::size_t>& component, const Mesh& mesh)
   : _cell_dimension(0), _is_view(true), _global_dimension(0), _ufc_offset(0),
-    _range_map(mesh.mpi_comm())
+    _range_map(new RangeMap(mesh.mpi_comm()))
     //    _global_offset(parent_dofmap._global_offset),
     //    _local_ownership_size(parent_dofmap._local_ownership_size)
 {
@@ -79,7 +79,7 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh)
   : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0), _range_map(mesh.mpi_comm())
+    _global_dimension(0), _ufc_offset(0), _range_map(new RangeMap(mesh.mpi_comm()))
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -153,12 +153,12 @@ std::size_t DofMap::global_dimension() const
 std::size_t DofMap::local_dimension(std::string type) const
 {
   if (type == "owned")
-    return _range_map.size();
+    return _range_map->size();
   else if (type == "unowned")
     //    return block_size*_local_to_global_unowned.size();
-    return block_size*_range_map.local_to_global_unowned().size();
+    return block_size*_range_map->local_to_global_unowned().size();
   else if (type == "all")
-    return _range_map.size() + block_size*_range_map.local_to_global_unowned().size();
+    return _range_map->size() + block_size*_range_map->local_to_global_unowned().size();
   else
   {
     dolfin_error("DofMap.h",
@@ -196,7 +196,7 @@ std::size_t DofMap::num_facet_dofs() const
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> DofMap::ownership_range() const
 {
-  return _range_map.local_range();
+  return _range_map->local_range();
 }
 //-----------------------------------------------------------------------------
 const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const
@@ -265,7 +265,7 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
   //const std::size_t offset = ownership_range().first;
 
   // Number of local dofs (dofs owned by this process)
-  const std::size_t local_ownership_size = _range_map.size();
+  const std::size_t local_ownership_size = _range_map->size();
 
   // Vector to hold coordinates and return
   std::vector<double> x(gdim*local_ownership_size);
@@ -407,8 +407,8 @@ std::vector<dolfin::la_index> DofMap::dofs() const
   std::vector<la_index> _dofs;
   _dofs.reserve(_dofmap.size()*max_element_dofs());
 
-  const std::size_t local_ownership_size = _range_map.size();
-  const std::size_t global_offset = _range_map.local_range().first;
+  const std::size_t local_ownership_size = _range_map->size();
+  const std::size_t global_offset = _range_map->local_range().first;
 
   // Insert all dofs into a vector (will contain duplicates)
   for (auto dof : _dofmap)
@@ -472,17 +472,17 @@ void DofMap::set_x(GenericVector& x, double value, std::size_t component,
 void DofMap::tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const
 {
 
-  const std::vector<std::size_t>& local_to_global_unowned = _range_map.local_to_global_unowned();
-  const std::size_t local_ownership_size = _range_map.size();
+  const std::vector<std::size_t>& local_to_global_unowned = _range_map->local_to_global_unowned();
+  const std::size_t local_ownership_size = _range_map->size();
   const int size = local_ownership_size
     + block_size*local_to_global_unowned.size();
   local_to_global_map.resize(size);
 
-  const std::size_t global_offset = _range_map.local_range().first;
+  const std::size_t global_offset = _range_map->local_range().first;
   for (int i = 0; i < local_ownership_size; ++i)
     local_to_global_map[i] = i + global_offset;
 
-  for (std::size_t node = 0; node < _range_map.local_to_global_unowned().size(); ++node)
+  for (std::size_t node = 0; node < _range_map->local_to_global_unowned().size(); ++node)
   {
     for (std::size_t component = 0; component < block_size; ++component)
     {
