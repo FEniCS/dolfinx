@@ -21,10 +21,10 @@
 #ifndef __TENSOR_LAYOUT_H
 #define __TENSOR_LAYOUT_H
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include <memory>
 
 #include "dolfin/common/types.h"
 #include "dolfin/common/MPI.h"

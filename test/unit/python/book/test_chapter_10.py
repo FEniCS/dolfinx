@@ -537,7 +537,8 @@ def test_p30_box_1():
             return x[0] < 0.5 + DOLFIN_EPS and on_boundary
     neumann_boundary = NeumannBoundary()
 
-    dss = ds[neumann_boundary]
+    # Changed from notation dss = ds[neumann_boundary]
+    dss = ds(subdomain_data=neumann_boundary)
     a = g*v*dss(0) + h*v*dss(1)
 
 
