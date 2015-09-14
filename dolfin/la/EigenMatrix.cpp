@@ -84,7 +84,7 @@ double EigenMatrix::norm(std::string norm_type) const
     return _matA.squaredNorm();
   else if (norm_type == "frobenius")
     return _matA.norm();
-  else if (norm_type == "frobenius")
+  else if (norm_type == "linf")
   {
     double _norm = 0.0;
     for (std::size_t i = 0; i < size(0); ++i)
