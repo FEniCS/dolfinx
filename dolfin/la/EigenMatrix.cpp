@@ -73,10 +73,24 @@ std::size_t EigenMatrix::size(std::size_t dim) const
 //---------------------------------------------------------------------------
 double EigenMatrix::norm(std::string norm_type) const
 {
-  if (norm_type == "l2")
+  if (norm_type == "l1")
+  {
+    double _norm = 0.0;
+    for (std::size_t i = 0; i < size(1); ++i)
+      _norm = std::max(_norm, _matA.col(i).cwiseAbs().sum());
+    return _norm;
+  }
+  else if (norm_type == "l2")
     return _matA.squaredNorm();
   else if (norm_type == "frobenius")
     return _matA.norm();
+  else if (norm_type == "frobenius")
+  {
+    double _norm = 0.0;
+    for (std::size_t i = 0; i < size(0); ++i)
+      _norm = std::max(_norm, _matA.row(i).cwiseAbs().sum());
+    return _norm;
+  }
   else
   {
     dolfin_error("EigenMatrix.h",
