@@ -358,14 +358,10 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_reuse_preconditioner(bool reuse_pc)
 {
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 5
   dolfin_assert(_ksp);
   const PetscBool _reuse_pc = reuse_pc ? PETSC_TRUE : PETSC_FALSE;
   PetscErrorCode ierr = KSPSetReusePreconditioner(_ksp, _reuse_pc);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetReusePreconditioner");
-#else
-  warning("PETScKrylovSolver::set_reuse_preconditioner is only supported for PETSc version 3.5 or later");
-#endif
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
@@ -451,7 +447,7 @@ void PETScKrylovSolver::_set_operator(std::shared_ptr<const PETScBaseMatrix> A)
 //-----------------------------------------------------------------------------
 void
 PETScKrylovSolver::_set_operators(std::shared_ptr<const PETScBaseMatrix> A,
-                                 std::shared_ptr<const PETScBaseMatrix> P)
+                                  std::shared_ptr<const PETScBaseMatrix> P)
 {
   _matA = A;
   _matP = P;
@@ -460,41 +456,8 @@ PETScKrylovSolver::_set_operators(std::shared_ptr<const PETScBaseMatrix> A,
   dolfin_assert(_ksp);
 
   PetscErrorCode ierr;
-
-  // Get parameter
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-  const std::string mat_structure = parameters("preconditioner")["structure"];
-
-  // Set operators with appropriate option
-  if (mat_structure == "same")
-  {
-    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
-                           SAME_PRECONDITIONER);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  }
-  else if (mat_structure == "same_nonzero_pattern")
-  {
-    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
-                           SAME_NONZERO_PATTERN);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  }
-  else if (mat_structure == "different_nonzero_pattern")
-  {
-    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
-                           DIFFERENT_NONZERO_PATTERN);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  }
-  else
-  {
-    dolfin_error("PETScKrylovSolver.cpp",
-                 "set PETSc Krylov solver operators",
-                 "Preconditioner re-use parameter \"%s \" is unknown",
-                 mat_structure.c_str());
-  }
-  #else
   ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat());
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  #endif
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::_solve(const PETScBaseMatrix& A,
