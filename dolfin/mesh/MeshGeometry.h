@@ -57,6 +57,10 @@ namespace dolfin
     std::size_t dim() const
     { return _dim; }
 
+    /// Return polynomial degree of coordinate field
+    std::size_t degree() const
+    { return 1; }
+
     /// Return number of coordinates
     std::size_t size() const
     {

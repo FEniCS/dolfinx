@@ -92,11 +92,6 @@ namespace dolfin
     void set_operators(std::shared_ptr<const GenericLinearOperator> A,
                        std::shared_ptr<const GenericLinearOperator> P);
 
-
-    /// Set null space of the operator (matrix). This is used to solve
-    /// singular systems
-    void set_nullspace(const VectorSpaceBasis& nullspace);
-
     /// Get operator (matrix)
     const PETScBaseMatrix& get_operator() const;
 
@@ -190,12 +185,6 @@ namespace dolfin
 
     // Matrix used to construct the preconditioner
     std::shared_ptr<const PETScBaseMatrix> _matP;
-
-    // Null space vectors
-    std::vector<PETScVector> _nullspace;
-
-    // PETSc null space
-    MatNullSpace petsc_nullspace;
 
     bool preconditioner_set;
 

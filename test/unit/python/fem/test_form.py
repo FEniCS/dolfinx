@@ -152,7 +152,7 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
     bottom = FacetFunctionSizet(square)
     bottom.set_all(0)
     subdomain.mark(bottom, 1)
-    dss = ds[bottom]
+    dss = ds(subdomain_data=bottom)
     foo = MPI.sum(square.mpi_comm(),
                abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
     # Assemble over all cells of submesh created from subset of boundary mesh
@@ -190,7 +190,7 @@ def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
     bottom = FacetFunctionSizet(cube)
     bottom.set_all(0)
     subdomain.mark(bottom, 1)
-    dss = ds[bottom]
+    dss = ds(subdomain_data=bottom)
     foo = MPI.sum(cube.mpi_comm(),
                abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
     # Assemble over all cells of submesh created from subset of boundary mesh

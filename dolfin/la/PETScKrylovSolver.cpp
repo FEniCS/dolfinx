@@ -95,7 +95,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
                                      std::string preconditioner)
   : _ksp(NULL), pc_dolfin(NULL),
     _preconditioner(new PETScPreconditioner(preconditioner)),
-    petsc_nullspace(NULL), preconditioner_set(false)
+    preconditioner_set(false)
 {
   // Check that the requested method is known
   if (_methods.count(method) == 0)
@@ -116,7 +116,6 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
   : _ksp(NULL),
     pc_dolfin(NULL),
     _preconditioner(reference_to_no_delete_pointer(preconditioner)),
-    petsc_nullspace(NULL),
     preconditioner_set(false)
 {
   // Set parameter values
@@ -128,7 +127,6 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
   std::shared_ptr<PETScPreconditioner> preconditioner)
   : _ksp(NULL), pc_dolfin(NULL), _preconditioner(preconditioner),
-  petsc_nullspace(NULL),
   preconditioner_set(false)
 {
   // Set parameter values
@@ -139,8 +137,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
                                      PETScUserPreconditioner& preconditioner)
-  : _ksp(NULL), pc_dolfin(&preconditioner), petsc_nullspace(NULL),
-    preconditioner_set(false)
+  : _ksp(NULL), pc_dolfin(&preconditioner), preconditioner_set(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -150,8 +147,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
   std::shared_ptr<PETScUserPreconditioner> preconditioner)
-  : _ksp(NULL), pc_dolfin(preconditioner.get()), petsc_nullspace(NULL),
-    preconditioner_set(false)
+  : _ksp(NULL), pc_dolfin(preconditioner.get()), preconditioner_set(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -160,7 +156,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(KSP ksp)
-  : _ksp(ksp), pc_dolfin(0), petsc_nullspace(NULL), preconditioner_set(true)
+  : _ksp(ksp), pc_dolfin(0), preconditioner_set(true)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -174,8 +170,6 @@ PETScKrylovSolver::~PETScKrylovSolver()
 {
   if (_ksp)
     KSPDestroy(&_ksp);
-  if (petsc_nullspace)
-    MatNullSpaceDestroy(&petsc_nullspace);
 }
 //-----------------------------------------------------------------------------
 void
@@ -190,55 +184,6 @@ void PETScKrylovSolver::set_operators(
 {
   _set_operators(as_type<const PETScBaseMatrix>(A),
                  as_type<const PETScBaseMatrix>(P));
-}
-//-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
-{
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 5
-
-  deprecation("PETScKrylovSolver::set_nullspace",
-              "1.6.0", "1.7.0",
-              "Attach the null space to the matrix insetad");
-
-  PetscErrorCode ierr;
-
-  // Copy vectors
-  for (std::size_t i = 0; i < nullspace.dim(); ++i)
-  {
-    dolfin_assert(nullspace[i]);
-    const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
-
-    // Copy vector
-    _nullspace.push_back(x);
-  }
-
-  // Get pointers to underlying PETSc objects and normalize vectors
-  std::vector<Vec> petsc_vec(nullspace.dim());
-  for (std::size_t i = 0; i < nullspace.dim(); ++i)
-  {
-    petsc_vec[i] = _nullspace[i].vec();
-    PetscReal val = 0.0;
-    ierr = VecNormalize(_nullspace[i].vec(), &val);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "VecNormalize");
-  }
-
-  // Create null space
-  if (petsc_nullspace)
-    MatNullSpaceDestroy(&petsc_nullspace);
-  ierr = MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.dim(),
-                            petsc_vec.data(), &petsc_nullspace);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
-
-  // Set null space
-  dolfin_assert(_ksp);
-  ierr = KSPSetNullSpace(_ksp, petsc_nullspace);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetNullSpace");
-
-#else
-  dolfin_error("PETScKrylovSolver.cpp",
-               "set null space for solver",
-               "For PETSc version > 3.5 nullspace must be attached to matrix");
-#endif
 }
 //-----------------------------------------------------------------------------
 const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
@@ -413,14 +358,10 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_reuse_preconditioner(bool reuse_pc)
 {
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 5
   dolfin_assert(_ksp);
   const PetscBool _reuse_pc = reuse_pc ? PETSC_TRUE : PETSC_FALSE;
   PetscErrorCode ierr = KSPSetReusePreconditioner(_ksp, _reuse_pc);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetReusePreconditioner");
-#else
-  warning("PETScKrylovSolver::set_reuse_preconditioner is only supported for PETSc version 3.5 or later");
-#endif
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
@@ -506,7 +447,7 @@ void PETScKrylovSolver::_set_operator(std::shared_ptr<const PETScBaseMatrix> A)
 //-----------------------------------------------------------------------------
 void
 PETScKrylovSolver::_set_operators(std::shared_ptr<const PETScBaseMatrix> A,
-                                 std::shared_ptr<const PETScBaseMatrix> P)
+                                  std::shared_ptr<const PETScBaseMatrix> P)
 {
   _matA = A;
   _matP = P;
@@ -515,41 +456,8 @@ PETScKrylovSolver::_set_operators(std::shared_ptr<const PETScBaseMatrix> A,
   dolfin_assert(_ksp);
 
   PetscErrorCode ierr;
-
-  // Get parameter
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-  const std::string mat_structure = parameters("preconditioner")["structure"];
-
-  // Set operators with appropriate option
-  if (mat_structure == "same")
-  {
-    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
-                           SAME_PRECONDITIONER);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  }
-  else if (mat_structure == "same_nonzero_pattern")
-  {
-    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
-                           SAME_NONZERO_PATTERN);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  }
-  else if (mat_structure == "different_nonzero_pattern")
-  {
-    ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat(),
-                           DIFFERENT_NONZERO_PATTERN);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  }
-  else
-  {
-    dolfin_error("PETScKrylovSolver.cpp",
-                 "set PETSc Krylov solver operators",
-                 "Preconditioner re-use parameter \"%s \" is unknown",
-                 mat_structure.c_str());
-  }
-  #else
   ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat());
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  #endif
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::_solve(const PETScBaseMatrix& A,
