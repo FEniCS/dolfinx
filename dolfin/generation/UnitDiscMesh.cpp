@@ -73,15 +73,11 @@ UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n, std::size_t gdim)
           i1 = base_m + (k*(i-1) + j/2 + 1)%row_m;
           i2 = base_i + (k*i + j/2 + 1)%row_i;
         }
-        std::cout << "(" << i <<", " << j  << ", " << k << ") : ";
-        std::cout << i0 <<", " << i1  << ", " << i2 << "\n" ;
-
 
         editor.add_cell(c, i0, i1, i2);
         ++c;
       }
   }
-
 
   editor.close();
 }
