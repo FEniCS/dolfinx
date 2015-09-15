@@ -99,7 +99,7 @@ int main()
 
   // Create null space basis object and attach to Krylov solver
   VectorSpaceBasis null_space(null_space_basis);
-  solver.set_nullspace(null_space);
+  A->down_cast<PETScMatrix>().set_nullspace(null_space);
 
   // Orthogonalize b with respect to the null space (this gurantees
   // that a solution exists)
@@ -112,7 +112,7 @@ int main()
   Vector residual(*u.vector());
   A->mult(*u.vector(), residual);
   residual.axpy(-1.0, b);
-  info("Norm of residual: %lf\n", residual.norm("l2"));
+  info("Norm of residual: %lf", residual.norm("l2"));
 
   // Plot solution
   plot(u);

@@ -48,10 +48,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Function::Function(const FunctionSpace& V)
-  : Hierarchical<Function>(*this),
-    _function_space(reference_to_no_delete_pointer(V)),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
+Function::Function(const FunctionSpace& V) : Hierarchical<Function>(*this),
+  _function_space(reference_to_no_delete_pointer(V)),
+  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
   if (!V.component().empty())
@@ -67,7 +66,7 @@ Function::Function(const FunctionSpace& V)
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
   : Hierarchical<Function>(*this), _function_space(V),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
+  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
   if (!V->component().empty())
@@ -84,7 +83,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 Function::Function(std::shared_ptr<const FunctionSpace> V,
                    std::shared_ptr<GenericVector> x)
   : Hierarchical<Function>(*this), _function_space(V), _vector(x),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
+  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // We do not check for a subspace since this constructor is used for
   // creating subfunctions
@@ -96,8 +95,8 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
   : Hierarchical<Function>(*this),
-    _function_space(reference_to_no_delete_pointer(V)),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
+  _function_space(reference_to_no_delete_pointer(V)),
+  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
   if (!V.component().empty())
@@ -125,9 +124,9 @@ Function::Function(const FunctionSpace& V, std::string filename)
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V,
-                   std::string filename)
-  : Hierarchical<Function>(*this), _function_space(V),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
+                   std::string filename) : Hierarchical<Function>(*this),
+  _function_space(V),
+  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
   if (!V->component().empty())
@@ -154,9 +153,8 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
   file >> *this;
 }
 //-----------------------------------------------------------------------------
-Function::Function(const Function& v)
-  : Hierarchical<Function>(*this),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
+Function::Function(const Function& v) : Hierarchical<Function>(*this),
+  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Assign data
   *this = v;
@@ -164,7 +162,7 @@ Function::Function(const Function& v)
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v, std::size_t i)
   : Hierarchical<Function>(*this),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
+  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Copy function space pointer
   this->_function_space = v[i]._function_space;
@@ -194,7 +192,7 @@ const Function& Function::operator= (const Function& v)
     _vector = v._vector->copy();
 
     // Clear subfunction cache
-    sub_functions.clear();
+    _sub_functions.clear();
   }
   else
   {
@@ -257,9 +255,8 @@ Function& Function::operator[] (std::size_t i) const
 
   // Check if sub-Function is in the cache, otherwise create and add
   // to cache
-  boost::ptr_map<std::size_t, Function>::iterator sub_function
-    = sub_functions.find(i);
-  if (sub_function != sub_functions.end())
+  auto sub_function = _sub_functions.find(i);
+  if (sub_function != _sub_functions.end())
     return *(sub_function->second);
   else
   {
@@ -269,8 +266,8 @@ Function& Function::operator[] (std::size_t i) const
       sub_space(_function_space->extract_sub_space(component));
 
     // Insert sub-Function into map and return reference
-    sub_functions.insert(i, new Function(sub_space, _vector));
-    return *(sub_functions.find(i)->second);
+    _sub_functions.insert(i, new Function(sub_space, _vector));
+    return *(_sub_functions.find(i)->second);
   }
 }
 //-----------------------------------------------------------------------------
@@ -382,17 +379,13 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   // If not found, use the closest cell
   if (id == std::numeric_limits<unsigned int>::max())
   {
-    if (allow_extrapolation)
-    {
+    if (_allow_extrapolation)
       id = mesh.bounding_box_tree()->compute_closest_entity(point).first;
-      //cout << "Extrapolating function value at x = " << point
-      //     << " (not inside domain)." << endl;
-    }
     else
     {
       dolfin_error("Function.cpp",
                    "evaluate function at point",
-                   "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
+                   "The point is not inside the domain. Consider calling \"Function::set_allow_extrapolation(true)\" on this Function to allow extrapolation");
     }
   }
 
@@ -702,8 +695,7 @@ Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get dofs on cell
-    const ArrayView<const dolfin::la_index>
-      dofs = dofmap.cell_dofs(cell->index());
+    auto dofs = dofmap.cell_dofs(cell->index());
     for (std::size_t d = 0; d < dofs.size(); ++d)
     {
       const std::size_t dof = dofs[d];

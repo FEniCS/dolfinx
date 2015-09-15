@@ -1170,7 +1170,11 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
 
     // Build local-to-global map for nodes
     for (std::size_t i = 0; i < local_dim; ++i)
+    {
+      dolfin_assert(ufc_nodes_local[i] < node_local_to_global.size());
       node_local_to_global[ufc_nodes_local[i]] = ufc_nodes_global[i];
+    }
+
   }
 
   return dofmaps[0];

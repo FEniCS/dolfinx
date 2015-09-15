@@ -107,3 +107,8 @@
 %rename(_root_node) dolfin::Hierarchical::root_node_shared_ptr;
 %ignore dolfin::Hierarchical::leaf_node;
 %rename(_leaf_node) dolfin::Hierarchical::leaf_node_shared_ptr;
+
+//-----------------------------------------------------------------------------
+// Ignores for Variable
+//-----------------------------------------------------------------------------
+%ignore dolfin::Variable::operator=;

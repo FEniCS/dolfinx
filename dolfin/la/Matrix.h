@@ -25,8 +25,8 @@
 #ifndef __MATRIX_H
 #define __MATRIX_H
 
-#include <boost/tuple/tuple.hpp>
 #include <memory>
+#include <tuple>
 #include "DefaultFactory.h"
 #include "GenericMatrix.h"
 
@@ -187,6 +187,10 @@ namespace dolfin
     virtual void transpmult(const GenericVector& x, GenericVector& y) const
     { matrix->transpmult(x, y); }
 
+    /// Get diagonal of a matrix
+    virtual void get_diagonal(GenericVector& x) const
+    { matrix->get_diagonal(x); }
+
     /// Set diagonal of a matrix
     virtual void set_diagonal(const GenericVector& x)
     { matrix->set_diagonal(x); }
@@ -206,12 +210,6 @@ namespace dolfin
     /// Test if matrix is symmetric
     virtual bool is_symmetric(double tol) const
     { return matrix->is_symmetric(tol); }
-
-    /// Return pointers to underlying compressed storage data.
-    /// See GenericMatrix for documentation.
-    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,
-      const double*, int> data() const
-    { return matrix->data(); }
 
     //--- Special functions ---
 

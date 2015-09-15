@@ -35,22 +35,20 @@
 
 namespace dolfin
 {
-  //typedef Eigen::SparseMatrix<double, Eigen::RowMajor, dolfin::la_index>
-  //eigen_matrix_type;
-  typedef Eigen::SparseMatrix<double, Eigen::RowMajor> eigen_matrix_type;
 
-  /// This class provides a sparse matrix class based on Eigen.
-  /// It is a simple wrapper for Eigen::SparseMatrix implementing the
+  /// This class provides a sparse matrix class based on Eigen.  It is
+  /// a simple wrapper for Eigen::SparseMatrix implementing the
   /// GenericMatrix interface.
   ///
   /// The interface is intentionally simple. For advanced usage,
   /// access the underlying Eigen matrix and use the standard Eigen
   /// interface which is documented at http://eigen.tuxfamily.org
 
-
   class EigenMatrix : public GenericMatrix
   {
   public:
+
+    typedef Eigen::SparseMatrix<double, Eigen::RowMajor, int> eigen_matrix_type;
 
     /// Create empty matrix
     EigenMatrix();
@@ -175,6 +173,9 @@ namespace dolfin
     /// Matrix-vector product, y = A^T x
     virtual void transpmult(const GenericVector& x, GenericVector& y) const;
 
+    /// Get diagonal of a matrix
+    virtual void get_diagonal(GenericVector& x) const;
+
     /// Set diagonal of a matrix
     virtual void set_diagonal(const GenericVector& x);
 
@@ -186,6 +187,11 @@ namespace dolfin
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A);
+
+    /// Return pointers to underlying compressed storage data See
+    /// GenericMatrix for documentation.
+    virtual std::tuple<const int*, const int*, const double*, std::size_t>
+      data() const;
 
     //--- Special functions ---
 

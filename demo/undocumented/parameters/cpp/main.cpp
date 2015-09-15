@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
   //--- Demo of global DOLFIN parameters ---
 
   // Set some global DOLFIN parameters
-  parameters["linear_algebra_backend"] = "uBLAS";
+  parameters["linear_algebra_backend"] = "Eigen";
 
   // Print global DOLFIN parameters
   info(parameters, true);

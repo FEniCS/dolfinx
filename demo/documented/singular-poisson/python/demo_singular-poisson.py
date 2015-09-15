@@ -73,17 +73,17 @@ u = Function(V)
 # Create Krylov solver
 solver = KrylovSolver(A, "gmres")
 
-# Create vector that spans the null space
+# Create vector that spans the null space and normalize
 null_vec = Vector(u.vector())
 V.dofmap().set(null_vec, 1.0)
 null_vec *= 1.0/null_vec.norm("l2")
 
 # Create null space basis object and attach to Krylov solver
 null_space = VectorSpaceBasis([null_vec])
-solver.set_nullspace(null_space)
+as_backend_type(A).set_nullspace(null_space)
 
- # Orthogonalize b with respect to the null space (this gurantees that
- # a solution exists)
+# Orthogonalize RHS b with respect to the null space (this gurantees a
+# solution exists)
 null_space.orthogonalize(b);
 
 # Solve

@@ -27,6 +27,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 #include <petscksp.h>
 #include <petscpc.h>
 #include "GenericLUSolver.h"
@@ -95,6 +96,14 @@ namespace dolfin
     std::size_t solve_transpose(const PETScMatrix& A, PETScVector& x,
                                 const PETScVector& b);
 
+    /// Sets the prefix used by PETSc when searching the options
+    /// database
+    void set_options_prefix(std::string options_prefix);
+
+    /// Returns the prefix used by PETSc when searching the options
+    /// database
+    std::string get_options_prefix() const;
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
@@ -112,6 +121,9 @@ namespace dolfin
     friend class PETScTAOSolver;
 
   private:
+
+    // Prefix for PETSc options database
+    std::string _petsc_options_prefix;
 
     const MatSolverPackage _solver_package;
 

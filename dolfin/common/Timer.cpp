@@ -62,7 +62,7 @@ double Timer::stop()
   _timer.stop();
   const auto elapsed = this->elapsed();
   if (_task.size() > 0)
-    LogManager::logger.register_timing(_task, elapsed);
+    LogManager::logger().register_timing(_task, elapsed);
   return std::get<0>(elapsed);
 }
 //-----------------------------------------------------------------------------
