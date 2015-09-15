@@ -134,8 +134,13 @@ void MeshSmoothing::smooth(Mesh& mesh, std::size_t num_iterations)
       if (r < DOLFIN_EPS)
         continue;
       rmin = std::min(0.5*rmin, r);
+
+      std::vector<double> new_vertex(mesh.geometry().x(v->index()),
+                                     mesh.geometry().x(v->index()) + d);
       for (std::size_t i = 0; i < d; i++)
-        mesh.geometry().x(v->index(), i) += rmin*(xx[i] - p[i])/r;
+        new_vertex[i] += rmin*(xx[i] - p[i])/r;
+      mesh.geometry().set(v->index(), new_vertex.data());
+
     }
   }
 
@@ -177,8 +182,7 @@ void MeshSmoothing::snap_boundary(Mesh& mesh,
     Point p = geometry.point(i);
     Array<double> x(dim, p.coordinates());
     sub_domain.snap(x);
-    for (unsigned int j = 0; j < dim; ++j)
-      geometry.x(i, j) = p[j];
+    geometry.set(i, p.coordinates());
   }
 
   // Move interior vertices
@@ -198,12 +202,7 @@ void MeshSmoothing::move_interior_vertices(Mesh& mesh,
     const MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);
     const std::size_t d = mesh.geometry().dim();
     for (VertexIterator v(boundary); !v.end(); ++v)
-    {
-      const double* xb = v->x();
-      const std::size_t vi = vertex_map[*v];
-      for (std::size_t i = 0; i < d; i++)
-        mesh.geometry().x(vi, i) = xb[i];
-    }
+      mesh.geometry().set(vertex_map[*v], v->x());
   }
 }
 //-----------------------------------------------------------------------------

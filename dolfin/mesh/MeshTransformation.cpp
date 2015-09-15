@@ -39,8 +39,10 @@ void MeshTransformation::translate(Mesh& mesh, const Point& point)
   // Displace all points
   for (std::size_t i = 0; i < geometry.size(); i++)
   {
+    std::vector<double> x0(geometry.x(i), geometry.x(i) + gdim);
     for (std::size_t j = 0; j < gdim; j++)
-      geometry.x(i, j) += dx[j];
+      x0[j] += dx[j];
+    geometry.set(i, x0.data());
   }
 }
 //-----------------------------------------------------------------------------
@@ -104,6 +106,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
 
     // Rotate all points
     MeshGeometry& geometry = mesh.geometry();
+    std::vector<double> xr(2);
     for (std::size_t i = 0; i < geometry.size(); i++)
     {
       // Get coordinate
@@ -114,12 +117,11 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
       const double dx1 = x[1] - c[1];
 
       // Rotate
-      const double x0 = c[0] + S00*dx0 + S01*dx1;
-      const double x1 = c[1] + S10*dx0 + S11*dx1;
+      xr[0] = c[0] + S00*dx0 + S01*dx1;
+      xr[1] = c[1] + S10*dx0 + S11*dx1;
 
       // Store coordinate
-      geometry.x(i, 0) = x0;
-      geometry.x(i, 1) = x1;
+      geometry.set(i, xr.data());
     }
   }
   else if (gdim == 3)
@@ -153,6 +155,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
 
     // Rotate all points
     MeshGeometry& geometry = mesh.geometry();
+    std::vector<double> xr(3);
     for (std::size_t i = 0; i < geometry.size(); i++)
     {
       // Get coordinate
@@ -164,14 +167,12 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
       const double dx2 = x[2] - c[2];
 
       // Rotate
-      const double x0 = c[0] + R00*dx0 + R01*dx1 + R02*dx2;
-      const double x1 = c[1] + R10*dx0 + R11*dx1 + R12*dx2;
-      const double x2 = c[2] + R20*dx0 + R21*dx1 + R22*dx2;
+      xr[0] = c[0] + R00*dx0 + R01*dx1 + R02*dx2;
+      xr[1] = c[1] + R10*dx0 + R11*dx1 + R12*dx2;
+      xr[2] = c[2] + R20*dx0 + R21*dx1 + R22*dx2;
 
       // Store coordinate
-      geometry.x(i, 0) = x0;
-      geometry.x(i, 1) = x1;
-      geometry.x(i, 2) = x2;
+      geometry.set(i, xr.data());
     }
   }
   else

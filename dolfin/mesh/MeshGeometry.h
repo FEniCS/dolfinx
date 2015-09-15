@@ -69,12 +69,12 @@ namespace dolfin
     }
 
     /// Return value of coordinate with local index n in direction i
-    double& x(std::size_t n, std::size_t i)
-    {
-      dolfin_assert(n < local_index_to_position.size());
-      dolfin_assert(i < _dim);
-      return coordinates[local_index_to_position[n]*_dim + i];
-    }
+    // double& x(std::size_t n, std::size_t i)
+    // {
+    //   dolfin_assert(n < local_index_to_position.size());
+    //   dolfin_assert(i < _dim);
+    //   return coordinates[local_index_to_position[n]*_dim + i];
+    // }
 
     /// Return value of coordinate with local index n in direction i
     double x(std::size_t n, std::size_t i) const
@@ -85,7 +85,7 @@ namespace dolfin
     }
 
     /// Return array of values for coordinate with local index n
-    //    double* x(std::size_t n)
+    //      double* x(std::size_t n)
     //    {
     //      dolfin_assert(n < local_index_to_position.size());
     //      return &coordinates[local_index_to_position[n]*_dim];
@@ -117,7 +117,8 @@ namespace dolfin
 
     /// Set value of coordinate
     //void set(std::size_t n, std::size_t i, double x);
-    void set(std::size_t local_index, const std::vector<double>& x);
+    // void set(std::size_t local_index, const std::vector<double>& x);
+    void set(std::size_t local_index, const double* x);
 
     /// Hash of coordinate values
     ///

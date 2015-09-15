@@ -98,10 +98,9 @@ void MeshGeometry::init(std::size_t dim, std::size_t size)
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::set(std::size_t local_index,
-                       const std::vector<double>& x)
+                       const double* x)
 {
-  dolfin_assert(x.size() == _dim);
-  std::copy(x.begin(), x.end(), coordinates.begin() + local_index*_dim);
+  std::copy(x, x +_dim, coordinates.begin() + local_index*_dim);
 
   dolfin_assert(local_index < position_to_local_index.size());
   position_to_local_index[local_index] = local_index;
