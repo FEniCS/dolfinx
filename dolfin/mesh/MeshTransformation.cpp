@@ -37,11 +37,11 @@ void MeshTransformation::translate(Mesh& mesh, const Point& point)
   const double* dx = point.coordinates();
 
   // Displace all points
+  std::vector<double> x0(gdim);
   for (std::size_t i = 0; i < geometry.size(); i++)
   {
-    std::vector<double> x0(geometry.x(i), geometry.x(i) + gdim);
     for (std::size_t j = 0; j < gdim; j++)
-      x0[j] += dx[j];
+      x0[j] = geometry.x(i, j) + dx[j];
     geometry.set(i, x0.data());
   }
 }
