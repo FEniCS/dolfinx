@@ -63,7 +63,7 @@ namespace dolfin
     /// Return number of coordinates
     std::size_t size() const
     {
-      deprecate("MeshGeometry::size()", "1.7.0", "1.8.0", "Use MeshGeometry::num_vertices() instead");
+      deprecation("MeshGeometry::size()", "1.7.0", "1.8.0", "Use MeshGeometry::num_vertices() instead");
       return num_vertices();
     }
 
@@ -77,7 +77,7 @@ namespace dolfin
     /// Return the total number of points in the geometry, located on any entity
     std::size_t num_points() const
     {
-      warning("MeshGeometry::num_points() not working yet";
+      warning("MeshGeometry::num_points() not working yet");
       return 0;
     }
 
@@ -89,11 +89,10 @@ namespace dolfin
 
     const double* point_coordinates(std::size_t point_index)
     {
-      warning("MeshGeometry::point_coordinates() not working yet";
+      warning("MeshGeometry::point_coordinates() not working yet");
       dolfin_assert(point_index < local_index_to_position.size());
       return &coordinates[local_index_to_position[point_index]*_dim];
     }
-
 
     /// Return value of coordinate with local index n in direction i
     double& x(std::size_t n, std::size_t i)
