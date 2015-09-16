@@ -176,22 +176,6 @@ namespace dolfin
                                               cell_orientation, cell);
     }
 
-    /// Map coordinate xhat from reference cell to coordinate x in cell
-    void map_from_reference_cell(double* x, const double* xhat,
-                                 const ufc::cell& c) const
-    {
-      dolfin_assert(_ufc_element);
-      _ufc_element->map_from_reference_cell(x, xhat, c);
-    }
-
-    /// Map from coordinate x in cell to coordinate xhat in reference cell
-    void map_to_reference_cell(double* xhat, const double* x,
-                               const ufc::cell& c) const
-    {
-      dolfin_assert(_ufc_element);
-      _ufc_element->map_to_reference_cell(xhat, x, c);
-    }
-
     /// Return the number of sub elements (for a mixed element)
     std::size_t num_sub_elements() const
     {

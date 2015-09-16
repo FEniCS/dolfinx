@@ -417,7 +417,9 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     xml.mesh_geometry(num_total_vertices, gdim, current_mesh_name);
 
     boost::filesystem::path p(hdf5_filename);
-    xml.data_attribute(u.name(), value_rank, vertex_data,
+    // Force all value_ranks to appear as "Scalar" in 1D geometry
+    const std::size_t apparent_value_rank = ((gdim == 1)? 0 : value_rank);
+    xml.data_attribute(u.name(), apparent_value_rank, vertex_data,
                        num_total_vertices, num_global_cells,
                        padded_value_size,
                        p.filename().string() + ":" + dataset_name);
