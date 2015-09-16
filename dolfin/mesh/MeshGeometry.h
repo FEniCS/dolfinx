@@ -95,12 +95,12 @@ namespace dolfin
     }
 
     /// Return value of coordinate with local index n in direction i
-    double& x(std::size_t n, std::size_t i)
-    {
-      dolfin_error("MeshGeometry.h",
-                   "return coordinates (non-const)",
-                   "MeshGeometry::x() has been removed. Please use MeshGeometry::vertex_coordinates() instead");
-    }
+    // double& x(std::size_t n, std::size_t i)
+    // {
+    //   dolfin_error("MeshGeometry.h",
+    //                "return coordinates (non-const)",
+    //                "MeshGeometry::x() has been removed. Please use MeshGeometry::vertex_coordinates() instead");
+    // }
 
     /// Return value of coordinate with local index n in direction i
     double x(std::size_t n, std::size_t i) const
@@ -111,12 +111,12 @@ namespace dolfin
     }
 
     /// Return array of values for coordinate with local index n
-    double* x(std::size_t n)
-    {
-      dolfin_error("MeshGeometry.h",
-                   "return coordinates (non-const)",
-                   "MeshGeometry::x() has been removed. Please use MeshGeometry::vertex_coordinates() instead");
-    }
+    // double* x(std::size_t n)
+    // {
+    //   dolfin_error("MeshGeometry.h",
+    //                "return coordinates (non-const)",
+    //                "MeshGeometry::x() has been removed. Please use MeshGeometry::vertex_coordinates() instead");
+    // }
 
     /// Return array of values for coordinate with local index n
     const double* x(std::size_t n) const

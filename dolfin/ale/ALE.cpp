@@ -125,11 +125,13 @@ void ALE::move(Mesh& mesh, const GenericFunction& displacement)
   displacement.compute_vertex_values(vertex_values, mesh);
 
   // Move vertex coordinates
-  std::vector<double>& x = mesh.geometry().x();
-  for (std::size_t d = 0; d < gdim; d++)
+  MeshGeometry& geometry = mesh.geometry();
+  std::vector<double> x(gdim);
+  for (std::size_t i = 0; i < N; i++)
   {
-    for (std::size_t i = 0; i < N; i++)
-      x[i*gdim + d] += vertex_values[d*N + i];
+    for (std::size_t j = 0; j < gdim; j++)
+      x[j] = geometry.x(i, j) + vertex_values[j*N + i];
+    geometry.set(i, x.data());
   }
 }
 //-----------------------------------------------------------------------------
