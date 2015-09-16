@@ -30,7 +30,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshGeometry::MeshGeometry() : _dim(0)
+MeshGeometry::MeshGeometry() : _dim(0), _degree(1)
 {
   // Do nothing
 }
@@ -49,6 +49,7 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
 {
   // Copy data
   _dim = geometry._dim;
+  _degree = geometry._degree;
   coordinates             = geometry.coordinates;
   position_to_local_index = geometry.position_to_local_index;
   local_index_to_position = geometry.local_index_to_position;

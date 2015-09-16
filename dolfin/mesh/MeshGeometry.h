@@ -30,7 +30,6 @@
 
 namespace dolfin
 {
-
   /// MeshGeometry stores the geometry imposed on a mesh. Currently,
   /// the geometry is represented by the set of coordinates for the
   /// vertices of a mesh, but other representations are possible.
@@ -59,22 +58,50 @@ namespace dolfin
 
     /// Return polynomial degree of coordinate field
     std::size_t degree() const
-    { return 1; }
+    { return _degree; }
 
     /// Return number of coordinates
     std::size_t size() const
+    {
+      deprecate("MeshGeometry::size()", "1.7.0", "1.8.0", "Use MeshGeometry::num_vertices() instead");
+      return num_vertices();
+    }
+
+    /// Return the number of vertex coordinates
+    std::size_t num_vertices() const
     {
       dolfin_assert(coordinates.size() % _dim == 0);
       return coordinates.size()/_dim;
     }
 
+    /// Return the total number of points in the geometry, located on any entity
+    std::size_t num_points() const
+    {
+      warning("MeshGeometry::num_points() not working yet";
+      return 0;
+    }
+
+    const double* vertex_coordinates(std::size_t point_index)
+    {
+      dolfin_assert(point_index < local_index_to_position.size());
+      return &coordinates[local_index_to_position[point_index]*_dim];
+    }
+
+    const double* point_coordinates(std::size_t point_index)
+    {
+      warning("MeshGeometry::point_coordinates() not working yet";
+      dolfin_assert(point_index < local_index_to_position.size());
+      return &coordinates[local_index_to_position[point_index]*_dim];
+    }
+
+
     /// Return value of coordinate with local index n in direction i
-    // double& x(std::size_t n, std::size_t i)
-    // {
-    //   dolfin_assert(n < local_index_to_position.size());
-    //   dolfin_assert(i < _dim);
-    //   return coordinates[local_index_to_position[n]*_dim + i];
-    // }
+    double& x(std::size_t n, std::size_t i)
+    {
+      dolfin_error("MeshGeometry.h",
+                   "return coordinates (non-const)",
+                   "MeshGeometry::x() has been removed. Please use MeshGeometry::vertex_coordinates() instead");
+    }
 
     /// Return value of coordinate with local index n in direction i
     double x(std::size_t n, std::size_t i) const
@@ -85,11 +112,12 @@ namespace dolfin
     }
 
     /// Return array of values for coordinate with local index n
-    //      double* x(std::size_t n)
-    //    {
-    //      dolfin_assert(n < local_index_to_position.size());
-    //      return &coordinates[local_index_to_position[n]*_dim];
-    //    }
+    double* x(std::size_t n)
+    {
+      dolfin_error("MeshGeometry.h",
+                   "return coordinates (non-const)",
+                   "MeshGeometry::x() has been removed. Please use MeshGeometry::vertex_coordinates() instead");
+    }
 
     /// Return array of values for coordinate with local index n
     const double* x(std::size_t n) const
@@ -135,6 +163,9 @@ namespace dolfin
 
     // Euclidean dimension
     std::size_t _dim;
+
+    // Polynomial degree (1 = linear, 2 = quadratic etc.)
+    std::size_t _degree;
 
     // Coordinates for all vertices stored as a contiguous array
     std::vector<double> coordinates;
