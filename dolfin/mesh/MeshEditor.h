@@ -106,6 +106,9 @@ namespace dolfin
     void init_vertices(std::size_t num_vertices)
     { init_vertices_global(num_vertices, num_vertices); }
 
+    /// Initialise entities in MeshGeometry
+    void init_entities();
+
     /// Specify number of vertices (distributed version)
     ///
     /// *Arguments*
@@ -113,6 +116,8 @@ namespace dolfin
     ///         The number of vertices on this process.
     ///     num_global_vertices (std::size_t)
     ///         The number of vertices in distributed mesh.
+    ///     degree (std::size_t)
+    ///         The polynomial degree of the mesh.
     ///
     /// *Example*
     ///     .. code-block:: c++
@@ -123,7 +128,8 @@ namespace dolfin
     ///         editor.init_vertices(4, 8);
     ///
     void init_vertices_global(std::size_t num_local_vertices,
-                              std::size_t num_global_vertices);
+                              std::size_t num_global_vertices,
+                              std::size_t degree=1);
 
     /// Specify number of cells (serial version)
     ///
@@ -234,6 +240,10 @@ namespace dolfin
     ///         The x-coordinates.
     void add_vertex_global(std::size_t local_index, std::size_t global_index,
                            const std::vector<double>& x);
+
+    /// Add a point in a given entity of dimension entity_dim
+    void add_entity_point(std::size_t entity_dim, std::size_t order,
+                          std::size_t index, const Point& p);
 
     /// Add cell with given vertices (1D)
     ///

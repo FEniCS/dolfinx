@@ -51,8 +51,6 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
   _dim = geometry._dim;
   _degree = geometry._degree;
   coordinates             = geometry.coordinates;
-  position_to_local_index = geometry.position_to_local_index;
-  local_index_to_position = geometry.local_index_to_position;
 
   return *this;
 }
@@ -78,36 +76,58 @@ void MeshGeometry::clear()
 {
   _dim  = 0;
   coordinates.clear();
-  position_to_local_index.clear();
-  local_index_to_position.clear();
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::init(std::size_t dim, std::size_t size)
+void MeshGeometry::init(std::size_t dim, std::size_t num_vertices,
+                        std::size_t degree)
 {
   // Delete old data if any
   clear();
 
   // Allocate new data
-  coordinates.resize(dim*size);
+  coordinates.resize(dim*num_vertices);
 
-  // Allocate new data
-  position_to_local_index.resize(size);
-  local_index_to_position.resize(size);
-
-  // Save dimension and size
+  // Save dimension and degree
   _dim = dim;
+  _degree = degree;
+}
+//-----------------------------------------------------------------------------
+void MeshGeometry::init_entities(const std::vector<std::size_t>& num_entities)
+{
+  // Check vertex coordinates are already there, and match first entry
+  dolfin_assert(!coordinates.empty());
+  dolfin_assert(!num_entities.empty());
+  dolfin_assert(num_entities.size() < 5);
+  dolfin_assert(num_entries[0]*_dim == coordinates.size());
+
+  // Set number of coordinates per entity type for Lagrange spaces
+  const std::size_t d = _degree;
+  const std::vector<std::size_t> num_entity_coordinates
+    = { 1, (d - 1), (d - 2)*(d - 1)/2,
+        (d - 3)*(d - 2)*(d - 1)/6 };
+
+  std::size_t offset = 0;
+  entity_offsets.resize(num_entities.size());
+  for (std::size_t i = 0; i != num_entities.size(); ++i)
+  {
+    // If one is zero, the other must be zero too
+    dolfin_assert((num_entity_coordinates[i] == 0 and num_entities[i] == 0)
+                  or (num_entity_coordinates[i] != 0 and num_entities[i] != 0));
+    for (std::size_t j = 0; j != num_entity_coordinates[i]; ++j)
+    {
+      entity_offsets[i].push_back(offset);
+      std::cout << "[" << i <<", " << j << "] = " << offset << "\n";
+      offset += num_entities[i];
+    }
+  }
+  coordinates.resize(_dim*offset);
+  std::cout << "num(coordinates) = " << offset << "\n";
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::set(std::size_t local_index,
                        const double* x)
 {
   std::copy(x, x +_dim, coordinates.begin() + local_index*_dim);
-
-  dolfin_assert(local_index < position_to_local_index.size());
-  position_to_local_index[local_index] = local_index;
-
-  dolfin_assert(local_index < local_index_to_position.size());
-  local_index_to_position[local_index] = local_index;
 }
 //-----------------------------------------------------------------------------
 std::size_t MeshGeometry::hash() const

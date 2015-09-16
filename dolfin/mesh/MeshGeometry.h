@@ -83,15 +83,15 @@ namespace dolfin
 
     const double* vertex_coordinates(std::size_t point_index)
     {
-      dolfin_assert(point_index < local_index_to_position.size());
-      return &coordinates[local_index_to_position[point_index]*_dim];
+      dolfin_assert(point_index*_dim < coordinates.size());
+      return &coordinates[point_index*_dim];
     }
 
     const double* point_coordinates(std::size_t point_index)
     {
       warning("MeshGeometry::point_coordinates() not working yet");
-      dolfin_assert(point_index < local_index_to_position.size());
-      return &coordinates[local_index_to_position[point_index]*_dim];
+      dolfin_assert(point_index*_dim < coordinates.size());
+      return &coordinates[point_index*_dim];
     }
 
     /// Return value of coordinate with local index n in direction i
@@ -105,9 +105,9 @@ namespace dolfin
     /// Return value of coordinate with local index n in direction i
     double x(std::size_t n, std::size_t i) const
     {
-      dolfin_assert(n < local_index_to_position.size());
+      dolfin_assert((n*_dim + i) < coordinates.size());
       dolfin_assert(i < _dim);
-      return coordinates[local_index_to_position[n]*_dim + i];
+      return coordinates[n*_dim + i];
     }
 
     /// Return array of values for coordinate with local index n
@@ -121,8 +121,8 @@ namespace dolfin
     /// Return array of values for coordinate with local index n
     const double* x(std::size_t n) const
     {
-      dolfin_assert(n < local_index_to_position.size());
-      return &coordinates[local_index_to_position[n]*_dim];
+      dolfin_assert(n*_dim < coordinates.size());
+      return &coordinates[n*_dim];
     }
 
     /// Return array of values for all coordinates
@@ -139,8 +139,20 @@ namespace dolfin
     /// Clear all data
     void clear();
 
-    /// Initialize coordinate list to given dimension and size
-    void init(std::size_t dim, std::size_t size);
+    /// Initialize coordinate list to given dimension, number of vertices, and degree
+    void init(std::size_t dim, std::size_t num_vertices, std::size_t degree);
+
+    /// Initialise entities (other than vertices)
+    void init_entities(const std::vector<std::size_t>& num_entities);
+
+    /// Get the index for an entity point in coordinates
+    std::size_t get_entity_index(std::size_t entity_dim, std::size_t order,
+                                 std::size_t index)
+    {
+      dolfin_assert(entity_dim < entity_offsets.size());
+      dolfin_assert(order < entity_offsets[entity_dim].size());
+      return (entity_offsets[entity_dim][order] + index);
+    }
 
     /// Set value of coordinate
     //void set(std::size_t n, std::size_t i, double x);
@@ -166,14 +178,11 @@ namespace dolfin
     // Polynomial degree (1 = linear, 2 = quadratic etc.)
     std::size_t _degree;
 
-    // Coordinates for all vertices stored as a contiguous array
+    // Offsets to storage for coordinate points for each entity type
+    std::vector<std::vector<std::size_t>> entity_offsets;
+
+    // Coordinates for all points stored as a contiguous array
     std::vector<double> coordinates;
-
-    // Local coordinate indices (array position -> index)
-    std::vector<unsigned int> position_to_local_index;
-
-    // Local coordinate indices (local index -> array position)
-    std::vector<unsigned int> local_index_to_position;
 
   };
 

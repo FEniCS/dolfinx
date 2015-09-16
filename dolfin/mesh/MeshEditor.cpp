@@ -109,7 +109,8 @@ void MeshEditor::open(Mesh& mesh, std::string type, std::size_t tdim,
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::init_vertices_global(std::size_t num_local_vertices,
-                                      std::size_t num_global_vertices)
+                                      std::size_t num_global_vertices,
+                                      std::size_t degree)
 {
   // Check if we are currently editing a mesh
   if (!_mesh)
@@ -124,7 +125,15 @@ void MeshEditor::init_vertices_global(std::size_t num_local_vertices,
   _mesh->_topology.init(0, num_local_vertices, num_global_vertices);
   _mesh->_topology.init_ghost(0, num_local_vertices);
   _mesh->_topology.init_global_indices(0, num_local_vertices);
-  _mesh->_geometry.init(_gdim, num_local_vertices);
+  _mesh->_geometry.init(_gdim, num_local_vertices, degree);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::init_entities()
+{
+  std::vector<std::size_t> num_entities(_tdim + 1, 0);
+  for (std::size_t d = 0; d <= _tdim; ++d)
+    num_entities[d] = _mesh->topology().size(d);
+  _mesh->_geometry.init_entities(num_entities);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::init_cells_global(std::size_t num_local_cells,
@@ -206,6 +215,13 @@ void MeshEditor::add_vertex_global(std::size_t local_index,
   // Set coordinate
   _mesh->_geometry.set(local_index, x.data());
   _mesh->_topology.set_global_index(0, local_index, global_index);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::add_entity_point(std::size_t entity_dim, std::size_t order,
+                                  std::size_t index, const Point& p)
+{
+  const std::size_t idx = _mesh->_geometry.get_entity_index(entity_dim, order, index);
+  _mesh->_geometry.set(idx, p.coordinates());
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(std::size_t c, std::size_t v0, std::size_t v1)

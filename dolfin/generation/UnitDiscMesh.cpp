@@ -18,6 +18,8 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/MeshEditor.h>
+#include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/Edge.h>
 #include "UnitDiscMesh.h"
 
 using namespace dolfin;
@@ -31,7 +33,11 @@ UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n, std::size_t gdim)
 
   MeshEditor editor;
   editor.open(*this, 2, gdim);
-  editor.init_vertices(1 + 3*n*(n + 1));
+
+  std::size_t degree = 2;
+  editor.init_vertices_global(1 + 3*n*(n + 1),
+                              1 + 3*n*(n + 1),
+                              degree);
 
   std::size_t c = 0;
   editor.add_vertex(c, Point(0,0,0));
@@ -77,6 +83,32 @@ UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n, std::size_t gdim)
         editor.add_cell(c, i0, i1, i2);
         ++c;
       }
+  }
+
+  // Need to have initialised edge topology, in order to add geometry for them
+  order();
+  init(1);
+  std::cout << "num edges = " << num_entities(1) << "\n";
+  // Create space for entity points in MeshGeometry
+  editor.init_entities();
+  for (EdgeIterator e(*this); !e.end(); ++e)
+  {
+    Point v0 = Vertex(*this, e->entities(0)[0]).point();
+    Point v1 = Vertex(*this, e->entities(0)[1]).point();
+    Point dv = v1 - v0;
+    // If d=0, point lies on radial line
+    double d = std::abs((v1.x()*dv.y() - v1.y()*dv.x()));
+    Point pt = e->midpoint();
+    // If d lies on an axial line, push out to correct radius (same as end vertex)
+    if (d > 1e-6)
+      pt *= v0.norm()/pt.norm();
+
+    editor.add_entity_point(1, 0, e->index(), pt);
+
+    std::cout << e->index() << " : ";
+    std::cout << e->midpoint().str(true) << " - ";
+    std::cout << pt.str(true) << "\n";
+    std::cout << e->entities(0)[0] << " - " << e->entities(0)[1] << "\n";
   }
 
   editor.close();
