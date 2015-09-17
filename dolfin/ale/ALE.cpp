@@ -73,7 +73,6 @@ std::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh0, const Mesh& mesh1)
     mesh_to_boundary_0[boundary_to_mesh_0[i]] = i;
 
   // Iterate over vertices in boundary1
-  const std::size_t dim = mesh0.geometry().dim();
   for (VertexIterator v(boundary1); !v.end(); ++v)
   {
     // Get global vertex index (steps 1 and 2)

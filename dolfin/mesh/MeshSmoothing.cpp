@@ -200,7 +200,6 @@ void MeshSmoothing::move_interior_vertices(Mesh& mesh,
   {
     // Use vertex map to update boundary coordinates of original mesh
     const MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);
-    const std::size_t d = mesh.geometry().dim();
     for (VertexIterator v(boundary); !v.end(); ++v)
       mesh.geometry().set(vertex_map[*v], v->x());
   }
