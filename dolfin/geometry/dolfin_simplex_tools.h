@@ -1,7 +1,7 @@
 #ifndef DOLFIN_SIMPLEX_TOOLS_H
 #define DOLFIN_SIMPLEX_TOOLS_H
 
-#include <dolfin.h>
+#include "../dolfin.h"
 #include "predicates.h"
 
 #include <string>
