@@ -93,13 +93,11 @@ UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n, std::size_t gdim)
   {
     Point v0 = Vertex(*this, e->entities(0)[0]).point();
     Point v1 = Vertex(*this, e->entities(0)[1]).point();
-    Point dv = v1 - v0;
-    // If d=0, point lies on radial line
-    // double d = std::abs((v1.x()*dv.y() - v1.y()*dv.x()));
     Point pt = e->midpoint();
-    // If d lies on an axial line, push out to correct radius (same as end vertex)
-    //    if (d > 1e-8)
-    //      pt *= v0.norm()/pt.norm();
+
+    if (std::abs(v0.norm() - 1.0) < 1e-6 and
+        std::abs(v1.norm() - 1.0) < 1e-6)
+      pt *= v0.norm()/pt.norm();
 
     editor.add_entity_point(1, 0, e->index(), pt);
 
