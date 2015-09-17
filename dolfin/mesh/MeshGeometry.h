@@ -71,14 +71,20 @@ namespace dolfin
     std::size_t num_vertices() const
     {
       dolfin_assert(coordinates.size() % _dim == 0);
+      if (_degree > 1)
+      {
+        dolfin_assert(entity_offsets.size() > 1);
+        dolfin_assert(entity_offsets[1].size() > 0);
+        return entity_offsets[1][0];
+      }
       return coordinates.size()/_dim;
     }
 
     /// Return the total number of points in the geometry, located on any entity
     std::size_t num_points() const
     {
-      warning("MeshGeometry::num_points() not working yet");
-      return 0;
+      dolfin_assert(coordinates.size() % _dim == 0);
+      return coordinates.size()/_dim;
     }
 
     const double* vertex_coordinates(std::size_t point_index)
@@ -151,7 +157,9 @@ namespace dolfin
     {
       dolfin_assert(entity_dim < entity_offsets.size());
       dolfin_assert(order < entity_offsets[entity_dim].size());
-      return (entity_offsets[entity_dim][order] + index);
+      const std::size_t idx = (entity_offsets[entity_dim][order] + index);
+      dolfin_assert(idx*_dim < coordinates.size());
+      return idx;
     }
 
     /// Set value of coordinate

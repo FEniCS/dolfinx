@@ -98,7 +98,6 @@ void MeshGeometry::init_entities(const std::vector<std::size_t>& num_entities)
   dolfin_assert(!coordinates.empty());
   dolfin_assert(!num_entities.empty());
   dolfin_assert(num_entities.size() < 5);
-  dolfin_assert(num_entries[0]*_dim == coordinates.size());
 
   // Set number of coordinates per entity type for Lagrange spaces
   const std::size_t d = _degree;
@@ -110,9 +109,6 @@ void MeshGeometry::init_entities(const std::vector<std::size_t>& num_entities)
   entity_offsets.resize(num_entities.size());
   for (std::size_t i = 0; i != num_entities.size(); ++i)
   {
-    // If one is zero, the other must be zero too
-    dolfin_assert((num_entity_coordinates[i] == 0 and num_entities[i] == 0)
-                  or (num_entity_coordinates[i] != 0 and num_entities[i] != 0));
     for (std::size_t j = 0; j != num_entity_coordinates[i]; ++j)
     {
       entity_offsets[i].push_back(offset);
