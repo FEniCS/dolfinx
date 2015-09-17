@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-#ifdef ENABLE_PETSC_TAO
+#ifdef HAS_PETSC
 
 #include <petsclog.h>
 
@@ -182,8 +182,7 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
 
   // Set the monitor
   if (parameters["monitor_convergence"])
-    TaoSetMonitor(_tao, __TAOMonitor, this, PETSC_NULL);
-
+    TaoSetMonitor(_tao, __TAOMonitor, this, NULL);
 
   // Check for any tao command line options
   std::string prefix = std::string(parameters["options_prefix"]);
@@ -361,7 +360,11 @@ void TAOLinearBoundSolver::set_ksp_options()
       KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
 
     if (krylov_parameters["monitor_convergence"])
-      KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
+    {
+      KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm,
+                       PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
+                       NULL);
+    }
 
     // Set tolerances
     const int max_ksp_it = krylov_parameters["maximum_iterations"];

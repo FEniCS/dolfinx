@@ -228,6 +228,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
   PCSetFromOptions(pc);
 
   // Print preconditioner information
+  /*
   const bool report = parameters["report"];
   if (report)
   {
@@ -236,6 +237,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
     ierr = PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
     if (ierr != 0) petsc_error(ierr, __FILE__, "PCView");
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void PETScPreconditioner::set_nullspace(const VectorSpaceBasis& near_nullspace)

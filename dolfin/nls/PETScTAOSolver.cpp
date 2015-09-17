@@ -18,7 +18,7 @@
 // First added:  2014-06-22
 // Last changed: 2014-07-27
 
-#ifdef ENABLE_PETSC_TAO
+#ifdef HAS_PETSC
 
 #include <map>
 #include <string>
@@ -225,7 +225,11 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
 
   // Set the monitor
   if (parameters["monitor_convergence"])
-    TaoSetMonitor(_tao, TaoDefaultMonitor, PETSC_NULL, PETSC_NULL);
+  {
+    TaoSetMonitor(_tao, TaoDefaultMonitor,
+                  PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_tao)),
+                  NULL);
+  }
 
   // Check for any TAO command line options
   std::string prefix = std::string(parameters["options_prefix"]);
@@ -491,7 +495,11 @@ void PETScTAOSolver::set_ksp_options()
 
     // KSP monitor
     if (krylov_parameters["monitor_convergence"])
-      KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
+    {
+      KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm,
+                       PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
+                       NULL);
+    }
 
     // Get integer tolerances (to take care of casting to PetscInt)
     const int max_iter = krylov_parameters["maximum_iterations"];

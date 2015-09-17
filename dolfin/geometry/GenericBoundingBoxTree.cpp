@@ -23,6 +23,7 @@
 // recursion and is more convenient than sending it around.
 #define MAX_DIM 6
 
+#include <dolfin/common/MPI.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
@@ -39,6 +40,31 @@ using namespace dolfin;
 GenericBoundingBoxTree::GenericBoundingBoxTree() : _tdim(0)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<GenericBoundingBoxTree>
+GenericBoundingBoxTree::create(unsigned int gdim)
+{
+  std::shared_ptr<GenericBoundingBoxTree> tree;
+
+  switch (gdim)
+  {
+  case 1:
+    tree.reset(new BoundingBoxTree1D());
+    break;
+  case 2:
+    tree.reset(new BoundingBoxTree2D());
+    break;
+  case 3:
+    tree.reset(new BoundingBoxTree3D());
+    break;
+  default:
+    dolfin_error("BoundingBoxTree.cpp",
+                 "build bounding box tree",
+                 "Not implemented for geometric dimension %d",
+                 gdim);
+  }
+  return tree;
 }
 //-----------------------------------------------------------------------------
 void GenericBoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
@@ -80,6 +106,30 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
   log(PROGRESS,
       "Computed bounding box tree with %d nodes for %d entities.",
       num_bboxes(), num_leaves);
+
+  const std::size_t mpi_size = MPI::size(mesh.mpi_comm());
+  if (mpi_size > 1)
+  {
+    // Send root node coordinates to all processes
+    std::vector<double> send_bbox(_bbox_coordinates.end() - _gdim*2,
+                                  _bbox_coordinates.end());
+    std::vector<double> recv_bbox;
+    MPI::all_gather(mesh.mpi_comm(), send_bbox, recv_bbox);
+    std::vector<unsigned int> global_leaves(mpi_size);
+    for (std::size_t i = 0; i != mpi_size; ++i)
+      global_leaves[i] = i;
+
+    _global_tree = create(_gdim);
+    _global_tree->_build(recv_bbox,
+                         global_leaves.begin(), global_leaves.end(), _gdim);
+
+    info("Computed global bounding box tree with %d boxes.",
+         _global_tree->num_bboxes());
+    // Print on rank 0
+    //    if(MPI::rank(mesh.mpi_comm()) == 0)
+    //      std::cout << _global_tree->str() << "\n";
+
+  }
 }
 //-----------------------------------------------------------------------------
 void GenericBoundingBoxTree::build(const std::vector<Point>& points)
@@ -147,6 +197,15 @@ GenericBoundingBoxTree::compute_entity_collisions(const Point& point,
   _compute_collisions(*this, point, num_bboxes() - 1, entities, &mesh);
 
   return entities;
+}
+//-----------------------------------------------------------------------------
+std::vector<unsigned int>
+GenericBoundingBoxTree::compute_process_collisions(const Point& point) const
+{
+  if (_global_tree)
+    return _global_tree->compute_collisions(point);
+
+  return std::vector<unsigned int>(1, 0);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<unsigned int>, std::vector<unsigned int>>
@@ -652,24 +711,7 @@ void GenericBoundingBoxTree::build_point_search_tree(const Mesh& mesh) const
     points.push_back(cell->midpoint());
 
   // Select implementation
-  const std::size_t gdim = mesh.geometry().dim();
-  switch (gdim)
-  {
-  case 1:
-    _point_search_tree.reset(new BoundingBoxTree1D());
-    break;
-  case 2:
-    _point_search_tree.reset(new BoundingBoxTree2D());
-    break;
-  case 3:
-    _point_search_tree.reset(new BoundingBoxTree3D());
-    break;
-  default:
-    dolfin_error("BoundingBoxTree.cpp",
-                 "build bounding box tree",
-                 "Not implemented for geometric dimension %d",
-                 gdim);
-  }
+  _point_search_tree = create(mesh.geometry().dim());
 
   // Build tree
   dolfin_assert(_point_search_tree);
@@ -724,6 +766,34 @@ GenericBoundingBoxTree::sort_points(std::size_t axis,
     break;
   default:
     std::nth_element(begin, middle, end, less_z_point(points));
+  }
+}
+//-----------------------------------------------------------------------------
+std::string GenericBoundingBoxTree::str(bool verbose)
+{
+  std::stringstream s;
+  tree_print(s, _bboxes.size() - 1);
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+void GenericBoundingBoxTree::tree_print(std::stringstream& s, unsigned int i)
+{
+  std::size_t dim = _bbox_coordinates.size() / _bboxes.size();
+  std::size_t idx = i*dim;
+  s << "[";
+  for (unsigned int j = idx; j != idx + dim; ++j)
+    s << _bbox_coordinates[j] << " ";
+  s << "]\n";
+
+  if (_bboxes[i].child_0 == i)
+    s << "leaf containing entity (" << _bboxes[i].child_1 << ")";
+  else
+  {
+    s << "{";
+    tree_print(s, _bboxes[i].child_0);
+    s << ", \n";
+    tree_print(s, _bboxes[i].child_1);
+    s << "}\n";
   }
 }
 //-----------------------------------------------------------------------------
