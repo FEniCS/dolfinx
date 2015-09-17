@@ -321,12 +321,6 @@ void Function::operator=(const FunctionAXPY& axpy)
     _vector->axpy(it->first, *(it->second->vector()));
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FunctionSpace> Function::function_space() const
-{
-  dolfin_assert(_function_space);
-  return _function_space;
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> Function::vector()
 {
   dolfin_assert(_vector);
@@ -489,16 +483,6 @@ void Function::eval(Array<double>& values,
     eval(values, x);
 }
 //-----------------------------------------------------------------------------
-void Function::non_matching_eval(Array<double>& values,
-                                 const Array<double>& x,
-                                 const ufc::cell& ufc_cell) const
-{
-  deprecation("Function::non_matching_eval(values, x, ufc_cell)", "1.6.0", "1.7.0",
-              "Please use Function::eval(values, x) instead");
-
-  eval(values, x);
-}
-//-----------------------------------------------------------------------------
 void Function::restrict(double* w, const FiniteElement& element,
                         const Cell& dolfin_cell,
                         const double* vertex_coordinates,
@@ -517,17 +501,9 @@ void Function::restrict(double* w, const FiniteElement& element,
     const ArrayView<const dolfin::la_index> dofs
       = dofmap.cell_dofs(dolfin_cell.index());
 
-    if (!dofs.empty())
-    {
-      // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
-      // Pick values from vector(s)
-      _vector->get_local(w, dofs.size(), dofs.data());
-    }
-    else
-    {
-      // Set dofs to zero (zero extension of function space on a Restriction)
-      memset(w, 0, sizeof(*w)*dofmap.max_element_dofs());
-    }
+    // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
+    // Pick values from vector(s)
+    _vector->get_local(w, dofs.size(), dofs.data());
   }
   else
   {

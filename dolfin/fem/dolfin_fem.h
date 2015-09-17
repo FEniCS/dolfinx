@@ -9,6 +9,7 @@
 #include <dolfin/fem/Equation.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/BasisFunction.h>
+#include <dolfin/fem/DiscreteOperators.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/PointSource.h>
 #include <dolfin/fem/assemble.h>

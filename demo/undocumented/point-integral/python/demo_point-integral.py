@@ -46,13 +46,13 @@ def boundary(x):
 
 def center_func(x):
     return (0.45 <= x[0] and x[0] <= 0.55 and near(x[1], 0.5)) or \
-           0.45 <= x[1] and x[1] <= 0.55 and near(x[0], 0.5) 
+           0.45 <= x[1] and x[1] <= 0.55 and near(x[0], 0.5)
 
 # Define domain for point integral
 center_domain = VertexFunction("size_t", mesh, 0)
 center = AutoSubDomain(center_func)
 center.mark(center_domain, 1)
-dPP = dP[center_domain]
+dPP = dP(subdomain_data=center_domain)
 
 # Define boundary condition
 u0 = Constant(0.0)

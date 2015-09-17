@@ -23,6 +23,7 @@
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
 
+#include <memory>
 #include <ufc.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
@@ -34,6 +35,7 @@ namespace dolfin
   class Cell;
   class Point;
   class FiniteElement;
+  class FunctionSpace;
 
   /// This is a common base class for functions. Functions can be
   /// evaluated at a given point and they can be restricted to a given
@@ -124,6 +126,9 @@ namespace dolfin
     virtual void evaluate(double* values,
                           const double* coordinates,
                           const ufc::cell& cell) const;
+
+    // Pointer to FunctionSpace, if appropriate, otherwise NULL
+    virtual std::shared_ptr<const FunctionSpace> function_space() const = 0;
 
   protected:
 
