@@ -50,7 +50,7 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
   // Copy data
   _dim = geometry._dim;
   _degree = geometry._degree;
-  coordinates             = geometry.coordinates;
+  coordinates = geometry.coordinates;
 
   return *this;
 }
@@ -94,7 +94,6 @@ void MeshGeometry::init(std::size_t dim, std::size_t num_vertices,
 //-----------------------------------------------------------------------------
 void MeshGeometry::init_entities(const std::vector<std::size_t>& num_entities)
 {
-  // Check vertex coordinates are already there, and match first entry
   dolfin_assert(!coordinates.empty());
   dolfin_assert(!num_entities.empty());
   dolfin_assert(num_entities.size() < 5);

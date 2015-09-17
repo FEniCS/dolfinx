@@ -38,8 +38,10 @@ from dolfin import *
 
 # Create mesh and define function space
 degree = 2
-#mesh = UnitDiscMesh(32, 32, degree=degree)
-mesh = UnitSquareMesh(32, 32)
+nsteps = 5
+gdim = 2
+mesh = UnitDiscMesh(mpi_comm_world(), nsteps, gdim)
+# mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "Lagrange", degree)
 
 # Define boundary condition
@@ -64,8 +66,8 @@ M = (u - uexact)**2*dx
 print assemble(M)
 
 # Save solution in VTK format
-#file = File("poisson.pvd")
-#file << u
+# file = File("poisson.xdmf")
+# file << u
 
 # Plot solution
 #plot(u, interactive=True)

@@ -130,6 +130,12 @@ void MeshEditor::init_vertices_global(std::size_t num_local_vertices,
 //-----------------------------------------------------------------------------
 void MeshEditor::init_entities()
 {
+  // Initialise entities required for this polynomial degree
+  _mesh->order();
+  std::size_t dmax = std::min(_mesh->_geometry.degree(), _tdim);
+  for (std::size_t d = 1; d < dmax; ++d)
+    _mesh->init(d);
+
   std::vector<std::size_t> num_entities(_tdim + 1, 0);
   for (std::size_t d = 0; d <= _tdim; ++d)
     num_entities[d] = _mesh->topology().size(d);
