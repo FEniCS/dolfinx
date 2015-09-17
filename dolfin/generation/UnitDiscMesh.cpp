@@ -85,9 +85,9 @@ UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n, std::size_t gdim)
       }
   }
 
-  // Initialise space for entity points in MeshGeometry
+  // Initialise entities required for this degree polynomial mesh
+  // and allocate space for the point coordinate data
   editor.init_entities();
-  std::cout << "num edges = " << num_entities(1) << "\n";
 
   for (EdgeIterator e(*this); !e.end(); ++e)
   {
@@ -99,12 +99,8 @@ UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n, std::size_t gdim)
         std::abs(v1.norm() - 1.0) < 1e-6)
       pt *= v0.norm()/pt.norm();
 
+    // Add Edge-based point
     editor.add_entity_point(1, 0, e->index(), pt);
-
-    std::cout << e->index() << " : ";
-    std::cout << e->midpoint().str(true) << " - ";
-    std::cout << pt.str(true) << "\n";
-    std::cout << e->entities(0)[0] << " - " << e->entities(0)[1] << "\n";
   }
 
   editor.close();

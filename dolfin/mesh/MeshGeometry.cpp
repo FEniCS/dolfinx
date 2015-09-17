@@ -57,19 +57,20 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
 //-----------------------------------------------------------------------------
 Point MeshGeometry::point(std::size_t n) const
 {
-  double _x = 0.0;
-  double _y = 0.0;
-  double _z = 0.0;
+  // double _x = 0.0;
+  // double _y = 0.0;
+  // double _z = 0.0;
 
-  if ( _dim > 0 )
-    _x = x(n, 0);
-  if ( _dim > 1 )
-    _y = x(n, 1);
-  if ( _dim > 2 )
-    _z = x(n, 2);
+  // if ( _dim > 0 )
+  //   _x = x(n, 0);
+  // if ( _dim > 1 )
+  //   _y = x(n, 1);
+  // if ( _dim > 2 )
+  //   _z = x(n, 2);
 
-  Point p(_x, _y, _z);
-  return p;
+  //  Point p(_x, _y, _z);
+
+  return Point(_dim, x(n));;
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::clear()
@@ -98,12 +99,13 @@ void MeshGeometry::init_entities(const std::vector<std::size_t>& num_entities)
   dolfin_assert(!num_entities.empty());
   dolfin_assert(num_entities.size() < 5);
 
-  // Set number of coordinates per entity type for Lagrange spaces
+  // Number of coordinates per entity type for Lagrange spaces
   const std::size_t d = _degree;
   const std::vector<std::size_t> num_entity_coordinates
     = { 1, (d - 1), (d - 2)*(d - 1)/2,
         (d - 3)*(d - 2)*(d - 1)/6 };
 
+  // Calculate offset into coordinates for each block of points
   std::size_t offset = 0;
   entity_offsets.resize(num_entities.size());
   for (std::size_t i = 0; i != num_entities.size(); ++i)
@@ -111,12 +113,10 @@ void MeshGeometry::init_entities(const std::vector<std::size_t>& num_entities)
     for (std::size_t j = 0; j != num_entity_coordinates[i]; ++j)
     {
       entity_offsets[i].push_back(offset);
-      std::cout << "[" << i <<", " << j << "] = " << offset << "\n";
       offset += num_entities[i];
     }
   }
   coordinates.resize(_dim*offset);
-  std::cout << "num(coordinates) = " << offset << "\n";
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::set(std::size_t local_index,
