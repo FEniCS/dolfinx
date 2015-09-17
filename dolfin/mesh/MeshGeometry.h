@@ -151,9 +151,30 @@ namespace dolfin
     /// Initialise entities (other than vertices)
     void init_entities(const std::vector<std::size_t>& num_entities);
 
+    /// Get the number of coordinate points per entity for this degree
+    std::size_t num_entity_coordinates(std::size_t entity_dim) const
+    {
+      // Calculate the number of points per entity for Lagrange elements
+      switch(entity_dim)
+      {
+      case 0:
+        return 1;
+      case 1:
+        return (_degree - 1);
+      case 2:
+        return (_degree - 2)*(_degree - 1)/2;
+      case 3:
+        return (_degree - 3)*(_degree - 2)*(_degree - 1)/6;
+      }
+      dolfin_error("MeshGeometry.h",
+                   "calculate number of points",
+                   "Entity dimension out of range");
+      return 0;
+    }
+
     /// Get the index for an entity point in coordinates
     std::size_t get_entity_index(std::size_t entity_dim, std::size_t order,
-                                 std::size_t index)
+                                 std::size_t index) const
     {
       dolfin_assert(entity_dim < entity_offsets.size());
       dolfin_assert(order < entity_offsets[entity_dim].size());
@@ -188,6 +209,10 @@ namespace dolfin
 
     // Offsets to storage for coordinate points for each entity type
     std::vector<std::vector<std::size_t>> entity_offsets;
+
+    // Fixed number of points per entity for given degree
+    // calculated here for convenience
+    std::vector<std::size_t> _num_entity_coordinates;
 
     // Coordinates for all points stored as a contiguous array
     std::vector<double> coordinates;

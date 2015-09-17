@@ -80,7 +80,7 @@ void MeshGeometry::clear()
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::init(std::size_t dim, std::size_t num_vertices,
-                        std::size_t degree)
+                        std::size_t d)
 {
   // Delete old data if any
   clear();
@@ -90,7 +90,7 @@ void MeshGeometry::init(std::size_t dim, std::size_t num_vertices,
 
   // Save dimension and degree
   _dim = dim;
-  _degree = degree;
+  _degree = d;
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::init_entities(const std::vector<std::size_t>& num_entities)
@@ -99,18 +99,12 @@ void MeshGeometry::init_entities(const std::vector<std::size_t>& num_entities)
   dolfin_assert(!num_entities.empty());
   dolfin_assert(num_entities.size() < 5);
 
-  // Number of coordinates per entity type for Lagrange spaces
-  const std::size_t d = _degree;
-  const std::vector<std::size_t> num_entity_coordinates
-    = { 1, (d - 1), (d - 2)*(d - 1)/2,
-        (d - 3)*(d - 2)*(d - 1)/6 };
-
   // Calculate offset into coordinates for each block of points
   std::size_t offset = 0;
   entity_offsets.resize(num_entities.size());
   for (std::size_t i = 0; i != num_entities.size(); ++i)
   {
-    for (std::size_t j = 0; j != num_entity_coordinates[i]; ++j)
+    for (std::size_t j = 0; j != num_entity_coordinates(i); ++j)
     {
       entity_offsets[i].push_back(offset);
       offset += num_entities[i];

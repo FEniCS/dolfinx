@@ -448,6 +448,29 @@ std::string Mesh::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+void Mesh::coordinate_dofs(std::vector<double>& dofs, std::size_t index) const
+{
+  dofs.clear();
+
+  const std::size_t gdim = _geometry.dim();
+  Cell cell(*this, index);
+
+  for (std::size_t dim = 0; dim <= _topology.dim(); ++dim)
+  {
+    for (std::size_t j = 0; j != cell.num_entities(dim); ++j)
+    {
+      for (std::size_t k = 0; k != _geometry.num_entity_coordinates(dim); ++k)
+      {
+        //        std::cout << dim << " " << j << " " << k << " : " << cell.entities(dim)[j] << "\n";
+        const std::size_t point_index
+          = _geometry.get_entity_index(dim, k, cell.entities(dim)[j]);
+        const double* point_ptr = _geometry.x(point_index);
+        dofs.insert(dofs.end(), point_ptr, point_ptr + gdim);
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 const std::vector<int>& Mesh::cell_orientations() const
 {
   return _cell_orientations;
