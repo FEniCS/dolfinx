@@ -486,9 +486,12 @@ void XDMFFile::operator<< (const Mesh& mesh)
   // Make sure entities are numbered
   DistributedMeshTools::number_entities(mesh, cell_dim);
 
-  // Get number of global cells and vertices
-  const std::size_t num_global_cells   = mesh.size_global(cell_dim);
-  const std::size_t num_total_vertices = mesh.size_global(0);
+  // Get number of global cells and points
+  const std::size_t num_global_cells = mesh.size_global(cell_dim);
+  std::size_t num_total_points = 0;
+  for (std::size_t i = 0; i <= mesh.topology().dim(); ++i)
+    num_total_points +=
+      mesh.geometry().num_entity_coordinates(i)*mesh.size_global(i);
 
   // Write mesh to HDF5 file
   // The XML below will obliterate any existing XDMF file
@@ -506,10 +509,11 @@ void XDMFFile::operator<< (const Mesh& mesh)
     const std::string ref = p.filename().string() + ":" + group_name;
 
     // Describe topological connectivity
-    xml.mesh_topology(mesh.type().cell_type(), 1, num_global_cells, ref);
+    xml.mesh_topology(mesh.type().cell_type(), mesh.geometry().degree(),
+                      num_global_cells, ref);
 
     // Describe geometric coordinates
-    xml.mesh_geometry(num_total_vertices, gdim, ref);
+    xml.mesh_geometry(num_total_points, gdim, ref);
 
     xml.write();
   }
