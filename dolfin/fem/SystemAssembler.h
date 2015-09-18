@@ -153,7 +153,7 @@ namespace dolfin
       std::array<std::vector<double>, 2>& Ae,
       std::array<UFC*, 2>& ufc,
       ufc::cell& ufc_cell,
-      std::vector<double>& vertex_coordinates,
+      std::vector<double>& coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet,
       const Cell& cell,
@@ -167,7 +167,7 @@ namespace dolfin
     static void compute_interior_facet_tensor(
       std::array<UFC*, 2>& ufc,
       std::array<ufc::cell, 2>& ufc_cell,
-      std::array<std::vector<double>, 2>& vertex_coordinates,
+      std::array<std::vector<double>, 2>& coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet,
       const std::array<Cell, 2>& cell,

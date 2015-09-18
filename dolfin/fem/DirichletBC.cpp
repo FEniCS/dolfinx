@@ -854,7 +854,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 
   // Create UFC cell
   ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
 
   // Iterate over marked
   dolfin_assert(_function_space->element());
@@ -876,12 +876,12 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     const size_t facet_local_index = cell.index(facet);
 
     // Update UFC cell geometry data
-    cell.get_vertex_coordinates(vertex_coordinates);
+    cell.get_coordinate_dofs(coordinate_dofs);
     cell.get_cell_data(ufc_cell, facet_local_index);
 
     // Restrict coefficient to cell
     _g->restrict(data.w.data(), *_function_space->element(), cell,
-                 vertex_coordinates.data(), ufc_cell);
+                 coordinate_dofs.data(), ufc_cell);
 
     // Tabulate dofs on cell
     const ArrayView<const dolfin::la_index> cell_dofs
@@ -954,7 +954,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 
     // Create UFC cell object and vertex coordinate holder
     ufc::cell ufc_cell;
-    std::vector<double> vertex_coordinates;
+    std::vector<double> coordinate_dofs;
 
     // Loop the vertices associated with the facet
     for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
@@ -962,7 +962,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
       // Loop the cells associated with the vertex
       for (CellIterator c(*vertex); !c.end(); ++c)
       {
-        c->get_vertex_coordinates(vertex_coordinates);
+        c->get_coordinate_dofs(coordinate_dofs);
         c->get_cell_data(ufc_cell, local_facet);
 
         bool tabulated = false;
@@ -980,8 +980,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           // Tabulate coordinates if not already done
           if (!tabulated)
           {
-            dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
-                                        *c);
+            dofmap.tabulate_coordinates(data.coordinates, coordinate_dofs, *c);
             tabulated = true;
           }
 
@@ -1001,7 +1000,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           if (!interpolated)
           {
             _g->restrict(data.w.data(), *_function_space->element(), cell,
-                         vertex_coordinates.data(), ufc_cell);
+                         coordinate_dofs.data(), ufc_cell);
             interpolated = true;
           }
 
@@ -1046,7 +1045,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                  : dofmap.ownership_range());
 
   // Iterate over cells
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   if (MPI::max(mesh.mpi_comm(), _cells_to_localdofs.size()) == 0)
   {
     // First time around all cells must be iterated over.
@@ -1056,12 +1055,11 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Update UFC cell
-      cell->get_vertex_coordinates(vertex_coordinates);
+      cell->get_coordinate_dofs(coordinate_dofs);
       cell->get_cell_data(ufc_cell);
 
       // Tabulate coordinates of dofs on cell
-      dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
-                                  *cell);
+      dofmap.tabulate_coordinates(data.coordinates, coordinate_dofs, *cell);
 
       // Tabulate dofs on cell
       const ArrayView<const dolfin::la_index> cell_dofs
@@ -1095,7 +1093,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 
           // Restrict coefficient to cell
           _g->restrict(data.w.data(), *_function_space->element(), *cell,
-                      vertex_coordinates.data(), ufc_cell);
+                      coordinate_dofs.data(), ufc_cell);
 
           // Put cell index in storage for next time function is called
           _cells_to_localdofs.insert(std::make_pair(cell->index(), dofs));
@@ -1122,16 +1120,16 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       const Cell cell(mesh, it->first);
 
       // Update UFC cell
-      cell.get_vertex_coordinates(vertex_coordinates);
+      cell.get_coordinate_dofs(coordinate_dofs);
       cell.get_cell_data(ufc_cell);
 
       // Tabulate coordinates of dofs on cell
-      dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
+      dofmap.tabulate_coordinates(data.coordinates, coordinate_dofs,
                                   cell);
 
       // Restrict coefficient to cell
       _g->restrict(data.w.data(), *_function_space->element(), cell,
-                    vertex_coordinates.data(), ufc_cell);
+                    coordinate_dofs.data(), ufc_cell);
 
       // Tabulate dofs on cell
       const ArrayView<const dolfin::la_index> cell_dofs

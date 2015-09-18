@@ -337,7 +337,7 @@ LagrangeInterpolator::tabulate_coordinates_to_dofs(const GenericDofMap& dofmap,
 
   // Loop over cells and tabulate dofs
   boost::multi_array<double, 2> coordinates;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   std::vector<double> coors(gdim);
 
   // Speed up the computations by only visiting (most) dofs once
@@ -348,14 +348,14 @@ LagrangeInterpolator::tabulate_coordinates_to_dofs(const GenericDofMap& dofmap,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update UFC cell
-    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_coordinate_dofs(coordinate_dofs);
 
     // Get local-to-global map
     const ArrayView<const dolfin::la_index> dofs
       = dofmap.cell_dofs(cell->index());
 
     // Tabulate dof coordinates on cell
-    dofmap.tabulate_coordinates(coordinates, vertex_coordinates, *cell);
+    dofmap.tabulate_coordinates(coordinates, coordinate_dofs, *cell);
 
     // Map dofs into coords_to_dofs
     for (std::size_t i = 0; i < dofs.size(); ++i)

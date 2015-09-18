@@ -80,7 +80,7 @@ def function_space(self, i):
 %extend dolfin::GenericDofMap {
   void _tabulate_coordinates(PyObject* coordinates, const Cell& cell)
   {
-    // NOTE: No NumPy array check. Assumed everything is coorect!
+    // NOTE: No NumPy array check. Assuming everything is correct!
 
     // Get NumPy array
     PyArrayObject *xa = reinterpret_cast<PyArrayObject*>(coordinates);
@@ -89,11 +89,11 @@ def function_space(self, i):
     boost::multi_array<double, 2> tmparray;
 
     // Get cell vertex coordinates
-    std::vector<double> vertex_coordinates;
-    cell.get_vertex_coordinates(vertex_coordinates);
+    std::vector<double> coordinate_dofs;
+    cell.get_coordinate_dofs(coordinate_dofs);
 
     // Tabulate the coordinates
-    self->tabulate_coordinates(tmparray, vertex_coordinates, cell);
+    self->tabulate_coordinates(tmparray, coordinate_dofs, cell);
 
     // Get geometric dimension
     std::size_t gdim = tmparray.shape()[1];
