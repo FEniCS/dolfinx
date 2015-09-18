@@ -133,14 +133,14 @@ FunctionSpace::interpolate_from_parent(GenericVector& expansion_coefficients,
   std::vector<double> cell_coefficients(_dofmap->max_element_dofs());
 
   // Iterate over mesh and interpolate on each cell
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   std::size_t tdim = _mesh->topology().dim();
   const std::vector<std::size_t>& child_to_parent = _mesh->data().array("parent_cell", tdim);
 
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
     // Update to current cell
-    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_coordinate_dofs(coordinate_dofs);
 
     // Get cell orientation
     int cell_orientation = -1;
@@ -156,7 +156,7 @@ FunctionSpace::interpolate_from_parent(GenericVector& expansion_coefficients,
 
     // Evaluate on parent cell on which v is defined
     _element->evaluate_dofs(cell_coefficients.data(), v,
-                            vertex_coordinates.data(),
+                            coordinate_dofs.data(),
                             cell_orientation,
                             ufc_parent);
 
@@ -180,16 +180,16 @@ void FunctionSpace::interpolate_from_any(GenericVector& expansion_coefficients,
 
   // Iterate over mesh and interpolate on each cell
   ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
     // Update to current cell
-    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_coordinate_dofs(coordinate_dofs);
     cell->get_cell_data(ufc_cell);
 
     // Restrict function to cell
     v.restrict(cell_coefficients.data(), *_element, *cell,
-               vertex_coordinates.data(), ufc_cell);
+               coordinate_dofs.data(), ufc_cell);
 
     // Tabulate dofs
     const ArrayView<const dolfin::la_index> cell_dofs

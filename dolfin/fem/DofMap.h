@@ -239,7 +239,7 @@ namespace dolfin
     ///     local_entity (std::size_t)
     ///         The local entity index
     void tabulate_entity_dofs(std::vector<std::size_t>& dofs,
-			      std::size_t dim, std::size_t local_entity) const;
+                              std::size_t dim, std::size_t local_entity) const;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell
     /// version)
@@ -247,12 +247,12 @@ namespace dolfin
     /// *Arguments*
     ///     coordinates (boost::multi_array<double, 2>)
     ///         The coordinates of all dofs on a cell.
-    ///     vertex_coordinates (std::vector<double>)
-    ///         The cell vertex coordinates
+    ///     coordinate_dofs (std::vector<double>)
+    ///         The cell coordinates
     ///     cell (Cell)
     ///         The cell.
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                              const std::vector<double>& vertex_coordinates,
+                              const std::vector<double>& coordinate_dofs,
                               const Cell& cell) const;
 
     /// Tabulate the coordinates of all dofs on this process. This

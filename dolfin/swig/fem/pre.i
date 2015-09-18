@@ -147,17 +147,17 @@ PROBLEM_RENAMES(NonlinearVariational)
 //-----------------------------------------------------------------------------
 %ignore dolfin::DofMap::tabulate_coordinates(
                                 boost::multi_array<double, 2>& coordinates,
-                                const std::vector<double>& vertex_coordinates,
+                                const std::vector<double>& coordinate_dofs,
                                 const Cell& cell) const;
 
 %ignore dolfin::GenericDofMap::tabulate_coordinates(
                                 boost::multi_array<double, 2>& coordinates,
-                                const std::vector<double>& vertex_coordinates,
+                                const std::vector<double>& coordinate_dofs,
                                 const Cell& cell) const;
 
 %ignore dolfin::MultiMeshDofMap::tabulate_coordinates(
                                 boost::multi_array<double, 2>& coordinates,
-                                const std::vector<double>& vertex_coordinates,
+                                const std::vector<double>& coordinate_dofs,
                                 const ufc::cell& cell) const;
 
 //-----------------------------------------------------------------------------

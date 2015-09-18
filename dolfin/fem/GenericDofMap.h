@@ -125,7 +125,7 @@ namespace dolfin
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
     virtual
       void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                                const std::vector<double>& vertex_coordinates,
+                                const std::vector<double>& coordinate_dofs,
                                 const Cell& cell) const = 0;
 
     /// Tabulate the coordinates of all dofs owned by this
