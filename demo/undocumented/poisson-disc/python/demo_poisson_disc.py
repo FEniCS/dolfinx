@@ -31,6 +31,8 @@ du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 
 # Begin demo
 
+from __future__ import print_function
+
 from dolfin import *
 parameters["form_compiler"]["representation"] = "uflacs"
 
@@ -39,6 +41,7 @@ def compute(nsteps):
     degree = 2
     gdim = 2
     mesh = UnitDiscMesh(mpi_comm_world(), nsteps, gdim)
+    nc = mesh.num_cells()
     V = FunctionSpace(mesh, "Lagrange", degree)
 
     # Define boundary condition
@@ -60,10 +63,13 @@ def compute(nsteps):
     x = SpatialCoordinate(mesh)
     uexact = (1.0 - x**2) / 4.0
     M = (u - uexact)**2*dx(degree=5)
-    return assemble(M)
+    M0 = uexact**2*dx(degree=5)
+    area = assemble(1.0*dx(mesh))
+    return nc, sqrt(assemble(M) / assemble(M0)), area
 
 for nsteps in (1, 2, 4, 8, 16, 32, 64):
-    print nsteps, compute(nsteps)
+    nc, err, area = compute(nsteps)
+    print("steps, cells, sqrt(cells), |M|/|M0|, area:", nsteps, nc, sqrt(nc), err, area)
 
 # Save solution in VTK format
 # file = File("poisson.xdmf")
