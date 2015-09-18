@@ -28,7 +28,7 @@
 //     u(x, y) = 0        for x^2 + y^2 = 1
 
 #include <dolfin.h>
-#include "Poisson.h"
+#include "PoissonDisc.h"
 
 using namespace dolfin;
 
@@ -54,10 +54,11 @@ int main()
 {
   // Create mesh and function space
   int degree = 2;
-  //UnitDiscMesh mesh(32, 32, degree);
-  UnitSquareMesh mesh(32, 32);
+  int gdim = 2;
+  UnitDiscMesh mesh(MPI_COMM_WORLD, 32, gdim);
+  //UnitSquareMesh mesh(32, 32);
 
-  Poisson::FunctionSpace V(mesh);
+  PoissonDisc::FunctionSpace V(mesh);
 
   // Define boundary condition
   Constant u0(0.0);
@@ -65,8 +66,8 @@ int main()
   DirichletBC bc(V, u0, boundary);
 
   // Define variational forms
-  Poisson::BilinearForm a(V, V);
-  Poisson::LinearForm L(V);
+  PoissonDisc::BilinearForm a(V, V);
+  PoissonDisc::LinearForm L(V);
 
   Source f;
   L.f = f;
@@ -76,7 +77,7 @@ int main()
   solve(a == L, u, bc);
 
   // Error norm functional
-  Poisson::Functional M(mesh);
+  PoissonDisc::Functional M(mesh);
   M.uh = u;
   double uerror = assemble(M);
   std::cout << uerror << std::endl;

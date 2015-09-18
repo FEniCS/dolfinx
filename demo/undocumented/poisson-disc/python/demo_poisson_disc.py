@@ -28,42 +28,42 @@ du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2007-08-16
-# Last changed: 2012-11-12
 
 # Begin demo
 
 from dolfin import *
+parameters["form_compiler"]["representation"] = "uflacs"
 
-# Create mesh and define function space
-degree = 2
-nsteps = 5
-gdim = 2
-mesh = UnitDiscMesh(mpi_comm_world(), nsteps, gdim)
-# mesh = UnitSquareMesh(32, 32)
-V = FunctionSpace(mesh, "Lagrange", degree)
+def compute(nsteps):
+    # Create mesh and define function space
+    degree = 2
+    gdim = 2
+    mesh = UnitDiscMesh(mpi_comm_world(), nsteps, gdim)
+    V = FunctionSpace(mesh, "Lagrange", degree)
 
-# Define boundary condition
-u0 = Constant(0.0)
-bc = DirichletBC(V, u0, "on_boundary")
+    # Define boundary condition
+    u0 = Constant(0.0)
+    bc = DirichletBC(V, u0, "on_boundary")
 
-# Define variational problem
-u = TrialFunction(V)
-v = TestFunction(V)
-f = Expression("1.0")
-a = inner(grad(u), grad(v))*dx
-L = f*v*dx
+    # Define variational problem
+    u = TrialFunction(V)
+    v = TestFunction(V)
+    f = Constant(1.0)
+    a = inner(grad(u), grad(v))*dx
+    L = f*v*dx
 
-# Compute solution
-u = Function(V)
-solve(a == L, u, bc)
+    # Compute solution
+    u = Function(V)
+    solve(a == L, u, bc)
 
-# Compute error norm
-x = SpatialCoordinate(mesh)
-uexact = (1.0 - x**2) / 4.0
-M = (u - uexact)**2*dx
-print assemble(M)
+    # Compute error norm
+    x = SpatialCoordinate(mesh)
+    uexact = (1.0 - x**2) / 4.0
+    M = (u - uexact)**2*dx(degree=5)
+    return assemble(M)
+
+for nsteps in (1, 2, 4, 8, 16, 32, 64):
+    print nsteps, compute(nsteps)
 
 # Save solution in VTK format
 # file = File("poisson.xdmf")
