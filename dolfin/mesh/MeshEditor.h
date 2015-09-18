@@ -52,15 +52,16 @@ namespace dolfin
     ///         The topological dimension.
     ///     gdim (std::size_t)
     ///         The geometrical dimension.
-    ///
+    ///     degree (std::size_t)
+    ///         The polynomial degree.
     /// *Example*
     ///     .. code-block:: c++
     ///
     ///         Mesh mesh;
     ///         MeshEditor editor;
-    ///         editor.open(mesh, 2, 2);
+    ///         editor.open(mesh, 2, 2, 1);
     ///
-    void open(Mesh& mesh, std::size_t tdim, std::size_t gdim);
+    void open(Mesh& mesh, std::size_t tdim, std::size_t gdim, std::size_t degree=1);
 
     /// Open mesh of given cell type, topological and geometrical dimension
     ///
@@ -73,8 +74,10 @@ namespace dolfin
     ///         The topological dimension.
     ///     gdim (std::size_t)
     ///         The geometrical dimension.
+    ///     degree (std::size_t)
+    ///         The polynomial degree.
     void open(Mesh& mesh, CellType::Type type, std::size_t tdim,
-              std::size_t gdim);
+              std::size_t gdim, std::size_t degree=1);
 
     /// Open mesh of given cell type, topological and geometrical dimension
     ///
@@ -87,7 +90,10 @@ namespace dolfin
     ///         The topological dimension.
     ///     gdim (std::size_t)
     ///         The geometrical dimension.
-    void open(Mesh& mesh, std::string type, std::size_t tdim, std::size_t gdim);
+    ///     degree (std::size_t)
+    ///         The polynomial degree.
+    void open(Mesh& mesh, std::string type, std::size_t tdim,
+              std::size_t gdim, std::size_t degree=1);
 
     /// Specify number of vertices (serial version)
     ///
@@ -107,6 +113,11 @@ namespace dolfin
     { init_vertices_global(num_vertices, num_vertices); }
 
     /// Initialise entities in MeshGeometry
+    ///
+    /// Create required Edges and Faces for the current polynomial degree
+    /// in the mesh topology, so that points can be added for them.
+    /// In order to initialise entities, cells must all be added first.
+    ///
     void init_entities();
 
     /// Specify number of vertices (distributed version)
@@ -128,8 +139,7 @@ namespace dolfin
     ///         editor.init_vertices(4, 8);
     ///
     void init_vertices_global(std::size_t num_local_vertices,
-                              std::size_t num_global_vertices,
-                              std::size_t degree=1);
+                              std::size_t num_global_vertices);
 
     /// Specify number of cells (serial version)
     ///

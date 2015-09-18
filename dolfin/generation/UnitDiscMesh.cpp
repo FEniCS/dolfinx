@@ -32,12 +32,11 @@ UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n, std::size_t gdim)
   dolfin_assert(gdim == 2 or gdim == 3);
 
   MeshEditor editor;
-  editor.open(*this, 2, gdim);
+  const std::size_t degree = 2;
+  editor.open(*this, 2, gdim, degree);
 
-  std::size_t degree = 2;
   editor.init_vertices_global(1 + 3*n*(n + 1),
-                              1 + 3*n*(n + 1),
-                              degree);
+                              1 + 3*n*(n + 1));
 
   std::size_t c = 0;
   editor.add_vertex(c, Point(0,0,0));

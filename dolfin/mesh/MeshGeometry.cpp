@@ -57,36 +57,20 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
 //-----------------------------------------------------------------------------
 Point MeshGeometry::point(std::size_t n) const
 {
-  // double _x = 0.0;
-  // double _y = 0.0;
-  // double _z = 0.0;
-
-  // if ( _dim > 0 )
-  //   _x = x(n, 0);
-  // if ( _dim > 1 )
-  //   _y = x(n, 1);
-  // if ( _dim > 2 )
-  //   _z = x(n, 2);
-
-  //  Point p(_x, _y, _z);
-
   return Point(_dim, x(n));;
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::clear()
 {
   _dim  = 0;
+  _degree = 1;
   coordinates.clear();
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::init(std::size_t dim, std::size_t num_vertices,
-                        std::size_t d)
+void MeshGeometry::init(std::size_t dim, std::size_t d)
 {
   // Delete old data if any
   clear();
-
-  // Allocate new data
-  coordinates.resize(dim*num_vertices);
 
   // Save dimension and degree
   _dim = dim;
@@ -95,15 +79,15 @@ void MeshGeometry::init(std::size_t dim, std::size_t num_vertices,
 //-----------------------------------------------------------------------------
 void MeshGeometry::init_entities(const std::vector<std::size_t>& num_entities)
 {
-  dolfin_assert(!coordinates.empty());
-  dolfin_assert(!num_entities.empty());
-  dolfin_assert(num_entities.size() < 5);
+  // Check some kind of initialisation has been done
+  dolfin_assert(_dim > 0);
 
   // Calculate offset into coordinates for each block of points
   std::size_t offset = 0;
   entity_offsets.resize(num_entities.size());
   for (std::size_t i = 0; i != num_entities.size(); ++i)
   {
+    entity_offsets[i].clear();
     for (std::size_t j = 0; j != num_entity_coordinates(i); ++j)
     {
       entity_offsets[i].push_back(offset);

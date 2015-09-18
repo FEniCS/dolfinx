@@ -146,7 +146,7 @@ namespace dolfin
     void clear();
 
     /// Initialize coordinate list to given dimension, number of vertices, and degree
-    void init(std::size_t dim, std::size_t num_vertices, std::size_t degree);
+    void init(std::size_t dim, std::size_t degree);
 
     /// Initialise entities (other than vertices)
     void init_entities(const std::vector<std::size_t>& num_entities);

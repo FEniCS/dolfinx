@@ -24,6 +24,10 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshHierarchy.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshEditor.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Edge.h>
+#include <dolfin/mesh/Vertex.h>
 #include "UniformMeshRefinement.h"
 #include "LocalMeshRefinement.h"
 #include "PlazaRefinementND.h"
@@ -108,5 +112,52 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh,
                  "refine mesh",
                  "Cannot refine mesh of topological dimension %d in parallel. Only 2D and 3D supported", D);
   }
+}
+//-----------------------------------------------------------------------------
+void dolfin::p_refine(Mesh& refined_mesh, const Mesh& mesh)
+{
+  MeshEditor editor;
+  if (mesh.geometry().degree() != 1)
+  {
+    dolfin_error("refine.cpp",
+                 "increase polynomial degree of mesh",
+                 "Currently only linear -> quadratic is supported");
+  }
+
+  if (mesh.type().cell_type() != CellType::triangle
+      and mesh.type().cell_type() != CellType::tetrahedron
+      and mesh.type().cell_type() != CellType::interval)
+  {
+    dolfin_error("refine.cpp",
+                 "increase polynomial degree of mesh",
+                 "Unsupported cell type");
+  }
+
+  const std::size_t tdim = mesh.topology().dim();
+  const std::size_t gdim = mesh.geometry().dim();
+
+  editor.open(refined_mesh, tdim, gdim, 2);
+
+  // Copy over mesh
+  editor.init_vertices_global(mesh.size(0), mesh.size_global(0));
+  for (VertexIterator v(mesh); !v.end(); ++v)
+    editor.add_vertex(v->index(), v->point());
+
+  editor.init_cells_global(mesh.size(tdim), mesh.size_global(tdim));
+  std::vector<std::size_t> verts(tdim + 1);
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    std::copy(c->entities(0), c->entities(0) + tdim + 1, verts.begin());
+    editor.add_cell(c->index(), verts);
+  }
+
+  // Initialise edges
+  editor.init_entities();
+
+  // Add points at centres of edges
+  for (EdgeIterator e(refined_mesh); !e.end(); ++e)
+    editor.add_entity_point(1, 0, e->index(), e->midpoint());
+
+  editor.close();
 }
 //-----------------------------------------------------------------------------
