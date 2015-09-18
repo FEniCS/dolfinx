@@ -324,13 +324,25 @@ namespace dolfin
     /// Get cell coordinate dofs (not vertex coordinates)
     void get_coordinate_dofs(std::vector<double>& coordinates) const
     {
-      const std::size_t gdim = _mesh->geometry().dim();
-      const std::size_t num_vertices = this->num_vertices();
-      const unsigned int* vertices = this->entities(0);
-      coordinates.resize(num_vertices*gdim);
-      for (std::size_t i = 0; i < num_vertices; i++)
-        for (std::size_t j = 0; j < gdim; j++)
-          coordinates[i*gdim + j] = _mesh->geometry().x(vertices[i])[j];
+      const MeshGeometry& geom = _mesh->geometry();
+      const std::size_t gdim = geom.dim();
+
+      coordinates.clear();
+      for (std::size_t dim = 0; dim <= _mesh->topology().dim(); ++dim)
+      {
+        for (std::size_t j = 0; j != num_entities(dim); ++j)
+        {
+          for (std::size_t k = 0;
+               k != geom.num_entity_coordinates(dim); ++k)
+          {
+            const std::size_t point_index
+              = geom.get_entity_index(dim, k, entities(dim)[j]);
+            const double* point_ptr = geom.x(point_index);
+            coordinates.insert(coordinates.end(),
+                               point_ptr, point_ptr + gdim);
+          }
+        }
+      }
     }
 
     // FIXME: This function is part of a UFC transition
