@@ -67,9 +67,17 @@ def compute(nsteps):
     area = assemble(1.0*dx(mesh))
     return nc, sqrt(assemble(M) / assemble(M0)), area
 
+# Print convergence, getting rate of 3.5
+import math
+preverr = None
 for nsteps in (1, 2, 4, 8, 16, 32, 64):
     nc, err, area = compute(nsteps)
-    print("steps, cells, sqrt(cells), |M|/|M0|, area:", nsteps, nc, sqrt(nc), err, area)
+    if preverr is None:
+        conv = 0.0
+    else:
+        conv = math.log(preverr/err, 2)
+    print("steps = %d, cells = %d, sqrt(cells) = %d, |M|/|M0| = %.4g, area = %f, conv = %.4g:" % (nsteps, nc, sqrt(nc), err, area, conv))
+    preverr = err
 
 # Save solution in VTK format
 # file = File("poisson.xdmf")
