@@ -33,7 +33,7 @@
 #include "MultiMesh.h"
 // FIXME August
 #include <dolfin/geometry/dolfin_simplex_tools.h>
-//#define Augustdebug
+#define Augustdebug
 
 using namespace dolfin;
 
@@ -1533,7 +1533,7 @@ void MultiMesh::_build_quadrature_rules_interface()
 	  }
 
 	  const std::size_t N = initial_cells.size();
-	  std::cout << "initial_cells.size() = #stages = " << N << std::endl;
+	  std::cout << "\ninitial_cells.size() = #stages = " << N << std::endl;
 
 	  if (N > 0)
 	  {
@@ -1582,7 +1582,24 @@ void MultiMesh::_build_quadrature_rules_interface()
 	    // Now do the inclusion-exclusion
 	    for (std::size_t stage = 1; stage < N; ++stage)
 	    {
+#ifdef Augustdebug
 	      std::cout << "\nstage " << stage << std::endl;
+	      // even more debugging
+	      std::cout << "checkout what we have in previous intersections\n";
+	      for (const auto previous_polyhedron: previous_intersections)
+	      {
+		for (const auto previous_simplex: previous_polyhedron.second)
+		  std::cout << tools::drawtriangle(previous_simplex);
+		std::cout << '\n';
+	      }
+	      std::cout << "keys were: ";
+	      for (const auto previous_polyhedron: previous_intersections)
+		for (const auto k: previous_polyhedron.first)
+		  std::cout << k << ' ';
+	      std::cout << std::endl;
+#endif
+
+
 	      // Structure for storing new intersections
 	      std::vector<std::pair<std::vector<std::size_t>, Polyhedron> > new_intersections;
 
@@ -1592,8 +1609,20 @@ void MultiMesh::_build_quadrature_rules_interface()
 		// Loop over all initial polyhedra (cells)
 		for (const auto initial_cell: initial_cells)
 		{
+
+		  {
+		    std::cout << "initial keys: ";
+		    for (const auto k: initial_cells)
+		      std::cout << k.first << ' ';
+		    std::cout << "previous pol keys: ";
+		    for (const auto k: previous_polyhedron.first)
+		      std::cout << k << ' ';
+		    std::cout << std::endl;
+		  }
+
 		  if (initial_cell.first < previous_polyhedron.first[0])
 		  {
+		    std::cout << "check keys " << initial_cell.first <<" " << previous_polyhedron.first[0]<< std::endl;
 		    Polyhedron new_polyhedron;
 		    std::vector<std::size_t> new_keys;
 		    bool any_intersections = false;
@@ -1625,7 +1654,23 @@ void MultiMesh::_build_quadrature_rules_interface()
 		    if (any_intersections)
 		    {
 		      //new_keys.push_back(initial_cells.first);
+		      const std::size_t old_key_sz = new_keys.size();
 		      new_keys.insert(new_keys.end(), previous_polyhedron.first.begin(), previous_polyhedron.first.end());
+
+#ifdef Augustdebug
+		      if (new_keys.size() > old_key_sz)
+		      {
+			std::cout << "old keys: ";
+			for (const auto k: previous_polyhedron.first)
+			  std::cout << k <<' ';
+			std::cout << '\n';
+			std::cout << "new keys: ";
+			for (const auto k: new_keys)
+			  std::cout << k <<' ';
+			std::cout << std::endl;
+		      }
+#endif
+
 		      // Save data
 		      new_intersections.push_back(std::make_pair(new_keys, new_polyhedron));
 		    }
@@ -1666,7 +1711,18 @@ void MultiMesh::_build_quadrature_rules_interface()
 	  }
 	}
 	interface_qr.push_back(cut_cutting_interface_qr);
-      }
+
+#ifdef Augustdebug
+	std::cout << "short summary of this cut/cutting pair = " << cut_part << ' ' << cutting_part_j << '\n'
+		  << "cut_cutting_interface_qr.size() = " << cut_cutting_interface_qr.second.size() << std::endl;
+	for (std::size_t i = 0; i < cut_cutting_interface_qr.second.size(); ++i)
+	{
+	  std::cout << "plot(" << cut_cutting_interface_qr.first[2*i]<<","<<cut_cutting_interface_qr.first[2*i+1]<<",'kx'); # " << cut_cutting_interface_qr.second[i]<<' '<<i<<std::endl;
+	}
+	PPause;
+#endif
+
+      } // end loop over cutting
 
       _quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
 
@@ -1750,10 +1806,13 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
   }
 
 #ifdef Augustdebug
-  std::cout << "# display quadrature rule:"<< std::endl;
+  std::cout << "# display quadrature rule (last " << num_points << " added):"<< std::endl;
   for (std::size_t i = 0; i < qr.second.size(); ++i)
   {
-    std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') # "<<qr.second[i]<<std::endl;
+    std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') # "<<qr.second[i]<<' ';
+    if (i > (qr.second.size() - num_points))
+      std::cout << "(new)";
+    std::cout << std::endl;
     //std::cout  << dqr.first[2*i]<<' '<<dqr.first[2*i+1]<< std::endl;
   }
 #endif

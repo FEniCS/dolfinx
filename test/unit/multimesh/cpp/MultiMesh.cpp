@@ -39,9 +39,20 @@ class MultiMeshes : public CppUnit::TestFixture
   //CPPUNIT_TEST(test_exclusion_inclusion_small_angle);
   //CPPUNIT_TEST(test_multiple_meshes_quadrature);
   CPPUNIT_TEST(test_multiple_meshes_interface_quadrature);
+  //CPPUNIT_TEST(test_mass_matrix);
   CPPUNIT_TEST_SUITE_END();
 
 public:
+
+  // void test_mass_matrix()
+  // {
+  //   UnitSquareMesh mesh_0(1, 1);
+  //   UnitSquareMesh mesh_1(2, 2);
+  //   MultiMesh multimesh;
+  //   multimesh.add(mesh_0);
+  //   multimesh.add(mesh_1);
+  //   multimesh.build();
+  // }
 
   //------------------------------------------------------------------------------
   void rotate(double x, double y, double cx, double cy, double w,
@@ -131,7 +142,7 @@ public:
 	    rotate(x1, y1, cx, cy, v, xr, yr);
 	    if (xr > 0 and xr < 1 and yr > 0 and yr < 1)
 	    {
-              std::shared_ptr<Mesh> mesh(new RectangleMesh(x0, y0, x1, y1,
+              std::shared_ptr<Mesh> mesh(new RectangleMesh(Point(x0, y0), Point(x1, y1),
                                                            std::max((int)std::round((x1-x0)/h), 1),
                                                            std::max((int)std::round((y1-y0)/h), 1)));
               mesh->rotate(v);
@@ -254,64 +265,64 @@ public:
 	  md[i] = mdnew;
       }
 
-      RectangleMesh mesh_0(md[0].x0, md[0].y0, md[0].x1, md[0].y1, md[0].m, md[0].n);
+      RectangleMesh mesh_0(Point(md[0].x0, md[0].y0), Point(md[0].x1, md[0].y1), md[0].m, md[0].n);
       mesh_0.rotate(md[0].v);
       multimesh.add(mesh_0);
-      RectangleMesh mesh_1(md[1].x0, md[1].y0, md[1].x1, md[1].y1, md[1].m, md[1].n);
+      RectangleMesh mesh_1(Point(md[1].x0, md[1].y0), Point(md[1].x1, md[1].y1),  md[1].m, md[1].n);
       mesh_1.rotate(md[1].v);
       multimesh.add(mesh_1);
-      RectangleMesh mesh_2(md[2].x0, md[2].y0, md[2].x1, md[2].y1, md[2].m, md[2].n);
+      RectangleMesh mesh_2(Point(md[2].x0, md[2].y0), Point(md[2].x1, md[2].y1),  md[2].m, md[2].n);
       mesh_2.rotate(md[2].v);
       multimesh.add(mesh_2);
-      RectangleMesh mesh_3(md[3].x0, md[3].y0, md[3].x1, md[3].y1, md[3].m, md[3].n);
+      RectangleMesh mesh_3(Point(md[3].x0, md[3].y0), Point(md[3].x1, md[3].y1),  md[3].m, md[3].n);
       mesh_3.rotate(md[3].v);
       multimesh.add(mesh_3);
-      RectangleMesh mesh_4(md[4].x0, md[4].y0, md[4].x1, md[4].y1, md[4].m, md[4].n);
+      RectangleMesh mesh_4(Point(md[4].x0, md[4].y0), Point(md[4].x1, md[4].y1),  md[4].m, md[4].n);
       mesh_4.rotate(md[4].v);
       multimesh.add(mesh_4);
-      RectangleMesh mesh_5(md[5].x0, md[5].y0, md[5].x1, md[5].y1, md[5].m, md[5].n);
+      RectangleMesh mesh_5(Point(md[5].x0, md[5].y0), Point(md[5].x1, md[5].y1),  md[5].m, md[5].n);
       mesh_5.rotate(md[5].v);
       multimesh.add(mesh_5);
-      RectangleMesh mesh_6(md[6].x0, md[6].y0, md[6].x1, md[6].y1, md[6].m, md[6].n);
+      RectangleMesh mesh_6(Point(md[6].x0, md[6].y0), Point(md[6].x1, md[6].y1),  md[6].m, md[6].n);
       mesh_6.rotate(md[6].v);
       multimesh.add(mesh_6);
-      RectangleMesh mesh_7(md[7].x0, md[7].y0, md[7].x1, md[7].y1, md[7].m, md[7].n);
+      RectangleMesh mesh_7(Point(md[7].x0, md[7].y0), Point(md[7].x1, md[7].y1),  md[7].m, md[7].n);
       mesh_7.rotate(md[7].v);
       multimesh.add(mesh_7);
-      // RectangleMesh mesh_8(md[8].x0, md[8].y0, md[8].x1, md[8].y1, md[8].m, md[8].n);
+      // RectangleMesh mesh_8(Point(md[8].x0, md[8].y0), Point(md[8].x1, md[8].y1),  md[8].m, md[8].n);
       // mesh_8.rotate(md[8].v);
       // multimesh.add(mesh_8);
-      // RectangleMesh mesh_9(md[9].x0, md[9].y0, md[9].x1, md[9].y1, md[9].m, md[9].n);
+      // RectangleMesh mesh_9(Point(md[9].x0, md[9].y0), Point(md[9].x1, md[9].y1),  md[9].m, md[9].n);
       // mesh_9.rotate(md[9].v);
       // multimesh.add(mesh_9);
-      // RectangleMesh mesh_10(md[10].x0, md[10].y0, md[10].x1, md[10].y1, md[10].m, md[10].n);
+      // RectangleMesh mesh_10(Point(md[10].x0, md[10].y0), Point(md[10].x1, md[10].y1),  md[10].m, md[10].n);
       // mesh_10.rotate(md[10].v);
       // multimesh.add(mesh_10);
-      // RectangleMesh mesh_11(md[11].x0, md[11].y0, md[11].x1, md[11].y1, md[11].m, md[11].n);
+      // RectangleMesh mesh_11(Point(md[11].x0, md[11].y0), Point(md[11].x1, md[11].y1),  md[11].m, md[11].n);
       // mesh_11.rotate(md[11].v);
       // multimesh.add(mesh_11);
-      // RectangleMesh mesh_12(md[12].x0, md[12].y0, md[12].x1, md[12].y1, md[12].m, md[12].n);
+      // RectangleMesh mesh_12(Point(md[12].x0, md[12].y0), Point(md[12].x1, md[12].y1),  md[12].m, md[12].n);
       // mesh_12.rotate(md[12].v);
       // multimesh.add(mesh_12);
-      // RectangleMesh mesh_13(md[13].x0, md[13].y0, md[13].x1, md[13].y1, md[13].m, md[13].n);
+      // RectangleMesh mesh_13(Point(md[13].x0, md[13].y0), Point(md[13].x1, md[13].y1),  md[13].m, md[13].n);
       // mesh_13.rotate(md[13].v);
       // multimesh.add(mesh_13);
-      // RectangleMesh mesh_14(md[14].x0, md[14].y0, md[14].x1, md[14].y1, md[14].m, md[14].n);
+      // RectangleMesh mesh_14(Point(md[14].x0, md[14].y0), Point(md[14].x1, md[14].y1),  md[14].m, md[14].n);
       // mesh_14.rotate(md[14].v);
       // multimesh.add(mesh_14);
-      // RectangleMesh mesh_15(md[15].x0, md[15].y0, md[15].x1, md[15].y1, md[15].m, md[15].n);
+      // RectangleMesh mesh_15(Point(md[15].x0, md[15].y0), Point(md[15].x1, md[15].y1),  md[15].m, md[15].n);
       // mesh_15.rotate(md[15].v);
       // multimesh.add(mesh_15);
-      // RectangleMesh mesh_16(md[16].x0, md[16].y0, md[16].x1, md[16].y1, md[16].m, md[16].n);
+      // RectangleMesh mesh_16(Point(md[16].x0, md[16].y0), Point(md[16].x1, md[16].y1),  md[16].m, md[16].n);
       // mesh_16.rotate(md[16].v);
       // multimesh.add(mesh_16);
-      // RectangleMesh mesh_17(md[17].x0, md[17].y0, md[17].x1, md[17].y1, md[17].m, md[17].n);
+      // RectangleMesh mesh_17(Point(md[17].x0, md[17].y0), Point(md[17].x1, md[17].y1),  md[17].m, md[17].n);
       // mesh_17.rotate(md[17].v);
       // multimesh.add(mesh_17);
-      // RectangleMesh mesh_18(md[18].x0, md[18].y0, md[18].x1, md[18].y1, md[18].m, md[18].n);
+      // RectangleMesh mesh_18(Point(md[18].x0, md[18].y0), Point(md[18].x1, md[18].y1),  md[18].m, md[18].n);
       // mesh_18.rotate(md[18].v);
       // multimesh.add(mesh_18);
-      // RectangleMesh mesh_19(md[19].x0, md[19].y0, md[19].x1, md[19].y1, md[19].m, md[19].n);
+      // RectangleMesh mesh_19(Point(md[19].x0, md[19].y0), Point(md[19].x1, md[19].y1),  md[19].m, md[19].n);
       // mesh_19.rotate(md[19].v);
       // multimesh.add(mesh_19);
 
@@ -343,10 +354,10 @@ public:
     const double v = 1e-16;
 
     UnitSquareMesh mesh_0(1, 1);
-    RectangleMesh mesh_1(0.200000, 0.200000, 0.800000, 0.800000, 1, 1);
+    RectangleMesh mesh_1(Point(0.2, 0.2), Point(0.8, 0.8), 1, 1);
     mesh_1.rotate(v, 2);
 
-    RectangleMesh mesh_2(0.300000, 0.300000, 0.700000, 0.700000, 1, 1);
+    RectangleMesh mesh_2(Point(0.3, 0.3), Point(0.7, 0.7), 1, 1);
     //mesh_2.rotate(8.002805e-01, 2);
     //mesh_2.rotate(1.418863e-01, 2);
     mesh_2.rotate(2*v, 2);
@@ -899,40 +910,46 @@ public:
     // exact_area += 4*(0.7-0.3); // mesh2 and mesh3
     // File("mesh_3.xml") << mesh_3;
 
-    MultiMesh multimesh;
-    MeshEditor me;
-    const std::size_t N = 10;
-    std::vector<Mesh> meshes(N);
-    double exact_area = 0;
-    for (std::size_t i = 0; i < N; ++i)
+    //const std::size_t N = 5;
+    for (std::size_t N = 5; N < 6; ++N)
     {
-      me.open(meshes[i], 2, 2);
-      me.init_vertices(3);
-      me.init_cells(1);
-      const double a = 0.01;
-      const Point p0(a*i, a*i);
-      const Point p1(1-2*a*i, a*i);
-      const Point p2(a*i, 1-2*a*i);
-      me.add_vertex(0, p0);
-      me.add_vertex(1, p1);
-      me.add_vertex(2, p2);
-      me.add_cell(0, 0, 1, 2);
-      me.close();
-      multimesh.add(meshes[i]);
-      const std::vector<double>& x=meshes[i].coordinates();
-      if (i > 0)
-	exact_area += p0.distance(p1) + p0.distance(p2) + p1.distance(p2);
+      for (std::size_t k = 0; k < 80; ++k)
+	std::cout << '-';
+      std::cout << "\nN = " << N << std::endl;
+      MultiMesh multimesh;
+      MeshEditor me;
+      std::vector<Mesh> meshes(N);
+      double exact_area = 0;
+      for (std::size_t i = 0; i < N; ++i)
+      {
+	me.open(meshes[i], 2, 2);
+	me.init_vertices(3);
+	me.init_cells(1);
+	const double a = 0.05;
+	const Point p0(a*i, a*i);
+	const Point p1(1-2*a*i, a*i);
+	const Point p2(a*i, 1-2*a*i);
+	me.add_vertex(0, p0);
+	me.add_vertex(1, p1);
+	me.add_vertex(2, p2);
+	me.add_cell(0, 0, 1, 2);
+	me.close();
+	multimesh.add(meshes[i]);
+	const std::vector<double>& x=meshes[i].coordinates();
+	if (i > 0)
+	  exact_area += p0.distance(p1) + p0.distance(p2) + p1.distance(p2);
+      }
+      multimesh.build();
+      tools::dolfin_write_medit_triangles("multimesh",multimesh, N);
+
+      const double area = compute_interface_area(multimesh, exact_area);
+      const double e = std::abs(area - exact_area);
+      std::cout << std::setprecision(15)
+		<< "N = " << N << '\n'
+		<< "area = " << area << '\n'
+		<< "error = " << e << '\n';
+      CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_area, area, DOLFIN_EPS_LARGE);
     }
-    multimesh.build();
-    tools::dolfin_write_medit_triangles("multimesh",multimesh);
-
-    const double area = compute_interface_area(multimesh, exact_area);
-    const double e = std::abs(area - exact_area);
-    std::cout << std::setprecision(15)
-	      << "area = " << area << '\n'
-	      << "error = " << e << '\n';
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_area, area, DOLFIN_EPS_LARGE);
-
 
 
     // // Sum contribution from all parts
@@ -1030,7 +1047,7 @@ public:
 	for (std::size_t n = 1; n <= 100; ++n)
 	{
 	  UnitSquareMesh mesh_0(m, n);
-	  RectangleMesh mesh_1(0.2, 0.2, 0.8, 0.8, m, n);
+	  RectangleMesh mesh_1(Point(0.2, 0.2), Point(0.8, 0.8), m, n);
 	  mesh_1.rotate(v, 2);
 
 	  MultiMesh multimesh;
