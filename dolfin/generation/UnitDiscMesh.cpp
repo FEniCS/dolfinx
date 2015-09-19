@@ -31,7 +31,7 @@ UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n,
 {
   dolfin_assert(n > 0);
   dolfin_assert(gdim == 2 or gdim == 3);
-  dolfin_assert(degree == 2 or degree == 3);
+  dolfin_assert(degree == 1 or degree == 2);
 
   MeshEditor editor;
   editor.open(*this, 2, gdim, degree);

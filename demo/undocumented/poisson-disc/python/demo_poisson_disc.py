@@ -38,7 +38,7 @@ parameters["form_compiler"]["representation"] = "uflacs"
 
 def compute(nsteps):
     # Create mesh and define function space
-    degree = 2
+    degree = 1
     gdim = 2
     mesh = UnitDiscMesh(mpi_comm_world(), nsteps, degree, gdim)
     nc = mesh.num_cells()
