@@ -25,16 +25,16 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n, std::size_t gdim)
+UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n,
+                           std::size_t degree, std::size_t gdim)
   : Mesh(comm)
 {
   dolfin_assert(n > 0);
   dolfin_assert(gdim == 2 or gdim == 3);
+  dolfin_assert(degree == 2 or degree == 3);
 
   MeshEditor editor;
-  const std::size_t degree = 2;
   editor.open(*this, 2, gdim, degree);
-
   editor.init_vertices_global(1 + 3*n*(n + 1),
                               1 + 3*n*(n + 1));
 
@@ -86,20 +86,24 @@ UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n, std::size_t gdim)
 
   // Initialise entities required for this degree polynomial mesh
   // and allocate space for the point coordinate data
-  editor.init_entities();
 
-  for (EdgeIterator e(*this); !e.end(); ++e)
+  if (degree == 2)
   {
-    Point v0 = Vertex(*this, e->entities(0)[0]).point();
-    Point v1 = Vertex(*this, e->entities(0)[1]).point();
-    Point pt = e->midpoint();
+    editor.init_entities();
 
-    if (std::abs(v0.norm() - 1.0) < 1e-6 and
-        std::abs(v1.norm() - 1.0) < 1e-6)
-      pt *= v0.norm()/pt.norm();
+    for (EdgeIterator e(*this); !e.end(); ++e)
+    {
+      Point v0 = Vertex(*this, e->entities(0)[0]).point();
+      Point v1 = Vertex(*this, e->entities(0)[1]).point();
+      Point pt = e->midpoint();
 
-    // Add Edge-based point
-    editor.add_entity_point(1, 0, e->index(), pt);
+      if (std::abs(v0.norm() - 1.0) < 1e-6 and
+          std::abs(v1.norm() - 1.0) < 1e-6)
+        pt *= v0.norm()/pt.norm();
+
+      // Add Edge-based point
+      editor.add_entity_point(1, 0, e->index(), pt);
+    }
   }
 
   editor.close();

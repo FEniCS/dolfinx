@@ -55,7 +55,7 @@ int main()
   // Create mesh and function space
   int degree = 2;
   int gdim = 2;
-  UnitDiscMesh mesh(MPI_COMM_WORLD, 32, gdim);
+  UnitDiscMesh mesh(MPI_COMM_WORLD, 32, degree, gdim);
   //UnitSquareMesh mesh(32, 32);
 
   PoissonDisc::FunctionSpace V(mesh);

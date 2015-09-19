@@ -40,7 +40,7 @@ def compute(nsteps):
     # Create mesh and define function space
     degree = 2
     gdim = 2
-    mesh = UnitDiscMesh(mpi_comm_world(), nsteps, gdim)
+    mesh = UnitDiscMesh(mpi_comm_world(), nsteps, degree, gdim)
     nc = mesh.num_cells()
     V = FunctionSpace(mesh, "Lagrange", degree)
 
