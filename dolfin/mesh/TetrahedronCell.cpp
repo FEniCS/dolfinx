@@ -138,6 +138,85 @@ TetrahedronCell::create_entities(boost::multi_array<unsigned int, 2>& e,
   }
 }
 //-----------------------------------------------------------------------------
+void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
+                                  std::size_t& current_cell) const
+{
+  deprecation("refine_cell", "1.7.0", "1.8.0",
+              "This method is not recommended, use specific refinement methods instead");
+
+  // Get vertices and edges
+  const unsigned int* v = cell.entities(0);
+  const unsigned int* e = cell.entities(1);
+  dolfin_assert(v);
+  dolfin_assert(e);
+
+  // Get offset for new vertex indices
+  const std::size_t offset = cell.mesh().num_vertices();
+
+  // Compute indices for the ten new vertices
+  const std::size_t v0 = v[0];
+  const std::size_t v1 = v[1];
+  const std::size_t v2 = v[2];
+  const std::size_t v3 = v[3];
+  const std::size_t e0 = offset + e[find_edge(0, cell)];
+  const std::size_t e1 = offset + e[find_edge(1, cell)];
+  const std::size_t e2 = offset + e[find_edge(2, cell)];
+  const std::size_t e3 = offset + e[find_edge(3, cell)];
+  const std::size_t e4 = offset + e[find_edge(4, cell)];
+  const std::size_t e5 = offset + e[find_edge(5, cell)];
+
+  // Regular refinement creates 8 new cells but we need to be careful
+  // to make the partition in a way that does not make the aspect
+  // ratio worse in each refinement. We do this by cutting the middle
+  // octahedron along the shortest of three possible paths.
+  dolfin_assert(editor._mesh);
+  const Point p0 = editor._mesh->geometry().point(e0);
+  const Point p1 = editor._mesh->geometry().point(e1);
+  const Point p2 = editor._mesh->geometry().point(e2);
+  const Point p3 = editor._mesh->geometry().point(e3);
+  const Point p4 = editor._mesh->geometry().point(e4);
+  const Point p5 = editor._mesh->geometry().point(e5);
+  const double d05 = p0.distance(p5);
+  const double d14 = p1.distance(p4);
+  const double d23 = p2.distance(p3);
+
+  // Data structure to hold cells
+  boost::multi_array<std::size_t, 2> cells(boost::extents[8][4]);
+
+  // First create the 4 congruent tetrahedra at the corners
+  cells[0][0] = v0; cells[0][1] = e3; cells[0][2] = e4; cells[0][3] = e5;
+  cells[1][0] = v1; cells[1][1] = e1; cells[1][2] = e2; cells[1][3] = e5;
+  cells[2][0] = v2; cells[2][1] = e0; cells[2][2] = e2; cells[2][3] = e4;
+  cells[3][0] = v3; cells[3][1] = e0; cells[3][2] = e1; cells[3][3] = e3;
+
+  // Then divide the remaining octahedron into 4 tetrahedra
+  if (d05 <= d14 && d14 <= d23)
+  {
+    cells[4][0] = e0; cells[4][1] = e1; cells[4][2] = e2; cells[4][3] = e5;
+    cells[5][0] = e0; cells[5][1] = e1; cells[5][2] = e3; cells[5][3] = e5;
+    cells[6][0] = e0; cells[6][1] = e2; cells[6][2] = e4; cells[6][3] = e5;
+    cells[7][0] = e0; cells[7][1] = e3; cells[7][2] = e4; cells[7][3] = e5;
+  }
+  else if (d14 <= d23)
+  {
+    cells[4][0] = e0; cells[4][1] = e1; cells[4][2] = e2; cells[4][3] = e4;
+    cells[5][0] = e0; cells[5][1] = e1; cells[5][2] = e3; cells[5][3] = e4;
+    cells[6][0] = e1; cells[6][1] = e2; cells[6][2] = e4; cells[6][3] = e5;
+    cells[7][0] = e1; cells[7][1] = e3; cells[7][2] = e4; cells[7][3] = e5;
+  }
+  else
+  {
+    cells[4][0] = e0; cells[4][1] = e1; cells[4][2] = e2; cells[4][3] = e3;
+    cells[5][0] = e0; cells[5][1] = e2; cells[5][2] = e3; cells[5][3] = e4;
+    cells[6][0] = e1; cells[6][1] = e2; cells[6][2] = e3; cells[6][3] = e5;
+    cells[7][0] = e2; cells[7][1] = e3; cells[7][2] = e4; cells[7][3] = e5;
+  }
+
+  // Add cells
+  for (auto _cell = cells.begin(); _cell != cells.end(); ++_cell)
+    editor.add_cell(current_cell++, *_cell);
+}
+//-----------------------------------------------------------------------------
 double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 {
   // Check that we get a tetrahedron

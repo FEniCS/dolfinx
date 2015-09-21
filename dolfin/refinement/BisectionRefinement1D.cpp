@@ -64,16 +64,16 @@ void BisectionRefinement1D::refine(Mesh& refined_mesh,
       auto it = new_vertex_map.find(cell_index);
       dolfin_assert (it != new_vertex_map.end());
 
-      std::vector<std::size_t> new_cell = {indices[0], it->second};
-      p_ref.new_cell(new_cell);
+      std::vector<std::size_t> new_cells
+        = {indices[0], it->second,
+           it->second, indices[1]};
+      p_ref.new_cells(new_cells);
       parent_cell.push_back(cell_index);
-      new_cell = {it->second, indices[1]};
-      p_ref.new_cell(new_cell);
       parent_cell.push_back(cell_index);
     }
     else
     {
-      p_ref.new_cell(indices);
+      p_ref.new_cell(*cell);
       parent_cell.push_back(cell_index);
     }
   }
