@@ -141,6 +141,9 @@ TetrahedronCell::create_entities(boost::multi_array<unsigned int, 2>& e,
 void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
                                   std::size_t& current_cell) const
 {
+  deprecation("refine_cell", "1.7.0", "1.8.0",
+              "This method is not recommended, use specific refinement methods instead");
+
   // Get vertices and edges
   const unsigned int* v = cell.entities(0);
   const unsigned int* e = cell.entities(1);
@@ -212,14 +215,6 @@ void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
   // Add cells
   for (auto _cell = cells.begin(); _cell != cells.end(); ++_cell)
     editor.add_cell(current_cell++, *_cell);
-}
-//-----------------------------------------------------------------------------
-void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
-					   std::size_t& current_cell,
-                                           std::size_t refinement_rule,
-                                           std::size_t* marked_edges) const
-{
-  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::volume(const MeshEntity& tetrahedron) const

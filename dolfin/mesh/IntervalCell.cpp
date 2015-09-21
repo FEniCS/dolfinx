@@ -94,6 +94,9 @@ void IntervalCell::create_entities(boost::multi_array<unsigned int, 2>& e,
 void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,
                                std::size_t& current_cell) const
 {
+  deprecation("refine_cell", "1.7.0", "1.8.0",
+              "This method is not recommended, use specific refinement methods instead");
+
   // Get vertices
   const unsigned int* v = cell.entities(0);
   dolfin_assert(v);
