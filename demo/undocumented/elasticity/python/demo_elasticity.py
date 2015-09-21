@@ -42,12 +42,12 @@ def build_nullspace(V, x):
     V.sub(2).dofmap().set(nullspace_basis[2], 1.0);
 
     # Build rotational null space basis
-    V.sub(0).dofmap().set_x(nullspace_basis[3], -1.0, 1, V.mesh());
-    V.sub(1).dofmap().set_x(nullspace_basis[3],  1.0, 0, V.mesh());
-    V.sub(0).dofmap().set_x(nullspace_basis[4],  1.0, 2, V.mesh());
-    V.sub(2).dofmap().set_x(nullspace_basis[4], -1.0, 0, V.mesh());
-    V.sub(2).dofmap().set_x(nullspace_basis[5],  1.0, 1, V.mesh());
-    V.sub(1).dofmap().set_x(nullspace_basis[5], -1.0, 2, V.mesh());
+    V.sub(0).set_x(nullspace_basis[3], -1.0, 1);
+    V.sub(1).set_x(nullspace_basis[3],  1.0, 0);
+    V.sub(0).set_x(nullspace_basis[4],  1.0, 2);
+    V.sub(2).set_x(nullspace_basis[4], -1.0, 0);
+    V.sub(2).set_x(nullspace_basis[5],  1.0, 1);
+    V.sub(1).set_x(nullspace_basis[5], -1.0, 2);
 
     for x in nullspace_basis:
         x.apply("insert")

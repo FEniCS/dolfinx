@@ -90,8 +90,8 @@ namespace dolfin
   private:
 
     // Create a map from coordinates to a list of dofs that share the coordinate
-    std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate >
-      tabulate_coordinates_to_dofs(const GenericDofMap& dofmap, const Mesh& mesh);
+    std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
+    tabulate_coordinates_to_dofs(const FunctionSpace& V);
 
     // Create a map from dof to its component index in Mixed Space
     void extract_dof_component_map(std::unordered_map<std::size_t, std::size_t>&

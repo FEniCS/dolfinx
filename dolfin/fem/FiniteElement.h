@@ -21,11 +21,14 @@
 #include <memory>
 #include <vector>
 #include <ufc.h>
+#include <boost/multi_array.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 
 namespace dolfin
 {
+
+  class Cell;
 
   /// This is a wrapper for a UFC finite element (ufc::finite_element).
 
@@ -175,6 +178,19 @@ namespace dolfin
                                               coordinate_dofs,
                                               cell_orientation, cell);
     }
+
+    /// Tabulate the coordinates of all dofs on an element
+    ///
+    /// *Arguments*
+    ///     coordinates (boost::multi_array<double, 2>)
+    ///         The coordinates of all dofs on a cell.
+    ///     coordinate_dofs (std::vector<double>)
+    ///         The cell coordinates
+    ///     cell (Cell)
+    ///         The cell.
+    void tabulate_dof_coordinates(boost::multi_array<double, 2>& coordinates,
+                                  const std::vector<double>& coordinate_dofs,
+                                  const Cell& cell) const;
 
     /// Return the number of sub elements (for a mixed element)
     std::size_t num_sub_elements() const

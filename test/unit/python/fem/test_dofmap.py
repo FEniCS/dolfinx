@@ -46,39 +46,13 @@ def W(V, Q):
 reorder_dofs = set_parameters_fixture("reorder_dofs_serial", [True, False])
 
 
-def test_tabulate_coord(mesh, V, W):
-
-    L0  = W.sub(0)
-    L1  = W.sub(1)
-    L01 = L1.sub(0)
-    L11 = L1.sub(1)
-
-    coord0 = np.zeros((3,2), dtype="d")
-    coord1 = np.zeros((3,2), dtype="d")
-    coord2 = np.zeros((3,2), dtype="d")
-    coord3 = np.zeros((3,2), dtype="d")
-
-    for cell in cells(mesh):
-        V.dofmap().tabulate_coordinates(cell, coord0)
-        L0.dofmap().tabulate_coordinates(cell, coord1)
-        L01.dofmap().tabulate_coordinates(cell, coord2)
-        L11.dofmap().tabulate_coordinates(cell, coord3)
-        coord4 = L1.dofmap().tabulate_coordinates(cell)
-
-        assert (coord0 == coord1).all()
-        assert (coord0 == coord2).all()
-        assert (coord0 == coord3).all()
-        assert (coord4[:3] == coord0).all()
-        assert (coord4[3:] == coord0).all()
-
-
 def test_tabulate_all_coordinates(mesh, V, W):
     D = mesh.geometry().dim()
     V_dofmap = V.dofmap()
     W_dofmap = W.dofmap()
 
-    all_coords_V = V_dofmap.tabulate_all_coordinates(V.mesh())
-    all_coords_W = W_dofmap.tabulate_all_coordinates(W.mesh())
+    all_coords_V = V.tabulate_dof_coordinates()
+    all_coords_W = W.tabulate_dof_coordinates()
     local_size_V = V_dofmap.ownership_range()[1]-V_dofmap.ownership_range()[0]
     local_size_W = W_dofmap.ownership_range()[1]-W_dofmap.ownership_range()[0]
 
@@ -169,11 +143,11 @@ def test_tabulate_coord_periodic():
     coord3 = np.zeros((3,2), dtype="d")
 
     for cell in cells(mesh):
-        V.dofmap().tabulate_coordinates(cell, coord0)
-        L0.dofmap().tabulate_coordinates(cell, coord1)
-        L01.dofmap().tabulate_coordinates(cell, coord2)
-        L11.dofmap().tabulate_coordinates(cell, coord3)
-        coord4 = L1.dofmap().tabulate_coordinates(cell)
+        V.element().tabulate_dof_coordinates(cell, coord0)
+        L0.element().tabulate_dof_coordinates(cell, coord1)
+        L01.element().tabulate_dof_coordinates(cell, coord2)
+        L11.element().tabulate_dof_coordinates(cell, coord3)
+        coord4 = L1.element().tabulate_dof_coordinates(cell)
 
         assert (coord0 == coord1).all()
         assert (coord0 == coord2).all()

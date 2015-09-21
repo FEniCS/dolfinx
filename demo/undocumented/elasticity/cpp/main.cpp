@@ -29,9 +29,6 @@ using namespace dolfin;
 dolfin::VectorSpaceBasis build_nullspace(const dolfin::FunctionSpace& V,
                                          const GenericVector& x)
 {
-  dolfin_assert(V.mesh());
-  const dolfin::Mesh& mesh = *(V.mesh());
-
   // Get subspaces
   dolfin::SubSpace V0(V, 0);
   dolfin::SubSpace V1(V, 1);
@@ -48,14 +45,14 @@ dolfin::VectorSpaceBasis build_nullspace(const dolfin::FunctionSpace& V,
   V2.dofmap()->set(*basis[2], 1.0);
 
   // Rotations
-  V0.dofmap()->set_x(*basis[3], -1.0, 1, mesh);
-  V1.dofmap()->set_x(*basis[3],  1.0, 0, mesh);
+  V0.set_x(*basis[3], -1.0, 1);
+  V1.set_x(*basis[3],  1.0, 0);
 
-  V0.dofmap()->set_x(*basis[4],  1.0, 2, mesh);
-  V2.dofmap()->set_x(*basis[4], -1.0, 0, mesh);
+  V0.set_x(*basis[4],  1.0, 2);
+  V2.set_x(*basis[4], -1.0, 0);
 
-  V2.dofmap()->set_x(*basis[5],  1.0, 1, mesh);
-  V1.dofmap()->set_x(*basis[5], -1.0, 2, mesh);
+  V2.set_x(*basis[5],  1.0, 1);
+  V1.set_x(*basis[5], -1.0, 2);
 
   // Apply
   for (std::size_t i = 0; i < basis.size(); ++i)
