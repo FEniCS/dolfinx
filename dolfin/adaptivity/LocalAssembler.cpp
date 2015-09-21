@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2013
 //
 // First added:  2011-01-04
-// Last changed: 2013-01-10
+// Last changed: 2015-09-21
 
 #include <dolfin/common/types.h>
 #include <Eigen/Dense>
@@ -63,6 +63,15 @@ LocalAssembler::assemble(Eigen::MatrixXd& A,
       assemble_exterior_facet(A, ufc, coordinate_dofs, ufc_cell, cell,
                               *facet, facet.pos(), exterior_facet_domains);
     }
+  }
+
+  // Check that there are no vertex integrals
+  if (ufc.form.has_vertex_integrals())
+  {
+    dolfin_error("LocalAssembler.cpp",
+                 "assemble local problem",
+                 "Local problem contains vertex integrals which are not yet "
+                 "supported by LocalAssembler");
   }
 }
 //------------------------------------------------------------------------------
@@ -194,7 +203,7 @@ void LocalAssembler::assemble_interior_facet(Eigen::MatrixXd& A,
   if (N == 1)
   {
     for (std::size_t i = 0; i < M; i++)
-      A(i, 0) = ufc.macro_A[i];
+      A(i, 0) += ufc.macro_A[i];
   }
   else
   {
