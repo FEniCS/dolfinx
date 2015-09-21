@@ -34,15 +34,17 @@ du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 from __future__ import print_function
 
 from dolfin import *
+import math
 parameters["form_compiler"]["representation"] = "uflacs"
 
-def compute(nsteps):
+def compute(nsteps, degree, gdim):
     # Create mesh and define function space
-    degree = 2
-    gdim = 2
     mesh = UnitDiscMesh(mpi_comm_world(), nsteps, degree, gdim)
-    nc = mesh.num_cells()
     V = FunctionSpace(mesh, "Lagrange", degree)
+
+    # Compute domain area and average h
+    area = assemble(1.0*dx(mesh))
+    h = (area / mesh.num_cells())**(1.0 / mesh.topology().dim())
 
     # Define boundary condition
     u0 = Constant(0.0)
@@ -59,29 +61,40 @@ def compute(nsteps):
     u = Function(V)
     solve(a == L, u, bc)
 
-    # Compute error norm
+    # Compute relative error norm
     x = SpatialCoordinate(mesh)
     uexact = (1.0 - x**2) / 4.0
     M = (u - uexact)**2*dx(degree=5)
     M0 = uexact**2*dx(degree=5)
-    area = assemble(1.0*dx(mesh))
-    return nc, sqrt(assemble(M) / assemble(M0)), area
+    err = sqrt(assemble(M) / assemble(M0))
 
-# Print convergence, getting rate of 3.5
-import math
-preverr = None
-for nsteps in (1, 2, 4, 8, 16, 32, 64):
-    nc, err, area = compute(nsteps)
-    if preverr is None:
-        conv = 0.0
-    else:
-        conv = math.log(preverr/err, 2)
-    print("steps = %d, cells = %d, sqrt(cells) = %d, |M|/|M0| = %.4g, area = %f, conv = %.4g:" % (nsteps, nc, sqrt(nc), err, area, conv))
-    preverr = err
+    return err, h, area, mesh.num_cells(), u
 
-# Save solution in VTK format
-# file = File("poisson.xdmf")
-# file << u
+def compute_rates():
+    "Compute convergence rates for degrees 1 and 2."
+    gdim = 2
+    tdim = gdim
+    for degree in (1, 2):
+        preverr = None
+        prevh = None
+        print("\nUsing degree %d" % degree)
+        for i, nsteps in enumerate((1, 8, 64)):
+            err, h, area, num_cells, u = compute(nsteps, degree, gdim)
+            if preverr is None:
+                conv = 0.0
+                print("conv =  N/A, h = %.3e, err = %.3e, area = %.16f, num_cells = %d" % (h, err, area, num_cells))
+            else:
+                conv = math.log(preverr/err, prevh/h)
+                print("conv = %1.2f, h = %.3e, err = %.3e, area = %.16f, num_cells = %d" % (conv, h, err, area, num_cells))
+            preverr = err
+            prevh = h
 
-# Plot solution
-#plot(u, interactive=True)
+        # Save solution in VTK format
+        #file = File("poisson-disc-degree%d.xdmf" % degree)
+        #file << u
+
+        # Plot solution
+        #plot(u, title="u, degree=%d" % degree)
+    #interactive()
+
+compute_rates()
