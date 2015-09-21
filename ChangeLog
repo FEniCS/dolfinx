@@ -1,3 +1,5 @@
+- Remove refine_cell() methods from CellTypes
+- Enable marker refinement to work in parallel for 1D meshes too
 1.6.0 [2015-07-28]
 - Remove redundant pressure boundary condition in Stokes demos
 - Require Point in RectangleMesh and BoxMesh constructors

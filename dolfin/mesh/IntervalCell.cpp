@@ -91,31 +91,6 @@ void IntervalCell::create_entities(boost::multi_array<unsigned int, 2>& e,
   e[0][0] = v[0]; e[1][0] = v[1];
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,
-                               std::size_t& current_cell) const
-{
-  // Get vertices
-  const unsigned int* v = cell.entities(0);
-  dolfin_assert(v);
-
-  // Get offset for new vertex indices
-  const std::size_t offset = cell.mesh().num_vertices();
-
-  // Compute indices for the three new vertices
-  const std::size_t v0 = v[0];
-  const std::size_t v1 = v[1];
-  const std::size_t e0 = offset + cell.index();
-
-  // Add the two new cells
-  std::vector<std::size_t> new_cell(2);
-
-  new_cell[0] = v0; new_cell[1] = e0;
-  editor.add_cell(current_cell++, new_cell);
-
-  new_cell[0] = e0; new_cell[1] = v1;
-  editor.add_cell(current_cell++, new_cell);
-}
-//-----------------------------------------------------------------------------
 double IntervalCell::volume(const MeshEntity& interval) const
 {
   // Check that we get an interval

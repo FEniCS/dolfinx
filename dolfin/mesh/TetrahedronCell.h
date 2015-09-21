@@ -60,16 +60,6 @@ namespace dolfin
     void create_entities(boost::multi_array<unsigned int, 2>& e,
                          std::size_t dim, const unsigned int* v) const;
 
-    /// Regular refinement of cell
-    void refine_cell(Cell& cell, MeshEditor& editor,
-                     std::size_t& current_cell) const;
-
-    /// Irregular refinement of cell
-    void refine_cellIrregular(Cell& cell, MeshEditor& editor,
-                              std::size_t& current_cell,
-                              std::size_t refinement_rule,
-                              std::size_t* marked_edges) const;
-
     /// Compute volume of tetrahedron
     double volume(const MeshEntity& tetrahedron) const;
 

@@ -36,8 +36,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/refinement/LocalMeshRefinement.h>
-#include <dolfin/refinement/UniformMeshRefinement.h>
+#include <dolfin/refinement/refine.h>
 #include "ErrorControl.h"
 #include "adapt.h"
 
@@ -66,7 +65,7 @@ const Mesh& dolfin::adapt(const Mesh& mesh)
 
   // Refine uniformly
   std::shared_ptr<Mesh> adapted_mesh(new Mesh());
-  UniformMeshRefinement::refine(*adapted_mesh, mesh);
+  refine(*adapted_mesh, mesh);
 
   // Initialize the entities initialized in mesh in adapted_mesh
   for (std::size_t d = 0; d <= mesh.topology().dim(); ++d)
@@ -91,7 +90,7 @@ const dolfin::Mesh& dolfin::adapt(const Mesh& mesh,
 
   // Call refinement algorithm
   std::shared_ptr<Mesh> adapted_mesh(new Mesh());
-  LocalMeshRefinement::refine(*adapted_mesh, mesh, cell_markers);
+  refine(*adapted_mesh, mesh, cell_markers);
 
   // Initialize the entities initialized in mesh in adapted_mesh
   for (std::size_t d = 0; d <= mesh.topology().dim(); ++d)
