@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2012-2015 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -132,6 +132,11 @@ namespace dolfin
     void write_point_xml(const std::string dataset_name,
                          const std::size_t num_global_points,
                          const unsigned int value_size);
+
+    // Get point data values for degree 1 or 2 mesh
+    void get_point_data_values(std::vector<double>& data_values,
+                               const Function& u);
+
 
     // Most recent mesh name
     std::string current_mesh_name;

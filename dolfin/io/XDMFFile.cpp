@@ -354,6 +354,9 @@ void XDMFFile::get_point_data_values(std::vector<double>& data_values,
     Array<dolfin::la_index> data_dofs(data_values.size());
     std::fill(data_dofs.data(), data_dofs.data() + data_dofs.size(), 0);
 
+    dolfin_assert(u.function_space()->dofmap());
+    const GenericDofMap& dofmap = *u.function_space()->dofmap();
+
     // Go over all cells inserting values
     // FIXME: a lot of duplication here
     for (CellIterator cell(mesh); !cell.end(); ++cell)
