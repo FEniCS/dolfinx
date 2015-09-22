@@ -2,7 +2,7 @@
 #define DOLFIN_SIMPLEX_TOOLS_H
 
 //#include "../dolfin.h" // for install
-#include <dolfin.h>
+#include <dolfin.h> // for building test
 #include "predicates.h"
 
 #include <string>

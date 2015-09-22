@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2015-09-02
+// Last changed: 2015-09-22
 //
 // Unit tests for MultiMesh
 
