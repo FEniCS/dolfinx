@@ -195,25 +195,23 @@ void PlazaRefinementND::get_tetrahedra(
   for (std::size_t i = 0; i < 10; ++i)
   {
     for (std::size_t j = i + 1; j < 10; ++j)
+    {
       if (conn[i][j])
       {
         facet_set.clear();
         for (std::size_t k = j + 1; k < 10; ++k)
         {
           if (conn[i][k] && conn[j][k])
-            facet_set.push_back(k);
-        }
-        // Note that j>i and k>j. facet_set is in increasing order, so *q > *p.
-        // Should never repeat same tetrahedron twice.
-        for(auto p = facet_set.begin(); p != facet_set.end(); ++p)
-        {
-          for(auto q = p + 1; q != facet_set.end(); ++q)
           {
-            if(conn[*p][*q])
-              tet_set.insert(tet_set.end(), {i, j, *p, *q});
+            // Note that i < j < m < k
+            for (const auto &m : facet_set)
+              if (conn[m][k])
+                tet_set.insert(tet_set.end(), {i, j, m, k});
+            facet_set.push_back(k);
           }
         }
       }
+    }
   }
 }
 //-----------------------------------------------------------------------------
