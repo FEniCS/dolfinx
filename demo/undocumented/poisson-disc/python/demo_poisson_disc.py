@@ -75,6 +75,7 @@ def compute_rates():
     gdim = 2
     tdim = gdim
     for degree in (1, 2):
+        file = XDMFFile(mpi_comm_world(), "poisson-disc-degree%d.xdmf" % degree)
         preverr = None
         prevh = None
         print("\nUsing degree %d" % degree)
@@ -89,9 +90,12 @@ def compute_rates():
             preverr = err
             prevh = h
 
-        # Save solution in VTK format
-        #file = File("poisson-disc-degree%d.xdmf" % degree)
-        #file << u
+            # Save solution in VTK format
+            u.rename('u','u')
+            if (degree == 1):
+                file << u
+            else:
+                file.write_quadratic(u)
 
         # Plot solution
         #plot(u, title="u, degree=%d" % degree)

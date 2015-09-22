@@ -75,6 +75,9 @@ namespace dolfin
     /// by a geometry Function
     void write_quadratic(const Function& u_geom, const Function& u_val);
 
+    // Experimental
+    void write_quadratic(const Function& u_val);
+
     /// Save a Function to XDMF/HDF5 files for visualisation.
     void operator<< (const Function& u);
 

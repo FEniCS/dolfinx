@@ -34,6 +34,8 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Edge.h>
+#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Mesh.h>
@@ -189,6 +191,118 @@ void XDMFFile::write_quadratic(const Function& u_geom, const Function& u_val)
     xml.data_attribute(function_name, value_rank, true,
                        num_total_vertices, num_global_cells,
                        value_size, data_ref);
+    xml.write();
+  }
+
+  ++counter;
+  hdf5_file->close();
+}
+//----------------------------------------------------------------------------
+void XDMFFile::write_quadratic(const Function& u_val)
+{
+  // Experimental. Only works with a P2 Function in serial
+  dolfin_assert(MPI::size(_mpi_comm) == 1);
+
+  boost::filesystem::path p(_filename);
+  p.replace_extension(".h5");
+  hdf5_filename = p.string();
+
+  if (counter == 0)
+    hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
+  else
+    hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "a"));
+  hdf5_filemode = "w";
+
+  // Get mesh and dofmap
+  dolfin_assert(u_val.function_space()->mesh());
+  const Mesh& mesh = *u_val.function_space()->mesh();
+
+  const std::size_t tdim = mesh.topology().dim();
+  const std::size_t gdim = mesh.geometry().dim();
+
+  // FIXME: Could work in 1D, but not yet tested
+  dolfin_assert(tdim == 2 or tdim == 3);
+
+  const GenericDofMap& dofmap = *u_val.function_space()->dofmap();
+
+  // Should be equal components on each edge and vertex
+  dolfin_assert(dofmap.num_entity_dofs(0) ==
+                dofmap.num_entity_dofs(1));
+
+  const std::string h5_mesh_name = "/Mesh/" + std::to_string(counter);
+  hdf5_file->write(mesh, h5_mesh_name);
+
+  // Save values
+  const std::string dataset_name = "/Function/" + std::to_string(counter)
+    + "/values";
+
+  const std::size_t value_rank = u_val.value_rank();
+  const std::size_t value_size = u_val.value_size();
+  // Pad 2D vectors
+  const std::size_t pad_val_size = (value_size == 2) ? 3 : value_size;
+
+  std::vector<std::size_t> global_size(2);
+  global_size[0]
+    = mesh.size(0) + mesh.size(1);
+  global_size[1] = pad_val_size;
+  std::vector<double> data_values(pad_val_size*global_size[0]);
+  Array<dolfin::la_index> data_dofs(data_values.size());
+  std::fill(data_dofs.data(), data_dofs.data() + data_dofs.size(), 0);
+
+  // Go over all cells inserting values
+  // FIXME: a lot of duplication here
+  const GenericVector& u = *u_val.vector();
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    const ArrayView<const dolfin::la_index> dofs
+      = dofmap.cell_dofs(cell->index());
+    std::size_t c = 0;
+    for (std::size_t i = 0; i != value_size; ++i)
+    {
+      for (VertexIterator v(*cell); !v.end(); ++v)
+      {
+        const std::size_t v0 = v->index()*pad_val_size;
+        data_dofs[v0 + i] = dofs[c];
+        ++c;
+      }
+      for (EdgeIterator e(*cell); !e.end(); ++e)
+      {
+        const std::size_t e0 = (e->index() + mesh.size(0))*pad_val_size;
+        data_dofs[e0 + i] = dofs[c];
+        ++c;
+      }
+    }
+  }
+
+  u.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
+  // Blank out empty values of 2D vector
+  if (value_size == 2)
+    for (std::size_t i = 2; i < data_values.size(); i += 3)
+      data_values[i] = 0.0;
+
+  const bool mpi_io = (MPI::size(_mpi_comm) != 1);
+  hdf5_file->write_data(dataset_name, data_values, global_size, mpi_io);
+
+  if (MPI::rank(_mpi_comm) == 0)
+  {
+    XDMFxml xml(_filename);
+
+    const std::size_t num_total_vertices = mesh.geometry().x().size()/gdim;
+    const std::size_t num_global_cells = mesh.num_cells();
+
+    std::string function_name = u_val.name();
+    xml.init_timeseries(function_name, (double)counter, counter);
+
+    boost::filesystem::path p(hdf5_filename);
+    const std::string mesh_ref = p.filename().string() + ":" + h5_mesh_name;
+    const std::string data_ref = p.filename().string() + ":" + dataset_name;
+
+    xml.mesh_topology(mesh.type().cell_type(), 2, num_global_cells, mesh_ref);
+    xml.mesh_geometry(num_total_vertices, gdim, mesh_ref);
+
+    xml.data_attribute(function_name, value_rank, true,
+                       num_total_vertices, num_global_cells,
+                       pad_val_size, data_ref);
     xml.write();
   }
 
