@@ -121,6 +121,13 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh,
 
 }
 //-----------------------------------------------------------------------------
+dolfin::Mesh dolfin::p_refine(const Mesh& mesh)
+{
+  Mesh refined_mesh;
+  p_refine(refined_mesh, mesh);
+  return refined_mesh;
+}
+//-----------------------------------------------------------------------------
 void dolfin::p_refine(Mesh& refined_mesh, const Mesh& mesh)
 {
   MeshEditor editor;

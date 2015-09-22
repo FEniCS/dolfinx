@@ -131,6 +131,14 @@ namespace dolfin
   ///         The original linear mesh.
   void p_refine(Mesh& refined_mesh, const Mesh& mesh);
 
+  /// Return a p_refined mesh
+  /// Increase the polynomial order of the mesh from 1 to 2, i.e. add points
+  /// at the Edge midpoints, to make a quadratic mesh.
+  ///
+  /// *Arguments*
+  ///     mesh (_Mesh_)
+  ///         The original linear mesh.
+  Mesh p_refine(const Mesh& mesh);
 }
 
 #endif
