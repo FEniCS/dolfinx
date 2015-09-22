@@ -200,7 +200,7 @@ void XDMFFile::write_quadratic(const Function& u_geom, const Function& u_val)
 //----------------------------------------------------------------------------
 void XDMFFile::write_quadratic(const Function& u_val)
 {
-  // Experimental. Only works with a P2 Function in serial
+  // Experimental. Only works with a P2 Function in serial on a quadratic mesh
   dolfin_assert(MPI::size(_mpi_comm) == 1);
 
   boost::filesystem::path p(_filename);
@@ -222,6 +222,7 @@ void XDMFFile::write_quadratic(const Function& u_val)
 
   // FIXME: Could work in 1D, but not yet tested
   dolfin_assert(tdim == 2 or tdim == 3);
+  dolfin_assert(mesh.geometry().degree() == 2);
 
   const GenericDofMap& dofmap = *u_val.function_space()->dofmap();
 
@@ -308,6 +309,83 @@ void XDMFFile::write_quadratic(const Function& u_val)
 
   ++counter;
   hdf5_file->close();
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::get_point_data_values(std::vector<double>& data_values,
+                                     const Function& u)
+{
+  const Mesh& mesh = *u.function_space()->mesh();
+  const std::size_t value_size = u.value_size();
+  const std::size_t value_rank = u.value_rank();
+
+  // Interleave the values for vector or tensor fields and pad 2D
+  // vectors and tensors to 3D
+  std::size_t padded_value_size = value_size;
+  if (value_size == 2)
+    padded_value_size = 3;
+  else if (value_size == 4)
+    padded_value_size = 9;
+
+  if (mesh.geometry().degree() == 1)
+  {
+    u.compute_vertex_values(data_values, mesh);
+    const std::size_t num_local_vertices = mesh.size(0);
+
+    if (value_rank > 0)
+    {
+      std::vector<double> _data_values(padded_value_size*num_local_vertices,
+                                       0.0);
+      for (std::size_t i = 0; i < num_local_vertices; i++)
+      {
+        for (std::size_t j = 0; j < value_size; j++)
+        {
+          std::size_t tensor_2d_offset = (j > 1 && value_size == 4) ? 1 : 0;
+          _data_values[i*padded_value_size + j + tensor_2d_offset]
+            = data_values[i + j*num_local_vertices];
+        }
+      }
+      data_values = _data_values;
+    }
+  }
+  else if (mesh.geometry().degree() == 2)
+  {
+    const std::size_t num_local_points = mesh.size(0) + mesh.size(1);
+    data_values.resize(padded_value_size*num_local_points);
+    Array<dolfin::la_index> data_dofs(data_values.size());
+    std::fill(data_dofs.data(), data_dofs.data() + data_dofs.size(), 0);
+
+    // Go over all cells inserting values
+    // FIXME: a lot of duplication here
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      const ArrayView<const dolfin::la_index> dofs
+        = dofmap.cell_dofs(cell->index());
+      std::size_t c = 0;
+      for (std::size_t i = 0; i != value_size; ++i)
+      {
+        for (VertexIterator v(*cell); !v.end(); ++v)
+        {
+          const std::size_t v0 = v->index()*padded_value_size;
+          data_dofs[v0 + i] = dofs[c];
+          ++c;
+        }
+        for (EdgeIterator e(*cell); !e.end(); ++e)
+        {
+          const std::size_t e0 = (e->index() + mesh.size(0))*padded_value_size;
+          data_dofs[e0 + i] = dofs[c];
+          ++c;
+        }
+      }
+    }
+
+    const GenericVector& uvec = *u.vector();
+    uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
+    // Blank out empty values of 2D vector
+    if (value_size == 2)
+      for (std::size_t i = 2; i < data_values.size(); i += 3)
+        data_values[i] = 0.0;
+  }
+
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Function& u)
