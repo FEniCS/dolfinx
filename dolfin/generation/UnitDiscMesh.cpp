@@ -56,12 +56,15 @@ UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n,
   editor.init_cells(6*n*n);
 
   c = 0;
+  std::size_t base_i = 0;
+  std::size_t row_i = 1;
   for (std::size_t i = 1; i <= n; ++i)
   {
-    const std::size_t base_i = 1 + 3*i*(i - 1);
-    const std::size_t base_m = (i>1 ? 1 : 0) + 3*(i-1)*(i-2);
-    const std::size_t row_i = 6*i;
-    const std::size_t row_m = (i>1) ? 6*(i-1) : 1;
+    std::size_t base_m = base_i;
+    base_i = 1 + 3*i*(i - 1);
+    std::size_t row_m = row_i;
+    row_i = 6*i;
+
     for (std::size_t k = 0; k != 6; ++k)
       for (std::size_t j = 0; j < (i*2 - 1); ++j)
       {
