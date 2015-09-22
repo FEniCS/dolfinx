@@ -210,12 +210,7 @@ void PlazaRefinementND::get_tetrahedra(
           for(auto q = p + 1; q != facet_set.end(); ++q)
           {
             if(conn[*p][*q])
-            {
-              tet_set.push_back(i);
-              tet_set.push_back(j);
-              tet_set.push_back(*p);
-              tet_set.push_back(*q);
-            }
+              tet_set.insert(tet_set.end(), {i, j, *p, *q});
           }
         }
       }
@@ -281,7 +276,7 @@ void PlazaRefinementND::face_long_edge(std::vector<unsigned int>& long_edge,
     if (tdim == 2)
       edge_ratio_ok[f->index()] = (min_len/max_len >= min_ratio);
 
-    long_edge[f->index()] = imax;
+    long_edge[f->index()] = face_edges[imax];
   }
 }
 //-----------------------------------------------------------------------------
