@@ -43,7 +43,7 @@
 
 using namespace dolfin;
 
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 LocalSolver::LocalSolver(std::shared_ptr<const Form> a,
                          std::shared_ptr<const Form> L,
                          SolverType solver_type)
@@ -54,15 +54,14 @@ LocalSolver::LocalSolver(std::shared_ptr<const Form> a,
   dolfin_assert(L);
   dolfin_assert(L->rank() == 1);
 }
-//----------------------------------------------------------------------------
-LocalSolver::LocalSolver(std::shared_ptr<const Form> a,
-                         SolverType solver_type)
+//-----------------------------------------------------------------------------
+LocalSolver::LocalSolver(std::shared_ptr<const Form> a, SolverType solver_type)
   : _a(a), _solver_type(solver_type)
 {
   dolfin_assert(a);
   dolfin_assert(a->rank() == 2);
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void LocalSolver::solve_global_rhs(Function& u) const
 {
   // Compute RHS (global)
@@ -78,7 +77,7 @@ void LocalSolver::solve_global_rhs(Function& u) const
   // Solve local problems
   _solve_local(x, b.get(), nullptr);
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void LocalSolver::solve_local_rhs(Function& u) const
 {
   // Extract the vector where the solution will be stored
@@ -88,17 +87,15 @@ void LocalSolver::solve_local_rhs(Function& u) const
   // Loop over all cells and assemble local LHS & RHS which are then solved
   _solve_local(x, nullptr, nullptr);
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void LocalSolver::solve_local(GenericVector& x, const GenericVector& b,
                               const GenericDofMap& dofmap_b) const
 {
   _solve_local(x, &b, &dofmap_b);
 }
 //-----------------------------------------------------------------------------
-void LocalSolver::_solve_local(GenericVector& x,
-                               const GenericVector* global_b,
-                               const GenericDofMap* dofmap_L)
-                               const
+void LocalSolver::_solve_local(GenericVector& x, const GenericVector* global_b,
+                               const GenericDofMap* dofmap_L) const
 {
   // Check that we have valid bilinear form
   dolfin_assert(_a);
@@ -113,9 +110,7 @@ void LocalSolver::_solve_local(GenericVector& x,
 
   // Check that we have valid linear form or a dofmap for it
   if (dofmap_L)
-  {
     dolfin_assert(global_b);
-  }
   else
   {
     dolfin_assert(_formL);
@@ -135,12 +130,12 @@ void LocalSolver::_solve_local(GenericVector& x,
   dolfin_assert(dofmaps_a[0] and dofmaps_a[1]);
 
   // Extract cell_domains etc from left-hand side form
-  const MeshFunction<std::size_t>* cell_domains =
-    _a->cell_domains().get();
-  const MeshFunction<std::size_t>* exterior_facet_domains =
-    _a->exterior_facet_domains().get();
-  const MeshFunction<std::size_t>* interior_facet_domains =
-    _a->interior_facet_domains().get();
+  const MeshFunction<std::size_t>* cell_domains
+    = _a->cell_domains().get();
+  const MeshFunction<std::size_t>* exterior_facet_domains
+    = _a->exterior_facet_domains().get();
+  const MeshFunction<std::size_t>* interior_facet_domains
+    = _a->interior_facet_domains().get();
 
   // Eigen data structures and factorisations for cell data structures
   Eigen::MatrixXd A_e, b_e, x_e;
@@ -188,7 +183,6 @@ void LocalSolver::_solve_local(GenericVector& x,
     x_e.resize(dofs_L.size(), 1);
     b_e.resize(dofs_L.size(), 1);
 
-
     if (global_b)
     {
       // Copy global RHS data into local RHS vector
@@ -230,6 +224,7 @@ void LocalSolver::_solve_local(GenericVector& x,
         x_e = lu.solve(b_e);
       }
     }
+
     // Insert solution in global vector
     x.set_local(x_e.data(), dofs_a1.size(), dofs_a1.data());
 
@@ -269,12 +264,12 @@ void LocalSolver::factorize()
   dolfin_assert(dofmaps_a[0] and dofmaps_a[1]);
 
   // Extract cell_domains etc from left-hand side form
-  const MeshFunction<std::size_t>* cell_domains =
-    _a->cell_domains().get();
-  const MeshFunction<std::size_t>* exterior_facet_domains =
-    _a->exterior_facet_domains().get();
-  const MeshFunction<std::size_t>* interior_facet_domains =
-    _a->interior_facet_domains().get();
+  const MeshFunction<std::size_t>* cell_domains
+    = _a->cell_domains().get();
+  const MeshFunction<std::size_t>* exterior_facet_domains
+    = _a->exterior_facet_domains().get();
+  const MeshFunction<std::size_t>* interior_facet_domains
+    = _a->interior_facet_domains().get();
 
   // Local dense matrix
   Eigen::MatrixXd A_e;
@@ -293,10 +288,12 @@ void LocalSolver::factorize()
 
     // Check that the local matrix is square
     if (dofs_a0.size() != dofs_a1.size())
+    {
       dolfin_error("LocalSolver.cpp",
                    "assemble local LHS",
                    "Local LHS dimensions is non square (%d x %d) on cell %d",
                    dofs_a0.size(), dofs_a1.size(), cell->index());
+    }
 
     // Update data to current cell
     cell->get_coordinate_dofs(coordinate_dofs);
@@ -323,4 +320,3 @@ void LocalSolver::clear_factorization()
   _lu_cache.clear();
 }
 //-----------------------------------------------------------------------------
-

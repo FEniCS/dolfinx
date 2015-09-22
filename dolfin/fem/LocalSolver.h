@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Steven Vandekerckhove, 2014
-// Modified by Tormod Landet, 2015
 
 #ifndef __LOCAL_SOLVER_H
 #define __LOCAL_SOLVER_H
@@ -34,20 +31,20 @@ namespace dolfin
   /// left-hand side A_local which must be square locally but not
   /// globally. The right-hand side b_local is either computed locally
   /// for one cell or globally for all cells depending on which of the
-  /// solve_local_rhs or solve_global_rhs methods which are called. You
-  /// can optionally assemble the right-hand side vector yourself and
-  /// use the solve_local method. You must then provide the DofMap of
-  /// the right-hand side.
+  /// solve_local_rhs or solve_global_rhs methods which are
+  /// called. You can optionally assemble the right-hand side vector
+  /// yourself and use the solve_local method. You must then provide
+  /// the DofMap of the right-hand side.
   ///
   /// The local solver solves A_local x_local = b_local. The result
   /// x_local is copied into the global vector x of the provided
   /// Function u. You can optionally call the factorize() method to
-  /// pre-calculate the local left-hand side factorizations to speed up
-  /// repeated applications of the LocalSolver with the same LHS. The
-  /// solve_xxx methods will factorise the LHS A_local matrices each time
-  /// if they are not cached by a previous call to factorize. You can
-  /// chose upon initialization whether you want Cholesky or LU (default)
-  /// factorisations.
+  /// pre-calculate the local left-hand side factorizations to speed
+  /// up repeated applications of the LocalSolver with the same
+  /// LHS. The solve_xxx methods will factorise the LHS A_local
+  /// matrices each time if they are not cached by a previous call to
+  /// factorize. You can chose upon initialization whether you want
+  /// Cholesky or LU (default) factorisations.
   ///
   /// For forms with no coupling across cell edges, this function is
   /// identical to a global solve. For problems with coupling across
@@ -115,16 +112,15 @@ namespace dolfin
     const SolverType _solver_type;
 
     // Cached LU factorisations of matrices (_solver_type==Cholesky)
-    std::vector<Eigen::PartialPivLU<Eigen::MatrixXd> > _lu_cache;
+    std::vector<Eigen::PartialPivLU<Eigen::MatrixXd>> _lu_cache;
 
     // Cached Cholesky factorisations of matrices (_solver_type==LU)
-    std::vector<Eigen::LLT<Eigen::MatrixXd> > _cholesky_cache;
+    std::vector<Eigen::LLT<Eigen::MatrixXd>> _cholesky_cache;
 
     // Helper function that does the actual calculations
     void _solve_local(GenericVector& x,
                       const GenericVector* global_b,
-                      const GenericDofMap* dofmap_L)
-                      const;
+                      const GenericDofMap* dofmap_L) const;
   };
 
 }
