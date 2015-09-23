@@ -106,42 +106,6 @@ void TriangleCell::create_entities(boost::multi_array<unsigned int, 2>&  e,
   e[2][0] = v[0]; e[2][1] = v[1];
 }
 //-----------------------------------------------------------------------------
-void TriangleCell::refine_cell(Cell& cell, MeshEditor& editor,
-                               std::size_t& current_cell) const
-{
-  deprecation("refine_cell", "1.7.0", "1.8.0",
-              "This method is not recommended, use specific refinement methods instead");
-
-  // Get vertices and edges
-  const unsigned int* v = cell.entities(0);
-  const unsigned int* e = cell.entities(1);
-  dolfin_assert(v);
-  dolfin_assert(e);
-
-  // Get offset for new vertex indices
-  const std::size_t offset = cell.mesh().num_vertices();
-
-  // Compute indices for the six new vertices
-  const std::size_t v0 = v[0];
-  const std::size_t v1 = v[1];
-  const std::size_t v2 = v[2];
-  const std::size_t e0 = offset + e[find_edge(0, cell)];
-  const std::size_t e1 = offset + e[find_edge(1, cell)];
-  const std::size_t e2 = offset + e[find_edge(2, cell)];
-
-  // Create four new cells
-  std::vector<std::vector<std::size_t>> cells(4, std::vector<std::size_t>(3));
-  cells[0][0] = v0; cells[0][1] = e2; cells[0][2] = e1;
-  cells[1][0] = v1; cells[1][1] = e0; cells[1][2] = e2;
-  cells[2][0] = v2; cells[2][1] = e1; cells[2][2] = e0;
-  cells[3][0] = e0; cells[3][1] = e1; cells[3][2] = e2;
-
-  // Add cells
-  std::vector<std::vector<std::size_t>>::const_iterator _cell;
-  for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
-    editor.add_cell(current_cell++, *_cell);
-}
-//-----------------------------------------------------------------------------
 double TriangleCell::volume(const MeshEntity& triangle) const
 {
   // Check that we get a triangle
