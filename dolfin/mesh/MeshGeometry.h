@@ -63,7 +63,7 @@ namespace dolfin
     /// Return number of coordinates
     std::size_t size() const
     {
-      deprecation("MeshGeometry::size()", "1.7.0", "1.8.0", "Use MeshGeometry::num_vertices() instead");
+      deprecation("MeshGeometry::size()", "1.7.0", "1.8.0", "Use MeshGeometry::num_vertices() or MeshGeometry::num_points() instead");
       return num_vertices();
     }
 
@@ -89,13 +89,12 @@ namespace dolfin
 
     const double* vertex_coordinates(std::size_t point_index)
     {
-      dolfin_assert(point_index*_dim < coordinates.size());
+      dolfin_assert(point_index < num_vertices());
       return &coordinates[point_index*_dim];
     }
 
     const double* point_coordinates(std::size_t point_index)
     {
-      warning("MeshGeometry::point_coordinates() not working yet");
       dolfin_assert(point_index*_dim < coordinates.size());
       return &coordinates[point_index*_dim];
     }
@@ -209,10 +208,6 @@ namespace dolfin
 
     // Offsets to storage for coordinate points for each entity type
     std::vector<std::vector<std::size_t>> entity_offsets;
-
-    // Fixed number of points per entity for given degree
-    // calculated here for convenience
-    std::vector<std::size_t> _num_entity_coordinates;
 
     // Coordinates for all points stored as a contiguous array
     std::vector<double> coordinates;
