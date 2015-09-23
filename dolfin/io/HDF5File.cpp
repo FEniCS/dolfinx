@@ -311,7 +311,6 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 
         // Only cope with quadratic for now
         dolfin_assert(geom.degree() == 2);
-        dolfin_assert(num_cell_points == 6);
         // FIXME: make it work in parallel
         dolfin_assert(!mpi_io);
 

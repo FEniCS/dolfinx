@@ -51,6 +51,7 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
   _dim = geometry._dim;
   _degree = geometry._degree;
   coordinates = geometry.coordinates;
+  entity_offsets = geometry.entity_offsets;
 
   return *this;
 }
