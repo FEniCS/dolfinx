@@ -25,9 +25,8 @@
 import pytest
 import numpy
 from dolfin import *
+from dolfin_utils.test import skip_in_parallel
 from dolfin_utils.test import set_parameters_fixture
-
-
 ghost_mode = set_parameters_fixture("ghost_mode", ["shared_facet"])
 
 
@@ -126,8 +125,8 @@ def test_solve_local_rhs_facet_integrals(ghost_mode):
     x[:] = 1
     assert round((u.vector() - x).norm('l2'), 10) == 0
 
-
 def test_local_solver_dg(ghost_mode):
+    # Ghosted mesh in 1D not supported
     mesh = UnitSquareMesh(50, 1)
     U = FunctionSpace(mesh, "DG", 2)
 
@@ -166,6 +165,7 @@ def test_local_solver_dg(ghost_mode):
 
 
 def test_solve_local(ghost_mode):
+    # Ghosted mesh in 1D not supported
     mesh = UnitSquareMesh(50, 1)
     U = FunctionSpace(mesh, "DG", 2)
 
