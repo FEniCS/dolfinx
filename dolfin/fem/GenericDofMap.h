@@ -25,7 +25,6 @@
 #include <map>
 #include <utility>
 #include <vector>
-#include <boost/multi_array.hpp>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -122,20 +121,6 @@ namespace dolfin
                                       std::size_t dim,
                                       std::size_t local_entity) const = 0;
 
-    /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
-    virtual
-      void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                                const std::vector<double>& coordinate_dofs,
-                                const Cell& cell) const = 0;
-
-    /// Tabulate the coordinates of all dofs owned by this
-    /// process. This function is typically used by preconditioners
-    /// that require the spatial coordinates of dofs, for example
-    /// for re-partitioning or nullspace computations. The format for
-    /// the return vector is [x0, y0, z0, x1, y1, z1, . . .].
-    virtual std::vector<double>
-      tabulate_all_coordinates(const Mesh& mesh) const = 0;
-
     /// Create a copy of the dof map
     virtual std::shared_ptr<GenericDofMap> copy() const = 0;
 
@@ -166,14 +151,6 @@ namespace dolfin
     /// function is typically used to construct the null space of a
     /// matrix operator
     virtual void set(GenericVector& x, double value) const = 0;
-
-    /// Set dof entries in vector to the value*x[i], where x[i] is the
-    /// spatial coordinate of the dof. Parallel layout of vector must
-    /// be consistent with dof map range. This function is typically
-    /// used to construct the null space of a matrix operator, e.g. rigid
-    /// body rotations.
-    virtual void set_x(GenericVector& x, double value, std::size_t component,
-                       const Mesh& mesh) const = 0;
 
     /// Return the map from unowned local dofmap nodes to global dofmap
     /// nodes. Dofmap node is dof index modulo block size.

@@ -927,6 +927,10 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
 
+  // Get finite element
+  dolfin_assert(_function_space->element());
+  const FiniteElement& element = *_function_space->element();
+
   // Initialize facets, needed for geometric search
   log(TRACE, "Computing facets, needed for geometric application of boundary conditions.");
   mesh.init(mesh.topology().dim() - 1);
@@ -980,7 +984,8 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           // Tabulate coordinates if not already done
           if (!tabulated)
           {
-            dofmap.tabulate_coordinates(data.coordinates, coordinate_dofs, *c);
+            element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs,
+                                             *c);
             tabulated = true;
           }
 
@@ -1016,10 +1021,6 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                        LocalData& data) const
 {
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->element());
-  dolfin_assert(_g);
-
   if (!_user_sub_domain)
   {
     dolfin_error("DirichletBC.cpp",
@@ -1027,11 +1028,16 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                  "A SubDomain is required for pointwise search");
   }
 
-  // Get mesh and dofmap
-  dolfin_assert(_function_space->mesh());
+  dolfin_assert(_g);
+
+// Get mesh, dofmap and element
+  dolfin_assert(_function_space);
   dolfin_assert(_function_space->dofmap());
-  const Mesh& mesh = *_function_space->mesh();
+  dolfin_assert(_function_space->element());
+  dolfin_assert(_function_space->mesh());
   const GenericDofMap& dofmap = *_function_space->dofmap();
+  const FiniteElement& element = *_function_space->element();
+  const Mesh& mesh = *_function_space->mesh();
 
   // Geometric dim
   const std::size_t gdim = mesh.geometry().dim();
@@ -1059,7 +1065,8 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       cell->get_cell_data(ufc_cell);
 
       // Tabulate coordinates of dofs on cell
-      dofmap.tabulate_coordinates(data.coordinates, coordinate_dofs, *cell);
+      element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs,
+                                       *cell);
 
       // Tabulate dofs on cell
       const ArrayView<const dolfin::la_index> cell_dofs
@@ -1124,8 +1131,8 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       cell.get_cell_data(ufc_cell);
 
       // Tabulate coordinates of dofs on cell
-      dofmap.tabulate_coordinates(data.coordinates, coordinate_dofs,
-                                  cell);
+      element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs,
+                                       cell);
 
       // Restrict coefficient to cell
       _g->restrict(data.w.data(), *_function_space->element(), cell,
