@@ -21,9 +21,6 @@
 #
 # Modified by Steven Vandekerckhove, 2014
 # Modified by Tormod Landet, 2015
-#
-# First added:  2013-02-13
-# Last changed: 2015-09-19
 
 import pytest
 import numpy
@@ -64,7 +61,10 @@ def test_solve_global_rhs():
         error = assemble((u - f)*(u - f)*dx)
         assert round(error, 10) == 0
 
+
 def test_solve_local_rhs():
+
+    parameters["ghost_mode"] = "shared_facet"
     mesh = UnitCubeMesh(1, 5, 1)
     V = FunctionSpace(mesh, "Lagrange", 2)
     W = FunctionSpace(mesh, "Lagrange", 2)
@@ -96,36 +96,46 @@ def test_solve_local_rhs():
         local_solver.solve_local_rhs(u)
         assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
 
+        parameters["ghost_mode"] = "none"
+
+
 def test_solve_local_rhs_facet_integrals():
+
+    parameters["ghost_mode"] = "shared_facet"
     mesh = UnitSquareMesh(4, 4)
-    
+
     Vu = VectorFunctionSpace(mesh, 'DG', 1)
-    Vv = FunctionSpace(mesh, 'DGT', 1) 
+    Vv = FunctionSpace(mesh, 'DGT', 1)
     u = TrialFunction(Vu)
     v = TestFunction(Vv)
-    
+
     n = FacetNormal(mesh)
     w = Constant([1, 1])
-    
+
     a = dot(u, n)*v*ds
     L = dot(w, n)*v*ds
-    
+
     for R in '+-':
         a += dot(u(R), n(R))*v(R)*dS
         L += dot(w(R), n(R))*v(R)*dS
-    
+
     A = assemble(a)
     b = assemble(L)
-    
+
     u = Function(Vu)
     local_solver = LocalSolver(a, L)
     local_solver.solve_local_rhs(u)
-    
+
     x = u.vector().copy()
     x[:] = 1
     assert round((u.vector() - x).norm('l2'), 10) == 0
 
+    parameters["ghost_mode"] = "none"
+
+
 def test_local_solver_dg():
+
+    parameters["ghost_mode"] = "shared_facet"
     mesh = UnitIntervalMesh(50)
     U = FunctionSpace(mesh, "DG", 2)
 
@@ -162,8 +172,12 @@ def test_local_solver_dg():
     local_solver.solve_global_rhs(u_ls)
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
 
+    parameters["ghost_mode"] = "none"
+
 
 def test_solve_local():
+
+    parameters["ghost_mode"] = "shared_facet"
     mesh = UnitIntervalMesh(50)
     U = FunctionSpace(mesh, "DG", 2)
 
@@ -200,3 +214,5 @@ def test_solve_local():
     u_ls = Function(U)
     local_solver.solve_local(u_ls.vector(), b, U.dofmap())
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
+
+    parameters["ghost_mode"] = "none"
