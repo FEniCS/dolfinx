@@ -550,7 +550,7 @@ bool CollisionDetection::collides_triangle_point(const Point& p0,
   Point r = point - p0;
   // Check point is in plane of triangle (for manifold)
   double volume = r.dot(normal);
-  if (volume > DOLFIN_EPS)
+  if (std::abs(volume) > DOLFIN_EPS)
     return false;
 
   // Compute normal to triangle based on point and first edge
