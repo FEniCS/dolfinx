@@ -1532,10 +1532,11 @@ void MultiMesh::_build_quadrature_rules_interface()
 	    }
 	  }
 
-	  const std::size_t N = initial_cells.size();
-	  std::cout << "\ninitial_cells.size() = #stages = " << N << std::endl;
+	  const std::size_t N_cells = initial_cells.size();
+	  const std::size_t N_stages = N_cells;
+	  std::cout << "\ninitial_cells.size() = #stages = " << N_cells << std::endl;
 
-	  if (N > 0)
+	  if (N_cells > 0)
 	  {
 // 	    //std::vector<std::pair<std::vector<std::size_t>, Polyhedron> > previous_intersections(N);
 // 	    std::vector<std::vector<std::size_t>> previous_intersections_keys(N);
@@ -1584,56 +1585,90 @@ void MultiMesh::_build_quadrature_rules_interface()
 	    // Do stage 0: this is the intersection of the edge with
 	    // all the cells. The cells with non-empty intersection
 	    // form the previous intersections.
-	    std::vector<std::vector<std::size_t>> previous_intersections_keys(N);
-	    std::vector<Polyhedron> previous_intersections(N);
+	    std::cout << "\nstage 0" << std::endl;
+	    std::vector<std::vector<std::size_t>> previous_intersections_keys;
+	    std::vector<Polyhedron> previous_intersections;
 
 	    // Add quadrature rule for stage 0. These are composed of E \cap K_i. Keep track of keys.
 	    const double sign = -1;
 	    const std::size_t old_num_qr = cut_cutting_interface_qr.second.size();
 
 	    for (const auto cell: initial_cells)
+	    {
+	      bool add_key = false, key_added = false;
 	      for (const auto polyhedron: cut_cutting_interface)
 		for (const auto simplex: polyhedron)
 		{
 		  // Compute intersection between the initial polyhedra and cut_cutting_interface
 		  const std::vector<double> x = convert(simplex, tdim-1, gdim);
-		  const std::vector<double> ii =
-		    IntersectionTriangulation::triangulate_intersection(cell.second, x, tdim-1);
+		  const std::vector<double> ii = IntersectionTriangulation::triangulate_intersection(cell.second, x, tdim-1);
 		  if (ii.size()) {
-		    previous_intersections_keys.push_back(std::vector<std::size_t>(1, cell.first));
-		    std::vector<double> y;
-		    cell.second.get_vertex_coordinates(y);
-		    Simplex s = convert(y.data(), tdim, gdim);
-		    Polyhedron p = std::vector<Simplex>(1, s);
-		    previous_intersections.push_back(p);
+		    std::cout << "collided cell " << tools::drawtriangle(cell.second) << " with simplex " << tools::drawtriangle(simplex) << std::endl;
+		    add_key = true;
 		    _add_quadrature_rule(cut_cutting_interface_qr, ii, tdim-1, gdim, quadrature_order, sign);
 		  }
 		}
+	      if (add_key and !key_added)
+	      {
+		std::vector<double> y;
+		cell.second.get_vertex_coordinates(y);
+		Simplex s = convert(y.data(), tdim, gdim);
+		Polyhedron p = std::vector<Simplex>(1, s);
+		previous_intersections.push_back(p);
+		previous_intersections_keys.push_back(std::vector<std::size_t>(1, cell.first));
+		key_added = true;
+	      }
+	    }
+
+#ifdef Augustdebug
+	    std::cout << "summary stage 0\n"
+		      << "polyhedra:\n";
+	    for (const auto polyhedron: previous_intersections)
+	      for (const auto simplex: polyhedron)
+		std::cout << tools::drawtriangle(simplex);
+	    std::cout << "\nkeys:\n";
+	    for (std::size_t a = 0; a < previous_intersections_keys.size(); ++a)
+	    {
+	      std::cout << a << ": ";
+	      for (const auto k: previous_intersections_keys[a])
+		std::cout << k;
+	      std::cout << '\n';
+	    }
+	    //for (const auto kk: previous_intersections_keys)
+	    //for (const auto k: kk)
+	    //std::cout << k << ' ';
+	      std::cout << "num qr = " << cut_cutting_interface_qr.second.size()<<'\n';
+	    for (std::size_t i = 0; i < cut_cutting_interface_qr.second.size(); ++i)
+	      std::cout << "plot(" << cut_cutting_interface_qr.first[2*i]<<','<<cut_cutting_interface_qr.first[2*i+1]<<",'go') # "<<cut_cutting_interface_qr.second[i]<<std::endl;
+#endif
 
 
 	    // Now do the inclusion-exclusion. This is only needed if
 	    // we found qr points in stage 0.
 	    if (cut_cutting_interface_qr.second.size() - old_num_qr > 0)
 	    {
-	      for (std::size_t stage = 1; stage < N; ++stage)
+	      for (std::size_t stage = 1; stage < N_stages; ++stage)
 	      {
 #ifdef Augustdebug
 		quadrature_rule stage_qr;
 		if (stage == 1) std::cout << '\n';
 		std::cout << "\nstage " << stage << std::endl;
 		// even more debugging
-		std::cout << "checkout what we have in previous intersections\n";
+		std::cout << "see what we have in previous intersections:\n";
 		for (const auto previous_polyhedron: previous_intersections)
-		{
 		  for (const auto previous_simplex: previous_polyhedron)
 		    std::cout << tools::drawtriangle(previous_simplex);
-		  std::cout << '\n';
+		std::cout << "\nprevious intersections keys were: ";
+		for (std::size_t a = 0; a < previous_intersections_keys.size(); ++a)
+		{
+		  std::cout << a << ": ";
+		  for (const auto k: previous_intersections_keys[a])
+		    std::cout << k;
+		  //for (const auto kk: previous_intersections_keys)
+		  //for (const auto k: kk)
+		  //std::cout << k << ' ';
+		  std::cout << std::endl;
 		}
-		std::cout << "previous intersections keys were: ";
-		for (const auto kk: previous_intersections_keys)
-		  for (const auto k: kk)
-		    std::cout << k << ' ';
-		std::cout << std::endl;
 #endif
 		// Structure for storing new intersections
 		//std::vector<std::pair<std::vector<std::size_t>, Polyhedron> > new_intersections;
@@ -1647,15 +1682,16 @@ void MultiMesh::_build_quadrature_rules_interface()
 		  // Loop over all initial polyhedra (cells)
 		  for (const auto initial_cell: initial_cells)
 		  {
-#ifdef Augustdebug
-		    std::cout << "initial cell key (only one): " << initial_cell.first << '\n'
-			      << "previous pol keys: ";
-		    for (const auto kk: previous_intersections_keys)
-		      for (const auto k: kk)
-			std::cout << k << ' ';
-		    std::cout << std::endl;
-#endif
-		    if (initial_cell.first < previous_intersections_keys[j][0])
+// #ifdef Augustdebug
+// 		    std::cout << "initial cell key (only one): " << initial_cell.first << '\n'
+// 			      << "previous pol keys: ";
+// 		    for (const auto kk: previous_intersections_keys)
+// 		      for (const auto k: kk)
+// 			std::cout << k << ' ';
+// 		    std::cout << std::endl;
+// #endif
+ 		    //if (initial_cell.first < previous_intersections_keys[j][0])
+		    if (previous_intersections_keys[j][0] < initial_cell.first)
 		    {
 #ifdef Augustdebug
 		      std::cout << "check collision cell-key " << initial_cell.first << " and prev inters " << previous_intersections_keys[j][0] << std::endl;
@@ -1764,13 +1800,13 @@ void MultiMesh::_build_quadrature_rules_interface()
 			  _add_quadrature_rule(stage_qr, ii, tdim-1, gdim, quadrature_order, sign);
 			  std::cout << "the collision was:\n"
 				    << tools::drawtriangle(simplex)<<tools::drawtriangle(interface_simplex)<<std::endl;
-			  PPause;
+			  //PPause;
 #endif
 			}
 		      }
 
-		// summary stage
 #ifdef Augustdebug
+		// summary stage
 		std::cout << "summary stage " << stage << ":\n";
 		for (const auto polyhedron: new_intersections)
 		  //for (const auto simplex: polyhedron.second)
@@ -1780,7 +1816,7 @@ void MultiMesh::_build_quadrature_rules_interface()
 		for (const auto kk: new_intersections_keys)
 		  for (const auto k: kk)
 		    std::cout << k << ' ';
-		std::cout << "\nqr points = " << stage_qr.second.size() << '\n';
+		std::cout << "\nstage qr points = " << stage_qr.second.size() << '\n';
 		for (std::size_t i = 0; i < stage_qr.second.size(); ++i)
 		  std::cout << "plot("<<stage_qr.first[2*i]<<","<<stage_qr.first[2*i+1]<<",'ks') # "<<stage_qr.second[i]<<std::endl;
 #endif
@@ -1881,20 +1917,19 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
 
     // Add weight
     qr.second.push_back(factor*dqr.second[i]);
-    //std::cout << std::setprecision(20) <<factor*dqr.second[i] << '\n';
   }
 
-#ifdef Augustdebug
-  std::cout << "# display quadrature rule (last " << num_points << " added):"<< std::endl;
-  for (std::size_t i = 0; i < qr.second.size(); ++i)
-  {
-    std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') # "<<qr.second[i]<<' ';
-    if (i > (qr.second.size() - num_points))
-      std::cout << "(new)";
-    std::cout << std::endl;
-    //std::cout  << dqr.first[2*i]<<' '<<dqr.first[2*i+1]<< std::endl;
-  }
-#endif
+// #ifdef Augustdebug
+//   std::cout << "# display quadrature rule (last " << num_points << " added):"<< std::endl;
+//   for (std::size_t i = 0; i < qr.second.size(); ++i)
+//   {
+//     std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') # "<<qr.second[i]<<' ';
+//     if (i > (qr.second.size() - num_points))
+//       std::cout << "(new)";
+//     std::cout << std::endl;
+//     //std::cout  << dqr.first[2*i]<<' '<<dqr.first[2*i+1]<< std::endl;
+//   }
+// #endif
 
   return num_points;
 }
@@ -1912,7 +1947,7 @@ void MultiMesh::_add_normal(std::vector<double>& normals,
 //-----------------------------------------------------------------------------
 void MultiMesh::_plot() const
 {
-  cout << "Plotting multimesh with " << num_parts() << " parts" << endl;
+  std::cout << "Plotting multimesh with " << num_parts() << " parts" << std::endl;
 
   // Iterate over parts
   for (std::size_t p = 0; p < num_parts(); ++p)
@@ -1937,10 +1972,10 @@ void MultiMesh::_plot() const
     const std::size_t num_cut = cut_cells(p).size();
     const std::size_t num_covered = covered_cells(p).size();
     const std::size_t num_uncut = part(p)->num_cells() - num_cut - num_covered;
-    cout << "Part " << p << " has "
-         << num_uncut   << " uncut cells (0), "
-         << num_cut     << " cut cells (1), and "
-         << num_covered << " covered cells (2)." << endl;
+    std::cout << "Part " << p << " has "
+	      << num_uncut   << " uncut cells (0), "
+	      << num_cut     << " cut cells (1), and "
+	      << num_covered << " covered cells (2)." << std::endl;
 
     // Plot
     std::stringstream s;
