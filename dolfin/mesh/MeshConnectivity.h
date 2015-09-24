@@ -163,10 +163,6 @@ namespace dolfin
 
   private:
 
-    // Friends
-    friend class BinaryFile;
-    friend class MeshRenumbering;
-
     // Dimensions (only used for pretty-printing)
     std::size_t _d0, _d1;
 

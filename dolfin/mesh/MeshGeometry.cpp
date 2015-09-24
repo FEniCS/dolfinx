@@ -30,7 +30,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshGeometry::MeshGeometry() : _dim(0)
+MeshGeometry::MeshGeometry() : _dim(0), _degree(1)
 {
   // Do nothing
 }
@@ -49,6 +49,7 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
 {
   // Copy data
   _dim = geometry._dim;
+  _degree = geometry._degree;
   coordinates             = geometry.coordinates;
   position_to_local_index = geometry.position_to_local_index;
   local_index_to_position = geometry.local_index_to_position;
@@ -98,10 +99,9 @@ void MeshGeometry::init(std::size_t dim, std::size_t size)
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::set(std::size_t local_index,
-                       const std::vector<double>& x)
+                       const double* x)
 {
-  dolfin_assert(x.size() == _dim);
-  std::copy(x.begin(), x.end(), coordinates.begin() + local_index*_dim);
+  std::copy(x, x +_dim, coordinates.begin() + local_index*_dim);
 
   dolfin_assert(local_index < position_to_local_index.size());
   position_to_local_index[local_index] = local_index;

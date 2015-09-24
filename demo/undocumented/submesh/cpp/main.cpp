@@ -53,10 +53,12 @@ int main()
 
   // Move structure mesh
   MeshGeometry& geometry = structure_mesh.geometry();
+
   for (VertexIterator v(structure_mesh); !v.end(); ++v)
   {
-    const double* x = v->x();
-    geometry.x(v->index())[0] += 0.1*x[0]*x[1];
+    std::array<double, 2> x = {v->x()[0], v->x()[1]};
+    x[0] += 0.1*x[0]*x[1];
+    geometry.set(v->index(), x.data());
   }
 
   // Move fluid mesh according to structure mesh

@@ -73,7 +73,6 @@ std::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh0, const Mesh& mesh1)
     mesh_to_boundary_0[boundary_to_mesh_0[i]] = i;
 
   // Iterate over vertices in boundary1
-  const std::size_t dim = mesh0.geometry().dim();
   for (VertexIterator v(boundary1); !v.end(); ++v)
   {
     // Get global vertex index (steps 1 and 2)
@@ -98,9 +97,8 @@ std::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh0, const Mesh& mesh1)
     const std::size_t boundary_index_0 = it->second;
 
     // Update vertex coordinate
-    double* x = boundary0.geometry().x(boundary_index_0);
-    for (std::size_t i = 0; i < dim; i++)
-      x[i] = v->x()[i];
+    MeshGeometry& geom = boundary0.geometry();
+    geom.set(boundary_index_0, v->x());
   }
 
   // Move mesh
@@ -126,11 +124,13 @@ void ALE::move(Mesh& mesh, const GenericFunction& displacement)
   displacement.compute_vertex_values(vertex_values, mesh);
 
   // Move vertex coordinates
-  std::vector<double>& x = mesh.geometry().x();
-  for (std::size_t d = 0; d < gdim; d++)
+  MeshGeometry& geometry = mesh.geometry();
+  std::vector<double> x(gdim);
+  for (std::size_t i = 0; i < N; i++)
   {
-    for (std::size_t i = 0; i < N; i++)
-      x[i*gdim + d] += vertex_values[d*N + i];
+    for (std::size_t j = 0; j < gdim; j++)
+      x[j] = geometry.x(i, j) + vertex_values[j*N + i];
+    geometry.set(i, x.data());
   }
 }
 //-----------------------------------------------------------------------------
