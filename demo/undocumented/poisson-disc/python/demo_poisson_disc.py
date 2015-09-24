@@ -92,10 +92,7 @@ def compute_rates():
 
             # Save solution in VTK format
             u.rename('u','u')
-            if (degree == 1):
-                file << u
-            else:
-                file.write_quadratic(u)
+            file << u
 
         # Plot solution
         #plot(u, title="u, degree=%d" % degree)
