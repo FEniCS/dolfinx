@@ -145,17 +145,17 @@ PROBLEM_RENAMES(NonlinearVariational)
 // Ignore dolfin::Cell versions of signatures as these now are handled by
 // a typemap
 //-----------------------------------------------------------------------------
-%ignore dolfin::DofMap::tabulate_coordinates(
+%ignore dolfin::FiniteElement::tabulate_dof_coordinates(
                                 boost::multi_array<double, 2>& coordinates,
                                 const std::vector<double>& coordinate_dofs,
                                 const Cell& cell) const;
 
-%ignore dolfin::GenericDofMap::tabulate_coordinates(
+%ignore dolfin::FiniteElement::tabulate_dof_coordinates(
                                 boost::multi_array<double, 2>& coordinates,
                                 const std::vector<double>& coordinate_dofs,
                                 const Cell& cell) const;
 
-%ignore dolfin::MultiMeshDofMap::tabulate_coordinates(
+%ignore dolfin::MultiMeshDofMap::tabulate_dof_coordinates(
                                 boost::multi_array<double, 2>& coordinates,
                                 const std::vector<double>& coordinate_dofs,
                                 const ufc::cell& cell) const;

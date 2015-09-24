@@ -100,10 +100,6 @@ namespace dolfin
                                  std::size_t dim,
                                  const unsigned int* v) const = 0;
 
-    /// Refine cell uniformly
-    virtual void refine_cell(Cell& cell, MeshEditor& editor,
-                             std::size_t& current_cell) const;
-
     /// Compute (generalized) volume of mesh entity
     virtual double volume(const MeshEntity& entity) const = 0;
 
