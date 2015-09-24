@@ -63,10 +63,6 @@ namespace dolfin
                          std::size_t dim,
                          const unsigned int* v) const;
 
-    /// Refine cell uniformly
-    void refine_cell(Cell& cell, MeshEditor& editor,
-                     std::size_t& current_cell) const;
-
     /// Compute (generalized) volume (length) of interval
     double volume(const MeshEntity& interval) const;
 

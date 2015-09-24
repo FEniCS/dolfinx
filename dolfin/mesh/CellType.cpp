@@ -358,10 +358,3 @@ double CellType::radius_ratio(const Cell& cell) const
     return 2.0*dim()*r/diameter(cell);
 }
 //-----------------------------------------------------------------------------
-void CellType::refine_cell(Cell& cell, MeshEditor& editor,
-                           std::size_t& current_cell) const
-{
-  dolfin_error("CellType.h", "refine cell",
-      "This method is deprecated and is not supported by this cell type");
-}
-//-----------------------------------------------------------------------------
