@@ -217,11 +217,6 @@ void XDMFFile::write_quadratic(const Function& u_val)
   dolfin_assert(u_val.function_space()->mesh());
   const Mesh& mesh = *u_val.function_space()->mesh();
 
-  const std::size_t tdim = mesh.topology().dim();
-  const std::size_t gdim = mesh.geometry().dim();
-
-  // FIXME: Could work in 1D, but not yet tested
-  dolfin_assert(tdim == 2 or tdim == 3);
   dolfin_assert(mesh.geometry().degree() == 2);
 
   const GenericDofMap& dofmap = *u_val.function_space()->dofmap();
@@ -288,6 +283,7 @@ void XDMFFile::write_quadratic(const Function& u_val)
   {
     XDMFxml xml(_filename);
 
+    const std::size_t gdim = mesh.geometry().dim();
     const std::size_t num_total_vertices = mesh.geometry().x().size()/gdim;
     const std::size_t num_global_cells = mesh.num_cells();
 

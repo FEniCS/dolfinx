@@ -322,16 +322,18 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         else
           edge_mapping = {5, 2, 4, 3, 1, 0};
 
-        for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+        for (CellIterator c(mesh); !c.end(); ++c)
         {
           // Add indices for vertices and edges
           for (unsigned int dim = 0; dim != 2; ++dim)
           {
-            for (unsigned int i = 0; i != c->num_entities(dim); ++i)
+            for (unsigned int i = 0; i != celltype->num_entities(dim); ++i)
             {
               std::size_t im = (dim == 0) ? i : edge_mapping[i];
+              const std::size_t entity_index
+                = (dim == tdim) ? c->index() : c->entities(dim)[im];
               const std::size_t local_idx
-                = geom.get_entity_index(dim, 0, c->entities(dim)[im]);
+                = geom.get_entity_index(dim, 0, entity_index);
               topological_data.push_back(local_idx);
             }
           }

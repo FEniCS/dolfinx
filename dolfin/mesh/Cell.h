@@ -326,17 +326,20 @@ namespace dolfin
     {
       const MeshGeometry& geom = _mesh->geometry();
       const std::size_t gdim = geom.dim();
+      const std::size_t tdim = _mesh->topology().dim();
 
       coordinates.clear();
-      for (std::size_t dim = 0; dim <= _mesh->topology().dim(); ++dim)
+      for (std::size_t dim = 0; dim <= tdim; ++dim)
       {
         for (std::size_t j = 0; j != num_entities(dim); ++j)
         {
           for (std::size_t k = 0;
                k != geom.num_entity_coordinates(dim); ++k)
           {
+            const std::size_t entity_index
+              = (dim == tdim) ? index() : entities(dim)[j];
             const std::size_t point_index
-              = geom.get_entity_index(dim, k, entities(dim)[j]);
+              = geom.get_entity_index(dim, k, entity_index);
             const double* point_ptr = geom.x(point_index);
             coordinates.insert(coordinates.end(),
                                point_ptr, point_ptr + gdim);
