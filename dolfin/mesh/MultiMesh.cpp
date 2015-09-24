@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-09-22
+// Last changed: 2015-09-23
 
 
 #include <dolfin/log/log.h>
@@ -737,8 +737,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	// std::cout << "----------------- stage " << stage << std::endl;
 
       	// Structure for storing new intersections
-      	std::vector<std::pair<std::vector<std::size_t>,
-			      Polyhedron> > new_intersections;
+      	std::vector<std::pair<std::vector<std::size_t>,Polyhedron> > new_intersections;
 
       	// Loop over all intersections from the previous stage
       	for (const auto previous_polyhedron: previous_intersections)
@@ -1502,11 +1501,11 @@ void MultiMesh::_build_quadrature_rules_interface()
 	      std::vector<double> x = convert(polygon, tdim-1, gdim);
 	      _add_quadrature_rule(cut_cutting_interface_qr, x,
 				   tdim-1, gdim, quadrature_order, 1.);
-	      std::cout << "done cut_cutting_interface_qr" << std::endl;
+	      std::cout << "done cut_cutting_interface_qr initialization with " << cut_cutting_interface_qr.second.size() << " points " << std::endl;
 	      //PPause;
 	    }
 	  }
-	} // end this cut cutting pair
+	} // end this cut cutting pair initialization
 
 	// Now subtract the net contribution from all other cutting
 	// elements. By net contribution we mean the
@@ -1514,7 +1513,7 @@ void MultiMesh::_build_quadrature_rules_interface()
 	// cut_cutting_interface.
 	if (cut_cutting_interface.size())
 	{
-	  std::vector<std::pair<std::size_t, const Cell> > initial_cells; // previously initial_polyhedron
+	  std::vector<std::pair<std::size_t, const Cell> > initial_cells;
 
 	  // All other cutting cells are to be included in the
 	  // inclusion-exclusion
@@ -1538,218 +1537,255 @@ void MultiMesh::_build_quadrature_rules_interface()
 
 	  if (N > 0)
 	  {
-	    std::vector<std::pair<std::vector<std::size_t>, Polyhedron> > previous_intersections(N);
-	    for (std::size_t i = 0; i < N; ++i)
-	    {
-	      std::vector<double> x;
-	      initial_cells[i].second.get_vertex_coordinates(x);
-	      Simplex s = convert(x.data(), tdim, gdim);
-	      Polyhedron p = std::vector<Simplex>(1, s);
-	      previous_intersections[i] =
-		std::make_pair(std::vector<std::size_t>(1, initial_cells[i].first), p);
-	    }
+// 	    //std::vector<std::pair<std::vector<std::size_t>, Polyhedron> > previous_intersections(N);
+// 	    std::vector<std::vector<std::size_t>> previous_intersections_keys(N);
+// 	    std::vector<Polyhedron> previous_intersections(N);
+// 	    for (std::size_t i = 0; i < N; ++i)
+// 	    {
+// 	      std::vector<double> x;
+// 	      initial_cells[i].second.get_vertex_coordinates(x);
+// 	      Simplex s = convert(x.data(), tdim, gdim);
+// 	      Polyhedron p = std::vector<Simplex>(1, s);
+// 	      //previous_intersections[i] = std::make_pair(std::vector<std::size_t>(1, initial_cells[i].first), p);
+// 	      previous_intersections[i] = p;
+// 	      previous_intersections_keys[i] = std::vector<std::size_t>(1, initial_cells[i].first);
+// 	    }
 
-	    // Add quadrature rule for stage 0. These are composed of E \cap K_i
-	    {
-	      std::cout << "\nstage 0" << std::endl;
-	      const double sign = -1;
-	      //quadrature_rule qr;
-	      for (const auto cell: initial_cells)
-	      {
-#ifdef Augustdebug
-		std::cout << tools::drawtriangle(cell.second) << std::endl;
-#endif
-		for (const auto polyhedron: cut_cutting_interface)
+// 	    // Add quadrature rule for stage 0. These are composed of E \cap K_i. Keep track of keys.
+// 	    const double sign = -1;
+// 	    const std::size_t old_num_qr = cut_cutting_interface_qr.second.size();
+// #ifdef Augustdebug
+// 	    std::cout << "\nstage 0" << std::endl;
+// #endif
+// 	    for (const auto cell: initial_cells)
+// 	    {
+// #ifdef Augustdebug
+// 	      std::cout << tools::drawtriangle(cell.second) << std::endl;
+// #endif
+// 	      for (const auto polyhedron: cut_cutting_interface)
+// 		for (const auto simplex: polyhedron)
+// 		{
+// #ifdef Augustdebug
+// 		  std::cout << tools::drawtriangle(simplex);
+// #endif
+// 		  // Compute intersection between the initial
+// 		  // polyhedra (simple simplices) and
+// 		  // cut_cutting_interface
+// 		  const std::vector<double> x = convert(simplex, tdim-1, gdim);
+// 		  const std::vector<double> ii =
+// 		    IntersectionTriangulation::triangulate_intersection(cell.second, x, tdim-1);
+// 		  _add_quadrature_rule(cut_cutting_interface_qr, ii, tdim-1, gdim, quadrature_order, sign);
+// 		}
+// 	    }
+// #ifdef Augustdebug
+// 	    std::cout << "\nnum qr points added: " << cut_cutting_interface_qr.second.size() - old_num_qr << std::endl;
+// #endif
+
+	    // Do stage 0: this is the intersection of the edge with
+	    // all the cells. The cells with non-empty intersection
+	    // form the previous intersections.
+	    std::vector<std::vector<std::size_t>> previous_intersections_keys(N);
+	    std::vector<Polyhedron> previous_intersections(N);
+
+	    // Add quadrature rule for stage 0. These are composed of E \cap K_i. Keep track of keys.
+	    const double sign = -1;
+	    const std::size_t old_num_qr = cut_cutting_interface_qr.second.size();
+
+	    for (const auto cell: initial_cells)
+	      for (const auto polyhedron: cut_cutting_interface)
+		for (const auto simplex: polyhedron)
 		{
-		  for (const auto simplex: polyhedron)
-		  {
-#ifdef Augustdebug
-		    std::cout << tools::drawtriangle(simplex);
-#endif
-		    // Compute intersection between the initial
-		    // polyhedra (simple simplices) and
-		    // cut_cutting_interface
-		    const std::vector<double> x = convert(simplex, tdim-1, gdim);
-		    const std::vector<double> ii =
-		      IntersectionTriangulation::triangulate_intersection(cell.second, x, tdim-1);
+		  // Compute intersection between the initial polyhedra and cut_cutting_interface
+		  const std::vector<double> x = convert(simplex, tdim-1, gdim);
+		  const std::vector<double> ii =
+		    IntersectionTriangulation::triangulate_intersection(cell.second, x, tdim-1);
+		  if (ii.size()) {
+		    previous_intersections_keys.push_back(std::vector<std::size_t>(1, cell.first));
+		    std::vector<double> y;
+		    cell.second.get_vertex_coordinates(y);
+		    Simplex s = convert(y.data(), tdim, gdim);
+		    Polyhedron p = std::vector<Simplex>(1, s);
+		    previous_intersections.push_back(p);
 		    _add_quadrature_rule(cut_cutting_interface_qr, ii, tdim-1, gdim, quadrature_order, sign);
-		    //std::cout << "stage 0 qr " << qr.first.size() << std::endl; PPause;
 		  }
 		}
-#ifdef Augustdebug
-		//PPause;
-#endif
-	      }
-	    }
 
-	    // Now do the inclusion-exclusion
-	    for (std::size_t stage = 1; stage < N; ++stage)
+
+	    // Now do the inclusion-exclusion. This is only needed if
+	    // we found qr points in stage 0.
+	    if (cut_cutting_interface_qr.second.size() - old_num_qr > 0)
 	    {
+	      for (std::size_t stage = 1; stage < N; ++stage)
+	      {
 #ifdef Augustdebug
-	      quadrature_rule stage_qr;
-
-	      if (stage == 1) std::cout << '\n';
-	      std::cout << "\nstage " << stage << std::endl;
-	      // even more debugging
-	      std::cout << "checkout what we have in previous intersections\n";
-	      for (const auto previous_polyhedron: previous_intersections)
-	      {
-		for (const auto previous_simplex: previous_polyhedron.second)
-		  std::cout << tools::drawtriangle(previous_simplex);
-		std::cout << '\n';
-	      }
-	      std::cout << "keys were: ";
-	      for (const auto previous_polyhedron: previous_intersections)
-		for (const auto k: previous_polyhedron.first)
-		  std::cout << k << ' ';
-	      std::cout << std::endl;
-#endif
-
-
-	      // Structure for storing new intersections
-	      std::vector<std::pair<std::vector<std::size_t>, Polyhedron> > new_intersections;
-
-	      // Loop over all intersections from the previous stage
-	      for (const auto previous_polyhedron: previous_intersections)
-	      {
-		// Loop over all initial polyhedra (cells)
-		for (const auto initial_cell: initial_cells)
+		quadrature_rule stage_qr;
+		if (stage == 1) std::cout << '\n';
+		std::cout << "\nstage " << stage << std::endl;
+		// even more debugging
+		std::cout << "checkout what we have in previous intersections\n";
+		for (const auto previous_polyhedron: previous_intersections)
 		{
-
-#ifdef Augustdebug
-		  std::cout << "initial keys: ";
-		  for (const auto k: initial_cells)
-		    std::cout << k.first << ' ';
-		  std::cout << "previous pol keys: ";
-		  for (const auto k: previous_polyhedron.first)
+		  for (const auto previous_simplex: previous_polyhedron)
+		    std::cout << tools::drawtriangle(previous_simplex);
+		  std::cout << '\n';
+		}
+		std::cout << "previous intersections keys were: ";
+		for (const auto kk: previous_intersections_keys)
+		  for (const auto k: kk)
 		    std::cout << k << ' ';
-		  std::cout << std::endl;
+		std::cout << std::endl;
 #endif
+		// Structure for storing new intersections
+		//std::vector<std::pair<std::vector<std::size_t>, Polyhedron> > new_intersections;
+		std::vector<std::vector<std::size_t>> new_intersections_keys;
+		std::vector<Polyhedron> new_intersections;
 
-		  if (initial_cell.first < previous_polyhedron.first[0])
+		// Loop over all intersections from the previous stage
+		//for (const auto previous_polyhedron: previous_intersections)
+		for (std::size_t j = 0; j < previous_intersections.size(); ++j)
+		{
+		  // Loop over all initial polyhedra (cells)
+		  for (const auto initial_cell: initial_cells)
 		  {
 #ifdef Augustdebug
-		    std::cout << "check collision keys " << initial_cell.first << " and " << previous_polyhedron.first[0]<< std::endl;
+		    std::cout << "initial cell key (only one): " << initial_cell.first << '\n'
+			      << "previous pol keys: ";
+		    for (const auto kk: previous_intersections_keys)
+		      for (const auto k: kk)
+			std::cout << k << ' ';
+		    std::cout << std::endl;
 #endif
-		    Polyhedron new_polyhedron;
-		    std::vector<std::size_t> new_keys;
-		    bool any_intersections = false;
-
-		    for (const auto previous_simplex: previous_polyhedron.second)
+		    if (initial_cell.first < previous_intersections_keys[j][0])
 		    {
-		      // Compute the intersection
-		      const std::vector<double> x = convert(previous_simplex, tdim, gdim);
-		      const std::vector<double> ii =
-			IntersectionTriangulation::triangulate_intersection(initial_cell.second, x, tdim);
-		      if (ii.size())
+#ifdef Augustdebug
+		      std::cout << "check collision cell-key " << initial_cell.first << " and prev inters " << previous_intersections_keys[j][0] << std::endl;
+#endif
+		      Polyhedron new_polyhedron;
+		      std::vector<std::size_t> new_polyhedron_keys;
+		      bool any_intersections = false;
+
+		      //for (const auto previous_simplex: previous_polyhedron.second)
+		      //for (std::size_t k = 0; k < previous_polyhedron.second.size(); ++k)
+		      for (std::size_t k = 0; k < previous_intersections[j].size(); ++k)
 		      {
-			std::vector<Simplex> pii = convert(ii, tdim, gdim);
-			for (const auto simplex: pii)
+			// Compute the intersection
+			//const std::vector<double> x = convert(previous_simplex, tdim, gdim);
+			//const std::vector<double> x = convert(previous_polyhedron.second[k], tdim, gdim);
+			const std::vector<double> x = convert(previous_intersections[j][k], tdim, gdim);
+			const std::vector<double> ii =
+			  IntersectionTriangulation::triangulate_intersection(initial_cell.second, x, tdim);
+			if (ii.size())
 			{
-			  const double area = tools::area(simplex);
-			  if (std::isfinite(area))
+			  std::vector<Simplex> pii = convert(ii, tdim, gdim);
+			  for (const auto simplex: pii)
 			  {
-			    new_polyhedron.push_back(simplex);
+			    const double area = tools::area(simplex);
+			    if (std::isfinite(area))
+			    {
+			      new_polyhedron.push_back(simplex);
+			      //new_keys.push_back(previous_polyhedron.first[k]);
+			      new_polyhedron_keys.push_back(previous_intersections_keys[j][k]); // here we can get multiple keys
 
-			    // // Test: compute net intersection
-			    // for (const auto new_s: new_polyhedron)
-			    // {
-			    //   const std::vector<double> jj =
-			    // 	IntersectionTriangulation::triangulate_intersection(simplex, tdim,
-			    // 							    new_s, tdim, gdim);
-			    //   std::vector<Simplex> pjj = convert(jj, tdim, gdim);
-			    //   for (const auto s: pjj)
-			    // 	new_polyhedron.push_back(s);
-			    // }
+			      // // Test: compute net intersection
+			      // for (const auto new_s: new_polyhedron)
+			      // {
+			      //   const std::vector<double> jj =
+			      // 	IntersectionTriangulation::triangulate_intersection(simplex, tdim,
+			      // 							    new_s, tdim, gdim);
+			      //   std::vector<Simplex> pjj = convert(jj, tdim, gdim);
+			      //   for (const auto s: pjj)
+			      // 	new_polyhedron.push_back(s);
+			      // }
 
-			    any_intersections = true;
-			  }
-			  else
-			  {
-			    small_elements_cnt++;
+			      any_intersections = true;
+			    }
+			    else
+			    {
+			      small_elements_cnt++;
+			    }
 			  }
 			}
 		      }
-		    }
 
-		    if (any_intersections)
-		    {
-		      //new_keys.push_back(initial_cells.first);
-		      const std::size_t old_key_sz = new_keys.size();
-		      new_keys.insert(new_keys.end(), previous_polyhedron.first.begin(),
-				      previous_polyhedron.first.end());
-
-#ifdef Augustdebug
-		      if (new_keys.size() > old_key_sz)
+		      if (any_intersections)
 		      {
-			std::cout << "old keys: ";
-			for (const auto k: previous_polyhedron.first)
-			  std::cout << k <<' ';
-			std::cout << '\n';
-			std::cout << "new keys: ";
-			for (const auto k: new_keys)
-			  std::cout << k <<' ';
-			std::cout << std::endl;
+			// //new_keys.push_back(initial_cells.first);
+			// const std::size_t old_key_sz = new_keys.size();
+			// new_keys.insert(new_keys.end(), previous_polyhedron.first.begin(),
+			// 		      previous_polyhedron.first.end());
+
+// #ifdef Augustdebug
+// 			//if (new_keys.size() > old_key_sz)
+// 			{
+// 			  std::cout << "old intersection_keys: ";
+// 			  for (const auto kk: previous_intersections_keys)
+// 			    for (const auto k: kk)
+// 			      std::cout << k <<' ';
+// 			  std::cout << '\n';
+// 			  std::cout << "new keys: ";
+// 			  for (const auto k: new_keys)
+// 			    std::cout << k <<' ';
+// 			  std::cout << std::endl;
+// 			}
+// #endif
+			// Save data
+			//new_intersections.push_back(std::make_pair(new_keys, new_polyhedron));
+			new_intersections.push_back(new_polyhedron);
+			new_intersections_keys.push_back(new_polyhedron_keys);
 		      }
-#endif
-
-		      // // Test: before saving, compute net intersection of the new_polyhedron?
-		      // Polyhedron net_polyhedron;
-		      // for (const auto s: new_polyhedron)
-
-		      // Save data
-		      new_intersections.push_back(std::make_pair(new_keys, new_polyhedron));
 		    }
 		  }
 		}
-	      }
 
-	      // Update before next stage
-	      previous_intersections = new_intersections;
+		// Update before next stage
+		previous_intersections = new_intersections;
 
-	      // Add quadrature rule with correct sign
-	      const double sign = std::pow(-1, stage+1); // stage 0 has neg sign (above), stage 1 positive etc.
-	      //quadrature_rule qr;
+		// Add quadrature rule with correct sign
+		const double sign = std::pow(-1, stage+1); // stage 0 has neg sign (above), stage 1 positive etc.
+		//quadrature_rule qr;
 
-	      for (const auto polyhedron: new_intersections)
-		for (const auto simplex: polyhedron.second)
-		  for (const auto interface_polyhedron: cut_cutting_interface)
-		    for (const auto interface_simplex: interface_polyhedron)
-		    {
-		      // Check intersection with edge from cut_cutting_interface
-		      const std::vector<double> ii = IntersectionTriangulation::triangulate_intersection(simplex, tdim, interface_simplex, tdim-1, gdim);
-		      if (ii.size())
+		for (const auto polyhedron: new_intersections)
+		  //for (const auto simplex: polyhedron.second)
+		  for (const auto simplex: polyhedron)
+		    for (const auto interface_polyhedron: cut_cutting_interface)
+		      for (const auto interface_simplex: interface_polyhedron)
 		      {
+			// Check intersection with edge from cut_cutting_interface
+			const std::vector<double> ii
+			  = IntersectionTriangulation::triangulate_intersection(simplex, tdim,
+										interface_simplex, tdim-1, gdim);
+			if (ii.size())
+			{
 #ifdef Augustdebug
-			std::cout << "# deep inside inc exc\n";
+			  std::cout << "# deep inside inc exc\n";
 #endif
-			_add_quadrature_rule(cut_cutting_interface_qr, ii, tdim-1, gdim, quadrature_order, sign);
+			  _add_quadrature_rule(cut_cutting_interface_qr, ii, tdim-1, gdim, quadrature_order, sign);
 #ifdef Augustdebug
-			_add_quadrature_rule(stage_qr, ii, tdim-1, gdim, quadrature_order, sign);
-			std::cout << "the collision was:\n"
-				  << tools::drawtriangle(simplex)<<tools::drawtriangle(interface_simplex)<<std::endl;
-			PPause;
+			  _add_quadrature_rule(stage_qr, ii, tdim-1, gdim, quadrature_order, sign);
+			  std::cout << "the collision was:\n"
+				    << tools::drawtriangle(simplex)<<tools::drawtriangle(interface_simplex)<<std::endl;
+			  PPause;
 #endif
+			}
 		      }
-		    }
 
-	      // summary stage
+		// summary stage
 #ifdef Augustdebug
-	      std::cout << "summary stage " << stage << ":\n";
-	      for (const auto polyhedron: new_intersections)
-		for (const auto simplex: polyhedron.second)
-		  std::cout << tools::drawtriangle(simplex);
-	      std::cout << "\nkeys: ";
-	      for (const auto polyhedron: new_intersections)
-		for (const auto k: polyhedron.first)
-		  std::cout << k << ' ';
-	      std::cout << "\nqr points = " << stage_qr.second.size() << '\n';
-	      for (std::size_t i = 0; i < stage_qr.second.size(); ++i)
-		std::cout << "plot("<<stage_qr.first[2*i]<<","<<stage_qr.first[2*i+1]<<",'ks') # "<<stage_qr.second[i]<<std::endl;
+		std::cout << "summary stage " << stage << ":\n";
+		for (const auto polyhedron: new_intersections)
+		  //for (const auto simplex: polyhedron.second)
+		  for (const auto simplex: polyhedron)
+		    std::cout << tools::drawtriangle(simplex);
+		std::cout << "\nkeys: ";
+		for (const auto kk: new_intersections_keys)
+		  for (const auto k: kk)
+		    std::cout << k << ' ';
+		std::cout << "\nqr points = " << stage_qr.second.size() << '\n';
+		for (std::size_t i = 0; i < stage_qr.second.size(); ++i)
+		  std::cout << "plot("<<stage_qr.first[2*i]<<","<<stage_qr.first[2*i+1]<<",'ks') # "<<stage_qr.second[i]<<std::endl;
 #endif
+	      } // end stage
 	    }
-
-
 	  }
 	}
 	interface_qr.push_back(cut_cutting_interface_qr);
