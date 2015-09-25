@@ -114,35 +114,77 @@ void XDMFFile::get_point_data_values(std::vector<double>& data_values,
 
     dolfin_assert(u.function_space()->dofmap());
     const GenericDofMap& dofmap = *u.function_space()->dofmap();
-    // Should be same number of components on vertices as edges for P2
-    dolfin_assert(dofmap.num_entity_dofs(0) == dofmap.num_entity_dofs(1));
 
-    // Go over all cells inserting values
-    // FIXME: a lot of duplication here
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    // Function can be P1 or P2
+    if (dofmap.num_entity_dofs(1) == 0)
     {
-      const ArrayView<const dolfin::la_index> dofs
-        = dofmap.cell_dofs(cell->index());
-      std::size_t c = 0;
-      for (std::size_t i = 0; i != value_size; ++i)
+      // P1
+
+      for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
-        for (VertexIterator v(*cell); !v.end(); ++v)
+        const ArrayView<const dolfin::la_index> dofs
+          = dofmap.cell_dofs(cell->index());
+        std::size_t c = 0;
+        for (std::size_t i = 0; i != value_size; ++i)
         {
-          const std::size_t v0 = v->index()*width;
-          data_dofs[v0 + i] = dofs[c];
-          ++c;
-        }
-        for (EdgeIterator e(*cell); !e.end(); ++e)
-        {
-          const std::size_t e0 = (e->index() + mesh.size(0))*width;
-          data_dofs[e0 + i] = dofs[c];
-          ++c;
+          for (VertexIterator v(*cell); !v.end(); ++v)
+          {
+            const std::size_t v0 = v->index()*width;
+            data_dofs[v0 + i] = dofs[c];
+            ++c;
+          }
         }
       }
+      // Get the values at the vertex points
+      const GenericVector& uvec = *u.vector();
+      uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
+
+      // Get midpoint values for Edge points
+      for (EdgeIterator e(mesh); !e.end(); ++e)
+      {
+        const std::size_t v0 = e->entities(0)[0];
+        const std::size_t v1 = e->entities(0)[1];
+        const std::size_t e0 = (e->index() + mesh.size(0))*width;
+        for (std::size_t i = 0; i != value_size; ++i)
+          data_values[e0 + i] = (data_values[v0 + i] + data_values[v1 + i])/2.0;
+      }
+    }
+    else if (dofmap.num_entity_dofs(0) == dofmap.num_entity_dofs(1))
+    {
+      // P2
+      // Go over all cells inserting values
+      // FIXME: a lot of duplication here
+      for (CellIterator cell(mesh); !cell.end(); ++cell)
+      {
+        const ArrayView<const dolfin::la_index> dofs
+          = dofmap.cell_dofs(cell->index());
+        std::size_t c = 0;
+        for (std::size_t i = 0; i != value_size; ++i)
+        {
+          for (VertexIterator v(*cell); !v.end(); ++v)
+          {
+            const std::size_t v0 = v->index()*width;
+            data_dofs[v0 + i] = dofs[c];
+            ++c;
+          }
+          for (EdgeIterator e(*cell); !e.end(); ++e)
+          {
+            const std::size_t e0 = (e->index() + mesh.size(0))*width;
+            data_dofs[e0 + i] = dofs[c];
+            ++c;
+          }
+        }
+      }
+      const GenericVector& uvec = *u.vector();
+      uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
+    }
+    else
+    {
+      dolfin_error("XDMFFile.cpp",
+       "get point values for Function",
+       "Function appears not to be defined on a P1 or P2 type FunctionSpace");
     }
 
-    const GenericVector& uvec = *u.vector();
-    uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
     // Blank out empty values of 2D vector and tensor
     if (value_rank == 1 and value_size == 2)
       for (std::size_t i = 0; i < data_values.size(); i += 3)
@@ -231,11 +273,6 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     cell_based_dim *= tdim;
   const bool vertex_data = !(dofmap.max_element_dofs() == cell_based_dim);
 
-  // Get number of local/global cells/vertices
-  const std::size_t num_local_cells = mesh.topology().ghost_offset(tdim);
-  //  const std::size_t num_local_vertices = mesh.num_vertices();
-  const std::size_t num_global_cells = mesh.size_global(tdim);
-
   // Get Function data at vertices/cell centres
   std::vector<double> data_values;
 
@@ -249,6 +286,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     dolfin_assert(u.vector());
 
     // Allocate memory for function values at cell centres
+    const std::size_t num_local_cells = mesh.topology().ghost_offset(tdim);
     const std::size_t size = num_local_cells*value_size;
 
     // Build lists of dofs and create map
@@ -328,23 +366,28 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   const bool mpi_io = MPI::size(mesh.mpi_comm()) > 1 ? true : false;
   std::vector<std::size_t> global_size(2);
-  std::size_t num_global_points = mesh.size_global(0);
   global_size[1] = padded_value_size;
-  if (degree == 2)
+
+  std::size_t num_global_points = mesh.size_global(0);
+  const std::size_t num_global_cells = mesh.size_global(tdim);
+  if (vertex_data)
   {
-    dolfin_assert(!mpi_io);
-    global_size[0] = mesh.size(0) + mesh.size(1);
-    num_global_points = global_size[0];
-  }
-  else if (vertex_data)
-  {
-    // Remove duplicates for vertex-based data
-    DistributedMeshTools::reorder_values_by_global_indices(mesh, data_values,
-                                                           padded_value_size);
-    global_size[0] = mesh.size_global(0);
+    if (degree == 2)
+    {
+      dolfin_assert(!mpi_io);
+      num_global_points = mesh.size(0) + mesh.size(1);
+      global_size[0] = num_global_points;
+    }
+    else
+    {
+      // Remove duplicates for vertex-based data in parallel
+      DistributedMeshTools::reorder_values_by_global_indices(mesh, data_values,
+                                                             padded_value_size);
+      global_size[0] = num_global_points;
+    }
   }
   else
-    global_size[0] = mesh.size_global(tdim);
+    global_size[0] = num_global_cells;
 
   // Save data values to HDF5 file.  Vertex/cell values are saved in
   // the hdf5 group /VisualisationVector as distinct from /Vector

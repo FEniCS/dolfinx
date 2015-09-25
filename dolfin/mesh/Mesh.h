@@ -612,20 +612,6 @@ namespace dolfin
     ///         No example code available for this function.
     std::string str(bool verbose) const;
 
-    /// Return coordinate dofs for a given cell for higher order mesh representations
-    ///
-    /// *Arguments*
-    ///     dofs (vector<double>&)
-    ///         Returned dofs in ufc ordering
-    ///     cell_index (std::size_t)
-    ///         Index of cell
-    ///
-    /// *Example*
-    ///     .. note::
-    ///
-    ///         No example code available for this function.
-    void coordinate_dofs(std::vector<double>& dofs, std::size_t cell_index) const;
-
     /// Return cell_orientations (const version)
     ///
     /// *Returns*

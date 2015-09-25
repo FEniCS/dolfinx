@@ -448,12 +448,6 @@ std::string Mesh::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void Mesh::coordinate_dofs(std::vector<double>& dofs, std::size_t index) const
-{
-  const Cell cell(*this, index);
-  cell.get_coordinate_dofs(dofs);
-}
-//-----------------------------------------------------------------------------
 const std::vector<int>& Mesh::cell_orientations() const
 {
   return _cell_orientations;
