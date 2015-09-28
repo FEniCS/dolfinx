@@ -53,15 +53,24 @@ LocalAssembler::assemble(Eigen::MatrixXd& A,
   for (FacetIterator facet(cell); !facet.end(); ++facet)
   {
     ufc_cell.local_facet = facet.pos();
-    if (facet->num_entities(cell.dim()) == 2)
+    int Ncells = facet->num_entities(cell.dim());
+    if (Ncells == 2)
     {
       assemble_interior_facet(A, ufc, coordinate_dofs, ufc_cell, cell,
                               *facet, facet.pos(), interior_facet_domains);
     }
-    else
+    else if (Ncells == 1)
     {
       assemble_exterior_facet(A, ufc, coordinate_dofs, ufc_cell, cell,
                               *facet, facet.pos(), exterior_facet_domains);
+    }
+    else
+    {
+      dolfin_error("LocalAssembler.cpp",
+                   "assemble local problem",
+                   "Cell <-> facet connectivity not initialized, found "
+                   "facet with %d connected cells. Expected 1 or 2 cells",
+                   Ncells);
     }
   }
 
