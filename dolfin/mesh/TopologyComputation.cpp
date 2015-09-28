@@ -236,17 +236,18 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
   else
   {
     // These connections should already exist
-    dolfin_assert(!(d0 > 0 && d1 == 0));
+    //    dolfin_assert(!(d0 > 0 && d1 == 0));
 
     // Choose how to take intersection
-    dolfin_assert(d0 != 0);
-    dolfin_assert(d1 != 0);
-    std::size_t d = 0;
+    //    dolfin_assert(d0 != 0);
+    //    dolfin_assert(d1 != 0);
+    //    std::size_t d = 0;
 
     // Compute connectivity d0 - d - d1 and take intersection
-    compute_connectivity(mesh, d0, d);
-    compute_connectivity(mesh, d, d1);
-    compute_from_intersection(mesh, d0, d1, d);
+    //    compute_connectivity(mesh, d0, d);
+    //    compute_connectivity(mesh, d, d1);
+    //    compute_from_intersection(mesh, d0, d1, d);
+    compute_from_map(mesh, d0, d1);
   }
 }
 //--------------------------------------------------------------------------
@@ -292,6 +293,48 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
       connectivity.set(e0->index(), e1->index(), tmp[e0->index()]++);
 }
 //----------------------------------------------------------------------------
+void TopologyComputation::compute_from_map(Mesh& mesh,
+                                           std::size_t d0,
+                                           std::size_t d1)
+{
+  dolfin_assert(d1 > 0);
+  dolfin_assert(d0 > d1);
+
+  std::unique_ptr<CellType> cell_type(CellType::create(mesh.type()
+                                                       .entity_type(d0)));
+
+  MeshConnectivity& connectivity = mesh.topology()(d0, d1);
+  connectivity.init(mesh.size(d0), cell_type->num_entities(d1));
+
+  std::map<std::vector<unsigned int>, unsigned int> entity_to_index;
+
+  const std::size_t nvd1 = mesh.type().num_vertices(d1);
+  std::vector<unsigned int> key(nvd1);
+  for (MeshEntityIterator e(mesh, d1, "all"); !e.end(); ++e)
+  {
+    std::partial_sort_copy(e->entities(0), e->entities(0) + nvd1,
+                           key.begin(), key.begin() + nvd1);
+    entity_to_index.insert(std::make_pair(key, e->index()));
+  }
+
+  std::vector<std::size_t> entities;
+  boost::multi_array<unsigned int, 2> keys;
+  for (MeshEntityIterator e(mesh, d0, "all"); !e.end(); ++e)
+  {
+    entities.clear();
+    cell_type->create_entities(keys, d1, e->entities(0));
+    for (const auto &p : keys)
+    {
+      std::partial_sort_copy(p.begin(), p.end(), key.begin(), key.end());
+      const auto it = entity_to_index.find(key);
+      dolfin_assert(it != entity_to_index.end());
+      entities.push_back(it->second);
+    }
+    connectivity.set(e->index(), entities.data());
+  }
+
+}
+//-----------------------------------------------------------------------------
 void TopologyComputation::compute_from_intersection(Mesh& mesh,
                                                     std::size_t d0,
                                                     std::size_t d1,
