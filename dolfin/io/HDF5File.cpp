@@ -265,7 +265,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
   CellType::Type cell_type = mesh.type().entity_type(cell_dim);
   std::unique_ptr<CellType> celltype(CellType::create(cell_type));
   std::size_t num_cell_points = 0;
-  for (std::size_t i = 0; i <= tdim; ++i)
+  for (std::size_t i = 0; i <= cell_dim; ++i)
     num_cell_points +=
       mesh.geometry().num_entity_coordinates(i)*celltype->num_entities(i);
 
