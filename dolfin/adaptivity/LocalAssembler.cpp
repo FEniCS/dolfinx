@@ -50,27 +50,31 @@ LocalAssembler::assemble(Eigen::MatrixXd& A,
   assemble_cell(A, ufc, coordinate_dofs, ufc_cell, cell, cell_domains);
 
   // Assemble contributions from facet integrals
-  for (FacetIterator facet(cell); !facet.end(); ++facet)
+  if (ufc.form.has_exterior_facet_integrals() ||
+      ufc.form.has_interior_facet_integrals())
   {
-    ufc_cell.local_facet = facet.pos();
-    int Ncells = facet->num_entities(cell.dim());
-    if (Ncells == 2)
+    for (FacetIterator facet(cell); !facet.end(); ++facet)
     {
-      assemble_interior_facet(A, ufc, coordinate_dofs, ufc_cell, cell,
-                              *facet, facet.pos(), interior_facet_domains);
-    }
-    else if (Ncells == 1)
-    {
-      assemble_exterior_facet(A, ufc, coordinate_dofs, ufc_cell, cell,
-                              *facet, facet.pos(), exterior_facet_domains);
-    }
-    else
-    {
-      dolfin_error("LocalAssembler.cpp",
-                   "assemble local problem",
-                   "Cell <-> facet connectivity not initialized, found "
-                   "facet with %d connected cells. Expected 1 or 2 cells",
-                   Ncells);
+      ufc_cell.local_facet = facet.pos();
+      int Ncells = facet->num_entities(cell.dim());
+      if (Ncells == 2)
+      {
+        assemble_interior_facet(A, ufc, coordinate_dofs, ufc_cell, cell,
+                                *facet, facet.pos(), interior_facet_domains);
+      }
+      else if (Ncells == 1)
+      {
+        assemble_exterior_facet(A, ufc, coordinate_dofs, ufc_cell, cell,
+                                *facet, facet.pos(), exterior_facet_domains);
+      }
+      else
+      {
+        dolfin_error("LocalAssembler.cpp",
+                     "assemble local problem",
+                     "Cell <-> facet connectivity not initialized, found "
+                     "facet with %d connected cells. Expected 1 or 2 cells",
+                     Ncells);
+      }
     }
   }
 
