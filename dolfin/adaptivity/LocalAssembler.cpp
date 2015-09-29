@@ -30,17 +30,17 @@
 
 using namespace dolfin;
 
-//------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void
 LocalAssembler::assemble(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                                        Eigen::RowMajor>& A,
-                         UFC& ufc,
-                         const std::vector<double>& coordinate_dofs,
-                         ufc::cell& ufc_cell,
-                         const Cell& cell,
-                         const MeshFunction<std::size_t>* cell_domains,
-                         const MeshFunction<std::size_t>* exterior_facet_domains,
-                         const MeshFunction<std::size_t>* interior_facet_domains)
+                   UFC& ufc,
+                   const std::vector<double>& coordinate_dofs,
+                   ufc::cell& ufc_cell,
+                   const Cell& cell,
+                   const MeshFunction<std::size_t>* cell_domains,
+                   const MeshFunction<std::size_t>* exterior_facet_domains,
+                   const MeshFunction<std::size_t>* interior_facet_domains)
 {
   // Clear tensor
   A.setZero();
@@ -57,7 +57,7 @@ LocalAssembler::assemble(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
     for (FacetIterator facet(cell); !facet.end(); ++facet)
     {
       ufc_cell.local_facet = facet.pos();
-      int Ncells = facet->num_entities(cell.dim());
+      const int Ncells = facet->num_entities(cell.dim());
       if (Ncells == 2)
       {
         assemble_interior_facet(A, ufc, coordinate_dofs, ufc_cell, cell,
@@ -88,14 +88,16 @@ LocalAssembler::assemble(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                  "supported by LocalAssembler");
   }
 }
-//------------------------------------------------------------------------------
-void LocalAssembler::assemble_cell(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                                 Eigen::RowMajor>& A,
-                                   UFC& ufc,
-                                   const std::vector<double>& coordinate_dofs,
-                                   const ufc::cell& ufc_cell,
-                                   const Cell& cell,
-                                   const MeshFunction<std::size_t>* domains)
+//-----------------------------------------------------------------------------
+void
+LocalAssembler::assemble_cell(Eigen::Matrix<double, Eigen::Dynamic,
+                                            Eigen::Dynamic,
+                                            Eigen::RowMajor>& A,
+                              UFC& ufc,
+                              const std::vector<double>& coordinate_dofs,
+                              const ufc::cell& ufc_cell,
+                              const Cell& cell,
+                              const MeshFunction<std::size_t>* domains)
 {
   // Skip if there are no cell integrals
   if (!ufc.form.has_cell_integrals())
@@ -121,9 +123,12 @@ void LocalAssembler::assemble_cell(Eigen::Matrix<double, Eigen::Dynamic, Eigen::
                             coordinate_dofs.data(),
                             ufc_cell.orientation);
 }
-//------------------------------------------------------------------------------
-void LocalAssembler::assemble_exterior_facet(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                                           Eigen::RowMajor>& A,
+//-----------------------------------------------------------------------------
+void
+LocalAssembler::assemble_exterior_facet(Eigen::Matrix<double,
+                                                      Eigen::Dynamic,
+                                                      Eigen::Dynamic,
+                                                      Eigen::RowMajor>& A,
                                   UFC& ufc,
                                   const std::vector<double>& coordinate_dofs,
                                   const ufc::cell& ufc_cell,
@@ -159,9 +164,11 @@ void LocalAssembler::assemble_exterior_facet(Eigen::Matrix<double, Eigen::Dynami
                             local_facet,
                             ufc_cell.orientation);
 }
-//------------------------------------------------------------------------------
-void LocalAssembler::assemble_interior_facet(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                                           Eigen::RowMajor>& A,
+//-----------------------------------------------------------------------------
+void
+LocalAssembler::assemble_interior_facet(Eigen::Matrix<double, Eigen::Dynamic,
+                                                      Eigen::Dynamic,
+                                                      Eigen::RowMajor>& A,
                                   UFC& ufc,
                                   const std::vector<double>& coordinate_dofs,
                                   const ufc::cell& ufc_cell,
@@ -214,4 +221,4 @@ void LocalAssembler::assemble_interior_facet(Eigen::Matrix<double, Eigen::Dynami
         A(i, j) += ufc.macro_A[2*N*i + j];
   }
 }
-//------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------

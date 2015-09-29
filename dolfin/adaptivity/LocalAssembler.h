@@ -58,7 +58,8 @@ namespace dolfin
                const MeshFunction<std::size_t>* interior_facet_domains);
 
     ///
-    static void assemble_cell(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+    static void assemble_cell(Eigen::Matrix<double, Eigen::Dynamic,
+                                            Eigen::Dynamic,
                                             Eigen::RowMajor>& A,
                               UFC& ufc,
                               const std::vector<double>& coordinate_dofs,
@@ -68,7 +69,8 @@ namespace dolfin
 
     ///
     static void
-      assemble_exterior_facet(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+      assemble_exterior_facet(Eigen::Matrix<double, Eigen::Dynamic,
+                                            Eigen::Dynamic,
                                             Eigen::RowMajor>& A,
                               UFC& ufc,
                               const std::vector<double>& coordinate_dofs,
@@ -80,7 +82,8 @@ namespace dolfin
 
     ///
     static void
-      assemble_interior_facet(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+      assemble_interior_facet(Eigen::Matrix<double, Eigen::Dynamic,
+                                            Eigen::Dynamic,
                                             Eigen::RowMajor>& A,
                               UFC& ufc,
                               const std::vector<double>& coordinate_dofs,
