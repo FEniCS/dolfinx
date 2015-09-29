@@ -91,7 +91,8 @@ namespace dolfin
                               const Cell& cell,
                               const Facet& facet,
                               const std::size_t local_facet,
-                              const MeshFunction<std::size_t>* domains);
+                              const MeshFunction<std::size_t>* domains,
+                              const MeshFunction<std::size_t>* cell_domains);
   };
 
 }

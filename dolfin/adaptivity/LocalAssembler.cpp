@@ -23,7 +23,12 @@
 #include <dolfin/common/types.h>
 #include <Eigen/Dense>
 
+#include <dolfin/common/Array.h>
+#include <dolfin/fem/Form.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/UFC.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/la/GenericTensor.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include "LocalAssembler.h"
@@ -61,7 +66,8 @@ LocalAssembler::assemble(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
       if (Ncells == 2)
       {
         assemble_interior_facet(A, ufc, coordinate_dofs, ufc_cell, cell,
-                                *facet, facet.pos(), interior_facet_domains);
+                                *facet, facet.pos(), interior_facet_domains,
+                                cell_domains);
       }
       else if (Ncells == 1)
       {
@@ -175,7 +181,8 @@ LocalAssembler::assemble_interior_facet(Eigen::Matrix<double, Eigen::Dynamic,
                                   const Cell& cell,
                                   const Facet& facet,
                                   const std::size_t local_facet,
-                                  const MeshFunction<std::size_t>* domains)
+                                  const MeshFunction<std::size_t>* domains,
+                                  const MeshFunction<std::size_t>* cell_domains)
 {
   // Skip if there are no interior facet integrals
   if (!ufc.form.has_interior_facet_integrals())
@@ -193,32 +200,90 @@ LocalAssembler::assemble_interior_facet(Eigen::Matrix<double, Eigen::Dynamic,
   if (!integral)
     return;
 
+  // Extract mesh
+  const Mesh& mesh = cell.mesh();
+  const std::size_t D = mesh.topology().dim();
+
+  // Get cells incident with facet (which is 0 and 1 here is arbitrary)  
+  dolfin_assert(facet.num_entities(D) == 2);
+  std::size_t cell_index_plus = facet.entities(D)[0];
+  std::size_t cell_index_minus = facet.entities(D)[1];
+  bool local_is_plus = cell_index_plus == cell.index();
+
+  // The convention '+' = 0, '-' = 1 is from ffc
+  const Cell cell0(mesh, cell_index_plus);
+  const Cell cell1(mesh, cell_index_minus);
+
+  // Is this facet on a domain boundary?
+  if (cell_domains && !cell_domains->empty() &&
+      (*cell_domains)[cell_index_plus] < (*cell_domains)[cell_index_minus])
+  {
+    std::swap(cell_index_plus, cell_index_minus);
+  }
+
+  // Get information about the adjacent cell
+  const Cell& cell_adj = local_is_plus ? cell1 : cell0;
+  std::vector<double> coordinate_dofs_adj;
+  ufc::cell ufc_cell_adj;
+  std::size_t local_facet_adj = cell_adj.index(facet);
+  cell_adj.get_coordinate_dofs(coordinate_dofs_adj);
+  cell_adj.get_cell_data(ufc_cell_adj);
+
+  // Get information about plus and minus cells
+  const std::vector<double>* coordinate_dofs0 = nullptr;
+  const std::vector<double>* coordinate_dofs1 = nullptr;
+  const ufc::cell* ufc_cell0 = nullptr;
+  const ufc::cell* ufc_cell1 = nullptr;
+  std::size_t local_facet0, local_facet1;
+  if (local_is_plus)
+  {
+    coordinate_dofs0 = &coordinate_dofs;
+    coordinate_dofs1 = &coordinate_dofs_adj;
+    ufc_cell0 = &ufc_cell;
+    ufc_cell1 = &ufc_cell_adj;
+    local_facet0 = local_facet;
+    local_facet1 = local_facet_adj;
+  }
+  else
+  {
+    coordinate_dofs1 = &coordinate_dofs;
+    coordinate_dofs0 = &coordinate_dofs_adj;
+    ufc_cell1 = &ufc_cell;
+    ufc_cell0 = &ufc_cell_adj;
+    local_facet1 = local_facet;
+    local_facet0 = local_facet_adj;
+  }
+
   // Update to current pair of cells and facets
-  ufc.update(cell, coordinate_dofs, ufc_cell,
-             cell, coordinate_dofs, ufc_cell,
+  ufc.update(cell0, *coordinate_dofs0, *ufc_cell0,
+             cell1, *coordinate_dofs1, *ufc_cell1,
              integral->enabled_coefficients());
 
   // Tabulate interior facet tensor on macro element
   integral->tabulate_tensor(ufc.macro_A.data(), ufc.macro_w(),
-                            coordinate_dofs.data(),
-                            coordinate_dofs.data(),
-                            local_facet, local_facet,
-                            ufc_cell.orientation,
-                            ufc_cell.orientation);
+                            coordinate_dofs0->data(),
+                            coordinate_dofs1->data(),
+                            local_facet0, local_facet1,
+                            ufc_cell0->orientation,
+                            ufc_cell1->orientation);
 
-  // Stuff upper left quadrant (corresponding to this cell) into A
+  // Stuff upper left quadrant (corresponding to cell_plus) or
+  // lower left quadrant (corresponding to cell_minus) into A
+  // depending on which cell is the local cell
   const std::size_t M = A.rows();
   const std::size_t N = A.cols();
+  const std::size_t offset_N = local_is_plus ? 0 : N;
+  const std::size_t offset_M = local_is_plus ? 0 : M;
   if (N == 1)
   {
     for (std::size_t i = 0; i < M; i++)
-      A(i, 0) += ufc.macro_A[i];
+      A(i, 0) += ufc.macro_A[i + offset_M];
   }
   else
   {
     for (std::size_t i = 0; i < M; i++)
       for (std::size_t j = 0; j < N; j++)
-        A(i, j) += ufc.macro_A[2*N*i + j];
+        A(i, j) += ufc.macro_A[2*N*(i + offset_M) + j + offset_N];
   }
 }
 //-----------------------------------------------------------------------------
