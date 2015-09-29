@@ -300,23 +300,28 @@ void TopologyComputation::compute_from_map(Mesh& mesh,
   dolfin_assert(d1 > 0);
   dolfin_assert(d0 > d1);
 
+  // Get the type of entity d0
   std::unique_ptr<CellType> cell_type(CellType::create(mesh.type()
                                                        .entity_type(d0)));
 
   MeshConnectivity& connectivity = mesh.topology()(d0, d1);
   connectivity.init(mesh.size(d0), cell_type->num_entities(d1));
 
-  std::map<std::vector<unsigned int>, unsigned int> entity_to_index;
+  // Make a map from the sorted d1 entity vertices to the d1 entity index
+  boost::unordered_map<std::vector<unsigned int>, unsigned int>
+    entity_to_index;
+  entity_to_index.reserve(mesh.size(d1));
 
-  const std::size_t nvd1 = mesh.type().num_vertices(d1);
-  std::vector<unsigned int> key(nvd1);
+  const std::size_t num_verts_d1 = mesh.type().num_vertices(d1);
+  std::vector<unsigned int> key(num_verts_d1);
   for (MeshEntityIterator e(mesh, d1, "all"); !e.end(); ++e)
   {
-    std::partial_sort_copy(e->entities(0), e->entities(0) + nvd1,
-                           key.begin(), key.begin() + nvd1);
+    std::partial_sort_copy(e->entities(0), e->entities(0) + num_verts_d1,
+                           key.begin(), key.end());
     entity_to_index.insert(std::make_pair(key, e->index()));
   }
 
+  // Search for d1 entities of d0 in map, and recover index
   std::vector<std::size_t> entities;
   boost::multi_array<unsigned int, 2> keys;
   for (MeshEntityIterator e(mesh, d0, "all"); !e.end(); ++e)
