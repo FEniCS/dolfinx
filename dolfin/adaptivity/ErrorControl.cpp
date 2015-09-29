@@ -291,7 +291,8 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   // Define matrices for cell-residual problems
   dolfin_assert(V.element());
   const std::size_t N = V.element()->space_dimension();
-  Eigen::MatrixXd A(N, N), b(N, 1);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                Eigen::RowMajor> A(N, N), b(N, 1);
   Eigen::VectorXd x(N);
 
   // Extract cell_domains etc from right-hand side form
@@ -374,7 +375,8 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   const GenericDofMap& dofmap = *V.dofmap();
 
   // Define matrices for facet-residual problems
-  Eigen::MatrixXd A(N, N), b(N, 1);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                Eigen::RowMajor> A(N, N), b(N, 1);
   Eigen::VectorXd x(N);
 
   // Variables to be used for the construction of the cone function

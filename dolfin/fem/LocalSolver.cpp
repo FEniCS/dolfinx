@@ -138,9 +138,13 @@ void LocalSolver::_solve_local(GenericVector& x, const GenericVector* global_b,
     = _a->interior_facet_domains().get();
 
   // Eigen data structures and factorisations for cell data structures
-  Eigen::MatrixXd A_e, b_e, x_e;
-  Eigen::PartialPivLU<Eigen::MatrixXd> lu;
-  Eigen::LLT<Eigen::MatrixXd> cholesky;
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                Eigen::RowMajor> A_e, b_e;
+  Eigen::VectorXd x_e;
+  Eigen::PartialPivLU<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>> lu;
+  Eigen::LLT<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                           Eigen::RowMajor>> cholesky;
   bool use_cache = !(_cholesky_cache.empty() and _lu_cache.empty());
 
   // Loop over cells and solve local problems
@@ -180,7 +184,7 @@ void LocalSolver::_solve_local(GenericVector& x, const GenericVector* global_b,
     cell->get_coordinate_dofs(coordinate_dofs);
 
     // Assemble the linear form
-    x_e.resize(dofs_L.size(), 1);
+    x_e.resize(dofs_L.size());
     b_e.resize(dofs_L.size(), 1);
 
     if (global_b)
@@ -272,7 +276,7 @@ void LocalSolver::factorize()
     = _a->interior_facet_domains().get();
 
   // Local dense matrix
-  Eigen::MatrixXd A_e;
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A_e;
 
   // Loop over cells and solve local problems
   Progress p("Performing local (cell-wise) factorization", mesh.num_cells());

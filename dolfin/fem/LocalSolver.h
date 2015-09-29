@@ -111,11 +111,15 @@ namespace dolfin
     // Solver type to use
     const SolverType _solver_type;
 
-    // Cached LU factorisations of matrices (_solver_type==Cholesky)
-    std::vector<Eigen::PartialPivLU<Eigen::MatrixXd>> _lu_cache;
+    // Cached LU factorisations of matrices (_spd==false)
+    std::vector<Eigen::PartialPivLU<Eigen::Matrix<double, Eigen::Dynamic,
+                                                  Eigen::Dynamic,
+                                                  Eigen::RowMajor> > > _lu_cache;
 
-    // Cached Cholesky factorisations of matrices (_solver_type==LU)
-    std::vector<Eigen::LLT<Eigen::MatrixXd>> _cholesky_cache;
+    // Cached Cholesky factorisations of matrices (_spd==true)
+    std::vector<Eigen::LLT<Eigen::Matrix<double, Eigen::Dynamic,
+                                         Eigen::Dynamic,
+                                         Eigen::RowMajor> > > _cholesky_cache;
 
     // Helper function that does the actual calculations
     void _solve_local(GenericVector& x,

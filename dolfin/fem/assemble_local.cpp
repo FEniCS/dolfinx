@@ -36,7 +36,7 @@ void dolfin::assemble_local(const Form& a,
                             const Cell& cell,
                             std::vector<double>& tensor)
 {
-  Eigen::MatrixXd A_e;
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A_e;
   UFC ufc(a);
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
