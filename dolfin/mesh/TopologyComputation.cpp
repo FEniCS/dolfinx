@@ -187,7 +187,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
   //   1. compute_entities():     d  - 0  from dim - 0
   //   2. compute_transpose():    d0 - d1 from d1 - d0
   //   3. compute_intersection(): d0 - d1 from d0 - d' - d1
-  //
+  //   4. compute_from_map():     d0 - d1 from d1 - 0 and d0 - 0
   // Each of these functions assume a set of preconditions that we
   // need to satisfy.
 
@@ -235,18 +235,8 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
   }
   else
   {
-    // These connections should already exist
-    //    dolfin_assert(!(d0 > 0 && d1 == 0));
-
-    // Choose how to take intersection
-    //    dolfin_assert(d0 != 0);
-    //    dolfin_assert(d1 != 0);
-    //    std::size_t d = 0;
-
-    // Compute connectivity d0 - d - d1 and take intersection
-    //    compute_connectivity(mesh, d0, d);
-    //    compute_connectivity(mesh, d, d1);
-    //    compute_from_intersection(mesh, d0, d1, d);
+    // Compute by mapping vertices from a lower dimension entity
+    // to those of a higher dimension entity
     compute_from_map(mesh, d0, d1);
   }
 }
