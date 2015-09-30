@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2013
+// Modified by Tormod Landet 2015
 //
 // First added:  2011-01-04
-// Last changed: 2015-09-21
+// Last changed: 2015-09-29
 
 #include <dolfin/common/types.h>
 #include <Eigen/Dense>

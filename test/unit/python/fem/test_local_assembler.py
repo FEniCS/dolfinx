@@ -22,32 +22,58 @@
 import numpy
 from dolfin import *
 
+
 def test_local_assembler_1D():
-    mesh = UnitIntervalMesh(2)
+    mesh = UnitIntervalMesh(20)
     V = FunctionSpace(mesh, 'CG', 1)
     u = TrialFunction(V)
     v = TestFunction(V)
     c = Cell(mesh, 0)
-    
+
     a_scalar = Constant(1)*dx(domain=mesh)
     a_vector = v*dx
     a_matrix = u*v*dx
-    
+
     A_scalar = assemble_local(a_scalar, c)
     A_vector = assemble_local(a_vector, c)
     A_matrix = assemble_local(a_matrix, c)
-    
+
     assert isinstance(A_scalar, float) 
-    assert A_scalar == 0.5
-    
+    assert near(A_scalar, 0.05)
+
     assert isinstance(A_vector, numpy.ndarray)
     assert A_vector.shape == (2,)
-    assert near(A_vector[0], 0.25)
-    assert near(A_vector[1], 0.25) 
-    
+    assert near(A_vector[0], 0.025)
+    assert near(A_vector[1], 0.025) 
+
     assert isinstance(A_matrix, numpy.ndarray)
     assert A_matrix.shape == (2,2)
-    assert near(A_matrix[0,0], 1/6.0)
-    assert near(A_matrix[0,1], 1/12.0)
-    assert near(A_matrix[1,0], 1/12.0)
-    assert near(A_matrix[1,1], 1/6.0)
+    assert near(A_matrix[0,0], 1/60.0)
+    assert near(A_matrix[0,1], 1/120.0)
+    assert near(A_matrix[1,0], 1/120.0)
+    assert near(A_matrix[1,1], 1/60.0)
+
+
+def test_local_assembler_on_facet_integrals():
+    mesh = UnitSquareMesh(4, 4, 'right')
+    Vdg = VectorFunctionSpace(mesh, 'CG', 1)
+    Vdgt = FunctionSpace(mesh, 'CG', 1) 
+    
+    v = TestFunction(Vdgt)
+    n = FacetNormal(mesh) 
+    
+    w = Function(Vdg)
+    for cell in cells(mesh):
+        for dof in Vdg.dofmap().cell_dofs(cell.index()):
+            w.vector()[dof] = 1.0 + cell.index() % 5
+    
+    f_ds = dot(w, n)
+    upwind = (dot(w, n) + abs(dot(w, n)))/2
+    f_dS = upwind('+') + upwind('-') 
+    
+    L = f_ds*v*ds + f_dS*v('+')*dS + f_dS*v('-')*dS
+    c = Cell(mesh, 5)
+    b_e = assemble_local(L, c)
+    b_a = numpy.array([0.25, 0.75, 0.25])
+    err = sum((b_e - b_a)**2)
+    assert err < 1e-16

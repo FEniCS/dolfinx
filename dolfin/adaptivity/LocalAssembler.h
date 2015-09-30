@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-01-04
-// Last changed: 2011-01-13
+// Last changed: 2015-09-29
 
 #ifndef __LOCAL_ASSEMBLER_H
 #define __LOCAL_ASSEMBLER_H
