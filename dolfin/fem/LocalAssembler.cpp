@@ -120,7 +120,11 @@ LocalAssembler::assemble_cell(Eigen::Matrix<double, Eigen::Dynamic,
 
   // Skip integral if zero
   if (!integral)
+  {
+    // Clear tensor here instead of in assemble() as a small speedup
+    A.setZero();
     return;
+  }
 
   // Update to current cell
   ufc.update(cell, coordinate_dofs, ufc_cell,
