@@ -29,8 +29,7 @@ from dolfin_utils.test import *
 
 def test_gradient():
     """Test discrete gradient computation (typically used for curl-curl
-    AMG pre conditioners
-    """
+    AMG preconditioners"""
 
     def compute_discrete_gradient(mesh):
         V = FunctionSpace(mesh, "Lagrange", 1)
@@ -42,9 +41,9 @@ def test_gradient():
         assert G.size(1) == mesh.size_global(0)
         assert round(G.norm("frobenius") - sqrt(2.0*num_edges), 8) == 0.0
 
-        meshes = [UnitSquareMesh(11, 6), UnitCubeMesh(4, 3, 7)]
-        for mesh in meshes:
-            compute_discrete_gradient(mesh)
+    meshes = [UnitSquareMesh(11, 6), UnitCubeMesh(4, 3, 7)]
+    for mesh in meshes:
+        compute_discrete_gradient(mesh)
 
 
 def test_incompatible_spaces():
