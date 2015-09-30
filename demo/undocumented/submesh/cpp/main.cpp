@@ -56,7 +56,7 @@ int main()
 
   for (VertexIterator v(structure_mesh); !v.end(); ++v)
   {
-    std::array<double, 2> x = {v->x()[0], v->x()[1]};
+    std::array<double, 2> x = {{v->x()[0], v->x()[1]}};
     x[0] += 0.1*x[0]*x[1];
     geometry.set(v->index(), x.data());
   }
