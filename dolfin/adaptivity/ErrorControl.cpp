@@ -33,6 +33,7 @@
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/Form.h>
+#include <dolfin/fem/LocalAssembler.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/fem/LinearVariationalProblem.h>
 #include <dolfin/fem/LinearVariationalSolver.h>
@@ -47,7 +48,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 
-#include "LocalAssembler.h"
 #include "ErrorControl.h"
 
 using namespace dolfin;

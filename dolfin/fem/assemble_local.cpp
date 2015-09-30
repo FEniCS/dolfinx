@@ -19,7 +19,7 @@
 
 #include <Eigen/Dense>
 
-#include <dolfin/adaptivity/LocalAssembler.h>
+#include <dolfin/fem/LocalAssembler.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericTensor.h>

@@ -23,10 +23,10 @@
 #include <vector>
 #include <Eigen/Dense>
 
-#include <dolfin/adaptivity/LocalAssembler.h>
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
+#include <dolfin/fem/LocalAssembler.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
