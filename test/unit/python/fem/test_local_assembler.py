@@ -67,13 +67,9 @@ def test_local_assembler_on_facet_integrals():
         for dof in Vdg.dofmap().cell_dofs(cell.index()):
             w.vector()[dof] = 1.0 + cell.index() % 5
     
-    f_ds = dot(w, n)
-    upwind = (dot(w, n) + abs(dot(w, n)))/2
-    f_dS = upwind('+') + upwind('-') 
-    
-    L = f_ds*v*ds + f_dS*v('+')*dS + f_dS*v('-')*dS
+    L = dot(w('-'), w('+'))*v('+')*dS
     c = Cell(mesh, 5)
     b_e = assemble_local(L, c)
-    b_a = numpy.array([0.25, 0.75, 0.25])
-    err = sum((b_e - b_a)**2)
-    assert err < 1e-16
+    b_a = numpy.array([0, 19/8., 9/8.])
+    error = sum((b_e - b_a)**2)
+    assert error < 1e-16
