@@ -19,7 +19,7 @@
 // Modified by Tormod Landet 2015
 //
 // First added:  2011-01-04
-// Last changed: 2015-09-29
+// Last changed: 2015-09-30
 
 #include <dolfin/common/types.h>
 #include <Eigen/Dense>
@@ -36,7 +36,7 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void
 LocalAssembler::assemble(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                                        Eigen::RowMajor>& A,
@@ -95,7 +95,7 @@ LocalAssembler::assemble(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                  "supported by LocalAssembler");
   }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void
 LocalAssembler::assemble_cell(Eigen::Matrix<double, Eigen::Dynamic,
                                             Eigen::Dynamic,
@@ -104,7 +104,7 @@ LocalAssembler::assemble_cell(Eigen::Matrix<double, Eigen::Dynamic,
                               const std::vector<double>& coordinate_dofs,
                               const ufc::cell& ufc_cell,
                               const Cell& cell,
-                              const MeshFunction<std::size_t>* domains)
+                              const MeshFunction<std::size_t>* cell_domains)
 {
   // Skip if there are no cell integrals
   if (!ufc.form.has_cell_integrals())
@@ -114,8 +114,8 @@ LocalAssembler::assemble_cell(Eigen::Matrix<double, Eigen::Dynamic,
   ufc::cell_integral* integral = ufc.default_cell_integral.get();
 
   // Get integral for sub domain (if any)
-  if (domains && !domains->empty())
-    integral = ufc.get_cell_integral((*domains)[cell]);
+  if (cell_domains && !cell_domains->empty())
+    integral = ufc.get_cell_integral((*cell_domains)[cell]);
 
   // Skip integral if zero
   if (!integral)
@@ -130,19 +130,19 @@ LocalAssembler::assemble_cell(Eigen::Matrix<double, Eigen::Dynamic,
                             coordinate_dofs.data(),
                             ufc_cell.orientation);
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void
 LocalAssembler::assemble_exterior_facet(Eigen::Matrix<double,
                                                       Eigen::Dynamic,
                                                       Eigen::Dynamic,
                                                       Eigen::RowMajor>& A,
-                                  UFC& ufc,
-                                  const std::vector<double>& coordinate_dofs,
-                                  const ufc::cell& ufc_cell,
-                                  const Cell& cell,
-                                  const Facet& facet,
-                                  const std::size_t local_facet,
-                                  const MeshFunction<std::size_t>* domains)
+                        UFC& ufc,
+                        const std::vector<double>& coordinate_dofs,
+                        const ufc::cell& ufc_cell,
+                        const Cell& cell,
+                        const Facet& facet,
+                        const std::size_t local_facet,
+                        const MeshFunction<std::size_t>* exterior_facet_domains)
 {
   // Skip if there are no exterior facet integrals
   if (!ufc.form.has_exterior_facet_integrals())
@@ -153,8 +153,8 @@ LocalAssembler::assemble_exterior_facet(Eigen::Matrix<double,
     = ufc.default_exterior_facet_integral.get();
 
   // Get integral for sub domain (if any)
-  if (domains && !domains->empty())
-    integral = ufc.get_exterior_facet_integral((*domains)[facet]);
+  if (exterior_facet_domains && !exterior_facet_domains->empty())
+    integral = ufc.get_exterior_facet_integral((*exterior_facet_domains)[facet]);
 
   // Skip integral if zero
   if (!integral)
@@ -171,19 +171,19 @@ LocalAssembler::assemble_exterior_facet(Eigen::Matrix<double,
                             local_facet,
                             ufc_cell.orientation);
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void
 LocalAssembler::assemble_interior_facet(Eigen::Matrix<double, Eigen::Dynamic,
                                                       Eigen::Dynamic,
                                                       Eigen::RowMajor>& A,
-                                  UFC& ufc,
-                                  const std::vector<double>& coordinate_dofs,
-                                  const ufc::cell& ufc_cell,
-                                  const Cell& cell,
-                                  const Facet& facet,
-                                  const std::size_t local_facet,
-                                  const MeshFunction<std::size_t>* domains,
-                                  const MeshFunction<std::size_t>* cell_domains)
+                        UFC& ufc,
+                        const std::vector<double>& coordinate_dofs,
+                        const ufc::cell& ufc_cell,
+                        const Cell& cell,
+                        const Facet& facet,
+                        const std::size_t local_facet,
+                        const MeshFunction<std::size_t>* interior_facet_domains,
+                        const MeshFunction<std::size_t>* cell_domains)
 {
   // Skip if there are no interior facet integrals
   if (!ufc.form.has_interior_facet_integrals())
@@ -194,8 +194,8 @@ LocalAssembler::assemble_interior_facet(Eigen::Matrix<double, Eigen::Dynamic,
     = ufc.default_interior_facet_integral.get();
 
   // Get integral for sub domain (if any)
-  if (domains && !domains->empty())
-    integral = ufc.get_interior_facet_integral((*domains)[facet]);
+  if (interior_facet_domains && !interior_facet_domains->empty())
+    integral = ufc.get_interior_facet_integral((*interior_facet_domains)[facet]);
 
   // Skip integral if zero
   if (!integral)
@@ -287,4 +287,4 @@ LocalAssembler::assemble_interior_facet(Eigen::Matrix<double, Eigen::Dynamic,
         A(i, j) += ufc.macro_A[2*N*(i + offset_M) + j + offset_N];
   }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
