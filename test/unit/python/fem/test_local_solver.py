@@ -119,9 +119,6 @@ def test_solve_local_rhs_facet_integrals():
         a += dot(u(R), n(R))*v(R)*dS
         L += dot(w(R), n(R))*v(R)*dS
 
-    A = assemble(a)
-    b = assemble(L)
-
     u = Function(Vu)
     local_solver = LocalSolver(a, L)
     local_solver.solve_local_rhs(u)

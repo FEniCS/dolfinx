@@ -48,9 +48,6 @@ LocalAssembler::assemble(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                    const MeshFunction<std::size_t>* exterior_facet_domains,
                    const MeshFunction<std::size_t>* interior_facet_domains)
 {
-  // Clear tensor
-  A.setZero();
-
   cell.get_cell_data(ufc_cell);
 
   // Assemble contributions from cell integral
@@ -108,7 +105,11 @@ LocalAssembler::assemble_cell(Eigen::Matrix<double, Eigen::Dynamic,
 {
   // Skip if there are no cell integrals
   if (!ufc.form.has_cell_integrals())
+  {
+    // Clear tensor here instead of in assemble() as a small speedup
+    A.setZero();
     return;
+  }
 
   // Extract default cell integral
   ufc::cell_integral* integral = ufc.default_cell_integral.get();
@@ -125,7 +126,7 @@ LocalAssembler::assemble_cell(Eigen::Matrix<double, Eigen::Dynamic,
   ufc.update(cell, coordinate_dofs, ufc_cell,
              integral->enabled_coefficients());
 
-  // Tabulate cell tensor directly into A
+  // Tabulate cell tensor directly into A. This overwrites any previous values
   integral->tabulate_tensor(A.data(), ufc.w(),
                             coordinate_dofs.data(),
                             ufc_cell.orientation);
@@ -164,12 +165,20 @@ LocalAssembler::assemble_exterior_facet(Eigen::Matrix<double,
   ufc.update(cell, coordinate_dofs, ufc_cell,
              integral->enabled_coefficients());
 
-  // Tabulate exterior facet tensor directly into A
-  integral->tabulate_tensor(A.data(),
+  // Tabulate exterior facet tensor. Here we cannot tabulate directly into A
+  // since this will overwrite any previously assembled dx, ds or dS forms
+  integral->tabulate_tensor(ufc.A.data(),
                             ufc.w(),
                             coordinate_dofs.data(),
                             local_facet,
                             ufc_cell.orientation);
+
+  // Stuff a_ufc.A into A
+  const std::size_t M = A.rows();
+  const std::size_t N = A.cols();
+  for (std::size_t i = 0; i < M; i++)
+    for (std::size_t j = 0; j < N; j++)
+      A(i, j) += ufc.A[N*i + j];
 }
 //------------------------------------------------------------------------------
 void
