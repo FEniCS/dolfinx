@@ -29,19 +29,14 @@ void RangeMap::init(std::size_t local_size, std::size_t block_size)
   // Calculate offsets
   MPI::all_gather(_mpi_comm, local_size, _all_ranges);
 
-  const std::size_t mpi_rank = MPI::rank(_mpi_comm);
   const std::size_t mpi_size = MPI::size(_mpi_comm);
   for (std::size_t i = 1; i != mpi_size; ++i)
     _all_ranges[i] += _all_ranges[i - 1];
   _all_ranges.insert(_all_ranges.begin(), 0);
-
-  //  _local_range.first = _all_ranges[mpi_rank];
-  // _local_range.second = _all_ranges[mpi_rank + 1];
 }
 //-----------------------------------------------------------------------------
 void RangeMap::set_local_to_global(std::vector<std::size_t> indices)
 {
-  dolfin_assert(_local_size > 0);
   _local_to_global = indices;
 
   const std::size_t mpi_rank = MPI::rank(_mpi_comm);

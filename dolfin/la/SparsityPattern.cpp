@@ -166,8 +166,8 @@ void SparsityPattern::insert_global(
     map_j = entries[0];
   }
 
-  dolfin_assert(_primary_dim < _local_range.size());
-  dolfin_assert(primary_codim < _local_range.size());
+  dolfin_assert(_primary_dim < _range_maps.size());
+  dolfin_assert(primary_codim < _range_maps.size());
   const std::pair<dolfin::la_index, dolfin::la_index>
     local_range0 = _range_maps[_primary_dim]->local_range();
   const std::pair<dolfin::la_index, dolfin::la_index>
@@ -278,7 +278,6 @@ void SparsityPattern::insert_local(
       else
       {
         // Store non-local entry (communicated later during apply())
-        std::size_t codim_block_size = _block_size[primary_codim];
         for (const auto &j_index : map_j)
         {
           const std::size_t J = range_map1->local_to_global(j_index);
@@ -435,8 +434,8 @@ void SparsityPattern::apply()
       for (std::size_t i = 0; i < non_local_received_p.size(); i += 2)
       {
         // Get global row and column
-        const std::size_t I = non_local_received_p[i];
-        const std::size_t J = non_local_received_p[i + 1];
+        const dolfin::la_index I = non_local_received_p[i];
+        const dolfin::la_index J = non_local_received_p[i + 1];
 
         // Sanity check
         if (I < local_range0.first

@@ -333,7 +333,7 @@ std::vector<dolfin::la_index> DofMap::dofs() const
   std::vector<la_index> _dofs;
   _dofs.reserve(_dofmap.size()*max_element_dofs());
 
-  const std::size_t local_ownership_size = _range_map->size();
+  const dolfin::la_index local_ownership_size = _range_map->size();
   const std::size_t global_offset = _range_map->local_range().first;
 
   // Insert all dofs into a vector (will contain duplicates)
@@ -376,7 +376,7 @@ void DofMap::tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_gl
   local_to_global_map.resize(size);
 
   const std::size_t global_offset = _range_map->local_range().first;
-  for (int i = 0; i < local_ownership_size; ++i)
+  for (std::size_t i = 0; i < local_ownership_size; ++i)
     local_to_global_map[i] = i + global_offset;
 
   for (std::size_t node = 0; node < _range_map->local_to_global_unowned().size(); ++node)
