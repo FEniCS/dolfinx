@@ -134,7 +134,7 @@ void LocalSolver::solve_local_rhs(Function& u) const
   // Assemble LHS over cells and solve
   Progress p("Performing local (cell-wise) solve", mesh.num_cells());
   ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get local-to-global dof maps for cell
@@ -148,25 +148,25 @@ void LocalSolver::solve_local_rhs(Function& u) const
     dolfin_assert(dofs_a0.size() == dofs_L.size());
 
     // Update to current cell
-    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_coordinate_dofs(coordinate_dofs);
     cell->get_cell_data(ufc_cell);
 
     // Resize local RHS vector and copy global RHS data into local
     // RHS, else compute b_e
     b_e.resize(dofs_L.size());
-    ufc_L.update(*cell, vertex_coordinates, ufc_cell,
+    ufc_L.update(*cell, coordinate_dofs, ufc_cell,
                  integral_L->enabled_coefficients());
 
     // Tabulate matrix on cell
     integral_L->tabulate_tensor(b_e.data(), ufc_L.w(),
-                                vertex_coordinates.data(),
+                                coordinate_dofs.data(),
                                 ufc_cell.orientation);
 
     // Solve local problem
     if (integral_a)
     {
       // Update LHS UFC object
-      ufc_a.update(*cell, vertex_coordinates, ufc_cell,
+      ufc_a.update(*cell, coordinate_dofs, ufc_cell,
                    integral_a->enabled_coefficients());
 
       // Resize A_e and tabulate on for cell
@@ -174,7 +174,7 @@ void LocalSolver::solve_local_rhs(Function& u) const
       dolfin_assert(dim == dofmaps_a[1]->num_element_dofs(cell->index()));
       A_e.resize(dim, dim);
       integral_a->tabulate_tensor(A_e.data(), ufc_a.w(),
-                                  vertex_coordinates.data(),
+                                  coordinate_dofs.data(),
                                   ufc_cell.orientation);
       // Solve local problem
       if (_solver_type == SolverType::Cholesky)
@@ -251,7 +251,7 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector& b,
   // Assemble LHS over cells and solve
   Progress p("Performing local (cell-wise) solve", mesh.num_cells());
   ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get cell dofmaps
@@ -271,11 +271,11 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector& b,
     if (!use_cache)
     {
       // Update to current cell
-      cell->get_vertex_coordinates(vertex_coordinates);
+      cell->get_coordinate_dofs(coordinate_dofs);
       cell->get_cell_data(ufc_cell);
 
       // Update LHS UFC object
-      ufc_a.update(*cell, vertex_coordinates, ufc_cell,
+      ufc_a.update(*cell, coordinate_dofs, ufc_cell,
                    integral_a->enabled_coefficients());
 
       // Resize A_e and tabulate on for cell
@@ -283,7 +283,7 @@ void LocalSolver::solve_local(GenericVector& x, const GenericVector& b,
       dolfin_assert(dim == dofmaps_a[1]->num_element_dofs(cell->index()));
       A_e.resize(dim, dim);
       integral_a->tabulate_tensor(A_e.data(), ufc_a.w(),
-                                  vertex_coordinates.data(),
+                                  coordinate_dofs.data(),
                                   ufc_cell.orientation);
       // Solve local problem
       if (_solver_type == SolverType::Cholesky)
@@ -357,13 +357,13 @@ void LocalSolver::factorize()
   // Assemble over cells
   Progress p("Performing local (cell-wise) solve", mesh.num_cells());
   ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update to current cell and update
-    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_coordinate_dofs(coordinate_dofs);
     cell->get_cell_data(ufc_cell);
-    ufc.update(*cell, vertex_coordinates, ufc_cell,
+    ufc.update(*cell, coordinate_dofs, ufc_cell,
                integral->enabled_coefficients());
 
     // Get cell dimension
@@ -377,7 +377,7 @@ void LocalSolver::factorize()
 
     // Tabulate A on cell
     integral->tabulate_tensor(A.data(), ufc.w(),
-                              vertex_coordinates.data(),
+                              coordinate_dofs.data(),
                               ufc_cell.orientation);
 
      // Compute LU decomposition and store

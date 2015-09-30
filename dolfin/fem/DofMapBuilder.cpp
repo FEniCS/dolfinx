@@ -77,8 +77,6 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Sanity checks on UFC dofmap
   const std::size_t D = mesh.topology().dim();
   dolfin_assert(dofmap._ufc_dofmap);
-  dolfin_assert(dofmap._ufc_dofmap->geometric_dimension()
-                == mesh.geometry().dim());
   dolfin_assert(dofmap._ufc_dofmap->topological_dimension() == D);
 
   // Extract needs_entities as vector

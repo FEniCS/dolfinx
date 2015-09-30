@@ -160,10 +160,12 @@ void XDMFxml::data_attribute(std::string name,
   xdmf_values.append_attribute("Name") = name.c_str();
 
   dolfin_assert(value_rank < 3);
+  // 1D Vector should be treated as a Scalar
+  std::size_t apparent_value_rank = (padded_value_size == 1) ? 0 : value_rank;
   static std::vector<std::string> attrib_type
     = {"Scalar", "Vector", "Tensor"};
   xdmf_values.append_attribute("AttributeType")
-    = attrib_type[value_rank].c_str();
+    = attrib_type[apparent_value_rank].c_str();
 
   xdmf_values.append_attribute("Center") = (vertex_data ? "Node" : "Cell");
 

@@ -135,7 +135,7 @@ void UFC::init(const Form& a)
   }
 }
 //-----------------------------------------------------------------------------
-void UFC::update(const Cell& c, const std::vector<double>& vertex_coordinates,
+void UFC::update(const Cell& c, const std::vector<double>& coordinate_dofs,
                  const ufc::cell& ufc_cell,
                  const std::vector<bool> & enabled_coefficients)
 {
@@ -146,13 +146,13 @@ void UFC::update(const Cell& c, const std::vector<double>& vertex_coordinates,
       continue;
     dolfin_assert(coefficients[i]);
     coefficients[i]->restrict(_w[i].data(), coefficient_elements[i], c,
-                              vertex_coordinates.data(), ufc_cell);
+                              coordinate_dofs.data(), ufc_cell);
   }
 }
 //-----------------------------------------------------------------------------
-void UFC::update(const Cell& c0, const std::vector<double>& vertex_coordinates0,
+void UFC::update(const Cell& c0, const std::vector<double>& coordinate_dofs0,
                  const ufc::cell& ufc_cell0,
-                 const Cell& c1, const std::vector<double>& vertex_coordinates1,
+                 const Cell& c1, const std::vector<double>& coordinate_dofs1,
                  const ufc::cell& ufc_cell1,
                  const std::vector<bool> & enabled_coefficients)
 {
@@ -164,14 +164,14 @@ void UFC::update(const Cell& c0, const std::vector<double>& vertex_coordinates0,
     dolfin_assert(coefficients[i]);
     const std::size_t offset = coefficient_elements[i].space_dimension();
     coefficients[i]->restrict(_macro_w[i].data(), coefficient_elements[i],
-                              c0, vertex_coordinates0.data(), ufc_cell0);
+                              c0, coordinate_dofs0.data(), ufc_cell0);
     coefficients[i]->restrict(_macro_w[i].data() + offset,
                               coefficient_elements[i],
-                              c1, vertex_coordinates1.data(), ufc_cell1);
+                              c1, coordinate_dofs1.data(), ufc_cell1);
   }
 }
 //-----------------------------------------------------------------------------
-void UFC::update(const Cell& c, const std::vector<double>& vertex_coordinates,
+void UFC::update(const Cell& c, const std::vector<double>& coordinate_dofs,
                  const ufc::cell& ufc_cell)
 {
   // Restrict coefficients to facet
@@ -179,13 +179,13 @@ void UFC::update(const Cell& c, const std::vector<double>& vertex_coordinates,
   {
     dolfin_assert(coefficients[i]);
     coefficients[i]->restrict(_w[i].data(), coefficient_elements[i], c,
-                              vertex_coordinates.data(), ufc_cell);
+                              coordinate_dofs.data(), ufc_cell);
   }
 }
 //-----------------------------------------------------------------------------
-void UFC::update(const Cell& c0, const std::vector<double>& vertex_coordinates0,
+void UFC::update(const Cell& c0, const std::vector<double>& coordinate_dofs0,
                  const ufc::cell& ufc_cell0,
-                 const Cell& c1, const std::vector<double>& vertex_coordinates1,
+                 const Cell& c1, const std::vector<double>& coordinate_dofs1,
                  const ufc::cell& ufc_cell1)
 {
   // Restrict coefficients to facet
@@ -194,10 +194,10 @@ void UFC::update(const Cell& c0, const std::vector<double>& vertex_coordinates0,
     dolfin_assert(coefficients[i]);
     const std::size_t offset = coefficient_elements[i].space_dimension();
     coefficients[i]->restrict(_macro_w[i].data(), coefficient_elements[i],
-                              c0, vertex_coordinates0.data(), ufc_cell0);
+                              c0, coordinate_dofs0.data(), ufc_cell0);
     coefficients[i]->restrict(_macro_w[i].data() + offset,
                               coefficient_elements[i],
-                              c1, vertex_coordinates1.data(), ufc_cell1);
+                              c1, coordinate_dofs1.data(), ufc_cell1);
   }
 }
 //-----------------------------------------------------------------------------

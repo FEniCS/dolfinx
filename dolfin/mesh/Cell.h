@@ -321,20 +321,35 @@ namespace dolfin
     { return IntersectionTriangulation::triangulate_intersection(*this, entity); }
 
     // FIXME: This function is part of a UFC transition
-    /// Get cell vertex coordinates
-    void get_vertex_coordinates(double* coordinates) const
+    /// Get cell coordinate dofs (not vertex coordinates)
+    void get_coordinate_dofs(std::vector<double>& coordinates) const
     {
-      dolfin_assert(coordinates);
-      const std::size_t gdim = _mesh->geometry().dim();
-      const std::size_t num_vertices = this->num_vertices();
-      const unsigned int* vertices = this->entities(0);
-      for (std::size_t i = 0; i < num_vertices; i++)
-        for (std::size_t j = 0; j < gdim; j++)
-          coordinates[i*gdim + j] = _mesh->geometry().x(vertices[i])[j];
+      const MeshGeometry& geom = _mesh->geometry();
+      const std::size_t gdim = geom.dim();
+      const std::size_t tdim = _mesh->topology().dim();
+
+      coordinates.clear();
+      for (std::size_t dim = 0; dim <= tdim; ++dim)
+      {
+        for (std::size_t j = 0; j != num_entities(dim); ++j)
+        {
+          for (std::size_t k = 0;
+               k != geom.num_entity_coordinates(dim); ++k)
+          {
+            const std::size_t entity_index
+              = (dim == tdim) ? index() : entities(dim)[j];
+            const std::size_t point_index
+              = geom.get_entity_index(dim, k, entity_index);
+            const double* point_ptr = geom.x(point_index);
+            coordinates.insert(coordinates.end(),
+                               point_ptr, point_ptr + gdim);
+          }
+        }
+      }
     }
 
     // FIXME: This function is part of a UFC transition
-    /// Get cell vertex coordinates
+    /// Get cell vertex coordinates (not coordinate dofs)
     void get_vertex_coordinates(std::vector<double>& coordinates) const
     {
       const std::size_t gdim = _mesh->geometry().dim();

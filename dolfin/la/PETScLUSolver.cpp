@@ -174,14 +174,8 @@ void PETScLUSolver::set_operator(std::shared_ptr<const PETScMatrix> A)
   }
 
   PetscErrorCode ierr;
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-  ierr = KSPSetOperators(_ksp, _matA->mat(), _matA->mat(),
-                         DIFFERENT_NONZERO_PATTERN);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  #else
   ierr = KSPSetOperators(_ksp, _matA->mat(), _matA->mat());
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-  #endif
 }
 //-----------------------------------------------------------------------------
 const GenericLinearOperator& PETScLUSolver::get_operator() const

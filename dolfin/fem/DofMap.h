@@ -30,7 +30,6 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include <boost/multi_array.hpp>
 #include <memory>
 #include <unordered_map>
 #include <ufc.h>
@@ -241,35 +240,7 @@ namespace dolfin
     ///     local_entity (std::size_t)
     ///         The local entity index
     void tabulate_entity_dofs(std::vector<std::size_t>& dofs,
-			      std::size_t dim, std::size_t local_entity) const;
-
-    /// Tabulate the coordinates of all dofs on a cell (UFC cell
-    /// version)
-    ///
-    /// *Arguments*
-    ///     coordinates (boost::multi_array<double, 2>)
-    ///         The coordinates of all dofs on a cell.
-    ///     vertex_coordinates (std::vector<double>)
-    ///         The cell vertex coordinates
-    ///     cell (Cell)
-    ///         The cell.
-    void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                              const std::vector<double>& vertex_coordinates,
-                              const Cell& cell) const;
-
-    /// Tabulate the coordinates of all dofs on this process. This
-    /// function is typically used by preconditioners that require the
-    /// spatial coordinates of dofs, for example for re-partitioning or
-    /// nullspace computations.
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh.
-    ///
-    /// *Returns*
-    ///     std::vector<double>
-    ///         The dof coordinates (x0, y0, x1, y1, . . .)
-    std::vector<double> tabulate_all_coordinates(const Mesh& mesh) const;
+                              std::size_t dim, std::size_t local_entity) const;
 
     /// Create a copy of the dof map
     ///
@@ -340,24 +311,6 @@ namespace dolfin
     ///     value (double)
     ///         The value to set.
     void set(GenericVector& x, double value) const;
-
-    /// Set dof entries in vector to the x[i] coordinate of the dof
-    /// spatial coordinate. Parallel layout of vector must be consistent
-    /// with dof map range This function is typically used to
-    /// construct the null space of a matrix operator, e.g. rigid
-    /// body rotations.
-    ///
-    /// *Arguments*
-    ///     vector (_GenericVector_)
-    ///         The vector to set.
-    ///     value (double)
-    ///         The value to multiply to coordinate by.
-    ///     component (std::size_t)
-    ///         The coordinate index.
-    ///     mesh (_Mesh_)
-    ///         The mesh.
-    void set_x(GenericVector& x, double value, std::size_t component,
-               const Mesh& mesh) const;
 
     /// Return the map
     std::shared_ptr<RangeMap> range_map() const

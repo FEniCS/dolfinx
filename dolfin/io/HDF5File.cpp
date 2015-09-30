@@ -256,12 +256,18 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 {
   Timer t0("HDF5: write mesh to file");
 
-  CellType::Type cell_type = mesh.type().entity_type(cell_dim);
+  const std::size_t tdim = mesh.topology().dim();
+  const std::size_t gdim = mesh.geometry().dim();
 
-  std::unique_ptr<CellType> celltype(CellType::create(cell_type));
-  std::size_t num_cell_verts = celltype->num_entities(0);
-
+  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
   dolfin_assert(hdf5_file_open);
+
+  CellType::Type cell_type = mesh.type().entity_type(cell_dim);
+  std::unique_ptr<CellType> celltype(CellType::create(cell_type));
+  std::size_t num_cell_points = 0;
+  for (std::size_t i = 0; i <= cell_dim; ++i)
+    num_cell_points +=
+      mesh.geometry().num_entity_coordinates(i)*celltype->num_entities(i);
 
   // ---------- Vertices (coordinates)
   {
@@ -269,16 +275,17 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     const std::string coord_dataset =  name + "/coordinates";
 
     // Copy coordinates and indices and remove off-process values
-    const std::size_t gdim = mesh.geometry().dim();
-    const std::vector<double> vertex_coords
-      = DistributedMeshTools::reorder_vertices_by_global_indices(mesh);
+    std::vector<double> vertex_coords;
+    if (!mpi_io)
+      vertex_coords = mesh.geometry().x();
+    else
+      vertex_coords
+        = DistributedMeshTools::reorder_vertices_by_global_indices(mesh);
 
     // Write coordinates out from each process
     std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(_mpi_comm, vertex_coords.size()/gdim);
     global_size[1] = gdim;
-    dolfin_assert(global_size[0] == mesh.size_global(0));
-    const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
     write_data(coord_dataset, vertex_coords, global_size, mpi_io);
   }
 
@@ -286,7 +293,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
   {
     // Get/build topology data
     std::vector<std::size_t> topological_data;
-    topological_data.reserve(mesh.num_entities(cell_dim)*(num_cell_verts));
+    topological_data.reserve(mesh.num_entities(cell_dim)*(num_cell_points));
 
     const std::vector<std::size_t>& global_vertices
       = mesh.topology().global_indices(0);
@@ -294,11 +301,45 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     // Permutation to VTK ordering
     const std::vector<unsigned int> perm = celltype->vtk_mapping();
 
-    if (cell_dim == mesh.topology().dim() || MPI::size(_mpi_comm) == 1)
+    if (cell_dim == tdim or !mpi_io)
     {
       // Usual case, with cell output, and/or none shared with another
       // process.
-      if (cell_dim == 0)
+      if (mesh.geometry().degree() > 1)
+      {
+        const MeshGeometry& geom = mesh.geometry();
+
+        // Only cope with quadratic for now
+        dolfin_assert(geom.degree() == 2);
+        // FIXME: make it work in parallel
+        dolfin_assert(!mpi_io);
+
+        std::vector<std::size_t> edge_mapping;
+        if (tdim == 1)
+          edge_mapping = {0};
+        else if (tdim == 2)
+          edge_mapping = {2, 0, 1};
+        else
+          edge_mapping = {5, 2, 4, 3, 1, 0};
+
+        for (CellIterator c(mesh); !c.end(); ++c)
+        {
+          // Add indices for vertices and edges
+          for (unsigned int dim = 0; dim != 2; ++dim)
+          {
+            for (unsigned int i = 0; i != celltype->num_entities(dim); ++i)
+            {
+              std::size_t im = (dim == 0) ? i : edge_mapping[i];
+              const std::size_t entity_index
+                = (dim == tdim) ? c->index() : c->entities(dim)[im];
+              const std::size_t local_idx
+                = geom.get_entity_index(dim, 0, entity_index);
+              topological_data.push_back(local_idx);
+            }
+          }
+        }
+      }
+      else if (cell_dim == 0)
       {
         for (VertexIterator v(mesh); !v.end(); ++v)
           topological_data.push_back(v->global_index());
@@ -326,10 +367,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       const std::map<unsigned int, std::set<unsigned int>>& shared_entities
         = mesh.topology().shared_entities(cell_dim);
 
-      const std::size_t tdim = mesh.topology().dim();
-
       std::set<unsigned int> non_local_entities;
-
       if (mesh.topology().size(tdim) == mesh.topology().ghost_offset(tdim))
       {
         // No ghost cells - exclude shared entities which are on lower rank processes
@@ -385,8 +423,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     const std::string topology_dataset =  name + "/topology";
     std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(_mpi_comm,
-                              topological_data.size()/num_cell_verts);
-    global_size[1] = num_cell_verts;
+                              topological_data.size()/num_cell_points);
+    global_size[1] = num_cell_points;
     dolfin_assert(global_size[0] == mesh.size_global(cell_dim));
     const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
     write_data(topology_dataset, topological_data, global_size, mpi_io);

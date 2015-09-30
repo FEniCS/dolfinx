@@ -36,8 +36,8 @@ def build_elastic_nullspace(V, x):
     V.sub(1).dofmap().set(nullspace_basis[1], 1.0);
 
     # Build rotational null space basis
-    V.sub(0).dofmap().set_x(nullspace_basis[2], -1.0, 1, V.mesh());
-    V.sub(1).dofmap().set_x(nullspace_basis[2], 1.0, 0, V.mesh());
+    V.sub(0).set_x(nullspace_basis[2], -1.0, 1);
+    V.sub(1).set_x(nullspace_basis[2], 1.0, 0);
     for x in nullspace_basis:
         x.apply("insert")
     return VectorSpaceBasis(nullspace_basis)
@@ -54,11 +54,11 @@ def build_broken_elastic_nullspace(V, x):
     V.sub(1).dofmap().set(nullspace_basis[1], 1.0);
 
     # Build rotational null space basis
-    V.sub(0).dofmap().set_x(nullspace_basis[2], -1.0, 1, V.mesh());
-    V.sub(1).dofmap().set_x(nullspace_basis[2], 1.0, 0, V.mesh());
+    V.sub(0).set_x(nullspace_basis[2], -1.0, 1);
+    V.sub(1).set_x(nullspace_basis[2], 1.0, 0);
 
     # Add vector that is not in nullspace
-    V.sub(1).dofmap().set_x(nullspace_basis[3], 1.0, 1, V.mesh());
+    V.sub(1).set_x(nullspace_basis[3], 1.0, 1);
 
     for x in nullspace_basis:
         x.apply("insert")

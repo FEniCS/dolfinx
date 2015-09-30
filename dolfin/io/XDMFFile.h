@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2012-2015 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -71,10 +71,6 @@ namespace dolfin
     /// Read in a mesh from the associated HDF5 file
     void operator>> (Mesh& mesh);
 
-    /// Save a quadratic Function to a quadratic Mesh defined
-    /// by a geometry Function
-    void write_quadratic(const Function& u_geom, const Function& u_val);
-
     /// Save a Function to XDMF/HDF5 files for visualisation.
     void operator<< (const Function& u);
 
@@ -129,6 +125,11 @@ namespace dolfin
     void write_point_xml(const std::string dataset_name,
                          const std::size_t num_global_points,
                          const unsigned int value_size);
+
+    // Get point data values for linear or quadratic mesh into
+    // flattened 2D array in data_values with given width
+    void get_point_data_values(std::vector<double>& data_values, std::size_t width,
+                               const Function& u);
 
     // Most recent mesh name
     std::string current_mesh_name;

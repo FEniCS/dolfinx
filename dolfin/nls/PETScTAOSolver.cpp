@@ -18,7 +18,7 @@
 // First added:  2014-06-22
 // Last changed: 2014-07-27
 
-#ifdef ENABLE_PETSC_TAO
+#ifdef HAS_PETSC
 
 #include <map>
 #include <string>

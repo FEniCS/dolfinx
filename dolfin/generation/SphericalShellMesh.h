@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2010 Anders Logg
+// Copyright (C) 2015 Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -15,27 +15,22 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2010
-//
-// First added:  2006-06-07
-// Last changed: 2010-02-26
 
-#ifndef __UNIFORM_MESH_REFINEMENT_H
-#define __UNIFORM_MESH_REFINEMENT_H
+#ifndef __SPHERICAL_SHELL_MESH_H
+#define __SPHERICAL_SHELL_MESH_H
+
+#include <dolfin/common/MPI.h>
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
 
-  class Mesh;
-
-  /// This class implements uniform mesh refinement.
-
-  class UniformMeshRefinement
+  class SphericalShellMesh : public Mesh
   {
   public:
 
-    /// Refine mesh uniformly
-    static void refine(Mesh& refined_mesh, const Mesh& mesh);
+    /// Create a spherical shell manifold for testing
+    SphericalShellMesh(MPI_Comm comm, std::size_t degree);
 
   };
 

@@ -166,31 +166,19 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     }
     else
     {
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-      _map0.assign(tensor_layout.local_to_global_map[0].begin(),
-                   tensor_layout.local_to_global_map[0].end());
-      _map1.assign(tensor_layout.local_to_global_map[1].begin(),
-                   tensor_layout.local_to_global_map[1].end());
-      #else
       _map0 = std::vector<PetscInt>(tensor_layout.local_to_global_map[0].size()/bs);
       _map1 = std::vector<PetscInt>(tensor_layout.local_to_global_map[1].size()/bs);
       for (std::size_t i = 0; i < _map0.size(); ++i)
         _map0[i] = tensor_layout.local_to_global_map[0][i*bs]/bs;
       for (std::size_t i = 0; i < _map1.size(); ++i)
         _map1[i] = tensor_layout.local_to_global_map[1][i*bs]/bs;
-      #endif
     }
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map0.size(), _map0.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
-    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map1.size(), _map1.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
-    #else
-    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map0.size(), _map0.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
-    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map1.size(), _map1.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
-    #endif
+    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map0.size(),
+                                 _map0.data(), PETSC_COPY_VALUES,
+                                 &petsc_local_to_global0);
+    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map1.size(),
+                                 _map1.data(), PETSC_COPY_VALUES,
+                                 &petsc_local_to_global1);
     MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
                                petsc_local_to_global1);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
@@ -249,16 +237,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     dolfin_assert(tensor_layout.local_to_global_map.size() == 2);
 
     std::vector<PetscInt> _map0, _map1;
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-    _map0.assign(tensor_layout.local_to_global_map[0].begin(),
-                 tensor_layout.local_to_global_map[0].end());
-    _map1.assign(tensor_layout.local_to_global_map[1].begin(),
-                 tensor_layout.local_to_global_map[1].end());
-    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, _map0.size(), _map0.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
-    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, _map1.size(), _map1.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
-    #else
     // Block size
     const std::size_t bs = tensor_layout.block_size;
 
@@ -274,18 +252,15 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, bs, _map1.size(),
                                  _map1.data(),
                                  PETSC_COPY_VALUES, &petsc_local_to_global1);
-    #endif
 
     MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
                                petsc_local_to_global1);
 
-#if PETSC_VERSION_GE(3, 6, 0)
     // Note: This should be called after having set the l2g map for
     // MATIS (this is a dummy call if _matA is not of type MATIS)
     ierr = MatISSetPreallocation(_matA, 0, _num_nonzeros_diagonal.data(),
                                  0, _num_nonzeros_off_diagonal.data());
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatISSetPreallocation");
-#endif
 
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);

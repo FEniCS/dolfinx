@@ -186,6 +186,8 @@ def main():
        os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'python'), \
        os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
        os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'), \
+       os.path.join(demodir, 'undocumented', 'poisson-disc',                'python'), \
+       os.path.join(demodir, 'undocumented', 'poisson-disc',                'cpp'),    \
        os.path.join(demodir, 'undocumented', 'smoothing',                   'python'), \
        os.path.join(demodir, 'documented',   'subdomains',                  'cpp'),    \
        os.path.join(demodir, 'documented',   'subdomains',                  'python'), \
