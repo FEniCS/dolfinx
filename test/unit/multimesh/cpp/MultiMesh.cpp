@@ -890,127 +890,79 @@ public:
 
   void test_multiple_meshes_interface_quadrature()
   {
-    // MultiMesh multimesh;
-    // UnitSquareMesh mesh_0(1, 1);
-    // multimesh.add(mesh_0);
-    // File("mesh_0.xml") << mesh_0;
 
-    // RectangleMesh mesh_1(0.1, 0.1, 0.9, 0.9, 1, 1);
-    // multimesh.add(mesh_1);
-    // double exact_area = 4*(0.9-0.1); // mesh0 and mesh1
-    // File("mesh_1.xml") << mesh_1;
-
-    // RectangleMesh mesh_2(0.2, 0.2, 0.8, 0.8, 1, 1);
-    // multimesh.add(mesh_2);
-    // exact_area += 4*(0.8-0.2); // mesh1 and mesh2
-    // File("mesh_2.xml") << mesh_2;
-
-    // RectangleMesh mesh_3(0.3, 0.3, 0.7, 0.7, 1, 1);
-    // multimesh.add(mesh_3);
-    // exact_area += 4*(0.7-0.3); // mesh2 and mesh3
-    // File("mesh_3.xml") << mesh_3;
-
-    //const std::size_t N = 5;
-    for (std::size_t N = 1; N < 20; ++N)
-    {
-      for (std::size_t k = 0; k < 80; ++k)
-	std::cout << '-';
-      std::cout << "\nN = " << N << std::endl;
-      MultiMesh multimesh;
-      MeshEditor me;
-      std::vector<Mesh> meshes(N);
-      double exact_area = 0;
-      for (std::size_t i = 0; i < N; ++i)
-      {
-	me.open(meshes[i], 2, 2);
-	me.init_vertices(3);
-	me.init_cells(1);
-	const double a = 0.01;
-	const Point p0(a*i, a*i);
-	const Point p1(1-2*a*i, a*i);
-	const Point p2(a*i, 1-2*a*i);
-	me.add_vertex(0, p0);
-	me.add_vertex(1, p1);
-	me.add_vertex(2, p2);
-	me.add_cell(0, 0, 1, 2);
-	me.close();
-	multimesh.add(meshes[i]);
-	const std::vector<double>& x=meshes[i].coordinates();
-	if (i > 0)
-	  exact_area += p0.distance(p1) + p0.distance(p2) + p1.distance(p2);
-      }
-      multimesh.build();
-      tools::dolfin_write_medit_triangles("multimesh",multimesh, N);
-
-      const double area = compute_interface_area(multimesh, exact_area);
-      const double e = std::abs(area - exact_area);
-      std::cout << std::setprecision(15)
-		<< "N = " << N << '\n'
-		<< "area = " << area << '\n'
-		<< "error = " << e << '\n';
-      //CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_area, area, DOLFIN_EPS_LARGE);
-    }
-
-
-    // // Sum contribution from all parts
-    // std::cout << "\n\n Sum up\n\n";
-    // double volume = 0;
-    // for (std::size_t part = 0; part < multimesh.num_parts(); part++)
+    // // Test triangles on top of each other
+    // for (std::size_t N = 1; N < 20; ++N)
     // {
-    //   std::cout << "% part " << part << '\n';
-    //   double part_volume = 0;
-
-    //   const auto& quadrature_rules = multimesh.quadrature_rule_interface(part);
-
-    //   // Get collision map
-    //   const auto& cmap = multimesh.collision_map_cut_cells(part);
-    //   for (auto it = cmap.begin(); it != cmap.end(); ++it)
+    //   for (std::size_t k = 0; k < 80; ++k)
+    // 	std::cout << '-';
+    //   std::cout << "\nN = " << N << std::endl;
+    //   MultiMesh multimesh;
+    //   MeshEditor me;
+    //   std::vector<Mesh> meshes(N);
+    //   double exact_area = 0;
+    //   for (std::size_t i = 0; i < N; ++i)
     //   {
-    //     const unsigned int cut_cell_index = it->first;
-
-    //     // Iterate over cutting cells
-    //     const auto& cutting_cells = it->second;
-    //     for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
-    //     {
-    //       //const std::size_t cutting_part = jt->first;
-    //       //const std::size_t cutting_cell_index = jt->second;
-
-    //       // Get quadrature rule for interface part defined by
-    //       // intersection of the cut and cutting cells
-    //       const std::size_t k = jt - cutting_cells.begin();
-    //       dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
-    //       const auto& qr = quadrature_rules.at(cut_cell_index)[k];
-
-    //       for (std::size_t j = 0; j < qr.second.size(); ++j)
-    //       {
-    //         volume += qr.second[j];
-    //         part_volume += qr.second[j];
-    //       }
-
-    //     }
+    // 	me.open(meshes[i], 2, 2);
+    // 	me.init_vertices(3);
+    // 	me.init_cells(1);
+    // 	const double a = 0.01;
+    // 	const Point p0(a*i, a*i);
+    // 	const Point p1(1-2*a*i, a*i);
+    // 	const Point p2(a*i, 1-2*a*i);
+    // 	me.add_vertex(0, p0);
+    // 	me.add_vertex(1, p1);
+    // 	me.add_vertex(2, p2);
+    // 	me.add_cell(0, 0, 1, 2);
+    // 	me.close();
+    // 	multimesh.add(meshes[i]);
+    // 	const std::vector<double>& x=meshes[i].coordinates();
+    // 	if (i > 0)
+    // 	  exact_area += p0.distance(p1) + p0.distance(p2) + p1.distance(p2);
     //   }
+    //   multimesh.build();
+    //   tools::dolfin_write_medit_triangles("multimesh",multimesh, N);
 
-    //   const double volume = compute_volume(multimesh, exact_volume);
-    //   const double e = std::abs(volume - exact_volume);
-    //   max_error = std::max(e, max_error);
+    //   const double area = compute_interface_area(multimesh, exact_area);
+    //   const double e = std::abs(area - exact_area);
     //   std::cout << std::setprecision(15)
-    // 		<< "v = " << v << '\n'
-    // 		<< "m = " << m << '\n'
-    // 		<< "n = " << n << '\n'
-    // 		<< "volume = " << volume << '\n'
-    // 		<< "error = " << e << '\n'
-    // 		<< "max error = " << max_error << '\n';
-
-    //   std::cout<<"part volume " << part_volume<<std::endl;
+    // 		<< "N = " << N << '\n'
+    // 		<< "area = " << area << '\n'
+    // 		<< "error = " << e << '\n';
+    //   //CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_area, area, DOLFIN_EPS_LARGE);
     // }
 
+    // Test squares in diagonal on background unit square
+    const std::size_t m = 1, n = 1;
+    const double h = 0.025;
+    const double s = 0.5;
+    if (h >= s) { std::cout << "h must be less than s\n"; exit(1); }
+    UnitSquareMesh usm(m, n);
+    MultiMesh mm;
+    mm.add(usm);
+    std::vector<Mesh> meshes;
+    double exact_area = 4*s;
+    std::size_t N = 1;
+    while (N*h+s < 1)
+    {
+      std::cout << "rectangle mesh points [" << N*h << "," << N*h+s << "] x [" << N*h << "," << N*h+s << "]" << std::endl;
+      std::shared_ptr<Mesh> rm(new RectangleMesh(Point(N*h, N*h), Point(N*h+s, N*h+s), m, n));
+      mm.add(rm);
+      if (N > 1)
+	exact_area += 2*s + 2*h;
+      N++;
+    }
+    mm.build();
+    tools::dolfin_write_medit_triangles("multimesh", mm, N);
 
-    // std::cout << "exact volume " << exact_volume<<'\n'
-    //           << "volume " << volume<<std::endl;
-    // CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
+    const double area = compute_interface_area(mm, exact_area);
+    const double error = std::abs(area - exact_area);
+    std::cout << std::setprecision(15)
+	      << "N = " << N << '\n'
+	      << "area = " << area << '\n'
+	      << "error = " << error << '\n';
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_area, area, DOLFIN_EPS_LARGE);
   }
-
-
 
 
   //------------------------------------------------------------------------------
@@ -1183,24 +1135,24 @@ public:
 	  // Get quadrature rule for interface part defined by
 	  // intersection of the cut and cutting cells
 	  const std::size_t k = jt - cutting_cells.begin();
-	  std::cout << cut_cell_index << ' ' << k <<' ' << std::flush
-		    << quadrature_rules.size() << ' '
-		    << quadrature_rules.at(cut_cell_index).size() << "   " << std::flush;
+	  // std::cout << cut_cell_index << ' ' << k <<' ' << std::flush
+	  // 	    << quadrature_rules.size() << ' '
+	  // 	    << quadrature_rules.at(cut_cell_index).size() << "   " << std::flush;
 	  dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
 	  const auto& qr = quadrature_rules.at(cut_cell_index)[k];
 	  std::stringstream ss;
 	  for (std::size_t i = 0; i < qr.second.size(); ++i)
 	  {
 	    file << qr.first[2*i]<<' '<<qr.first[2*i+1]<<' '<<qr.second[i]<<'\n';
-	    std::cout << qr.second[i]<<' ';
+	    //std::cout << qr.second[i]<<' ';
 	    area += qr.second[i];
 	    part_area += qr.second[i];
 	    //std::cout << qr.first[2*i]<<' '<<qr.first[2*i+1]<<'\n';
 	  }
-	  std::cout << std::endl;
+	  //std::cout << std::endl;
 	}
       }
-      std::cout << "\ttotal area " << part_area << std::endl;
+      std::cout << "total area " << part_area << std::endl;
       all_areas.push_back(part_area);
     }
     file.close();

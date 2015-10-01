@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2014-04-25
+// Last changed: 2015-09-30
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -96,9 +96,7 @@ SimplexQuadrature::compute_quadrature_rule_interval(const double* coordinates,
     w.assign(2, 1.);
 
     // Assign points corresponding to -1/sqrt(3) and 1/sqrt(3)
-    p.resize(2);
-    p[0] = -1./std::sqrt(3);
-    p[1] = 1./std::sqrt(3);
+    p = { -1./std::sqrt(3), 1./std::sqrt(3) };
 
     break;
   case 3:
