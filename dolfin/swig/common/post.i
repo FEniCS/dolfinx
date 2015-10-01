@@ -53,14 +53,14 @@ typedef struct {
       // We don't bother with MPI_Abort. This would require taking care of
       // MPI state. We just assume mpirun catches SIGABRT and sends SIGTERM
       // to other ranks.
-      std::terminate();
+      std::abort();
     }
   }
 %}
 
 %pythoncode %{
 # Install C++ terminate handler into Python (if not interactive)
-# This ensures that std::terminate (which is likely to be appropriately
+# This ensures that std::abort (which is likely to be appropriately
 # interpreted by MPI implementations) is called by sys.excepthook thus
 # avoiding parallel deadlocks when one process raises
 import sys
