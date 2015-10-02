@@ -25,6 +25,11 @@
 import pytest
 import numpy
 from dolfin import *
+from dolfin_utils.test import set_parameters_fixture
+
+
+ghost_mode = set_parameters_fixture("ghost_mode", ["shared_facet"])
+
 
 def test_solve_global_rhs():
     mesh = UnitCubeMesh(2, 3, 3)
@@ -62,9 +67,7 @@ def test_solve_global_rhs():
         assert round(error, 10) == 0
 
 
-def test_solve_local_rhs():
-
-    parameters["ghost_mode"] = "shared_facet"
+def test_solve_local_rhs(ghost_mode):
     mesh = UnitCubeMesh(1, 5, 1)
     V = FunctionSpace(mesh, "Lagrange", 2)
     W = FunctionSpace(mesh, "Lagrange", 2)
@@ -96,12 +99,8 @@ def test_solve_local_rhs():
         local_solver.solve_local_rhs(u)
         assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
 
-        parameters["ghost_mode"] = "none"
 
-
-def test_solve_local_rhs_facet_integrals():
-
-    parameters["ghost_mode"] = "shared_facet"
+def test_solve_local_rhs_facet_integrals(ghost_mode):
     mesh = UnitSquareMesh(4, 4)
 
     Vu = VectorFunctionSpace(mesh, 'DG', 1)
@@ -127,13 +126,9 @@ def test_solve_local_rhs_facet_integrals():
     x[:] = 1
     assert round((u.vector() - x).norm('l2'), 10) == 0
 
-    parameters["ghost_mode"] = "none"
 
-
-def test_local_solver_dg():
-
-    parameters["ghost_mode"] = "shared_facet"
-    mesh = UnitIntervalMesh(50)
+def test_local_solver_dg(ghost_mode):
+    mesh = UnitSquareMesh(50, 1)
     U = FunctionSpace(mesh, "DG", 2)
 
     # Set initial values
@@ -169,13 +164,9 @@ def test_local_solver_dg():
     local_solver.solve_global_rhs(u_ls)
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
 
-    parameters["ghost_mode"] = "none"
 
-
-def test_solve_local():
-
-    parameters["ghost_mode"] = "shared_facet"
-    mesh = UnitIntervalMesh(50)
+def test_solve_local(ghost_mode):
+    mesh = UnitSquareMesh(50, 1)
     U = FunctionSpace(mesh, "DG", 2)
 
     # Set initial values
@@ -211,5 +202,3 @@ def test_solve_local():
     u_ls = Function(U)
     local_solver.solve_local(u_ls.vector(), b, U.dofmap())
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
-
-    parameters["ghost_mode"] = "none"

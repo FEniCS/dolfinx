@@ -22,6 +22,10 @@
 from __future__ import division
 import numpy
 from dolfin import *
+from dolfin_utils.test import set_parameters_fixture
+
+
+ghost_mode = set_parameters_fixture("ghost_mode", ["shared_facet"])
 
 
 def test_local_assembler_1D():
@@ -55,28 +59,46 @@ def test_local_assembler_1D():
     assert near(A_matrix[1,1], 1/60)
 
 
-def test_local_assembler_on_facet_integrals():
+def test_local_assembler_on_facet_integrals(ghost_mode):
     mesh = UnitSquareMesh(4, 4, 'right')
-    Vdg = VectorFunctionSpace(mesh, 'CG', 1)
-    Vdgt = FunctionSpace(mesh, 'CG', 1) 
-    
+    Vcg = FunctionSpace(mesh, 'CG', 1)
+    Vdg = FunctionSpace(mesh, 'DG', 0)
+    Vdgt = FunctionSpace(mesh, 'DGT', 1) 
+
     v = TestFunction(Vdgt)
     n = FacetNormal(mesh) 
+
+    # Initialize DG function "w" in discontinuous pattern
+    w = Expression('(1.0 + pow(x[0], 2.2) + 1/(0.1 + pow(x[1], 3)))*300.0',
+                   element=Vdg.ufl_element())
+
+    # Define form that tests that the correct + and - values are used
+    L = w('-')*v('+')*dS
+
+    # Compile form. This is collective
+    L = Form(L)
+
+    # Get global cell 10. This will return a cell only on one of the processes
+    c = get_cell_at(mesh, 5/12, 1/3, 0)
+
+    if c:
+        # Assemble locally on the selected cell
+        b_e = assemble_local(L, c)
     
-    w = Function(Vdg)
-    for cell in cells(mesh):
-        for dof in Vdg.dofmap().cell_dofs(cell.index()):
-            w.vector()[dof] = 1.0 + cell.index() % 5
-    
-    L = dot(w('-'), w('+'))*v('+')*dS
-    c = Cell(mesh, 5)
-    b_e = assemble_local(L, c)
-    b_a = numpy.array([0, 19/8, 9/8])
-    error = sum((b_e - b_a)**2)
-    assert error < 1e-16
+        # Compare to values from phonyx (fully independent implementation)
+        b_phonyx = numpy.array([266.55210302, 266.55210302, 365.49000122,
+                                365.49000122,          0.0,          0.0])
+        error = sum((b_e - b_phonyx)**2)**0.5
+        error = float(error) # MPI.max does strange things to numpy.float64 ...
+
+    else:
+        error = 0
+
+    error = MPI.max(mpi_comm_world(), float(error))
+    assert error < 1e-8
 
 
-def test_local_assembler_on_facet_integrals2():
+def test_local_assembler_on_facet_integrals2(ghost_mode):
     mesh = UnitSquareMesh(4, 4)
     Vu = VectorFunctionSpace(mesh, 'DG', 1)
     Vv = FunctionSpace(mesh, 'DGT', 1)
@@ -84,17 +106,51 @@ def test_local_assembler_on_facet_integrals2():
     v = TestFunction(Vv)
     n = FacetNormal(mesh)
 
+    # Define form
     a = dot(u, n)*v*ds
     for R in '+-':
         a += dot(u(R), n(R))*v(R)*dS
 
-    c = Cell(mesh, 0)
-    A_e = assemble_local(a, c)
-    A_correct = numpy.array([[    0, 1/12,  1/24,     0,     0,    0],
-                             [    0, 1/24,  1/12,     0,     0,    0],
-                             [-1/12,    0, -1/24,  1/12,     0, 1/24],
-                             [-1/24,    0, -1/12,  1/24,     0, 1/12],
-                             [    0,    0,     0, -1/12, -1/24,    0],
-                             [    0,    0,     0, -1/24, -1/12,    0]])
-    error = ((A_e - A_correct)**2).sum()**0.5
-    assert error < 1e-15
+    # Compile form. This is collective
+    a = Form(a)
+
+    # Get global cell 0. This will return a cell only on one of the processes
+    c = get_cell_at(mesh, 1/6, 1/12, 0)
+    
+    if c:
+        A_e = assemble_local(a, c)
+        A_correct = numpy.array([[    0, 1/12,  1/24,     0,     0,    0],
+                                 [    0, 1/24,  1/12,     0,     0,    0],
+                                 [-1/12,    0, -1/24,  1/12,     0, 1/24],
+                                 [-1/24,    0, -1/12,  1/24,     0, 1/12],
+                                 [    0,    0,     0, -1/12, -1/24,    0],
+                                 [    0,    0,     0, -1/24, -1/12,    0]])
+        error = ((A_e - A_correct)**2).sum()**0.5
+        error = float(error) # MPI.max does strange things to numpy.float64 ...
+
+    else:
+        error = 0
+
+    error = MPI.max(mpi_comm_world(), error)
+    assert error < 1e-16
+
+
+def get_cell_at(mesh, x, y, z, eps=1e-3):
+    """
+    Return the cell with the given midpoint or None if not found. The function
+    also checks that the cell is found on one of the processes when running in
+    parallel to avoid that the above tests always suceed if the cell is not
+    found on any of the processes.
+    """
+    found = None
+    for cell in cells(mesh):
+        mp = cell.midpoint()
+        if abs(mp.x() - x) + abs(mp.y() - y) + abs(mp.y() - y) < eps:
+            found = cell
+            break
+
+    # Make sure this cell is on at least one of the parallel processes
+    marker = 1 if found is not None else 0
+    assert MPI.max(mpi_comm_world(), marker) == 1
+
+    return found
