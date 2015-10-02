@@ -210,4 +210,5 @@ for f in [timings, list_timings, dump_timings_to_xml, timing]:
     doc = doc.replace(" }", "]")
     f.__doc__ = doc
     del doc
+del f
 %}
