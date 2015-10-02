@@ -223,23 +223,30 @@ def test_global_dof_builder():
 
 def test_dof_to_vertex_map(mesh, reorder_dofs):
 
+    def _test_maps_consistency(space):
+        v2d = vertex_to_dof_map(space)
+        d2v = dof_to_vertex_map(space)
+        assert len(v2d) == len(d2v)
+        assert np.all(v2d[d2v] == np.arange(len(v2d)))
+        assert np.all(d2v[v2d] == np.arange(len(d2v)))
+
     # Check for both reordered and UFC ordered dofs
     V = FunctionSpace(mesh, "Lagrange", 1)
     Q = VectorFunctionSpace(mesh, "Lagrange", 1)
     W = V*Q
+
+    _test_maps_consistency(V)
+    _test_maps_consistency(Q)
+    _test_maps_consistency(W)
 
     u = Function(V)
     e = Expression("x[0]+x[1]")
     u.interpolate(e)
 
     vert_values = mesh.coordinates().sum(1)
-    func_values = -1*np.ones(len(vert_values))
-    func_values[dof_to_vertex_map(V)] = u.vector().array()
-
-    for v_val, f_val in zip(vert_values, func_values):
-        # Do not compare dofs owned by other process
-        if f_val != -1:
-            assert round(f_val - v_val, 7) == 0
+    func_values = np.empty(len(vert_values))
+    u.vector().get_local(func_values, vertex_to_dof_map(V))
+    assert round(max(abs(func_values - vert_values)), 7) == 0
 
     c0 = Constant((1,2))
     u0 = Function(Q)
@@ -250,7 +257,8 @@ def test_dof_to_vertex_map(mesh, reorder_dofs):
     vert_values[::2] = 1
     vert_values[1::2] = 2
 
-    u1.vector().set_local(vert_values[dof_to_vertex_map(Q)].copy())
+    dim = Q.dofmap().local_dimension('owned')
+    u1.vector().set_local(vert_values[dof_to_vertex_map(Q)[:dim]].copy())
     assert round((u0.vector()-u1.vector()).sum() - 0.0, 7) == 0
 
     W = FunctionSpace(mesh, "DG", 0)
