@@ -2,6 +2,7 @@
 	pattern based on max/min edge ratio
 - Removed refine_cell() method in CellTypes
 - Enable marker refinement to work in parallel for 1D meshes too
+- Add std::abort to Python exception hook to avoid parallel deadlocks
 1.6.0 [2015-07-28]
 - Remove redundant pressure boundary condition in Stokes demos
 - Require Point in RectangleMesh and BoxMesh constructors
