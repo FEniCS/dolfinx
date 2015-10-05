@@ -3,6 +3,8 @@
 - Removed refine_cell() method in CellTypes
 - Enable marker refinement to work in parallel for 1D meshes too
 - Add std::abort to Python exception hook to avoid parallel deadlocks
+- Extend dof_to_vertex_map with unowned dofs, thus making dof_to_vertex_map
+	an inverse of vertex_to_dof_map
 1.6.0 [2015-07-28]
 - Remove redundant pressure boundary condition in Stokes demos
 - Require Point in RectangleMesh and BoxMesh constructors
