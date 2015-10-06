@@ -326,26 +326,44 @@ namespace dolfin
     {
       const MeshGeometry& geom = _mesh->geometry();
       const std::size_t gdim = geom.dim();
-      const std::size_t tdim = _mesh->topology().dim();
+      const std::size_t geom_degree = geom.degree();
+      const std::size_t num_vertices = this->num_vertices();
+      const unsigned int* vertices = this->entities(0);
 
-      coordinates.clear();
-      for (std::size_t dim = 0; dim <= tdim; ++dim)
+      if (geom_degree == 1)
       {
-        for (std::size_t j = 0; j != num_entities(dim); ++j)
+        coordinates.resize(num_vertices*gdim);
+        for (std::size_t i = 0; i < num_vertices; ++i)
+          for (std::size_t j = 0; j < gdim; ++j)
+            coordinates[i*gdim + j] = geom.x(vertices[i])[j];
+      }
+      else if (geom_degree == 2)
+      {
+        const std::size_t tdim = _mesh->topology().dim();
+        const std::size_t num_edges = this->num_entities(1);
+        const unsigned int* edges = this->entities(1);
+
+        coordinates.resize((num_vertices + num_edges)*gdim);
+
+        for (std::size_t i = 0; i < num_vertices; ++i)
+          for (std::size_t j = 0; j < gdim; j++)
+            coordinates[i*gdim + j] = geom.x(vertices[i])[j];
+
+        for (std::size_t i = 0; i < num_edges; ++i)
         {
-          for (std::size_t k = 0;
-               k != geom.num_entity_coordinates(dim); ++k)
-          {
-            const std::size_t entity_index
-              = (dim == tdim) ? index() : entities(dim)[j];
-            const std::size_t point_index
-              = geom.get_entity_index(dim, k, entity_index);
-            const double* point_ptr = geom.x(point_index);
-            coordinates.insert(coordinates.end(),
-                               point_ptr, point_ptr + gdim);
-          }
+          const std::size_t entity_index
+              = (tdim == 1) ? index() : edges[i];
+          const std::size_t point_index
+            = geom.get_entity_index(1, 0, entity_index);
+          for (std::size_t j = 0; j < gdim; ++j)
+            coordinates[(i + num_vertices)*gdim + j] = geom.x(point_index)[j];
         }
       }
+      else
+      {
+        dolfin_error("Cell.h", "get coordinate_dofs", "Unsupported mesh degree");
+      }
+
     }
 
     // FIXME: This function is part of a UFC transition
