@@ -81,12 +81,8 @@ int main()
   // Inflow boundary condition for velocity
   DirichletBC bc1(W0, inflow, sub_domains, 1);
 
-  // Boundary condition for pressure at outflow
-  DirichletBC bc2(W1, zero, sub_domains, 2);
-
   // Collect boundary conditions
-  std::vector<const DirichletBC*> bcs;
-  bcs.push_back(&bc0); bcs.push_back(&bc1); bcs.push_back(&bc2);
+  std::vector<const DirichletBC*> bcs = {{&bc0, &bc1}};
 
   // Define variational problem
   Constant f(0.0, 0.0);

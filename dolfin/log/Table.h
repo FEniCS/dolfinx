@@ -28,7 +28,8 @@
 
 namespace dolfin
 {
-
+  class MPI;
+  class XMLTable;
   class TableEntry;
 
   /// This class provides storage and pretty-printing for tables.
@@ -36,12 +37,12 @@ namespace dolfin
   ///
   ///   Table table("Timings");
   ///
-  ///   table("uBLAS",  "Assemble") = 0.010;
-  ///   table("uBLAS",  "Solve")    = 0.020;
+  ///   table("Eigen",  "Assemble") = 0.010;
+  ///   table("Eigen",  "Solve")    = 0.020;
   ///   table("PETSc",  "Assemble") = 0.011;
   ///   table("PETSc",  "Solve")    = 0.019;
-  ///   table("Epetra", "Assemble") = 0.012;
-  ///   table("Epetra", "Solve")    = 0.018;
+  ///   table("Tpetra", "Assemble") = 0.012;
+  ///   table("Tpetra", "Solve")    = 0.018;
   ///
   ///   info(table);
 
@@ -76,9 +77,6 @@ namespace dolfin
     /// Get value of table entry
     double get_value(std::string row, std::string col) const;
 
-    /// Return table title
-    std::string title() const;
-
     /// Assignment operator
     const Table& operator= (const Table& table);
 
@@ -89,9 +87,6 @@ namespace dolfin
     std::string str_latex() const;
 
   private:
-
-    // Table title
-    std::string _title;
 
     // Rows
     std::vector<std::string> rows;
@@ -109,6 +104,12 @@ namespace dolfin
 
     // True if we should right-justify the table entries
     bool _right_justify;
+
+    // Allow MPI::all_reduce accessing dvalues
+    friend class MPI;
+
+    // Allow XMLTable accessing data
+    friend class XMLTable;
 
   };
 

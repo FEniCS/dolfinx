@@ -18,28 +18,29 @@
 // Modified by Anders Logg 2010-2013
 //
 // First added:  2010-08-19
-// Last changed: 2013-11-15
+// Last changed: 2015-06-16
 
 #include <sstream>
 #include <stdio.h>
-#include <dolfin/log/Table.h>
+
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Timer.h>
-
-#include <dolfin/parameter/Parameters.h>
-#include <dolfin/la/Vector.h>
-#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/GenericFunction.h>
+#include <dolfin/la/Vector.h>
+#include <dolfin/log/Table.h>
+#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/parameter/Parameters.h>
 #include <dolfin/plot/plot.h>
 
 #include "GenericAdaptiveVariationalSolver.h"
 #include "GoalFunctional.h"
 #include "ErrorControl.h"
-#include "TimeSeries.h"
 #include "adapt.h"
+#include "ErrorControl.h"
 #include "marking.h"
+#include "TimeSeries.h"
 
 using namespace dolfin;
 
@@ -65,7 +66,9 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
 
   // Initialize storage of meshes and indicators
   std::string label = parameters["data_label"];
-  TimeSeries series(label);
+#ifdef HAS_HDF5
+  TimeSeries series(goal->mesh().mpi_comm(), label);
+#endif
 
   // Iterate over a series of meshes
   Timer timer("Adaptive solve");
@@ -151,8 +154,12 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
     datum->add("time_compute_indicators", timer.stop());
     if (parameters["save_data"])
     {
+#ifdef HAS_HDF5
       //series.store(indicators, i); // No TimeSeries storage of MeshFunction
       series.store(mesh, i);
+#else
+      warning("HDF5 not available, unable to save refinement data as time series.");
+#endif
     }
     end();
 
@@ -189,7 +196,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
           max_iterations);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::shared_ptr<Parameters> >
+std::vector<std::shared_ptr<Parameters>>
 GenericAdaptiveVariationalSolver::adaptive_data() const
 {
   return _adaptive_data;

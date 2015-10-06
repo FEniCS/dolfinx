@@ -41,21 +41,22 @@ MeshEditor::~MeshEditor()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::open(Mesh& mesh, std::size_t tdim, std::size_t gdim)
+void MeshEditor::open(Mesh& mesh, std::size_t tdim,
+                      std::size_t gdim, std::size_t degree)
 {
   switch (tdim)
   {
   case 0:
-    open(mesh, CellType::point, tdim, gdim);
+    open(mesh, CellType::point, tdim, gdim, degree);
     break;
   case 1:
-    open(mesh, CellType::interval, tdim, gdim);
+    open(mesh, CellType::interval, tdim, gdim, degree);
     break;
   case 2:
-    open(mesh, CellType::triangle, tdim, gdim);
+    open(mesh, CellType::triangle, tdim, gdim, degree);
     break;
   case 3:
-    open(mesh, CellType::tetrahedron, tdim, gdim);
+    open(mesh, CellType::tetrahedron, tdim, gdim, degree);
     break;
   default:
     dolfin_error("MeshEditor.cpp",
@@ -65,7 +66,7 @@ void MeshEditor::open(Mesh& mesh, std::size_t tdim, std::size_t gdim)
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
-                      std::size_t gdim)
+                      std::size_t gdim, std::size_t degree)
 {
   // Clear old mesh data
   mesh.clear();
@@ -77,10 +78,13 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
   _tdim = tdim;
 
   // Set cell type
-  mesh._cell_type = CellType::create(type);
+  mesh._cell_type.reset(CellType::create(type));
 
   // Initialize topological dimension
   mesh._topology.init(tdim);
+
+  // Initialize geometric dimension and degree
+  mesh._geometry.init(gdim, degree);
 
   // Initialize domains
   mesh._domains.init(tdim);
@@ -90,16 +94,16 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::open(Mesh& mesh, std::string type, std::size_t tdim,
-                      std::size_t gdim)
+                      std::size_t gdim, std::size_t degree)
 {
   if (type == "point")
-    open(mesh, CellType::point, tdim, gdim);
+    open(mesh, CellType::point, tdim, gdim, degree);
   else if (type == "interval")
-    open(mesh, CellType::interval, tdim, gdim);
+    open(mesh, CellType::interval, tdim, gdim, degree);
   else if (type == "triangle")
-    open(mesh, CellType::triangle, tdim, gdim);
+    open(mesh, CellType::triangle, tdim, gdim, degree);
   else if (type == "tetrahedron")
-    open(mesh, CellType::tetrahedron, tdim, gdim);
+    open(mesh, CellType::tetrahedron, tdim, gdim, degree);
   else
   {
     dolfin_error("MeshEditor.cpp",
@@ -124,7 +128,34 @@ void MeshEditor::init_vertices_global(std::size_t num_local_vertices,
   _mesh->_topology.init(0, num_local_vertices, num_global_vertices);
   _mesh->_topology.init_ghost(0, num_local_vertices);
   _mesh->_topology.init_global_indices(0, num_local_vertices);
-  _mesh->_geometry.init(_gdim, num_local_vertices);
+  std::vector<std::size_t> num_vertex_points(1, num_local_vertices);
+  _mesh->_geometry.init_entities(num_vertex_points);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::init_entities()
+{
+  dolfin_assert(_tdim > 0);
+  dolfin_assert(_mesh);
+
+  if (_mesh->topology().size(_tdim) == 0
+      or next_cell != _num_cells)
+  {
+    dolfin_error("MeshEditor.cpp",
+                 "initialise topological entities",
+                 "It is required to add all cells before initialising other entities");
+  }
+
+  // Initialise entities required for this polynomial degree
+  _mesh->order();
+  std::size_t dmax = std::min(_mesh->_geometry.degree(), _tdim);
+  for (std::size_t d = 1; d < dmax; ++d)
+    _mesh->init(d);
+
+  // Create space in the MeshGeometry coordinates for the new entity points
+  std::vector<std::size_t> num_entities(_tdim + 1, 0);
+  for (std::size_t d = 0; d <= _tdim; ++d)
+    num_entities[d] = _mesh->topology().size(d);
+  _mesh->_geometry.init_entities(num_entities);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::init_cells_global(std::size_t num_local_cells,
@@ -192,8 +223,7 @@ void MeshEditor::add_vertex_global(std::size_t local_index,
   add_vertex_common(local_index, _gdim);
 
   // Set coordinate
-  std::vector<double> x(p.coordinates(), p.coordinates() + _gdim);
-  _mesh->_geometry.set(local_index, x);
+  _mesh->_geometry.set(local_index, p.coordinates());
   _mesh->_topology.set_global_index(0, local_index, global_index);
 }
 //-----------------------------------------------------------------------------
@@ -205,8 +235,15 @@ void MeshEditor::add_vertex_global(std::size_t local_index,
   add_vertex_common(local_index, x.size());
 
   // Set coordinate
-  _mesh->_geometry.set(local_index, x);
+  _mesh->_geometry.set(local_index, x.data());
   _mesh->_topology.set_global_index(0, local_index, global_index);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::add_entity_point(std::size_t entity_dim, std::size_t order,
+                                  std::size_t index, const Point& p)
+{
+  const std::size_t idx = _mesh->_geometry.get_entity_index(entity_dim, order, index);
+  _mesh->_geometry.set(idx, p.coordinates());
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(std::size_t c, std::size_t v0, std::size_t v1)
@@ -241,36 +278,12 @@ void MeshEditor::add_cell(std::size_t c, std::size_t v0, std::size_t v1,
   add_cell(c, c, _vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_cell(std::size_t c, const std::vector<std::size_t>& v)
-{
-  add_cell(c, c, v);
-}
-//-----------------------------------------------------------------------------
-void MeshEditor::add_cell(std::size_t local_index, std::size_t global_index,
-                          const std::vector<std::size_t>& v)
-{
-  dolfin_assert(v.size() == _tdim + 1);
-
-  // Check vertices
-  check_vertices(v);
-
-  // Add cell
-  add_cell_common(local_index, _tdim);
-
-  // Set data
-  _mesh->_topology(_tdim, 0).set(local_index, v);
-  _mesh->_topology.set_global_index(_tdim, local_index, global_index);
-}
-//-----------------------------------------------------------------------------
 void MeshEditor::close(bool order)
 {
   // Order mesh if requested
   dolfin_assert(_mesh);
   if (order && !_mesh->ordered())
     _mesh->order();
-
-  // Initialize cell orientations
-  _mesh->cell_orientations().resize(_mesh->num_cells(), -1);
 
   // Clear data
   clear();
@@ -367,18 +380,5 @@ void MeshEditor::clear()
   next_cell = 0;
   _mesh = 0;
   _vertices.clear();
-}
-//-----------------------------------------------------------------------------
-void MeshEditor::check_vertices(const std::vector<std::size_t>& v) const
-{
-  for (std::size_t i = 0; i < v.size(); ++i)
-  {
-    if (_num_vertices > 0 && v[i] >= _num_vertices)
-    {
-      dolfin_error("MeshEditor.cpp",
-                   "add cell using mesh editor",
-                   "Vertex index (%d) out of range [0, %d)", v[i], _num_vertices);
-    }
-  }
 }
 //-----------------------------------------------------------------------------

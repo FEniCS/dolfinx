@@ -56,6 +56,7 @@ class Pressure : public Expression
 int main()
 {
   parameters["allow_extrapolation"] = true;
+  parameters["refinement_algorithm"] = "plaza_with_parent_facets";
 
   // Create mesh and function space
   Mesh mesh("../channel_with_flap.xml.gz");
@@ -118,7 +119,7 @@ int main()
   solver.summary();
 
   // Show all timings
-  list_timings();
+  list_timings(TimingClear::clear, { TimingType::wall });
 
   // Plot solutions
   Function solution = w.leaf_node();

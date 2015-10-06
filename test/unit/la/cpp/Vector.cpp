@@ -37,8 +37,8 @@ public:
 
   void test_backends()
   {
-    // uBLAS
-    parameters["linear_algebra_backend"] = "uBLAS";
+    // Eigen
+    parameters["linear_algebra_backend"] = "Eigen";
     _test_operators(MPI_COMM_SELF);
 
     // FIXME: Outcommented STL backend to circumvent infinite loops as
@@ -124,9 +124,9 @@ public:
     }
     #endif
 
-    // uBLAS
+    // Eigen
     {
-      uBLASVector x;
+      EigenVector x;
       x.init(layout_local);
       CPPUNIT_ASSERT(x.size() == 203);
     }

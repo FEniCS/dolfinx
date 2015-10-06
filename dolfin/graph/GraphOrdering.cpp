@@ -126,7 +126,7 @@ void GraphOrdering::num_edges_per_vertex(std::vector<std::size_t>& num_edges) co
   _tensor_layout.sparsity_pattern()->num_nonzeros_diagonal(num_edges);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<std::size_t> > GraphOrdering::edges() const
+const std::vector<std::vector<std::size_t>> GraphOrdering::edges() const
 {
   dolfin_assert(_tensor_layout.sparsity_pattern());
   return _tensor_layout.sparsity_pattern()->diagonal_pattern(GenericSparsityPattern::unsorted);
@@ -180,7 +180,7 @@ void GraphOrdering::get_all_edges(void *data, int num_gid_entries,
                                   float *ewgts, int *ierr)
 {
   GraphOrdering *objs = (GraphOrdering *)data;
-  const std::vector<std::vector<std::size_t> > edges = objs->edges();
+  const std::vector<std::vector<std::size_t>> edges = objs->edges();
 
   std::size_t sum = 0;
   for (std::size_t i = 0; i < edges.size(); ++i)

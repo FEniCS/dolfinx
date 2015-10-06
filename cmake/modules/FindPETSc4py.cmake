@@ -80,3 +80,33 @@ else(PETSC4PY_FOUND)
 endif(PETSC4PY_FOUND)
 
 mark_as_advanced(PETSC4PY_INCLUDE_DIRS, PETSC4PY_VERSION, PETSC4PY_VERSION_MAJOR, PETSC4PY_VERSION_MINOR)
+
+if (PETSc4py_FIND_VERSION)
+  # Check if version found is >= required version
+  if (NOT "${PETSC4PY_VERSION}" VERSION_LESS "${PETSc4py_FIND_VERSION}")
+    set(PETSC4PY_VERSION_OK TRUE)
+  endif()
+else()
+  # No specific version requested
+  set(PETSC4PY_VERSION_OK TRUE)
+endif()
+mark_as_advanced(PETSC4PY_VERSION_OK)
+
+# Standard package handling
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(PETSc4py
+  "PETSc4py could not be found. Be sure to set PYTHONPATH appropriately."
+  PETSC4PY_INCLUDE_DIRS PETSC4PY_VERSION PETSC4PY_VERSION_OK)
+
+# Check petsc4py.i for PETSC_INT
+if(PETSC4PY_INCLUDE_DIRS)
+  file(STRINGS "${PETSC4PY_INCLUDE_DIRS}/petsc4py/petsc4py.i" PETSC4PY_INT)
+  string(REGEX MATCH "SWIG_TYPECHECK_INT[0-9]+" PETSC4PY_INT "${PETSC4PY_INT}")
+  string(REPLACE "SWIG_TYPECHECK_INT" "" PETSC4PY_INT "${PETSC4PY_INT}")
+  math(EXPR PETSC_INT "${PETSC_INT_SIZE}*8")
+  if(NOT PETSC_INT STREQUAL PETSC4PY_INT)
+    message(STATUS "PETSC_INT = ${PETSC4PY_INT} ${PETSC_INT}")
+    message(STATUS " - does not match")
+    set(PETSC4PY_FOUND FALSE)
+  endif()
+endif()

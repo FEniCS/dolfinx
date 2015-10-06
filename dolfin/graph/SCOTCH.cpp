@@ -25,7 +25,7 @@
 #include <map>
 #include <numeric>
 #include <set>
-#include <boost/lexical_cast.hpp>
+#include <string>
 
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
@@ -52,11 +52,11 @@ using namespace dolfin;
 void SCOTCH::compute_partition(
   const MPI_Comm mpi_comm,
   std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
   const LocalMeshData& mesh_data)
 {
   // Create data structures to hold graph
-  std::vector<std::set<std::size_t> > local_graph;
+  std::vector<std::set<std::size_t>> local_graph;
   std::set<std::size_t> ghost_vertices;
 
   // Compute local dual graph
@@ -64,11 +64,9 @@ void SCOTCH::compute_partition(
                                    ghost_vertices);
 
   // Compute partitions
-  const std::size_t num_global_vertices = mesh_data.num_global_cells;
-  const std::vector<std::size_t>& global_cell_indices
-    = mesh_data.global_cell_indices;
-  partition(mpi_comm, local_graph, ghost_vertices, global_cell_indices,
-            num_global_vertices, cell_partition, ghost_procs);
+  partition(mpi_comm, local_graph, mesh_data.cell_weight,
+            ghost_vertices, mesh_data.global_cell_indices,
+            mesh_data.num_global_cells, cell_partition, ghost_procs);
 
 }
 //-----------------------------------------------------------------------------
@@ -76,8 +74,7 @@ std::vector<int> SCOTCH::compute_gps(const Graph& graph,
                                      std::size_t num_passes)
 {
   // Create strategy string for Gibbs-Poole-Stockmeyer ordering
-  std::string strategy = "g{pass= "
-    + boost::lexical_cast<std::string>(num_passes) + "}";
+  std::string strategy = "g{pass= " + std::to_string(num_passes) + "}";
 
   return compute_reordering(graph, strategy);
 }
@@ -95,7 +92,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
                                 std::vector<int>& inverse_permutation,
                                 std::string scotch_strategy)
 {
-  Timer timer("SCOTCH graph ordering");
+  Timer timer("Compute SCOTCH graph re-ordering");
 
   // Number of local graph vertices (cells)
   const SCOTCH_Num vertnbr = graph.size();
@@ -135,6 +132,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
   }
 
   // Build SCOTCH graph
+  Timer timer1("SCOTCH: call SCOTCH_graphBuild");
   if (SCOTCH_graphBuild(&scotch_graph, baseval,
                         vertnbr, &verttab[0], &verttab[1], NULL, NULL,
                         edgenbr, &edgetab[0], NULL))
@@ -143,6 +141,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
                  "partition mesh using SCOTCH",
                  "Error building SCOTCH graph");
   }
+  timer1.stop();
 
   // Check graph data for consistency
   /*
@@ -161,8 +160,6 @@ void SCOTCH::compute_reordering(const Graph& graph,
   SCOTCH_stratInit(&strat);
 
   // Set SCOTCH strategy (if provided)
-  //SCOTCH_stratGraphOrderBuild(&strat, SCOTCH_STRATQUALITY, 0, 0);
-  //SCOTCH_stratGraphOrderBuild(&strat, SCOTCH_STRATSPEED, 0, 0);
   if (!scotch_strategy.empty())
     SCOTCH_stratGraphOrder(&strat, scotch_strategy.c_str());
 
@@ -175,6 +172,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
   SCOTCH_randomReset();
 
   // Compute re-ordering
+  Timer timer2("SCOTCH: call SCOTCH_graphOrder");
   if (SCOTCH_graphOrder(&scotch_graph, &strat, permutation_indices.data(),
                         inverse_permutation_indices.data(), NULL, NULL, NULL))
   {
@@ -182,6 +180,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
                  "re-order graph using SCOTCH",
                  "Error during re-ordering");
   }
+  timer2.stop();
 
   // Clean up SCOTCH objects
   SCOTCH_graphExit(&scotch_graph);
@@ -198,14 +197,15 @@ void SCOTCH::compute_reordering(const Graph& graph,
 //-----------------------------------------------------------------------------
 void SCOTCH::partition(
   const MPI_Comm mpi_comm,
-  const std::vector<std::set<std::size_t> >& local_graph,
+  const std::vector<std::set<std::size_t>>& local_graph,
+  const std::vector<std::size_t>& node_weights,
   const std::set<std::size_t>& ghost_vertices,
   const std::vector<std::size_t>& global_cell_indices,
   const std::size_t num_global_vertices,
   std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs)
+  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs)
 {
-  Timer timer("Partition graph (calling SCOTCH)");
+  Timer timer("Compute graph partition (SCOTCH)");
 
   // C-style array indexing
   const SCOTCH_Num baseval = 0;
@@ -233,7 +233,7 @@ void SCOTCH::partition(
   // number of local edges + edges connecting to ghost vertices)
   SCOTCH_Num edgelocnbr = 0;
   vertloctab.push_back((SCOTCH_Num) 0);
-  std::vector<std::set<std::size_t> >::const_iterator vertex;
+  std::vector<std::set<std::size_t>>::const_iterator vertex;
   for(vertex = local_graph.begin(); vertex != local_graph.end(); ++vertex)
   {
     edgelocnbr += vertex->size();
@@ -252,6 +252,7 @@ void SCOTCH::partition(
   const SCOTCH_Num local_graph_size = local_graph.size();
   MPI::all_gather(mpi_comm, local_graph_size, proccnttab);
 
+  #ifdef DEBUG
   // FIXME: explain this test
   // Array containing . . . . (some sanity checks)
   std::vector<std::size_t> procvrttab(num_processes + 1);
@@ -266,59 +267,7 @@ void SCOTCH::partition(
   // Sanity check
   for (std::size_t i = 1; i <= proc_num; ++i)
     dolfin_assert(procvrttab[i] >= (procvrttab[i - 1] + proccnttab[i - 1]));
-
-  // Print graph data -------------------------------------
-  /*
-  {
-    const SCOTCH_Num vertgstnbr = local_graph.size() + ghost_vertices.size();
-
-    // Total  (global) number of vertices (cells) in the graph
-    const SCOTCH_Num vertglbnbr = num_global_vertices;
-
-    // Total (global) number of edges (cell-cell connections) in the graph
-    const SCOTCH_Num edgeglbnbr = MPI::sum(mpi_comm, edgelocnbr);
-
-    for (std::size_t proc = 0; proc < num_processes; ++proc)
-    {
-      // Print data for one process at a time
-      if (proc == proc_num)
-      {
-        // Number of processes
-        const SCOTCH_Num procglbnbr = num_processes;
-
-        cout << "--------------------------------------------------" << endl;
-        cout << "Num vertices (vertglbnbr)     : " << vertglbnbr << endl;
-        cout << "Num edges (edgeglbnbr)        : " << edgeglbnbr << endl;
-        cout << "Num of processes (procglbnbr) : " << procglbnbr << endl;
-        cout << "Vert per processes (proccnttab) : " << endl;
-        for (std::size_t i = 0; i < proccnttab.size(); ++i)
-          cout << "  " << proccnttab[i];
-        cout << endl;
-        cout << "Offsets (procvrttab): " << endl;
-        for (std::size_t i = 0; i < procvrttab.size(); ++i)
-          cout << "  " << procvrttab[i];
-        cout << endl;
-
-        //------ Print local data
-        cout << "(*) Num vertices (vertlocnbr)        : " << vertlocnbr << endl;
-        cout << "(*) Num vert (inc ghost) (vertgstnbr): " << vertgstnbr << endl;
-        cout << "(*) Num edges (edgelocnbr)           : " << edgelocnbr << endl;
-        cout << "(*) Vertloctab: " << endl;
-        for (std::size_t i = 0; i < vertloctab.size(); ++i)
-          cout << "  " << vertloctab[i];
-        cout << endl;
-        cout << "edgeloctab: " << endl;
-        for (std::size_t i = 0; i < edgeloctab.size(); ++i)
-          cout << "  " << edgeloctab[i];
-        cout << endl;
-        cout << "--------------------------------------------------" << endl;
-      }
-      MPI::barrier(mpi_comm);
-    }
-    MPI::barrier(mpi_comm);
-  }
-  */
-  // ------------------------------------------------------
+  #endif
 
   // Create SCOTCH graph and initialise
   SCOTCH_Dgraph dgrafdat;
@@ -329,9 +278,21 @@ void SCOTCH::partition(
                  "Error initializing SCOTCH graph");
   }
 
+  SCOTCH_Num* veloloctab;
+  std::vector<SCOTCH_Num> vload;
+  if (node_weights.size() == 0)
+    veloloctab = NULL;
+  else
+  {
+    vload.resize(node_weights.size());
+    std::copy(node_weights.begin(), node_weights.end(), vload.begin());
+    veloloctab = vload.data();
+  }
+
   // Build SCOTCH distributed graph
+  Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
-                              &vertloctab[0], NULL, NULL, NULL,
+                              &vertloctab[0], NULL, veloloctab, NULL,
                               edgelocnbr, edgelocnbr,
                               &edgeloctab[0], NULL, NULL) )
   {
@@ -339,6 +300,7 @@ void SCOTCH::partition(
                  "partition mesh using SCOTCH",
                  "Error building SCOTCH graph");
   }
+  timer1.stop();
 
   // Check graph data for consistency
   #ifdef DEBUG
@@ -353,14 +315,15 @@ void SCOTCH::partition(
   // Number of partitions (set equal to number of processes)
   const SCOTCH_Num npart = num_processes;
 
-  // Partitioning strategy
+  // Initialise partitioning strategy
   SCOTCH_Strat strat;
   SCOTCH_stratInit(&strat);
 
-  // Set strategy (SCOTCH uses very cryptic strings for this, and they
-  // can change between versions)
-  //std::string strategy = "b{sep=m{asc=b{bnd=q{strat=f},org=q{strat=f}},low=q{strat=m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}|m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}},seq=q{strat=m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}|m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}}},seq=b{job=t,map=t,poli=S,sep=m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}|m{type=h,vert=80,low=h{pass=10}f{bal=0.0005,move=80},asc=b{bnd=d{dif=1,rem=1,pass=40}f{bal=0.005,move=80},org=f{bal=0.005,move=80}}}}}";
-  //SCOTCH_stratDgraphMap (&strat, strategy.c_str());
+  // Set SCOTCH strategy
+  //SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATDEFAULT, npart, npart, 0.05);
+  SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATSPEED, npart, npart, 0.05);
+  //SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATQUALITY, npart, npart, 0.05);
+  //SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATSCALABILITY, npart, npart, 0.15);
 
   // Resize vector to hold cell partition indices with enough extra
   // space for ghost cell partition information too When there are no
@@ -374,12 +337,25 @@ void SCOTCH::partition(
   SCOTCH_randomReset();
 
   // Partition graph
+  Timer timer2("SCOTCH: call SCOTCH_dgraphPart");
   if (SCOTCH_dgraphPart(&dgrafdat, npart, &strat, _cell_partition.data()))
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
                  "Error during partitioning");
   }
+  timer2.stop();
+
+  /*
+  // Write SCOTCH strategy to file
+  if (dolfin::MPI::rank(MPI_COMM_WORLD) == 0)
+  {
+    FILE* fp;
+    fp = fopen("test.txt", "w");
+    SCOTCH_stratSave(&strat, fp);
+    fclose(fp);
+  }
+  */
 
   // Exchange halo with cell_partition data for ghosts
   // FIXME: check MPI type compatibility with SCOTCH_Num. Getting this
@@ -388,7 +364,7 @@ void SCOTCH::partition(
   MPI_Datatype MPI_SCOTCH_Num;
   if (sizeof(SCOTCH_Num) == 4)
     MPI_SCOTCH_Num = MPI_INT;
-  else if (sizeof(SCOTCH_Num)==8)
+  else if (sizeof(SCOTCH_Num) == 8)
     MPI_SCOTCH_Num = MPI_LONG_LONG_INT;
 
   // Double check size is correct
@@ -396,6 +372,7 @@ void SCOTCH::partition(
   MPI_Type_size(MPI_SCOTCH_Num, &tsize);
   dolfin_assert(tsize == sizeof(SCOTCH_Num));
 
+  Timer timer3("SCOTCH: call SCOTCH_dgraphHalo");
   if (SCOTCH_dgraphHalo(&dgrafdat, (void *)_cell_partition.data(),
                         MPI_SCOTCH_Num))
   {
@@ -403,16 +380,20 @@ void SCOTCH::partition(
                  "partition mesh using SCOTCH",
                  "Error during halo exchange");
   }
+  timer3.stop();
 
   // Get SCOTCH's locally indexed graph
+  Timer timer4("Get SCOTCH graph data");
   SCOTCH_Num* edge_ghost_tab;
   SCOTCH_dgraphData(&dgrafdat,
                     NULL, NULL, NULL, NULL, NULL, NULL,
                     NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                     &edge_ghost_tab, NULL, (MPI_Comm *)&mpi_comm);
+  timer4.stop();
 
   // Iterate through SCOTCH's local compact graph to find partition
   // boundaries and save to map
+  Timer timer5("Extract partition boundaries from SCOTCH graph");
   for(SCOTCH_Num i = 0; i < vertlocnbr; ++i)
   {
     const std::size_t proc_this =  _cell_partition[i];
@@ -425,8 +406,8 @@ void SCOTCH::partition(
         if (map_it == ghost_procs.end())
         {
           dolfin::Set<unsigned int> sharing_processes;
-          // Owning process goes first into dolfin::Set
-          // (unordered set) so will always be first.
+          // Owning process goes first into dolfin::Set (unordered
+          // set) so will always be first.
           sharing_processes.insert(proc_this);
           sharing_processes.insert(proc_other);
           ghost_procs.insert(std::make_pair(i, sharing_processes));
@@ -436,6 +417,7 @@ void SCOTCH::partition(
       }
     }
   }
+  timer5.stop();
 
   // Clean up SCOTCH objects
   SCOTCH_dgraphExit(&dgrafdat);
@@ -453,7 +435,7 @@ void SCOTCH::partition(
 void SCOTCH::compute_partition(
   const MPI_Comm mpi_comm,
   std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
   const LocalMeshData& mesh_data)
 {
   dolfin_error("SCOTCH.cpp",
@@ -492,12 +474,13 @@ void SCOTCH::compute_reordering(const Graph& graph,
 }
 //-----------------------------------------------------------------------------
 void SCOTCH::partition(const MPI_Comm mpi_comm,
-                       const std::vector<std::set<std::size_t> >& local_graph,
+                       const std::vector<std::set<std::size_t>>& local_graph,
+                       const std::vector<std::size_t>& node_weights,
                        const std::set<std::size_t>& ghost_vertices,
                        const std::vector<std::size_t>& global_cell_indices,
                        const std::size_t num_global_vertices,
                        std::vector<std::size_t>& cell_partition,
-                       std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs)
+                       std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs)
 {
   dolfin_error("SCOTCH.cpp",
                "partition mesh using SCOTCH",

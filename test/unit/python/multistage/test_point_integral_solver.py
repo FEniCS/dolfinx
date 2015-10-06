@@ -30,7 +30,7 @@ from dolfin_utils.test import set_parameters_fixture
 optimize = set_parameters_fixture('form_compiler.optimize', [True])
 
 # Exclude some tests for now
-scalar_excludes = [ExplicitMidPoint, RK4, CN2, ExplicitMidPoint, ESDIRK3, ESDIRK4]
+scalar_excludes = [RK4, CN2, ExplicitMidPoint, ESDIRK3, ESDIRK4]
 
 # Build test methods using function closure so 1 test is generated per Scheme and
 # test case
@@ -65,7 +65,7 @@ def test_butcher_schemes_scalar_time(Scheme, optimize):
 
     u = Function(V)
     compound_time_expr = Expression("weight*time*time", weight=weight, \
-                                    element=time.element(), time=time)
+                                    element=time.ufl_element(), time=time)
     form = (2+time+compound_time_expr-time**4)*v*dP
 
     scheme = Scheme(form, u, time)
@@ -88,7 +88,7 @@ def test_butcher_schemes_scalar(Scheme, optimize):
 
     if Scheme in scalar_excludes:
         return
-    
+
     mesh = UnitSquareMesh(10, 10)
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
@@ -100,7 +100,7 @@ def test_butcher_schemes_scalar(Scheme, optimize):
     form = (1-u)*v*dP
 
     scheme = Scheme(form, u)
-        
+
     info(scheme)
     u_errors = []
     solver = PointIntegralSolver(scheme)
@@ -139,7 +139,7 @@ def test_butcher_schemes_vector(Scheme, optimize):
     form = (-u[1]*v[0]+u[0]*v[1])*dP
 
     scheme = Scheme(form, u)
-        
+
     info(scheme)
     solver = PointIntegralSolver(scheme)
     u_errors = []

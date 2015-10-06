@@ -66,7 +66,7 @@ def _create_dp_problem(dim):
     vertex_domain = VertexFunction("size_t", mesh , 0)
     subdomain.mark(vertex_domain, 1)
     bc = DirichletBC(VV, Constant((0,0)), disjoint_subdomain)
-    dPP = dP[vertex_domain]
+    dPP = dP(subdomain_data=vertex_domain)
 
     return (u, uu), (v, vv), (U, UU), dPP, bc
 

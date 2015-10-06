@@ -43,9 +43,9 @@ namespace dolfin
 
   class Function;
   class GenericVector;
-  class LocalMeshData;
   class Mesh;
   class Parameters;
+  class Table;
   template<typename T> class Array;
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
@@ -66,10 +66,6 @@ namespace dolfin
     void operator>> (Mesh& input);
     void operator<< (const Mesh& output);
 
-    // LocalMeshData
-    void operator>> (LocalMeshData& input);
-    void operator<< (const LocalMeshData& output);
-
     // Vector
     void operator>> (GenericVector& input);
     void read_vector(std::vector<double>& input,
@@ -79,6 +75,10 @@ namespace dolfin
     // Parameters
     void operator>> (Parameters& input);
     void operator<< (const Parameters& output);
+
+    // Table
+    void operator>> (Table& input);
+    void operator<< (const Table& output);
 
     // Function data
     void operator>>(Function& input);

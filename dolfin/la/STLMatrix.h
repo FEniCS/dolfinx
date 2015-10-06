@@ -35,8 +35,6 @@
 #include "TensorLayout.h"
 #include "GenericMatrix.h"
 
-#include <dolfin/log/dolfin_log.h>
-
 namespace dolfin
 {
 
@@ -180,6 +178,10 @@ namespace dolfin
 
     // Matrix-vector product, y = A^T x
     virtual void transpmult(const GenericVector& x, GenericVector& y) const
+    { dolfin_not_implemented(); }
+
+    /// Get diagonal of a matrix
+    virtual void get_diagonal(GenericVector& x) const
     { dolfin_not_implemented(); }
 
     /// Set diagonal of a matrix

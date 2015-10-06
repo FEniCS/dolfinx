@@ -101,8 +101,8 @@ int main(int argc, char* argv[])
   // Create meshes
   int N = 32;
   UnitSquareMesh mesh_0(N, N);
-  RectangleMesh  mesh_1(0.2, 0.2, 0.6, 0.6, N, N);
-  RectangleMesh  mesh_2(0.4, 0.4, 0.8, 0.8, N, N);
+  RectangleMesh  mesh_1(Point(0.2, 0.2), Point(0.6, 0.6), N, N);
+  RectangleMesh  mesh_2(Point(0.4, 0.4), Point(0.8, 0.8), N, N);
 
   // Create function spaces
   MultiMeshStokes::FunctionSpace W0(mesh_0);

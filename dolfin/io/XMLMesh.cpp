@@ -24,10 +24,9 @@
 #include <memory>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <vector>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
-#include <memory>
 
 #include "pugixml.hpp"
 
@@ -37,6 +36,7 @@
 #include "dolfin/la/GenericVector.h"
 #include "dolfin/mesh/Cell.h"
 #include "dolfin/mesh/CellType.h"
+#include "dolfin/mesh/LocalMeshData.h"
 #include "dolfin/mesh/Mesh.h"
 #include "dolfin/mesh/MeshData.h"
 #include "dolfin/mesh/MeshEditor.h"
@@ -131,7 +131,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
   const unsigned int num_vertices_per_cell = cell_type->num_vertices(tdim);
   std::vector<std::string> v_str(num_vertices_per_cell);
   for (std::size_t i = 0; i < num_vertices_per_cell; ++i)
-    v_str[i] = "v" + boost::lexical_cast<std::string, unsigned int>(i);
+    v_str[i] = "v" + std::to_string(i);
 
   // Iterate over cells and add to mesh
   std::vector<std::size_t> v(num_vertices_per_cell);
@@ -317,6 +317,73 @@ void XMLMesh::read_domains(MeshDomains& domains, const Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
+void XMLMesh::read_domain_data(LocalMeshData& mesh_data,
+                               const pugi::xml_node xml_dolfin)
+{
+  // Get mesh node
+  const pugi::xml_node mesh_node = xml_dolfin.child("mesh");
+  if (!mesh_node)
+  {
+    dolfin_error("XMLMesh.cpp",
+                 "read mesh from XML file",
+                 "Not a DOLFIN XML Mesh file");
+  }
+
+
+  // Check if we have any domains
+  const pugi::xml_node xml_domains = mesh_node.child("domains");
+  if (!xml_domains)
+  {
+    mesh_data.domain_data.clear();
+    return;
+  }
+
+  // Iterate over data
+  for (pugi::xml_node_iterator xml_domain = xml_domains.begin();
+       xml_domain != xml_domains.end(); ++xml_domain)
+  {
+    // Check that node is <mesh_value_collection>
+    const std::string node_name = xml_domain->name();
+    if (node_name != "mesh_value_collection")
+    {
+      dolfin_error("XMLMesh.cpp",
+                   "read mesh domains from XML file",
+                   "Expecting XML node <mesh_value_collection> but got <%s>",
+                   node_name.c_str());
+    }
+
+    // Get attributes
+    const std::string type = xml_domain->attribute("type").value();
+    const std::size_t dim = xml_domain->attribute("dim").as_uint();
+
+    // Check that the type is uint
+    if (type != "uint")
+    {
+      dolfin_error("XMLMesh.cpp",
+                   "read mesh domains from XML file",
+                   "Mesh domains must be marked as uint, not %s",
+                   type.c_str());
+    }
+
+    // Get domain data
+    std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::size_t>>&
+      domain_data = mesh_data.domain_data[dim] ;
+
+    pugi::xml_node_iterator xml_domain_dim;
+    for (xml_domain_dim = xml_domain->begin();
+         xml_domain_dim != xml_domain->end(); ++xml_domain_dim)
+    {
+      const std::size_t cell_index
+        = xml_domain_dim->attribute("cell_index").as_uint();
+      const std::size_t local_entity
+          = xml_domain_dim->attribute("local_entity").as_uint();
+      const std::size_t value = xml_domain_dim->attribute("value").as_uint();
+
+      domain_data.push_back({{cell_index, local_entity}, value});
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 void XMLMesh::read_array_uint(std::vector<std::size_t>& array,
                               const pugi::xml_node xml_array)
 {
@@ -449,10 +516,11 @@ void XMLMesh::write_data(const Mesh& mesh, const MeshData& data,
 
   // Write arrays
   typedef std::vector<std::map<std::string,
-                               std::vector<std::size_t> > >::const_iterator array_iterator_d;
+                               std::vector<std::size_t>>>::const_iterator array_iterator_d;
   typedef std::map<std::string,
-                   std::vector<std::size_t> >::const_iterator array_iterator;
-  for (array_iterator_d it_d = data._arrays.begin(); it_d != data._arrays.end(); ++it_d)
+                   std::vector<std::size_t>>::const_iterator array_iterator;
+  for (array_iterator_d it_d = data._arrays.begin();
+       it_d != data._arrays.end(); ++it_d)
   {
     const std::size_t dim =  it_d - data._arrays.begin();
     for (array_iterator it = it_d->begin(); it != it_d->end(); ++it)

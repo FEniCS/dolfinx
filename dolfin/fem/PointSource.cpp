@@ -95,14 +95,9 @@ void PointSource::apply(GenericVector& b)
   // Create cell
   const Cell cell(mesh, static_cast<std::size_t>(cell_index));
 
-  // Vertex coordinates
-  const std::size_t gdim = mesh.geometry().dim();
-  const std::size_t num_vertices = cell.num_entities(0);
-  std::vector<double> vertex_coordinates(gdim* num_vertices);
-  const unsigned int* vertices = cell.entities(0);
-  for (std::size_t i = 0; i < num_vertices; i++)
-    for (std::size_t j = 0; j < gdim; j++)
-      vertex_coordinates[i*gdim + j] = mesh.geometry().x(vertices[i])[j];
+  // Cell coordinates
+  std::vector<double> coordinate_dofs;
+  cell.get_coordinate_dofs(coordinate_dofs);
 
   // Evaluate all basis functions at the point()
   dolfin_assert(_function_space->element());
@@ -113,7 +108,7 @@ void PointSource::apply(GenericVector& b)
   cell.get_cell_data(ufc_cell);
   _function_space->element()->evaluate_basis_all(values.data(),
                                                  _p.coordinates(),
-                                                 vertex_coordinates.data(),
+                                                 coordinate_dofs.data(),
                                                  ufc_cell.orientation);
 
   // Scale by magnitude
@@ -122,12 +117,12 @@ void PointSource::apply(GenericVector& b)
 
   // Compute local-to-global mapping
   dolfin_assert(_function_space->dofmap());
-  const std::vector<dolfin::la_index>& dofs
+  const ArrayView<const dolfin::la_index> dofs
     = _function_space->dofmap()->cell_dofs(cell.index());
 
   // Add values to vector
   dolfin_assert(_function_space->element()->space_dimension()
-                == _function_space->dofmap()->cell_dimension(cell.index()));
+                == _function_space->dofmap()->num_element_dofs(cell.index()));
   b.add_local(values.data(), _function_space->element()->space_dimension(),
               dofs.data());
   b.apply("add");

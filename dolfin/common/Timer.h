@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg
+// Copyright (C) 2008 Anders Logg, 2015 Jan Blechta
 //
 // This file is part of DOLFIN.
 //
@@ -22,6 +22,8 @@
 #define __TIMER_H
 
 #include <string>
+#include <tuple>
+#include <boost/timer/timer.hpp>
 
 namespace dolfin
 {
@@ -46,31 +48,37 @@ namespace dolfin
   {
   public:
 
-    /// Create timer
+    /// Create timer without logging
+    Timer();
+
+    /// Create timer with logging
     Timer(std::string task);
 
     /// Destructor
     ~Timer();
 
-    /// Start timer
+    /// Zero and start timer
     void start();
 
-    /// Stop timer
+    /// Resume timer. Not well-defined for logging timer
+    void resume();
+
+    /// Stop timer, return wall time elapsed and store timing data
+    /// into logger
     double stop();
 
-    /// Return value of timer (or time at start if not stopped)
-    double value() const;
+    /// Return wall, user and system time in seconds. Wall-clock time
+    /// has precision around 1 microsecond; user and system around
+    /// 10 millisecond.
+    std::tuple<double, double, double> elapsed() const;
 
   private:
 
     // Name of task
     std::string _task;
 
-    // Start time
-    double t;
-
-    // True if timer has been stopped
-    bool stopped;
+    // Implementation of timer
+    boost::timer::cpu_timer _timer;
 
   };
 

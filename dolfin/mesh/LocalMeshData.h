@@ -102,8 +102,11 @@ namespace dolfin
     // Global cell numbers for all cells stored on local processor
     std::vector<std::size_t> global_cell_indices;
 
-    // Optional process owner for each cell in  global_cell_indices
+    // Optional process owner for each cell in global_cell_indices
     std::vector<std::size_t> cell_partition;
+
+    // Optional weight for each cell for partitioning
+    std::vector<std::size_t> cell_weight;
 
     // Global number of vertices
     std::size_t num_global_vertices;
@@ -119,6 +122,10 @@ namespace dolfin
 
     // Topological dimension
     std::size_t tdim;
+
+    // Cell type
+    // FIXME: this should replace the need for num_vertices_per_cell and tdim
+    CellType::Type cell_type;
 
     // Mesh domain data [dim](line, (cell_index, local_index, value))
     std::map<std::size_t, std::vector<std::pair<std::pair<std::size_t,

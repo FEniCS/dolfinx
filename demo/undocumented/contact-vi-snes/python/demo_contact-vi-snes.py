@@ -24,6 +24,11 @@
 
 from dolfin import *
 
+# This demo requires PETSc
+if not has_petsc():
+    print("DOLFIN must be compiled with PETSc to run this demo.")
+    exit(0)
+
 # Create mesh
 mesh = Mesh("../circle_yplane.xml.gz")
 
@@ -36,7 +41,7 @@ u  = Function(V)                 # Displacement from previous iteration
 B  = Constant((0.0, -0.05))      # Body force per unit volume
 
 # Kinematics
-I = Identity(u.geometric_dimension())  # Identity tensor
+I = Identity(len(u))  # Identity tensor
 F = I + grad(u)             # Deformation gradient
 C = F.T*F                   # Right Cauchy-Green tensor
 

@@ -81,8 +81,8 @@ namespace dolfin
   /// apply and the boundary markers would still remain intact.
   ///
   /// Alternatively, the boundary may be specified by a _MeshFunction_
-  /// labeling all mesh facets together with a number that specifies
-  /// which facets should be included in the boundary.
+  /// over facets labeling all mesh facets together with a number that
+  /// specifies which facets should be included in the boundary.
   ///
   /// The third option is to attach the boundary information to the
   /// mesh. This is handled automatically when exporting a mesh from
@@ -103,6 +103,9 @@ namespace dolfin
   /// approach. The three possibilities are "topological", "geometric"
   /// and "pointwise".
   ///
+  /// Note: when using "pointwise", the boolean argument `on_boundary`
+  /// in SubDomain::inside will always be false.
+  ///
   /// The 'check_midpoint' variable can be used to decide whether or
   /// not the midpoint of each facet should be checked when a
   /// user-defined _SubDomain_ is used to define the domain of the
@@ -114,6 +117,12 @@ namespace dolfin
   /// sphere or cylinder), in which case it is important *not* to
   /// check the midpoint which will be located in the interior of a
   /// domain defined relative to a radius.
+  ///
+  /// Note that there may be caching employed in BC computation for
+  /// performance reasons. In particular, applicable DOFs are cached
+  /// by some methods on a first apply(). This means that changing a
+  /// supplied object (defining boundary subdomain) after first use may
+  /// have no effect. But this is implementation and method specific.
   class DirichletBC : public Hierarchical<DirichletBC>, public Variable
   {
 
@@ -246,11 +255,10 @@ namespace dolfin
     ///         method to identify dofs.
     DirichletBC(std::shared_ptr<const FunctionSpace> V,
                 std::shared_ptr<const GenericFunction> g,
-                const std::vector<std::size_t>&
-                markers,
+                const std::vector<std::size_t>& markers,
                 std::string method="topological");
 
-    /// Copy constructor
+    /// Copy constructor. Either cached DOF data are copied.
     ///
     /// *Arguments*
     ///     bc (_DirichletBC_)
@@ -260,7 +268,7 @@ namespace dolfin
     /// Destructor
     ~DirichletBC();
 
-    /// Assignment operator
+    /// Assignment operator. Either cached DOF data are assigned.
     ///
     /// *Arguments*
     ///     bc (_DirichletBC_)
@@ -505,8 +513,10 @@ namespace dolfin
     // Boundary facets, stored by facet index (local to process)
     mutable std::vector<std::size_t> _facets;
 
-    // Cells attached to boundary, stored by cell index with map to local dof number
-    mutable std::map<std::size_t, std::vector<std::size_t> > _cells_to_localdofs;
+    // Cells attached to boundary, stored by cell index with map to
+    // local dof number
+    mutable std::map<std::size_t, std::vector<std::size_t> >
+    _cells_to_localdofs;
 
     // User defined mesh function
     std::shared_ptr<const MeshFunction<std::size_t> > _user_mesh_function;

@@ -104,8 +104,19 @@ namespace dolfin
     /// Set given connection for given entity
     void set(std::size_t entity, std::size_t connection, std::size_t pos);
 
-    /// Set all connections for given entity
-    void set(std::size_t entity, const std::vector<std::size_t>& connections);
+    /// Set all connections for given entity. T is a contains,
+    /// e.g. std::vector<std::size_t>
+    template<typename T>
+    void set(std::size_t entity, const T& connections)
+    {
+      dolfin_assert((entity + 1) < index_to_position.size());
+      dolfin_assert(connections.size()
+                    == index_to_position[entity + 1]-index_to_position[entity]);
+
+      // Copy data
+      std::copy(connections.begin(), connections.end(),
+                _connections.begin() + index_to_position[entity]);
+    }
 
     /// Set all connections for given entity
     void set(std::size_t entity, std::size_t* connections);
@@ -151,10 +162,6 @@ namespace dolfin
     std::string str(bool verbose) const;
 
   private:
-
-    // Friends
-    friend class BinaryFile;
-    friend class MeshRenumbering;
 
     // Dimensions (only used for pretty-printing)
     std::size_t _d0, _d1;

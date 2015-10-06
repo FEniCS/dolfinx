@@ -20,7 +20,7 @@
 
 #ifdef HAS_PETSC
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "GenericVector.h"
 #include "PETScVector.h"
 #include "PETScBaseMatrix.h"
@@ -108,23 +108,13 @@ void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
   Vec x = NULL;
   if (dim == 0)
   {
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 5 && PETSC_VERSION_RELEASE == 1
-    ierr = MatGetVecs(_matA, PETSC_NULL, &x);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetVecs");
-    #else
     ierr = MatCreateVecs(_matA, PETSC_NULL, &x);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreateVecs");
-    #endif
   }
   else if (dim == 1)
   {
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 5 && PETSC_VERSION_RELEASE == 1
-    ierr = MatGetVecs(_matA, &x, PETSC_NULL);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetVecs");
-    #else
     ierr = MatCreateVecs(_matA, &x, PETSC_NULL);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreateVecs");
-    #endif
   }
   else
   {

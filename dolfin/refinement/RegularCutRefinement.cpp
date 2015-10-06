@@ -79,7 +79,7 @@ RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
 
   // Create edge markers and initialize to false
   const std::size_t edges_per_cell = D + 1;
-  std::vector<std::vector<bool> > edge_markers(mesh.num_cells());
+  std::vector<std::vector<bool>> edge_markers(mesh.num_cells());
   for (std::size_t i = 0; i < mesh.num_cells(); i++)
   {
     edge_markers[i].resize(edges_per_cell);
@@ -297,7 +297,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
 
   // Iterate over all cells and add new cells
   std::size_t current_cell = 0;
-  std::vector<std::vector<std::size_t> > cells(4, std::vector<std::size_t>(3));
+  std::vector<std::vector<std::size_t>> cells(4, std::vector<std::size_t>(3));
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get marker
@@ -359,11 +359,12 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       cells[3][0] = e0; cells[3][1] = e1; cells[3][2] = e2;
 
       // Add cells
-      std::vector<std::vector<std::size_t> >::const_iterator _cell;
+      std::vector<std::vector<std::size_t>>::const_iterator _cell;
       for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
         editor.add_cell(current_cell++, *_cell);
     }
-    else if (marker == backtrack_bisection || marker == backtrack_bisection_refine)
+    else if (marker == backtrack_bisection
+             || marker == backtrack_bisection_refine)
     {
       // Special case: backtrack bisected cells
       dolfin_assert(unrefined_cells[cell->index()] == -1);
@@ -407,8 +408,10 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       const std::size_t v0 = vertices_0[common_edges.first];
       const std::size_t v1 = vertices_1[common_edges.second];
       const std::size_t v2 = vertices_0[bisection_edges.first];
-      const std::size_t e0 = offset + marked_edges.find(edges_1[bisection_vertices.second]);
-      const std::size_t e1 = offset + marked_edges.find(edges_0[bisection_vertices.first]);
+      const std::size_t e0 = offset
+        + marked_edges.find(edges_1[bisection_vertices.second]);
+      const std::size_t e1 = offset
+        + marked_edges.find(edges_0[bisection_vertices.first]);
       const std::size_t e2 = vertices_0[bisection_vertices.first];
 
       // Locate new vertices on bisected edge (if any)

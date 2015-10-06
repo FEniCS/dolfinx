@@ -48,12 +48,6 @@ namespace dolfin
   /// Return true if DOLFIN is compiled with PETSc
   bool has_petsc();
 
-  /// Return true if PETSc SNES is enabled
-  bool has_petsc_snes();
-
-  /// Return true if PETSc TAO is enabled
-  bool has_petsc_tao();
-
   /// Return true if DOLFIN is compiled with SLEPc
   bool has_slepc();
 
@@ -74,9 +68,6 @@ namespace dolfin
 
   /// Return true if DOLFIN is compiled with HDF5
   bool has_hdf5();
-
-  /// Return true if DOLFIN is compiled with Exodus
-  bool has_exodus();
 
 }
 

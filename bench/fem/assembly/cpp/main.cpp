@@ -54,6 +54,7 @@ int main(int argc, char* argv[])
   info("Assembly for various forms and backends");
   set_log_active(false);
 
+  // FIXME: Why?
   parameters["reorder_dofs_serial"] = false;
 
   // Forms
@@ -67,11 +68,7 @@ int main(int argc, char* argv[])
   forms.push_back("navierstokes");
 
   // Backends
-  std::vector<std::string> backends;
-  backends.push_back("uBLAS");
-  backends.push_back("PETSc");
-  backends.push_back("Epetra");
-  backends.push_back("STL");
+  std::vector<std::string> backends = {"PETSc", "Tpetra", "Eigen", "STL"};
 
   // Override forms and backends with command-line arguments
   if (argc == 3)
@@ -107,11 +104,21 @@ int main(int argc, char* argv[])
       parameters["timer_prefix"] = backends[j];
       std::cout << "  Backend: " << backends[j] << std::endl;
       const double tt0 = bench_form(forms[i], assemble_form);
-      const double tt1 = timing(backends[j] + t1.title(), true);
-      const double tt2 = timing(backends[j] + t2.title(), true);
-      const double tt3 = timing(backends[j] + t3.title(), true);
-      const double tt4 = timing(backends[j] + t4.title(), true);
-      const double tt5 = timing(backends[j] + t5.title(), true);
+      const auto timing1 = timing(backends[j] + t1.name(), TimingClear::clear);
+      const auto timing2 = timing(backends[j] + t2.name(), TimingClear::clear);
+      const auto timing3 = timing(backends[j] + t3.name(), TimingClear::clear);
+      const auto timing4 = timing(backends[j] + t4.name(), TimingClear::clear);
+      const auto timing5 = timing(backends[j] + t5.name(), TimingClear::clear);
+      const double tt1
+        = std::get<1>(timing1)/static_cast<double>(std::get<0>(timing1));
+      const double tt2
+        = std::get<1>(timing2)/static_cast<double>(std::get<0>(timing2));
+      const double tt3
+        = std::get<1>(timing3)/static_cast<double>(std::get<0>(timing3));
+      const double tt4
+        = std::get<1>(timing4)/static_cast<double>(std::get<0>(timing4));
+      const double tt5
+        = std::get<1>(timing5)/static_cast<double>(std::get<0>(timing5));
       t0(forms[i], backends[j]) = tt0;
       t1(forms[i], backends[j]) = tt1;
       t2(forms[i], backends[j]) = tt2;
@@ -119,7 +126,8 @@ int main(int argc, char* argv[])
       t4(forms[i], backends[j]) = tt4;
       t5(forms[i], backends[j]) = tt5;
       t6(forms[i], backends[j]) = tt0 - tt1 - tt2 - tt3 - tt4 - tt5;
-      std::cout << "  BENCH " << forms[i] << "-" << backends[j] << " " << tt0 << std::endl;
+      std::cout << "  BENCH " << forms[i] << "-" << backends[j] << " " << tt0
+                << std::endl;
     }
   }
 
@@ -150,22 +158,6 @@ int main(int argc, char* argv[])
   std::cout << std::endl; info(t6, true);
   if (argc == 1)
     std::cout << std::endl; info(t7, true);
-
-  /*
-  // Display LaTeX tables
-  const bool print_latex = true;
-  if (print_latex)
-  {
-    std::cout << std::endl << t0.str_latex();
-    //std::cout << std::endl << t1.str_latex();
-    std::cout << std::endl << t2.str_latex();
-    std::cout << std::endl << t3.str_latex();
-    std::cout << std::endl << t4.str_latex();
-    std::cout << std::endl << t5.str_latex();
-    std::cout << std::endl << t6.str_latex();
-    std::cout << std::endl << t7.str_latex();
-  }
-  */
 
   return 0;
 }

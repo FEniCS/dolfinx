@@ -56,10 +56,6 @@ def run_cpp_demo(prefix, demo, rootdir, timing, failed):
     if platform.system() == 'Windows':
         cppdemo_executable += '.exe'
 
-    if not os.path.isfile(os.path.join(demo, cppdemo_executable)):
-        print("*** Warning: missing demo")
-        return
-
     t1 = time()
     os.chdir(demo)
     status, output = get_status_output("%s .%s%s" % (prefix, os.path.sep, cppdemo_executable))
@@ -83,13 +79,9 @@ def run_python_demo(prefix, demo, rootdir, timing, failed):
 
     demofile = get_executable_name(demo, "python") + '.py'
 
-    if not os.path.isfile(os.path.join(demo, demofile)):
-        print("*** Warning: missing demo")
-        return
-
     t1 = time()
     os.chdir(demo)
-    status, output = get_status_output("%s %s %s" % (prefix, sys.executable, demofile))
+    status, output = get_status_output("%s %s -u %s" % (prefix, sys.executable, demofile))
     os.chdir(rootdir)
     t2 = time()
     timing += [(t2 - t1, demo)]
@@ -115,6 +107,25 @@ def main():
     demodir = os.path.join(os.curdir, "..", "..", "demo")
     rootdir = os.path.abspath(os.curdir)
 
+    # List of demos that have demo dir but are not currently implemented
+    # NOTE: Demo must be listed here iff unimplemented otherwse the test will
+    #       fail. This is meant to protect against usual bad named demos not
+    #       executed for ages in regression tests.
+    not_implemented = \
+      [os.path.join(demodir, 'undocumented', 'projection-interpolation',    'cpp'), \
+       os.path.join(demodir, 'undocumented', 'interpolation',               'cpp'), \
+       os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'), \
+       os.path.join(demodir, 'undocumented', 'multistage-solver',           'cpp'), \
+       os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'), \
+       os.path.join(demodir, 'undocumented', 'overlapping-regions',         'cpp'), \
+       os.path.join(demodir, 'undocumented', 'sub-function-assignment',     'cpp'), \
+       os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'cpp'), \
+       os.path.join(demodir, 'undocumented', 'timing',                      'cpp'), \
+       os.path.join(demodir, 'documented',   'stokes-mini',                 'cpp'), \
+       os.path.join(demodir, 'documented',   'tensor-weighted-poisson',     'cpp'), \
+       os.path.join(demodir, 'documented',   'subdomains-poisson',          'cpp'), \
+       ]
+
     # Demos to run
     cppdemos = []
     pydemos = []
@@ -122,10 +133,20 @@ def main():
         if os.path.basename(dpath) == 'cpp':
             if os.path.isfile(os.path.join(dpath, 'Makefile')):
                 cppdemos.append(dpath)
+                assert not dpath in not_implemented, \
+                    "Demo '%s' marked as not_implemented" % dpath
+            else:
+                assert dpath in not_implemented, \
+                    "Non-existing demo '%s' not marked as not_implemented" % dpath
         elif os.path.basename(dpath) == 'python':
             tmp = dpath.split(os.path.sep)[-2]
             if os.path.isfile(os.path.join(dpath, 'demo_' + tmp + '.py')):
                 pydemos.append(dpath)
+                assert not dpath in not_implemented, \
+                    "Demo '%s' marked as not_implemented" % dpath
+            else:
+                assert dpath in not_implemented, \
+                    "Non-existing demo '%s' not marked as not_implemented" % dpath
 
     # Set non-interactive
     os.putenv('DOLFIN_NOPLOT', '1')
@@ -165,6 +186,8 @@ def main():
        os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'python'), \
        os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
        os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'), \
+       os.path.join(demodir, 'undocumented', 'poisson-disc',                'python'), \
+       os.path.join(demodir, 'undocumented', 'poisson-disc',                'cpp'),    \
        os.path.join(demodir, 'undocumented', 'smoothing',                   'python'), \
        os.path.join(demodir, 'documented',   'subdomains',                  'cpp'),    \
        os.path.join(demodir, 'documented',   'subdomains',                  'python'), \

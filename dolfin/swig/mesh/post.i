@@ -1,5 +1,5 @@
 /* -*- C -*- */
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,9 +20,7 @@
 // Modified by Ola Skavhaug 2006-2007
 // Modified by Garth Wells 2007-2010
 // Modified by Johan Hake 2008-2009
-//
-// First added:  2006-09-20
-// Last changed: 2011-03-11
+// Modified by Martin Alnaes 2013-2015
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (post)
@@ -101,7 +99,7 @@ _subdomain_mark_doc_string = SubDomain._mark.__doc__
 %{
 # NOTE: This is a hardcoded check, which rely on SubDomain::mark only taking
 # a MeshFunction as its first argument when mark is called with two arguments
-def mark(self, *args):
+def mark(self, *args, **kwargs):
     from . import common
     if len(args) == 2 and not isinstance(args[0], \
                     (MeshFunctionSizet, MeshFunctionInt,
@@ -110,6 +108,8 @@ def mark(self, *args):
                             "mark MeshFunction",
                             "Expected a MeshFunction of type \"size_t\", \"int\", \"double\" or \"bool\"")
 
+    if ("check_midpoint" in kwargs):
+        args = args + (kwargs["check_midpoint"],)
     self._mark(*args)
 %}
 }
@@ -134,11 +134,15 @@ del _subdomain_mark_doc_string
 // Extend MeshFunction interface for get and set items
 %extend dolfin::MeshFunction<TYPE>
 {
-  TYPE _getitem(std::size_t i) { return (*self)[i]; }
-  void _setitem(std::size_t i, TYPE val) { (*self)[i] = val; }
+  TYPE _getitem(std::size_t i)
+  { return (*self)[i]; }
+  void _setitem(std::size_t i, TYPE val)
+  { (*self)[i] = val; }
 
-  TYPE _getitem(dolfin::MeshEntity& e) { return (*self)[e]; }
-  void _setitem(dolfin::MeshEntity& e, TYPE val) { (*self)[e] = val; }
+  TYPE _getitem(dolfin::MeshEntity& e)
+  { return (*self)[e]; }
+  void _setitem(dolfin::MeshEntity& e, TYPE val)
+  { (*self)[e] = val; }
 
 %pythoncode%{
 def array(self):
@@ -472,7 +476,15 @@ def cells(self):
 //-----------------------------------------------------------------------------
 // Extend Mesh interface with some ufl_* methods
 //-----------------------------------------------------------------------------
-%extend dolfin::Mesh {
+// TODO: This was intended as steps toward letting dolfin.Mesh inherit from ufl.Mesh.
+//       That seems to be harder than anticipated, because fundamental properties
+//       of dolfin::Mesh are mutable and undefined at construction time.
+//       This work is therefore on hold. I don't think this is a showstopper,
+//       it mainly means the code won't be as clean as I wanted.
+// Note: The extensions to the C++ dolfin::Mesh class here are added to
+//       all C++ subclasses of Mesh by swig, e.g. SubMesh, RectangleMesh, UnitSquareMesh
+%extend dolfin::Mesh
+{
 %pythoncode
 %{
 def ufl_id(self):
@@ -480,55 +492,26 @@ def ufl_id(self):
     return self.id()
 
 def ufl_cell(self):
-    """
-    Returns the ufl cell of the mesh.
-
-    The cell corresponds to the topological dimension of the mesh.
-    """
+    """Returns the ufl cell of the mesh."""
     import ufl
-    tdim = self.topology().dim()
     gdim = self.geometry().dim()
-    dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
-    cellname = dim2domain[tdim]
+    cellname = self.type().description(False)
     return ufl.Cell(cellname, geometric_dimension=gdim)
 
-def ufl_domain(self):
-    """Returns the ufl Domain corresponding to the mesh."""
+def ufl_coordinate_element(self):
+    "Return the finite element of the coordinate vector field of this domain."
     import ufl
-    label = "dolfin_mesh_with_id_%d" % self.id()
-    return ufl.Domain(self.ufl_cell(), label=label, data=self)
-%}
-}
-
-//-----------------------------------------------------------------------------
-// Extend SubMesh interface with some ufl_* methods
-//-----------------------------------------------------------------------------
-// TODO: It would be nice if this was inherited from the Mesh extension above!
-%extend dolfin::SubMesh {
-%pythoncode
-%{
-def ufl_id(self):
-    "Returns an id that UFL can use to decide if two objects are the same."
-    return self.id()
-
-def ufl_cell(self):
-    """
-    Returns the ufl cell of the mesh.
-
-    The cell corresponds to the topological dimension of the mesh.
-    """
-    import ufl
-    tdim = self.topology().dim()
-    gdim = self.geometry().dim()
-    dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
-    cellname = dim2domain[tdim]
-    return ufl.Cell(cellname, geometric_dimension=gdim)
+    cell = self.ufl_cell()
+    degree = self.geometry().degree()
+    return ufl.VectorElement("Lagrange", cell, degree, dim=cell.geometric_dimension())
 
 def ufl_domain(self):
-    """Returns the ufl Domain corresponding to the mesh."""
+    """Returns the ufl domain corresponding to the mesh."""
     import ufl
-    label = "dolfin_mesh_with_id_%d" % self.id()
-    return ufl.Domain(self.ufl_cell(), label=label, data=self)
+    # Cache object to avoid recreating it a lot
+    if not hasattr(self, "_ufl_domain"):
+        self._ufl_domain = ufl.Mesh(self.ufl_coordinate_element(), ufl_id=self.ufl_id(), cargo=self)
+    return self._ufl_domain
 %}
 }
 
@@ -541,3 +524,14 @@ HierarchicalMesh.root_node = new_instancemethod(_mesh.HierarchicalMesh__root_nod
 HierarchicalMesh.child = new_instancemethod(_mesh.HierarchicalMesh__child,None,HierarchicalMesh)
 HierarchicalMesh.parent = new_instancemethod(_mesh.HierarchicalMesh__parent,None,HierarchicalMesh)
 %}
+
+//-----------------------------------------------------------------------------
+// Map __getitem__ to operator[] for MeshHierarchy
+//-----------------------------------------------------------------------------
+%extend dolfin::MeshHierarchy
+{
+  std::shared_ptr<const dolfin::Mesh> __getitem__(int i)
+  {
+    return (*($self))[i];
+  }
+}

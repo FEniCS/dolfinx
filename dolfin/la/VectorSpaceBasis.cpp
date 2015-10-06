@@ -18,6 +18,7 @@
 // First added:  2013-05-29
 // Last changed: 2013-05-29
 
+#include <cmath>
 #include <dolfin/common/constants.h>
 #include "VectorSpaceBasis.h"
 
@@ -25,8 +26,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 VectorSpaceBasis::VectorSpaceBasis(const std::vector<std::shared_ptr<
-                                     GenericVector> > basis)
-  : _basis(basis)
+                                   GenericVector>> basis) : _basis(basis)
 {
   // Do nothing
 }

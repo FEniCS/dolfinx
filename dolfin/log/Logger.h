@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2013 Anders Logg
+// Copyright (C) 2003-2013 Anders Logg, 2015 Jan Blechta
 //
 // This file is part of DOLFIN.
 //
@@ -18,9 +18,6 @@
 // Thanks to Jim Tilander for many helpful hints.
 //
 // Modified by Ola Skavhaug 2007, 2009
-//
-// First added:  2003-03-13
-// Last changed: 2013-01-07
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -29,6 +26,11 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <set>
+#include <tuple>
+
+#include <dolfin/common/timing.h>
+#include <dolfin/common/MPI.h>
 #include "Table.h"
 #include "LogLevel.h"
 
@@ -100,24 +102,36 @@ namespace dolfin
     inline int get_log_level() const { return _log_level; }
 
     /// Register timing (for later summary)
-    void register_timing(std::string task, double elapsed_time);
+    void register_timing(std::string task,
+                         std::tuple<double, double, double> elapsed);
 
-    /// Return a summary of timings and tasks as a Table, optionally
-    /// clearing stored timings
-    Table timings(bool reset=false);
+    /// Return a summary of timings and tasks in a Table, optionally clearing
+    /// stored timings
+    Table timings(TimingClear clear, std::set<TimingType> type);
 
-    /// Print summary of timings and tasks, optionally clearing stored
-    /// timings
-    void list_timings(bool reset=false);
+    /// List a summary of timings and tasks, optionally clearing stored timings.
+    /// ``MPI_AVG`` reduction is printed. Collective on ``Logger::mpi_comm()``.
+    void list_timings(TimingClear clear, std::set<TimingType> type);
 
-    /// Return timing (average) for given task, optionally clearing
-    /// timing for task
-    double timing(std::string task, bool reset=false);
+    /// Dump a summary of timings and tasks to XML file, optionally clearing
+    /// stored timings. ``MPI_MAX``, ``MPI_MIN`` and ``MPI_AVG`` reductions are
+    /// stored. Collective on ``Logger::mpi_comm()``.
+    void dump_timings_to_xml(std::string filename, TimingClear clear);
+
+    /// Return timing (count, total wall time, total user time,
+    /// total system time) for given task, optionally clearing
+    /// all timings for the task
+    std::tuple<std::size_t, double, double, double>
+      timing(std::string task, TimingClear clear);
 
     /// Monitor memory usage. Call this function at the start of a
     /// program to continuously monitor the memory usage of the
     /// process.
     void monitor_memory_usage();
+
+    /// Return MPI Communicator of Logger
+    MPI_Comm mpi_comm()
+    { return _mpi_comm; }
 
     /// Helper function for reporting memory usage
     void _report_memory_usage(size_t num_mb);
@@ -132,7 +146,7 @@ namespace dolfin
   private:
 
     // Write message
-    void write(int log_level, std::string msg, int rank) const;
+    void write(int log_level, std::string msg) const;
 
     // True iff logging is active
     bool _active;
@@ -146,14 +160,22 @@ namespace dolfin
     // Optional stream for logging
     std::ostream* logstream;
 
-    // List of timings for tasks, map from string to (num_timings, total_time)
-    std::map<std::string, std::pair<std::size_t, double> > _timings;
+    // List of timings for tasks, map from string to
+    // (num_timings, total_wall_time, total_user_time, total_system_time)
+    std::map<std::string, std::tuple<std::size_t, double, double, double> >
+       _timings;
 
     // Thread used for monitoring memory usage
     std::unique_ptr<boost::thread> _thread_monitor_memory_usage;
 
     // Maximum memory usage so far
     long int _maximum_memory_usage;
+
+    // Map for stringifying TimingType
+    static std::map<TimingType, std::string> _TimingType_descr;
+
+    // MPI Communicator
+    MPI_Comm _mpi_comm;
 
   };
 

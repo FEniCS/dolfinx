@@ -32,7 +32,7 @@ equations that is not positive-definite. Standard iterative linear
 solvers typically fail to converge for such systems. Some care must
 therefore be taken in preconditioning the systems of
 equations. Moreover, not all of the linear algebra backends support
-this. We therefore start by checking that either "PETSc" or "Epetra"
+this. We therefore start by checking that either "PETSc" or "Tpetra"
 (from Trilinos) is available. We also try to pick MINRES Krylov
 subspace method which is suitable for symmetric indefinite problems.
 If not available, costly QMR method is choosen.
@@ -41,8 +41,8 @@ If not available, costly QMR method is choosen.
 
     from dolfin import *
 
-    # Test for PETSc or Epetra
-    if not has_linear_algebra_backend("PETSc") and not has_linear_algebra_backend("Epetra"):
+    # Test for PETSc or Tpetra
+    if not has_linear_algebra_backend("PETSc") and not has_linear_algebra_backend("Tpetra"):
         info("DOLFIN has not been configured with Trilinos or PETSc. Exiting.")
         exit()
 
@@ -99,12 +99,8 @@ Next, we define the boundary conditions.
     inflow = Expression(("-sin(x[1]*pi)", "0.0", "0.0"))
     bc1 = DirichletBC(W.sub(0), inflow, right)
 
-    # Boundary condition for pressure at outflow
-    zero = Constant(0)
-    bc2 = DirichletBC(W.sub(1), zero, left)
-
     # Collect boundary conditions
-    bcs = [bc0, bc1, bc2]
+    bcs = [bc0, bc1]
 
 The bilinear and linear forms corresponding to the weak mixed
 formulation of the Stokes equations are defined as follows:

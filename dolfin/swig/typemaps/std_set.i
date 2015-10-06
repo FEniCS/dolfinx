@@ -140,3 +140,44 @@ ARGOUT_TYPEMAP_STD_SET_OF_PRIMITIVES(std::size_t, cells, NPY_UINTP)
 OUT_SET_TYPEMAP_OF_PRIMITIVES(std::size_t, NPY_UINTP)
 OUT_SET_TYPEMAP_OF_PRIMITIVES(int, NPY_INT)
 OUT_SET_TYPEMAP_OF_PRIMITIVES(unsigned int, NPY_UINT)
+
+
+// ---------------------------------------------------------------------------
+// Typemaps (in) for std::set<dolfin::TimingType>
+// ---------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_INT32_ARRAY) std::set<dolfin::TimingType>
+{
+    $1 = PySequence_Check($input) ? 1 : 0;
+}
+
+%typemap(in) std::set<dolfin::TimingType> (std::set<dolfin::TimingType> tmp)
+{
+  if (!PyList_Check($input)) {
+    PyErr_SetString(PyExc_ValueError,"expected a list of 'TimingType' (aka int32).");
+    return NULL;
+  }
+  int list_length = PyList_Size($input);
+  if (!list_length > 0){
+    PyErr_SetString(PyExc_ValueError,"expected a list with length > 0");
+    return NULL;
+  }
+  for (int i = 0; i < list_length; i++)
+  {
+    PyObject *o = PyList_GetItem($input,i);
+%#if PY_VERSION_HEX>=0x03000000
+    if (PyLong_Check(o))
+%#else
+    if (PyInt_Check(o))
+%#endif
+    {
+      int int_o = PyInt_AsLong(o);
+      tmp.insert(static_cast<dolfin::TimingType>(int_o));
+    }
+    else
+    {
+      PyErr_SetString(PyExc_TypeError,"provide a list of 'TimingType' (aka int32).");
+      return NULL;
+    }
+  }
+  $1 = tmp;
+}

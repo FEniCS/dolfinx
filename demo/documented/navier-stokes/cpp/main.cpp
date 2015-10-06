@@ -102,11 +102,8 @@ int main()
   DirichletBC noslip(V, zero_vector, noslip_domain);
   DirichletBC inflow(Q, p_in, inflow_domain);
   DirichletBC outflow(Q, zero, outflow_domain);
-  std::vector<DirichletBC*> bcu;
-  bcu.push_back(&noslip);
-  std::vector<DirichletBC*> bcp;
-  bcp.push_back(&inflow);
-  bcp.push_back(&outflow);
+  std::vector<DirichletBC*> bcu = {&noslip};
+  std::vector<DirichletBC*> bcp = {{&inflow, &outflow}};
 
   // Create functions
   Function u0(V);
@@ -165,8 +162,11 @@ int main()
     begin("Computing pressure correction");
     assemble(b2, L2);
     for (std::size_t i = 0; i < bcp.size(); i++)
+    {
       bcp[i]->apply(A2, b2);
-    solve(A2, *p1.vector(), b2, "cg", prec);
+      bcp[i]->apply(*p1.vector());
+    }
+    solve(A2, *p1.vector(), b2, "bicgstab", prec);
     end();
 
     // Velocity correction

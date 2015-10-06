@@ -27,13 +27,15 @@ using namespace dolfin;
 
 int main()
 {
+
+  #ifdef HAS_HDF5
+
   // Create empty time series
-  TimeSeries series("primal");
+  TimeSeries series(MPI_COMM_WORLD, "primal");
 
   // Create a mesh and a vector
   UnitSquareMesh unit_square(2, 2);
   Mesh mesh(unit_square);
-  //Vector x;
 
   // Add a bunch of meshes and vectors to the series
   double t = 0.0;
@@ -66,6 +68,8 @@ int main()
   // Plot mesh
   plot(mesh);
   interactive();
+
+  #endif
 
   return 0;
 }

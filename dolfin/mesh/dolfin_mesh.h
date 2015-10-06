@@ -31,11 +31,12 @@
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/SubMesh.h>
-#include <dolfin/mesh/Restriction.h>
 #include <dolfin/mesh/DomainBoundary.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/MeshQuality.h>
 #include <dolfin/mesh/MultiMesh.h>
+#include <dolfin/mesh/MeshHierarchy.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 
 #endif

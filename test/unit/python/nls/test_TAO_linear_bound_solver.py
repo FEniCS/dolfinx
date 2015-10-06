@@ -47,13 +47,13 @@ from dolfin_utils.test import *
 
 backend = set_parameters_fixture("linear_algebra_backend", ["PETSc"])
 
-@skip_if_not_petsc_tao
+@skip_if_not_PETSc
 def test_tao_linear_bound_solver(backend):
     "Test TAOLinearBoundSolver"
 
     # Create mesh and define function space
     Lx = 1.0; Ly = 0.1
-    mesh = RectangleMesh(0, 0, Lx, Ly, 100, 10)
+    mesh = RectangleMesh(Point(0, 0), Point(Lx, Ly), 100, 10)
     V = FunctionSpace(mesh, "Lagrange", 1)
 
     # Define Dirichlet boundaries

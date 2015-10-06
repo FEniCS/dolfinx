@@ -46,7 +46,8 @@ import os
 
 from dolfin_utils.test import *
 
-parameter_degree = set_parameters_fixture("form_compiler.quadrature_degree", [5])
+parameter_degree = set_parameters_fixture("form_compiler.quadrature_degree", \
+                                          [5])
 parameter_backend = set_parameters_fixture("linear_algebra_backend", ["PETSc"])
 
 @fixture
@@ -116,21 +117,27 @@ def snes_solver_parameters_bounds():
             "sign": "default",
             "report": True}}
 
-@skip_if_not_petsc_snes
-def test_snes_solver(F, bcs, u, snes_solver_parameters_sign, parameter_degree, parameter_backend):
+@skip_if_not_PETSc
+def test_snes_solver(F, bcs, u, snes_solver_parameters_sign, parameter_degree,\
+                     parameter_backend):
     u.interpolate(Constant(-1000.0))
     solve(F == 0, u, bcs, solver_parameters=snes_solver_parameters_sign)
     assert u.vector().min() >= 0
 
-@skip_if_not_petsc_snes
-def test_newton_solver(F, u, bcs, newton_solver_parameters, parameter_degree, parameter_backend):
+
+@skip_if_not_PETSc
+def test_newton_solver(F, u, bcs, newton_solver_parameters, parameter_degree,\
+                       parameter_backend):
     u.interpolate(Constant(-1000.0))
     solve(F == 0, u, bcs, solver_parameters=newton_solver_parameters)
     assert u.vector().min() < 0
 
-@skip_if_not_petsc_snes
-def test_snes_solver_bound_functions(F, u, bcs, J, snes_solver_parameters_bounds, 
-                                      lb, ub, parameter_degree, parameter_backend):
+
+@skip_if_not_PETSc
+def test_snes_solver_bound_functions(F, u, bcs, J, \
+                                     snes_solver_parameters_bounds,
+                                     lb, ub, parameter_degree, \
+                                     parameter_backend):
     u.interpolate(Constant(-1000.0))
     problem = NonlinearVariationalProblem(F, u, bcs, J)
     solver  = NonlinearVariationalSolver(problem)
@@ -138,9 +145,11 @@ def test_snes_solver_bound_functions(F, u, bcs, J, snes_solver_parameters_bounds
     solver.solve(lb, ub)
     assert u.vector().min() >= 0
 
-@skip_if_not_petsc_snes
-def test_snes_solver_bound_vectors(F, u, bcs, J, snes_solver_parameters_bounds, 
-                                    lb, ub, parameter_degree, parameter_backend):
+
+@skip_if_not_PETSc
+def test_snes_solver_bound_vectors(F, u, bcs, J, snes_solver_parameters_bounds,
+                                    lb, ub, parameter_degree, \
+                                   parameter_backend):
     u.interpolate(Constant(-1000.0))
     problem = NonlinearVariationalProblem(F, u, bcs, J)
     solver  = NonlinearVariationalSolver(problem)

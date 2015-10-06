@@ -15,9 +15,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2008-12-16
-// Last changed: 2012-03-28
 
 //-----------------------------------------------------------------------------
 // MPI communicator wrappers (deliberately very lightweight)
@@ -38,13 +35,68 @@ typedef struct {
 
 
 //-----------------------------------------------------------------------------
+// Wrapper of std::terminate, installed into Python exception hook
+//-----------------------------------------------------------------------------
+%noexception dolfin::dolfin_terminate();
+%inline %{
+  #include <signal.h>
+
+  namespace dolfin {
+    void dolfin_terminate() noexcept
+    {
+      // Uninstall signal handlers of OpenMPI cluttering stderr
+      struct sigaction act;
+      memset(&act, 0, sizeof(act));
+      act.sa_handler = SIG_IGN;
+      sigaction(SIGABRT, &act, NULL);
+
+      // We don't bother with MPI_Abort. This would require taking care of
+      // MPI state. We just assume mpirun catches SIGABRT and sends SIGTERM
+      // to other ranks.
+      std::abort();
+    }
+  }
+%}
+
+%pythoncode %{
+# Install C++ terminate handler into Python (if not interactive)
+# This ensures that std::abort (which is likely to be appropriately
+# interpreted by MPI implementations) is called by sys.excepthook thus
+# avoiding parallel deadlocks when one process raises
+import sys
+def _is_interactive():
+    return hasattr(sys, "ps1") or sys.flags.interactive
+if not _is_interactive():
+    def _new_excepthook(*args):
+        import sys
+        sys.__excepthook__(*args)
+        dolfin_terminate()
+    sys.excepthook = _new_excepthook
+    del _new_excepthook
+del _is_interactive, sys
+%}
+
+
+//-----------------------------------------------------------------------------
 // Instantiate some DOLFIN MPI templates
 //-----------------------------------------------------------------------------
 
 %template(max) dolfin::MPI::max<double>;
 %template(min) dolfin::MPI::min<double>;
 %template(sum) dolfin::MPI::sum<double>;
+%template(max) dolfin::MPI::max<int>;
+%template(min) dolfin::MPI::min<int>;
+%template(sum) dolfin::MPI::sum<int>;
+%template(max) dolfin::MPI::max<unsigned int>;
+%template(min) dolfin::MPI::min<unsigned int>;
 %template(sum) dolfin::MPI::sum<unsigned int>;
+%template(max) dolfin::MPI::max<std::size_t>;
+%template(min) dolfin::MPI::min<std::size_t>;
+%template(sum) dolfin::MPI::sum<std::size_t>;
+%template(max) dolfin::MPI::max<dolfin::Table>;
+%template(min) dolfin::MPI::min<dolfin::Table>;
+%template(sum) dolfin::MPI::sum<dolfin::Table>;
+%template(avg) dolfin::MPI::avg<dolfin::Table>;
 
 //-----------------------------------------------------------------------------
 // Ignore const array interface (Used if the Array type is a const)
@@ -63,32 +115,31 @@ typedef struct {
 //
 // TYPE          : The Array template type
 // TEMPLATE_NAME : The Template name
-// TYPE_NAME     : The name of the pointer type, 'double' for 'double', 'uint' for
-//                 'dolfin::uint'
+// TYPE_NAME     : The name of the pointer type, 'double' for 'double',
+//                 'uint' for 'dolfin::uint'
 //-----------------------------------------------------------------------------
 
 %define ARRAY_EXTENSIONS(TYPE, TEMPLATE_NAME, TYPE_NAME)
 
 // Construct value wrapper for dolfin::Array<TYPE>
-// Valuewrapper is used so a return by value Array does not make an extra copy
-// in any typemaps
+// Valuewrapper is used so a return by value Array does not make an
+// extra copy in any typemaps
 %feature("valuewrapper") dolfin::Array<TYPE>;
 
 // Cannot construct an Array from another Array.
 // Use NumPy Array instead
 %ignore dolfin::Array<TYPE>::Array(const Array& other);
-
 %template(TEMPLATE_NAME ## Array) dolfin::Array<TYPE>;
-
 %feature("docstring") dolfin::Array::__getitem__ "Missing docstring";
 %feature("docstring") dolfin::Array::__setitem__ "Missing docstring";
 %feature("docstring") dolfin::Array::array "Missing docstring";
-
-%extend dolfin::Array<TYPE> {
+%extend dolfin::Array<TYPE>
+{
   TYPE _getitem(unsigned int i) const { return (*self)[i]; }
   void _setitem(unsigned int i, const TYPE& val) { (*self)[i] = val; }
 
-  PyObject * _array(){
+  PyObject * _array()
+  {
     return %make_numpy_array(1, TYPE_NAME)(self->size(), self->data(), true);
   }
 
@@ -130,7 +181,6 @@ def __len__(self):
 //-----------------------------------------------------------------------------
 CONST_ARRAY_IGNORES(double)
 ARRAY_EXTENSIONS(double, Double, double)
-//ARRAY_EXTENSIONS(const double, ConstDouble, double)
 ARRAY_EXTENSIONS(unsigned int, UInt, uint)
 ARRAY_EXTENSIONS(int, Int, int)
 
@@ -145,3 +195,20 @@ ARRAY_EXTENSIONS(int, Int, int)
     return self->str(false);
   }
 }
+
+//-----------------------------------------------------------------------------
+// Fixup docstrings
+//-----------------------------------------------------------------------------
+%pythoncode
+%{
+for f in [timings, list_timings, dump_timings_to_xml, timing]:
+    doc = f.__doc__
+    doc = doc.replace("TimingType::", "TimingType_")
+    doc = doc.replace("TimingClear::", "TimingClear_")
+    doc = doc.replace("std::set<TimingType>", "list")
+    doc = doc.replace("{ ", "[")
+    doc = doc.replace(" }", "]")
+    f.__doc__ = doc
+    del doc
+del f
+%}

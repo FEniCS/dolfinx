@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2013 Anders Logg
+// Copyright (C) 2006-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,9 +19,7 @@
 // Modified by Andre Massing 2009.
 // Modified by Garth N. Wells 2010.
 // Modified by Jan Blechta 2013
-//
-// First added:  2006-06-01
-// Last changed: 2014-04-24
+// Modified by Martin Alnaes, 2015
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -160,7 +158,7 @@ namespace dolfin
     ///
     /// *Returns*
     ///     double
-    ///         cell_dimension * inradius / circumradius
+    ///         topological_dimension * inradius / circumradius
     ///
     /// *Example*
     ///     .. code-block:: c++
@@ -323,20 +321,35 @@ namespace dolfin
     { return IntersectionTriangulation::triangulate_intersection(*this, entity); }
 
     // FIXME: This function is part of a UFC transition
-    /// Get cell vertex coordinates
-    void get_vertex_coordinates(double* coordinates) const
+    /// Get cell coordinate dofs (not vertex coordinates)
+    void get_coordinate_dofs(std::vector<double>& coordinates) const
     {
-      dolfin_assert(coordinates);
-      const std::size_t gdim = _mesh->geometry().dim();
-      const std::size_t num_vertices = this->num_vertices();
-      const unsigned int* vertices = this->entities(0);
-      for (std::size_t i = 0; i < num_vertices; i++)
-        for (std::size_t j = 0; j < gdim; j++)
-          coordinates[i*gdim + j] = _mesh->geometry().x(vertices[i])[j];
+      const MeshGeometry& geom = _mesh->geometry();
+      const std::size_t gdim = geom.dim();
+      const std::size_t tdim = _mesh->topology().dim();
+
+      coordinates.clear();
+      for (std::size_t dim = 0; dim <= tdim; ++dim)
+      {
+        for (std::size_t j = 0; j != num_entities(dim); ++j)
+        {
+          for (std::size_t k = 0;
+               k != geom.num_entity_coordinates(dim); ++k)
+          {
+            const std::size_t entity_index
+              = (dim == tdim) ? index() : entities(dim)[j];
+            const std::size_t point_index
+              = geom.get_entity_index(dim, k, entity_index);
+            const double* point_ptr = geom.x(point_index);
+            coordinates.insert(coordinates.end(),
+                               point_ptr, point_ptr + gdim);
+          }
+        }
+      }
     }
 
     // FIXME: This function is part of a UFC transition
-    /// Get cell vertex coordinates
+    /// Get cell vertex coordinates (not coordinate dofs)
     void get_vertex_coordinates(std::vector<double>& coordinates) const
     {
       const std::size_t gdim = _mesh->geometry().dim();
@@ -352,9 +365,15 @@ namespace dolfin
     /// Fill UFC cell with miscellaneous data
     void get_cell_data(ufc::cell& ufc_cell, int local_facet=-1) const
     {
-      ufc_cell.geometric_dimension = _mesh->geometry().dim();;
+      ufc_cell.geometric_dimension = _mesh->geometry().dim();
       ufc_cell.local_facet = local_facet;
-      ufc_cell.orientation = _mesh->cell_orientations()[index()];
+      if (_mesh->cell_orientations().empty())
+        ufc_cell.orientation = -1;
+      else
+      {
+        dolfin_assert(index() < _mesh->cell_orientations().size());
+        ufc_cell.orientation = _mesh->cell_orientations()[index()];
+      }
       ufc_cell.mesh_identifier = mesh_id();
       ufc_cell.index = index();
     }
@@ -367,8 +386,13 @@ namespace dolfin
 
       const std::size_t tdim = topology.dim();
       ufc_cell.topological_dimension = tdim;
-      ufc_cell.orientation = _mesh->cell_orientations()[index()];
-
+      if (_mesh->cell_orientations().empty())
+        ufc_cell.orientation = -1;
+      else
+      {
+        dolfin_assert(index() < _mesh->cell_orientations().size());
+        ufc_cell.orientation = _mesh->cell_orientations()[index()];
+      }
       ufc_cell.entity_indices.resize(tdim + 1);
       for (std::size_t d = 0; d < tdim; d++)
       {

@@ -22,11 +22,12 @@
 from dolfin import *
 import pytest
 
-from dolfin_utils.test import * 
+from dolfin_utils.test import *
 
+backends = ["PETSc"]
 
 # Backends supporting the LinearOperator interface
-@pytest.mark.parametrize('backend', ["PETSc", skip_in_parallel("uBLAS")])
+@pytest.mark.parametrize('backend', backends)
 def test_linear_operator(backend):
 
     # Check whether backend is available

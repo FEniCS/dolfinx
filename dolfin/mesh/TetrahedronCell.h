@@ -26,6 +26,8 @@
 #define __TETRAHEDRON_CELL_H
 
 #include <vector>
+#include <boost/multi_array.hpp>
+
 #include "CellType.h"
 
 namespace dolfin
@@ -55,17 +57,8 @@ namespace dolfin
     std::size_t orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void create_entities(std::vector<std::vector<unsigned int> >& e,
+    void create_entities(boost::multi_array<unsigned int, 2>& e,
                          std::size_t dim, const unsigned int* v) const;
-
-    /// Regular refinement of cell
-    void refine_cell(Cell& cell, MeshEditor& editor,
-                     std::size_t& current_cell) const;
-
-    /// Irregular refinement of cell
-    void refine_cellIrregular(Cell& cell, MeshEditor& editor,
-                              std::size_t& current_cell, std::size_t refinement_rule,
-                              std::size_t* marked_edges) const;
 
     /// Compute volume of tetrahedron
     double volume(const MeshEntity& tetrahedron) const;
@@ -76,7 +69,8 @@ namespace dolfin
     /// Compute squared distance to given point
     double squared_distance(const Cell& cell, const Point& point) const;
 
-    /// Compute component i of normal of given facet with respect to the cell
+    /// Compute component i of normal of given facet with respect to
+    /// the cell
     double normal(const Cell& cell, std::size_t facet, std::size_t i) const;
 
     /// Compute normal of given facet with respect to the cell
@@ -89,8 +83,8 @@ namespace dolfin
     double facet_area(const Cell& cell, std::size_t facet) const;
 
     /// Order entities locally
-    void order(Cell& cell,
-               const std::vector<std::size_t>& local_to_global_vertex_indices) const;
+    void order(Cell& cell, const std::vector<std::size_t>&
+               local_to_global_vertex_indices) const;
 
     /// Check whether given point collides with cell
     bool collides(const Cell& cell, const Point& point) const;
@@ -101,9 +95,13 @@ namespace dolfin
     /// Compute triangulation of intersection of two cells
     virtual std::vector<double>
     triangulate_intersection(const Cell& c0, const Cell& c1) const;
-    
+
     /// Return description of cell type
     std::string description(bool plural) const;
+
+    /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
+    std::vector<unsigned int> vtk_mapping() const
+    { return std::vector<unsigned int> {0, 1, 2, 3}; }
 
   private:
 
@@ -117,7 +115,7 @@ namespace dolfin
                                 const Point& B,
                                 const Point& C,
                                 const Point& D) const;
- 
+
   };
 
 }

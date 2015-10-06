@@ -43,7 +43,7 @@ LocalMeshData::LocalMeshData(const Mesh& mesh)
   : num_global_vertices(0), num_global_cells(0), num_vertices_per_cell(0),
     gdim(0), tdim(0), _mpi_comm(mesh.mpi_comm())
 {
-  Timer timer("build LocalMeshData");
+  Timer timer("Build LocalMeshData from local Mesh");
 
   // Extract data on main process and split among processes
   if (MPI::is_broadcaster(mesh.mpi_comm()))
@@ -140,13 +140,15 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
   num_global_vertices = mesh.num_vertices();
   num_global_cells = mesh.num_cells();
   num_vertices_per_cell = mesh.type().num_entities(0);
+  cell_type = mesh.type().cell_type();
 
   // Get coordinates for all vertices stored on local processor
   vertex_coordinates.resize(boost::extents[mesh.num_vertices()][gdim]);
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     const std::size_t index = vertex->index();
-    std::copy(vertex->x(), vertex->x() + gdim, vertex_coordinates[index].begin());
+    std::copy(vertex->x(), vertex->x() + gdim,
+              vertex_coordinates[index].begin());
   }
 
   // Get global vertex indices for all vertices stored on local processor
@@ -157,7 +159,6 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
   // Get global vertex indices for all cells stored on local processor
   cell_vertices.resize(boost::extents[mesh.num_cells()][num_vertices_per_cell]);
   global_cell_indices.reserve(mesh.num_cells());
-  //  std::vector<std::size_t> vertices(num_vertices_per_cell);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const std::size_t index = cell->index();
@@ -183,18 +184,20 @@ void LocalMeshData::broadcast_mesh_data(const MPI_Comm mpi_comm)
     values.push_back(num_global_vertices);
     values.push_back(num_global_cells);
     values.push_back(num_vertices_per_cell);
+    values.push_back(cell_type);
     MPI::broadcast(mpi_comm, values);
   }
 
   // Broadcast coordinates for vertices
   {
-    std::vector<std::vector<double> > send_values(num_processes);
+    std::vector<std::vector<double>> send_values(num_processes);
     for (std::size_t p = 0; p < num_processes; p++)
     {
       const std::pair<std::size_t, std::size_t> local_range
         = MPI::local_range(mpi_comm, p, num_global_vertices);
       log(TRACE, "Sending %d vertices to process %d, range is (%d, %d)",
-          local_range.second - local_range.first, p, local_range.first, local_range.second);
+          local_range.second - local_range.first, p, local_range.first,
+          local_range.second);
 
       send_values[p].reserve(gdim*(local_range.second - local_range.first));
       for (std::size_t i = local_range.first; i < local_range.second; i++)
@@ -211,7 +214,7 @@ void LocalMeshData::broadcast_mesh_data(const MPI_Comm mpi_comm)
 
   // Broadcast global vertex indices
   {
-    std::vector<std::vector<std::size_t> > send_values(num_processes);
+    std::vector<std::vector<std::size_t>> send_values(num_processes);
     for (std::size_t p = 0; p < num_processes; p++)
     {
       const std::pair<std::size_t, std::size_t> local_range
@@ -226,7 +229,7 @@ void LocalMeshData::broadcast_mesh_data(const MPI_Comm mpi_comm)
   dolfin_debug("check");
   // Broadcast cell vertices
   {
-    std::vector<std::vector<std::size_t> > send_values(num_processes);
+    std::vector<std::vector<std::size_t>> send_values(num_processes);
     for (std::size_t p = 0; p < num_processes; p++)
     {
       const std::pair<std::size_t, std::size_t> local_range
@@ -251,22 +254,24 @@ void LocalMeshData::broadcast_mesh_data(const MPI_Comm mpi_comm)
 void LocalMeshData::receive_mesh_data(const MPI_Comm mpi_comm)
 {
   dolfin_debug("check");
+
   // Receive simple scalar data
   {
     std::vector<std::size_t> values;
     MPI::broadcast(mpi_comm, values);
-    dolfin_assert(values.size() == 5);
+    dolfin_assert(values.size() == 6);
     gdim = values[0];
     tdim = values[1];
     num_global_vertices = values[2];
     num_global_cells = values[3];
     num_vertices_per_cell = values[4];
+    cell_type = (CellType::Type)values[5];
   }
 
   dolfin_debug("check");
   // Receive coordinates for vertices
   {
-    std::vector<std::vector<double> > send_values;
+    std::vector<std::vector<double>> send_values;
     std::vector<double> values;
     MPI::scatter(mpi_comm, send_values, values);
     unpack_vertex_coordinates(values);
@@ -275,21 +280,22 @@ void LocalMeshData::receive_mesh_data(const MPI_Comm mpi_comm)
   dolfin_debug("check");
   // Receive global vertex indices
   {
-    std::vector<std::vector<std::size_t> > send_values;
+    std::vector<std::vector<std::size_t>> send_values;
     MPI::scatter(mpi_comm, send_values, vertex_indices);
   }
 
   dolfin_debug("check");
-  /// Receive coordinates for vertices
+  // Receive coordinates for vertices
   {
-    std::vector<std::vector<std::size_t> > send_values;
+    std::vector<std::vector<std::size_t>> send_values;
     std::vector<std::size_t> values;
     MPI::scatter(mpi_comm, send_values, values);
     unpack_cell_vertices(values);
   }
 }
 //-----------------------------------------------------------------------------
-void LocalMeshData::unpack_vertex_coordinates(const std::vector<double>& values)
+void
+LocalMeshData::unpack_vertex_coordinates(const std::vector<double>& values)
 {
   dolfin_assert(values.size() % gdim == 0);
   const std::size_t num_vertices = values.size()/gdim;
@@ -303,17 +309,18 @@ void LocalMeshData::unpack_vertex_coordinates(const std::vector<double>& values)
   log(TRACE, "Received %d vertex coordinates", vertex_coordinates.size());
 }
 //-----------------------------------------------------------------------------
-void LocalMeshData::unpack_cell_vertices(const std::vector<std::size_t>& values)
+void
+LocalMeshData::unpack_cell_vertices(const std::vector<std::size_t>& values)
 {
-  const std::size_t num_cells = values.size()/(tdim + 2);
-  dolfin_assert(values.size() % (tdim + 2) == 0);
+  const std::size_t num_cells = values.size()/(num_vertices_per_cell + 1);
+  dolfin_assert(values.size() % (num_vertices_per_cell + 1) == 0);
   cell_vertices.resize(boost::extents[num_cells][num_vertices_per_cell]);
   global_cell_indices.clear();
   std::size_t k = 0;
   for (std::size_t i = 0; i < num_cells; i++)
   {
     global_cell_indices.push_back(values[k++]);
-    for (std::size_t j = 0; j < tdim + 1; j++)
+    for (std::size_t j = 0; j < num_vertices_per_cell; j++)
       cell_vertices[i][j] = values[k++];
   }
 

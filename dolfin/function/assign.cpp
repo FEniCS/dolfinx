@@ -33,12 +33,13 @@ void dolfin::assign(std::shared_ptr<Function> receiving_func,
   assigner.assign(receiving_func, assigning_func);
 }
 //-----------------------------------------------------------------------------
-void dolfin::assign(std::shared_ptr<Function> receiving_func,
-	      std::vector<std::shared_ptr<const Function> > assigning_funcs)
+void
+dolfin::assign(std::shared_ptr<Function> receiving_func,
+               std::vector<std::shared_ptr<const Function>> assigning_funcs)
 {
 
   // Instantiate FunctionAssigner and call assign
-  std::vector<std::shared_ptr<const FunctionSpace> > assigning_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace>> assigning_spaces;
   for (std::size_t i = 0; i < assigning_funcs.size(); i++)
     assigning_spaces.push_back(assigning_funcs[i]->function_space());
 
@@ -48,11 +49,11 @@ void dolfin::assign(std::shared_ptr<Function> receiving_func,
 
 }
 //-----------------------------------------------------------------------------
-void dolfin::assign(std::vector<std::shared_ptr<Function> > receiving_funcs,
+void dolfin::assign(std::vector<std::shared_ptr<Function>> receiving_funcs,
 		    std::shared_ptr<const Function> assigning_func)
 {
   // Instantiate FunctionAssigner and call assign
-  std::vector<std::shared_ptr<const FunctionSpace> > receiving_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace>> receiving_spaces;
 
   for (std::size_t i = 0; i < receiving_funcs.size(); i++)
     receiving_spaces.push_back(receiving_funcs[i]->function_space());

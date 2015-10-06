@@ -21,17 +21,16 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2013-03-11
+// Last changed: 2015-03-27
 
+#include <clocale>
 #include <fstream>
 #include <string>
 #include <boost/filesystem.hpp>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/function/Function.h>
-#include <dolfin/log/dolfin_log.h>
-#include "BinaryFile.h"
-#include "ExodusFile.h"
+#include <dolfin/log/log.h>
 #include "RAWFile.h"
 #include "SVGFile.h"
 #include "VTKFile.h"
@@ -148,6 +147,10 @@ void File::create_parent_path(std::string filename)
 void File::init(MPI_Comm comm, const std::string filename,
                 std::string encoding)
 {
+  // Make sure locale is set to "C". This prevents spurious bugs in converting
+  // from string to double. See DOLFIN Issue #498.
+  std::setlocale(LC_ALL, "C");
+
   // Create parent path for file if file has a parent path
   create_parent_path(filename);
 
@@ -163,8 +166,6 @@ void File::init(MPI_Comm comm, const std::string filename,
       boost::filesystem::extension(boost::filesystem::basename(path));
     if (ext == ".xml")
       file.reset(new XMLFile(comm, filename));
-    else if (ext == ".bin")
-      file.reset(new BinaryFile(filename));
     else
     {
       dolfin_error("File.cpp",
@@ -179,20 +180,12 @@ void File::init(MPI_Comm comm, const std::string filename,
     file.reset(new XMLFile(comm, filename));
   else if (extension == ".pvd")
     file.reset(new VTKFile(filename, encoding));
-#ifdef HAS_VTK
-#ifdef HAS_VTK_EXODUS
-  else if (extension == ".e")
-    file.reset(new ExodusFile(filename));
-#endif
-#endif
   else if (extension == ".raw")
     file.reset(new RAWFile(filename));
   else if (extension == ".xyz")
     file.reset(new XYZFile(filename));
-  else if (extension == ".bin")
-    file.reset(new BinaryFile(filename));
 #ifdef HAS_HDF5
-  else if (extension == ".xdmf")
+  else if (extension == ".xdmf" or extension == ".xmf")
     file.reset(new XDMFFile(comm, filename));
 #endif
   else if (extension == ".svg")
@@ -230,9 +223,6 @@ void File::init(MPI_Comm comm, const std::string filename, Type type,
     break;
   case xyz:
     file.reset(new XYZFile(filename));
-    break;
-  case binary:
-    file.reset(new BinaryFile(filename));
     break;
   default:
     dolfin_error("File.cpp",

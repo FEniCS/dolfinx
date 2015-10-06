@@ -27,6 +27,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 #include <petscksp.h>
 #include <petscpc.h>
 #include "GenericLUSolver.h"
@@ -95,6 +96,14 @@ namespace dolfin
     std::size_t solve_transpose(const PETScMatrix& A, PETScVector& x,
                                 const PETScVector& b);
 
+    /// Sets the prefix used by PETSc when searching the options
+    /// database
+    void set_options_prefix(std::string options_prefix);
+
+    /// Returns the prefix used by PETSc when searching the options
+    /// database
+    std::string get_options_prefix() const;
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
@@ -102,14 +111,19 @@ namespace dolfin
     KSP ksp() const;
 
     /// Return a list of available solver methods
-    static std::vector<std::pair<std::string, std::string> > methods();
+    static std::map<std::string, std::string> methods();
 
     /// Default parameter values
     static Parameters default_parameters();
 
     friend class PETScSNESSolver;
 
+    friend class PETScTAOSolver;
+
   private:
+
+    // Prefix for PETSc options database
+    std::string _petsc_options_prefix;
 
     const MatSolverPackage _solver_package;
 
@@ -120,8 +134,8 @@ namespace dolfin
     static const std::map<const MatSolverPackage, const bool> _methods_cholesky;
 
     // Available LU solvers descriptions
-    static const std::vector<std::pair<std::string, std::string> >
-      _methods_descr;
+    static const std::map<std::string, std::string>
+    _methods_descr;
 
     // Select LU solver type
     const MatSolverPackage select_solver(std::string& method) const;
@@ -135,13 +149,10 @@ namespace dolfin
     // Configure PETSc options
     void configure_ksp(const MatSolverPackage solver_package);
 
-    // Set PETSc operators
-    void set_petsc_operators();
-
     // Print pre-solve report
     void pre_report(const PETScMatrix& A) const;
 
-    /// PETSc solver pointer
+    // PETSc solver pointer
     KSP _ksp;
 
     // Operator (the matrix)

@@ -46,7 +46,7 @@ namespace dolfin
       // Get number of entities (excluding ghosts)
       const std::size_t dim = _entity.dim();
       mesh.init(dim);
-      
+
       // End at ghost cells for normal iterator
       pos_end = mesh.topology().ghost_offset(dim);
     }
@@ -68,6 +68,11 @@ namespace dolfin
         pos_end = mesh.topology().ghost_offset(dim);
       else if (opt == "ghost")
         _pos = mesh.topology().ghost_offset(dim);
+      else if (opt != "all")
+        dolfin_error("MeshEntityIterator.h",
+                     "initialize MeshEntityIterator",
+                     "unknown opt=\"%s\", choose from "
+                     "opt=[\"regular\", \"ghost\", \"all\"]", opt.c_str());
     }
 
     /// Create iterator for entities of given dimension connected to given entity
@@ -142,10 +147,6 @@ namespace dolfin
     /// Member access operator
     T* operator->()
     { _entity._local_index = (index ? index[_pos] : _pos); return &_entity; }
-
-    /// Random access operator
-    T& operator[] (std::size_t pos)
-    { _pos = pos; return *operator->();}
 
     /// Check if iterator has reached the end
     bool end() const

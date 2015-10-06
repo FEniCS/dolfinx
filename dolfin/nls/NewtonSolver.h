@@ -113,12 +113,27 @@ namespace dolfin
     ///         Parameter values.
     static Parameters default_parameters();
 
-  private:
+  protected:
 
-    // Convergence test
+    /// Convergence test. It may be overloaded using virtual inheritance and
+    /// this base criterion may be called from derived, both in C++ and Python.
+    ///
+    /// *Arguments*
+    ///     r (_GenericVector_)
+    ///         Residual for criterion evaluation.
+    ///     nonlinear_problem (_NonlinearProblem_)
+    ///         The nonlinear problem.
+    ///     iteration (std::size_t)
+    ///         Newton iteration number.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         Whether convergence occured.
     virtual bool converged(const GenericVector& r,
                            const NonlinearProblem& nonlinear_problem,
                            std::size_t iteration);
+
+  private:
 
     // Current number of Newton iterations
     std::size_t _newton_iteration;

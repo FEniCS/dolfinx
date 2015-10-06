@@ -48,10 +48,6 @@ Parameters KrylovSolver::default_parameters()
   p.add("error_on_nonconvergence", true);
   p.add("nonzero_initial_guess",   false);
 
-  // FIXME: This should be removed, see
-  // https://bugs.launchpad.net/dolfin/+bug/988494
-  p.add("use_petsc_cusp_hack", false);
-
   // GMRES options
   Parameters p_gmres("gmres");
   p_gmres.add("restart", 30);
@@ -159,9 +155,9 @@ void KrylovSolver::init(std::string method, std::string preconditioner)
   DefaultFactory factory;
 
   // Get list of available methods and preconditioners
-  std::vector<std::pair<std::string, std::string> >
+  const std::map<std::string, std::string>
     methods = factory.krylov_solver_methods();
-  std::vector<std::pair<std::string, std::string> >
+  const std::map<std::string, std::string>
     preconditioners = factory.krylov_solver_preconditioners();
 
   // Check that method is available

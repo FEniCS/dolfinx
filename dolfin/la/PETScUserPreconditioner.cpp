@@ -24,12 +24,10 @@
 #ifdef HAS_PETSC
 
 #include <memory>
+
 #include <petscversion.h>
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
-#include <petsc-private/pcimpl.h>
-#else
-#include <private/pcimpl.h>
-#endif
+#include <petsc/private/pcimpl.h>
+
 #include <dolfin/common/NoDeleter.h>
 #include "PETScVector.h"
 #include "PETScUserPreconditioner.h"

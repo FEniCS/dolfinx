@@ -74,13 +74,9 @@ void LagrangeInterpolator::interpolate(Function& u, const Expression& u0)
   // Create vector to hold all local values of u
   std::vector<double> local_u_vector(u.vector()->local_size());
 
-  // Get dofmap of this Function
-  dolfin_assert(V.dofmap());
-  const GenericDofMap& dofmap = *V.dofmap();
-
   // Create map from coordinates to dofs sharing that coordinate
-  std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
-    coords_to_dofs = tabulate_coordinates_to_dofs(dofmap, mesh);
+  const std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
+    coords_to_dofs = tabulate_coordinates_to_dofs(V);
 
   // Get a map from global dofs to component number in mixed space
   std::unordered_map<std::size_t, std::size_t> dof_component_map;
@@ -88,21 +84,16 @@ void LagrangeInterpolator::interpolate(Function& u, const Expression& u0)
   extract_dof_component_map(dof_component_map, V, &component);
 
   // Evaluate all points
-  std::map<std::vector<double>, std::vector<std::size_t>,
-           lt_coordinate>::const_iterator map_it;
-  for (map_it = coords_to_dofs.begin(); map_it != coords_to_dofs.end();
-       map_it++)
+  for (const auto &map_it : coords_to_dofs)
   {
     // Place interpolation point in x
-    std::copy(map_it->first.begin(), map_it->first.end(), x.begin());
+    std::copy(map_it.first.begin(), map_it.first.end(), x.begin());
 
     u0.eval(_values, _x);
-    std::vector<std::size_t> dofs = map_it->second;
-    for (std::vector<std::size_t>::const_iterator d = dofs.begin();
-         d != dofs.end(); d++)
+    for (const auto &d : map_it.second)
     {
-      dolfin_assert(*d < local_u_vector.size());
-      local_u_vector[*d] = values[dof_component_map[*d]];
+      dolfin_assert(d < local_u_vector.size());
+      local_u_vector[d] = values[dof_component_map[d]];
     }
   }
 
@@ -135,7 +126,7 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   dolfin_assert(u0.function_space());
   dolfin_assert( u.function_space());
   const FunctionSpace& V0 = *u0.function_space();
-  const FunctionSpace& V1 = *u .function_space();
+  const FunctionSpace& V1 =  *u.function_space();
 
   // Get element interpolating to
   dolfin_assert(V1.element());
@@ -176,10 +167,9 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   // Create bounding box of mesh0
   std::vector<double> x_min_max(2*gdim0);
   std::vector<double> coordinates = mesh0.coordinates();
-  for (std::size_t i=0; i<gdim0; i++)
+  for (std::size_t i = 0; i < gdim0; ++i)
   {
-    for (std::vector<double>::const_iterator it=coordinates.begin()+i;
-         it < coordinates.end(); it+=gdim0)
+    for (auto it = coordinates.begin() + i; it < coordinates.end(); it += gdim0)
     {
       x_min_max[i]         = std::min(x_min_max[i], *it);
       x_min_max[gdim0 + i] = std::max(x_min_max[gdim0 + i], *it);
@@ -187,7 +177,7 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   }
 
   // Communicate bounding boxes
-  std::vector<std::vector<double> > bounding_boxes;
+  std::vector<std::vector<double>> bounding_boxes;
   MPI::all_gather(mpi_comm, x_min_max, bounding_boxes);
 
   // Create arrays used to evaluate one point
@@ -199,13 +189,9 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   // Create vector to hold all local values of u
   std::vector<double> local_u_vector(u.vector()->local_size());
 
-  // Get dofmap of u
-  dolfin_assert(V1.dofmap());
-  const GenericDofMap& dofmap = *V1.dofmap();
-
   // Create map from coordinates to dofs sharing that coordinate
   std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
-    coords_to_dofs = tabulate_coordinates_to_dofs(dofmap, mesh1);
+    coords_to_dofs = tabulate_coordinates_to_dofs(V1);
 
   // Get a map from global dofs to component number in mixed space
   std::unordered_map<std::size_t, std::size_t> dof_component_map;
@@ -214,23 +200,17 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
 
   // Search this process first for all coordinates in u's local mesh
   std::vector<double> points_not_found;
-  std::map<std::vector<double>, std::vector<std::size_t>,
-           lt_coordinate>::const_iterator map_it;
-  for (map_it = coords_to_dofs.begin(); map_it != coords_to_dofs.end();
-       map_it++)
+  for (const auto &map_it : coords_to_dofs)
   {
     // Place interpolation point in x
-    std::copy(map_it->first.begin(), map_it->first.end(), x.begin());
+    std::copy(map_it.first.begin(), map_it.first.end(), x.begin());
 
     try
     { // Store values when point is found
       u0.eval(_values, _x);
-      std::vector<std::size_t> dofs = map_it->second;
-      for (std::vector<std::size_t>::const_iterator d = dofs.begin();
-           d != dofs.end(); d++)
-      {
-        local_u_vector[*d] = values[dof_component_map[*d]];
-      }
+      std::vector<std::size_t> dofs = map_it.second;
+      for (const auto &d : map_it.second)
+        local_u_vector[d] = values[dof_component_map[d]];
     }
     catch (std::exception &e)
     {
@@ -245,7 +225,7 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   // Remaining interpolation points must be found through MPI
   // communication.  Check first using bounding boxes which process
   // may own the points
-  std::vector<std::vector<double> > potential_points(num_processes);
+  std::vector<std::vector<double>> potential_points(num_processes);
   for (std::size_t i = 0; i < points_not_found.size(); i += gdim1)
   {
     std::copy(points_not_found.begin() + i,
@@ -267,20 +247,20 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   }
 
   // Communicate all potential points
-  std::vector<std::vector<double> > potential_points_recv;
+  std::vector<std::vector<double>> potential_points_recv;
   MPI::all_to_all(mpi_comm, potential_points, potential_points_recv);
 
   // Now try to eval u0 for the received points
-  std::vector<std::vector<double> > coefficients_found(num_processes);
-  std::vector<std::vector<double> > points_found(num_processes);
+  std::vector<std::vector<double>> coefficients_found(num_processes);
+  std::vector<std::vector<double>> points_found(num_processes);
 
-  for (std::size_t p = 0; p < num_processes; p++)
+  for (std::size_t p = 0; p < num_processes; ++p)
   {
     if (p == MPI::rank(mpi_comm))
       continue;
 
-    std::vector<double> points = potential_points_recv[p];
-    for (std::size_t j = 0; j < points.size()/gdim1; j++)
+    std::vector<double>& points = potential_points_recv[p];
+    for (std::size_t j = 0; j < points.size()/gdim1; ++j)
     {
       std::copy(points.begin() + j*gdim1, points.begin() + (j + 1)*gdim1,
                 x.begin());
@@ -301,35 +281,33 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   }
 
   // Send back the found coefficients and points
-  std::vector<std::vector<double> > coefficients_recv;
-  std::vector<std::vector<double> > points_recv;
+  std::vector<std::vector<double>> coefficients_recv;
+  std::vector<std::vector<double>> points_recv;
   MPI::all_to_all(mpi_comm, coefficients_found, coefficients_recv);
   MPI::all_to_all(mpi_comm, points_found, points_recv);
-
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     if (p == MPI::rank(mpi_comm))
       continue;
 
     // Get the new values and points
-    std::vector<double> vals = coefficients_recv[p];
-    std::vector<double> pts = points_recv[p];
+    const std::vector<double>& vals = coefficients_recv[p];
+    const std::vector<double>& pts = points_recv[p];
 
     // Move all found coefficients into the local_u_vector
-    for (std::size_t j = 0; j < pts.size()/gdim1; j++)
+    for (std::size_t j = 0; j < pts.size()/gdim1; ++j)
     {
       std::copy(pts.begin() + j*gdim1, pts.begin() + (j + 1)*gdim1, x.begin());
 
       // Get the owned dofs sharing x
-      std::vector<std::size_t> dofs = coords_to_dofs[x];
+      const std::vector<std::size_t>& dofs = coords_to_dofs[x];
 
       // Place result in local_u_vector
-      for (std::vector<std::size_t>::const_iterator d = dofs.begin();
-           d != dofs.end(); d++)
+      for (const auto &d : dofs)
       {
-        dolfin_assert(*d <  local_u_vector.size());
-        local_u_vector[*d]
-          = vals[j*u0.value_size() + dof_component_map[*d]];
+        dolfin_assert(d <  local_u_vector.size());
+        local_u_vector[d]
+          = vals[j*u0.value_size() + dof_component_map[d]];
       }
     }
   }
@@ -340,19 +318,25 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
 }
 //-----------------------------------------------------------------------------
 std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
-LagrangeInterpolator::tabulate_coordinates_to_dofs(const GenericDofMap& dofmap,
-                                                   const Mesh& mesh)
+LagrangeInterpolator::tabulate_coordinates_to_dofs(const FunctionSpace& V)
 {
   std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
     coords_to_dofs(lt_coordinate(1.0e-12));
 
+  // Extract mesh, dofmap and element
+  dolfin_assert(V.dofmap());
+  dolfin_assert(V.element());
+  dolfin_assert(V.mesh());
+  const GenericDofMap& dofmap = *V.dofmap();
+  const FiniteElement& element = *V.element();
+  const Mesh& mesh = *V.mesh();
+
   // Geometric dimension
-  const std::size_t gdim = dofmap.geometric_dimension();
-  dolfin_assert(gdim == mesh.geometry().dim());
+  const std::size_t gdim = mesh.geometry().dim();
 
   // Loop over cells and tabulate dofs
   boost::multi_array<double, 2> coordinates;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   std::vector<double> coors(gdim);
 
   // Speed up the computations by only visiting (most) dofs once
@@ -363,13 +347,14 @@ LagrangeInterpolator::tabulate_coordinates_to_dofs(const GenericDofMap& dofmap,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update UFC cell
-    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_coordinate_dofs(coordinate_dofs);
 
     // Get local-to-global map
-    const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
+    const ArrayView<const dolfin::la_index> dofs
+      = dofmap.cell_dofs(cell->index());
 
     // Tabulate dof coordinates on cell
-    dofmap.tabulate_coordinates(coordinates, vertex_coordinates, *cell);
+    element.tabulate_dof_coordinates(coordinates, coordinate_dofs, *cell);
 
     // Map dofs into coords_to_dofs
     for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -384,21 +369,11 @@ LagrangeInterpolator::tabulate_coordinates_to_dofs(const GenericDofMap& dofmap,
         // Put coordinates in coors
         std::copy(coordinates[i].begin(), coordinates[i].end(), coors.begin());
 
-        std::map<std::vector<double>,
-                 std::vector<std::size_t> >::const_iterator
-          it = coords_to_dofs.find(coors);
-        if (it == coords_to_dofs.end())
-        {
-          // Add coordinate and dof to map
-          std::vector<std::size_t> dof_vec;
-          dof_vec.push_back(dof);
-          coords_to_dofs[coors] = dof_vec;
-        }
-        else
-        {
-          // Add dof to mapped coordinate
-          coords_to_dofs[coors].push_back(dof);
-        }
+        // Add dof to list at this coord
+        const auto ins = coords_to_dofs.insert
+          (std::make_pair(coors, std::vector<std::size_t>{dof}));
+        if (!ins.second)
+          ins.first->second.push_back(dof);
       }
     }
   }
@@ -412,32 +387,30 @@ LagrangeInterpolator::extract_dof_component_map(std::unordered_map<std::size_t,
                                                 int* component)
 {
   // Extract sub dofmaps recursively and store dof to component map
-  std::unordered_map<std::size_t, std::size_t> collapsed_map;
-  std::unordered_map<std::size_t, std::size_t>::const_iterator map_it;
-  std::vector<std::size_t> comp(1);
-
   if (V.element()->num_sub_elements() == 0)
   {
+    std::unordered_map<std::size_t, std::size_t> collapsed_map;
     std::shared_ptr<GenericDofMap> dummy
       = V.dofmap()->collapse(collapsed_map, *V.mesh());
     (*component)++;
-    for (map_it =collapsed_map.begin(); map_it!=collapsed_map.end(); ++map_it)
-      dof_component_map[map_it->second] = (*component);
+    for (const auto &map_it : collapsed_map)
+      dof_component_map[map_it.second] = (*component);
   }
   else
   {
-    for (std::size_t i = 0; i < V.element()->num_sub_elements(); i++)
+    for (std::size_t i = 0; i < V.element()->num_sub_elements(); ++i)
     {
-      comp[0] = i;
+      const std::vector<std::size_t> comp = {i};
       std::shared_ptr<FunctionSpace> Vs = V.extract_sub_space(comp);
       extract_dof_component_map(dof_component_map, *Vs, component);
     }
   }
 }
 //-----------------------------------------------------------------------------
-bool LagrangeInterpolator::in_bounding_box(const std::vector<double>& point,
-                                           const std::vector<double>& bounding_box,
-                                           const double tol)
+bool
+LagrangeInterpolator::in_bounding_box(const std::vector<double>& point,
+                                      const std::vector<double>& bounding_box,
+                                      const double tol)
 {
   // Return false if bounding box is empty
   if (bounding_box.empty())

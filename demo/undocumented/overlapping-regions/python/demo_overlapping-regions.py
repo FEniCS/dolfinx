@@ -59,7 +59,7 @@ v = TestFunction(V)
 DL, DM, DR = (1,2), (2,), (2,3) # ***
 
 # Define new measures associated with the interior domains
-dx = Measure("dx")[domains]
+dx = Measure('dx', domain=mesh, subdomain_data=domains)
 
 # Make forms for equation
 a = u*v*dx() + alpha*dot(grad(u), grad(v))*dx() # ***

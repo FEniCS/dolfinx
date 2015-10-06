@@ -43,8 +43,7 @@ void dolfin::solve(const Equation& equation, Function& u,
                    const DirichletBC& bc, const double tol, GoalFunctional& M)
 {
   // Create list containing single boundary condition
-  std::vector<const DirichletBC*> bcs;
-  bcs.push_back(&bc);
+  std::vector<const DirichletBC*> bcs ={&bc};
 
   // Call common adaptive solve function
   solve(equation, u, bcs, tol, M);
@@ -88,8 +87,7 @@ void dolfin::solve(const Equation& equation, Function& u,
                    GoalFunctional& M)
 {
   // Create list containing single boundary condition
-  std::vector<const DirichletBC*> bcs;
-  bcs.push_back(&bc);
+  std::vector<const DirichletBC*> bcs = {&bc};
 
   // Call common adaptive solve function with Jacobian
   solve(equation, u, bcs, J, tol, M);

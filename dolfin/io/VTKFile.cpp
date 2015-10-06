@@ -237,11 +237,12 @@ std::string VTKFile::init(const Mesh& mesh, std::size_t cell_dim) const
                                       counter, ".vtu");
   clear_file(vtu_filename);
 
-  // Number of cells
-  const std::size_t num_cells = mesh.topology().size(cell_dim);
+  // Number of cells and vertices
+  const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
+  const std::size_t num_vertices = mesh.topology().ghost_offset(0);
 
   // Write headers
-  vtk_header_open(mesh.num_vertices(), num_cells, vtu_filename);
+  vtk_header_open(num_vertices, num_cells, vtu_filename);
 
   return vtu_filename;
 }
@@ -298,7 +299,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
 
   dolfin_assert(u.function_space()->dofmap());
   const GenericDofMap& dofmap= *u.function_space()->dofmap();
-  if (dofmap.max_cell_dimension() == cell_based_dim)
+  if (dofmap.max_element_dofs() == cell_based_dim)
     VTKWriter::write_cell_data(u, vtu_filename, binary, compress);
   else
     write_point_data(u, mesh, vtu_filename);
@@ -321,30 +322,27 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
   const std::size_t size = num_vertices*dim;
   std::vector<double> values(size);
 
-  // Get function values at vertices and zero any small values
+  // Get function values at vertices
   u.compute_vertex_values(values, mesh);
   dolfin_assert(values.size() == size);
-  std::vector<double>::iterator it;
-  for (it = values.begin(); it != values.end(); ++it)
-  {
-    if (std::abs(*it) < DOLFIN_EPS)
-      *it = 0.0;
-  }
 
   if (rank == 0)
   {
     fp << "<PointData  Scalars=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+       << "\"  format=\""<< encode_string <<"\">";
   }
   else if (rank == 1)
   {
     fp << "<PointData  Vectors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+       << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
   }
   else if (rank == 2)
   {
     fp << "<PointData  Tensors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+       << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
   }
 
   if (_encoding == "ascii")
@@ -608,7 +606,7 @@ void VTKFile::pvtu_write(const Function& u, const std::string fname) const
   dolfin_assert(u.function_space()->dofmap());
   for (std::size_t i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
-  if (u.function_space()->dofmap()->max_cell_dimension() == cell_based_dim)
+  if (u.function_space()->dofmap()->max_element_dofs() == cell_based_dim)
     data_type = "cell";
 
   const std::size_t num_processes = MPI::size(mesh.mpi_comm());

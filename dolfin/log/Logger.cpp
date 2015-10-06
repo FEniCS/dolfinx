@@ -33,7 +33,6 @@
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
-#include <boost/lexical_cast.hpp>
 
 #ifdef __linux__
 #include <sys/types.h>
@@ -43,16 +42,12 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/common/defines.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/io/File.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "LogLevel.h"
 #include "Logger.h"
 
 using namespace dolfin;
-
-typedef std::map<std::string, std::pair<std::size_t, double> >::iterator
-map_iterator;
-typedef std::map<std::string, std::pair<std::size_t, double> >::const_iterator
-const_map_iterator;
 
 // Function for monitoring memory usage, called by thread
 #ifdef __linux__
@@ -100,7 +95,8 @@ void _monitor_memory_usage(dolfin::Logger* logger)
 
 //-----------------------------------------------------------------------------
 Logger::Logger() : _active(true), _log_level(INFO), indentation_level(0),
-                   logstream(&std::cout), _maximum_memory_usage(-1)
+                   logstream(&std::cout), _maximum_memory_usage(-1),
+                   _mpi_comm(MPI_COMM_WORLD)
 {
   // Do nothing
 }
@@ -114,7 +110,7 @@ Logger::~Logger()
 //-----------------------------------------------------------------------------
 void Logger::log(std::string msg, int log_level) const
 {
-  write(log_level, msg, -1);
+  write(log_level, msg);
 }
 //-----------------------------------------------------------------------------
 void Logger::log_underline(std::string msg, int log_level) const
@@ -136,7 +132,7 @@ void Logger::log_underline(std::string msg, int log_level) const
 void Logger::warning(std::string msg) const
 {
   std::string s = std::string("*** Warning: ") + msg;
-  write(WARNING, s, -1);
+  write(WARNING, s);
 }
 //-----------------------------------------------------------------------------
 void Logger::error(std::string msg) const
@@ -150,9 +146,10 @@ void Logger::dolfin_error(std::string location,
                           std::string reason,
                           int mpi_rank) const
 {
-  std::string _mpi_rank = boost::lexical_cast<std::string>(mpi_rank);
+
   if (mpi_rank < 0)
-    _mpi_rank = "unknown";
+    mpi_rank = MPI::rank(_mpi_comm);
+  std::string _mpi_rank = std::to_string(mpi_rank);
 
   std::stringstream s;
   s << std::endl << std::endl
@@ -211,7 +208,7 @@ void Logger::deprecation(std::string feature,
   #ifdef DOLFIN_DEPRECATION_ERROR
   error(s.str());
   #else
-  write(WARNING, s.str(), -1);
+  write(WARNING, s.str());
   #endif
 }
 //-----------------------------------------------------------------------------
@@ -246,7 +243,7 @@ void Logger::progress(std::string title, double p) const
   line << std::setprecision(1);
   line << "] " << 100.0*p << '%';
 
-  write(PROGRESS, line.str(), -1);
+  write(PROGRESS, line.str());
 }
 //-----------------------------------------------------------------------------
 void Logger::set_output_stream(std::ostream& ostream)
@@ -264,44 +261,47 @@ void Logger::set_log_level(int log_level)
   _log_level = log_level;
 }
 //-----------------------------------------------------------------------------
-void Logger::register_timing(std::string task, double elapsed_time)
+void Logger::register_timing(std::string task,
+                             std::tuple<double, double, double> elapsed)
 {
-  // Remove small or negative numbers
-  if (elapsed_time < DOLFIN_EPS)
-    elapsed_time = 0.0;
+  dolfin_assert(elapsed >=
+    std::make_tuple(double(0.0), double(0.0), double(0.0)));
 
   // Print a message
   std::stringstream line;
-  line << "Elapsed time: " << elapsed_time << " (" << task << ")";
+  line << "Elapsed wall, usr, sys time: "
+       << std::get<0>(elapsed) << ", "
+       << std::get<1>(elapsed) << ", "
+       << std::get<2>(elapsed)
+       << " ("  << task << ")";
   log(line.str(), TRACE);
 
   // Store values for summary
-  map_iterator it = _timings.find(task);
+  const auto timing = std::tuple_cat(std::make_tuple(std::size_t(1)), elapsed);
+  auto it = _timings.find(task);
   if (it == _timings.end())
   {
-    std::pair<std::size_t, double> timing(1, elapsed_time);
     _timings[task] = timing;
   }
   else
   {
-    it->second.first += 1;
-    it->second.second += elapsed_time;
+    std::get<0>(it->second) += std::get<0>(timing);
+    std::get<1>(it->second) += std::get<1>(timing);
+    std::get<2>(it->second) += std::get<2>(timing);
+    std::get<3>(it->second) += std::get<3>(timing);
   }
 }
 //-----------------------------------------------------------------------------
-void Logger::list_timings(bool reset)
+void Logger::list_timings(TimingClear clear, std::set<TimingType> type)
 {
-  // Check if timings are empty
-  if (_timings.empty())
-  {
-    log("Timings: no timings to report.");
-    return;
-  }
-  else
-  {
-    log("");
-    log(timings(reset).str(true));
-  }
+  // Format and reduce to rank 0
+  Table timings = this->timings(clear, type);
+  timings = MPI::avg(_mpi_comm, timings);
+  const std::string str = timings.str(true);
+
+  // Print just on rank 0
+  if (MPI::rank(_mpi_comm) == 0)
+    log(str);
 
   // Print maximum memory usage if available
   if (_maximum_memory_usage >= 0)
@@ -310,36 +310,66 @@ void Logger::list_timings(bool reset)
     s << "\nMaximum memory usage: " << _maximum_memory_usage << " MB";
     log(s.str());
   }
-
 }
 //-----------------------------------------------------------------------------
-Table Logger::timings(bool reset)
+void Logger::dump_timings_to_xml(std::string filename, TimingClear clear)
+{
+  Table t = timings(clear,
+    { TimingType::wall, TimingType::user, TimingType::system });
+
+  Table t_max = MPI::max(_mpi_comm, t);
+  Table t_min = MPI::min(_mpi_comm, t);
+  Table t_avg = MPI::avg(_mpi_comm, t);
+
+  if (MPI::rank(_mpi_comm) == 0)
+  {
+    File f(MPI_COMM_SELF, filename);
+    f << t_max;
+    f << t_min;
+    f << t_avg;
+  }
+}
+//-----------------------------------------------------------------------------
+std::map<TimingType, std::string> Logger::_TimingType_descr
+  = { { TimingType::wall,   "wall" },
+      { TimingType::user,   "usr"  },
+      { TimingType::system, "sys"  } };
+//-----------------------------------------------------------------------------
+Table Logger::timings(TimingClear clear,
+                      std::set<TimingType> type)
 {
   // Generate timing table
   Table table("Summary of timings");
-  for (const_map_iterator it = _timings.begin(); it != _timings.end(); ++it)
+  for (auto& it : _timings)
   {
-    const std::string task    = it->first;
-    const std::size_t num_timings    = it->second.first;
-    const double total_time   = it->second.second;
-    const double average_time = total_time / static_cast<double>(num_timings);
+    const std::string task = it.first;
+    const std::size_t num_timings = std::get<0>(it.second);
+    const std::vector<double> times { std::get<1>(it.second),
+                                      std::get<2>(it.second),
+                                      std::get<3>(it.second) };
+    table(task, "reps") = num_timings;
+    for (const auto& t : type)
+    {
+      const double total_time = times[static_cast<int>(t)];
+      const double average_time = total_time / static_cast<double>(num_timings);
+      table(task, Logger::_TimingType_descr[t] + " avg") = average_time;
+      table(task, Logger::_TimingType_descr[t] + " tot") = total_time;
+    }
 
-    table(task, "Average time") = average_time;
-    table(task, "Total time")   = total_time;
-    table(task, "Reps")         = num_timings;
   }
 
   // Clear timings
-  if (reset)
+  if (static_cast<bool>(clear))
     _timings.clear();
 
   return table;
 }
 //-----------------------------------------------------------------------------
-double Logger::timing(std::string task, bool reset)
+std::tuple<std::size_t, double, double, double>
+  Logger::timing(std::string task, TimingClear clear)
 {
   // Find timing
-  map_iterator it = _timings.find(task);
+  auto it = _timings.find(task);
   if (it == _timings.end())
   {
     std::stringstream line;
@@ -348,16 +378,14 @@ double Logger::timing(std::string task, bool reset)
                  "extract timing for task",
                  line.str());
   }
-
-  // Compute average
-  const std::size_t num_timings  = it->second.first;
-  const double total_time   = it->second.second;
-  const double average_time = total_time / static_cast<double>(num_timings);
+  // Prepare for return for the case of reset
+  const auto result = it->second;
 
   // Clear timing
-  _timings.erase(it);
+  if (static_cast<bool>(clear))
+    _timings.erase(it);
 
-  return average_time;
+  return result;
 }
 //-----------------------------------------------------------------------------
 void Logger::monitor_memory_usage()
@@ -393,7 +421,7 @@ void Logger::_report_memory_usage(size_t num_mb)
 void Logger::__debug(std::string msg) const
 {
   std::string s = std::string("DEBUG: ") + msg;
-  write(DBG, s, -1);
+  write(DBG, s);
 }
 //-----------------------------------------------------------------------------
 void Logger::__dolfin_assert(std::string file, unsigned long line,
@@ -408,11 +436,13 @@ void Logger::__dolfin_assert(std::string file, unsigned long line,
   dolfin_error(location.str(), task.str(), reason.str());
 }
 //-----------------------------------------------------------------------------
-void Logger::write(int log_level, std::string msg, int rank) const
+void Logger::write(int log_level, std::string msg) const
 {
   // Check log level
   if (!_active || log_level < _log_level)
     return;
+
+  const std::size_t rank = MPI::rank(_mpi_comm);
 
   // Check if we want output on root process only
   const bool std_out_all_processes = parameters["std_out_all_processes"];
@@ -420,7 +450,7 @@ void Logger::write(int log_level, std::string msg, int rank) const
     return;
 
   // Prefix with process number if running in parallel
-  if (rank >= 0)
+  if (MPI::size(_mpi_comm) > 1)
   {
     std::stringstream prefix;
     prefix << "Process " << rank << ": ";

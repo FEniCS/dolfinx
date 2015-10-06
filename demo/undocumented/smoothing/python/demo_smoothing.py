@@ -1,6 +1,6 @@
 "This demo program demonstrates various algorithms for mesh smoothing."
 
-# Copyright (C) 2010 Anders Logg
+# Copyright (C) 2010, 2015 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -21,9 +21,10 @@
 # Last changed: 2010-05-11
 
 from dolfin import *
+parameters["refinement_algorithm"] = "plaza"
 
 # Create rectangular mesh
-mesh = RectangleMesh(0.0, 0.0, 2.4, 0.4, 60, 10)
+mesh = RectangleMesh(Point(0.0, 0.0), Point(2.4, 0.4), 60, 10)
 
 # Define a circular hole
 center = Point(0.2, 0.2)

@@ -25,6 +25,7 @@
 import pytest
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
+import numpy as np
 
 
 @skip_in_parallel
@@ -165,3 +166,48 @@ def test_tetrahedron_collides_tetrahedron():
     # touching faces
     assert c3.collides(c43) == True
     assert c43.collides(c3) == True
+
+
+def _test_collision_robustness_2d(aspect, y, step):
+    nx = 10
+    ny = int(aspect*nx)
+    mesh = UnitSquareMesh(nx, ny, 'crossed')
+    bb = mesh.bounding_box_tree()
+
+    x = 0.0
+    p = Point(x, y)
+    while x <= 1.0:
+        c = bb.compute_first_entity_collision(Point(x, y))
+        assert c < np.uintc(-1)
+        x += step
+
+def _test_collision_robustness_3d(aspect, y, z, step):
+    nx = nz = 10
+    ny = int(aspect*nx)
+    mesh = UnitCubeMesh(nx, ny, nz)
+    bb = mesh.bounding_box_tree()
+
+    x = 0.0
+    while x <= 1.0:
+        c = bb.compute_first_entity_collision(Point(x, y, z))
+        assert c < np.uintc(-1)
+        x += step
+
+@skip_in_parallel
+@pytest.mark.slow
+def test_collision_robustness_slow():
+    """Test cases from https://bitbucket.org/fenics-project/dolfin/issue/296"""
+    _test_collision_robustness_2d( 100, 1e-14,       1e-5)
+    _test_collision_robustness_2d(  40, 1e-03,       1e-5)
+    _test_collision_robustness_2d( 100, 0.5 + 1e-14, 1e-5)
+    _test_collision_robustness_2d(4.43, 0.5,      4.03e-6)
+    _test_collision_robustness_3d( 100, 1e-14, 1e-14, 1e-5)
+
+@skip_in_parallel
+@pytest.mark.skipif(True, reason='Very slow test cases')
+def test_collision_robustness_very_slow():
+    """Test cases from https://bitbucket.org/fenics-project/dolfin/issue/296"""
+    _test_collision_robustness_2d(  10, 1e-16,       1e-7)
+    _test_collision_robustness_2d(4.43, 1e-17,    4.03e-6)
+    _test_collision_robustness_2d(  40, 0.5,         1e-6)
+    _test_collision_robustness_2d(  10, 0.5 + 1e-16, 1e-7)

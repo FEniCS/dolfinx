@@ -30,8 +30,9 @@
 #include <algorithm>
 #include <utility>
 #include <vector>
-#include <dolfin/log/log.h>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
+#include <dolfin/log/log.h>
 #include "TensorLayout.h"
 #include "GenericTensor.h"
 
@@ -71,7 +72,7 @@ namespace dolfin
 
     /// Return local ownership range
     virtual std::pair<std::size_t, std::size_t>
-      local_range(std::size_t dim) const
+    local_range(std::size_t dim) const
     { dolfin_assert(dim == 0); return local_range(); }
 
     /// Get block of values using global indices
@@ -109,25 +110,14 @@ namespace dolfin
     /// Add block of values using global indices
     virtual void
       add(const double* block,
-          const std::vector<const std::vector<dolfin::la_index>* >& rows)
-    { add(block, rows[0]->size(), &(*rows[0])[0]); }
+          const std::vector<ArrayView<const dolfin::la_index> >& rows)
+    { add(block, rows[0].size(), rows[0].data()); }
 
     /// Add block of values using local indices
     virtual void
-      add_local(const double* block,
-          const std::vector<const std::vector<dolfin::la_index>* >& rows)
-    { add_local(block, rows[0]->size(), &(*rows[0])[0]); }
-
-    /// Add block of values using global indices
-    virtual void add(const double* block,
-                     const std::vector<std::vector<dolfin::la_index> >& rows)
-    { add(block, rows[0].size(), &(rows[0])[0]); }
-
-    /// Add block of values using local indices
-    virtual void
-      add_local(const double* block,
-                const std::vector<std::vector<dolfin::la_index> >& rows)
-    { add_local(block, rows[0].size(), &(rows[0])[0]); }
+    add_local(const double* block,
+              const std::vector<ArrayView<const dolfin::la_index> >& rows)
+    { add_local(block, rows[0].size(), rows[0].data()); }
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;
@@ -266,24 +256,6 @@ namespace dolfin
 
     /// Assignment operator
     virtual const GenericVector& operator= (double a) = 0;
-
-    /// Return pointer to underlying data (const version)
-    virtual const double* data() const
-    {
-      dolfin_error("GenericVector.h",
-                   "return pointer to underlying vector data",
-                   "Not implemented by current linear algebra backend");
-      return 0;
-    }
-
-    /// Return pointer to underlying data
-    virtual double* data()
-    {
-      dolfin_error("GenericVector.h",
-                   "return pointer to underlying vector data",
-                   "Not implemented by current linear algebra backend");
-      return 0;
-    }
 
     //--- Convenience functions ---
 

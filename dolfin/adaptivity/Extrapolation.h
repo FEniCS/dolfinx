@@ -27,9 +27,10 @@
 #include <map>
 #include <set>
 #include <vector>
-#include <Eigen/Dense>
 
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
+#include <Eigen/Dense>
 
 namespace ufc
 {
@@ -81,9 +82,9 @@ namespace dolfin
       compute_coefficients(std::vector<std::vector<double> >& coefficients,
                            const Function&v, const FunctionSpace& V,
                            const FunctionSpace& W, const Cell& cell0,
-                           const std::vector<double>& vertex_coordinates0,
+                           const std::vector<double>& coordinate_dofs0,
                            const ufc::cell& c0,
-                           const std::vector<dolfin::la_index>& dofs,
+                           const ArrayView<const dolfin::la_index>& dofs,
                            std::size_t& offset);
 
     // Add equations for current cell
@@ -91,8 +92,8 @@ namespace dolfin
                                  Eigen::VectorXd& b,
                                  const Cell& cell0,
                                  const Cell& cell1,
-                                 const std::vector<double>& vertex_coordinates0,
-                                 const std::vector<double>& vertex_coordinates1,
+                                 const std::vector<double>& coordinate_dofs0,
+                                 const std::vector<double>& coordinate_dofs1,
                                  const ufc::cell& c0,
                                  const ufc::cell& c1,
                                  const FunctionSpace& V,

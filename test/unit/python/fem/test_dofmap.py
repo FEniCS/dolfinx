@@ -46,69 +46,45 @@ def W(V, Q):
 reorder_dofs = set_parameters_fixture("reorder_dofs_serial", [True, False])
 
 
-def test_tabulate_coord(mesh, V, W):
-
-    L0  = W.sub(0)
-    L1  = W.sub(1)
-    L01 = L1.sub(0)
-    L11 = L1.sub(1)
-
-    coord0 = np.zeros((3,2), dtype="d")
-    coord1 = np.zeros((3,2), dtype="d")
-    coord2 = np.zeros((3,2), dtype="d")
-    coord3 = np.zeros((3,2), dtype="d")
-
-    for cell in cells(mesh):
-        V.dofmap().tabulate_coordinates(cell, coord0)
-        L0.dofmap().tabulate_coordinates(cell, coord1)
-        L01.dofmap().tabulate_coordinates(cell, coord2)
-        L11.dofmap().tabulate_coordinates(cell, coord3)
-        coord4 = L1.dofmap().tabulate_coordinates(cell)
-
-        assert (coord0 == coord1).all()
-        assert (coord0 == coord2).all()
-        assert (coord0 == coord3).all()
-        assert (coord4[:3] == coord0).all()
-        assert (coord4[3:] == coord0).all()
-
 def test_tabulate_all_coordinates(mesh, V, W):
     D = mesh.geometry().dim()
-    
-    all_coords_V = V.dofmap().tabulate_all_coordinates(V.mesh())
-    all_coords_W = W.dofmap().tabulate_all_coordinates(W.mesh())
-    
-    local_size_V = V.dofmap().ownership_range()[1]-V.dofmap().ownership_range()[0]
-    local_size_W = W.dofmap().ownership_range()[1]-W.dofmap().ownership_range()[0]
-    
+    V_dofmap = V.dofmap()
+    W_dofmap = W.dofmap()
+
+    all_coords_V = V.tabulate_dof_coordinates()
+    all_coords_W = W.tabulate_dof_coordinates()
+    local_size_V = V_dofmap.ownership_range()[1]-V_dofmap.ownership_range()[0]
+    local_size_W = W_dofmap.ownership_range()[1]-W_dofmap.ownership_range()[0]
+
     assert all_coords_V.shape == (D*local_size_V,)
     assert all_coords_W.shape == (D*local_size_W,)
-    
+
     all_coords_V = all_coords_V.reshape(local_size_V, D)
     all_coords_W = all_coords_W.reshape(local_size_W, D)
-    
+
     checked_V = [False]*local_size_V
     checked_W = [False]*local_size_W
-    
+
     # Check that all coordinates are within the cell it should be
     for cell in cells(mesh):
-        dofs_V = V.dofmap().cell_dofs(cell.index())
+        dofs_V = V_dofmap.cell_dofs(cell.index())
         for di in dofs_V:
             if di >= local_size_V:
                 continue
             assert cell.contains(Point(all_coords_V[di]))
             checked_V[di] = True
 
-        dofs_W = W.dofmap().cell_dofs(cell.index())
+        dofs_W = W_dofmap.cell_dofs(cell.index())
         for di in dofs_W:
             if di >= local_size_W:
                 continue
             assert cell.contains(Point(all_coords_W[di]))
             checked_W[di] = True
-    
+
     # Assert that all dofs have been checked by the above
     assert all(checked_V)
     assert all(checked_W)
-    
+
 
 def test_tabulate_dofs(mesh, W):
 
@@ -135,6 +111,7 @@ def test_tabulate_dofs(mesh, W):
         assert len(np.intersect1d(dofs1, dofs2)) == 0
         assert np.array_equal(np.append(dofs1, dofs2), dofs3)
 
+
 def test_tabulate_coord_periodic():
 
     class PeriodicBoundary2(SubDomain):
@@ -149,8 +126,10 @@ def test_tabulate_coord_periodic():
 
     mesh = UnitSquareMesh(4, 4)
 
-    V = FunctionSpace(mesh, "Lagrange", 1,  constrained_domain=periodic_boundary)
-    Q = VectorFunctionSpace(mesh, "Lagrange", 1,  constrained_domain=periodic_boundary)
+    V = FunctionSpace(mesh, "Lagrange", 1,  \
+                      constrained_domain=periodic_boundary)
+    Q = VectorFunctionSpace(mesh, "Lagrange", 1,  \
+                            constrained_domain=periodic_boundary)
     W = V*Q
 
     L0  = W.sub(0)
@@ -164,17 +143,18 @@ def test_tabulate_coord_periodic():
     coord3 = np.zeros((3,2), dtype="d")
 
     for cell in cells(mesh):
-        V.dofmap().tabulate_coordinates(cell, coord0)
-        L0.dofmap().tabulate_coordinates(cell, coord1)
-        L01.dofmap().tabulate_coordinates(cell, coord2)
-        L11.dofmap().tabulate_coordinates(cell, coord3)
-        coord4 = L1.dofmap().tabulate_coordinates(cell)
+        V.element().tabulate_dof_coordinates(cell, coord0)
+        L0.element().tabulate_dof_coordinates(cell, coord1)
+        L01.element().tabulate_dof_coordinates(cell, coord2)
+        L11.element().tabulate_dof_coordinates(cell, coord3)
+        coord4 = L1.element().tabulate_dof_coordinates(cell)
 
         assert (coord0 == coord1).all()
         assert (coord0 == coord2).all()
         assert (coord0 == coord3).all()
         assert (coord4[:3] == coord0).all()
         assert (coord4[3:] == coord0).all()
+
 
 def test_tabulate_dofs_periodic():
 
@@ -191,7 +171,8 @@ def test_tabulate_dofs_periodic():
     periodic_boundary = PeriodicBoundary2()
 
     V = FunctionSpace(mesh, "Lagrange", 2, constrained_domain=periodic_boundary)
-    Q = VectorFunctionSpace(mesh, "Lagrange", 2, constrained_domain=periodic_boundary)
+    Q = VectorFunctionSpace(mesh, "Lagrange", 2, \
+                            constrained_domain=periodic_boundary)
     W = V*Q
 
     L0   = W.sub(0)
@@ -225,6 +206,7 @@ def test_tabulate_dofs_periodic():
         assert len(np.intersect1d(dofs1, dofs2)) == 0
         assert np.array_equal(np.append(dofs1, dofs2), dofs3)
 
+
 def test_global_dof_builder():
 
     mesh = UnitSquareMesh(3, 3)
@@ -241,23 +223,30 @@ def test_global_dof_builder():
 
 def test_dof_to_vertex_map(mesh, reorder_dofs):
 
+    def _test_maps_consistency(space):
+        v2d = vertex_to_dof_map(space)
+        d2v = dof_to_vertex_map(space)
+        assert len(v2d) == len(d2v)
+        assert np.all(v2d[d2v] == np.arange(len(v2d)))
+        assert np.all(d2v[v2d] == np.arange(len(d2v)))
+
     # Check for both reordered and UFC ordered dofs
     V = FunctionSpace(mesh, "Lagrange", 1)
     Q = VectorFunctionSpace(mesh, "Lagrange", 1)
     W = V*Q
+
+    _test_maps_consistency(V)
+    _test_maps_consistency(Q)
+    _test_maps_consistency(W)
 
     u = Function(V)
     e = Expression("x[0]+x[1]")
     u.interpolate(e)
 
     vert_values = mesh.coordinates().sum(1)
-    func_values = -1*np.ones(len(vert_values))
-    func_values[dof_to_vertex_map(V)] = u.vector().array()
-
-    for v_val, f_val in zip(vert_values, func_values):
-        # Do not compare dofs owned by other process
-        if f_val != -1:
-            assert round(f_val - v_val, 7) == 0
+    func_values = np.empty(len(vert_values))
+    u.vector().get_local(func_values, vertex_to_dof_map(V))
+    assert round(max(abs(func_values - vert_values)), 7) == 0
 
     c0 = Constant((1,2))
     u0 = Function(Q)
@@ -268,7 +257,8 @@ def test_dof_to_vertex_map(mesh, reorder_dofs):
     vert_values[::2] = 1
     vert_values[1::2] = 2
 
-    u1.vector().set_local(vert_values[dof_to_vertex_map(Q)].copy())
+    dim = Q.dofmap().local_dimension('owned')
+    u1.vector().set_local(vert_values[dof_to_vertex_map(Q)[:dim]].copy())
     assert round((u0.vector()-u1.vector()).sum() - 0.0, 7) == 0
 
     W = FunctionSpace(mesh, "DG", 0)
@@ -332,7 +322,7 @@ def test_entity_dofs(mesh):
         assert all(d==cd for d, cd in zip(dofs, cdofs))
 
 
-def test_clear_sub_map_data(mesh):
+def test_clear_sub_map_data_scalar(mesh):
     V = FunctionSpace(mesh, "CG", 2)
     with pytest.raises(ValueError):
         V.sub(1)
@@ -350,6 +340,47 @@ def test_clear_sub_map_data(mesh):
     with pytest.raises(RuntimeError):
         V.sub(0)
 
+
+def test_clear_sub_map_data_vector(mesh):
+    mesh = UnitSquareMesh(8, 8)
+    V = FunctionSpace(mesh, "Lagrange", 1)
+    W = V*V
+
+    # Check block size
+    assert W.dofmap().block_size == 2
+
+    W.dofmap().clear_sub_map_data()
+    with pytest.raises(RuntimeError):
+        W0 = W.sub(0)
+    with pytest.raises(RuntimeError):
+        W1 = W.sub(1)
+
+
+def test_block_size(mesh):
+    meshes = [UnitSquareMesh(8, 8), UnitCubeMesh(4, 4, 4)]
+    for mesh in meshes:
+        V = FunctionSpace(mesh, "Lagrange", 2)
+        assert V.dofmap().block_size == 1
+
+        W = V*V
+        assert W.dofmap().block_size == 2
+
+        for i in range(1, 6):
+            W = MixedFunctionSpace([V]*i)
+            assert W.dofmap().block_size == i
+
+        V = VectorFunctionSpace(mesh, "Lagrange", 2)
+        assert V.dofmap().block_size == mesh.geometry().dim()
+
+
+def test_block_size_real(mesh):
+    mesh = UnitIntervalMesh(12)
+    V = FunctionSpace(mesh, 'DG', 0)
+    R = FunctionSpace(mesh, 'R', 0)
+    X = MixedFunctionSpace([V, R])
+    assert X.dofmap().block_size == 1
+
+
 @skip_in_serial
 def test_mpi_dofmap_stats(mesh):
 
@@ -362,3 +393,48 @@ def test_mpi_dofmap_stats(mesh):
 
     for owner in V.dofmap().off_process_owner():
         assert owner in neighbours
+
+
+def test_local_dimension(V, Q, W):
+    for space in [V, Q, W]:
+        dofmap = space.dofmap()
+        local_to_global_map = dofmap.tabulate_local_to_global_dofs()
+        ownership_range = dofmap.ownership_range()
+        dim1 = dofmap.local_dimension('owned')
+        dim2 = dofmap.local_dimension('unowned')
+        dim3 = dofmap.local_dimension('all')
+        assert dim1 == ownership_range[1] - ownership_range[0]
+        assert dim3 == local_to_global_map.size
+        assert dim1 + dim2 == dim3
+        with pytest.raises(RuntimeError):
+            dofmap.local_dimension('foo')
+
+
+@skip_in_parallel
+def test_dofs_dim(mesh, V, Q, W):
+    """Test function GenericDofMap::dofs(mesh, dim)"""
+    meshes = [UnitIntervalMesh(10),
+              UnitSquareMesh(6, 6),
+              UnitCubeMesh(2, 2, 2)]
+
+    for mesh in meshes:
+        tdim = mesh.topology().dim()
+        spaces = [FunctionSpace(mesh, "Discontinuous Lagrange", 1),
+                  FunctionSpace(mesh, "Discontinuous Lagrange", 2),
+                  FunctionSpace(mesh, "Lagrange", 1),
+                  FunctionSpace(mesh, "Lagrange", 2),
+                  FunctionSpace(mesh, "Lagrange", 3)]
+
+        if tdim > 1:
+            vspaces = [VectorFunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1),
+                       VectorFunctionSpace(mesh, "Nedelec 1st kind H(curl)", 2),
+                       VectorFunctionSpace(mesh, "RT", 1)]
+            spaces = spaces + vspaces
+
+        for V in spaces:
+            dofmap = V.dofmap()
+            for dim in range(0, mesh.topology().dim()):
+                edofs = dofmap.dofs(mesh, dim)
+                num_mesh_entities = mesh.num_entities(dim)
+                dofs_per_entity = dofmap.num_entity_dofs(dim)
+                assert len(edofs) == dofs_per_entity*num_mesh_entities

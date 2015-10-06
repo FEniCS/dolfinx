@@ -33,6 +33,6 @@ unsigned int dolfin_pythonversion() { return  PY_VERSION_HEX; }
 tmp = hex(dolfin_swigversion())
 __swigversion__ = "%d.%d.%d"%(tuple(map(int, [tmp[-5], tmp[-3], tmp[-2:]])))
 tmp = hex(dolfin_pythonversion())
-__pythonversion__ = "%d.%d.%d"%(tuple(map(int, [tmp[2], tmp[4], tmp[6]])))
+__pythonversion__ = "%d.%d.%d"%(tuple(map(lambda x: int(x,16), [tmp[2], tmp[3:5], tmp[5:7]])))
 del tmp, dolfin_pythonversion, dolfin_swigversion
 %}

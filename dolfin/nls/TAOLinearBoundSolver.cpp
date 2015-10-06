@@ -14,18 +14,15 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added : 2012-12-03
-// Last changed: 2013-04-04
 
-#ifdef ENABLE_PETSC_TAO
+#ifdef HAS_PETSC
 
 #include <petsclog.h>
 
 #include <dolfin/common/Timer.h>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/log/log.h>
 #include "dolfin/la/GenericMatrix.h"
 #include "dolfin/la/GenericVector.h"
 #include "dolfin/la/PETScMatrix.h"
@@ -38,8 +35,6 @@
 #include "petscmat.h"
 #include "petsctao.h"
 
-#include <dolfin/common/timing.h>
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -51,11 +46,12 @@ const std::map<std::string, const KSPType> TAOLinearBoundSolver::_ksp_methods
     {"minres",     KSPMINRES},
     {"tfqmr",      KSPTFQMR},
     {"richardson", KSPRICHARDSON},
+    {"nash",       KSPNASH},
     {"stcg",       KSPSTCG},
     {"bicgstab",   KSPBCGS} };
 //-----------------------------------------------------------------------------
 // Mapping from method string to description
-const std::vector<std::pair<std::string, std::string> >
+const std::map<std::string, std::string>
   TAOLinearBoundSolver::_methods_descr
 = { {"default"  ,  "Default Tao method (tao_tron)"},
     {"tron" ,  "Newton Trust Region method"},
@@ -63,19 +59,19 @@ const std::vector<std::pair<std::string, std::string> >
     {"gpcg" ,  "Gradient Projection Conjugate Gradient"},
     {"blmvm",  "Limited memory variable metric method"} };
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 TAOLinearBoundSolver::methods()
 {
   return TAOLinearBoundSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 TAOLinearBoundSolver::krylov_solvers()
 {
   return PETScKrylovSolver::methods();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::string> >
+std::map<std::string, std::string>
 TAOLinearBoundSolver::preconditioners()
 {
   return PETScPreconditioner::preconditioners();
@@ -186,8 +182,7 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
 
   // Set the monitor
   if (parameters["monitor_convergence"])
-    TaoSetMonitor(_tao, __TAOMonitor, this, PETSC_NULL);
-
+    TaoSetMonitor(_tao, __TAOMonitor, this, NULL);
 
   // Check for any tao command line options
   std::string prefix = std::string(parameters["options_prefix"]);
@@ -244,7 +239,7 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
     }
     else
     {
-      log(WARNING,  "Tao solver %s failed to converge. Try a different TAO method,"\
+      log(WARNING,  "Tao solver %s failed to converge. Try a different TAO method," \
 	  " adjust some parameters", tao_type);
     }
   }
@@ -365,7 +360,11 @@ void TAOLinearBoundSolver::set_ksp_options()
       KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
 
     if (krylov_parameters["monitor_convergence"])
-      KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
+    {
+      KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm,
+                       PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
+                       NULL);
+    }
 
     // Set tolerances
     const int max_ksp_it = krylov_parameters["maximum_iterations"];
@@ -441,10 +440,11 @@ PetscErrorCode TAOLinearBoundSolver::__TAOMonitor(Tao tao, void *ctx)
   PetscReal f, gnorm, cnorm, xdiff;
   TaoConvergedReason reason;
   TaoGetSolutionStatus(tao, &its, &f, &gnorm, &cnorm, &xdiff, &reason);
-  if (!(its%5))
-    PetscPrintf(PETSC_COMM_WORLD,"iteration=%D\tf=%g\n",its,(double)f);
+  if (!(its % 5))
+    PetscPrintf(PETSC_COMM_WORLD,"iteration=%D\tf=%g\n", its, (double)f);
 
   return 0;
 }
 //------------------------------------------------------------------------------
+
 #endif

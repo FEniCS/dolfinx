@@ -21,6 +21,10 @@
 // First added:  2011-10-15
 // Last changed: 2014-08-11
 
+#ifdef HAS_PETSC
+#include <petscversion.h>
+#endif
+
 #include "types.h"
 #include "defines.h"
 
@@ -67,23 +71,6 @@ bool dolfin::has_petsc()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_petsc_snes()
-{
-#ifdef ENABLE_PETSC_SNES
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
-bool dolfin::has_petsc_tao()
-{
-#ifdef ENABLE_PETSC_TAO
-  return true;
-#else
-  return false;
-#endif
-}//-------------------------------------------------------------------------
 bool dolfin::has_slepc()
 {
 #ifdef HAS_SLEPC
@@ -141,15 +128,6 @@ bool dolfin::has_zlib()
 bool dolfin::has_hdf5()
 {
 #ifdef HAS_HDF5
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
-bool dolfin::has_exodus()
-{
-#ifdef HAS_VTK_EXODUS
   return true;
 #else
   return false;

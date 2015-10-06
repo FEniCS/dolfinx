@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Chris Richardson, 2012
+// Modified by Chris Richardson, 2012-2014
 //
 // First added:  2010-02-19
 // Last changed: 2013-01-31
@@ -45,6 +45,8 @@ using namespace dolfin;
 Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
                                                   const GenericDofMap& dofmap1)
 {
+  Timer timer("Build local sparsity graph from dofmaps");
+
   // Create empty graph
   const std::size_t n = dofmap0.global_dimension();
   Graph graph(n);
@@ -52,13 +54,13 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   // Build graph
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const std::vector<dolfin::la_index>& dofs0
+    const ArrayView<const dolfin::la_index> dofs0
       = dofmap0.cell_dofs(cell->index());
-    const std::vector<dolfin::la_index>& dofs1
+    const ArrayView<const dolfin::la_index> dofs1
       = dofmap1.cell_dofs(cell->index());
-    std::vector<dolfin::la_index>::const_iterator node0, node1;
-    for (node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
-      for (node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)
+    //std::vector<dolfin::la_index>::const_iterator node0, node1;
+    for (auto node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
+      for (auto node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)
         if (*node0 != *node1)
           graph[*node0].insert(*node1);
   }
@@ -80,8 +82,8 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   dolfin_assert(coloring_type.front() == coloring_type.back());
 
   // Create graph
-  const std::size_t num_verticies = mesh.num_entities(coloring_type[0]);
-  Graph graph(num_verticies);
+  const std::size_t num_vertices = mesh.num_entities(coloring_type[0]);
+  Graph graph(num_vertices);
 
   // Build graph
   for (MeshEntityIterator vertex_entity(mesh, coloring_type[0]);
@@ -128,8 +130,8 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   mesh.init(dim1, dim0);
 
   // Create graph
-  const std::size_t num_verticies = mesh.num_entities(dim0);
-  Graph graph(num_verticies);
+  const std::size_t num_vertices = mesh.num_entities(dim0);
+  Graph graph(num_vertices);
 
   // Build graph
   for (MeshEntityIterator colored_entity(mesh, dim0); !colored_entity.end();
@@ -151,10 +153,11 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   return graph;
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph(const MPI_Comm mpi_comm,
-                                      const LocalMeshData& mesh_data,
-                            std::vector<std::set<std::size_t> >& local_graph,
-                            std::set<std::size_t>& ghost_vertices)
+void GraphBuilder::compute_dual_graph(
+  const MPI_Comm mpi_comm,
+  const LocalMeshData& mesh_data,
+  std::vector<std::set<std::size_t>>& local_graph,
+  std::set<std::size_t>& ghost_vertices)
 {
   FacetCellMap facet_cell_map;
 
@@ -167,19 +170,25 @@ void GraphBuilder::compute_dual_graph(const MPI_Comm mpi_comm,
   #endif
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_local_dual_graph(const MPI_Comm mpi_comm,
-                                            const LocalMeshData& mesh_data,
-                            std::vector<std::set<std::size_t> >& local_graph,
-                            FacetCellMap& facet_cell_map)
+void GraphBuilder::compute_local_dual_graph(
+  const MPI_Comm mpi_comm,
+  const LocalMeshData& mesh_data,
+  std::vector<std::set<std::size_t>>& local_graph,
+  FacetCellMap& facet_cell_map)
 {
-  Timer timer("Compute local dual graph");
+  Timer timer("Compute local part of mesh dual graph");
 
   // List of cell vertices
   const boost::multi_array<std::size_t, 2>& cell_vertices
     = mesh_data.cell_vertices;
+
+  const std::size_t tdim = mesh_data.tdim;
+  std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
+
   const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
-  const std::size_t num_vertices_per_cell = mesh_data.num_vertices_per_cell;
-  const std::size_t num_vertices_per_facet = num_vertices_per_cell - 1;
+  const std::size_t num_vertices_per_cell = cell_type->num_entities(0);
+  const std::size_t num_facets_per_cell = cell_type->num_entities(tdim - 1);
+  const std::size_t num_vertices_per_facet = cell_type->num_vertices(tdim - 1);
 
   dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
   dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
@@ -198,25 +207,30 @@ void GraphBuilder::compute_local_dual_graph(const MPI_Comm mpi_comm,
   facet_cell_map.rehash((facet_cell_map.size()
                      + num_local_cells)/facet_cell_map.max_load_factor() + 1);
 
+  boost::multi_array<unsigned int, 2> fverts(boost::extents
+                                             [num_facets_per_cell]
+                                             [num_vertices_per_facet]);
+
+  std::vector<unsigned int> cellvtx(num_vertices_per_cell);
+  std::pair<std::vector<std::size_t>, std::size_t> map_entry;
+  map_entry.first.resize(num_vertices_per_facet);
+
   // Iterate over all cells
-  std::vector<std::size_t> cellvtx(num_vertices_per_cell);
-  std::pair<std::vector<std::size_t>, std::size_t>
-    map_entry(std::vector<std::size_t>(num_vertices_per_facet), 0);
   for (std::size_t i = 0; i < num_local_cells; ++i)
   {
-    // Copy cell vertices and sort into order, taking a subset (minus
-    // one vertex) to form a set of facet vertices
-    std::copy(cell_vertices[i].begin(), cell_vertices[i].end(),
-              cellvtx.begin());
-    std::sort(cellvtx.begin(), cellvtx.end());
-
-    // Copy data to map_entry
-    std::copy(cellvtx.begin() + 1, cellvtx.end(), map_entry.first.begin());
     map_entry.second = i;
 
+    std::copy(cell_vertices[i].begin(), cell_vertices[i].end(),
+              cellvtx.begin());
+    cell_type->create_entities(fverts, tdim - 1, cellvtx.data());
+
     // Iterate over facets in cell
-    for (std::size_t j = 0; j < num_vertices_per_cell; ++j)
+    for (std::size_t j = 0; j < num_facets_per_cell; ++j)
     {
+      std::copy(fverts[j].begin(),
+                fverts[j].end(), map_entry.first.begin());
+      std::sort(map_entry.first.begin(), map_entry.first.end());
+
       // Map lookup/insert
       std::pair<FacetCellMap::iterator, bool> map_lookup
         = facet_cell_map.insert(map_entry);
@@ -232,32 +246,31 @@ void GraphBuilder::compute_local_dual_graph(const MPI_Comm mpi_comm,
         // Save memory and search time by erasing
         facet_cell_map.erase(map_lookup.first);
       }
-
-      // Change facet by one entry, cycling from [1,2,3] -> [0,2,3]- >
-      // [0,1,3] -> [0,1,2] (for tetrahedron)
-      if (j != num_vertices_per_facet)
-        map_entry.first[j] = cellvtx[j];
     }
   }
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_nonlocal_dual_graph(const MPI_Comm mpi_comm,
-                                               const LocalMeshData& mesh_data,
-                            std::vector<std::set<std::size_t> >& local_graph,
-                            FacetCellMap& facet_cell_map,
-                            std::set<std::size_t>& ghost_vertices)
+void GraphBuilder::compute_nonlocal_dual_graph(
+  const MPI_Comm mpi_comm,
+  const LocalMeshData& mesh_data,
+  std::vector<std::set<std::size_t>>& local_graph,
+  FacetCellMap& facet_cell_map,
+  std::set<std::size_t>& ghost_vertices)
 {
-  Timer timer("Compute non-local dual graph");
+  Timer timer("Compute non-local part of mesh dual graph");
 
   // At this stage facet_cell map only contains facets->cells with
   // edge facets either interprocess or external boundaries
+
+  const std::size_t tdim = mesh_data.tdim;
+  std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
 
   // List of cell vertices
   const boost::multi_array<std::size_t, 2>& cell_vertices
     = mesh_data.cell_vertices;
   const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
-  const std::size_t num_vertices_per_cell = mesh_data.num_vertices_per_cell;
-  const std::size_t num_vertices_per_facet = num_vertices_per_cell - 1;
+  const std::size_t num_vertices_per_cell = cell_type->num_entities(0);
+  const std::size_t num_vertices_per_facet = cell_type->num_vertices(tdim - 1);
 
   dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
   dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
@@ -271,56 +284,54 @@ void GraphBuilder::compute_nonlocal_dual_graph(const MPI_Comm mpi_comm,
   const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Send facet-cell map to intermediary match-making processes
-  std::vector<std::vector<std::size_t> > send_buffer(num_processes);
-  std::vector<std::vector<std::size_t> > received_buffer(num_processes);
+  std::vector<std::vector<std::size_t>> send_buffer(num_processes);
+  std::vector<std::vector<std::size_t>> received_buffer(num_processes);
 
   // Pack map data and send to match-maker process
-  boost::unordered_map<std::vector<std::size_t>,
-                     std::size_t>::const_iterator it;
-  for (it = facet_cell_map.begin(); it != facet_cell_map.end(); ++it)
+  for (auto &it : facet_cell_map)
   {
-    // FIXME: Could use a better index? First vertex is slightly skewed
-    //        towards low values - may not be important
+    // FIXME: Could use a better index? First vertex is slightly
+    //        skewed towards low values - may not be important
 
     // Use first vertex of facet to partition into blocks
-    std::size_t dest_proc = MPI::index_owner(mpi_comm, (it->first)[0],
+    std::size_t dest_proc = MPI::index_owner(mpi_comm, (it.first)[0],
                                              mesh_data.num_global_vertices);
 
     // Pack map into vectors to send
-    for (std::size_t i = 0; i < num_vertices_per_facet; ++i)
-      send_buffer[dest_proc].push_back((it->first)[i]);
+    send_buffer[dest_proc].insert(send_buffer[dest_proc].end(),
+                                  it.first.begin(), it.first.end());
 
     // Add offset to cell numbers sent off process
-    send_buffer[dest_proc].push_back(it->second + offset);
+    send_buffer[dest_proc].push_back(it.second + offset);
   }
 
   // Send data
   MPI::all_to_all(mpi_comm, send_buffer, received_buffer);
 
   // Clear send buffer
-  send_buffer = std::vector<std::vector<std::size_t> >(num_processes);
+  send_buffer = std::vector<std::vector<std::size_t>>(num_processes);
 
   // Map to connect processes and cells, using facet as key
   typedef boost::unordered_map<std::vector<std::size_t>,
-              std::pair<std::size_t, std::size_t> > MatchMap;
+              std::pair<std::size_t, std::size_t>> MatchMap;
   MatchMap matchmap;
 
   // Look for matches to send back to other processes
   std::pair<std::vector<std::size_t>,
-            std::pair<std::size_t, std::size_t> > key;
+            std::pair<std::size_t, std::size_t>> key;
   key.first.resize(num_vertices_per_facet);
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     // Unpack into map
     const std::vector<std::size_t>& data_p = received_buffer[p];
-    for (std::size_t i = 0; i < data_p.size();
-         i += (num_vertices_per_facet + 1))
+    for (auto it = data_p.begin(); it != data_p.end();
+         it += (num_vertices_per_facet + 1))
     {
       // Build map key
-      std::copy(&data_p[i], &data_p[i] + num_vertices_per_facet,
+      std::copy(it, it + num_vertices_per_facet,
                 key.first.begin());
       key.second.first = p;
-      key.second.second = data_p[i + num_vertices_per_facet];
+      key.second.second = *(it + num_vertices_per_facet);
 
       // Perform map insertion/look-up
       std::pair<MatchMap::iterator, bool> data = matchmap.insert(key);
@@ -333,7 +344,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(const MPI_Comm mpi_comm,
         const std::size_t proc1 = data.first->second.first;
         const std::size_t proc2 = p;
         const std::size_t cell1 = data.first->second.second;
-        const std::size_t cell2 = data_p[i + num_vertices_per_facet];
+        const std::size_t cell2 = key.second.second;
         send_buffer[proc1].push_back(cell1);
         send_buffer[proc1].push_back(cell2);
         send_buffer[proc2].push_back(cell2);

@@ -27,6 +27,7 @@
 
 #include <string>
 #include <vector>
+#include <boost/multi_array.hpp>
 
 namespace dolfin
 {
@@ -46,7 +47,7 @@ namespace dolfin
   public:
 
     /// Enum for different cell types
-    enum Type { point, interval, triangle, tetrahedron };
+    enum Type { point, interval, triangle, quadrilateral, tetrahedron, hexahedron };
 
     /// Constructor
     CellType(Type cell_type, Type facet_type);
@@ -72,6 +73,9 @@ namespace dolfin
     /// Return type of cell for facets
     Type facet_type() const { return _facet_type; }
 
+    /// Return type of cell for entity of dimension i
+    Type entity_type(std::size_t i) const;
+
     /// Return topological dimension of cell
     virtual std::size_t dim() const = 0;
 
@@ -92,12 +96,9 @@ namespace dolfin
     std::size_t orientation(const Cell& cell, const Point& up) const;
 
     /// Create entities e of given topological dimension from vertices v
-    virtual void create_entities(std::vector<std::vector<unsigned int> >& e,
-                                 std::size_t dim, const unsigned int* v) const = 0;
-
-    /// Refine cell uniformly
-    virtual void refine_cell(Cell& cell, MeshEditor& editor,
-                             std::size_t& current_cell) const = 0;
+    virtual void create_entities(boost::multi_array<unsigned int, 2>& e,
+                                 std::size_t dim,
+                                 const unsigned int* v) const = 0;
 
     /// Compute (generalized) volume of mesh entity
     virtual double volume(const MeshEntity& entity) const = 0;
@@ -112,10 +113,12 @@ namespace dolfin
     virtual double radius_ratio(const Cell& cell) const;
 
     /// Compute squared distance to given point
-    virtual double squared_distance(const Cell& cell, const Point& point) const = 0;
+    virtual double squared_distance(const Cell& cell,
+                                    const Point& point) const = 0;
 
     /// Compute component i of normal of given facet with respect to the cell
-    virtual double normal(const Cell& cell, std::size_t facet, std::size_t i) const = 0;
+    virtual double normal(const Cell& cell, std::size_t facet,
+                          std::size_t i) const = 0;
 
     /// Compute of given facet with respect to the cell
     virtual Point normal(const Cell& cell, std::size_t facet) const = 0;
@@ -149,6 +152,9 @@ namespace dolfin
 
     /// Return description of cell type
     virtual std::string description(bool plural) const = 0;
+
+    /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
+    virtual std::vector<unsigned int> vtk_mapping() const = 0;
 
   protected:
 

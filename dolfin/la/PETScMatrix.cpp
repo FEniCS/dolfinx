@@ -21,9 +21,7 @@
 // Modified by Magnus Vikstrøm 2007-2008.
 // Modified by Fredrik Valdmanis 2011-2012
 // Modified by Jan Blechta 2013
-//
-// First added:  2004
-// Last changed: 2013-09-24
+// Modified by Martin Sandve Alnæs 2014
 
 #ifdef HAS_PETSC
 
@@ -31,16 +29,16 @@
 #include <iostream>
 #include <sstream>
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
-#include "PETScVector.h"
-#include "PETScMatrix.h"
 #include "GenericSparsityPattern.h"
+#include "PETScFactory.h"
+#include "PETScVector.h"
 #include "SparsityPattern.h"
 #include "TensorLayout.h"
-#include "PETScFactory.h"
-#include "PETScCuspFactory.h"
+#include "VectorSpaceBasis.h"
+#include "PETScMatrix.h"
 
 using namespace dolfin;
 
@@ -50,28 +48,17 @@ const std::map<std::string, NormType> PETScMatrix::norm_types
     {"frobenius", NORM_FROBENIUS} };
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(bool use_gpu) : PETScBaseMatrix(NULL),
-                                         _use_gpu(use_gpu)
+PETScMatrix::PETScMatrix() : PETScBaseMatrix(NULL)
 {
-#ifndef HAS_PETSC_CUSP
-  if (use_gpu)
-  {
-    dolfin_error("PETScMatrix.cpp",
-                 "create GPU matrix",
-                 "PETSc not compiled with Cusp support");
-  }
-#endif
-
-  // Do nothing else
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(Mat A) : PETScBaseMatrix(A), _use_gpu(false)
+PETScMatrix::PETScMatrix(Mat A) : PETScBaseMatrix(A)
 {
   // Do nothing (reference count to A is incremented in base class)
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScBaseMatrix(NULL),
-                                                 _use_gpu(false)
+PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScBaseMatrix(NULL)
 {
   if (A.mat())
   {
@@ -112,11 +99,9 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
   if (_matA)
   {
-    #ifdef DOLFIN_DEPRECATION_ERROR
-    error("PETScMatrix may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning.");
-    #else
-    warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error.");
-    #endif
+    dolfin_error("PETScMatrix.cpp",
+                 "init PETSc matrix",
+                 "PETScMatrix may not be initialized more than once.");
     MatDestroy(&_matA);
   }
 
@@ -131,23 +116,17 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     ierr = MatCreate(PETSC_COMM_SELF, &_matA);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
 
+    // Set options prefix (if any)
+    PetscErrorCode ierr = MatSetOptionsPrefix(_matA, _petsc_options_prefix.c_str());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
+
     // Set size
     ierr = MatSetSizes(_matA, M, N, M, N);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetSizes");
 
     // Set matrix type according to chosen architecture
-    if (!_use_gpu)
-    {
-      ierr = MatSetType(_matA, MATSEQAIJ);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
-    }
-    #ifdef HAS_PETSC_CUSP
-    else
-    {
-      ierr = MatSetType(_matA, MATSEQAIJCUSP);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
-    }
-    #endif
+    ierr = MatSetType(_matA, MATSEQAIJ);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
 
     // Set block size
     if (tensor_layout.block_size > 1)
@@ -187,31 +166,19 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     }
     else
     {
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-      _map0.assign(tensor_layout.local_to_global_map[0].begin(),
-                   tensor_layout.local_to_global_map[0].end());
-      _map1.assign(tensor_layout.local_to_global_map[1].begin(),
-                   tensor_layout.local_to_global_map[1].end());
-      #else
       _map0 = std::vector<PetscInt>(tensor_layout.local_to_global_map[0].size()/bs);
       _map1 = std::vector<PetscInt>(tensor_layout.local_to_global_map[1].size()/bs);
       for (std::size_t i = 0; i < _map0.size(); ++i)
         _map0[i] = tensor_layout.local_to_global_map[0][i*bs]/bs;
       for (std::size_t i = 0; i < _map1.size(); ++i)
         _map1[i] = tensor_layout.local_to_global_map[1][i*bs]/bs;
-      #endif
     }
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map0.size(), _map0.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
-    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map1.size(), _map1.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
-    #else
-    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map0.size(), _map0.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
-    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map1.size(), _map1.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
-    #endif
+    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map0.size(),
+                                 _map0.data(), PETSC_COPY_VALUES,
+                                 &petsc_local_to_global0);
+    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map1.size(),
+                                 _map1.data(), PETSC_COPY_VALUES,
+                                 &petsc_local_to_global1);
     MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
                                petsc_local_to_global1);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
@@ -219,12 +186,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   }
   else
   {
-    if (_use_gpu)
-    {
-      not_working_in_parallel("Due to limitations in PETSc, "
-                              "distributed PETSc Cusp matrices");
-    }
-
     // Get number of nonzeros for each row from sparsity pattern
     std::vector<std::size_t> num_nonzeros_diagonal;
     std::vector<std::size_t> num_nonzeros_off_diagonal;
@@ -234,6 +195,10 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // Create matrix
     ierr = MatCreate(PETSC_COMM_WORLD, &_matA);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
+
+    // Set options prefix (if any)
+    PetscErrorCode ierr = MatSetOptionsPrefix(_matA, _petsc_options_prefix.c_str());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
 
     // Set size
     ierr = MatSetSizes(_matA, m, n, M, N);
@@ -249,6 +214,13 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
       ierr = MatSetBlockSize(_matA, tensor_layout.block_size);
       if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetBlockSize");
     }
+
+    // Apply PETSc options from the options database to the matrix
+    // (this includes changing the matrix type to one specified by the
+    // user)
+    ierr = MatSetFromOptions(_matA);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetFromOptions");
+
     // Allocate space (using data from sparsity pattern)
     const std::vector<PetscInt>
       _num_nonzeros_diagonal(num_nonzeros_diagonal.begin(),
@@ -265,16 +237,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     dolfin_assert(tensor_layout.local_to_global_map.size() == 2);
 
     std::vector<PetscInt> _map0, _map1;
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-    _map0.assign(tensor_layout.local_to_global_map[0].begin(),
-                 tensor_layout.local_to_global_map[0].end());
-    _map1.assign(tensor_layout.local_to_global_map[1].begin(),
-                 tensor_layout.local_to_global_map[1].end());
-    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, _map0.size(), _map0.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
-    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, _map1.size(), _map1.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
-    #else
     // Block size
     const std::size_t bs = tensor_layout.block_size;
 
@@ -284,14 +246,22 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
       _map0[i] = tensor_layout.local_to_global_map[0][i*bs]/bs;
     for (std::size_t i = 0; i < _map1.size(); ++i)
       _map1[i] = tensor_layout.local_to_global_map[1][i*bs]/bs;
-    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, bs, _map0.size(), _map0.data(),
+    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, bs, _map0.size(),
+                                 _map0.data(),
                                  PETSC_COPY_VALUES, &petsc_local_to_global0);
-    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, bs, _map1.size(), _map1.data(),
+    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, bs, _map1.size(),
+                                 _map1.data(),
                                  PETSC_COPY_VALUES, &petsc_local_to_global1);
-    #endif
 
     MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
                                petsc_local_to_global1);
+
+    // Note: This should be called after having set the l2g map for
+    // MATIS (this is a dummy call if _matA is not of type MATIS)
+    ierr = MatISSetPreallocation(_matA, 0, _num_nonzeros_diagonal.data(),
+                                 0, _num_nonzeros_off_diagonal.data());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatISSetPreallocation");
+
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
   }
@@ -305,13 +275,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   ierr = MatSetOption(_matA, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOption");
 
-  ierr = MatSetFromOptions(_matA);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetFromOptions");
-
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
   ierr = MatSetUp(_matA);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetUp");
-  #endif
 }
 //-----------------------------------------------------------------------------
 bool PETScMatrix::empty() const
@@ -451,7 +416,7 @@ void PETScMatrix::setrow(std::size_t row,
   // Set values
   const PetscInt _row = row;
   const std::vector<PetscInt> _columns(columns.begin(), columns.end());
-  set(&values[0], 1, &_row, n, _columns.data());
+  set(values.data(), 1, &_row, n, _columns.data());
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero(std::size_t m, const dolfin::la_index* rows)
@@ -567,6 +532,23 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatMultTranspose");
 }
 //-----------------------------------------------------------------------------
+void PETScMatrix::get_diagonal(GenericVector& x) const
+{
+  dolfin_assert(_matA);
+
+  PETScVector& xx = x.down_cast<PETScVector>();
+  if (size(1) != size(0) || size(0) != xx.size())
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "get diagonal of a PETSc matrix",
+                 "Matrix and vector dimensions don't match for matrix-vector set");
+  }
+
+  PetscErrorCode ierr = MatGetDiagonal(_matA, xx.vec());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetDiagonal");
+  xx.update_ghost_values();
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::set_diagonal(const GenericVector& x)
 {
   dolfin_assert(_matA);
@@ -646,6 +628,13 @@ MPI_Comm PETScMatrix::mpi_comm() const
   return mpi_comm;
 }
 //-----------------------------------------------------------------------------
+std::size_t PETScMatrix::nnz() const
+{
+  MatInfo info;
+  MatGetInfo(_matA, MAT_GLOBAL_SUM, &info);
+  return info.nz_allocated;
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::zero()
 {
   dolfin_assert(_matA);
@@ -685,16 +674,35 @@ bool PETScMatrix::is_symmetric(double tol) const
 //-----------------------------------------------------------------------------
 GenericLinearAlgebraFactory& PETScMatrix::factory() const
 {
-  if (!_use_gpu)
-    return PETScFactory::instance();
-  #ifdef HAS_PETSC_CUSP
-  else
-    return PETScCuspFactory::instance();
-  #endif
-
-  // Return something to keep the compiler happy. Code will never be
-  // reached.
   return PETScFactory::instance();
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::set_options_prefix(std::string options_prefix)
+{
+  if (_matA)
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "setting PETSc options prefix",
+                 "Cannot set options prefix since PETSc Mat has already been initialized");
+
+  }
+  else
+    _petsc_options_prefix = options_prefix;
+}
+//-----------------------------------------------------------------------------
+std::string PETScMatrix::get_options_prefix() const
+{
+  if (_matA)
+  {
+    const char* prefix = NULL;
+    MatGetOptionsPrefix(_matA, &prefix);
+    return std::string(prefix);
+  }
+  else
+  {
+    warning("PETSc Mat object has not been initialised, therefore prefix has not been set");
+    return std::string();
+  }
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
@@ -703,11 +711,9 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
   {
     if (_matA)
     {
-      #ifdef DOLFIN_DEPRECATION_ERROR
-      error("PETScVector may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
-      #else
-      warning("PETScVector may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
-      #endif
+      dolfin_error("PETScMatrix.cpp",
+                   "assign to PETSc matrix",
+                   "PETScMatrix may not be initialized more than once.");
       MatDestroy(&_matA);
     }
     _matA = NULL;
@@ -725,11 +731,9 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
                      "assign to PETSc matrix",
                      "More than one object points to the underlying PETSc object");
       }
-      #ifdef DOLFIN_DEPRECATION_ERROR
-      error("PETScMatrix may not be initialized more than once. Remove build definition -DDOLFIN_DEPRECATION_ERROR to change this to a warning. Error is in PETScMatrix::operator=.");
-      #else
-      warning("PETScMatrix may not be initialized more than once. In version > 1.4, this will become an error. Warning is in PETScMatrix::operator=.");
-      #endif
+      dolfin_error("PETScMatrix.cpp",
+                   "assign to PETSc matrix",
+                   "PETScMatrix may not be initialized more than once.");
       MatDestroy(&_matA);
     }
 
@@ -738,6 +742,48 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatDuplicate");
   }
   return *this;
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::set_nullspace(const VectorSpaceBasis& nullspace)
+{
+  PetscErrorCode ierr;
+
+  // Copy vectors
+  std::vector<PETScVector> _nullspace;
+  for (std::size_t i = 0; i < nullspace.dim(); ++i)
+  {
+    dolfin_assert(nullspace[i]);
+    const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
+
+    // Copy vector
+    _nullspace.push_back(x);
+  }
+
+  // Get pointers to underlying PETSc objects and normalize vectors
+  std::vector<Vec> petsc_vecs;
+  for (auto& basis_vector : _nullspace)
+  {
+    // Store pointer to PETSc Vec
+    petsc_vecs.push_back(basis_vector.vec());
+
+    PetscReal val = 0.0;
+    ierr = VecNormalize(basis_vector.vec(), &val);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecNormalize");
+  }
+
+  // Create PETSC nullspace
+  MatNullSpace petsc_nullspace = NULL;
+  ierr = MatNullSpaceCreate(mpi_comm(), PETSC_FALSE, petsc_vecs.size(),
+                            petsc_vecs.data(), &petsc_nullspace);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
+
+  // Attach PETSc nullspace to matrix
+  dolfin_assert(_matA);
+  ierr = MatSetNullSpace(_matA, petsc_nullspace);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetNullSpace");
+
+  // Decrease reference count for nullspace
+  MatNullSpaceDestroy(&petsc_nullspace);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::binary_dump(std::string file_name) const

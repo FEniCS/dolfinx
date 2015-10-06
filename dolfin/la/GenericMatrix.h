@@ -28,8 +28,8 @@
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
 
+#include <tuple>
 #include <vector>
-#include <boost/tuple/tuple.hpp>
 #include "GenericTensor.h"
 #include "GenericLinearOperator.h"
 
@@ -59,7 +59,10 @@ namespace dolfin
 
     /// Return local ownership range
     virtual std::pair<std::size_t, std::size_t>
-      local_range(std::size_t dim) const = 0;
+    local_range(std::size_t dim) const = 0;
+
+    /// Return number of non-zero entries in matrix (collective)
+    virtual std::size_t nnz() const = 0;
 
     /// Get block of values
     virtual void get(double* block, const dolfin::la_index* num_rows,
@@ -90,37 +93,20 @@ namespace dolfin
 
     /// Add block of values using global indices
     virtual void
-      add(const double* block,
-          const std::vector<const std::vector<dolfin::la_index>* >& rows)
+    add(const double* block,
+        const std::vector<ArrayView<const dolfin::la_index> >& rows)
     {
-      add(block, (rows[0])->size(), &(*rows[0])[0], (rows[1])->size(),
-          &(*rows[1])[0]);
+      add(block, rows[0].size(), rows[0].data(),
+          rows[1].size(), rows[1].data());
     }
 
     /// Add block of values using local indices
     virtual void
-      add_local(const double* block,
-                const std::vector<const std::vector<dolfin::la_index>* >& rows)
+    add_local(const double* block,
+              const std::vector<ArrayView<const dolfin::la_index> >& rows)
     {
-      add_local(block, (rows[0])->size(), &(*rows[0])[0], (rows[1])->size(),
-                &(*rows[1])[0]);
-    }
-
-    /// Add block of values using global indices
-    virtual void add(const double* block,
-                     const std::vector<std::vector<dolfin::la_index> >& rows)
-    {
-      add(block, rows[0].size(), &(rows[0])[0], rows[1].size(),
-          &(rows[1])[0]);
-    }
-
-    /// Add block of values using local indices
-    virtual void
-      add_local(const double* block,
-                const std::vector<std::vector<dolfin::la_index> >& rows)
-    {
-      add_local(block, rows[0].size(), &(rows[0])[0], rows[1].size(),
-                &(rows[1])[0]);
+      add_local(block, rows[0].size(), rows[0].data(),
+                rows[1].size(), rows[1].data());
     }
 
     /// Set all entries to zero and keep any sparse structure
@@ -179,7 +165,6 @@ namespace dolfin
     virtual double norm(std::string norm_type) const = 0;
 
     /// Get non-zero values of given row (global index) on local process
-
     virtual void getrow(std::size_t row, std::vector<std::size_t>& columns,
                         std::vector<double>& values) const = 0;
 
@@ -203,6 +188,9 @@ namespace dolfin
     /// Matrix-vector product, y = A^T x. The y vector must either be
     /// zero-sized or have correct size and parallel layout.
     virtual void transpmult(const GenericVector& x, GenericVector& y) const = 0;
+
+    /// Get diagonal of a matrix
+    virtual void get_diagonal(GenericVector& x) const = 0;
 
     /// Set diagonal of a matrix
     virtual void set_diagonal(const GenericVector& x) = 0;
@@ -239,19 +227,6 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 
-    /// Return pointers to underlying compressed row/column storage data
-    /// For compressed row storage, data = (row_pointer[#rows +1],
-    /// column_index[#nz], matrix_values[#nz], nz)
-    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,
-                                 const double*, int> data() const
-    {
-      dolfin_error("GenericMatrix.h",
-                   "return pointers to underlying matrix data",
-                   "Not implemented by current linear algebra backend");
-      return boost::tuples::tuple<const std::size_t*, const std::size_t*,
-                                  const double*, int>(0, 0, 0, 0);
-   }
-
     //--- Convenience functions ---
 
     /// Get value of given entry
@@ -275,9 +250,6 @@ namespace dolfin
 
     /// Insert one on the diagonal for all zero rows
     virtual void ident_zeros();
-
-    /// Build compressed version of matrix (zeros removed)
-    virtual void compressed(GenericMatrix& B) const;
 
   };
 

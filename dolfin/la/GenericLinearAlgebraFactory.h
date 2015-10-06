@@ -61,7 +61,8 @@ namespace dolfin
     virtual std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const = 0;
 
     /// Create empty linear operator
-    virtual std::shared_ptr<GenericLinearOperator> create_linear_operator() const = 0;
+    virtual std::shared_ptr<GenericLinearOperator>
+    create_linear_operator() const = 0;
 
     /// Create LU solver
     virtual std::shared_ptr<GenericLUSolver>
@@ -69,34 +70,24 @@ namespace dolfin
 
     /// Create Krylov solver
     virtual std::shared_ptr<GenericLinearSolver>
-    create_krylov_solver(std::string method, std::string preconditioner) const = 0;
+    create_krylov_solver(std::string method,
+                         std::string preconditioner) const = 0;
 
-    /// Return a list of available LU solver methods.
-    /// This function should be overloaded by subclass if non-empty.
-    virtual std::vector<std::pair<std::string, std::string> >
-    lu_solver_methods() const
-    {
-      std::vector<std::pair<std::string, std::string> > methods;
-      return methods;
-    }
+    /// Return a list of available LU solver methods.  This function
+    /// should be overloaded by subclass if non-empty.
+    virtual std::map<std::string, std::string> lu_solver_methods() const
+    { return std::map<std::string, std::string>(); }
 
-    /// Return a list of available Krylov solver methods.
-    /// This function should be overloaded by subclass if non-empty.
-    virtual std::vector<std::pair<std::string, std::string> >
-    krylov_solver_methods() const
-    {
-      std::vector<std::pair<std::string, std::string> > methods;
-      return methods;
-    }
+    /// Return a list of available Krylov solver methods.  This
+    /// function should be overloaded by subclass if non-empty.
+    virtual std::map<std::string, std::string> krylov_solver_methods() const
+    { return std::map<std::string, std::string>(); }
 
     /// Return a list of available preconditioners.
     /// This function should be overloaded by subclass if non-empty.
-    virtual std::vector<std::pair<std::string, std::string> >
+    virtual std::map<std::string, std::string>
     krylov_solver_preconditioners() const
-    {
-      std::vector<std::pair<std::string, std::string> > preconditioners;
-      return preconditioners;
-    }
+    { return std::map<std::string, std::string>(); }
 
   protected:
 

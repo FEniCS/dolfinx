@@ -51,9 +51,9 @@ void RKSolver::step(double dt)
   const double t0 = *_scheme->t();
 
   // Get scheme data
-  std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms
-    =  _scheme->stage_forms();
-  std::vector<std::shared_ptr<Function> >& stage_solutions
+  std::vector<std::vector<std::shared_ptr<const Form>>>& stage_forms
+    = _scheme->stage_forms();
+  std::vector<std::shared_ptr<Function>>& stage_solutions
     = _scheme->stage_solutions();
   std::vector<const DirichletBC* > bcs = _scheme->bcs();
 

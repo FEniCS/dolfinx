@@ -25,6 +25,7 @@
 
 #include <string>
 #include <vector>
+#include <boost/multi_array.hpp>
 #include "CellType.h"
 
 namespace dolfin
@@ -50,18 +51,17 @@ namespace dolfin
     /// Return number of entities of given topological dimension
     std::size_t num_entities(std::size_t dim) const;
 
-    /// Return number of vertices for entity of given topological dimension
+    /// Return number of vertices for entity of given topological
+    /// dimension
     std::size_t num_vertices(std::size_t dim) const;
 
     /// Return orientation of the cell (assuming flat space)
     std::size_t orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void create_entities(std::vector<std::vector<unsigned int> >& e, std::size_t dim,
+    void create_entities(boost::multi_array<unsigned int, 2>& e,
+                         std::size_t dim,
                          const unsigned int* v) const;
-
-    /// Refine cell uniformly
-    void refine_cell(Cell& cell, MeshEditor& editor, std::size_t& current_cell) const;
 
     /// Compute (generalized) volume (length) of interval
     double volume(const MeshEntity& interval) const;
@@ -80,7 +80,8 @@ namespace dolfin
                                    const Point& a,
                                    const Point& b);
 
-    /// Compute component i of normal of given facet with respect to the cell
+    /// Compute component i of normal of given facet with respect to
+    /// the cell
     double normal(const Cell& cell, std::size_t facet, std::size_t i) const;
 
     /// Compute of given facet with respect to the cell
@@ -93,8 +94,8 @@ namespace dolfin
     double facet_area(const Cell& cell, std::size_t facet) const;
 
     /// Order entities locally
-    void order(Cell& cell,
-               const std::vector<std::size_t>& local_to_global_vertex_indices) const;
+    void order(Cell& cell, const std::vector<std::size_t>&
+               local_to_global_vertex_indices) const;
 
     /// Check whether given point collides with cell
     virtual
@@ -110,6 +111,10 @@ namespace dolfin
 
     /// Return description of cell type
     std::string description(bool plural) const;
+
+    /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
+    std::vector<unsigned int> vtk_mapping() const
+    { return std::vector<unsigned int> {0, 1}; }
 
   };
 

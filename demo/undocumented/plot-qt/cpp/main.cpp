@@ -19,9 +19,17 @@
 // Last changed: 2012-09-18
 //
 // This demo illustrates embedding the plot window in a Qt application.
+#ifndef HAS_QVTK
+#include <iostream>
+int main()
+{
+  std::cout << "DOLFIN not configured with QVTK. Quitting gracefully."
+            << std::endl;
+  return 0;
+}
+#else
 
 #include <QtGui>
-
 #include <dolfin.h>
 
 #include "CoordLabel.h"
@@ -94,3 +102,5 @@ int main(int argc, char *argv[])
   return app.exec();
 }
 //----------------------------------------------------------------------------
+
+#endif

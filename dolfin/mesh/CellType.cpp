@@ -25,12 +25,14 @@
 #include <algorithm>
 
 #include <dolfin/geometry/Point.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "Cell.h"
 #include "CellType.h"
+#include "HexahedronCell.h"
 #include "IntervalCell.h"
 #include "MeshFunction.h"
 #include "PointCell.h"
+#include "QuadrilateralCell.h"
 #include "TetrahedronCell.h"
 #include "TriangleCell.h"
 #include "Vertex.h"
@@ -81,6 +83,10 @@ CellType* CellType::create(Type type)
     return new TriangleCell();
   case tetrahedron:
     return new TetrahedronCell();
+  case quadrilateral:
+    return new QuadrilateralCell();
+  case hexahedron:
+    return new HexahedronCell();
   default:
     dolfin_error("CellType.cpp",
                  "create cell type",
@@ -103,6 +109,10 @@ CellType::Type CellType::string2type(std::string type)
     return triangle;
   else if (type == "tetrahedron")
     return tetrahedron;
+  else if (type == "quadrilateral")
+    return quadrilateral;
+  else if (type == "hexahedron")
+    return hexahedron;
   else
   {
     dolfin_error("CellType.cpp",
@@ -125,6 +135,10 @@ std::string CellType::type2string(Type type)
     return "triangle";
   case tetrahedron:
     return "tetrahedron";
+  case quadrilateral:
+    return "quadrilateral";
+  case hexahedron:
+    return "hexahedron";
   default:
     dolfin_error("CellType.cpp",
                  "convert cell type to string",
@@ -132,6 +146,17 @@ std::string CellType::type2string(Type type)
   }
 
   return "";
+}
+//-----------------------------------------------------------------------------
+CellType::Type CellType::entity_type(std::size_t i) const
+{
+  if (i == dim())
+    return _cell_type;
+  else if (i == dim() - 1)
+    return _facet_type;
+  else if (i == 1)
+    return Type::interval;
+ return Type::point;
 }
 //-----------------------------------------------------------------------------
 bool CellType::ordered(const Cell& cell, const std::vector<std::size_t>&

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2005 Johan Jansson
+// Copyright (C) 2004-2015 Johan Jansson and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -19,9 +19,6 @@
 // Modified by Johan Hoffman 2005
 // Modified by Andy R. Terrel 2005
 // Modified by Garth N. Wells 2005-2010
-//
-// First added:  2005-12-02
-// Last changed: 2012-08-20
 
 #ifndef __DOLFIN_PETSC_KRYLOV_SOLVER_H
 #define __DOLFIN_PETSC_KRYLOV_SOLVER_H
@@ -29,8 +26,9 @@
 #ifdef HAS_PETSC
 
 #include <map>
-#include <petscksp.h>
 #include <memory>
+#include <string>
+#include <petscksp.h>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
 #include "PETScObject.h"
@@ -79,7 +77,7 @@ namespace dolfin
     /// Create Krylov solver for a particular method and
     /// PETScPreconditioner (shared_ptr version)
     PETScKrylovSolver(std::string method,
-		    std::shared_ptr<PETScUserPreconditioner> preconditioner);
+                      std::shared_ptr<PETScUserPreconditioner> preconditioner);
 
     /// Create solver wrapper of a PETSc KSP object
     explicit PETScKrylovSolver(KSP ksp);
@@ -90,20 +88,9 @@ namespace dolfin
     /// Set operator (matrix)
     void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
-    /// Set operator (matrix)
-    void set_operator(std::shared_ptr<const PETScBaseMatrix> A);
-
     /// Set operator (matrix) and preconditioner matrix
     void set_operators(std::shared_ptr<const GenericLinearOperator> A,
                        std::shared_ptr<const GenericLinearOperator> P);
-
-    /// Set operator (matrix) and preconditioner matrix
-    void set_operators(std::shared_ptr<const PETScBaseMatrix> A,
-                       std::shared_ptr<const PETScBaseMatrix> P);
-
-    /// Set null space of the operator (matrix). This is used to solve
-    /// singular systems
-    void set_nullspace(const VectorSpaceBasis& nullspace);
 
     /// Get operator (matrix)
     const PETScBaseMatrix& get_operator() const;
@@ -118,9 +105,18 @@ namespace dolfin
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                       const GenericVector& b);
 
-    /// Solve linear system Ax = b and return number of iterations
-    std::size_t solve(const PETScBaseMatrix& A, PETScVector& x,
-                      const PETScVector& b);
+    /// Reuse preconditioner if true, otherwise do not, even if matrix
+    /// operator changes (by default preconditioner is re-built if the
+    /// matrix changes)
+    void set_reuse_preconditioner(bool reuse_pc);
+
+    /// Sets the prefix used by PETSc when searching the options
+    /// database
+    void set_options_prefix(std::string options_prefix);
+
+    /// Returns the prefix used by PETSc when searching the options
+    /// database
+    std::string get_options_prefix() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -129,26 +125,32 @@ namespace dolfin
     KSP ksp() const;
 
     /// Return a list of available solver methods
-    static std::vector<std::pair<std::string, std::string> > methods();
+    static std::map<std::string, std::string> methods();
 
     /// Return a list of available preconditioners
-    static std::vector<std::pair<std::string, std::string> > preconditioners();
-
-    /// Set options prefix
-    void set_options_prefix(std::string prefix);
+    static std::map<std::string, std::string> preconditioners();
 
     /// Default parameter values
     static Parameters default_parameters();
 
     friend class PETScSNESSolver;
+    friend class PETScTAOSolver;
 
   private:
 
     // Initialize KSP solver
     void init(const std::string& method);
 
-    // Set PETSc operators
-    void set_petsc_operators();
+    // Set operator (matrix)
+    void _set_operator(std::shared_ptr<const PETScBaseMatrix> A);
+
+    // Set operator (matrix) and preconditioner matrix
+    void _set_operators(std::shared_ptr<const PETScBaseMatrix> A,
+                        std::shared_ptr<const PETScBaseMatrix> P);
+
+    // Solve linear system Ax = b and return number of iterations
+    std::size_t _solve(const PETScBaseMatrix& A, PETScVector& x,
+                       const PETScVector& b);
 
     // Set options that affect KSP object
     void set_petsc_ksp_options();
@@ -159,11 +161,14 @@ namespace dolfin
     void check_dimensions(const PETScBaseMatrix& A, const GenericVector& x,
                           const GenericVector& b) const;
 
+    // Prefix for PETSc options database
+    std::string _petsc_options_prefix;
+
     // Available solvers
     static const std::map<std::string, const KSPType> _methods;
 
     // Available solvers descriptions
-    static const std::vector<std::pair<std::string, std::string> >
+    static const std::map<std::string, std::string>
       _methods_descr;
 
     // PETSc solver pointer
@@ -180,12 +185,6 @@ namespace dolfin
 
     // Matrix used to construct the preconditioner
     std::shared_ptr<const PETScBaseMatrix> _matP;
-
-    // Null space vectors
-    std::vector<PETScVector> _nullspace;
-
-    // PETSc null space
-    MatNullSpace petsc_nullspace;
 
     bool preconditioner_set;
 

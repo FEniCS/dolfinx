@@ -23,9 +23,7 @@
 // First added:  2006-06-21
 // Last changed: 2014-02-06
 
-#include <dolfin/common/timing.h>
-
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "Facet.h"
@@ -85,17 +83,17 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
 
   // Shared vertices for full mesh
   // FIXME: const_cast
-  const std::map<unsigned int, std::set<unsigned int> > &
+  const std::map<unsigned int, std::set<unsigned int>> &
     shared_vertices = const_cast<Mesh&>(mesh).topology().shared_entities(0);
 
   // Shared vertices for boundary mesh
-  std::map<unsigned int, std::set<unsigned int> > shared_boundary_vertices;
+  std::map<unsigned int, std::set<unsigned int>> shared_boundary_vertices;
   if (exterior)
   {
     // Extract shared vertices if vertex is identified as part of globally
     // exterior facet.
     std::vector<std::size_t> boundary_global_indices;
-    for (std::map<unsigned int, std::set<unsigned int> >::const_iterator
+    for (std::map<unsigned int, std::set<unsigned int>>::const_iterator
         sv_it=shared_vertices.begin(); sv_it != shared_vertices.end(); ++sv_it)
     {
       std::size_t local_mesh_index = sv_it->first;
@@ -115,7 +113,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
     }
 
     // Distribute all shared boundary vertices
-    std::vector<std::vector<std::size_t> > boundary_global_indices_all;
+    std::vector<std::vector<std::size_t>> boundary_global_indices_all;
     MPI::all_gather(mesh.mpi_comm(), boundary_global_indices,
                      boundary_global_indices_all);
 
@@ -206,7 +204,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
             // Determine "owner" of global_mesh_index
             std::size_t owner = my_rank;
 
-            std::map<unsigned int, std::set<unsigned int> >::const_iterator
+            std::map<unsigned int, std::set<unsigned int>>::const_iterator
               other_processes_it
               = shared_boundary_vertices.find(local_mesh_index);
             if (other_processes_it != shared_boundary_vertices.end() && D > 1)
@@ -273,7 +271,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
   // Set global indices of owned vertices, request global indices for
   // vertices owned elsewhere
   std::map<std::size_t, std::size_t> global_indices;
-  std::vector<std::vector<std::size_t> > request_global_indices(num_processes);
+  std::vector<std::vector<std::size_t>> request_global_indices(num_processes);
 
   std::size_t current_index = start_index;
   for (std::size_t local_boundary_index = 0;
@@ -291,12 +289,12 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
   }
 
   // Send and receive requests from other processes
-  std::vector<std::vector<std::size_t> > global_index_requests(num_processes);
+  std::vector<std::vector<std::size_t>> global_index_requests(num_processes);
   MPI::all_to_all(mesh.mpi_comm(), request_global_indices,
                   global_index_requests);
 
   // Find response to requests of global indices
-  std::vector<std::vector<std::size_t> > respond_global_indices(num_processes);
+  std::vector<std::vector<std::size_t>> respond_global_indices(num_processes);
   for (std::size_t i = 0; i < num_processes; i++)
   {
     const std::size_t N = global_index_requests[i].size();
@@ -308,7 +306,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
   }
 
   // Scatter responses back to requesting processes
-  std::vector<std::vector<std::size_t> > global_index_responses(num_processes);
+  std::vector<std::vector<std::size_t>> global_index_responses(num_processes);
   MPI::all_to_all(mesh.mpi_comm(), respond_global_indices,
                   global_index_responses);
 

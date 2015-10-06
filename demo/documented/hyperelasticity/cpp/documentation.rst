@@ -57,7 +57,7 @@ Now, we can define the kinematic quantities involved in the model
 .. code-block:: python
 
     # Kinematics
-    d = u.geometric_dimension()
+    d = len(u)
     I = Identity(d)                 # Identity tensor
     F = I + grad(u)                 # Deformation gradient
     C = F.T*F                       # Right Cauchy-Green tensor
@@ -239,8 +239,7 @@ and ``Rotation`` (for the value on the right boundary).
   // Create Dirichlet boundary conditions
   DirichletBC bcl(V, c, left);
   DirichletBC bcr(V, r, right);
-  std::vector<const DirichletBC*> bcs;
-  bcs.push_back(&bcl); bcs.push_back(&bcr);
+  std::vector<const DirichletBC*> bcs = {{&bcl, &bcr}};
 
 The two boundary conditions are collected in the container ``bcs``.
 

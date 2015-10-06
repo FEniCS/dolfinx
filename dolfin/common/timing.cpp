@@ -18,34 +18,18 @@
 // First added:  2003-12-21
 // Last changed: 2012-11-01
 
-// Uncomment this for testing std::clock
-//#define _WIN32
+#include <tuple>
 
-#ifdef _WIN32
-#include <boost/timer.hpp>
-#else
-#include <sys/time.h>
-#endif
-
-#include "MPI.h"
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogManager.h>
+#include <dolfin/log/Table.h>
+#include "Timer.h"
 #include "timing.h"
-
-// We use boost::timer (std::clock) on Windows and otherwise the
-// platform-dependent (but higher-precision) gettimeofday from
-// <sys/time.h>. Note that in the latter case, the timer is not
-// reset to zero at the start of the program so time() will not
-// report total CPU time, only the difference makes sense.
 
 namespace dolfin
 {
-#ifdef _WIN32
-  boost::timer __global_timer;
-  boost::timer __tic_timer;
-#else
-  double __tic_timer;
-#endif
+  Timer __global_timer;
+  Timer __tic_timer;
 }
 
 using namespace dolfin;
@@ -53,61 +37,37 @@ using namespace dolfin;
 //-----------------------------------------------------------------------
 void dolfin::tic()
 {
-#ifdef _WIN32
-  dolfin::__tic_timer.restart();
-#else
-  dolfin::__tic_timer = time();
-#endif
+  __tic_timer.start();
 }
 //-----------------------------------------------------------------------------
 double dolfin::toc()
 {
-#ifdef _WIN32
-  return __tic_timer.elapsed();
-#else
-  return time() - __tic_timer;
-#endif
+  return std::get<0>(__tic_timer.elapsed());
 }
 //-----------------------------------------------------------------------------
 double dolfin::time()
 {
-#ifdef _WIN32
-  return dolfin::__global_timer.elapsed();
-#else
-  struct timeval tv;
-  struct timezone tz;
-  if (gettimeofday(&tv, &tz) != 0)
-  {
-    dolfin_error("timing.cpp",
-                 "return current time",
-                 "Call to gettimeofday() failed");
-  }
-  return static_cast<double>(tv.tv_sec) + static_cast<double>(tv.tv_usec)*1e-6;
-#endif
+  return std::get<0>(__global_timer.elapsed());
 }
 //-----------------------------------------------------------------------------
-void dolfin::list_timings(bool reset)
+Table dolfin::timings(TimingClear clear, std::set<TimingType> type)
 {
-  // Optimization
-  if (!LogManager::logger.is_active())
-    return;
-
-  LogManager::logger.list_timings(reset);
+  return LogManager::logger().timings(clear, type);
 }
 //-----------------------------------------------------------------------------
-Table dolfin::timings(bool reset)
+void dolfin::list_timings(TimingClear clear, std::set<TimingType> type)
 {
-  return LogManager::logger.timings(reset);
+  LogManager::logger().list_timings(clear, type);
 }
 //-----------------------------------------------------------------------------
-void dolfin::summary(bool reset)
+void dolfin::dump_timings_to_xml(std::string filename, TimingClear clear)
 {
-  warning("The summary() function is deprecated, use list_timings().");
-  list_timings(reset);
+  LogManager::logger().dump_timings_to_xml(filename, clear);
 }
 //-----------------------------------------------------------------------------
-double dolfin::timing(std::string task, bool reset)
+std::tuple<std::size_t, double, double, double>
+  dolfin::timing(std::string task, TimingClear clear)
 {
-  return LogManager::logger.timing(task, reset);
+  return LogManager::logger().timing(task, clear);
 }
 //-----------------------------------------------------------------------------

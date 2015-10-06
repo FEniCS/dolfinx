@@ -19,8 +19,8 @@
 // Last changed: 2013-02-26
 
 #include<set>
+#include<string>
 #include<vector>
-#include<boost/lexical_cast.hpp>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
@@ -42,7 +42,7 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
   Timer timer0("Partition graph (calling Zoltan PHG)");
 
   // Create data structures to hold graph
-  std::vector<std::set<std::size_t> > local_graph;
+  std::vector<std::set<std::size_t>> local_graph;
   std::set<std::size_t> ghost_vertices;
 
   // Compute local dual graph
@@ -63,7 +63,7 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
   zoltan.Set_Param("NUM_LID_ENTRIES", "0");
 
   zoltan.Set_Param("NUM_GLOBAL_PARTS",
-              boost::lexical_cast<std::string>(MPI::size(mpi_comm)));
+                   std::to_string(MPI::size(mpi_comm)));
 
   zoltan.Set_Param("NUM_LOCAL_PARTS", "1");
   zoltan.Set_Param("LB_METHOD", "GRAPH");
@@ -75,7 +75,7 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
   // Repartitioning weighting
   double phg_repart_multiplier = parameters["Zoltan_PHG_REPART_MULTIPLIER"];
   zoltan.Set_Param("PHG_REPART_MULTIPLIER",
-                   boost::lexical_cast<std::string>(phg_repart_multiplier));
+                   std::to_string(phg_repart_multiplier));
 
 
   // Set call-back functions
@@ -155,7 +155,7 @@ ZoltanPartition::compute_partition_rcb(const MPI_Comm mpi_comm,
   zoltan.Set_Param("NUM_LID_ENTRIES", "0");
 
   zoltan.Set_Param("NUM_GLOBAL_PARTS",
-               boost::lexical_cast<std::string>(MPI::size(mpi_comm)));
+                   std::to_string(MPI::size(mpi_comm)));
 
   zoltan.Set_Param("NUM_LOCAL_PARTS", "1");
   zoltan.Set_Param("LB_METHOD", "RCB");
@@ -258,8 +258,8 @@ void ZoltanPartition::get_number_edges(void *data,
                                        ZOLTAN_ID_PTR local_ids, int *num_edges,
                                        int *ierr)
 {
-  std::vector<std::set<std::size_t> >* local_graph
-    = (std::vector<std::set<std::size_t> >*)data;
+  std::vector<std::set<std::size_t>>* local_graph
+    = (std::vector<std::set<std::size_t>>*)data;
 
   dolfin_assert(num_gid_entries == 1);
   dolfin_assert(num_lid_entries == 0);
@@ -284,8 +284,8 @@ void ZoltanPartition::get_all_edges(void* data,
   error("ZoltanPartition::get_all_edges need to be updated for MPI communicator");
   /*
   // Get graph
-  const std::vector<std::set<std::size_t> >* local_graph
-    = (std::vector<std::set<std::size_t> >*)data;
+  const std::vector<std::set<std::size_t>>* local_graph
+    = (std::vector<std::set<std::size_t>>*)data;
 
   // MPI communicate
   const MPI_Comm mpi_comm = local_graph->mpi_comm();
@@ -297,7 +297,7 @@ void ZoltanPartition::get_all_edges(void* data,
   offsets.push_back(MPI::sum(mpi_comm, local_graph->size()));
 
   std::size_t i = 0;
-  for(std::vector<std::set<std::size_t> >::iterator node = local_graph->begin();
+  for(std::vector<std::set<std::size_t>>::iterator node = local_graph->begin();
       node != local_graph->end(); ++node)
   {
     for(std::set<std::size_t>::iterator edge = node->begin();
@@ -358,7 +358,7 @@ void ZoltanPartition::get_all_geom(void *data,
 
   // Need to get all vertex coordinates which are referred to by
   // topology onto this process...
-  std::map<std::size_t, std::vector<double> > vertex;
+  std::map<std::size_t, std::vector<double>> vertex;
 
   // Insert local vertices into map
   for(std::size_t i = 0; i < num_local_vertices; ++i)
@@ -369,8 +369,8 @@ void ZoltanPartition::get_all_geom(void *data,
   }
 
   std::size_t num_processes = MPI::size(mpi_comm);
-  std::vector<std::vector<std::size_t> >send_buffer(num_processes);
-  std::vector<std::vector<std::size_t> >receive_buffer(num_processes);
+  std::vector<std::vector<std::size_t>>send_buffer(num_processes);
+  std::vector<std::vector<std::size_t>>receive_buffer(num_processes);
 
   // Make list of requested remote vertices for each remote process
   for (std::size_t i = 0; i < num_local_cells; ++i)
@@ -391,12 +391,12 @@ void ZoltanPartition::get_all_geom(void *data,
 
   MPI::all_to_all(mpi_comm, send_buffer, receive_buffer);
 
-  std::vector<std::vector<double> > dsend_buffer(num_processes);
-  std::vector<std::vector<double> > dreceive_buffer(num_processes);
+  std::vector<std::vector<double>> dsend_buffer(num_processes);
+  std::vector<std::vector<double>> dreceive_buffer(num_processes);
 
   // Get received requests for vertices from remote processes, and put
   // together answer to send back
-  for (std::vector<std::vector<std::size_t> >::iterator p
+  for (std::vector<std::vector<std::size_t>>::iterator p
          = receive_buffer.begin(); p != receive_buffer.end(); ++p)
   {
     std::size_t proc = p - receive_buffer.begin();

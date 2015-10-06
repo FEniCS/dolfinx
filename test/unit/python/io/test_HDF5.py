@@ -139,6 +139,28 @@ def test_save_and_read_mesh_value_collection(tempdir):
                 assert val == int(ndiv*sum(mid)) + 1
 
 @skip_if_not_HDF5
+def test_save_and_read_mesh_value_collection_with_only_one_marked_entity(tempdir):
+    ndiv = 5
+    filename = os.path.join(tempdir, "mesh_value_collection.h5")
+    mesh = UnitCubeMesh(ndiv, ndiv, ndiv)
+    mvc = MeshValueCollection("size_t", mesh, 3)
+    mesh.init(3)
+    if MPI.rank(mesh.mpi_comm()) == 0:
+        mvc.set_value(0, 1)
+
+    # write to file
+    with HDF5File(mesh.mpi_comm(), filename, 'w') as f :
+        f.write(mvc, "/mesh_value_collection")
+
+    # read from file
+    with HDF5File(mesh.mpi_comm(), filename, 'r') as f :
+        mvc = MeshValueCollection("size_t", mesh, 3)
+        f.read(mvc, "/mesh_value_collection")
+        assert MPI.sum(mesh.mpi_comm(), mvc.size()) == 1
+        if MPI.rank(mesh.mpi_comm()) == 0:
+            assert mvc.get_value(0, 0) == 1
+
+@skip_if_not_HDF5
 def test_save_and_read_function(tempdir):
     filename = os.path.join(tempdir, "function.h5")
 

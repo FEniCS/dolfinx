@@ -54,71 +54,53 @@ find_package(ParMETIS 4.0.2 QUIET)
 
 # Check for header file
 find_path(CHOLMOD_INCLUDE_DIRS cholmod.h
-  HINTS ${CHOLMOD_DIR}/include $ENV{CHOLMOD_DIR}/include
+  HINTS ${CHOLMOD_DIR}/include $ENV{CHOLMOD_DIR}/include $ENV{PETSC_DIR}/include
   PATH_SUFFIXES suitesparse ufsparse
-  DOC "Directory where the CHOLMOD header is located"
- )
+  DOC "Directory where the CHOLMOD header is located")
 
 # Check for CHOLMOD library
 find_library(CHOLMOD_LIBRARY cholmod
-  HINTS ${CHOLMOD_DIR}/lib $ENV{CHOLMOD_DIR}/lib
-  NO_DEFAULT_PATH
-  DOC "The CHOLMOD library"
-  )
-find_library(CHOLMOD_LIBRARY cholmod
-  DOC "The CHOLMOD library"
-  )
+  HINTS ${CHOLMOD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{PETSC_DIR}/lib
+  DOC "The CHOLMOD library")
 
 # Check for CAMD library
 find_library(CAMD_LIBRARY camd
-  HINTS ${CHOLMOD_DIR}/lib ${CAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{CAMD_DIR}/lib
-  NO_DEFAULT_PATH
-  DOC "The CAMD library"
-  )
-find_library(CAMD_LIBRARY camd
-  DOC "The CAMD library"
-  )
+  HINTS ${CHOLMOD_DIR}/lib ${CAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib
+  $ENV{CAMD_DIR}/lib $ENV{PETSC_DIR}/lib
+  DOC "The CAMD library")
 
 # Check for COLAMD library
 find_library(COLAMD_LIBRARY colamd
-  HINTS ${CHOLMOD_DIR}/lib ${COLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{COLAMD_DIR}/lib
-  NO_DEFAULT_PATH
-  DOC "The COLAMD library"
-  )
-find_library(COLAMD_LIBRARY colamd
+  HINTS ${CHOLMOD_DIR}/lib ${COLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib
+  $ENV{COLAMD_DIR}/lib $ENV{PETSC_DIR}/lib
   DOC "The COLAMD library"
   )
 
 # Check for CCOLAMD library
 find_library(CCOLAMD_LIBRARY ccolamd
-  HINTS ${CHOLMOD_DIR}/lib ${CCOLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{CCOLAMD_DIR}/lib
-  NO_DEFAULT_PATH
-  DOC "The CCOLAMD library"
-  )
-find_library(CCOLAMD_LIBRARY ccolamd
-  DOC "The CCOLAMD library"
-  )
+  HINTS ${CHOLMOD_DIR}/lib ${CCOLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib
+  $ENV{CCOLAMD_DIR}/lib $ENV{PETSC_DIR}/lib
+  DOC "The CCOLAMD library")
 
 # Check for SUITESPARSECONFIG library
-find_library(SUITESPARSE_LIBRARY suitesparseconfig
-  HINTS ${CHOLMOD_DIR}/lib ${CCOLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{CCOLAMD_DIR}/lib
-  NO_DEFAULT_PATH
-  DOC "The SUITESPARSECONFIG library"
-  )
-find_library(SUITESPARSE_LIBRARY suitesparseconfig
-  DOC "The SUITESPARSECONFIG library"
-  )
+find_library(SUITESPARSECONFIG_LIBRARY suitesparseconfig
+  HINTS ${CHOLMOD_DIR}/lib ${CCOLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib
+  $ENV{CCOLAMD_DIR}/lib $ENV{PETSC_DIR}/lib
+  DOC "The SUITESPARSECONFIG library")
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND NOT APPLE)
   # Check for rt library
   find_library(RT_LIBRARY rt
-    DOC "The RT library"
-    )
+    DOC "The RT library")
 endif()
 
 # Collect libraries (order is important)
+set(CHOLMOD_LIBRARIES)
+if (CHOLMOD_LIBRARY)
+  set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${CHOLMOD_LIBRARY})
+endif()
 if (AMD_FOUND)
-  set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARY} ${AMD_LIBRARIES})
+  set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES}  ${AMD_LIBRARIES})
 endif()
 if (CAMD_LIBRARY)
   set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${CAMD_LIBRARY})
@@ -129,8 +111,8 @@ endif()
 if (CCOLAMD_LIBRARY)
   set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${CCOLAMD_LIBRARY})
 endif()
-if (SUITESPARSE_LIBRARY)
-  set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${SUITESPARSE_LIBRARY})
+if (SUITESPARSECONFIG_LIBRARY)
+  set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${SUITESPARSECONFIG_LIBRARY})
 endif()
 if (RT_LIBRARY)
   set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${RT_LIBRARY})
@@ -156,14 +138,8 @@ if (GFORTRAN_EXECUTABLE)
   endif()
 endif()
 
-mark_as_advanced(
-  CHOLMOD_INCLUDE_DIRS
-  CHOLMOD_LIBRARY
-  CHOLMOD_LIBRARIES
-  CAMD_LIBRARY
-  COLAMD_LIBRARY
-  CCOLAMD_LIBRARY
-  )
+mark_as_advanced(CHOLMOD_INCLUDE_DIRS CHOLMOD_LIBRARY CHOLMOD_LIBRARIES
+  CAMD_LIBRARY COLAMD_LIBRARY CCOLAMD_LIBRARY)
 
 # Try to run a test program that uses CHOLMOD
 if (DOLFIN_SKIP_BUILD_TESTS)
@@ -172,11 +148,10 @@ elseif (CHOLMOD_INCLUDE_DIRS AND CHOLMOD_LIBRARIES AND AMD_FOUND)
 
   set(CMAKE_REQUIRED_INCLUDES  ${CHOLMOD_INCLUDE_DIRS} ${AMD_INCLUDE_DIRS})
   set(CMAKE_REQUIRED_LIBRARIES ${CHOLMOD_LIBRARIES})
-#  message("Cholmod libraries ${CHOLMOD_LIBRARIES}")
 
-  # Build and run test program
-  include(CheckCXXSourceRuns)
-  check_cxx_source_runs("
+  set(CHOLMOD_TEST_LIB_CPP
+    "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/cholmod_test_lib.cpp")
+  file(WRITE ${CHOLMOD_TEST_LIB_CPP} "
 #include <stdio.h>
 #include <cholmod.h>
 
@@ -206,6 +181,7 @@ int main()
   cholmod_reallocate_sparse(cholmod_nnz(S, &c), S, &c);
   b = cholmod_ones(S->nrow, 1, S->xtype, &c);
   L = cholmod_analyze(S, &c);
+/*
   cholmod_factorize(S, L, &c);
   x = cholmod_solve(CHOLMOD_A, L, b, &c);
   r = cholmod_copy_dense(b, &c);
@@ -218,8 +194,27 @@ int main()
   cholmod_free_dense(&b, &c);
   cholmod_finish(&c);
   return 0;
+*/
 }
-" CHOLMOD_TEST_RUNS)
+")
+
+  try_run(CHOLMOD_TEST_LIB_EXITCODE
+    CHOLMOD_TEST_LIB_COMPILED
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${CHOLMOD_TEST_LIB_CPP}
+    CMAKE_FLAGS
+    "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
+    "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
+    COMPILE_OUTPUT_VARIABLE CHOLMOD_TEST_LIB_COMPILE_OUTPUT
+    RUN_OUTPUT_VARIABLE CHOLMOD_TEST_LIB_OUTPUT
+    )
+
+  if (CHOLMOD_TEST_LIB_COMPILED AND CHOLMOD_TEST_LIB_EXITCODE EQUAL 0)
+    message(STATUS "Performing test CHOLMOD_TEST_RUNS - Success")
+    set(CHOLMOD_TEST_RUNS TRUE)
+  else()
+    message(STATUS "Performing test CHOLMOD_TEST_RUNS - Failed")
+  endif()
 
 endif()
 

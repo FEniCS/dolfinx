@@ -123,16 +123,16 @@ namespace dolfin
     // Forward backward substitution, assume that mat is already
     // in place LU factorized
     void _forward_backward_subst(const std::vector<double>& A,
-				 const std::vector<double>& b,
-				 std::vector<double>& x) const;
+                                 const std::vector<double>& b,
+                                 std::vector<double>& x) const;
 
     // Compute jacobian using passed UFC form
     void _compute_jacobian(std::vector<double>& jac,
                            const std::vector<double>& u,
-			   unsigned int local_vert, UFC& loc_ufc,
-			   const Cell& cell, const ufc::cell& ufc_cell,
-			   int coefficient_index,
-			   const std::vector<double>& vertex_coordinates);
+                           unsigned int local_vert, UFC& loc_ufc,
+                           const Cell& cell, const ufc::cell& ufc_cell,
+                           int coefficient_index,
+                           const std::vector<double>& coordinate_dofs);
 
     // Compute the norm of a vector
     double _norm(const std::vector<double>& vec) const;
@@ -148,17 +148,17 @@ namespace dolfin
     // Solve an explicit stage
     void _solve_explicit_stage(std::size_t vert_ind, unsigned int stage,
                                const ufc::cell& ufc_cell,
-			       const std::vector<double>& vertex_coordinates);
+                               const std::vector<double>& coordinate_dofs);
 
     // Solve an implicit stage
     void _solve_implicit_stage(std::size_t vert_ind, unsigned int stage,
-			       const Cell& cell, const ufc::cell& ufc_cell,
-			       const std::vector<double>& vertex_coordinates);
+                               const Cell& cell, const ufc::cell& ufc_cell,
+                               const std::vector<double>& coordinate_dofs);
 
     void
       _simplified_newton_solve(std::size_t vert_ind, unsigned int stage,
                                const Cell& cell, const ufc::cell& ufc_cell,
-                               const std::vector<double>& vertex_coordinates);
+                               const std::vector<double>& coordinate_dofs);
 
     // The MultiStageScheme
     std::shared_ptr<MultiStageScheme> _scheme;

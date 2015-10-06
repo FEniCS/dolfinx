@@ -38,6 +38,12 @@ def attr(tempdir):
     del hdf_file
 
 @skip_if_not_HDF5
+def test_fail_on_accessing_attribute_on_non_existing_dataset(tempdir):
+    hdf_file = HDF5File(mpi_comm_world(), os.path.join(tempdir, "hdf_file.h5"), "w")
+    with pytest.raises(RuntimeError):
+        attr = hdf_file.attributes("/a_vector")
+
+@skip_if_not_HDF5
 def test_read_write_str_attribute(attr):
     attr['name'] = 'Vector'
     assert attr.type_str("name") == "string"
@@ -78,7 +84,7 @@ def test_read_write_vec_int_attribute(attr):
 @skip_if_not_HDF5
 def test_attribute_container_interface(attr):
     names = ["data_0", "data_1", "data_2", "data_3"]
-    values = range(4)
+    values = [i for i in range(4)]
     
     for name, value in zip(names, values):
         attr[name] = value

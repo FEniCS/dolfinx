@@ -28,7 +28,6 @@ import ufl
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture
 
-
 @fixture
 def square():
     return UnitSquareMesh(2, 2)
@@ -47,30 +46,34 @@ def cube():
 
 @fixture
 def V1(square_boundary):
-    return FunctionSpace(square_boundary, "CG", 1) 
+    return FunctionSpace(square_boundary, "CG", 1)
 
 @fixture
-def VV1(square_boundary):   
+def VV1(square_boundary):
     return VectorFunctionSpace(square_boundary, "CG", 1)
 
 @fixture
-def Q1(square_boundary):   
+def Q1(square_boundary):
     return FunctionSpace(square_boundary, "DG", 0)
 
 @fixture
-def V2(cube_boundary):   
-    return FunctionSpace(cube_boundary, "CG", 1)      
+def V2(cube_boundary):
+    return FunctionSpace(cube_boundary, "CG", 1)
 
 @fixture
 def VV2(cube_boundary):
     return VectorFunctionSpace(cube_boundary, "CG", 1)
 
 @fixture
-def Q2(cube_boundary):   
+def Q2(cube_boundary):
     return FunctionSpace(cube_boundary, "DG", 0)
 
 
 def test_assemble_functional(V1, V2):
+
+    mesh = V1.mesh()
+    surfacearea = assemble(1*dx(mesh))
+    assert round(surfacearea - 4.0, 7) == 0
 
     u = Function(V1)
     u.vector()[:] = 1.0
@@ -149,7 +152,7 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
     bottom = FacetFunctionSizet(square)
     bottom.set_all(0)
     subdomain.mark(bottom, 1)
-    dss = ds[bottom]
+    dss = ds(subdomain_data=bottom)
     foo = MPI.sum(square.mpi_comm(),
                abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
     # Assemble over all cells of submesh created from subset of boundary mesh
@@ -187,12 +190,9 @@ def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
     bottom = FacetFunctionSizet(cube)
     bottom.set_all(0)
     subdomain.mark(bottom, 1)
-    dss = ds[bottom]
+    dss = ds(subdomain_data=bottom)
     foo = MPI.sum(cube.mpi_comm(),
                abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
-    #foo = MPI.sum(cube.mpi_comm(),
-    #              abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(1),
-    #                           exterior_facet_domains=bottom).array()).sum())
     # Assemble over all cells of submesh created from subset of boundary mesh
     bottom2 = CellFunctionSizet(cube_boundary)
     bottom2.set_all(0)
@@ -254,8 +254,8 @@ def test_basic_rt(RT2, RT3):
     # Project
     pw2 = project(f2, RT2)
     pw3 = project(f3, RT3)
-    pa2 = assemble(inner(pw2, pw2)*dx)
-    pa3 = assemble(inner(pw3, pw3)*dx)
+    pa2 = assemble(pw2**2*dx)
+    pa3 = assemble(pw3**2*dx)
 
     # Project explicitly
     a2 = inner(u2, v2)*dx
@@ -270,15 +270,18 @@ def test_basic_rt(RT2, RT3):
     b3 = assemble(L3)
     solve(A2, w2.vector(), b2)
     solve(A3, w3.vector(), b3)
-    a2 = assemble(inner(w2, w2)*dx)
-    a3 = assemble(inner(w3, w3)*dx)
+    a2 = assemble(w2**2*dx)
+    a3 = assemble(w3**2*dx)
 
     # Compare various results
-    assert round((w2.vector() - pw2.vector()).norm("l2") - 0.0, 5) == 0
+    assert round((w2.vector() - pw2.vector()).norm("l2"), 5) == 0
+    assert round((w3.vector() - pw3.vector()).norm("l2"), 5) == 0
+    # 2d
+    assert round(a2 - 5.0, 7) == 0
+    assert round(pa2 - 5.0, 7) == 0
+    # 3d
     assert round(a3 - 5.0, 7) == 0
-    assert round(a2 - a3, 7) == 0
-    assert round(pa2 - a2, 7) == 0
-    assert round(pa2 - pa3, 7) == 0
+    assert round(pa3 - 5.0, 6) == 0
 
 
 @skip_in_parallel
@@ -347,7 +350,7 @@ def bottom2(cube_boundary, plane):
 def bottom3(mesh3, line):
     return SubMesh(mesh3, line)
 
-    
+
 @skip_in_parallel
 def test_normals_2D_1D(bottom1, m):
     "Testing assembly of normals for 1D meshes embedded in 2D"

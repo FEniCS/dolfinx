@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2012-2015 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -30,11 +30,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include "GenericFile.h"
-
-namespace pugi
-{
-  class xml_node;
-}
 
 namespace dolfin
 {
@@ -131,29 +126,10 @@ namespace dolfin
                          const std::size_t num_global_points,
                          const unsigned int value_size);
 
-    // Write XML description for Function and MeshFunction output
-    // updating time-series if need be
-    void output_xml(const double time_step, const bool vertex_data,
-                    const std::size_t cell_dim,
-                    const std::size_t num_global_cells,
-                    const std::size_t gdim,
-                    const std::size_t num_total_vertices,
-                    const std::size_t value_rank,
-                    const std::size_t padded_value_size,
-                    const std::string name,
-                    const std::string dataset_name) const;
-
-    // Helper function to add topology reference to XDMF XML file
-    void xml_mesh_topology(pugi::xml_node& xdmf_topology,
-                           const std::size_t cell_dim,
-                           const std::size_t num_global_cells,
-                           const std::string topology_dataset_name) const;
-
-    // Helper function to add geometry section to XDMF XML file
-    void xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
-                           const std::size_t num_all_local_cells,
-                           const std::size_t gdim,
-                           const std::string geometry_dataset_name) const;
+    // Get point data values for linear or quadratic mesh into
+    // flattened 2D array in data_values with given width
+    void get_point_data_values(std::vector<double>& data_values, std::size_t width,
+                               const Function& u);
 
     // Most recent mesh name
     std::string current_mesh_name;

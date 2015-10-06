@@ -58,7 +58,8 @@ MeshColoring::color(Mesh& mesh,
                     const std::vector<std::size_t>& coloring_type)
 {
   // Convenience typedefs
-  typedef std::pair<std::vector<std::size_t>, std::vector<std::vector<std::size_t> > > ColorData;
+  typedef std::pair<std::vector<std::size_t>,
+                    std::vector<std::vector<std::size_t>>> ColorData;
 
   info("Coloring mesh.");
 
@@ -76,7 +77,7 @@ MeshColoring::color(Mesh& mesh,
   ColorData& color_data = mesh.topology().coloring.find(coloring_type)->second;
 
   std::vector<std::size_t>& colors = color_data.first;
-  std::vector<std::vector<std::size_t> >& entities_of_color = color_data.second;
+  std::vector<std::vector<std::size_t>>& entities_of_color = color_data.second;
 
   // Initialise mesh function for colors and compute coloring
   const std::size_t colored_entity_dim = coloring_type[0];
@@ -137,7 +138,8 @@ CellFunction<std::size_t> MeshColoring::cell_colors(const Mesh& mesh,
 
   // Get color data
   std::map<std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
-           std::vector<std::vector<std::size_t> > > >::const_iterator coloring_data;
+           std::vector<std::vector<std::size_t>>>>::const_iterator
+    coloring_data;
   coloring_data = mesh.topology().coloring.find(coloring_type);
 
   // Check that coloring has been computed

@@ -18,6 +18,7 @@
 // First added:  2011-10-15
 // Last changed:
 
+#include <cmath>
 #include <vector>
 #include "dolfin/common/MPI.h"
 #include "GenericMatrix.h"

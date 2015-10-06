@@ -341,7 +341,7 @@ NUMPY_ARRAY_FRAGMENTS(bool, NPY_BOOL, bool)
 NUMPY_ARRAY_FRAGMENTS(std::size_t, NPY_UINTP, size_t)
 
 #if (DOLFIN_LA_INDEX_SIZE==4)
-NUMPY_ARRAY_FRAGMENTS(dolfin::la_index, NPY_INT32, dolfin_index)
+NUMPY_ARRAY_FRAGMENTS(dolfin::la_index, NPY_INT, dolfin_index)
 #else
 NUMPY_ARRAY_FRAGMENTS(dolfin::la_index, NPY_INT64, dolfin_index)
 #endif
@@ -511,4 +511,21 @@ namespace __private {
   }
 }
 
-// vim:ft=cpp:
+//-----------------------------------------------------------------------------
+// In typemap for const std::vector<std::pair<std::size_t, std::size_t> >&
+//-----------------------------------------------------------------------------
+%typemap(in) const std::vector<std::pair<std::size_t, std::size_t> >&
+(std::vector<std::pair<std::size_t, std::size_t> > temp)
+{
+  PyArrayObject* xa = reinterpret_cast<PyArrayObject*>($input);
+  if ( !PyArray_Check(xa) || !PyArray_ISCONTIGUOUS(xa) || PyArray_NDIM(xa) != 2
+       || PyArray_DIM(xa, 1) != 2 || PyArray_TYPE(xa) != NPY_UINTP )
+    SWIG_exception(SWIG_TypeError, "expected contiguous NumPy array"
+      " of dtype='uintp' and shape=(n, 2) as argument $argnum");
+  std::size_t *data = static_cast<std::size_t*>(PyArray_DATA(xa));
+  const std::size_t dim0 = PyArray_DIM(xa, 0);
+  temp.reserve(dim0);
+  for (std::size_t i = 0; i < dim0; ++i)
+    temp.push_back(std::make_pair(data[2*i], data[2*i+1]));
+  $1 = &temp;
+}

@@ -28,6 +28,7 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/geometry/Point.h>
 #include "HDF5Attribute.h"
 #include "HDF5Interface.h"
 
@@ -99,6 +100,12 @@ namespace dolfin
     void read(Mesh& mesh, const std::string name,
               bool use_partition_from_file) const;
 
+    /// Read in Mesh with given topology and geometry datasets
+    void read(Mesh& input_mesh, const std::string topology_name,
+              const std::string geometry_name,
+              const std::string known_cell_type,
+              bool use_partition_from_file) const;
+
     /// Write MeshFunction to file in a format suitable for re-reading
     void write(const MeshFunction<std::size_t>& meshfunction,
                const std::string name);
@@ -164,7 +171,7 @@ namespace dolfin
 
     // Friend
     friend class XDMFFile;
-    friend class TimeSeriesHDF5;
+    friend class TimeSeries;
 
     // Write a MeshFunction to file
     template <typename T>
@@ -227,7 +234,12 @@ namespace dolfin
 
     // Write data to HDF5 file
     const bool chunking = parameters["chunking"];
-    HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
+    // Ensure dataset starts with '/'
+    std::string dset_name(dataset_name);
+    if (dset_name[0] != '/')
+      dset_name = "/" + dataset_name;
+
+    HDF5Interface::write_dataset(hdf5_file_id, dset_name, data,
                                  range, global_size, use_mpi_io, chunking);
   }
   //---------------------------------------------------------------------------

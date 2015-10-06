@@ -83,7 +83,7 @@ def square():
 
 @fixture
 def rectangle():
-    return RectangleMesh(0, 0, 2, 2, 5, 5)
+    return RectangleMesh(Point(0, 0), Point(2, 2), 5, 5)
 
 @fixture
 def cube():
@@ -91,7 +91,7 @@ def cube():
 
 @fixture
 def box():
-    return BoxMesh(0, 0, 0, 2, 2, 2, 2, 2, 5)
+    return BoxMesh(Point(0, 0, 0), Point(2, 2, 2), 2, 2, 5)
 
 @fixture
 def mesh():
@@ -117,8 +117,8 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
         domain = mesh.ufl_domain()
         assert mesh.geometry().dim() == domain.geometric_dimension()
         assert mesh.topology().dim() == domain.topological_dimension()
-        assert mesh.ufl_cell() == domain.cell()
-        assert str(mesh.id()) in domain.label()
+        assert mesh.ufl_cell() == domain.ufl_cell()
+        assert mesh.id() == domain.ufl_id()
 
     _check_ufl_domain(interval)
     _check_ufl_domain(square)
@@ -178,6 +178,24 @@ def test_UnitCubeMeshDistributedLocal():
     assert mesh.num_vertices() == 480
     assert mesh.num_cells() == 1890
 
+def test_UnitQuadMesh():
+    mesh = UnitQuadMesh(5, 7)
+    assert mesh.size_global(0) == 48
+    assert mesh.size_global(2) == 35
+
+def test_UnitHexMesh():
+    mesh = UnitHexMesh(5, 7, 9)
+    assert mesh.size_global(0) == 480
+    assert mesh.size_global(3) == 315
+
+def test_RefineUnitIntervalMesh():
+    """Refine mesh of unit interval."""
+    mesh = UnitIntervalMesh(20)
+    cell_markers = CellFunction("bool", mesh)
+    cell_markers[0] = (MPI.rank(mesh.mpi_comm())==0)
+    mesh2 = refine(mesh, cell_markers)
+    assert mesh2.size_global(0) == 22
+    assert mesh2.size_global(1) == 21
 
 def test_RefineUnitSquareMesh():
     """Refine mesh of unit square."""
@@ -185,7 +203,6 @@ def test_RefineUnitSquareMesh():
     mesh = refine(mesh)
     assert mesh.size_global(0) == 165
     assert mesh.size_global(2) == 280
-
 
 def test_RefineUnitCubeMesh():
     """Refine mesh of unit cube."""
@@ -373,12 +390,14 @@ def test_basic_cell_orientations():
     "Test that default cell orientations initialize and update as expected."
     mesh = UnitIntervalMesh(12)
     orientations = mesh.cell_orientations()
+    print(len(orientations))
+    assert len(orientations) == 0
+
+    mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0")))
+    orientations = mesh.cell_orientations()
     assert len(orientations) == mesh.num_cells()
     for i in range(mesh.num_cells()):
-        assert orientations[i] == -1
-
-    orientations[0] = 1
-    assert mesh.cell_orientations()[0] == 1
+        assert mesh.cell_orientations()[i] == 0
 
 
 @skip_in_parallel

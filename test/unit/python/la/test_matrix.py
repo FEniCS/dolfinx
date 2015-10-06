@@ -27,26 +27,27 @@ from __future__ import print_function
 import pytest
 from dolfin import *
 from six.moves import xrange as range
-
 from dolfin_utils.test import *
-
 
 # TODO: Reuse this fixture setup code between matrix and vector tests:
 
-# Lists of backends supporting or not supporting data access
+# Lists of backends supporting or not supporting FooMatrix::data()
+# access
 data_backends = []
 no_data_backends = [("PETSc", "")]
 
 # Add serial only backends
 if MPI.size(mpi_comm_world()) == 1:
-    # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't used in the old test.
-    data_backends += [("uBLAS", "Dense"), ("uBLAS", "Sparse")]
+    # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't
+    # used in the old test.
+    data_backends += [("Eigen", "")]
     no_data_backends += [("PETScCusp", "")]
+
 
 # TODO: STL tests were disabled in old test framework, and do not work now:
 # If we have PETSc, STL Vector gets typedefed to one of these and data
 # test will not work. If none of these backends are available
-# STLVector defaults to uBLASVEctor, which data will work
+# STLVector defaults to EigenVEctor, which data will work
 #if has_linear_algebra_backend("PETSc"):
 #    no_data_backends += [("STL", "")]
 #else:
@@ -58,14 +59,17 @@ no_data_backends = [b for b in no_data_backends if has_linear_algebra_backend(b[
 any_backends = data_backends + no_data_backends
 
 
-# Fixtures setting up and resetting the global linear algebra backend for a list of backends
-any_backend     = set_parameters_fixture("linear_algebra_backend", any_backends, lambda x: x[0])
-data_backend    = set_parameters_fixture("linear_algebra_backend", data_backends, lambda x: x[0])
-no_data_backend = set_parameters_fixture("linear_algebra_backend", no_data_backends, lambda x: x[0])
+# Fixtures setting up and resetting the global linear algebra backend
+# for a list of backends
+any_backend = set_parameters_fixture("linear_algebra_backend", any_backends, \
+                                     lambda x: x[0])
+data_backend = set_parameters_fixture("linear_algebra_backend", data_backends, \
+                                      lambda x: x[0])
+no_data_backend = set_parameters_fixture("linear_algebra_backend", \
+                                         no_data_backends, lambda x: x[0])
 
 # With and without explicit backend choice
 use_backend = true_false_fixture
-
 
 class TestMatrixForAnyBackend:
 
@@ -94,15 +98,13 @@ class TestMatrixForAnyBackend:
         return A, B
 
     def test_basic_la_operations(self, use_backend, any_backend):
-        # Hack to make old tests work in new framework. The original setup was a bit exoteric...
-        # TODO: Removing use of self in this class will make it clearer what happens in this test.
+        # Hack to make old tests work in new framework. The original
+        # setup was a bit exoteric...
+        # TODO: Removing use of self in this class will make it
+        # clearer what happens in this test.
         self.backend, self.sub_backend = any_backend
 
         from numpy import ndarray, array, ones, sum
-
-        # Tests bailout for this choice
-        if self.backend == "uBLAS" and not use_backend:
-            return
 
         A, B = self.assemble_matrices(use_backend)
         unit_norm = A.norm('frobenius')
@@ -169,10 +171,6 @@ class TestMatrixForAnyBackend:
 
         from numpy import ndarray, array, ones, sum
 
-        # Tests bailout for this choice
-        if self.backend == "uBLAS" and not use_backend:
-            return
-
         # Assemble matrices
         A, B = self.assemble_matrices(use_backend)
 
@@ -182,13 +180,20 @@ class TestMatrixForAnyBackend:
         assert A2.shape == (2021, 2021)
         assert round(sqrt(sum(A2**2)) - A.norm('frobenius'), 7) == 0
 
-        if self.backend == 'uBLAS' and self.sub_backend == 'Sparse':
+        if self.backend == 'Eigen':
             try:
                 import scipy.sparse
                 import numpy.linalg
+                A = as_backend_type(A)
                 A3 = A.sparray()
                 assert isinstance(A3, scipy.sparse.csr_matrix)
                 assert round(numpy.linalg.norm(A3.todense() - A2) - 0.0, 7) == 0
+
+                row, col, val = A.data()
+                A_scipy = scipy.sparse.csr_matrix((val, col, row))
+                assert round(numpy.linalg.norm(A_scipy.todense(), 'fro') \
+                             - A.norm("frobenius"), 7) == 0.0
+
             except ImportError:
                 pass
 
@@ -233,16 +238,6 @@ class TestMatrixForAnyBackend:
         assert B0.size(1) == B1.size(1)
         assert round(B0.norm("frobenius") - B1.norm("frobenius"), 7) == 0
 
-    def test_compress_matrix(self, any_backend):
-        self.backend, self.sub_backend = any_backend
-
-        A, B = self.assemble_matrices()
-        A_norm = A.norm('frobenius')
-        C = Matrix()
-        A.compressed(C)
-        C_norm = C.norm('frobenius')
-        assert round(A_norm - C_norm, 7) == 0
-
     @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, reason="Disabled because it tends to crash the tests in parallel.")
     @pytest.mark.slow
     def test_ident_zeros(self, use_backend, any_backend):
@@ -251,11 +246,12 @@ class TestMatrixForAnyBackend:
         # Check that PETScMatrix::ident_zeros() rethrows PETSc error
         if self.backend[0:5] == "PETSc":
             A, B = self.assemble_matrices(use_backend=use_backend)
-            with pytest.raises(RuntimeError):
+            with pytest.raises(Exception):
                 A.ident_zeros()
 
         # Assemble matrix A with diagonal entries
-        A, B = self.assemble_matrices(use_backend=use_backend, keep_diagonal=True)
+        A, B = self.assemble_matrices(use_backend=use_backend, \
+                                      keep_diagonal=True)
 
         # Find zero rows
         zero_rows = []
@@ -278,16 +274,15 @@ class TestMatrixForAnyBackend:
             assert j < cols.size
             assert round(sum(abs(row)) - 1.0, 7) == 0
 
-    def test_setting_diagonal(self, use_backend, any_backend):
+    def test_setting_getting_diagonal(self, use_backend, any_backend):
         self.backend, self.sub_backend = any_backend
 
         mesh = UnitSquareMesh(21, 23)
 
         V = FunctionSpace(mesh, "Lagrange", 2)
-        W = FunctionSpace(mesh, "Lagrange", 1)
-
         v = TestFunction(V)
         u = TrialFunction(V)
+        w = Function(V)
 
         if use_backend:
             backend = globals()[self.backend + self.sub_backend + 'Factory'].instance()
@@ -313,6 +308,10 @@ class TestMatrixForAnyBackend:
         B.mult(ones, resultsB)
         assert round(resultsA.norm("l2") - resultsB.norm("l2"), 7) == 0
 
+        A.get_diagonal(w.vector())
+        w.vector()[:] -= b
+        assert round(w.vector().norm("l2"), 14) == 0
+
     #def test_create_from_sparsity_pattern(self):
 
     #def test_size(self):
@@ -329,17 +328,15 @@ class TestMatrixForAnyBackend:
 
 
     # Test the access of the raw data through pointers
-    # This is only available for uBLAS and MTL4 backends
+    # This is only available for the Eigen backend
     def test_matrix_data(self, use_backend, data_backend):
         """ Test for ordinary Matrix"""
         self.backend, self.sub_backend = data_backend
 
-        # Tests bailout for this choice
-        if self.backend == "uBLAS" and \
-               (not use_backend or self.sub_backend =="Dense"):
-            return
-
         A, B = self.assemble_matrices(use_backend)
+        A = as_backend_type(A)
+        B = as_backend_type(B)
+
         array = A.array()
         rows, cols, values = A.data()
         i = 0
@@ -367,13 +364,7 @@ class TestMatrixForAnyBackend:
                 assert array[row,cols[k]] == values[k]
 
 
-    def test_matrix_no_data(self, no_data_backend):
-        self.backend, self.sub_backend = no_data_backend
-
+    def test_matrix_nnz(self, any_backend):
         A, B = self.assemble_matrices()
-        with pytest.raises(RuntimeError):
-            A.data()
-
-        A = as_backend_type(A)
-        with pytest.raises(RuntimeError):
-            A.data()
+        assert A.nnz() == 2992
+        assert B.nnz() == 9398

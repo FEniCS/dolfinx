@@ -277,34 +277,34 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh>
-                                                mesh) : _mesh(mesh), _dim(-1)
+  MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh>
+                                              mesh) : _mesh(mesh), _dim(-1)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh,
-                                                std::size_t dim)
+  MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh,
+                                              std::size_t dim)
     : Variable("m", "unnamed MeshValueCollection"),
-    _mesh(reference_to_no_delete_pointer(mesh)), _dim(dim)
+      _mesh(reference_to_no_delete_pointer(mesh)), _dim(dim)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh>
-                                                mesh, std::size_t dim)
+  MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh>
+                                              mesh, std::size_t dim)
     : Variable("m", "unnamed MeshValueCollection"), _mesh(mesh), _dim(dim)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshValueCollection<T>::MeshValueCollection(const MeshFunction<T>&
-                                                mesh_function)
+  MeshValueCollection<T>::MeshValueCollection(const MeshFunction<T>&
+                                              mesh_function)
     : Variable("m", "unnamed MeshValueCollection"), _mesh(mesh_function.mesh()),
-    _dim(mesh_function.dim())
+      _dim(mesh_function.dim())
   {
     dolfin_assert(_mesh);
     const std::size_t D = _mesh->topology().dim();
@@ -348,10 +348,10 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh,
-                                                const std::string filename)
+  MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh,
+                                              const std::string filename)
     : Variable("m", "unnamed MeshValueCollection"),
-    _mesh(reference_to_no_delete_pointer(mesh)), _dim(-1)
+      _mesh(reference_to_no_delete_pointer(mesh)), _dim(-1)
   {
     File file(filename);
     file >> *this;
@@ -359,14 +359,13 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshValueCollection<T>&
-    MeshValueCollection<T>::operator=(const MeshFunction<T>& mesh_function)
+  MeshValueCollection<T>&
+  MeshValueCollection<T>::operator=(const MeshFunction<T>& mesh_function)
   {
     _mesh = mesh_function.mesh();
     _dim = mesh_function.dim();
 
     dolfin_assert(_mesh);
-
     const std::size_t D = _mesh->topology().dim();
 
     // FIXME: Use iterators
@@ -412,9 +411,9 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshValueCollection<T>&
-    MeshValueCollection<T>::operator=(const MeshValueCollection<T>&
-                                      mesh_value_collection)
+  MeshValueCollection<T>&
+  MeshValueCollection<T>::operator=(const MeshValueCollection<T>&
+                                    mesh_value_collection)
   {
     _mesh = mesh_value_collection._mesh;
     _dim = mesh_value_collection.dim();
@@ -424,7 +423,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    void MeshValueCollection<T>::init(const Mesh& mesh, std::size_t dim)
+  void MeshValueCollection<T>::init(const Mesh& mesh, std::size_t dim)
   {
     mesh.init(dim);
     _mesh = reference_to_no_delete_pointer(mesh);
@@ -433,8 +432,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    void MeshValueCollection<T>::init(std::shared_ptr<const Mesh> mesh,
-                                      std::size_t dim)
+  void MeshValueCollection<T>::init(std::shared_ptr<const Mesh> mesh,
+                                    std::size_t dim)
   {
     mesh->init(dim);
     _mesh = mesh;
@@ -443,7 +442,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    void MeshValueCollection<T>::init(std::size_t dim)
+  void MeshValueCollection<T>::init(std::size_t dim)
   {
     dolfin_assert(_mesh);
     dolfin_assert(_dim < 0);
@@ -451,7 +450,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    std::size_t MeshValueCollection<T>::dim() const
+  std::size_t MeshValueCollection<T>::dim() const
   {
     dolfin_assert(_dim >= 0);
     return _dim;
@@ -470,7 +469,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    std::shared_ptr<const Mesh> MeshValueCollection<T>::mesh() const
+  std::shared_ptr<const Mesh> MeshValueCollection<T>::mesh() const
   {
     dolfin_assert(_mesh);
     return _mesh;
@@ -590,7 +589,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename T>
   const std::map<std::pair<std::size_t, std::size_t>, T>&
-    MeshValueCollection<T>::values() const
+  MeshValueCollection<T>::values() const
   {
     return _values;
   }

@@ -29,15 +29,15 @@ from dolfin_utils.test import *
 def mesh():
     return UnitCubeMesh(8, 8, 8)
 
-@fixture 
+@fixture
 def R(mesh):
     return FunctionSpace(mesh, 'R', 0)
 
-@fixture 
+@fixture
 def V(mesh):
     return FunctionSpace(mesh, 'CG', 1)
 
-@fixture 
+@fixture
 def W(mesh):
     return VectorFunctionSpace(mesh, 'CG', 1)
 
@@ -320,7 +320,7 @@ def test_interpolation_jit_rank0(V):
 
 @skip_in_parallel
 def test_extrapolation(V):
-    original_parameters = parameters["allow_extrapolation"]    
+    original_parameters = parameters["allow_extrapolation"]
 
     f0 = Function(V)
     with pytest.raises(RuntimeError):
@@ -329,13 +329,13 @@ def test_extrapolation(V):
     mesh1 = UnitSquareMesh(3, 3)
     V1 = FunctionSpace(mesh1, "CG", 1)
 
+    mesh2 = UnitTriangleMesh()
+    V2 = FunctionSpace(mesh2, "CG", 1)
+
     parameters["allow_extrapolation"] = True
     f1 = Function(V1)
     f1.vector()[:] = 1.0
     assert round(f1(0.,-1) - 1.0, 7) == 0
-
-    mesh2 = UnitTriangleMesh()
-    V2 = FunctionSpace(mesh2, "CG", 1)
 
     parameters["allow_extrapolation"] = False
     f2 = Function(V2)
@@ -345,10 +345,32 @@ def test_extrapolation(V):
     parameters["allow_extrapolation"] = True
     f3 = Function(V2)
     f3.vector()[:] = 1.0
-
     assert round(f3(0.,-1) - 1.0, 7) == 0
 
     parameters["allow_extrapolation"] = original_parameters
+
+    f1 = Function(V1)
+    f1.set_allow_extrapolation(True)
+    f1.vector()[:] = 1.0
+    assert round(f1(0.,-1) - 1.0, 7) == 0
+
+    f2 = Function(V2)
+
+    f2.set_allow_extrapolation(False)
+    with pytest.raises(RuntimeError):
+        f2.__call__((0.,-1.))
+
+    f2.set_allow_extrapolation(True)
+    f2.vector()[:] = 1.0
+    assert round(f2(0.,-1) - 1.0, 7) == 0
+
+    f2.set_allow_extrapolation(True)
+    assert f2.get_allow_extrapolation() is True
+    f2.set_allow_extrapolation(False)
+    assert f2.get_allow_extrapolation() is False
+
+    parameters["allow_extrapolation"] = original_parameters
+
 
 def test_interpolation_jit_rank1(W):
     f = Expression(("1.0", "1.0", "1.0"))
@@ -356,91 +378,6 @@ def test_interpolation_jit_rank1(W):
     x = w.vector()
     assert x.max() == 1
     assert x.min() == 1
-
-def xtest_restricted_function_equals_its_interpolation_and_projection_in_dg():
-    class Side0(SubDomain):
-        def inside(self, x, on_boundary):
-            return x[0] <= 0.55
-
-    class Side1(SubDomain):
-        def inside(self, x, on_boundary):
-            return x[0] >= 0.45
-
-    mesh = UnitSquareMesh(10,10)
-    dim = 2
-
-    sd0 = MeshFunctionSizet(mesh, dim)
-    sd1 = MeshFunctionSizet(mesh, dim)
-
-    Side0().mark(sd0, 1)
-    Side1().mark(sd1, 2)
-
-    r0 = Restriction(sd0, 1)
-    r1 = Restriction(sd1, 2)
-
-    Vt = FunctionSpace(mesh, "DG", 1)
-    V0 = FunctionSpace(r0, "CG", 1)
-    V1 = FunctionSpace(r1, "CG", 1)
-
-    ft = Function(Vt)
-    f0 = Function(V0)
-    f1 = Function(V1)
-
-    f0.interpolate(Expression("x[0]*x[0]"))
-    f1.interpolate(Expression("x[1]*x[1]"))
-    ft.interpolate(f0)
-    gt = project(f1+f0, Vt)
-
-    f0v = assemble(f0*dx(1, subdomain_data=sd0))
-    f1v = assemble(f1*dx(2, subdomain_data=sd1))
-    ftv = assemble(ft*dx(1, subdomain_data=sd0))
-    gtv = assemble(gt*dx)
-
-    assert round(f0v - ftv, 7) == 0
-    assert round(f0v+f1v - gtv, 7) == 0
-
-@skip_in_parallel
-def xtest_restricted_function_equals_its_interpolation_and_projection_in_dg(self):
-    class Side0(SubDomain):
-        def inside(self, x, on_boundary):
-            return x[0] <= 0.55
-
-    class Side1(SubDomain):
-        def inside(self, x, on_boundary):
-            return x[0] >= 0.45
-
-    mesh = UnitSquareMesh(10,10)
-    dim = 2
-
-    sd0 = MeshFunctionSizet(mesh, dim)
-    sd1 = MeshFunctionSizet(mesh, dim)
-
-    Side0().mark(sd0, 1)
-    Side1().mark(sd1, 2)
-
-    r0 = Restriction(sd0, 1)
-    r1 = Restriction(sd1, 2)
-
-    Vt = FunctionSpace(mesh, "DG", 1)
-    V0 = FunctionSpace(r0, "CG", 1)
-    V1 = FunctionSpace(r1, "CG", 1)
-
-    ft = Function(Vt)
-    f0 = Function(V0)
-    f1 = Function(V1)
-
-    f0.interpolate(Expression("x[0]*x[0]"))
-    f1.interpolate(Expression("x[1]*x[1]"))
-    ft.interpolate(f0)
-    gt = project(f1+f0, Vt)
-
-    f0v = assemble(f0*dx(1, subdomain_data=sd0))
-    f1v = assemble(f1*dx(2, subdomain_data=sd1))
-    ftv = assemble(ft*dx(1, subdomain_data=sd0))
-    gtv = assemble(gt*dx)
-
-    self.assertAlmostEqual(f0v, ftv)
-    self.assertAlmostEqual(f0v+f1v, gtv)
 
 
 @skip_in_parallel

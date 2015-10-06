@@ -35,6 +35,7 @@ namespace pugi
 namespace dolfin
 {
 
+  class LocalMeshData;
   class Mesh;
   class MeshData;
   class MeshDomains;
@@ -64,6 +65,16 @@ namespace dolfin
     static void read_domains(MeshDomains& domains,
                              const Mesh& mesh,
                              const pugi::xml_node mesh_node);
+
+  public:
+
+    // FIXME: This is hack for domain data support via XML in
+    // parallel.
+    // Read domain data in LocalMeshData.
+    static void read_domain_data(LocalMeshData& mesh_data,
+                                 const pugi::xml_node mesh_node);
+
+  private:
 
     // Read array
     static void read_array_uint(std::vector<std::size_t>& array,
