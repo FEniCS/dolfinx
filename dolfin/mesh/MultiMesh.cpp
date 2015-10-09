@@ -171,10 +171,10 @@ void MultiMesh::build()
 
   // Build quadrature rules of the cut cells' overlap. Do this before
   // we build the quadrature rules of the cut cells
-  //_build_quadrature_rules_overlap();
+  _build_quadrature_rules_overlap();
 
   // Build quadrature rules of the cut cells
-  //_build_quadrature_rules_cut_cells();
+  _build_quadrature_rules_cut_cells();
 
   // FIXME:
   _build_quadrature_rules_interface();
@@ -712,7 +712,9 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	    std::vector<double> x = convert(simplex, tdim, gdim);
 	    _add_quadrature_rule(overlap_part_qr, x,
 				 tdim, gdim, quadrature_order, sign);
+#ifdef Augustdebug
 	    PPause;
+#endif
 	  }
 
 	// Add quadrature rule for overlap part
