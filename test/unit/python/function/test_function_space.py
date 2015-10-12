@@ -64,10 +64,10 @@ def W2(g):
 
 def test_python_interface(V, V2, W, W2, Q):
     # Test Python interface of cpp generated FunctionSpace
-    assert isinstance(V, FunctionSpaceBase)
-    assert isinstance(W, FunctionSpaceBase)
-    assert isinstance(V2, FunctionSpaceBase)
-    assert isinstance(W2, FunctionSpaceBase)
+    assert isinstance(V, FunctionSpace)
+    assert isinstance(W, FunctionSpace)
+    assert isinstance(V2, FunctionSpace)
+    assert isinstance(W2, FunctionSpace)
 
     assert V.cell() == V2.cell()
     assert W.cell() == W2.cell()
