@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2015-09-30
+// Last changed: 2015-10-12
 //
 // Unit tests for MultiMesh
 
@@ -934,7 +934,7 @@ public:
 
     // Test squares in diagonal on background unit square
     const std::size_t m = 1, n = 1;
-    const double h = 0.025;
+    const double h = 0.2;
     const double s = 0.5;
     if (h >= s) { std::cout << "h must be less than s\n"; exit(1); }
     UnitSquareMesh usm(m, n);

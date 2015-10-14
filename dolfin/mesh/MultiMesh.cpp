@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-09-30
+// Last changed: 2015-10-14
 
 
 #include <dolfin/log/log.h>
@@ -33,7 +33,7 @@
 #include "MultiMesh.h"
 // FIXME August
 #include <dolfin/geometry/dolfin_simplex_tools.h>
-//#define Augustdebug
+#define Augustdebug
 
 using namespace dolfin;
 
@@ -713,7 +713,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	    _add_quadrature_rule(overlap_part_qr, x,
 				 tdim, gdim, quadrature_order, sign);
 #ifdef Augustdebug
-	    PPause;
+	    //PPause;
 #endif
 	  }
 
@@ -924,7 +924,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	    std::vector<double> x = convert(simplex, tdim, gdim);
 	    _add_quadrature_rule(overlap_part_qr, x,
 				 tdim, gdim, quadrature_order, sign);
-	    PPause;
+	    //PPause;
 	  }
 
         // Add quadrature rule for overlap part
@@ -1337,6 +1337,29 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 //------------------------------------------------------------------------------
 void MultiMesh::_build_quadrature_rules_interface()
 {
+  {
+    for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
+    {
+      std::cout << "cut part = " << cut_part << std::endl;
+      const auto& cmap = collision_map_cut_cells(cut_part);
+      for (auto it = cmap.begin(); it != cmap.end(); ++it)
+      {
+	// Get cut cell
+	const unsigned int cut_cell_index = it->first;
+	const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
+	std::cout << tools::drawtriangle(cut_cell) << std::endl;
+
+	for (std::size_t f = 0; f < 3; ++f)
+	{
+	  std::cout << cut_cell.normal(f) << std::endl;
+	}
+      }
+    }
+    PPause;
+  }
+
+
+
   begin(PROGRESS, "Building quadrature rules of interface.");
 
   // Get quadrature order
@@ -1424,6 +1447,7 @@ void MultiMesh::_build_quadrature_rules_interface()
 
       // Data structure for the interface quadrature rule
       std::vector<quadrature_rule> interface_qr;
+      std::vector<std::vector<double>> interface_n;
 
       // Loop over all cutting cells
       for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
@@ -1434,10 +1458,34 @@ void MultiMesh::_build_quadrature_rules_interface()
         const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
 
 #ifdef Augustdebug
+	std::cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n";
 	std::cout << "\ncut cutting (cutting part_j=" << cutting_part_j << ")\n"
 		  << tools::drawtriangle(cut_cell,"'y'") << tools::drawtriangle(cutting_cell_j,"'m'")<<std::endl;
-#endif
+	std::cout << "the FACET normals are ";
+	for (auto boundary_cell_index : full_to_bdry[cutting_part_j][cutting_cell_index_j])
+        {
+	  // Get the boundary facet as a facet in the full mesh
+	  const Facet boundary_facet(*_meshes[cutting_part_j],
+				     boundary_cell_index.second);
 
+	  // Get the cutting cell normal
+	  const std::size_t local_facet_index = cutting_cell_j.index(boundary_facet);
+	  const Point facet_normal = -cutting_cell_j.normal(local_facet_index);
+	  std::cout << facet_normal << "   ";
+	}
+	std::cout << std::endl;
+	std::cout << "the CELL normals are ";
+	for (auto boundary_cell_index: full_to_bdry[cutting_part_j][cutting_cell_index_j])
+	{
+	  const Cell boundary_cell(*_boundary_meshes[cutting_part_j],
+                                   boundary_cell_index.first);
+	  const Point cell_normal = boundary_cell.normal(0);
+	  std::cout << tools::drawtriangle(boundary_cell) << '\n' << cell_normal << std::endl;
+	}
+	std::cout << std::endl;
+
+	PPause;
+#endif
   	// Only allow same type of cell for now
       	dolfin_assert(cutting_cell_j.mesh().topology().dim() == tdim);
       	dolfin_assert(cutting_cell_j.mesh().geometry().dim() == gdim);
@@ -1446,7 +1494,9 @@ void MultiMesh::_build_quadrature_rules_interface()
 	// (the interface integral is over this interface minus the
 	// colliding elements which influence are subtracted below).
 	std::vector<Polyhedron> cut_cutting_interface; // NB: this is really a single polyhedron
+	std::vector<std::vector<Point>> cut_cutting_normals; // Matches the polyhedron
 	quadrature_rule cut_cutting_interface_qr;
+	std::vector<double> cut_cutting_interface_n;
 
 	// Iterate over boundary cells
         for (auto boundary_cell_index : full_to_bdry[cutting_part_j][cutting_cell_index_j])
@@ -1456,9 +1506,15 @@ void MultiMesh::_build_quadrature_rules_interface()
           const Cell boundary_cell(*_boundary_meshes[cutting_part_j],
                                    boundary_cell_index.first);
 
-	  // Get the boundary facet as a facet in the full mesh
-          const Facet boundary_facet(*_meshes[cutting_part_j],
-                                     boundary_cell_index.second);
+#ifdef Augustdebug
+	  std::vector<double> x;
+	  boundary_cell.get_vertex_coordinates(x);
+	  for (const auto i: x)
+	    std::cout << i <<' ';
+	  std::cout << std::endl;
+	  std::cout << tools::drawtriangle(boundary_cell) << std::endl;
+#endif
+
 
           // Triangulate intersection of cut cell and boundary cell
           const auto triangulation_cut_boundary
@@ -1484,28 +1540,46 @@ void MultiMesh::_build_quadrature_rules_interface()
 	    }
 	  }
 #endif
-
 	  // Test only include large lines
 	  double length = 0;
 	  for (const auto simplex: polygon)
 	    length += std::abs(tools::area(simplex));
 	  if (std::isfinite(length))
 	  {
+	    // Get the boundary facet as a facet in the full mesh
+	    const Facet boundary_facet(*_meshes[cutting_part_j],
+				       boundary_cell_index.second);
+
+	    // Get the cutting cell normal
+	    const std::size_t local_facet_index = cutting_cell_j.index(boundary_facet);
+	    const Point facet_normal = -cutting_cell_j.normal(local_facet_index);
+
 	    // Store polygon
 	    cut_cutting_interface.push_back(polygon);
 
-	    // Store quadrature rule
+	    // Store quadrature rule and normal
 	    for (const auto simplex: polygon)
 	    {
+	      // Store the normal (normal matches simplices in polygon)
+	      cut_cutting_normals.push_back(std::vector<Point>(1,facet_normal));
+
 	      std::vector<double> x = convert(polygon, tdim-1, gdim);
-	      _add_quadrature_rule(cut_cutting_interface_qr, x,
-				   tdim-1, gdim, quadrature_order, 1.);
+	      const auto num_qr_pts = _add_quadrature_rule
+		(cut_cutting_interface_qr,
+		 x, tdim-1, gdim,
+		 quadrature_order, 1.);
+	      for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
+		_add_normal(cut_cutting_interface_n,
+			    facet_normal,
+			    num_qr_pts[j], gdim);
 #ifdef Augustdebug
 	      std::cout << "done cut_cutting_interface_qr initialization with " << cut_cutting_interface_qr.second.size() << " points " << std::endl;
 #endif
 	    }
 	  }
 	} // end this cut cutting pair initialization
+
+	PPause;
 
 	// Now subtract the net contribution from all other cutting
 	// elements. By net contribution we mean the
@@ -1539,6 +1613,11 @@ void MultiMesh::_build_quadrature_rules_interface()
 	  const std::size_t N_stages = N_cells;
 #ifdef Augustdebug
 	  std::cout << "\ninitial_cells.size() = #stages = " << N_cells << std::endl;
+	  std::cout << "normals are\n";
+	  for (const auto vec: cut_cutting_normals)
+	    for (const auto n: vec)
+	      std::cout << n << ' ';
+	  std::cout << std::endl;
 #endif
 	  if (N_cells > 0)
 	  {
@@ -1558,9 +1637,13 @@ void MultiMesh::_build_quadrature_rules_interface()
 	    for (const auto cell: initial_cells)
 	    {
 	      bool add_key = false, key_added = false;
-	      for (const auto polyhedron: cut_cutting_interface)
-		for (const auto simplex: polyhedron)
+	      //for (const auto polyhedron: cut_cutting_interface)
+	      for (std::size_t p = 0; p < cut_cutting_interface.size(); ++p)
+		//for (const auto simplex: polyhedron)
+		for (std::size_t s = 0; s < cut_cutting_interface[p].size(); ++s)
 		{
+		  const Simplex& simplex = cut_cutting_interface[p][s];
+
 		  // Compute intersection between the initial polyhedra and cut_cutting_interface
 		  const std::vector<double> x = convert(simplex, tdim-1, gdim);
 		  const std::vector<double> ii = IntersectionTriangulation::triangulate_intersection(cell.second, x, tdim-1);
@@ -1572,7 +1655,14 @@ void MultiMesh::_build_quadrature_rules_interface()
 		    std::cout << "collided cell " << tools::drawtriangle(cell.second) << " with simplex " << tools::drawtriangle(simplex) << " (cell key " << cell.first << ")" << std::endl;
 #endif
 		    add_key = true;
-		    _add_quadrature_rule(cut_cutting_interface_qr, ii, tdim-1, gdim, quadrature_order, sign);
+		    const auto num_qr_pts = _add_quadrature_rule
+		      (cut_cutting_interface_qr,
+		       ii, tdim-1, gdim,
+		       quadrature_order, sign);
+		    for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
+		      _add_normal(cut_cutting_interface_n,
+		    		  cut_cutting_normals[p][s],
+		    		  num_qr_pts[j], gdim);
 		  }
 		}
 	      if (add_key and !key_added)
@@ -1604,6 +1694,10 @@ void MultiMesh::_build_quadrature_rules_interface()
 		  std::cout << k;
 		std::cout << '\n';
 	      }
+	      std::cout << "normals:\n";
+	      for (const auto n: cut_cutting_interface_n)
+		std::cout << n<<' ';
+	      std::cout << std::endl;
 	      //for (const auto kk: previous_intersections_keys)
 	      //for (const auto k: kk)
 	      //std::cout << k << ' ';
@@ -1692,14 +1786,25 @@ void MultiMesh::_build_quadrature_rules_interface()
 		const double sign = std::pow(-1, stage+1);
 		for (const auto polyhedron: new_intersections)
 		  for (const auto simplex: polyhedron)
-		    for (const auto interface_polyhedron: cut_cutting_interface)
-		      for (const auto interface_simplex: interface_polyhedron)
+		    // for (const auto interface_polyhedron: cut_cutting_interface)
+		    for (std::size_t p = 0; p < cut_cutting_interface.size(); ++p)
+		    //   for (const auto interface_simplex: interface_polyhedron)
+		      for (std::size_t s = 0; s < cut_cutting_interface[p].size(); ++s)
 		      {
+			const Simplex& interface_simplex = cut_cutting_interface[p][s];
+
 			// Check intersection with edge from cut_cutting_interface
 			const std::vector<double> ii = IntersectionTriangulation::triangulate_intersection(simplex, tdim, interface_simplex, tdim-1, gdim);
 			if (ii.size())
 			{
-			  _add_quadrature_rule(cut_cutting_interface_qr, ii, tdim-1, gdim, quadrature_order, sign);
+			  const auto num_qr_pts =_add_quadrature_rule
+			    (cut_cutting_interface_qr,
+			     ii, tdim-1, gdim,
+			     quadrature_order, sign);
+			  for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
+			    _add_normal(cut_cutting_interface_n,
+			  		cut_cutting_normals[p][s],
+			  		num_qr_pts[j], gdim);
 #ifdef Augustdebug
 			  std::cout<<" qr creation collision was:\n"
 				   <<tools::drawtriangle(simplex)<<tools::drawtriangle(interface_simplex)<<std::endl;
@@ -1720,21 +1825,27 @@ void MultiMesh::_build_quadrature_rules_interface()
 	  }
 	}
 	interface_qr.push_back(cut_cutting_interface_qr);
+	interface_n.push_back(cut_cutting_interface_n);
+
+	dolfin_assert(interface_n.size() == interface_qr.size());
 
 #ifdef Augustdebug
 	std::cout << "\nshort summary of this cut/cutting pair = " << cut_part << ' ' << cutting_part_j << '\n'
 		  << "cut_cutting_interface_qr.size() = " << cut_cutting_interface_qr.second.size() << std::endl;
 	for (std::size_t i = 0; i < cut_cutting_interface_qr.second.size(); ++i)
 	{
-	  std::cout << "plot(" << cut_cutting_interface_qr.first[2*i]<<","<<cut_cutting_interface_qr.first[2*i+1]<<",'kx'); # " << cut_cutting_interface_qr.second[i]<<' '<<i<<std::endl;
+	  std::cout << "plot(" << cut_cutting_interface_qr.first[2*i]<<","<<cut_cutting_interface_qr.first[2*i+1]<<",'rx'); # " << cut_cutting_interface_qr.second[i]<<' '<<i<<" normal: ";
+	  for (std::size_t j = 0; j < gdim; ++j)
+	    std::cout << cut_cutting_interface_n[i*gdim+j] << ' ';
+	  std::cout << std::endl;
 	}
-
 	PPause;
 #endif
 
       } // end loop over cutting
 
       _quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
+      _facet_normals[cut_part][cut_cell_index] = interface_n;
 
 #ifdef Augustdebug
       std::cout << "summary for cut part and cut cell index " << cut_part << " " << cut_cell_index << std::endl;
