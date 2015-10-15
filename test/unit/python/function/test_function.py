@@ -45,11 +45,9 @@ def W(mesh):
 def test_name_argument(W):
     u = Function(W)
     v = Function(W, name="v")
-    g = Function(v, name="g")
     assert u.name() == "f_%d" % u.count()
     assert v.name() == "v"
     assert str(v) == "v"
-    assert g.name() == "g"
 
 def test_in_function_space(W):
     u = Function(W)
