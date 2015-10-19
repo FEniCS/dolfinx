@@ -60,5 +60,7 @@ if isinstance(val, cpp.Function):
     return Function(val)
 if isinstance(val, cpp.FunctionSpace):
     return FunctionSpace(val)
+# NOTE: Mesh will possibly appear here when Mesh has special PyDOLFIN wrapper
+#       subclassing ufl.Domain
 return val
 %}
