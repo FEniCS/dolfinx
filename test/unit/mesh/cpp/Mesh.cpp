@@ -291,14 +291,14 @@ public:
   {
     // Get coordinates of vertices
     UnitSquareMesh mesh(5, 5);
-    CPPUNIT_ASSERT(mesh.geometry().size() == 36);
+    CPPUNIT_ASSERT(mesh.geometry().num_vertices() == 36);
   }
 
   void testGetCells()
   {
     // Get cells of mesh
     UnitSquareMesh mesh(5, 5);
-    CPPUNIT_ASSERT(mesh.topology().size(2) == 50);
+    CPPUNIT_ASSERT(mesh.topology().num_vertices(2) == 50);
   }
 
 };
