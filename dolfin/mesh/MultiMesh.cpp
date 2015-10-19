@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-10-14
+// Last changed: 2015-10-19
 
 
 #include <dolfin/log/log.h>
@@ -33,7 +33,8 @@
 #include "MultiMesh.h"
 // FIXME August
 #include <dolfin/geometry/dolfin_simplex_tools.h>
-#define Augustdebug
+//#define Augustdebug
+//#define Augustnormaldebug
 
 using namespace dolfin;
 
@@ -495,34 +496,34 @@ void MultiMesh::_build_quadrature_rules_overlap()
   //   }
   // }
 
-#ifdef Augustdebug
-  std::cout.precision(15);
-  for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
-  {
-    // Iterate over cut cells for current part
-    const auto& cmap = collision_map_cut_cells(cut_part);
-    for (auto it = cmap.begin(); it != cmap.end(); ++it)
-    {
-      // Get cut cell
-      const unsigned int cut_cell_index = it->first;
-      const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
-      std::cout << tools::drawtriangle(cut_cell);
+// #ifdef Augustdebug
+//   std::cout.precision(15);
+//   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
+//   {
+//     // Iterate over cut cells for current part
+//     const auto& cmap = collision_map_cut_cells(cut_part);
+//     for (auto it = cmap.begin(); it != cmap.end(); ++it)
+//     {
+//       // Get cut cell
+//       const unsigned int cut_cell_index = it->first;
+//       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
+//       std::cout << tools::drawtriangle(cut_cell);
 
-      // Loop over all cutting cells to construct the polyhedra to be
-      // used in the inclusion-exclusion principle
-      for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
-      {
-	// Get cutting part and cutting cell
-        const std::size_t cutting_part = jt->first;
-        const std::size_t cutting_cell_index = jt->second;
-        const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
-	std::cout << tools::drawtriangle(cutting_cell);
-      }
-      std::cout << std::endl;
-    }
-  }
-  PPause;
-#endif
+//       // Loop over all cutting cells to construct the polyhedra to be
+//       // used in the inclusion-exclusion principle
+//       for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
+//       {
+// 	// Get cutting part and cutting cell
+//         const std::size_t cutting_part = jt->first;
+//         const std::size_t cutting_cell_index = jt->second;
+//         const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
+// 	std::cout << tools::drawtriangle(cutting_cell);
+//       }
+//       std::cout << std::endl;
+//     }
+//   }
+//   PPause;
+// #endif
 
 
   std::size_t small_elements_cnt = 0;
@@ -1337,30 +1338,30 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 //------------------------------------------------------------------------------
 void MultiMesh::_build_quadrature_rules_interface()
 {
-  {
-    for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
-    {
-      std::cout << "cut part = " << cut_part << std::endl;
-      const auto& cmap = collision_map_cut_cells(cut_part);
-      for (auto it = cmap.begin(); it != cmap.end(); ++it)
-      {
-	// Get cut cell
-	const unsigned int cut_cell_index = it->first;
-	const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
-	std::cout << tools::drawtriangle(cut_cell) << std::endl;
+  begin(PROGRESS, "Building quadrature rules of interface.");
 
-	for (std::size_t f = 0; f < 3; ++f)
-	{
-	  std::cout << cut_cell.normal(f) << std::endl;
-	}
+#ifdef Augustnormaldebug
+  for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
+  {
+    std::cout << "cut part = " << cut_part << std::endl;
+    const auto& cmap = collision_map_cut_cells(cut_part);
+    for (auto it = cmap.begin(); it != cmap.end(); ++it)
+    {
+      // Get cut cell
+      const unsigned int cut_cell_index = it->first;
+      const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
+      std::cout << tools::drawtriangle(cut_cell) << std::endl;
+
+      for (std::size_t f = 0; f < 3; ++f)
+      {
+	std::cout << cut_cell.normal(f) << std::endl;
       }
     }
-    PPause;
   }
+  PPause;
+#endif
 
 
-
-  begin(PROGRESS, "Building quadrature rules of interface.");
 
   // Get quadrature order
   const std::size_t quadrature_order = parameters["quadrature_order"];
@@ -1376,7 +1377,7 @@ void MultiMesh::_build_quadrature_rules_interface()
   _facet_normals.resize(num_parts());
 
   // FIXME: test prebuild map from boundary facets to full mesh cells
-  // for all meshes: Loop over all boundary mesh facets to find the
+   // for all meshes: Loop over all boundary mesh facets to find the
   // full mesh cell which contains the facet. This is done in two
   // steps: Since the facet is on the boundary mesh, we first map this
   // facet to a facet in the full mesh using the
@@ -1408,13 +1409,12 @@ void MultiMesh::_build_quadrature_rules_interface()
     {
       // Find the facet in the full mesh
       const std::size_t full_mesh_facet = boundary_cell_map[boundary_facet];
-
       // Find the cells in the full mesh (for interior facets we
       // can have 2 facets, but here we should only have 1)
       dolfin_assert(full_facet_cell_map.size(full_mesh_facet) == 1);
       const auto& full_cells = full_facet_cell_map(full_mesh_facet);
-      full_to_bdry[part][full_cells[0]].push_back(std::make_pair(boundary_facet,
-                                                                 full_mesh_facet));
+      full_to_bdry[part][full_cells[0]].push_back(std::make_pair(boundary_facet, full_mesh_facet));
+      //full_to_bdry[part][full_cells[0]].push_back(std::make_pair(boundary_facet,
     }
   }
 
@@ -1436,7 +1436,6 @@ void MultiMesh::_build_quadrature_rules_interface()
 #ifdef Augustdebug
       std::cout << "-------- new cut cell\n";
 #endif
-
       // Get cut cell
       const unsigned int cut_cell_index = it->first;
       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
@@ -1457,11 +1456,11 @@ void MultiMesh::_build_quadrature_rules_interface()
         const std::size_t cutting_cell_index_j = jt->second;
         const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
 
-#ifdef Augustdebug
+#ifdef Augustnormaldebug
 	std::cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n";
-	std::cout << "\ncut cutting (cutting part_j=" << cutting_part_j << ")\n"
+	std::cout << "\ncut cutting (cut = " << cut_part << " cutting part_j=" << cutting_part_j << ")\n"
 		  << tools::drawtriangle(cut_cell,"'y'") << tools::drawtriangle(cutting_cell_j,"'m'")<<std::endl;
-	std::cout << "the FACET normals are ";
+	std::cout << "the FACET normals are:\n ";
 	for (auto boundary_cell_index : full_to_bdry[cutting_part_j][cutting_cell_index_j])
         {
 	  // Get the boundary facet as a facet in the full mesh
@@ -1470,19 +1469,22 @@ void MultiMesh::_build_quadrature_rules_interface()
 
 	  // Get the cutting cell normal
 	  const std::size_t local_facet_index = cutting_cell_j.index(boundary_facet);
-	  const Point facet_normal = -cutting_cell_j.normal(local_facet_index);
-	  std::cout << facet_normal << "   ";
+	  const Point facet_normal = cutting_cell_j.normal(local_facet_index);
+	  std::cout << boundary_cell_index.second << "   " << facet_normal << std::endl;
 	}
-	std::cout << std::endl;
-	std::cout << "the CELL normals are ";
+	std::cout << "the bdry CELL normals are:\n ";
 	for (auto boundary_cell_index: full_to_bdry[cutting_part_j][cutting_cell_index_j])
 	{
 	  const Cell boundary_cell(*_boundary_meshes[cutting_part_j],
                                    boundary_cell_index.first);
-	  const Point cell_normal = boundary_cell.normal(0);
-	  std::cout << tools::drawtriangle(boundary_cell) << '\n' << cell_normal << std::endl;
+	  const Point cell_normal0 = boundary_cell.normal(0);
+	  const Point cell_normal1 = boundary_cell.normal(1);
+	  std::cout << tools::drawtriangle(boundary_cell,"'k'",tdim-1) << " # " << cell_normal0<<"  "<<cell_normal1 << std::endl;
 	}
-	std::cout << std::endl;
+	// std::cout << "the FULL cell normals are ";
+	// for (auto boundary_cell_index: full_to_bdry[cutting_part_j][cutting_cell_index_j])
+	// {
+	//   const std::size_t full_facet_no =
 
 	PPause;
 #endif
@@ -1505,8 +1507,7 @@ void MultiMesh::_build_quadrature_rules_interface()
           // (remember that this is of one less topological dimension)
           const Cell boundary_cell(*_boundary_meshes[cutting_part_j],
                                    boundary_cell_index.first);
-
-#ifdef Augustdebug
+#ifdef Augustnormaldebug
 	  std::vector<double> x;
 	  boundary_cell.get_vertex_coordinates(x);
 	  for (const auto i: x)
@@ -1514,8 +1515,6 @@ void MultiMesh::_build_quadrature_rules_interface()
 	  std::cout << std::endl;
 	  std::cout << tools::drawtriangle(boundary_cell) << std::endl;
 #endif
-
-
           // Triangulate intersection of cut cell and boundary cell
           const auto triangulation_cut_boundary
             = cut_cell.triangulate_intersection(boundary_cell);
@@ -1552,7 +1551,7 @@ void MultiMesh::_build_quadrature_rules_interface()
 
 	    // Get the cutting cell normal
 	    const std::size_t local_facet_index = cutting_cell_j.index(boundary_facet);
-	    const Point facet_normal = -cutting_cell_j.normal(local_facet_index);
+	    const Point facet_normal = cutting_cell_j.normal(local_facet_index);
 
 	    // Store polygon
 	    cut_cutting_interface.push_back(polygon);
@@ -1579,7 +1578,12 @@ void MultiMesh::_build_quadrature_rules_interface()
 	  }
 	} // end this cut cutting pair initialization
 
+#ifdef Augustnormaldebug
+	std::cout << "after cut cutting pair initialization, normals:"<<std::endl;
+	for (std::size_t i = 0; i < cut_cutting_interface_n.size()/2; ++i)
+	  std::cout << i << ":   "<< cut_cutting_interface_n[2*i]<<' '<<cut_cutting_interface_n[2*i+1] << std::endl;
 	PPause;
+#endif
 
 	// Now subtract the net contribution from all other cutting
 	// elements. By net contribution we mean the

@@ -92,10 +92,11 @@ namespace tools
   }
 
   inline std::string drawtriangle(const dolfin::Cell &cell,
-				  const std::string& color = "'b'")
+				  const std::string& color = "'b'",
+				  const std::size_t tdim = 2)
   {
-    std::vector<dolfin::Point> tri(3);
-    for (int i = 0; i < 3; ++i)
+    std::vector<dolfin::Point> tri(tdim+1);
+    for (std::size_t i = 0; i < tdim+1; ++i)
       tri[i] = cell.mesh().geometry().point(cell.entities(0)[i]);
     return drawtriangle(tri, color);
   }

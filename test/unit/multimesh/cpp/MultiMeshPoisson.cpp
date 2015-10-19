@@ -28,7 +28,8 @@ class DirichletBoundary : public SubDomain
 
 MultiMeshFunction solve_random_meshes(std::size_t N_meshes,
 				      double h,
-				      std::string& filename)
+				      std::string& filename,
+				      bool do_plot)
 {
   const std::size_t N = static_cast<std::size_t>(std::round(1. / h));
 
@@ -110,8 +111,11 @@ MultiMeshFunction solve_random_meshes(std::size_t N_meshes,
     ss << i;
     File(filename + ss.str() + ".pvd") << *u.part(i);
 
-    plot(u.part(i), ss.str());
-    interactive();
+    if (do_plot)
+    {
+      plot(u.part(i), ss.str());
+      interactive();
+    }
   }
 
 }
@@ -211,8 +215,6 @@ void solve(double t,
 
 int main(int argc, char* argv[])
 {
-  set_log_level(DBG);
-
   if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
   {
     info("Sorry, this demo does not (yet) run in parallel.");
@@ -226,6 +228,9 @@ int main(int argc, char* argv[])
   // Application parameters
   Parameters p("my_own_params");
 
+  // Debug or not
+  p.add("debug", false);
+
   // Set number of random meshes on top of background unit square mesh
   p.add("N_meshes", 1);
 
@@ -235,11 +240,19 @@ int main(int argc, char* argv[])
   // Set pvd filename base
   p.add("filename", "uh");
 
+  // Plot or not
+  p.add("plot", false);
+
+  // Read parameters
+  p.parse(argc, argv);
+  if (p["debug"])
+    set_log_level(DBG);
   const std::size_t N_meshes = p["N_meshes"];
   const double h = p["h"];
   std::string filename = p["filename"];
+  const bool do_plot = p["plot"];
 
-  const auto uh = solve_random_meshes(N_meshes, h, filename);
+  const auto uh = solve_random_meshes(N_meshes, h, filename, do_plot);
 
 
   return 0;
