@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (C) 2006-2014 Garth N. Wells
 #
 # This file is part of DOLFIN.
@@ -16,7 +17,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Anders Logg 2011
-# Modified by Martin Alnaes 2014
+# Modified by Martin Alnæs 2014
 #
 # The linearised bilinear form a(du, v) and linear form L(v) for
 # the Cahn-Hilliard equation.
