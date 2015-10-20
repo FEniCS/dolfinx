@@ -3,6 +3,8 @@
 #include "MultiMeshPoisson.h"
 #include "MultiMeshL2Norm.h"
 
+#include <dolfin/geometry/dolfin_simplex_tools.h>
+
 using namespace dolfin;
 
 // Exact solution
@@ -57,120 +59,149 @@ double MultiMeshL2Error(const MultiMeshFunctionSpace& V,
   return std::sqrt(m.get_scalar_value());
 }
 
-std::string pvd_filename(const std::string& basename,
-			       std::size_t part,
-			       double h)
+std::string fullname(const std::string& basename,
+		     std::size_t part,
+		     double h)
 {
   std::stringstream ss;
   ss << basename << "-part" << part << "-h" << h;
+  std::string str = ss.str();
+  std::replace(str.begin(), str.end(), '.', '_');
+  return ss.str();
 }
 
 
 void solve_random_meshes(std::size_t Nmeshes,
-			 double h,
+			 std::size_t start,
+			 std::size_t stop,
 			 std::string& filename,
 			 bool do_plot,
 			 bool do_errors,
-			 double& L2_error)
+			 std::vector<double>& hh,
+			 std::vector<double>& L2_errors)
 {
-  std::cout << "Solve Poisson on " << Nmeshes << " random meshes on top of background mesh" << std::endl;
+  std::cout << "Solve Poisson on " << Nmeshes << "+1 meshes" << std::endl;
 
-  const std::size_t N = static_cast<std::size_t>(std::round(1. / h));
+  hh.resize(Nmeshes);
+  L2_errors.resize(Nmeshes);
 
-  MultiMeshFunctionSpace V;
-  V.parameters("multimesh")["quadrature_order"] = 2;
-
-  // Background mesh
-  UnitSquareMesh usm(N, N);
-  MultiMeshPoisson::FunctionSpace V_part(usm);
-  V.add(V_part);
-
-  const std::size_t mn = 1;
-
-  // Build function space
-  for (std::size_t i = 0; i < Nmeshes; ++i)
-  {
-    // Create random rectangle mesh
-    double x0 = dolfin::rand();
-    double x1 = dolfin::rand();
-    if (x0 > x1) std::swap(x0, x1);
-    double y0 = dolfin::rand();
-    double y1 = dolfin::rand();
-    if (y0 > y1) std::swap(y0, y1);
-
-    const std::size_t m = static_cast<std::size_t>(std::round((x1-x0) / h));
-    const std::size_t n = static_cast<std::size_t>(std::round((y1-y0) / h));
-
-    std::shared_ptr<Mesh> rm(new RectangleMesh(Point(x0, y0), Point(x1, y1),
-					       std::max(m, mn), std::max(n, mn)));
-
-    // // Rotate
-    // const double v = dolfin::rand()*90;
-    // rm->rotate(v);
-
-    std::shared_ptr<MultiMeshPoisson::FunctionSpace> V_part(new MultiMeshPoisson::FunctionSpace(rm));
-
-    V.add(V_part);
-  }
-  V.build();
-
-  MultiMeshForm a(V, V);
-  MultiMeshForm L(V);
-  Source f;
-
-  // Build forms
-  for (std::size_t i = 0; i < V.num_parts(); ++i)
-  {
-    std::shared_ptr<const FunctionSpace> V_part = V.part(i);
-    std::shared_ptr<MultiMeshPoisson::BilinearForm> a_part(new MultiMeshPoisson::BilinearForm(V_part, V_part));
-    std::shared_ptr<MultiMeshPoisson::LinearForm> L_part(new MultiMeshPoisson::LinearForm(V_part));
-    L_part->f = f;
-    a.add(a_part);
-    L.add(L_part);
-  }
-  a.build();
-  L.build();
-
-  // BC
+  // Data
   Constant zero(0);
   DirichletBoundary bdry;
-  MultiMeshDirichletBC bc(V, zero, bdry);
+  Source f;
 
-  // Assemble
-  Matrix A;
-  Vector b;
-  MultiMeshAssembler mma;
-  mma.assemble(A, a);
-  mma.assemble(b, L);
-  bc.apply(A, b);
+  std::vector<Point> xy0(Nmeshes), xy1(Nmeshes);
 
-  // Solve
-  MultiMeshFunction uh(V);
-  solve(A, *uh.vector(), b);
+  // Create random rectangle mesh
+  // for (std::size_t part = 0; part < Nmeshes; ++part)
+  // {
+  //   // Define random rectangle mesh
+  //   xy0[part] = Point(dolfin::rand(), dolfin::rand());
+  //   xy1[part] = Point(dolfin::rand(), dolfin::rand());
+  //   if (xy0[part][0] > xy1[part][0]) std::swap(xy0[part][0], xy1[part][0]);
+  //   if (xy0[part][1] > xy1[part][1]) std::swap(xy0[part][1], xy1[part][1]);
+  //   std::cout << xy0[part] << " " << xy1[part] << std::endl;
+  // }
 
-  // Save
-  for (std::size_t i = 0; i < V.num_parts(); ++i)
+  // Create meshes not aligned with each other
+  const double hmin = 1. / std::pow(2.0, stop);
+  for (std::size_t part = 0; part < Nmeshes; ++part)
   {
-    std::stringstream ss;
-    ss << i;
-    File(filename + ss.str() + ".pvd") << *uh.part(i);
+    xy0[part] = Point((part+1)*hmin, (part+1)*hmin);
+    xy1[part] = Point(1, 1) - xy0[part];
   }
 
-  // Plot
-  if (do_plot)
+  for (std::size_t s = start; s <= stop; ++s)
   {
-    for (std::size_t i = 0; i < V.num_parts(); ++i)
-      plot(uh.part(i));
-    plot(V.multimesh());
-    interactive();
+    MultiMeshFunctionSpace V;
+    V.parameters("multimesh")["quadrature_order"] = 2;
+
+    MultiMesh mm; // only for plotting
+
+    // Mesh size
+    const double h = hh[s-start] = 1./std::pow(2.0, s);
+
+    // Background mesh
+    const std::size_t min_elements = 1;
+    const std::size_t N = std::max(min_elements, static_cast<std::size_t>(std::round(1. / h)));
+    UnitSquareMesh usm(N, N);
+
+    mm.add(usm);
+
+    // Add up
+    MultiMeshPoisson::FunctionSpace V_part(usm);
+    V.add(V_part);
+
+    for (std::size_t part = 0; part < Nmeshes; ++part)
+    {
+      // Create meshes
+      const std::size_t m = static_cast<std::size_t>(std::round((xy1[part][0]-xy0[part][0]) / h));
+      const std::size_t n = static_cast<std::size_t>(std::round((xy1[part][1]-xy0[part][1]) / h));
+      std::shared_ptr<Mesh> rm(new RectangleMesh(xy0[part], xy1[part],
+						 std::max(m, min_elements),
+						 std::max(n, min_elements)));
+      std::shared_ptr<MultiMeshPoisson::FunctionSpace> V_part(new MultiMeshPoisson::FunctionSpace(rm));
+      V.add(V_part);
+
+      mm.add(rm);
+    }
+    V.build();
+
+    mm.build();
+    tools::dolfin_write_medit_triangles("multimesh", mm, s);
+
+    // Create forms
+    MultiMeshForm a(V, V);
+    MultiMeshForm L(V);
+
+    for (std::size_t part = 0; part < V.num_parts(); ++part)
+    {
+      std::shared_ptr<const FunctionSpace> V_part = V.part(part);
+      std::shared_ptr<MultiMeshPoisson::BilinearForm> a_part(new MultiMeshPoisson::BilinearForm(V_part, V_part));
+      std::shared_ptr<MultiMeshPoisson::LinearForm> L_part(new MultiMeshPoisson::LinearForm(V_part));
+      L_part->f = f;
+      a.add(a_part);
+      L.add(L_part);
+    }
+    a.build();
+    L.build();
+
+    // Assemble
+    Matrix A;
+    Vector b;
+    MultiMeshAssembler mma;
+    mma.assemble(A, a);
+    mma.assemble(b, L);
+
+    // BC
+    MultiMeshDirichletBC bc(V, zero, bdry);
+    bc.apply(A, b);
+
+    // Solve
+    MultiMeshFunction uh(V);
+    solve(A, *uh.vector(), b);
+
+    // Save
+    for (std::size_t part = 0; part < V.num_parts(); ++part)
+      File(fullname(filename, part, h) + ".pvd") << *uh.part(part);
+
+    // Plot
+    if (do_plot)
+    {
+      for (std::size_t part = 0; part < V.num_parts(); ++part)
+	plot(uh.part(part), fullname(filename, part, h));
+      plot(V.multimesh());
+      interactive();
+    }
+
+    // Error
+    if (do_errors)
+    {
+      L2_errors[s-start] = MultiMeshL2Error(V, uh);
+      //H1_error = MultiMeshLH1Error(V, uh);
+    }
   }
 
-  // Error
-  if (do_errors)
-  {
-    L2_error = MultiMeshL2Error(V, uh);
-    //H1_error = MultiMeshLH1Error(V, uh);
-  }
 }
 
 
@@ -196,8 +227,8 @@ int main(int argc, char* argv[])
   p.add("Nmeshes", 1);
 
   // Set start stop for mesh size
-  p.add("start", 5);
-  p.add("stop", 5);
+  p.add("start", 2);
+  p.add("stop", 6);
 
   // Set pvd filename base
   p.add("filename", "uh");
@@ -219,12 +250,12 @@ int main(int argc, char* argv[])
   const bool do_plot = p["plot"];
   const bool do_errors = p["errors"];
 
-  for (std::size_t i = start; i <= stop; ++i)
-  {
-    const double h = std::pow(2, -i);
-    double L2_error;
-    solve_random_meshes(Nmeshes, h, filename, do_plot, do_errors, L2_error);
-    std::cout << h << ' ' << L2_error << std::endl;
-  }
+  std::vector<double> hh, L2_errors;
+  solve_random_meshes(Nmeshes, start, stop,
+		      filename, do_plot, do_errors,
+		      hh, L2_errors);
+
+  for (std::size_t i = 0; i <= stop-start; ++i)
+    std::cout << hh[i] << ' ' << L2_errors[i] << std::endl;
 
 }
