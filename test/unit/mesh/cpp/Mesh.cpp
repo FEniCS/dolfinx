@@ -298,7 +298,7 @@ public:
   {
     // Get cells of mesh
     UnitSquareMesh mesh(5, 5);
-    CPPUNIT_ASSERT(mesh.topology().num_vertices(2) == 50);
+    CPPUNIT_ASSERT(mesh.topology().size(2) == 50);
   }
 
 };
