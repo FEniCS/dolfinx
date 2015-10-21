@@ -99,10 +99,10 @@ void solve_random_meshes(std::size_t Nmeshes,
   // }
 
   // Create meshes not aligned with each other
-  const double hmin = 1. / std::pow(2.0, stop);
+  const double hmin = 1. / std::pow(2.0, stop+1);
   for (std::size_t part = 0; part < Nmeshes; ++part)
   {
-    xy0[part] = Point((part+1)*hmin, (part+1)*hmin);
+    xy0[part] = Point((part+0.5)*hmin, (part+1)*hmin);
     xy1[part] = Point(1, 1) - xy0[part];
   }
 
@@ -220,38 +220,38 @@ int main(int argc, char* argv[])
   parameters.parse(argc, argv);
   parameters["reorder_dofs_serial"] = false;
 
-  // Application parameters
-  Parameters p("my_own_params");
+  // // Application parameters
+  // Parameters p("my_own_params");
 
-  // Debug or not
-  p.add("debug", false);
+  // // Debug or not
+  // p.add("debug", false);
 
-  // Set number of random meshes on top of background unit square mesh
-  p.add("Nmeshes", 1);
+  // // Set number of random meshes on top of background unit square mesh
+  // p.add("Nmeshes", 1);
 
-  // Set start stop for mesh size
-  p.add("start", 2);
-  p.add("stop", 6);
+  // // Set start stop for mesh size
+  // p.add("start", 2);
+  // p.add("stop", 6);
 
-  // Set pvd filename base
-  p.add("filename", "uh");
+  // // Set pvd filename base
+  // p.add("filename", "uh");
 
-  // Plot or not
-  p.add("plot", false);
+  // // Plot or not
+  // p.add("plot", false);
 
-  // Errors or not
-  p.add("errors", true);
+  // // Errors or not
+  // p.add("errors", true);
 
-  // Read parameters
-  p.parse(argc, argv);
-  if (p["debug"])
-    set_log_level(DBG);
-  const std::size_t Nmeshes = p["Nmeshes"];
-  const std::size_t start = p["start"];
-  const std::size_t stop = p["stop"];
-  std::string filename = p["filename"];
-  const bool do_plot = p["plot"];
-  const bool do_errors = p["errors"];
+  // // Read parameters
+  // p.parse(argc, argv);
+  // if (p["debug"])
+  // set_log_level(DBG);
+  const std::size_t Nmeshes = 1;//p["Nmeshes"];
+  const std::size_t start = 2;//p["start"];
+  const std::size_t stop = 6;///p["stop"];
+  std::string filename = "uh";//p["filename"];
+  const bool do_plot = false;//p["plot"];
+  const bool do_errors = true;//p["errors"];
 
   std::vector<double> hh, L2_errors;
   solve_random_meshes(Nmeshes, start, stop,
