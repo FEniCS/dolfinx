@@ -123,3 +123,8 @@ install_manifest.txt
 # OS X files
 .DS_Store
 .DS_Store?
+
+# Eclipse files
+.*project
+.settings
+
