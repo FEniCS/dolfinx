@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2014-04-03
+// Last changed: 2015-10-21
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -59,6 +59,9 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include "Point.h"
 #include "CollisionDetection.h"
+
+// FIXME August
+#include <dolfin/geometry/dolfin_cgal_tools.h>
 
 using namespace dolfin;
 
@@ -184,25 +187,43 @@ bool
 CollisionDetection::collides_interval_interval(const MeshEntity& interval_0,
                                                const MeshEntity& interval_1)
 {
-  // Get coordinates
+  // // Get coordinates
+  // const MeshGeometry& geometry_0 = interval_0.mesh().geometry();
+  // const MeshGeometry& geometry_1 = interval_1.mesh().geometry();
+  // const unsigned int* vertices_0 = interval_0.entities(0);
+  // const unsigned int* vertices_1 = interval_1.entities(0);
+  // const double x00 = geometry_0.point(vertices_0[0])[0];
+  // const double x01 = geometry_0.point(vertices_0[1])[0];
+  // const double x10 = geometry_1.point(vertices_1[0])[0];
+  // const double x11 = geometry_1.point(vertices_1[1])[0];
+
+  // const double a0 = std::min(x00, x01);
+  // const double b0 = std::max(x00, x01);
+  // const double a1 = std::min(x10, x11);
+  // const double b1 = std::max(x10, x11);
+
+  // // Check for collisions
+  // const double dx = std::min(b0 - a0, b1 - a1);
+  // const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
+  // return b1 > a0 - eps && a1 < b0 + eps;
+
   const MeshGeometry& geometry_0 = interval_0.mesh().geometry();
   const MeshGeometry& geometry_1 = interval_1.mesh().geometry();
   const unsigned int* vertices_0 = interval_0.entities(0);
   const unsigned int* vertices_1 = interval_1.entities(0);
-  const double x00 = geometry_0.point(vertices_0[0])[0];
-  const double x01 = geometry_0.point(vertices_0[1])[0];
-  const double x10 = geometry_1.point(vertices_1[0])[0];
-  const double x11 = geometry_1.point(vertices_1[1])[0];
 
-  const double a0 = std::min(x00, x01);
-  const double b0 = std::max(x00, x01);
-  const double a1 = std::min(x10, x11);
-  const double b1 = std::max(x10, x11);
+  const Point a(geometry_0.point(vertices_0[0])[0],
+		geometry_0.point(vertices_0[0])[1]);
+  const Point b(geometry_0.point(vertices_0[1])[0],
+		geometry_0.point(vertices_0[1])[1]);
+  const Point c(geometry_1.point(vertices_1[0])[0],
+		geometry_1.point(vertices_1[0])[1]);
+  const Point d(geometry_1.point(vertices_1[1])[0],
+		geometry_1.point(vertices_1[1])[1]);
 
-  // Check for collisions
-  const double dx = std::min(b0 - a0, b1 - a1);
-  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
-  return b1 > a0 - eps && a1 < b0 + eps;
+  return CGAL::do_intersect(cgaltools::convert(a, b),
+			    cgaltools::convert(c, d));
+
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_point(const MeshEntity& triangle,
@@ -421,73 +442,79 @@ CollisionDetection::collides_edge_edge(const Point& a,
 				       const Point& c,
 				       const Point& d)
 {
-  const double tol = DOLFIN_EPS_LARGE;
+  // const double tol = DOLFIN_EPS_LARGE;
 
-  // Check if two edges are the same
-  if ((a - c).norm() < tol and (b - d).norm() < tol)
-    return false;
-  if ((a - d).norm() < tol and (b - c).norm() < tol)
-    return false;
+  // // Check if two edges are the same
+  // if ((a - c).norm() < tol and (b - d).norm() < tol)
+  //   return false;
+  // if ((a - d).norm() < tol and (b - c).norm() < tol)
+  //   return false;
 
-  // Get edges as vectors and compute the normal
-  const Point L1 = b - a;
-  const Point L2 = d - c;
-  const Point n = L1.cross(L2);
+  // // Get edges as vectors and compute the normal
+  // const Point L1 = b - a;
+  // const Point L2 = d - c;
+  // const Point n = L1.cross(L2);
 
-  // Check if L1 and L2 are coplanar
-  const Point ca = c - a;
-  if (std::abs(ca.dot(n)) > tol)
-    return false;
+  // // Check if L1 and L2 are coplanar
+  // const Point ca = c - a;
+  // if (std::abs(ca.dot(n)) > tol)
+  //   return false;
 
-  // Find orthogonal plane with normal n1
-  const Point n1 = n.cross(L1);
-  const double n1dotL2 = n1.dot(L2);
-  if (std::abs(n1dotL2) < tol)
-    return false;
-  const double t = n1.dot(a - c) / n1dotL2;
-  if (t <= 0 or t >= 1)
-    return false;
+  // // Find orthogonal plane with normal n1
+  // const Point n1 = n.cross(L1);
+  // const double n1dotL2 = n1.dot(L2);
+  // if (std::abs(n1dotL2) < tol)
+  //   return false;
+  // const double t = n1.dot(a - c) / n1dotL2;
+  // if (t <= 0 or t >= 1)
+  //   return false;
 
-  // Find orthogonal plane with normal n2
-  const Point n2 = n.cross(L2);
-  const double n2dotL1 = n2.dot(L1);
-  if (std::abs(n2dotL1) < tol)
-    return false;
-  const double s = n2.dot(c - a) / n2dotL1;
-  if (s <= 0 or s >= 1)
-    return false;
+  // // Find orthogonal plane with normal n2
+  // const Point n2 = n.cross(L2);
+  // const double n2dotL1 = n2.dot(L1);
+  // if (std::abs(n2dotL1) < tol)
+  //   return false;
+  // const double s = n2.dot(c - a) / n2dotL1;
+  // if (s <= 0 or s >= 1)
+  //   return false;
 
-  return true;
+  // return true;
+
+  return CGAL::do_intersect(cgaltools::convert(a, b),
+			    cgaltools::convert(c, d));
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_interval_point(const Point& p0,
                                                  const Point& p1,
                                                  const Point& point)
 {
-  // Compute angle between v = p1 - p0 and w = point - p0
-  Point v = p1 - p0;
-  const double vnorm = v.norm();
+  // // Compute angle between v = p1 - p0 and w = point - p0
+  // Point v = p1 - p0;
+  // const double vnorm = v.norm();
 
-  // p0 and p1 are the same points
-  if (vnorm < DOLFIN_EPS_LARGE)
-    return false;
+  // // p0 and p1 are the same points
+  // if (vnorm < DOLFIN_EPS_LARGE)
+  //   return false;
 
-  const Point w = point - p0;
-  const double wnorm = w.norm();
+  // const Point w = point - p0;
+  // const double wnorm = w.norm();
 
-  // point and p0 are the same points
-  if (wnorm < DOLFIN_EPS)
-    return true;
+  // // point and p0 are the same points
+  // if (wnorm < DOLFIN_EPS)
+  //   return true;
 
-  // Compute cosine
-  v /= vnorm;
-  const double a = v.dot(w) / wnorm;
+  // // Compute cosine
+  // v /= vnorm;
+  // const double a = v.dot(w) / wnorm;
 
-  // Cosine should be 1, and point should lie between p0 and p1
-  if (std::abs(1-a) < DOLFIN_EPS_LARGE and wnorm <= vnorm)
-    return true;
+  // // Cosine should be 1, and point should lie between p0 and p1
+  // if (std::abs(1-a) < DOLFIN_EPS_LARGE and wnorm <= vnorm)
+  //   return true;
 
-  return false;
+  // return false;
+
+  return CGAL::do_intersect(cgaltools::convert(p0, p1),
+			    cgaltools::convert(point));
 }
 
 //-----------------------------------------------------------------------------
@@ -496,39 +523,42 @@ bool CollisionDetection::collides_triangle_point_2d(const Point& p0,
                                                     const Point& p2,
                                                     const Point &point)
 {
-  // Simplified algorithm for coplanar triangles and points (z=0)
-  // This algorithm is robust because it will perform the same numerical
-  // test on each edge of neighbouring triangles. Points cannot slip
-  // between the edges, and evade detection.
+  // // Simplified algorithm for coplanar triangles and points (z=0)
+  // // This algorithm is robust because it will perform the same numerical
+  // // test on each edge of neighbouring triangles. Points cannot slip
+  // // between the edges, and evade detection.
 
-  // Vectors defining each edge in consistent orientation
-  const Point r0 = p0 - p2;
-  const Point r1 = p1 - p0;
-  const Point r2 = p2 - p1;
+  // // Vectors defining each edge in consistent orientation
+  // const Point r0 = p0 - p2;
+  // const Point r1 = p1 - p0;
+  // const Point r2 = p2 - p1;
 
-  // Normal to triangle
-  double normal = r1.x()*r0.y() - r1.y()*r0.x();
+  // // Normal to triangle
+  // double normal = r1.x()*r0.y() - r1.y()*r0.x();
 
-  // Compute normal to triangle based on point and first edge
-  // Will have opposite sign if outside triangle
+  // // Compute normal to triangle based on point and first edge
+  // // Will have opposite sign if outside triangle
 
-  Point r = point - p0;
-  double pnormal = r.x()*r0.y() - r.y()*r0.x();
-  if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
-    return false;
+  // Point r = point - p0;
+  // double pnormal = r.x()*r0.y() - r.y()*r0.x();
+  // if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
+  //   return false;
 
-  // Repeat for each edge
-  r = point - p1;
-  pnormal = r.x()*r1.y() - r.y()*r1.x();
-  if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
-    return false;
+  // // Repeat for each edge
+  // r = point - p1;
+  // pnormal = r.x()*r1.y() - r.y()*r1.x();
+  // if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
+  //   return false;
 
-  r = point - p2;
-  pnormal = r.x()*r2.y() - r.y()*r2.x();
-  if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
-    return false;
+  // r = point - p2;
+  // pnormal = r.x()*r2.y() - r.y()*r2.x();
+  // if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
+  //   return false;
 
-  return true;
+  // return true;
+
+  return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
+			    cgaltools::convert(point));
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_point(const Point& p0,
@@ -581,139 +611,142 @@ CollisionDetection::collides_triangle_triangle(const Point& p0,
 					       const Point& q1,
 					       const Point& q2)
 {
-  // Algorithm and code from Tomas Moller: A Fast Triangle-Triangle
-  // Intersection Test, Journal of Graphics Tools, 2(2), 1997. Source
-  // code is available at
-  // http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/opttritri.txt
+  // // Algorithm and code from Tomas Moller: A Fast Triangle-Triangle
+  // // Intersection Test, Journal of Graphics Tools, 2(2), 1997. Source
+  // // code is available at
+  // // http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/opttritri.txt
 
-  // First check if the triangles are the same. We need to do this
-  // separately if we do _not_ allow for adjacent edges to be
-  // classified as colliding (see the edge_edge_test).
+  // // First check if the triangles are the same. We need to do this
+  // // separately if we do _not_ allow for adjacent edges to be
+  // // classified as colliding (see the edge_edge_test).
 
-  const Point Vmid = (p0 + p1 + p2) / 3.;
-  const Point Umid = (q0 + q1 + q2) / 3.;
-  if ((Vmid-Umid).norm() < DOLFIN_EPS_LARGE)
-    return true;
+  // const Point Vmid = (p0 + p1 + p2) / 3.;
+  // const Point Umid = (q0 + q1 + q2) / 3.;
+  // if ((Vmid-Umid).norm() < DOLFIN_EPS_LARGE)
+  //   return true;
 
-  Point E1, E2;
-  Point N1, N2;
-  double d1, d2;
-  double du0, du1, du2, dv0, dv1, dv2;
-  Point D;
-  double isect1[2], isect2[2];
-  double du0du1, du0du2, dv0dv1, dv0dv2;
-  int index;
-  double vp0, vp1, vp2;
-  double up0, up1, up2;
-  double bb, cc, max;
+  // Point E1, E2;
+  // Point N1, N2;
+  // double d1, d2;
+  // double du0, du1, du2, dv0, dv1, dv2;
+  // Point D;
+  // double isect1[2], isect2[2];
+  // double du0du1, du0du2, dv0dv1, dv0dv2;
+  // int index;
+  // double vp0, vp1, vp2;
+  // double up0, up1, up2;
+  // double bb, cc, max;
 
-  // Compute plane equation of triangle(p0,p1,p2)
-  E1 = p1-p0;
-  E2 = p2-p0;
-  N1 = E1.cross(E2);
-  d1 = -N1.dot(p0);
+  // // Compute plane equation of triangle(p0,p1,p2)
+  // E1 = p1-p0;
+  // E2 = p2-p0;
+  // N1 = E1.cross(E2);
+  // d1 = -N1.dot(p0);
 
-  // Plane equation 1: N1.X+d1=0. Put q0,q1,q2 into plane equation 1
-  // to compute signed distances to the plane
-  du0 = N1.dot(q0)+d1;
-  du1 = N1.dot(q1)+d1;
-  du2 = N1.dot(q2)+d1;
+  // // Plane equation 1: N1.X+d1=0. Put q0,q1,q2 into plane equation 1
+  // // to compute signed distances to the plane
+  // du0 = N1.dot(q0)+d1;
+  // du1 = N1.dot(q1)+d1;
+  // du2 = N1.dot(q2)+d1;
 
-  // Coplanarity robustness check
-  if (std::abs(du0) < DOLFIN_EPS_LARGE)
-    du0 = 0.0;
-  if (std::abs(du1) < DOLFIN_EPS_LARGE)
-    du1 = 0.0;
-  if (std::abs(du2) < DOLFIN_EPS_LARGE)
-    du2 = 0.0;
-  du0du1 = du0*du1;
-  du0du2 = du0*du2;
+  // // Coplanarity robustness check
+  // if (std::abs(du0) < DOLFIN_EPS_LARGE)
+  //   du0 = 0.0;
+  // if (std::abs(du1) < DOLFIN_EPS_LARGE)
+  //   du1 = 0.0;
+  // if (std::abs(du2) < DOLFIN_EPS_LARGE)
+  //   du2 = 0.0;
+  // du0du1 = du0*du1;
+  // du0du2 = du0*du2;
 
-  // Same sign on all of them + not equal 0?
-  if (du0du1>0. && du0du2>0.)
-    return false;
+  // // Same sign on all of them + not equal 0?
+  // if (du0du1>0. && du0du2>0.)
+  //   return false;
 
-  // Compute plane of triangle (q0,q1,q2)
-  E1 = q1-q0;
-  E2 = q2-q0;
-  N2 = E1.cross(E2);
-  d2 = -N2.dot(q0);
-  // Plane equation 2: N2.X+d2=0. Put p0,p1,p2 into plane equation 2
-  dv0 = N2.dot(p0)+d2;
-  dv1 = N2.dot(p1)+d2;
-  dv2 = N2.dot(p2)+d2;
+  // // Compute plane of triangle (q0,q1,q2)
+  // E1 = q1-q0;
+  // E2 = q2-q0;
+  // N2 = E1.cross(E2);
+  // d2 = -N2.dot(q0);
+  // // Plane equation 2: N2.X+d2=0. Put p0,p1,p2 into plane equation 2
+  // dv0 = N2.dot(p0)+d2;
+  // dv1 = N2.dot(p1)+d2;
+  // dv2 = N2.dot(p2)+d2;
 
-  // Coplanarity check
-  if (std::abs(dv0) < DOLFIN_EPS_LARGE)
-    dv0 = 0.0;
-  if (std::abs(dv1) < DOLFIN_EPS_LARGE)
-    dv1 = 0.0;
-  if (std::abs(dv2) < DOLFIN_EPS_LARGE)
-    dv2 = 0.0;
-  dv0dv1 = dv0*dv1;
-  dv0dv2 = dv0*dv2;
+  // // Coplanarity check
+  // if (std::abs(dv0) < DOLFIN_EPS_LARGE)
+  //   dv0 = 0.0;
+  // if (std::abs(dv1) < DOLFIN_EPS_LARGE)
+  //   dv1 = 0.0;
+  // if (std::abs(dv2) < DOLFIN_EPS_LARGE)
+  //   dv2 = 0.0;
+  // dv0dv1 = dv0*dv1;
+  // dv0dv2 = dv0*dv2;
 
-  // Same sign on all of them + not equal 0 ?
-  if (dv0dv1>0. && dv0dv2>0.)
-    return false;
+  // // Same sign on all of them + not equal 0 ?
+  // if (dv0dv1>0. && dv0dv2>0.)
+  //   return false;
 
-  // Compute direction of intersection line
-  D = N1.cross(N2);
+  // // Compute direction of intersection line
+  // D = N1.cross(N2);
 
-  // Compute and index to the largest component of D
-  max = (double)std::abs(D[0]);
-  index = 0;
-  bb = (double)std::abs(D[1]);
-  cc = (double)std::abs(D[2]);
-  if (bb > max)
-    max = bb, index = 1;
-  if (cc > max)
-    max = cc, index = 2;
+  // // Compute and index to the largest component of D
+  // max = (double)std::abs(D[0]);
+  // index = 0;
+  // bb = (double)std::abs(D[1]);
+  // cc = (double)std::abs(D[2]);
+  // if (bb > max)
+  //   max = bb, index = 1;
+  // if (cc > max)
+  //   max = cc, index = 2;
 
-  // This is the simplified projection onto L
-  vp0 = p0[index];
-  vp1 = p1[index];
-  vp2 = p2[index];
+  // // This is the simplified projection onto L
+  // vp0 = p0[index];
+  // vp1 = p1[index];
+  // vp2 = p2[index];
 
-  up0 = q0[index];
-  up1 = q1[index];
-  up2 = q2[index];
+  // up0 = q0[index];
+  // up1 = q1[index];
+  // up2 = q2[index];
 
-  // Compute interval for triangle 1
-  double a, b, c, x0, x1;
-  if (compute_intervals(vp0, vp1, vp2, dv0, dv1, dv2, dv0dv1, dv0dv2,
-                        a, b, c, x0, x1))
-    return coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
+  // // Compute interval for triangle 1
+  // double a, b, c, x0, x1;
+  // if (compute_intervals(vp0, vp1, vp2, dv0, dv1, dv2, dv0dv1, dv0dv2,
+  //                       a, b, c, x0, x1))
+  //   return coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
 
-  // Compute interval for triangle 2
-  double d, e, f, y0, y1;
-  if (compute_intervals(up0, up1, up2, du0, du1, du2, du0du1, du0du2,
-                        d, e, f, y0, y1))
-    return coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
+  // // Compute interval for triangle 2
+  // double d, e, f, y0, y1;
+  // if (compute_intervals(up0, up1, up2, du0, du1, du2, du0du1, du0du2,
+  //                       d, e, f, y0, y1))
+  //   return coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
 
-  double xx, yy, xxyy, tmp;
-  xx = x0*x1;
-  yy = y0*y1;
-  xxyy = xx*yy;
+  // double xx, yy, xxyy, tmp;
+  // xx = x0*x1;
+  // yy = y0*y1;
+  // xxyy = xx*yy;
 
-  tmp = a*xxyy;
-  isect1[0] = tmp+b*x1*yy;
-  isect1[1] = tmp+c*x0*yy;
+  // tmp = a*xxyy;
+  // isect1[0] = tmp+b*x1*yy;
+  // isect1[1] = tmp+c*x0*yy;
 
-  tmp = d*xxyy;
-  isect2[0] = tmp+e*xx*y1;
-  isect2[1] = tmp+f*xx*y0;
+  // tmp = d*xxyy;
+  // isect2[0] = tmp+e*xx*y1;
+  // isect2[1] = tmp+f*xx*y0;
 
-  if (isect1[0] > isect1[1])
-    std::swap(isect1[0], isect1[1]);
-  if (isect2[0] > isect2[1])
-    std::swap(isect2[0], isect2[1]);
+  // if (isect1[0] > isect1[1])
+  //   std::swap(isect1[0], isect1[1]);
+  // if (isect2[0] > isect2[1])
+  //   std::swap(isect2[0], isect2[1]);
 
-  if (isect1[1] < isect2[0] ||
-      isect2[1] < isect1[0])
-    return false;
+  // if (isect1[1] < isect2[0] ||
+  //     isect2[1] < isect1[0])
+  //   return false;
 
-  return true;
+  // return true;
+
+  return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
+			    cgaltools::convert(q0, q1, q2));
 }
 //-----------------------------------------------------------------------------
 bool
