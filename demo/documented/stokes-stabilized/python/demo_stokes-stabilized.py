@@ -36,9 +36,10 @@ mesh = Mesh("../dolfin_fine.xml.gz")
 sub_domains = MeshFunction("size_t", mesh, "../dolfin_fine_subdomains.xml.gz");
 
 # Define function spaces
-scalar = FunctionSpace(mesh, "CG", 1)
-vector = VectorFunctionSpace(mesh, "CG", 1)
+vector   = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+scalar   = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 system = vector * scalar
+W = FunctionSpace(mesh, system)
 
 # Create functions for boundary conditions
 noslip = Constant((0, 0))
@@ -46,17 +47,17 @@ inflow = Expression(("-sin(x[1]*pi)", "0"))
 zero   = Constant(0)
 
 # No-slip boundary condition for velocity
-bc0 = DirichletBC(system.sub(0), noslip, sub_domains, 0)
+bc0 = DirichletBC(W.sub(0), noslip, sub_domains, 0)
 
 # Inflow boundary condition for velocity
-bc1 = DirichletBC(system.sub(0), inflow, sub_domains, 1)
+bc1 = DirichletBC(W.sub(0), inflow, sub_domains, 1)
 
 # Collect boundary conditions
 bcs = [bc0, bc1]
 
 # Define variational problem
-(v, q) = TestFunctions(system)
-(u, p) = TrialFunctions(system)
+(v, q) = TestFunctions(W)
+(u, p) = TrialFunctions(W)
 f = Constant((0, 0))
 h = CellSize(mesh)
 beta  = 0.2
@@ -66,7 +67,7 @@ a = (inner(grad(v), grad(u)) - div(v)*p + q*div(u) + \
 L = inner(v + delta*grad(q), f)*dx
 
 # Compute solution
-w = Function(system)
+w = Function(W)
 solve(a == L, w, bcs)
 u, p = w.split()
 

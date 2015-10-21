@@ -47,9 +47,9 @@ from dolfin import *
 mesh = UnitSquareMesh(32, 32)
 
 # Define function spaces and mixed (product) space
-BDM = FunctionSpace(mesh, "BDM", 1)
-DG = FunctionSpace(mesh, "DG", 0)
-W = BDM * DG
+BDM = FiniteElement("BDM", mesh.ufl_cell(), 1)
+DG  = FiniteElement("DG", mesh.ufl_cell(), 0)
+W = FunctionSpace(mesh, BDM * DG)
 
 # Define trial and test functions
 (sigma, u) = TrialFunctions(W)

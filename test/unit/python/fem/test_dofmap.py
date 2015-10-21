@@ -211,14 +211,14 @@ def test_global_dof_builder():
 
     mesh = UnitSquareMesh(3, 3)
 
-    V = VectorFunctionSpace(mesh, "CG", 1)
-    Q = FunctionSpace(mesh, "CG", 1)
-    R = FunctionSpace(mesh, "R", 0)
+    V = VectorElement("CG", mesh.ufl_cell(), 1)
+    Q = FiniteElement("CG", mesh.ufl_cell(), 1)
+    R = FiniteElement("R",  mesh.ufl_cell(), 0)
 
-    W = MixedFunctionSpace([Q, Q, Q, R])
-    W = MixedFunctionSpace([Q, Q, R, Q])
-    W = MixedFunctionSpace([V, R])
-    W = MixedFunctionSpace([R, V])
+    W = FunctionSpace(mesh, MixedElement([Q, Q, Q, R]))
+    W = FunctionSpace(mesh, MixedElement([Q, Q, R, Q]))
+    W = FunctionSpace(mesh, V*R)
+    W = FunctionSpace(mesh, R*V)
 
 
 def test_dof_to_vertex_map(mesh, reorder_dofs):
@@ -359,14 +359,16 @@ def test_clear_sub_map_data_vector(mesh):
 def test_block_size(mesh):
     meshes = [UnitSquareMesh(8, 8), UnitCubeMesh(4, 4, 4)]
     for mesh in meshes:
-        V = FunctionSpace(mesh, "Lagrange", 2)
+        P2 = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
+
+        V = FunctionSpace(mesh, P2)
         assert V.dofmap().block_size == 1
 
-        W = V*V
-        assert W.dofmap().block_size == 2
+        V = FunctionSpace(mesh, P2*P2)
+        assert V.dofmap().block_size == 2
 
         for i in range(1, 6):
-            W = MixedFunctionSpace([V]*i)
+            W = FunctionSpace(mesh, MixedElement(i*[P2]))
             assert W.dofmap().block_size == i
 
         V = VectorFunctionSpace(mesh, "Lagrange", 2)
@@ -375,9 +377,9 @@ def test_block_size(mesh):
 
 def test_block_size_real(mesh):
     mesh = UnitIntervalMesh(12)
-    V = FunctionSpace(mesh, 'DG', 0)
-    R = FunctionSpace(mesh, 'R', 0)
-    X = MixedFunctionSpace([V, R])
+    V = FiniteElement('DG', mesh.ufl_cell(), 0)
+    R = FiniteElement('R',  mesh.ufl_cell(), 0)
+    X = FunctionSpace(mesh, V*R)
     assert X.dofmap().block_size == 1
 
 
