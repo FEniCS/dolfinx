@@ -88,11 +88,11 @@ def J(V, u, F):
 
 @fixture
 def lb(V):
-    return Function(interpolate(Constant(0.), V))
+    return interpolate(Constant(0.), V)
 
 @fixture
 def ub(V):
-    return Function(interpolate(Constant(100.), V))
+    return interpolate(Constant(100.), V)
 
 @fixture
 def newton_solver_parameters():
