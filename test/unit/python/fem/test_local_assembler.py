@@ -43,13 +43,13 @@ def test_local_assembler_1D():
     A_vector = assemble_local(a_vector, c)
     A_matrix = assemble_local(a_matrix, c)
 
-    assert isinstance(A_scalar, float) 
+    assert isinstance(A_scalar, float)
     assert near(A_scalar, 0.05)
 
     assert isinstance(A_vector, numpy.ndarray)
     assert A_vector.shape == (2,)
     assert near(A_vector[0], 0.025)
-    assert near(A_vector[1], 0.025) 
+    assert near(A_vector[1], 0.025)
 
     assert isinstance(A_matrix, numpy.ndarray)
     assert A_matrix.shape == (2,2)
@@ -63,10 +63,10 @@ def test_local_assembler_on_facet_integrals(ghost_mode):
     mesh = UnitSquareMesh(4, 4, 'right')
     Vcg = FunctionSpace(mesh, 'CG', 1)
     Vdg = FunctionSpace(mesh, 'DG', 0)
-    Vdgt = FunctionSpace(mesh, 'DGT', 1) 
+    Vdgt = FunctionSpace(mesh, 'DGT', 1)
 
     v = TestFunction(Vdgt)
-    n = FacetNormal(mesh) 
+    n = FacetNormal(mesh)
 
     # Initialize DG function "w" in discontinuous pattern
     w = Expression('(1.0 + pow(x[0], 2.2) + 1/(0.1 + pow(x[1], 3)))*300.0',
@@ -84,7 +84,7 @@ def test_local_assembler_on_facet_integrals(ghost_mode):
     if c:
         # Assemble locally on the selected cell
         b_e = assemble_local(L, c)
-    
+
         # Compare to values from phonyx (fully independent implementation)
         b_phonyx = numpy.array([266.55210302, 266.55210302, 365.49000122,
                                 365.49000122,          0.0,          0.0])
@@ -92,7 +92,7 @@ def test_local_assembler_on_facet_integrals(ghost_mode):
         error = float(error) # MPI.max does strange things to numpy.float64 ...
 
     else:
-        error = 0
+        error = 0.0
 
     error = MPI.max(mpi_comm_world(), float(error))
     assert error < 1e-8
@@ -116,7 +116,7 @@ def test_local_assembler_on_facet_integrals2(ghost_mode):
 
     # Get global cell 0. This will return a cell only on one of the processes
     c = get_cell_at(mesh, 1/6, 1/12, 0)
-    
+
     if c:
         A_e = assemble_local(a, c)
         A_correct = numpy.array([[    0, 1/12,  1/24,     0,     0,    0],
@@ -129,9 +129,9 @@ def test_local_assembler_on_facet_integrals2(ghost_mode):
         error = float(error) # MPI.max does strange things to numpy.float64 ...
 
     else:
-        error = 0
+        error = 0.0
 
-    error = MPI.max(mpi_comm_world(), error)
+    error = MPI.max(mpi_comm_world(), float(error))
     assert error < 1e-16
 
 
