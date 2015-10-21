@@ -400,7 +400,6 @@ def test_interpolation_old(V, W, mesh):
 
     # Vector interpolation
     f1 = F1()
-    W = V * V
     f = Function(W)
     f.interpolate(f1)
     assert round(f.vector().norm("l1") - 2*mesh.num_vertices(), 7) == 0

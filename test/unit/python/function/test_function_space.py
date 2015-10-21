@@ -42,8 +42,10 @@ def W(mesh):
     return VectorFunctionSpace(mesh, 'CG', 1)
 
 @fixture
-def Q(W, V):
-    return W*V
+def Q(mesh):
+    W = VectorElement('CG', mesh.ufl_cell(), 1)
+    V = FiniteElement('CG', mesh.ufl_cell(), 1)
+    return FunctionSpace(mesh, W*V)
 
 @fixture
 def f(V):
@@ -77,9 +79,6 @@ def test_python_interface(V, V2, W, W2, Q):
     assert W.ufl_element() == W2.ufl_element()
     assert W.id() == W2.id()
     assert V.id() == V2.id()
-
-    Q2 = W2*V2
-    assert Q2.dim() == Q.dim()
 
 def test_component(V, W, Q):
     assert not W.component()
