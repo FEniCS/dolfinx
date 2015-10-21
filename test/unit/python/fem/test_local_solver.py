@@ -125,7 +125,7 @@ def test_solve_local_rhs_facet_integrals(ghost_mode):
     x[:] = 1
     assert round((u.vector() - x).norm('l2'), 10) == 0
 
-@skip_in_parallel
+
 def test_local_solver_dg(ghost_mode):
     # Ghosted mesh in 1D not supported
     mesh = UnitSquareMesh(50, 1)
@@ -164,7 +164,7 @@ def test_local_solver_dg(ghost_mode):
     local_solver.solve_global_rhs(u_ls)
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
 
-@skip_in_parallel
+
 def test_solve_local(ghost_mode):
     # Ghosted mesh in 1D not supported
     mesh = UnitSquareMesh(50, 1)
