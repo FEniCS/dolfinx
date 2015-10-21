@@ -85,11 +85,6 @@ void solve_random_meshes(std::size_t Nmeshes,
   hh.resize(Nmeshes);
   L2_errors.resize(Nmeshes);
 
-  // Data
-  Constant zero(0);
-  DirichletBoundary bdry;
-  Source f;
-
   std::vector<Point> xy0(Nmeshes), xy1(Nmeshes);
 
   // Create random rectangle mesh
@@ -113,13 +108,20 @@ void solve_random_meshes(std::size_t Nmeshes,
 
   for (std::size_t s = start; s <= stop; ++s)
   {
+    // Mesh size
+    const double h = hh[s-start] = 1./std::pow(2.0, s);
+
+    std::cout << "run " << s << " mesh size " << h << std::endl;
+
+    // Data
+    Constant zero(0);
+    DirichletBoundary bdry;
+    Source f;
+
     MultiMeshFunctionSpace V;
     V.parameters("multimesh")["quadrature_order"] = 2;
 
     MultiMesh mm; // only for plotting
-
-    // Mesh size
-    const double h = hh[s-start] = 1./std::pow(2.0, s);
 
     // Background mesh
     const std::size_t min_elements = 1;
@@ -156,7 +158,8 @@ void solve_random_meshes(std::size_t Nmeshes,
 
     for (std::size_t part = 0; part < V.num_parts(); ++part)
     {
-      std::shared_ptr<const FunctionSpace> V_part = V.part(part);
+      //std::shared_ptr<const FunctionSpace> V_part = V.part(part);
+      auto V_part = V.part(part);
       std::shared_ptr<MultiMeshPoisson::BilinearForm> a_part(new MultiMeshPoisson::BilinearForm(V_part, V_part));
       std::shared_ptr<MultiMeshPoisson::LinearForm> L_part(new MultiMeshPoisson::LinearForm(V_part));
       L_part->f = f;
