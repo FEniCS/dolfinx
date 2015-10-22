@@ -11,6 +11,7 @@
 #include <CGAL/Boolean_set_operations_2.h>
 #include <CGAL/Polygon_set_2.h>
 
+#define Augustcgal
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel CGALKernel;
 //typedef CGAL::Exact_predicates_inexact_constructions_kernel CGALKernel;
