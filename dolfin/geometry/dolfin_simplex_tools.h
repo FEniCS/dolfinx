@@ -10,6 +10,8 @@
 #include <fstream>
 #include <vector>
 
+#define Augustcgal
+
 namespace tools
 {
 #define PPause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
