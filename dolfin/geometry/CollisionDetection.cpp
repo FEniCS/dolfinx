@@ -566,41 +566,44 @@ bool CollisionDetection::collides_triangle_point(const Point& p0,
                                                  const Point& p2,
                                                  const Point &point)
 {
-  // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
+  // // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
 
-  // Vectors defining each edge in consistent orientation
-  const Point r0 = p0 - p2;
-  const Point r1 = p1 - p0;
-  const Point r2 = p2 - p1;
+  // // Vectors defining each edge in consistent orientation
+  // const Point r0 = p0 - p2;
+  // const Point r1 = p1 - p0;
+  // const Point r2 = p2 - p1;
 
-  // Normal to triangle: should be the same as
-  // r2.cross(r1) and r0.cross(r2).
-  Point normal = r1.cross(r0);
+  // // Normal to triangle: should be the same as
+  // // r2.cross(r1) and r0.cross(r2).
+  // Point normal = r1.cross(r0);
 
-  Point r = point - p0;
-  // Check point is in plane of triangle (for manifold)
-  double volume = r.dot(normal);
-  if (volume > DOLFIN_EPS)
-    return false;
+  // Point r = point - p0;
+  // // Check point is in plane of triangle (for manifold)
+  // double volume = r.dot(normal);
+  // if (volume > DOLFIN_EPS)
+  //   return false;
 
-  // Compute normal to triangle based on point and first edge
-  // Dot product of two normals should be positive, if inside.
-  Point pnormal = r.cross(r0);
-  double t1 = normal.dot(pnormal);
-  if (t1 < 0) return false;
+  // // Compute normal to triangle based on point and first edge
+  // // Dot product of two normals should be positive, if inside.
+  // Point pnormal = r.cross(r0);
+  // double t1 = normal.dot(pnormal);
+  // if (t1 < 0) return false;
 
-  // Repeat for each edge
-  r = point - p1;
-  pnormal = r.cross(r1);
-  double t2 = normal.dot(pnormal);
-  if (t2 < 0) return false;
+  // // Repeat for each edge
+  // r = point - p1;
+  // pnormal = r.cross(r1);
+  // double t2 = normal.dot(pnormal);
+  // if (t2 < 0) return false;
 
-  r = point - p2;
-  pnormal = r.cross(r2);
-  double t3 = normal.dot(pnormal);
-  if (t3 < 0) return false;
+  // r = point - p2;
+  // pnormal = r.cross(r2);
+  // double t3 = normal.dot(pnormal);
+  // if (t3 < 0) return false;
 
-  return true;
+  // return true;
+  return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
+			    cgaltools::convert(point));
+
 }
 //-----------------------------------------------------------------------------
 bool
