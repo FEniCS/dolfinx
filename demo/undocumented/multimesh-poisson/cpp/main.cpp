@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2014 Anders Logg
+// Copyright (C) 2013-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-07-05
+// Last changed: 2015-10-16
 //
 // This demo program solves Poisson's equation on a domain defined by
-// three overlapping and non-matching meshes.
+// three overlapping and non-matching meshes. The solution is computed
+// on a sequence of rotating meshes to check test the multimesh
+// functionality.
 
 #include <cmath>
-
 #include <dolfin.h>
 #include "MultiMeshPoisson.h"
 
@@ -66,8 +67,14 @@ void solve(double t,
   MultiMeshPoisson::FunctionSpace V1(mesh_1);
   MultiMeshPoisson::FunctionSpace V2(mesh_2);
 
-  // FIXME: Some of this stuff may be wrapped or automated later to
-  // avoid needing to explicitly call add() and build()
+  // FIXME: Should look like this
+  /*
+  MultiMeshPoisson::MultiMeshFunctionSpace V;
+  V.add_mesh(mesh_0);
+  V.add_mesh(mesh_1);
+  V.add_mesh(mesh_2);
+  V.build();
+  */
 
   // Create forms
   MultiMeshPoisson::BilinearForm a0(V0, V0);
@@ -76,6 +83,12 @@ void solve(double t,
   MultiMeshPoisson::LinearForm L0(V0);
   MultiMeshPoisson::LinearForm L1(V1);
   MultiMeshPoisson::LinearForm L2(V2);
+
+  // FIXME: Should look like this
+  /*
+  MultiMeshPoisson::MultiMeshBilinearForm a(V, V);
+  MultiMeshPoisson::MultiMeshLinearForm L(V);
+  */
 
   // Build multimesh function space
   MultiMeshFunctionSpace V;
@@ -90,6 +103,11 @@ void solve(double t,
   L0.f = f;
   L1.f = f;
   L2.f = f;
+
+  // FIXME: Should look like this
+  /*
+  L.f = f
+  */
 
   // Build multimesh forms
   MultiMeshForm a(V, V);
@@ -146,8 +164,7 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  // FIXME: Testing
-  //set_log_level(DBG);
+  // FIXME: Check whether this can be removed, should not be needed
   parameters["reorder_dofs_serial"] = false;
 
   // Parameters
