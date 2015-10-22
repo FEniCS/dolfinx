@@ -13,7 +13,7 @@ First, the :py:mod:`dolfin` module is imported:
 
 .. code-block:: python
 
-	from dolfin import *
+    from dolfin import *
 
 In this example, different boundary conditions are prescribed on
 different parts of the boundaries. This information must be made
@@ -27,23 +27,23 @@ following way:
 
 .. code-block:: python
 
-	# Load mesh and subdomains
-	mesh = Mesh("dolfin_fine.xml.gz")
-	sub_domains = MeshFunction("size_t", mesh, "dolfin_fine_subdomains.xml.gz")
+    # Load mesh and subdomains
+    mesh = Mesh("../dolfin_fine.xml.gz")
+    sub_domains = MeshFunction("size_t", mesh, "../dolfin_fine_subdomains.xml.gz")
 
-Next, we define a :py:class:`MixedFunctionSpace
-<dolfin.functions.functionspace.MixedFunctionSpace>` composed of a
-:py:class:`VectorFunctionSpace
-<dolfin.functions.functionspace.VectorFunctionSpace>` and a
-:py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`, both of
-continuous piecewise linears.
+Next, we define a :py:class:`FunctionSpace
+<dolfin.functions.functionspace.FunctionSpace>` build on a mixed
+finite element ``system`` which is created from ``vector`` of
+continuous piece-wise linears and ``scalar`` of continuous
+piece-wise linears.
 
 .. code-block:: python
 
-	# Define function spaces
-	scalar = FunctionSpace(mesh, "CG", 1)
-	vector = VectorFunctionSpace(mesh, "CG", 1)
-	system = vector * scalar
+    # Define function spaces
+    vector   = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    scalar   = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    system = vector * scalar
+    W = FunctionSpace(mesh, system)
 
 Now that we have our mixed function space and marked subdomains
 defining the boundaries, we create functions for the boundary
@@ -51,19 +51,19 @@ conditions and define boundary conditions:
 
 .. code-block:: python
 
-	# Create functions for boundary conditions
-	noslip = Constant((0, 0))
-	inflow = Expression(("-sin(x[1]*pi)", "0"))
-	zero   = Constant(0)
+    # Create functions for boundary conditions
+    noslip = Constant((0, 0))
+    inflow = Expression(("-sin(x[1]*pi)", "0"))
+    zero   = Constant(0)
 
-	# No-slip boundary condition for velocity
-	bc0 = DirichletBC(system.sub(0), noslip, sub_domains, 0)
+    # No-slip boundary condition for velocity
+    bc0 = DirichletBC(W.sub(0), noslip, sub_domains, 0)
 
-	# Inflow boundary condition for velocity
-	bc1 = DirichletBC(system.sub(0), inflow, sub_domains, 1)
+    # Inflow boundary condition for velocity
+    bc1 = DirichletBC(W.sub(0), inflow, sub_domains, 1)
 
-	# Collect boundary conditions
-	bcs = [bc0, bc1]
+    # Collect boundary conditions
+    bcs = [bc0, bc1]
 
 Here, we have given four arguments to :py:class:`DirichletBC
 <dolfin.cpp.fem.DirichletBC>`. The first specifies the
@@ -83,16 +83,16 @@ mixed formulation of the Stokes equations are defined as follows:
 
 .. code-block:: python
 
-	# Define variational problem
-	(v, q) = TestFunctions(system)
-	(u, p) = TrialFunctions(system)
-	f = Constant((0, 0))
-	h = CellSize(mesh)
-	beta  = 0.2
-	delta = beta*h*h
-	a = (inner(grad(v), grad(u)) - div(v)*p + q*div(u) + \
-	    delta*inner(grad(q), grad(p)))*dx
-	L = inner(v + delta*grad(q), f)*dx
+    # Define variational problem
+    (v, q) = TestFunctions(W)
+    (u, p) = TrialFunctions(W)
+    f = Constant((0, 0))
+    h = CellSize(mesh)
+    beta  = 0.2
+    delta = beta*h*h
+    a = (inner(grad(v), grad(u)) - div(v)*p + q*div(u) + \
+        delta*inner(grad(q), grad(p)))*dx
+    L = inner(v + delta*grad(q), f)*dx
 
 To compute the solution we use the bilinear and linear forms, and the
 boundary condition, but we also need to create a :py:class:`Function
@@ -106,28 +106,28 @@ by calling the :py:meth:`split
 
 .. code-block:: python
 
-	# Compute solution
-	w = Function(system)
-	solve(a == L, w, bcs)
-	u, p = w.split()
+    # Compute solution
+    w = Function(W)
+    solve(a == L, w, bcs)
+    u, p = w.split()
 
 Finally, we can store to file and plot the solutions.
 
 .. code-block:: python
 
-	# Save solution in VTK format
-	ufile_pvd = File("velocity.pvd")
-	ufile_pvd << u
-	pfile_pvd = File("pressure.pvd")
-	pfile_pvd << p
+    # Save solution in VTK format
+    ufile_pvd = File("velocity.pvd")
+    ufile_pvd << u
+    pfile_pvd = File("pressure.pvd")
+    pfile_pvd << p
 
-	# Plot solution
-	plot(u)
-	plot(p)
-	interactive()
+    # Plot solution
+    plot(u)
+    plot(p)
+    interactive()
 
 Complete code
 -------------
 
 .. literalinclude:: demo_stokes-stabilized.py
-	:start-after: # Begin demo
+    :start-after: # Begin demo

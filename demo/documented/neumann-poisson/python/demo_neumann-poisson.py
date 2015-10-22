@@ -47,8 +47,10 @@ and the above constraint.
 
 from dolfin import *
 
-# Create mesh and define function space
+# Create mesh
 mesh = UnitSquareMesh(64, 64)
+
+# Build function space with Lagrange multiplier
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 R = FiniteElement("Real", mesh.ufl_cell(), 0)
 W = FunctionSpace(mesh, P1 * R)
