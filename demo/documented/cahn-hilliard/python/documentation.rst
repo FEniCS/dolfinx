@@ -112,20 +112,15 @@ the code and the generation phase may use considerably more memory).
 
 A unit square mesh with 97 (= 96 + 1) vertices in each direction is
 created, and on this mesh a :py:class:`FunctionSpace
-<dolfin.functions.functionspace.FunctionSpace>` :math:`V` and a
-:py:class:`MixedFunctionSpace
-<dolfin.functions.functionspace.MixedFunctionSpace>` space :math:`ME =
-V \times V` are defined:
+<dolfin.functions.functionspace.FunctionSpace>` ``ME`` is built
+using a pair of linear Lagrangian elements.
 
 .. code-block:: python
 
-    # Create mesh and define function spaces
+    # Create mesh and build function space
     mesh = UnitSquareMesh(96, 96)
-    V = FunctionSpace(mesh, "Lagrange", 1)
-    ME = V*V
-
-The space ``V`` involves first-order continuous Lagrange basis functions.
-The mixed space is created using the ``*`` operator.
+    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    ME = FunctionSpace(mesh, P1*P1)
 
 Trial and test functions of the space ``ME`` are now defined:
 

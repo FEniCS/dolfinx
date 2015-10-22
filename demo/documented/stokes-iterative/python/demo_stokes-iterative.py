@@ -47,7 +47,7 @@ else:
 # Load mesh
 mesh = UnitCubeMesh(16, 16, 16)
 
-# Define function spaces
+# Build function space
 P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 TH = P2 * P1

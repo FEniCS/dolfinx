@@ -216,28 +216,28 @@ def base():
     global_normal = Expression(("0.0", "1.0", "0.0"))
     square3d.init_cell_orientations(global_normal)
 
-    RT2 = FunctionSpace(square, "RT", 1)
-    RT3 = FunctionSpace(square3d, "RT", 1)
-    DG2 = FunctionSpace(square, "DG", 0)
-    DG3 = FunctionSpace(square3d, "DG", 0)
+    RT2 = FiniteElement("RT", square.ufl_cell(), 1)
+    RT3 = FiniteElement("RT", square3d.ufl_cell(), 1)
+    DG2 = FiniteElement("DG", square.ufl_cell(), 0)
+    DG3 = FiniteElement("DG", square3d.ufl_cell(), 0)
 
-    return [(RT2, RT3), (DG2, DG3)]
+    return [(RT2, RT3), (DG2, DG3), (square, square3d)]
 
 @fixture
 def RT2(base):
-    return base[0][0]
+    return FunctionSpace(base[2][0], base[0][0])
 
 @fixture
 def RT3(base):
-    return base[0][1]
+    return FunctionSpace(base[2][1], base[0][1])
 
 @fixture
 def W2(base):
-    return base[0][0] * base[1][0]
+    return FunctionSpace(base[2][0], base[0][0] * base[1][0])
 
 @fixture
 def W3(base):
-    return base[0][1] * base[1][1]
+    return FunctionSpace(base[2][1], base[0][1] * base[1][1])
 
 
 @skip_in_parallel

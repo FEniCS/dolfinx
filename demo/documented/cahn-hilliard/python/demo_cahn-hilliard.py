@@ -57,7 +57,7 @@ parameters["form_compiler"]["optimize"]     = True
 parameters["form_compiler"]["cpp_optimize"] = True
 parameters["form_compiler"]["representation"] = "quadrature"
 
-# Create mesh and define function spaces
+# Create mesh and build function space
 mesh = UnitSquareMesh(96, 96)
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 ME = FunctionSpace(mesh, P1*P1)

@@ -353,8 +353,8 @@ def test_clear_sub_map_data_scalar(mesh):
 
 def test_clear_sub_map_data_vector(mesh):
     mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "Lagrange", 1)
-    W = V*V
+    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    W = FunctionSpace(mesh, P1*P1)
 
     # Check block size
     assert W.dofmap().block_size == 2

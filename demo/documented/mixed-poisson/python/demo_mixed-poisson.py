@@ -46,7 +46,7 @@ from dolfin import *
 # Create mesh
 mesh = UnitSquareMesh(32, 32)
 
-# Define function spaces and mixed (product) space
+# Define finite elements spaces and build mixed space
 BDM = FiniteElement("BDM", mesh.ufl_cell(), 1)
 DG  = FiniteElement("DG", mesh.ufl_cell(), 0)
 W = FunctionSpace(mesh, BDM * DG)

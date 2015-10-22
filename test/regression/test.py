@@ -59,6 +59,7 @@ def run_cpp_demo(prefix, demo, rootdir, timing, failed):
     t1 = time()
     os.chdir(demo)
     status, output = get_status_output("%s .%s%s" % (prefix, os.path.sep, cppdemo_executable))
+    print(output)
     os.chdir(rootdir)
     t2 = time()
     timing += [(t2 - t1, demo)]
@@ -82,6 +83,7 @@ def run_python_demo(prefix, demo, rootdir, timing, failed):
     t1 = time()
     os.chdir(demo)
     status, output = get_status_output("%s %s -u %s" % (prefix, sys.executable, demofile))
+    print(output)
     os.chdir(rootdir)
     t2 = time()
     timing += [(t2 - t1, demo)]

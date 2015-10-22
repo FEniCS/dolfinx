@@ -389,8 +389,9 @@ def test_interpolation_old(V, W, mesh):
         def eval(self, values, x):
             values[0] = 1.0
             values[1] = 1.0
+            values[2] = 1.0
         def value_shape(self):
-            return (2,)
+            return (3,)
 
     # Scalar interpolation
     f0 = F0()
@@ -402,4 +403,4 @@ def test_interpolation_old(V, W, mesh):
     f1 = F1()
     f = Function(W)
     f.interpolate(f1)
-    assert round(f.vector().norm("l1") - 2*mesh.num_vertices(), 7) == 0
+    assert round(f.vector().norm("l1") - 3*mesh.num_vertices(), 7) == 0
