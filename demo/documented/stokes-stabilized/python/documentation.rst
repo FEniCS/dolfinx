@@ -68,12 +68,10 @@ conditions and define boundary conditions:
 Here, we have given four arguments to :py:class:`DirichletBC
 <dolfin.cpp.fem.DirichletBC>`. The first specifies the
 :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`. Since
-we have a :py:class:`MixedFunctionSpace
-<dolfin.functions.functionspace.MixedFunctionSpace>`, we write
-system.sub(0) for the :py:class:`VectorFunctionSpace
-<dolfin.functions.functionspace.VectorFunctionSpace>`, and
-system.sub(1) for the :py:class:`FunctionSpace
-<dolfin.cpp.function.FunctionSpace>`. The second argument specifies
+we have a mixed function space, we write
+``system.sub(0)`` for the velocity component of the space, and
+``system.sub(1)`` for the pressure component of the space.
+The second argument specifies
 the value on the Dirichlet boundary. The two last arguments specify the
 marking of the subdomains; sub_domains contains the subdomain markers
 and the number given as the last argument is the subdomain index.
@@ -97,8 +95,8 @@ mixed formulation of the Stokes equations are defined as follows:
 To compute the solution we use the bilinear and linear forms, and the
 boundary condition, but we also need to create a :py:class:`Function
 <dolfin.cpp.function.Function>` to store the solution(s). The (full)
-solution will be stored in ``w``, which we initialize using the
-MixedFunctionSpace system. The actual computation is performed by
+solution will be stored in ``w``, which we initialize using the mixed
+function space ``system``. The actual computation is performed by
 calling solve with the arguments ``a``, ``L`` and ``bcs``. The
 separate components ``u`` and ``p`` of the solution can be extracted
 by calling the :py:meth:`split

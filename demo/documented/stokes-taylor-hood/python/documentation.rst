@@ -97,9 +97,8 @@ formulation of the Stokes equations are defined as follows:
 To compute the solution we use the bilinear and linear forms, and the
 boundary condition, but we also need to create a :py:class:`Function
 <dolfin.cpp.function.Function>` to store the solution(s). The (full)
-solution will be stored in w, which we initialize using the
-:py:class:`MixedFunctionSpace
-<dolfin.functions.functionspace.MixedFunctionSpace>` ``W``. The actual
+solution will be stored in w, which we initialize using the mixed
+function space ``W``. The actual
 computation is performed by calling solve with the arguments ``a``,
 ``L``, ``w`` and ``bcs``. The separate components ``u`` and ``p`` of
 the solution can be extracted by calling the :py:meth:`split
