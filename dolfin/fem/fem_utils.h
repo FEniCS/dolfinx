@@ -30,7 +30,7 @@ namespace dolfin
   /// Return a map between dofs indices and vertex indices
   ///
   /// Only works for FunctionSpace with dofs exclusively on vertices.
-  /// For MixedFunctionSpaces vertex index is offset with the number
+  /// For mixed FunctionSpaces vertex index is offset with the number
   /// of dofs per vertex.
   ///
   /// In parallel the returned map maps both owned and unowned dofs
@@ -50,7 +50,7 @@ namespace dolfin
   /// Return a map between vertex indices and dofs indices
   ///
   /// Only works for FunctionSpace with dofs exclusively on vertices.
-  /// For MixedFunctionSpaces dof index is offset with the number of
+  /// For mixed FunctionSpaces dof index is offset with the number of
   /// dofs per vertex.
   ///
   /// *Arguments*

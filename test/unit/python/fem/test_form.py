@@ -30,7 +30,7 @@ from dolfin_utils.test import skip_in_parallel, fixture
 
 @fixture
 def square():
-    return UnitSquareMesh(2, 2)
+    return UnitSquareMesh(8, 8)
 
 @fixture
 def square_boundary(square):

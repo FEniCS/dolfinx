@@ -63,7 +63,8 @@ namespace dolfin
     /// Return number of coordinates
     std::size_t size() const
     {
-      deprecation("MeshGeometry::size()", "1.7.0", "1.8.0", "Use MeshGeometry::num_vertices() or MeshGeometry::num_points() instead");
+      deprecation("MeshGeometry::size()", "1.7.0", "1.8.0",
+                  "Use MeshGeometry::num_vertices() or MeshGeometry::num_points() instead");
       return num_vertices();
     }
 
@@ -80,7 +81,8 @@ namespace dolfin
       return coordinates.size()/_dim;
     }
 
-    /// Return the total number of points in the geometry, located on any entity
+    /// Return the total number of points in the geometry, located on
+    /// any entity
     std::size_t num_points() const
     {
       dolfin_assert(coordinates.size() % _dim == 0);
@@ -100,28 +102,12 @@ namespace dolfin
     }
 
     /// Return value of coordinate with local index n in direction i
-    // double& x(std::size_t n, std::size_t i)
-    // {
-    //   dolfin_error("MeshGeometry.h",
-    //                "return coordinates (non-const)",
-    //                "MeshGeometry::x() has been removed. Please use MeshGeometry::vertex_coordinates() instead");
-    // }
-
-    /// Return value of coordinate with local index n in direction i
     double x(std::size_t n, std::size_t i) const
     {
       dolfin_assert((n*_dim + i) < coordinates.size());
       dolfin_assert(i < _dim);
       return coordinates[n*_dim + i];
     }
-
-    /// Return array of values for coordinate with local index n
-    // double* x(std::size_t n)
-    // {
-    //   dolfin_error("MeshGeometry.h",
-    //                "return coordinates (non-const)",
-    //                "MeshGeometry::x() has been removed. Please use MeshGeometry::vertex_coordinates() instead");
-    // }
 
     /// Return array of values for coordinate with local index n
     const double* x(std::size_t n) const
@@ -144,7 +130,8 @@ namespace dolfin
     /// Clear all data
     void clear();
 
-    /// Initialize coordinate list to given dimension, number of vertices, and degree
+    /// Initialize coordinate list to given dimension, number of
+    /// vertices, and degree
     void init(std::size_t dim, std::size_t degree);
 
     /// Initialise entities (other than vertices)
@@ -153,7 +140,8 @@ namespace dolfin
     /// Get the number of coordinate points per entity for this degree
     std::size_t num_entity_coordinates(std::size_t entity_dim) const
     {
-      // Calculate the number of points per entity for Lagrange elements
+      // Calculate the number of points per entity for Lagrange
+      // elements
       switch(entity_dim)
       {
       case 0:
@@ -183,8 +171,6 @@ namespace dolfin
     }
 
     /// Set value of coordinate
-    //void set(std::size_t n, std::size_t i, double x);
-    // void set(std::size_t local_index, const std::vector<double>& x);
     void set(std::size_t local_index, const double* x);
 
     /// Hash of coordinate values

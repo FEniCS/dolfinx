@@ -96,10 +96,10 @@ applied to, the data for the boundary condition, and the relevant part
 of the boundary.
 
 We want to apply the boundary condition to the first subspace of the
-mixed space. Subspaces of a :py:class:`MixedFunctionSpace
-<dolfin.functions.functionspace.MixedFunctionSpace>` can be accessed
+mixed space. Subspaces of a mixed :py:class:`FunctionSpace
+<dolfin.functions.functionspace.FunctionSpace>` can be accessed
 by the method :py:func:`sub
-<dolfin.functions.functionspace.FunctionSpaceBase.sub>`. In our case,
+<dolfin.functions.functionspace.FunctionSpace.sub>`. In our case,
 this reads ``W.sub(0)``. (Do *not* use the separate space ``BDM`` as
 this would mess up the numbering.)
 
