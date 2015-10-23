@@ -29,14 +29,14 @@ namespace cgaltools
 
   inline Point_2 convert(const dolfin::Point& p)
   {
-    std::cout << "point convert " << p[0]<<' '<<p[1]<<std::endl;
+    //std::cout << "point convert " << p[0]<<' '<<p[1]<<std::endl;
     return Point_2(p[0], p[1]);
   }
 
   inline Segment_2 convert(const dolfin::Point& a,
 			   const dolfin::Point& b)
   {
-    std::cout << "segment convert " << std::endl;
+    //std::cout << "segment convert " << std::endl;
     return Segment_2(convert(a), convert(b));
   }
 
@@ -44,7 +44,7 @@ namespace cgaltools
 			    const dolfin::Point& b,
 			    const dolfin::Point& c)
   {
-    std::cout << "triangle convert " << std::endl;
+    //std::cout << "triangle convert " << std::endl;
     return Triangle_2(convert(a), convert(b), convert(c));
   }
 
@@ -124,7 +124,7 @@ namespace cgaltools
   template<class T>
     inline std::vector<double> parse(const T& ii)
   {
-    std::cout << __FUNCTION__ << std::endl;
+    //std::cout << __FUNCTION__ << std::endl;
     std::vector<double> triangulation;
 
     const Point_2* p = boost::get<Point_2>(&*ii);
@@ -139,7 +139,7 @@ namespace cgaltools
     const Segment_2* s = boost::get<Segment_2>(&*ii);
     if (s)
     {
-      std::cout << "segment " << std::endl;
+      //std::cout << "segment " << std::endl;
       std::cout << (*s)[0][0] <<' '<<(*s)[0][1] <<' '<<(*s)[1][0]<<' '<<(*s)[1][1]<<std::endl;
       triangulation.resize(4);
       triangulation[0] = CGAL::to_double(s->vertex(0)[0]);
@@ -165,7 +165,7 @@ namespace cgaltools
     const std::vector<Point_2>* pts = boost::get<std::vector<Point_2>>(&*ii);
     if (pts)
     {
-      std::cout << "pts" << std::endl;
+      //std::cout << "pts" << std::endl;
       triangulation.resize(pts->size()*2);
       for (std::size_t i = 0; i < pts->size(); ++i)
       {

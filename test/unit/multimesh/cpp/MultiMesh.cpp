@@ -931,54 +931,54 @@ public:
     //   //CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_area, area, DOLFIN_EPS_LARGE);
     // }
 
-    {
-      MeshEditor me;
-      Mesh mesh;
-      me.open(mesh, 2, 2);
-      me.init_vertices(3);
-      me.init_cells(1);
-      const Point p0(0., 0.);
-      const Point p1(1., 0.);
-      const Point p2(0., 1.);
-      me.add_vertex(0, p0);
-      me.add_vertex(1, p1);
-      me.add_vertex(2, p2);
-      me.add_cell(0, 0, 1, 2);
-      me.close();
+    // {
+    //   MeshEditor me;
+    //   Mesh mesh;
+    //   me.open(mesh, 2, 2);
+    //   me.init_vertices(3);
+    //   me.init_cells(1);
+    //   const Point p0(0., 0.);
+    //   const Point p1(1., 0.);
+    //   const Point p2(0., 1.);
+    //   me.add_vertex(0, p0);
+    //   me.add_vertex(1, p1);
+    //   me.add_vertex(2, p2);
+    //   me.add_cell(0, 0, 1, 2);
+    //   me.close();
 
-      MeshEditor meline;
-      Mesh meshline;
-      meline.open(meshline, 1, 2);
-      meline.init_vertices(2);
-      meline.init_cells(1);
-      const Point a(0.5, 0.2);
-      const Point b(0.5, -0.5);
-      meline.add_vertex(0, a);
-      meline.add_vertex(1, b);
-      const std::vector<std::size_t> v = {{0, 1}};
-      meline.add_cell(0, v);
-      meline.close();
+    //   MeshEditor meline;
+    //   Mesh meshline;
+    //   meline.open(meshline, 1, 2);
+    //   meline.init_vertices(2);
+    //   meline.init_cells(1);
+    //   const Point a(0.5, 0.2);
+    //   const Point b(0.5, -0.5);
+    //   meline.add_vertex(0, a);
+    //   meline.add_vertex(1, b);
+    //   const std::vector<std::size_t> v = {{0, 1}};
+    //   meline.add_cell(0, v);
+    //   meline.close();
 
-      Cell tri(mesh, 0);
-      Cell line(meshline, 0);
+    //   Cell tri(mesh, 0);
+    //   Cell line(meshline, 0);
 
-      std::cout << tools::drawtriangle(tri)<<tools::drawtriangle(line)<<std::endl;
+    //   std::cout << tools::drawtriangle(tri)<<tools::drawtriangle(line)<<std::endl;
 
-      const std::vector<double> intersection = IntersectionTriangulation::triangulate_intersection(tri, line);
-      for (const auto t: intersection)
-	std::cout << t <<' ';
-      std::cout << std::endl;
+    //   const std::vector<double> intersection = IntersectionTriangulation::triangulate_intersection(tri, line);
+    //   for (const auto t: intersection)
+    // 	std::cout << t <<' ';
+    //   std::cout << std::endl;
 
-      std::cout << tools::drawtriangle(intersection,"'r'")<<std::endl;
+    //   std::cout << tools::drawtriangle(intersection,"'r'")<<std::endl;
 
-      exit(0);
-    }
+    //   exit(0);
+    // }
 
 
 
     // Test squares in diagonal on background unit square
     const std::size_t m = 1, n = 1;
-    const double h = 0.4;
+    const double h = 0.1;
     const double s = 0.5;
     if (h >= s) { std::cout << "h must be less than s\n"; exit(1); }
     UnitSquareMesh usm(m, n);

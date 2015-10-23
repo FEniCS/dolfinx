@@ -352,8 +352,6 @@ IntersectionTriangulation::triangulate_intersection_triangle_interval
  const std::vector<Point>& interval,
  std::size_t gdim)
 {
-  std::cout << __FUNCTION__ << std::endl;
-
 #ifdef Augustcgal
   dolfin_assert(gdim == 2);
 
