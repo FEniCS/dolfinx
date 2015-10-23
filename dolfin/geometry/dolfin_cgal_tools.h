@@ -13,13 +13,12 @@
 
 #define Augustcgal
 
-//typedef CGAL::Exact_predicates_exact_constructions_kernel CGALKernel;
-typedef CGAL::Exact_predicates_inexact_constructions_kernel CGALKernel;
+typedef CGAL::Exact_predicates_exact_constructions_kernel CGALKernel;
+//typedef CGAL::Exact_predicates_inexact_constructions_kernel CGALKernel;
 typedef CGALKernel::FT                            ExactNumber;
 typedef CGAL::Point_2<CGALKernel>                 Point_2;
 typedef CGAL::Triangle_2<CGALKernel>              Triangle_2;
-typedef CGAL::Line_2<CGALKernel>                  Line_2;
-typedef CGAL::Segment_2<CGALKernel>              Segment_2;
+typedef CGAL::Segment_2<CGALKernel>               Segment_2;
 
 namespace cgaltools
 {
@@ -34,11 +33,11 @@ namespace cgaltools
     return Point_2(p[0], p[1]);
   }
 
-  inline Line_2 convert(const dolfin::Point& a,
-			const dolfin::Point& b)
+  inline Segment_2 convert(const dolfin::Point& a,
+			   const dolfin::Point& b)
   {
-    std::cout << "line convert " << std::endl;
-    return Line_2(convert(a), convert(b));
+    std::cout << "segment convert " << std::endl;
+    return Segment_2(convert(a), convert(b));
   }
 
   inline Triangle_2 convert(const dolfin::Point& a,
@@ -48,6 +47,26 @@ namespace cgaltools
     std::cout << "triangle convert " << std::endl;
     return Triangle_2(convert(a), convert(b), convert(c));
   }
+
+  inline std::vector<dolfin::Point> convert(const Segment_2& t)
+  {
+    std::vector<dolfin::Point> p(2);
+    for (std::size_t i = 0; i < 2; ++i)
+      for (std::size_t j = 0; j < 2; ++j)
+	p[i][j] = CGAL::to_double(t[i][j]);
+    return p;
+  }
+
+  inline std::vector<dolfin::Point> convert(const Triangle_2& t)
+  {
+    std::vector<dolfin::Point> p(3);
+    for (std::size_t i = 0; i < 3; ++i)
+      for (std::size_t j = 0; j < 2; ++j)
+	p[i][j] = CGAL::to_double(t[i][j]);
+    return p;
+  }
+
+
 
   // for parsing the intersection, check
   // http://doc.cgal.org/latest/Kernel_23/group__intersection__linear__grp.html
@@ -127,18 +146,6 @@ namespace cgaltools
       triangulation[1] = CGAL::to_double(s->vertex(0)[1]);
       triangulation[2] = CGAL::to_double(s->vertex(1)[0]);
       triangulation[3] = CGAL::to_double(s->vertex(1)[1]);
-      return triangulation;
-    }
-
-    const Line_2* l = boost::get<Line_2>(&*ii);
-    if (l)
-    {
-      std::cout << "line " << std::endl;
-      triangulation.resize(4);
-      triangulation[0] = CGAL::to_double(l->point(0)[0]);
-      triangulation[1] = CGAL::to_double(l->point(0)[1]);
-      triangulation[2] = CGAL::to_double(l->point(1)[0]);
-      triangulation[3] = CGAL::to_double(l->point(1)[1]);
       return triangulation;
     }
 

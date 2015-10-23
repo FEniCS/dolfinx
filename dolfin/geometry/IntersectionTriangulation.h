@@ -170,6 +170,12 @@ namespace dolfin
                              std::vector<Point>& intersection_normals,
                              std::size_t tdim);
 
+    // Function for computing the intersection of two triangles given
+    // by std::vector<Point>.
+    static std::vector<double>
+    triangulate_intersection_triangle_triangle(const std::vector<Point>& tri_0,
+                                               const std::vector<Point>& tri_1);
+
   private:
 
     // Function for computing the intersection of two intervals given
@@ -185,12 +191,6 @@ namespace dolfin
     triangulate_intersection_triangle_interval(const std::vector<Point>& triangle,
                                                const std::vector<Point>& interval,
                                                std::size_t gdim);
-
-    // Function for computing the intersection of two triangles given
-    // by std::vector<Point>.
-    static std::vector<double>
-    triangulate_intersection_triangle_triangle(const std::vector<Point>& tri_0,
-                                               const std::vector<Point>& tri_1);
 
     // Function for computing the intersection of two tetrahedra given
     // by std::vector<Point>.

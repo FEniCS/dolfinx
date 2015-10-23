@@ -962,10 +962,14 @@ public:
       Cell tri(mesh, 0);
       Cell line(meshline, 0);
 
+      std::cout << tools::drawtriangle(tri)<<tools::drawtriangle(line)<<std::endl;
+
       const std::vector<double> intersection = IntersectionTriangulation::triangulate_intersection(tri, line);
       for (const auto t: intersection)
 	std::cout << t <<' ';
       std::cout << std::endl;
+
+      std::cout << tools::drawtriangle(intersection,"'r'")<<std::endl;
 
       exit(0);
     }
