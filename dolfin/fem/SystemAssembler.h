@@ -134,7 +134,7 @@ namespace dolfin
       std::array<GenericTensor*, 2>& tensors,
       std::array<UFC*, 2>& ufc,
       Scratch& data,
-      const DirichletBC::Map& boundary_values,
+      const std::vector<DirichletBC::Map>& boundary_values,
       std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
       std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains);
 
@@ -142,7 +142,7 @@ namespace dolfin
       std::array<GenericTensor*, 2>& tensors,
       std::array<UFC*, 2>& ufc,
       Scratch& data,
-      const DirichletBC::Map& boundary_values,
+      const std::vector<DirichletBC::Map>& boundary_values,
       std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
       std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains,
       std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains);
@@ -189,7 +189,7 @@ namespace dolfin
       const std::array<std::vector<ArrayView<const la_index>>, 2>& cell_dofs);
 
     static void apply_bc(double* A, double* b,
-                         const DirichletBC::Map& boundary_values,
+                         const std::vector<DirichletBC::Map>& boundary_values,
                          const ArrayView<const dolfin::la_index>& global_dofs0,
                          const ArrayView<const dolfin::la_index>& global_dofs1);
 
@@ -202,7 +202,7 @@ namespace dolfin
     static bool
       cell_matrix_required(const GenericTensor* A,
                            const void* integral,
-                           const DirichletBC::Map& boundary_values,
+                           const std::vector<DirichletBC::Map>& boundary_values,
                            const ArrayView<const dolfin::la_index>& dofs);
 
   };
