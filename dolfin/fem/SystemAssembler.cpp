@@ -483,9 +483,6 @@ void SystemAssembler::cell_wise_assembly(
       }
     }
 
-    // Check dofmap is the same for LHS columns and RHS vector
-    dolfin_assert(cell_dofs[1][0].data() == cell_dofs[0][1].data());
-
     // Modify local matrix/element for Dirichlet boundary conditions
     apply_bc(data.Ae[0].data(), data.Ae[1].data(), boundary_values,
              cell_dofs[0][0], cell_dofs[0][1]);
@@ -1045,12 +1042,12 @@ SystemAssembler::apply_bc(double* A, double* b,
   Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                            Eigen::RowMajor>>
     _matA(A, global_dofs0.size(), global_dofs1.size());
-  Eigen::Map<Eigen::VectorXd> _b(b, global_dofs1.size());
+  Eigen::Map<Eigen::VectorXd> _b(b, global_dofs0.size());
 
   if (boundary_values.size() == 1)
   {
     // Square matrix with same FunctionSpace on each axis
-    // Loop over columns
+    // Loop over columns/rows
     for (int i = 0; i < _matA.cols(); ++i)
     {
       const std::size_t ii = global_dofs1[i];
@@ -1067,14 +1064,14 @@ SystemAssembler::apply_bc(double* A, double* b,
         _matA.col(i).setZero();
 
         // Place 1 on diagonal and bc on RHS (i th row ).
-        _b(i)    = bc_value->second;
+        _b(i)       = bc_value->second;
         _matA(i, i) = 1.0;
       }
     }
   }
   else
   {
-    // Loop over rows
+    // Loop over rows first
     for (int i = 0; i < _matA.rows(); ++i)
     {
       const std::size_t ii = global_dofs0[i];
