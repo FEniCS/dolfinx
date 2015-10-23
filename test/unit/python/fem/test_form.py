@@ -233,11 +233,23 @@ def RT3(base):
 
 @fixture
 def W2(base):
+    """ RT2 * DG2 """
     return FunctionSpace(base[2][0], base[0][0] * base[1][0])
 
 @fixture
 def W3(base):
+    """ RT3 * DG3 """
     return FunctionSpace(base[2][1], base[0][1] * base[1][1])
+
+@fixture
+def QQ2(base):
+    """ DG2 * DG2 """
+    return FunctionSpace(base[2][0], base[1][0] * base[1][0])
+
+@fixture
+def QQ3(base):
+    """ DG3 * DG3 """
+    return FunctionSpace(base[2][1], base[1][1] * base[1][1])
 
 
 @skip_in_parallel
@@ -467,3 +479,27 @@ def test_facetarea(bottom1, bottom2, bottom3, m):
     a = area*ds
     b1 = assemble(a)
     assert round(b0 - b1, 7) == 0
+
+
+@skip_in_parallel
+def test_derivative(QQ2, QQ3):
+    for W in [QQ2, QQ3]:
+        w = Function(W)
+        dim = w.value_dimension(0)
+        w.interpolate(Constant([42.0*(i+1) for i in range(dim)]))
+
+        # Single argument derivative
+        u, v = split(w)
+        F = u*v*dx
+        dF = derivative(F, w)
+        b1 = assemble(dF)
+
+        # Multiple argument derivative
+        u, v = w.split()
+        F = u*v*dx
+        dF = derivative(F, (u, v))
+        b2 = assemble(dF)
+
+        # Compare
+        b1 -= b2
+        assert round(b1.norm('l2'), 7) == 0.0
