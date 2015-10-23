@@ -437,6 +437,9 @@ void MultiMesh::_build_collision_maps()
 void MultiMesh::_build_quadrature_rules_overlap()
 {
   begin(PROGRESS, "Building quadrature rules of cut cells' overlap.");
+#ifdef Augustdebug
+  std::cout << __FUNCTION__ << std::endl;
+#endif
 
   // Get quadrature order
   const std::size_t quadrature_order = parameters["quadrature_order"];
@@ -1339,6 +1342,9 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 void MultiMesh::_build_quadrature_rules_interface()
 {
   begin(PROGRESS, "Building quadrature rules of interface.");
+#ifdef Augustdebug
+  std::cout << __FUNCTION__ << std::endl;
+#endif
 
 #ifdef Augustnormaldebug
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
@@ -1456,10 +1462,12 @@ void MultiMesh::_build_quadrature_rules_interface()
         const std::size_t cutting_cell_index_j = jt->second;
         const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
 
-#ifdef Augustnormaldebug
+#ifdef Augustdebug
 	std::cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n";
 	std::cout << "\ncut cutting (cut = " << cut_part << " cutting part_j=" << cutting_part_j << ")\n"
 		  << tools::drawtriangle(cut_cell,"'y'") << tools::drawtriangle(cutting_cell_j,"'m'")<<std::endl;
+#endif
+#ifdef Augustnormaldebug
 	std::cout << "the FACET normals are:\n ";
 	for (auto boundary_cell_index : full_to_bdry[cutting_part_j][cutting_cell_index_j])
         {
@@ -1538,6 +1546,7 @@ void MultiMesh::_build_quadrature_rules_interface()
 	      std::cout << "];"<<std::endl;
 	    }
 	  }
+	  PPause;
 #endif
 	  // Test only include large lines
 	  double length = 0;

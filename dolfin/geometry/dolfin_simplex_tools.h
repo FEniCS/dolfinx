@@ -91,9 +91,9 @@ namespace tools
   }
 
   inline std::string drawtriangle(const dolfin::Cell &cell,
-				  const std::string& color = "'b'",
-				  const std::size_t tdim = 2)
+				  const std::string& color = "'b'")
   {
+    const std::size_t tdim = cell.mesh().topology().dim();
     std::vector<dolfin::Point> tri(tdim+1);
     for (std::size_t i = 0; i < tdim+1; ++i)
       tri[i] = cell.mesh().geometry().point(cell.entities(0)[i]);
@@ -103,11 +103,19 @@ namespace tools
   inline std::string drawtriangle(const std::vector<double>& s,
 				  const std::string& color = "'b'")
   {
-    std::vector<dolfin::Point> ss(3);
-    ss[0] = dolfin::Point(s[0],s[1]);
-    ss[1] = dolfin::Point(s[2],s[3]);
-    ss[2] = dolfin::Point(s[4],s[5]);
-    return drawtriangle(ss, color);
+    std::vector<dolfin::Point> pp(s.size() / 2);
+    for (std::size_t i = 0; i < pp.size(); ++i)
+    {
+      pp[i][0] = s[2*i];
+      pp[i][1] = s[2*i+1];
+    }
+    return drawtriangle(pp, color);
+
+    /* std::vector<dolfin::Point> ss(3); */
+    /* ss[0] = dolfin::Point(s[0],s[1]); */
+    /* ss[1] = dolfin::Point(s[2],s[3]); */
+    /* ss[2] = dolfin::Point(s[4],s[5]); */
+    /* return drawtriangle(ss, color); */
   }
 
   inline std::string matlabplot(const dolfin::Point& p,
