@@ -118,6 +118,16 @@ namespace tools
     /* return drawtriangle(ss, color); */
   }
 
+  inline std::string drawtriangle(const dolfin::Point& a,
+				  const dolfin::Point& b,
+				  const dolfin::Point& c,
+				  const std::string color = "'b'")
+  {
+    std::vector<dolfin::Point> t = {{ a, b, c}};
+    return drawtriangle(t, color);
+  }
+
+
   inline std::string matlabplot(const dolfin::Point& p,
 				const std::string m="'.'")
   {

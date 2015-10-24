@@ -11,6 +11,8 @@
 #include <CGAL/Boolean_set_operations_2.h>
 #include <CGAL/Polygon_set_2.h>
 
+#include <dolfin/geometry/dolfin_simplex_tools.h>
+
 #define Augustcgal
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel CGALKernel;
@@ -66,6 +68,20 @@ namespace cgaltools
     return p;
   }
 
+  inline bool is_degenerate(const dolfin::Point& a,
+			    const dolfin::Point& b)
+  {
+    Segment_2 s(convert(a), convert(b));
+    return s.is_degenerate();
+  }
+
+  inline bool is_degenerate(const dolfin::Point& a,
+			    const dolfin::Point& b,
+			    const dolfin::Point& c)
+  {
+    Triangle_2 t(convert(a), convert(b), convert(c));
+    return t.is_degenerate();
+  }
 
 
   // for parsing the intersection, check
@@ -140,7 +156,7 @@ namespace cgaltools
     if (s)
     {
       //std::cout << "segment " << std::endl;
-      std::cout << (*s)[0][0] <<' '<<(*s)[0][1] <<' '<<(*s)[1][0]<<' '<<(*s)[1][1]<<std::endl;
+      //std::cout << (*s)[0][0] <<' '<<(*s)[0][1] <<' '<<(*s)[1][0]<<' '<<(*s)[1][1]<<std::endl;
       triangulation.resize(4);
       triangulation[0] = CGAL::to_double(s->vertex(0)[0]);
       triangulation[1] = CGAL::to_double(s->vertex(0)[1]);

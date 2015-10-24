@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2015-10-22
+// Last changed: 2015-10-24
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -295,10 +295,17 @@ IntersectionTriangulation::triangulate_intersection_interval_interval
   const Point& d = interval_1[1];
   std::vector<double> triangulation;
 
-  if (CollisionDetection::collides_edge_edge(a, b, c, d))
+  if (cgaltools::is_degenerate(a, b))
+    return triangulation;
+  if (cgaltools::is_degenerate(c, d))
+    return triangulation;
+
+  const auto I0 = cgaltools::convert(a, b);
+  const auto I1 = cgaltools::convert(c, d);
+
+  if (CGAL::do_intersect(I0, I1))
   {
-    auto ii = CGAL::intersection(cgaltools::convert(a, b),
-				 cgaltools::convert(c, d));
+    const auto ii = CGAL::intersection(I0, I1);
     dolfin_assert(ii);
     triangulation = cgaltools::parse(ii);
 
@@ -362,11 +369,17 @@ IntersectionTriangulation::triangulate_intersection_triangle_interval
   const Point& b = interval[1];
   std::vector<double> triangulation;
 
-  if (CGAL::do_intersect(cgaltools::convert(r, s, t),
-			 cgaltools::convert(a, b)))
+  if (cgaltools::is_degenerate(r, s, t))
+    return triangulation;
+  if (cgaltools::is_degenerate(a, b))
+    return triangulation;
+
+  const auto T = cgaltools::convert(r, s, t);
+  const auto I = cgaltools::convert(a, b);
+
+  if (CGAL::do_intersect(T, I))
   {
-    auto ii = CGAL::intersection(cgaltools::convert(r, s, t),
-				 cgaltools::convert(a, b));
+    const auto ii = CGAL::intersection(T, I);
     dolfin_assert(ii);
     triangulation = cgaltools::parse(ii);
 
@@ -476,12 +489,17 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   const Point& c = tri_1[2];
   std::vector<double> triangulation;
 
+  if (cgaltools::is_degenerate(r, s, t))
+    return triangulation;
+  if (cgaltools::is_degenerate(a, b, c))
+    return triangulation;
+
   const auto T0 = cgaltools::convert(r, s, t);
   const auto T1 = cgaltools::convert(a, b, c);
 
   if (CGAL::do_intersect(T0, T1))
   {
-    auto ii = CGAL::intersection(T0, T1);
+    const auto ii = CGAL::intersection(T0, T1);
     dolfin_assert(ii);
     triangulation = cgaltools::parse(ii);
     if (triangulation.size() == 0)
@@ -1178,7 +1196,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle
                                                        tet[2],
                                                        tet[3],
                                                        tri[i]))
-    points.push_back(tri[i]);
+      points.push_back(tri[i]);
 
   // Check if a tetrahedron edge intersects the triangle
   std::vector<std::vector<int>> tet_edges(6, std::vector<int>(2));
@@ -1480,10 +1498,17 @@ IntersectionTriangulation::intersection_edge_edge_2d(const Point& a,
 						     Point& pt)
 {
 #ifdef Augustcgal
-  if (CollisionDetection::collides_edge_edge(a, b, c, d))
+  if (cgaltools::is_degenerate(a, b))
+    return false;
+  if (cgaltools::is_degenerate(c, d))
+    return false;
+
+  const auto E0 = cgaltools::convert(a, b);
+  const auto E1 = cgaltools::convert(c, d);
+
+  if (CGAL::do_intersect(E0, E1))
   {
-    auto ii = CGAL::intersection(cgaltools::convert(a, b),
-				 cgaltools::convert(c, d));
+    const auto ii = CGAL::intersection(E0, E1);
     dolfin_assert(ii);
     const std::vector<double> triangulation = cgaltools::parse(ii);
 
@@ -1699,11 +1724,17 @@ IntersectionTriangulation::intersection_face_edge(const Point& r,
 {
 #ifdef Augustcgal
   // CGAL version only 2D
-  if (CGAL::do_intersect(cgaltools::convert(r, s, t),
-			 cgaltools::convert(a, b)))
+  if (cgaltools::is_degenerate(r, s, t))
+    return false;
+  if (cgaltools::is_degenerate(a, b))
+    return false;
+
+  const auto T = cgaltools::convert(r, s, t);
+  const auto I = cgaltools::convert(a, b);
+
+  if (CGAL::do_intersect(T, I))
   {
-    auto ii = CGAL::intersection(cgaltools::convert(r, s, t),
-				 cgaltools::convert(a, b));
+    const auto ii = CGAL::intersection(T, I);
     dolfin_assert(ii);
     const std::vector<double> triangulation = cgaltools::parse(ii);
 
