@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-10-22
+// Last changed: 2015-10-24
 
 
 #include <dolfin/log/log.h>
@@ -1506,7 +1506,7 @@ void MultiMesh::_build_quadrature_rules_interface()
 	std::vector<Polyhedron> cut_cutting_interface; // NB: this is really a single polyhedron
 	std::vector<std::vector<Point>> cut_cutting_normals; // Matches the polyhedron
 	quadrature_rule cut_cutting_interface_qr;
-	std::vector<double> cut_cutting_interface_n;
+	std::vector<double> cut_cutting_interface_n; // Matches cut_cutting_interface_qr.first
 
 	// Iterate over boundary cells
         for (auto boundary_cell_index : full_to_bdry[cutting_part_j][cutting_cell_index_j])
@@ -1524,8 +1524,7 @@ void MultiMesh::_build_quadrature_rules_interface()
 	  std::cout << tools::drawtriangle(boundary_cell) << std::endl;
 #endif
           // Triangulate intersection of cut cell and boundary cell
-          const auto triangulation_cut_boundary
-            = cut_cell.triangulate_intersection(boundary_cell);
+          const auto triangulation_cut_boundary = cut_cell.triangulate_intersection(boundary_cell);
 	  const Polyhedron polygon = convert(triangulation_cut_boundary, tdim-1, gdim);
 
 #ifdef Augustdebug
@@ -1565,13 +1564,12 @@ void MultiMesh::_build_quadrature_rules_interface()
 	    // Store polygon
 	    cut_cutting_interface.push_back(polygon);
 
-	    // Store quadrature rule and normal
-	    //for (const auto simplex: polygon)
-	    for (std::size_t s = 0; s < cut_cutting_interface.back().size(); ++s)
-	    {
-	      // Store the normal (normal matches simplices in polygon)
-	      cut_cutting_normals.push_back(std::vector<Point>(1,facet_normal));
+	    // Temporarily store normal (match simplices in polygon)
+	    cut_cutting_normals.push_back(std::vector<Point>(polygon.size(), facet_normal));
 
+	    // Store quadrature rule and normal
+	    for (const auto simplex: polygon)
+	    {
 	      std::vector<double> x = convert(polygon, tdim-1, gdim);
 	      const auto num_qr_pts = _add_quadrature_rule
 		(cut_cutting_interface_qr,
@@ -1589,7 +1587,11 @@ void MultiMesh::_build_quadrature_rules_interface()
 	} // end this cut cutting pair initialization
 
 #ifdef Augustdebug
-	std::cout << cut_cutting_interface.size() <<' '<<cut_cutting_normals.size()<<std::endl;
+	// Remember that cut_cutting_interface_n is vector<double>, i.e. twice the number of actual normals
+	std::cout << cut_cutting_interface_qr.first.size() <<' '<<cut_cutting_interface_n.size() << std::endl;
+	dolfin_assert(cut_cutting_interface_qr.first.size() == cut_cutting_interface_n.size());
+	// also cut_cutting_normals temporarily save normals:
+	std::cout << cut_cutting_interface.size() << ' ' << cut_cutting_normals.size() << std::endl;
 	dolfin_assert(cut_cutting_interface.size() == cut_cutting_normals.size());
 #endif
 
