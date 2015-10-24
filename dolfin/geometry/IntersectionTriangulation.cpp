@@ -1746,6 +1746,7 @@ IntersectionTriangulation::intersection_face_edge(const Point& r,
     }
     else if (triangulation.size() == 4)
     {
+      std::cout << __FUNCTION__ << " average" << std::endl;
       pt[0] = 0.5*(triangulation[0] + triangulation[2]);
       pt[1] = 0.5*(triangulation[1] + triangulation[3]);
       return true;

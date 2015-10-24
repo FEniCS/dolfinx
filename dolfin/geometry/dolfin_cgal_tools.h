@@ -141,14 +141,12 @@ namespace cgaltools
     inline std::vector<double> parse(const T& ii)
   {
     //std::cout << __FUNCTION__ << std::endl;
-    std::vector<double> triangulation;
 
     const Point_2* p = boost::get<Point_2>(&*ii);
     if (p)
     {
-      triangulation.resize(2);
-      triangulation[0] = CGAL::to_double(p->x());
-      triangulation[1] = CGAL::to_double(p->y());
+      std::vector<double> triangulation = {{ CGAL::to_double(p->x()),
+					     CGAL::to_double(p->y()) }};
       return triangulation;
     }
 
@@ -157,24 +155,22 @@ namespace cgaltools
     {
       //std::cout << "segment " << std::endl;
       //std::cout << (*s)[0][0] <<' '<<(*s)[0][1] <<' '<<(*s)[1][0]<<' '<<(*s)[1][1]<<std::endl;
-      triangulation.resize(4);
-      triangulation[0] = CGAL::to_double(s->vertex(0)[0]);
-      triangulation[1] = CGAL::to_double(s->vertex(0)[1]);
-      triangulation[2] = CGAL::to_double(s->vertex(1)[0]);
-      triangulation[3] = CGAL::to_double(s->vertex(1)[1]);
+      std::vector<double> triangulation = {{ CGAL::to_double(s->vertex(0)[0]),
+					     CGAL::to_double(s->vertex(0)[1]),
+					     CGAL::to_double(s->vertex(1)[0]),
+					     CGAL::to_double(s->vertex(1)[1]) }};
       return triangulation;
     }
 
     const Triangle_2* t = boost::get<Triangle_2>(&*ii);
     if (t)
     {
-      triangulation.resize(6);
-      triangulation[0] = CGAL::to_double(t->vertex(0)[0]);
-      triangulation[1] = CGAL::to_double(t->vertex(0)[1]);
-      triangulation[2] = CGAL::to_double(t->vertex(1)[0]);
-      triangulation[3] = CGAL::to_double(t->vertex(1)[1]);
-      triangulation[4] = CGAL::to_double(t->vertex(2)[0]);
-      triangulation[5] = CGAL::to_double(t->vertex(2)[1]);
+      std::vector<double> triangulation = {{ CGAL::to_double(t->vertex(0)[0]),
+					     CGAL::to_double(t->vertex(0)[1]),
+					     CGAL::to_double(t->vertex(1)[0]),
+					     CGAL::to_double(t->vertex(1)[1]),
+					     CGAL::to_double(t->vertex(2)[0]),
+					     CGAL::to_double(t->vertex(2)[1]) }};
       return triangulation;
     }
 
@@ -182,7 +178,7 @@ namespace cgaltools
     if (pts)
     {
       //std::cout << "pts" << std::endl;
-      triangulation.resize(pts->size()*2);
+      std::vector<double> triangulation(pts->size()*2);
       for (std::size_t i = 0; i < pts->size(); ++i)
       {
 	triangulation[2*i] = CGAL::to_double((*pts)[i].x());
@@ -191,7 +187,7 @@ namespace cgaltools
       return triangulation;
     }
 
-    return triangulation;
+    return std::vector<double>();
   }
 
 
