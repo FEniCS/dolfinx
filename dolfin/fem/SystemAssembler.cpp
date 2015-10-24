@@ -250,15 +250,21 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   std::size_t num_fs
     = (*_a->function_space(0) == *_a->function_space(1)) ? 1 : 2;
 
-  // Bin boundary conditions according to which form they apply to
+  // Bin boundary conditions according to which form they apply to (if any)
   std::vector<DirichletBC::Map> boundary_values(num_fs);
   for (std::size_t i = 0; i < _bcs.size(); ++i)
   {
-    unsigned int axis
-      = (*_bcs[i]->function_space() == *_a->function_space(0)) ? 0 : 1;
-    _bcs[i]->get_boundary_values(boundary_values[axis]);
-    if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
-      _bcs[i]->gather(boundary_values[axis]);
+    int axis = -1;
+    if (*_bcs[i]->function_space() == *_a->function_space(0))
+      axis = 0;
+    else if (*_bcs[i]->function_space() == *_a->function_space(1))
+      axis = 1;
+    if (axis != -1)
+    {
+      _bcs[i]->get_boundary_values(boundary_values[axis]);
+      if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
+        _bcs[i]->gather(boundary_values[axis]);
+    }
   }
 
   // Modify boundary values for incremental (typically nonlinear)
