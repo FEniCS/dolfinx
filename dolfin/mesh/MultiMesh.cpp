@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-10-24
+// Last changed: 2015-10-25
 
 
 #include <dolfin/log/log.h>
@@ -33,8 +33,8 @@
 #include "MultiMesh.h"
 // FIXME August
 #include <dolfin/geometry/dolfin_simplex_tools.h>
-//#define Augustdebug
-//#define Augustnormaldebug
+#define Augustdebug
+#define Augustnormaldebug
 
 using namespace dolfin;
 
