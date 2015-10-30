@@ -488,18 +488,40 @@ def test_derivative(QQ2, QQ3):
         dim = w.value_dimension(0)
         w.interpolate(Constant([42.0*(i+1) for i in range(dim)]))
 
-        # Single argument derivative
+        # Derivative w.r.t. mixed space
         u, v = split(w)
         F = u*v*dx
         dF = derivative(F, w)
         b1 = assemble(dF)
 
-        # Multiple argument derivative
-        u, v = w.split()
-        F = u*v*dx
-        dF = derivative(F, (u, v))
-        b2 = assemble(dF)
+
+def test_coefficient_derivatives(V1, V2):
+    for V in [V1, V2]:
+        f = Function(V)
+        g = Function(V)
+        v = TestFunction(V)
+        u = TrialFunction(V)
+
+        f.interpolate(Expression("1.0 + x[0] + x[1]"))
+        g.interpolate(Expression("2.0 + x[0] + x[1]"))
+
+        # Since g = f + 1, define dg/df = 1
+        cd = {g: 1}
+
+        # Handle relation between g and f in derivative
+        M = g**2*dx
+        L = derivative(M, f, v, coefficient_derivatives=cd)
+        a = derivative(L, f, u, coefficient_derivatives=cd)
+        A0 = assemble(a).norm('frobenius')
+        b0 = assemble(L).norm('l2')
+
+        # Manually construct the above case
+        M = g**2*dx
+        L = 2*g*v*dx
+        a = 2*u*v*dx
+        A1 = assemble(a).norm('frobenius')
+        b1 = assemble(L).norm('l2')
 
         # Compare
-        b1 -= b2
-        assert round(b1.norm('l2'), 7) == 0.0
+        assert round(A0 - A1, 7) == 0.0
+        assert round(b0 - b1, 7) == 0.0
