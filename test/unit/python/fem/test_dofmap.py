@@ -39,8 +39,10 @@ def Q(mesh):
     return VectorFunctionSpace(mesh, "Lagrange", 1)
 
 @fixture
-def W(V, Q):
-    return V*Q
+def W(mesh):
+    V = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    Q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    return FunctionSpace(mesh, V*Q)
 
 
 reorder_dofs = set_parameters_fixture("reorder_dofs_serial", [True, False])
@@ -126,11 +128,12 @@ def test_tabulate_coord_periodic():
 
     mesh = UnitSquareMesh(4, 4)
 
-    V = FunctionSpace(mesh, "Lagrange", 1,  \
-                      constrained_domain=periodic_boundary)
-    Q = VectorFunctionSpace(mesh, "Lagrange", 1,  \
-                            constrained_domain=periodic_boundary)
+    V = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    Q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
     W = V*Q
+
+    V = FunctionSpace(mesh, V, constrained_domain=periodic_boundary)
+    W = FunctionSpace(mesh, W, constrained_domain=periodic_boundary)
 
     L0  = W.sub(0)
     L1  = W.sub(1)
@@ -170,10 +173,13 @@ def test_tabulate_dofs_periodic():
     # Create periodic boundary
     periodic_boundary = PeriodicBoundary2()
 
-    V = FunctionSpace(mesh, "Lagrange", 2, constrained_domain=periodic_boundary)
-    Q = VectorFunctionSpace(mesh, "Lagrange", 2, \
-                            constrained_domain=periodic_boundary)
+    V = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
+    Q = VectorElement("Lagrange", mesh.ufl_cell(), 2)
     W = V*Q
+
+    V = FunctionSpace(mesh, V, constrained_domain=periodic_boundary)
+    Q = FunctionSpace(mesh, Q, constrained_domain=periodic_boundary)
+    W = FunctionSpace(mesh, W, constrained_domain=periodic_boundary)
 
     L0   = W.sub(0)
     L1   = W.sub(1)
@@ -211,14 +217,14 @@ def test_global_dof_builder():
 
     mesh = UnitSquareMesh(3, 3)
 
-    V = VectorFunctionSpace(mesh, "CG", 1)
-    Q = FunctionSpace(mesh, "CG", 1)
-    R = FunctionSpace(mesh, "R", 0)
+    V = VectorElement("CG", mesh.ufl_cell(), 1)
+    Q = FiniteElement("CG", mesh.ufl_cell(), 1)
+    R = FiniteElement("R",  mesh.ufl_cell(), 0)
 
-    W = MixedFunctionSpace([Q, Q, Q, R])
-    W = MixedFunctionSpace([Q, Q, R, Q])
-    W = MixedFunctionSpace([V, R])
-    W = MixedFunctionSpace([R, V])
+    W = FunctionSpace(mesh, MixedElement([Q, Q, Q, R]))
+    W = FunctionSpace(mesh, MixedElement([Q, Q, R, Q]))
+    W = FunctionSpace(mesh, V*R)
+    W = FunctionSpace(mesh, R*V)
 
 
 def test_dof_to_vertex_map(mesh, reorder_dofs):
@@ -231,9 +237,13 @@ def test_dof_to_vertex_map(mesh, reorder_dofs):
         assert np.all(d2v[v2d] == np.arange(len(d2v)))
 
     # Check for both reordered and UFC ordered dofs
-    V = FunctionSpace(mesh, "Lagrange", 1)
-    Q = VectorFunctionSpace(mesh, "Lagrange", 1)
-    W = V*Q
+    v = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    w = v*q
+
+    V = FunctionSpace(mesh, v)
+    Q = FunctionSpace(mesh, q)
+    W = FunctionSpace(mesh, w)
 
     _test_maps_consistency(V)
     _test_maps_consistency(Q)
@@ -265,7 +275,7 @@ def test_dof_to_vertex_map(mesh, reorder_dofs):
     with pytest.raises(RuntimeError):
         dof_to_vertex_map(W)
 
-    W = Q*FunctionSpace(mesh, "R", 0)
+    W = FunctionSpace(mesh, q*FiniteElement("R", mesh.ufl_cell(), 0))
     with pytest.raises(RuntimeError):
         dof_to_vertex_map(W)
 
@@ -343,8 +353,8 @@ def test_clear_sub_map_data_scalar(mesh):
 
 def test_clear_sub_map_data_vector(mesh):
     mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "Lagrange", 1)
-    W = V*V
+    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    W = FunctionSpace(mesh, P1*P1)
 
     # Check block size
     assert W.dofmap().block_size == 2
@@ -359,14 +369,16 @@ def test_clear_sub_map_data_vector(mesh):
 def test_block_size(mesh):
     meshes = [UnitSquareMesh(8, 8), UnitCubeMesh(4, 4, 4)]
     for mesh in meshes:
-        V = FunctionSpace(mesh, "Lagrange", 2)
+        P2 = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
+
+        V = FunctionSpace(mesh, P2)
         assert V.dofmap().block_size == 1
 
-        W = V*V
-        assert W.dofmap().block_size == 2
+        V = FunctionSpace(mesh, P2*P2)
+        assert V.dofmap().block_size == 2
 
         for i in range(1, 6):
-            W = MixedFunctionSpace([V]*i)
+            W = FunctionSpace(mesh, MixedElement(i*[P2]))
             assert W.dofmap().block_size == i
 
         V = VectorFunctionSpace(mesh, "Lagrange", 2)
@@ -375,9 +387,9 @@ def test_block_size(mesh):
 
 def test_block_size_real(mesh):
     mesh = UnitIntervalMesh(12)
-    V = FunctionSpace(mesh, 'DG', 0)
-    R = FunctionSpace(mesh, 'R', 0)
-    X = MixedFunctionSpace([V, R])
+    V = FiniteElement('DG', mesh.ufl_cell(), 0)
+    R = FiniteElement('R',  mesh.ufl_cell(), 0)
+    X = FunctionSpace(mesh, V*R)
     assert X.dofmap().block_size == 1
 
 

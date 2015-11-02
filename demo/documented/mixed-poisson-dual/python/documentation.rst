@@ -37,24 +37,18 @@ the unit square. In this example, we will let the mesh consist of 32 x
    pair: FunctionSpace; Discontinuous Raviart-Thomas
    pair: FunctionSpace; Lagrange
 
-Next, we need to define the function spaces. We define the two
-function spaces :math:`\Sigma_h = DRT` and :math:`V_h = CG`
-separately, before combining these into a mixed function space:
+Next, we need to build the function space.
 
 .. code-block:: python
 
-    # Define function spaces and mixed (product) space
-    DRT = FunctionSpace(mesh, "DRT", 2)
-    CG = FunctionSpace(mesh, "CG", 3)
-    W = DRT * CG
+    # Define finite elements spaces and build mixed space
+    DRT = FiniteElement("DRT", mesh.ufl_cell(), 2)
+    CG  = FiniteElement("CG", mesh.ufl_cell(), 3)
+    W = FunctionSpace(mesh, DRT * CG)
 
 The second argument to :py:class:`FunctionSpace
-<dolfin.functions.functionspace.FunctionSpace>` specifies the type of
-finite element family, while the third argument specifies the
-polynomial degree. The UFL user manual contains a list of all
-available finite element families and more details.  The * operator
-creates a mixed (product) space ``W`` from the two separate spaces
-``DRT`` and ``CG``. Hence,
+<dolfin.functions.functionspace.FunctionSpace>` specifies underlying
+finite element, here mixed element obtained by ``*`` operator.
 
 .. math::
 
