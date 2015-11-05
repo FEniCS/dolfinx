@@ -53,6 +53,15 @@ def solve(t, x1, y1, x2, y2, plot_solution,
     v = TestFunction(V)
     # f = Coefficient(element)
 
+    # Define facet normal and mesh size
+    n = FacetNormal(multimesh)
+    h = 2.0*Circumradius(multimesh)
+    h = (h('+') + h('-')) / 2
+
+# # Parameters
+# alpha = 4.0
+# beta = 4.0
+
 
 if MPI.size(mpi_comm_world()) > 1:
     info("Sorry, this demo does not (yet) run in parallel.")
@@ -87,14 +96,7 @@ for n in range(N):
           u0_file, u1_file, u2_file)
 
 
-# # Define facet normal and mesh size
-# n = FacetNormal(triangle)
-# h = 2.0*Circumradius(triangle)
-# h = (h('+') + h('-')) / 2
 
-# # Parameters
-# alpha = 4.0
-# beta = 4.0
 
 # # Bilinear form
 # a = dot(grad(u), grad(v))*dX \
