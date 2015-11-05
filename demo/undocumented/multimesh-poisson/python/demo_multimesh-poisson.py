@@ -45,7 +45,7 @@ def solve(t, x1, y1, x2, y2, plot_solution,
     multimesh.build()
 
     # Create function space
-    #V = MultiMeshFunctionSpace(multimesh, "Lagrange", 1);
+    V = MultiMeshFunctionSpace(multimesh, "Lagrange", 1);
     #V.parameters.multimesh.quadrature_order = 2
 
 if MPI.size(mpi_comm_world()) > 1:
