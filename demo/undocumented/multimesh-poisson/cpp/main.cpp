@@ -16,11 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2015-10-16
+// Last changed: 2015-11-05
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes. The solution is computed
-// on a sequence of rotating meshes to check test the multimesh
+// on a sequence of rotating meshes to test the multimesh
 // functionality.
 
 #include <cmath>
@@ -62,64 +62,24 @@ void solve(double t,
   mesh_1.rotate(70*t);
   mesh_2.rotate(-70*t);
 
-  // Create function spaces
-  MultiMeshPoisson::FunctionSpace V0(mesh_0);
-  MultiMeshPoisson::FunctionSpace V1(mesh_1);
-  MultiMeshPoisson::FunctionSpace V2(mesh_2);
+  // Build multimesh
+  MultiMesh multimesh;
+  multimesh.add(mesh_0);
+  multimesh.add(mesh_1);
+  multimesh.add(mesh_2);
+  multimesh.build();
 
-  // FIXME: Should look like this
-  /*
-  MultiMeshPoisson::MultiMeshFunctionSpace V;
-  V.add_mesh(mesh_0);
-  V.add_mesh(mesh_1);
-  V.add_mesh(mesh_2);
-  V.build();
-  */
+  // Create function space
+  MultiMeshPoisson::MultiMeshFunctionSpace V(multimesh);
+  V.parameters("multimesh")["quadrature_order"] = 2;
 
   // Create forms
-  MultiMeshPoisson::BilinearForm a0(V0, V0);
-  MultiMeshPoisson::BilinearForm a1(V1, V1);
-  MultiMeshPoisson::BilinearForm a2(V2, V2);
-  MultiMeshPoisson::LinearForm L0(V0);
-  MultiMeshPoisson::LinearForm L1(V1);
-  MultiMeshPoisson::LinearForm L2(V2);
-
-  // FIXME: Should look like this
-  /*
   MultiMeshPoisson::MultiMeshBilinearForm a(V, V);
   MultiMeshPoisson::MultiMeshLinearForm L(V);
-  */
 
-  // Build multimesh function space
-  MultiMeshFunctionSpace V;
-  V.parameters("multimesh")["quadrature_order"] = 2;
-  V.add(V0);
-  V.add(V1);
-  V.add(V2);
-  V.build();
-
-  // Set coefficients
+  // Attach coefficients
   Source f;
-  L0.f = f;
-  L1.f = f;
-  L2.f = f;
-
-  // FIXME: Should look like this
-  /*
-  L.f = f
-  */
-
-  // Build multimesh forms
-  MultiMeshForm a(V, V);
-  MultiMeshForm L(V);
-  a.add(a0);
-  a.add(a1);
-  a.add(a2);
-  L.add(L0);
-  L.add(L1);
-  L.add(L2);
-  a.build();
-  L.build();
+  L.f = f;
 
   // Create boundary condition
   Constant zero(0);
@@ -154,7 +114,7 @@ void solve(double t,
     plot(u.part(2), "u_2");
     interactive();
   }
-  }
+}
 
 int main(int argc, char* argv[])
 {
