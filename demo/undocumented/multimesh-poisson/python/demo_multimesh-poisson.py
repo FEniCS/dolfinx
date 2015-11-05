@@ -46,7 +46,13 @@ def solve(t, x1, y1, x2, y2, plot_solution,
 
     # Create function space
     V = MultiMeshFunctionSpace(multimesh, "Lagrange", 1);
-    #V.parameters.multimesh.quadrature_order = 2
+    V.parameters.multimesh.quadrature_order = 2
+
+    # Define trial and test functions
+    u = TrialFunction(V)
+    v = TestFunction(V)
+    # f = Coefficient(element)
+
 
 if MPI.size(mpi_comm_world()) > 1:
     info("Sorry, this demo does not (yet) run in parallel.")
@@ -80,13 +86,6 @@ for n in range(N):
     solve(t, x1, y1, x2, y2, n == N - 1,
           u0_file, u1_file, u2_file)
 
-# # Define element
-# element = FiniteElement("Lagrange", triangle, 1)
-
-# # Define trial and test functions and right-hand side
-# u = TrialFunction(element)
-# v = TestFunction(element)
-# f = Coefficient(element)
 
 # # Define facet normal and mesh size
 # n = FacetNormal(triangle)
