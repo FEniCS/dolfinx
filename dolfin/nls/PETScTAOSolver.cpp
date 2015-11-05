@@ -459,7 +459,7 @@ void PETScTAOSolver::set_ksp_options()
           #else
           lu_method = "petsc";
           warning("Using PETSc native LU solver. Consider configuring PETSc with an efficient LU solver (e.g. UMFPACK, MUMPS).");
-#endif
+          #endif
         }
         else
         {
@@ -471,8 +471,8 @@ void PETScTAOSolver::set_ksp_options()
           lu_method = "mumps";
           #else
           dolfin_error("PETScTAOSolver.cpp",
-                     "solve linear system using PETSc LU solver",
-                     "No suitable solver for parallel LU found. Consider configuring PETSc with MUMPS or SuperLU_dist");
+                       "solve linear system using PETSc LU solver",
+                       "No suitable solver for parallel LU found. Consider configuring PETSc with MUMPS or SuperLU_dist");
           #endif
         }
       }
@@ -508,8 +508,8 @@ void PETScTAOSolver::set_ksp_options()
     if (krylov_parameters["monitor_convergence"])
     {
       KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm,
-                       PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
-                       NULL);
+                    PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
+                    NULL);
     }
 
     // Get integer tolerances (to take care of casting to PetscInt)
