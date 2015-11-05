@@ -260,7 +260,11 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
   init(optimisation_problem, x_copy, lb, ub);
 
   // Solve
-  TaoSolve(_tao);
+  PetscErrorCode ierr;
+  ierr = TaoSolve(_tao);
+
+  // Check the error code from TaoSolve
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSolve");
 
   // Get the solution vector
   x.zero();
