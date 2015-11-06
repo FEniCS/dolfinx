@@ -372,8 +372,10 @@ def test_non_square_assembly():
         return (x[0] == 0)
 
     # Assemble four blocks in VxV, VxQ, QxV and VxV
-    Q = FunctionSpace(mesh, "CG", 1)
-    V = VectorFunctionSpace(mesh, "CG", 2)
+    P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    Q = FunctionSpace(mesh, P1)
+    V = FunctionSpace(mesh, P2)
     u = TrialFunction(V)
     v = TestFunction(V)
     p = TrialFunction(Q)
@@ -414,7 +416,7 @@ def test_non_square_assembly():
     bnorm1 += b.norm("l2")**2
 
     # Same problem as a MixedFunctionSpace
-    W = V*Q
+    W = FunctionSpace(mesh, P2*P1)
     u, p = TrialFunctions(W)
     v, q = TestFunctions(W)
 
