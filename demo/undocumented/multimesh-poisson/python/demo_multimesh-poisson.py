@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2015-11-05
-# Last changed: 2015-11-05
+# Last changed: 2015-11-06
 #
 # This demo program solves Poisson's equation on a domain defined by
 # three overlapping and non-matching meshes. The solution is computed
@@ -48,20 +48,33 @@ def solve(t, x1, y1, x2, y2, plot_solution,
     V = MultiMeshFunctionSpace(multimesh, "Lagrange", 1);
     V.parameters.multimesh.quadrature_order = 2
 
-    # Define trial and test functions
+    # Define trial and test functions and right-hand side
     u = TrialFunction(V)
     v = TestFunction(V)
-    # f = Coefficient(element)
+    f = Constant(1)
 
     # Define facet normal and mesh size
     n = FacetNormal(multimesh)
     h = 2.0*Circumradius(multimesh)
     h = (h('+') + h('-')) / 2
 
-# # Parameters
-# alpha = 4.0
-# beta = 4.0
+    # Parameters
+    alpha = 4.0
+    beta = 4.0
 
+    # Bilinear form
+    a = dot(grad(u), grad(v))*dX \
+      - dot(avg(grad(u)), jump(v, n))*dI \
+      - dot(avg(grad(v)), jump(u, n))*dI \
+      + alpha/h*jump(u)*jump(v)*dI \
+      + dot(jump(grad(u)), jump(grad(v)))*dO
+
+    # Linear form
+    L = f*v*dx
+
+    # Assemble linear system
+    A = assemble_multimesh(a)
+    b = assemble_multimesh(L)
 
 if MPI.size(mpi_comm_world()) > 1:
     info("Sorry, this demo does not (yet) run in parallel.")
@@ -94,16 +107,3 @@ for n in range(N):
     # Compute solution
     solve(t, x1, y1, x2, y2, n == N - 1,
           u0_file, u1_file, u2_file)
-
-
-
-
-# # Bilinear form
-# a = dot(grad(u), grad(v))*dX \
-#   - dot(avg(grad(u)), jump(v, n))*dI \
-#   - dot(avg(grad(v)), jump(u, n))*dI \
-#   + alpha/h*jump(u)*jump(v)*dI \
-#   + dot(jump(grad(u)), jump(grad(v)))*dO
-
-# # Linear form
-# L = f*v*dx
