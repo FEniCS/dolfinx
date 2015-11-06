@@ -291,7 +291,7 @@ public:
   {
     // Get coordinates of vertices
     UnitSquareMesh mesh(5, 5);
-    CPPUNIT_ASSERT(mesh.geometry().size() == 36);
+    CPPUNIT_ASSERT(mesh.geometry().num_vertices() == 36);
   }
 
   void testGetCells()

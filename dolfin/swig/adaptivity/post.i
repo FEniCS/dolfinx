@@ -35,4 +35,3 @@ HierarchicalErrorControl.root_node = HierarchicalErrorControl._root_node
 HierarchicalErrorControl.child = HierarchicalErrorControl._child
 HierarchicalErrorControl.parent = HierarchicalErrorControl._parent
 %}
-

@@ -38,7 +38,7 @@ void MeshTransformation::translate(Mesh& mesh, const Point& point)
 
   // Displace all points
   std::vector<double> x0(gdim);
-  for (std::size_t i = 0; i < geometry.size(); i++)
+  for (std::size_t i = 0; i < geometry.num_vertices(); i++)
   {
     for (std::size_t j = 0; j < gdim; j++)
       x0[j] = geometry.x(i, j) + dx[j];
@@ -58,7 +58,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis)
     c[j] = 0.0;
 
   // Sum all vertex coordinates
-  for (std::size_t i = 0; i < geometry.size(); i++)
+  for (std::size_t i = 0; i < geometry.num_vertices(); i++)
   {
     const double* x = geometry.x(i);
     for (std::size_t j = 0; j < gdim; j++)
@@ -67,7 +67,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis)
 
   // Divide by the number of vertices
   for (std::size_t j = 0; j < gdim; j++)
-    c[j] /= static_cast<double>(geometry.size());
+    c[j] /= static_cast<double>(geometry.num_vertices());
 
   // Set up point
   dolfin_assert(gdim <= 3);
@@ -107,7 +107,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
     // Rotate all points
     MeshGeometry& geometry = mesh.geometry();
     std::vector<double> xr(2);
-    for (std::size_t i = 0; i < geometry.size(); i++)
+    for (std::size_t i = 0; i < geometry.num_vertices(); i++)
     {
       // Get coordinate
       const double* x = geometry.x(i);
@@ -156,7 +156,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
     // Rotate all points
     MeshGeometry& geometry = mesh.geometry();
     std::vector<double> xr(3);
-    for (std::size_t i = 0; i < geometry.size(); i++)
+    for (std::size_t i = 0; i < geometry.num_vertices(); i++)
     {
       // Get coordinate
       const double* x = geometry.x(i);

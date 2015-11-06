@@ -27,9 +27,10 @@ from time import time
 
 SIZE = 4
 mesh = UnitCubeMesh(SIZE, SIZE, SIZE)
+cell = mesh.ufl_cell()
 
-V = VectorFunctionSpace(mesh, "CG", 2) * FunctionSpace(mesh, "DG", 1)
-W = VectorFunctionSpace(mesh, "CG", 3) * FunctionSpace(mesh, "DG", 2)
+V = FunctionSpace(mesh, VectorElement("CG", cell, 2) * FiniteElement("DG", cell, 1))
+W = FunctionSpace(mesh, VectorElement("CG", cell, 3) * FiniteElement("DG", cell, 2))
 
 u = Expression(("sin(x[0])", "1.0", "x[0]*x[1]", "0.0"), degree=3)
 u = interpolate(u, V)

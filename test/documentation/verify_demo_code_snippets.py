@@ -60,8 +60,13 @@ def get_blocks(rst_file, block_type):
     code = False
     block = []
     for e, l in enumerate(lines):
+        # Don't tolerate non-space whitespace
+        if l.lstrip() != l.lstrip(' '):
+            raise RuntimeError("There are tabs or other suspicious whitespace "
+                               " in '%s'!" % rst_file)
         # Get start of code block.
         if "code-block::" in l and block_type in l:
+            assert not code
             code = True
             block = []
             continue

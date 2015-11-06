@@ -31,12 +31,12 @@ our backend for linear algebra.
 
 .. code-block:: python
 
-	# Test for PETSc
-	if not has_linear_algebra_backend("PETSc"):
-	    info("DOLFIN has not been configured with PETSc. Exiting.")
-	    exit()
+    # Test for PETSc
+    if not has_linear_algebra_backend("PETSc"):
+        info("DOLFIN has not been configured with PETSc. Exiting.")
+        exit()
 
-	parameters["linear_algebra_backend"] = "PETSc"
+    parameters["linear_algebra_backend"] = "PETSc"
 
 
 We begin by defining a mesh of the domain and a finite element
@@ -61,8 +61,8 @@ and a :py:class:`TestFunction
 
 .. code-block:: python
 
-	u = TrialFunction(V)
-	v = TestFunction(V)
+    u = TrialFunction(V)
+    v = TestFunction(V)
 
 Further, the source :math:`f` and the boundary normal derivative
 :math:`g` are involved in the variational forms, and hence we must
@@ -75,8 +75,8 @@ expressions at run-time.
 
 .. code-block:: python
 
-	f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-	g = Expression("-sin(5*x[0])")
+    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+    g = Expression("-sin(5*x[0])")
 
 
 With :math:`u,v,f` and :math:`g`, we can write down the bilinear form
@@ -84,8 +84,8 @@ With :math:`u,v,f` and :math:`g`, we can write down the bilinear form
 
 .. code-block:: python
 
-	a = inner(grad(u), grad(v))*dx
-	L = f*v*dx + g*v*ds
+    a = inner(grad(u), grad(v))*dx
+    L = f*v*dx + g*v*ds
 
 In order to transform our variational problem into a linear system we
 need to assemble the coefficient matrix ``A`` and the right-side
@@ -94,17 +94,17 @@ vector ``b``. We do this using the function :py:meth:`assemble
 
 .. code-block:: python
 
-	# Assemble system
-	A = assemble(a)
-	b = assemble(L)
+    # Assemble system
+    A = assemble(a)
+    b = assemble(L)
 
 We specify a Vector for storing the result by defining a
 :py:class:`Function <dolfin.cpp.function.Function>`.
 
 .. code-block:: python
 
-	# Solution Function
-	u = Function(V)
+    # Solution Function
+    u = Function(V)
 
 Next, we specify the iterative solver we want to use, in this case a
 :py:class:`KrylovSolver <dolfin.cpp.la.KrylovSolver>`. The first
@@ -114,8 +114,8 @@ Residual (GMRES) method.
 
 .. code-block:: python
 
-	# Create Krylov solver
-	solver = KrylovSolver(A, "gmres")
+    # Create Krylov solver
+    solver = KrylovSolver(A, "gmres")
 
 We impose our additional constraint by removing the null space
 component from the solution vector. In order to do this we need a
@@ -126,33 +126,33 @@ as its null space.
 
 .. code-block:: python
 
-	# Create vector that spans the null space
-	null_vec = Vector(u.vector())
-	V.dofmap().set(null_vec, 1.0)
-	null_vec *= 1.0/null_vec.norm("l2")
+    # Create vector that spans the null space and normalize
+    null_vec = Vector(u.vector())
+    V.dofmap().set(null_vec, 1.0)
+    null_vec *= 1.0/null_vec.norm("l2")
 
-	# Create null space basis object and attach to Krylov solver
-	null_space = VectorSpaceBasis([null_vec])
-	solver.set_nullspace(null_space)
+    # Create null space basis object and attach to PETSc matrix
+    null_space = VectorSpaceBasis([null_vec])
+    as_backend_type(A).set_nullspace(null_space)
 
 Orthogonalization of ``b`` with respect to the null space makes sure
 that it doesn't contain any component in the null space.
 
 .. code-block:: python
 
-	null_space.orthogonalize(b);
+    null_space.orthogonalize(b);
 
 Finally we are able to solve our linear system
 
 .. code-block:: python
 
-	solver.solve(u.vector(), b)
+    solver.solve(u.vector(), b)
 
 and plot the solution
 
 .. code-block:: python
 
-	plot(u, interactive=True)
+    plot(u, interactive=True)
 
 Complete code
 -------------
