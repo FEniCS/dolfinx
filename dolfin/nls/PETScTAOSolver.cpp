@@ -369,11 +369,18 @@ void PETScTAOSolver::set_tao_options()
   set_tao(parameters["method"]);
 
   // Set tolerances
+  #if PETSC_VERSION_GT(3, 6, 2)
+  TaoSetTolerances(_tao,
+                         parameters["gradient_absolute_tol"],
+                         parameters["gradient_relative_tol"],
+                         parameters["gradient_t_tol"]);
+  #else
   TaoSetTolerances(_tao, parameters["function_absolute_tol"],
                          parameters["function_relative_tol"],
                          parameters["gradient_absolute_tol"],
                          parameters["gradient_relative_tol"],
                          parameters["gradient_t_tol"]);
+  #endif
 
   // Set TAO solver maximum iterations
   int maxits = parameters["maximum_iterations"];

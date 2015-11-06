@@ -47,8 +47,8 @@
 %pythoncode %{
 def function_space(self):
     "Return the FunctionSpace"
-    from dolfin.functions.functionspace import FunctionSpaceFromCpp
-    return FunctionSpaceFromCpp(self._function_space())
+    from dolfin.functions.functionspace import FunctionSpace
+    return FunctionSpace(self._function_space())
 %}
 }
 
@@ -69,8 +69,8 @@ def function_space(self, i):
          _FunctionSpace_
              Function space shared pointer.
     """
-    from dolfin.functions.functionspace import FunctionSpaceFromCpp
-    return FunctionSpaceFromCpp(self._function_space(i))
+    from dolfin.functions.functionspace import FunctionSpace
+    return FunctionSpace(self._function_space(i))
 %}
 }
 
@@ -156,15 +156,15 @@ def trial_space(self):
     """
     Return the trial space
     """
-    from dolfin.functions.functionspace import FunctionSpaceFromCpp
-    return FunctionSpaceFromCpp(self._trial_space())
+    from dolfin.functions.functionspace import FunctionSpace
+    return FunctionSpace(self._trial_space())
 
 def test_space(self):
     """
     Return the test space
     """
-    from dolfin.functions.functionspace import FunctionSpaceFromCpp
-    return FunctionSpaceFromCpp(self._test_space())
+    from dolfin.functions.functionspace import FunctionSpace
+    return FunctionSpace(self._test_space())
 
 %}
 }
