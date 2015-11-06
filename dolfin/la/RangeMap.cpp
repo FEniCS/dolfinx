@@ -35,7 +35,7 @@ void RangeMap::init(std::size_t local_size, std::size_t block_size)
   _all_ranges.insert(_all_ranges.begin(), 0);
 }
 //-----------------------------------------------------------------------------
-void RangeMap::set_local_to_global(std::vector<std::size_t> indices)
+void RangeMap::set_local_to_global(std::vector<std::size_t>& indices)
 {
   _local_to_global = indices;
 
