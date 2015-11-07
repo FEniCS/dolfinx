@@ -60,15 +60,13 @@ namespace dolfin
       const MPI_Comm mpi_comm,
       const std::vector<std::size_t>& dims,
       const std::vector<std::shared_ptr<const RangeMap>> range_maps,
-      const std::vector<std::size_t>& block_sizes,
       const std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
     void init(
       const MPI_Comm mpi_comm,
       const std::vector<std::size_t>& dims,
-      const std::vector<std::shared_ptr<const RangeMap>> range_maps,
-      const std::vector<std::size_t>& block_sizes);
+      const std::vector<std::shared_ptr<const RangeMap>> range_maps);
 
     /// Insert a global entry - will be fixed by apply()
     void insert_global(dolfin::la_index i, dolfin::la_index j);
@@ -144,15 +142,6 @@ namespace dolfin
 
     // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
     std::vector<std::size_t> non_local;
-
-    // Array map from un-owned local indices to global indices
-    //    std::vector<std::vector<std::size_t> > _local_to_global;
-
-    // Map from non-local vertex to owning process index
-    //    std::vector<std::vector<int> > _off_process_owner;
-
-    // Block size
-    std::vector<std::size_t> _block_size;
 
   };
 

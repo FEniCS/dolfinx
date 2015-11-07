@@ -87,7 +87,6 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   tensor_layout = A->factory().create_layout(2);
   dolfin_assert(tensor_layout);
 
-  //std::vector<std::size_t> block_sizes = {1, 1};
   std::vector<std::size_t> global_dimensions
     = {V0.dofmap()->global_dimension(), V1.dofmap()->global_dimension()};
   std::vector<std::pair<std::size_t, std::size_t>> local_range
@@ -125,7 +124,6 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
         sparsity_entries[1].push_back(col1);
       }
     }
-    std::vector<std::size_t> block_sizes = {1, 1};
 
     std::vector<std::shared_ptr<const RangeMap>> range_maps;
     range_maps.push_back(V0.dofmap()->range_map());
@@ -133,7 +131,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
 
     GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
     pattern.init(mesh.mpi_comm(), global_dimensions,
-                 range_maps, block_sizes);
+                 range_maps);
 
     std::vector<ArrayView<const dolfin::la_index>> _sparsity_entries
       = {{ArrayView<const la_index>(sparsity_entries[0]),

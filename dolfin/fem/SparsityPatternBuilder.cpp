@@ -58,16 +58,10 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   dolfin_assert(!dofmaps.empty());
   dolfin_assert(dofmaps[0]);
-  std::vector<std::size_t> block_sizes(rank);
-  for (std::size_t i = 0; i < rank; ++i)
-    block_sizes[i] = dofmaps[i]->block_size();
 
   // Initialise sparsity pattern
   if (init)
-  {
-    sparsity_pattern.init(mesh.mpi_comm(), global_dimensions, range_maps,
-                          block_sizes);
-  }
+    sparsity_pattern.init(mesh.mpi_comm(), global_dimensions, range_maps);
 
   // Only build for rank >= 2 (matrices and higher order tensors) that
   // require sparsity details
@@ -271,17 +265,16 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
   for (std::size_t i = 0; i < rank; ++i)
   {
     range_maps[i].reset(new RangeMap(MPI_COMM_WORLD));
-    // FIXME - fill in RangeMaps
+    // FIXME - fill in RangeMaps?
     global_dimensions[i] = form.function_space(i)->dofmap()->global_dimension();
     local_range[i]       = form.function_space(i)->dofmap()->ownership_range();
     off_process_owner[i].set(form.function_space(i)->dofmap()->off_process_owner());
   }
 
   // Initialize sparsity pattern
-  const std::vector<std::size_t> block_sizes(rank, 1);
   sparsity_pattern.init(form.function_space(0)->part(0)->mesh()->mpi_comm(),
                         global_dimensions,
-                        range_maps, block_sizes);
+                        range_maps);
 
   // Iterate over each part
   for (std::size_t part = 0; part < form.num_parts(); part++)

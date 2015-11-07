@@ -357,7 +357,7 @@ def test_clear_sub_map_data_vector(mesh):
     W = FunctionSpace(mesh, P1*P1)
 
     # Check block size
-    assert W.dofmap().block_size == 2
+    assert W.dofmap().block_size() == 2
 
     W.dofmap().clear_sub_map_data()
     with pytest.raises(RuntimeError):
@@ -372,17 +372,17 @@ def test_block_size(mesh):
         P2 = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
 
         V = FunctionSpace(mesh, P2)
-        assert V.dofmap().block_size == 1
+        assert V.dofmap().block_size() == 1
 
         V = FunctionSpace(mesh, P2*P2)
-        assert V.dofmap().block_size == 2
+        assert V.dofmap().block_size() == 2
 
         for i in range(1, 6):
             W = FunctionSpace(mesh, MixedElement(i*[P2]))
-            assert W.dofmap().block_size == i
+            assert W.dofmap().block_size() == i
 
         V = VectorFunctionSpace(mesh, "Lagrange", 2)
-        assert V.dofmap().block_size == mesh.geometry().dim()
+        assert V.dofmap().block_size() == mesh.geometry().dim()
 
 
 def test_block_size_real(mesh):
@@ -390,7 +390,7 @@ def test_block_size_real(mesh):
     V = FiniteElement('DG', mesh.ufl_cell(), 0)
     R = FiniteElement('R',  mesh.ufl_cell(), 0)
     X = FunctionSpace(mesh, V*R)
-    assert X.dofmap().block_size == 1
+    assert X.dofmap().block_size() == 1
 
 
 @skip_in_serial

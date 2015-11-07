@@ -43,23 +43,20 @@ SparsityPattern::SparsityPattern(
   const MPI_Comm mpi_comm,
   const std::vector<std::size_t>& dims,
   const std::vector<std::shared_ptr<const RangeMap>> range_maps,
-  const std::vector<std::size_t>& block_sizes,
   std::size_t primary_dim)
   : GenericSparsityPattern(primary_dim), _mpi_comm(MPI_COMM_NULL)
 {
-  init(mpi_comm, dims, range_maps, block_sizes);
+  init(mpi_comm, dims, range_maps);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::init(
   const MPI_Comm mpi_comm,
   const std::vector<std::size_t>& dims,
-  const std::vector<std::shared_ptr<const RangeMap>> range_maps,
-  const std::vector<std::size_t>& block_sizes)
+  const std::vector<std::shared_ptr<const RangeMap>> range_maps)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(dims.size() == 2);
   dolfin_assert(range_maps.size() == 2);
-  dolfin_assert(block_sizes.size() == 2);
 
   _mpi_comm = mpi_comm;
   _range_maps = range_maps;
@@ -70,9 +67,6 @@ void SparsityPattern::init(
   diagonal.clear();
   off_diagonal.clear();
   non_local.clear();
-
-  // Set block size
-  _block_size = block_sizes;
 
   // Check that primary dimension is valid
   if (_primary_dim > 1)
@@ -384,7 +378,7 @@ void SparsityPattern::apply()
     const std::vector<std::size_t>& local_to_global
       = _range_maps[_primary_dim]->local_to_global_unowned();
 
-    std::size_t dim_block_size = _block_size[_primary_dim];
+    std::size_t dim_block_size = _range_maps[_primary_dim]->block_size();
     for (std::size_t i = 0; i < non_local.size(); i += 2)
     {
       // Get local indices of off-process dofs
