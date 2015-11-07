@@ -165,10 +165,11 @@ void PETScTAOSolver::set_tao(const std::string tao_type)
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
-                                  GenericVector& x,
-                                  const GenericVector& lb,
-                                  const GenericVector& ub)
+std::pair<std::size_t, bool>
+PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
+                      GenericVector& x,
+                      const GenericVector& lb,
+                      const GenericVector& ub)
 {
   // Bound-constrained minimisation problem
   has_bounds = true;
@@ -177,8 +178,9 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
                lb.down_cast<PETScVector>(), ub.down_cast<PETScVector>());
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
-                                  GenericVector& x)
+std::pair<std::size_t, bool>
+PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
+                      GenericVector& x)
 {
   // Unconstrained minimisation problem
   has_bounds = false;
@@ -270,10 +272,11 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetConvergenceTest");
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
-                                  PETScVector& x,
-                                  const PETScVector& lb,
-                                  const PETScVector& ub)
+std::pair<std::size_t, bool>
+PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
+                      PETScVector& x,
+                      const PETScVector& lb,
+                      const PETScVector& ub)
 {
   Timer timer("PETSc TAO solver execution");
   PetscErrorCode ierr;
@@ -306,9 +309,9 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoGetConvergedReason");
 
   // Get the number of iterations
-  PetscInt num_iterations = 0;
-  ierr = TaoGetMaximumIterations(_tao, &num_iterations);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoGetMaximumIterations");
+  PetscInt its = 0;
+  ierr = TaoGetIterationNumber(_tao, &its);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoGetIterationNumber");
 
   // Report number of iterations
   if (reason >= 0)
@@ -323,7 +326,7 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
       dolfin_error("PETScTAOSolver.cpp",
                    "solve nonlinear optimisation problem",
                    "Solution failed to converge in %i iterations (TAO reason %d)",
-                   num_iterations, reason);
+                   its, reason);
     }
     else
     {
@@ -332,7 +335,7 @@ std::size_t PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
     }
   }
 
-  return num_iterations;
+  return std::make_pair(its, reason > 0);
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScTAOSolver::FormFunctionGradient(Tao tao, Vec x,
