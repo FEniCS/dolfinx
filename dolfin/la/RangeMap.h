@@ -58,6 +58,14 @@ namespace dolfin
     std::pair<std::size_t, std::size_t> local_range() const
     {
       const std::size_t rank = MPI::rank(_mpi_comm);
+
+      // Uninitialised
+      if(_all_ranges.size() == 0)
+      {
+        warning("Asking for size of uninitialised range\n");
+        return std::pair<std::size_t, std::size_t>(0, 0);
+      }
+
       return std::make_pair(_block_size*_all_ranges[rank],
                             _block_size*_all_ranges[rank + 1]);
     }
@@ -66,6 +74,15 @@ namespace dolfin
     std::size_t size() const
     {
       const std::size_t rank = MPI::rank(_mpi_comm);
+
+      // Uninitialised
+      if(_all_ranges.size() == 0)
+      {
+        warning("Asking for size of uninitialised range\n");
+        return 0;
+      }
+
+
       return _block_size*(_all_ranges[rank + 1]
                           - _all_ranges[rank]);
     }

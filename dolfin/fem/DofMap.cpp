@@ -68,9 +68,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
 DofMap::DofMap(const DofMap& parent_dofmap,
                const std::vector<std::size_t>& component, const Mesh& mesh)
   : _cell_dimension(0), _is_view(true), _global_dimension(0), _ufc_offset(0),
-    _range_map(new RangeMap(mesh.mpi_comm()))
-    //    _global_offset(parent_dofmap._global_offset),
-    //    _local_ownership_size(parent_dofmap._local_ownership_size)
+    _range_map(parent_dofmap._range_map)
 {
   // Build sub-dofmap
   DofMapBuilder::build_sub_map_view(*this, parent_dofmap, component, mesh);
