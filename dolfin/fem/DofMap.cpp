@@ -150,13 +150,14 @@ std::size_t DofMap::global_dimension() const
 //-----------------------------------------------------------------------------
 std::size_t DofMap::local_dimension(std::string type) const
 {
+  const int bs = _range_map->block_size();
   if (type == "owned")
     return _range_map->size();
   else if (type == "unowned")
-    //    return block_size*_local_to_global_unowned.size();
-    return block_size*_range_map->local_to_global_unowned().size();
+    return bs*_range_map->local_to_global_unowned().size();
   else if (type == "all")
-    return _range_map->size() + block_size*_range_map->local_to_global_unowned().size();
+    return _range_map->size()
+         + bs*_range_map->local_to_global_unowned().size();
   else
   {
     dolfin_error("DofMap.h",
@@ -366,23 +367,25 @@ void DofMap::set(GenericVector& x, double value) const
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const
 {
-
-  const std::vector<std::size_t>& local_to_global_unowned = _range_map->local_to_global_unowned();
+  const std::size_t bs = _range_map->block_size();
+  const std::vector<std::size_t>& local_to_global_unowned
+    = _range_map->local_to_global_unowned();
   const std::size_t local_ownership_size = _range_map->size();
   const int size = local_ownership_size
-    + block_size*local_to_global_unowned.size();
+                    + bs*local_to_global_unowned.size();
   local_to_global_map.resize(size);
 
   const std::size_t global_offset = _range_map->local_range().first;
   for (std::size_t i = 0; i < local_ownership_size; ++i)
     local_to_global_map[i] = i + global_offset;
 
-  for (std::size_t node = 0; node < _range_map->local_to_global_unowned().size(); ++node)
+  for (std::size_t node = 0;
+       node < _range_map->local_to_global_unowned().size(); ++node)
   {
-    for (std::size_t component = 0; component < block_size; ++component)
+    for (std::size_t component = 0; component < bs; ++component)
     {
-      local_to_global_map[block_size*node + component + local_ownership_size]
-        =  block_size*local_to_global_unowned[node] + component;
+      local_to_global_map[bs*node + component + local_ownership_size]
+        = bs*local_to_global_unowned[node] + component;
     }
   }
 }

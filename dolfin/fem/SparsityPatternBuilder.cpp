@@ -60,7 +60,7 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   dolfin_assert(dofmaps[0]);
   std::vector<std::size_t> block_sizes(rank);
   for (std::size_t i = 0; i < rank; ++i)
-    block_sizes[i] = dofmaps[i]->block_size;
+    block_sizes[i] = dofmaps[i]->block_size();
 
   // Initialise sparsity pattern
   if (init)

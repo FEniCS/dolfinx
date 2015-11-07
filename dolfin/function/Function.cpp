@@ -611,7 +611,7 @@ void Function::init_vector()
   const std::pair<std::size_t, std::size_t> range = dofmap.ownership_range();
 
   // Determine ghost vertices if dof map is distributed
-  const std::size_t bs = dofmap.block_size;
+  const std::size_t bs = dofmap.block_size();
   std::vector<la_index>
     ghost_indices(bs*dofmap.range_map()->local_to_global_unowned().size());
   for (std::size_t i = 0; i < dofmap.range_map()->local_to_global_unowned().size(); ++i)

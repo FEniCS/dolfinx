@@ -316,6 +316,9 @@ namespace dolfin
     std::shared_ptr<RangeMap> range_map() const
     { return _range_map; }
 
+    int block_size() const
+    { return _range_map->block_size(); }
+
     /// Compute the map from local (this process) dof indices to
     /// global dof indices.
     ///
@@ -397,19 +400,8 @@ namespace dolfin
     // Object containing information about dof distribution across processes
     std::shared_ptr<RangeMap> _range_map;
 
-    // Number of dofs owned by this process
-    //    std::size_t _global_offset;
-    //    int _local_ownership_size;
-
     // Temporary until MultiMeshDofMap runs in parallel
     friend class MultiMeshDofMap;
-
-    // Map from local index of un-owned dofs to global dof index
-    //    std::vector<std::size_t> _local_to_global_unowned;
-
-    // Map from dofs in local dof map are not owned by this process to
-    // the owner process
-    //    std::vector<int> _off_process_owner;
 
     // List of processes that share a given dof
     std::unordered_map<int, std::vector<int> > _shared_nodes;

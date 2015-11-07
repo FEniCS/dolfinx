@@ -104,7 +104,6 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // is not re-ordered or if global dofs are present)
   const std::size_t bs = (global_dofs.empty() and reorder)
     ? compute_blocksize(*dofmap._ufc_dofmap) : 1;
-  dofmap.block_size = bs;
 
   // Compute a 'node' dofmap based on a UFC dofmap. Returns:
   // - node dofmap (node_dofmap)
@@ -333,7 +332,6 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
   sub_dofmap.range_map() = parent_dofmap.range_map();
   sub_dofmap._shared_nodes = parent_dofmap._shared_nodes;
   sub_dofmap._neighbours = parent_dofmap._neighbours;
-  sub_dofmap.block_size = parent_dofmap.block_size;
 
   // Store UFC local to re-ordered local if submap has any submaps
   if (sub_dofmap._ufc_dofmap->num_sub_dofmaps() > 0)
@@ -350,7 +348,7 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
 
   // Map to re-ordered dofs
   const std::vector<int>& local_to_local = parent_dofmap._ufc_local_to_local;
-  const std::size_t bs = parent_dofmap.block_size;
+  const std::size_t bs = parent_dofmap.block_size();
   for (auto cell_map = sub_dofmap_graph.begin();
        cell_map != sub_dofmap_graph.end(); ++cell_map)
   {

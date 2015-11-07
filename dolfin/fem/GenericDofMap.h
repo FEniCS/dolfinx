@@ -56,7 +56,8 @@ namespace dolfin
   public:
 
     /// Constructor
-    GenericDofMap() : block_size(1) {}
+    GenericDofMap()
+    {}
 
     /// True if dof map is a view into another map (is a sub-dofmap)
     virtual bool is_view() const = 0;
@@ -181,13 +182,12 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
 
+    /// Get block size
+    virtual int block_size() const = 0;
+
     /// Subdomain mapping constrained boundaries, e.g. periodic
     /// conditions
     std::shared_ptr<const SubDomain> constrained_domain;
-
-    /// Dofmap block size, e.g. 3 for 3D elasticity with a suitable
-    // ordered dofmap
-    std::size_t block_size;
 
   };
 

@@ -424,13 +424,13 @@ void FunctionAssigner::_check_and_build_indices(
     const GenericDofMap& receiving_dofmap = *receiving_spaces[i]->dofmap();
 
     // Get on-process dof ranges
-    const std::size_t bs_assigning = assigning_dofmap.block_size;
+    const std::size_t bs_assigning = assigning_dofmap.block_size();
     const std::size_t assigning_range
       = assigning_dofmap.ownership_range().second
       - assigning_dofmap.ownership_range().first
       + bs_assigning*assigning_dofmap.range_map()->local_to_global_unowned().size();
 
-    const std::size_t bs_receiving = receiving_dofmap.block_size;
+    const std::size_t bs_receiving = receiving_dofmap.block_size();
     const std::size_t receiving_range
       = (receiving_dofmap.ownership_range().second
          - receiving_dofmap.ownership_range().first)

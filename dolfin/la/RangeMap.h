@@ -37,7 +37,7 @@ namespace dolfin
 
     /// Range map with no data
     explicit RangeMap(MPI_Comm mpi_comm)
-      : _mpi_comm(mpi_comm)
+      : _mpi_comm(mpi_comm), _block_size(1)
     {}
 
     /// Range map with local size on each process
@@ -122,6 +122,10 @@ namespace dolfin
     {
       return _off_process_owner;
     }
+
+    /// Get block size
+    int block_size() const
+    { return _block_size; }
 
     /// Return MPI communicator
     MPI_Comm mpi_comm() const

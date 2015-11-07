@@ -222,7 +222,7 @@ void DirichletBC::gather(Map& boundary_values) const
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
   const auto& shared_nodes = dofmap.shared_nodes();
-  const int bs = dofmap.block_size;
+  const int bs = dofmap.block_size();
 
   // Create list of boundary values to send to each processor
   std::vector<std::vector<std::size_t>> proc_map0(comm_size);
