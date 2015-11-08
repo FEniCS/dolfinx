@@ -111,11 +111,7 @@ PETScTAOSolver::PETScTAOSolver(const std::string tao_type,
 PETScTAOSolver::~PETScTAOSolver()
 {
   if (_tao)
-  {
-    PetscErrorCode ierr = TaoDestroy(&_tao);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "TaoDestroy");
-  }
-
+    TaoDestroy(&_tao);
 }
 //-----------------------------------------------------------------------------
 void PETScTAOSolver::update_parameters(const std::string tao_type,
