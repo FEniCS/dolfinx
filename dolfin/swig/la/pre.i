@@ -189,6 +189,7 @@
 %ignore dolfin::PETScKrylovSolver::ksp() const;
 %ignore dolfin::PETScLUSolver::ksp() const;
 %ignore dolfin::PETScSNESSolver::snes() const;
+%ignore dolfin::PETScTAOSolver::tao() const;
 #else
 // Ignore everything
 %ignore dolfin::PETScVector::vec;
@@ -196,6 +197,7 @@
 %ignore dolfin::PETScKrylovSolver::ksp;
 %ignore dolfin::PETScLUSolver::ksp;
 %ignore dolfin::PETScSNESSolver::snes;
+%ignore dolfin::PETScTAOSolver::tao;
 #endif
 #endif
 
