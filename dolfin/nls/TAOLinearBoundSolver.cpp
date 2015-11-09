@@ -97,7 +97,7 @@ TAOLinearBoundSolver::TAOLinearBoundSolver(const std::string method,
       or (method != "default"))
   {
     log(WARNING, "Some preconditioners may be not be applicable to "\
-	"TAO solvers and generate errors.");
+    "TAO solvers and generate errors.");
   }
 
 }
@@ -121,7 +121,7 @@ TAOLinearBoundSolver::set_operators(std::shared_ptr<const GenericMatrix> A,
 //-----------------------------------------------------------------------------
 void
 TAOLinearBoundSolver::set_operators(std::shared_ptr<const PETScMatrix> A,
-				    std::shared_ptr<const PETScVector> b)
+                                    std::shared_ptr<const PETScVector> b)
 {
   this->A = A;
   this->b = b;
@@ -131,22 +131,22 @@ TAOLinearBoundSolver::set_operators(std::shared_ptr<const PETScMatrix> A,
 //-----------------------------------------------------------------------------
 std::size_t TAOLinearBoundSolver::solve(const GenericMatrix& A1,
                                         GenericVector& x,
-					const GenericVector& b1,
+                                        const GenericVector& b1,
                                         const GenericVector& xl,
-					const GenericVector& xu)
+                                        const GenericVector& xu)
 {
   return solve(A1.down_cast<PETScMatrix>(),
-	       x.down_cast<PETScVector>(),
-	       b1.down_cast<PETScVector>(),
-	       xl.down_cast<PETScVector>(),
-	       xu.down_cast<PETScVector>());
+               x.down_cast<PETScVector>(),
+               b1.down_cast<PETScVector>(),
+               xl.down_cast<PETScVector>(),
+               xu.down_cast<PETScVector>());
 }
 //-----------------------------------------------------------------------------
 std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
                                         PETScVector& x,
-					const PETScVector& b1,
+                                        const PETScVector& b1,
                                         const PETScVector& xl,
-					const PETScVector& xu)
+                                        const PETScVector& xu)
 {
 
   // Check symmetry
@@ -240,7 +240,7 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
     else
     {
       log(WARNING,  "Tao solver %s failed to converge. Try a different TAO method," \
-	  " adjust some parameters", tao_type);
+      " adjust some parameters", tao_type);
     }
   }
 
@@ -268,7 +268,7 @@ void TAOLinearBoundSolver::set_solver(const std::string& method)
     else
     {
       dolfin_error("TAOLinearBoundSolver.cpp",
-		   "set solver for TAO solver",
+           "set solver for TAO solver",
                    "Unknown solver type (\"%s\")", method.c_str());
     }
   }
@@ -287,7 +287,7 @@ void TAOLinearBoundSolver::set_ksp(std::string ksp_type)
     else
     {
       log(WARNING, "The selected tao solver does not allow to set a specific "\
-	  "Krylov solver. Option %s is ignored", ksp_type.c_str());
+      "Krylov solver. Option %s is ignored", ksp_type.c_str());
     }
   }
 }
@@ -379,9 +379,9 @@ void TAOLinearBoundSolver::set_ksp_options()
     const int max_ksp_it = krylov_parameters["maximum_iterations"];
     KSPSetTolerances(ksp,
                      krylov_parameters["relative_tolerance"],
-		     krylov_parameters["absolute_tolerance"],
-		     krylov_parameters["divergence_limit"],
-		     max_ksp_it);
+                     krylov_parameters["absolute_tolerance"],
+                     krylov_parameters["divergence_limit"],
+                     max_ksp_it);
 
     // Set preconditioner
     if (preconditioner && !preconditioner_set)
