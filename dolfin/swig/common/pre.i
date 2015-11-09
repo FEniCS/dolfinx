@@ -50,6 +50,7 @@
 %petsc4py_objreft(Vec)
 %petsc4py_objreft(KSP)
 %petsc4py_objreft(SNES)
+%petsc4py_objreft(Tao)
 #endif
 
 #ifdef HAS_SLEPC4PY

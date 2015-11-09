@@ -1,3 +1,5 @@
+- PETScTAOSolver::solve() now returns a pair of
+	number of iterations (std::size_t) and whether iteration converged (bool)
 - Better quality refinement in 2D in Plaza algorithm, by choosing refinement
 	pattern based on max/min edge ratio
 - Removed refine_cell() method in CellTypes
