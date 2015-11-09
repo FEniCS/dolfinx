@@ -179,7 +179,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   PetscInitialized(&is_initialized);
   if (is_initialized)
   {
-    PetscOptionsInsert(&argc, &argv, PETSC_NULL);
+    PetscOptionsInsert(&argc, &argv, NULL);
   }
   else
   {
@@ -192,14 +192,14 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 
     // Pass command line arguments to PETSc (will overwrite any
     // default above)
-    PetscOptionsInsert(&argc, &argv, PETSC_NULL);
+    PetscOptionsInsert(&argc, &argv, NULL);
   }
 
   // Set PETSc
 
   #ifdef HAS_SLEPC
   // Initialize SLEPc
-  SlepcInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
+  SlepcInitialize(&argc, &argv, NULL, NULL);
   #endif
 
   // Avoid using default PETSc signal handler
