@@ -310,20 +310,22 @@ std::shared_ptr<const PETScVector> TAOLinearBoundSolver::get_vector() const
 void TAOLinearBoundSolver::read_parameters()
 {
   dolfin_assert(_tao);
+  PetscErrorCode ierr;
 
   // Set tolerances
-  #if PETSC_VERSION_GT(3, 6, 2)
-  TaoSetTolerances(_tao,
-                   parameters["gradient_absolute_tol"],
-		   parameters["gradient_relative_tol"],
-		   parameters["gradient_t_tol"]);
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6
+  ierr = TaoSetTolerances(_tao, parameters["function_absolute_tol"],
+                                parameters["function_relative_tol"],
+                                parameters["gradient_absolute_tol"],
+                                parameters["gradient_relative_tol"],
+                                parameters["gradient_t_tol"]);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetTolerances");
   #else
-  TaoSetTolerances(_tao, parameters["function_absolute_tol"],
-  		   parameters["function_relative_tol"],
-		   parameters["gradient_absolute_tol"],
-		   parameters["gradient_relative_tol"],
-		   parameters["gradient_t_tol"]);
-   #endif
+  ierr = TaoSetTolerances(_tao, parameters["gradient_absolute_tol"],
+                                parameters["gradient_relative_tol"],
+                                parameters["gradient_t_tol"]);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetTolerances");
+  #endif
 
   // Set TAO solver maximum iterations
   int maxits = parameters["maximum_iterations"];

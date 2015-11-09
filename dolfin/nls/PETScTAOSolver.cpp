@@ -407,15 +407,15 @@ void PETScTAOSolver::set_tao_options()
   set_tao(parameters["method"]);
 
   // Set tolerances
-  #if PETSC_VERSION_GT(3, 6, 2)
-  ierr = TaoSetTolerances(_tao, parameters["gradient_absolute_tol"],
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6
+  ierr = TaoSetTolerances(_tao, parameters["function_absolute_tol"],
+                                parameters["function_relative_tol"],
+                                parameters["gradient_absolute_tol"],
                                 parameters["gradient_relative_tol"],
                                 parameters["gradient_t_tol"]);
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetTolerances");
   #else
-  ierr = TaoSetTolerances(_tao, parameters["function_absolute_tol"],
-                                parameters["function_relative_tol"],
-                                parameters["gradient_absolute_tol"],
+  ierr = TaoSetTolerances(_tao, parameters["gradient_absolute_tol"],
                                 parameters["gradient_relative_tol"],
                                 parameters["gradient_t_tol"]);
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetTolerances");
