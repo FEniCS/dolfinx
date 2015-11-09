@@ -341,7 +341,7 @@ void TAOLinearBoundSolver::read_parameters()
   PetscErrorCode ierr;
 
   // Set tolerances
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
   ierr = TaoSetTolerances(_tao, parameters["function_absolute_tol"],
                                 parameters["function_relative_tol"],
                                 parameters["gradient_absolute_tol"],
