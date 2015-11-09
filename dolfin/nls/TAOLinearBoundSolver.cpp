@@ -288,8 +288,9 @@ void TAOLinearBoundSolver::set_solver(const std::string& method)
     else
     {
       dolfin_error("TAOLinearBoundSolver.cpp",
-           "set solver for TAO solver",
+                   "set solver for TAO solver",
                    "Unknown solver type (\"%s\")", method.c_str());
+      ierr = 0; // Make compiler happy about uninitialized variable
     }
   }
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetType");
