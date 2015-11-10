@@ -161,7 +161,7 @@ void Logger::dolfin_error(std::string location,
     << "*** using the information listed below, you can ask for help at"
     << std::endl
     << "***" << std::endl
-    << "***     fenics@fenicsproject.org"
+    << "***     fenics-support@googlegroups.com"
     << std::endl
     << "***" << std::endl
     << "*** Remember to include the error message listed below and, if possible,"
