@@ -98,10 +98,10 @@ def solve_poisson(t, x1, y1, x2, y2, plot_solution,
     # Plot solution (last time)
     if plot_solution:
         plot(V.multimesh())
-        plot(u.part(0), title="u_0")
-        plot(u.part(1), title="u_1")
-        plot(u.part(2), title="u_2")
-        interactive()
+        #plot(u.part(0), title="u_0")
+        #plot(u.part(1), title="u_1")
+        #plot(u.part(2), title="u_2")
+        #interactive()
 
 if MPI.size(mpi_comm_world()) > 1:
     info("Sorry, this demo does not (yet) run in parallel.")
@@ -112,7 +112,7 @@ parameters["reorder_dofs_serial"] = False
 
 # Parameters
 T = 40.0
-N = 400
+N = 4
 dt = T / N
 
 # Files for storing solution
