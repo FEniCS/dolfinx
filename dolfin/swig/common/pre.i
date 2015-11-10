@@ -38,7 +38,7 @@
 // and object itself we only care about the former.
 %define %petsc4py_objreft(Type)
 %typemap(check,noblock=1) Type *OUTPUT {
-  if ($1 == PETSC_NULL)
+  if ($1 == NULL)
     %argument_nullref("$type", $symname, $argnum);
  }
 %apply Type *OUTPUT { Type & }
