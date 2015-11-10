@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2015-11-05
-# Last changed: 2015-11-06
+# Last changed: 2015-11-10
 #
 # This demo program solves Poisson's equation on a domain defined by
 # three overlapping and non-matching meshes. The solution is computed
@@ -25,8 +25,12 @@
 
 from dolfin import *
 
-def solve(t, x1, y1, x2, y2, plot_solution,
-          u0_file, u1_file, u2_file):
+class DirichletBoundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary
+
+def solve_poisson(t, x1, y1, x2, y2, plot_solution,
+                  u0_file, u1_file, u2_file):
     "Compute solution for given mesh configuration"
 
     # Create meshes
@@ -45,7 +49,7 @@ def solve(t, x1, y1, x2, y2, plot_solution,
     multimesh.build()
 
     # Create function space
-    V = MultiMeshFunctionSpace(multimesh, "Lagrange", 1);
+    V = MultiMeshFunctionSpace(multimesh, "Lagrange", 1)
     V.parameters.multimesh.quadrature_order = 2
 
     # Define trial and test functions and right-hand side
@@ -58,23 +62,46 @@ def solve(t, x1, y1, x2, y2, plot_solution,
     h = 2.0*Circumradius(multimesh)
     h = (h('+') + h('-')) / 2
 
-    # Parameters
+    # Set parameters
     alpha = 4.0
     beta = 4.0
 
-    # Bilinear form
+    # Define bilinear form
     a = dot(grad(u), grad(v))*dX \
       - dot(avg(grad(u)), jump(v, n))*dI \
       - dot(avg(grad(v)), jump(u, n))*dI \
       + alpha/h*jump(u)*jump(v)*dI \
       + dot(jump(grad(u)), jump(grad(v)))*dO
 
-    # Linear form
+    # Define linear form
     L = f*v*dx
 
     # Assemble linear system
     A = assemble_multimesh(a)
     b = assemble_multimesh(L)
+
+    # Apply boundary condition
+    zero = Constant(0)
+    boundary = DirichletBoundary()
+    bc = MultiMeshDirichletBC(V, zero, boundary)
+    bc.apply(A, b)
+
+    # Compute solution
+    u = MultiMeshFunction(V)
+    solve(A, u.vector(), b)
+
+    # Save to file
+    u0_file << u.part(0)
+    u1_file << u.part(1)
+    u2_file << u.part(2)
+
+    # Plot solution (last time)
+    if plot_solution:
+        plot(V.multimesh())
+        plot(u.part(0), title="u_0")
+        plot(u.part(1), title="u_1")
+        plot(u.part(2), title="u_2")
+        interactive()
 
 if MPI.size(mpi_comm_world()) > 1:
     info("Sorry, this demo does not (yet) run in parallel.")
@@ -105,5 +132,5 @@ for n in range(N):
     y2 = sin(t)*cos(2*t)
 
     # Compute solution
-    solve(t, x1, y1, x2, y2, n == N - 1,
-          u0_file, u1_file, u2_file)
+    solve_poisson(t, x1, y1, x2, y2, n == N - 1,
+                  u0_file, u1_file, u2_file)

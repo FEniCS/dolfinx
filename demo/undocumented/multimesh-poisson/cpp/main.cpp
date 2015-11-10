@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2015-11-05
+// Last changed: 2015-11-10
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes. The solution is computed
@@ -48,11 +48,11 @@ class DirichletBoundary : public SubDomain
 };
 
 // Compute solution for given mesh configuration
-void solve(double t,
-           double x1, double y1,
-           double x2, double y2,
-           bool plot_solution,
-           File& u0_file, File& u1_file, File& u2_file)
+void solve_poisson(double t,
+                   double x1, double y1,
+                   double x2, double y2,
+                   bool plot_solution,
+                   File& u0_file, File& u1_file, File& u2_file)
 {
   // Create meshes
   double r = 0.5;
@@ -81,11 +81,6 @@ void solve(double t,
   Source f;
   L.f = f;
 
-  // Create boundary condition
-  Constant zero(0);
-  DirichletBoundary boundary;
-  MultiMeshDirichletBC bc(V, zero, boundary);
-
   // Assemble linear system
   Matrix A;
   Vector b;
@@ -94,6 +89,9 @@ void solve(double t,
   assembler.assemble(b, L);
 
   // Apply boundary condition
+  Constant zero(0);
+  DirichletBoundary boundary;
+  MultiMeshDirichletBC bc(V, zero, boundary);
   bc.apply(A, b);
 
   // Compute solution
@@ -150,8 +148,8 @@ int main(int argc, char* argv[])
     const double y2 = sin(t)*cos(2*t);
 
     // Compute solution
-    solve(t, x1, y1, x2, y2, n == N - 1,
-          u0_file, u1_file, u2_file);
+    solve_poisson(t, x1, y1, x2, y2, n == N - 1,
+                  u0_file, u1_file, u2_file);
   }
 
   return 0;
