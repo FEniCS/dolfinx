@@ -29,7 +29,6 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MultiMesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include "ExpressionWrapper.h"
@@ -97,7 +96,6 @@ namespace dolfin
     DISPATCH(ExpressionWrapper);
     DISPATCH(Function);
     DISPATCH(Mesh);
-    DISPATCH(MultiMesh);
     DISPATCH(MeshFunction<bool>);
     DISPATCH(MeshFunction<double>);
     //DISPATCH(MeshFunction<float>);

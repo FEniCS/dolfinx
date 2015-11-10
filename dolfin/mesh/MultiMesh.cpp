@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-05-28
+// Last changed: 2015-11-11
 
 #include <dolfin/log/log.h>
 #include <dolfin/plot/plot.h>
@@ -797,6 +797,10 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
 //-----------------------------------------------------------------------------
 void MultiMesh::_plot() const
 {
+  // Developer note: This function is implemented here rather than
+  // in the plot library since it is too specialized to be implemented
+  // there.
+
   cout << "Plotting multimesh with " << num_parts() << " parts" << endl;
 
   // Iterate over parts
@@ -830,7 +834,7 @@ void MultiMesh::_plot() const
     // Plot
     std::stringstream s;
     s << "Map of cell types for multimesh part " << p;
-    plot(f, s.str());
+    dolfin::plot(f, s.str());
   }
 }
 //-----------------------------------------------------------------------------

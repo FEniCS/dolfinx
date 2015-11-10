@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2015-11-05
-# Last changed: 2015-11-10
+# Last changed: 2015-11-11
 #
 # This demo program solves Poisson's equation on a domain defined by
 # three overlapping and non-matching meshes. The solution is computed
@@ -98,10 +98,10 @@ def solve_poisson(t, x1, y1, x2, y2, plot_solution,
     # Plot solution (last time)
     if plot_solution:
         plot(V.multimesh())
-        #plot(u.part(0), title="u_0")
-        #plot(u.part(1), title="u_1")
-        #plot(u.part(2), title="u_2")
-        #interactive()
+        plot(u.part(0), title="u_0")
+        plot(u.part(1), title="u_1")
+        plot(u.part(2), title="u_2")
+        interactive()
 
 if MPI.size(mpi_comm_world()) > 1:
     info("Sorry, this demo does not (yet) run in parallel.")
@@ -112,7 +112,7 @@ parameters["reorder_dofs_serial"] = False
 
 # Parameters
 T = 40.0
-N = 4
+N = 400
 dt = T / N
 
 # Files for storing solution

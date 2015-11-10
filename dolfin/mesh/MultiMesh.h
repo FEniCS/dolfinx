@@ -1,4 +1,4 @@
-// Copyright (C) 2014 Anders Logg
+// Copyright (C) 2014-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2014-06-17
+// Last changed: 2015-11-11
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -285,8 +285,8 @@ namespace dolfin
 
   private:
 
-    // Friends
-    friend void plot(std::shared_ptr<const MultiMesh>);
+    // Friend (in plot.h)
+    friend void plot_multimesh(std::shared_ptr<const MultiMesh>);
 
     // List of meshes
     std::vector<std::shared_ptr<const Mesh> > _meshes;
