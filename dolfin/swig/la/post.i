@@ -928,6 +928,13 @@ _matrix_vector_mul_map[PETScLinearOperator] = [PETScVector]
   { snes = self->snes(); }
 }
 
+%feature("docstring") dolfin::PETScTAOSolver::tao "Return petsc4py representation of PETSc TAO solver";
+%extend dolfin::PETScTAOSolver
+{
+  void tao(Tao& tao)
+  { tao = self->tao(); }
+}
+
 #else
 %extend dolfin::PETScBaseMatrix {
     %pythoncode %{
@@ -974,6 +981,16 @@ _matrix_vector_mul_map[PETScLinearOperator] = [PETScVector]
         def snes(self):
             common.dolfin_error("dolfin/swig/la/post.i",
                                 "access PETScSNESSolver objects in python",
+                                "dolfin must be configured with petsc4py enabled")
+            return None
+    %}
+}
+
+%extend dolfin::PETScTAOSolver {
+    %pythoncode %{
+        def tao(self):
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "access PETScTAOSolver objects in python",
                                 "dolfin must be configured with petsc4py enabled")
             return None
     %}

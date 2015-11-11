@@ -237,20 +237,9 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
   // Set number of threads if using PaStiX
   if (strcmp(_solver_package, MATSOLVERPASTIX) == 0)
   {
-    if (parameters["num_threads"].is_set())
-    {
-      // Use number of threads specified for LU solver
-      ierr = PetscOptionsSetValue("-mat_pastix_threadnbr",
-                           parameters["num_threads"].value_str().c_str());
-      if (ierr != 0) petsc_error(ierr, __FILE__, "PetscOptionsSetValue");
-    }
-    else
-    {
-      // Use global number of threads
-      ierr = PetscOptionsSetValue("-mat_pastix_threadnbr",
-                        dolfin::parameters["num_threads"].value_str().c_str());
-      if (ierr != 0) petsc_error(ierr, __FILE__, "PetscOptionsSetValue");
-    }
+    const std::size_t num_threads = parameters["num_threads"].is_set() ?
+      parameters["num_threads"] : dolfin::parameters["num_threads"];
+    PETScOptions::set("-mat_pastix_threadnbr", num_threads);
   }
 
   // Solve linear system
