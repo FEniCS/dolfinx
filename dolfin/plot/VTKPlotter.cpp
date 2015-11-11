@@ -765,20 +765,23 @@ namespace dolfin
   class VTKWindowOutputStage {}; // dummy class
 }
 
-VTKPlotter::VTKPlotter(std::shared_ptr<const Variable>, QVTKWidget*):
-  _initialized(false),
-  _frame_counter(0),
-  no_plot(false)
+VTKPlotter::VTKPlotter(std::shared_ptr<const Variable>)
+  : _initialized(false), _frame_counter(0), no_plot(false)
 {
   init();
 }
+
 VTKPlotter::VTKPlotter(std::shared_ptr<const Expression>,
-		       std::shared_ptr<const Mesh>, QVTKWidget*)  { init(); }
+		       std::shared_ptr<const Mesh>)
+{
+  init();
+}
+
 VTKPlotter::~VTKPlotter() {}
 
-// (Ab)use init() to issue a warning.
-// We also need to initialize the parameter set to avoid tons of
-// warning when running the tests without VTK.
+// (Ab)use init() to issue a warning.  We also need to initialize the
+// parameter set to avoid tons of warning when running the tests
+// without VTK.
 
 void VTKPlotter::init()
 {
