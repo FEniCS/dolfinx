@@ -41,9 +41,14 @@ Contact
 
 For comments and requests, send an email to the FEniCS mailing list:
 
-  fenics@fenicsproject.org
+  fenics-dev@googlegroups.com
 
-For questions and bug reports, visit the FEniCS Q&A page:
+For questions related to obtaining, building or installing DOLFIN, send
+an email to the FEniCS support mailing list:
+
+  fenics-support@googlegroups.com
+
+For questions about using DOLFIN, visit the FEniCS Q&A page:
 
   http://fenicsproject.org/qa
 

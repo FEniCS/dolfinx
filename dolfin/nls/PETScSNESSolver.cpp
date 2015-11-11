@@ -289,7 +289,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   // same as the vector that holds the current solution
   // guess in the dolfin form.
   PETScVector x_copy(x.down_cast<PETScVector>());
-  SNESSolve(_snes, PETSC_NULL, x_copy.vec());
+  SNESSolve(_snes, NULL, x_copy.vec());
   x.zero();
   x.axpy(1.0, x_copy);
 
