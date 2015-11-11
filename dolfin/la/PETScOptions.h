@@ -57,7 +57,7 @@ namespace dolfin
     /// Set PETSc string option
     static void set(std::string option, std::string value);
 
-    /// Generic function for setting PETSc option
+    /// Genetic function for setting PETSc option
     template<typename T>
       static void set(std::string option, const T value)
     {
@@ -65,7 +65,7 @@ namespace dolfin
 
       PetscErrorCode ierr;
       std::string _option = "-" + option;
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 6 && PETSC_VERSION_SUBMINOR >= 1
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
       ierr = PetscOptionsSetValue(_option.c_str(),
                boost::lexical_cast<std::string>(value).c_str());
       #else
