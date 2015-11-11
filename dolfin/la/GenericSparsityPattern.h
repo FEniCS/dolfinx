@@ -59,7 +59,7 @@ namespace dolfin
     virtual void
       init(const MPI_Comm mpi_comm,
            const std::vector<std::size_t>& dims,
-           const std::vector<std::shared_ptr<const IndexMap>> range_maps) = 0;
+           const std::vector<std::shared_ptr<const IndexMap>> index_maps) = 0;
 
     /// Insert non-zero entries using global indices
     virtual void insert_global(const std::vector<

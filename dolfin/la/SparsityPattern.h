@@ -59,14 +59,14 @@ namespace dolfin
     SparsityPattern(
       const MPI_Comm mpi_comm,
       const std::vector<std::size_t>& dims,
-      const std::vector<std::shared_ptr<const IndexMap>> range_maps,
+      const std::vector<std::shared_ptr<const IndexMap>> index_maps,
       const std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
     void init(
       const MPI_Comm mpi_comm,
       const std::vector<std::size_t>& dims,
-      const std::vector<std::shared_ptr<const IndexMap>> range_maps);
+      const std::vector<std::shared_ptr<const IndexMap>> index_maps);
 
     /// Insert a global entry - will be fixed by apply()
     void insert_global(dolfin::la_index i, dolfin::la_index j);
@@ -134,7 +134,7 @@ namespace dolfin
     //    std::vector<std::pair<std::size_t, std::size_t> > _local_range;
 
     // IndexMaps for each dimension
-    std::vector<std::shared_ptr<const IndexMap>> _range_maps;
+    std::vector<std::shared_ptr<const IndexMap>> _index_maps;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;

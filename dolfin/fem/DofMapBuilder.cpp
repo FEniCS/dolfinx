@@ -191,11 +191,11 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
                                node_local_to_global0, mesh,
                                dofmap._global_dimension/bs);
 
-    dofmap.range_map()->init(num_owned_nodes, bs);
+    dofmap.index_map()->init(num_owned_nodes, bs);
 
     // Sanity check
     dolfin_assert(MPI::sum(mesh.mpi_comm(),
-                           (std::size_t) dofmap.range_map()->size())
+                           (std::size_t) dofmap.index_map()->size())
                   == dofmap._global_dimension);
 
     // Compute node re-ordering for process index locality and spatial
@@ -205,8 +205,8 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
     // (c) New local node index to new global node index
     // (d) Old local node index to new local node index
     std::vector<int> node_old_to_new_local;
-    dolfin_assert(dofmap.range_map());
-    compute_node_reordering(*dofmap.range_map(),
+    dolfin_assert(dofmap.index_map());
+    compute_node_reordering(*dofmap.index_map(),
                             node_old_to_new_local,
                             shared_node_to_processes0,
                             node_local_to_global0,
@@ -258,7 +258,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
         dofmap._ufc_local_to_local[i] = i;
     }
 
-    dofmap.range_map()->init(dofmap._global_dimension, bs);
+    dofmap.index_map()->init(dofmap._global_dimension, bs);
     dofmap._shared_nodes.clear();
   }
 
@@ -331,7 +331,7 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
     = sub_dofmap._ufc_dofmap->global_dimension(sub_dofmap._num_mesh_entities_global);
 
   // Copy data from parent
-  sub_dofmap.range_map() = parent_dofmap.range_map();
+  sub_dofmap.index_map() = parent_dofmap.index_map();
   sub_dofmap._shared_nodes = parent_dofmap._shared_nodes;
   sub_dofmap._neighbours = parent_dofmap._neighbours;
 
@@ -1457,7 +1457,7 @@ void DofMapBuilder::compute_shared_nodes(
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_node_reordering(
-  IndexMap& range_map,
+  IndexMap& index_map,
   std::vector<int>& old_to_new_local,
   const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
   const std::vector<std::size_t>& old_local_to_global,
@@ -1641,7 +1641,7 @@ void DofMapBuilder::compute_node_reordering(
       off_process_node_counter++;
     }
 
-  range_map.set_local_to_global(local_to_global_unowned);
+  index_map.set_local_to_global(local_to_global_unowned);
 
   // Sanity check
   for (auto it : old_to_new_local)

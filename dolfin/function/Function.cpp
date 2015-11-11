@@ -606,14 +606,14 @@ void Function::init_vector()
   // Determine ghost vertices if dof map is distributed
   const std::size_t bs = dofmap.block_size();
   std::vector<la_index>
-    ghost_indices(bs*dofmap.range_map()->local_to_global_unowned().size());
+    ghost_indices(bs*dofmap.index_map()->local_to_global_unowned().size());
   for (std::size_t i = 0;
-       i < dofmap.range_map()->local_to_global_unowned().size(); ++i)
+       i < dofmap.index_map()->local_to_global_unowned().size(); ++i)
   {
     for (std::size_t j = 0; j < bs; ++j)
     {
       ghost_indices[bs*i + j]
-        = bs*dofmap.range_map()->local_to_global_unowned()[i] + j;
+        = bs*dofmap.index_map()->local_to_global_unowned()[i] + j;
     }
   }
 

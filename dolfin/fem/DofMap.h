@@ -178,7 +178,7 @@ namespace dolfin
     ///     std::vector<unsigned int>
     ///         The map from non-local dofs.
     const std::vector<int>& off_process_owner() const
-    { return _range_map->off_process_owner(); }
+    { return _index_map->off_process_owner(); }
 
     /// Return map from all shared nodes to the sharing processes (not
     /// including the current process) that share it.
@@ -313,11 +313,11 @@ namespace dolfin
     void set(GenericVector& x, double value) const;
 
     /// Return the map
-    std::shared_ptr<IndexMap> range_map() const
-    { return _range_map; }
+    std::shared_ptr<IndexMap> index_map() const
+    { return _index_map; }
 
     int block_size() const
-    { return _range_map->block_size(); }
+    { return _index_map->block_size(); }
 
     /// Compute the map from local (this process) dof indices to
     /// global dof indices.
@@ -337,11 +337,11 @@ namespace dolfin
     ///     std::size_t
     ///         The global dof index.
     std::size_t local_to_global_index(int local_index) const
-    { return _range_map->local_to_global(local_index); }
+    { return _index_map->local_to_global(local_index); }
 
 
     const std::vector<std::size_t>& local_to_global_unowned() const
-    { return _range_map->local_to_global_unowned(); }
+    { return _index_map->local_to_global_unowned(); }
 
     /// Return informal string representation (pretty-print)
     ///
@@ -399,7 +399,7 @@ namespace dolfin
 
     // Object containing information about dof distribution across
     // processes
-    std::shared_ptr<IndexMap> _range_map;
+    std::shared_ptr<IndexMap> _index_map;
 
     // Temporary until MultiMeshDofMap runs in parallel
     friend class MultiMeshDofMap;

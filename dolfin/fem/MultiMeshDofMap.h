@@ -93,7 +93,7 @@ namespace dolfin
     const std::vector<int>& off_process_owner() const;
 
     /// Return the map
-    std::shared_ptr<IndexMap> range_map() const;
+    std::shared_ptr<IndexMap> index_map() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;

@@ -52,16 +52,16 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Get global dimensions and local range
   const std::size_t rank = dofmaps.size();
   std::vector<std::size_t> global_dimensions(rank);
-  std::vector<std::shared_ptr<const IndexMap>> range_maps(rank);
+  std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
-    range_maps[i] = dofmaps[i]->range_map();
+    index_maps[i] = dofmaps[i]->index_map();
 
   dolfin_assert(!dofmaps.empty());
   dolfin_assert(dofmaps[0]);
 
   // Initialise sparsity pattern
   if (init)
-    sparsity_pattern.init(mesh.mpi_comm(), global_dimensions, range_maps);
+    sparsity_pattern.init(mesh.mpi_comm(), global_dimensions, index_maps);
 
   // Only build for rank >= 2 (matrices and higher order tensors) that
   // require sparsity details
@@ -227,8 +227,8 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   if (diagonal)
   {
-    const std::size_t local_size0 = range_maps[0]->size();
-    const std::size_t local_size1 = range_maps[1]->size();
+    const std::size_t local_size0 = index_maps[0]->size();
+    const std::size_t local_size1 = index_maps[1]->size();
     const std::size_t local_size = std::min(local_size0, local_size1);
 
     Progress p("Building sparsity pattern over diagonal", local_size);
@@ -257,10 +257,10 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
   // Get global dimensions and local range
   const std::size_t rank = form.rank();
   std::vector<std::size_t> global_dimensions(rank);
-  std::vector<std::shared_ptr<const IndexMap>> range_maps;
+  std::vector<std::shared_ptr<const IndexMap>> index_maps;
   for (std::size_t i = 0; i < rank; ++i)
   {
-    range_maps[i] = form.function_space(i)->dofmap()->range_map();
+    index_maps[i] = form.function_space(i)->dofmap()->index_map();
     global_dimensions[i]
       = form.function_space(i)->dofmap()->global_dimension();
   }
@@ -268,7 +268,7 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
   // Initialize sparsity pattern
   sparsity_pattern.init(form.function_space(0)->part(0)->mesh()->mpi_comm(),
                         global_dimensions,
-                        range_maps);
+                        index_maps);
 
   // Iterate over each part
   for (std::size_t part = 0; part < form.num_parts(); part++)
