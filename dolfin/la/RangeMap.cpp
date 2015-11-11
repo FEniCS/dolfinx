@@ -14,13 +14,35 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
 
 #include <algorithm>
+#include <limits>
 #include "RangeMap.h"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+RangeMap::RangeMap()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+RangeMap::RangeMap(MPI_Comm mpi_comm) :  _mpi_comm(mpi_comm), _block_size(1)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+RangeMap::RangeMap(MPI_Comm mpi_comm, std::size_t local_size,
+                   std::size_t block_size)
+  : _mpi_comm(mpi_comm)
+{
+  init(local_size, block_size);
+}
+//-----------------------------------------------------------------------------
+RangeMap::~RangeMap()
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 void RangeMap::init(std::size_t local_size, std::size_t block_size)
 {
@@ -35,6 +57,68 @@ void RangeMap::init(std::size_t local_size, std::size_t block_size)
   _all_ranges.insert(_all_ranges.begin(), 0);
 }
 //-----------------------------------------------------------------------------
+std::pair<std::size_t, std::size_t> RangeMap::local_range() const
+{
+  // Get my MPI rank
+  const std::size_t rank = MPI::rank(_mpi_comm);
+
+  if(_all_ranges.size() == 0)
+  {
+    warning("Asking for size of uninitialised range");
+    return std::pair<std::size_t, std::size_t>(0, 0);
+  }
+  else
+  {
+    return std::make_pair(_block_size*_all_ranges[rank],
+                          _block_size*_all_ranges[rank + 1]);
+  }
+}
+//-----------------------------------------------------------------------------
+std::size_t RangeMap::size() const
+{
+  // Get my MPI rank
+  const std::size_t rank = MPI::rank(_mpi_comm);
+
+  if(_all_ranges.size() == 0)
+  {
+    warning("Asking for size of uninitialised range");
+    return 0;
+  }
+  else
+  {
+    return _block_size*(_all_ranges[rank + 1]
+                        - _all_ranges[rank]);
+  }
+}
+//-----------------------------------------------------------------------------
+std::size_t RangeMap::size_global() const
+{
+  return _all_ranges.back();
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::size_t>& RangeMap::local_to_global_unowned() const
+{
+  return _local_to_global;
+}
+//----------------------------------------------------------------------------
+std::size_t RangeMap::local_to_global(std::size_t i) const
+{
+  const std::size_t local_size = size();
+  const std::size_t global_offset = local_range().first;
+
+  if (i < size())
+    return (i + global_offset);
+  else
+  {
+    const std::div_t div = std::div((i - local_size),
+                                    _block_size);
+    const int component = div.rem;
+    const int index = div.quot;
+    dolfin_assert((std::size_t) index < _local_to_global.size());
+    return _block_size*_local_to_global[index] + component;
+  }
+}
+//-----------------------------------------------------------------------------
 void RangeMap::set_local_to_global(std::vector<std::size_t>& indices)
 {
   _local_to_global = indices;
@@ -42,11 +126,27 @@ void RangeMap::set_local_to_global(std::vector<std::size_t>& indices)
   const std::size_t mpi_rank = MPI::rank(_mpi_comm);
   for (const auto &node : _local_to_global)
   {
-    const std::size_t p = std::upper_bound(_all_ranges.begin(),
-                                           _all_ranges.end(), node)
-                                - _all_ranges.begin() - 1;
+    const std::size_t p
+      = std::upper_bound(_all_ranges.begin(), _all_ranges.end(), node)
+      - _all_ranges.begin() - 1;
+
     dolfin_assert(p != mpi_rank);
     _off_process_owner.push_back(p);
   }
 }
-//-----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+const std::vector<int>& RangeMap::off_process_owner() const
+{
+  return _off_process_owner;
+}
+//----------------------------------------------------------------------------
+int RangeMap::block_size() const
+{
+  return _block_size;
+}
+//----------------------------------------------------------------------------
+MPI_Comm RangeMap::mpi_comm() const
+{
+  return _mpi_comm;
+}
+//----------------------------------------------------------------------------

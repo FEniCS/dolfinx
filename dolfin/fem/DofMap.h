@@ -28,17 +28,17 @@
 #include <cstdlib>
 #include <map>
 #include <memory>
+#include <unordered_map>
 #include <utility>
 #include <vector>
-#include <memory>
-#include <unordered_map>
 #include <ufc.h>
 
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
+#include <dolfin/la/RangeMap.h>
 #include <dolfin/mesh/Cell.h>
 #include "GenericDofMap.h"
-#include <dolfin/la/RangeMap.h>
+
 
 namespace dolfin
 {
@@ -397,7 +397,8 @@ namespace dolfin
     // UFC dof map offset
     std::size_t _ufc_offset;
 
-    // Object containing information about dof distribution across processes
+    // Object containing information about dof distribution across
+    // processes
     std::shared_ptr<RangeMap> _range_map;
 
     // Temporary until MultiMeshDofMap runs in parallel

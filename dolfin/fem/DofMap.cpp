@@ -42,7 +42,8 @@ using namespace dolfin;
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh)
   : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0), _range_map(new RangeMap(mesh.mpi_comm()))
+    _global_dimension(0), _ufc_offset(0),
+    _range_map(new RangeMap(mesh.mpi_comm()))
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -54,7 +55,8 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh,
                std::shared_ptr<const SubDomain> constrained_domain)
   : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0), _range_map(new RangeMap(mesh.mpi_comm()))
+    _global_dimension(0), _ufc_offset(0),
+    _range_map(new RangeMap(mesh.mpi_comm()))
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -77,7 +79,8 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh)
   : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0), _range_map(new RangeMap(mesh.mpi_comm()))
+    _global_dimension(0), _ufc_offset(0),
+    _range_map(new RangeMap(mesh.mpi_comm()))
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -135,7 +138,6 @@ DofMap::DofMap(const DofMap& dofmap) : _range_map(dofmap._range_map)
   _shared_nodes = dofmap._shared_nodes;
   _neighbours = dofmap._neighbours;
   constrained_domain = dofmap.constrained_domain;
-  //  _range_map = dofmap._range_map;
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
@@ -171,8 +173,6 @@ std::size_t DofMap::local_dimension(std::string type) const
 std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
 {
   return _cell_dimension;
-  //dolfin_assert(cell_index < _dofmap.size());
-  //return _dofmap[cell_index].size();
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::max_element_dofs() const

@@ -23,13 +23,12 @@
 #ifndef __DOF_MAP_BUILDER_H
 #define __DOF_MAP_BUILDER_H
 
-#include <memory>
 #include <map>
+#include <memory>
 #include <set>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <dolfin/la/RangeMap.h>
 
 namespace ufc
 {
@@ -41,6 +40,7 @@ namespace dolfin
 
   class DofMap;
   class Mesh;
+  class RangeMap;
   class SubDomain;
   class UFC;
 
@@ -51,8 +51,8 @@ namespace dolfin
 
   public:
 
-    /// Build dofmap. The constrained domain may be
-    /// a null pointer, in which case it is ignored.
+    /// Build dofmap. The constrained domain may be a null pointer, in
+    /// which case it is ignored.
     static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
                       std::shared_ptr<const SubDomain> constrained_domain);
 
@@ -175,7 +175,7 @@ namespace dolfin
       const Mesh& mesh);
 
     static void compute_node_reordering(
-                                        std::shared_ptr<RangeMap> range_map,
+      RangeMap& range_map,
       std::vector<int>& old_to_new_local,
       const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
       const std::vector<std::size_t>& old_local_to_global,

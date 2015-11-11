@@ -127,10 +127,10 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     A.init(*tensor_layout);
     t1.stop();
 
-    // Insert zeros on the diagonal as diagonal entries may be prematurely
-    // optimised away by the linear algebra backend when calling
-    // GenericMatrix::apply, e.g. PETSc does this then errors when matrices
-    // have no diagonal entry inserted.
+    // Insert zeros on the diagonal as diagonal entries may be
+    // prematurely optimised away by the linear algebra backend when
+    // calling GenericMatrix::apply, e.g. PETSc does this then errors
+    // when matrices have no diagonal entry inserted.
     if (A.rank() == 2 && keep_diagonal)
     {
       // Down cast to GenericMatrix

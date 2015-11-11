@@ -20,18 +20,18 @@
 
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/Progress.h>
-#include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MultiMesh.h>
+#include <dolfin/mesh/Vertex.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/MultiMeshFunctionSpace.h>
-#include "MultiMeshForm.h"
 #include "MultiMeshDofMap.h"
+#include "MultiMeshForm.h"
 #include "SparsityPatternBuilder.h"
 
 using namespace dolfin;
@@ -103,7 +103,6 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     mesh.init(0, D);
 
     std::vector<std::vector<dolfin::la_index>> global_dofs(rank);
-    //std::vector<const std::vector<dolfin::la_index>* > global_dofs_p(rank);
     std::vector<std::vector<std::size_t>> local_to_local_dofs(rank);
 
     // Resize local dof map vector

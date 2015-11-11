@@ -18,16 +18,15 @@
 // First added:  2013-09-20
 // Last changed: 2014-02-28
 
-#include <utility>
-
 #include <map>
+#include <utility>
 #include <dolfin/common/types.h>
-#include <dolfin/log/log.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericVector.h>
+#include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
 #include "FunctionAssigner.h"
 
 using namespace dolfin;
