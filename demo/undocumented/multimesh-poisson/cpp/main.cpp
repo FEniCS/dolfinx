@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2015-11-10
+// Last changed: 2015-11-11
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes. The solution is computed
@@ -84,9 +84,8 @@ void solve_poisson(double t,
   // Assemble linear system
   Matrix A;
   Vector b;
-  MultiMeshAssembler assembler;
-  assembler.assemble(A, a);
-  assembler.assemble(b, L);
+  assemble_multimesh(A, a);
+  assemble_multimesh(b, L);
 
   // Apply boundary condition
   Constant zero(0);
