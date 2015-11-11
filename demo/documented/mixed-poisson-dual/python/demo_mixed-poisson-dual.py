@@ -45,10 +45,10 @@ from dolfin import *
 # Create mesh
 mesh = UnitSquareMesh(32, 32)
 
-# Define function spaces and mixed (product) space
-DRT = FunctionSpace(mesh, "DRT", 2)
-CG  = FunctionSpace(mesh, "CG", 3)
-W = DRT * CG
+# Define finite elements spaces and build mixed space
+DRT = FiniteElement("DRT", mesh.ufl_cell(), 2)
+CG  = FiniteElement("CG", mesh.ufl_cell(), 3)
+W = FunctionSpace(mesh, DRT * CG)
 
 # Define trial and test functions
 (sigma, u) = TrialFunctions(W)
