@@ -27,7 +27,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
-#include <dolfin/la/RangeMap.h>
+#include <dolfin/la/IndexMap.h>
 #include "SparsityPattern.h"
 
 using namespace dolfin;
@@ -42,7 +42,7 @@ SparsityPattern::SparsityPattern(std::size_t primary_dim)
 SparsityPattern::SparsityPattern(
   const MPI_Comm mpi_comm,
   const std::vector<std::size_t>& dims,
-  const std::vector<std::shared_ptr<const RangeMap>> range_maps,
+  const std::vector<std::shared_ptr<const IndexMap>> range_maps,
   std::size_t primary_dim)
   : GenericSparsityPattern(primary_dim), _mpi_comm(MPI_COMM_NULL)
 {
@@ -52,7 +52,7 @@ SparsityPattern::SparsityPattern(
 void SparsityPattern::init(
   const MPI_Comm mpi_comm,
   const std::vector<std::size_t>& dims,
-  const std::vector<std::shared_ptr<const RangeMap>> range_maps)
+  const std::vector<std::shared_ptr<const IndexMap>> range_maps)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(dims.size() == 2);
@@ -233,8 +233,8 @@ void SparsityPattern::insert_local(
     map_j = entries[0];
   }
 
-  std::shared_ptr<const RangeMap> range_map0 = _range_maps[ _primary_dim];
-  std::shared_ptr<const RangeMap> range_map1 = _range_maps[primary_codim];
+  std::shared_ptr<const IndexMap> range_map0 = _range_maps[ _primary_dim];
+  std::shared_ptr<const IndexMap> range_map1 = _range_maps[primary_codim];
   const la_index local_size0 = range_map0->size();
   const la_index local_size1 = range_map1->size();
 

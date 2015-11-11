@@ -37,7 +37,7 @@
 
 namespace dolfin
 {
-  class RangeMap;
+  class IndexMap;
 
   /// Base class (interface) for generic tensor sparsity patterns.
   /// Currently, this interface is mostly limited to matrices.
@@ -59,7 +59,7 @@ namespace dolfin
     virtual void
       init(const MPI_Comm mpi_comm,
            const std::vector<std::size_t>& dims,
-           const std::vector<std::shared_ptr<const RangeMap>> range_maps) = 0;
+           const std::vector<std::shared_ptr<const IndexMap>> range_maps) = 0;
 
     /// Insert non-zero entries using global indices
     virtual void insert_global(const std::vector<

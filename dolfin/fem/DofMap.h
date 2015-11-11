@@ -35,7 +35,7 @@
 
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
-#include <dolfin/la/RangeMap.h>
+#include <dolfin/la/IndexMap.h>
 #include <dolfin/mesh/Cell.h>
 #include "GenericDofMap.h"
 
@@ -313,7 +313,7 @@ namespace dolfin
     void set(GenericVector& x, double value) const;
 
     /// Return the map
-    std::shared_ptr<RangeMap> range_map() const
+    std::shared_ptr<IndexMap> range_map() const
     { return _range_map; }
 
     int block_size() const
@@ -399,7 +399,7 @@ namespace dolfin
 
     // Object containing information about dof distribution across
     // processes
-    std::shared_ptr<RangeMap> _range_map;
+    std::shared_ptr<IndexMap> _range_map;
 
     // Temporary until MultiMeshDofMap runs in parallel
     friend class MultiMeshDofMap;

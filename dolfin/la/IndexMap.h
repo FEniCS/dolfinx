@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef __RANGE_MAP_H
-#define __RANGE_MAP_H
+#ifndef __INDEX_MAP_H
+#define __INDEX_MAP_H
 
 #include <utility>
 #include <vector>
@@ -25,21 +25,28 @@
 namespace dolfin
 {
 
-  class RangeMap
+  /// This class represents the distribution index arrays across
+  /// processes. An index array is a contiguous collection of N+1
+  /// indices [0, 1, . . ., N] that are distributed across processes M
+  /// processes. On a given process, the IndexMap stores a portion of
+  /// the index set using local indices [0, 1, . . . , n], and a map
+  /// from the local indices to a unique global index.
+
+  class IndexMap
   {
   public:
 
     /// Constructor
-    RangeMap();
+    IndexMap();
 
     /// Range map with no data
-    explicit RangeMap(MPI_Comm mpi_comm);
+    explicit IndexMap(MPI_Comm mpi_comm);
 
     /// Range map with local size on each process
-    RangeMap(MPI_Comm mpi_comm, std::size_t local_size, std::size_t block_size);
+    IndexMap(MPI_Comm mpi_comm, std::size_t local_size, std::size_t block_size);
 
     /// Destructor
-    ~RangeMap();
+    ~IndexMap();
 
     /// Initialise with local_size
     void init(std::size_t local_size, std::size_t block_size);

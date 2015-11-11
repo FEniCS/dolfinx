@@ -45,7 +45,7 @@
 #include <dolfin/la/TensorLayout.h>
 #include <dolfin/la/SparsityPattern.h>
 
-#include <dolfin/la/RangeMap.h>
+#include <dolfin/la/IndexMap.h>
 
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/DefaultFactory.h>

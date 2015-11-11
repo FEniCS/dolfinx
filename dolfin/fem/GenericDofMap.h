@@ -33,7 +33,7 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/la/RangeMap.h>
+#include <dolfin/la/IndexMap.h>
 #include <dolfin/log/log.h>
 
 namespace ufc
@@ -159,7 +159,7 @@ namespace dolfin
     virtual const std::vector<std::size_t>& local_to_global_unowned() const = 0;
 
     /// Range map
-    virtual std::shared_ptr<RangeMap> range_map() const = 0;
+    virtual std::shared_ptr<IndexMap> range_map() const = 0;
 
     /// Tabulate map between local (process) and global dof indices
     virtual void tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const = 0;

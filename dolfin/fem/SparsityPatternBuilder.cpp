@@ -52,7 +52,7 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Get global dimensions and local range
   const std::size_t rank = dofmaps.size();
   std::vector<std::size_t> global_dimensions(rank);
-  std::vector<std::shared_ptr<const RangeMap>> range_maps(rank);
+  std::vector<std::shared_ptr<const IndexMap>> range_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
     range_maps[i] = dofmaps[i]->range_map();
 
@@ -260,11 +260,11 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
   std::vector<std::pair<std::size_t, std::size_t>> local_range(rank);
   std::vector<ArrayView<const std::size_t>> local_to_global(rank);
   std::vector<ArrayView<const int>> off_process_owner(rank);
-  std::vector<std::shared_ptr<const RangeMap>> range_maps;
+  std::vector<std::shared_ptr<const IndexMap>> range_maps;
   for (std::size_t i = 0; i < rank; ++i)
   {
-    range_maps[i].reset(new RangeMap(MPI_COMM_WORLD));
-    // FIXME - fill in RangeMaps?
+    range_maps[i].reset(new IndexMap(MPI_COMM_WORLD));
+    // FIXME - fill in IndexMaps?
     global_dimensions[i] = form.function_space(i)->dofmap()->global_dimension();
     local_range[i]       = form.function_space(i)->dofmap()->ownership_range();
     off_process_owner[i].set(form.function_space(i)->dofmap()->off_process_owner());
