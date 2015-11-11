@@ -142,6 +142,12 @@ MultiMeshDofMap::off_process_owner() const
   return _original_dofmaps[0]->off_process_owner();
 }
 //-----------------------------------------------------------------------------
+std::shared_ptr<IndexMap> MultiMeshDofMap::range_map() const
+{
+  // FIXME: Does not run in parallel
+  return _original_dofmaps[0]->range_map();
+}
+//-----------------------------------------------------------------------------
 std::string MultiMeshDofMap::str(bool verbose) const
 {
   std::stringstream s;

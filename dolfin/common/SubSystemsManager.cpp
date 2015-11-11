@@ -194,7 +194,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 
   // Pass command line arguments to PETSc (will overwrite any
   // default above)
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 6 && PETSC_VERSION_SUBMINOR >= 1
   PetscOptionsInsert(&argc, &argv, NULL);
   #else
   PetscOptionsInsert(NULL, &argc, &argv, NULL);

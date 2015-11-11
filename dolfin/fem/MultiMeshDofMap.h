@@ -92,6 +92,9 @@ namespace dolfin
     /// to owning process
     const std::vector<int>& off_process_owner() const;
 
+    /// Return the map
+    std::shared_ptr<IndexMap> range_map() const;
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
