@@ -257,7 +257,7 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
   // Get global dimensions and local range
   const std::size_t rank = form.rank();
   std::vector<std::size_t> global_dimensions(rank);
-  std::vector<std::shared_ptr<const IndexMap>> index_maps;
+  std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
   {
     index_maps[i] = form.function_space(i)->dofmap()->index_map();
