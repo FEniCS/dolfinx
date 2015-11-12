@@ -100,8 +100,9 @@ namespace dolfin
 
   private:
 
-    // Total global dimension (sum of parts)
-    std::size_t _global_dimension;
+    // Index Map containing total global dimension (sum of parts)
+    // FIXME: make it work in parallel
+    std::shared_ptr<IndexMap> _index_map;
 
     // List of original dofmaps
     std::vector<std::shared_ptr<const GenericDofMap> > _original_dofmaps;
