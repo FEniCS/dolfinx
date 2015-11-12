@@ -66,7 +66,8 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
-               const std::vector<std::size_t>& component, const Mesh& mesh)
+               const std::vector<std::size_t>& component,
+               const Mesh& mesh)
   : _cell_dimension(0), _is_view(true), _global_dimension(0), _ufc_offset(0),
     _global_offset(parent_dofmap._global_offset),
     _local_ownership_size(parent_dofmap._local_ownership_size)
@@ -75,7 +76,8 @@ DofMap::DofMap(const DofMap& parent_dofmap,
   DofMapBuilder::build_sub_map_view(*this, parent_dofmap, component, mesh);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
+DofMap::DofMap(std::unordered_map<std::size_t,
+               std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh)
   : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
     _global_dimension(0), _ufc_offset(0), _global_offset(0),
@@ -130,6 +132,7 @@ DofMap::DofMap(const DofMap& dofmap)
   _dofmap = dofmap._dofmap;
   _cell_dimension = dofmap._cell_dimension;
   _ufc_dofmap = dofmap._ufc_dofmap;
+  _num_mesh_entities_global = dofmap._num_mesh_entities_global;
   _global_offset = dofmap._global_offset;
   _local_ownership_size = dofmap._local_ownership_size;
   _ufc_local_to_local= dofmap._ufc_local_to_local;
