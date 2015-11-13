@@ -130,8 +130,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
     index_maps.push_back(V1.dofmap()->index_map());
 
     GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
-    pattern.init(mesh.mpi_comm(), global_dimensions,
-                 index_maps);
+    pattern.init(mesh.mpi_comm(), index_maps);
 
     std::vector<ArrayView<const dolfin::la_index>> _sparsity_entries
       = {{ArrayView<const la_index>(sparsity_entries[0]),

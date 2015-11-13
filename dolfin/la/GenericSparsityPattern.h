@@ -58,7 +58,6 @@ namespace dolfin
     /// Initialize sparsity pattern for a generic tensor
     virtual void
       init(const MPI_Comm mpi_comm,
-           const std::vector<std::size_t>& dims,
            const std::vector<std::shared_ptr<const IndexMap>> index_maps) = 0;
 
     /// Insert non-zero entries using global indices

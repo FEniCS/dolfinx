@@ -41,21 +41,18 @@ SparsityPattern::SparsityPattern(std::size_t primary_dim)
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
   const MPI_Comm mpi_comm,
-  const std::vector<std::size_t>& dims,
   const std::vector<std::shared_ptr<const IndexMap>> index_maps,
   std::size_t primary_dim)
   : GenericSparsityPattern(primary_dim), _mpi_comm(MPI_COMM_NULL)
 {
-  init(mpi_comm, dims, index_maps);
+  init(mpi_comm, index_maps);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::init(
   const MPI_Comm mpi_comm,
-  const std::vector<std::size_t>& dims,
   const std::vector<std::shared_ptr<const IndexMap>> index_maps)
 {
   // Only rank 2 sparsity patterns are supported
-  dolfin_assert(dims.size() == 2);
   dolfin_assert(index_maps.size() == 2);
 
   _mpi_comm = mpi_comm;
