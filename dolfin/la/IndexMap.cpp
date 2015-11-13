@@ -93,7 +93,7 @@ std::size_t IndexMap::size() const
 //-----------------------------------------------------------------------------
 std::size_t IndexMap::size_global() const
 {
-  return _all_ranges.back();
+  return _all_ranges.back() * _block_size;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::size_t>& IndexMap::local_to_global_unowned() const
