@@ -181,15 +181,6 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   {
     // Initialize PETSc
     PetscInitializeNoArguments();
-
-    // Set options to avoid common failures with some 3rd party solvers
-    //#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-    //PetscOptionsSetValue("-mat_mumps_icntl_7", "0");
-    //PetscOptionsSetValue("-mat_superlu_dist_colperm", "MMD_AT_PLUS_A");
-    //#else
-    //PetscOptionsSetValue(NULL, "-mat_mumps_icntl_7", "0");
-    //PetscOptionsSetValue(NULL, "-mat_superlu_dist_colperm", "MMD_AT_PLUS_A");
-    //#endif
   }
 
   // Pass command line arguments to PETSc (will overwrite any
