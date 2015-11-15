@@ -21,6 +21,7 @@
 #include <sstream>
 #include <unordered_set>
 
+#include <dolfin/log/Log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include "EigenVector.h"
@@ -120,7 +121,7 @@ void EigenVector::add_local(const Array<double>& values)
 void EigenVector::gather(GenericVector& x,
                          const std::vector<dolfin::la_index>& indices) const
 {
-  error("Not implemented");
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 void EigenVector::gather(std::vector<double>& x,

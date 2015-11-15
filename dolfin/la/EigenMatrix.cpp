@@ -63,7 +63,7 @@ std::size_t EigenMatrix::size(std::size_t dim) const
 {
   if (dim > 1)
   {
-    dolfin_error("EigenMatrix.h",
+    dolfin_error("EigenMatrix.cpp",
                  "access size of Eigen matrix",
                  "Illegal axis (%d), must be 0 or 1", dim);
   }
@@ -93,7 +93,7 @@ double EigenMatrix::norm(std::string norm_type) const
   }
   else
   {
-    dolfin_error("EigenMatrix.h",
+    dolfin_error("EigenMatrix.cpp",
                  "compute norm of Eigen matrix",
                  "Unknown norm type (\"%s\")",
                  norm_type.c_str());
@@ -109,7 +109,9 @@ void EigenMatrix::getrow(std::size_t row_idx,
 
   // Check storage is RowMajor
   if (!eigen_matrix_type::IsRowMajor)
-    error("Cannot get row from ColMajor matrix");
+    dolfin_error("EigenMatrix.cpp",
+                 "get row of Eigen matrix",
+                 "Cannot get row from column major matrix");
 
   // Insert values into std::vectors
   columns.clear();
@@ -228,7 +230,7 @@ void EigenMatrix::mult(const GenericVector& x, GenericVector& y) const
   EigenVector& yy = as_type<EigenVector>(y);
   if (size(1) != xx.size())
   {
-    dolfin_error("EigenMatrix.h",
+    dolfin_error("EigenMatrix.cpp",
                  "compute matrix-vector product with Eigen matrix",
                  "Non-matching dimensions for matrix-vector product");
   }
@@ -239,7 +241,7 @@ void EigenMatrix::mult(const GenericVector& x, GenericVector& y) const
 
   if (size(0) != yy.size())
   {
-    dolfin_error("EigenMatrix.h",
+    dolfin_error("EigenMatrix.cpp",
                  "compute matrix-vector product with Eigen matrix",
                  "Vector for matrix-vector result has wrong size");
   }
@@ -251,7 +253,7 @@ void EigenMatrix::get_diagonal(GenericVector& x) const
 {
   if (size(1) != size(0) || size(0) != x.size())
   {
-    dolfin_error("EigenMatrix.h",
+    dolfin_error("EigenMatrix.cpp",
                  "Get diagonal of a Eigen Matrix",
                  "Matrix and vector dimensions don't match");
   }
@@ -265,7 +267,7 @@ void EigenMatrix::set_diagonal(const GenericVector& x)
 {
   if (size(1) != size(0) || size(0) != x.size())
   {
-    dolfin_error("EigenMatrix.h",
+    dolfin_error("EigenMatrix.cpp",
                  "Set diagonal of a Eigen Matrix",
                  "Matrix and vector dimensions don't match");
   }
@@ -283,7 +285,7 @@ void EigenMatrix::transpmult(const GenericVector& x,
 
   if (size(0) != xx.size())
   {
-    dolfin_error("EigenMatrix.h",
+    dolfin_error("EigenMatrix.cpp",
                  "compute matrix-vector product with Eigen matrix",
                  "Non-matching dimensions for matrix-vector product");
   }
@@ -294,7 +296,7 @@ void EigenMatrix::transpmult(const GenericVector& x,
 
   if (size(1) != yy.size())
   {
-    dolfin_error("EigenMatrix.h",
+    dolfin_error("EigenMatrix.cpp",
                  "compute matrix-vector product with Eigen matrix",
                  "Vector for matrix-vector result has wrong size");
   }
@@ -335,7 +337,7 @@ EigenMatrix:: data() const
   // Check that matrix has been compressed
   if (!_matA.isCompressed())
   {
-    dolfin_error("EigenMatrix.h",
+    dolfin_error("EigenMatrix.cpp",
                  "get raw data from EigenMatrix",
                  "Matrix has not been compressed. Try calling EigenMatrix::compress() first");
   }
@@ -382,7 +384,7 @@ void EigenMatrix::init(const TensorLayout& tensor_layout)
     = dynamic_cast<const SparsityPattern*>(tensor_layout.sparsity_pattern().get());
   if (!pattern_pointer)
   {
-    dolfin_error("EigenMatrix.h",
+    dolfin_error("EigenMatrix.cpp",
                  "initialize Eigen matrix",
                  "Cannot convert GenericSparsityPattern to concrete SparsityPattern type");
   }
@@ -422,7 +424,7 @@ void EigenMatrix::axpy(double a, const GenericMatrix& A,
   // Check for same size
   if (size(0) != A.size(0) or size(1) != A.size(1))
   {
-    dolfin_error("EigenMatrix.h",
+    dolfin_error("EigenMatrix.cpp",
                  "perform axpy operation with Eigen matrix",
                  "Dimensions don't match");
   }

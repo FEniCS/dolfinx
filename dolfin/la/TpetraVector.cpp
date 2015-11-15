@@ -585,7 +585,9 @@ TpetraVector::_init(MPI_Comm comm,
                     const std::vector<dolfin::la_index>& local_to_global_map)
 {
   if (!_x.is_null())
-    error("TpetraVector cannot be initialized more than once.");
+    dolfin_error("TpetraVector.h",
+                 "initialize vector",
+                 "Vector cannot be initialised more than once");
 
   // Make a Trilinos version of the MPI Comm
   Teuchos::RCP<const Teuchos::Comm<int>> _comm(new Teuchos::MpiComm<int>(comm));

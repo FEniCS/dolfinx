@@ -1476,7 +1476,9 @@ void DofMapBuilder::compute_node_reordering(
     else if (*node == -1)
       ++unowned_local_size;
     else
-      error("Invalid node ownership index.");
+      dolfin_error("DofMap.cpp",
+                   "compute node reordering",
+                   "Invalid node ownership index.");
   }
   dolfin_assert((unowned_local_size+owned_local_size) == node_ownership.size());
   dolfin_assert((unowned_local_size+owned_local_size)

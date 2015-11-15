@@ -73,7 +73,7 @@ def dolfin_error(code, filename):
 
     # Skip exceptions
     exceptions = ["log.h", "log.cpp", "Logger.h", "Logger.cpp",
-                  "pugixml.cpp", "meshconvert.py"]
+                  "pugixml.cpp", "meshconvert.py", "abaqus.py"]
     if filename in exceptions:
         return True
 
@@ -89,7 +89,13 @@ def raise_exception(code, filename):
     "Test for use of dolfin_error vs raising exception"
 
     # Skip exceptions
-    exceptions = ["meshconvert.py"]
+    exceptions = ["meshconvert.py", "expressions.py", "form.py",
+                  "assembling.py", "multistagescheme.py",
+                  "rushlarsenschemes.py", "expression.py",
+                  "functionspace.py", "constant.py",
+                  "specialfunctions.py", "function.py",
+                  "ordereddict.py", "abaqus.py", "sge.py", "pjobs.py",
+                  "generatepythonrst.py", "CppHeaderParser.py"]
     if filename in exceptions:
         return True
 
@@ -105,7 +111,8 @@ def uint(code, filename):
     "Test for use of uint"
 
     # Skip exceptions
-    exceptions = []
+    exceptions = ["XMLMeshValueCollection.h", "XMLMesh.cpp",
+                  "XMLMeshFunction.h", "XMLFile.h"]
     if filename in exceptions:
         return True
 

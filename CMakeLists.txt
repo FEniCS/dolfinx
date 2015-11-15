@@ -1088,14 +1088,14 @@ if (DOLFIN_ENABLE_TESTING)
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/documentation")
 
   # Add target "run_styletest" for running documentation tests
-  #add_custom_target(run_styletest
-  #  COMMAND ${PYTHON_EXECUTABLE} "-B" "test_coding_style.py"
-  #  DEPENDS copy_data_test_demo
-  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/codingstyle")
+  add_custom_target(run_styletest
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "test_coding_style.py"
+    DEPENDS copy_data_test_demo
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/codingstyle")
 
   # Add target "runtests" for running all tests
   add_custom_target(runtests
-    DEPENDS run_doctest run_regressiontests run_unittests)# run_styletest)
+    DEPENDS run_doctest run_regressiontests run_unittests run_styletest)
 endif()
 
 #------------------------------------------------------------------------------

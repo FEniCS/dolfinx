@@ -288,7 +288,9 @@ void DirichletBC::gather(Map& boundary_values) const
         if (it == local_to_global.end())
         {
           // Throw error if dof is not in local map
-          error("Cannot find dof in local_to_global_unowned array");
+          dolfin_error("DirichletBC.cpp",
+                       "gather boundary values",
+                       "Cannot find dof in local_to_global_unowned array");
         }
         else
         {

@@ -131,7 +131,9 @@ void SparsityPattern::insert_global(dolfin::la_index i, dolfin::la_index j)
       }
     else
     {
-      error("Row index in SparsityPattern::insert_global must be local to process.");
+      dolfin_error("SparsityPattern.cpp",
+                   "insert using global indices",
+                   "Index must be in the process range");
     }
   }
 }
@@ -204,7 +206,9 @@ void SparsityPattern::insert_global(
       }
       else
       {
-        error("Row index in SparsityPattern::insert_global must be local to process.");
+        dolfin_error("SparsityPattern.cpp",
+                     "insert using global indices",
+                     "Index must be in the process range");
       }
     }
   }
