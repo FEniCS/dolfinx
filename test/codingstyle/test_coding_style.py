@@ -22,7 +22,7 @@ import pytest
 
 def pytest_generate_tests(metafunc):
     # List of C++ tests
-    cpp_tests = [dolfin_error, uint]
+    cpp_tests = [dolfin_error, uint, includes]
 
     # List of Python tests
     python_tests = [dolfin_error, raise_exception]
@@ -122,6 +122,24 @@ def uint(code, filename):
 
     # Write an error message
     assert False, "* Warning: uint is used in %s when std::size_t should be used" % filename
+    return False
+
+def includes(code, filename):
+    "Test of not including dolfin_foo.h which bloat compilation units"
+
+    # Skip exceptions
+    exceptions = ['dolfin.h']
+    if filename in exceptions:
+        return True
+
+    # Check for raising of exception
+    # NOTE: Improve this pattern if it generates false positives
+    r = re.search(r"\bdolfin_[a-zA-Z]*\.h\b", code)
+    if r is None:
+        return True
+
+    # Write an error message
+    assert False, "* Warning: %s should not be included in %s" % (r.group(), filename)
     return False
 
 if __name__ == "__main__":
