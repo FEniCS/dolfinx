@@ -34,8 +34,6 @@
 #include "GraphBuilder.h"
 #include "SCOTCH.h"
 
-#include <dolfin/common/dolfin_common.h>
-
 #ifdef HAS_SCOTCH
 extern "C"
 {

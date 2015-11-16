@@ -23,7 +23,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
 #include "TpetraVector.h"

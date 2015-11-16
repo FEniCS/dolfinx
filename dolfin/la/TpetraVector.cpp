@@ -26,7 +26,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
-#include <dolfin/log/dolfin_log.h>
 #include "TpetraFactory.h"
 #include "TpetraVector.h"
 
