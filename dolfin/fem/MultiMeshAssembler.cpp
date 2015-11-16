@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2015-10-23
+// Last changed: 2015-11-12
 
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 

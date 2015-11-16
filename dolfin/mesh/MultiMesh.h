@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2015-11-11
+// Last changed: 2015-11-12
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -52,7 +52,7 @@ namespace dolfin
   public:
 
     /// Create empty multimesh
-    MultiMesh();
+    MultiMesh(std::size_t quadrature_order=2);
 
     /// Destructor
     ~MultiMesh();
@@ -273,16 +273,6 @@ namespace dolfin
     /// Clear multimesh
     void clear();
 
-    /// Default parameter values
-    static Parameters default_parameters()
-    {
-      Parameters p("multimesh");
-
-      p.add("quadrature_order", 1);
-
-      return p;
-    }
-
   private:
 
     // Friend (in plot.h)
@@ -419,6 +409,9 @@ namespace dolfin
     //     k = the collision number (in the list of cutting cells)
     std::vector<std::map<unsigned int, std::vector<std::vector<double> > > >
     _facet_normals;
+
+    // Quadrature order
+    std::size_t _quadrature_order;
 
     // Build boundary meshes
     void _build_boundary_meshes();

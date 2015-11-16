@@ -42,7 +42,8 @@ using namespace dolfin;
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh)
   : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0), _global_offset(0)
+    _global_dimension(0), _ufc_offset(0), _multimesh_offset(0),
+    _global_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -54,7 +55,8 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh,
                std::shared_ptr<const SubDomain> constrained_domain)
   : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0), _global_offset(0)
+    _global_dimension(0), _ufc_offset(0), _multimesh_offset(0),
+    _global_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -68,7 +70,8 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
 DofMap::DofMap(const DofMap& parent_dofmap,
                const std::vector<std::size_t>& component,
                const Mesh& mesh)
-  : _cell_dimension(0), _is_view(true), _global_dimension(0), _ufc_offset(0),
+  : _cell_dimension(0), _is_view(true), _global_dimension(0),
+    _ufc_offset(0), _multimesh_offset(0),
     _global_offset(parent_dofmap._global_offset),
     _local_ownership_size(parent_dofmap._local_ownership_size)
 {
@@ -80,8 +83,8 @@ DofMap::DofMap(std::unordered_map<std::size_t,
                std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh)
   : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0), _global_offset(0),
-    _local_ownership_size(0)
+    _global_dimension(0), _ufc_offset(0), _multimesh_offset(0),
+    _global_offset(0), _local_ownership_size(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -139,6 +142,7 @@ DofMap::DofMap(const DofMap& dofmap)
   _is_view = dofmap._is_view;
   _global_dimension = dofmap._global_dimension;
   _ufc_offset = dofmap._ufc_offset;
+  _multimesh_offset = dofmap._multimesh_offset;
   _off_process_owner = dofmap._off_process_owner;
   _shared_nodes = dofmap._shared_nodes;
   _neighbours = dofmap._neighbours;
@@ -415,7 +419,7 @@ std::string DofMap::str(bool verbose) const
   {
     // Cell loop
     dolfin_assert(_dofmap.size()%_cell_dimension == 0);
-    const std::size_t ncells = _dofmap.size()/_cell_dimension;
+    const std::size_t ncells = _dofmap.size() / _cell_dimension;
 
     for (std::size_t i = 0; i < ncells; ++i)
     {

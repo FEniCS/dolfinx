@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-06-11
+// Last changed: 2015-11-12
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -32,11 +32,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MultiMeshFunctionSpace::MultiMeshFunctionSpace()
-  : _multimesh(new MultiMesh()), _dofmap(new MultiMeshDofMap())
+MultiMeshFunctionSpace::MultiMeshFunctionSpace(const MultiMesh& multimesh)
+  : _multimesh(reference_to_no_delete_pointer(multimesh)),
+    _dofmap(new MultiMeshDofMap())
 {
-  // Set parameters
-  parameters = default_parameters();
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+MultiMeshFunctionSpace::MultiMeshFunctionSpace(std::shared_ptr<const MultiMesh> multimesh)
+  : _multimesh(multimesh),
+    _dofmap(new MultiMeshDofMap())
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MultiMeshFunctionSpace::~MultiMeshFunctionSpace()
@@ -98,9 +105,6 @@ void MultiMeshFunctionSpace::build()
 {
   begin(PROGRESS, "Building multimesh function space.");
 
-  // Build multimesh
-  _build_multimesh();
-
   // Build dofmap using empty list of offsets (will be computed)
   std::vector<dolfin::la_index> offsets;
   _build_dofmap(offsets);
@@ -111,8 +115,7 @@ void MultiMeshFunctionSpace::build()
   end();
 }
 //-----------------------------------------------------------------------------
-void MultiMeshFunctionSpace::build(std::shared_ptr<MultiMesh> multimesh,
-                                   const std::vector<dolfin::la_index>& offsets)
+void MultiMeshFunctionSpace::build(const std::vector<dolfin::la_index>& offsets)
 {
   begin(PROGRESS, "Building multimesh subspace.");
 
@@ -123,23 +126,6 @@ void MultiMeshFunctionSpace::build(std::shared_ptr<MultiMesh> multimesh,
   _build_views();
 
   end();
-}
-//-----------------------------------------------------------------------------
-void MultiMeshFunctionSpace::_build_multimesh()
-{
-  // Clear multimesh
-  dolfin_assert(_multimesh);
-  _multimesh->clear();
-
-  // Propagate parameters
-  _multimesh->parameters.update(parameters("multimesh"));
-
-  // Add meshes
-  for (std::size_t i = 0; i < num_parts(); i++)
-    _multimesh->add(_function_spaces[i]->mesh());
-
-  // Build multimesh
-  _multimesh->build();
 }
 //-----------------------------------------------------------------------------
 void MultiMeshFunctionSpace::_build_dofmap(const std::vector<dolfin::la_index>& offsets)

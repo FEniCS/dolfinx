@@ -405,6 +405,9 @@ namespace dolfin
     // UFC dof map offset
     std::size_t _ufc_offset;
 
+    // Multimesh dof map offset
+    std::size_t _multimesh_offset;
+
     // Number of dofs owned by this process
     std::size_t _global_offset;
     int _local_ownership_size;

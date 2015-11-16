@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2014 Anders Logg
+// Copyright (C) 2013-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2015-11-11
+// Last changed: 2015-11-12
 
 #include <dolfin/log/log.h>
 #include <dolfin/plot/plot.h>
@@ -34,10 +34,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MultiMesh::MultiMesh()
+MultiMesh::MultiMesh(std::size_t quadrature_order)
+  : _quadrature_order(quadrature_order)
 {
-  // Set parameters
-  parameters = default_parameters();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MultiMesh::~MultiMesh()
@@ -374,9 +374,6 @@ void MultiMesh::_build_quadrature_rules_overlap()
 {
   begin(PROGRESS, "Building quadrature rules of cut cells' overlap.");
 
-  // Get quadrature order
-  const std::size_t quadrature_order = parameters["quadrature_order"];
-
   // Clear quadrature rules
   _quadrature_rules_overlap.clear();
   _quadrature_rules_interface.clear();
@@ -531,7 +528,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
               = _add_quadrature_rule(interface_part_qr,
                                      triangulation_cut_boundary,
                                      tdim_boundary, gdim,
-                                     quadrature_order, 1);
+                                     _quadrature_order, 1);
 
             const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
             const Point n = -cutting_cell.normal(local_facet_index);
@@ -562,7 +559,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
               = _add_quadrature_rule(interface_part_qr,
                                      triangulation_boundary_prev_volume,
                                      tdim_boundary, gdim,
-                                     quadrature_order, -1);
+                                     _quadrature_order, -1);
 
             const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
             const Point n = -cutting_cell.normal(local_facet_index);
@@ -606,7 +603,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
             = _add_quadrature_rule(interface_part_qr,
                                    triangulation_prev_cutting,
                                    tdim_boundary, gdim,
-                                   quadrature_order, -1);
+                                   _quadrature_order, -1);
 
           for (std::size_t i = 0; i < num_qr_points.size(); ++i)
             _add_normal(interface_part_n,
@@ -649,10 +646,10 @@ void MultiMesh::_build_quadrature_rules_overlap()
         // triangulations
         _add_quadrature_rule(overlap_part_qr,
                              triangulation_cut_cutting,
-                             tdim, gdim, quadrature_order, 1);
+                             tdim, gdim, _quadrature_order, 1);
         _add_quadrature_rule(overlap_part_qr,
                              triangulation_cutting_prev,
-                             tdim, gdim, quadrature_order, -1);
+                             tdim, gdim, _quadrature_order, -1);
 
         // Add quadrature rule for overlap part
         overlap_qr.push_back(overlap_part_qr);
@@ -680,12 +677,6 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 {
   begin(PROGRESS, "Building quadrature rules of cut cells.");
 
-  // FIXME: Do we want to check to make sure we
-  // have the same order in the overlapping part?
-
-  // Get quadrature order
-  const std::size_t quadrature_order = parameters["quadrature_order"];
-
   // Clear quadrature rules
   _quadrature_rules_cut_cells.clear();
   _quadrature_rules_cut_cells.resize(num_parts());
@@ -706,7 +697,7 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 
       // Compute quadrature rule for the cell itself.
       auto qr = SimplexQuadrature::compute_quadrature_rule(cut_cell,
-                                                           quadrature_order);
+                                                           _quadrature_order);
 
       // Get the quadrature rule for the overlapping part
       const auto& qr_overlap = _quadrature_rules_overlap[cut_part][cut_cell_index];
