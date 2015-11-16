@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2015-11-11
+// Last changed: 2015-11-16
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes. The solution is computed
@@ -71,7 +71,6 @@ void solve_poisson(double t,
 
   // Create function space
   MultiMeshPoisson::MultiMeshFunctionSpace V(multimesh);
-  V.parameters("multimesh")["quadrature_order"] = 2;
 
   // Create forms
   MultiMeshPoisson::MultiMeshBilinearForm a(V, V);

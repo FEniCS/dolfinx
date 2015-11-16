@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2015-11-05
-# Last changed: 2015-11-11
+# Last changed: 2015-11-17
 #
 # This demo program solves Poisson's equation on a domain defined by
 # three overlapping and non-matching meshes. The solution is computed
@@ -50,7 +50,6 @@ def solve_poisson(t, x1, y1, x2, y2, plot_solution,
 
     # Create function space
     V = MultiMeshFunctionSpace(multimesh, "Lagrange", 1)
-    V.parameters.multimesh.quadrature_order = 2
 
     # Define trial and test functions and right-hand side
     u = TrialFunction(V)

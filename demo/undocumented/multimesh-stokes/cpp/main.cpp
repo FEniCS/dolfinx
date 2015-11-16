@@ -68,14 +68,6 @@ class NoslipBoundary : public SubDomain
   }
 };
 
-class AllDomain : public SubDomain
-{
-  bool inside(const Array<double>& x, bool on_boundary) const
-  {
-    return true;
-  }
-};
-
 int main(int argc, char* argv[])
 {
   if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
@@ -84,9 +76,8 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  // FIXME: Testing
+  // FIXME: Check whether this can be removed, should not be needed
   parameters["reorder_dofs_serial"] = false;
-  std::size_t quadrature_order = 2;
 
   // Create meshes
   UnitSquareMesh mesh_0(16, 16);
@@ -94,7 +85,7 @@ int main(int argc, char* argv[])
   RectangleMesh  mesh_2(Point(0.4, 0.4), Point(0.8, 0.8), 8, 8);
 
   // Build multimesh
-  MultiMesh multimesh(quadrature_order);
+  MultiMesh multimesh;
   multimesh.add(mesh_0);
   multimesh.add(mesh_1);
   multimesh.add(mesh_2);
