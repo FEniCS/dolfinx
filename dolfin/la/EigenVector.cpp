@@ -21,7 +21,7 @@
 #include <sstream>
 #include <unordered_set>
 
-#include <dolfin/log/Log.h>
+#include <dolfin/log/log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include "EigenVector.h"

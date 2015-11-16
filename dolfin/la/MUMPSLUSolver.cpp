@@ -188,7 +188,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   if (data.INFOG(1) < 0)
     dolfin_error("MUMPSLUSolver.cpp",
                  "compute matrix factors",
-                 "MUMPS reported an error during the solve"
+                 "MUMPS reported an error during the solve");
 
   // Shift indices by -1
   for (std::size_t i = 0; i < local_x_size ; ++i)
