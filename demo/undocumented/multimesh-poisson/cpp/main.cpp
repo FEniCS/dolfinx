@@ -120,9 +120,6 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  // FIXME: Check whether this can be removed, should not be needed
-  parameters["reorder_dofs_serial"] = false;
-
   // Parameters
   const double T = 40.0;
   const std::size_t N = 400;

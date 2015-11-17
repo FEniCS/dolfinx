@@ -40,12 +40,12 @@ h = (h('+') + h('-')) / 2
 alpha = 4.0
 beta = 4.0
 
-# Bilinear form
+# Define bilinear form
 a = dot(grad(u), grad(v))*dX \
   - dot(avg(grad(u)), jump(v, n))*dI \
   - dot(avg(grad(v)), jump(u, n))*dI \
   + alpha/h*jump(u)*jump(v)*dI \
-  + dot(jump(grad(u)), jump(grad(v)))*dO
+  + beta*dot(jump(grad(u)), jump(grad(v)))*dO
 
-# Linear form
+# Define linear form
 L = f*v*dx

@@ -70,7 +70,7 @@ def solve_poisson(t, x1, y1, x2, y2, plot_solution,
       - dot(avg(grad(u)), jump(v, n))*dI \
       - dot(avg(grad(v)), jump(u, n))*dI \
       + alpha/h*jump(u)*jump(v)*dI \
-      + dot(jump(grad(u)), jump(grad(v)))*dO
+      + beta*dot(jump(grad(u)), jump(grad(v)))*dO
 
     # Define linear form
     L = f*v*dx
@@ -105,9 +105,6 @@ def solve_poisson(t, x1, y1, x2, y2, plot_solution,
 if MPI.size(mpi_comm_world()) > 1:
     info("Sorry, this demo does not (yet) run in parallel.")
     exit(0)
-
-# FIXME: Check whether this can be removed, should not be needed
-parameters["reorder_dofs_serial"] = False
 
 # Parameters
 T = 40.0

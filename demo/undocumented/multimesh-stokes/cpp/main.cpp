@@ -76,9 +76,6 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  // FIXME: Check whether this can be removed, should not be needed
-  parameters["reorder_dofs_serial"] = false;
-
   // Create meshes
   UnitSquareMesh mesh_0(16, 16);
   RectangleMesh  mesh_1(Point(0.2, 0.2), Point(0.6, 0.6), 8, 8);

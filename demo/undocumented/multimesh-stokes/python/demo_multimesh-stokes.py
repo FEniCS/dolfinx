@@ -39,9 +39,6 @@ if MPI.size(mpi_comm_world()) > 1:
     info("Sorry, this demo does not (yet) run in parallel.")
     exit(0)
 
-# FIXME: Check whether this can be removed, should not be needed
-parameters["reorder_dofs_serial"] = False
-
 # Create meshes
 mesh_0 = UnitSquareMesh(16, 16)
 mesh_1 = RectangleMesh(Point(0.2, 0.2), Point(0.6, 0.6), 8, 8)
@@ -75,7 +72,6 @@ f = Constant((0, 0))
 # Define facet normal and mesh size
 n = FacetNormal(multimesh)
 h = 2.0*Circumradius(multimesh)
-h = (h('+') + h('-')) / 2
 
 # Parameters
 alpha = 4.0
@@ -86,19 +82,29 @@ def tensor_jump(v, n):
 def a_h(v, w):
     return inner(grad(v), grad(w))*dX \
          - inner(avg(grad(v)), tensor_jump(w, n))*dI \
-         - inner(avg(grad(w)), tensor_jump(v, n))*dI
+         - inner(avg(grad(w)), tensor_jump(v, n))*dI \
+         + alpha/avg(h) * inner(jump(v), jump(w))*dI
 
 def b_h(v, q):
     return -div(v)*q*dX + jump(v, n)*avg(q)*dI
 
-def s_h(v, w):
+def l_h(v, q, f):
+    return inner(f, v)*dX
+
+def s_O(v, w):
     return inner(jump(grad(v)), jump(grad(w)))*dO
 
+def s_C(v, q, w, r):
+    return h*h*inner(-div(grad(v)) + grad(q), -div(grad(w)) - grad(r))*dC
+
+def l_C(v, q, f):
+    return h*h*inner(f, -div(grad(v)) - grad(q))*dC
+
 # Define bilinear form
-a = a_h(u, v) + b_h(v, p) + b_h(u, q) + s_h(u, v)
+a = a_h(u, v) + b_h(v, p) + b_h(u, q) + s_O(u, v) + s_C(u, p, v, q)
 
 # Define linear form
-L = dot(f, v)*dx
+L  = l_h(v, q, f) + l_C(v, q, f)
 
 # Assemble linear system
 A = assemble_multimesh(a)
