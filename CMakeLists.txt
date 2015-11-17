@@ -1093,6 +1093,10 @@ if (DOLFIN_ENABLE_TESTING)
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/codingstyle")
 
+  # Create test_coding_style.py in build dir (depends on source path)
+  configure_file(${CMAKE_SOURCE_DIR}/test/codingstyle/test_coding_style.py.in
+    ${CMAKE_BINARY_DIR}/test/codingstyle/test_coding_style.py @ONLY)
+
   # Add target "runtests" for running all tests
   add_custom_target(runtests
     DEPENDS run_doctest run_regressiontests run_unittests run_styletest)
