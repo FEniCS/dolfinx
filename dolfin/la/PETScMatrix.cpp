@@ -129,8 +129,9 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
 
     // Set block size
-    const int bs = tensor_layout.index_map(0)->block_size();
-    dolfin_assert(bs == tensor_layout.index_map(1)->block_size());
+    int bs = tensor_layout.index_map(0)->block_size();
+    if (bs != tensor_layout.index_map(1)->block_size())
+      bs = 1;
     if (bs > 1)
     {
      ierr =  MatSetBlockSize(_matA, bs);
@@ -155,7 +156,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     if (tensor_layout.index_map(0)->local_to_global_unowned().empty()
         && tensor_layout.index_map(1)->local_to_global_unowned().empty())
     {
-      //      dolfin_assert(bs == 1);
+      //  dolfin_assert(bs == 1);
       _map0.resize(M);
       _map1.resize(N);
       for (std::size_t i = 0; i < M; ++i)
@@ -170,9 +171,9 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
       _map1 = std::vector<PetscInt>
         (tensor_layout.index_map(1)->size()/bs);
       for (std::size_t i = 0; i < _map0.size(); ++i)
-        _map0[i] = tensor_layout.index_map(0)->local_to_global(i);
+        _map0[i] = tensor_layout.index_map(0)->local_to_global(i, bs);
       for (std::size_t i = 0; i < _map1.size(); ++i)
-        _map1[i] = tensor_layout.index_map(1)->local_to_global(i);
+        _map1[i] = tensor_layout.index_map(1)->local_to_global(i, bs);
     }
     ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map0.size(),
                                  _map0.data(), PETSC_COPY_VALUES,
