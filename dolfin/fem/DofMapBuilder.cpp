@@ -141,7 +141,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   dofmap._cell_dimension = dofmap._ufc_dofmap->num_element_dofs();
 
   // Set global dimension
-  std::size_t global_dimension
+  dofmap._global_dimension
     = dofmap._ufc_dofmap->global_dimension(dofmap._num_mesh_entities_global);
 
   // Compute local UFC indices of any 'global' dofs, and re-map if
@@ -189,14 +189,14 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
                                node_graph0,
                                shared_nodes, global_nodes0,
                                node_local_to_global0, mesh,
-                               global_dimension/bs);
+                               dofmap._global_dimension/bs);
 
     dofmap.index_map()->init(num_owned_nodes, bs);
 
     // Sanity check
     dolfin_assert(MPI::sum(mesh.mpi_comm(),
                            (std::size_t) dofmap.index_map()->size())
-                  == global_dimension);
+                  == dofmap._global_dimension);
 
     // Compute node re-ordering for process index locality and spatial
     // locality within a process, including
@@ -253,12 +253,12 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
     if (dofmap._ufc_local_to_local.empty()
         && dofmap._ufc_dofmap->num_sub_dofmaps() > 0)
     {
-      dofmap._ufc_local_to_local.resize(global_dimension);
+      dofmap._ufc_local_to_local.resize(dofmap._global_dimension);
       for (std::size_t i = 0; i < dofmap._ufc_local_to_local.size(); ++i)
         dofmap._ufc_local_to_local[i] = i;
     }
 
-    dofmap.index_map()->init(global_dimension, bs);
+    dofmap.index_map()->init(dofmap._global_dimension, bs);
     dofmap._shared_nodes.clear();
   }
 
@@ -327,14 +327,11 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
   sub_dofmap._num_mesh_entities_global
     = parent_dofmap._num_mesh_entities_global;
   dolfin_assert(!sub_dofmap._num_mesh_entities_global.empty());
-
-  // FIXME: sub_dofmap copies the IndexMap from its parent, but needs to have
-  // a different global dimension?
   sub_dofmap._global_dimension
-      = sub_dofmap._ufc_dofmap->global_dimension(sub_dofmap._num_mesh_entities_global);
+    = sub_dofmap._ufc_dofmap->global_dimension(sub_dofmap._num_mesh_entities_global);
 
   // Copy data from parent
-  sub_dofmap._index_map = parent_dofmap._index_map;
+  sub_dofmap.index_map() = parent_dofmap.index_map();
   sub_dofmap._shared_nodes = parent_dofmap._shared_nodes;
   sub_dofmap._neighbours = parent_dofmap._neighbours;
 

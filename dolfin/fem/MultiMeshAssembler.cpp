@@ -634,24 +634,19 @@ void MultiMeshAssembler::_init_global_tensor(GenericTensor& A,
   dolfin_assert(tensor_layout);
 
   // Get dimensions
-  std::vector<std::size_t> global_dimensions;
-  std::vector<std::pair<std::size_t, std::size_t>> local_ranges;
-  std::vector<std::size_t> block_sizes;
+  std::vector<std::shared_ptr<const IndexMap>> index_maps;
   for (std::size_t i = 0; i < a.rank(); i++)
   {
     std::shared_ptr<const MultiMeshFunctionSpace> V = a.function_space(i);
     dolfin_assert(V);
 
-    global_dimensions.push_back(V->dim());
-    local_ranges.push_back(std::make_pair(0, V->dim())); // FIXME: not parallel
+    index_maps.push_back(std::shared_ptr<const IndexMap>
+                         (new IndexMap(MPI_COMM_WORLD, V->dim(), 1)));
   }
-
-  // Set block size
-  const std::size_t block_size = 1;
 
   // Initialise tensor layout
   tensor_layout->init(MPI_COMM_WORLD,
-                      global_dimensions, block_size, local_ranges);
+                      index_maps);
 
   // Build sparsity pattern if required
   if (tensor_layout->sparsity_pattern())

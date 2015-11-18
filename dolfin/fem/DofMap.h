@@ -392,7 +392,7 @@ namespace dolfin
 
     // Global dimension. Note that this may differ from the global
     // dimension of the UFC dofmap if the function space is periodic.
-    // std::size_t _global_dimension;
+    std::size_t _global_dimension;
 
     // UFC dof map offset
     std::size_t _ufc_offset;

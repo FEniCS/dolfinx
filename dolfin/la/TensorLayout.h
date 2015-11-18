@@ -32,6 +32,7 @@
 
 namespace dolfin
 {
+  class IndexMap;
 
   /// This class described the size and possibly the sparsity of a
   /// (sparse) tensor. It is used by the linear algebra backends to
@@ -47,17 +48,13 @@ namespace dolfin
 
     /// Create a tensor layout
     TensorLayout(const MPI_Comm mpi_comm,
-                 const std::vector<std::size_t>& dims,
+                 const std::vector<std::shared_ptr<const IndexMap>>& index_maps,
                  std::size_t primary_dim,
-                 std::size_t block_size,
-                 const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
                  bool sparsity_pattern);
 
     /// Initialize tensor layout
     void init(const MPI_Comm mpi_comm,
-              const std::vector<std::size_t>& dims,
-              std::size_t block_size,
-              const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range);
+              const std::vector<std::shared_ptr<const IndexMap>>& index_maps);
 
     /// Return rank
     std::size_t rank() const;
@@ -85,24 +82,26 @@ namespace dolfin
 
     /// Dofmap block size, e.g. 3 for 3D elasticity with a suitable
     /// ordered dofmap
-    std::size_t block_size;
+    // std::size_t block_size;
 
     /// Return MPI communicator
     MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
-    std::vector<std::vector<std::size_t> > local_to_global_map;
+    /// Return IndexMap for dimension
+    std::shared_ptr<const IndexMap> index_map(std::size_t i) const
+    {
+      dolfin_assert(i < _index_maps.size());
+      return _index_maps[i];
+    }
 
   private:
 
     // MPI communicator
     MPI_Comm _mpi_comm;
 
-    // Shape of tensor
-    std::vector<std::size_t> _shape;
-
-    // Ownership range for each dimension
-    std::vector<std::pair<std::size_t, std::size_t> > _ownership_range;
+    // index maps
+    std::vector<std::shared_ptr<const IndexMap>> _index_maps;
 
     // Sparsity pattern
     std::shared_ptr<GenericSparsityPattern> _sparsity_pattern;

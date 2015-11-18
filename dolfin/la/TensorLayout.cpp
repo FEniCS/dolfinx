@@ -20,6 +20,7 @@
 
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
+#include "IndexMap.h"
 #include "SparsityPattern.h"
 #include "TensorLayout.h"
 
@@ -27,7 +28,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 TensorLayout::TensorLayout(std::size_t pdim, bool sparsity_pattern)
-  : primary_dim(pdim), block_size(0), _mpi_comm(MPI_COMM_NULL)
+  : primary_dim(pdim), _mpi_comm(MPI_COMM_NULL)
 {
   // Create empty sparsity pattern
   if (sparsity_pattern)
@@ -35,67 +36,49 @@ TensorLayout::TensorLayout(std::size_t pdim, bool sparsity_pattern)
 }
 //-----------------------------------------------------------------------------
 TensorLayout::TensorLayout(const MPI_Comm mpi_comm,
-                           const std::vector<std::size_t>& dims,
-                           std::size_t pdim, std::size_t bs,
-                           const std::vector<std::pair<std::size_t,
-                           std::size_t>>& ownership_range,
-                           bool sparsity_pattern)
-  : primary_dim(pdim), block_size(bs), local_to_global_map(dims.size()),
-    _mpi_comm(mpi_comm), _shape(dims), _ownership_range(ownership_range)
+             const std::vector<std::shared_ptr<const IndexMap>>& index_maps,
+             std::size_t pdim,
+             bool sparsity_pattern)
+  : primary_dim(pdim), _mpi_comm(mpi_comm), _index_maps(index_maps)
 {
   // Only rank 2 sparsity patterns are supported
-  dolfin_assert(!(sparsity_pattern && dims.size() != 2));
+  dolfin_assert(!(sparsity_pattern && index_maps.size() != 2));
 
-  // Check that dimensions match
-  dolfin_assert(dims.size() == ownership_range.size());
-
-  // Create empty sparsity pattern
   if (sparsity_pattern)
     _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
 void TensorLayout::init(
   const MPI_Comm mpi_comm,
-  const std::vector<std::size_t>& dims, std::size_t bs,
-  const std::vector<std::pair<std::size_t, std::size_t>>& ownership_range)
+  const std::vector<std::shared_ptr<const IndexMap>>& index_maps)
 {
   // Only rank 2 sparsity patterns are supported
-  dolfin_assert(!(_sparsity_pattern && dims.size() != 2));
+  dolfin_assert(!(_sparsity_pattern && index_maps.size() != 2));
 
-  // Check that dimensions match
-  dolfin_assert(dims.size() == ownership_range.size());
-
-  local_to_global_map.resize(dims.size());
+  // Store index maps
+  _index_maps = index_maps;
 
   // Store MPI communicator
   _mpi_comm = mpi_comm;
-
-  // Store dimensions
-  _shape = dims;
-
-  // Store block size
-  block_size = bs;
-
-  // Store ownership range
-  _ownership_range = ownership_range;
 }
 //-----------------------------------------------------------------------------
 std::size_t TensorLayout::rank() const
 {
-  return _shape.size();
+  return _index_maps.size();
 }
 //-----------------------------------------------------------------------------
 std::size_t TensorLayout::size(std::size_t i) const
 {
-  dolfin_assert(i < _shape.size());
-  return _shape[i];
+  dolfin_assert(i < _index_maps.size());
+  return _index_maps[i]->size_global();
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
 TensorLayout::local_range(std::size_t dim) const
 {
-  dolfin_assert(dim < 2);
-  return _ownership_range[dim];
+  dolfin_assert(dim < _index_maps.size());
+  return _index_maps[dim]->local_range();
+
 }
 //-----------------------------------------------------------------------------
 std::string TensorLayout::str(bool verbose) const
@@ -104,8 +87,8 @@ std::string TensorLayout::str(bool verbose) const
   s << "<TensorLayout for tensor of rank " << rank() << ">" << std::endl;
   for (std::size_t i = 0; i < rank(); i++)
   {
-    s << " Local range for dim " << i << ": [" << _ownership_range[i].first
-        << ", " << _ownership_range[i].second << ")" << std::endl;
+    s << " Local range for dim " << i << ": [" << local_range(i).first
+      << ", " << local_range(i).second << ")" << std::endl;
   }
   return s.str();
 }

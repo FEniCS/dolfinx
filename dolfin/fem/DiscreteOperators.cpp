@@ -87,14 +87,14 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   tensor_layout = A->factory().create_layout(2);
   dolfin_assert(tensor_layout);
 
-  std::vector<std::size_t> global_dimensions
-    = {V0.dofmap()->global_dimension(), V1.dofmap()->global_dimension()};
+  // Copy index maps from dofmaps
+  std::vector<std::shared_ptr<const IndexMap> > index_maps
+    = {V0.dofmap()->index_map(), V1.dofmap()->index_map()};
   std::vector<std::pair<std::size_t, std::size_t>> local_range
     = { V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
 
   // Initialise tensor layout
-  tensor_layout->init(mesh.mpi_comm(), global_dimensions, 1,
-                      local_range);
+  tensor_layout->init(mesh.mpi_comm(), index_maps);
 
   // Initialize edge -> vertex connections
   mesh.init(1, 0);

@@ -33,6 +33,7 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
+#include "IndexMap.h"
 #include "TensorLayout.h"
 #include "GenericTensor.h"
 
@@ -58,7 +59,7 @@ namespace dolfin
         error("GenericVector cannot be initialised more than once");
       std::vector<dolfin::la_index> ghosts;
       init(tensor_layout.mpi_comm(), tensor_layout.local_range(0),
-           tensor_layout.local_to_global_map[0], ghosts);
+           tensor_layout.index_map(0)->local_to_global_unowned(), ghosts);
       zero();
     }
 
