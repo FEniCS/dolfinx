@@ -222,7 +222,7 @@ void DirichletBC::gather(Map& boundary_values) const
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
   const auto& shared_nodes = dofmap.shared_nodes();
-  const int bs = dofmap.block_size;
+  const int bs = dofmap.block_size();
 
   // Create list of boundary values to send to each processor
   std::vector<std::vector<std::size_t>> proc_map0(comm_size);
@@ -241,7 +241,7 @@ void DirichletBC::gather(Map& boundary_values) const
       for (auto proc = shared_node->second.begin();
            proc != shared_node->second.end(); ++proc)
       {
-        proc_map0[*proc].push_back(dofmap.local_to_global_index(bv->first));
+        proc_map0[*proc].push_back(dofmap.index_map()->local_to_global(bv->first));
         proc_map1[*proc].push_back(bv->second);
       }
     }
@@ -278,20 +278,24 @@ void DirichletBC::gather(Map& boundary_values) const
         const std::imaxdiv_t div = std::imaxdiv(_vec[i].first, bs);
         const std::size_t node = div.quot;
         const int component = div.rem;
+        const std::vector<std::size_t>& local_to_global
+          = dofmap.index_map()->local_to_global_unowned();
 
         // Case 1: dof is not owned by this process
-        auto it = std::find(dofmap.local_to_global_unowned().begin(),
-                            dofmap.local_to_global_unowned().end(),
+        auto it = std::find(local_to_global.begin(),
+                            local_to_global.end(),
                             node);
-        if (it == dofmap.local_to_global_unowned().end())
+        if (it == local_to_global.end())
         {
           // Throw error if dof is not in local map
-          error("Cannot find dof in local_to_global_unowned array");
+          dolfin_error("DirichletBC.cpp",
+                       "gather boundary values",
+                       "Cannot find dof in local_to_global_unowned array");
         }
         else
         {
           const std::size_t pos
-            = std::distance(dofmap.local_to_global_unowned().begin(), it);
+            = std::distance(local_to_global.begin(), it);
           _vec[i].first = owned_size + bs*pos + component;
         }
       }
@@ -854,7 +858,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 
   // Create UFC cell
   ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
 
   // Iterate over marked
   dolfin_assert(_function_space->element());
@@ -876,12 +880,12 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     const size_t facet_local_index = cell.index(facet);
 
     // Update UFC cell geometry data
-    cell.get_vertex_coordinates(vertex_coordinates);
+    cell.get_coordinate_dofs(coordinate_dofs);
     cell.get_cell_data(ufc_cell, facet_local_index);
 
     // Restrict coefficient to cell
     _g->restrict(data.w.data(), *_function_space->element(), cell,
-                 vertex_coordinates.data(), ufc_cell);
+                 coordinate_dofs.data(), ufc_cell);
 
     // Tabulate dofs on cell
     const ArrayView<const dolfin::la_index> cell_dofs
@@ -927,6 +931,10 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
 
+  // Get finite element
+  dolfin_assert(_function_space->element());
+  const FiniteElement& element = *_function_space->element();
+
   // Initialize facets, needed for geometric search
   log(TRACE, "Computing facets, needed for geometric application of boundary conditions.");
   mesh.init(mesh.topology().dim() - 1);
@@ -954,7 +962,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 
     // Create UFC cell object and vertex coordinate holder
     ufc::cell ufc_cell;
-    std::vector<double> vertex_coordinates;
+    std::vector<double> coordinate_dofs;
 
     // Loop the vertices associated with the facet
     for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
@@ -962,7 +970,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
       // Loop the cells associated with the vertex
       for (CellIterator c(*vertex); !c.end(); ++c)
       {
-        c->get_vertex_coordinates(vertex_coordinates);
+        c->get_coordinate_dofs(coordinate_dofs);
         c->get_cell_data(ufc_cell, local_facet);
 
         bool tabulated = false;
@@ -980,8 +988,8 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           // Tabulate coordinates if not already done
           if (!tabulated)
           {
-            dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
-                                        *c);
+            element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs,
+                                             *c);
             tabulated = true;
           }
 
@@ -1001,7 +1009,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           if (!interpolated)
           {
             _g->restrict(data.w.data(), *_function_space->element(), cell,
-                         vertex_coordinates.data(), ufc_cell);
+                         coordinate_dofs.data(), ufc_cell);
             interpolated = true;
           }
 
@@ -1017,10 +1025,6 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                        LocalData& data) const
 {
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->element());
-  dolfin_assert(_g);
-
   if (!_user_sub_domain)
   {
     dolfin_error("DirichletBC.cpp",
@@ -1028,11 +1032,16 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                  "A SubDomain is required for pointwise search");
   }
 
-  // Get mesh and dofmap
-  dolfin_assert(_function_space->mesh());
+  dolfin_assert(_g);
+
+// Get mesh, dofmap and element
+  dolfin_assert(_function_space);
   dolfin_assert(_function_space->dofmap());
-  const Mesh& mesh = *_function_space->mesh();
+  dolfin_assert(_function_space->element());
+  dolfin_assert(_function_space->mesh());
   const GenericDofMap& dofmap = *_function_space->dofmap();
+  const FiniteElement& element = *_function_space->element();
+  const Mesh& mesh = *_function_space->mesh();
 
   // Geometric dim
   const std::size_t gdim = mesh.geometry().dim();
@@ -1046,28 +1055,29 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                  : dofmap.ownership_range());
 
   // Iterate over cells
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   if (MPI::max(mesh.mpi_comm(), _cells_to_localdofs.size()) == 0)
   {
-    // First time around all cells must be iterated over.
-    // Create map from cells attached to boundary to local dofs.
+    // First time around all cells must be iterated over.  Create map
+    // from cells attached to boundary to local dofs.
     Progress p("Computing Dirichlet boundary values, pointwise search",
                mesh.num_cells());
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Update UFC cell
-      cell->get_vertex_coordinates(vertex_coordinates);
+      cell->get_coordinate_dofs(coordinate_dofs);
       cell->get_cell_data(ufc_cell);
 
       // Tabulate coordinates of dofs on cell
-      dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
-                                  *cell);
+      element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs,
+                                       *cell);
 
       // Tabulate dofs on cell
       const ArrayView<const dolfin::la_index> cell_dofs
         = dofmap.cell_dofs(cell->index());
 
-      // Interpolate function only once and only on cells where necessary
+      // Interpolate function only once and only on cells where
+      // necessary
       bool already_interpolated = false;
 
       // Loop all dofs on cell
@@ -1095,9 +1105,10 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 
           // Restrict coefficient to cell
           _g->restrict(data.w.data(), *_function_space->element(), *cell,
-                      vertex_coordinates.data(), ufc_cell);
+                      coordinate_dofs.data(), ufc_cell);
 
-          // Put cell index in storage for next time function is called
+          // Put cell index in storage for next time function is
+          // called
           _cells_to_localdofs.insert(std::make_pair(cell->index(), dofs));
         }
 
@@ -1113,7 +1124,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   }
   else
   {
-    // Loop over cells that contain dofs on boundary.
+    // Loop over cells that contain dofs on boundary
     std::map<std::size_t, std::vector<std::size_t>>::const_iterator it;
     for (it = _cells_to_localdofs.begin(); it != _cells_to_localdofs.end();
          ++it)
@@ -1122,16 +1133,16 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       const Cell cell(mesh, it->first);
 
       // Update UFC cell
-      cell.get_vertex_coordinates(vertex_coordinates);
+      cell.get_coordinate_dofs(coordinate_dofs);
       cell.get_cell_data(ufc_cell);
 
       // Tabulate coordinates of dofs on cell
-      dofmap.tabulate_coordinates(data.coordinates, vertex_coordinates,
-                                  cell);
+      element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs,
+                                       cell);
 
       // Restrict coefficient to cell
       _g->restrict(data.w.data(), *_function_space->element(), cell,
-                    vertex_coordinates.data(), ufc_cell);
+                    coordinate_dofs.data(), ufc_cell);
 
       // Tabulate dofs on cell
       const ArrayView<const dolfin::la_index> cell_dofs

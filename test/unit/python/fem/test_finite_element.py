@@ -41,8 +41,10 @@ def Q(mesh):
     return VectorFunctionSpace(mesh, "CG", 1)
 
 @fixture
-def W(V, Q):
-    return V * Q
+def W(mesh):
+    V = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    Q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    return FunctionSpace(mesh, V*Q)
 
 
 def test_evaluate_dofs(W, mesh, V):
@@ -66,7 +68,7 @@ def test_evaluate_dofs(W, mesh, V):
     for cell in cells(mesh):
         vx = cell.get_vertex_coordinates()
         orientation = cell.orientation()
-        V.dofmap().tabulate_coordinates(cell, coords)
+        V.element().tabulate_dof_coordinates(cell, coords)
         for i in range(coords.shape[0]):
             coord[:] = coords[i,:]
             values0[i] = e(*coord)
@@ -81,6 +83,7 @@ def test_evaluate_dofs(W, mesh, V):
             assert round(values0[i] - values3[i], 7) == 0
             assert round(values4[:3][i] - values0[i], 7) == 0
             assert round(values4[3:][i] - values0[i], 7) == 0
+
 
 def test_evaluate_dofs_manifolds_affine():
     "Testing evaluate_dofs vs tabulated coordinates."
@@ -109,7 +112,7 @@ def test_evaluate_dofs_manifolds_affine():
         for cell in cells(V.mesh()):
             vx = cell.get_vertex_coordinates()
             orientation = cell.orientation()
-            V.dofmap().tabulate_coordinates(cell, coords)
+            V.element().tabulate_dof_coordinates(cell, coords)
             for i in range(coords.shape[0]):
                 coord[:] = coords[i,:]
                 values0[i] = f(*coord)
@@ -132,11 +135,11 @@ def test_tabulate_coord(V, W, mesh):
     L11 = L1.sub(1)
 
     for cell in cells(mesh):
-        V.dofmap().tabulate_coordinates(cell, coord0)
-        L0.dofmap().tabulate_coordinates(cell, coord1)
-        L01.dofmap().tabulate_coordinates(cell, coord2)
-        L11.dofmap().tabulate_coordinates(cell, coord3)
-        L1.dofmap().tabulate_coordinates(cell, coord4)
+        V.element().tabulate_dof_coordinates(cell, coord0)
+        L0.element().tabulate_dof_coordinates(cell, coord1)
+        L01.element().tabulate_dof_coordinates(cell, coord2)
+        L11.element().tabulate_dof_coordinates(cell, coord3)
+        L1.element().tabulate_dof_coordinates(cell, coord4)
 
         assert (coord0 == coord1).all()
         assert (coord0 == coord2).all()

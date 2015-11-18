@@ -36,7 +36,7 @@
 //-----------------------------------------------------------------------------
 %extend dolfin::Mesh {
   PyObject* _coordinates() {
-    return %make_numpy_array(2, double)(self->num_vertices(),
+    return %make_numpy_array(2, double)(self->geometry().num_points(),
 					self->geometry().dim(),
 					self->coordinates().data(), true);
   }

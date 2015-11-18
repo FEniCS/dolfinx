@@ -108,12 +108,12 @@ void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
   Vec x = NULL;
   if (dim == 0)
   {
-    ierr = MatCreateVecs(_matA, PETSC_NULL, &x);
+    ierr = MatCreateVecs(_matA, NULL, &x);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreateVecs");
   }
   else if (dim == 1)
   {
-    ierr = MatCreateVecs(_matA, &x, PETSC_NULL);
+    ierr = MatCreateVecs(_matA, &x, NULL);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreateVecs");
   }
   else

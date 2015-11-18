@@ -3,9 +3,6 @@ import pytest
 import numpy
 from dolfin import *
 
-xfail = pytest.mark.xfail
-
-@xfail
 def test_manifold_point_search():
     # Simple two-triangle surface in 3d
     vertices = [
@@ -32,5 +29,5 @@ def test_manifold_point_search():
     mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
 
     bb = mesh.bounding_box_tree()
-    assert bb.compute_first_entity_collision(Point(2.0/3.0, 1.0/3.0, 2.0/3.0)) == 0 # passes
-    assert bb.compute_first_entity_collision(Point(1.0/3.0, 2.0/3.0, 2.0/3.0)) == 1 # fails
+    assert bb.compute_first_entity_collision(Point(2.0/3.0, 1.0/3.0, 2.0/3.0)) == 0
+    assert bb.compute_first_entity_collision(Point(1.0/3.0, 2.0/3.0, 2.0/3.0)) == 1

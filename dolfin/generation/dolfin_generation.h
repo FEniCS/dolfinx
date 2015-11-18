@@ -13,5 +13,7 @@
 #include <dolfin/generation/UnitSquareMesh.h>
 #include <dolfin/generation/UnitQuadMesh.h>
 #include <dolfin/generation/UnitHexMesh.h>
+#include <dolfin/generation/UnitDiscMesh.h>
+#include <dolfin/generation/SphericalShellMesh.h>
 
 #endif

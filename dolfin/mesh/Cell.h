@@ -321,20 +321,53 @@ namespace dolfin
     { return IntersectionTriangulation::triangulate_intersection(*this, entity); }
 
     // FIXME: This function is part of a UFC transition
-    /// Get cell vertex coordinates
-    void get_vertex_coordinates(double* coordinates) const
+    /// Get cell coordinate dofs (not vertex coordinates)
+    void get_coordinate_dofs(std::vector<double>& coordinates) const
     {
-      dolfin_assert(coordinates);
-      const std::size_t gdim = _mesh->geometry().dim();
+      const MeshGeometry& geom = _mesh->geometry();
+      const std::size_t gdim = geom.dim();
+      const std::size_t geom_degree = geom.degree();
       const std::size_t num_vertices = this->num_vertices();
       const unsigned int* vertices = this->entities(0);
-      for (std::size_t i = 0; i < num_vertices; i++)
-        for (std::size_t j = 0; j < gdim; j++)
-          coordinates[i*gdim + j] = _mesh->geometry().x(vertices[i])[j];
+
+      if (geom_degree == 1)
+      {
+        coordinates.resize(num_vertices*gdim);
+        for (std::size_t i = 0; i < num_vertices; ++i)
+          for (std::size_t j = 0; j < gdim; ++j)
+            coordinates[i*gdim + j] = geom.x(vertices[i])[j];
+      }
+      else if (geom_degree == 2)
+      {
+        const std::size_t tdim = _mesh->topology().dim();
+        const std::size_t num_edges = this->num_entities(1);
+        const unsigned int* edges = this->entities(1);
+
+        coordinates.resize((num_vertices + num_edges)*gdim);
+
+        for (std::size_t i = 0; i < num_vertices; ++i)
+          for (std::size_t j = 0; j < gdim; j++)
+            coordinates[i*gdim + j] = geom.x(vertices[i])[j];
+
+        for (std::size_t i = 0; i < num_edges; ++i)
+        {
+          const std::size_t entity_index
+              = (tdim == 1) ? index() : edges[i];
+          const std::size_t point_index
+            = geom.get_entity_index(1, 0, entity_index);
+          for (std::size_t j = 0; j < gdim; ++j)
+            coordinates[(i + num_vertices)*gdim + j] = geom.x(point_index)[j];
+        }
+      }
+      else
+      {
+        dolfin_error("Cell.h", "get coordinate_dofs", "Unsupported mesh degree");
+      }
+
     }
 
     // FIXME: This function is part of a UFC transition
-    /// Get cell vertex coordinates
+    /// Get cell vertex coordinates (not coordinate dofs)
     void get_vertex_coordinates(std::vector<double>& coordinates) const
     {
       const std::size_t gdim = _mesh->geometry().dim();

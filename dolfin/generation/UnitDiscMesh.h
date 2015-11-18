@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Joachim Berdal Haga
+// Copyright (C) 2015 Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -15,43 +15,27 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2012-09-14
-// Last changed: 2012-09-18
 
-#ifndef __PLOT_WIDGET_H
-#define __PLOT_WIDGET_H
+#ifndef __UNIT_DISC_MESH_H
+#define __UNIT_DISC_MESH_H
 
-#include <QVTKWidget.h>
+#include <dolfin/common/MPI.h>
+#include <dolfin/mesh/Mesh.h>
 
-class PlotWidget : public QVTKWidget
+namespace dolfin
 {
-  Q_OBJECT
 
-  /// Extends QVTKWidget to send signals on mouse move and click.
+  class UnitDiscMesh : public Mesh
+  {
+  public:
 
-public:
+    /// Create a Unit Disc in 2D or 3D geometry
+    /// with n steps, and given degree polynomial mesh
+    UnitDiscMesh(MPI_Comm comm, std::size_t n,
+                 std::size_t degree, std::size_t gdim);
 
-  PlotWidget(QWidget *parent=NULL);
+  };
 
-protected:
-
-  virtual void mouseMoveEvent(QMouseEvent *);
-
-  virtual void mousePressEvent(QMouseEvent *);
-
-  virtual void mouseReleaseEvent(QMouseEvent *);
-
-signals:
-
-  void mouseMoved(int x, int y);
-
-  void mouseClick(int x, int y);
-
-private:
-
-  // Used to decide which mouse event is a click
-  bool button1_click_in_progress;
-
-};
+}
 
 #endif

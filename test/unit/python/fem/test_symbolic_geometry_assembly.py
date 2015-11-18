@@ -13,7 +13,8 @@ from ufl.classes import CellOrientation, CellNormal, CellCoordinate, CellOrigin,
 #parameters["reorder_dofs_serial"] = False
 
 
-# Hack to skip uflacs parameter if not installed. There's probably a cleaner way to do this with pytest.
+# Hack to skip uflacs parameter if not installed. There's probably a
+# cleaner way to do this with pytest.
 try:
     import uflacs
     _uflacs = ["uflacs"]
@@ -214,7 +215,8 @@ def test_line_meshes(line1d, line2d, line3d, rline1d, rline2d, rline3d):#, uflac
 
 @skip_in_parallel
 def test_write_line_meshes_to_files(line1d, line2d, line3d, rline1d, rline2d, rline3d, uflacs_representation_only):
-    # Enable to write meshes to file for inspection (plot doesn't work for 1d in 2d/3d)
+    # Enable to write meshes to file for inspection (plot doesn't work
+    # for 1d in 2d/3d)
     # CellNormal is only supported by uflacs
     if 0:
         File("line1d.xdmf") << line1d
@@ -264,7 +266,8 @@ def test_manifold_line_geometry(mesh, uflacs_representation_only):
     length2 = assemble(1.0*dx2(mesh2))
     assert round(length - length2, 7) == 0.0
 
-    # Check that number of cells can be computed correctly by scaling integral by |detJ|^-1
+    # Check that number of cells can be computed correctly by scaling
+    # integral by |detJ|^-1
     num_cells = assemble(1.0/abs(detJ)*dx)
     assert round(num_cells - mesh.num_cells(), 7) == 0.0
 
@@ -282,7 +285,8 @@ def test_manifold_line_geometry(mesh, uflacs_representation_only):
         mf[i] = 1 # mark this cell
         x0 = Constant(tuple(coords[cells[i][0],:]))
 
-        # Integrate x components over a cell and compare with midpoint computed from coords
+        # Integrate x components over a cell and compare with midpoint
+        # computed from coords
         for j in range(gdim):
             xm = 0.5*(coords[cells[i][0],j] + coords[cells[i][1],j])
             assert round(assemble(x[j]/abs(detJ)*dx(1)) - xm, 7) == 0.0
@@ -385,13 +389,15 @@ def test_manifold_cg1_functions(square3d, any_representation):
     mf[1] = 1
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
 
-    # We need unit testing of some symbolic quantities to pinpoint any sign problems etc. in the right places
+    # We need unit testing of some symbolic quantities to pinpoint any
+    # sign problems etc. in the right places
     x = SpatialCoordinate(mesh)
 
     U1 = FunctionSpace(mesh, "CG", 1)
     V1 = VectorFunctionSpace(mesh, "CG", 1)
 
-    # Project piecewise linears to scalar and vector CG1 spaces on manifold
+    # Project piecewise linears to scalar and vector CG1 spaces on
+    # manifold
     u1 = project(x[0], U1)
     v1 = project(x, V1)
     # exact x in vertices is [0,0,0, 1,1,1, 1,0,0, 0,1,0],
@@ -400,7 +406,8 @@ def test_manifold_cg1_functions(square3d, any_representation):
     # and sum(x components for each vertex) is sum(1, 3, 1, 1):
     assert round(sum(v1.vector().array()) - (1+3+1+1), 7) == 0.0
 
-    # Integrate piecewise constant functions over manifold cells, computing midpoint coordinates
+    # Integrate piecewise constant functions over manifold cells,
+    # computing midpoint coordinates
     midpoints = [
         (1.0/3.0, 2.0/3.0, 2.0/3.0),
         (2.0/3.0, 1.0/3.0, 2.0/3.0),
@@ -493,7 +500,8 @@ def test_manifold_symbolic_geometry(square3d, uflacs_representation_only):
     assert orientations[0] == 1 # down
     assert orientations[1] == 0 # up
 
-    # Check cell orientation, should be -1.0 (down) and +1.0 (up) on the two cells respectively by construction
+    # Check cell orientation, should be -1.0 (down) and +1.0 (up) on
+    # the two cells respectively by construction
     co = CellOrientation(mesh)
     co0 = assemble(co/A*dx(0))
     co1 = assemble(co/A*dx(1))
@@ -541,7 +549,8 @@ def test_manifold_symbolic_geometry(square3d, uflacs_representation_only):
         assert round(assemble( A2*dx(k) ) - A**2, 7) == 0.0
         # Validate cell orientation
         assert round(assemble( co*dx(k) ) - A*(1 if k == 1 else -1), 7) == 0.0
-        # Compare co*detJ to A (detJ is pseudo-determinant with sign restored, *co again is equivalent to abs())
+        # Compare co*detJ to A (detJ is pseudo-determinant with sign
+        # restored, *co again is equivalent to abs())
         A3 = Aref*co*detJ
         assert round(assemble( (A-A3)**2*dx(k) ) - 0.0, 7) == 0.0
         assert round(assemble( (A2-A3)**2*dx(k) ) - 0.0, 7) == 0.0
@@ -555,8 +564,8 @@ def test_manifold_symbolic_geometry(square3d, uflacs_representation_only):
         assert round(assemble( 1.0/A4*dx(k) ) - 1.0, 7) == 0.0
         assert round(assemble( A4*dx(k) ) - A**2, 7) == 0.0
 
-    # Check integral of reference coordinate components over reference triangle:
-    # \int_0^1 \int_0^{1-x} x dy dx = 1/6
+    # Check integral of reference coordinate components over reference
+    # triangle: \int_0^1 \int_0^{1-x} x dy dx = 1/6
     Xmp = (1.0/6.0, 1.0/6.0)
     for k in range(2):
         for j in range(2):
@@ -652,7 +661,8 @@ def test_manifold_piola_mapped_functions(square3d, any_representation):
     assert round(assemble(derivative((v1-vec)**2*dx, v1)).norm('l2'), 7) == 0.0
     assert round(assemble(derivative((w1-vec)**2*dx, w1)).norm('l2'), 7) == 0.0
 
-    # Hdiv mapping of a local constant vector should be representable in hdiv conforming space
+    # Hdiv mapping of a local constant vector should be representable
+    # in hdiv conforming space
     vec = (1.0/detJ)*J*as_vector((3.0, 5.0))
     q1 = project(vec, Q1)
     u1 = project(vec, U1)
@@ -663,7 +673,8 @@ def test_manifold_piola_mapped_functions(square3d, any_representation):
     assert round(assemble((v1-vec)**2*dx), 7) == 0.0
     assert round(assemble((w1-vec)**2*dx), 7) > 0.0 # Exact representation not possible?
 
-    # Hcurl mapping of a local constant vector should be representable in hcurl conforming space
+    # Hcurl mapping of a local constant vector should be representable
+    # in hcurl conforming space
     vec = K.T*as_vector((5.0, 2.0))
     q1 = project(vec, Q1)
     u1 = project(vec, U1)

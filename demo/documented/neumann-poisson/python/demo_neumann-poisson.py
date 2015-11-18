@@ -47,11 +47,13 @@ and the above constraint.
 
 from dolfin import *
 
-# Create mesh and define function space
+# Create mesh
 mesh = UnitSquareMesh(64, 64)
-V = FunctionSpace(mesh, "CG", 1)
-R = FunctionSpace(mesh, "R", 0)
-W = V * R
+
+# Build function space with Lagrange multiplier
+P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+R = FiniteElement("Real", mesh.ufl_cell(), 0)
+W = FunctionSpace(mesh, P1 * R)
 
 # Define variational problem
 (u, c) = TrialFunction(W)

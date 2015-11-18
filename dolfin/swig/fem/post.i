@@ -47,8 +47,8 @@
 %pythoncode %{
 def function_space(self):
     "Return the FunctionSpace"
-    from dolfin.functions.functionspace import FunctionSpaceFromCpp
-    return FunctionSpaceFromCpp(self._function_space())
+    from dolfin.functions.functionspace import FunctionSpace
+    return FunctionSpace(self._function_space())
 %}
 }
 
@@ -69,18 +69,18 @@ def function_space(self, i):
          _FunctionSpace_
              Function space shared pointer.
     """
-    from dolfin.functions.functionspace import FunctionSpaceFromCpp
-    return FunctionSpaceFromCpp(self._function_space(i))
+    from dolfin.functions.functionspace import FunctionSpace
+    return FunctionSpace(self._function_space(i))
 %}
 }
 
 //-----------------------------------------------------------------------------
-// Extend GenericDofMap.tabulate_coordinates()
+// Extend FiniteElement.tabulate_dof_coordinates()
 //-----------------------------------------------------------------------------
-%extend dolfin::GenericDofMap {
-  void _tabulate_coordinates(PyObject* coordinates, const Cell& cell)
+%extend dolfin::FiniteElement {
+  void _tabulate_dof_coordinates(PyObject* coordinates, const Cell& cell)
   {
-    // NOTE: No NumPy array check. Assumed everything is coorect!
+    // NOTE: No NumPy array check. Assuming everything is correct!
 
     // Get NumPy array
     PyArrayObject *xa = reinterpret_cast<PyArrayObject*>(coordinates);
@@ -89,24 +89,24 @@ def function_space(self, i):
     boost::multi_array<double, 2> tmparray;
 
     // Get cell vertex coordinates
-    std::vector<double> vertex_coordinates;
-    cell.get_vertex_coordinates(vertex_coordinates);
+    std::vector<double> coordinate_dofs;
+    cell.get_coordinate_dofs(coordinate_dofs);
 
     // Tabulate the coordinates
-    self->tabulate_coordinates(tmparray, vertex_coordinates, cell);
+    self->tabulate_dof_coordinates(tmparray, coordinate_dofs, cell);
 
     // Get geometric dimension
     std::size_t gdim = tmparray.shape()[1];
 
     // Copy data
     double* data = static_cast<double*>(PyArray_DATA(xa));
-    for (std::size_t i = 0; i < self->num_element_dofs(cell.index()); i++)
+    for (std::size_t i = 0; i < self->space_dimension(); i++)
       for (std::size_t j = 0; j < gdim; j++)
         data[i*gdim + j] = tmparray[i][j];
   }
 
 %pythoncode %{
-def tabulate_coordinates(self, cell, coordinates=None):
+def tabulate_dof_coordinates(self, cell, coordinates=None):
     """ Tabulate the coordinates of all dofs on a cell
 
     *Arguments*
@@ -121,8 +121,8 @@ def tabulate_coordinates(self, cell, coordinates=None):
     import numpy as np
 
     # Check coordinate argument
-    gdim = cell.mesh().geometry().dim()
-    shape = (self.max_element_dofs(), gdim)
+    gdim = self.geometric_dimension()
+    shape = (self.space_dimension(), gdim)
     if coordinates is None:
         coordinates = np.zeros(shape, 'd')
     if not isinstance(coordinates, np.ndarray) or \
@@ -133,7 +133,7 @@ def tabulate_coordinates(self, cell, coordinates=None):
               "of 'double' (dtype='d') with shape %s"%str(shape))
 
     # Call the extended method
-    self._tabulate_coordinates(coordinates, cell)
+    self._tabulate_dof_coordinates(coordinates, cell)
     return coordinates
 %}
 }
@@ -156,15 +156,15 @@ def trial_space(self):
     """
     Return the trial space
     """
-    from dolfin.functions.functionspace import FunctionSpaceFromCpp
-    return FunctionSpaceFromCpp(self._trial_space())
+    from dolfin.functions.functionspace import FunctionSpace
+    return FunctionSpace(self._trial_space())
 
 def test_space(self):
     """
     Return the test space
     """
-    from dolfin.functions.functionspace import FunctionSpaceFromCpp
-    return FunctionSpaceFromCpp(self._test_space())
+    from dolfin.functions.functionspace import FunctionSpace
+    return FunctionSpace(self._test_space())
 
 %}
 }

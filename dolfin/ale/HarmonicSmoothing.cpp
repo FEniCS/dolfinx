@@ -190,7 +190,7 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
   {
     for (std::size_t dim = 0; dim < d; dim++)
       coord[dim] = displacement[dim*num_vertices + i] + geometry.x(i, dim);
-    geometry.set(i, coord);
+    geometry.set(i, coord.data());
   }
 
   // Return calculated displacement

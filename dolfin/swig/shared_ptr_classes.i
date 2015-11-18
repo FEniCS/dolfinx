@@ -121,6 +121,8 @@
 %shared_ptr(dolfin::UnitSquareMesh)
 %shared_ptr(dolfin::UnitQuadMesh)
 %shared_ptr(dolfin::UnitHexMesh)
+%shared_ptr(dolfin::UnitDiscMesh)
+%shared_ptr(dolfin::SphericalShellMesh)
 %shared_ptr(dolfin::BoxMesh)
 %shared_ptr(dolfin::Box)
 %shared_ptr(dolfin::RectangleMesh)
@@ -159,6 +161,7 @@
 %shared_ptr(dolfin::Matrix)
 %shared_ptr(dolfin::Vector)
 %shared_ptr(dolfin::LinearOperator)
+%shared_ptr(dolfin::IndexMap)
 
 %shared_ptr(dolfin::STLMatrix)
 

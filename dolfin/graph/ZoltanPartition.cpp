@@ -24,6 +24,7 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/log/log.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "GraphBuilder.h"
@@ -281,7 +282,9 @@ void ZoltanPartition::get_all_edges(void* data,
                                  int* nbor_procs, int wgt_dim,
                                  float* ewgts, int* ierr)
 {
-  error("ZoltanPartition::get_all_edges need to be updated for MPI communicator");
+  // FIXME: ZoltanPartition::get_all_edges need to be updated for MPI communicator
+  dolfin_not_implemented();
+
   /*
   // Get graph
   const std::vector<std::set<std::size_t>>* local_graph

@@ -33,6 +33,7 @@
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/Form.h>
+#include <dolfin/fem/LocalAssembler.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/fem/LinearVariationalProblem.h>
 #include <dolfin/fem/LinearVariationalSolver.h>
@@ -47,7 +48,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 
-#include "LocalAssembler.h"
 #include "ErrorControl.h"
 
 using namespace dolfin;
@@ -291,7 +291,8 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   // Define matrices for cell-residual problems
   dolfin_assert(V.element());
   const std::size_t N = V.element()->space_dimension();
-  Eigen::MatrixXd A(N, N), b(N, 1);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                Eigen::RowMajor> A(N, N), b(N, 1);
   Eigen::VectorXd x(N);
 
   // Extract cell_domains etc from right-hand side form
@@ -304,17 +305,17 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 
   // Assemble and solve local linear systems
   ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get cell vertices
-    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_coordinate_dofs(coordinate_dofs);
 
     // Assemble local linear system
-    LocalAssembler::assemble(A, ufc_lhs, vertex_coordinates,
+    LocalAssembler::assemble(A, ufc_lhs, coordinate_dofs,
                              ufc_cell, *cell, cell_domains,
                              exterior_facet_domains, interior_facet_domains);
-    LocalAssembler::assemble(b, ufc_rhs, vertex_coordinates, ufc_cell,
+    LocalAssembler::assemble(b, ufc_rhs, coordinate_dofs, ufc_cell,
                              *cell, cell_domains,
                              exterior_facet_domains, interior_facet_domains);
 
@@ -374,7 +375,8 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   const GenericDofMap& dofmap = *V.dofmap();
 
   // Define matrices for facet-residual problems
-  Eigen::MatrixXd A(N, N), b(N, 1);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                Eigen::RowMajor> A(N, N), b(N, 1);
   Eigen::VectorXd x(N);
 
   // Variables to be used for the construction of the cone function
@@ -420,17 +422,17 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 
     // Assemble and solve local linear systems
     ufc::cell ufc_cell;
-    std::vector<double> vertex_coordinates;
+    std::vector<double> coordinate_dofs;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      // Get cell vertex_coordinates
-      cell->get_vertex_coordinates(vertex_coordinates);
+      // Get cell coordinate_dofs
+      cell->get_coordinate_dofs(coordinate_dofs);
 
       // Assemble linear system
-      LocalAssembler::assemble(A, ufc_lhs, vertex_coordinates,
+      LocalAssembler::assemble(A, ufc_lhs, coordinate_dofs,
                                ufc_cell, *cell, cell_domains,
                                exterior_facet_domains, interior_facet_domains);
-      LocalAssembler::assemble(b, ufc_rhs, vertex_coordinates,
+      LocalAssembler::assemble(b, ufc_rhs, coordinate_dofs,
                                ufc_cell, *cell, cell_domains,
                                exterior_facet_domains, interior_facet_domains);
 

@@ -23,8 +23,8 @@
 #ifndef __DOF_MAP_BUILDER_H
 #define __DOF_MAP_BUILDER_H
 
-#include <memory>
 #include <map>
+#include <memory>
 #include <set>
 #include <unordered_map>
 #include <utility>
@@ -40,6 +40,7 @@ namespace dolfin
 
   class DofMap;
   class Mesh;
+  class IndexMap;
   class SubDomain;
   class UFC;
 
@@ -50,8 +51,8 @@ namespace dolfin
 
   public:
 
-    /// Build dofmap. The constrained domain may be
-    /// a null pointer, in which case it is ignored.
+    /// Build dofmap. The constrained domain may be a null pointer, in
+    /// which case it is ignored.
     static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
                       std::shared_ptr<const SubDomain> constrained_domain);
 
@@ -174,8 +175,7 @@ namespace dolfin
       const Mesh& mesh);
 
     static void compute_node_reordering(
-      std::vector<std::size_t>& local_to_global_unowned,
-      std::vector<int>& off_process_owner,
+      IndexMap& index_map,
       std::vector<int>& old_to_new_local,
       const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
       const std::vector<std::size_t>& old_local_to_global,

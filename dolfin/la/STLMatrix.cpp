@@ -319,7 +319,10 @@ void STLMatrix::apply(std::string mode)
 double STLMatrix::norm(std::string norm_type) const
 {
   if (norm_type != "frobenius")
-    error("Do not know to compute %s norm for STLMatrix", norm_type.c_str());
+    dolfin_error("STLMatrix.cpp",
+                 "compute matrix norm",
+                 "Do not know to compute %s norm for STLMatrix",
+                 norm_type.c_str());
 
   double _norm = 0.0;
   for (std::size_t i = 0; i < _values.size(); ++i)

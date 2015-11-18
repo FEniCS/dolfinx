@@ -120,6 +120,10 @@ namespace dolfin
     static void check_arity(std::shared_ptr<const Form> a,
                             std::shared_ptr<const Form> L);
 
+    // Check if _bcs[i] is part of FunctionSpace fs
+    bool check_functionspace_for_bc
+      (std::shared_ptr<const FunctionSpace> fs, std::size_t i);
+
     // Assemble system
     void assemble(GenericMatrix* A, GenericVector* b,
                   const GenericVector* x0);
@@ -134,7 +138,7 @@ namespace dolfin
       std::array<GenericTensor*, 2>& tensors,
       std::array<UFC*, 2>& ufc,
       Scratch& data,
-      const DirichletBC::Map& boundary_values,
+      const std::vector<DirichletBC::Map>& boundary_values,
       std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
       std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains);
 
@@ -142,7 +146,7 @@ namespace dolfin
       std::array<GenericTensor*, 2>& tensors,
       std::array<UFC*, 2>& ufc,
       Scratch& data,
-      const DirichletBC::Map& boundary_values,
+      const std::vector<DirichletBC::Map>& boundary_values,
       std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
       std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains,
       std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains);
@@ -153,7 +157,7 @@ namespace dolfin
       std::array<std::vector<double>, 2>& Ae,
       std::array<UFC*, 2>& ufc,
       ufc::cell& ufc_cell,
-      std::vector<double>& vertex_coordinates,
+      std::vector<double>& coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet,
       const Cell& cell,
@@ -167,7 +171,7 @@ namespace dolfin
     static void compute_interior_facet_tensor(
       std::array<UFC*, 2>& ufc,
       std::array<ufc::cell, 2>& ufc_cell,
-      std::array<std::vector<double>, 2>& vertex_coordinates,
+      std::array<std::vector<double>, 2>& coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet,
       const std::array<Cell, 2>& cell,
@@ -189,7 +193,7 @@ namespace dolfin
       const std::array<std::vector<ArrayView<const la_index>>, 2>& cell_dofs);
 
     static void apply_bc(double* A, double* b,
-                         const DirichletBC::Map& boundary_values,
+                         const std::vector<DirichletBC::Map>& boundary_values,
                          const ArrayView<const dolfin::la_index>& global_dofs0,
                          const ArrayView<const dolfin::la_index>& global_dofs1);
 
@@ -202,7 +206,7 @@ namespace dolfin
     static bool
       cell_matrix_required(const GenericTensor* A,
                            const void* integral,
-                           const DirichletBC::Map& boundary_values,
+                           const std::vector<DirichletBC::Map>& boundary_values,
                            const ArrayView<const dolfin::la_index>& dofs);
 
   };

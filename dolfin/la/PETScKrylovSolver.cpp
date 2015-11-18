@@ -541,12 +541,12 @@ void PETScKrylovSolver::write_report(int num_iterations,
   {
     if (pc_type_str == PCASM)
     {
-      ierr = PCASMGetSubKSP(pc, PETSC_NULL, PETSC_NULL, &sub_ksp);
+      ierr = PCASMGetSubKSP(pc, NULL, NULL, &sub_ksp);
       if (ierr != 0) petsc_error(ierr, __FILE__, "PCASMGetSubKSP");
     }
     else if (pc_type_str == PCBJACOBI)
     {
-      ierr = PCBJacobiGetSubKSP(pc, PETSC_NULL, PETSC_NULL, &sub_ksp);
+      ierr = PCBJacobiGetSubKSP(pc, NULL, NULL, &sub_ksp);
       if (ierr != 0) petsc_error(ierr, __FILE__, "PCBJacobiGetSubKSP");
     }
     ierr = KSPGetType(*sub_ksp, &sub_ksp_type);
