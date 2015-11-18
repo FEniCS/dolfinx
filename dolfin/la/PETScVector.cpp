@@ -809,7 +809,9 @@ void PETScVector::_init(MPI_Comm comm,
 {
   PetscErrorCode ierr;
   if (_x)
-    error("PETScVector cannot be initialized more than once.");
+    dolfin_error("PETScVector.h",
+                 "initialize vector",
+                 "Vector cannot be initialised more than once");
 
   const std::size_t local_size = range.second - range.first;
   dolfin_assert(range.second >= range.first);
@@ -840,13 +842,8 @@ void PETScVector::_init(MPI_Comm comm,
     for (std::size_t i = 0; i < size; ++i)
       _map[i] = i + range.first;
   }
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-  ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map.size(), _map.data(),
-                               PETSC_COPY_VALUES, &petsc_local_to_global);
-  #else
   ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, 1, _map.size(), _map.data(),
                                PETSC_COPY_VALUES, &petsc_local_to_global);
-  #endif
   VecSetLocalToGlobalMapping(_x, petsc_local_to_global);
   ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
 }

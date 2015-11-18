@@ -72,7 +72,7 @@ namespace dolfin
 
     ufc::cell ufc_cell;
 
-    std::vector<double> _vertex_coordinates;
+    std::vector<double> _coordinate_dofs;
 
     std::size_t value_size_loc;
 

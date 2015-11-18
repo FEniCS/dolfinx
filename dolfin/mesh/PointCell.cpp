@@ -85,14 +85,6 @@ void PointCell::create_entities(boost::multi_array<unsigned int, 2>& e,
                "Entities on a point cell are not defined");
 }
 //-----------------------------------------------------------------------------
-void PointCell::refine_cell(Cell& cell, MeshEditor& editor,
-                            std::size_t& current_cell) const
-{
-  dolfin_error("PointCell.cpp",
-               "refine cell",
-               "Refinement of a point cell is not defined");
-}
-//-----------------------------------------------------------------------------
 double PointCell::volume(const MeshEntity& triangle) const
 {
   dolfin_error("PointCell.cpp",

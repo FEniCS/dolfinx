@@ -109,10 +109,6 @@ if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   if (PETSC_CUSP_FOUND)
     list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC_CUSP")
   endif()
-
-  if (PETSC_HAS_TAO)
-      list(APPEND DOLFIN_CXX_DEFINITIONS "-DENABLE_PETSC_TAO")
-  endif()
 endif()
 
 # petsc4py
@@ -194,16 +190,8 @@ if (DOLFIN_ENABLE_OPENMP AND OPENMP_FOUND)
   if (MINGW)
     list(APPEND DOLFIN_LINK_FLAGS "${OpenMP_CXX_FLAGS}")
   endif()
-
 endif()
 
-# Qt4
-if (DOLFIN_ENABLE_QT AND QT_FOUND)
-  include(${QT_USE_FILE})
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_QT4")
-  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${QT_INCLUDE_DIR})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${QT_LIBRARIES})
-endif()
 
 # VTK
 if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
@@ -220,27 +208,6 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
   foreach (lib ${VTK_LIBRARIES})
     list(APPEND DOLFIN_VTK_LIBRARIES ${lib})
   endforeach()
-
-  # Check if the QVTK library is found
-  if (DOLFIN_ENABLE_QT AND QT_FOUND)
-    if ("${VTK_MAJOR_VERSION}" STREQUAL "5")
-      find_library(VTK_LIB_QVTK QVTK HINTS ${VTK_LIBRARY_DIRS} NO_DEFAULT_PATH)
-      find_library(VTK_LIB_QVTK QVTK HINTS ${VTK_LIBRARY_DIRS})
-      if (VTK_LIB_QVTK)
-	list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_QVTK})
-      endif()
-    else()
-      if (TARGET vtkGUISupportQt)
-	set(VTK_LIB_QVTK TRUE)
-      endif()
-    endif()
-
-    if (VTK_LIB_QVTK)
-      list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_QVTK")
-    else()
-      message(STATUS "QVTK not found, disabling QT for plotting")
-    endif()
-  endif()
 
   # Append to EXTRA libraries, so they are not linked with demos (this
   # fails with VTK6 unless the vtk macros are also installed).

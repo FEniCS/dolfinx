@@ -43,8 +43,8 @@ def test_krylov_samg_solver_elasticity():
         V.sub(1).dofmap().set(nullspace_basis[1], 1.0);
 
         # Build rotational null space basis
-        V.sub(0).dofmap().set_x(nullspace_basis[2], -1.0, 1, V.mesh());
-        V.sub(1).dofmap().set_x(nullspace_basis[2], 1.0, 0, V.mesh());
+        V.sub(0).set_x(nullspace_basis[2], -1.0, 1);
+        V.sub(1).set_x(nullspace_basis[2], 1.0, 0);
 
         for x in nullspace_basis:
             x.apply("insert")
@@ -99,15 +99,8 @@ def test_krylov_samg_solver_elasticity():
     PETScOptions.set("mg_levels_ksp_type", "chebyshev")
     PETScOptions.set("mg_levels_pc_type", "jacobi")
 
-    # Improve estimate of eigenvalues for Chebyshev smoothing (PETSc
-    # version<3.6 option)
-    PETScOptions.set("mg_levels_est_ksp_type", "cg")
-    PETScOptions.set("mg_levels_est_ksp_max_it", 50)
-    PETScOptions.set("gamg_est_ksp_type", "cg")
-    PETScOptions.set("gamg_est_ksp_max_it", 50)
-
-    # Improve estimate of eigenvalues for Chebyshev smoothing (more
-    # recent PETSc option)
+    # Improve estimate of eigenvalues for Chebyshev smoothing
+    PETScOptions.set("mg_levels_esteig_ksp_type", "cg");
     PETScOptions.set("mg_levels_ksp_chebyshev_esteig_steps", 50)
 
     # Build list of smoothed aggregation preconditioners
@@ -118,10 +111,10 @@ def test_krylov_samg_solver_elasticity():
     # Test iteration count with increasing mesh size for each
     # preconditioner
     for method in methods:
-        for N in [4, 8, 16, 32, 64]:
+        for N in [8, 16, 32, 64]:
             print("Testing method '{}' with {} x {} mesh".format(method, N, N))
             niter = amg_solve(N, method)
-            assert niter < 12
+            assert niter < 18
 
     parameters["linear_algebra_backend"] = previous_backend
 
@@ -129,16 +122,6 @@ def test_krylov_samg_solver_elasticity():
 @skip_if_not_PETSc
 def test_krylov_reuse_pc():
     "Test preconditioner re-use with PETScKrylovSolver"
-
-    # Test requires PETSc version 3.5 or later. Use petsc4py to check
-    # version number.
-    try:
-        from petsc4py import PETSc
-    except ImportError:
-        pytest.skip("petsc4py required to check PETSc version")
-    else:
-        if not PETSc.Sys.getVersion() >= (3, 5, 0):
-            pytest.skip("PETSc version must be 3.5  of higher")
 
     # Define problem
     mesh = UnitSquareMesh(8, 8)

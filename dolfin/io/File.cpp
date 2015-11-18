@@ -185,7 +185,7 @@ void File::init(MPI_Comm comm, const std::string filename,
   else if (extension == ".xyz")
     file.reset(new XYZFile(filename));
 #ifdef HAS_HDF5
-  else if (extension == ".xdmf")
+  else if (extension == ".xdmf" or extension == ".xmf")
     file.reset(new XDMFFile(comm, filename));
 #endif
   else if (extension == ".svg")

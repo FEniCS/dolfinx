@@ -62,15 +62,6 @@ bool dolfin::has_mpi()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_tao()
-{
-#ifdef ENABLE_PETSC_TAO
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
 bool dolfin::has_petsc()
 {
 #ifdef HAS_PETSC

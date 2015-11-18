@@ -36,10 +36,10 @@ global_normal = Expression(("x[0]", "x[1]", "x[2]"))
 mesh.init_cell_orientations(global_normal)
 
 # Define function spaces and basis functions
-V = FunctionSpace(mesh, "RT", 1)
-Q = FunctionSpace(mesh, "DG", 0)
-R = FunctionSpace(mesh, "R", 0)
-W = MixedFunctionSpace((V, Q, R))
+RT1 = FiniteElement("RT", mesh.ufl_cell(), 1)
+DG0 = FiniteElement("DG", mesh.ufl_cell(), 0)
+R = FiniteElement("R", mesh.ufl_cell(), 0)
+W = FunctionSpace(mesh, MixedElement((RT1, DG0, R)))
 
 (sigma, u, r) = TrialFunctions(W)
 (tau, v, t) = TestFunctions(W)

@@ -192,13 +192,13 @@ void GenericFunction::evaluate(double* values,
 void GenericFunction::restrict_as_ufc_function(double* w,
                                                const FiniteElement& element,
                                                const Cell& dolfin_cell,
-                                               const double* vertex_coordinates,
+                                               const double* coordinate_dofs,
                                                const ufc::cell& ufc_cell) const
 {
   dolfin_assert(w);
 
   // Evaluate dofs to get the expansion coefficients
-  element.evaluate_dofs(w, *this, vertex_coordinates, ufc_cell.orientation,
+  element.evaluate_dofs(w, *this, coordinate_dofs, ufc_cell.orientation,
                         ufc_cell);
 }
 //-----------------------------------------------------------------------------

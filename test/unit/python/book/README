@@ -37,9 +37,15 @@ should be listeed in this file:
 
 * DOLFIN 1.5:
   - python/chapter_10.py: change all UnitSquareMesh(2, 2) to UnitSquareMesh(3, 3)
-    so they can run in parallel with 3 processes without failing 
+    so they can run in parallel with 3 processes without failing
 
 * DOLFIN 1.6
 
   - chapter_1_files/transient/diffusion/sin_daD.py:
     update for interface change in RectangleMesh(x0, ...) --> RectangleMesh(Point(x0, y0), ...)
+
+* DOLFIN 1.7
+
+  - python/book/test_chapter_10.py: change dss = ds[neumann_boundary] -> ds(subdomain_data=neumann_boundary)
+  - python/book/chapter_1_files/stationary/poisson/d6_p2D.py: change
+    'FunctionSpace(mesh, family, degree=degree)' -> 'FunctionSpace(mesh, family, degree)'

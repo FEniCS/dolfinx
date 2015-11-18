@@ -20,18 +20,18 @@
 
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/Progress.h>
-#include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MultiMesh.h>
+#include <dolfin/mesh/Vertex.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/MultiMeshFunctionSpace.h>
-#include "MultiMeshForm.h"
 #include "MultiMeshDofMap.h"
+#include "MultiMeshForm.h"
 #include "SparsityPatternBuilder.h"
 
 using namespace dolfin;
@@ -52,29 +52,16 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Get global dimensions and local range
   const std::size_t rank = dofmaps.size();
   std::vector<std::size_t> global_dimensions(rank);
-  std::vector<std::pair<std::size_t, std::size_t>> local_range(rank);
-  std::vector<ArrayView<const std::size_t>> local_to_global(rank);
-  std::vector<ArrayView<const int>> off_process_owner(rank);
+  std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
-  {
-    global_dimensions[i] = dofmaps[i]->global_dimension();
-    local_range[i]       = dofmaps[i]->ownership_range();
-    local_to_global[i].set(dofmaps[i]->local_to_global_unowned());
-    off_process_owner[i].set(dofmaps[i]->off_process_owner());
-  }
+    index_maps[i] = dofmaps[i]->index_map();
 
   dolfin_assert(!dofmaps.empty());
   dolfin_assert(dofmaps[0]);
-  std::vector<std::size_t> block_sizes(rank);
-  for (std::size_t i = 0; i < rank; ++i)
-    block_sizes[i] = dofmaps[i]->block_size;
 
   // Initialise sparsity pattern
   if (init)
-  {
-    sparsity_pattern.init(mesh.mpi_comm(), global_dimensions, local_range,
-                          local_to_global, off_process_owner, block_sizes);
-  }
+    sparsity_pattern.init(mesh.mpi_comm(), global_dimensions, index_maps);
 
   // Only build for rank >= 2 (matrices and higher order tensors) that
   // require sparsity details
@@ -116,7 +103,6 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     mesh.init(0, D);
 
     std::vector<std::vector<dolfin::la_index>> global_dofs(rank);
-    //std::vector<const std::vector<dolfin::la_index>* > global_dofs_p(rank);
     std::vector<std::vector<std::size_t>> local_to_local_dofs(rank);
 
     // Resize local dof map vector
@@ -241,8 +227,8 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   if (diagonal)
   {
-    const std::size_t local_size0 = local_range[0].second-local_range[0].first;
-    const std::size_t local_size1 = local_range[1].second-local_range[1].first;
+    const std::size_t local_size0 = index_maps[0]->size();
+    const std::size_t local_size1 = index_maps[1]->size();
     const std::size_t local_size = std::min(local_size0, local_size1);
 
     Progress p("Building sparsity pattern over diagonal", local_size);
@@ -271,22 +257,18 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
   // Get global dimensions and local range
   const std::size_t rank = form.rank();
   std::vector<std::size_t> global_dimensions(rank);
-  std::vector<std::pair<std::size_t, std::size_t>> local_range(rank);
-  std::vector<ArrayView<const std::size_t>> local_to_global(rank);
-  std::vector<ArrayView<const int>> off_process_owner(rank);
+  std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
   {
-    global_dimensions[i] = form.function_space(i)->dofmap()->global_dimension();
-    local_range[i]       = form.function_space(i)->dofmap()->ownership_range();
-    off_process_owner[i].set(form.function_space(i)->dofmap()->off_process_owner());
+    index_maps[i] = form.function_space(i)->dofmap()->index_map();
+    global_dimensions[i]
+      = form.function_space(i)->dofmap()->global_dimension();
   }
 
   // Initialize sparsity pattern
-  const std::vector<std::size_t> block_sizes(rank, 1);
   sparsity_pattern.init(form.function_space(0)->part(0)->mesh()->mpi_comm(),
                         global_dimensions,
-                        local_range, local_to_global,
-                        off_process_owner, block_sizes);
+                        index_maps);
 
   // Iterate over each part
   for (std::size_t part = 0; part < form.num_parts(); part++)

@@ -99,11 +99,11 @@ std::size_t Expression::value_dimension(std::size_t i) const
 void Expression::restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
-                          const double* vertex_coordinates,
+                          const double* coordinate_dofs,
                           const ufc::cell& ufc_cell) const
 {
   // Restrict as UFC function (by calling eval)
-  restrict_as_ufc_function(w, element, dolfin_cell, vertex_coordinates,
+  restrict_as_ufc_function(w, element, dolfin_cell, coordinate_dofs,
                            ufc_cell);
 }
 //-----------------------------------------------------------------------------
@@ -142,5 +142,10 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
       }
     }
   }
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const FunctionSpace> Expression::function_space() const
+{
+  return std::shared_ptr<const FunctionSpace>();
 }
 //-----------------------------------------------------------------------------

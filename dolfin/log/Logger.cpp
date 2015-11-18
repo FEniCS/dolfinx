@@ -161,7 +161,7 @@ void Logger::dolfin_error(std::string location,
     << "*** using the information listed below, you can ask for help at"
     << std::endl
     << "***" << std::endl
-    << "***     fenics@fenicsproject.org"
+    << "***     fenics-support@googlegroups.com"
     << std::endl
     << "***" << std::endl
     << "*** Remember to include the error message listed below and, if possible,"
@@ -290,15 +290,6 @@ void Logger::register_timing(std::string task,
     std::get<2>(it->second) += std::get<2>(timing);
     std::get<3>(it->second) += std::get<3>(timing);
   }
-}
-//-----------------------------------------------------------------------------
-void Logger::list_timings(bool reset)
-{
-  deprecation("dolfin::list_timings(bool)", "1.6.0", "1.7.0",
-              "The method is replaced by another Logger::list_timings(...), "
-              "e.g, 'list_timings(TimingClear_keep, [TimingType_wall])'");
-  list_timings(static_cast<TimingClear>(reset),
-               std::set<TimingType>({ TimingType::wall }));
 }
 //-----------------------------------------------------------------------------
 void Logger::list_timings(TimingClear clear, std::set<TimingType> type)

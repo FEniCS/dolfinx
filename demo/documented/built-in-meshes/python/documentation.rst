@@ -54,7 +54,7 @@ can also omit this argument and thereby use the default direction
    plot(mesh, title="Unit square")
 
 .. image:: unitsquaremesh.png
-	:scale: 75 %
+    :scale: 75 %
 
 Our second version of a mesh on the unit square has diagonals to the
 left, the third version has crossed diagonals and our final version
@@ -104,10 +104,10 @@ diagonals to both left and right.
    plot(mesh, title="Rectangle (right/left)")
 
 .. image:: rectanglemesh.png
-	:scale: 75 %
+    :scale: 75 %
 
 .. image:: rectanglemesh_left_right.png
-	:scale: 75 %
+    :scale: 75 %
 
 To make a mesh of the 3D unit cube :math:`[0,1] \times [0,1] \times
 [0,1]`, we use :py:class:`UnitCubeMesh

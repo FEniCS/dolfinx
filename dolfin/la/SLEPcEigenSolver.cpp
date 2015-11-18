@@ -139,10 +139,14 @@ void SLEPcEigenSolver::solve(std::size_t n)
   {
     KSP ksp;
     ST st;
-    EPSMonitorSet(_eps, EPSMonitorAll, NULL, NULL);
+    EPSMonitorSet(_eps, EPSMonitorAll,
+                  PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_eps)),
+                  NULL);
     EPSGetST(_eps, &st);
     STGetKSP(st, &ksp);
-    KSPMonitorSet(ksp, KSPMonitorDefault, NULL, NULL);
+    KSPMonitorSet(ksp, KSPMonitorDefault,
+                  PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
+                  NULL);
     EPSView(_eps, PETSC_VIEWER_STDOUT_SELF);
   }
 

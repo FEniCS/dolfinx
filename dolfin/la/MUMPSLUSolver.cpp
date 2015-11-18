@@ -135,7 +135,10 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.n = _matA->size(0);
 
   if (!_matA->base_one())
-    error("MUMPS requires a CoordinateMatrix with Fortran-style base 1 indexing.");
+    dolfin_error("MUMPSLUSolver.cpp",
+                 "initialize solver",
+                 "MUMPS requires a CoordinateMatrix with Fortran-style "
+                 "base 1 indexing");
 
   // Get matrix coordinate and value data
   const std::vector<std::size_t>& rows = _matA->rows();
@@ -154,7 +157,10 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.job = 4;
   dmumps_c(&data);
   if (data.INFOG(1) < 0)
-    error("MUMPS reported an error during the analysis and factorisation.");
+    dolfin_error("MUMPSLUSolver.cpp",
+                 "compute matrix factors",
+                 "MUMPS reported an error during the analysis and "
+                 "factorisation");
 
   cout << "Factorisation finished" << endl;
 
@@ -180,7 +186,9 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.job = 3;
   dmumps_c(&data);
   if (data.INFOG(1) < 0)
-    error("MUMPS reported an error during the solve.");
+    dolfin_error("MUMPSLUSolver.cpp",
+                 "compute matrix factors",
+                 "MUMPS reported an error during the solve");
 
   // Shift indices by -1
   for (std::size_t i = 0; i < local_x_size ; ++i)

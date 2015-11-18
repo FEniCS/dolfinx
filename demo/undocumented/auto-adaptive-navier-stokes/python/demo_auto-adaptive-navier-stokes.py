@@ -46,9 +46,9 @@ nu = Constant(0.02)
 mesh = Mesh("../channel_with_flap.xml.gz")
 
 # Define function spaces (Taylor-Hood)
-V = VectorFunctionSpace(mesh, "CG", 2)
-Q = FunctionSpace(mesh, "CG", 1)
-W = V * Q
+V = VectorElement("CG", mesh.ufl_cell(), 2)
+Q = FiniteElement("CG", mesh.ufl_cell(), 1)
+W = FunctionSpace(mesh, V * Q)
 
 # Define unknown and test function(s)
 (v, q) = TestFunctions(W)

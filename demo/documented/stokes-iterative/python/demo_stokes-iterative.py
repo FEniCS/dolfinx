@@ -47,10 +47,11 @@ else:
 # Load mesh
 mesh = UnitCubeMesh(16, 16, 16)
 
-# Define function spaces
-V = VectorFunctionSpace(mesh, "CG", 2)
-Q = FunctionSpace(mesh, "CG", 1)
-W = V * Q
+# Build function space
+P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
+P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+TH = P2 * P1
+W = FunctionSpace(mesh, TH)
 
 # Boundaries
 def right(x, on_boundary): return x[0] > (1.0 - DOLFIN_EPS)

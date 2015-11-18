@@ -61,16 +61,16 @@ namespace dolfin
 
     /// Update current cell
     void update(const Cell& cell,
-                const std::vector<double>& vertex_coordinates0,
+                const std::vector<double>& coordinate_dofs0,
                 const ufc::cell& ufc_cell,
                 const std::vector<bool> & enabled_coefficients);
 
     /// Update current pair of cells for macro element
     void update(const Cell& cell0,
-                const std::vector<double>& vertex_coordinates0,
+                const std::vector<double>& coordinate_dofs0,
                 const ufc::cell& ufc_cell0,
                 const Cell& cell1,
-                const std::vector<double>& vertex_coordinates1,
+                const std::vector<double>& coordinate_dofs1,
                 const ufc::cell& ufc_cell1,
                 const std::vector<bool> & enabled_coefficients);
 
@@ -78,17 +78,17 @@ namespace dolfin
     /// PointIntegralSolver supports the version with
     /// enabled_coefficients)
     void update(const Cell& cell,
-                const std::vector<double>& vertex_coordinates0,
+                const std::vector<double>& coordinate_dofs0,
                 const ufc::cell& ufc_cell);
 
     /// Update current pair of cells for macro element (TODO: Remove
     /// this when PointIntegralSolver supports the version with
     /// enabled_coefficients)
     void update(const Cell& cell0,
-                const std::vector<double>& vertex_coordinates0,
+                const std::vector<double>& coordinate_dofs0,
                 const ufc::cell& ufc_cell0,
                 const Cell& cell1,
-                const std::vector<double>& vertex_coordinates1,
+                const std::vector<double>& coordinate_dofs1,
                 const ufc::cell& ufc_cell1);
 
     /// Pointer to coefficient data. Used to support UFC interface.

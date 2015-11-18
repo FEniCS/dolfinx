@@ -205,9 +205,6 @@ const Function& Function::operator= (const Function& v)
     std::vector<dolfin::la_index> new_rows(collapsed_map.size());
     std::vector<dolfin::la_index> old_rows(collapsed_map.size());
     std::size_t i = 0;
-    //const std::size_t local_owned_size
-    //  = v._function_space->dofmap()->ownership_range().second
-    //  - v._function_space->dofmap()->ownership_range().first;
     for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
     {
       new_rows[i]   = entry->first;
@@ -216,10 +213,6 @@ const Function& Function::operator= (const Function& v)
     MPI::barrier(MPI_COMM_WORLD);
 
     // Gather values into a vector
-    //std::vector<double> gathered_values;
-    //dolfin_assert(v.vector());
-    //v.vector()->gather(gathered_values, old_rows);
-
     dolfin_assert(v.vector());
     std::vector<double> gathered_values(collapsed_map.size());
     v.vector()->get_local(gathered_values.data(), gathered_values.size(),
@@ -321,12 +314,6 @@ void Function::operator=(const FunctionAXPY& axpy)
     _vector->axpy(it->first, *(it->second->vector()));
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FunctionSpace> Function::function_space() const
-{
-  dolfin_assert(_function_space);
-  return _function_space;
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> Function::vector()
 {
   dolfin_assert(_vector);
@@ -415,13 +402,13 @@ void Function::eval(Array<double>& values, const Array<double>& x,
   // Create work vector for expansion coefficients
   std::vector<double> coefficients(element.space_dimension());
 
-  // Cell vertices (re-allocated inside function for thread safety)
-  std::vector<double> vertex_coordinates;
-  dolfin_cell.get_vertex_coordinates(vertex_coordinates);
+  // Cell coordinates (re-allocated inside function for thread safety)
+  std::vector<double> coordinate_dofs;
+  dolfin_cell.get_coordinate_dofs(coordinate_dofs);
 
   // Restrict function to cell
   restrict(coefficients.data(), element, dolfin_cell,
-           vertex_coordinates.data(), ufc_cell);
+           coordinate_dofs.data(), ufc_cell);
 
   // Create work vector for basis
   std::vector<double> basis(value_size_loc);
@@ -434,7 +421,7 @@ void Function::eval(Array<double>& values, const Array<double>& x,
   for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
     element.evaluate_basis(i, basis.data(), x.data(),
-                           vertex_coordinates.data(),
+                           coordinate_dofs.data(),
                            ufc_cell.orientation);
     for (std::size_t j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
@@ -489,19 +476,9 @@ void Function::eval(Array<double>& values,
     eval(values, x);
 }
 //-----------------------------------------------------------------------------
-void Function::non_matching_eval(Array<double>& values,
-                                 const Array<double>& x,
-                                 const ufc::cell& ufc_cell) const
-{
-  deprecation("Function::non_matching_eval(values, x, ufc_cell)", "1.6.0", "1.7.0",
-              "Please use Function::eval(values, x) instead");
-
-  eval(values, x);
-}
-//-----------------------------------------------------------------------------
 void Function::restrict(double* w, const FiniteElement& element,
                         const Cell& dolfin_cell,
-                        const double* vertex_coordinates,
+                        const double* coordinate_dofs,
                         const ufc::cell& ufc_cell) const
 {
   dolfin_assert(w);
@@ -517,22 +494,14 @@ void Function::restrict(double* w, const FiniteElement& element,
     const ArrayView<const dolfin::la_index> dofs
       = dofmap.cell_dofs(dolfin_cell.index());
 
-    if (!dofs.empty())
-    {
-      // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
-      // Pick values from vector(s)
-      _vector->get_local(w, dofs.size(), dofs.data());
-    }
-    else
-    {
-      // Set dofs to zero (zero extension of function space on a Restriction)
-      memset(w, 0, sizeof(*w)*dofmap.max_element_dofs());
-    }
+    // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
+    // Pick values from vector(s)
+    _vector->get_local(w, dofs.size(), dofs.data());
   }
   else
   {
     // Restrict as UFC function (by calling eval)
-    restrict_as_ufc_function(w, element, dolfin_cell, vertex_coordinates,
+    restrict_as_ufc_function(w, element, dolfin_cell, coordinate_dofs,
                              ufc_cell);
   }
 }
@@ -576,21 +545,21 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   // Interpolate vertex values on each cell (using last computed value
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     // Update to current cell
-    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_coordinate_dofs(coordinate_dofs);
     cell->get_cell_data(ufc_cell);
 
     // Pick values from global vector
-    restrict(coefficients.data(), element, *cell, vertex_coordinates.data(),
+    restrict(coefficients.data(), element, *cell, coordinate_dofs.data(),
              ufc_cell);
 
     // Interpolate values at the vertices
     element.interpolate_vertex_values(cell_vertex_values.data(),
                                       coefficients.data(),
-                                      vertex_coordinates.data(),
+                                      coordinate_dofs.data(),
                                       ufc_cell.orientation,
                                       ufc_cell);
 
@@ -635,12 +604,18 @@ void Function::init_vector()
   const std::pair<std::size_t, std::size_t> range = dofmap.ownership_range();
 
   // Determine ghost vertices if dof map is distributed
-  const std::size_t bs = dofmap.block_size;
+  const std::size_t bs = dofmap.block_size();
   std::vector<la_index>
-    ghost_indices(bs*dofmap.local_to_global_unowned().size());
-  for (std::size_t i = 0; i < dofmap.local_to_global_unowned().size(); ++i)
+    ghost_indices(bs*dofmap.index_map()->local_to_global_unowned().size());
+  for (std::size_t i = 0;
+       i < dofmap.index_map()->local_to_global_unowned().size(); ++i)
+  {
     for (std::size_t j = 0; j < bs; ++j)
-      ghost_indices[bs*i + j] = bs*dofmap.local_to_global_unowned()[i] + j;
+    {
+      ghost_indices[bs*i + j]
+        = bs*dofmap.index_map()->local_to_global_unowned()[i] + j;
+    }
+  }
 
   // Create vector of dofs
   if (!_vector)
