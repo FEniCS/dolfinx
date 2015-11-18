@@ -91,6 +91,19 @@ std::size_t IndexMap::size() const
   }
 }
 //-----------------------------------------------------------------------------
+std::size_t IndexMap::size(const std::string type) const
+{
+  if (type == "all")
+    return size() + _local_to_global.size()*_block_size;
+  else
+  {
+    dolfin_error("IndexMap.cpp",
+                 "get size",
+                 "Unrecognised option %s", type.c_str());
+  }
+  return 0;
+}
+//-----------------------------------------------------------------------------
 std::size_t IndexMap::size_global() const
 {
   return _all_ranges.back() * _block_size;
@@ -103,24 +116,18 @@ const std::vector<std::size_t>& IndexMap::local_to_global_unowned() const
 //----------------------------------------------------------------------------
 std::size_t IndexMap::local_to_global(std::size_t i) const
 {
-  return local_to_global(i, _block_size);
-}
-//-----------------------------------------------------------------------------
-std::size_t IndexMap::local_to_global(std::size_t i, int bs) const
-{
   const std::size_t local_size = size();
   const std::size_t global_offset = local_range().first;
 
-  if (i < size())
+  if (i < local_size)
     return (i + global_offset);
   else
   {
-    const std::div_t div = std::div((i - local_size),
-                                    bs);
+    const std::div_t div = std::div((i - local_size), _block_size);
     const int component = div.rem;
     const int index = div.quot;
     dolfin_assert((std::size_t) index < _local_to_global.size());
-    return bs*_local_to_global[index] + component;
+    return _block_size*_local_to_global[index] + component;
   }
 }
 //-----------------------------------------------------------------------------

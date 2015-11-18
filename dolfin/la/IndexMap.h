@@ -57,6 +57,9 @@ namespace dolfin
     /// Number of local indices
     std::size_t size() const;
 
+    /// Number of local indices "local", "shared" or "all"
+    std::size_t size(const std::string type) const;
+
     /// Global size of map
     std::size_t size_global() const;
 
@@ -65,9 +68,6 @@ namespace dolfin
 
     /// Get global index of local index i
     std::size_t local_to_global(std::size_t i) const;
-
-    /// Get global index of local index i as if with block size bs
-    std::size_t local_to_global(std::size_t i, int bs) const;
 
     /// Set local_to_global map for unowned indices
     void set_local_to_global(std::vector<std::size_t>& indices);
