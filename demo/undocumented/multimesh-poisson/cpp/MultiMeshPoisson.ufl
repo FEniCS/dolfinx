@@ -48,4 +48,4 @@ a = dot(grad(u), grad(v))*dX \
   + beta*dot(jump(grad(u)), jump(grad(v)))*dO
 
 # Define linear form
-L = f*v*dx
+L = f*v*dX

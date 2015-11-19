@@ -73,7 +73,7 @@ def solve_poisson(t, x1, y1, x2, y2, plot_solution,
       + beta*dot(jump(grad(u)), jump(grad(v)))*dO
 
     # Define linear form
-    L = f*v*dx
+    L = f*v*dX
 
     # Assemble linear system
     A = assemble_multimesh(a)
