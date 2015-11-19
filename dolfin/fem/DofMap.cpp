@@ -161,6 +161,13 @@ std::size_t DofMap::local_dimension(std::string type) const
     return _index_map->size(IndexMap::MapSize::UNOWNED);
   else if (type == "all")
     return _index_map->size(IndexMap::MapSize::ALL);
+  else
+  {
+    dolfin_error("DofMap.cpp",
+                 "get local dimension",
+                 "Unknown type %s", type.c_str());
+  }
+
   return 0;
 }
 //-----------------------------------------------------------------------------
