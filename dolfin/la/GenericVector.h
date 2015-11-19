@@ -58,8 +58,8 @@ namespace dolfin
       if (!empty())
         error("GenericVector cannot be initialised more than once");
       std::vector<dolfin::la_index> ghosts;
-      std::vector<std::size_t>
-        local_to_global(tensor_layout.index_map(0)->size("all"));
+      std::vector<std::size_t> local_to_global(tensor_layout.index_map(0)
+                                               ->size(IndexMap::MapSize::ALL));
       // FIXME: should just pass index_map to init()
       for (std::size_t i = 0; i != local_to_global.size(); ++i)
         local_to_global[i] = tensor_layout.index_map(0)->local_to_global(i);

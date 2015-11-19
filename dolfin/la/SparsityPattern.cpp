@@ -73,7 +73,8 @@ void SparsityPattern::init(
                  "Primary dimension must be less than 2 (0=row major, 1=column major");
   }
 
-  const std::size_t local_size = index_maps[_primary_dim]->size("owned");
+  const std::size_t local_size
+    = index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
 
   // Resize diagonal block
   diagonal.resize(local_size);
@@ -232,8 +233,8 @@ void SparsityPattern::insert_local(
 
   std::shared_ptr<const IndexMap> index_map0 = _index_maps[ _primary_dim];
   std::shared_ptr<const IndexMap> index_map1 = _index_maps[primary_codim];
-  const la_index local_size0 = index_map0->size("owned");
-  const la_index local_size1 = index_map1->size("owned");
+  const la_index local_size0 = index_map0->size(IndexMap::MapSize::OWNED);
+  const la_index local_size1 = index_map1->size(IndexMap::MapSize::OWNED);
 
   // Check local range
   if (MPI::size(_mpi_comm) == 1)
@@ -352,7 +353,8 @@ void SparsityPattern::apply()
     local_range0 = _index_maps[_primary_dim]->local_range();
   const std::pair<dolfin::la_index, dolfin::la_index>
     local_range1 = _index_maps[primary_codim]->local_range();
-  const std::size_t local_size0 = _index_maps[_primary_dim]->size("owned");
+  const std::size_t local_size0
+    = _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
   const std::size_t offset0 = local_range0.first;
 
   const std::size_t num_processes = MPI::size(_mpi_comm);

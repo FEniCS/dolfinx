@@ -226,8 +226,10 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   if (diagonal)
   {
-    const std::size_t local_size0 = index_maps[0]->size("owned");
-    const std::size_t local_size1 = index_maps[1]->size("owned");
+    const std::size_t local_size0
+      = index_maps[0]->size(IndexMap::MapSize::OWNED);
+    const std::size_t local_size1
+      = index_maps[1]->size(IndexMap::MapSize::OWNED);
     const std::size_t local_size = std::min(local_size0, local_size1);
 
     Progress p("Building sparsity pattern over diagonal", local_size);

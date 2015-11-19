@@ -99,7 +99,7 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   // Save the local row and column mapping, so we can use add_local
   // and set_local later with off-process entries
   std::vector<dolfin::la_index>
-    global_indices0(tensor_layout.index_map(0)->size("owned"));
+    global_indices0(tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL));
   for (std::size_t i = 0; i < global_indices0.size(); ++i)
     global_indices0[i] = tensor_layout.index_map(0)->local_to_global(i);
 
@@ -109,7 +109,7 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
                   _global_indices0, 0, _comm));
 
   std::vector<dolfin::la_index>
-    global_indices1(tensor_layout.index_map(1)->size("owned"));
+    global_indices1(tensor_layout.index_map(1)->size(IndexMap::MapSize::ALL));
   for (std::size_t i = 0; i < global_indices1.size(); ++i)
     global_indices1[i] = tensor_layout.index_map(1)->local_to_global(i);
 

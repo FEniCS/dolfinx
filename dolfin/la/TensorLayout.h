@@ -80,10 +80,6 @@ namespace dolfin
     /// Primary storage dim (e.g., 0=row major, 1=column major)
     const std::size_t primary_dim;
 
-    /// Dofmap block size, e.g. 3 for 3D elasticity with a suitable
-    /// ordered dofmap
-    // std::size_t block_size;
-
     /// Return MPI communicator
     MPI_Comm mpi_comm() const
     { return _mpi_comm; }

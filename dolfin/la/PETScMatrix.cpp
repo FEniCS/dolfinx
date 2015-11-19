@@ -167,9 +167,9 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     else
     {
       _map0 = std::vector<PetscInt>
-        (tensor_layout.index_map(0)->size("all")/bs);
+        (tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL)/bs);
       _map1 = std::vector<PetscInt>
-        (tensor_layout.index_map(1)->size("all")/bs);
+        (tensor_layout.index_map(1)->size(IndexMap::MapSize::ALL)/bs);
       for (std::size_t i = 0; i < _map0.size(); ++i)
         _map0[i] = tensor_layout.index_map(0)->local_to_global(i*bs)/bs;
       for (std::size_t i = 0; i < _map1.size(); ++i)
@@ -242,8 +242,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     dolfin_assert(tensor_layout.rank() == 2);
 
     std::vector<PetscInt> _map0, _map1;
-    _map0.resize(tensor_layout.index_map(0)->size("all")/bs);
-    _map1.resize(tensor_layout.index_map(1)->size("all")/bs);
+    _map0.resize(tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL)/bs);
+    _map1.resize(tensor_layout.index_map(1)->size(IndexMap::MapSize::ALL)/bs);
 
     for (std::size_t i = 0; i < _map0.size(); ++i)
       _map0[i] = tensor_layout.index_map(0)->local_to_global(i*bs)/bs;
