@@ -167,9 +167,9 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     else
     {
       _map0 = std::vector<PetscInt>
-        (tensor_layout.index_map(0)->size()/bs);
+        (tensor_layout.index_map(0)->size("all")/bs);
       _map1 = std::vector<PetscInt>
-        (tensor_layout.index_map(1)->size()/bs);
+        (tensor_layout.index_map(1)->size("all")/bs);
       for (std::size_t i = 0; i < _map0.size(); ++i)
         _map0[i] = tensor_layout.index_map(0)->local_to_global(i*bs)/bs;
       for (std::size_t i = 0; i < _map1.size(); ++i)

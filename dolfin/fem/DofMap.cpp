@@ -152,22 +152,7 @@ std::size_t DofMap::global_dimension() const
 //-----------------------------------------------------------------------------
 std::size_t DofMap::local_dimension(std::string type) const
 {
-  const int bs = _index_map->block_size();
-  if (type == "owned")
-    return _index_map->size();
-  else if (type == "unowned")
-    return bs*_index_map->local_to_global_unowned().size();
-  else if (type == "all")
-    return _index_map->size()
-         + bs*_index_map->local_to_global_unowned().size();
-  else
-  {
-    dolfin_error("DofMap.h",
-                 "report DofMap local dimension",
-                 "unknown dof type given. Use either \"owned\", "
-                 "\"unowned\", or \"all\"");
-    return 0;
-  }
+  return _index_map->size(type);
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
@@ -332,7 +317,7 @@ std::vector<dolfin::la_index> DofMap::dofs() const
   std::vector<la_index> _dofs;
   _dofs.reserve(_dofmap.size()*max_element_dofs());
 
-  const dolfin::la_index local_ownership_size = _index_map->size();
+  const dolfin::la_index local_ownership_size = _index_map->size("owned");
   const std::size_t global_offset = _index_map->local_range().first;
 
   // Insert all dofs into a vector (will contain duplicates)
@@ -370,10 +355,8 @@ void DofMap::tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_gl
   const std::size_t bs = _index_map->block_size();
   const std::vector<std::size_t>& local_to_global_unowned
     = _index_map->local_to_global_unowned();
-  const std::size_t local_ownership_size = _index_map->size();
-  const int size = local_ownership_size
-                    + bs*local_to_global_unowned.size();
-  local_to_global_map.resize(size);
+  const std::size_t local_ownership_size = _index_map->size("owned");
+  local_to_global_map.resize(_index_map->size("all"));
 
   const std::size_t global_offset = _index_map->local_range().first;
   for (std::size_t i = 0; i < local_ownership_size; ++i)

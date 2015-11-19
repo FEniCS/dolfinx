@@ -74,7 +74,7 @@ std::pair<std::size_t, std::size_t> IndexMap::local_range() const
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t IndexMap::size() const
+std::size_t IndexMap::size(const std::string type) const
 {
   // Get my MPI rank
   const std::size_t rank = MPI::rank(_mpi_comm);
@@ -84,17 +84,17 @@ std::size_t IndexMap::size() const
     warning("Asking for size of uninitialised range");
     return 0;
   }
-  else
-  {
-    return _block_size*(_all_ranges[rank + 1]
-                        - _all_ranges[rank]);
-  }
-}
-//-----------------------------------------------------------------------------
-std::size_t IndexMap::size(const std::string type) const
-{
+
+  const std::size_t owned_size = _block_size*(_all_ranges[rank + 1]
+                                              - _all_ranges[rank]);
+  if (type == "owned")
+    return owned_size;
+
+  const std::size_t unowned_size = _local_to_global.size()*_block_size;
   if (type == "all")
-    return size() + _local_to_global.size()*_block_size;
+    return (owned_size + unowned_size);
+  else if (type == "unowned")
+    return unowned_size;
   else
   {
     dolfin_error("IndexMap.cpp",
@@ -116,7 +116,7 @@ const std::vector<std::size_t>& IndexMap::local_to_global_unowned() const
 //----------------------------------------------------------------------------
 std::size_t IndexMap::local_to_global(std::size_t i) const
 {
-  const std::size_t local_size = size();
+  const std::size_t local_size = size("owned");
   const std::size_t global_offset = local_range().first;
 
   if (i < local_size)

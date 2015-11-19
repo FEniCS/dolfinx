@@ -54,10 +54,7 @@ namespace dolfin
     /// Local range of indices
     std::pair<std::size_t, std::size_t> local_range() const;
 
-    /// Number of local indices
-    std::size_t size() const;
-
-    /// Number of local indices "local", "shared" or "all"
+    /// Number of local indices "owned", "unowned" or "all"
     std::size_t size(const std::string type) const;
 
     /// Global size of map
