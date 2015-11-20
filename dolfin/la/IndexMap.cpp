@@ -89,6 +89,8 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
                                               - _all_ranges[rank]);
   if (type == IndexMap::MapSize::OWNED)
     return owned_size;
+  else if (type == IndexMap::MapSize::GLOBAL)
+    return _all_ranges.back() * _block_size;
 
   const std::size_t unowned_size = _local_to_global.size()*_block_size;
   if (type == IndexMap::MapSize::ALL)
@@ -102,11 +104,6 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
                  "Unrecognised option for IndexMap::MapSize");
   }
   return 0;
-}
-//-----------------------------------------------------------------------------
-std::size_t IndexMap::size_global() const
-{
-  return _all_ranges.back() * _block_size;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::size_t>& IndexMap::local_to_global_unowned() const

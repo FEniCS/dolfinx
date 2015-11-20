@@ -534,8 +534,8 @@ void SparsityPattern::info_statistics() const
   const std::size_t num_nonzeros_total = num_nonzeros_diagonal
     + num_nonzeros_off_diagonal + num_nonzeros_non_local;
 
-  std::size_t size0 = _index_maps[0]->size_global();
-  std::size_t size1 = _index_maps[1]->size_global();
+  std::size_t size0 = _index_maps[0]->size(IndexMap::MapSize::GLOBAL);
+  std::size_t size1 = _index_maps[1]->size(IndexMap::MapSize::GLOBAL);
 
   // Return number of entries
   cout << "Matrix of size " << size0 << " x " << size1 << " has "

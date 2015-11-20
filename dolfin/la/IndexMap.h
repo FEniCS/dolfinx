@@ -60,11 +60,8 @@ namespace dolfin
     std::pair<std::size_t, std::size_t> local_range() const;
 
     /// Get number of local indices of type MapSize::OWNED,
-    /// MapSize::UNOWNED or MapSize::ALL
+    /// MapSize::UNOWNED, MapSize::ALL or MapSize::GLOBAL
     std::size_t size(MapSize type) const;
-
-    /// Global size of map
-    std::size_t size_global() const;
 
     /// Get local to global map for unowned indices
     /// (local indexing beyond end of local range)

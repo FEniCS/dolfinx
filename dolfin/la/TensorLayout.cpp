@@ -73,7 +73,7 @@ std::size_t TensorLayout::rank() const
 std::size_t TensorLayout::size(std::size_t i) const
 {
   dolfin_assert(i < _index_maps.size());
-  return _index_maps[i]->size_global();
+  return _index_maps[i]->size(IndexMap::MapSize::GLOBAL);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
