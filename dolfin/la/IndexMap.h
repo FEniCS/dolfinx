@@ -36,7 +36,10 @@ namespace dolfin
   {
   public:
 
-    enum class MapSize { ALL, OWNED, UNOWNED, GLOBAL };
+    enum class MapSize : int32_t { ALL = 0,
+                                   OWNED = 1,
+                                   UNOWNED = 2,
+                                   GLOBAL = 3 };
 
     /// Constructor
     IndexMap();
@@ -57,7 +60,7 @@ namespace dolfin
     std::pair<std::size_t, std::size_t> local_range() const;
 
     /// Number of local indices "owned", "unowned" or "all"
-    std::size_t size(const MapSize type) const;
+    std::size_t size(MapSize type) const;
 
     /// Global size of map
     std::size_t size_global() const;

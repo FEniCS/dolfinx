@@ -94,7 +94,8 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
     = { V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
 
   // Initialise tensor layout
-  tensor_layout->init(mesh.mpi_comm(), index_maps);
+  tensor_layout->init(mesh.mpi_comm(), index_maps,
+                      TensorLayout::Ghosts::UNGHOSTED);
 
   // Initialize edge -> vertex connections
   mesh.init(1, 0);

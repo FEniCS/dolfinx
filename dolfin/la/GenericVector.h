@@ -53,6 +53,7 @@ namespace dolfin
     //--- Implementation of the GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern
+    /// FIXME: This needs to be implemented on backend side! Remove it!
     virtual void init(const TensorLayout& tensor_layout)
     {
       if (!empty())
@@ -60,9 +61,23 @@ namespace dolfin
       std::vector<dolfin::la_index> ghosts;
       std::vector<std::size_t> local_to_global(tensor_layout.index_map(0)
                                                ->size(IndexMap::MapSize::ALL));
+
       // FIXME: should just pass index_map to init()
       for (std::size_t i = 0; i != local_to_global.size(); ++i)
         local_to_global[i] = tensor_layout.index_map(0)->local_to_global(i);
+
+      // FIXME: temporary hack - needs passing tensor layout directly to backend
+      if (tensor_layout.is_ghosted() == TensorLayout::Ghosts::GHOSTED);
+      {
+        const std::size_t nowned =
+          tensor_layout.index_map(0)->size(IndexMap::MapSize::OWNED);
+        const std::size_t nghosts =
+          tensor_layout.index_map(0)->size(IndexMap::MapSize::UNOWNED);
+        ghosts.resize(nghosts);
+        for (std::size_t i = 0; i != nghosts; ++i)
+          ghosts[i] = local_to_global[i+nowned];
+      }
+
       init(tensor_layout.mpi_comm(), tensor_layout.local_range(0),
            local_to_global, ghosts);
       zero();
@@ -148,6 +163,7 @@ namespace dolfin
 
     /// Initialise vector with given ownership range and with ghost
     /// values
+    /// FIXME: Reimplement using init(const TensorLayout&) and deprecate
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range,
                       const std::vector<std::size_t>& local_to_global_map,

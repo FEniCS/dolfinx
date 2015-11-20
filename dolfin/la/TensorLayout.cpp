@@ -27,39 +27,42 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TensorLayout::TensorLayout(std::size_t pdim, bool sparsity_pattern)
+TensorLayout::TensorLayout(std::size_t pdim, Sparsity sparsity_pattern)
   : primary_dim(pdim), _mpi_comm(MPI_COMM_NULL)
 {
   // Create empty sparsity pattern
-  if (sparsity_pattern)
+  if (sparsity_pattern == TensorLayout::Sparsity::SPARSE)
     _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
 TensorLayout::TensorLayout(const MPI_Comm mpi_comm,
              const std::vector<std::shared_ptr<const IndexMap>>& index_maps,
              std::size_t pdim,
-             bool sparsity_pattern)
-  : primary_dim(pdim), _mpi_comm(mpi_comm), _index_maps(index_maps)
+             Sparsity sparsity_pattern,
+             Ghosts ghosted)
+  : primary_dim(pdim), _mpi_comm(mpi_comm), _index_maps(index_maps),
+    _ghosted(ghosted)
 {
   // Only rank 2 sparsity patterns are supported
-  dolfin_assert(!(sparsity_pattern && index_maps.size() != 2));
+  dolfin_assert(!(sparsity_pattern == TensorLayout::Sparsity::SPARSE
+                  && index_maps.size() != 2));
 
-  if (sparsity_pattern)
+  if (sparsity_pattern == TensorLayout::Sparsity::SPARSE)
     _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
 void TensorLayout::init(
   const MPI_Comm mpi_comm,
-  const std::vector<std::shared_ptr<const IndexMap>>& index_maps)
+  const std::vector<std::shared_ptr<const IndexMap>>& index_maps,
+  Ghosts ghosted)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(!(_sparsity_pattern && index_maps.size() != 2));
 
-  // Store index maps
+  // Store everything
   _index_maps = index_maps;
-
-  // Store MPI communicator
   _mpi_comm = mpi_comm;
+  _ghosted = ghosted;
 }
 //-----------------------------------------------------------------------------
 std::size_t TensorLayout::rank() const

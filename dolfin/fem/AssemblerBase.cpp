@@ -73,7 +73,12 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
 
     // Initialise tensor layout
     // FIXME: somewhere need to check block sizes are same on both axes
-    tensor_layout->init(a.mesh().mpi_comm(), index_maps);
+    // NOTE: Jan: that will be done on the backend side; IndexMap will
+    //            provide tabulate functions with arbitrary block size;
+    //            moreover the functions will tabulate directly using a
+    //            correct int type
+    tensor_layout->init(a.mesh().mpi_comm(), index_maps,
+                        TensorLayout::Ghosts::UNGHOSTED);
 
     // Build sparsity pattern if required
     if (tensor_layout->sparsity_pattern())

@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include <random>
 #include <utility>
+#include <memory>
 #include <ufc.h>
 
 #include <dolfin/common/Timer.h>
@@ -331,7 +332,10 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
     = sub_dofmap._ufc_dofmap->global_dimension(sub_dofmap._num_mesh_entities_global);
 
   // Copy data from parent
-  sub_dofmap.index_map() = parent_dofmap.index_map();
+  // FIXME: Do we touch sub_dofmap.index_map() in this routine? If yes, then
+  //        this routine has incorrect constness!
+  sub_dofmap.index_map()
+    = std::const_pointer_cast<IndexMap>(parent_dofmap.index_map());
   sub_dofmap._shared_nodes = parent_dofmap._shared_nodes;
   sub_dofmap._neighbours = parent_dofmap._neighbours;
 

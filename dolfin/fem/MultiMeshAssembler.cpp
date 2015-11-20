@@ -645,8 +645,8 @@ void MultiMeshAssembler::_init_global_tensor(GenericTensor& A,
   }
 
   // Initialise tensor layout
-  tensor_layout->init(MPI_COMM_WORLD,
-                      index_maps);
+  tensor_layout->init(MPI_COMM_WORLD, index_maps,
+                      TensorLayout::Ghosts::UNGHOSTED);
 
   // Build sparsity pattern if required
   if (tensor_layout->sparsity_pattern())

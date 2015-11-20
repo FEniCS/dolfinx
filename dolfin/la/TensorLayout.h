@@ -43,18 +43,23 @@ namespace dolfin
 
   public:
 
+    enum class Sparsity : bool { SPARSE = true, DENSE = false };
+    enum class Ghosts : bool { GHOSTED = true, UNGHOSTED = false };
+
     /// Create empty tensor layout
-    TensorLayout(std::size_t primary_dim, bool sparsity_pattern);
+    TensorLayout(std::size_t primary_dim, Sparsity sparsity_pattern);
 
     /// Create a tensor layout
     TensorLayout(const MPI_Comm mpi_comm,
                  const std::vector<std::shared_ptr<const IndexMap>>& index_maps,
                  std::size_t primary_dim,
-                 bool sparsity_pattern);
+                 Sparsity sparsity_pattern,
+                 Ghosts ghosted);
 
     /// Initialize tensor layout
     void init(const MPI_Comm mpi_comm,
-              const std::vector<std::shared_ptr<const IndexMap>>& index_maps);
+              const std::vector<std::shared_ptr<const IndexMap>>& index_maps,
+              Ghosts ghosted);
 
     /// Return rank
     std::size_t rank() const;
@@ -91,16 +96,25 @@ namespace dolfin
       return _index_maps[i];
     }
 
+    /// Require ghosts
+    Ghosts is_ghosted() const
+    {
+      return _ghosted;
+    }
+
   private:
 
     // MPI communicator
     MPI_Comm _mpi_comm;
 
-    // index maps
+    // Index maps
     std::vector<std::shared_ptr<const IndexMap>> _index_maps;
 
     // Sparsity pattern
     std::shared_ptr<GenericSparsityPattern> _sparsity_pattern;
+
+    // Ghosted tensor (typically vector) required
+    Ghosts _ghosted = Ghosts::UNGHOSTED;
 
   };
 
