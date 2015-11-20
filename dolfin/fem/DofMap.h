@@ -316,6 +316,8 @@ namespace dolfin
     std::shared_ptr<const IndexMap> index_map() const
     { return _index_map; }
 
+    /// Return the block size for dof maps with components, typically
+    /// used for vector valued functions.
     int block_size() const
     { return _index_map->block_size(); }
 
@@ -339,7 +341,7 @@ namespace dolfin
     std::size_t local_to_global_index(int local_index) const
     { return _index_map->local_to_global(local_index); }
 
-
+    /// Return indices of dofs which are owned by other processes
     const std::vector<std::size_t>& local_to_global_unowned() const
     { return _index_map->local_to_global_unowned(); }
 

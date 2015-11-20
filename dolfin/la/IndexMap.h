@@ -44,37 +44,40 @@ namespace dolfin
     /// Constructor
     IndexMap();
 
-    /// Range map with no data
+    /// Index map with no data
     explicit IndexMap(MPI_Comm mpi_comm);
 
-    /// Range map with local size on each process
+    /// Index map with local size on each process
     IndexMap(MPI_Comm mpi_comm, std::size_t local_size, std::size_t block_size);
 
     /// Destructor
     ~IndexMap();
 
-    /// Initialise with local_size
+    /// Initialise with number of local entries and block size
     void init(std::size_t local_size, std::size_t block_size);
 
     /// Local range of indices
     std::pair<std::size_t, std::size_t> local_range() const;
 
-    /// Number of local indices "owned", "unowned" or "all"
+    /// Get number of local indices of type MapSize::OWNED,
+    /// MapSize::UNOWNED or MapSize::ALL
     std::size_t size(MapSize type) const;
 
     /// Global size of map
     std::size_t size_global() const;
 
     /// Get local to global map for unowned indices
+    /// (local indexing beyond end of local range)
     const std::vector<std::size_t>& local_to_global_unowned() const;
 
     /// Get global index of local index i
     std::size_t local_to_global(std::size_t i) const;
 
     /// Set local_to_global map for unowned indices
+    /// (beyond end of local range)
     void set_local_to_global(std::vector<std::size_t>& indices);
 
-    /// Get off process owner
+    /// Get off process owner for unowned indices
     const std::vector<int>& off_process_owner() const;
 
     /// Get block size
