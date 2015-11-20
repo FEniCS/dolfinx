@@ -312,11 +312,7 @@ namespace dolfin
     ///         The value to set.
     void set(GenericVector& x, double value) const;
 
-    /// Return the map
-    std::shared_ptr<IndexMap> index_map()
-    { return _index_map; }
-
-    /// Return the map (const version)
+    /// Return the map (const access)
     std::shared_ptr<const IndexMap> index_map() const
     { return _index_map; }
 
