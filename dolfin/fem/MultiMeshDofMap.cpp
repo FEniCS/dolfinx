@@ -36,7 +36,7 @@ MultiMeshDofMap::MultiMeshDofMap()
 //-----------------------------------------------------------------------------
 MultiMeshDofMap::MultiMeshDofMap(const MultiMeshDofMap& dofmap)
 {
-  _global_dimension = dofmap._global_dimension;
+  _index_map = dofmap._index_map;
   _original_dofmaps = dofmap._original_dofmaps;
   _new_dofmaps = dofmap._new_dofmaps;
 }
@@ -74,7 +74,7 @@ void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space,
 {
   // Compute global dimension
   begin(PROGRESS, "Computing total dimension.");
-  _global_dimension = 0;
+  std::size_t _global_dimension = 0;
   for (std::size_t i = 0; i < num_parts(); i++)
   {
     const std::size_t d = _original_dofmaps[i]->global_dimension();
@@ -115,31 +115,39 @@ void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space,
     // Increase offset
     offset += _original_dofmaps[part]->global_dimension();
   }
+
+  _index_map.reset(new IndexMap(MPI_COMM_WORLD, _global_dimension, 1));
 }
 //-----------------------------------------------------------------------------
 void MultiMeshDofMap::clear()
 {
-  _global_dimension = 0;
+  _index_map.reset();
   _original_dofmaps.clear();
   _new_dofmaps.clear();
 }
 //-----------------------------------------------------------------------------
 std::size_t MultiMeshDofMap::global_dimension() const
 {
-  return _global_dimension;
+  return _index_map->size_global();
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> MultiMeshDofMap::ownership_range() const
 {
   // FIXME: Does not run in parallel
-  return std::make_pair<std::size_t, std::size_t>(0, global_dimension());
+  return _index_map->local_range();
 }
 //-----------------------------------------------------------------------------
 const std::vector<int>&
 MultiMeshDofMap::off_process_owner() const
 {
   // FIXME: Does not run in parallel
-  return _original_dofmaps[0]->off_process_owner();
+  return _index_map->off_process_owner();
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<IndexMap> MultiMeshDofMap::index_map() const
+{
+  // FIXME: Does not run in parallel
+  return _index_map;
 }
 //-----------------------------------------------------------------------------
 std::string MultiMeshDofMap::str(bool verbose) const

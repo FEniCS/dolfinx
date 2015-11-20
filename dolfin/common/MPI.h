@@ -621,7 +621,7 @@ namespace dolfin
   {
     #ifdef HAS_MPI
     // Enforce cast to MPI_Op; this is needed because template dispatch may
-    // not recognize this is possible, e.g. C-enum to uint in SGI MPT
+    // not recognize this is possible, e.g. C-enum to unsigned int in SGI MPT
     MPI_Op op = static_cast<MPI_Op>(MPI_MAX);
     return all_reduce(comm, value, op);
     #else
@@ -633,7 +633,7 @@ namespace dolfin
   {
     #ifdef HAS_MPI
     // Enforce cast to MPI_Op; this is needed because template dispatch may
-    // not recognize this is possible, e.g. C-enum to uint in SGI MPT
+    // not recognize this is possible, e.g. C-enum to unsigned int in SGI MPT
     MPI_Op op = static_cast<MPI_Op>(MPI_MIN);
     return all_reduce(comm, value, op);
     #else
@@ -645,7 +645,7 @@ namespace dolfin
   {
     #ifdef HAS_MPI
     // Enforce cast to MPI_Op; this is needed because template dispatch may
-    // not recognize this is possible, e.g. C-enum to uint in SGI MPT
+    // not recognize this is possible, e.g. C-enum to unsigned int in SGI MPT
     MPI_Op op = static_cast<MPI_Op>(MPI_SUM);
     return all_reduce(comm, value, op);
     #else

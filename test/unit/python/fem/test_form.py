@@ -28,10 +28,9 @@ import ufl
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture
 
-
 @fixture
 def square():
-    return UnitSquareMesh(2, 2)
+    return UnitSquareMesh(8, 8)
 
 @fixture
 def square_boundary(square):
@@ -71,6 +70,10 @@ def Q2(cube_boundary):
 
 
 def test_assemble_functional(V1, V2):
+
+    mesh = V1.mesh()
+    surfacearea = assemble(1*dx(mesh))
+    assert round(surfacearea - 4.0, 7) == 0
 
     u = Function(V1)
     u.vector()[:] = 1.0
@@ -149,7 +152,7 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
     bottom = FacetFunctionSizet(square)
     bottom.set_all(0)
     subdomain.mark(bottom, 1)
-    dss = ds[bottom]
+    dss = ds(subdomain_data=bottom)
     foo = MPI.sum(square.mpi_comm(),
                abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
     # Assemble over all cells of submesh created from subset of boundary mesh
@@ -187,7 +190,7 @@ def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
     bottom = FacetFunctionSizet(cube)
     bottom.set_all(0)
     subdomain.mark(bottom, 1)
-    dss = ds[bottom]
+    dss = ds(subdomain_data=bottom)
     foo = MPI.sum(cube.mpi_comm(),
                abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
     # Assemble over all cells of submesh created from subset of boundary mesh
@@ -213,28 +216,40 @@ def base():
     global_normal = Expression(("0.0", "1.0", "0.0"))
     square3d.init_cell_orientations(global_normal)
 
-    RT2 = FunctionSpace(square, "RT", 1)
-    RT3 = FunctionSpace(square3d, "RT", 1)
-    DG2 = FunctionSpace(square, "DG", 0)
-    DG3 = FunctionSpace(square3d, "DG", 0)
+    RT2 = FiniteElement("RT", square.ufl_cell(), 1)
+    RT3 = FiniteElement("RT", square3d.ufl_cell(), 1)
+    DG2 = FiniteElement("DG", square.ufl_cell(), 0)
+    DG3 = FiniteElement("DG", square3d.ufl_cell(), 0)
 
-    return [(RT2, RT3), (DG2, DG3)]
+    return [(RT2, RT3), (DG2, DG3), (square, square3d)]
 
 @fixture
 def RT2(base):
-    return base[0][0]
+    return FunctionSpace(base[2][0], base[0][0])
 
 @fixture
 def RT3(base):
-    return base[0][1]
+    return FunctionSpace(base[2][1], base[0][1])
 
 @fixture
 def W2(base):
-    return base[0][0] * base[1][0]
+    """ RT2 * DG2 """
+    return FunctionSpace(base[2][0], base[0][0] * base[1][0])
 
 @fixture
 def W3(base):
-    return base[0][1] * base[1][1]
+    """ RT3 * DG3 """
+    return FunctionSpace(base[2][1], base[0][1] * base[1][1])
+
+@fixture
+def QQ2(base):
+    """ DG2 * DG2 """
+    return FunctionSpace(base[2][0], base[1][0] * base[1][0])
+
+@fixture
+def QQ3(base):
+    """ DG3 * DG3 """
+    return FunctionSpace(base[2][1], base[1][1] * base[1][1])
 
 
 @skip_in_parallel
@@ -251,8 +266,8 @@ def test_basic_rt(RT2, RT3):
     # Project
     pw2 = project(f2, RT2)
     pw3 = project(f3, RT3)
-    pa2 = assemble(inner(pw2, pw2)*dx)
-    pa3 = assemble(inner(pw3, pw3)*dx)
+    pa2 = assemble(pw2**2*dx)
+    pa3 = assemble(pw3**2*dx)
 
     # Project explicitly
     a2 = inner(u2, v2)*dx
@@ -267,15 +282,18 @@ def test_basic_rt(RT2, RT3):
     b3 = assemble(L3)
     solve(A2, w2.vector(), b2)
     solve(A3, w3.vector(), b3)
-    a2 = assemble(inner(w2, w2)*dx)
-    a3 = assemble(inner(w3, w3)*dx)
+    a2 = assemble(w2**2*dx)
+    a3 = assemble(w3**2*dx)
 
     # Compare various results
-    assert round((w2.vector() - pw2.vector()).norm("l2") - 0.0, 5) == 0
+    assert round((w2.vector() - pw2.vector()).norm("l2"), 5) == 0
+    assert round((w3.vector() - pw3.vector()).norm("l2"), 5) == 0
+    # 2d
+    assert round(a2 - 5.0, 7) == 0
+    assert round(pa2 - 5.0, 7) == 0
+    # 3d
     assert round(a3 - 5.0, 7) == 0
-    assert round(a2 - a3, 7) == 0
-    assert round(pa2 - a2, 7) == 0
-    assert round(pa2 - pa3, 6) == 0
+    assert round(pa3 - 5.0, 6) == 0
 
 
 @skip_in_parallel
@@ -461,3 +479,49 @@ def test_facetarea(bottom1, bottom2, bottom3, m):
     a = area*ds
     b1 = assemble(a)
     assert round(b0 - b1, 7) == 0
+
+
+@skip_in_parallel
+def test_derivative(QQ2, QQ3):
+    for W in [QQ2, QQ3]:
+        w = Function(W)
+        dim = w.value_dimension(0)
+        w.interpolate(Constant([42.0*(i+1) for i in range(dim)]))
+
+        # Derivative w.r.t. mixed space
+        u, v = split(w)
+        F = u*v*dx
+        dF = derivative(F, w)
+        b1 = assemble(dF)
+
+
+def test_coefficient_derivatives(V1, V2):
+    for V in [V1, V2]:
+        f = Function(V)
+        g = Function(V)
+        v = TestFunction(V)
+        u = TrialFunction(V)
+
+        f.interpolate(Expression("1.0 + x[0] + x[1]"))
+        g.interpolate(Expression("2.0 + x[0] + x[1]"))
+
+        # Since g = f + 1, define dg/df = 1
+        cd = {g: 1}
+
+        # Handle relation between g and f in derivative
+        M = g**2*dx
+        L = derivative(M, f, v, coefficient_derivatives=cd)
+        a = derivative(L, f, u, coefficient_derivatives=cd)
+        A0 = assemble(a).norm('frobenius')
+        b0 = assemble(L).norm('l2')
+
+        # Manually construct the above case
+        M = g**2*dx
+        L = 2*g*v*dx
+        a = 2*u*v*dx
+        A1 = assemble(a).norm('frobenius')
+        b1 = assemble(L).norm('l2')
+
+        # Compare
+        assert round(A0 - A1, 7) == 0.0
+        assert round(b0 - b1, 7) == 0.0

@@ -124,12 +124,6 @@ void HexahedronCell::create_entities(boost::multi_array<unsigned int, 2>& e,
   }
 }
 //-----------------------------------------------------------------------------
-void HexahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
-                               std::size_t& current_cell) const
-{
-  dolfin_not_implemented();
-}
-//-----------------------------------------------------------------------------
 double HexahedronCell::volume(const MeshEntity& cell) const
 {
   if (cell.dim() != 2)

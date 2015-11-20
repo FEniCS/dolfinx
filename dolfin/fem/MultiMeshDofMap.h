@@ -92,13 +92,17 @@ namespace dolfin
     /// to owning process
     const std::vector<int>& off_process_owner() const;
 
+    /// Return the map
+    std::shared_ptr<IndexMap> index_map() const;
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
   private:
 
-    // Total global dimension (sum of parts)
-    std::size_t _global_dimension;
+    // Index Map containing total global dimension (sum of parts)
+    // FIXME: make it work in parallel
+    std::shared_ptr<IndexMap> _index_map;
 
     // List of original dofmaps
     std::vector<std::shared_ptr<const GenericDofMap> > _original_dofmaps;

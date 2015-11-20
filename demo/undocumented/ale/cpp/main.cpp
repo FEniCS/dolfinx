@@ -38,11 +38,14 @@ int main()
 
   // Move vertices in boundary
   MeshGeometry& geometry = boundary.geometry();
+
+  std::vector<double> x(2);
   for (VertexIterator v(boundary); !v.end(); ++v)
   {
-    double* x = geometry.x(v->index());
-    x[0] *= 3.0;
-    x[1] += 0.1*sin(5.0*x[0]);
+    std::size_t i = v->index();
+    x[0] = geometry.x(i, 0)*3.0;
+    x[1] = geometry.x(i, 1) + 0.1*sin(5.0*x[0]);
+    geometry.set(i, x.data());
   }
 
   // Move mesh

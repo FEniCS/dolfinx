@@ -312,17 +312,17 @@ def test_subdomain_assembly_form_1():
     mesh1 = subdomains.mesh()
     mesh2 = boundaries.mesh()
     assert mesh1.id() == mesh2.id()
-    assert mesh1.ufl_domain().label() == mesh2.ufl_domain().label()
+    assert mesh1.ufl_domain().ufl_id() == mesh2.ufl_domain().ufl_id()
 
-    dxs = dx[subdomains]
-    dss = ds[boundaries]
-    assert dxs.domain() == None
-    assert dss.domain() == None
+    dxs = dx(subdomain_data=subdomains)
+    dss = ds(subdomain_data=boundaries)
+    assert dxs.ufl_domain() == None
+    assert dss.ufl_domain() == None
     assert dxs.subdomain_data() == subdomains
     assert dss.subdomain_data() == boundaries
 
     M = f*f*dxs(0) + g*f*dxs(1) + f*f*dss(1)
-    assert M.domains() == (mesh.ufl_domain(),)
+    assert M.ufl_domains() == (mesh.ufl_domain(),)
     sd = M.subdomain_data()[mesh.ufl_domain()]
     assert sd["cell"] == subdomains
     assert sd["exterior_facet"] == boundaries
@@ -383,17 +383,17 @@ def test_subdomain_assembly_form_1_multithreaded():
     mesh1 = subdomains.mesh()
     mesh2 = boundaries.mesh()
     assert mesh1.id() == mesh2.id()
-    assert mesh1.ufl_domain().label() == mesh2.ufl_domain().label()
+    assert mesh1.ufl_domain().ufl_id() == mesh2.ufl_domain().ufl_id()
 
-    dxs = dx[subdomains]
-    dss = ds[boundaries]
-    assert dxs.domain() == None
-    assert dss.domain() == None
+    dxs = dx(subdomain_data=subdomains)
+    dss = ds(subdomain_data=boundaries)
+    assert dxs.ufl_domain() == None
+    assert dss.ufl_domain() == None
     assert dxs.subdomain_data() == subdomains
     assert dss.subdomain_data() == boundaries
 
     M = f*f*dxs(0) + g*f*dxs(1) + f*f*dss(1)
-    assert M.domains() == (mesh.ufl_domain(),)
+    assert M.ufl_domains() == (mesh.ufl_domain(),)
     sd = M.subdomain_data()[mesh.ufl_domain()]
     assert sd["cell"] == subdomains
     assert sd["exterior_facet"] == boundaries
@@ -519,10 +519,14 @@ def test_nonsquare_assembly():
     """Test assembly of a rectangular matrix"""
 
     mesh = UnitSquareMesh(16, 16)
-    V = VectorFunctionSpace(mesh, "CG", 2)
-    Q = FunctionSpace(mesh, "CG", 1)
 
+    V = VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    Q = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     W = V*Q
+    V = FunctionSpace(mesh, V)
+    Q = FunctionSpace(mesh, Q)
+    W = FunctionSpace(mesh, W)
+
     (v, q) = TestFunctions(W)
     (u, p) = TrialFunctions(W)
     a = div(v)*p*dx
@@ -542,9 +546,9 @@ def test_nonsquare_assembly_multithreaded():
 
     mesh = UnitSquareMesh(16, 16)
 
-    V = VectorFunctionSpace(mesh, "CG", 2)
-    Q = FunctionSpace(mesh, "CG", 1)
-    W = V*Q
+    V = VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    Q = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    W = FunctionSpace(mesh, V*Q)
 
     (v, q) = TestFunctions(W)
     (u, p) = TrialFunctions(W)
@@ -624,7 +628,7 @@ def test_ways_to_pass_mesh_to_assembler():
     e = Expression("x[0]") # nothing
     e2 = Expression("x[0]", cell=mesh.ufl_cell()) # cell
     e3 = Expression("x[0]", element=V.ufl_element()) # ufl element
-    e4 = Expression("x[0]", domain=mesh) # ufl.Domain (this one holds mesh reference)
+    e4 = Expression("x[0]", domain=mesh) # mesh
 
     # Provide mesh in measure:
     dx2 = Measure("dx", domain=mesh)

@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Joachim Berdal Haga
+// Copyright (C) 2015 Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -15,35 +15,25 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2012-09-18
-// Last changed: 2012-09-18
 
-#ifndef __COORD_LABEL_H
-#define __COORD_LABEL_H
+#ifndef __SPHERICAL_SHELL_MESH_H
+#define __SPHERICAL_SHELL_MESH_H
 
-#include <QLabel>
+#include <dolfin/common/MPI.h>
+#include <dolfin/mesh/Mesh.h>
 
-class CoordLabel : public QLabel
+namespace dolfin
 {
-  Q_OBJECT
 
-  /// A simple wrapper around QLabel, to create simple gui elements for
-  /// formatted display of numbers. Add setNum() slots as required.
+  class SphericalShellMesh : public Mesh
+  {
+  public:
 
-public:
+    /// Create a spherical shell manifold for testing
+    SphericalShellMesh(MPI_Comm comm, std::size_t degree);
 
-  CoordLabel(const char *format, QWidget *parent=NULL);
+  };
 
-public slots:
-
-  void setNum(int);
-  void setNum(int,int);
-  void setNum(double,double,double);
-
-private:
-
-  const char *_format;
-
-};
+}
 
 #endif

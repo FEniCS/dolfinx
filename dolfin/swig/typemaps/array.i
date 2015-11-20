@@ -107,6 +107,7 @@
 
 // Instantiate argument name specific typemaps for non const arguments
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, values, )
+IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, y, )
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(std::size_t, INT32, NPY_UINTP, size_t, indices,)
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, vertex_values, )
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::la_index, INT32, NPY_UINTP, dolfin_index, indices,)

@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 2.8)
 project(DOLFIN)
 set(DOLFIN_VERSION_RELEASE 0)
 set(DOLFIN_VERSION_MAJOR "1")
-set(DOLFIN_VERSION_MINOR "6")
+set(DOLFIN_VERSION_MINOR "7")
 set(DOLFIN_VERSION_MICRO "0")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 if (NOT DOLFIN_VERSION_RELEASE)
@@ -114,7 +114,6 @@ list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
 list(APPEND OPTIONAL_PACKAGES "HDF5")
 list(APPEND OPTIONAL_PACKAGES "VTK")
-list(APPEND OPTIONAL_PACKAGES "QT")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
@@ -325,10 +324,10 @@ set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
-find_package(UFC 1.6.0 QUIET HINTS ${UFC_DIR})
+find_package(UFC 1.7.0 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 1.6.0.\n"
+    "compatible with requested version 1.7.0.\n"
     "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
 else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
@@ -409,7 +408,7 @@ endif()
 
 # Check for PETSc, SLEPc and petsc4py, slepc4py
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc 3.4)
+  find_package(PETSc 3.6)
 
   if (PETSC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_PETSC4PY)
     find_package(PETSc4py)
@@ -423,10 +422,10 @@ if (DOLFIN_ENABLE_PETSC)
   endif()
 
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc 3.4)
+    find_package(SLEPc 3.6)
 
     if (SLEPC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_SLEPC4PY)
-      find_package(SLEPc4py 3.5.1)
+      find_package(SLEPc4py)
       if (SLEPC4PY_FOUND)
         if (NOT ("${SLEPC4PY_VERSION_MAJOR}" EQUAL "${SLEPC_VERSION_MAJOR}"
               AND "${SLEPC4PY_VERSION_MINOR}" EQUAL "${SLEPC_VERSION_MINOR}"))
@@ -436,12 +435,6 @@ if (DOLFIN_ENABLE_PETSC)
       endif()
     endif()
   endif()
-
-  # Enable TAO for PETSc version > 3.4
-  if ((PETSC_VERSION VERSION_GREATER 3.4.100))
-    set(PETSC_HAS_TAO TRUE)
-  endif()
-
 endif()
 
 # Check for ParMETIS and SCOTCH
@@ -590,11 +583,6 @@ endif()
 # Check for Sphinx
 if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
   find_package(Sphinx 1.1.0)
-endif()
-
-# Check for Qt4
-if (DOLFIN_ENABLE_QT)
-  find_package(Qt4)
 endif()
 
 # Check for VTK
@@ -1063,22 +1051,9 @@ if (DOLFIN_ENABLE_TESTING)
     DEPENDS copy_data_test_demo demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
-  # Add target "run_systemtests" for running system tests
-  add_custom_target(run_systemtests
-    COMMAND echo "System tests are removed.")
-
-  # TODO: Make buildbot run the dependencies here separately?
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
-    DEPENDS run_unittests_2)
-
-  # ... attempt at controlling dependency execution order ...
-  add_custom_target(run_unittests_2
-    DEPENDS run_unittests_py_mpi run_unittests_1)
-  add_custom_target(run_unittests_1
-    DEPENDS run_unittests_cpp run_unittests_0)
-  add_custom_target(run_unittests_0
-    DEPENDS run_unittests_py)
+    DEPENDS run_unittests_cpp run_unittests_py run_unittests_py_mpi)
 
   # TODO: Use google test for C++ unit tests?
   # Add target "run_unittests_cpp" for running only C++ unit tests
@@ -1095,7 +1070,7 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "run_unittests_py_mpi" for running Python unit tests with mpi
   add_custom_target(run_unittests_py_mpi
-    COMMAND ${MPIEXEC} "-np" "3" ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-vs"
+    COMMAND ${MPIEXEC} "-np" "3" "./mpipipe.sh" ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-vs"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
@@ -1113,14 +1088,18 @@ if (DOLFIN_ENABLE_TESTING)
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/documentation")
 
   # Add target "run_styletest" for running documentation tests
-  #add_custom_target(run_styletest
-  #  COMMAND ${PYTHON_EXECUTABLE} "-B" "test_coding_style.py"
-  #  DEPENDS copy_data_test_demo
-  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/codingstyle")
+  add_custom_target(run_styletest
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "test_coding_style.py"
+    DEPENDS copy_data_test_demo
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/codingstyle")
+
+  # Create test_coding_style.py in build dir (depends on source path)
+  configure_file(${CMAKE_SOURCE_DIR}/test/codingstyle/test_coding_style.py.in
+    ${CMAKE_BINARY_DIR}/test/codingstyle/test_coding_style.py @ONLY)
 
   # Add target "runtests" for running all tests
   add_custom_target(runtests
-    DEPENDS run_doctest run_regressiontests run_unittests)# run_styletest)
+    DEPENDS run_doctest run_regressiontests run_unittests run_styletest)
 endif()
 
 #------------------------------------------------------------------------------

@@ -1,5 +1,19 @@
+- Remove QT (was an optional dependency)
+- PETScTAOSolver::solve() now returns a pair of number of
+	iterations (std::size_t) and whether iteration converged (bool)
+- Better quality refinement in 2D in Plaza algorithm, by choosing refinement
+	pattern based on max/min edge ratio
+- Removed refine_cell() method in CellTypes
+- Enable marker refinement to work in parallel for 1D meshes too
+- Add std::abort to Python exception hook to avoid parallel deadlocks
+- Extend dof_to_vertex_map with unowned dofs, thus making dof_to_vertex_map
+	an inverse of vertex_to_dof_map
+- Clean-up in PyDOLFIN function space design, issue #576
+- Deprecate MixedFunctionSpace and EnrichedFunctionSpace in favour of
+	initialization by suitable UFL element
+1.6.0 [2015-07-28]
 - Remove redundant pressure boundary condition in Stokes demos
-- Require Point in RectangleMesh and BoxMesh constructors 
+- Require Point in RectangleMesh and BoxMesh constructors
 - Remove BinaryFile (TimeSeries now requires HDF5)
 - Add (highly experimental) support for Tpetra matrices and
 	vectors from Trilinos, interfacing to Belos, Amesos2, IfPack2 and

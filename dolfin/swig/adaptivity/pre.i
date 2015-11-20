@@ -50,4 +50,17 @@
 %ignore dolfin::AdaptiveLinearVariationalSolver::AdaptiveLinearVariationalSolver(LinearVariationalProblem&);
 %ignore dolfin::AdaptiveNonlinearVariationalSolver::AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem&);
 
-
+//-----------------------------------------------------------------------------
+// Wrap adapt return value with PyDOLFIN classes
+//-----------------------------------------------------------------------------
+%pythonappend dolfin::adapt %{
+from dolfin import cpp
+from dolfin.functions import Function, FunctionSpace
+if isinstance(val, cpp.Function):
+    return Function(val)
+if isinstance(val, cpp.FunctionSpace):
+    return FunctionSpace(val)
+# NOTE: Mesh will possibly appear here when Mesh has special PyDOLFIN wrapper
+#       subclassing ufl.Domain
+return val
+%}

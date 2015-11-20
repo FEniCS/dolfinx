@@ -40,7 +40,7 @@ public:
 
   void test_multiple_meshes_quadrature()
   {
-    set_log_level(DEBUG);
+    set_log_level(DBG);
 
     // Create multimesh from three triangle meshes of the unit square
 

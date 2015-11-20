@@ -28,7 +28,7 @@ in a box of the same size."""
 from __future__ import print_function
 from dolfin import *
 
-if not has_tao():
+if not has_petsc():
     print("DOLFIN must be compiled with PETSc to run this demo.")
     exit(0)
 
@@ -45,7 +45,7 @@ u  = Function(V)                 # Displacement from previous iteration
 B  = Constant((0.0, -1.5))       # Body force per unit volume
 
 # Kinematics
-I = Identity(u.geometric_dimension())  # Identity tensor
+I = Identity(len(u))  # Identity tensor
 F = I + grad(u)             # Deformation gradient
 C = F.T*F                   # Right Cauchy-Green tensor
 

@@ -117,8 +117,8 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
         domain = mesh.ufl_domain()
         assert mesh.geometry().dim() == domain.geometric_dimension()
         assert mesh.topology().dim() == domain.topological_dimension()
-        assert mesh.ufl_cell() == domain.cell()
-        assert str(mesh.id()) in domain.label()
+        assert mesh.ufl_cell() == domain.ufl_cell()
+        assert mesh.id() == domain.ufl_id()
 
     _check_ufl_domain(interval)
     _check_ufl_domain(square)
@@ -188,15 +188,14 @@ def test_UnitHexMesh():
     assert mesh.size_global(0) == 480
     assert mesh.size_global(3) == 315
 
-@skip_in_parallel
-def test_LocalRefineUnitIntervalMesh():
+def test_RefineUnitIntervalMesh():
     """Refine mesh of unit interval."""
-    mesh = UnitIntervalMesh(10)
+    mesh = UnitIntervalMesh(20)
     cell_markers = CellFunction("bool", mesh)
-    cell_markers[7] = True
+    cell_markers[0] = (MPI.rank(mesh.mpi_comm())==0)
     mesh2 = refine(mesh, cell_markers)
-    assert mesh2.num_cells() == 11
-
+    assert mesh2.size_global(0) == 22
+    assert mesh2.size_global(1) == 21
 
 def test_RefineUnitSquareMesh():
     """Refine mesh of unit square."""
@@ -204,7 +203,6 @@ def test_RefineUnitSquareMesh():
     mesh = refine(mesh)
     assert mesh.size_global(0) == 165
     assert mesh.size_global(2) == 280
-
 
 def test_RefineUnitCubeMesh():
     """Refine mesh of unit cube."""

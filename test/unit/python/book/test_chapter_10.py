@@ -388,7 +388,7 @@ def test_p21_box_1():
     mesh = UnitSquareMesh(3, 3)
     V = VectorFunctionSpace(mesh, "Lagrange", 2)
     Q = FunctionSpace(mesh, "Lagrange", 1)
-    W = V*Q
+    #W = V*Q # deprecated!
 
 
 @use_gc_barrier
@@ -426,9 +426,9 @@ def test_p22_box_2():
 @use_gc_barrier
 def test_p23_box_1():
     mesh = UnitSquareMesh(3, 3)
-    V = VectorFunctionSpace(mesh, "Lagrange", 2)
-    Q = FunctionSpace(mesh, "Lagrange", 1)
-    W = V*Q
+    V = VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    Q = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    W = FunctionSpace(mesh, V*Q)
 
     w = Function(W)
     u, p = w.split()
@@ -537,7 +537,8 @@ def test_p30_box_1():
             return x[0] < 0.5 + DOLFIN_EPS and on_boundary
     neumann_boundary = NeumannBoundary()
 
-    dss = ds[neumann_boundary]
+    # Changed from notation dss = ds[neumann_boundary]
+    dss = ds(subdomain_data=neumann_boundary)
     a = g*v*dss(0) + h*v*dss(1)
 
 

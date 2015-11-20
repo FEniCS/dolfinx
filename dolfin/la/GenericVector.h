@@ -55,7 +55,9 @@ namespace dolfin
     virtual void init(const TensorLayout& tensor_layout)
     {
       if (!empty())
-        error("GenericVector cannot be initialised more than once");
+        dolfin_error("GenericVector.h",
+                     "initialize vector",
+                     "Vector cannot be initialised more than once");
       std::vector<dolfin::la_index> ghosts;
       init(tensor_layout.mpi_comm(), tensor_layout.local_range(0),
            tensor_layout.local_to_global_map[0], ghosts);

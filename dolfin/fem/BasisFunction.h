@@ -53,9 +53,9 @@ namespace dolfin
     ///     cell (ufc::cell)
     ///         The cell.
     BasisFunction(std::size_t index, const FiniteElement& element,
-                  const std::vector<double>& vertex_coordinates)
+                  const std::vector<double>& coordinate_dofs)
       : _index(index), _element(element),
-      _vertex_coordinates(vertex_coordinates) {}
+      _coordinate_dofs(coordinate_dofs) {}
 
     /// Destructor
     ~BasisFunction() {}
@@ -70,7 +70,7 @@ namespace dolfin
     void eval(double* values, const double* x) const
     {
       // Note: assuming cell_orientation = 0
-      _element.evaluate_basis(_index, values, x, _vertex_coordinates.data(),
+      _element.evaluate_basis(_index, values, x, _coordinate_dofs.data(),
                               0);
     }
 
@@ -87,7 +87,7 @@ namespace dolfin
     {
       // Note: assuming cell_orientation = 0
       _element.evaluate_basis_derivatives(_index, n, values, x,
-                                          _vertex_coordinates.data(), 0);
+                                          _coordinate_dofs.data(), 0);
     }
 
     //--- Implementation of ufc::function interface ---
@@ -114,8 +114,8 @@ namespace dolfin
     // The finite element
     const FiniteElement& _element;
 
-    // Cell vertex coordinates
-    const std::vector<double> _vertex_coordinates;
+    // Cell coordinates
+    const std::vector<double> _coordinate_dofs;
 
   };
 

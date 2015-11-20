@@ -21,11 +21,14 @@
 #include <memory>
 #include <vector>
 #include <ufc.h>
+#include <boost/multi_array.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 
 namespace dolfin
 {
+
+  class Cell;
 
   /// This is a wrapper for a UFC finite element (ufc::finite_element).
 
@@ -92,22 +95,22 @@ namespace dolfin
 
     /// Evaluate basis function i at given point in cell
     void evaluate_basis(std::size_t i, double* values, const double* x,
-                        const double* vertex_coordinates,
+                        const double* coordinate_dofs,
                         int cell_orientation) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis(i, values, x, vertex_coordinates,
+      _ufc_element->evaluate_basis(i, values, x, coordinate_dofs,
                                    cell_orientation);
     }
 
     /// Evaluate all basis functions at given point in cell
     void evaluate_basis_all(double* values,
                             const double* x,
-                            const double* vertex_coordinates,
+                            const double* coordinate_dofs,
                             int cell_orientation) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis_all(values, x, vertex_coordinates,
+      _ufc_element->evaluate_basis_all(values, x, coordinate_dofs,
                                        cell_orientation);
     }
 
@@ -116,12 +119,12 @@ namespace dolfin
                                     unsigned int n,
                                     double* values,
                                     const double* x,
-                                    const double* vertex_coordinates,
+                                    const double* coordinate_dofs,
                                     int cell_orientation) const
     {
       dolfin_assert(_ufc_element);
       _ufc_element->evaluate_basis_derivatives(i, n, values, x,
-                                               vertex_coordinates,
+                                               coordinate_dofs,
                                                cell_orientation);
     }
 
@@ -130,67 +133,64 @@ namespace dolfin
     void evaluate_basis_derivatives_all(unsigned int n,
                                         double* values,
                                         const double* x,
-                                        const double* vertex_coordinates,
+                                        const double* coordinate_dofs,
                                         int cell_orientation) const
     {
       dolfin_assert(_ufc_element);
       _ufc_element->evaluate_basis_derivatives_all(n, values, x,
-                                                   vertex_coordinates,
+                                                   coordinate_dofs,
                                                    cell_orientation);
     }
 
     /// Evaluate linear functional for dof i on the function f
     double evaluate_dof(std::size_t i,
                         const ufc::function& function,
-                        const double* vertex_coordinates,
+                        const double* coordinate_dofs,
                         int cell_orientation,
                         const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
-      return _ufc_element->evaluate_dof(i, function, vertex_coordinates,
+      return _ufc_element->evaluate_dof(i, function, coordinate_dofs,
                                         cell_orientation, c);
     }
 
     /// Evaluate linear functionals for all dofs on the function f
     void evaluate_dofs(double* values,
                        const ufc::function& f,
-                       const double* vertex_coordinates,
+                       const double* coordinate_dofs,
                        int cell_orientation,
                        const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_dofs(values, f, vertex_coordinates,
+      _ufc_element->evaluate_dofs(values, f, coordinate_dofs,
                                   cell_orientation, c);
     }
 
     /// Interpolate vertex values from dof values
     void interpolate_vertex_values(double* vertex_values,
                                    double* coefficients,
-                                   const double* vertex_coordinates,
+                                   const double* coordinate_dofs,
                                    int cell_orientation,
                                    const ufc::cell& cell) const
     {
       dolfin_assert(_ufc_element);
       _ufc_element->interpolate_vertex_values(vertex_values, coefficients,
-                                              vertex_coordinates,
+                                              coordinate_dofs,
                                               cell_orientation, cell);
     }
 
-    /// Map coordinate xhat from reference cell to coordinate x in cell
-    void map_from_reference_cell(double* x, const double* xhat,
-                                 const ufc::cell& c) const
-    {
-      dolfin_assert(_ufc_element);
-      _ufc_element->map_from_reference_cell(x, xhat, c);
-    }
-
-    /// Map from coordinate x in cell to coordinate xhat in reference cell
-    void map_to_reference_cell(double* xhat, const double* x,
-                               const ufc::cell& c) const
-    {
-      dolfin_assert(_ufc_element);
-      _ufc_element->map_to_reference_cell(xhat, x, c);
-    }
+    /// Tabulate the coordinates of all dofs on an element
+    ///
+    /// *Arguments*
+    ///     coordinates (boost::multi_array<double, 2>)
+    ///         The coordinates of all dofs on a cell.
+    ///     coordinate_dofs (std::vector<double>)
+    ///         The cell coordinates
+    ///     cell (Cell)
+    ///         The cell.
+    void tabulate_dof_coordinates(boost::multi_array<double, 2>& coordinates,
+                                  const std::vector<double>& coordinate_dofs,
+                                  const Cell& cell) const;
 
     /// Return the number of sub elements (for a mixed element)
     std::size_t num_sub_elements() const

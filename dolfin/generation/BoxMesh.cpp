@@ -51,7 +51,7 @@ BoxMesh::BoxMesh(MPI_Comm comm,
 void BoxMesh::build(const Point& p0, const Point& p1,
                     std::size_t nx, std::size_t ny, std::size_t nz)
 {
-  Timer timer("Generate Box mesh");
+  Timer timer("Build BoxMesh");
 
   // Receive mesh according to parallel policy
   if (MPI::is_receiver(this->mpi_comm()))

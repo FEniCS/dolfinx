@@ -40,8 +40,9 @@ def _create_dp_problem(dim):
     else:
         mesh = UnitCubeMesh(4, 4, 4)
 
-    V = FunctionSpace(mesh, "P", 1)
-    VV = V*V
+    P1 = FiniteElement("P", mesh.ufl_cell(), 1)
+    V = FunctionSpace(mesh, P1)
+    VV = FunctionSpace(mesh, P1*P1)
 
     # Create expression used to interpolate initial data
     y_dim = 1 if dim > 1 else 0
@@ -66,7 +67,7 @@ def _create_dp_problem(dim):
     vertex_domain = VertexFunction("size_t", mesh , 0)
     subdomain.mark(vertex_domain, 1)
     bc = DirichletBC(VV, Constant((0,0)), disjoint_subdomain)
-    dPP = dP[vertex_domain]
+    dPP = dP(subdomain_data=vertex_domain)
 
     return (u, uu), (v, vv), (U, UU), dPP, bc
 

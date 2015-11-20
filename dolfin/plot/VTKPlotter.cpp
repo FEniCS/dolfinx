@@ -42,11 +42,6 @@
 #include "VTKPlottableMeshFunction.h"
 #include "VTKPlottableDirichletBC.h"
 
-#ifdef HAS_QVTK
-#include <QApplication>
-#include <QtGlobal>
-#endif
-
 #include <vtkSmartPointer.h>
 #include <vtkCamera.h>
 #include <vtkPolyLine.h>
@@ -70,12 +65,14 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 namespace // anonymous
 {
-  void round_significant_digits(double &x, double (*rounding)(double), int num_significant_digits)
+  void round_significant_digits(double &x, double (*rounding)(double),
+                                int num_significant_digits)
   {
     if (x != 0.0)
     {
       const int num_digits = std::log10(std::abs(x))+1;
-      const double reduction_factor = std::pow(10.0, num_digits-num_significant_digits);
+      const double reduction_factor
+        = std::pow(10.0, num_digits-num_significant_digits);
       x = rounding(x/reduction_factor)*reduction_factor;
     }
   }
@@ -113,10 +110,10 @@ namespace dolfin
   }
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(std::shared_ptr<const Variable> obj, QVTKWidget *widget)
+VTKPlotter::VTKPlotter(std::shared_ptr<const Variable> obj)
   : _initialized(false),
     _plottable(CreateVTKPlottable(obj)),
-    vtk_pipeline(new VTKWindowOutputStage(widget)),
+    vtk_pipeline(new VTKWindowOutputStage()),
     _frame_counter(0),
     _key(to_key(*obj))
 {
@@ -126,10 +123,10 @@ VTKPlotter::VTKPlotter(std::shared_ptr<const Variable> obj, QVTKWidget *widget)
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(std::shared_ptr<const Expression> expression,
-    std::shared_ptr<const Mesh> mesh, QVTKWidget *widget)
+                       std::shared_ptr<const Mesh> mesh)
   : _initialized(false),
     _plottable(CreateVTKPlottable(expression, mesh)),
-    vtk_pipeline(new VTKWindowOutputStage(widget)),
+    vtk_pipeline(new VTKWindowOutputStage()),
     _frame_counter(0),
     _key(to_key(*expression))
 {
@@ -154,11 +151,6 @@ void VTKPlotter::plot(std::shared_ptr<const Variable> variable)
     return;
   }
 
-  if (vtk_pipeline->resurrect_window())
-  {
-    active_plotters->push_back(this);
-  }
-
   update_pipeline(variable);
 
   vtk_pipeline->render();
@@ -166,7 +158,7 @@ void VTKPlotter::plot(std::shared_ptr<const Variable> variable)
   _frame_counter++;
 
   // Synthesize key presses from parameters
-  Parameter &param_keys = parameters["input_keys"];
+  Parameter& param_keys = parameters["input_keys"];
   if (param_keys.is_set())
   {
     std::string keys = param_keys;
@@ -180,31 +172,20 @@ void VTKPlotter::plot(std::shared_ptr<const Variable> variable)
   }
 
   if (parameters["interactive"])
-  {
     interactive();
-  }
-#ifdef HAS_QVTK
-  else
-  {
-    qApp->processEvents();
-  }
-#endif
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::interactive(bool enter_eventloop)
 {
   init();
 
-  // Abort if DOLFIN_NOPLOT is set to a nonzero value, or if 'Q' has been pressed.
+  // Abort if DOLFIN_NOPLOT is set to a nonzero value, or if 'Q' has
+  // been pressed.
   if (no_plot || run_to_end)
-  {
     return;
-  }
 
   if (parameters["helptext"])
-  {
     vtk_pipeline->set_helptext(get_helptext());
-  }
 
   vtk_pipeline->start_interaction(enter_eventloop);
 }
@@ -217,16 +198,18 @@ void VTKPlotter::init()
   }
   _initialized = true;
 
-  // Check if environment variable DOLFIN_NOPLOT is set to a nonzero value
+  // Check if environment variable DOLFIN_NOPLOT is set to a nonzero
+  // value
   {
     const char *noplot_env;
     noplot_env = getenv("DOLFIN_NOPLOT");
-    no_plot = (noplot_env != NULL && strcmp(noplot_env, "0") != 0 && strcmp(noplot_env, "") != 0);
+    no_plot = (noplot_env != NULL && strcmp(noplot_env, "0") != 0
+               && strcmp(noplot_env, "") != 0);
   }
 
-  // Check if we have a (potential) connection to the X server. In the future,
-  // we may instead use a non-gui output stage in this case.
-#if defined(Q_WS_X11) || defined(VTK_USE_X) // <QtGlobal>, <vtkToolkits.h>
+  // Check if we have a (potential) connection to the X server. In the
+  // future, we may instead use a non-gui output stage in this case.
+#if defined(Q_WS_X11) || defined(VTK_USE_X)
   if (!getenv("DISPLAY") || strcmp(getenv("DISPLAY"), "") == 0)
   {
     warning("DISPLAY not set, disabling plotting");
@@ -241,36 +224,35 @@ void VTKPlotter::init()
   active_plotters_local_copy = active_plotters;
   log(TRACE, "Size of plotter pool is %d.", active_plotters->size());
 
-  // Don't initialize pipeline if no_plot is set, since the pipeline requires a
-  // connection to the X server.
+  // Don't initialize pipeline if no_plot is set, since the pipeline
+  // requires a connection to the X server.
   if (no_plot)
-  {
     return;
-  }
 
-  // Let the plottable set default parameters that depend on user parameters
-  // (like scalar-warped 2d plots, which should be elevated only if user
-  // doesn't set "mode=off").
+  // Let the plottable set default parameters that depend on user
+  // parameters (like scalar-warped 2d plots, which should be elevated
+  // only if user doesn't set "mode=off").
   _plottable->modify_user_parameters(parameters);
 
-  // We first initialize the part of the pipeline that the plotter controls.
-  // This is the part from the Poly data mapper and out, including actor,
-  // renderer, renderwindow and interaction. It also takes care of the scalar
-  // bar and other decorations.
+  // We first initialize the part of the pipeline that the plotter
+  // controls.  This is the part from the Poly data mapper and out,
+  // including actor, renderer, renderwindow and interaction. It also
+  // takes care of the scalar bar and other decorations.
 
   dolfin_assert(vtk_pipeline);
   vtk_pipeline->init(this, parameters);
 
   if (parameters["tile_windows"])
   {
-    // Adjust window position to not completely overlap previous plots.
+    // Adjust window position to not completely overlap previous
+    // plots
     std::size_t num_old_plots = active_plotters->size()-1;
 
     int row=0, col=0, width=0, height=0;
     if (num_old_plots > 0)
     {
-      // Get the size of a window that's already decorated, otherwise the frame
-      // size may be not include all decoration (on X)
+      // Get the size of a window that's already decorated, otherwise
+      // the frame size may be not include all decoration (on X)
       (*active_plotters->begin())->vtk_pipeline->get_window_size(width, height);
 
       int swidth, sheight;
@@ -283,10 +265,6 @@ void VTKPlotter::init()
       col = (num_old_plots / num_rows) % num_cols;
     }
     vtk_pipeline->place_window(row*width, col*height);
-  }
-  else
-  {
-    vtk_pipeline->resurrect_window();
   }
 
   // Let the plottable initialize its part of the pipeline
@@ -314,7 +292,8 @@ void VTKPlotter::set_title_from(const Variable &variable)
 {
 
   std::stringstream title;
-  title << "Plot of \"" << variable.name() << "\"" << " (" << variable.label() << ")";
+  title << "Plot of \"" << variable.name() << "\"" << " ("
+        << variable.label() << ")";
   parameters["title"] =  title.str();
 }
 //----------------------------------------------------------------------------
@@ -344,17 +323,10 @@ std::string VTKPlotter::get_helptext()
   text << "   p: Save plot to png file\n";
 #endif
   text << "  hH: Show help, or print help to console\n";
-#ifdef HAS_QVTK
-  text << "   I: Enter interactive mode (and pause execution)\n";
-#endif
   text << "  qQ: Continue, or continue to end\n";
   text << " C-c: Abort execution\n";
   text << "\n";
-#ifdef HAS_QVTK
-  text << "Window control:\n";
-  text << " C-w: Close plot window\n";
-  text << " C-q: Close all plot windows\n";
-#endif
+
   return text.str();
 }
 //----------------------------------------------------------------------------
@@ -422,7 +394,8 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
         return false;
 
       // Check if label actor is present. If not get from plottable.
-      vtkSmartPointer<vtkActor2D> labels = _plottable->get_vertex_label_actor(vtk_pipeline->get_renderer());
+      vtkSmartPointer<vtkActor2D> labels
+        = _plottable->get_vertex_label_actor(vtk_pipeline->get_renderer());
 
       bool added = vtk_pipeline->add_viewprop(labels);
       if (!added)
@@ -440,9 +413,10 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
       if (_plottable->dim() > 2)
         return false;
 
-      // Check if label actor is present. If not get from plottable. If it
-      // is, toggle off
-      vtkSmartPointer<vtkActor2D> labels = _plottable->get_cell_label_actor(vtk_pipeline->get_renderer());
+      // Check if label actor is present. If not get from
+      // plottable. If it is, toggle off
+      vtkSmartPointer<vtkActor2D> labels
+        = _plottable->get_cell_label_actor(vtk_pipeline->get_renderer());
 
       bool added = vtk_pipeline->add_viewprop(labels);
       if (!added)
@@ -491,15 +465,10 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
     return true;
 
   case CONTROL + 'w':
-    vtk_pipeline->close_window();
     active_plotters->remove(this);
     return true;
 
   case CONTROL + 'q':
-    foreach (VTKPlotter *plotter, *active_plotters)
-    {
-      plotter->vtk_pipeline->close_window();
-    }
     active_plotters->clear();
     vtk_pipeline->stop_interaction();
     return true;
@@ -508,13 +477,6 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
     run_to_end = true;
     vtk_pipeline->stop_interaction();
     return true;
-
-#ifdef HAS_QVTK
-  case SHIFT + 'i': // Enter interactive mode
-    run_to_end = false;
-    interactive();
-    return true;
-#endif
 
   case CONTROL + 'c':
     dolfin_error("VTKPlotter", "continue execution", "Aborted by user");
@@ -528,21 +490,18 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
   return false;
 }
 //----------------------------------------------------------------------------
-QVTKWidget *VTKPlotter::get_widget() const
-{
-  return vtk_pipeline->get_widget();
-}
-//----------------------------------------------------------------------------
 void VTKPlotter::write_png(std::string filename)
 {
   if (no_plot)
     return;
 
-  if (filename.empty()) {
-    // We construct a filename from the given prefix and static counter.
-    // If a file with that filename exists, the counter is incremented
-    // until a unique filename is found.
-    do {
+  if (filename.empty())
+  {
+    // We construct a filename from the given prefix and static
+    // counter.  If a file with that filename exists, the counter is
+    // incremented until a unique filename is found.
+    do
+    {
       std::stringstream filenamebuilder;
       filenamebuilder << std::string(parameters["prefix"]);
       filenamebuilder << hardcopy_counter++;
@@ -562,11 +521,13 @@ void VTKPlotter::write_pdf(std::string filename)
   if (no_plot)
     return;
 
-  if (filename.empty()) {
-    // We construct a filename from the given prefix and static counter.
-    // If a file with that filename exists, the counter is incremented
-    // until a unique filename is found.
-    do {
+  if (filename.empty())
+  {
+    // We construct a filename from the given prefix and static
+    // counter.  If a file with that filename exists, the counter is
+    // incremented until a unique filename is found.
+    do
+    {
       std::stringstream filenamebuilder;
       filenamebuilder << std::string(parameters["prefix"]);
       filenamebuilder << hardcopy_counter++;
@@ -624,7 +585,10 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   const std::size_t dim = _plottable->dim();
 
   if (points.size() % dim != 0)
-    warning("VTKPlotter::add_polygon() : Size of array is not a multiple of %d", dim);
+  {
+    warning("VTKPlotter::add_polygon() : Size of array is not a multiple of %d",
+            dim);
+  }
 
   const std::size_t numpoints = points.size()/dim;
 
@@ -648,20 +612,23 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   for (std::size_t i = 0; i < numpoints; i++)
     line->GetPointIds()->SetId(i, i);
 
-  vtkSmartPointer<vtkUnstructuredGrid> grid = vtkSmartPointer<vtkUnstructuredGrid>::New();
+  vtkSmartPointer<vtkUnstructuredGrid> grid
+    = vtkSmartPointer<vtkUnstructuredGrid>::New();
   grid->Allocate(1, 1);
 
   grid->InsertNextCell(line->GetCellType(), line->GetPointIds());
   grid->SetPoints(vtk_points);
 
-  vtkSmartPointer<vtkGeometryFilter> extract = vtkSmartPointer<vtkGeometryFilter>::New();
+  vtkSmartPointer<vtkGeometryFilter> extract
+    = vtkSmartPointer<vtkGeometryFilter>::New();
   #if VTK_MAJOR_VERSION <= 5
   extract->SetInput(grid);
   #else
   extract->SetInputData(grid);
   #endif
 
-  vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  vtkSmartPointer<vtkPolyDataMapper> mapper
+    = vtkSmartPointer<vtkPolyDataMapper>::New();
   mapper->SetInputConnection(extract->GetOutputPort());
 
   vtkSmartPointer<vtkActor> polygon_actor = vtkSmartPointer<vtkActor>::New();
@@ -686,7 +653,7 @@ void VTKPlotter::rescale()
   {
     _plottable->update_range(range);
 
-    // Round small values (<5% of range) to zero
+    // Round small values (< 5% of range) to zero
     const double diff = range[1]-range[0];
     if (diff != 0 && std::abs(range[0]/diff) < 0.05)
       range[0] = 0;
@@ -698,11 +665,14 @@ void VTKPlotter::rescale()
     round_significant_digits(range[1], std::ceil,  2);
   }
 
-  if (range_min.is_set()) range[0] = range_min;
-  if (range_max.is_set()) range[1] = range_max;
+  if (range_min.is_set())
+    range[0] = range_min;
+  if (range_max.is_set())
+    range[1] = range_max;
 
   _plottable->rescale(range, parameters);
   vtk_pipeline->set_scalar_range(range);
+
   // The rescale may have changed the scene (scalar/vector warping)
   vtk_pipeline->reset_camera_clipping_range();
 }
@@ -739,14 +709,15 @@ void VTKPlotter::update_pipeline(std::shared_ptr<const Variable> variable)
   // Update the plottable data
   _plottable->update(variable, parameters, _frame_counter);
 
-  // If this is the first render of this plot and/or the rescale parameter
-  // is set, we read get the min/max values of the data and process them
+  // If this is the first render of this plot and/or the rescale
+  // parameter is set, we read get the min/max values of the data and
+  // process them
   if (_frame_counter == 0 || parameters["rescale"])
     rescale();
 
-  // Set the mapper's connection on each plot. This must be done since the
-  // visualization parameters may have changed since the last frame, and
-  // the input may hence also have changed
+  // Set the mapper's connection on each plot. This must be done since
+  // the visualization parameters may have changed since the last
+  // frame, and the input may hence also have changed
 
   _plottable->connect_to_output(*vtk_pipeline);
   if (_frame_counter == 0)
@@ -767,9 +738,7 @@ void VTKPlotter::all_interactive(bool really)
   }
 
   if (really)
-  {
     run_to_end = false;
-  }
 
   // Prepare interactiveness on every plotter but the first
   foreach (VTKPlotter *plotter, *active_plotters)
@@ -796,20 +765,23 @@ namespace dolfin
   class VTKWindowOutputStage {}; // dummy class
 }
 
-VTKPlotter::VTKPlotter(std::shared_ptr<const Variable>, QVTKWidget*):
-  _initialized(false),
-  _frame_counter(0),
-  no_plot(false)
+VTKPlotter::VTKPlotter(std::shared_ptr<const Variable>)
+  : _initialized(false), _frame_counter(0), no_plot(false)
 {
   init();
 }
+
 VTKPlotter::VTKPlotter(std::shared_ptr<const Expression>,
-		       std::shared_ptr<const Mesh>, QVTKWidget*)  { init(); }
+		       std::shared_ptr<const Mesh>)
+{
+  init();
+}
+
 VTKPlotter::~VTKPlotter() {}
 
-// (Ab)use init() to issue a warning.
-// We also need to initialize the parameter set to avoid tons of warning
-// when running the tests without VTK.
+// (Ab)use init() to issue a warning.  We also need to initialize the
+// parameter set to avoid tons of warning when running the tests
+// without VTK.
 
 void VTKPlotter::init()
 {
@@ -832,12 +804,13 @@ void VTKPlotter::add_polygon  (const Array<double>&)              {}
 void VTKPlotter::all_interactive(bool)                            {}
 void VTKPlotter::set_key(std::string key)                         {}
 
-bool VTKPlotter::key_pressed(int, char, std::string)                    { return false; }
-bool VTKPlotter::is_compatible(std::shared_ptr<const Variable>) const { return false; }
+bool VTKPlotter::key_pressed(int, char, std::string)
+{ return false; }
+bool VTKPlotter::is_compatible(std::shared_ptr<const Variable>) const
+{ return false; }
 
 std::string        VTKPlotter::to_key(const Variable &) { return ""; }
 const std::string& VTKPlotter::key() const              { return _key; }
-QVTKWidget *       VTKPlotter::get_widget() const       { return NULL; }
 
 #endif // HAS_VTK
 

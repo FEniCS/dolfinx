@@ -45,11 +45,9 @@ def W(mesh):
 def test_name_argument(W):
     u = Function(W)
     v = Function(W, name="v")
-    g = Function(v, name="g")
     assert u.name() == "f_%d" % u.count()
     assert v.name() == "v"
     assert str(v) == "v"
-    assert g.name() == "g"
 
 def test_in_function_space(W):
     u = Function(W)
@@ -379,91 +377,6 @@ def test_interpolation_jit_rank1(W):
     assert x.max() == 1
     assert x.min() == 1
 
-def xtest_restricted_function_equals_its_interpolation_and_projection_in_dg():
-    class Side0(SubDomain):
-        def inside(self, x, on_boundary):
-            return x[0] <= 0.55
-
-    class Side1(SubDomain):
-        def inside(self, x, on_boundary):
-            return x[0] >= 0.45
-
-    mesh = UnitSquareMesh(10,10)
-    dim = 2
-
-    sd0 = MeshFunctionSizet(mesh, dim)
-    sd1 = MeshFunctionSizet(mesh, dim)
-
-    Side0().mark(sd0, 1)
-    Side1().mark(sd1, 2)
-
-    r0 = Restriction(sd0, 1)
-    r1 = Restriction(sd1, 2)
-
-    Vt = FunctionSpace(mesh, "DG", 1)
-    V0 = FunctionSpace(r0, "CG", 1)
-    V1 = FunctionSpace(r1, "CG", 1)
-
-    ft = Function(Vt)
-    f0 = Function(V0)
-    f1 = Function(V1)
-
-    f0.interpolate(Expression("x[0]*x[0]"))
-    f1.interpolate(Expression("x[1]*x[1]"))
-    ft.interpolate(f0)
-    gt = project(f1+f0, Vt)
-
-    f0v = assemble(f0*dx(1, subdomain_data=sd0))
-    f1v = assemble(f1*dx(2, subdomain_data=sd1))
-    ftv = assemble(ft*dx(1, subdomain_data=sd0))
-    gtv = assemble(gt*dx)
-
-    assert round(f0v - ftv, 7) == 0
-    assert round(f0v+f1v - gtv, 7) == 0
-
-@skip_in_parallel
-def xtest_restricted_function_equals_its_interpolation_and_projection_in_dg(self):
-    class Side0(SubDomain):
-        def inside(self, x, on_boundary):
-            return x[0] <= 0.55
-
-    class Side1(SubDomain):
-        def inside(self, x, on_boundary):
-            return x[0] >= 0.45
-
-    mesh = UnitSquareMesh(10,10)
-    dim = 2
-
-    sd0 = MeshFunctionSizet(mesh, dim)
-    sd1 = MeshFunctionSizet(mesh, dim)
-
-    Side0().mark(sd0, 1)
-    Side1().mark(sd1, 2)
-
-    r0 = Restriction(sd0, 1)
-    r1 = Restriction(sd1, 2)
-
-    Vt = FunctionSpace(mesh, "DG", 1)
-    V0 = FunctionSpace(r0, "CG", 1)
-    V1 = FunctionSpace(r1, "CG", 1)
-
-    ft = Function(Vt)
-    f0 = Function(V0)
-    f1 = Function(V1)
-
-    f0.interpolate(Expression("x[0]*x[0]"))
-    f1.interpolate(Expression("x[1]*x[1]"))
-    ft.interpolate(f0)
-    gt = project(f1+f0, Vt)
-
-    f0v = assemble(f0*dx(1, subdomain_data=sd0))
-    f1v = assemble(f1*dx(2, subdomain_data=sd1))
-    ftv = assemble(ft*dx(1, subdomain_data=sd0))
-    gtv = assemble(gt*dx)
-
-    self.assertAlmostEqual(f0v, ftv)
-    self.assertAlmostEqual(f0v+f1v, gtv)
-
 
 @skip_in_parallel
 def test_interpolation_old(V, W, mesh):
@@ -476,8 +389,9 @@ def test_interpolation_old(V, W, mesh):
         def eval(self, values, x):
             values[0] = 1.0
             values[1] = 1.0
+            values[2] = 1.0
         def value_shape(self):
-            return (2,)
+            return (3,)
 
     # Scalar interpolation
     f0 = F0()
@@ -487,7 +401,6 @@ def test_interpolation_old(V, W, mesh):
 
     # Vector interpolation
     f1 = F1()
-    W = V * V
     f = Function(W)
     f.interpolate(f1)
-    assert round(f.vector().norm("l1") - 2*mesh.num_vertices(), 7) == 0
+    assert round(f.vector().norm("l1") - 3*mesh.num_vertices(), 7) == 0

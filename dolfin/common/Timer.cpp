@@ -66,13 +66,6 @@ double Timer::stop()
   return std::get<0>(elapsed);
 }
 //-----------------------------------------------------------------------------
-double Timer::value() const
-{
-  deprecation("Timer::value()", "1.6.0", "1.7.0", "The method is ill-defined.");
-  const double t = static_cast<double>(_timer.elapsed().wall) * 1e-9;
-  return t;
-}
-//-----------------------------------------------------------------------------
 std::tuple<double, double, double> Timer::elapsed() const
 {
   const auto elapsed = _timer.elapsed();

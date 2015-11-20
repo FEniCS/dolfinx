@@ -21,7 +21,7 @@
 #ifndef __PETSC_TAO_SOLVER_H
 #define __PETSC_TAO_SOLVER_H
 
-#ifdef ENABLE_PETSC_TAO
+#ifdef HAS_PETSC
 
 #include <map>
 #include <petsctao.h>
@@ -69,12 +69,13 @@ namespace dolfin
     ///         The upper bound.
     ///
     /// *Returns*
-    ///     num_iterations (std::size_t)
-    ///         Number of iterations
-    std::size_t solve(OptimisationProblem& optimisation_problem,
-                      GenericVector& x,
-                      const GenericVector& lb,
-                      const GenericVector& ub);
+    ///     (its, converged) (std::pair<std::size_t, bool>)
+    ///         Pair of number of iterations, and whether
+    ///         iteration converged
+    std::pair<std::size_t, bool> solve(OptimisationProblem& optimisation_problem,
+                                       GenericVector& x,
+                                       const GenericVector& lb,
+                                       const GenericVector& ub);
 
     /// Solve a nonlinear unconstrained minimisation problem
     ///
@@ -85,10 +86,11 @@ namespace dolfin
     ///         The solution vector (initial guess).
     ///
     /// *Returns*
-    ///     num_iterations (std::size_t)
-    ///         Number of iterations
-    std::size_t solve(OptimisationProblem& optimisation_problem,
-                      GenericVector& x);
+    ///     (its, converged) (std::pair<std::size_t, bool>)
+    ///         Pair of number of iterations, and whether
+    ///         iteration converged
+    std::pair<std::size_t, bool> solve(OptimisationProblem& optimisation_problem,
+                                       GenericVector& x);
 
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
@@ -129,11 +131,12 @@ namespace dolfin
     ///         The upper bound.
     ///
     /// *Returns*
-    ///     num_iterations (std::size_t)
-    ///         Number of iterations
-    std::size_t solve(OptimisationProblem& optimisation_problem,
-                      PETScVector& x, const PETScVector& lb,
-                      const PETScVector& ub);
+    ///     (its, converged) (std::pair<std::size_t, bool>)
+    ///         Pair of number of iterations, and whether
+    ///         iteration converged
+    std::pair<std::size_t, bool> solve(OptimisationProblem& optimisation_problem,
+                                       PETScVector& x, const PETScVector& lb,
+                                       const PETScVector& ub);
 
     // TAO context for optimisation problems
     struct tao_ctx_t

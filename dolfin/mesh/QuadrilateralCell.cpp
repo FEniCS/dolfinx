@@ -98,12 +98,6 @@ void QuadrilateralCell::create_entities(boost::multi_array<unsigned int, 2>& e,
   e[3][0] = v[2]; e[3][1] = v[3];
 }
 //-----------------------------------------------------------------------------
-void QuadrilateralCell::refine_cell(Cell& cell, MeshEditor& editor,
-                                    std::size_t& current_cell) const
-{
-  dolfin_not_implemented();
-}
-//-----------------------------------------------------------------------------
 double QuadrilateralCell::volume(const MeshEntity& cell) const
 {
   if (cell.dim() != 2)
