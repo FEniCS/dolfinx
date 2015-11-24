@@ -21,12 +21,14 @@
 #ifndef __VECTOR_SPACE_BASIS_H
 #define __VECTOR_SPACE_BASIS_H
 
-#include <vector>
 #include <memory>
-#include "GenericVector.h"
+#include <vector>
+
 
 namespace dolfin
 {
+
+  class GenericVector;
 
   /// This class defines a basis for vector spaces,
   /// typically used for expressing nullspaces, transpose nullspaces
@@ -42,16 +44,21 @@ namespace dolfin
     /// Destructor
     ~VectorSpaceBasis() {}
 
+    /// Apply the Gram-Schmidt process to orthonormalize the
+    /// basis. Throws an error if a (near) linear dependency is
+    /// detected. Error is thrown if <x_i, x_i> < tol.
+    void orthonormalize(double tol=1.0e-10);
+
     /// Test if basis is orthonormal
-    bool is_orthonormal() const;
+    bool is_orthonormal(double tol=1.0e-10) const;
 
     /// Test if basis is orthogonal
-    bool is_orthogonal() const;
+    bool is_orthogonal(double tol=1.0e-10) const;
 
     /// Orthogonalize x with respect to basis
     void orthogonalize(GenericVector& x) const;
 
-    /// Dimension of the basis
+    /// Number of vectors in the basis
     std::size_t dim() const;
 
     /// Get a particular basis vector
