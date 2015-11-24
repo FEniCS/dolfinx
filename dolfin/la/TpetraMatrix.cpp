@@ -23,7 +23,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
 #include "TpetraVector.h"
@@ -73,7 +73,9 @@ std::shared_ptr<GenericMatrix> TpetraMatrix::copy() const
 void TpetraMatrix::init(const TensorLayout& tensor_layout)
 {
   if (!_matA.is_null())
-    error("TpetraMatrix may not be initialized more than once.");
+    dolfin_error("TpetraMatrix.h",
+                 "initialize matrix",
+                 "Matrix cannot be initialised more than once");
 
   // Get global dimensions and local range
   dolfin_assert(tensor_layout.rank() == 2);

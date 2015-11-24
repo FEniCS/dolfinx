@@ -72,15 +72,15 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
       dolfin_assert(dofmaps[i]);
       global_dimensions.push_back(dofmaps[i]->global_dimension());
       local_range.push_back(dofmaps[i]->ownership_range());
-      block_sizes.push_back(dofmaps[i]->block_size);
+      block_sizes.push_back(dofmaps[i]->block_size());
     }
 
     // Set block size for sparsity graphs
     std::size_t block_size = 1;
     if (a.rank() == 2)
     {
-      const std::vector<std::size_t> _bs(a.rank(), dofmaps[0]->block_size);
-      block_size = (block_sizes == _bs) ? dofmaps[0]->block_size : 1;
+      const std::vector<std::size_t> _bs(a.rank(), dofmaps[0]->block_size());
+      block_size = (block_sizes == _bs) ? dofmaps[0]->block_size() : 1;
     }
 
     // Initialise tensor layout
@@ -92,18 +92,18 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
       tensor_layout->local_to_global_map.resize(a.rank());
       for (std::size_t i = 0; i < a.rank(); ++i)
       {
-        const std::size_t bs = dofmaps[i]->block_size;
+        const std::size_t bs = dofmaps[i]->block_size();
         const std::size_t local_size
           = local_range[i].second - local_range[i].first;
         const std::vector<std::size_t>& local_to_global_unowned
-          = dofmaps[i]->local_to_global_unowned();
+          = dofmaps[i]->index_map()->local_to_global_unowned();
         tensor_layout->local_to_global_map[i].resize(local_size
                                                   + bs*local_to_global_unowned.size());
         for (std::size_t j = 0;
              j < tensor_layout->local_to_global_map[i].size(); ++j)
         {
           tensor_layout->local_to_global_map[i][j]
-            = dofmaps[i]->local_to_global_index(j);
+            = dofmaps[i]->index_map()->local_to_global(j);
         }
       }
     }
@@ -127,10 +127,10 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     A.init(*tensor_layout);
     t1.stop();
 
-    // Insert zeros on the diagonal as diagonal entries may be prematurely
-    // optimised away by the linear algebra backend when calling
-    // GenericMatrix::apply, e.g. PETSc does this then errors when matrices
-    // have no diagonal entry inserted.
+    // Insert zeros on the diagonal as diagonal entries may be
+    // prematurely optimised away by the linear algebra backend when
+    // calling GenericMatrix::apply, e.g. PETSc does this then errors
+    // when matrices have no diagonal entry inserted.
     if (A.rank() == 2 && keep_diagonal)
     {
       // Down cast to GenericMatrix

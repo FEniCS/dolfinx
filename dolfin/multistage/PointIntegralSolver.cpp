@@ -791,7 +791,9 @@ void PointIntegralSolver::_simplified_newton_solve(
              "relative_residual: %.3e, residual: %.3e.", max_iterations, vert_ind,
              relative_previous_residual, relative_residual, residual);
       }
-      error("Newton solver in PointIntegralSolver exceeded maximal iterations.");
+      dolfin_error("PointIntegralSolver.h",
+                   "Newton point integral solver",
+                   "Newton solver in PointIntegralSolver exceeded maximal iterations");
     }
 
     // Update solution

@@ -33,6 +33,7 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/la/IndexMap.h>
 #include <dolfin/log/log.h>
 
 namespace ufc
@@ -55,7 +56,8 @@ namespace dolfin
   public:
 
     /// Constructor
-    GenericDofMap() : block_size(1) {}
+    GenericDofMap()
+    {}
 
     /// True if dof map is a view into another map (is a sub-dofmap)
     virtual bool is_view() const = 0;
@@ -156,6 +158,9 @@ namespace dolfin
     /// nodes. Dofmap node is dof index modulo block size.
     virtual const std::vector<std::size_t>& local_to_global_unowned() const = 0;
 
+    /// Range map
+    virtual std::shared_ptr<IndexMap> index_map() const = 0;
+
     /// Tabulate map between local (process) and global dof indices
     virtual void tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const = 0;
 
@@ -177,13 +182,12 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
 
+    /// Get block size
+    virtual int block_size() const = 0;
+
     /// Subdomain mapping constrained boundaries, e.g. periodic
     /// conditions
     std::shared_ptr<const SubDomain> constrained_domain;
-
-    /// Dofmap block size, e.g. 3 for 3D elasticity with a suitable
-    // ordered dofmap
-    std::size_t block_size;
 
   };
 

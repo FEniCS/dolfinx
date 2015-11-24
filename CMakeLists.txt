@@ -114,7 +114,6 @@ list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
 list(APPEND OPTIONAL_PACKAGES "HDF5")
 list(APPEND OPTIONAL_PACKAGES "VTK")
-list(APPEND OPTIONAL_PACKAGES "QT")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
@@ -584,11 +583,6 @@ endif()
 # Check for Sphinx
 if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
   find_package(Sphinx 1.1.0)
-endif()
-
-# Check for Qt4
-if (DOLFIN_ENABLE_QT)
-  find_package(Qt4)
 endif()
 
 # Check for VTK
@@ -1094,14 +1088,18 @@ if (DOLFIN_ENABLE_TESTING)
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/documentation")
 
   # Add target "run_styletest" for running documentation tests
-  #add_custom_target(run_styletest
-  #  COMMAND ${PYTHON_EXECUTABLE} "-B" "test_coding_style.py"
-  #  DEPENDS copy_data_test_demo
-  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/codingstyle")
+  add_custom_target(run_styletest
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "test_coding_style.py"
+    DEPENDS copy_data_test_demo
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/codingstyle")
+
+  # Create test_coding_style.py in build dir (depends on source path)
+  configure_file(${CMAKE_SOURCE_DIR}/test/codingstyle/test_coding_style.py.in
+    ${CMAKE_BINARY_DIR}/test/codingstyle/test_coding_style.py @ONLY)
 
   # Add target "runtests" for running all tests
   add_custom_target(runtests
-    DEPENDS run_doctest run_regressiontests run_unittests)# run_styletest)
+    DEPENDS run_doctest run_regressiontests run_unittests run_styletest)
 endif()
 
 #------------------------------------------------------------------------------

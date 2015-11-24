@@ -46,7 +46,7 @@ from dolfin import *
 
 # Test for PETSc
 if not has_linear_algebra_backend("PETSc"):
-    info("DOLFIN has not been configured with TPETSc. Exiting.")
+    info("DOLFIN has not been configured with PETSc. Exiting.")
     exit()
 
 parameters["linear_algebra_backend"] = "PETSc"
@@ -78,7 +78,7 @@ null_vec = Vector(u.vector())
 V.dofmap().set(null_vec, 1.0)
 null_vec *= 1.0/null_vec.norm("l2")
 
-# Create null space basis object and attach to Krylov solver
+# Create null space basis object and attach to PETSc matrix
 null_space = VectorSpaceBasis([null_vec])
 as_backend_type(A).set_nullspace(null_space)
 

@@ -205,9 +205,6 @@ const Function& Function::operator= (const Function& v)
     std::vector<dolfin::la_index> new_rows(collapsed_map.size());
     std::vector<dolfin::la_index> old_rows(collapsed_map.size());
     std::size_t i = 0;
-    //const std::size_t local_owned_size
-    //  = v._function_space->dofmap()->ownership_range().second
-    //  - v._function_space->dofmap()->ownership_range().first;
     for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
     {
       new_rows[i]   = entry->first;
@@ -216,10 +213,6 @@ const Function& Function::operator= (const Function& v)
     MPI::barrier(MPI_COMM_WORLD);
 
     // Gather values into a vector
-    //std::vector<double> gathered_values;
-    //dolfin_assert(v.vector());
-    //v.vector()->gather(gathered_values, old_rows);
-
     dolfin_assert(v.vector());
     std::vector<double> gathered_values(collapsed_map.size());
     v.vector()->get_local(gathered_values.data(), gathered_values.size(),
@@ -610,12 +603,18 @@ void Function::init_vector()
   const std::pair<std::size_t, std::size_t> range = dofmap.ownership_range();
 
   // Determine ghost vertices if dof map is distributed
-  const std::size_t bs = dofmap.block_size;
+  const std::size_t bs = dofmap.block_size();
   std::vector<la_index>
-    ghost_indices(bs*dofmap.local_to_global_unowned().size());
-  for (std::size_t i = 0; i < dofmap.local_to_global_unowned().size(); ++i)
+    ghost_indices(bs*dofmap.index_map()->local_to_global_unowned().size());
+  for (std::size_t i = 0;
+       i < dofmap.index_map()->local_to_global_unowned().size(); ++i)
+  {
     for (std::size_t j = 0; j < bs; ++j)
-      ghost_indices[bs*i + j] = bs*dofmap.local_to_global_unowned()[i] + j;
+    {
+      ghost_indices[bs*i + j]
+        = bs*dofmap.index_map()->local_to_global_unowned()[i] + j;
+    }
+  }
 
   // Create vector of dofs
   if (!_vector)

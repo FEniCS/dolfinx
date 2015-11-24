@@ -28,14 +28,14 @@
 #include <cstdlib>
 #include <map>
 #include <memory>
+#include <unordered_map>
 #include <utility>
 #include <vector>
-#include <memory>
-#include <unordered_map>
 #include <ufc.h>
 
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
+#include <dolfin/la/IndexMap.h>
 #include <dolfin/mesh/Cell.h>
 #include "GenericDofMap.h"
 
@@ -176,7 +176,8 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<unsigned int>
     ///         The map from non-local dofs.
-    const std::vector<int>& off_process_owner() const;
+    const std::vector<int>& off_process_owner() const
+    { return _index_map->off_process_owner(); }
 
     /// Return map from all shared nodes to the sharing processes (not
     /// including the current process) that share it.
@@ -310,14 +311,12 @@ namespace dolfin
     ///         The value to set.
     void set(GenericVector& x, double value) const;
 
-    /// Return the map from unowned local dofmap nodes to global dofmap
-    /// nodes. Dofmap node is dof index modulo block size.
-    ///
-    /// *Returns*
-    ///     _std::vector<std::size_t>_
-    ///         The unonwed local-to-global node map.
-    const std::vector<std::size_t>& local_to_global_unowned() const
-    { return _local_to_global_unowned; }
+    /// Return the map
+    std::shared_ptr<IndexMap> index_map() const
+    { return _index_map; }
+
+    int block_size() const
+    { return _index_map->block_size(); }
 
     /// Compute the map from local (this process) dof indices to
     /// global dof indices.
@@ -337,19 +336,11 @@ namespace dolfin
     ///     std::size_t
     ///         The global dof index.
     std::size_t local_to_global_index(int local_index) const
-    {
-      if (local_index < _local_ownership_size)
-        return local_index + _global_offset;
-      else
-      {
-        const std::div_t div = std::div((local_index - _local_ownership_size),
-                                        block_size);
-        const int component = div.rem;
-        const int index = div.quot;
-        dolfin_assert((std::size_t) index < _local_to_global_unowned.size());
-        return block_size*_local_to_global_unowned[index] + component;
-      }
-    }
+    { return _index_map->local_to_global(local_index); }
+
+
+    const std::vector<std::size_t>& local_to_global_unowned() const
+    { return _index_map->local_to_global_unowned(); }
 
     /// Return informal string representation (pretty-print)
     ///
@@ -408,19 +399,12 @@ namespace dolfin
     // Multimesh dof map offset
     std::size_t _multimesh_offset;
 
-    // Number of dofs owned by this process
-    std::size_t _global_offset;
-    int _local_ownership_size;
+    // Object containing information about dof distribution across
+    // processes
+    std::shared_ptr<IndexMap> _index_map;
 
     // Temporary until MultiMeshDofMap runs in parallel
     friend class MultiMeshDofMap;
-
-    // Map from local index of un-owned dofs to global dof index
-    std::vector<std::size_t> _local_to_global_unowned;
-
-    // Map from dofs in local dof map are not owned by this process to
-    // the owner process
-    std::vector<int> _off_process_owner;
 
     // List of processes that share a given dof
     std::unordered_map<int, std::vector<int> > _shared_nodes;

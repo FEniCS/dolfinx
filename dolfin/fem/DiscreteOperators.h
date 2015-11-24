@@ -18,7 +18,6 @@
 #ifndef __DOLFIN_DISCRETE_OPERATORS_H
 #define __DOLFIN_DISCRETE_OPERATORS_H
 
-
 #include <memory>
 
 namespace dolfin
@@ -46,7 +45,7 @@ namespace dolfin
     /// i.e. v = Aw. V0 is the H(curl) space, and V1 is the P1
     /// Lagrange space.
     static std::shared_ptr<GenericMatrix>
-    build_gradient(const FunctionSpace& V0, const FunctionSpace& V1);
+      build_gradient(const FunctionSpace& V0, const FunctionSpace& V1);
 
   };
 }

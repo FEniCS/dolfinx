@@ -147,7 +147,7 @@ void SystemAssembler::check_arity(std::shared_ptr<const Form> a,
     }
   }
 
-  // Check that a is a bilinear form
+  // Check that L is a linear form
   if (L)
   {
     if (L->rank() != 1)
@@ -171,6 +171,28 @@ in SystemAssembler. Taking %s subdomains from bilinear form",
               name.c_str(), name.c_str());
   }
   return a ? a: b;
+}
+//-----------------------------------------------------------------------------
+bool SystemAssembler::check_functionspace_for_bc
+    (std::shared_ptr<const FunctionSpace> fs, std::size_t i)
+{
+  std::shared_ptr<const FunctionSpace> bc_function_space
+    = _bcs[i]->function_space();
+
+  if (*bc_function_space == *fs)
+    return true;
+  else
+  {
+    // Recursively check sub-spaces
+    std::size_t num_sub_elements = fs->element()->num_sub_elements();
+    for (std::size_t i = 0; i != num_sub_elements; ++i)
+      {
+        std::shared_ptr<const FunctionSpace> subspace = (*fs)[i];
+        if (check_functionspace_for_bc(subspace, i))
+          return true;
+      }
+  }
+  return false;
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
@@ -212,7 +234,7 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   dolfin_assert(_l->rank() == 1);
 
   // Check that forms share a function space
-  if (*_a->function_space(1) != *_l->function_space(0))
+  if (*_a->function_space(0) != *_l->function_space(0))
   {
     dolfin_error("SystemAssembler.cpp",
                  "assemble system",
@@ -246,40 +268,59 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   Scratch data(*_a, *_l);
 
   // Get Dirichlet dofs and values for local mesh
-  DirichletBC::Map boundary_values;
+  // Determine whether _a is bilinear in the same form
+  std::size_t num_fs
+    = (*_a->function_space(0) == *_a->function_space(1)) ? 1 : 2;
+
+  // Bin boundary conditions according to which form they apply to (if any)
+  std::vector<DirichletBC::Map> boundary_values(num_fs);
   for (std::size_t i = 0; i < _bcs.size(); ++i)
   {
-    _bcs[i]->get_boundary_values(boundary_values);
-    if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
-      _bcs[i]->gather(boundary_values);
+    // Match the FunctionSpace of the BC
+    // with the (possible sub-)FunctionSpace on each axis of _a.
+    int axis = -1;
+
+    if (check_functionspace_for_bc(_a->function_space(0), i))
+      axis = 0;
+    else if (check_functionspace_for_bc(_a->function_space(1), i))
+      axis = 1;
+
+    // Found!
+    if (axis != -1)
+    {
+      _bcs[i]->get_boundary_values(boundary_values[axis]);
+      if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
+        _bcs[i]->gather(boundary_values[axis]);
+    }
+
   }
 
   // Modify boundary values for incremental (typically nonlinear)
   // problems
+  // FIXME: not sure what happens when num_fs==2
   if (x0)
   {
     dolfin_assert(x0->size()
                   == _a->function_space(1)->dofmap()->global_dimension());
 
-    const std::size_t num_bc_dofs = boundary_values.size();
+    const std::size_t num_bc_dofs = boundary_values[0].size();
     std::vector<dolfin::la_index> bc_indices;
     std::vector<double> bc_values;
     bc_indices.reserve(num_bc_dofs);
     bc_values.reserve(num_bc_dofs);
 
     // Build list of boundary dofs and values
-    DirichletBC::Map::const_iterator bv;
-    for (bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
+    for (const auto &bv : boundary_values[0])
     {
-      bc_indices.push_back(bv->first);
-      bc_values.push_back(bv->second);
+      bc_indices.push_back(bv.first);
+      bc_values.push_back(bv.second);
     }
 
     // Modify bc values
     std::vector<double> x0_values(num_bc_dofs);
     x0->get_local(x0_values.data(), num_bc_dofs, bc_indices.data());
     for (std::size_t i = 0; i < num_bc_dofs; i++)
-      boundary_values[bc_indices[i]] = x0_values[i] - bc_values[i];
+      boundary_values[0][bc_indices[i]] = x0_values[i] - bc_values[i];
   }
 
   // Check whether we should do cell-wise or facet-wise assembly
@@ -312,7 +353,7 @@ void SystemAssembler::cell_wise_assembly(
   std::array<GenericTensor*, 2>& tensors,
   std::array<UFC*, 2>& ufc,
   Scratch& data,
-  const DirichletBC::Map& boundary_values,
+  const std::vector<DirichletBC::Map>& boundary_values,
   std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
   std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains)
 {
@@ -476,9 +517,6 @@ void SystemAssembler::cell_wise_assembly(
       }
     }
 
-    // Check dofmap is the same for LHS columns and RHS vector
-    dolfin_assert(cell_dofs[1][0].data() == cell_dofs[0][1].data());
-
     // Modify local matrix/element for Dirichlet boundary conditions
     apply_bc(data.Ae[0].data(), data.Ae[1].data(), boundary_values,
              cell_dofs[0][0], cell_dofs[0][1]);
@@ -498,7 +536,7 @@ void SystemAssembler::facet_wise_assembly(
   std::array<GenericTensor*, 2>& tensors,
   std::array<UFC*, 2>& ufc,
   Scratch& data,
-  const DirichletBC::Map& boundary_values,
+  const std::vector<DirichletBC::Map>& boundary_values,
   std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
   std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains,
   std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains)
@@ -1027,42 +1065,69 @@ void SystemAssembler::matrix_block_add(
 //-----------------------------------------------------------------------------
 void
 SystemAssembler::apply_bc(double* A, double* b,
-                          const DirichletBC::Map& boundary_values,
+                          const std::vector<DirichletBC::Map>& boundary_values,
                           const ArrayView<const dolfin::la_index>& global_dofs0,
                           const ArrayView<const dolfin::la_index>& global_dofs1)
 {
   dolfin_assert(A);
   dolfin_assert(b);
-  dolfin_assert(global_dofs0.size() == global_dofs1.size());
 
   // Wrap matrix and vector using Eigen
   Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                            Eigen::RowMajor>>
     _matA(A, global_dofs0.size(), global_dofs1.size());
-  Eigen::Map<Eigen::VectorXd> _b(b, global_dofs1.size());
+  Eigen::Map<Eigen::VectorXd> _b(b, global_dofs0.size());
 
-  // Loop over rows
-  //for (std::size_t i = 0; i < _matA.n_rows; ++i)
-  for (int i = 0; i < _matA.cols(); ++i)
+  if (boundary_values.size() == 1)
   {
-    const std::size_t ii = global_dofs1[i];
-    DirichletBC::Map::const_iterator bc_value = boundary_values.find(ii);
-    if (bc_value != boundary_values.end())
+    // Square matrix with same FunctionSpace on each axis
+    // Loop over columns/rows
+    for (int i = 0; i < _matA.cols(); ++i)
     {
-      // Zero row
-      _matA.row(i).setZero();
+      const std::size_t ii = global_dofs1[i];
+      DirichletBC::Map::const_iterator bc_value = boundary_values[0].find(ii);
+      if (bc_value != boundary_values[0].end())
+      {
+        // Zero row
+        _matA.row(i).setZero();
 
-      // Modify RHS (subtract (bc_column(A))*bc_val from b)
-      _b -= _matA.col(i)*bc_value->second;
+        // Modify RHS (subtract (bc_column(A))*bc_val from b)
+        _b -= _matA.col(i)*bc_value->second;
 
-      // Zero column
-      _matA.col(i).setZero();
+        // Zero column
+        _matA.col(i).setZero();
 
-      // Place 1 on diagonal and bc on RHS (i th row ).
-      _b(i)    = bc_value->second;
-      _matA(i, i) = 1.0;
+        // Place 1 on diagonal and bc on RHS (i th row ).
+        _b(i)       = bc_value->second;
+        _matA(i, i) = 1.0;
+      }
     }
   }
+  else
+  {
+    // Loop over rows first
+    for (int i = 0; i < _matA.rows(); ++i)
+    {
+      const std::size_t ii = global_dofs0[i];
+      DirichletBC::Map::const_iterator bc_value = boundary_values[0].find(ii);
+      if (bc_value != boundary_values[0].end())
+        _matA.row(i).setZero();
+    }
+
+    // Loop over columns
+    for (int j = 0; j < _matA.cols(); ++j)
+    {
+      const std::size_t jj = global_dofs1[j];
+      DirichletBC::Map::const_iterator bc_value = boundary_values[1].find(jj);
+      if (bc_value != boundary_values[1].end())
+      {
+        // Modify RHS (subtract (bc_column(A))*bc_val from b)
+        _b -= _matA.col(j)*bc_value->second;
+        _matA.col(j).setZero();
+      }
+    }
+  }
+
 }
 //-----------------------------------------------------------------------------
 bool SystemAssembler::has_bc(const DirichletBC::Map& boundary_values,
@@ -1082,12 +1147,12 @@ bool SystemAssembler::has_bc(const DirichletBC::Map& boundary_values,
 bool SystemAssembler::cell_matrix_required(
   const GenericTensor* A,
   const void* integral,
-  const DirichletBC::Map& boundary_values,
+  const std::vector<DirichletBC::Map>& boundary_values,
   const ArrayView<const dolfin::la_index>& dofs)
 {
   if (A && integral)
     return true;
-  else if (integral && has_bc(boundary_values, dofs))
+  else if (integral && has_bc(boundary_values[0], dofs))
     return true;
   else
     return false;
