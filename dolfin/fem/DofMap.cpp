@@ -132,6 +132,7 @@ DofMap::DofMap(const DofMap& dofmap) : _index_map(dofmap._index_map)
   _dofmap = dofmap._dofmap;
   _cell_dimension = dofmap._cell_dimension;
   _ufc_dofmap = dofmap._ufc_dofmap;
+  _num_mesh_entities_global = dofmap._num_mesh_entities_global;
   _ufc_local_to_local= dofmap._ufc_local_to_local;
   _is_view = dofmap._is_view;
   _global_dimension = dofmap._global_dimension;
