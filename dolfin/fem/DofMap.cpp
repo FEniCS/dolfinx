@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Martin Alnes, 2008-2015
-// Modified by Kent-Andre Mardal, 2009
-// Modified by Ola Skavhaug, 2009
-// Modified by Niclas Jansson, 2009
-// Modified by Joachim B Haga, 2012
-// Modified by Mikael Mortensen, 2012
-// Modified by Jan Blechta, 2013
+// Modified by Martin Alnes 2008-2015
+// Modified by Kent-Andre Mardal 2009
+// Modified by Ola Skavhaug 2009
+// Modified by Niclas Jansson 2009
+// Modified by Joachim B Haga 2012
+// Modified by Mikael Mortensen 2012
+// Modified by Jan Blechta 2013
 
 #include <unordered_map>
 
@@ -69,8 +69,8 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
                const std::vector<std::size_t>& component, const Mesh& mesh)
-  : _cell_dimension(0), _is_view(true), _global_dimension(0),
-    _ufc_offset(0), _multimesh_offset(0),
+  : _cell_dimension(0), _ufc_dofmap(0), _is_view(true),
+    _global_dimension(0), _ufc_offset(0), _multimesh_offset(0),
     _index_map(parent_dofmap._index_map)
 {
   // Build sub-dofmap
@@ -132,8 +132,8 @@ DofMap::DofMap(const DofMap& dofmap) : _index_map(dofmap._index_map)
   _dofmap = dofmap._dofmap;
   _cell_dimension = dofmap._cell_dimension;
   _ufc_dofmap = dofmap._ufc_dofmap;
-  _num_mesh_entities_global = dofmap._num_mesh_entities_global;_
-  _ufc_local_to_local= dofmap._ufc_local_to_local;
+  _num_mesh_entities_global = dofmap._num_mesh_entities_global;
+  _ufc_local_to_local = dofmap._ufc_local_to_local;
   _is_view = dofmap._is_view;
   _global_dimension = dofmap._global_dimension;
   _ufc_offset = dofmap._ufc_offset;
