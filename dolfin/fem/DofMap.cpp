@@ -132,8 +132,7 @@ DofMap::DofMap(const DofMap& dofmap) : _index_map(dofmap._index_map)
   _dofmap = dofmap._dofmap;
   _cell_dimension = dofmap._cell_dimension;
   _ufc_dofmap = dofmap._ufc_dofmap;
-  _num_mesh_entities_global = dofmap._num_mesh_entities_global;
-  _ufc_local_to_local = dofmap._ufc_local_to_local;
+  _ufc_local_to_local= dofmap._ufc_local_to_local;
   _is_view = dofmap._is_view;
   _global_dimension = dofmap._global_dimension;
   _ufc_offset = dofmap._ufc_offset;
@@ -357,7 +356,7 @@ std::vector<dolfin::la_index> DofMap::dofs() const
 void DofMap::set(GenericVector& x, double value) const
 {
   dolfin_assert(_dofmap.size() % _cell_dimension == 0);
-  const std::size_t num_cells = _dofmap.size()/_cell_dimension;
+  const std::size_t num_cells = _dofmap.size() / _cell_dimension;
 
   std::vector<double> _value(_cell_dimension, value);
   for (std::size_t i = 0; i < num_cells; ++i)
@@ -377,8 +376,6 @@ void DofMap::tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_gl
   const int size = local_ownership_size
                     + bs*local_to_global_unowned.size();
   local_to_global_map.resize(size);
-  for (int i = 0; i < _local_ownership_size; ++i)
-    local_to_global_map[i] = i + _global_offset;
 
   const std::size_t global_offset = _index_map->local_range().first;
   for (std::size_t i = 0; i < local_ownership_size; ++i)
