@@ -86,8 +86,6 @@ bool VectorSpaceBasis::is_orthogonal(double tol) const
       if (i != j)
       {
         const double dot_ij = _basis[i]->inner(*_basis[j]);
-        std::cout << "Test dot: " << i << ", " << j << ", "
-                  << dot_ij << std::endl;
         if (std::abs(dot_ij) > tol)
           return false;
       }
