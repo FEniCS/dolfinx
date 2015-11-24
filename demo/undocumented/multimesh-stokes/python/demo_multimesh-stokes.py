@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2015-11-11
-# Last changed: 2015-11-17
+# Last changed: 2015-11-24
 #
 # This demo program solves the Stokes equations on a domain defined
 # by three overlapping and non-matching meshes.
@@ -53,12 +53,11 @@ multimesh.build()
 
 # FIXME: Tensor algebra not supported for multimesh function spaces
 
-# Create function space(s)
-def function_space_constructor(mesh):
-    V = VectorFunctionSpace(mesh, "Lagrange", 2)
-    Q = FunctionSpace(mesh, "Lagrange", 1)
-    return V * Q
-W = MultiMeshFunctionSpace(multimesh, function_space_constructor)
+# Create function space
+P2 = VectorElement("Lagrange", triangle, 2)
+P1 = FiniteElement("Lagrange", triangle, 1)
+TH = P2 * P1
+W  = MultiMeshFunctionSpace(multimesh, TH)
 
 # Define trial and test functions and right-hand side
 u = TrialFunction(W)
