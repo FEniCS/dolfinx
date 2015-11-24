@@ -24,6 +24,8 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel
 
+parameters["reorder_dofs_serial"] = False
+
 @skip_if_not_PETSc
 def test_krylov_samg_solver_elasticity():
     "Test PETScKrylovSolver with smoothed aggregation AMG"
@@ -79,8 +81,12 @@ def test_krylov_samg_solver_elasticity():
         # Create solution function
         u = Function(V)
 
-        # Create near null space basis
+        # Create near null space basis and orthonormalize
         null_space = build_nullspace(V, u.vector())
+        null_space.orthonormalize()
+
+        # Test that basis is orthonormal
+        assert null_space.is_orthonormal()
 
         # Create PETSC smoothed aggregation AMG preconditioner,
         # attach near null space and create CG solver
