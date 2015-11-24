@@ -265,7 +265,7 @@ namespace dolfin
     const std::size_t _primary_dim;
 
     // Block size, e.g. 3 for 3D elasticity with appropriate dof ordering
-    std::size_t _block_size;
+    int _block_size;
 
     // Local ownership range (row range for row-wise storage, column
     // range for column-wise storage)

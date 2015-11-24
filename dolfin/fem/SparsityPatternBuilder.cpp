@@ -51,7 +51,6 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 {
   // Get global dimensions and local range
   const std::size_t rank = dofmaps.size();
-  std::vector<std::size_t> global_dimensions(rank);
   std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
     index_maps[i] = dofmaps[i]->index_map();
@@ -61,7 +60,7 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   // Initialise sparsity pattern
   if (init)
-    sparsity_pattern.init(mesh.mpi_comm(), global_dimensions, index_maps);
+    sparsity_pattern.init(mesh.mpi_comm(), index_maps);
 
   // Only build for rank >= 2 (matrices and higher order tensors) that
   // require sparsity details
@@ -227,8 +226,10 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   if (diagonal)
   {
-    const std::size_t local_size0 = index_maps[0]->size();
-    const std::size_t local_size1 = index_maps[1]->size();
+    const std::size_t local_size0
+      = index_maps[0]->size(IndexMap::MapSize::OWNED);
+    const std::size_t local_size1
+      = index_maps[1]->size(IndexMap::MapSize::OWNED);
     const std::size_t local_size = std::min(local_size0, local_size1);
 
     Progress p("Building sparsity pattern over diagonal", local_size);
@@ -256,18 +257,14 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
 {
   // Get global dimensions and local range
   const std::size_t rank = form.rank();
-  std::vector<std::size_t> global_dimensions(rank);
   std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
   {
     index_maps[i] = form.function_space(i)->dofmap()->index_map();
-    global_dimensions[i]
-      = form.function_space(i)->dofmap()->global_dimension();
   }
 
   // Initialize sparsity pattern
   sparsity_pattern.init(form.function_space(0)->part(0)->mesh()->mpi_comm(),
-                        global_dimensions,
                         index_maps);
 
   // Iterate over each part

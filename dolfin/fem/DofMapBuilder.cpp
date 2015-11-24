@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include <random>
 #include <utility>
+#include <memory>
 #include <ufc.h>
 
 #include <dolfin/common/Timer.h>
@@ -191,11 +192,11 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
                                node_local_to_global0, mesh,
                                dofmap._global_dimension/bs);
 
-    dofmap.index_map()->init(num_owned_nodes, bs);
+    dofmap._index_map->init(num_owned_nodes, bs);
 
     // Sanity check
     dolfin_assert(MPI::sum(mesh.mpi_comm(),
-                           (std::size_t) dofmap.index_map()->size())
+       (std::size_t) dofmap._index_map->size(IndexMap::MapSize::OWNED))
                   == dofmap._global_dimension);
 
     // Compute node re-ordering for process index locality and spatial
@@ -205,8 +206,8 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
     // (c) New local node index to new global node index
     // (d) Old local node index to new local node index
     std::vector<int> node_old_to_new_local;
-    dolfin_assert(dofmap.index_map());
-    compute_node_reordering(*dofmap.index_map(),
+    dolfin_assert(dofmap._index_map);
+    compute_node_reordering(*dofmap._index_map,
                             node_old_to_new_local,
                             shared_node_to_processes0,
                             node_local_to_global0,
@@ -258,7 +259,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
         dofmap._ufc_local_to_local[i] = i;
     }
 
-    dofmap.index_map()->init(dofmap._global_dimension, bs);
+    dofmap._index_map->init(dofmap._global_dimension, bs);
     dofmap._shared_nodes.clear();
   }
 
@@ -331,6 +332,8 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
     = sub_dofmap._ufc_dofmap->global_dimension(sub_dofmap._num_mesh_entities_global);
 
   // Copy data from parent
+  // FIXME: Do we touch sub_dofmap.index_map() in this routine? If yes, then
+  //        this routine has incorrect constness!
   sub_dofmap.index_map() = parent_dofmap.index_map();
   sub_dofmap._shared_nodes = parent_dofmap._shared_nodes;
   sub_dofmap._neighbours = parent_dofmap._neighbours;

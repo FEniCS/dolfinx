@@ -128,7 +128,7 @@ void MultiMeshDofMap::clear()
 //-----------------------------------------------------------------------------
 std::size_t MultiMeshDofMap::global_dimension() const
 {
-  return _index_map->size_global();
+  return _index_map->size(IndexMap::MapSize::GLOBAL);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> MultiMeshDofMap::ownership_range() const
