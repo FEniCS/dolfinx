@@ -59,20 +59,19 @@ namespace dolfin
       if (!empty())
         error("GenericVector cannot be initialised more than once");
       std::vector<dolfin::la_index> ghosts;
-      std::vector<std::size_t> local_to_global(tensor_layout.index_map(0)
-                                               ->size(IndexMap::MapSize::ALL));
+      std::vector<std::size_t> local_to_global(tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL));
 
       // FIXME: should just pass index_map to init()
       for (std::size_t i = 0; i != local_to_global.size(); ++i)
         local_to_global[i] = tensor_layout.index_map(0)->local_to_global(i);
 
       // FIXME: temporary hack - needs passing tensor layout directly to backend
-      if (tensor_layout.is_ghosted() == TensorLayout::Ghosts::GHOSTED);
+      if (tensor_layout.is_ghosted() == TensorLayout::Ghosts::GHOSTED)
       {
-        const std::size_t nowned =
-          tensor_layout.index_map(0)->size(IndexMap::MapSize::OWNED);
-        const std::size_t nghosts =
-          tensor_layout.index_map(0)->size(IndexMap::MapSize::UNOWNED);
+        const std::size_t nowned
+          = tensor_layout.index_map(0)->size(IndexMap::MapSize::OWNED);
+        const std::size_t nghosts
+          = tensor_layout.index_map(0)->size(IndexMap::MapSize::UNOWNED);
         ghosts.resize(nghosts);
         for (std::size_t i = 0; i != nghosts; ++i)
           ghosts[i] = local_to_global[i+nowned];
