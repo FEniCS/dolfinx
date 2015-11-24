@@ -96,19 +96,21 @@ public:
   void test_init()
   {
     // Create local and distributed vector layouts
-    const std::vector<std::size_t> dims(1, 203);
 
     // Create local vector layout
-    TensorLayout layout_local(0, false);
-    std::vector<std::pair<std::size_t, std::size_t> >
-      local_range(1, std::make_pair(0, 203));
-    layout_local.init(MPI_COMM_SELF, dims, 1, local_range);
+    TensorLayout layout_local(0, TensorLayout::Sparsity::DENSE);
+    std::vector<std::shared_ptr<const IndexMap>> index_maps(1);
+    index_maps[0].reset(new IndexMap(MPI_COMM_SELF, 203, 1));
+    layout_local.init(MPI_COMM_SELF, index_maps,
+                      TensorLayout::Ghosts::UNGHOSTED);
 
     // Create distributed vector layout
-    TensorLayout layout_distributed(0, false);
-    std::vector<std::pair<std::size_t, std::size_t> >
-      ownership_range(1, dolfin::MPI::local_range(MPI_COMM_WORLD, 203));
-    layout_distributed.init(MPI_COMM_WORLD, dims, 1, ownership_range);
+    TensorLayout layout_distributed(0, TensorLayout::Sparsity::DENSE);
+    auto lrange = dolfin::MPI::local_range(MPI_COMM_WORLD, 203);
+    std::size_t nlocal = lrange.second - lrange.first;
+    index_maps[0].reset(new IndexMap(MPI_COMM_SELF, nlocal, 1));
+    layout_distributed.init(MPI_COMM_WORLD, index_maps,
+                            TensorLayout::Ghosts::UNGHOSTED);
 
     // Vector
     #ifdef HAS_PETSC
@@ -152,16 +154,19 @@ public:
     const std::vector<std::size_t> dims(1, 203);
 
     // Create local vector layout
-    TensorLayout layout_local(0, false);
-    std::vector<std::pair<std::size_t, std::size_t> >
-      local_range(1, std::make_pair(0, 203));
-    layout_local.init(MPI_COMM_SELF, dims, 1, local_range);
+    TensorLayout layout_local(0, TensorLayout::Sparsity::DENSE);
+    std::vector<std::shared_ptr<const IndexMap>> index_maps(1);
+    index_maps[0].reset(new IndexMap(MPI_COMM_SELF, 203, 1));
+    layout_local.init(MPI_COMM_SELF, index_maps,
+                      TensorLayout::Ghosts::UNGHOSTED);
 
     // Create distributed vector layout
-    TensorLayout layout_distributed(0, false);
-    std::vector<std::pair<std::size_t, std::size_t> >
-      ownership_range(1, dolfin::MPI::local_range(MPI_COMM_WORLD, 203));
-    layout_distributed.init(MPI_COMM_WORLD, dims, 1, ownership_range);
+    TensorLayout layout_distributed(0, TensorLayout::Sparsity::DENSE);
+    auto lrange = dolfin::MPI::local_range(MPI_COMM_WORLD, 203);
+    std::size_t nlocal = lrange.second - lrange.first;
+    index_maps[0].reset(new IndexMap(MPI_COMM_SELF, nlocal, 1));
+    layout_distributed.init(MPI_COMM_WORLD, index_maps,
+                            TensorLayout::Ghosts::UNGHOSTED);
 
     // Vector
     #ifdef HAS_PETSC
