@@ -87,15 +87,15 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   tensor_layout = A->factory().create_layout(2);
   dolfin_assert(tensor_layout);
 
-  //std::vector<std::size_t> block_sizes = {1, 1};
-  std::vector<std::size_t> global_dimensions
-    = {V0.dofmap()->global_dimension(), V1.dofmap()->global_dimension()};
+  // Copy index maps from dofmaps
+  std::vector<std::shared_ptr<const IndexMap> > index_maps
+    = {V0.dofmap()->index_map(), V1.dofmap()->index_map()};
   std::vector<std::pair<std::size_t, std::size_t>> local_range
     = { V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
 
   // Initialise tensor layout
-  tensor_layout->init(mesh.mpi_comm(), global_dimensions, 1,
-                      local_range);
+  tensor_layout->init(mesh.mpi_comm(), index_maps,
+                      TensorLayout::Ghosts::UNGHOSTED);
 
   // Initialize edge -> vertex connections
   mesh.init(1, 0);
@@ -125,18 +125,13 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
         sparsity_entries[1].push_back(col1);
       }
     }
-    std::vector<ArrayView<const std::size_t>> local_to_global(2);
-    std::vector<ArrayView<const int>> off_process_owner(2);
-    std::vector<std::size_t> block_sizes = {1, 1};
-    local_to_global[0].set(V0.dofmap()->local_to_global_unowned());
-    local_to_global[1].set(V1.dofmap()->local_to_global_unowned());
-    off_process_owner[0].set(V0.dofmap()->off_process_owner());
-    off_process_owner[1].set(V1.dofmap()->off_process_owner());
+
+    std::vector<std::shared_ptr<const IndexMap>> index_maps;
+    index_maps.push_back(V0.dofmap()->index_map());
+    index_maps.push_back(V1.dofmap()->index_map());
 
     GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
-    pattern.init(mesh.mpi_comm(), global_dimensions, local_range,
-                 local_to_global,
-                 off_process_owner, block_sizes);
+    pattern.init(mesh.mpi_comm(), index_maps);
 
     std::vector<ArrayView<const dolfin::la_index>> _sparsity_entries
       = {{ArrayView<const la_index>(sparsity_entries[0]),

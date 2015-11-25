@@ -809,7 +809,9 @@ void PETScVector::_init(MPI_Comm comm,
 {
   PetscErrorCode ierr;
   if (_x)
-    error("PETScVector cannot be initialized more than once.");
+    dolfin_error("PETScVector.h",
+                 "initialize vector",
+                 "Vector cannot be initialised more than once");
 
   const std::size_t local_size = range.second - range.first;
   dolfin_assert(range.second >= range.first);

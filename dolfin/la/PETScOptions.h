@@ -34,9 +34,9 @@ namespace dolfin
 
   /// These class provides static functions that permit users to set
   /// and retrieve PETSc options via the PETSc option/parameter
-  /// system. The option should be prefixed by '-', e.g.
+  /// system. The option must not be prefixed by '-', e.g.
   ///
-  ///     PETScOptions::set("mat_mumps_icntl_14", 40.0);
+  ///     PETScOptions::set("mat_mumps_icntl_14", 40);
 
   class PETScOptions
   {
@@ -65,8 +65,13 @@ namespace dolfin
 
       PetscErrorCode ierr;
       std::string _option = "-" + option;
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
       ierr = PetscOptionsSetValue(_option.c_str(),
-                           boost::lexical_cast<std::string>(value).c_str());
+               boost::lexical_cast<std::string>(value).c_str());
+      #else
+      ierr = PetscOptionsSetValue(NULL, _option.c_str(),
+               boost::lexical_cast<std::string>(value).c_str());
+      #endif
       if (ierr != 0)
       {
         dolfin_error("PETScOptions.h",

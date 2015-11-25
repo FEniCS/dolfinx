@@ -58,7 +58,10 @@ dolfin::VectorSpaceBasis build_nullspace(const dolfin::FunctionSpace& V,
   for (std::size_t i = 0; i < basis.size(); ++i)
     basis[i]->apply("add");
 
-  return dolfin::VectorSpaceBasis(basis);
+  // Create vector space and orthonormalize
+  VectorSpaceBasis vector_space(basis);
+  vector_space.orthonormalize();
+  return vector_space;
 }
 
 

@@ -46,9 +46,9 @@ std::shared_ptr<GenericVector> TpetraFactory::create_vector() const
 std::shared_ptr<TensorLayout>
 TpetraFactory::create_layout(std::size_t rank) const
 {
-  bool sparsity = false;
+  TensorLayout::Sparsity sparsity = TensorLayout::Sparsity::DENSE;
   if (rank > 1)
-    sparsity = true;
+    sparsity = TensorLayout::Sparsity::SPARSE;
   std::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
   return pattern;
 }

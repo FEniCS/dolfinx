@@ -57,20 +57,27 @@ def RR(mesh):
     return VectorFunctionSpace(mesh, "R", 0)
 
 @fixt
-def QQV(QQ, V):
-    return QQ*V
+def QQV(mesh):
+    QQ = VectorElement("CG", mesh.ufl_cell(), 2)
+    V = FiniteElement("CG", mesh.ufl_cell(), 1)
+    return FunctionSpace(mesh, QQ*V)
 
 @fixt
-def WW(W):
-    return W * W
+def WW(mesh):
+    W = VectorElement("CG", mesh.ufl_cell(), 1)
+    return FunctionSpace(mesh, W*W)
 
 @fixt
-def WR(W, R):
-    return W * R
+def WR(mesh):
+    W = VectorElement("CG", mesh.ufl_cell(), 1)
+    R = FiniteElement("R", mesh.ufl_cell(), 0)
+    return FunctionSpace(mesh, W*R)
 
 @fixt
-def WRR(W, RR):
-    return W * RR
+def WRR(mesh):
+    W = VectorElement("CG", mesh.ufl_cell(), 1)
+    RR = VectorElement("R", mesh.ufl_cell(), 0)
+    return FunctionSpace(mesh, W*RR)
 
 @fixt
 def u0(V):

@@ -44,11 +44,13 @@ typedef struct {
   namespace dolfin {
     void dolfin_terminate() noexcept
     {
-      // Uninstall signal handlers of OpenMPI cluttering stderr
+      // Uninstall OpenMPI signal handlers cluttering stderr (only on POSIX)
+      #ifndef __MINGW32__
       struct sigaction act;
       memset(&act, 0, sizeof(act));
       act.sa_handler = SIG_IGN;
       sigaction(SIGABRT, &act, NULL);
+      #endif
 
       // We don't bother with MPI_Abort. This would require taking care of
       // MPI state. We just assume mpirun catches SIGABRT and sends SIGTERM

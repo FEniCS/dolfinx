@@ -179,7 +179,10 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
 
   // Check for data set exists
   if (!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
-    error("Data set with name \"%s\" does not exist", dataset_name.c_str());
+    dolfin_error("HDF5File.cpp",
+                 "read vector from file",
+                 "Data set with name \"%s\" does not exist",
+                 dataset_name.c_str());
 
   // Get dataset rank
   const std::size_t rank = HDF5Interface::dataset_rank(hdf5_file_id,
@@ -961,16 +964,24 @@ void HDF5File::read(Function& u, const std::string name)
 
   // Check datasets exist
   if (!HDF5Interface::has_group(hdf5_file_id, basename))
-    error("Group with name \"%s\" does not exist", name.c_str());
+    dolfin_error("HDF5File.cpp",
+                 "read function from file",
+                 "Group with name \"%s\" does not exist", name.c_str());
   if (!HDF5Interface::has_dataset(hdf5_file_id, cells_dataset_name))
-    error("Dataset with name \"%s\" does not exist",
-          cells_dataset_name.c_str());
+    dolfin_error("HDF5File.cpp",
+                 "read function from file",
+                 "Dataset with name \"%s\" does not exist",
+                 cells_dataset_name.c_str());
   if (!HDF5Interface::has_dataset(hdf5_file_id, cell_dofs_dataset_name))
-    error("Dataset with name \"%s\" does not exist",
-          cell_dofs_dataset_name.c_str());
+    dolfin_error("HDF5File.cpp",
+                 "read function from file",
+                 "Dataset with name \"%s\" does not exist",
+                 cell_dofs_dataset_name.c_str());
   if (!HDF5Interface::has_dataset(hdf5_file_id, x_cell_dofs_dataset_name))
-    error("Dataset with name \"%s\" does not exist",
-          x_cell_dofs_dataset_name.c_str());
+    dolfin_error("HDF5File.cpp",
+                 "read function from file",
+                 "Dataset with name \"%s\" does not exist",
+                 x_cell_dofs_dataset_name.c_str());
 
   // Check if it has the vector_0-dataset. If not, it may be stored with an
   // older version, and instead have a vector-dataset.
@@ -982,8 +993,10 @@ void HDF5File::read(Function& u, const std::string name)
       vector_dataset_name = vector_dataset_name.substr(0, N) + "/vector";
 
     if (!HDF5Interface::has_dataset(hdf5_file_id, vector_dataset_name))
-      error("Dataset with name \"%s\" does not exist",
-            tmp_name.c_str());
+      dolfin_error("HDF5File.cpp",
+                   "read function from file",
+                   "Dataset with name \"%s\" does not exist",
+                   tmp_name.c_str());
   }
 
   // Get existing mesh and dofmap - these should be pre-existing

@@ -519,10 +519,14 @@ def test_nonsquare_assembly():
     """Test assembly of a rectangular matrix"""
 
     mesh = UnitSquareMesh(16, 16)
-    V = VectorFunctionSpace(mesh, "CG", 2)
-    Q = FunctionSpace(mesh, "CG", 1)
 
+    V = VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    Q = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     W = V*Q
+    V = FunctionSpace(mesh, V)
+    Q = FunctionSpace(mesh, Q)
+    W = FunctionSpace(mesh, W)
+
     (v, q) = TestFunctions(W)
     (u, p) = TrialFunctions(W)
     a = div(v)*p*dx
@@ -542,9 +546,9 @@ def test_nonsquare_assembly_multithreaded():
 
     mesh = UnitSquareMesh(16, 16)
 
-    V = VectorFunctionSpace(mesh, "CG", 2)
-    Q = FunctionSpace(mesh, "CG", 1)
-    W = V*Q
+    V = VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    Q = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    W = FunctionSpace(mesh, V*Q)
 
     (v, q) = TestFunctions(W)
     (u, p) = TrialFunctions(W)

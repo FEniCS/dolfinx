@@ -222,7 +222,7 @@ void DirichletBC::gather(Map& boundary_values) const
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
   const auto& shared_nodes = dofmap.shared_nodes();
-  const int bs = dofmap.block_size;
+  const int bs = dofmap.block_size();
 
   // Create list of boundary values to send to each processor
   std::vector<std::vector<std::size_t>> proc_map0(comm_size);
@@ -241,7 +241,7 @@ void DirichletBC::gather(Map& boundary_values) const
       for (auto proc = shared_node->second.begin();
            proc != shared_node->second.end(); ++proc)
       {
-        proc_map0[*proc].push_back(dofmap.local_to_global_index(bv->first));
+        proc_map0[*proc].push_back(dofmap.index_map()->local_to_global(bv->first));
         proc_map1[*proc].push_back(bv->second);
       }
     }
@@ -278,20 +278,24 @@ void DirichletBC::gather(Map& boundary_values) const
         const std::imaxdiv_t div = std::imaxdiv(_vec[i].first, bs);
         const std::size_t node = div.quot;
         const int component = div.rem;
+        const std::vector<std::size_t>& local_to_global
+          = dofmap.index_map()->local_to_global_unowned();
 
         // Case 1: dof is not owned by this process
-        auto it = std::find(dofmap.local_to_global_unowned().begin(),
-                            dofmap.local_to_global_unowned().end(),
+        auto it = std::find(local_to_global.begin(),
+                            local_to_global.end(),
                             node);
-        if (it == dofmap.local_to_global_unowned().end())
+        if (it == local_to_global.end())
         {
           // Throw error if dof is not in local map
-          error("Cannot find dof in local_to_global_unowned array");
+          dolfin_error("DirichletBC.cpp",
+                       "gather boundary values",
+                       "Cannot find dof in local_to_global_unowned array");
         }
         else
         {
           const std::size_t pos
-            = std::distance(dofmap.local_to_global_unowned().begin(), it);
+            = std::distance(local_to_global.begin(), it);
           _vec[i].first = owned_size + bs*pos + component;
         }
       }
@@ -1054,8 +1058,8 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   std::vector<double> coordinate_dofs;
   if (MPI::max(mesh.mpi_comm(), _cells_to_localdofs.size()) == 0)
   {
-    // First time around all cells must be iterated over.
-    // Create map from cells attached to boundary to local dofs.
+    // First time around all cells must be iterated over.  Create map
+    // from cells attached to boundary to local dofs.
     Progress p("Computing Dirichlet boundary values, pointwise search",
                mesh.num_cells());
     for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -1072,7 +1076,8 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       const ArrayView<const dolfin::la_index> cell_dofs
         = dofmap.cell_dofs(cell->index());
 
-      // Interpolate function only once and only on cells where necessary
+      // Interpolate function only once and only on cells where
+      // necessary
       bool already_interpolated = false;
 
       // Loop all dofs on cell
@@ -1102,7 +1107,8 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
           _g->restrict(data.w.data(), *_function_space->element(), *cell,
                       coordinate_dofs.data(), ufc_cell);
 
-          // Put cell index in storage for next time function is called
+          // Put cell index in storage for next time function is
+          // called
           _cells_to_localdofs.insert(std::make_pair(cell->index(), dofs));
         }
 
@@ -1118,7 +1124,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   }
   else
   {
-    // Loop over cells that contain dofs on boundary.
+    // Loop over cells that contain dofs on boundary
     std::map<std::size_t, std::vector<std::size_t>>::const_iterator it;
     for (it = _cells_to_localdofs.begin(); it != _cells_to_localdofs.end();
          ++it)

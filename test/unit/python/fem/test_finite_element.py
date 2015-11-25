@@ -41,8 +41,10 @@ def Q(mesh):
     return VectorFunctionSpace(mesh, "CG", 1)
 
 @fixture
-def W(V, Q):
-    return V * Q
+def W(mesh):
+    V = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    Q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    return FunctionSpace(mesh, V*Q)
 
 
 def test_evaluate_dofs(W, mesh, V):

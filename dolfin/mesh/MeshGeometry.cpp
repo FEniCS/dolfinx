@@ -118,7 +118,7 @@ std::string MeshGeometry::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    for (std::size_t i = 0; i < size(); i++)
+    for (std::size_t i = 0; i < num_vertices(); i++)
     {
       s << "  " << i << ":";
       for (std::size_t d = 0; d < _dim; d++)
@@ -128,7 +128,10 @@ std::string MeshGeometry::str(bool verbose) const
     s << std::endl;
   }
   else
-    s << "<MeshGeometry of dimension " << _dim << " and size " << size() << ">";
+  {
+    s << "<MeshGeometry of dimension " << _dim << " and size "
+      << num_vertices() << ">";
+  }
 
   return s.str();
 }

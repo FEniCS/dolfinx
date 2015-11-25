@@ -58,7 +58,7 @@ namespace dolfin
 
     /// If a widget is supplied, this widget will be used for drawing,
     /// instead of a new top-level widget. Ownership is transferred.
-    VTKWindowOutputStage(QVTKWidget* widget = NULL);
+    VTKWindowOutputStage();
 
     /// Destructor
     ~VTKWindowOutputStage();
@@ -84,20 +84,7 @@ namespace dolfin
     /// Retrieve the window title
     std::string get_window_title();
 
-    /// Return a pointer to the plotting widget. The pointer is valid
-    /// from after init() is called (if no widget was passed in the
-    /// constructor).
-    QVTKWidget *get_widget() const;
-
-    /// Close the plotting window (only Qt). The window is not destroyed.
-    void close_window();
-
-    /// Re-open a previously closed plotting window.
-    bool resurrect_window();
-
-    /// Start interaction, and optionally enter the event loop. In Qt,
-    /// interaction is allowed also before start_interaction is called,
-    /// but updates are only processed when the plot is updated.
+    /// Start interaction, and optionally enter the event loop.
     void start_interaction(bool enter_eventloop=true);
 
     /// Exit the event loop
@@ -151,7 +138,8 @@ namespace dolfin
 
     /// Used by plottables to indicate whether the scene should be
     /// treated as translucent (which requires depth sorting, etc.)
-    void set_translucent(bool onoff, std::size_t topo_dim=3, std::size_t geom_dim=3);
+    void set_translucent(bool onoff, std::size_t topo_dim=3,
+                         std::size_t geom_dim=3);
 
   protected:
 
@@ -187,10 +175,6 @@ namespace dolfin
     vtkSmartPointer<vtkTextActor> helptextActor;
     vtkSmartPointer<vtkBalloonRepresentation> balloonRep;
     vtkSmartPointer<vtkBalloonWidget> balloonwidget;
-
-    #ifdef HAS_QVTK
-    QVTKWidget *widget;
-    #endif
 
   };
 

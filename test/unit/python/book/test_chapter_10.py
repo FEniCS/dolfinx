@@ -388,7 +388,7 @@ def test_p21_box_1():
     mesh = UnitSquareMesh(3, 3)
     V = VectorFunctionSpace(mesh, "Lagrange", 2)
     Q = FunctionSpace(mesh, "Lagrange", 1)
-    W = V*Q
+    #W = V*Q # deprecated!
 
 
 @use_gc_barrier
@@ -426,9 +426,9 @@ def test_p22_box_2():
 @use_gc_barrier
 def test_p23_box_1():
     mesh = UnitSquareMesh(3, 3)
-    V = VectorFunctionSpace(mesh, "Lagrange", 2)
-    Q = FunctionSpace(mesh, "Lagrange", 1)
-    W = V*Q
+    V = VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    Q = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    W = FunctionSpace(mesh, V*Q)
 
     w = Function(W)
     u, p = w.split()

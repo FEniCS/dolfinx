@@ -205,9 +205,6 @@ const Function& Function::operator= (const Function& v)
     std::vector<dolfin::la_index> new_rows(collapsed_map.size());
     std::vector<dolfin::la_index> old_rows(collapsed_map.size());
     std::size_t i = 0;
-    //const std::size_t local_owned_size
-    //  = v._function_space->dofmap()->ownership_range().second
-    //  - v._function_space->dofmap()->ownership_range().first;
     for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
     {
       new_rows[i]   = entry->first;
@@ -216,10 +213,6 @@ const Function& Function::operator= (const Function& v)
     MPI::barrier(MPI_COMM_WORLD);
 
     // Gather values into a vector
-    //std::vector<double> gathered_values;
-    //dolfin_assert(v.vector());
-    //v.vector()->gather(gathered_values, old_rows);
-
     dolfin_assert(v.vector());
     std::vector<double> gathered_values(collapsed_map.size());
     v.vector()->get_local(gathered_values.data(), gathered_values.size(),
@@ -594,56 +587,47 @@ void Function::init_vector()
 {
   Timer timer("Init dof vector");
 
-  // Check that function space is not a subspace (view)
-  dolfin_assert(_function_space);
-  if (_function_space->dofmap()->is_view())
-  {
-    dolfin_error("Function.cpp",
-                 "initialize vector of degrees of freedom for function",
-                 "Cannot be created from subspace. Consider collapsing the function space");
-  }
-
   // Get dof map
+  dolfin_assert(_function_space);
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *(_function_space->dofmap());
 
-  // Get local range
-  const std::pair<std::size_t, std::size_t> range = dofmap.ownership_range();
+  // Check that function space is not a subspace (view)
+  if (dofmap.is_view())
+  {
+    dolfin_error("Function.cpp",
+                 "initialize vector of degrees of freedom for function",
+                 "Cannot be created from subspace. Consider collapsing the "
+                 "function space");
+  }
 
-  // Determine ghost vertices if dof map is distributed
-  const std::size_t bs = dofmap.block_size;
-  std::vector<la_index>
-    ghost_indices(bs*dofmap.local_to_global_unowned().size());
-  for (std::size_t i = 0; i < dofmap.local_to_global_unowned().size(); ++i)
-    for (std::size_t j = 0; j < bs; ++j)
-      ghost_indices[bs*i + j] = bs*dofmap.local_to_global_unowned()[i] + j;
+  // Get index map
+  std::shared_ptr<const IndexMap> index_map = dofmap.index_map();
+  dolfin_assert(index_map);
+
+  DefaultFactory factory;
+
+  // Create layout for initialising tensor
+  std::shared_ptr<TensorLayout> tensor_layout;
+  tensor_layout = factory.create_layout(1);
+  dolfin_assert(tensor_layout);
+  dolfin_assert(!tensor_layout->sparsity_pattern());
+  dolfin_assert(_function_space->mesh());
+  tensor_layout->init(_function_space->mesh()->mpi_comm(), {index_map},
+                      TensorLayout::Ghosts::GHOSTED);
 
   // Create vector of dofs
   if (!_vector)
-  {
-    DefaultFactory factory;
     _vector = factory.create_vector();
-  }
   dolfin_assert(_vector);
-
-  // Tabulate local-to-global map for dofs
-  std::vector<std::size_t> local_to_global_map;
-  dofmap.tabulate_local_to_global_dofs(local_to_global_map);
-
-  // Initialize vector of dofs
-  dolfin_assert(_function_space->mesh());
-  if (_vector->empty())
-  {
-    _vector->init(_function_space->mesh()->mpi_comm(), range,
-                  local_to_global_map, ghost_indices);
-  }
-  else
+  if (!_vector->empty())
   {
     dolfin_error("Function.cpp",
                  "initialize vector of degrees of freedom for function",
                  "Cannot re-initialize a non-empty vector. Consider creating a new function");
 
   }
+  _vector->init(*tensor_layout);
   _vector->zero();
 }
 //-----------------------------------------------------------------------------

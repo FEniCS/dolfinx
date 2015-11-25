@@ -47,10 +47,10 @@ def testConstantInit():
     assert c2.cell() == triangle
     assert c3.cell() == tetrahedron
 
-    assert c0.shape() == ()
-    assert c1.shape() == (2,)
-    assert c2.shape() == (2,2)
-    assert c3.shape() == (2,)
+    assert c0.ufl_shape == ()
+    assert c1.ufl_shape == (2,)
+    assert c2.ufl_shape == (2,2)
+    assert c3.ufl_shape == (2,)
 
 
 def testGrad():

@@ -34,7 +34,6 @@
 #include <Tpetra_Version.hpp>
 
 #include <dolfin/common/types.h>
-#include <dolfin/log/dolfin_log.h>
 #include "GenericVector.h"
 
 namespace dolfin

@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Joachim Berdal Haga
+// Copyright (C) 2015 Tormod Landet
 //
 // This file is part of DOLFIN.
 //
@@ -15,35 +15,20 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2012-09-18
-// Last changed: 2012-09-18
+// First added:  2015-09-22
+//
+// This file adds an easy to use wrapper for the LocalAssembler::assemble
+// routine that can used from Python
 
-#ifndef __COORD_LABEL_H
-#define __COORD_LABEL_H
+#ifndef __ASSEMBLE_LOCAL_H
+#define __ASSEMBLE_LOCAL_H
 
-#include <QLabel>
-
-class CoordLabel : public QLabel
+namespace dolfin
 {
-  Q_OBJECT
-
-  /// A simple wrapper around QLabel, to create simple gui elements for
-  /// formatted display of numbers. Add setNum() slots as required.
-
-public:
-
-  CoordLabel(const char *format, QWidget *parent=NULL);
-
-public slots:
-
-  void setNum(int);
-  void setNum(int,int);
-  void setNum(double,double,double);
-
-private:
-
-  const char *_format;
-
-};
+  /// Assemble form to local tensor on a cell
+  void assemble_local(const Form& a,
+                      const Cell& cell,
+                      std::vector<double>& tensor);
+}
 
 #endif

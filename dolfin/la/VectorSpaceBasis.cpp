@@ -20,6 +20,7 @@
 
 #include <cmath>
 #include <dolfin/common/constants.h>
+#include "GenericVector.h"
 #include "VectorSpaceBasis.h"
 
 using namespace dolfin;
@@ -31,7 +32,32 @@ VectorSpaceBasis::VectorSpaceBasis(const std::vector<std::shared_ptr<
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool VectorSpaceBasis::is_orthonormal() const
+void VectorSpaceBasis::orthonormalize(double tol)
+{
+  // Loop over each vector in basis
+  for (std::size_t i = 0; i < _basis.size(); ++i)
+  {
+    // Orthogonalize vector i with respect to previously
+    // orthonormalized vectors
+    for (std::size_t j = 0; j < i; ++j)
+    {
+      const double dot_ij = _basis[i]->inner(*_basis[j]);
+      _basis[i]->axpy(-dot_ij, *_basis[j]);
+    }
+
+    if (_basis[i]->norm("l2") < tol)
+    {
+      dolfin_error("VectorSpaceBasis.cpp",
+                   "orthonormalize vector basis",
+                   "Vector space has linear dependency");
+    }
+
+    // Normalise basis function
+    (*_basis[i]) /= _basis[i]->norm("l2");
+  }
+}
+//-----------------------------------------------------------------------------
+bool VectorSpaceBasis::is_orthonormal(double tol) const
 {
   for (std::size_t i = 0; i < _basis.size(); i++)
   {
@@ -41,7 +67,7 @@ bool VectorSpaceBasis::is_orthonormal() const
       dolfin_assert(_basis[j]);
       const double delta_ij = (i == j) ? 1.0 : 0.0;
       const double dot_ij = _basis[i]->inner(*_basis[j]);
-      if (std::abs(delta_ij - dot_ij) > DOLFIN_EPS)
+      if (std::abs(delta_ij - dot_ij) > tol)
         return false;
     }
   }
@@ -49,7 +75,7 @@ bool VectorSpaceBasis::is_orthonormal() const
   return true;
 }
 //-----------------------------------------------------------------------------
-bool VectorSpaceBasis::is_orthogonal() const
+bool VectorSpaceBasis::is_orthogonal(double tol) const
 {
   for (std::size_t i = 0; i < _basis.size(); i++)
   {
@@ -60,7 +86,7 @@ bool VectorSpaceBasis::is_orthogonal() const
       if (i != j)
       {
         const double dot_ij = _basis[i]->inner(*_basis[j]);
-        if (std::abs(dot_ij) > DOLFIN_EPS)
+        if (std::abs(dot_ij) > tol)
           return false;
       }
     }

@@ -57,18 +57,18 @@ def test_instantiation_mixed_element():
 
     pbc = PeriodicBoundary2()
     mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=pbc)
-    VV = V*V
+    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    VV = FunctionSpace(mesh, P1*P1, constrained_domain=pbc)
 
 def test_instantiation_mixed_element_real():
     """ A rudimentary test for instantiation with mixed elements that include a real space"""
 
     pbc = PeriodicBoundary2()
     mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=pbc)
-    R = FunctionSpace(mesh, "Real", 0, constrained_domain=pbc)
-    VV = V*R
-    VV = R*V
+    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    R = FiniteElement("Real", mesh.ufl_cell(), 0)
+    VV = FunctionSpace(mesh, P1*R, constrained_domain=pbc)
+    VV = FunctionSpace(mesh, R*P1, constrained_domain=pbc)
 
 def test_instantiation_no_vertex_element_2D():
     """ A rudimentary test for instantiation for element that does

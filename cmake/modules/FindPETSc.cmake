@@ -64,7 +64,7 @@ endforeach()
 
 # List of possible locations for PETSC_DIR
 set(petsc_dir_locations "")
-list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.4.2")  # Debian location
+list(APPEND petsc_dir_locations "/usr/lib/petsc")           # Debian location
 list(APPEND petsc_dir_locations "/opt/local/lib/petsc")     # Macports location
 list(APPEND petsc_dir_locations "/usr/local/lib/petsc")     # User location
 list(APPEND petsc_dir_locations "$ENV{HOME}/petsc")         # User location
