@@ -24,8 +24,6 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel
 
-parameters["reorder_dofs_serial"] = False
-
 @skip_if_not_PETSc
 def test_krylov_samg_solver_elasticity():
     "Test PETScKrylovSolver with smoothed aggregation AMG"
