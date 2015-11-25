@@ -13,7 +13,7 @@
 
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 
-//#define Augustcgal
+#define Augustcgal
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel CGALKernel;
 //typedef CGAL::Exact_predicates_inexact_constructions_kernel CGALKernel;

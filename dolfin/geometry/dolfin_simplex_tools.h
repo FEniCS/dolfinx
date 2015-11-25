@@ -3,6 +3,7 @@
 
 //#include "../dolfin.h" // for install
 #include <dolfin.h> // for building test
+
 #include "predicates.h"
 
 #include <string>

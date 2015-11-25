@@ -1,4 +1,4 @@
-# Copyright (C) 2014 Anders Logg
+# Copyright (C) 2014-2015 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-06-26
-# Last changed: 2014-06-15
+# Last changed: 2015-10-16
 #
 # The bilinear form a(u, v) and linear form L(v) for a multimesh
 # formulation of Poisson's equation.
@@ -57,5 +57,5 @@ a = dot(grad(u), grad(v))*dx \
   + alpha/h*jump(u)*jump(v)*di \
   + dot(jump(grad(u)), jump(grad(v)))*do
 
-# Linear form
+# Define linear form
 L = f*v*dx

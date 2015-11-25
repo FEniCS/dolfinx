@@ -136,7 +136,7 @@ void solve(double t,
     plot(u.part(2), "u_2");
     interactive();
   }
-  }
+}
 
 int main(int argc, char* argv[])
 {

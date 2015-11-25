@@ -33,8 +33,9 @@
 #include "MultiMesh.h"
 // FIXME August
 #include <dolfin/geometry/dolfin_simplex_tools.h>
-#define Augustdebug
-#define Augustnormaldebug
+#define Augustwritemarkers
+//#define Augustdebug
+// #define Augustnormaldebug
 
 using namespace dolfin;
 
@@ -390,7 +391,7 @@ void MultiMesh::_build_collision_maps()
       }
     }
 
-#ifdef Augustdebug
+#ifdef Augustwritemarkers
     {
       std::vector<double> tmp(markers.size());
       for (std::size_t i = 0; i < markers.size(); ++i)
