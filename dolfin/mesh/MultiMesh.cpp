@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2015-11-12
+// Last changed: 2015-11-26
 
 #include <dolfin/log/log.h>
 #include <dolfin/plot/plot.h>
@@ -34,8 +34,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MultiMesh::MultiMesh(std::size_t quadrature_order)
-  : _quadrature_order(quadrature_order)
+MultiMesh::MultiMesh()
 {
   // Do nothing
 }
@@ -148,7 +147,7 @@ void MultiMesh::add(const Mesh& mesh)
   add(reference_to_no_delete_pointer(mesh));
 }
 //-----------------------------------------------------------------------------
-void MultiMesh::build()
+void MultiMesh::build(std::size_t quadrature_order)
 {
   begin(PROGRESS, "Building multimesh.");
 
@@ -167,10 +166,10 @@ void MultiMesh::build()
 
   // Build quadrature rules of the cut cells' overlap. Do this before
   // we build the quadrature rules of the cut cells
-  _build_quadrature_rules_overlap();
+  _build_quadrature_rules_overlap(quadrature_order);
 
   // Build quadrature rules of the cut cells
-  _build_quadrature_rules_cut_cells();
+  _build_quadrature_rules_cut_cells(quadrature_order);
 
   end();
 }
@@ -370,7 +369,7 @@ void MultiMesh::_build_collision_maps()
   end();
 }
 //-----------------------------------------------------------------------------
-void MultiMesh::_build_quadrature_rules_overlap()
+void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 {
   begin(PROGRESS, "Building quadrature rules of cut cells' overlap.");
 
@@ -528,7 +527,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
               = _add_quadrature_rule(interface_part_qr,
                                      triangulation_cut_boundary,
                                      tdim_boundary, gdim,
-                                     _quadrature_order, 1);
+                                     quadrature_order, 1);
 
             const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
             const Point n = -cutting_cell.normal(local_facet_index);
@@ -559,7 +558,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
               = _add_quadrature_rule(interface_part_qr,
                                      triangulation_boundary_prev_volume,
                                      tdim_boundary, gdim,
-                                     _quadrature_order, -1);
+                                     quadrature_order, -1);
 
             const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
             const Point n = -cutting_cell.normal(local_facet_index);
@@ -603,7 +602,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
             = _add_quadrature_rule(interface_part_qr,
                                    triangulation_prev_cutting,
                                    tdim_boundary, gdim,
-                                   _quadrature_order, -1);
+                                   quadrature_order, -1);
 
           for (std::size_t i = 0; i < num_qr_points.size(); ++i)
             _add_normal(interface_part_n,
@@ -646,10 +645,10 @@ void MultiMesh::_build_quadrature_rules_overlap()
         // triangulations
         _add_quadrature_rule(overlap_part_qr,
                              triangulation_cut_cutting,
-                             tdim, gdim, _quadrature_order, 1);
+                             tdim, gdim, quadrature_order, 1);
         _add_quadrature_rule(overlap_part_qr,
                              triangulation_cutting_prev,
-                             tdim, gdim, _quadrature_order, -1);
+                             tdim, gdim, quadrature_order, -1);
 
         // Add quadrature rule for overlap part
         overlap_qr.push_back(overlap_part_qr);
@@ -673,7 +672,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
   end();
 }
 //-----------------------------------------------------------------------------
-void MultiMesh::_build_quadrature_rules_cut_cells()
+void MultiMesh::_build_quadrature_rules_cut_cells(std::size_t quadrature_order)
 {
   begin(PROGRESS, "Building quadrature rules of cut cells.");
 
@@ -697,7 +696,7 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 
       // Compute quadrature rule for the cell itself.
       auto qr = SimplexQuadrature::compute_quadrature_rule(cut_cell,
-                                                           _quadrature_order);
+                                                           quadrature_order);
 
       // Get the quadrature rule for the overlapping part
       const auto& qr_overlap = _quadrature_rules_overlap[cut_part][cut_cell_index];

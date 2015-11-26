@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2015-11-12
+// Last changed: 2015-11-26
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -52,7 +52,7 @@ namespace dolfin
   public:
 
     /// Create empty multimesh
-    MultiMesh(std::size_t quadrature_order=2);
+    MultiMesh();
 
     /// Destructor
     ~MultiMesh();
@@ -268,7 +268,7 @@ namespace dolfin
     void add(const Mesh& mesh);
 
     /// Build multimesh
-    void build();
+    void build(std::size_t quadrature_order=2);
 
     /// Clear multimesh
     void clear();
@@ -410,9 +410,6 @@ namespace dolfin
     std::vector<std::map<unsigned int, std::vector<std::vector<double> > > >
     _facet_normals;
 
-    // Quadrature order
-    std::size_t _quadrature_order;
-
     // Build boundary meshes
     void _build_boundary_meshes();
 
@@ -425,10 +422,10 @@ namespace dolfin
     //void _build_collision_maps_different_topology();
 
     // Build quadrature rules for the cut cells
-    void _build_quadrature_rules_cut_cells();
+    void _build_quadrature_rules_cut_cells(std::size_t quadrature_order);
 
     // Build quadrature rules for the overlap
-    void _build_quadrature_rules_overlap();
+    void _build_quadrature_rules_overlap(std::size_t quadrature_order);
 
     // Add quadrature rule for simplices in the triangulation
     // array. Returns the number of points generated for each simplex.
