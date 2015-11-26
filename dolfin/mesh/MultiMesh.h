@@ -54,6 +54,42 @@ namespace dolfin
     /// Create empty multimesh
     MultiMesh();
 
+    /// Create multimesh from given list of meshes
+    MultiMesh(std::vector<std::shared_ptr<const Mesh>> meshes,
+              std::size_t quadrature_order);
+
+    //--- Convenience constructors ---
+
+    /// Create multimesh from one mesh (shared_ptr version)
+    MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+              std::size_t quadrature_order);
+
+    /// Create multimesh from one mesh (reference version)
+    MultiMesh(const Mesh& mesh_0,
+              std::size_t quadrature_order);
+
+    /// Create multimesh from two meshes (shared_ptr version)
+    MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+              std::shared_ptr<const Mesh> mesh_1,
+              std::size_t quadrature_order);
+
+    /// Create multimesh from two meshes (reference version)
+    MultiMesh(const Mesh& mesh_0,
+              const Mesh& mesh_1,
+              std::size_t quadrature_order);
+
+    /// Create multimesh from three meshes (shared_ptr version)
+    MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+              std::shared_ptr<const Mesh> mesh_1,
+              std::shared_ptr<const Mesh> mesh_2,
+              std::size_t quadrature_order);
+
+    /// Create multimesh from three meshes (reference version)
+    MultiMesh(const Mesh& mesh_0,
+              const Mesh& mesh_1,
+              const Mesh& mesh_2,
+              std::size_t quadrature_order);
+
     /// Destructor
     ~MultiMesh();
 

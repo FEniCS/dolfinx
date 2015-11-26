@@ -39,6 +39,75 @@ MultiMesh::MultiMesh()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+MultiMesh::MultiMesh(std::vector<std::shared_ptr<const Mesh>> meshes,
+                     std::size_t quadrature_order)
+{
+  // Add and build
+  for (auto mesh : meshes)
+    add(mesh);
+  build(quadrature_order);
+}
+//-----------------------------------------------------------------------------
+MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+                     std::size_t quadrature_order)
+{
+  // Add and build
+  add(mesh_0);
+  build(quadrature_order);
+}
+//-----------------------------------------------------------------------------
+MultiMesh::MultiMesh(const Mesh& mesh_0,
+                     std::size_t quadrature_order)
+{
+  // Add and build
+  add(mesh_0);
+  build(quadrature_order);
+}
+//-----------------------------------------------------------------------------
+MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+                     std::shared_ptr<const Mesh> mesh_1,
+                     std::size_t quadrature_order)
+{
+  // Add and build
+  add(mesh_0);
+  add(mesh_1);
+  build(quadrature_order);
+}
+//-----------------------------------------------------------------------------
+MultiMesh::MultiMesh(const Mesh& mesh_0,
+                     const Mesh& mesh_1,
+                     std::size_t quadrature_order)
+{
+  // Add and build
+  add(mesh_0);
+  add(mesh_1);
+  build(quadrature_order);
+}
+//-----------------------------------------------------------------------------
+MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+                     std::shared_ptr<const Mesh> mesh_1,
+                     std::shared_ptr<const Mesh> mesh_2,
+                     std::size_t quadrature_order)
+{
+  // Add and build
+  add(mesh_0);
+  add(mesh_1);
+  add(mesh_2);
+  build(quadrature_order);
+}
+//-----------------------------------------------------------------------------
+MultiMesh::MultiMesh(const Mesh& mesh_0,
+                     const Mesh& mesh_1,
+                     const Mesh& mesh_2,
+                     std::size_t quadrature_order)
+{
+  // Add and build
+  add(mesh_0);
+  add(mesh_1);
+  add(mesh_2);
+  build(quadrature_order);
+}
+//-----------------------------------------------------------------------------
 MultiMesh::~MultiMesh()
 {
   // Do nothing
