@@ -50,7 +50,8 @@ class DirichletBoundary : public SubDomain
 };
 
 // Compute solution for given mesh configuration
-void solve_poisson(double t,
+void solve_poisson(std::size_t step,
+		   double t,
                    double x1, double y1,
                    double x2, double y2,
                    bool plot_solution,
@@ -138,7 +139,7 @@ void solve_poisson(double t,
 
   // Debugging
   {
-    std::cout << "\tmax min " << u.vector()->max() << ' ' << u.vector()->min() << '\n';
+    std::cout << "\tmax min step " << step <<' ' << u.vector()->max() << ' ' << u.vector()->min() << '\n';
     for (std::size_t part = 0; part < multimesh.num_parts(); ++part)
     {
       // get max on vertex values
@@ -215,6 +216,7 @@ void solve_poisson(double t,
       }
 
       std::cout << "\tpart " << part
+		<< " step " << step
 		<< " all vertices " << maxvv
 		<< " uncut " << maxvals[0]
 		<< " cut " << maxvals[1]
@@ -236,6 +238,8 @@ void solve_poisson(double t,
     plot(u.part(2), "u_2");
     interactive();
   }
+
+
 }
 
 int main(int argc, char* argv[])
@@ -248,8 +252,8 @@ int main(int argc, char* argv[])
 
   // Parameters
   const double T = 40.0;
-  const std::size_t N = 400;
-  const double dt = T / N;
+  const std::size_t N = 57;
+  const double dt = T / 400;
 
   // Files for storing solution
   File u0_file("u0.pvd");
@@ -269,7 +273,7 @@ int main(int argc, char* argv[])
   File covered2_file("covered2.pvd");
 
   // Iterate over configurations
-  for (std::size_t n = 277; n < 278; n++)
+  for (std::size_t n = 56; n < N; n++)
   {
     info("Computing solution, step %d / %d.", n, N - 1);
 
@@ -283,7 +287,8 @@ int main(int argc, char* argv[])
     // Compute solution
     // solve_poisson(t, x1, y1, x2, y2, n == N - 1,
     //               u0_file, u1_file, u2_file);
-    solve_poisson(t, x1, y1, x2, y2, n == 277,
+    solve_poisson(n,
+		  t, x1, y1, x2, y2, n == N - 1,
 		  u0_file, u1_file, u2_file,
 		  uncut0_file, uncut1_file, uncut2_file,
                   cut0_file, cut1_file, cut2_file,

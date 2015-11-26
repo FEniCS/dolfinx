@@ -142,7 +142,8 @@ if (NOT CMAKE_BUILD_TYPE)
     "Choose the type of build, options are: Debug Developer MinSizeRel Release RelWithDebInfo." FORCE)
 endif()
 
-list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS "-v -O0 -ggdb3")
+#list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS "-v -O0 -ggdb3")
+list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS "-ggdb3")
 
 # Check for some compiler flags
 include(CheckCXXCompilerFlag)

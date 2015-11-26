@@ -33,6 +33,7 @@
 #include "MultiMesh.h"
 // FIXME August
 #include <dolfin/geometry/dolfin_simplex_tools.h>
+
 #define Augustwritemarkers
 //#define Augustdebug
 // #define Augustnormaldebug
@@ -301,6 +302,28 @@ void MultiMesh::_build_collision_maps()
   _collision_maps_cut_cells.clear();
   _collision_maps_cut_cells_boundary.clear();
 
+  // for (std::size_t i = 0; i < num_parts(); i++)
+  // {
+  //   for (std::size_t j = i + 1; j < num_parts(); j++)
+  //   {
+  //     // Compute domain-boundary collisions
+  //     const auto& boundary_collisions = _trees[i]->compute_collisions(*_boundary_trees[j]);
+
+  //     // Iterate over boundary collisions
+  //     for (const auto it: boundary_collisions.first)
+  //     {
+  // 	// std::cout <<"part " <<i<<" collides with " << j << " cell " << it;
+  // 	// if (i==0 and (it==136 or it==137)) { std::cout << " *****"; }
+  // 	// std::cout << '\n';
+  // 	const Cell cell(*_meshes[i], it);
+  // 	std::cout << tools::drawtriangle(cell);
+  //     }
+  //   }
+  //   std::cout << std::endl;
+  //   PPause;
+  // }
+  // PPause;
+
   // Iterate over all parts
   for (std::size_t i = 0; i < num_parts(); i++)
   {
@@ -311,7 +334,7 @@ void MultiMesh::_build_collision_maps()
     // 2: covered = cell colliding with some higher domain but not its boundary
 
     // Create vector of markers for cells in part `i` (0, 1, or 2)
-    std::vector<char> markers(_meshes[i]->num_cells(), 0);
+    std::vector<std::size_t> markers(_meshes[i]->num_cells(), 0);
 
     // Create local array for marking boundary collisions for cells in
     // part `i`. Note that in contrast to the markers above which are
@@ -335,23 +358,22 @@ void MultiMesh::_build_collision_maps()
       const auto& boundary_collisions = _trees[i]->compute_collisions(*_boundary_trees[j]);
 
       // Iterate over boundary collisions
-      for (auto it = boundary_collisions.first.begin();
-           it != boundary_collisions.first.end(); ++it)
+      for (const auto it: boundary_collisions.first)
       {
         // Mark that cell collides with boundary
-        collides_with_boundary[*it] = true;
+        collides_with_boundary[it] = true;
 
         // Mark as cut cell if not previously covered
-        if (markers[*it] != 2)
+        if (markers[it] != 2)
         {
           // Mark as cut cell
-          markers[*it] = 1;
+	  markers[it] = 1;
 
           // Add empty list of collisions into map if it does not exist
-          if (collision_map_cut_cells.find(*it) == collision_map_cut_cells.end())
+          if (collision_map_cut_cells.find(it) == collision_map_cut_cells.end())
           {
             std::vector<std::pair<std::size_t, unsigned int>> collisions;
-            collision_map_cut_cells[*it] = collisions;
+            collision_map_cut_cells[it] = collisions;
           }
         }
       }
@@ -408,6 +430,8 @@ void MultiMesh::_build_collision_maps()
     std::vector<unsigned int> covered_cells;
     for (unsigned int c = 0; c < _meshes[i]->num_cells(); c++)
     {
+      if (i==0 and (c==136 or c==137))
+	std::cout << __LINE__<<' '<<c<<' '<<markers[c]<< std::endl;
       switch (markers[c])
       {
       case 0:
