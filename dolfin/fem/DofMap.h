@@ -39,7 +39,6 @@
 #include <dolfin/mesh/Cell.h>
 #include "GenericDofMap.h"
 
-
 namespace dolfin
 {
 
@@ -398,6 +397,9 @@ namespace dolfin
 
     // UFC dof map offset
     std::size_t _ufc_offset;
+
+    // Multimesh dof map offset
+    std::size_t _multimesh_offset;
 
     // Object containing information about dof distribution across
     // processes

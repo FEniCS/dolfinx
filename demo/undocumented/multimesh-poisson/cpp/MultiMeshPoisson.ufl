@@ -1,4 +1,4 @@
-# Copyright (C) 2014 Anders Logg
+# Copyright (C) 2014-2015 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-06-26
-# Last changed: 2014-06-15
+# Last changed: 2015-10-16
 #
 # The bilinear form a(u, v) and linear form L(v) for a multimesh
 # formulation of Poisson's equation.
@@ -36,26 +36,16 @@ n = FacetNormal(triangle)
 h = 2.0*Circumradius(triangle)
 h = (h('+') + h('-')) / 2
 
-# Define custom measures (FIXME: prettify this)
-dc0 = dc(0, metadata={"num_cells": 1})
-dc1 = dc(1, metadata={"num_cells": 2})
-dc2 = dc(2, metadata={"num_cells": 2})
-
-# Define measures for integration
-dx = dx + dc0 # domain integral
-di = dc1      # interface integral
-do = dc2      # overlap integral
-
 # Parameters
 alpha = 4.0
 beta = 4.0
 
-# Bilinear form
-a = dot(grad(u), grad(v))*dx \
-  - dot(avg(grad(u)), jump(v, n))*di \
-  - dot(avg(grad(v)), jump(u, n))*di \
-  + alpha/h*jump(u)*jump(v)*di \
-  + dot(jump(grad(u)), jump(grad(v)))*do
+# Define bilinear form
+a = dot(grad(u), grad(v))*dX \
+  - dot(avg(grad(u)), jump(v, n))*dI \
+  - dot(avg(grad(v)), jump(u, n))*dI \
+  + alpha/h*jump(u)*jump(v)*dI \
+  + beta*dot(jump(grad(u)), jump(grad(v)))*dO
 
-# Linear form
-L = f*v*dx
+# Define linear form
+L = f*v*dX

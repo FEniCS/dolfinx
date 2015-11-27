@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2014-06-11
+// Last changed: 2015-11-12
 
 #ifndef __MULTI_MESH_FUNCTION_SPACE_H
 #define __MULTI_MESH_FUNCTION_SPACE_H
@@ -46,8 +46,11 @@ namespace dolfin
   {
   public:
 
-    /// Create empty multimesh function space
-    MultiMeshFunctionSpace();
+    /// Create multimesh function space on multimesh (referece version)
+    MultiMeshFunctionSpace(const MultiMesh& multimesh);
+
+    /// Create multimesh function space on multimesh (shared pointer version)
+    MultiMeshFunctionSpace(std::shared_ptr<const MultiMesh> multimesh);
 
     /// Destructor
     ~MultiMeshFunctionSpace();
@@ -123,21 +126,9 @@ namespace dolfin
     /// Build multimesh function space
     void build();
 
-    /// Build multimesh function space. This function reuses an
-    /// existing multimesh and uses offsets computed from the full
-    /// function spaces on each part.
-    void build(std::shared_ptr<MultiMesh> multimesh,
-               const std::vector<dolfin::la_index>& offsets);
-
-    /// Default parameter values
-    static Parameters default_parameters()
-    {
-      Parameters p("multimesh_functionspace");
-
-      p.add(MultiMesh::default_parameters());
-
-      return p;
-    }
+    /// Build multimesh function space. This function uses offsets
+    /// computed from the full function spaces on each part.
+    void build(const std::vector<dolfin::la_index>& offsets);
 
   private:
 
@@ -151,10 +142,13 @@ namespace dolfin
     std::vector<std::shared_ptr<const FunctionSpace> > _function_space_views;
 
     // Multimesh
-    std::shared_ptr<MultiMesh> _multimesh;
+    std::shared_ptr<const MultiMesh> _multimesh;
 
     // Multimesh dofmap
     std::shared_ptr<MultiMeshDofMap> _dofmap;
+
+    // Quadrature order
+    std::size_t _quadrature_order;
 
     // Build multimesh
     void _build_multimesh();

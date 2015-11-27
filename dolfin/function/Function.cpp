@@ -245,7 +245,6 @@ const Function& Function::operator= (const Expression& v)
 //-----------------------------------------------------------------------------
 Function& Function::operator[] (std::size_t i) const
 {
-
   // Check if sub-Function is in the cache, otherwise create and add
   // to cache
   auto sub_function = _sub_functions.find(i);
