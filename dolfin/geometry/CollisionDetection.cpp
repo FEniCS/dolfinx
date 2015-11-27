@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2015-10-22
+// Last changed: 2015-11-27
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -107,11 +107,9 @@ CollisionDetection::collides(const MeshEntity& entity_0,
       dolfin_not_implemented();
       break;
     case 1:
-      return collides_interval_interval(entity_1, entity_0);
-      break;
+      return collides_interval_interval(entity_0, entity_1);
     case 2:
-      dolfin_not_implemented();
-      break;
+      return collides_triangle_interval(entity_1, entity_0);
     case 3:
       dolfin_not_implemented();
       break;
@@ -129,8 +127,7 @@ CollisionDetection::collides(const MeshEntity& entity_0,
       dolfin_not_implemented();
       break;
     case 1:
-      dolfin_not_implemented();
-      break;
+      return collides_triangle_interval(entity_0, entity_1);
     case 2:
       return collides_triangle_triangle(entity_0, entity_1);
     case 3:
@@ -249,6 +246,24 @@ bool CollisionDetection::collides_triangle_point(const MeshEntity& triangle,
                                    geometry.point(vertices[2]),
                                    point);
 
+}
+//------------------------------------------------------------------------------
+bool CollisionDetection::collides_triangle_interval(const MeshEntity& triangle,
+						    const MeshEntity& interval)
+{
+  dolfin_assert(triangle.mesh().topology().dim() == 2);
+  dolfin_assert(interval.mesh().topology().dim() == 1);
+
+  const MeshGeometry& geometry_t = triangle.mesh().geometry();
+  const unsigned int* vertices_t = triangle.entities(0);
+  const MeshGeometry& geometry_i = interval.mesh().geometry();
+  const unsigned int* vertices_i = interval.entities(0);
+
+  return collides_triangle_interval(geometry_t.point(vertices_t[0]),
+				    geometry_t.point(vertices_t[1]),
+				    geometry_t.point(vertices_t[2]),
+				    geometry_i.point(vertices_i[0]),
+				    geometry_i.point(vertices_i[1]));
 }
 //-----------------------------------------------------------------------------
 bool
@@ -624,6 +639,23 @@ bool CollisionDetection::collides_triangle_point(const Point& p0,
 #endif
 }
 //-----------------------------------------------------------------------------
+bool CollisionDetection::collides_triangle_interval(const Point& p0,
+						    const Point& p1,
+						    const Point& p2,
+						    const Point& q0,
+						    const Point& q1)
+{
+#ifdef Augustcgal
+  return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
+			    cgaltools::convert(q0, q1));
+#else
+  dolfin_error("CollisionDetection.cpp",
+	       "the function collides_triangle_interval function",
+	       "only implemented for CGAL");
+#endif
+}
+
+//------------------------------------------------------------------------------
 bool
 CollisionDetection::collides_triangle_triangle(const Point& p0,
 					       const Point& p1,

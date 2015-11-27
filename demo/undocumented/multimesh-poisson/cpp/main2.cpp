@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2015-11-16
+// Last changed: 2015-11-28
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes. The solution is computed
@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
 
   // Parameters
   const double T = 40.0;
-  const std::size_t N = 57;
+  const std::size_t N = 400;
   const double dt = T / 400;
 
   // Files for storing solution
@@ -273,7 +273,7 @@ int main(int argc, char* argv[])
   File covered2_file("covered2.pvd");
 
   // Iterate over configurations
-  for (std::size_t n = 56; n < N; n++)
+  for (std::size_t n = 0; n < N; n++)
   {
     info("Computing solution, step %d / %d.", n, N - 1);
 

@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-10-25
+// Last changed: 2015-11-27
 
 
 #include <dolfin/log/log.h>
@@ -34,7 +34,7 @@
 // FIXME August
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 
-#define Augustwritemarkers
+
 //#define Augustdebug
 // #define Augustnormaldebug
 
@@ -283,6 +283,7 @@ void MultiMesh::_build_bounding_box_trees()
     std::shared_ptr<BoundingBoxTree> boundary_tree(new BoundingBoxTree());
 
     // FIXME: what if the boundary mesh is empty?
+    dolfin_assert(_boundary_meshes[i]->num_vertices()>0);
     if (_boundary_meshes[i]->num_vertices()>0)
       boundary_tree->build(*_boundary_meshes[i]);
     _boundary_trees.push_back(boundary_tree);
@@ -302,28 +303,6 @@ void MultiMesh::_build_collision_maps()
   _collision_maps_cut_cells.clear();
   _collision_maps_cut_cells_boundary.clear();
 
-  // for (std::size_t i = 0; i < num_parts(); i++)
-  // {
-  //   for (std::size_t j = i + 1; j < num_parts(); j++)
-  //   {
-  //     // Compute domain-boundary collisions
-  //     const auto& boundary_collisions = _trees[i]->compute_collisions(*_boundary_trees[j]);
-
-  //     // Iterate over boundary collisions
-  //     for (const auto it: boundary_collisions.first)
-  //     {
-  // 	// std::cout <<"part " <<i<<" collides with " << j << " cell " << it;
-  // 	// if (i==0 and (it==136 or it==137)) { std::cout << " *****"; }
-  // 	// std::cout << '\n';
-  // 	const Cell cell(*_meshes[i], it);
-  // 	std::cout << tools::drawtriangle(cell);
-  //     }
-  //   }
-  //   std::cout << std::endl;
-  //   PPause;
-  // }
-  // PPause;
-
   // Iterate over all parts
   for (std::size_t i = 0; i < num_parts(); i++)
   {
@@ -336,11 +315,12 @@ void MultiMesh::_build_collision_maps()
     // Create vector of markers for cells in part `i` (0, 1, or 2)
     std::vector<std::size_t> markers(_meshes[i]->num_cells(), 0);
 
-    // Create local array for marking boundary collisions for cells in
-    // part `i`. Note that in contrast to the markers above which are
-    // global to part `i`, these markers are local to the collision
-    // between part `i` and part `j`.
+    // Create local arrays for marking domain and boundary collisions
+    // for cells in part `i`. Note that in contrast to the markers
+    // above which are global to part `i`, these markers are local to
+    // the collision between part `i` and part `j`.
     std::vector<bool> collides_with_boundary(_meshes[i]->num_cells());
+    std::vector<bool> collides_with_domain(_meshes[i]->num_cells());
 
     // Create empty collision map for cut cells in part `i`
     std::map<unsigned int, std::vector<std::pair<std::size_t, unsigned int>>>
@@ -351,29 +331,36 @@ void MultiMesh::_build_collision_maps()
     {
       log(PROGRESS, "Computing collisions for mesh %d overlapped by mesh %d.", i, j);
 
-      // Reset boundary collision markers
-      std::fill(collides_with_boundary.begin(), collides_with_boundary.end(), false);
-
       // Compute domain-boundary collisions
       const auto& boundary_collisions = _trees[i]->compute_collisions(*_boundary_trees[j]);
 
-      // Iterate over boundary collisions
-      for (const auto it: boundary_collisions.first)
+      // Reset boundary collision markers
+      std::fill(collides_with_boundary.begin(), collides_with_boundary.end(), false);
+
+      // Iterate over boundary collisions.
+      for (std::size_t k = 0; k < boundary_collisions.first.size(); ++k)
       {
-        // Mark that cell collides with boundary
-        collides_with_boundary[it] = true;
+	const std::size_t cell_i = boundary_collisions.first[k];
 
-        // Mark as cut cell if not previously covered
-        if (markers[it] != 2)
-        {
-          // Mark as cut cell
-	  markers[it] = 1;
+	// Do a careful check if not already marked as colliding
+	if (!collides_with_boundary[cell_i])
+	{
+	  const Cell cell(*_meshes[i], cell_i);
+	  const Cell boundary_cell(*_boundary_meshes[j], boundary_collisions.second[k]);
+	  collides_with_boundary[cell_i] = cell.collides(boundary_cell);
+	}
 
-          // Add empty list of collisions into map if it does not exist
-          if (collision_map_cut_cells.find(it) == collision_map_cut_cells.end())
-          {
+	// Mark as cut cell if not previously covered
+	if (collides_with_boundary[cell_i] and markers[cell_i] != 2)
+	{
+	  // Mark as cut cell
+	  markers[cell_i] = 1;
+
+	  // Add empty list of collisions into map if it does not exist
+	  if (collision_map_cut_cells.find(cell_i) == collision_map_cut_cells.end())
+	  {
             std::vector<std::pair<std::size_t, unsigned int>> collisions;
-            collision_map_cut_cells[it] = collisions;
+            collision_map_cut_cells[cell_i] = collisions;
           }
         }
       }
@@ -381,13 +368,16 @@ void MultiMesh::_build_collision_maps()
       // Compute domain-domain collisions
       const auto& domain_collisions = _trees[i]->compute_collisions(*_trees[j]);
 
+      // Reset domain collision markers
+      std::fill(collides_with_domain.begin(), collides_with_domain.end(), false);
+
       // Iterate over domain collisions
       dolfin_assert(domain_collisions.first.size() == domain_collisions.second.size());
       for (std::size_t k = 0; k < domain_collisions.first.size(); k++)
       {
         // Get the two colliding cells
-        auto cell_i = domain_collisions.first[k];
-        auto cell_j = domain_collisions.second[k];
+        const std::size_t cell_i = domain_collisions.first[k];
+	const std::size_t cell_j = domain_collisions.second[k];
 
         // Store collision in collision map if we have a cut cell
         if (markers[cell_i] == 1)
@@ -400,29 +390,30 @@ void MultiMesh::_build_collision_maps()
         // Mark cell as covered if it does not collide with boundary
         if (!collides_with_boundary[cell_i])
         {
-          // Remove from collision map if previously marked as as cut cell
-          if (markers[cell_i] == 1)
-          {
-            dolfin_assert(collision_map_cut_cells.find(cell_i) != collision_map_cut_cells.end());
-            collision_map_cut_cells.erase(cell_i);
-          }
+	  // Detailed check if it is not marked as colliding with domain
+	  if (!collides_with_domain[cell_i])
+	  {
+	    const Cell cell(*_meshes[i], cell_i);
+	    const Cell other_cell(*_meshes[j], cell_j);
+	    collides_with_domain[cell_i] = cell.collides(other_cell);
+	  }
 
-          // Mark as covered cell (may already be marked)
-          markers[cell_i] = 2;
+	  if (collides_with_domain[cell_i])
+	  {
+	    // Remove from collision map if previously marked as as cut cell
+	    if (markers[cell_i] == 1)
+	    {
+	      dolfin_assert(collision_map_cut_cells.find(cell_i) != collision_map_cut_cells.end());
+	      collision_map_cut_cells.erase(cell_i);
+	    }
+
+	    // Mark as covered cell (may already be marked)
+	    markers[cell_i] = 2;
+	  }
+
         }
       }
     }
-
-#ifdef Augustwritemarkers
-    {
-      std::vector<double> tmp(markers.size());
-      for (std::size_t i = 0; i < markers.size(); ++i)
-	tmp[i] = markers[i];
-      tools::dolfin_write_medit_triangles("markers",*_meshes[i],i,&tmp);
-      //PPause;
-    }
-#endif
-
 
     // Extract uncut, cut and covered cells from markers
     std::vector<unsigned int> uncut_cells;
