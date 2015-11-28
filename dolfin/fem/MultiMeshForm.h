@@ -40,6 +40,10 @@ namespace dolfin
   {
   public:
 
+    // FIXME: Test multimesh functionals. Should likely require a multimesh
+    // when instaniated and this constructor should then be removed.
+    MultiMeshForm() {}
+    
     /// Create empty multimesh functional (shared pointer version)
     MultiMeshForm(std::shared_ptr<const MultiMesh> multimesh);
 
