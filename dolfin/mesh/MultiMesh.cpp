@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-11-27
+// Last changed: 2015-11-28
 
 
 #include <dolfin/log/log.h>
@@ -35,8 +35,9 @@
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 
 
+#define Augustwritemarkers
 //#define Augustdebug
-// #define Augustnormaldebug
+//#define Augustnormaldebug
 
 using namespace dolfin;
 
@@ -313,7 +314,7 @@ void MultiMesh::_build_collision_maps()
     // 2: covered = cell colliding with some higher domain but not its boundary
 
     // Create vector of markers for cells in part `i` (0, 1, or 2)
-    std::vector<std::size_t> markers(_meshes[i]->num_cells(), 0);
+    std::vector<char> markers(_meshes[i]->num_cells(), 0);
 
     // Create local arrays for marking domain and boundary collisions
     // for cells in part `i`. Note that in contrast to the markers
@@ -340,6 +341,7 @@ void MultiMesh::_build_collision_maps()
       // Iterate over boundary collisions.
       for (std::size_t k = 0; k < boundary_collisions.first.size(); ++k)
       {
+	// Get the colliding cell
 	const std::size_t cell_i = boundary_collisions.first[k];
 
 	// Do a careful check if not already marked as colliding
@@ -387,7 +389,7 @@ void MultiMesh::_build_collision_maps()
           it->second.push_back(std::make_pair(j, cell_j));
         }
 
-        // Mark cell as covered if it does not collide with boundary
+        // Possibility to cell as covered if it does not collide with boundary
         if (!collides_with_boundary[cell_i])
         {
 	  // Detailed check if it is not marked as colliding with domain
@@ -421,8 +423,6 @@ void MultiMesh::_build_collision_maps()
     std::vector<unsigned int> covered_cells;
     for (unsigned int c = 0; c < _meshes[i]->num_cells(); c++)
     {
-      if (i==0 and (c==136 or c==137))
-	std::cout << __LINE__<<' '<<c<<' '<<markers[c]<< std::endl;
       switch (markers[c])
       {
       case 0:
@@ -445,6 +445,14 @@ void MultiMesh::_build_collision_maps()
     // Report results
     log(PROGRESS, "Part %d has %d uncut cells, %d cut cells, and %d covered cells.",
         i, uncut_cells.size(), cut_cells.size(), covered_cells.size());
+
+#ifdef Augustwritemarkers
+    std::vector<std::size_t> tmp(markers.size());
+    for (std::size_t i = 0; i < tmp.size(); ++i)
+      tmp[i] = (std::size_t) markers[i];
+    tools::dolfin_write_medit_triangles("markers",*_meshes[i],i,&tmp);
+    tools::dolfin_write_medit_triangles("multimesh",*this);
+#endif
   }
 
   end();
@@ -1053,6 +1061,17 @@ void MultiMesh::_build_quadrature_rules_overlap()
     //   std::cout << "error " << cut_part << " " << err << '\n';
     // }
 
+    std::cout << "qr for part " << cut_part << '\n';
+    std::stringstream ss; ss << "qr" << cut_part << ".txt";
+    std::ofstream f;
+    f.open(ss.str());
+    for (const auto c: cut_cells(cut_part))
+    {
+      const auto& overlap_qr = _quadrature_rules_overlap[cut_part][c];
+      for (const auto qr: overlap_qr)
+	for (std::size_t i = 0; i < qr.second.size(); ++i)
+	  f << qr.first[2*i] << ' ' << qr.first[2*i+1] << ' ' << qr.second[i] << '\n';
+    }
   }
 
 

@@ -107,13 +107,13 @@ namespace dolfin
     static bool collides_triangle_point(const MeshEntity& triangle,
 					const Point& point);
 
-    /// Check whether triangle collides with point.
+    /// Check whether triangle collides with interval.
     ///
     /// *Arguments*
     ///     triangle (_MeshEntity_)
     ///         The triangle.
-    ///     point (_Point_)
-    ///         The point.
+    ///     interval (_MeshEntity_)
+    ///         The interval.
     ///
     /// *Returns*
     ///     bool

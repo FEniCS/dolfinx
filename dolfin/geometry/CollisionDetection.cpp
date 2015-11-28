@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2015-11-27
+// Last changed: 2015-11-28
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -649,9 +649,21 @@ bool CollisionDetection::collides_triangle_interval(const Point& p0,
   return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
 			    cgaltools::convert(q0, q1));
 #else
-  dolfin_error("CollisionDetection.cpp",
-	       "the function collides_triangle_interval function",
-	       "only implemented for CGAL");
+  // Check if end points are in triangle
+  if (collides_triangle_point(p0, p1, p2, q0))
+    return true;
+  if (collides_triangle_point(p0, p1, p2, q1))
+    return true;
+
+  // Check if any of the triangle edges are cut by the interval
+  if (collides_edge_edge(p0, p1, q0, q1))
+    return true;
+  if (collides_edge_edge(p0, p2, q0, q1))
+    return true;
+  if (collides_edge_edge(p1, p2, q0, q1))
+    return true;
+
+  return false;
 #endif
 }
 

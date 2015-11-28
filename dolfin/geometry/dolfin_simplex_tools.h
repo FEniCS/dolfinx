@@ -139,10 +139,11 @@ namespace tools
 
   //void Pause() { char apa; std::cin >> apa; }
 
+  template<class T>
   inline void dolfin_write_medit_triangles(const std::string &filename,
 					   const dolfin::Mesh& mesh,
 					   const int t = 0,
-					   const std::vector<double>* u = 0)
+					   const std::vector<T>* u = 0)
   {
     std::stringstream ss;
     ss<<filename<<"."<<t<<".mesh";

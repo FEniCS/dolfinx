@@ -28,6 +28,7 @@
 #include "MultiMeshPoisson.h"
 
 #include "P1.h"
+#include </home/august/dev/fenics-dev/dolfin-multimesh/dolfin/geometry/dolfin_simplex_tools.h>
 
 using namespace dolfin;
 
@@ -49,6 +50,86 @@ class DirichletBoundary : public SubDomain
   }
 };
 
+void evaluate_at_qr(const MultiMesh& mm,
+		    const MultiMeshFunction& uh)
+{
+  for (std::size_t part = 0; part < mm.num_parts(); ++part)
+  {
+    std::cout << "\npart " << part << '\n';
+
+    // get vertex values
+    std::vector<double> vertex_values;
+    uh.part(part)->compute_vertex_values(vertex_values, *mm.part(part));
+
+    const std::vector<std::string> colors = {{ "'b'", "'g'", "'r'" }};
+    std::vector<std::size_t> cells;
+
+    // cells colliding with the cut cells
+    const auto collision_map = mm.collision_map_cut_cells(part);
+
+    // loop over cut cells
+    for (const auto cell_no: mm.cut_cells(part))
+    {
+      // all qr on cell_no
+      const auto qr = mm.quadrature_rule_cut_cell(part, cell_no);
+
+      // loop over qr
+      for (std::size_t i = 0; i < qr.second.size(); ++i)
+      {
+	const Point p(qr.first[2*i], qr.first[2*i+1]);
+	const double uhval = (*uh.part(part))(p.x(), p.y());
+
+	// if evaluated function big...
+	if (std::abs(uhval) > 100)
+	{
+	  // save cell no
+	  cells.push_back(cell_no);
+	  const std::string color = qr.second[i] > 0 ? "'.'" : "'x'";
+	  std::cout << tools::matlabplot(p,color) <<" # " << qr.second[i] << ' ' << //std::setprecision(15) <<
+	    uhval << " (";
+
+	  // print nodal uh values
+	  const Cell cell(*mm.part(part), cell_no);
+	  for (std::size_t j = 0; j < cell.num_vertices(); ++j)
+	    std::cout << cell.entities(0)[j] << ' '<<vertex_values[cell.entities(0)[j]] <<' ';
+	  std::cout << ")\n";
+	}
+      }
+    }
+
+    // make cell numbers unique
+    std::sort(cells.begin(), cells.end());
+    const auto new_end = std::unique(cells.begin(), cells.end());
+    cells.erase(new_end, cells.end());
+
+    // loop over all cells with large uh values
+    for (const auto cell_no: cells)
+    {
+      const Cell cell(*mm.part(part), cell_no);
+      std::cout << tools::drawtriangle(cell);
+
+      // compute net weight (~visible area)
+      const auto qr = mm.quadrature_rule_cut_cell(part, cell_no);
+      double net_weight = 0;
+      for (const auto w: qr.second)
+      {
+	net_weight += w;
+	std::cout << ' '<<w;
+      }
+      std::cout << " # net weight = " << net_weight << '\n';
+
+      // also display all colliding cells
+      const auto it = collision_map.find(cell_no);
+      dolfin_assert(it->first == cell_no);
+      for (const auto cpair: it->second)
+      {
+	const Cell cutting_cell(*mm.part(cpair.first), cpair.second);
+	std::cout << tools::drawtriangle(cutting_cell,colors[cpair.first]);
+      }
+    }
+  }
+}
+
 // Compute solution for given mesh configuration
 void solve_poisson(std::size_t step,
 		   double t,
@@ -68,12 +149,15 @@ void solve_poisson(std::size_t step,
   mesh_1.rotate(70*t);
   mesh_2.rotate(-70*t);
 
+
+
   // Build multimesh
   MultiMesh multimesh;
   multimesh.add(mesh_0);
   multimesh.add(mesh_1);
   multimesh.add(mesh_2);
-  multimesh.build();
+  multimesh.build(); // qr generated here
+
 
   // // Create function space
   // MultiMeshPoisson::MultiMeshFunctionSpace V(multimesh);
@@ -97,7 +181,7 @@ void solve_poisson(std::size_t step,
   V.add(V0);
   V.add(V1);
   V.add(V2);
-  V.build();
+  V.build(); // multimesh built here, i.e. qr generation here
 
   // Attach coefficients
   Source f;
@@ -149,79 +233,81 @@ void solve_poisson(std::size_t step,
 
       // get max on uncut, cut and covered
       const std::vector<std::vector<unsigned int>> cells = {{ multimesh.uncut_cells(part),
-							      multimesh.cut_cells(part),
-							      multimesh.covered_cells(part) }};
+  							      multimesh.cut_cells(part),
+  							      multimesh.covered_cells(part) }};
       std::vector<double> maxvals(cells.size(), 0);
 
       for (std::size_t k = 0; k < cells.size(); ++k)
       {
-	if (cells[k].size())
-	{
-	  // Create meshfunction using markers
-	  MeshFunction<std::size_t> foo(*multimesh.part(part),
-					multimesh.part(part)->topology().dim());
-	  foo.set_all(0); // dummy
-	  for (const auto cell: cells[k])
-	    foo.set_value(cell, k+1);
+  	if (cells[k].size())
+  	{
+  	  // Create meshfunction using markers
+  	  MeshFunction<std::size_t> foo(*multimesh.part(part),
+  					multimesh.part(part)->topology().dim());
+  	  foo.set_all(0); // dummy
+  	  for (const auto cell: cells[k])
+  	    foo.set_value(cell, k+1);
 
-	  // Create submesh out of meshfunction
-	  SubMesh sm(*multimesh.part(part), foo, k+1);
+  	  // Create submesh out of meshfunction
+  	  SubMesh sm(*multimesh.part(part), foo, k+1);
 
-	  // Interpolate on submesh
-	  P1::FunctionSpace V(sm);
-	  Function usm(V);
-	  usm.interpolate(*u.part(part));
+  	  // Interpolate on submesh
+  	  P1::FunctionSpace V(sm);
+  	  Function usm(V);
+  	  usm.interpolate(*u.part(part));
 
-	  // Get max values
-	  std::vector<double> vertex_values;
-	  usm.compute_vertex_values(vertex_values);
+  	  // Get max values
+  	  std::vector<double> vertex_values;
+  	  usm.compute_vertex_values(vertex_values);
 
-	  maxvals[k] = *std::max_element(vertex_values.begin(), vertex_values.end());
+  	  maxvals[k] = *std::max_element(vertex_values.begin(), vertex_values.end());
 
-	  // if (part == 0)
-	  //   if (k == 0 or k == 1) {
-	  //     std::cout << k <<'\n';
-	  //     for (const auto cell: cells[k])
-	  // 	std::cout << cell << ' ';
-	  //     std::cout << '\n';
-	  //   }
+  	  // if (part == 0)
+  	  //   if (k == 0 or k == 1) {
+  	  //     std::cout << k <<'\n';
+  	  //     for (const auto cell: cells[k])
+  	  // 	std::cout << cell << ' ';
+  	  //     std::cout << '\n';
+  	  //   }
 
-	  // if (marker == 1 and part == 0) {
-	  //   for (const auto v: vertex_values)
-	  //     std::cout << v<<' ';
-	  //   std::cout << '\n';
-	  // }
+  	  // if (marker == 1 and part == 0) {
+  	  //   for (const auto v: vertex_values)
+  	  //     std::cout << v<<' ';
+  	  //   std::cout << '\n';
+  	  // }
 
-	  // save
-	  switch(k) {
-	  case 0: { // uncut
-	    if (part == 0) uncut0_file << usm;
-	    else if (part == 1) uncut1_file << usm;
-	    else if (part == 2) uncut2_file << usm;
-	    break;
-	  }
-	  case 1: { // cut
-	    if (part == 0) cut0_file << usm;
-	    else if (part == 1) cut1_file << usm;
-	    else if (part == 2) cut2_file << usm;
-	    break;
-	  }
-	  case 2: { // covered
-	    if (part == 0) covered0_file << usm;
-	    else if (part == 1) covered1_file << usm;
-	    else if (part == 2) covered2_file << usm;
-	  }
-	  }
-	}
+  	  // save
+  	  switch(k) {
+  	  case 0: { // uncut
+  	    if (part == 0) uncut0_file << usm;
+  	    else if (part == 1) uncut1_file << usm;
+  	    else if (part == 2) uncut2_file << usm;
+  	    break;
+  	  }
+  	  case 1: { // cut
+  	    if (part == 0) cut0_file << usm;
+  	    else if (part == 1) cut1_file << usm;
+  	    else if (part == 2) cut2_file << usm;
+  	    break;
+  	  }
+  	  case 2: { // covered
+  	    if (part == 0) covered0_file << usm;
+  	    else if (part == 1) covered1_file << usm;
+  	    else if (part == 2) covered2_file << usm;
+  	  }
+  	  }
+  	}
       }
 
       std::cout << "\tpart " << part
-		<< " step " << step
-		<< " all vertices " << maxvv
-		<< " uncut " << maxvals[0]
-		<< " cut " << maxvals[1]
-		<< " covered " << maxvals[2] << '\n';
+  		<< " step " << step
+  		<< " all vertices " << maxvv
+  		<< " uncut " << maxvals[0]
+  		<< " cut " << maxvals[1]
+  		<< " covered " << maxvals[2] << '\n';
     }
+
+    evaluate_at_qr(multimesh,u);
   }
 
   // Save to file
@@ -250,9 +336,11 @@ int main(int argc, char* argv[])
     return 0;
   }
 
+  //set_log_level(DEBUG);
+
   // Parameters
   const double T = 40.0;
-  const std::size_t N = 400;
+  const std::size_t N = 25;
   const double dt = T / 400;
 
   // Files for storing solution
@@ -273,7 +361,7 @@ int main(int argc, char* argv[])
   File covered2_file("covered2.pvd");
 
   // Iterate over configurations
-  for (std::size_t n = 0; n < N; n++)
+  for (std::size_t n = 24; n < N; n++)
   {
     info("Computing solution, step %d / %d.", n, N - 1);
 
