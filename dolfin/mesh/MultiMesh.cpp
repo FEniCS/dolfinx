@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-11-28
+// Last changed: 2015-11-29
 
 
 #include <dolfin/log/log.h>
@@ -34,7 +34,7 @@
 // FIXME August
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 
-
+#define Augustcheckqrpositive
 #define Augustwritemarkers
 //#define Augustdebug
 //#define Augustnormaldebug
@@ -1060,18 +1060,6 @@ void MultiMesh::_build_quadrature_rules_overlap()
     // 	err = (areapos-areaminus)-part_volume;
     //   std::cout << "error " << cut_part << " " << err << '\n';
     // }
-
-    std::cout << "qr for part " << cut_part << '\n';
-    std::stringstream ss; ss << "qr" << cut_part << ".txt";
-    std::ofstream f;
-    f.open(ss.str());
-    for (const auto c: cut_cells(cut_part))
-    {
-      const auto& overlap_qr = _quadrature_rules_overlap[cut_part][c];
-      for (const auto qr: overlap_qr)
-	for (std::size_t i = 0; i < qr.second.size(); ++i)
-	  f << qr.first[2*i] << ' ' << qr.first[2*i+1] << ' ' << qr.second[i] << '\n';
-    }
   }
 
 
@@ -1365,6 +1353,26 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
       // quadrature rule of the cut cell with flipped sign
       for (std::size_t k = 0; k < qr_overlap.size(); k++)
         _add_quadrature_rule(qr, qr_overlap[k], gdim, -1);
+
+#ifdef Augustcheckqrpositive
+      // Check qr overlap
+      double overlap_weight = 0;
+      for (const auto qr: qr_overlap)
+	overlap_weight += std::accumulate(qr.begin(),
+						qr.end(), 0.);
+
+      // Check positivity
+      double net_weight = std::accumulate(qr.second.begin(),
+					  qr.second.end(), 0.);
+      if (net_weight < 0)
+      {
+	std::cout<< __FUNCTION__  << "cut part " << cut_part<<" cell " << cut_cell_index << " net weight = " << net_weight << " (overlap weight = " << overlap_weight << ") "<<std::endl;
+
+	// how to fix?
+	//qr = quadrature_rule();
+      }
+
+#endif
 
       // Store quadrature rule for cut cell
       _quadrature_rules_cut_cells[cut_part][cut_cell_index] = qr;

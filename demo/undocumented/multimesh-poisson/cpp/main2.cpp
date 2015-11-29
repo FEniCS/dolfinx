@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2015-11-28
+// Last changed: 2015-11-29
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes. The solution is computed
@@ -130,6 +130,104 @@ void evaluate_at_qr(const MultiMesh& mm,
   }
 }
 
+void find_max(std::size_t step,
+	      const MultiMesh& multimesh,
+	      const MultiMeshFunction& u,
+	      File& uncut0_file, File& uncut1_file, File& uncut2_file,
+	      File& cut0_file, File& cut1_file, File& cut2_file,
+	      File& covered0_file, File& covered1_file, File& covered2_file)
+
+{
+  std::cout << "\tmax min step " << step <<' ' << u.vector()->max() << ' ' << u.vector()->min() << '\n';
+
+  for (std::size_t part = 0; part < multimesh.num_parts(); ++part)
+  {
+    // get max on vertex values
+    std::vector<double> vertex_values;
+    u.part(part)->compute_vertex_values(vertex_values,
+					*multimesh.part(part));
+    const double maxvv = *std::max_element(vertex_values.begin(),
+					   vertex_values.end());
+
+    // get max on uncut, cut and covered
+    const std::vector<std::vector<unsigned int>> cells
+      = {{ multimesh.uncut_cells(part),
+	   multimesh.cut_cells(part),
+	   multimesh.covered_cells(part) }};
+    std::vector<double> maxvals(cells.size(), 0);
+
+    for (std::size_t k = 0; k < cells.size(); ++k)
+    {
+      if (cells[k].size())
+      {
+	// Create meshfunction using markers
+	MeshFunction<std::size_t> foo(*multimesh.part(part),
+				      multimesh.part(part)->topology().dim());
+	foo.set_all(0); // dummy
+	for (const auto cell: cells[k])
+	  foo.set_value(cell, k+1);
+
+	// Create submesh out of meshfunction
+	SubMesh sm(*multimesh.part(part), foo, k+1);
+
+	// Interpolate on submesh
+	P1::FunctionSpace V(sm);
+	Function usm(V);
+	usm.interpolate(*u.part(part));
+
+	// Get max values on submesh
+	std::vector<double> vertex_values;
+	usm.compute_vertex_values(vertex_values);
+	maxvals[k] = *std::max_element(vertex_values.begin(),
+				       vertex_values.end());
+
+	// if (part == 0)
+	//   if (k == 0 or k == 1) {
+	//     std::cout << k <<'\n';
+	//     for (const auto cell: cells[k])
+	// 	std::cout << cell << ' ';
+	//     std::cout << '\n';
+	//   }
+
+	// if (marker == 1 and part == 0) {
+	//   for (const auto v: vertex_values)
+	//     std::cout << v<<' ';
+	//   std::cout << '\n';
+	// }
+
+	// save
+	switch(k) {
+	case 0: { // uncut
+	  if (part == 0) uncut0_file << usm;
+	  else if (part == 1) uncut1_file << usm;
+	  else if (part == 2) uncut2_file << usm;
+	  break;
+	}
+	case 1: { // cut
+	  if (part == 0) cut0_file << usm;
+	  else if (part == 1) cut1_file << usm;
+	  else if (part == 2) cut2_file << usm;
+	  break;
+	}
+	case 2: { // covered
+	  if (part == 0) covered0_file << usm;
+	  else if (part == 1) covered1_file << usm;
+	  else if (part == 2) covered2_file << usm;
+	}
+	}
+      }
+    }
+
+    std::cout << "\tpart " << part
+	      << " step " << step
+	      << " all vertices " << maxvv
+	      << " uncut " << maxvals[0]
+	      << " cut " << maxvals[1]
+	      << " covered " << maxvals[2] << '\n';
+  }
+
+}
+
 // Compute solution for given mesh configuration
 void solve_poisson(std::size_t step,
 		   double t,
@@ -223,89 +321,10 @@ void solve_poisson(std::size_t step,
 
   // Debugging
   {
-    std::cout << "\tmax min step " << step <<' ' << u.vector()->max() << ' ' << u.vector()->min() << '\n';
-    for (std::size_t part = 0; part < multimesh.num_parts(); ++part)
-    {
-      // get max on vertex values
-      std::vector<double> vertex_values;
-      u.part(part)->compute_vertex_values(vertex_values, *multimesh.part(part));
-      const double maxvv = *std::max_element(vertex_values.begin(), vertex_values.end());
-
-      // get max on uncut, cut and covered
-      const std::vector<std::vector<unsigned int>> cells = {{ multimesh.uncut_cells(part),
-  							      multimesh.cut_cells(part),
-  							      multimesh.covered_cells(part) }};
-      std::vector<double> maxvals(cells.size(), 0);
-
-      for (std::size_t k = 0; k < cells.size(); ++k)
-      {
-  	if (cells[k].size())
-  	{
-  	  // Create meshfunction using markers
-  	  MeshFunction<std::size_t> foo(*multimesh.part(part),
-  					multimesh.part(part)->topology().dim());
-  	  foo.set_all(0); // dummy
-  	  for (const auto cell: cells[k])
-  	    foo.set_value(cell, k+1);
-
-  	  // Create submesh out of meshfunction
-  	  SubMesh sm(*multimesh.part(part), foo, k+1);
-
-  	  // Interpolate on submesh
-  	  P1::FunctionSpace V(sm);
-  	  Function usm(V);
-  	  usm.interpolate(*u.part(part));
-
-  	  // Get max values
-  	  std::vector<double> vertex_values;
-  	  usm.compute_vertex_values(vertex_values);
-
-  	  maxvals[k] = *std::max_element(vertex_values.begin(), vertex_values.end());
-
-  	  // if (part == 0)
-  	  //   if (k == 0 or k == 1) {
-  	  //     std::cout << k <<'\n';
-  	  //     for (const auto cell: cells[k])
-  	  // 	std::cout << cell << ' ';
-  	  //     std::cout << '\n';
-  	  //   }
-
-  	  // if (marker == 1 and part == 0) {
-  	  //   for (const auto v: vertex_values)
-  	  //     std::cout << v<<' ';
-  	  //   std::cout << '\n';
-  	  // }
-
-  	  // save
-  	  switch(k) {
-  	  case 0: { // uncut
-  	    if (part == 0) uncut0_file << usm;
-  	    else if (part == 1) uncut1_file << usm;
-  	    else if (part == 2) uncut2_file << usm;
-  	    break;
-  	  }
-  	  case 1: { // cut
-  	    if (part == 0) cut0_file << usm;
-  	    else if (part == 1) cut1_file << usm;
-  	    else if (part == 2) cut2_file << usm;
-  	    break;
-  	  }
-  	  case 2: { // covered
-  	    if (part == 0) covered0_file << usm;
-  	    else if (part == 1) covered1_file << usm;
-  	    else if (part == 2) covered2_file << usm;
-  	  }
-  	  }
-  	}
-      }
-
-      std::cout << "\tpart " << part
-  		<< " step " << step
-  		<< " all vertices " << maxvv
-  		<< " uncut " << maxvals[0]
-  		<< " cut " << maxvals[1]
-  		<< " covered " << maxvals[2] << '\n';
-    }
+    find_max(step, multimesh, u,
+	     uncut0_file, uncut1_file, uncut2_file,
+	     cut0_file, cut1_file, cut2_file,
+	     covered0_file, covered1_file, covered2_file);
 
     evaluate_at_qr(multimesh,u);
   }
