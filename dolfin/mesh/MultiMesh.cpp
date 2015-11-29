@@ -1357,16 +1357,16 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 #ifdef Augustcheckqrpositive
       // Check qr overlap
       double overlap_weight = 0;
-      for (const auto qr: qr_overlap)
-	overlap_weight += std::accumulate(qr.begin(),
-						qr.end(), 0.);
+      for (const auto qro: qr_overlap)
+	overlap_weight += std::accumulate(qro.second.begin(),
+					  qro.second.end(), 0.);
 
       // Check positivity
       double net_weight = std::accumulate(qr.second.begin(),
 					  qr.second.end(), 0.);
       if (net_weight < 0)
       {
-	std::cout<< __FUNCTION__  << "cut part " << cut_part<<" cell " << cut_cell_index << " net weight = " << net_weight << " (overlap weight = " << overlap_weight << ") "<<std::endl;
+	std::cout<< __FUNCTION__  << "cut part " << cut_part<<" cell " << cut_cell_index << " net weight = " << net_weight << " (overlap weight = " << overlap_weight << " area = " << cut_cell.volume() << ") "<<std::endl;
 
 	// how to fix?
 	//qr = quadrature_rule();
