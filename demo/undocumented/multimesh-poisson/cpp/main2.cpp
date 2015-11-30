@@ -85,8 +85,8 @@ void evaluate_at_qr(const MultiMesh& mm,
 	  // save cell no
 	  cells.push_back(cell_no);
 	  const std::string color = qr.second[i] > 0 ? "'.'" : "'x'";
-	  std::cout << tools::matlabplot(p,color) <<" # " << qr.second[i] << ' ' << //std::setprecision(15) <<
-	    uhval << " (";
+	  std::cout << tools::matlabplot(p,color) <<" # " << qr.second[i] << ' '
+		    << /*std::setprecision(15) <<*/ uhval << " (";
 
 	  // print nodal uh values
 	  const Cell cell(*mm.part(part), cell_no);
@@ -354,6 +354,66 @@ int main(int argc, char* argv[])
     info("Sorry, this demo does not (yet) run in parallel.");
     return 0;
   }
+
+  {
+    // test
+    Mesh mesh0, mesh1, mesh2;
+    {
+      MeshEditor me;
+      me.open(mesh0, 2, 2);
+      me.init_vertices(3);
+      me.init_cells(1);
+      const Point p0(0., 0.);
+      const Point p1(1., 0.);
+      const Point p2(0.5, 0.5);
+      me.add_vertex(0, p0);
+      me.add_vertex(1, p1);
+      me.add_vertex(2, p2);
+      me.add_cell(0, 0, 1, 2);
+      me.close();
+    }
+
+    {
+      MeshEditor me;
+      me.open(mesh1, 2, 2);
+      me.init_vertices(3);
+      me.init_cells(1);
+      const Point p0(0., 1.);
+      const Point p1(1., -2.);
+      const Point p2(2., 1.);
+      me.add_vertex(0, p0);
+      me.add_vertex(1, p1);
+      me.add_vertex(2, p2);
+      me.add_cell(0, 0, 1, 2);
+      me.close();
+    }
+
+    {
+      MeshEditor me;
+      me.open(mesh2, 2, 2);
+      me.init_vertices(3);
+      me.init_cells(1);
+      const Point p0(-0.75, 1.);
+      const Point p1(0.25, -2.);
+      const Point p2(1.25, 1.);
+      me.add_vertex(0, p0);
+      me.add_vertex(1, p1);
+      me.add_vertex(2, p2);
+      me.add_cell(0, 0, 1, 2);
+      me.close();
+    }
+
+    MultiMesh multimesh;
+    multimesh.add(mesh0);
+    multimesh.add(mesh1);
+    multimesh.add(mesh2);
+    multimesh.build();
+
+    exit(0);
+
+  }
+
+
 
   //set_log_level(DEBUG);
 

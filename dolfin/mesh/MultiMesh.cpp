@@ -36,7 +36,7 @@
 
 #define Augustcheckqrpositive
 #define Augustwritemarkers
-//#define Augustdebug
+#define Augustdebug
 //#define Augustnormaldebug
 
 using namespace dolfin;
@@ -181,7 +181,7 @@ void MultiMesh::build()
   _build_quadrature_rules_cut_cells();
 
   // FIXME:
-  _build_quadrature_rules_interface();
+  //_build_quadrature_rules_interface();
 
   end();
 }
@@ -523,34 +523,35 @@ void MultiMesh::_build_quadrature_rules_overlap()
   //   }
   // }
 
-  // #ifdef Augustdebug
-  //   std::cout.precision(15);
-  //   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
-  //   {
-  //     // Iterate over cut cells for current part
-  //     const auto& cmap = collision_map_cut_cells(cut_part);
-  //     for (auto it = cmap.begin(); it != cmap.end(); ++it)
-  //     {
-  //       // Get cut cell
-  //       const unsigned int cut_cell_index = it->first;
-  //       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
-  //       std::cout << tools::drawtriangle(cut_cell);
+  #ifdef Augustdebug
+    std::cout.precision(15);
+    for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
+    {
+      // Iterate over cut cells for current part
+      const auto& cmap = collision_map_cut_cells(cut_part);
+      for (auto it = cmap.begin(); it != cmap.end(); ++it)
+	if(it->first == 6)
+      {
+        // Get cut cell
+        const unsigned int cut_cell_index = it->first;
+        const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
+        std::cout << tools::drawtriangle(cut_cell);
 
-  //       // Loop over all cutting cells to construct the polyhedra to be
-  //       // used in the inclusion-exclusion principle
-  //       for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
-  //       {
-  // 	// Get cutting part and cutting cell
-  //         const std::size_t cutting_part = jt->first;
-  //         const std::size_t cutting_cell_index = jt->second;
-  //         const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
-  // 	std::cout << tools::drawtriangle(cutting_cell);
-  //       }
-  //       std::cout << std::endl;
-  //     }
-  //   }
-  //   PPause;
-  // #endif
+        // Loop over all cutting cells to construct the polyhedra to be
+        // used in the inclusion-exclusion principle
+        for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
+        {
+  	// Get cutting part and cutting cell
+          const std::size_t cutting_part = jt->first;
+          const std::size_t cutting_cell_index = jt->second;
+          const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
+  	std::cout << tools::drawtriangle(cutting_cell);
+        }
+        std::cout << std::endl;
+      }
+    }
+    PPause;
+  #endif
 
 
   std::size_t small_elements_cnt = 0;
@@ -568,6 +569,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
+      if (it->first == 6)
     {
 #ifdef Augustdebug
       std::cout << "-------- new cut cell\n";
@@ -764,7 +766,9 @@ void MultiMesh::_build_quadrature_rules_overlap()
 
       for (std::size_t stage = 1; stage < N; ++stage)
       {
-	// std::cout << "----------------- stage " << stage << std::endl;
+#ifdef Augustdebug
+	std::cout << "----------------- stage " << stage << std::endl;
+#endif
 
       	// Structure for storing new intersections
       	std::vector<std::pair<std::vector<std::size_t>,Polyhedron> > new_intersections;
@@ -1009,6 +1013,25 @@ void MultiMesh::_build_quadrature_rules_overlap()
 
       // PPause;
 
+
+#ifdef Augustcheckqrpositive
+      // Check qr overlap
+      double net_weight = 0;
+      for (const auto qro: overlap_qr)
+	net_weight += std::accumulate(qro.second.begin(),
+				      qro.second.end(), 0.);
+      if (net_weight < 0)
+      {
+	std::cout<< __FUNCTION__  << ": cut part " << cut_part<<" cell " << cut_cell_index << " net weight = " << net_weight << " area = " << cut_cell.volume() << ") "<<std::endl;
+
+	// how to fix?
+	//qr = quadrature_rule();
+	//PPause;
+	std::cout << "exiting";
+	exit(1);
+      }
+
+#endif
 
 
 
@@ -1989,17 +2012,17 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
     qr.second.push_back(factor*dqr.second[i]);
   }
 
-#ifdef Augustdebug
-  std::cout << "# display quadrature rule (last " << num_points << " added):"<< std::endl;
-  for (std::size_t i = 0; i < qr.second.size(); ++i)
-  {
-    std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') # "<<qr.second[i]<<' ';
-    if (i > (qr.second.size() - num_points))
-      std::cout << "(new)";
-    std::cout << std::endl;
-    //std::cout  << dqr.first[2*i]<<' '<<dqr.first[2*i+1]<< std::endl;
-  }
-#endif
+// #ifdef Augustdebug
+//   std::cout << "# display quadrature rule (last " << num_points << " added):"<< std::endl;
+//   for (std::size_t i = 0; i < qr.second.size(); ++i)
+//   {
+//     std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') # "<<qr.second[i]<<' ';
+//     if (i > (qr.second.size() - num_points))
+//       std::cout << "(new)";
+//     std::cout << std::endl;
+//     //std::cout  << dqr.first[2*i]<<' '<<dqr.first[2*i+1]<< std::endl;
+//   }
+// #endif
 
   return num_points;
 }
