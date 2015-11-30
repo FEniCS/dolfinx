@@ -24,8 +24,6 @@
 #include <dolfin/common/unittest.h>
 #include <dolfin/geometry/SimplexQuadrature.h>
 
-#include "MultiMeshStokes2D.h"
-
 using namespace dolfin;
 
 class MultiMeshes : public CppUnit::TestFixture
