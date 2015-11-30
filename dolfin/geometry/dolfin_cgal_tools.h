@@ -145,6 +145,7 @@ namespace cgaltools
     const Point_2* p = boost::get<Point_2>(&*ii);
     if (p)
     {
+      //std::cout << "point\n";
       std::vector<double> triangulation = {{ CGAL::to_double(p->x()),
 					     CGAL::to_double(p->y()) }};
       return triangulation;
@@ -165,6 +166,7 @@ namespace cgaltools
     const Triangle_2* t = boost::get<Triangle_2>(&*ii);
     if (t)
     {
+      //std::cout << "triangle " << std::endl;
       std::vector<double> triangulation = {{ CGAL::to_double(t->vertex(0)[0]),
 					     CGAL::to_double(t->vertex(0)[1]),
 					     CGAL::to_double(t->vertex(1)[0]),
@@ -174,16 +176,66 @@ namespace cgaltools
       return triangulation;
     }
 
-    const std::vector<Point_2>* pts = boost::get<std::vector<Point_2>>(&*ii);
-    if (pts)
+    const std::vector<Point_2>* points = boost::get<std::vector<Point_2>>(&*ii);
+    if (points)
     {
-      //std::cout << "pts" << std::endl;
-      std::vector<double> triangulation(pts->size()*2);
-      for (std::size_t i = 0; i < pts->size(); ++i)
+      std::vector<double> triangulation;
+      // Do simple Graham scan
+
+      // Find left-most point (smallest x-coordinate)
+      std::size_t i_min = 0;
+      double x_min = CGAL::to_double((*points)[0].x());
+      for (std::size_t i = 1; i < points->size(); i++)
       {
-	triangulation[2*i] = CGAL::to_double((*pts)[i].x());
-	triangulation[2*i+1] = CGAL::to_double((*pts)[i].y());
+	const double x = CGAL::to_double((*points)[i].x());
+	if (x < x_min)
+	{
+	  x_min = x;
+	  i_min = i;
+	}
       }
+
+      // Compute signed squared cos of angle with (0, 1) from i_min to
+      // all points
+      std::vector<std::pair<double, std::size_t>> order;
+      for (std::size_t i = 0; i < points->size(); i++)
+      {
+	// Skip left-most point used as origin
+	if (i == i_min)
+	  continue;
+
+	// Compute vector to point
+	const dolfin::Point v(CGAL::to_double((*points)[i].x()) - CGAL::to_double((*points)[i_min].x()), CGAL::to_double((*points)[i].y()) - CGAL::to_double((*points)[i_min].y()));
+
+	// Compute square cos of angle
+	const double cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_norm();
+
+	// Store for sorting
+	order.push_back(std::make_pair(cos2, i));
+      }
+
+      // Sort points based on angle
+      std::sort(order.begin(), order.end());
+
+      // Triangulate polygon by connecting i_min with the ordered points
+      triangulation.reserve((points->size() - 2)*3*2);
+      const dolfin::Point p0(CGAL::to_double((*points)[i_min].x()),
+			     CGAL::to_double((*points)[i_min].y()));
+
+      for (std::size_t i = 0; i < points->size() - 2; i++)
+      {
+	const dolfin::Point p1(CGAL::to_double((*points)[order[i].second].x()),
+			       CGAL::to_double((*points)[order[i].second].y()));
+	const dolfin::Point p2(CGAL::to_double((*points)[order[i + 1].second].x()),
+			       CGAL::to_double((*points)[order[i + 1].second].y()));
+	triangulation.push_back(p0.x());
+	triangulation.push_back(p0.y());
+	triangulation.push_back(p1.x());
+	triangulation.push_back(p1.y());
+	triangulation.push_back(p2.x());
+	triangulation.push_back(p2.y());
+      }
+
       return triangulation;
     }
 
