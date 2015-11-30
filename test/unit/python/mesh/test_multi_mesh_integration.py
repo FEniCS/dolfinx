@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-03-04
-# Last changed: 2014-03-10
+# Last changed: 2015-11-30
 
 from __future__ import print_function
 import numpy
@@ -75,29 +75,6 @@ def test_integrate():
         #print(cut)
         #print("quadrature")
         #print(qr)
-
-    V_0 = FunctionSpace(mesh_0, "CG", 1)
-    V_1 = FunctionSpace(mesh_1, "CG", 1)
-
-    V_multi = MultiMeshFunctionSpace()
-    V_multi.add(V_0)
-    V_multi.add(V_1)
-    V_multi.build()
-
-    u = MultiMeshFunction(V_multi)
-    u.vector()[:] = 1.
-
-    v_0 = Function(V_0)
-    v_1 = Function(V_1)
-    v_0.vector()[:] = 1.
-    v_1.vector()[:] = 1.
-
-    L_multi = MultiMeshForm(V_multi)
-    L_0 = Form(v_0*dx)
-    L_1 = Form(v_1*dx)
-    L_multi.add(L_0)
-    L_multi.add(L_1)
-    L_multi.build()
 
     # area = assemble(L_0) + assemble(L_1)
     # MMA = MultiMeshAssembler()
