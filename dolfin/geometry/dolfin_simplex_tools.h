@@ -43,26 +43,27 @@ namespace tools
 
   inline double area(const std::vector<dolfin::Point> &simplex)
   {
-    /* const dolfin::Point et=tri[1]-tri[0]; */
-    /* const dolfin::Point es=tri[2]-tri[0]; */
-    /* return Heron(et.norm(), es.norm(), (et-es).norm()); */
+    const auto tri=simplex;
+    const dolfin::Point et=tri[1]-tri[0];
+    const dolfin::Point es=tri[2]-tri[0];
+    return Heron(et.norm(), es.norm(), (et-es).norm());
 
-    if (simplex.size() == 3)
-    {
-      double a[2]={simplex[0][0],simplex[0][1]};
-      double b[2]={simplex[1][0],simplex[1][1]};
-      double c[2]={simplex[2][0],simplex[2][1]};
-      return 0.5*orient2d(a,b,c);
-    }
-    else if (simplex.size() == 2)
-    {
-      return (simplex[0]-simplex[1]).norm();
-    }
-    else
-    {
-      PPause;
-      return -9e99;
-    }
+    /* if (simplex.size() == 3) */
+    /* { */
+    /*   double a[2]={simplex[0][0],simplex[0][1]}; */
+    /*   double b[2]={simplex[1][0],simplex[1][1]}; */
+    /*   double c[2]={simplex[2][0],simplex[2][1]}; */
+    /*   return 0.5*orient2d(a,b,c); */
+    /* } */
+    /* else if (simplex.size() == 2) */
+    /* { */
+    /*   return (simplex[0]-simplex[1]).norm(); */
+    /* } */
+    /* else */
+    /* { */
+    /*   PPause; */
+    /*   return -9e99; */
+    /* } */
   }
 
   inline std::string drawtriangle(const std::vector<dolfin::Point> &simplex,
