@@ -1,8 +1,8 @@
 #ifndef DOLFIN_SIMPLEX_TOOLS_H
 #define DOLFIN_SIMPLEX_TOOLS_H
 
-#include "../dolfin.h" // for install
-//#include <dolfin.h> // for building test
+//#include "../dolfin.h" // for install
+#include <dolfin.h> // for building test
 
 #include "predicates.h"
 
@@ -139,7 +139,7 @@ namespace tools
 
   //void Pause() { char apa; std::cin >> apa; }
 
-  template<class T>
+  template<class T=int>
   inline void dolfin_write_medit_triangles(const std::string &filename,
 					   const dolfin::Mesh& mesh,
 					   const int t = 0,
