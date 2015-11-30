@@ -445,15 +445,19 @@ void MultiMesh::_build_collision_maps()
     // Report results
     log(PROGRESS, "Part %d has %d uncut cells, %d cut cells, and %d covered cells.",
         i, uncut_cells.size(), cut_cells.size(), covered_cells.size());
+  }
 
 #ifdef Augustwritemarkers
-    std::vector<std::size_t> tmp(markers.size());
-    for (std::size_t i = 0; i < tmp.size(); ++i)
-      tmp[i] = (std::size_t) markers[i];
-    tools::dolfin_write_medit_triangles("markers",*_meshes[i],i,&tmp);
-    tools::dolfin_write_medit_triangles("multimesh",*this);
-#endif
+  for (std::size_t part = 0; part < num_parts(); ++part)
+  {
+    std::vector<std::size_t> marker(_meshes[part]->num_cells(),-1);
+    for (const auto c: _uncut_cells[part]) marker[c] = 0;
+    for (const auto c: _cut_cells[part]) marker[c] = 1;
+    for (const auto c: _covered_cells[part]) marker[c] = 2;
+    tools::dolfin_write_medit_triangles("markers",*_meshes[part],part,&marker);
   }
+  tools::dolfin_write_medit_triangles("multimesh",*this);
+#endif
 
   end();
 }
