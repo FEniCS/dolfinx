@@ -26,6 +26,7 @@
 
 // FIXME:
 #include "predicates.h"
+#include "dolfin_simplex_tools.h"
 
 using namespace dolfin;
 
@@ -186,11 +187,17 @@ SimplexQuadrature::compute_quadrature_rule_interval(const double* coordinates,
     }
   case 3:
     {
-      const double J[] = {coordinates[3] - coordinates[0],
-                          coordinates[4] - coordinates[1],
-                          coordinates[5] - coordinates[2]};
-      const double det2 = J[0]*J[0] + J[1]*J[1] + J[2]*J[2];
-      det = std::sqrt(det2);
+      // const double J[] = {coordinates[3] - coordinates[0],
+      //                     coordinates[4] - coordinates[1],
+      //                     coordinates[5] - coordinates[2]};
+      // const double det2 = J[0]*J[0] + J[1]*J[1] + J[2]*J[2];
+      // det = std::sqrt(det2);
+
+      const Point a(coordinates[0],coordinates[1]);
+      const Point b(coordinates[2],coordinates[3]);
+      const Point c(coordinates[4],coordinates[5]);
+      det = tools::area({{a,b,c}});
+
       break;
     }
   default:
