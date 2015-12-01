@@ -34,9 +34,8 @@
 // FIXME August
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 
-//#define Augustcheckqrpositive
-//#define Augustwritemarkers
-//#define Augustdebug
+#define Augustcheckqrpositive
+#define Augustdebug
 //#define Augustnormaldebug
 
 using namespace dolfin;
@@ -181,7 +180,7 @@ void MultiMesh::build()
   _build_quadrature_rules_cut_cells();
 
   // FIXME:
-  _build_quadrature_rules_interface();
+  //_build_quadrature_rules_interface();
 
   end();
 }
@@ -295,6 +294,138 @@ void MultiMesh::_build_bounding_box_trees()
 //-----------------------------------------------------------------------------
 void MultiMesh::_build_collision_maps()
 {
+  // begin(PROGRESS, "Building collision maps.");
+
+  // // Clear collision maps
+  // _uncut_cells.clear();
+  // _cut_cells.clear();
+  // _covered_cells.clear();
+  // _collision_maps_cut_cells.clear();
+  // _collision_maps_cut_cells_boundary.clear();
+
+  // // Iterate over all parts
+  // for (std::size_t i = 0; i < num_parts(); i++)
+  // {
+  //   // Extract uncut, cut and covered cells:
+  //   //
+  //   // 0: uncut   = cell not colliding with any higher domain
+  //   // 1: cut     = cell colliding with some higher boundary and is not covered
+  //   // 2: covered = cell colliding with some higher domain but not its boundary
+
+  //   // Create vector of markers for cells in part `i` (0, 1, or 2)
+  //   std::vector<char> markers(_meshes[i]->num_cells(), 0);
+
+  //   // Create local array for marking boundary collisions for cells in
+  //   // part `i`. Note that in contrast to the markers above which are
+  //   // global to part `i`, these markers are local to the collision
+  //   // between part `i` and part `j`.
+  //   std::vector<bool> collides_with_boundary(_meshes[i]->num_cells());
+
+  //   // Create empty collision map for cut cells in part `i`
+  //   std::map<unsigned int, std::vector<std::pair<std::size_t, unsigned int>>>
+  //     collision_map_cut_cells;
+
+  //   // Iterate over covering parts (with higher part number)
+  //   for (std::size_t j = i + 1; j < num_parts(); j++)
+  //   {
+  //     log(PROGRESS, "Computing collisions for mesh %d overlapped by mesh %d.", i, j);
+
+  //     // Reset boundary collision markers
+  //     std::fill(collides_with_boundary.begin(), collides_with_boundary.end(), false);
+
+  //     // Compute domain-boundary collisions
+  //     const auto& boundary_collisions = _trees[i]->compute_collisions(*_boundary_trees[j]);
+
+  //     // Iterate over boundary collisions
+  //     for (auto it = boundary_collisions.first.begin();
+  //          it != boundary_collisions.first.end(); ++it)
+  //     {
+  //       // Mark that cell collides with boundary
+  //       collides_with_boundary[*it] = true;
+
+  //       // Mark as cut cell if not previously covered
+  //       if (markers[*it] != 2)
+  //       {
+  //         // Mark as cut cell
+  //         markers[*it] = 1;
+
+  //         // Add empty list of collisions into map if it does not exist
+  //         if (collision_map_cut_cells.find(*it) == collision_map_cut_cells.end())
+  //         {
+  //           std::vector<std::pair<std::size_t, unsigned int>> collisions;
+  //           collision_map_cut_cells[*it] = collisions;
+  //         }
+  //       }
+  //     }
+
+  //     // Compute domain-domain collisions
+  //     const auto& domain_collisions = _trees[i]->compute_collisions(*_trees[j]);
+
+  //     // Iterate over domain collisions
+  //     dolfin_assert(domain_collisions.first.size() == domain_collisions.second.size());
+  //     for (std::size_t k = 0; k < domain_collisions.first.size(); k++)
+  //     {
+  //       // Get the two colliding cells
+  //       auto cell_i = domain_collisions.first[k];
+  //       auto cell_j = domain_collisions.second[k];
+
+  //       // Store collision in collision map if we have a cut cell
+  //       if (markers[cell_i] == 1)
+  //       {
+  //         auto it = collision_map_cut_cells.find(cell_i);
+  //         dolfin_assert(it != collision_map_cut_cells.end());
+  //         it->second.push_back(std::make_pair(j, cell_j));
+  //       }
+
+  //       // Mark cell as covered if it does not collide with boundary
+  //       if (!collides_with_boundary[cell_i])
+  //       {
+  //         // Remove from collision map if previously marked as as cut cell
+  //         if (markers[cell_i] == 1)
+  //         {
+  //           dolfin_assert(collision_map_cut_cells.find(cell_i) != collision_map_cut_cells.end());
+  //           collision_map_cut_cells.erase(cell_i);
+  //         }
+
+  //         // Mark as covered cell (may already be marked)
+  //         markers[cell_i] = 2;
+  //       }
+  //     }
+  //   }
+
+  //   // Extract uncut, cut and covered cells from markers
+  //   std::vector<unsigned int> uncut_cells;
+  //   std::vector<unsigned int> cut_cells;
+  //   std::vector<unsigned int> covered_cells;
+  //   for (unsigned int c = 0; c < _meshes[i]->num_cells(); c++)
+  //   {
+  //     switch (markers[c])
+  //     {
+  //     case 0:
+  //       uncut_cells.push_back(c);
+  //       break;
+  //     case 1:
+  //       cut_cells.push_back(c);
+  //       break;
+  //     default:
+  //       covered_cells.push_back(c);
+  //     }
+  //   }
+
+  //   // Store data for this mesh
+  //   _uncut_cells.push_back(uncut_cells);
+  //   _cut_cells.push_back(cut_cells);
+  //   _covered_cells.push_back(covered_cells);
+  //   _collision_maps_cut_cells.push_back(collision_map_cut_cells);
+
+  //   // Report results
+  //   log(PROGRESS, "Part %d has %d uncut cells, %d cut cells, and %d covered cells.",
+  //       i, uncut_cells.size(), cut_cells.size(), covered_cells.size());
+  // }
+
+  // end();
+
+
   begin(PROGRESS, "Building collision maps.");
 
   // Clear collision maps
@@ -384,9 +515,15 @@ void MultiMesh::_build_collision_maps()
         // Store collision in collision map if we have a cut cell
         if (markers[cell_i] == 1)
         {
-          auto it = collision_map_cut_cells.find(cell_i);
-          dolfin_assert(it != collision_map_cut_cells.end());
-          it->second.push_back(std::make_pair(j, cell_j));
+	  const Cell cell(*_meshes[i], cell_i);
+	  const Cell other_cell(*_meshes[j], cell_j);
+	  if (cell.collides(other_cell))
+	  {
+	    collides_with_domain[cell_i] = true;
+	    auto it = collision_map_cut_cells.find(cell_i);
+	    dolfin_assert(it != collision_map_cut_cells.end());
+	    it->second.push_back(std::make_pair(j, cell_j));
+	  }
         }
 
         // Possibility to cell as covered if it does not collide with boundary
@@ -447,17 +584,17 @@ void MultiMesh::_build_collision_maps()
         i, uncut_cells.size(), cut_cells.size(), covered_cells.size());
   }
 
-#ifdef Augustwritemarkers
-  for (std::size_t part = 0; part < num_parts(); ++part)
-  {
-    std::vector<std::size_t> marker(_meshes[part]->num_cells(),-1);
-    for (const auto c: _uncut_cells[part]) marker[c] = 0;
-    for (const auto c: _cut_cells[part]) marker[c] = 1;
-    for (const auto c: _covered_cells[part]) marker[c] = 2;
-    tools::dolfin_write_medit_triangles("markers",*_meshes[part],part,&marker);
-  }
-  tools::dolfin_write_medit_triangles("multimesh",*this);
-#endif
+// #ifdef Augustwritemarkers
+//   for (std::size_t part = 0; part < num_parts(); ++part)
+//   {
+//     std::vector<std::size_t> marker(_meshes[part]->num_cells(),-1);
+//     for (const auto c: _uncut_cells[part]) marker[c] = 0;
+//     for (const auto c: _cut_cells[part]) marker[c] = 1;
+//     for (const auto c: _covered_cells[part]) marker[c] = 2;
+//     tools::dolfin_write_medit_triangles("markers",*_meshes[part],3*(_counter++)+part,&marker);
+//   }
+//   tools::dolfin_write_medit_triangles("multimesh",*this);
+// #endif
 
   end();
 }
@@ -534,11 +671,14 @@ void MultiMesh::_build_quadrature_rules_overlap()
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
+      if (cut_part == 0 and it->first == 6)
     {
+      const std::vector<std::string> color = {{ "'b'", "'g'", "'r'" }};
+
       // Get cut cell
       const unsigned int cut_cell_index = it->first;
       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
-      std::cout << tools::drawtriangle(cut_cell);
+      std::cout << tools::drawtriangle(cut_cell, color[cut_part]);
 
       // Loop over all cutting cells to construct the polyhedra to be
       // used in the inclusion-exclusion principle
@@ -548,7 +688,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	const std::size_t cutting_part = jt->first;
 	const std::size_t cutting_cell_index = jt->second;
 	const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
-  	std::cout << tools::drawtriangle(cutting_cell);
+  	std::cout << tools::drawtriangle(cutting_cell, color[cutting_part]);
       }
       std::cout << std::endl;
     }
@@ -572,6 +712,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
+      if (cut_part == 0 and it->first == 6)
     {
 #ifdef Augustdebug
       std::cout << "-------- new cut cell\n";
@@ -606,8 +747,10 @@ void MultiMesh::_build_quadrature_rules_overlap()
 
 #ifdef Augustdebug
 	{
-	  std::cout << "\ncut cutting (cutting part=" << cutting_part << ")" << std::endl;
-	  std::cout << tools::drawtriangle(cut_cell,"'y'")<<tools::drawtriangle(cutting_cell,"'m'")<<std::endl;
+	  std::cout << "\ncut cutting (cut_cell="<<cut_cell_index<<" and cutting part="<<cutting_part<<" and cutting cell="<<cutting_cell_index<<")" << std::endl;
+
+	  //(cutting part=" << cutting_part << ")" << std::endl;
+	  std::cout << tools::drawtriangle(cut_cell,"'y'")<<tools::drawtriangle(cutting_cell,"'m'")<<tools::zoom()<<std::endl;
 	}
 #endif
 
@@ -631,7 +774,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	  {
 	    for (const auto simplex: polyhedron)
 	      std::cout << tools::drawtriangle(simplex,"'k'");
-	    std::cout << std::endl;
+	    std::cout <<tools::zoom()<< std::endl;
 	    std::cout << "areas=[";
 	    for (const auto simplex: polyhedron)
 	      std::cout << tools::area(simplex)<<' ';
@@ -851,14 +994,14 @@ void MultiMesh::_build_quadrature_rules_overlap()
 #ifdef Augustdebug
 		    {
 		      std::cout << '\n'<<tools::drawtriangle(previous_simplex,"'b'")
-		    		<< tools::drawtriangle(initial_simplex,"'r'")<<std::endl;
+		    		<< tools::drawtriangle(initial_simplex,"'r'")<<tools::zoom()<<std::endl;
 		      std::cout << "areas: " << tools::area(previous_simplex)<<' '<<tools::area(initial_simplex)<<'\n';
 		      const double min_area = std::min(tools::area(previous_simplex), tools::area(initial_simplex));
 
 		      std::cout << "resulting intersection:\n";
 		      for (const auto simplex: pii)
 		    	std::cout << tools::drawtriangle(simplex,"'g'");
-		      std::cout<<'\n';
+		      std::cout<<tools::zoom()<<'\n';
 		      double intersection_area = 0;
 		      std::cout << "areas=[ ";
 		      for (const auto simplex: pii) {
@@ -1029,8 +1172,8 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	// how to fix?
 	//qr = quadrature_rule();
 	//PPause;
-	std::cout << "exiting";
-	exit(1);
+	//std::cout << "exiting";
+	//exit(1);
       }
 
 #endif
@@ -1335,6 +1478,11 @@ void MultiMesh::_build_quadrature_rules_overlap()
   //     _facet_normals[cut_part][cut_cell_index] = interface_n;
   //   }
   // }
+
+
+  std::cout << "\n\n" << __FUNCTION__ << " done\n\nexiting.";
+  exit(0);
+
 
   end();
 }

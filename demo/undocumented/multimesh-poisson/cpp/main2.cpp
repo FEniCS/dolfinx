@@ -50,6 +50,26 @@ class DirichletBoundary : public SubDomain
   }
 };
 
+void writemarkers(std::size_t step,
+		  const MultiMesh& mm)
+{
+  for (std::size_t part = 0; part < mm.num_parts(); ++part)
+  {
+    std::stringstream ss; ss << part;
+    const std::size_t n = mm.part(part)->num_cells();
+    std::vector<int> uncut(n, -1), cut(n, -1), covered(n, -1);
+    for (const auto c: mm.uncut_cells(part)) uncut[c] = 0;
+    for (const auto c: mm.cut_cells(part)) cut[c] = 1;
+    for (const auto c: mm.covered_cells(part)) covered[c] = 2;
+    tools::dolfin_write_medit_triangles("uncut"+ss.str(),*mm.part(part),step,&uncut);
+    tools::dolfin_write_medit_triangles("cut"+ss.str(),*mm.part(part),step,&cut);
+    tools::dolfin_write_medit_triangles("covered"+ss.str(),*mm.part(part),step,&covered);
+  }
+  tools::dolfin_write_medit_triangles("multimesh",mm,step);
+
+}
+
+
 void evaluate_at_qr(const MultiMesh& mm,
 		    const MultiMeshFunction& uh)
 {
@@ -105,22 +125,25 @@ void evaluate_at_qr(const MultiMesh& mm,
     // loop over all cells with large uh values
     for (const auto cell_no: cells)
     {
+      std::cout << "# cell with large uh:\n";
       const Cell cell(*mm.part(part), cell_no);
       std::cout << tools::drawtriangle(cell);
 
       // compute net weight (~visible area)
       const auto qr = mm.quadrature_rule_cut_cell(part, cell_no);
       double net_weight = 0;
+      std::cout << " # ";
       for (const auto w: qr.second)
       {
 	net_weight += w;
 	std::cout << ' '<<w;
       }
-      std::cout << " # net weight = " << net_weight << '\n';
+      std::cout << "\n# net weight = " << net_weight << '\n';
 
       // also display all colliding cells
       const auto it = collision_map.find(cell_no);
       dolfin_assert(it->first == cell_no);
+      std::cout << "# colliding:\n";
       for (const auto cpair: it->second)
       {
 	const Cell cutting_cell(*mm.part(cpair.first), cpair.second);
@@ -129,6 +152,7 @@ void evaluate_at_qr(const MultiMesh& mm,
     }
 
   }
+  PPause;
 }
 
 void find_max(std::size_t step,
@@ -328,12 +352,14 @@ void solve_poisson(std::size_t step,
 	     covered0_file, covered1_file, covered2_file);
 
     //evaluate_at_qr(multimesh,u);
+
+    writemarkers(step, multimesh);
   }
 
   // Save to file
-  u0_file << *u.part(0);
-  u1_file << *u.part(1);
-  u2_file << *u.part(2);
+  u0_file << std::make_pair<const Function*, double>(&*u.part(0), (double)step);
+  u1_file << std::make_pair<const Function*, double>(&*u.part(1), (double)step);
+  u2_file << std::make_pair<const Function*, double>(&*u.part(2), (double)step);
 
   // Plot solution (last time)
   if (plot_solution)
@@ -361,8 +387,8 @@ int main(int argc, char* argv[])
   // Parameters
   const double T = 40.0;
   const std::size_t start = 24;
-  const std::size_t N = 250;
-  const double dt = T / 4000;
+  const std::size_t N = 25;
+  const double dt = T / 400;
 
   // Files for storing solution
   File u0_file("u0.pvd");

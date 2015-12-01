@@ -140,10 +140,10 @@ namespace tools
 
   //void Pause() { char apa; std::cin >> apa; }
 
-  template<class T=int>
+  template<class U=std::size_t, class T=double>
   inline void dolfin_write_medit_triangles(const std::string &filename,
 					   const dolfin::Mesh& mesh,
-					   const int t = 0,
+					   const U t = 0,
 					   const std::vector<T>* u = 0)
   {
     std::stringstream ss;
@@ -347,6 +347,11 @@ namespace tools
 
     fp << "</Piece>\n</UnstructuredGrid>\n</VTKFile>\n";
     fp.close();
+  }
+
+  inline std::string zoom()
+  {
+    return "plt.autoscale(enable=True,axis='both',tight=None);";
   }
 
 }
