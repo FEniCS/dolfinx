@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-11-29
+// Last changed: 2015-11-30
 
 
 #include <dolfin/log/log.h>
@@ -34,9 +34,9 @@
 // FIXME August
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 
-#define Augustcheckqrpositive
-#define Augustwritemarkers
-#define Augustdebug
+//#define Augustcheckqrpositive
+//#define Augustwritemarkers
+//#define Augustdebug
 //#define Augustnormaldebug
 
 using namespace dolfin;
@@ -181,7 +181,7 @@ void MultiMesh::build()
   _build_quadrature_rules_cut_cells();
 
   // FIXME:
-  //_build_quadrature_rules_interface();
+  _build_quadrature_rules_interface();
 
   end();
 }
@@ -527,35 +527,34 @@ void MultiMesh::_build_quadrature_rules_overlap()
   //   }
   // }
 
-  #ifdef Augustdebug
-    std::cout.precision(15);
-    for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
+#ifdef Augustdebug
+  std::cout.precision(15);
+  for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
+  {
+    // Iterate over cut cells for current part
+    const auto& cmap = collision_map_cut_cells(cut_part);
+    for (auto it = cmap.begin(); it != cmap.end(); ++it)
     {
-      // Iterate over cut cells for current part
-      const auto& cmap = collision_map_cut_cells(cut_part);
-      for (auto it = cmap.begin(); it != cmap.end(); ++it)
-	if(it->first == 6)
-      {
-        // Get cut cell
-        const unsigned int cut_cell_index = it->first;
-        const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
-        std::cout << tools::drawtriangle(cut_cell);
+      // Get cut cell
+      const unsigned int cut_cell_index = it->first;
+      const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
+      std::cout << tools::drawtriangle(cut_cell);
 
-        // Loop over all cutting cells to construct the polyhedra to be
-        // used in the inclusion-exclusion principle
-        for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
-        {
+      // Loop over all cutting cells to construct the polyhedra to be
+      // used in the inclusion-exclusion principle
+      for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
+      {
   	// Get cutting part and cutting cell
-          const std::size_t cutting_part = jt->first;
-          const std::size_t cutting_cell_index = jt->second;
-          const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
+	const std::size_t cutting_part = jt->first;
+	const std::size_t cutting_cell_index = jt->second;
+	const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
   	std::cout << tools::drawtriangle(cutting_cell);
-        }
-        std::cout << std::endl;
       }
+      std::cout << std::endl;
     }
-    PPause;
-  #endif
+  }
+  PPause;
+#endif
 
 
   std::size_t small_elements_cnt = 0;
@@ -573,7 +572,6 @@ void MultiMesh::_build_quadrature_rules_overlap()
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
-      if (it->first == 6)
     {
 #ifdef Augustdebug
       std::cout << "-------- new cut cell\n";
@@ -1879,7 +1877,7 @@ void MultiMesh::_build_quadrature_rules_interface()
 		  for (const auto simplex: polyhedron)
 		    // for (const auto interface_polyhedron: cut_cutting_interface)
 		    for (std::size_t p = 0; p < cut_cutting_interface.size(); ++p)
-		    //   for (const auto interface_simplex: interface_polyhedron)
+		      //   for (const auto interface_simplex: interface_polyhedron)
 		      for (std::size_t s = 0; s < cut_cutting_interface[p].size(); ++s)
 		      {
 			const Simplex& interface_simplex = cut_cutting_interface[p][s];
@@ -2016,17 +2014,17 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
     qr.second.push_back(factor*dqr.second[i]);
   }
 
-// #ifdef Augustdebug
-//   std::cout << "# display quadrature rule (last " << num_points << " added):"<< std::endl;
-//   for (std::size_t i = 0; i < qr.second.size(); ++i)
-//   {
-//     std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') # "<<qr.second[i]<<' ';
-//     if (i > (qr.second.size() - num_points))
-//       std::cout << "(new)";
-//     std::cout << std::endl;
-//     //std::cout  << dqr.first[2*i]<<' '<<dqr.first[2*i+1]<< std::endl;
-//   }
-// #endif
+  // #ifdef Augustdebug
+  //   std::cout << "# display quadrature rule (last " << num_points << " added):"<< std::endl;
+  //   for (std::size_t i = 0; i < qr.second.size(); ++i)
+  //   {
+  //     std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') # "<<qr.second[i]<<' ';
+  //     if (i > (qr.second.size() - num_points))
+  //       std::cout << "(new)";
+  //     std::cout << std::endl;
+  //     //std::cout  << dqr.first[2*i]<<' '<<dqr.first[2*i+1]<< std::endl;
+  //   }
+  // #endif
 
   return num_points;
 }
@@ -2099,27 +2097,27 @@ MultiMesh::compute_permutations(std::size_t n,
   case 0:
     return std::vector<std::deque<std::size_t> >();
   case 1:
-  {
-    std::vector<std::deque<std::size_t> > pp(n, std::deque<std::size_t>());
-    for (std::size_t i = 0; i < n; i++)
-      pp[i].push_back(i);
-    return pp;
-  }
+    {
+      std::vector<std::deque<std::size_t> > pp(n, std::deque<std::size_t>());
+      for (std::size_t i = 0; i < n; i++)
+	pp[i].push_back(i);
+      return pp;
+    }
   default:
-  {
-    std::vector<std::deque<std::size_t> > pp = compute_permutations(k - 1, n);
-    std::vector<std::deque<std::size_t> > permutations;
+    {
+      std::vector<std::deque<std::size_t> > pp = compute_permutations(k - 1, n);
+      std::vector<std::deque<std::size_t> > permutations;
 
-    for (std::size_t i = 0; i < n; ++i)
-      for (const auto& p: pp)
-	if (i < p[0])
-	{
-	  std::deque<std::size_t> q = p;
-	  q.push_front(i);
-	  permutations.push_back(q);
-	}
-    return permutations;
-  }
+      for (std::size_t i = 0; i < n; ++i)
+	for (const auto& p: pp)
+	  if (i < p[0])
+	  {
+	    std::deque<std::size_t> q = p;
+	    q.push_front(i);
+	    permutations.push_back(q);
+	  }
+      return permutations;
+    }
   }
 }
 // //------------------------------------------------------------------------------

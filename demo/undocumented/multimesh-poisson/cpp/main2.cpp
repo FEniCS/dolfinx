@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2015-11-29
+// Last changed: 2015-11-30
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes. The solution is computed
@@ -127,6 +127,7 @@ void evaluate_at_qr(const MultiMesh& mm,
 	std::cout << tools::drawtriangle(cutting_cell,colors[cpair.first]);
       }
     }
+
   }
 }
 
@@ -326,7 +327,7 @@ void solve_poisson(std::size_t step,
 	     cut0_file, cut1_file, cut2_file,
 	     covered0_file, covered1_file, covered2_file);
 
-    evaluate_at_qr(multimesh,u);
+    //evaluate_at_qr(multimesh,u);
   }
 
   // Save to file
@@ -355,72 +356,13 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  {
-    // test
-    Mesh mesh0, mesh1, mesh2;
-    {
-      MeshEditor me;
-      me.open(mesh0, 2, 2);
-      me.init_vertices(3);
-      me.init_cells(1);
-      const Point p0(0., 0.);
-      const Point p1(1., 0.);
-      const Point p2(0.5, 0.5);
-      me.add_vertex(0, p0);
-      me.add_vertex(1, p1);
-      me.add_vertex(2, p2);
-      me.add_cell(0, 0, 1, 2);
-      me.close();
-    }
-
-    {
-      MeshEditor me;
-      me.open(mesh1, 2, 2);
-      me.init_vertices(3);
-      me.init_cells(1);
-      const Point p0(0., 1.);
-      const Point p1(1., -2.);
-      const Point p2(2., 1.);
-      me.add_vertex(0, p0);
-      me.add_vertex(1, p1);
-      me.add_vertex(2, p2);
-      me.add_cell(0, 0, 1, 2);
-      me.close();
-    }
-
-    {
-      MeshEditor me;
-      me.open(mesh2, 2, 2);
-      me.init_vertices(3);
-      me.init_cells(1);
-      const Point p0(-0.75, 1.);
-      const Point p1(0.25, -2.);
-      const Point p2(1.25, 1.);
-      me.add_vertex(0, p0);
-      me.add_vertex(1, p1);
-      me.add_vertex(2, p2);
-      me.add_cell(0, 0, 1, 2);
-      me.close();
-    }
-
-    MultiMesh multimesh;
-    multimesh.add(mesh0);
-    multimesh.add(mesh1);
-    multimesh.add(mesh2);
-    multimesh.build();
-
-    exit(0);
-
-  }
-
-
-
   //set_log_level(DEBUG);
 
   // Parameters
   const double T = 40.0;
-  const std::size_t N = 25;
-  const double dt = T / 400;
+  const std::size_t start = 24;
+  const std::size_t N = 250;
+  const double dt = T / 4000;
 
   // Files for storing solution
   File u0_file("u0.pvd");
@@ -440,7 +382,7 @@ int main(int argc, char* argv[])
   File covered2_file("covered2.pvd");
 
   // Iterate over configurations
-  for (std::size_t n = 24; n < N; n++)
+  for (std::size_t n = start; n < N; n++)
   {
     info("Computing solution, step %d / %d.", n, N - 1);
 
