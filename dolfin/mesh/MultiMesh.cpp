@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-11-30
+// Last changed: 2015-12-01
 
 
 #include <dolfin/log/log.h>
@@ -180,7 +180,7 @@ void MultiMesh::build()
   _build_quadrature_rules_cut_cells();
 
   // FIXME:
-  //_build_quadrature_rules_interface();
+  _build_quadrature_rules_interface();
 
   end();
 }
@@ -671,7 +671,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
-      if (cut_part == 0 and it->first == 6)
+      //if (cut_part == 0 and it->first == 6)
     {
       const std::vector<std::string> color = {{ "'b'", "'g'", "'r'" }};
 
@@ -712,7 +712,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
-      if (cut_part == 0 and it->first == 6)
+      //if (cut_part == 0 and it->first == 6)
     {
 #ifdef Augustdebug
       std::cout << "-------- new cut cell\n";
@@ -1164,14 +1164,23 @@ void MultiMesh::_build_quadrature_rules_overlap()
       double net_weight = 0;
       for (const auto qro: overlap_qr)
 	net_weight += std::accumulate(qro.second.begin(),
-				      qro.second.end(), 0.);
-      if (net_weight < 0)
+						  qro.second.end(), 0.);
+      std::cout << "net weight = " << net_weight << '\n';
+      if (net_weight >= cut_cell.volume())
       {
+	for (const auto qro: overlap_qr)
+	{
+	  std::cout << "weights: ";
+	  for (const auto w: qro.second)
+	    std::cout << w << ' ';
+	  std::cout << '\n';
+	}
+
 	std::cout<< __FUNCTION__  << ": cut part " << cut_part<<" cell " << cut_cell_index << " net weight = " << net_weight << " area = " << cut_cell.volume() << ") "<<std::endl;
 
 	// how to fix?
 	//qr = quadrature_rule();
-	//PPause;
+	PPause;
 	//std::cout << "exiting";
 	//exit(1);
       }
@@ -1480,8 +1489,8 @@ void MultiMesh::_build_quadrature_rules_overlap()
   // }
 
 
-  std::cout << "\n\n" << __FUNCTION__ << " done\n\nexiting.";
-  exit(0);
+  //std::cout << "\n\n" << __FUNCTION__ << " done\n\nexiting.";
+  //exit(0);
 
 
   end();
@@ -1539,7 +1548,7 @@ void MultiMesh::_build_quadrature_rules_cut_cells()
 					  qr.second.end(), 0.);
       if (net_weight < 0)
       {
-	std::cout<< __FUNCTION__  << "cut part " << cut_part<<" cell " << cut_cell_index << " net weight = " << net_weight << " (overlap weight = " << overlap_weight << " area = " << cut_cell.volume() << ") "<<std::endl;
+	std::cout<< __FUNCTION__  << ": cut part " << cut_part<<" cell " << cut_cell_index << " net weight = " << net_weight << " (overlap weight = " << overlap_weight << " area = " << cut_cell.volume() << ") "<<std::endl;
 
 	// how to fix?
 	//qr = quadrature_rule();
