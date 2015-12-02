@@ -281,6 +281,8 @@ namespace cgaltools
       return triangulation;
     }
 
+    std::cout << "unexpected behavior in dolfin cgal tools, exiting"; exit(1);
+
     return std::vector<double>();
   }
 
