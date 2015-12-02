@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-12-01
+// Last changed: 2015-12-02
 
 
 #include <dolfin/log/log.h>
@@ -35,8 +35,8 @@
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 
 #define Augustcheckqrpositive
-#define Augustdebug
-#define Augustnormaldebug
+// #define Augustdebug
+// #define Augustnormaldebug
 
 using namespace dolfin;
 
@@ -174,10 +174,10 @@ void MultiMesh::build()
 
   // Build quadrature rules of the cut cells' overlap. Do this before
   // we build the quadrature rules of the cut cells
-  //_build_quadrature_rules_overlap();
+  _build_quadrature_rules_overlap();
 
   // Build quadrature rules of the cut cells
-  //_build_quadrature_rules_cut_cells();
+  _build_quadrature_rules_cut_cells();
 
   // FIXME:
   _build_quadrature_rules_interface();
@@ -1670,7 +1670,7 @@ void MultiMesh::_build_quadrature_rules_interface()
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
-      if (cut_part == 0 and it->first == 16)
+      //if (cut_part == 0 and it->first == 16)
     {
 #ifdef Augustdebug
       std::cout << "-------- new cut cell\n";
@@ -2119,7 +2119,7 @@ void MultiMesh::_build_quadrature_rules_interface()
     }
   }
 
-  std::cout << __FUNCTION__ << " done, exiting"; exit(1);
+  //std::cout << __FUNCTION__ << " done, exiting"; exit(1);
 
   //std::cout << "small elements " << small_elements_cnt << std::endl;
 }
