@@ -281,6 +281,10 @@ void solve_poisson(std::size_t step,
   multimesh.add(mesh_2);
   multimesh.build(); // qr generated here
 
+  {
+    // Debug
+    writemarkers(step, multimesh);
+  }
 
   // // Create function space
   // MultiMeshPoisson::MultiMeshFunctionSpace V(multimesh);
@@ -351,9 +355,7 @@ void solve_poisson(std::size_t step,
 	     cut0_file, cut1_file, cut2_file,
 	     covered0_file, covered1_file, covered2_file);
 
-    //evaluate_at_qr(multimesh,u);
-
-    writemarkers(step, multimesh);
+    evaluate_at_qr(multimesh,u);
   }
 
   // Save to file
@@ -386,8 +388,8 @@ int main(int argc, char* argv[])
 
   // Parameters
   const double T = 40.0;
-  const std::size_t start = 24;
-  const std::size_t N = 25;
+  const std::size_t start = 228; //24
+  const std::size_t N = 229; //25
   const double dt = T / 400;
 
   // Files for storing solution
