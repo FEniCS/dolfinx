@@ -91,7 +91,9 @@ namespace dolfin
 
     /// Fill array with number of nonzeros for off-diagonal block in
     /// local_range for dimension 0. For matrices, fill array with
-    /// number of nonzeros per local row for off-diagonal block
+    /// number of nonzeros per local row for off-diagonal block. If
+    /// there is no off-diagonal pattern, the vector is resized to
+    /// zero-length
     void
       num_nonzeros_off_diagonal(std::vector<std::size_t>& num_nonzeros) const;
 
