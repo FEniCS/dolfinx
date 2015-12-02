@@ -14,6 +14,7 @@
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 
 #define Augustcgal
+//#define Augustdebug_cgal
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel CGALKernel;
 //typedef CGAL::Exact_predicates_inexact_constructions_kernel CGALKernel;
@@ -166,28 +167,74 @@ namespace cgaltools
     const Triangle_2* t = boost::get<Triangle_2>(&*ii);
     if (t)
     {
-      //std::cout << "triangle " << std::endl;
+      /* std::cout << "cgal triangle " << std::endl; */
       std::vector<double> triangulation = {{ CGAL::to_double(t->vertex(0)[0]),
 					     CGAL::to_double(t->vertex(0)[1]),
-					     CGAL::to_double(t->vertex(1)[0]),
-					     CGAL::to_double(t->vertex(1)[1]),
 					     CGAL::to_double(t->vertex(2)[0]),
-					     CGAL::to_double(t->vertex(2)[1]) }};
+					     CGAL::to_double(t->vertex(2)[1]),
+					     CGAL::to_double(t->vertex(1)[0]),
+					     CGAL::to_double(t->vertex(1)[1]) }};
       return triangulation;
     }
 
-    const std::vector<Point_2>* points = boost::get<std::vector<Point_2>>(&*ii);
-    if (points)
+    const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii);
+    if (cgal_points)
     {
+      /* std::cout << "cgal triangulation " << std::endl; */
       std::vector<double> triangulation;
+
+      // convert to dolfin::Point
+      using dolfin::Point;
+
+      std::vector<Point> points(cgal_points->size());
+      for (std::size_t i = 0; i < points.size(); ++i)
+	points[i] = Point(CGAL::to_double((*cgal_points)[i].x()),
+			  CGAL::to_double((*cgal_points)[i].y()));
+
+#ifdef Augustdebug_cgal
+      std::cout << "before duplicates "<< points.size() << '\n';
+      for (std::size_t i = 0; i < points.size(); ++i)
+	std::cout << tools::matlabplot(points[i]);
+      std::cout << '\n';
+#endif
+
+      // remove duplicate points
+      std::vector<Point> tmp;
+      tmp.reserve(points.size());
+
+      for (std::size_t i = 0; i < points.size(); ++i)
+      {
+	bool different = true;
+	for (std::size_t j = i+1; j < points.size(); ++j)
+	  if ((points[i] - points[j]).norm() < DOLFIN_EPS)//_LARGE)
+	  {
+	    different = false;
+	    break;
+	  }
+	if (different)
+	  tmp.push_back(points[i]);
+      }
+      points = tmp;
+
+#ifdef Augustdebug_cgal
+      std::cout << "After: " << points.size() << '\n';
+      for (std::size_t i = 0; i < points.size(); ++i)
+	std::cout << tools::matlabplot(points[i]);
+      std::cout << '\n';
+
+      std::cout << "too few points to form triangulation" << std::endl;
+#endif
+      if (points.size()<3) return triangulation;
+
+
       // Do simple Graham scan
 
       // Find left-most point (smallest x-coordinate)
       std::size_t i_min = 0;
-      double x_min = CGAL::to_double((*points)[0].x());
-      for (std::size_t i = 1; i < points->size(); i++)
+      double x_min = points[0].x();
+      for (std::size_t i = 1; i < points.size(); i++)
       {
-	const double x = CGAL::to_double((*points)[i].x());
+	const double x = points[i].x();
 	if (x < x_min)
 	{
 	  x_min = x;
@@ -195,17 +242,16 @@ namespace cgaltools
 	}
       }
 
-      // Compute signed squared cos of angle with (0, 1) from i_min to
-      // all points
+      // Compute signed squared cos of angle with (0, 1) from i_min to all points
       std::vector<std::pair<double, std::size_t>> order;
-      for (std::size_t i = 0; i < points->size(); i++)
+      for (std::size_t i = 0; i < points.size(); i++)
       {
 	// Skip left-most point used as origin
 	if (i == i_min)
 	  continue;
 
 	// Compute vector to point
-	const dolfin::Point v(CGAL::to_double((*points)[i].x()) - CGAL::to_double((*points)[i_min].x()), CGAL::to_double((*points)[i].y()) - CGAL::to_double((*points)[i_min].y()));
+	const Point v = points[i] - points[i_min];
 
 	// Compute square cos of angle
 	const double cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_norm();
@@ -218,16 +264,12 @@ namespace cgaltools
       std::sort(order.begin(), order.end());
 
       // Triangulate polygon by connecting i_min with the ordered points
-      triangulation.reserve((points->size() - 2)*3*2);
-      const dolfin::Point p0(CGAL::to_double((*points)[i_min].x()),
-			     CGAL::to_double((*points)[i_min].y()));
-
-      for (std::size_t i = 0; i < points->size() - 2; i++)
+      triangulation.reserve((points.size() - 2)*3*2);
+      const Point& p0 = points[i_min];
+      for (std::size_t i = 0; i < points.size() - 2; i++)
       {
-	const dolfin::Point p1(CGAL::to_double((*points)[order[i].second].x()),
-			       CGAL::to_double((*points)[order[i].second].y()));
-	const dolfin::Point p2(CGAL::to_double((*points)[order[i + 1].second].x()),
-			       CGAL::to_double((*points)[order[i + 1].second].y()));
+	const Point& p1 = points[order[i].second];
+	const Point& p2 = points[order[i + 1].second];
 	triangulation.push_back(p0.x());
 	triangulation.push_back(p0.y());
 	triangulation.push_back(p1.x());

@@ -502,13 +502,17 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
     const auto ii = CGAL::intersection(T0, T1);
     dolfin_assert(ii);
     triangulation = cgaltools::parse(ii);
-    if (triangulation.size() == 0)
-    {
-      std::cout << tools::drawtriangle(tri_0) << tools::drawtriangle(tri_1)<<std::endl;
-      dolfin_error("IntersectionTriangulation.cpp",
-		   "find intersection of two triangles in intersection_triangle_triangle function",
-		   "no intersection found");
-    }
+
+    // NB: cgaltools::parse can return triangulation of size 0, for
+    // example if it detected a triangle but it was found to be flat.
+
+    // if (triangulation.size() == 0)
+    // {
+    //   std::cout << tools::drawtriangle(tri_0) << tools::drawtriangle(tri_1)<<std::endl;
+    //   dolfin_error("IntersectionTriangulation.cpp",
+    // 		   "find intersection of two triangles in intersection_triangle_triangle function",
+    // 		   "no intersection found");
+    // }
   }
   return triangulation;
 #else

@@ -36,7 +36,7 @@
 
 #define Augustcheckqrpositive
 #define Augustdebug
-//#define Augustnormaldebug
+#define Augustnormaldebug
 
 using namespace dolfin;
 
@@ -174,13 +174,13 @@ void MultiMesh::build()
 
   // Build quadrature rules of the cut cells' overlap. Do this before
   // we build the quadrature rules of the cut cells
-  _build_quadrature_rules_overlap();
+  //_build_quadrature_rules_overlap();
 
   // Build quadrature rules of the cut cells
-  _build_quadrature_rules_cut_cells();
+  //_build_quadrature_rules_cut_cells();
 
   // FIXME:
-  //_build_quadrature_rules_interface();
+  _build_quadrature_rules_interface();
 
   end();
 }
@@ -671,7 +671,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
-      if (cut_part == 0 and it->first == 6)
+      //      if (cut_part == 0 and it->first == 16)
     {
       const std::vector<std::string> color = {{ "'b'", "'g'", "'r'" }};
 
@@ -690,7 +690,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
   	std::cout << tools::drawtriangle(cutting_cell, color[cutting_part]);
       }
-      std::cout << std::endl;
+      std::cout << tools::zoom()<<std::endl;
     }
   }
   PPause;
@@ -704,15 +704,15 @@ void MultiMesh::_build_quadrature_rules_overlap()
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
     std::cout << "----- cut part: " << cut_part << std::endl;
-#ifdef Augustdebug
-    tools::dolfin_write_medit_triangles("cut_part",*(_meshes[cut_part]),cut_part);
-    //double areapos = 0, areaminus = 0;
-#endif
+// #ifdef Augustdebug
+//     tools::dolfin_write_medit_triangles("cut_part",*(_meshes[cut_part]),cut_part);
+//     //double areapos = 0, areaminus = 0;
+// #endif
 
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
-      if (cut_part == 0 and it->first == 6)
+      //if (cut_part == 0 and it->first == 16)
     {
 #ifdef Augustdebug
       std::cout << "-------- new cut cell\n";
@@ -924,17 +924,24 @@ void MultiMesh::_build_quadrature_rules_overlap()
       	  // Loop over all initial polyhedra.
       	  for (const auto initial_polyhedron: initial_polyhedra)
       	  {
-	    // std::cout << "check keys from previous_polyhedron: ";
-	    // for (const auto key: previous_polyhedron.first)
-	    //   std::cout << key <<' ';
-	    // std::cout << '\n';
-	    // std::cout << "initial key: " << initial_polyhedron.first << std::endl;
 
 	    // test: only check if initial_polyhedron key <
 	    // previous_polyhedron key[0]
 	    if (initial_polyhedron.first < previous_polyhedron.first[0])
 	    {
-
+#ifdef Augustdebug
+	      std::cout << "----------\nkeys previous_polyhedron: ";
+	      for (const auto key: previous_polyhedron.first)
+		std::cout << key <<' ';
+	      std::cout << "simplices previous polyhedron:\n";
+	      for (const auto s: previous_polyhedron.second)
+		std::cout << tools::drawtriangle(s);
+	      std::cout << "\nkeys initial_polyhedron: " << initial_polyhedron.first <<'\n';
+	      std::cout << "simplices initial polyhedron\n";
+	      for (const auto s: initial_polyhedron.second)
+		std::cout << tools::drawtriangle(s,"'r'");
+	      std::cout << tools::zoom()<<'\n';
+#endif
 	      // {
 	      // 	for (const auto previous_simplex: previous_polyhedron.second)
 	      // 	  std::cout << tools::drawtriangle(previous_simplex,"'b'");
@@ -1165,7 +1172,8 @@ void MultiMesh::_build_quadrature_rules_overlap()
       for (const auto qro: overlap_qr)
 	net_weight += std::accumulate(qro.second.begin(),
 				      qro.second.end(), 0.);
-      if (net_weight < 0)
+      std::cout <<"weight and volume " << std::setprecision(15)<< net_weight <<' '<<cut_cell.volume() <<' '<<net_weight-cut_cell.volume()<< '\n';
+      if (net_weight >= cut_cell.volume())
       {
 	std::cout<< __FUNCTION__  << ": cut part " << cut_part<<" cell " << cut_cell_index << " net weight = " << net_weight << " area = " << cut_cell.volume() << ") "<<std::endl;
 
@@ -1480,8 +1488,8 @@ void MultiMesh::_build_quadrature_rules_overlap()
   // }
 
 
-  std::cout << "\n\n" << __FUNCTION__ << " done\n\nexiting.";
-  exit(0);
+  // std::cout << "\n\n" << __FUNCTION__ << " done, exiting.";
+  // exit(0);
 
 
   end();
@@ -1646,14 +1654,15 @@ void MultiMesh::_build_quadrature_rules_interface()
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
     std::cout << "----- cut part: " << cut_part << std::endl;
-#ifdef Augustdebug
-    tools::dolfin_write_medit_triangles("cut_part",*(_meshes[cut_part]),cut_part);
-    //double areapos = 0, areaminus = 0;
-#endif
+// #ifdef Augustdebug
+//     tools::dolfin_write_medit_triangles("cut_part",*(_meshes[cut_part]),cut_part);
+//     //double areapos = 0, areaminus = 0;
+// #endif
 
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
+      if (cut_part == 0 and it->first == 16)
     {
 #ifdef Augustdebug
       std::cout << "-------- new cut cell\n";
@@ -2101,6 +2110,8 @@ void MultiMesh::_build_quadrature_rules_interface()
 
     }
   }
+
+  std::cout << __FUNCTION__ << " done, exiting"; exit(1);
 
   //std::cout << "small elements " << small_elements_cnt << std::endl;
 }
