@@ -17,16 +17,13 @@
 //
 // Modified by Johan Hoffman 2007
 // Modified by Magnus Vikstrøm 2007
-// Modified by Garth N. Wells 2007-2013
+// Modified by Garth N. Wells 2007-2015
 // Modified by Niclas Jansson 2008
 // Modified by Kristoffer Selim 2008
 // Modified by Andre Massing 2009-2010
 // Modified by Marie E. Rognes 2012
 // Modified by Mikael Mortensen 2012
 // Modified by Jan Blechta 2013
-//
-// First added:  2006-05-08
-// Last changed: 2014-08-11
 
 #ifndef __MESH_H
 #define __MESH_H
