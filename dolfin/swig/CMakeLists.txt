@@ -1,6 +1,6 @@
 project(swig)
 
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Remove '-Werror', '-Wall' and 'pedantic' flags (if present) when compiling SWIG-generated files
 string(REGEX REPLACE "-Wall" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
