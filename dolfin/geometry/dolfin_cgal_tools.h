@@ -1,8 +1,8 @@
 #ifndef DOLFIN_CGAL_TOOLS_H
 #define DOLFIN_CGAL_TOOLS_H
 
-#include "../dolfin.h" // for install
-//#include <dolfin.h> // for building test
+//#include "../dolfin.h" // for install
+/* #include <dolfin.h> // for building test */
 
 #include <CGAL/Triangle_2.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
@@ -12,9 +12,10 @@
 #include <CGAL/Polygon_set_2.h>
 
 #include <dolfin/geometry/dolfin_simplex_tools.h>
+#include <dolfin/geometry/IntersectionTriangulation.h>
 
 #define Augustcgal
-//#define Augustdebug_cgal
+#define Augustdebug_cgal
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel CGALKernel;
 //typedef CGAL::Exact_predicates_inexact_constructions_kernel CGALKernel;
@@ -138,6 +139,7 @@ namespace cgaltools
   /*   return triangulation; */
   /* } */
 
+
   template<class T>
     inline std::vector<double> parse(const T& ii)
   {
@@ -184,101 +186,107 @@ namespace cgaltools
       std::vector<double> triangulation;
 
       // convert to dolfin::Point
-      using dolfin::Point;
-
-      std::vector<Point> points(cgal_points->size());
+      std::vector<dolfin::Point> points(cgal_points->size());
       for (std::size_t i = 0; i < points.size(); ++i)
-	points[i] = Point(CGAL::to_double((*cgal_points)[i].x()),
-			  CGAL::to_double((*cgal_points)[i].y()));
+	points[i] = dolfin::Point(CGAL::to_double((*cgal_points)[i].x()),
+				  CGAL::to_double((*cgal_points)[i].y()));
 
-#ifdef Augustdebug_cgal
-      std::cout << "before duplicates "<< points.size() << '\n';
-      for (std::size_t i = 0; i < points.size(); ++i)
-	std::cout << tools::matlabplot(points[i]);
-      std::cout << '\n';
-#endif
-
-      // remove duplicate points
-      std::vector<Point> tmp;
-      tmp.reserve(points.size());
-
-      for (std::size_t i = 0; i < points.size(); ++i)
-      {
-	bool different = true;
-	for (std::size_t j = i+1; j < points.size(); ++j)
-	  if ((points[i] - points[j]).norm() < DOLFIN_EPS)//_LARGE)
-	  {
-	    different = false;
-	    break;
-	  }
-	if (different)
-	  tmp.push_back(points[i]);
-      }
-      points = tmp;
-
-#ifdef Augustdebug_cgal
-      std::cout << "After: " << points.size() << '\n';
-      for (std::size_t i = 0; i < points.size(); ++i)
-	std::cout << tools::matlabplot(points[i]);
-      std::cout << '\n';
-
-      std::cout << "too few points to form triangulation" << std::endl;
-#endif
-      if (points.size()<3) return triangulation;
-
-
-      // Do simple Graham scan
-
-      // Find left-most point (smallest x-coordinate)
-      std::size_t i_min = 0;
-      double x_min = points[0].x();
-      for (std::size_t i = 1; i < points.size(); i++)
-      {
-	const double x = points[i].x();
-	if (x < x_min)
-	{
-	  x_min = x;
-	  i_min = i;
-	}
-      }
-
-      // Compute signed squared cos of angle with (0, 1) from i_min to all points
-      std::vector<std::pair<double, std::size_t>> order;
-      for (std::size_t i = 0; i < points.size(); i++)
-      {
-	// Skip left-most point used as origin
-	if (i == i_min)
-	  continue;
-
-	// Compute vector to point
-	const Point v = points[i] - points[i_min];
-
-	// Compute square cos of angle
-	const double cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_norm();
-
-	// Store for sorting
-	order.push_back(std::make_pair(cos2, i));
-      }
-
-      // Sort points based on angle
-      std::sort(order.begin(), order.end());
-
-      // Triangulate polygon by connecting i_min with the ordered points
-      triangulation.reserve((points.size() - 2)*3*2);
-      const Point& p0 = points[i_min];
-      for (std::size_t i = 0; i < points.size() - 2; i++)
-      {
-	const Point& p1 = points[order[i].second];
-	const Point& p2 = points[order[i + 1].second];
-	triangulation.push_back(p0.x());
-	triangulation.push_back(p0.y());
-	triangulation.push_back(p1.x());
-	triangulation.push_back(p1.y());
-	triangulation.push_back(p2.x());
-	triangulation.push_back(p2.y());
-      }
-
+      triangulation = dolfin::IntersectionTriangulation::graham_scan(points);
       return triangulation;
+
+/* #ifdef Augustdebug_cgal */
+/*       std::cout << "before duplicates "<< points.size() << '\n'; */
+/*       for (std::size_t i = 0; i < points.size(); ++i) */
+/* 	std::cout << tools::matlabplot(points[i]); */
+/*       std::cout << '\n'; */
+/* #endif */
+
+/*       // remove duplicate points */
+/*       std::vector<Point> tmp; */
+/*       tmp.reserve(points.size()); */
+
+/*       for (std::size_t i = 0; i < points.size(); ++i) */
+/*       { */
+/* 	bool different = true; */
+/* 	for (std::size_t j = i+1; j < points.size(); ++j) */
+/* 	  if ((points[i] - points[j]).norm() < DOLFIN_EPS)//_LARGE) */
+/* 	  { */
+/* 	    different = false; */
+/* 	    break; */
+/* 	  } */
+/* 	if (different) */
+/* 	  tmp.push_back(points[i]); */
+/*       } */
+/*       points = tmp; */
+
+/* #ifdef Augustdebug_cgal */
+/*       std::cout << "After: " << points.size() << '\n'; */
+/*       for (std::size_t i = 0; i < points.size(); ++i) */
+/* 	std::cout << tools::matlabplot(points[i]); */
+/*       std::cout << '\n'; */
+/* #endif */
+
+/*       if (points.size()<3) */
+/*       { */
+/* #ifdef Augustdebug_cgal */
+/* 	std::cout << "too few points to form triangulation" << std::endl; */
+/* #endif */
+/* 	return triangulation; */
+/*       } */
+
+
+/*       // Do simple Graham scan */
+
+/*       // Find left-most point (smallest x-coordinate) */
+/*       std::size_t i_min = 0; */
+/*       double x_min = points[0].x(); */
+/*       for (std::size_t i = 1; i < points.size(); i++) */
+/*       { */
+/* 	const double x = points[i].x(); */
+/* 	if (x < x_min) */
+/* 	{ */
+/* 	  x_min = x; */
+/* 	  i_min = i; */
+/* 	} */
+/*       } */
+
+/*       // Compute signed squared cos of angle with (0, 1) from i_min to all points */
+/*       std::vector<std::pair<double, std::size_t>> order; */
+/*       for (std::size_t i = 0; i < points.size(); i++) */
+/*       { */
+/* 	// Skip left-most point used as origin */
+/* 	if (i == i_min) */
+/* 	  continue; */
+
+/* 	// Compute vector to point */
+/* 	const Point v = points[i] - points[i_min]; */
+
+/* 	// Compute square cos of angle */
+/* 	const double cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_norm(); */
+
+/* 	// Store for sorting */
+/* 	order.push_back(std::make_pair(cos2, i)); */
+/*       } */
+
+/*       // Sort points based on angle */
+/*       std::sort(order.begin(), order.end()); */
+
+/*       // Triangulate polygon by connecting i_min with the ordered points */
+/*       triangulation.reserve((points.size() - 2)*3*2); */
+/*       const Point& p0 = points[i_min]; */
+/*       for (std::size_t i = 0; i < points.size() - 2; i++) */
+/*       { */
+/* 	const Point& p1 = points[order[i].second]; */
+/* 	const Point& p2 = points[order[i + 1].second]; */
+/* 	triangulation.push_back(p0.x()); */
+/* 	triangulation.push_back(p0.y()); */
+/* 	triangulation.push_back(p1.x()); */
+/* 	triangulation.push_back(p1.y()); */
+/* 	triangulation.push_back(p2.x()); */
+/* 	triangulation.push_back(p2.y()); */
+/*       } */
+
+/*       return triangulation; */
     }
 
     std::cout << "unexpected behavior in dolfin cgal tools, exiting"; exit(1);

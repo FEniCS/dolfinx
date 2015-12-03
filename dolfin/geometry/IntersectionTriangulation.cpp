@@ -27,6 +27,8 @@
 #include <dolfin/geometry/dolfin_cgal_tools.h>
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 
+//#define Augustdebug
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -1492,6 +1494,245 @@ IntersectionTriangulation::triangulate_intersection
                                 normals[i]);
   }
 
+}
+
+
+//------------------------------------------------------------------------------
+std::vector<double>
+IntersectionTriangulation::graham_scan(const std::vector<Point>& points0)
+{
+  // Sometimes (at least using CGAL::intersection) we can get an extra
+  // point on an edge: a-----c--b. This point c may cause problems for
+  // the graham scan. To avoid this, use an extra center point.
+
+  std::vector<double> triangulation;
+
+#ifdef Augustdebug
+  std::cout << "before duplicates "<< points0.size() << '\n';
+  for (const auto p: points0)
+    std::cout << tools::matlabplot(p);
+  std::cout << '\n';
+#endif
+
+  // Remove duplicate points
+  std::vector<Point> points;
+  points.reserve(points0.size());
+
+  for (std::size_t i = 0; i < points0.size(); ++i)
+  {
+    bool different = true;
+    for (std::size_t j = i+1; j < points0.size(); ++j)
+      if ((points0[i] - points0[j]).norm() < DOLFIN_EPS)
+      {
+	different = false;
+	break;
+      }
+    if (different)
+      points.push_back(points0[i]);
+  }
+
+  if (points.size() < 3)
+  {
+#ifdef Augustdebug
+    std::cout << "after duplicate removal: " << points.size() << " too few points to form triangulation" << std::endl;
+#endif
+    return triangulation;
+  }
+
+  // Use the center of the points and point no 0 as reference for the
+  // angle calculation
+  Point pointscenter = points[0];
+  for (std::size_t m = 1; m < points.size(); ++m)
+    pointscenter += points[m];
+  pointscenter /= points.size();
+
+  Point n = (points[2] - points[0]).cross(points[1] - points[0]);
+  const double det = n.norm();
+  n /= det;
+
+  std::vector<std::pair<double, std::size_t>> order;
+  Point ref = points[0] - pointscenter;
+  ref /= ref.norm();
+
+  // Calculate and store angles
+  for (std::size_t m = 1; m < points.size(); ++m)
+  {
+    const Point v = points[m] - pointscenter;
+    const double frac = ref.dot(v) / v.norm();
+    double alpha;
+    if (frac <= -1)
+      alpha = DOLFIN_PI;
+    else if (frac >= 1)
+      alpha = 0;
+    else
+    {
+      alpha = acos(frac);
+      if (v.dot(n.cross(ref)) < 0)
+        alpha = 2*DOLFIN_PI-alpha;
+    }
+    order.push_back(std::make_pair(alpha, m));
+  }
+
+  // Sort angles
+  std::sort(order.begin(), order.end());
+
+#ifdef Augustdebug
+  std::cout <<"plot("<<points[0].x()<<","<<points[0].y()<<");\n";
+  for (const auto o: order)
+    std::cout << "plot("<<points[o.second].x()<<','<<points[o.second].y()<<");\n";
+#endif
+
+  // Triangulate polygon by connecting i_min with the ordered points
+  triangulation.reserve((points.size() - 2)*3*2);
+  const Point& p0 = points[0];
+  for (std::size_t i = 0; i < order.size() - 1; i++)
+  {
+    const Point& p1 = points[order[i].second];
+    const Point& p2 = points[order[i + 1].second];
+    triangulation.push_back(p0.x());
+    triangulation.push_back(p0.y());
+    triangulation.push_back(p1.x());
+    triangulation.push_back(p1.y());
+    triangulation.push_back(p2.x());
+    triangulation.push_back(p2.y());
+  }
+
+  return triangulation;
+
+
+//   std::vector<double> triangulation;
+
+// #ifdef Augustdebug
+//   std::cout << "before duplicates "<< points0.size() << '\n';
+//   for (const auto p: points0)
+//     std::cout << tools::matlabplot(p);
+//   std::cout << '\n';
+// #endif
+
+
+//   // Remove duplicate points
+//   std::vector<Point> points;
+//   points.reserve(points0.size());
+
+//   for (std::size_t i = 0; i < points0.size(); ++i)
+//   {
+//     bool different = true;
+//     for (std::size_t j = i+1; j < points0.size(); ++j)
+//       if ((points0[i] - points0[j]).norm() < DOLFIN_EPS)
+//       {
+// 	different = false;
+// 	break;
+//       }
+//     if (different)
+//       points.push_back(points0[i]);
+//   }
+
+//   if (points.size() < 3)
+//   {
+// #ifdef Augustdebug
+//     std::cout << "after duplicate removal: " << points.size() << " too few points to form triangulation" << std::endl;
+// #endif
+//     return triangulation;
+//   }
+
+//   // Do the Graham scan starting at a suitable first node. Compute
+//   // angles using a suitable reference line.
+//   bool small_angle_diff = true;
+//   std::vector<std::pair<double, std::size_t>> order;
+//   std::size_t i_min = 0;
+
+//   while (small_angle_diff and i_min < points.size())
+//   {
+//     order.clear();
+
+//     // Find a suitable reference line (not too small)
+//     std::size_t i_next;
+//     Point ref;
+//     bool small_length = true;
+//     while (small_length and i_min < points.size())
+//     {
+//       i_next = (i_min + 1) % points.size();
+//       ref = points[i_min] - points[i_next];
+//       const double refnorm = ref.norm();
+//       ref /= refnorm;
+//       small_length = false;
+//       if (refnorm < DOLFIN_EPS_LARGE)
+//       {
+// 	small_length = true;
+// 	i_min++;
+//       }
+//     }
+
+// #ifdef Augustdebug
+//     std::cout << "i_min and next: " << i_min << ' '<<i_next << '\n';
+//     std::cout << tools::matlabplot(points[i_min],"'ko'")<<tools::matlabplot(points[i_next],"'kx'")<<'\n';
+// #endif
+
+//     // Compute angles
+//     for (std::size_t i = 0; i < points.size(); ++i)
+//     {
+//       if (i == i_min)
+// 	continue;
+//       const Point v = points[i] - points[i_min];
+//       const double frac = ref.dot(v) / v.norm();
+// #ifdef Augustdebug
+//       std::cout << "frac = " << frac << '\n';
+// #endif
+//       double alpha;
+//       if (frac <= -1)
+// 	alpha = DOLFIN_PI;
+//       else if (frac >= 1)
+// 	alpha = 0;
+//       else
+// 	alpha = std::acos(frac);
+//       order.push_back(std::make_pair(alpha, i));
+//     }
+
+//     // Sort points based on angle
+//     std::sort(order.begin(), order.end());
+
+//     // Compute angle differences. Select new point if angles are close.
+//     small_angle_diff = false;
+//     for (std::size_t i = 1; i < points.size(); ++i)
+//       if (std::abs(order[i-1].first - order[i].first) < DOLFIN_EPS_LARGE)
+//       {
+// 	small_angle_diff = true;
+// 	i_min++;
+// 	break;
+//       }
+//   }
+
+//   // If no points with small angles are found, return empty triangulation
+//   if (small_angle_diff)
+//     return triangulation;
+//   //dolfin_assert(!small_angle_diff);
+//   //dolfin_assert(i_min <= points.size());
+
+// #ifdef Augustdebug
+//   std::cout << "points\n";
+//   for (const auto p: points)
+//     std::cout << tools::matlabplot(p);
+//   std::cout << '\n';
+//   for (const auto o: order)
+//     std::cout << o.second << ' ' << o.first*180/DOLFIN_PI<<'\n';
+// #endif
+
+//   // Triangulate polygon by connecting i_min with the ordered points
+//   triangulation.reserve((points.size() - 2)*3*2);
+//   const Point& p0 = points[i_min];
+//   for (std::size_t i = 0; i < points.size() - 2; i++)
+//   {
+//     const Point& p1 = points[order[i].second];
+//     const Point& p2 = points[order[i + 1].second];
+//     triangulation.push_back(p0.x());
+//     triangulation.push_back(p0.y());
+//     triangulation.push_back(p1.x());
+//     triangulation.push_back(p1.y());
+//     triangulation.push_back(p2.x());
+//     triangulation.push_back(p2.y());
+//   }
+
+//   return triangulation;
 }
 //-----------------------------------------------------------------------------
 bool

@@ -176,6 +176,11 @@ namespace dolfin
     triangulate_intersection_triangle_triangle(const std::vector<Point>& tri_0,
                                                const std::vector<Point>& tri_1);
 
+    // FIXME: this shouldn't be public.
+    // Function for creating the convex triangulation of a set of points
+    static std::vector<double>
+      graham_scan(const std::vector<Point>& points);
+
   private:
 
     // Function for computing the intersection of two intervals given
@@ -203,6 +208,7 @@ namespace dolfin
     static std::vector<double>
     triangulate_intersection_tetrahedron_triangle(const std::vector<Point>& tet,
                                                   const std::vector<Point>& tri);
+
 
     // Helper function
     // FIXME

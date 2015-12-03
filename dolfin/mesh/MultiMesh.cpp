@@ -35,7 +35,7 @@
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 
 #define Augustcheckqrpositive
-// #define Augustdebug
+//#define Augustdebug
 // #define Augustnormaldebug
 
 using namespace dolfin;
@@ -671,7 +671,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
-      //      if (cut_part == 0 and it->first == 16)
+      //      if (cut_part == 0 and it->first == 254)
     {
       const std::vector<std::string> color = {{ "'b'", "'g'", "'r'" }};
 
@@ -712,7 +712,7 @@ void MultiMesh::_build_quadrature_rules_overlap()
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
-      //if (cut_part == 0 and it->first == 16)
+      //      if (cut_part == 0 and it->first == 254)
     {
 #ifdef Augustdebug
       std::cout << "-------- new cut cell\n";
@@ -968,6 +968,10 @@ void MultiMesh::_build_quadrature_rules_overlap()
 		for (const auto initial_simplex: initial_polyhedron.second)
 		{
 		  // Compute the intersection (a polyhedron)
+#ifdef Augustdebug
+		  std::cout << "try collide:\n"
+			    << tools::drawtriangle(initial_simplex,"'r'")<<tools::drawtriangle(previous_simplex)<<tools::zoom()<<'\n';
+#endif
 		  const std::vector<double> ii
 		    = IntersectionTriangulation::
 		    triangulate_intersection(initial_simplex, tdim,
@@ -1173,8 +1177,9 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	net_weight += std::accumulate(qro.second.begin(),
 				      qro.second.end(), 0.);
       std::cout <<"weight and volume " << std::setprecision(15)<< net_weight <<' '<<cut_cell.volume() <<' '<<net_weight-cut_cell.volume()<< '\n';
-      if (net_weight >= cut_cell.volume())
+      if (net_weight - cut_cell.volume() > DOLFIN_EPS)
       {
+	std::cout << "cut part = " << cut_part << " cut cell index = " << cut_cell_index << '\n';
 	for (const auto qro: overlap_qr)
 	{
 	  std::cout << "weights: ";
