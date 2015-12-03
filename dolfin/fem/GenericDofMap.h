@@ -169,7 +169,7 @@ namespace dolfin
 
     /// Return map from shared nodes to the processes (not including
     /// the current process) that share it.
-    virtual const std::unordered_map<int, std::vector<int> >&
+    virtual const std::unordered_map<int, std::vector<int>>&
       shared_nodes() const = 0;
 
     /// Return set of processes that share dofs with the this process

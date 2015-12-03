@@ -89,7 +89,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   dolfin_assert(tensor_layout);
 
   // Copy index maps from dofmaps
-  std::vector<std::shared_ptr<const IndexMap> > index_maps
+  std::vector<std::shared_ptr<const IndexMap>> index_maps
     = {V0.dofmap()->index_map(), V1.dofmap()->index_map()};
   std::vector<std::pair<std::size_t, std::size_t>> local_range
     = { V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};

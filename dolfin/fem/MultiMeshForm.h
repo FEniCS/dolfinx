@@ -43,7 +43,7 @@ namespace dolfin
     // FIXME: Test multimesh functionals. Should likely require a multimesh
     // when instaniated and this constructor should then be removed.
     MultiMeshForm() {}
-    
+
     /// Create empty multimesh functional (shared pointer version)
     MultiMeshForm(std::shared_ptr<const MultiMesh> multimesh);
 
@@ -136,10 +136,10 @@ namespace dolfin
     std::shared_ptr<const MultiMesh> _multimesh;
 
     // Function spaces (one for each argument)
-    std::vector<std::shared_ptr<const MultiMeshFunctionSpace> > _function_spaces;
+    std::vector<std::shared_ptr<const MultiMeshFunctionSpace>> _function_spaces;
 
     // List of forms (one for each part)
-    std::vector<std::shared_ptr<const Form> > _forms;
+    std::vector<std::shared_ptr<const Form>> _forms;
 
   };
 

@@ -85,7 +85,8 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   const std::size_t m = row_range.second - row_range.first;
 
   // Get sparsity pattern
-  const SparsityPattern& sparsity_pattern = tensor_layout.sparsity_pattern();
+  auto sparsity_pattern = tensor_layout.sparsity_pattern();
+  dolfin_assert(sparsity_pattern);
 
   // Initialize matrix
   // Insist on square Matrix for now
@@ -93,7 +94,7 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
 
   // Set up MPI Comm
   Teuchos::RCP<const Teuchos::Comm<int>>
-    _comm(new Teuchos::MpiComm<int>(sparsity_pattern.mpi_comm()));
+    _comm(new Teuchos::MpiComm<int>(sparsity_pattern->mpi_comm()));
 
   // Save the local row and column mapping, so we can use add_local
   // and set_local later with off-process entries
@@ -120,16 +121,16 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   // Make a Tpetra::CrsGraph of the sparsity_pattern
   typedef Tpetra::CrsGraph<> graph_type;
   std::vector<std::vector<std::size_t>> pattern_diag
-    = sparsity_pattern.diagonal_pattern(SparsityPattern::unsorted);
+    = sparsity_pattern->diagonal_pattern(SparsityPattern::unsorted);
   std::vector<std::vector<std::size_t>> pattern_off
-    = sparsity_pattern.off_diagonal_pattern(SparsityPattern::unsorted);
+    = sparsity_pattern->off_diagonal_pattern(SparsityPattern::unsorted);
 
   dolfin_assert(pattern_diag.size() == pattern_off.size());
   dolfin_assert(m == pattern_diag.size());
 
   // Get number of non-zeros per row to allocate storage
   std::vector<std::size_t> entries_per_row(m);
-  sparsity_pattern.num_local_nonzeros(entries_per_row);
+  sparsity_pattern->num_local_nonzeros(entries_per_row);
   Teuchos::ArrayRCP<std::size_t> _nnz(entries_per_row.data(), 0,
                                       entries_per_row.size(), false);
 

@@ -50,7 +50,7 @@ namespace dolfin
     const CellDomainAssigner& operator= (const MeshFunction<std::size_t>& domains);
 
     // Assign shared pointer
-    const CellDomainAssigner& operator= (std::shared_ptr<const MeshFunction<std::size_t> > domains);
+    const CellDomainAssigner& operator= (std::shared_ptr<const MeshFunction<std::size_t>> domains);
 
   private:
 
@@ -71,7 +71,7 @@ namespace dolfin
     const ExteriorFacetDomainAssigner& operator= (const MeshFunction<std::size_t>& domains);
 
     // Assign shared pointer
-    const ExteriorFacetDomainAssigner& operator= (std::shared_ptr<const MeshFunction<std::size_t> > domains);
+    const ExteriorFacetDomainAssigner& operator= (std::shared_ptr<const MeshFunction<std::size_t>> domains);
 
   private:
 
@@ -92,7 +92,7 @@ namespace dolfin
     const InteriorFacetDomainAssigner& operator= (const MeshFunction<std::size_t>& domains);
 
     // Assign shared pointer
-    const InteriorFacetDomainAssigner& operator= (std::shared_ptr<const MeshFunction<std::size_t> > domains);
+    const InteriorFacetDomainAssigner& operator= (std::shared_ptr<const MeshFunction<std::size_t>> domains);
 
   private:
 
@@ -113,7 +113,7 @@ namespace dolfin
     const VertexDomainAssigner& operator= (const MeshFunction<std::size_t>& domains);
 
     // Assign shared pointer
-    const VertexDomainAssigner& operator= (std::shared_ptr<const MeshFunction<std::size_t> > domains);
+    const VertexDomainAssigner& operator= (std::shared_ptr<const MeshFunction<std::size_t>> domains);
 
   private:
 

@@ -110,41 +110,41 @@ namespace dolfin
     // Finite elements for coefficients
     std::vector<FiniteElement> coefficient_elements;
 
-    // Cell integrals (access through
-    // get_cell_integral to get proper fallback to default)
-    std::vector<std::shared_ptr<ufc::cell_integral> >
+    // Cell integrals (access through get_cell_integral to get proper
+    // fallback to default)
+    std::vector<std::shared_ptr<ufc::cell_integral>>
       cell_integrals;
 
     // Exterior facet integrals (access through
     // get_exterior_facet_integral to get proper fallback to default)
-    std::vector<std::shared_ptr<ufc::exterior_facet_integral> >
+    std::vector<std::shared_ptr<ufc::exterior_facet_integral>>
       exterior_facet_integrals;
 
     // Interior facet integrals (access through
     // get_interior_facet_integral to get proper fallback to default)
-    std::vector<std::shared_ptr<ufc::interior_facet_integral> >
+    std::vector<std::shared_ptr<ufc::interior_facet_integral>>
       interior_facet_integrals;
 
     // Point integrals (access through get_vertex_integral to get
     // proper fallback to default)
-    std::vector<std::shared_ptr<ufc::vertex_integral> >
+    std::vector<std::shared_ptr<ufc::vertex_integral>>
       vertex_integrals;
 
     // Custom integrals (access through get_custom_integral to get
     // proper fallback to default)
-    std::vector<std::shared_ptr<ufc::custom_integral> > custom_integrals;
+    std::vector<std::shared_ptr<ufc::custom_integral>> custom_integrals;
 
     // Cutcell integrals (access through get_cutcell_integral to get
     // proper fallback to default)
-    std::vector<std::shared_ptr<ufc::cutcell_integral> > cutcell_integrals;
+    std::vector<std::shared_ptr<ufc::cutcell_integral>> cutcell_integrals;
 
-    // Interface integrals (access through get_interface_integral to get
-    // proper fallback to default)
-    std::vector<std::shared_ptr<ufc::interface_integral> > interface_integrals;
+    // Interface integrals (access through get_interface_integral to
+    // get proper fallback to default)
+    std::vector<std::shared_ptr<ufc::interface_integral>> interface_integrals;
 
     // Overlap integrals (access through get_overlap_integral to get
     // proper fallback to default)
-    std::vector<std::shared_ptr<ufc::overlap_integral> > overlap_integrals;
+    std::vector<std::shared_ptr<ufc::overlap_integral>> overlap_integrals;
 
   public:
 
@@ -262,8 +262,8 @@ namespace dolfin
       return default_cutcell_integral.get();
     }
 
-    /// Get interface integral over a given domain, falling back to the
-    /// default if necessary
+    /// Get interface integral over a given domain, falling back to
+    /// the default if necessary
     ufc::interface_integral * get_interface_integral(std::size_t domain)
     {
       if (domain < form.max_interface_subdomain_id())
@@ -306,16 +306,16 @@ namespace dolfin
 
     // Coefficients (std::vector<double*> is used to interface with
     // UFC)
-    std::vector<std::vector<double> > _w;
+    std::vector<std::vector<double>> _w;
     std::vector<double*> w_pointer;
 
     // Coefficients on macro element (std::vector<double*> is used to
     // interface with UFC)
-    std::vector<std::vector<double> > _macro_w;
+    std::vector<std::vector<double>> _macro_w;
     std::vector<double*> macro_w_pointer;
 
     // Coefficient functions
-    const std::vector<std::shared_ptr<const GenericFunction> > coefficients;
+    const std::vector<std::shared_ptr<const GenericFunction>> coefficients;
 
   public:
 

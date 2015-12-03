@@ -72,11 +72,11 @@ namespace dolfin
 
     /// Insert non-zero entries using global indices
     void insert_global(const std::vector<
-                       ArrayView<const dolfin::la_index> >& entries);
+                       ArrayView<const dolfin::la_index>>& entries);
 
     /// Insert non-zero entries using local (process-wise) indices
     void insert_local(const std::vector<
-                      ArrayView<const dolfin::la_index> >& entries);
+                      ArrayView<const dolfin::la_index>>& entries);
 
     /// Return rank
     std::size_t rank() const;
@@ -119,12 +119,11 @@ namespace dolfin
 
     /// Return underlying sparsity pattern (diagonal). Options are
     /// 'sorted' and 'unsorted'.
-    std::vector<std::vector<std::size_t> > diagonal_pattern(Type type) const;
+    std::vector<std::vector<std::size_t>> diagonal_pattern(Type type) const;
 
     /// Return underlying sparsity pattern (off-diagonal). Options are
     /// 'sorted' and 'unsorted'.
-    std::vector<std::vector<std::size_t> >
-      off_diagonal_pattern(Type type) const;
+    std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
 
   private:
 
@@ -139,7 +138,7 @@ namespace dolfin
     MPI_Comm _mpi_comm;
 
     // Ownership range for each dimension
-    //    std::vector<std::pair<std::size_t, std::size_t> > _local_range;
+    //    std::vector<std::pair<std::size_t, std::size_t>> _local_range;
 
     // IndexMaps for each dimension
     std::vector<std::shared_ptr<const IndexMap>> _index_maps;
