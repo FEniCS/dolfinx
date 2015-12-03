@@ -64,7 +64,10 @@ namespace dolfin
     virtual void insert_global(const std::vector<
                                ArrayView<const dolfin::la_index> >& entries) = 0;
 
-    /// Insert non-zero entries using local (process-wise) entries
+    /// Insert non-zero entries using global indices
+    virtual void insert_global(dolfin::la_index i, dolfin::la_index j) = 0;
+
+      /// Insert non-zero entries using local (process-wise) entries
     virtual void insert_local(const std::vector<
                               ArrayView<const dolfin::la_index> >& entries) = 0;
 
