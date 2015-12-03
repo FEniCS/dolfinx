@@ -32,17 +32,16 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
-#include "GenericSparsityPattern.h"
 
 namespace dolfin
 {
 
   class IndexMap;
 
-  /// This class implements the GenericSparsityPattern interface.  It
-  /// is used by most linear algebra backends.
+  /// This class implements a sparsity pattern data structure.  It is
+  /// used by most linear algebra backends.
 
-  class SparsityPattern : public GenericSparsityPattern
+  class SparsityPattern
   {
 
     // NOTE: Do not change this typedef without performing careful
@@ -51,6 +50,8 @@ namespace dolfin
     typedef dolfin::Set<std::size_t> set_type;
 
   public:
+
+    enum Type {sorted, unsorted};
 
     /// Create empty sparsity pattern
     SparsityPattern(std::size_t primary_dim);
@@ -79,6 +80,11 @@ namespace dolfin
 
     /// Return rank
     std::size_t rank() const;
+
+    /// Return primary dimension (e.g., 0=row partition, 1=column
+    /// partition)
+    std::size_t primary_dim() const
+    { return _primary_dim; }
 
     /// Return local range for dimension dim
     std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const;
@@ -125,7 +131,11 @@ namespace dolfin
     // Print some useful information
     void info_statistics() const;
 
-    // MPI communicator
+    // Primary sparsity pattern storage dimension (e.g., 0=row
+    // partition, 1=column partition)
+    const std::size_t _primary_dim;
+
+   // MPI communicator
     MPI_Comm _mpi_comm;
 
     // Ownership range for each dimension

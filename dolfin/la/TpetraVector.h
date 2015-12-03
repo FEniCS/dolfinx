@@ -66,7 +66,7 @@ namespace dolfin
     TpetraVector(MPI_Comm comm, std::size_t N);
 
     /// Create vector
-    //explicit TpetraVector(const GenericSparsityPattern& sparsity_pattern);
+    //explicit TpetraVector(const SparsityPattern& sparsity_pattern);
 
     /// Copy constructor
     TpetraVector(const TpetraVector& x);

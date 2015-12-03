@@ -83,7 +83,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     // Build sparsity pattern if required
     if (tensor_layout->sparsity_pattern())
     {
-      GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+      SparsityPattern& pattern = *tensor_layout->sparsity_pattern();
       SparsityPatternBuilder::build(pattern,
                                 a.mesh(), dofmaps,
                                 a.ufc_form()->has_cell_integrals(),

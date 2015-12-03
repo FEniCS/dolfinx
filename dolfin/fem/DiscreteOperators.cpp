@@ -22,6 +22,7 @@
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/TensorLayout.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
@@ -130,7 +131,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
     index_maps.push_back(V0.dofmap()->index_map());
     index_maps.push_back(V1.dofmap()->index_map());
 
-    GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+    SparsityPattern& pattern = *tensor_layout->sparsity_pattern();
     pattern.init(mesh.mpi_comm(), index_maps);
 
     std::vector<ArrayView<const dolfin::la_index>> _sparsity_entries

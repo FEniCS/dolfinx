@@ -38,7 +38,7 @@
 namespace dolfin
 {
 
-  class GenericSparsityPattern;
+  class SparsityPattern;
   class GenericVector;
 
   /// Simple STL-based implementation of the GenericMatrix interface.
