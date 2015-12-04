@@ -12,12 +12,6 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin/common/version.h
   )
 include_directories(${CMAKE_BINARY_DIR})
 
-#set(CMAKE_SKIP_BUILD_RPATH  FALSE)
-#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-#SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-
-# Macros
-
 #------------------------------------------------------------------------------
 # DOLFIN source directories
 
