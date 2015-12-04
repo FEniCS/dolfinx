@@ -1,9 +1,6 @@
 #ifndef DOLFIN_SIMPLEX_TOOLS_H
 #define DOLFIN_SIMPLEX_TOOLS_H
 
-//#include "../dolfin.h" // for install
-//#include <dolfin.h> // for building test
-
 #include "predicates.h"
 
 #include <string>
@@ -36,7 +33,7 @@ namespace tools
     const double s2 = (a+(b+c))*(c-(a-b))*(c+(a-b))*(a+(b-c));
     if (s2 < 0)
     {
-      std::cout << "Heron error, negative sqrt: " << s2 << std::endl;
+      std::cout << "Heron error, negative sqrt: " << s2 << " is to be replaced with 0" << std::endl;
       if (std::abs(s2) < DOLFIN_EPS) // If we don't do this v=1e-13, m=24, n=1 doesn't work
 	return 0;
       else

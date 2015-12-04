@@ -1,9 +1,6 @@
 #ifndef DOLFIN_CGAL_TOOLS_H
 #define DOLFIN_CGAL_TOOLS_H
 
-//#include "../dolfin.h" // for install
-/* #include <dolfin.h> // for building test */
-
 #include <CGAL/Triangle_2.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>

@@ -248,7 +248,7 @@ void MultiMesh::build(std::size_t quadrature_order)
   _build_quadrature_rules_cut_cells(quadrature_order);
 
   // FIXME:
-  _build_quadrature_rules_interface();
+  _build_quadrature_rules_interface(quadrature_order);
 
   end();
 }
@@ -1634,7 +1634,7 @@ void MultiMesh::_build_quadrature_rules_cut_cells(std::size_t quadrature_order)
   end();
 }
 //------------------------------------------------------------------------------
-void MultiMesh::_build_quadrature_rules_interface()
+void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 {
   begin(PROGRESS, "Building quadrature rules of interface.");
 #ifdef Augustdebug
@@ -1661,11 +1661,6 @@ void MultiMesh::_build_quadrature_rules_interface()
   }
   PPause;
 #endif
-
-
-
-  // Get quadrature order
-  const std::size_t quadrature_order = parameters["quadrature_order"];
 
   // Clear quadrature rules
   _quadrature_rules_interface.clear();

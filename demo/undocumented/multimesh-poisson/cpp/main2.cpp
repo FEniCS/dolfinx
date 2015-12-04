@@ -286,57 +286,23 @@ void solve_poisson(std::size_t step,
     writemarkers(step, multimesh);
   }
 
-  // // Create function space
-  // MultiMeshPoisson::MultiMeshFunctionSpace V(multimesh);
-  MultiMeshPoisson::FunctionSpace V0(mesh_0);
-  MultiMeshPoisson::FunctionSpace V1(mesh_1);
-  MultiMeshPoisson::FunctionSpace V2(mesh_2);
 
-  // // Create forms
-  // MultiMeshPoisson::MultiMeshBilinearForm a(V, V);
-  // MultiMeshPoisson::MultiMeshLinearForm L(V);
-  MultiMeshPoisson::BilinearForm a0(V0, V0);
-  MultiMeshPoisson::BilinearForm a1(V1, V1);
-  MultiMeshPoisson::BilinearForm a2(V2, V2);
-  MultiMeshPoisson::LinearForm L0(V0);
-  MultiMeshPoisson::LinearForm L1(V1);
-  MultiMeshPoisson::LinearForm L2(V2);
+  // Create function space
+  MultiMeshPoisson::MultiMeshFunctionSpace V(multimesh);
 
-  // Build multimesh function space
-  MultiMeshFunctionSpace V;
-  V.parameters("multimesh")["quadrature_order"] = 2;
-  V.add(V0);
-  V.add(V1);
-  V.add(V2);
-  V.build(); // multimesh built here, i.e. qr generation here
+  // Create forms
+  MultiMeshPoisson::MultiMeshBilinearForm a(V, V);
+  MultiMeshPoisson::MultiMeshLinearForm L(V);
 
   // Attach coefficients
   Source f;
-  // L.f = f;
-  L0.f = f;
-  L1.f = f;
-  L2.f = f;
-
-  // Build multimesh forms
-  MultiMeshForm a(V, V);
-  MultiMeshForm L(V);
-  a.add(a0);
-  a.add(a1);
-  a.add(a2);
-  L.add(L0);
-  L.add(L1);
-  L.add(L2);
-  a.build();
-  L.build();
+  L.f = f;
 
   // Assemble linear system
   Matrix A;
   Vector b;
-  // assemble_multimesh(A, a);
-  // assemble_multimesh(b, L);
-  MultiMeshAssembler assembler;
-  assembler.assemble(A, a);
-  assembler.assemble(b, L);
+  assemble_multimesh(A, a);
+  assemble_multimesh(b, L);
 
   // Apply boundary condition
   Constant zero(0);

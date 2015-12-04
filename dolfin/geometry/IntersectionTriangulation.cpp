@@ -502,7 +502,10 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   if (CGAL::do_intersect(T0, T1))
   {
     const auto ii = CGAL::intersection(T0, T1);
-    dolfin_assert(ii);
+
+    // We can have empty ii if we use CGAL::Exact_predicates_inexact_constructions_kernel
+    if (!ii) { return triangulation; }
+    //dolfin_assert(ii);
     triangulation = cgaltools::parse(ii);
 
     // NB: cgaltools::parse can return triangulation of size 0, for

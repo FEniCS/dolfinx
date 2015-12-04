@@ -144,6 +144,8 @@ endif()
 
 #list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS "-v -O0 -ggdb3")
 list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS "-ggdb3")
+set(DOLFIN_ENABLE_PYTHON "0")
+
 
 # Check for some compiler flags
 include(CheckCXXCompilerFlag)

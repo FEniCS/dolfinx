@@ -483,7 +483,7 @@ namespace dolfin
     void _build_quadrature_rules_overlap(std::size_t quadrature_order);
 
     // FIXME
-    void _build_quadrature_rules_interface();
+    void _build_quadrature_rules_interface(std::size_t quadrature_order);
 
     // Add quadrature rule for simplices in the triangulation
     // array. Returns the number of points generated for each simplex.
