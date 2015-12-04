@@ -30,9 +30,6 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/geometry/Point.h>
 
-// FIXME
-//#include <dolfin/mesh/dolfin_write_medit.h>
-
 namespace dolfin
 {
 
@@ -493,16 +490,6 @@ namespace dolfin
 
     // Plot multimesh
     void _plot() const;
-
-    // Helper function to compute n choose k
-    static std::size_t n_choose_k(std::size_t n,
-				  std::size_t k);
-
-    // Helper function to compute the n choose k permutations
-    static std::vector<std::deque<std::size_t> > compute_permutations(std::size_t n,
-								      std::size_t k);
-
-
 
     // FIXME: Helper function to convert between flat triangulation
     // and list of Points (this function should not be needed: fix the
