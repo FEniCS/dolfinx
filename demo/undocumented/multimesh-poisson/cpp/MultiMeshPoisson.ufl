@@ -38,6 +38,7 @@ h = (h('+') + h('-')) / 2
 
 # Parameters
 alpha = 4.0
+beta = 4.0
 
 # Define bilinear form
 a = dot(grad(u), grad(v))*dX \
