@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Martin Alnes, 2008-2015
-// Modified by Kent-Andre Mardal, 2009
-// Modified by Ola Skavhaug, 2009
-// Modified by Niclas Jansson, 2009
-// Modified by Joachim B Haga, 2012
-// Modified by Mikael Mortensen, 2012
-// Modified by Jan Blechta, 2013
+// Modified by Martin Alnes 2008-2015
+// Modified by Kent-Andre Mardal 2009
+// Modified by Ola Skavhaug 2009
+// Modified by Niclas Jansson 2009
+// Modified by Joachim B Haga 2012
+// Modified by Mikael Mortensen 2012
+// Modified by Jan Blechta 2013
 
 #include <unordered_map>
 
@@ -42,7 +42,7 @@ using namespace dolfin;
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh)
   : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0),
+    _global_dimension(0), _ufc_offset(0), _multimesh_offset(0),
     _index_map(new IndexMap(mesh.mpi_comm()))
 {
   dolfin_assert(_ufc_dofmap);
@@ -55,7 +55,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh,
                std::shared_ptr<const SubDomain> constrained_domain)
   : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0),
+    _global_dimension(0), _ufc_offset(0), _multimesh_offset(0),
     _index_map(new IndexMap(mesh.mpi_comm()))
 {
   dolfin_assert(_ufc_dofmap);
@@ -69,7 +69,8 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
                const std::vector<std::size_t>& component, const Mesh& mesh)
-  : _cell_dimension(0), _is_view(true), _global_dimension(0), _ufc_offset(0),
+  : _cell_dimension(0), _ufc_dofmap(0), _is_view(true),
+    _global_dimension(0), _ufc_offset(0), _multimesh_offset(0),
     _index_map(parent_dofmap._index_map)
 {
   // Build sub-dofmap
@@ -79,7 +80,7 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh)
   : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0),
+    _global_dimension(0), _ufc_offset(0), _multimesh_offset(0),
     _index_map(new IndexMap(mesh.mpi_comm()))
 {
   dolfin_assert(_ufc_dofmap);
@@ -131,10 +132,12 @@ DofMap::DofMap(const DofMap& dofmap) : _index_map(dofmap._index_map)
   _dofmap = dofmap._dofmap;
   _cell_dimension = dofmap._cell_dimension;
   _ufc_dofmap = dofmap._ufc_dofmap;
+  _num_mesh_entities_global = dofmap._num_mesh_entities_global;
   _ufc_local_to_local= dofmap._ufc_local_to_local;
   _is_view = dofmap._is_view;
   _global_dimension = dofmap._global_dimension;
   _ufc_offset = dofmap._ufc_offset;
+  _multimesh_offset = dofmap._multimesh_offset;
   _shared_nodes = dofmap._shared_nodes;
   _neighbours = dofmap._neighbours;
   constrained_domain = dofmap.constrained_domain;
@@ -152,22 +155,23 @@ std::size_t DofMap::global_dimension() const
 //-----------------------------------------------------------------------------
 std::size_t DofMap::local_dimension(std::string type) const
 {
-  const int bs = _index_map->block_size();
+  deprecation("DofMap::local_dimension", "1.7.0",
+              "1.8.0", "Please use dofmap::index_map()->size() instead");
+
   if (type == "owned")
-    return _index_map->size();
+    return _index_map->size(IndexMap::MapSize::OWNED);
   else if (type == "unowned")
-    return bs*_index_map->local_to_global_unowned().size();
+    return _index_map->size(IndexMap::MapSize::UNOWNED);
   else if (type == "all")
-    return _index_map->size()
-         + bs*_index_map->local_to_global_unowned().size();
+    return _index_map->size(IndexMap::MapSize::ALL);
   else
   {
-    dolfin_error("DofMap.h",
-                 "report DofMap local dimension",
-                 "unknown dof type given. Use either \"owned\", "
-                 "\"unowned\", or \"all\"");
-    return 0;
+    dolfin_error("DofMap.cpp",
+                 "get local dimension",
+                 "Unknown type %s", type.c_str());
   }
+
+  return 0;
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
@@ -332,7 +336,8 @@ std::vector<dolfin::la_index> DofMap::dofs() const
   std::vector<la_index> _dofs;
   _dofs.reserve(_dofmap.size()*max_element_dofs());
 
-  const dolfin::la_index local_ownership_size = _index_map->size();
+  const dolfin::la_index local_ownership_size
+    = _index_map->size(IndexMap::MapSize::OWNED);
   const std::size_t global_offset = _index_map->local_range().first;
 
   // Insert all dofs into a vector (will contain duplicates)
@@ -354,7 +359,7 @@ std::vector<dolfin::la_index> DofMap::dofs() const
 void DofMap::set(GenericVector& x, double value) const
 {
   dolfin_assert(_dofmap.size() % _cell_dimension == 0);
-  const std::size_t num_cells = _dofmap.size()/_cell_dimension;
+  const std::size_t num_cells = _dofmap.size() / _cell_dimension;
 
   std::vector<double> _value(_cell_dimension, value);
   for (std::size_t i = 0; i < num_cells; ++i)
@@ -370,10 +375,9 @@ void DofMap::tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_gl
   const std::size_t bs = _index_map->block_size();
   const std::vector<std::size_t>& local_to_global_unowned
     = _index_map->local_to_global_unowned();
-  const std::size_t local_ownership_size = _index_map->size();
-  const int size = local_ownership_size
-                    + bs*local_to_global_unowned.size();
-  local_to_global_map.resize(size);
+  const std::size_t local_ownership_size
+    = _index_map->size(IndexMap::MapSize::OWNED);
+  local_to_global_map.resize(_index_map->size(IndexMap::MapSize::ALL));
 
   const std::size_t global_offset = _index_map->local_range().first;
   for (std::size_t i = 0; i < local_ownership_size; ++i)
@@ -414,7 +418,7 @@ std::string DofMap::str(bool verbose) const
   {
     // Cell loop
     dolfin_assert(_dofmap.size()%_cell_dimension == 0);
-    const std::size_t ncells = _dofmap.size()/_cell_dimension;
+    const std::size_t ncells = _dofmap.size() / _cell_dimension;
 
     for (std::size_t i = 0; i < ncells; ++i)
     {

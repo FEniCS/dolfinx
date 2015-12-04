@@ -26,20 +26,39 @@ from dolfin_utils.test import *
 backends = ["PETSc", skip_in_parallel("Eigen")]
 
 def build_elastic_nullspace(V, x):
-    """Function to build nullspace for 2D elasticity"""
+    """Function to build nullspace for 2D/3D elasticity"""
+
+    # Get geometric dim
+    gdim = V.mesh().geometry().dim()
+    assert gdim == 2 or gdim == 3
+
+    # Set dimension of nullspace
+    dim = 3 if gdim == 2 else 6
 
     # Create list of vectors for null space
-    nullspace_basis = [x.copy() for i in range(3)]
+    nullspace_basis = [x.copy() for i in range(dim)]
 
     # Build translational null space basis
-    V.sub(0).dofmap().set(nullspace_basis[0], 1.0);
-    V.sub(1).dofmap().set(nullspace_basis[1], 1.0);
+    for i in range(gdim):
+        V.sub(i).dofmap().set(nullspace_basis[i], 1.0);
 
     # Build rotational null space basis
-    V.sub(0).set_x(nullspace_basis[2], -1.0, 1);
-    V.sub(1).set_x(nullspace_basis[2], 1.0, 0);
+    if gdim == 2:
+        V.sub(0).set_x(nullspace_basis[2], -1.0, 1);
+        V.sub(1).set_x(nullspace_basis[2], 1.0, 0);
+    elif gdim == 3:
+        V.sub(0).set_x(nullspace_basis[3], -1.0, 1);
+        V.sub(1).set_x(nullspace_basis[3],  1.0, 0);
+
+        V.sub(0).set_x(nullspace_basis[4],  1.0, 2);
+        V.sub(2).set_x(nullspace_basis[4], -1.0, 0);
+
+        V.sub(2).set_x(nullspace_basis[5],  1.0, 1);
+        V.sub(1).set_x(nullspace_basis[5], -1.0, 2);
+
     for x in nullspace_basis:
         x.apply("insert")
+
     return VectorSpaceBasis(nullspace_basis)
 
 
@@ -63,6 +82,30 @@ def build_broken_elastic_nullspace(V, x):
     for x in nullspace_basis:
         x.apply("insert")
     return VectorSpaceBasis(nullspace_basis)
+
+
+def test_nullspace_orthogonal():
+    """Test that null spaces orthogonalisation"""
+    meshes = [UnitSquareMesh(12, 12), UnitCubeMesh(4, 4, 4)]
+    for mesh in meshes:
+        for p in range(1, 4):
+            V = VectorFunctionSpace(mesh, 'CG', p)
+            zero = Constant([0.0]*mesh.geometry().dim())
+            L = dot(TestFunction(V), zero)*dx
+            x = assemble(L)
+
+            # Build nullspace
+            null_space = build_elastic_nullspace(V, x)
+
+            assert not null_space.is_orthogonal()
+            assert not null_space.is_orthonormal()
+
+            # Orthogonalise nullspace
+            null_space.orthonormalize()
+
+            # Checl that null space basis is orthonormal
+            assert null_space.is_orthogonal()
+            assert null_space.is_orthonormal()
 
 
 @pytest.mark.parametrize('backend', backends)

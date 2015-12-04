@@ -59,7 +59,7 @@ namespace dolfin
                          std::string preconditioner) const;
 
     /// Return a list of available LU solver methods
-    //    std::vector<std::pair<std::string, std::string> >
+    //    std::vector<std::pair<std::string, std::string>>
     //      lu_solver_methods() const;
 
     /// Return a list of available Krylov solver methods

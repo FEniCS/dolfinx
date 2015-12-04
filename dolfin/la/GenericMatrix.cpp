@@ -22,7 +22,6 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Timer.h>
-#include "GenericSparsityPattern.h"
 #include "GenericMatrix.h"
 
 using namespace dolfin;

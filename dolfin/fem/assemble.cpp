@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2013 Anders Logg
+// Copyright (C) 2007-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -21,12 +21,13 @@
 // Modified by Martin S. Alnaes, 2013.
 //
 // First added:  2007-01-17
-// Last changed: 2013-02-13
+// Last changed: 2015-11-11
 
 #include <dolfin/la/Scalar.h>
 #include "Form.h"
 #include "Assembler.h"
 #include "SystemAssembler.h"
+#include "MultiMeshAssembler.h"
 #include "assemble.h"
 
 using namespace dolfin;
@@ -76,6 +77,12 @@ void dolfin::assemble_system(GenericMatrix& A,
 {
   SystemAssembler assembler(a, L, bcs);
   assembler.assemble(A, b, x0);
+}
+//-----------------------------------------------------------------------------
+void dolfin::assemble_multimesh(GenericTensor& A, const MultiMeshForm& a)
+{
+  MultiMeshAssembler assembler;
+  assembler.assemble(A, a);
 }
 //-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a)

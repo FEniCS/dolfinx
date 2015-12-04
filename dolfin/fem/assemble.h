@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2013 Anders Logg
+// Copyright (C) 2007-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -21,7 +21,7 @@
 // Modified by Martin S. Alnaes, 2013.
 //
 // First added:  2007-01-17
-// Last changed: 2013-02-13
+// Last changed: 2015-11-11
 //
 // This file duplicates the Assembler::assemble* and SystemAssembler::assemble*
 // functions in namespace dolfin, and adds special versions returning the value
@@ -38,6 +38,7 @@ namespace dolfin
 
   class DirichletBC;
   class Form;
+  class MultiMeshForm;
   class GenericMatrix;
   class GenericTensor;
   class GenericVector;
@@ -76,6 +77,9 @@ namespace dolfin
                        const Form& L,
                        const std::vector<const DirichletBC*> bcs,
                        const GenericVector& x0);
+
+  /// Assemble tensor from multimesh form
+  void assemble_multimesh(GenericTensor& A, const MultiMeshForm& a);
 
   //--- Specialized version for scalars ---
 

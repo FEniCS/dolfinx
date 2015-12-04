@@ -748,7 +748,7 @@ IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, facets,
                                                   std_size_t)
 #endif
 
-// Typemaps for GenericSparsityPattern interface
+// Typemaps for SparsityPattern interface
 #if (DOLFIN_SIZE_T==4)
 IN_TYPEMAP_STD_VECTOR_OF_ARRAYVIEW_OF_PRIMITIVES(const std::size_t, INT32,
                                                  local_to_global, NPY_UINTP,

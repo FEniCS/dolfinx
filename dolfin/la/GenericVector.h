@@ -33,6 +33,7 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
+#include "IndexMap.h"
 #include "TensorLayout.h"
 #include "GenericTensor.h"
 
@@ -52,6 +53,7 @@ namespace dolfin
     //--- Implementation of the GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern
+    /// FIXME: This needs to be implemented on backend side! Remove it!
     virtual void init(const TensorLayout& tensor_layout)
     {
       if (!empty())
@@ -59,8 +61,26 @@ namespace dolfin
                      "initialize vector",
                      "Vector cannot be initialised more than once");
       std::vector<dolfin::la_index> ghosts;
+      std::vector<std::size_t> local_to_global(tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL));
+
+      // FIXME: should just pass index_map to init()
+      for (std::size_t i = 0; i != local_to_global.size(); ++i)
+        local_to_global[i] = tensor_layout.index_map(0)->local_to_global(i);
+
+      // FIXME: temporary hack - needs passing tensor layout directly to backend
+      if (tensor_layout.is_ghosted() == TensorLayout::Ghosts::GHOSTED)
+      {
+        const std::size_t nowned
+          = tensor_layout.index_map(0)->size(IndexMap::MapSize::OWNED);
+        const std::size_t nghosts
+          = tensor_layout.index_map(0)->size(IndexMap::MapSize::UNOWNED);
+        ghosts.resize(nghosts);
+        for (std::size_t i = 0; i != nghosts; ++i)
+          ghosts[i] = local_to_global[i+nowned];
+      }
+
       init(tensor_layout.mpi_comm(), tensor_layout.local_range(0),
-           tensor_layout.local_to_global_map[0], ghosts);
+           local_to_global, ghosts);
       zero();
     }
 
@@ -112,13 +132,13 @@ namespace dolfin
     /// Add block of values using global indices
     virtual void
       add(const double* block,
-          const std::vector<ArrayView<const dolfin::la_index> >& rows)
+          const std::vector<ArrayView<const dolfin::la_index>>& rows)
     { add(block, rows[0].size(), rows[0].data()); }
 
     /// Add block of values using local indices
     virtual void
     add_local(const double* block,
-              const std::vector<ArrayView<const dolfin::la_index> >& rows)
+              const std::vector<ArrayView<const dolfin::la_index>>& rows)
     { add_local(block, rows[0].size(), rows[0].data()); }
 
     /// Set all entries to zero and keep any sparse structure
@@ -144,6 +164,7 @@ namespace dolfin
 
     /// Initialise vector with given ownership range and with ghost
     /// values
+    /// FIXME: Reimplement using init(const TensorLayout&) and deprecate
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range,
                       const std::vector<std::size_t>& local_to_global_map,

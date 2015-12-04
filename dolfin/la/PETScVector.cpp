@@ -19,9 +19,6 @@
 // Modified by Martin Sandve Alnes 2008
 // Modified by Johannes Ring 2011.
 // Modified by Fredrik Valdmanis 2011-2012
-//
-// First added:  2004
-// Last changed: 2012-08-22
 
 #ifdef HAS_PETSC
 
@@ -29,12 +26,13 @@
 #include <numeric>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/log/log.h>
+#include "SparsityPattern.h"
 #include "PETScVector.h"
 #include "PETScFactory.h"
-#include <dolfin/common/MPI.h>
 
 using namespace dolfin;
 
@@ -58,7 +56,7 @@ PETScVector::PETScVector(MPI_Comm comm, std::size_t N) : _x(NULL)
   _init(comm, range, local_to_global_map, ghost_indices);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern)
+PETScVector::PETScVector(const SparsityPattern& sparsity_pattern)
   : _x(NULL)
 {
   std::vector<la_index> ghost_indices;

@@ -1,4 +1,4 @@
-// Copyright (C) 2014 Anders Logg
+// Copyright (C) 2014-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-06-11
-// Last changed: 2014-06-11
+// Last changed: 2015-11-12
 
 #ifndef __MULTI_MESH_SUB_SPACE_H
 #define __MULTI_MESH_SUB_SPACE_H

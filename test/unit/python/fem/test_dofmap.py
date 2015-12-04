@@ -267,7 +267,7 @@ def test_dof_to_vertex_map(mesh, reorder_dofs):
     vert_values[::2] = 1
     vert_values[1::2] = 2
 
-    dim = Q.dofmap().local_dimension('owned')
+    dim = Q.dofmap().index_map().size(IndexMap.MapSize_OWNED)
     u1.vector().set_local(vert_values[dof_to_vertex_map(Q)[:dim]].copy())
     assert round((u0.vector()-u1.vector()).sum() - 0.0, 7) == 0
 
@@ -412,14 +412,14 @@ def test_local_dimension(V, Q, W):
         dofmap = space.dofmap()
         local_to_global_map = dofmap.tabulate_local_to_global_dofs()
         ownership_range = dofmap.ownership_range()
-        dim1 = dofmap.local_dimension('owned')
-        dim2 = dofmap.local_dimension('unowned')
-        dim3 = dofmap.local_dimension('all')
+        dim1 = dofmap.index_map().size(IndexMap.MapSize_OWNED)
+        dim2 = dofmap.index_map().size(IndexMap.MapSize_UNOWNED)
+        dim3 = dofmap.index_map().size(IndexMap.MapSize_ALL)
         assert dim1 == ownership_range[1] - ownership_range[0]
         assert dim3 == local_to_global_map.size
         assert dim1 + dim2 == dim3
-        with pytest.raises(RuntimeError):
-            dofmap.local_dimension('foo')
+        #with pytest.raises(RuntimeError):
+        #    dofmap.index_map().size('foo')
 
 
 @skip_in_parallel

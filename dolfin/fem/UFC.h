@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2014 Anders Logg
+// Copyright (C) 2007-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells 2009
 //
 // First added:  2007-01-17
-// Last changed: 2014-04-24
+// Last changed: 2015-10-23
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
@@ -110,29 +110,41 @@ namespace dolfin
     // Finite elements for coefficients
     std::vector<FiniteElement> coefficient_elements;
 
-    // Cell integrals (access through
-    // get_cell_integral to get proper fallback to default)
-    std::vector<std::shared_ptr<ufc::cell_integral> >
+    // Cell integrals (access through get_cell_integral to get proper
+    // fallback to default)
+    std::vector<std::shared_ptr<ufc::cell_integral>>
       cell_integrals;
 
     // Exterior facet integrals (access through
     // get_exterior_facet_integral to get proper fallback to default)
-    std::vector<std::shared_ptr<ufc::exterior_facet_integral> >
+    std::vector<std::shared_ptr<ufc::exterior_facet_integral>>
       exterior_facet_integrals;
 
     // Interior facet integrals (access through
     // get_interior_facet_integral to get proper fallback to default)
-    std::vector<std::shared_ptr<ufc::interior_facet_integral> >
+    std::vector<std::shared_ptr<ufc::interior_facet_integral>>
       interior_facet_integrals;
 
     // Point integrals (access through get_vertex_integral to get
     // proper fallback to default)
-    std::vector<std::shared_ptr<ufc::vertex_integral> >
+    std::vector<std::shared_ptr<ufc::vertex_integral>>
       vertex_integrals;
 
     // Custom integrals (access through get_custom_integral to get
     // proper fallback to default)
-    std::vector<std::shared_ptr<ufc::custom_integral> > custom_integrals;
+    std::vector<std::shared_ptr<ufc::custom_integral>> custom_integrals;
+
+    // Cutcell integrals (access through get_cutcell_integral to get
+    // proper fallback to default)
+    std::vector<std::shared_ptr<ufc::cutcell_integral>> cutcell_integrals;
+
+    // Interface integrals (access through get_interface_integral to
+    // get proper fallback to default)
+    std::vector<std::shared_ptr<ufc::interface_integral>> interface_integrals;
+
+    // Overlap integrals (access through get_overlap_integral to get
+    // proper fallback to default)
+    std::vector<std::shared_ptr<ufc::overlap_integral>> overlap_integrals;
 
   public:
 
@@ -154,6 +166,15 @@ namespace dolfin
 
     // Default custom integral
     std::shared_ptr<ufc::custom_integral> default_custom_integral;
+
+    // Default cutcell integral
+    std::shared_ptr<ufc::cutcell_integral> default_cutcell_integral;
+
+    // Default interface integral
+    std::shared_ptr<ufc::interface_integral> default_interface_integral;
+
+    // Default overlap integral
+    std::shared_ptr<ufc::overlap_integral> default_overlap_integral;
 
     /// Get cell integral over a given domain, falling back to the
     /// default if necessary
@@ -228,6 +249,45 @@ namespace dolfin
       return default_custom_integral.get();
     }
 
+    /// Get cutcell integral over a given domain, falling back to the
+    /// default if necessary
+    ufc::cutcell_integral * get_cutcell_integral(std::size_t domain)
+    {
+      if (domain < form.max_cutcell_subdomain_id())
+      {
+        ufc::cutcell_integral * integral = cutcell_integrals[domain].get();
+        if (integral)
+          return integral;
+      }
+      return default_cutcell_integral.get();
+    }
+
+    /// Get interface integral over a given domain, falling back to
+    /// the default if necessary
+    ufc::interface_integral * get_interface_integral(std::size_t domain)
+    {
+      if (domain < form.max_interface_subdomain_id())
+      {
+        ufc::interface_integral * integral = interface_integrals[domain].get();
+        if (integral)
+          return integral;
+      }
+      return default_interface_integral.get();
+    }
+
+    /// Get overlap integral over a given domain, falling back to the
+    /// default if necessary
+    ufc::overlap_integral * get_overlap_integral(std::size_t domain)
+    {
+      if (domain < form.max_overlap_subdomain_id())
+      {
+        ufc::overlap_integral * integral = overlap_integrals[domain].get();
+        if (integral)
+          return integral;
+      }
+      return default_overlap_integral.get();
+    }
+
     // Form
     const ufc::form& form;
 
@@ -246,16 +306,16 @@ namespace dolfin
 
     // Coefficients (std::vector<double*> is used to interface with
     // UFC)
-    std::vector<std::vector<double> > _w;
+    std::vector<std::vector<double>> _w;
     std::vector<double*> w_pointer;
 
     // Coefficients on macro element (std::vector<double*> is used to
     // interface with UFC)
-    std::vector<std::vector<double> > _macro_w;
+    std::vector<std::vector<double>> _macro_w;
     std::vector<double*> macro_w_pointer;
 
     // Coefficient functions
-    const std::vector<std::shared_ptr<const GenericFunction> > coefficients;
+    const std::vector<std::shared_ptr<const GenericFunction>> coefficients;
 
   public:
 

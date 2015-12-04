@@ -15,8 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-#include "EigenMatrix.h"
 #include "EigenFactory.h"
+#include "SparsityPattern.h"
+#include "EigenMatrix.h"
 
 using namespace dolfin;
 
@@ -380,22 +381,16 @@ void EigenMatrix::init(const TensorLayout& tensor_layout)
 
   // Get sparsity pattern
   dolfin_assert(tensor_layout.sparsity_pattern());
-  const SparsityPattern* pattern_pointer
-    = dynamic_cast<const SparsityPattern*>(tensor_layout.sparsity_pattern().get());
-  if (!pattern_pointer)
-  {
-    dolfin_error("EigenMatrix.cpp",
-                 "initialize Eigen matrix",
-                 "Cannot convert GenericSparsityPattern to concrete SparsityPattern type");
-  }
+  auto sparsity_pattern = tensor_layout.sparsity_pattern();
+  dolfin_assert(sparsity_pattern);
 
   // Reserve space for non-zeroes and get non-zero pattern
   std::vector<std::size_t> num_nonzeros_per_row;
-  pattern_pointer->num_nonzeros_diagonal(num_nonzeros_per_row);
+  sparsity_pattern->num_nonzeros_diagonal(num_nonzeros_per_row);
   _matA.reserve(num_nonzeros_per_row);
 
   const std::vector<std::vector<std::size_t>> pattern
-    = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
+    = sparsity_pattern->diagonal_pattern(SparsityPattern::sorted);
 
   if (!eigen_matrix_type::IsRowMajor)
     warning ("Entering sparsity for RowMajor matrix - performance may be affected");
