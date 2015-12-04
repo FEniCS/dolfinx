@@ -1176,10 +1176,9 @@ void MultiMesh::_build_quadrature_rules_overlap()
       for (const auto qro: overlap_qr)
 	net_weight += std::accumulate(qro.second.begin(),
 				      qro.second.end(), 0.);
-      std::cout <<"weight and volume " << std::setprecision(15)<< net_weight <<' '<<cut_cell.volume() <<' '<<net_weight-cut_cell.volume()<< '\n';
       if (net_weight - cut_cell.volume() > DOLFIN_EPS)
       {
-	std::cout << "cut part = " << cut_part << " cut cell index = " << cut_cell_index << '\n';
+	std::cout<< __FUNCTION__  << ": cut part " << cut_part<<" cell " << cut_cell_index << " net weight = " << net_weight << " area = " << cut_cell.volume() << ") "<<std::endl;
 	for (const auto qro: overlap_qr)
 	{
 	  std::cout << "weights: ";
@@ -1187,8 +1186,8 @@ void MultiMesh::_build_quadrature_rules_overlap()
 	    std::cout << w << ' ';
 	  std::cout << '\n';
 	}
+	std::cout <<"weight and volume " << std::setprecision(15)<< net_weight <<' '<<cut_cell.volume() <<' '<<net_weight-cut_cell.volume()<< '\n';
 
-	std::cout<< __FUNCTION__  << ": cut part " << cut_part<<" cell " << cut_cell_index << " net weight = " << net_weight << " area = " << cut_cell.volume() << ") "<<std::endl;
 
 	// how to fix?
 	//qr = quadrature_rule();
