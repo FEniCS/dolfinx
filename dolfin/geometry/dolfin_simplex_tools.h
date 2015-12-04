@@ -2,7 +2,7 @@
 #define DOLFIN_SIMPLEX_TOOLS_H
 
 //#include "../dolfin.h" // for install
-#include <dolfin.h> // for building test
+//#include <dolfin.h> // for building test
 
 #include "predicates.h"
 
@@ -10,6 +10,12 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+
+#include <dolfin/geometry/Point.h>
+#include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/MultiMesh.h>
+#include <dolfin/mesh/Cell.h>
+
 
 namespace tools
 {
