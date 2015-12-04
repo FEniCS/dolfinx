@@ -97,7 +97,7 @@ namespace dolfin
     /// nonlinear solver that does not rely on the Jacobian.
     NonlinearVariationalProblem(std::shared_ptr<const Form> F,
                                 std::shared_ptr<Function> u,
-                                std::vector<std::shared_ptr<const DirichletBC> > bcs);
+                                std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
     /// Create nonlinear variational problem, shared pointer version.
     /// The Jacobian form is specified which allows the use of a
@@ -105,7 +105,7 @@ namespace dolfin
     /// method).
     NonlinearVariationalProblem(std::shared_ptr<const Form> F,
                                 std::shared_ptr<Function> u,
-                                std::vector<std::shared_ptr<const DirichletBC> > bcs,
+                                std::vector<std::shared_ptr<const DirichletBC>> bcs,
                                 std::shared_ptr<const Form> J);
 
     /// Set the bounds for bound constrained solver
@@ -137,7 +137,7 @@ namespace dolfin
     std::shared_ptr<const Function> solution() const;
 
     /// Return boundary conditions
-    std::vector<std::shared_ptr<const DirichletBC> > bcs() const;
+    std::vector<std::shared_ptr<const DirichletBC>> bcs() const;
 
     /// Return trial space
     std::shared_ptr<const FunctionSpace> trial_space() const;
@@ -175,7 +175,7 @@ namespace dolfin
     std::shared_ptr<Function> _u;
 
     // The boundary conditions
-    std::vector<std::shared_ptr<const DirichletBC> > _bcs;
+    std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 
     // The lower and upper bounds (pointers may be zero if not provided)
     std::shared_ptr<const GenericVector> _lb;

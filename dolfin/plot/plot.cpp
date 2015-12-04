@@ -20,7 +20,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2014-06-11
+// Last changed: 2015-11-11
 
 #include <cstdlib>
 #include <sstream>
@@ -174,10 +174,16 @@ std::shared_ptr<VTKPlotter> dolfin::plot(std::shared_ptr<const Expression> expre
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MultiMesh& multimesh)
 {
-  plot(reference_to_no_delete_pointer(multimesh));
+  plot_multimesh(reference_to_no_delete_pointer(multimesh));
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(std::shared_ptr<const MultiMesh> multimesh)
+{
+  dolfin_assert(multimesh);
+  plot_multimesh(multimesh);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot_multimesh(std::shared_ptr<const MultiMesh> multimesh)
 {
   dolfin_assert(multimesh);
   multimesh->_plot();

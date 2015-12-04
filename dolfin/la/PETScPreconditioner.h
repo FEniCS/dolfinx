@@ -81,7 +81,7 @@ namespace dolfin
     // FIXME: Document
     void
       set_fieldsplit(PETScKrylovSolver& solver,
-                     const std::vector<std::vector<dolfin::la_index> >& fields,
+                     const std::vector<std::vector<dolfin::la_index>>& fields,
                      const std::vector<std::string>& split_names);
 
     /// Return informal string representation (pretty-print)

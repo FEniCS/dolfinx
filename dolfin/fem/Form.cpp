@@ -19,7 +19,7 @@
 // Modified by Martin Alnes 2008
 //
 // First added:  2007-12-10
-// Last changed: 2014-02-14
+// Last changed: 2015-11-08
 
 #include <memory>
 #include <string>

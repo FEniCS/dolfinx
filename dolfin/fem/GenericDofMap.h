@@ -158,8 +158,8 @@ namespace dolfin
     /// nodes. Dofmap node is dof index modulo block size.
     virtual const std::vector<std::size_t>& local_to_global_unowned() const = 0;
 
-    /// Range map
-    virtual std::shared_ptr<IndexMap> index_map() const = 0;
+    /// Index map (const access)
+    virtual std::shared_ptr<const IndexMap> index_map() const = 0;
 
     /// Tabulate map between local (process) and global dof indices
     virtual void tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const = 0;
@@ -169,7 +169,7 @@ namespace dolfin
 
     /// Return map from shared nodes to the processes (not including
     /// the current process) that share it.
-    virtual const std::unordered_map<int, std::vector<int> >&
+    virtual const std::unordered_map<int, std::vector<int>>&
       shared_nodes() const = 0;
 
     /// Return set of processes that share dofs with the this process

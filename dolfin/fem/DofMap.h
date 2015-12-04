@@ -39,7 +39,6 @@
 #include <dolfin/mesh/Cell.h>
 #include "GenericDofMap.h"
 
-
 namespace dolfin
 {
 
@@ -184,9 +183,9 @@ namespace dolfin
     /// including the current process) that share it.
     ///
     /// *Returns*
-    ///     std::unordered_map<std::size_t, std::vector<unsigned int> >
+    ///     std::unordered_map<std::size_t, std::vector<unsigned int>>
     ///         The map from dofs to list of processes
-    const std::unordered_map<int, std::vector<int> >& shared_nodes() const;
+    const std::unordered_map<int, std::vector<int>>& shared_nodes() const;
 
     /// Return set of processes that share dofs with this process
     ///
@@ -312,10 +311,12 @@ namespace dolfin
     ///         The value to set.
     void set(GenericVector& x, double value) const;
 
-    /// Return the map
-    std::shared_ptr<IndexMap> index_map() const
+    /// Return the map (const access)
+    std::shared_ptr<const IndexMap> index_map() const
     { return _index_map; }
 
+    /// Return the block size for dof maps with components, typically
+    /// used for vector valued functions.
     int block_size() const
     { return _index_map->block_size(); }
 
@@ -339,7 +340,7 @@ namespace dolfin
     std::size_t local_to_global_index(int local_index) const
     { return _index_map->local_to_global(local_index); }
 
-
+    /// Return indices of dofs which are owned by other processes
     const std::vector<std::size_t>& local_to_global_unowned() const
     { return _index_map->local_to_global_unowned(); }
 
@@ -397,6 +398,9 @@ namespace dolfin
     // UFC dof map offset
     std::size_t _ufc_offset;
 
+    // Multimesh dof map offset
+    std::size_t _multimesh_offset;
+
     // Object containing information about dof distribution across
     // processes
     std::shared_ptr<IndexMap> _index_map;
@@ -405,7 +409,7 @@ namespace dolfin
     friend class MultiMeshDofMap;
 
     // List of processes that share a given dof
-    std::unordered_map<int, std::vector<int> > _shared_nodes;
+    std::unordered_map<int, std::vector<int>> _shared_nodes;
 
     // Neighbours (processes that we share dofs with)
     std::set<int> _neighbours;

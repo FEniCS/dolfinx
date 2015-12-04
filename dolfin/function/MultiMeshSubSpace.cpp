@@ -1,4 +1,4 @@
-// Copyright (C) 2014 Anders Logg
+// Copyright (C) 2014-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-06-11
-// Last changed: 2014-06-11
+// Last changed: 2015-11-12
 
 #include <memory>
 
@@ -29,7 +29,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MultiMeshSubSpace::MultiMeshSubSpace(MultiMeshFunctionSpace& V,
                                      std::size_t component)
-  : MultiMeshFunctionSpace()
+  : MultiMeshFunctionSpace(V.multimesh())
 {
   // Create array
   std::vector<std::size_t> c = {component};
@@ -41,7 +41,7 @@ MultiMeshSubSpace::MultiMeshSubSpace(MultiMeshFunctionSpace& V,
 MultiMeshSubSpace::MultiMeshSubSpace(MultiMeshFunctionSpace& V,
                                      std::size_t component,
                                      std::size_t sub_component)
-  : MultiMeshFunctionSpace()
+  : MultiMeshFunctionSpace(V.multimesh())
 {
   // Create array
   std::vector<std::size_t> c = {{component, sub_component}};
@@ -52,7 +52,7 @@ MultiMeshSubSpace::MultiMeshSubSpace(MultiMeshFunctionSpace& V,
 //-----------------------------------------------------------------------------
 MultiMeshSubSpace::MultiMeshSubSpace(MultiMeshFunctionSpace& V,
                                      const std::vector<std::size_t>& component)
-  : MultiMeshFunctionSpace()
+  : MultiMeshFunctionSpace(V.multimesh())
 {
   // Build subspace
   _build(V, component);
@@ -85,6 +85,6 @@ void MultiMeshSubSpace::_build(MultiMeshFunctionSpace& V,
   }
 
   // Build multimesh function space from subspaces
-  this->build(V._multimesh, offsets);
+  this->build(offsets);
 }
 //-----------------------------------------------------------------------------

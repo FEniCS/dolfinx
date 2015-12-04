@@ -202,7 +202,7 @@ namespace dolfin
     ///         method to identify dofs.
     DirichletBC(std::shared_ptr<const FunctionSpace> V,
                 std::shared_ptr<const GenericFunction> g,
-                std::shared_ptr<const MeshFunction<std::size_t> > sub_domains,
+                std::shared_ptr<const MeshFunction<std::size_t>> sub_domains,
                 std::size_t sub_domain,
                 std::string method="topological");
 
@@ -368,7 +368,7 @@ namespace dolfin
     /// Return boundary markers
     ///
     /// *Returns*
-    ///     std::vector<std::pair<std::size_t, std::size_t> >
+    ///     std::vector<std::pair<std::size_t, std::size_t>>
     ///         Boundary markers (facets stored as pairs of cells and
     ///         local facet numbers).
     const std::vector<std::size_t>& markers() const;
@@ -515,11 +515,11 @@ namespace dolfin
 
     // Cells attached to boundary, stored by cell index with map to
     // local dof number
-    mutable std::map<std::size_t, std::vector<std::size_t> >
+    mutable std::map<std::size_t, std::vector<std::size_t>>
     _cells_to_localdofs;
 
     // User defined mesh function
-    std::shared_ptr<const MeshFunction<std::size_t> > _user_mesh_function;
+    std::shared_ptr<const MeshFunction<std::size_t>> _user_mesh_function;
 
     // User defined sub domain marker for mesh or mesh function
     std::size_t _user_sub_domain_marker;

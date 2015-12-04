@@ -28,7 +28,6 @@
 #include <dolfin/common/MPI.h>
 #include "TpetraVector.h"
 #include "TpetraMatrix.h"
-#include "GenericSparsityPattern.h"
 #include "SparsityPattern.h"
 #include "TensorLayout.h"
 #include "TpetraFactory.h"
@@ -86,9 +85,8 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   const std::size_t m = row_range.second - row_range.first;
 
   // Get sparsity pattern
-  dolfin_assert(tensor_layout.sparsity_pattern());
-  std::shared_ptr<const GenericSparsityPattern> sparsity_pattern
-    = tensor_layout.sparsity_pattern();
+  auto sparsity_pattern = tensor_layout.sparsity_pattern();
+  dolfin_assert(sparsity_pattern);
 
   // Initialize matrix
   // Insist on square Matrix for now
@@ -100,17 +98,21 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
 
   // Save the local row and column mapping, so we can use add_local
   // and set_local later with off-process entries
-  std::vector<dolfin::la_index> global_indices0
-    (tensor_layout.local_to_global_map[0].begin(),
-     tensor_layout.local_to_global_map[0].end());
+  std::vector<dolfin::la_index>
+    global_indices0(tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL));
+  for (std::size_t i = 0; i < global_indices0.size(); ++i)
+    global_indices0[i] = tensor_layout.index_map(0)->local_to_global(i);
+
   Teuchos::ArrayView<dolfin::la_index> _global_indices0(global_indices0);
   _row_map = Teuchos::rcp
     (new map_type(Teuchos::OrdinalTraits<dolfin::la_index>::invalid(),
                   _global_indices0, 0, _comm));
 
-  std::vector<dolfin::la_index> global_indices1
-    (tensor_layout.local_to_global_map[1].begin(),
-     tensor_layout.local_to_global_map[1].end());
+  std::vector<dolfin::la_index>
+    global_indices1(tensor_layout.index_map(1)->size(IndexMap::MapSize::ALL));
+  for (std::size_t i = 0; i < global_indices1.size(); ++i)
+    global_indices1[i] = tensor_layout.index_map(1)->local_to_global(i);
+
   Teuchos::ArrayView<dolfin::la_index> _global_indices1(global_indices1);
   _col_map = Teuchos::rcp
     (new map_type(Teuchos::OrdinalTraits<dolfin::la_index>::invalid(),
@@ -119,9 +121,9 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   // Make a Tpetra::CrsGraph of the sparsity_pattern
   typedef Tpetra::CrsGraph<> graph_type;
   std::vector<std::vector<std::size_t>> pattern_diag
-    = sparsity_pattern->diagonal_pattern(GenericSparsityPattern::unsorted);
+    = sparsity_pattern->diagonal_pattern(SparsityPattern::unsorted);
   std::vector<std::vector<std::size_t>> pattern_off
-    = sparsity_pattern->off_diagonal_pattern(GenericSparsityPattern::unsorted);
+    = sparsity_pattern->off_diagonal_pattern(SparsityPattern::unsorted);
 
   dolfin_assert(pattern_diag.size() == pattern_off.size());
   dolfin_assert(m == pattern_diag.size());
@@ -151,8 +153,8 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
                    pattern_off[i].end());
 
     Teuchos::ArrayView<dolfin::la_index> _indices(indices);
-    crs_graph->insertGlobalIndices(tensor_layout.local_to_global_map[0][i],
-                                _indices);
+    crs_graph->insertGlobalIndices
+      (tensor_layout.index_map(0)->local_to_global(i), _indices);
   }
 
   crs_graph->fillComplete();
@@ -597,7 +599,7 @@ void TpetraMatrix::get_diagonal(GenericVector& x) const
                  "get diagonal of a Tpetra matrix",
                  "Matrix and vector dimensions don't match for matrix-vector set");
   }
-  
+
   if (xx.vec()->getNumVectors() != 1)
   {
     dolfin_error("TpetraMatrix.cpp",
