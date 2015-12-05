@@ -55,7 +55,15 @@ if (EXISTS ${DOLFIN_USE_FILE})
       "Choose the type of build, options are: Debug MinSizeRel Release RelWithDebInfo." FORCE)
   endif()
 else()
-  # Building from within build tree, so necessary parameters are already set.
+  # Compiler definitions
+  add_definitions(${DOLFIN_CXX_DEFINITIONS})
+
+  # Compiler flags
+  set(CMAKE_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
+
+  # Include directories
+  include_directories(${DOLFIN_INCLUDE_DIRS})
+  include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 endif()
 
 # Executable
