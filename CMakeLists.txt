@@ -82,6 +82,9 @@ option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 option(DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py." OFF)
 
+# Add shared library paths so shared libs in non-system paths are found
+option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
+
 # Hande RPATH on OSX when not installing to a system directory, see
 # https://groups.google.com/d/msg/fenics-dev/KSCrob4M_1M/zsJwdN-SCAAJ
 # and https://cmake.org/Wiki/CMake_RPATH_handling#Always_full_RPATH.
