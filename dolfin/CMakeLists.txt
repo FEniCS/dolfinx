@@ -12,11 +12,6 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin/common/version.h
   )
 include_directories(${CMAKE_BINARY_DIR})
 
-#set(CMAKE_SKIP_BUILD_RPATH  FALSE)
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-# Macros
-
 #------------------------------------------------------------------------------
 # DOLFIN source directories
 
@@ -197,21 +192,12 @@ endif()
 if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
   include(${VTK_USE_FILE})
 
-  # The Macports VTK library includes some deprecated gcc code
-  if (APPLE)
-    set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} -Wno-deprecated")
-  endif()
-
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_VTK")
   list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
 
-  foreach (lib ${VTK_LIBRARIES})
-    list(APPEND DOLFIN_VTK_LIBRARIES ${lib})
-  endforeach()
-
   # Append to EXTRA libraries, so they are not linked with demos (this
   # fails with VTK6 unless the vtk macros are also installed).
-  list(APPEND DOLFIN_EXTRA_TARGET_LINK_LIBRARIES ${DOLFIN_VTK_LIBRARIES})
+  list(APPEND DOLFIN_EXTRA_TARGET_LINK_LIBRARIES ${VTK_LIBRARIES})
 endif()
 
 #------------------------------------------------------------------------------
