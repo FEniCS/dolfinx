@@ -72,7 +72,7 @@ namespace dolfin
 
     /// Set local_to_global map for unowned indices
     /// (beyond end of local range)
-    void set_local_to_global(std::vector<std::size_t>& indices);
+    void set_local_to_global(const std::vector<std::size_t>& indices);
 
     /// Get off process owner for unowned indices
     const std::vector<int>& off_process_owner() const;

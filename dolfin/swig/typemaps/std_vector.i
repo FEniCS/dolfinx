@@ -750,19 +750,7 @@ IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, facets,
                                                   std_size_t)
 #endif
 
-// Typemaps for GenericSparsityPattern interface
-#if (DOLFIN_SIZE_T==4)
-IN_TYPEMAP_STD_VECTOR_OF_ARRAYVIEW_OF_PRIMITIVES(const std::size_t, INT32,
-                                                 local_to_global, NPY_UINTP,
-                                                 uintp)
-#else
-IN_TYPEMAP_STD_VECTOR_OF_ARRAYVIEW_OF_PRIMITIVES(const std::size_t, INT64,
-                                                 local_to_global, NPY_UINTP,
-                                                 uintp)
-#endif
-IN_TYPEMAP_STD_VECTOR_OF_ARRAYVIEW_OF_PRIMITIVES(const int, INT32,
-                                                 off_process_owner, NPY_INT,
-                                                 intc)
+// Typemaps for SparsityPattern::insert_local/global
 #if (DOLFIN_LA_INDEX_SIZE==4)
 IN_TYPEMAP_STD_VECTOR_OF_ARRAYVIEW_OF_PRIMITIVES(const dolfin::la_index, INT32,
                                                  entries, NPY_INT, int32)

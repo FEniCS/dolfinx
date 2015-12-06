@@ -128,7 +128,7 @@ std::size_t IndexMap::local_to_global(std::size_t i) const
   }
 }
 //-----------------------------------------------------------------------------
-void IndexMap::set_local_to_global(std::vector<std::size_t>& indices)
+void IndexMap::set_local_to_global(const std::vector<std::size_t>& indices)
 {
   _local_to_global = indices;
 
