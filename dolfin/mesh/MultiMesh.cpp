@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-12-02
+// Last changed: 2015-12-05
 
 #include <dolfin/log/log.h>
 #include <dolfin/plot/plot.h>
@@ -2159,20 +2159,38 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
       _quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
       _facet_normals[cut_part][cut_cell_index] = interface_n;
 
-#ifdef Augustdebug
-      std::cout << "summary for cut part and cut cell index " << cut_part << " " << cut_cell_index << std::endl;
-      std::cout << "interface_qr.size() = " << interface_qr.size() << std::endl;
-      std::size_t cnt = 0;
-      for (const auto dqr: interface_qr)
+      //#ifdef Augustdebug
       {
-	std::cout << cnt++ << std::endl;
-	for (std::size_t i = 0; i < dqr.second.size(); ++i)
+	//std::cout << "summary for cut part and cut cell index " << cut_part << " " << cut_cell_index << std::endl;
+	//std::cout << "interface_qr.size() = " << interface_qr.size() << std::endl;
+	std::cout << tools::drawtriangle(cut_cell)<<'\n';
+	const auto& cmap = collision_map_cut_cells(cut_part);
+	for (auto it = cmap.begin(); it != cmap.end(); ++it)
 	{
-	  std::cout << "plot(" << dqr.first[2*i]<<","<<dqr.first[2*i+1]<<",'ro'); # "<<dqr.second[i]<<' '<<i<<std::endl;
+	  // Loop over all cutting cells
+	  for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
+	  {
+	    // Get cutting part and cutting cell
+	    const std::size_t cutting_part_j = jt->first;
+	    const std::size_t cutting_cell_index_j = jt->second;
+	    const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
+	    std::cout << tools::drawtriangle(cutting_cell_j)<<'\n';
+	  }
 	}
+	std::cout << '\n';
+	//std::size_t cnt = 0;
+	for (const auto dqr: interface_qr)
+	{
+	  //std::cout << cnt++ << std::endl;
+	  for (std::size_t i = 0; i < dqr.second.size(); ++i)
+	  {
+	    const std::string m = dqr.second[i] > 0 ? "'r.'" : "'go'";
+	    std::cout<<std::setprecision(15) << "plot(" << dqr.first[2*i]<<","<<dqr.first[2*i+1]<<','<<m<<"); % "<<dqr.second[i]<<' '<<i<<std::endl;
+	  }
+	}
+	//PPause;
       }
-      PPause;
-#endif
+      //#endif
 
     }
   }
