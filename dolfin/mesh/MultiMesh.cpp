@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2015-12-05
+// Last changed: 2015-12-06
 
 #include <dolfin/log/log.h>
 #include <dolfin/plot/plot.h>
@@ -242,10 +242,10 @@ void MultiMesh::build(std::size_t quadrature_order)
 
   // Build quadrature rules of the cut cells' overlap. Do this before
   // we build the quadrature rules of the cut cells
-  _build_quadrature_rules_overlap(quadrature_order);
+  //_build_quadrature_rules_overlap(quadrature_order);
 
   // Build quadrature rules of the cut cells
-  _build_quadrature_rules_cut_cells(quadrature_order);
+  //_build_quadrature_rules_cut_cells(quadrature_order);
 
   // FIXME:
   _build_quadrature_rules_interface(quadrature_order);
@@ -2161,23 +2161,26 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 
       //#ifdef Augustdebug
       {
-	//std::cout << "summary for cut part and cut cell index " << cut_part << " " << cut_cell_index << std::endl;
-	//std::cout << "interface_qr.size() = " << interface_qr.size() << std::endl;
-	std::cout << tools::drawtriangle(cut_cell)<<'\n';
-	const auto& cmap = collision_map_cut_cells(cut_part);
-	for (auto it = cmap.begin(); it != cmap.end(); ++it)
-	{
-	  // Loop over all cutting cells
-	  for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
-	  {
-	    // Get cutting part and cutting cell
-	    const std::size_t cutting_part_j = jt->first;
-	    const std::size_t cutting_cell_index_j = jt->second;
-	    const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
-	    std::cout << tools::drawtriangle(cutting_cell_j)<<'\n';
-	  }
-	}
-	std::cout << '\n';
+	std::cout << "\n\nsummary for cut part and cut cell index " << cut_part << " " << cut_cell_index << std::endl;
+	std::cout << "interface_qr.size() = " << interface_qr.size() << std::endl;
+	std::cout << tools::drawtriangle(cut_cell,"'b'",true)<<'\n';
+	// const auto& cmap = collision_map_cut_cells(cut_part);
+	// for (auto it = cmap.begin(); it != cmap.end(); ++it)
+	// {
+	//   if (it->first == cut_cell_index)
+	//   {
+	//     // Loop over all cutting cells
+	//     for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
+	//     {
+	//       // Get cutting part and cutting cell
+	//       const std::size_t cutting_part_j = jt->first;
+	//       const std::size_t cutting_cell_index_j = jt->second;
+	//       const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
+	//       std::cout << tools::drawtriangle(cutting_cell_j,"'r'",true);
+	//     }
+	//     std::cout << '\n';
+	//   }
+	// }
 	//std::size_t cnt = 0;
 	for (const auto dqr: interface_qr)
 	{
@@ -2189,6 +2192,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	  }
 	}
 	//PPause;
+	//if (cut_cell_index==487 or cut_cell_index==446) { PPause; }
       }
       //#endif
 
