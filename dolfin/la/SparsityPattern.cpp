@@ -34,7 +34,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(std::size_t primary_dim)
-  : GenericSparsityPattern(primary_dim), _mpi_comm(MPI_COMM_NULL)
+  : _primary_dim(primary_dim), _mpi_comm(MPI_COMM_NULL)
 {
   // Do nothing
 }
@@ -43,7 +43,7 @@ SparsityPattern::SparsityPattern(
   const MPI_Comm mpi_comm,
   const std::vector<std::shared_ptr<const IndexMap>> index_maps,
   std::size_t primary_dim)
-  : GenericSparsityPattern(primary_dim), _mpi_comm(MPI_COMM_NULL)
+  : _primary_dim(primary_dim), _mpi_comm(MPI_COMM_NULL)
 {
   init(mpi_comm, index_maps);
 }

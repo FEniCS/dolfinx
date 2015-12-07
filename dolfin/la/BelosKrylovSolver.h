@@ -98,7 +98,7 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     /// Return Belos pointer
-    //    Teuchos::RCP<Belos::SolverManager<> > ksp() const;
+    //    Teuchos::RCP<Belos::SolverManager<>> ksp() const;
 
     /// Return a list of available solver methods
     static std::map<std::string, std::string> methods();

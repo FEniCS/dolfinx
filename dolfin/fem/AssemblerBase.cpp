@@ -64,7 +64,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     dolfin_assert(tensor_layout);
 
     // Get dimensions and mapping across processes for each dimension
-    std::vector<std::shared_ptr<const IndexMap> > index_maps;
+    std::vector<std::shared_ptr<const IndexMap>> index_maps;
     for (std::size_t i = 0; i < a.rank(); i++)
     {
       dolfin_assert(dofmaps[i]);
@@ -83,7 +83,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     // Build sparsity pattern if required
     if (tensor_layout->sparsity_pattern())
     {
-      GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+      SparsityPattern& pattern = *tensor_layout->sparsity_pattern();
       SparsityPatternBuilder::build(pattern,
                                 a.mesh(), dofmaps,
                                 a.ufc_form()->has_cell_integrals(),
