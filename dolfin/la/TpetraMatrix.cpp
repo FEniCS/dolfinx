@@ -158,7 +158,8 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
       (tensor_layout.index_map(0)->local_to_global(i), _indices);
   }
 
-  crs_graph->fillComplete();
+  crs_graph->fillComplete(_col_map, _row_map);
+
   _matA = Teuchos::rcp(new matrix_type(crs_graph));
 }
 //-----------------------------------------------------------------------------
@@ -232,7 +233,11 @@ void TpetraMatrix::init_vector(GenericVector& z, std::size_t dim) const
                  "Dimension must be 0 or 1, not %d", dim);
   }
 
-  _z._x = Teuchos::rcp(new TpetraVector::vector_type(_map, 1));
+  _z._x_ghosted = Teuchos::rcp(new TpetraVector::vector_type(_map, 1));
+  dolfin_assert(!_z._x_ghosted.is_null());
+
+  // Get a modifiable view into the ghosted vector
+  _z._x = _z._x_ghosted->offsetViewNonConst(_map, 0);
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::get(double* block,

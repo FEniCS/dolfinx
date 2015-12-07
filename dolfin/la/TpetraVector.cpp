@@ -63,14 +63,13 @@ TpetraVector::~TpetraVector()
 //-----------------------------------------------------------------------------
 void TpetraVector::zero()
 {
-  dolfin_assert(!_x.is_null());
+  dolfin_assert(!_x_ghosted.is_null());
   _x_ghosted->putScalar(0.0);
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::apply(std::string mode)
 {
   dolfin_assert(!_x.is_null());
-  std::cout << "Apply called with: " << mode << "\n";
 
   Teuchos::RCP<const map_type> xmap(_x->getMap());
   Teuchos::RCP<vector_type> y(new vector_type(xmap, 1));
@@ -474,8 +473,8 @@ double TpetraVector::sum(const Array<std::size_t>& rows) const
 //-----------------------------------------------------------------------------
 const TpetraVector& TpetraVector::operator*= (double a)
 {
-  dolfin_assert(!_x_ghosted.is_null());
-  _x_ghosted->scale(a);
+  dolfin_assert(!_x.is_null());
+  _x->scale(a);
   return *this;
 }
 //-----------------------------------------------------------------------------
