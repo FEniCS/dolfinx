@@ -80,6 +80,9 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   dolfin_assert(tensor_layout.rank() == 2);
   const std::size_t M = tensor_layout.size(0);
   const std::size_t N = tensor_layout.size(1);
+
+  std::cout << "M = " << M << " N = " << N << "\n";
+
   const std::pair<std::size_t, std::size_t> row_range
     = tensor_layout.local_range(0);
   const std::size_t m = row_range.second - row_range.first;
@@ -89,8 +92,6 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   dolfin_assert(sparsity_pattern);
 
   // Initialize matrix
-  // Insist on square Matrix for now
-  dolfin_assert(M == N);
 
   // Set up MPI Comm
   Teuchos::RCP<const Teuchos::Comm<int>>
@@ -174,9 +175,9 @@ std::size_t TpetraMatrix::size(std::size_t dim) const
   if (_matA.is_null())
     num_elements = 0;
   else if (dim == 0)
-    num_elements = _matA->getRangeMap()->getGlobalNumElements();
+    num_elements = _matA->getRowMap()->getGlobalNumElements();
   else
-    num_elements = _matA->getDomainMap()->getGlobalNumElements();
+    num_elements = _matA->getColMap()->getGlobalNumElements();
 
   return num_elements;
 }
@@ -636,19 +637,17 @@ void TpetraMatrix::set_diagonal(const GenericVector& x)
 double TpetraMatrix::norm(std::string norm_type) const
 {
   dolfin_assert(!_matA.is_null());
-  dolfin_not_implemented();
 
-  // Check that norm is known
-  // if (norm_types.count(norm_type) == 0)
-  // {
-  //   dolfin_error("TpetraMatrix.cpp",
-  //                "compute norm of Tpetra matrix",
-  //                "Unknown norm type (\"%s\")", norm_type.c_str());
-  // }
+  if (norm_type == "frobenius")
+    return _matA->getFrobeniusNorm();
+  else
+  {
+       dolfin_error("TpetraMatrix.cpp",
+                    "compute norm of Tpetra matrix",
+                    "Unknown norm type (\"%s\")", norm_type.c_str());
+  }
 
-  double value = 0.0;
-
-  return value;
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::apply(std::string mode)

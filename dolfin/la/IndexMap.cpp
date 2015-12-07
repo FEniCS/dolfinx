@@ -22,12 +22,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap()
+IndexMap::IndexMap() : _block_size(1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm mpi_comm) :  _mpi_comm(mpi_comm), _block_size(1)
+IndexMap::IndexMap(MPI_Comm mpi_comm) : _mpi_comm(mpi_comm), _block_size(1)
 {
   // Do nothing
 }

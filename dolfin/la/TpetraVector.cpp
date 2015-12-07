@@ -396,7 +396,7 @@ void TpetraVector::axpy(double a, const GenericVector& y)
   dolfin_assert(!_x_ghosted.is_null());
   const TpetraVector& _y = as_type<const TpetraVector>(y);
   dolfin_assert(!_y._x_ghosted.is_null());
-  _x_ghosted->update(1.0, *_y._x_ghosted, a);
+  _x_ghosted->update(a, *_y._x_ghosted, 1.0);
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::abs()

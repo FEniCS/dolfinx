@@ -51,6 +51,7 @@
 #include <dolfin/la/EigenFactory.h>
 #include <dolfin/la/PETScUserPreconditioner.h>
 #include <dolfin/la/PETScFactory.h>
+#include <dolfin/la/TpetraFactory.h>
 #include <dolfin/la/STLFactory.h>
 #include <dolfin/la/SLEPcEigenSolver.h>
 #include <dolfin/la/Vector.h>
