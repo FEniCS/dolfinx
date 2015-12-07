@@ -11,11 +11,13 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
   # Need to get VTK config because VTK uses advanced VTK features
   # which mean it's not enough to just link to the DOLFIN target. See
   # http://www.vtk.org/pipermail/vtk-developers/2013-October/014402.html
-  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
-    vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
-    NO_MODULE QUIET)
-  if (VTK_FOUND)
-    include(${VTK_USE_FILE})
+  if (@VTK_FOUND@)
+    find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
+      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
+      NO_MODULE QUIET)
+    if (VTK_FOUND)
+      include(${VTK_USE_FILE})
+    endif()
   endif()
 
   # Add compiler definitions needed to use DOLFIN
