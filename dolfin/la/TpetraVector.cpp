@@ -69,6 +69,18 @@ void TpetraVector::zero()
 //-----------------------------------------------------------------------------
 void TpetraVector::apply(std::string mode)
 {
+  if (mode == "insert")
+  {
+    update_ghost_values();
+    return;
+  }
+  else if (mode != "add")
+  {
+    dolfin_error("TpetraVector.cpp",
+                 "finalise vector",
+                 "Unknown mode \"%s\"", mode.c_str());
+  }
+
   dolfin_assert(!_x.is_null());
 
   Teuchos::RCP<const map_type> xmap(_x->getMap());
@@ -79,14 +91,14 @@ void TpetraVector::apply(std::string mode)
   Tpetra::Export<dolfin::la_index> exporter(ghostmap, xmap);
 
   // Forward export to reduction vector
-  if (mode == "add")
-    y->doExport(*_x_ghosted, exporter, Tpetra::ADD);
-  else if (mode == "insert")
-    y->doExport(*_x_ghosted, exporter, Tpetra::INSERT);
+  y->doExport(*_x_ghosted, exporter, Tpetra::ADD);
 
-  // Copy back into _x
-  std::copy(y->getData(0).begin(), y->getData(0).end(),
-            _x->getDataNonConst(0).begin());
+  // Copy back into _x_ghosted
+  Tpetra::Import<dolfin::la_index> importer(xmap, ghostmap);
+  _x_ghosted->doImport(*y, importer, Tpetra::INSERT);
+
+  //  std::copy(y->getData(0).begin(), y->getData(0).end(),
+  //            _x->getDataNonConst(0).begin());
 }
 //-----------------------------------------------------------------------------
 MPI_Comm TpetraVector::mpi_comm() const
@@ -248,17 +260,18 @@ void TpetraVector::set(const double* block, std::size_t m,
 void TpetraVector::set_local(const double* block, std::size_t m,
                              const dolfin::la_index* rows)
 {
-  dolfin_assert(!_x_ghosted.is_null());
+  dolfin_assert(!_x.is_null());
   for (std::size_t i = 0; i != m; ++i)
   {
-    if(_x_ghosted->getMap()->isNodeLocalElement(rows[i]))
-      _x_ghosted->replaceLocalValue(rows[i], 0, block[i]);
+    if(_x->getMap()->isNodeLocalElement(rows[i]))
+      _x->replaceLocalValue(rows[i], 0, block[i]);
     else
     {
       dolfin_error("TpetraVector.cpp", "set data",
                    "Row %d not valid", rows[i]);
     }
   }
+
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::add(const double* block, std::size_t m,
@@ -650,6 +663,11 @@ void TpetraVector::mapdump(Teuchos::RCP<const map_type> xmap,
       ss << " ";
   }
   ss << "\n";
+
+  for (std::size_t j = 0; j != xmap->getNodeNumElements(); ++j)
+    ss << j << " -> " << xmap->getGlobalElement(j) << "\n";
+  ss << "\n";
+
 
   const Teuchos::RCP<const Teuchos::MpiComm<int>> _mpi_comm
     = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(xmap()->getComm());

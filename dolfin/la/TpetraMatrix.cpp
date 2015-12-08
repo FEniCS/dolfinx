@@ -176,9 +176,10 @@ std::size_t TpetraMatrix::size(std::size_t dim) const
   if (_matA.is_null())
     num_elements = 0;
   else if (dim == 0)
-    num_elements = _matA->getRowMap()->getGlobalNumElements();
+    num_elements = _matA->getRowMap()->getMaxAllGlobalIndex() + 1;
   else
-    num_elements = _matA->getColMap()->getGlobalNumElements();
+    num_elements = _matA->getColMap()->getMaxAllGlobalIndex() + 1;
+
 
   return num_elements;
 }
