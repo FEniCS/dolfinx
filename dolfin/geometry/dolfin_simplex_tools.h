@@ -46,10 +46,17 @@ namespace tools
 
   inline double area(const std::vector<dolfin::Point> &simplex)
   {
-    const auto tri=simplex;
-    const dolfin::Point et=tri[1]-tri[0];
-    const dolfin::Point es=tri[2]-tri[0];
-    return Heron(et.norm(), es.norm(), (et-es).norm());
+    if (simplex.size() == 3)
+    {
+      const dolfin::Point et=simplex[1]-simplex[0];
+      const dolfin::Point es=simplex[2]-simplex[0];
+      return Heron(et.norm(), es.norm(), (et-es).norm());
+    }
+    else if (simplex.size() == 2)
+    {
+      return (simplex[0]-simplex[1]).norm();
+    }
+    else { PPause; return -9e99; }
 
     /* if (simplex.size() == 3) */
     /* { */

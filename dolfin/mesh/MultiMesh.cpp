@@ -35,7 +35,7 @@
 #include <iomanip>
 
 #define Augustcheckqrpositive
-//#define Augustdebug
+// #define Augustdebug
 // #define Augustnormaldebug
 
 using namespace dolfin;
@@ -242,10 +242,10 @@ void MultiMesh::build(std::size_t quadrature_order)
 
   // Build quadrature rules of the cut cells' overlap. Do this before
   // we build the quadrature rules of the cut cells
-  //_build_quadrature_rules_overlap(quadrature_order);
+  _build_quadrature_rules_overlap(quadrature_order);
 
   // Build quadrature rules of the cut cells
-  //_build_quadrature_rules_cut_cells(quadrature_order);
+  _build_quadrature_rules_cut_cells(quadrature_order);
 
   // FIXME:
   _build_quadrature_rules_interface(quadrature_order);
@@ -1727,11 +1727,11 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
-    for (auto it = cmap.begin(); it != cmap.end(); ++it)
-      //if (cut_part == 0 and it->first == 16)
+    for (auto it = cmap.begin(); it !=cmap.end(); ++it)
+      //if (cut_part == 0 and it->first == 486)
     {
 #ifdef Augustdebug
-      std::cout << "-------- new cut cell\n";
+      std::cout << "-------- new cut cell "<< it->first << '\n';
 #endif
       // Get cut cell
       const unsigned int cut_cell_index = it->first;
@@ -1756,8 +1756,9 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 #ifdef Augustdebug
 	std::cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n";
 	std::cout << "\ncut cutting (cut = " << cut_part << " cutting part_j=" << cutting_part_j << ")\n"
-		  << tools::drawtriangle(cut_cell,"'y'") << tools::drawtriangle(cutting_cell_j,"'m'")<<std::endl;
+		  << tools::drawtriangle(cut_cell,"'y'") << tools::drawtriangle(cutting_cell_j,"'m'")<<tools::zoom()<<std::endl;
 #endif
+
 #ifdef Augustnormaldebug
 	std::cout << "the FACET normals are:\n ";
 	for (auto boundary_cell_index : full_to_bdry[cutting_part_j][cutting_cell_index_j])
@@ -1820,6 +1821,8 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 
 #ifdef Augustdebug
 	  {
+	    std::cout << "intersection of:\n";
+	    std::cout << tools::drawtriangle(cut_cell,"'b'")<<tools::drawtriangle(boundary_cell,"'r'")<<tools::zoom()<<'\n';
 	    const auto intersection = triangulation_cut_boundary;
 	    std::cout << "% intersection (size="<<intersection.size()<<": ";
 	    for (std::size_t i = 0; i < intersection.size(); ++i)
@@ -1836,12 +1839,16 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	      std::cout << "];"<<std::endl;
 	    }
 	  }
-	  PPause;
+	  //PPause;
 #endif
 	  // Test only include large lines
 	  double length = 0;
 	  for (const auto simplex: polygon)
 	    length += std::abs(tools::area(simplex));
+#ifdef Augustdebug
+	  std::cout << "length " << length << '\n';
+#endif
+
 	  if (std::isfinite(length))
 	  {
 	    // Get the boundary facet as a facet in the full mesh
@@ -1884,6 +1891,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	// also cut_cutting_normals temporarily save normals:
 	std::cout << cut_cutting_interface.size() << ' ' << cut_cutting_normals.size() << std::endl;
 	dolfin_assert(cut_cutting_interface.size() == cut_cutting_normals.size());
+//PPause;
 #endif
 
 #ifdef Augustnormaldebug
@@ -1892,6 +1900,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	  std::cout << i << ":   "<< cut_cutting_interface_n[2*i]<<' '<<cut_cutting_interface_n[2*i+1] << std::endl;
 	PPause;
 #endif
+
 
 	// Now subtract the net contribution from all other cutting
 	// elements. By net contribution we mean the
@@ -2151,7 +2160,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	    std::cout << cut_cutting_interface_n[i*gdim+j] << ' ';
 	  std::cout << std::endl;
 	}
-	PPause;
+	      //PPause;
 #endif
 
       } // end loop over cutting
@@ -2159,42 +2168,42 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
       _quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
       _facet_normals[cut_part][cut_cell_index] = interface_n;
 
-      //#ifdef Augustdebug
-      {
+ #ifdef Augustcheckqrpositive
+     {
 	std::cout << "\n\nsummary for cut part and cut cell index " << cut_part << " " << cut_cell_index << std::endl;
 	std::cout << "interface_qr.size() = " << interface_qr.size() << std::endl;
 	std::cout << tools::drawtriangle(cut_cell,"'b'",true)<<'\n';
-	// const auto& cmap = collision_map_cut_cells(cut_part);
-	// for (auto it = cmap.begin(); it != cmap.end(); ++it)
-	// {
-	//   if (it->first == cut_cell_index)
-	//   {
-	//     // Loop over all cutting cells
-	//     for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
-	//     {
-	//       // Get cutting part and cutting cell
-	//       const std::size_t cutting_part_j = jt->first;
-	//       const std::size_t cutting_cell_index_j = jt->second;
-	//       const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
-	//       std::cout << tools::drawtriangle(cutting_cell_j,"'r'",true);
-	//     }
-	//     std::cout << '\n';
-	//   }
-	// }
-	//std::size_t cnt = 0;
-	for (const auto dqr: interface_qr)
+	const auto& cmap = collision_map_cut_cells(cut_part);
+	for (auto it = cmap.begin(); it != cmap.end(); ++it)
 	{
-	  //std::cout << cnt++ << std::endl;
-	  for (std::size_t i = 0; i < dqr.second.size(); ++i)
+	  if (it->first == cut_cell_index)
 	  {
-	    const std::string m = dqr.second[i] > 0 ? "'r.'" : "'go'";
-	    std::cout<<std::setprecision(15) << "plot(" << dqr.first[2*i]<<","<<dqr.first[2*i+1]<<','<<m<<"); % "<<dqr.second[i]<<' '<<i<<std::endl;
+	    // Loop over all cutting cells
+	    for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
+	    {
+	      // Get cutting part and cutting cell
+	      const std::size_t cutting_part_j = jt->first;
+	      const std::size_t cutting_cell_index_j = jt->second;
+	      const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
+	      std::cout << tools::drawtriangle(cutting_cell_j,"'r'",true);
+	    }
+	    std::cout << '\n';
 	  }
 	}
-	//PPause;
-	//if (cut_cell_index==487 or cut_cell_index==446) { PPause; }
+	std::size_t cnt = 0;
+	for (const auto dqr: interface_qr)
+	{
+	  for (std::size_t i = 0; i < dqr.second.size(); ++i)
+	  {
+	    cnt++;
+	    const std::string m = dqr.second[i] > 0 ? "'rx'" : "'go'";
+	    std::cout<<std::setprecision(15) << "plot(" << dqr.first[2*i]<<","<<dqr.first[2*i+1]<<','<<m<<",'markersize',14); % "<<dqr.second[i]<<' '<<i<<std::endl;
+	  }
+	}
+	if (cnt==0) { PPause; }
+	//if (cut_cell_index==486 or cut_cell_index==488) { PPause; }
       }
-      //#endif
+#endif
 
     }
   }
