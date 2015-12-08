@@ -73,15 +73,30 @@ void SparsityPattern::init(
                  "Primary dimension must be less than 2 (0=row major, 1=column major");
   }
 
-  const std::size_t local_size
+  const std::size_t local_size0
     = index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
 
+  const std::size_t primary_codim = _primary_dim == 0 ? 1 : 0;
+  const std::size_t local_size1
+    = index_maps[primary_codim]->size(IndexMap::MapSize::OWNED);
+  const std::size_t global_size1
+    = index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
+
   // Resize diagonal block
-  diagonal.resize(local_size);
+  diagonal.resize(local_size0);
 
   // Resize off-diagonal block (only needed when local range != global
   // range)
-  off_diagonal.resize(local_size);
+  if (global_size1 > local_size1)
+  {
+    dolfin_assert(MPI::size(_mpi_comm) > 1);
+    off_diagonal.resize(local_size0);
+  }
+  else
+  {
+    dolfin_assert(global_size1 == local_size1);
+    dolfin_assert(MPI::size(_mpi_comm) == 1);
+  }
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(dolfin::la_index i, dolfin::la_index j)

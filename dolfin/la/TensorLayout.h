@@ -50,15 +50,15 @@ namespace dolfin
     TensorLayout(std::size_t primary_dim, Sparsity sparsity_pattern);
 
     /// Create a tensor layout
-    TensorLayout(const MPI_Comm mpi_comm,
-                 const std::vector<std::shared_ptr<const IndexMap>>& index_maps,
+    TensorLayout(MPI_Comm mpi_comm,
+                 std::vector<std::shared_ptr<const IndexMap>> index_maps,
                  std::size_t primary_dim,
                  Sparsity sparsity_pattern,
                  Ghosts ghosted);
 
     /// Initialize tensor layout
-    void init(const MPI_Comm mpi_comm,
-              const std::vector<std::shared_ptr<const IndexMap>>& index_maps,
+    void init(MPI_Comm mpi_comm,
+              std::vector<std::shared_ptr<const IndexMap>> index_maps,
               Ghosts ghosted);
 
     /// Return rank

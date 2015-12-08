@@ -57,15 +57,13 @@ namespace dolfin
     SparsityPattern(std::size_t primary_dim);
 
     /// Create sparsity pattern for a generic tensor
-    SparsityPattern(
-      const MPI_Comm mpi_comm,
-      const std::vector<std::shared_ptr<const IndexMap>> index_maps,
-      const std::size_t primary_dim);
+    SparsityPattern(MPI_Comm mpi_comm,
+                    std::vector<std::shared_ptr<const IndexMap>> index_maps,
+                    std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
-    void init(
-      const MPI_Comm mpi_comm,
-      const std::vector<std::shared_ptr<const IndexMap>> index_maps);
+    void init(MPI_Comm mpi_comm,
+              std::vector<std::shared_ptr<const IndexMap>> index_maps);
 
     /// Insert a global entry - will be fixed by apply()
     void insert_global(dolfin::la_index i, dolfin::la_index j);
@@ -99,7 +97,9 @@ namespace dolfin
 
     /// Fill array with number of nonzeros for off-diagonal block in
     /// local_range for dimension 0. For matrices, fill array with
-    /// number of nonzeros per local row for off-diagonal block
+    /// number of nonzeros per local row for off-diagonal block. If
+    /// there is no off-diagonal pattern, the vector is resized to
+    /// zero-length
     void
       num_nonzeros_off_diagonal(std::vector<std::size_t>& num_nonzeros) const;
 
