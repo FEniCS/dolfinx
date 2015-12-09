@@ -123,6 +123,9 @@ namespace dolfin
                                       std::size_t dim,
                                       std::size_t local_entity) const = 0;
 
+    /// Tabulate globally supported dofs
+    virtual void tabulate_global_dofs(std::vector<std::size_t>& dofs) const = 0;
+
     /// Create a copy of the dof map
     virtual std::shared_ptr<GenericDofMap> copy() const = 0;
 

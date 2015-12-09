@@ -76,6 +76,12 @@ namespace dolfin
     void insert_local(const std::vector<
                       ArrayView<const dolfin::la_index>>& entries);
 
+    /// Insert full rows (or columns, according to primary dimension)
+    /// using local (process-wise) indices. This must be called before
+    /// any other sparse insertion occurs to avoid quadratic complexity
+    /// of dense rows insertion
+    void insert_full_rows_local(const std::vector<std::size_t>& rows);
+
     /// Return rank
     std::size_t rank() const;
 
@@ -146,6 +152,13 @@ namespace dolfin
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;
     std::vector<set_type> off_diagonal;
+
+    // List of full rows (or columns, according to primary dimension).
+    // Full rows are kept separately to circumvent quadratic scaling
+    // (caused by linear insertion time into dolfin::Set; std::set has
+    // logarithmic insertion, which would result in N log(N) overall
+    // complexity for dense rows)
+    set_type full_rows;
 
     // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
     std::vector<std::size_t> non_local;
