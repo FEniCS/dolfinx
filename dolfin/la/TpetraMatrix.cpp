@@ -81,11 +81,15 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   const std::size_t M = tensor_layout.size(0);
   const std::size_t N = tensor_layout.size(1);
 
-  std::cout << "M = " << M << " N = " << N << "\n";
+  //  std::cout << "M = " << M << " N = " << N << "\n";
 
   const std::pair<std::size_t, std::size_t> row_range
     = tensor_layout.local_range(0);
   const std::size_t m = row_range.second - row_range.first;
+
+  const std::pair<std::size_t, std::size_t> col_range
+    = tensor_layout.local_range(1);
+  const std::size_t n = col_range.second - col_range.first;
 
   // Get sparsity pattern
   auto sparsity_pattern = tensor_layout.sparsity_pattern();
@@ -96,6 +100,9 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   // Set up MPI Comm
   Teuchos::RCP<const Teuchos::Comm<int>>
     _comm(new Teuchos::MpiComm<int>(sparsity_pattern->mpi_comm()));
+
+  Teuchos::RCP<const map_type> range_map(new map_type(M, m, 0, _comm));
+  Teuchos::RCP<const map_type> domain_map(new map_type(N, n, 0, _comm));
 
   // Save the local row and column mapping, so we can use add_local
   // and set_local later with off-process entries
@@ -158,7 +165,7 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
       (tensor_layout.index_map(0)->local_to_global(i), _indices);
   }
 
-  crs_graph->fillComplete(_col_map, _row_map);
+  crs_graph->fillComplete(domain_map, range_map);
 
   _matA = Teuchos::rcp(new matrix_type(crs_graph));
 }
@@ -224,9 +231,23 @@ void TpetraMatrix::init_vector(GenericVector& z, std::size_t dim) const
 
   Teuchos::RCP<const map_type> _map;
   if (dim == 0)
+  {
     _map =_matA->getRangeMap();
+    dolfin_assert(_map->isOneToOne());
+    _z._x_ghosted = Teuchos::rcp(new TpetraVector::vector_type(_map, 1));
+    dolfin_assert(!_z._x_ghosted.is_null());
+    // Get a modifiable view into the ghosted vector
+    _z._x = _z._x_ghosted->offsetViewNonConst(_map, 0);
+  }
   else if (dim == 1)
+  {
     _map = _matA->getDomainMap();
+    dolfin_assert(_map->isOneToOne());
+    _z._x_ghosted = Teuchos::rcp(new TpetraVector::vector_type(_map, 1));
+    dolfin_assert(!_z._x_ghosted.is_null());
+    // Get a modifiable view into the ghosted vector
+    _z._x = _z._x_ghosted->offsetViewNonConst(_map, 0);
+  }
   else
   {
     dolfin_error("TpetraMatrix.cpp",
@@ -234,11 +255,6 @@ void TpetraMatrix::init_vector(GenericVector& z, std::size_t dim) const
                  "Dimension must be 0 or 1, not %d", dim);
   }
 
-  _z._x_ghosted = Teuchos::rcp(new TpetraVector::vector_type(_map, 1));
-  dolfin_assert(!_z._x_ghosted.is_null());
-
-  // Get a modifiable view into the ghosted vector
-  _z._x = _z._x_ghosted->offsetViewNonConst(_map, 0);
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::get(double* block,
@@ -581,7 +597,7 @@ void TpetraMatrix::transpmult(const GenericVector& x, GenericVector& y) const
                  "Vector for transpose matrix-vector result has wrong size");
   }
 
-  _matA->apply(*xx._x, *yy._x, Teuchos::TRANS);
+  _matA->apply(*xx._x, *yy._x_ghosted, Teuchos::TRANS);
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::get_diagonal(GenericVector& x) const
@@ -683,7 +699,8 @@ MPI_Comm TpetraMatrix::mpi_comm() const
 void TpetraMatrix::zero()
 {
   dolfin_assert(!_matA.is_null());
-  dolfin_assert(!_matA->isFillComplete());
+  if(_matA->isFillComplete())
+    _matA->resumeFill();
   _matA->setAllToScalar(0.0);
 }
 //-----------------------------------------------------------------------------
