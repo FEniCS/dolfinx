@@ -52,7 +52,9 @@ TpetraMatrix::TpetraMatrix(Teuchos::RCP<matrix_type> A) : _matA(A)
 //-----------------------------------------------------------------------------
 TpetraMatrix::TpetraMatrix(const TpetraMatrix& A)
 {
-  dolfin_assert(!A._matA.is_null());
+  // Copy NULL to NULL
+  if(A._matA.is_null())
+    return;
 
   _matA = A._matA->clone(A._matA->getNode());
 
@@ -195,6 +197,8 @@ std::size_t TpetraMatrix::size(std::size_t dim) const
 std::pair<std::size_t, std::size_t>
 TpetraMatrix::local_range(std::size_t dim) const
 {
+  dolfin_assert(!_matA.is_null());
+
   if (dim == 0)
   {
     Teuchos::RCP<const map_type> a_row_map(_matA->getRowMap());
@@ -214,6 +218,8 @@ TpetraMatrix::local_range(std::size_t dim) const
 //-----------------------------------------------------------------------------
 std::size_t TpetraMatrix::nnz() const
 {
+  dolfin_assert(!_matA.is_null());
+
   std::size_t nnz_local = _matA->getCrsGraph()->getNodeNumEntries();
   return MPI::sum(mpi_comm(), nnz_local);
 }
@@ -376,8 +382,8 @@ void TpetraMatrix::add_local(const double* block,
 void TpetraMatrix::axpy(double a, const GenericMatrix& A,
                         bool same_nonzero_pattern)
 {
-  const TpetraMatrix& AA = as_type<const TpetraMatrix>(A);
   dolfin_assert(!_matA.is_null());
+  const TpetraMatrix& AA = as_type<const TpetraMatrix>(A);
   dolfin_assert(!AA._matA.is_null());
 
   double one=1;
@@ -702,6 +708,7 @@ void TpetraMatrix::apply(std::string mode)
 //-----------------------------------------------------------------------------
 MPI_Comm TpetraMatrix::mpi_comm() const
 {
+  dolfin_assert(!_matA.is_null());
   // Unwrap MPI_Comm
   const Teuchos::RCP<const Teuchos::MpiComm<int>> _mpi_comm
     = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(_matA->getComm());
