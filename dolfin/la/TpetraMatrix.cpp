@@ -81,10 +81,6 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
 
   // Get global dimensions and local range
   dolfin_assert(tensor_layout.rank() == 2);
-  const std::size_t M = tensor_layout.size(0);
-  const std::size_t N = tensor_layout.size(1);
-
-  //  std::cout << "M = " << M << " N = " << N << "\n";
 
   const std::pair<std::size_t, std::size_t> row_range
     = tensor_layout.local_range(0);
@@ -104,30 +100,42 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   Teuchos::RCP<const Teuchos::Comm<int>>
     _comm(new Teuchos::MpiComm<int>(sparsity_pattern->mpi_comm()));
 
-  Teuchos::RCP<const map_type> range_map(new map_type(M, m, 0, _comm));
-  Teuchos::RCP<const map_type> domain_map(new map_type(N, n, 0, _comm));
-
   // Save the local row and column mapping, so we can use add_local
-  // and set_local later with off-process entries
+  // later with off-process entries
+
+  // Overlapping RowMap
   std::vector<dolfin::la_index>
     global_indices0(tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL));
   for (std::size_t i = 0; i < global_indices0.size(); ++i)
     global_indices0[i] = tensor_layout.index_map(0)->local_to_global(i);
-
   Teuchos::ArrayView<dolfin::la_index> _global_indices0(global_indices0);
   _row_map = Teuchos::rcp
     (new map_type(Teuchos::OrdinalTraits<dolfin::la_index>::invalid(),
                   _global_indices0, 0, _comm));
 
+  // Non-overlapping RangeMap
+  Teuchos::ArrayView<dolfin::la_index>
+    _global_indices_subset0(global_indices0.data(), m);
+  Teuchos::RCP<const map_type> range_map
+    (new map_type(Teuchos::OrdinalTraits<dolfin::la_index>::invalid(),
+                  _global_indices_subset0, 0, _comm));
+
+  // Overlapping ColMap
   std::vector<dolfin::la_index>
     global_indices1(tensor_layout.index_map(1)->size(IndexMap::MapSize::ALL));
   for (std::size_t i = 0; i < global_indices1.size(); ++i)
     global_indices1[i] = tensor_layout.index_map(1)->local_to_global(i);
-
   Teuchos::ArrayView<dolfin::la_index> _global_indices1(global_indices1);
   _col_map = Teuchos::rcp
     (new map_type(Teuchos::OrdinalTraits<dolfin::la_index>::invalid(),
                   _global_indices1, 0, _comm));
+
+  // Non-overlapping DomainMap
+  Teuchos::ArrayView<dolfin::la_index>
+    _global_indices_subset1(global_indices1.data(), n);
+  Teuchos::RCP<const map_type> domain_map
+    (new map_type(Teuchos::OrdinalTraits<dolfin::la_index>::invalid(),
+                  _global_indices_subset1, 0, _comm));
 
   // Make a Tpetra::CrsGraph of the sparsity_pattern
   typedef Tpetra::CrsGraph<> graph_type;
@@ -147,14 +155,9 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
 
   // Create a non-overlapping "row" map for the graph
   // The column map will be auto-generated from the entries.
-  Teuchos::ArrayView<dolfin::la_index>
-    _global_indices_subset(global_indices0.data(), m);
-  Teuchos::RCP<const map_type> graph_row_map
-    (new map_type(Teuchos::OrdinalTraits<dolfin::la_index>::invalid(),
-                  _global_indices_subset, 0, _comm));
 
   Teuchos::RCP<graph_type> crs_graph
-    (new graph_type(graph_row_map, _nnz, Tpetra::StaticProfile));
+    (new graph_type(range_map, _nnz, Tpetra::StaticProfile));
 
   for (std::size_t i = 0; i != m; ++i)
   {
