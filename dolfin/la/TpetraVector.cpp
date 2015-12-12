@@ -494,14 +494,19 @@ double TpetraVector::sum(const Array<std::size_t>& rows) const
   {
     const std::size_t index = rows[i];
     dolfin_assert(index < size());
-    if (row_set.find(index) == row_set.end())
+    if(_x->getMap()->isNodeLocalElement(index))
     {
-      _sum += arr[index];
-      row_set.insert(index);
+      if (row_set.find(index) == row_set.end())
+      {
+        const dolfin::la_index lindex
+          = _x->getMap()->getLocalElement(index);
+        _sum += arr[lindex];
+        row_set.insert(index);
+      }
     }
   }
 
-  return _sum;
+  return MPI::sum(mpi_comm(), _sum);
 }
 //-----------------------------------------------------------------------------
 const TpetraVector& TpetraVector::operator*= (double a)
