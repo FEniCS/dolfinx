@@ -40,6 +40,7 @@ namespace dolfin
 
   class TpetraVector;
   class TensorLayout;
+  class IndexMap;
 
   /// This class provides a simple matrix class based on Tpetra.  It
   /// is a wrapper for a Tpetra matrix pointer

@@ -24,6 +24,7 @@
 #include "TpetraMatrix.h"
 #include "TpetraVector.h"
 #include "TpetraFactory.h"
+#include "Amesos2LUSolver.h"
 
 using namespace dolfin;
 
@@ -65,8 +66,7 @@ TpetraFactory::create_linear_operator() const
 std::shared_ptr<GenericLUSolver>
 TpetraFactory::create_lu_solver(std::string method) const
 {
-  std::shared_ptr<GenericLUSolver> solver; //(new TpetraLUSolver(method));
-  dolfin_not_implemented();
+  std::shared_ptr<GenericLUSolver> solver(new Amesos2LUSolver(method));
   return solver;
 }
 //-----------------------------------------------------------------------------
@@ -77,6 +77,11 @@ TpetraFactory::create_krylov_solver(std::string method,
   std::shared_ptr<GenericLinearSolver>
     solver(new BelosKrylovSolver(method, preconditioner));
   return solver;
+}
+//-----------------------------------------------------------------------------
+std::map<std::string, std::string> TpetraFactory::lu_solver_methods() const
+{
+  return Amesos2LUSolver::methods();
 }
 //-----------------------------------------------------------------------------
 std::map<std::string, std::string> TpetraFactory::krylov_solver_methods() const
