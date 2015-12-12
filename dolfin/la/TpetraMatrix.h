@@ -221,8 +221,8 @@ namespace dolfin
 
     // Row and Column maps to allow local indexing of off-process
     // entries needed in add_local() and set_local()
-    Teuchos::RCP<const map_type> _row_map;
-    Teuchos::RCP<const map_type> _col_map;
+    std::array<std::shared_ptr<const IndexMap>, 2>
+      index_map;
 
   };
 

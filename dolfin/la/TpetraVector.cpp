@@ -21,6 +21,8 @@
 
 #include <cmath>
 #include <numeric>
+#include <unordered_set>
+
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
@@ -435,7 +437,12 @@ double TpetraVector::norm(std::string norm_type) const
   typedef Tpetra::MultiVector<>::mag_type mag_type;
   std::vector<mag_type> norms(1);
   const Teuchos::ArrayView<mag_type> norm_view(norms);
-  _x->norm2(norm_view);
+  if (norm_type == "l2")
+    _x->norm2(norm_view);
+  else if (norm_type == "l1")
+    _x->norm1(norm_view);
+  else if (norm_type == "linf")
+    _x->normInf(norm_view);
   return norms[0];
 }
 //-----------------------------------------------------------------------------
@@ -477,11 +484,24 @@ double TpetraVector::sum(const Array<std::size_t>& rows) const
 {
   dolfin_assert(!_x.is_null());
 
-  // FIXME
+  // FIXME - not working in parallel
 
-  dolfin_not_implemented();
+  Teuchos::ArrayRCP<const double> arr(_x->getData(0));
 
-  return 0.0;
+  std::unordered_set<std::size_t> row_set;
+  double _sum = 0.0;
+  for (std::size_t i = 0; i < rows.size(); ++i)
+  {
+    const std::size_t index = rows[i];
+    dolfin_assert(index < size());
+    if (row_set.find(index) == row_set.end())
+    {
+      _sum += arr[index];
+      row_set.insert(index);
+    }
+  }
+
+  return _sum;
 }
 //-----------------------------------------------------------------------------
 const TpetraVector& TpetraVector::operator*= (double a)
