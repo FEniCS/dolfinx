@@ -494,7 +494,7 @@ double TpetraVector::sum(const Array<std::size_t>& rows) const
   {
     const std::size_t index = rows[i];
     dolfin_assert(index < size());
-    if(_x->getMap()->isNodeLocalElement(index))
+    if(_x->getMap()->isNodeGlobalElement(index))
     {
       if (row_set.find(index) == row_set.end())
       {
