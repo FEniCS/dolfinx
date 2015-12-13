@@ -86,12 +86,15 @@ namespace dolfin
 
     void init_solver(std::string& method);
 
+    // Reference counted pointer (RCP) to solver
     Teuchos::RCP<Amesos2::Solver<TpetraMatrix::matrix_type,
                                  TpetraVector::vector_type>> _solver;
 
     // Operator (the matrix)
     std::shared_ptr<const TpetraMatrix> _matA;
 
+    // Method name
+    std::string _method_name;
   };
 
 }

@@ -35,10 +35,12 @@ using namespace dolfin;
 std::map<std::string, std::string>
 Amesos2LUSolver::methods()
 {
-  std::map<std::string, std::string> _methods;
-  _methods["default"] = "default method";
+  std::map<std::string, std::string> amesos2_methods;
+  amesos2_methods["default"] = "default method";
+  amesos2_methods["KLU2"] = "Built in KLU2";
+  amesos2_methods["Basker"] = "Basker";
 
-  return _methods;
+  return amesos2_methods;
 }
 //-----------------------------------------------------------------------------
 Parameters Amesos2LUSolver::default_parameters()
@@ -126,6 +128,7 @@ std::size_t Amesos2LUSolver::solve(GenericVector& x, const GenericVector& b)
   Timer timer("Amesos2 LU solver");
 
   dolfin_assert(_matA);
+  dolfin_assert(!_matA->mat().is_null());
 
   // Downcast matrix and vectors
   const TpetraVector& _b = as_type<const TpetraVector>(b);
@@ -144,25 +147,17 @@ std::size_t Amesos2LUSolver::solve(GenericVector& x, const GenericVector& b)
   if (x.empty())
     _matA->init_vector(x, 1);
 
-  // Solve linear system
-  //  const Vec b_petsc = _b.vec();
-  //  Vec x_petsc = _x.vec();
-  //  if (!transpose)
-  // {
-  //   ierr = KSPSolve(_ksp, b_petsc, x_petsc);
-  //   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
-  // }
-  // else
-  // {
-  //   ierr = KSPSolveTranspose(_ksp, b_petsc, x_petsc);
-  //   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolveTranspose");
-  // }
-
   if (_solver.is_null())
-    _solver = Amesos2::create("KLU2", _matA->mat(),
+  {
+    _solver = Amesos2::create(_method_name, _matA->mat(),
                               _x.vec(),
       Teuchos::rcp_dynamic_cast<const TpetraVector::vector_type>(_b.vec()));
-
+  }
+  else
+  {
+    _solver->setX(_x.vec());
+    _solver->setB(Teuchos::rcp_dynamic_cast<const TpetraVector::vector_type>(_b.vec()));
+  }
   _solver->solve();
 
   return 1;
@@ -191,7 +186,7 @@ std::string Amesos2LUSolver::str(bool verbose) const
 
   if (verbose)
   {
-    warning("Verbose output for Amesos2LUSolver not implemented.");
+    warning("Verbose output for Amesos2LUSolver not implemented yet.");
   }
   else
     s << "<Amesos2LUSolver>";
@@ -201,9 +196,9 @@ std::string Amesos2LUSolver::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void Amesos2LUSolver::init_solver(std::string& method)
 {
-  std::string method_name = method;
-  if (method=="default")
-    method_name = "KLU2";
+  _method_name = method;
+  if (method == "default")
+    _method_name = "KLU2";
 
 }
 //-----------------------------------------------------------------------------

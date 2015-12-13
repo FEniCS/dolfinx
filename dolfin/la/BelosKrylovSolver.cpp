@@ -114,8 +114,8 @@ void
 BelosKrylovSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
                                  std::shared_ptr<const GenericLinearOperator> P)
 {
-  set_operators(as_type<const TpetraMatrix>(A),
-                as_type<const TpetraMatrix>(P));
+  _set_operators(as_type<const TpetraMatrix>(A),
+                 as_type<const TpetraMatrix>(P));
 }
 //-----------------------------------------------------------------------------
 const TpetraMatrix& BelosKrylovSolver::get_operator() const
@@ -173,7 +173,7 @@ void BelosKrylovSolver::init(const std::string& method)
 //-----------------------------------------------------------------------------
 void BelosKrylovSolver::_set_operator(std::shared_ptr<const TpetraMatrix> A)
 {
-  set_operators(A, A);
+  _set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
 void BelosKrylovSolver::_set_operators(std::shared_ptr<const TpetraMatrix> A,

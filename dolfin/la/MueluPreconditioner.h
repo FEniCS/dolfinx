@@ -62,6 +62,9 @@ namespace dolfin
 
   private:
 
+    typedef Tpetra::Operator<double, int, dolfin::la_index,
+                             TpetraVector::node_type> op_type;
+
     typedef MueLu::TpetraOperator<double, int, dolfin::la_index,
                                   TpetraVector::node_type> prec_type;
 

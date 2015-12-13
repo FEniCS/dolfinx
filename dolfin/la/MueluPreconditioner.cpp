@@ -59,9 +59,12 @@ void MueluPreconditioner::init(std::shared_ptr<const TpetraMatrix> P)
   paramList.set("aggregation: max agg size", 9);
 
   // FIXME: why does it need to be non-const when Ifpack2 uses const?
+  std::shared_ptr<TpetraMatrix> P_non_const
+    = std::const_pointer_cast<TpetraMatrix>(P);
+
   _prec = MueLu::CreateTpetraPreconditioner(
-    std::const_pointer_cast<TpetraMatrix>(P)->mat(),
-    paramList);
+                Teuchos::rcp_dynamic_cast<op_type>(P_non_const->mat()),
+                paramList);
 }
 //-----------------------------------------------------------------------------
 void MueluPreconditioner::set(BelosKrylovSolver& solver)
