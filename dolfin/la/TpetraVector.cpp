@@ -268,10 +268,7 @@ void TpetraVector::set_local(const double* block, std::size_t m,
     if(_x->getMap()->isNodeLocalElement(rows[i]))
       _x->replaceLocalValue(rows[i], 0, block[i]);
     else
-    {
-      dolfin_error("TpetraVector.cpp", "set data",
-                   "Row %d not valid", rows[i]);
-    }
+      warning("Not setting on row %d", rows[i]);
   }
 
 }
