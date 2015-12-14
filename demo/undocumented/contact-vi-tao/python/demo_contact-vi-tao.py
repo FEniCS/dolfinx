@@ -126,7 +126,7 @@ parameters.parse()
 solver.solve(ContactProblem(), u.vector(), u_min.vector(), u_max.vector())
 
 # Save solution in XDMF format
-out = File("u.xdmf")
+out = XDMFFile(mesh.mpi_comm(), "u.xdmf")
 out << u
 
 # Plot the current configuration
