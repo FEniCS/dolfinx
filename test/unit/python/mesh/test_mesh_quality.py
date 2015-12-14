@@ -119,6 +119,5 @@ def test_dihedral_angles_min_max():
 def test_dihedral_angles_matplotlib():
     # Create mesh, collpase and compute min ratio
     mesh = UnitCubeMesh(12, 12, 12)
-    test = MeshQuality.dihedral_angles_matplotlib_histogram(mesh, 10)
-    # NUMBER 5 IS CURSED, DON'T USE IT!!!
+    test = MeshQuality.dihedral_angles_matplotlib_histogram(mesh, 5)
     print(test)
