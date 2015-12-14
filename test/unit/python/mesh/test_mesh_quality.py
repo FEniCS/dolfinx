@@ -115,3 +115,10 @@ def test_dihedral_angles_min_max():
     assert round(dang_min*(180/numpy.pi) - 45.0) == 0
     assert round(dang_max*(180/numpy.pi) - 90.0) == 0
 
+@skip_in_parallel
+def test_dihedral_angles_matplotlib():
+    # Create mesh, collpase and compute min ratio
+    mesh = UnitCubeMesh(12, 12, 12)
+    test = MeshQuality.dihedral_angles_matplotlib_histogram(mesh, 10)
+    # NUMBER 5 IS CURSED, DON'T USE IT!!!
+    print(test)

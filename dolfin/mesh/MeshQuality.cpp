@@ -69,6 +69,11 @@ MeshQuality::radius_ratio_histogram_data(const Mesh& mesh,
   for (std::size_t i = 0; i < num_bins; ++i)
     bins[i] = static_cast<double>(i)*interval + interval/2.0;
 
+  std::cout << interval << std::endl;
+  std::cout << num_bins << std::endl;
+  std::cout << static_cast<double>(num_bins) << std::endl;
+
+
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const double ratio = cell->radius_ratio();
@@ -176,35 +181,67 @@ std::pair<double, double> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
 
   CellIterator cell(mesh);
 
-  // Get the min element in the mesh
-  std::vector<double> temp = dihedral_angles(*cell);
+  // Get the angles at each cell
+  std::vector<double> angs = dihedral_angles(*cell);
 
-  double d_ang_min = *std::min_element(temp.begin(), temp.end());
-  double d_ang_max = *std::max_element(temp.begin(), temp.end());
+  // Get original min and max
+  double d_ang_min = *std::min_element(angs.begin(), angs.end());
+  double d_ang_max = *std::max_element(angs.begin(), angs.end());
 
   for (; !cell.end(); ++cell)
   {
-    temp = dihedral_angles(*cell);
+    // Get the angles from the next cell
+    angs = dihedral_angles(*cell);
 
-    d_ang_min = std::min(d_ang_min, *std::min_element(temp.begin(), temp.end()));
-    d_ang_max = std::max(d_ang_max, *std::max_element(temp.begin(), temp.end()));
+    // And then update the min and max
+    d_ang_min = std::min(d_ang_min, *std::min_element(angs.begin(), angs.end()));
+    d_ang_max = std::max(d_ang_max, *std::max_element(angs.begin(), angs.end()));
   }
 
   d_ang_min = MPI::min(mesh.mpi_comm(), d_ang_min);
   d_ang_max = MPI::max(mesh.mpi_comm(), d_ang_max);
 
   return std::make_pair(d_ang_min, d_ang_max);
+}
+//-----------------------------------------------------------------------------
+std::pair<std::vector<double>, std::vector<double>>
+MeshQuality::dihedral_angles_histogram_data(const Mesh& mesh,
+                                         std::size_t num_bins)
+{
+  std::vector<double> bins(num_bins), values(num_bins, 0.0);
 
-  // Create an empty vector storing all cells
-  // std::vector<double> angles_mesh(mesh.num_cells()*6);
+  // May need to assert the maximum possible angle
+  // dolfin_assert(dihedral_angles_min_max(mesh).second <= 1.0); 
 
-  // for (CellIterator c(mesh); !c.end(); ++c)
-  // {
-  //   std::vector<double> result = dihedral_angles(*c);
-  //   // vector1.insert( vector1.end(), vector2.begin(), vector2.end() );
-  //   angles_mesh.append();
-  // }
-  // return angles_mesh;
+  double d_ang_min, d_ang_max;
+  d_ang_min = dihedral_angles_min_max(mesh).first;
+  d_ang_max = dihedral_angles_min_max(mesh).second;
+
+  const double interval= (d_ang_max - d_ang_min)/(static_cast<double>(num_bins));
+
+  for (std::size_t i = 0; i < num_bins; ++i)
+    bins[i] = d_ang_min + static_cast<double>(i)*interval + interval/2.0;
+
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // this one should return the value of the angle
+    const std::vector<double> angs = dihedral_angles(*cell);
+
+    // Iterate through the collected vector
+    for(std::size_t i = 0; i < angs.size(); i++) 
+    {
+      // Compute 'bin' index, and handle special case that ratio = 1.0
+        const std::size_t slot = static_cast<std::size_t>((angs[i] - d_ang_min)/interval);
+        values[slot] += 1.0; 
+    }
+  }
+
+  for (std::size_t i = 0; i < values.size(); ++i)
+  {
+    values[i] = MPI::sum(mesh.mpi_comm(), values[i]);
+  }
+
+  return std::make_pair(bins, values);
 }
 //-----------------------------------------------------------------------------
 std::string
@@ -213,7 +250,7 @@ MeshQuality::dihedral_angles_matplotlib_histogram(const Mesh& mesh,
 {
   // Compute data
   std::pair<std::vector<double>, std::vector<double>>
-    data = radius_ratio_histogram_data(mesh, num_intervals);
+    data = dihedral_angles_histogram_data(mesh, num_intervals);
 
   dolfin_assert(!data.first.empty());
   dolfin_assert(data.first.size() == data.second.size());
@@ -237,10 +274,9 @@ MeshQuality::dihedral_angles_matplotlib_histogram(const Mesh& mesh,
   matplotlib << values.str()  << std::endl;
   matplotlib << std::endl;
 
-  matplotlib << "    matplotlib.pylab.xlim([0, 1])" <<  std::endl;
   matplotlib << "    width = 0.7*(bins[1] - bins[0])" << std::endl;
-  matplotlib << "    matplotlib.pylab.xlabel('radius ratio')" << std::endl;
-  matplotlib << "    matplotlib.pylab.ylabel('number of cells')" << std::endl;
+  matplotlib << "    matplotlib.pylab.xlabel('dihedral angles')" << std::endl;
+  matplotlib << "    matplotlib.pylab.ylabel('number of edges')" << std::endl; // this is weird...
   matplotlib << "    matplotlib.pylab.bar(bins, values, align='center', width=width)"
              << std::endl;
   matplotlib << "    matplotlib.pylab.show()" << std::endl;
