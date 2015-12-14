@@ -142,6 +142,8 @@ namespace dolfin
 
     void eval(Array<double>& values, const Array<double>& x) const;
 
+    virtual std::string str(bool verbose) const;
+
   private:
 
     // Values of constant function

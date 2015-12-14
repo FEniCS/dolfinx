@@ -21,6 +21,10 @@
 // First added:  2006-02-09
 // Last changed: 2011-11-14
 
+#include <string>
+#include <sstream>
+#include <iterator>
+#include <iostream>
 #include <dolfin/log/log.h>
 #include "Constant.h"
 
@@ -133,5 +137,27 @@ void Constant::eval(Array<double>& values, const Array<double>& x) const
   // Copy values
   for (std::size_t j = 0; j < _values.size(); j++)
     values[j] = _values[j];
+}
+//-----------------------------------------------------------------------------
+std::string Constant::str(bool verbose) const
+{
+  std::ostringstream oss;
+
+  if (!_values.empty())
+  {
+    if (!_value_shape.empty())
+    {
+      oss << "(";
+      // Avoid a trailing ", "
+      std::copy(_values.begin(), _values.end()-1,
+          std::ostream_iterator<double>(oss, ", "));
+      oss << _values.back();
+      oss << ")";
+    }
+    else
+      oss << _values[0];
+  }
+
+  return oss.str();
 }
 //-----------------------------------------------------------------------------
