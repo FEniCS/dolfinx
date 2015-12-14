@@ -45,15 +45,16 @@ parameters["linear_algebra_backend"] = "PETSc";
 
 # Load sphere mesh
 mesh = Mesh("../sphere.xml.gz")
-mesh = refine(mesh)
+#mesh = UnitCubeMesh(1, 1, 1)
+#mesh = refine(mesh)
 
 # Define function spaces
 P1 = VectorFunctionSpace(mesh, "Lagrange", 1)
-PN = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1)
+V = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1)
 
 # Define test and trial functions
-v0 = TestFunction(PN)
-u0 = TrialFunction(PN)
+v0 = TestFunction(V)
+u0 = TrialFunction(V)
 v1 = TestFunction(P1)
 u1 = TrialFunction(P1)
 
@@ -61,7 +62,7 @@ u1 = TrialFunction(P1)
 dbdt = Expression(("0.0", "0.0", "1.0"), degree=1)
 zero = Expression(("0.0", "0.0", "0.0"), degree=1)
 
-T = Function(PN)
+T = Function(V)
 J = Function(P1)
 
 # Dirichlet boundary
@@ -70,7 +71,7 @@ class DirichletBoundary(SubDomain):
         return on_boundary
 
 # Boundary condition
-bc = DirichletBC(PN, zero, DirichletBoundary())
+bc = DirichletBC(V, zero, DirichletBoundary())
 
 # Forms for the eddy-current equation
 a = inner(curl(v0), curl(u0))*dx
@@ -85,55 +86,43 @@ ksp.create(PETSc.COMM_WORLD)
 ksp.setType("cg")
 ksp.setTolerances(rtol=1.0e-8, atol=1.0e-12, divtol=1.0e10, max_it=300)
 
-#def monitor(ksp, its, rnorm):
-#   print "Ooosp", its, rnorm
-
-#ksp.setMonitor(monitor)
-
 # Get the preconditioner and set type
 pc = ksp.getPC()
 pc.setType("hypre")
+pc.setHYPREType("ams")
 
 opts = PETSc.Options()
-opts.setValue("-pc_hypre_type", "ams")
-pc.setFromOptions()
-
-#opts.setValue("-ksp_view", True)
+opts.setValue("-ksp_monitor_true_residual", None)
 
 # Build discrete gradient
 P1s = FunctionSpace(mesh, "Lagrange", 1)
-G = DiscreteOperators.build_gradient(PN, P1s)
+G = DiscreteOperators.build_gradient(V, P1s)
+print "G Norm: ", G.norm("frobenius")
 
 # Attach discrete gradient to preconditioner
 G = as_backend_type(G)
 pc.setHYPREDiscreteGradient(G.mat())
 
 # Inform preconditioner of constants in the Nedelec space
-constants = [Function(PN)]*3;
-constants[0].interpolate(Constant((1.0, 0.0, 0.0)));
-constants[1].interpolate(Constant((0.0, 1.0, 0.0)));
-constants[2].interpolate(Constant((0.0, 0.0, 1.0)));
+constants = [Function(V) for i in range(3)]
+for i, c in enumerate(constants):
+    direction = [1 if i == j else 0 for j in range(3)]
+    c.interpolate(Constant(direction))
 
 cvecs = [as_backend_type(constant.vector()).vec() for constant in constants]
+
 pc.setHYPRESetEdgeConstantVectors(cvecs[0], cvecs[1], cvecs[2])
 
-pc.setHYPRESetBetaPoissonMatrix()
+pc.setHYPRESetBetaPoissonMatrix(None)
 
 # Set operator
-ksp.setOperators(as_backend_type(A).mat())
+ksp.setOperators(as_backend_type(A).mat(), as_backend_type(A).mat())
 
-#opts.setValue("-eddy_ksp_monitor_true_residual", True)
-#ksp.setOptionsPrefix("eddy_")
-#opts.setValue("-ksp_view", True)
-#ksp.setFromOptions()
-
-#print(PETSc.Options().getAll())
-ksp.setConvergenceHistory()
-#ksp.setFromOptions()
+# Solve
+ksp.setFromOptions()
 ksp.solve(as_backend_type(b).vec(), as_backend_type(T.vector()).vec())
 
-history = ksp.getConvergenceHistory()
-print(history)
+# Show solver details
 ksp.view()
 
 #print("Test norm: {}".format(T.vector().norm("l2")))
