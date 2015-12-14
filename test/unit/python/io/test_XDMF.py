@@ -33,7 +33,7 @@ def test_save_and_load_1d_mesh(tempdir):
     del file
 
     file = XDMFFile(mesh.mpi_comm(), filename)
-    file << mesh
+    file.write(mesh)
     del file
 
     mesh2 = Mesh(filename)
@@ -51,7 +51,7 @@ def test_save_and_load_2d_mesh(tempdir):
     del file
 
     file = XDMFFile(mesh.mpi_comm(), filename)
-    file << mesh
+    file.write(mesh)
     del file
 
     mesh2 = Mesh(filename)
@@ -69,7 +69,7 @@ def test_save_and_load_3d_mesh(tempdir):
     del file
 
     file = XDMFFile(mesh.mpi_comm(), filename)
-    file << mesh
+    file.write(mesh)
     del file
 
     mesh2 = Mesh(filename)
