@@ -24,6 +24,7 @@
 #include "Mesh.h"
 #include "MeshFunction.h"
 #include "MeshQuality.h"
+#include "Vertex.h"
 
 using namespace dolfin;
 
@@ -135,3 +136,35 @@ MeshQuality::radius_ratio_matplotlib_histogram(const Mesh& mesh,
   return matplotlib.str();
 }
 //-----------------------------------------------------------------------------
+std::vector<double> MeshQuality::dihedral_angles(const Cell& cell)
+{
+  // FIXME: assert tetrahedron
+
+  static std::size_t edges[6][2] = {{2, 3},
+                                    {1, 3},
+                                    {1, 2},
+                                    {0, 3},
+                                    {0, 2},
+                                    {0, 1}};
+  const Mesh& mesh = cell.mesh();
+
+  std::vector<double> dh_angle(6);
+  for (unsigned int i = 0; i != 6; ++i)
+  {
+    const std::size_t i0 = cell.entities(0)[edges[i][0]];
+    const std::size_t i1 = cell.entities(0)[edges[i][1]];
+    const std::size_t i2 = cell.entities(0)[edges[5 - i][0]];
+    const std::size_t i3 = cell.entities(0)[edges[5 - i][1]];
+    const Point p0 = Vertex(mesh, i0).point();
+    Point v1 = Vertex(mesh, i1).point() - p0;
+    Point v2 = Vertex(mesh, i2).point() - p0;
+    Point v3 = Vertex(mesh, i3).point() - p0;
+    v1 /= v1.norm();
+    v2 /= v2.norm();
+    v3 /= v3.norm();
+    double cphi = (v2.dot(v3) - v1.dot(v2)*v1.dot(v3)) / (v1.cross(v2).norm() * v1.cross(v3).norm());
+    dh_angle[i] = acos(cphi);
+  }
+
+  return dh_angle;
+}

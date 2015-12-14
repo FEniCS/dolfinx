@@ -88,6 +88,10 @@ namespace dolfin
     static std::string
       radius_ratio_matplotlib_histogram(const Mesh& mesh,
 					std::size_t num_bins = 50);
+
+    /// Get internal dihedral angles of a tetrahedral cell
+    static std::vector<double> dihedral_angles(const Cell& cell);
+
   };
 
 }
