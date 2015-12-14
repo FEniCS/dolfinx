@@ -168,3 +168,90 @@ std::vector<double> MeshQuality::dihedral_angles(const Cell& cell)
 
   return dh_angle;
 }
+//-----------------------------------------------------------------------------
+std::pair<double, double> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
+{
+  // Get the maximum and minimum value of dihedral angles in cells across a mesh
+  // SHOULD ONLY WORK FOR 3D MESH
+
+  CellIterator cell(mesh);
+  // Get the min element in the mesh
+  // std::vector<double> temp = dihedral_angles(*cell);
+  
+  double d_ang_min = *std::min_element(dihedral_angles(*cell).begin(), dihedral_angles(*cell).end());
+  double d_ang_max = *std::max_element(dihedral_angles(*cell).begin(), dihedral_angles(*cell).end());
+
+  for (; !cell.end(); ++cell)
+  {
+    // temp = dihedral_angles(*cell);
+
+    d_ang_min = std::min(d_ang_min, *std::min_element(dihedral_angles(*cell).begin(), dihedral_angles(*cell).end()));
+    d_ang_max = std::max(d_ang_max, *std::max_element(dihedral_angles(*cell).begin(), dihedral_angles(*cell).end()));
+  }
+
+  d_ang_min = MPI::min(mesh.mpi_comm(), d_ang_min);
+  d_ang_max = MPI::max(mesh.mpi_comm(), d_ang_max);
+
+  return std::make_pair(d_ang_min, d_ang_max);
+
+  // Create an empty vector storing all cells
+  // std::vector<double> angles_mesh(mesh.num_cells()*6);
+
+  // for (CellIterator c(mesh); !c.end(); ++c)
+  // {
+  //   std::vector<double> result = dihedral_angles(*c);
+  //   // vector1.insert( vector1.end(), vector2.begin(), vector2.end() );
+  //   angles_mesh.append();
+  // }
+  // return angles_mesh;
+}
+//-----------------------------------------------------------------------------
+std::string
+MeshQuality::dihedral_angles_matplotlib_histogram(const Mesh& mesh,
+                 std::size_t num_intervals)
+{
+  // Compute data
+  std::pair<std::vector<double>, std::vector<double>>
+    data = radius_ratio_histogram_data(mesh, num_intervals);
+
+  dolfin_assert(!data.first.empty());
+  dolfin_assert(data.first.size() == data.second.size());
+
+  // Create Matplotlib string
+  std::stringstream matplotlib;
+  matplotlib << "def plot_histogram():" << std::endl;
+  matplotlib << "    import matplotlib.pyplot" << std::endl;
+  std::stringstream bins, values;
+  bins   << "    bins = [" << data.first[0];
+  values << "    values = [" << data.second[0];
+  for (std::size_t i = 1; i < data.first.size(); ++i)
+  {
+    bins   << ", " << data.first[i];
+    values << ", " << data.second[i];
+  }
+  bins << "]";
+  values << "]";
+
+  matplotlib << bins.str() << std::endl;
+  matplotlib << values.str()  << std::endl;
+  matplotlib << std::endl;
+
+  matplotlib << "    matplotlib.pylab.xlim([0, 1])" <<  std::endl;
+  matplotlib << "    width = 0.7*(bins[1] - bins[0])" << std::endl;
+  matplotlib << "    matplotlib.pylab.xlabel('radius ratio')" << std::endl;
+  matplotlib << "    matplotlib.pylab.ylabel('number of cells')" << std::endl;
+  matplotlib << "    matplotlib.pylab.bar(bins, values, align='center', width=width)"
+             << std::endl;
+  matplotlib << "    matplotlib.pylab.show()" << std::endl;
+
+  matplotlib << std::endl;
+  matplotlib << "try:" << std::endl;
+  matplotlib << "    import matplotlib.pylab"  << std::endl;
+  matplotlib << "except ImportError:" << std::endl;
+  matplotlib << "    print(\"Plotting mesh quality histogram requires Matplotlib\")"
+             << std::endl;
+  matplotlib << "else:" << std::endl;
+  matplotlib << "    plot_histogram()" << std::endl;
+
+  return matplotlib.str();
+}

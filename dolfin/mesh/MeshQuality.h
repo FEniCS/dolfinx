@@ -90,8 +90,17 @@ namespace dolfin
 					std::size_t num_bins = 50);
 
     /// Get internal dihedral angles of a tetrahedral cell
-    static std::vector<double> dihedral_angles(const Cell& cell);
+    static std::vector<double> 
+        dihedral_angles(const Cell& cell);
 
+    /// Get internal minimum and maximum dihedral angles of a 3D mesh
+    static std::pair<double, double> 
+        dihedral_angles_min_max(const Mesh& mesh);
+
+    /// Create Matplotlib string to plot cell quality histogram
+    static std::string
+      dihedral_angles_matplotlib_histogram(const Mesh& mesh,
+                    std::size_t num_bins = 50);
   };
 
 }
