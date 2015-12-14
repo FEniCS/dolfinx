@@ -18,7 +18,7 @@ elements.
 
 """
 
-# Copyright (C) 2009 Bartosz Sawicki
+# Copyright (C) 2009-2015 Bartosz Sawicki and Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -38,12 +38,17 @@ elements.
 # Modified by Anders Logg 2011
 
 from dolfin import *
+from petsc4py import *
+
+# Set PETSc as default linear algebra backend
+parameters["linear_algebra_backend"] = "PETSc";
 
 # Load sphere mesh
 mesh = Mesh("../sphere.xml.gz")
+mesh = refine(mesh)
 
 # Define function spaces
-P1 = VectorFunctionSpace(mesh, "CG", 1)
+P1 = VectorFunctionSpace(mesh, "Lagrange", 1)
 PN = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1)
 
 # Define test and trial functions
@@ -55,6 +60,7 @@ u1 = TrialFunction(P1)
 # Define functions
 dbdt = Expression(("0.0", "0.0", "1.0"), degree=1)
 zero = Expression(("0.0", "0.0", "0.0"), degree=1)
+
 T = Function(PN)
 J = Function(P1)
 
@@ -66,17 +72,83 @@ class DirichletBoundary(SubDomain):
 # Boundary condition
 bc = DirichletBC(PN, zero, DirichletBoundary())
 
+# Forms for the eddy-current equation
+a = inner(curl(v0), curl(u0))*dx
+L = -inner(v0, dbdt)*dx
+
+# Assemble system
+A, b = assemble_system(a, L, bc)
+
+# Create Krylov solver
+ksp = PETSc.KSP()
+ksp.create(PETSc.COMM_WORLD)
+ksp.setType("cg")
+ksp.setTolerances(rtol=1.0e-8, atol=1.0e-12, divtol=1.0e10, max_it=300)
+
+#def monitor(ksp, its, rnorm):
+#   print "Ooosp", its, rnorm
+
+#ksp.setMonitor(monitor)
+
+# Get the preconditioner and set type
+pc = ksp.getPC()
+pc.setType("hypre")
+
+opts = PETSc.Options()
+opts.setValue("-pc_hypre_type", "ams")
+pc.setFromOptions()
+
+#opts.setValue("-ksp_view", True)
+
+# Build discrete gradient
+P1s = FunctionSpace(mesh, "Lagrange", 1)
+G = DiscreteOperators.build_gradient(PN, P1s)
+
+# Attach discrete gradient to preconditioner
+G = as_backend_type(G)
+pc.setHYPREDiscreteGradient(G.mat())
+
+# Inform preconditioner of constants in the Nedelec space
+constants = [Function(PN)]*3;
+constants[0].interpolate(Constant((1.0, 0.0, 0.0)));
+constants[1].interpolate(Constant((0.0, 1.0, 0.0)));
+constants[2].interpolate(Constant((0.0, 0.0, 1.0)));
+
+cvecs = [as_backend_type(constant.vector()).vec() for constant in constants]
+pc.setHYPRESetEdgeConstantVectors(cvecs[0], cvecs[1], cvecs[2])
+
+pc.setHYPRESetBetaPoissonMatrix()
+
+# Set operator
+ksp.setOperators(as_backend_type(A).mat())
+
+#opts.setValue("-eddy_ksp_monitor_true_residual", True)
+#ksp.setOptionsPrefix("eddy_")
+#opts.setValue("-ksp_view", True)
+#ksp.setFromOptions()
+
+#print(PETSc.Options().getAll())
+ksp.setConvergenceHistory()
+#ksp.setFromOptions()
+ksp.solve(as_backend_type(b).vec(), as_backend_type(T.vector()).vec())
+
+history = ksp.getConvergenceHistory()
+print(history)
+ksp.view()
+
+#print("Test norm: {}".format(T.vector().norm("l2")))
+
 # Solve eddy currents equation (using potential T)
-solve(inner(curl(v0), curl(u0))*dx == -inner(v0, dbdt)*dx, T, bc)
+#solve(inner(curl(v0), curl(u0))*dx == -inner(v0, dbdt)*dx, T, bc)
 
 # Solve density equation
-solve(inner(v1, u1)*dx == dot(v1, curl(T))*dx, J)
+#solve(inner(v1, u1)*dx == dot(v1, curl(T))*dx, J)
 
 # Plot solution
-plot(J)
+#plot(J)
 
-file=File("current_density.pvd")
-file << J
+#file=File("current_density.pvd")
+#file << J
 
 # Hold plot
-interactive()
+#interactive()
