@@ -143,7 +143,12 @@ MeshQuality::radius_ratio_matplotlib_histogram(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 std::vector<double> MeshQuality::dihedral_angles(const Cell& cell)
 {
-  // FIXME: assert tetrahedron
+  if (cell.type() < 4)
+      dolfin_error("MeshQuality.cpp",
+                 "calculate dihedral angles",
+                 "Only works for 3D cells");
+  // Check cell type
+  // dolfin_assert(cell.type()>=4);
 
   static std::size_t edges[6][2] = {{2, 3},
                                     {1, 3},
