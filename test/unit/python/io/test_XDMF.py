@@ -28,15 +28,13 @@ def test_save_and_load_1d_mesh(tempdir):
     filename = os.path.join(tempdir, "mesh.xdmf")
     mesh = UnitIntervalMesh(32)
 
-    file = File(filename)
-    file << mesh
-    del file
-
     file = XDMFFile(mesh.mpi_comm(), filename)
     file.write(mesh)
     del file
 
-    mesh2 = Mesh(filename)
+    mesh2 = Mesh()
+    file = XDMFFile(mpi_comm_world(), filename)
+    file.read(mesh2, False)
     assert mesh.size_global(0) == mesh2.size_global(0)
     dim = mesh.topology().dim()
     assert mesh.size_global(dim) == mesh2.size_global(dim)
@@ -46,15 +44,13 @@ def test_save_and_load_2d_mesh(tempdir):
     filename = os.path.join(tempdir, "mesh_2D.xdmf")
     mesh = UnitSquareMesh(32, 32)
 
-    file = File(filename)
-    file << mesh
-    del file
-
     file = XDMFFile(mesh.mpi_comm(), filename)
     file.write(mesh)
     del file
 
-    mesh2 = Mesh(filename)
+    mesh2 = Mesh()
+    file = XDMFFile(mpi_comm_world(), filename)
+    file.read(mesh2, False)
     assert mesh.size_global(0) == mesh2.size_global(0)
     dim = mesh.topology().dim()
     assert mesh.size_global(dim) == mesh2.size_global(dim)
@@ -64,15 +60,13 @@ def test_save_and_load_3d_mesh(tempdir):
     filename = os.path.join(tempdir, "mesh_3D.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
 
-    file = File(filename)
-    file << mesh
-    del file
-
     file = XDMFFile(mesh.mpi_comm(), filename)
     file.write(mesh)
     del file
 
-    mesh2 = Mesh(filename)
+    mesh2 = Mesh()
+    file = XDMFFile(mpi_comm_world(), filename)
+    file.read(mesh2, False)
     assert mesh.size_global(0) == mesh2.size_global(0)
     dim = mesh.topology().dim()
     assert mesh.size_global(dim) == mesh2.size_global(dim)
@@ -105,6 +99,7 @@ def test_save_2d_scalar(tempdir):
     file = File(mesh.mpi_comm(), filename)
     file << u
     del file
+
     file = XDMFFile(mesh.mpi_comm(), filename)
     file << u
     del file

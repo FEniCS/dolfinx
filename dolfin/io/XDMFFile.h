@@ -135,7 +135,7 @@ namespace dolfin
     // Most recent mesh name
     std::string current_mesh_name;
 
-    std::string _filename;
+    const std::string _filename;
 
     std::size_t counter;
 

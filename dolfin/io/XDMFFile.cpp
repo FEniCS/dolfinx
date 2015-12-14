@@ -49,7 +49,7 @@ using namespace dolfin;
 
 //----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
-  : _mpi_comm(comm)
+  : _mpi_comm(comm), _filename(filename)
 {
   // Make name for HDF5 file (used to store data)
   boost::filesystem::path p(filename);
@@ -440,6 +440,7 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
   }
   dolfin_assert(hdf5_file);
 
+  std::cout << "Filename = (" << _filename << ")" << std::endl;
   XDMFxml xml(_filename);
   xml.read();
 

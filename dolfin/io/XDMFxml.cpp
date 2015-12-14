@@ -17,6 +17,7 @@
 
 #ifdef HAS_HDF5
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <boost/algorithm/string.hpp>
@@ -55,12 +56,15 @@ void XDMFxml::write() const
 //-----------------------------------------------------------------------------
 void XDMFxml::read()
 {
+  // FIXME: check file exists
+  std::cout << "Testing filename: " << _filename << std::endl;
+
   pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
   if (!result)
   {
     dolfin_error("XDMFxml.cpp",
                  "read mesh from XDMF/H5 files",
-                 "XML parsing error.");
+                 "XML parsing error");
   }
 }
 //-----------------------------------------------------------------------------
