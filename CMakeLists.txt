@@ -70,10 +70,8 @@ set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfin)
 # Configurable options for how we want to build
 
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
-option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." OFF)
-option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
-option(DOLFIN_AUTO_DETECT_MPI "Detect MPI automatically - turn this off to use the MPI compiler wrappers directly via setting CXX, CXX, FC." ON)
+option(DOLFIN_AUTO_DETECT_MPI "Detect MPI automatically (turn this off to use the MPI compiler wrappers directly via setting CXX, CXX, FC)." ON)
 option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 option(DOLFIN_ENABLE_UNIT_TESTS "Enable unit tests." ON)
@@ -83,6 +81,22 @@ option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 option(DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py." OFF)
+
+# Add shared library paths so shared libs in non-system paths are found
+option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
+
+# Hande RPATH on OSX when not installing to a system directory, see
+# https://groups.google.com/d/msg/fenics-dev/KSCrob4M_1M/zsJwdN-SCAAJ
+# and https://cmake.org/Wiki/CMake_RPATH_handling#Always_full_RPATH.
+if (APPLE)
+  # The RPATH to be used when installing, but only if it's not a
+  # system directory
+  SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+  IF("${isSystemDir}" STREQUAL "-1")
+     SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  ENDIF("${isSystemDir}" STREQUAL "-1")
+endif()
 
 #------------------------------------------------------------------------------
 # This should be removed when Clang support OpenMP is ready
@@ -587,7 +601,9 @@ endif()
 
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
-  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
+  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
+    vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
+    NO_MODULE)
   set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
   if (VTK_FOUND)
     if ("${VTK_VERSION}" VERSION_LESS "5.2")

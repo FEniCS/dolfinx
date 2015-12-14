@@ -30,7 +30,6 @@
 #include "EigenVector.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
-#include "SparsityPattern.h"
 #include "TensorLayout.h"
 
 namespace dolfin

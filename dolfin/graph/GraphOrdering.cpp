@@ -28,7 +28,7 @@
 #include <zoltan_cpp.h>
 
 #include "dolfin/common/MPI.h"
-#include "dolfin/la/GenericSparsityPattern.h"
+#include "dolfin/la/SparsityPattern.h"
 #include "dolfin/la/TensorLayout.h"
 #include "dolfin/log/log.h"
 #include "GraphOrdering.h"
@@ -129,7 +129,7 @@ void GraphOrdering::num_edges_per_vertex(std::vector<std::size_t>& num_edges) co
 const std::vector<std::vector<std::size_t>> GraphOrdering::edges() const
 {
   dolfin_assert(_tensor_layout.sparsity_pattern());
-  return _tensor_layout.sparsity_pattern()->diagonal_pattern(GenericSparsityPattern::unsorted);
+  return _tensor_layout.sparsity_pattern()->diagonal_pattern(SparsityPattern::unsorted);
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

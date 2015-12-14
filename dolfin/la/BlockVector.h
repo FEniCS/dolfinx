@@ -102,7 +102,7 @@ namespace dolfin
 
   private:
 
-    std::vector<std::shared_ptr<GenericVector> > vectors;
+    std::vector<std::shared_ptr<GenericVector>> vectors;
 
   };
 

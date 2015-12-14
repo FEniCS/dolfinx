@@ -20,7 +20,7 @@
 
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/la/GenericSparsityPattern.h>
+#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/Progress.h>
 #include <dolfin/mesh/Cell.h>
@@ -38,7 +38,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void
-SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
+SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
                               const Mesh& mesh,
                               const std::vector<const GenericDofMap*> dofmaps,
                               bool cells,
@@ -53,10 +53,10 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   const std::size_t rank = dofmaps.size();
   std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
+  {
+    dolfin_assert(dofmaps[i]);
     index_maps[i] = dofmaps[i]->index_map();
-
-  dolfin_assert(!dofmaps.empty());
-  dolfin_assert(dofmaps[0]);
+  }
 
   // Initialise sparsity pattern
   if (init)
@@ -252,7 +252,7 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 }
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
-  GenericSparsityPattern& sparsity_pattern,
+  SparsityPattern& sparsity_pattern,
   const MultiMeshForm& form)
 {
   // Get global dimensions and local range
@@ -301,7 +301,7 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
 }
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface(
-  GenericSparsityPattern& sparsity_pattern,
+  SparsityPattern& sparsity_pattern,
   const MultiMeshForm& form,
   std::size_t part)
 {
@@ -317,7 +317,7 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface(
 
   // FIXME: We need two different lists here because the interface
   // FIXME: of insert() requires a list of pointers to dofs. Consider
-  // FIXME: improving the interface of GenericSparsityPattern.
+  // FIXME: improving the interface of SparsityPattern.
 
   // Data structure for storing dofs on macro cell (0 + 1)
   std::vector<std::vector<dolfin::la_index>> dofs(form.rank());

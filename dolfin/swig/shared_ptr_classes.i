@@ -206,7 +206,6 @@
 %shared_ptr(dolfin::LUSolver)
 
 %shared_ptr(dolfin::TensorLayout)
-%shared_ptr(dolfin::GenericSparsityPattern)
 %shared_ptr(dolfin::SparsityPattern)
 
 // log

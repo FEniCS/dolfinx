@@ -28,7 +28,6 @@
 #include <dolfin/common/MPI.h>
 #include "TpetraVector.h"
 #include "TpetraMatrix.h"
-#include "GenericSparsityPattern.h"
 #include "SparsityPattern.h"
 #include "TensorLayout.h"
 #include "TpetraFactory.h"
@@ -86,9 +85,8 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   const std::size_t m = row_range.second - row_range.first;
 
   // Get sparsity pattern
-  dolfin_assert(tensor_layout.sparsity_pattern());
-  std::shared_ptr<const GenericSparsityPattern> sparsity_pattern
-    = tensor_layout.sparsity_pattern();
+  auto sparsity_pattern = tensor_layout.sparsity_pattern();
+  dolfin_assert(sparsity_pattern);
 
   // Initialize matrix
   // Insist on square Matrix for now
@@ -123,11 +121,12 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   // Make a Tpetra::CrsGraph of the sparsity_pattern
   typedef Tpetra::CrsGraph<> graph_type;
   std::vector<std::vector<std::size_t>> pattern_diag
-    = sparsity_pattern->diagonal_pattern(GenericSparsityPattern::unsorted);
+    = sparsity_pattern->diagonal_pattern(SparsityPattern::unsorted);
   std::vector<std::vector<std::size_t>> pattern_off
-    = sparsity_pattern->off_diagonal_pattern(GenericSparsityPattern::unsorted);
+    = sparsity_pattern->off_diagonal_pattern(SparsityPattern::unsorted);
+  const bool has_off_diag = pattern_off.size() > 0;
 
-  dolfin_assert(pattern_diag.size() == pattern_off.size());
+  dolfin_assert(pattern_diag.size() == pattern_off.size() || !has_off_diag);
   dolfin_assert(m == pattern_diag.size());
 
   // Get number of non-zeros per row to allocate storage
@@ -151,8 +150,11 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   {
     std::vector<dolfin::la_index> indices(pattern_diag[i].begin(),
                                           pattern_diag[i].end());
-    indices.insert(indices.end(), pattern_off[i].begin(),
-                   pattern_off[i].end());
+    if (has_off_diag)
+    {
+      indices.insert(indices.end(), pattern_off[i].begin(),
+                     pattern_off[i].end());
+    }
 
     Teuchos::ArrayView<dolfin::la_index> _indices(indices);
     crs_graph->insertGlobalIndices
