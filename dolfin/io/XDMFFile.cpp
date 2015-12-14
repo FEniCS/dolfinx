@@ -49,7 +49,7 @@ using namespace dolfin;
 
 //----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
-  : GenericFile(filename, "XDMF"), _mpi_comm(comm)
+  : _mpi_comm(comm)
 {
   // Make name for HDF5 file (used to store data)
   boost::filesystem::path p(filename);

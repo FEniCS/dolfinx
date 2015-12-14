@@ -29,7 +29,6 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
-#include "GenericFile.h"
 
 namespace dolfin
 {
@@ -49,7 +48,7 @@ namespace dolfin
   /// XDMF is not suitable for checkpointing as it may decimate
   /// some data.
 
-  class XDMFFile : public GenericFile, public Variable
+  class XDMFFile : public Variable
   {
   public:
 
@@ -135,6 +134,11 @@ namespace dolfin
 
     // Most recent mesh name
     std::string current_mesh_name;
+
+    std::string _filename;
+
+    std::size_t counter;
+
   };
 }
 #endif
