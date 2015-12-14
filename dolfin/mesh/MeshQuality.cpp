@@ -175,18 +175,19 @@ std::pair<double, double> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
   // SHOULD ONLY WORK FOR 3D MESH
 
   CellIterator cell(mesh);
+
   // Get the min element in the mesh
-  // std::vector<double> temp = dihedral_angles(*cell);
-  
-  double d_ang_min = *std::min_element(dihedral_angles(*cell).begin(), dihedral_angles(*cell).end());
-  double d_ang_max = *std::max_element(dihedral_angles(*cell).begin(), dihedral_angles(*cell).end());
+  std::vector<double> temp = dihedral_angles(*cell);
+
+  double d_ang_min = *std::min_element(temp.begin(), temp.end());
+  double d_ang_max = *std::max_element(temp.begin(), temp.end());
 
   for (; !cell.end(); ++cell)
   {
-    // temp = dihedral_angles(*cell);
+    temp = dihedral_angles(*cell);
 
-    d_ang_min = std::min(d_ang_min, *std::min_element(dihedral_angles(*cell).begin(), dihedral_angles(*cell).end()));
-    d_ang_max = std::max(d_ang_max, *std::max_element(dihedral_angles(*cell).begin(), dihedral_angles(*cell).end()));
+    d_ang_min = std::min(d_ang_min, *std::min_element(temp.begin(), temp.end()));
+    d_ang_max = std::max(d_ang_max, *std::max_element(temp.begin(), temp.end()));
   }
 
   d_ang_min = MPI::min(mesh.mpi_comm(), d_ang_min);
