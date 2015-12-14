@@ -63,6 +63,10 @@ namespace dolfin
     /// file to store the mesh, and a related XDMF file with metadata.
     void operator<< (const Mesh& mesh);
 
+    /// Save a mesh for visualisation, with e.g. ParaView. Creates a HDF5
+    /// file to store the mesh, and a related XDMF file with metadata.
+    void write (const Mesh& mesh);
+
     /// Read in a mesh from the associated HDF5 file,
     /// optionally using stored partitioning, if possible
     /// when the same number of processes are being used.

@@ -462,6 +462,11 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
 {
+  write(mesh);
+}
+//----------------------------------------------------------------------------
+void XDMFFile::write (const Mesh& mesh)
+{
   // Write Mesh to HDF5 file
 
   if (hdf5_filemode != "w")
