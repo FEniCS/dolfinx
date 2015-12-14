@@ -131,6 +131,13 @@ namespace dolfin
     ///         The scalar value.
     operator double() const;
 
+    /// Return copy of this Constant's current values
+    ///
+    /// *Returns*
+    ///     std::vector<double>
+    ///         The vector of scalar values of the constant.
+    std::vector<double> values(void) const;
+
     //--- Implementation of Expression interface ---
 
     void eval(Array<double>& values, const Array<double>& x) const;

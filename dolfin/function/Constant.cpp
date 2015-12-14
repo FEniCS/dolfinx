@@ -122,6 +122,12 @@ Constant::operator double() const
   return _values[0];
 }
 //-----------------------------------------------------------------------------
+std::vector<double> Constant::values(void) const
+{
+  dolfin_assert(_values.size() > 0)
+  return _values;
+}
+//-----------------------------------------------------------------------------
 void Constant::eval(Array<double>& values, const Array<double>& x) const
 {
   // Copy values
