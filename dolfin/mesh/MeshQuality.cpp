@@ -211,16 +211,13 @@ MeshQuality::dihedral_angles_histogram_data(const Mesh& mesh,
   std::vector<double> bins(num_bins), values(num_bins, 0.0);
 
   // May need to assert the maximum possible angle
-  // dolfin_assert(dihedral_angles_min_max(mesh).second <= 1.0); 
-
-  double d_ang_min, d_ang_max;
-  d_ang_min = dihedral_angles_min_max(mesh).first;
-  d_ang_max = dihedral_angles_min_max(mesh).second;
-
-  const double interval= (d_ang_max - d_ang_min)/(static_cast<double>(num_bins));
+  dolfin_assert(dihedral_angles_min_max(mesh).second <= M_PI); 
+  
+  // Currently min value is 0.0 and max is M_PI
+  const double interval= M_PI/(static_cast<double>(num_bins));
 
   for (std::size_t i = 0; i < num_bins; ++i)
-    bins[i] = d_ang_min + static_cast<double>(i)*interval + interval/2.0;
+    bins[i] = static_cast<double>(i)*interval + interval/2.0;
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -230,8 +227,11 @@ MeshQuality::dihedral_angles_histogram_data(const Mesh& mesh,
     // Iterate through the collected vector
     for(std::size_t i = 0; i < angs.size(); i++) 
     {
-      // Compute 'bin' index, and handle special case that ratio = 1.0
-        const std::size_t slot = static_cast<std::size_t>((angs[i] - d_ang_min)/interval);
+      // Compute 'bin' index, and handle special case that angle = M_PI
+        const std::size_t slot
+        = std::min(static_cast<std::size_t>(angs[i]/interval), num_bins -1);
+
+        // const std::size_t slot = static_cast<std::size_t>((angs[i] - d_ang_min)/interval);
         values[slot] += 1.0; 
     }
   }
