@@ -94,8 +94,6 @@ namespace dolfin
     void write(const std::vector<Point>& points,
                const std::vector<double>& values);
 
-    using GenericFile::write;
-
     /// Read first MeshFunction from file
     void operator>> (MeshFunction<bool>& meshfunction);
     void operator>> (MeshFunction<int>& meshfunction);

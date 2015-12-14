@@ -159,7 +159,7 @@ namespace dolfin
     /// Read from file
     template<typename T> void operator>>(T& t)
     {
-      file->read();
+      file->_read();
       *file >> t;
     }
 
@@ -230,7 +230,7 @@ namespace dolfin
     /// Write object to file
     template<typename T> void operator<<(const T& t)
     {
-      file->write(MPI::rank(_mpi_comm));
+      file->_write(MPI::rank(_mpi_comm));
       *file << t;
     }
 

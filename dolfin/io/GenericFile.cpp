@@ -328,12 +328,12 @@ void GenericFile::operator<< (const std::map<std::size_t,
   read_not_impl("std::map<std::size_t, std::vector<double>>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::read()
+void GenericFile::_read()
 {
   opened_read = true;
 }
 //-----------------------------------------------------------------------------
-void GenericFile::write(std::size_t process_number)
+void GenericFile::_write(std::size_t process_number)
 {
   // pvd files should only be cleared by one process
   if (_filetype == "VTK" && process_number > 0)

@@ -80,38 +80,38 @@ File::~File()
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const Mesh*, double> mesh)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << mesh;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<int>*, double> f)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void
 File::operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<double>*, double> f)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const Function*, double> u)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << u;
 }
 //-----------------------------------------------------------------------------
