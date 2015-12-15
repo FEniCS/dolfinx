@@ -141,12 +141,14 @@ MeshQuality::radius_ratio_matplotlib_histogram(const Mesh& mesh,
   return matplotlib.str();
 }
 //-----------------------------------------------------------------------------
-std::vector<double> MeshQuality::dihedral_angles(const Cell& cell)
+void MeshQuality::dihedral_angles(const Cell& cell, std::vector<double>& dh_angle)
 {
   if (cell.type() < 4)
+  {
       dolfin_error("MeshQuality.cpp",
                  "calculate dihedral angles",
                  "Only works for 3D cells");
+  }
   // Check cell type
   // dolfin_assert(cell.type()>=4);
 
@@ -158,8 +160,8 @@ std::vector<double> MeshQuality::dihedral_angles(const Cell& cell)
                                     {0, 1}};
   const Mesh& mesh = cell.mesh();
 
-  std::vector<double> dh_angle(6);
-  for (unsigned int i = 0; i != 6; ++i)
+  dh_angle.resize(6);
+  for (unsigned int i = 0; i < 6; ++i)
   {
     const std::size_t i0 = cell.entities(0)[edges[i][0]];
     const std::size_t i1 = cell.entities(0)[edges[i][1]];
@@ -175,28 +177,27 @@ std::vector<double> MeshQuality::dihedral_angles(const Cell& cell)
     double cphi = (v2.dot(v3) - v1.dot(v2)*v1.dot(v3)) / (v1.cross(v2).norm() * v1.cross(v3).norm());
     dh_angle[i] = acos(cphi);
   }
-
-  return dh_angle;
 }
 //-----------------------------------------------------------------------------
 std::pair<double, double> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
 {
   // Get the maximum and minimum value of dihedral angles in cells across a mesh
   // SHOULD ONLY WORK FOR 3D MESH
-
-  CellIterator cell(mesh);
+  //CellIterator cell(mesh);
 
   // Get the angles at each cell
-  std::vector<double> angs = dihedral_angles(*cell);
+  //std::vector<double> angs; 
+  //dihedral_angles(*cell, angs);
 
   // Get original min and max
-  double d_ang_min = *std::min_element(angs.begin(), angs.end());
-  double d_ang_max = *std::max_element(angs.begin(), angs.end());
+  double d_ang_min = DOLFIN_PI + 1.0;
+  double d_ang_max = -1.0;
 
-  for (; !cell.end(); ++cell)
+  std::vector<double> angs(6); 
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get the angles from the next cell
-    angs = dihedral_angles(*cell);
+    dihedral_angles(*cell, angs);
 
     // And then update the min and max
     d_ang_min = std::min(d_ang_min, *std::min_element(angs.begin(), angs.end()));
@@ -215,7 +216,8 @@ MeshQuality::dihedral_angles_histogram_data(const Mesh& mesh,
 {
   std::vector<double> bins(num_bins), values(num_bins, 0.0);
 
-  // May need to assert the maximum possible angle
+  // May need to assert the minimum and maximum possible angle
+  dolfin_assert(dihedral_angles_min_max(mesh).first >= 0.0); // Is this really needed?
   dolfin_assert(dihedral_angles_min_max(mesh).second <= M_PI); 
   
   // Currently min value is 0.0 and max is M_PI
@@ -224,14 +226,15 @@ MeshQuality::dihedral_angles_histogram_data(const Mesh& mesh,
   for (std::size_t i = 0; i < num_bins; ++i)
     bins[i] = static_cast<double>(i)*interval + interval/2.0;
 
+  std::vector<double> angs(6);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // this one should return the value of the angle
-    const std::vector<double> angs = dihedral_angles(*cell);
+    dihedral_angles(*cell, angs);
 
     // Iterate through the collected vector
     for(std::size_t i = 0; i < angs.size(); i++) 
-    {
+    { 
       // Compute 'bin' index, and handle special case that angle = M_PI
         const std::size_t slot
         = std::min(static_cast<std::size_t>(angs[i]/interval), num_bins -1);
