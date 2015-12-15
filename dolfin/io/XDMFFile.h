@@ -41,12 +41,12 @@ namespace dolfin
   class Point;
 
   /// This class supports the output of meshes and functions in XDMF
-  /// (http://www.xdmf.org) format. It creates an XML file that describes
-  /// the data and points to a HDF5 file that stores the actual problem
-  /// data. Output of data in parallel is supported.
+  /// (http://www.xdmf.org) format. It creates an XML file that
+  /// describes the data and points to a HDF5 file that stores the
+  /// actual problem data. Output of data in parallel is supported.
   ///
-  /// XDMF is not suitable for checkpointing as it may decimate
-  /// some data.
+  /// XDMF is not suitable for checkpointing as it may decimate some
+  /// data.
 
   class XDMFFile : public Variable
   {
@@ -58,17 +58,19 @@ namespace dolfin
     /// Destructor
     ~XDMFFile();
 
-    /// Save a mesh for visualisation, with e.g. ParaView. Creates a HDF5
-    /// file to store the mesh, and a related XDMF file with metadata.
+    /// Save a mesh for visualisation, with e.g. ParaView. Creates a
+    /// HDF5 file to store the mesh, and a related XDMF file with
+    /// metadata.
     void operator<< (const Mesh& mesh);
 
-    /// Save a mesh for visualisation, with e.g. ParaView. Creates a HDF5
-    /// file to store the mesh, and a related XDMF file with metadata.
+    /// Save a mesh for visualisation, with e.g. ParaView. Creates a
+    /// HDF5 file to store the mesh, and a related XDMF file with
+    /// metadata.
     void write (const Mesh& mesh);
 
-    /// Read in a mesh from the associated HDF5 file,
-    /// optionally using stored partitioning, if possible
-    /// when the same number of processes are being used.
+    /// Read in a mesh from the associated HDF5 file, optionally using
+    /// stored partitioning, if possible when the same number of
+    /// processes are being used.
     void read(Mesh& mesh, bool use_partition_from_file);
 
     /// Read in a mesh from the associated HDF5 file
@@ -121,16 +123,16 @@ namespace dolfin
     template<typename T>
       void read_mesh_function(MeshFunction<T>& meshfunction);
 
-    // Write XML description of point clouds, with value_size = 0, 1 or 3
-    // (for either no point data, scalar, or vector)
+    // Write XML description of point clouds, with value_size = 0, 1
+    // or 3 (for either no point data, scalar, or vector)
     void write_point_xml(const std::string dataset_name,
                          const std::size_t num_global_points,
                          const unsigned int value_size);
 
     // Get point data values for linear or quadratic mesh into
     // flattened 2D array in data_values with given width
-    void get_point_data_values(std::vector<double>& data_values, std::size_t width,
-                               const Function& u);
+    void get_point_data_values(std::vector<double>& data_values,
+                               std::size_t width, const Function& u);
 
     // Most recent mesh name
     std::string current_mesh_name;

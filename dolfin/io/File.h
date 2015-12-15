@@ -18,9 +18,6 @@
 // Modified by Magnus Vikstrom 2007
 // Modified by Nuno Lopes 2008
 // Modified by Ola Skavhaug 2009
-//
-// First added:  2002-11-12
-// Last changed: 2013-03-11
 
 #ifndef __FILE_H
 #define __FILE_H

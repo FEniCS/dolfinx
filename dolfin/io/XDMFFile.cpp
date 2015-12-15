@@ -67,9 +67,9 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
   // HDF5 file whilst running, at some performance cost.
   parameters.add("flush_output", false);
 
-  // HDF5 file restart interval. Use 0 to collect all output in one file.
+  // HDF5 file restart interval. Use 0 to collect all output in one
+  // file.
   parameters.add("multi_file", 0);
-
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -256,8 +256,8 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   const std::size_t value_rank = u.value_rank();
   const std::size_t value_size = u.value_size();
 
-  // For 2D vectors and tensors, pad out values with zeros
-  // to make 3D (XDMF does not support 2D data)
+  // For 2D vectors and tensors, pad out values with zeros to make 3D
+  // (XDMF does not support 2D data)
   std::size_t padded_value_size = value_size;
   if (value_rank > 0)
   {
@@ -448,7 +448,8 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
   const std::vector<std::string> geom_name = xml.geometry_name();
   boost::filesystem::path topo_path(topo_name[0]);
   boost::filesystem::path hdf5_path(hdf5_filename);
-  if (topo_path.filename() != hdf5_path.filename() or geom_name[0] != topo_name[0])
+  if (topo_path.filename() != hdf5_path.filename()
+      or geom_name[0] != topo_name[0])
   {
     dolfin_error("XDMFFile.cpp",
                  "read XDMF mesh",
@@ -456,9 +457,8 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
   }
 
   // Try to read the mesh from the associated HDF5 file
-  hdf5_file->read(mesh, topo_name[1],
-                  geom_name[1],
-                  topo_name[2], use_partition_from_file);
+  hdf5_file->read(mesh, topo_name[1], geom_name[1], topo_name[2],
+                  use_partition_from_file);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
@@ -466,7 +466,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
   write(mesh);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::write (const Mesh& mesh)
+void XDMFFile::write(const Mesh& mesh)
 {
   // Write Mesh to HDF5 file
 
