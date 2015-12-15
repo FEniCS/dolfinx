@@ -15,9 +15,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2009-03-30
-// Last changed: 2015-06-24
-//
 // Eddy currents phenomena in low conducting body can be described
 // using electric vector potential and curl-curl operator:
 //
@@ -39,9 +36,7 @@
 // Hypre, via PETSc. It therefore requires PETSc, configured with
 // Hypre.
 
-
 #include <dolfin.h>
-#include <dolfin/fem/DiscreteOperators.h>
 #include "EddyCurrents.h"
 #include "CurrentDensity.h"
 #include "P1Space.h"
@@ -147,7 +142,7 @@ int main()
   // Solve problem using an iterative linear solver
   Function J(V1);
   Parameters p;
-  p.add("linear_solver", "iterative");
+  p.add("linear_solver", "cg");
   p.add("symmetric", true);
   solve(a1 == L1, J, p);
 

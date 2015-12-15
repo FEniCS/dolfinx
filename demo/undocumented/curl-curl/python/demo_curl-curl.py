@@ -13,10 +13,10 @@ Boundary condition:
 
    T_t = T_w = 0, \frac{\partial T_n}{\partial n} = 0
 
-which is naturaly fulfilled for zero Dirichlet BC with Nedelec (edge)
+which is naturally fulfilled for zero Dirichlet BC with Nedelec (edge)
 elements.
 
-This demo uses the auxillary Maxwell space multigrid preconditioner
+This demo uses the auxiliary Maxwell space multigrid preconditioner
 from HYPRE (via PETSc). To run this demo, PETSc must be configured
 with HYPRE, and petsc4py must be available.
 
@@ -102,7 +102,7 @@ L = -inner(v, dbdt)*dx
 # Assemble system
 A, b = assemble_system(a, L, bc)
 
-# Create Krylov solver
+# Create PETSc Krylov solver (from petsc4py)
 ksp = PETSc.KSP()
 ksp.create(PETSc.COMM_WORLD)
 
@@ -132,8 +132,8 @@ for i, c in enumerate(constants):
 cvecs = [as_backend_type(constant.vector()).vec() for constant in constants]
 pc.setHYPRESetEdgeConstantVectors(cvecs[0], cvecs[1], cvecs[2])
 
-#  We are dealing with a zero conductivity problem (no mass term), so
-#  we need to tell the preconditioner
+# We are dealing with a zero conductivity problem (no mass term), so
+# we need to tell the preconditioner
 pc.setHYPRESetBetaPoissonMatrix(None)
 
 # Set operator for the linear solver
@@ -158,7 +158,7 @@ W = VectorFunctionSpace(mesh, "Lagrange", 1)
 v = TestFunction(W)
 u = TrialFunction(W)
 
-# Solve density equation
+# Solve density equation (use conjugate gradient linear solver)
 J = Function(W)
 solve(inner(v, u)*dx == dot(v, curl(T))*dx, J,
       solver_parameters={"linear_solver": "cg"} )
