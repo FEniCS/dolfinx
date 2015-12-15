@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Kent-Andre Mardal and Garth N. Wells
+// Copyright (C) 2008-2015 Kent-Andre Mardal and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,9 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2008-2011
-//
-// First added:  2009-06-22
-// Last changed: 2013-04-23
 
 #ifndef __SYSTEM_ASSEMBLER_H
 #define __SYSTEM_ASSEMBLER_H
@@ -53,24 +50,14 @@ namespace dolfin
   template<typename T> class MeshFunction;
   class UFC;
 
-  /// This class provides an assembler for systems of the form
-  /// Ax = b. It differs from the default DOLFIN assembler in that it
+  /// This class provides an assembler for systems of the form Ax =
+  /// b. It differs from the default DOLFIN assembler in that it
   /// applies boundary conditions at the time of assembly, which
   /// preserves any symmetries in A.
 
   class SystemAssembler : public AssemblerBase
   {
   public:
-
-    /// Constructor
-    SystemAssembler(const Form& a, const Form& L);
-
-    /// Constructor
-    SystemAssembler(const Form& a, const Form& L, const DirichletBC& bc);
-
-    /// Constructor
-    SystemAssembler(const Form& a, const Form& L,
-                    const std::vector<const DirichletBC*> bcs);
 
     /// Constructor
     SystemAssembler(std::shared_ptr<const Form> a,
