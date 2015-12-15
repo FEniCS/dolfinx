@@ -136,7 +136,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<double>
     ///         The vector of scalar values of the constant.
-    std::vector<double> values(void) const;
+    std::vector<double> values() const;
 
     //--- Implementation of Expression interface ---
 

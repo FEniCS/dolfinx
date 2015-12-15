@@ -25,6 +25,7 @@
 #include <sstream>
 #include <iterator>
 #include <iostream>
+#include <dolfin/common/utils.h>
 #include <dolfin/log/log.h>
 #include "Constant.h"
 
@@ -143,21 +144,34 @@ std::string Constant::str(bool verbose) const
 {
   std::ostringstream oss;
 
-  if (!_values.empty())
+  oss << "<Constant of dimension "
+      << _values.size()
+      << ">";
+  if (verbose)
   {
-    if (!_value_shape.empty())
+    std::ostringstream ossv;
+    if (!_values.empty())
     {
-      oss << "(";
-      // Avoid a trailing ", "
-      std::copy(_values.begin(), _values.end()-1,
-          std::ostream_iterator<double>(oss, ", "));
-      oss << _values.back();
-      oss << ")";
+      ossv << std::endl << std::endl;
+      if (!_value_shape.empty())
+      {
+        ossv << "Values: ";
+        ossv << "(";
+        // Avoid a trailing ", "
+        std::copy(_values.begin(), _values.end()-1,
+            std::ostream_iterator<double>(ossv, ", "));
+        ossv << _values.back();
+        ossv << ")";
+      }
+      else
+      {
+        ossv << "Value: ";
+        ossv << _values[0];
+      }
     }
-    else
-      oss << _values[0];
+    oss << indent(ossv.str());
   }
-
+  
   return oss.str();
 }
 //-----------------------------------------------------------------------------
