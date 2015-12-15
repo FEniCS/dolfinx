@@ -29,6 +29,7 @@
 #include "Assembler.h"
 #include "Form.h"
 #include "NonlinearVariationalProblem.h"
+#include "SystemAssembler.h"
 #include "NonlinearVariationalSolver.h"
 
 using namespace dolfin;
@@ -190,19 +191,22 @@ NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
   // Get problem data
   dolfin_assert(_problem);
   std::shared_ptr<const Form> F(_problem->residual_form());
+  std::shared_ptr<const Form> J(_problem->jacobian_form());
   std::vector<std::shared_ptr<const DirichletBC>> bcs(_problem->bcs());
 
-  // Assemble right-hand side
-  dolfin_assert(F);
-  Assembler assembler;
-  assembler.assemble(b, *F);
-
-  // Apply boundary conditions
-  for (std::size_t i = 0; i < bcs.size(); i++)
+  // Create assembler
+  std::vector<const DirichletBC*> _bcs(bcs.size());
+  for (std::size_t i = 0; i < bcs.size(); ++i)
   {
     dolfin_assert(bcs[i]);
-    bcs[i]->apply(b, x);
+    _bcs[i] = bcs[i].get();
   }
+  dolfin_assert(J);
+  dolfin_assert(F);
+  SystemAssembler assembler(J, F, _bcs);
+
+  // Assemble right-hand side
+  assembler.assemble(b, x);
 
   // Print vector
   dolfin_assert(_solver);
@@ -218,19 +222,22 @@ NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
   // Get problem data
   dolfin_assert(_problem);
   std::shared_ptr<const Form> J(_problem->jacobian_form());
+  std::shared_ptr<const Form> F(_problem->residual_form());
   std::vector<std::shared_ptr<const DirichletBC>> bcs(_problem->bcs());
 
-  // Assemble left-hand side
-  dolfin_assert(J);
-  Assembler assembler;
-  assembler.assemble(A, *J);
-
-  // Apply boundary conditions
-  for (std::size_t i = 0; i < bcs.size(); i++)
+  // Create assembler
+  std::vector<const DirichletBC*> _bcs(bcs.size());
+  for (std::size_t i = 0; i < bcs.size(); ++i)
   {
     dolfin_assert(bcs[i]);
-    bcs[i]->apply(A);
+    _bcs[i] = bcs[i].get();
   }
+  dolfin_assert(J);
+  dolfin_assert(F);
+  SystemAssembler assembler(J, F, _bcs);
+
+  // Assemble left-hand side
+  assembler.assemble(A);
 
   // Print matrix
   dolfin_assert(_solver);
