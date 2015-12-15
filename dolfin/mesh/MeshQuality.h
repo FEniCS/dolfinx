@@ -31,7 +31,7 @@
 namespace dolfin
 {
 
-  class Mesh;
+    class Mesh;
 
   /// The class provides functions to quantify mesh quality
 
@@ -90,8 +90,7 @@ namespace dolfin
 					std::size_t num_intervals = 50);
 
     /// Get internal dihedral angles of a tetrahedral cell
-    static std::vector<double> 
-        dihedral_angles(const Cell& cell);
+    static void dihedral_angles(const Cell& cell, std::vector<double>& dh_angle); 
 
     /// Get internal minimum and maximum dihedral angles of a 3D mesh
     static std::pair<double, double> 
