@@ -107,7 +107,6 @@ def test_radius_ratio_min_radius_ratio_max():
     assert round(rmin - 0.0, 7) == 0
     assert round(rmax - 1.0, 7) == 0
 
-@skip_in_parallel
 def test_dihedral_angles_min_max():
     # Create 3D mesh with regular tetrahedron
     mesh = UnitCubeMesh(1, 1, 1)
@@ -115,7 +114,6 @@ def test_dihedral_angles_min_max():
     assert round(dang_min*(180/numpy.pi) - 45.0) == 0
     assert round(dang_max*(180/numpy.pi) - 90.0) == 0
 
-@skip_in_parallel
 def test_dihedral_angles_matplotlib():
     # Create mesh, collpase and compute min ratio
     mesh = UnitCubeMesh(12, 12, 12)
