@@ -53,7 +53,7 @@ endif()
 # Set CMake options, see `cmake --help-policy CMP000x`
 if (COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
-  cmake_policy(SET CMP0004 OLD)
+  cmake_policy(SET CMP0004 NEW)
   if(POLICY CMP0042)
     cmake_policy(SET CMP0042 NEW)
   endif()
