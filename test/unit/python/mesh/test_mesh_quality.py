@@ -37,6 +37,7 @@ def test_radius_ratio_triangle():
     for c in cells(mesh):
         assert round(ratios[c] - 0.828427124746, 7) == 0
 
+
 def test_radius_ratio_tetrahedron():
 
     # Create mesh and compute ratios
@@ -44,7 +45,7 @@ def test_radius_ratio_tetrahedron():
     ratios = MeshQuality.radius_ratios(mesh)
     for c in cells(mesh):
         assert round(ratios[c] - 0.717438935214, 7) == 0
-        #print ratio[c]
+
 
 def test_radius_ratio_triangle_min_max():
 
@@ -60,6 +61,7 @@ def test_radius_ratio_triangle_min_max():
     assert round(rmin - 0.0, 7) == 0
     assert round(rmax - 0.0, 7) == 0
 
+
 def test_radius_ratio_tetrahedron_min_max():
 
     # Create mesh, collpase and compute min ratio
@@ -74,8 +76,8 @@ def test_radius_ratio_tetrahedron_min_max():
     assert round(rmax - 0.0, 7) == 0
     assert round(rmax - 0.0, 7) == 0
 
-def test_radius_ratio_matplotlib():
 
+def test_radius_ratio_matplotlib():
     # Create mesh, collpase and compute min ratio
     mesh = UnitCubeMesh(12, 12, 12)
     test = MeshQuality.radius_ratio_matplotlib_histogram(mesh, 5)
