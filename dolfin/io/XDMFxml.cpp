@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 
 #include <dolfin/log/log.h>
@@ -56,15 +57,20 @@ void XDMFxml::write() const
 //-----------------------------------------------------------------------------
 void XDMFxml::read()
 {
-  // FIXME: check file exists
-  std::cout << "Testing filename: " << _filename << std::endl;
+  // Check file exists
+  if (!boost::filesystem::exists(_filename))
+  {
+    dolfin_error("XDMFxml.cpp",
+                 "read mesh from XDMF/H5 files",
+                 "File does not exist");
+  }
 
   pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
   if (!result)
   {
     dolfin_error("XDMFxml.cpp",
                  "read mesh from XDMF/H5 files",
-                 "XML parsing error");
+                 "Error opening XML file");
   }
 }
 //-----------------------------------------------------------------------------
