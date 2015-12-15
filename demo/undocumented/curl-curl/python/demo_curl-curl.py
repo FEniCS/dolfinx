@@ -11,10 +11,14 @@ Boundary condition:
 
    J_n = 0,
 
-   T_t=T_w=0, \frac{\partial T_n}{\partial n} = 0
+   T_t = T_w = 0, \frac{\partial T_n}{\partial n} = 0
 
 which is naturaly fulfilled for zero Dirichlet BC with Nedelec (edge)
 elements.
+
+This demo uses the auxillary Maxwell space multigrid preconditioner
+from HYPRE (via PETSc). To run this demo, PETSc must be configured
+with HYPRE, and petsc4py must be available.
 
 """
 
@@ -38,32 +42,50 @@ elements.
 # Modified by Anders Logg 2011
 
 from dolfin import *
-from petsc4py import *
+
+# Check that DOLFIN has been configured with PETSc
+if not has_petsc():
+    print("This demo requires DOLFIN to be configured with PETSc.")
+    exit()
+
+# Check that PETSc has been configured with HYPRE
+if not "hypre_amg" in PETScPreconditioner.preconditioners():
+    print("This demo requires PETSc to be configured with HYPRE")
+    exit()
+
+# Try to import petsc4py, and check that HYPRE bindings are available
+try:
+    from petsc4py import *
+    try:
+        getattr(PETSc.PC, 'getHYPREType')
+    except AttributeError:
+        print("This demo requires a recent petsc4py with HYPRE bindings.")
+        exit()
+except ImportError:
+    print("This demo requires petsc4py.")
+    exit()
+
 
 # Set PETSc as default linear algebra backend
 parameters["linear_algebra_backend"] = "PETSc";
 
 # Load sphere mesh
 mesh = Mesh("../sphere.xml.gz")
-#mesh = UnitCubeMesh(1, 1, 1)
-#mesh = refine(mesh)
+mesh = refine(mesh)
 
 # Define function spaces
-P1 = VectorFunctionSpace(mesh, "Lagrange", 1)
 V = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1)
 
 # Define test and trial functions
-v0 = TestFunction(V)
-u0 = TrialFunction(V)
-v1 = TestFunction(P1)
-u1 = TrialFunction(P1)
+v = TestFunction(V)
+u = TrialFunction(V)
 
-# Define functions
-dbdt = Expression(("0.0", "0.0", "1.0"), degree=1)
-zero = Expression(("0.0", "0.0", "0.0"), degree=1)
+# Define functions for boundary condiitons
+dbdt = Constant((0.0, 0.0, 1.0))
+zero = Constant((0.0, 0.0, 0.0))
 
+# Magnetic field (to be computed)
 T = Function(V)
-J = Function(P1)
 
 # Dirichlet boundary
 class DirichletBoundary(SubDomain):
@@ -74,8 +96,8 @@ class DirichletBoundary(SubDomain):
 bc = DirichletBC(V, zero, DirichletBoundary())
 
 # Forms for the eddy-current equation
-a = inner(curl(v0), curl(u0))*dx
-L = -inner(v0, dbdt)*dx
+a = inner(curl(v), curl(u))*dx
+L = -inner(v, dbdt)*dx
 
 # Assemble system
 A, b = assemble_system(a, L, bc)
@@ -83,61 +105,68 @@ A, b = assemble_system(a, L, bc)
 # Create Krylov solver
 ksp = PETSc.KSP()
 ksp.create(PETSc.COMM_WORLD)
+
+# Set the Krylov solver type and set tolerances
 ksp.setType("cg")
 ksp.setTolerances(rtol=1.0e-8, atol=1.0e-12, divtol=1.0e10, max_it=300)
 
-# Get the preconditioner and set type
+# Get the preconditioner and set type (HYPRE AMS)
 pc = ksp.getPC()
 pc.setType("hypre")
 pc.setHYPREType("ams")
 
-opts = PETSc.Options()
-opts.setValue("-ksp_monitor_true_residual", None)
-
 # Build discrete gradient
-P1s = FunctionSpace(mesh, "Lagrange", 1)
-G = DiscreteOperators.build_gradient(V, P1s)
-print "G Norm: ", G.norm("frobenius")
+P1 = FunctionSpace(mesh, "Lagrange", 1)
+G = DiscreteOperators.build_gradient(V, P1)
 
 # Attach discrete gradient to preconditioner
-G = as_backend_type(G)
-pc.setHYPREDiscreteGradient(G.mat())
+pc.setHYPREDiscreteGradient(as_backend_type(G).mat())
 
-# Inform preconditioner of constants in the Nedelec space
+# Build constants basis for the Nedelec space
 constants = [Function(V) for i in range(3)]
 for i, c in enumerate(constants):
-    direction = [1 if i == j else 0 for j in range(3)]
+    direction = [1.0 if i == j else 0.0 for j in range(3)]
     c.interpolate(Constant(direction))
 
+# Inform preconditioner of constants in the Nedelec space
 cvecs = [as_backend_type(constant.vector()).vec() for constant in constants]
-
 pc.setHYPRESetEdgeConstantVectors(cvecs[0], cvecs[1], cvecs[2])
 
+#  We are dealing with a zero conductivity problem (no mass term), so
+#  we need to tell the preconditioner
 pc.setHYPRESetBetaPoissonMatrix(None)
 
-# Set operator
-ksp.setOperators(as_backend_type(A).mat(), as_backend_type(A).mat())
+# Set operator for the linear solver
+ksp.setOperators(as_backend_type(A).mat())
 
-# Solve
+# Set options prefix
+ksp.setOptionsPrefix("eddy_")
+
+# Turn on monitoring of residual
+opts = PETSc.Options()
+opts.setValue("-eddy_ksp_monitor_true_residual", None)
+
+# Solve eddy currents equation (using potential T)
 ksp.setFromOptions()
 ksp.solve(as_backend_type(b).vec(), as_backend_type(T.vector()).vec())
 
-# Show solver details
+# Show linear solver details
 ksp.view()
 
-#print("Test norm: {}".format(T.vector().norm("l2")))
-
-# Solve eddy currents equation (using potential T)
-#solve(inner(curl(v0), curl(u0))*dx == -inner(v0, dbdt)*dx, T, bc)
+# Test and trial functions for density equation
+W = VectorFunctionSpace(mesh, "Lagrange", 1)
+v = TestFunction(W)
+u = TrialFunction(W)
 
 # Solve density equation
-#solve(inner(v1, u1)*dx == dot(v1, curl(T))*dx, J)
+J = Function(W)
+solve(inner(v, u)*dx == dot(v, curl(T))*dx, J,
+      solver_parameters={"linear_solver": "cg"} )
 
-# Plot solution
-#plot(J)
+# Write solution to PVD/ParaView file
+file = File("current_density.pvd")
+file << J
 
-#file=File("current_density.pvd")
-#file << J
-
-# Hold plot
-#interactive()
+# Plot solution and hold plot
+plot(J)
+interactive()

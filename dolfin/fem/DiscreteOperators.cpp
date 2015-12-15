@@ -61,8 +61,6 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
                  "function spaces is not a lowest-order edge space");
   }
 
-  std:: cout << "Build grad 1" << std::endl;
-
   // Check that V1 is a linear nodal basis
   if (V1.dim() != mesh.size_global(0))
   {
@@ -99,7 +97,6 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   // Initialise tensor layout
   tensor_layout->init(mesh.mpi_comm(), index_maps,
                       TensorLayout::Ghosts::UNGHOSTED);
-  std:: cout << "Build grad 3" << std::endl;
 
   // Initialize edge -> vertex connections
   mesh.init(1, 0);
