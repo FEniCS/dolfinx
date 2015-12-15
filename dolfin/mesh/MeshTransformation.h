@@ -24,52 +24,64 @@
 namespace dolfin
 {
 
-   class Mesh;
-   class Point;
+  class Mesh;
+  class Point;
 
   /// This class implements various transformations of the coordinates
   /// of a mesh.
 
-  class MeshTransformation
-  {
-  public:
+class MeshTransformation
+{
+public:
 
-    /// Translate mesh according to a given vector.
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh
-    ///     point (Point)
-    ///         The vector defining the translation.
-    static void translate(Mesh& mesh, const Point& point);
+  /// Translate mesh according to a given vector.
+  ///
+  /// *Arguments*
+  ///     mesh (_Mesh_)
+  ///         The mesh
+  ///     point (Point)
+  ///         The vector defining the translation.
+  static void translate(Mesh& mesh, const Point& point);
 
-    /// Rotate mesh around a coordinate axis through center of mass
-    /// of all mesh vertices
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh.
-    ///     angle (double)
-    ///         The number of degrees (0-360) of rotation.
-    ///     axis (std::size_t)
-    ///         The coordinate axis around which to rotate the mesh.
-    static void rotate(Mesh& mesh, double angle, std::size_t axis);
+  /// Rescale mesh by a given scaling factor with respect to a center
+  /// point.
+  ///
+  /// *Arguments*
+  ///     mesh (_Mesh_)
+  ///         The mesh
+  ///      scale (double)
+  ///         The scaling factor.
+  ///      center (Point)
+  ///         The center of the scaling.
+  static void rescale(Mesh& mesh, const double scale, const Point& center);
 
-    /// Rotate mesh around a coordinate axis through a given point
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh.
-    ///     angle (double)
-    ///         The number of degrees (0-360) of rotation.
-    ///     axis (std::size_t)
-    ///         The coordinate axis around which to rotate the mesh.
-    ///     point (_Point_)
-    ///         The point around which to rotate the mesh.
-    static void rotate(Mesh& mesh, double angle, std::size_t axis,
-                       const Point& p);
+  /// Rotate mesh around a coordinate axis through center of mass
+  /// of all mesh vertices
+  ///
+  /// *Arguments*
+  ///     mesh (_Mesh_)
+  ///         The mesh.
+  ///     angle (double)
+  ///         The number of degrees (0-360) of rotation.
+  ///     axis (std::size_t)
+  ///         The coordinate axis around which to rotate the mesh.
+  static void rotate(Mesh& mesh, double angle, std::size_t axis);
 
-  };
+  /// Rotate mesh around a coordinate axis through a given point
+  ///
+  /// *Arguments*
+  ///     mesh (_Mesh_)
+  ///         The mesh.
+  ///     angle (double)
+  ///         The number of degrees (0-360) of rotation.
+  ///     axis (std::size_t)
+  ///         The coordinate axis around which to rotate the mesh.
+  ///     point (_Point_)
+  ///         The point around which to rotate the mesh.
+  static void rotate(Mesh& mesh, double angle, std::size_t axis,
+                     const Point& p);
+
+};
 
 }
 

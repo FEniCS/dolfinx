@@ -28,19 +28,23 @@ from dolfin import *
 from six.moves import xrange as range
 from dolfin_utils.test import fixture
 
+
 @pytest.fixture(scope="module", params=range(5))
 def name(request):
     names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
     return names[request.param]
+
 
 @pytest.fixture(scope="module", params=range(4))
 def tp(request):
     tps = ['int', 'size_t', 'bool', 'double']
     return tps[request.param]
 
+
 @fixture
 def mesh():
     return UnitCubeMesh(3, 3, 3)
+
 
 @fixture
 def funcs(mesh):
@@ -49,13 +53,14 @@ def funcs(mesh):
     funcs = {}
     for tp in tps:
         for name in names:
-            funcs[(tp, name)] = eval("%sFunction('%s', mesh)"%\
-                                       (name, tp))
+            funcs[(tp, name)] = eval("%sFunction('%s', mesh)" % (name, tp))
     return funcs
+
 
 @fixture
 def cube():
     return UnitCubeMesh(8, 8, 8)
+
 
 @fixture
 def f(cube):
@@ -69,8 +74,9 @@ def test_size(tp, name, funcs, mesh):
         assert a == b
     else:
         a = len(funcs[(tp, name)])
-        b = getattr(mesh, "num_%ss"%name.lower())()
+        b = getattr(mesh, "num_%ss" % name.lower())()
         assert a == b
+
 
 def test_access_type(tp, name, funcs):
     type_dict = dict(int=int, size_t=int, double=float, bool=bool)
@@ -80,22 +86,22 @@ def test_access_type(tp, name, funcs):
 def test_numpy_access(funcs, tp, name):
     values = funcs[(tp, name)].array()
     values[:] = numpy.random.rand(len(values))
-    assert all(values[i]==funcs[(tp, name)][i] \
-        		 for i in range(len(values)))
+    assert all(values[i] == funcs[(tp, name)][i] for i in range(len(values)))
+
 
 def test_iterate(tp, name, funcs):
-     for index, value in enumerate(funcs[(tp, name)]):
-         pass
-     assert index == len(funcs[(tp, name)])-1
-     with pytest.raises(IndexError):
-          funcs[(tp, name)].__getitem__(len(funcs[(tp, name)]))
+    for index, value in enumerate(funcs[(tp, name)]):
+        pass
+    assert index == len(funcs[(tp, name)])-1
+    with pytest.raises(IndexError):
+        funcs[(tp, name)].__getitem__(len(funcs[(tp, name)]))
 
 
 def test_setvalues(tp, funcs, name):
     if tp != 'bool':
         with pytest.raises(TypeError):
             funcs[(tp, name)].__setitem__(len(funcs[(tp, name)])-1, "jada")
-            
+
 
 def test_Create(cube):
     """Create MeshFunctions."""
