@@ -49,3 +49,18 @@ def test_rotate_3d():
     mesh.rotate(30, 1)
     mesh.rotate(30, 2)
     mesh.rotate(30, 0, p)
+    
+def test_rescale_2d():
+    mesh = UnitSquareMesh(8, 8)
+    p = Point(4, 4)
+    c = 1.5
+    MeshTransformation.rescale(mesh, c, p)
+    assert sum(c.volume() for c in cells(mesh)) == c * c
+
+def test_rescale_3d():
+    mesh = UnitCubeMesh(8, 8, 8)
+    p = Point(4, 4, 4)
+    c = 1.5
+    MeshTransformation.rescale(mesh, c, p)
+    assert sum(c.volume() for c in cells(mesh)) == c * c
+
