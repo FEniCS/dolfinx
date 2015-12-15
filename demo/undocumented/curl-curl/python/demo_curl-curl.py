@@ -50,21 +50,20 @@ if not has_petsc():
 
 # Check that PETSc has been configured with HYPRE
 if not "hypre_amg" in PETScPreconditioner.preconditioners():
-    print("This demo requires PETSc to be configured with HYPRE")
+    print("This demo requires PETSc to be configured with HYPRE.")
     exit()
 
-# Try to import petsc4py, and check that HYPRE bindings are available
+if not has_petsc4py():
+    print("DOLFIN has not been compiled with petsc4py support.")
+    exit()
+
+# Import petsc4py and check that HYPRE bindings are available
+from petsc4py import *
 try:
-    from petsc4py import *
-    try:
-        getattr(PETSc.PC, 'getHYPREType')
-    except AttributeError:
-        print("This demo requires a recent petsc4py with HYPRE bindings.")
-        exit()
-except ImportError:
-    print("This demo requires petsc4py.")
+    getattr(PETSc.PC, 'getHYPREType')
+except AttributeError:
+    print("This demo requires a recent petsc4py with HYPRE bindings.")
     exit()
-
 
 # Set PETSc as default linear algebra backend
 parameters["linear_algebra_backend"] = "PETSc";
