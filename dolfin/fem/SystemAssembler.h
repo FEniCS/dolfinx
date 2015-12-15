@@ -66,12 +66,7 @@ namespace dolfin
     /// Constructor
     SystemAssembler(std::shared_ptr<const Form> a,
                     std::shared_ptr<const Form> L,
-                    const DirichletBC& bc);
-
-    /// Constructor
-    SystemAssembler(std::shared_ptr<const Form> a,
-                    std::shared_ptr<const Form> L,
-                    const std::vector<const DirichletBC*> bcs);
+                    std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
     /// Assemble system (A, b)
     void assemble(GenericMatrix& A, GenericVector& b);
@@ -119,7 +114,7 @@ namespace dolfin
     std::shared_ptr<const Form> _a, _l;
 
     // Boundary conditions
-    std::vector<const DirichletBC*> _bcs;
+    std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 
     static void cell_wise_assembly(
       std::array<GenericTensor*, 2>& tensors,

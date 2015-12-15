@@ -59,19 +59,7 @@ SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
 //-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
                                  std::shared_ptr<const Form> L,
-                                 const DirichletBC& bc)
-  : _a(a), _l(L)
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-
-  // Store Dirichlet boundary condition
-  _bcs.push_back(&bc);
-}
-//-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
-                                 std::shared_ptr<const Form> L,
-                                 const std::vector<const DirichletBC*> bcs)
+                                 std::vector<std::shared_ptr<const DirichletBC>> bcs)
   : _a(a), _l(L), _bcs(bcs)
 {
   // Check arity of forms

@@ -28,6 +28,7 @@
 #ifndef __ASSEMBLE_H
 #define __ASSEMBLE_H
 
+#include <memory>
 #include <vector>
 
 namespace dolfin
@@ -56,13 +57,13 @@ namespace dolfin
   /// Assemble system (A, b) and apply Dirichlet boundary conditions
   void assemble_system(GenericMatrix& A, GenericVector& b,
                        const Form& a, const Form& L,
-                       const std::vector<const DirichletBC*> bcs);
+                       std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   /// Assemble system (A, b) on sub domains and apply Dirichlet
   /// boundary conditions
   void assemble_system(GenericMatrix& A, GenericVector& b,
                        const Form& a, const Form& L,
-                       const std::vector<const DirichletBC*> bcs,
+                       std::vector<std::shared_ptr<const DirichletBC>> bcs,
                        const GenericVector& x0);
 
   /// Assemble tensor from multimesh form
