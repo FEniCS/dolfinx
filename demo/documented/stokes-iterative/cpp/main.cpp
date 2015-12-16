@@ -110,15 +110,12 @@ int main()
   // Set-up infow boundary condition
   Inflow inflow_prfofile;
   Right right;
-  DirichletBC inflow(W0, inflow_prfofile, right);
+  auto inflow = std::make_shared<DirichletBC>(W0, inflow_prfofile, right);
 
   // Set-up no-slip boundary condition
   Constant zero_vector(0.0, 0.0, 0.0);
   TopBottom top_bottom;
-  DirichletBC noslip(W0, zero_vector, top_bottom);
-
-  // Collect boundary conditions
-  std::vector<const DirichletBC*> bcs = {{&inflow, &noslip}};
+  auto noslip = std::make_shared<DirichletBC>(W0, zero_vector, top_bottom);
 
   // Create forms for the Stokes problem
   Constant f(0.0, 0.0, 0.0);
@@ -135,11 +132,11 @@ int main()
   // Assemble precondtioner system (P, b_dummy)
   std::shared_ptr<Matrix> P(new Matrix);
   Vector b;
-  assemble_system(*P, b, a_P, L, bcs);
+  assemble_system(*P, b, a_P, L, {inflow, noslip});
 
   // Assemble Stokes system (A, b)
   std::shared_ptr<Matrix> A(new Matrix);
-  assemble_system(*A, b, a, L, bcs);
+  assemble_system(*A, b, a, L, {inflow, noslip});
 
   // Create Krylov solver with specified method and preconditioner
   KrylovSolver solver(krylov_method, "amg");

@@ -28,11 +28,13 @@
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/nls/PETScSNESSolver.h>
 #include "NonlinearVariationalProblem.h"
+#include "SystemAssembler.h"
 
 namespace dolfin
 {
 
-  /// This class implements a solver for nonlinear variational problems.
+  /// This class implements a solver for nonlinear variational
+  /// problems.
 
   class NonlinearVariationalSolver : public Variable
   {
