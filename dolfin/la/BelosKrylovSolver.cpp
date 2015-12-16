@@ -18,6 +18,8 @@
 
 #ifdef HAS_TRILINOS
 
+#include <cctype>
+
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
@@ -38,8 +40,8 @@ std::map<std::string, std::string> BelosKrylovSolver::preconditioners()
   std::map<std::string, std::string> allowed_precs
     = Ifpack2Preconditioner::preconditioners();
 
-  allowed_precs.insert(std::make_pair<std::string, std::string>("muelu",
-                                                                "muelu"));
+  allowed_precs.insert({"muelu", "muelu"});
+  allowed_precs.insert({"amg", "muelu"});
 
   return allowed_precs;
 }
@@ -53,8 +55,11 @@ std::map<std::string, std::string> BelosKrylovSolver::methods()
   result.insert(std::make_pair("default", "default method"));
 
   for (auto &m : methods)
+  {
+    for (auto &c : m)
+      c = std::tolower(c);
     result.insert(std::make_pair(m, m));
-
+  }
   return result;
 }
 //-----------------------------------------------------------------------------
@@ -75,7 +80,7 @@ BelosKrylovSolver::BelosKrylovSolver(std::string method,
 
   if (preconditioner != "none")
   {
-    if (preconditioner == "muelu")
+    if (preconditioner == "muelu" or preconditioner == "amg")
       _prec.reset(new MueluPreconditioner());
     else
       _prec.reset(new Ifpack2Preconditioner(preconditioner));
@@ -93,13 +98,6 @@ Parameters BelosKrylovSolver::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters());
   p.rename("belos_krylov_solver");
-
-  // Norm type used in convergence test
-  // std::set<std::string> allowed_norm_types;
-  // allowed_norm_types.insert("preconditioned");
-  // allowed_norm_types.insert("true");
-  // allowed_norm_types.insert("none");
-  // p.add("convergence_norm_type", allowed_norm_types);
 
   return p;
 }
@@ -251,6 +249,7 @@ std::size_t BelosKrylovSolver::_solve(TpetraVector& x, const TpetraVector& b)
   _solver->setProblem(_problem);
 
   Belos::ReturnType result =_solver->solve();
+
   const std::size_t num_iterations = _solver->getNumIters();
 
   if (result == Belos::Converged)

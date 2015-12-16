@@ -42,21 +42,28 @@ void MueluPreconditioner::init(std::shared_ptr<const TpetraMatrix> P)
   Teuchos::ParameterList paramList;
   paramList.set("verbosity", "extreme");
 
-  paramList.set("max levels", 3);
+  paramList.set("max levels", 10);
   paramList.set("coarse: max size", 10);
-  paramList.set("coarse: type", "Klu2");
-  paramList.set("multigrid algorithm", "sa");
-  paramList.set("smoother: type", "RELAXATION");
+  paramList.set("coarse: type", "DIRECT");
+  paramList.set("multigrid algorithm", "unsmoothed");
 
-  Teuchos::ParameterList sparamList;
-  sparamList.set("relaxation: type", "Jacobi");
-  sparamList.set("relaxation: sweeps", 1);
-  sparamList.set("relaxation: damping factor", 0.9);
-  paramList.set("smoother: params", sparamList);
+  Teuchos::ParameterList pre_paramList;
+  pre_paramList.set("relaxation: type", "Symmetric Gauss-Seidel");
+  pre_paramList.set("relaxation: sweeps", 3);
+  pre_paramList.set("relaxation: damping factor", 0.6);
+  paramList.set("smoother: pre type", "RELAXATION");
+  paramList.set("smoother: pre params", pre_paramList);
 
-  paramList.set("aggregation: type", "uncoupled");
-  paramList.set("aggregation: min agg size", 3);
-  paramList.set("aggregation: max agg size", 9);
+  Teuchos::ParameterList post_paramList;
+  post_paramList.set("relaxation: type", "Gauss-Seidel");
+  post_paramList.set("relaxation: sweeps", 1);
+  post_paramList.set("relaxation: damping factor", 0.9);
+  paramList.set("smoother: post type", "RELAXATION");
+  paramList.set("smoother: post params", post_paramList);
+
+  // paramList.set("aggregation: type", "uncoupled");
+  // paramList.set("aggregation: min agg size", 3);
+  // paramList.set("aggregation: max agg size", 9);
 
   // FIXME: why does it need to be non-const when Ifpack2 uses const?
   std::shared_ptr<TpetraMatrix> P_non_const

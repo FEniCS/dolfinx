@@ -98,16 +98,13 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     /// Return Belos pointer
-    //    Teuchos::RCP<Belos::SolverManager<>> ksp() const;
+    //    Teuchos::RCP<Belos::SolverManager<>> solver_manager() const;
 
     /// Return a list of available solver methods
     static std::map<std::string, std::string> methods();
 
     /// Return a list of available preconditioners
     static std::map<std::string, std::string> preconditioners();
-
-    ///// Set options prefix
-    //void set_options_prefix(std::string prefix);
 
     /// Default parameter values
     static Parameters default_parameters();
