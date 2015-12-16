@@ -195,15 +195,9 @@ NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
   std::vector<std::shared_ptr<const DirichletBC>> bcs(_problem->bcs());
 
   // Create assembler
-  std::vector<const DirichletBC*> _bcs(bcs.size());
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-  {
-    dolfin_assert(bcs[i]);
-    _bcs[i] = bcs[i].get();
-  }
   dolfin_assert(J);
   dolfin_assert(F);
-  SystemAssembler assembler(J, F, _bcs);
+  SystemAssembler assembler(J, F, bcs);
 
   // Assemble right-hand side
   assembler.assemble(b, x);
@@ -226,15 +220,9 @@ NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
   std::vector<std::shared_ptr<const DirichletBC>> bcs(_problem->bcs());
 
   // Create assembler
-  std::vector<const DirichletBC*> _bcs(bcs.size());
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-  {
-    dolfin_assert(bcs[i]);
-    _bcs[i] = bcs[i].get();
-  }
   dolfin_assert(J);
   dolfin_assert(F);
-  SystemAssembler assembler(J, F, _bcs);
+  SystemAssembler assembler(J, F, bcs);
 
   // Assemble left-hand side
   assembler.assemble(A);
