@@ -104,11 +104,6 @@ PROBLEM_RENAMES(NonlinearVariational)
 
 %ignore dolfin::NonlinearVariationalSolver::NonlinearVariationalSolver(NonlinearVariationalProblem&);
 
-%ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&);
-%ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&, const DirichletBC&);
-%ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&,
-                         const std::vector<const DirichletBC*>);
-
 //-----------------------------------------------------------------------------
 // Ignore GenericDofMap::cell_dofs
 //-----------------------------------------------------------------------------

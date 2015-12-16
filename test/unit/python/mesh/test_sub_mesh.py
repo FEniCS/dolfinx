@@ -25,12 +25,14 @@ from dolfin import *
 import six
 from dolfin_utils.test import skip_in_parallel, datadir
 
+
 @pytest.fixture(scope='module', params=range(3))
 def MeshFunc(request):
     test_mesh = [(UnitIntervalMesh, (10,)),
                  (UnitSquareMesh, (10, 10)),
                  (UnitCubeMesh, (10, 10, 10))]
     return test_mesh[request.param]
+
 
 @skip_in_parallel
 def test_creation(MeshFunc):
@@ -43,7 +45,7 @@ def test_creation(MeshFunc):
     domains = CellFunction("size_t", mesh, 0)
     for cell in cells(mesh):
         # Mark half the cells
-        if cell.index()>mesh.num_cells()/2:
+        if cell.index() > mesh.num_cells()/2:
             break
         domains[cell] = 1
         mesh.domains().set_marker((cell.index(), 1), dim_t)
@@ -59,16 +61,17 @@ def test_creation(MeshFunc):
     for cell0, cell1 in zip(cells(smesh0), cells(smesh1)):
         assert cell0.index() == cell1.index()
         assert smesh0.domains().get_marker(cell0.index(), dim_t) == \
-               smesh1.domains().get_marker(cell1.index(), dim_t)
+            smesh1.domains().get_marker(cell1.index(), dim_t)
 
     # This test passed for unittest because it called SubMesh((mesh, 2))
     # and not SubMesh(mesh, 2)
-    #with pytest.raises(RuntimeError):
+    # with pytest.raises(RuntimeError):
     #    SubMesh(mesh, 2)
 
     mesh = MeshFunc(*args)
     with pytest.raises(RuntimeError):
         SubMesh(mesh, 1)
+
 
 @skip_in_parallel
 def test_facet_domain_propagation(datadir):
@@ -87,14 +90,17 @@ def test_facet_domain_propagation(datadir):
 
     for value in [5, 10, 15]:
         sum_parent = 0
-        sum_inner  = 0
-        sum_outer  = 0
+        sum_inner = 0
+        sum_outer = 0
         for key, val in six.iteritems(parent_facets):
-            if val == value: sum_parent += val
+            if val == value:
+                sum_parent += val
         for key, val in six.iteritems(inner_facets):
-            if val == value: sum_inner += val
+            if val == value:
+                sum_inner += val
         for key, val in six.iteritems(outer_facets):
-            if val == value: sum_outer += val
+            if val == value:
+                sum_outer += val
 
         assert sum_outer == sum_inner
         assert sum_outer == sum_parent
@@ -106,7 +112,7 @@ def test_facet_domain_propagation(datadir):
 
     # Check we have the same number of value-marked facets
     for value in [5, 10, 15]:
-        assert ((inner_facets.array()==value).sum() ==
-                (outer_facets.array()==value).sum())
-        assert ((parent_facets.array()==value).sum() ==
-                (outer_facets.array()==value).sum())
+        assert ((inner_facets.array() == value).sum() ==
+                (outer_facets.array() == value).sum())
+        assert ((parent_facets.array() == value).sum() ==
+                (outer_facets.array() == value).sum())

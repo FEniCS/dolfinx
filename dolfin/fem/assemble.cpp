@@ -39,43 +39,40 @@ void dolfin::assemble(GenericTensor& A, const Form& a)
   assembler.assemble(A, a);
 }
 //-----------------------------------------------------------------------------
-void dolfin::assemble_system(GenericMatrix& A,
-                             GenericVector& b,
-                             const Form& a,
-                             const Form& L)
+void dolfin::assemble_system(GenericMatrix& A, GenericVector& b,
+                             const Form& a, const Form& L)
 {
-  SystemAssembler assembler(a, L);
+  SystemAssembler assembler(reference_to_no_delete_pointer(a),
+                            reference_to_no_delete_pointer(L));
   assembler.assemble(A, b);
 }
 //-----------------------------------------------------------------------------
-void dolfin::assemble_system(GenericMatrix& A,
-                             GenericVector& b,
-                             const Form& a,
-                             const Form& L,
+void dolfin::assemble_system(GenericMatrix& A, GenericVector& b,
+                             const Form& a, const Form& L,
                              const DirichletBC& bc)
 {
-  SystemAssembler assembler(a, L, bc);
+  SystemAssembler assembler(reference_to_no_delete_pointer(a),
+                            reference_to_no_delete_pointer(L),
+                            {reference_to_no_delete_pointer(bc)});
   assembler.assemble(A, b);
 }
 //-----------------------------------------------------------------------------
-void dolfin::assemble_system(GenericMatrix& A,
-                             GenericVector& b,
-                             const Form& a,
-                             const Form& L,
-                             const std::vector<const DirichletBC*> bcs)
+void dolfin::assemble_system(GenericMatrix& A, GenericVector& b,
+                             const Form& a, const Form& L,
+                             std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
-  SystemAssembler assembler(a, L, bcs);
+  SystemAssembler assembler(reference_to_no_delete_pointer(a),
+                            reference_to_no_delete_pointer(L), bcs);
   assembler.assemble(A, b);
 }
 //-----------------------------------------------------------------------------
-void dolfin::assemble_system(GenericMatrix& A,
-                             GenericVector& b,
-                             const Form& a,
-                             const Form& L,
-                             const std::vector<const DirichletBC*> bcs,
+void dolfin::assemble_system(GenericMatrix& A, GenericVector& b,
+                             const Form& a, const Form& L,
+                             std::vector<std::shared_ptr<const DirichletBC>> bcs,
                              const GenericVector& x0)
 {
-  SystemAssembler assembler(a, L, bcs);
+  SystemAssembler assembler(reference_to_no_delete_pointer(a),
+                            reference_to_no_delete_pointer(L), bcs);
   assembler.assemble(A, b, x0);
 }
 //-----------------------------------------------------------------------------

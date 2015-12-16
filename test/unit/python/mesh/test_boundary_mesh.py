@@ -38,6 +38,7 @@ def test_1D_mesh():
     assert bmesh1.size_global(0) == 2
     assert bmesh1.topology().dim() == 0
 
+
 def test_2D_mesh():
     mesh = UnitSquareMesh(8, 8)
 
@@ -46,6 +47,7 @@ def test_2D_mesh():
     assert MPI.sum(mesh.mpi_comm(), bmesh1.num_cells()) == 4*8
     assert bmesh1.size_global(1) == 4*8
     assert bmesh1.topology().dim() == 1
+
 
 def test_3D_mesh():
     mesh = UnitCubeMesh(8, 8, 8)
