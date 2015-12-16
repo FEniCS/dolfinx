@@ -37,9 +37,24 @@ Amesos2LUSolver::methods()
 {
   std::map<std::string, std::string> amesos2_methods;
   amesos2_methods["default"] = "default method";
+#ifdef HAVE_AMESOS2_KLU2
   amesos2_methods["KLU2"] = "Built in KLU2";
+#endif
+#ifdef HAVE_AMESOS2_BASKER
   amesos2_methods["Basker"] = "Basker";
-
+#endif
+#ifdef HAVE_AMESOS2_SUPERLU
+  amesos2_methods["Superlu"] = "Superlu";
+#endif
+#ifdef HAVE_AMESOS2_LAPACK
+  amesos2_methods["Lapack"] = "Lapack (for testing)";
+#endif
+#ifdef HAVE_AMESOS2_MUMPS
+  amesos2_methods["Mumps"] = "MUMPS";
+#endif
+#ifdef HAVE_AMESOS2_SUPERLUDIST
+  amesos2_methods["Superludist"] = "Superludist";
+#endif
   return amesos2_methods;
 }
 //-----------------------------------------------------------------------------
@@ -142,10 +157,17 @@ std::size_t Amesos2LUSolver::solve(GenericVector& x, const GenericVector& b)
                  "Cannot factorize non-square TpetraMatrix");
   }
 
-  // Initialize solution vector if required (make compatible with A in
-  // parallel)
+  // Initialize solution vector if required
+  // (make compatible with A in parallel)
   if (x.empty())
     _matA->init_vector(x, 1);
+
+  if (Amesos2::query(_method_name) == false)
+  {
+    dolfin_error("Amesos2LUSolver.cpp",
+                 "set solver method",
+                 "\"%s\" not supported", _method_name.c_str());
+  }
 
   if (_solver.is_null())
   {
@@ -198,7 +220,14 @@ void Amesos2LUSolver::init_solver(std::string& method)
 {
   _method_name = method;
   if (method == "default")
+  {
+    #ifdef HAVE_AMESOS2_KLU2
     _method_name = "KLU2";
+    #else
+    dolfin_error("Amesos2LUSolver.cpp", "initialise solver",
+      "Default KLU2 solver not found");
+    #endif
+}
 
 }
 //-----------------------------------------------------------------------------

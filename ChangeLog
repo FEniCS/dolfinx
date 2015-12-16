@@ -1,3 +1,4 @@
+- Update Trilinos support to include Amesos2, and better support from Python
 - Remove QT (was an optional dependency)
 - PETScTAOSolver::solve() now returns a pair of number of
 	iterations (std::size_t) and whether iteration converged (bool)
