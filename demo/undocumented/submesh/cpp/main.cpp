@@ -15,9 +15,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2009-02-11
-// Last changed: 2015-06-15
-//
 // This demo program demonstrates how to extract matching sub meshes
 // from a common mesh.
 
@@ -48,13 +45,13 @@ int main()
   structure.mark(sub_domains, 1);
 
   // Extract sub meshes
-  SubMesh fluid_mesh(mesh, sub_domains, 0);
-  SubMesh structure_mesh(mesh, sub_domains, 1);
+  auto fluid_mesh = std::make_shared<SubMesh>(mesh, sub_domains, 0);
+  auto structure_mesh = std::make_shared<SubMesh>(mesh, sub_domains, 1);
 
   // Move structure mesh
-  MeshGeometry& geometry = structure_mesh.geometry();
+  MeshGeometry& geometry = structure_mesh->geometry();
 
-  for (VertexIterator v(structure_mesh); !v.end(); ++v)
+  for (VertexIterator v(*structure_mesh); !v.end(); ++v)
   {
     std::array<double, 2> x = {{v->x()[0], v->x()[1]}};
     x[0] += 0.1*x[0]*x[1];
@@ -62,8 +59,8 @@ int main()
   }
 
   // Move fluid mesh according to structure mesh
-  fluid_mesh.move(structure_mesh);
-  fluid_mesh.smooth();
+  ALE::move(fluid_mesh, *structure_mesh);
+  fluid_mesh->smooth();
 
   // Plot meshes
   plot(fluid_mesh);

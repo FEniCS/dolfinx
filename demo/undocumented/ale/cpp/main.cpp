@@ -31,10 +31,10 @@ using namespace dolfin;
 int main()
 {
   // Create mesh
-  UnitSquareMesh mesh(20, 20);
+  auto mesh = std::make_shared<UnitSquareMesh>(20, 20);
 
   // Create boundary mesh
-  BoundaryMesh boundary(mesh, "exterior");
+  BoundaryMesh boundary(*mesh, "exterior");
 
   // Move vertices in boundary
   MeshGeometry& geometry = boundary.geometry();
@@ -49,15 +49,15 @@ int main()
   }
 
   // Move mesh
-  mesh.move(boundary);
+  ALE::move(mesh, boundary);
 
   // Plot mesh
-  plot(mesh);
+  plot(*mesh);
   interactive();
 
   // Write mesh to file
   File file("mesh_deformed.pvd");
-  file << mesh;
+  file << *mesh;
 
   return 0;
 }

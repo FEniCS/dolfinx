@@ -30,30 +30,30 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh,
-                                              const BoundaryMesh& new_boundary)
+std::shared_ptr<MeshDisplacement> ALE::move(std::shared_ptr<Mesh> mesh,
+                                            const BoundaryMesh& new_boundary)
 {
   return HarmonicSmoothing::move(mesh, new_boundary);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh0, const Mesh& mesh1)
+std::shared_ptr<MeshDisplacement> ALE::move(std::shared_ptr<Mesh> mesh0,
+                                            const Mesh& mesh1)
 {
-  // FIXME: Maybe this works in parallel but there is no obvious way to
-  //        test it as SubMesh::init does not work in parallel
+  // FIXME: Maybe this works in parallel but there is no obvious way
+  //        to test it as SubMesh::init does not work in parallel
   not_working_in_parallel("Move coordinates of mesh0 according "
                           "to mesh1 with common global vertices");
 
-  // Topological dimension
-  //const std::size_t D = mesh1.topology().dim();
+  dolfin_assert(mesh0);
 
   // Extract boundary meshes
-  BoundaryMesh boundary0(mesh0, "exterior");
+  BoundaryMesh boundary0(*mesh0, "exterior");
   BoundaryMesh boundary1(mesh1, "exterior");
 
   // Get vertex mappings
-  dolfin_assert(mesh0.data().exists("parent_vertex_indices", 0));
+  dolfin_assert(mesh0->data().exists("parent_vertex_indices", 0));
   const std::vector<std::size_t>& local_to_global_0
-    = mesh0.data().array("parent_vertex_indices", 0);
+    = mesh0->data().array("parent_vertex_indices", 0);
 
   dolfin_assert(mesh1.data().exists("parent_vertex_indices", 0));
   const std::vector<std::size_t>& local_to_global_1
