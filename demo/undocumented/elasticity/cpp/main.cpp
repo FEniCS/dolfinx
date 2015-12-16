@@ -139,9 +139,9 @@ int main()
   VectorSpaceBasis null_space = build_nullspace(V, *u.vector());
 
   // Create PETSc smoothed aggregation AMG preconditioner
-  PETScPreconditioner pc("petsc_amg");
-  pc.parameters["report"] = true;
-  pc.set_nullspace(null_space);
+  auto pc = std::make_shared<PETScPreconditioner>("petsc_amg");
+  pc->parameters["report"] = true;
+  pc->set_nullspace(null_space);
 
   // Set some multigrid smoother parameters
   PETScOptions::set("mg_levels_ksp_type", "chebyshev");

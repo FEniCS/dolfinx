@@ -112,32 +112,9 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
-                                     PETScPreconditioner& preconditioner)
-  : _ksp(NULL),
-    pc_dolfin(NULL),
-    _preconditioner(reference_to_no_delete_pointer(preconditioner)),
-    preconditioner_set(false)
-{
-  // Set parameter values
-  parameters = default_parameters();
-
-  init(method);
-}
-//-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(std::string method,
   std::shared_ptr<PETScPreconditioner> preconditioner)
   : _ksp(NULL), pc_dolfin(NULL), _preconditioner(preconditioner),
   preconditioner_set(false)
-{
-  // Set parameter values
-  parameters = default_parameters();
-
-  init(method);
-}
-//-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(std::string method,
-                                     PETScUserPreconditioner& preconditioner)
-  : _ksp(NULL), pc_dolfin(&preconditioner), preconditioner_set(false)
 {
   // Set parameter values
   parameters = default_parameters();

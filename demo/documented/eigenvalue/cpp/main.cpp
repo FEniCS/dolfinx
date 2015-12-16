@@ -36,10 +36,10 @@ int main()
   Mesh mesh("../box_with_dent.xml.gz");
 
   // Build stiffness matrix
-  PETScMatrix A;
+  auto A = std::make_shared<PETScMatrix>();
   StiffnessMatrix::FunctionSpace V(mesh);
   StiffnessMatrix::BilinearForm a(V, V);
-  assemble(A, a);
+  assemble(*A, a);
 
   // Create eigensolver
   SLEPcEigenSolver esolver(A);
