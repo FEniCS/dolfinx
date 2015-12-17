@@ -37,15 +37,15 @@
 %extend dolfin::Mesh {
   PyObject* _coordinates() {
     return %make_numpy_array(2, double)(self->geometry().num_points(),
-					self->geometry().dim(),
-					self->coordinates().data(), true);
+                                        self->geometry().dim(),
+                                        self->coordinates().data(), true);
   }
 
   PyObject* _cells() {
     // FIXME: Works only for Mesh with Intervals, Triangles and Tetrahedrons
     return %make_numpy_array(2, uint)(self->num_cells(),
                                       self->type().num_entities(0),
-				      self->cells().data(), false);
+                                      self->cells().data(), false);
   }
 
   PyObject* _cell_orientations()
@@ -318,5 +318,5 @@ FORWARD_DECLARE_MESHFUNCTIONS(std::size_t, Sizet)
 //-----------------------------------------------------------------------------
 // Ignores for MultiMesh
 //-----------------------------------------------------------------------------
-%ignore dolfin::plot(const MultiMesh& multimesh);
-%ignore dolfin::plot(std::shared_ptr<const MultiMesh> multimesh);
+%ignore dolfin::plot(const MultiMesh&);
+%ignore dolfin::plot(std::shared_ptr<const MultiMesh>);

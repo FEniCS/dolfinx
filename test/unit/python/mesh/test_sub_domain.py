@@ -22,10 +22,10 @@
 # First added:  2013-06-24
 # Last changed: 2013-06-24
 
-
 import numpy as np
 from dolfin import *
 import pytest
+
 
 def test_compiled_subdomains():
     def noDefaultValues():
@@ -44,6 +44,7 @@ def test_compiled_subdomains():
     with pytest.raises(RuntimeError):
         wrongParameterNames()
 
+
 def test_creation_and_marking():
 
     class Left(SubDomain):
@@ -55,52 +56,50 @@ def test_creation_and_marking():
             return x[0] > 1.0 - DOLFIN_EPS
 
     subdomain_pairs = [(Left(), Right()),
-                        (AutoSubDomain(\
-                            lambda x, on_boundary: x[0] < DOLFIN_EPS),
-                        AutoSubDomain(\
-                            lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS)),
-                        (CompiledSubDomain("near(x[0], a)", a = 0.0),
-                        CompiledSubDomain("near(x[0], a)", a = 1.0)),
-                        (CompiledSubDomain("near(x[0], 0.0)"),
+                       (AutoSubDomain(lambda x, on_boundary: x[0] < DOLFIN_EPS),
+                        AutoSubDomain(lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS)),
+                       (CompiledSubDomain("near(x[0], a)", a=0.0),
+                        CompiledSubDomain("near(x[0], a)", a=1.0)),
+                       (CompiledSubDomain("near(x[0], 0.0)"),
                         CompiledSubDomain("near(x[0], 1.0)"))]
 
     empty = CompiledSubDomain("false")
     every = CompiledSubDomain("true")
 
-    for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
-        dim = ind+1
+    for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh,
+                                     UnitCubeMesh]):
+        dim = ind + 1
         args = [10]*dim
         mesh = MeshClass(*args)
 
         mesh.init()
 
         for left, right in subdomain_pairs:
-
             for MeshFunc, f_dim in [(VertexFunction, 0),
-                                    (FacetFunction, dim-1),
+                                    (FacetFunction, dim - 1),
                                     (CellFunction, dim)]:
                 f = MeshFunc("size_t", mesh, 0)
 
                 left.mark(f, 1)
                 right.mark(f, 2)
 
-                correct = {(1,0):1,
-                            (1,0):1,
-                            (1,1):0,
-                            (2,0):11,
-                            (2,1):10,
-                            (2,2):0,
-                            (3,0):121,
-                            (3,2):200,
-                            (3,3):0}
+                correct = {(1, 0): 1,
+                           (1, 0): 1,
+                           (1, 1): 0,
+                           (2, 0): 11,
+                           (2, 1): 10,
+                           (2, 2): 0,
+                           (3, 0): 121,
+                           (3, 2): 200,
+                           (3, 3): 0}
 
                 # Check that the number of marked entities are at least the
                 # correct number (it can be larger in parallel)
                 assert all(value >= correct[dim, f_dim]
-                            for value in [
-                              MPI.sum(mesh.mpi_comm(), float((f.array()==2).sum())),
-                              MPI.sum(mesh.mpi_comm(), float((f.array()==1).sum())),
-                              ])
+                for value in [
+                        MPI.sum(mesh.mpi_comm(), float((f.array() == 2).sum())),
+                        MPI.sum(mesh.mpi_comm(), float((f.array() == 1).sum())),
+                ])
 
         for MeshFunc, f_dim in [(VertexFunction, 0),
                                 (FacetFunction, dim-1),
@@ -111,5 +110,5 @@ def test_creation_and_marking():
             every.mark(f, 2)
 
             # Check that the number of marked entities is correct
-            assert sum(f.array()==1) == 0
-            assert sum(f.array()==2) == mesh.num_entities(f_dim)
+            assert sum(f.array() == 1) == 0
+            assert sum(f.array() == 2) == mesh.num_entities(f_dim)

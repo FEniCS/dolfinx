@@ -53,10 +53,10 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
   const std::size_t rank = dofmaps.size();
   std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
+  {
+    dolfin_assert(dofmaps[i]);
     index_maps[i] = dofmaps[i]->index_map();
-
-  dolfin_assert(!dofmaps.empty());
-  dolfin_assert(dofmaps[0]);
+  }
 
   // Initialise sparsity pattern
   if (init)

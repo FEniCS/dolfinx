@@ -99,9 +99,6 @@ namespace dolfin
   // Plot multimesh (shared_ptr version)
   void plot(std::shared_ptr<const MultiMesh> multimesh);
 
-  // Plot multimesh (shared_ptr version, visible from Python)
-  void plot_multimesh(std::shared_ptr<const MultiMesh> multimesh);
-
 }
 
 #endif

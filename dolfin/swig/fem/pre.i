@@ -104,11 +104,6 @@ PROBLEM_RENAMES(NonlinearVariational)
 
 %ignore dolfin::NonlinearVariationalSolver::NonlinearVariationalSolver(NonlinearVariationalProblem&);
 
-%ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&);
-%ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&, const DirichletBC&);
-%ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&,
-                         const std::vector<const DirichletBC*>);
-
 //-----------------------------------------------------------------------------
 // Ignore GenericDofMap::cell_dofs
 //-----------------------------------------------------------------------------
@@ -224,7 +219,7 @@ const ufc::cell& (void *argp, bool dolfin_cell, int res)
 //-----------------------------------------------------------------------------
 %typemap (in) std::vector<std::vector<std::shared_ptr<const dolfin::TYPE> > > (std::vector<std::vector<std::shared_ptr<const dolfin::TYPE> > >  tmp_vec_0, std::vector<std::shared_ptr<const dolfin::TYPE> >  tmp_vec_1, std::shared_ptr<dolfin::TYPE> tempshared)
 {
-  // IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR), shared_ptr version
+  // IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_SHARED_POINTERS(TYPE)
   if (!PyList_Check($input))
     SWIG_exception(SWIG_TypeError, "list of lists of TYPE expected");
 

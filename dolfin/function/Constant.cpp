@@ -21,6 +21,11 @@
 // First added:  2006-02-09
 // Last changed: 2011-11-14
 
+#include <iostream>
+#include <iterator>
+#include <sstream>
+#include <string>
+#include <dolfin/common/utils.h>
 #include <dolfin/log/log.h>
 #include "Constant.h"
 
@@ -122,10 +127,49 @@ Constant::operator double() const
   return _values[0];
 }
 //-----------------------------------------------------------------------------
+std::vector<double> Constant::values() const
+{
+  dolfin_assert(!_values.empty());
+  return _values;
+}
+//-----------------------------------------------------------------------------
 void Constant::eval(Array<double>& values, const Array<double>& x) const
 {
   // Copy values
   for (std::size_t j = 0; j < _values.size(); j++)
     values[j] = _values[j];
+}
+//-----------------------------------------------------------------------------
+std::string Constant::str(bool verbose) const
+{
+  std::ostringstream oss;
+  oss << "<Constant of dimension " << _values.size() << ">";
+
+  if (verbose)
+  {
+    std::ostringstream ossv;
+    if (!_values.empty())
+    {
+      ossv << std::endl << std::endl;
+      if (!_value_shape.empty())
+      {
+        ossv << "Values: ";
+        ossv << "(";
+        // Avoid a trailing ", "
+        std::copy(_values.begin(), _values.end() - 1,
+                  std::ostream_iterator<double>(ossv, ", "));
+        ossv << _values.back();
+        ossv << ")";
+      }
+      else
+      {
+        ossv << "Value: ";
+        ossv << _values[0];
+      }
+    }
+    oss << indent(ossv.str());
+  }
+
+  return oss.str();
 }
 //-----------------------------------------------------------------------------

@@ -29,6 +29,5 @@
 //-----------------------------------------------------------------------------
 // Ignores for MultiMesh
 //-----------------------------------------------------------------------------
-%ignore dolfin::plot(const MultiMesh& multimesh);
-%ignore dolfin::plot(std::shared_ptr<const MultiMesh> multimesh);
-
+%ignore dolfin::plot(const MultiMesh&);
+%rename (_plot_multimesh) dolfin::plot(std::shared_ptr<const MultiMesh>);

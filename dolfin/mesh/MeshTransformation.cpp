@@ -14,13 +14,11 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2012-01-16
-// Last changed: 2013-06-28
 
+#include <array>
 #include <cmath>
-
 #include <dolfin/common/constants.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Mesh.h>
 #include "MeshTransformation.h"
 
@@ -35,6 +33,7 @@ void MeshTransformation::translate(Mesh& mesh, const Point& point)
 
   // Get displacement vector coordinates
   const double* dx = point.coordinates();
+  dolfin_assert(dx);
 
   // Displace all points
   std::vector<double> x0(gdim);
@@ -46,6 +45,31 @@ void MeshTransformation::translate(Mesh& mesh, const Point& point)
   }
 }
 //-----------------------------------------------------------------------------
+void MeshTransformation::rescale(Mesh& mesh, const double scale,
+                                 const Point& center)
+{
+  // Get mesh geometry
+  MeshGeometry& geometry = mesh.geometry();
+  const std::size_t gdim = geometry.dim();
+
+  // Get center coordinates
+  const double* dx = center.coordinates();
+
+  // 1. Displace all points by -dx so that the center coincides with
+  // the origin: x = x - x_center
+  // 2. Scale all points by the scaling factor x = s * x
+  // 3. Displace all points by +dx again x = x + x_center
+  // Summarized: x = s * x + (1 - s) * x_center
+
+  std::vector<double> x0(gdim);
+  for (std::size_t i = 0; i < geometry.num_vertices(); i++)
+  {
+    for (std::size_t j = 0; j < gdim; j++)
+      x0[j] = scale * geometry.x(i, j) + (1-scale)*dx[j];
+    geometry.set(i, x0.data());
+  }
+}
+//-----------------------------------------------------------------------------
 void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis)
 {
   // Get mesh geometry
@@ -53,9 +77,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis)
   const std::size_t gdim = geometry.dim();
 
   // Reset center of mass
-  std::vector<double> c(gdim);
-  for (std::size_t j = 0; j < gdim; j++)
-    c[j] = 0.0;
+  std::vector<double> c(gdim, 0.0);
 
   // Sum all vertex coordinates
   for (std::size_t i = 0; i < geometry.num_vertices(); i++)
@@ -106,7 +128,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
 
     // Rotate all points
     MeshGeometry& geometry = mesh.geometry();
-    std::vector<double> xr(2);
+    std::array<double, 2> xr;
     for (std::size_t i = 0; i < geometry.num_vertices(); i++)
     {
       // Get coordinate
@@ -155,7 +177,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
 
     // Rotate all points
     MeshGeometry& geometry = mesh.geometry();
-    std::vector<double> xr(3);
+    std::array<double, 3> xr;
     for (std::size_t i = 0; i < geometry.num_vertices(); i++)
     {
       // Get coordinate

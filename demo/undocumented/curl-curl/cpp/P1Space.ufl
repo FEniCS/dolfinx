@@ -1,8 +1,4 @@
-#!/usr/bin/env py.test
-
-"Unit tests for the MeshData class"
-
-# Copyright (C) 2011 Anders Logg
+# Copyright (C) 2015 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -19,15 +15,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2011-08-22
-# Last changed: 2011-08-22
+# Compile this form with FFC: ffc -l dolfin P1Space.ufl
 
-import pytest
-from dolfin import *
-
-
-def test_meshfunction():
-    "Test input/output"
-
-    mesh = UnitCubeMesh(3, 3, 3)
-    f = mesh.data().create_array("foo", 3)
+element = FiniteElement("Lagrange", tetrahedron, 1)

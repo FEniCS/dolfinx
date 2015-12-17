@@ -257,7 +257,14 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
   SNESGetLineSearch(_snes, &linesearch);
 
   if (report)
+  {
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
     SNESLineSearchSetMonitor(linesearch, PETSC_TRUE);
+    #else
+    SNESLineSearchMonitor(linesearch);
+    #endif
+  }
+
   const std::string line_search_type = std::string(parameters["line_search"]);
   SNESLineSearchSetType(linesearch, line_search_type.c_str());
 

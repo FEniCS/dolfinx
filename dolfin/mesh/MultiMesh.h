@@ -312,7 +312,7 @@ namespace dolfin
   private:
 
     // Friend (in plot.h)
-    friend void plot_multimesh(std::shared_ptr<const MultiMesh>);
+    friend void plot(std::shared_ptr<const MultiMesh>);
 
     // List of meshes
     std::vector<std::shared_ptr<const Mesh> > _meshes;

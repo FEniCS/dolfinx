@@ -14,9 +14,8 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2012-02-24
-// Last changed:
+
+#include <memory>
 
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
@@ -32,29 +31,28 @@ TensorLayout::TensorLayout(std::size_t pdim, Sparsity sparsity_pattern)
 {
   // Create empty sparsity pattern
   if (sparsity_pattern == TensorLayout::Sparsity::SPARSE)
-    _sparsity_pattern.reset(new SparsityPattern(primary_dim));
+    _sparsity_pattern = std::make_shared<SparsityPattern>(primary_dim);
 }
 //-----------------------------------------------------------------------------
 TensorLayout::TensorLayout(const MPI_Comm mpi_comm,
-             const std::vector<std::shared_ptr<const IndexMap>>& index_maps,
+             std::vector<std::shared_ptr<const IndexMap>> index_maps,
              std::size_t pdim,
              Sparsity sparsity_pattern,
              Ghosts ghosted)
   : primary_dim(pdim), _mpi_comm(mpi_comm), _index_maps(index_maps),
     _ghosted(ghosted)
 {
-  // Only rank 2 sparsity patterns are supported
-  dolfin_assert(!(sparsity_pattern == TensorLayout::Sparsity::SPARSE
-                  && index_maps.size() != 2));
-
   if (sparsity_pattern == TensorLayout::Sparsity::SPARSE)
-    _sparsity_pattern.reset(new SparsityPattern(primary_dim));
+    _sparsity_pattern = std::make_shared<SparsityPattern>(primary_dim);
+
+  // Only rank 2 sparsity patterns are supported
+  dolfin_assert(!(_sparsity_pattern && index_maps.size() != 2));
 }
 //-----------------------------------------------------------------------------
 void TensorLayout::init(
   const MPI_Comm mpi_comm,
-  const std::vector<std::shared_ptr<const IndexMap>>& index_maps,
-  Ghosts ghosted)
+  const std::vector<std::shared_ptr<const IndexMap>> index_maps,
+  const Ghosts ghosted)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(!(_sparsity_pattern && index_maps.size() != 2));
