@@ -158,15 +158,60 @@ std::string BelosKrylovSolver::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void BelosKrylovSolver::init(const std::string& method)
 {
-  Teuchos::RCP<Teuchos::ParameterList> dummyParams = Teuchos::parameterList();
+  Teuchos::RCP<Teuchos::ParameterList> dummy_params = Teuchos::parameterList();
 
   std::string method_name = method;
   if (method=="default")
     method_name = "GMRES";
 
   Belos::SolverFactory<double, TpetraVector::vector_type, op_type> factory;
-  _solver = factory.create(method_name, dummyParams);
+  _solver = factory.create(method_name, dummy_params);
+
+  Teuchos::RCP<const Teuchos::ParameterList> valid_params = _solver->getValidParameters();
+
+  for (auto &p : *valid_params)
+  {
+    std::cout << p.first ;
+    if (p.second.isType<bool>())
+      std::cout << Teuchos::getValue<bool>(p.second);
+    else if (p.second.isType<int>())
+      std::cout << Teuchos::getValue<int>(p.second);
+    else if (p.second.isType<double>())
+      std::cout << Teuchos::getValue<double>(p.second);
+    std::cout << "\n";
+  }
+
   _problem = Teuchos::rcp(new problem_type);
+}
+//-----------------------------------------------------------------------------
+void BelosKrylovSolver::set_options(Parameters params)
+{
+  if (_solver.is_null())
+  {
+    dolfin_error("BelosKrylovSolver.cpp",
+                 "set parameters",
+                 "Solver not initialised");
+  }
+
+  Teuchos::RCP<Teuchos::ParameterList> solver_params
+    = Teuchos::parameterList(*_solver->getCurrentParameters());
+
+  // Regular parameter values
+  std::vector<std::string> keys;
+  params.get_parameter_keys(keys);
+
+  for (auto &k : keys)
+  {
+    const std::string type = params[k].type_str();
+    if (solver_params->isParameter(k))
+    {
+      if (type == "int")
+        solver_params->set(k, int(params[k]));
+      else if (type == "double")
+        solver_params->set(k, double(params[k]));
+    }
+  }
+
 }
 //-----------------------------------------------------------------------------
 void BelosKrylovSolver::_set_operator(std::shared_ptr<const TpetraMatrix> A)

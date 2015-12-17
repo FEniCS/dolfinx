@@ -134,6 +134,9 @@ namespace dolfin
     // Set options for solver
     void set_options();
 
+    // Set a parameter set on the solver (copy to Teuchos::ParameterList and set)
+    void set_options(Parameters params);
+
     void check_dimensions(const TpetraMatrix& A, const GenericVector& x,
                           const GenericVector& b) const;
 
