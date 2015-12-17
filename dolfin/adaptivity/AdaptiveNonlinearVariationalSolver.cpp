@@ -35,15 +35,6 @@
 using namespace dolfin;
 
 // ----------------------------------------------------------------------------
-AdaptiveNonlinearVariationalSolver::
-AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem,
-                                   GoalFunctional& goal)
-  : _problem(reference_to_no_delete_pointer(problem))
-{
-  init(reference_to_no_delete_pointer(problem),
-       reference_to_no_delete_pointer(goal));
-}
-// ----------------------------------------------------------------------------
 AdaptiveNonlinearVariationalSolver::AdaptiveNonlinearVariationalSolver(
   std::shared_ptr<NonlinearVariationalProblem> problem,
   std::shared_ptr<GoalFunctional> goal)

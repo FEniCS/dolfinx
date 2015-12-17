@@ -87,12 +87,12 @@ int main()
   dF.w = w;
 
   // Define goal functional
-  AdaptiveNavierStokes::GoalFunctional M(mesh);
-  M.w = w;
+  auto M = std::make_shared<AdaptiveNavierStokes::GoalFunctional>(mesh);
+  M->w = w;
   Outflow outflow;
-  MeshFunction<std::size_t> outflow_markers(mesh, mesh.topology().dim()-1, 1);
+  FacetFunction<std::size_t> outflow_markers(mesh, 1);
   outflow.mark(outflow_markers, 0);
-  M.ds = outflow_markers;
+  M->ds = outflow_markers;
 
   // Define error tolerance
   double tol = 1.e-5;
@@ -103,7 +103,7 @@ int main()
 
   // Define variational problem from the variational form F, specify
   // the unknown Function w and the boundary condition bc
-  NonlinearVariationalProblem pde(F, w, bc, dF);
+  auto pde = std::make_shared<NonlinearVariationalProblem>(F, w, bc, dF);
 
   // Define solver
   AdaptiveNonlinearVariationalSolver solver(pde, M);

@@ -26,6 +26,7 @@
 
 #include "AdaptiveLinearVariationalSolver.h"
 #include "AdaptiveNonlinearVariationalSolver.h"
+#include "GoalFunctional.h"
 #include "adaptivesolve.h"
 
 //-----------------------------------------------------------------------------
@@ -57,8 +58,11 @@ void dolfin::solve(const Equation& equation, Function& u,
   // Solve linear problem
   if (equation.is_linear())
   {
-    LinearVariationalProblem problem(*equation.lhs(), *equation.rhs(), u, bcs);
-    AdaptiveLinearVariationalSolver solver(problem, M);
+    auto problem = std::make_shared<LinearVariationalProblem>(*equation.lhs(),
+                                                              *equation.rhs(),
+                                                              u, bcs);
+    AdaptiveLinearVariationalSolver
+      solver(problem, std::shared_ptr<GoalFunctional>(&M, [](GoalFunctional*){}));
     solver.solve(tol);
   }
   else
@@ -69,10 +73,9 @@ void dolfin::solve(const Equation& equation, Function& u,
                  "Nonlinear adaptive solve not implemented without Jacobian");
   }
 }
-//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-void dolfin::solve(const Equation& equation, Function& u,  const Form& J,
+void dolfin::solve(const Equation& equation, Function& u, const Form& J,
                    const double tol, GoalFunctional& M)
 {
   // Create empty list of boundary conditions
@@ -93,25 +96,26 @@ void dolfin::solve(const Equation& equation, Function& u,
   solve(equation, u, bcs, J, tol, M);
 }
 //-----------------------------------------------------------------------------
-void dolfin::solve(const Equation& equation,
-                   Function& u,
-                   std::vector<const DirichletBC*> bcs,
-                   const Form& J,
-                   const double tol,
-                   GoalFunctional& M)
+void dolfin::solve(const Equation& equation, Function& u,
+                   std::vector<const DirichletBC*> bcs, const Form& J,
+                   const double tol, GoalFunctional& M)
 
 {
   // Raise error if problem is linear
   if (equation.is_linear())
+  {
     dolfin_error("solve.cpp",
                  "solve nonlinear variational problem adaptively",
                  "Variational problem is linear");
+  }
 
   // Define nonlinear problem
-  NonlinearVariationalProblem problem(*equation.lhs(), u, bcs, J);
+  auto problem = std::make_shared<NonlinearVariationalProblem>(*equation.lhs(),
+                                                               u, bcs, J);
 
   // Solve nonlinear problem adaptively
-  AdaptiveNonlinearVariationalSolver solver(problem, M);
+  AdaptiveNonlinearVariationalSolver
+    solver(problem, std::shared_ptr<GoalFunctional>(&M, [](GoalFunctional*){}));
   solver.solve(tol);
 }
 //-----------------------------------------------------------------------------
