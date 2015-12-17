@@ -507,9 +507,9 @@ if (DOLFIN_ENABLE_TRILINOS)
     $ENV{TRILINOS_DIR} QUIET)
   set(DOLFIN_TRILINOS_PACKAGES "Tpetra;Zoltan;MueLu;Amesos2;Ifpack2;Belos")
 
-  if ("${Trilinos_VERSION}" VERSION_LESS "11.0.0")
+  if ("${Trilinos_VERSION}" VERSION_LESS "12.4.0")
     set(Trilinos_FOUND FALSE)
-    message(STATUS "Unable to find Trilinos (>= 11.0.0)")
+    message(STATUS "Unable to find Trilinos (>= 12.4.0)")
   endif()
 
   # Check for required packages

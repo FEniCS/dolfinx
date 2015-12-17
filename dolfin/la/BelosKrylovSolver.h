@@ -42,6 +42,7 @@ namespace dolfin
   class GenericVector;
   class TpetraMatrix;
   class TpetraVector;
+  class TrilinosPreconditioner;
 
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Belos iterative solver
@@ -61,14 +62,9 @@ namespace dolfin
     BelosKrylovSolver(std::string method = "default",
                       std::string preconditioner = "default");
 
-    /// Create Krylov solver for a particular method and
-    /// BelosPreconditioner
-    ///    BelosKrylovSolver(std::string method, Ifpack2Preconditioner& preconditioner);
-
-    /// Create Krylov solver for a particular method and
-    /// BelosPreconditioner (shared_ptr version)
-    //    BelosKrylovSolver(std::string method,
-    //		      std::shared_ptr<Ifpack2Preconditioner> preconditioner);
+    /// Create Krylov solver for a particular method and TrilinosPreconditioner
+    BelosKrylovSolver(std::string method,
+                      std::shared_ptr<TrilinosPreconditioner> preconditioner);
 
     /// Destructor
     ~BelosKrylovSolver();
@@ -133,9 +129,6 @@ namespace dolfin
 
     // Set options for solver
     void set_options();
-
-    // Set a parameter set on the solver (copy to Teuchos::ParameterList and set)
-    void set_options(Parameters params);
 
     void check_dimensions(const TpetraMatrix& A, const GenericVector& x,
                           const GenericVector& b) const;

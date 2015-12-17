@@ -32,6 +32,9 @@
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/BelosKrylovSolver.h>
+#include <dolfin/la/TrilinosPreconditioner.h>
+#include <dolfin/la/MueluPreconditioner.h>
+#include <dolfin/la/Ifpack2Preconditioner.h>
 #include <dolfin/la/MUMPSLUSolver.h>
 #include <dolfin/la/PaStiXLUSolver.h>
 

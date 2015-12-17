@@ -89,6 +89,25 @@ BelosKrylovSolver::BelosKrylovSolver(std::string method,
   init(method);
 }
 //-----------------------------------------------------------------------------
+BelosKrylovSolver::BelosKrylovSolver(std::string method,
+  std::shared_ptr<TrilinosPreconditioner> preconditioner)
+  : _prec(preconditioner)
+{
+  // Check that the requested method is known
+  const std::map<std::string, std::string> _methods = methods();
+  if (_methods.find(method) == _methods.end())
+  {
+    dolfin_error("BelosKrylovSolver.cpp",
+                 "create Belos Krylov solver",
+                 "Unknown Krylov method \"%s\"", method.c_str());
+  }
+
+  // Set parameter values
+  parameters = default_parameters();
+
+  init(method);
+}
+//-----------------------------------------------------------------------------
 BelosKrylovSolver::~BelosKrylovSolver()
 {
   // Do nothing
@@ -98,6 +117,9 @@ Parameters BelosKrylovSolver::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters());
   p.rename("belos_krylov_solver");
+
+  Parameters belos_parameters("belos");
+  p.add(belos_parameters);
 
   return p;
 }
@@ -167,51 +189,7 @@ void BelosKrylovSolver::init(const std::string& method)
   Belos::SolverFactory<double, TpetraVector::vector_type, op_type> factory;
   _solver = factory.create(method_name, dummy_params);
 
-  Teuchos::RCP<const Teuchos::ParameterList> valid_params = _solver->getValidParameters();
-
-  for (auto &p : *valid_params)
-  {
-    std::cout << p.first ;
-    if (p.second.isType<bool>())
-      std::cout << Teuchos::getValue<bool>(p.second);
-    else if (p.second.isType<int>())
-      std::cout << Teuchos::getValue<int>(p.second);
-    else if (p.second.isType<double>())
-      std::cout << Teuchos::getValue<double>(p.second);
-    std::cout << "\n";
-  }
-
   _problem = Teuchos::rcp(new problem_type);
-}
-//-----------------------------------------------------------------------------
-void BelosKrylovSolver::set_options(Parameters params)
-{
-  if (_solver.is_null())
-  {
-    dolfin_error("BelosKrylovSolver.cpp",
-                 "set parameters",
-                 "Solver not initialised");
-  }
-
-  Teuchos::RCP<Teuchos::ParameterList> solver_params
-    = Teuchos::parameterList(*_solver->getCurrentParameters());
-
-  // Regular parameter values
-  std::vector<std::string> keys;
-  params.get_parameter_keys(keys);
-
-  for (auto &k : keys)
-  {
-    const std::string type = params[k].type_str();
-    if (solver_params->isParameter(k))
-    {
-      if (type == "int")
-        solver_params->set(k, int(params[k]));
-      else if (type == "double")
-        solver_params->set(k, double(params[k]));
-    }
-  }
-
 }
 //-----------------------------------------------------------------------------
 void BelosKrylovSolver::_set_operator(std::shared_ptr<const TpetraMatrix> A)
@@ -362,6 +340,41 @@ void BelosKrylovSolver::set_options()
     solverParams->set("Output Style", (int)Belos::Brief);
     solverParams->set("Output Frequency", 1);
   }
+
+  // Regular parameter values
+  std::vector<std::string> keys;
+  const Parameters& params = parameters("belos");
+
+  params.get_parameter_keys(keys);
+
+  for (auto &k : keys)
+  {
+    // Replace "_" with " " in parameter key
+    std::string trilinos_key = k;
+    for (auto &c : trilinos_key)
+      if (c == '_')
+        c = ' ';
+
+    const std::string type = params[k].type_str();
+
+    if (solverParams->isParameter(trilinos_key))
+    {
+      std::cout << "Setting \"" << trilinos_key << "\" \n";
+      if (type == "int")
+        solverParams->set(trilinos_key, int(params[k]));
+      else if (type == "double")
+        solverParams->set(trilinos_key, double(params[k]));
+      else if (type == "bool")
+        solverParams->set(trilinos_key, bool(params[k]));
+      else
+      {
+        dolfin_error("BelosKrylovSolver.cpp",
+                     "set parameter",
+                     "Cannot parse type \"%s\"", type.c_str());
+      }
+    }
+  }
+
   _solver->setParameters(solverParams);
 }
 //-----------------------------------------------------------------------------

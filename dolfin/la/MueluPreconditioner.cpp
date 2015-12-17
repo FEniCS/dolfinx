@@ -94,6 +94,9 @@ Parameters MueluPreconditioner::default_parameters()
   Parameters p(KrylovSolver::default_parameters()("preconditioner"));
   p.rename("muelu_preconditioner");
 
+  Parameters muelu_parameters("muelu");
+  p.add(muelu_parameters);
+
   Teuchos::RCP<const Teuchos::ParameterList> pList = MueLu::MasterList::List();
   pList->print();
 

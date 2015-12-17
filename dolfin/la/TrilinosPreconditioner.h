@@ -23,7 +23,6 @@
 
 #include "GenericPreconditioner.h"
 
-
 namespace dolfin
 {
 
@@ -34,6 +33,12 @@ namespace dolfin
   class TrilinosPreconditioner: public GenericPreconditioner
   {
   public:
+
+    TrilinosPreconditioner()
+    {}
+
+    ~TrilinosPreconditioner()
+    {}
 
     // Set this preconditioner on a solver
     virtual void set(BelosKrylovSolver& solver) = 0;
