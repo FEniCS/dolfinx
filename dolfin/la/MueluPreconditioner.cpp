@@ -39,13 +39,46 @@ MueluPreconditioner::~MueluPreconditioner()
 //-----------------------------------------------------------------------------
 void MueluPreconditioner::init(std::shared_ptr<const TpetraMatrix> P)
 {
+  // Generate Trilinos parameters from dolfin parameters
   Teuchos::ParameterList paramList;
-  paramList.set("verbosity", "extreme");
+  Parameters params = parameters("muelu");
 
-  paramList.set("max levels", 10);
-  paramList.set("coarse: max size", 10);
-  paramList.set("coarse: type", "DIRECT");
-  paramList.set("multigrid algorithm", "unsmoothed");
+  std::vector<std::string> keys;
+  params.get_parameter_keys(keys);
+
+  for (auto &k : keys)
+  {
+    // Replace "_" with " " in parameter key
+    std::string trilinos_key = k;
+    for (auto &c : trilinos_key)
+      if (c == '_')
+        c = ' ';
+
+    const std::string type = params[k].type_str();
+
+    std::cout << "Setting \"" << trilinos_key << "\" \n";
+    if (type == "int")
+      paramList.set(trilinos_key, int(params[k]));
+    else if (type == "double")
+      paramList.set(trilinos_key, double(params[k]));
+    else if (type == "bool")
+      paramList.set(trilinos_key, bool(params[k]));
+    else if (type == "string")
+      paramList.set(trilinos_key, std::string(params[k]));
+    else
+    {
+      dolfin_error("MueluPreconditioner.cpp",
+                   "set parameter",
+                   "Cannot parse type \"%s\"", type.c_str());
+    }
+  }
+
+  // paramList.set("verbosity", "extreme");
+
+  // paramList.set("max levels", 10);
+  // paramList.set("coarse: max size", 10);
+  // paramList.set("coarse: type", "DIRECT");
+  // paramList.set("multigrid algorithm", "unsmoothed");
 
   Teuchos::ParameterList pre_paramList;
   pre_paramList.set("relaxation: type", "Symmetric Gauss-Seidel");
@@ -95,8 +128,10 @@ Parameters MueluPreconditioner::default_parameters()
   p.rename("muelu_preconditioner");
 
   Parameters muelu_parameters("muelu");
+  muelu_parameters.add("verbosity", "extreme");
   p.add(muelu_parameters);
 
+  // Just print off all the parameters
   Teuchos::RCP<const Teuchos::ParameterList> pList = MueLu::MasterList::List();
   pList->print();
 

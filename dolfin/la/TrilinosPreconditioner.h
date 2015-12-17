@@ -21,6 +21,8 @@
 #ifndef __TRILINOS_PRECONDITIONER_H
 #define __TRILINOS_PRECONDITIONER_H
 
+#ifdef HAS_TRILINOS
+
 #include "GenericPreconditioner.h"
 
 namespace dolfin
@@ -48,5 +50,7 @@ namespace dolfin
 
   };
 }
+
+#endif
 
 #endif
