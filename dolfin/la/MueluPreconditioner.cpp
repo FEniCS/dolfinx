@@ -22,6 +22,7 @@
 #include "BelosKrylovSolver.h"
 #include "KrylovSolver.h"
 #include "MueluPreconditioner.h"
+#include "TrilinosParameters.h"
 
 using namespace dolfin;
 
@@ -40,63 +41,9 @@ MueluPreconditioner::~MueluPreconditioner()
 void MueluPreconditioner::init(std::shared_ptr<const TpetraMatrix> P)
 {
   // Generate Trilinos parameters from dolfin parameters
-  Teuchos::ParameterList paramList;
+  Teuchos::RCP<Teuchos::ParameterList> paramList(new Teuchos::ParameterList);
   Parameters params = parameters("muelu");
-
-  std::vector<std::string> keys;
-  params.get_parameter_keys(keys);
-
-  for (auto &k : keys)
-  {
-    // Replace "_" with " " in parameter key
-    std::string trilinos_key = k;
-    for (auto &c : trilinos_key)
-      if (c == '_')
-        c = ' ';
-
-    const std::string type = params[k].type_str();
-
-    std::cout << "Setting \"" << trilinos_key << "\" \n";
-    if (type == "int")
-      paramList.set(trilinos_key, int(params[k]));
-    else if (type == "double")
-      paramList.set(trilinos_key, double(params[k]));
-    else if (type == "bool")
-      paramList.set(trilinos_key, bool(params[k]));
-    else if (type == "string")
-      paramList.set(trilinos_key, std::string(params[k]));
-    else
-    {
-      dolfin_error("MueluPreconditioner.cpp",
-                   "set parameter",
-                   "Cannot parse type \"%s\"", type.c_str());
-    }
-  }
-
-  // paramList.set("verbosity", "extreme");
-
-  // paramList.set("max levels", 10);
-  // paramList.set("coarse: max size", 10);
-  // paramList.set("coarse: type", "DIRECT");
-  // paramList.set("multigrid algorithm", "unsmoothed");
-
-  Teuchos::ParameterList pre_paramList;
-  pre_paramList.set("relaxation: type", "Symmetric Gauss-Seidel");
-  pre_paramList.set("relaxation: sweeps", 3);
-  pre_paramList.set("relaxation: damping factor", 0.6);
-  paramList.set("smoother: pre type", "RELAXATION");
-  paramList.set("smoother: pre params", pre_paramList);
-
-  Teuchos::ParameterList post_paramList;
-  post_paramList.set("relaxation: type", "Gauss-Seidel");
-  post_paramList.set("relaxation: sweeps", 1);
-  post_paramList.set("relaxation: damping factor", 0.9);
-  paramList.set("smoother: post type", "RELAXATION");
-  paramList.set("smoother: post params", post_paramList);
-
-  // paramList.set("aggregation: type", "uncoupled");
-  // paramList.set("aggregation: min agg size", 3);
-  // paramList.set("aggregation: max agg size", 9);
+  TrilinosParameters::insert_parameters(params, paramList);
 
   // FIXME: why does it need to be non-const when Ifpack2 uses const?
   std::shared_ptr<TpetraMatrix> P_non_const
@@ -104,7 +51,7 @@ void MueluPreconditioner::init(std::shared_ptr<const TpetraMatrix> P)
 
   _prec = MueLu::CreateTpetraPreconditioner(
                 Teuchos::rcp_dynamic_cast<op_type>(P_non_const->mat()),
-                paramList);
+                *paramList);
 }
 //-----------------------------------------------------------------------------
 void MueluPreconditioner::set(BelosKrylovSolver& solver)
@@ -119,6 +66,11 @@ std::string MueluPreconditioner::str(bool verbose) const
   if (verbose)
     s << _prec->description() << std::endl;
 
+  // Print off all the possible parameters
+  // FIXME: pipe this to stringstream and output when verbose is set
+  // Teuchos::RCP<const Teuchos::ParameterList> pList = MueLu::MasterList::List();
+  // pList->print();
+
   return s.str();
 }
 //-----------------------------------------------------------------------------
@@ -128,12 +80,8 @@ Parameters MueluPreconditioner::default_parameters()
   p.rename("muelu_preconditioner");
 
   Parameters muelu_parameters("muelu");
-  muelu_parameters.add("verbosity", "extreme");
+  muelu_parameters.add("verbosity", "low");
   p.add(muelu_parameters);
-
-  // Just print off all the parameters
-  Teuchos::RCP<const Teuchos::ParameterList> pList = MueLu::MasterList::List();
-  pList->print();
 
   return p;
 }

@@ -31,6 +31,7 @@
 #include "BelosKrylovSolver.h"
 #include "Ifpack2Preconditioner.h"
 #include "MueluPreconditioner.h"
+#include "TrilinosParameters.h"
 
 using namespace dolfin;
 
@@ -329,7 +330,8 @@ void BelosKrylovSolver::set_options()
   solverParams->set("Convergence Tolerance", rel_tol);
 
   const bool monitor_convergence = parameters["monitor_convergence"];
-  if (monitor_convergence)
+  const bool report = parameters["report"];
+  if (monitor_convergence or report)
   {
     solverParams->set("Verbosity",
                       Belos::Warnings
@@ -338,42 +340,13 @@ void BelosKrylovSolver::set_options()
                       | Belos::TimingDetails
                       | Belos::FinalSummary);
     solverParams->set("Output Style", (int)Belos::Brief);
+  }
+  if (monitor_convergence)
     solverParams->set("Output Frequency", 1);
-  }
 
-  // Regular parameter values
-  std::vector<std::string> keys;
+  // Copy over any parameters from dolfin parameters in ["belos"]
   const Parameters& params = parameters("belos");
-
-  params.get_parameter_keys(keys);
-
-  for (auto &k : keys)
-  {
-    // Replace "_" with " " in parameter key
-    std::string trilinos_key = k;
-    for (auto &c : trilinos_key)
-      if (c == '_')
-        c = ' ';
-
-    const std::string type = params[k].type_str();
-
-    if (solverParams->isParameter(trilinos_key))
-    {
-      std::cout << "Setting \"" << trilinos_key << "\" \n";
-      if (type == "int")
-        solverParams->set(trilinos_key, int(params[k]));
-      else if (type == "double")
-        solverParams->set(trilinos_key, double(params[k]));
-      else if (type == "bool")
-        solverParams->set(trilinos_key, bool(params[k]));
-      else
-      {
-        dolfin_error("BelosKrylovSolver.cpp",
-                     "set parameter",
-                     "Cannot parse type \"%s\"", type.c_str());
-      }
-    }
-  }
+  TrilinosParameters::insert_parameters(params, solverParams);
 
   _solver->setParameters(solverParams);
 }
