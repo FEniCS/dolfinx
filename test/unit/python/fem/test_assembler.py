@@ -55,6 +55,7 @@ def test_cell_assembly_1D():
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
 
+
 @skip_in_parallel
 def test_cell_assembly_1D_multithreaded():
 
@@ -92,7 +93,7 @@ def test_cell_assembly():
     a = inner(epsilon(v), epsilon(u))*dx
     L = inner(v, f)*dx
 
-    A_frobenius_norm =  4.3969686527582512
+    A_frobenius_norm = 4.3969686527582512
     b_l2_norm = 0.95470326978246278
 
     # Assemble A and b
@@ -115,7 +116,7 @@ def test_cell_assembly_multithreaded():
     a = inner(epsilon(v), epsilon(u))*dx
     L = inner(v, f)*dx
 
-    A_frobenius_norm =  4.3969686527582512
+    A_frobenius_norm = 4.3969686527582512
     b_l2_norm = 0.95470326978246278
 
     # Assemble A and b
@@ -139,7 +140,8 @@ def test_facet_assembly():
     n = FacetNormal(mesh)
     h = CellSize(mesh)
     h_avg = (h('+') + h('-'))/2
-    f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
+    f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) \
++ pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
 
     # Define bilinear form
     a = dot(grad(v), grad(u))*dx \
@@ -175,7 +177,8 @@ def test_facet_assembly_multithreaded():
     n = FacetNormal(mesh)
     h = CellSize(mesh)
     h_avg = (h('+') + h('-'))/2
-    f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
+    f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) \
++ pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
 
     # Define bilinear form
     a = dot(grad(v), grad(u))*dx \
@@ -210,6 +213,7 @@ def test_functional_assembly():
     M1 = f*ds(mesh)
     assert round(assemble(M1) - 4.0, 7) == 0
 
+
 @skip_in_parallel
 def test_functional_assembly_multithreaded():
 
@@ -239,9 +243,11 @@ def test_subdomain_and_fulldomain_assembly_meshdomains():
     class F0(SubDomain):
         def inside(self, x, inside):
             return near(x[0], 0.0)
+
     class F1(SubDomain):
         def inside(self, x, inside):
             return near(x[1], 0.0)
+
     class F2(SubDomain):
         def inside(self, x, inside):
             return near(x[2], 0.0)
@@ -250,9 +256,11 @@ def test_subdomain_and_fulldomain_assembly_meshdomains():
     class S0(SubDomain):
         def inside(self, x, inside):
             return x[0] > 0.25
+
     class S1(SubDomain):
         def inside(self, x, inside):
             return x[0] > 0.5
+
     class S2(SubDomain):
         def inside(self, x, inside):
             return x[0] > 0.75
@@ -263,23 +271,25 @@ def test_subdomain_and_fulldomain_assembly_meshdomains():
     f2 = F2()
     f0.mark_facets(mesh, 0)
     f1.mark_facets(mesh, 1)
-    f2.mark_facets(mesh, 3) # NB! 3, to leave a gap
+    f2.mark_facets(mesh, 3)  # NB! 3, to leave a gap
 
     s0 = S0()
     s1 = S1()
     s2 = S2()
     s0.mark_cells(mesh, 0)
     s1.mark_cells(mesh, 1)
-    s2.mark_cells(mesh, 3) # NB! 3, to leave a gap
+    s2.mark_cells(mesh, 3)  # NB! 3, to leave a gap
 
     # Assemble forms on subdomains and full domain and compare
     krange = list(range(5))
     for dmu in (dx, ds):
         full = assemble(Constant(3.0)*dmu(mesh))
-        subplusfull = [assemble(Constant(3.0)*dmu(mesh) + Constant(1.0)*dmu(k, domain=mesh)) for k in krange]
+        subplusfull = [assemble(Constant(3.0)*dmu(mesh) +
+                                Constant(1.0)*dmu(k, domain=mesh))
+                       for k in krange]
         sub = [assemble(Constant(1.0)*dmu(k, domain=mesh)) for k in krange]
         for k in krange:
-	    #print sub[k] + full, subplusfull[k]
+            # print sub[k] + full, subplusfull[k]
             assert round(sub[k] + full - subplusfull[k], 7) == 0
 
 
@@ -333,11 +343,11 @@ def test_subdomain_assembly_form_1():
 
     # This feature has been removed:
     # Check that given exterior_facet_domains override
-    #new_boundaries = FacetFunction("size_t", mesh)
-    #new_boundaries.set_all(0)
-    #reference2 = 6.2001953125
-    #value2 = assemble(M, exterior_facet_domains=new_boundaries)
-    #assert round(value2 - reference2, 10) == 0
+    # new_boundaries = FacetFunction("size_t", mesh)
+    # new_boundaries.set_all(0)
+    # reference2 = 6.2001953125
+    # value2 = assemble(M, exterior_facet_domains=new_boundaries)
+    # assert round(value2 - reference2, 10) == 0
 
     # Check that the form itself assembles as before
     assert round(assemble(M) - reference, 10) == 0
@@ -409,16 +419,16 @@ def test_subdomain_assembly_form_1_multithreaded():
 
     # This feature has been removed:
     # Check that given exterior_facet_domains override
-    #new_boundaries = FacetFunction("size_t", mesh)
-    #new_boundaries.set_all(0)
-    #reference2 = 6.2001953125
-    #value2 = assemble(M, exterior_facet_domains=new_boundaries)
-    #assert round(value2 - reference2, 10) == 0
+    # new_boundaries = FacetFunction("size_t", mesh)
+    # new_boundaries.set_all(0)
+    # reference2 = 6.2001953125
+    # value2 = assemble(M, exterior_facet_domains=new_boundaries)
+    # assert round(value2 - reference2, 10) == 0
     # Assemble form (multi-threaded)
-    #parameters["num_threads"] = 4
-    #assert round(assemble(M, exterior_facet_domains=new_boundaries) -
-    #             reference2, 10) == 0
-    #parameters["num_threads"] = 0
+    # parameters["num_threads"] = 4
+    # assert round(assemble(M, exterior_facet_domains=new_boundaries) -
+    #              reference2, 10) == 0
+    # parameters["num_threads"] = 0
 
     # Check that the form itself assembles as before
     assert round(assemble(M) - reference, 10) == 0
@@ -496,12 +506,14 @@ def test_colored_cell_assembly():
     v = TestFunction(V)
     u = TrialFunction(V)
     f = Constant((10, 20, 30))
+
     def epsilon(v):
         return 0.5*(grad(v) + grad(v).T)
+
     a = inner(epsilon(v), epsilon(u))*dx
     L = inner(v, f)*dx
 
-    A_frobenius_norm =  4.3969686527582512
+    A_frobenius_norm = 4.3969686527582512
     b_l2_norm = 0.95470326978246278
 
     # Assemble A and b
@@ -607,6 +619,7 @@ def test_reference_assembly(filedir):
         print("Cannot run this test without SciPy")
         parameters["reorder_dofs_serial"] = reorder_dofs
 
+
 def test_ways_to_pass_mesh_to_assembler():
     mesh = UnitSquareMesh(16, 16)
 
@@ -625,10 +638,10 @@ def test_ways_to_pass_mesh_to_assembler():
     f.interpolate(Expression("x[0]"))
 
     # An expression equal to x[0], with different geometry info:
-    e = Expression("x[0]") # nothing
-    e2 = Expression("x[0]", cell=mesh.ufl_cell()) # cell
-    e3 = Expression("x[0]", element=V.ufl_element()) # ufl element
-    e4 = Expression("x[0]", domain=mesh) # mesh
+    e = Expression("x[0]")  # nothing
+    e2 = Expression("x[0]", cell=mesh.ufl_cell())  # cell
+    e3 = Expression("x[0]", element=V.ufl_element())  # ufl element
+    e4 = Expression("x[0]", domain=mesh)  # mesh
 
     # Provide mesh in measure:
     dx2 = Measure("dx", domain=mesh)
@@ -637,9 +650,11 @@ def test_ways_to_pass_mesh_to_assembler():
     assert round(1.0 - assemble(Constant(1.0)*dx2), 7) == 0
 
     # Try with cell argument to Constant as well:
-    assert round(1.0 - assemble(Constant(1.0, cell=mesh.ufl_cell())*dx(mesh))) == 0
+    assert round(1.0 - assemble(Constant(1.0,
+                                         cell=mesh.ufl_cell())*dx(mesh))) == 0
     assert round(1.0 - assemble(Constant(1.0, cell=mesh.ufl_cell())*dx2)) == 0
-    assert round(1.0 - assemble(Constant(1.0, cell=mesh.ufl_cell())*dx(mesh))) == 0
+    assert round(1.0 - assemble(Constant(1.0,
+                                         cell=mesh.ufl_cell())*dx(mesh))) == 0
     assert round(1.0 - assemble(Constant(1.0, cell=mesh.ufl_cell())*dx2)) == 0
 
     # Geometric quantities with mesh in domain:
@@ -657,7 +672,7 @@ def test_ways_to_pass_mesh_to_assembler():
     assert round(0.5 - assemble(e*dx(mesh)), 7) == 0
     assert round(0.5 - assemble(e2*dx(mesh)), 7) == 0
     assert round(0.5 - assemble(e3*dx(mesh)), 7) == 0
-    assert round(0.5 - assemble(e4*dx), 7) == 0 # e4 has a domain with mesh reference
+    assert round(0.5 - assemble(e4*dx), 7) == 0  # e4 has a domain with mesh reference
     assert round(0.5 - assemble(e4*dx(mesh)), 7) == 0
 
     # Geometric quantities with mesh in domain:
