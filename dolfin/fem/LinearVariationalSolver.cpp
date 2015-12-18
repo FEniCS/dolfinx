@@ -91,23 +91,8 @@ void LinearVariationalSolver::solve()
                    "Empty linear forms cannot be used with symmetric assembly");
     }
 
-    // Need to cast to DirichletBC to use assemble_system
-    std::vector<const DirichletBC*> _bcs;
-    for (std::size_t i = 0; i < bcs.size(); i++)
-    {
-      dolfin_assert(bcs[i]);
-      const DirichletBC* _bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
-      if (!_bc)
-      {
-        dolfin_error("LinearVariationalSolver.cpp",
-                     "apply boundary condition in linear variational solver",
-                     "Only Dirichlet boundary conditions may be used for symmetric systems");
-      }
-      _bcs.push_back(_bc);
-    }
-
     // Assemble linear system and apply boundary conditions
-    SystemAssembler assembler(a, L, _bcs);
+    SystemAssembler assembler(a, L, bcs);
     assembler.assemble(*A, *b);
   }
   else

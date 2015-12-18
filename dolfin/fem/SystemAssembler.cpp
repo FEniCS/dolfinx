@@ -20,8 +20,8 @@
 // Modified by Jan Blechta 2013
 // Modified by Martin Alnaes 2013-2015
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <Eigen/Dense>
 
 #include <dolfin/common/ArrayView.h>
@@ -49,35 +49,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(const Form& a, const Form& L)
-  : _a(reference_to_no_delete_pointer(a)),
-    _l(reference_to_no_delete_pointer(L))
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-}
-//-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(const Form& a, const Form& L,
-                                 const DirichletBC& bc)
-  : _a(reference_to_no_delete_pointer(a)),
-    _l(reference_to_no_delete_pointer(L))
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-
-  // Store Dirichlet boundary condition
-  _bcs.push_back(&bc);
-}
-//-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(const Form& a, const Form& L,
-                                 const std::vector<const DirichletBC*> bcs)
-  : _a(reference_to_no_delete_pointer(a)),
-    _l(reference_to_no_delete_pointer(L)), _bcs(bcs)
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-}
-//-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
                                  std::shared_ptr<const Form> L)
   : _a(a), _l(L)
@@ -88,19 +59,7 @@ SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
 //-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
                                  std::shared_ptr<const Form> L,
-                                 const DirichletBC& bc)
-  : _a(a), _l(L)
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-
-  // Store Dirichlet boundary condition
-  _bcs.push_back(&bc);
-}
-//-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
-                                 std::shared_ptr<const Form> L,
-                                 const std::vector<const DirichletBC*> bcs)
+                                 std::vector<std::shared_ptr<const DirichletBC>> bcs)
   : _a(a), _l(L), _bcs(bcs)
 {
   // Check arity of forms
