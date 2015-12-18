@@ -45,15 +45,6 @@ namespace dolfin
   /// Assemble tensor
   void assemble(GenericTensor& A, const Form& a);
 
-  /// Assemble system (A, b)
-  void assemble_system(GenericMatrix& A, GenericVector& b,
-                       const Form& a, const Form& L);
-
-  /// Assemble system (A, b) and apply Dirichlet boundary condition
-  void assemble_system(GenericMatrix& A, GenericVector& b,
-                       const Form& a, const Form& L,
-                       const DirichletBC& bc);
-
   /// Assemble system (A, b) and apply Dirichlet boundary conditions
   void assemble_system(GenericMatrix& A, GenericVector& b,
                        const Form& a, const Form& L,

@@ -99,7 +99,7 @@ int main()
   // Create boundary condition
   Constant u0(0.0);
   DirichletBoundary boundary;
-  DirichletBC bc(V, u0, boundary);
+  auto bc = std::make_shared<DirichletBC>(V, u0, boundary);
 
   // Create function
   Function u(V);
@@ -115,12 +115,12 @@ int main()
   tic();
   assemble(A, a);
   assemble(b, L);
-  bc.apply(A, b);
+  bc->apply(A, b);
   table("Standard", "Assembly time") = toc();
 
   // Assemble A and b together
   tic();
-  assemble_system(A, b, a, L, bc);
+  assemble_system(A, b, a, L, {bc});
   table("Symmetric", "Assembly time") = toc();
 
   // Display summary

@@ -70,7 +70,7 @@ int main()
   // Define function space and boundary condition
   EddyCurrents::FunctionSpace V(mesh);
   DirichletBoundary boundary;
-  DirichletBC bc(V, zero, boundary);
+  auto bc = std::make_shared<DirichletBC>(V, zero, boundary);
 
   // Define variational problem for T
   EddyCurrents::BilinearForm a(V, V);
@@ -83,7 +83,7 @@ int main()
   // Assemble system
   auto A = std::make_shared<PETScMatrix>();
   PETScVector b;
-  assemble_system(*A, b, a, L, bc);
+  assemble_system(*A, b, a, L, {bc});
 
   // Create PETSc Krylov solver
   PETScKrylovSolver solver("cg");

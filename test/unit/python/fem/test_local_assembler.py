@@ -52,11 +52,11 @@ def test_local_assembler_1D():
     assert near(A_vector[1], 0.025)
 
     assert isinstance(A_matrix, numpy.ndarray)
-    assert A_matrix.shape == (2,2)
-    assert near(A_matrix[0,0], 1/60)
-    assert near(A_matrix[0,1], 1/120)
-    assert near(A_matrix[1,0], 1/120)
-    assert near(A_matrix[1,1], 1/60)
+    assert A_matrix.shape == (2, 2)
+    assert near(A_matrix[0, 0], 1/60)
+    assert near(A_matrix[0, 1], 1/120)
+    assert near(A_matrix[1, 0], 1/120)
+    assert near(A_matrix[1, 1], 1/60)
 
 
 def test_local_assembler_on_facet_integrals(ghost_mode):
@@ -78,18 +78,20 @@ def test_local_assembler_on_facet_integrals(ghost_mode):
     # Compile form. This is collective
     L = Form(L)
 
-    # Get global cell 10. This will return a cell only on one of the processes
+    # Get global cell 10. This will return a cell only on one of the
+    # processes
     c = get_cell_at(mesh, 5/12, 1/3, 0)
 
     if c:
         # Assemble locally on the selected cell
         b_e = assemble_local(L, c)
 
-        # Compare to values from phonyx (fully independent implementation)
+        # Compare to values from phonyx (fully independent
+        # implementation)
         b_phonyx = numpy.array([266.55210302, 266.55210302, 365.49000122,
                                 365.49000122,          0.0,          0.0])
         error = sum((b_e - b_phonyx)**2)**0.5
-        error = float(error) # MPI.max does strange things to numpy.float64 ...
+        error = float(error)  # MPI.max does strange things to numpy.float64
 
     else:
         error = 0.0
@@ -114,19 +116,20 @@ def test_local_assembler_on_facet_integrals2(ghost_mode):
     # Compile form. This is collective
     a = Form(a)
 
-    # Get global cell 0. This will return a cell only on one of the processes
+    # Get global cell 0. This will return a cell only on one of the
+    # processes
     c = get_cell_at(mesh, 1/6, 1/12, 0)
 
     if c:
         A_e = assemble_local(a, c)
-        A_correct = numpy.array([[    0, 1/12,  1/24,     0,     0,    0],
-                                 [    0, 1/24,  1/12,     0,     0,    0],
-                                 [-1/12,    0, -1/24,  1/12,     0, 1/24],
-                                 [-1/24,    0, -1/12,  1/24,     0, 1/12],
-                                 [    0,    0,     0, -1/12, -1/24,    0],
-                                 [    0,    0,     0, -1/24, -1/12,    0]])
+        A_correct = numpy.array([[0, 1/12, 1/24, 0, 0, 0],
+                                 [0, 1/24, 1/12, 0, 0, 0],
+                                 [-1/12, 0, -1/24, 1/12, 0, 1/24],
+                                 [-1/24, 0, -1/12, 1/24, 0, 1/12],
+                                 [0, 0, 0, -1/12, -1/24, 0],
+                                 [0, 0, 0, -1/24, -1/12, 0]])
         error = ((A_e - A_correct)**2).sum()**0.5
-        error = float(error) # MPI.max does strange things to numpy.float64 ...
+        error = float(error)  # MPI.max does strange things to numpy.float64
 
     else:
         error = 0.0
@@ -136,11 +139,11 @@ def test_local_assembler_on_facet_integrals2(ghost_mode):
 
 
 def get_cell_at(mesh, x, y, z, eps=1e-3):
-    """
-    Return the cell with the given midpoint or None if not found. The function
-    also checks that the cell is found on one of the processes when running in
-    parallel to avoid that the above tests always suceed if the cell is not
-    found on any of the processes.
+    """Return the cell with the given midpoint or None if not found. The
+    function also checks that the cell is found on one of the
+    processes when running in parallel to avoid that the above tests
+    always suceed if the cell is not found on any of the processes.
+
     """
     found = None
     for cell in cells(mesh):

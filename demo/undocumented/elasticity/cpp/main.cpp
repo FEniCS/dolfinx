@@ -122,13 +122,13 @@ int main()
   // Set up boundary condition on inner surface
   InnerSurface inner_surface;
   Constant zero(0.0, 0.0, 0.0);
-  DirichletBC bc(V, zero, inner_surface);
+  auto bc = std::make_shared<DirichletBC>(V, zero, inner_surface);
 
   // Assemble system, applying boundary conditions and preserving
   // symmetry)
   PETScMatrix A;
   PETScVector b;
-  assemble_system(A, b, a, L, bc);
+  assemble_system(A, b, a, L, {bc});
 
   // Create solution function
   Function u(V);
