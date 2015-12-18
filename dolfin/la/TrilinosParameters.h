@@ -15,40 +15,31 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2012-11-09
-// Last changed:
 
-#ifndef __TRILINOS_PRECONDITIONER_H
-#define __TRILINOS_PRECONDITIONER_H
+#ifndef __DOLFIN_TRILINOS_PARAMETERS_H
+#define __DOLFIN_TRILINOS_PARAMETERS_H
 
 #ifdef HAS_TRILINOS
 
-#include "GenericPreconditioner.h"
+#include <dolfin/parameter/Parameters.h>
+
+#include <Teuchos_ParameterList.hpp>
 
 namespace dolfin
 {
 
-  class BelosKrylovSolver;
 
-  /// This class provides a common base for Trilinos preconditioners.
-
-  class TrilinosPreconditioner: public GenericPreconditioner
+  class TrilinosParameters
   {
+
   public:
 
-    TrilinosPreconditioner()
-    {}
-
-    ~TrilinosPreconditioner()
-    {}
-
-    // Set this preconditioner on a solver
-    virtual void set(BelosKrylovSolver& solver) = 0;
-
-    // Initialise this preconditioner with the operator P
-    virtual void init(std::shared_ptr<const TpetraMatrix> P) = 0;
+    /// Copy over parameters from a dolfin Parameters object to a Teuchos::ParameterList
+    static void insert_parameters(const Parameters& params,
+                             Teuchos::RCP<Teuchos::ParameterList> parameter_list);
 
   };
+
 }
 
 #endif
