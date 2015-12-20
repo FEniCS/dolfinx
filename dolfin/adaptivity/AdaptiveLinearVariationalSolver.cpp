@@ -36,15 +36,6 @@ using namespace dolfin;
 
 // ----------------------------------------------------------------------------
 AdaptiveLinearVariationalSolver::
-AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem,
-                                GoalFunctional& goal)
-  : _problem(reference_to_no_delete_pointer(problem))
-{
-  init(reference_to_no_delete_pointer(problem),
-       reference_to_no_delete_pointer(goal));
-}
-// ----------------------------------------------------------------------------
-AdaptiveLinearVariationalSolver::
 AdaptiveLinearVariationalSolver(std::shared_ptr<LinearVariationalProblem> problem,
                                 std::shared_ptr<GoalFunctional> goal)
   : _problem(problem)

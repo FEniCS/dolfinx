@@ -99,7 +99,7 @@ int main()
   };
 
   // Read mesh
-  Mesh mesh("../pulley.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../pulley.xml.gz");
 
   // Create right-hand side loading function
   CentripetalLoading f;
@@ -122,13 +122,13 @@ int main()
   // Set up boundary condition on inner surface
   InnerSurface inner_surface;
   Constant zero(0.0, 0.0, 0.0);
-  DirichletBC bc(V, zero, inner_surface);
+  auto bc = std::make_shared<DirichletBC>(V, zero, inner_surface);
 
   // Assemble system, applying boundary conditions and preserving
   // symmetry)
   PETScMatrix A;
   PETScVector b;
-  assemble_system(A, b, a, L, bc);
+  assemble_system(A, b, a, L, {bc});
 
   // Create solution function
   Function u(V);
@@ -190,10 +190,10 @@ int main()
   file_stress << stress;
 
   // Save colored mesh paritions in VTK format if running in parallel
-  if (dolfin::MPI::size(mesh.mpi_comm()) > 1)
+  if (dolfin::MPI::size(mesh->mpi_comm()) > 1)
   {
     CellFunction<std::size_t>
-      partitions(mesh, dolfin::MPI::rank(mesh.mpi_comm()));
+      partitions(mesh, dolfin::MPI::rank(mesh->mpi_comm()));
     File file("partitions.pvd");
     file << partitions;
   }
@@ -202,8 +202,8 @@ int main()
   plot(u, "Displacement", "displacement");
 
   // Displace mesh and plot displaced mesh
-  mesh.move(u);
-  plot(mesh, "Deformed mesh");
+  ALE::move(*mesh, u);
+  plot(*mesh, "Deformed mesh");
 
   // Make plot windows interactive
   interactive();

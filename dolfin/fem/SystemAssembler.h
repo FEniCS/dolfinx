@@ -61,10 +61,6 @@ namespace dolfin
 
     /// Constructor
     SystemAssembler(std::shared_ptr<const Form> a,
-                    std::shared_ptr<const Form> L);
-
-    /// Constructor
-    SystemAssembler(std::shared_ptr<const Form> a,
                     std::shared_ptr<const Form> L,
                     std::vector<std::shared_ptr<const DirichletBC>> bcs);
 

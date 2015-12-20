@@ -75,7 +75,7 @@ int main()
   Function u(V);
 
   // Define goal functional (quantity of interest)
-  AdaptivePoisson::GoalFunctional M(mesh);
+  auto M = std::make_shared<AdaptivePoisson::GoalFunctional>(mesh);
 
   // Define error tolerance
   double tol = 1.e-5;
@@ -83,7 +83,7 @@ int main()
   // Solve equation a = L with respect to u and the given boundary
   // conditions, such that the estimated error (measured in M) is less
   // than tol
-  LinearVariationalProblem problem(a, L, u, bc);
+  auto problem = std::make_shared<LinearVariationalProblem>(a, L, u, bc);
   AdaptiveLinearVariationalSolver solver(problem, M);
   solver.parameters("error_control")("dual_variational_solver")["linear_solver"] = "cg";
   solver.parameters("error_control")("dual_variational_solver")["symmetric"] = true;

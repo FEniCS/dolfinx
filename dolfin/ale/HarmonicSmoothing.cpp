@@ -39,9 +39,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
-                                            const BoundaryMesh& new_boundary)
+std::shared_ptr<MeshDisplacement>
+HarmonicSmoothing::move(std::shared_ptr<Mesh> mesh,
+                        const BoundaryMesh& new_boundary)
 {
+  dolfin_assert(mesh);
+
   // Now this works regardless of reorder_dofs_serial value
   const bool reorder_dofs_serial = parameters["reorder_dofs_serial"];
   if (!reorder_dofs_serial)
@@ -50,8 +53,8 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
             "parameters[\"reorder_dofs_serial\"] = false");
   }
 
-  const std::size_t D = mesh.topology().dim();
-  const std::size_t d = mesh.geometry().dim();
+  const std::size_t D = mesh->topology().dim();
+  const std::size_t d = mesh->geometry().dim();
 
   // Choose form and function space
   std::shared_ptr<FunctionSpace> V;
@@ -81,7 +84,7 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
   assemble(*A, *form);
 
   // Number of mesh vertices (local)
-  const std::size_t num_vertices = mesh.num_vertices();
+  const std::size_t num_vertices = mesh->num_vertices();
 
   // Dof range
   const dolfin::la_index n0 = V->dofmap()->ownership_range().first;
@@ -167,7 +170,7 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
     for (std::size_t i = 0; i < num_boundary_dofs; i++)
     {
       boundary_values[i] = new_boundary.geometry().x(boundary_vertices[i], dim)
-        - mesh.geometry().x(vertex_map[boundary_vertices[i]], dim);
+        - mesh->geometry().x(vertex_map[boundary_vertices[i]], dim);
     }
     b.set(boundary_values.data(), num_boundary_dofs, boundary_dofs.data());
     b.apply("insert");
@@ -184,7 +187,7 @@ std::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh,
   }
 
   // Modify mesh coordinates
-  MeshGeometry& geometry = mesh.geometry();
+  MeshGeometry& geometry = mesh->geometry();
   std::vector<double> coord(d);
   for (std::size_t i = 0; i < num_vertices; i++)
   {

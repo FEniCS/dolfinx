@@ -85,7 +85,7 @@ def test_cell_assembly_bc():
     L = inner(f, v)*dx
 
     A_frobenius_norm = 96.847818767384
-    b_l2_norm =  96.564760289080
+    b_l2_norm = 96.564760289080
 
     # Assemble system
     A, b = assemble_system(a, L, bc)
@@ -133,7 +133,8 @@ def test_facet_assembly():
         n = FacetNormal(mesh)
         h = CellSize(mesh)
         h_avg = (h('+') + h('-'))/2
-        f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
+        f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) \
++ pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
 
         # Define bilinear form
         a = dot(grad(v), grad(u))*dx \
@@ -366,8 +367,10 @@ def test_facet_assembly_cellwise_insertion(filedir):
     run_test(UnitIntervalMesh(10))
     run_test(Mesh(os.path.join(filedir, "gmsh_unit_interval.xml")))
 
+
 def test_non_square_assembly():
     mesh = UnitSquareMesh(14, 14)
+
     def bound(x):
         return (x[0] == 0)
 
@@ -420,7 +423,7 @@ def test_non_square_assembly():
     u, p = TrialFunctions(W)
     v, q = TestFunctions(W)
 
-    a = inner(grad(u), grad(v))*dx + dot(grad(p), v)*dx +  q*div(u)*dx +  p*q*dx
+    a = inner(grad(u), grad(v))*dx + dot(grad(p), v)*dx + q*div(u)*dx + p*q*dx
     L = dot(Constant((0.0, 0.0)), v)*dx + Constant(0.0)*q*dx
     bc = DirichletBC(W.sub(0).sub(0), Constant(1.0), bound)
     assembler = SystemAssembler(a, L, bc)

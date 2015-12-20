@@ -195,7 +195,10 @@ void MeshSmoothing::move_interior_vertices(Mesh& mesh,
 {
   // Select smoothing of interior vertices
   if (harmonic_smoothing)
-    ALE::move(mesh, boundary);
+  {
+    std::shared_ptr<Mesh> _mesh(&mesh, [](Mesh*){});
+    ALE::move(_mesh, boundary);
+  }
   else
   {
     // Use vertex map to update boundary coordinates of original mesh
