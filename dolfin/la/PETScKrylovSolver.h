@@ -61,18 +61,9 @@ namespace dolfin
                       std::string preconditioner = "default");
 
     /// Create Krylov solver for a particular method and
-    /// PETScPreconditioner
-    PETScKrylovSolver(std::string method, PETScPreconditioner& preconditioner);
-
-    /// Create Krylov solver for a particular method and
     /// PETScPreconditioner (shared_ptr version)
     PETScKrylovSolver(std::string method,
 		      std::shared_ptr<PETScPreconditioner> preconditioner);
-
-    /// Create Krylov solver for a particular method and
-    /// PETScPreconditioner
-    PETScKrylovSolver(std::string method,
-                      PETScUserPreconditioner& preconditioner);
 
     /// Create Krylov solver for a particular method and
     /// PETScPreconditioner (shared_ptr version)
