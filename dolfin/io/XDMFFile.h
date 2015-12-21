@@ -145,6 +145,7 @@ namespace dolfin
 
     const std::string _filename;
 
+    // Counter for time series
     std::size_t counter;
 
     const Encoding _encoding;
