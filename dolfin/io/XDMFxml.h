@@ -86,10 +86,10 @@ namespace dolfin
                        const std::size_t gdim,
                        const std::string reference);
 
-  private:
-
-    // Generate the XML header generic to all files
+    /// Generate the XML header generic to all files
     void header();
+
+  private:
 
     // The XML document
     pugi::xml_document xml_doc;

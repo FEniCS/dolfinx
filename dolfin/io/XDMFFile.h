@@ -39,6 +39,7 @@ namespace dolfin
   class HDF5File;
   class Mesh;
   template<typename T> class MeshFunction;
+  template<typename T> class MeshValueCollection;
   class Point;
 
   /// This class supports the output of meshes and functions in XDMF
@@ -97,6 +98,9 @@ namespace dolfin
     void operator>> (MeshFunction<int>& meshfunction);
     void operator>> (MeshFunction<std::size_t>& meshfunction);
     void operator>> (MeshFunction<double>& meshfunction);
+
+    // Write out mesh value collection (subset)
+    void write(const MeshValueCollection<std::size_t>& mvc);
 
   private:
 

@@ -39,6 +39,7 @@
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
 #include "HDF5File.h"
 #include "HDF5Utility.h"
@@ -491,24 +492,24 @@ void XDMFFile::operator<< (const Mesh& mesh)
   // Write mesh to HDF5 file
   // The XML below will obliterate any existing XDMF file
 
-  const std::string group_name = "/Mesh/" + name;
-  hdf5_file->write(mesh, cell_dim, group_name);
+  const std::string mesh_name = "/Mesh/" + name;
+  hdf5_file->write(mesh, cell_dim, mesh_name);
+  boost::filesystem::path p(hdf5_filename);
+  current_mesh_name = p.filename().string() + ":" + mesh_name;
 
   // Write the XML meta description on process zero
   if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     XDMFxml xml(_filename);
+    xml.header();
     xml.init_mesh(name);
-
-    boost::filesystem::path p(hdf5_filename);
-    const std::string ref = p.filename().string() + ":" + group_name;
 
     // Describe topological connectivity
     xml.mesh_topology(mesh.type().cell_type(), mesh.geometry().degree(),
-                      num_global_cells, ref);
+                      num_global_cells, current_mesh_name);
 
     // Describe geometric coordinates
-    xml.mesh_geometry(num_total_points, gdim, ref);
+    xml.mesh_geometry(num_total_points, gdim, current_mesh_name);
 
     xml.write();
   }
@@ -615,6 +616,56 @@ void XDMFFile::write_point_xml(const std::string group_name,
   }
 }
 //----------------------------------------------------------------------------
+void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc)
+{
+  // Provide some very basic functionality for saving MeshValueCollections
+  // mainly for saving values on a boundary mesh
+
+  dolfin_assert(mvc.mesh());
+  std::shared_ptr<const Mesh> mesh = mvc.mesh();
+
+  if (hdf5_filemode != "w")
+  {
+    // Append to existing HDF5 File
+    hdf5_file.reset(new HDF5File(mesh->mpi_comm(), hdf5_filename, "a"));
+    hdf5_filemode = "w";
+  }
+
+  if (mvc.size() == 0)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "save empty MeshValueCollection",
+                 "No values in MeshValueCollection");
+  }
+
+  const std::size_t cell_dim = mvc.dim();
+  CellType::Type cell_type = mesh->type().entity_type(cell_dim);
+
+  // Use HDF5 function to output MeshFunction
+  const std::string dataset_name = "/MVC/" + mvc.name();
+  hdf5_file->write(mvc, dataset_name);
+
+  if (MPI::rank(mesh->mpi_comm()) == 0)
+  {
+    XDMFxml xml(_filename);
+    xml.read();
+    xml.init_mesh(mvc.name());
+
+    boost::filesystem::path p(hdf5_filename);
+    const std::string dataset_ref
+      = p.filename().string() + ":" + dataset_name;
+
+    xml.mesh_topology(cell_type, 1, mvc.size(), dataset_ref);
+    xml.mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
+                      current_mesh_name);
+    xml.data_attribute(mvc.name(), 0, false, mesh->size_global(0),
+                       mvc.size(), 1, dataset_ref + "/values");
+    xml.write();
+  }
+
+  counter++;
+}
+//-----------------------------------------------------------------------------
 template<typename T>
 void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 {

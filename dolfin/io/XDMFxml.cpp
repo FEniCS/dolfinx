@@ -183,7 +183,6 @@ void XDMFxml::data_attribute(std::string name,
 //-----------------------------------------------------------------------------
 pugi::xml_node XDMFxml::init_mesh(std::string name)
 {
-  header();
   pugi::xml_node xdmf_domain = xml_doc.child("Xdmf").child("Domain");
   dolfin_assert(xdmf_domain);
   xdmf_grid = xdmf_domain.append_child("Grid");
