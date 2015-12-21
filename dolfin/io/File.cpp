@@ -36,7 +36,6 @@
 #include "VTKFile.h"
 #include "X3DFile.h"
 #include "XMLFile.h"
-#include "XDMFFile.h"
 #include "XYZFile.h"
 
 #include "File.h"
@@ -80,38 +79,38 @@ File::~File()
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const Mesh*, double> mesh)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << mesh;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<int>*, double> f)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void
 File::operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<double>*, double> f)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const Function*, double> u)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << u;
 }
 //-----------------------------------------------------------------------------
@@ -184,10 +183,6 @@ void File::init(MPI_Comm comm, const std::string filename,
     file.reset(new RAWFile(filename));
   else if (extension == ".xyz")
     file.reset(new XYZFile(filename));
-#ifdef HAS_HDF5
-  else if (extension == ".xdmf" or extension == ".xmf")
-    file.reset(new XDMFFile(comm, filename, encoding));
-#endif
   else if (extension == ".svg")
     file.reset(new SVGFile(filename));
   else
@@ -207,11 +202,6 @@ void File::init(MPI_Comm comm, const std::string filename, Type type,
   case x3d:
     file.reset(new X3DFile(filename));
     break;
-  case xdmf:
-#ifdef HAS_HDF5
-    file.reset(new XDMFFile(comm, filename, encoding));
-    break;
-#endif
   case xml:
     file.reset(new XMLFile(comm, filename));
     break;

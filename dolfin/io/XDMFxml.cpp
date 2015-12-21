@@ -17,9 +17,11 @@
 
 #ifdef HAS_HDF5
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 
 #include <dolfin/log/log.h>
@@ -55,12 +57,20 @@ void XDMFxml::write() const
 //-----------------------------------------------------------------------------
 void XDMFxml::read()
 {
+  // Check file exists
+  if (!boost::filesystem::exists(_filename))
+  {
+    dolfin_error("XDMFxml.cpp",
+                 "read mesh from XDMF/H5 files",
+                 "File does not exist");
+  }
+
   pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
   if (!result)
   {
     dolfin_error("XDMFxml.cpp",
                  "read mesh from XDMF/H5 files",
-                 "XML parsing error.");
+                 "Error opening XML file");
   }
 }
 //-----------------------------------------------------------------------------
@@ -107,8 +117,8 @@ std::vector<std::string> XDMFxml::topology_name() const
 std::vector<std::string> XDMFxml::geometry_name() const
 {
   // Geometry - check format and get dataset name
-  pugi::xml_node xdmf_geometry_data =
-    xml_doc.child("Xdmf").child("Domain").child("Grid").child("Geometry").child("DataItem");
+  pugi::xml_node xdmf_geometry_data
+    = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Geometry").child("DataItem");
   dolfin_assert(xdmf_geometry_data);
 
   const std::string geom_fmt(xdmf_geometry_data.attribute("Format").value());
@@ -360,8 +370,7 @@ void XDMFxml::mesh_topology(const CellType::Type cell_type,
     xdmf_topology_data.append_attribute("Dimensions") = cell_dims.c_str();
 
     const std::string topology_reference = reference + "/topology";
-    xdmf_topology_data.append_child(pugi::node_pcdata)
-      .set_value(topology_reference.c_str());
+    xdmf_topology_data.append_child(pugi::node_pcdata).set_value(topology_reference.c_str());
   }
 }
 //----------------------------------------------------------------------------
