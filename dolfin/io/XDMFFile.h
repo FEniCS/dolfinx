@@ -52,8 +52,11 @@ namespace dolfin
   {
   public:
 
+    /// File encoding type
+    enum class Encoding {HDF5, ASCII};
+
     /// Constructor
-    XDMFFile(MPI_Comm comm, const std::string filename);
+    XDMFFile(MPI_Comm comm, const std::string filename, const Encoding=Encoding::HDF5);
 
     /// Destructor
     ~XDMFFile();
@@ -87,6 +90,9 @@ namespace dolfin
     void operator<< (const MeshFunction<int>& meshfunction);
     void operator<< (const MeshFunction<std::size_t>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
+
+    /// Write ascii_xml_vesion
+    void write_ascii(const Mesh& mesh);
 
     /// Save a cloud of points to file
     void write(const std::vector<Point>& points);
@@ -140,6 +146,8 @@ namespace dolfin
     const std::string _filename;
 
     std::size_t counter;
+
+    const Encoding _encoding;
 
   };
 }
