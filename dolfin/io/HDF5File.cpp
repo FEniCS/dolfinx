@@ -1143,7 +1143,7 @@ void HDF5File::read(Function& u, const std::string name)
 void HDF5File::write(const MeshValueCollection<std::size_t>& mesh_values,
                      const std::string name)
 {
-  write_mesh_value_collection(mesh_values, name);
+  write_mesh_value_collection_v2(mesh_values, name);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(MeshValueCollection<std::size_t>& mesh_values,
@@ -1155,7 +1155,7 @@ void HDF5File::read(MeshValueCollection<std::size_t>& mesh_values,
 void HDF5File::write(const MeshValueCollection<double>& mesh_values,
                      const std::string name)
 {
-  write_mesh_value_collection(mesh_values, name);
+  write_mesh_value_collection_v2(mesh_values, name);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(MeshValueCollection<double>& mesh_values,
@@ -1205,7 +1205,47 @@ void HDF5File::read(MeshValueCollection<bool>& mesh_values,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_values, const std::string name)
+void HDF5File::write_mesh_value_collection_v2(const MeshValueCollection<T>& mesh_values,
+                                              const std::string name)
+{
+  const std::size_t dim = mesh_values.dim();
+  std::shared_ptr<const Mesh> mesh = mesh_values.mesh();
+
+  const std::map<std::pair<std::size_t, std::size_t>, T>& values
+    = mesh_values.values();
+
+  std::unique_ptr<CellType> entity_type(CellType::create(mesh->type().entity_type(dim)));
+  const std::size_t num_vertices_per_entity = (dim == 0) ? 1 : entity_type->num_vertices();
+
+  std::vector<std::size_t> topology;
+  std::vector<T> value_data;
+  topology.reserve(values.size()*num_vertices_per_entity);
+  value_data.reserve(values.size());
+
+  for (auto &p : values)
+  {
+    const Cell cell = Cell(*mesh, p.first.first);
+    const unsigned int entity_local_idx = cell.entities(dim)[p.first.second];
+    const MeshEntity entity = MeshEntity(*mesh, dim, entity_local_idx);
+    for (VertexIterator v(entity); !v.end(); ++v)
+      topology.push_back(v->global_index());
+    value_data.push_back(p.second);
+  }
+
+  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+  std::vector<std::size_t> global_size(2);
+
+  global_size[0] = MPI::sum(_mpi_comm, values.size());
+  global_size[1] = num_vertices_per_entity;
+  write_data(name + "/topology", topology, global_size, mpi_io);
+
+  global_size[1] = 1;
+  write_data(name + "/values", value_data, global_size, mpi_io);
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
+                                           const std::string name)
 {
   const std::map<std::pair<std::size_t, std::size_t>, T>& values
     = mesh_values.values();
