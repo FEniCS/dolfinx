@@ -33,7 +33,7 @@ def test_xdmf_cell_scalar_ghost(cd_tempdir, ghost_mode):
     E = Expression("x[0]")
     F.interpolate(E)
 
-    xdmf = File("dg0.xdmf")
+    xdmf = XDMFFile(mesh.mpi_comm(), "dg0.xdmf")
     xdmf << F
     del xdmf
 

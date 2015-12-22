@@ -144,10 +144,14 @@ namespace dolfin
     // Most recent mesh name
     std::string current_mesh_name;
 
+    // Cached filename
     const std::string _filename;
 
+    // Counter for time series
     std::size_t counter;
 
+    // Encoding for storing the actual data, either inline as ASCII in the XML
+    // or as an external HDF5 file
     const Encoding _encoding;
 
   };
