@@ -699,9 +699,9 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc)
     const std::string dataset_ref
       = p.filename().string() + ":" + dataset_name;
 
-    xml.mesh_topology(cell_type, 1, mvc.size(), dataset_ref);
+    xml.mesh_topology(cell_type, 1, mvc.size(), dataset_ref, xdmf_format_str());
     xml.mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
-                      current_mesh_name);
+                      current_mesh_name, xdmf_format_str());
     xml.data_attribute(mvc.name(), 0, false, mesh->size_global(0),
                        mvc.size(), 1, dataset_ref + "/values");
     xml.write();
