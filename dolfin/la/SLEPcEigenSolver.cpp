@@ -33,32 +33,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A)
-  : _matA(reference_to_no_delete_pointer(const_cast<PETScMatrix&>(A)))
-{
-  dolfin_assert(A.size(0) == A.size(1));
-
-  // Set default parameter values
-  parameters = default_parameters();
-
-  // Set up solver environment
-  EPSCreate(PETSC_COMM_WORLD, &_eps);
-}
-//-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
-  : _matA(reference_to_no_delete_pointer(A)), _matB(reference_to_no_delete_pointer(B))
-{
-  dolfin_assert(A.size(0) == A.size(1));
-  dolfin_assert(B.size(0) == A.size(0));
-  dolfin_assert(B.size(1) == A.size(1));
-
-  // Set default parameter values
-  parameters = default_parameters();
-
-  // Set up solver environment
-  EPSCreate(PETSC_COMM_WORLD, &_eps);
-}
-//-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A)
   : _matA(A)
 {

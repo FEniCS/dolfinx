@@ -52,13 +52,6 @@ Parameters MUMPSLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-MUMPSLUSolver::MUMPSLUSolver(const CoordinateMatrix& A)
-  : _matA(reference_to_no_delete_pointer(A))
-{
-  // Set parameter values
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
 MUMPSLUSolver::MUMPSLUSolver(std::shared_ptr<const CoordinateMatrix> A)
   : _matA(A)
 {

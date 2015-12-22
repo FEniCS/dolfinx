@@ -131,13 +131,7 @@ namespace dolfin
   public:
 
     /// Create eigenvalue solver for Ax = \lambda x
-    SLEPcEigenSolver(const PETScMatrix& A);
-
-    /// Create eigenvalue solver Ax = \lambda Bx
-    SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B);
-
-    /// Create eigenvalue solver for Ax = \lambda x
-    SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A);
+    explicit SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A);
 
     /// Create eigenvalue solver for Ax = \lambda x
     SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,

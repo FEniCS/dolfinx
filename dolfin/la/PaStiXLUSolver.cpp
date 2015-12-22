@@ -75,13 +75,6 @@ Parameters PaStiXLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PaStiXLUSolver::PaStiXLUSolver(const STLMatrix& A)
-  : A(reference_to_no_delete_pointer(A))
-{
-  // Set parameter values
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
 PaStiXLUSolver::PaStiXLUSolver(std::shared_ptr<const STLMatrix> A) : A(A)
 {
   // Set parameter values

@@ -52,10 +52,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    MUMPSLUSolver(const CoordinateMatrix& A);
-
-    /// Constructor
-    MUMPSLUSolver(std::shared_ptr<const CoordinateMatrix> A);
+    explicit MUMPSLUSolver(std::shared_ptr<const CoordinateMatrix> A);
 
     /// Destructor
     ~MUMPSLUSolver();
