@@ -525,7 +525,7 @@ void XDMFFile::write(const Mesh& mesh)
     else if (_encoding == XDMFFile::Encoding::HDF5)
     {
       const boost::filesystem::path p(hdf5_filename);
-      topology_xml_value = p.filename().string() + ":" + group_name;
+      topology_xml_value = p.filename().string() + ":" + group_name + "/topology";
     }
 
     // Describe topological connectivity
@@ -549,7 +549,7 @@ void XDMFFile::write(const Mesh& mesh)
     else if (_encoding == XDMFFile::Encoding::HDF5)
     {
       const boost::filesystem::path p(hdf5_filename);
-      geometry_xml_value = p.filename().string() + ":" + group_name;
+      geometry_xml_value = p.filename().string() + ":" + group_name + "/coordinates";
     }
 
     // Describe geometric coordinates

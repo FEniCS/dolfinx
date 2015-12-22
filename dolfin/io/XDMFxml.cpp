@@ -370,8 +370,7 @@ void XDMFxml::mesh_topology(const CellType::Type cell_type,
       + " " + std::to_string(nodes_per_element);
     xdmf_topology_data.append_attribute("Dimensions") = cell_dims.c_str();
 
-    const std::string topology_reference = xml_value_data + "/topology";
-    xdmf_topology_data.append_child(pugi::node_pcdata).set_value(topology_reference.c_str());
+    xdmf_topology_data.append_child(pugi::node_pcdata).set_value(xml_value_data.c_str());
   }
 }
 //----------------------------------------------------------------------------
@@ -438,8 +437,7 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
     xdmf_geom_2.append_child(pugi::node_pcdata).set_value(dummy_zeros.c_str());
   }
 
-  const std::string geometry_reference = xml_value_data + "/coordinates";
-  xdmf_geom_data.append_child(pugi::node_pcdata).set_value(geometry_reference.c_str());
+  xdmf_geom_data.append_child(pugi::node_pcdata).set_value(xml_value_data.c_str());
 }
 //-----------------------------------------------------------------------------
 #endif
