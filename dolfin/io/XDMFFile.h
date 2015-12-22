@@ -138,6 +138,9 @@ namespace dolfin
     void get_point_data_values(std::vector<double>& data_values,
                                std::size_t width, const Function& u);
 
+    std::string xdmf_format_str()
+    { return (_encoding == XDMFFile::Encoding::HDF5) ? "HDF" : "XML"; }
+
     // Most recent mesh name
     std::string current_mesh_name;
 

@@ -304,7 +304,8 @@ pugi::xml_node XDMFxml::init_timeseries(std::string name, double time_step,
 void XDMFxml::mesh_topology(const CellType::Type cell_type,
                             const std::size_t cell_order,
                             const std::size_t num_global_cells,
-                            const std::string reference)
+                            const std::string xml_value_data,
+                            const std::string format)
 {
   pugi::xml_node xdmf_topology = xdmf_grid.child("Topology");
   pugi::xml_node xdmf_topology_data = xdmf_topology.child("DataItem");
@@ -360,23 +361,24 @@ void XDMFxml::mesh_topology(const CellType::Type cell_type,
                  "Invalid combination of cell type and order");
   }
 
-  if (reference.size() > 0)
+  if (xml_value_data.size() > 0)
   {
     // Refer to all cells and dimensions
     xdmf_topology_data = xdmf_topology.append_child("DataItem");
-    xdmf_topology_data.append_attribute("Format") = "HDF";
+    xdmf_topology_data.append_attribute("Format") = format.c_str();
     const std::string cell_dims = std::to_string(num_global_cells)
       + " " + std::to_string(nodes_per_element);
     xdmf_topology_data.append_attribute("Dimensions") = cell_dims.c_str();
 
-    const std::string topology_reference = reference + "/topology";
+    const std::string topology_reference = xml_value_data + "/topology";
     xdmf_topology_data.append_child(pugi::node_pcdata).set_value(topology_reference.c_str());
   }
 }
 //----------------------------------------------------------------------------
 void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
                             const std::size_t gdim,
-                            const std::string reference)
+                            const std::string xml_value_data,
+                            const std::string format)
 {
   pugi::xml_node xdmf_geometry = xdmf_grid.child("Geometry");
   pugi::xml_node xdmf_geom_data = xdmf_geometry.child("DataItem");
@@ -400,7 +402,7 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
   xdmf_geometry.append_attribute("GeometryType") = geometry_type.c_str();
   xdmf_geom_data = xdmf_geometry.append_child("DataItem");
 
-  xdmf_geom_data.append_attribute("Format") = "HDF";
+  xdmf_geom_data.append_attribute("Format") = format.c_str();
   std::string geom_dim = std::to_string(num_total_vertices) + " "
     + std::to_string(gdim);
   xdmf_geom_data.append_attribute("Dimensions") = geom_dim.c_str();
@@ -436,7 +438,7 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
     xdmf_geom_2.append_child(pugi::node_pcdata).set_value(dummy_zeros.c_str());
   }
 
-  const std::string geometry_reference = reference + "/coordinates";
+  const std::string geometry_reference = xml_value_data + "/coordinates";
   xdmf_geom_data.append_child(pugi::node_pcdata).set_value(geometry_reference.c_str());
 }
 //-----------------------------------------------------------------------------

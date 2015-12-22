@@ -410,8 +410,8 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     XDMFxml xml(_filename);
     xml.init_timeseries(u.name(), time_step, counter);
     xml.mesh_topology(mesh.type().cell_type(), degree,
-                      num_global_cells, current_mesh_name);
-    xml.mesh_geometry(num_global_points, gdim, current_mesh_name);
+                      num_global_cells, current_mesh_name, xdmf_format_str());
+    xml.mesh_geometry(num_global_points, gdim, current_mesh_name, xdmf_format_str());
 
     boost::filesystem::path p(hdf5_filename);
     xml.data_attribute(u.name(), value_rank, vertex_data,
@@ -512,19 +512,15 @@ void XDMFFile::write(const Mesh& mesh)
 
     if (_encoding == XDMFFile::Encoding::ASCII)
     {
-      std::ostringstream oss_top;
       const std::size_t num_cell_entities = mesh.type().num_entities(0);
       for (CellIterator c(mesh); !c.end(); ++c)
       {
         const unsigned int* vertices = c->entities(0);
-        oss_top << std::endl;
+        topology_xml_value += "\n";
         for (size_t i=0; i<num_cell_entities; ++i)
-        {
-          oss_top << vertices[i] << " ";
-        }
+          topology_xml_value += boost::str(boost::format("%d") % vertices[i]) + " ";
       }
-      oss_top << std::endl;
-      topology_xml_value = oss_top.str();
+      topology_xml_value += "\n";
     }
     else if (_encoding == XDMFFile::Encoding::HDF5)
     {
@@ -534,25 +530,21 @@ void XDMFFile::write(const Mesh& mesh)
 
     // Describe topological connectivity
     xml.mesh_topology(mesh.type().cell_type(), mesh.geometry().degree(),
-                      num_global_cells, topology_xml_value);
+                      num_global_cells, topology_xml_value, xdmf_format_str());
 
     // Write the geometry
     std::string geometry_xml_value;
 
     if (_encoding == XDMFFile::Encoding::ASCII)
     {
-      std::ostringstream oss_geo;
       for (VertexIterator v(mesh); !v.end(); ++v)
       {
-        oss_geo << std::endl;
+        geometry_xml_value += "\n";
         const double* p = v->x();
         for (size_t i=0; i<gdim; ++i)
-        {
-          oss_geo << boost::str(boost::format("%.15e") % p[i]).c_str() << " ";
-        }
+          geometry_xml_value += boost::str(boost::format("%.15e") % p[i]) + " ";
       }
-      oss_geo << std::endl;
-      geometry_xml_value = oss_geo.str();
+      geometry_xml_value += "\n";
     }
     else if (_encoding == XDMFFile::Encoding::HDF5)
     {
@@ -561,7 +553,7 @@ void XDMFFile::write(const Mesh& mesh)
     }
 
     // Describe geometric coordinates
-    xml.mesh_geometry(num_total_points, gdim, geometry_xml_value);
+    xml.mesh_geometry(num_total_points, gdim, geometry_xml_value, xdmf_format_str());
 
     xml.write();
   }
@@ -648,13 +640,13 @@ void XDMFFile::write_point_xml(const std::string group_name,
     xml.init_mesh("Point cloud");
 
     // Point topology, no connectivity data
-    xml.mesh_topology(CellType::Type::point, 0, num_global_points, "");
+    xml.mesh_topology(CellType::Type::point, 0, num_global_points, "", xdmf_format_str());
 
     // Describe geometric coordinates
     // FIXME: assumes 3D
     boost::filesystem::path p(hdf5_filename);
     xml.mesh_geometry(num_global_points, 3,
-                      p.filename().string() + ":/Points");
+                      p.filename().string() + ":/Points", xdmf_format_str());
 
     if(value_size != 0)
     {
@@ -707,9 +699,9 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     const std::string meshfunction_name = meshfunction.name();
     xml.init_timeseries(meshfunction_name, (double)counter, counter);
     xml.mesh_topology(cell_type, 1, mesh.size_global(cell_dim),
-                      current_mesh_name);
+                      current_mesh_name, xdmf_format_str());
     xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(),
-                      current_mesh_name);
+                      current_mesh_name, xdmf_format_str());
     xml.data_attribute(meshfunction_name, 0, false, mesh.size_global(0),
                        mesh.size_global(cell_dim), 1, dataset_name);
     xml.write();

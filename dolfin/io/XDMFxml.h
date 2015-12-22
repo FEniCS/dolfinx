@@ -80,12 +80,14 @@ namespace dolfin
     void mesh_topology(const CellType::Type cell_type,
                        const std::size_t cell_order,
                        const std::size_t num_global_cells,
-                       const std::string reference);
+                       const std::string xml_value_data,
+                       const std::string format);
 
     /// Attach geometry to the current grid node
     void mesh_geometry(const std::size_t num_total_vertices,
                        const std::size_t gdim,
-                       const std::string reference);
+                       const std::string xml_value_data,
+                       const std::string format);
 
   private:
 
