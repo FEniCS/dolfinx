@@ -45,6 +45,7 @@ namespace dolfin
 
   class HDF5File : public Variable
   {
+
   public:
 
     /// Constructor. file_mode should "a" (append), "w" (write) or "r"
@@ -187,6 +188,11 @@ namespace dolfin
     template <typename T>
     void write_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
                                      const std::string name);
+
+    // Write a MeshValueCollection to file (new version using vertex indices)
+    template <typename T>
+    void write_mesh_value_collection_v2(const MeshValueCollection<T>& mesh_values,
+                                        const std::string name);
 
     // Read a MeshValueCollection from file
     template <typename T>

@@ -42,11 +42,26 @@ XDMFxml::~XDMFxml()
 //-----------------------------------------------------------------------------
 void XDMFxml::header()
 {
-  xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
-  pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
-  xdmf.append_attribute("Version") = "2.0";
-  xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
-  xdmf.append_child("Domain");
+  // If a new file, add a header
+  if (!boost::filesystem::exists(_filename))
+  {
+    xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+    pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
+    xdmf.append_attribute("Version") = "2.0";
+    xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
+    xdmf.append_child("Domain");
+  }
+  else
+  {
+    // Read in existing XDMF file
+    pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+    if (!result)
+    {
+      dolfin_error("XDMFxml.cpp",
+                   "write data to XDMF file",
+                   "XML parsing error when reading from existing file");
+    }
+  }
 }
 //----------------------------------------------------------------------------
 void XDMFxml::write() const
@@ -57,11 +72,10 @@ void XDMFxml::write() const
 //-----------------------------------------------------------------------------
 void XDMFxml::read()
 {
-  // Check file exists
   if (!boost::filesystem::exists(_filename))
   {
     dolfin_error("XDMFxml.cpp",
-                 "read mesh from XDMF/H5 files",
+                 "read XDMF file",
                  "File does not exist");
   }
 
@@ -193,7 +207,9 @@ void XDMFxml::data_attribute(std::string name,
 //-----------------------------------------------------------------------------
 pugi::xml_node XDMFxml::init_mesh(std::string name)
 {
+  // If a new file, add a header
   header();
+
   pugi::xml_node xdmf_domain = xml_doc.child("Xdmf").child("Domain");
   dolfin_assert(xdmf_domain);
   xdmf_grid = xdmf_domain.append_child("Grid");
@@ -207,22 +223,8 @@ pugi::xml_node XDMFxml::init_mesh(std::string name)
 pugi::xml_node XDMFxml::init_timeseries(std::string name, double time_step,
                                         std::size_t counter)
  {
-   if (counter == 0)
-   {
-     // First time step - create document template
-     header();
-   }
-   else
-   {
-     // Subsequent timestep - read in existing XDMF file
-     pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
-     if (!result)
-     {
-       dolfin_error("XDMFxml.cpp",
-                    "write data to XDMF file",
-                    "XML parsing error when reading from existing file");
-     }
-   }
+   // If a new file, add a header
+   header();
 
    pugi::xml_node xdmf_domain = xml_doc.child("Xdmf").child("Domain");
    dolfin_assert(xdmf_domain);

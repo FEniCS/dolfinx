@@ -35,15 +35,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PointSource::PointSource(const FunctionSpace& V,
-                         const Point& p,
-                         double magnitude)
-  : _function_space(reference_to_no_delete_pointer(V)), _p(p), _magnitude(magnitude)
-{
-  // Check that function space is scalar
-  check_is_scalar(V);
-}
-//-----------------------------------------------------------------------------
 PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
                          const Point& p,
                          double magnitude)
