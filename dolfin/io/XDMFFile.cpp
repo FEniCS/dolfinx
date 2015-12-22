@@ -52,6 +52,13 @@ using namespace dolfin;
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
   : GenericFile(filename, "XDMF"), _mpi_comm(comm)
 {
+  if (boost::filesystem::exists(filename))
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "write XDMF file",
+                 "Will not overwrite existing file");
+  }
+
   // Make name for HDF5 file (used to store data)
   boost::filesystem::path p(filename);
   p.replace_extension(".h5");
@@ -501,7 +508,6 @@ void XDMFFile::operator<< (const Mesh& mesh)
   if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     XDMFxml xml(_filename);
-    xml.header();
     xml.init_mesh(name);
 
     // Describe topological connectivity
@@ -648,7 +654,6 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc)
   if (MPI::rank(mesh->mpi_comm()) == 0)
   {
     XDMFxml xml(_filename);
-    xml.read();
     xml.init_mesh(mvc.name());
 
     boost::filesystem::path p(hdf5_filename);
@@ -703,7 +708,8 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   {
     XDMFxml xml(_filename);
     const std::string meshfunction_name = meshfunction.name();
-    xml.init_timeseries(meshfunction_name, (double)counter, counter);
+    //   xml.init_timeseries(meshfunction_name, (double)counter, counter);
+    xml.init_mesh(meshfunction_name);
     xml.mesh_topology(cell_type, 1, mesh.size_global(cell_dim),
                       current_mesh_name);
     xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(),
