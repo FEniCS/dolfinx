@@ -79,14 +79,14 @@ int main()
   SubSpace V0(V, 0);
   Constant zero(0.0);
   SymmetryLine s;
-  DirichletBC bc(V0, zero, s, "pointwise");
-  std::vector<const DirichletBC*> bcs {&bc};
+  auto bc = std::make_shared<DirichletBC>(V0, zero, s, "pointwise");
+  std::vector<std::shared_ptr<const DirichletBC>> bcs {bc};
 
   // Define source and boundary traction functions
   Constant B(0.0, -0.05);
 
   // Define solution function
-  Function u(V);
+  auto u = std::make_shared<Function>(V);
 
   // Set material parameters
   const double E  = 10.0;
@@ -95,12 +95,12 @@ int main()
   Constant lambda(E*nu/((1.0 + nu)*(1.0 - 2.0*nu)));
 
   // Create (linear) form defining (nonlinear) variational problem
-  HyperElasticity::ResidualForm F(V);
-  F.mu = mu; F.lmbda = lambda; F.B = B; F.u = u;
+  auto F = std::make_shared<HyperElasticity::ResidualForm>(V);
+  F->mu = mu; F->lmbda = lambda; F->B = B; F->u = *u;
 
   // Create jacobian dF = F' (for use in nonlinear solver).
-  HyperElasticity::JacobianForm J(V, V);
-  J.mu = mu; J.lmbda = lambda; J.u = u;
+  auto J = std::make_shared<HyperElasticity::JacobianForm>(V, V);
+  J->mu = mu; J->lmbda = lambda; J->u = *u;
 
   // Interpolate expression for upper bound
   UpperBound umax_exp;
@@ -137,10 +137,10 @@ int main()
 
   // Save solution in VTK format
   File file("displacement.pvd");
-  file << u;
+  file << *u;
 
   // plot the current configuration
-  plot(u,"Displacement", "displacement");
+  plot(*u, "Displacement", "displacement");
 
   // Make plot windows interactive
   interactive();

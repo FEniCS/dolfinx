@@ -16,11 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Corrado Maurini, 2013.
-//
-// First added:  2011-06-22
-// Last changed: 2013-03-20
 
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/Function.h>
 #include "Form.h"
 #include "NonlinearVariationalProblem.h"
@@ -28,98 +24,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
-                                                         Function& u)
-  : Hierarchical<NonlinearVariationalProblem>(*this),
-    _residual(reference_to_no_delete_pointer(F)),
-    _u(reference_to_no_delete_pointer(u))
-{
-  // Check forms
-  check_forms();
-}
-//-----------------------------------------------------------------------------
-NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
-                                                         Function& u,
-                                                         const Form& J)
-  : Hierarchical<NonlinearVariationalProblem>(*this),
-    _residual(reference_to_no_delete_pointer(F)),
-    _jacobian(reference_to_no_delete_pointer(J)),
-    _u(reference_to_no_delete_pointer(u))
-{
-  // Check forms
-  check_forms();
-}
-//-----------------------------------------------------------------------------
-NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
-                                                         Function& u,
-                                                         const DirichletBC& bc)
-  : Hierarchical<NonlinearVariationalProblem>(*this),
-    _residual(reference_to_no_delete_pointer(F)), _u(reference_to_no_delete_pointer(u))
-{
-  // Store boundary condition
-  _bcs.push_back(reference_to_no_delete_pointer(bc));
-
-  // Check forms
-  check_forms();
-}
-//-----------------------------------------------------------------------------
-NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
-                                                         Function& u,
-                                                         const DirichletBC& bc,
-                                                         const Form& J)
-  : Hierarchical<NonlinearVariationalProblem>(*this),
-    _residual(reference_to_no_delete_pointer(F)),
-    _jacobian(reference_to_no_delete_pointer(J)),
-    _u(reference_to_no_delete_pointer(u))
-{
-  // Store boundary condition
-  _bcs.push_back(reference_to_no_delete_pointer(bc));
-
-  // Check forms
-  check_forms();
-}
-//-----------------------------------------------------------------------------
-NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
-                                                         Function& u,
-                                          std::vector<const DirichletBC*> bcs)
-  : Hierarchical<NonlinearVariationalProblem>(*this),
-    _residual(reference_to_no_delete_pointer(F)), _u(reference_to_no_delete_pointer(u))
-{
-  // Store boundary conditions
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-    _bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
-
-  // Check forms
-  check_forms();
-}
-//-----------------------------------------------------------------------------
-NonlinearVariationalProblem::NonlinearVariationalProblem(const Form& F,
-                                                         Function& u,
-                                          std::vector<const DirichletBC*> bcs,
-                                          const Form& J)
-  : Hierarchical<NonlinearVariationalProblem>(*this),
-    _residual(reference_to_no_delete_pointer(F)),
-    _jacobian(reference_to_no_delete_pointer(J)),
-    _u(reference_to_no_delete_pointer(u))
-{
-  // Store boundary conditions
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-    _bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
-
-  // Check forms
-  check_forms();
-}
-//-----------------------------------------------------------------------------
 NonlinearVariationalProblem::NonlinearVariationalProblem(
   std::shared_ptr<const Form> F,
   std::shared_ptr<Function> u,
   std::vector<std::shared_ptr<const DirichletBC>> bcs)
-  : Hierarchical<NonlinearVariationalProblem>(*this), _residual(F), _u(u)
+  : Hierarchical<NonlinearVariationalProblem>(*this), _residual(F), _u(u),
+  _bcs(bcs)
 {
-  // Store boundary conditions
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-    _bcs.push_back(bcs[i]);
-
   // Check forms
   check_forms();
 }
@@ -129,34 +40,17 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(
   std::shared_ptr<Function> u,
   std::vector<std::shared_ptr<const DirichletBC>> bcs,
   std::shared_ptr<const Form> J)
-  : Hierarchical<NonlinearVariationalProblem>(*this), _residual(F), _jacobian(J), _u(u)
+  : Hierarchical<NonlinearVariationalProblem>(*this), _residual(F),
+  _jacobian(J), _u(u), _bcs(bcs)
 {
-  // Store boundary conditions
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-    _bcs.push_back(bcs[i]);
-
   // Check forms
   check_forms();
-}
-//-----------------------------------------------------------------------------
-void NonlinearVariationalProblem::set_bounds(
-  std::shared_ptr<const Function> lb_func,
-  std::shared_ptr<const Function> ub_func)
-{
-    set_bounds(*lb_func,*ub_func);
 }
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::set_bounds(const Function& lb_func,
                                              const Function& ub_func)
 {
-    set_bounds(lb_func.vector(),ub_func.vector());
-}
-//-----------------------------------------------------------------------------
-void NonlinearVariationalProblem::set_bounds(const GenericVector& lb,
-                                             const GenericVector& ub)
-{
-    set_bounds(reference_to_no_delete_pointer(lb),
-               reference_to_no_delete_pointer(ub));
+    set_bounds(lb_func.vector(), ub_func.vector());
 }
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::set_bounds(

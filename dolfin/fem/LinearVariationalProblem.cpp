@@ -14,11 +14,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2011-06-22
-// Last changed: 2012-08-17
 
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/Function.h>
 #include "Form.h"
 #include "LinearVariationalProblem.h"
@@ -26,59 +22,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearVariationalProblem::LinearVariationalProblem(const Form& a,
- const Form& L, Function& u) : Hierarchical<LinearVariationalProblem>(*this),
-  _a(reference_to_no_delete_pointer(a)), _l(reference_to_no_delete_pointer(L)),
-  _u(reference_to_no_delete_pointer(u))
+LinearVariationalProblem::LinearVariationalProblem(
+  std::shared_ptr<const Form> a,
+  std::shared_ptr<const Form> L,
+  std::shared_ptr<Function> u,
+  const std::vector<std::shared_ptr<const DirichletBC>> bcs)
+  : Hierarchical<LinearVariationalProblem>(*this), _a(a), _l(L), _u(u),
+  _bcs(bcs)
 {
-  // Check forms
-  check_forms();
-}
-//-----------------------------------------------------------------------------
-LinearVariationalProblem::LinearVariationalProblem(const Form& a,
-  const Form& L, Function& u, const DirichletBC& bc)
-  : Hierarchical<LinearVariationalProblem>(*this),
-    _a(reference_to_no_delete_pointer(a)),
-    _l(reference_to_no_delete_pointer(L)),
-    _u(reference_to_no_delete_pointer(u))
-{
-  // Store boundary condition
-  _bcs.push_back(reference_to_no_delete_pointer(bc));
-
-  // Check forms
-  check_forms();
-}
-//-----------------------------------------------------------------------------
-LinearVariationalProblem::
-LinearVariationalProblem(const Form& a,
-                         const Form& L,
-                         Function& u,
-                         std::vector<const DirichletBC*> bcs)
-  : Hierarchical<LinearVariationalProblem>(*this),
-    _a(reference_to_no_delete_pointer(a)),
-    _l(reference_to_no_delete_pointer(L)),
-    _u(reference_to_no_delete_pointer(u))
-{
-  // Store boundary conditions
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-    _bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
-
-  // Check forms
-  check_forms();
-}
-//-----------------------------------------------------------------------------
-LinearVariationalProblem::
-LinearVariationalProblem(std::shared_ptr<const Form> a,
-                         std::shared_ptr<const Form> L,
-                         std::shared_ptr<Function> u,
-                         std::vector<std::shared_ptr<const DirichletBC>> bcs)
-  : Hierarchical<LinearVariationalProblem>(*this),
-    _a(a), _l(L), _u(u)
-{
-  // Store boundary conditions
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-    _bcs.push_back(bcs[i]);
-
   // Check forms
   check_forms();
 }

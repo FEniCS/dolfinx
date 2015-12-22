@@ -61,18 +61,18 @@ int main()
   // Define boundary condition
   Constant u0(0.0);
   DirichletBoundary boundary;
-  DirichletBC bc(V, u0, boundary);
+  auto bc = std::make_shared<DirichletBC>(V, u0, boundary);
 
   // Define variational forms
-  AdaptivePoisson::BilinearForm a(V, V);
-  AdaptivePoisson::LinearForm L(V);
+  auto a = std::make_shared<AdaptivePoisson::BilinearForm>(V, V);
+  auto L = std::make_shared<AdaptivePoisson::LinearForm>(V);
   Source f;
   dUdN g;
-  L.f = f;
-  L.g = g;
+  L->f = f;
+  L->g = g;
 
   // Define Function for solution
-  Function u(V);
+  auto u = std::make_shared<Function>(V);
 
   // Define goal functional (quantity of interest)
   auto M = std::make_shared<AdaptivePoisson::GoalFunctional>(mesh);
@@ -83,7 +83,8 @@ int main()
   // Solve equation a = L with respect to u and the given boundary
   // conditions, such that the estimated error (measured in M) is less
   // than tol
-  auto problem = std::make_shared<LinearVariationalProblem>(a, L, u, bc);
+  std::vector<std::shared_ptr<const DirichletBC>> bcs({bc});
+  auto problem = std::make_shared<LinearVariationalProblem>(a, L, u, bcs);
   AdaptiveLinearVariationalSolver solver(problem, M);
   solver.parameters("error_control")("dual_variational_solver")["linear_solver"] = "cg";
   solver.parameters("error_control")("dual_variational_solver")["symmetric"] = true;
@@ -92,8 +93,8 @@ int main()
   solver.summary();
 
   // Plot final solution
-  plot(u.root_node(), "Solution on initial mesh");
-  plot(u.leaf_node(), "Solution on final mesh");
+  plot(u->root_node(), "Solution on initial mesh");
+  plot(u->leaf_node(), "Solution on final mesh");
   interactive();
 
   return 0;
