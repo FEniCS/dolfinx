@@ -46,15 +46,16 @@ namespace dolfin
     /// Read from a file
     void read();
 
-    /// Get the (unique) Mesh topology name, split into three parts (file name, dataset name, CellType)
-    /// from the current XML
+    /// Get the (unique) Mesh topology name, split into three parts
+    /// (file name, dataset name, CellType) from the current XML
     std::vector<std::string> topology_name() const;
 
-    /// Get the (unique) Mesh geometry name, split into two parts (file name, dataset name)
-    /// from the current XML
+    /// Get the (unique) Mesh geometry name, split into two parts
+    /// (file name, dataset name) from the current XML
     std::vector<std::string> geometry_name() const;
 
-    /// Get the (unique) dataset name for a MeshFunction in current XML
+    /// Get the (unique) dataset name for a MeshFunction in current
+    /// XML
     std::string dataname() const;
 
     /// Add a data item to the current grid
@@ -66,12 +67,12 @@ namespace dolfin
                         std::size_t padded_value_size,
                         std::string dataset_name);
 
-    /// Initalise XML for a Mesh-like single output
-    /// returning the xdmf_grid node
+    /// Initalise XML for a Mesh-like single output returning the
+    /// xdmf_grid node
     pugi::xml_node init_mesh(std::string name);
 
-    /// Initialise XML for a TimeSeries-like output
-    /// returning the xdmf_grid node
+    /// Initialise XML for a TimeSeries-like output returning the
+    /// xdmf_grid node
     pugi::xml_node init_timeseries(std::string name, double time_step,
                                    std::size_t counter);
 
