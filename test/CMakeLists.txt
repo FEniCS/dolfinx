@@ -20,15 +20,18 @@ find_package(DOLFIN REQUIRED)
 if (DOLFIN_FOUND)
 
   # Build list of all cpp directories
-  file(GLOB_RECURSE initial_list "*/*.cpp")
+  file(GLOB_RECURSE initial_list "*.cpp")
 
   set(added_dirs "")
 
   # Add each C++ demo directory only once
   foreach (cpp_test ${initial_list})
 
-    # Get directory name
-    get_filename_component(cpp_dir ${cpp_test} PATH)
+    # Get directory 
+    get_filename_component(cpp_lib_dir ${cpp_test} DIRECTORY)
+
+    # Get one upper directory
+    get_filename_component(cpp_dir ${cpp_lib_dir} DIRECTORY)
 
     # Get last dir name
     get_filename_component(last_component ${cpp_dir} NAME)
@@ -39,15 +42,15 @@ if (DOLFIN_FOUND)
       # Check if the director is already added
       set(already_in "")
       foreach (dir ${added_dirs})
-	if (${dir} STREQUAL ${cpp_dir})
-	  set(already_in TRUE)
-	endif()
+        if (${dir} STREQUAL ${cpp_lib_dir})
+          set(already_in TRUE)
+        endif()
       endforeach()
 
       # Schedule directory for compilation
       if (NOT already_in)
-	list(APPEND added_dirs ${cpp_dir})
-	add_subdirectory(${cpp_dir})
+          list(APPEND added_dirs ${cpp_lib_dir})
+          add_subdirectory(${cpp_lib_dir})
       endif()
     endif()
   endforeach()

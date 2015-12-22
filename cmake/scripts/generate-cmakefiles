@@ -102,11 +102,20 @@ def generate_cmake_files(subdirectory, generated_files):
 
         executable_names = set()
 
+        parent_dir = os.path.split(root)[0]
+        cpp_test_dir = os.path.split(parent_dir)[0]
+        cpp_test = os.path.split(parent_dir)[1]
+
         # For 'cpp' directories, get list of .cpp files
-        if "cpp" in dirs:
+        if ("cpp" in dirs) or ("cpp" in cpp_test):
             cpp_files = []
-            program_dir = root + "/cpp"
-            program_name = os.path.split(root)[-1]
+            if "cpp" in dirs:
+                program_dir = root + "/cpp"
+                program_name = os.path.split(root)[-1]
+
+            if "cpp" in cpp_test:
+                program_dir = root
+                program_name = os.path.split(root)[-1]
 
             skip = False
             for exclude in exclude_projects :
