@@ -54,6 +54,21 @@ namespace dolfin
     /// (file name, dataset name) from the current XML
     std::vector<std::string> geometry_name() const;
 
+    /// Get the topology dimension
+    std::size_t get_tdim() const;
+
+    /// Get the geometry dimension
+    std::size_t get_gdim() const;
+
+    /// Get the topology cell type
+    std::string get_cell_type() const;
+
+    /// Get the Mesh geometry (for use with ASCII encoding)
+    std::string get_geometry() const;
+
+    /// Get the Mesh topology (for use with ASCII encoding)
+    std::string get_topology() const;
+
     /// Get the (unique) dataset name for a MeshFunction in current
     /// XML
     std::string dataname() const;

@@ -433,13 +433,16 @@ void XDMFFile::operator>> (Mesh& mesh)
 //-----------------------------------------------------------------------------
 void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
 {
-  // Prepare HDF5 file
-  if (hdf5_filemode != "r")
+  if (_encoding == XDMFFile::Encoding::HDF5)
   {
-    hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "r"));
-    hdf5_filemode = "r";
+    // Prepare HDF5 file
+    if (hdf5_filemode != "r")
+    {
+      hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "r"));
+      hdf5_filemode = "r";
+    }
+    dolfin_assert(hdf5_file);
   }
-  dolfin_assert(hdf5_file);
 
   std::cout << "Filename = (" << _filename << ")" << std::endl;
   XDMFxml xml(_filename);
@@ -457,9 +460,26 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
                  "Topology and geometry file names do not match");
   }
 
-  // Try to read the mesh from the associated HDF5 file
-  hdf5_file->read(mesh, topo_name[1], geom_name[1], topo_name[2],
-                  use_partition_from_file);
+  if (_encoding == XDMFFile::Encoding::HDF5)
+  {
+    // Try to read the mesh from the associated HDF5 file
+    hdf5_file->read(mesh, topo_name[1], geom_name[1], topo_name[2],
+                    use_partition_from_file);
+  }
+  else if (_encoding == XDMFFile::Encoding::ASCII)
+  {
+    if (MPI::rank(mesh.mpi_comm()) == 0)
+    {
+      const std::string geometry_data = xml.get_geometry();
+      const std::string topology_data = xml.get_topology();
+      const std::string cell_type = xml.get_cell_type();
+
+      // Create mesh for editing
+      MeshEditor editor;
+      editor.open(mesh, cell_type, xml.get_tdim(), xml.get_gdim());
+
+    }
+  }
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
