@@ -91,8 +91,6 @@ namespace dolfin
     void operator<< (const MeshFunction<std::size_t>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
 
-    /// Write ascii_xml_vesion
-    void write_ascii(const Mesh& mesh);
 
     /// Save a cloud of points to file
     void write(const std::vector<Point>& points);

@@ -466,90 +466,8 @@ void XDMFFile::operator<< (const Mesh& mesh)
   write(mesh);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::write_ascii(const Mesh& mesh)
-{
-  // Output data name
-  const std::string name = mesh.name();
-
-  // Topological and geometric dimensions
-  const std::size_t gdim = mesh.geometry().dim();
-  const std::size_t cell_dim = mesh.topology().dim();
-
-  // Make sure entities are numbered
-  DistributedMeshTools::number_entities(mesh, cell_dim);
-
-  // Get number of global cells and points
-  const std::size_t num_global_cells = mesh.size_global(cell_dim);
-  std::size_t num_total_points = 0;
-  for (std::size_t i = 0; i <= mesh.topology().dim(); ++i)
-    num_total_points +=
-            mesh.geometry().num_entity_coordinates(i)*mesh.size_global(i);
-
-  // Write mesh to HDF5 file
-  // The XML below will obliterate any existing XDMF file
-
-  const std::string group_name = "/Mesh/" + name;
-
-  // Write the XML meta description on process zero
-  if (MPI::rank(mesh.mpi_comm()) == 0)
-  {
-    XDMFxml xml(_filename);
-    xml.init_mesh(name);
-
-    std::ostringstream oss_top;
-    const std::size_t num_cell_entities = mesh.type().num_entities(0);
-    for (CellIterator c(mesh); !c.end(); ++c)
-    {
-      const unsigned int* vertices = c->entities(0);
-      oss_top << std::endl;
-      for (size_t i=0; i<num_cell_entities; ++i)
-      {
-        oss_top << vertices[i] << " ";
-      }
-    }
-    oss_top << std::endl;
-
-    // Describe topological connectivity
-    xml.mesh_topology(mesh.type().cell_type(), mesh.geometry().degree(),
-                      num_global_cells, oss_top.str());
-
-
-    std::ostringstream oss_geo;
-    for (VertexIterator v(mesh); !v.end(); ++v)
-    {
-      oss_geo << std::endl;
-      const double* p = v->x();
-      for (size_t i=0; i<gdim; ++i)
-      {
-        oss_geo << boost::str(boost::format("%.15e") % p[i]).c_str() << " ";
-      }
-    }
-    oss_geo << std::endl;
-
-    // Describe geometric coordinates
-    xml.mesh_geometry(num_total_points, gdim, oss_geo.str());
-
-    xml.write();
-  }
-}
-//----------------------------------------------------------------------------
 void XDMFFile::write(const Mesh& mesh)
 {
-  if (_encoding == XDMFFile::Encoding::ASCII)
-  {
-    write_ascii(mesh);
-    return;
-  }
-
-  // Write Mesh to HDF5 file
-
-  if (hdf5_filemode != "w")
-  {
-    // Create HDF5 file (truncate)
-    hdf5_file.reset(new HDF5File(mesh.mpi_comm(), hdf5_filename, "w"));
-    hdf5_filemode = "w";
-  }
-
   // Output data name
   const std::string name = mesh.name();
 
@@ -565,13 +483,23 @@ void XDMFFile::write(const Mesh& mesh)
   std::size_t num_total_points = 0;
   for (std::size_t i = 0; i <= mesh.topology().dim(); ++i)
     num_total_points +=
-      mesh.geometry().num_entity_coordinates(i)*mesh.size_global(i);
-
-  // Write mesh to HDF5 file
-  // The XML below will obliterate any existing XDMF file
+        mesh.geometry().num_entity_coordinates(i)*mesh.size_global(i);
 
   const std::string group_name = "/Mesh/" + name;
-  hdf5_file->write(mesh, cell_dim, group_name);
+
+  // Write hdf5 file on all processes
+  if (_encoding == XDMFFile::Encoding::HDF5) {
+    // Write mesh to HDF5 file
+    // The XML below will obliterate any existing XDMF file
+    if (hdf5_filemode != "w")
+    {
+      // Create HDF5 file (truncate)
+      hdf5_file.reset(new HDF5File(mesh.mpi_comm(), hdf5_filename, "w"));
+      hdf5_filemode = "w";
+    }
+
+    hdf5_file->write(mesh, cell_dim, group_name);
+  }
 
   // Write the XML meta description on process zero
   if (MPI::rank(mesh.mpi_comm()) == 0)
@@ -579,15 +507,61 @@ void XDMFFile::write(const Mesh& mesh)
     XDMFxml xml(_filename);
     xml.init_mesh(name);
 
-    boost::filesystem::path p(hdf5_filename);
-    const std::string ref = p.filename().string() + ":" + group_name;
+    // Write the topology
+    std::string topology_xml_value;
+
+    if (_encoding == XDMFFile::Encoding::ASCII)
+    {
+      std::ostringstream oss_top;
+      const std::size_t num_cell_entities = mesh.type().num_entities(0);
+      for (CellIterator c(mesh); !c.end(); ++c)
+      {
+        const unsigned int* vertices = c->entities(0);
+        oss_top << std::endl;
+        for (size_t i=0; i<num_cell_entities; ++i)
+        {
+          oss_top << vertices[i] << " ";
+        }
+      }
+      oss_top << std::endl;
+      topology_xml_value = oss_top.str();
+    }
+    else if (_encoding == XDMFFile::Encoding::HDF5)
+    {
+      const boost::filesystem::path p(hdf5_filename);
+      topology_xml_value = p.filename().string() + ":" + group_name;
+    }
 
     // Describe topological connectivity
     xml.mesh_topology(mesh.type().cell_type(), mesh.geometry().degree(),
-                      num_global_cells, ref);
+                      num_global_cells, topology_xml_value);
+
+    // Write the geometry
+    std::string geometry_xml_value;
+
+    if (_encoding == XDMFFile::Encoding::ASCII)
+    {
+      std::ostringstream oss_geo;
+      for (VertexIterator v(mesh); !v.end(); ++v)
+      {
+        oss_geo << std::endl;
+        const double* p = v->x();
+        for (size_t i=0; i<gdim; ++i)
+        {
+          oss_geo << boost::str(boost::format("%.15e") % p[i]).c_str() << " ";
+        }
+      }
+      oss_geo << std::endl;
+      geometry_xml_value = oss_geo.str();
+    }
+    else if (_encoding == XDMFFile::Encoding::HDF5)
+    {
+      const boost::filesystem::path p(hdf5_filename);
+      geometry_xml_value = p.filename().string() + ":" + group_name;
+    }
 
     // Describe geometric coordinates
-    xml.mesh_geometry(num_total_points, gdim, ref);
+    xml.mesh_geometry(num_total_points, gdim, geometry_xml_value);
 
     xml.write();
   }
