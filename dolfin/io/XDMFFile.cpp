@@ -52,13 +52,6 @@ using namespace dolfin;
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename, const XDMFFile::Encoding encoding)
   : _mpi_comm(comm), _filename(filename), counter(0), _encoding(encoding)
 {
-  if (boost::filesystem::exists(filename))
-  {
-    dolfin_error("XDMFFile.cpp",
-                 "write XDMF file",
-                 "Will not overwrite existing file");
-  }
-
   // Make name for HDF5 file (used to store data)
   boost::filesystem::path p(filename);
   p.replace_extension(".h5");
