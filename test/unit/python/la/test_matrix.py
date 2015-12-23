@@ -351,3 +351,9 @@ class TestMatrixForAnyBackend:
         A, B = self.assemble_matrices()
         assert A.nnz() == 2992
         assert B.nnz() == 9398
+
+        A, B = self.assemble_matrices(keep_diagonal=True)
+        assert A.nnz() == 4589
+        # NOTE: Following should never be tested because diagonal is not
+        #       invariant w.r.t. different row and column dof reordering!
+        #assert B.nnz() == ??
