@@ -50,7 +50,8 @@ using namespace dolfin;
 
 //----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename, const XDMFFile::Encoding encoding)
-  : _mpi_comm(comm), _filename(filename), counter(0), _encoding(encoding)
+  : _mpi_comm(comm), current_mesh_name(""),
+    _filename(filename), counter(0), _encoding(encoding)
 {
   // Make name for HDF5 file (used to store data)
   boost::filesystem::path p(filename);
@@ -714,6 +715,13 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc)
     dolfin_error("XDMFFile.cpp",
                  "save empty MeshValueCollection",
                  "No values in MeshValueCollection");
+  }
+
+  if (current_mesh_name == "")
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "save MeshValueCollection",
+                 "A Mesh must be saved first");
   }
 
   const std::size_t cell_dim = mvc.dim();

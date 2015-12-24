@@ -184,19 +184,25 @@ namespace dolfin
     void read_mesh_function(MeshFunction<T>& meshfunction,
                             const std::string name) const;
 
-    // Write a MeshValueCollection to file
+    // Write a MeshValueCollection to file (old format)
     template <typename T>
-    void write_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
+    void write_mesh_value_collection_old(
+                                     const MeshValueCollection<T>& mesh_values,
                                      const std::string name);
 
     // Write a MeshValueCollection to file (new version using vertex indices)
     template <typename T>
-    void write_mesh_value_collection_v2(const MeshValueCollection<T>& mesh_values,
-                                        const std::string name);
+    void write_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
+                                     const std::string name);
 
     // Read a MeshValueCollection from file
     template <typename T>
     void read_mesh_value_collection(MeshValueCollection<T>& mesh_values,
+                                    const std::string name) const;
+
+    // Read a MeshValueCollection (old format)
+    template <typename T>
+    void read_mesh_value_collection_old(MeshValueCollection<T>& mesh_values,
                                     const std::string name) const;
 
     // Write contiguous data to HDF5 data set. Data is flattened into

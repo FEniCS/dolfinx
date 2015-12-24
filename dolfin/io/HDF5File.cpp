@@ -1143,7 +1143,7 @@ void HDF5File::read(Function& u, const std::string name)
 void HDF5File::write(const MeshValueCollection<std::size_t>& mesh_values,
                      const std::string name)
 {
-  write_mesh_value_collection_v2(mesh_values, name);
+  write_mesh_value_collection(mesh_values, name);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(MeshValueCollection<std::size_t>& mesh_values,
@@ -1155,7 +1155,7 @@ void HDF5File::read(MeshValueCollection<std::size_t>& mesh_values,
 void HDF5File::write(const MeshValueCollection<double>& mesh_values,
                      const std::string name)
 {
-  write_mesh_value_collection_v2(mesh_values, name);
+  write_mesh_value_collection(mesh_values, name);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(MeshValueCollection<double>& mesh_values,
@@ -1205,7 +1205,7 @@ void HDF5File::read(MeshValueCollection<bool>& mesh_values,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void HDF5File::write_mesh_value_collection_v2(const MeshValueCollection<T>& mesh_values,
+void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
                                               const std::string name)
 {
   const std::size_t dim = mesh_values.dim();
@@ -1222,12 +1222,17 @@ void HDF5File::write_mesh_value_collection_v2(const MeshValueCollection<T>& mesh
   topology.reserve(values.size()*num_vertices_per_entity);
   value_data.reserve(values.size());
 
+  const std::size_t tdim = mesh->topology().dim();
+  mesh->init(tdim, dim);
   for (auto &p : values)
   {
-    const Cell cell = Cell(*mesh, p.first.first);
-    const unsigned int entity_local_idx = cell.entities(dim)[p.first.second];
-    const MeshEntity entity = MeshEntity(*mesh, dim, entity_local_idx);
-    for (VertexIterator v(entity); !v.end(); ++v)
+    MeshEntity cell = Cell(*mesh, p.first.first);
+    if (dim != tdim)
+    {
+      const unsigned int entity_local_idx = cell.entities(dim)[p.first.second];
+      cell = MeshEntity(*mesh, dim, entity_local_idx);
+    }
+    for (VertexIterator v(cell); !v.end(); ++v)
       topology.push_back(v->global_index());
     value_data.push_back(p.second);
   }
@@ -1241,11 +1246,15 @@ void HDF5File::write_mesh_value_collection_v2(const MeshValueCollection<T>& mesh
 
   global_size[1] = 1;
   write_data(name + "/values", value_data, global_size, mpi_io);
+
+  HDF5Interface::add_attribute(hdf5_file_id, name, "dimension",
+                               mesh_values.dim());
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
-                                           const std::string name)
+void HDF5File::write_mesh_value_collection_old(
+                    const MeshValueCollection<T>& mesh_values,
+                    const std::string name)
 {
   const std::map<std::pair<std::size_t, std::size_t>, T>& values
     = mesh_values.values();
@@ -1285,6 +1294,198 @@ void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_va
 //-----------------------------------------------------------------------------
 template <typename T>
 void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
+                                          const std::string name) const
+{
+  Timer t1("HDF5: read mesh value collection");
+  dolfin_assert(hdf5_file_open);
+
+  if (!HDF5Interface::has_group(hdf5_file_id, name))
+  {
+    dolfin_error("HDF5File.cpp",
+                 "open MeshValueCollection dataset",
+                 "Group \"%s\" not found in file", name.c_str());
+  }
+
+  std::size_t dim = 0;
+  HDF5Interface::get_attribute(hdf5_file_id, name, "dimension", dim);
+  std::shared_ptr<const Mesh> mesh = mesh_vc.mesh();
+  dolfin_assert(mesh);
+  std::unique_ptr<CellType>
+    entity_type(CellType::create(mesh->type().entity_type(dim)));
+  const std::size_t num_verts_per_entity = entity_type->num_entities(0);
+
+  // Reset MeshValueCollection
+  mesh_vc.clear();
+  mesh_vc.init(*mesh, dim);
+
+  const std::string values_name = name + "/values";
+  const std::string topology_name = name + "/topology";
+
+  if (!HDF5Interface::has_dataset(hdf5_file_id, values_name))
+  {
+    dolfin_error("HDF5File.cpp",
+                 "open MeshValueCollection dataset",
+                 "Dataset \"%s\" not found in file", values_name.c_str());
+  }
+
+  if (!HDF5Interface::has_dataset(hdf5_file_id, topology_name))
+  {
+    dolfin_error("HDF5File.cpp",
+                 "open MeshValueCollection dataset",
+                 "Dataset \"%s\" not found in file", topology_name.c_str());
+  }
+
+  // Check both datasets have the same number of entries
+  const std::vector<std::size_t> values_dim
+      = HDF5Interface::get_dataset_size(hdf5_file_id, values_name);
+  const std::vector<std::size_t> topology_dim
+      = HDF5Interface::get_dataset_size(hdf5_file_id, topology_name);
+  dolfin_assert(values_dim[0] == topology_dim[0]);
+
+  // Divide range between processes
+  const std::pair<std::size_t, std::size_t> data_range
+    = MPI::local_range(_mpi_comm, values_dim[0]);
+  const std::size_t local_size = data_range.second - data_range.first;
+
+  // Read local range of values and entities
+  std::vector<T> values_data;
+  values_data.reserve(local_size);
+  HDF5Interface::read_dataset(hdf5_file_id, values_name, data_range,
+                              values_data);
+  std::vector<std::size_t> topology_data;
+  topology_data.reserve(local_size*num_verts_per_entity);
+  HDF5Interface::read_dataset(hdf5_file_id, topology_name, data_range,
+                              topology_data);
+
+  /// Basically need to tabulate all entities by vertex, and get their
+  /// local index, transmit them to a 'sorting' host.
+  /// Also send the read data to the 'sorting' hosts.
+
+  // Ensure the mesh dimension is initialised
+  mesh->init(dim);
+  std::size_t global_vertex_range = mesh->size_global(0);
+  std::vector<std::size_t> v(num_verts_per_entity);
+  const std::size_t num_processes = MPI::size(_mpi_comm);
+
+  // Calculate map from entity vertices to {process, local index}
+  std::map<std::vector<std::size_t>,
+           std::vector<std::size_t>> entity_map;
+
+  std::vector<std::vector<std::size_t>> send_entities(num_processes);
+  std::vector<std::vector<std::size_t>> recv_entities(num_processes);
+
+  for (MeshEntityIterator m(*mesh, dim); !m.end(); ++m)
+  {
+    if (dim == 0)
+      v[0] = m->index();
+    else
+    {
+      std::partial_sort_copy(m->entities(0),
+                             m->entities(0) + num_verts_per_entity,
+                             v.begin(), v.end());
+    }
+
+    std::size_t dest = MPI::index_owner(_mpi_comm,
+                                        v[0], global_vertex_range);
+    send_entities[dest].push_back(m->index());
+    send_entities[dest].insert(send_entities[dest].end(),
+                               v.begin(), v.end());
+  }
+
+  MPI::all_to_all(_mpi_comm, send_entities, recv_entities);
+
+  for (std::size_t i = 0; i != num_processes; ++i)
+  {
+    for (std::vector<std::size_t>::const_iterator it
+           = recv_entities[i].begin(); it != recv_entities[i].end();
+         it += (num_verts_per_entity + 1))
+    {
+      std::copy(it + 1, it + num_verts_per_entity + 1, v.begin());
+      auto map_it = entity_map.insert({v, {i, *it}});
+      if (!map_it.second)
+      {
+        // Entry already exists, add to it
+        map_it.first->second.push_back(i);
+        map_it.first->second.push_back(*it);
+      }
+    }
+  }
+
+  // Send data from MeshValueCollection to sorting process
+
+  std::vector<std::vector<T>> send_data(num_processes);
+  std::vector<std::vector<T>> recv_data(num_processes);
+  // Reset send/recv arrays
+  send_entities = std::vector<std::vector<std::size_t>>(num_processes);
+  recv_entities = std::vector<std::vector<std::size_t>>(num_processes);
+
+  std::size_t i = 0;
+  for (auto it = topology_data.begin(); it != topology_data.end();
+       it += num_verts_per_entity)
+  {
+    std::partial_sort_copy(it, it + num_verts_per_entity,
+                           v.begin(), v.end());
+    std::size_t dest = MPI::index_owner(_mpi_comm,
+                                        v[0], global_vertex_range);
+    send_entities[dest].insert(send_entities[dest].end(),
+                               v.begin(), v.end());
+    send_data[dest].push_back(values_data[i]);
+    ++i;
+  }
+
+  MPI::all_to_all(_mpi_comm, send_entities, recv_entities);
+  MPI::all_to_all(_mpi_comm, send_data, recv_data);
+
+  // Reset send arrays
+  send_data = std::vector<std::vector<T>>(num_processes);
+  send_entities = std::vector<std::vector<std::size_t>>(num_processes);
+
+  // Locate entity in map, and send back to data to owning processes
+  for (std::size_t i = 0; i != num_processes; ++i)
+  {
+    dolfin_assert(recv_data[i].size()*num_verts_per_entity
+                  == recv_entities[i].size());
+
+    for (std::size_t j = 0; j != recv_data[i].size(); ++j)
+    {
+      auto it = recv_entities[i].begin() + j*num_verts_per_entity;
+      std::copy(it, it + num_verts_per_entity, v.begin());
+      auto map_it = entity_map.find(v);
+
+      if (map_it == entity_map.end())
+      {
+        dolfin_error("HDF5File.cpp",
+                     "find entity in map",
+                     "Error reading MeshValueCollection");
+      }
+      for (auto p = map_it->second.begin(); p != map_it->second.end();
+           p += 2)
+      {
+        const std::size_t dest = *p;
+        dolfin_assert(dest < num_processes);
+        send_entities[dest].push_back(*(p + 1));
+        send_data[dest].push_back(recv_data[i][j]);
+      }
+    }
+  }
+
+  // Send to owning processes and set in MeshValueCollection
+  MPI::all_to_all(_mpi_comm, send_entities, recv_entities);
+  MPI::all_to_all(_mpi_comm, send_data, recv_data);
+
+  for (std::size_t i = 0; i != num_processes; ++i)
+  {
+    dolfin_assert(recv_entities[i].size() == recv_data[i].size());
+    for (std::size_t j = 0; j != recv_data[i].size(); ++j)
+    {
+      mesh_vc.set_value(recv_entities[i][j], recv_data[i][j]);
+    }
+  }
+
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
                                           const std::string name) const
 {
   Timer t1("HDF5: read mesh value collection");
