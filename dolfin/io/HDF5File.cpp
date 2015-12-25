@@ -1242,13 +1242,20 @@ void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_va
 
   global_size[0] = MPI::sum(_mpi_comm, values.size());
   global_size[1] = num_vertices_per_entity;
-  write_data(name + "/topology", topology, global_size, mpi_io);
 
-  global_size[1] = 1;
-  write_data(name + "/values", value_data, global_size, mpi_io);
+  // FIXME: this should throw an error, but is here because
+  // "mesh domains" call write_mesh_value_collection with empty
+  // datasets sometimes. Remove when mesh domains are removed.
+  if (global_size[0] > 0)
+  {
+    write_data(name + "/topology", topology, global_size, mpi_io);
 
-  HDF5Interface::add_attribute(hdf5_file_id, name, "dimension",
-                               mesh_values.dim());
+    global_size[1] = 1;
+    write_data(name + "/values", value_data, global_size, mpi_io);
+
+    HDF5Interface::add_attribute(hdf5_file_id, name, "dimension",
+                                 mesh_values.dim());
+  }
 }
 //-----------------------------------------------------------------------------
 template <typename T>
