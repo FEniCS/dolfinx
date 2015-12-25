@@ -1384,12 +1384,12 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
   for (MeshEntityIterator m(*mesh, dim); !m.end(); ++m)
   {
     if (dim == 0)
-      v[0] = m->index();
+      v[0] = m->global_index();
     else
     {
-      std::partial_sort_copy(m->entities(0),
-                             m->entities(0) + num_verts_per_entity,
-                             v.begin(), v.end());
+      for (VertexIterator vtx(*m); !vtx.end(); ++vtx)
+        v[vtx.pos()] = vtx->global_index();
+      std::sort(v.begin(), v.end());
     }
 
     std::size_t dest = MPI::index_owner(_mpi_comm,
