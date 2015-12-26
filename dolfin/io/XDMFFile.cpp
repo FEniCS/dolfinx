@@ -72,6 +72,10 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename, const XDMFFile::En
   // HDF5 file restart interval. Use 0 to collect all output in one
   // file.
   parameters.add("multi_file", 0);
+
+  // Whether to save multi-dataset files as time series, or flat
+  parameters.add("time_series", true);
+
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -727,14 +731,19 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc)
   const std::size_t cell_dim = mvc.dim();
   CellType::Type cell_type = mesh->type().entity_type(cell_dim);
 
-  // Use HDF5 function to output MeshFunction
+  // Use HDF5 function to output MeshValueCollection
   const std::string dataset_name = "/MVC/" + mvc.name();
   hdf5_file->write(mvc, dataset_name);
+
+  bool time_series = parameters["time_series"];
 
   if (MPI::rank(mesh->mpi_comm()) == 0)
   {
     XDMFxml xml(_filename);
-    xml.init_mesh(mvc.name());
+    if (time_series)
+      xml.init_timeseries(mvc.name(), (double)counter, counter);
+    else
+      xml.init_mesh(mvc.name());
 
     boost::filesystem::path p(hdf5_filename);
     const std::string dataset_ref
@@ -748,7 +757,7 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc)
     xml.write();
   }
 
-  counter++;
+  ++counter;
 }
 //-----------------------------------------------------------------------------
 template<typename T>
@@ -784,12 +793,17 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   // Saved MeshFunction values are in the /Mesh group
   const std::string dataset_name = current_mesh_name + "/values";
 
+  bool time_series = parameters["time_series"];
+
   if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     XDMFxml xml(_filename);
     const std::string meshfunction_name = meshfunction.name();
-    //   xml.init_timeseries(meshfunction_name, (double)counter, counter);
-    xml.init_mesh(meshfunction_name);
+    if (time_series)
+      xml.init_timeseries(meshfunction_name, (double)counter, counter);
+    else
+      xml.init_mesh(meshfunction_name);
+
     xml.mesh_topology(cell_type, 1, mesh.size_global(cell_dim),
                       current_mesh_name);
     xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(),
