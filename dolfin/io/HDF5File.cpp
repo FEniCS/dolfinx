@@ -1313,6 +1313,13 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
                  "Group \"%s\" not found in file", name.c_str());
   }
 
+  if (HDF5Interface::has_dataset(hdf5_file_id, name + "/cells"))
+  {
+    warning("Found old MeshValueCollection format");
+    read_mesh_value_collection_old(mesh_vc, name);
+    return;
+  }
+
   std::size_t dim = 0;
   HDF5Interface::get_attribute(hdf5_file_id, name, "dimension", dim);
   std::shared_ptr<const Mesh> mesh = mesh_vc.mesh();
