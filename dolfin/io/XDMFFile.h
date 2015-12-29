@@ -20,8 +20,6 @@
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
 
-#ifdef HAS_HDF5
-
 #include <memory>
 #include <string>
 #include <utility>
@@ -160,5 +158,5 @@ namespace dolfin
 
   };
 }
-#endif
+
 #endif

@@ -17,8 +17,6 @@
 //
 // Modified by Garth N. Wells, 2012
 
-#ifdef HAS_HDF5
-
 #include <iomanip>
 #include <ostream>
 #include <sstream>
@@ -29,6 +27,7 @@
 #include <boost/format.hpp>
 
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/defines.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -39,6 +38,7 @@
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
 #include "HDF5File.h"
@@ -433,6 +433,7 @@ void XDMFFile::operator>> (Mesh& mesh)
 //-----------------------------------------------------------------------------
 void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
 {
+  // FIXME: encoding should be read from file
   if (_encoding == XDMFFile::Encoding::HDF5)
   {
     // Prepare HDF5 file
@@ -489,6 +490,20 @@ void XDMFFile::operator<< (const Mesh& mesh)
 //----------------------------------------------------------------------------
 void XDMFFile::write(const Mesh& mesh)
 {
+  // FIXME: make this a private method called by all write methods
+  if (_encoding == XDMFFile::Encoding::HDF5 and !has_hdf5())
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "write XDMF file",
+                 "DOLFIN has not been compiled with HDF5 support");
+  }
+  if (_encoding == XDMFFile::Encoding::ASCII and MPI::size(_mpi_comm) != 1)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "write XDMF file",
+                 "ASCII format is not supported in parallel, use HDF5");
+  }
+
   // Output data name
   const std::string name = mesh.name();
 
@@ -538,7 +553,7 @@ void XDMFFile::write(const Mesh& mesh)
       {
         const unsigned int* vertices = c->entities(0);
         topology_xml_value += "\n";
-        for (size_t i=0; i<num_cell_entities; ++i)
+        for (size_t i = 0; i < num_cell_entities; ++i)
           topology_xml_value += boost::str(boost::format("%d") % vertices[i]) + " ";
       }
       topology_xml_value += "\n";
@@ -562,7 +577,7 @@ void XDMFFile::write(const Mesh& mesh)
       {
         geometry_xml_value += "\n";
         const double* p = v->x();
-        for (size_t i=0; i<gdim; ++i)
+        for (size_t i = 0; i < gdim; ++i)
           geometry_xml_value += boost::str(boost::format("%.15e") % p[i]) + " ";
       }
       geometry_xml_value += "\n";
@@ -826,4 +841,3 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
   hdf5_file->read(meshfunction, "/Mesh/" + data_name);
 }
 //----------------------------------------------------------------------------
-#endif
