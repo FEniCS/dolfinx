@@ -108,57 +108,57 @@ def test_save_and_read_meshfunction_3D(tempdir):
             assert meshfunctions[i][cell] == mf2[cell]
     mf_file.close()
 
-# @skip_if_not_HDF5
-# def test_save_and_read_mesh_value_collection(tempdir):
-#     ndiv = 5
-#     filename = os.path.join(tempdir, "mesh_value_collection.h5")
-#     mesh = UnitCubeMesh(ndiv, ndiv, ndiv)
+@skip_if_not_HDF5
+def test_save_and_read_mesh_value_collection(tempdir):
+    ndiv = 5
+    filename = os.path.join(tempdir, "mesh_value_collection.h5")
+    mesh = UnitCubeMesh(ndiv, ndiv, ndiv)
 
-#     point2list = lambda p : [ p.x(), p.y(), p.z() ]
+    point2list = lambda p : [ p.x(), p.y(), p.z() ]
 
-#     # write to file
-#     with HDF5File(mesh.mpi_comm(), filename, 'w') as f :
-#         for dim in range(mesh.topology().dim()) :
-#             mvc = MeshValueCollection("size_t", mesh, dim)
-#             mesh.init(dim)
-#             for e in entities(mesh, dim) :
-#                 # this can be easily computed to the check the value
-#                 val = int(ndiv*sum(point2list(e.midpoint()))) + 1
-#                 mvc.set_value(e.index(), val)
-#             f.write(mvc, "/mesh_value_collection_{}".format(dim))
+    # write to file
+    with HDF5File(mesh.mpi_comm(), filename, 'w') as f :
+        for dim in range(mesh.topology().dim()) :
+            mvc = MeshValueCollection("size_t", mesh, dim)
+            mesh.init(dim)
+            for e in entities(mesh, dim) :
+                # this can be easily computed to the check the value
+                val = int(ndiv*sum(point2list(e.midpoint()))) + 1
+                mvc.set_value(e.index(), val)
+            f.write(mvc, "/mesh_value_collection_{}".format(dim))
 
-#     # read from file
-#     with HDF5File(mesh.mpi_comm(), filename, 'r') as f :
-#         for dim in range(mesh.topology().dim()) :
-#             mvc = MeshValueCollection("size_t", mesh, dim)
-#             f.read(mvc, "/mesh_value_collection_{}".format(dim))
-#             # check the values
-#             for (cell, lidx), val in mvc.values().items() :
-#                 eidx = Cell(mesh, cell).entities(dim)[lidx]
-#                 mid = point2list(MeshEntity(mesh, dim, eidx).midpoint())
-#                 assert val == int(ndiv*sum(mid)) + 1
+    # read from file
+    with HDF5File(mesh.mpi_comm(), filename, 'r') as f :
+        for dim in range(mesh.topology().dim()) :
+            mvc = MeshValueCollection("size_t", mesh, dim)
+            f.read(mvc, "/mesh_value_collection_{}".format(dim))
+            # check the values
+            for (cell, lidx), val in mvc.values().items() :
+                eidx = Cell(mesh, cell).entities(dim)[lidx]
+                mid = point2list(MeshEntity(mesh, dim, eidx).midpoint())
+                assert val == int(ndiv*sum(mid)) + 1
 
-# @skip_if_not_HDF5
-# def test_save_and_read_mesh_value_collection_with_only_one_marked_entity(tempdir):
-#     ndiv = 5
-#     filename = os.path.join(tempdir, "mesh_value_collection.h5")
-#     mesh = UnitCubeMesh(ndiv, ndiv, ndiv)
-#     mvc = MeshValueCollection("size_t", mesh, 3)
-#     mesh.init(3)
-#     if MPI.rank(mesh.mpi_comm()) == 0:
-#         mvc.set_value(0, 1)
+@skip_if_not_HDF5
+def test_save_and_read_mesh_value_collection_with_only_one_marked_entity(tempdir):
+    ndiv = 5
+    filename = os.path.join(tempdir, "mesh_value_collection.h5")
+    mesh = UnitCubeMesh(ndiv, ndiv, ndiv)
+    mvc = MeshValueCollection("size_t", mesh, 3)
+    mesh.init(3)
+    if MPI.rank(mesh.mpi_comm()) == 0:
+        mvc.set_value(0, 1)
 
-#     # write to file
-#     with HDF5File(mesh.mpi_comm(), filename, 'w') as f :
-#         f.write(mvc, "/mesh_value_collection")
+    # write to file
+    with HDF5File(mesh.mpi_comm(), filename, 'w') as f :
+        f.write(mvc, "/mesh_value_collection")
 
-#     # read from file
-#     with HDF5File(mesh.mpi_comm(), filename, 'r') as f :
-#         mvc = MeshValueCollection("size_t", mesh, 3)
-#         f.read(mvc, "/mesh_value_collection")
-#         assert MPI.sum(mesh.mpi_comm(), mvc.size()) == 1
-#         if MPI.rank(mesh.mpi_comm()) == 0:
-#             assert mvc.get_value(0, 0) == 1
+    # read from file
+    with HDF5File(mesh.mpi_comm(), filename, 'r') as f :
+        mvc = MeshValueCollection("size_t", mesh, 3)
+        f.read(mvc, "/mesh_value_collection")
+        assert MPI.sum(mesh.mpi_comm(), mvc.size()) == 1
+        if MPI.rank(mesh.mpi_comm()) == 0:
+            assert mvc.get_value(0, 0) == 1
 
 @skip_if_not_HDF5
 def test_save_and_read_function(tempdir):
