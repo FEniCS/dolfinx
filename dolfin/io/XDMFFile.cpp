@@ -434,16 +434,6 @@ void XDMFFile::operator>> (Mesh& mesh)
 void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
 {
   // FIXME: encoding should be read from file
-  if (_encoding == XDMFFile::Encoding::HDF5)
-  {
-    // Prepare HDF5 file
-    if (hdf5_filemode != "r")
-    {
-      hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "r"));
-      hdf5_filemode = "r";
-    }
-    dolfin_assert(hdf5_file);
-  }
 
   std::cout << "Filename = (" << _filename << ")" << std::endl;
   XDMFxml xml(_filename);
@@ -451,21 +441,24 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
 
   const std::vector<std::string> topo_name = xml.topology_name();
   const std::vector<std::string> geom_name = xml.geometry_name();
-  boost::filesystem::path topo_path(topo_name[0]);
-  boost::filesystem::path hdf5_path(hdf5_filename);
-  if (topo_path.filename() != hdf5_path.filename()
-      or geom_name[0] != topo_name[0])
+  if (geom_name[0] != topo_name[0])
   {
     dolfin_error("XDMFFile.cpp",
                  "read XDMF mesh",
                  "Topology and geometry file names do not match");
   }
 
-  if (_encoding == XDMFFile::Encoding::HDF5)
+  if (topo_name[3] == "HDF5")
   {
+    if (!has_hdf5())
+      dolfin_error("XDMFile.cpp", "open Mesh file", "Need HDF5 support");
+
+    // Close any associated HDF5 which may be open
+    hdf5_file.reset();
+    HDF5File mesh_file(_mpi_comm, topo_name[0], "r");
     // Try to read the mesh from the associated HDF5 file
-    hdf5_file->read(mesh, topo_name[1], geom_name[1], topo_name[2],
-                    use_partition_from_file);
+    mesh_file.read(mesh, topo_name[1], geom_name[1], topo_name[2],
+                   use_partition_from_file);
   }
   else if (_encoding == XDMFFile::Encoding::ASCII)
   {

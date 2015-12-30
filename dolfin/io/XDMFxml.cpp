@@ -150,12 +150,12 @@ std::vector<std::string> XDMFxml::topology_name() const
 
   const std::string
     topological_data_format(xdmf_topology_data.attribute("Format").value());
-  if (topological_data_format != "HDF")
-  {
-    dolfin_error("XDMFxml.cpp",
-                 "read mesh from XDMF/H5 files",
-                 "XML parsing error. Wrong dataset format (not HDF5)");
-  }
+  // if (topological_data_format != "HDF")
+  // {
+  //   dolfin_error("XDMFxml.cpp",
+  //                "read mesh from XDMF/H5 files",
+  //                "XML parsing error. Wrong dataset format (not HDF5)");
+  // }
 
   // Usually, the DOLFIN CellType is just the lower case of the VTK name
   // FIXME: this will fail for 1D and quadratic topology
@@ -169,6 +169,9 @@ std::vector<std::string> XDMFxml::topology_name() const
 
   // Add cell type to topology data
   topo_vec.push_back(cell_type);
+
+  // Add data format
+  topo_vec.push_back(topological_data_format);
 
   return topo_vec;
 }
