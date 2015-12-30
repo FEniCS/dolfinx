@@ -450,17 +450,18 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
 
   if (topo_name[3] == "HDF5")
   {
-    if (!has_hdf5())
-      dolfin_error("XDMFile.cpp", "open Mesh file", "Need HDF5 support");
-
+#ifdef HAS_HDF5
     // Close any associated HDF5 which may be open
     hdf5_file.reset();
     HDF5File mesh_file(_mpi_comm, topo_name[0], "r");
     // Try to read the mesh from the associated HDF5 file
     mesh_file.read(mesh, topo_name[1], geom_name[1], topo_name[2],
                    use_partition_from_file);
+#else
+    dolfin_error("XDMFile.cpp", "open Mesh file", "Need HDF5 support");
+#endif
   }
-  else if (_encoding == XDMFFile::Encoding::ASCII)
+  else if (topo_name[3] == "XML")
   {
     if (MPI::rank(mesh.mpi_comm()) == 0)
     {
