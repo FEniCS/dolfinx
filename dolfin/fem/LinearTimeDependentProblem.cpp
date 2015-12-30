@@ -14,78 +14,21 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2012-08-17
-// Last changed: 2012-08-20
 
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/Function.h>
-//#include "TensorProductForm.h"
 #include "LinearTimeDependentProblem.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearTimeDependentProblem::
-LinearTimeDependentProblem(const TensorProductForm& a,
-                           const TensorProductForm& L,
-                           Function& u)
-  : Hierarchical<LinearTimeDependentProblem>(*this),
-    _a(reference_to_no_delete_pointer(a)),
-    _l(reference_to_no_delete_pointer(L)),
-    _u(reference_to_no_delete_pointer(u))
+LinearTimeDependentProblem::LinearTimeDependentProblem(
+  std::shared_ptr<const TensorProductForm> a,
+  std::shared_ptr<const TensorProductForm> L,
+  std::shared_ptr<Function> u,
+  std::vector<std::shared_ptr<const BoundaryCondition>> bcs)
+  : Hierarchical<LinearTimeDependentProblem>(*this), _a(a), _l(L), _u(u),
+  _bcs(bcs)
 {
-  // Check forms
-  check_forms();
-}
-//-----------------------------------------------------------------------------
-LinearTimeDependentProblem::
-LinearTimeDependentProblem(const TensorProductForm& a,
-                           const TensorProductForm& L,
-                           Function& u,
-                           const BoundaryCondition& bc)
-  : Hierarchical<LinearTimeDependentProblem>(*this),
-    _a(reference_to_no_delete_pointer(a)),
-    _l(reference_to_no_delete_pointer(L)),
-    _u(reference_to_no_delete_pointer(u))
-{
-  // Store boundary condition
-  _bcs.push_back(reference_to_no_delete_pointer(bc));
-
-  // Check forms
-  check_forms();
-}
-//-----------------------------------------------------------------------------
-LinearTimeDependentProblem::
-LinearTimeDependentProblem(const TensorProductForm& a,
-                           const TensorProductForm& L,
-                           Function& u,
-                           std::vector<const BoundaryCondition*> bcs)
-  : Hierarchical<LinearTimeDependentProblem>(*this),
-    _a(reference_to_no_delete_pointer(a)),
-    _l(reference_to_no_delete_pointer(L)),
-    _u(reference_to_no_delete_pointer(u))
-{
-  // Store boundary conditions
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-    _bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
-
-  // Check forms
-  check_forms();
-}
-//-----------------------------------------------------------------------------
-LinearTimeDependentProblem::
-LinearTimeDependentProblem(std::shared_ptr<const TensorProductForm> a,
-                           std::shared_ptr<const TensorProductForm> L,
-                           std::shared_ptr<Function> u,
-                           std::vector<std::shared_ptr<const BoundaryCondition>> bcs)
-  : Hierarchical<LinearTimeDependentProblem>(*this),
-    _a(a), _l(L), _u(u)
-{
-  // Store boundary conditions
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-    _bcs.push_back(bcs[i]);
-
   // Check forms
   check_forms();
 }
