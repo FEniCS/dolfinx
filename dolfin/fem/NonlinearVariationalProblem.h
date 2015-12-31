@@ -48,20 +48,13 @@ namespace dolfin
   public:
 
     /// Create nonlinear variational problem, shared pointer version.
-    /// The Jacobian form is not specified which requires the use of a
-    /// nonlinear solver that does not rely on the Jacobian.
-    NonlinearVariationalProblem(std::shared_ptr<const Form> F,
-                                std::shared_ptr<Function> u,
-                                std::vector<std::shared_ptr<const DirichletBC>> bcs);
-
-    /// Create nonlinear variational problem, shared pointer version.
     /// The Jacobian form is specified which allows the use of a
     /// nonlinear solver that relies on the Jacobian (using Newton's
     /// method).
     NonlinearVariationalProblem(std::shared_ptr<const Form> F,
                                 std::shared_ptr<Function> u,
                                 std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                                std::shared_ptr<const Form> J);
+                                std::shared_ptr<const Form> J=NULL);
 
     /// Set the bounds for bound constrained solver
     void set_bounds(const Function& lb_func, const Function& ub_func);

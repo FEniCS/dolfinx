@@ -68,8 +68,8 @@ PROBLEM_RENAMES(NonlinearVariational)
                      std::shared_ptr<const GenericFunction>,
                      const std::vector<std::size_t>&,
                      std::string method="topological");
-%ignore dolfin::LinearVariationalSolver::LinearVariationalSolver(LinearVariationalProblem&);
 
+%ignore dolfin::LinearVariationalSolver::LinearVariationalSolver(LinearVariationalProblem&);
 %ignore dolfin::NonlinearVariationalSolver::NonlinearVariationalSolver(NonlinearVariationalProblem&);
 
 //-----------------------------------------------------------------------------
