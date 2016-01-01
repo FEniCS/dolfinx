@@ -46,6 +46,10 @@ cmake_policy(SET CMP0004 NEW)
 # DOLFIN_CMAKE_CONFIG_PATH)
 find_package(DOLFIN REQUIRED)
 
+# Locate GTest
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
+
 if (EXISTS ${DOLFIN_USE_FILE})
   include(${DOLFIN_USE_FILE})
 
@@ -75,7 +79,7 @@ endif()
 
 executable_str = "add_executable(%s %s)"
 target_link_libraries_str = "target_link_libraries(%s "\
-                            "${DOLFIN_LIBRARIES})"
+                            "${DOLFIN_LIBRARIES} ${GTEST_LIBRARIES})"
 
 # Subdirectories
 sub_directories = ['demo', 'test', 'bench']

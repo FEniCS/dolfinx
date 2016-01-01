@@ -21,77 +21,63 @@
 // Unit tests for MeshFunction
 
 #include <dolfin.h>
-#include <dolfin/common/unittest.h>
+#include <gtest/gtest.h>
 
 using namespace dolfin;
 
-class MeshFunctions : public CppUnit::TestFixture
-{
-  CPPUNIT_TEST_SUITE(MeshFunctions);
-  CPPUNIT_TEST(test_create_from_domains);
-  CPPUNIT_TEST_SUITE_END();
+TEST(MeshFunctions, test_create_from_domains) {
+  // Create mesh
+  std::shared_ptr<Mesh> mesh(new UnitSquareMesh(3, 3));
+  dolfin_assert(mesh);
 
-public:
+  const std::size_t D = mesh->topology().dim();
 
-  void test_create_from_domains()
+  // Test setting all values
+  for (std::size_t d = 0; d <= D; ++d)
   {
-    // Create mesh
-    std::shared_ptr<Mesh> mesh(new UnitSquareMesh(3, 3));
-    dolfin_assert(mesh);
+    // Create MeshDomains object
+    MeshDomains mesh_domains;
+    mesh_domains.init(D);
 
-    const std::size_t D = mesh->topology().dim();
+    mesh->init(d);
 
-    // Test setting all values
-    for (std::size_t d = 0; d <= D; ++d)
-    {
-      // Create MeshDomains object
-      MeshDomains mesh_domains;
-      mesh_domains.init(D);
+    // Build mesh domain
+    std::map<std::size_t, std::size_t>& domain = mesh_domains.markers(d);
+    for (std::size_t i = 0; i < mesh->num_entities(d); ++i)
+      domain.insert(std::make_pair(i, i));
 
-      mesh->init(d);
-
-      // Build mesh domain
-      std::map<std::size_t, std::size_t>& domain = mesh_domains.markers(d);
-      for (std::size_t i = 0; i < mesh->num_entities(d); ++i)
-        domain.insert(std::make_pair(i, i));
-
-      // Create MeshFunction and test values
-      MeshFunction<std::size_t> mf(mesh, d, mesh_domains);
-      for (std::size_t i = 0; i < mf.size(); ++i)
-        CPPUNIT_ASSERT(mf[i] == i);
-    }
-
-    // Test setting some values only
-    for (std::size_t d = 0; d <= D; ++d)
-    {
-      // Create MeshDomains object
-      MeshDomains mesh_domains;
-      mesh_domains.init(D);
-
-      mesh->init(d);
-
-      // Build mesh domain
-      std::map<std::size_t, std::size_t>& domain = mesh_domains.markers(d);
-      const std::size_t num_entities = mesh->num_entities(d);
-      for (std::size_t i = num_entities/2; i < num_entities; ++i)
-        domain.insert(std::make_pair(i, i));
-
-      // Create MeshFunction and test values
-      MeshFunction<std::size_t> mf(mesh, d, mesh_domains);
-      for (std::size_t i = 0; i < num_entities/2; ++i)
-        CPPUNIT_ASSERT(mf[i] == std::numeric_limits<std::size_t>::max());
-      for (std::size_t i = num_entities/2; i < mf.size(); ++i)
-        CPPUNIT_ASSERT(mf[i] == i);
-    }
-
-
+    // Create MeshFunction and test values
+    MeshFunction<std::size_t> mf(mesh, d, mesh_domains);
+    for (std::size_t i = 0; i < mf.size(); ++i)
+      ASSERT_EQ(mf[i], i);
   }
 
-};
+  // Test setting some values only
+  for (std::size_t d = 0; d <= D; ++d)
+  {
+    // Create MeshDomains object
+    MeshDomains mesh_domains;
+    mesh_domains.init(D);
 
+    mesh->init(d);
 
-int main()
-{
-  CPPUNIT_TEST_SUITE_REGISTRATION(MeshFunctions);
-  DOLFIN_TEST;
+    // Build mesh domain
+    std::map<std::size_t, std::size_t>& domain = mesh_domains.markers(d);
+    const std::size_t num_entities = mesh->num_entities(d);
+    for (std::size_t i = num_entities/2; i < num_entities; ++i)
+      domain.insert(std::make_pair(i, i));
+
+    // Create MeshFunction and test values
+    MeshFunction<std::size_t> mf(mesh, d, mesh_domains);
+    for (std::size_t i = 0; i < num_entities/2; ++i)
+      ASSERT_EQ(mf[i], std::numeric_limits<std::size_t>::max());
+    for (std::size_t i = num_entities/2; i < mf.size(); ++i)
+      ASSERT_EQ(mf[i], i);
+  }
+}
+
+// Test all
+int main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

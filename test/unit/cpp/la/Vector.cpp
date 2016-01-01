@@ -21,80 +21,69 @@
 // Unit tests Selected methods for GenericVector
 
 #include <dolfin.h>
-#include <dolfin/common/unittest.h>
+#include <gtest/gtest.h>
 
 using namespace dolfin;
 
-class TestVector : public CppUnit::TestFixture
+void _test_operators(MPI_Comm comm)
 {
-  CPPUNIT_TEST_SUITE(TestVector);
-  CPPUNIT_TEST(test_backends);
-  CPPUNIT_TEST(test_init);
-  CPPUNIT_TEST(test_get_local_empty);
-  CPPUNIT_TEST_SUITE_END();
+  Vector v(comm, 10), u(comm, 10);
+  v = 0.0;
+  u = 0.0;
+  ASSERT_EQ(v.sum(), 0.0);
 
-public:
+  // operator=(double a)
+  v = 1.0;
+  ASSERT_EQ(v.sum(), v.size());
 
-  void test_backends()
-  {
-    // Eigen
-    parameters["linear_algebra_backend"] = "Eigen";
-    _test_operators(MPI_COMM_SELF);
+  // operator=(const GenericVector& x)
+  u = v;
+  ASSERT_EQ(u.sum(), u.size());
 
-    // FIXME: Outcommented STL backend to circumvent infinite loops as
-    // FIXME: seen on one buildbot
-    // STL
-    //parameters["linear_algebra_backend"] = "STL";
-    //_test_operators();
+  // operator+=(const GenericVector& x)
+  u += v;
+  ASSERT_EQ(u.sum(), 2*u.size());
 
-    // PETSc
-    #ifdef HAS_PETSC
-    parameters["linear_algebra_backend"] = "PETSc";
-    _test_operators(MPI_COMM_WORLD);
-    #endif
-  }
+  // operator-=(const GenericVector& x)
+  u -= v;
+  u -= v;
+  ASSERT_EQ(u.sum(), 0.0);
 
-  void _test_operators(MPI_Comm comm)
-  {
-    Vector v(comm, 10), u(comm, 10);
-    v = 0.0;
-    u = 0.0;
-    CPPUNIT_ASSERT(v.sum() == 0.0);
+  // operator*=(double a)
+  v *= 5.0;
+  ASSERT_EQ(v.sum(), v.size()*5.0);
 
-    // operator=(double a)
-    v = 1.0;
-    CPPUNIT_ASSERT(v.sum() == v.size());
+  // operator/=(double a)
+  v /= 2.0;
+  ASSERT_EQ(v.sum(), 2.5*v.size());
 
-    // operator=(const GenericVector& x)
-    u = v;
-    CPPUNIT_ASSERT(u.sum() == u.size());
+  // operator*=(const GenericVector& x)
+  u = 2.0;
+  v*=u;
+  ASSERT_EQ(v.sum(), v.size()*5.0);
+}
 
-    // operator+=(const GenericVector& x)
-    u += v;
-    CPPUNIT_ASSERT(u.sum() == 2*u.size());
+TEST(TestVector, test_backends) { 
+ // Eigen
+  parameters["linear_algebra_backend"] = "Eigen";
+  _test_operators(MPI_COMM_SELF);
 
-    // operator-=(const GenericVector& x)
-    u -= v;
-    u -= v;
-    CPPUNIT_ASSERT(u.sum() == 0.0);
+  // FIXME: Outcommented STL backend to circumvent infinite loops as
+  // FIXME: seen on one buildbot
+  // STL
+  //parameters["linear_algebra_backend"] = "STL";
+  //_test_operators();
 
-    // operator*=(double a)
-    v *= 5.0;
-    CPPUNIT_ASSERT(v.sum() == v.size()*5.0);
+  // PETSc
+  #ifdef HAS_PETSC
+  parameters["linear_algebra_backend"] = "PETSc";
+  _test_operators(MPI_COMM_WORLD);
+  #endif
+}
 
-    // operator/=(double a)
-    v /= 2.0;
-    CPPUNIT_ASSERT(v.sum() == 2.5*v.size());
+//----------------------------------------------------
 
-    // operator*=(const GenericVector& x)
-    u = 2.0;
-    v*=u;
-    CPPUNIT_ASSERT(v.sum() == v.size()*5.0);
-
-  }
-
-  void test_init()
-  {
+TEST(TestVector, test_init) { 
     // Create local and distributed vector layouts
 
     // Create local vector layout
@@ -118,11 +107,11 @@ public:
     {
       Vector x;
       x.init(layout_local);
-      CPPUNIT_ASSERT(x.size() == 203);
+      ASSERT_EQ(x.size(), 203);
 
       Vector y;
       y.init(layout_distributed);
-      CPPUNIT_ASSERT(y.size() == 203);
+      ASSERT_EQ(x.size(), 203);
     }
     #endif
 
@@ -130,7 +119,7 @@ public:
     {
       EigenVector x;
       x.init(layout_local);
-      CPPUNIT_ASSERT(x.size() == 203);
+      ASSERT_EQ(x.size(), 203);
     }
 
     // PETSc
@@ -138,18 +127,19 @@ public:
     {
       PETScVector x;
       x.init(layout_local);
-      CPPUNIT_ASSERT(x.size() == 203);
+      ASSERT_EQ(x.size(), 203);
 
       PETScVector y;
       y.init(layout_distributed);
-      CPPUNIT_ASSERT(y.size() == 203);
+      ASSERT_EQ(y.size(), 203);
     }
     #endif
 
-  }
+}
 
-  void test_get_local_empty()
-  {
+//----------------------------------------------------
+
+TEST(TestVector, test_get_local_empty) { 
     // Create local and distributed vector layouts
     const std::vector<std::size_t> dims(1, 203);
 
@@ -174,11 +164,11 @@ public:
     {
       Vector x;
       x.init(layout_local);
-      CPPUNIT_ASSERT(x.size() == 203);
+      ASSERT_EQ(x.size(), 203);
 
       Vector y;
       y.init(layout_distributed);
-      CPPUNIT_ASSERT(y.size() == 203);
+      ASSERT_EQ(y.size(), 203);
 
       //:get_local(double* block, std::size_t m,
       //           const dolfin::la_index* rows) const
@@ -191,14 +181,12 @@ public:
     }
     #endif
 
-  }
+}
 
+//----------------------------------------------------
 
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(TestVector);
-
-int main()
-{
-  DOLFIN_TEST;
+// Test all
+int main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

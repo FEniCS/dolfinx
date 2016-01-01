@@ -20,46 +20,35 @@
 //
 
 #include <dolfin.h>
-#include <dolfin/mesh/LocalMeshData.h>
-#include <dolfin/common/unittest.h>
+#include <gtest/gtest.h>
 
 using namespace dolfin;
 
-class MeshValueCollectionIO : public CppUnit::TestFixture
-{
-  CPPUNIT_TEST_SUITE(MeshValueCollectionIO);
-  CPPUNIT_TEST(test_read);
-  CPPUNIT_TEST_SUITE_END();
-
-public:
-
-  void test_read()
-  {
-    // Create mesh and read file
-    UnitCubeMesh mesh(5, 5, 5);
-    MeshValueCollection<std::size_t>
-      markers(mesh, "xml_value_collection_ref.xml");
-
-    // Check size
-    CPPUNIT_ASSERT(dolfin::MPI::sum(mesh.mpi_comm(), markers.size()) == 6);
-
-    // Check sum of values
-    const std::map<std::pair<std::size_t, std::size_t>, std::size_t>&
-      values = markers.values();
-    std::map<std::pair<std::size_t, std::size_t>,
-             std::size_t>::const_iterator it;
-    std::size_t sum = 0;
-    for (it = values.begin(); it != values.end(); ++it)
-      sum += it->second;
-    CPPUNIT_ASSERT(dolfin::MPI::sum(mesh.mpi_comm(), sum) == 48);
-  }
-
-};
 
 
-CPPUNIT_TEST_SUITE_REGISTRATION(MeshValueCollectionIO);
+// Test rewritten using Google Test
+TEST(MeshValueCollectionIO, test_read) { 
+  // Create mesh and read file
+  UnitCubeMesh mesh(5, 5, 5);
+  MeshValueCollection<std::size_t>
+    markers(mesh, "xml_value_collection_ref.xml");
 
-int main()
-{
-  DOLFIN_TEST;
+  // Check size
+  ASSERT_EQ(dolfin::MPI::sum(mesh.mpi_comm(), markers.size()), 6);
+
+  // Check sum of values
+  const std::map<std::pair<std::size_t, std::size_t>, std::size_t>&
+    values = markers.values();
+  std::map<std::pair<std::size_t, std::size_t>,
+           std::size_t>::const_iterator it;
+  std::size_t sum = 0;
+  for (it = values.begin(); it != values.end(); ++it)
+    sum += it->second;
+  ASSERT_EQ(dolfin::MPI::sum(mesh.mpi_comm(), sum), 48);
+}
+
+// Test all
+int main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

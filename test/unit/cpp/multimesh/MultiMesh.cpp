@@ -21,100 +21,89 @@
 // Unit tests for MultiMesh
 
 #include <dolfin.h>
-#include <dolfin/common/unittest.h>
 #include <dolfin/geometry/SimplexQuadrature.h>
+#include <gtest/gtest.h>
 
 using namespace dolfin;
 
-class MultiMeshes : public CppUnit::TestFixture
-{
-  CPPUNIT_TEST_SUITE(MultiMeshes);
-  //CPPUNIT_TEST(test_multiple_meshes_quadrature);
-  CPPUNIT_TEST(test_multiple_meshes_interface_quadrature);
-  CPPUNIT_TEST(test_assembly);
-  CPPUNIT_TEST_SUITE_END();
+// This test was commented out in the original file
+// TEST(MultiMeshes, test_multiple_meshes_quadrature) { 
+//     set_log_level(DBG);
 
-public:
+//     // Create multimesh from three triangle meshes of the unit square
 
-  void test_multiple_meshes_quadrature()
-  {
-    set_log_level(DBG);
+//     // Many meshes, but not more than three overlap => this works
+//     UnitCubeMesh mesh_0(11, 12, 13);
+//     BoxMesh mesh_1(Point(0.1, 0.1, 0.1),    Point(0.9, 0.9, 0.9),    13, 11, 12);
+//     BoxMesh mesh_2(Point(0.2, 0.2, 0.2),    Point(0.95, 0.95, 0.8),  11, 13, 11);
+//     BoxMesh mesh_3(Point(0.94, 0.01, 0.01), Point(0.98, 0.99, 0.99), 1, 11, 11);
+//     BoxMesh mesh_4(Point(0.01, 0.01, 0.01), Point(0.02, 0.02, 0.02), 1, 1, 1);
 
-    // Create multimesh from three triangle meshes of the unit square
+//     // // Completely nested 2D: can't do no more than three meshes
+//     // UnitSquareMesh mesh_0(1, 1);
+//     // RectangleMesh mesh_1(Point(0.1, 0.1), Point(0.9, 0.9, 1, 1);
+//     // RectangleMesh mesh_2(Point(0.2, 0.2), Point(0.8, 0.8, 1, 1);
+//     // RectangleMesh mesh_3(Point(0.3, 0.3), Point(0.7, 0.7, 1, 1);
+//     // RectangleMesh mesh_4(Point(0.4, 0.4), Point(0.6, 0.6, 1, 1);
 
-    // Many meshes, but not more than three overlap => this works
-    UnitCubeMesh mesh_0(11, 12, 13);
-    BoxMesh mesh_1(Point(0.1, 0.1, 0.1),    Point(0.9, 0.9, 0.9),    13, 11, 12);
-    BoxMesh mesh_2(Point(0.2, 0.2, 0.2),    Point(0.95, 0.95, 0.8),  11, 13, 11);
-    BoxMesh mesh_3(Point(0.94, 0.01, 0.01), Point(0.98, 0.99, 0.99), 1, 11, 11);
-    BoxMesh mesh_4(Point(0.01, 0.01, 0.01), Point(0.02, 0.02, 0.02), 1, 1, 1);
+//     // // Completely nested 3D: can't do no more than three meshes
+//     // UnitCubeMesh mesh_0(2, 3, 4);
+//     // BoxMesh mesh_1(Point(0.1, 0.1, 0.1),    Point(0.9, 0.9, 0.9),    4, 3, 2);
+//     // BoxMesh mesh_2(Point(0.2, 0.2, 0.2),    Point(0.8, 0.8, 0.8),    3, 4, 3);
+//     // BoxMesh mesh_3(Point(0.8, 0.01, 0.01),  Point(0.9, 0.99, 0.99),  4, 2, 3);
+//     // BoxMesh mesh_4(Point(0.01, 0.01, 0.01), Point(0.02, 0.02, 0.02), 1, 1, 1);
 
-    // // Completely nested 2D: can't do no more than three meshes
-    // UnitSquareMesh mesh_0(1, 1);
-    // RectangleMesh mesh_1(Point(0.1, 0.1), Point(0.9, 0.9, 1, 1);
-    // RectangleMesh mesh_2(Point(0.2, 0.2), Point(0.8, 0.8, 1, 1);
-    // RectangleMesh mesh_3(Point(0.3, 0.3), Point(0.7, 0.7, 1, 1);
-    // RectangleMesh mesh_4(Point(0.4, 0.4), Point(0.6, 0.6, 1, 1);
+//     // Build the multimesh
+//     MultiMesh multimesh;
+//     multimesh.add(mesh_0);
+//     multimesh.add(mesh_1);
+//     multimesh.add(mesh_2);
+//     multimesh.add(mesh_3);
+//     multimesh.add(mesh_4);
+//     multimesh.build();
 
-    // // Completely nested 3D: can't do no more than three meshes
-    // UnitCubeMesh mesh_0(2, 3, 4);
-    // BoxMesh mesh_1(Point(0.1, 0.1, 0.1),    Point(0.9, 0.9, 0.9),    4, 3, 2);
-    // BoxMesh mesh_2(Point(0.2, 0.2, 0.2),    Point(0.8, 0.8, 0.8),    3, 4, 3);
-    // BoxMesh mesh_3(Point(0.8, 0.01, 0.01),  Point(0.9, 0.99, 0.99),  4, 2, 3);
-    // BoxMesh mesh_4(Point(0.01, 0.01, 0.01), Point(0.02, 0.02, 0.02), 1, 1, 1);
+//     // Exact volume is known
+//     const double exact_volume = 1;
+//     double volume = 0;
 
-    // Build the multimesh
-    MultiMesh multimesh;
-    multimesh.add(mesh_0);
-    multimesh.add(mesh_1);
-    multimesh.add(mesh_2);
-    multimesh.add(mesh_3);
-    multimesh.add(mesh_4);
-    multimesh.build();
+//     // Sum contribution from all parts
+//     std::cout << "Sum contributions\n";
+//     for (std::size_t part = 0; part < multimesh.num_parts(); part++)
+//     {
+//       std::cout << "% part " << part;
+//       double part_volume = 0;
 
-    // Exact volume is known
-    const double exact_volume = 1;
-    double volume = 0;
+//       // Uncut cell volume given by function volume
+//       const auto uncut_cells = multimesh.uncut_cells(part);
+//       for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
+//       {
+//         const Cell cell(*multimesh.part(part), *it);
+//         volume += cell.volume();
+//         part_volume += cell.volume();
+//       }
 
-    // Sum contribution from all parts
-    std::cout << "Sum contributions\n";
-    for (std::size_t part = 0; part < multimesh.num_parts(); part++)
-    {
-      std::cout << "% part " << part;
-      double part_volume = 0;
+//       std::cout << "\t uncut volume "<< part_volume<<' ';
 
-      // Uncut cell volume given by function volume
-      const auto uncut_cells = multimesh.uncut_cells(part);
-      for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
-      {
-        const Cell cell(*multimesh.part(part), *it);
-        volume += cell.volume();
-        part_volume += cell.volume();
-      }
+//       // Cut cell volume given by quadrature rule
+//       const auto& cut_cells = multimesh.cut_cells(part);
+//       for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
+//       {
+//         const auto& qr = multimesh.quadrature_rule_cut_cell(part, *it);
+//         for (std::size_t i = 0; i < qr.second.size(); ++i)
+//         {
+//           volume += qr.second[i];
+//           part_volume += qr.second[i];
+//         }
+//       }
+//       std::cout << "\ttotal volume " << part_volume << std::endl;
+//     }
 
-      std::cout << "\t uncut volume "<< part_volume<<' ';
+//     std::cout<<std::setprecision(13) << "exact volume " << exact_volume<<'\n'
+//               << "volume " << volume<<std::endl;
+//     ASSERT_NEAR(exact_volume, volume, DOLFIN_EPS_LARGE);
+// }
 
-      // Cut cell volume given by quadrature rule
-      const auto& cut_cells = multimesh.cut_cells(part);
-      for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
-      {
-        const auto& qr = multimesh.quadrature_rule_cut_cell(part, *it);
-        for (std::size_t i = 0; i < qr.second.size(); ++i)
-        {
-          volume += qr.second[i];
-          part_volume += qr.second[i];
-        }
-      }
-      std::cout << "\ttotal volume " << part_volume << std::endl;
-    }
-
-    std::cout<<std::setprecision(13) << "exact volume " << exact_volume<<'\n'
-              << "volume " << volume<<std::endl;
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, DOLFIN_EPS_LARGE);
-  }
-
-  void test_multiple_meshes_interface_quadrature()
-  {
+TEST(MultiMeshes, test_multiple_meshes_interface_quadrature) { 
     // // These three meshes are ok
     // UnitSquareMesh mesh_0(1, 1);
     // RectangleMesh mesh_1(Point(0.1, 0.1), Point(0.9, 0.9), 1, 1);
@@ -292,18 +281,16 @@ public:
 
     std::cout << "exact volume " << exact_volume<<'\n'
               << "volume " << volume<<std::endl;
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, 10*DOLFIN_EPS_LARGE);
-  }
+    ASSERT_NEAR(exact_volume, volume, 10*DOLFIN_EPS_LARGE);
+}
 
-  void test_assembly()
-  {
-    // FIXME: Reimplement when functionals are in place again
-  }
+TEST(MultiMeshes, test_assembly) { 
+ // FIXME: Reimplement when functionals are in place again
+}
 
-};
 
-int main()
-{
+// Test all
+int main(int argc, char **argv) {
   // Test not working in parallel
   if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
   {
@@ -312,6 +299,6 @@ int main()
     return 0;
   }
 
-  CPPUNIT_TEST_SUITE_REGISTRATION(MultiMeshes);
-  DOLFIN_TEST;
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

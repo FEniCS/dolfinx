@@ -24,28 +24,22 @@
 //
 // Unit tests for the function library
 
+
 #include <dolfin.h>
-#include <dolfin/common/unittest.h>
 #include "Projection.h"
+
+#include <gtest/gtest.h>
 
 using namespace dolfin;
 
-class Eval : public CppUnit::TestFixture
-{
-  CPPUNIT_TEST_SUITE(Eval);
-  CPPUNIT_TEST(testArbitraryEval);
-  CPPUNIT_TEST_SUITE_END();
 
-public:
 
-  void testArbitraryEval()
-  {
+// Test rewritten using Google Test
+TEST(Eval, testArbitraryEval) { 
     class F0 : public Expression
     {
     public:
-
       F0() {}
-
       void eval(Array<double>& values, const Array<double>& x) const
       {
         values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
@@ -55,9 +49,7 @@ public:
     class F1 : public Expression
     {
     public:
-
       F1() {}
-
       void eval(Array<double>& values, const Array<double>& x) const
       {
         values[0] = 1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2];
@@ -78,10 +70,11 @@ public:
 
     // Test evaluation of a user-defined function
     f0.eval(u0, x);
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(u0[0],
-                                 sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
-                                 DOLFIN_EPS);
+    ASSERT_NEAR(u0[0],
+      sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
+            DOLFIN_EPS);
 
+    // Test for single core only
     if (dolfin::MPI::size(mesh.mpi_comm()) == 1)
     {
       // Test evaluation of a discrete function
@@ -95,14 +88,13 @@ public:
       const double tol = 1.0e-6;
       f1.eval(u0, x);
       g.eval(u1, x);
-      CPPUNIT_ASSERT(std::abs(u0[0]-u1[0]) < tol);
+      ASSERT_NEAR(u0[0], u1[0], tol);
     }
-  }
-};
 
-CPPUNIT_TEST_SUITE_REGISTRATION(Eval);
+}
 
-int main()
-{
-  DOLFIN_TEST;
+// Test all
+int main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

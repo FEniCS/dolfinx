@@ -23,25 +23,17 @@
 // Unit tests for matrix-free linear solvers (LinearOperator)
 
 #include <dolfin.h>
-#include <dolfin/common/unittest.h>
 #include "forms/ReactionDiffusion.h"
 #include "forms/ReactionDiffusionAction.h"
+
+#include <gtest/gtest.h>
 
 using namespace dolfin;
 
 // Backends supporting the LinearOperator interface
 std::vector<std::string> backends;
 
-class TestLinearOperator : public CppUnit::TestFixture
-{
-  CPPUNIT_TEST_SUITE(TestLinearOperator);
-  CPPUNIT_TEST(test_linear_operator);
-  CPPUNIT_TEST_SUITE_END();
-
-public:
-
-  void test_linear_operator()
-  {
+TEST(TestLinearOperator, test_linear_operator) { 
     // Define linear operator
     class MyLinearOperator : public LinearOperator
     {
@@ -49,7 +41,7 @@ public:
 
       MyLinearOperator(Form& a_action, Function& u)
         : LinearOperator(*u.vector(), *u.vector()),
-	  a_action(a_action), u(u)
+      a_action(a_action), u(u)
       {
         // Do nothing
       }
@@ -79,14 +71,14 @@ public:
     {
       // Check whether backend is available
       if (!has_linear_algebra_backend(backends[i]))
-	continue;
+  continue;
 
       // Skip testing Eigen in parallel
       if (dolfin::MPI::size(MPI_COMM_WORLD) > 1
           && backends[i] == "Eigen")
       {
-	info("Not running Eigen test in parallel");
-	continue;
+  info("Not running Eigen test in parallel");
+  continue;
       }
 
       // Set linear algebra backend
@@ -117,19 +109,19 @@ public:
       const double norm_action = norm(x, "l2");
 
       // Check results
-      CPPUNIT_ASSERT_DOUBLES_EQUAL(norm_ref, norm_action, 1e-10);
+      ASSERT_NEAR(norm_ref, norm_action, 1e-10);
     }
-  }
-
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(TestLinearOperator);
-
-int main()
-{
-  // Add backends supporting the LinearOperator interface
-  backends.push_back("PETSc");
-  backends.push_back("Eigen");
-
-  DOLFIN_TEST;
 }
+
+// Test all
+int main(int argc, char **argv) {
+    // Add backends supporting the LinearOperator interface
+    backends.push_back("PETSc");
+    backends.push_back("Eigen");
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
+
+
+
+
