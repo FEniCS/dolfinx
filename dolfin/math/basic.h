@@ -27,7 +27,8 @@
 
 namespace dolfin
 {
-  /// Return a to the power n
+  /// Return a to the power n.
+  /// NOTE: Overflow is not checked!
   std::size_t ipow(std::size_t a, std::size_t n);
 
   /// Return a random number, uniformly distributed between [0.0, 1.0)
