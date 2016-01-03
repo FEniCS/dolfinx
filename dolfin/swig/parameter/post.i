@@ -250,8 +250,12 @@ def __str__(self):
     "p.__str__() <==> str(x)"
     return self.str(False)
 
-__getattr__ = __getitem__
-__setattr__ = __setitem__
+# NOTE: This seems to cause infinite recursion if called on object
+#       deletion when exceptions are ignored; __getitem__ uses in
+#       turn __getattr__; although not sure why an exception happens
+#       when looking up in __dict__ thus causing call to __getattr__
+#__getattr__ = __getitem__
+#__setattr__ = __setitem__
 
 def iterdata(self):
     """Returns an iterator of a tuple of a parameter key together with its value"""
