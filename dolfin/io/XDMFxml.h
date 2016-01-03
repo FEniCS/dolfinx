@@ -34,6 +34,26 @@ namespace dolfin
   {
   public:
 
+    class TopologyData
+    {
+    public:
+      std::string format;
+      std::string hdf5_filename;
+      std::string hdf5_dataset;
+      std::string cell_type;
+      std::string data;
+    };
+
+    class GeometryData
+    {
+    public:
+      std::string format;
+      std::string hdf5_filename;
+      std::string hdf5_dataset;
+      std::size_t dim;
+      std::string data;
+    };
+
     /// Constructor
     XDMFxml(std::string filename);
 
@@ -48,26 +68,11 @@ namespace dolfin
 
     /// Get the (unique) Mesh topology name, split into three parts
     /// (file name, dataset name, CellType) from the current XML
-    std::vector<std::string> topology_name() const;
+    TopologyData get_topology() const;
 
     /// Get the (unique) Mesh geometry name, split into two parts
     /// (file name, dataset name) from the current XML
-    std::vector<std::string> geometry_name() const;
-
-    /// Get the topology dimension
-    std::size_t get_tdim() const;
-
-    /// Get the geometry dimension
-    std::size_t get_gdim() const;
-
-    /// Get the topology cell type
-    std::string get_cell_type() const;
-
-    /// Get the Mesh geometry (for use with ASCII encoding)
-    std::string get_geometry() const;
-
-    /// Get the Mesh topology (for use with ASCII encoding)
-    std::string get_topology() const;
+    GeometryData get_geometry() const;
 
     /// Get the (unique) dataset name for a MeshFunction in current
     /// XML

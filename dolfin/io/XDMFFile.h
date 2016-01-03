@@ -55,7 +55,7 @@ namespace dolfin
     enum class Encoding {HDF5, ASCII};
 
     /// Constructor
-    XDMFFile(MPI_Comm comm, const std::string filename, const Encoding=Encoding::HDF5);
+    XDMFFile(MPI_Comm comm, const std::string filename);
 
     /// Destructor
     ~XDMFFile();
@@ -63,20 +63,12 @@ namespace dolfin
     /// Save a mesh for visualisation, with e.g. ParaView. Creates a
     /// HDF5 file to store the mesh, and a related XDMF file with
     /// metadata.
-    void operator<< (const Mesh& mesh);
-
-    /// Save a mesh for visualisation, with e.g. ParaView. Creates a
-    /// HDF5 file to store the mesh, and a related XDMF file with
-    /// metadata.
-    void write (const Mesh& mesh);
+    void write(const Mesh& mesh, Encoding encoding=Encoding::HDF5);
 
     /// Read in a mesh from the associated HDF5 file, optionally using
     /// stored partitioning, if possible when the same number of
     /// processes are being used.
     void read(Mesh& mesh, bool use_partition_from_file);
-
-    /// Read in a mesh from the associated HDF5 file
-    void operator>> (Mesh& mesh);
 
     /// Save a Function to XDMF/HDF5 files for visualisation.
     void operator<< (const Function& u);
@@ -140,8 +132,8 @@ namespace dolfin
     void get_point_data_values(std::vector<double>& data_values,
                                std::size_t width, const Function& u);
 
-    std::string xdmf_format_str()
-    { return (_encoding == XDMFFile::Encoding::HDF5) ? "HDF" : "XML"; }
+    std::string xdmf_format_str(Encoding encoding)
+    { return (encoding == XDMFFile::Encoding::HDF5) ? "HDF" : "XML"; }
 
     // Most recent mesh name
     std::string current_mesh_name;
@@ -151,10 +143,6 @@ namespace dolfin
 
     // Counter for time series
     std::size_t counter;
-
-    // Encoding for storing the actual data, either inline as ASCII in the XML
-    // or as an external HDF5 file
-    const Encoding _encoding;
 
   };
 }

@@ -49,9 +49,9 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename, const XDMFFile::Encoding encoding)
+XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
   : _mpi_comm(comm), current_mesh_name(""),
-    _filename(filename), counter(0), _encoding(encoding)
+    _filename(filename), counter(0)
 {
   // Make name for HDF5 file (used to store data)
   boost::filesystem::path p(filename);
@@ -415,9 +415,12 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   {
     XDMFxml xml(_filename);
     xml.init_timeseries(u.name(), time_step, counter);
+
+    XDMFFile::Encoding encoding = XDMFFile::Encoding::HDF5;
+
     xml.mesh_topology(mesh.type().cell_type(), degree,
-                      num_global_cells, current_mesh_name, xdmf_format_str());
-    xml.mesh_geometry(num_global_points, gdim, current_mesh_name, xdmf_format_str());
+                      num_global_cells, current_mesh_name, xdmf_format_str(encoding));
+    xml.mesh_geometry(num_global_points, gdim, current_mesh_name, xdmf_format_str(encoding));
 
     boost::filesystem::path p(hdf5_filename);
     xml.data_attribute(u.name(), value_rank, vertex_data,
@@ -431,72 +434,62 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   ++counter;
 }
 //----------------------------------------------------------------------------
-void XDMFFile::operator>> (Mesh& mesh)
-{
-  read(mesh, false);
-}
-//-----------------------------------------------------------------------------
 void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
 {
-  // FIXME: encoding should be read from file
 
-  std::cout << "Filename = (" << _filename << ")" << std::endl;
   XDMFxml xml(_filename);
   xml.read();
 
-  const std::vector<std::string> topo_name = xml.topology_name();
-  const std::vector<std::string> geom_name = xml.geometry_name();
-  if (geom_name[0] != topo_name[0])
-  {
-    dolfin_error("XDMFFile.cpp",
-                 "read XDMF mesh",
-                 "Topology and geometry file names do not match");
-  }
+  const auto topo = xml.get_topology();
+  const auto geom = xml.get_geometry();
 
-  if (topo_name[3] == "HDF5")
+  if (topo.format == "HDF")
   {
 #ifdef HAS_HDF5
+    if (geom.hdf5_filename != topo.hdf5_filename)
+    {
+      dolfin_error("XDMFFile.cpp",
+                   "read XDMF mesh",
+                   "Topology and geometry file names do not match");
+    }
     // Close any associated HDF5 which may be open
     hdf5_file.reset();
-    HDF5File mesh_file(_mpi_comm, topo_name[0], "r");
+    // Prepend directory name of XDMF file...
+    // FIXME: not robust - topo.hdf5_filename may already be an absolute path
+    boost::filesystem::path xdmf_path(_filename);
+    HDF5File mesh_file(_mpi_comm, xdmf_path.parent_path().string()
+                       + "/" + topo.hdf5_filename, "r");
     // Try to read the mesh from the associated HDF5 file
-    mesh_file.read(mesh, topo_name[1], geom_name[1], topo_name[2],
-                   use_partition_from_file);
+    mesh_file.read(mesh, topo.hdf5_dataset, geom.hdf5_dataset,
+                   topo.cell_type, use_partition_from_file);
 #else
     dolfin_error("XDMFile.cpp", "open Mesh file", "Need HDF5 support");
 #endif
   }
-  else if (topo_name[3] == "XML")
+  else if (topo.format == "XML")
   {
     if (MPI::rank(mesh.mpi_comm()) == 0)
     {
-      const std::string geometry_data = xml.get_geometry();
-      const std::string topology_data = xml.get_topology();
-      const std::string cell_type = xml.get_cell_type();
-
       // Create mesh for editing
-      MeshEditor editor;
-      editor.open(mesh, cell_type, xml.get_tdim(), xml.get_gdim());
+      std::unique_ptr<CellType> cell_type(CellType::create(topo.cell_type));
+      std::size_t tdim = cell_type->dim();
 
+      MeshEditor editor;
+      editor.open(mesh, topo.cell_type, tdim, geom.dim);
     }
   }
 }
 //----------------------------------------------------------------------------
-void XDMFFile::operator<< (const Mesh& mesh)
-{
-  write(mesh);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::write(const Mesh& mesh)
+void XDMFFile::write(const Mesh& mesh, XDMFFile::Encoding encoding)
 {
   // FIXME: make this a private method called by all write methods
-  if (_encoding == XDMFFile::Encoding::HDF5 and !has_hdf5())
+  if (encoding == XDMFFile::Encoding::HDF5 and !has_hdf5())
   {
     dolfin_error("XDMFFile.cpp",
                  "write XDMF file",
                  "DOLFIN has not been compiled with HDF5 support");
   }
-  if (_encoding == XDMFFile::Encoding::ASCII and MPI::size(_mpi_comm) != 1)
+  if (encoding == XDMFFile::Encoding::ASCII and MPI::size(_mpi_comm) != 1)
   {
     dolfin_error("XDMFFile.cpp",
                  "write XDMF file",
@@ -523,7 +516,7 @@ void XDMFFile::write(const Mesh& mesh)
   const std::string group_name = "/Mesh/" + name;
 
   // Write hdf5 file on all processes
-  if (_encoding == XDMFFile::Encoding::HDF5) {
+  if (encoding == XDMFFile::Encoding::HDF5) {
     // Write mesh to HDF5 file
     // The XML below will obliterate any existing XDMF file
     if (hdf5_filemode != "w")
@@ -545,7 +538,7 @@ void XDMFFile::write(const Mesh& mesh)
     // Write the topology
     std::string topology_xml_value;
 
-    if (_encoding == XDMFFile::Encoding::ASCII)
+    if (encoding == XDMFFile::Encoding::ASCII)
     {
       const std::size_t num_cell_entities = mesh.type().num_entities(0);
       for (CellIterator c(mesh); !c.end(); ++c)
@@ -557,7 +550,7 @@ void XDMFFile::write(const Mesh& mesh)
       }
       topology_xml_value += "\n";
     }
-    else if (_encoding == XDMFFile::Encoding::HDF5)
+    else if (encoding == XDMFFile::Encoding::HDF5)
     {
       const boost::filesystem::path p(hdf5_filename);
       topology_xml_value = p.filename().string() + ":" + group_name + "/topology";
@@ -565,12 +558,12 @@ void XDMFFile::write(const Mesh& mesh)
 
     // Describe topological connectivity
     xml.mesh_topology(mesh.type().cell_type(), mesh.geometry().degree(),
-                      num_global_cells, topology_xml_value, xdmf_format_str());
+                      num_global_cells, topology_xml_value, xdmf_format_str(encoding));
 
     // Write the geometry
     std::string geometry_xml_value;
 
-    if (_encoding == XDMFFile::Encoding::ASCII)
+    if (encoding == XDMFFile::Encoding::ASCII)
     {
       for (VertexIterator v(mesh); !v.end(); ++v)
       {
@@ -581,14 +574,15 @@ void XDMFFile::write(const Mesh& mesh)
       }
       geometry_xml_value += "\n";
     }
-    else if (_encoding == XDMFFile::Encoding::HDF5)
+    else if (encoding == XDMFFile::Encoding::HDF5)
     {
       const boost::filesystem::path p(hdf5_filename);
       geometry_xml_value = p.filename().string() + ":" + group_name + "/coordinates";
     }
 
     // Describe geometric coordinates
-    xml.mesh_geometry(num_total_points, gdim, geometry_xml_value, xdmf_format_str());
+    xml.mesh_geometry(num_total_points, gdim,
+                      geometry_xml_value, xdmf_format_str(encoding));
 
     xml.write();
   }
@@ -668,6 +662,8 @@ void XDMFFile::write_point_xml(const std::string group_name,
                                const std::size_t num_global_points,
                                const unsigned int value_size)
 {
+  XDMFFile::Encoding encoding = XDMFFile::Encoding::HDF5;
+
   // Write the XML meta description on process zero
   if (MPI::rank(_mpi_comm) == 0)
   {
@@ -675,13 +671,13 @@ void XDMFFile::write_point_xml(const std::string group_name,
     xml.init_mesh("Point cloud");
 
     // Point topology, no connectivity data
-    xml.mesh_topology(CellType::Type::point, 0, num_global_points, "", xdmf_format_str());
+    xml.mesh_topology(CellType::Type::point, 0, num_global_points, "", xdmf_format_str(encoding));
 
     // Describe geometric coordinates
     // FIXME: assumes 3D
     boost::filesystem::path p(hdf5_filename);
     xml.mesh_geometry(num_global_points, 3,
-                      p.filename().string() + ":/Points", xdmf_format_str());
+                      p.filename().string() + ":/Points", xdmf_format_str(encoding));
 
     if(value_size != 0)
     {
@@ -745,9 +741,11 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc)
     const std::string dataset_ref
       = p.filename().string() + ":" + dataset_name;
 
-    xml.mesh_topology(cell_type, 1, mvc.size(), dataset_ref, xdmf_format_str());
+    XDMFFile::Encoding encoding =   XDMFFile::Encoding::HDF5;
+
+    xml.mesh_topology(cell_type, 1, mvc.size(), dataset_ref, xdmf_format_str(encoding));
     xml.mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
-                      current_mesh_name, xdmf_format_str());
+                      current_mesh_name, xdmf_format_str(encoding));
     xml.data_attribute(mvc.name(), 0, false, mesh->size_global(0),
                        mvc.size(), 1, dataset_ref + "/values");
     xml.write();
@@ -800,10 +798,12 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     else
       xml.init_mesh(meshfunction_name);
 
+    XDMFFile::Encoding encoding =   XDMFFile::Encoding::HDF5;
+
     xml.mesh_topology(cell_type, 1, mesh.size_global(cell_dim),
-                      current_mesh_name, xdmf_format_str());
+                      current_mesh_name, xdmf_format_str(encoding));
     xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(),
-                      current_mesh_name, xdmf_format_str());
+                      current_mesh_name, xdmf_format_str(encoding));
     xml.data_attribute(meshfunction_name, 0, false, mesh.size_global(0),
                        mesh.size_global(cell_dim), 1, dataset_name);
     xml.write();
