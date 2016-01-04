@@ -19,8 +19,6 @@
 #ifndef __DOLFIN_XDMFXML_H
 #define __DOLFIN_XDMFXML_H
 
-#ifdef HAS_HDF5
-
 #include <string>
 #include <vector>
 #include <dolfin/mesh/CellType.h>
@@ -124,5 +122,4 @@ namespace dolfin
     std::string _filename;
   };
 }
-#endif
 #endif

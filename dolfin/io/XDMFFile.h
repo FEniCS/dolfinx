@@ -33,7 +33,9 @@ namespace dolfin
 
   // Forward declarations
   class Function;
+#ifdef HAS_HDF5
   class HDF5File;
+#endif
   class Mesh;
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
@@ -84,11 +86,13 @@ namespace dolfin
 
 
     /// Save a cloud of points to file
-    void write(const std::vector<Point>& points);
+    void write(const std::vector<Point>& points,
+               Encoding encoding=Encoding::HDF5);
 
     /// Save a cloud of points, with scalar values
     void write(const std::vector<Point>& points,
-               const std::vector<double>& values);
+               const std::vector<double>& values,
+               Encoding encoding=Encoding::HDF5);
 
     /// Read first MeshFunction from file
     void operator>> (MeshFunction<bool>& meshfunction);
@@ -96,8 +100,14 @@ namespace dolfin
     void operator>> (MeshFunction<std::size_t>& meshfunction);
     void operator>> (MeshFunction<double>& meshfunction);
 
+    // Generic MeshFunction writer
+    template<typename T>
+      void write(const MeshFunction<T>& meshfunction,
+                 Encoding encoding=Encoding::HDF5);
+
     // Write out mesh value collection (subset)
-    void write(const MeshValueCollection<std::size_t>& mvc);
+    void write(const MeshValueCollection<std::size_t>& mvc,
+               Encoding encoding=Encoding::HDF5);
 
   private:
 
@@ -105,17 +115,15 @@ namespace dolfin
     MPI_Comm _mpi_comm;
 
     // HDF5 data file
+#ifdef HAS_HDF5
     std::unique_ptr<HDF5File> hdf5_file;
+#endif
 
     // HDF5 filename
     std::string hdf5_filename;
 
     // HDF5 file mode (r/w)
     std::string hdf5_filemode;
-
-    // Generic MeshFunction writer
-    template<typename T>
-      void write_mesh_function(const MeshFunction<T>& meshfunction);
 
     // Generic MeshFunction reader
     template<typename T>
@@ -125,12 +133,16 @@ namespace dolfin
     // or 3 (for either no point data, scalar, or vector)
     void write_point_xml(const std::string dataset_name,
                          const std::size_t num_global_points,
-                         const unsigned int value_size);
+                         const unsigned int value_size,
+                         Encoding encoding);
 
     // Get point data values for linear or quadratic mesh into
     // flattened 2D array in data_values with given width
     void get_point_data_values(std::vector<double>& data_values,
                                std::size_t width, const Function& u);
+
+    // Check whether the requested encoding is supported
+    void check_encoding(Encoding encoding);
 
     std::string xdmf_format_str(Encoding encoding)
     { return (encoding == XDMFFile::Encoding::HDF5) ? "HDF" : "XML"; }

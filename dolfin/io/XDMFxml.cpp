@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-#ifdef HAS_HDF5
-
 #include <iostream>
 #include <string>
 #include <vector>
@@ -464,4 +462,3 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
   xdmf_geom_data.append_child(pugi::node_pcdata).set_value(xml_value_data.c_str());
 }
 //-----------------------------------------------------------------------------
-#endif
