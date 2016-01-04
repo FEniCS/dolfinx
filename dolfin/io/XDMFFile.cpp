@@ -484,6 +484,57 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
 
       MeshEditor editor;
       editor.open(mesh, topo.cell_type, tdim, geom.dim);
+
+      // Read geometry
+      editor.init_vertices_global(geom.n_points, geom.n_points);
+
+      const auto& g_data = geom.data;
+      std::istringstream iss(g_data);
+      std::string data_line;
+      std::vector<std::string> coords(geom.dim);
+      Point p;
+      std::size_t index = 0;
+      while(std::getline(iss, data_line))
+      {
+        boost::split(coords, data_line, boost::is_any_of(" "));
+        for (int j = 0; j < geom.dim; ++j) {
+          p[j] = std::stod(coords[j]);
+        }
+        editor.add_vertex(index, p);
+        index += 1;
+      }
+
+      if (geom.n_points != index)
+        dolfin_error("XDMFFile.cpp",
+                     "parse mesh geometry points",
+                     (boost::format("number of points found in data (%d) does not match xdmf meta data (%d)")
+                         % index % geom.n_points).str());
+
+      // Read topology
+      editor.init_cells_global(topo.n_cells, topo.n_cells);
+
+      const auto& t_data = topo.data;
+      iss.clear();
+      iss.str(t_data);
+      index = 0;
+      std::vector<std::string> splt_str_indices(topo.cell_dim);
+      std::vector<std::size_t> point_indices(topo.cell_dim);
+      while(std::getline(iss, data_line))
+      {
+        boost::split(splt_str_indices, data_line, boost::is_any_of(" "));
+        for (int j = 0; j < topo.cell_dim; ++j)
+          point_indices[j] = std::stol(splt_str_indices[j]);
+        editor.add_cell(index, point_indices);
+        index += 1;
+      }
+
+      if (topo.n_cells != index)
+        dolfin_error("XDMFFile.cpp",
+                     "parse mesh topology",
+                     (boost::format("number of cells found in data (%d) does not match xdmf meta data (%d)")
+                      % index % topo.n_cells).str());
+
+      editor.close();
     }
   }
 }
