@@ -1120,13 +1120,10 @@ public:
 	status[*it] = 2;
       }
       std::cout << "\ttotal volume " << part_volume << std::endl;
-<<<<<<< HEAD
+
       all_volumes.push_back(part_volume);
 
       tools::dolfin_write_medit_triangles("status",*multimesh.part(part),part,&status);
-
-=======
->>>>>>> master
     }
     file.close();
 
@@ -1203,25 +1200,8 @@ public:
     }
     file.close();
 
-<<<<<<< HEAD
     return area;
   }
-
-
-
-
-
-=======
-    std::cout << "exact volume " << exact_volume<<'\n'
-              << "volume " << volume<<std::endl;
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(exact_volume, volume, 10*DOLFIN_EPS_LARGE);
-  }
-
-  void test_assembly()
-  {
-    // FIXME: Reimplement when functionals are in place again
-  }
->>>>>>> master
 
 };
 

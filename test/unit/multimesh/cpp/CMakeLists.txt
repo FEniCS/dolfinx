@@ -40,9 +40,13 @@ include_directories(${DOLFIN_INCLUDE_DIRS})
 include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(test_MultiMeshPoisson MultiMeshPoisson.cpp)
+#add_executable(test_MultiMeshPoisson MultiMeshPoisson.cpp)
 add_executable(test_MultiMesh MultiMesh.cpp)
 
+###### Link to cgal
+list(APPEND DOLFIN_LIBRARIES "/usr/lib/x86_64-linux-gnu/libCGAL.so;/usr/lib/x86_64-linux-gnu/libgmp.so;/usr/lib/x86_64-linux-gnu/libmpfr.so")
+
+
 # Target libraries
-target_link_libraries(test_MultiMeshPoisson ${DOLFIN_LIBRARIES})
+#target_link_libraries(test_MultiMeshPoisson ${DOLFIN_LIBRARIES})
 target_link_libraries(test_MultiMesh ${DOLFIN_LIBRARIES})
