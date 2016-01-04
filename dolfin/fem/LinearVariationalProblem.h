@@ -44,11 +44,11 @@ namespace dolfin
   public:
 
     /// Create linear variational problem with a list of boundary
-    /// conditions (shared pointer version)
+    /// conditions
     LinearVariationalProblem(std::shared_ptr<const Form> a,
                              std::shared_ptr<const Form> L,
                              std::shared_ptr<Function> u,
-                             const std::vector<std::shared_ptr<const DirichletBC>> bcs);
+                             std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
     /// Return bilinear form
     std::shared_ptr<const Form> bilinear_form() const;

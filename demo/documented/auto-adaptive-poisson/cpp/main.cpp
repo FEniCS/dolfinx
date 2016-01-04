@@ -86,8 +86,10 @@ int main()
   std::vector<std::shared_ptr<const DirichletBC>> bcs({bc});
   auto problem = std::make_shared<LinearVariationalProblem>(a, L, u, bcs);
   AdaptiveLinearVariationalSolver solver(problem, M);
-  solver.parameters("error_control")("dual_variational_solver")["linear_solver"] = "cg";
-  solver.parameters("error_control")("dual_variational_solver")["symmetric"] = true;
+  solver.parameters("error_control")("dual_variational_solver")["linear_solver"]
+    = "cg";
+  solver.parameters("error_control")("dual_variational_solver")["symmetric"]
+    = true;
   solver.solve(tol);
 
   solver.summary();

@@ -80,7 +80,6 @@ int main()
   Constant zero(0.0);
   SymmetryLine s;
   auto bc = std::make_shared<DirichletBC>(V0, zero, s, "pointwise");
-  std::vector<std::shared_ptr<const DirichletBC>> bcs {bc};
 
   // Define source and boundary traction functions
   Constant B(0.0, -0.05);
@@ -113,7 +112,7 @@ int main()
   umin.interpolate(umin_exp);
 
   // Set up the non-linear problem
-  NonlinearVariationalProblem problem(F, u, bcs, J);
+  NonlinearVariationalProblem problem(F, u, {bc}, J);
 
   // Set up the non-linear solver
   NonlinearVariationalSolver solver(problem);

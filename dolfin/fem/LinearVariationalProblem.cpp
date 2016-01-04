@@ -26,7 +26,7 @@ LinearVariationalProblem::LinearVariationalProblem(
   std::shared_ptr<const Form> a,
   std::shared_ptr<const Form> L,
   std::shared_ptr<Function> u,
-  const std::vector<std::shared_ptr<const DirichletBC>> bcs)
+  std::vector<std::shared_ptr<const DirichletBC>> bcs)
   : Hierarchical<LinearVariationalProblem>(*this), _a(a), _l(L), _u(u),
   _bcs(bcs)
 {
