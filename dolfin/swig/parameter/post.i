@@ -217,7 +217,7 @@ def update(self, other):
         if isinstance(self_value, Parameters):
             self_value.update(other_value)
         else:
-            setattr(self, key, other_value)
+            self.__setitem__(key, other_value)
 
 def to_dict(self):
     """Convert the Parameters to a dict"""
