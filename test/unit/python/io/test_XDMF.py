@@ -22,14 +22,16 @@ import os
 from dolfin import *
 from dolfin_utils.test import skip_if_not_HDF5, skip_in_parallel, fixture, tempdir
 
+encodings = [(XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)]
 
+@pytest.mark.parametrize("encoding", encodings)
 @skip_if_not_HDF5
-def test_save_and_load_1d_mesh(tempdir):
+def test_save_and_load_1d_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mesh.xdmf")
     mesh = UnitIntervalMesh(32)
 
     file = XDMFFile(mesh.mpi_comm(), filename)
-    file.write(mesh)
+    file.write(mesh, encoding)
     del file
 
     mesh2 = Mesh()
@@ -39,8 +41,9 @@ def test_save_and_load_1d_mesh(tempdir):
     dim = mesh.topology().dim()
     assert mesh.size_global(dim) == mesh2.size_global(dim)
 
+@pytest.mark.parametrize("encoding", encodings)
 @skip_if_not_HDF5
-def test_save_and_load_2d_mesh(tempdir):
+def test_save_and_load_2d_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mesh_2D.xdmf")
     mesh = UnitSquareMesh(32, 32)
 
@@ -55,8 +58,9 @@ def test_save_and_load_2d_mesh(tempdir):
     dim = mesh.topology().dim()
     assert mesh.size_global(dim) == mesh2.size_global(dim)
 
+@pytest.mark.parametrize("encoding", encodings)
 @skip_if_not_HDF5
-def test_save_and_load_3d_mesh(tempdir):
+def test_save_and_load_3d_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mesh_3D.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
 
