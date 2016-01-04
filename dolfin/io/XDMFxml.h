@@ -40,7 +40,7 @@ namespace dolfin
       std::string hdf5_dataset;
       std::string cell_type;
       std::size_t n_cells;
-      std::size_t cell_dim;
+      std::size_t points_per_cell;
       std::string data;
     };
 

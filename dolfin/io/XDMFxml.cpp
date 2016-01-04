@@ -114,7 +114,7 @@ XDMFxml::TopologyData XDMFxml::get_topology() const
   boost::split(topo_dim_vec, topo_dim, boost::is_any_of(" "));
 
   tdata.n_cells = std::stol(topo_dim_vec[0]);
-  tdata.cell_dim = std::stol(topo_dim_vec[1]);
+  tdata.points_per_cell = std::stol(topo_dim_vec[1]);
 
   if (tdata.format == "XML")
   {

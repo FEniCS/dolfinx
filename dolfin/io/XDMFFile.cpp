@@ -501,7 +501,7 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
           p[j] = std::stod(coords[j]);
         }
         editor.add_vertex(index, p);
-        index += 1;
+        ++index;
       }
 
       if (geom.n_points != index)
@@ -517,15 +517,15 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
       iss.clear();
       iss.str(t_data);
       index = 0;
-      std::vector<std::string> splt_str_indices(topo.cell_dim);
-      std::vector<std::size_t> point_indices(topo.cell_dim);
+      std::vector<std::string> splt_str_indices(topo.points_per_cell);
+      std::vector<std::size_t> point_indices(topo.points_per_cell);
       while(std::getline(iss, data_line))
       {
         boost::split(splt_str_indices, data_line, boost::is_any_of(" "));
-        for (int j = 0; j < topo.cell_dim; ++j)
+        for (int j = 0; j < topo.points_per_cell; ++j)
           point_indices[j] = std::stol(splt_str_indices[j]);
         editor.add_cell(index, point_indices);
-        index += 1;
+        ++index;
       }
 
       if (topo.n_cells != index)
