@@ -22,7 +22,7 @@ import os
 from dolfin import *
 from dolfin_utils.test import skip_if_not_HDF5, skip_in_parallel, fixture, tempdir
 
-encodings = [(XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)]
+encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)
 
 @pytest.mark.parametrize("encoding", encodings)
 @skip_if_not_HDF5
