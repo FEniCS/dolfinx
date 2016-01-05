@@ -21,8 +21,9 @@
 #ifndef __BASIS_FUNCTION_H
 #define __BASIS_FUNCTION_H
 
+#include <memory>
+#include <vector>
 #include <ufc.h>
-#include <dolfin/common/types.h>
 #include <dolfin/fem/FiniteElement.h>
 
 namespace dolfin
@@ -32,12 +33,12 @@ namespace dolfin
   /// used for computation of basis function values and derivatives.
   ///
   /// Evaluation of basis functions is also possible through the use
-  /// of the functions ``evaluate_basis`` and ``evaluate_basis_derivatives``
-  /// available in the _FiniteElement_ class. The BasisFunction class
-  /// relies on these functions for evaluation but also implements the
-  /// ufc::function interface which allows evaluate_dof to be
-  /// evaluated for a basis function (on a possibly different
-  /// element).
+  /// of the functions ``evaluate_basis`` and
+  /// ``evaluate_basis_derivatives`` available in the _FiniteElement_
+  /// class. The BasisFunction class relies on these functions for
+  /// evaluation but also implements the ufc::function interface which
+  /// allows evaluate_dof to be evaluated for a basis function (on a
+  /// possibly different element).
 
   class BasisFunction : public ufc::function
   {
@@ -52,13 +53,21 @@ namespace dolfin
     ///         The element to create basis function on.
     ///     cell (ufc::cell)
     ///         The cell.
-    BasisFunction(std::size_t index, const FiniteElement& element,
+    BasisFunction(std::size_t index,
+                  std::shared_ptr<const FiniteElement> element,
                   const std::vector<double>& coordinate_dofs)
-      : _index(index), _element(element),
-      _coordinate_dofs(coordinate_dofs) {}
+      : _index(index), _element(element), _coordinate_dofs(coordinate_dofs) {}
 
     /// Destructor
     ~BasisFunction() {}
+
+    /// Update the basis function index
+    ///
+    /// *Arguments*
+    ///     index (std::size_t)
+    ///         The index of the basis function.
+    void update_index(std::size_t index)
+    { _index = index; }
 
     /// Evaluate basis function at given point
     ///
@@ -70,8 +79,8 @@ namespace dolfin
     void eval(double* values, const double* x) const
     {
       // Note: assuming cell_orientation = 0
-      _element.evaluate_basis(_index, values, x, _coordinate_dofs.data(),
-                              0);
+      dolfin_assert(_element);
+      _element->evaluate_basis(_index, values, x, _coordinate_dofs.data(), 0);
     }
 
     /// Evaluate all order n derivatives at given point
@@ -86,8 +95,9 @@ namespace dolfin
     void eval_derivatives(double* values, const double* x, std::size_t n) const
     {
       // Note: assuming cell_orientation = 0
-      _element.evaluate_basis_derivatives(_index, n, values, x,
-                                          _coordinate_dofs.data(), 0);
+      dolfin_assert(_element);
+      _element->evaluate_basis_derivatives(_index, n, values, x,
+                                           _coordinate_dofs.data(), 0);
     }
 
     //--- Implementation of ufc::function interface ---
@@ -101,8 +111,7 @@ namespace dolfin
     ///         The coordinates of the point.
     ///     cell (ufc::cell)
     ///         The cell.
-    void evaluate(double* values,
-                  const double* coordinates,
+    void evaluate(double* values, const double* coordinates,
                   const ufc::cell& cell) const
     { eval(values, coordinates); }
 
@@ -112,7 +121,7 @@ namespace dolfin
     std::size_t _index;
 
     // The finite element
-    const FiniteElement& _element;
+    std::shared_ptr<const FiniteElement> _element;
 
     // Cell coordinates
     const std::vector<double> _coordinate_dofs;

@@ -63,7 +63,7 @@ int main()
   AdaptiveNavierStokes::BilinearForm::TrialSpace W(mesh);
 
   // Unknown
-  Function w(W);
+  auto w = std::make_shared<Function>(W);
 
   // Define boundary condition
   Constant u0(0.0, 0.0);
@@ -71,24 +71,24 @@ int main()
   MeshFunction<std::size_t> noslip_markers(mesh, mesh.topology().dim() - 1, 1);
   noslip.mark(noslip_markers, 0);
   SubSpace W0(W, 0);
-  DirichletBC bc(W0, u0, noslip_markers, 0);
+  auto bc = std::make_shared<DirichletBC>(W0, u0, noslip_markers, 0);
 
   // Create variational formulation and assign coefficients
   Constant nu(0.02);
-  AdaptiveNavierStokes::LinearForm F(W);
+  auto F = std::make_shared<AdaptiveNavierStokes::LinearForm>(W);
   Pressure p0;
-  F.p0 = p0;
-  F.nu = nu;
-  F.w = w;
+  F->p0 = p0;
+  F->nu = nu;
+  F->w = *w;
 
   // Initialize Jacobian dF
-  AdaptiveNavierStokes::BilinearForm dF(W, W);
-  dF.nu = nu;
-  dF.w = w;
+  auto dF = std::make_shared<AdaptiveNavierStokes::BilinearForm>(W, W);
+  dF->nu = nu;
+  dF->w = *w;
 
   // Define goal functional
   auto M = std::make_shared<AdaptiveNavierStokes::GoalFunctional>(mesh);
-  M->w = w;
+  M->w = *w;
   Outflow outflow;
   FacetFunction<std::size_t> outflow_markers(mesh, 1);
   outflow.mark(outflow_markers, 0);
@@ -103,7 +103,8 @@ int main()
 
   // Define variational problem from the variational form F, specify
   // the unknown Function w and the boundary condition bc
-  auto pde = std::make_shared<NonlinearVariationalProblem>(F, w, bc, dF);
+  std::vector<std::shared_ptr<const DirichletBC>> bcs {bc};
+  auto pde = std::make_shared<NonlinearVariationalProblem>(F, w, bcs, dF);
 
   // Define solver
   AdaptiveNonlinearVariationalSolver solver(pde, M);
@@ -122,7 +123,7 @@ int main()
   list_timings(TimingClear::clear, { TimingType::wall });
 
   // Plot solutions
-  Function solution = w.leaf_node();
+  Function solution = w->leaf_node();
   plot(solution[0], "Velocity on finest mesh");
   plot(solution[1], "Pressure on finest mesh");
   interactive();
