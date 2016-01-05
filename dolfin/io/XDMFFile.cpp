@@ -210,11 +210,10 @@ void XDMFFile::get_point_data_values(std::vector<double>& data_values,
 //----------------------------------------------------------------------------
 void XDMFFile::write(const Function& u, XDMFFile::Encoding encoding)
 {
-  std::pair<const Function*, double> ut(&u, (double) counter);
-  this->write(ut, encoding);
+  write(u, (double) counter, encoding);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::write(const std::pair<const Function*, double> ut, XDMFFile::Encoding encoding)
+void XDMFFile::write(const Function& u, double time_step, XDMFFile::Encoding encoding)
 {
 
   // Conditions for starting a new HDF5 file
@@ -243,18 +242,12 @@ void XDMFFile::write(const std::pair<const Function*, double> ut, XDMFFile::Enco
   dolfin_assert(hdf5_file);
 #endif
 
-  // Access Function, Mesh, dofmap  and time step
-  dolfin_assert(ut.first);
-  const Function& u = *(ut.first);
-
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
   const std::size_t degree = mesh.geometry().degree();
 
   dolfin_assert(u.function_space()->dofmap());
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
-
-  const double time_step = ut.second;
 
   // Geometric and topological dimension
   const std::size_t gdim = mesh.geometry().dim();

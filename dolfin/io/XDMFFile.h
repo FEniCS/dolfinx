@@ -76,7 +76,7 @@ namespace dolfin
     void write(const Function& u, Encoding encoding=Encoding::HDF5);
 
     /// Save Function + time stamp to file
-    void write(const std::pair<const Function*, double> ut, Encoding encoding=Encoding::HDF5);
+    void write(const Function& u, double t, Encoding encoding=Encoding::HDF5);
 
     /// Save MeshFunction to file
     void operator<< (const MeshFunction<bool>& meshfunction);
