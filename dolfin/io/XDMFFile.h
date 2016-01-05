@@ -79,10 +79,14 @@ namespace dolfin
     void write(const Function& u, double t, Encoding encoding=Encoding::HDF5);
 
     /// Save MeshFunction to file
-    void operator<< (const MeshFunction<bool>& meshfunction);
-    void operator<< (const MeshFunction<int>& meshfunction);
-    void operator<< (const MeshFunction<std::size_t>& meshfunction);
-    void operator<< (const MeshFunction<double>& meshfunction);
+    void write(const MeshFunction<bool>& meshfunction,
+               Encoding encoding=Encoding::HDF5);
+    void write(const MeshFunction<int>& meshfunction,
+               Encoding encoding=Encoding::HDF5);
+    void write(const MeshFunction<std::size_t>& meshfunction,
+               Encoding encoding=Encoding::HDF5);
+    void write(const MeshFunction<double>& meshfunction,
+               Encoding encoding=Encoding::HDF5);
 
     /// Save a cloud of points to file
     void write(const std::vector<Point>& points,
@@ -126,7 +130,13 @@ namespace dolfin
 
     // Generic MeshFunction reader
     template<typename T>
-      void read_mesh_function(MeshFunction<T>& meshfunction);
+    void read_mesh_function(MeshFunction<T>& meshfunction);
+
+    // Generic MeshFunction writer
+    template<typename T>
+    void write_mesh_function(const MeshFunction<T>& meshfunction,
+                             std::string format,
+                             Encoding encoding);
 
     // Write XML description of point clouds, with value_size = 0, 1
     // or 3 (for either no point data, scalar, or vector)
@@ -139,6 +149,8 @@ namespace dolfin
     // flattened 2D array in data_values with given width
     void get_point_data_values(std::vector<double>& data_values,
                                std::size_t width, const Function& u);
+
+    // Write generic mesh func
 
     // Check whether the requested encoding is supported
     void check_encoding(Encoding encoding);
@@ -156,9 +168,10 @@ namespace dolfin
     std::string generate_xdmf_ascii_mesh_geometry_data(const Mesh& mesh);
 
     // Generate the data string to insert in an xdmf file for vertex
-    // data
+    // data with output formatted according to format
+    template<typename T>
     std::string generate_xdmf_ascii_vertex_data(
-        const std::vector<double>& data);
+        const std::vector<T>& data, std::string format);
 
     // Most recent mesh name
     std::string current_mesh_name;
