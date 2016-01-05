@@ -73,17 +73,16 @@ namespace dolfin
     void read(Mesh& mesh, bool use_partition_from_file);
 
     /// Save a Function to XDMF/HDF5 files for visualisation.
-    void write(const Function& u);
+    void write(const Function& u, Encoding encoding=Encoding::HDF5);
 
     /// Save Function + time stamp to file
-    void write(const std::pair<const Function*, double> ut);
+    void write(const std::pair<const Function*, double> ut, Encoding encoding=Encoding::HDF5);
 
     /// Save MeshFunction to file
     void operator<< (const MeshFunction<bool>& meshfunction);
     void operator<< (const MeshFunction<int>& meshfunction);
     void operator<< (const MeshFunction<std::size_t>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
-
 
     /// Save a cloud of points to file
     void write(const std::vector<Point>& points,
@@ -144,8 +143,22 @@ namespace dolfin
     // Check whether the requested encoding is supported
     void check_encoding(Encoding encoding);
 
+    // Generate the XDMF format string based on the Encoding enumeration
     std::string xdmf_format_str(Encoding encoding)
     { return (encoding == XDMFFile::Encoding::HDF5) ? "HDF" : "XML"; }
+
+    // Generate the data string to insert in an xdmf file for the
+    // mesh element to node connectivity
+    std::string generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh);
+
+    // Generate the data string to insert in an xdmf file for the
+    // mesh point cloud
+    std::string generate_xdmf_ascii_mesh_geometry_data(const Mesh& mesh);
+
+    // Generate the data string to insert in an xdmf file for vertex
+    // data
+    std::string generate_xdmf_ascii_vertex_data(
+        const std::vector<double>& data);
 
     // Most recent mesh name
     std::string current_mesh_name;

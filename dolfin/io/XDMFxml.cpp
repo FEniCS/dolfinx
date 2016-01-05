@@ -211,7 +211,8 @@ void XDMFxml::data_attribute(std::string name,
                              std::size_t num_total_vertices,
                              std::size_t num_global_cells,
                              std::size_t padded_value_size,
-                             std::string dataset_name)
+                             std::string dataset_name,
+                             std::string format)
 {
   // Grid/Attribute (Function value data)
   pugi::xml_node xdmf_values = xdmf_grid.append_child("Attribute");
@@ -228,7 +229,7 @@ void XDMFxml::data_attribute(std::string name,
   xdmf_values.append_attribute("Center") = (vertex_data ? "Node" : "Cell");
 
   pugi::xml_node xdmf_data = xdmf_values.append_child("DataItem");
-  xdmf_data.append_attribute("Format") = "HDF";
+  xdmf_data.append_attribute("Format") = format.c_str();
 
   const std::size_t num_total_entities
     = (vertex_data ? num_total_vertices : num_global_cells);

@@ -86,7 +86,8 @@ namespace dolfin
                         std::size_t num_total_vertices,
                         std::size_t num_global_cells,
                         std::size_t padded_value_size,
-                        std::string dataset_name);
+                        std::string dataset_name,
+                        std::string format);
 
     /// Initalise XML for a Mesh-like single output returning the
     /// xdmf_grid node
