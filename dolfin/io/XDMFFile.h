@@ -106,6 +106,7 @@ namespace dolfin
     // Generic MeshFunction writer
     template<typename T>
       void write(const MeshFunction<T>& meshfunction,
+                 std::string format,
                  Encoding encoding=Encoding::HDF5);
 
     // Write out mesh value collection (subset)
