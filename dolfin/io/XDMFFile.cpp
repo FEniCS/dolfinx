@@ -208,13 +208,13 @@ void XDMFFile::get_point_data_values(std::vector<double>& data_values,
 
 }
 //----------------------------------------------------------------------------
-void XDMFFile::operator<< (const Function& u)
+void XDMFFile::write(const Function& u)
 {
   std::pair<const Function*, double> ut(&u, (double) counter);
-  *this << ut;
+  this->write(ut);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
+void XDMFFile::write(const std::pair<const Function*, double> ut)
 {
 
   // Conditions for starting a new HDF5 file

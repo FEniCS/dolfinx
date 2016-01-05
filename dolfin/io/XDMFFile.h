@@ -73,10 +73,10 @@ namespace dolfin
     void read(Mesh& mesh, bool use_partition_from_file);
 
     /// Save a Function to XDMF/HDF5 files for visualisation.
-    void operator<< (const Function& u);
+    void write(const Function& u);
 
     /// Save Function + time stamp to file
-    void operator<< (const std::pair<const Function*, double> ut);
+    void write(const std::pair<const Function*, double> ut);
 
     /// Save MeshFunction to file
     void operator<< (const MeshFunction<bool>& meshfunction);
