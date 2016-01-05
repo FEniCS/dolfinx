@@ -78,14 +78,14 @@ int main()
   Source f;
 
   // Define PDE
-  Poisson::FunctionSpace V(mesh, periodic_boundary);
+  auto V = std::make_shared<Poisson::FunctionSpace>(mesh, periodic_boundary);
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
   L.f = f;
 
   // Create Dirichlet boundary condition
-  Constant u0(0.0);
-  DirichletBoundary dirichlet_boundary;
+  auto u0 = std::make_shared<Constant>(0.0);
+  auto dirichlet_boundary = std::make_shared<DirichletBoundary>();
   DirichletBC bc0(V, u0, dirichlet_boundary);
 
   // Collect boundary conditions

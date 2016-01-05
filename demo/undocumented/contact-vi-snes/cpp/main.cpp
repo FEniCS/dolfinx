@@ -76,9 +76,9 @@ int main()
   HyperElasticity::FunctionSpace V(mesh);
 
   // Create Dirichlet boundary conditions
-  SubSpace V0(V, 0);
-  Constant zero(0.0);
-  SymmetryLine s;
+  auto V0 = std::make_shared<SubSpace>(V, 0);
+  auto zero = std::make_shared<Constant>(0.0);
+  auto s = std::make_shared<SymmetryLine>();
   auto bc = std::make_shared<DirichletBC>(V0, zero, s, "pointwise");
 
   // Define source and boundary traction functions

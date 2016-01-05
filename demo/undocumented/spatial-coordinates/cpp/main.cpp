@@ -53,11 +53,11 @@ int main()
 {
   // Create mesh and function space
   UnitSquareMesh mesh(32, 32);
-  SpatialCoordinates::FunctionSpace V(mesh);
+  auto V = std::make_shared<SpatialCoordinates::FunctionSpace>(mesh);
 
   // Define boundary condition
-  Constant u0(0.0);
-  DirichletBoundary boundary;
+  auto u0 = std::make_shared<Constant>(0.0);
+  auto boundary = std::make_shared<DirichletBoundary>();
   auto bc = std::make_shared<DirichletBC>(V, u0, boundary);
 
   // Define variational problem
