@@ -58,13 +58,13 @@ int main()
   // Define boundary condition
   Constant u0(0.0);
   DirichletBoundary boundary;
-  DirichletBC bc(V, u0, boundary);
+  auto bc = std::make_shared<DirichletBC>(V, u0, boundary);
 
   // Define variational problem
-  SpatialCoordinates::BilinearForm a(V, V);
-  SpatialCoordinates::LinearForm L(V);
-  Function u(V);
-  LinearVariationalProblem problem(a, L, u, bc);
+  auto a = std::make_shared<SpatialCoordinates::BilinearForm>(V, V);
+  auto L = std::make_shared<SpatialCoordinates::LinearForm>(V);
+  auto u = std::make_shared<Function>(V);
+  LinearVariationalProblem problem(a, L, u, {bc});
 
   // Compute solution
   LinearVariationalSolver solver(problem);
@@ -73,10 +73,10 @@ int main()
 
   // Save solution in VTK format
   File file("spatial-coordinates.pvd");
-  file << u;
+  file << *u;
 
   // Plot solution
-  plot(u);
+  plot(*u);
   interactive();
 
   return 0;

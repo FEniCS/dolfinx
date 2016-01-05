@@ -74,21 +74,22 @@ int main()
   Poisson::FunctionSpace V(mesh);
 
   // Define variational problem
-  Poisson::BilinearForm a(V, V);
-  Poisson::LinearForm L(V);
+  auto a = std::make_shared<Poisson::BilinearForm>(V, V);
+  auto L = std::make_shared<Poisson::LinearForm>(V);
   Source f;
   Flux g;
-  L.f = f;
-  L.g = g;
-  Function w(V);
-  LinearVariationalProblem problem(a, L, w);
+  L->f = f;
+  L->g = g;
+  auto w = std::make_shared<Function>(V);
+  std::vector<std::shared_ptr<const DirichletBC>> bcs;
+  auto problem = std::make_shared<LinearVariationalProblem>(a, L, w, bcs);
 
   // Compute solution
   LinearVariationalSolver solver(problem);
   solver.solve();
 
   // Extract subfunction
-  Function u = w[0];
+  Function u = (*w)[0];
 
   // Plot solution
   plot(u);

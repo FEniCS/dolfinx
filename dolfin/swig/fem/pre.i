@@ -68,40 +68,8 @@ PROBLEM_RENAMES(NonlinearVariational)
                      std::shared_ptr<const GenericFunction>,
                      const std::vector<std::size_t>&,
                      std::string method="topological");
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
-                                                                   const Form&,
-                                                                   Function&);
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
-                                                     const Form&,
-                                                     Function&,
-                                                     const DirichletBC&);
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
-                                       const Form&,
-                                       Function&,
-                                       std::vector<const DirichletBC*>);
-
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                                     Function&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                                   Function&,
-                                                                   const Form&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                     Function&,
-                                                     const DirichletBC&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                     Function&,
-                                                     const DirichletBC&,
-                                                     const Form&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                       Function&,
-                                       std::vector<const DirichletBC*>);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                         Function&,
-                                         std::vector<const DirichletBC*>,
-                                         const Form&);
 
 %ignore dolfin::LinearVariationalSolver::LinearVariationalSolver(LinearVariationalProblem&);
-
 %ignore dolfin::NonlinearVariationalSolver::NonlinearVariationalSolver(NonlinearVariationalProblem&);
 
 //-----------------------------------------------------------------------------

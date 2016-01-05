@@ -26,93 +26,83 @@
 #include "solve.h"
 
 //-----------------------------------------------------------------------------
-void dolfin::solve(const Equation& equation,
-                   Function& u, Parameters parameters)
+void dolfin::solve(const Equation& equation, Function& u, Parameters parameters)
 {
-  // Create empty list of boundary conditions
-  std::vector<const DirichletBC*> bcs;
-
   // Call common solve function
-  solve(equation, u, bcs, parameters);
+  solve(equation, u, std::vector<const DirichletBC*>(), parameters);
 }
 //-----------------------------------------------------------------------------
-void dolfin::solve(const Equation& equation,
-                   Function& u,
-                   const DirichletBC& bc,
+void dolfin::solve(const Equation& equation, Function& u, const DirichletBC& bc,
 		   Parameters parameters)
 {
-  // Create list containing single boundary condition
-  std::vector<const DirichletBC*> bcs;
-  bcs.push_back(&bc);
-
   // Call common solve function
-  solve(equation, u, bcs, parameters);
+  solve(equation, u, {&bc}, parameters);
 }
 //-----------------------------------------------------------------------------
-void dolfin::solve(const Equation& equation,
-                   Function& u,
-                   std::vector<const DirichletBC*> bcs,
-		   Parameters parameters)
+void dolfin::solve(const Equation& equation, Function& u,
+                   std::vector<const DirichletBC*> bcs, Parameters parameters)
 {
+  // Pack bcs
+  std::vector<std::shared_ptr<const DirichletBC>> _bcs;
+  for (auto bc : bcs)
+    _bcs.push_back(reference_to_no_delete_pointer(*bc));
+
   // Solve linear problem
   if (equation.is_linear())
   {
-    LinearVariationalProblem problem(*equation.lhs(), *equation.rhs(), u, bcs);
+    LinearVariationalProblem problem(equation.lhs(), equation.rhs(),
+                                     reference_to_no_delete_pointer(u), _bcs);
     LinearVariationalSolver solver(problem);
     solver.parameters.update(parameters);
     solver.solve();
   }
-
-  // Solve nonlinear problem
   else
   {
-    NonlinearVariationalProblem problem(*equation.lhs(), u, bcs);
+    // Solve nonlinear problem
+    NonlinearVariationalProblem problem(equation.lhs(),
+                                        reference_to_no_delete_pointer(u),
+                                        _bcs);
     NonlinearVariationalSolver solver(problem);
     solver.parameters.update(parameters);
     solver.solve();
   }
 }
 //-----------------------------------------------------------------------------
-void dolfin::solve(const Equation& equation,
-                   Function& u,
-                   const Form& J,
+void dolfin::solve(const Equation& equation, Function& u, const Form& J,
 		   Parameters parameters)
 {
-  // Create empty list of boundary conditions
-  std::vector<const DirichletBC*> bcs;
-
   // Call common solve function
-  solve(equation, u, bcs, J, parameters);
+  solve(equation, u, {}, J, parameters);
 }
 //-----------------------------------------------------------------------------
-void dolfin::solve(const Equation& equation,
-                   Function& u,
-                   const DirichletBC& bc,
-                   const Form& J,
-                    Parameters parameters)
+void dolfin::solve(const Equation& equation, Function& u, const DirichletBC& bc,
+                   const Form& J, Parameters parameters)
 {
-  // Create list containing single boundary condition
-  std::vector<const DirichletBC*> bcs;
-  bcs.push_back(&bc);
-
   // Call common solve function
-  solve(equation, u, bcs, J, parameters);
+  solve(equation, u, {&bc}, J, parameters);
 }
 //-----------------------------------------------------------------------------
-void dolfin::solve(const Equation& equation,
-                   Function& u,
-                   std::vector<const DirichletBC*> bcs,
-                   const Form& J,
+void dolfin::solve(const Equation& equation, Function& u,
+                   std::vector<const DirichletBC*> bcs, const Form& J,
 		   Parameters parameters)
 {
   // Check that the problem is linear
   if (equation.is_linear())
+  {
     dolfin_error("solve.cpp",
                  "solve nonlinear variational problem",
                  "Variational problem is linear");
+  }
+
+  // Pack bcs
+  std::vector<std::shared_ptr<const DirichletBC>> _bcs;
+  for (auto bc : bcs)
+    _bcs.push_back(reference_to_no_delete_pointer(*bc));
 
   // Solve nonlinear problem
-  NonlinearVariationalProblem problem(*equation.lhs(), u, bcs, J);
+  NonlinearVariationalProblem problem(equation.lhs(),
+                                      reference_to_no_delete_pointer(u), _bcs,
+                                      reference_to_no_delete_pointer(J));
   NonlinearVariationalSolver solver(problem);
   solver.parameters.update(parameters);
   solver.solve();

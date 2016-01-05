@@ -231,9 +231,12 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
   v.restrict(&dof_values[0], *V.element(), cell1, coordinate_dofs1.data(),
              c1);
 
-  // Iterate over given local dofs for V on patch cell
+  // Create basis function
   dolfin_assert(W.element());
-  for (auto const &it: dof2row)
+  BasisFunction phi(0, W.element(), coordinate_dofs0);
+
+  // Iterate over given local dofs for V on patch cell
+  for (auto const &it : dof2row)
   {
     const std::size_t i = it.first;
     const std::size_t row = it.second;
@@ -242,7 +245,7 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
     for (std::size_t j = 0; j < W.element()->space_dimension(); ++j)
     {
       // Create basis function
-      const BasisFunction phi(j, *W.element(), coordinate_dofs0);
+      phi.update_index(j);
 
       // Evaluate dof on basis function
       const double dof_value
