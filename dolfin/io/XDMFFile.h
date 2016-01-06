@@ -109,10 +109,10 @@ namespace dolfin
     void read(Mesh& mesh, bool use_partition_from_file);
 
     /// Read first MeshFunction from file
-    void operator>> (MeshFunction<bool>& meshfunction);
-    void operator>> (MeshFunction<int>& meshfunction);
-    void operator>> (MeshFunction<std::size_t>& meshfunction);
-    void operator>> (MeshFunction<double>& meshfunction);
+    void read(MeshFunction<bool>& meshfunction);
+    void read(MeshFunction<int>& meshfunction);
+    void read(MeshFunction<std::size_t>& meshfunction);
+    void read(MeshFunction<double>& meshfunction);
 
   private:
 

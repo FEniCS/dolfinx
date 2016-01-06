@@ -850,7 +850,7 @@ void XDMFFile::write(const MeshFunction<T>& meshfunction,
   write_mesh_function(meshfunction, format, encoding);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::operator>> (MeshFunction<bool>& meshfunction)
+void XDMFFile::read(MeshFunction<bool>& meshfunction)
 {
   const Mesh& mesh = *meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
@@ -862,17 +862,17 @@ void XDMFFile::operator>> (MeshFunction<bool>& meshfunction)
     meshfunction[cell->index()] = (mf[cell->index()] == 1);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::operator>> (MeshFunction<int>& meshfunction)
+void XDMFFile::read(MeshFunction<int>& meshfunction)
 {
   read_mesh_function(meshfunction);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::operator>> (MeshFunction<std::size_t>& meshfunction)
+void XDMFFile::read(MeshFunction<std::size_t>& meshfunction)
 {
   read_mesh_function(meshfunction);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::operator>> (MeshFunction<double>& meshfunction)
+void XDMFFile::read(MeshFunction<double>& meshfunction)
 {
   read_mesh_function(meshfunction);
 }
