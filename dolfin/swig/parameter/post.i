@@ -250,7 +250,7 @@ def __str__(self):
     "p.__str__() <==> str(x)"
     return self.str(False)
 
-def __getattr__(self, key)
+def __getattr__(self, key):
     # Check that there is still SWIG proxy available; otherwise
     # implementation below may end up in infinite recursion
     try:
@@ -265,7 +265,7 @@ def __getattr__(self, key)
         return AttributeError("'Parameters' object has no attribute '%s'"
                  % e.message)
 
-__getattr__.__doc__ = __getitem__.__doc
+__getattr__.__doc__ = __getitem__.__doc__
 
 __setattr__ = __setitem__
 
