@@ -34,9 +34,9 @@
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 #include <iomanip>
 
-#define Augustcheckqrpositive
-// #define Augustdebug
-// #define Augustnormaldebug
+//#define Augustcheckqrpositive
+#define Augustdebug
+//#define Augustnormaldebug
 
 using namespace dolfin;
 
@@ -909,12 +909,9 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       // Data structure for storing the previous intersections: the key
       // and the intersections.
       const std::size_t N = initial_polyhedra.size();
-      std::vector<std::pair<std::vector<std::size_t>,
-			    Polyhedron> > previous_intersections(N);
+      std::vector<std::pair<std::vector<std::size_t>, Polyhedron> > previous_intersections(N);
       for (std::size_t i = 0; i < N; ++i)
-	previous_intersections[i]
-	  = std::make_pair(std::vector<std::size_t>(1, initial_polyhedra[i].first),
-			   initial_polyhedra[i].second);
+	previous_intersections[i] = std::make_pair(std::vector<std::size_t>(1, initial_polyhedra[i].first), initial_polyhedra[i].second);
 
       // const std::size_t Ninterface = initial_polygons.size();
       // std::vector<std::pair<std::vector<std::size_t>,
@@ -950,8 +947,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	  {
 	    //areapos += tools::area(simplex);
 	    std::vector<double> x = convert(simplex, tdim, gdim);
-	    _add_quadrature_rule(overlap_part_qr, x,
-				 tdim, gdim, quadrature_order, sign);
+	    _add_quadrature_rule(overlap_part_qr, x, tdim, gdim, quadrature_order, sign);
 #ifdef Augustdebug
 	    //PPause;
 #endif
@@ -1037,10 +1033,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 		  std::cout << "try collide:\n"
 			    << tools::drawtriangle(initial_simplex,"'r'")<<tools::drawtriangle(previous_simplex)<<tools::zoom()<<'\n';
 #endif
-		  const std::vector<double> ii
-		    = IntersectionTriangulation::
-		    triangulate_intersection(initial_simplex, tdim,
-					     previous_simplex, tdim, gdim);
+		  const std::vector<double> ii = IntersectionTriangulation::triangulate_intersection(initial_simplex, tdim, previous_simplex, tdim, gdim);
 
 		  if (ii.size())
 		  {
@@ -1595,8 +1588,7 @@ void MultiMesh::_build_quadrature_rules_cut_cells(std::size_t quadrature_order)
       const std::size_t gdim = cut_cell.mesh().geometry().dim();
 
       // Compute quadrature rule for the cell itself.
-      auto qr = SimplexQuadrature::compute_quadrature_rule(cut_cell,
-                                                           quadrature_order);
+      auto qr = SimplexQuadrature::compute_quadrature_rule(cut_cell, quadrature_order);
 
       // Get the quadrature rule for the overlapping part
       const auto& qr_overlap = _quadrature_rules_overlap[cut_part][cut_cell_index];
@@ -2183,7 +2175,6 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	  }
 	}
 	if (cnt==0) { PPause; }
-	//if (cut_cell_index==486 or cut_cell_index==488) { PPause; }
       }
 #endif
 

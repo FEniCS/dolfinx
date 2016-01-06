@@ -78,7 +78,7 @@ namespace tools
 
   inline std::string drawtriangle(const std::vector<dolfin::Point> &simplex,
 				  const std::string& color = "'b'",
-				  bool matlab=false)
+				  bool matlab=true)
   {
     std::stringstream ss; ss.precision(15);
     if (simplex.size() == 3)
@@ -104,15 +104,18 @@ namespace tools
       /* 	 << "[" << simplex[0][1] << ',' << simplex[1][1] << "]);" */
       /* 	 << "set(hline,'color'," << color << ");"; */
       ss << "drawline2([" << simplex[0][0] << ',' << simplex[1][0] << "],"
-	 <<  "[" << simplex[0][1] << ',' << simplex[1][1] << "],"
-	 << "plt=plt,color="<< color << ",linewidth=5.0);";
+	 <<  "[" << simplex[0][1] << ',' << simplex[1][1] << "],";
+      if (matlab)
+	ss << color<<");";
+      else
+	ss << "plt=plt,color="<< color << ",linewidth=5.0);";
     }
     return ss.str();
   }
 
   inline std::string drawtriangle(const dolfin::Cell &cell,
 				  const std::string& color = "'b'",
-				  bool matlab=false)
+				  bool matlab=true)
   {
     const std::size_t tdim = cell.mesh().topology().dim();
     std::vector<dolfin::Point> tri(tdim+1);
@@ -369,9 +372,11 @@ namespace tools
     fp.close();
   }
 
-  inline std::string zoom()
+  inline std::string zoom(bool matlab=true)
   {
-    return "plt.autoscale(enable=True,axis='both',tight=None);";
+    if (matlab) return "axis equal;";
+    else
+      return "plt.autoscale(enable=True,axis='both',tight=None);";
   }
 
 }

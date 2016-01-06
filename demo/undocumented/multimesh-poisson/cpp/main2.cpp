@@ -70,6 +70,140 @@ void writemarkers(std::size_t step,
 }
 
 
+double compute_volume(const MultiMesh& multimesh,
+		      double exact_volume)
+{
+  std::cout << "\n" << __FUNCTION__<< std::endl;
+
+  double volume = 0;
+  std::vector<double> all_volumes;
+
+  std::ofstream file("quadrature_volume.txt");
+  if (!file.good()) { std::cout << "file not good\n"; exit(0); }
+  file.precision(20);
+
+  // Sum contribution from all parts
+  std::cout << "Sum contributions\n";
+  for (std::size_t part = 0; part < multimesh.num_parts(); part++)
+  {
+    std::cout << "% part " << part;
+    double part_volume = 0;
+    std::vector<double> status(multimesh.part(part)->num_cells(), 0);
+
+    // Uncut cell volume given by function volume
+    const auto uncut_cells = multimesh.uncut_cells(part);
+    for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
+    {
+      const Cell cell(*multimesh.part(part), *it);
+      volume += cell.volume();
+      //std::cout << std::setprecision(20) << cell.volume() <<'\n';
+      part_volume += cell.volume();
+      status[*it] = 1;
+      //file << "0 0 "<< cell.volume() << '\n';
+    }
+
+    std::cout << "\t uncut volume "<< part_volume << ' ';
+
+    // Cut cell volume given by quadrature rule
+    const auto& cut_cells = multimesh.cut_cells(part);
+    for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
+    {
+      const auto& qr = multimesh.quadrature_rule_cut_cell(part, *it);
+      for (std::size_t i = 0; i < qr.second.size(); ++i)
+      {
+	file << qr.first[2*i]<<' '<<qr.first[2*i+1]<<' '<<qr.second[i]<<'\n';
+	volume += qr.second[i];
+	part_volume += qr.second[i];
+	//std::cout << qr.first[2*i]<<' '<<qr.first[2*i+1]<<'\n';
+      }
+      status[*it] = 2;
+    }
+    std::cout << "\ttotal volume " << part_volume << std::endl;
+
+    all_volumes.push_back(part_volume);
+
+    tools::dolfin_write_medit_triangles("status",*multimesh.part(part),part,&status);
+  }
+  file.close();
+
+  return volume;
+}
+
+double compute_interface_area(const MultiMesh& multimesh,
+			      double exact_area)
+{
+  std::cout << "\n" << __FUNCTION__ << std::endl;
+
+  double area = 0;
+  std::vector<double> all_areas;
+
+  std::ofstream file("quadrature_interface.txt");
+  if (!file.good()) { std::cout << "file not good\n"; exit(0); }
+  file.precision(20);
+
+  // Sum contribution from all parts
+  std::cout << "Sum contributions\n";
+  for (std::size_t part = 0; part < multimesh.num_parts(); part++)
+  {
+    std::cout << "% part " << part << ' ';
+    double part_area = 0;
+    const auto& quadrature_rules = multimesh.quadrature_rule_interface(part);
+
+    // // Uncut cell area given by function area
+    // const auto uncut_cells = multimesh.uncut_cells(part);
+    // for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
+    // {
+    //   const Cell cell(*multimesh.part(part), *it);
+    //   area += cell.area();
+    // 	//std::cout << std::setprecision(20) << cell.area() <<'\n';
+    //   part_area += cell.area();
+    // 	status[*it] = 1;
+    // 	//file << "0 0 "<< cell.area() << '\n';
+    // }
+
+    // std::cout << "\t uncut area "<< part_area << ' ';
+
+
+    // Get collision map
+    const auto& cmap = multimesh.collision_map_cut_cells(part);
+    for (auto it = cmap.begin(); it != cmap.end(); ++it)
+    {
+      const unsigned int cut_cell_index = it->first;
+      const auto& cutting_cells = it->second;
+
+      // Iterate over cutting cells
+      for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
+      {
+	// Get quadrature rule for interface part defined by
+	// intersection of the cut and cutting cells
+	const std::size_t k = jt - cutting_cells.begin();
+	// std::cout << cut_cell_index << ' ' << k <<' ' << std::flush
+	// 	    << quadrature_rules.size() << ' '
+	// 	    << quadrature_rules.at(cut_cell_index).size() << "   " << std::flush;
+	dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
+	const auto& qr = quadrature_rules.at(cut_cell_index)[k];
+	std::stringstream ss;
+	for (std::size_t i = 0; i < qr.second.size(); ++i)
+	{
+	  file << qr.first[2*i]<<' '<<qr.first[2*i+1]<<' '<<qr.second[i]<<'\n';
+	  //std::cout << qr.second[i]<<' ';
+	  area += qr.second[i];
+	  part_area += qr.second[i];
+	  //std::cout << qr.first[2*i]<<' '<<qr.first[2*i+1]<<'\n';
+	}
+	//std::cout << std::endl;
+      }
+    }
+    std::cout << "total area " << part_area << std::endl;
+    all_areas.push_back(part_area);
+  }
+  file.close();
+
+  return area;
+}
+
+
+
 void evaluate_at_qr(const MultiMesh& mm,
 		    const MultiMeshFunction& uh)
 {
@@ -265,14 +399,13 @@ void solve_poisson(std::size_t step,
 		   File& covered0_file, File& covered1_file, File& covered2_file)
 {
   // Create meshes
-  double r = 0.5;
-  RectangleMesh mesh_0(Point(-r, -r), Point(r, r), 16, 16);
-  RectangleMesh mesh_1(Point(x1 - r, y1 - r), Point(x1 + r, y1 + r), 8, 8);
-  RectangleMesh mesh_2(Point(x2 - r, y2 - r), Point(x2 + r, y2 + r), 8, 8);
+  const std::size_t N = 8;
+  const double r = 0.5;
+  RectangleMesh mesh_0(Point(-r, -r), Point(r, r), 2*N, 2*N);
+  RectangleMesh mesh_1(Point(x1 - r, y1 - r), Point(x1 + r, y1 + r), N, N);
+  RectangleMesh mesh_2(Point(x2 - r, y2 - r), Point(x2 + r, y2 + r), N, N);
   mesh_1.rotate(70*t);
   mesh_2.rotate(-70*t);
-
-
 
   // Build multimesh
   MultiMesh multimesh;
@@ -280,6 +413,30 @@ void solve_poisson(std::size_t step,
   multimesh.add(mesh_1);
   multimesh.add(mesh_2);
   multimesh.build(); // qr generated here
+
+  {
+    for (std::size_t p = 0; p < multimesh.num_parts(); ++p)
+    {
+      const auto c = multimesh.part(p)->coordinates();
+      double x = 0., y = 0.;
+      for (std::size_t i = 0; i < c.size(); i += 2)
+      {
+	x += c[i];
+	y += c[i+1];
+      }
+      x /= c.size()/2;
+      y /= c.size()/2;
+      std::cout << "mesh_" << p << " center " << x << ' ' << y << std::endl;
+    }
+    //exit(0);
+  }
+
+  {
+    double volume = compute_volume(multimesh, 0);
+    double area = compute_interface_area(multimesh, 0);
+    std::cout << "volume " << volume << '\n'
+	      << "area " << area << std::endl;
+  }
 
   {
     // Debug
@@ -398,6 +555,27 @@ int main(int argc, char* argv[])
 		  covered0_file, covered1_file, covered2_file);
 
   }
+
+  {
+    // area check for start=64
+    const Point cc(0.5,0.5,0);
+    const Point x1( -0.403762341596028 ,0.483956950767669,0);
+    const Point x3(0.454003129796834,     0.454003129215499,0);
+    const Point xa(-0.403202111282917, 0.5,0);
+    const Point xb(0.452396877021612,0.5, 0);
+    const Point xc(0.5, 0.452396877021612,0);
+    const Point b = cc-xa;
+    const Point c = cc-x1;
+    const Point d = xc-x1;
+    const double S1 = 0.5*std::abs(b.cross(c)[2]) + 0.5*std::abs(c.cross(d)[2]);
+    const Point e = xb-x3;
+    const Point f = cc-x3;
+    const Point g = xc-x3;
+    const double S2 = 0.5*std::abs(e.cross(f)[2]) + 0.5*std::abs(f.cross(g)[2]);
+    const double area_part_0 = 1 - 2*S1 + S2;
+    std::cout << "\n\narea part 0:    " << area_part_0 << std::endl;
+  }
+
 
   return 0;
 }

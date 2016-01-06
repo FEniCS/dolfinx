@@ -11,6 +11,7 @@
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 #include <dolfin/geometry/IntersectionTriangulation.h>
 
+
 #define Augustcgal
 #define Augustdebug_cgal
 
@@ -157,26 +158,26 @@ namespace cgaltools
       //std::cout << "segment " << std::endl;
       //std::cout << (*s)[0][0] <<' '<<(*s)[0][1] <<' '<<(*s)[1][0]<<' '<<(*s)[1][1]<<std::endl;
       std::vector<double> triangulation = {{ CGAL::to_double(s->vertex(0)[0]),
-					     CGAL::to_double(s->vertex(0)[1]),
-					     CGAL::to_double(s->vertex(1)[0]),
-					     CGAL::to_double(s->vertex(1)[1]) }};
+    					     CGAL::to_double(s->vertex(0)[1]),
+    					     CGAL::to_double(s->vertex(1)[0]),
+    					     CGAL::to_double(s->vertex(1)[1]) }};
       return triangulation;
     }
 
-    const Triangle_2* t = boost::get<Triangle_2>(&*ii);
+    const Triangle_2* t = boost::relaxed_get<Triangle_2>(&*ii);
     if (t)
     {
       /* std::cout << "cgal triangle " << std::endl; */
       std::vector<double> triangulation = {{ CGAL::to_double(t->vertex(0)[0]),
-					     CGAL::to_double(t->vertex(0)[1]),
-					     CGAL::to_double(t->vertex(2)[0]),
-					     CGAL::to_double(t->vertex(2)[1]),
-					     CGAL::to_double(t->vertex(1)[0]),
-					     CGAL::to_double(t->vertex(1)[1]) }};
+    					     CGAL::to_double(t->vertex(0)[1]),
+    					     CGAL::to_double(t->vertex(2)[0]),
+    					     CGAL::to_double(t->vertex(2)[1]),
+    					     CGAL::to_double(t->vertex(1)[0]),
+    					     CGAL::to_double(t->vertex(1)[1]) }};
       return triangulation;
     }
 
-    const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii);
+    const std::vector<Point_2>* cgal_points = boost::relaxed_get<std::vector<Point_2>>(&*ii);
     if (cgal_points)
     {
       /* std::cout << "cgal triangulation " << std::endl; */
@@ -185,8 +186,8 @@ namespace cgaltools
       // convert to dolfin::Point
       std::vector<dolfin::Point> points(cgal_points->size());
       for (std::size_t i = 0; i < points.size(); ++i)
-	points[i] = dolfin::Point(CGAL::to_double((*cgal_points)[i].x()),
-				  CGAL::to_double((*cgal_points)[i].y()));
+    	points[i] = dolfin::Point(CGAL::to_double((*cgal_points)[i].x()),
+    				  CGAL::to_double((*cgal_points)[i].y()));
 
       triangulation = dolfin::IntersectionTriangulation::graham_scan(points);
       return triangulation;
