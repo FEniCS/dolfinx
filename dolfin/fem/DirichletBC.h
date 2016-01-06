@@ -168,7 +168,7 @@ namespace dolfin
                 std::size_t sub_domain,
                 std::string method="topological");
 
-    // FIXME: Can this be removed?
+    // TODO: Remove/deprecate this function
     /// Create boundary condition for boundary data included in the mesh
     ///
     /// *Arguments*
