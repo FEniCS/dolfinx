@@ -35,51 +35,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NonlinearVariationalSolver::
-NonlinearVariationalSolver(NonlinearVariationalProblem& problem)
-  : _problem(reference_to_no_delete_pointer(problem))
-{
-  // Set parameters
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
-NonlinearVariationalSolver::
-NonlinearVariationalSolver(std::shared_ptr<NonlinearVariationalProblem> problem)
+NonlinearVariationalSolver::NonlinearVariationalSolver(std::shared_ptr<NonlinearVariationalProblem> problem)
   : _problem(problem)
 {
   // Set parameters
   parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
-std::pair<std::size_t, bool>
-NonlinearVariationalSolver::solve(const Function& lb,
-                                  const Function& ub)
-{
-  return solve(lb.vector(), ub.vector());
-}
-//-----------------------------------------------------------------------------
-std::pair<std::size_t, bool>
-NonlinearVariationalSolver::solve(std::shared_ptr<const Function> lb,
-                                  std::shared_ptr<const Function> ub)
-{
-  return solve(*lb,*ub);
-}
-//-----------------------------------------------------------------------------
-std::pair<std::size_t, bool>
-NonlinearVariationalSolver::solve(const GenericVector& lb,
-                                  const GenericVector& ub)
-{
-  return solve(reference_to_no_delete_pointer(lb),
-               reference_to_no_delete_pointer(ub));
-}
-//-----------------------------------------------------------------------------
-std::pair<std::size_t, bool>
-NonlinearVariationalSolver::solve(std::shared_ptr<const GenericVector> lb,
-                                  std::shared_ptr<const GenericVector> ub)
-{
-  // Set bounds and solve
-  this->_problem->set_bounds(lb,ub);
-  return solve();
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
@@ -103,11 +63,12 @@ std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
                  "Needs PETSc to solve bound constrained problems");
   }
 #endif
+
   // Get problem data
   dolfin_assert(_problem);
-  std::shared_ptr<Function> u(_problem->solution());
+  auto u = _problem->solution();
 
-  // Create nonlinear problem
+  // Create discrete nonlinear problem
   if (!nonlinear_problem)
   {
     nonlinear_problem = std::make_shared<NonlinearDiscreteProblem>(_problem,
@@ -123,6 +84,7 @@ std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
                    "solve nonlinear variational problem",
                    "Set the \"nonlinear_solver\" parameter to \"snes\" or remove bounds");
     }
+
     // Create Newton solver and set parameters
     if (!newton_solver)
       newton_solver = std::shared_ptr<NewtonSolver>(new NewtonSolver());
@@ -173,8 +135,8 @@ std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
 // Implementation of NonlinearDiscreteProblem
 //-----------------------------------------------------------------------------
 NonlinearVariationalSolver::NonlinearDiscreteProblem::
-NonlinearDiscreteProblem(std::shared_ptr<NonlinearVariationalProblem> problem,
-                         std::shared_ptr<NonlinearVariationalSolver> solver)
+NonlinearDiscreteProblem(std::shared_ptr<const NonlinearVariationalProblem> problem,
+                         std::shared_ptr<const NonlinearVariationalSolver> solver)
   : _problem(problem), _solver(solver)
 {
   // Do nothing
@@ -190,8 +152,8 @@ NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
 {
   // Get problem data
   dolfin_assert(_problem);
-  std::shared_ptr<const Form> F(_problem->residual_form());
-  std::shared_ptr<const Form> J(_problem->jacobian_form());
+  std::shared_ptr<const Form> F = _problem->residual_form();
+  std::shared_ptr<const Form> J = _problem->jacobian_form();
   std::vector<std::shared_ptr<const DirichletBC>> bcs(_problem->bcs());
 
   // Create assembler
@@ -215,8 +177,8 @@ NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
 {
   // Get problem data
   dolfin_assert(_problem);
-  std::shared_ptr<const Form> J(_problem->jacobian_form());
-  std::shared_ptr<const Form> F(_problem->residual_form());
+  std::shared_ptr<const Form> J = _problem->jacobian_form();
+  std::shared_ptr<const Form> F = _problem->residual_form();
   std::vector<std::shared_ptr<const DirichletBC>> bcs(_problem->bcs());
 
   // Create assembler

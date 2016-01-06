@@ -107,7 +107,7 @@ namespace dolfin
     // The residual form
     std::shared_ptr<const Form> _residual;
 
-    // The Jacobian form (pointer may be zero if not provided)
+    // The Jacobian form (pointer may be null if not provided)
     std::shared_ptr<const Form> _jacobian;
 
     // The solution
@@ -116,7 +116,8 @@ namespace dolfin
     // The boundary conditions
     std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 
-    // The lower and upper bounds (pointers may be zero if not provided)
+    // The lower and upper bounds (pointers may be null if not
+    // provided)
     std::shared_ptr<const GenericVector> _lb;
     std::shared_ptr<const GenericVector> _ub;
   };
