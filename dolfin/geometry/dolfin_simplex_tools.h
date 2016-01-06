@@ -161,6 +161,32 @@ namespace tools
     return ss.str();
   }
 
+  inline std::string plot(const dolfin::Point& p,
+			  const std::string m="'.'")
+  {
+    return matlabplot(p,m);
+  }
+
+  inline std::string drawarrow(const dolfin::Point& v1,
+			       const dolfin::Point& v2)
+  {
+    std::stringstream ss;
+    ss << "drawarrow(" << v1 << ',' << v2 << ");";
+    return ss.str();
+    /* const dolfin::Point v = v2-v1; */
+    /* const Point ones(0,0,1); */
+    /* Point n = ones.cross(v); */
+    /* if (n.norm() < 1e-5) { */
+    /*   const Point ones(0,1,0); */
+    /*   n = ones.cross(v); */
+    /* } */
+    /* const double a = 0.03*norm(v); */
+    /* n /= n.norm(); */
+    /* drawline(v1, v2); */
+    /* drawline(v2, v1 + 0.8 * v + a * n); */
+    /* drawline(v2, v1 + 0.8 * v - a * n); */
+  }
+
   //void Pause() { char apa; std::cin >> apa; }
 
   template<class U=std::size_t, class T=double>
