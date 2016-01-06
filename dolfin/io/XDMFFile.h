@@ -161,8 +161,14 @@ namespace dolfin
     { return (encoding == XDMFFile::Encoding::HDF5) ? "HDF" : "XML"; }
 
     // Generate the data string to insert in an xdmf file for the
-    // mesh element to node connectivity
+    // mesh cell to node connectivity
     std::string generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh);
+
+    // Generate the data string to insert in an xdmf file for the
+    // mesh for the topology of entitiy dimension edim -> 0.
+    std::string generate_xdmf_ascii_mesh_topology_data(
+        const Mesh& mesh,
+        const std::size_t edim);
 
     // Generate the data string to insert in an xdmf file for the
     // mesh point cloud

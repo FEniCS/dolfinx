@@ -895,16 +895,37 @@ void XDMFFile::check_encoding(XDMFFile::Encoding encoding)
 //-----------------------------------------------------------------------------
 std::string XDMFFile::generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh)
 {
+  return generate_xdmf_ascii_mesh_topology_data(mesh, mesh.geometry().dim());
+}
+//-----------------------------------------------------------------------------
+std::string XDMFFile::generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh,
+                                                             const std::size_t edim)
+{
+  std::unique_ptr<CellType> celltype(CellType::create(mesh.type().entity_type(edim)));
+
+  // Permutation to VTK ordering
+  const std::vector<unsigned int> perm = celltype->vtk_mapping();
+
   std::string topology_xml_value;
-  const std::size_t num_cell_entities = mesh.type().num_entities(0);
-  for (CellIterator c(mesh); !c.end(); ++c)
-  {
-    const unsigned int* vertices = c->entities(0);
-    topology_xml_value += "\n";
-    for (size_t i = 0; i < num_cell_entities; ++i)
-      topology_xml_value += boost::str(boost::format("%d") % vertices[i]) + " ";
-  }
   topology_xml_value += "\n";
+  if (edim == 0)
+  {
+    for (VertexIterator v(mesh); !v.end(); ++v)
+      topology_xml_value += boost::str(boost::format("%d") % v->global_index()) + "\n";
+  }
+  else
+  {
+    for (MeshEntityIterator c(mesh, edim); !c.end(); ++c)
+    {
+      for (unsigned int i = 0; i != c->num_entities(0); ++i)
+      {
+        const std::size_t local_idx = c->entities(0)[perm[i]];
+        topology_xml_value += boost::str(boost::format("%d") % local_idx) + " ";
+      }
+      topology_xml_value += "\n";
+    }
+  }
+
   return topology_xml_value;
 }
 //-----------------------------------------------------------------------------
@@ -1000,7 +1021,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
     {
       // Add the mesh topology and geometry to the xml data
       xml.mesh_topology(cell_type, 1, mesh.size_global(cell_dim),
-                        generate_xdmf_ascii_mesh_topology_data(mesh),
+                        generate_xdmf_ascii_mesh_topology_data(mesh, cell_dim),
                         xdmf_format_str(encoding));
       xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(),
                         generate_xdmf_ascii_mesh_geometry_data(mesh),
