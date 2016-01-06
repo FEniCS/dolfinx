@@ -574,6 +574,10 @@ int main(int argc, char* argv[])
     const double S2 = 0.5*std::abs(e.cross(f)[2]) + 0.5*std::abs(f.cross(g)[2]);
     const double area_part_0 = 1 - 2*S1 + S2;
     std::cout << "\n\narea part 0:    " << area_part_0 << std::endl;
+
+    // Check interface integral
+    double interface_part_0 = 2*(x1-xa).norm() + 2*(x3-x1).norm();
+    std::cout << "interface length part 0:   " << interface_part_0 << std::endl;
   }
 
 
