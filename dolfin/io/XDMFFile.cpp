@@ -885,6 +885,7 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
   xml.read();
 
   Encoding encoding = get_file_encoding();
+  check_encoding(encoding);
 
   if (encoding == Encoding::HDF5)
   {
