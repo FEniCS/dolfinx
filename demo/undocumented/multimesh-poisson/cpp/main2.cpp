@@ -575,6 +575,10 @@ int main(int argc, char* argv[])
     const double area_part_0 = 1 - 2*S1 + S2;
     std::cout << "\n\narea part 0:    " << area_part_0 << std::endl;
 
+    // uncut volume (1-h)^2 plus two elements on the top and sides not cut
+    const double h = 0.0625;
+    std::cout << "area uncut part 0: " << (1-h)*(1-h)+2*h*h << std::endl;
+
     // Check interface integral
     double interface_part_0 = 2*(x1-xa).norm() + 2*(x3-x1).norm();
     std::cout << "interface length part 0:   " << interface_part_0 << std::endl;
