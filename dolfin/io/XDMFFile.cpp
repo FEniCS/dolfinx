@@ -25,6 +25,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/defines.h>
@@ -882,20 +883,40 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
 {
   XDMFxml xml(_filename);
   xml.read();
-  const std::string data_name = xml.dataname();
 
-#ifdef HAS_HDF5
-  if (hdf5_filemode != "r")
+  Encoding encoding = get_file_encoding();
+
+  if (encoding == Encoding::HDF5)
   {
-    hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "r"));
-    hdf5_filemode = "r";
-  }
+#ifdef HAS_HDF5
+    const std::string data_name = xml.dataname();
 
-  dolfin_assert(hdf5_file);
+    if (hdf5_filemode != "r")
+    {
+      hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "r"));
+      hdf5_filemode = "r";
+    }
 
-  // Try to read the meshfunction from the associated HDF5 file
-  hdf5_file->read(meshfunction, "/Mesh/" + data_name);
+    dolfin_assert(hdf5_file);
+
+    // Try to read the meshfunction from the associated HDF5 file
+    hdf5_file->read(meshfunction, "/Mesh/" + data_name);
+#else
+    dolfin_error("XDMFile.cpp", "open MeshFunction file", "Need HDF5 support");
 #endif
+  }
+  else if (encoding == Encoding::ASCII)
+  {
+    std::vector<std::string> data_lines;
+    const std::string data_set = xml.get_first_data_set();
+    boost::split(data_lines, data_set, boost::is_any_of("\n"));
+
+    const std::size_t n_lines = data_lines.size();
+    for (std::size_t j = 0; j < n_lines; ++j)
+    {
+      meshfunction[j] = boost::lexical_cast<T>(data_lines[j]);
+    }
+  }
 }
 //----------------------------------------------------------------------------
 void XDMFFile::check_encoding(XDMFFile::Encoding encoding)
@@ -1067,5 +1088,19 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
   }
 
   ++counter;
+}
+//-----------------------------------------------------------------------------
+XDMFFile::Encoding XDMFFile::get_file_encoding()
+{
+  XDMFxml xml(_filename);
+  xml.read();
+  const std::string xml_encoding_attrib = xml.data_encoding();
+  return get_file_encoding(xml_encoding_attrib);
+}
+//-----------------------------------------------------------------------------
+XDMFFile::Encoding XDMFFile::get_file_encoding(std::string xml_encoding_attrib)
+{
+  return (xml_encoding_attrib == "XML") ? XDMFFile::Encoding::ASCII
+                                        : XDMFFile::Encoding::HDF5;
 }
 //-----------------------------------------------------------------------------

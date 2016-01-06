@@ -185,6 +185,21 @@ XDMFxml::GeometryData XDMFxml::get_geometry() const
   return gdata;
 }
 //-----------------------------------------------------------------------------
+std::string XDMFxml::get_first_data_set() const
+{
+  // Values - check format and get dataset name
+  pugi::xml_node xdmf_values = xml_doc.child("Xdmf").child("Domain").
+      child("Grid").child("Grid").child("Attribute").child("DataItem");
+  dolfin_assert(xdmf_values);
+
+  const std::string value_fmt(xdmf_values.attribute("Format").value());
+  dolfin_assert(value_fmt == "HDF");
+
+  std::string data_value(xdmf_values.first_child().value());
+  boost::trim(data_value);
+  return data_value;
+}
+//-----------------------------------------------------------------------------
 std::string XDMFxml::dataname() const
 {
   // Values - check format and get dataset name
@@ -203,6 +218,17 @@ std::string XDMFxml::dataname() const
   dolfin_assert(value_bits[4] == "values");
 
   return value_bits[3];
+}
+//-----------------------------------------------------------------------------
+std::string XDMFxml::data_encoding() const
+{
+  // Values - check format and get dataset name
+  pugi::xml_node xdmf_values = xml_doc.child("Xdmf").child("Domain").
+      child("Grid").child("Grid").child("Attribute").child("DataItem");
+  dolfin_assert(xdmf_values);
+
+  const std::string value_fmt(xdmf_values.attribute("Format").value());
+  return value_fmt;
 }
 //-----------------------------------------------------------------------------
 void XDMFxml::data_attribute(std::string name,

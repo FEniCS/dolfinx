@@ -181,6 +181,11 @@ namespace dolfin
     std::string generate_xdmf_ascii_vertex_data(
         const std::vector<T>& data, std::string format);
 
+    // Determine the encoding of the data from the xml file.
+    // E.g. "XML" or "HDF".
+    Encoding get_file_encoding();
+    Encoding get_file_encoding(std::string xdmf_format);
+
     // Most recent mesh name
     std::string current_mesh_name;
 

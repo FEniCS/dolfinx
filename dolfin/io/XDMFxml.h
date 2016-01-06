@@ -75,9 +75,16 @@ namespace dolfin
     /// (file name, dataset name) from the current XML
     GeometryData get_geometry() const;
 
+    /// Get the (unique) dataset for a MeshFunction in current
+    /// XML
+    std::string get_first_data_set() const;
+
     /// Get the (unique) dataset name for a MeshFunction in current
     /// XML
     std::string dataname() const;
+
+    /// Get the data encoding. "XML" or "HDF"
+    std::string data_encoding() const;
 
     /// Add a data item to the current grid
     void data_attribute(std::string name,
