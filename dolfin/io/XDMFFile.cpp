@@ -218,28 +218,31 @@ void XDMFFile::write(const Function& u, double time_step, XDMFFile::Encoding enc
 
   // Conditions for starting a new HDF5 file
 #ifdef HAS_HDF5
-  const int mf_interval = parameters["multi_file"];
-  if ( (mf_interval != 0 and counter%mf_interval == 0) or hdf5_filemode != "w" )
+  if (encoding == XDMFFile::Encoding::HDF5)
   {
-    // Make name for HDF5 file (used to store data)
-    boost::filesystem::path p(_filename);
-    p.replace_extension(".h5");
-    hdf5_filename = p.string();
-
-    if (mf_interval != 0)
+    const int mf_interval = parameters["multi_file"];
+    if ( (mf_interval != 0 and counter%mf_interval == 0) or hdf5_filemode != "w" )
     {
-      std::stringstream s;
-      s << std::setw(6) << std::setfill('0') << counter;
-      hdf5_filename += "_" + s.str();
+      // Make name for HDF5 file (used to store data)
+      boost::filesystem::path p(_filename);
+      p.replace_extension(".h5");
+      hdf5_filename = p.string();
+
+      if (mf_interval != 0)
+      {
+        std::stringstream s;
+        s << std::setw(6) << std::setfill('0') << counter;
+        hdf5_filename += "_" + s.str();
+      }
+
+      // Create new HDF5 file (truncate),
+      // closing any open file from a previous timestep
+      hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
+      hdf5_filemode = "w";
     }
 
-    // Create new HDF5 file (truncate),
-    // closing any open file from a previous timestep
-    hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
-    hdf5_filemode = "w";
+    dolfin_assert(hdf5_file);
   }
-
-  dolfin_assert(hdf5_file);
 #endif
 
   dolfin_assert(u.function_space()->mesh());
@@ -360,10 +363,13 @@ void XDMFFile::write(const Function& u, double time_step, XDMFFile::Encoding enc
   if (parameters["rewrite_function_mesh"] || counter == 0)
   {
 #ifdef HAS_HDF5
-    const std::string h5_mesh_name = "/Mesh/" + std::to_string(counter);
-    boost::filesystem::path p(hdf5_filename);
-    current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
-    hdf5_file->write(mesh, h5_mesh_name);
+    if (encoding == XDMFFile::Encoding::HDF5)
+    {
+      const std::string h5_mesh_name = "/Mesh/" + std::to_string(counter);
+      boost::filesystem::path p(hdf5_filename);
+      current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
+      hdf5_file->write(mesh, h5_mesh_name);
+    }
 #endif
   }
 
@@ -397,16 +403,18 @@ void XDMFFile::write(const Function& u, double time_step, XDMFFile::Encoding enc
   // which is used for solution vectors.
 
   const std::string dataset_name = "/VisualisationVector/"
-    + std::to_string(counter);
+                                   + std::to_string(counter);
 
 #ifdef HAS_HDF5
+  if (encoding == XDMFFile::Encoding::HDF5)
+  {
+    hdf5_file->write_data(dataset_name, data_values, global_size, mpi_io);
 
-  hdf5_file->write_data(dataset_name, data_values, global_size, mpi_io);
-
-  // Flush file. Improves chances of recovering data if
-  // interrupted. Also makes file somewhat readable between writes.
-  if (parameters["flush_output"])
-    hdf5_file->flush();
+    // Flush file. Improves chances of recovering data if
+    // interrupted. Also makes file somewhat readable between writes.
+    if (parameters["flush_output"])
+      hdf5_file->flush();
+  }
 #endif
 
   // Write the XML meta description (see http://www.xdmf.org) on
@@ -478,7 +486,7 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
     // FIXME: not robust - topo.hdf5_filename may already be an absolute path
     boost::filesystem::path xdmf_path(_filename);
     HDF5File mesh_file(_mpi_comm, xdmf_path.parent_path().string()
-                       + "/" + topo.hdf5_filename, "r");
+                                  + "/" + topo.hdf5_filename, "r");
     // Try to read the mesh from the associated HDF5 file
     mesh_file.read(mesh, topo.hdf5_dataset, geom.hdf5_dataset,
                    topo.cell_type, use_partition_from_file);
@@ -520,7 +528,7 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
         dolfin_error("XDMFFile.cpp",
                      "parse mesh geometry points",
                      (boost::format("number of points found in data (%d) does not match xdmf meta data (%d)")
-                         % index % geom.n_points).str());
+                      % index % geom.n_points).str());
 
       // Read topology
       editor.init_cells_global(topo.n_cells, topo.n_cells);
@@ -576,7 +584,8 @@ void XDMFFile::write(const Mesh& mesh, XDMFFile::Encoding encoding)
 
   // Write hdf5 file on all processes
 #ifdef HAS_HDF5
-  if (encoding == XDMFFile::Encoding::HDF5) {
+  if (encoding == XDMFFile::Encoding::HDF5)
+  {
     // Write mesh to HDF5 file
     // The XML below will obliterate any existing XDMF file
     if (hdf5_filemode != "w")
@@ -669,15 +678,18 @@ void XDMFFile::write(const std::vector<Point>& points,
 
   // Initialise HDF5 file
 #ifdef HAS_HDF5
-  if (hdf5_filemode != "w")
+  if (encoding == XDMFFile::Encoding::HDF5)
   {
-    // Create HDF5 file (truncate)
-    hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
-    hdf5_filemode = "w";
-  }
+    if (hdf5_filemode != "w")
+    {
+      // Create HDF5 file (truncate)
+      hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
+      hdf5_filemode = "w";
+    }
 
-  // Write HDF5 file
-  hdf5_file->write(points, group_name);
+    // Write HDF5 file
+    hdf5_file->write(points, group_name);
+  }
 #endif
 
   // The XML created below will obliterate any existing XDMF file
@@ -697,19 +709,22 @@ void XDMFFile::write(const std::vector<Point>& points,
   const std::string group_name = "/Points";
 
 #ifdef HAS_HDF5
-  // Initialise HDF5 file
-  if (hdf5_filemode != "w")
+  if (encoding == XDMFFile::Encoding::HDF5)
   {
-    // Create HDF5 file (truncate)
-    hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
-    hdf5_filemode = "w";
+    // Initialise HDF5 file
+    if (hdf5_filemode != "w")
+    {
+      // Create HDF5 file (truncate)
+      hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
+      hdf5_filemode = "w";
+    }
+
+    // Write HDF5 file
+    hdf5_file->write(points, group_name);
+
+    const std::string values_name = group_name + "/values";
+    hdf5_file->write(values, values_name);
   }
-
-  // Write HDF5 file
-  hdf5_file->write(points, group_name);
-
-  const std::string values_name = group_name + "/values";
-  hdf5_file->write(values, values_name);
 #endif
 
   // The XML created will obliterate any existing XDMF file
@@ -763,11 +778,14 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
   std::shared_ptr<const Mesh> mesh = mvc.mesh();
 
 #ifdef HAS_HDF5
-  if (hdf5_filemode != "w")
+  if (encoding == XDMFFile::Encoding::HDF5)
   {
-    // Append to existing HDF5 File
-    hdf5_file.reset(new HDF5File(mesh->mpi_comm(), hdf5_filename, "a"));
-    hdf5_filemode = "w";
+    if (hdf5_filemode != "w")
+    {
+      // Append to existing HDF5 File
+      hdf5_file.reset(new HDF5File(mesh->mpi_comm(), hdf5_filename, "a"));
+      hdf5_filemode = "w";
+    }
   }
 #endif
 
@@ -791,8 +809,11 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
   const std::string dataset_name = "/MVC/" + mvc.name();
 
 #ifdef HAS_HDF5
-  // Use HDF5 function to output MeshValueCollection
-  hdf5_file->write(mvc, dataset_name);
+  if (encoding == XDMFFile::Encoding::HDF5)
+  {
+    // Use HDF5 function to output MeshValueCollection
+    hdf5_file->write(mvc, dataset_name);
+  }
 #endif
 
   bool time_series = parameters["time_series"];
@@ -807,7 +828,7 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
 
     boost::filesystem::path p(hdf5_filename);
     const std::string dataset_ref
-      = p.filename().string() + ":" + dataset_name;
+        = p.filename().string() + ":" + dataset_name;
 
     xml.mesh_topology(cell_type, 1, mvc.size(), dataset_ref, xdmf_format_str(encoding));
     xml.mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
@@ -967,11 +988,14 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
   const Mesh& mesh = *meshfunction.mesh();
 
 #ifdef HAS_HDF5
-  if (hdf5_filemode != "w")
+  if (encoding == XDMFFile::Encoding::HDF5)
   {
-    // Create HDF5 file (truncate)
-    hdf5_file.reset(new HDF5File(mesh.mpi_comm(), hdf5_filename, "w"));
-    hdf5_filemode = "w";
+    if (hdf5_filemode != "w")
+    {
+      // Create HDF5 file (truncate)
+      hdf5_file.reset(new HDF5File(mesh.mpi_comm(), hdf5_filename, "w"));
+      hdf5_filemode = "w";
+    }
   }
 #endif
 
@@ -986,11 +1010,14 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
   CellType::Type cell_type = mesh.type().entity_type(cell_dim);
 
 #ifdef HAS_HDF5
-  // Use HDF5 function to output MeshFunction
-  const std::string h5_mesh_name = "/Mesh/" + std::to_string(counter);
-  boost::filesystem::path p(hdf5_filename);
-  current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
-  hdf5_file->write(meshfunction, h5_mesh_name);
+  if (encoding == XDMFFile::Encoding::HDF5)
+  {
+    // Use HDF5 function to output MeshFunction
+    const std::string h5_mesh_name = "/Mesh/" + std::to_string(counter);
+    boost::filesystem::path p(hdf5_filename);
+    current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
+    hdf5_file->write(meshfunction, h5_mesh_name);
+  }
 #endif
 
   // Saved MeshFunction values are in the /Mesh group
