@@ -250,12 +250,24 @@ def __str__(self):
     "p.__str__() <==> str(x)"
     return self.str(False)
 
-# NOTE: This seems to cause infinite recursion if called on object
-#       deletion when exceptions are ignored; __getitem__ uses in
-#       turn __getattr__; although not sure why an exception happens
-#       when looking up in __dict__ thus causing call to __getattr__
-#__getattr__ = __getitem__
-#__setattr__ = __setitem__
+def __getattr__(self, key)
+    # Check that there is still SWIG proxy available; otherwise
+    # implementation below may end up in infinite recursion
+    try:
+        self.__dict__["this"]
+    except KeyError:
+        raise AttributeError("SWIG proxy 'this' defunct on object '%s'" % self)
+
+    # Make sure KeyError is reraised as AttributeError
+    try:
+        return self.__getitem__(key)
+    except KeyError as e:
+        return AttributeError("'Parameters' object has no attribute '%s'"
+                 % e.message)
+
+__getattr__.__doc__ = __getitem__.__doc
+
+__setattr__ = __setitem__
 
 def iterdata(self):
     """Returns an iterator of a tuple of a parameter key together with its value"""
