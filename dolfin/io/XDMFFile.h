@@ -67,11 +67,6 @@ namespace dolfin
     /// metadata.
     void write(const Mesh& mesh, Encoding encoding=Encoding::HDF5);
 
-    /// Read in a mesh from the associated HDF5 file, optionally using
-    /// stored partitioning, if possible when the same number of
-    /// processes are being used.
-    void read(Mesh& mesh, bool use_partition_from_file);
-
     /// Save a Function to XDMF/HDF5 files for visualisation.
     void write(const Function& u, Encoding encoding=Encoding::HDF5);
 
@@ -97,21 +92,27 @@ namespace dolfin
                const std::vector<double>& values,
                Encoding encoding=Encoding::HDF5);
 
+    // Generic MeshFunction writer
+    template<typename T>
+    void write(const MeshFunction<T>& meshfunction,
+               std::string format,
+               Encoding encoding=Encoding::HDF5);
+
+    // Write out mesh value collection (subset)
+    void write(const MeshValueCollection<std::size_t>& mvc,
+               Encoding encoding=Encoding::HDF5);
+
+
+    /// Read in a mesh from the associated HDF5 file, optionally using
+    /// stored partitioning, if possible when the same number of
+    /// processes are being used.
+    void read(Mesh& mesh, bool use_partition_from_file);
+
     /// Read first MeshFunction from file
     void operator>> (MeshFunction<bool>& meshfunction);
     void operator>> (MeshFunction<int>& meshfunction);
     void operator>> (MeshFunction<std::size_t>& meshfunction);
     void operator>> (MeshFunction<double>& meshfunction);
-
-    // Generic MeshFunction writer
-    template<typename T>
-      void write(const MeshFunction<T>& meshfunction,
-                 std::string format,
-                 Encoding encoding=Encoding::HDF5);
-
-    // Write out mesh value collection (subset)
-    void write(const MeshValueCollection<std::size_t>& mvc,
-               Encoding encoding=Encoding::HDF5);
 
   private:
 
