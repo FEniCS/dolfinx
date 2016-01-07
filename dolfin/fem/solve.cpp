@@ -52,7 +52,7 @@ void dolfin::solve(const Equation& equation, Function& u,
   {
     LinearVariationalProblem problem(equation.lhs(), equation.rhs(),
                                      reference_to_no_delete_pointer(u), _bcs);
-    LinearVariationalSolver solver(problem);
+    LinearVariationalSolver solver(reference_to_no_delete_pointer(problem));
     solver.parameters.update(parameters);
     solver.solve();
   }
