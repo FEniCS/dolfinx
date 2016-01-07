@@ -111,7 +111,7 @@ int main()
   Constant lambda(E*nu/((1.0 + nu)*(1.0 - 2.0*nu)));
 
   // Create function space
-  Elasticity::Form_a::TestSpace V(mesh);
+  auto V = std::make_shared<Elasticity::Form_a::TestSpace>(mesh);
 
   // Define variational problem
   Elasticity::Form_a a(V, V);
@@ -120,8 +120,8 @@ int main()
   L.f = f;
 
   // Set up boundary condition on inner surface
-  InnerSurface inner_surface;
-  Constant zero(0.0, 0.0, 0.0);
+  auto inner_surface = std::make_shared<InnerSurface>();
+  auto zero = std::make_shared<Constant>(0.0, 0.0, 0.0);
   auto bc = std::make_shared<DirichletBC>(V, zero, inner_surface);
 
   // Assemble system, applying boundary conditions and preserving
@@ -136,7 +136,7 @@ int main()
   // Create near null space basis (required for smoothed aggregation
   // AMG). The solution vector is passed so that it can be copied to
   // generate compatible vectors for the nullspace.
-  VectorSpaceBasis null_space = build_nullspace(V, *u.vector());
+  VectorSpaceBasis null_space = build_nullspace(*V, *u.vector());
 
   // Create PETSc smoothed aggregation AMG preconditioner
   auto pc = std::make_shared<PETScPreconditioner>("petsc_amg");

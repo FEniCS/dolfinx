@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
   Constant alpha(5.0);
 
   // Create function space
-  AdvectionDiffusion::FunctionSpace V(mesh);
+  auto V = std::make_shared<AdvectionDiffusion::FunctionSpace>(mesh);
 
   // Create forms and attach functions
   AdvectionDiffusion::BilinearForm a(V, V);
@@ -86,8 +86,8 @@ int main(int argc, char *argv[])
   L.f = f;
 
   // Set up boundary condition (apply strong BCs)
-  BC g;
-  DirichletBoundary boundary;
+  auto g = std::make_shared<BC>();
+  auto boundary = std::make_shared<DirichletBoundary>();
   DirichletBC bc(V, g, boundary, "geometric");
 
   // Solution function

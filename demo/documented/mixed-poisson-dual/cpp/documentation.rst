@@ -162,9 +162,9 @@ class.
 .. code-block:: c++
 
     // Define boundary condition
-    Constant zero(0.0);
-    SubSpace W1(W, 1);
-    DirichletBoundary boundary;
+    auto zero = std::make_shared<Constant>(0.0);
+    auto W1 = std::make_shared<SubSpace>(W, 1);
+    auto boundary = std::make_shared<DirichletBoundary>();
     DirichletBC bc(W1, zero, boundary);
 
 To compute the solution we use the bilinear and linear forms, and the

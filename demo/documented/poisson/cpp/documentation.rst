@@ -137,7 +137,7 @@ the form file) defined relative to this mesh, we do as follows
 
     // Create mesh and function space
     UnitSquareMesh mesh(32, 32);
-    Poisson::FunctionSpace V(mesh);
+    auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
 .. index:: DirichletBC
 
@@ -155,8 +155,8 @@ as follows:
 .. code-block:: c++
 
     // Define boundary condition
-    Constant u0(0.0);
-    DirichletBoundary boundary;
+    auto u0 = std::make_shared<Constant>(0.0);
+    auto boundary = std::make_shared<DirichletBoundary>();
     DirichletBC bc(V, u0, boundary);
 
 .. index::

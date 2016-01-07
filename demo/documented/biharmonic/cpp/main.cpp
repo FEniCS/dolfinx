@@ -73,11 +73,11 @@ int main()
   Constant alpha(8.0);
 
   // Create function space
-  Biharmonic::FunctionSpace V(mesh);
+  auto V = std::make_shared<Biharmonic::FunctionSpace>(mesh);
 
   // Define boundary condition
-  Constant u0(0.0);
-  DirichletBoundary boundary;
+  auto u0 = std::make_shared<Constant>(0.0);
+  auto boundary = std::make_shared<DirichletBoundary>();
   DirichletBC bc(V, u0, boundary);
 
   // Define variational problem

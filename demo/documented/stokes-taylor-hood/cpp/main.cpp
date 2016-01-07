@@ -63,17 +63,17 @@ int main()
 
   // Read mesh and sub domain markers
   Mesh mesh("../dolfin_fine.xml.gz");
-  MeshFunction<std::size_t> sub_domains(mesh, "../dolfin_fine_subdomains.xml.gz");
+  auto sub_domains = std::make_shared<MeshFunction<std::size_t>>(mesh, "../dolfin_fine_subdomains.xml.gz");
 
   // Create function space and subspaces
   Stokes::FunctionSpace W(mesh);
-  SubSpace W0(W, 0);
+  auto W0 = std::make_shared<SubSpace>(W, 0);
   SubSpace W1(W, 1);
 
   // Create functions for boundary conditions
-  Noslip noslip;
-  Inflow inflow;
-  Constant zero(0);
+  auto noslip = std::make_shared<Noslip>();
+  auto inflow = std::make_shared<Inflow>();
+  auto zero = std::make_shared<Constant>(0.0);
 
   // No-slip boundary condition for velocity
   DirichletBC bc0(W0, noslip, sub_domains, 0);
@@ -103,7 +103,7 @@ int main()
   pfile_pvd << p;
 
   File pfile_mf("mf.pvd");
-  pfile_mf << sub_domains;
+  pfile_mf << *sub_domains;
 
   // Plot solution
   plot(u);

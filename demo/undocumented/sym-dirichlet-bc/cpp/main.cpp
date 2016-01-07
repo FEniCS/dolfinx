@@ -91,14 +91,14 @@ int main()
   Flux g;
 
   // Define forms and attach functions
-  Poisson::FunctionSpace V(mesh);
+  auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
   L.f = f; L.g = g;
 
   // Create boundary condition
-  Constant u0(0.0);
-  DirichletBoundary boundary;
+  auto u0 = std::make_shared<Constant>(0.0);
+  auto boundary = std::make_shared<DirichletBoundary>();
   auto bc = std::make_shared<DirichletBC>(V, u0, boundary);
 
   // Create function

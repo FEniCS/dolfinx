@@ -189,9 +189,9 @@ defined above does.
 .. code-block:: c++
 
     // Define boundary condition
-    SubSpace W0(W, 0);
-    BoundarySource G(mesh);
-    EssentialBoundary boundary;
+    auto W0 = std::make_shared<SubSpace>(W, 0);
+    auto G = std::make_shared<BoundarySource>(mesh);
+    auto boundary = std::make_shared<EssentialBoundary>();
     DirichletBC bc(W0, G, boundary);
 
 To compute the solution we use the bilinear and linear forms, and the

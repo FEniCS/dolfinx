@@ -65,11 +65,11 @@ int main()
   Constant dbdt(0.0, 0.0, 1.0);
 
   // Dirichlet boundary condition
-  Constant zero(0.0, 0.0, 0.0);
+  auto zero = std::make_shared<Constant>(0.0, 0.0, 0.0);
 
   // Define function space and boundary condition
-  EddyCurrents::FunctionSpace V(mesh);
-  DirichletBoundary boundary;
+  auto V = std::make_shared<EddyCurrents::FunctionSpace>(mesh);
+  auto boundary = std::make_shared<DirichletBoundary>();
   auto bc = std::make_shared<DirichletBC>(V, zero, boundary);
 
   // Define variational problem for T
@@ -100,7 +100,7 @@ int main()
 
   // Build discrete gradient operator and attach to preconditioner
   P1Space::FunctionSpace P1(mesh);
-  auto G = DiscreteOperators::build_gradient(V, P1);
+  auto G = DiscreteOperators::build_gradient(*V, P1);
   PCHYPRESetDiscreteGradient(pc, as_type<PETScMatrix>(*G).mat());
 
   // Inform preconditioner of constants in the Nedelec space

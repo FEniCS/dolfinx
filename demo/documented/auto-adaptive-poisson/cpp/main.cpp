@@ -55,12 +55,12 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and define function space
-  UnitSquareMesh mesh(8, 8);
-  AdaptivePoisson::BilinearForm::TrialSpace V(mesh);
+  auto mesh = std::make_shared<UnitSquareMesh>(8, 8);
+  auto V = std::make_shared<AdaptivePoisson::BilinearForm::TrialSpace>(mesh);
 
   // Define boundary condition
-  Constant u0(0.0);
-  DirichletBoundary boundary;
+  auto u0 = std::make_shared<Constant>(0.0);
+  auto boundary = std::make_shared<DirichletBoundary>();
   auto bc = std::make_shared<DirichletBC>(V, u0, boundary);
 
   // Define variational forms
