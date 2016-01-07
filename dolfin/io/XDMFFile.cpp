@@ -765,19 +765,17 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
   dolfin_assert(mvc.mesh());
   std::shared_ptr<const Mesh> mesh = mvc.mesh();
 
+#ifdef HAS_HDF5
   if (encoding == Encoding::HDF5)
   {
-#ifdef HAS_HDF5
     if (hdf5_filemode != "w")
     {
       // Append to existing HDF5 File
       hdf5_file.reset(new HDF5File(mesh->mpi_comm(), hdf5_filename, "a"));
       hdf5_filemode = "w";
     }
-#else
-    dolfin_error("XDMFile.cpp", "write MeshValueCollection", "Need HDF5 support");
-#endif
   }
+#endif
 
   if (mvc.size() == 0)
   {
@@ -832,6 +830,8 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
     }
     else if (encoding == Encoding::ASCII)
     {
+      // FIXME: should already have geometry in file and could use
+      // an XPath reference here.
       _xml.mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
                          generate_xdmf_ascii_mesh_geometry_data(*mesh),
                          xdmf_format_str(encoding));
@@ -877,7 +877,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
 
   // Get mesh
   dolfin_assert(meshfunction.mesh());
-  const Mesh& mesh = *meshfunction.mesh();
+  std::shared_ptr<const Mesh> mesh = meshfunction.mesh();
 
 #ifdef HAS_HDF5
   if (encoding == Encoding::HDF5)
@@ -885,7 +885,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
     if (hdf5_filemode != "w")
     {
       // Create HDF5 file (truncate)
-      hdf5_file.reset(new HDF5File(mesh.mpi_comm(), hdf5_filename, "w"));
+      hdf5_file.reset(new HDF5File(mesh->mpi_comm(), hdf5_filename, "w"));
       hdf5_filemode = "w";
     }
   }
@@ -899,7 +899,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
   }
 
   const std::size_t cell_dim = meshfunction.dim();
-  CellType::Type cell_type = mesh.type().entity_type(cell_dim);
+  CellType::Type cell_type = mesh->type().entity_type(cell_dim);
 
   if (encoding == Encoding::HDF5)
   {
@@ -921,7 +921,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
 
   bool time_series = parameters["time_series"];
 
-  if (MPI::rank(mesh.mpi_comm()) == 0)
+  if (MPI::rank(mesh->mpi_comm()) == 0)
   {
     const std::string meshfunction_name = meshfunction.name();
     if (time_series)
@@ -931,32 +931,32 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
 
     if (encoding == Encoding::HDF5)
     {
-      _xml.mesh_topology(cell_type, 1, mesh.size_global(cell_dim),
+      _xml.mesh_topology(cell_type, 1, mesh->size_global(cell_dim),
                         current_mesh_name + "/topology",
                          xdmf_format_str(encoding));
-      _xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(),
+      _xml.mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
                         current_mesh_name + "/coordinates",
                          xdmf_format_str(encoding));
-      _xml.data_attribute(meshfunction_name, 0, false, mesh.size_global(0),
-                          mesh.size_global(cell_dim), 1, dataset_name,
+      _xml.data_attribute(meshfunction_name, 0, false, mesh->size_global(0),
+                          mesh->size_global(cell_dim), 1, dataset_name,
                           xdmf_format_str(encoding));
     }
     else if (encoding == Encoding::ASCII)
     {
       // Add the mesh topology and geometry to the xml data
-      _xml.mesh_topology(cell_type, 1, mesh.size_global(cell_dim),
-                         generate_xdmf_ascii_mesh_topology_data(mesh, cell_dim),
+      _xml.mesh_topology(cell_type, 1, mesh->size_global(cell_dim),
+                         generate_xdmf_ascii_mesh_topology_data(*mesh, cell_dim),
                          xdmf_format_str(encoding));
-      _xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(),
-                         generate_xdmf_ascii_mesh_geometry_data(mesh),
+      _xml.mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
+                         generate_xdmf_ascii_mesh_geometry_data(*mesh),
                          xdmf_format_str(encoding));
 
       std::vector<T> data_values;
       // No duplicates - ignore ghost cells if present
       data_values.assign(meshfunction.values(),
-                         meshfunction.values() + mesh.topology().ghost_offset(cell_dim));
-      _xml.data_attribute(meshfunction_name, 0, false, mesh.size_global(0),
-                          mesh.size_global(cell_dim), 1,
+                         meshfunction.values() + mesh->topology().ghost_offset(cell_dim));
+      _xml.data_attribute(meshfunction_name, 0, false, mesh->size_global(0),
+                          mesh->size_global(cell_dim), 1,
                           generate_xdmf_ascii_data(data_values, format),
                           xdmf_format_str(encoding));
     }
@@ -1056,9 +1056,10 @@ std::string XDMFFile::generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 std::string XDMFFile::generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh,
-                                                             const std::size_t edim)
+                                                       const std::size_t edim)
 {
-  std::unique_ptr<CellType> celltype(CellType::create(mesh.type().entity_type(edim)));
+  std::unique_ptr<CellType>
+    celltype(CellType::create(mesh.type().entity_type(edim)));
 
   // Permutation to VTK ordering
   const std::vector<unsigned int> perm = celltype->vtk_mapping();
@@ -1068,7 +1069,8 @@ std::string XDMFFile::generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh,
   if (edim == 0)
   {
     for (VertexIterator v(mesh); !v.end(); ++v)
-      topology_xml_value += boost::str(boost::format("%d") % v->global_index()) + "\n";
+      topology_xml_value
+        += boost::str(boost::format("%d") % v->global_index()) + "\n";
   }
   else
   {
@@ -1077,7 +1079,8 @@ std::string XDMFFile::generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh,
       for (unsigned int i = 0; i != c->num_entities(0); ++i)
       {
         const std::size_t local_idx = c->entities(0)[perm[i]];
-        topology_xml_value += boost::str(boost::format("%d") % local_idx) + " ";
+        topology_xml_value
+          += boost::str(boost::format("%d") % local_idx) + " ";
       }
       topology_xml_value += "\n";
     }

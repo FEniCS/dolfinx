@@ -34,7 +34,7 @@ def test_xdmf_cell_scalar_ghost(cd_tempdir, ghost_mode):
     F.interpolate(E)
 
     xdmf = XDMFFile(mesh.mpi_comm(), "dg0.xdmf")
-    xdmf << F
+    xdmf.write(F)
     del xdmf
 
     hdf = HDF5File(mesh.mpi_comm(), "dg0.h5", "r")
