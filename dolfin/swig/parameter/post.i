@@ -256,7 +256,7 @@ def __getattr__(self, key):
     try:
         self.__dict__["this"]
     except KeyError:
-        raise AttributeError("SWIG proxy 'this' defunct on object '%s'" % self)
+        raise AttributeError("SWIG proxy 'this' defunct on 'Parameters' object")
 
     # Make sure KeyError is reraised as AttributeError
     try:
