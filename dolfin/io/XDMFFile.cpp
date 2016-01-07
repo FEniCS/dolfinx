@@ -363,15 +363,19 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
   // Write mesh to HDF5 file
   if (parameters["rewrite_function_mesh"] || counter == 0)
   {
-#ifdef HAS_HDF5
     if (encoding == Encoding::HDF5)
     {
+#ifdef HAS_HDF5
       const std::string h5_mesh_name = "/Mesh/" + std::to_string(counter);
       boost::filesystem::path p(hdf5_filename);
       current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
       hdf5_file->write(mesh, h5_mesh_name);
-    }
 #endif
+    }
+    else if (encoding == Encoding::ASCII)
+    {
+      current_mesh_name = "/Xdmf/Domain/Grid";
+    }
   }
 
   const bool mpi_io = MPI::size(mesh.mpi_comm()) > 1 ? true : false;
@@ -897,16 +901,20 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
   const std::size_t cell_dim = meshfunction.dim();
   CellType::Type cell_type = mesh.type().entity_type(cell_dim);
 
-#ifdef HAS_HDF5
   if (encoding == Encoding::HDF5)
   {
+#ifdef HAS_HDF5
     // Use HDF5 function to output MeshFunction
     const std::string h5_mesh_name = "/Mesh/" + std::to_string(counter);
     boost::filesystem::path p(hdf5_filename);
     current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
     hdf5_file->write(meshfunction, h5_mesh_name);
-  }
 #endif
+  }
+  else if (encoding == Encoding::ASCII)
+  {
+    current_mesh_name = "/Xdmf/Domain/Grid";
+  }
 
   // Saved MeshFunction values are in the /Mesh group
   const std::string dataset_name = current_mesh_name + "/values";
@@ -1111,7 +1119,7 @@ std::string XDMFFile::generate_xdmf_ascii_data(
   std::string data_str;
   data_str += "\n";
   for (std::size_t j = 0; j < data.size(); ++j)
-    data_str += boost::lexical_cast<T>(data[j]) + "\n";
+    data_str += boost::lexical_cast<std::string>(data[j]) + "\n";
   return data_str;
 }
 //-----------------------------------------------------------------------------
@@ -1141,12 +1149,14 @@ void XDMFFile::write_ascii_mesh_value_collection(
 
   CellType::Type cell_type = mesh->type().entity_type(dim);
   std::unique_ptr<CellType> entity_type(CellType::create(cell_type));
-  const std::size_t num_vertices_per_entity = (dim == 0) ? 1 : entity_type->num_vertices();
+//  const std::size_t num_vertices_per_entity = (dim == 0) ? 1 : entity_type->num_vertices();
 
-  std::vector<std::size_t> topology;
+//  std::vector<std::size_t> topology;
   std::vector<T> value_data;
-  topology.reserve(values.size()*num_vertices_per_entity);
+//  topology.reserve(values.size()*num_vertices_per_entity);
   value_data.reserve(values.size());
+  std::string topology;
+  topology += "\n";
 
   const std::size_t tdim = mesh->topology().dim();
   mesh->init(tdim, dim);
@@ -1159,18 +1169,13 @@ void XDMFFile::write_ascii_mesh_value_collection(
       cell = MeshEntity(*mesh, dim, entity_local_idx);
     }
     for (VertexIterator v(cell); !v.end(); ++v)
-      topology.push_back(v->global_index());
+      topology += boost::str(boost::format("%d") % v->global_index()) + " ";
+    topology += "\n";
     value_data.push_back(p.second);
   }
 
-//  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
-//  std::vector<std::size_t> global_size(2);
-//
-//  global_size[0] = MPI::sum(_mpi_comm, values.size());
-//  global_size[1] = num_vertices_per_entity;
-
   _xml.mesh_topology(cell_type, 1, mesh_values.size(),
-                     generate_xdmf_ascii_data(topology, "%d"),
+                     topology,
                      xdmf_format_str(Encoding::ASCII));
 
   _xml.data_attribute(mesh_values.name(), 0, false,
