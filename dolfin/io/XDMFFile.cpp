@@ -519,7 +519,7 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
       while(std::getline(iss, data_line))
       {
         boost::split(coords, data_line, boost::is_any_of(" "));
-        for (int j = 0; j < geom.dim; ++j) {
+        for (std::size_t j = 0; j < geom.dim; ++j) {
           p[j] = std::stod(coords[j]);
         }
         editor.add_vertex(index, p);
@@ -544,7 +544,7 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
       while(std::getline(iss, data_line))
       {
         boost::split(splt_str_indices, data_line, boost::is_any_of(" "));
-        for (int j = 0; j < topo.points_per_cell; ++j)
+        for (std::size_t j = 0; j < topo.points_per_cell; ++j)
           point_indices[j] = std::stol(splt_str_indices[j]);
         editor.add_cell(index, point_indices);
         ++index;
@@ -929,7 +929,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
                          meshfunction.values() + mesh.topology().ghost_offset(cell_dim));
       xml.data_attribute(meshfunction_name, 0, false, mesh.size_global(0),
                          mesh.size_global(cell_dim), 1,
-                         generate_xdmf_ascii_vertex_data(data_values, format),
+                         generate_xdmf_ascii_data(data_values, format),
                          xdmf_format_str(encoding));
     }
     xml.write();
