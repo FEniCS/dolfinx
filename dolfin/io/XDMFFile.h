@@ -143,13 +143,28 @@ namespace dolfin
                const std::vector<double>& values,
                Encoding encoding=Encoding::HDF5);
 
-    // Write out mesh value collection (subset)
+    /// Write out mesh value collection (subset)
+    /// using an associated HDF5 file, or storing the data inline as XML.
+    ///
+    /// *Arguments*
+    ///     mvc (_MeshValueCollection<std::size_t>_)
+    ///         A list of points to save.
+    ///     encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
     void write(const MeshValueCollection<std::size_t>& mvc,
                Encoding encoding=Encoding::HDF5);
 
     /// Read in a mesh from the associated HDF5 file, optionally using
     /// stored partitioning, if possible when the same number of
     /// processes are being used.
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///
+    ///     use_partition_from_file (_bool_)
+    ///         Use the existing partition information in HDF5
+    ///
     void read(Mesh& mesh, bool use_partition_from_file);
 
     /// Read first MeshFunction from file
@@ -195,8 +210,6 @@ namespace dolfin
     // flattened 2D array in data_values with given width
     void get_point_data_values(std::vector<double>& data_values,
                                std::size_t width, const Function& u);
-
-    // Write generic mesh func
 
     // Check whether the requested encoding is supported
     void check_encoding(Encoding encoding);
