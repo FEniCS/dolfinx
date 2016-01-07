@@ -52,12 +52,9 @@ PROBLEM_RENAMES(NonlinearVariational)
 // version of constructors to these types
 //-----------------------------------------------------------------------------
 %ignore dolfin::DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace>,
-                     std::shared_ptr<const GenericFunction>,
-                     const std::vector<std::size_t>&,
-                     std::string method="topological");
-
-%ignore dolfin::LinearVariationalSolver::LinearVariationalSolver(LinearVariationalProblem&);
-%ignore dolfin::NonlinearVariationalSolver::NonlinearVariationalSolver(NonlinearVariationalProblem&);
+                                         std::shared_ptr<const GenericFunction>,
+                                         const std::vector<std::size_t>&,
+                                         std::string method="topological");
 
 //-----------------------------------------------------------------------------
 // Ignore GenericDofMap::cell_dofs
