@@ -112,7 +112,9 @@ int main()
   umin.interpolate(umin_exp);
 
   // Set up the non-linear problem
-  NonlinearVariationalProblem problem(F, u, {bc}, J);
+  std::vector<std::shared_ptr<const DirichletBC>> bcs = {bc};
+  auto problem = std::make_shared<NonlinearVariationalProblem>(F, u, bcs, J);
+  problem->set_bounds(umin, umax);
 
   // Set up the non-linear solver
   NonlinearVariationalSolver solver(problem);
@@ -124,7 +126,7 @@ int main()
 
   // Solve the problems
   std::pair<std::size_t, bool> out;
-  out = solver.solve(umin,umax);
+  out = solver.solve();
 
   // Check for convergence. Convergence is one modifies the loading
   // and the mesh size

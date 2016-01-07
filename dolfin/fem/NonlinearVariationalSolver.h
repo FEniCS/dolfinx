@@ -41,71 +41,7 @@ namespace dolfin
   public:
 
     /// Create nonlinear variational solver for given problem
-    NonlinearVariationalSolver(NonlinearVariationalProblem& problem);
-
-    /// Create nonlinear variational solver for given problem (shared
-    /// pointer version)
-    NonlinearVariationalSolver(std::shared_ptr<NonlinearVariationalProblem> problem);
-
-    /// Solve variational problem with bound constraints defined by
-    /// GenericVectors
-    ///
-    /// *Arguments*
-    ///     lb (_GenericVector_)
-    ///         The linear solver.
-    ///     ub (_GenericVector_)
-    ///         The factory.
-    /// *Returns*
-    ///     std::pair<std::size_t, bool>
-    ///         Pair of number of Newton iterations, and whether
-    ///         iteration converged)
-    std::pair<std::size_t, bool> solve(const GenericVector& lb,
-                                       const GenericVector& ub);
-
-    /// Solve variational problem with bound constraints defined by
-    /// GenericVectors (shared pointer version)
-    ///
-    /// *Arguments*
-    ///     lb (_std::shared_ptr<const GenericVector>_)
-    ///         The linear solver.
-    ///     ub (_std::shared_ptr<const GenericVector>_)
-    ///         The factory.
-    /// *Returns*
-    ///     std::pair<std::size_t, bool>
-    ///         Pair of number of Newton iterations, and whether
-    ///         iteration converged)
-    std::pair<std::size_t, bool>
-      solve(std::shared_ptr<const GenericVector> lb,
-            std::shared_ptr<const GenericVector> ub);
-
-    /// Solve variational problem with bound constraints defined by Functions
-    ///
-    /// *Arguments*
-    ///     lb (_Function_)
-    ///         The linear solver.
-    ///     ub (_Function_)
-    ///         The factory.
-    /// *Returns*
-    ///     std::pair<std::size_t, bool>
-    ///         Pair of number of Newton iterations, and whether
-    ///         iteration converged)
-    std::pair<std::size_t, bool> solve(const Function& lb,
-                                       const Function& ub);
-
-    /// Solve variational problem with bound constraints defined by
-    /// Functions (shared pointer version)
-    ///
-    /// *Arguments*
-    ///     lb (_std::shared_ptr<const Function>_)
-    ///         The linear solver.
-    ///     ub (_std::shared_ptr<const Function>_)
-    ///         The factory.
-    /// *Returns*
-    ///     std::pair<std::size_t, bool>
-    ///         Pair of number of Newton iterations, and whether
-    ///         iteration converged)
-    std::pair<std::size_t, bool> solve(std::shared_ptr<const Function> lb,
-                                       std::shared_ptr<const Function> ub);
+    explicit NonlinearVariationalSolver(std::shared_ptr<NonlinearVariationalProblem> problem);
 
     /// Solve variational problem
     ///
@@ -147,8 +83,8 @@ namespace dolfin
 
       // Constructor
       NonlinearDiscreteProblem(
-        std::shared_ptr<NonlinearVariationalProblem> problem,
-        std::shared_ptr<NonlinearVariationalSolver> solver);
+        std::shared_ptr<const NonlinearVariationalProblem> problem,
+        std::shared_ptr<const NonlinearVariationalSolver> solver);
 
       // Destructor
       ~NonlinearDiscreteProblem();
@@ -162,8 +98,8 @@ namespace dolfin
     private:
 
       // Problem and solver objects
-      std::shared_ptr<NonlinearVariationalProblem> _problem;
-      std::shared_ptr<NonlinearVariationalSolver> _solver;
+      std::shared_ptr<const NonlinearVariationalProblem> _problem;
+      std::shared_ptr<const NonlinearVariationalSolver> _solver;
 
     };
 
