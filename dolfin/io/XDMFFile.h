@@ -254,7 +254,7 @@ namespace dolfin
     std::size_t counter;
 
     // The xml document of the XDMF file
-    XDMFxml xml;
+    XDMFxml _xml;
 
   };
 }
