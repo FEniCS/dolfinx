@@ -238,6 +238,9 @@ namespace dolfin
     template<typename T>
     std::string generate_xdmf_ascii_data(
         const std::vector<T>& data, std::string format);
+    template<typename T>
+    std::string generate_xdmf_ascii_data(
+        const std::vector<T>& data);
 
     // Determine the encoding of the data from the xml file.
     // E.g. "XML" or "HDF".
@@ -255,6 +258,12 @@ namespace dolfin
 
     // The xml document of the XDMF file
     XDMFxml _xml;
+
+    // Write MVC to ascii string to store in xdmf xml file
+    template <typename T>
+    void write_ascii_mesh_value_collection(
+        const MeshValueCollection<T>& mesh_values,
+        std::string data_name);
 
   };
 }
