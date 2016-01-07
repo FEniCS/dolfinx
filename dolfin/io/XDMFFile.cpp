@@ -430,8 +430,11 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
     if (encoding == Encoding::HDF5)
     {
       xml.mesh_topology(mesh.type().cell_type(), degree,
-                        num_global_cells, current_mesh_name, xdmf_format_str(encoding));
-      xml.mesh_geometry(num_global_points, gdim, current_mesh_name, xdmf_format_str(encoding));
+                        num_global_cells, current_mesh_name + "/topology",
+                        xdmf_format_str(encoding));
+      xml.mesh_geometry(num_global_points, gdim,
+                        current_mesh_name + "/coordinates",
+                        xdmf_format_str(encoding));
 
       boost::filesystem::path p(hdf5_filename);
       xml.data_attribute(u.name(), value_rank, vertex_data,
@@ -809,9 +812,11 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
     const std::string dataset_ref
         = p.filename().string() + ":" + dataset_name;
 
-    xml.mesh_topology(cell_type, 1, mvc.size(), dataset_ref, xdmf_format_str(encoding));
+    xml.mesh_topology(cell_type, 1, mvc.size(), dataset_ref + "/topology",
+                      xdmf_format_str(encoding));
     xml.mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
-                      current_mesh_name, xdmf_format_str(encoding));
+                      current_mesh_name + "/coordinates",
+                      xdmf_format_str(encoding));
     xml.data_attribute(mvc.name(), 0, false, mesh->size_global(0),
                        mvc.size(), 1, dataset_ref + "/values",
                        xdmf_format_str(encoding));
@@ -906,9 +911,11 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
     if (encoding == Encoding::HDF5)
     {
       xml.mesh_topology(cell_type, 1, mesh.size_global(cell_dim),
-                        current_mesh_name, xdmf_format_str(encoding));
+                        current_mesh_name + "/topology",
+                        xdmf_format_str(encoding));
       xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(),
-                        current_mesh_name, xdmf_format_str(encoding));
+                        current_mesh_name + "/coordinates",
+                        xdmf_format_str(encoding));
       xml.data_attribute(meshfunction_name, 0, false, mesh.size_global(0),
                          mesh.size_global(cell_dim), 1, dataset_name,
                          xdmf_format_str(encoding));
