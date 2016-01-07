@@ -821,14 +821,6 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
   ++counter;
 }
 //-----------------------------------------------------------------------------
-template<typename T>
-void XDMFFile::write(const MeshFunction<T>& meshfunction,
-                     std::string format,
-                     Encoding encoding)
-{
-  write_mesh_function(meshfunction, format, encoding);
-}
-//----------------------------------------------------------------------------
 void XDMFFile::write(const MeshFunction<bool>& meshfunction,
                      Encoding encoding)
 {

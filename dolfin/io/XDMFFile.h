@@ -62,18 +62,51 @@ namespace dolfin
     /// Destructor
     ~XDMFFile();
 
-    /// Save a mesh for visualisation, with e.g. ParaView. Creates a
-    /// HDF5 file to store the mesh, and a related XDMF file with
-    /// metadata.
+    /// Save a mesh to XDMF format, either using an associated
+    /// HDF5 file, or storing the data inline as XML
+    /// Create function on given function space
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         A mesh to save.
+    ///     encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
     void write(const Mesh& mesh, Encoding encoding=Encoding::HDF5);
 
-    /// Save a Function to XDMF/HDF5 files for visualisation.
+    /// Save a Function to XDMF file for visualisation,
+    /// using an associated HDF5 file, or storing the data inline as XML.
+    ///
+    /// *Arguments*
+    ///     u (_Function_)
+    ///         A function to save.
+    ///     encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
     void write(const Function& u, Encoding encoding=Encoding::HDF5);
 
-    /// Save Function + time stamp to file
+    /// Save a Function with timestamp to XDMF file for visualisation,
+    /// using an associated HDF5 file, or storing the data inline as XML.
+    ///
+    /// *Arguments*
+    ///     u (_Function_)
+    ///         A function to save.
+    ///     t (_double_)
+    ///         Timestep
+    ///     encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
     void write(const Function& u, double t, Encoding encoding=Encoding::HDF5);
 
     /// Save MeshFunction to file
+    /// using an associated HDF5 file, or storing the data inline as XML.
+    ///
+    /// *Arguments*
+    ///     meshfunction (_MeshFunction_)
+    ///         A meshfunction to save.
+    ///     encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
     void write(const MeshFunction<bool>& meshfunction,
                Encoding encoding=Encoding::HDF5);
     void write(const MeshFunction<int>& meshfunction,
@@ -84,24 +117,35 @@ namespace dolfin
                Encoding encoding=Encoding::HDF5);
 
     /// Save a cloud of points to file
+    /// using an associated HDF5 file, or storing the data inline as XML.
+    ///
+    /// *Arguments*
+    ///     points (_std::vector<Point>_)
+    ///         A list of points to save.
+    ///     encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
     void write(const std::vector<Point>& points,
                Encoding encoding=Encoding::HDF5);
 
     /// Save a cloud of points, with scalar values
+    /// using an associated HDF5 file, or storing the data inline as XML.
+    ///
+    /// *Arguments*
+    ///     points (_std::vector<Point>_)
+    ///         A list of points to save.
+    ///     values (_std::vector<double>_)
+    ///         A list of values at each point.
+    ///     encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
     void write(const std::vector<Point>& points,
                const std::vector<double>& values,
-               Encoding encoding=Encoding::HDF5);
-
-    // Generic MeshFunction writer
-    template<typename T>
-    void write(const MeshFunction<T>& meshfunction,
-               std::string format,
                Encoding encoding=Encoding::HDF5);
 
     // Write out mesh value collection (subset)
     void write(const MeshValueCollection<std::size_t>& mvc,
                Encoding encoding=Encoding::HDF5);
-
 
     /// Read in a mesh from the associated HDF5 file, optionally using
     /// stored partitioning, if possible when the same number of
