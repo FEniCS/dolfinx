@@ -178,7 +178,7 @@ namespace dolfin
     // Generate the data string to insert in an xdmf file for vertex
     // data with output formatted according to format
     template<typename T>
-    std::string generate_xdmf_ascii_vertex_data(
+    std::string generate_xdmf_ascii_data(
         const std::vector<T>& data, std::string format);
 
     // Determine the encoding of the data from the xml file.

@@ -216,6 +216,7 @@ void XDMFFile::write(const Function& u, Encoding encoding)
 //----------------------------------------------------------------------------
 void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
 {
+  check_encoding(encoding);
 
   // Conditions for starting a new HDF5 file
 #ifdef HAS_HDF5
@@ -453,7 +454,7 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
       xml.data_attribute(u.name(), value_rank, vertex_data,
                          num_global_points, num_global_cells,
                          padded_value_size,
-                         generate_xdmf_ascii_vertex_data(data_values, "%.15e"),
+                         generate_xdmf_ascii_data(data_values, "%.15e"),
                          xdmf_format_str(encoding));
     }
     xml.write();
@@ -643,30 +644,6 @@ void XDMFFile::write(const Mesh& mesh, Encoding encoding)
   }
 }
 //----------------------------------------------------------------------------
-void XDMFFile::write(const MeshFunction<bool>& meshfunction,
-                     Encoding encoding)
-{
-  write_mesh_function(meshfunction, "%d", encoding);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::write(const MeshFunction<int>& meshfunction,
-                     Encoding encoding)
-{
-  write_mesh_function(meshfunction, "%d", encoding);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::write(const MeshFunction<std::size_t>& meshfunction,
-                     Encoding encoding)
-{
-  write_mesh_function(meshfunction, "%d", encoding);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::write(const MeshFunction<double>& meshfunction,
-                     Encoding encoding)
-{
-  write_mesh_function(meshfunction, "%.15e", encoding);
-}
-//----------------------------------------------------------------------------
 void XDMFFile::write(const std::vector<Point>& points,
                      Encoding encoding)
 {
@@ -770,6 +747,7 @@ void XDMFFile::write_point_xml(const std::string group_name,
 void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
                      Encoding encoding)
 {
+  //FIXME: make work with ASCII encoding or call dolfin_not_implemented()
   check_encoding(encoding);
 
   // Provide some very basic functionality for saving MeshValueCollections
@@ -851,6 +829,123 @@ void XDMFFile::write(const MeshFunction<T>& meshfunction,
   write_mesh_function(meshfunction, format, encoding);
 }
 //----------------------------------------------------------------------------
+void XDMFFile::write(const MeshFunction<bool>& meshfunction,
+                     Encoding encoding)
+{
+  write_mesh_function(meshfunction, "%d", encoding);
+}
+//----------------------------------------------------------------------------
+void XDMFFile::write(const MeshFunction<int>& meshfunction,
+                     Encoding encoding)
+{
+  write_mesh_function(meshfunction, "%d", encoding);
+}
+//----------------------------------------------------------------------------
+void XDMFFile::write(const MeshFunction<std::size_t>& meshfunction,
+                     Encoding encoding)
+{
+  write_mesh_function(meshfunction, "%d", encoding);
+}
+//----------------------------------------------------------------------------
+void XDMFFile::write(const MeshFunction<double>& meshfunction,
+                     Encoding encoding)
+{
+  write_mesh_function(meshfunction, "%.15e", encoding);
+}
+//-----------------------------------------------------------------------------
+template<typename T>
+void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
+                                   std::string format,
+                                   Encoding encoding)
+{
+  check_encoding(encoding);
+
+  // Get mesh
+  dolfin_assert(meshfunction.mesh());
+  const Mesh& mesh = *meshfunction.mesh();
+
+#ifdef HAS_HDF5
+  if (encoding == Encoding::HDF5)
+  {
+    if (hdf5_filemode != "w")
+    {
+      // Create HDF5 file (truncate)
+      hdf5_file.reset(new HDF5File(mesh.mpi_comm(), hdf5_filename, "w"));
+      hdf5_filemode = "w";
+    }
+  }
+#endif
+
+  if (meshfunction.size() == 0)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "save empty MeshFunction",
+                 "No values in MeshFunction");
+  }
+
+  const std::size_t cell_dim = meshfunction.dim();
+  CellType::Type cell_type = mesh.type().entity_type(cell_dim);
+
+#ifdef HAS_HDF5
+  if (encoding == Encoding::HDF5)
+  {
+    // Use HDF5 function to output MeshFunction
+    const std::string h5_mesh_name = "/Mesh/" + std::to_string(counter);
+    boost::filesystem::path p(hdf5_filename);
+    current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
+    hdf5_file->write(meshfunction, h5_mesh_name);
+  }
+#endif
+
+  // Saved MeshFunction values are in the /Mesh group
+  const std::string dataset_name = current_mesh_name + "/values";
+
+  bool time_series = parameters["time_series"];
+
+  if (MPI::rank(mesh.mpi_comm()) == 0)
+  {
+    XDMFxml xml(_filename);
+    const std::string meshfunction_name = meshfunction.name();
+    if (time_series)
+      xml.init_timeseries(meshfunction_name, (double)counter, counter);
+    else
+      xml.init_mesh(meshfunction_name);
+
+    if (encoding == Encoding::HDF5)
+    {
+      xml.mesh_topology(cell_type, 1, mesh.size_global(cell_dim),
+                        current_mesh_name, xdmf_format_str(encoding));
+      xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(),
+                        current_mesh_name, xdmf_format_str(encoding));
+      xml.data_attribute(meshfunction_name, 0, false, mesh.size_global(0),
+                         mesh.size_global(cell_dim), 1, dataset_name,
+                         xdmf_format_str(encoding));
+    }
+    else if (encoding == Encoding::ASCII)
+    {
+      // Add the mesh topology and geometry to the xml data
+      xml.mesh_topology(cell_type, 1, mesh.size_global(cell_dim),
+                        generate_xdmf_ascii_mesh_topology_data(mesh, cell_dim),
+                        xdmf_format_str(encoding));
+      xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(),
+                        generate_xdmf_ascii_mesh_geometry_data(mesh),
+                        xdmf_format_str(encoding));
+
+      std::vector<T> data_values;
+      // No duplicates - ignore ghost cells if present
+      data_values.assign(meshfunction.values(),
+                         meshfunction.values() + mesh.topology().ghost_offset(cell_dim));
+      xml.data_attribute(meshfunction_name, 0, false, mesh.size_global(0),
+                         mesh.size_global(cell_dim), 1,
+                         generate_xdmf_ascii_vertex_data(data_values, format),
+                         xdmf_format_str(encoding));
+    }
+    xml.write();
+  }
+
+  ++counter;
+}
+//-----------------------------------------------------------------------------
 void XDMFFile::read(MeshFunction<bool>& meshfunction)
 {
   const Mesh& mesh = *meshfunction.mesh();
@@ -988,7 +1083,7 @@ std::string XDMFFile::generate_xdmf_ascii_mesh_geometry_data(const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 template<typename T>
-std::string XDMFFile::generate_xdmf_ascii_vertex_data(
+std::string XDMFFile::generate_xdmf_ascii_data(
     const std::vector<T>& data, std::string format)
 {
   std::string data_str;
@@ -996,99 +1091,6 @@ std::string XDMFFile::generate_xdmf_ascii_vertex_data(
   for (std::size_t j = 0; j < data.size(); ++j)
     data_str += boost::str(boost::format(format) % data[j]) + "\n";
   return data_str;
-}
-//-----------------------------------------------------------------------------
-template<typename T>
-void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
-                                   std::string format,
-                                   Encoding encoding)
-{
-  check_encoding(encoding);
-
-  // Get mesh
-  dolfin_assert(meshfunction.mesh());
-  const Mesh& mesh = *meshfunction.mesh();
-
-#ifdef HAS_HDF5
-  if (encoding == Encoding::HDF5)
-  {
-    if (hdf5_filemode != "w")
-    {
-      // Create HDF5 file (truncate)
-      hdf5_file.reset(new HDF5File(mesh.mpi_comm(), hdf5_filename, "w"));
-      hdf5_filemode = "w";
-    }
-  }
-#endif
-
-  if (meshfunction.size() == 0)
-  {
-    dolfin_error("XDMFFile.cpp",
-                 "save empty MeshFunction",
-                 "No values in MeshFunction");
-  }
-
-  const std::size_t cell_dim = meshfunction.dim();
-  CellType::Type cell_type = mesh.type().entity_type(cell_dim);
-
-#ifdef HAS_HDF5
-  if (encoding == Encoding::HDF5)
-  {
-    // Use HDF5 function to output MeshFunction
-    const std::string h5_mesh_name = "/Mesh/" + std::to_string(counter);
-    boost::filesystem::path p(hdf5_filename);
-    current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
-    hdf5_file->write(meshfunction, h5_mesh_name);
-  }
-#endif
-
-  // Saved MeshFunction values are in the /Mesh group
-  const std::string dataset_name = current_mesh_name + "/values";
-
-  bool time_series = parameters["time_series"];
-
-  if (MPI::rank(mesh.mpi_comm()) == 0)
-  {
-    XDMFxml xml(_filename);
-    const std::string meshfunction_name = meshfunction.name();
-    if (time_series)
-      xml.init_timeseries(meshfunction_name, (double)counter, counter);
-    else
-      xml.init_mesh(meshfunction_name);
-
-    if (encoding == Encoding::HDF5)
-    {
-      xml.mesh_topology(cell_type, 1, mesh.size_global(cell_dim),
-                        current_mesh_name, xdmf_format_str(encoding));
-      xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(),
-                        current_mesh_name, xdmf_format_str(encoding));
-      xml.data_attribute(meshfunction_name, 0, false, mesh.size_global(0),
-                         mesh.size_global(cell_dim), 1, dataset_name,
-                         xdmf_format_str(encoding));
-    }
-    else if (encoding == Encoding::ASCII)
-    {
-      // Add the mesh topology and geometry to the xml data
-      xml.mesh_topology(cell_type, 1, mesh.size_global(cell_dim),
-                        generate_xdmf_ascii_mesh_topology_data(mesh, cell_dim),
-                        xdmf_format_str(encoding));
-      xml.mesh_geometry(mesh.size_global(0), mesh.geometry().dim(),
-                        generate_xdmf_ascii_mesh_geometry_data(mesh),
-                        xdmf_format_str(encoding));
-
-      std::vector<T> data_values;
-      // No duplicates - ignore ghost cells if present
-      data_values.assign(meshfunction.values(),
-                         meshfunction.values() + mesh.topology().ghost_offset(cell_dim));
-      xml.data_attribute(meshfunction_name, 0, false, mesh.size_global(0),
-                         mesh.size_global(cell_dim), 1,
-                         generate_xdmf_ascii_vertex_data(data_values, format),
-                         xdmf_format_str(encoding));
-    }
-    xml.write();
-  }
-
-  ++counter;
 }
 //-----------------------------------------------------------------------------
 XDMFFile::Encoding XDMFFile::get_file_encoding()
