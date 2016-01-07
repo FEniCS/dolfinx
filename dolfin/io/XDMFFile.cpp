@@ -1149,11 +1149,8 @@ void XDMFFile::write_ascii_mesh_value_collection(
 
   CellType::Type cell_type = mesh->type().entity_type(dim);
   std::unique_ptr<CellType> entity_type(CellType::create(cell_type));
-//  const std::size_t num_vertices_per_entity = (dim == 0) ? 1 : entity_type->num_vertices();
 
-//  std::vector<std::size_t> topology;
   std::vector<T> value_data;
-//  topology.reserve(values.size()*num_vertices_per_entity);
   value_data.reserve(values.size());
   std::string topology;
   topology += "\n";
