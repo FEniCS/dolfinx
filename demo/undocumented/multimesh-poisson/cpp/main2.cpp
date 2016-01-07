@@ -646,32 +646,58 @@ int main(int argc, char* argv[])
     const Point b = cc-xa;
     const Point c = cc-x1;
     const Point d = xc-x1;
+    // S1 = Area{x1,x1,xc,cc}
     const double S1 = 0.5*std::abs(b.cross(c)[2]) + 0.5*std::abs(c.cross(d)[2]);
     const Point e = xb-x3;
     const Point f = cc-x3;
     const Point g = xc-x3;
+    // S2 = area{x3,xc,cc,xb}
     const double S2 = 0.5*std::abs(e.cross(f)[2]) + 0.5*std::abs(f.cross(g)[2]);
     const double area_part_0 = 1 - 2*S1 + S2;
     std::cout << "\n\narea part 0:    " << area_part_0 << std::endl;
 
     // part 0 uncut volume (1-h)^2 plus two elements on the top and sides not cut
     const double h = 0.0625;
-    std::cout << "area uncut part 0: " << (1-h)*(1-h)+2*h*h << std::endl;
+    const double area_uncut_part_0 = (1-h)*(1-h)+2*h*h;
+    std::cout << "area uncut part 0: " << area_uncut_part_0 << std::endl;
 
     // Check part 0 interface integral
     const double interface_part_0 = 2*(x1-xa).norm() + 2*(x3-x1).norm();
     std::cout << "interface length part 0:   " << interface_part_0 << std::endl;
 
-    {
-      // part 1 interface area
-      const Point x0(0.454003112031502,0.454003107715805,0);
-      const Point x1(0.449057481830201,0.59562851091874,0);
-      const Point x2(0.600932112043836,0.600932087371726,0);
-      const double interface_part_1 = (x2-x1).norm() + (x1-x0).norm();
-      std::cout << "interface length part 1:  "<< interface_part_1 << std::endl;
-    }
+    // part 1 volume
+    const Point y1(0.449057462336667, 0.595628463731148,0);
+    const Point y2(0.600932132396578, 0.600932092071092,0);
+    const Point y3(0.595628469787003,0.44905746289499,0);
+    // S3 = area{x3,y1,y2,y3}
+    const Point A = y1-x3;
+    const Point B = y2-x3;
+    const Point C = y3-x3;
+    const double S3 = 0.5*std::abs(A.cross(B)[2]) + 0.5*std::abs(C.cross(B)[2]);
+    const double area_part_1 = 1 - S3;// + S2;
+    std::cout << "area part 1 " << area_part_1 << std::endl;
 
+    // part 1 uncut volume  = (1-H)*1 - 2*H*H
+    const double H = 2*h;
+    const double area_uncut_part_1 = 1-4*H*H;
+    std::cout << "area uncut part 1: " << area_uncut_part_1 << std::endl;
 
+    // part 1 interface area
+    const Point y4(0.454003112031502,0.454003107715805,0);
+    const double interface_part_1 = (y2-y1).norm() + (y1-y4).norm();
+    std::cout << "interface length part 1:  "<< interface_part_1 << std::endl;
+
+    // Summary
+    std::cout << "\nSummary\nmeasured areas\n"
+	      << "% part 0  uncut volume " << area_uncut_part_0
+	      << "   total volume " << area_part_0
+	      << '\n'
+	      << "% part 1  uncut volume " << area_uncut_part_1
+	      << "   total volume " << area_part_1
+	      << '\n'
+	      << "Measured interfaces:\n"
+	      << "% part 0  total area (length) " << interface_part_0 << '\n'
+	      << "% part 1  total area (length) " << interface_part_1 << std::endl;
   }
 
 
