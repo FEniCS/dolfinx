@@ -168,10 +168,11 @@ namespace tools
   }
 
   inline std::string drawarrow(const dolfin::Point& v1,
-			       const dolfin::Point& v2)
+			       const dolfin::Point& v2,
+			       const std::string& color = "'b'")
   {
     std::stringstream ss;ss.precision(15);
-    ss << "drawarrow([" << v1[0] << ' '<<v1[1] <<"],[" << v2[0]<<' '<<v2[1] << "]);";
+    ss << "drawarrow([" << v1[0] << ' '<<v1[1] <<"],[" << v2[0]<<' '<<v2[1] << "], "<< color << ");";
     return ss.str();
     /* const dolfin::Point v = v2-v1; */
     /* const Point ones(0,0,1); */

@@ -205,47 +205,78 @@ double compute_interface_area(const MultiMesh& multimesh,
 void plot_normals(const MultiMesh& multimesh)
 {
   std::cout << "\n" << __FUNCTION__ << std::endl;
+  const std::vector<std::string> colors = {{ "'b'", "'g'", "'r'" }};
+  const std::vector<std::string> marker = {{ "'.'", "'o'", "'x'" }};
 
-  for (std::size_t part = 0; part < multimesh.num_parts(); part++)
+  //for (std::size_t part = 0; part < multimesh.num_parts(); part++)
+    const std::size_t part = 1;
   {
     std::cout << "% part " << part << ' ' <<std::endl;
+    const auto& cmap = multimesh.collision_map_cut_cells(part);
+    const auto& quadrature_rules = multimesh.quadrature_rule_interface(part);
+    const auto& normals = multimesh.facet_normals(part);
 
-    for (const auto cell_no: multimesh.cut_cells(part))
+    for (auto it = cmap.begin(); it != cmap.end(); ++it)
     {
-      const auto qrmap = multimesh.quadrature_rule_interface(part).find(cell_no);
-      const std::vector<quadrature_rule> qr = qrmap->second;
+      const unsigned int cut_cell_index = it->first;
+      const auto& cutting_cells = it->second;
 
-      const auto fnmap = multimesh.facet_normals(part).find(cell_no);
-      const std::vector<std::vector<double>> normals = fnmap->second;
+      const Cell cut_cell(*multimesh.part(part), cut_cell_index);
+      std::cout << tools::drawtriangle(cut_cell, colors[part]);
 
-      //std::cout << qr.size() << ' ' << normals.size() << std::endl;
-      dolfin_assert(qr.size() == normals.size());
-
-      for (std::size_t i = 0; i < qr.size(); ++i)
+      // Iterate over cutting cells
+      for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
       {
-	for (std::size_t j = 0; j < qr[i].second.size(); ++j)
+	const std::size_t cutting_cell_part = jt->first;
+
+	if (cutting_cell_part == 2)
 	{
-	  const Point p(qr[i].first[2*j], qr[i].first[2*j+1]);
-	  std::cout << tools::plot(p,"'k.'");
-	  const Point n(normals[i][2*j],normals[i][2*j+1]);
-	  const double d = 0.01;
-	  std::cout << tools::drawarrow(p, p+d*n);
+	  const Cell cutting_cell(*multimesh.part(cutting_cell_part), jt->second);
+	  std::cout << tools::drawtriangle(cutting_cell, colors[cutting_cell_part]);
+
+	  // Get quadrature rule for interface part defined by
+	  // intersection of the cut and cutting cells
+	  const std::size_t k = jt - cutting_cells.begin();
+	  const auto& qr = quadrature_rules.at(cut_cell_index)[k];
+	  const auto& nn = normals.at(cut_cell_index)[k];
+
+	  for (std::size_t i = 0; i < qr.second.size(); ++i)
+	  {
+	    const Point p(qr.first[2*i], qr.first[2*i+1]);
+	    std::cout << tools::plot(p,"'k.'");
+	    const Point n(nn[2*i], nn[2*i+1]);
+	    const double d = 0.01;
+	    std::cout << tools::drawarrow(p, p+d*n, colors[cutting_cell_part]);
+	  }
 	}
-	std::cout << std::endl;
       }
-
-      // std::cout << nn.size() << ' ' << nn[0].size() << ' '  << qr.second.size() << std::endl;
-      // dolfin_assert(nn.size() == qr.second.size());
-
-      // // loop over qr
-      // for (std::size_t i = 0; i < qr.second.size(); ++i)
-      // {
-      // 	const Point p(qr.first[2*i], qr.first[2*i+1]);
-      // 	std::cout << tools::plot(p,"'k.'");
-      // }
-
-
     }
+
+    // for (const auto cell_no: multimesh.cut_cells(part))
+    // {
+    //   const auto qrmap = multimesh.quadrature_rule_interface(part).find(cell_no);
+    //   const std::vector<quadrature_rule> qr = qrmap->second;
+
+    //   const auto fnmap = multimesh.facet_normals(part).find(cell_no);
+    //   const std::vector<std::vector<double>> normals = fnmap->second;
+
+    //   //std::cout << qr.size() << ' ' << normals.size() << std::endl;
+    //   dolfin_assert(qr.size() == normals.size());
+
+    //   for (std::size_t i = 0; i < qr.size(); ++i)
+    //   {
+    // 	for (std::size_t j = 0; j < qr[i].second.size(); ++j)
+    // 	{
+    // 	  const Point p(qr[i].first[2*j], qr[i].first[2*j+1]);
+    // 	  std::cout << tools::plot(p,"'k.'");
+    // 	  const Point n(normals[i][2*j],normals[i][2*j+1]);
+    // 	  const double d = 0.01;
+    // 	  std::cout << tools::drawarrow(p, p+d*n);
+    // 	}
+    // 	std::cout << std::endl;
+    //   }
+    // }
+
   }
 }
 
@@ -486,7 +517,7 @@ void solve_poisson(std::size_t step,
 
   {
     // Debug
-    plot_normals(multimesh);
+    //plot_normals(multimesh);
     writemarkers(step, multimesh);
   }
 
@@ -605,6 +636,7 @@ int main(int argc, char* argv[])
 
   {
     // area check for start=64
+    // part 0:
     const Point cc(0.5,0.5,0);
     const Point x1( -0.403762341596028 ,0.483956950767669,0);
     const Point x3(0.454003129796834,     0.454003129215499,0);
@@ -622,13 +654,24 @@ int main(int argc, char* argv[])
     const double area_part_0 = 1 - 2*S1 + S2;
     std::cout << "\n\narea part 0:    " << area_part_0 << std::endl;
 
-    // uncut volume (1-h)^2 plus two elements on the top and sides not cut
+    // part 0 uncut volume (1-h)^2 plus two elements on the top and sides not cut
     const double h = 0.0625;
     std::cout << "area uncut part 0: " << (1-h)*(1-h)+2*h*h << std::endl;
 
-    // Check interface integral
-    double interface_part_0 = 2*(x1-xa).norm() + 2*(x3-x1).norm();
+    // Check part 0 interface integral
+    const double interface_part_0 = 2*(x1-xa).norm() + 2*(x3-x1).norm();
     std::cout << "interface length part 0:   " << interface_part_0 << std::endl;
+
+    {
+      // part 1 interface area
+      const Point x0(0.454003112031502,0.454003107715805,0);
+      const Point x1(0.449057481830201,0.59562851091874,0);
+      const Point x2(0.600932112043836,0.600932087371726,0);
+      const double interface_part_1 = (x2-x1).norm() + (x1-x0).norm();
+      std::cout << "interface length part 1:  "<< interface_part_1 << std::endl;
+    }
+
+
   }
 
 
