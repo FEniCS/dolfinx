@@ -28,7 +28,8 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-XDMFxml::XDMFxml(std::string filename): _filename(filename)
+XDMFxml::XDMFxml(std::string filename): _filename(filename),
+                                        _is_this_first_write(true)
 {
   // Do nothing
 }
@@ -41,13 +42,16 @@ XDMFxml::~XDMFxml()
 void XDMFxml::header()
 {
   // If a new file, add a header
-  if (!boost::filesystem::exists(_filename))
+  if (!boost::filesystem::exists(_filename) or _is_this_first_write)
   {
     xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
     pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
     xdmf.append_attribute("Version") = "2.0";
     xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
     xdmf.append_child("Domain");
+
+    write();
+    _is_this_first_write = false;
   }
   else
   {
@@ -193,7 +197,7 @@ std::string XDMFxml::get_first_data_set() const
   dolfin_assert(xdmf_values);
 
   const std::string value_fmt(xdmf_values.attribute("Format").value());
-  dolfin_assert(value_fmt == "HDF");
+//  dolfin_assert(value_fmt == "XML");
 
   std::string data_value(xdmf_values.first_child().value());
   boost::trim(data_value);

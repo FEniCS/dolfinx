@@ -52,7 +52,7 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
   : _mpi_comm(comm), current_mesh_name(""),
-    _filename(filename), counter(0)
+    _filename(filename), counter(0), xml(filename)
 {
   // Make name for HDF5 file (used to store data)
   boost::filesystem::path p(filename);
@@ -76,7 +76,6 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
 
   // Whether to save multi-dataset files as time series, or flat
   parameters.add("time_series", true);
-
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -424,7 +423,7 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
 
   if (MPI::rank(mesh.mpi_comm()) == 0)
   {
-    XDMFxml xml(_filename);
+//    XDMFxml xml(_filename);
     xml.init_timeseries(u.name(), time_step, counter);
 
     if (encoding == Encoding::HDF5)
@@ -470,7 +469,7 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
 void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
 {
 
-  XDMFxml xml(_filename);
+//  XDMFxml xml(_filename);
   xml.read();
 
   const auto topo = xml.get_topology();
@@ -606,7 +605,7 @@ void XDMFFile::write(const Mesh& mesh, Encoding encoding)
   // Write the XML meta description on process zero
   if (MPI::rank(mesh.mpi_comm()) == 0)
   {
-    XDMFxml xml(_filename);
+//    XDMFxml xml(_filename);
     xml.init_mesh(name);
 
     // Write the topology
@@ -722,7 +721,7 @@ void XDMFFile::write_point_xml(const std::string group_name,
   // Write the XML meta description on process zero
   if (MPI::rank(_mpi_comm) == 0)
   {
-    XDMFxml xml(_filename);
+//    XDMFxml xml(_filename);
     xml.init_mesh("Point cloud");
 
     // Point topology, no connectivity data
@@ -802,7 +801,7 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
 
   if (MPI::rank(mesh->mpi_comm()) == 0)
   {
-    XDMFxml xml(_filename);
+//    XDMFxml xml(_filename);
     if (time_series)
       xml.init_timeseries(mvc.name(), (double)counter, counter);
     else
@@ -901,7 +900,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
 
   if (MPI::rank(mesh.mpi_comm()) == 0)
   {
-    XDMFxml xml(_filename);
+//    XDMFxml xml(_filename);
     const std::string meshfunction_name = meshfunction.name();
     if (time_series)
       xml.init_timeseries(meshfunction_name, (double)counter, counter);
@@ -975,7 +974,7 @@ void XDMFFile::read(MeshFunction<double>& meshfunction)
 template<typename T>
 void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
 {
-  XDMFxml xml(_filename);
+//  XDMFxml xml(_filename);
   xml.read();
 
   Encoding encoding = get_file_encoding();
@@ -1094,7 +1093,7 @@ std::string XDMFFile::generate_xdmf_ascii_data(
 //-----------------------------------------------------------------------------
 XDMFFile::Encoding XDMFFile::get_file_encoding()
 {
-  XDMFxml xml(_filename);
+//  XDMFxml xml(_filename);
   xml.read();
   const std::string xml_encoding_attrib = xml.data_encoding();
   return get_file_encoding(xml_encoding_attrib);

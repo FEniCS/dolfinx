@@ -27,6 +27,7 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
+#include "XDMFxml.h"
 
 namespace dolfin
 {
@@ -251,6 +252,9 @@ namespace dolfin
 
     // Counter for time series
     std::size_t counter;
+
+    // The xml document of the XDMF file
+    XDMFxml xml;
 
   };
 }

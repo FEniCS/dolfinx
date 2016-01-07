@@ -131,6 +131,10 @@ namespace dolfin
 
     // Filename
     std::string _filename;
+
+    // This is to ensure that when the file is written for the first
+    // time, it overwrites any existing file with the same name.
+    bool _is_this_first_write;
   };
 }
 #endif
