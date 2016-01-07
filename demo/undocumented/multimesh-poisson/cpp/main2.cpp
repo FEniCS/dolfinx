@@ -208,25 +208,41 @@ void plot_normals(const MultiMesh& multimesh)
 
   for (std::size_t part = 0; part < multimesh.num_parts(); part++)
   {
-    std::cout << "% part " << part << ' ';
-    //const auto all_normals = multimesh.facet_normals(part);
+    std::cout << "% part " << part << ' ' <<std::endl;
 
     for (const auto cell_no: multimesh.cut_cells(part))
     {
-      const auto qr = multimesh.quadrature_rule_cut_cell(part, cell_no);
+      const auto qrmap = multimesh.quadrature_rule_interface(part).find(cell_no);
+      const std::vector<quadrature_rule> qr = qrmap->second;
 
       const auto fnmap = multimesh.facet_normals(part).find(cell_no);
-      const std::vector<std::vector<double>> nn = fnmap->second;
+      const std::vector<std::vector<double>> normals = fnmap->second;
 
-      std::cout << nn.size() << ' ' << nn[0].size() << ' '  << qr.second.size() << std::endl;
-      dolfin_assert(nn.size() == qr.second.size());
+      //std::cout << qr.size() << ' ' << normals.size() << std::endl;
+      dolfin_assert(qr.size() == normals.size());
 
-      // loop over qr
-      for (std::size_t i = 0; i < qr.second.size(); ++i)
+      for (std::size_t i = 0; i < qr.size(); ++i)
       {
-	const Point p(qr.first[2*i], qr.first[2*i+1]);
-	std::cout << tools::plot(p,"'k.'");
+	for (std::size_t j = 0; j < qr[i].second.size(); ++j)
+	{
+	  const Point p(qr[i].first[2*j], qr[i].first[2*j+1]);
+	  std::cout << tools::plot(p,"'k.'");
+	  const Point n(normals[i][2*j],normals[i][2*j+1]);
+	  const double d = 0.01;
+	  std::cout << tools::drawarrow(p, p+d*n);
+	}
+	std::cout << std::endl;
       }
+
+      // std::cout << nn.size() << ' ' << nn[0].size() << ' '  << qr.second.size() << std::endl;
+      // dolfin_assert(nn.size() == qr.second.size());
+
+      // // loop over qr
+      // for (std::size_t i = 0; i < qr.second.size(); ++i)
+      // {
+      // 	const Point p(qr.first[2*i], qr.first[2*i+1]);
+      // 	std::cout << tools::plot(p,"'k.'");
+      // }
 
 
     }
