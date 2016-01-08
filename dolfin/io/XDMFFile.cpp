@@ -504,11 +504,15 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
     if (MPI::rank(mesh.mpi_comm()) == 0)
     {
       // Create mesh for editing
-      std::unique_ptr<CellType> cell_type(CellType::create(topo.cell_type));
+      // In the XML we need to catch the case where TopologyType="PolyLine"
+      // When using HDF5, this is already written in the .h5 file
+      const std::string topo_cell_type_fix = (topo.cell_type == "polyline") ?
+                                             "interval" : topo.cell_type;
+      std::unique_ptr<CellType> cell_type(CellType::create(topo_cell_type_fix));
       std::size_t tdim = cell_type->dim();
 
       MeshEditor editor;
-      editor.open(mesh, topo.cell_type, tdim, geom.dim);
+      editor.open(mesh, topo_cell_type_fix, tdim, geom.dim);
 
       // Read geometry
       editor.init_vertices_global(geom.n_points, geom.n_points);
