@@ -444,7 +444,8 @@ void XDMFxml::mesh_topology(const CellType::Type cell_type,
 void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
                             const std::size_t gdim,
                             const std::string xml_value_data,
-                            const std::string format)
+                            const std::string format,
+                            const bool is_reference)
 {
   pugi::xml_node xdmf_geometry = xdmf_grid.child("Geometry");
   pugi::xml_node xdmf_geom_data = xdmf_geometry.child("DataItem");
@@ -468,7 +469,10 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
   xdmf_geometry.append_attribute("GeometryType") = geometry_type.c_str();
   xdmf_geom_data = xdmf_geometry.append_child("DataItem");
 
-  xdmf_geom_data.append_attribute("Format") = format.c_str();
+  if (is_reference)
+    xdmf_geom_data.append_attribute("Format") = format.c_str();
+  else
+    xdmf_geom_data.append_attribute("Reference") = format.c_str();
   std::string geom_dim = std::to_string(num_total_vertices) + " "
     + std::to_string(gdim);
   xdmf_geom_data.append_attribute("Dimensions") = geom_dim.c_str();

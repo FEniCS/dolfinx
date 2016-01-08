@@ -834,11 +834,10 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
     }
     else if (encoding == Encoding::ASCII)
     {
-      // FIXME: should already have geometry in file and could use
-      // an XPath reference here.
+      // FIXME: This will only reference the first mesh geometry
       _xml.mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
-                         generate_xdmf_ascii_mesh_geometry_data(*mesh),
-                         xdmf_format_str(encoding));
+                         current_mesh_name + "/Geometry/DataItem",
+                         xdmf_format_str(encoding), true);
       write_ascii_mesh_value_collection(mvc, dataset_name);
     }
 

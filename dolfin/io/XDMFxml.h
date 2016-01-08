@@ -116,7 +116,8 @@ namespace dolfin
     void mesh_geometry(const std::size_t num_total_vertices,
                        const std::size_t gdim,
                        const std::string xml_value_data,
-                       const std::string format);
+                       const std::string format,
+                       const bool is_reference=false);
 
   private:
 
