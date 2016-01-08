@@ -1206,7 +1206,7 @@ void HDF5File::read(MeshValueCollection<bool>& mesh_values,
 //-----------------------------------------------------------------------------
 template <typename T>
 void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
-                                              const std::string name)
+                                           const std::string name)
 {
   const std::size_t dim = mesh_values.dim();
   std::shared_ptr<const Mesh> mesh = mesh_values.mesh();
@@ -1214,8 +1214,10 @@ void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_va
   const std::map<std::pair<std::size_t, std::size_t>, T>& values
     = mesh_values.values();
 
-  std::unique_ptr<CellType> entity_type(CellType::create(mesh->type().entity_type(dim)));
-  const std::size_t num_vertices_per_entity = (dim == 0) ? 1 : entity_type->num_vertices();
+  std::unique_ptr<CellType>
+    entity_type(CellType::create(mesh->type().entity_type(dim)));
+  const std::size_t num_vertices_per_entity
+    = (dim == 0) ? 1 : entity_type->num_vertices();
 
   std::vector<std::size_t> topology;
   std::vector<T> value_data;
