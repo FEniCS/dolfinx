@@ -31,6 +31,10 @@ using namespace dolfin;
 // Boundary condition
 class DirichletBoundary : public SubDomain
 {
+public:
+
+  DirichletBoundary() {}
+
   bool inside(const Array<double>& x, bool on_boundary) const
   { return on_boundary; }
 };

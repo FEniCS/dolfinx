@@ -154,7 +154,7 @@ formulation. We also define the bilinear form ``a`` and linear form
 .. code-block:: c++
 
     // Construct function space
-    MixedPoisson::FunctionSpace W(mesh);
+    auto W = std::make_shared<MixedPoisson::FunctionSpace>(mesh);
     MixedPoisson::BilinearForm a(W, W);
     MixedPoisson::LinearForm L(W);
 
@@ -189,7 +189,7 @@ defined above does.
 .. code-block:: c++
 
     // Define boundary condition
-    auto W0 = std::make_shared<SubSpace>(W, 0);
+    auto W0 = std::make_shared<SubSpace>(*W, 0);
     auto G = std::make_shared<BoundarySource>(mesh);
     auto boundary = std::make_shared<EssentialBoundary>();
     DirichletBC bc(W0, G, boundary);

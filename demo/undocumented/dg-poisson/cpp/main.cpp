@@ -99,7 +99,7 @@ int main()
   BoundaryDerivative g;
 
   // Create funtion space
-  Poisson::FunctionSpace V(mesh);
+  auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
   // Mark facets of the mesh
   NeumannBoundary neumann_boundary;

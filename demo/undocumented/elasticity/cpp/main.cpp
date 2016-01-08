@@ -172,7 +172,7 @@ int main()
   vtk_file << u;
 
   // Extract stress and write in VTK format
-  Elasticity::Form_a_s::TestSpace W(mesh);
+  auto W = std::make_shared<Elasticity::Form_a_s::TestSpace>(mesh);
   Elasticity::Form_a_s a_s(W, W);
   Elasticity::Form_L_s L_s(W);
   L_s.mu = mu;

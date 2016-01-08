@@ -53,7 +53,7 @@ int main()
   Mesh mesh("../dolfin_fine.xml.gz");
 
   // Read velocity field from file
-  Functionals::CoefficientSpace_p Vp(mesh);
+  auto Vp = std::make_shared<Functionals::CoefficientSpace_p>(mesh);
   Function p(Vp, "../dolfin_fine_pressure.xml.gz");
 
   // Mark 'fish'
