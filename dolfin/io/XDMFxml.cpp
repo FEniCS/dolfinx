@@ -470,9 +470,9 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
   xdmf_geom_data = xdmf_geometry.append_child("DataItem");
 
   if (is_reference)
-    xdmf_geom_data.append_attribute("Format") = format.c_str();
-  else
     xdmf_geom_data.append_attribute("Reference") = format.c_str();
+  else
+    xdmf_geom_data.append_attribute("Format") = format.c_str();
   std::string geom_dim = std::to_string(num_total_vertices) + " "
     + std::to_string(gdim);
   xdmf_geom_data.append_attribute("Dimensions") = geom_dim.c_str();
