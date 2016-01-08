@@ -342,3 +342,31 @@ def test_save_points_3D(tempdir, encoding):
     else:
         file.write(points, vals, encoding)
     del file
+
+@pytest.mark.parametrize("encoding", encodings)
+@skip_if_not_HDF5
+def test_save_mesh_value_collection(tempdir, encoding):
+    mesh = UnitCubeMesh(4, 4, 4)
+    tdim = mesh.topology().dim()
+
+    meshfn = CellFunction("size_t", mesh, 0)
+    meshfn.rename("volume_marker", "Volume Markers")
+    for c in cells(mesh):
+        if c.midpoint().y() > 0.1:
+            meshfn[c] = 1
+        if c.midpoint().y() > 0.9:
+            meshfn[c] = 2
+
+    for mvc_dim in range(0, tdim + 1):
+        mvc = MeshValueCollection("size_t", mesh, 2)
+        mvc.rename("dim_%d_marker" % mvc_dim, "BC")
+        mesh.init(mvc_dim, tdim)
+        for e in cpp.entities(mesh, mvc_dim):
+            if (e.midpoint().x() > 0.5):
+                mvc.set_value(e.index(), 1)
+
+        xdmf = XDMFFile(mesh.mpi_comm(), 
+            os.path.join(tempdir, "mvc_%d.xdmf" % mvc_dim))
+        xdmf.parameters['time_series']=False
+        xdmf.write(meshfn, encoding)
+        xdmf.write(mvc, encoding)
