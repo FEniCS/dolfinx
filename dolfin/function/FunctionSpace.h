@@ -188,21 +188,6 @@ namespace dolfin
     std::shared_ptr<FunctionSpace> sub(std::size_t component) const
     { return extract_sub_space({component}); }
 
-    /*
-    /// Extract subspace for component (two levels)
-    ///
-    /// *Arguments*
-    ///     component (std::size_t)
-    ///         Index of the first subspace.
-    ///     suncomponent (std::size_t)
-    ///         Index of the subspace.
-    /// *Returns*
-    ///     _FunctionSpace_
-    ///         The subspace.
-    std::shared_ptr<FunctionSpace> sub(std::size_t component,
-                                       std::size_t sub_component) const;
-    */
-
     /// Extract subspace for component
     ///
     /// *Arguments*
