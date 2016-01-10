@@ -40,7 +40,7 @@ namespace dolfin
 
     /// Constructor
     /// FIXME: Include version where one can pass a Solver and/or Parameters
-    RKSolver(std::shared_ptr<MultiStageScheme> scheme);
+    explicit RKSolver(std::shared_ptr<MultiStageScheme> scheme);
 
     /// Step solver with time step dt
     void step(double dt);

@@ -21,8 +21,8 @@
 #ifndef __BUTCHERSCHEME_H
 #define __BUTCHERSCHEME_H
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/function/Function.h>
@@ -45,35 +45,21 @@ namespace dolfin
   public:
 
     /// Constructor
-    /// FIXME: This constructor is a MESS. Needs clean up...
-    MultiStageScheme(std::vector<std::vector<std::shared_ptr<const Form> > > stage_forms,
-		  std::shared_ptr<const Form> last_stage,
-		  std::vector<std::shared_ptr<Function> > stage_solutions,
-		  std::shared_ptr<Function> u,
-		  std::shared_ptr<Constant> t,
-		  std::shared_ptr<Constant> dt,
-		  std::vector<double> dt_stage_offset,
-		  std::vector<int> jacobian_indices,
-		  unsigned int order,
-		  const std::string name,
-		  const std::string human_form);
-
-    /// Constructor with Boundary conditions
-    MultiStageScheme(std::vector<std::vector<std::shared_ptr<const Form> > > stage_forms,
-		  std::shared_ptr<const Form> last_stage,
-		  std::vector<std::shared_ptr<Function> > stage_solutions,
-		  std::shared_ptr<Function> u,
-		  std::shared_ptr<Constant> t,
-		  std::shared_ptr<Constant> dt,
-		  std::vector<double> dt_stage_offset,
-		  std::vector<int> jacobian_indices,
-		  unsigned int order,
-		  const std::string name,
-		  const std::string human_form,
-		  std::vector<const DirichletBC* > bcs);
+    MultiStageScheme(std::vector<std::vector<std::shared_ptr<const Form>>> stage_forms,
+                     std::shared_ptr<const Form> last_stage,
+                     std::vector<std::shared_ptr<Function> > stage_solutions,
+                     std::shared_ptr<Function> u,
+                     std::shared_ptr<Constant> t,
+                     std::shared_ptr<Constant> dt,
+                     std::vector<double> dt_stage_offset,
+                     std::vector<int> jacobian_indices,
+                     unsigned int order,
+                     const std::string name,
+                     const std::string human_form,
+                     std::vector<std::shared_ptr<const DirichletBC>> bcs = {});
 
     /// Return the stages
-    std::vector<std::vector<std::shared_ptr<const Form> > >& stage_forms();
+    std::vector<std::vector<std::shared_ptr<const Form>>>& stage_forms();
 
     /// Return the last stage
     std::shared_ptr<const Form> last_stage();
@@ -100,7 +86,7 @@ namespace dolfin
     unsigned int order() const;
 
     /// Return boundary conditions
-    std::vector<const DirichletBC* > bcs() const;
+    std::vector<std::shared_ptr<const DirichletBC>> bcs() const;
 
     /// Return true if stage is implicit
     bool implicit(unsigned int stage) const;
@@ -121,13 +107,13 @@ namespace dolfin
     void _check_arguments();
 
     // Vector of forms for the different RK stages
-    std::vector<std::vector<std::shared_ptr<const Form> > > _stage_forms;
+    std::vector<std::vector<std::shared_ptr<const Form>>> _stage_forms;
 
     // A linear combination of solutions for the last stage
     std::shared_ptr<const Form> _last_stage;
 
     // Solutions for the different stages
-    std::vector<std::shared_ptr<Function> > _stage_solutions;
+    std::vector<std::shared_ptr<Function>> _stage_solutions;
 
     // The solution
     std::shared_ptr<Function> _u;
@@ -154,7 +140,7 @@ namespace dolfin
     std::string _human_form;
 
     // The boundary conditions
-    std::vector<const DirichletBC* > _bcs;
+    std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 
   };
 
