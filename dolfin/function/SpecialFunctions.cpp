@@ -30,24 +30,24 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshCoordinates::MeshCoordinates(const Mesh& mesh)
-  : Expression(mesh.geometry().dim()), _mesh(mesh)
+MeshCoordinates::MeshCoordinates(std::shared_ptr<const Mesh> mesh)
+  : Expression(_mesh->geometry().dim()), _mesh(mesh)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshCoordinates::eval(Array<double>& values,
-                           const Array<double>& x,
+void MeshCoordinates::eval(Array<double>& values, const Array<double>& x,
                            const ufc::cell& cell) const
 {
-  dolfin_assert(cell.geometric_dimension == _mesh.geometry().dim());
-  dolfin_assert(x.size() == _mesh.geometry().dim());
+  dolfin_assert(_mesh);
+  dolfin_assert(cell.geometric_dimension == _mesh->geometry().dim());
+  dolfin_assert(x.size() == _mesh->geometry().dim());
 
   for (std::size_t i = 0; i < cell.geometric_dimension; ++i)
     values[i] = x[i];
 }
 //-----------------------------------------------------------------------------
-FacetArea::FacetArea(const Mesh& mesh)
+FacetArea::FacetArea(std::shared_ptr<const Mesh> mesh)
   : _mesh(mesh),
     not_on_boundary("*** Warning: evaluating special function FacetArea on a "
                     "non-facet domain, returning zero.")
@@ -55,15 +55,15 @@ FacetArea::FacetArea(const Mesh& mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FacetArea::eval(Array<double>& values,
-                     const Array<double>& x,
+void FacetArea::eval(Array<double>& values, const Array<double>& x,
                      const ufc::cell& cell) const
 {
-  dolfin_assert(cell.geometric_dimension == _mesh.geometry().dim());
+  dolfin_assert(_mesh);
+  dolfin_assert(cell.geometric_dimension == _mesh->geometry().dim());
 
   if (cell.local_facet >= 0)
   {
-    Cell c(_mesh, cell.index);
+    Cell c(*_mesh, cell.index);
     values[0] = c.facet_area(cell.local_facet);
   }
   else
