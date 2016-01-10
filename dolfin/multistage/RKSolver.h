@@ -23,8 +23,6 @@
 
 #include <vector>
 #include <memory>
-
-#include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/fem/Assembler.h>
 #include <dolfin/la/GenericVector.h>
 
@@ -51,7 +49,7 @@ namespace dolfin
     void step_interval(double t0, double t1, double dt);
 
     /// Return the MultiStageScheme
-    std::shared_ptr<MultiStageScheme> scheme() const 
+    std::shared_ptr<MultiStageScheme> scheme() const
     {return _scheme;}
 
   private:
