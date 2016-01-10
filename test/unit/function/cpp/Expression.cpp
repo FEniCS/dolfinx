@@ -85,7 +85,7 @@ public:
     if (dolfin::MPI::size(mesh.mpi_comm()) == 1)
     {
       // Test evaluation of a discrete function
-      Projection::FunctionSpace V(mesh);
+      auto V = std::make_shared<Projection::FunctionSpace>(mesh);
       Projection::BilinearForm a(V, V);
       Projection::LinearForm L(V);
       L.f = f1;

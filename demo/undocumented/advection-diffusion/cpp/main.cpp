@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
   Mesh mesh("../dolfin_fine.xml.gz");
 
   // Create velocity FunctionSpace
-  Velocity::FunctionSpace V_u(mesh);
+  auto V_u = std::make_shared<Velocity::FunctionSpace>(mesh);
 
   // Create velocity function
   Function velocity(V_u);

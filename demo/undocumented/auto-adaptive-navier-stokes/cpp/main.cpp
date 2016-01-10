@@ -60,9 +60,9 @@ int main()
 
   // Create mesh and function space
   Mesh mesh("../channel_with_flap.xml.gz");
-  AdaptiveNavierStokes::BilinearForm::TrialSpace W(mesh);
+  auto W = std::make_shared<AdaptiveNavierStokes::BilinearForm::TrialSpace>(mesh);
 
-  // Unknown
+  // Unknown field
   auto w = std::make_shared<Function>(W);
 
   // Define boundary condition
@@ -70,7 +70,7 @@ int main()
   Noslip noslip;
   auto noslip_markers = std::make_shared<FacetFunction<std::size_t>>(mesh, 1);
   noslip.mark(*noslip_markers, 0);
-  auto W0 = std::make_shared<SubSpace>(W, 0);
+  auto W0 = std::make_shared<SubSpace>(*W, 0);
   auto bc = std::make_shared<DirichletBC>(W0, u0, noslip_markers, 0);
 
   // Create variational formulation and assign coefficients

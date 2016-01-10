@@ -73,10 +73,10 @@ int main()
   Mesh mesh("../circle_yplane.xml.gz");
 
   // Create function space
-  HyperElasticity::FunctionSpace V(mesh);
+  auto V = std::make_shared<HyperElasticity::FunctionSpace>(mesh);
 
   // Create Dirichlet boundary conditions
-  auto V0 = std::make_shared<SubSpace>(V, 0);
+  auto V0 = std::make_shared<SubSpace>(*V, 0);
   auto zero = std::make_shared<Constant>(0.0);
   auto s = std::make_shared<SymmetryLine>();
   auto bc = std::make_shared<DirichletBC>(V0, zero, s, "pointwise");

@@ -134,7 +134,7 @@ int main()
   T.vector()->apply("insert");
 
   // Define variational problem for J
-  CurrentDensity::FunctionSpace V1(mesh);
+  auto V1 = std::make_shared<CurrentDensity::FunctionSpace>(mesh);
   CurrentDensity::BilinearForm a1(V1,V1);
   CurrentDensity::LinearForm L1(V1);
   L1.T = T;

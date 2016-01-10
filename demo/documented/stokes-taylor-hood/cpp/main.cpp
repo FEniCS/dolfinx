@@ -66,9 +66,9 @@ int main()
   auto sub_domains = std::make_shared<MeshFunction<std::size_t>>(mesh, "../dolfin_fine_subdomains.xml.gz");
 
   // Create function space and subspaces
-  Stokes::FunctionSpace W(mesh);
-  auto W0 = std::make_shared<SubSpace>(W, 0);
-  SubSpace W1(W, 1);
+  auto W = std::make_shared<Stokes::FunctionSpace>(mesh);
+  auto W0 = std::make_shared<SubSpace>(*W, 0);
+  SubSpace W1(*W, 1);
 
   // Create functions for boundary conditions
   auto noslip = std::make_shared<Noslip>();

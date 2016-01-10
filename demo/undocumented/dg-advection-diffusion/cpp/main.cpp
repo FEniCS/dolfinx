@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
   Mesh mesh("../unitsquare_64_64.xml.gz");
 
   // Create velocity FunctionSpace
-  Velocity::FunctionSpace V_u(mesh);
+  auto V_u = std::make_shared<Velocity::FunctionSpace>(mesh);
 
   // Create velocity function
   Function u(V_u, "../unitsquare_64_64_velocity.xml.gz");
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
   solve(A, *phi_h.vector(), b);
 
   // Define variational problem
-  Projection::FunctionSpace Vp(mesh);
+  auto Vp = std::make_shared<Projection::FunctionSpace>(mesh);
   Projection::BilinearForm ap(Vp, Vp);
   Projection::LinearForm Lp(Vp);
   Lp.phi0 = phi_h;

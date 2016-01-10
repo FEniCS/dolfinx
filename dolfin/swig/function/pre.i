@@ -33,12 +33,6 @@
 // ===========================================================================
 
 //-----------------------------------------------------------------------------
-// Ignore reference (to FunctionSpaces) constructors of Function
-//-----------------------------------------------------------------------------
-%ignore dolfin::Function::Function(const FunctionSpace&);
-%ignore dolfin::Function::Function(const FunctionSpace&, std::string);
-
-//-----------------------------------------------------------------------------
 // Modifying the interface of Function
 //-----------------------------------------------------------------------------
 %rename(_function_space) dolfin::GenericFunction::function_space;

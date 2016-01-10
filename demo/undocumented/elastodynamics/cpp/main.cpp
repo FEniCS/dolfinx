@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
   L.ds = right_boundary_function;
 
   // Create projection to compute the normal strain eps_xx
-  DG0_eps_xx::FunctionSpace Vdg(mesh);
+  auto Vdg = std::make_shared<DG0_eps_xx::FunctionSpace>(mesh);
   DG0_eps_xx::BilinearForm a_eps(Vdg, Vdg);
   DG0_eps_xx::LinearForm L_eps(Vdg);
   L_eps.u = u;
