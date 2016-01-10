@@ -156,16 +156,14 @@ space the boundary condition is supposed to be applied to, the data
 for the boundary condition, and the relevant part of the boundary.
 
 We want to apply the boundary condition to the second subspace of the
-mixed space. This space can be accessed by the :cpp:class:`Subspace`
-class.
+mixed space.
 
 .. code-block:: c++
 
     // Define boundary condition
     auto zero = std::make_shared<Constant>(0.0);
-    auto W1 = std::make_shared<SubSpace>(*W, 1);
     auto boundary = std::make_shared<DirichletBoundary>();
-    DirichletBC bc(W1, zero, boundary);
+    DirichletBC bc(W->sub(1), zero, boundary);
 
 To compute the solution we use the bilinear and linear forms, and the
 boundary condition, but we also need to create a :cpp:class:`Function`

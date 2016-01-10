@@ -86,10 +86,9 @@ int main()
   L.f = f;
 
   // Define boundary condition
-  auto W0 = std::make_shared<SubSpace>(*W, 0);
   auto G = std::make_shared<BoundarySource>(mesh);
   auto boundary = std::make_shared<EssentialBoundary>();
-  DirichletBC bc(W0, G, boundary);
+  DirichletBC bc(W->sub(0), G, boundary);
 
   // Compute solution
   Function w(W);

@@ -104,18 +104,18 @@ int main()
 
   // Create function space and subspaces
   auto W = std::make_shared<Stokes::FunctionSpace>(mesh);
-  auto W0 = std::make_shared<SubSpace>(*W, 0);
-  SubSpace W1(*W, 1);
 
   // Set-up infow boundary condition
   auto inflow_prfofile = std::make_shared<Inflow>();
   auto right = std::make_shared<Right>();
-  auto inflow = std::make_shared<DirichletBC>(W0, inflow_prfofile, right);
+  auto inflow = std::make_shared<DirichletBC>(W->sub(0), inflow_prfofile,
+                                              right);
 
   // Set-up no-slip boundary condition
   auto zero_vector = std::make_shared<Constant>(0.0, 0.0, 0.0);
   auto top_bottom = std::make_shared<TopBottom>();
-  auto noslip = std::make_shared<DirichletBC>(W0, zero_vector, top_bottom);
+  auto noslip = std::make_shared<DirichletBC>(W->sub(0), zero_vector,
+                                              top_bottom);
 
   // Create forms for the Stokes problem
   Constant f(0.0, 0.0, 0.0);

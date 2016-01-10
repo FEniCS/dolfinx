@@ -65,10 +65,8 @@ int main()
   Mesh mesh("../dolfin_fine.xml.gz");
   auto sub_domains = std::make_shared<MeshFunction<std::size_t>>(mesh, "../dolfin_fine_subdomains.xml.gz");
 
-  // Create function space and subspaces
+  // Create function space
   auto W = std::make_shared<Stokes::FunctionSpace>(mesh);
-  auto W0 = std::make_shared<SubSpace>(*W, 0);
-  SubSpace W1(*W, 1);
 
   // Create functions for boundary conditions
   auto noslip = std::make_shared<Noslip>();
@@ -76,10 +74,10 @@ int main()
   auto zero = std::make_shared<Constant>(0.0);
 
   // No-slip boundary condition for velocity
-  DirichletBC bc0(W0, noslip, sub_domains, 0);
+  DirichletBC bc0(W->sub(0), noslip, sub_domains, 0);
 
   // Inflow boundary condition for velocity
-  DirichletBC bc1(W0, inflow, sub_domains, 1);
+  DirichletBC bc1(W->sub(0), inflow, sub_domains, 1);
 
   // Collect boundary conditions
   std::vector<const DirichletBC*> bcs = {{&bc0, &bc1}};

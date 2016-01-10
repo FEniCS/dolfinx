@@ -39,7 +39,6 @@
 #include <dolfin/fem/LinearVariationalSolver.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/SubSpace.h>
 #include <dolfin/function/Constant.h>
 #include <dolfin/function/SpecialFacetFunction.h>
 #include <dolfin/la/Matrix.h>
@@ -503,8 +502,7 @@ void ErrorControl::apply_bcs_to_extrapolation(
     }
     else
     {
-      std::shared_ptr<SubSpace> S(new SubSpace(*_extrapolation_space,
-                                               component));
+      std::shared_ptr<FunctionSpace> S = _extrapolation_space->sub(component);
       if (sub_domain)
       {
         e_bc.reset(new DirichletBC(S, bcs[i]->value(), sub_domain,

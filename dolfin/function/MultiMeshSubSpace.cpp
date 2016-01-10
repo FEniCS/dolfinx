@@ -19,9 +19,8 @@
 // Last changed: 2015-11-12
 
 #include <memory>
-
 #include <dolfin/common/NoDeleter.h>
-#include "SubSpace.h"
+#include "FunctionSpace.h"
 #include "MultiMeshSubSpace.h"
 
 using namespace dolfin;
@@ -74,8 +73,7 @@ void MultiMeshSubSpace::_build(MultiMeshFunctionSpace& V,
     std::shared_ptr<const FunctionSpace> part_space(V.part(part));
 
     // Extract subspace
-    std::shared_ptr<SubSpace>
-      part_subspace(new SubSpace(*part_space, component));
+    auto part_subspace = part_space->sub(component);
 
     // Add the subspace
     this->add(part_subspace);

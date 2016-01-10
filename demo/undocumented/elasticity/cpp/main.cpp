@@ -30,9 +30,9 @@ dolfin::VectorSpaceBasis build_nullspace(const dolfin::FunctionSpace& V,
                                          const GenericVector& x)
 {
   // Get subspaces
-  dolfin::SubSpace V0(V, 0);
-  dolfin::SubSpace V1(V, 1);
-  dolfin::SubSpace V2(V, 2);
+  auto V0 = V.sub(0);
+  auto V1 = V.sub(1);
+  auto V2 = V.sub(2);
 
   // Create vectors for nullspace basis
   std::vector<std::shared_ptr<dolfin::GenericVector>> basis(6);
@@ -40,19 +40,19 @@ dolfin::VectorSpaceBasis build_nullspace(const dolfin::FunctionSpace& V,
     basis[i] = x.copy();
 
   // x0, x1, x2 translations
-  V0.dofmap()->set(*basis[0], 1.0);
-  V1.dofmap()->set(*basis[1], 1.0);
-  V2.dofmap()->set(*basis[2], 1.0);
+  V0->dofmap()->set(*basis[0], 1.0);
+  V1->dofmap()->set(*basis[1], 1.0);
+  V2->dofmap()->set(*basis[2], 1.0);
 
   // Rotations
-  V0.set_x(*basis[3], -1.0, 1);
-  V1.set_x(*basis[3],  1.0, 0);
+  V0->set_x(*basis[3], -1.0, 1);
+  V1->set_x(*basis[3],  1.0, 0);
 
-  V0.set_x(*basis[4],  1.0, 2);
-  V2.set_x(*basis[4], -1.0, 0);
+  V0->set_x(*basis[4],  1.0, 2);
+  V2->set_x(*basis[4], -1.0, 0);
 
-  V2.set_x(*basis[5],  1.0, 1);
-  V1.set_x(*basis[5], -1.0, 2);
+  V2->set_x(*basis[5],  1.0, 1);
+  V1->set_x(*basis[5], -1.0, 2);
 
   // Apply
   for (std::size_t i = 0; i < basis.size(); ++i)
