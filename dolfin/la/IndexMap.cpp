@@ -110,23 +110,6 @@ const std::vector<std::size_t>& IndexMap::local_to_global_unowned() const
 {
   return _local_to_global;
 }
-//----------------------------------------------------------------------------
-std::size_t IndexMap::local_to_global(std::size_t i) const
-{
-  const std::size_t local_size = size(IndexMap::MapSize::OWNED);
-  const std::size_t global_offset = local_range().first;
-
-  if (i < local_size)
-    return (i + global_offset);
-  else
-  {
-    const std::div_t div = std::div((i - local_size), _block_size);
-    const int component = div.rem;
-    const int index = div.quot;
-    dolfin_assert((std::size_t) index < _local_to_global.size());
-    return _block_size*_local_to_global[index] + component;
-  }
-}
 //-----------------------------------------------------------------------------
 void IndexMap::set_local_to_global(const std::vector<std::size_t>& indices)
 {
