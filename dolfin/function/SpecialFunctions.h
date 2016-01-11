@@ -25,6 +25,7 @@
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
 
+#include <memory>
 #include <dolfin/log/Event.h>
 #include <dolfin/common/Array.h>
 #include "Expression.h"
@@ -40,27 +41,27 @@ namespace dolfin
   public:
 
     /// Constructor
-    explicit MeshCoordinates(const Mesh& mesh);
+    explicit MeshCoordinates(std::shared_ptr<const Mesh> mesh);
 
     /// Evaluate function
-    void eval(Array<double>& values,
-              const Array<double>& x,
+    void eval(Array<double>& values, const Array<double>& x,
               const ufc::cell& cell) const;
 
   private:
 
     // The mesh
-    const Mesh& _mesh;
+    std::shared_ptr<const Mesh> _mesh;
 
   };
 
-  /// This function represents the area/length of a cell facet on a given mesh.
+  /// This function represents the area/length of a cell facet on a
+  /// given mesh.
   class FacetArea : public Expression
   {
   public:
 
     /// Constructor
-    explicit FacetArea(const Mesh& mesh);
+    explicit FacetArea(std::shared_ptr<const Mesh> mesh);
 
     /// Evaluate function
     void eval(Array<double>& values,
@@ -70,7 +71,7 @@ namespace dolfin
   private:
 
     // The mesh
-    const Mesh& _mesh;
+    std::shared_ptr<const Mesh> _mesh;
 
     // Warning when evaluating on cells
     mutable Event not_on_boundary;
