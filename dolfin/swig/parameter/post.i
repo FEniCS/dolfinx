@@ -262,12 +262,18 @@ def __getattr__(self, key):
     try:
         return self.__getitem__(key)
     except KeyError as e:
-        return AttributeError("'Parameters' object has no attribute '%s'"
-                 % e.message)
+        raise AttributeError("'Parameters' object has no attribute '%s'" % e.message)
 
 __getattr__.__doc__ = __getitem__.__doc__
 
-__setattr__ = __setitem__
+def __setattr__(self, key, value):
+    # Make sure KeyError is reraised as AttributeError
+    try:
+        return self.__setitem__(key, value)
+    except KeyError as e:
+        raise AttributeError("'Parameters' object has no attribute '%s'" % e.message)
+
+__setattr__.__doc__ = __setitem__.__doc__
 
 def iterdata(self):
     """Returns an iterator of a tuple of a parameter key together with its value"""
