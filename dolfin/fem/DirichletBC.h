@@ -435,6 +435,9 @@ namespace dolfin
 
   private:
 
+    // Cached number of bc dofs, used for memory allocation
+    std::size_t _num_dofs;
+
     // Boundary facets, stored by facet index (local to process)
     mutable std::vector<std::size_t> _facets;
 
