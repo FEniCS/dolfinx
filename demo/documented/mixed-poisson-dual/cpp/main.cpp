@@ -66,9 +66,8 @@ int main()
 
   // Define boundary condition
   auto zero = std::make_shared<Constant>(0.0);
-  auto W1 = std::make_shared<SubSpace>(*W, 1);
   auto boundary = std::make_shared<DirichletBoundary>();
-  DirichletBC bc(W1, zero, boundary);
+  DirichletBC bc(W->sub(1), zero, boundary);
 
   // Compute solution
   Function w(W);

@@ -173,8 +173,8 @@ space the boundary condition is supposed to be applied to, the data
 for the boundary condition, and the relevant part of the boundary.
 
 We want to apply the boundary condition to the first subspace of the
-mixed space. This space can be accessed by the :cpp:class:`Subspace`
-class.
+mixed space. This space can be accessed through the `sub` member
+function of the :cpp:class:`FunctionSpace` class.
 
 Next, we need to construct the data for the boundary condition. An
 essential boundary condition is handled by replacing degrees of
@@ -189,10 +189,9 @@ defined above does.
 .. code-block:: c++
 
     // Define boundary condition
-    auto W0 = std::make_shared<SubSpace>(*W, 0);
     auto G = std::make_shared<BoundarySource>(mesh);
     auto boundary = std::make_shared<EssentialBoundary>();
-    DirichletBC bc(W0, G, boundary);
+    DirichletBC bc(W->sub(0), G, boundary);
 
 To compute the solution we use the bilinear and linear forms, and the
 boundary condition, but we also need to create a :cpp:class:`Function`

@@ -1,3 +1,4 @@
+- Remove class SubSpace. Using FunctionSpace::sub(...) instead
 - Remove reference versions constructors of NonlinearVariationalSolver
 - Remove setting of bounds from NonlinearVariationalSolver (was
 	already available through NonlinearVariationalProblem)
