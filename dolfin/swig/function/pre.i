@@ -43,8 +43,8 @@
 //-----------------------------------------------------------------------------
 // Modifying the interface of FunctionSpace
 //-----------------------------------------------------------------------------
-%rename(sub) dolfin::FunctionSpace::operator[];
 %rename(assign) dolfin::FunctionSpace::operator=;
+%ignore dolfin::FunctionSpace::operator[];
 %ignore dolfin::FunctionSpace::collapse() const;
 
 //-----------------------------------------------------------------------------
