@@ -40,8 +40,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Form::Form(std::size_t rank, std::size_t num_coefficients)
-  : Hierarchical<Form>(*this),
-    dx(*this), ds(*this), dS(*this), dP(*this),
+  : Hierarchical<Form>(*this), dx(*this), ds(*this), dS(*this), dP(*this),
     _function_spaces(rank), _coefficients(num_coefficients), _rank(rank)
 {
   // Do nothing

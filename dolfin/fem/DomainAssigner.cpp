@@ -26,23 +26,9 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 const CellDomainAssigner&
-CellDomainAssigner::operator= (const MeshFunction<std::size_t>& domains)
-{
-  _form.set_cell_domains(reference_to_no_delete_pointer(domains));
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const CellDomainAssigner&
 CellDomainAssigner::operator= (std::shared_ptr<const MeshFunction<std::size_t>> domains)
 {
   _form.set_cell_domains(domains);
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const ExteriorFacetDomainAssigner&
-ExteriorFacetDomainAssigner::operator= (const MeshFunction<std::size_t>& domains)
-{
-  _form.set_exterior_facet_domains(reference_to_no_delete_pointer(domains));
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -54,23 +40,9 @@ ExteriorFacetDomainAssigner::operator= (std::shared_ptr<const MeshFunction<std::
 }
 //-----------------------------------------------------------------------------
 const InteriorFacetDomainAssigner&
-InteriorFacetDomainAssigner::operator= (const MeshFunction<std::size_t>& domains)
-{
-  _form.set_interior_facet_domains(reference_to_no_delete_pointer(domains));
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const InteriorFacetDomainAssigner&
 InteriorFacetDomainAssigner::operator= (std::shared_ptr<const MeshFunction<std::size_t>> domains)
 {
   _form.set_interior_facet_domains(domains);
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const VertexDomainAssigner&
-VertexDomainAssigner::operator= (const MeshFunction<std::size_t>& domains)
-{
-  _form.set_vertex_domains(reference_to_no_delete_pointer(domains));
   return *this;
 }
 //-----------------------------------------------------------------------------

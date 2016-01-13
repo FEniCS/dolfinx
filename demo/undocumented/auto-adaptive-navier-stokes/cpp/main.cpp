@@ -90,8 +90,8 @@ int main()
   auto M = std::make_shared<AdaptiveNavierStokes::GoalFunctional>(mesh);
   M->w = *w;
   Outflow outflow;
-  FacetFunction<std::size_t> outflow_markers(mesh, 1);
-  outflow.mark(outflow_markers, 0);
+  auto outflow_markers = std::make_shared<FacetFunction<std::size_t>>(mesh, 1);
+  outflow.mark(*outflow_markers, 0);
   M->ds = outflow_markers;
 
   // Define error tolerance
