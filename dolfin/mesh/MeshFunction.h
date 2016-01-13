@@ -67,26 +67,9 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh to create mesh function on.
-    explicit MeshFunction(const Mesh& mesh);
-
-    /// Create empty mesh function on given mesh (shared_ptr version)
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh to create mesh function on.
     explicit MeshFunction(std::shared_ptr<const Mesh> mesh);
 
     /// Create mesh function of given dimension on given mesh
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh to create mesh function on.
-    ///     dim (std::size_t)
-    ///         The mesh entity dimension for the mesh function.
-    MeshFunction(const Mesh& mesh, std::size_t dim);
-
-    /// Create mesh function of given dimension on given mesh
-    /// (shared_ptr version)
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
@@ -105,29 +88,8 @@ namespace dolfin
     ///         The mesh entity dimension.
     ///     value (T)
     ///         The value.
-    MeshFunction(const Mesh& mesh, std::size_t dim, const T& value);
-
-    /// Create mesh of given dimension on given mesh and initialize
-    /// to a value (shared_ptr version)
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh to create mesh function on.
-    ///     dim (std::size_t)
-    ///         The mesh entity dimension.
-    ///     value (T)
-    ///         The value.
     MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim,
                  const T& value);
-
-    /// Create function from data file
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh to create mesh function on.
-    ///     filename (std::string)
-    ///         The filename to create mesh function from.
-    MeshFunction(const Mesh& mesh, const std::string filename);
 
     /// Create function from data file (shared_ptr version)
     ///
@@ -138,16 +100,6 @@ namespace dolfin
     ///         The filename to create mesh function from.
     MeshFunction(std::shared_ptr<const Mesh> mesh,
                  const std::string filename);
-
-    /// Create function from a MeshValueCollecion
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh to create mesh function on.
-    ///     value_collection (_MeshValueCollection_ <T>)
-    ///         The mesh value collection for the mesh function data.
-    MeshFunction(const Mesh& mesh,
-                 const MeshValueCollection<T>& value_collection);
 
     /// Create function from a MeshValueCollecion (shared_ptr version)
     ///
@@ -309,29 +261,7 @@ namespace dolfin
     ///         The mesh.
     ///     dim (std::size_t)
     ///         The dimension.
-    void init(const Mesh& mesh, std::size_t dim);
-
-    /// Initialize mesh function for given topological dimension
-    /// (shared_ptr version)
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh.
-    ///     dim (std::size_t)
-    ///         The dimension.
     void init(std::shared_ptr<const Mesh> mesh, std::size_t dim);
-
-    /// Initialize mesh function for given topological dimension of
-    /// given size
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh.
-    ///     dim (std::size_t)
-    ///         The dimension.
-    ///     size (std::size_t)
-    ///         The size.
-    void init(const Mesh& mesh, std::size_t dim, std::size_t size);
 
     /// Initialize mesh function for given topological dimension of
     /// given size (shared_ptr version)
@@ -386,8 +316,9 @@ namespace dolfin
 
   private:
 
-    // Values at the set of mesh entities. We don't use a std::vector<T>
-    // here because it has trouble with bool, which C++ specialises.
+    // Values at the set of mesh entities. We don't use a
+    // std::vector<T> here because it has trouble with bool, which C++
+    // specialises.
     boost::scoped_array<T> _values;
 
     // The mesh
@@ -415,29 +346,11 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshFunction<T>::MeshFunction(const Mesh& mesh)
-    : Variable("f", "unnamed MeshFunction"),
-    Hierarchical<MeshFunction<T> >(*this),
-    _mesh(reference_to_no_delete_pointer(mesh)), _dim(0), _size(0)
-  {
-    // Do nothing
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
     MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh)
     : Variable("f", "unnamed MeshFunction"),
     Hierarchical<MeshFunction<T> >(*this), _mesh(mesh), _dim(0), _size(0)
   {
     // Do nothing
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
-  MeshFunction<T>::MeshFunction(const Mesh& mesh, std::size_t dim)
-    : Variable("f", "unnamed MeshFunction"),
-    Hierarchical<MeshFunction<T> >(*this),
-    _mesh(reference_to_no_delete_pointer(mesh)) , _dim(0), _size(0)
-  {
-    init(dim);
   }
   //---------------------------------------------------------------------------
   template <typename T>
@@ -447,17 +360,6 @@ namespace dolfin
     Hierarchical<MeshFunction<T> >(*this), _mesh(mesh), _dim(0), _size(0)
   {
     init(dim);
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
-  MeshFunction<T>::MeshFunction(const Mesh& mesh, std::size_t dim,
-                                const T& value)
-    : Variable("f", "unnamed MeshFunction"),
-    Hierarchical<MeshFunction<T> >(*this),
-    _mesh(reference_to_no_delete_pointer(mesh)), _dim(0), _size(0)
-  {
-    init(dim);
-    set_all(value);
   }
   //---------------------------------------------------------------------------
   template <typename T>
@@ -471,16 +373,6 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  MeshFunction<T>::MeshFunction(const Mesh& mesh, const std::string filename)
-    : Variable("f", "unnamed MeshFunction"),
-    Hierarchical<MeshFunction<T> >(*this),
-    _mesh(reference_to_no_delete_pointer(mesh)), _dim(0), _size(0)
-  {
-    File file(filename);
-    file >> *this;
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
     MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
                                   const std::string filename)
     : Variable("f", "unnamed MeshFunction"),
@@ -488,17 +380,6 @@ namespace dolfin
   {
     File file(filename);
     file >> *this;
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
-  MeshFunction<T>::MeshFunction(const Mesh& mesh,
-    const MeshValueCollection<T>& value_collection) :
-    Variable("f", "unnamed MeshFunction"),
-      Hierarchical<MeshFunction<T> >(*this),
-      _mesh(reference_to_no_delete_pointer(mesh)),
-      _dim(value_collection.dim()), _size(0)
-  {
-    *this = value_collection;
   }
   //---------------------------------------------------------------------------
   template <typename T>
@@ -740,35 +621,12 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    void MeshFunction<T>::init(const Mesh& mesh, std::size_t dim)
-  {
-    mesh.init(dim);
-    init(mesh, dim, mesh.size(dim));
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
     void MeshFunction<T>::init(std::shared_ptr<const Mesh> mesh,
                                std::size_t dim)
   {
     dolfin_assert(mesh);
     mesh->init(dim);
     init(mesh, dim, mesh->size(dim));
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
-    void MeshFunction<T>::init(const Mesh& mesh, std::size_t dim,
-                               std::size_t size)
-  {
-    // Initialize mesh for entities of given dimension
-    mesh.init(dim);
-    dolfin_assert(mesh.size(dim) == size);
-
-    // Initialize data
-    if (_size != size)
-      _values.reset(new T[size]);
-    _mesh = reference_to_no_delete_pointer(mesh);
-    _dim = dim;
-    _size = size;
   }
   //---------------------------------------------------------------------------
   template <typename T>

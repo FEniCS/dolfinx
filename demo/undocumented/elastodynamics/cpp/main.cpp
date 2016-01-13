@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
   init(argc, argv);
 
   // Create mesh
-  Mesh mesh("../dolfin_fine.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../dolfin_fine.xml.gz");
 
   // Create function space
   auto V = std::make_shared<ElastoDynamics::FunctionSpace>(mesh);

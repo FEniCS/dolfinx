@@ -91,7 +91,7 @@ int main()
   parameters["ghost_mode"] = "shared_facet";
 
   // Create mesh
-  UnitSquareMesh mesh(24, 24);
+  auto mesh = std::make_shared<UnitSquareMesh>(24, 24);
 
   // Create functions
   Source f;
