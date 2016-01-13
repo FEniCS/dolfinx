@@ -50,7 +50,7 @@ class Fish : public SubDomain
 int main()
 {
   // Read mesh from file
-  Mesh mesh("../dolfin_fine.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../dolfin_fine.xml.gz");
 
   // Read velocity field from file
   auto Vp = std::make_shared<Functionals::CoefficientSpace_p>(mesh);

@@ -33,14 +33,14 @@ using namespace dolfin;
 int main(int argc, char *argv[])
 {
   // Read mesh
-  Mesh mesh("../dolfin_fine.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../dolfin_fine.xml.gz");
 
   // Create velocity FunctionSpace
   auto V_u = std::make_shared<Velocity::FunctionSpace>(mesh);
 
   // Create velocity function
   Function velocity(V_u);
-  File file_u(mesh.mpi_comm(), "../dolfin_fine_velocity.xml.gz");
+  File file_u(mesh->mpi_comm(), "../dolfin_fine_velocity.xml.gz");
   file_u >> velocity;
 
   // Read sub domain markers

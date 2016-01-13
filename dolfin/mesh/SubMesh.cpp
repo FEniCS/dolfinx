@@ -39,7 +39,8 @@ using namespace dolfin;
 SubMesh::SubMesh(const Mesh& mesh, const SubDomain& sub_domain)
 {
   // Create mesh function and mark sub domain
-  MeshFunction<std::size_t> sub_domains(mesh, mesh.topology().dim());
+  MeshFunction<std::size_t> sub_domains(reference_to_no_delete_pointer(mesh),
+                                        mesh.topology().dim());
   sub_domains = 0;
   sub_domain.mark(sub_domains, 1);
 

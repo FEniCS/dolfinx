@@ -36,12 +36,12 @@ public:
   void test_read()
   {
     // Create mesh and read file
-    UnitCubeMesh mesh(5, 5, 5);
+    auto mesh = std::make_shared<UnitCubeMesh>(5, 5, 5);
     MeshValueCollection<std::size_t>
       markers(mesh, "xml_value_collection_ref.xml");
 
     // Check size
-    CPPUNIT_ASSERT(dolfin::MPI::sum(mesh.mpi_comm(), markers.size()) == 6);
+    CPPUNIT_ASSERT(dolfin::MPI::sum(mesh->mpi_comm(), markers.size()) == 6);
 
     // Check sum of values
     const std::map<std::pair<std::size_t, std::size_t>, std::size_t>&
@@ -51,7 +51,7 @@ public:
     std::size_t sum = 0;
     for (it = values.begin(); it != values.end(); ++it)
       sum += it->second;
-    CPPUNIT_ASSERT(dolfin::MPI::sum(mesh.mpi_comm(), sum) == 48);
+    CPPUNIT_ASSERT(dolfin::MPI::sum(mesh->mpi_comm(), sum) == 48);
   }
 
 };

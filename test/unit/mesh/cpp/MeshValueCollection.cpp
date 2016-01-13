@@ -40,11 +40,11 @@ public:
 
   void testAssign2DCells()
   {
-    UnitSquareMesh mesh(3, 3);
-    const std::size_t ncells = mesh.num_cells();
+    auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
+    const std::size_t ncells = mesh->num_cells();
     MeshValueCollection<int> f(mesh, 2);
     bool all_new = true;
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    for (CellIterator cell(*mesh); !cell.end(); ++cell)
     {
       bool this_new;
       const int value = ncells - cell->index();
@@ -56,7 +56,7 @@ public:
     CPPUNIT_ASSERT_EQUAL(ncells, f.size());
     CPPUNIT_ASSERT_EQUAL(ncells, g.size());
     CPPUNIT_ASSERT(all_new);
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    for (CellIterator cell(*mesh); !cell.end(); ++cell)
     {
       const int value = ncells - cell->index();
       CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), 0));
@@ -65,12 +65,12 @@ public:
 
   void testAssign2DFacets()
   {
-    UnitSquareMesh mesh(3, 3);
-    mesh.init(2,1);
-    const std::size_t ncells = mesh.num_cells();
+    auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
+    mesh->init(2,1);
+    const std::size_t ncells = mesh->num_cells();
     MeshValueCollection<int> f(mesh, 1);
     bool all_new = true;
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    for (CellIterator cell(*mesh); !cell.end(); ++cell)
     {
       const int value = ncells - cell->index();
       for (std::size_t i = 0; i < cell->num_entities(1); ++i)
@@ -85,7 +85,7 @@ public:
     CPPUNIT_ASSERT_EQUAL(ncells*3, f.size());
     CPPUNIT_ASSERT_EQUAL(ncells*3, g.size());
     CPPUNIT_ASSERT(all_new);
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    for (CellIterator cell(*mesh); !cell.end(); ++cell)
     {
       for (std::size_t i = 0; i < cell->num_entities(1); ++i)
       {
@@ -97,12 +97,12 @@ public:
 
   void testAssign2DVertices()
   {
-    UnitSquareMesh mesh(3, 3);
-    mesh.init(2, 0);
-    const std::size_t ncells = mesh.num_cells();
+    auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
+    mesh->init(2, 0);
+    const std::size_t ncells = mesh->num_cells();
     MeshValueCollection<int> f(mesh, 0);
     bool all_new = true;
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    for (CellIterator cell(*mesh); !cell.end(); ++cell)
     {
       const int value = ncells - cell->index();
       for (std::size_t i = 0; i < cell->num_entities(0); ++i)
@@ -117,7 +117,7 @@ public:
     CPPUNIT_ASSERT_EQUAL(ncells*3, f.size());
     CPPUNIT_ASSERT_EQUAL(ncells*3, g.size());
     CPPUNIT_ASSERT(all_new);
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    for (CellIterator cell(*mesh); !cell.end(); ++cell)
     {
       for (std::size_t i = 0; i < cell->num_entities(0); ++i)
       {
@@ -129,16 +129,16 @@ public:
 
   void testMeshFunctionAssign2DCells()
   {
-    UnitSquareMesh mesh(3, 3);
-    const std::size_t ncells = mesh.num_cells();
+    auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
+    const std::size_t ncells = mesh->num_cells();
     MeshFunction<int> f(mesh, 2, 0);
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    for (CellIterator cell(*mesh); !cell.end(); ++cell)
       f[cell->index()] = ncells - cell->index();
     MeshValueCollection<int> g(mesh, 2);
     g = f;
     CPPUNIT_ASSERT_EQUAL(ncells, f.size());
     CPPUNIT_ASSERT_EQUAL(ncells, g.size());
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    for (CellIterator cell(*mesh); !cell.end(); ++cell)
     {
       const int value = ncells - cell->index();
       CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), 0));
@@ -147,14 +147,14 @@ public:
 
   void testMeshFunctionAssign2DFacets()
   {
-    UnitSquareMesh mesh(3, 3);
-    mesh.init(1);
+    auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
+    mesh->init(1);
     MeshFunction<int> f(mesh, 1, 25);
     MeshValueCollection<int> g(mesh, 1);
     g = f;
-    CPPUNIT_ASSERT_EQUAL(mesh.num_facets(), f.size());
-    CPPUNIT_ASSERT_EQUAL(mesh.num_cells()*3, g.size());
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    CPPUNIT_ASSERT_EQUAL(mesh->num_facets(), f.size());
+    CPPUNIT_ASSERT_EQUAL(mesh->num_cells()*3, g.size());
+    for (CellIterator cell(*mesh); !cell.end(); ++cell)
     {
       for (std::size_t i = 0; i < cell->num_entities(1); ++i)
         CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
@@ -163,14 +163,14 @@ public:
 
   void testMeshFunctionAssign2DVertices()
   {
-    UnitSquareMesh mesh(3, 3);
-    mesh.init(0);
+    auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
+    mesh->init(0);
     MeshFunction<int> f(mesh, 0, 25);
     MeshValueCollection<int> g(mesh, 0);
     g = f;
-    CPPUNIT_ASSERT_EQUAL(mesh.num_vertices(), f.size());
-    CPPUNIT_ASSERT_EQUAL(mesh.num_cells()*3, g.size());
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    CPPUNIT_ASSERT_EQUAL(mesh->num_vertices(), f.size());
+    CPPUNIT_ASSERT_EQUAL(mesh->num_cells()*3, g.size());
+    for (CellIterator cell(*mesh); !cell.end(); ++cell)
     {
       for (std::size_t i = 0; i < cell->num_entities(0); ++i)
         CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));

@@ -566,7 +566,7 @@ const dolfin::MeshFunction<std::size_t>&
 
   // Map values of mesh function into refined mesh function
   std::shared_ptr<MeshFunction<std::size_t>>
-    adapted_mesh_function(new MeshFunction<std::size_t>(*adapted_mesh,
+    adapted_mesh_function(new MeshFunction<std::size_t>(adapted_mesh,
                                                         mesh_function.dim()));
   for (std::size_t i = 0; i < adapted_mesh_function->size(); i++)
   {
