@@ -269,15 +269,14 @@ void DirichletBC::gather(Map& boundary_values) const
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::get_boundary_values(Map& boundary_values,
-                                      std::string method) const
+void DirichletBC::get_boundary_values(Map& boundary_values) const
 {
   // Create local data
   dolfin_assert(_function_space);
   LocalData data(*_function_space);
 
   // Compute dofs and values
-  compute_bc(boundary_values, data, method);
+  compute_bc(boundary_values, data, _method);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::zero(GenericMatrix& A) const
@@ -310,7 +309,7 @@ void DirichletBC::zero_columns(GenericMatrix& A,
                                double diag_val) const
 {
   Map bv_map;
-  get_boundary_values(bv_map, _method);
+  get_boundary_values(bv_map);
 
   // Create lookup table of dofs
   //const std::size_t nrows = A.size(0); // should be equal to b.size()
@@ -739,14 +738,6 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
 
-  // Allocate space
-  dolfin_assert(boundary_values.size() == 0);
-  if (_num_dofs > 0)
-    boundary_values.reserve(_num_dofs);
-  else
-    // FIXME: PROFILEME: Little overkill (2d P1 -> factor 2)
-    boundary_values.reserve(_facets.size()*dofmap.num_facet_dofs());
-
   // Topological dimension
   const std::size_t D = mesh.topology().dim();
 
@@ -757,6 +748,10 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   // Create UFC cell
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
+
+  // Allocate space
+  dolfin_assert(boundary_values.size() == 0);
+  boundary_values.reserve(_facets.size()*dofmap.num_facet_dofs());
 
   // Iterate over marked
   dolfin_assert(_function_space->element());
@@ -801,9 +796,6 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     }
     p++;
   }
-
-  // Store num of bc dofs for better performance next time
-  _num_dofs = boundary_values.size();
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_geometric(Map& boundary_values,
@@ -847,13 +839,14 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 
   const std::size_t D = mesh.topology().dim();
 
-  // Allocate space
+  // Allocate space using cached size or upper estimate
   dolfin_assert(boundary_values.size() == 0);
   if (_num_dofs > 0)
     boundary_values.reserve(_num_dofs);
   else
     // FIXME: PROFILEME: Quite overkill
-    boundary_values.reserve(_facets.size()*dofmap.max_element_dofs());
+    // 1 facet = 2 cells, num_bc_dofs <= num_cells*max_element_dofs
+    boundary_values.reserve(2*_facets.size()*dofmap.max_element_dofs());
 
   // Iterate over facets
   Progress p("Computing Dirichlet boundary values, geometric search",
@@ -966,7 +959,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                  ? std::pair<std::size_t, std::size_t>(0,0)
                                  : dofmap.ownership_range());
 
-  // Allocate space
+  // Allocate space using cached size
   dolfin_assert(boundary_values.size() == 0);
   if (_num_dofs > 0)
     boundary_values.reserve(_num_dofs);
