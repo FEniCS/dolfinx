@@ -316,7 +316,7 @@ namespace dolfin
            ++cell_index)
       {
         const std::pair<std::size_t, std::size_t> key(cell_index, 0);
-        _values.insert(std::make_pair(key, mesh_function[cell_index]));
+        _values.insert({key, mesh_function[cell_index]});
       }
     }
     else
@@ -341,7 +341,7 @@ namespace dolfin
           // Insert into map
           const std::pair<std::size_t, std::size_t> key(cell.index(),
                                                         local_entity);
-          _values.insert(std::make_pair(key, mesh_function[entity_index]));
+          _values.insert({key, mesh_function[entity_index]});
         }
       }
     }
@@ -377,7 +377,7 @@ namespace dolfin
            ++cell_index)
       {
         const std::pair<std::size_t, std::size_t> key(cell_index, 0);
-        _values.insert(std::make_pair(key, mesh_function[cell_index]));
+        _values.insert({key, mesh_function[cell_index]});
       }
     }
     else
@@ -402,7 +402,7 @@ namespace dolfin
           // Insert into map
           const std::pair<std::size_t, std::size_t> key(cell.index(),
                                                         local_entity);
-          _values.insert(std::make_pair(key, mesh_function[entity_index]));
+          _values.insert({key, mesh_function[entity_index]});
         }
       }
     }
@@ -490,7 +490,7 @@ namespace dolfin
 
     const std::pair<std::size_t, std::size_t> pos(cell_index, local_entity);
     std::pair<typename std::map<std::pair<std::size_t, std::size_t>, T>::iterator, bool>
-      it = _values.insert(std::make_pair(pos, value));
+      it = _values.insert({pos, value});
 
     // If an item with same key already exists the value has not been
     // set and we need to update it
@@ -521,7 +521,7 @@ namespace dolfin
       const std::pair<std::size_t, std::size_t> pos(entity_index, 0);
       std::pair<typename std::map<std::pair<std::size_t,
         std::size_t>, T>::iterator, bool> it;
-      it = _values.insert(std::make_pair(pos, value));
+      it = _values.insert({pos, value});
 
       // If an item with same key already exists the value has not been
       // set and we need to update it
@@ -548,7 +548,7 @@ namespace dolfin
     const std::pair<std::size_t, std::size_t> pos(cell.index(), local_entity);
     std::pair<typename std::map<std::pair<std::size_t,
       std::size_t>, T>::iterator, bool> it;
-    it = _values.insert(std::make_pair(pos, value));
+    it = _values.insert({pos, value});
 
     // If an item with same key already exists the value has not been
     // set and we need to update it
