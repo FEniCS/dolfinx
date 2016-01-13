@@ -57,9 +57,9 @@ int main()
   Function p(Vp, "../dolfin_fine_pressure.xml.gz");
 
   // Mark 'fish'
-  FacetFunction<std::size_t> markers(mesh, 1);
+  auto markers = std::make_shared<FacetFunction<std::size_t>>(mesh, 1);
   Fish fish;
-  fish.mark(markers, 1);
+  fish.mark(*markers, 1);
 
   // Functionals for lift and drag
   Functionals::Form_lift L(mesh, p);

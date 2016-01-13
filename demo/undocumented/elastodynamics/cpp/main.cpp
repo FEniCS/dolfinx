@@ -142,8 +142,9 @@ int main(int argc, char* argv[])
 
   // External load
   RightBoundary right_boundary;
-  MeshFunction<std::size_t> right_boundary_function(mesh, 1);
-  right_boundary.mark(right_boundary_function, 3);
+  auto right_boundary_function
+    = std::make_shared<MeshFunction<std::size_t>>(mesh, 1);
+  right_boundary.mark(*right_boundary_function, 3);
   Pressure p(t, dt, false), p0(t, dt, true);
 
   // Dirichlet boundary conditions

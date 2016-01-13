@@ -105,9 +105,9 @@ int main()
   NeumannBoundary neumann_boundary;
   DirichletBoundary dirichlet_boundary;
 
-  FacetFunction<std::size_t> boundaries(mesh, 0);
-  neumann_boundary.mark(boundaries, 2);
-  dirichlet_boundary.mark(boundaries, 1);
+  auto boundaries = std::make_shared<FacetFunction<std::size_t>>(mesh, 0);
+  neumann_boundary.mark(*boundaries, 2);
+  dirichlet_boundary.mark(*boundaries, 1);
 
   // Define variational problem
   Poisson::BilinearForm a(V, V);

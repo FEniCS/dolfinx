@@ -30,7 +30,6 @@
 
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/types.h>
-#include "DomainAssigner.h"
 #include "Equation.h"
 
 // Forward declaration
@@ -311,7 +310,8 @@ namespace dolfin
     /// *Arguments*
     ///     cell_domains (_MeshFunction_ <std::size_t>)
     ///         The cell domains.
-    void set_cell_domains(std::shared_ptr<const MeshFunction<std::size_t>> cell_domains);
+    void set_cell_domains(std::shared_ptr<const MeshFunction<std::size_t>>
+                          cell_domains);
 
     /// Set exterior facet domains
     ///
@@ -350,11 +350,12 @@ namespace dolfin
     /// Comparison operator, returning equation lhs == 0
     Equation operator==(int rhs) const;
 
-    // Assignment of domains
-    CellDomainAssigner dx;
-    ExteriorFacetDomainAssigner ds;
-    InteriorFacetDomainAssigner dS;
-    VertexDomainAssigner dP;
+    // Domain markers (cells, exterior facets, interior facets,
+    // vertices)
+    std::shared_ptr<const MeshFunction<std::size_t>> dx;
+    std::shared_ptr<const MeshFunction<std::size_t>> ds;
+    std::shared_ptr<const MeshFunction<std::size_t>> dS;
+    std::shared_ptr<const MeshFunction<std::size_t>> dP;
 
   protected:
 
@@ -369,18 +370,6 @@ namespace dolfin
 
     // The mesh (needed for functionals when we don't have any spaces)
     std::shared_ptr<const Mesh> _mesh;
-
-    // Markers for cell domains
-    std::shared_ptr<const MeshFunction<std::size_t>> _cell_domains;
-
-    // Markers for exterior facet domains
-    std::shared_ptr<const MeshFunction<std::size_t>> _exterior_facet_domains;
-
-    // Markers for interior facet domains
-    std::shared_ptr<const MeshFunction<std::size_t>> _interior_facet_domains;
-
-    // Markers for vertex domains
-    std::shared_ptr<const MeshFunction<std::size_t>> _vertex_domains;
 
   private:
 
