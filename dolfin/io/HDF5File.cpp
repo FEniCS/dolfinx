@@ -667,7 +667,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   // directly to the right place
   std::vector<std::vector<std::size_t>> send_requests(num_processes);
   const std::size_t process_number = MPI::rank(_mpi_comm);
-  for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
+  for (MeshEntityIterator cell(mesh, cell_dim, "all"); !cell.end(); ++cell)
   {
     std::vector<std::size_t> cell_topology;
     for (VertexIterator v(*cell); !v.end(); ++v)
