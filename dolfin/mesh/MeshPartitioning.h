@@ -85,36 +85,36 @@ namespace dolfin
     // Compute cell partitioning for local mesh data. Returns
     // cell->process vector for cells in LocalMeshData
     // and a map from local index->processes to which ghost cells must be sent
-    static void partition_cells(const MPI_Comm& mpi_comm, 
+    static void partition_cells(const MPI_Comm& mpi_comm,
                                 const LocalMeshData& mesh_data,
          std::vector<std::size_t>& cell_partition,
-         std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs);
+         std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs);
 
     // Build mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,
      const std::vector<std::size_t>& cell_partition,
-     const std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs);
+     const std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs);
 
     // Distribute a layer of cells attached by vertex to boundary
     // updating new_mesh_data and shared_cells
     static void distribute_cell_layer(MPI_Comm mpi_comm,
       unsigned int num_regular_cells,
-      std::map<unsigned int, std::set<unsigned int> >& shared_cells,
+      std::map<unsigned int, std::set<unsigned int>>& shared_cells,
       LocalMeshData& new_mesh_data);
 
     // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH)
     static void reorder_cells_gps(MPI_Comm mpi_comm,
      unsigned int num_regular_cells,
-     std::map<unsigned int, std::set<unsigned int> >& shared_cells,
+     std::map<unsigned int, std::set<unsigned int>>& shared_cells,
      LocalMeshData& new_mesh_data);
-    
+
     // Reorder vertices by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH)
     static void reorder_vertices_gps(MPI_Comm mpi_comm,
      unsigned int num_regular_vertices,
      unsigned int num_regular_cells,
      std::map<std::size_t, std::size_t>& vertex_global_to_local,
      LocalMeshData& new_mesh_data);
-    
+
     // This function takes the partition computed by the partitioner
     // (which tells us to which process each of the local cells stored in
     // LocalMeshData on this process belongs) and sends the cells
@@ -122,20 +122,20 @@ namespace dolfin
     // along with the list of sharing processes.
     // A new LocalMeshData object is populated with the redistributed
     // cells. Return the number of non-ghost cells on this process.
-    static unsigned int 
+    static unsigned int
       distribute_cells(const MPI_Comm mpi_comm,
         const LocalMeshData& data,
         const std::vector<std::size_t>& cell_partition,
-        const std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
-        std::map<unsigned int, std::set<unsigned int> >& shared_cells,
+        const std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
+        std::map<unsigned int, std::set<unsigned int>>& shared_cells,
         LocalMeshData& new_mesh_data);
 
     // Utility to convert received_vertex_indices into
     // vertex sharing information
     static void build_shared_vertices(MPI_Comm mpi_comm,
-     std::map<unsigned int, std::set<unsigned int> >& shared_vertices,
+     std::map<unsigned int, std::set<unsigned int>>& shared_vertices,
      const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
-     const std::vector<std::vector<std::size_t> >& received_vertex_indices);
+     const std::vector<std::vector<std::size_t>>& received_vertex_indices);
 
     // Distribute vertices and vertex sharing information,
     // returning the number of vertices which are not ghosted.
@@ -144,11 +144,11 @@ namespace dolfin
         const LocalMeshData& mesh_data,
         LocalMeshData& new_mesh_data,
         std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
-        std::map<unsigned int, std::set<unsigned int> >& shared_vertices_local);
+        std::map<unsigned int, std::set<unsigned int>>& shared_vertices_local);
 
     // Work out the mapping from global index to local index for the set of
     // vertices which are on this process
-    static std::size_t compute_vertex_mapping(MPI_Comm mpi_comm, 
+    static std::size_t compute_vertex_mapping(MPI_Comm mpi_comm,
                   unsigned int num_regular_cells,
                   LocalMeshData& new_mesh_data,
                   std::map<std::size_t, std::size_t>& vertex_global_to_local);
@@ -157,7 +157,7 @@ namespace dolfin
     static void build_mesh(Mesh& mesh,
       const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
       const LocalMeshData& new_mesh_data);
-            
+
     // Create and attach distributed MeshDomains from local_data
     static void build_mesh_domains(Mesh& mesh,
       const LocalMeshData& local_data);
@@ -166,7 +166,7 @@ namespace dolfin
     // [entry, (cell_index, local_index, value)]
     template<typename T, typename MeshValueCollection>
     static void build_mesh_value_collection(const Mesh& mesh,
-      const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T> >& local_value_data,
+      const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T>>& local_value_data,
       MeshValueCollection& mesh_values);
   };
 
@@ -176,7 +176,7 @@ namespace dolfin
              const LocalMeshValueCollection<T>& local_data, const Mesh& mesh)
   {
     // Extract data
-    const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T> >& local_values
+    const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T>>& local_values
       = local_data.values();
 
     // Build MeshValueCollection from local data
@@ -185,7 +185,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template<typename T, typename MeshValueCollection>
   void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
-    const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T> >& local_value_data,
+    const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T>>& local_value_data,
     MeshValueCollection& mesh_values)
   {
     // Get MPI communicator
@@ -210,7 +210,7 @@ namespace dolfin
     MeshValueCollection& markers = mesh_values;
 
     // Get local mesh data for domains
-    const std::vector< std::pair<std::pair<std::size_t, std::size_t>, T> >&
+    const std::vector< std::pair<std::pair<std::size_t, std::size_t>, T>>&
       ldata = local_value_data;
 
     // Get local local-to-global map
@@ -235,6 +235,9 @@ namespace dolfin
 
     for (std::size_t i = 0; i < ldata.size(); ++i)
     {
+      const std::map<unsigned int, std::set<unsigned int>>& sharing_map
+        = mesh.topology().shared_entities(D);
+
       const std::size_t global_cell_index = ldata[i].first.first;
       std::map<std::size_t, std::size_t>::const_iterator data
         = map_of_global_entity_indices.find(global_cell_index);
@@ -244,6 +247,10 @@ namespace dolfin
         const std::size_t entity_local_index = ldata[i].first.second;
         const T value = ldata[i].second;
         markers.set_value(local_cell_index, entity_local_index, value);
+
+        // If shared with other processes, add to off process list
+        if (sharing_map.find(local_cell_index) != sharing_map.end())
+          off_process_global_cell_entities.push_back(global_cell_index);
       }
       else
         off_process_global_cell_entities.push_back(global_cell_index);
@@ -251,7 +258,7 @@ namespace dolfin
 
     // Get destinations and local cell index at destination for
     // off-process cells
-    const std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >
+    const std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t>>>
       entity_hosts
       = DistributedMeshTools::locate_off_process_entities(off_process_global_cell_entities,
                                                           D, mesh);
@@ -260,14 +267,14 @@ namespace dolfin
     const std::size_t num_processes = MPI::size(mpi_comm);
 
     // Pack data to send to appropriate process
-    std::vector<std::vector<std::size_t> > send_data0(num_processes);
-    std::vector<std::vector<T> > send_data1(num_processes);
-    std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >::const_iterator entity_host;
+    std::vector<std::vector<std::size_t>> send_data0(num_processes);
+    std::vector<std::vector<T>> send_data1(num_processes);
+    std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t>>>::const_iterator entity_host;
 
     {
       // Build a convenience map in order to speedup the loop over
       // local data
-      std::map<std::size_t, std::set<std::size_t> > map_of_ldata;
+      std::map<std::size_t, std::set<std::size_t>> map_of_ldata;
       for (std::size_t i = 0; i < ldata.size(); ++i)
         map_of_ldata[ldata[i].first.first].insert(i);
 
@@ -275,11 +282,11 @@ namespace dolfin
            ++entity_host)
       {
         const std::size_t host_global_cell_index = entity_host->first;
-        const std::set<std::pair<std::size_t, std::size_t> >& processes_data
+        const std::set<std::pair<std::size_t, std::size_t>>& processes_data
           = entity_host->second;
 
         // Loop over local data
-        std::map<std::size_t, std::set<std::size_t> >::const_iterator ldata_it
+        std::map<std::size_t, std::set<std::size_t>>::const_iterator ldata_it
           = map_of_ldata.find(host_global_cell_index);
         if (ldata_it != map_of_ldata.end())
         {
@@ -289,7 +296,7 @@ namespace dolfin
             const std::size_t local_entity_index = ldata[*it].first.second;
             const T domain_value = ldata[*it].second;
 
-            std::set<std::pair<std::size_t, std::size_t> >::const_iterator process_data;
+            std::set<std::pair<std::size_t, std::size_t>>::const_iterator process_data;
             for (process_data = processes_data.begin();
                  process_data != processes_data.end(); ++process_data)
             {
@@ -305,8 +312,8 @@ namespace dolfin
     }
 
     // Send/receive data
-    std::vector<std::vector<std::size_t> > received_data0;
-    std::vector<std::vector<T> > received_data1;
+    std::vector<std::vector<std::size_t>> received_data0;
+    std::vector<std::vector<T>> received_data1;
     MPI::all_to_all(mpi_comm, send_data0, received_data0);
     MPI::all_to_all(mpi_comm, send_data1, received_data1);
 

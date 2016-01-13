@@ -43,8 +43,8 @@ int main()
 {
   // Create mesh and function spaces
   UnitSquareMesh mesh(8, 8);
-  P1::FunctionSpace P1(mesh);
-  P2::FunctionSpace P2(mesh);
+  auto P1 = std::make_shared<P1::FunctionSpace>(mesh);
+  auto P2 = std::make_shared<P2::FunctionSpace>(mesh);
 
   // Create exact dual
   Dual dual;

@@ -55,7 +55,7 @@ std::pair<double, double> MeshQuality::radius_ratio_min_max(const Mesh& mesh)
 
   qmin = MPI::min(mesh.mpi_comm(), qmin);
   qmax = MPI::max(mesh.mpi_comm(), qmax);
-  return std::make_pair(qmin, qmax);
+  return {qmin, qmax};
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double>>
@@ -88,7 +88,7 @@ MeshQuality::radius_ratio_histogram_data(const Mesh& mesh,
   for (std::size_t i = 0; i < values.size(); ++i)
     values[i] = MPI::sum(mesh.mpi_comm(), values[i]);
 
-  return std::make_pair(bins, values);
+  return {bins, values};
 }
 //-----------------------------------------------------------------------------
 std::string
@@ -186,14 +186,14 @@ std::pair<double, double> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
   //CellIterator cell(mesh);
 
   // Get the angles at each cell
-  //std::vector<double> angs; 
+  //std::vector<double> angs;
   //dihedral_angles(*cell, angs);
 
   // Get original min and max
   double d_ang_min = DOLFIN_PI + 1.0;
   double d_ang_max = -1.0;
 
-  std::vector<double> angs(6); 
+  std::vector<double> angs(6);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get the angles from the next cell
@@ -207,7 +207,7 @@ std::pair<double, double> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
   d_ang_min = MPI::min(mesh.mpi_comm(), d_ang_min);
   d_ang_max = MPI::max(mesh.mpi_comm(), d_ang_max);
 
-  return std::make_pair(d_ang_min, d_ang_max);
+  return {d_ang_min, d_ang_max};
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double>>
@@ -218,8 +218,8 @@ MeshQuality::dihedral_angles_histogram_data(const Mesh& mesh,
 
   // May need to assert the minimum and maximum possible angle
   dolfin_assert(dihedral_angles_min_max(mesh).first >= 0.0); // Is this really needed?
-  dolfin_assert(dihedral_angles_min_max(mesh).second <= M_PI); 
-  
+  dolfin_assert(dihedral_angles_min_max(mesh).second <= M_PI);
+
   // Currently min value is 0.0 and max is M_PI
   const double interval= M_PI/(static_cast<double>(num_bins));
 
@@ -233,14 +233,14 @@ MeshQuality::dihedral_angles_histogram_data(const Mesh& mesh,
     dihedral_angles(*cell, angs);
 
     // Iterate through the collected vector
-    for(std::size_t i = 0; i < angs.size(); i++) 
-    { 
+    for(std::size_t i = 0; i < angs.size(); i++)
+    {
       // Compute 'bin' index, and handle special case that angle = M_PI
         const std::size_t slot
         = std::min(static_cast<std::size_t>(angs[i]/interval), num_bins -1);
 
         // const std::size_t slot = static_cast<std::size_t>((angs[i] - d_ang_min)/interval);
-        values[slot] += 1.0; 
+        values[slot] += 1.0;
     }
   }
 
@@ -249,7 +249,7 @@ MeshQuality::dihedral_angles_histogram_data(const Mesh& mesh,
     values[i] = MPI::sum(mesh.mpi_comm(), values[i]);
   }
 
-  return std::make_pair(bins, values);
+  return {bins, values};
 }
 //-----------------------------------------------------------------------------
 std::string

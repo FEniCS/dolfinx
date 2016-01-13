@@ -38,29 +38,9 @@ MultiStageScheme::MultiStageScheme(
     std::vector<int> jacobian_indices,
     unsigned int order,
     const std::string name,
-    const std::string human_form) :
-  Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage),
-  _stage_solutions(stage_solutions), _u(u), _t(t), _dt(dt),
-  _dt_stage_offset(dt_stage_offset), _jacobian_indices(jacobian_indices),
-  _order(order), _implicit(false), _human_form(human_form)
-{
-  _check_arguments();
-}
-//-----------------------------------------------------------------------------
-MultiStageScheme::MultiStageScheme(
-    std::vector<std::vector<std::shared_ptr<const Form>>> stage_forms,
-    std::shared_ptr<const Form> last_stage,
-    std::vector<std::shared_ptr<Function>> stage_solutions,
-    std::shared_ptr<Function> u,
-    std::shared_ptr<Constant> t,
-    std::shared_ptr<Constant> dt,
-    std::vector<double> dt_stage_offset,
-    std::vector<int> jacobian_indices,
-    unsigned int order,
-    const std::string name,
     const std::string human_form,
-    std::vector<const DirichletBC* > bcs) :
-  Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage),
+    std::vector<std::shared_ptr<const DirichletBC>> bcs)
+: Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage),
   _stage_solutions(stage_solutions), _u(u), _t(t), _dt(dt),
   _dt_stage_offset(dt_stage_offset), _jacobian_indices(jacobian_indices),
   _order(order), _implicit(false), _human_form(human_form), _bcs(bcs)
@@ -114,7 +94,7 @@ unsigned int MultiStageScheme::order() const
   return _order;
 }
 //-----------------------------------------------------------------------------
-std::vector<const DirichletBC* > MultiStageScheme::bcs() const
+std::vector<std::shared_ptr<const DirichletBC>> MultiStageScheme::bcs() const
 {
   return _bcs;
 }
@@ -183,7 +163,7 @@ void MultiStageScheme::_check_arguments()
   */
 
   // Check solution is in the same space as the last stage solution
-  if (!(_stage_solutions.size()==0 || \
+  if (!(_stage_solutions.size()==0 or
         _u->in(*_stage_solutions[_stage_solutions.size()-1]->function_space())))
   {
     dolfin_error("MultiStageScheme.cpp",
@@ -203,7 +183,7 @@ void MultiStageScheme::_check_arguments()
     }
 
     // Check we have correct number of forms
-    if (_stage_forms[i].size()==0 || _stage_forms[i].size()>2)
+    if (_stage_forms[i].size()==0 or _stage_forms[i].size()>2)
     {
       dolfin_error("MultiStageScheme.cpp",
 		   "construct MultiStageScheme",

@@ -70,11 +70,11 @@ int main()
 {
   // Create mesh and define function space
   UnitSquareMesh mesh(16, 16);
-  NonlinearPoisson::FunctionSpace V(mesh);
+  auto V = std::make_shared<NonlinearPoisson::FunctionSpace>(mesh);
 
   // Define boundary condition
-  DirichletBoundary dirichlet_boundary;
-  Constant g(1.0);
+  auto dirichlet_boundary = std::make_shared<DirichletBoundary>();
+  auto g = std::make_shared<Constant>(1.0);
   DirichletBC bc(V, g, dirichlet_boundary);
 
   // Define source and solution functions

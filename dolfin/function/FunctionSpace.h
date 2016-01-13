@@ -180,6 +180,29 @@ namespace dolfin
     /// Extract subspace for component
     ///
     /// *Arguments*
+    ///     component (std::size_t)
+    ///         Index of the subspace.
+    /// *Returns*
+    ///     _FunctionSpace_
+    ///         The subspace.
+    std::shared_ptr<FunctionSpace> sub(std::size_t component) const
+    { return extract_sub_space({component}); }
+
+    /// Extract subspace for component
+    ///
+    /// *Arguments*
+    ///     component (std::vector<std::size_t>)
+    ///         The component.
+    /// *Returns*
+    ///     _FunctionSpace_
+    ///         The subspace.
+    std::shared_ptr<FunctionSpace>
+    sub(const std::vector<std::size_t>& component) const
+    { return extract_sub_space(component); }
+
+    /// Extract subspace for component
+    ///
+    /// *Arguments*
     ///     component (std::vector<std::size_t>)
     ///         The component.
     ///
@@ -310,7 +333,7 @@ namespace dolfin
 
     // Cache of subspaces
     mutable std::map<std::vector<std::size_t>,
-      std::shared_ptr<FunctionSpace> > _subspaces;
+                     std::shared_ptr<FunctionSpace> > _subspaces;
 
   };
 

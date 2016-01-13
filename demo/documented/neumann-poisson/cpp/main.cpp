@@ -71,7 +71,7 @@ int main()
 {
   // Create mesh and function space
   UnitSquareMesh mesh(64, 64);
-  Poisson::FunctionSpace V(mesh);
+  auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
   // Define variational problem
   auto a = std::make_shared<Poisson::BilinearForm>(V, V);

@@ -44,14 +44,14 @@ int main(int argc, char* argv[])
 
   // Create mesh and function space
   UnitCubeMesh mesh(n, n, n);
-  Poisson::FunctionSpace V(mesh);
+  auto V = std::make_shared<const Poisson::FunctionSpace>(mesh);
 
   // MPI communicator
   const MPI_Comm comm = mesh.mpi_comm();
 
   // Define boundary condition
-  Constant u0(0.0);
-  DomainBoundary boundary;
+  auto u0 = std::make_shared<const Constant>(0.0);
+  auto boundary = std::make_shared<const DomainBoundary>();
   DirichletBC bc(V, u0, boundary);
 
   // Define variational problem

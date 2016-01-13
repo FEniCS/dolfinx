@@ -52,7 +52,7 @@ void dolfin::solve(const Equation& equation, Function& u,
   {
     LinearVariationalProblem problem(equation.lhs(), equation.rhs(),
                                      reference_to_no_delete_pointer(u), _bcs);
-    LinearVariationalSolver solver(problem);
+    LinearVariationalSolver solver(reference_to_no_delete_pointer(problem));
     solver.parameters.update(parameters);
     solver.solve();
   }
@@ -62,7 +62,7 @@ void dolfin::solve(const Equation& equation, Function& u,
     NonlinearVariationalProblem problem(equation.lhs(),
                                         reference_to_no_delete_pointer(u),
                                         _bcs);
-    NonlinearVariationalSolver solver(problem);
+    NonlinearVariationalSolver solver(reference_to_no_delete_pointer(problem));
     solver.parameters.update(parameters);
     solver.solve();
   }
@@ -103,7 +103,7 @@ void dolfin::solve(const Equation& equation, Function& u,
   NonlinearVariationalProblem problem(equation.lhs(),
                                       reference_to_no_delete_pointer(u), _bcs,
                                       reference_to_no_delete_pointer(J));
-  NonlinearVariationalSolver solver(problem);
+  NonlinearVariationalSolver solver(reference_to_no_delete_pointer(problem));
   solver.parameters.update(parameters);
   solver.solve();
 }

@@ -127,9 +127,7 @@ namespace dolfin
       const std::size_t cell_index = indices[2*i];
       const std::size_t local_entity_index = indices[2*i + 1];
       const T value = v[i];
-      _values.push_back(std::make_pair(std::make_pair(cell_index,
-                                                      local_entity_index),
-                                       value));
+      _values.push_back({{cell_index, local_entity_index}, value});
     }
   }
   //---------------------------------------------------------------------------

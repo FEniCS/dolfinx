@@ -66,7 +66,7 @@ int main()
   Mesh mesh("../circle_yplane.xml.gz");
 
   // Create function space
-  Elasticity::FunctionSpace V(mesh);
+  auto V = std::make_shared<Elasticity::FunctionSpace>(mesh);
 
   // Create right-hand side
   Constant f(0.0, -0.1);

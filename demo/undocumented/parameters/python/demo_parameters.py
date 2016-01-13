@@ -70,10 +70,6 @@ solver_parameters.set_range("max_iterations", 0, 1000)
 solver_parameters["max_iterations"] = 500
 solver_parameters["relative_tolerance"] = 0.1
 
-# Can also access parameter values like this
-solver_parameters.max_iterations = 500
-solver_parameters.relative_tolerance = 0.1
-
 # Set solver parameters as nested parameters of application parameters
 application_parameters.add(solver_parameters)
 
@@ -84,11 +80,6 @@ application_parameters.parse()
 foo = application_parameters["foo"]
 bar = application_parameters["bar"]
 tol = application_parameters["solver_parameters"]["tolerance"]
-
-# Can also access parameter values like this
-foo = application_parameters.foo
-bar = application_parameters.bar
-tol = application_parameters.solver_parameters.tolerance
 
 # Print parameter values
 print("foo =", foo)

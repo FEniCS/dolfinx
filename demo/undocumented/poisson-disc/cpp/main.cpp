@@ -56,13 +56,12 @@ int main()
   int degree = 2;
   int gdim = 2;
   UnitDiscMesh mesh(MPI_COMM_WORLD, 32, degree, gdim);
-  //UnitSquareMesh mesh(32, 32);
 
-  PoissonDisc::FunctionSpace V(mesh);
+  auto V = std::make_shared<PoissonDisc::FunctionSpace>(mesh);
 
   // Define boundary condition
-  Constant u0(0.0);
-  DirichletBoundary boundary;
+  auto u0 = std::make_shared<Constant>(0.0);
+  auto boundary = std::make_shared<DirichletBoundary>();
   DirichletBC bc(V, u0, boundary);
 
   // Define variational forms

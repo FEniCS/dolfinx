@@ -18,6 +18,7 @@
 // Modified by Corrado Maurini, 2013.
 
 #include <dolfin/function/Function.h>
+#include <dolfin/la/GenericVector.h>
 #include "Form.h"
 #include "NonlinearVariationalProblem.h"
 
@@ -39,17 +40,17 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(
 void NonlinearVariationalProblem::set_bounds(const Function& lb_func,
                                              const Function& ub_func)
 {
-  set_bounds(lb_func.vector(), ub_func.vector());
+  this->set_bounds(lb_func.vector(), ub_func.vector());
 }
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::set_bounds(
   std::shared_ptr<const GenericVector> lb,
   std::shared_ptr<const GenericVector> ub)
 {
+  dolfin_assert(lb);
+  dolfin_assert(ub);
   this->_lb = lb;
   this->_ub = ub;
-  dolfin_assert(_lb);
-  dolfin_assert(_ub);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const Form> NonlinearVariationalProblem::residual_form() const

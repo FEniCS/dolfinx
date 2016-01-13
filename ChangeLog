@@ -1,3 +1,12 @@
+- Remove reference versions of constructors for many classes that
+	store a pointer/reference to the object passed to the
+	constructor. This is an intrusive interface change for C++ users,
+	but necessary to improve code maintainabilty and to improve memory
+	safety. The Python interface is (virtually) unaffected.
+- Remove class SubSpace. Using FunctionSpace::sub(...) instead
+- Remove reference versions constructors of NonlinearVariationalSolver
+- Remove setting of bounds from NonlinearVariationalSolver (was
+	already available through NonlinearVariationalProblem)
 - Update Trilinos support to include Amesos2, and better support from Python
 - Rewrite interface of TensorLayout and SparsityPattern; local-to-global
 	maps now handled using new IndexMap class; GenericSparsityPattern

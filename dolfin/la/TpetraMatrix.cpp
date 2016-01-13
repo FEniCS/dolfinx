@@ -134,8 +134,6 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
     (new map_type(Teuchos::OrdinalTraits<dolfin::la_index>::invalid(),
                   _global_indices1, 0, _comm));
 
-  // Make a Tpetra::CrsGraph of the sparsity_pattern
-  typedef Tpetra::CrsGraph<> graph_type;
   std::vector<std::vector<std::size_t>> pattern_diag
     = sparsity_pattern->diagonal_pattern(SparsityPattern::unsorted);
   std::vector<std::vector<std::size_t>> pattern_off
@@ -169,7 +167,7 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
 
     Teuchos::ArrayView<dolfin::la_index> _indices(indices);
     crs_graph->insertGlobalIndices
-      (tensor_layout.index_map(0)->local_to_global(i), _indices);
+      ((dolfin::la_index)tensor_layout.index_map(0)->local_to_global(i), _indices);
   }
 
   crs_graph->fillComplete(domain_map, range_map);
@@ -495,13 +493,14 @@ void TpetraMatrix::zero_local(std::size_t m, const dolfin::la_index* rows)
 
   for (std::size_t i = 0 ; i != m; ++i)
   {
-    Teuchos::ArrayView<const dolfin::la_index> cols;
+    int row = rows[i];
+    Teuchos::ArrayView<const int> cols;
     Teuchos::ArrayView<const double> data;
-    _matA->getLocalRowView(rows[i], cols, data);
+    _matA->getLocalRowView(row, cols, data);
     std::vector<double> z(cols.size(), 0);
     Teuchos::ArrayView<const double> dataz(z);
 
-    _matA->replaceLocalValues(rows[i], cols, dataz);
+    _matA->replaceLocalValues(row, cols, dataz);
   }
 }
 //-----------------------------------------------------------------------------

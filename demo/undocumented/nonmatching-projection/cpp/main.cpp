@@ -47,7 +47,7 @@ int main()
   UnitSquareMesh mesh1(64, 64);
 
   // Create P3 function space
-  P3::FunctionSpace V0(mesh0);
+  auto V0 = std::make_shared<P3::FunctionSpace>(mesh0);
 
   // Interpolate expression into V0
   MyExpression e;
@@ -55,7 +55,7 @@ int main()
   f0.interpolate(e);
 
   // Define variational problem
-  P1_projection::FunctionSpace V1(mesh1);
+  auto V1 = std::make_shared<P1_projection::FunctionSpace>(mesh1);
   P1_projection::BilinearForm a(V1, V1);
   P1_projection::LinearForm L(V1, f0);
 

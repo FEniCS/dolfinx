@@ -30,9 +30,9 @@ dolfin::VectorSpaceBasis build_nullspace(const dolfin::FunctionSpace& V,
                                          const GenericVector& x)
 {
   // Get subspaces
-  dolfin::SubSpace V0(V, 0);
-  dolfin::SubSpace V1(V, 1);
-  dolfin::SubSpace V2(V, 2);
+  auto V0 = V.sub(0);
+  auto V1 = V.sub(1);
+  auto V2 = V.sub(2);
 
   // Create vectors for nullspace basis
   std::vector<std::shared_ptr<dolfin::GenericVector>> basis(6);
@@ -40,19 +40,19 @@ dolfin::VectorSpaceBasis build_nullspace(const dolfin::FunctionSpace& V,
     basis[i] = x.copy();
 
   // x0, x1, x2 translations
-  V0.dofmap()->set(*basis[0], 1.0);
-  V1.dofmap()->set(*basis[1], 1.0);
-  V2.dofmap()->set(*basis[2], 1.0);
+  V0->dofmap()->set(*basis[0], 1.0);
+  V1->dofmap()->set(*basis[1], 1.0);
+  V2->dofmap()->set(*basis[2], 1.0);
 
   // Rotations
-  V0.set_x(*basis[3], -1.0, 1);
-  V1.set_x(*basis[3],  1.0, 0);
+  V0->set_x(*basis[3], -1.0, 1);
+  V1->set_x(*basis[3],  1.0, 0);
 
-  V0.set_x(*basis[4],  1.0, 2);
-  V2.set_x(*basis[4], -1.0, 0);
+  V0->set_x(*basis[4],  1.0, 2);
+  V2->set_x(*basis[4], -1.0, 0);
 
-  V2.set_x(*basis[5],  1.0, 1);
-  V1.set_x(*basis[5], -1.0, 2);
+  V2->set_x(*basis[5],  1.0, 1);
+  V1->set_x(*basis[5], -1.0, 2);
 
   // Apply
   for (std::size_t i = 0; i < basis.size(); ++i)
@@ -111,7 +111,7 @@ int main()
   Constant lambda(E*nu/((1.0 + nu)*(1.0 - 2.0*nu)));
 
   // Create function space
-  Elasticity::Form_a::TestSpace V(mesh);
+  auto V = std::make_shared<Elasticity::Form_a::TestSpace>(mesh);
 
   // Define variational problem
   Elasticity::Form_a a(V, V);
@@ -120,8 +120,8 @@ int main()
   L.f = f;
 
   // Set up boundary condition on inner surface
-  InnerSurface inner_surface;
-  Constant zero(0.0, 0.0, 0.0);
+  auto inner_surface = std::make_shared<InnerSurface>();
+  auto zero = std::make_shared<Constant>(0.0, 0.0, 0.0);
   auto bc = std::make_shared<DirichletBC>(V, zero, inner_surface);
 
   // Assemble system, applying boundary conditions and preserving
@@ -136,7 +136,7 @@ int main()
   // Create near null space basis (required for smoothed aggregation
   // AMG). The solution vector is passed so that it can be copied to
   // generate compatible vectors for the nullspace.
-  VectorSpaceBasis null_space = build_nullspace(V, *u.vector());
+  VectorSpaceBasis null_space = build_nullspace(*V, *u.vector());
 
   // Create PETSc smoothed aggregation AMG preconditioner
   auto pc = std::make_shared<PETScPreconditioner>("petsc_amg");
@@ -172,7 +172,7 @@ int main()
   vtk_file << u;
 
   // Extract stress and write in VTK format
-  Elasticity::Form_a_s::TestSpace W(mesh);
+  auto W = std::make_shared<Elasticity::Form_a_s::TestSpace>(mesh);
   Elasticity::Form_a_s a_s(W, W);
   Elasticity::Form_L_s L_s(W);
   L_s.mu = mu;

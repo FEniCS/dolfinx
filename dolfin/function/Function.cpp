@@ -48,22 +48,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Function::Function(const FunctionSpace& V) : Hierarchical<Function>(*this),
-  _function_space(reference_to_no_delete_pointer(V)),
-  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
-{
-  // Check that we don't have a subspace
-  if (!V.component().empty())
-  {
-    dolfin_error("Function.cpp",
-                 "create function",
-                 "Cannot be created from subspace. Consider collapsing the function space");
-  }
-
-  // Initialize vector
-  init_vector();
-}
-//-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
   : Hierarchical<Function>(*this), _function_space(V),
   _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
@@ -91,36 +75,6 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
   // Assertion uses '<=' to deal with sub-functions
   dolfin_assert(V->dofmap());
   dolfin_assert(V->dofmap()->global_dimension() <= x->size());
-}
-//-----------------------------------------------------------------------------
-Function::Function(const FunctionSpace& V, std::string filename)
-  : Hierarchical<Function>(*this),
-  _function_space(reference_to_no_delete_pointer(V)),
-  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
-{
-  // Check that we don't have a subspace
-  if (!V.component().empty())
-  {
-    dolfin_error("Function.cpp",
-                 "create function",
-                 "Cannot be created from subspace. Consider collapsing the function space");
-  }
-
-  // Initialize vector
-  init_vector();
-
-  // Check size of vector
-  if (_vector->size() != _function_space->dim())
-  {
-    dolfin_error("Function.cpp",
-                 "read function from file",
-                 "The number of degrees of freedom (%d) does not match dimension of function space (%d)",
-                 _vector->size(), _function_space->dim());
-  }
-
-  // Read function data from file
-  File file(filename);
-  file >> *this;
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V,

@@ -213,8 +213,8 @@ spaces:
 .. code-block:: c++
 
     // Create function spaces
-    VelocityUpdate::FunctionSpace V(mesh);
-    PressureUpdate::FunctionSpace Q(mesh);
+    auto V = std::make_shared<VelocityUpdate::FunctionSpace>(mesh);
+    auto Q = std::make_shared<PressureUpdate::FunctionSpace>(mesh);
 
 The time step and the length of the interval are defined by:
 
@@ -230,10 +230,10 @@ below.
 
 .. code-block:: c++
 
-    // Define values for boundary conditions
-    InflowPressure p_in;
-    Constant zero(0);
-    Constant zero_vector(0, 0);
+   // Define values for boundary conditions
+   auto p_in = std::make_shared<InflowPressure>();
+   auto zero = std::make_shared<Constant>(0.0);
+   auto zero_vector = std::make_shared<Constant>(0.0, 0.0);
 
 Before we can define our boundary conditions, we also need to
 instantiate the classes we defined above for the boundary subdomains:
@@ -241,9 +241,9 @@ instantiate the classes we defined above for the boundary subdomains:
 .. code-block:: c++
 
     // Define subdomains for boundary conditions
-    NoslipDomain noslip_domain;
-    InflowDomain inflow_domain;
-    OutflowDomain outflow_domain;
+    auto noslip_domain = std::make_shared<NoslipDomain>();
+    auto inflow_domain = std::make_shared<InflowDomain>();
+    auto outflow_domain = std::make_shared<OutflowDomain>() ;
 
 We may now define the boundary conditions for the velocity and
 pressure. We define one no-slip boundary condition for the velocity
@@ -344,7 +344,7 @@ The time-stepping loop is now implemented as follows:
     while (t < T + DOLFIN_EPS)
     {
       // Update pressure boundary condition
-      p_in.t = t;
+      p_in->t = t;
 
 We remember to update the current time for the time-dependent pressure
 boundary value.

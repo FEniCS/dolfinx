@@ -27,7 +27,6 @@
 #include <dolfin.h>
 #include "AdvectionDiffusion.h"
 #include "Velocity.h"
-#include <dolfin/io/XMLFile.h>
 
 using namespace dolfin;
 
@@ -37,19 +36,19 @@ int main(int argc, char *argv[])
   Mesh mesh("../dolfin_fine.xml.gz");
 
   // Create velocity FunctionSpace
-  Velocity::FunctionSpace V_u(mesh);
+  auto V_u = std::make_shared<Velocity::FunctionSpace>(mesh);
 
   // Create velocity function
   Function velocity(V_u);
-  XMLFile file_u(mesh.mpi_comm(), "../dolfin_fine_velocity.xml.gz");
+  File file_u(mesh.mpi_comm(), "../dolfin_fine_velocity.xml.gz");
   file_u >> velocity;
 
   // Read sub domain markers
-  MeshFunction<std::size_t> sub_domains(mesh,
+  auto sub_domains = std::make_shared<MeshFunction<std::size_t>>(mesh,
                                         "../dolfin_fine_subdomains.xml.gz");
 
   // Create function space
-  AdvectionDiffusion::FunctionSpace V(mesh);
+  auto V = std::make_shared<AdvectionDiffusion::FunctionSpace>(mesh);
 
   // Source term and initial condition
   Constant f(0.0);
@@ -62,7 +61,7 @@ int main(int argc, char *argv[])
   L.u0 = u; L.b = velocity; L.f = f;
 
   // Set up boundary condition
-  Constant g(1.0);
+  auto g = std::make_shared<Constant>(1.0);
   DirichletBC bc(V, g, sub_domains, 1);
 
   // Solution

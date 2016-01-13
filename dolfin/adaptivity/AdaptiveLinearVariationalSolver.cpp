@@ -87,7 +87,7 @@ std::shared_ptr<const Function>
 AdaptiveLinearVariationalSolver::solve_primal()
 {
   LinearVariationalProblem& current = _problem->leaf_node();
-  LinearVariationalSolver solver(current);
+  LinearVariationalSolver solver(reference_to_no_delete_pointer(current));
   solver.parameters.update(parameters("linear_variational_solver"));
   solver.solve();
   return current.solution();

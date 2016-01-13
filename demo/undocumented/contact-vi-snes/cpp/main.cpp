@@ -73,13 +73,12 @@ int main()
   Mesh mesh("../circle_yplane.xml.gz");
 
   // Create function space
-  HyperElasticity::FunctionSpace V(mesh);
+  auto V = std::make_shared<HyperElasticity::FunctionSpace>(mesh);
 
   // Create Dirichlet boundary conditions
-  SubSpace V0(V, 0);
-  Constant zero(0.0);
-  SymmetryLine s;
-  auto bc = std::make_shared<DirichletBC>(V0, zero, s, "pointwise");
+  auto zero = std::make_shared<Constant>(0.0);
+  auto s = std::make_shared<SymmetryLine>();
+  auto bc = std::make_shared<DirichletBC>(V->sub(0), zero, s, "pointwise");
 
   // Define source and boundary traction functions
   Constant B(0.0, -0.05);
@@ -112,7 +111,9 @@ int main()
   umin.interpolate(umin_exp);
 
   // Set up the non-linear problem
-  NonlinearVariationalProblem problem(F, u, {bc}, J);
+  std::vector<std::shared_ptr<const DirichletBC>> bcs = {bc};
+  auto problem = std::make_shared<NonlinearVariationalProblem>(F, u, bcs, J);
+  problem->set_bounds(umin, umax);
 
   // Set up the non-linear solver
   NonlinearVariationalSolver solver(problem);
@@ -124,7 +125,7 @@ int main()
 
   // Solve the problems
   std::pair<std::size_t, bool> out;
-  out = solver.solve(umin,umax);
+  out = solver.solve();
 
   // Check for convergence. Convergence is one modifies the loading
   // and the mesh size

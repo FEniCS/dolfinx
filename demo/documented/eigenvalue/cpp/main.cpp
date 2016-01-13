@@ -37,7 +37,7 @@ int main()
 
   // Build stiffness matrix
   auto A = std::make_shared<PETScMatrix>();
-  StiffnessMatrix::FunctionSpace V(mesh);
+  auto V = std::make_shared<StiffnessMatrix::FunctionSpace>(mesh);
   StiffnessMatrix::BilinearForm a(V, V);
   assemble(*A, a);
 

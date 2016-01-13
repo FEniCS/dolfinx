@@ -45,8 +45,7 @@ AdaptiveNonlinearVariationalSolver::AdaptiveNonlinearVariationalSolver(
 // ----------------------------------------------------------------------------
 AdaptiveNonlinearVariationalSolver::AdaptiveNonlinearVariationalSolver(
   std::shared_ptr<NonlinearVariationalProblem> problem,
-  std::shared_ptr<Form> goal,
-  std::shared_ptr<ErrorControl> control)
+  std::shared_ptr<Form> goal, std::shared_ptr<ErrorControl> control)
   : _problem(problem)
 {
   this->goal = goal;
@@ -86,7 +85,7 @@ std::shared_ptr<const Function>
 AdaptiveNonlinearVariationalSolver::solve_primal()
 {
   NonlinearVariationalProblem& current = _problem->leaf_node();
-  NonlinearVariationalSolver solver(current);
+  NonlinearVariationalSolver solver(reference_to_no_delete_pointer(current));
   solver.parameters.update(parameters("nonlinear_variational_solver"));
   solver.solve();
   return current.solution();

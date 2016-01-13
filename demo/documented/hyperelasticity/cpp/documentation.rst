@@ -215,9 +215,9 @@ generated code.
 
 .. code-block:: c++
 
-  // Create mesh and define function space
-  UnitCubeMesh mesh (24, 16, 16);
-  HyperElasticity::FunctionSpace V(mesh);
+   // Create mesh and define function space
+   UnitCubeMesh mesh (24, 16, 16);
+   auto V = std::make_shared<HyperElasticity::FunctionSpace>(mesh);
 
 Now, the Dirichlet boundary conditions can be created using the class
 :cpp:class:`DirichletBC`, the previously initialized
@@ -228,18 +228,18 @@ and ``Rotation`` (for the value on the right boundary).
 
 .. code-block:: c++
 
-  // Define Dirichlet boundaries
-  Left left;
-  Right right;
+   // Define Dirichlet boundaries
+   auto left = std::make_shared<Left>();
+   auto right = std::make_shared<Right>();
 
-  // Define Dirichlet boundary functions
-  Clamp c;
-  Rotation r;
+   // Define Dirichlet boundary functions
+   auto c = std::make_shared<Clamp>();
+   auto r = std::make_shared<Rotation>();
 
-  // Create Dirichlet boundary conditions
-  DirichletBC bcl(V, c, left);
-  DirichletBC bcr(V, r, right);
-  std::vector<const DirichletBC*> bcs = {{&bcl, &bcr}};
+   // Create Dirichlet boundary conditions
+   DirichletBC bcl(V, c, left);
+   DirichletBC bcr(V, r, right);
+   std::vector<const DirichletBC*> bcs = {{&bcl, &bcr}};
 
 The two boundary conditions are collected in the container ``bcs``.
 
