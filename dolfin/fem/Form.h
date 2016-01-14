@@ -147,7 +147,7 @@ namespace dolfin
     ///
     /// *Returns*
     ///     _Mesh_
-    ///         The mesh.
+    ///         Shared pointer to the mesh.
     std::shared_ptr<const Mesh> mesh() const;
 
     /// Return function space for given argument
