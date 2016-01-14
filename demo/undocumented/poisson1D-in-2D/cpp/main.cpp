@@ -49,7 +49,7 @@ double to_interval(const Array<double>& x)
 }
 
 // Rotate the mesh through theta
-void rotate(Mesh & mesh)
+void rotate(Mesh& mesh)
 {
   std::vector<double>& x = mesh.coordinates();
   double tmpx;
@@ -105,10 +105,10 @@ int main()
   BoundaryMesh boundarymesh(squaremesh, "exterior");
 
   // The actual mesh is just the bottom.
-  SubMesh mesh(boundarymesh, BottomEdge());
+  auto mesh = std::make_shared<SubMesh>(boundarymesh, BottomEdge());
 
   // Rotate mesh coordinates.
-  rotate(mesh);
+  rotate(*mesh);
 
   // Create function space
   auto V = std::make_shared<Poisson::FunctionSpace>(mesh);

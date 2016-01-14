@@ -64,7 +64,7 @@ public:
       }
     };
 
-    UnitCubeMesh mesh(8, 8, 8);
+    auto mesh = std::make_shared<UnitCubeMesh>(8, 8, 8);
 
     Array<double> x(3);
     x[0] = 0.31; x[1] = 0.32; x[2] = 0.33;
@@ -82,7 +82,7 @@ public:
                                  sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
                                  DOLFIN_EPS);
 
-    if (dolfin::MPI::size(mesh.mpi_comm()) == 1)
+    if (dolfin::MPI::size(mesh->mpi_comm()) == 1)
     {
       // Test evaluation of a discrete function
       auto V = std::make_shared<Projection::FunctionSpace>(mesh);

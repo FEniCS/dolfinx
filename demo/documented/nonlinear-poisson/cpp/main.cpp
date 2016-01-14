@@ -69,7 +69,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and define function space
-  UnitSquareMesh mesh(16, 16);
+  auto mesh = std::make_shared<UnitSquareMesh>(16, 16);
   auto V = std::make_shared<NonlinearPoisson::FunctionSpace>(mesh);
 
   // Define boundary condition

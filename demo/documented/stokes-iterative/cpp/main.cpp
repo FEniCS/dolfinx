@@ -100,7 +100,7 @@ int main()
   }
 
   // Create mesh
-  UnitCubeMesh mesh(16, 16, 16);
+  auto mesh = std::make_shared<UnitCubeMesh>(16, 16, 16);
 
   // Create function space and subspaces
   auto W = std::make_shared<Stokes::FunctionSpace>(mesh);

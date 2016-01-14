@@ -78,7 +78,7 @@ int main()
   parameters["std_out_all_processes"] = false;
 
   // Load mesh from file
-  Mesh mesh("../lshape.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../lshape.xml.gz");
 
   // Create function spaces
   auto V = std::make_shared<VelocityUpdate::FunctionSpace>(mesh);

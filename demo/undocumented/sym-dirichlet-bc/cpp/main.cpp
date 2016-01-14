@@ -84,7 +84,7 @@ int main()
   };
 
   // Create mesh
-  UnitSquareMesh mesh(300, 300);
+  auto mesh = std::make_shared<UnitSquareMesh>(300, 300);
 
   // Create functions
   auto f = std::make_shared<Source>();

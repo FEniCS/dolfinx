@@ -58,8 +58,8 @@ int main()
   };
 
   // Load sphere mesh and refine uniformly
-  Mesh mesh("../sphere.xml.gz");
-  mesh = refine(mesh);
+  auto mesh = std::make_shared<Mesh>("../sphere.xml.gz");
+  mesh = std::make_shared<Mesh>(refine(*mesh));
 
   // Homogeneous external magnetic field (dB/dt)
   auto dbdt = std::make_shared<Constant>(0.0, 0.0, 1.0);

@@ -93,7 +93,7 @@ public:
       parameters["linear_algebra_backend"] = backends[i];
 
       // Compute reference value by solving ordinary linear system
-      UnitSquareMesh mesh(8, 8);
+      auto mesh = std::make_shared<UnitSquareMesh>(8, 8);
       auto V = std::make_shared<ReactionDiffusion::FunctionSpace>(mesh);
       ReactionDiffusion::BilinearForm a(V, V);
       ReactionDiffusion::LinearForm L(V);

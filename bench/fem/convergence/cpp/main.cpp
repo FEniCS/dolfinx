@@ -63,7 +63,7 @@ double solve2D(int q, int n)
   printf("Solving Poisson's equation in 2D for q = %d, n = %d.\n", q, n);
 
   // Set up problem
-  UnitSquareMesh mesh(n, n);
+  auto mesh = std::make_shared<UnitSquareMesh>(n, n);
   auto f = std::make_shared<Source2D>();
   auto zero = std::make_shared<const Constant>(0.0);
 
@@ -122,7 +122,7 @@ double solve2D(int q, int n)
   double emax = 0.0;
   std::vector<double> U;
   x.get_local(U);
-  for (VertexIterator v(mesh); !v.end(); ++v)
+  for (VertexIterator v(*mesh); !v.end(); ++v)
   {
     const Point p = v->point();
     const double u = sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y());
@@ -142,7 +142,7 @@ double solve3D(int q, int n)
   printf("Solving Poisson's equation in 3D for q = %d, n = %d.\n", q, n);
 
   // Set up problem
-  UnitCubeMesh mesh(n, n, n);
+  auto mesh = std::make_shared<UnitCubeMesh>(n, n, n);
   auto f = std::make_shared<Source3D>();
   auto zero = std::make_shared<const Constant>(0.0);
 
@@ -196,7 +196,7 @@ double solve3D(int q, int n)
   double emax = 0.0;
   std::vector<double> U;
   x.get_local(U);
-  for (VertexIterator v(mesh); !v.end(); ++v)
+  for (VertexIterator v(*mesh); !v.end(); ++v)
   {
     const Point p = v->point();
     const double u = sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y())*sin(DOLFIN_PI*p.z());

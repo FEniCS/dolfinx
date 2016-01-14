@@ -41,7 +41,7 @@ public:
 int main()
 {
   // Create mesh and a point in the mesh
-  UnitCubeMesh mesh(8, 8, 8);
+  auto mesh = std::make_shared<UnitCubeMesh>(8, 8, 8);
   Point x(0.31, 0.32, 0.33);
 
   // A user-defined function

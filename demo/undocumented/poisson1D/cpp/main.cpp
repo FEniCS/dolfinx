@@ -73,7 +73,7 @@ public:
 int main()
 {
   // Create mesh
-  UnitIntervalMesh mesh(50);
+  auto mesh = std::make_shared<UnitIntervalMesh>(50);
 
   // Create function space
   auto V = std::make_shared<Poisson::FunctionSpace>(mesh);

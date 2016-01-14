@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
   // mesh and a quadratic vector Lagrange element
 
   // Read mesh
-  Mesh mesh("../unitsquare_64_64.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../unitsquare_64_64.xml.gz");
 
   // Create velocity FunctionSpace
   auto V_u = std::make_shared<Velocity::FunctionSpace>(mesh);

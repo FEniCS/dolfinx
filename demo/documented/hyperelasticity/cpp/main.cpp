@@ -96,7 +96,7 @@ public:
 int main()
 {
   // Create mesh and define function space
-  UnitCubeMesh mesh (24, 16, 16);
+  auto mesh = std::make_shared<UnitCubeMesh>(24, 16, 16);
   auto V = std::make_shared<HyperElasticity::FunctionSpace>(mesh);
 
   // Define Dirichlet boundaries

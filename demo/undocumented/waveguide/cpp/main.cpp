@@ -44,7 +44,8 @@ int main()
   // Create mesh
   double width = 1.0;
   double height = 0.5;
-  RectangleMesh mesh(Point(0.0, 0.0), Point(width, height), 4, 2);
+  auto mesh = std::make_shared<RectangleMesh>(Point(0.0, 0.0),
+                                              Point(width, height), 4, 2);
 
   // Define the forms - gererates an generalized eigenproblem of the form
   // [S]{h} = k_o^2[T]{h}

@@ -43,11 +43,11 @@ int main(int argc, char* argv[])
   int n = atoi(argv[1]);
 
   // Create mesh and function space
-  UnitCubeMesh mesh(n, n, n);
+  auto mesh = std::make_shared<UnitCubeMesh>(n, n, n);
   auto V = std::make_shared<const Poisson::FunctionSpace>(mesh);
 
   // MPI communicator
-  const MPI_Comm comm = mesh.mpi_comm();
+  const MPI_Comm comm = mesh->mpi_comm();
 
   // Define boundary condition
   auto u0 = std::make_shared<const Constant>(0.0);

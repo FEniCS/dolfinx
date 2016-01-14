@@ -59,19 +59,20 @@ class CahnHilliardEquation : public NonlinearProblem
   public:
 
     // Constructor
-  CahnHilliardEquation(const Mesh& mesh,
+  CahnHilliardEquation(std::shared_ptr<const Mesh> mesh,
                        std::shared_ptr<const Constant> dt,
                        std::shared_ptr<const Constant> theta,
                        std::shared_ptr<const Constant> lambda)
     {
       // Initialize class (depending on geometric dimension of the mesh).
       // Unfortunately C++ does not allow namespaces as template arguments
-      if (mesh.geometry().dim() == 2)
+      dolfin_assert(mesh);
+      if (mesh->geometry().dim() == 2)
       {
         init<CahnHilliard2D::FunctionSpace, CahnHilliard2D::JacobianForm,
              CahnHilliard2D::ResidualForm>(mesh, dt, theta, lambda);
       }
-      else if (mesh.geometry().dim() == 3)
+      else if (mesh->geometry().dim() == 3)
       {
         init<CahnHilliard3D::FunctionSpace, CahnHilliard3D::JacobianForm,
              CahnHilliard3D::ResidualForm>(mesh, dt, theta, lambda);
@@ -107,7 +108,7 @@ class CahnHilliardEquation : public NonlinearProblem
   private:
 
     template<class X, class Y, class Z>
-    void init(const Mesh& mesh,
+    void init(std::shared_ptr<const Mesh> mesh,
               std::shared_ptr<const Constant> dt,
               std::shared_ptr<const Constant> theta,
               std::shared_ptr<const Constant> lambda)
@@ -147,7 +148,7 @@ int main(int argc, char* argv[])
   init(argc, argv);
 
   // Mesh
-  UnitSquareMesh mesh(96, 96);
+  auto mesh = std::make_shared<UnitSquareMesh>(96, 96);
 
   // Time stepping and model parameters
   auto dt = std::make_shared<Constant>(5.0e-6);
