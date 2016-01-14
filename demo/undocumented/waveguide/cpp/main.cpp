@@ -51,7 +51,7 @@ int main()
   // with the eigenvalues k_o^2 representing the square of the cutoff wavenumber
   // and the corresponding right-eigenvector giving the coefficients of the
   // discrete system used to obtain the approximate field anywhere in the domain
-  Forms::FunctionSpace V(mesh);
+  auto V = std::make_shared<Forms::FunctionSpace>(mesh);
   Forms::Form_a s(V, V);
   Forms::Form_L t(V, V);
 

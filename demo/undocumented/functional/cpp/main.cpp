@@ -46,7 +46,7 @@ int main()
   };
 
   // Define functional
-  UnitSquareMesh mesh(16, 16);
+  auto mesh = std::make_shared<UnitSquareMesh>(16, 16);
   auto v = std::shared_ptr<MyFunction>();
   EnergyNorm::Functional M(mesh, v);
 

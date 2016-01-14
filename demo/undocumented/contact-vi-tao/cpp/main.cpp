@@ -63,7 +63,7 @@ int main()
 #ifdef HAS_PETSC
 
   // Read mesh
-  Mesh mesh("../circle_yplane.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../circle_yplane.xml.gz");
 
   // Create function space
   auto V = std::make_shared<Elasticity::FunctionSpace>(mesh);
