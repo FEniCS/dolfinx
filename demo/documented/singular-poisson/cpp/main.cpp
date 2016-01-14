@@ -74,8 +74,8 @@ int main()
   // Define variational problem
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
-  Source f;
-  Flux g;
+  auto f = std::make_shared<Source>();
+  auto g = std::make_shared<Flux>();
   L.f = f;
   L.g = g;
 

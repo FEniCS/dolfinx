@@ -97,7 +97,7 @@ public:
       auto V = std::make_shared<ReactionDiffusion::FunctionSpace>(mesh);
       ReactionDiffusion::BilinearForm a(V, V);
       ReactionDiffusion::LinearForm L(V);
-      Constant f(1.0);
+      auto f = std::make_shared<Constant>(1.0);
       L.f = f;
       Matrix A;
       Vector x, b;
@@ -110,9 +110,9 @@ public:
 
       // Solve using linear operator defined by form action
       ReactionDiffusionAction::LinearForm a_action(V);
-      Function u(V);
+      auto u = std::make_shared<Function>(V);
       a_action.u = u;
-      MyLinearOperator O(a_action, u);
+      MyLinearOperator O(a_action, *u);
       solve(O, x, b, "gmres", "none");
       const double norm_action = norm(x, "l2");
 

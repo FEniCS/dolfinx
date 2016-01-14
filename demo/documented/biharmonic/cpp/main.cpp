@@ -69,8 +69,8 @@ int main()
   UnitSquareMesh mesh(32, 32);
 
   // Create functions
-  Source f;
-  Constant alpha(8.0);
+  auto f = std::make_shared<Source>();
+  auto alpha = std::make_shared<Constant>(8.0);
 
   // Create function space
   auto V = std::make_shared<Biharmonic::FunctionSpace>(mesh);

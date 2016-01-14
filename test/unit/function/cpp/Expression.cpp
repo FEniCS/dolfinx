@@ -74,7 +74,7 @@ public:
 
     // User-defined functions (one from finite element space, one not)
     F0 f0;
-    F1 f1;
+    auto f1 = std::make_shared<F1>();
 
     // Test evaluation of a user-defined function
     f0.eval(u0, x);
@@ -93,7 +93,7 @@ public:
       solve(a == L, g);
 
       const double tol = 1.0e-6;
-      f1.eval(u0, x);
+      f1->eval(u0, x);
       g.eval(u1, x);
       CPPUNIT_ASSERT(std::abs(u0[0]-u1[0]) < tol);
     }

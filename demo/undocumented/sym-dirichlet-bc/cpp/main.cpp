@@ -87,8 +87,8 @@ int main()
   UnitSquareMesh mesh(300, 300);
 
   // Create functions
-  Source f;
-  Flux g;
+  auto f = std::make_shared<Source>();
+  auto g = std::make_shared<Flux>();
 
   // Define forms and attach functions
   auto V = std::make_shared<Poisson::FunctionSpace>(mesh);

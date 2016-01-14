@@ -64,7 +64,7 @@ double solve2D(int q, int n)
 
   // Set up problem
   UnitSquareMesh mesh(n, n);
-  Source2D f;
+  auto f = std::make_shared<Source2D>();
   auto zero = std::make_shared<const Constant>(0.0);
 
   // Choose forms
@@ -143,7 +143,7 @@ double solve3D(int q, int n)
 
   // Set up problem
   UnitCubeMesh mesh(n, n, n);
-  Source3D f;
+  auto f = std::make_shared<Source3D>();
   auto zero = std::make_shared<const Constant>(0.0);
 
   // Choose forms

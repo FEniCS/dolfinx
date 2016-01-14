@@ -113,17 +113,17 @@ int main()
   std::vector<const DirichletBC*> bcs = {{&bcl, &bcr}};
 
   // Define source and boundary traction functions
-  Constant B(0.0, -0.5, 0.0);
-  Constant T(0.1,  0.0, 0.0);
+  auto B = std::make_shared<Constant>(0.0, -0.5, 0.0);
+  auto T = std::make_shared<Constant>(0.1,  0.0, 0.0);
 
   // Define solution function
-  Function u(V);
+  auto u = std::make_shared<Function>(V);
 
   // Set material parameters
   const double E  = 10.0;
   const double nu = 0.3;
-  Constant mu(E/(2*(1 + nu)));
-  Constant lambda(E*nu/((1 + nu)*(1 - 2*nu)));
+  auto mu = std::make_shared<Constant>(E/(2*(1 + nu)));
+  auto lambda = std::make_shared<Constant>(E*nu/((1 + nu)*(1 - 2*nu)));
 
   // Create (linear) form defining (nonlinear) variational problem
   HyperElasticity::ResidualForm F(V);
@@ -135,14 +135,14 @@ int main()
   J.mu = mu; J.lmbda = lambda; J.u = u;
 
   // Solve nonlinear variational problem F(u; v) = 0
-  solve(F == 0, u, bcs, J);
+  solve(F == 0, *u, bcs, J);
 
   // Save solution in VTK format
   File file("displacement.pvd");
-  file << u;
+  file << *u;
 
   // Plot solution
-  plot(u);
+  plot(*u);
   interactive();
 
   return 0;

@@ -81,7 +81,7 @@ int main()
   auto bc = std::make_shared<DirichletBC>(V->sub(0), zero, s, "pointwise");
 
   // Define source and boundary traction functions
-  Constant B(0.0, -0.05);
+  auto B = std::make_shared<Constant>(0.0, -0.05);
 
   // Define solution function
   auto u = std::make_shared<Function>(V);
@@ -89,16 +89,16 @@ int main()
   // Set material parameters
   const double E  = 10.0;
   const double nu = 0.3;
-  Constant mu(E/(2*(1 + nu)));
-  Constant lambda(E*nu/((1.0 + nu)*(1.0 - 2.0*nu)));
+  auto mu = std::make_shared<Constant>(E/(2*(1 + nu)));
+  auto lambda = std::make_shared<Constant>(E*nu/((1.0 + nu)*(1.0 - 2.0*nu)));
 
   // Create (linear) form defining (nonlinear) variational problem
   auto F = std::make_shared<HyperElasticity::ResidualForm>(V);
-  F->mu = mu; F->lmbda = lambda; F->B = B; F->u = *u;
+  F->mu = mu; F->lmbda = lambda; F->B = B; F->u = u;
 
   // Create jacobian dF = F' (for use in nonlinear solver).
   auto J = std::make_shared<HyperElasticity::JacobianForm>(V, V);
-  J->mu = mu; J->lmbda = lambda; J->u = *u;
+  J->mu = mu; J->lmbda = lambda; J->u = u;
 
   // Interpolate expression for upper bound
   UpperBound umax_exp;

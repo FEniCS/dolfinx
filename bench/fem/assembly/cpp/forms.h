@@ -67,7 +67,7 @@ double bench_form(std::string form_name, double (*foo)(Form&))
   {
     UnitSquareMesh mesh(SIZE_2D, SIZE_2D);
     StabStokes2D::FunctionSpace V(mesh);
-    Constant h(1.0);
+    auto h = std::make_shared<Constant>(1.0);
     StabStokes2D::BilinearForm form(V, V, h);
     return foo(form);
   }
@@ -82,11 +82,11 @@ double bench_form(std::string form_name, double (*foo)(Form&))
   {
     UnitCubeMesh mesh(SIZE_3D, SIZE_3D, SIZE_3D);
     NSEMomentum3D::FunctionSpace V(mesh);
-    Constant  w(1.0, 1.0, 1.0);
-    Constant d1(1.0);
-    Constant d2(1.0);
-    Constant k(1.0);
-    Constant nu(1.0);
+    auto w = std::make_shared<Constant>(1.0, 1.0, 1.0);
+    auto d1 = std::make_shared<Constant>(1.0);
+    auto d2 = std::make_shared<Constant>(1.0);
+    auto k = std::make_shared<Constant>(1.0);
+    auto nu = std::make_shared<Constant>(1.0);
     NSEMomentum3D::BilinearForm form(V, V, w, d1, d2, k, nu);
     return foo(form);
   }

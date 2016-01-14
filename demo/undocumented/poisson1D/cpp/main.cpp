@@ -84,8 +84,8 @@ int main()
   DirichletBC bc(V, zero, boundary);
 
   // Create source and flux terms
-  Source f;
-  Flux g;
+  auto f = std::make_shared<Source>();
+  auto g = std::make_shared<Flux>();
 
   // Define variational problem
   Poisson::BilinearForm a(V, V);

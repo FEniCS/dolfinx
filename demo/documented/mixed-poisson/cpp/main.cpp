@@ -82,7 +82,7 @@ int main()
   MixedPoisson::LinearForm L(W);
 
   // Create source and assign to L
-  Source f;
+  auto f = std::make_shared<Source>();
   L.f = f;
 
   // Define boundary condition

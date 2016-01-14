@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
   // Define variational problem
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
-  Constant f(1.0);
+  auto f= std::make_shared<Constant>(1.0);
   L.f = f;
   Function u(V);
 

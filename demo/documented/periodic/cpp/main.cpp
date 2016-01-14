@@ -75,7 +75,7 @@ int main()
   PeriodicBoundary periodic_boundary;
 
   // Create functions
-  Source f;
+  auto f = std::make_shared<Source>();
 
   // Define PDE
   auto V = std::make_shared<Poisson::FunctionSpace>(mesh, periodic_boundary);

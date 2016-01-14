@@ -51,8 +51,8 @@ int main()
 
   // Interpolate expression into V0
   MyExpression e;
-  Function f0(V0);
-  f0.interpolate(e);
+  auto f0 = std::make_shared<Function>(V0);
+  f0->interpolate(e);
 
   // Define variational problem
   auto V1 = std::make_shared<P1_projection::FunctionSpace>(mesh1);
@@ -64,7 +64,7 @@ int main()
   solve(a == L, f1);
 
   // Plot results
-  plot(f0);
+  plot(*f0);
   plot(f1);
   interactive();
 

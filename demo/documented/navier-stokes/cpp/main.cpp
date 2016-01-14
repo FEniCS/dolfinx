@@ -106,13 +106,13 @@ int main()
   std::vector<DirichletBC*> bcp = {{&inflow, &outflow}};
 
   // Create functions
-  Function u0(V);
-  Function u1(V);
-  Function p1(Q);
+  auto u0 = std::make_shared<Function>(V);
+  auto u1 = std::make_shared<Function>(V);
+  auto p1 = std::make_shared<Function>(Q);
 
   // Create coefficients
-  Constant k(dt);
-  Constant f(0, 0);
+  auto k = std::make_shared<Constant>(dt);
+  auto f = std::make_shared<Constant>(0, 0);
 
   // Create forms
   TentativeVelocity::BilinearForm a1(V, V);
@@ -155,7 +155,7 @@ int main()
     assemble(b1, L1);
     for (std::size_t i = 0; i < bcu.size(); i++)
       bcu[i]->apply(A1, b1);
-    solve(A1, *u1.vector(), b1, "gmres", "default");
+    solve(A1, *u1->vector(), b1, "gmres", "default");
     end();
 
     // Pressure correction
@@ -164,9 +164,9 @@ int main()
     for (std::size_t i = 0; i < bcp.size(); i++)
     {
       bcp[i]->apply(A2, b2);
-      bcp[i]->apply(*p1.vector());
+      bcp[i]->apply(*p1->vector());
     }
-    solve(A2, *p1.vector(), b2, "bicgstab", prec);
+    solve(A2, *p1->vector(), b2, "bicgstab", prec);
     end();
 
     // Velocity correction
@@ -174,15 +174,15 @@ int main()
     assemble(b3, L3);
     for (std::size_t i = 0; i < bcu.size(); i++)
       bcu[i]->apply(A3, b3);
-    solve(A3, *u1.vector(), b3, "gmres", "default");
+    solve(A3, *u1->vector(), b3, "gmres", "default");
     end();
 
     // Save to file
-    ufile << u1;
-    pfile << p1;
+    ufile << *u1;
+    pfile << *p1;
 
     // Move to next time step
-    u0 = u1;
+    *u0 = *u1;
     t += dt;
     cout << "t = " << t << endl;
   }

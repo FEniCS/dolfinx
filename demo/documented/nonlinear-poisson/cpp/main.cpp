@@ -78,8 +78,8 @@ int main()
   DirichletBC bc(V, g, dirichlet_boundary);
 
   // Define source and solution functions
-  Source f;
-  Function u(V);
+  auto f = std::make_shared<Source>();
+  auto u = std::make_shared<Function>(V);
 
   // Create residual form defining (nonlinear) variational problem
   NonlinearPoisson::LinearForm F(V);
@@ -97,14 +97,14 @@ int main()
   params.add(newton_params);
 
   // Solve nonlinear variational problem
-  solve(F == 0, u, bc, J, params);
+  solve(F == 0, *u, bc, J, params);
 
   // Save solution in VTK format
   File file("nonlinear_poisson.pvd");
-  file << u;
+  file << *u;
 
   // Plot solution
-  plot(u);
+  plot(*u);
   interactive();
 
   return 0;

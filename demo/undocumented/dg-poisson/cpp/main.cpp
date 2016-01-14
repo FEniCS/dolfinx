@@ -94,9 +94,9 @@ int main()
   auto mesh = std::make_shared<UnitSquareMesh>(24, 24);
 
   // Create functions
-  Source f;
-  BoundaryValue u0;
-  BoundaryDerivative g;
+  auto f = std::make_shared<Source>();
+  auto u0 = std::make_shared<BoundaryValue>();
+  auto g = std::make_shared<BoundaryDerivative>();
 
   // Create funtion space
   auto V = std::make_shared<Poisson::FunctionSpace>(mesh);

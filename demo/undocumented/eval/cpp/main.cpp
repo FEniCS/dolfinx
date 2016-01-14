@@ -45,7 +45,7 @@ int main()
   Point x(0.31, 0.32, 0.33);
 
   // A user-defined function
-  F f;
+  auto f = std::make_shared<F>();
 
   // Project to a discrete function
   auto V = std::make_shared<Projection::FunctionSpace>(mesh);
@@ -56,7 +56,7 @@ int main()
   solve(a == L, g);
 
   // Evaluate user-defined function f
-  info("f(x) = %g", f(x));
+  info("f(x) = %g", (*f)(x));
 
   // Evaluate discrete function g (projection of f)
   info("g(x) = %g", g(x));

@@ -76,8 +76,8 @@ int main()
   // Define variational problem
   auto a = std::make_shared<Poisson::BilinearForm>(V, V);
   auto L = std::make_shared<Poisson::LinearForm>(V);
-  Source f;
-  Flux g;
+  auto f = std::make_shared<Source>();
+  auto g = std::make_shared<Flux>();
   L->f = f;
   L->g = g;
   auto w = std::make_shared<Function>(V);
