@@ -67,7 +67,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
   // Initialize storage of meshes and indicators
   std::string label = parameters["data_label"];
 #ifdef HAS_HDF5
-  TimeSeries series(goal->mesh().mpi_comm(), label);
+  TimeSeries series(goal->mesh()->mpi_comm(), label);
 #endif
 
   // Iterate over a series of meshes

@@ -88,7 +88,8 @@ std::vector<std::size_t> Form::coloring(std::size_t entity_dim) const
   warning("Form::coloring does not properly consider form type.");
 
   // Get mesh
-  const Mesh& mesh = this->mesh();
+  dolfin_assert(this->mesh());
+  const Mesh& mesh = *(this->mesh());
   const std::size_t cell_dim = mesh.topology().dim();
 
   std::vector<std::size_t> _coloring;
@@ -111,7 +112,7 @@ void Form::set_mesh(std::shared_ptr<const Mesh> mesh)
   _mesh = mesh;
 }
 //-----------------------------------------------------------------------------
-const Mesh& Form::mesh() const
+std::shared_ptr<const Mesh> Form::mesh() const
 {
   // In the case when there are no function spaces (in the case of a
   // a functional) the (generated) subclass must set the mesh directly
@@ -177,12 +178,7 @@ const Mesh& Form::mesh() const
 
   // Return first mesh
   dolfin_assert(meshes[0]);
-  return *meshes[0];
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const dolfin::Mesh> Form::mesh_shared_ptr() const
-{
-  return _mesh;
+  return meshes[0];
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FunctionSpace> Form::function_space(std::size_t i) const

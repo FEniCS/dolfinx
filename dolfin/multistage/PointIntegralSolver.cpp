@@ -48,7 +48,7 @@ PointIntegralSolver::PointIntegralSolver(std::shared_ptr<MultiStageScheme> schem
   _mesh(_scheme->last_stage()->mesh()),
   _dofmap(*_scheme->last_stage()->function_space(0)->dofmap()),
   _system_size(_dofmap.num_entity_dofs(0)),
-  _dof_offset(_mesh.type().num_entities(0)),
+  _dof_offset(_mesh->type().num_entities(0)),
   _num_stages(_scheme->stage_forms().size()),
   _local_to_local_dofs(_system_size),
   _vertex_map(), _local_to_global_dofs(_system_size),
@@ -96,6 +96,8 @@ void PointIntegralSolver::reset_stage_solutions()
 //-----------------------------------------------------------------------------
 void PointIntegralSolver::step(double dt)
 {
+  dolfin_assert(_mesh);
+
   const bool reset_stage_solutions_ = parameters["reset_stage_solutions"];
   const bool reset_newton_solver_
     = parameters("newton_solver")["reset_each_step"];
@@ -125,10 +127,10 @@ void PointIntegralSolver::step(double dt)
   // Iterate over vertices
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  for (std::size_t vert_ind = 0; vert_ind < _mesh.num_vertices(); ++vert_ind)
+  for (std::size_t vert_ind = 0; vert_ind < _mesh->num_vertices(); ++vert_ind)
   {
     // Cell containing vertex
-    const Cell cell(_mesh, _vertex_map[vert_ind].first);
+    const Cell cell(*_mesh, _vertex_map[vert_ind].first);
     cell.get_coordinate_dofs(coordinate_dofs);
     cell.get_cell_data(ufc_cell);
 
@@ -453,7 +455,7 @@ void PointIntegralSolver::_check_forms()
         = *stage_forms[i][j]->function_space(0)->dofmap();
       const unsigned int dofs_per_vertex = dofmap.num_entity_dofs(0);
       const unsigned int vert_per_cell
-        = _mesh.topology()(_mesh.topology().dim(), 0).size(0);
+        = _mesh->topology()(_mesh->topology().dim(), 0).size(0);
 
       if (vert_per_cell*dofs_per_vertex != dofmap.max_element_dofs())
       {
@@ -467,6 +469,8 @@ void PointIntegralSolver::_check_forms()
 //-----------------------------------------------------------------------------
 void PointIntegralSolver::_init()
 {
+  dolfin_assert(_mesh);
+
   // Get stage forms
   std::vector<std::vector<std::shared_ptr<const Form>>>& stage_forms
     = _scheme->stage_forms();
@@ -541,15 +545,15 @@ void PointIntegralSolver::_init()
   }
 
   // Build vertex map
-  _vertex_map.resize(_mesh.num_vertices());
+  _vertex_map.resize(_mesh->num_vertices());
 
   // Init mesh connections
-  _mesh.init(0);
-  const unsigned int dim_t = _mesh.topology().dim();
+  _mesh->init(0);
+  const unsigned int dim_t = _mesh->topology().dim();
 
   // Iterate over vertices and collect cell and local vertex
   // information
-  for (VertexIterator vert(_mesh); !vert.end(); ++vert)
+  for (VertexIterator vert(*_mesh); !vert.end(); ++vert)
   {
     // First look for cell where the vert is local vert 0
     bool local_vert_found = false;
@@ -570,7 +574,7 @@ void PointIntegralSolver::_init()
     // corresponds to
     if (!local_vert_found)
     {
-      const Cell cell0(_mesh, vert->entities(dim_t)[0]);
+      const Cell cell0(*_mesh, vert->entities(dim_t)[0]);
       _vertex_map[vert->index()].first = cell0.index();
 
       unsigned int local_vert_index = 0;
