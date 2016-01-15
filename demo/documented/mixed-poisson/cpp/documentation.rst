@@ -163,7 +163,7 @@ Then we create the source (:math:`f`) and assign it to the linear form.
 .. code-block:: c++
 
     // Create source and assign to L
-    Source f;
+    auto f = std::make_shared<Source>();
     L.f = f;
 
 It only remains to prescribe the boundary condition for the
@@ -189,7 +189,7 @@ defined above does.
 .. code-block:: c++
 
     // Define boundary condition
-    auto G = std::make_shared<BoundarySource>(mesh);
+    auto G = std::make_shared<BoundarySource>(*mesh);
     auto boundary = std::make_shared<EssentialBoundary>();
     DirichletBC bc(W->sub(0), G, boundary);
 

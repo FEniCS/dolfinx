@@ -59,10 +59,10 @@ class CahnHilliardEquation : public NonlinearProblem
   public:
 
     // Constructor
-  CahnHilliardEquation(std::shared_ptr<const Mesh> mesh,
-                       std::shared_ptr<const Constant> dt,
-                       std::shared_ptr<const Constant> theta,
-                       std::shared_ptr<const Constant> lambda)
+    CahnHilliardEquation(std::shared_ptr<const Mesh> mesh,
+                         std::shared_ptr<const Constant> dt,
+                         std::shared_ptr<const Constant> theta,
+                         std::shared_ptr<const Constant> lambda)
     {
       // Initialize class (depending on geometric dimension of the mesh).
       // Unfortunately C++ does not allow namespaces as template arguments
@@ -120,7 +120,7 @@ class CahnHilliardEquation : public NonlinearProblem
 
       // Create forms and attach functions
       Y* _a = new Y(V, V);
-      Z* _L = new Z(V);
+      Z* _L = new Z(dt);
       _a->u = _u;
       _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
       _L->u = _u; _L->u0 = _u0;
