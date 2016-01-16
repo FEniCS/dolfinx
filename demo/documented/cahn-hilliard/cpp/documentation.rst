@@ -271,7 +271,7 @@ initial condition (by interpolation).
 
         // Create forms and attach functions
         Y* _a = new Y(V, V);
-        Z* _L = new Z(dt);
+        Z* _L = new Z(V);
         _a->u = _u;
         _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
         _L->u = _u; _L->u0 = _u0;
