@@ -102,13 +102,13 @@ int main()
   auto mesh = std::make_shared<Mesh>("../pulley.xml.gz");
 
   // Create right-hand side loading function
-  CentripetalLoading f;
+  auto f = std::make_shared<CentripetalLoading>();
 
   // Set elasticity parameters
   double E  = 10.0;
   double nu = 0.3;
-  Constant mu(E/(2.0*(1.0 + nu)));
-  Constant lambda(E*nu/((1.0 + nu)*(1.0 - 2.0*nu)));
+  auto mu = std::make_shared<Constant>(E/(2.0*(1.0 + nu)));
+  auto lambda = std::make_shared<Constant>(E*nu/((1.0 + nu)*(1.0 - 2.0*nu)));
 
   // Create function space
   auto V = std::make_shared<Elasticity::Form_a::TestSpace>(mesh);
@@ -131,12 +131,12 @@ int main()
   assemble_system(A, b, a, L, {bc});
 
   // Create solution function
-  Function u(V);
+  auto u = std::make_shared<Function>(V);
 
   // Create near null space basis (required for smoothed aggregation
   // AMG). The solution vector is passed so that it can be copied to
   // generate compatible vectors for the nullspace.
-  VectorSpaceBasis null_space = build_nullspace(*V, *u.vector());
+  VectorSpaceBasis null_space = build_nullspace(*V, *u->vector());
 
   // Create PETSc smoothed aggregation AMG preconditioner
   auto pc = std::make_shared<PETScPreconditioner>("petsc_amg");
@@ -156,20 +156,20 @@ int main()
   solver.parameters["monitor_convergence"] = true;
 
   // Solve
-  solver.solve(A, *(u.vector()), b);
+  solver.solve(A, *(u->vector()), b);
 
   // Extract solution components (deep copy)
-  Function ux = u[0];
-  Function uy = u[1];
-  Function uz = u[2];
-  std::cout << "Norm (u vector): " << u.vector()->norm("l2") << std::endl;
+  Function ux = (*u)[0];
+  Function uy = (*u)[1];
+  Function uz = (*u)[2];
+  std::cout << "Norm (u vector): " << u->vector()->norm("l2") << std::endl;
   std::cout << "Norm (ux, uy, uz): " << ux.vector()->norm("l2") << "  "
             << uy.vector()->norm("l2") << "  "
             << uz.vector()->norm("l2") << std::endl;
 
   // Save solution in VTK format
   File vtk_file("elasticity.pvd", "compressed");
-  vtk_file << u;
+  vtk_file << *u;
 
   // Extract stress and write in VTK format
   auto W = std::make_shared<Elasticity::Form_a_s::TestSpace>(mesh);
@@ -202,7 +202,7 @@ int main()
   plot(u, "Displacement", "displacement");
 
   // Displace mesh and plot displaced mesh
-  ALE::move(*mesh, u);
+  ALE::move(*mesh, *u);
   plot(*mesh, "Deformed mesh");
 
   // Make plot windows interactive

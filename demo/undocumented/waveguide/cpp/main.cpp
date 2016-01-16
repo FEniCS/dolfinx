@@ -44,14 +44,15 @@ int main()
   // Create mesh
   double width = 1.0;
   double height = 0.5;
-  RectangleMesh mesh(Point(0.0, 0.0), Point(width, height), 4, 2);
+  auto mesh = std::make_shared<RectangleMesh>(Point(0.0, 0.0),
+                                              Point(width, height), 4, 2);
 
   // Define the forms - gererates an generalized eigenproblem of the form
   // [S]{h} = k_o^2[T]{h}
   // with the eigenvalues k_o^2 representing the square of the cutoff wavenumber
   // and the corresponding right-eigenvector giving the coefficients of the
   // discrete system used to obtain the approximate field anywhere in the domain
-  Forms::FunctionSpace V(mesh);
+  auto V = std::make_shared<Forms::FunctionSpace>(mesh);
   Forms::Form_a s(V, V);
   Forms::Form_L t(V, V);
 

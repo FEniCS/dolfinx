@@ -33,7 +33,7 @@ int main()
   auto mesh = std::make_shared<Mesh>("../aneurysm.xml.gz");
 
   // Define variational problem
-  Constant f(0.0);
+  auto f = std::make_shared<Constant>(0.0);
   auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);

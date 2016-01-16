@@ -74,21 +74,21 @@ int main()
   auto bc = std::make_shared<DirichletBC>(W0, u0, noslip_markers, 0);
 
   // Create variational formulation and assign coefficients
-  Constant nu(0.02);
+  auto nu = std::make_shared<Constant>(0.02);
   auto F = std::make_shared<AdaptiveNavierStokes::LinearForm>(W);
-  Pressure p0;
+  auto p0 = std::make_shared<Pressure>();
   F->p0 = p0;
   F->nu = nu;
-  F->w = *w;
+  F->w = w;
 
   // Initialize Jacobian dF
   auto dF = std::make_shared<AdaptiveNavierStokes::BilinearForm>(W, W);
   dF->nu = nu;
-  dF->w = *w;
+  dF->w = w;
 
   // Define goal functional
   auto M = std::make_shared<AdaptiveNavierStokes::GoalFunctional>(mesh);
-  M->w = *w;
+  M->w = w;
   Outflow outflow;
   auto outflow_markers = std::make_shared<FacetFunction<std::size_t>>(mesh, 1);
   outflow.mark(*outflow_markers, 0);

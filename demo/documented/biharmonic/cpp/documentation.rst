@@ -129,7 +129,7 @@ vertices in each direction:
     parameters["ghost_mode"] = "shared_facet";
 
     // Create mesh
-    UnitSquareMesh mesh(32, 32);
+    auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
 
 The source function, a function for the cell size and the penalty term
 are declared:
@@ -137,8 +137,8 @@ are declared:
 .. code-block:: c++
 
     // Create functions
-    Source f;
-    Constant alpha(8.0);
+    auto f = std::make_shared<Source>();
+    auto alpha = std::make_shared<Constant>(8.0);
 
 A function space object, which is defined in the generated code, is
 created:

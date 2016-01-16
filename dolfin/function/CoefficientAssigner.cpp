@@ -16,13 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Martin Alnes, 2008.
-//
-// First added:  2008-10-28
-// Last changed: 2009-10-04
 
 #include <memory>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/Form.h>
+#include <dolfin/log/log.h>
 #include "CoefficientAssigner.h"
 
 using namespace dolfin;
@@ -39,9 +37,9 @@ CoefficientAssigner::~CoefficientAssigner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void CoefficientAssigner::operator= (const GenericFunction& coefficient)
+void CoefficientAssigner::operator= (std::shared_ptr<const GenericFunction> coefficient)
 {
-  std::shared_ptr<const GenericFunction> c(&coefficient, NoDeleter());
-  _form.set_coefficient(_number, c);
+  dolfin_assert(coefficient);
+  _form.set_coefficient(_number, coefficient);
 }
 //-----------------------------------------------------------------------------

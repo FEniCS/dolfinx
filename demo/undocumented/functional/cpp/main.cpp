@@ -41,15 +41,13 @@ int main()
   public:
 
     void eval(Array<double>& values, const Array<double>& x) const
-    {
-      values[0] = sin(x[0]) + cos(x[1]);
-    }
+    { values[0] = sin(x[0]) + cos(x[1]); }
 
   };
 
   // Define functional
-  UnitSquareMesh mesh(16, 16);
-  MyFunction v;
+  auto mesh = std::make_shared<UnitSquareMesh>(16, 16);
+  auto v = std::shared_ptr<MyFunction>();
   EnergyNorm::Functional M(mesh, v);
 
   // Evaluate functional

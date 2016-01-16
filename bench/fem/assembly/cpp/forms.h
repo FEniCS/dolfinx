@@ -18,6 +18,7 @@
 // First added:  2008-07-22
 // Last changed: 2010-05-03
 
+#include <memory>
 #include <dolfin.h>
 
 #include "forms/Poisson2DP1.h"
@@ -37,56 +38,56 @@ double bench_form(std::string form_name, double (*foo)(Form&))
 {
   if (form_name == "poisson1")
   {
-    UnitSquareMesh mesh(SIZE_2D, SIZE_2D);
-    Poisson2DP1::FunctionSpace V(mesh);
+    auto mesh = std::make_shared<UnitSquareMesh>(SIZE_2D, SIZE_2D);
+    auto V = std::make_shared<Poisson2DP1::FunctionSpace>(mesh);
     Poisson2DP1::BilinearForm form(V, V);
     return foo(form);
   }
   else if (form_name == "poisson2")
   {
-    UnitSquareMesh mesh(SIZE_2D, SIZE_2D);
-    Poisson2DP2::FunctionSpace V(mesh);
+    auto mesh = std::make_shared<UnitSquareMesh>(SIZE_2D, SIZE_2D);
+    auto V = std::make_shared<Poisson2DP2::FunctionSpace>(mesh);
     Poisson2DP2::BilinearForm form(V, V);
     return foo(form);
   }
   else if (form_name == "poisson3")
   {
-    UnitSquareMesh mesh(SIZE_2D, SIZE_2D);
-    Poisson2DP3::FunctionSpace V(mesh);
+    auto mesh = std::make_shared<UnitSquareMesh>(SIZE_2D, SIZE_2D);
+    auto V = std::make_shared<Poisson2DP3::FunctionSpace>(mesh);
     Poisson2DP3::BilinearForm form(V, V);
     return foo(form);
   }
   else if (form_name == "stokes")
   {
-    UnitSquareMesh mesh(SIZE_2D, SIZE_2D);
-    THStokes2D::FunctionSpace V(mesh);
+    auto mesh = std::make_shared<UnitSquareMesh>(SIZE_2D, SIZE_2D);
+    auto V = std::make_shared<THStokes2D::FunctionSpace>(mesh);
     THStokes2D::BilinearForm form(V, V);
     return foo(form);
   }
   else if (form_name == "stabilization")
   {
-    UnitSquareMesh mesh(SIZE_2D, SIZE_2D);
-    StabStokes2D::FunctionSpace V(mesh);
-    Constant h(1.0);
+    auto mesh = std::make_shared<UnitSquareMesh>(SIZE_2D, SIZE_2D);
+    auto V = std::make_shared<StabStokes2D::FunctionSpace>(mesh);
+    auto h = std::make_shared<Constant>(1.0);
     StabStokes2D::BilinearForm form(V, V, h);
     return foo(form);
   }
   else if (form_name == "elasticity")
   {
-    UnitCubeMesh mesh(SIZE_3D, SIZE_3D, SIZE_3D);
-    Elasticity3D::FunctionSpace V(mesh);
+    auto mesh = std::make_shared<UnitCubeMesh>(SIZE_3D, SIZE_3D, SIZE_3D);
+    auto V = std::make_shared<Elasticity3D::FunctionSpace>(mesh);
     Elasticity3D::BilinearForm form(V, V);
     return foo(form);
   }
   else if (form_name == "navierstokes")
   {
-    UnitCubeMesh mesh(SIZE_3D, SIZE_3D, SIZE_3D);
-    NSEMomentum3D::FunctionSpace V(mesh);
-    Constant  w(1.0, 1.0, 1.0);
-    Constant d1(1.0);
-    Constant d2(1.0);
-    Constant k(1.0);
-    Constant nu(1.0);
+    auto mesh = std::make_shared<UnitCubeMesh>(SIZE_3D, SIZE_3D, SIZE_3D);
+    auto V = std::make_shared<NSEMomentum3D::FunctionSpace>(mesh);
+    auto w = std::make_shared<Constant>(1.0, 1.0, 1.0);
+    auto d1 = std::make_shared<Constant>(1.0);
+    auto d2 = std::make_shared<Constant>(1.0);
+    auto k = std::make_shared<Constant>(1.0);
+    auto nu = std::make_shared<Constant>(1.0);
     NSEMomentum3D::BilinearForm form(V, V, w, d1, d2, k, nu);
     return foo(form);
   }
