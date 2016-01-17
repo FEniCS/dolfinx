@@ -116,6 +116,8 @@ double bench(std::string form, std::shared_ptr<const Form> a)
 
 int main(int argc, char* argv[])
 {
+  info("Runtime of threaded assembly benchmark");
+
   // Parse command-line arguments
   parameters.parse(argc, argv);
 
