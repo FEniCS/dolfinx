@@ -348,8 +348,7 @@ void MeshPartitioning::reorder_cells_gps(
   {
     const unsigned int cell_index = p->first;
     if (cell_index < num_regular_cells)
-      remapped_shared_cells.insert(std::make_pair
-                                   (remap[cell_index], p->second));
+      remapped_shared_cells.insert({remap[cell_index], p->second});
     else
       remapped_shared_cells.insert(*p);
   }
@@ -437,10 +436,9 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   {
     // Add map entry for each vertex
     for(auto p = cell_vertices[i].begin(); p != cell_vertices[i].end(); ++p)
-      sh_vert_to_cell.insert(std::make_pair(*p, std::vector<std::size_t>()));
+      sh_vert_to_cell.insert({*p, std::vector<std::size_t>()});
 
-    cell_global_to_local.insert(std::make_pair
-                                (new_mesh_data.global_cell_indices[i], i));
+    cell_global_to_local.insert({new_mesh_data.global_cell_indices[i], i});
   }
 
   // Reduce vertex set to those which also appear in local cells
@@ -458,8 +456,7 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
       auto vc_it = sh_vert_to_cell.find(*v);
       if (vc_it != sh_vert_to_cell.end())
       {
-        cell_global_to_local.insert(std::make_pair
-                                    (new_mesh_data.global_cell_indices[i], i));
+        cell_global_to_local.insert({new_mesh_data.global_cell_indices[i], i});
         vc_it->second.push_back(i);
       }
     }
@@ -515,7 +512,7 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
       // Look for vertex in map, and add the attached cell
       auto it = sh_vert_to_cell.find(vertex_index);
       if (it == sh_vert_to_cell.end())
-        sh_vert_to_cell.insert(std::make_pair(vertex_index, cell_set));
+        sh_vert_to_cell.insert({vertex_index, cell_set});
       else
         it->second.insert(it->second.end(), cell_set.begin(), cell_set.end());
     }
@@ -552,8 +549,8 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
       auto cell_it = cell_global_to_local.find(cell_index);
       if (cell_it == cell_global_to_local.end())
       {
-        cell_global_to_local.insert(std::make_pair(cell_index, count));
-        shared_cells.insert(std::make_pair(count, std::set<unsigned int>()));
+        cell_global_to_local.insert({cell_index, count});
+        shared_cells.insert({count, std::set<unsigned int>()});
         new_mesh_data.global_cell_indices.push_back(cell_index);
         new_mesh_data.cell_partition.push_back(owner);
         ++count;
@@ -592,7 +589,7 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
         {
           auto it = shared_cells.find(*c);
           if (it == shared_cells.end())
-            shared_cells.insert(std::make_pair(*c, sharing_procs));
+            shared_cells.insert({*c, sharing_procs});
           else
             it->second.insert(sharing_procs.begin(), sharing_procs.end());
         }
@@ -610,7 +607,7 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   {
     auto it = shared_cells.find(*c);
     if (it == shared_cells.end())
-      shared_cells.insert(std::make_pair(*c, sharing_procs));
+      shared_cells.insert({*c, sharing_procs});
     else
       it->second.insert(sharing_procs.begin(), sharing_procs.end());
   }
@@ -763,7 +760,7 @@ unsigned int MeshPartitioning::distribute_cells(
         std::set<unsigned int> proc_set(tmp_it, tmp_it + num_ghosts);
         // Remove self from set of sharing processes
         proc_set.erase(mpi_rank);
-        shared_cells.insert(std::make_pair(idx, proc_set));
+        shared_cells.insert({idx, proc_set});
         tmp_it += num_ghosts;
       }
       new_mesh_data.global_cell_indices[idx] = *tmp_it++;
@@ -809,7 +806,7 @@ std::size_t MeshPartitioning::compute_vertex_mapping(MPI_Comm mpi_comm,
       auto map_it = vertex_global_to_local.find(*q);
       if (map_it == vertex_global_to_local.end())
       {
-        vertex_global_to_local.insert(std::make_pair(*q, v));
+        vertex_global_to_local.insert({*q, v});
         vertex_indices.push_back(*q);
         ++v;
         if (i < num_regular_cells)
@@ -948,7 +945,7 @@ void MeshPartitioning::build_shared_vertices(MPI_Comm mpi_comm,
       {
         std::set<unsigned int> proc_set;
         proc_set.insert(p);
-        vertex_to_proc.insert(std::make_pair(*q, proc_set));
+        vertex_to_proc.insert({*q, proc_set});
       }
       else
         map_it->second.insert(p);
@@ -992,8 +989,7 @@ void MeshPartitioning::build_shared_vertices(MPI_Comm mpi_comm,
       const unsigned int local_index = local_index_it->second;
       dolfin_assert(shared_vertices_local.find(local_index)
                     == shared_vertices_local.end());
-      shared_vertices_local.insert(std::make_pair(local_index,
-                                                  sharing_processes));
+      shared_vertices_local.insert({local_index, sharing_processes});
     }
   }
 }
@@ -1120,10 +1116,7 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
 
     // Get map from mesh domains
     std::map<std::size_t, std::size_t>& markers = mesh.domains().markers(d);
-
-    std::map<std::pair<std::size_t, std::size_t>,
-             std::size_t>::const_iterator it;
-    for (it = values.begin(); it != values.end(); ++it)
+    for (auto it = values.begin(); it != values.end(); ++it)
     {
       const std::size_t cell_index = it->first.first;
       const std::size_t local_entity_index = it->first.second;

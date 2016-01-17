@@ -54,7 +54,7 @@ int main()
   UnitSquareMesh mesh(32, 32);
 
   // Construct function space
-  MixedPoissonDual::FunctionSpace W(mesh);
+  auto W = std::make_shared<MixedPoissonDual::FunctionSpace>(mesh);
   MixedPoissonDual::BilinearForm a(W, W);
   MixedPoissonDual::LinearForm L(W);
 
@@ -65,10 +65,9 @@ int main()
   L.g = g;
 
   // Define boundary condition
-  Constant zero(0.0);
-  SubSpace W1(W, 1);
-  DirichletBoundary boundary;
-  DirichletBC bc(W1, zero, boundary);
+  auto zero = std::make_shared<Constant>(0.0);
+  auto boundary = std::make_shared<DirichletBoundary>();
+  DirichletBC bc(W->sub(1), zero, boundary);
 
   // Compute solution
   Function w(W);

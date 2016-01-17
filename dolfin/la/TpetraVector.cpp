@@ -90,13 +90,17 @@ void TpetraVector::apply(std::string mode)
   Teuchos::RCP<const map_type> ghostmap(_x_ghosted->getMap());
 
   // Export from overlapping map ghostmap, to non-overlapping xmap
-  Tpetra::Export<dolfin::la_index> exporter(ghostmap, xmap);
+  Tpetra::Export<vector_type::local_ordinal_type,
+                 vector_type::global_ordinal_type,
+                 vector_type::node_type> exporter(ghostmap, xmap);
 
   // Forward export to reduction vector
   y->doExport(*_x_ghosted, exporter, Tpetra::ADD);
 
   // Copy back into _x_ghosted
-  Tpetra::Import<dolfin::la_index> importer(xmap, ghostmap);
+  Tpetra::Import<vector_type::local_ordinal_type,
+                 vector_type::global_ordinal_type,
+                 vector_type::node_type> importer(xmap, ghostmap);
   _x_ghosted->doImport(*y, importer, Tpetra::INSERT);
 
   //  std::copy(y->getData(0).begin(), y->getData(0).end(),
@@ -216,7 +220,9 @@ void TpetraVector::update_ghost_values()
   Teuchos::RCP<const map_type> ghostmap(_x_ghosted->getMap());
 
   // Export from non-overlapping map x, to overlapping ghostmap
-  Tpetra::Import<dolfin::la_index> importer(xmap, ghostmap);
+  Tpetra::Import<vector_type::local_ordinal_type,
+                 vector_type::global_ordinal_type,
+                 vector_type::node_type> importer(xmap, ghostmap);
 
   // FIXME: is this safe, since _x is a view into _x_ghosted?
   _x_ghosted->doImport(*_x, importer, Tpetra::INSERT);
@@ -365,8 +371,10 @@ void TpetraVector::gather(GenericVector& y,
                  "Cannot re-initialize gather vector. Must be empty, or have correct size and be a local vector");
   }
 
-  const Tpetra::Export<dolfin::la_index>
-    exporter(_x->getMap(), _y._x->getMap());
+
+  Tpetra::Export<vector_type::local_ordinal_type,
+              vector_type::global_ordinal_type,
+              vector_type::node_type> exporter(_x->getMap(), _y._x->getMap());
   _y._x->doExport(*_x, exporter, Tpetra::INSERT);
 }
 //-----------------------------------------------------------------------------
@@ -395,8 +403,10 @@ void TpetraVector::gather_on_zero(std::vector<double>& v) const
   Teuchos::RCP<vector_type> y(new vector_type(ymap, 1));
 
   // Export from vector x to vector y
-  const Tpetra::Export<dolfin::la_index>
-    exporter(_x->getMap(), y->getMap());
+  Tpetra::Export<vector_type::local_ordinal_type,
+              vector_type::global_ordinal_type,
+              vector_type::node_type> exporter(_x->getMap(), ymap);
+
   y->doExport(*_x, exporter, Tpetra::INSERT);
   Teuchos::ArrayRCP<const double> yarr(y->getData(0));
   std::copy(yarr.get(), yarr.get() + v.size(), v.begin());

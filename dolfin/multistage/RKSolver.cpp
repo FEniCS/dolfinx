@@ -55,7 +55,7 @@ void RKSolver::step(double dt)
     = _scheme->stage_forms();
   std::vector<std::shared_ptr<Function>>& stage_solutions
     = _scheme->stage_solutions();
-  std::vector<const DirichletBC* > bcs = _scheme->bcs();
+  std::vector<std::shared_ptr<const DirichletBC>> bcs = _scheme->bcs();
 
   // Iterate over stage forms
   for (unsigned int stage=0; stage < stage_forms.size(); stage++)
@@ -86,7 +86,10 @@ void RKSolver::step(double dt)
       // FIXME: applying the bcs on stage solutions are probably wrong...
       // FIXME: Include solver parameters
       // Do a nonlinear solve
-      solve(*stage_forms[stage][0] == 0, *stage_solutions[stage], bcs,
+      std::vector<const DirichletBC*> _bcs(bcs.size());
+      for (std::size_t i = 0; i < bcs.size(); ++i)
+        _bcs[i] = bcs[i].get();
+      solve(*stage_forms[stage][0] == 0, *stage_solutions[stage], _bcs,
             *stage_forms[stage][1]);
     }
   }

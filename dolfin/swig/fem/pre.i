@@ -51,58 +51,10 @@ PROBLEM_RENAMES(NonlinearVariational)
 // To simplify handling of shared_ptr types in PyDOLFIN we ignore the reference
 // version of constructors to these types
 //-----------------------------------------------------------------------------
-%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
-                     const GenericFunction&,
-                     const SubDomain&,
-                     std::string method="topological");
-%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
-                     const GenericFunction&,
-                     const MeshFunction<std::size_t>&,
-                     std::size_t,
-                     std::string method="topological");
-%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
-                     const GenericFunction&,
-                     std::size_t,
-                     std::string method="topological");
 %ignore dolfin::DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace>,
-                     std::shared_ptr<const GenericFunction>,
-                     const std::vector<std::size_t>&,
-                     std::string method="topological");
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
-                                                                   const Form&,
-                                                                   Function&);
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
-                                                     const Form&,
-                                                     Function&,
-                                                     const DirichletBC&);
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
-                                       const Form&,
-                                       Function&,
-                                       std::vector<const DirichletBC*>);
-
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                                     Function&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                                   Function&,
-                                                                   const Form&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                     Function&,
-                                                     const DirichletBC&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                     Function&,
-                                                     const DirichletBC&,
-                                                     const Form&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                       Function&,
-                                       std::vector<const DirichletBC*>);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                         Function&,
-                                         std::vector<const DirichletBC*>,
-                                         const Form&);
-
-%ignore dolfin::LinearVariationalSolver::LinearVariationalSolver(LinearVariationalProblem&);
-
-%ignore dolfin::NonlinearVariationalSolver::NonlinearVariationalSolver(NonlinearVariationalProblem&);
+                                         std::shared_ptr<const GenericFunction>,
+                                         const std::vector<std::size_t>&,
+                                         std::string method="topological");
 
 //-----------------------------------------------------------------------------
 // Ignore GenericDofMap::cell_dofs
@@ -119,7 +71,6 @@ PROBLEM_RENAMES(NonlinearVariational)
 // Modifying the interface of DirichletBC
 //-----------------------------------------------------------------------------
 %rename (_function_space) dolfin::DirichletBC::function_space;
-%ignore dolfin::DirichletBC::set_value(const GenericFunction&);
 %ignore dolfin::DirichletBC::gather;
 
 //-----------------------------------------------------------------------------

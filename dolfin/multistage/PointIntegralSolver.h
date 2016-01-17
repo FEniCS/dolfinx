@@ -47,7 +47,7 @@ namespace dolfin
     /// Constructor
     /// FIXME: Include version where one can pass a Solver and/or
     /// Parameters
-    PointIntegralSolver(std::shared_ptr<MultiStageScheme> scheme);
+    explicit PointIntegralSolver(std::shared_ptr<MultiStageScheme> scheme);
 
     /// Destructor
     ~PointIntegralSolver();
@@ -184,14 +184,14 @@ namespace dolfin
 
     // Vertex map between vertices, cells and corresponding local
     // vertex
-    std::vector<std::pair<std::size_t, unsigned int> > _vertex_map;
+    std::vector<std::pair<std::size_t, unsigned int>> _vertex_map;
 
     // Local to global dofs used when solution is fanned out to global
     // vector
     std::vector<dolfin::la_index> _local_to_global_dofs;
 
     // Local stage solutions
-    std::vector<std::vector<double> > _local_stage_solutions;
+    std::vector<std::vector<double>> _local_stage_solutions;
 
     // Local solutions
     std::vector<double> _u0;
@@ -200,19 +200,19 @@ namespace dolfin
     std::vector<double> _dx;
 
     // UFC objects, one for each form
-    std::vector<std::vector<std::shared_ptr<UFC> > > _ufcs;
+    std::vector<std::vector<std::shared_ptr<UFC>>> _ufcs;
 
     // UFC objects for the last form
     std::shared_ptr<UFC> _last_stage_ufc;
 
     // Solution coefficient index in form
-    std::vector<std::vector<int> > _coefficient_index;
+    std::vector<std::vector<int>> _coefficient_index;
 
     // Flag which is set to false once the jacobian has been computed
     std::vector<bool> _recompute_jacobian;
 
     // Jacobians/LU factorized jacobians matrices
-    std::vector<std::vector<double> > _jacobians;
+    std::vector<std::vector<double>> _jacobians;
 
     // Variable used in the estimation of the error of the newton
     // iteration for the first iteration (important for linear

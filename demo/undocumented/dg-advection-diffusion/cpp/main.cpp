@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
   Mesh mesh("../unitsquare_64_64.xml.gz");
 
   // Create velocity FunctionSpace
-  Velocity::FunctionSpace V_u(mesh);
+  auto V_u = std::make_shared<Velocity::FunctionSpace>(mesh);
 
   // Create velocity function
   Function u(V_u, "../unitsquare_64_64_velocity.xml.gz");
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
   Constant alpha(5.0);
 
   // Create function space
-  AdvectionDiffusion::FunctionSpace V(mesh);
+  auto V = std::make_shared<AdvectionDiffusion::FunctionSpace>(mesh);
 
   // Create forms and attach functions
   AdvectionDiffusion::BilinearForm a(V, V);
@@ -86,8 +86,8 @@ int main(int argc, char *argv[])
   L.f = f;
 
   // Set up boundary condition (apply strong BCs)
-  BC g;
-  DirichletBoundary boundary;
+  auto g = std::make_shared<BC>();
+  auto boundary = std::make_shared<DirichletBoundary>();
   DirichletBC bc(V, g, boundary, "geometric");
 
   // Solution function
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
   solve(A, *phi_h.vector(), b);
 
   // Define variational problem
-  Projection::FunctionSpace Vp(mesh);
+  auto Vp = std::make_shared<Projection::FunctionSpace>(mesh);
   Projection::BilinearForm ap(Vp, Vp);
   Projection::LinearForm Lp(Vp);
   Lp.phi0 = phi_h;

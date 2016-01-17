@@ -86,7 +86,7 @@ TEST(TestLinearOperator, test_linear_operator) {
 
       // Compute reference value by solving ordinary linear system
       UnitSquareMesh mesh(8, 8);
-      ReactionDiffusion::FunctionSpace V(mesh);
+      auto V = std::make_shared<ReactionDiffusion::FunctionSpace>(mesh);
       ReactionDiffusion::BilinearForm a(V, V);
       ReactionDiffusion::LinearForm L(V);
       Constant f(1.0);

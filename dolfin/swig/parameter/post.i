@@ -217,7 +217,7 @@ def update(self, other):
         if isinstance(self_value, Parameters):
             self_value.update(other_value)
         else:
-            setattr(self, key, other_value)
+            self.__setitem__(key, other_value)
 
 def to_dict(self):
     """Convert the Parameters to a dict"""
@@ -250,8 +250,30 @@ def __str__(self):
     "p.__str__() <==> str(x)"
     return self.str(False)
 
-__getattr__ = __getitem__
-__setattr__ = __setitem__
+def __getattr__(self, key):
+    # Check that there is still SWIG proxy available; otherwise
+    # implementation below may end up in infinite recursion
+    try:
+        self.__dict__["this"]
+    except KeyError:
+        raise AttributeError("SWIG proxy 'this' defunct on 'Parameters' object")
+
+    # Make sure KeyError is reraised as AttributeError
+    try:
+        return self.__getitem__(key)
+    except KeyError as e:
+        raise AttributeError("'Parameters' object has no attribute '%s'" % e.message)
+
+__getattr__.__doc__ = __getitem__.__doc__
+
+def __setattr__(self, key, value):
+    # Make sure KeyError is reraised as AttributeError
+    try:
+        return self.__setitem__(key, value)
+    except KeyError as e:
+        raise AttributeError("'Parameters' object has no attribute '%s'" % e.message)
+
+__setattr__.__doc__ = __setitem__.__doc__
 
 def iterdata(self):
     """Returns an iterator of a tuple of a parameter key together with its value"""

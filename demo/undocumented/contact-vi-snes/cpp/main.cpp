@@ -73,20 +73,18 @@ int main()
   Mesh mesh("../circle_yplane.xml.gz");
 
   // Create function space
-  HyperElasticity::FunctionSpace V(mesh);
+  auto V = std::make_shared<HyperElasticity::FunctionSpace>(mesh);
 
   // Create Dirichlet boundary conditions
-  SubSpace V0(V, 0);
-  Constant zero(0.0);
-  SymmetryLine s;
-  DirichletBC bc(V0, zero, s, "pointwise");
-  std::vector<const DirichletBC*> bcs {&bc};
+  auto zero = std::make_shared<Constant>(0.0);
+  auto s = std::make_shared<SymmetryLine>();
+  auto bc = std::make_shared<DirichletBC>(V->sub(0), zero, s, "pointwise");
 
   // Define source and boundary traction functions
   Constant B(0.0, -0.05);
 
   // Define solution function
-  Function u(V);
+  auto u = std::make_shared<Function>(V);
 
   // Set material parameters
   const double E  = 10.0;
@@ -95,12 +93,12 @@ int main()
   Constant lambda(E*nu/((1.0 + nu)*(1.0 - 2.0*nu)));
 
   // Create (linear) form defining (nonlinear) variational problem
-  HyperElasticity::ResidualForm F(V);
-  F.mu = mu; F.lmbda = lambda; F.B = B; F.u = u;
+  auto F = std::make_shared<HyperElasticity::ResidualForm>(V);
+  F->mu = mu; F->lmbda = lambda; F->B = B; F->u = *u;
 
   // Create jacobian dF = F' (for use in nonlinear solver).
-  HyperElasticity::JacobianForm J(V, V);
-  J.mu = mu; J.lmbda = lambda; J.u = u;
+  auto J = std::make_shared<HyperElasticity::JacobianForm>(V, V);
+  J->mu = mu; J->lmbda = lambda; J->u = *u;
 
   // Interpolate expression for upper bound
   UpperBound umax_exp;
@@ -113,7 +111,9 @@ int main()
   umin.interpolate(umin_exp);
 
   // Set up the non-linear problem
-  NonlinearVariationalProblem problem(F, u, bcs, J);
+  std::vector<std::shared_ptr<const DirichletBC>> bcs = {bc};
+  auto problem = std::make_shared<NonlinearVariationalProblem>(F, u, bcs, J);
+  problem->set_bounds(umin, umax);
 
   // Set up the non-linear solver
   NonlinearVariationalSolver solver(problem);
@@ -125,7 +125,7 @@ int main()
 
   // Solve the problems
   std::pair<std::size_t, bool> out;
-  out = solver.solve(umin,umax);
+  out = solver.solve();
 
   // Check for convergence. Convergence is one modifies the loading
   // and the mesh size
@@ -137,10 +137,10 @@ int main()
 
   // Save solution in VTK format
   File file("displacement.pvd");
-  file << u;
+  file << *u;
 
   // plot the current configuration
-  plot(u,"Displacement", "displacement");
+  plot(*u, "Displacement", "displacement");
 
   // Make plot windows interactive
   interactive();

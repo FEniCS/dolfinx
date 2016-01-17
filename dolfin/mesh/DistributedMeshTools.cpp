@@ -418,12 +418,17 @@ DistributedMeshTools::locate_off_process_entities(const std::vector<std::size_t>
     std::set<std::size_t> set_of_my_entities(entity_indices.begin(),
                                              entity_indices.end());
 
+    const std::map<unsigned int, std::set<unsigned int>>& sharing_map
+      = mesh.topology().shared_entities(D);
+
     // FIXME: This can be made more efficient by exploiting fact that
     //        set is sorted
     // Remove local cells from set_of_my_entities to reduce communication
     for (std::size_t j = 0; j < global_entity_indices.size(); ++j)
-      set_of_my_entities.erase(global_entity_indices[j]);
-
+    {
+      if (sharing_map.find(j) != sharing_map.end())
+        set_of_my_entities.erase(global_entity_indices[j]);
+    }
     // Copy entries from set_of_my_entities to my_entities
     my_entities = std::vector<std::size_t>(set_of_my_entities.begin(),
                                            set_of_my_entities.end());
@@ -485,7 +490,7 @@ DistributedMeshTools::locate_off_process_entities(const std::vector<std::size_t>
     {
       const std::size_t global_index = host_processes[j];
       const std::size_t local_index  = host_processes[j + 1];
-      processes[global_index].insert(std::make_pair(dest, local_index));
+      processes[global_index].insert({dest, local_index});
     }
 
     // FIXME: Do later for efficiency
@@ -564,7 +569,7 @@ std::unordered_map<unsigned int,
     {
       send_indices[*dest].push_back(global_index);
       local_sent_indices[*dest].push_back(local_index);
-      global_to_local[*dest].insert(std::make_pair(global_index, local_index));
+      global_to_local[*dest].insert({global_index, local_index});
     }
   }
 
@@ -642,8 +647,7 @@ std::unordered_map<unsigned int,
 
       for (std::size_t i = 0; i < neighbour_local_indices.size(); ++i)
       {
-        shared_local_indices_map[my_local_indices[i]].push_back(std::make_pair(proc,
-                                                                               neighbour_local_indices[i]));
+        shared_local_indices_map[my_local_indices[i]].push_back({proc, neighbour_local_indices[i]});
       }
     }
   }
@@ -668,8 +672,7 @@ void DistributedMeshTools::compute_entity_ownership(
   for (v = shared_vertices_local.begin(); v != shared_vertices_local.end(); ++v)
   {
     dolfin_assert(v->first < global_vertex_indices.size());
-    shared_vertices.insert(std::make_pair(global_vertex_indices[v->first],
-                                          v->second));
+    shared_vertices.insert({global_vertex_indices[v->first], v->second});
   }
 
   // Entity ownership list ([entity vertices], data):
@@ -1004,7 +1007,7 @@ DistributedMeshTools::compute_num_global_entities(const MPI_Comm mpi_comm,
                                                  num_entities_to_number.end(),
                                                  (std::size_t)0);
 
-  return std::make_pair(num_global, offset);
+  return {num_global, offset};
 }
 //-----------------------------------------------------------------------------
 void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
@@ -1061,8 +1064,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     {
       // Insert shared facets into mapping
       if (f->is_shared())
-        global_to_local_facet.insert(std::make_pair(f->global_index(),
-                                                    f->index()));
+        global_to_local_facet.insert({f->global_index(), f->index()});
       // Copy local values
       const std::size_t n_cells = f->num_entities(D);
       num_global_neighbors[f->index()] = n_cells;
