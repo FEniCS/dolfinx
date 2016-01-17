@@ -69,13 +69,13 @@ int main()
   };
 
   // Create mesh
-  UnitSquareMesh mesh(32, 32);
+  auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
 
   // Create periodic boundary condition
-  PeriodicBoundary periodic_boundary;
+  auto periodic_boundary = std::make_shared<PeriodicBoundary>();
 
   // Create functions
-  Source f;
+  auto f = std::make_shared<Source>();
 
   // Define PDE
   auto V = std::make_shared<Poisson::FunctionSpace>(mesh, periodic_boundary);

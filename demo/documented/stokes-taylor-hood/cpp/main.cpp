@@ -83,7 +83,7 @@ int main()
   std::vector<const DirichletBC*> bcs = {{&bc0, &bc1}};
 
   // Define variational problem
-  Constant f(0.0, 0.0);
+  auto f = std::make_shared<Constant>(0.0, 0.0);
   Stokes::BilinearForm a(W, W);
   Stokes::LinearForm L(W);
   L.f = f;

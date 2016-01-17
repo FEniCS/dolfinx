@@ -54,7 +54,7 @@ int main()
 
   // Read velocity field from file
   auto Vp = std::make_shared<Functionals::CoefficientSpace_p>(mesh);
-  Function p(Vp, "../dolfin_fine_pressure.xml.gz");
+  auto p = std::make_shared<Function>(Vp, "../dolfin_fine_pressure.xml.gz");
 
   // Mark 'fish'
   auto markers = std::make_shared<FacetFunction<std::size_t>>(mesh, 1);

@@ -74,7 +74,7 @@ class EssentialBoundary : public SubDomain
 int main()
 {
   // Create mesh
-  UnitSquareMesh mesh(32, 32);
+  auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
 
   // Construct function space
   auto W = std::make_shared<MixedPoisson::FunctionSpace>(mesh);
@@ -82,11 +82,11 @@ int main()
   MixedPoisson::LinearForm L(W);
 
   // Create source and assign to L
-  Source f;
+  auto f = std::make_shared<Source>();
   L.f = f;
 
   // Define boundary condition
-  auto G = std::make_shared<BoundarySource>(mesh);
+  auto G = std::make_shared<BoundarySource>(*mesh);
   auto boundary = std::make_shared<EssentialBoundary>();
   DirichletBC bc(W->sub(0), G, boundary);
 

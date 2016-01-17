@@ -33,7 +33,7 @@ int main()
   #ifdef HAS_SLEPC
 
   // Create mesh
-  Mesh mesh("../box_with_dent.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../box_with_dent.xml.gz");
 
   // Build stiffness matrix
   auto A = std::make_shared<PETScMatrix>();

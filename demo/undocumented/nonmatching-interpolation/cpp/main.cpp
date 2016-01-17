@@ -43,8 +43,8 @@ public:
 int main()
 {
   // Create meshes
-  UnitSquareMesh mesh0(16, 16);
-  UnitSquareMesh mesh1(64, 64);
+  auto mesh0 = std::make_shared<UnitSquareMesh>(16, 16);
+  auto mesh1 = std::make_shared<UnitSquareMesh>(64, 64);
 
   // Create function spaces
   auto V0 = std::make_shared<P3::FunctionSpace>(mesh0);

@@ -39,9 +39,9 @@ int main(int argc, char *argv[])
   auto V_u = std::make_shared<Velocity::FunctionSpace>(mesh);
 
   // Create velocity function
-  Function velocity(V_u);
+  auto velocity = std::make_shared<Function>(V_u);
   File file_u(mesh->mpi_comm(), "../dolfin_fine_velocity.xml.gz");
-  file_u >> velocity;
+  file_u >> *velocity;
 
   // Read sub domain markers
   auto sub_domains = std::make_shared<MeshFunction<std::size_t>>(mesh,
@@ -51,8 +51,8 @@ int main(int argc, char *argv[])
   auto V = std::make_shared<AdvectionDiffusion::FunctionSpace>(mesh);
 
   // Source term and initial condition
-  Constant f(0.0);
-  Function u(V);
+  auto f = std::make_shared<Constant>(0.0);
+  auto u = std::make_shared<Function>(V);
 
   // Set up forms
   AdvectionDiffusion::BilinearForm a(V, V);
@@ -63,9 +63,6 @@ int main(int argc, char *argv[])
   // Set up boundary condition
   auto g = std::make_shared<Constant>(1.0);
   DirichletBC bc(V, g, sub_domains, 1);
-
-  // Solution
-  Function u1(V);
 
   // Linear system
   std::shared_ptr<Matrix> A(new Matrix);
@@ -96,17 +93,17 @@ int main(int argc, char *argv[])
     bc.apply(b);
 
     // Solve the linear system (re-use the already factorized matrix A)
-    lu.solve(*u.vector(), b);
+    lu.solve(*u->vector(), b);
 
     // Save solution in VTK format
-    file << std::pair<const Function*, double>(&u, t);
+    file << std::pair<const Function*, double>(u.get(), t);
 
     // Move to next interval
-    p = t / T;
+    p = t/T;
     t += k;
   }
 
   // Plot solution
-  plot(u);
+  plot(*u);
   interactive();
 }
