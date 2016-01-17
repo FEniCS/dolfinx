@@ -42,14 +42,13 @@ namespace dolfin
   public:
 
     /// Compute the exterior boundary of a given mesh
-    static void compute_boundary(const Mesh& mesh,
-                                          const std::string type,
-                                          BoundaryMesh& boundary);
+    static void compute_boundary(const Mesh& mesh, const std::string type,
+                                 BoundaryMesh& boundary);
 
     /// Compute the boundary of a given mesh
     static void compute_boundary_common(const Mesh& mesh,
-					                              BoundaryMesh& boundary,
-					                              bool interior_boundary);
+                                        BoundaryMesh& boundary,
+                                        bool interior_boundary);
 
   private:
 

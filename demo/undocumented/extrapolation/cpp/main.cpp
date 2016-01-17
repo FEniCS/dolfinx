@@ -42,7 +42,7 @@ public:
 int main()
 {
   // Create mesh and function spaces
-  UnitSquareMesh mesh(8, 8);
+  auto mesh = std::make_shared<UnitSquareMesh>(8, 8);
   auto P1 = std::make_shared<P1::FunctionSpace>(mesh);
   auto P2 = std::make_shared<P2::FunctionSpace>(mesh);
 

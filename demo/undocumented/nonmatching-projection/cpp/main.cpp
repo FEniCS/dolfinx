@@ -43,16 +43,16 @@ public:
 int main()
 {
   // Create meshes
-  UnitSquareMesh mesh0(16, 16);
-  UnitSquareMesh mesh1(64, 64);
+  auto mesh0 = std::make_shared<UnitSquareMesh>(16, 16);
+  auto mesh1 = std::make_shared<UnitSquareMesh>(64, 64);
 
   // Create P3 function space
   auto V0 = std::make_shared<P3::FunctionSpace>(mesh0);
 
   // Interpolate expression into V0
   MyExpression e;
-  Function f0(V0);
-  f0.interpolate(e);
+  auto f0 = std::make_shared<Function>(V0);
+  f0->interpolate(e);
 
   // Define variational problem
   auto V1 = std::make_shared<P1_projection::FunctionSpace>(mesh1);
@@ -64,7 +64,7 @@ int main()
   solve(a == L, f1);
 
   // Plot results
-  plot(f0);
+  plot(*f0);
   plot(f1);
   interactive();
 

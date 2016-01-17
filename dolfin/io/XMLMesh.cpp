@@ -167,7 +167,8 @@ void XMLMesh::read_data(MeshData& data, const Mesh& mesh,
     if (node_name == "mesh_function")
     {
       // Create MeshFunction to read data into
-      MeshFunction<std::size_t> mf(mesh);
+      auto _mesh = reference_to_no_delete_pointer(mesh);
+      MeshFunction<std::size_t> mf(_mesh);
 
       // Read  MeshFunction
       //const std::string data_type = it->attribute("type").value();
@@ -214,7 +215,8 @@ void XMLMesh::read_data(MeshData& data, const Mesh& mesh,
       else if (data_set_type == "mesh_function")
       {
         // Create MeshFunction to read data into
-        MeshFunction<std::size_t> mf(mesh);
+        auto _mesh = reference_to_no_delete_pointer(mesh);
+        MeshFunction<std::size_t> mf(_mesh);
 
         // Read  MeshFunction
         const std::string data_type = data_set.attribute("type").value();
@@ -538,7 +540,8 @@ void XMLMesh::write_data(const Mesh& mesh, const MeshData& data,
       }
 
       // Copy data into MeshFunction
-      MeshFunction<std::size_t> mf(mesh, dim);
+      auto _mesh = reference_to_no_delete_pointer(mesh);
+      MeshFunction<std::size_t> mf(_mesh, dim);
       mf.rename(name, name);
       for (std::size_t i = 0; i < mf.size(); ++i)
         mf[i] = array[i];
@@ -566,7 +569,8 @@ void XMLMesh::write_domains(const Mesh& mesh, const MeshDomains& domains,
     {
       const std::map<std::size_t, std::size_t>& domain = domains.markers(d);
 
-      MeshValueCollection<std::size_t> collection(mesh, d);
+      auto _mesh = reference_to_no_delete_pointer(mesh);
+      MeshValueCollection<std::size_t> collection(_mesh, d);
       std::map<std::size_t, std::size_t>::const_iterator it;
       for (it = domain.begin(); it != domain.end(); ++it)
         collection.set_value(it->first, it->second);

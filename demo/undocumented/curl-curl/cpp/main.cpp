@@ -58,11 +58,11 @@ int main()
   };
 
   // Load sphere mesh and refine uniformly
-  Mesh mesh("../sphere.xml.gz");
-  mesh = refine(mesh);
+  auto mesh = std::make_shared<Mesh>("../sphere.xml.gz");
+  mesh = std::make_shared<Mesh>(refine(*mesh));
 
   // Homogeneous external magnetic field (dB/dt)
-  Constant dbdt(0.0, 0.0, 1.0);
+  auto dbdt = std::make_shared<Constant>(0.0, 0.0, 1.0);
 
   // Dirichlet boundary condition
   auto zero = std::make_shared<Constant>(0.0, 0.0, 0.0);
@@ -78,7 +78,7 @@ int main()
   L.dbdt = dbdt;
 
   // Solution function
-  Function T(V);
+  auto T = std::make_shared<Function>(V);
 
   // Assemble system
   auto A = std::make_shared<PETScMatrix>();
@@ -128,10 +128,10 @@ int main()
   KSPSetFromOptions(ksp);
 
   // Solve system
-  KSPSolve(ksp, b.vec(), as_type<PETScVector>(*T.vector()).vec());
+  KSPSolve(ksp, b.vec(), as_type<PETScVector>(*T->vector()).vec());
 
   // Update ghost values in solution vector
-  T.vector()->apply("insert");
+  T->vector()->apply("insert");
 
   // Define variational problem for J
   auto V1 = std::make_shared<CurrentDensity::FunctionSpace>(mesh);

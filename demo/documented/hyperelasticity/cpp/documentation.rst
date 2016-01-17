@@ -216,7 +216,7 @@ generated code.
 .. code-block:: c++
 
    // Create mesh and define function space
-   UnitCubeMesh mesh (24, 16, 16);
+   auto mesh = std::make_shared<UnitCubeMesh>(24, 16, 16);
    auto V = std::make_shared<HyperElasticity::FunctionSpace>(mesh);
 
 Now, the Dirichlet boundary conditions can be created using the class
@@ -249,8 +249,8 @@ source ``B`` and the traction ``T``.
 .. code-block:: c++
 
   // Define source and boundary traction functions
-  Constant B(0.0, -0.5, 0.0);
-  Constant T(0.1,  0.0, 0.0);
+  auto B = std::make_shared<Constant>(0.0, -0.5, 0.0);
+  auto T = std::make_shared<Constant>(0.1,  0.0, 0.0);
 
 The solution for the displacement will be an instance of the class
 :cpp:class:`Function`, living in the function space ``V``; we define
@@ -259,7 +259,7 @@ it here:
 .. code-block:: c++
 
   // Define solution function
-  Function u(V);
+  auto u = std::make_shared<Function>(V);
 
 Next, we set the material parameters
 
@@ -268,8 +268,8 @@ Next, we set the material parameters
   // Set material parameters
   const double E  = 10.0;
   const double nu = 0.3;
-  Constant mu(E/(2*(1 + nu)));
-  Constant lambda(E*nu/((1 + nu)*(1 - 2*nu)));
+  auto mu = std::make_shared<Constant>(E/(2*(1 + nu)));
+  auto lambda = std::make_shared<Constant>(E*nu/((1 + nu)*(1 - 2*nu)));
 
 Now, we can initialize the bilinear and linear forms (``a``, ``L``)
 using the previously defined :cpp:class:`FunctionSpace` ``V``. We
@@ -293,7 +293,7 @@ solution of the variational problem.
 .. code-block:: c++
 
   // Solve nonlinear variational problem F(u; v) = 0
-  solve(F == 0, u, bcs, J);
+  solve(F == 0, *u, bcs, J);
 
 Finally, the solution ``u`` is saved to a file named
 ``displacement.pvd`` in VTK format, and the displacement solution is
@@ -303,10 +303,10 @@ plotted.
 
   // Save solution in VTK format
   File file("displacement.pvd");
-  file << u;
+  file << *u;
 
   // Plot solution
-  plot(u);
+  plot(*u);
   interactive();
 
   return 0;

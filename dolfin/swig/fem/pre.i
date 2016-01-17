@@ -48,9 +48,9 @@ PROBLEM_RENAMES(LinearVariational)
 PROBLEM_RENAMES(NonlinearVariational)
 
 //-----------------------------------------------------------------------------
-// To simplify handling of shared_ptr types in PyDOLFIN we ignore the reference
-// version of constructors to these types
-//-----------------------------------------------------------------------------
+// To simplify handling of shared_ptr types in PyDOLFIN we ignore the
+// reference version of constructors to these types
+// -----------------------------------------------------------------------------
 %ignore dolfin::DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace>,
                                          std::shared_ptr<const GenericFunction>,
                                          const std::vector<std::size_t>&,

@@ -66,8 +66,8 @@ int main()
   // Define variational forms
   auto a = std::make_shared<AdaptivePoisson::BilinearForm>(V, V);
   auto L = std::make_shared<AdaptivePoisson::LinearForm>(V);
-  Source f;
-  dUdN g;
+  auto f = std::make_shared<Source>();
+  auto g = std::make_shared<dUdN>();
   L->f = f;
   L->g = g;
 

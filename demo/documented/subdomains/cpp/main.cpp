@@ -61,12 +61,12 @@ int main()
   };
 
   // Read mesh
-  Mesh mesh("../dolfin_fine.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../dolfin_fine.xml.gz");
 
   // Create mesh functions over the cell facets
-  MeshFunction<std::size_t> sub_domains(mesh, mesh.topology().dim() - 1);
-  MeshFunction<double> sub_domains_double(mesh, mesh.topology().dim() - 1);
-  MeshFunction<bool> sub_domains_bool(mesh, mesh.topology().dim() - 1);
+  MeshFunction<std::size_t> sub_domains(mesh, mesh->topology().dim() - 1);
+  MeshFunction<double> sub_domains_double(mesh, mesh->topology().dim() - 1);
+  MeshFunction<bool> sub_domains_bool(mesh, mesh->topology().dim() - 1);
 
   // Mark all facets as sub domain 3
   sub_domains = 3;

@@ -144,8 +144,8 @@ linear form.
 .. code-block:: c++
 
     // Create sources and assign to L
-    Source f;
-    BoundarySource g;
+    auto f = std::make_shared<Source>();
+    auto g = std::make_shared<BoundarySource>();
     L.f = f;
     L.g = g;
 

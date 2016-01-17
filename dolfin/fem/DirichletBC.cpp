@@ -623,16 +623,17 @@ void DirichletBC::init_from_sub_domain(std::shared_ptr<const SubDomain>
   // FIXME: mainly for convenience (we may reuse mark() in SubDomain).
 
   dolfin_assert(_function_space->mesh());
-  const Mesh& mesh = *_function_space->mesh();
+  std::shared_ptr<const Mesh> mesh = _function_space->mesh();
+  dolfin_assert(mesh);
 
   // Create mesh function for sub domain markers on facets and mark
   // all facet as subdomain 1
-  const std::size_t dim = mesh.topology().dim();
+  const std::size_t dim = mesh->topology().dim();
   _function_space->mesh()->init(dim - 1);
   FacetFunction<std::size_t> sub_domains(mesh, 1);
 
   // Set geometric dimension (needed for SWIG interface)
-  sub_domain->_geometric_dimension = mesh.geometry().dim();
+  sub_domain->_geometric_dimension = mesh->geometry().dim();
 
   // Mark the sub domain as sub domain 0
   sub_domain->mark(sub_domains, 0, _check_midpoint);
