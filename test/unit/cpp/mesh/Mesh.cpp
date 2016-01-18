@@ -146,7 +146,7 @@ TEST(BoundaryExtraction, testBoundaryBoundary) {
 //-----------------------------------------------
 TEST(MeshFunctions, testAssign) { 
   /// Assign value of mesh function
-  UnitSquareMesh mesh(3, 3);
+  auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
   MeshFunction<int> f(mesh, 0);
   f[3] = 10;
   Vertex v(mesh, 3);
@@ -175,7 +175,7 @@ TEST(InputOutput, testMeshXML3D) {
 
 TEST(InputOutput, testMeshFunction) {
   // Write and read mesh function to/from file
-  UnitSquareMesh mesh(1, 1);
+  auto mesh = std::make_shared<UnitSquareMesh>(1, 1);
   MeshFunction<int> f(mesh, 0);
   f[0] = 2;
   f[1] = 4;
@@ -185,7 +185,7 @@ TEST(InputOutput, testMeshFunction) {
   file << f;
   MeshFunction<int> g(mesh, 0);
   file >> g;
-  for (VertexIterator v(mesh); !v.end(); ++v)
+  for (VertexIterator v(*mesh); !v.end(); ++v)
     ASSERT_EQ(f[*v], g[*v]);
 }
 

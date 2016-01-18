@@ -56,7 +56,7 @@ TEST(Eval, testArbitraryEval) {
       }
     };
 
-    UnitCubeMesh mesh(8, 8, 8);
+    auto mesh = std::make_shared<UnitCubeMesh>(8, 8, 8);
 
     Array<double> x(3);
     x[0] = 0.31; x[1] = 0.32; x[2] = 0.33;
@@ -66,7 +66,7 @@ TEST(Eval, testArbitraryEval) {
 
     // User-defined functions (one from finite element space, one not)
     F0 f0;
-    F1 f1;
+    auto f1 = std::make_shared<F1>();
 
     // Test evaluation of a user-defined function
     f0.eval(u0, x);
@@ -75,7 +75,7 @@ TEST(Eval, testArbitraryEval) {
             DOLFIN_EPS);
 
     // Test for single core only
-    if (dolfin::MPI::size(mesh.mpi_comm()) == 1)
+    if (dolfin::MPI::size(mesh->mpi_comm()) == 1)
     {
       // Test evaluation of a discrete function
       auto V = std::make_shared<Projection::FunctionSpace>(mesh);
@@ -86,7 +86,7 @@ TEST(Eval, testArbitraryEval) {
       solve(a == L, g);
 
       const double tol = 1.0e-6;
-      f1.eval(u0, x);
+      f1->eval(u0, x);
       g.eval(u1, x);
       ASSERT_NEAR(u0[0], u1[0], tol);
     }

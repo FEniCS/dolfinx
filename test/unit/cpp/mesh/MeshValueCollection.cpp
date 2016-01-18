@@ -26,11 +26,11 @@
 using namespace dolfin;
 
 TEST(MeshValueCollections, testAssign2DCells) {
-  UnitSquareMesh mesh(3, 3);
-  const std::size_t ncells = mesh.num_cells();
+  auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
+  const std::size_t ncells = mesh->num_cells();
   MeshValueCollection<int> f(mesh, 2);
   bool all_new = true;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(*mesh); !cell.end(); ++cell)
   {
     bool this_new;
     const int value = ncells - cell->index();
@@ -42,7 +42,7 @@ TEST(MeshValueCollections, testAssign2DCells) {
   ASSERT_EQ(ncells, f.size());
   ASSERT_EQ(ncells, g.size());
   ASSERT_TRUE(all_new);
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(*mesh); !cell.end(); ++cell)
   {
     const int value = ncells - cell->index();
     ASSERT_EQ(value, g.get_value(cell->index(), 0));
@@ -55,7 +55,7 @@ TEST(MeshValueCollections, testAssign2DFacets) {
   const std::size_t ncells = mesh.num_cells();
   MeshValueCollection<int> f(mesh, 1);
   bool all_new = true;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(*mesh); !cell.end(); ++cell)
   {
     const int value = ncells - cell->index();
     for (std::size_t i = 0; i < cell->num_entities(1); ++i)
@@ -70,7 +70,7 @@ TEST(MeshValueCollections, testAssign2DFacets) {
   ASSERT_EQ(ncells*3, f.size());
   ASSERT_EQ(ncells*3, g.size());
   ASSERT_TRUE(all_new);
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(*mesh); !cell.end(); ++cell)
   {
     for (std::size_t i = 0; i < cell->num_entities(1); ++i)
     {
@@ -82,12 +82,12 @@ TEST(MeshValueCollections, testAssign2DFacets) {
 
 
 TEST(MeshValueCollections, testAssign2DVertices) {
-  UnitSquareMesh mesh(3, 3);
-  mesh.init(2, 0);
-  const std::size_t ncells = mesh.num_cells();
+  auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
+  mesh->init(2, 0);
+  const std::size_t ncells = mesh->num_cells();
   MeshValueCollection<int> f(mesh, 0);
   bool all_new = true;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(*mesh); !cell.end(); ++cell)
   {
     const int value = ncells - cell->index();
     for (std::size_t i = 0; i < cell->num_entities(0); ++i)
@@ -102,7 +102,7 @@ TEST(MeshValueCollections, testAssign2DVertices) {
   ASSERT_EQ(ncells*3, f.size());
   ASSERT_EQ(ncells*3, g.size());
   ASSERT_TRUE(all_new);
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(*mesh); !cell.end(); ++cell)
   {
     for (std::size_t i = 0; i < cell->num_entities(0); ++i)
     {
@@ -114,16 +114,16 @@ TEST(MeshValueCollections, testAssign2DVertices) {
 
 
 TEST(MeshValueCollections, testMeshFunctionAssign2DCells) {
-  UnitSquareMesh mesh(3, 3);
-  const std::size_t ncells = mesh.num_cells();
+  auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
+  const std::size_t ncells = mesh->num_cells();
   MeshFunction<int> f(mesh, 2, 0);
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(*mesh); !cell.end(); ++cell)
     f[cell->index()] = ncells - cell->index();
   MeshValueCollection<int> g(mesh, 2);
   g = f;
   ASSERT_EQ(ncells, f.size());
   ASSERT_EQ(ncells, g.size());
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(*mesh); !cell.end(); ++cell)
   {
     const int value = ncells - cell->index();
     ASSERT_EQ(value, g.get_value(cell->index(), 0));
@@ -132,14 +132,14 @@ TEST(MeshValueCollections, testMeshFunctionAssign2DCells) {
 
 
 TEST(MeshValueCollections, testMeshFunctionAssign2DFacets) {
-  UnitSquareMesh mesh(3, 3);
-  mesh.init(1);
+  auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
+  mesh->init(1);
   MeshFunction<int> f(mesh, 1, 25);
   MeshValueCollection<int> g(mesh, 1);
   g = f;
-  ASSERT_EQ(mesh.num_facets(), f.size());
-  ASSERT_EQ(mesh.num_cells()*3, g.size());
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  ASSERT_EQ(mesh->num_facets(), f.size());
+  ASSERT_EQ(mesh->num_cells()*3, g.size());
+  for (CellIterator cell(*mesh); !cell.end(); ++cell)
   {
     for (std::size_t i = 0; i < cell->num_entities(1); ++i)
       ASSERT_EQ(25, g.get_value(cell->index(), i));
@@ -148,14 +148,14 @@ TEST(MeshValueCollections, testMeshFunctionAssign2DFacets) {
 
 
 TEST(MeshValueCollections, testMeshFunctionAssign2DVertices) {
-  UnitSquareMesh mesh(3, 3);
-  mesh.init(0);
+  auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
+  mesh->init(0);
   MeshFunction<int> f(mesh, 0, 25);
   MeshValueCollection<int> g(mesh, 0);
   g = f;
-  ASSERT_EQ(mesh.num_vertices(), f.size());
-  ASSERT_EQ(mesh.num_cells()*3, g.size());
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  ASSERT_EQ(mesh->num_vertices(), f.size());
+  ASSERT_EQ(mesh->num_cells()*3, g.size());
+  for (CellIterator cell(*mesh); !cell.end(); ++cell)
   {
     for (std::size_t i = 0; i < cell->num_entities(0); ++i)
       ASSERT_EQ(25, g.get_value(cell->index(), i));

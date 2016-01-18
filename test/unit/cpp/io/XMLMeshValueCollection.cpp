@@ -29,12 +29,12 @@ using namespace dolfin;
 // Test rewritten using Google Test
 TEST(MeshValueCollectionIO, test_read) { 
   // Create mesh and read file
-  UnitCubeMesh mesh(5, 5, 5);
+  auto mesh = std::make_shared<UnitCubeMesh>(5, 5, 5);
   MeshValueCollection<std::size_t>
     markers(mesh, "xml_value_collection_ref.xml");
 
   // Check size
-  ASSERT_EQ(dolfin::MPI::sum(mesh.mpi_comm(), markers.size()), 6);
+  ASSERT_EQ(dolfin::MPI::sum(mesh->mpi_comm(), markers.size()), 6);
 
   // Check sum of values
   const std::map<std::pair<std::size_t, std::size_t>, std::size_t>&
@@ -44,7 +44,7 @@ TEST(MeshValueCollectionIO, test_read) {
   std::size_t sum = 0;
   for (it = values.begin(); it != values.end(); ++it)
     sum += it->second;
-  ASSERT_EQ(dolfin::MPI::sum(mesh.mpi_comm(), sum), 48);
+  ASSERT_EQ(dolfin::MPI::sum(mesh->mpi_comm(), sum), 48);
 }
 
 // Test all
