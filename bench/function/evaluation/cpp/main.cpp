@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
   tic();
   for (std::size_t N = 10; N < mesh_max_size; N += 2)
   {
-    UnitCubeMesh mesh(N, N, N);
+    const auto mesh = std::make_shared<const UnitCubeMesh>(N, N, N);
 
     const auto V0 = std::make_shared<const P1::FunctionSpace>(mesh);
     Function f0(V0);
