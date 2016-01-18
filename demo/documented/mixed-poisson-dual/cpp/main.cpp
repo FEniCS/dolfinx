@@ -51,7 +51,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh
-  UnitSquareMesh mesh(32, 32);
+  auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
 
   // Construct function space
   auto W = std::make_shared<MixedPoissonDual::FunctionSpace>(mesh);
@@ -59,8 +59,8 @@ int main()
   MixedPoissonDual::LinearForm L(W);
 
   // Create sources and assign to L
-  Source f;
-  BoundarySource g;
+  auto f = std::make_shared<Source>();
+  auto g = std::make_shared<BoundarySource>();
   L.f = f;
   L.g = g;
 

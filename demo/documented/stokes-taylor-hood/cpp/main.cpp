@@ -62,7 +62,7 @@ int main()
   };
 
   // Read mesh and sub domain markers
-  Mesh mesh("../dolfin_fine.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../dolfin_fine.xml.gz");
   auto sub_domains = std::make_shared<MeshFunction<std::size_t>>(mesh, "../dolfin_fine_subdomains.xml.gz");
 
   // Create function space
@@ -83,7 +83,7 @@ int main()
   std::vector<const DirichletBC*> bcs = {{&bc0, &bc1}};
 
   // Define variational problem
-  Constant f(0.0, 0.0);
+  auto f = std::make_shared<Constant>(0.0, 0.0);
   Stokes::BilinearForm a(W, W);
   Stokes::LinearForm L(W);
   L.f = f;

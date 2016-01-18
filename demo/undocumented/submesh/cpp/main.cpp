@@ -29,15 +29,17 @@ int main()
   {
     bool inside(const Array<double>& x, bool on_boundary) const
     {
-      return x[0] > 1.4 - DOLFIN_EPS and x[0] < 1.6 + DOLFIN_EPS and x[1] < 0.6 + DOLFIN_EPS;
+      return x[0] > 1.4 - DOLFIN_EPS and x[0] < 1.6 + DOLFIN_EPS
+                                                and x[1] < 0.6 + DOLFIN_EPS;
     }
   };
 
   // Create mesh
-  RectangleMesh mesh(Point(0.0, 0.0), Point(3.0, 1.0), 60, 20);
+  auto mesh = std::make_shared<RectangleMesh>(Point(0.0, 0.0),
+                                              Point(3.0, 1.0), 60, 20);
 
   // Create sub domain markers and mark everything as 0
-  MeshFunction<std::size_t> sub_domains(mesh, mesh.topology().dim());
+  MeshFunction<std::size_t> sub_domains(mesh, mesh->topology().dim());
   sub_domains = 0;
 
   // Mark structure domain as 1
@@ -45,8 +47,8 @@ int main()
   structure.mark(sub_domains, 1);
 
   // Extract sub meshes
-  auto fluid_mesh = std::make_shared<SubMesh>(mesh, sub_domains, 0);
-  auto structure_mesh = std::make_shared<SubMesh>(mesh, sub_domains, 1);
+  auto fluid_mesh = std::make_shared<SubMesh>(*mesh, sub_domains, 0);
+  auto structure_mesh = std::make_shared<SubMesh>(*mesh, sub_domains, 1);
 
   // Move structure mesh
   MeshGeometry& geometry = structure_mesh->geometry();

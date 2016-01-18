@@ -68,7 +68,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and function space
-  UnitSquareMesh mesh(32, 32);
+  auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
   auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
   // Define boundary condition
@@ -80,8 +80,8 @@ int main()
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
 
-  Source f;
-  dUdN g;
+  auto f = std::make_shared<Source>();
+  auto g = std::make_shared<dUdN>();
   L.f = f;
   L.g = g;
 

@@ -66,11 +66,11 @@ int main()
   parameters["ghost_mode"] = "shared_facet";
 
   // Create mesh
-  UnitSquareMesh mesh(32, 32);
+  auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
 
   // Create functions
-  Source f;
-  Constant alpha(8.0);
+  auto f = std::make_shared<Source>();
+  auto alpha = std::make_shared<Constant>(8.0);
 
   // Create function space
   auto V = std::make_shared<Biharmonic::FunctionSpace>(mesh);

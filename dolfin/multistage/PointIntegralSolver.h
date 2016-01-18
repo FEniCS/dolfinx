@@ -164,7 +164,7 @@ namespace dolfin
     std::shared_ptr<MultiStageScheme> _scheme;
 
     // Reference to mesh
-    const Mesh& _mesh;
+    std::shared_ptr<const Mesh> _mesh;
 
     // The dofmap (Same for all stages and forms)
     const GenericDofMap& _dofmap;

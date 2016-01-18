@@ -282,7 +282,7 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
   dolfin_assert(mesh);
 
   // Create MeshFunction and initialise to zero
-  MeshFunction<std::size_t> mf(*mesh, dim, 0);
+  MeshFunction<std::size_t> mf(mesh, dim, 0);
 
   // Compute marker
   const std::map<unsigned int, std::pair<unsigned int, unsigned int>>

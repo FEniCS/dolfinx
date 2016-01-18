@@ -1090,7 +1090,7 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
     mesh.init(d);
 
     // Create empty MeshValueCollection
-    MeshValueCollection<std::size_t> mvc(mesh, d);
+    MeshValueCollection<std::size_t> mvc(reference_to_no_delete_pointer(mesh), d);
 
     // Get domain data and build mesh value collection
     auto dim_data = domain_data.find(d);

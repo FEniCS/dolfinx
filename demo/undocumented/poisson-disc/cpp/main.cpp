@@ -55,7 +55,7 @@ int main()
   // Create mesh and function space
   int degree = 2;
   int gdim = 2;
-  UnitDiscMesh mesh(MPI_COMM_WORLD, 32, degree, gdim);
+  auto mesh = std::make_shared<UnitDiscMesh>(MPI_COMM_WORLD, 32, degree, gdim);
 
   auto V = std::make_shared<PoissonDisc::FunctionSpace>(mesh);
 
@@ -68,12 +68,12 @@ int main()
   PoissonDisc::BilinearForm a(V, V);
   PoissonDisc::LinearForm L(V);
 
-  Source f;
+  auto f = std::make_shared<Source>();
   L.f = f;
 
   // Compute solution
-  Function u(V);
-  solve(a == L, u, bc);
+  auto u = std::make_shared<Function>(V);
+  solve(a == L, *u, bc);
 
   // Error norm functional
   PoissonDisc::Functional M(mesh);

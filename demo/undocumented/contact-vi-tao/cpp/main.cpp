@@ -63,19 +63,19 @@ int main()
 #ifdef HAS_PETSC
 
   // Read mesh
-  Mesh mesh("../circle_yplane.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../circle_yplane.xml.gz");
 
   // Create function space
   auto V = std::make_shared<Elasticity::FunctionSpace>(mesh);
 
   // Create right-hand side
-  Constant f(0.0, -0.1);
+  auto f = std::make_shared<Constant>(0.0, -0.1);
 
   // Set elasticity parameters
   double E  = 10.0;
   double nu = 0.3;
-  Constant mu(E / (2*(1 + nu)));
-  Constant lambda(E*nu / ((1 + nu)*(1 - 2*nu)));
+  auto mu = std::make_shared<Constant>(E / (2*(1 + nu)));
+  auto lambda = std::make_shared<Constant>(E*nu / ((1 + nu)*(1 - 2*nu)));
 
   // Define variational problem
   Elasticity::BilinearForm a(V, V);
