@@ -36,8 +36,6 @@ public:
 
 };
 
-#ifdef HAS_CGAL
-
 int main(int argc, char* argv[])
 {
   not_working_in_parallel("Function evalutation benchmark");
@@ -51,9 +49,9 @@ int main(int argc, char* argv[])
   tic();
   for (std::size_t N = 10; N < mesh_max_size; N += 2)
   {
-    UnitCubeMesh mesh(N, N, N);
+    const auto mesh = std::make_shared<const UnitCubeMesh>(N, N, N);
 
-    P1::FunctionSpace V0(mesh);
+    const auto V0 = std::make_shared<const P1::FunctionSpace>(mesh);
     Function f0(V0);
     F f;
     f0.interpolate(f);
@@ -80,13 +78,3 @@ int main(int argc, char* argv[])
 
   return 0;
 }
-
-#else
-
-int main()
-{
-  info("DOLFIN must be compiled with CGAL to run function eval benchmark.");
-  return 0;
-}
-
-#endif

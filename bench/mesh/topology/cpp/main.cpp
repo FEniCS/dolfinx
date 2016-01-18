@@ -42,6 +42,10 @@ int main(int argc, char* argv[])
   UnitCubeMesh mesh(SIZE, SIZE, SIZE);
   const int D = mesh.topology().dim();
 
+  // Clear timing (if there is some)
+  { Timer t("Compute connectivity 3-3"); }
+  timing("Compute connectivity 3-3", TimingClear::clear);
+
   for (int i = 0; i < NUM_REPS; i++)
   {
     mesh.clean();
@@ -52,6 +56,10 @@ int main(int argc, char* argv[])
   // Report timings
   list_timings(TimingClear::keep,
                { TimingType::wall, TimingType::user, TimingType::system });
+
+  // Report timing
+  const auto t = timing("Compute connectivity 3-3", TimingClear::clear);
+  info("BENCH %g", std::get<1>(t));
 
   return 0;
 }

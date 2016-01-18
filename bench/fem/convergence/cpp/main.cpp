@@ -212,6 +212,8 @@ double solve3D(int q, int n)
 
 int main()
 {
+  info("Runtime of convergence benchmark");
+
   set_log_active(false);
 
   const int qmax_2D = 5;
