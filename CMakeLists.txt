@@ -577,19 +577,15 @@ if (DOLFIN_ENABLE_ZLIB)
   find_package(ZLIB)
 endif()
 
-# Check for cppunit
+# Check for gtest
 if (DOLFIN_ENABLE_UNIT_TESTS)
-  find_package(CppUnit)
+  find_package(GTest)
 
-  # Older version of CPPUNIT use std::auto_ptr, which is deprecated
-  if (CPPUNIT_FOUND)
-    if ("${CPPUNIT_VERSION}" VERSION_LESS "1.13.1")
-      include(CheckCXXCompilerFlag)
-      CHECK_CXX_COMPILER_FLAG(-Wno-deprecated HAVE_NO_DEPRECATED)
-      if (HAVE_NO_DEPRECATED)
-        set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -Wno-deprecated")
-      endif()
-    endif()
+  # Check if GTest is there
+  if (GTEST_FOUND)
+     message(STATUS "Found GTest.")
+  else (GTEST_FOUND)
+     message(FATAL_ERROR "Could not locate GTest. Please install GTest to continue.")
   endif()
 
 endif()
@@ -1038,7 +1034,7 @@ if (DOLFIN_ENABLE_BENCHMARKS)
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
 endif()
 
-if (CPPUNIT_FOUND)
+if (GTEST_FOUND)
   # Add test but do not add to default target
   add_subdirectory(test EXCLUDE_FROM_ALL)
 
