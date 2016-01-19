@@ -48,11 +48,9 @@ find_package(DOLFIN REQUIRED)
 
 # Locate GTest
 find_package(GTest)
-IF (${GTEST_FOUND})
-   MESSAGE(STATUS "Found GTest.")
-ELSE (${GTEST_FOUND})
-   MESSAGE(FATAL_ERROR "Could not locate GTest. Please install GTest to continue.")
-ENDIF (${GTEST_FOUND})
+if (NOT GTEST_FOUND)
+   message(FATAL_ERROR "Could not locate GTest.")
+endif (GTEST_FOUND)
 
 include_directories(${GTEST_INCLUDE_DIRS})
 
