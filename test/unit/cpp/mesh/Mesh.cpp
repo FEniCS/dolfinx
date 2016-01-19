@@ -149,7 +149,7 @@ TEST(MeshFunctions, testAssign) {
   auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
   MeshFunction<int> f(mesh, 0);
   f[3] = 10;
-  Vertex v(mesh, 3);
+  Vertex v(*mesh, 3);
   ASSERT_EQ(f[v], 10);
 }
 //-----------------------------------------------

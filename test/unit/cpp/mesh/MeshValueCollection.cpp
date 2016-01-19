@@ -50,9 +50,9 @@ TEST(MeshValueCollections, testAssign2DCells) {
 }
 
 TEST(MeshValueCollections, testAssign2DFacets) {
-  UnitSquareMesh mesh(3, 3);
-  mesh.init(2,1);
-  const std::size_t ncells = mesh.num_cells();
+  auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
+  mesh->init(2,1);
+  const std::size_t ncells = mesh->num_cells();
   MeshValueCollection<int> f(mesh, 1);
   bool all_new = true;
   for (CellIterator cell(*mesh); !cell.end(); ++cell)
