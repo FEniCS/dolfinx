@@ -77,8 +77,8 @@ TEST(TestLinearOperator, test_linear_operator) {
       if (dolfin::MPI::size(MPI_COMM_WORLD) > 1
           && backends[i] == "Eigen")
       {
-  info("Not running Eigen test in parallel");
-  continue;
+        info("Not running Eigen test in parallel");
+        continue;
       }
 
       // Set linear algebra backend
