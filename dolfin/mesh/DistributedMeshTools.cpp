@@ -426,7 +426,7 @@ DistributedMeshTools::locate_off_process_entities(const std::vector<std::size_t>
     // Remove local cells from set_of_my_entities to reduce communication
     for (std::size_t j = 0; j < global_entity_indices.size(); ++j)
     {
-      if (sharing_map.find(j) != sharing_map.end())
+      if (sharing_map.find(j) == sharing_map.end())
         set_of_my_entities.erase(global_entity_indices[j]);
     }
     // Copy entries from set_of_my_entities to my_entities
