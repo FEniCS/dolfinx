@@ -28,7 +28,6 @@
 #include <dolfin/fem/LinearVariationalProblem.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/SubSpace.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/SpecialFacetFunction.h>
@@ -445,7 +444,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   else
   {
     adapt(S, adapted_mesh);
-    V.reset(new SubSpace(S.child(), component));
+    V = S.child().sub(component);
   }
 
   // Get refined value
@@ -567,7 +566,7 @@ const dolfin::MeshFunction<std::size_t>&
 
   // Map values of mesh function into refined mesh function
   std::shared_ptr<MeshFunction<std::size_t>>
-    adapted_mesh_function(new MeshFunction<std::size_t>(*adapted_mesh,
+    adapted_mesh_function(new MeshFunction<std::size_t>(adapted_mesh,
                                                         mesh_function.dim()));
   for (std::size_t i = 0; i < adapted_mesh_function->size(); i++)
   {

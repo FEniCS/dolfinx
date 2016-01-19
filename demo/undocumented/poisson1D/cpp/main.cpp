@@ -73,19 +73,19 @@ public:
 int main()
 {
   // Create mesh
-  UnitIntervalMesh mesh(50);
+  auto mesh = std::make_shared<UnitIntervalMesh>(50);
 
   // Create function space
-  Poisson::FunctionSpace V(mesh);
+  auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
   // Set up BCs
-  Constant zero(0.0);
-  DirichletBoundary boundary;
+  auto zero = std::make_shared<Constant>(0.0);
+  auto boundary = std::make_shared<DirichletBoundary>();
   DirichletBC bc(V, zero, boundary);
 
   // Create source and flux terms
-  Source f;
-  Flux g;
+  auto f = std::make_shared<Source>();
+  auto g = std::make_shared<Flux>();
 
   // Define variational problem
   Poisson::BilinearForm a(V, V);

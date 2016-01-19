@@ -31,6 +31,10 @@ using namespace dolfin;
 // Boundary condition
 class DirichletBoundary : public SubDomain
 {
+public:
+
+  DirichletBoundary() {}
+
   bool inside(const Array<double>& x, bool on_boundary) const
   { return on_boundary; }
 };
@@ -59,48 +63,48 @@ double solve2D(int q, int n)
   printf("Solving Poisson's equation in 2D for q = %d, n = %d.\n", q, n);
 
   // Set up problem
-  UnitSquareMesh mesh(n, n);
-  Source2D f;
-  Constant zero(0.0);
+  auto mesh = std::make_shared<UnitSquareMesh>(n, n);
+  auto f = std::make_shared<Source2D>();
+  auto zero = std::make_shared<const Constant>(0.0);
 
   // Choose forms
   Form* a = 0;
   Form* L = 0;
-  FunctionSpace* V = 0;
+  std::shared_ptr<const FunctionSpace> V;
   switch (q)
   {
   case 1:
-    V = new Poisson2D_1::FunctionSpace(mesh);
-    a = new Poisson2D_1::BilinearForm(*V, *V);
-    L = new Poisson2D_1::LinearForm(*V, f);
+    V = std::make_shared<Poisson2D_1::FunctionSpace>(mesh);
+    a = new Poisson2D_1::BilinearForm(V, V);
+    L = new Poisson2D_1::LinearForm(V, f);
     break;
   case 2:
-    V = new Poisson2D_2::FunctionSpace(mesh);
-    a = new Poisson2D_2::BilinearForm(*V, *V);
-    L = new Poisson2D_2::LinearForm(*V, f);
+    V = std::make_shared<Poisson2D_2::FunctionSpace>(mesh);
+    a = new Poisson2D_2::BilinearForm(V, V);
+    L = new Poisson2D_2::LinearForm(V, f);
     break;
   case 3:
-    V = new Poisson2D_3::FunctionSpace(mesh);
-    a = new Poisson2D_3::BilinearForm(*V, *V);
-    L = new Poisson2D_3::LinearForm(*V, f);
+    V = std::make_shared<Poisson2D_3::FunctionSpace>(mesh);
+    a = new Poisson2D_3::BilinearForm(V, V);
+    L = new Poisson2D_3::LinearForm(V, f);
     break;
   case 4:
-    V = new Poisson2D_4::FunctionSpace(mesh);
-    a = new Poisson2D_4::BilinearForm(*V, *V);
-    L = new Poisson2D_4::LinearForm(*V, f);
+    V = std::make_shared<Poisson2D_4::FunctionSpace>(mesh);
+    a = new Poisson2D_4::BilinearForm(V, V);
+    L = new Poisson2D_4::LinearForm(V, f);
     break;
   case 5:
-    V = new Poisson2D_5::FunctionSpace(mesh);
-    a = new Poisson2D_5::BilinearForm(*V, *V);
-    L = new Poisson2D_5::LinearForm(*V, f);
+    V = std::make_shared<Poisson2D_5::FunctionSpace>(mesh);
+    a = new Poisson2D_5::BilinearForm(V, V);
+    L = new Poisson2D_5::LinearForm(V, f);
     break;
   default:
     error("Forms not compiled for q = %d.", q);
   }
 
   // Set up boundary conditions
-  DirichletBoundary boundary;
-  DirichletBC bc(*V, zero, boundary);
+  auto boundary = std::make_shared<const DirichletBoundary>();
+  DirichletBC bc(V, zero, boundary);
 
   // Discretize equation
   Matrix A;
@@ -118,7 +122,7 @@ double solve2D(int q, int n)
   double emax = 0.0;
   std::vector<double> U;
   x.get_local(U);
-  for (VertexIterator v(mesh); !v.end(); ++v)
+  for (VertexIterator v(*mesh); !v.end(); ++v)
   {
     const Point p = v->point();
     const double u = sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y());
@@ -128,7 +132,6 @@ double solve2D(int q, int n)
 
   delete a;
   delete L;
-  delete V;
 
   return emax;
 }
@@ -139,43 +142,43 @@ double solve3D(int q, int n)
   printf("Solving Poisson's equation in 3D for q = %d, n = %d.\n", q, n);
 
   // Set up problem
-  UnitCubeMesh mesh(n, n, n);
-  Source3D f;
-  Constant zero(0.0);
+  auto mesh = std::make_shared<UnitCubeMesh>(n, n, n);
+  auto f = std::make_shared<Source3D>();
+  auto zero = std::make_shared<const Constant>(0.0);
 
   // Choose forms
   Form* a = 0;
   Form* L = 0;
-  FunctionSpace* V = 0;
+  std::shared_ptr<const FunctionSpace> V;
   switch (q)
   {
   case 1:
-    V = new Poisson3D_1::FunctionSpace(mesh);
-    a = new Poisson3D_1::BilinearForm(*V, *V);
-    L = new Poisson3D_1::LinearForm(*V, f);
+    V = std::make_shared<Poisson3D_1::FunctionSpace>(mesh);
+    a = new Poisson3D_1::BilinearForm(V, V);
+    L = new Poisson3D_1::LinearForm(V, f);
     break;
   case 2:
-    V = new Poisson3D_2::FunctionSpace(mesh);
-    a = new Poisson3D_2::BilinearForm(*V, *V);
-    L = new Poisson3D_2::LinearForm(*V, f);
+    V = std::make_shared<Poisson3D_2::FunctionSpace>(mesh);
+    a = new Poisson3D_2::BilinearForm(V, V);
+    L = new Poisson3D_2::LinearForm(V, f);
     break;
   case 3:
-    V = new Poisson3D_3::FunctionSpace(mesh);
-    a = new Poisson3D_3::BilinearForm(*V, *V);
-    L = new Poisson3D_3::LinearForm(*V, f);
+    V = std::make_shared<Poisson3D_3::FunctionSpace>(mesh);
+    a = new Poisson3D_3::BilinearForm(V, V);
+    L = new Poisson3D_3::LinearForm(V, f);
     break;
   case 4:
-    V = new Poisson3D_4::FunctionSpace(mesh);
-    a = new Poisson3D_4::BilinearForm(*V, *V);
-    L = new Poisson3D_4::LinearForm(*V, f);
+    V = std::make_shared<Poisson3D_4::FunctionSpace>(mesh);
+    a = new Poisson3D_4::BilinearForm(V, V);
+    L = new Poisson3D_4::LinearForm(V, f);
     break;
   default:
     error("Forms not compiled for q = %d.", q);
   }
 
   // Set up boundary conditions
-  DirichletBoundary boundary;
-  DirichletBC bc(*V, zero, boundary);
+  auto boundary = std::make_shared<const DirichletBoundary>();
+  DirichletBC bc(V, zero, boundary);
 
   // Discretize equation
   Matrix A;
@@ -193,7 +196,7 @@ double solve3D(int q, int n)
   double emax = 0.0;
   std::vector<double> U;
   x.get_local(U);
-  for (VertexIterator v(mesh); !v.end(); ++v)
+  for (VertexIterator v(*mesh); !v.end(); ++v)
   {
     const Point p = v->point();
     const double u = sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y())*sin(DOLFIN_PI*p.z());
@@ -203,13 +206,14 @@ double solve3D(int q, int n)
 
   delete a;
   delete L;
-  delete V;
 
   return emax;
 }
 
 int main()
 {
+  info("Runtime of convergence benchmark");
+
   set_log_active(false);
 
   const int qmax_2D = 5;

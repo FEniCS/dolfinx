@@ -48,12 +48,12 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and function space
-  UnitSquareMesh mesh(64, 64);
-  Conditional::FunctionSpace V(mesh);
+  auto mesh = std::make_shared<UnitSquareMesh>(64, 64);
+  auto V = std::make_shared<Conditional::FunctionSpace>(mesh);
 
   // Define boundary condition
-  Constant u0(0.0);
-  DirichletBoundary boundary;
+  auto u0 = std::make_shared<Constant>(0.0);
+  auto boundary = std::make_shared<DirichletBoundary>();
   DirichletBC bc(V, u0, boundary);
 
   // Define variational problem

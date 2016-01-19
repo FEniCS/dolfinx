@@ -38,9 +38,6 @@ V = FunctionSpace(mesh, "CG", 1)
 f = Expression("sin(5.0*x[0])*sin(5.0*x[1])")
 v = interpolate(f, V)
 
-# FIXME: We would like to do refined_mesh = refine(mesh) here
-# FIXME: but that breaks in parallel
-
 # Refine mesh and create a new function space
 refined_mesh = refine(mesh)
 W = FunctionSpace(refined_mesh, "CG", 1)

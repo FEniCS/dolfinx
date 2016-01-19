@@ -132,7 +132,8 @@ void Assembler::assemble_cells(
   Timer timer("Assemble cells");
 
   // Extract mesh
-  const Mesh& mesh = a.mesh();
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
 
   // Form rank
   const std::size_t form_rank = ufc.form.rank();
@@ -221,7 +222,8 @@ void Assembler::assemble_exterior_facets(
   Timer timer("Assemble exterior facets");
 
   // Extract mesh
-  const Mesh& mesh = a.mesh();
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
 
   // Form rank
   const std::size_t form_rank = ufc.form.rank();
@@ -322,7 +324,8 @@ void Assembler::assemble_interior_facets(
   Timer timer("Assemble interior facets");
 
   // Extract mesh and coefficients
-  const Mesh& mesh = a.mesh();
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
 
   // MPI rank
   const int my_mpi_rank = MPI::rank(mesh.mpi_comm());
@@ -468,7 +471,8 @@ void Assembler::assemble_vertices(
   Timer timer("Assemble vertices");
 
   // Extract mesh
-  const Mesh& mesh = a.mesh();
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
 
   // Compute cell and vertex - cell connectivity if not already
   // computed

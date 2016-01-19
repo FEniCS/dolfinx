@@ -58,18 +58,18 @@ int main()
   };
 
   // Load sphere mesh and refine uniformly
-  Mesh mesh("../sphere.xml.gz");
-  mesh = refine(mesh);
+  auto mesh = std::make_shared<Mesh>("../sphere.xml.gz");
+  mesh = std::make_shared<Mesh>(refine(*mesh));
 
   // Homogeneous external magnetic field (dB/dt)
-  Constant dbdt(0.0, 0.0, 1.0);
+  auto dbdt = std::make_shared<Constant>(0.0, 0.0, 1.0);
 
   // Dirichlet boundary condition
-  Constant zero(0.0, 0.0, 0.0);
+  auto zero = std::make_shared<Constant>(0.0, 0.0, 0.0);
 
   // Define function space and boundary condition
-  EddyCurrents::FunctionSpace V(mesh);
-  DirichletBoundary boundary;
+  auto V = std::make_shared<EddyCurrents::FunctionSpace>(mesh);
+  auto boundary = std::make_shared<DirichletBoundary>();
   auto bc = std::make_shared<DirichletBC>(V, zero, boundary);
 
   // Define variational problem for T
@@ -78,7 +78,7 @@ int main()
   L.dbdt = dbdt;
 
   // Solution function
-  Function T(V);
+  auto T = std::make_shared<Function>(V);
 
   // Assemble system
   auto A = std::make_shared<PETScMatrix>();
@@ -100,7 +100,7 @@ int main()
 
   // Build discrete gradient operator and attach to preconditioner
   P1Space::FunctionSpace P1(mesh);
-  auto G = DiscreteOperators::build_gradient(V, P1);
+  auto G = DiscreteOperators::build_gradient(*V, P1);
   PCHYPRESetDiscreteGradient(pc, as_type<PETScMatrix>(*G).mat());
 
   // Inform preconditioner of constants in the Nedelec space
@@ -128,13 +128,13 @@ int main()
   KSPSetFromOptions(ksp);
 
   // Solve system
-  KSPSolve(ksp, b.vec(), as_type<PETScVector>(*T.vector()).vec());
+  KSPSolve(ksp, b.vec(), as_type<PETScVector>(*T->vector()).vec());
 
   // Update ghost values in solution vector
-  T.vector()->apply("insert");
+  T->vector()->apply("insert");
 
   // Define variational problem for J
-  CurrentDensity::FunctionSpace V1(mesh);
+  auto V1 = std::make_shared<CurrentDensity::FunctionSpace>(mesh);
   CurrentDensity::BilinearForm a1(V1,V1);
   CurrentDensity::LinearForm L1(V1);
   L1.T = T;

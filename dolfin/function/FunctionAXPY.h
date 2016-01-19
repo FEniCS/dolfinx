@@ -29,6 +29,9 @@ namespace dolfin
 
   class Function;
 
+  // FIXME: Straighten out memory management in this class by
+  // switching to smart pointers.
+
   /// This class represents a linear combination of functions. It is
   /// mostly used as an intermediate class for operations such as u =
   /// 3*u0 + 4*u1; where the rhs generates an FunctionAXPY.

@@ -59,17 +59,20 @@ class CahnHilliardEquation : public NonlinearProblem
   public:
 
     // Constructor
-  CahnHilliardEquation(const Mesh& mesh, const Constant& dt,
-                         const Constant& theta, const Constant& lambda)
+    CahnHilliardEquation(std::shared_ptr<const Mesh> mesh,
+                         std::shared_ptr<const Constant> dt,
+                         std::shared_ptr<const Constant> theta,
+                         std::shared_ptr<const Constant> lambda)
     {
       // Initialize class (depending on geometric dimension of the mesh).
       // Unfortunately C++ does not allow namespaces as template arguments
-      if (mesh.geometry().dim() == 2)
+      dolfin_assert(mesh);
+      if (mesh->geometry().dim() == 2)
       {
         init<CahnHilliard2D::FunctionSpace, CahnHilliard2D::JacobianForm,
              CahnHilliard2D::ResidualForm>(mesh, dt, theta, lambda);
       }
-      else if (mesh.geometry().dim() == 3)
+      else if (mesh->geometry().dim() == 3)
       {
         init<CahnHilliard3D::FunctionSpace, CahnHilliard3D::JacobianForm,
              CahnHilliard3D::ResidualForm>(mesh, dt, theta, lambda);
@@ -105,8 +108,10 @@ class CahnHilliardEquation : public NonlinearProblem
   private:
 
     template<class X, class Y, class Z>
-    void init(const Mesh& mesh, const Constant& dt, const Constant& theta,
-              const Constant& lambda)
+    void init(std::shared_ptr<const Mesh> mesh,
+              std::shared_ptr<const Constant> dt,
+              std::shared_ptr<const Constant> theta,
+              std::shared_ptr<const Constant> lambda)
     {
       // Create function space and functions
       std::shared_ptr<X> V(new X(mesh));
@@ -116,9 +121,9 @@ class CahnHilliardEquation : public NonlinearProblem
       // Create forms and attach functions
       Y* _a = new Y(V, V);
       Z* _L = new Z(V);
-      _a->u = *_u;
+      _a->u = _u;
       _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
-      _L->u = *_u; _L->u0 = *_u0;
+      _L->u = _u; _L->u0 = _u0;
       _L->lmbda = lambda; _L->dt = dt; _L->theta = theta;
 
       // Wrap pointers in a smart pointer
@@ -131,10 +136,10 @@ class CahnHilliardEquation : public NonlinearProblem
     }
 
     // Function space, forms and functions
-    boost::scoped_ptr<Form> a;
-    boost::scoped_ptr<Form> L;
-    boost::scoped_ptr<Function> _u;
-    boost::scoped_ptr<Function> _u0;
+    std::unique_ptr<Form> a;
+    std::unique_ptr<Form> L;
+    std::shared_ptr<Function> _u;
+    std::shared_ptr<Function> _u0;
 };
 
 
@@ -143,15 +148,15 @@ int main(int argc, char* argv[])
   init(argc, argv);
 
   // Mesh
-  UnitSquareMesh mesh(96, 96);
+  auto mesh = std::make_shared<UnitSquareMesh>(96, 96);
 
   // Time stepping and model parameters
-  Constant dt(5.0e-6);
-  Constant theta(0.5);
-  Constant lambda(1.0e-2);
+  auto dt = std::make_shared<Constant>(5.0e-6);
+  auto theta = std::make_shared<Constant>(0.5);
+  auto lambda = std::make_shared<Constant>(1.0e-2);
 
   double t = 0.0;
-  double T = 50*dt;
+  double T = 50*(*dt);
 
   // Create user-defined nonlinear problem
   CahnHilliardEquation cahn_hilliard(mesh, dt, theta, lambda);
@@ -176,7 +181,7 @@ int main(int argc, char* argv[])
   while (t < T)
   {
     // Update for next time step
-    t += dt;
+    t += *dt;
     *u0.vector() = *u.vector();
 
     // Solve

@@ -113,7 +113,8 @@ void MultiMeshAssembler::_assemble_uncut_cells(GenericTensor& A,
     UFC ufc_part(a_part);
 
     // Extract mesh
-    const Mesh& mesh_part = a_part.mesh();
+    dolfin_assert(a_part.mesh());
+    const Mesh& mesh_part = *(a_part.mesh());
 
     // FIXME: Handle subdomains
 
@@ -189,7 +190,8 @@ void MultiMeshAssembler::_assemble_cut_cells(GenericTensor& A,
     UFC ufc_part(a_part);
 
     // Extract mesh
-    const Mesh& mesh_part = a_part.mesh();
+    dolfin_assert(a_part.mesh());
+    const Mesh& mesh_part = *(a_part.mesh());
 
     // FIXME: Handle subdomains
 
@@ -411,8 +413,9 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
         // Get facet normals
         const auto& n = facet_normals.at(cut_cell_index)[k];
 
-        // FIXME: We would like to use this assertion (but it fails for 2 meshes)
-        dolfin_assert(n.size() == a_part.mesh().geometry().dim()*num_quadrature_points);
+        // FIXME: We would like to use this assertion (but it fails
+        // for 2 meshes)
+        dolfin_assert(n.size() == a_part.mesh()->geometry().dim()*num_quadrature_points);
 
         // FIXME: For now, use this assertion (which fails for 3 meshes)
         //dolfin_assert(n.size() > 0);

@@ -68,7 +68,14 @@ int main(int argc, char* argv[])
   forms.push_back("navierstokes");
 
   // Backends
-  std::vector<std::string> backends = {"PETSc", "Tpetra", "Eigen", "STL"};
+  std::vector<std::string> backends = {"PETSc", "Tpetra", "Eigen"};
+  {
+    for (auto it = backends.begin(); it != backends.end();)
+      if (has_linear_algebra_backend(*it))
+        ++it;
+      else
+        it = backends.erase(it);
+  }
 
   // Override forms and backends with command-line arguments
   if (argc == 3)
