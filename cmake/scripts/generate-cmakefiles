@@ -47,7 +47,13 @@ cmake_policy(SET CMP0004 NEW)
 find_package(DOLFIN REQUIRED)
 
 # Locate GTest
-find_package(GTest REQUIRED)
+find_package(GTest)
+IF (${GTEST_FOUND})
+   MESSAGE(STATUS "Found GTest.")
+ELSE (${GTEST_FOUND})
+   MESSAGE(FATAL_ERROR "Could not locate GTest. Please install GTest to continue.")
+ENDIF (${GTEST_FOUND})
+
 include_directories(${GTEST_INCLUDE_DIRS})
 
 if (EXISTS ${DOLFIN_USE_FILE})
