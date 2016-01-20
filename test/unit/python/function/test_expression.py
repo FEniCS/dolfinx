@@ -687,3 +687,21 @@ def test_doc_string_python_expressions(mesh):
 
     assert id(f3._mesh) == id(square)
     assert id(f3._domain) == id(cell_data)
+
+@pytest.mark.slow
+def test_compile_expressions():
+    """
+    This test tests that the auto-generated cpp Expression code can be actually compiled.
+    """
+    expression_list = ['.5',
+        'x[0] * sin(.5)',
+        '5.E-3']
+    current_expression = ''
+    for edata in expression_list:
+        current_expression = edata
+        try:
+            e  = Expression(edata)
+            assert True
+        except:
+            print 'Code for Expression(\'' + current_expression + '\') was not generated correctly'
+            assert False
