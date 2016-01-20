@@ -47,9 +47,8 @@ cmake_policy(SET CMP0004 NEW)
 find_package(DOLFIN REQUIRED)
 
 # Locate gtest and gtest_main bin
-# add_subdirectory(../../../../GoogleTest/googletest-src
-#                  ../../../../GoogleTest/googletest-build)
-include_directories(../../../../GoogleTest/googletest-src/include)
+include_directories(../../../../GoogleTest/src/googletest/include)
+link_directories(../../../../GoogleTest/src/googletest-build)
 
 
 include_directories(${GTEST_INCLUDE_DIRS})
