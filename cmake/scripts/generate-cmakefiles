@@ -47,8 +47,8 @@ cmake_policy(SET CMP0004 NEW)
 find_package(DOLFIN REQUIRED)
 
 # Locate gtest and gtest_main bin
-include_directories(../../../../GoogleTest/src/googletest/include)
-link_directories(../../../../GoogleTest/src/googletest-build)
+include_directories(%(include_dir)s)
+link_directories(%(link_dir)s)
 
 
 include_directories(${GTEST_INCLUDE_DIRS})
@@ -79,6 +79,11 @@ endif()
 # Target libraries
 %(target_libraries)s
 """
+
+# Get direction to Google Test
+dolfin_source = os.getcwd()
+include_dir = dolfin_source + "/GoogleTest/src/googletest/include"
+link_dir = dolfin_source + "/GoogleTest/src/googletest-build"
 
 executable_str = "add_executable(%s %s)"
 target_link_libraries_str = "target_link_libraries(%s "\
@@ -139,7 +144,10 @@ def generate_cmake_files(subdirectory, generated_files):
             name_forms = dict(
                 project_name=executable_prefix + program_name,
                 executables="NOT_SET",
-                target_libraries="NOT_SET")
+                target_libraries="NOT_SET",
+                include_dir=include_dir,
+                link_dir=link_dir)
+            
             for f in os.listdir(program_dir):
                 filename, extension = os.path.splitext(f)
                 if extension == ".cpp":

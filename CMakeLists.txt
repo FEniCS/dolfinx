@@ -1066,7 +1066,8 @@ if (DOLFIN_ENABLE_BENCHMARKS)
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
 endif()
 
-if (GTEST_FOUND)
+if (DOLFIN_ENABLE_TESTING)
+
   # Add test but do not add to default target
   add_subdirectory(test EXCLUDE_FROM_ALL)
 
@@ -1074,9 +1075,6 @@ if (GTEST_FOUND)
   add_custom_target(tests
                     COMMAND ${MAKE_PROGRAM}
                     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
-endif()
-
-if (DOLFIN_ENABLE_TESTING)
 
   # Add target "run_memorytests" for running memory tests
   add_custom_target(copy_data_test_demo

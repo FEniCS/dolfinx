@@ -129,3 +129,6 @@ install_manifest.txt
 .settings
 
 cmake.local
+
+# Google Test Files
+/GoogleTest/
