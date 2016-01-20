@@ -25,7 +25,9 @@
 
 using namespace dolfin;
 
-TEST(MeshFunctions, test_create_from_domains) {
+//-----------------------------------------------------------------------------
+TEST(MeshFunctions, test_create_from_domains)
+{
   // Create mesh
   std::shared_ptr<Mesh> mesh(new UnitSquareMesh(3, 3));
   dolfin_assert(mesh);
@@ -75,9 +77,10 @@ TEST(MeshFunctions, test_create_from_domains) {
       ASSERT_EQ(mf[i], i);
   }
 }
-
-// Test all
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+//-----------------------------------------------------------------------------
+int main(int argc, char **argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
+//-----------------------------------------------------------------------------

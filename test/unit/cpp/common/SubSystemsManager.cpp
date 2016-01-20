@@ -25,23 +25,22 @@
 
 using namespace dolfin;
 
-
-
 // Test rewritten using Google Test
-TEST(TestSubSystemsManager, test_petsc_user_init) { 
+TEST(TestSubSystemsManager, test_petsc_user_init)
+{
   // Test user initialisation of PETSc
-  #ifdef HAS_PETSC
+#ifdef HAS_PETSC
   int argc = 0;
   char **argv = NULL;
   PetscInitialize(&argc, &argv, NULL, NULL);
 
   UnitSquareMesh(12, 12);
   PETScVector(MPI_COMM_WORLD, 30);
-  #endif
+#endif
 }
 
-// Test all
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+int main(int argc, char **argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

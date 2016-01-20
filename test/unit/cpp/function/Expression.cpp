@@ -24,77 +24,70 @@
 //
 // Unit tests for the function library
 
-
 #include <dolfin.h>
 #include "Projection.h"
-
 #include <gtest/gtest.h>
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+TEST(Eval, testArbitraryEval)
+{
+  class F0 : public Expression
+  {
+  public:
+    F0() {}
+    void eval(Array<double>& values, const Array<double>& x) const
+    { values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]); }
+  };
 
+  class F1 : public Expression
+  {
+  public:
+    F1() {}
+    void eval(Array<double>& values, const Array<double>& x) const
+    { values[0] = 1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]; }
+  };
 
-// Test rewritten using Google Test
-TEST(Eval, testArbitraryEval) { 
-    class F0 : public Expression
-    {
-    public:
-      F0() {}
-      void eval(Array<double>& values, const Array<double>& x) const
-      {
-        values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
-      }
-    };
+  auto mesh = std::make_shared<UnitCubeMesh>(8, 8, 8);
 
-    class F1 : public Expression
-    {
-    public:
-      F1() {}
-      void eval(Array<double>& values, const Array<double>& x) const
-      {
-        values[0] = 1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2];
-      }
-    };
+  Array<double> x(3);
+  x[0] = 0.31; x[1] = 0.32; x[2] = 0.33;
 
-    auto mesh = std::make_shared<UnitCubeMesh>(8, 8, 8);
+  Array<double> u0(1);
+  Array<double> u1(1);
 
-    Array<double> x(3);
-    x[0] = 0.31; x[1] = 0.32; x[2] = 0.33;
+  // User-defined functions (one from finite element space, one not)
+  F0 f0;
+  auto f1 = std::make_shared<F1>();
 
-    Array<double> u0(1);
-    Array<double> u1(1);
+  // Test evaluation of a user-defined function
+  f0.eval(u0, x);
+  ASSERT_NEAR(u0[0],
+              sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
+              DOLFIN_EPS);
 
-    // User-defined functions (one from finite element space, one not)
-    F0 f0;
-    auto f1 = std::make_shared<F1>();
+  // Test for single core only
+  if (dolfin::MPI::size(mesh->mpi_comm()) == 1)
+  {
+    // Test evaluation of a discrete function
+    auto V = std::make_shared<Projection::FunctionSpace>(mesh);
+    Projection::BilinearForm a(V, V);
+    Projection::LinearForm L(V);
+    L.f = f1;
+    Function g(V);
+    solve(a == L, g);
 
-    // Test evaluation of a user-defined function
-    f0.eval(u0, x);
-    ASSERT_NEAR(u0[0],
-      sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
-            DOLFIN_EPS);
-
-    // Test for single core only
-    if (dolfin::MPI::size(mesh->mpi_comm()) == 1)
-    {
-      // Test evaluation of a discrete function
-      auto V = std::make_shared<Projection::FunctionSpace>(mesh);
-      Projection::BilinearForm a(V, V);
-      Projection::LinearForm L(V);
-      L.f = f1;
-      Function g(V);
-      solve(a == L, g);
-
-      const double tol = 1.0e-6;
-      f1->eval(u0, x);
-      g.eval(u1, x);
-      ASSERT_NEAR(u0[0], u1[0], tol);
-    }
-
+    const double tol = 1.0e-6;
+    f1->eval(u0, x);
+    g.eval(u1, x);
+    ASSERT_NEAR(u0[0], u1[0], tol);
+  }
 }
-
-// Test all
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+//-----------------------------------------------------------------------------
+int main(int argc, char **argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
+//-----------------------------------------------------------------------------

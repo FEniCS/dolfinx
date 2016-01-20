@@ -25,8 +25,8 @@
 
 using namespace dolfin;
 
-TEST(InputOutput, test_simple) { 
-
+TEST(InputOutput, test_simple)
+{
     // Create some parameters
     Parameters p0("test");
     p0.add("filename", "foo.txt");
@@ -51,13 +51,13 @@ TEST(InputOutput, test_simple) {
 
     // Check values
     ASSERT_EQ(filename, "foo.txt");
-    ASSERT_EQ(maxiter, 100);
+    ASSERT_EQ(maxiter, (std::size_t) 100);
     ASSERT_DOUBLE_EQ(tolerance, 0.001);
     ASSERT_TRUE(monitor_convergence);
 }
 
-TEST(InputOutput, test_nested) { 
-
+TEST(InputOutput, test_nested)
+{
     // Create some nested parameters
     Parameters p0("test");
     Parameters p00("sub0");
@@ -90,22 +90,22 @@ TEST(InputOutput, test_nested) {
     // Check values
     ASSERT_EQ(foo, "bar");
     ASSERT_EQ(filename, "foo.txt");
-    ASSERT_EQ(maxiter, 100);
+    ASSERT_EQ(maxiter, (std::size_t) 100);
     ASSERT_DOUBLE_EQ(tolerance, 0.001);
     ASSERT_TRUE(monitor_convergence);
 }
 
 // Test all
-int main(int argc, char **argv) {
-
-    // Not working in parallel, even if only process 0 writes and
-    // others wait for a barrier. Skipping this in parallel for now.
-      if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
-      {
-        info("Skipping unit test in parallel.");
-        info("OK");
-        return 0;
-      }
+int main(int argc, char **argv)
+{
+  // Not working in parallel, even if only process 0 writes and
+  // others wait for a barrier. Skipping this in parallel for now.
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    info("Skipping unit test in parallel.");
+    info("OK");
+    return 0;
+  }
 
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
