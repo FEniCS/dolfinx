@@ -47,8 +47,8 @@ cmake_policy(SET CMP0004 NEW)
 find_package(DOLFIN REQUIRED)
 
 # Locate gtest and gtest_main bin
-add_subdirectory(../../../../GoogleTest/googletest-src
-                 ../../../../GoogleTest/googletest-build)
+# add_subdirectory(../../../../GoogleTest/googletest-src
+#                  ../../../../GoogleTest/googletest-build)
 include_directories(../../../../GoogleTest/googletest-src/include)
 
 
@@ -83,7 +83,7 @@ endif()
 
 executable_str = "add_executable(%s %s)"
 target_link_libraries_str = "target_link_libraries(%s "\
-                            "${DOLFIN_LIBRARIES} ${GTEST_LIBRARIES})"
+                            "${DOLFIN_LIBRARIES} gtest gtest_main)"
 
 # Subdirectories
 sub_directories = ['demo', 'test', 'bench']
