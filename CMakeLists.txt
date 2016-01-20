@@ -580,44 +580,30 @@ endif()
 # Check for gtest
 if (DOLFIN_ENABLE_UNIT_TESTS)
 
-  ## Using ExternalProject to Build GTest and use the Library
-  # Enable ExternalProject CMake module
-  include(ExternalProject)
+  configure_file(CMakeLists.txt.in
+                ${DOLFIN_SOURCE_DIR}/GoogleTest/googletest-download/CMakeLists.txt)
 
-  # Set the build type if it isn't already
-  if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-  endif()
-
-  # Set default ExternalProject root directory
-  set_directory_properties(PROPERTIES EP_PREFIX ${CMAKE_BINARY_DIR}/GoogleTest)
-
-  # Add gtest
-  ExternalProject_Add(
-      googletest
-      URL http://googletest.googlecode.com/files/gtest-1.7.0.zip
-      TIMEOUT 10
-      # PATCH_COMMAND svn patch ${CMAKE_SOURCE_DIR}/gtest.patch ${CMAKE_BINARY_DIR}/ThirdParty/src/googletest
-      # Force separate output paths for debug and release builds to allow easy
-      # identification of correct lib in subsequent TARGET_LINK_LIBRARIES commands
-      CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-                 -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=DebugLibs
-                 -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=ReleaseLibs
-                 -Dgtest_force_shared_crt=ON
-      # Disable install step
-      INSTALL_COMMAND ""
-      # Wrap download, configure and build steps in a script to log output
-      LOG_DOWNLOAD ON
-      LOG_CONFIGURE ON
-      LOG_BUILD ON)
-
-  # Specify include dir
-  ExternalProject_Get_Property(googletest source_dir)
-  include_directories(${source_dir}/include)
-
-  # Add compiler flag for MSVC 2012
-  if(MSVC_VERSION EQUAL 1700)
-    add_definitions(-D_VARIADIC_MAX=10)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}/GoogleTest/googletest-download )
+  execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}/GoogleTest/googletest-download )
+   
+  # # Prevent GoogleTest from overriding our compiler/linker options
+  # # when building with Visual Studio
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+   
+  # Add googletest directly to our build. This adds
+  # the following targets: gtest, gtest_main, gmock
+  # and gmock_main
+  add_subdirectory(${DOLFIN_SOURCE_DIR}/GoogleTest/googletest-src
+                   ${DOLFIN_SOURCE_DIR}/GoogleTest/googletest-build)
+   
+  # The gtest/gmock targets carry header search path
+  # dependencies automatically when using CMake 2.8.11 or
+  # later. Otherwise we have to add them here ourselves.
+  if (CMAKE_VERSION VERSION_LESS 2.8.11)
+    include_directories("${gtest_SOURCE_DIR}/include"
+                        "${gmock_SOURCE_DIR}/include")
   endif()
 
 endif()
