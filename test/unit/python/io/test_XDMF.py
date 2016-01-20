@@ -22,10 +22,12 @@ import os
 from dolfin import *
 from dolfin_utils.test import skip_if_not_HDF5, skip_in_parallel, fixture, tempdir
 
-encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)
+if has_hdf5():
+    encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)
+else:
+    encodings = (XDMFFile.Encoding_ASCII,)
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_and_load_1d_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mesh.xdmf")
     mesh = UnitIntervalMesh(32)
@@ -42,13 +44,12 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
     assert mesh.size_global(dim) == mesh2.size_global(dim)
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_and_load_2d_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mesh_2D.xdmf")
     mesh = UnitSquareMesh(32, 32)
 
     file = XDMFFile(mesh.mpi_comm(), filename)
-    file.write(mesh)
+    file.write(mesh, encoding)
     del file
 
     mesh2 = Mesh()
@@ -59,13 +60,12 @@ def test_save_and_load_2d_mesh(tempdir, encoding):
     assert mesh.size_global(dim) == mesh2.size_global(dim)
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_and_load_3d_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mesh_3D.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
 
     file = XDMFFile(mesh.mpi_comm(), filename)
-    file.write(mesh)
+    file.write(mesh, encoding)
     del file
 
     mesh2 = Mesh()
@@ -76,7 +76,6 @@ def test_save_and_load_3d_mesh(tempdir, encoding):
     assert mesh.size_global(dim) == mesh2.size_global(dim)
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_1d_scalar(tempdir, encoding):
     filename1 = os.path.join(tempdir, "u1.xdmf")
     filename2 = os.path.join(tempdir, "u1_.xdmf")
@@ -90,7 +89,6 @@ def test_save_1d_scalar(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_2d_scalar(tempdir, encoding):
     filename = os.path.join(tempdir, "u2.xdmf")
     mesh = UnitSquareMesh(16, 16)
@@ -103,7 +101,6 @@ def test_save_2d_scalar(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_3d_scalar(tempdir, encoding):
     filename = os.path.join(tempdir, "u3.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
@@ -116,7 +113,6 @@ def test_save_3d_scalar(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_2d_vector(tempdir, encoding):
     filename = os.path.join(tempdir, "u_2dv.xdmf")
     mesh = UnitSquareMesh(16, 16)
@@ -130,7 +126,6 @@ def test_save_2d_vector(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_3d_vector(tempdir, encoding):
     filename = os.path.join(tempdir, "u_3Dv.xdmf")
     mesh = UnitCubeMesh(1, 1, 1)
@@ -143,7 +138,6 @@ def test_save_3d_vector(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_3d_vector_series(tempdir, encoding):
     filename = os.path.join(tempdir, "u_3D.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
@@ -163,7 +157,6 @@ def test_save_3d_vector_series(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_2d_tensor(tempdir, encoding):
     filename = os.path.join(tempdir, "tensor.xdmf")
     mesh = UnitSquareMesh(16, 16)
@@ -175,7 +168,6 @@ def test_save_2d_tensor(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_3d_tensor(tempdir, encoding):
     filename = os.path.join(tempdir, "u3t.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
@@ -187,7 +179,6 @@ def test_save_3d_tensor(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_1d_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mf_1D.xdmf")
     mesh = UnitIntervalMesh(32)
@@ -200,7 +191,6 @@ def test_save_1d_mesh(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_2D_cell_function(tempdir, encoding):
     filename = os.path.join(tempdir, "mf_2D.xdmf")
     mesh = UnitSquareMesh(32, 32)
@@ -213,7 +203,6 @@ def test_save_2D_cell_function(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_3D_cell_function(tempdir, encoding):
     mesh = UnitCubeMesh(8, 8, 8)
     mf = CellFunction("size_t", mesh)
@@ -226,7 +215,6 @@ def test_save_3D_cell_function(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_2D_facet_function(tempdir, encoding):
     mesh = UnitSquareMesh(32, 32)
     mf = FacetFunction("size_t", mesh)
@@ -239,7 +227,6 @@ def test_save_2D_facet_function(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_3D_facet_function(tempdir, encoding):
     mesh = UnitCubeMesh(8, 8, 8)
     mf = FacetFunction("size_t", mesh)
@@ -252,7 +239,6 @@ def test_save_3D_facet_function(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_3D_edge_function(tempdir, encoding):
     mesh = UnitCubeMesh(8, 8, 8)
     mf = EdgeFunction("size_t", mesh)
@@ -264,7 +250,6 @@ def test_save_3D_edge_function(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_2D_vertex_function(tempdir, encoding):
     mesh = UnitSquareMesh(32, 32)
     mf = VertexFunction("size_t", mesh)
@@ -277,7 +262,6 @@ def test_save_2D_vertex_function(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_3D_vertex_function(tempdir, encoding):
     filename = os.path.join(tempdir, "mf_vertex_3D.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
@@ -290,7 +274,6 @@ def test_save_3D_vertex_function(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_points_2D(tempdir, encoding):
     import numpy
     mesh = UnitSquareMesh(16, 16)
@@ -317,7 +300,6 @@ def test_save_points_2D(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_points_3D(tempdir, encoding):
     import numpy
     mesh = UnitCubeMesh(4, 4, 4)
@@ -344,7 +326,6 @@ def test_save_points_3D(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@skip_if_not_HDF5
 def test_save_mesh_value_collection(tempdir, encoding):
     mesh = UnitCubeMesh(4, 4, 4)
     tdim = mesh.topology().dim()
