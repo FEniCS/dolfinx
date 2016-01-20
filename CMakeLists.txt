@@ -589,13 +589,16 @@ if (DOLFIN_ENABLE_UNIT_TESTS)
     set(CMAKE_BUILD_TYPE Release)
   endif()
 
+  # FIXME: We should really be building in somewhere lik
+  # ${CMAKE_BINARY_DIR}/GoogleTest
   # Set default ExternalProject root directory
   set_directory_properties(PROPERTIES EP_PREFIX ${DOLFIN_SOURCE_DIR}/GoogleTest)
+  #set_directory_properties(PROPERTIES EP_PREFIX ${CMAKE_BINARY_DIR}/GoogleTest)
 
   # Add gtest
   ExternalProject_Add(
       googletest
-      URL http://googletest.googlecode.com/files/gtest-1.7.0.zip
+      URL https://github.com/google/googletest/archive/release-1.7.0.tar.gz
       TIMEOUT 10
       # PATCH_COMMAND svn patch ${CMAKE_SOURCE_DIR}/gtest.patch ${CMAKE_BINARY_DIR}/ThirdParty/src/googletest
       # Force separate output paths for debug and release builds to allow easy
@@ -614,11 +617,6 @@ if (DOLFIN_ENABLE_UNIT_TESTS)
   # Specify include dir
   ExternalProject_Get_Property(googletest source_dir)
   include_directories(${source_dir}/include)
-
-  # Add compiler flag for MSVC 2012
-  if(MSVC_VERSION EQUAL 1700)
-    add_definitions(-D_VARIADIC_MAX=10)
-  endif()
 
 endif()
 
