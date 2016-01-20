@@ -25,6 +25,7 @@
 
 using namespace dolfin;
 
+//----------------------------------------------------
 void _test_operators(MPI_Comm comm)
 {
   Vector v(comm, 10), u(comm, 10);
@@ -62,9 +63,10 @@ void _test_operators(MPI_Comm comm)
   v*=u;
   ASSERT_EQ(v.sum(), v.size()*5.0);
 }
-
-TEST(TestVector, test_backends) { 
- // Eigen
+//----------------------------------------------------
+TEST(TestVector, test_backends)
+{
+  // Eigen
   parameters["linear_algebra_backend"] = "Eigen";
   _test_operators(MPI_COMM_SELF);
 
@@ -75,115 +77,109 @@ TEST(TestVector, test_backends) {
   //_test_operators();
 
   // PETSc
-  #ifdef HAS_PETSC
+#ifdef HAS_PETSC
   parameters["linear_algebra_backend"] = "PETSc";
   _test_operators(MPI_COMM_WORLD);
-  #endif
+#endif
 }
-
 //----------------------------------------------------
+TEST(TestVector, test_init)
+{
+  // Create local and distributed vector layouts
 
-TEST(TestVector, test_init) { 
-    // Create local and distributed vector layouts
+  // Create local vector layout
+  TensorLayout layout_local(0, TensorLayout::Sparsity::DENSE);
+  std::vector<std::shared_ptr<const IndexMap>> index_maps(1);
+  index_maps[0].reset(new IndexMap(MPI_COMM_SELF, 203, 1));
+  layout_local.init(MPI_COMM_SELF, index_maps,
+                    TensorLayout::Ghosts::UNGHOSTED);
 
-    // Create local vector layout
-    TensorLayout layout_local(0, TensorLayout::Sparsity::DENSE);
-    std::vector<std::shared_ptr<const IndexMap>> index_maps(1);
-    index_maps[0].reset(new IndexMap(MPI_COMM_SELF, 203, 1));
-    layout_local.init(MPI_COMM_SELF, index_maps,
-                      TensorLayout::Ghosts::UNGHOSTED);
+  // Create distributed vector layout
+  TensorLayout layout_distributed(0, TensorLayout::Sparsity::DENSE);
+  auto lrange = dolfin::MPI::local_range(MPI_COMM_WORLD, 203);
+  std::size_t nlocal = lrange.second - lrange.first;
+  index_maps[0].reset(new IndexMap(MPI_COMM_SELF, nlocal, 1));
+  layout_distributed.init(MPI_COMM_WORLD, index_maps,
+                          TensorLayout::Ghosts::UNGHOSTED);
 
-    // Create distributed vector layout
-    TensorLayout layout_distributed(0, TensorLayout::Sparsity::DENSE);
-    auto lrange = dolfin::MPI::local_range(MPI_COMM_WORLD, 203);
-    std::size_t nlocal = lrange.second - lrange.first;
-    index_maps[0].reset(new IndexMap(MPI_COMM_SELF, nlocal, 1));
-    layout_distributed.init(MPI_COMM_WORLD, index_maps,
-                            TensorLayout::Ghosts::UNGHOSTED);
+  // Vector
+#ifdef HAS_PETSC
+  parameters["linear_algebra_backend"] = "PETSc";
+  {
+    Vector x;
+    x.init(layout_local);
+    ASSERT_EQ(x.size(), (std::size_t) 203);
 
-    // Vector
-    #ifdef HAS_PETSC
-    parameters["linear_algebra_backend"] = "PETSc";
-    {
-      Vector x;
-      x.init(layout_local);
-      ASSERT_EQ(x.size(), 203);
-
-      Vector y;
-      y.init(layout_distributed);
-      ASSERT_EQ(x.size(), 203);
+    Vector y;
+    y.init(layout_distributed);
+    ASSERT_EQ(x.size(), (std::size_t) 203);
     }
-    #endif
+#endif
 
-    // Eigen
-    {
-      EigenVector x;
-      x.init(layout_local);
-      ASSERT_EQ(x.size(), 203);
-    }
+  // Eigen
+  {
+    EigenVector x;
+    x.init(layout_local);
+    ASSERT_EQ(x.size(), (std::size_t) 203);
+  }
 
-    // PETSc
-    #ifdef HAS_PETSC
-    {
-      PETScVector x;
-      x.init(layout_local);
-      ASSERT_EQ(x.size(), 203);
+  // PETSc
+#ifdef HAS_PETSC
+  {
+    PETScVector x;
+    x.init(layout_local);
+    ASSERT_EQ(x.size(), (std::size_t) 203);
 
-      PETScVector y;
-      y.init(layout_distributed);
-      ASSERT_EQ(y.size(), 203);
-    }
-    #endif
-
+    PETScVector y;
+    y.init(layout_distributed);
+    ASSERT_EQ(y.size(), (std::size_t) 203);
+  }
+#endif
 }
-
 //----------------------------------------------------
+TEST(TestVector, test_get_local_empty)
+{
+  // Create local and distributed vector layouts
+  const std::vector<std::size_t> dims(1, 203);
 
-TEST(TestVector, test_get_local_empty) { 
-    // Create local and distributed vector layouts
-    const std::vector<std::size_t> dims(1, 203);
+  // Create local vector layout
+  TensorLayout layout_local(0, TensorLayout::Sparsity::DENSE);
+  std::vector<std::shared_ptr<const IndexMap>> index_maps(1);
+  index_maps[0].reset(new IndexMap(MPI_COMM_SELF, 203, 1));
+  layout_local.init(MPI_COMM_SELF, index_maps,
+                    TensorLayout::Ghosts::UNGHOSTED);
 
-    // Create local vector layout
-    TensorLayout layout_local(0, TensorLayout::Sparsity::DENSE);
-    std::vector<std::shared_ptr<const IndexMap>> index_maps(1);
-    index_maps[0].reset(new IndexMap(MPI_COMM_SELF, 203, 1));
-    layout_local.init(MPI_COMM_SELF, index_maps,
-                      TensorLayout::Ghosts::UNGHOSTED);
+  // Create distributed vector layout
+  TensorLayout layout_distributed(0, TensorLayout::Sparsity::DENSE);
+  auto lrange = dolfin::MPI::local_range(MPI_COMM_WORLD, 203);
+  std::size_t nlocal = lrange.second - lrange.first;
+  index_maps[0].reset(new IndexMap(MPI_COMM_SELF, nlocal, 1));
+  layout_distributed.init(MPI_COMM_WORLD, index_maps,
+                          TensorLayout::Ghosts::UNGHOSTED);
 
-    // Create distributed vector layout
-    TensorLayout layout_distributed(0, TensorLayout::Sparsity::DENSE);
-    auto lrange = dolfin::MPI::local_range(MPI_COMM_WORLD, 203);
-    std::size_t nlocal = lrange.second - lrange.first;
-    index_maps[0].reset(new IndexMap(MPI_COMM_SELF, nlocal, 1));
-    layout_distributed.init(MPI_COMM_WORLD, index_maps,
-                            TensorLayout::Ghosts::UNGHOSTED);
+  // Vector
+#ifdef HAS_PETSC
+  parameters["linear_algebra_backend"] = "PETSc";
+  {
+    Vector x;
+    x.init(layout_local);
+    ASSERT_EQ(x.size(), (std::size_t) 203);
 
-    // Vector
-    #ifdef HAS_PETSC
-    parameters["linear_algebra_backend"] = "PETSc";
-    {
-      Vector x;
-      x.init(layout_local);
-      ASSERT_EQ(x.size(), 203);
+    Vector y;
+    y.init(layout_distributed);
+    ASSERT_EQ(y.size(), (std::size_t) 203);
 
-      Vector y;
-      y.init(layout_distributed);
-      ASSERT_EQ(y.size(), 203);
+    //:get_local(double* block, std::size_t m,
+    //           const dolfin::la_index* rows) const
 
-      //:get_local(double* block, std::size_t m,
-      //           const dolfin::la_index* rows) const
+    double* block = NULL;
+    dolfin::la_index* rows = NULL;
+    x.get_local(block, 0, rows);
+    y.get_local(block, 0, rows);
 
-      double* block = NULL;
-      dolfin::la_index* rows = NULL;
-      x.get_local(block, 0, rows);
-      y.get_local(block, 0, rows);
-
-    }
-    #endif
-
+  }
+#endif
 }
-
-//----------------------------------------------------
 
 // Test all
 int Vector_main(int argc, char **argv) {

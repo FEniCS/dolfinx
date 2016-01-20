@@ -25,8 +25,8 @@
 
 using namespace dolfin;
 
-TEST(InputOutput, test_simple) { 
-
+TEST(InputOutput, test_simple)
+{
     // Create some parameters
     Parameters p0("test");
     p0.add("filename", "foo.txt");
@@ -51,13 +51,13 @@ TEST(InputOutput, test_simple) {
 
     // Check values
     ASSERT_EQ(filename, "foo.txt");
-    ASSERT_EQ(maxiter, 100);
+    ASSERT_EQ(maxiter, (std::size_t) 100);
     ASSERT_DOUBLE_EQ(tolerance, 0.001);
     ASSERT_TRUE(monitor_convergence);
 }
 
-TEST(InputOutput, test_nested) { 
-
+TEST(InputOutput, test_nested)
+{
     // Create some nested parameters
     Parameters p0("test");
     Parameters p00("sub0");
@@ -90,7 +90,7 @@ TEST(InputOutput, test_nested) {
     // Check values
     ASSERT_EQ(foo, "bar");
     ASSERT_EQ(filename, "foo.txt");
-    ASSERT_EQ(maxiter, 100);
+    ASSERT_EQ(maxiter, (std::size_t) 100);
     ASSERT_DOUBLE_EQ(tolerance, 0.001);
     ASSERT_TRUE(monitor_convergence);
 }

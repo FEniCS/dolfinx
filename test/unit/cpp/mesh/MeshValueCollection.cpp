@@ -25,7 +25,9 @@
 
 using namespace dolfin;
 
-TEST(MeshValueCollections, testAssign2DCells) {
+//-----------------------------------------------------------------------------
+TEST(MeshValueCollections, testAssign2DCells)
+{
   auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
   const std::size_t ncells = mesh->num_cells();
   MeshValueCollection<int> f(mesh, 2);
@@ -48,8 +50,9 @@ TEST(MeshValueCollections, testAssign2DCells) {
     ASSERT_EQ(value, g.get_value(cell->index(), 0));
   }
 }
-
-TEST(MeshValueCollections, testAssign2DFacets) {
+//-----------------------------------------------------------------------------
+TEST(MeshValueCollections, testAssign2DFacets)
+{
   auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
   mesh->init(2,1);
   const std::size_t ncells = mesh->num_cells();
@@ -79,9 +82,9 @@ TEST(MeshValueCollections, testAssign2DFacets) {
     }
   }
 }
-
-
-TEST(MeshValueCollections, testAssign2DVertices) {
+//-----------------------------------------------------------------------------
+TEST(MeshValueCollections, testAssign2DVertices)
+{
   auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
   mesh->init(2, 0);
   const std::size_t ncells = mesh->num_cells();
@@ -111,9 +114,9 @@ TEST(MeshValueCollections, testAssign2DVertices) {
     }
   }
 }
-
-
-TEST(MeshValueCollections, testMeshFunctionAssign2DCells) {
+//-----------------------------------------------------------------------------
+TEST(MeshValueCollections, testMeshFunctionAssign2DCells)
+{
   auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
   const std::size_t ncells = mesh->num_cells();
   MeshFunction<int> f(mesh, 2, 0);
@@ -129,9 +132,9 @@ TEST(MeshValueCollections, testMeshFunctionAssign2DCells) {
     ASSERT_EQ(value, g.get_value(cell->index(), 0));
   }
 }
-
-
-TEST(MeshValueCollections, testMeshFunctionAssign2DFacets) {
+//-----------------------------------------------------------------------------
+TEST(MeshValueCollections, testMeshFunctionAssign2DFacets)
+{
   auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
   mesh->init(1);
   MeshFunction<int> f(mesh, 1, 25);
@@ -145,9 +148,9 @@ TEST(MeshValueCollections, testMeshFunctionAssign2DFacets) {
       ASSERT_EQ(25, g.get_value(cell->index(), i));
   }
 }
-
-
-TEST(MeshValueCollections, testMeshFunctionAssign2DVertices) {
+//-----------------------------------------------------------------------------
+TEST(MeshValueCollections, testMeshFunctionAssign2DVertices)
+{
   auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
   mesh->init(0);
   MeshFunction<int> f(mesh, 0, 25);
@@ -168,3 +171,4 @@ int MeshValueCollection_main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
+

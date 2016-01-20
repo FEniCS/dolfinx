@@ -25,7 +25,9 @@
 
 using namespace dolfin;
 
-TEST(MeshFunctions, test_create_from_domains) {
+//-----------------------------------------------------------------------------
+TEST(MeshFunctions, test_create_from_domains)
+{
   // Create mesh
   std::shared_ptr<Mesh> mesh(new UnitSquareMesh(3, 3));
   dolfin_assert(mesh);

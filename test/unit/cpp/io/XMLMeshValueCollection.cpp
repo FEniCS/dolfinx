@@ -24,27 +24,25 @@
 
 using namespace dolfin;
 
-
-
-// Test rewritten using Google Test
-TEST(MeshValueCollectionIO, test_read) { 
+//-----------------------------------------------------------------------------
+TEST(MeshValueCollectionIO, test_read)
+{
   // Create mesh and read file
   auto mesh = std::make_shared<UnitCubeMesh>(5, 5, 5);
   MeshValueCollection<std::size_t>
     markers(mesh, "./unit/cpp/io/xml_value_collection_ref.xml");
 
   // Check size
-  ASSERT_EQ(dolfin::MPI::sum(mesh->mpi_comm(), markers.size()), 6);
+  ASSERT_EQ(dolfin::MPI::sum(mesh->mpi_comm(), markers.size()),
+            (std::size_t) 6);
 
   // Check sum of values
   const std::map<std::pair<std::size_t, std::size_t>, std::size_t>&
     values = markers.values();
-  std::map<std::pair<std::size_t, std::size_t>,
-           std::size_t>::const_iterator it;
   std::size_t sum = 0;
-  for (it = values.begin(); it != values.end(); ++it)
+  for (auto it = values.begin(); it != values.end(); ++it)
     sum += it->second;
-  ASSERT_EQ(dolfin::MPI::sum(mesh->mpi_comm(), sum), 48);
+  ASSERT_EQ(dolfin::MPI::sum(mesh->mpi_comm(), sum), (std::size_t) 48);
 }
 
 // Test all

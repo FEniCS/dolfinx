@@ -27,40 +27,43 @@
 
 using namespace dolfin;
 
-TEST(SimpleShapesTest, testUnitSquareMesh) { 
+//-----------------------------------------------------------------------------
+TEST(SimpleShapesTest, testUnitSquareMesh)
+{
   // Create mesh of unit square
   UnitSquareMesh mesh(5, 7);
-  ASSERT_EQ(mesh.num_vertices(), 48);
-  ASSERT_EQ(mesh.num_cells(), 70);
+  ASSERT_EQ(mesh.num_vertices(), (std::size_t) 48);
+  ASSERT_EQ(mesh.num_cells(), (std::size_t) 70);
 }
-
-TEST(SimpleShapesTest, testUnitCubeMesh) { 
+//-----------------------------------------------------------------------------
+TEST(SimpleShapesTest, testUnitCubeMesh)
+{
   // Create mesh of unit cube
   UnitCubeMesh mesh(5, 7, 9);
-  ASSERT_EQ(mesh.num_vertices(), 480);
-  ASSERT_EQ(mesh.num_cells(), 1890);
+  ASSERT_EQ(mesh.num_vertices(), (std::size_t) 480);
+  ASSERT_EQ(mesh.num_cells(), (std::size_t) 1890);
 }
-
-//----------------------------------------------
-
-TEST(MeshRefinement, testRefineUnitSquareMesh) { 
+//-----------------------------------------------------------------------------
+TEST(MeshRefinement, testRefineUnitSquareMesh)
+{
   // Refine mesh of unit square
   UnitSquareMesh mesh0(5, 7);
   Mesh mesh1 = refine(mesh0);
-  ASSERT_EQ(mesh1.num_vertices(), 165);
-  ASSERT_EQ(mesh1.num_cells(), 280);
+  ASSERT_EQ(mesh1.num_vertices(), (std::size_t) 165);
+  ASSERT_EQ(mesh1.num_cells(), (std::size_t) 280);
 }
-
-TEST(MeshRefinement, testRefineUnitCubeMesh) { 
+//-----------------------------------------------------------------------------
+TEST(MeshRefinement, testRefineUnitCubeMesh)
+{
   // Refine mesh of unit cube
   UnitCubeMesh mesh0(5, 7, 9);
   Mesh mesh1 = refine(mesh0);
-  ASSERT_EQ(mesh1.num_vertices(), 3135);
-  ASSERT_EQ(mesh1.num_cells(), 15120);
+  ASSERT_EQ(mesh1.num_vertices(), (std::size_t) 3135);
+  ASSERT_EQ(mesh1.num_cells(), (std::size_t) 15120);
 }
-
-//----------------------------------------------
-TEST(MeshIterators, testVertexIterators) { 
+//-----------------------------------------------------------------------------
+TEST(MeshIterators, testVertexIterators)
+{
   // Iterate over vertices
   UnitCubeMesh mesh(5, 5, 5);
   unsigned int n = 0;
@@ -68,8 +71,9 @@ TEST(MeshIterators, testVertexIterators) {
     n++;
   ASSERT_EQ(n, mesh.num_vertices());
 }
-
-TEST(MeshIterators, testEdgeIterators) {
+//-----------------------------------------------------------------------------
+TEST(MeshIterators, testEdgeIterators)
+{
   // Iterate over edges
   UnitCubeMesh mesh(5, 5, 5);
   unsigned int n = 0;
@@ -77,8 +81,9 @@ TEST(MeshIterators, testEdgeIterators) {
     n++;
   ASSERT_EQ(n, mesh.num_edges());
 }
-
-TEST(MeshIterators, testFaceIterators) { 
+//-----------------------------------------------------------------------------
+TEST(MeshIterators, testFaceIterators)
+{
   // Iterate over faces
   UnitCubeMesh mesh(5, 5, 5);
   unsigned int n = 0;
@@ -86,8 +91,9 @@ TEST(MeshIterators, testFaceIterators) {
     n++;
   ASSERT_EQ(n, mesh.num_faces());
 }
-
-TEST(MeshIterators, testFacetIterators) { 
+//-----------------------------------------------------------------------------
+TEST(MeshIterators, testFacetIterators)
+{
   // Iterate over facets
   UnitCubeMesh mesh(5, 5, 5);
   unsigned int n = 0;
@@ -95,8 +101,9 @@ TEST(MeshIterators, testFacetIterators) {
     n++;
   ASSERT_EQ(n, mesh.num_facets());
 }
-
-TEST(MeshIterators, testCellIterators) { 
+//-----------------------------------------------------------------------------
+TEST(MeshIterators, testCellIterators)
+{
   // Iterate over cells
   UnitCubeMesh mesh(5, 5, 5);
   unsigned int n = 0;
@@ -104,8 +111,9 @@ TEST(MeshIterators, testCellIterators) {
     n++;
   ASSERT_EQ(n, mesh.num_cells());
 }
-
-TEST(MeshIterators, testMixedIterators) { 
+//-----------------------------------------------------------------------------
+TEST(MeshIterators, testMixedIterators)
+{
   // Iterate over vertices of cells
   UnitCubeMesh mesh(5, 5, 5);
   unsigned int n = 0;
@@ -114,18 +122,18 @@ TEST(MeshIterators, testMixedIterators) {
       n++;
   ASSERT_EQ(n, 4*mesh.num_cells());
 }
-
-// -------------------------------------------------------------
-
-TEST(BoundaryExtraction, testBoundaryComputation) { 
+//-----------------------------------------------------------------------------
+TEST(BoundaryExtraction, testBoundaryComputation)
+{
   // Compute boundary of mesh
   UnitCubeMesh mesh(2, 2, 2);
   BoundaryMesh boundary(mesh, "exterior");
-  ASSERT_EQ(boundary.num_vertices(), 26);
-  ASSERT_EQ(boundary.num_cells(), 48);
+  ASSERT_EQ(boundary.num_vertices(), (std::size_t) 26);
+  ASSERT_EQ(boundary.num_cells(), (std::size_t) 48);
 }
-
-TEST(BoundaryExtraction, testBoundaryBoundary) { 
+//-----------------------------------------------------------------------------
+TEST(BoundaryExtraction, testBoundaryBoundary)
+{
   // Compute boundary of boundary
   //
   // Note that we can't do
@@ -140,11 +148,12 @@ TEST(BoundaryExtraction, testBoundaryBoundary) {
   BoundaryMesh b0(mesh, "exterior");
   b0.order();
   BoundaryMesh b1(b0, "exterior");
-  ASSERT_EQ(b1.num_vertices(), 0);
-  ASSERT_EQ(b1.num_cells(), 0);
+  ASSERT_EQ(b1.num_vertices(), (std::size_t) 0);
+  ASSERT_EQ(b1.num_cells(), (std::size_t) 0);
 }
-//-----------------------------------------------
-TEST(MeshFunctions, testAssign) { 
+//-----------------------------------------------------------------------------
+TEST(MeshFunctions, testAssign)
+{
   /// Assign value of mesh function
   auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
   MeshFunction<int> f(mesh, 0);
@@ -152,28 +161,31 @@ TEST(MeshFunctions, testAssign) {
   Vertex v(*mesh, 3);
   ASSERT_EQ(f[v], 10);
 }
-//-----------------------------------------------
-TEST(InputOutput, testMeshXML2D) { 
+//-----------------------------------------------------------------------------
+TEST(InputOutput, testMeshXML2D)
+{
   // Write and read 2D mesh to/from file
   UnitSquareMesh mesh_out(3, 3);
   Mesh mesh_in;
   File file("unitsquare.xml");
   file << mesh_out;
   file >> mesh_in;
-  ASSERT_EQ(mesh_in.num_vertices(), 16);
+  ASSERT_EQ(mesh_in.num_vertices(), (std::size_t) 16);
 }
-
-TEST(InputOutput, testMeshXML3D) { 
+//-----------------------------------------------------------------------------
+TEST(InputOutput, testMeshXML3D)
+{
   // Write and read 3D mesh to/from file
   UnitCubeMesh mesh_out(3, 3, 3);
   Mesh mesh_in;
   File file("unitcube.xml");
   file << mesh_out;
   file >> mesh_in;
-  ASSERT_EQ(mesh_in.num_vertices(), 64);
+  ASSERT_EQ(mesh_in.num_vertices(), (std::size_t) 64);
 }
-
-TEST(InputOutput, testMeshFunction) {
+//-----------------------------------------------------------------------------
+TEST(InputOutput, testMeshFunction)
+{
   // Write and read mesh function to/from file
   auto mesh = std::make_shared<UnitSquareMesh>(1, 1);
   MeshFunction<int> f(mesh, 0);
@@ -190,25 +202,26 @@ TEST(InputOutput, testMeshFunction) {
 }
 
 //-----------------------------------------------
-TEST(PyCCInterface, testGetGeometricalDimension) {
+TEST(PyCCInterface, testGetGeometricalDimension)
+{
   // Get geometrical dimension of mesh
   UnitSquareMesh mesh(5, 5);
-  ASSERT_EQ(mesh.geometry().dim(), 2);
+  ASSERT_EQ(mesh.geometry().dim(), (std::size_t) 2);
 }
-
-TEST(PyCCInterface, testGetCoordinates) {
+//-----------------------------------------------------------------------------
+TEST(PyCCInterface, testGetCoordinates)
+{
   // Get coordinates of vertices
   UnitSquareMesh mesh(5, 5);
-  ASSERT_EQ(mesh.geometry().num_vertices(), 36);
+  ASSERT_EQ(mesh.geometry().num_vertices(), (std::size_t) 36);
 }
-
-
-TEST(PyCCInterface, testGetCells) {
+//-----------------------------------------------------------------------------
+TEST(PyCCInterface, testGetCells)
+{
   // Get cells of mesh
   UnitSquareMesh mesh(5, 5);
-  ASSERT_EQ(mesh.topology().size(2), 50);
+  ASSERT_EQ(mesh.topology().size(2), (std::size_t) 50);
 }
-
 
 // Test all
 int Mesh_main(int argc, char **argv) {
@@ -222,5 +235,6 @@ int Mesh_main(int argc, char **argv) {
       ::testing::GTEST_FLAG(filter) = "MeshIterators.*";
     }
     return RUN_ALL_TESTS();
-}
 
+}
+//-----------------------------------------------------------------------------

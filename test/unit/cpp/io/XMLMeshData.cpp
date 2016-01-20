@@ -24,10 +24,9 @@
 
 using namespace dolfin;
 
-
-
-// Test rewritten using Google Test
-TEST(XMLMeshDataIO, test_write_read) { 
+//-----------------------------------------------------------------------------
+TEST(XMLMeshDataIO, test_write_read)
+{
   // XML mesh output is not supported in parallel. Add test for
   // parallel with HDF5 when ready.
   if (dolfin::MPI::size(MPI_COMM_WORLD) == 1)

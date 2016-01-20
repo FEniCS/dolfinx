@@ -27,7 +27,7 @@
 using namespace dolfin;
 
 // This test was commented out in the original file
-// TEST(MultiMeshes, test_multiple_meshes_quadrature) { 
+// TEST(MultiMeshes, test_multiple_meshes_quadrature) {
 //     set_log_level(DBG);
 
 //     // Create multimesh from three triangle meshes of the unit square
@@ -103,7 +103,9 @@ using namespace dolfin;
 //     ASSERT_NEAR(exact_volume, volume, DOLFIN_EPS_LARGE);
 // }
 
-TEST(MultiMeshes, test_multiple_meshes_interface_quadrature) { 
+//-----------------------------------------------------------------------------
+TEST(MultiMeshes, test_multiple_meshes_interface_quadrature)
+{
     // // These three meshes are ok
     // UnitSquareMesh mesh_0(1, 1);
     // RectangleMesh mesh_1(Point(0.1, 0.1), Point(0.9, 0.9), 1, 1);
@@ -283,8 +285,9 @@ TEST(MultiMeshes, test_multiple_meshes_interface_quadrature) {
               << "volume " << volume<<std::endl;
     ASSERT_NEAR(exact_volume, volume, 10*DOLFIN_EPS_LARGE);
 }
-
-TEST(MultiMeshes, test_assembly) { 
+//-----------------------------------------------------------------------------
+TEST(MultiMeshes, test_assembly)
+{
  // FIXME: Reimplement when functionals are in place again
 }
 
@@ -302,3 +305,4 @@ int MultiMesh_main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
+//-----------------------------------------------------------------------------
