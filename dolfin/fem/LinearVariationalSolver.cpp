@@ -38,14 +38,6 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 LinearVariationalSolver::
-LinearVariationalSolver(LinearVariationalProblem& problem)
-  : _problem(reference_to_no_delete_pointer(problem))
-{
-  // Set parameters
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
-LinearVariationalSolver::
 LinearVariationalSolver(std::shared_ptr<LinearVariationalProblem> problem)
   : _problem(problem)
 {
@@ -66,10 +58,10 @@ void LinearVariationalSolver::solve()
 
   // Get problem data
   dolfin_assert(_problem);
-  std::shared_ptr<const Form> a(_problem->bilinear_form());
-  std::shared_ptr<const Form> L(_problem->linear_form());
-  std::shared_ptr<Function> u(_problem->solution());
-  std::vector<std::shared_ptr<const DirichletBC>> bcs(_problem->bcs());
+  const auto a = _problem->bilinear_form();
+  const auto L = _problem->linear_form();
+  auto u = _problem->solution();
+  auto bcs = _problem->bcs();
 
   dolfin_assert(a);
   dolfin_assert(L);

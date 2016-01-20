@@ -317,7 +317,8 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   u.vector()->apply("insert");
 }
 //-----------------------------------------------------------------------------
-std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
+std::map<std::vector<double>, std::vector<std::size_t>,
+         LagrangeInterpolator::lt_coordinate>
 LagrangeInterpolator::tabulate_coordinates_to_dofs(const FunctionSpace& V)
 {
   std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>

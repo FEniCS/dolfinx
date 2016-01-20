@@ -64,7 +64,7 @@ public:
       }
     };
 
-    UnitCubeMesh mesh(8, 8, 8);
+    auto mesh = std::make_shared<UnitCubeMesh>(8, 8, 8);
 
     Array<double> x(3);
     x[0] = 0.31; x[1] = 0.32; x[2] = 0.33;
@@ -74,7 +74,7 @@ public:
 
     // User-defined functions (one from finite element space, one not)
     F0 f0;
-    F1 f1;
+    auto f1 = std::make_shared<F1>();
 
     // Test evaluation of a user-defined function
     f0.eval(u0, x);
@@ -82,10 +82,10 @@ public:
                                  sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
                                  DOLFIN_EPS);
 
-    if (dolfin::MPI::size(mesh.mpi_comm()) == 1)
+    if (dolfin::MPI::size(mesh->mpi_comm()) == 1)
     {
       // Test evaluation of a discrete function
-      Projection::FunctionSpace V(mesh);
+      auto V = std::make_shared<Projection::FunctionSpace>(mesh);
       Projection::BilinearForm a(V, V);
       Projection::LinearForm L(V);
       L.f = f1;
@@ -93,7 +93,7 @@ public:
       solve(a == L, g);
 
       const double tol = 1.0e-6;
-      f1.eval(u0, x);
+      f1->eval(u0, x);
       g.eval(u1, x);
       CPPUNIT_ASSERT(std::abs(u0[0]-u1[0]) < tol);
     }

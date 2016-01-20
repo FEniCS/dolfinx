@@ -18,6 +18,7 @@
 // Modified by Garth N. Wells, 2012
 
 #include <iomanip>
+#include <memory>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -973,13 +974,14 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
 //-----------------------------------------------------------------------------
 void XDMFFile::read(MeshFunction<bool>& meshfunction)
 {
-  const Mesh& mesh = *meshfunction.mesh();
+  const std::shared_ptr<const Mesh> mesh = meshfunction.mesh();
+  dolfin_assert(mesh);
   const std::size_t cell_dim = meshfunction.dim();
 
   MeshFunction<std::size_t> mf(mesh, cell_dim);
   read_mesh_function(mf);
 
-  for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
+  for (MeshEntityIterator cell(*mesh, cell_dim); !cell.end(); ++cell)
     meshfunction[cell->index()] = (mf[cell->index()] == 1);
 }
 //----------------------------------------------------------------------------

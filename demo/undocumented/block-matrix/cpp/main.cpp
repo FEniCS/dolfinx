@@ -31,10 +31,10 @@ using namespace dolfin;
 int main()
 {
   // Create mesh
-  UnitSquareMesh mesh(32, 32);
+  auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
 
   // Create a simple stiffness matrix and vector
-  StiffnessMatrix::FunctionSpace V(mesh);
+  auto V = std::make_shared<StiffnessMatrix::FunctionSpace>(mesh);
 
   StiffnessMatrix::BilinearForm a(V, V);
   std::shared_ptr<GenericMatrix> A(new Matrix);

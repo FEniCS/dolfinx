@@ -30,6 +30,9 @@ using namespace dolfin;
 
 int main(int argc, char* argv[])
 {
+  info("Compute closest entity on UnitCubeMesh(%d, %d, %d)",
+       SIZE, SIZE, SIZE);
+
   // Create mesh
   UnitCubeMesh mesh(SIZE, SIZE, SIZE);
 

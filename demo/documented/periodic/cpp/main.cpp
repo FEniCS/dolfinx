@@ -69,23 +69,23 @@ int main()
   };
 
   // Create mesh
-  UnitSquareMesh mesh(32, 32);
+  auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
 
   // Create periodic boundary condition
-  PeriodicBoundary periodic_boundary;
+  auto periodic_boundary = std::make_shared<PeriodicBoundary>();
 
   // Create functions
-  Source f;
+  auto f = std::make_shared<Source>();
 
   // Define PDE
-  Poisson::FunctionSpace V(mesh, periodic_boundary);
+  auto V = std::make_shared<Poisson::FunctionSpace>(mesh, periodic_boundary);
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
   L.f = f;
 
   // Create Dirichlet boundary condition
-  Constant u0(0.0);
-  DirichletBoundary dirichlet_boundary;
+  auto u0 = std::make_shared<Constant>(0.0);
+  auto dirichlet_boundary = std::make_shared<DirichletBoundary>();
   DirichletBC bc0(V, u0, dirichlet_boundary);
 
   // Collect boundary conditions
