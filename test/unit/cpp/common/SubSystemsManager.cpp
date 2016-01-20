@@ -41,7 +41,7 @@ TEST(TestSubSystemsManager, test_petsc_user_init) {
 }
 
 // Test all
-int main(int argc, char **argv) {
+int SubSystemsManager_main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

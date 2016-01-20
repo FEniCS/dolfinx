@@ -290,7 +290,7 @@ TEST(MultiMeshes, test_assembly) {
 
 
 // Test all
-int main(int argc, char **argv) {
+int MultiMesh_main(int argc, char **argv) {
   // Test not working in parallel
   if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
   {

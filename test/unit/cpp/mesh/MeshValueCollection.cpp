@@ -164,7 +164,7 @@ TEST(MeshValueCollections, testMeshFunctionAssign2DVertices) {
 
 
 // Test all
-int main(int argc, char **argv) {
+int MeshValueCollection_main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

@@ -186,7 +186,7 @@ TEST(TestVector, test_get_local_empty) {
 //----------------------------------------------------
 
 // Test all
-int main(int argc, char **argv) {
+int Vector_main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

@@ -211,7 +211,7 @@ TEST(PyCCInterface, testGetCells) {
 
 
 // Test all
-int main(int argc, char **argv) {
+int Mesh_main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
 
     // FIXME: Only the following test works in Parallel

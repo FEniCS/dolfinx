@@ -77,7 +77,7 @@ TEST(MeshFunctions, test_create_from_domains) {
 }
 
 // Test all
-int main(int argc, char **argv) {
+int MeshFunction_main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

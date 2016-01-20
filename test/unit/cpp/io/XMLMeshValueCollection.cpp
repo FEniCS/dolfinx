@@ -31,7 +31,7 @@ TEST(MeshValueCollectionIO, test_read) {
   // Create mesh and read file
   auto mesh = std::make_shared<UnitCubeMesh>(5, 5, 5);
   MeshValueCollection<std::size_t>
-    markers(mesh, "xml_value_collection_ref.xml");
+    markers(mesh, "./unit/cpp/io/xml_value_collection_ref.xml");
 
   // Check size
   ASSERT_EQ(dolfin::MPI::sum(mesh->mpi_comm(), markers.size()), 6);
@@ -48,7 +48,7 @@ TEST(MeshValueCollectionIO, test_read) {
 }
 
 // Test all
-int main(int argc, char **argv) {
+int XMLMeshValueCollection_main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

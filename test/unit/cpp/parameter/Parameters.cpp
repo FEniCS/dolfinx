@@ -96,7 +96,7 @@ TEST(InputOutput, test_nested) {
 }
 
 // Test all
-int main(int argc, char **argv) {
+int Parameter_main(int argc, char **argv) {
 
     // Not working in parallel, even if only process 0 writes and
     // others wait for a barrier. Skipping this in parallel for now.

@@ -94,7 +94,7 @@ TEST(Eval, testArbitraryEval) {
 }
 
 // Test all
-int main(int argc, char **argv) {
+int Expression_main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

@@ -114,7 +114,7 @@ TEST(TestLinearOperator, test_linear_operator) {
 }
 
 // Test all
-int main(int argc, char **argv) {
+int LinearOperator_main(int argc, char **argv) {
     // Add backends supporting the LinearOperator interface
     backends.push_back("PETSc");
     backends.push_back("Eigen");
