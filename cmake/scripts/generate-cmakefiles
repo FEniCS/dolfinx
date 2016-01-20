@@ -46,11 +46,11 @@ cmake_policy(SET CMP0004 NEW)
 # DOLFIN_CMAKE_CONFIG_PATH)
 find_package(DOLFIN REQUIRED)
 
-# Locate GTest
-find_package(GTest)
-if (NOT GTEST_FOUND)
-   message(FATAL_ERROR "Could not locate GTest.")
-endif (GTEST_FOUND)
+# Locate gtest and gtest_main bin
+add_subdirectory(../../../../GoogleTest/googletest-src
+                 ../../../../GoogleTest/googletest-build)
+include_directories(../../../../GoogleTest/googletest-src/include)
+
 
 include_directories(${GTEST_INCLUDE_DIRS})
 
