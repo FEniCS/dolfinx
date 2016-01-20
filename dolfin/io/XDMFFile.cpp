@@ -592,9 +592,9 @@ void XDMFFile::write(const Mesh& mesh, Encoding encoding)
   const std::string group_name = "/Mesh/" + name;
 
   // Write hdf5 file on all processes
-#ifdef HAS_HDF5
   if (encoding == Encoding::HDF5)
   {
+#ifdef HAS_HDF5
     // Write mesh to HDF5 file
     // The XML below will obliterate any existing XDMF file
     if (hdf5_filemode != "w")
@@ -604,8 +604,10 @@ void XDMFFile::write(const Mesh& mesh, Encoding encoding)
       hdf5_filemode = "w";
     }
     hdf5_file->write(mesh, cell_dim, group_name);
-  }
+#else
+    dolfin_error("XDMFile.cpp", "write Mesh", "Need HDF5 support");
 #endif
+  }
 
   // Write the XML meta description on process zero
   if (MPI::rank(mesh.mpi_comm()) == 0)
@@ -699,8 +701,8 @@ void XDMFFile::write(const std::vector<Point>& points,
   const std::string group_name = "/Points";
 
   if (encoding == Encoding::HDF5)
-#ifdef HAS_HDF5
   {
+#ifdef HAS_HDF5
     // Initialise HDF5 file
     if (hdf5_filemode != "w")
     {
