@@ -46,13 +46,6 @@ cmake_policy(SET CMP0004 NEW)
 # DOLFIN_CMAKE_CONFIG_PATH)
 find_package(DOLFIN REQUIRED)
 
-# Locate gtest and gtest_main bin
-include_directories(%(include_dir)s)
-link_directories(%(link_dir)s)
-
-
-include_directories(${GTEST_INCLUDE_DIRS})
-
 if (EXISTS ${DOLFIN_USE_FILE})
   include(${DOLFIN_USE_FILE})
 
@@ -80,26 +73,19 @@ endif()
 %(target_libraries)s
 """
 
-# Get direction to Google Test
-dolfin_source = os.getcwd()
-include_dir = dolfin_source + "/GoogleTest/src/googletest/include"
-link_dir = dolfin_source + "/GoogleTest/src/googletest-build"
-
 executable_str = "add_executable(%s %s)"
 target_link_libraries_str = "target_link_libraries(%s "\
-                            "${DOLFIN_LIBRARIES} gtest gtest_main)"
+                            "${DOLFIN_LIBRARIES})"
 
 # Subdirectories
-sub_directories = ['demo', 'test', 'bench']
+sub_directories = ['demo', 'bench']
 
 # Prefix map for subdirectories
-executable_prefixes = dict(test="test_",
-                           demo="demo_",
+executable_prefixes = dict(demo="demo_",
                            bench="bench_")
 
 # Main file name map for subdirectories
-main_file_names = dict(test="test.cpp",
-                       demo="main.cpp",
+main_file_names = dict(demo="main.cpp",
                        bench="main.cpp")
 
 # Projects that use custom CMakeLists.txt (shouldn't overwrite)
@@ -114,20 +100,11 @@ def generate_cmake_files(subdirectory, generated_files):
 
         executable_names = set()
 
-        parent_dir = os.path.split(root)[0]
-        cpp_test_dir = os.path.split(parent_dir)[0]
-        cpp_test = os.path.split(parent_dir)[1]
-
         # For 'cpp' directories, get list of .cpp files
-        if ("cpp" in dirs) or ("cpp" in cpp_test):
+        if "cpp" in dirs:
             cpp_files = []
-            if "cpp" in dirs:
-                program_dir = root + "/cpp"
-                program_name = os.path.split(root)[-1]
-
-            if "cpp" in cpp_test:
-                program_dir = root
-                program_name = os.path.split(root)[-1]
+            program_dir = root + "/cpp"
+            program_name = os.path.split(root)[-1]
 
             skip = False
             for exclude in exclude_projects :
@@ -144,10 +121,7 @@ def generate_cmake_files(subdirectory, generated_files):
             name_forms = dict(
                 project_name=executable_prefix + program_name,
                 executables="NOT_SET",
-                target_libraries="NOT_SET",
-                include_dir=include_dir,
-                link_dir=link_dir)
-            
+                target_libraries="NOT_SET")
             for f in os.listdir(program_dir):
                 filename, extension = os.path.splitext(f)
                 if extension == ".cpp":
