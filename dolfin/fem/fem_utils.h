@@ -26,6 +26,8 @@ namespace dolfin
 {
 
   class FunctionSpace;
+  class Function;
+  class MeshGeometry;
 
   /// Return a map between dofs indices and vertex indices
   ///
