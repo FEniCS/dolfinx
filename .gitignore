@@ -107,6 +107,7 @@ CMakeLists.txt
 !doc/CMakeLists.txt
 !demo/CMakeLists.txt
 !test/CMakeLists.txt
+!test/cpp/CMakeLists.txt
 
 
 CMakeCache.txt
