@@ -106,8 +106,8 @@ CMakeLists.txt
 !dolfin/swig/CMakeLists.txt
 !doc/CMakeLists.txt
 !demo/CMakeLists.txt
-!test/CMakeLists.txt
-!test/cpp/CMakeLists.txt
+!test/unit/CMakeLists.txt
+!test/unit/cpp/CMakeLists.txt
 
 
 CMakeCache.txt
