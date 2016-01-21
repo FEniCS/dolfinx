@@ -28,9 +28,10 @@ using namespace dolfin;
 TEST(MeshValueCollectionIO, test_read)
 {
   // Create mesh and read file
+  // Link to the mesh is quite long...
   auto mesh = std::make_shared<UnitCubeMesh>(5, 5, 5);
   MeshValueCollection<std::size_t>
-    markers(mesh, "./unit/cpp/io/xml_value_collection_ref.xml");
+    markers(mesh, "./test/unit/cpp/io/xml_value_collection_ref.xml");
 
   // Check size
   ASSERT_EQ(dolfin::MPI::sum(mesh->mpi_comm(), markers.size()),

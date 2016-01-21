@@ -589,11 +589,8 @@ if (DOLFIN_ENABLE_UNIT_TESTS)
     set(CMAKE_BUILD_TYPE Release)
   endif()
 
-  # FIXME: We should really be building in somewhere lik
-  # ${CMAKE_BINARY_DIR}/GoogleTest
   # Set default ExternalProject root directory
-  set_directory_properties(PROPERTIES EP_PREFIX ${DOLFIN_SOURCE_DIR}/GoogleTest)
-  #set_directory_properties(PROPERTIES EP_PREFIX ${CMAKE_BINARY_DIR}/GoogleTest)
+  set_directory_properties(PROPERTIES EP_PREFIX ${CMAKE_BINARY_DIR}/GoogleTest)
 
   # Add gtest
   ExternalProject_Add(
@@ -1065,6 +1062,10 @@ if (DOLFIN_ENABLE_BENCHMARKS)
 endif()
 
 if (DOLFIN_ENABLE_TESTING)
+  
+  # Add GoogleTest Directory
+  include_directories(${CMAKE_BINARY_DIR}/GoogleTest/src/googletest/include)
+  link_directories(${CMAKE_BINARY_DIR}/GoogleTest/src/googletest-build)
 
   # Add test but do not add to default target
   add_subdirectory(test EXCLUDE_FROM_ALL)
@@ -1097,10 +1098,11 @@ if (DOLFIN_ENABLE_TESTING)
 
   # TODO: Use google test for C++ unit tests?
   # Add target "run_unittests_cpp" for running only C++ unit tests
+  # Not using the cpp_tester from dolfin_utils.test anymore
+  # (maybe removing the test_cpp_*.py files?)
   add_custom_target(run_unittests_cpp
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-vs" "-k" "cpp"
-    DEPENDS copy_data_test_demo tests
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/all_tests
+    DEPENDS copy_data_test_demo tests)
 
   # Add target "run_unittests_py" for running Python unit tests
   add_custom_target(run_unittests_py

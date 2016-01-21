@@ -48,8 +48,11 @@ if (DOLFIN_FOUND)
 
   # Now build one executable file
   # Locate gtest and gtest_main bin
-  include_directories(/home/quang_ha/Documents/fenics-code-day/gtests-clean/GoogleTest/src/googletest/include)
-  link_directories(/home/quang_ha/Documents/fenics-code-day/gtests-clean/GoogleTest/src/googletest-build)
+  # message("WHERE ARE YOU!!!")
+  # message(${CMAKE_BINARY_DIR})
+  # message("WHERE ARE YOU!!!")
+  # include_directories(/home/quang_ha/Documents/fenics-code-day/gtests-clean/GoogleTest/src/googletest/include)
+  # link_directories(/home/quang_ha/Documents/fenics-code-day/gtests-clean/GoogleTest/src/googletest-build)
 
   # Set CMake behavior
   cmake_policy(SET CMP0004 NEW)
