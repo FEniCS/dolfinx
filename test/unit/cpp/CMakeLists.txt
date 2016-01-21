@@ -31,7 +31,7 @@ if (DOLFIN_FOUND)
   # Add each C++ demo directory only once
   foreach (cpp_test ${initial_list})
 
-    # Get directory 
+    # Get directory
     get_filename_component(cpp_lib_dir ${cpp_test} DIRECTORY)
 
     # Get one upper directory
@@ -73,7 +73,7 @@ if (DOLFIN_FOUND)
     include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
   endif()
 
-  add_executable(all_tests ${added_files})
+  add_executable(cpp_tests ${added_files})
   target_link_libraries(all_tests ${DOLFIN_LIBRARIES} gtest gtest_main)
 
 else()
@@ -81,5 +81,3 @@ else()
   message(STATUS "Could not locate DOLFINConfig.cmake file. Did you do 'make install' for the DOLFIN library and set the appropriate paths (source <build_dir>/dolfin.conf)?")
 
 endif()
-
-
