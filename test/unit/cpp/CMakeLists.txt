@@ -73,8 +73,8 @@ if (DOLFIN_FOUND)
     include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
   endif()
 
-  add_executable(cpp_tests ${added_files})
-  target_link_libraries(all_tests ${DOLFIN_LIBRARIES} gtest gtest_main)
+  add_executable(cpp_gtests ${added_files})
+  target_link_libraries(cpp_gtests ${DOLFIN_LIBRARIES} gtest gtest_main)
 
 else()
 

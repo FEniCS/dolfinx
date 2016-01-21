@@ -1034,8 +1034,8 @@ if (DOLFIN_ENABLE_TESTING)
   # Add cpp_test but do not add to default target
   add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
 
-  # Add target "cpp_tests" for building CPP tests
-  add_custom_target(cpp_tests
+  # Add target "tests_cpp" for building C++ tests
+  add_custom_target(unittests_cpp
                     COMMAND ${MAKE_PROGRAM}
                     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp")
 
@@ -1065,8 +1065,8 @@ if (DOLFIN_ENABLE_TESTING)
   # Not using the cpp_tester from dolfin_utils.test anymore
   # (maybe removing the test_cpp_*.py files?)
   add_custom_target(run_unittests_cpp
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/all_tests
-    DEPENDS copy_data_test_demo cpp_tests)
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/cpp_gtests
+    DEPENDS copy_data_test_demo unittests_cpp)
 
   # Add target "run_unittests_py" for running Python unit tests
   add_custom_target(run_unittests_py
