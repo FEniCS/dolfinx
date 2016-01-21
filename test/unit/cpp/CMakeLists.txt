@@ -15,6 +15,10 @@ endif()
 # to find it
 find_package(DOLFIN REQUIRED)
 
+# Add GoogleTest Directory
+include_directories(${CMAKE_BINARY_DIR}/GoogleTest/src/googletest/include)
+link_directories(${CMAKE_BINARY_DIR}/GoogleTest/src/googletest-build)
+
 # If config file is found, add all demo sub-directories, else print helper
 # message
 if (DOLFIN_FOUND)
@@ -45,14 +49,6 @@ if (DOLFIN_FOUND)
 
     endif()
   endforeach()
-
-  # Now build one executable file
-  # Locate gtest and gtest_main bin
-  # message("WHERE ARE YOU!!!")
-  # message(${CMAKE_BINARY_DIR})
-  # message("WHERE ARE YOU!!!")
-  # include_directories(/home/quang_ha/Documents/fenics-code-day/gtests-clean/GoogleTest/src/googletest/include)
-  # link_directories(/home/quang_ha/Documents/fenics-code-day/gtests-clean/GoogleTest/src/googletest-build)
 
   # Set CMake behavior
   cmake_policy(SET CMP0004 NEW)

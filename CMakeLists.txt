@@ -580,40 +580,8 @@ endif()
 # Check for gtest
 if (DOLFIN_ENABLE_UNIT_TESTS)
 
-  ## Using ExternalProject to Build GTest and use the Library
-  # Enable ExternalProject CMake module
-  include(ExternalProject)
-
-  # Set the build type if it isn't already
-  if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-  endif()
-
-  # Set default ExternalProject root directory
-  set_directory_properties(PROPERTIES EP_PREFIX ${CMAKE_BINARY_DIR}/GoogleTest)
-
-  # Add gtest
-  ExternalProject_Add(
-      googletest
-      URL https://github.com/google/googletest/archive/release-1.7.0.tar.gz
-      TIMEOUT 10
-      # PATCH_COMMAND svn patch ${CMAKE_SOURCE_DIR}/gtest.patch ${CMAKE_BINARY_DIR}/ThirdParty/src/googletest
-      # Force separate output paths for debug and release builds to allow easy
-      # identification of correct lib in subsequent TARGET_LINK_LIBRARIES commands
-      CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-                 -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=DebugLibs
-                 -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=ReleaseLibs
-                 -Dgtest_force_shared_crt=ON
-      # Disable install step
-      INSTALL_COMMAND ""
-      # Wrap download, configure and build steps in a script to log output
-      LOG_DOWNLOAD ON
-      LOG_CONFIGURE ON
-      LOG_BUILD ON)
-
-  # Specify include dir
-  ExternalProject_Get_Property(googletest source_dir)
-  include_directories(${source_dir}/include)
+  # Add sub directory to the test/unit/cpp
+  add_subdirectory(test/unit)
 
 endif()
 
@@ -1062,18 +1030,14 @@ if (DOLFIN_ENABLE_BENCHMARKS)
 endif()
 
 if (DOLFIN_ENABLE_TESTING)
-  
-  # Add GoogleTest Directory
-  include_directories(${CMAKE_BINARY_DIR}/GoogleTest/src/googletest/include)
-  link_directories(${CMAKE_BINARY_DIR}/GoogleTest/src/googletest-build)
 
-  # Add test but do not add to default target
-  add_subdirectory(test EXCLUDE_FROM_ALL)
+  # Add cpp_test but do not add to default target
+  add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
 
-  # Add target "tests" for building tests
-  add_custom_target(tests
+  # Add target "cpp_tests" for building CPP tests
+  add_custom_target(cpp_tests
                     COMMAND ${MAKE_PROGRAM}
-                    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
+                    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp")
 
   # Add target "run_memorytests" for running memory tests
   add_custom_target(copy_data_test_demo
@@ -1101,8 +1065,8 @@ if (DOLFIN_ENABLE_TESTING)
   # Not using the cpp_tester from dolfin_utils.test anymore
   # (maybe removing the test_cpp_*.py files?)
   add_custom_target(run_unittests_cpp
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/all_tests
-    DEPENDS copy_data_test_demo tests)
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/all_tests
+    DEPENDS copy_data_test_demo cpp_tests)
 
   # Add target "run_unittests_py" for running Python unit tests
   add_custom_target(run_unittests_py
