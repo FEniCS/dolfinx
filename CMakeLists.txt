@@ -887,11 +887,11 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
 endif()
 
 #------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for tests, bench and demos if not
+# Generate CMakeLists.txt files for bench and demos if not
 # exists
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/test/unit/cpp/common/CMakeLists.txt)
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
   message(STATUS "")
   message(STATUS "Generating CMakeLists.txt files in demo, test and bench directories")
   message(STATUS "-------------------------------------------------------------------")
