@@ -580,7 +580,7 @@ endif()
 # Check for gtest
 if (DOLFIN_ENABLE_UNIT_TESTS)
 
-  # Add sub directory to the test/unit/cpp
+  # Add sub directory to build GoogleTest
   add_subdirectory(test/unit)
 
 endif()
