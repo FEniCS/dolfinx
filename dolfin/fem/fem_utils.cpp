@@ -131,7 +131,7 @@ void set_coordinates(MeshGeometry& geometry, const Function& position);
 
   std::vector<std::size_t> num_local_entities(tdim);
   std::vector<std::size_t> coords_per_entity(tdim);
-  std::vector<std::vector<std::vector<std::size_t>>> local_to_local;
+  std::vector<std::vector<std::vector<std::size_t>>> local_to_local(tdim);
   std::vector<std::vector<std::size_t>> offsets(tdim);
 
   for (std::size_t dim = 0; dim <= tdim; ++dim)
@@ -140,7 +140,7 @@ void set_coordinates(MeshGeometry& geometry, const Function& position);
     num_local_entities[dim] = mesh.type().num_entities(dim);
 
     // Get local-to-local mapping of dofs
-    local_to_local.resize(num_local_entities[tdim]);
+    local_to_local[tdim].resize(num_local_entities[tdim]);
     for (std::size_t local_ind = 0; local_ind != num_local_entities[tdim]; ++local_ind)
       dofmap.tabulate_entity_dofs(local_to_local[dim][local_ind], dim, local_ind);
 
