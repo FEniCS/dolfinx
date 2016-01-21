@@ -63,6 +63,8 @@ namespace dolfin
   ///         The vertex to dof map
   std::vector<dolfin::la_index> vertex_to_dof_map(const FunctionSpace& space);
 
+  void set_coordinates(MeshGeometry& geometry, const Function& position);
+  void get_coordinates(Function& position, const MeshGeometry& geometry);
 }
 
 #endif

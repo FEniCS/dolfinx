@@ -120,3 +120,79 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
   return return_map;
 }
 //-----------------------------------------------------------------------------
+void set_coordinates(MeshGeometry& geometry, const Function& position);
+{
+  // FIXME: Add checks of function space and meshes
+  auto& x = geometry.x();
+  const auto& v = *position.vector();
+  const auto& dofmap = *position.function_space()->dofmap()
+  const auto& mesh = *position.function_space()->mesh()
+  const auto tdim = mesh.topology().dim()
+
+  std::vector<std::size_t> num_local_entities(tdim);
+  std::vector<std::size_t> coords_per_entity(tdim);
+  std::vector<std::vector<std::vector<std::size_t>>> local_to_local;
+  std::vector<std::vector<std::size_t>> offsets(tdim);
+
+  for (std::size_t dim = 0; dim <= tdim; ++dim)
+  {
+    // Get number local entities
+    num_local_entities[dim] = mesh.type().num_entities(dim);
+
+    // Get local-to-local mapping of dofs
+    local_to_local.resize(num_local_entities[tdim]);
+    for (std::size_t local_ind = 0; local_ind != num_local_entities[tdim]; ++local_ind)
+      dofmap.tabulate_entity_dofs(local_to_local[dim][local_ind], dim, local_ind);
+
+    // Get entity offsets; could be retrieved directly from geometry
+    coords_per_entity[dim] = geometry.num_entity_coordinates(dim);
+    for (std::size_t coord_ind = 0; coord_ind != coords_per_entity[dim]; ++coord_ind)
+    {
+      const auto offset = geometry.get_entity_index(dim, coord_ind, 0);
+      offsets[dim].push_back(offset)
+    }
+  }
+
+  // Initialize needed connectivities
+  for (std::size_t dim = 0; dim <= tdim; ++dim)
+  {
+    if (coords_per_entity[dim] > 0)
+      mesh.init(tdim, dim);
+  }
+
+  ArrayView<const la_index> cell_dofs;
+  std::vector<double> values;
+  const unsigned int* global_entities;
+
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    // Get values on cell
+    cell_dofs = dofmap.cell_dofs(cell_index);
+    values.resize(cell_dofs.size());
+    x.get_local(values.data(), cell_dofs.size(), cell_dofs.data());
+
+    // Iterate over all entities on cell
+    for (std::size_t dim = 0; dim <= tdim; ++dim)
+    {
+      // Get local-to-global entity mapping
+      global_entities = c.entities(dim);
+
+      for (std::size_t local_entity = 0;
+           local_entity != num_local_entities[dim]; ++local_entity)
+      {
+        for (std::size_t local_dof; local_dof != coords_per_entity[dim];
+              ++local_dof)
+        {
+          x[offsets[dim][local_dof] + global_entities[local_entity]]
+            = values[local_to_local[dim][local_entity][local_dof]]
+        }
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void get_coordinates(Function& position, const MeshGeometry& geometry);
+{
+  dolfin_error("", "", "");
+}
+//-----------------------------------------------------------------------------
