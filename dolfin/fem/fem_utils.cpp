@@ -121,7 +121,7 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
   return return_map;
 }
 //-----------------------------------------------------------------------------
-void set_coordinates(MeshGeometry& geometry, const Function& position)
+void dolfin::set_coordinates(MeshGeometry& geometry, const Function& position)
 {
   // FIXME: Add checks of function space and meshes
   auto& x = geometry.x();
@@ -129,11 +129,12 @@ void set_coordinates(MeshGeometry& geometry, const Function& position)
   const auto& dofmap = *position.function_space()->dofmap();
   const auto& mesh = *position.function_space()->mesh();
   const auto tdim = mesh.topology().dim();
+  const auto gdim = mesh.geometry().dim();
 
-  std::vector<std::size_t> num_local_entities(tdim);
-  std::vector<std::size_t> coords_per_entity(tdim);
-  std::vector<std::vector<std::vector<std::size_t>>> local_to_local(tdim);
-  std::vector<std::vector<std::size_t>> offsets(tdim);
+  std::vector<std::size_t> num_local_entities(tdim+1);
+  std::vector<std::size_t> coords_per_entity(tdim+1);
+  std::vector<std::vector<std::vector<std::size_t>>> local_to_local(tdim+1);
+  std::vector<std::vector<std::size_t>> offsets(tdim+1);
 
   for (std::size_t dim = 0; dim <= tdim; ++dim)
   {
@@ -141,8 +142,8 @@ void set_coordinates(MeshGeometry& geometry, const Function& position)
     num_local_entities[dim] = mesh.type().num_entities(dim);
 
     // Get local-to-local mapping of dofs
-    local_to_local[tdim].resize(num_local_entities[tdim]);
-    for (std::size_t local_ind = 0; local_ind != num_local_entities[tdim]; ++local_ind)
+    local_to_local[dim].resize(num_local_entities[dim]);
+    for (std::size_t local_ind = 0; local_ind != num_local_entities[dim]; ++local_ind)
       dofmap.tabulate_entity_dofs(local_to_local[dim][local_ind], dim, local_ind);
 
     // Get entity offsets; could be retrieved directly from geometry
@@ -184,15 +185,18 @@ void set_coordinates(MeshGeometry& geometry, const Function& position)
         for (std::size_t local_dof = 0; local_dof != coords_per_entity[dim];
               ++local_dof)
         {
-          x[offsets[dim][local_dof] + global_entities[local_entity]]
-            = values[local_to_local[dim][local_entity][local_dof]];
+          for (std::size_t component = 0; component != gdim; ++component)
+          {
+            x[gdim*(offsets[dim][local_dof] + global_entities[local_entity]) + component]
+              = values[local_to_local[dim][local_entity][gdim*local_dof+component]];
+          }
         }
       }
     }
   }
 }
 //-----------------------------------------------------------------------------
-void get_coordinates(Function& position, const MeshGeometry& geometry)
+void dolfin::get_coordinates(Function& position, const MeshGeometry& geometry)
 {
   dolfin_error("", "", "");
 }
