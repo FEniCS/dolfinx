@@ -121,41 +121,84 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
   return return_map;
 }
 //-----------------------------------------------------------------------------
-// This helper function sets geometry from position (if set) or stores
-// geometry into position (otherwise)
-void _get_set_coordinates(MeshGeometry& geometry, Function& position,
-  const bool set)
+void _precheck_coordinates(const MeshGeometry& geometry,
+  const Function& position, const bool setting)
 {
   dolfin_assert(position.function_space());
   dolfin_assert(position.function_space()->mesh());
   dolfin_assert(position.function_space()->dofmap());
+  dolfin_assert(position.function_space()->element());
+  dolfin_assert(position.function_space()->element()->ufc_element());
+
+  if (&position.function_space()->mesh()->geometry() != &geometry)
+  {
+    dolfin_error("fem_utils.cpp",
+                 "set/get mesh geometry coordinates from function",
+                 "function mesh geometry and given geometry "
+                 "do not match (address comparison)");
+  }
+
+  if (position.function_space()->element()->ufc_element()->family()
+          != "Lagrange")
+  {
+    dolfin_error("fem_utils.cpp",
+                 "set/get mesh geometry coordinates from function",
+                 "expecting 'Lagrange' finite element family rather than '%s'",
+      position.function_space()->element()->ufc_element()->family().c_str());
+  }
 
   if (position.value_rank() != 1)
   {
     dolfin_error("fem_utils.cpp",
-                 "set mesh geometry coordinated from function",
+                 "set/get mesh geometry coordinates from function",
                  "function has incorrect value rank %d, need 1",
                  position.value_rank());
   }
 
-  if (position.value_dimension(0) != geometry.dim())
+  // This msg would be a bit misleading (although not incorrect) when getting
+  if (setting && position.value_dimension(0)
+          < position.function_space()->mesh()->topology().dim())
   {
     dolfin_error("fem_utils.cpp",
-                 "set mesh geometry coordinated from function",
+                 "set mesh geometry coordinates from function",
+                 "function value dimension %d cannot be smaller than "
+                 "topological dimension %d",
+                 position.value_dimension(0),
+                 position.function_space()->mesh()->topology().dim());
+  }
+
+  // Check just when getting; we will reinit geometry when setting
+  if (!setting && position.value_dimension(0) != geometry.dim())
+  {
+    dolfin_error("fem_utils.cpp",
+                 "get mesh geometry coordinates from function",
                  "function value dimension %d and geometry dimension %d "
                  "do not match",
                  position.value_dimension(0), geometry.dim());
   }
 
-  // FIXME: Check for Lagrange family of position
-
-  if (&position.function_space()->mesh()->geometry() != &geometry)
+  // Check just when getting; we will reinit geometry when setting
+  if (!setting && position.function_space()->element()->ufc_element()->degree()
+          != geometry.degree())
   {
     dolfin_error("fem_utils.cpp",
-                 "set mesh geometry coordinated from function",
-                 "function mesh geometry and given geometry "
-                 "do not match (address comparison)");
+                 "get mesh geometry coordinates from function",
+                 "function degree %d and geometry degree %d do not match",
+                 position.function_space()->element()->ufc_element()->degree(),
+                 geometry.degree());
   }
+
+}
+//-----------------------------------------------------------------------------
+// This helper function sets geometry from position (if setting) or stores
+// geometry into position (otherwise)
+void _get_set_coordinates(MeshGeometry& geometry, Function& position,
+  const bool setting)
+{
+  // Last check that initialization went well
+  dolfin_assert(position.value_dimension(0) == geometry.dim());
+  dolfin_assert(position.function_space()->element()->ufc_element()->degree()
+          == geometry.degree());
 
   auto& x = geometry.x();
   auto& v = *position.vector();
@@ -206,7 +249,7 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
     // Get/prepare values and dofs on cell
     cell_dofs = dofmap.cell_dofs(c->index());
     values.resize(cell_dofs.size());
-    if (set)
+    if (setting)
       v.get_local(values.data(), cell_dofs.size(), cell_dofs.data());
 
     // Iterate over all entities on cell
@@ -229,7 +272,7 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
             vi = local_to_local[dim][local_entity][gdim*local_dof + component];
 
             // Set one or other
-            if (set)
+            if (setting)
               x[xi] = values[vi];
             else
               values[vi] = x[xi];
@@ -239,36 +282,36 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
     }
 
     // Store cell contribution to dof vector (if getting)
-    if (!set)
+    if (!setting)
       v.set_local(values.data(), cell_dofs.size(), cell_dofs.data());
   }
 
-  if (!set)
+  if (!setting)
     v.apply("insert");
 }
 //-----------------------------------------------------------------------------
 void dolfin::set_coordinates(MeshGeometry& geometry, const Function& position)
 {
-  // NOTE: There are two options
-  //         1. allow just the matching function
-  //         2. allow any function and init geometry (commented code below)
+  _precheck_coordinates(geometry, position, true);
 
-  /*
-  // Initialize brand new geometry
-  auto const t = position.function_space()->mesh()->topology();
-  // FIXME: How to get the degree of position
-  geometry.init(position.value_dimension(0), ????)
-  std::vector<std::size_t> num_entities(t.dim()+1);
-  for (std::size_t dim = 0; dim <= tdim; ++dim)
-    num_entities[dim] = t.size(dim);
+  // Get number entities of every dim in mesh
+  const auto topology = position.function_space()->mesh()->topology();
+  std::vector<std::size_t> num_entities(topology.dim() + 1);
+  for (std::size_t dim = 0; dim <= topology.dim(); ++dim)
+    num_entities[dim] = topology.size(dim);
+
+  // Initialize new geometry from function
+  geometry.init(position.value_dimension(0),
+          position.function_space()->element()->ufc_element()->degree());
   geometry.init_entities(num_entities);
-  */
 
+  // Call setter
   _get_set_coordinates(geometry, const_cast<Function&>(position), true);
 }
 //-----------------------------------------------------------------------------
 void dolfin::get_coordinates(Function& position, const MeshGeometry& geometry)
 {
+  _precheck_coordinates(geometry, position, false);
   _get_set_coordinates(const_cast<MeshGeometry&>(geometry), position, false);
 }
 //-----------------------------------------------------------------------------

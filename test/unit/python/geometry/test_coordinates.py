@@ -72,7 +72,25 @@ def test_higher_order(meshes_p2):
 def test_raises(meshes_p1):
     mesh1, mesh2 = meshes_p1[:2]
 
-    # Scalar coordinate function - wrong value rank
+    # Non-matching meshes (different address of mesh2.geometry()
+    # and c.function_space().mesh().geometry())
+    mesh_another = Mesh(mesh2)
+    V = FunctionSpace(mesh_another, mesh_another.ufl_coordinate_element())
+    c = Function(V)
+    with pytest.raises(RuntimeError):
+        get_coordinates(c, mesh2.geometry())
+    with pytest.raises(RuntimeError):
+        set_coordinates(mesh2.geometry(), c)
+
+    # Wrong FE family
+    V = VectorFunctionSpace(mesh2, "Discontinuous Lagrange", 1)
+    c = Function(V)
+    with pytest.raises(RuntimeError):
+        get_coordinates(c, mesh2.geometry())
+    with pytest.raises(RuntimeError):
+        set_coordinates(mesh2.geometry(), c)
+
+    # Wrong value rank
     V = FunctionSpace(mesh2, "Lagrange", 1)
     c = Function(V)
     with pytest.raises(RuntimeError):
@@ -80,28 +98,24 @@ def test_raises(meshes_p1):
     with pytest.raises(RuntimeError):
         set_coordinates(mesh2.geometry(), c)
 
-    # Wrong value shape
+    # Wrong value shape (incompatible for getting,
+    # too small (< tdim) for setting)
+    V = VectorFunctionSpace(mesh2, "Lagrange", mesh2.geometry().degree(),
+            dim=mesh2.geometry().dim() - 1)
+    c = Function(V)
+    with pytest.raises(RuntimeError):
+        get_coordinates(c, mesh2.geometry())
+    with pytest.raises(RuntimeError):
+        set_coordinates(mesh2.geometry(), c)
+
+    # Non-matching degree (for getting), ok for setting
+    V = VectorFunctionSpace(mesh2, "Lagrange", mesh2.geometry().degree() + 1)
+    c = Function(V)
+    with pytest.raises(RuntimeError):
+        get_coordinates(c, mesh2.geometry())
+    set_coordinates(mesh2.geometry(), c)
+
+    # Can change gdim and degree by setting
     V = VectorFunctionSpace(mesh2, "Lagrange", 1,
-            dim=mesh2.geometry().dim()-1)
-    c = Function(V)
-    with pytest.raises(RuntimeError):
-        get_coordinates(c, mesh2.geometry())
-    with pytest.raises(RuntimeError):
-        set_coordinates(mesh2.geometry(), c)
-
-    # Similar
-    V = FunctionSpace(mesh1, mesh1.ufl_coordinate_element())
-    c = Function(V)
-    with pytest.raises(RuntimeError):
-        get_coordinates(c, mesh2.geometry())
-    with pytest.raises(RuntimeError):
-        set_coordinates(mesh2.geometry(), c)
-
-    mesh_another = Mesh(mesh2)
-    V = FunctionSpace(mesh_another, mesh_another.ufl_coordinate_element())
-    c = Function(V)
-    with pytest.raises(RuntimeError):
-        get_coordinates(c, mesh2.geometry())
-    # NOTE: This may stop raising in future; geometry may re-initialized to match
-    with pytest.raises(RuntimeError):
-        set_coordinates(mesh2.geometry(), c)
+            dim=mesh2.geometry().dim() + 1)
+    set_coordinates(mesh2.geometry(), c)
