@@ -1340,7 +1340,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
 
   // Reset MeshValueCollection
   mesh_vc.clear();
-  mesh_vc.init(*mesh, dim);
+  mesh_vc.init(mesh, dim);
 
   const std::string values_name = name + "/values";
   const std::string topology_name = name + "/topology";
