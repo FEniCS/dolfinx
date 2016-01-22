@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2015 Johan Hake, Jan Blechta
+// Copyright (C) 2013, 2015, 2016 Johan Hake, Jan Blechta
 //
 // This file is part of DOLFIN.
 //
@@ -121,11 +121,44 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
   return return_map;
 }
 //-----------------------------------------------------------------------------
-void dolfin::set_coordinates(MeshGeometry& geometry, const Function& position)
+// This helper function sets geometry from position (if set) or stores
+// geometry into position (otherwise)
+void _get_set_coordinates(MeshGeometry& geometry, Function& position,
+  const bool set)
 {
-  // FIXME: Add checks of function space and meshes
+  dolfin_assert(position.function_space());
+  dolfin_assert(position.function_space()->mesh());
+  dolfin_assert(position.function_space()->dofmap());
+
+  if (position.value_rank() != 1)
+  {
+    dolfin_error("fem_utils.cpp",
+                 "set mesh geometry coordinated from function",
+                 "function has incorrect value rank %d, need 1",
+                 position.value_rank());
+  }
+
+  if (position.value_dimension(0) != geometry.dim())
+  {
+    dolfin_error("fem_utils.cpp",
+                 "set mesh geometry coordinated from function",
+                 "function value dimension %d and geometry dimension %d "
+                 "do not match",
+                 position.value_dimension(0), geometry.dim());
+  }
+
+  // FIXME: Check for Lagrange family of position
+
+  if (&position.function_space()->mesh()->geometry() != &geometry)
+  {
+    dolfin_error("fem_utils.cpp",
+                 "set mesh geometry coordinated from function",
+                 "function mesh geometry and given geometry "
+                 "do not match (address comparison)");
+  }
+
   auto& x = geometry.x();
-  const auto& v = *position.vector();
+  auto& v = *position.vector();
   const auto& dofmap = *position.function_space()->dofmap();
   const auto& mesh = *position.function_space()->mesh();
   const auto tdim = mesh.topology().dim();
@@ -165,13 +198,16 @@ void dolfin::set_coordinates(MeshGeometry& geometry, const Function& position)
   ArrayView<const la_index> cell_dofs;
   std::vector<double> values;
   const unsigned int* global_entities;
+  std::size_t xi, vi;
 
+  // Get/set cell-by-cell
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    // Get values on cell
+    // Get/prepare values and dofs on cell
     cell_dofs = dofmap.cell_dofs(c->index());
     values.resize(cell_dofs.size());
-    v.get_local(values.data(), cell_dofs.size(), cell_dofs.data());
+    if (set)
+      v.get_local(values.data(), cell_dofs.size(), cell_dofs.data());
 
     // Iterate over all entities on cell
     for (std::size_t dim = 0; dim <= tdim; ++dim)
@@ -187,17 +223,52 @@ void dolfin::set_coordinates(MeshGeometry& geometry, const Function& position)
         {
           for (std::size_t component = 0; component != gdim; ++component)
           {
-            x[gdim*(offsets[dim][local_dof] + global_entities[local_entity]) + component]
-              = values[local_to_local[dim][local_entity][gdim*local_dof+component]];
+            // Compute indices
+            xi = gdim*(offsets[dim][local_dof] + global_entities[local_entity])
+               + component;
+            vi = local_to_local[dim][local_entity][gdim*local_dof + component];
+
+            // Set one or other
+            if (set)
+              x[xi] = values[vi];
+            else
+              values[vi] = x[xi];
           }
         }
       }
     }
+
+    // Store cell contribution to dof vector (if getting)
+    if (!set)
+      v.set_local(values.data(), cell_dofs.size(), cell_dofs.data());
   }
+
+  if (!set)
+    v.apply("insert");
+}
+//-----------------------------------------------------------------------------
+void dolfin::set_coordinates(MeshGeometry& geometry, const Function& position)
+{
+  // NOTE: There are two options
+  //         1. allow just the matching function
+  //         2. allow any function and init geometry (commented code below)
+
+  /*
+  // Initialize brand new geometry
+  auto const t = position.function_space()->mesh()->topology();
+  // FIXME: How to get the degree of position
+  geometry.init(position.value_dimension(0), ????)
+  std::vector<std::size_t> num_entities(t.dim()+1);
+  for (std::size_t dim = 0; dim <= tdim; ++dim)
+    num_entities[dim] = t.size(dim);
+  geometry.init_entities(num_entities);
+  */
+
+  _get_set_coordinates(geometry, const_cast<Function&>(position), true);
 }
 //-----------------------------------------------------------------------------
 void dolfin::get_coordinates(Function& position, const MeshGeometry& geometry)
 {
-  dolfin_error("", "", "");
+  _get_set_coordinates(const_cast<MeshGeometry&>(geometry), position, false);
 }
 //-----------------------------------------------------------------------------

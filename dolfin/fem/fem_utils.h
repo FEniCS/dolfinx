@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2015 Johan Hake, Jan Blechta
+// Copyright (C) 2013, 2015, 2016 Johan Hake, Jan Blechta
 //
 // This file is part of DOLFIN.
 //
@@ -26,8 +26,6 @@ namespace dolfin
 {
 
   class FunctionSpace;
-  class Function;
-  class MeshGeometry;
 
   /// Return a map between dofs indices and vertex indices
   ///
@@ -65,7 +63,35 @@ namespace dolfin
   ///         The vertex to dof map
   std::vector<dolfin::la_index> vertex_to_dof_map(const FunctionSpace& space);
 
+  class Function;
+  class MeshGeometry;
+
+  /// Sets mesh coordinates from function
+  ///
+  /// Mesh connectivities d-0, d-1, ..., d-r are built on function mesh
+  /// (where d is topological dimension of the mesh and r is maximal
+  /// dimension of entity associated with any coordinate/node). Consider
+  /// clearing unneeded connectivities when finished.
+  ///
+  /// *Arguments*
+  ///     geometry (_MeshGeometry_)
+  ///         Mesh geometry to be set
+  ///     position (_Function_)
+  ///         Vectorial Lagrange function of arbitrary degree and mesh
   void set_coordinates(MeshGeometry& geometry, const Function& position);
+
+  /// Stores mesh coordinates into function
+  ///
+  /// Mesh connectivities d-0, d-1, ..., d-r are built on function mesh
+  /// (where d is topological dimension of the mesh and r is maximal
+  /// dimension of entity associated with any coordinate/node). Consider
+  /// clearing unneeded connectivities when finished.
+  ///
+  /// *Arguments*
+  ///     position (_Function_)
+  ///         Vectorial Lagrange function with matching degree and mesh
+  ///     geometry (_MeshGeometry_)
+  ///         Mesh geometry to be stored
   void get_coordinates(Function& position, const MeshGeometry& geometry);
 }
 
