@@ -27,7 +27,6 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
-#include "XDMFxml.h"
 
 namespace dolfin
 {
@@ -41,6 +40,7 @@ namespace dolfin
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
   class Point;
+  class XDMFxml;
 
   /// This class supports the output of meshes and functions in XDMF
   /// (http://www.xdmf.org) format. It creates an XML file that
@@ -63,9 +63,9 @@ namespace dolfin
     /// Destructor
     ~XDMFFile();
 
-    /// Save a mesh to XDMF format, either using an associated
-    /// HDF5 file, or storing the data inline as XML
-    /// Create function on given function space
+    /// Save a mesh to XDMF format, either using an associated HDF5
+    /// file, or storing the data inline as XML Create function on
+    /// given function space
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
@@ -75,8 +75,8 @@ namespace dolfin
     ///
     void write(const Mesh& mesh, Encoding encoding=Encoding::HDF5);
 
-    /// Save a Function to XDMF file for visualisation,
-    /// using an associated HDF5 file, or storing the data inline as XML.
+    /// Save a Function to XDMF file for visualisation, using an
+    /// associated HDF5 file, or storing the data inline as XML.
     ///
     /// *Arguments*
     ///     u (_Function_)
@@ -87,7 +87,8 @@ namespace dolfin
     void write(const Function& u, Encoding encoding=Encoding::HDF5);
 
     /// Save a Function with timestamp to XDMF file for visualisation,
-    /// using an associated HDF5 file, or storing the data inline as XML.
+    /// using an associated HDF5 file, or storing the data inline as
+    /// XML.
     ///
     /// *Arguments*
     ///     u (_Function_)
@@ -99,8 +100,8 @@ namespace dolfin
     ///
     void write(const Function& u, double t, Encoding encoding=Encoding::HDF5);
 
-    /// Save MeshFunction to file
-    /// using an associated HDF5 file, or storing the data inline as XML.
+    /// Save MeshFunction to file using an associated HDF5 file, or
+    /// storing the data inline as XML.
     ///
     /// *Arguments*
     ///     meshfunction (_MeshFunction_)
@@ -117,8 +118,8 @@ namespace dolfin
     void write(const MeshFunction<double>& meshfunction,
                Encoding encoding=Encoding::HDF5);
 
-    /// Save a cloud of points to file
-    /// using an associated HDF5 file, or storing the data inline as XML.
+    /// Save a cloud of points to file using an associated HDF5 file,
+    /// or storing the data inline as XML.
     ///
     /// *Arguments*
     ///     points (_std::vector<Point>_)
@@ -129,8 +130,8 @@ namespace dolfin
     void write(const std::vector<Point>& points,
                Encoding encoding=Encoding::HDF5);
 
-    /// Save a cloud of points, with scalar values
-    /// using an associated HDF5 file, or storing the data inline as XML.
+    /// Save a cloud of points, with scalar values using an associated
+    /// HDF5 file, or storing the data inline as XML.
     ///
     /// *Arguments*
     ///     points (_std::vector<Point>_)
@@ -144,8 +145,8 @@ namespace dolfin
                const std::vector<double>& values,
                Encoding encoding=Encoding::HDF5);
 
-    /// Write out mesh value collection (subset)
-    /// using an associated HDF5 file, or storing the data inline as XML.
+    /// Write out mesh value collection (subset) using an associated
+    /// HDF5 file, or storing the data inline as XML.
     ///
     /// *Arguments*
     ///     mvc (_MeshValueCollection<std::size_t>_)
@@ -257,11 +258,11 @@ namespace dolfin
     std::size_t counter;
 
     // The xml document of the XDMF file
-    XDMFxml _xml;
+    std::unique_ptr<XDMFxml> _xml;
 
     // Write MVC to ascii string to store in xdmf xml file
     template <typename T>
-    void write_ascii_mesh_value_collection(
+      void write_ascii_mesh_value_collection(
         const MeshValueCollection<T>& mesh_values,
         std::string data_name);
 
