@@ -328,6 +328,7 @@ def test_save_3D_vertex_function(tempdir, encoding):
 
 
 @pytest.mark.parametrize("encoding", encodings)
+@ensure_errors_for_special_cases
 def test_save_points_2D(tempdir, encoding):
     import numpy
     mesh = UnitSquareMesh(16, 16)
@@ -338,7 +339,7 @@ def test_save_points_2D(tempdir, encoding):
     vals = numpy.array(values)
 
     file = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "points_2D.xdmf"))
-    if encoding == XDMFFile.Encoding_ASCII:
+    if encoding == XDMFFile.Encoding_ASCII: # Not implemented
         with pytest.raises(RuntimeError):
             file.write(points, encoding)
     else:
@@ -347,15 +348,13 @@ def test_save_points_2D(tempdir, encoding):
 
     file = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir,
                                                   "points_values_2D.xdmf"))
-    if encoding == XDMFFile.Encoding_ASCII:
-        with pytest.raises(RuntimeError):
-            file.write(points, encoding)
-    else:
-        file.write(points, vals, encoding)
+    
+    file.write(points, vals, encoding)
     del file
 
 
 @pytest.mark.parametrize("encoding", encodings)
+@ensure_errors_for_special_cases
 def test_save_points_3D(tempdir, encoding):
     import numpy
     mesh = UnitCubeMesh(4, 4, 4)
@@ -366,7 +365,7 @@ def test_save_points_3D(tempdir, encoding):
     vals = numpy.array(values)
 
     file = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "points_3D.xdmf"))
-    if encoding == XDMFFile.Encoding_ASCII:
+    if encoding == XDMFFile.Encoding_ASCII: # Not implemented
         with pytest.raises(RuntimeError):
             file.write(points, encoding)
     else:
@@ -374,11 +373,8 @@ def test_save_points_3D(tempdir, encoding):
     del file
 
     file = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "points_values_3D.xdmf"))
-    if encoding == XDMFFile.Encoding_ASCII:
-        with pytest.raises(RuntimeError):
-            file.write(points, encoding)
-    else:
-        file.write(points, vals, encoding)
+    
+    file.write(points, vals, encoding)
     del file
 
 
