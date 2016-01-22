@@ -32,7 +32,7 @@ encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)
 def ensure_errors_for_special_cases(func):
     def fails_decorator(tempdir, encoding):
         if not has_hdf5() and encoding == XDMFFile.Encoding_HDF5:
-            with pytest.raises(Exception):
+            with pytest.raises(RuntimeError):
                 fname = func.__name__
                 func(tempdir, encoding)
         elif encoding == XDMFFile.Encoding_ASCII and MPI.size(mpi_comm_world()) > 1:
