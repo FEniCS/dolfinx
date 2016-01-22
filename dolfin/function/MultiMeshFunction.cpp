@@ -88,6 +88,10 @@ void MultiMeshFunction::init_vector()
   // not handle distributed vectors (since we do not yet handle
   // communication between distributed bounding box trees).
 
+  // FIXME: Dear Developer, this needs to be rewritten as in
+  //        Function::init_vector()! We need to get rid of
+  //        GenericVector::init(MPI_COMM_WORLD, range, local_to_global, ghost_indices);
+
   // Get global size
   const std::size_t N = _function_space->dofmap()->global_dimension();
 
@@ -133,6 +137,8 @@ void MultiMeshFunction::init_vector()
 void MultiMeshFunction::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
                                           std::vector<la_index>& ghost_indices) const
 {
+  // NOTE: Well, don't implement me! Rather rewrite init_vector().
+  //       See Function::init_vector().
   dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
