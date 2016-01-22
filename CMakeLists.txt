@@ -1065,7 +1065,7 @@ if (DOLFIN_ENABLE_TESTING)
   # Not using the cpp_tester from dolfin_utils.test anymore
   # (maybe removing the test_cpp_*.py files?)
   add_custom_target(run_unittests_cpp
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/cpp_gtests
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/tests
     DEPENDS copy_data_test_demo unittests_cpp)
 
   # Add target "run_unittests_py" for running Python unit tests
