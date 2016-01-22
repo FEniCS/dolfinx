@@ -24,8 +24,8 @@ import pytest
 import numpy as np
 
 from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, UnitDiscMesh
-from dolfin import FunctionSpace, Function, mpi_comm_world
-from dolfin import get_coordinates, set_coordinates
+from dolfin import FunctionSpace, VectorFunctionSpace, Function, mpi_comm_world
+from dolfin import get_coordinates, set_coordinates, Mesh
 from dolfin_utils.test import skip_in_parallel, fixture
 
 
@@ -36,7 +36,7 @@ def meshes_p1():
 
 @fixture
 def meshes_p2():
-    return UnitDiscMesh(mpi_comm_world(), 1, 2, 2),
+    return UnitDiscMesh(mpi_comm_world(), 1, 2, 2), UnitDiscMesh(mpi_comm_world(), 1, 2, 3)
 
 
 def _test_get_set_coordinates(mesh):
@@ -67,3 +67,41 @@ def test_linear(meshes_p1):
 def test_higher_order(meshes_p2):
     for mesh in meshes_p2:
         _test_get_set_coordinates(mesh)
+
+
+def test_raises(meshes_p1):
+    mesh1, mesh2 = meshes_p1[:2]
+
+    # Scalar coordinate function - wrong value rank
+    V = FunctionSpace(mesh2, "Lagrange", 1)
+    c = Function(V)
+    with pytest.raises(RuntimeError):
+        get_coordinates(c, mesh2.geometry())
+    with pytest.raises(RuntimeError):
+        set_coordinates(mesh2.geometry(), c)
+
+    # Wrong value shape
+    V = VectorFunctionSpace(mesh2, "Lagrange", 1,
+            dim=mesh2.geometry().dim()-1)
+    c = Function(V)
+    with pytest.raises(RuntimeError):
+        get_coordinates(c, mesh2.geometry())
+    with pytest.raises(RuntimeError):
+        set_coordinates(mesh2.geometry(), c)
+
+    # Similar
+    V = FunctionSpace(mesh1, mesh1.ufl_coordinate_element())
+    c = Function(V)
+    with pytest.raises(RuntimeError):
+        get_coordinates(c, mesh2.geometry())
+    with pytest.raises(RuntimeError):
+        set_coordinates(mesh2.geometry(), c)
+
+    mesh_another = Mesh(mesh2)
+    V = FunctionSpace(mesh_another, mesh_another.ufl_coordinate_element())
+    c = Function(V)
+    with pytest.raises(RuntimeError):
+        get_coordinates(c, mesh2.geometry())
+    # NOTE: This may stop raising in future; geometry may re-initialized to match
+    with pytest.raises(RuntimeError):
+        set_coordinates(mesh2.geometry(), c)
