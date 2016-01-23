@@ -74,11 +74,10 @@ option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." 
 option(DOLFIN_AUTO_DETECT_MPI "Detect MPI automatically (turn this off to use the MPI compiler wrappers directly via setting CXX, CXX, FC)." ON)
 option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
-option(DOLFIN_ENABLE_UNIT_TESTS "Enable unit tests." ON)
 option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
+option(DOLFIN_ENABLE_GTEST "Enable C++ unit tests with Google Test if DOLFIN_ENABLE_TESTING is true (requires Internet connection to download Google Test when first configured." ON)
 option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
-option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 option(DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py." OFF)
 
@@ -578,14 +577,6 @@ if (DOLFIN_ENABLE_ZLIB)
   find_package(ZLIB)
 endif()
 
-# Check for gtest
-if (DOLFIN_ENABLE_UNIT_TESTS)
-
-  # Add sub directory to build GoogleTest
-  add_subdirectory(test/unit)
-
-endif()
-
 # Check for Sphinx
 if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
   find_package(Sphinx 1.1.0)
@@ -1032,13 +1023,28 @@ endif()
 
 if (DOLFIN_ENABLE_TESTING)
 
-  # Add target "unittests_cpp", but do not add to default target
-  add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
+  # Google Test needs to be downloaded and compiled by CMake, so we
+  # handle it as a special case.
+  if (DOLFIN_ENABLE_GTEST)
+    # Add sub directory to build GoogleTest
+    add_subdirectory(test/unit)
+
+    # Add target "unittests_cpp", but do not add to default target
+    add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
+
+    # Add target "run_unittests_cpp" for running only C++ unit tests
+    add_custom_target(run_unittests_cpp
+      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/tests
+      DEPENDS copy_data_test_demo unittests_cpp)
+  else()
+    # Add dummy targets for C++ unit tests
+    add_custom_target(unittests_cpp)
+    add_custom_target(run_unittests_cpp)
+  endif()
 
   # FIXME: remove this buildbot updated to call unittests_cpp
   # Add alias for unittests_cpp
   add_custom_target(tests DEPENDS unittests_cpp)
-
 
   # Add target "run_memorytests" for running memory tests
   add_custom_target(copy_data_test_demo
@@ -1060,11 +1066,6 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
     DEPENDS run_unittests_cpp run_unittests_py run_unittests_py_mpi)
-
-  # Add target "run_unittests_cpp" for running only C++ unit tests
-  add_custom_target(run_unittests_cpp
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/tests
-    DEPENDS copy_data_test_demo unittests_cpp)
 
   # Add target "run_unittests_py" for running Python unit tests
   add_custom_target(run_unittests_py
