@@ -170,7 +170,8 @@ if (HAVE_PEDANTIC)
 endif()
 
 # Workaround https://bugs.launchpad.net/ubuntu/+source/gcc-4.6/+bug/1352356
-# NOTE: Remove this block when bug is fixed upstream or GCC 4.6 support is dropped
+# NOTE: Remove this block when bug is fixed upstream or GCC 4.6
+# support is dropped
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   if (NOT DEFINED CMAKE_CXX_COMPILER_VERSION)
     execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
@@ -1034,8 +1035,9 @@ if (DOLFIN_ENABLE_TESTING)
   # Add cpp_test but do not add to default target
   add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
 
-  # Add target "unittests_cpp" for building C++ tests
-  add_custom_target(unittests_cpp
+  # FIXME: Change this to unittests_cpp (need to update on buildbot)
+  # Add target "tests" for building C++ tests
+  add_custom_target(tests
                     COMMAND ${MAKE_PROGRAM}
                     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp")
 
@@ -1060,13 +1062,10 @@ if (DOLFIN_ENABLE_TESTING)
   add_custom_target(run_unittests
     DEPENDS run_unittests_cpp run_unittests_py run_unittests_py_mpi)
 
-  # TODO: Use google test for C++ unit tests?
   # Add target "run_unittests_cpp" for running only C++ unit tests
-  # Not using the cpp_tester from dolfin_utils.test anymore
-  # (maybe removing the test_cpp_*.py files?)
   add_custom_target(run_unittests_cpp
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/tests
-    DEPENDS copy_data_test_demo unittests_cpp)
+    DEPENDS copy_data_test_demo tests)
 
   # Add target "run_unittests_py" for running Python unit tests
   add_custom_target(run_unittests_py
