@@ -24,6 +24,9 @@
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/fem/fem_utils.h>
+#include <dolfin/la/GenericVector.h>
+#include <dolfin/log/log.h>
 #include "HarmonicSmoothing.h"
 #include "ALE.h"
 
@@ -33,12 +36,21 @@ using namespace dolfin;
 std::shared_ptr<MeshDisplacement> ALE::move(std::shared_ptr<Mesh> mesh,
                                             const BoundaryMesh& new_boundary)
 {
+  deprecation("ALE::move(shared_ptr<Mesh>&, const BoundaryMesh&)", "1.7.0",
+              "1.8.0", "Use ALE::move(Mesh&, const Function&) and/or "
+              "get/set_coordinates() free functions");
+
   return HarmonicSmoothing::move(mesh, new_boundary);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<MeshDisplacement> ALE::move(std::shared_ptr<Mesh> mesh0,
                                             const Mesh& mesh1)
 {
+  deprecation("ALE::move(shared_ptr<Mesh>&, const Mesh&)", "1.7.0",
+              "1.8.0", "Use ALE::move(Mesh&, const Function&) and/or "
+              "Use ALE::move(Mesh&, const Function&) and/or "
+              "get/set_coordinates() free functions");
+
   // FIXME: Maybe this works in parallel but there is no obvious way
   //        to test it as SubMesh::init does not work in parallel
   not_working_in_parallel("Move coordinates of mesh0 according "
@@ -107,6 +119,9 @@ std::shared_ptr<MeshDisplacement> ALE::move(std::shared_ptr<Mesh> mesh0,
 //-----------------------------------------------------------------------------
 void ALE::move(Mesh& mesh, const GenericFunction& displacement)
 {
+  deprecation("ALE::move(Mesh&, const GenericFunction&)", "1.7.0", "1.8.0",
+              "Use ALE::move(Mesh&, const Function&) instead");
+
   // Check dimensions
   const std::size_t gdim = mesh.geometry().dim();
   if (!((displacement.value_rank() == 0 && gdim == 1) ||
@@ -132,5 +147,13 @@ void ALE::move(Mesh& mesh, const GenericFunction& displacement)
       x[j] = geometry.x(i, j) + vertex_values[j*N + i];
     geometry.set(i, x.data());
   }
+}
+//-----------------------------------------------------------------------------
+void ALE::move(Mesh& mesh, const Function& displacement)
+{
+  Function position(displacement.function_space());
+  get_coordinates(position, mesh.geometry());
+  *position.vector() += *displacement.vector();
+  set_coordinates(mesh.geometry(), position);
 }
 //-----------------------------------------------------------------------------

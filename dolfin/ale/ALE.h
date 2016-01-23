@@ -44,6 +44,10 @@ namespace dolfin
 
 
     /// Move coordinates of mesh according to new boundary coordinates.
+    /// DEPRECATED in favour of ALE::move(Mesh&, const Function&)
+    /// and/or free functions get/set_coordinates() because the
+    /// current implementation does not generalize to higher-order
+    /// geometries.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
@@ -58,9 +62,12 @@ namespace dolfin
     static std::shared_ptr<MeshDisplacement>
       move(std::shared_ptr<Mesh> mesh, const BoundaryMesh& new_boundary);
 
-
     /// Move coordinates of mesh according to adjacent mesh with
     /// common global vertices.
+    /// DEPRECATED in favour of ALE::move(Mesh&, const Function&)
+    /// and/or free functions get/set_coordinates() because the
+    /// current implementation does not generalize to higher-order
+    /// geometries.
     ///
     /// *Arguments*
     ///     mesh0 (_Mesh_)
@@ -75,13 +82,29 @@ namespace dolfin
                                                   const Mesh& mesh1);
 
     /// Move coordinates of mesh according to displacement function.
+    /// DEPRECATED in favour of ALE::move(Mesh&, const Function&)
+    /// and/or free functions get/set_coordinates() because the
+    /// current implementation does not generalize to higher-order
+    /// geometries.
+    /// NOTE: This cannot be implemented for higher-order geometries
+    ///       as there is no way of constructing function space for
+    ///       position unless supplied as an argument.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
-    ///         The mesh to move..
+    ///         The mesh to move.
     ///     displacement (_GenericFunction_)
-    ///         A _GenericFunction_ object.
+    ///         A vectorial generic function.
     static void move(Mesh& mesh, const GenericFunction& displacement);
+
+    /// Move coordinates of mesh according to displacement function.
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh to move.
+    ///     displacement (_Function_)
+    ///         A vectorial Lagrange function of matching degree.
+    static void move(Mesh& mesh, const Function& displacement);
 
   };
 
