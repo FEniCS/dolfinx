@@ -1032,14 +1032,13 @@ endif()
 
 if (DOLFIN_ENABLE_TESTING)
 
-  # Add cpp_test but do not add to default target
+  # Add target "unittests_cpp", but do not add to default target
   add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
 
-  # FIXME: Change this to unittests_cpp (need to update on buildbot)
-  # Add target "tests" for building C++ tests
-  add_custom_target(tests
-                    COMMAND ${MAKE_PROGRAM}
-                    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp")
+  # FIXME: remove this buildbot updated to call unittests_cpp
+  # Add alias for unittests_cpp
+  add_custom_target(tests DEPENDS unittests_cpp)
+
 
   # Add target "run_memorytests" for running memory tests
   add_custom_target(copy_data_test_demo
@@ -1065,7 +1064,7 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_unittests_cpp" for running only C++ unit tests
   add_custom_target(run_unittests_cpp
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/tests
-    DEPENDS copy_data_test_demo tests)
+    DEPENDS copy_data_test_demo unittests_cpp)
 
   # Add target "run_unittests_py" for running Python unit tests
   add_custom_target(run_unittests_py
