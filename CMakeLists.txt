@@ -1034,7 +1034,7 @@ if (DOLFIN_ENABLE_TESTING)
   # Add cpp_test but do not add to default target
   add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
 
-  # Add target "tests_cpp" for building C++ tests
+  # Add target "unittests_cpp" for building C++ tests
   add_custom_target(unittests_cpp
                     COMMAND ${MAKE_PROGRAM}
                     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp")
