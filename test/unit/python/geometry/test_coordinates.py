@@ -26,6 +26,7 @@ import numpy as np
 from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, UnitDiscMesh
 from dolfin import FunctionSpace, VectorFunctionSpace, Function, mpi_comm_world
 from dolfin import get_coordinates, set_coordinates, Mesh
+from dolfin import Expression, interpolate
 from dolfin_utils.test import skip_in_parallel, fixture
 
 
@@ -45,6 +46,9 @@ def _test_get_set_coordinates(mesh):
     c = Function(V)
     get_coordinates(c, mesh.geometry())
 
+    # Check correctness of got coords
+    _check_coords(mesh, c)
+
     # Backup and zero coords
     coords = mesh.coordinates()
     coords_old = coords.copy()
@@ -56,6 +60,21 @@ def _test_get_set_coordinates(mesh):
 
     # Check
     assert np.all(mesh.coordinates() == coords_old)
+
+
+def _check_coords(mesh, c):
+    # FIXME: This does not work for higher-order geometries although it should
+    if mesh.geometry().degree() > 1:
+        return
+
+    # Compare supplied c with interpolation of x
+    class X(Expression):
+        def eval(self, values, x):
+            values[:] = x[:]
+    x = X(domain=mesh, element=mesh.ufl_coordinate_element())
+    x = interpolate(x, c.function_space())
+    x.vector()[:] -= c.vector()
+    assert np.isclose(x.vector().norm("l1"), 0.0)
 
 
 def test_linear(meshes_p1):
