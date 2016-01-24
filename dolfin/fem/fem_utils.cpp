@@ -256,6 +256,8 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
     for (std::size_t dim = 0; dim <= tdim; ++dim)
     {
       // Get local-to-global entity mapping
+      // FIXME: Probably will give incorrect result for dim == tdim.
+      //        Need to check how c->entites(tdim) is defined.
       global_entities = c->entities(dim);
 
       for (std::size_t local_entity = 0;
