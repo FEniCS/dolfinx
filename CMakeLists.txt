@@ -1034,7 +1034,7 @@ if (DOLFIN_ENABLE_TESTING)
 
     # Add target "run_unittests_cpp" for running only C++ unit tests
     add_custom_target(run_unittests_cpp
-      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/tests
+      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/unittests_cpp
       DEPENDS copy_data_test_demo unittests_cpp)
   else()
     # Add dummy targets for C++ unit tests
