@@ -20,8 +20,15 @@ from __future__ import print_function
 from dolfin import *
 import ufl
 from six.moves import xrange as range
+import os
+
+display = os.environ.get("DISPLAY")
 
 try:
+    if not display:
+        import matplotlib
+        # Avoid interactive backend (such as TkAgg) on headless machine
+        matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import axes3d
 except ImportError as e:
@@ -88,12 +95,15 @@ def plot_1d_meshes():
     # FIXME: This passes fine in parallel although it's not obvious what does it do
     plt.figure()
     plot(interval_mesh(1, 30))
+    plt.savefig("mesh_1d.png")
 
     plt.figure()
     plot(interval_mesh(2, 100))
+    plt.savefig("mesh_2d.png")
 
     plt.figure()
     plot(interval_mesh(3, 100))
+    plt.savefig("mesh_3d.png")
 
 
 def plot_functions():
@@ -108,7 +118,9 @@ def plot_functions():
 
     plot_alongside(u, v, **r)
     plot_alongside(u, v, mode='color', **r)
+    plt.savefig("color_plot.pdf")
     plot_alongside(u, v, mode='warp', **r)
+    plt.savefig("warp_plot.pdf")
     plot_alongside(u, v, v, mode='warp', **r)
 
 
