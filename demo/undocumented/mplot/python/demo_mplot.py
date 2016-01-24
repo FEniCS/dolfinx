@@ -25,15 +25,19 @@ import os
 display = os.environ.get("DISPLAY")
 
 try:
+    # Avoid interactive backend (such as TkAgg) on headless machine
     if not display:
         import matplotlib
-        # Avoid interactive backend (such as TkAgg) on headless machine
-        matplotlib.use("Agg")
+        try:
+            matplotlib.use("Agg")
+        except ValueError as e:
+            raise ImportError(str(e))
+    # Import pyplot and 3D plotting extension
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import axes3d
 except ImportError as e:
     print("Import of matplotlib failed with the message:")
-    print(e.message)
+    print('"%s"' % str(e))
     print()
     print("Please, make sure matplotlib is installed. Bye!")
     exit()
