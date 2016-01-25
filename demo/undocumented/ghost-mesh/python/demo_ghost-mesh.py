@@ -4,20 +4,30 @@
 # run with mpirun
 #
 from __future__ import print_function
+from dolfin import *
+import numpy as np
+import sys, os
+import six
+
+display = os.environ.get("DISPLAY")
 
 try:
+    # Avoid interactive backend (such as TkAgg) on headless machine
+    if not display:
+        import matplotlib
+        try:
+            matplotlib.use("Agg")
+        except ValueError as e:
+            raise ImportError(str(e))
+    # Import pyplot and needed class
     import matplotlib.pyplot as plt
     from matplotlib.collections import PolyCollection
-except ImportError:
-    print("matplotib is needed to run this demo. Import was not "
-          "succesful. Exiting gracefully.")
+except ImportError as e:
+    print("Import of matplotlib failed with the message:")
+    print('"%s"' % str(e))
+    print()
+    print("Please, make sure matplotlib is installed. Bye!")
     exit()
-
-from dolfin import *
-
-import numpy as np
-import sys
-import six
 
 parameters["ghost_mode"] = "shared_vertex"
 #parameters["ghost_mode"] = "shared_facet"
@@ -153,3 +163,4 @@ for note in facet_note:
 # xdmf << Q
 
 plt.savefig("mesh-rank%d.png" % rank)
+plt.show()
