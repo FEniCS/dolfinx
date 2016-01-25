@@ -212,7 +212,8 @@ add_definitions(${DOLFIN_CXX_DEFINITIONS})
 add_definitions(-DDOLFIN_VERSION="${DOLFIN_VERSION}")
 
 # Just add git revision flag to the one affected file
-set_source_files_properties(common/defines.cpp PROPERTIES COMPILE_FLAGS -DDOLFIN_GIT_COMMIT_HASH=\\\"${GIT_COMMIT_HASH}\\\")
+set_source_files_properties(common/defines.cpp PROPERTIES COMPILE_FLAGS
+  "-DDOLFIN_GIT_COMMIT_HASH=\\\"${GIT_COMMIT_HASH}\\\" -DUFC_SIGNATURE=\\\"${UFC_SIGNATURE}\\\"")
 
 # Add flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
