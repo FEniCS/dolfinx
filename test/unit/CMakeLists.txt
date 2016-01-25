@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 2.8.2)
- 
+
 project(googletest-download NONE)
 
-## Using ExternalProject to Build GTest and use the Library
-# Enable ExternalProject CMake module
+# Using ExternalProject to Build GTest and use the Library
 include(ExternalProject)
 
 # Set the build type if it isn't already
@@ -18,7 +17,7 @@ set_directory_properties(PROPERTIES EP_PREFIX ${CMAKE_BINARY_DIR}/GoogleTest)
 ExternalProject_Add(
     googletest
     URL https://github.com/google/googletest/archive/release-1.7.0.tar.gz
-    TIMEOUT 10
+    TIMEOUT 20
     # PATCH_COMMAND svn patch ${CMAKE_SOURCE_DIR}/gtest.patch ${CMAKE_BINARY_DIR}/ThirdParty/src/googletest
     # Force separate output paths for debug and release builds to allow easy
     # identification of correct lib in subsequent TARGET_LINK_LIBRARIES commands
