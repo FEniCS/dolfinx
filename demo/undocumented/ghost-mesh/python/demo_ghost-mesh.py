@@ -149,7 +149,7 @@ for note in facet_note:
 
 # Q = FacetFunction("double", mesh)
 
-# xdmf = File("a.xdmf")
-# xdmf << Q
+# xdmf = XDMFFile("a.xdmf")
+# xdmf.write(Q, XDMFFile.Encoding_ASCII)
 
 plt.savefig("mesh-rank%d.png" % rank)

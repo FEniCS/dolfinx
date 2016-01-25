@@ -97,7 +97,7 @@ def compute_rates():
 
                 # Save solution to file
                 u.rename('u', 'u')
-                ufile << u
+                ufile.write(u)#, XDMFFile.Encoding_ASCII)
 
             # Plot solution
             #plot(u, title="u, degree=%d" % degree)

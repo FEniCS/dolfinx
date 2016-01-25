@@ -127,7 +127,7 @@ solver.solve(BucklingProblem(), u.vector(), u_min.vector(), u_max.vector())
 
 # Save solution in XDMF format
 out = XDMFFile(mesh.mpi_comm(), "u.xdmf")
-out << u
+out.write(u, XDMFFile.Encoding_ASCII)
 
 # Plot the current configuration
 plot(u, mode="displacement", wireframe=True, title="Displacement field")
