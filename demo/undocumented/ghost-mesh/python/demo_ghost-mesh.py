@@ -104,7 +104,7 @@ for c in cells(mesh, "all"):
 #    else:
 #        cell_str = str(c.index())
     cells_note.append((xavg, yavg, cell_str))
-    cells_store.append(zip(xc,yc))
+    cells_store.append(list(zip(xc,yc)))
 
     colors.append(cmap[cell_ownership[c.index()]])
     idx += 1
