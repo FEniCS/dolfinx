@@ -28,11 +28,11 @@
 
 #include "dolfin/common/types.h"
 #include "dolfin/common/MPI.h"
-#include "GenericSparsityPattern.h"
 
 namespace dolfin
 {
   class IndexMap;
+  class SparsityPattern;
 
   /// This class described the size and possibly the sparsity of a
   /// (sparse) tensor. It is used by the linear algebra backends to
@@ -50,15 +50,15 @@ namespace dolfin
     TensorLayout(std::size_t primary_dim, Sparsity sparsity_pattern);
 
     /// Create a tensor layout
-    TensorLayout(const MPI_Comm mpi_comm,
-                 const std::vector<std::shared_ptr<const IndexMap>>& index_maps,
+    TensorLayout(MPI_Comm mpi_comm,
+                 std::vector<std::shared_ptr<const IndexMap>> index_maps,
                  std::size_t primary_dim,
                  Sparsity sparsity_pattern,
                  Ghosts ghosted);
 
     /// Initialize tensor layout
-    void init(const MPI_Comm mpi_comm,
-              const std::vector<std::shared_ptr<const IndexMap>>& index_maps,
+    void init(MPI_Comm mpi_comm,
+              std::vector<std::shared_ptr<const IndexMap>> index_maps,
               Ghosts ghosted);
 
     /// Return rank
@@ -72,11 +72,11 @@ namespace dolfin
     std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const;
 
     /// Return sparsity pattern (possibly null)
-    std::shared_ptr<GenericSparsityPattern> sparsity_pattern()
+    std::shared_ptr<SparsityPattern> sparsity_pattern()
     { return _sparsity_pattern; }
 
     /// Return sparsity pattern (possibly null), const version
-    std::shared_ptr<const GenericSparsityPattern> sparsity_pattern() const
+    std::shared_ptr<const SparsityPattern> sparsity_pattern() const
     { return _sparsity_pattern; }
 
     /// Return informal string representation (pretty-print)
@@ -111,7 +111,7 @@ namespace dolfin
     std::vector<std::shared_ptr<const IndexMap>> _index_maps;
 
     // Sparsity pattern
-    std::shared_ptr<GenericSparsityPattern> _sparsity_pattern;
+    std::shared_ptr<SparsityPattern> _sparsity_pattern;
 
     // Ghosted tensor (typically vector) required
     Ghosts _ghosted = Ghosts::UNGHOSTED;

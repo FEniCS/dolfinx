@@ -32,7 +32,6 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
-#include "GenericSparsityPattern.h"
 #include "PETScFactory.h"
 #include "PETScVector.h"
 #include "SparsityPattern.h"
@@ -93,9 +92,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   const std::size_t n = col_range.second - col_range.first;
 
   // Get sparsity pattern
-  dolfin_assert(tensor_layout.sparsity_pattern());
-  const GenericSparsityPattern& sparsity_pattern
-    = *tensor_layout.sparsity_pattern();
+  auto sparsity_pattern = tensor_layout.sparsity_pattern();
 
   if (_matA)
   {
@@ -106,11 +103,11 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   }
 
   // Initialize matrix
-  if (dolfin::MPI::size(sparsity_pattern.mpi_comm()) == 1)
+  if (dolfin::MPI::size(sparsity_pattern->mpi_comm()) == 1)
   {
     // Get number of nonzeros for each row from sparsity pattern
     std::vector<std::size_t> num_nonzeros(M);
-    sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
+    sparsity_pattern->num_nonzeros_diagonal(num_nonzeros);
 
     // Create matrix
     ierr = MatCreate(PETSC_COMM_SELF, &_matA);
@@ -191,15 +188,16 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // Get number of nonzeros for each row from sparsity pattern
     std::vector<std::size_t> num_nonzeros_diagonal;
     std::vector<std::size_t> num_nonzeros_off_diagonal;
-    sparsity_pattern.num_nonzeros_diagonal(num_nonzeros_diagonal);
-    sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
+    sparsity_pattern->num_nonzeros_diagonal(num_nonzeros_diagonal);
+    sparsity_pattern->num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
 
     // Create matrix
     ierr = MatCreate(PETSC_COMM_WORLD, &_matA);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
 
     // Set options prefix (if any)
-    PetscErrorCode ierr = MatSetOptionsPrefix(_matA, _petsc_options_prefix.c_str());
+    PetscErrorCode ierr = MatSetOptionsPrefix(_matA,
+                                              _petsc_options_prefix.c_str());
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
 
     // Set size

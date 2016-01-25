@@ -50,7 +50,7 @@ for x in structure_mesh.coordinates():
     x[0] += 0.1*x[0]*x[1]
 
 # Move fluid mesh according to structure mesh
-fluid_mesh.move(structure_mesh)
+ALE.move(fluid_mesh, structure_mesh)
 fluid_mesh.smooth()
 
 # Plot meshes

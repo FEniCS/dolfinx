@@ -43,19 +43,19 @@ public:
 int main()
 {
   // Create meshes
-  UnitSquareMesh mesh0(16, 16);
-  UnitSquareMesh mesh1(64, 64);
+  auto mesh0 = std::make_shared<UnitSquareMesh>(16, 16);
+  auto mesh1 = std::make_shared<UnitSquareMesh>(64, 64);
 
   // Create P3 function space
-  P3::FunctionSpace V0(mesh0);
+  auto V0 = std::make_shared<P3::FunctionSpace>(mesh0);
 
   // Interpolate expression into V0
   MyExpression e;
-  Function f0(V0);
-  f0.interpolate(e);
+  auto f0 = std::make_shared<Function>(V0);
+  f0->interpolate(e);
 
   // Define variational problem
-  P1_projection::FunctionSpace V1(mesh1);
+  auto V1 = std::make_shared<P1_projection::FunctionSpace>(mesh1);
   P1_projection::BilinearForm a(V1, V1);
   P1_projection::LinearForm L(V1, f0);
 
@@ -64,7 +64,7 @@ int main()
   solve(a == L, f1);
 
   // Plot results
-  plot(f0);
+  plot(*f0);
   plot(f1);
   interactive();
 

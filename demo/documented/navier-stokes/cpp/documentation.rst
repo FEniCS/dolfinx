@@ -204,7 +204,7 @@ We then load the mesh for the L-shaped domain from file:
 .. code-block:: c++
 
     // Load mesh from file
-    Mesh mesh("../lshape.xml.gz");
+    auto mesh = std::make_shared<Mesh>("../lshape.xml.gz");
 
 We next define a pair of function spaces :math:`V` and :math:`Q` for
 the velocity and pressure, and test and trial functions on these
@@ -213,8 +213,8 @@ spaces:
 .. code-block:: c++
 
     // Create function spaces
-    VelocityUpdate::FunctionSpace V(mesh);
-    PressureUpdate::FunctionSpace Q(mesh);
+    auto V = std::make_shared<VelocityUpdate::FunctionSpace>(mesh);
+    auto Q = std::make_shared<PressureUpdate::FunctionSpace>(mesh);
 
 The time step and the length of the interval are defined by:
 
@@ -230,10 +230,10 @@ below.
 
 .. code-block:: c++
 
-    // Define values for boundary conditions
-    InflowPressure p_in;
-    Constant zero(0);
-    Constant zero_vector(0, 0);
+   // Define values for boundary conditions
+   auto p_in = std::make_shared<InflowPressure>();
+   auto zero = std::make_shared<Constant>(0.0);
+   auto zero_vector = std::make_shared<Constant>(0.0, 0.0);
 
 Before we can define our boundary conditions, we also need to
 instantiate the classes we defined above for the boundary subdomains:
@@ -241,9 +241,9 @@ instantiate the classes we defined above for the boundary subdomains:
 .. code-block:: c++
 
     // Define subdomains for boundary conditions
-    NoslipDomain noslip_domain;
-    InflowDomain inflow_domain;
-    OutflowDomain outflow_domain;
+    auto noslip_domain = std::make_shared<NoslipDomain>();
+    auto inflow_domain = std::make_shared<InflowDomain>();
+    auto outflow_domain = std::make_shared<OutflowDomain>() ;
 
 We may now define the boundary conditions for the velocity and
 pressure. We define one no-slip boundary condition for the velocity
@@ -271,13 +271,13 @@ below:
 .. code-block:: c++
 
     // Create functions
-    Function u0(V);
-    Function u1(V);
-    Function p1(Q);
+    auto u0 = std::make_shared<Function>(V);
+    auto u1 = std::make_shared<Function>(V);
+    auto p1 = std::make_shared<Function>(Q);
 
     // Create coefficients
-    Constant k(dt);
-    Constant f(0, 0);
+    auto k = std::make_shared<Constant>(dt);
+    auto f = std::make_shared<Constant>(0, 0);
 
 The next step is now to define the variational problems for the three
 steps of Chorin's method. We do this by instantiating the classes
@@ -344,7 +344,7 @@ The time-stepping loop is now implemented as follows:
     while (t < T + DOLFIN_EPS)
     {
       // Update pressure boundary condition
-      p_in.t = t;
+      p_in->t = t;
 
 We remember to update the current time for the time-dependent pressure
 boundary value.
@@ -363,7 +363,7 @@ pressure equation if available:
     assemble(b1, L1);
     for (std::size_t i = 0; i < bcu.size(); i++)
       bcu[i]->apply(A1, b1);
-    solve(A1, *u1.vector(), b1, "gmres", "default");
+    solve(A1, *u1->vector(), b1, "gmres", "default");
     end();
 
     // Pressure correction
@@ -372,9 +372,9 @@ pressure equation if available:
     for (std::size_t i = 0; i < bcp.size(); i++)
     {
       bcp[i]->apply(A2, b2);
-      bcp[i]->apply(*p1.vector());
+      bcp[i]->apply(*p1->vector());
     }
-    solve(A2, *p1.vector(), b2, "bicgstab", prec);
+    solve(A2, *p1->vector(), b2, "bicgstab", prec);
     end();
 
     // Velocity correction
@@ -382,7 +382,7 @@ pressure equation if available:
     assemble(b3, L3);
     for (std::size_t i = 0; i < bcu.size(); i++)
       bcu[i]->apply(A3, b3);
-    solve(A3, *u1.vector(), b3, "gmres", "default");
+    solve(A3, *u1->vector(), b3, "gmres", "default");
     end();
 
 Note the use of ``begin`` and ``end``; these improve the readability
@@ -395,11 +395,11 @@ and update values for the next time step:
 .. code-block:: c++
 
     // Save to file
-    ufile << u1;
-    pfile << p1;
+    ufile << *u1;
+    pfile << *p1;
 
     // Move to next time step
-    u0 = u1;
+    *u0 = *u1;
     t += dt;
 
 Finally, we plot the solution and the program is finished:

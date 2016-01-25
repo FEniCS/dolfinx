@@ -321,8 +321,12 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
 
   // Add offset to local UFC dofmap
   for (std::size_t i = 0; i < sub_dofmap_graph.size(); ++i)
+  {
     for (std::size_t j = 0; j < sub_dofmap_graph[i].size(); ++j)
+    {
       sub_dofmap_graph[i][j] += ufc_offset;
+    }
+  }
 
   // Store number of global mesh entities and set global dimension
   sub_dofmap._num_mesh_entities_global
@@ -363,9 +367,12 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
       const std::size_t node = div.rem;
       const std::size_t component = div.quot;
 
-        // Get dof from UFC local-to-local map
+      // Get dof from UFC local-to-local map
       dolfin_assert(node < local_to_local.size());
-      const std::size_t current_dof = bs*local_to_local[node] + component;
+      std::size_t current_dof = bs*local_to_local[node] + component;
+
+      // Add multimesh offset
+      current_dof += parent_dofmap._multimesh_offset;
 
       // Set dof index in transformed dofmap
       *dof = current_dof;
@@ -379,7 +386,8 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
   sub_dofmap._dofmap.clear();
   for (auto const &cell_dofs : sub_dofmap_graph)
   {
-    sub_dofmap._dofmap.insert(sub_dofmap._dofmap.end(), cell_dofs.begin(),
+    sub_dofmap._dofmap.insert(sub_dofmap._dofmap.end(),
+                              cell_dofs.begin(),
                               cell_dofs.end());
   }
 }

@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2007-05-02
-// Last changed: 2014-06-11
+// Last changed: 2015-11-11
 
 #ifndef __PLOT_H
 #define __PLOT_H

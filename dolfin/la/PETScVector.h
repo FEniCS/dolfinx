@@ -44,7 +44,7 @@
 namespace dolfin
 {
 
-  class GenericSparsityPattern;
+  class SparsityPattern;
   template<typename T> class Array;
 
   /// This class provides a simple vector class based on PETSc.
@@ -66,7 +66,7 @@ namespace dolfin
     PETScVector(MPI_Comm comm, std::size_t N);
 
     /// Create vector
-    explicit PETScVector(const GenericSparsityPattern& sparsity_pattern);
+    explicit PETScVector(const SparsityPattern& sparsity_pattern);
 
     /// Copy constructor
     PETScVector(const PETScVector& x);

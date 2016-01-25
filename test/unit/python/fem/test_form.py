@@ -28,41 +28,51 @@ import ufl
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture
 
+
 @fixture
 def square():
     return UnitSquareMesh(8, 8)
+
 
 @fixture
 def square_boundary(square):
     return BoundaryMesh(square, "exterior")
 
+
 @fixture
 def cube_boundary(cube):
     return BoundaryMesh(cube, "exterior")
+
 
 @fixture
 def cube():
     return UnitCubeMesh(2, 2, 2)
 
+
 @fixture
 def V1(square_boundary):
     return FunctionSpace(square_boundary, "CG", 1)
+
 
 @fixture
 def VV1(square_boundary):
     return VectorFunctionSpace(square_boundary, "CG", 1)
 
+
 @fixture
 def Q1(square_boundary):
     return FunctionSpace(square_boundary, "DG", 0)
+
 
 @fixture
 def V2(cube_boundary):
     return FunctionSpace(cube_boundary, "CG", 1)
 
+
 @fixture
 def VV2(cube_boundary):
     return VectorFunctionSpace(cube_boundary, "CG", 1)
+
 
 @fixture
 def Q2(cube_boundary):
@@ -102,7 +112,7 @@ def test_assemble_linear(V1, Q1, square_boundary, V2, Q2, cube_boundary):
     w = TestFunction(Q1)
     u.vector()[:] = 0.5
     facetareas = MPI.sum(square_boundary.mpi_comm(),
-                          assemble(u*w*dx).array().sum())
+                         assemble(u*w*dx).array().sum())
     assert round(facetareas - 2.0, 7) == 0
 
     u = Function(V2)
@@ -127,7 +137,7 @@ def test_assemble_linear(V1, Q1, square_boundary, V2, Q2, cube_boundary):
     a = MPI.sum(mesh.mpi_comm(),
                 assemble(inner(u, v)*ds).array().sum())
     b = MPI.sum(bdry.mpi_comm(),
-                 assemble(inner(bu, bv)*dx).array().sum())
+                assemble(inner(bu, bv)*dx).array().sum())
     assert round(a - b, 7) == 0
 
 
@@ -142,7 +152,7 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
     bv = TestFunction(V1)
 
     a = MPI.sum(square.mpi_comm(),
-                 assemble(inner(u, v)*ds).array().sum())
+                assemble(inner(u, v)*ds).array().sum())
     b = MPI.sum(square_boundary.mpi_comm(),
                 assemble(inner(bu, bv)*dx).array().sum())
     assert round(a - b, 7) == 0
@@ -154,8 +164,11 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
     subdomain.mark(bottom, 1)
     dss = ds(subdomain_data=bottom)
     foo = MPI.sum(square.mpi_comm(),
-               abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
-    # Assemble over all cells of submesh created from subset of boundary mesh
+                  abs(assemble(inner(grad(u)[0],
+                                     grad(v)[0])*dss(1)).array()).sum())
+
+    # Assemble over all cells of submesh created from subset of
+    # boundary mesh
     bottom2 = CellFunctionSizet(square_boundary)
     bottom2.set_all(0)
     subdomain.mark(bottom2, 1)
@@ -163,7 +176,8 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
     bu = TrialFunction(BV)
     bv = TestFunction(BV)
     bar = MPI.sum(square_boundary.mpi_comm(),
-                  abs(assemble(inner(grad(bu)[0], grad(bv)[0])*dx).array()).sum())
+                  abs(assemble(inner(grad(bu)[0],
+                                     grad(bv)[0])*dx).array()).sum())
     # Should give same result
     assert round(bar - foo, 7) == 0
 
@@ -192,8 +206,11 @@ def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
     subdomain.mark(bottom, 1)
     dss = ds(subdomain_data=bottom)
     foo = MPI.sum(cube.mpi_comm(),
-               abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
-    # Assemble over all cells of submesh created from subset of boundary mesh
+                  abs(assemble(inner(grad(u)[0],
+                                     grad(v)[0])*dss(1)).array()).sum())
+
+    # Assemble over all cells of submesh created from subset of
+    # boundary mesh
     bottom2 = CellFunctionSizet(cube_boundary)
     bottom2.set_all(0)
     subdomain.mark(bottom2, 1)
@@ -201,7 +218,9 @@ def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
     bu = TrialFunction(BV)
     bv = TestFunction(BV)
     bar = MPI.sum(cube_boundary.mpi_comm(),
-                   abs(assemble(inner(grad(bu)[0], grad(bv)[0])*dx).array()).sum())
+                  abs(assemble(inner(grad(bu)[0],
+                                     grad(bv)[0])*dx).array()).sum())
+
     # Should give same result
     assert round(bar - foo, 7) == 0
 
@@ -223,28 +242,34 @@ def base():
 
     return [(RT2, RT3), (DG2, DG3), (square, square3d)]
 
+
 @fixture
 def RT2(base):
     return FunctionSpace(base[2][0], base[0][0])
 
+
 @fixture
 def RT3(base):
     return FunctionSpace(base[2][1], base[0][1])
+
 
 @fixture
 def W2(base):
     """ RT2 * DG2 """
     return FunctionSpace(base[2][0], base[0][0] * base[1][0])
 
+
 @fixture
 def W3(base):
     """ RT3 * DG3 """
     return FunctionSpace(base[2][1], base[0][1] * base[1][1])
 
+
 @fixture
 def QQ2(base):
     """ DG2 * DG2 """
     return FunctionSpace(base[2][0], base[1][0] * base[1][0])
+
 
 @fixture
 def QQ3(base):
@@ -325,38 +350,47 @@ def test_mixed_poisson_solve(W2, W3):
 def m():
     return 3
 
+
 @fixture
 def cube(m):
     return UnitCubeMesh(m, m, m)
+
 
 @fixture
 def cube_boundary(cube):
     return BoundaryMesh(cube, "exterior")
 
+
 @fixture
 def plane():
     return CompiledSubDomain("near(x[1], 0.0)")
+
 
 @fixture
 def square_boundary_(m):
     square = UnitSquareMesh(m, m)
     return BoundaryMesh(square, "exterior")
 
+
 @fixture
 def line():
     return CompiledSubDomain("near(x[0], 0.0)")
+
 
 @fixture
 def mesh3(cube_boundary, plane):
     return BoundaryMesh(SubMesh(cube_boundary, plane), "exterior")
 
+
 @fixture
 def bottom1(square_boundary_, plane):
     return SubMesh(square_boundary_, plane)
 
+
 @fixture
 def bottom2(cube_boundary, plane):
     return SubMesh(cube_boundary, plane)
+
 
 @fixture
 def bottom3(mesh3, line):

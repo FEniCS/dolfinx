@@ -154,7 +154,7 @@ formulation. We also define the bilinear form ``a`` and linear form
 .. code-block:: c++
 
     // Construct function space
-    MixedPoisson::FunctionSpace W(mesh);
+    auto W = std::make_shared<MixedPoisson::FunctionSpace>(mesh);
     MixedPoisson::BilinearForm a(W, W);
     MixedPoisson::LinearForm L(W);
 
@@ -163,7 +163,7 @@ Then we create the source (:math:`f`) and assign it to the linear form.
 .. code-block:: c++
 
     // Create source and assign to L
-    Source f;
+    auto f = std::make_shared<Source>();
     L.f = f;
 
 It only remains to prescribe the boundary condition for the
@@ -173,8 +173,8 @@ space the boundary condition is supposed to be applied to, the data
 for the boundary condition, and the relevant part of the boundary.
 
 We want to apply the boundary condition to the first subspace of the
-mixed space. This space can be accessed by the :cpp:class:`Subspace`
-class.
+mixed space. This space can be accessed through the `sub` member
+function of the :cpp:class:`FunctionSpace` class.
 
 Next, we need to construct the data for the boundary condition. An
 essential boundary condition is handled by replacing degrees of
@@ -189,10 +189,9 @@ defined above does.
 .. code-block:: c++
 
     // Define boundary condition
-    SubSpace W0(W, 0);
-    BoundarySource G(mesh);
-    EssentialBoundary boundary;
-    DirichletBC bc(W0, G, boundary);
+    auto G = std::make_shared<BoundarySource>(*mesh);
+    auto boundary = std::make_shared<EssentialBoundary>();
+    DirichletBC bc(W->sub(0), G, boundary);
 
 To compute the solution we use the bilinear and linear forms, and the
 boundary condition, but we also need to create a :cpp:class:`Function`

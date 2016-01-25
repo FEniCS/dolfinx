@@ -34,7 +34,7 @@ from dolfin_utils.test import *
 # Lists of backends supporting or not supporting GenericVector::data()
 # access
 data_backends = []
-no_data_backends = ["PETSc"]
+no_data_backends = ["PETSc", "Tpetra"]
 
 # Add serial only backends
 if MPI.size(mpi_comm_world()) == 1:

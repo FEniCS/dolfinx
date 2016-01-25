@@ -34,7 +34,7 @@ from dolfin_utils.test import *
 # Lists of backends supporting or not supporting FooMatrix::data()
 # access
 data_backends = []
-no_data_backends = [("PETSc", "")]
+no_data_backends = [("PETSc", ""), ("Tpetra", "")]
 
 # Add serial only backends
 if MPI.size(mpi_comm_world()) == 1:
@@ -197,21 +197,6 @@ class TestMatrixForAnyBackend:
             except ImportError:
                 pass
 
-    #def create_sparsity_pattern(self):
-    #    "Create a sparsity pattern"
-    #    mesh = UnitSquareMesh(34, 33)
-    #
-    #    V = FunctionSpace(mesh, "Lagrange", 2)
-    #    W = FunctionSpace(mesh, "Lagrange", 1)
-    #
-    #    v = TestFunction(V)
-    #    u = TrialFunction(V)
-    #    s = TrialFunction(W)
-    #
-    #    # Forms
-    #    a = dot(grad(u), grad(v))*dx
-    #    b = v*s*dx
-
     def test_create_empty_matrix(self, any_backend):
         A = Matrix()
         assert A.size(0) == 0
@@ -238,15 +223,13 @@ class TestMatrixForAnyBackend:
         assert B0.size(1) == B1.size(1)
         assert round(B0.norm("frobenius") - B1.norm("frobenius"), 7) == 0
 
-    @pytest.mark.skipif(MPI.size(mpi_comm_world()) > 1, reason="Disabled because it tends to crash the tests in parallel.")
-    @pytest.mark.slow
     def test_ident_zeros(self, use_backend, any_backend):
         self.backend, self.sub_backend = any_backend
 
         # Check that PETScMatrix::ident_zeros() rethrows PETSc error
         if self.backend[0:5] == "PETSc":
             A, B = self.assemble_matrices(use_backend=use_backend)
-            with pytest.raises(Exception):
+            with pytest.raises(RuntimeError):
                 A.ident_zeros()
 
         # Assemble matrix A with diagonal entries
@@ -368,3 +351,9 @@ class TestMatrixForAnyBackend:
         A, B = self.assemble_matrices()
         assert A.nnz() == 2992
         assert B.nnz() == 9398
+
+        A, B = self.assemble_matrices(keep_diagonal=True)
+        assert A.nnz() == 4589
+        # NOTE: Following should never be tested because diagonal is not
+        #       invariant w.r.t. different row and column dof reordering!
+        #assert B.nnz() == ??

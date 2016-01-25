@@ -170,7 +170,7 @@ namespace dolfin
               bool check_midpoint);
 
     // List of boundary conditions for parts
-    std::vector<std::shared_ptr<const DirichletBC> > _bcs;
+    std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 
     // Wrapper of user-defined subdomain
     mutable std::shared_ptr<MultiMeshSubDomain> _sub_domain;

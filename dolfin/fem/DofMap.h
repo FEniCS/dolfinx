@@ -39,7 +39,6 @@
 #include <dolfin/mesh/Cell.h>
 #include "GenericDofMap.h"
 
-
 namespace dolfin
 {
 
@@ -184,9 +183,9 @@ namespace dolfin
     /// including the current process) that share it.
     ///
     /// *Returns*
-    ///     std::unordered_map<std::size_t, std::vector<unsigned int> >
+    ///     std::unordered_map<std::size_t, std::vector<unsigned int>>
     ///         The map from dofs to list of processes
-    const std::unordered_map<int, std::vector<int> >& shared_nodes() const;
+    const std::unordered_map<int, std::vector<int>>& shared_nodes() const;
 
     /// Return set of processes that share dofs with this process
     ///
@@ -399,6 +398,9 @@ namespace dolfin
     // UFC dof map offset
     std::size_t _ufc_offset;
 
+    // Multimesh dof map offset
+    std::size_t _multimesh_offset;
+
     // Object containing information about dof distribution across
     // processes
     std::shared_ptr<IndexMap> _index_map;
@@ -407,7 +409,7 @@ namespace dolfin
     friend class MultiMeshDofMap;
 
     // List of processes that share a given dof
-    std::unordered_map<int, std::vector<int> > _shared_nodes;
+    std::unordered_map<int, std::vector<int>> _shared_nodes;
 
     // Neighbours (processes that we share dofs with)
     std::set<int> _neighbours;

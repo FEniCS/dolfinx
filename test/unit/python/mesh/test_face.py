@@ -26,9 +26,11 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture
 
+
 @fixture
 def cube():
     return UnitCubeMesh(5, 5, 5)
+
 
 @fixture
 def square():

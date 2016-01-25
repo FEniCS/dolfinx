@@ -105,10 +105,10 @@ namespace dolfin
     std::shared_ptr<IndexMap> _index_map;
 
     // List of original dofmaps
-    std::vector<std::shared_ptr<const GenericDofMap> > _original_dofmaps;
+    std::vector<std::shared_ptr<const GenericDofMap>> _original_dofmaps;
 
     // List of modified dofmaps
-    std::vector<std::shared_ptr<GenericDofMap> > _new_dofmaps;
+    std::vector<std::shared_ptr<GenericDofMap>> _new_dofmaps;
 
   };
 

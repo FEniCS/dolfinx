@@ -91,23 +91,23 @@ int main()
   parameters["ghost_mode"] = "shared_facet";
 
   // Create mesh
-  UnitSquareMesh mesh(24, 24);
+  auto mesh = std::make_shared<UnitSquareMesh>(24, 24);
 
   // Create functions
-  Source f;
-  BoundaryValue u0;
-  BoundaryDerivative g;
+  auto f = std::make_shared<Source>();
+  auto u0 = std::make_shared<BoundaryValue>();
+  auto g = std::make_shared<BoundaryDerivative>();
 
   // Create funtion space
-  Poisson::FunctionSpace V(mesh);
+  auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
   // Mark facets of the mesh
   NeumannBoundary neumann_boundary;
   DirichletBoundary dirichlet_boundary;
 
-  FacetFunction<std::size_t> boundaries(mesh, 0);
-  neumann_boundary.mark(boundaries, 2);
-  dirichlet_boundary.mark(boundaries, 1);
+  auto boundaries = std::make_shared<FacetFunction<std::size_t>>(mesh, 0);
+  neumann_boundary.mark(*boundaries, 2);
+  dirichlet_boundary.mark(*boundaries, 1);
 
   // Define variational problem
   Poisson::BilinearForm a(V, V);

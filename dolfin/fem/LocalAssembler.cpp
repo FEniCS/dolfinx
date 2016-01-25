@@ -39,14 +39,14 @@ using namespace dolfin;
 //------------------------------------------------------------------------------
 void
 LocalAssembler::assemble(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                       Eigen::RowMajor>& A,
-                   UFC& ufc,
-                   const std::vector<double>& coordinate_dofs,
-                   ufc::cell& ufc_cell,
-                   const Cell& cell,
-                   const MeshFunction<std::size_t>* cell_domains,
-                   const MeshFunction<std::size_t>* exterior_facet_domains,
-                   const MeshFunction<std::size_t>* interior_facet_domains)
+                         Eigen::RowMajor>& A,
+                         UFC& ufc,
+                         const std::vector<double>& coordinate_dofs,
+                         ufc::cell& ufc_cell,
+                         const Cell& cell,
+                         const MeshFunction<std::size_t>* cell_domains,
+                         const MeshFunction<std::size_t>* exterior_facet_domains,
+                         const MeshFunction<std::size_t>* interior_facet_domains)
 {
   cell.get_cell_data(ufc_cell);
 
@@ -54,8 +54,8 @@ LocalAssembler::assemble(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
   assemble_cell(A, ufc, coordinate_dofs, ufc_cell, cell, cell_domains);
 
   // Assemble contributions from facet integrals
-  if (ufc.form.has_exterior_facet_integrals() ||
-      ufc.form.has_interior_facet_integrals())
+  if (ufc.form.has_exterior_facet_integrals()
+      || ufc.form.has_interior_facet_integrals())
   {
     for (FacetIterator facet(cell); !facet.end(); ++facet)
     {
@@ -130,7 +130,8 @@ LocalAssembler::assemble_cell(Eigen::Matrix<double, Eigen::Dynamic,
   ufc.update(cell, coordinate_dofs, ufc_cell,
              integral->enabled_coefficients());
 
-  // Tabulate cell tensor directly into A. This overwrites any previous values
+  // Tabulate cell tensor directly into A. This overwrites any
+  // previous values
   integral->tabulate_tensor(A.data(), ufc.w(),
                             coordinate_dofs.data(),
                             ufc_cell.orientation);
@@ -169,8 +170,9 @@ LocalAssembler::assemble_exterior_facet(Eigen::Matrix<double,
   ufc.update(cell, coordinate_dofs, ufc_cell,
              integral->enabled_coefficients());
 
-  // Tabulate exterior facet tensor. Here we cannot tabulate directly into A
-  // since this will overwrite any previously assembled dx, ds or dS forms
+  // Tabulate exterior facet tensor. Here we cannot tabulate directly
+  // into A since this will overwrite any previously assembled dx, ds
+  // or dS forms
   integral->tabulate_tensor(ufc.A.data(),
                             ufc.w(),
                             coordinate_dofs.data(),
@@ -218,7 +220,8 @@ LocalAssembler::assemble_interior_facet(Eigen::Matrix<double, Eigen::Dynamic,
   const Mesh& mesh = cell.mesh();
   const std::size_t D = mesh.topology().dim();
 
-  // Get cells incident with facet (which is 0 and 1 here is arbitrary)  
+  // Get cells incident with facet (which is 0 and 1 here is
+  // arbitrary)
   dolfin_assert(facet.num_entities(D) == 2);
   std::size_t cell_index_plus = facet.entities(D)[0];
   std::size_t cell_index_minus = facet.entities(D)[1];
@@ -281,9 +284,9 @@ LocalAssembler::assemble_interior_facet(Eigen::Matrix<double, Eigen::Dynamic,
                             ufc_cell0->orientation,
                             ufc_cell1->orientation);
 
-  // Stuff upper left quadrant (corresponding to cell_plus) or
-  // lower left quadrant (corresponding to cell_minus) into A
-  // depending on which cell is the local cell
+  // Stuff upper left quadrant (corresponding to cell_plus) or lower
+  // left quadrant (corresponding to cell_minus) into A depending on
+  // which cell is the local cell
   const std::size_t M = A.rows();
   const std::size_t N = A.cols();
   const std::size_t offset_N = local_is_plus ? 0 : N;

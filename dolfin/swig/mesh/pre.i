@@ -37,15 +37,15 @@
 %extend dolfin::Mesh {
   PyObject* _coordinates() {
     return %make_numpy_array(2, double)(self->geometry().num_points(),
-					self->geometry().dim(),
-					self->coordinates().data(), true);
+                                        self->geometry().dim(),
+                                        self->coordinates().data(), true);
   }
 
   PyObject* _cells() {
     // FIXME: Works only for Mesh with Intervals, Triangles and Tetrahedrons
     return %make_numpy_array(2, uint)(self->num_cells(),
                                       self->type().num_entities(0),
-				      self->cells().data(), false);
+                                      self->cells().data(), false);
   }
 
   PyObject* _cell_orientations()
@@ -260,38 +260,6 @@ FORWARD_DECLARE_HIERARCHICAL_MESHFUNCTIONS(std::size_t, Sizet)
 // Include shared_ptr declaration of MeshValueCollection
 %shared_ptr(dolfin::MeshValueCollection<TYPE>)
 
-//-----------------------------------------------------------------------------
-// Ignore MeshFunction constructors that take a Mesh reference
-//-----------------------------------------------------------------------------
-%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&);
-%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, std::size_t);
-%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, std::size_t, const TYPE&);
-%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, const std::string);
-%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, const MeshValueCollection<T>&);
-
-%ignore dolfin::CellFunction<TYPE>::CellFunction(const Mesh&);
-%ignore dolfin::CellFunction<TYPE>::CellFunction(const Mesh&, const TYPE&);
-
-%ignore dolfin::FacetFunction<TYPE>::FacetFunction(const Mesh&);
-%ignore dolfin::FacetFunction<TYPE>::FacetFunction(const Mesh&, const TYPE&);
-
-%ignore dolfin::FaceFunction<TYPE>::FaceFunction(const Mesh&);
-%ignore dolfin::FaceFunction<TYPE>::FaceFunction(const Mesh&, const TYPE&);
-
-%ignore dolfin::EdgeFunction<TYPE>::EdgeFunction(const Mesh&);
-%ignore dolfin::EdgeFunction<TYPE>::EdgeFunction(const Mesh&, const TYPE&);
-
-%ignore dolfin::VertexFunction<TYPE>::VertexFunction(const Mesh&);
-%ignore dolfin::VertexFunction<TYPE>::VertexFunction(const Mesh&, const TYPE&);
-
-%ignore dolfin::MeshFunction<TYPE>::init(const Mesh&, std::size_t);
-%ignore dolfin::MeshFunction<TYPE>::init(const Mesh&, std::size_t, const T&);
-
-//-----------------------------------------------------------------------------
-// Ignore MeshValueCollection constructors that take a Mesh reference
-//-----------------------------------------------------------------------------
-%ignore dolfin::MeshValueCollection<TYPE>::MeshValueCollection(const Mesh&, std::size_t);
-
 %enddef
 
 FORWARD_DECLARE_MESHFUNCTIONS(unsigned int, UInt)
@@ -318,5 +286,5 @@ FORWARD_DECLARE_MESHFUNCTIONS(std::size_t, Sizet)
 //-----------------------------------------------------------------------------
 // Ignores for MultiMesh
 //-----------------------------------------------------------------------------
-%ignore dolfin::plot(const MultiMesh& multimesh);
-%ignore dolfin::plot(std::shared_ptr<const MultiMesh> multimesh);
+%ignore dolfin::plot(const MultiMesh&);
+%ignore dolfin::plot(std::shared_ptr<const MultiMesh>);

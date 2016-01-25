@@ -100,28 +100,25 @@ int main()
   }
 
   // Create mesh
-  UnitCubeMesh mesh(16, 16, 16);
+  auto mesh = std::make_shared<UnitCubeMesh>(16, 16, 16);
 
   // Create function space and subspaces
-  Stokes::FunctionSpace W(mesh);
-  SubSpace W0(W, 0);
-  SubSpace W1(W, 1);
+  auto W = std::make_shared<Stokes::FunctionSpace>(mesh);
 
   // Set-up infow boundary condition
-  Inflow inflow_prfofile;
-  Right right;
-  DirichletBC inflow(W0, inflow_prfofile, right);
+  auto inflow_prfofile = std::make_shared<Inflow>();
+  auto right = std::make_shared<Right>();
+  auto inflow = std::make_shared<DirichletBC>(W->sub(0), inflow_prfofile,
+                                              right);
 
   // Set-up no-slip boundary condition
-  Constant zero_vector(0.0, 0.0, 0.0);
-  TopBottom top_bottom;
-  DirichletBC noslip(W0, zero_vector, top_bottom);
-
-  // Collect boundary conditions
-  std::vector<const DirichletBC*> bcs = {{&inflow, &noslip}};
+  auto zero_vector = std::make_shared<Constant>(0.0, 0.0, 0.0);
+  auto top_bottom = std::make_shared<TopBottom>();
+  auto noslip = std::make_shared<DirichletBC>(W->sub(0), zero_vector,
+                                              top_bottom);
 
   // Create forms for the Stokes problem
-  Constant f(0.0, 0.0, 0.0);
+  auto f = std::make_shared<Constant>(0.0, 0.0, 0.0);
   Stokes::BilinearForm a(W, W);
   Stokes::LinearForm L(W);
   L.f = f;
@@ -133,13 +130,13 @@ int main()
   StokesPreconditioner::BilinearForm a_P(W, W);
 
   // Assemble precondtioner system (P, b_dummy)
-  std::shared_ptr<Matrix> P(new Matrix);
+  auto P = std::make_shared<Matrix>();
   Vector b;
-  assemble_system(*P, b, a_P, L, bcs);
+  assemble_system(*P, b, a_P, L, {inflow, noslip});
 
   // Assemble Stokes system (A, b)
-  std::shared_ptr<Matrix> A(new Matrix);
-  assemble_system(*A, b, a, L, bcs);
+  auto A = std::make_shared<Matrix>();
+  assemble_system(*A, b, a, L, {inflow, noslip});
 
   // Create Krylov solver with specified method and preconditioner
   KrylovSolver solver(krylov_method, "amg");

@@ -1,4 +1,4 @@
-# Copyright (C) 2014 Anders Logg
+# Copyright (C) 2014-2015 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-06-10
-# Last changed: 2014-06-10
+# Last changed: 2015-11-17
 #
 # The bilinear form a(u, v) and linear form L(v) for a multimesh
 # formulation of the Stokes equations.
@@ -36,17 +36,6 @@ f = Coefficient(P2)
 # Define facet normal and mesh size
 n = FacetNormal(triangle)
 h = 2.0*Circumradius(triangle)
-h = (h('+') + h('-')) / 2
-
-# Define custom measures (FIXME: prettify this)
-dc0 = dc(0, metadata={"num_cells": 1})
-dc1 = dc(1, metadata={"num_cells": 2})
-dc2 = dc(2, metadata={"num_cells": 2})
-
-# Define measures for integration
-dx = dx + dc0 # domain integral
-di = dc1      # interface integral
-do = dc2      # overlap integral
 
 # Parameters
 alpha = 4.0
@@ -55,18 +44,28 @@ def tensor_jump(v, n):
     return outer(v('+'), n('+')) + outer(v('-'), n('-'))
 
 def a_h(v, w):
-    return inner(grad(v), grad(w))*dx \
-         - inner(avg(grad(v)), tensor_jump(w, n))*di \
-         - inner(avg(grad(w)), tensor_jump(v, n))*di
+    return inner(grad(v), grad(w))*dX \
+         - inner(avg(grad(v)), tensor_jump(w, n))*dI \
+         - inner(avg(grad(w)), tensor_jump(v, n))*dI \
+         + alpha/avg(h) * inner(jump(v), jump(w))*dI
 
 def b_h(v, q):
-    return -div(v)*q*dx + jump(v, n)*avg(q)*di
+    return -div(v)*q*dX + jump(v, n)*avg(q)*dI
 
-def s_h(v, w):
-    return inner(jump(grad(v)), jump(grad(w)))*do
+def l_h(v, q, f):
+    return inner(f, v)*dX
 
-# Bilinear form
-a = a_h(u, v) + b_h(v, p) + b_h(u, q) + s_h(u, v)
+def s_O(v, w):
+    return inner(jump(grad(v)), jump(grad(w)))*dO
 
-# Linear form
-L = dot(f, v)*dx
+def s_C(v, q, w, r):
+    return h*h*inner(-div(grad(v)) + grad(q), -div(grad(w)) - grad(r))*dC
+
+def l_C(v, q, f):
+    return h*h*inner(f, -div(grad(v)) - grad(q))*dC
+
+# Define bilinear form
+a = a_h(u, v) + b_h(v, p) + b_h(u, q) + s_O(u, v) + s_C(u, p, v, q)
+
+# Define linear form
+L  = l_h(v, q, f) + l_C(v, q, f)

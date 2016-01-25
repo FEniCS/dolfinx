@@ -31,7 +31,7 @@ from dolfin_utils.test import * #cd_tempdir, pushpop_parameters, skip_in_paralle
 
 def create_data(A=None):
     "This function creates data used in the tests below"
-    mesh = UnitSquareMesh(3, 3)
+    mesh = UnitSquareMesh(4, 4)
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = TrialFunction(V)
     v = TestFunction(V)

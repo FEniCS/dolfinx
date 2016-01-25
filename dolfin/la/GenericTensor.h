@@ -83,12 +83,12 @@ namespace dolfin
     /// Add block of values using global indices
     virtual
       void add(const double* block,
-           const std::vector<ArrayView<const dolfin::la_index> >& rows) = 0;
+           const std::vector<ArrayView<const dolfin::la_index>>& rows) = 0;
 
     /// Add block of values using local indices
     virtual void add_local(
       const double* block,
-      const std::vector<ArrayView<const dolfin::la_index> >& rows) = 0;
+      const std::vector<ArrayView<const dolfin::la_index>>& rows) = 0;
 
 
     /// Add block of values using global indices

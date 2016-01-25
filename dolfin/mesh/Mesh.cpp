@@ -69,7 +69,7 @@ Mesh::Mesh(MPI_Comm comm) : Variable("mesh", "DOLFIN mesh"),
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                Hierarchical<Mesh>(*this), _ordered(false),
-                               _mpi_comm(MPI_COMM_WORLD)
+                               _mpi_comm(mesh.mpi_comm())
 {
   *this = mesh;
 }
@@ -291,21 +291,6 @@ void Mesh::rotate(double angle, std::size_t axis)
 void Mesh::rotate(double angle, std::size_t axis, const Point& point)
 {
   MeshTransformation::rotate(*this, angle, axis, point);
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<MeshDisplacement> Mesh::move(BoundaryMesh& boundary)
-{
-  return ALE::move(*this, boundary);
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<MeshDisplacement> Mesh::move(Mesh& mesh)
-{
-  return ALE::move(*this, mesh);
-}
-//-----------------------------------------------------------------------------
-void Mesh::move(const GenericFunction& displacement)
-{
-  ALE::move(*this, displacement);
 }
 //-----------------------------------------------------------------------------
 void Mesh::smooth(std::size_t num_iterations)

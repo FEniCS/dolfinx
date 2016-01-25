@@ -17,16 +17,13 @@
 //
 // Modified by Johan Hoffman 2007
 // Modified by Magnus Vikstrøm 2007
-// Modified by Garth N. Wells 2007-2013
+// Modified by Garth N. Wells 2007-2015
 // Modified by Niclas Jansson 2008
 // Modified by Kristoffer Selim 2008
 // Modified by Andre Massing 2009-2010
 // Modified by Marie E. Rognes 2012
 // Modified by Mikael Mortensen 2012
 // Modified by Jan Blechta 2013
-//
-// First added:  2006-05-08
-// Last changed: 2014-08-11
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -437,38 +434,6 @@ namespace dolfin
     ///     point (_Point_)
     ///         The point around which to rotate the mesh.
     void rotate(double angle, std::size_t axis, const Point& point);
-
-    /// Move coordinates of mesh according to new boundary coordinates.
-    ///
-    /// *Arguments*
-    ///     boundary (_BoundaryMesh_)
-    ///         A mesh containing just the boundary cells.
-    ///
-    /// *Returns*
-    ///     MeshDisplacement
-    ///         Displacement encapsulated in Expression subclass
-    ///         MeshDisplacement.
-    std::shared_ptr<MeshDisplacement> move(BoundaryMesh& boundary);
-
-    /// Move coordinates of mesh according to adjacent mesh with
-    /// common global vertices.
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         A _Mesh_ object.
-    ///
-    /// *Returns*
-    ///     MeshDisplacement
-    ///         Displacement encapsulated in Expression subclass
-    ///         MeshDisplacement.
-    std::shared_ptr<MeshDisplacement> move(Mesh& mesh);
-
-    /// Move coordinates of mesh according to displacement function.
-    ///
-    /// *Arguments*
-    ///     displacement (_GenericFunction_)
-    ///         A _GenericFunction_ object.
-    void move(const GenericFunction& displacement);
 
     /// Smooth internal vertices of mesh by local averaging.
     ///

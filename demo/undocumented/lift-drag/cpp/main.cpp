@@ -50,16 +50,16 @@ class Fish : public SubDomain
 int main()
 {
   // Read mesh from file
-  Mesh mesh("../dolfin_fine.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../dolfin_fine.xml.gz");
 
   // Read velocity field from file
-  Functionals::CoefficientSpace_p Vp(mesh);
-  Function p(Vp, "../dolfin_fine_pressure.xml.gz");
+  auto Vp = std::make_shared<Functionals::CoefficientSpace_p>(mesh);
+  auto p = std::make_shared<Function>(Vp, "../dolfin_fine_pressure.xml.gz");
 
   // Mark 'fish'
-  FacetFunction<std::size_t> markers(mesh, 1);
+  auto markers = std::make_shared<FacetFunction<std::size_t>>(mesh, 1);
   Fish fish;
-  fish.mark(markers, 1);
+  fish.mark(*markers, 1);
 
   // Functionals for lift and drag
   Functionals::Form_lift L(mesh, p);

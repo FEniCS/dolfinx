@@ -77,16 +77,6 @@ namespace dolfin
     ///         The mesh associated with the collection.
     ///     dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
-    MeshValueCollection(const Mesh& mesh, std::size_t dim);
-
-    /// Create a mesh value collection of entities of given dimension
-    /// on a given mesh (shared_ptr version)
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh associated with the collection.
-    ///     dim (std::size_t)
-    ///         The mesh entity dimension for the mesh value collection.
     MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
     /// Create a mesh value collection from a file.
@@ -99,7 +89,7 @@ namespace dolfin
     ///         The XML file name.
     ///     dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
-    MeshValueCollection(const Mesh& mesh, const std::string filename);
+    MeshValueCollection(std::shared_ptr<const Mesh> mesh, const std::string filename);
 
     /// Destructor
     ~MeshValueCollection() {}
@@ -122,16 +112,6 @@ namespace dolfin
       operator=(const MeshValueCollection<T>& mesh_value_collection);
 
     /// Initialise MeshValueCollection with mesh and dimension
-    ///
-    /// *Arguments*
-    ///     mesh (_mesh))
-    ///         The mesh on which the value collection is defined
-    ///     dim (std::size_t)
-    ///         The mesh entity dimension for the mesh value collection.
-    void init(const Mesh& mesh, std::size_t dim);
-
-    /// Initialise MeshValueCollection with mesh and dimension
-    /// (shared_ptr version)
     ///
     /// *Arguments*
     ///     mesh (_mesh))
@@ -284,15 +264,6 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh,
-                                              std::size_t dim)
-    : Variable("m", "unnamed MeshValueCollection"),
-      _mesh(reference_to_no_delete_pointer(mesh)), _dim(dim)
-  {
-    // Do nothing
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
   MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh>
                                               mesh, std::size_t dim)
     : Variable("m", "unnamed MeshValueCollection"), _mesh(mesh), _dim(dim)
@@ -316,7 +287,7 @@ namespace dolfin
            ++cell_index)
       {
         const std::pair<std::size_t, std::size_t> key(cell_index, 0);
-        _values.insert(std::make_pair(key, mesh_function[cell_index]));
+        _values.insert({key, mesh_function[cell_index]});
       }
     }
     else
@@ -341,17 +312,17 @@ namespace dolfin
           // Insert into map
           const std::pair<std::size_t, std::size_t> key(cell.index(),
                                                         local_entity);
-          _values.insert(std::make_pair(key, mesh_function[entity_index]));
+          _values.insert({key, mesh_function[entity_index]});
         }
       }
     }
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh,
-                                              const std::string filename)
+    MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
+                                                const std::string filename)
     : Variable("m", "unnamed MeshValueCollection"),
-      _mesh(reference_to_no_delete_pointer(mesh)), _dim(-1)
+      _mesh(mesh), _dim(-1)
   {
     File file(filename);
     file >> *this;
@@ -377,7 +348,7 @@ namespace dolfin
            ++cell_index)
       {
         const std::pair<std::size_t, std::size_t> key(cell_index, 0);
-        _values.insert(std::make_pair(key, mesh_function[cell_index]));
+        _values.insert({key, mesh_function[cell_index]});
       }
     }
     else
@@ -402,7 +373,7 @@ namespace dolfin
           // Insert into map
           const std::pair<std::size_t, std::size_t> key(cell.index(),
                                                         local_entity);
-          _values.insert(std::make_pair(key, mesh_function[entity_index]));
+          _values.insert({key, mesh_function[entity_index]});
         }
       }
     }
@@ -420,15 +391,6 @@ namespace dolfin
     _values = mesh_value_collection.values();
 
     return *this;
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
-  void MeshValueCollection<T>::init(const Mesh& mesh, std::size_t dim)
-  {
-    mesh.init(dim);
-    _mesh = reference_to_no_delete_pointer(mesh);
-    _dim = dim;
-    _values.clear();
   }
   //---------------------------------------------------------------------------
   template <typename T>
@@ -490,7 +452,7 @@ namespace dolfin
 
     const std::pair<std::size_t, std::size_t> pos(cell_index, local_entity);
     std::pair<typename std::map<std::pair<std::size_t, std::size_t>, T>::iterator, bool>
-      it = _values.insert(std::make_pair(pos, value));
+      it = _values.insert({pos, value});
 
     // If an item with same key already exists the value has not been
     // set and we need to update it
@@ -521,7 +483,7 @@ namespace dolfin
       const std::pair<std::size_t, std::size_t> pos(entity_index, 0);
       std::pair<typename std::map<std::pair<std::size_t,
         std::size_t>, T>::iterator, bool> it;
-      it = _values.insert(std::make_pair(pos, value));
+      it = _values.insert({pos, value});
 
       // If an item with same key already exists the value has not been
       // set and we need to update it
@@ -548,7 +510,7 @@ namespace dolfin
     const std::pair<std::size_t, std::size_t> pos(cell.index(), local_entity);
     std::pair<typename std::map<std::pair<std::size_t,
       std::size_t>, T>::iterator, bool> it;
-    it = _values.insert(std::make_pair(pos, value));
+    it = _values.insert({pos, value});
 
     // If an item with same key already exists the value has not been
     // set and we need to update it

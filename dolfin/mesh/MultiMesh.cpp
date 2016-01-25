@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2014 Anders Logg
+// Copyright (C) 2013-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2013-08-05
-// Last changed: 2014-05-28
+// Last changed: 2015-11-26
 
 #include <dolfin/log/log.h>
 #include <dolfin/plot/plot.h>
@@ -36,8 +36,76 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MultiMesh::MultiMesh()
 {
-  // Set parameters
-  parameters = default_parameters();
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+MultiMesh::MultiMesh(std::vector<std::shared_ptr<const Mesh>> meshes,
+                     std::size_t quadrature_order)
+{
+  // Add and build
+  for (auto mesh : meshes)
+    add(mesh);
+  build(quadrature_order);
+}
+//-----------------------------------------------------------------------------
+MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+                     std::size_t quadrature_order)
+{
+  // Add and build
+  add(mesh_0);
+  build(quadrature_order);
+}
+//-----------------------------------------------------------------------------
+MultiMesh::MultiMesh(const Mesh& mesh_0,
+                     std::size_t quadrature_order)
+{
+  // Add and build
+  add(mesh_0);
+  build(quadrature_order);
+}
+//-----------------------------------------------------------------------------
+MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+                     std::shared_ptr<const Mesh> mesh_1,
+                     std::size_t quadrature_order)
+{
+  // Add and build
+  add(mesh_0);
+  add(mesh_1);
+  build(quadrature_order);
+}
+//-----------------------------------------------------------------------------
+MultiMesh::MultiMesh(const Mesh& mesh_0,
+                     const Mesh& mesh_1,
+                     std::size_t quadrature_order)
+{
+  // Add and build
+  add(mesh_0);
+  add(mesh_1);
+  build(quadrature_order);
+}
+//-----------------------------------------------------------------------------
+MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+                     std::shared_ptr<const Mesh> mesh_1,
+                     std::shared_ptr<const Mesh> mesh_2,
+                     std::size_t quadrature_order)
+{
+  // Add and build
+  add(mesh_0);
+  add(mesh_1);
+  add(mesh_2);
+  build(quadrature_order);
+}
+//-----------------------------------------------------------------------------
+MultiMesh::MultiMesh(const Mesh& mesh_0,
+                     const Mesh& mesh_1,
+                     const Mesh& mesh_2,
+                     std::size_t quadrature_order)
+{
+  // Add and build
+  add(mesh_0);
+  add(mesh_1);
+  add(mesh_2);
+  build(quadrature_order);
 }
 //-----------------------------------------------------------------------------
 MultiMesh::~MultiMesh()
@@ -148,7 +216,7 @@ void MultiMesh::add(const Mesh& mesh)
   add(reference_to_no_delete_pointer(mesh));
 }
 //-----------------------------------------------------------------------------
-void MultiMesh::build()
+void MultiMesh::build(std::size_t quadrature_order)
 {
   begin(PROGRESS, "Building multimesh.");
 
@@ -167,10 +235,10 @@ void MultiMesh::build()
 
   // Build quadrature rules of the cut cells' overlap. Do this before
   // we build the quadrature rules of the cut cells
-  _build_quadrature_rules_overlap();
+  _build_quadrature_rules_overlap(quadrature_order);
 
   // Build quadrature rules of the cut cells
-  _build_quadrature_rules_cut_cells();
+  _build_quadrature_rules_cut_cells(quadrature_order);
 
   end();
 }
@@ -370,12 +438,9 @@ void MultiMesh::_build_collision_maps()
   end();
 }
 //-----------------------------------------------------------------------------
-void MultiMesh::_build_quadrature_rules_overlap()
+void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 {
   begin(PROGRESS, "Building quadrature rules of cut cells' overlap.");
-
-  // Get quadrature order
-  const std::size_t quadrature_order = parameters["quadrature_order"];
 
   // Clear quadrature rules
   _quadrature_rules_overlap.clear();
@@ -676,15 +741,9 @@ void MultiMesh::_build_quadrature_rules_overlap()
   end();
 }
 //-----------------------------------------------------------------------------
-void MultiMesh::_build_quadrature_rules_cut_cells()
+void MultiMesh::_build_quadrature_rules_cut_cells(std::size_t quadrature_order)
 {
   begin(PROGRESS, "Building quadrature rules of cut cells.");
-
-  // FIXME: Do we want to check to make sure we
-  // have the same order in the overlapping part?
-
-  // Get quadrature order
-  const std::size_t quadrature_order = parameters["quadrature_order"];
 
   // Clear quadrature rules
   _quadrature_rules_cut_cells.clear();
@@ -797,6 +856,10 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
 //-----------------------------------------------------------------------------
 void MultiMesh::_plot() const
 {
+  // Developer note: This function is implemented here rather than
+  // in the plot library since it is too specialized to be implemented
+  // there.
+
   cout << "Plotting multimesh with " << num_parts() << " parts" << endl;
 
   // Iterate over parts
@@ -830,7 +893,7 @@ void MultiMesh::_plot() const
     // Plot
     std::stringstream s;
     s << "Map of cell types for multimesh part " << p;
-    plot(f, s.str());
+    dolfin::plot(f, s.str());
   }
 }
 //-----------------------------------------------------------------------------
