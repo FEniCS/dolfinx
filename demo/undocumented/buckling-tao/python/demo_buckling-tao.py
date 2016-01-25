@@ -125,9 +125,17 @@ parameters.parse()
 # Solve the problem
 solver.solve(BucklingProblem(), u.vector(), u_min.vector(), u_max.vector())
 
-# Save solution in XDMF format
+# Save solution in XDMF format if available
 out = XDMFFile(mesh.mpi_comm(), "u.xdmf")
-out.write(u, XDMFFile.Encoding_ASCII)
+if has_hdf5():
+    out.write(u)
+elif MPI.size(mesh.mpi_comm()) == 1:
+    encoding = XDMFFile.Encoding_ASCII
+    out.write(u, encoding)
+else:
+    # Save solution in vtk format
+    out = File("u.pvd")
+    out << u
 
 # Plot the current configuration
 plot(u, mode="displacement", wireframe=True, title="Displacement field")

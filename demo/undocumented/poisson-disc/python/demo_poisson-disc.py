@@ -82,6 +82,7 @@ def compute_rates():
         for element_degree in (1, 2):
             print("\nUsing coordinate degree %d, element degree %d" % (coordinate_degree, element_degree))
             ufile = XDMFFile(mpi_comm_world(), "poisson-disc-degree-x%d-e%d.xdmf" % (coordinate_degree, element_degree))
+            encoding = XDMFFile.Encoding_HDF5 if has_hdf5() else XDMFFile.Encoding_ASCII
             preverr = None
             prevh = None
             for i, nsteps in enumerate((1, 8, 64)):
@@ -97,7 +98,11 @@ def compute_rates():
 
                 # Save solution to file
                 u.rename('u', 'u')
-                ufile.write(u)#, XDMFFile.Encoding_ASCII)
+
+                if MPI.size(mpi_comm_world()) > 1 and encoding == XDMFFile.Encoding_ASCII:
+                    print("Plotting not supported in parallel without HDF5")
+                else:
+                    ufile.write(u, encoding)
 
             # Plot solution
             #plot(u, title="u, degree=%d" % degree)
