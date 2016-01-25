@@ -100,7 +100,7 @@ def compute_rates():
                 u.rename('u', 'u')
 
                 if MPI.size(mpi_comm_world()) > 1 and encoding == XDMFFile.Encoding_ASCII:
-                    print("Plotting not supported in parallel without HDF5")
+                    print("XDMF file output not supported in parallel without HDF5")
                 else:
                     ufile.write(u, encoding)
 
