@@ -52,12 +52,12 @@ if(MPI.size(mpi_comm_world()) == 1):
 mesh = UnitSquareMesh(8, 8)
 # mesh = refine(M)
 
-shared_vertices = mesh.topology().shared_entities(0).keys()
+shared_vertices = np.fromiter(mesh.topology().shared_entities(0).keys(), dtype='uintc')
 shared_cells = mesh.topology().shared_entities(mesh.topology().dim())
 
 num_regular_vertices = mesh.topology().ghost_offset(0)
 
-ghost_vertices = range(num_regular_vertices, mesh.topology().size(0))
+ghost_vertices = np.arange(num_regular_vertices, mesh.topology().size(0))
 
 verts_note = []
 if (n == 0):
