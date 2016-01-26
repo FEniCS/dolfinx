@@ -155,7 +155,7 @@ def test_save_3d_vector(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "u_3Dv.xdmf")
-    mesh = UnitCubeMesh(1, 1, 1)
+    mesh = UnitCubeMesh(2, 2, 2)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 1))
     c = Constant((1.0, 2.0, 3.0))
     u.interpolate(c)
@@ -356,7 +356,7 @@ def test_save_points_2D(tempdir, encoding):
 
     file = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir,
                                                   "points_values_2D.xdmf"))
-    
+
     file.write(points, vals, encoding)
     del file
 
@@ -382,7 +382,7 @@ def test_save_points_3D(tempdir, encoding):
     del file
 
     file = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "points_values_3D.xdmf"))
-    
+
     file.write(points, vals, encoding)
     del file
 

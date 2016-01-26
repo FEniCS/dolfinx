@@ -803,7 +803,7 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
   }
 #endif
 
-  if (mvc.size() == 0)
+  if (MPI::sum(mesh->mpi_comm(), mvc.size()) == 0)
   {
     dolfin_error("XDMFFile.cpp",
                  "save empty MeshValueCollection",
