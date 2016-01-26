@@ -31,3 +31,10 @@
 //-----------------------------------------------------------------------------
 %ignore dolfin::plot(const MultiMesh&);
 %rename (_plot_multimesh) dolfin::plot(std::shared_ptr<const MultiMesh>);
+
+// Ignore reference versions of plot
+%ignore dolfin::plot(const Variable&, std::string, std::string);
+%ignore dolfin::plot(const Variable&, const Parameters&);
+%ignore dolfin:: plot(const Expression&, const Mesh&, std::string, std::string);
+%ignore dolfin:: plot(const Expression&, const Mesh&, std::string, std::string);
+%ignore dolfin::plot(const Expression&, const Mesh&, const Parameters&);
