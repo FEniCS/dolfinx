@@ -116,6 +116,8 @@ double bench(std::string form, std::shared_ptr<const Form> a)
 
 int main(int argc, char* argv[])
 {
+  info("Runtime of threaded assembly benchmark");
+
   // Parse command-line arguments
   parameters.parse(argc, argv);
 
@@ -126,7 +128,7 @@ int main(int argc, char* argv[])
 
   // Test cases
   std::vector<std::pair<std::string, std::shared_ptr<const Form> > > forms;
-  //forms.push_back(std::make_pair("Poisson", PoissonFactory::a(mesh)));
+  forms.push_back(std::make_pair("Poisson", PoissonFactory::a(mesh)));
   forms.push_back(std::make_pair("NavierStokes", NavierStokesFactory::a(mesh)));
 
   // If parameter num_threads has been set, just run once
@@ -143,7 +145,7 @@ int main(int argc, char* argv[])
     Table speedups("Speedups");
 
     // Iterate over number of threads
-    for (int num_threads = 2; num_threads <= MAX_NUM_THREADS; num_threads++)
+    for (int num_threads = 0; num_threads <= MAX_NUM_THREADS; num_threads++)
     {
       // Set the number of threads
       parameters["num_threads"] = num_threads;

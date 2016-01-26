@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2015 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,32 +15,32 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// This benchmark measures the performance of building a BoundingBoxTree (and
-// one call to compute_entities, which is dominated by building).
+// First added:  2008-09-30
+// Last changed: 2012-08-21
 //
-// First added:  2013-04-18
-// Last changed: 2013-06-25
+// Unit tests for SubSystemsManager
 
-#include <vector>
 #include <dolfin.h>
+#include <gtest/gtest.h>
 
 using namespace dolfin;
 
-#define SIZE 128
-
-int main(int argc, char* argv[])
+// Test rewritten using Google Test
+TEST(TestSubSystemsManager, test_petsc_user_init)
 {
-  info("Build bounding box tree on UnitCubeMesh(%d, %d, %d)",
-       SIZE, SIZE, SIZE);
+  // Test user initialisation of PETSc
+#ifdef HAS_PETSC
+  int argc = 0;
+  char **argv = NULL;
+  PetscInitialize(&argc, &argv, NULL, NULL);
 
-  // Create mesh
-  UnitCubeMesh mesh(SIZE, SIZE, SIZE);
+  UnitSquareMesh(12, 12);
+  PETScVector(MPI_COMM_WORLD, 30);
+#endif
+}
 
-  // Create and build tree
-  tic();
-  BoundingBoxTree tree;
-  tree.build(mesh);
-  info("BENCH %g", toc());
-
-  return 0;
+// Test all
+int SubSystemsManager_main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

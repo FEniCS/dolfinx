@@ -28,10 +28,8 @@ using namespace dolfin;
 
 int main(int argc, char* argv[])
 {
-
   #ifdef HAS_PETSC
 
-  //parameters["mesh_partitioner"] = "SCOTCH";
   parameters["linear_algebra_backend"] = "PETSc";
 
   // Parse command-line arguments
@@ -61,19 +59,9 @@ int main(int argc, char* argv[])
   L.f = f;
   Function u(V);
 
-  // Create preconditioner and linear solver
-  //TrilinosPreconditioner pc("amg_ml");
-  //PETScPreconditioner pc("amg_hypre");
-  //PETScPreconditioner pc("amg_ml");
-  //PETScKrylovSolver solver("gmres", pc);
-
-  // Pick solver; UMFPACK runs out of memory even on 24GB RAM machine
-  std::string method = "lu";
-  if (has_lu_solver_method("mumps"))
-    method = "mumps";
-  else if (has_lu_solver_method("superlu_dist"))
-    method = "superlu_dist";
-  PETScLUSolver solver(method);
+  // Prepare iterative solver
+  const auto pc = std::make_shared<PETScPreconditioner>("petsc_amg");
+  PETScKrylovSolver solver("cg", pc);
 
   // Assemble matrix and vector, and apply Dirichlet boundary conditions
   Matrix A;
@@ -81,6 +69,7 @@ int main(int argc, char* argv[])
   assemble(A, a);
   assemble(b, L);
   bc.apply(A, b);
+  bc.apply(*u.vector());
 
   // Solve linear system
   dolfin::MPI::barrier(comm);
@@ -93,7 +82,7 @@ int main(int argc, char* argv[])
 
   // Solve linear system (preconditioner assuming same non-zero pattern)
   if (solver.parameters.has_key("preconditioner"))
-      solver.parameters("preconditioner")["same_nonzero_pattern"] = true;
+    solver.parameters("preconditioner")["structure"] = "same_nonzero_pattern";
   u.vector()->zero();
   dolfin::MPI::barrier(comm);
   t = time();
@@ -105,7 +94,7 @@ int main(int argc, char* argv[])
 
   // Solve linear system (re-use preconditioner)
   if (solver.parameters.has_key("preconditioner"))
-    solver.parameters("preconditioner")["reuse"] = true;
+    solver.parameters("preconditioner")["structure"] = "same";
   u.vector()->zero();
   dolfin::MPI::barrier(comm);
   t = time();

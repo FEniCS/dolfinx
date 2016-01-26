@@ -25,6 +25,7 @@
 - Clean-up in PyDOLFIN function space design, issue #576
 - Deprecate MixedFunctionSpace and EnrichedFunctionSpace in favour of
 	initialization by suitable UFL element
+- Add experimental matplotlib-based plotting backend, see mplot demo
 1.6.0 [2015-07-28]
 - Remove redundant pressure boundary condition in Stokes demos
 - Require Point in RectangleMesh and BoxMesh constructors

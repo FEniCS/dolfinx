@@ -78,16 +78,14 @@ target_link_libraries_str = "target_link_libraries(%s "\
                             "${DOLFIN_LIBRARIES})"
 
 # Subdirectories
-sub_directories = ['demo', 'test', 'bench']
+sub_directories = ['demo', 'bench']
 
 # Prefix map for subdirectories
-executable_prefixes = dict(test="test_",
-                           demo="demo_",
+executable_prefixes = dict(demo="demo_",
                            bench="bench_")
 
 # Main file name map for subdirectories
-main_file_names = dict(test="test.cpp",
-                       demo="main.cpp",
+main_file_names = dict(demo="main.cpp",
                        bench="main.cpp")
 
 # Projects that use custom CMakeLists.txt (shouldn't overwrite)
