@@ -48,22 +48,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Function::Function(const FunctionSpace& V) : Hierarchical<Function>(*this),
-  _function_space(reference_to_no_delete_pointer(V)),
-  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
-{
-  // Check that we don't have a subspace
-  if (!V.component().empty())
-  {
-    dolfin_error("Function.cpp",
-                 "create function",
-                 "Cannot be created from subspace. Consider collapsing the function space");
-  }
-
-  // Initialize vector
-  init_vector();
-}
-//-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
   : Hierarchical<Function>(*this), _function_space(V),
   _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
@@ -91,36 +75,6 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
   // Assertion uses '<=' to deal with sub-functions
   dolfin_assert(V->dofmap());
   dolfin_assert(V->dofmap()->global_dimension() <= x->size());
-}
-//-----------------------------------------------------------------------------
-Function::Function(const FunctionSpace& V, std::string filename)
-  : Hierarchical<Function>(*this),
-  _function_space(reference_to_no_delete_pointer(V)),
-  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
-{
-  // Check that we don't have a subspace
-  if (!V.component().empty())
-  {
-    dolfin_error("Function.cpp",
-                 "create function",
-                 "Cannot be created from subspace. Consider collapsing the function space");
-  }
-
-  // Initialize vector
-  init_vector();
-
-  // Check size of vector
-  if (_vector->size() != _function_space->dim())
-  {
-    dolfin_error("Function.cpp",
-                 "read function from file",
-                 "The number of degrees of freedom (%d) does not match dimension of function space (%d)",
-                 _vector->size(), _function_space->dim());
-  }
-
-  // Read function data from file
-  File file(filename);
-  file >> *this;
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V,
@@ -245,7 +199,6 @@ const Function& Function::operator= (const Expression& v)
 //-----------------------------------------------------------------------------
 Function& Function::operator[] (std::size_t i) const
 {
-
   // Check if sub-Function is in the cache, otherwise create and add
   // to cache
   auto sub_function = _sub_functions.find(i);
@@ -587,62 +540,47 @@ void Function::init_vector()
 {
   Timer timer("Init dof vector");
 
-  // Check that function space is not a subspace (view)
-  dolfin_assert(_function_space);
-  if (_function_space->dofmap()->is_view())
-  {
-    dolfin_error("Function.cpp",
-                 "initialize vector of degrees of freedom for function",
-                 "Cannot be created from subspace. Consider collapsing the function space");
-  }
-
   // Get dof map
+  dolfin_assert(_function_space);
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *(_function_space->dofmap());
 
-  // Get local range
-  const std::pair<std::size_t, std::size_t> range = dofmap.ownership_range();
-
-  // Determine ghost vertices if dof map is distributed
-  const std::size_t bs = dofmap.block_size();
-  std::vector<la_index>
-    ghost_indices(bs*dofmap.index_map()->local_to_global_unowned().size());
-  for (std::size_t i = 0;
-       i < dofmap.index_map()->local_to_global_unowned().size(); ++i)
+  // Check that function space is not a subspace (view)
+  if (dofmap.is_view())
   {
-    for (std::size_t j = 0; j < bs; ++j)
-    {
-      ghost_indices[bs*i + j]
-        = bs*dofmap.index_map()->local_to_global_unowned()[i] + j;
-    }
+    dolfin_error("Function.cpp",
+                 "initialize vector of degrees of freedom for function",
+                 "Cannot be created from subspace. Consider collapsing the "
+                 "function space");
   }
+
+  // Get index map
+  std::shared_ptr<const IndexMap> index_map = dofmap.index_map();
+  dolfin_assert(index_map);
+
+  DefaultFactory factory;
+
+  // Create layout for initialising tensor
+  std::shared_ptr<TensorLayout> tensor_layout;
+  tensor_layout = factory.create_layout(1);
+  dolfin_assert(tensor_layout);
+  dolfin_assert(!tensor_layout->sparsity_pattern());
+  dolfin_assert(_function_space->mesh());
+  tensor_layout->init(_function_space->mesh()->mpi_comm(), {index_map},
+                      TensorLayout::Ghosts::GHOSTED);
 
   // Create vector of dofs
   if (!_vector)
-  {
-    DefaultFactory factory;
     _vector = factory.create_vector();
-  }
   dolfin_assert(_vector);
-
-  // Tabulate local-to-global map for dofs
-  std::vector<std::size_t> local_to_global_map;
-  dofmap.tabulate_local_to_global_dofs(local_to_global_map);
-
-  // Initialize vector of dofs
-  dolfin_assert(_function_space->mesh());
-  if (_vector->empty())
-  {
-    _vector->init(_function_space->mesh()->mpi_comm(), range,
-                  local_to_global_map, ghost_indices);
-  }
-  else
+  if (!_vector->empty())
   {
     dolfin_error("Function.cpp",
                  "initialize vector of degrees of freedom for function",
                  "Cannot re-initialize a non-empty vector. Consider creating a new function");
 
   }
+  _vector->init(*tensor_layout);
   _vector->zero();
 }
 //-----------------------------------------------------------------------------

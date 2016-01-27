@@ -52,7 +52,11 @@ def build_nullspace(V, x):
     for x in nullspace_basis:
         x.apply("insert")
 
-    return VectorSpaceBasis(nullspace_basis)
+    # Create vector space basis and orthogonalize
+    basis = VectorSpaceBasis(nullspace_basis)
+    basis.orthonormalize()
+
+    return basis
 
 
 # Load mesh and define function space

@@ -32,17 +32,16 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
-#include "GenericSparsityPattern.h"
 
 namespace dolfin
 {
 
   class IndexMap;
 
-  /// This class implements the GenericSparsityPattern interface.  It
-  /// is used by most linear algebra backends.
+  /// This class implements a sparsity pattern data structure.  It is
+  /// used by most linear algebra backends.
 
-  class SparsityPattern : public GenericSparsityPattern
+  class SparsityPattern
   {
 
     // NOTE: Do not change this typedef without performing careful
@@ -52,35 +51,38 @@ namespace dolfin
 
   public:
 
+    enum Type {sorted, unsorted};
+
     /// Create empty sparsity pattern
     SparsityPattern(std::size_t primary_dim);
 
     /// Create sparsity pattern for a generic tensor
-    SparsityPattern(
-      const MPI_Comm mpi_comm,
-      const std::vector<std::size_t>& dims,
-      const std::vector<std::shared_ptr<const IndexMap>> index_maps,
-      const std::size_t primary_dim);
+    SparsityPattern(MPI_Comm mpi_comm,
+                    std::vector<std::shared_ptr<const IndexMap>> index_maps,
+                    std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
-    void init(
-      const MPI_Comm mpi_comm,
-      const std::vector<std::size_t>& dims,
-      const std::vector<std::shared_ptr<const IndexMap>> index_maps);
+    void init(MPI_Comm mpi_comm,
+              std::vector<std::shared_ptr<const IndexMap>> index_maps);
 
     /// Insert a global entry - will be fixed by apply()
     void insert_global(dolfin::la_index i, dolfin::la_index j);
 
     /// Insert non-zero entries using global indices
     void insert_global(const std::vector<
-                       ArrayView<const dolfin::la_index> >& entries);
+                       ArrayView<const dolfin::la_index>>& entries);
 
     /// Insert non-zero entries using local (process-wise) indices
     void insert_local(const std::vector<
-                      ArrayView<const dolfin::la_index> >& entries);
+                      ArrayView<const dolfin::la_index>>& entries);
 
     /// Return rank
     std::size_t rank() const;
+
+    /// Return primary dimension (e.g., 0=row partition, 1=column
+    /// partition)
+    std::size_t primary_dim() const
+    { return _primary_dim; }
 
     /// Return local range for dimension dim
     std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const;
@@ -95,7 +97,9 @@ namespace dolfin
 
     /// Fill array with number of nonzeros for off-diagonal block in
     /// local_range for dimension 0. For matrices, fill array with
-    /// number of nonzeros per local row for off-diagonal block
+    /// number of nonzeros per local row for off-diagonal block. If
+    /// there is no off-diagonal pattern, the vector is resized to
+    /// zero-length
     void
       num_nonzeros_off_diagonal(std::vector<std::size_t>& num_nonzeros) const;
 
@@ -115,23 +119,26 @@ namespace dolfin
 
     /// Return underlying sparsity pattern (diagonal). Options are
     /// 'sorted' and 'unsorted'.
-    std::vector<std::vector<std::size_t> > diagonal_pattern(Type type) const;
+    std::vector<std::vector<std::size_t>> diagonal_pattern(Type type) const;
 
     /// Return underlying sparsity pattern (off-diagonal). Options are
     /// 'sorted' and 'unsorted'.
-    std::vector<std::vector<std::size_t> >
-      off_diagonal_pattern(Type type) const;
+    std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
 
   private:
 
     // Print some useful information
     void info_statistics() const;
 
-    // MPI communicator
+    // Primary sparsity pattern storage dimension (e.g., 0=row
+    // partition, 1=column partition)
+    const std::size_t _primary_dim;
+
+   // MPI communicator
     MPI_Comm _mpi_comm;
 
     // Ownership range for each dimension
-    //    std::vector<std::pair<std::size_t, std::size_t> > _local_range;
+    //    std::vector<std::pair<std::size_t, std::size_t>> _local_range;
 
     // IndexMaps for each dimension
     std::vector<std::shared_ptr<const IndexMap>> _index_maps;

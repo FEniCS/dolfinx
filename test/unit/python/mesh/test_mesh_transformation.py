@@ -18,22 +18,21 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2012-01-16
-# Last changed: 2013-06-28
-
 
 from dolfin import *
+
 
 def test_translate_2d():
     mesh = UnitSquareMesh(8, 8)
     p = Point(1, 2)
     mesh.translate(p)
 
+
 def test_translate_3d():
     mesh = UnitCubeMesh(8, 8, 8)
     p = Point(1, 2, 3)
     mesh.translate(p)
+
 
 def test_rotate_2d():
     mesh = UnitSquareMesh(8, 8)
@@ -42,6 +41,7 @@ def test_rotate_2d():
     mesh.rotate(10, 2)
     mesh.rotate(10, 2, p)
 
+
 def test_rotate_3d():
     mesh = UnitCubeMesh(8, 8, 8)
     p = Point(1, 2, 3)
@@ -49,3 +49,21 @@ def test_rotate_3d():
     mesh.rotate(30, 1)
     mesh.rotate(30, 2)
     mesh.rotate(30, 0, p)
+
+
+def test_rescale_2d():
+    mesh = UnitSquareMesh(8, 8)
+    p = Point(4, 4)
+    s = 1.5
+    MeshTransformation.rescale(mesh, s, p)
+    comm = mesh.mpi_comm()
+    assert MPI.sum(comm, sum(c.volume() for c in cells(mesh))) == s*s
+
+
+def test_rescale_3d():
+    mesh = UnitCubeMesh(8, 8, 8)
+    p = Point(4, 4, 4)
+    s = 1.5
+    MeshTransformation.rescale(mesh, s, p)
+    comm = mesh.mpi_comm()
+    assert MPI.sum(comm, sum(c.volume() for c in cells(mesh))) == s*s*s

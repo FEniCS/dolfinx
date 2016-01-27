@@ -24,13 +24,14 @@
 
 from dolfin import *
 
+
 def test_triangle_mesh():
 
     # Create mesh object and open editor
     mesh = Mesh()
     editor = MeshEditor()
     editor.open(mesh, 2, 2)
-    editor.init_vertices(3) # test both versions of interface
+    editor.init_vertices(3)  # test both versions of interface
     editor.init_vertices_global(3, 3)
     editor.init_cells(1)    # test both versions of interface
     editor.init_cells_global(1, 1)

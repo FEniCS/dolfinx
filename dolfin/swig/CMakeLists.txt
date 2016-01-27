@@ -1,8 +1,7 @@
 project(swig)
 
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-# Remove '-Werror', '-Wall' and 'pedantic' flags (if present) when compiling SWIG-generated files
+# Remove '-Werror', '-Wall' and 'pedantic' flags (if present) when
+# compiling SWIG-generated files
 string(REGEX REPLACE "-Wall" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 string(REGEX REPLACE "-Wall" " " CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER}")
 string(REGEX REPLACE "-Werror=format-security" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -21,6 +20,17 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -wd186")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -wd186")
   endif()
+endif()
+
+# Prevent clang emitting warnings for SWIG-generated code
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  set(CLANG_FLAGS "-Wno-logical-not-parentheses -Wno-logical-op-parentheses \
+-Wno-tautological-constant-out-of-range-compare")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CLANG_FLAGS}")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${CLANG_FLAGS}")
+  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} ${CLANG_FLAGS}")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CLANG_FLAGS}")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${CLANG_FLAGS}")
 endif()
 
 # Set common include directoris

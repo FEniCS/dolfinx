@@ -79,8 +79,12 @@ def test_krylov_samg_solver_elasticity():
         # Create solution function
         u = Function(V)
 
-        # Create near null space basis
+        # Create near null space basis and orthonormalize
         null_space = build_nullspace(V, u.vector())
+        null_space.orthonormalize()
+
+        # Test that basis is orthonormal
+        assert null_space.is_orthonormal()
 
         # Create PETSC smoothed aggregation AMG preconditioner,
         # attach near null space and create CG solver
@@ -187,3 +191,62 @@ def test_krylov_reuse_pc():
     x = PETScVector()
     num_iter = solver.solve(x, b)
     assert num_iter == num_iter_mod
+
+def test_krylov_tpetra():
+    if not has_linear_algebra_backend("Tpetra"):
+        return
+    mesh = UnitCubeMesh(10, 10, 10)
+    Q = FunctionSpace(mesh, "CG", 1)
+    v = TestFunction(Q)
+    u = TrialFunction(Q)
+    a = dot(grad(u), grad(v))*dx
+    L = v*dx
+
+    def bound(x):
+        return x[0] == 0
+    bc = DirichletBC(Q, Constant(0.0), bound)
+
+    A = TpetraMatrix()
+    b = TpetraVector()
+    assemble(a, A)
+    assemble(L, b)
+    bc.apply(A)
+    bc.apply(b)
+
+    mp = MueluPreconditioner()
+    mlp = mp.parameters['muelu']
+    mlp['verbosity'] = 'none'
+    mlp.add("max_levels", 10)
+    mlp.add("coarse:_max_size", 10)
+    mlp.add("coarse:_type", "KLU2")
+    mlp.add("multigrid_algorithm", "sa")
+    mlp.add("aggregation:_type", "uncoupled");
+    mlp.add("aggregation:_min_agg_size", 3);
+    mlp.add("aggregation:_max_agg_size", 7);
+
+    pre_paramList = Parameters("smoother:_pre_params")
+    pre_paramList.add("relaxation:_type", "Symmetric Gauss-Seidel")
+    pre_paramList.add("relaxation:_sweeps", 1)
+    pre_paramList.add("relaxation:_damping_factor", 0.6)
+    mlp.add("smoother:_pre_type", "RELAXATION")
+    mlp.add(pre_paramList)
+
+    post_paramList = Parameters("smoother:_post_params")
+    post_paramList.add("relaxation:_type", "Symmetric Gauss-Seidel");
+    post_paramList.add("relaxation:_sweeps", 1);
+    post_paramList.add("relaxation:_damping_factor", 0.9);
+    mlp.add("smoother:_post_type", "RELAXATION");
+    mlp.add(post_paramList);
+
+    solver = BelosKrylovSolver("cg", mp)
+    solver.parameters['relative_tolerance'] = 1e-8
+    solver.parameters['monitor_convergence'] = False
+    solver.parameters['belos'].add("Maximum_Iterations", 150)
+
+    solver.set_operator(A)
+
+    u = TpetraVector()
+    n_iter = solver.solve(u, b)
+
+    # Number of iterations should be around 15
+    assert n_iter < 50

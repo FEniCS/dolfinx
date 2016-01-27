@@ -66,7 +66,8 @@ void STLMatrix::init(const TensorLayout& tensor_layout)
     primary_codim = 0;
 
   // Set block size
-  _block_size = tensor_layout.block_size;
+  _block_size = tensor_layout.index_map(0)->block_size();
+  dolfin_assert(_block_size == tensor_layout.index_map(1)->block_size());
 
   _local_range = tensor_layout.local_range(_primary_dim);
   num_codim_entities = tensor_layout.size(primary_codim);

@@ -73,10 +73,11 @@ for line in lines:
         description = match.group(4)
 
         if not name in benchmarks:
-            benchmarks[name] = [[date], [elapsed_time], description]
+            benchmarks[name] = [[[date], [elapsed_time], description]]
         else:
-            benchmarks[name][0].append(date)
-            benchmarks[name][1].append(elapsed_time)
+            benchmarks[name][0][0].append(date)
+            benchmarks[name][0][1].append(elapsed_time)
+            benchmarks[name][0][2] = description # take later description
 
 # Open and read in logs/milestones.log
 milestones = []
@@ -126,6 +127,7 @@ def get_maxtime(dates, min_date, max_date, run_timings):
 
 # Create normalized plots with all benchmarks in same plot for
 # last week, last month, last year, and last five years
+linetypes = {}
 print("Generating plots for all benchmarks...")
 for last, locator, date_fmt, xmin in zip(lasts, locators, date_fmts, xmins):
     fig = plt.figure()
@@ -134,12 +136,13 @@ for last, locator, date_fmt, xmin in zip(lasts, locators, date_fmts, xmins):
     ymax = 0
     for benchmark, values in benchmarks.items():
         num += 1
-        dates = values[0]
-        run_timings = values[1]/numpy.linalg.norm(values[1])
-        ax.plot(dates, run_timings,
-                marker=markers[num % len(markers)], markersize=3,
-                label=benchmark)
+        dates = values[0][0]
+        run_timings = values[0][1]/numpy.linalg.norm(values[0][1])
+        p = ax.plot(dates, run_timings,
+                    marker=markers[num % len(markers)], markersize=3,
+                    label=benchmark)
         ax.hold(True)
+        linetypes[benchmark] = p[0]
         maxtime = get_maxtime(dates, xmin, today, run_timings)
         if maxtime > ymax:
             ymax = maxtime
@@ -161,7 +164,7 @@ for last, locator, date_fmt, xmin in zip(lasts, locators, date_fmts, xmins):
                     arrowprops=dict(arrowstyle="->", alpha=0.3)
                     )
 
-    lgd = plt.legend(loc='best')
+    #lgd = plt.legend(loc='best')
     fig.autofmt_xdate()
     plt.title("All benchmarks (last %s)" % last)
     filename = "all_last_%s.png" % last.replace(' ', '_')
@@ -173,32 +176,57 @@ for last, locator, date_fmt, xmin in zip(lasts, locators, date_fmts, xmins):
     else:
         outfile.write("  <td><img src=\"%s\" /></td></tr>\n" % filename)
 
+# Separate legend
+linetypes = sorted(linetypes.items())
+handles = [p for (t, p) in linetypes]
+labels = [t for (t, p) in linetypes]
+plt.figure(figsize=(12, 4)) # twice wide the default
+plt.figlegend(handles, labels, 'center', ncol=3)
+plt.savefig('all_legend.png')
+outfile.write("  <tr><td colspan=\"2\"><img src=\"%s\" /></td></tr>\n" % 'all_legend.png')
+
 outfile.write("</table>\n")
 outfile.write("</center>\n")
 
-# Now create separate plots for every benchmark
+# Put together subtasks benchmarks which should be plotted together
+# (annotated by ((...)) in description)
 for benchmark, values in benchmarks.items():
+    postfix = values[0][2].split("((")
+    if len(postfix) == 1:
+        continue
+    assert len(postfix) == 2
+    postfix = postfix[1].strip().replace("))", "")
+    benchmarks.pop(benchmark)
+    name = "-".join(benchmark.split("-")[:3]) + "-subtasks"
+    if not name in benchmarks:
+        benchmarks[name] = []
+    benchmarks[name].append((values[0][0], values[0][1], postfix))
+
+# Now create separate plots for every benchmark
+for benchmark, values in sorted(benchmarks.items()):
     print("Generating plots for %s..." % benchmark)
 
     outfile.write("<h2>%s</h2><p>\n" % benchmark)
     outfile.write("<center>\n")
     outfile.write("<table border=\"0\">\n")
 
-    dates = values[0]
-    run_timings = values[1]
-    description = values[2]
-    # Wrap the lines in the description
-    description = textwrap.fill(description, width=30)
-
     # Create plots for last week, last month, last year, and last five years
     for last, locator, date_fmt, xmin in zip(lasts, locators, date_fmts, xmins):
         fig = plt.figure()
         ax = fig.gca()
-        ax.plot(dates, run_timings, marker='o', markersize=3)
-        ax.set_ylabel("time (seconds)")
-        maxtime = get_maxtime(dates, xmin, today, run_timings)
-        ax.set_ylim(0, maxtime + maxtime/2)
-        ax.legend((description,), loc='best')        
+        if any(s in benchmark for s in ["fem-speedup-cpp-"]):
+            ax.set_ylabel("speedup")
+        else:
+            ax.set_ylabel("time (seconds)")
+        maxtime = 0.0
+        for v in values:
+            dates = v[0]
+            run_timings = v[1]
+            description = textwrap.fill(v[2], width=30)
+            maxtime = max(maxtime, get_maxtime(dates, xmin, today, run_timings))
+            ax.set_ylim(0, maxtime + maxtime/2)
+            ax.plot(dates, run_timings, marker='o', markersize=3, label=description)
+        ax.legend(loc='best')
         ax.xaxis.set_major_locator(locator)
         ax.xaxis.set_major_formatter(mdates.DateFormatter(date_fmt))
         ax.set_xlim(xmin, today)

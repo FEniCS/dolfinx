@@ -28,10 +28,11 @@
 
 #include "dolfin/common/types.h"
 #include "dolfin/common/MPI.h"
-#include "GenericSparsityPattern.h"
 
 namespace dolfin
 {
+  class IndexMap;
+  class SparsityPattern;
 
   /// This class described the size and possibly the sparsity of a
   /// (sparse) tensor. It is used by the linear algebra backends to
@@ -42,22 +43,23 @@ namespace dolfin
 
   public:
 
+    enum class Sparsity : bool { SPARSE = true, DENSE = false };
+    enum class Ghosts : bool { GHOSTED = true, UNGHOSTED = false };
+
     /// Create empty tensor layout
-    TensorLayout(std::size_t primary_dim, bool sparsity_pattern);
+    TensorLayout(std::size_t primary_dim, Sparsity sparsity_pattern);
 
     /// Create a tensor layout
-    TensorLayout(const MPI_Comm mpi_comm,
-                 const std::vector<std::size_t>& dims,
+    TensorLayout(MPI_Comm mpi_comm,
+                 std::vector<std::shared_ptr<const IndexMap>> index_maps,
                  std::size_t primary_dim,
-                 std::size_t block_size,
-                 const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
-                 bool sparsity_pattern);
+                 Sparsity sparsity_pattern,
+                 Ghosts ghosted);
 
     /// Initialize tensor layout
-    void init(const MPI_Comm mpi_comm,
-              const std::vector<std::size_t>& dims,
-              std::size_t block_size,
-              const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range);
+    void init(MPI_Comm mpi_comm,
+              std::vector<std::shared_ptr<const IndexMap>> index_maps,
+              Ghosts ghosted);
 
     /// Return rank
     std::size_t rank() const;
@@ -70,11 +72,11 @@ namespace dolfin
     std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const;
 
     /// Return sparsity pattern (possibly null)
-    std::shared_ptr<GenericSparsityPattern> sparsity_pattern()
+    std::shared_ptr<SparsityPattern> sparsity_pattern()
     { return _sparsity_pattern; }
 
     /// Return sparsity pattern (possibly null), const version
-    std::shared_ptr<const GenericSparsityPattern> sparsity_pattern() const
+    std::shared_ptr<const SparsityPattern> sparsity_pattern() const
     { return _sparsity_pattern; }
 
     /// Return informal string representation (pretty-print)
@@ -83,29 +85,36 @@ namespace dolfin
     /// Primary storage dim (e.g., 0=row major, 1=column major)
     const std::size_t primary_dim;
 
-    /// Dofmap block size, e.g. 3 for 3D elasticity with a suitable
-    /// ordered dofmap
-    std::size_t block_size;
-
     /// Return MPI communicator
     MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
-    std::vector<std::vector<std::size_t> > local_to_global_map;
+    /// Return IndexMap for dimension
+    std::shared_ptr<const IndexMap> index_map(std::size_t i) const
+    {
+      dolfin_assert(i < _index_maps.size());
+      return _index_maps[i];
+    }
+
+    /// Require ghosts
+    Ghosts is_ghosted() const
+    {
+      return _ghosted;
+    }
 
   private:
 
     // MPI communicator
     MPI_Comm _mpi_comm;
 
-    // Shape of tensor
-    std::vector<std::size_t> _shape;
-
-    // Ownership range for each dimension
-    std::vector<std::pair<std::size_t, std::size_t> > _ownership_range;
+    // Index maps
+    std::vector<std::shared_ptr<const IndexMap>> _index_maps;
 
     // Sparsity pattern
-    std::shared_ptr<GenericSparsityPattern> _sparsity_pattern;
+    std::shared_ptr<SparsityPattern> _sparsity_pattern;
+
+    // Ghosted tensor (typically vector) required
+    Ghosts _ghosted = Ghosts::UNGHOSTED;
 
   };
 

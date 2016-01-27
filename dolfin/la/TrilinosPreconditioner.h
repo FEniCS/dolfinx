@@ -21,8 +21,9 @@
 #ifndef __TRILINOS_PRECONDITIONER_H
 #define __TRILINOS_PRECONDITIONER_H
 
-#include "GenericPreconditioner.h"
+#ifdef HAS_TRILINOS
 
+#include "GenericPreconditioner.h"
 
 namespace dolfin
 {
@@ -35,6 +36,12 @@ namespace dolfin
   {
   public:
 
+    TrilinosPreconditioner()
+    {}
+
+    ~TrilinosPreconditioner()
+    {}
+
     // Set this preconditioner on a solver
     virtual void set(BelosKrylovSolver& solver) = 0;
 
@@ -43,5 +50,7 @@ namespace dolfin
 
   };
 }
+
+#endif
 
 #endif

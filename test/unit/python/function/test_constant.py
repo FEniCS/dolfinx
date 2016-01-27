@@ -83,3 +83,29 @@ def test_compute_vertex_values():
     assert all(e1_values[:mesh.num_vertices()]==1)
     assert all(e1_values[mesh.num_vertices():mesh.num_vertices()*2]==2)
     assert all(e1_values[mesh.num_vertices()*2:mesh.num_vertices()*3]==3)
+
+
+def test_values():
+    import numpy as np
+
+    c0 = Constant(1.)
+    c0_vals = c0.values()
+    assert np.all(c0_vals == np.array([1.], dtype=np.double))
+
+    c1 = Constant((1., 2.))
+    c1_vals = c1.values()
+    assert np.all(c1_vals == np.array([1., 2.], dtype=np.double))
+
+    c2 = Constant((1., 2., 3.))
+    c2_vals = c2.values()
+    assert np.all(c2_vals == np.array([1., 2., 3.], dtype=np.double))
+
+
+def test_str():
+    c0 = Constant(1.)
+    c0.str(False)
+    c0.str(True)
+
+    c1 = Constant((1., 2., 3.))
+    c1.str(False)
+    c1.str(True)

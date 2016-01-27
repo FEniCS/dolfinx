@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2014-08-11
+// Last changed: 2015-11-10
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -101,11 +101,16 @@ namespace dolfin
 
     if (dynamic_cast<const Expression*>(var.get()))
     {
-      dolfin_error("plot object", "dolfin::plot", "A mesh must be supplied when plotting an expression");
+      dolfin_error("VTKPlotter.cpp",
+                   "plot object",
+                   "A mesh must be supplied when plotting an expression");
     }
 
     // Any type not listed above
-    dolfin_error("plot object", "dolfin::plot", "Object type not supported for plotting");
+    dolfin_error("VTKPlotter.cpp",
+                 "plot object",
+                 "Object type not supported for plotting");
+
     return NULL; // not reached
   }
 }
@@ -682,7 +687,7 @@ void VTKPlotter::update_pipeline(std::shared_ptr<const Variable> variable)
   if (!is_compatible(variable))
   {
     dolfin_error("VTKPlotter.cpp",
-                 "plot()",
+                 "plot object",
                  "The plottable is not compatible with the data");
   }
 

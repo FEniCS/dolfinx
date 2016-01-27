@@ -18,9 +18,11 @@
 // Modified by Ola Skavhaug 2007
 // Modified by Anders Logg 2008-2014
 
+#include <algorithm>
+
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/la/GenericSparsityPattern.h>
+#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/Progress.h>
 #include <dolfin/mesh/Cell.h>
@@ -38,7 +40,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void
-SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
+SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
                               const Mesh& mesh,
                               const std::vector<const GenericDofMap*> dofmaps,
                               bool cells,
@@ -51,17 +53,16 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 {
   // Get global dimensions and local range
   const std::size_t rank = dofmaps.size();
-  std::vector<std::size_t> global_dimensions(rank);
   std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
+  {
+    dolfin_assert(dofmaps[i]);
     index_maps[i] = dofmaps[i]->index_map();
-
-  dolfin_assert(!dofmaps.empty());
-  dolfin_assert(dofmaps[0]);
+  }
 
   // Initialise sparsity pattern
   if (init)
-    sparsity_pattern.init(mesh.mpi_comm(), global_dimensions, index_maps);
+    sparsity_pattern.init(mesh.mpi_comm(), index_maps);
 
   // Only build for rank >= 2 (matrices and higher order tensors) that
   // require sparsity details
@@ -227,20 +228,21 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   if (diagonal)
   {
-    const std::size_t local_size0 = index_maps[0]->size();
-    const std::size_t local_size1 = index_maps[1]->size();
-    const std::size_t local_size = std::min(local_size0, local_size1);
+    dolfin_assert(rank == 2);
+    const std::size_t primary_dim = sparsity_pattern.primary_dim();
+    const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
+    const std::pair<std::size_t, std::size_t> primary_range
+      = index_maps[primary_dim]->local_range();
+    const std::size_t secondary_range
+      = index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
+    const std::size_t diagonal_range
+      = std::min(primary_range.second, secondary_range);
 
-    Progress p("Building sparsity pattern over diagonal", local_size);
-    std::vector<dolfin::la_index> diagonal_dof(1, 0);
-    for (std::size_t i = 0; i < rank; ++i)
-      dofs[i].set(diagonal_dof);
-
-    for (std::size_t j = 0; j < local_size; j++)
+    Progress p("Building sparsity pattern over diagonal",
+               diagonal_range - primary_range.first);
+    for (std::size_t j = primary_range.first; j < diagonal_range; j++)
     {
-      // Insert diagonal non-zeroes in sparsity pattern
-      diagonal_dof[0] = j;
-      sparsity_pattern.insert_local(dofs);
+      sparsity_pattern.insert_global(j, j);
       p++;
     }
   }
@@ -251,23 +253,19 @@ SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 }
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
-  GenericSparsityPattern& sparsity_pattern,
+  SparsityPattern& sparsity_pattern,
   const MultiMeshForm& form)
 {
   // Get global dimensions and local range
   const std::size_t rank = form.rank();
-  std::vector<std::size_t> global_dimensions(rank);
   std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
   {
     index_maps[i] = form.function_space(i)->dofmap()->index_map();
-    global_dimensions[i]
-      = form.function_space(i)->dofmap()->global_dimension();
   }
 
   // Initialize sparsity pattern
   sparsity_pattern.init(form.function_space(0)->part(0)->mesh()->mpi_comm(),
-                        global_dimensions,
                         index_maps);
 
   // Iterate over each part
@@ -304,7 +302,7 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
 }
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface(
-  GenericSparsityPattern& sparsity_pattern,
+  SparsityPattern& sparsity_pattern,
   const MultiMeshForm& form,
   std::size_t part)
 {
@@ -320,7 +318,7 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface(
 
   // FIXME: We need two different lists here because the interface
   // FIXME: of insert() requires a list of pointers to dofs. Consider
-  // FIXME: improving the interface of GenericSparsityPattern.
+  // FIXME: improving the interface of SparsityPattern.
 
   // Data structure for storing dofs on macro cell (0 + 1)
   std::vector<std::vector<dolfin::la_index>> dofs(form.rank());

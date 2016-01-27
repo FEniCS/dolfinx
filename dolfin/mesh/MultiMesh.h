@@ -1,4 +1,4 @@
-// Copyright (C) 2014 Anders Logg
+// Copyright (C) 2014-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2014-06-17
+// Last changed: 2015-11-26
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -53,6 +53,42 @@ namespace dolfin
 
     /// Create empty multimesh
     MultiMesh();
+
+    /// Create multimesh from given list of meshes
+    MultiMesh(std::vector<std::shared_ptr<const Mesh>> meshes,
+              std::size_t quadrature_order);
+
+    //--- Convenience constructors ---
+
+    /// Create multimesh from one mesh (shared_ptr version)
+    MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+              std::size_t quadrature_order);
+
+    /// Create multimesh from one mesh (reference version)
+    MultiMesh(const Mesh& mesh_0,
+              std::size_t quadrature_order);
+
+    /// Create multimesh from two meshes (shared_ptr version)
+    MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+              std::shared_ptr<const Mesh> mesh_1,
+              std::size_t quadrature_order);
+
+    /// Create multimesh from two meshes (reference version)
+    MultiMesh(const Mesh& mesh_0,
+              const Mesh& mesh_1,
+              std::size_t quadrature_order);
+
+    /// Create multimesh from three meshes (shared_ptr version)
+    MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+              std::shared_ptr<const Mesh> mesh_1,
+              std::shared_ptr<const Mesh> mesh_2,
+              std::size_t quadrature_order);
+
+    /// Create multimesh from three meshes (reference version)
+    MultiMesh(const Mesh& mesh_0,
+              const Mesh& mesh_1,
+              const Mesh& mesh_2,
+              std::size_t quadrature_order);
 
     /// Destructor
     ~MultiMesh();
@@ -268,24 +304,14 @@ namespace dolfin
     void add(const Mesh& mesh);
 
     /// Build multimesh
-    void build();
+    void build(std::size_t quadrature_order=2);
 
     /// Clear multimesh
     void clear();
 
-    /// Default parameter values
-    static Parameters default_parameters()
-    {
-      Parameters p("multimesh");
-
-      p.add("quadrature_order", 1);
-
-      return p;
-    }
-
   private:
 
-    // Friends
+    // Friend (in plot.h)
     friend void plot(std::shared_ptr<const MultiMesh>);
 
     // List of meshes
@@ -432,10 +458,10 @@ namespace dolfin
     //void _build_collision_maps_different_topology();
 
     // Build quadrature rules for the cut cells
-    void _build_quadrature_rules_cut_cells();
+    void _build_quadrature_rules_cut_cells(std::size_t quadrature_order);
 
     // Build quadrature rules for the overlap
-    void _build_quadrature_rules_overlap();
+    void _build_quadrature_rules_overlap(std::size_t quadrature_order);
 
     // Add quadrature rule for simplices in the triangulation
     // array. Returns the number of points generated for each simplex.

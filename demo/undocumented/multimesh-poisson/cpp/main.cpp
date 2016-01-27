@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2014 Anders Logg
+// Copyright (C) 2013-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-07-05
+// Last changed: 2015-11-16
 //
 // This demo program solves Poisson's equation on a domain defined by
-// three overlapping and non-matching meshes.
+// three overlapping and non-matching meshes. The solution is computed
+// on a sequence of rotating meshes to test the multimesh
+// functionality.
 
 #include <cmath>
-
 #include <dolfin.h>
 #include "MultiMeshPoisson.h"
 
@@ -47,11 +48,11 @@ class DirichletBoundary : public SubDomain
 };
 
 // Compute solution for given mesh configuration
-void solve(double t,
-           double x1, double y1,
-           double x2, double y2,
-           bool plot_solution,
-           File& u0_file, File& u1_file, File& u2_file)
+void solve_poisson(double t,
+                   double x1, double y1,
+                   double x2, double y2,
+                   bool plot_solution,
+                   File& u0_file, File& u1_file, File& u2_file)
 {
   // Create meshes
   double r = 0.5;
@@ -61,61 +62,34 @@ void solve(double t,
   mesh_1.rotate(70*t);
   mesh_2.rotate(-70*t);
 
-  // Create function spaces
-  MultiMeshPoisson::FunctionSpace V0(mesh_0);
-  MultiMeshPoisson::FunctionSpace V1(mesh_1);
-  MultiMeshPoisson::FunctionSpace V2(mesh_2);
+  // Build multimesh
+  MultiMesh multimesh;
+  multimesh.add(mesh_0);
+  multimesh.add(mesh_1);
+  multimesh.add(mesh_2);
+  multimesh.build();
 
-  // FIXME: Some of this stuff may be wrapped or automated later to
-  // avoid needing to explicitly call add() and build()
+  // Create function space
+  MultiMeshPoisson::MultiMeshFunctionSpace V(multimesh);
 
   // Create forms
-  MultiMeshPoisson::BilinearForm a0(V0, V0);
-  MultiMeshPoisson::BilinearForm a1(V1, V1);
-  MultiMeshPoisson::BilinearForm a2(V2, V2);
-  MultiMeshPoisson::LinearForm L0(V0);
-  MultiMeshPoisson::LinearForm L1(V1);
-  MultiMeshPoisson::LinearForm L2(V2);
+  MultiMeshPoisson::MultiMeshBilinearForm a(V, V);
+  MultiMeshPoisson::MultiMeshLinearForm L(V);
 
-  // Build multimesh function space
-  MultiMeshFunctionSpace V;
-  V.parameters("multimesh")["quadrature_order"] = 2;
-  V.add(V0);
-  V.add(V1);
-  V.add(V2);
-  V.build();
-
-  // Set coefficients
+  // Attach coefficients
   Source f;
-  L0.f = f;
-  L1.f = f;
-  L2.f = f;
-
-  // Build multimesh forms
-  MultiMeshForm a(V, V);
-  MultiMeshForm L(V);
-  a.add(a0);
-  a.add(a1);
-  a.add(a2);
-  L.add(L0);
-  L.add(L1);
-  L.add(L2);
-  a.build();
-  L.build();
-
-  // Create boundary condition
-  Constant zero(0);
-  DirichletBoundary boundary;
-  MultiMeshDirichletBC bc(V, zero, boundary);
+  L.f = f;
 
   // Assemble linear system
   Matrix A;
   Vector b;
-  MultiMeshAssembler assembler;
-  assembler.assemble(A, a);
-  assembler.assemble(b, L);
+  assemble_multimesh(A, a);
+  assemble_multimesh(b, L);
 
   // Apply boundary condition
+  Constant zero(0);
+  DirichletBoundary boundary;
+  MultiMeshDirichletBC bc(V, zero, boundary);
   bc.apply(A, b);
 
   // Compute solution
@@ -136,7 +110,7 @@ void solve(double t,
     plot(u.part(2), "u_2");
     interactive();
   }
-  }
+}
 
 int main(int argc, char* argv[])
 {
@@ -145,10 +119,6 @@ int main(int argc, char* argv[])
     info("Sorry, this demo does not (yet) run in parallel.");
     return 0;
   }
-
-  // FIXME: Testing
-  //set_log_level(DBG);
-  parameters["reorder_dofs_serial"] = false;
 
   // Parameters
   const double T = 40.0;
@@ -173,8 +143,8 @@ int main(int argc, char* argv[])
     const double y2 = sin(t)*cos(2*t);
 
     // Compute solution
-    solve(t, x1, y1, x2, y2, n == N - 1,
-          u0_file, u1_file, u2_file);
+    solve_poisson(t, x1, y1, x2, y2, n == N - 1,
+                  u0_file, u1_file, u2_file);
   }
 
   return 0;

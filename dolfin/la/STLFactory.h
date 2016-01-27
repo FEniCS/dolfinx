@@ -59,7 +59,8 @@ namespace dolfin
     /// Create empty tensor layout
     std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
     {
-      std::shared_ptr<TensorLayout> pattern(new TensorLayout(0, false));
+      std::shared_ptr<TensorLayout>
+        pattern(new TensorLayout(0, TensorLayout::Sparsity::DENSE));
       return pattern;
     }
 

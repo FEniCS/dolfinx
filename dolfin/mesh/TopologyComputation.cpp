@@ -308,7 +308,7 @@ void TopologyComputation::compute_from_map(Mesh& mesh,
   {
     std::partial_sort_copy(e->entities(0), e->entities(0) + num_verts_d1,
                            key.begin(), key.end());
-    entity_to_index.insert(std::make_pair(key, e->index()));
+    entity_to_index.insert({key, e->index()});
   }
 
   // Search for d1 entities of d0 in map, and recover index

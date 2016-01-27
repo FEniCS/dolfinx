@@ -37,7 +37,7 @@ def get_time(output):
     timing = []
     for line in lines:
         time = float(line.split(":")[-1])
-        name = line.split(":")[-2].strip("TIME").strip(None).replace("(", "").replace(")", "")
+        name = line.split(":")[-2].strip("Process 0: ").strip("TIME").strip(None).replace("(", "").replace(")", "")
         timing.append( (name, time) )
     return timing
 
@@ -69,5 +69,8 @@ print "solve"
 for test1, test2  in zip(solve_t1, solve_t2):
     print "  ", test1[0] + ":", test1[1]/test2[1]
 
-print "BENCH assembly", assembly_t1[0][1] / assembly_t2[0][1] + assembly_t1[1][1] / assembly_t2[1][1]
-print "BENCH solve", solve_t1[0][1] / solve_t2[0][1]
+print "BENCH assembly_1st", assembly_t1[0][1] / assembly_t2[0][1]
+print "BENCH assembly_2nd", assembly_t1[1][1] / assembly_t2[1][1]
+print "BENCH solve_1st", solve_t1[0][1] / solve_t2[0][1]
+print "BENCH solve_same_pc_pattern", solve_t1[1][1] / solve_t2[2][1]
+print "BENCH solve_same_pc", solve_t1[2][1] / solve_t2[2][1]

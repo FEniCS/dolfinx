@@ -1,3 +1,17 @@
+- Fix bug when reading domain data from mesh file for a ghosted mesh.
+- Remove reference versions of constructors for many classes that
+	store a pointer/reference to the object passed to the
+	constructor. This is an intrusive interface change for C++ users,
+	but necessary to improve code maintainabilty and to improve memory
+	safety. The Python interface is (virtually) unaffected.
+- Remove class SubSpace. Using FunctionSpace::sub(...) instead
+- Remove reference versions constructors of NonlinearVariationalSolver
+- Remove setting of bounds from NonlinearVariationalSolver (was
+	already available through NonlinearVariationalProblem)
+- Update Trilinos support to include Amesos2, and better support from Python
+- Rewrite interface of TensorLayout and SparsityPattern; local-to-global
+	maps now handled using new IndexMap class; GenericSparsityPattern
+	class removed
 - Remove QT (was an optional dependency)
 - PETScTAOSolver::solve() now returns a pair of number of
 	iterations (std::size_t) and whether iteration converged (bool)
@@ -11,6 +25,7 @@
 - Clean-up in PyDOLFIN function space design, issue #576
 - Deprecate MixedFunctionSpace and EnrichedFunctionSpace in favour of
 	initialization by suitable UFL element
+- Add experimental matplotlib-based plotting backend, see mplot demo
 1.6.0 [2015-07-28]
 - Remove redundant pressure boundary condition in Stokes demos
 - Require Point in RectangleMesh and BoxMesh constructors

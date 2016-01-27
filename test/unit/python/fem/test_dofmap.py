@@ -26,17 +26,21 @@ from dolfin import *
 
 from dolfin_utils.test import *
 
+
 @fixture
 def mesh():
     return UnitSquareMesh(4, 4)
+
 
 @fixture
 def V(mesh):
     return FunctionSpace(mesh, "Lagrange", 1)
 
+
 @fixture
 def Q(mesh):
     return VectorFunctionSpace(mesh, "Lagrange", 1)
+
 
 @fixture
 def W(mesh):
@@ -90,15 +94,13 @@ def test_tabulate_all_coordinates(mesh, V, W):
 
 def test_tabulate_dofs(mesh, W):
 
-    L0   = W.sub(0)
-    L1   = W.sub(1)
-    L01  = L1.sub(0)
-    L11  = L1.sub(1)
+    L0 = W.sub(0)
+    L1 = W.sub(1)
+    L01 = L1.sub(0)
+    L11 = L1.sub(1)
 
     for i, cell in enumerate(cells(mesh)):
-
         dofs0 = L0.dofmap().cell_dofs(cell.index())
-
         dofs1 = L01.dofmap().cell_dofs(cell.index())
         dofs2 = L11.dofmap().cell_dofs(cell.index())
         dofs3 = L1.dofmap().cell_dofs(cell.index())
@@ -119,6 +121,7 @@ def test_tabulate_coord_periodic():
     class PeriodicBoundary2(SubDomain):
         def inside(self, x, on_boundary):
             return x[0] < DOLFIN_EPS
+
         def map(self, x, y):
             y[0] = x[0] - 1.0
             y[1] = x[1]
@@ -135,15 +138,15 @@ def test_tabulate_coord_periodic():
     V = FunctionSpace(mesh, V, constrained_domain=periodic_boundary)
     W = FunctionSpace(mesh, W, constrained_domain=periodic_boundary)
 
-    L0  = W.sub(0)
-    L1  = W.sub(1)
+    L0 = W.sub(0)
+    L1 = W.sub(1)
     L01 = L1.sub(0)
     L11 = L1.sub(1)
 
-    coord0 = np.zeros((3,2), dtype="d")
-    coord1 = np.zeros((3,2), dtype="d")
-    coord2 = np.zeros((3,2), dtype="d")
-    coord3 = np.zeros((3,2), dtype="d")
+    coord0 = np.zeros((3, 2), dtype="d")
+    coord1 = np.zeros((3, 2), dtype="d")
+    coord2 = np.zeros((3, 2), dtype="d")
+    coord3 = np.zeros((3, 2), dtype="d")
 
     for cell in cells(mesh):
         V.element().tabulate_dof_coordinates(cell, coord0)
@@ -164,6 +167,7 @@ def test_tabulate_dofs_periodic():
     class PeriodicBoundary2(SubDomain):
         def inside(self, x, on_boundary):
             return x[0] < DOLFIN_EPS
+
         def map(self, x, y):
             y[0] = x[0] - 1.0
             y[1] = x[1]
@@ -181,10 +185,10 @@ def test_tabulate_dofs_periodic():
     Q = FunctionSpace(mesh, Q, constrained_domain=periodic_boundary)
     W = FunctionSpace(mesh, W, constrained_domain=periodic_boundary)
 
-    L0   = W.sub(0)
-    L1   = W.sub(1)
-    L01  = L1.sub(0)
-    L11  = L1.sub(1)
+    L0 = W.sub(0)
+    L1 = W.sub(1)
+    L01 = L1.sub(0)
+    L11 = L1.sub(1)
 
     # Check dimensions
     assert V.dim() == 110
@@ -195,9 +199,7 @@ def test_tabulate_dofs_periodic():
     assert L11.dim() == V.dim()
 
     for i, cell in enumerate(cells(mesh)):
-
         dofs0 = L0.dofmap().cell_dofs(cell.index())
-
         dofs1 = L01.dofmap().cell_dofs(cell.index())
         dofs2 = L11.dofmap().cell_dofs(cell.index())
         dofs3 = L1.dofmap().cell_dofs(cell.index())
@@ -214,7 +216,6 @@ def test_tabulate_dofs_periodic():
 
 
 def test_global_dof_builder():
-
     mesh = UnitSquareMesh(3, 3)
 
     V = VectorElement("CG", mesh.ufl_cell(), 1)
@@ -258,7 +259,7 @@ def test_dof_to_vertex_map(mesh, reorder_dofs):
     u.vector().get_local(func_values, vertex_to_dof_map(V))
     assert round(max(abs(func_values - vert_values)), 7) == 0
 
-    c0 = Constant((1,2))
+    c0 = Constant((1, 2))
     u0 = Function(Q)
     u0.interpolate(c0)
 
@@ -267,7 +268,7 @@ def test_dof_to_vertex_map(mesh, reorder_dofs):
     vert_values[::2] = 1
     vert_values[1::2] = 2
 
-    dim = Q.dofmap().local_dimension('owned')
+    dim = Q.dofmap().index_map().size(IndexMap.MapSize_OWNED)
     u1.vector().set_local(vert_values[dof_to_vertex_map(Q)[:dim]].copy())
     assert round((u0.vector()-u1.vector()).sum() - 0.0, 7) == 0
 
@@ -324,12 +325,12 @@ def test_entity_dofs(mesh):
 
     V = VectorFunctionSpace(mesh, "CG", 1)
 
-    # Note this numbering is dependent on FFC and can change This
-    # test is here just to check that we get correct numbers
-    # mapped from ufc generated code to dolfin
-    for i, cdofs in enumerate([[0,3], [1,4], [2,5]]):
+    # Note this numbering is dependent on FFC and can change This test
+    # is here just to check that we get correct numbers mapped from
+    # ufc generated code to dolfin
+    for i, cdofs in enumerate([[0, 3], [1, 4], [2, 5]]):
         dofs = V.dofmap().tabulate_entity_dofs(0, i)
-        assert all(d==cd for d, cd in zip(dofs, cdofs))
+        assert all(d == cd for d, cd in zip(dofs, cdofs))
 
 
 def test_clear_sub_map_data_scalar(mesh):
@@ -412,14 +413,14 @@ def test_local_dimension(V, Q, W):
         dofmap = space.dofmap()
         local_to_global_map = dofmap.tabulate_local_to_global_dofs()
         ownership_range = dofmap.ownership_range()
-        dim1 = dofmap.local_dimension('owned')
-        dim2 = dofmap.local_dimension('unowned')
-        dim3 = dofmap.local_dimension('all')
+        dim1 = dofmap.index_map().size(IndexMap.MapSize_OWNED)
+        dim2 = dofmap.index_map().size(IndexMap.MapSize_UNOWNED)
+        dim3 = dofmap.index_map().size(IndexMap.MapSize_ALL)
         assert dim1 == ownership_range[1] - ownership_range[0]
         assert dim3 == local_to_global_map.size
         assert dim1 + dim2 == dim3
-        with pytest.raises(RuntimeError):
-            dofmap.local_dimension('foo')
+        # with pytest.raises(RuntimeError):
+        #    dofmap.index_map().size('foo')
 
 
 @skip_in_parallel
@@ -438,8 +439,9 @@ def test_dofs_dim(mesh, V, Q, W):
                   FunctionSpace(mesh, "Lagrange", 3)]
 
         if tdim > 1:
-            vspaces = [VectorFunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1),
-                       VectorFunctionSpace(mesh, "Nedelec 1st kind H(curl)", 2),
+            N1 = "Nedelec 1st kind H(curl)"
+            vspaces = [VectorFunctionSpace(mesh, N1, 1),
+                       VectorFunctionSpace(mesh, N1, 2),
                        VectorFunctionSpace(mesh, "RT", 1)]
             spaces = spaces + vspaces
 

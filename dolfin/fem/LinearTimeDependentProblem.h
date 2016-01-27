@@ -49,29 +49,12 @@ namespace dolfin
   {
   public:
 
-    /// Create linear variational problem without boundary conditions
-    LinearTimeDependentProblem(const TensorProductForm& a,
-                               const TensorProductForm& L,
-                               Function& u);
-
-    /// Create linear variational problem with a single boundary condition
-    LinearTimeDependentProblem(const TensorProductForm& a,
-                             const TensorProductForm& L,
-                             Function& u,
-                             const BoundaryCondition& bc);
-
-    /// Create linear variational problem with a list of boundary conditions
-    LinearTimeDependentProblem(const TensorProductForm& a,
-                             const TensorProductForm& L,
-                             Function& u,
-                             std::vector<const BoundaryCondition*> bcs);
-
-    /// Create linear variational problem with a list of boundary conditions
-    /// (shared pointer version)
+    /// Create linear variational problem with a list of boundary
+    /// conditions (shared pointer version)
     LinearTimeDependentProblem(std::shared_ptr<const TensorProductForm> a,
                                std::shared_ptr<const TensorProductForm> L,
                                std::shared_ptr<Function> u,
-                               std::vector<std::shared_ptr<const BoundaryCondition> > bcs);
+                               std::vector<std::shared_ptr<const BoundaryCondition>> bcs);
 
     /// Return bilinear form
     std::shared_ptr<const TensorProductForm> bilinear_form() const;
@@ -86,7 +69,7 @@ namespace dolfin
     std::shared_ptr<const Function> solution() const;
 
     /// Return boundary conditions
-    std::vector<std::shared_ptr<const BoundaryCondition> > bcs() const;
+    std::vector<std::shared_ptr<const BoundaryCondition>> bcs() const;
 
     /// Return trial space
     std::shared_ptr<const FunctionSpace> trial_space() const;
@@ -109,7 +92,7 @@ namespace dolfin
     std::shared_ptr<Function> _u;
 
     // The boundary conditions
-    std::vector<std::shared_ptr<const BoundaryCondition> > _bcs;
+    std::vector<std::shared_ptr<const BoundaryCondition>> _bcs;
 
   };
 

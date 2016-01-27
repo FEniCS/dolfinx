@@ -21,6 +21,8 @@
 
 #include <cmath>
 #include <numeric>
+#include <unordered_set>
+
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
@@ -63,31 +65,46 @@ TpetraVector::~TpetraVector()
 //-----------------------------------------------------------------------------
 void TpetraVector::zero()
 {
-  dolfin_assert(!_x.is_null());
+  dolfin_assert(!_x_ghosted.is_null());
   _x_ghosted->putScalar(0.0);
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::apply(std::string mode)
 {
+  if (mode == "insert")
+  {
+    update_ghost_values();
+    return;
+  }
+  else if (mode != "add")
+  {
+    dolfin_error("TpetraVector.cpp",
+                 "finalise vector",
+                 "Unknown mode \"%s\"", mode.c_str());
+  }
+
   dolfin_assert(!_x.is_null());
-  std::cout << "Apply called with: " << mode << "\n";
 
   Teuchos::RCP<const map_type> xmap(_x->getMap());
   Teuchos::RCP<vector_type> y(new vector_type(xmap, 1));
   Teuchos::RCP<const map_type> ghostmap(_x_ghosted->getMap());
 
   // Export from overlapping map ghostmap, to non-overlapping xmap
-  Tpetra::Export<dolfin::la_index> exporter(ghostmap, xmap);
+  Tpetra::Export<vector_type::local_ordinal_type,
+                 vector_type::global_ordinal_type,
+                 vector_type::node_type> exporter(ghostmap, xmap);
 
   // Forward export to reduction vector
-  if (mode == "add")
-    y->doExport(*_x_ghosted, exporter, Tpetra::ADD);
-  else if (mode == "insert")
-    y->doExport(*_x_ghosted, exporter, Tpetra::INSERT);
+  y->doExport(*_x_ghosted, exporter, Tpetra::ADD);
 
-  // Copy back into _x
-  std::copy(y->getData(0).begin(), y->getData(0).end(),
-            _x->getDataNonConst(0).begin());
+  // Copy back into _x_ghosted
+  Tpetra::Import<vector_type::local_ordinal_type,
+                 vector_type::global_ordinal_type,
+                 vector_type::node_type> importer(xmap, ghostmap);
+  _x_ghosted->doImport(*y, importer, Tpetra::INSERT);
+
+  //  std::copy(y->getData(0).begin(), y->getData(0).end(),
+  //            _x->getDataNonConst(0).begin());
 }
 //-----------------------------------------------------------------------------
 MPI_Comm TpetraVector::mpi_comm() const
@@ -203,7 +220,9 @@ void TpetraVector::update_ghost_values()
   Teuchos::RCP<const map_type> ghostmap(_x_ghosted->getMap());
 
   // Export from non-overlapping map x, to overlapping ghostmap
-  Tpetra::Import<dolfin::la_index> importer(xmap, ghostmap);
+  Tpetra::Import<vector_type::local_ordinal_type,
+                 vector_type::global_ordinal_type,
+                 vector_type::node_type> importer(xmap, ghostmap);
 
   // FIXME: is this safe, since _x is a view into _x_ghosted?
   _x_ghosted->doImport(*_x, importer, Tpetra::INSERT);
@@ -249,17 +268,15 @@ void TpetraVector::set(const double* block, std::size_t m,
 void TpetraVector::set_local(const double* block, std::size_t m,
                              const dolfin::la_index* rows)
 {
-  dolfin_assert(!_x_ghosted.is_null());
+  dolfin_assert(!_x.is_null());
   for (std::size_t i = 0; i != m; ++i)
   {
-    if(_x_ghosted->getMap()->isNodeLocalElement(rows[i]))
-      _x_ghosted->replaceLocalValue(rows[i], 0, block[i]);
+    if(_x->getMap()->isNodeLocalElement(rows[i]))
+      _x->replaceLocalValue(rows[i], 0, block[i]);
     else
-    {
-      dolfin_error("TpetraVector.cpp", "set data",
-                   "Row %d not valid", rows[i]);
-    }
+      warning("Not setting on row %d", rows[i]);
   }
+
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::add(const double* block, std::size_t m,
@@ -354,8 +371,10 @@ void TpetraVector::gather(GenericVector& y,
                  "Cannot re-initialize gather vector. Must be empty, or have correct size and be a local vector");
   }
 
-  const Tpetra::Export<dolfin::la_index>
-    exporter(_x->getMap(), _y._x->getMap());
+
+  Tpetra::Export<vector_type::local_ordinal_type,
+              vector_type::global_ordinal_type,
+              vector_type::node_type> exporter(_x->getMap(), _y._x->getMap());
   _y._x->doExport(*_x, exporter, Tpetra::INSERT);
 }
 //-----------------------------------------------------------------------------
@@ -384,8 +403,10 @@ void TpetraVector::gather_on_zero(std::vector<double>& v) const
   Teuchos::RCP<vector_type> y(new vector_type(ymap, 1));
 
   // Export from vector x to vector y
-  const Tpetra::Export<dolfin::la_index>
-    exporter(_x->getMap(), y->getMap());
+  Tpetra::Export<vector_type::local_ordinal_type,
+              vector_type::global_ordinal_type,
+              vector_type::node_type> exporter(_x->getMap(), ymap);
+
   y->doExport(*_x, exporter, Tpetra::INSERT);
   Teuchos::ArrayRCP<const double> yarr(y->getData(0));
   std::copy(yarr.get(), yarr.get() + v.size(), v.begin());
@@ -396,7 +417,7 @@ void TpetraVector::axpy(double a, const GenericVector& y)
   dolfin_assert(!_x_ghosted.is_null());
   const TpetraVector& _y = as_type<const TpetraVector>(y);
   dolfin_assert(!_y._x_ghosted.is_null());
-  _x_ghosted->update(1.0, *_y._x_ghosted, a);
+  _x_ghosted->update(a, *_y._x_ghosted, 1.0);
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::abs()
@@ -423,7 +444,12 @@ double TpetraVector::norm(std::string norm_type) const
   typedef Tpetra::MultiVector<>::mag_type mag_type;
   std::vector<mag_type> norms(1);
   const Teuchos::ArrayView<mag_type> norm_view(norms);
-  _x->norm2(norm_view);
+  if (norm_type == "l2")
+    _x->norm2(norm_view);
+  else if (norm_type == "l1")
+    _x->norm1(norm_view);
+  else if (norm_type == "linf")
+    _x->normInf(norm_view);
   return norms[0];
 }
 //-----------------------------------------------------------------------------
@@ -465,17 +491,35 @@ double TpetraVector::sum(const Array<std::size_t>& rows) const
 {
   dolfin_assert(!_x.is_null());
 
-  // FIXME
+  // FIXME - not working in parallel
 
-  dolfin_not_implemented();
+  Teuchos::ArrayRCP<const double> arr(_x->getData(0));
 
-  return 0.0;
+  std::unordered_set<std::size_t> row_set;
+  double _sum = 0.0;
+  for (std::size_t i = 0; i < rows.size(); ++i)
+  {
+    const std::size_t index = rows[i];
+    dolfin_assert(index < size());
+    if(_x->getMap()->isNodeGlobalElement(index))
+    {
+      if (row_set.find(index) == row_set.end())
+      {
+        const dolfin::la_index lindex
+          = _x->getMap()->getLocalElement(index);
+        _sum += arr[lindex];
+        row_set.insert(index);
+      }
+    }
+  }
+
+  return MPI::sum(mpi_comm(), _sum);
 }
 //-----------------------------------------------------------------------------
 const TpetraVector& TpetraVector::operator*= (double a)
 {
-  dolfin_assert(!_x_ghosted.is_null());
-  _x_ghosted->scale(a);
+  dolfin_assert(!_x.is_null());
+  _x->scale(a);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -651,6 +695,11 @@ void TpetraVector::mapdump(Teuchos::RCP<const map_type> xmap,
       ss << " ";
   }
   ss << "\n";
+
+  for (std::size_t j = 0; j != xmap->getNodeNumElements(); ++j)
+    ss << j << " -> " << xmap->getGlobalElement(j) << "\n";
+  ss << "\n";
+
 
   const Teuchos::RCP<const Teuchos::MpiComm<int>> _mpi_comm
     = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(xmap()->getComm());

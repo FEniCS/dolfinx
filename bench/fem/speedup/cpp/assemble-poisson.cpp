@@ -37,10 +37,10 @@ int main(int argc, char* argv[])
   int n = atoi(argv[1]);
 
   // Create mesh and function space
-  UnitCubeMesh mesh(n, n, n);
-  Poisson::FunctionSpace V(mesh);
+  auto mesh = std::make_shared<UnitCubeMesh>(n, n, n);
+  auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
-  const MPI_Comm comm = mesh.mpi_comm();
+  const MPI_Comm comm = mesh->mpi_comm();
 
   // Assemble matrix
   Poisson::BilinearForm a(V, V);

@@ -59,40 +59,40 @@ int main()
   parameters["refinement_algorithm"] = "plaza_with_parent_facets";
 
   // Create mesh and function space
-  Mesh mesh("../channel_with_flap.xml.gz");
-  AdaptiveNavierStokes::BilinearForm::TrialSpace W(mesh);
+  auto mesh = std::make_shared<Mesh>("../channel_with_flap.xml.gz");
+  auto W = std::make_shared<AdaptiveNavierStokes::BilinearForm::TrialSpace>(mesh);
 
-  // Unknown
-  Function w(W);
+  // Unknown field
+  auto w = std::make_shared<Function>(W);
 
   // Define boundary condition
-  Constant u0(0.0, 0.0);
+  auto u0 = std::make_shared<Constant>(0.0, 0.0);
   Noslip noslip;
-  MeshFunction<std::size_t> noslip_markers(mesh, mesh.topology().dim() - 1, 1);
-  noslip.mark(noslip_markers, 0);
-  SubSpace W0(W, 0);
-  DirichletBC bc(W0, u0, noslip_markers, 0);
+  auto noslip_markers = std::make_shared<FacetFunction<std::size_t>>(mesh, 1);
+  noslip.mark(*noslip_markers, 0);
+  auto W0 = W->sub(0);
+  auto bc = std::make_shared<DirichletBC>(W0, u0, noslip_markers, 0);
 
   // Create variational formulation and assign coefficients
-  Constant nu(0.02);
-  AdaptiveNavierStokes::LinearForm F(W);
-  Pressure p0;
-  F.p0 = p0;
-  F.nu = nu;
-  F.w = w;
+  auto nu = std::make_shared<Constant>(0.02);
+  auto F = std::make_shared<AdaptiveNavierStokes::LinearForm>(W);
+  auto p0 = std::make_shared<Pressure>();
+  F->p0 = p0;
+  F->nu = nu;
+  F->w = w;
 
   // Initialize Jacobian dF
-  AdaptiveNavierStokes::BilinearForm dF(W, W);
-  dF.nu = nu;
-  dF.w = w;
+  auto dF = std::make_shared<AdaptiveNavierStokes::BilinearForm>(W, W);
+  dF->nu = nu;
+  dF->w = w;
 
   // Define goal functional
-  AdaptiveNavierStokes::GoalFunctional M(mesh);
-  M.w = w;
+  auto M = std::make_shared<AdaptiveNavierStokes::GoalFunctional>(mesh);
+  M->w = w;
   Outflow outflow;
-  MeshFunction<std::size_t> outflow_markers(mesh, mesh.topology().dim()-1, 1);
-  outflow.mark(outflow_markers, 0);
-  M.ds = outflow_markers;
+  auto outflow_markers = std::make_shared<FacetFunction<std::size_t>>(mesh, 1);
+  outflow.mark(*outflow_markers, 0);
+  M->ds = outflow_markers;
 
   // Define error tolerance
   double tol = 1.e-5;
@@ -103,7 +103,8 @@ int main()
 
   // Define variational problem from the variational form F, specify
   // the unknown Function w and the boundary condition bc
-  NonlinearVariationalProblem pde(F, w, bc, dF);
+  std::vector<std::shared_ptr<const DirichletBC>> bcs {bc};
+  auto pde = std::make_shared<NonlinearVariationalProblem>(F, w, bcs, dF);
 
   // Define solver
   AdaptiveNonlinearVariationalSolver solver(pde, M);
@@ -122,7 +123,7 @@ int main()
   list_timings(TimingClear::clear, { TimingType::wall });
 
   // Plot solutions
-  Function solution = w.leaf_node();
+  Function solution = w->leaf_node();
   plot(solution[0], "Velocity on finest mesh");
   plot(solution[1], "Pressure on finest mesh");
   interactive();

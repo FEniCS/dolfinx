@@ -20,8 +20,8 @@
 // Modified by Jan Blechta 2013
 // Modified by Martin Alnaes 2013-2015
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <Eigen/Dense>
 
 #include <dolfin/common/ArrayView.h>
@@ -49,58 +49,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(const Form& a, const Form& L)
-  : _a(reference_to_no_delete_pointer(a)),
-    _l(reference_to_no_delete_pointer(L))
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-}
-//-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(const Form& a, const Form& L,
-                                 const DirichletBC& bc)
-  : _a(reference_to_no_delete_pointer(a)),
-    _l(reference_to_no_delete_pointer(L))
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-
-  // Store Dirichlet boundary condition
-  _bcs.push_back(&bc);
-}
-//-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(const Form& a, const Form& L,
-                                 const std::vector<const DirichletBC*> bcs)
-  : _a(reference_to_no_delete_pointer(a)),
-    _l(reference_to_no_delete_pointer(L)), _bcs(bcs)
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-}
-//-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
-                                 std::shared_ptr<const Form> L)
-  : _a(a), _l(L)
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-}
-//-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
                                  std::shared_ptr<const Form> L,
-                                 const DirichletBC& bc)
-  : _a(a), _l(L)
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-
-  // Store Dirichlet boundary condition
-  _bcs.push_back(&bc);
-}
-//-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
-                                 std::shared_ptr<const Form> L,
-                                 const std::vector<const DirichletBC*> bcs)
+                                 std::vector<std::shared_ptr<const DirichletBC>> bcs)
   : _a(a), _l(L), _bcs(bcs)
 {
   // Check arity of forms
@@ -205,7 +156,8 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   Timer timer("Assemble system");
 
   // Get mesh
-  const Mesh& mesh = _a->mesh();
+  dolfin_assert(_a->mesh());
+  const Mesh& mesh = *(_a->mesh());
   dolfin_assert(mesh.ordered());
 
   // Get cell domains
@@ -358,7 +310,8 @@ void SystemAssembler::cell_wise_assembly(
   std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains)
 {
   // Extract mesh
-  const Mesh& mesh = ufc[0]->dolfin_form.mesh();
+  dolfin_assert(ufc[0]->dolfin_form.mesh());
+  const Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
   // Initialize entities if using external facet integrals
   dolfin_assert(mesh.ordered());
@@ -542,7 +495,8 @@ void SystemAssembler::facet_wise_assembly(
   std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains)
 {
   // Extract mesh
-  const Mesh& mesh = ufc[0]->dolfin_form.mesh();
+  dolfin_assert(ufc[0]->dolfin_form.mesh());
+  const Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
   // Compute facets and facet - cell connectivity if not already
   // computed

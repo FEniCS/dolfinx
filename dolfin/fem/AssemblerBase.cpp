@@ -63,57 +63,34 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     tensor_layout = A.factory().create_layout(a.rank());
     dolfin_assert(tensor_layout);
 
-    // Get dimensions
-    std::vector<std::size_t> global_dimensions;
-    std::vector<std::pair<std::size_t, std::size_t>> local_range;
-    std::vector<std::size_t> block_sizes;
+    // Get dimensions and mapping across processes for each dimension
+    std::vector<std::shared_ptr<const IndexMap>> index_maps;
     for (std::size_t i = 0; i < a.rank(); i++)
     {
       dolfin_assert(dofmaps[i]);
-      global_dimensions.push_back(dofmaps[i]->global_dimension());
-      local_range.push_back(dofmaps[i]->ownership_range());
-      block_sizes.push_back(dofmaps[i]->block_size());
+      index_maps.push_back(dofmaps[i]->index_map());
     }
 
-    // Set block size for sparsity graphs
-    std::size_t block_size = 1;
-    if (a.rank() == 2)
-    {
-      const std::vector<std::size_t> _bs(a.rank(), dofmaps[0]->block_size());
-      block_size = (block_sizes == _bs) ? dofmaps[0]->block_size() : 1;
-    }
+    // Get mesh
+    dolfin_assert(a.mesh());
+    const Mesh& mesh = *(a.mesh());
 
     // Initialise tensor layout
-    tensor_layout->init(a.mesh().mpi_comm(), global_dimensions, block_size,
-                        local_range);
+    // FIXME: somewhere need to check block sizes are same on both axes
+    // NOTE: Jan: that will be done on the backend side; IndexMap will
+    //            provide tabulate functions with arbitrary block size;
+    //            moreover the functions will tabulate directly using a
+    //            correct int type
 
-    if (a.rank() > 0)
-    {
-      tensor_layout->local_to_global_map.resize(a.rank());
-      for (std::size_t i = 0; i < a.rank(); ++i)
-      {
-        const std::size_t bs = dofmaps[i]->block_size();
-        const std::size_t local_size
-          = local_range[i].second - local_range[i].first;
-        const std::vector<std::size_t>& local_to_global_unowned
-          = dofmaps[i]->index_map()->local_to_global_unowned();
-        tensor_layout->local_to_global_map[i].resize(local_size
-                                                  + bs*local_to_global_unowned.size());
-        for (std::size_t j = 0;
-             j < tensor_layout->local_to_global_map[i].size(); ++j)
-        {
-          tensor_layout->local_to_global_map[i][j]
-            = dofmaps[i]->index_map()->local_to_global(j);
-        }
-      }
-    }
+    tensor_layout->init(mesh.mpi_comm(), index_maps,
+                        TensorLayout::Ghosts::UNGHOSTED);
 
     // Build sparsity pattern if required
     if (tensor_layout->sparsity_pattern())
     {
-      GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+      SparsityPattern& pattern = *tensor_layout->sparsity_pattern();
       SparsityPatternBuilder::build(pattern,
-                                a.mesh(), dofmaps,
+                                mesh, dofmaps,
                                 a.ufc_form()->has_cell_integrals(),
                                 a.ufc_form()->has_interior_facet_integrals(),
                                 a.ufc_form()->has_exterior_facet_integrals(),
@@ -178,7 +155,8 @@ void AssemblerBase::check(const Form& a)
   a.check();
 
   // Extract mesh and coefficients
-  const Mesh& mesh = a.mesh();
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
   const std::vector<std::shared_ptr<const GenericFunction>>
     coefficients = a.coefficients();
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2013-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-10-16
+// Last changed: 2015-11-05
 
 #ifndef __MULTI_MESH_FORM_H
 #define __MULTI_MESH_FORM_H
@@ -39,6 +39,10 @@ namespace dolfin
   class MultiMeshForm
   {
   public:
+
+    // FIXME: Test multimesh functionals. Should likely require a multimesh
+    // when instaniated and this constructor should then be removed.
+    MultiMeshForm() {}
 
     /// Create empty multimesh functional (shared pointer version)
     MultiMeshForm(std::shared_ptr<const MultiMesh> multimesh);
@@ -132,10 +136,10 @@ namespace dolfin
     std::shared_ptr<const MultiMesh> _multimesh;
 
     // Function spaces (one for each argument)
-    std::vector<std::shared_ptr<const MultiMeshFunctionSpace> > _function_spaces;
+    std::vector<std::shared_ptr<const MultiMeshFunctionSpace>> _function_spaces;
 
     // List of forms (one for each part)
-    std::vector<std::shared_ptr<const Form> > _forms;
+    std::vector<std::shared_ptr<const Form>> _forms;
 
   };
 

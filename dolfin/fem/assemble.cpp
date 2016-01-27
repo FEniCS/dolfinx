@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2013 Anders Logg
+// Copyright (C) 2007-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -21,12 +21,13 @@
 // Modified by Martin S. Alnaes, 2013.
 //
 // First added:  2007-01-17
-// Last changed: 2013-02-13
+// Last changed: 2015-11-11
 
 #include <dolfin/la/Scalar.h>
 #include "Form.h"
 #include "Assembler.h"
 #include "SystemAssembler.h"
+#include "MultiMeshAssembler.h"
 #include "assemble.h"
 
 using namespace dolfin;
@@ -38,44 +39,29 @@ void dolfin::assemble(GenericTensor& A, const Form& a)
   assembler.assemble(A, a);
 }
 //-----------------------------------------------------------------------------
-void dolfin::assemble_system(GenericMatrix& A,
-                             GenericVector& b,
-                             const Form& a,
-                             const Form& L)
+void dolfin::assemble_system(GenericMatrix& A, GenericVector& b,
+                             const Form& a, const Form& L,
+                             std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
-  SystemAssembler assembler(a, L);
+  SystemAssembler assembler(reference_to_no_delete_pointer(a),
+                            reference_to_no_delete_pointer(L), bcs);
   assembler.assemble(A, b);
 }
 //-----------------------------------------------------------------------------
-void dolfin::assemble_system(GenericMatrix& A,
-                             GenericVector& b,
-                             const Form& a,
-                             const Form& L,
-                             const DirichletBC& bc)
-{
-  SystemAssembler assembler(a, L, bc);
-  assembler.assemble(A, b);
-}
-//-----------------------------------------------------------------------------
-void dolfin::assemble_system(GenericMatrix& A,
-                             GenericVector& b,
-                             const Form& a,
-                             const Form& L,
-                             const std::vector<const DirichletBC*> bcs)
-{
-  SystemAssembler assembler(a, L, bcs);
-  assembler.assemble(A, b);
-}
-//-----------------------------------------------------------------------------
-void dolfin::assemble_system(GenericMatrix& A,
-                             GenericVector& b,
-                             const Form& a,
-                             const Form& L,
-                             const std::vector<const DirichletBC*> bcs,
+void dolfin::assemble_system(GenericMatrix& A, GenericVector& b,
+                             const Form& a, const Form& L,
+                             std::vector<std::shared_ptr<const DirichletBC>> bcs,
                              const GenericVector& x0)
 {
-  SystemAssembler assembler(a, L, bcs);
+  SystemAssembler assembler(reference_to_no_delete_pointer(a),
+                            reference_to_no_delete_pointer(L), bcs);
   assembler.assemble(A, b, x0);
+}
+//-----------------------------------------------------------------------------
+void dolfin::assemble_multimesh(GenericTensor& A, const MultiMeshForm& a)
+{
+  MultiMeshAssembler assembler;
+  assembler.assemble(A, a);
 }
 //-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a)

@@ -55,7 +55,8 @@ using namespace dolfin;
 void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
 {
   // Get mesh
-  const Mesh& mesh = a.mesh();
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
 
   if (MPI::size(mesh.mpi_comm()) > 1)
   {
@@ -127,7 +128,8 @@ void OpenMpAssembler::assemble_cells(
   omp_set_num_threads(num_threads);
 
   // Extract mesh
-  const Mesh& mesh = a.mesh();
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
 
   // FIXME: Check that UFC copy constructor is dealing with copying
   // pointers correctly
@@ -258,7 +260,8 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(
   omp_set_num_threads(num_threads);
 
   // Extract mesh
-  const Mesh& mesh = a.mesh();
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
 
   // Compute facets and facet - cell connectivity if not already computed
   const std::size_t D = mesh.topology().dim();
@@ -450,7 +453,8 @@ void OpenMpAssembler::assemble_interior_facets(
   warning("OpenMpAssembler::assemble_interior_facets is untested.");
 
   // Extract mesh
-  const Mesh& mesh = a.mesh();
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
 
   // Topological dimension
   const std::size_t D = mesh.topology().dim();

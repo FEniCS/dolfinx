@@ -30,7 +30,6 @@
 
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/types.h>
-#include "DomainAssigner.h"
 #include "Equation.h"
 
 // Forward declaration
@@ -104,8 +103,8 @@ namespace dolfin
     ///     coefficients (std::vector<_GenericFunction_>)
     ///         Vector of coefficients.
     Form(std::shared_ptr<const ufc::form> ufc_form,
-         std::vector<std::shared_ptr<const FunctionSpace> > function_spaces,
-         std::vector<std::shared_ptr<const GenericFunction> > coefficients);
+         std::vector<std::shared_ptr<const FunctionSpace>> function_spaces,
+         std::vector<std::shared_ptr<const GenericFunction>> coefficients);
 
     /// Destructor
     virtual ~Form();
@@ -148,15 +147,8 @@ namespace dolfin
     ///
     /// *Returns*
     ///     _Mesh_
-    ///         The mesh.
-    const Mesh& mesh() const;
-
-    /// Return mesh shared pointer (if any)
-    ///
-    /// *Returns*
-    ///     _Mesh_
-    ///         The mesh shared pointer.
-    std::shared_ptr<const Mesh> mesh_shared_ptr() const;
+    ///         Shared pointer to the mesh.
+    std::shared_ptr<const Mesh> mesh() const;
 
     /// Return function space for given argument
     ///
@@ -174,7 +166,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<_FunctionSpace_>
     ///         Vector of function space shared pointers.
-    std::vector<std::shared_ptr<const FunctionSpace> > function_spaces() const;
+    std::vector<std::shared_ptr<const FunctionSpace>> function_spaces() const;
 
     /// Set coefficient with given number (shared pointer version)
     ///
@@ -204,7 +196,7 @@ namespace dolfin
     ///     coefficients (std::map<std::string, _GenericFunction_>)
     ///         The map of coefficients.
     void set_coefficients(std::map<std::string,
-                          std::shared_ptr<const GenericFunction> > coefficients);
+                          std::shared_ptr<const GenericFunction>> coefficients);
 
     /// Set some coefficients in given map. Each coefficient in the
     /// given map will be set, if the name of the coefficient matches
@@ -221,7 +213,7 @@ namespace dolfin
     ///     coefficients (std::map<std::string, _GenericFunction_>)
     ///         The map of coefficients.
     void set_some_coefficients(std::map<std::string,
-                               std::shared_ptr<const GenericFunction> > coefficients);
+                               std::shared_ptr<const GenericFunction>> coefficients);
 
     /// Return coefficient with given number
     ///
@@ -250,7 +242,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<_GenericFunction_>
     ///         All coefficients.
-    std::vector<std::shared_ptr<const GenericFunction> > coefficients() const;
+    std::vector<std::shared_ptr<const GenericFunction>> coefficients() const;
 
     /// Return the number of the coefficient with this name
     ///
@@ -280,15 +272,15 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <std::size_t>
     ///         The cell domains.
-    std::shared_ptr<const MeshFunction<std::size_t> > cell_domains() const;
+    std::shared_ptr<const MeshFunction<std::size_t>> cell_domains() const;
 
     /// Return exterior facet domains (zero pointer if no domains have
     /// been specified)
     ///
     /// *Returns*
-    ///     std::shared_ptr<_MeshFunction_ <std::size_t> >
+    ///     std::shared_ptr<_MeshFunction_ <std::size_t>>
     ///         The exterior facet domains.
-    std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains() const;
+    std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains() const;
 
     /// Return interior facet domains (zero pointer if no domains have
     /// been specified)
@@ -296,7 +288,7 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <std::size_t>
     ///         The interior facet domains.
-    std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains() const;
+    std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains() const;
 
     /// Return vertex domains (zero pointer if no domains have been
     /// specified)
@@ -304,35 +296,36 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <std::size_t>
     ///         The vertex domains.
-    std::shared_ptr<const MeshFunction<std::size_t> > vertex_domains() const;
+    std::shared_ptr<const MeshFunction<std::size_t>> vertex_domains() const;
 
     /// Set cell domains
     ///
     /// *Arguments*
     ///     cell_domains (_MeshFunction_ <std::size_t>)
     ///         The cell domains.
-    void set_cell_domains(std::shared_ptr<const MeshFunction<std::size_t> > cell_domains);
+    void set_cell_domains(std::shared_ptr<const MeshFunction<std::size_t>>
+                          cell_domains);
 
     /// Set exterior facet domains
     ///
     /// *Arguments*
     ///     exterior_facet_domains (_MeshFunction_ <std::size_t>)
     ///         The exterior facet domains.
-    void set_exterior_facet_domains(std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains);
+    void set_exterior_facet_domains(std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains);
 
     /// Set interior facet domains
     ///
     /// *Arguments*
     ///     interior_facet_domains (_MeshFunction_ <std::size_t>)
     ///         The interior facet domains.
-    void set_interior_facet_domains(std::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains);
+    void set_interior_facet_domains(std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains);
 
     /// Set vertex domains
     ///
     /// *Arguments*
     ///     vertex_domains (_MeshFunction_ <std::size_t>)
     ///         The vertex domains.
-    void set_vertex_domains(std::shared_ptr<const MeshFunction<std::size_t> > vertex_domains);
+    void set_vertex_domains(std::shared_ptr<const MeshFunction<std::size_t>> vertex_domains);
 
     /// Return UFC form shared pointer
     ///
@@ -350,11 +343,12 @@ namespace dolfin
     /// Comparison operator, returning equation lhs == 0
     Equation operator==(int rhs) const;
 
-    // Assignment of domains
-    CellDomainAssigner dx;
-    ExteriorFacetDomainAssigner ds;
-    InteriorFacetDomainAssigner dS;
-    VertexDomainAssigner dP;
+    // Domain markers (cells, exterior facets, interior facets,
+    // vertices)
+    std::shared_ptr<const MeshFunction<std::size_t>> dx;
+    std::shared_ptr<const MeshFunction<std::size_t>> ds;
+    std::shared_ptr<const MeshFunction<std::size_t>> dS;
+    std::shared_ptr<const MeshFunction<std::size_t>> dP;
 
   protected:
 
@@ -362,25 +356,13 @@ namespace dolfin
     std::shared_ptr<const ufc::form> _ufc_form;
 
     // Function spaces (one for each argument)
-    std::vector<std::shared_ptr<const FunctionSpace> > _function_spaces;
+    std::vector<std::shared_ptr<const FunctionSpace>> _function_spaces;
 
     // Coefficients
-    std::vector<std::shared_ptr<const GenericFunction> > _coefficients;
+    std::vector<std::shared_ptr<const GenericFunction>> _coefficients;
 
     // The mesh (needed for functionals when we don't have any spaces)
     std::shared_ptr<const Mesh> _mesh;
-
-    // Markers for cell domains
-    std::shared_ptr<const MeshFunction<std::size_t> > _cell_domains;
-
-    // Markers for exterior facet domains
-    std::shared_ptr<const MeshFunction<std::size_t> > _exterior_facet_domains;
-
-    // Markers for interior facet domains
-    std::shared_ptr<const MeshFunction<std::size_t> > _interior_facet_domains;
-
-    // Markers for vertex domains
-    std::shared_ptr<const MeshFunction<std::size_t> > _vertex_domains;
 
   private:
 

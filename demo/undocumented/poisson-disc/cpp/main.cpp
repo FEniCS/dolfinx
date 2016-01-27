@@ -55,26 +55,25 @@ int main()
   // Create mesh and function space
   int degree = 2;
   int gdim = 2;
-  UnitDiscMesh mesh(MPI_COMM_WORLD, 32, degree, gdim);
-  //UnitSquareMesh mesh(32, 32);
+  auto mesh = std::make_shared<UnitDiscMesh>(MPI_COMM_WORLD, 32, degree, gdim);
 
-  PoissonDisc::FunctionSpace V(mesh);
+  auto V = std::make_shared<PoissonDisc::FunctionSpace>(mesh);
 
   // Define boundary condition
-  Constant u0(0.0);
-  DirichletBoundary boundary;
+  auto u0 = std::make_shared<Constant>(0.0);
+  auto boundary = std::make_shared<DirichletBoundary>();
   DirichletBC bc(V, u0, boundary);
 
   // Define variational forms
   PoissonDisc::BilinearForm a(V, V);
   PoissonDisc::LinearForm L(V);
 
-  Source f;
+  auto f = std::make_shared<Source>();
   L.f = f;
 
   // Compute solution
-  Function u(V);
-  solve(a == L, u, bc);
+  auto u = std::make_shared<Function>(V);
+  solve(a == L, *u, bc);
 
   // Error norm functional
   PoissonDisc::Functional M(mesh);

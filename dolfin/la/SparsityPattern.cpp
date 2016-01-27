@@ -34,28 +34,25 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(std::size_t primary_dim)
-  : GenericSparsityPattern(primary_dim), _mpi_comm(MPI_COMM_NULL)
+  : _primary_dim(primary_dim), _mpi_comm(MPI_COMM_NULL)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
   const MPI_Comm mpi_comm,
-  const std::vector<std::size_t>& dims,
   const std::vector<std::shared_ptr<const IndexMap>> index_maps,
   std::size_t primary_dim)
-  : GenericSparsityPattern(primary_dim), _mpi_comm(MPI_COMM_NULL)
+  : _primary_dim(primary_dim), _mpi_comm(MPI_COMM_NULL)
 {
-  init(mpi_comm, dims, index_maps);
+  init(mpi_comm, index_maps);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::init(
   const MPI_Comm mpi_comm,
-  const std::vector<std::size_t>& dims,
   const std::vector<std::shared_ptr<const IndexMap>> index_maps)
 {
   // Only rank 2 sparsity patterns are supported
-  dolfin_assert(dims.size() == 2);
   dolfin_assert(index_maps.size() == 2);
 
   _mpi_comm = mpi_comm;
@@ -76,14 +73,30 @@ void SparsityPattern::init(
                  "Primary dimension must be less than 2 (0=row major, 1=column major");
   }
 
-  const std::size_t local_size = index_maps[_primary_dim]->size();
+  const std::size_t local_size0
+    = index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
+
+  const std::size_t primary_codim = _primary_dim == 0 ? 1 : 0;
+  const std::size_t local_size1
+    = index_maps[primary_codim]->size(IndexMap::MapSize::OWNED);
+  const std::size_t global_size1
+    = index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
 
   // Resize diagonal block
-  diagonal.resize(local_size);
+  diagonal.resize(local_size0);
 
   // Resize off-diagonal block (only needed when local range != global
   // range)
-  off_diagonal.resize(local_size);
+  if (global_size1 > local_size1)
+  {
+    dolfin_assert(MPI::size(_mpi_comm) > 1);
+    off_diagonal.resize(local_size0);
+  }
+  else
+  {
+    dolfin_assert(global_size1 == local_size1);
+    dolfin_assert(MPI::size(_mpi_comm) == 1);
+  }
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(dolfin::la_index i, dolfin::la_index j)
@@ -239,8 +252,8 @@ void SparsityPattern::insert_local(
 
   std::shared_ptr<const IndexMap> index_map0 = _index_maps[ _primary_dim];
   std::shared_ptr<const IndexMap> index_map1 = _index_maps[primary_codim];
-  const la_index local_size0 = index_map0->size();
-  const la_index local_size1 = index_map1->size();
+  const la_index local_size0 = index_map0->size(IndexMap::MapSize::OWNED);
+  const la_index local_size1 = index_map1->size(IndexMap::MapSize::OWNED);
 
   // Check local range
   if (MPI::size(_mpi_comm) == 1)
@@ -359,7 +372,8 @@ void SparsityPattern::apply()
     local_range0 = _index_maps[_primary_dim]->local_range();
   const std::pair<dolfin::la_index, dolfin::la_index>
     local_range1 = _index_maps[primary_codim]->local_range();
-  const std::size_t local_size0 = _index_maps[_primary_dim]->size();
+  const std::size_t local_size0
+    = _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
   const std::size_t offset0 = local_range0.first;
 
   const std::size_t num_processes = MPI::size(_mpi_comm);
@@ -539,8 +553,8 @@ void SparsityPattern::info_statistics() const
   const std::size_t num_nonzeros_total = num_nonzeros_diagonal
     + num_nonzeros_off_diagonal + num_nonzeros_non_local;
 
-  std::size_t size0 = _index_maps[0]->size_global();
-  std::size_t size1 = _index_maps[1]->size_global();
+  std::size_t size0 = _index_maps[0]->size(IndexMap::MapSize::GLOBAL);
+  std::size_t size1 = _index_maps[1]->size(IndexMap::MapSize::GLOBAL);
 
   // Return number of entries
   cout << "Matrix of size " << size0 << " x " << size1 << " has "

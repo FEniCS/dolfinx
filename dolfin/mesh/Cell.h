@@ -450,14 +450,8 @@ namespace dolfin
   {
   public:
 
-    CellFunction(const Mesh& mesh)
-      : MeshFunction<T>(mesh, mesh.topology().dim()) {}
-
     CellFunction(std::shared_ptr<const Mesh> mesh)
       : MeshFunction<T>(mesh, mesh->topology().dim()) {}
-
-    CellFunction(const Mesh& mesh, const T& value)
-      : MeshFunction<T>(mesh, mesh.topology().dim(), value) {}
 
     CellFunction(std::shared_ptr<const Mesh> mesh, const T& value)
       : MeshFunction<T>(mesh, mesh->topology().dim(), value) {}

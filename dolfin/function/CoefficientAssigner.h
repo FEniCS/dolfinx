@@ -14,14 +14,12 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2008-10-28
-// Last changed: 2009-10-04
 
 #ifndef __COEFFICIENT_ASSIGNER_H
 #define __COEFFICIENT_ASSIGNER_H
 
 #include <cstddef>
+#include <memory>
 
 namespace dolfin
 {
@@ -49,7 +47,7 @@ namespace dolfin
     ~CoefficientAssigner();
 
     /// Assign coefficient
-    void operator= (const GenericFunction& coefficient);
+    void operator= (std::shared_ptr<const GenericFunction> coefficient);
 
   private:
 

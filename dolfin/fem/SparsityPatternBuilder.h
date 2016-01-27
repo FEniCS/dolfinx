@@ -32,9 +32,9 @@ namespace dolfin
 {
 
   class GenericDofMap;
-  class GenericSparsityPattern;
   class Mesh;
   class MultiMeshForm;
+  class SparsityPattern;
 
   /// This class provides functions to compute the sparsity pattern
   /// based on DOF maps
@@ -44,7 +44,7 @@ namespace dolfin
   public:
 
     /// Build sparsity pattern for assembly of given form
-    static void build(GenericSparsityPattern& sparsity_pattern,
+    static void build(SparsityPattern& sparsity_pattern,
                       const Mesh& mesh,
                       const std::vector<const GenericDofMap*> dofmaps,
                       bool cells,
@@ -57,14 +57,14 @@ namespace dolfin
 
     /// Build sparsity pattern for assembly of given multimesh form
     static void
-      build_multimesh_sparsity_pattern(GenericSparsityPattern& sparsity_pattern,
+      build_multimesh_sparsity_pattern(SparsityPattern& sparsity_pattern,
                                        const MultiMeshForm& form);
 
   private:
 
     // Build sparsity pattern for interface part of multimesh form
     static void _build_multimesh_sparsity_pattern_interface
-      (GenericSparsityPattern& sparsity_pattern,
+      (SparsityPattern& sparsity_pattern,
        const MultiMeshForm& form,
        std::size_t part);
 

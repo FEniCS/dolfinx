@@ -35,15 +35,19 @@ def test_subdomain_marking():
     class F0(SubDomain):
         def inside(self, x, inside):
             return near(x[0], 0.0)
+
     class F1(SubDomain):
         def inside(self, x, inside):
             return near(x[0], 1.0)
+
     class F2(SubDomain):
         def inside(self, x, inside):
             return near(x[1], 0.0)
+
     class F3(SubDomain):
         def inside(self, x, inside):
             return near(x[1], 1.0)
+
     class F4(SubDomain):
         def inside(self, x, inside):
             return near(x[2], 0.0)

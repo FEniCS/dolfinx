@@ -22,6 +22,7 @@
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/TensorLayout.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
@@ -87,23 +88,25 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   tensor_layout = A->factory().create_layout(2);
   dolfin_assert(tensor_layout);
 
-  std::vector<std::size_t> global_dimensions
-    = {V0.dofmap()->global_dimension(), V1.dofmap()->global_dimension()};
+  // Copy index maps from dofmaps
+  std::vector<std::shared_ptr<const IndexMap> > index_maps
+    = {V0.dofmap()->index_map(), V1.dofmap()->index_map()};
   std::vector<std::pair<std::size_t, std::size_t>> local_range
     = { V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
 
   // Initialise tensor layout
-  tensor_layout->init(mesh.mpi_comm(), global_dimensions, 1,
-                      local_range);
+  tensor_layout->init(mesh.mpi_comm(), index_maps,
+                      TensorLayout::Ghosts::UNGHOSTED);
 
   // Initialize edge -> vertex connections
   mesh.init(1, 0);
 
-  // Build sparsity pattern
+  SparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+  pattern.init(mesh.mpi_comm(), index_maps);
+
+    // Build sparsity pattern
   if (tensor_layout->sparsity_pattern())
   {
-    std::vector<std::vector<dolfin::la_index>>
-      sparsity_entries(2);
     for (EdgeIterator edge(mesh); !edge.end(); ++edge)
     {
       // Row index (global indices)
@@ -114,29 +117,13 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
         // Column indices (global indices)
         const Vertex v0(mesh, edge->entities(0)[0]);
         const Vertex v1(mesh, edge->entities(0)[1]);
-        const int col0 = local_to_global_map1[vertex_to_dof[v0.index()]];
-        const int col1 = local_to_global_map1[vertex_to_dof[v1.index()]];
+        std::size_t col0 = local_to_global_map1[vertex_to_dof[v0.index()]];
+        std::size_t col1 = local_to_global_map1[vertex_to_dof[v1.index()]];
 
-        sparsity_entries[0].push_back(row);
-        sparsity_entries[1].push_back(col0);
-
-        sparsity_entries[0].push_back(row);
-        sparsity_entries[1].push_back(col1);
+        pattern.insert_global(row, col0);
+        pattern.insert_global(row, col1);
       }
     }
-
-    std::vector<std::shared_ptr<const IndexMap>> index_maps;
-    index_maps.push_back(V0.dofmap()->index_map());
-    index_maps.push_back(V1.dofmap()->index_map());
-
-    GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
-    pattern.init(mesh.mpi_comm(), global_dimensions,
-                 index_maps);
-
-    std::vector<ArrayView<const dolfin::la_index>> _sparsity_entries
-      = {{ArrayView<const la_index>(sparsity_entries[0]),
-          ArrayView<const la_index>(sparsity_entries[1])}};
-    pattern.insert_global(_sparsity_entries);
     pattern.apply();
   }
 

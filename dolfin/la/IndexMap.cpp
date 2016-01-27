@@ -22,12 +22,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap()
+IndexMap::IndexMap() : _block_size(1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm mpi_comm) :  _mpi_comm(mpi_comm), _block_size(1)
+IndexMap::IndexMap(MPI_Comm mpi_comm) : _mpi_comm(mpi_comm), _block_size(1)
 {
   // Do nothing
 }
@@ -74,7 +74,7 @@ std::pair<std::size_t, std::size_t> IndexMap::local_range() const
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t IndexMap::size() const
+std::size_t IndexMap::size(const IndexMap::MapSize type) const
 {
   // Get my MPI rank
   const std::size_t rank = MPI::rank(_mpi_comm);
@@ -84,16 +84,26 @@ std::size_t IndexMap::size() const
     warning("Asking for size of uninitialised range");
     return 0;
   }
+
+  const std::size_t owned_size = _block_size*(_all_ranges[rank + 1]
+                                              - _all_ranges[rank]);
+  if (type == IndexMap::MapSize::OWNED)
+    return owned_size;
+  else if (type == IndexMap::MapSize::GLOBAL)
+    return _all_ranges.back() * _block_size;
+
+  const std::size_t unowned_size = _local_to_global.size()*_block_size;
+  if (type == IndexMap::MapSize::ALL)
+    return (owned_size + unowned_size);
+  else if (type == IndexMap::MapSize::UNOWNED)
+    return unowned_size;
   else
   {
-    return _block_size*(_all_ranges[rank + 1]
-                        - _all_ranges[rank]);
+    dolfin_error("IndexMap.cpp",
+                 "get size",
+                 "Unrecognised option for IndexMap::MapSize");
   }
-}
-//-----------------------------------------------------------------------------
-std::size_t IndexMap::size_global() const
-{
-  return _all_ranges.back();
+  return 0;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::size_t>& IndexMap::local_to_global_unowned() const
@@ -103,15 +113,14 @@ const std::vector<std::size_t>& IndexMap::local_to_global_unowned() const
 //----------------------------------------------------------------------------
 std::size_t IndexMap::local_to_global(std::size_t i) const
 {
-  const std::size_t local_size = size();
+  const std::size_t local_size = size(IndexMap::MapSize::OWNED);
   const std::size_t global_offset = local_range().first;
 
-  if (i < size())
+  if (i < local_size)
     return (i + global_offset);
   else
   {
-    const std::div_t div = std::div((i - local_size),
-                                    _block_size);
+    const std::div_t div = std::div((i - local_size), _block_size);
     const int component = div.rem;
     const int index = div.quot;
     dolfin_assert((std::size_t) index < _local_to_global.size());
@@ -119,7 +128,7 @@ std::size_t IndexMap::local_to_global(std::size_t i) const
   }
 }
 //-----------------------------------------------------------------------------
-void IndexMap::set_local_to_global(std::vector<std::size_t>& indices)
+void IndexMap::set_local_to_global(const std::vector<std::size_t>& indices)
 {
   _local_to_global = indices;
 

@@ -29,31 +29,31 @@ int main()
   File file("mesh.pvd");
 
   // Create mesh of unit square
-  UnitSquareMesh unit_square(5, 5);
-  Mesh mesh(unit_square);
-  file << mesh;
+  auto mesh = std::make_shared<Mesh>(UnitSquareMesh(5, 5));
+
+  file << *mesh;
 
   // Uniform refinement
-  mesh = refine(mesh);
-  file << mesh;
+  mesh = std::make_shared<Mesh>(refine(*mesh));
+  file << *mesh;
 
   // Refine mesh close to x = (0.5, 0.5)
   Point p(0.5, 0.5);
   for (unsigned int i = 0; i < 5; i++)
   {
     // Mark cells for refinement
-    MeshFunction<bool> cell_markers(mesh, mesh.topology().dim(), false);
-    for (CellIterator c(mesh); !c.end(); ++c)
+    MeshFunction<bool> cell_markers(mesh, mesh->topology().dim(), false);
+    for (CellIterator c(*mesh); !c.end(); ++c)
     {
       if (c->midpoint().distance(p) < 0.1)
         cell_markers[*c] = true;
     }
 
     // Refine mesh
-    mesh = refine(mesh, cell_markers);
+    mesh = std::make_shared<Mesh>(refine(*mesh, cell_markers));
 
-    file << mesh;
-    plot(mesh);
+    file << *mesh;
+    plot(*mesh);
     interactive();
   }
 

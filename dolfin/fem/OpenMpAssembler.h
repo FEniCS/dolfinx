@@ -62,20 +62,20 @@ namespace dolfin
 
     // Assemble over cells
     void assemble_cells(GenericTensor& A, const Form& a, UFC& ufc,
-                        std::shared_ptr<const MeshFunction<std::size_t> > domains,
+                        std::shared_ptr<const MeshFunction<std::size_t>> domains,
                         std::vector<double>* values);
 
     // Assemble over exterior facets
     void assemble_cells_and_exterior_facets(GenericTensor& A,
              const Form& a, UFC& ufc,
-             std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
-             std::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains,
+             std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
+             std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains,
              std::vector<double>* values);
 
     // Assemble over interior facets
     void assemble_interior_facets(GenericTensor& A, const Form& a, UFC& ufc,
-             std::shared_ptr<const MeshFunction<std::size_t> > domains,
-             std::shared_ptr<const MeshFunction<std::size_t> > cell_domains,
+             std::shared_ptr<const MeshFunction<std::size_t>> domains,
+             std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
              std::vector<double>* values);
 
   };

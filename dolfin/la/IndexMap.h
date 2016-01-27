@@ -36,40 +36,47 @@ namespace dolfin
   {
   public:
 
+    enum class MapSize : int32_t { ALL = 0,
+                                   OWNED = 1,
+                                   UNOWNED = 2,
+                                   GLOBAL = 3 };
+
     /// Constructor
     IndexMap();
 
-    /// Range map with no data
+    /// Index map with no data
     explicit IndexMap(MPI_Comm mpi_comm);
 
-    /// Range map with local size on each process
+    /// Index map with local size on each process. This constructor
+    /// is collective
     IndexMap(MPI_Comm mpi_comm, std::size_t local_size, std::size_t block_size);
 
     /// Destructor
     ~IndexMap();
 
-    /// Initialise with local_size
+    /// Initialise with number of local entries and block size. This
+    /// function is collective
     void init(std::size_t local_size, std::size_t block_size);
 
     /// Local range of indices
     std::pair<std::size_t, std::size_t> local_range() const;
 
-    /// Number of local indices
-    std::size_t size() const;
-
-    /// Global size of map
-    std::size_t size_global() const;
+    /// Get number of local indices of type MapSize::OWNED,
+    /// MapSize::UNOWNED, MapSize::ALL or MapSize::GLOBAL
+    std::size_t size(MapSize type) const;
 
     /// Get local to global map for unowned indices
+    /// (local indexing beyond end of local range)
     const std::vector<std::size_t>& local_to_global_unowned() const;
 
     /// Get global index of local index i
     std::size_t local_to_global(std::size_t i) const;
 
-    /// Set local_to_global map for unowned indices
-    void set_local_to_global(std::vector<std::size_t>& indices);
+    /// Set local_to_global map for unowned indices (beyond end of local
+    /// range). Computes and stores off-process owner array.
+    void set_local_to_global(const std::vector<std::size_t>& indices);
 
-    /// Get off process owner
+    /// Get off process owner for unowned indices
     const std::vector<int>& off_process_owner() const;
 
     /// Get block size

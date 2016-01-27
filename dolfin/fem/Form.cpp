@@ -19,7 +19,7 @@
 // Modified by Martin Alnes 2008
 //
 // First added:  2007-12-10
-// Last changed: 2014-02-14
+// Last changed: 2015-11-08
 
 #include <memory>
 #include <string>
@@ -40,9 +40,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Form::Form(std::size_t rank, std::size_t num_coefficients)
-  : Hierarchical<Form>(*this),
-    dx(*this), ds(*this), dS(*this), dP(*this),
-    _function_spaces(rank), _coefficients(num_coefficients), _rank(rank)
+  : Hierarchical<Form>(*this),  _function_spaces(rank),
+  _coefficients(num_coefficients), _rank(rank)
 {
   // Do nothing
 }
@@ -50,8 +49,7 @@ Form::Form(std::size_t rank, std::size_t num_coefficients)
 Form::Form(std::shared_ptr<const ufc::form> ufc_form,
            std::vector<std::shared_ptr<const FunctionSpace>> function_spaces,
            std::vector<std::shared_ptr<const GenericFunction>> coefficients)
-  : Hierarchical<Form>(*this),
-    dx(*this), ds(*this), dS(*this), dP(*this), _ufc_form(ufc_form),
+  : Hierarchical<Form>(*this), _ufc_form(ufc_form),
     _function_spaces(function_spaces), _coefficients(coefficients),
     _rank(ufc_form->rank())
 {
@@ -90,7 +88,8 @@ std::vector<std::size_t> Form::coloring(std::size_t entity_dim) const
   warning("Form::coloring does not properly consider form type.");
 
   // Get mesh
-  const Mesh& mesh = this->mesh();
+  dolfin_assert(this->mesh());
+  const Mesh& mesh = *(this->mesh());
   const std::size_t cell_dim = mesh.topology().dim();
 
   std::vector<std::size_t> _coloring;
@@ -113,7 +112,7 @@ void Form::set_mesh(std::shared_ptr<const Mesh> mesh)
   _mesh = mesh;
 }
 //-----------------------------------------------------------------------------
-const Mesh& Form::mesh() const
+std::shared_ptr<const Mesh> Form::mesh() const
 {
   // In the case when there are no function spaces (in the case of a
   // a functional) the (generated) subclass must set the mesh directly
@@ -135,14 +134,14 @@ const Mesh& Form::mesh() const
     meshes.push_back(_mesh);
 
   // Extract meshes from markers if any
-  if (_cell_domains)
-    meshes.push_back(_cell_domains->mesh());
-  if (_exterior_facet_domains)
-    meshes.push_back(_exterior_facet_domains->mesh());
-  if (_interior_facet_domains)
-    meshes.push_back(_interior_facet_domains->mesh());
-  if (_vertex_domains)
-    meshes.push_back(_vertex_domains->mesh());
+  if (dx)
+    meshes.push_back(dx->mesh());
+  if (ds)
+    meshes.push_back(ds->mesh());
+  if (dS)
+    meshes.push_back(dS->mesh());
+  if (dP)
+    meshes.push_back(dP->mesh());
 
   // Extract meshes from coefficients. Note that this is only done
   // when we don't already have a mesh sine it may otherwise conflict
@@ -179,12 +178,7 @@ const Mesh& Form::mesh() const
 
   // Return first mesh
   dolfin_assert(meshes[0]);
-  return *meshes[0];
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const dolfin::Mesh> Form::mesh_shared_ptr() const
-{
-  return _mesh;
+  return meshes[0];
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FunctionSpace> Form::function_space(std::size_t i) const
@@ -297,46 +291,46 @@ std::string Form::coefficient_name(std::size_t i) const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const MeshFunction<std::size_t>> Form::cell_domains() const
 {
-  return _cell_domains;
+  return dx;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const MeshFunction<std::size_t>> Form::exterior_facet_domains() const
 {
-  return _exterior_facet_domains;
+  return ds;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const MeshFunction<std::size_t>> Form::interior_facet_domains() const
 {
-  return _interior_facet_domains;
+  return dS;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const MeshFunction<std::size_t>> Form::vertex_domains() const
 {
-  return _vertex_domains;
+  return dP;
 }
 //-----------------------------------------------------------------------------
 void Form::set_cell_domains
 (std::shared_ptr<const MeshFunction<std::size_t>> cell_domains)
 {
-  _cell_domains = cell_domains;
+  dx = cell_domains;
 }
 //-----------------------------------------------------------------------------
 void Form::set_exterior_facet_domains
 (std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains)
 {
-  _exterior_facet_domains = exterior_facet_domains;
+  ds = exterior_facet_domains;
 }
 //-----------------------------------------------------------------------------
 void Form::set_interior_facet_domains
 (std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains)
 {
-  _interior_facet_domains = interior_facet_domains;
+  dS = interior_facet_domains;
 }
 //-----------------------------------------------------------------------------
 void Form::set_vertex_domains
 (std::shared_ptr<const MeshFunction<std::size_t>> vertex_domains)
 {
-  _vertex_domains = vertex_domains;
+  dP = vertex_domains;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const ufc::form> Form::ufc_form() const
@@ -369,13 +363,15 @@ void Form::check() const
   // Check argument function spaces
   for (std::size_t i = 0; i < _function_spaces.size(); ++i)
   {
-    std::unique_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
+    std::unique_ptr<ufc::finite_element>
+      element(_ufc_form->create_finite_element(i));
     dolfin_assert(element);
     dolfin_assert(_function_spaces[i]->element());
     if (element->signature() != _function_spaces[i]->element()->signature())
     {
       log(ERROR, "Expected element: %s", element->signature());
-      log(ERROR, "Input element:    %s", _function_spaces[i]->element()->signature().c_str());
+      log(ERROR, "Input element:    %s",
+          _function_spaces[i]->element()->signature().c_str());
       dolfin_error("Form.cpp",
                    "assemble form",
                    "Wrong type of function space for argument %d", i);
