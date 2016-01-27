@@ -21,26 +21,12 @@
 // Unit tests for the parameter library
 
 #include <dolfin.h>
-#include <dolfin/common/unittest.h>
+#include <gtest/gtest.h>
 
 using namespace dolfin;
 
-class InputOutput : public CppUnit::TestFixture
+TEST(InputOutput, test_simple)
 {
-  CPPUNIT_TEST_SUITE(InputOutput);
-  CPPUNIT_TEST(test_simple);
-  CPPUNIT_TEST(test_nested);
-  CPPUNIT_TEST_SUITE_END();
-
-public:
-
-  void test_simple()
-  {
-    // Not working in parallel, even if only process 0 writes and
-    // others wait for a barrier. Skipping this in parallel for now.
-    if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
-      return;
-
     // Create some parameters
     Parameters p0("test");
     p0.add("filename", "foo.txt");
@@ -64,19 +50,14 @@ public:
     bool monitor_convergence(p1["monitor_convergence"]);
 
     // Check values
-    CPPUNIT_ASSERT(filename == "foo.txt");
-    CPPUNIT_ASSERT(maxiter == 100);
-    CPPUNIT_ASSERT(tolerance == 0.001);
-    CPPUNIT_ASSERT(monitor_convergence == true);
-  }
+    ASSERT_EQ(filename, "foo.txt");
+    ASSERT_EQ(maxiter, (std::size_t) 100);
+    ASSERT_DOUBLE_EQ(tolerance, 0.001);
+    ASSERT_TRUE(monitor_convergence);
+}
 
-  void test_nested()
-  {
-    // Not working in parallel, even if only process 0 writes and
-    // others wait for a barrier. Skipping this in parallel for now.
-    if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
-      return;
-
+TEST(InputOutput, test_nested)
+{
     // Create some nested parameters
     Parameters p0("test");
     Parameters p00("sub0");
@@ -107,18 +88,25 @@ public:
     bool monitor_convergence(p1("sub0")["monitor_convergence"]);
 
     // Check values
-    CPPUNIT_ASSERT(foo == "bar");
-    CPPUNIT_ASSERT(filename == "foo.txt");
-    CPPUNIT_ASSERT(maxiter == 100);
-    CPPUNIT_ASSERT(tolerance == 0.001);
-    CPPUNIT_ASSERT(monitor_convergence == true);
-  }
+    ASSERT_EQ(foo, "bar");
+    ASSERT_EQ(filename, "foo.txt");
+    ASSERT_EQ(maxiter, (std::size_t) 100);
+    ASSERT_DOUBLE_EQ(tolerance, 0.001);
+    ASSERT_TRUE(monitor_convergence);
+}
 
-};
+// Test all
+int Parameter_main(int argc, char **argv) {
 
+    // Not working in parallel, even if only process 0 writes and
+    // others wait for a barrier. Skipping this in parallel for now.
+      if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+      {
+        info("Skipping unit test in parallel.");
+        info("OK");
+        return 0;
+      }
 
-int main()
-{
-  CPPUNIT_TEST_SUITE_REGISTRATION(InputOutput);
-  DOLFIN_TEST;
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
