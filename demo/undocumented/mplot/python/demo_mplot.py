@@ -23,10 +23,11 @@ from six.moves import xrange as range
 import os
 
 display = os.environ.get("DISPLAY")
+noplot = os.environ.get("DOLFIN_NOPLOT", "0") != "0"
 
 try:
     # Avoid interactive backend (such as TkAgg) on headless machine
-    if not display:
+    if not display or noplot:
         import matplotlib
         try:
             matplotlib.use("Agg")

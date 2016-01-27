@@ -1,4 +1,5 @@
-- Fix bug when reading domain data from mesh file for a ghosted mesh.
+- Switch to Google Test framwork for C++ unit tests
+- Fix bug when reading domain data from mesh file for a ghosted mesh
 - Remove reference versions of constructors for many classes that
 	store a pointer/reference to the object passed to the
 	constructor. This is an intrusive interface change for C++ users,
