@@ -370,7 +370,7 @@ def test_generic_function_attributes(mesh, V):
     tf.vector()[:] = 1.0
 
     e0 = Expression(["2*t", "-t"], t=tc)
-    e1 = Expression(["2*t", "-t"], t=1.0)
+    e1 = Expression(["2*t0", "-t0"], t0=1.0)
     e2 = Expression("t", t=te)
     e3 = Expression("t", t=tf)
 
@@ -381,7 +381,7 @@ def test_generic_function_attributes(mesh, V):
                  assemble(inner(e3,e3)*dx(mesh)), 7) == 0
 
     tc.assign(3.0)
-    e1.t = float(tc)
+    e1.t0 = float(tc)
 
     assert round(assemble(inner(e0,e0)*dx(mesh)) - \
                  assemble(inner(e1,e1)*dx(mesh)), 7) == 0
