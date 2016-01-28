@@ -333,7 +333,7 @@ def test_element_instantiation():
     f4 = F2(cell=triangle)
     assert isinstance(f4.ufl_element(), TensorElement)
 
-def test_exponent_init():
+def test_num_literal():
     e0 = Expression("1e10")
     assert e0(0,0,0) == 1e10
 
@@ -342,6 +342,15 @@ def test_exponent_init():
 
     e2 = Expression("1e+10")
     assert e2(0,0,0) == 1e+10
+
+    e3 = Expression(".5")
+    assert e3(0,0,0) == 0.5
+
+    e4 = Expression("x[0] * sin(.5)")
+    assert e4(0,0,0) == 0.
+
+    e5 = Expression("5.E-3")
+    assert e5(0,0,0) == 5.e-3
 
 def test_name_space_usage(mesh):
     e0 = Expression("std::sin(x[0])*cos(x[1])")
@@ -688,20 +697,3 @@ def test_doc_string_python_expressions(mesh):
     assert id(f3._mesh) == id(square)
     assert id(f3._domain) == id(cell_data)
 
-@pytest.mark.slow
-def test_compile_expressions():
-    """
-    This test tests that the auto-generated cpp Expression code can be actually compiled.
-    """
-    expression_list = ['.5',
-        'x[0] * sin(.5)',
-        '5.E-3']
-    current_expression = ''
-    for edata in expression_list:
-        current_expression = edata
-        try:
-            e  = Expression(edata)
-            assert True
-        except:
-            print 'Code for Expression(\'' + current_expression + '\') was not generated correctly'
-            assert False
