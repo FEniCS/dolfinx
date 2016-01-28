@@ -418,17 +418,6 @@ if (DOLFIN_ENABLE_PYTHON)
     include(UseSWIG)
     set(PYTHON_FOUND TRUE)
 
-    # Store UFC signature for runtime checks
-    execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c
-                    "import ffc.jitobject, sys; sys.stdout.write(ffc.jitobject.ufc_signature)"
-                    OUTPUT_VARIABLE UFC_SIGNATURE
-                    RESULT_VARIABLE _UFC_SIGNATURE_RESULT)
-    if (_UFC_SIGNATURE_RESULT)
-      message(FATAL_ERROR "Could not fetch UFC signature from ffc.jitobject.ufc_signature.")
-    else()
-      message(STATUS "UFC version: ${UFC_VERSION_STRING}")
-    endif()
-
   endif()
 
 endif()
