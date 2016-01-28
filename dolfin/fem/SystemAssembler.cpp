@@ -125,10 +125,10 @@ in SystemAssembler. Taking %s subdomains from bilinear form",
 }
 //-----------------------------------------------------------------------------
 bool SystemAssembler::check_functionspace_for_bc
-    (std::shared_ptr<const FunctionSpace> fs, std::size_t i)
+    (std::shared_ptr<const FunctionSpace> fs, std::size_t bc_index)
 {
   std::shared_ptr<const FunctionSpace> bc_function_space
-    = _bcs[i]->function_space();
+    = _bcs[bc_index]->function_space();
 
   if (*bc_function_space == *fs)
     return true;
@@ -139,7 +139,7 @@ bool SystemAssembler::check_functionspace_for_bc
     for (std::size_t i = 0; i != num_sub_elements; ++i)
       {
         std::shared_ptr<const FunctionSpace> subspace = (*fs)[i];
-        if (check_functionspace_for_bc(subspace, i))
+        if (check_functionspace_for_bc(subspace, bc_index))
           return true;
       }
   }
