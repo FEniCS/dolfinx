@@ -160,8 +160,17 @@ for note in facet_note:
 
 # Q = FacetFunction("double", mesh)
 
-# xdmf = File("a.xdmf")
-# xdmf << Q
+# # Save solution in XDMF format if available
+# xdmf = XDMFFile(mesh.mpi_comm(), "Q.xdmf")
+# if has_hdf5():
+#     xdmf.write(Q)
+# elif MPI.size(mesh.mpi_comm()) == 1:
+#     encoding = XDMFFile.Encoding_ASCII
+#     xdmf.write(Q, encoding)
+# else:
+#     # Save solution in vtk format
+#     xdmf = File("Q.pvd")
+#     xdmf << Q
 
 plt.savefig("mesh-rank%d.png" % rank)
 plt.show()
