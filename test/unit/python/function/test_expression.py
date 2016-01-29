@@ -349,8 +349,10 @@ def test_num_literal():
     e4 = Expression("x[0] * sin(.5)")
     assert e4(0,0,0) == 0.
 
-    e5 = Expression("5.E-3")
-    assert e5(0,0,0) == 5.e-3
+    e5 = Expression(["2*t0", "-t0"], t0=1.0)
+    values = e5(0,0,0)
+    assert values[0] == 2. 
+    assert values[1] == -1.
 
 def test_name_space_usage(mesh):
     e0 = Expression("std::sin(x[0])*cos(x[1])")
