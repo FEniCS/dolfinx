@@ -417,11 +417,9 @@ if (DOLFIN_ENABLE_PYTHON)
     endif()
     include(UseSWIG)
     set(PYTHON_FOUND TRUE)
-
   endif()
 
 endif()
-
 
 # Check for PETSc, SLEPc and petsc4py, slepc4py
 if (DOLFIN_ENABLE_PETSC)
