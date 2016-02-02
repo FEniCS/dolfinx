@@ -241,12 +241,18 @@ namespace dolfin
     //    generate_xdmf_ascii_data(data_values, "%.15e")
     template<typename T>
       std::string generate_xdmf_ascii_data(const T& data, std::string format);
+
+    // As XDMFFile::generate_xdmf_ascii_data, using boost::lexical_cast to
+    // format the numeric data as a string.
     template<typename T>
       std::string generate_xdmf_ascii_data(const T& data);
 
     // Determine the encoding of the data from the xml file.
-    // E.g. "XML" or "HDF".
     Encoding get_file_encoding();
+
+    // Determine the encoding enumeration value from the xdmf format string
+    // E.g. "XML" or "HDF".
+    // See XDMFFile::xdmf_format_str
     Encoding get_file_encoding(std::string xdmf_format);
 
     // Most recent mesh name
