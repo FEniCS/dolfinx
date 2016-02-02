@@ -497,9 +497,10 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
 
     // Prepend directory name of XDMF file...
     // FIXME: not robust - topo.hdf5_filename may already be an absolute path
-    boost::filesystem::path hdf5_path(_filename);
-    hdf5_path.replace_extension(".h5");
-    HDF5File mesh_file(_mpi_comm, hdf5_path.string(), "r");
+    boost::filesystem::path xdmf_path(_filename);
+    boost::filesystem::path hdf5_path(topo.hdf5_filename);
+    HDF5File mesh_file(_mpi_comm, (xdmf_path.parent_path()
+                                  / hdf5_path).string(), "r");
 
     // Try to read the mesh from the associated HDF5 file
     mesh_file.read(mesh, topo.hdf5_dataset, geom.hdf5_dataset,
