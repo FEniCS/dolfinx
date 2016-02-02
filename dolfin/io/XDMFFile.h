@@ -234,8 +234,11 @@ namespace dolfin
     // mesh point cloud
     std::string generate_xdmf_ascii_mesh_geometry_data(const Mesh& mesh);
 
-    // Generate the data string to insert in an xdmf file for vertex
-    // data with output formatted according to format
+    // Generate a string of the vertex data numeric values contained in the
+    // data argument which can then be inserted into an xdmf file. The
+    // numeric data is formatted according to the format argument.
+    // E.g:
+    //    generate_xdmf_ascii_data(data_values, "%.15e")
     template<typename T>
       std::string generate_xdmf_ascii_data(const T& data, std::string format);
     template<typename T>
