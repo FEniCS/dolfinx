@@ -587,6 +587,7 @@ endif()
 if (DOLFIN_ENABLE_VTK)
   find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
     vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
+    vtkRenderingFreeTypeOpenGL
     NO_MODULE)
   set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
   if (VTK_FOUND)
