@@ -30,6 +30,7 @@ from six.moves import xrange as range
 
 from dolfin_utils.test import skip_in_parallel
 
+
 def triangulation_to_mesh_2d(triangulation):
     editor = MeshEditor()
     mesh = Mesh()
@@ -44,6 +45,7 @@ def triangulation_to_mesh_2d(triangulation):
         editor.add_vertex(i, triangulation[2*i], triangulation[2*i + 1])
     editor.close()
     return mesh
+
 
 @skip_in_parallel
 def test_integrate():

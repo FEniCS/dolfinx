@@ -64,22 +64,6 @@ const std::set<std::string> DirichletBC::methods
 = {"topological", "geometric", "pointwise"};
 
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const FunctionSpace& V,
-                         const GenericFunction& g,
-                         const SubDomain& sub_domain,
-                         std::string method,
-                         bool check_midpoint)
-  : Hierarchical<DirichletBC>(*this),
-    _function_space(reference_to_no_delete_pointer(V)),
-    _g(reference_to_no_delete_pointer(g)),
-    _method(method),
-    _user_sub_domain(reference_to_no_delete_pointer(sub_domain)),
-    _check_midpoint(check_midpoint)
-{
-  check();
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          std::shared_ptr<const GenericFunction> g,
                          std::shared_ptr<const SubDomain> sub_domain,
@@ -93,19 +77,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
-                         const MeshFunction<std::size_t>& sub_domains,
-                         std::size_t sub_domain, std::string method)
-  : Hierarchical<DirichletBC>(*this),
-    _function_space(reference_to_no_delete_pointer(V)),
-    _g(reference_to_no_delete_pointer(g)), _method(method),
-    _user_mesh_function(reference_to_no_delete_pointer(sub_domains)),
-    _user_sub_domain_marker(sub_domain), _check_midpoint(true)
-{
-  check();
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          std::shared_ptr<const GenericFunction> g,
                          std::shared_ptr<const MeshFunction<std::size_t>> sub_domains,
@@ -114,18 +85,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
   : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
     _method(method), _user_mesh_function(sub_domains),
     _user_sub_domain_marker(sub_domain), _check_midpoint(true)
-{
-  check();
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
-                         std::size_t sub_domain, std::string method)
-  : Hierarchical<DirichletBC>(*this),
-    _function_space(reference_to_no_delete_pointer(V)),
-    _g(reference_to_no_delete_pointer(g)), _method(method),
-    _user_sub_domain_marker(sub_domain),
-    _check_midpoint(true)
 {
   check();
   parameters = default_parameters();
@@ -434,80 +393,6 @@ std::shared_ptr<const SubDomain> DirichletBC::user_sub_domain() const
   return _user_sub_domain;
 }
 //-----------------------------------------------------------------------------
-bool DirichletBC::is_compatible(GenericFunction& v) const
-{
-  // This function only checks the values at vertices when it should
-  // really check that the dof functionals agree. The check here is
-  // neither necessary nor sufficient to guarantee compatible boundary
-  // boundary conditions but a more robust test requires access to the
-  // function space.
-
-  dolfin_error("DirichletBC.cpp",
-               "call is_compatible",
-               "This function has not been updated for the new Function class interface");
-
-  /*
-  // Compute value size
-  std::size_t size = 1;
-  const std::size_t rank = g->function_space().element()->value_rank();
-  for (std::size_t i = 0; i < rank ; i++)
-    size *= g->function_space().element()->value_dimension(i);
-  double* g_values = new double[size];
-  double* v_values = new double[size];
-
-  // Get mesh
-  const Mesh& mesh = _function_space->mesh();
-
-  // Iterate over facets
-  for (std::size_t f = 0; f < facets.size(); f++)
-  {
-    // Create cell and facet
-    std::size_t cell_number  = facets[f].first;
-    std::size_t facet_number = facets[f].second;
-    Cell cell(mesh, cell_number);
-    Facet facet(mesh, facet_number);
-
-    // Make cell and facet available to user-defined function
-    dolfin_error("DirichletBC.cpp",
-                 "add proper message here",
-                 "Does the new GenericFunction class need an 'update' function?");
-    //g->update(cell, facet_number);
-    //v.update(cell, facet_number);
-
-    // Iterate over facet vertices
-    for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
-    {
-      // Evaluate g and v at vertex
-      g->eval(g_values, vertex->x());
-      v.eval(v_values, vertex->x());
-
-      // Check values
-      for (std::size_t i = 0; i < size; i++)
-      {
-        if (std::abs(g_values[i] - v_values[i]) > DOLFIN_EPS)
-        {
-          Point p(mesh.geometry().dim(), vertex->x());
-          cout << "Incompatible function value " << v_values[i] << " at x = " << p << ", should be " << g_values[i] << "." << endl;
-          delete [] g_values;
-          delete [] v_values;
-          return false;
-        }
-      }
-    }
-  }
-
-  delete [] g_values;
-  delete [] v_values;
-  */
-
-  return true;
-}
-//-----------------------------------------------------------------------------
-void DirichletBC::set_value(const GenericFunction& g)
-{
-  _g = reference_to_no_delete_pointer(g);
-}
-//-----------------------------------------------------------------------------
 void DirichletBC::homogenize()
 {
   const std::size_t value_rank = _g->value_rank();
@@ -738,16 +623,17 @@ void DirichletBC::init_from_sub_domain(std::shared_ptr<const SubDomain>
   // FIXME: mainly for convenience (we may reuse mark() in SubDomain).
 
   dolfin_assert(_function_space->mesh());
-  const Mesh& mesh = *_function_space->mesh();
+  std::shared_ptr<const Mesh> mesh = _function_space->mesh();
+  dolfin_assert(mesh);
 
   // Create mesh function for sub domain markers on facets and mark
   // all facet as subdomain 1
-  const std::size_t dim = mesh.topology().dim();
+  const std::size_t dim = mesh->topology().dim();
   _function_space->mesh()->init(dim - 1);
   FacetFunction<std::size_t> sub_domains(mesh, 1);
 
   // Set geometric dimension (needed for SWIG interface)
-  sub_domain->_geometric_dimension = mesh.geometry().dim();
+  sub_domain->_geometric_dimension = mesh->geometry().dim();
 
   // Mark the sub domain as sub domain 0
   sub_domain->mark(sub_domains, 0, _check_midpoint);
@@ -778,11 +664,11 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<std::size_t>& sub_d
 //-----------------------------------------------------------------------------
 void DirichletBC::init_from_mesh(std::size_t sub_domain) const
 {
-  // For this to work, the mesh *needs* to be ordered according to
-  // the UFC ordering before it gets here. So reordering the mesh
-  // here will either have no effect (if the mesh is already ordered
-  // or it won't do anything good (since the markers are wrong anyway).
-  // In conclusion: we don't need to order the mesh here.
+  // For this to work, the mesh *needs* to be ordered according to the
+  // UFC ordering before it gets here. So reordering the mesh here
+  // will either have no effect (if the mesh is already ordered or it
+  // won't do anything good (since the markers are wrong anyway).  In
+  // conclusion: we don't need to order the mesh here.
 
   dolfin_assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();

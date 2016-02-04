@@ -44,13 +44,6 @@
 %ignore dolfin::GoalFunctional;
 
 //-----------------------------------------------------------------------------
-// To simplify handling of shared_ptr types in PyDOLFIN we ignore the reference
-// version of constructors to these types
-//-----------------------------------------------------------------------------
-%ignore dolfin::AdaptiveLinearVariationalSolver::AdaptiveLinearVariationalSolver(LinearVariationalProblem&);
-%ignore dolfin::AdaptiveNonlinearVariationalSolver::AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem&);
-
-//-----------------------------------------------------------------------------
 // Wrap adapt return value with PyDOLFIN classes
 //-----------------------------------------------------------------------------
 %pythonappend dolfin::adapt %{

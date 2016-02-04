@@ -25,12 +25,13 @@
 import pytest
 from dolfin import *
 
+
 def test_by_entity_cell_coloring():
     """Color mesh cells by connections."""
 
     # Get coloring libraries
     default_parameter = parameters["graph_coloring_library"]
-    coloring_libraries =  parameters.get_range("graph_coloring_library")
+    coloring_libraries = parameters.get_range("graph_coloring_library")
     for coloring_library in coloring_libraries:
         parameters["graph_coloring_library"] = coloring_library
         mesh = UnitCubeMesh(16, 16, 16)

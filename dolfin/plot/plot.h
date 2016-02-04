@@ -46,9 +46,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
 
   /// Plot variable of any supported type
-  std::shared_ptr<VTKPlotter> plot(const Variable&,
-                                   std::string title="",
-                                   std::string mode="auto");
+  void plot(const Variable&, std::string title="", std::string mode="auto");
 
   /// Plot variable (shared_ptr version)
   std::shared_ptr<VTKPlotter> plot(std::shared_ptr<const Variable>,
@@ -56,8 +54,7 @@ namespace dolfin
                                    std::string mode="auto");
 
   /// Plot variable (parameter version)
-  std::shared_ptr<VTKPlotter> plot(const Variable&,
-                                   const Parameters& parameters);
+  void plot(const Variable&, const Parameters& parameters);
 
   /// Plot variable (parameter, shared_ptr version)
   std::shared_ptr<VTKPlotter> plot(std::shared_ptr<const Variable>,
@@ -68,10 +65,8 @@ namespace dolfin
   //---------------------------------------------------------------------------
 
   /// Plot expression
-  std::shared_ptr<VTKPlotter> plot(const Expression& expression,
-                                   const Mesh& mesh,
-                                   std::string title="",
-                                   std::string mode="auto");
+  void plot(const Expression& expression, const Mesh& mesh,
+            std::string title="", std::string mode="auto");
 
   /// Plot expression (shared_ptr version)
   std::shared_ptr<VTKPlotter> plot(std::shared_ptr<const Expression> expression,
@@ -80,9 +75,8 @@ namespace dolfin
                                    std::string mode="auto");
 
   /// Plot expression (parameter version)
-  std::shared_ptr<VTKPlotter> plot(const Expression& expression,
-                                   const Mesh& mesh,
-                                   const Parameters& parameters);
+  void plot(const Expression& expression, const Mesh& mesh,
+            const Parameters& parameters);
 
   /// Plot expression (parameter, shared_ptr version)
   std::shared_ptr<VTKPlotter> plot(std::shared_ptr<const Expression> expression,
@@ -93,14 +87,15 @@ namespace dolfin
   // Specialized utility functions for plotting
   //---------------------------------------------------------------------------
 
+  // FIXME: This is very peculiar code. Why is there are shared_ptr
+  // version when the function does not return an object?
+
   // Plot multimesh
   void plot(const MultiMesh& multimesh);
 
   // Plot multimesh (shared_ptr version)
   void plot(std::shared_ptr<const MultiMesh> multimesh);
 
-  // Plot multimesh (shared_ptr version, visible from Python)
-  void plot_multimesh(std::shared_ptr<const MultiMesh> multimesh);
 
 }
 

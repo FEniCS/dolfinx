@@ -31,7 +31,7 @@
 namespace dolfin
 {
 
-  class Mesh;
+    class Mesh;
 
   /// The class provides functions to quantify mesh quality
 
@@ -82,12 +82,30 @@ namespace dolfin
     /// of cell quality
     static std::pair<std::vector<double>, std::vector<double> >
       radius_ratio_histogram_data(const Mesh& mesh,
-                                  std::size_t num_intervals = 50);
+                                  std::size_t num_bins = 50);
 
     /// Create Matplotlib string to plot cell quality histogram
     static std::string
       radius_ratio_matplotlib_histogram(const Mesh& mesh,
-					std::size_t num_bins = 50);
+					std::size_t num_intervals = 50);
+
+    /// Get internal dihedral angles of a tetrahedral cell
+    static void dihedral_angles(const Cell& cell, std::vector<double>& dh_angle); 
+
+    /// Get internal minimum and maximum dihedral angles of a 3D mesh
+    static std::pair<double, double> 
+        dihedral_angles_min_max(const Mesh& mesh);
+
+    /// Create (dihedral angles, number of cells) data for creating a histogram
+    /// of dihedral
+    static std::pair<std::vector<double>, std::vector<double> >
+      dihedral_angles_histogram_data(const Mesh& mesh,
+                                  std::size_t num_bins = 100);
+
+    /// Create Matplotlib string to plot dihedral angles quality histogram
+    static std::string
+      dihedral_angles_matplotlib_histogram(const Mesh& mesh,
+                                std::size_t num_intervals = 100);
   };
 
 }

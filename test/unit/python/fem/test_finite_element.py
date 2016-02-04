@@ -28,17 +28,21 @@ from dolfin import *
 from six.moves import xrange as range
 from dolfin_utils.test import fixture
 
+
 @fixture
 def mesh():
     return UnitSquareMesh(4, 4)
+
 
 @fixture
 def V(mesh):
     return FunctionSpace(mesh, "CG", 1)
 
+
 @fixture
 def Q(mesh):
     return VectorFunctionSpace(mesh, "CG", 1)
+
 
 @fixture
 def W(mesh):
@@ -60,8 +64,8 @@ def test_evaluate_dofs(W, mesh, V):
     values3 = numpy.zeros(3, dtype="d")
     values4 = numpy.zeros(6, dtype="d")
 
-    L0  = W.sub(0)
-    L1  = W.sub(1)
+    L0 = W.sub(0)
+    L1 = W.sub(1)
     L01 = L1.sub(0)
     L11 = L1.sub(1)
 
@@ -70,7 +74,7 @@ def test_evaluate_dofs(W, mesh, V):
         orientation = cell.orientation()
         V.element().tabulate_dof_coordinates(cell, coords)
         for i in range(coords.shape[0]):
-            coord[:] = coords[i,:]
+            coord[:] = coords[i, :]
             values0[i] = e(*coord)
         L0.element().evaluate_dofs(values1, e, vx, orientation, cell)
         L01.element().evaluate_dofs(values2, e, vx, orientation, cell)
@@ -114,7 +118,7 @@ def test_evaluate_dofs_manifolds_affine():
             orientation = cell.orientation()
             V.element().tabulate_dof_coordinates(cell, coords)
             for i in range(coords.shape[0]):
-                coord[:] = coords[i,:]
+                coord[:] = coords[i, :]
                 values0[i] = f(*coord)
             V.element().evaluate_dofs(values1, f, vx, orientation, cell)
             for i in range(sdim):
@@ -123,14 +127,14 @@ def test_evaluate_dofs_manifolds_affine():
 
 def test_tabulate_coord(V, W, mesh):
 
-    coord0 = numpy.zeros((3,2), dtype="d")
-    coord1 = numpy.zeros((3,2), dtype="d")
-    coord2 = numpy.zeros((3,2), dtype="d")
-    coord3 = numpy.zeros((3,2), dtype="d")
-    coord4 = numpy.zeros((6,2), dtype="d")
+    coord0 = numpy.zeros((3, 2), dtype="d")
+    coord1 = numpy.zeros((3, 2), dtype="d")
+    coord2 = numpy.zeros((3, 2), dtype="d")
+    coord3 = numpy.zeros((3, 2), dtype="d")
+    coord4 = numpy.zeros((6, 2), dtype="d")
 
-    L0  = W.sub(0)
-    L1  = W.sub(1)
+    L0 = W.sub(0)
+    L1 = W.sub(1)
     L01 = L1.sub(0)
     L11 = L1.sub(1)
 

@@ -70,25 +70,26 @@ class Flux : public Expression
 int main()
 {
   // Create mesh and function space
-  UnitSquareMesh mesh(64, 64);
-  Poisson::FunctionSpace V(mesh);
+  auto mesh = std::make_shared<UnitSquareMesh>(64, 64);
+  auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
   // Define variational problem
-  Poisson::BilinearForm a(V, V);
-  Poisson::LinearForm L(V);
-  Source f;
-  Flux g;
-  L.f = f;
-  L.g = g;
-  Function w(V);
-  LinearVariationalProblem problem(a, L, w);
+  auto a = std::make_shared<Poisson::BilinearForm>(V, V);
+  auto L = std::make_shared<Poisson::LinearForm>(V);
+  auto f = std::make_shared<Source>();
+  auto g = std::make_shared<Flux>();
+  L->f = f;
+  L->g = g;
+  auto w = std::make_shared<Function>(V);
+  std::vector<std::shared_ptr<const DirichletBC>> bcs;
+  auto problem = std::make_shared<LinearVariationalProblem>(a, L, w, bcs);
 
   // Compute solution
   LinearVariationalSolver solver(problem);
   solver.solve();
 
   // Extract subfunction
-  Function u = w[0];
+  Function u = (*w)[0];
 
   // Plot solution
   plot(u);

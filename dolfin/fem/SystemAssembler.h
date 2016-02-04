@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Kent-Andre Mardal and Garth N. Wells
+// Copyright (C) 2008-2015 Kent-Andre Mardal and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,9 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2008-2011
-//
-// First added:  2009-06-22
-// Last changed: 2013-04-23
 
 #ifndef __SYSTEM_ASSEMBLER_H
 #define __SYSTEM_ASSEMBLER_H
@@ -53,8 +50,8 @@ namespace dolfin
   template<typename T> class MeshFunction;
   class UFC;
 
-  /// This class provides an assembler for systems of the form
-  /// Ax = b. It differs from the default DOLFIN assembler in that it
+  /// This class provides an assembler for systems of the form Ax =
+  /// b. It differs from the default DOLFIN assembler in that it
   /// applies boundary conditions at the time of assembly, which
   /// preserves any symmetries in A.
 
@@ -63,28 +60,9 @@ namespace dolfin
   public:
 
     /// Constructor
-    SystemAssembler(const Form& a, const Form& L);
-
-    /// Constructor
-    SystemAssembler(const Form& a, const Form& L, const DirichletBC& bc);
-
-    /// Constructor
-    SystemAssembler(const Form& a, const Form& L,
-                    const std::vector<const DirichletBC*> bcs);
-
-    /// Constructor
-    SystemAssembler(std::shared_ptr<const Form> a,
-                    std::shared_ptr<const Form> L);
-
-    /// Constructor
     SystemAssembler(std::shared_ptr<const Form> a,
                     std::shared_ptr<const Form> L,
-                    const DirichletBC& bc);
-
-    /// Constructor
-    SystemAssembler(std::shared_ptr<const Form> a,
-                    std::shared_ptr<const Form> L,
-                    const std::vector<const DirichletBC*> bcs);
+                    std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
     /// Assemble system (A, b)
     void assemble(GenericMatrix& A, GenericVector& b);
@@ -120,9 +98,9 @@ namespace dolfin
     static void check_arity(std::shared_ptr<const Form> a,
                             std::shared_ptr<const Form> L);
 
-    // Check if _bcs[i] is part of FunctionSpace fs
+    // Check if _bcs[bc_index] is part of FunctionSpace fs
     bool check_functionspace_for_bc
-      (std::shared_ptr<const FunctionSpace> fs, std::size_t i);
+      (std::shared_ptr<const FunctionSpace> fs, std::size_t bc_index);
 
     // Assemble system
     void assemble(GenericMatrix* A, GenericVector* b,
@@ -132,7 +110,7 @@ namespace dolfin
     std::shared_ptr<const Form> _a, _l;
 
     // Boundary conditions
-    std::vector<const DirichletBC*> _bcs;
+    std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 
     static void cell_wise_assembly(
       std::array<GenericTensor*, 2>& tensors,

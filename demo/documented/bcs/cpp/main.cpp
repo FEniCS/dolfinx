@@ -30,20 +30,20 @@ using namespace dolfin;
 int main()
 {
   // Create mesh and finite element
-  Mesh mesh("../aneurysm.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../aneurysm.xml.gz");
 
   // Define variational problem
-  Constant f(0.0);
-  Poisson::FunctionSpace V(mesh);
+  auto f = std::make_shared<Constant>(0.0);
+  auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
   L.f = f;
 
   // Define boundary condition values
-  Constant u0(0.0);
-  Constant u1(1.0);
-  Constant u2(2.0);
-  Constant u3(3.0);
+  auto u0 = std::make_shared<Constant>(0.0);
+  auto u1 = std::make_shared<Constant>(1.0);
+  auto u2 = std::make_shared<Constant>(2.0);
+  auto u3 = std::make_shared<Constant>(3.0);
 
   // Define boundary conditions
   DirichletBC bc0(V, u0, 0);

@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 
   UnitCubeMesh mesh(SIZE, SIZE, SIZE);
 
-  int sum = 0;
+  std::size_t sum = 0;
   tic();
   for (int i = 0; i < NUM_REPS; i++)
   {
@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
   info("BENCH %g", toc());
 
   // To prevent optimizing the loop away
-  info("Sum is %d", sum);
+  info("Sum is %llu", (unsigned long long)sum);
 
   return 0;
 }

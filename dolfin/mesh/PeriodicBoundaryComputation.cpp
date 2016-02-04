@@ -141,7 +141,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int>>
           }
 
           // Insert (midpoint coordinates, local index) into map
-          master_coord_to_entity_index.insert(std::make_pair(x, e->index()));
+          master_coord_to_entity_index.insert({x, e->index()});
         }
         else
         {
@@ -266,8 +266,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int>>
       if (master_entity_index_p[i] < std::numeric_limits<unsigned int>::max())
       {
         ++num_local_slave_entities;
-        slave_to_master_entity.insert(std::make_pair(sent_slaves_p[i],
-                                      std::make_pair(p, master_entity_index_p[i])));
+        slave_to_master_entity.insert({sent_slaves_p[i], {p, master_entity_index_p[i]}});
       }
     }
   }
@@ -283,7 +282,7 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
   dolfin_assert(mesh);
 
   // Create MeshFunction and initialise to zero
-  MeshFunction<std::size_t> mf(*mesh, dim, 0);
+  MeshFunction<std::size_t> mf(mesh, dim, 0);
 
   // Compute marker
   const std::map<unsigned int, std::pair<unsigned int, unsigned int>>

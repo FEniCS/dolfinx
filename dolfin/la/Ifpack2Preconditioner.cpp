@@ -31,11 +31,11 @@ Ifpack2Preconditioner::preconditioners()
   std::map<std::string, std::string> precs_available
     =   { {"none", "none"},
           {"default",    "default preconditioner"},
-          {"DIAGONAL",   "Diagonal"},
-          {"RELAXATION", "Jacobi and Gauss-Seidel type relaxation"},
-          {"CHEBYSHEV",  "Chebyshev Polynomial preconditioner"},
-          {"RILUK",      "Relaxed ILU with level k fill"},
-          {"KRYLOV",     "CG/GMRES with zero initial guess"}};
+          {"diagonal",   "Diagonal"},
+          {"relaxation", "Jacobi and Gauss-Seidel type relaxation"},
+          {"chebyshev",  "Chebyshev Polynomial preconditioner"},
+          {"riluk",      "Relaxed ILU with level k fill"},
+          {"krylov",     "CG/GMRES with zero initial guess"}};
   return precs_available;
 }
 //-----------------------------------------------------------------------------
@@ -52,7 +52,7 @@ Ifpack2Preconditioner::Ifpack2Preconditioner(std::string preconditioner)
   }
 
   if (preconditioner == "default")
-    _name = "DIAGONAL";
+    _name = "diagonal";
 }
 //-----------------------------------------------------------------------------
 Ifpack2Preconditioner::~Ifpack2Preconditioner()

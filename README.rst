@@ -66,3 +66,10 @@ authors can be found in the file AUTHORS. For more information about
 DOLFIN, visit
 
   http://fenicsproject.org
+
+
+
+Automated Testing
+=================
+
+We use Atlassian Bamboo to perform automatic testing at http://magpie.bpi.cam.ac.uk:8085

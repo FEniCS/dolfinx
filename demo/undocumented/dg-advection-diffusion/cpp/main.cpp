@@ -59,25 +59,25 @@ int main(int argc, char *argv[])
   // mesh and a quadratic vector Lagrange element
 
   // Read mesh
-  Mesh mesh("../unitsquare_64_64.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../unitsquare_64_64.xml.gz");
 
   // Create velocity FunctionSpace
-  Velocity::FunctionSpace V_u(mesh);
+  auto V_u = std::make_shared<Velocity::FunctionSpace>(mesh);
 
   // Create velocity function
-  Function u(V_u, "../unitsquare_64_64_velocity.xml.gz");
+  auto u = std::make_shared<Function>(V_u, "../unitsquare_64_64_velocity.xml.gz");
 
   // Diffusivity
-  Constant c(0.0);
+  auto c = std::make_shared<Constant>(0.0);
 
   //Source term
-  Constant f(0.0);
+  auto f = std::make_shared<Constant>(0.0);
 
   // Penalty parameter
-  Constant alpha(5.0);
+  auto alpha = std::make_shared<Constant>(5.0);
 
   // Create function space
-  AdvectionDiffusion::FunctionSpace V(mesh);
+  auto V = std::make_shared<AdvectionDiffusion::FunctionSpace>(mesh);
 
   // Create forms and attach functions
   AdvectionDiffusion::BilinearForm a(V, V);
@@ -86,12 +86,12 @@ int main(int argc, char *argv[])
   L.f = f;
 
   // Set up boundary condition (apply strong BCs)
-  BC g;
-  DirichletBoundary boundary;
+  auto g = std::make_shared<BC>();
+  auto boundary = std::make_shared<DirichletBoundary>();
   DirichletBC bc(V, g, boundary, "geometric");
 
   // Solution function
-  Function phi_h(V);
+  auto phi_h = std::make_shared<Function>(V);
 
   // Assemble and apply boundary conditions
   Matrix A;
@@ -101,10 +101,10 @@ int main(int argc, char *argv[])
   bc.apply(A, b);
 
   // Solve system
-  solve(A, *phi_h.vector(), b);
+  solve(A, *phi_h->vector(), b);
 
   // Define variational problem
-  Projection::FunctionSpace Vp(mesh);
+  auto Vp = std::make_shared<Projection::FunctionSpace>(mesh);
   Projection::BilinearForm ap(Vp, Vp);
   Projection::LinearForm Lp(Vp);
   Lp.phi0 = phi_h;

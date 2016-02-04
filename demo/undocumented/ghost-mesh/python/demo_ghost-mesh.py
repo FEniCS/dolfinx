@@ -4,20 +4,31 @@
 # run with mpirun
 #
 from __future__ import print_function
+from dolfin import *
+import numpy as np
+import sys, os
+import six
+
+display = os.environ.get("DISPLAY")
+noplot = os.environ.get("DOLFIN_NOPLOT", "0") != "0"
 
 try:
+    # Avoid interactive backend (such as TkAgg) on headless machine
+    if not display or noplot:
+        import matplotlib
+        try:
+            matplotlib.use("Agg")
+        except ValueError as e:
+            raise ImportError(str(e))
+    # Import pyplot and needed class
     import matplotlib.pyplot as plt
     from matplotlib.collections import PolyCollection
-except ImportError:
-    print("matplotib is needed to run this demo. Import was not "
-          "succesful. Exiting gracefully.")
+except ImportError as e:
+    print("Import of matplotlib failed with the message:")
+    print('"%s"' % str(e))
+    print()
+    print("Please, make sure matplotlib is installed. Bye!")
     exit()
-
-from dolfin import *
-
-import numpy as np
-import sys
-import six
 
 parameters["ghost_mode"] = "shared_vertex"
 #parameters["ghost_mode"] = "shared_facet"
@@ -42,12 +53,12 @@ if(MPI.size(mpi_comm_world()) == 1):
 mesh = UnitSquareMesh(8, 8)
 # mesh = refine(M)
 
-shared_vertices = mesh.topology().shared_entities(0).keys()
+shared_vertices = np.fromiter(mesh.topology().shared_entities(0).keys(), dtype='uintc')
 shared_cells = mesh.topology().shared_entities(mesh.topology().dim())
 
 num_regular_vertices = mesh.topology().ghost_offset(0)
 
-ghost_vertices = range(num_regular_vertices, mesh.topology().size(0))
+ghost_vertices = np.arange(num_regular_vertices, mesh.topology().size(0))
 
 verts_note = []
 if (n == 0):
@@ -94,7 +105,7 @@ for c in cells(mesh, "all"):
 #    else:
 #        cell_str = str(c.index())
     cells_note.append((xavg, yavg, cell_str))
-    cells_store.append(zip(xc,yc))
+    cells_store.append(list(zip(xc,yc)))
 
     colors.append(cmap[cell_ownership[c.index()]])
     idx += 1
@@ -149,7 +160,17 @@ for note in facet_note:
 
 # Q = FacetFunction("double", mesh)
 
-# xdmf = File("a.xdmf")
-# xdmf << Q
+# # Save solution in XDMF format if available
+# xdmf = XDMFFile(mesh.mpi_comm(), "Q.xdmf")
+# if has_hdf5():
+#     xdmf.write(Q)
+# elif MPI.size(mesh.mpi_comm()) == 1:
+#     encoding = XDMFFile.Encoding_ASCII
+#     xdmf.write(Q, encoding)
+# else:
+#     # Save solution in vtk format
+#     xdmf = File("Q.pvd")
+#     xdmf << Q
 
 plt.savefig("mesh-rank%d.png" % rank)
+plt.show()

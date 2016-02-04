@@ -71,13 +71,18 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
       index_maps.push_back(dofmaps[i]->index_map());
     }
 
+    // Get mesh
+    dolfin_assert(a.mesh());
+    const Mesh& mesh = *(a.mesh());
+
     // Initialise tensor layout
     // FIXME: somewhere need to check block sizes are same on both axes
     // NOTE: Jan: that will be done on the backend side; IndexMap will
     //            provide tabulate functions with arbitrary block size;
     //            moreover the functions will tabulate directly using a
     //            correct int type
-    tensor_layout->init(a.mesh().mpi_comm(), index_maps,
+
+    tensor_layout->init(mesh.mpi_comm(), index_maps,
                         TensorLayout::Ghosts::UNGHOSTED);
 
     // Build sparsity pattern if required
@@ -85,7 +90,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     {
       SparsityPattern& pattern = *tensor_layout->sparsity_pattern();
       SparsityPatternBuilder::build(pattern,
-                                a.mesh(), dofmaps,
+                                mesh, dofmaps,
                                 a.ufc_form()->has_cell_integrals(),
                                 a.ufc_form()->has_interior_facet_integrals(),
                                 a.ufc_form()->has_exterior_facet_integrals(),
@@ -150,7 +155,8 @@ void AssemblerBase::check(const Form& a)
   a.check();
 
   // Extract mesh and coefficients
-  const Mesh& mesh = a.mesh();
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
   const std::vector<std::shared_ptr<const GenericFunction>>
     coefficients = a.coefficients();
 

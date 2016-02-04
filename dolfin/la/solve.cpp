@@ -218,6 +218,14 @@ bool dolfin::has_linear_algebra_backend(std::string backend)
     return false;
     #endif
   }
+  else if (backend == "Tpetra")
+  {
+    #ifdef HAS_TRILINOS
+    return true;
+    #else
+    return false;
+    #endif
+  }
   else if (backend == "STL")
     return true;
 
@@ -259,6 +267,11 @@ std::map<std::string, std::string> dolfin::linear_algebra_backends()
   backends.insert(std::make_pair("PETSc",
                                  "Powerful MPI parallel linear algebra"
                                  " library" + default_backend["PETSc"]));
+  #endif
+
+  #ifdef HAS_TRILINOS
+  backends.insert(std::make_pair("Tpetra",
+    "Powerful MPI parallel linear algebra library"));
   #endif
 
   return backends;

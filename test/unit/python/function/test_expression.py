@@ -333,7 +333,7 @@ def test_element_instantiation():
     f4 = F2(cell=triangle)
     assert isinstance(f4.ufl_element(), TensorElement)
 
-def test_exponent_init():
+def test_num_literal():
     e0 = Expression("1e10")
     assert e0(0,0,0) == 1e10
 
@@ -342,6 +342,17 @@ def test_exponent_init():
 
     e2 = Expression("1e+10")
     assert e2(0,0,0) == 1e+10
+
+    e3 = Expression(".5")
+    assert e3(0,0,0) == 0.5
+
+    e4 = Expression("x[0] * sin(.5)")
+    assert e4(0,0,0) == 0.
+
+    e5 = Expression(["2*t0", "-t0"], t0=1.0)
+    values = e5(0,0,0)
+    assert values[0] == 2.
+    assert values[1] == -1.
 
 def test_name_space_usage(mesh):
     e0 = Expression("std::sin(x[0])*cos(x[1])")
@@ -361,7 +372,7 @@ def test_generic_function_attributes(mesh, V):
     tf.vector()[:] = 1.0
 
     e0 = Expression(["2*t", "-t"], t=tc)
-    e1 = Expression(["2*t", "-t"], t=1.0)
+    e1 = Expression(["2*t0", "-t0"], t0=1.0)
     e2 = Expression("t", t=te)
     e3 = Expression("t", t=tf)
 
@@ -372,7 +383,7 @@ def test_generic_function_attributes(mesh, V):
                  assemble(inner(e3,e3)*dx(mesh)), 7) == 0
 
     tc.assign(3.0)
-    e1.t = float(tc)
+    e1.t0 = float(tc)
 
     assert round(assemble(inner(e0,e0)*dx(mesh)) - \
                  assemble(inner(e1,e1)*dx(mesh)), 7) == 0

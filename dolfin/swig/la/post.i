@@ -878,6 +878,14 @@ AS_BACKEND_TYPE_MACRO(EigenMatrix)
 _matrix_vector_mul_map[EigenMatrix] = [EigenVector]
 %}
 
+#ifdef HAS_TRILINOS
+AS_BACKEND_TYPE_MACRO(TpetraVector)
+AS_BACKEND_TYPE_MACRO(TpetraMatrix)
+%pythoncode %{
+_matrix_vector_mul_map[TpetraMatrix] = [TpetraVector]
+%}
+#endif
+
 #ifdef HAS_PETSC
 AS_BACKEND_TYPE_MACRO(PETScVector)
 AS_BACKEND_TYPE_MACRO(PETScMatrix)

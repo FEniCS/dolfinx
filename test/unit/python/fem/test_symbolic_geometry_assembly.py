@@ -6,12 +6,11 @@ import sys
 import pytest
 from dolfin_utils.test import set_parameters_fixture, skip_in_parallel
 
-from ufl.classes import CellOrientation, CellNormal, CellCoordinate, CellOrigin, Jacobian, JacobianInverse, JacobianDeterminant
-
+from ufl.classes import CellOrientation, CellNormal, CellCoordinate, \
+CellOrigin, Jacobian, JacobianInverse, JacobianDeterminant
 
 # This was for debugging, don't enable this permanently here in tests
-#parameters["reorder_dofs_serial"] = False
-
+# parameters["reorder_dofs_serial"] = False
 
 # Hack to skip uflacs parameter if not installed. There's probably a
 # cleaner way to do this with pytest.
@@ -20,12 +19,18 @@ try:
     _uflacs = ["uflacs"]
 except:
     _uflacs = []
-any_representation = set_parameters_fixture("form_compiler.representation", ["quadrature"] + _uflacs)
-uflacs_representation_only = set_parameters_fixture("form_compiler.representation", _uflacs)
+any_representation = set_parameters_fixture("form_compiler.representation",
+                                            ["quadrature"] + _uflacs)
+uflacs_representation_only \
+    = set_parameters_fixture("form_compiler.representation",
+                             _uflacs)
 
 
 def create_mesh(vertices, cells, cellname="simplex"):
-    "Given list of vertex coordinate tuples and cell vertex index tuples, build and return a mesh."
+    """Given list of vertex coordinate tuples and cell vertex index
+tuples, build and return a mesh.
+
+    """
 
     # Get dimensions
     gdim = len(vertices[0])
@@ -66,7 +71,10 @@ def create_mesh(vertices, cells, cellname="simplex"):
 
 
 def create_line_mesh(vertices):
-    "Given list of vertex coordinate tuples, build and return a mesh of intervals."
+    """Given list of vertex coordinate tuples, build and return a mesh of
+intervals.
+
+    """
 
     # Get dimensions
     gdim = len(vertices[0])
@@ -107,6 +115,7 @@ def create_line_mesh(vertices):
 
 line_resolution = 8
 
+
 @pytest.fixture
 def line1d(request):
     n = line_resolution
@@ -114,34 +123,36 @@ def line1d(request):
     vertices = [(u**2,) for u in us]
     return create_line_mesh(vertices)
 
+
 @pytest.fixture
 def rline1d(request):
     n = line_resolution
     us = [i/float(n-1) for i in range(n)]
     vertices = [(u**2,) for u in us]
-    vertices = list(reversed(vertices)) # same as line1d, just reversed here
+    vertices = list(reversed(vertices))  # same as line1d, just reversed here
     return create_line_mesh(vertices)
+
 
 @pytest.fixture
 def line2d(request):
     n = line_resolution
     us = [i/float(n-1) for i in range(n)]
-    vertices = [(cos(DOLFIN_PI*u), sin(DOLFIN_PI*u))
-                 for u in us]
+    vertices = [(cos(DOLFIN_PI*u), sin(DOLFIN_PI*u)) for u in us]
     mesh = create_line_mesh(vertices)
     mesh.init_cell_orientations(Expression(("0.0", "1.0")))
     return mesh
+
 
 @pytest.fixture
 def rline2d(request):
     n = line_resolution
     us = [i/float(n-1) for i in range(n)]
-    vertices = [(cos(DOLFIN_PI*u), sin(DOLFIN_PI*u))
-                 for u in us]
-    vertices = list(reversed(vertices)) # same as line2d, just reversed here
+    vertices = [(cos(DOLFIN_PI*u), sin(DOLFIN_PI*u)) for u in us]
+    vertices = list(reversed(vertices))  # same as line2d, just reversed here
     mesh = create_line_mesh(vertices)
     mesh.init_cell_orientations(Expression(("0.0", "1.0")))
     return mesh
+
 
 @pytest.fixture
 def line3d(request):
@@ -149,11 +160,11 @@ def line3d(request):
     us = [i/float(n-1) for i in range(n)]
     vertices = [(cos(4.0*DOLFIN_PI*u),
                  sin(4.0*DOLFIN_PI*u),
-                 2.0*u)
-                 for u in us]
+                 2.0*u) for u in us]
     mesh = create_line_mesh(vertices)
-    #mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
+    # mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
     return mesh
+
 
 @pytest.fixture
 def rline3d(request):
@@ -161,12 +172,12 @@ def rline3d(request):
     us = [i/float(n-1) for i in range(n)]
     vertices = [(cos(4.0*DOLFIN_PI*u),
                  sin(4.0*DOLFIN_PI*u),
-                 2.0*u)
-                 for u in us]
-    vertices = list(reversed(vertices)) # same as line3d, just reversed here
+                 2.0*u) for u in us]
+    vertices = list(reversed(vertices))  # same as line3d, just reversed here
     mesh = create_line_mesh(vertices)
-    #mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
+    # mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
     return mesh
+
 
 @pytest.fixture
 def square2d(request):
@@ -184,6 +195,7 @@ def square2d(request):
         ]
     mesh = create_mesh(vertices, cells)
     return mesh
+
 
 @pytest.fixture
 def square3d(request):
@@ -203,8 +215,9 @@ def square3d(request):
 
     return mesh
 
+
 @skip_in_parallel
-def test_line_meshes(line1d, line2d, line3d, rline1d, rline2d, rline3d):#, uflacs_representation_only):
+def test_line_meshes(line1d, line2d, line3d, rline1d, rline2d, rline3d):
     "Check some properties of the meshes created for these tests."
     assert line1d.geometry().dim() == 1
     assert line2d.geometry().dim() == 2
@@ -213,8 +226,10 @@ def test_line_meshes(line1d, line2d, line3d, rline1d, rline2d, rline3d):#, uflac
     assert line2d.topology().dim() == 1
     assert line3d.topology().dim() == 1
 
+
 @skip_in_parallel
-def test_write_line_meshes_to_files(line1d, line2d, line3d, rline1d, rline2d, rline3d, uflacs_representation_only):
+def test_write_line_meshes_to_files(line1d, line2d, line3d, rline1d, rline2d,
+                                    rline3d, uflacs_representation_only):
     # Enable to write meshes to file for inspection (plot doesn't work
     # for 1d in 2d/3d)
     # CellNormal is only supported by uflacs
@@ -225,8 +240,13 @@ def test_write_line_meshes_to_files(line1d, line2d, line3d, rline1d, rline2d, rl
         File("rline1d.xdmf") << rline1d
         File("rline2d.xdmf") << rline2d
         File("rline3d.xdmf") << rline3d
-        File("line2dnormal.xdmf") << project(CellNormal(line2d), VectorFunctionSpace(line2d, "DG", 0))
-        File("rline2dnormal.xdmf") << project(CellNormal(rline2d), VectorFunctionSpace(rline2d, "DG", 0))
+        File("line2dnormal.xdmf") << project(CellNormal(line2d),
+                                             VectorFunctionSpace(line2d,
+                                                                 "DG", 0))
+        File("rline2dnormal.xdmf") << project(CellNormal(rline2d),
+                                              VectorFunctionSpace(rline2d,
+                                                                  "DG", 0))
+
 
 @skip_in_parallel
 @pytest.mark.parametrize("mesh", [
@@ -235,7 +255,7 @@ def test_write_line_meshes_to_files(line1d, line2d, line3d, rline1d, rline2d, rl
     line3d(None),
     rline1d(None),
     rline2d(None),
-    rline3d(None),])
+    rline3d(None), ])
 def test_manifold_line_geometry(mesh, uflacs_representation_only):
     assert uflacs_representation_only == "uflacs"
     assert parameters["form_compiler"]["representation"] == "uflacs"
@@ -258,7 +278,8 @@ def test_manifold_line_geometry(mesh, uflacs_representation_only):
     K = JacobianInverse(mesh)
     vol = CellVolume(mesh)
 
-    # Check that length computed via integral doesn't change with refinement
+    # Check that length computed via integral doesn't change with
+    # refinement
     length = assemble(1.0*dx)
     mesh2 = refine(mesh)
     assert mesh2.num_cells() == 2*mesh.num_cells()
@@ -272,7 +293,7 @@ def test_manifold_line_geometry(mesh, uflacs_representation_only):
     assert round(num_cells - mesh.num_cells(), 7) == 0.0
 
     # Check that norm of Jacobian column matches detJ and volume
-    assert round(length - assemble(sqrt(J[:,0]**2)/abs(detJ)*dx), 7) == 0.0
+    assert round(length - assemble(sqrt(J[:, 0]**2)/abs(detJ)*dx), 7) == 0.0
     assert round(assemble((vol-abs(detJ))*dx), 7) == 0.0
     assert round(length - assemble(vol/abs(detJ)*dx), 7) == 0.0
 
@@ -282,59 +303,63 @@ def test_manifold_line_geometry(mesh, uflacs_representation_only):
     for i in range(mesh.num_cells()):
         mf[i] = 0
     for i in range(mesh.num_cells()):
-        mf[i] = 1 # mark this cell
-        x0 = Constant(tuple(coords[cells[i][0],:]))
+        mf[i] = 1  # mark this cell
+        x0 = Constant(tuple(coords[cells[i][0], :]))
 
         # Integrate x components over a cell and compare with midpoint
         # computed from coords
         for j in range(gdim):
-            xm = 0.5*(coords[cells[i][0],j] + coords[cells[i][1],j])
+            xm = 0.5*(coords[cells[i][0], j] + coords[cells[i][1], j])
             assert round(assemble(x[j]/abs(detJ)*dx(1)) - xm, 7) == 0.0
 
         # Jacobian column is pointing away from x0
-        assert assemble(dot(J[:,0],x-x0)*dx(1)) > 0.0
+        assert assemble(dot(J[:, 0], x-x0)*dx(1)) > 0.0
 
         # Check affine coordinate relations x=x0+J*X, X=K*(x-x0), K*J=I
-        assert round(assemble( (x - (x0+J*X))**2*dx(1) ), 7) == 0.0
-        assert round(assemble( (X - K*(x-x0))**2*dx(1) ), 7) == 0.0
-        assert round(assemble( (K*J - Identity(tdim))**2*dx(1) ), 7) == 0.0
+        assert round(assemble((x - (x0+J*X))**2*dx(1)), 7) == 0.0
+        assert round(assemble((X - K*(x-x0))**2*dx(1)), 7) == 0.0
+        assert round(assemble((K*J - Identity(tdim))**2*dx(1)), 7) == 0.0
 
         # Jacobian column is orthogonal to cell normal
         if gdim == 2:
-            assert round(assemble(dot(J[:,0],cn)*dx(1)), 7) == 0.0
+            assert round(assemble(dot(J[:, 0], cn)*dx(1)), 7) == 0.0
 
             # Create 3d tangent and cell normal vectors
-            tangent = as_vector((J[0,0],J[1,0],0.0))
+            tangent = as_vector((J[0, 0], J[1, 0], 0.0))
             tangent = co * tangent / sqrt(tangent**2)
             normal = as_vector((cn[0], cn[1], 0.0))
             up = cross(tangent, normal)
 
             # Check that t,n,up are orthogonal
-            assert round(assemble(dot(tangent,normal)*dx(1)), 7) == 0.0
-            assert round(assemble(dot(tangent,up)*dx(1)), 7) == 0.0
-            assert round(assemble(dot(normal,up)*dx(1)), 7) == 0.0
-            assert round(assemble((cross(up, tangent) - normal)**2*dx(1)), 7) == 0.0
+            assert round(assemble(dot(tangent, normal)*dx(1)), 7) == 0.0
+            assert round(assemble(dot(tangent, up)*dx(1)), 7) == 0.0
+            assert round(assemble(dot(normal, up)*dx(1)), 7) == 0.0
+            assert round(assemble((cross(up, tangent) - normal)**2*dx(1)),
+                         7) == 0.0
 
             assert round(assemble(up**2*dx(1)), 7) > 0.0
             assert round(assemble((up[0]**2 + up[1]**2)*dx(1)), 7) == 0.0
             assert round(assemble(up[2]*dx(1)), 7) > 0.0
-        mf[i] = 0 # unmark this cell
+        mf[i] = 0  # unmark this cell
+
 
 @skip_in_parallel
 def test_manifold_area(square3d, any_representation):
-    "Integrate literal expressions over manifold cells, no function spaces involved."
+    """Integrate literal expressions over manifold cells, no function
+spaces involved."""
     mesh = square3d
-    area = sqrt(3.0) # known area of mesh
+    area = sqrt(3.0)  # known area of mesh
 
     # Assembling mesh area scaled by a literal
     assert round(assemble(0.0*dx(mesh)) - 0.0*area, 7) == 0.0
     assert round(assemble(1.0*dx(mesh)) - 1.0*area, 7) == 0.0
     assert round(assemble(3.0*dx(mesh)) - 3.0*area, 7) == 0.0
 
+
 @skip_in_parallel
 def test_manifold_dg0_functions(square3d, any_representation):
     mesh = square3d
-    area = sqrt(3.0) # known area of mesh
+    area = sqrt(3.0)  # known area of mesh
 
     mf = CellFunction("size_t", mesh)
     mf[0] = 0
@@ -362,12 +387,13 @@ def test_manifold_dg0_functions(square3d, any_representation):
     assert round(assemble(v0[2]*dx) - v0v[2]*area) == 0.0
 
     # Project x to scalar and vector DG0 spaces on manifold
-    u0x = project(x[0], U0) # cell averages of x[0]: 2/3, 1/3, sum = 3/3
-    v0x = project(x, V0)    # cell averages of x[:]: (2/3, 1/3, 2/3), (1/3, 2/3, 2/3), sum = 10/3
-    assert round(sum(u0x.vector().array()) -  3.0/3.0, 7) == 0.0
+    u0x = project(x[0], U0)  # cell averages of x[0]: 2/3, 1/3, sum = 3/3
+    v0x = project(x, V0)  # cell averages of x[:]: (2/3, 1/3, 2/3), (1/3, 2/3, 2/3), sum = 10/3
+    assert round(sum(u0x.vector().array()) - 3.0/3.0, 7) == 0.0
     assert round(sum(v0x.vector().array()) - 10.0/3.0, 7) == 0.0
 
-    # Evaluate in all corners and cell midpoints, value should be the same constant everywhere
+    # Evaluate in all corners and cell midpoints, value should be the
+    # same constant everywhere
     points = [
         (0.0, 0.0, 1.0),
         (1.0, 1.0, 1.0),
@@ -377,12 +403,13 @@ def test_manifold_dg0_functions(square3d, any_representation):
         (2.0/3.0, 1.0/3.0, 2.0/3.0),
         ]
     for point in points:
-        assert round(sum( (v0(point) - numpy.asarray(v0v))**2 ), 7) == 0.0
+        assert round(sum((v0(point) - numpy.asarray(v0v))**2), 7) == 0.0
+
 
 @skip_in_parallel
 def test_manifold_cg1_functions(square3d, any_representation):
     mesh = square3d
-    area = sqrt(3.0) # known area of mesh
+    area = sqrt(3.0)  # known area of mesh
 
     mf = CellFunction("size_t", mesh)
     mf[0] = 0
@@ -422,6 +449,7 @@ def test_manifold_cg1_functions(square3d, any_representation):
     assert round(assemble(v1[1]*dx(1)) - mp[1][1]) == 0.0
     assert round(assemble(v1[2]*dx(1)) - mp[1][2]) == 0.0
 
+
 @skip_in_parallel
 def test_manifold_coordinate_projection(square3d, any_representation):
     mesh = square3d
@@ -443,6 +471,7 @@ def test_manifold_coordinate_projection(square3d, any_representation):
     assert round(assemble((v1[1]-x[1])**2*dx(1)), 7) == 0.0
     assert round(assemble((v1[2]-x[2])**2*dx(1)), 7) == 0.0
 
+
 @skip_in_parallel
 def test_manifold_point_evaluation(square3d, any_representation):
     mesh = square3d
@@ -456,35 +485,36 @@ def test_manifold_point_evaluation(square3d, any_representation):
     # value should equal the evaluation coordinate
     # Because bounding box tree doesn't handle manifolds,
     # we have to specify which cell each point is in.
-    points = [ [
-        (0.0, 0.0, 1.0), # vertex of both cells
-        (1.0, 1.0, 1.0), # vertex of both cells
-        (1.0, 0.0, 0.0), # vertex of cell 0 only
-        (2.0/3.0, 1.0/3.0, 2.0/3.0), # midpoint of cell 0
+    points = [[
+        (0.0, 0.0, 1.0),  # vertex of both cells
+        (1.0, 1.0, 1.0),  # vertex of both cells
+        (1.0, 0.0, 0.0),  # vertex of cell 0 only
+        (2.0/3.0, 1.0/3.0, 2.0/3.0),  # midpoint of cell 0
         ], [
-        (0.0, 0.0, 1.0), # vertex of both cells
-        (1.0, 1.0, 1.0), # vertex of both cells
-        (0.0, 1.0, 0.0), # vertex of cell 1 only
-        (1.0/3.0, 2.0/3.0, 2.0/3.0), # midpoint of cell 1
-        ] ]
+        (0.0, 0.0, 1.0),  # vertex of both cells
+        (1.0, 1.0, 1.0),  # vertex of both cells
+        (0.0, 1.0, 0.0),  # vertex of cell 1 only
+        (1.0/3.0, 2.0/3.0, 2.0/3.0),  # midpoint of cell 1
+        ]]
     values = numpy.zeros(3)
     bb = mesh.bounding_box_tree()
     for cellid in (0, 1):
         for point in points[cellid]:
             v1.eval_cell(values, numpy.asarray(point), Cell(mesh, cellid))
-            assert round(values[0] - point[0], 7) == 0.0 # expecting v1(x) = x
-            assert round(values[1] - point[1], 7) == 0.0 # expecting v1(x) = x
-            assert round(values[2] - point[2], 7) == 0.0 # expecting v1(x) = x
-            #print cellid, [round(v,2) for v in point], [round(v,2) for v in values]
+            assert round(values[0] - point[0], 7) == 0.0  # expecting v1(x) = x
+            assert round(values[1] - point[1], 7) == 0.0  # expecting v1(x) = x
+            assert round(values[2] - point[2], 7) == 0.0  # expecting v1(x) = x
+            # print cellid, [round(v,2) for v in point],
+            # [round(v,2) for v in values]
 
 
 # Some symbolic quantities are only available through uflacs
 @skip_in_parallel
 def test_manifold_symbolic_geometry(square3d, uflacs_representation_only):
     mesh = square3d
-    area = sqrt(3.0) # known area of mesh
-    A = area/2.0 # area of single cell
-    Aref = 0.5 # 0.5 is the area of the UFC reference triangle
+    area = sqrt(3.0)  # known area of mesh
+    A = area/2.0  # area of single cell
+    Aref = 0.5  # 0.5 is the area of the UFC reference triangle
 
     mf = CellFunction("size_t", mesh)
     mf[0] = 0
@@ -494,22 +524,21 @@ def test_manifold_symbolic_geometry(square3d, uflacs_representation_only):
     U0 = FunctionSpace(mesh, "DG", 0)
     V0 = VectorFunctionSpace(mesh, "DG", 0)
 
-
     # 0 means up=+1.0, 1 means down=-1.0
     orientations = mesh.cell_orientations()
-    assert orientations[0] == 1 # down
-    assert orientations[1] == 0 # up
+    assert orientations[0] == 1  # down
+    assert orientations[1] == 0  # up
 
     # Check cell orientation, should be -1.0 (down) and +1.0 (up) on
     # the two cells respectively by construction
     co = CellOrientation(mesh)
     co0 = assemble(co/A*dx(0))
     co1 = assemble(co/A*dx(1))
-    assert round(abs(co0) - 1.0, 7) == 0.0 # should be +1 or -1
-    assert round(abs(co1) - 1.0, 7) == 0.0 # should be +1 or -1
-    assert round(co1 + co0, 7) == 0.0 # should cancel out
-    assert round(co0 - -1.0, 7) == 0.0 # down
-    assert round(co1 - +1.0, 7) == 0.0 # up
+    assert round(abs(co0) - 1.0, 7) == 0.0  # should be +1 or -1
+    assert round(abs(co1) - 1.0, 7) == 0.0  # should be +1 or -1
+    assert round(co1 + co0, 7) == 0.0  # should cancel out
+    assert round(co0 - -1.0, 7) == 0.0  # down
+    assert round(co1 - +1.0, 7) == 0.0  # up
 
     # Check cell normal directions component for component
     cn = CellNormal(mesh)
@@ -527,42 +556,42 @@ def test_manifold_symbolic_geometry(square3d, uflacs_representation_only):
     x = SpatialCoordinate(mesh)
     X = CellCoordinate(mesh)
     J = Jacobian(mesh)
-    detJ = JacobianDeterminant(mesh) # pseudo-determinant
-    K = JacobianInverse(mesh) # pseudo-inverse
+    detJ = JacobianDeterminant(mesh)  # pseudo-determinant
+    K = JacobianInverse(mesh)  # pseudo-inverse
     vol = CellVolume(mesh)
 
     # This is not currently implemented in uflacs:
-    #x0 = CellOrigin(mesh)
+    # x0 = CellOrigin(mesh)
     # But by happy accident, x0 is the same vertex for both our triangles:
     x0 = as_vector((0.0, 0.0, 1.0))
 
     # Check integration area vs detJ
     for k in range(2):
         # Validate known cell area A
-        assert round(assemble( 1.0*dx(k) ) - A, 7) == 0.0
-        assert round(assemble( 1.0/A*dx(k) ) - 1.0, 7) == 0.0
-        assert round(assemble( A*dx(k) ) - A**2, 7) == 0.0
+        assert round(assemble(1.0*dx(k)) - A, 7) == 0.0
+        assert round(assemble(1.0/A*dx(k)) - 1.0, 7) == 0.0
+        assert round(assemble(A*dx(k)) - A**2, 7) == 0.0
         # Compare abs(detJ) to A
         A2 = Aref*abs(detJ)
-        assert round(assemble( (A-A2)**2*dx(k) ) - 0.0, 7) == 0.0
-        assert round(assemble( 1.0/A2*dx(k) ) - 1.0, 7) == 0.0
-        assert round(assemble( A2*dx(k) ) - A**2, 7) == 0.0
+        assert round(assemble((A-A2)**2*dx(k)) - 0.0, 7) == 0.0
+        assert round(assemble(1.0/A2*dx(k)) - 1.0, 7) == 0.0
+        assert round(assemble(A2*dx(k)) - A**2, 7) == 0.0
         # Validate cell orientation
-        assert round(assemble( co*dx(k) ) - A*(1 if k == 1 else -1), 7) == 0.0
+        assert round(assemble(co*dx(k)) - A*(1 if k == 1 else -1), 7) == 0.0
         # Compare co*detJ to A (detJ is pseudo-determinant with sign
         # restored, *co again is equivalent to abs())
         A3 = Aref*co*detJ
-        assert round(assemble( (A-A3)**2*dx(k) ) - 0.0, 7) == 0.0
-        assert round(assemble( (A2-A3)**2*dx(k) ) - 0.0, 7) == 0.0
-        assert round(assemble( 1.0/A3*dx(k) ) - 1.0, 7) == 0.0
-        assert round(assemble( A3*dx(k) ) - A**2, 7) == 0.0
+        assert round(assemble((A-A3)**2*dx(k)) - 0.0, 7) == 0.0
+        assert round(assemble((A2-A3)**2*dx(k)) - 0.0, 7) == 0.0
+        assert round(assemble(1.0/A3*dx(k)) - 1.0, 7) == 0.0
+        assert round(assemble(A3*dx(k)) - A**2, 7) == 0.0
         # Compare vol to A
         A4 = vol
-        assert round(assemble( (A-A4)**2*dx(k) ) - 0.0, 7) == 0.0
-        assert round(assemble( (A2-A4)**2*dx(k) ) - 0.0, 7) == 0.0
-        assert round(assemble( (A3-A4)**2*dx(k) ) - 0.0, 7) == 0.0
-        assert round(assemble( 1.0/A4*dx(k) ) - 1.0, 7) == 0.0
-        assert round(assemble( A4*dx(k) ) - A**2, 7) == 0.0
+        assert round(assemble((A-A4)**2*dx(k)) - 0.0, 7) == 0.0
+        assert round(assemble((A2-A4)**2*dx(k)) - 0.0, 7) == 0.0
+        assert round(assemble((A3-A4)**2*dx(k)) - 0.0, 7) == 0.0
+        assert round(assemble(1.0/A4*dx(k)) - 1.0, 7) == 0.0
+        assert round(assemble(A4*dx(k)) - A**2, 7) == 0.0
 
     # Check integral of reference coordinate components over reference
     # triangle: \int_0^1 \int_0^{1-x} x dy dx = 1/6
@@ -570,26 +599,27 @@ def test_manifold_symbolic_geometry(square3d, uflacs_representation_only):
     for k in range(2):
         for j in range(2):
             # Scale by detJ^-1 to get reference cell integral
-            assert round(assemble( X[j]/abs(detJ)*dx(k) ) - Xmp[j], 7) == 0.0
+            assert round(assemble(X[j]/abs(detJ)*dx(k)) - Xmp[j], 7) == 0.0
 
     # Check average of physical coordinate components over each cell:
-    xmp = [(2.0/3.0, 1.0/3.0, 2.0/3.0), # midpoint of cell 0
-           (1.0/3.0, 2.0/3.0, 2.0/3.0), # midpoint of cell 1
+    xmp = [(2.0/3.0, 1.0/3.0, 2.0/3.0),  # midpoint of cell 0
+           (1.0/3.0, 2.0/3.0, 2.0/3.0),  # midpoint of cell 1
            ]
     for k in range(2):
         for i in range(3):
             # Scale by A^-1 to get average of x, not integral
-            assert round(assemble( x[i]/A*dx(k) ) - xmp[k][i], 7) == 0.0
+            assert round(assemble(x[i]/A*dx(k)) - xmp[k][i], 7) == 0.0
 
     # Check affine coordinate relations x=x0+J*X, X=K*(x-x0), K*J=I
-    assert round(assemble( (x - (x0+J*X))**2*dx ), 7) == 0.0
-    assert round(assemble( (X - K*(x-x0))**2*dx ), 7) == 0.0
-    assert round(assemble( (K*J - Identity(2))**2/A*dx ), 7) == 0.0
+    assert round(assemble((x - (x0+J*X))**2*dx), 7) == 0.0
+    assert round(assemble((X - K*(x-x0))**2*dx), 7) == 0.0
+    assert round(assemble((K*J - Identity(2))**2/A*dx), 7) == 0.0
+
 
 @skip_in_parallel
 def test_manifold_piola_mapped_functions(square3d, any_representation):
     mesh = square3d
-    area = sqrt(3.0) # known area of mesh
+    area = sqrt(3.0)  # known area of mesh
     A = area/2.0
 
     mf = CellFunction("size_t", mesh)
@@ -600,8 +630,8 @@ def test_manifold_piola_mapped_functions(square3d, any_representation):
     x = SpatialCoordinate(mesh)
 
     J = Jacobian(mesh)
-    detJ = JacobianDeterminant(mesh) # pseudo-determinant
-    K = JacobianInverse(mesh) # pseudo-inverse
+    detJ = JacobianDeterminant(mesh)  # pseudo-determinant
+    K = JacobianInverse(mesh)  # pseudo-inverse
 
     Q1 = VectorFunctionSpace(mesh, "CG", 1)
     U1 = VectorFunctionSpace(mesh, "DG", 1)
@@ -633,16 +663,17 @@ def test_manifold_piola_mapped_functions(square3d, any_representation):
     assert assemble(w1**2*dx) == 0.0
     # Changing vec to nonzero, check that dM/df != 0 at f=0
     vec = Constant((2.0, 2.0, 2.0))
-    assert round(assemble(derivative((q1-vec)**2*dx, q1)).norm('l2')
-                 - assemble(-4.0*sum(dq)*dx).norm('l2'), 7) == 0.0
-    assert round(assemble(derivative((u1-vec)**2*dx, u1)).norm('l2')
-                 - assemble(-4.0*sum(du)*dx).norm('l2'), 7) == 0.0
-    assert round(assemble(derivative((v1-vec)**2*dx, v1)).norm('l2')
-                 - assemble(-4.0*sum(dv)*dx).norm('l2'), 7) == 0.0
-    assert round(assemble(derivative((w1-vec)**2*dx, w1)).norm('l2')
-                 - assemble(-4.0*sum(dw)*dx).norm('l2'), 7) == 0.0
+    assert round(assemble(derivative((q1-vec)**2*dx, q1)).norm('l2') -
+                 assemble(-4.0*sum(dq)*dx).norm('l2'), 7) == 0.0
+    assert round(assemble(derivative((u1-vec)**2*dx, u1)).norm('l2') -
+                 assemble(-4.0*sum(du)*dx).norm('l2'), 7) == 0.0
+    assert round(assemble(derivative((v1-vec)**2*dx, v1)).norm('l2') -
+                 assemble(-4.0*sum(dv)*dx).norm('l2'), 7) == 0.0
+    assert round(assemble(derivative((w1-vec)**2*dx, w1)).norm('l2') -
+                 assemble(-4.0*sum(dw)*dx).norm('l2'), 7) == 0.0
 
-    # Project piecewise linears to scalar and vector CG1 spaces on manifold
+    # Project piecewise linears to scalar and vector CG1 spaces on
+    # manifold
     vec = Constant((1.0, 1.0, 1.0))
     q1 = project(vec, Q1)
     u1 = project(vec, U1)
@@ -668,10 +699,10 @@ def test_manifold_piola_mapped_functions(square3d, any_representation):
     u1 = project(vec, U1)
     v1 = project(vec, V1)
     w1 = project(vec, W1)
-    assert round(assemble((q1-vec)**2*dx), 7) > 0.0 # Exact representation not possible?
+    assert round(assemble((q1-vec)**2*dx), 7) > 0.0  # Exact representation not possible?
     assert round(assemble((u1-vec)**2*dx), 7) == 0.0
     assert round(assemble((v1-vec)**2*dx), 7) == 0.0
-    assert round(assemble((w1-vec)**2*dx), 7) > 0.0 # Exact representation not possible?
+    assert round(assemble((w1-vec)**2*dx), 7) > 0.0  # Exact representation not possible?
 
     # Hcurl mapping of a local constant vector should be representable
     # in hcurl conforming space
@@ -680,11 +711,10 @@ def test_manifold_piola_mapped_functions(square3d, any_representation):
     u1 = project(vec, U1)
     v1 = project(vec, V1)
     w1 = project(vec, W1)
-    assert round(assemble((q1-vec)**2*dx), 7) > 0.0 # Exact representation not possible?
+    assert round(assemble((q1-vec)**2*dx), 7) > 0.0  # Exact representation not possible?
     assert round(assemble((u1-vec)**2*dx), 7) == 0.0
-    assert round(assemble((v1-vec)**2*dx), 7) > 0.0 # Exact representation not possible?
+    assert round(assemble((v1-vec)**2*dx), 7) > 0.0  # Exact representation not possible?
     assert round(assemble((w1-vec)**2*dx), 7) == 0.0
-
 
 
 # Some symbolic quantities are only available through uflacs
@@ -695,9 +725,9 @@ def test_tetrahedron_symbolic_geometry(uflacs_representation_only):
     gdim = mesh.geometry().dim()
     tdim = mesh.topology().dim()
 
-    area = 1.0 # known volume of mesh
-    A = area/6.0 # volume of single cell
-    Aref = 1.0/6.0 # the volume of the UFC reference tetrahedron
+    area = 1.0  # known volume of mesh
+    A = area/6.0  # volume of single cell
+    Aref = 1.0/6.0  # the volume of the UFC reference tetrahedron
 
     mf = CellFunction("size_t", mesh)
     for i in range(mesh.num_cells()):
@@ -722,31 +752,32 @@ def test_tetrahedron_symbolic_geometry(uflacs_representation_only):
     cells = mesh.cells()
     for k in range(mesh.num_cells()):
         # This is not currently implemented in uflacs:
-        #x0 = CellOrigin(mesh)
+        # x0 = CellOrigin(mesh)
         # But we can extract it from the mesh for a given cell k
         x0 = as_vector(coordinates[cells[k][0]][:])
         # Validate known cell volume A
-        assert round(assemble( 1.0*dx(k) ) - A, 7) == 0.0
-        assert round(assemble( 1.0/A*dx(k) ) - 1.0, 7) == 0.0
-        assert round(assemble( A*dx(k) ) - A**2, 7) == 0.0
+        assert round(assemble(1.0*dx(k)) - A, 7) == 0.0
+        assert round(assemble(1.0/A*dx(k)) - 1.0, 7) == 0.0
+        assert round(assemble(A*dx(k)) - A**2, 7) == 0.0
         # Compare abs(detJ) to A
         A2 = Aref*abs(detJ)
-        assert round(assemble( (A-A2)**2*dx(k) ) - 0.0, 7) == 0.0
-        assert round(assemble( 1.0/A2*dx(k) ) - 1.0, 7) == 0.0
-        assert round(assemble( A2*dx(k) ) - A**2, 7) == 0.0
+        assert round(assemble((A-A2)**2*dx(k)) - 0.0, 7) == 0.0
+        assert round(assemble(1.0/A2*dx(k)) - 1.0, 7) == 0.0
+        assert round(assemble(A2*dx(k)) - A**2, 7) == 0.0
         # Compare vol to A
         A4 = vol
-        assert round(assemble( (A-A4)**2*dx(k) ) - 0.0, 7) == 0.0
-        assert round(assemble( (A2-A4)**2*dx(k) ) - 0.0, 7) == 0.0
-        assert round(assemble( 1.0/A4*dx(k) ) - 1.0, 7) == 0.0
-        assert round(assemble( A4*dx(k) ) - A**2, 7) == 0.0
+        assert round(assemble((A-A4)**2*dx(k)) - 0.0, 7) == 0.0
+        assert round(assemble((A2-A4)**2*dx(k)) - 0.0, 7) == 0.0
+        assert round(assemble(1.0/A4*dx(k)) - 1.0, 7) == 0.0
+        assert round(assemble(A4*dx(k)) - A**2, 7) == 0.0
 
-    # Check integral of reference coordinate components over reference tetrahedron:
-    Xmp = (1.0/24.0, 1.0/24.0, 1.0/24.0) # not validated analytically
+    # Check integral of reference coordinate components over reference
+    # tetrahedron:
+    Xmp = (1.0/24.0, 1.0/24.0, 1.0/24.0)  # not validated analytically
     for k in range(mesh.num_cells()):
         for j in range(tdim):
             # Scale by detJ^-1 to get reference cell integral
-            assert round(assemble( X[j]/abs(detJ)*dx(k) ) - Xmp[j], 7) == 0.0
+            assert round(assemble(X[j]/abs(detJ)*dx(k)) - Xmp[j], 7) == 0.0
 
     # Check average of physical coordinate components over each cell:
     for k in range(mesh.num_cells()):
@@ -755,15 +786,14 @@ def test_tetrahedron_symbolic_geometry(uflacs_representation_only):
         vavg = sum(verts[1:], verts[0])/len(verts)
         for i in range(gdim):
             # Scale by A^-1 to get average of x, not integral
-            assert round(assemble( x[i]/A*dx(k) ) - vavg[i], 7) == 0.0
+            assert round(assemble(x[i]/A*dx(k)) - vavg[i], 7) == 0.0
 
     # Check affine coordinate relations x=x0+J*X, X=K*(x-x0), K*J=I
     for k in range(mesh.num_cells()):
         x0 = as_vector(coordinates[cells[k][0]][:])
-        assert round(assemble( (x - (x0+J*X))**2*dx(k) ), 7) == 0.0
-        assert round(assemble( (X - K*(x-x0))**2*dx(k) ), 7) == 0.0
-        assert round(assemble( (K*J - Identity(tdim))**2/A*dx(k) ), 7) == 0.0
-
+        assert round(assemble((x - (x0+J*X))**2*dx(k)), 7) == 0.0
+        assert round(assemble((X - K*(x-x0))**2*dx(k)), 7) == 0.0
+        assert round(assemble((K*J - Identity(tdim))**2/A*dx(k)), 7) == 0.0
 
 
 # Some symbolic quantities are only available through uflacs
@@ -774,9 +804,9 @@ def test_triangle_symbolic_geometry(uflacs_representation_only):
     gdim = mesh.geometry().dim()
     tdim = mesh.topology().dim()
 
-    area = 1.0 # known volume of mesh
-    A = area/2.0 # volume of single cell
-    Aref = 1.0/2.0 # the volume of the UFC reference triangle
+    area = 1.0  # known volume of mesh
+    A = area/2.0  # volume of single cell
+    Aref = 1.0/2.0  # the volume of the UFC reference triangle
 
     mf = CellFunction("size_t", mesh)
     for i in range(mesh.num_cells()):
@@ -801,31 +831,32 @@ def test_triangle_symbolic_geometry(uflacs_representation_only):
     cells = mesh.cells()
     for k in range(mesh.num_cells()):
         # This is not currently implemented in uflacs:
-        #x0 = CellOrigin(mesh)
+        # x0 = CellOrigin(mesh)
         # But we can extract it from the mesh for a given cell k
         x0 = as_vector(coordinates[cells[k][0]][:])
         # Validate known cell volume A
-        assert round(assemble( 1.0*dx(k) ) - A, 7) == 0.0
-        assert round(assemble( 1.0/A*dx(k) ) - 1.0, 7) == 0.0
-        assert round(assemble( A*dx(k) ) - A**2, 7) == 0.0
+        assert round(assemble(1.0*dx(k)) - A, 7) == 0.0
+        assert round(assemble(1.0/A*dx(k)) - 1.0, 7) == 0.0
+        assert round(assemble(A*dx(k)) - A**2, 7) == 0.0
         # Compare abs(detJ) to A
         A2 = Aref*abs(detJ)
-        assert round(assemble( (A-A2)**2*dx(k) ) - 0.0, 7) == 0.0
-        assert round(assemble( 1.0/A2*dx(k) ) - 1.0, 7) == 0.0
-        assert round(assemble( A2*dx(k) ) - A**2, 7) == 0.0
+        assert round(assemble((A-A2)**2*dx(k)) - 0.0, 7) == 0.0
+        assert round(assemble(1.0/A2*dx(k)) - 1.0, 7) == 0.0
+        assert round(assemble(A2*dx(k)) - A**2, 7) == 0.0
         # Compare vol to A
         A4 = vol
-        assert round(assemble( (A-A4)**2*dx(k) ) - 0.0, 7) == 0.0
-        assert round(assemble( (A2-A4)**2*dx(k) ) - 0.0, 7) == 0.0
-        assert round(assemble( 1.0/A4*dx(k) ) - 1.0, 7) == 0.0
-        assert round(assemble( A4*dx(k) ) - A**2, 7) == 0.0
+        assert round(assemble((A-A4)**2*dx(k)) - 0.0, 7) == 0.0
+        assert round(assemble((A2-A4)**2*dx(k)) - 0.0, 7) == 0.0
+        assert round(assemble(1.0/A4*dx(k)) - 1.0, 7) == 0.0
+        assert round(assemble(A4*dx(k)) - A**2, 7) == 0.0
 
-    # Check integral of reference coordinate components over reference triangle:
+    # Check integral of reference coordinate components over reference
+    # triangle:
     Xmp = (1.0/6.0, 1.0/6.0)
     for k in range(mesh.num_cells()):
         for j in range(tdim):
             # Scale by detJ^-1 to get reference cell integral
-            assert round(assemble( X[j]/abs(detJ)*dx(k) ) - Xmp[j], 7) == 0.0
+            assert round(assemble(X[j]/abs(detJ)*dx(k)) - Xmp[j], 7) == 0.0
 
     # Check average of physical coordinate components over each cell:
     for k in range(mesh.num_cells()):
@@ -834,11 +865,11 @@ def test_triangle_symbolic_geometry(uflacs_representation_only):
         vavg = sum(verts[1:], verts[0])/len(verts)
         for i in range(gdim):
             # Scale by A^-1 to get average of x, not integral
-            assert round(assemble( x[i]/A*dx(k) ) - vavg[i], 7) == 0.0
+            assert round(assemble(x[i]/A*dx(k)) - vavg[i], 7) == 0.0
 
     # Check affine coordinate relations x=x0+J*X, X=K*(x-x0), K*J=I
     for k in range(mesh.num_cells()):
         x0 = as_vector(coordinates[cells[k][0]][:])
-        assert round(assemble( (x - (x0+J*X))**2*dx(k) ), 7) == 0.0
-        assert round(assemble( (X - K*(x-x0))**2*dx(k) ), 7) == 0.0
-        assert round(assemble( (K*J - Identity(tdim))**2/A*dx(k) ), 7) == 0.0
+        assert round(assemble((x - (x0+J*X))**2*dx(k)), 7) == 0.0
+        assert round(assemble((X - K*(x-x0))**2*dx(k)), 7) == 0.0
+        assert round(assemble((K*J - Identity(tdim))**2/A*dx(k)), 7) == 0.0

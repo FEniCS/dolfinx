@@ -16,16 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Corrado Maurini, 2013.
-//
-// First added:  2011-06-22
-// Last changed: 2013-03-20
 
 #ifndef __NONLINEAR_VARIATIONAL_PROBLEM_H
 #define __NONLINEAR_VARIATIONAL_PROBLEM_H
 
 #include <memory>
 #include <vector>
-
 #include <dolfin/common/Hierarchical.h>
 
 namespace dolfin
@@ -51,54 +47,6 @@ namespace dolfin
   {
   public:
 
-    /// Create nonlinear variational problem without boundary
-    /// conditions.  The Jacobian form is not specified which requires
-    /// the use of a nonlinear solver that does not rely on the
-    /// Jacobian.
-    NonlinearVariationalProblem(const Form& F, Function& u);
-
-    /// Create nonlinear variational problem without boundary
-    /// conditions.  The Jacobian form is specified which allows the
-    /// use of a nonlinear solver that relies on the Jacobian (using
-    /// Newton's method).
-    NonlinearVariationalProblem(const Form& F, Function& u, const Form& J);
-
-    /// Create nonlinear variational problem with a single boundary
-    /// condition.  The Jacobian form is not specified which requires
-    /// the use of a nonlinear solver that does not rely on the
-    /// Jacobian.
-    NonlinearVariationalProblem(const Form& F, Function& u,
-                                const DirichletBC& bc);
-
-    /// Create nonlinear variational problem with a single boundary
-    /// condition.  The Jacobian form is specified which allows the
-    /// use of a nonlinear solver that relies on the Jacobian (using
-    /// Newton's method).
-    NonlinearVariationalProblem(const Form& F, Function& u,
-                                const DirichletBC& bc, const Form& J);
-
-    /// Create nonlinear variational problem with a list of boundary
-    /// conditions.  The Jacobian form is not specified which requires
-    /// the use of a nonlinear solver that does not rely on the
-    /// Jacobian.
-    NonlinearVariationalProblem(const Form& F, Function& u,
-                                std::vector<const DirichletBC*> bcs);
-
-    /// Create nonlinear variational problem with a list of boundary
-    /// conditions.  The Jacobian form is specified which allows the
-    /// use of a nonlinear solver that relies on the Jacobian (using
-    /// Newton's method).
-    NonlinearVariationalProblem(const Form& F, Function& u,
-                                std::vector<const DirichletBC*> bcs,
-                                const Form& J);
-
-    /// Create nonlinear variational problem, shared pointer version.
-    /// The Jacobian form is not specified which requires the use of a
-    /// nonlinear solver that does not rely on the Jacobian.
-    NonlinearVariationalProblem(std::shared_ptr<const Form> F,
-                                std::shared_ptr<Function> u,
-                                std::vector<std::shared_ptr<const DirichletBC>> bcs);
-
     /// Create nonlinear variational problem, shared pointer version.
     /// The Jacobian form is specified which allows the use of a
     /// nonlinear solver that relies on the Jacobian (using Newton's
@@ -106,23 +54,14 @@ namespace dolfin
     NonlinearVariationalProblem(std::shared_ptr<const Form> F,
                                 std::shared_ptr<Function> u,
                                 std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                                std::shared_ptr<const Form> J);
+                                std::shared_ptr<const Form> J=nullptr);
+
+    /// Set the bounds for bound constrained solver
+    void set_bounds(const Function& lb_func, const Function& ub_func);
 
     /// Set the bounds for bound constrained solver
     void set_bounds(std::shared_ptr<const GenericVector> lb,
                     std::shared_ptr<const GenericVector> ub);
-
-    /// Set the bounds for bound constrained solver
-    void set_bounds(const GenericVector& lb,
-                    const GenericVector& ub);
-
-    /// Set the bounds for bound constrained solver
-    void set_bounds(std::shared_ptr<const Function> lb_func,
-                    std::shared_ptr<const Function> ub_func);
-
-    /// Set the bounds for bound constrained solver
-    void set_bounds(const Function& lb_func,
-                    const Function& ub_func);
 
     /// Return residual form
     std::shared_ptr<const Form> residual_form() const;
@@ -168,7 +107,7 @@ namespace dolfin
     // The residual form
     std::shared_ptr<const Form> _residual;
 
-    // The Jacobian form (pointer may be zero if not provided)
+    // The Jacobian form (pointer may be null if not provided)
     std::shared_ptr<const Form> _jacobian;
 
     // The solution
@@ -177,7 +116,8 @@ namespace dolfin
     // The boundary conditions
     std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 
-    // The lower and upper bounds (pointers may be zero if not provided)
+    // The lower and upper bounds (pointers may be null if not
+    // provided)
     std::shared_ptr<const GenericVector> _lb;
     std::shared_ptr<const GenericVector> _ub;
   };

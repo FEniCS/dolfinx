@@ -21,6 +21,7 @@
 #ifndef __MESH_DISPLACEMENT_H
 #define __MESH_DISPLACEMENT_H
 
+#include <memory>
 #include <vector>
 #include <ufc.h>
 #include <dolfin/common/Array.h>
@@ -47,7 +48,7 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         Mesh to be displacement defined on.
-    MeshDisplacement(const Mesh& mesh);
+    explicit MeshDisplacement(std::shared_ptr<const Mesh> mesh);
 
     /// Copy constructor
     ///

@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <dolfin/common/constants.h>
+#include <dolfin/log/log.h>
 #include "basic.h"
 
 using namespace dolfin;
@@ -37,8 +38,23 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 std::size_t dolfin::ipow(std::size_t a, std::size_t n)
 {
-  std::size_t p = a;
-  for (std::size_t i = 1; i < n; i++)
+  // Treat special case a==0
+  if (a == 0)
+  {
+    if (n == 0)
+    {
+      // size_t does not have NaN, raise error
+      dolfin_error("math/basic.cpp",
+                   "take power ipow(0, 0)",
+                   "ipow(0, 0) does not have a sense");
+    }
+    return 0;
+  }
+
+  std::size_t p = 1;
+  // NOTE: Overflow not checked! Use __builtin_mul_overflow when
+  //       GCC >= 5, Clang >= 3.8 is required!
+  for (std::size_t i = 0; i < n; i++)
     p *= a;
   return p;
 }

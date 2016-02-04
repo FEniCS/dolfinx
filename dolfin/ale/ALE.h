@@ -42,17 +42,45 @@ namespace dolfin
   {
   public:
 
+
     /// Move coordinates of mesh according to new boundary coordinates.
-    /// Returns displacement (encapsulated in Expression subclass MeshDisplacement)
-    static std::shared_ptr<MeshDisplacement> move(Mesh& mesh,
-                                            const BoundaryMesh& new_boundary);
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh to move.
+    ///     boundary (_BoundaryMesh_)
+    ///         A mesh containing just the boundary cells.
+    ///
+    /// *Returns*
+    ///     MeshDisplacement
+    ///         Displacement encapsulated in Expression subclass
+    ///         MeshDisplacement.
+    static std::shared_ptr<MeshDisplacement>
+      move(std::shared_ptr<Mesh> mesh, const BoundaryMesh& new_boundary);
 
-    /// Move coordinates of mesh0 according to mesh1 with common global vertices.
-    /// Returns displacement (encapsulated in Expression subclass MeshDisplacement)
-    static std::shared_ptr<MeshDisplacement> move(Mesh& mesh0,
-                                                    const Mesh& mesh1);
 
-    /// Move coordinates of mesh according to displacement function
+    /// Move coordinates of mesh according to adjacent mesh with
+    /// common global vertices.
+    ///
+    /// *Arguments*
+    ///     mesh0 (_Mesh_)
+    ///         The mesh to move.
+    ///     mesh1 (_Mesh_)
+    ///         A _Mesh_ object.
+    ///
+    /// *Returns*
+    ///     MeshDisplacement
+    ///         Displacement encapsulated in Expression subclass
+    static std::shared_ptr<MeshDisplacement> move(std::shared_ptr<Mesh> mesh0,
+                                                  const Mesh& mesh1);
+
+    /// Move coordinates of mesh according to displacement function.
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh to move..
+    ///     displacement (_GenericFunction_)
+    ///         A _GenericFunction_ object.
     static void move(Mesh& mesh, const GenericFunction& displacement);
 
   };

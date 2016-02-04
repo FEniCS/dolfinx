@@ -133,7 +133,7 @@ def test_bc_for_piola_on_manifolds():
     BDM2 = lambda mesh: FunctionSpace(mesh, "BDM", 2)
     N1curl1 = lambda mesh: FunctionSpace(mesh, "N1curl", 1)
     N2curl1 = lambda mesh: FunctionSpace(mesh, "N2curl", 1)
-    N1curl2 = lambda mesh:FunctionSpace(mesh, "N1curl", 2)
+    N1curl2 = lambda mesh: FunctionSpace(mesh, "N1curl", 2)
     N2curl2 = lambda mesh: FunctionSpace(mesh, "N2curl", 2)
     elements = [N1curl1, N2curl1,  N1curl2, N2curl2, RT1, RT2, BDM1,
                 BDM2, DRT1, DRT2]
