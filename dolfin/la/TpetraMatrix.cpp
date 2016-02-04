@@ -76,9 +76,11 @@ std::shared_ptr<GenericMatrix> TpetraMatrix::copy() const
 void TpetraMatrix::init(const TensorLayout& tensor_layout)
 {
   if (!_matA.is_null())
+  {
     dolfin_error("TpetraMatrix.h",
                  "initialize matrix",
                  "Matrix cannot be initialised more than once");
+  }
 
   // Get global dimensions and local range
   dolfin_assert(tensor_layout.rank() == 2);
@@ -109,8 +111,10 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
 
   std::vector<dolfin::la_index> global_indices0(m);
   for (std::size_t i = 0; i < m; ++i)
+  {
     global_indices0[i]
-     = tensor_layout.index_map(0)->local_to_global(i);
+      = tensor_layout.index_map(0)->local_to_global(i);
+  }
 
   // Non-overlapping RangeMap
   Teuchos::ArrayView<dolfin::la_index>
@@ -123,9 +127,11 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   index_map[1] = tensor_layout.index_map(1);
 
   std::vector<dolfin::la_index> global_indices1(n);
-  for (std::size_t i = 0; i < n; ++i)
-    global_indices1[i]
-     = tensor_layout.index_map(1)->local_to_global(i);
+  {
+    for (std::size_t i = 0; i < n; ++i)
+      global_indices1[i]
+        = tensor_layout.index_map(1)->local_to_global(i);
+  }
 
   // Non-overlapping DomainMap
   Teuchos::ArrayView<dolfin::la_index>
@@ -192,7 +198,6 @@ std::size_t TpetraMatrix::size(std::size_t dim) const
   else
     num_elements = _matA->getColMap()->getMaxAllGlobalIndex() + 1;
 
-
   return num_elements;
 }
 //-----------------------------------------------------------------------------
@@ -225,7 +230,7 @@ TpetraMatrix::local_range(std::size_t dim) const
                  "Dimension invalid");
   }
 
-  return std::make_pair(0,0);
+  return std::make_pair(0, 0);
 }
 //-----------------------------------------------------------------------------
 std::size_t TpetraMatrix::nnz() const
@@ -273,12 +278,11 @@ void TpetraMatrix::init_vector(GenericVector& z, std::size_t dim) const
                  "initialize Tpetra vector to match Tpetra matrix",
                  "Dimension must be 0 or 1, not %d", dim);
   }
-
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::get(double* block,
-                      std::size_t m, const dolfin::la_index* rows,
-                      std::size_t n, const dolfin::la_index* cols) const
+                       std::size_t m, const dolfin::la_index* rows,
+                       std::size_t n, const dolfin::la_index* cols) const
 {
   // Get matrix entries (must be on this process)
   dolfin_assert(!_matA.is_null());
@@ -296,8 +300,8 @@ void TpetraMatrix::get(double* block,
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::set(const double* block,
-                      std::size_t m, const dolfin::la_index* rows,
-                      std::size_t n, const dolfin::la_index* cols)
+                       std::size_t m, const dolfin::la_index* rows,
+                       std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(!_matA.is_null());
   dolfin_assert(!_matA->isFillComplete());
@@ -312,8 +316,8 @@ void TpetraMatrix::set(const double* block,
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::set_local(const double* block,
-                            std::size_t m, const dolfin::la_index* rows,
-                            std::size_t n, const dolfin::la_index* cols)
+                             std::size_t m, const dolfin::la_index* rows,
+                             std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(!_matA.is_null());
   dolfin_assert(!_matA->isFillComplete());
@@ -343,15 +347,14 @@ void TpetraMatrix::set_local(const double* block,
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::add(const double* block,
-                      std::size_t m, const dolfin::la_index* rows,
-                      std::size_t n, const dolfin::la_index* cols)
+                       std::size_t m, const dolfin::la_index* rows,
+                       std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(!_matA.is_null());
   dolfin_assert(!_matA->isFillComplete());
 
   // Tpetra View of column indices
   Teuchos::ArrayView<const dolfin::la_index> column_idx(cols, n);
-
   for (std::size_t i = 0 ; i != m; ++i)
   {
     Teuchos::ArrayView<const double> data(block + i*n, n);
@@ -360,8 +363,8 @@ void TpetraMatrix::add(const double* block,
 }
 //-----------------------------------------------------------------------------
 void TpetraMatrix::add_local(const double* block,
-                            std::size_t m, const dolfin::la_index* rows,
-                            std::size_t n, const dolfin::la_index* cols)
+                             std::size_t m, const dolfin::la_index* rows,
+                             std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(!_matA.is_null());
   dolfin_assert(!_matA->isFillComplete());
@@ -696,9 +699,9 @@ double TpetraMatrix::norm(std::string norm_type) const
     return _matA->getFrobeniusNorm();
   else
   {
-       dolfin_error("TpetraMatrix.cpp",
-                    "compute norm of Tpetra matrix",
-                    "Unknown norm type (\"%s\")", norm_type.c_str());
+    dolfin_error("TpetraMatrix.cpp",
+                 "compute norm of Tpetra matrix",
+                 "Unknown norm type (\"%s\")", norm_type.c_str());
   }
 
   return 0.0;
@@ -734,6 +737,7 @@ void TpetraMatrix::zero()
   dolfin_assert(!_matA.is_null());
   if(_matA->isFillComplete())
     _matA->resumeFill();
+
   _matA->setAllToScalar(0.0);
 }
 //-----------------------------------------------------------------------------
@@ -742,6 +746,7 @@ const TpetraMatrix& TpetraMatrix::operator*= (double a)
   dolfin_assert(!_matA.is_null());
   if(_matA->isFillComplete())
     _matA->resumeFill();
+
   _matA->scale(a);
   return *this;
 }
@@ -751,6 +756,7 @@ const TpetraMatrix& TpetraMatrix::operator/= (double a)
   dolfin_assert(!_matA.is_null());
   if(_matA->isFillComplete())
     _matA->resumeFill();
+
   _matA->scale(1.0/a);
   return *this;
 }
