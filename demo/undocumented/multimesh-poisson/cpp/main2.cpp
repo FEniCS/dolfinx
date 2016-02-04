@@ -374,7 +374,7 @@ void find_max(std::size_t step,
 	      File& covered0_file, File& covered1_file, File& covered2_file)
 
 {
-  std::cout << "\tmax min step " << step <<' ' << u.vector()->max() << ' ' << u.vector()->min() << '\n';
+  std::cout << "\tSolution: max min step " << step <<' ' << u.vector()->max() << ' ' << u.vector()->min() << '\n';
 
   for (std::size_t part = 0; part < multimesh.num_parts(); ++part)
   {
@@ -478,7 +478,7 @@ void solve_poisson(std::size_t step,
   // Create meshes
   const std::size_t N = 8;
   const double r = 0.5;
-  RectangleMesh mesh_0(Point(-r, -r), Point(r, r), 2*N, 2*N);
+  RectangleMesh mesh_0(Point(-r, -r), Point(r, r), 2*N , 2*N);
   RectangleMesh mesh_1(Point(x1 - r, y1 - r), Point(x1 + r, y1 + r), N, N);
   RectangleMesh mesh_2(Point(x2 - r, y2 - r), Point(x2 + r, y2 + r), N, N);
   mesh_1.rotate(70*t);
@@ -490,23 +490,6 @@ void solve_poisson(std::size_t step,
   multimesh.add(mesh_1);
   multimesh.add(mesh_2);
   multimesh.build(); // qr generated here
-
-  {
-    for (std::size_t p = 0; p < multimesh.num_parts(); ++p)
-    {
-      const auto c = multimesh.part(p)->coordinates();
-      double x = 0., y = 0.;
-      for (std::size_t i = 0; i < c.size(); i += 2)
-      {
-	x += c[i];
-	y += c[i+1];
-      }
-      x /= c.size()/2;
-      y /= c.size()/2;
-      std::cout << "mesh_" << p << " center " << x << ' ' << y << std::endl;
-    }
-    //exit(0);
-  }
 
   {
     double volume = compute_volume(multimesh, 0);
@@ -574,8 +557,80 @@ void solve_poisson(std::size_t step,
     interactive();
   }
 
+}
+
+void manual_area_calculation_start64()
+{
+  // area check for start=64: we have manually measured the
+  // intersection points of the three overlapping grids to be able to
+  // compute the area and the length of the interfaces.
+
+  // part 0:
+  const Point cc(0.5,0.5,0);
+  const Point x1( -0.403762341596028 ,0.483956950767669,0);
+  const Point x3(0.454003129796834,     0.454003129215499,0);
+  const Point xa(-0.403202111282917, 0.5,0);
+  const Point xb(0.452396877021612,0.5, 0);
+  const Point xc(0.5, 0.452396877021612,0);
+  const Point b = cc-xa;
+  const Point c = cc-x1;
+  const Point d = xc-x1;
+  // S1 = Area{x1,xa,xc,cc}
+  const double S1 = 0.5*std::abs(b.cross(c)[2]) + 0.5*std::abs(c.cross(d)[2]);
+  const Point e = xb-x3;
+  const Point f = cc-x3;
+  const Point g = xc-x3;
+  // S2 = area{x3,xc,cc,xb}
+  const double S2 = 0.5*std::abs(e.cross(f)[2]) + 0.5*std::abs(f.cross(g)[2]);
+  const double area_part_0 = 1 - 2*S1 + S2;
+  //std::cout << "\n\narea part 0:    " << area_part_0 << std::endl;
+
+  // part 0 uncut volume (1-h)^2 plus two elements on the top and sides not cut
+  const double h = 0.0625;
+  const double area_uncut_part_0 = (1-h)*(1-h)+2*h*h;
+  //std::cout << "area uncut part 0: " << area_uncut_part_0 << std::endl;
+
+  // Check part 0 interface integral
+  const double interface_part_0 = 2*(x1-xa).norm() + 2*(x3-x1).norm();
+  //std::cout << "interface length part 0:   " << interface_part_0 << std::endl;
+
+  // part 1 volume
+  const Point y1(0.449057462336667, 0.595628463731148,0);
+  const Point y2(0.600932132396578, 0.600932092071092,0);
+  const Point y3(0.595628469787003,0.44905746289499,0);
+  // S3 = area{x3,y1,y2,y3}
+  const Point A = y1-x3;
+  const Point B = y2-x3;
+  const Point C = y3-x3;
+  const double S3 = 0.5*std::abs(A.cross(B)[2]) + 0.5*std::abs(C.cross(B)[2]);
+  const double area_part_1 = 1 - S3;// + S2;
+  //std::cout << "area part 1 " << area_part_1 << std::endl;
+
+  // part 1 uncut volume  = (1-H)*1 - 2*H*H
+  const double H = 2*h;
+  const double area_uncut_part_1 = 1-4*H*H;
+  //std::cout << "area uncut part 1: " << area_uncut_part_1 << std::endl;
+
+  // part 1 interface area
+  //const Point y4(0.454003112031502,0.454003107715805,0);
+  const Point y4=x3;
+  const double interface_part_1 = (y2-y1).norm() + (y1-y4).norm();
+  //std::cout << "interface length part 1:  "<< interface_part_1 << std::endl;
+
+  // Summary
+  std::cout << "\nSummary\nManually measured areas\n"
+	    << "% part 0  uncut volume " << area_uncut_part_0
+	    << "   total volume " << area_part_0
+	    << '\n'
+	    << "% part 1  uncut volume " << area_uncut_part_1
+	    << "   total volume " << area_part_1
+	    << '\n'
+	    << "Manually measured interfaces:\n"
+	    << "% part 0  total length " << interface_part_0 << '\n'
+	    << "% part 1  total length " << interface_part_1 << std::endl;
 
 }
+
 
 int main(int argc, char* argv[])
 {
@@ -632,72 +687,7 @@ int main(int argc, char* argv[])
                   cut0_file, cut1_file, cut2_file,
 		  covered0_file, covered1_file, covered2_file);
 
-  }
-
-  {
-    // area check for start=64
-    // part 0:
-    const Point cc(0.5,0.5,0);
-    const Point x1( -0.403762341596028 ,0.483956950767669,0);
-    const Point x3(0.454003129796834,     0.454003129215499,0);
-    const Point xa(-0.403202111282917, 0.5,0);
-    const Point xb(0.452396877021612,0.5, 0);
-    const Point xc(0.5, 0.452396877021612,0);
-    const Point b = cc-xa;
-    const Point c = cc-x1;
-    const Point d = xc-x1;
-    // S1 = Area{x1,x1,xc,cc}
-    const double S1 = 0.5*std::abs(b.cross(c)[2]) + 0.5*std::abs(c.cross(d)[2]);
-    const Point e = xb-x3;
-    const Point f = cc-x3;
-    const Point g = xc-x3;
-    // S2 = area{x3,xc,cc,xb}
-    const double S2 = 0.5*std::abs(e.cross(f)[2]) + 0.5*std::abs(f.cross(g)[2]);
-    const double area_part_0 = 1 - 2*S1 + S2;
-    std::cout << "\n\narea part 0:    " << area_part_0 << std::endl;
-
-    // part 0 uncut volume (1-h)^2 plus two elements on the top and sides not cut
-    const double h = 0.0625;
-    const double area_uncut_part_0 = (1-h)*(1-h)+2*h*h;
-    std::cout << "area uncut part 0: " << area_uncut_part_0 << std::endl;
-
-    // Check part 0 interface integral
-    const double interface_part_0 = 2*(x1-xa).norm() + 2*(x3-x1).norm();
-    std::cout << "interface length part 0:   " << interface_part_0 << std::endl;
-
-    // part 1 volume
-    const Point y1(0.449057462336667, 0.595628463731148,0);
-    const Point y2(0.600932132396578, 0.600932092071092,0);
-    const Point y3(0.595628469787003,0.44905746289499,0);
-    // S3 = area{x3,y1,y2,y3}
-    const Point A = y1-x3;
-    const Point B = y2-x3;
-    const Point C = y3-x3;
-    const double S3 = 0.5*std::abs(A.cross(B)[2]) + 0.5*std::abs(C.cross(B)[2]);
-    const double area_part_1 = 1 - S3;// + S2;
-    std::cout << "area part 1 " << area_part_1 << std::endl;
-
-    // part 1 uncut volume  = (1-H)*1 - 2*H*H
-    const double H = 2*h;
-    const double area_uncut_part_1 = 1-4*H*H;
-    std::cout << "area uncut part 1: " << area_uncut_part_1 << std::endl;
-
-    // part 1 interface area
-    const Point y4(0.454003112031502,0.454003107715805,0);
-    const double interface_part_1 = (y2-y1).norm() + (y1-y4).norm();
-    std::cout << "interface length part 1:  "<< interface_part_1 << std::endl;
-
-    // Summary
-    std::cout << "\nSummary\nmeasured areas\n"
-	      << "% part 0  uncut volume " << area_uncut_part_0
-	      << "   total volume " << area_part_0
-	      << '\n'
-	      << "% part 1  uncut volume " << area_uncut_part_1
-	      << "   total volume " << area_part_1
-	      << '\n'
-	      << "Measured interfaces:\n"
-	      << "% part 0  total area (length) " << interface_part_0 << '\n'
-	      << "% part 1  total area (length) " << interface_part_1 << std::endl;
+    manual_area_calculation_start64();
   }
 
 

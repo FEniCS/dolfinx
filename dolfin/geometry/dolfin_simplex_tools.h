@@ -34,7 +34,7 @@ namespace tools
     if (s2 < 0)
     {
       std::cout << "Heron error, negative sqrt: " << s2 << " is to be replaced with 0" << std::endl;
-      if (std::abs(s2) < DOLFIN_EPS) // If we don't do this v=1e-13, m=24, n=1 doesn't work
+      if (std::abs(s2) < DOLFIN_EPS)
 	return 0;
       else
 	exit(1);
