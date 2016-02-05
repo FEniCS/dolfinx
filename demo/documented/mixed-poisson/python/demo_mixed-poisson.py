@@ -56,7 +56,7 @@ W = FunctionSpace(mesh, BDM * DG)
 (tau, v) = TestFunctions(W)
 
 # Define source function
-f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
 
 # Define variational form
 a = (dot(sigma, tau) + div(tau)*u + div(sigma)*v)*dx

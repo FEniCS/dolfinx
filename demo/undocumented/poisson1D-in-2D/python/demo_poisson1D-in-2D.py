@@ -91,8 +91,8 @@ class DirichletBoundary(SubDomain):
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-f = Expression("9.0*pi*pi*sin(3.0*pi*%s)"% rotation.to_interval_c())
-g = Expression("3.0*pi*cos(3.0*pi*%s)"% rotation.to_interval_c())
+f = Expression("9.0*pi*pi*sin(3.0*pi*%s)" % rotation.to_interval_c(), degree=2)
+g = Expression("3.0*pi*cos(3.0*pi*%s)" % rotation.to_interval_c(), degree=2)
 
 a = dot(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds

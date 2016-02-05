@@ -26,7 +26,7 @@ P1 = FunctionSpace(mesh, "CG", 1)
 P2 = FunctionSpace(mesh, "CG", 2)
 
 # Create exact dual
-dual = Expression("sin(5.0*x[0])*sin(5.0*x[1])")
+dual = Expression("sin(5.0*x[0])*sin(5.0*x[1])", degree=2)
 
 # Create P1 approximation of exact dual
 z1 = Function(P1)

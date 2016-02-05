@@ -46,7 +46,7 @@ def test_arbitraryEval(mesh):
           def eval(self, values, x):
               values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
-    f0 = F0(name="f0", label="My expression")
+    f0 = F0(name="f0", label="My expression", degree=2)
     f1 = Expression("a*sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", \
                     degree=2, a=1., name="f1")
     x = array([0.31, 0.32, 0.33])
@@ -62,8 +62,8 @@ def test_arbitraryEval(mesh):
     assert f1.label() == "User defined expression"
 
     # Check outgeneration of name
-    count = int(F0().name()[2:])
-    assert F0().count() == count+1
+    count = int(F0(degree=0).name()[2:])
+    assert F0(degree=0).count() == count+1
 
     # Test original and vs short evaluation
     f0.eval(u00, x)
@@ -115,8 +115,8 @@ def test_ufl_eval():
         def value_shape(self):
             return (3,)
 
-    f0 = F0()
-    v0 = V0()
+    f0 = F0(degree=2)
+    v0 = V0(degree=2)
 
     x = (2.0, 1.0, 3.0)
 
@@ -170,7 +170,7 @@ def test_wrong_eval():
         def eval(self, values, x):
             values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
-    f0 = F0()
+    f0 = F0(degree=2)
     f1 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
 
     for f in [f0, f1]:
@@ -196,7 +196,7 @@ def test_no_write_to_const_array():
             values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
     mesh = UnitCubeMesh(3,3,3)
-    f1 = F1()
+    f1 = F1(degree=1)
     with pytest.raises(Exception):
         assemble(f1*dx(mesh))
 
@@ -204,8 +204,8 @@ def test_no_write_to_const_array():
 def test_compute_vertex_values(mesh):
     from numpy import zeros, all, array
 
-    e0 = Expression("1")
-    e1 = Expression(("1", "2", "3"))
+    e0 = Expression("1", degree=0)
+    e1 = Expression(("1", "2", "3"), degree=0)
 
     e0_values = e0.compute_vertex_values(mesh)
     e1_values = e1.compute_vertex_values(mesh)
@@ -254,13 +254,13 @@ def test_wrong_sub_classing():
         Expression("a")
 
     def wrongDefaultType():
-        Expression("a", a="1")
+        Expression("a", a="1", degree=1)
 
     def wrongParameterNames0():
-        Expression("long", str=1.0)
+        Expression("long", str=1.0, degree=1)
 
     def wrongParameterNames1():
-        Expression("user_parameters", user_parameters=1.0)
+        Expression("user_parameters", user_parameters=1.0, degree=1)
 
     with pytest.raises(TypeError):
         noAttributes()
@@ -303,66 +303,68 @@ def test_element_instantiation():
         def value_shape(self):
             return (2,2)
 
-    e0 = Expression("1")
+    e0 = Expression("1", degree=0)
     assert e0.ufl_element().cell() is None
 
-    e1 = Expression("1", cell=triangle)
+    e1 = Expression("1", cell=triangle, degree=0)
     assert not e1.ufl_element().cell() is None
 
     e2 = Expression("1", cell=triangle, degree=2)
     assert e2.ufl_element().degree() == 2
 
-    e3 = Expression(["1", "1"], cell=triangle)
+    e3 = Expression(["1", "1"], cell=triangle, degree=0)
     assert isinstance(e3.ufl_element(), VectorElement)
 
-    e4 = Expression((("1", "1"), ("1", "1")), cell=triangle)
+    e4 = Expression((("1", "1"), ("1", "1")), cell=triangle, degree=0)
     assert isinstance(e4.ufl_element(), TensorElement)
 
-    f0 = F0()
+    f0 = F0(degree=0)
     assert f0.ufl_element().cell() is None
 
-    f1 = F0(cell=triangle)
+    f1 = F0(cell=triangle, degree=0)
     assert not f1.ufl_element().cell() is None
 
     f2 = F0(cell=triangle, degree=2)
     assert f2.ufl_element().degree() == 2
 
-    f3 = F1(cell=triangle)
+    f3 = F1(cell=triangle, degree=0)
     assert isinstance(f3.ufl_element(), VectorElement)
 
-    f4 = F2(cell=triangle)
+    f4 = F2(cell=triangle, degree=0)
     assert isinstance(f4.ufl_element(), TensorElement)
 
+
 def test_num_literal():
-    e0 = Expression("1e10")
+    e0 = Expression("1e10", degree=0)
     assert e0(0,0,0) == 1e10
 
-    e1 = Expression("1e-10")
+    e1 = Expression("1e-10", degree=0)
     assert e1(0,0,0) == 1e-10
 
-    e2 = Expression("1e+10")
+    e2 = Expression("1e+10", degree=0)
     assert e2(0,0,0) == 1e+10
 
-    e3 = Expression(".5")
+    e3 = Expression(".5", degree=0)
     assert e3(0,0,0) == 0.5
 
-    e4 = Expression("x[0] * sin(.5)")
+    e4 = Expression("x[0] * sin(.5)", degree=2)
     assert e4(0,0,0) == 0.
 
-    e5 = Expression(["2*t0", "-t0"], t0=1.0)
+    e5 = Expression(["2*t0", "-t0"], t0=1.0, degree=0)
     values = e5(0,0,0)
     assert values[0] == 2.
     assert values[1] == -1.
 
+
 def test_name_space_usage(mesh):
-    e0 = Expression("std::sin(x[0])*cos(x[1])")
-    e1 = Expression("sin(x[0])*std::cos(x[1])")
-    assert round(assemble(e0*dx(mesh)) - \
-            assemble(e1*dx(mesh)), 7) == 0
+    e0 = Expression("std::sin(x[0])*cos(x[1])", degree=2)
+    e1 = Expression("sin(x[0])*std::cos(x[1])", degree=2)
+    assert round(assemble(e0*dx(mesh)) - assemble(e1*dx(mesh)), 7) == 0
+
 
 def test_generic_function_attributes(mesh, V):
     tc = Constant(2.0)
-    te = Expression("value", value=tc)
+    te = Expression("value", value=tc, degree=0)
 
     assert round(tc(0) - te(0), 7) == 0
     tc.assign(1.0)
@@ -371,10 +373,10 @@ def test_generic_function_attributes(mesh, V):
     tf = Function(V)
     tf.vector()[:] = 1.0
 
-    e0 = Expression(["2*t", "-t"], t=tc)
-    e1 = Expression(["2*t0", "-t0"], t0=1.0)
-    e2 = Expression("t", t=te)
-    e3 = Expression("t", t=tf)
+    e0 = Expression(["2*t", "-t"], t=tc, degree=0)
+    e1 = Expression(["2*t0", "-t0"], t0=1.0, degree=0)
+    e2 = Expression("t", t=te, degree=0)
+    e3 = Expression("t", t=tf, degree=0)
 
     assert round(assemble(inner(e0,e0)*dx(mesh)) -\
                  assemble(inner(e1,e1)*dx(mesh)), 7) == 0
@@ -404,9 +406,9 @@ def test_generic_function_attributes(mesh, V):
 
     # Test wrong kwargs
     with pytest.raises(TypeError):
-        Expression("t", t=Constant((1,0)))
+        Expression("t", t=Constant((1, 0)), degree=0)
     with pytest.raises(TypeError):
-        Expression("t", t=Function(W))
+        Expression("t", t=Function(W), degree=0)
 
     # Test non-scalar GenericFunction
     f2 = Function(W)
@@ -447,19 +449,19 @@ def test_doc_string_eval():
     square = UnitSquareMesh(10,10)
     V = VectorFunctionSpace(square, "CG", 1)
 
-    f0 = Expression('sin(x[0]) + cos(x[1])')
+    f0 = Expression('sin(x[0]) + cos(x[1])', degree=1)
     f1 = Expression(('cos(x[0])', 'sin(x[1])'), element = V.ufl_element())
     assert round(f0(0,0) - sum(f1(0,0)), 7) == 0
 
     f2 = Expression((('exp(x[0])','sin(x[1])'),
-                     ('sin(x[0])','tan(x[1])')))
+                     ('sin(x[0])','tan(x[1])')), degree=1)
     assert round(sum(f2(0,0)) - 1.0, 7) == 0
 
-    f = Expression('A*sin(x[0]) + B*cos(x[1])', A=2.0, B=Constant(4.0))
+    f = Expression('A*sin(x[0]) + B*cos(x[1])', A=2.0, B=Constant(4.0), degree=2)
     assert round(f(pi/4, pi/4) - 6./sqrt(2), 7) == 0
 
     f.A = 5.0
-    f.B = Expression("value", value=6.0)
+    f.B = Expression("value", value=6.0, degree=0)
     assert round(f(pi/4, pi/4) - 11./sqrt(2), 7) == 0
 
     f.user_parameters["A"] = 1.0
@@ -509,9 +511,9 @@ def test_doc_string_complex_compiled_expression(mesh):
 
     cell_data = CellFunction('uint', mesh)
     cell_data.set_all(3)
-    CompiledSubDomain("x[0]<=0.25").mark(cell_data, 0)
-    CompiledSubDomain("x[0]>0.25 && x[0]<0.75").mark(cell_data, 1)
-    CompiledSubDomain("x[0]>=0.75").mark(cell_data, 2)
+    CompiledSubDomain("x[0] <= 0.25").mark(cell_data, 0)
+    CompiledSubDomain("x[0] > 0.25 && x[0] < 0.75").mark(cell_data, 1)
+    CompiledSubDomain("x[0] >= 0.75").mark(cell_data, 2)
 
     # Points manually chosen to be in cells marked in cell_data as 0, 1, 2
     p0 = Point(0.1, 1.0, 0)
@@ -541,7 +543,7 @@ def test_doc_string_complex_compiled_expression(mesh):
     values = zeros(1, dtype=float_)
 
     # Create compiled expression and attach cell data
-    f = Expression(code)
+    f = Expression(code, degree=2)
     f.cell_data = cell_data
 
     coords = array([p0.x(), p0.y(), p0.z()], dtype=float_)
@@ -601,7 +603,7 @@ def test_doc_string_compiled_expression_with_system_headers():
       };
     }'''
 
-    e = Expression(code_compile)
+    e = Expression(code_compile, degree=1)
     assert hasattr(e, "update")
 
     # Test not compile
@@ -649,7 +651,7 @@ def test_doc_string_python_expressions(mesh):
     need also be updated in the docstring.
     """
 
-    square = UnitSquareMesh(4,4)
+    square = UnitSquareMesh(4, 4)
 
     class MyExpression0(Expression):
         def eval(self, value, x):
@@ -660,10 +662,10 @@ def test_doc_string_python_expressions(mesh):
         def value_shape(self):
             return (2,)
 
-    f0 = MyExpression0()
-    values = f0(0.2,0.3)
-    dx = 0.2-0.5
-    dy = 0.3-0.5
+    f0 = MyExpression0(degree=2)
+    values = f0(0.2, 0.3)
+    dx = 0.2 - 0.5
+    dy = 0.3 - 0.5
 
     assert round(values[0] - 500.0*exp(-(dx*dx + dy*dy)/0.02), 7) == 0
     assert round(values[1] - 250.0*exp(-(dx*dx + dy*dy)/0.01), 7) == 0
@@ -682,11 +684,11 @@ def test_doc_string_python_expressions(mesh):
             for attr in ufc_cell_attrs:
                   assert hasattr(ufc_cell, attr)
 
-    f1 = MyExpression1()
+    f1 = MyExpression1(degree=0)
     assemble(f1*ds(square))
 
     class MyExpression2(Expression):
-        def __init__(self, mesh, domain):
+        def __init__(self, mesh, domain, *arg, **kwargs):
             self._mesh = mesh
             self._domain = domain
         def eval(self, values, x):
@@ -694,7 +696,7 @@ def test_doc_string_python_expressions(mesh):
 
     cell_data = CellFunction('uint', square)
 
-    f3 = MyExpression2(square, cell_data)
+    f3 = MyExpression2(square, cell_data, degree=0)
 
     assert id(f3._mesh) == id(square)
     assert id(f3._domain) == id(cell_data)

@@ -72,9 +72,8 @@ omega = 300.0
 rho = 10.0
 
 # Loading due to centripetal acceleration (rho*omega^2*x_i)
-f = Expression(("rho*omega*omega*x[0]", \
-                "rho*omega*omega*x[1]", \
-                "0.0"), omega=omega, rho=rho)
+f = Expression(("rho*omega*omega*x[0]", "rho*omega*omega*x[1]", "0.0"),
+               omega=omega, rho=rho, degree=2)
 
 # Elasticity parameters
 E = 1.0e9

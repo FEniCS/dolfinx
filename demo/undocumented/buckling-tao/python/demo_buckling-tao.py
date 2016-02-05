@@ -59,8 +59,8 @@ f = Constant((-0.08, 0.0))
 
 # The displacement u must be such that the current configuration
 # doesn't escape the box [xmin, xmax] x [ymin, ymax]
-constraint_u = Expression(("xmax-x[0]", "ymax-x[1]"), xmax=10.0, ymax=2.0)
-constraint_l = Expression(("xmin-x[0]", "ymin-x[1]"), xmin=0.0, ymin=-0.2)
+constraint_u = Expression(("xmax-x[0]", "ymax-x[1]"), xmax=10.0, ymax=2.0, degree=1)
+constraint_l = Expression(("xmin-x[0]", "ymin-x[1]"), xmin=0.0, ymin=-0.2, degree=1)
 u_min = interpolate(constraint_l, V)
 u_max = interpolate(constraint_u, V)
 
