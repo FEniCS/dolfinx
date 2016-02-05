@@ -57,6 +57,9 @@ namespace dolfin
     /// File encoding type
     enum class Encoding {HDF5, ASCII};
 
+    /// Re-use or recompute mesh partition stored in file
+    enum UseFilePartition : bool {yes=true, no=false};
+
     /// Constructor
     XDMFFile(MPI_Comm comm, const std::string filename);
 
@@ -109,10 +112,8 @@ namespace dolfin
     ///     encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
-    void write(const MeshFunction<bool>& meshfunction,
-               Encoding encoding=Encoding::HDF5);
-    void write(const MeshFunction<int>& meshfunction,
-               Encoding encoding=Encoding::HDF5);
+    void write(const MeshFunction<bool>& meshfunction, Encoding encoding=Encoding::HDF5);
+    void write(const MeshFunction<int>& meshfunction, Encoding encoding=Encoding::HDF5);
     void write(const MeshFunction<std::size_t>& meshfunction,
                Encoding encoding=Encoding::HDF5);
     void write(const MeshFunction<double>& meshfunction,
@@ -127,8 +128,7 @@ namespace dolfin
     ///     encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
-    void write(const std::vector<Point>& points,
-               Encoding encoding=Encoding::HDF5);
+    void write(const std::vector<Point>& points, Encoding encoding=Encoding::HDF5);
 
     /// Save a cloud of points, with scalar values using an associated
     /// HDF5 file, or storing the data inline as XML.
@@ -141,8 +141,7 @@ namespace dolfin
     ///     encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
-    void write(const std::vector<Point>& points,
-               const std::vector<double>& values,
+    void write(const std::vector<Point>& points, const std::vector<double>& values,
                Encoding encoding=Encoding::HDF5);
 
     /// Write out mesh value collection (subset) using an associated
@@ -164,10 +163,10 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///
-    ///     use_partition_from_file (_bool_)
-    ///         Use the existing partition information in HDF5
+    ///     use_partition_from_file (_UseFilePartition_)
+    ///         Use the existing partition information in HDF5 file
     ///
-    void read(Mesh& mesh, bool use_partition_from_file);
+    void read(Mesh& mesh, UseFilePartition use_file_partition=UseFilePartition::no);
 
     /// Read first MeshFunction from file
     void read(MeshFunction<bool>& meshfunction);
@@ -193,58 +192,56 @@ namespace dolfin
 
     // Generic MeshFunction reader
     template<typename T>
-    void read_mesh_function(MeshFunction<T>& meshfunction);
+      void read_mesh_function(MeshFunction<T>& meshfunction);
 
     // Generic MeshFunction writer
     template<typename T>
-      void write_mesh_function(const MeshFunction<T>& meshfunction,
-                               std::string format,
+      void write_mesh_function(const MeshFunction<T>& meshfunction, std::string format,
                                Encoding encoding);
 
     // Write XML description of point clouds, with value_size = 0, 1
     // or 3 (for either no point data, scalar, or vector)
     void write_point_xml(const std::string dataset_name,
                          const std::size_t num_global_points,
-                         const unsigned int value_size,
-                         Encoding encoding);
+                         const unsigned int value_size, Encoding encoding);
 
     // Get point data values for linear or quadratic mesh into
     // flattened 2D array in data_values with given width
-    void get_point_data_values(std::vector<double>& data_values,
-                               std::size_t width, const Function& u);
+    void get_point_data_values(std::vector<double>& data_values, std::size_t width,
+                               const Function& u) const;
 
     // Check whether the requested encoding is supported
-    void check_encoding(Encoding encoding);
+    void check_encoding(Encoding encoding) const;
 
     // Generate the XDMF format string based on the Encoding
     // enumeration
-    std::string xdmf_format_str(Encoding encoding)
+    static std::string xdmf_format_str(Encoding encoding)
     { return (encoding == XDMFFile::Encoding::HDF5) ? "HDF" : "XML"; }
 
     // Generate the data string to insert in an xdmf file for the mesh
     // cell to node connectivity
-    std::string generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh);
+    static std::string generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh);
 
     // Generate the data string to insert in an xdmf file for the mesh
     // for the topology of entitiy dimension edim -> 0.
-    std::string generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh,
-                                                       const std::size_t edim);
+    static std::string generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh,
+                                                              const std::size_t edim);
 
     // Generate the data string to insert in an xdmf file for the
     // mesh point cloud
-    std::string generate_xdmf_ascii_mesh_geometry_data(const Mesh& mesh);
+    static std::string generate_xdmf_ascii_mesh_geometry_data(const Mesh& mesh);
 
     // Generate the data string to insert in an xdmf file for vertex
     // data with output formatted according to format
     template<typename T>
-      std::string generate_xdmf_ascii_data(const T& data, std::string format);
+    static  std::string generate_xdmf_ascii_data(const T& data, std::string format);
     template<typename T>
-      std::string generate_xdmf_ascii_data(const T& data);
+    static std::string generate_xdmf_ascii_data(const T& data);
 
     // Determine the encoding of the data from the xml file.
     // E.g. "XML" or "HDF".
-    Encoding get_file_encoding();
-    Encoding get_file_encoding(std::string xdmf_format);
+    Encoding get_file_encoding() const;
+    Encoding get_file_encoding(std::string xdmf_format) const;
 
     // Most recent mesh name
     std::string _current_mesh_name;
@@ -258,11 +255,10 @@ namespace dolfin
     // The xml document of the XDMF file
     std::unique_ptr<XDMFxml> _xml;
 
-    // Write MVC to ascii string to store in xdmf xml file
+    // Write MVC to ascii string to store in XDMF XML file
     template <typename T>
-      void write_ascii_mesh_value_collection(
-        const MeshValueCollection<T>& mesh_values,
-        std::string data_name);
+      void write_ascii_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
+                                             std::string data_name);
 
   };
 }

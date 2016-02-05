@@ -84,7 +84,7 @@ XDMFFile::~XDMFFile()
 //----------------------------------------------------------------------------
 void XDMFFile::get_point_data_values(std::vector<double>& data_values,
                                      std::size_t width,
-                                     const Function& u)
+                                     const Function& u) const
 {
   const Mesh& mesh = *u.function_space()->mesh();
   const std::size_t value_size = u.value_size();
@@ -474,7 +474,7 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
   ++_counter;
 }
 //----------------------------------------------------------------------------
-void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
+void XDMFFile::read(Mesh& mesh, UseFilePartition use_file_partition)
 {
   dolfin_assert(_xml);
   _xml->read();
@@ -500,11 +500,11 @@ void XDMFFile::read(Mesh& mesh, bool use_partition_from_file)
     boost::filesystem::path xdmf_path(_filename);
     boost::filesystem::path hdf5_path(topo.hdf5_filename);
     HDF5File mesh_file(_mpi_comm, (xdmf_path.parent_path()
-                                  / hdf5_path).string(), "r");
+                                   / hdf5_path).string(), "r");
 
     // Try to read the mesh from the associated HDF5 file
     mesh_file.read(mesh, topo.hdf5_dataset, geom.hdf5_dataset,
-                   topo.cell_type, use_partition_from_file);
+                   topo.cell_type, use_file_partition);
 #else
     dolfin_error("XDMFile.cpp", "open Mesh file", "Need HDF5 support");
 #endif
@@ -1035,13 +1035,11 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
   {
 #ifdef HAS_HDF5
     const std::string data_name = _xml->dataname();
-
     if (_hdf5_filemode != "r")
     {
       _hdf5_file.reset(new HDF5File(_mpi_comm, _hdf5_filename, "r"));
       _hdf5_filemode = "r";
     }
-
     dolfin_assert(_hdf5_file);
 
     // Try to read the meshfunction from the associated HDF5 file
@@ -1062,7 +1060,7 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
   }
 }
 //----------------------------------------------------------------------------
-void XDMFFile::check_encoding(Encoding encoding)
+void XDMFFile::check_encoding(Encoding encoding) const
 {
   if (encoding == Encoding::HDF5 and !has_hdf5())
   {
@@ -1157,7 +1155,7 @@ std::string XDMFFile::generate_xdmf_ascii_data(const T& data)
   return data_str;
 }
 //-----------------------------------------------------------------------------
-XDMFFile::Encoding XDMFFile::get_file_encoding()
+XDMFFile::Encoding XDMFFile::get_file_encoding() const
 {
   dolfin_assert(_xml);
   _xml->read();
@@ -1166,7 +1164,8 @@ XDMFFile::Encoding XDMFFile::get_file_encoding()
   return get_file_encoding(xml_encoding_attrib);
 }
 //-----------------------------------------------------------------------------
-XDMFFile::Encoding XDMFFile::get_file_encoding(std::string xml_encoding_attrib)
+XDMFFile::Encoding
+XDMFFile::get_file_encoding(std::string xml_encoding_attrib) const
 {
   return (xml_encoding_attrib == "XML") ? Encoding::ASCII : Encoding::HDF5;
 }
