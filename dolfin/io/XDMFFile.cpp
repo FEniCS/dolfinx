@@ -1164,8 +1164,7 @@ XDMFFile::Encoding XDMFFile::get_file_encoding() const
   return get_file_encoding(xml_encoding_attrib);
 }
 //-----------------------------------------------------------------------------
-XDMFFile::Encoding
-XDMFFile::get_file_encoding(std::string xml_encoding_attrib) const
+XDMFFile::Encoding XDMFFile::get_file_encoding(std::string xml_encoding_attrib)
 {
   return (xml_encoding_attrib == "XML") ? Encoding::ASCII : Encoding::HDF5;
 }

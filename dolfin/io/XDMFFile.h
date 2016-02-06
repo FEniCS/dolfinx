@@ -192,13 +192,12 @@ namespace dolfin
 
     // Generic MeshFunction reader
     template<typename T>
-      void read_mesh_function(MeshFunction<T>& meshfunction);
+    void read_mesh_function(MeshFunction<T>& meshfunction);
 
     // Generic MeshFunction writer
     template<typename T>
-      void write_mesh_function(const MeshFunction<T>& meshfunction,
-                               std::string format,
-                               Encoding encoding);
+    void write_mesh_function(const MeshFunction<T>& meshfunction,
+                             std::string format, Encoding encoding);
 
     // Write XML description of point clouds, with value_size = 0, 1
     // or 3 (for either no point data, scalar, or vector)
@@ -209,8 +208,7 @@ namespace dolfin
     // Get point data values for linear or quadratic mesh into
     // flattened 2D array in data_values with given width
     void get_point_data_values(std::vector<double>& data_values,
-                               std::size_t width,
-                               const Function& u) const;
+                               std::size_t width, const Function& u) const;
 
     // Check whether the requested encoding is supported
     void check_encoding(Encoding encoding) const;
@@ -225,13 +223,13 @@ namespace dolfin
     static std::string generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh);
 
     // Generate the data string to insert in an xdmf file for the mesh
-    // for the topology of entitiy dimension edim -> 0.
+    // for the topology of entitiy dimension edim -> 0
     static std::string
     generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh,
                                            const std::size_t edim);
 
-    // Generate the data string to insert in an xdmf file for the
-    // mesh point cloud
+    // Generate the data string to insert in an xdmf file for the mesh
+    // point cloud
     static std::string generate_xdmf_ascii_mesh_geometry_data(const Mesh& mesh);
 
     // Generate a string of the vertex data numeric values contained
@@ -240,8 +238,8 @@ namespace dolfin
     // argument. E.g:
     //    generate_xdmf_ascii_data(data_values, "%.15e")
     template<typename T>
-    static  std::string generate_xdmf_ascii_data(const T& data,
-                                                 std::string format);
+    static std::string generate_xdmf_ascii_data(const T& data,
+                                                std::string format);
 
     // As XDMFFile::generate_xdmf_ascii_data, using
     // boost::lexical_cast to format the numeric data as a string.
@@ -251,10 +249,9 @@ namespace dolfin
     // Determine the encoding of the data from the xml file.
     Encoding get_file_encoding() const;
 
-    // Determine the encoding enumeration value from the xdmf format string
-    // E.g. "XML" or "HDF".
-    // See XDMFFile::xdmf_format_str
-    static Encoding get_file_encoding(std::string xdmf_format) const;
+    // Determine the encoding enumeration value from the xdmf format
+    // string E.g. "XML" or "HDF" See XDMFFile::xdmf_format_str
+    static Encoding get_file_encoding(std::string xdmf_format);
 
     // Most recent mesh name
     std::string _current_mesh_name;
