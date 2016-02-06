@@ -64,7 +64,7 @@ L = - f*v*dx
 
 # Define function G such that G \cdot n = g
 class BoundarySource(Expression):
-    def __init__(self, mesh):
+    def __init__(self, mesh, **kwargs):
         self.mesh = mesh
     def eval_cell(self, values, x, ufc_cell):
         cell = Cell(self.mesh, ufc_cell.index)
@@ -75,7 +75,7 @@ class BoundarySource(Expression):
     def value_shape(self):
         return (2,)
 
-G = BoundarySource(mesh)
+G = BoundarySource(mesh, degree=2)
 
 # Define essential boundary
 def boundary(x):

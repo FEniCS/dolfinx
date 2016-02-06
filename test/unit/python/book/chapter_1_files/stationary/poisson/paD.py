@@ -48,7 +48,7 @@ solve(a == L, u, bcs)
 print(mesh)
 
 # Verification
-u_exact = Expression('x[0]*x[0]')
+u_exact = Expression('x[0]*x[0]', degree=2)
 u_e = interpolate(u_exact, V)
 print('Max error:', \
       numpy.abs(u_e.vector().array() - u.vector().array()).max())

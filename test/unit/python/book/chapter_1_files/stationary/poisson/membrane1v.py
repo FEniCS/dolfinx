@@ -34,7 +34,7 @@ v = TestFunction(V)
 a = inner(nabla_grad(w), nabla_grad(v))*dx
 f = Expression('4*exp(-0.5*(pow((R*x[0] - x0)/sigma, 2)) '
                '     - 0.5*(pow((R*x[1] - y0)/sigma, 2)))',
-               R=R, x0=x0, y0=y0, sigma=sigma)
+               R=R, x0=x0, y0=y0, sigma=sigma, degree=2)
 L = f*v*dx
 
 # Compute solution

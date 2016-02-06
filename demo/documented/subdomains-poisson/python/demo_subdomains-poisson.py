@@ -71,7 +71,7 @@ bottom.mark(boundaries, 4)
 # Define input data
 a0 = Constant(1.0)
 a1 = Constant(0.01)
-g_L = Expression("- 10*exp(- pow(x[1] - 0.5, 2))")
+g_L = Expression("- 10*exp(- pow(x[1] - 0.5, 2))", degree=2)
 g_R = Constant("1.0")
 f = Constant(1.0)
 

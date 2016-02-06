@@ -99,7 +99,7 @@ with f=0, q(u) = (1+u)^m, u=0 at x=0 and u=1 at x=1.
 """ % mesh)
 
 # Find max error
-u_exact = Expression('pow((pow(2, m+1)-1)*x[0] + 1, 1.0/(m+1)) - 1', m=m)
+u_exact = Expression('pow((pow(2, m+1)-1)*x[0] + 1, 1.0/(m+1)) - 1', m=m, degree=6)
 u_e = interpolate(u_exact, V)
 import numpy
 diff = numpy.abs(u_e.vector().array() - u_.vector().array()).max()

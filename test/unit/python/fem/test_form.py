@@ -280,7 +280,7 @@ def QQ3(base):
 @skip_in_parallel
 def test_basic_rt(RT2, RT3):
 
-    f2 = Expression(("2.0", "1.0", degree=0))
+    f2 = Expression(("2.0", "1.0"), degree=0)
     f3 = Expression(("1.0", "0.0", "2.0"), degree=0)
 
     u2 = TrialFunction(RT2)
@@ -536,8 +536,8 @@ def test_coefficient_derivatives(V1, V2):
         v = TestFunction(V)
         u = TrialFunction(V)
 
-        f.interpolate(Expression("1.0 + x[0] + x[1]"), degree=1)
-        g.interpolate(Expression("2.0 + x[0] + x[1]"), degree=1)
+        f.interpolate(Expression("1.0 + x[0] + x[1]", degree=1))
+        g.interpolate(Expression("2.0 + x[0] + x[1]", degree=1))
 
         # Since g = f + 1, define dg/df = 1
         cd = {g: 1}
