@@ -115,7 +115,7 @@ def plot_functions():
     mesh = UnitSquareMesh(8, 8, 'crossed')
     P1 = FunctionSpace(mesh, "Lagrange", 1)
     u = interpolate(Expression("x[0]*x[0] + x[1]*x[1]*(x[1]-0.5)", degree=3), P1)
-    v = interpolate(Expression("1.0+x[0]*x[0]", dgeree=2), P1)
+    v = interpolate(Expression("1.0+x[0]*x[0]", degree=2), P1)
 
     # Get common range
     r = {"range_min": min(u.vector().min(), v.vector().min()),
