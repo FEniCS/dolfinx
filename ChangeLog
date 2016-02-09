@@ -1,3 +1,5 @@
+- Require polynomial degree or finite element for Expressions in the Python
+	interface (fixes Issue #355, https://bitbucket.org/fenics-project/dolfin/issues/355)
 - Switch to Google Test framwork for C++ unit tests
 - Fix bug when reading domain data from mesh file for a ghosted mesh
 - Remove reference versions of constructors for many classes that
