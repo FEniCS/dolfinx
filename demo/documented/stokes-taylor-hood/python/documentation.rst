@@ -64,7 +64,7 @@ defining the boundaries, we define boundary conditions:
 
     # Inflow boundary condition for velocity
     # x0 = 1
-    inflow = Expression(("-sin(x[1]*pi)", "0.0"))
+    inflow = Expression(("-sin(x[1]*pi)", "0.0"), degree=2)
     bc1 = DirichletBC(W.sub(0), inflow, sub_domains, 1)
 
     # Collect boundary conditions

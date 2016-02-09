@@ -54,7 +54,7 @@ def test_butcher_schemes_scalar():
     form = u*v*dx
 
     tstop = 1.0
-    u_true = Expression("exp(t)", t=tstop)
+    u_true = Expression("exp(t)", t=tstop, degree=2)
 
     for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                    BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
@@ -85,7 +85,7 @@ def test_butcher_schemes_vector():
     form = inner(as_vector((-u[1], u[0])), v)*dx
 
     tstop = 1.0
-    u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
+    u_true = Expression(("cos(t)", "sin(t)"), t=tstop, degree=2)
 
     for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                    BackwardEuler, CN2, ESDIRK3, ESDIRK4]:

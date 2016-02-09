@@ -16,7 +16,7 @@ V = FunctionSpace(mesh, 'Lagrange', 1)
 # Define boundary conditions
 alpha = 3; beta = 1.2
 u0 = Expression('1 + x[0]*x[0] + alpha*x[1]*x[1] + beta*t',
-                alpha=alpha, beta=beta, t=0)
+                alpha=alpha, beta=beta, t=0, degree=2)
 
 class Boundary(SubDomain):  # define the Dirichlet boundary
     def inside(self, x, on_boundary):
@@ -47,7 +47,7 @@ K = assemble(a_K)
 A = M + dt*K
 
 # f term
-f = Expression('beta - 2 - 2*alpha', beta=beta, alpha=alpha)
+f = Expression('beta - 2 - 2*alpha', beta=beta, alpha=alpha, degree=0)
 
 # Compute solution
 u = Function(V)

@@ -32,7 +32,7 @@ import numpy
 mesh = Mesh("../sphere_16.xml.gz")
 
 # Define global normal
-global_normal = Expression(("x[0]", "x[1]", "x[2]"))
+global_normal = Expression(("x[0]", "x[1]", "x[2]"), degree=1)
 mesh.init_cell_orientations(global_normal)
 
 # Define function spaces and basis functions
@@ -44,7 +44,7 @@ W = FunctionSpace(mesh, MixedElement((RT1, DG0, R)))
 (sigma, u, r) = TrialFunctions(W)
 (tau, v, t) = TestFunctions(W)
 
-g = Expression("sin(0.5*pi*x[2])")
+g = Expression("sin(0.5*pi*x[2])", degree=2)
 
 # Define forms
 a = (inner(sigma, tau) + div(sigma)*v + div(tau)*u + r*v + t*u)*dx

@@ -55,8 +55,8 @@ W = FunctionSpace(mesh, DRT * CG)
 (tau, v) = TestFunctions(W)
 
 # Define source functions
-f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-g = Expression("sin(5.0*x[0])")
+f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
+g = Expression("sin(5.0*x[0])", degree=2)
 
 # Define variational form
 a = (dot(sigma, tau) + dot(grad(u), tau) + dot(sigma, grad(v)))*dx

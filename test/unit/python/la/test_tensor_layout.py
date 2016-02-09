@@ -64,7 +64,7 @@ def test_layout_and_pattern_interface(backend, V, VV, TH):
         u = TrialFunction(V)
         v = TestFunction(V)
         a = inner(grad(u), grad(v))*dx
-        f = Expression(np.full(v.ufl_shape, "x[0]*x[1]", dtype=object).tolist())
+        f = Expression(np.full(v.ufl_shape, "x[0]*x[1]", dtype=object).tolist(), degree=2)
         L = inner(f, v)*dx
 
         # Test ghosted vector (for use as dofs of FE function)

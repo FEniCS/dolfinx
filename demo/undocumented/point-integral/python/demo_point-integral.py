@@ -62,7 +62,7 @@ bc = DirichletBC(V, u0, boundary)
 u = TrialFunction(V)
 v = TestFunction(V)
 f = Constant(0.4)
-g = Expression("A*sin(5*x[0])", A=10.0)
+g = Expression("A*sin(5*x[0])", A=10.0, degree=2)
 a = inner(grad(u), grad(v))*dx
 L = f*v*dPP(1) + g*v*ds
 
