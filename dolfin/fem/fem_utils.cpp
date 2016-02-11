@@ -133,24 +133,25 @@ void _precheck_coordinates(const MeshGeometry& geometry,
   if (&position.function_space()->mesh()->geometry() != &geometry)
   {
     dolfin_error("fem_utils.cpp",
-                 "set/get mesh geometry coordinates from function",
+                 "set/get mesh geometry coordinates from/to function",
                  "function mesh geometry and given geometry "
                  "do not match (address comparison)");
   }
 
   if (position.function_space()->element()->ufc_element()->family()
-          != "Lagrange")
+          != std::string("Lagrange"))
+
   {
     dolfin_error("fem_utils.cpp",
-                 "set/get mesh geometry coordinates from function",
+                 "set/get mesh geometry coordinates from/to function",
                  "expecting 'Lagrange' finite element family rather than '%s'",
-      position.function_space()->element()->ufc_element()->family().c_str());
+                 position.function_space()->element()->ufc_element()->family());
   }
 
   if (position.value_rank() != 1)
   {
     dolfin_error("fem_utils.cpp",
-                 "set/get mesh geometry coordinates from function",
+                 "set/get mesh geometry coordinates from/to function",
                  "function has incorrect value rank %d, need 1",
                  position.value_rank());
   }
@@ -171,7 +172,7 @@ void _precheck_coordinates(const MeshGeometry& geometry,
   if (!setting && position.value_dimension(0) != geometry.dim())
   {
     dolfin_error("fem_utils.cpp",
-                 "get mesh geometry coordinates from function",
+                 "get mesh geometry coordinates and store to function",
                  "function value dimension %d and geometry dimension %d "
                  "do not match",
                  position.value_dimension(0), geometry.dim());
@@ -182,7 +183,7 @@ void _precheck_coordinates(const MeshGeometry& geometry,
           != geometry.degree())
   {
     dolfin_error("fem_utils.cpp",
-                 "get mesh geometry coordinates from function",
+                 "get mesh geometry coordinates and store to function",
                  "function degree %d and geometry degree %d do not match",
                  position.function_space()->element()->ufc_element()->degree(),
                  geometry.degree());
@@ -256,8 +257,6 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
     for (std::size_t dim = 0; dim <= tdim; ++dim)
     {
       // Get local-to-global entity mapping
-      // FIXME: Probably will give incorrect result for dim == tdim.
-      //        Need to check how c->entites(tdim) is defined.
       global_entities = c->entities(dim);
 
       for (std::size_t local_entity = 0;
