@@ -71,7 +71,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          bool check_midpoint)
   : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
     _method(method), _user_sub_domain(sub_domain),
-    _check_midpoint(check_midpoint), _num_dofs(0)
+    _num_dofs(0), _check_midpoint(check_midpoint)
 {
   check();
   parameters = default_parameters();
@@ -83,9 +83,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          std::size_t sub_domain,
                          std::string method)
   : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
-    _method(method), _user_mesh_function(sub_domains),
-    _user_sub_domain_marker(sub_domain), _check_midpoint(true),
-    _num_dofs(0)
+    _method(method), _num_dofs(0), _user_mesh_function(sub_domains),
+    _user_sub_domain_marker(sub_domain), _check_midpoint(true)
 {
   check();
   parameters = default_parameters();
@@ -95,8 +94,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          std::shared_ptr<const GenericFunction> g,
                          std::size_t sub_domain, std::string method)
   : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
-    _method(method), _user_sub_domain_marker(sub_domain),
-    _check_midpoint(true), _num_dofs(0)
+    _method(method), _num_dofs(0), _user_sub_domain_marker(sub_domain),
+    _check_midpoint(true)
 {
   check();
   parameters = default_parameters();
@@ -107,8 +106,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          const std::vector<std::size_t>& markers,
                          std::string method)
   : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
-    _method(method), _facets(markers), _user_sub_domain_marker(0),
-    _check_midpoint(true), _num_dofs(0)
+    _method(method), _num_dofs(0), _facets(markers),
+    _user_sub_domain_marker(0), _check_midpoint(true)
 {
   check();
   parameters = default_parameters();
@@ -131,12 +130,12 @@ const DirichletBC& DirichletBC::operator= (const DirichletBC& bc)
   _g = bc._g;
   _method = bc._method;
   _user_sub_domain = bc._user_sub_domain;
+  _num_dofs = bc._num_dofs;
   _facets = bc._facets;
   _cells_to_localdofs = bc._cells_to_localdofs;
   _user_mesh_function = bc._user_mesh_function;
   _user_sub_domain_marker = bc._user_sub_domain_marker;
   _check_midpoint = bc._check_midpoint;
-  _num_dofs = bc._num_dofs;
 
   // Call assignment operator for base class
   Variable::operator=(bc);
