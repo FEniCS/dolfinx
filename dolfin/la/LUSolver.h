@@ -90,12 +90,6 @@ namespace dolfin
       solver->parameters.update(parameters);
     }
 
-    // FIXME: This should not be needed. Need to cleanup linear solver
-    // name jungle: default, lu, iterative, direct, krylov, etc /
-    // Return parameter type: "krylov_solver" or "lu_solver"
-    std::string parameter_type() const
-    { return "lu_solver"; }
-
   private:
 
     // Initialize solver
