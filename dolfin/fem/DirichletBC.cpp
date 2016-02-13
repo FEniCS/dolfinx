@@ -753,8 +753,8 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   std::vector<double> coordinate_dofs;
 
   // Allocate space
-  dolfin_assert(boundary_values.size() == 0);
-  boundary_values.reserve(_facets.size()*dofmap.num_facet_dofs());
+  boundary_values.reserve(boundary_values.size()
+                          + _facets.size()*dofmap.num_facet_dofs());
 
   // Iterate over marked
   dolfin_assert(_function_space->element());
@@ -843,9 +843,8 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   const std::size_t D = mesh.topology().dim();
 
   // Allocate space using cached size
-  dolfin_assert(boundary_values.size() == 0);
   if (_num_dofs > 0)
-    boundary_values.reserve(_num_dofs);
+    boundary_values.reserve(boundary_values.size() + _num_dofs);
 
   // Iterate over facets
   Progress p("Computing Dirichlet boundary values, geometric search",
@@ -959,9 +958,8 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                  : dofmap.ownership_range());
 
   // Allocate space using cached size
-  dolfin_assert(boundary_values.size() == 0);
   if (_num_dofs > 0)
-    boundary_values.reserve(_num_dofs);
+    boundary_values.reserve(boundary_values.size() + _num_dofs);
 
   // Iterate over cells
   std::vector<double> coordinate_dofs;
