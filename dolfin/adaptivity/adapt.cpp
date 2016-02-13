@@ -53,13 +53,13 @@ void set_parent_child(const T& parent, std::shared_ptr<T> child)
   child->set_parent(reference_to_no_delete_pointer(_parent));
 }
 //-----------------------------------------------------------------------------
-const Mesh& dolfin::adapt(const Mesh& mesh)
+std::shared_ptr<Mesh> dolfin::adapt(const Mesh& mesh)
 {
   // Skip refinement if already refined
   if (mesh.has_child())
   {
     dolfin_debug("Mesh has already been refined, returning child mesh.");
-    return mesh.child();
+    return const_cast<Mesh&>(mesh).child_shared_ptr();
   }
 
   // Refine uniformly
@@ -74,17 +74,17 @@ const Mesh& dolfin::adapt(const Mesh& mesh)
   // Set parent / child
   set_parent_child(mesh, adapted_mesh);
 
-  return *adapted_mesh;
+  return adapted_mesh;
 }
 //-----------------------------------------------------------------------------
-const dolfin::Mesh& dolfin::adapt(const Mesh& mesh,
-                                  const MeshFunction<bool>& cell_markers)
+std::shared_ptr<Mesh> dolfin::adapt(const Mesh& mesh,
+                                    const MeshFunction<bool>& cell_markers)
 {
   // Skip refinement if already refined
   if (mesh.has_child())
   {
     dolfin_debug("Mesh has already been refined, returning child mesh.");
-    return mesh.child();
+    return const_cast<Mesh&>(mesh).child_shared_ptr();
   }
 
   // Call refinement algorithm
@@ -99,10 +99,10 @@ const dolfin::Mesh& dolfin::adapt(const Mesh& mesh,
   // Set parent / child
   set_parent_child(mesh, adapted_mesh);
 
-  return *adapted_mesh;
+  return adapted_mesh;
 }
 //-----------------------------------------------------------------------------
-const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space)
+std::shared_ptr<FunctionSpace> dolfin::adapt(const FunctionSpace& space)
 {
   dolfin_assert(space.mesh());
 
@@ -112,11 +112,12 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space)
   // Refine space
   adapt(space, space.mesh()->child_shared_ptr());
 
-  return space.child();
+  return const_cast<FunctionSpace*>(&space)->child_shared_ptr();
 }
 //-----------------------------------------------------------------------------
-const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
-                                           const MeshFunction<bool>& cell_markers)
+std::shared_ptr<FunctionSpace>
+  dolfin::adapt(const FunctionSpace& space,
+                const MeshFunction<bool>& cell_markers)
 {
   dolfin_assert(space.mesh());
 
@@ -126,11 +127,12 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
   // Refine space
   adapt(space, space.mesh()->child_shared_ptr());
 
-  return space.child();
+  return const_cast<FunctionSpace*>(&space)->child_shared_ptr();
 }
 //-----------------------------------------------------------------------------
-const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
-                                           std::shared_ptr<const Mesh> adapted_mesh)
+std::shared_ptr<FunctionSpace>
+  dolfin::adapt(const FunctionSpace& space,
+                std::shared_ptr<const Mesh> adapted_mesh)
 {
 
   // Skip refinement if already refined and child's mesh is the same
@@ -139,7 +141,7 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
       && adapted_mesh.get() == space.child().mesh().get())
   {
     dolfin_debug("Function space has already been refined, returning child space.");
-    return space.child();
+    return const_cast<FunctionSpace&>(space).child_shared_ptr();
   }
 
   // Create DOLFIN finite element and dofmap
@@ -157,12 +159,13 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
   // Set parent / child
   set_parent_child(space, refined_space);
 
-  return *refined_space;
+  return refined_space;
 }
 //-----------------------------------------------------------------------------
-const dolfin::Function& dolfin::adapt(const Function& function,
-                                      std::shared_ptr<const Mesh> adapted_mesh,
-                                      bool interpolate)
+std::shared_ptr<Function>
+  dolfin::adapt(const Function& function,
+                std::shared_ptr<const Mesh> adapted_mesh,
+                bool interpolate)
 {
   // Skip refinement if already refined and if child's mesh matches
   // requested mesh
@@ -170,7 +173,7 @@ const dolfin::Function& dolfin::adapt(const Function& function,
       && adapted_mesh.get() == function.child().function_space()->mesh().get())
   {
     dolfin_debug("Function has already been refined, returning child function.");
-    return function.child();
+    return const_cast<Function&>(function).child_shared_ptr();
   }
 
   // Refine function space
@@ -189,29 +192,31 @@ const dolfin::Function& dolfin::adapt(const Function& function,
   // Set parent / child
   set_parent_child(function, refined_function);
 
-  return *refined_function;
+  return refined_function;
 }
 //-----------------------------------------------------------------------------
-const dolfin::GenericFunction& dolfin::adapt(const GenericFunction& function,
-                                             std::shared_ptr<const Mesh> adapted_mesh)
+std::shared_ptr<GenericFunction>
+  dolfin::adapt(std::shared_ptr<const GenericFunction> function,
+                std::shared_ptr<const Mesh> adapted_mesh)
 {
   // Try casting to a function
-  const Function* f = dynamic_cast<const Function*>(&function);
+  const Function* f = dynamic_cast<const Function*>(function.get());
   if (f)
     return adapt(*f, adapted_mesh);
   else
-    return function;
+    return std::const_pointer_cast<GenericFunction>(function);
 }
 //-----------------------------------------------------------------------------
-const dolfin::Form& dolfin::adapt(const Form& form,
-                                  std::shared_ptr<const Mesh> adapted_mesh,
-                                  bool adapt_coefficients)
+std::shared_ptr<Form>
+  dolfin::adapt(const Form& form,
+                std::shared_ptr<const Mesh> adapted_mesh,
+                bool adapt_coefficients)
 {
   // Skip refinement if already refined
   if (form.has_child())
   {
     dolfin_debug("Form has already been refined, returning child form.");
-    return form.child();
+    return const_cast<Form&>(form).child_shared_ptr();
   }
 
   // Get data
@@ -280,18 +285,18 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   // Set parent / child
   set_parent_child(form, refined_form);
 
-  return *refined_form;
+  return refined_form;
 }
 //-----------------------------------------------------------------------------
-const dolfin::LinearVariationalProblem&
-dolfin::adapt(const LinearVariationalProblem& problem,
-              std::shared_ptr<const Mesh> adapted_mesh)
+std::shared_ptr<LinearVariationalProblem>
+  dolfin::adapt(const LinearVariationalProblem& problem,
+                std::shared_ptr<const Mesh> adapted_mesh)
 {
   // Skip refinement if already refined
   if (problem.has_child())
   {
     dolfin_debug("Linear variational problem has already been refined, returning child problem.");
-    return problem.child();
+    return const_cast<LinearVariationalProblem&>(problem).child_shared_ptr();
   }
 
   // Get data
@@ -312,7 +317,7 @@ dolfin::adapt(const LinearVariationalProblem& problem,
   dolfin_assert(u);
   adapt(*u, adapted_mesh);
   std::shared_ptr<Function> refined_u
-    = reference_to_no_delete_pointer(const_cast<Function&>(u->child()));
+    = std::const_pointer_cast<Function>(u)->child_shared_ptr();
 
   // Refine bcs
   std::shared_ptr<const FunctionSpace> V(problem.trial_space());
@@ -346,18 +351,18 @@ dolfin::adapt(const LinearVariationalProblem& problem,
   // Set parent / child
   set_parent_child(problem, refined_problem);
 
-  return *refined_problem;
+  return refined_problem;
 }
 //-----------------------------------------------------------------------------
-const dolfin::NonlinearVariationalProblem&
-dolfin::adapt(const NonlinearVariationalProblem& problem,
-              std::shared_ptr<const Mesh> adapted_mesh)
+std::shared_ptr<NonlinearVariationalProblem>
+  dolfin::adapt(const NonlinearVariationalProblem& problem,
+                std::shared_ptr<const Mesh> adapted_mesh)
 {
   // Skip refinement if already refined
   if (problem.has_child())
   {
     dolfin_debug("Nonlinear variational problem has already been refined, returning child problem.");
-    return problem.child();
+    return const_cast<NonlinearVariationalProblem&>(problem).child_shared_ptr();
   }
 
   // Get data
@@ -377,8 +382,8 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
   // Refine solution variable
   dolfin_assert(u);
   adapt(*u, adapted_mesh);
-  std::shared_ptr<Function> refined_u =
-    reference_to_no_delete_pointer(const_cast<Function&>(u->child()));
+  std::shared_ptr<Function> refined_u
+    = std::const_pointer_cast<Function>(u)->child_shared_ptr();
 
   // Refine bcs
   std::shared_ptr<const FunctionSpace> V(problem.trial_space());
@@ -412,12 +417,13 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
   // Set parent / child
   set_parent_child(problem, refined_problem);
 
-  return *refined_problem;
+  return refined_problem;
 }
 //-----------------------------------------------------------------------------
-const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
-                                    std::shared_ptr<const Mesh> adapted_mesh,
-                                    const FunctionSpace& S)
+std::shared_ptr<DirichletBC>
+  dolfin::adapt(const DirichletBC& bc,
+                std::shared_ptr<const Mesh> adapted_mesh,
+                const FunctionSpace& S)
 {
   dolfin_assert(adapted_mesh);
 
@@ -427,7 +433,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
       && adapted_mesh.get() == bc.child().function_space()->mesh().get())
   {
     dolfin_debug("DirichletBC has already been refined, returning child.");
-    return bc.child();
+    return const_cast<DirichletBC&>(bc).child_shared_ptr();
   }
 
   std::shared_ptr<const FunctionSpace> W = bc.function_space();
@@ -448,9 +454,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   }
 
   // Get refined value
-  const GenericFunction& g = adapt(*(bc.value()), adapted_mesh);
-  std::shared_ptr<const GenericFunction>
-    g_ptr(reference_to_no_delete_pointer(g));
+  std::shared_ptr<const GenericFunction> g = adapt(bc.value(), adapted_mesh);
 
   // Extract user_sub_domain
   std::shared_ptr<const SubDomain> user_sub_domain = bc.user_sub_domain();
@@ -460,7 +464,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   if (user_sub_domain)
   {
     // Use user defined sub domain if defined
-    refined_bc.reset(new DirichletBC(V, g_ptr, user_sub_domain, bc.method()));
+    refined_bc.reset(new DirichletBC(V, g, user_sub_domain, bc.method()));
   }
   else
   {
@@ -472,19 +476,19 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
     std::vector<std::size_t> refined_markers;
     adapt_markers(refined_markers, *adapted_mesh, markers, *W->mesh());
 
-    refined_bc.reset(new DirichletBC(V, g_ptr, refined_markers, bc.method()));
+    refined_bc.reset(new DirichletBC(V, g, refined_markers, bc.method()));
   }
 
   // Set parent / child
   set_parent_child(bc, refined_bc);
 
-  return *refined_bc;
+  return refined_bc;
 }
 //-----------------------------------------------------------------------------
-const dolfin::ErrorControl&
-dolfin::adapt(const ErrorControl& ec,
-              std::shared_ptr<const Mesh> adapted_mesh,
-              bool adapt_coefficients)
+std::shared_ptr<ErrorControl>
+  dolfin::adapt(const ErrorControl& ec,
+                std::shared_ptr<const Mesh> adapted_mesh,
+                bool adapt_coefficients)
 {
   dolfin_assert(adapted_mesh);
 
@@ -492,7 +496,7 @@ dolfin::adapt(const ErrorControl& ec,
   if (ec.has_child())
   {
     dolfin_debug("ErrorControl has already been refined, returning child problem.");
-    return ec.child();
+    return const_cast<ErrorControl&>(ec).child_shared_ptr();
   }
 
   // Refine data
@@ -520,10 +524,10 @@ dolfin::adapt(const ErrorControl& ec,
   // Set parent / child
   set_parent_child(ec, refined_ec);
 
-  return *refined_ec;
+  return refined_ec;
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<std::size_t>&
+std::shared_ptr<MeshFunction<std::size_t>>
   dolfin::adapt(const MeshFunction<std::size_t>& mesh_function,
                 std::shared_ptr<const Mesh> adapted_mesh)
 {
@@ -531,7 +535,7 @@ const dolfin::MeshFunction<std::size_t>&
   if (mesh_function.has_child())
   {
     dolfin_debug("MeshFunction has already been refined, returning child");
-    return mesh_function.child();
+    return const_cast<MeshFunction<std::size_t>&>(mesh_function).child_shared_ptr();
   }
 
   dolfin_assert(mesh_function.mesh());
@@ -581,7 +585,7 @@ const dolfin::MeshFunction<std::size_t>&
   set_parent_child(mesh_function, adapted_mesh_function);
 
   // Return refined mesh function
-  return *adapted_mesh_function;
+  return adapted_mesh_function;
 }
 //-----------------------------------------------------------------------------
 void dolfin::adapt_markers(std::vector<std::size_t>& refined_markers,
