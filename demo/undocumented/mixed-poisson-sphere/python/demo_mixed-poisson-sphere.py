@@ -50,16 +50,17 @@ g = Expression("sin(0.5*pi*x[2])", degree=2)
 a = (inner(sigma, tau) + div(sigma)*v + div(tau)*u + r*v + t*u)*dx
 L = g*v*dx
 
-# Set PETSc MUMPS parameters (this is required to prevent a memory
-# error when using MUMPS LU solver, which is probably due to the Real
-# space).
+# Tune some factorization options
 if has_petsc():
+    # Avoid factors memory exhaustion due to excessive pivoting
     PETScOptions.set("mat_mumps_icntl_14", 40.0)
     PETScOptions.set("mat_mumps_icntl_7", "0")
+    # Avoid zero pivots on 64-bit SuperLU_dist
+    PETScOptions.set("mat_superlu_dist_colperm", "MMD_ATA")
 
 # Solve problem
 w = Function(W)
-solve(a == L, w)
+solve(a == L, w, solver_parameters={"symmetric": True})
 (sigma, u, r) = w.split()
 
 # Plot CG1 representation of solutions
