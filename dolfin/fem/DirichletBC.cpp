@@ -187,7 +187,6 @@ void DirichletBC::gather(Map& boundary_values) const
   const int bs = dofmap.block_size();
 
   // Create list of boundary values to send to each processor
-  // FIXME: Reserve space for inner vectors
   std::vector<std::vector<std::size_t>> proc_map0(comm_size);
   std::vector<std::vector<double>> proc_map1(comm_size);
   for (Map::const_iterator bv = boundary_values.begin();
@@ -219,6 +218,12 @@ void DirichletBC::gather(Map& boundary_values) const
   const std::size_t n0 = dofmap.ownership_range().first;
   const std::size_t n1 = dofmap.ownership_range().second;
   const std::size_t owned_size = n1 - n0;
+
+  // Reserve space
+  std::size_t num_dofs = boundary_values.size();
+  for (std::size_t p = 0; p < comm_size; ++p)
+    num_dofs += received_bvc0[p].size();
+  boundary_values.reserve(num_dofs);
 
   // Add the received boundary values to the local boundary values
   for (std::size_t p = 0; p < comm_size; ++p)
@@ -264,7 +269,6 @@ void DirichletBC::gather(Map& boundary_values) const
       }
       _vec[i].second = received_bvc1[p][i];
     }
-    // FIXME: Reserve space
     boundary_values.insert(_vec.begin(), _vec.end());
   }
 }
@@ -839,14 +843,10 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 
   const std::size_t D = mesh.topology().dim();
 
-  // Allocate space using cached size or upper estimate
+  // Allocate space using cached size
   dolfin_assert(boundary_values.size() == 0);
   if (_num_dofs > 0)
     boundary_values.reserve(_num_dofs);
-  else
-    // FIXME: PROFILEME: Quite overkill
-    // 1 facet = 2 cells, num_bc_dofs <= num_cells*max_element_dofs
-    boundary_values.reserve(2*_facets.size()*dofmap.max_element_dofs());
 
   // Iterate over facets
   Progress p("Computing Dirichlet boundary values, geometric search",
