@@ -70,7 +70,7 @@ namespace dolfin
     const std::vector<std::size_t>& local_to_global_unowned() const;
 
     /// Get global index of local index i
-    std::size_t local_to_global(std::size_t i) const
+    std::size_t local_to_global(std::size_t i) const;
 
     /// Set local_to_global map for unowned indices (beyond end of local
     /// range). Computes and stores off-process owner array.
