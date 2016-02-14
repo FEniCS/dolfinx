@@ -30,6 +30,7 @@
 	initialization by suitable UFL element
 - Add experimental matplotlib-based plotting backend, see mplot demo
 - Remove method argument of DirichletBC::get_boundary_values()
+- Change return types of free functions adapt() to shared_ptr
 1.6.0 [2015-07-28]
 - Remove redundant pressure boundary condition in Stokes demos
 - Require Point in RectangleMesh and BoxMesh constructors

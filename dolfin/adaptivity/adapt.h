@@ -44,23 +44,24 @@ namespace dolfin
   //--- Refinement of meshes ---
 
   /// Refine mesh uniformly
-  const Mesh& adapt(const Mesh& mesh);
+  std::shared_ptr<Mesh> adapt(const Mesh& mesh);
 
   /// Refine mesh based on cell markers
-  const Mesh& adapt(const Mesh& mesh, const MeshFunction<bool>& cell_markers);
+  std::shared_ptr<Mesh> adapt(const Mesh& mesh,
+                              const MeshFunction<bool>& cell_markers);
 
   //--- Refinement of function spaces ---
 
   /// Refine function space uniformly
-  const FunctionSpace& adapt(const FunctionSpace& space);
+  std::shared_ptr<FunctionSpace> adapt(const FunctionSpace& space);
 
   /// Refine function space based on cell markers
-  const FunctionSpace& adapt(const FunctionSpace& space,
-                             const MeshFunction<bool>& cell_markers);
+  std::shared_ptr<FunctionSpace> adapt(const FunctionSpace& space,
+                                       const MeshFunction<bool>& cell_markers);
 
   /// Refine function space based on refined mesh
-  const FunctionSpace& adapt(const FunctionSpace& space,
-                             std::shared_ptr<const Mesh> adapted_mesh);
+  std::shared_ptr<FunctionSpace> adapt(const FunctionSpace& space,
+                                       std::shared_ptr<const Mesh> adapted_mesh);
 
   //--- Refinement of functions ---
 
@@ -79,24 +80,26 @@ namespace dolfin
   /// *Returns*
   ///     _Function__
   ///         The adapted function
-  const Function& adapt(const Function& function,
-                        std::shared_ptr<const Mesh> adapted_mesh,
-                        bool interpolate=true);
+  std::shared_ptr<Function> adapt(const Function& function,
+                                  std::shared_ptr<const Mesh> adapted_mesh,
+                                  bool interpolate=true);
 
   /// Refine GenericFunction based on refined mesh
-  const GenericFunction& adapt(const GenericFunction& function,
-                               std::shared_ptr<const Mesh> adapted_mesh);
+  std::shared_ptr<GenericFunction>
+    adapt(std::shared_ptr<const GenericFunction> function,
+          std::shared_ptr<const Mesh> adapted_mesh);
 
   /// Refine mesh function<std::size_t> based on mesh
-  const MeshFunction<std::size_t>& adapt(const MeshFunction<std::size_t>& mesh_function,
-                                  std::shared_ptr<const Mesh> adapted_mesh);
+  std::shared_ptr<MeshFunction<std::size_t>>
+    adapt(const MeshFunction<std::size_t>& mesh_function,
+          std::shared_ptr<const Mesh> adapted_mesh);
 
   //--- Refinement of boundary conditions ---
 
   /// Refine Dirichlet bc based on refined mesh
-  const DirichletBC& adapt(const DirichletBC& bc,
-                           std::shared_ptr<const Mesh> adapted_mesh,
-                           const FunctionSpace& S);
+  std::shared_ptr<DirichletBC> adapt(const DirichletBC& bc,
+                                     std::shared_ptr<const Mesh> adapted_mesh,
+                                     const FunctionSpace& S);
 
   /// Helper function for refinement of boundary conditions
   void adapt_markers(std::vector<std::size_t>& refined_markers,
@@ -121,19 +124,21 @@ namespace dolfin
   /// *Returns*
   ///     _Form__
   ///         The adapted form
-  const Form& adapt(const Form& form,
-                    std::shared_ptr<const Mesh> adapted_mesh,
-                    bool adapt_coefficients=true);
+  std::shared_ptr<Form> adapt(const Form& form,
+                              std::shared_ptr<const Mesh> adapted_mesh,
+                              bool adapt_coefficients=true);
 
   //--- Refinement of variational problems ---
 
   /// Refine linear variational problem based on mesh
-  const LinearVariationalProblem& adapt(const LinearVariationalProblem& problem,
-                                        std::shared_ptr<const Mesh> adapted_mesh);
+  std::shared_ptr<LinearVariationalProblem>
+    adapt(const LinearVariationalProblem& problem,
+          std::shared_ptr<const Mesh> adapted_mesh);
 
   /// Refine nonlinear variational problem based on mesh
-  const NonlinearVariationalProblem& adapt(const NonlinearVariationalProblem& problem,
-                                           std::shared_ptr<const Mesh> adapted_mesh);
+  std::shared_ptr<NonlinearVariationalProblem>
+    adapt(const NonlinearVariationalProblem& problem,
+          std::shared_ptr<const Mesh> adapted_mesh);
 
   /// Adapt error control object based on adapted mesh
   ///
@@ -150,9 +155,9 @@ namespace dolfin
   /// *Returns*
   ///     _ErrorControl__
   ///         The adapted error control object
-  const ErrorControl& adapt(const ErrorControl& ec,
-                            std::shared_ptr<const Mesh> adapted_mesh,
-                            bool adapt_coefficients=true);
+  std::shared_ptr<ErrorControl> adapt(const ErrorControl& ec,
+                                      std::shared_ptr<const Mesh> adapted_mesh,
+                                      bool adapt_coefficients=true);
 
 
 }
