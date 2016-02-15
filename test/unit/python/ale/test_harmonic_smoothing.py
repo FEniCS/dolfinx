@@ -23,11 +23,10 @@ from __future__ import print_function
 import pytest
 from dolfin import UnitSquareMesh, BoundaryMesh, Expression, \
                    CellFunction, SubMesh, Constant, MPI, MeshQuality,\
-                   mpi_comm_world
+                   mpi_comm_world, ALE
 from dolfin_utils.test import skip_in_parallel
 
 def test_HarmonicSmoothing():
-    #print("Testing HarmonicSmoothing::move(Mesh& mesh, "const BoundaryMesh& new_boundary)")
 
     # Create some mesh and its boundary
     mesh = UnitSquareMesh(10, 10)
@@ -35,10 +34,10 @@ def test_HarmonicSmoothing():
 
     # Move boundary
     disp = Expression(("0.3*x[0]*x[1]", "0.5*(1.0-x[1])"))
-    boundary.move(disp)
+    ALE.move(boundary, disp)
 
     # Move mesh according to given boundary
-    mesh.move(boundary)
+    ALE.move(mesh, boundary)
 
     # Check that new boundary topology corresponds to given one
     boundary_new = BoundaryMesh(mesh, 'exterior')
@@ -57,7 +56,6 @@ def test_HarmonicSmoothing():
 
 @skip_in_parallel
 def test_ale():
-    #print("Testing ALE::move(Mesh& mesh0, const Mesh& mesh1)")
 
     # Create some mesh
     mesh = UnitSquareMesh(4, 5)
@@ -75,10 +73,10 @@ def test_ale():
 
     # Move submesh0
     disp = Constant(("0.1", "-0.1"))
-    submesh0.move(disp)
+    ALE.move(submesh0, disp)
 
     # Move and smooth submesh1 accordignly
-    submesh1.move(submesh0)
+    ALE.move(submesh1, submesh0)
 
     # Move mesh accordingly
     parent_vertex_indices_0 = \

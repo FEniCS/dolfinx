@@ -67,10 +67,10 @@ bench/**/**/cpp/forms/*.h
 bench/**/**/cpp/*.h
 test/unit/**/python/*.xml
 test/unit/**/cpp/*.xml
-test/unit/function/cpp/Projection.h
-test/unit/la/cpp/forms/ReactionDiffusion.h
-test/unit/la/cpp/forms/ReactionDiffusionAction.h
-test/unit/multimesh/cpp/MultiMeshStokes2D.h
+test/unit/cpp/function/Projection.h
+test/unit/cpp/la/forms/ReactionDiffusion.h
+test/unit/cpp/la/forms/ReactionDiffusionAction.h
+test/unit/cpp/multimesh/MultiMeshStokes2D.h
 test/**/.cache/
 
 # FFC generated demo files
@@ -106,7 +106,8 @@ CMakeLists.txt
 !dolfin/swig/CMakeLists.txt
 !doc/CMakeLists.txt
 !demo/CMakeLists.txt
-!test/CMakeLists.txt
+!test/unit/CMakeLists.txt
+!test/unit/cpp/CMakeLists.txt
 
 
 CMakeCache.txt
@@ -128,3 +129,7 @@ install_manifest.txt
 .*project
 .settings
 
+cmake.local
+
+# Google Test Files
+/GoogleTest/

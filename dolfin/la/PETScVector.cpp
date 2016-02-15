@@ -186,8 +186,7 @@ void PETScVector::set_local(const std::vector<double>& values)
 
   // Build array of local indices
   std::vector<PetscInt> rows(local_size, 0);
-  for (std::size_t i = 0; i < local_size; ++i)
-    rows[i] += i;
+  std::iota(rows.begin(), rows.end(), 0);
 
   PetscErrorCode ierr = VecSetValuesLocal(_x, local_size, rows.data(),
                                           values.data(), INSERT_VALUES);
@@ -209,12 +208,11 @@ void PETScVector::add_local(const Array<double>& values)
     return;
 
   // Build array of local indices
-  std::vector<PetscInt> rows(local_size, 0);
-  for (std::size_t i = 0; i < local_size; ++i)
-    rows[i] += i;
+  std::vector<PetscInt> rows(local_size);
+  std::iota(rows.begin(), rows.end(), 0);
 
   PetscErrorCode ierr = VecSetValuesLocal(_x, local_size, rows.data(),
-                                     values.data(), ADD_VALUES);
+                                          values.data(), ADD_VALUES);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValuesLocal");
 }
 //-----------------------------------------------------------------------------

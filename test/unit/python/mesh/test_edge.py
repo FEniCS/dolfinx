@@ -26,13 +26,16 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import fixture, skip_in_parallel
 
+
 @fixture
 def cube():
     return UnitCubeMesh(5, 5, 5)
 
+
 @fixture
 def square():
     return UnitSquareMesh(5, 5)
+
 
 @pytest.fixture(scope='module', params=range(2))
 def meshes(cube, square, request):
@@ -47,6 +50,7 @@ def test_2DEdgeLength(square):
     for e in edges(square):
         length += e.length()
     assert round(length - 19.07106781186544708362, 7) == 0
+
 
 @skip_in_parallel
 def test_3DEdgeLength(cube):

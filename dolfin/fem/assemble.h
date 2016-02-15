@@ -20,17 +20,15 @@
 // Modified by Joachim B. Haga, 2012.
 // Modified by Martin S. Alnaes, 2013.
 //
-// First added:  2007-01-17
-// Last changed: 2015-11-11
-//
-// This file duplicates the Assembler::assemble* and SystemAssembler::assemble*
-// functions in namespace dolfin, and adds special versions returning the value
-// directly for scalars. For documentation, refer to Assemble.h and
-// SystemAssemble.h
+// This file duplicates the Assembler::assemble* and
+// SystemAssembler::assemble* functions in namespace dolfin, and adds
+// special versions returning the value directly for scalars. For
+// documentation, refer to Assemble.h and SystemAssemble.h
 
 #ifndef __ASSEMBLE_H
 #define __ASSEMBLE_H
 
+#include <memory>
 #include <vector>
 
 namespace dolfin
@@ -38,44 +36,25 @@ namespace dolfin
 
   class DirichletBC;
   class Form;
-  class MultiMeshForm;
   class GenericMatrix;
   class GenericTensor;
   class GenericVector;
   template<typename T> class MeshFunction;
-
-  //--- Copies of assembly functions in Assembler.h ---
+  class MultiMeshForm;
 
   /// Assemble tensor
   void assemble(GenericTensor& A, const Form& a);
 
-  /// Assemble system (A, b)
-  void assemble_system(GenericMatrix& A,
-                       GenericVector& b,
-                       const Form& a,
-                       const Form& L);
-
-  /// Assemble system (A, b) and apply Dirichlet boundary condition
-  void assemble_system(GenericMatrix& A,
-                       GenericVector& b,
-                       const Form& a,
-                       const Form& L,
-                       const DirichletBC& bc);
-
   /// Assemble system (A, b) and apply Dirichlet boundary conditions
-  void assemble_system(GenericMatrix& A,
-                       GenericVector& b,
-                       const Form& a,
-                       const Form& L,
-                       const std::vector<const DirichletBC*> bcs);
+  void assemble_system(GenericMatrix& A, GenericVector& b,
+                       const Form& a, const Form& L,
+                       std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-  /// Assemble system (A, b) on sub domains and apply Dirichlet boundary
-  /// conditions
-  void assemble_system(GenericMatrix& A,
-                       GenericVector& b,
-                       const Form& a,
-                       const Form& L,
-                       const std::vector<const DirichletBC*> bcs,
+  /// Assemble system (A, b) on sub domains and apply Dirichlet
+  /// boundary conditions
+  void assemble_system(GenericMatrix& A, GenericVector& b,
+                       const Form& a, const Form& L,
+                       std::vector<std::shared_ptr<const DirichletBC>> bcs,
                        const GenericVector& x0);
 
   /// Assemble tensor from multimesh form

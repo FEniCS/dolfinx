@@ -43,10 +43,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    PaStiXLUSolver(const STLMatrix& A);
-
-    /// Constructor
-    PaStiXLUSolver(std::shared_ptr<const STLMatrix> A);
+    explicit PaStiXLUSolver(std::shared_ptr<const STLMatrix> A);
 
     /// Destructor
     virtual ~PaStiXLUSolver();

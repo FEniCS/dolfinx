@@ -23,6 +23,7 @@
 #ifndef __MESH_COLORING_H
 #define __MESH_COLORING_H
 
+#include <memory>
 #include <string>
 #include <vector>
 #include "Cell.h"
@@ -40,16 +41,16 @@ namespace dolfin
   public:
 
     /// Color the cells of a mesh for given coloring type, which can
-    /// be one of "vertex", "edge" or "facet". Coloring is saved in the
-    /// mesh topology
+    /// be one of "vertex", "edge" or "facet". Coloring is saved in
+    /// the mesh topology
     static const std::vector<std::size_t>& color_cells(Mesh& mesh,
                                                  std::string coloring_type);
 
     /// Color the cells of a mesh for given coloring type specified by
-    /// topological dimension, which can be one of 0, 1 or D - 1. Coloring
-    /// is saved in the mesh topology
-    static const std::vector<std::size_t>& color(Mesh& mesh,
-                                       const std::vector<std::size_t>& coloring_type);
+    /// topological dimension, which can be one of 0, 1 or D -
+    /// 1. Coloring is saved in the mesh topology
+    static const std::vector<std::size_t>&
+      color(Mesh& mesh, const std::vector<std::size_t>& coloring_type);
 
     /// Compute cell colors for given coloring type specified by
     /// topological dimension, which can be one of 0, 1 or D - 1.
@@ -57,13 +58,16 @@ namespace dolfin
                                std::vector<std::size_t>& colors,
                                const std::vector<std::size_t>& coloring_type);
 
-    /// Return a MeshFunction with the cell colors (used for visualisation)
-    static CellFunction<std::size_t> cell_colors(const Mesh& mesh,
-                                           std::string coloring_type);
+    /// Return a MeshFunction with the cell colors (used for
+    /// visualisation)
+    static CellFunction<std::size_t>
+      cell_colors(std::shared_ptr<const Mesh> mesh,
+                  std::string coloring_type);
 
     /// Return a MeshFunction with the cell colors (used for visualisation)
-    static CellFunction<std::size_t> cell_colors(const Mesh& mesh,
-						                              const std::vector<std::size_t> coloring_type);
+    static CellFunction<std::size_t>
+      cell_colors(std::shared_ptr<const Mesh> mesh,
+                  std::vector<std::size_t> coloring_type);
 
 
     /// Convert coloring type to topological dimension

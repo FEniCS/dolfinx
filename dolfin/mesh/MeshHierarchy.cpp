@@ -62,20 +62,22 @@ std::shared_ptr<const MeshHierarchy> MeshHierarchy::refine(
 std::shared_ptr<const MeshHierarchy>
 MeshHierarchy::coarsen(const MeshFunction<bool>& coarsen_markers) const
 {
-  const Mesh& mesh = *(_meshes.back());
+  std::shared_ptr<const Mesh> mesh = _meshes.back();
+  dolfin_assert(mesh);
 
   // Make sure there is a parent MeshHierarchy
   dolfin_assert(_parent != NULL);
-  const Mesh& parent_mesh = *(_parent->_meshes.back());
+  std::shared_ptr<const Mesh> parent_mesh = _parent->_meshes.back();
+  dolfin_assert(parent_mesh);
 
   // Make sure markers are on finest mesh
-  dolfin_assert(coarsen_markers.mesh()->id() == mesh.id());
+  dolfin_assert(coarsen_markers.mesh()->id() == mesh->id());
 
   // FIXME: copy across boundaries in parallel
   std::set<std::size_t> coarsening_vertices;
   if (coarsen_markers.dim() == 0)
   {
-    for (VertexIterator v(mesh); !v.end(); ++v)
+    for (VertexIterator v(*mesh); !v.end(); ++v)
       if (coarsen_markers[*v])
         coarsening_vertices.insert(v->global_index());
   }
@@ -85,7 +87,7 @@ MeshHierarchy::coarsen(const MeshFunction<bool>& coarsen_markers) const
     // entity around a vertex is marked, then the vertex is
     // marked. Should this be "AND"-like behaviour, i.e. require
     // all surrounding entities to be marked?
-    for (MeshEntityIterator c(mesh, coarsen_markers.dim());
+    for (MeshEntityIterator c(*mesh, coarsen_markers.dim());
          !c.end(); ++c)
     {
       if (coarsen_markers[*c])
@@ -101,7 +103,7 @@ MeshHierarchy::coarsen(const MeshFunction<bool>& coarsen_markers) const
 
   // Find edges which were previously refined, but now only mark them
   // if not a parent of a "coarsening" vertex
-  for (EdgeIterator e(parent_mesh); !e.end(); ++e)
+  for (EdgeIterator e(*parent_mesh); !e.end(); ++e)
   {
     auto edge_it = edge_to_vertex.find(e->index());
     if (edge_it != edge_to_vertex.end())
@@ -117,12 +119,12 @@ MeshHierarchy::coarsen(const MeshFunction<bool>& coarsen_markers) const
     }
   }
 
-  std::shared_ptr<Mesh> refined_mesh(new Mesh);
-  std::shared_ptr<MeshHierarchy> refined_hierarchy(new MeshHierarchy);
-  std::shared_ptr<MeshRelation> refined_relation(new MeshRelation);
+  auto refined_mesh = std::make_shared<Mesh>();
+  auto refined_hierarchy = std::make_shared<MeshHierarchy>();
+  auto refined_relation = std::make_shared<MeshRelation>();
 
   // Refine with no redistribution
-  PlazaRefinementND::refine(*refined_mesh, parent_mesh,
+  PlazaRefinementND::refine(*refined_mesh, *parent_mesh,
                             edge_markers, true, *refined_relation);
 
   refined_hierarchy->_meshes = _parent->_meshes;

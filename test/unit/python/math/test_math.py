@@ -87,3 +87,21 @@ def test_between():
 
             # Check that we can fail for fairly close values
             assert not between(v, (v2p, v2m))
+
+def test_ipow():
+    with pytest.raises(RuntimeError):
+        ipow(0, 0)
+    assert ipow(0, 1) == 0
+    assert ipow(0, 10) == 0
+    assert ipow(0, 12345) == 0
+    assert ipow(1, 12345) == 1
+    assert ipow(12345, 0) == 1
+    assert ipow(12345, 1) == 12345
+    assert ipow(2, 15) == 32768
+
+@pytest.mark.xfail
+def test_ipow_overflow():
+    # This will fail because of overflow in dolfin/math/basic.cpp
+    # on 64-bit size_t. When __builtin_mul_overflow is employed
+    # to do the check, exception will be raised instead.
+    assert ipow(3, 41) == 3**41

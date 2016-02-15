@@ -18,6 +18,8 @@
 // Modified by Ola Skavhaug 2007
 // Modified by Anders Logg 2008-2014
 
+#include <algorithm>
+
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/la/SparsityPattern.h>
@@ -53,10 +55,10 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
   const std::size_t rank = dofmaps.size();
   std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
+  {
+    dolfin_assert(dofmaps[i]);
     index_maps[i] = dofmaps[i]->index_map();
-
-  dolfin_assert(!dofmaps.empty());
-  dolfin_assert(dofmaps[0]);
+  }
 
   // Initialise sparsity pattern
   if (init)
@@ -226,22 +228,21 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
 
   if (diagonal)
   {
-    const std::size_t local_size0
-      = index_maps[0]->size(IndexMap::MapSize::OWNED);
-    const std::size_t local_size1
-      = index_maps[1]->size(IndexMap::MapSize::OWNED);
-    const std::size_t local_size = std::min(local_size0, local_size1);
+    dolfin_assert(rank == 2);
+    const std::size_t primary_dim = sparsity_pattern.primary_dim();
+    const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
+    const std::pair<std::size_t, std::size_t> primary_range
+      = index_maps[primary_dim]->local_range();
+    const std::size_t secondary_range
+      = index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
+    const std::size_t diagonal_range
+      = std::min(primary_range.second, secondary_range);
 
-    Progress p("Building sparsity pattern over diagonal", local_size);
-    std::vector<dolfin::la_index> diagonal_dof(1, 0);
-    for (std::size_t i = 0; i < rank; ++i)
-      dofs[i].set(diagonal_dof);
-
-    for (std::size_t j = 0; j < local_size; j++)
+    Progress p("Building sparsity pattern over diagonal",
+               diagonal_range - primary_range.first);
+    for (std::size_t j = primary_range.first; j < diagonal_range; j++)
     {
-      // Insert diagonal non-zeroes in sparsity pattern
-      diagonal_dof[0] = j;
-      sparsity_pattern.insert_local(dofs);
+      sparsity_pattern.insert_global(j, j);
       p++;
     }
   }

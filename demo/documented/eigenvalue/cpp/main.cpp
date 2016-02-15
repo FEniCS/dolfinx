@@ -33,13 +33,13 @@ int main()
   #ifdef HAS_SLEPC
 
   // Create mesh
-  Mesh mesh("../box_with_dent.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../box_with_dent.xml.gz");
 
   // Build stiffness matrix
-  PETScMatrix A;
-  StiffnessMatrix::FunctionSpace V(mesh);
+  auto A = std::make_shared<PETScMatrix>();
+  auto V = std::make_shared<StiffnessMatrix::FunctionSpace>(mesh);
   StiffnessMatrix::BilinearForm a(V, V);
-  assemble(A, a);
+  assemble(*A, a);
 
   // Create eigensolver
   SLEPcEigenSolver esolver(A);

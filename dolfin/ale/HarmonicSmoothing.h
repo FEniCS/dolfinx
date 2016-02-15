@@ -30,10 +30,11 @@ namespace dolfin
   class BoundaryMesh;
   class Mesh;
 
-  /// This class implements harmonic mesh smoothing. Poisson's equation
-  /// is solved with zero right-hand side (Laplace's equation) for each
-  /// coordinate direction to compute new coordinates for all vertices,
-  /// given new locations for the coordinates of the boundary.
+  /// This class implements harmonic mesh smoothing. Poisson's
+  /// equation is solved with zero right-hand side (Laplace's
+  /// equation) for each coordinate direction to compute new
+  /// coordinates for all vertices, given new locations for the
+  /// coordinates of the boundary.
 
   class HarmonicSmoothing
   {
@@ -41,8 +42,8 @@ namespace dolfin
 
     /// Move coordinates of mesh according to new boundary coordinates
     /// and return the displacement
-    static std::shared_ptr<MeshDisplacement> move(Mesh& mesh, 
-                                        const BoundaryMesh& new_boundary);
+    static std::shared_ptr<MeshDisplacement>
+      move(std::shared_ptr<Mesh> mesh, const BoundaryMesh& new_boundary);
 
   };
 

@@ -115,52 +115,56 @@ int main(int argc, char* argv[])
   init(argc, argv);
 
   // Create mesh
-  Mesh mesh("../dolfin_fine.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../dolfin_fine.xml.gz");
 
   // Create function space
-  ElastoDynamics::FunctionSpace V(mesh);
+  auto V = std::make_shared<ElastoDynamics::FunctionSpace>(mesh);
 
   // Material parameters
-  Constant rho(1.0);                           // mass density
-  Constant eta(0.25);                          // damping coefficient
+  auto rho = std::make_shared<Constant>(1.0);  // mass density
+  auto eta = std::make_shared<Constant>(0.25); // damping coefficient
   double E  = 1.0;                             // Youngs modulus
   double nu = 0.0;                             // Poisson ratio
-  Constant lambda((nu*E)/((1.0 + nu)*(1.0 - 2.0 * nu))); // Lame coefficient
-  Constant mu(E/(2.0*(1.0 + nu)));               // Lame coefficient
+  auto lambda = std::make_shared<Constant>((nu*E)/((1.0 + nu)*(1.0 - 2.0 * nu))); // Lame coefficient
+  auto mu = std::make_shared<Constant>(E/(2.0*(1.0 + nu))); // Lame coefficient
 
   // Time stepping parameters
-  Constant alpha_m(0.2);
-  Constant alpha_f(0.4);
-  Constant beta(0.36);
-  Constant gamma(0.7);
-  Constant dt(1.0/32.0);    // time step
+  auto alpha_m = std::make_shared<Constant>(0.2);
+  auto alpha_f = std::make_shared<Constant>(0.4);
+  auto beta = std::make_shared<Constant>(0.36);
+  auto gamma = std::make_shared<Constant>(0.7);
+  auto dt = std::make_shared<Constant>(1.0/32.0);    // time step
   double t = 0.0;           // initial time
-  double T = 200*dt;        // final time
+  double T = 200*(*dt);        // final time
 
   // Body force
-  Constant f(0.0, 0.0);
+  auto f = std::make_shared<Constant>(0.0, 0.0);
 
   // External load
   RightBoundary right_boundary;
-  MeshFunction<std::size_t> right_boundary_function(mesh, 1);
-  right_boundary.mark(right_boundary_function, 3);
-  Pressure p(t, dt, false), p0(t, dt, true);
+  auto right_boundary_function
+    = std::make_shared<MeshFunction<std::size_t>>(mesh, 1);
+  right_boundary.mark(*right_boundary_function, 3);
+  auto p = std::make_shared<Pressure>(t, *dt, false);
+  auto p0 = std::make_shared<Pressure>(t, *dt, true);
 
   // Dirichlet boundary conditions
-  LeftBoundary left_boundary;
-  Constant zero(0.0, 0.0);
-  DirichletBC bc0(V, zero, left_boundary);
-  std::vector<const DirichletBC*> bc= {&bc0};
+  auto left_boundary = std::make_shared<LeftBoundary>();
+  auto zero = std::make_shared<Constant>(0.0, 0.0);
+  DirichletBC bc(V, zero, left_boundary);
 
   // Define solution vectors
-  Function u(V), u0(V);  // displacement
-  Function v(V), v0(V);  // velocity
-  Function a(V), a0(V);  // acceleration
+  auto u = std::make_shared<Function>(V); // displacement
+  auto u0 = std::make_shared<Function>(V);
+  Function v(V);  // velocity
+  auto v0 = std::make_shared<Function>(V);
+  Function a(V);  // acceleration
+  auto a0 = std::make_shared<Function>(V);
 
   // Set initial conditions and initialise acceleration function
-  u0.vector()->zero();
-  v0.vector()->zero();
-  a0.vector()->zero();
+  u0->vector()->zero();
+  v0->vector()->zero();
+  a0->vector()->zero();
 
   // Create forms
   ElastoDynamics::BilinearForm a_form(V, V);
@@ -192,7 +196,7 @@ int main(int argc, char* argv[])
   L.ds = right_boundary_function;
 
   // Create projection to compute the normal strain eps_xx
-  DG0_eps_xx::FunctionSpace Vdg(mesh);
+  auto Vdg = std::make_shared<DG0_eps_xx::FunctionSpace>(mesh);
   DG0_eps_xx::BilinearForm a_eps(Vdg, Vdg);
   DG0_eps_xx::LinearForm L_eps(Vdg);
   L_eps.u = u;
@@ -207,22 +211,22 @@ int main(int argc, char* argv[])
   while (t < T)
   {
     // Update for next time step
-    t += dt;
+    t += *dt;
     cout << "Time: " << t << endl;
 
     // Solve
-    solve(a_form == L, u, bc);
+    solve(a_form == L, *u, {&bc});
     solve(a_eps == L_eps, eps_xx);
 
     // Update velocity and acceleration
-    update_a(a, u, a0, v0, u0, beta, dt);
-    update_v(v, a, a0, v0, gamma, dt);
-    u0 = u; v0 = v; a0 = a;
+    update_a(a, *u, *a0, *v0, *u0, *beta, *dt);
+    update_v(v, a, *a0, *v0, *gamma, *dt);
+    *u0 = *u; *v0 = v; *a0 = a;
 
     // Save solutions to file
     if (step % 2 == 0)
     {
-      file_u << u;
+      file_u << *u;
       file_eps << eps_xx;
     }
     ++step;

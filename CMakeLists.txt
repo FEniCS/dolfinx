@@ -53,7 +53,7 @@ endif()
 # Set CMake options, see `cmake --help-policy CMP000x`
 if (COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
-  cmake_policy(SET CMP0004 OLD)
+  cmake_policy(SET CMP0004 NEW)
   if(POLICY CMP0042)
     cmake_policy(SET CMP0042 NEW)
   endif()
@@ -70,19 +70,33 @@ set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfin)
 # Configurable options for how we want to build
 
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
-option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." OFF)
-option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
-option(DOLFIN_AUTO_DETECT_MPI "Detect MPI automatically - turn this off to use the MPI compiler wrappers directly via setting CXX, CXX, FC." ON)
+option(DOLFIN_AUTO_DETECT_MPI "Detect MPI automatically (turn this off to use the MPI compiler wrappers directly via setting CXX, CXX, FC)." ON)
 option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
-option(DOLFIN_ENABLE_UNIT_TESTS "Enable unit tests." ON)
 option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
+option(DOLFIN_ENABLE_GTEST "Enable C++ unit tests with Google Test if DOLFIN_ENABLE_TESTING is true (requires Internet connection to download Google Test when first configured." ON)
 option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
-option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
+option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 option(DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py." OFF)
+
+# Add shared library paths so shared libs in non-system paths are found
+option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
+
+# Hande RPATH on OSX when not installing to a system directory, see
+# https://groups.google.com/d/msg/fenics-dev/KSCrob4M_1M/zsJwdN-SCAAJ
+# and https://cmake.org/Wiki/CMake_RPATH_handling#Always_full_RPATH.
+if (APPLE)
+  # The RPATH to be used when installing, but only if it's not a
+  # system directory
+  SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+  IF("${isSystemDir}" STREQUAL "-1")
+     SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  ENDIF("${isSystemDir}" STREQUAL "-1")
+endif()
 
 #------------------------------------------------------------------------------
 # This should be removed when Clang support OpenMP is ready
@@ -161,7 +175,8 @@ if (HAVE_PEDANTIC)
 endif()
 
 # Workaround https://bugs.launchpad.net/ubuntu/+source/gcc-4.6/+bug/1352356
-# NOTE: Remove this block when bug is fixed upstream or GCC 4.6 support is dropped
+# NOTE: Remove this block when bug is fixed upstream or GCC 4.6
+# support is dropped
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   if (NOT DEFINED CMAKE_CXX_COMPILER_VERSION)
     execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
@@ -499,9 +514,9 @@ if (DOLFIN_ENABLE_TRILINOS)
     $ENV{TRILINOS_DIR} QUIET)
   set(DOLFIN_TRILINOS_PACKAGES "Tpetra;Zoltan;MueLu;Amesos2;Ifpack2;Belos")
 
-  if ("${Trilinos_VERSION}" VERSION_LESS "11.0.0")
+  if ("${Trilinos_VERSION}" VERSION_LESS "12.4.0")
     set(Trilinos_FOUND FALSE)
-    message(STATUS "Unable to find Trilinos (>= 11.0.0)")
+    message(STATUS "Unable to find Trilinos (>= 12.4.0)")
   endif()
 
   # Check for required packages
@@ -569,23 +584,6 @@ if (DOLFIN_ENABLE_ZLIB)
   find_package(ZLIB)
 endif()
 
-# Check for cppunit
-if (DOLFIN_ENABLE_UNIT_TESTS)
-  find_package(CppUnit)
-
-  # Older version of CPPUNIT use std::auto_ptr, which is deprecated
-  if (CPPUNIT_FOUND)
-    if ("${CPPUNIT_VERSION}" VERSION_LESS "1.13.1")
-      include(CheckCXXCompilerFlag)
-      CHECK_CXX_COMPILER_FLAG(-Wno-deprecated HAVE_NO_DEPRECATED)
-      if (HAVE_NO_DEPRECATED)
-        set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -Wno-deprecated")
-      endif()
-    endif()
-  endif()
-
-endif()
-
 # Check for Sphinx
 if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
   find_package(Sphinx 1.1.0)
@@ -593,7 +591,19 @@ endif()
 
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
-  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
+  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
+    vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
+    NO_MODULE)
+
+  # For VTK < 6.3, vtkRenderingFreeTypeOpenGL module is required, so
+  # add if available (vtkRenderingFreeTypeOpenGL was removed from VTK
+  # 6.3)
+  if(TARGET vtkRenderingFreeTypeOpenGL)
+    find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
+      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
+      vtkRenderingFreeTypeOpenGL NO_MODULE)
+  endif()
+
   set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
   if (VTK_FOUND)
     if ("${VTK_VERSION}" VERSION_LESS "5.2")
@@ -841,7 +851,7 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-version.in
                ${CMAKE_BINARY_DIR}/dolfin-version @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
         DESTINATION ${DOLFIN_BIN_DIR}
-	PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
         OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
         COMPONENT RuntimeExecutables)
 
@@ -852,7 +862,7 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-get-demos.in
                ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
         DESTINATION ${DOLFIN_BIN_DIR}
-	PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
         COMPONENT RuntimeExecutables)
 
 
@@ -886,7 +896,7 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
 endif()
 
 #------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for tests, bench and demos if not
+# Generate CMakeLists.txt files for bench and demos if not
 # exists
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
@@ -1028,17 +1038,30 @@ if (DOLFIN_ENABLE_BENCHMARKS)
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
 endif()
 
-if (CPPUNIT_FOUND)
-  # Add test but do not add to default target
-  add_subdirectory(test EXCLUDE_FROM_ALL)
-
-  # Add target "tests" for building tests
-  add_custom_target(tests
-                    COMMAND ${MAKE_PROGRAM}
-                    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
-endif()
-
 if (DOLFIN_ENABLE_TESTING)
+
+  # Google Test needs to be downloaded and compiled by CMake, so we
+  # handle it as a special case.
+  if (DOLFIN_ENABLE_GTEST)
+    # Add sub directory to build GoogleTest
+    add_subdirectory(test/unit)
+
+    # Add target "unittests_cpp", but do not add to default target
+    add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
+
+    # Add target "run_unittests_cpp" for running only C++ unit tests
+    add_custom_target(run_unittests_cpp
+      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/unittests_cpp
+      DEPENDS copy_data_test_demo unittests_cpp)
+  else()
+    # Add dummy targets for C++ unit tests
+    add_custom_target(unittests_cpp)
+    add_custom_target(run_unittests_cpp)
+  endif()
+
+  # FIXME: remove this buildbot updated to call unittests_cpp
+  # Add alias for unittests_cpp
+  add_custom_target(tests DEPENDS unittests_cpp)
 
   # Add target "run_memorytests" for running memory tests
   add_custom_target(copy_data_test_demo
@@ -1060,13 +1083,6 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
     DEPENDS run_unittests_cpp run_unittests_py run_unittests_py_mpi)
-
-  # TODO: Use google test for C++ unit tests?
-  # Add target "run_unittests_cpp" for running only C++ unit tests
-  add_custom_target(run_unittests_cpp
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-vs" "-k" "cpp"
-    DEPENDS copy_data_test_demo tests
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
 
   # Add target "run_unittests_py" for running Python unit tests
   add_custom_target(run_unittests_py

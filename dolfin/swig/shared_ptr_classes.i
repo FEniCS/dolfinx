@@ -186,6 +186,9 @@
 %shared_ptr(dolfin::TpetraVector)
 %shared_ptr(dolfin::TpetraMatrix)
 %shared_ptr(dolfin::BelosKrylovSolver)
+%shared_ptr(dolfin::TrilinosPreconditioner)
+%shared_ptr(dolfin::Ifpack2Preconditioner)
+%shared_ptr(dolfin::MueluPreconditioner)
 #endif
 
 #ifdef HAS_SLEPC

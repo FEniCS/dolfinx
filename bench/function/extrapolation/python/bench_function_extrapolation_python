@@ -26,6 +26,10 @@ from dolfin import *
 from time import time
 
 SIZE = 4
+
+info("Extrapolation from P2*dP1 to P3*dP2 on UnitCubeMesh(%d, %d, %d)"
+     % (SIZE, SIZE, SIZE))
+
 mesh = UnitCubeMesh(SIZE, SIZE, SIZE)
 cell = mesh.ufl_cell()
 

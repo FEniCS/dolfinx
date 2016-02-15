@@ -170,11 +170,6 @@
 %ignore dolfin::GenericMatrix::setitem;
 %ignore dolfin::GenericMatrix::operator();
 
-// Ignore reference version of constructor
-%ignore dolfin::PETScKrylovSolver(std::string, PETScPreconditioner&);
-%ignore dolfin::PETScKrylovSolver(std::string, PETScUserPreconditioner&);
-%ignore dolfin::PaStiXLUSolver(const STLMatrix& A);
-
 //-----------------------------------------------------------------------------
 // PETSc/SLEPc backend
 //-----------------------------------------------------------------------------
@@ -202,9 +197,6 @@
 #endif
 
 #ifdef HAS_SLEPC
-%ignore dolfin::SLEPcEigenSolver(const PETScMatrix&);
-%ignore dolfin::SLEPcEigenSolver(const PETScMatrix&, const PETScMatrix&);
-
 // Only ignore C++ accessors if slepc4py is enabled
 #ifdef HAS_SLEPC4PY
 %ignore dolfin::SLEPcEigenSolver::eps() const;

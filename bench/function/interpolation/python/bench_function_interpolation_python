@@ -25,13 +25,12 @@
 from dolfin import *
 from time import time
 
-# FIXME: Temporary testing
-import sys
-if len(sys.argv) == 2 and sys.argv[1] == "DOLFIN":
-    parameters["use_cgal_intersection"] = False
-
 SIZE_0 = 21 #71
 SIZE_1 = 23 #73
+
+info("Extrapolation from P1 on UnitCubeMesh(%d, %d, %d) to "
+     "P1 on UnitCubeMesh(%d, %d, %d)"
+     % (SIZE_0, SIZE_0, SIZE_0, SIZE_1, SIZE_1, SIZE_1))
 
 parameters["allow_extrapolation"] = True
 
@@ -46,7 +45,5 @@ v0 = interpolate(Expression("sin(5*x[0])*cos(7*x[1])"), V0)
 tic = time()
 v1 = interpolate(v0, V1)
 t = time() - tic
-
-plot(v1, interactive=True)
 
 print "BENCH: ", t

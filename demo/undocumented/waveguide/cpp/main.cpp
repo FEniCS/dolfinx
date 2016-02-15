@@ -44,22 +44,23 @@ int main()
   // Create mesh
   double width = 1.0;
   double height = 0.5;
-  RectangleMesh mesh(Point(0.0, 0.0), Point(width, height), 4, 2);
+  auto mesh = std::make_shared<RectangleMesh>(Point(0.0, 0.0),
+                                              Point(width, height), 4, 2);
 
   // Define the forms - gererates an generalized eigenproblem of the form
   // [S]{h} = k_o^2[T]{h}
   // with the eigenvalues k_o^2 representing the square of the cutoff wavenumber
   // and the corresponding right-eigenvector giving the coefficients of the
   // discrete system used to obtain the approximate field anywhere in the domain
-  Forms::FunctionSpace V(mesh);
+  auto V = std::make_shared<Forms::FunctionSpace>(mesh);
   Forms::Form_a s(V, V);
   Forms::Form_L t(V, V);
 
   // Assemble the system matrices stiffness (S) and mass matrices (T)
-  PETScMatrix S;
-  PETScMatrix T;
-  assemble(S, s);
-  assemble(T, t);
+  auto S = std::make_shared<PETScMatrix>();
+  auto T = std::make_shared<PETScMatrix>();
+  assemble(*S, s);
+  assemble(*T, t);
 
   // Solve the eigen system
   SLEPcEigenSolver esolver(S, T);
@@ -67,19 +68,20 @@ int main()
   esolver.parameters["solver"] = "lapack";
   esolver.solve();
 
-  // The result should have real eigenvalues but due to rounding errors, some of
-  // the resultant eigenvalues may be small complex values.
-  // only consider the real part
+  // The result should have real eigenvalues but due to rounding
+  // errors, some of the resultant eigenvalues may be small complex
+  // values.  only consider the real part
 
-  // Now, the system contains a number of zero eigenvalues (near zero due to
-  // rounding) which are eigenvalues corresponding to the null-space of the curl
-  // operator and are a mathematical construct and do not represent physically
-  // realizable modes.  These are called spurious modes.
-  // So, we need to identify the smallest, non-zero eigenvalue of the system -
-  // which corresponds with cutoff wavenumber of the the dominant cutoff mode.
+  // Now, the system contains a number of zero eigenvalues (near zero
+  // due to rounding) which are eigenvalues corresponding to the
+  // null-space of the curl operator and are a mathematical construct
+  // and do not represent physically realizable modes.  These are
+  // called spurious modes.  So, we need to identify the smallest,
+  // non-zero eigenvalue of the system - which corresponds with cutoff
+  // wavenumber of the the dominant cutoff mode.
   double cutoff = -1.0;
   double lr, lc;
-  for (std::size_t i = 0; i < S.size(1); i++)
+  for (std::size_t i = 0; i < S->size(1); i++)
   {
     esolver.get_eigenvalue(lr, lc, i);
     if (lr > 1 && lc == 0)

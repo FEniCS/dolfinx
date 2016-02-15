@@ -72,7 +72,8 @@ void LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(Mesh& mesh,
   Mesh coarse_mesh(mesh);
 
   // Initialise forbidden cells
-  MeshFunction<bool> cell_forbidden(mesh);
+  auto _mesh = reference_to_no_delete_pointer(mesh);
+  MeshFunction<bool> cell_forbidden(_mesh);
   cell_forbidden.init(mesh.topology().dim());
   for (CellIterator c(mesh); !c.end(); ++c)
     cell_forbidden[c->index()] = false;
@@ -95,12 +96,9 @@ void LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(Mesh& mesh,
 
   // Define cell mapping between old and new mesh
   for (CellIterator c(mesh); !c.end(); ++c)
-  {
     old2new_cell[c->index()] = c->index();
-  }
 
   bool improving = true;
-
   while(improving)
   {
 
@@ -204,14 +202,16 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   const std::size_t num_vertices = mesh.size(0);
   const std::size_t num_cells = mesh.size(mesh.topology().dim());
 
+  auto _mesh = reference_to_no_delete_pointer(mesh);
+
   // Initialise forbidden vertices
-  MeshFunction<bool> vertex_forbidden(mesh);
+  MeshFunction<bool> vertex_forbidden(_mesh);
   vertex_forbidden.init(0);
   for (VertexIterator v(mesh); !v.end(); ++v)
     vertex_forbidden[v->index()] = false;
 
   // Initialise boundary vertices
-  MeshFunction<bool> vertex_boundary(mesh);
+  MeshFunction<bool> vertex_boundary(_mesh);
   vertex_boundary.init(0);
   for (VertexIterator v(mesh); !v.end(); ++v)
     vertex_boundary[v->index()] = false;
@@ -243,13 +243,13 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   editor.open(coarse_mesh, cell_type.cell_type(),
               mesh.topology().dim(), mesh.geometry().dim());
 
-  MeshFunction<bool> cell_to_remove(mesh);
+  MeshFunction<bool> cell_to_remove(_mesh);
   cell_to_remove.init(mesh.topology().dim());
 
   for (CellIterator ci(mesh); !ci.end(); ++ci)
     cell_to_remove[ci->index()] = false;
 
-  MeshFunction<bool> cell_to_regenerate(mesh);
+  MeshFunction<bool> cell_to_regenerate(_mesh);
   cell_to_regenerate.init(mesh.topology().dim());
   for (CellIterator ci(mesh); !ci.end(); ++ci)
     cell_to_regenerate[ci->index()] = false;

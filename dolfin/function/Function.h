@@ -64,19 +64,6 @@ namespace dolfin
   {
   public:
 
-    /// Create function on given function space
-    ///
-    /// *Arguments*
-    ///     V (_FunctionSpace_)
-    ///         The function space.
-    ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
-    ///         Function u(V);
-    ///
-    explicit Function(const FunctionSpace& V);
-
     /// Create function on given function space (shared data)
     ///
     /// *Arguments*
@@ -96,17 +83,6 @@ namespace dolfin
     ///         The vector.
     Function(std::shared_ptr<const FunctionSpace> V,
              std::shared_ptr<GenericVector> x);
-
-    /// Create function from vector of dofs stored to file
-    ///
-    /// *Arguments*
-    ///     V (_FunctionSpace_)
-    ///         The function space.
-    ///     filename_vector (std::string)
-    ///         The name of the file containing the vector.
-    ///     filename_dofdata (std::string)
-    ///         The name of the file containing the dofmap data.
-    Function(const FunctionSpace& V, std::string filename);
 
     /// Create function from vector of dofs stored to file (shared data)
     ///
@@ -275,10 +251,8 @@ namespace dolfin
     ///         The cell.
     ///     ufc_cell (ufc::cell)
     ///         The ufc::cell.
-    void eval(Array<double>& values,
-              const Array<double>& x,
-              const Cell& dolfin_cell,
-              const ufc::cell& ufc_cell) const;
+    void eval(Array<double>& values, const Array<double>& x,
+              const Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
 
     /// Interpolate function (on possibly non-matching meshes)
     ///

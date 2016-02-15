@@ -178,17 +178,20 @@ function ``init``:
 .. code-block:: c++
 
     // Constructor
-    CahnHilliardEquation(const Mesh& mesh, const Constant& dt,
-                         const Constant& theta, const Constant& lambda)
+    CahnHilliardEquation(std::shared_ptr<const Mesh> mesh,
+                         std::shared_ptr<const Constant> dt,
+                         std::shared_ptr<const Constant> theta,
+                         std::shared_ptr<const Constant> lambda)
     {
       // Initialize class (depending on geometric dimension of the mesh).
       // Unfortunately C++ does not allow namespaces as template arguments
-      if (mesh.geometry().dim() == 2)
+      dolfin_assert(mesh);
+      if (mesh->geometry().dim() == 2)
       {
         init<CahnHilliard2D::FunctionSpace, CahnHilliard2D::JacobianForm,
              CahnHilliard2D::ResidualForm>(mesh, dt, theta, lambda);
       }
-      else if (mesh.geometry().dim() == 3)
+      else if (mesh->geometry().dim() == 3)
       {
         init<CahnHilliard3D::FunctionSpace, CahnHilliard3D::JacobianForm,
              CahnHilliard3D::ResidualForm>(mesh, dt, theta, lambda);
@@ -253,33 +256,35 @@ initial condition (by interpolation).
 
 .. code-block:: c++
 
-  private:
+    private:
 
-    template<class X, class Y, class Z>
-    void init(const Mesh& mesh, const Constant& dt, const Constant& theta,
-              const Constant& lambda)
-    {
-      // Create function space and functions
-      std::shared_ptr<X> V(new X(mesh));
-      _u.reset(new Function(V));
-      _u0.reset(new Function(V));
+      template<class X, class Y, class Z>
+      void init(std::shared_ptr<const Mesh> mesh,
+                std::shared_ptr<const Constant> dt,
+                std::shared_ptr<const Constant> theta,
+                std::shared_ptr<const Constant> lambda)
+      {
+        // Create function space and functions
+        std::shared_ptr<X> V(new X(mesh));
+        _u.reset(new Function(V));
+        _u0.reset(new Function(V));
 
-      // Create forms and attach functions
-      Y* _a = new Y(V, V);
-      Z* _L = new Z(V);
-      _a->u = *_u;
-      _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
-      _L->u = *_u; _L->u0 = *_u0;
-      _L->lmbda = lambda; _L->dt = dt; _L->theta = theta;
+        // Create forms and attach functions
+        Y* _a = new Y(V, V);
+        Z* _L = new Z(V);
+        _a->u = _u;
+        _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
+        _L->u = _u; _L->u0 = _u0;
+        _L->lmbda = lambda; _L->dt = dt; _L->theta = theta;
 
-      // Wrap pointers in a smart pointer
-      a.reset(_a);
-      L.reset(_L);
+        // Wrap pointers in a smart pointer
+        a.reset(_a);
+        L.reset(_L);
 
-      // Set solution to intitial condition
-      InitialConditions u_initial;
-      *_u = u_initial;
-    }
+        // Set solution to intitial condition
+        InitialConditions u_initial;
+        *_u = u_initial;
+      }
 
 The ``CahnHilliardEquation`` class stores the data required for
 computing the residual vector and the Jacobian matrix as private data:
@@ -287,10 +292,10 @@ computing the residual vector and the Jacobian matrix as private data:
 .. code-block:: c++
 
       // Function space, forms and functions
-      boost::scoped_ptr<Form> a;
-      boost::scoped_ptr<Form> L;
-      boost::scoped_ptr<Function> _u;
-      boost::scoped_ptr<Function> _u0;
+      std::unique_ptr<Form> a;
+      std::unique_ptr<Form> L;
+      std::shared_ptr<Function> _u;
+      std::shared_ptr<Function> _u0;
   };
 
 The main program is started, and declared such that it can accept
@@ -308,7 +313,7 @@ A mesh is then created with 97 (96 + 1) vertices in each direction:
 .. code-block:: c++
 
     // Mesh
-    UnitSquareMesh mesh(96, 96);
+    auto mesh = std::make_shared<UnitSquareMesh>(96, 96);
 
 A set of constants (required for the assembling of the forms) and two
 scalars (to be used in the time stepping) are then declared:
@@ -316,12 +321,12 @@ scalars (to be used in the time stepping) are then declared:
 .. code-block:: c++
 
     // Time stepping and model parameters
-    Constant dt(5.0e-6);
-    Constant theta(0.5);
-    Constant lambda(1.0e-2);
+    auto dt = std::make_shared<Constant>(5.0e-6);
+    auto theta = std::make_shared<Constant>(0.5);
+    auto lambda = std::make_shared<Constant>(1.0e-2);
 
     double t = 0.0;
-    double T = 50*dt;
+    double T = 50*(*dt);
 
 A ``CahnHilliardEquation`` object is created, which will be used in conjunction
 with a Newton solver, and references to solution functions are
@@ -371,7 +376,7 @@ is saved to a file, along with the time ``t``.
     while (t < T)
     {
       // Update for next time step
-      t += dt;
+      t += *dt;
       *u0.vector() = *u.vector();
 
       // Solve

@@ -27,6 +27,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <numeric>
 #include <sstream>
 
 #include <dolfin/log/log.h>
@@ -155,11 +156,10 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     {
       //  dolfin_assert(bs == 1);
       _map0.resize(M);
+      std::iota(_map0.begin(), _map0.end(), 0);
+
       _map1.resize(N);
-      for (std::size_t i = 0; i < M; ++i)
-        _map0[i] = i;
-      for (std::size_t i = 0; i < N; ++i)
-        _map1[i] = i;
+      std::iota(_map1.begin(), _map1.end(), 0);
     }
     else
     {
