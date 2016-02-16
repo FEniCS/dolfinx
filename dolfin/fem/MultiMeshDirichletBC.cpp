@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-05-12
-// Last changed: 2014-05-12
+// Last changed: 2016-02-15
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -35,7 +35,9 @@ MultiMeshDirichletBC::MultiMeshDirichletBC(const MultiMeshFunctionSpace& V,
                                            const GenericFunction& g,
                                            const SubDomain& sub_domain,
                                            std::string method,
-                                           bool check_midpoint)
+                                           bool check_midpoint,
+                                           bool exclude_overlapped_boundaries)
+  : _exclude_overlapped_boundaries(exclude_overlapped_boundaries)
 {
   // Initialize boundary conditions for parts
   init(reference_to_no_delete_pointer(V),
@@ -49,7 +51,9 @@ MultiMeshDirichletBC::MultiMeshDirichletBC(std::shared_ptr<const MultiMeshFuncti
                                            std::shared_ptr<const GenericFunction> g,
                                            std::shared_ptr<const SubDomain> sub_domain,
                                            std::string method,
-                                           bool check_midpoint)
+                                           bool check_midpoint,
+                                           bool exclude_overlapped_boundaries)
+  : _exclude_overlapped_boundaries(exclude_overlapped_boundaries)
 {
   init(V, g, sub_domain, method, check_midpoint);
 }
@@ -145,7 +149,9 @@ void MultiMeshDirichletBC::init(std::shared_ptr<const MultiMeshFunctionSpace> V,
   _bcs.clear();
 
   // Initialize subdomain wrapper
-  _sub_domain.reset(new MultiMeshSubDomain(sub_domain, V->multimesh()));
+  _sub_domain.reset(new MultiMeshSubDomain(sub_domain,
+                                           V->multimesh(),
+                                           _exclude_overlapped_boundaries));
 
   // Iterate over parts
   for (std::size_t part = 0; part < V->num_parts(); part++)
@@ -167,10 +173,12 @@ void MultiMeshDirichletBC::init(std::shared_ptr<const MultiMeshFunctionSpace> V,
 //-----------------------------------------------------------------------------
 MultiMeshDirichletBC::MultiMeshSubDomain::MultiMeshSubDomain
 (std::shared_ptr<const SubDomain> sub_domain,
- std::shared_ptr<const MultiMesh> multimesh)
+ std::shared_ptr<const MultiMesh> multimesh,
+ bool exclude_overlapped_boundaries)
   : _user_sub_domain(sub_domain),
     _multimesh(multimesh),
-    _current_part(0)
+    _current_part(0),
+    _exclude_overlapped_boundaries(exclude_overlapped_boundaries)
 {
   // Do nothing
 }
@@ -187,7 +195,7 @@ bool MultiMeshDirichletBC::MultiMeshSubDomain::inside(const Array<double>& x,
 
   // If point is on boundary, check that it really is on the boundary,
   // which it may not be if it is contained in some other mesh.
-  if (on_boundary)
+  if (on_boundary && _exclude_overlapped_boundaries)
   {
     for (std::size_t part = 0; part < _multimesh->num_parts(); part++)
     {
@@ -215,4 +223,3 @@ void MultiMeshDirichletBC::MultiMeshSubDomain::set_current_part
   _current_part = current_part;
 }
 //-----------------------------------------------------------------------------
-
