@@ -13,17 +13,22 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
   # http://www.vtk.org/pipermail/vtk-developers/2013-October/014402.html
   if (@VTK_FOUND@)
     find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
-      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
-      NO_MODULE QUIET)
+      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture NO_MODULE QUIET)
 
-      # Earlier versions of VTK need vtkRenderingFreeTypeOpenGL, but
-      # this was removed from VTK 6.3
-      if(TARGET vtkRenderingFreeTypeOpenGL)
-        find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
-          vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
-          vtkRenderingFreeTypeOpenGL NO_MODULE QUIET)
-      endif()
+    # For VTK < 7.0
+    if(TARGET vtkRenderingOpenGL)
+      find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
+        vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
+        NO_MODULE QUIET)
+    endif()
 
+    # Earlier versions of VTK need vtkRenderingFreeTypeOpenGL, but
+    # this was removed from VTK 6.3
+    if(TARGET vtkRenderingFreeTypeOpenGL)
+      find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
+        vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
+        vtkRenderingFreeTypeOpenGL NO_MODULE QUIET)
+    endif()
 
     if (VTK_FOUND)
       include(${VTK_USE_FILE})
