@@ -21,6 +21,7 @@
 // First added:  2005-12-02
 // Last changed: 2015-06-15
 
+#include <cmath>
 #include <boost/multi_array.hpp>
 
 #include <dolfin/common/constants.h>

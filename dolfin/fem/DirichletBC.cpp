@@ -24,9 +24,10 @@
 // First added:  2007-04-10
 // Last changed: 2014-01-23
 
-#include <map>
 #include <cinttypes>
+#include <cmath>
 #include <cstdlib>
+#include <map>
 #include <utility>
 #include <ufc.h>
 
