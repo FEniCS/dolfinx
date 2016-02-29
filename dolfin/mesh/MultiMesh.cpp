@@ -20,6 +20,8 @@
 // First added:  2013-08-05
 // Last changed: 2015-11-26
 
+#include <cmath>
+
 #include <dolfin/log/log.h>
 #include <dolfin/plot/plot.h>
 #include <dolfin/common/NoDeleter.h>

@@ -66,7 +66,7 @@ defining the boundaries, we define boundary conditions:
 
     # Inflow boundary condition for velocity
     # NOTE: Projection here is inefficient workaround of issue #489, FFC issue #69
-    inflow = project(Expression(("-sin(x[1]*pi)", "0.0")), W.sub(0).collapse())
+    inflow = project(Expression(("-sin(x[1]*pi)", "0.0"), degree=2), W.sub(0).collapse())
     bc1 = DirichletBC(W.sub(0), inflow, sub_domains, 1)
 
     # Collect boundary conditions

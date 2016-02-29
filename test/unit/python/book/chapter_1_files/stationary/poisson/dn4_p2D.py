@@ -21,7 +21,7 @@ V = FunctionSpace(mesh, 'Lagrange', 1)
 
 # Define Dirichlet conditions for x=0 boundary
 
-u_L = Expression('1 + 2*x[1]*x[1]')
+u_L = Expression('1 + 2*x[1]*x[1]', degree=2)
 
 class LeftBoundary(SubDomain):
     def inside(self, x, on_boundary):
@@ -32,7 +32,7 @@ Gamma_0 = DirichletBC(V, u_L, LeftBoundary())
 
 # Define Dirichlet conditions for x=1 boundary
 
-u_R = Expression('2 + 2*x[1]*x[1]')
+u_R = Expression('2 + 2*x[1]*x[1]', degree=2)
 
 class RightBoundary(SubDomain):
     def inside(self, x, on_boundary):
@@ -47,7 +47,7 @@ bcs = [Gamma_0, Gamma_1]
 u = TrialFunction(V)
 v = TestFunction(V)
 f = Constant(-6.0)
-g = Expression('-4*x[1]')
+g = Expression('-4*x[1]', degree=1)
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx - g*v*ds
 
@@ -113,7 +113,7 @@ if mesh.num_cells() <= 30:
 
 
 # Exact solution:
-u_exact = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]')
+u_exact = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]', degree=2)
 
 # Verification
 u_e = interpolate(u_exact, V)

@@ -132,7 +132,7 @@ def test_local_solver_dg(ghost_mode):
     U = FunctionSpace(mesh, "DG", 2)
 
     # Set initial values
-    u0 = interpolate(Expression("cos(pi*x[0])"), U)
+    u0 = interpolate(Expression("cos(pi*x[0])", degree=2), U)
 
     # Define test and trial functions
     v, u = TestFunction(U), TrialFunction(U)
@@ -171,7 +171,7 @@ def test_solve_local(ghost_mode):
     U = FunctionSpace(mesh, "DG", 2)
 
     # Set initial values
-    u0 = interpolate(Expression("cos(pi*x[0])"), U)
+    u0 = interpolate(Expression("cos(pi*x[0])", degree=2), U)
 
     # Define test and trial functions
     v, u = TestFunction(U), TrialFunction(U)

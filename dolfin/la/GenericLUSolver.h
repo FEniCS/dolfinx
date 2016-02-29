@@ -77,6 +77,12 @@ namespace dolfin
       return 0;
     }
 
+    /// Return parameter type: "krylov_solver" or "lu_solver"
+    virtual std::string parameter_type() const
+    {
+      return "lu_solver";
+    }
+
   };
 
 }

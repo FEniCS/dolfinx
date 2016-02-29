@@ -75,8 +75,8 @@ expressions at run-time.
 
 .. code-block:: python
 
-    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-    g = Expression("-sin(5*x[0])")
+    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
+    g = Expression("-sin(5*x[0])", degree=2)
 
 
 With :math:`u,v,f` and :math:`g`, we can write down the bilinear form

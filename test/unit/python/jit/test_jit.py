@@ -28,7 +28,7 @@ def test_nasty_jit_caching_bug():
     # This may result in something like "matrices are not aligned"
     # from FIAT if the JIT caching does not recognize that the two
     # forms are different
-    
+
     default_parameters = parameters["form_compiler"]["representation"]
     for representation in ["tensor", "quadrature"]:
 
@@ -88,7 +88,7 @@ def test_mpi_dependent_jiting():
     # FIXME: Not a proper unit test...
     from dolfin import Expression, UnitSquareMesh, Function, TestFunction, \
          Form, FunctionSpace, dx, CompiledSubDomain, SubSystemsManager
-    
+
     # Init petsc (needed to initalize petsc and slepc collectively on
     # all processes)
     SubSystemsManager.init_petsc()
@@ -102,7 +102,7 @@ def test_mpi_dependent_jiting():
         import petsc4py.PETSc as petsc
     except:
         return
-    
+
     # Set communicator and get process information
     comm = mpi.COMM_WORLD
     group = comm.Get_group()
@@ -120,11 +120,11 @@ def test_mpi_dependent_jiting():
         group_comm_2 = petsc.Comm(comm.Create(group.Incl(range(2,size))))
 
     if rank == 0:
-        e = Expression("4", mpi_comm=group_comm_0)
+        e = Expression("4", mpi_comm=group_comm_0, degree=0)
 
     elif rank == 1:
         e = Expression("5", mpi_comm=group_comm_1)
-        domain = CompiledSubDomain("on_boundary", mpi_comm=group_comm_1)
+        domain = CompiledSubDomain("on_boundary", mpi_comm=group_comm_1, degree=0)
 
     else:
         mesh = UnitSquareMesh(group_comm_2, 2, 2)

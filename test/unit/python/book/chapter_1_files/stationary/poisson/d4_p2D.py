@@ -17,7 +17,7 @@ mesh = UnitSquareMesh(3, 3)
 V = FunctionSpace(mesh, 'Lagrange', 1)
 
 # Define boundary conditions
-u0 = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]')
+u0 = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]', degree=2)
 
 def u0_boundary(x, on_boundary):
     return on_boundary
