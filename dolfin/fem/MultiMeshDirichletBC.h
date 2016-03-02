@@ -1,4 +1,4 @@
-// Copyright (C) 2014 Anders Logg
+// Copyright (C) 2014-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-05-12
-// Last changed: 2016-02-15
+// Last changed: 2016-03-02
 
 #ifndef __MULTI_MESH_DIRICHLET_BC_H
 #define __MULTI_MESH_DIRICHLET_BC_H
@@ -42,31 +42,6 @@ namespace dolfin
   class MultiMeshDirichletBC
   {
   public:
-
-    /// Create boundary condition for subdomain
-    ///
-    /// *Arguments*
-    ///     V (_MultiMeshFunctionSpace_)
-    ///         The function space.
-    ///     g (_GenericFunction_)
-    ///         The value.
-    ///     sub_domain (_SubDomain_)
-    ///         The subdomain.
-    ///     method (std::string)
-    ///         Option passed to DirichletBC.
-    ///     check_midpoint (bool)
-    ///         Option passed to DirichletBC.
-    ///     exclude_overlapped_boundaries (bool)
-    ///         If true, then the variable on_boundary will
-    ///         be set to false for facets that are overlapped
-    ///         by another mesh (irrespective of the layering order
-    ///         of the meshes).
-    MultiMeshDirichletBC(const MultiMeshFunctionSpace& V,
-                         const GenericFunction& g,
-                         const SubDomain& sub_domain,
-                         std::string method="topological",
-                         bool check_midpoint=true,
-                         bool exclude_overlapped_boundaries=true);
 
     /// Create boundary condition for subdomain
     ///
