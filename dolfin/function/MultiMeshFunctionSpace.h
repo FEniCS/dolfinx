@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2013-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2015-11-12
+// Last changed: 2016-03-02
 
 #ifndef __MULTI_MESH_FUNCTION_SPACE_H
 #define __MULTI_MESH_FUNCTION_SPACE_H
@@ -45,9 +45,6 @@ namespace dolfin
   class MultiMeshFunctionSpace : public Variable
   {
   public:
-
-    /// Create multimesh function space on multimesh (referece version)
-    MultiMeshFunctionSpace(const MultiMesh& multimesh);
 
     /// Create multimesh function space on multimesh (shared pointer version)
     MultiMeshFunctionSpace(std::shared_ptr<const MultiMesh> multimesh);
@@ -109,19 +106,12 @@ namespace dolfin
     ///         Function space (part) number i
     std::shared_ptr<const FunctionSpace> view(std::size_t i) const;
 
-    /// Add function space (shared pointer version)
+    /// Add function space
     ///
     /// *Arguments*
     ///     function_space (_FunctionSpace_)
     ///         The function space.
     void add(std::shared_ptr<const FunctionSpace> function_space);
-
-    /// Add function space (reference version)
-    ///
-    /// *Arguments*
-    ///     function_space (_FunctionSpace_)
-    ///         The function space.
-    void add(const FunctionSpace& function_space);
 
     /// Build multimesh function space
     void build();

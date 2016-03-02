@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-05-12
-// Last changed: 2016-02-15
+// Last changed: 2016-03-02
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -30,22 +30,6 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-MultiMeshDirichletBC::MultiMeshDirichletBC(const MultiMeshFunctionSpace& V,
-                                           const GenericFunction& g,
-                                           const SubDomain& sub_domain,
-                                           std::string method,
-                                           bool check_midpoint,
-                                           bool exclude_overlapped_boundaries)
-  : _exclude_overlapped_boundaries(exclude_overlapped_boundaries)
-{
-  // Initialize boundary conditions for parts
-  init(reference_to_no_delete_pointer(V),
-       reference_to_no_delete_pointer(g),
-       reference_to_no_delete_pointer(sub_domain),
-       method,
-       check_midpoint);
-}
 //-----------------------------------------------------------------------------
 MultiMeshDirichletBC::MultiMeshDirichletBC(std::shared_ptr<const MultiMeshFunctionSpace> V,
                                            std::shared_ptr<const GenericFunction> g,
