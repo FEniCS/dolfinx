@@ -235,6 +235,10 @@ std::shared_ptr<Form>
     refined_spaces.push_back(space.child_shared_ptr());
   }
 
+  // Create new form (constructor used from Python interface)
+  std::shared_ptr<Form> refined_form(new Form(ufc_form,
+                                              refined_spaces));
+
   // Refine coefficients:
   std::vector<std::shared_ptr<const GenericFunction>> refined_coefficients;
   for (std::size_t i = 0; i < coefficients.size(); i++)
@@ -246,16 +250,11 @@ std::shared_ptr<Form>
     if (function)
     {
       adapt(*function, adapted_mesh, adapt_coefficients);
-      refined_coefficients.push_back(function->child_shared_ptr());
+      refined_form->set_coefficient(i, function->child_shared_ptr());
     }
     else
-      refined_coefficients.push_back(coefficients[i]);
+      refined_form->set_coefficient(i, coefficients[i]);
   }
-
-  // Create new form (constructor used from Python interface)
-  std::shared_ptr<Form> refined_form(new Form(ufc_form,
-                                              refined_spaces,
-                                              refined_coefficients));
 
   // Attach mesh
   refined_form->set_mesh(adapted_mesh);
