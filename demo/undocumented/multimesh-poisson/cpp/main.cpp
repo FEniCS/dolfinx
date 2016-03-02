@@ -27,8 +27,8 @@
 #include <dolfin.h>
 #include "MultiMeshPoisson.h"
 
-using namespace std;
 using namespace dolfin;
+using std::make_shared;
 
 // Source term (right-hand side)
 class Source : public Expression
