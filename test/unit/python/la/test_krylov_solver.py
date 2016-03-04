@@ -49,7 +49,9 @@ def test_krylov_samg_solver_elasticity():
         for x in nullspace_basis:
             x.apply("insert")
 
-        return VectorSpaceBasis(nullspace_basis)
+        nullspace = VectorSpaceBasis(nullspace_basis)
+        null_space.orthonormalize()
+        return null_space
 
     def amg_solve(N, method):
         # Elasticity parameters
@@ -81,15 +83,16 @@ def test_krylov_samg_solver_elasticity():
 
         # Create near null space basis and orthonormalize
         null_space = build_nullspace(V, u.vector())
-        null_space.orthonormalize()
+
+        # Attached near-null space to matrix
+        A.set_near_nullspace(null_space)
 
         # Test that basis is orthonormal
         assert null_space.is_orthonormal()
 
-        # Create PETSC smoothed aggregation AMG preconditioner,
-        # attach near null space and create CG solver
+        # Create PETSC smoothed aggregation AMG preconditioner, and
+        # create CG solver
         pc = PETScPreconditioner(method)
-        pc.set_nullspace(null_space)
         solver = PETScKrylovSolver("cg", pc)
 
         # Set matrix operator

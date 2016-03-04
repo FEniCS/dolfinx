@@ -63,15 +63,6 @@ namespace dolfin
     /// Set the preconditioner type and parameters
     virtual void set(PETScKrylovSolver& solver);
 
-    /// Set the (near) null space of the preconditioner operator
-    /// (matrix). This is required for certain preconditioner types,
-    /// e.g. smoothed aggregation multigrid
-    void set_nullspace(const VectorSpaceBasis& near_nullspace);
-
-    /// Return the PETSc null space
-    MatNullSpace near_nullspace() const
-    { return petsc_near_nullspace; }
-
     /// Set the coordinates of the operator (matrix) rows and
     /// geometric dimension d. This is can be used by required for
     /// certain preconditioners, e.g. ML. The input for this function
@@ -108,12 +99,6 @@ namespace dolfin
     // Available preconditioner descriptions
     static const std::map<std::string, std::string>
       _methods_descr;
-
-    // Near null space vectors
-    std::vector<PETScVector> _near_nullspace;
-
-    // PETSc near null space.
-    MatNullSpace petsc_near_nullspace;
 
     // Operator row coordinates
     std::vector<double> _coordinates;
