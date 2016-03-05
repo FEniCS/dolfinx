@@ -39,20 +39,10 @@ namespace dolfin
 
     virtual ~GenericPreconditioner() {}
 
-    /// Set the (approximate) null space of the preconditioner operator
-    /// (matrix). This is required for certain preconditioner types,
-    /// e.g. smoothed aggregation multigrid
-    virtual void set_nullspace(const VectorSpaceBasis& nullspace)
-    {
-      dolfin_error("GenericPreconditioner.h",
-                   "set nullspace for preconditioner operator",
-                   "Not supported by current preconditioner type");
-    }
-
-    /// Set the coordinates of the operator (matrix) rows and geometric
-    /// dimension d. This is can be used by required for certain
-    /// preconditioners, e.g. ML. The input for this function can be
-    /// generated using GenericDofMap::tabulate_all_dofs.
+    /// Set the coordinates of the operator (matrix) rows and
+    /// geometric dimension d. This is can be used by required for
+    /// certain preconditioners, e.g. ML. The input for this function
+    /// can be generated using GenericDofMap::tabulate_all_dofs.
     virtual void set_coordinates(const std::vector<double>& x, std::size_t dim)
     {
       dolfin_error("GenericPreconditioner.h",

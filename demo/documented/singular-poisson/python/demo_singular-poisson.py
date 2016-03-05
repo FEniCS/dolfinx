@@ -71,7 +71,8 @@ b = assemble(L)
 u = Function(V)
 
 # Create Krylov solver
-solver = KrylovSolver(A, "gmres")
+solver = PETScKrylovSolver("cg")
+solver.set_operator(A)
 
 # Create vector that spans the null space and normalize
 null_vec = Vector(u.vector())
@@ -82,8 +83,8 @@ null_vec *= 1.0/null_vec.norm("l2")
 null_space = VectorSpaceBasis([null_vec])
 as_backend_type(A).set_nullspace(null_space)
 
-# Orthogonalize RHS b with respect to the null space (this gurantees a
-# solution exists)
+# Orthogonalize RHS vector b with respect to the null space (this
+# gurantees a solution exists)
 null_space.orthogonalize(b);
 
 # Solve

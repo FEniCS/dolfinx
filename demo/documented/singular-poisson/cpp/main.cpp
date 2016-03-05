@@ -80,8 +80,8 @@ int main()
   L.g = g;
 
   // Assemble system
-  std::shared_ptr<GenericMatrix> A(new Matrix);
-  Vector b;
+  auto A = std::make_shared<PETScMatrix>();
+  PETScVector b;
   assemble(*A, a);
   assemble(b, L);
 
@@ -89,7 +89,8 @@ int main()
   Function u(V);
 
   // Create Krylov solver
-  KrylovSolver solver(A, "gmres");
+  PETScKrylovSolver solver("cg");
+  solver.set_operator(A);
 
   // Create vector that spans null space (normalised)
   std::shared_ptr<GenericVector> null_space_ptr(b.copy());
@@ -99,7 +100,7 @@ int main()
 
   // Create null space basis object and attach to Krylov solver
   VectorSpaceBasis null_space(null_space_basis);
-  A->down_cast<PETScMatrix>().set_nullspace(null_space);
+  A->set_nullspace(null_space);
 
   // Orthogonalize b with respect to the null space (this gurantees
   // that a solution exists)

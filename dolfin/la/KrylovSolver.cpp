@@ -122,11 +122,6 @@ KrylovSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
   solver->set_operators(A, P);
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
-{
-  solver->set_nullspace(nullspace);
-}
-//-----------------------------------------------------------------------------
 std::size_t KrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(solver);
