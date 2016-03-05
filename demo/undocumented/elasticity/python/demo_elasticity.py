@@ -111,7 +111,7 @@ u = Function(V)
 null_space = build_nullspace(V, u.vector())
 
 # Attach near nullspace to matrix
-A.set_near_nullspace(null_space)
+as_backend_type(A).set_near_nullspace(null_space)
 
 # Create PETSC smoothed aggregation AMG preconditioner and attach near
 # null space

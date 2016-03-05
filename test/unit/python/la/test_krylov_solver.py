@@ -24,6 +24,7 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel
 
+
 @skip_if_not_PETSc
 def test_krylov_samg_solver_elasticity():
     "Test PETScKrylovSolver with smoothed aggregation AMG"
@@ -39,17 +40,17 @@ def test_krylov_samg_solver_elasticity():
         nullspace_basis = [x.copy() for i in range(3)]
 
         # Build translational null space basis
-        V.sub(0).dofmap().set(nullspace_basis[0], 1.0);
-        V.sub(1).dofmap().set(nullspace_basis[1], 1.0);
+        V.sub(0).dofmap().set(nullspace_basis[0], 1.0)
+        V.sub(1).dofmap().set(nullspace_basis[1], 1.0)
 
         # Build rotational null space basis
-        V.sub(0).set_x(nullspace_basis[2], -1.0, 1);
-        V.sub(1).set_x(nullspace_basis[2], 1.0, 0);
+        V.sub(0).set_x(nullspace_basis[2], -1.0, 1)
+        V.sub(1).set_x(nullspace_basis[2], 1.0, 0)
 
         for x in nullspace_basis:
             x.apply("insert")
 
-        nullspace = VectorSpaceBasis(nullspace_basis)
+        null_space = VectorSpaceBasis(nullspace_basis)
         null_space.orthonormalize()
         return null_space
 
@@ -85,7 +86,7 @@ def test_krylov_samg_solver_elasticity():
         null_space = build_nullspace(V, u.vector())
 
         # Attached near-null space to matrix
-        A.set_near_nullspace(null_space)
+        as_backend_type(A).set_near_nullspace(null_space)
 
         # Test that basis is orthonormal
         assert null_space.is_orthonormal()
@@ -101,19 +102,18 @@ def test_krylov_samg_solver_elasticity():
         # Compute solution and return number of iterations
         return solver.solve(u.vector(), b)
 
-
     # Set some multigrid smoother parameters
     PETScOptions.set("mg_levels_ksp_type", "chebyshev")
     PETScOptions.set("mg_levels_pc_type", "jacobi")
 
     # Improve estimate of eigenvalues for Chebyshev smoothing
-    PETScOptions.set("mg_levels_esteig_ksp_type", "cg");
+    PETScOptions.set("mg_levels_esteig_ksp_type", "cg")
     PETScOptions.set("mg_levels_ksp_chebyshev_esteig_steps", 50)
 
     # Build list of smoothed aggregation preconditioners
     methods = ["petsc_amg"]
-    if "ml_amg" in PETScPreconditioner.preconditioners():
-        methods.append("ml_amg")
+    # if "ml_amg" in PETScPreconditioner.preconditioners():
+    #    methods.append("ml_amg")
 
     # Test iteration count with increasing mesh size for each
     # preconditioner
@@ -195,9 +195,11 @@ def test_krylov_reuse_pc():
     num_iter = solver.solve(x, b)
     assert num_iter == num_iter_mod
 
+
 def test_krylov_tpetra():
     if not has_linear_algebra_backend("Tpetra"):
         return
+
     mesh = UnitCubeMesh(10, 10, 10)
     Q = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(Q)
@@ -207,6 +209,7 @@ def test_krylov_tpetra():
 
     def bound(x):
         return x[0] == 0
+
     bc = DirichletBC(Q, Constant(0.0), bound)
 
     A = TpetraMatrix()
@@ -223,9 +226,9 @@ def test_krylov_tpetra():
     mlp.add("coarse:_max_size", 10)
     mlp.add("coarse:_type", "KLU2")
     mlp.add("multigrid_algorithm", "sa")
-    mlp.add("aggregation:_type", "uncoupled");
-    mlp.add("aggregation:_min_agg_size", 3);
-    mlp.add("aggregation:_max_agg_size", 7);
+    mlp.add("aggregation:_type", "uncoupled")
+    mlp.add("aggregation:_min_agg_size", 3)
+    mlp.add("aggregation:_max_agg_size", 7)
 
     pre_paramList = Parameters("smoother:_pre_params")
     pre_paramList.add("relaxation:_type", "Symmetric Gauss-Seidel")
@@ -235,11 +238,11 @@ def test_krylov_tpetra():
     mlp.add(pre_paramList)
 
     post_paramList = Parameters("smoother:_post_params")
-    post_paramList.add("relaxation:_type", "Symmetric Gauss-Seidel");
-    post_paramList.add("relaxation:_sweeps", 1);
-    post_paramList.add("relaxation:_damping_factor", 0.9);
-    mlp.add("smoother:_post_type", "RELAXATION");
-    mlp.add(post_paramList);
+    post_paramList.add("relaxation:_type", "Symmetric Gauss-Seidel")
+    post_paramList.add("relaxation:_sweeps", 1)
+    post_paramList.add("relaxation:_damping_factor", 0.9)
+    mlp.add("smoother:_post_type", "RELAXATION")
+    mlp.add(post_paramList)
 
     solver = BelosKrylovSolver("cg", mp)
     solver.parameters['relative_tolerance'] = 1e-8
