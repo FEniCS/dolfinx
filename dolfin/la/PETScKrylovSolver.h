@@ -57,8 +57,8 @@ namespace dolfin
 
     /// Create Krylov solver for a particular method and names
     /// preconditioner
-    PETScKrylovSolver(std::string method = "default",
-                      std::string preconditioner = "default");
+    PETScKrylovSolver(std::string method="default",
+                      std::string preconditioner="default");
 
     /// Create Krylov solver for a particular method and
     /// PETScPreconditioner (shared_ptr version)
@@ -96,9 +96,9 @@ namespace dolfin
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                       const GenericVector& b);
 
-    /// Reuse preconditioner if true, otherwise do not, even if matrix
-    /// operator changes (by default preconditioner is re-built if the
-    /// matrix changes)
+    /// Reuse preconditioner if true, even if matrix operator changes
+    /// (by default preconditioner will be re-built if the matrix
+    /// changes)
     void set_reuse_preconditioner(bool reuse_pc);
 
     /// Sets the prefix used by PETSc when searching the options
@@ -111,6 +111,9 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
+
+    /// Return MPI communicator
+    MPI_Comm mpi_comm() const;
 
     /// Return PETSc KSP pointer
     KSP ksp() const;
@@ -134,9 +137,6 @@ namespace dolfin
     friend class PETScTAOSolver;
 
   private:
-
-    // Initialize KSP solver
-    void init(const std::string& method);
 
     // Set operator (matrix)
     void _set_operator(std::shared_ptr<const PETScBaseMatrix> A);

@@ -39,7 +39,7 @@
 
 using namespace dolfin;
 
-// Mapping from method string to PETSc
+// Map from method string to PETSc (for subset of PETSc solvers)
 const std::map<std::string, const KSPType> PETScKrylovSolver::_methods
 = { {"default",  ""},
     {"cg",         KSPCG},
@@ -51,7 +51,7 @@ const std::map<std::string, const KSPType> PETScKrylovSolver::_methods
     {"nash",       KSPNASH},
     {"stcg",       KSPSTCG} };
 
-// Mapping from method string to description
+// Map from method string to description
 const std::map<std::string, std::string>
 PETScKrylovSolver::_methods_descr
 =
@@ -64,14 +64,12 @@ PETScKrylovSolver::_methods_descr
   {"bicgstab",   "Biconjugate gradient stabilized method"} };
 
 //-----------------------------------------------------------------------------
-std::map<std::string, std::string>
-PETScKrylovSolver::methods()
+std::map<std::string, std::string> PETScKrylovSolver::methods()
 {
   return PETScKrylovSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
-std::map<std::string, std::string>
-PETScKrylovSolver::preconditioners()
+std::map<std::string, std::string> PETScKrylovSolver::preconditioners()
 {
   return PETScPreconditioner::preconditioners();
 }
@@ -97,7 +95,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
     _preconditioner(new PETScPreconditioner(preconditioner)),
     preconditioner_set(false)
 {
-  // Check that the requested method is known
+   // Check that the requested method is known
   if (_methods.count(method) == 0)
   {
     dolfin_error("PETScKrylovSolver.cpp",
@@ -108,7 +106,18 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
   // Set parameter values
   parameters = default_parameters();
 
-  init(method);
+  PetscErrorCode ierr;
+
+  // Create PETSc KSP object
+  ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
+
+  // Set Krylov solver type
+  if (method != "default")
+  {
+    ierr = KSPSetType(_ksp, _methods.find(method)->second);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+  }
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
@@ -119,28 +128,60 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
   // Set parameter values
   parameters = default_parameters();
 
-  init(method);
+  PetscErrorCode ierr;
+
+  // Create PETSc KSP object
+  ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
+
+  // Set Krylov solver type
+  if (method != "default")
+  {
+    ierr = KSPSetType(_ksp, _methods.find(method)->second);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+  }
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
-  std::shared_ptr<PETScUserPreconditioner> preconditioner)
+                                     std::shared_ptr<PETScUserPreconditioner> preconditioner)
   : _ksp(NULL), pc_dolfin(preconditioner.get()), preconditioner_set(false)
 {
   // Set parameter values
-  parameters = default_parameters();
+  this->parameters = default_parameters();
 
-  init(method);
+  PetscErrorCode ierr;
+
+  // Create PETSc KSP object
+  ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
+
+  // Set Krylov solver type
+  if (method != "default")
+  {
+    ierr = KSPSetType(_ksp, _methods.find(method)->second);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+  }
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(KSP ksp)
-  : _ksp(ksp), pc_dolfin(0), preconditioner_set(true)
+PETScKrylovSolver::PETScKrylovSolver(KSP ksp) : _ksp(ksp), pc_dolfin(0),
+                                                preconditioner_set(true)
 {
   // Set parameter values
-  parameters = default_parameters();
+  this->parameters = default_parameters();
 
-  // Increment reference count
+  PetscErrorCode ierr;
   if (_ksp)
-    PetscObjectReference((PetscObject)_ksp);
+  {
+    // Increment reference count
+    ierr = PetscObjectReference((PetscObject)_ksp);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "PetscObjectReference");
+  }
+  else
+  {
+    // Create PETSc KSP object
+    ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
+  }
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::~PETScKrylovSolver()
@@ -209,8 +250,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Write a message
-  const bool report = parameters["report"];
-  if (report && dolfin::MPI::rank(PETSC_COMM_WORLD) == 0)
+  const bool report = this->parameters["report"];
+  if (report && dolfin::MPI::rank(this->mpi_comm()) == 0)
   {
     info("Solving linear system of size %ld x %ld (PETSc Krylov solver).",
          M, N);
@@ -247,10 +288,10 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Set convergence norm type
-  if (parameters["convergence_norm_type"].is_set())
+  if (this->parameters["convergence_norm_type"].is_set())
   {
     const std::string convergence_norm_type
-      = parameters["convergence_norm_type"];
+      = this->parameters["convergence_norm_type"];
     if (convergence_norm_type == "true")
     {
       ierr = KSPSetNormType(_ksp, KSP_NORM_UNPRECONDITIONED);
@@ -269,7 +310,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Solve linear system
-  if (MPI::rank(PETSC_COMM_WORLD) == 0)
+  if (dolfin::MPI::rank(this->mpi_comm()) == 0)
   {
     log(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.",
         _matA->size(0), _matA->size(1));
@@ -298,7 +339,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     ierr = KSPGetResidualNorm(_ksp, &rnorm);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetResidualNorm");
     const char *reason_str = KSPConvergedReasons[reason];
-    bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
+    bool error_on_nonconvergence = this->parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
     {
       dolfin_error("PETScKrylovSolver.cpp",
@@ -314,7 +355,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Report results
-  if (report && dolfin::MPI::rank(PETSC_COMM_WORLD) == 0)
+  if (report && dolfin::MPI::rank(this->mpi_comm()) == 0)
     write_report(num_iterations, reason);
 
   return num_iterations;
@@ -330,34 +371,19 @@ void PETScKrylovSolver::set_reuse_preconditioner(bool reuse_pc)
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
 {
-  if (_ksp)
-  {
-    dolfin_error("PETScKrylovSolver.cpp",
-                 "setting PETSc options prefix",
-                 "Cannot set options prefix since PETSc KSP has already been initialized");
-  }
-  else
-    _petsc_options_prefix = options_prefix;
+  // Set options prefix (if any)
+  dolfin_assert(_ksp);
+  PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, _petsc_options_prefix.c_str());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
 std::string PETScKrylovSolver::get_options_prefix() const
 {
-  if (_ksp)
-  {
-    const char* prefix = NULL;
-    KSPGetOptionsPrefix(_ksp, &prefix);
-    return std::string(prefix);
-  }
-  else
-  {
-    warning("PETSc KSP object has not been initialised, therefore prefix has not been set");
-    return std::string();
-  }
-}
-//-----------------------------------------------------------------------------
-KSP PETScKrylovSolver::ksp() const
-{
-  return _ksp;
+  dolfin_assert(_ksp);
+
+  const char* prefix = NULL;
+  KSPGetOptionsPrefix(_ksp, &prefix);
+  return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
 std::string PETScKrylovSolver::str(bool verbose) const
@@ -377,31 +403,17 @@ PETSc KSPView directly.");
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::init(const std::string& method)
+MPI_Comm PETScKrylovSolver::mpi_comm() const
 {
-  PetscErrorCode ierr;
-
-  if (_ksp)
-    KSPDestroy(&_ksp);
-
-  // Set up solver environment
-  ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
-
-  // Set options prefix (if any)
-  ierr = KSPSetOptionsPrefix(_ksp, _petsc_options_prefix.c_str());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
-
-  // Set solver type
-  if (method != "default")
-  {
-    ierr = KSPSetType(_ksp, _methods.find(method)->second);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
-  }
-
-  // Set from options database
-  ierr = KSPSetFromOptions(_ksp);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetFromOptions");
+  dolfin_assert(_ksp);
+  MPI_Comm mpi_comm = MPI_COMM_NULL;
+  PetscObjectGetComm((PetscObject)_ksp, &mpi_comm);
+  return mpi_comm;
+}
+//-----------------------------------------------------------------------------
+KSP PETScKrylovSolver::ksp() const
+{
+  return _ksp;
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::_set_operator(std::shared_ptr<const PETScBaseMatrix> A)
@@ -419,13 +431,13 @@ PETScKrylovSolver::_set_operators(std::shared_ptr<const PETScBaseMatrix> A,
   dolfin_assert(_matP);
   dolfin_assert(_ksp);
 
+  dolfin_assert(_ksp);
   PetscErrorCode ierr;
   ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat());
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScKrylovSolver::_solve(const PETScBaseMatrix& A,
-                                      PETScVector& x,
+std::size_t PETScKrylovSolver::_solve(const PETScBaseMatrix& A, PETScVector& x,
                                       const PETScVector& b)
 {
   // Set operator
@@ -438,15 +450,16 @@ std::size_t PETScKrylovSolver::_solve(const PETScBaseMatrix& A,
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_petsc_ksp_options()
 {
+  dolfin_assert(_ksp);
   PetscErrorCode ierr;
 
   // GMRES restart parameter
-  const int gmres_restart = parameters("gmres")["restart"];
+  const int gmres_restart = this->parameters("gmres")["restart"];
   ierr = KSPGMRESSetRestart(_ksp, gmres_restart);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGMRESSetRestart");
 
   // Non-zero initial guess
-  const bool nonzero_guess = parameters["nonzero_initial_guess"];
+  const bool nonzero_guess = this->parameters["nonzero_initial_guess"];
   PetscBool petsc_nonzero_guess = PETSC_FALSE;
   if (nonzero_guess)
     petsc_nonzero_guess = PETSC_TRUE;
@@ -454,21 +467,21 @@ void PETScKrylovSolver::set_petsc_ksp_options()
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetInitialGuessNonzero");
 
   // Monitor convergence
-  const bool monitor_convergence = parameters["monitor_convergence"];
+  const bool monitor_convergence = this->parameters["monitor_convergence"];
   if (monitor_convergence)
   {
-    ierr=KSPMonitorSet(_ksp, KSPMonitorTrueResidualNorm,
-                       PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_ksp)),
-                       NULL);
+    ierr = KSPMonitorSet(_ksp, KSPMonitorTrueResidualNorm,
+                         PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_ksp)),
+                         NULL);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
   }
 
   // Set tolerances
-  const int max_iterations = parameters["maximum_iterations"];
+  const int max_iterations = this->parameters["maximum_iterations"];
   ierr = KSPSetTolerances(_ksp,
-                          parameters["relative_tolerance"],
-                          parameters["absolute_tolerance"],
-                          parameters["divergence_limit"],
+                          this->parameters["relative_tolerance"],
+                          this->parameters["absolute_tolerance"],
+                          this->parameters["divergence_limit"],
                           max_iterations);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetTolerances");
 }
@@ -584,9 +597,6 @@ void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
                  "Non-matching dimensions for linear system (matrix has %ld columns and solution vector has %ld rows)",
                  A.size(1), x.size());
   }
-
-  // FIXME: We could implement a more thorough check of local/global
-  // FIXME: dimensions for distributed matrices and vectors here.
 }
 //-----------------------------------------------------------------------------
 
