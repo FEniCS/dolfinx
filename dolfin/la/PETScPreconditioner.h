@@ -34,7 +34,6 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/parameter/Parameters.h>
-#include "GenericPreconditioner.h"
 
 namespace dolfin
 {
@@ -49,8 +48,7 @@ namespace dolfin
   /// PETScKrylovSolver and set the preconditioner type and
   /// parameters.
 
-  class PETScPreconditioner : public PETScObject,
-    public GenericPreconditioner, public Variable
+  class PETScPreconditioner : public PETScObject, public Variable
   {
   public:
 
