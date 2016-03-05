@@ -98,8 +98,40 @@ Parameters PETScPreconditioner::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScPreconditioner::PETScPreconditioner(std::string type)
-  : _type(type), gdim(0)
+void PETScPreconditioner::set_type(PETScKrylovSolver& solver, std::string type)
+{
+  // Get KSP object
+  KSP ksp = solver.ksp();
+  if (!ksp)
+  {
+    dolfin_error("PETScPreconditioner.cpp",
+                 "set PETSc preconditioner type",
+                 "PETSc KSP object has not been intialized");
+  }
+
+  // Check that pc type is known
+  auto pc_type_pair = _methods.find(type);
+  if (pc_type_pair == _methods.end())
+  {
+    dolfin_error("PETScPreconditioner.cpp",
+                 "set PETSc preconditioner type",
+                 "Unknown preconditioner type (\"%s\")", type.c_str());
+  }
+
+  PetscErrorCode ierr;
+
+  // Get PETSc PC pointer
+  PC pc = nullptr;
+  ierr = KSPGetPC(ksp, &pc);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
+
+  // Set PC type
+  if (type != "default")
+    ierr = PCSetType(pc, pc_type_pair->second);
+}
+//-----------------------------------------------------------------------------
+PETScPreconditioner::PETScPreconditioner(std::string type) : _type(type),
+                                                             gdim(0)
 {
   // Set parameter values
   parameters = default_parameters();

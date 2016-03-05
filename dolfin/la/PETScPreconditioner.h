@@ -54,6 +54,8 @@ namespace dolfin
   {
   public:
 
+    static void set_type(PETScKrylovSolver& solver, std::string type);
+
     /// Create a particular preconditioner object
     explicit PETScPreconditioner(std::string type = "default");
 

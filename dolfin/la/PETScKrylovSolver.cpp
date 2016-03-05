@@ -92,7 +92,6 @@ Parameters PETScKrylovSolver::default_parameters()
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
                                      std::string preconditioner)
   : _ksp(NULL), pc_dolfin(NULL),
-    _preconditioner(new PETScPreconditioner(preconditioner)),
     preconditioner_set(false)
 {
    // Check that the requested method is known
@@ -118,6 +117,9 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
     ierr = KSPSetType(_ksp, _methods.find(method)->second);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
   }
+
+  // Set preconditioner type
+  PETScPreconditioner::set_type(*this, preconditioner);
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
