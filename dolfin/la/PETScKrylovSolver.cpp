@@ -79,12 +79,9 @@ Parameters PETScKrylovSolver::default_parameters()
   Parameters p(KrylovSolver::default_parameters());
   p.rename("petsc_krylov_solver");
 
-  // Norm type used in convergence test
-  std::set<std::string> allowed_norm_types;
-  allowed_norm_types.insert("preconditioned");
-  allowed_norm_types.insert("true");
-  allowed_norm_types.insert("none");
-  p.add("convergence_norm_type", allowed_norm_types);
+  // Allowed norm type used in convergence test (none set)
+  std::set<std::string> allowed_norms = {"preconditioned", "true", "natural", "none"};
+  p.add("convergence_norm_type", allowed_norms);
 
   return p;
 }
@@ -95,7 +92,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
     preconditioner_set(false)
 {
    // Check that the requested method is known
-  if (_methods.count(method) == 0)
+  if (_methods.find(method) == _methods.end())
   {
     dolfin_error("PETScKrylovSolver.cpp",
                  "create PETSc Krylov solver",
@@ -174,7 +171,7 @@ PETScKrylovSolver::PETScKrylovSolver(KSP ksp) : _ksp(ksp), pc_dolfin(0),
   PetscErrorCode ierr;
   if (_ksp)
   {
-    // Increment reference count
+    // Increment reference count since we holding a pointer to it
     ierr = PetscObjectReference((PetscObject)_ksp);
     if (ierr != 0) petsc_error(ierr, __FILE__, "PetscObjectReference");
   }
@@ -188,6 +185,8 @@ PETScKrylovSolver::PETScKrylovSolver(KSP ksp) : _ksp(ksp), pc_dolfin(0),
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::~PETScKrylovSolver()
 {
+  // Decrease reference count for KSP object, and clean-up if
+  // reference count goes to zero.
   if (_ksp)
     KSPDestroy(&_ksp);
 }
@@ -199,22 +198,11 @@ PETScKrylovSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operators(
-  std::shared_ptr<const  GenericLinearOperator> A,
+  std::shared_ptr<const GenericLinearOperator> A,
   std::shared_ptr<const GenericLinearOperator> P)
 {
   _set_operators(as_type<const PETScBaseMatrix>(A),
                  as_type<const PETScBaseMatrix>(P));
-}
-//-----------------------------------------------------------------------------
-const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
-{
-  if (!_matA)
-  {
-    dolfin_error("PETScKrylovSolver.cpp",
-                 "access operator for PETSc Krylov solver",
-                 "Operator has not been set");
-  }
-  return *_matA;
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
@@ -223,11 +211,9 @@ std::size_t PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::solve(const GenericLinearOperator& A,
-                                     GenericVector& x,
-                                     const GenericVector& b)
+                                     GenericVector& x, const GenericVector& b)
 {
-  return _solve(as_type<const PETScBaseMatrix>(A),
-                as_type<PETScVector>(x),
+  return _solve(as_type<const PETScBaseMatrix>(A), as_type<PETScVector>(x),
                 as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
@@ -259,15 +245,26 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
          M, N);
   }
 
+  // Non-zero initial guess to true/false
+  const bool nonzero_guess = this->parameters["nonzero_initial_guess"];
+  this->set_nonzero_guess(nonzero_guess);
+
+  // Monitor convergence
+  const bool monitor_convergence = this->parameters["monitor_convergence"];
+  this->monitor(monitor_convergence);
+
+  // Set tolerances
+  set_tolerances(this->parameters["relative_tolerance"],
+                 this->parameters["absolute_tolerance"],
+                 this->parameters["divergence_limit"],
+                 this->parameters["maximum_iterations"]);
+
   // Initialize solution vector, if necessary
   if (x.empty())
   {
     _matA->init_vector(x, 1);
-    x.zero();
+    this->set_nonzero_guess(false);
   }
-
-  // Set some PETSc-specific options
-  set_petsc_ksp_options();
 
   // FIXME: Improve check for re-setting preconditioner, e.g. if
   //        parameters change
@@ -291,21 +288,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   {
     const std::string convergence_norm_type
       = this->parameters["convergence_norm_type"];
-    if (convergence_norm_type == "true")
-    {
-      ierr = KSPSetNormType(_ksp, KSP_NORM_UNPRECONDITIONED);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetNormType");
-    }
-    else if (convergence_norm_type == "preconditioned")
-    {
-      ierr = KSPSetNormType(_ksp, KSP_NORM_PRECONDITIONED);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetNormType");
-    }
-    else if (convergence_norm_type == "none")
-    {
-      ierr = KSPSetNormType(_ksp, KSP_NORM_NONE);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetNormType");
-    }
+    set_norm_type(get_norm_type(convergence_norm_type));
   }
 
   // Solve linear system
@@ -315,10 +298,11 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
         _matA->size(0), _matA->size(1));
   }
 
+  // Solve system
   ierr =  KSPSolve(_ksp, b.vec(), x.vec());
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
 
-  // Update ghost values
+  // Update ghost values in solution vector
   x.update_ghost_values();
 
   // Get the number of iterations
@@ -360,12 +344,72 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_nonzero_guess(bool nonzero_guess)
+{
+  dolfin_assert(_ksp);
+  const PetscBool _nonero_guess = nonzero_guess ? PETSC_TRUE : PETSC_FALSE;
+  PetscErrorCode ierr = KSPSetInitialGuessNonzero(_ksp, _nonero_guess);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetIntialGuessNonzero");
+}
+//-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_reuse_preconditioner(bool reuse_pc)
 {
   dolfin_assert(_ksp);
   const PetscBool _reuse_pc = reuse_pc ? PETSC_TRUE : PETSC_FALSE;
   PetscErrorCode ierr = KSPSetReusePreconditioner(_ksp, _reuse_pc);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetReusePreconditioner");
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_tolerances(double relative, double absolute,
+                                       double diverged, int max_iter)
+{
+  dolfin_assert(_ksp);
+  PetscErrorCode ierr = KSPSetTolerances(_ksp, relative, absolute, diverged,
+                                         max_iter);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetTolerances");
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_norm_type(norm_type type)
+{
+  KSPNormType ksp_norm_type;
+  switch (type)
+  {
+  case norm_type::none:
+    ksp_norm_type = KSP_NORM_NONE;
+    break;
+  case norm_type::preconditioned:
+    ksp_norm_type = KSP_NORM_PRECONDITIONED;
+    break;
+  case norm_type::unpreconditioned:
+    ksp_norm_type = KSP_NORM_UNPRECONDITIONED;
+    break;
+  case norm_type::natural:
+    ksp_norm_type = KSP_NORM_NATURAL;
+    break;
+  default:
+    error("Unknown norm type for PETSc Krylov solving convergence testing");
+  }
+
+  dolfin_assert(_ksp);
+  KSPSetNormType(_ksp, ksp_norm_type);
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::monitor(bool monitor_convergence)
+{
+  dolfin_assert(_ksp);
+  PetscErrorCode ierr;
+  if (monitor_convergence)
+  {
+    ierr = KSPMonitorSet(_ksp, KSPMonitorTrueResidualNorm,
+                         PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_ksp)),
+                         NULL);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
+  }
+  else
+  {
+    ierr = KSPMonitorCancel(_ksp);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorCancel");
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
@@ -415,6 +459,23 @@ KSP PETScKrylovSolver::ksp() const
   return _ksp;
 }
 //-----------------------------------------------------------------------------
+PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type(std::string norm)
+{
+  if (norm == "none")
+    return norm_type::none;
+  else if (norm == "preconditioned")
+    return norm_type::preconditioned;
+  else if (norm == "true")
+    return norm_type::unpreconditioned;
+  else if (norm == "natural")
+    return norm_type::natural;
+  else
+  {
+    error("Unknown norm type string for PETSc Krylov convergence norm");
+    return norm_type::none;
+  }
+}
+//-----------------------------------------------------------------------------
 void PETScKrylovSolver::_set_operator(std::shared_ptr<const PETScBaseMatrix> A)
 {
   _set_operators(A, A);
@@ -445,44 +506,6 @@ std::size_t PETScKrylovSolver::_solve(const PETScBaseMatrix& A, PETScVector& x,
 
   // Call solve
   return solve(x, b);
-}
-//-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_petsc_ksp_options()
-{
-  dolfin_assert(_ksp);
-  PetscErrorCode ierr;
-
-  // GMRES restart parameter
-  const int gmres_restart = this->parameters("gmres")["restart"];
-  ierr = KSPGMRESSetRestart(_ksp, gmres_restart);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGMRESSetRestart");
-
-  // Non-zero initial guess
-  const bool nonzero_guess = this->parameters["nonzero_initial_guess"];
-  PetscBool petsc_nonzero_guess = PETSC_FALSE;
-  if (nonzero_guess)
-    petsc_nonzero_guess = PETSC_TRUE;
-  ierr = KSPSetInitialGuessNonzero(_ksp, petsc_nonzero_guess);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetInitialGuessNonzero");
-
-  // Monitor convergence
-  const bool monitor_convergence = this->parameters["monitor_convergence"];
-  if (monitor_convergence)
-  {
-    ierr = KSPMonitorSet(_ksp, KSPMonitorTrueResidualNorm,
-                         PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_ksp)),
-                         NULL);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
-  }
-
-  // Set tolerances
-  const int max_iterations = this->parameters["maximum_iterations"];
-  ierr = KSPSetTolerances(_ksp,
-                          this->parameters["relative_tolerance"],
-                          this->parameters["absolute_tolerance"],
-                          this->parameters["divergence_limit"],
-                          max_iterations);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetTolerances");
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::write_report(int num_iterations,

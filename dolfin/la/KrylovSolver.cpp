@@ -48,11 +48,6 @@ Parameters KrylovSolver::default_parameters()
   p.add("error_on_nonconvergence", true);
   p.add("nonzero_initial_guess",   false);
 
-  // GMRES options
-  Parameters p_gmres("gmres");
-  p_gmres.add("restart", 30);
-  p.add(p_gmres);
-
   // General preconditioner options
   Parameters p_pc("preconditioner");
   p_pc.add("shift_nonzero", 0.0);
