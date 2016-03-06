@@ -259,7 +259,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
          M, N);
   }
 
-  // Reinitialize solution vector if necessary
+  // Initialize solution vector, if necessary
   if (x.empty())
   {
     _matA->init_vector(x, 1);
@@ -268,9 +268,6 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 
   // Set some PETSc-specific options
   set_petsc_ksp_options();
-
-  // Set operators
-  //set_petsc_operators();
 
   // FIXME: Improve check for re-setting preconditioner, e.g. if
   //        parameters change
@@ -282,9 +279,9 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     _preconditioner->set(*this);
     preconditioner_set = true;
   }
-  // User defined preconditioner
   else if (pc_dolfin && !preconditioner_set)
   {
+    // User defined preconditioner
     PETScUserPreconditioner::setup(_ksp, *pc_dolfin);
     preconditioner_set = true;
   }
@@ -375,16 +372,16 @@ void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
 {
   // Set options prefix (if any)
   dolfin_assert(_ksp);
-  PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, _petsc_options_prefix.c_str());
+  PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, options_prefix.c_str());
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
 std::string PETScKrylovSolver::get_options_prefix() const
 {
   dolfin_assert(_ksp);
-
   const char* prefix = NULL;
-  KSPGetOptionsPrefix(_ksp, &prefix);
+  PetscErrorCode ierr = KSPGetOptionsPrefix(_ksp, &prefix);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetOptionsPrefix");
   return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
