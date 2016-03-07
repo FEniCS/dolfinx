@@ -856,7 +856,7 @@ def test_p41_box_2():
     solver = KrylovSolver()
     solver.parameters["absolute_tolerance"] = 1e-6
     solver.parameters["report"] = True
-    solver.parameters["gmres"]["restart"] = 50
+    #solver.parameters["gmres"]["restart"] = 50
     #solver.parameters["preconditioner"]["reuse"] = True
     solver.parameters["preconditioner"]["structure"] = "same"
 
