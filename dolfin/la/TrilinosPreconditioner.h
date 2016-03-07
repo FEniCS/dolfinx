@@ -29,7 +29,7 @@ namespace dolfin
 {
 
   class BelosKrylovSolver;
-  class TpetraMatrix
+  class TpetraMatrix;
 
   /// This class provides a common base for Trilinos preconditioners.
 
