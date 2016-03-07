@@ -371,7 +371,7 @@ void PETScKrylovSolver::set_tolerances(double relative, double absolute,
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_norm_type(norm_type type)
 {
-  KSPNormType ksp_norm_type;
+  KSPNormType ksp_norm_type = KSP_NORM_DEFAULT;
   switch (type)
   {
   case norm_type::none:
