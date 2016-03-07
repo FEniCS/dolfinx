@@ -52,7 +52,7 @@ namespace dolfin
   public:
 
     /// File formats
-    enum Type {x3d, xdmf, xml, vtk, raw, xyz, binary, svg};
+    enum class Type {x3d, xdmf, xml, vtk, raw, xyz, binary, svg};
 
     /// Create a file with given name
     ///
