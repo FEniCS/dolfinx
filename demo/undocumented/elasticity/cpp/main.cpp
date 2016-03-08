@@ -185,7 +185,7 @@ int main()
   Function stress(W);
   LocalSolver local_solver(std::shared_ptr<Form>(&a_s, NoDeleter()),
                            std::shared_ptr<Form>(&L_s, NoDeleter()),
-                           LocalSolver::Cholesky);
+                           LocalSolver::SolverType::Cholesky);
   local_solver.solve_local_rhs(stress);
 
   File file_stress("stress.pvd");
