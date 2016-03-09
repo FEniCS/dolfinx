@@ -59,6 +59,48 @@
 #endif
 
 //-----------------------------------------------------------------------------
+// Make DOLFIN aware of the types defined in UFC
+//-----------------------------------------------------------------------------
+%{
+#include <ufc.h>
+%}
+%ignore ufc::integral;
+%ignore ufc::cell_integral;
+%ignore ufc::exterior_facet_integral;
+%ignore ufc::interior_facet_integral;
+%ignore ufc::vertex_integral;
+%ignore ufc::custom_integral;
+%ignore ufc::cutcell_integral;
+%ignore ufc::interface_integral;
+%ignore ufc::overlap_integral;
+%rename(ufc_function) ufc::function;
+%include <ufc.h>
+
+std::shared_ptr<const ufc::finite_element> make_ufc_finite_element(void * element);
+std::shared_ptr<const ufc::dofmap> make_ufc_dofmap(void * dofmap);
+std::shared_ptr<const ufc::form> make_ufc_form(void * dofmap);
+
+%inline %{
+std::shared_ptr<const ufc::finite_element> make_ufc_finite_element(void * element)
+{
+  ufc::finite_element * p = static_cast<ufc::finite_element *>(element);
+  return std::shared_ptr<const ufc::finite_element>(p);
+}
+
+std::shared_ptr<const ufc::dofmap> make_ufc_dofmap(void * dofmap)
+{
+  ufc::dofmap * p = static_cast<ufc::dofmap *>(dofmap);
+  return std::shared_ptr<const ufc::dofmap>(p);
+}
+
+std::shared_ptr<const ufc::form> make_ufc_form(void * form)
+{
+  ufc::form * p = static_cast<ufc::form *>(form);
+  return std::shared_ptr<const ufc::form>(p);
+}
+%}
+
+//-----------------------------------------------------------------------------
 // Global modifications to the Array interface
 //-----------------------------------------------------------------------------
 %ignore dolfin::Array::operator=;
