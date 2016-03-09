@@ -104,9 +104,9 @@ namespace d_anonymous
       // Note: ALT key doesn't seem to be usable as a modifier.
       std::string keysym = Interactor->GetKeySym();
       char key = Interactor->GetKeyCode();
-      int modifiers = (VTKPlotter::SHIFT   * !!Interactor->GetShiftKey() +
-                       VTKPlotter::ALT     * !!Interactor->GetAltKey()   +
-                       VTKPlotter::CONTROL * !!Interactor->GetControlKey());
+      int modifiers = (static_cast<int>(VTKPlotter::Modifiers::SHIFT) * !!Interactor->GetShiftKey() +
+                       static_cast<int>(VTKPlotter::Modifiers::ALT) * !!Interactor->GetAltKey() +
+                       static_cast<int>(VTKPlotter::Modifiers::CONTROL) * !!Interactor->GetControlKey());
       if (keysym.size() == 1)
       {
         // Fix for things like shift+control+q which isn't sent correctly
@@ -117,7 +117,7 @@ namespace d_anonymous
       if (key && key == toupper(key))
       {
         // Things like '+', '&' which are not really shifted
-        modifiers &= ~VTKPlotter::SHIFT;
+        modifiers &= ~static_cast<int>(VTKPlotter::Modifiers::SHIFT);
       }
 
       log(DBG, "Keypress: %c|%d (%s)", key, modifiers, keysym.c_str());

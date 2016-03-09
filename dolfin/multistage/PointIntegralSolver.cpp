@@ -241,7 +241,7 @@ void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
 
   // Extract vertex dofs from tabulated tensor and put them into the
   // local stage solution vector
-  // Extract vertex dofs from tabulated tensor
+  //Extract vertex dofs from tabulated tensor
   for (unsigned int row = 0; row < _system_size; row++)
   {
     _local_stage_solutions[stage][row]
@@ -249,7 +249,8 @@ void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
   }
 
 
-  // FIXME: This below is dodgy and will sooner or later break in parallel (GNW)
+  // FIXME: This below is dodgy and will sooner or later break in
+  // parallel (GNW)
   // Put solution back into global stage solution vector
   // NOTE: This so an UFC.update (coefficient restriction) would just
   // work
@@ -348,9 +349,9 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
   {
     for (unsigned int col = 0; col < _system_size; col++)
     {
-      jac[row*_system_size + col] = loc_ufc.A[_local_to_local_dofs[row]*
-                                              _dof_offset*_system_size +
-                                              _local_to_local_dofs[col]];
+      jac[row*_system_size + col]
+        = loc_ufc.A[_local_to_local_dofs[row]*_dof_offset*_system_size
+                    + _local_to_local_dofs[col]];
     }
   }
   //t_impl_update_jac.stop();
@@ -409,7 +410,8 @@ void PointIntegralSolver::_forward_backward_subst(const std::vector<double>& A,
   }
 
   const unsigned int _system_size_m_1 = _system_size-1;
-  x[_system_size_m_1] = x[_system_size_m_1]/A[_system_size_m_1*_system_size+_system_size_m_1];
+  x[_system_size_m_1]
+    = x[_system_size_m_1]/A[_system_size_m_1*_system_size + _system_size_m_1];
 
   // Backward
   for (int i = _system_size-2; i >= 0; i--)
@@ -596,10 +598,8 @@ void PointIntegralSolver::_init()
 }
 //-----------------------------------------------------------------------------
 void PointIntegralSolver::_simplified_newton_solve(
-  std::size_t vert_ind, unsigned int stage,
-  const Cell& cell,
-  const ufc::cell& ufc_cell,
-  const std::vector<double>& coordinate_dofs)
+  std::size_t vert_ind, unsigned int stage, const Cell& cell,
+  const ufc::cell& ufc_cell, const std::vector<double>& coordinate_dofs)
 {
   //Timer _timer_newton_solve("Implicit stage: Newton solve");
   const Parameters& newton_solver_params = parameters("newton_solver");
@@ -656,8 +656,8 @@ void PointIntegralSolver::_simplified_newton_solve(
                                ufc_cell.orientation);
     t_impl_tt_F.stop();
 
-    // Extract vertex dofs from tabulated tensor, together with the old stage
-    // solution
+    // Extract vertex dofs from tabulated tensor, together with the
+    // old stage solution
     for (unsigned int row=0; row < _system_size; row++)
       _residual[row] = loc_ufc_F.A[_local_to_local_dofs[row]];
 
@@ -667,11 +667,16 @@ void PointIntegralSolver::_simplified_newton_solve(
 
     relative_residual = residual/initial_residual;
 
-    // Check for relative residual convergence together with a check for absolute tolerance
-    // The absolute tolerance check is combined a check that the residual is not changing
+    // Check for relative residual convergence together with a check
+    // for absolute tolerance
+    // The absolute tolerance check is combined a check that the
+    // residual is not changing
     // FIXME: Make the relative_previous_residual check configurable
-    if (relative_residual < rtol || (residual < atol && relative_previous_residual > 0.99))
+    if (relative_residual < rtol || (residual < atol
+                                     && relative_previous_residual > 0.99))
+    {
       break;
+    }
 
     // Should we recompute jacobian
     if (_recompute_jacobian[jac_index] || always_recompute_jacobian)
@@ -792,8 +797,8 @@ void PointIntegralSolver::_simplified_newton_solve(
       {
         info("Newton solver did not converge after %d iterations. vertex: %d, "
              "relative_previous_residual: %.3f, "
-             "relative_residual: %.3e, residual: %.3e.", max_iterations, vert_ind,
-             relative_previous_residual, relative_residual, residual);
+             "relative_residual: %.3e, residual: %.3e.", max_iterations,
+             vert_ind, relative_previous_residual, relative_residual, residual);
       }
       dolfin_error("PointIntegralSolver.h",
                    "Newton point integral solver",
