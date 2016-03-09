@@ -22,11 +22,12 @@
 //-----------------------------------------------------------------------------
 // Extend FunctionAXPY
 //-----------------------------------------------------------------------------
-//%extend dolfin::FunctionAXPY {
-//%pythoncode %{
-//__truediv__ = __div__
-//%}
-//}
+%extend dolfin::FunctionAXPY
+{
+%pythoncode %{
+__truediv__ = __div__
+%}
+}
 
 //-----------------------------------------------------------------------------
 // Extend FunctionSpace so one can check if a Function is in a FunctionSpace
