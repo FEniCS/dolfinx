@@ -230,29 +230,11 @@ string(STRIP DOLFIN_TARGET_LINK_LIBRARIES "${DOLFIN_TARGET_LINK_LIBRARIES}")
 # Add DOLFIN target libraries
 target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES}
   ${DOLFIN_EXTRA_TARGET_LINK_LIBRARIES})
+
 #------------------------------------------------------------------------------
 # SWIG
 
 if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
-
-  # Make sure we can import the UFC module and that it is compiled
-  # with present version of SWIG
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "from ufc import *; import sys; sys.stdout.write('.'.join([str(int(s)) for s in ufc.__swigversion__.split('.')]))"
-    OUTPUT_VARIABLE UFC_SWIGVERSION
-    RESULT_VARIABLE UFC_MODULE_NOT_FOUND
-    )
-
-  # Check that UFC can be imported
-  if (UFC_MODULE_NOT_FOUND)
-    message(WARNING "Unable to import UFC. Install latest UFC or check that PYTHONPATH is set appropriately. Python will be disabled.")
-  endif()
-
-  # Check that UFC was built with the version of SWIG that is being
-  # used
-  if (NOT UFC_MODULE_NOT_FOUND AND (NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}"))
-    message(WARNING "UFC compiled with different version of SWIG. Please install SWIG version ${UFC_SWIGVERSION} or recompile UFC with present SWIG.")
-  endif()
 
   # Add numpy defines to DOLFIN_PYTHON_DEFINITIONS
   if (NUMPY_FOUND)
@@ -260,7 +242,7 @@ if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
     # Set numpy version define
     set(DOLFIN_PYTHON_DEFINITIONS ${DOLFIN_PYTHON_DEFINITIONS};-DNUMPY_VERSION_MAJOR=${NUMPY_VERSION_MAJOR};-DNUMPY_VERSION_MINOR=${NUMPY_VERSION_MINOR};-DNUMPY_VERSION_MICRO=${NUMPY_VERSION_MICRO})
 
-    # Only set define for none depricated API for NUMPY version 1.7
+    # Only set define for none deprecated API for NUMPY version 1.7
     # and larger
     if(NUMPY_VERSION VERSION_GREATER 1.6.2)
       set(DOLFIN_PYTHON_DEFINITIONS ${DOLFIN_PYTHON_DEFINITIONS} -DNPY_NO_DEPRECATED_API=NPY_${NUMPY_VERSION_MAJOR}_${NUMPY_VERSION_MINOR}_API_VERSION)
@@ -268,10 +250,7 @@ if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
 
   endif()
 
-  # If suitble UFC SWIG extension is found, add SWIG subdirectory
-  if (NOT UFC_MODULE_NOT_FOUND AND ("${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}"))
-    add_subdirectory(swig)
-  endif()
+  add_subdirectory(swig)
 
 endif()
 

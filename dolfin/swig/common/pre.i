@@ -59,6 +59,47 @@
 #endif
 
 //-----------------------------------------------------------------------------
+// Make DOLFIN aware of the types defined in UFC
+//-----------------------------------------------------------------------------
+%{
+#include <ufc.h>
+%}
+// Avoid polluting the dolfin namespace with symbols introduced in ufc.h that we don't need
+%rename("$ignore", regextarget=1, fullname=1) "ufc::.*$";
+
+// Rename only the symbols we need to ufc_* 'namespace'
+%rename(ufc_cell) ufc::cell;
+%rename(ufc_function) ufc::function;
+%rename(ufc_finite_element) ufc::finite_element;
+%rename(ufc_dofmap) ufc::dofmap;
+%rename(ufc_form) ufc::form;
+%include <ufc.h>
+
+// Jit with ctypes will result in factory functions returning
+// just a void * to a new object, these functions will cast
+// them into our swig wrapper type system and make them
+// shared_ptrs in the process to manage their lifetime.
+%inline %{
+std::shared_ptr<const ufc::finite_element> make_ufc_finite_element(void * element)
+{
+  ufc::finite_element * p = static_cast<ufc::finite_element *>(element);
+  return std::shared_ptr<const ufc::finite_element>(p);
+}
+
+std::shared_ptr<const ufc::dofmap> make_ufc_dofmap(void * dofmap)
+{
+  ufc::dofmap * p = static_cast<ufc::dofmap *>(dofmap);
+  return std::shared_ptr<const ufc::dofmap>(p);
+}
+
+std::shared_ptr<const ufc::form> make_ufc_form(void * form)
+{
+  ufc::form * p = static_cast<ufc::form *>(form);
+  return std::shared_ptr<const ufc::form>(p);
+}
+%}
+
+//-----------------------------------------------------------------------------
 // Global modifications to the Array interface
 //-----------------------------------------------------------------------------
 %ignore dolfin::Array::operator=;
