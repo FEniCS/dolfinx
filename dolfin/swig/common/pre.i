@@ -64,22 +64,21 @@
 %{
 #include <ufc.h>
 %}
-%ignore ufc::integral;
-%ignore ufc::cell_integral;
-%ignore ufc::exterior_facet_integral;
-%ignore ufc::interior_facet_integral;
-%ignore ufc::vertex_integral;
-%ignore ufc::custom_integral;
-%ignore ufc::cutcell_integral;
-%ignore ufc::interface_integral;
-%ignore ufc::overlap_integral;
+// Avoid polluting the dolfin namespace with symbols introduced in ufc.h that we don't need
+%rename("$ignore", regextarget=1, fullname=1) "ufc::.*$";
+
+// Rename only the symbols we need to ufc_* 'namespace'
+%rename(ufc_cell) ufc::cell;
 %rename(ufc_function) ufc::function;
+%rename(ufc_finite_element) ufc::finite_element;
+%rename(ufc_dofmap) ufc::dofmap;
+%rename(ufc_form) ufc::form;
 %include <ufc.h>
 
-std::shared_ptr<const ufc::finite_element> make_ufc_finite_element(void * element);
-std::shared_ptr<const ufc::dofmap> make_ufc_dofmap(void * dofmap);
-std::shared_ptr<const ufc::form> make_ufc_form(void * dofmap);
-
+// Jit with ctypes will result in factory functions returning
+// just a void * to a new object, these functions will cast
+// them into our swig wrapper type system and make them
+// shared_ptrs in the process to manage their lifetime.
 %inline %{
 std::shared_ptr<const ufc::finite_element> make_ufc_finite_element(void * element)
 {
