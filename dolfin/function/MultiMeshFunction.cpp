@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2014 Anders Logg
+// Copyright (C) 2013-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-25
-// Last changed: 2014-05-23
+// Last changed: 2016-03-02
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
@@ -29,13 +29,6 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-MultiMeshFunction::MultiMeshFunction(const MultiMeshFunctionSpace& V)
-  : _function_space(reference_to_no_delete_pointer(V))
-{
-  // Initialize vector
-  init_vector();
-}
 //-----------------------------------------------------------------------------
 MultiMeshFunction::MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V)
   : _function_space(V)

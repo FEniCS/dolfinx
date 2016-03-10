@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2015-11-16
+// Last changed: 2016-03-02
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes. The solution is computed
@@ -28,6 +28,7 @@
 #include "MultiMeshPoisson.h"
 
 using namespace dolfin;
+using std::make_shared;
 
 // Source term (right-hand side)
 class Source : public Expression
@@ -56,58 +57,58 @@ void solve_poisson(double t,
 {
   // Create meshes
   double r = 0.5;
-  RectangleMesh mesh_0(Point(-r, -r), Point(r, r), 16, 16);
-  RectangleMesh mesh_1(Point(x1 - r, y1 - r), Point(x1 + r, y1 + r), 8, 8);
-  RectangleMesh mesh_2(Point(x2 - r, y2 - r), Point(x2 + r, y2 + r), 8, 8);
-  mesh_1.rotate(70*t);
-  mesh_2.rotate(-70*t);
+  auto mesh_0 = make_shared<RectangleMesh>(Point(-r, -r), Point(r, r), 16, 16);
+  auto mesh_1 = make_shared<RectangleMesh>(Point(x1 - r, y1 - r), Point(x1 + r, y1 + r), 8, 8);
+  auto mesh_2 = make_shared<RectangleMesh>(Point(x2 - r, y2 - r), Point(x2 + r, y2 + r), 8, 8);
+  mesh_1->rotate(70*t);
+  mesh_2->rotate(-70*t);
 
   // Build multimesh
-  MultiMesh multimesh;
-  multimesh.add(mesh_0);
-  multimesh.add(mesh_1);
-  multimesh.add(mesh_2);
-  multimesh.build();
+  auto multimesh = make_shared<MultiMesh>();
+  multimesh->add(mesh_0);
+  multimesh->add(mesh_1);
+  multimesh->add(mesh_2);
+  multimesh->build();
 
   // Create function space
-  MultiMeshPoisson::MultiMeshFunctionSpace V(multimesh);
+  auto V = make_shared<MultiMeshPoisson::MultiMeshFunctionSpace>(multimesh);
 
   // Create forms
-  MultiMeshPoisson::MultiMeshBilinearForm a(V, V);
-  MultiMeshPoisson::MultiMeshLinearForm L(V);
+  auto a = make_shared<MultiMeshPoisson::MultiMeshBilinearForm>(V, V);
+  auto L = make_shared<MultiMeshPoisson::MultiMeshLinearForm>(V);
 
   // Attach coefficients
-  Source f;
-  L.f = f;
+  auto f = make_shared<Source>();
+  L->f = f;
 
   // Assemble linear system
-  Matrix A;
-  Vector b;
-  assemble_multimesh(A, a);
-  assemble_multimesh(b, L);
+  auto A = make_shared<Matrix>();
+  auto b = make_shared<Vector>();
+  assemble_multimesh(*A, *a);
+  assemble_multimesh(*b, *L);
 
   // Apply boundary condition
-  Constant zero(0);
-  DirichletBoundary boundary;
-  MultiMeshDirichletBC bc(V, zero, boundary);
-  bc.apply(A, b);
+  auto zero = make_shared<Constant>(0);
+  auto boundary = make_shared<DirichletBoundary>();
+  auto bc = make_shared<MultiMeshDirichletBC>(V, zero, boundary);
+  bc->apply(*A, *b);
 
   // Compute solution
-  MultiMeshFunction u(V);
-  solve(A, *u.vector(), b);
+  auto u = make_shared<MultiMeshFunction>(V);
+  solve(*A, *u->vector(), *b);
 
   // Save to file
-  u0_file << *u.part(0);
-  u1_file << *u.part(1);
-  u2_file << *u.part(2);
+  u0_file << *u->part(0);
+  u1_file << *u->part(1);
+  u2_file << *u->part(2);
 
   // Plot solution (last time)
   if (plot_solution)
   {
-    plot(V.multimesh());
-    plot(u.part(0), "u_0");
-    plot(u.part(1), "u_1");
-    plot(u.part(2), "u_2");
+    plot(V->multimesh());
+    plot(u->part(0), "u_0");
+    plot(u->part(1), "u_1");
+    plot(u->part(2), "u_2");
     interactive();
   }
 }
