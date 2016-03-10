@@ -37,9 +37,57 @@ MultiMeshDirichletBC::MultiMeshDirichletBC(std::shared_ptr<const MultiMeshFuncti
                                            std::string method,
                                            bool check_midpoint,
                                            bool exclude_overlapped_boundaries)
-  : _exclude_overlapped_boundaries(exclude_overlapped_boundaries)
+  : _sub_domain(0),
+    _exclude_overlapped_boundaries(exclude_overlapped_boundaries)
 {
-  init(V, g, sub_domain, method, check_midpoint);
+  log(PROGRESS, "Initializing multimesh Dirichlet boundary conditions.");
+
+  // Initialize subdomain wrapper
+  _sub_domain.reset(new MultiMeshSubDomain(sub_domain,
+                                           V->multimesh(),
+                                           _exclude_overlapped_boundaries));
+
+  // Iterate over parts
+  for (std::size_t part = 0; part < V->num_parts(); part++)
+  {
+    // Get view of function space for part
+    std::shared_ptr<const FunctionSpace> V_part = V->view(part);
+
+    // Create Dirichlet boundary condition for part
+    std::shared_ptr<DirichletBC> bc(new DirichletBC(V_part,
+                                                    g,
+                                                    _sub_domain,
+                                                    method,
+                                                    check_midpoint));
+
+    // Add to list
+    _bcs.push_back(bc);
+  }
+}
+//-----------------------------------------------------------------------------
+MultiMeshDirichletBC::MultiMeshDirichletBC(std::shared_ptr<const MultiMeshFunctionSpace> V,
+                                          std::shared_ptr<const GenericFunction> g,
+                                          std::shared_ptr<const MeshFunction<std::size_t>> sub_domains,
+                                          std::size_t sub_domain,
+                                          std::size_t part,
+                                          std::string method)
+  : _sub_domain(0),
+    _exclude_overlapped_boundaries(false)
+{
+  // Get view of function space for part
+  std::shared_ptr<const FunctionSpace> V_part = V->view(part);
+
+  // Create Dirichlet boundary condition for part
+  std::shared_ptr<DirichletBC> bc(new DirichletBC(V_part,
+                                                  g,
+                                                  sub_domains,
+                                                  sub_domain,
+                                                  method));
+
+  // Add to list. Note that in this case (as opposed to the case when the
+  // boundary conditions are specified in terms of a subdomain) we will only
+  // have a single boundary condition.
+  _bcs.push_back(bc);
 }
 //-----------------------------------------------------------------------------
 MultiMeshDirichletBC::~MultiMeshDirichletBC()
@@ -49,15 +97,29 @@ MultiMeshDirichletBC::~MultiMeshDirichletBC()
 //-----------------------------------------------------------------------------
 void MultiMeshDirichletBC::apply(GenericMatrix& A) const
 {
-  // Iterate over boundary conditions
-  for (std::size_t part = 0; part < _bcs.size(); part++)
-  {
-    // Set current part for subdomain wrapper
-    dolfin_assert(_sub_domain);
-    _sub_domain->set_current_part(part);
+  // Check whether we have a list of boundary conditions, one for each
+  // part, or if we have a single boundary condition for a single
+  // part.
 
-    // Apply boundary condition
-    _bcs[part]->apply(A);
+  if (_sub_domain)
+  {
+    // Iterate over boundary conditions
+    for (std::size_t part = 0; part < _bcs.size(); part++)
+    {
+      // Set current part for subdomain wrapper
+      dolfin_assert(_sub_domain);
+      _sub_domain->set_current_part(part);
+
+      // Apply boundary condition for current part
+      _bcs[part]->apply(A);
+    }
+  }
+  else
+  {
+    dolfin_assert(_bcs.size() == 1);
+
+    // Apply the single boundary condition
+    _bcs[0]->apply(A);
   }
 }
 //-----------------------------------------------------------------------------
@@ -118,40 +180,6 @@ void MultiMeshDirichletBC::apply(GenericMatrix& A,
 
     // Apply boundary condition
     _bcs[part]->apply(A, b, x);
-  }
-}
-//-----------------------------------------------------------------------------
-void MultiMeshDirichletBC::init(std::shared_ptr<const MultiMeshFunctionSpace> V,
-                                std::shared_ptr<const GenericFunction> g,
-                                std::shared_ptr<const SubDomain> sub_domain,
-                                std::string method,
-                                bool check_midpoint)
-{
-  log(PROGRESS, "Initializing multimesh Dirichlet boundary conditions.");
-
-  // Clear old data if any
-  _bcs.clear();
-
-  // Initialize subdomain wrapper
-  _sub_domain.reset(new MultiMeshSubDomain(sub_domain,
-                                           V->multimesh(),
-                                           _exclude_overlapped_boundaries));
-
-  // Iterate over parts
-  for (std::size_t part = 0; part < V->num_parts(); part++)
-  {
-    // Get view of function space for part
-    std::shared_ptr<const FunctionSpace> V_part = V->view(part);
-
-    // Create Dirichlet boundary condition for part
-    std::shared_ptr<DirichletBC> bc(new DirichletBC(V_part,
-                                                    g,
-                                                    _sub_domain,
-                                                    method,
-                                                    check_midpoint));
-
-    // Add to list
-    _bcs.push_back(bc);
   }
 }
 //-----------------------------------------------------------------------------
