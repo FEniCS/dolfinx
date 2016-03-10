@@ -229,19 +229,6 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   // Set operators
   //set_petsc_operators();
 
-  // Set near null space for preconditioner
-  if (_preconditioner)
-  {
-    dolfin_assert(_matP);
-    const MatNullSpace pc_nullspace = _preconditioner->near_nullspace();
-
-    if (pc_nullspace && !preconditioner_set)
-    {
-      ierr = MatSetNearNullSpace(_matP->mat(), pc_nullspace);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetNearNullSpace");
-    }
-  }
-
   // FIXME: Improve check for re-setting preconditioner, e.g. if
   //        parameters change
   // FIXME: Solve using matrix free matrices fails if no user provided

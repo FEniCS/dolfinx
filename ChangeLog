@@ -1,11 +1,16 @@
-- Remove XDMF from File interface. XDMF is XML based, and has many possibilities for
-	file access, which are not accessible through the limited File interface and
-	"<<" ">>" operators. Instead of File, use XDMFFile, and use XDMFFile.read() and
-	XDMFFile.write() for I/O. Demos and tests have been updated to show usage.
-        XDMF now also supports ASCII I/O in serial, useful for compatibility with users
-	who do not have the HDF5 library available.
-- Require polynomial degree or finite element for Expressions in the Python
-	interface (fixes Issue #355, https://bitbucket.org/fenics-project/dolfin/issues/355)
+- Remove PETScPreconditioner::set_near_nullspace and add
+	PETScMatrix::set_near_nullspace
+- Build system updates for VTK 7.0
+- Remove XDMF from File interface. XDMF is XML based, and has many
+	possibilities for file access, which are not accessible through
+	the limited File interface and "<<" ">>" operators. Instead of
+	File, use XDMFFile, and use XDMFFile.read() and XDMFFile.write()
+	for I/O. Demos and tests have been updated to show usage.  XDMF
+	now also supports ASCII I/O in serial, useful for compatibility
+	with users who do not have the HDF5 library available.
+- Require polynomial degree or finite element for Expressions in
+	the Python interface (fixes Issue #355,
+	https://bitbucket.org/fenics-project/dolfin/issues/355)
 - Switch to Google Test framwork for C++ unit tests
 - Fix bug when reading domain data from mesh file for a ghosted mesh
 - Remove reference versions of constructors for many classes that

@@ -16,9 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells, 2009.
-//
-// First added:  2003-03-13
-// Last changed: 2009-09-08
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Variable.h>
@@ -32,8 +29,8 @@
 using namespace dolfin;
 
 // Definition of the global dolfin::cout and dolfin::endl variables
-LogStream dolfin::cout(LogStream::COUT);
-LogStream dolfin::endl(LogStream::ENDL);
+LogStream dolfin::cout(LogStream::Type::COUT);
+LogStream dolfin::endl(LogStream::Type::ENDL);
 
 //-----------------------------------------------------------------------------
 LogStream::LogStream(Type type) : _type(type)
@@ -48,7 +45,7 @@ LogStream::~LogStream()
 //-----------------------------------------------------------------------------
 LogStream& LogStream::operator<< (const LogStream& stream)
 {
-  if (stream._type == ENDL)
+  if (stream._type == Type::ENDL)
   {
     // Send buffer to log system
     info(buffer.str());

@@ -734,6 +734,7 @@ def test_p36_box_1(cd_tempdir, pushpop_parameters):
 
 
 @skip_in_parallel
+@skip_if_not_HDF5
 def test_p37_box_1(cd_tempdir):
     mesh = UnitSquareMesh(3, 3)
     V = FunctionSpace(mesh, "CG", 1)
@@ -750,6 +751,7 @@ def test_p37_box_1(cd_tempdir):
 
 
 @skip_in_parallel
+@skip_if_not_HDF5
 def test_p37_box_2():
     time_series = TimeSeries(mpi_comm_world(), "simulation_data")
     mesh = UnitSquareMesh(3, 3)

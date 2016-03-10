@@ -196,7 +196,7 @@ RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
 
     // No refinement
     if (num_marked == 0)
-      refinement_markers[i] = no_refinement;
+      refinement_markers[i] = static_cast<int>(marker_type::no_refinement);
 
     // Mark for bisection
     else if (num_marked == 1 && !is_bisected)
@@ -204,21 +204,23 @@ RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
 
     // Mark for regular refinement
     else if (num_marked == edges_per_cell && !is_bisected)
-      refinement_markers[i] = regular_refinement;
+      refinement_markers[i] = static_cast<int>(marker_type::regular_refinement);
 
     // Mark for bisection backtracking
     else if (num_marked == 2 && is_bisected)
-      refinement_markers[i] = backtrack_bisection;
+      refinement_markers[i] = static_cast<int>(marker_type::backtrack_bisection);
 
     // Mark for bisection backtracking and refinement
     else if (num_marked == edges_per_cell && is_bisected)
-      refinement_markers[i] = backtrack_bisection_refine;
+      refinement_markers[i] = static_cast<int>(marker_type::backtrack_bisection_refine);
 
     // Sanity check
     else
+    {
       dolfin_error("RegularCutRefinement.cpp",
                    "compute marked edges",
                    "Unexpected number of edges marked");
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -238,16 +240,16 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     const int marker = refinement_markers[cell->index()];
     switch (marker)
     {
-    case no_refinement:
+    case static_cast<int>(marker_type::no_refinement):
       num_cells += 1;
       break;
-    case regular_refinement:
+    case static_cast<int>(marker_type::regular_refinement):
       num_cells += 4;
       break;
-    case backtrack_bisection:
+    case static_cast<int>(marker_type::backtrack_bisection):
       num_cells += 2;
       break;
-    case backtrack_bisection_refine:
+    case static_cast<int>(marker_type::backtrack_bisection_refine):
       num_cells += 3;
       break;
     default:
@@ -302,11 +304,9 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   {
     // Get marker
     const int marker = refinement_markers[cell->index()];
-
-    if (marker == no_refinement)
+    if (marker == static_cast<int>(marker_type::no_refinement))
     {
       // No refinement: just copy cell to new mesh
-
       std::vector<std::size_t> vertices;
       for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
         vertices.push_back(vertex->index());
@@ -320,7 +320,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       {
         const std::size_t bisection_twin = (*bisection_twins)[cell->index()];
         const int twin_marker = refinement_markers[bisection_twin];
-        dolfin_assert(twin_marker == no_refinement);
+        dolfin_assert(twin_marker == static_cast<int>(marker_type::no_refinement));
         if (unrefined_cells[bisection_twin] >= 0)
         {
           const std::size_t i = current_cell - 1;
@@ -330,7 +330,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
         }
       }
     }
-    else if (marker == regular_refinement)
+    else if (marker == static_cast<int>(marker_type::regular_refinement))
     {
       // Regular refinement: divide into sub-simplices
       dolfin_assert(unrefined_cells[cell->index()] == -1);
@@ -363,8 +363,8 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
         editor.add_cell(current_cell++, *_cell);
     }
-    else if (marker == backtrack_bisection
-             || marker == backtrack_bisection_refine)
+    else if (marker == static_cast<int>(marker_type::backtrack_bisection)
+             || marker ==static_cast<int>(marker_type::backtrack_bisection_refine))
     {
       // Special case: backtrack bisected cells
       dolfin_assert(unrefined_cells[cell->index()] == -1);
@@ -417,10 +417,13 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       // Locate new vertices on bisected edge (if any)
       std::size_t E0 = 0;
       std::size_t E1 = 0;
-      if (marker == backtrack_bisection_refine)
+      if (marker == static_cast<int>(marker_type::backtrack_bisection_refine))
         E0 = offset + marked_edges.find(edges_0[bisection_edges.first]);
-      if (twin_marker == backtrack_bisection_refine)
+      if (twin_marker
+          == static_cast<int>(marker_type::backtrack_bisection_refine))
+      {
         E1 = offset + marked_edges.find(edges_1[bisection_edges.second]);
+      }
 
       // Add middle two cells (always)
       dolfin_assert(cell_data.size() == 3);
@@ -431,7 +434,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       editor.add_cell(current_cell++, cell_data);
 
       // Add one or two remaining cells in current cell (left)
-      if (marker == backtrack_bisection)
+      if (marker == static_cast<int>(marker_type::backtrack_bisection))
       {
         cell_data[0] = v0; cell_data[1] = e2; cell_data[2] = e1;
         editor.add_cell(current_cell++, cell_data);
@@ -451,7 +454,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       }
 
       // Add one or two remaining cells in twin cell (right)
-      if (twin_marker == backtrack_bisection)
+      if (twin_marker == static_cast<int>(marker_type::backtrack_bisection))
       {
         cell_data[0] = v1; cell_data[1] = e0; cell_data[2] = e2;
         editor.add_cell(current_cell++, cell_data);

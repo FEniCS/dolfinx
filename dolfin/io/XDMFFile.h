@@ -58,7 +58,7 @@ namespace dolfin
     enum class Encoding {HDF5, ASCII};
 
     /// Re-use or recompute mesh partition stored in file
-    enum UseFilePartition : bool {yes=true, no=false};
+    enum class UseFilePartition : bool {yes=true, no=false};
 
     /// Constructor
     XDMFFile(MPI_Comm comm, const std::string filename);

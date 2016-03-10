@@ -25,6 +25,7 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel
 
+
 @skip_if_not_PETSc
 def test_options_prefix():
     "Test set/get prefix option for PETSc objects"

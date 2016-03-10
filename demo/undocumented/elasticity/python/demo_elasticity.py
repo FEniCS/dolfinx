@@ -110,10 +110,12 @@ u = Function(V)
 # generate compatible vectors for the nullspace.
 null_space = build_nullspace(V, u.vector())
 
+# Attach near nullspace to matrix
+as_backend_type(A).set_near_nullspace(null_space)
+
 # Create PETSC smoothed aggregation AMG preconditioner and attach near
 # null space
 pc = PETScPreconditioner("petsc_amg")
-pc.set_nullspace(null_space)
 
 # Create CG Krylov solver and turn convergence monitoring on
 solver = PETScKrylovSolver("cg", pc)

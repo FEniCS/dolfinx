@@ -100,11 +100,8 @@ namespace dolfin
     ///         The UFC form.
     ///     function_spaces (std::vector<_FunctionSpace_>)
     ///         Vector of function spaces.
-    ///     coefficients (std::vector<_GenericFunction_>)
-    ///         Vector of coefficients.
     Form(std::shared_ptr<const ufc::form> ufc_form,
-         std::vector<std::shared_ptr<const FunctionSpace>> function_spaces,
-         std::vector<std::shared_ptr<const GenericFunction>> coefficients);
+         std::vector<std::shared_ptr<const FunctionSpace>> function_spaces);
 
     /// Destructor
     virtual ~Form();
@@ -123,6 +120,13 @@ namespace dolfin
     ///     std::size_t
     ///         The number of coefficients.
     std::size_t num_coefficients() const;
+
+    /// Return original coefficient position for each coefficient (0 <= i < n)
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         The position of coefficient i in original ufl form coefficients.
+    std::size_t original_coefficient_position(std::size_t i) const;
 
     /// Return coloring type for colored (multi-threaded) assembly of form
     /// over a mesh entity of a given dimension

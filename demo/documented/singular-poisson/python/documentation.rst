@@ -11,6 +11,7 @@ forms and the solver.
 
 .. include:: ../common.txt
 
+
 Implementation
 --------------
 
@@ -107,22 +108,21 @@ We specify a Vector for storing the result by defining a
     u = Function(V)
 
 Next, we specify the iterative solver we want to use, in this case a
-:py:class:`KrylovSolver <dolfin.cpp.la.KrylovSolver>`. The first
-argument is the left-hand side matrix, and the second argument
-specifies the method used. In this case we use the Generalized Minimum
-Residual (GMRES) method.
+:py:class:`PETScKrylovSolver <dolfin.cpp.la.PETScKrylovSolver>` with
+the conjugate gradient (CG) method, and attach the matrix operator to
+the solver.
 
 .. code-block:: python
 
     # Create Krylov solver
-    solver = KrylovSolver(A, "gmres")
+    solver = PETScKrylovSolver("cg")
+    solver.set_operator(A)
 
 We impose our additional constraint by removing the null space
 component from the solution vector. In order to do this we need a
 basis for the null space. This is done by creating a vector that spans
 the null space, and then defining a basis from it. The basis is then
-attached to the :py:class:`KrylovSolver <dolfin.cpp.la.KrylovSolver>`
-as its null space.
+attached to the matrix ``A`` as its null space.
 
 .. code-block:: python
 
@@ -153,6 +153,7 @@ and plot the solution
 .. code-block:: python
 
     plot(u, interactive=True)
+
 
 Complete code
 -------------

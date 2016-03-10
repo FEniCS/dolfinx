@@ -504,7 +504,7 @@ void XDMFFile::read(Mesh& mesh, UseFilePartition use_file_partition)
 
     // Try to read the mesh from the associated HDF5 file
     mesh_file.read(mesh, topo.hdf5_dataset, geom.hdf5_dataset,
-                   topo.cell_type, use_file_partition);
+                   topo.cell_type, static_cast<bool>(use_file_partition));
 #else
     dolfin_error("XDMFile.cpp", "open Mesh file", "Need HDF5 support");
 #endif
