@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2014 Anders Logg
+// Copyright (C) 2013-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2015-11-12
+// Last changed: 2016-03-02
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -31,13 +31,6 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-MultiMeshFunctionSpace::MultiMeshFunctionSpace(const MultiMesh& multimesh)
-  : _multimesh(reference_to_no_delete_pointer(multimesh)),
-    _dofmap(new MultiMeshDofMap())
-{
-  // Do nothing
-}
 //-----------------------------------------------------------------------------
 MultiMeshFunctionSpace::MultiMeshFunctionSpace(std::shared_ptr<const MultiMesh> multimesh)
   : _multimesh(multimesh),
@@ -94,11 +87,6 @@ MultiMeshFunctionSpace::add(std::shared_ptr<const FunctionSpace> function_space)
   _function_spaces.push_back(function_space);
   log(PROGRESS, "Added function space to multimesh space; space has %d part(s).",
       _function_spaces.size());
-}
-//-----------------------------------------------------------------------------
-void MultiMeshFunctionSpace::add(const FunctionSpace& function_space)
-{
-  add(reference_to_no_delete_pointer(function_space));
 }
 //-----------------------------------------------------------------------------
 void MultiMeshFunctionSpace::build()
