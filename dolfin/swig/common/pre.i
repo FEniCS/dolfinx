@@ -29,10 +29,10 @@
 //-----------------------------------------------------------------------------
 // petsc4py/slepc4py typemaps
 //-----------------------------------------------------------------------------
-// This must come early. The petsc4py/slepc4py module defines typemaps which
-// we will later use on %extended classes (in post).  The typemaps
-// must be in scope when swig sees the original class, not the
-// extended definition.
+// This must come early. The petsc4py/slepc4py module defines typemaps
+// which we will later use on %extended classes (in post).  The
+// typemaps must be in scope when swig sees the original class, not
+// the extended definition.
 
 // Remove petsc4py typemaps that check for nullity of pointer
 // and object itself we only care about the former.
@@ -64,21 +64,30 @@
 %{
 #include <ufc.h>
 %}
-// Avoid polluting the dolfin namespace with symbols introduced in ufc.h that we don't need
+// Avoid polluting the dolfin namespace with symbols introduced in
+// ufc.h that we don't need
 %rename("$ignore", regextarget=1, fullname=1) "ufc::.*$";
+
+// Brings back ('un-ignore') some destructors for SWIG to handle
+// shared_ptr wrapping
+%rename("%s", regextarget=1, fullname=1) "ufc::cell::~cell()$";
+%rename("%s", regextarget=1, fullname=1) "ufc::dofmap::~dofmap()$";
+%rename("%s", regextarget=1, fullname=1) "ufc::finite_element::~finite_element()*$";
+%rename("%s", regextarget=1, fullname=1) "ufc::form::~form()*$";
+%rename("%s", regextarget=1, fullname=1) "ufc::function::~function()*$";
 
 // Rename only the symbols we need to ufc_* 'namespace'
 %rename(ufc_cell) ufc::cell;
-%rename(ufc_function) ufc::function;
-%rename(ufc_finite_element) ufc::finite_element;
 %rename(ufc_dofmap) ufc::dofmap;
+%rename(ufc_finite_element) ufc::finite_element;
 %rename(ufc_form) ufc::form;
+%rename(ufc_function) ufc::function;
 %include <ufc.h>
 
-// Jit with ctypes will result in factory functions returning
-// just a void * to a new object, these functions will cast
-// them into our swig wrapper type system and make them
-// shared_ptrs in the process to manage their lifetime.
+// Jit with ctypes will result in factory functions returning just a
+// void * to a new object, these functions will cast them into our
+// swig wrapper type system and make them shared_ptrs in the process
+// to manage their lifetime.
 %inline %{
 std::shared_ptr<const ufc::finite_element> make_ufc_finite_element(void * element)
 {
@@ -138,8 +147,7 @@ std::shared_ptr<const ufc::form> make_ufc_form(void * form)
 %ignore dolfin::Hierarchical::operator=;
 
 //-----------------------------------------------------------------------------
-// Ignore all foo and rename foo_shared_ptr to _foo for SWIG >= 2.0
-// and ignore foo_shared_ptr for SWIG < 2.0
+// Ignore all foo and rename foo_shared_ptr to _foo
 //-----------------------------------------------------------------------------
 %ignore dolfin::Hierarchical::parent;
 %rename(_parent) dolfin::Hierarchical::parent_shared_ptr;
