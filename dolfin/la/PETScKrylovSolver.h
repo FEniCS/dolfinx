@@ -47,18 +47,17 @@ namespace dolfin
   class PETScSNESSolver;
   class VectorSpaceBasis;
 
-  /// This class implements Krylov methods for linear systems
-  /// of the form Ax = b. It is a wrapper for the Krylov solvers
-  /// of PETSc.
+  /// This class implements Krylov methods for linear systems of the
+  /// form Ax = b. It is a wrapper for the Krylov solvers of PETSc.
 
   class PETScKrylovSolver : public GenericLinearSolver, public PETScObject
   {
   public:
 
-    /// Create Krylov solver for a particular method and names
+    /// Create Krylov solver for a particular method and named
     /// preconditioner
-    PETScKrylovSolver(std::string method = "default",
-                      std::string preconditioner = "default");
+    PETScKrylovSolver(std::string method="default",
+                      std::string preconditioner="default");
 
     /// Create Krylov solver for a particular method and
     /// PETScPreconditioner (shared_ptr version)
@@ -83,9 +82,6 @@ namespace dolfin
     void set_operators(std::shared_ptr<const GenericLinearOperator> A,
                        std::shared_ptr<const GenericLinearOperator> P);
 
-    /// Get operator (matrix)
-    const PETScBaseMatrix& get_operator() const;
-
     /// Solve linear system Ax = b and return number of iterations
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
@@ -96,21 +92,43 @@ namespace dolfin
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                       const GenericVector& b);
 
-    /// Reuse preconditioner if true, otherwise do not, even if matrix
-    /// operator changes (by default preconditioner is re-built if the
-    /// matrix changes)
+    /// Use nonzero intial guess for solution function
+    /// (nonzero_guess=true, the solution vector x will not be zeroed
+    /// before the solver starts)
+    void set_nonzero_guess(bool nonzero_guess);
+
+    /// Reuse preconditioner if true, even if matrix operator changes
+    /// (by default preconditioner will be re-built if the matrix
+    /// changes)
     void set_reuse_preconditioner(bool reuse_pc);
 
-    /// Sets the prefix used by PETSc when searching the options
+    /// Set tolerances (relative residual, alsolute residial, maximum
+    /// number of iterations)
+    void set_tolerances(double relative, double absolute, double diverged,
+                        int max_iter);
+
+    /// Set norm type used in convergence testing. Not all solvers
+    /// types support all norm types (see
+    /// http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPSetNormType.html).
+    enum class norm_type {none, preconditioned, unpreconditioned, natural};
+    void set_norm_type(norm_type type);
+
+    /// Monitor residual at each iteration
+    void monitor(bool monitor_convergence);
+
+    /// Sets the prefix used by PETSc when searching the PETSc options
     /// database
     void set_options_prefix(std::string options_prefix);
 
-    /// Returns the prefix used by PETSc when searching the options
-    /// database
+    /// Returns the prefix used by PETSc when searching the PETSc
+    /// options database
     std::string get_options_prefix() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
+
+    /// Return MPI communicator
+    MPI_Comm mpi_comm() const;
 
     /// Return PETSc KSP pointer
     KSP ksp() const;
@@ -118,7 +136,7 @@ namespace dolfin
     /// Return a list of available solver methods
     static std::map<std::string, std::string> methods();
 
-    /// Return a list of available preconditioners
+    /// Return a list of available named preconditioners
     static std::map<std::string, std::string> preconditioners();
 
     /// Default parameter values
@@ -126,17 +144,15 @@ namespace dolfin
 
     /// Return parameter type: "krylov_solver" or "lu_solver"
     std::string parameter_type() const
-    {
-      return "krylov_solver";
-    }
+    { return "krylov_solver"; }
 
     friend class PETScSNESSolver;
     friend class PETScTAOSolver;
 
   private:
 
-    // Initialize KSP solver
-    void init(const std::string& method);
+    // Return norm_type enum for norm string
+    static PETScKrylovSolver::norm_type get_norm_type(std::string norm);
 
     // Set operator (matrix)
     void _set_operator(std::shared_ptr<const PETScBaseMatrix> A);
@@ -149,24 +165,17 @@ namespace dolfin
     std::size_t _solve(const PETScBaseMatrix& A, PETScVector& x,
                        const PETScVector& b);
 
-    // Set options that affect KSP object
-    void set_petsc_ksp_options();
-
     // Report the number of iterations
     void write_report(int num_iterations, KSPConvergedReason reason);
 
     void check_dimensions(const PETScBaseMatrix& A, const GenericVector& x,
                           const GenericVector& b) const;
 
-    // Prefix for PETSc options database
-    std::string _petsc_options_prefix;
-
     // Available solvers
     static const std::map<std::string, const KSPType> _methods;
 
     // Available solvers descriptions
-    static const std::map<std::string, std::string>
-      _methods_descr;
+    static const std::map<std::string, std::string> _methods_descr;
 
     // PETSc solver pointer
     KSP _ksp;

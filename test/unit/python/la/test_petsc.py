@@ -27,6 +27,36 @@ from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel
 
 
 @skip_if_not_PETSc
+def test_krylov_solver_options_prefix():
+    "Test set/get PETScKrylov solver prefix option"
+
+    # Prefix
+    prefix = "test_foo_"
+
+    # Create solver and set prefix
+    solver = PETScKrylovSolver()
+    solver.set_options_prefix(prefix)
+
+    # Check prefix (pre solve)
+    assert solver.get_options_prefix() == prefix
+
+    # Solve a system of equations
+    mesh = UnitSquareMesh(4, 4)
+    V = FunctionSpace(mesh, "Lagrange", 1)
+    u, v = TrialFunction(V), TestFunction(V)
+    a = u*v*dx
+    L = Constant(1.0)*v*dx
+    A = assemble(a)
+    b = assemble(L)
+    x = b.copy()
+    solver.set_operator(A)
+    solver.solve(x, b)
+
+    # Check prefix (post solve)
+    assert solver.get_options_prefix() == prefix
+
+
+@skip_if_not_PETSc
 def test_options_prefix():
     "Test set/get prefix option for PETSc objects"
 
