@@ -387,7 +387,9 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
     ksp_norm_type = KSP_NORM_NATURAL;
     break;
   default:
-    error("Unknown norm type for PETSc Krylov solving convergence testing");
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "set convergence norm type",
+                 "Unknown norm type");
   }
 
   dolfin_assert(_ksp);
@@ -471,7 +473,9 @@ PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type(std::string norm)
     return norm_type::natural;
   else
   {
-    error("Unknown norm type string for PETSc Krylov convergence norm");
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "get norm type from enum",
+                 "Unknown norm type \"%s\"", norm.c_str());
     return norm_type::none;
   }
 }
