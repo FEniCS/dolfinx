@@ -22,8 +22,8 @@
 // Modified by Martin Alnæs, 2008.
 // Modified by Fredrik Valdmanis, 2011.
 
-#ifndef __PETSC_VECTOR_H
-#define __PETSC_VECTOR_H
+#ifndef __DOLFIN_PETSC_VECTOR_H
+#define __DOLFIN_PETSC_VECTOR_H
 
 #ifdef HAS_PETSC
 
@@ -61,6 +61,9 @@ namespace dolfin
 
     /// Create empty vector
     PETScVector();
+
+    /// Create empty vector on an MPI communicator
+    explicit PETScVector(MPI_Comm comm);
 
     /// Create vector of size N
     PETScVector(MPI_Comm comm, std::size_t N);
@@ -252,15 +255,9 @@ namespace dolfin
   private:
 
     // Initialise PETSc vector
-    void _init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
+    void _init(std::pair<std::size_t, std::size_t> range,
                const std::vector<std::size_t>& local_to_global_map,
                const std::vector<la_index>& ghost_indices);
-
-    // Return true if vector is distributed
-    bool distributed() const;
-
-    // Prefix for PETSc options database
-    std::string _petsc_options_prefix;
 
     // PETSc Vec pointer
     Vec _x;

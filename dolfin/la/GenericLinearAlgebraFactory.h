@@ -55,7 +55,8 @@ namespace dolfin
     virtual std::shared_ptr<GenericMatrix> create_matrix() const = 0;
 
     /// Create empty vector
-    virtual std::shared_ptr<GenericVector> create_vector() const = 0;
+    virtual std::shared_ptr<GenericVector>
+      create_vector(MPI_Comm comm) const = 0;
 
     /// Create empty tensor layout
     virtual std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const = 0;

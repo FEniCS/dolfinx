@@ -46,17 +46,17 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    Vector()
+    Vector(MPI_Comm comm=MPI_COMM_WORLD)
     {
       DefaultFactory factory;
-      vector = factory.create_vector();
+      vector = factory.create_vector(comm);
     }
 
     /// Create vector of size N
     Vector(MPI_Comm comm, std::size_t N)
     {
       DefaultFactory factory;
-      vector = factory.create_vector();
+      vector = factory.create_vector(comm);
       vector->init(comm, N);
     }
 
