@@ -26,7 +26,7 @@ def test_save_and_read_xml_function(cd_tempdir):
     Q = FunctionSpace(mesh, "CG", 3)
     F0 = Function(Q)
     F1 = Function(Q)
-    E = Expression("x[0]")
+    E = Expression("x[0]", degree=1)
     F0.interpolate(E)
 
     # Save to XML File

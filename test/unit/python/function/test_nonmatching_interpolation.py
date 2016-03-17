@@ -27,19 +27,22 @@ import numpy
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
 
+
 class Quadratic2D(Expression):
     def eval(self, values, x):
         values[0] = x[0]*x[0] + x[1]*x[1] + 1.0
+
 
 class Quadratic3D(Expression):
     def eval(self, values, x):
         values[0] = x[0]*x[0] + x[1]*x[1] + x[2]*x[2] + 1.0
 
+
 @skip_in_parallel
 def test_functional2D():
     """Test integration of function interpolated in non-matching meshes"""
 
-    f = Quadratic2D()
+    f = Quadratic2D(degree=2)
 
     # Interpolate quadratic function on course mesh
     mesh0 = UnitSquareMesh(8, 8)
@@ -64,7 +67,7 @@ def test_functional2D():
 def test_functional3D():
     """Test integration of function interpolated in non-matching meshes"""
 
-    f = Quadratic3D()
+    f = Quadratic3D(degree=2)
 
     # Interpolate quadratic function on course mesh
     mesh0 = UnitCubeMesh(4, 4, 4)

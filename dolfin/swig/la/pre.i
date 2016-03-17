@@ -174,8 +174,6 @@
 // PETSc/SLEPc backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_PETSC
-// Ignore MatNullSpace not properly wrapped by SWIG
-%ignore dolfin::PETScPreconditioner::near_nullspace() const;
 
 // Only ignore C++ accessors if petsc4py is enabled
 #ifdef HAS_PETSC4PY

@@ -53,8 +53,8 @@ class DirichletBoundary(SubDomain):
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-f = Source()
-g = Flux()
+f = Source(degree=2)
+g = Flux(degree=2)
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
 

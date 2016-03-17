@@ -64,12 +64,11 @@ bc = DirichletBC(V, g, DirichletBoundary())
 # Define variational problem
 u = Function(V)
 v = TestFunction(V)
-f = Expression("x[0]*sin(x[1])")
+f = Expression("x[0]*sin(x[1])", degree=2)
 F = inner((1 + u**2)*grad(u), grad(v))*dx - f*v*dx
 
 # Compute solution
-solve(F == 0, u, bc, solver_parameters={"newton_solver":
-                                        {"relative_tolerance": 1e-6}})
+solve(F == 0, u, bc, solver_parameters={"newton_solver": {"relative_tolerance": 1e-6}})
 
 # Plot solution and solution gradient
 plot(u, title="Solution")

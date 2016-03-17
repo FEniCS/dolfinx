@@ -16,9 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells 2005.
-//
-// First added:  2003-03-13
-// Last changed: 2009-08-11
 
 #ifndef __LOG_STREAM_H
 #define __LOG_STREAM_H
@@ -44,7 +41,7 @@ namespace dolfin
   public:
 
     /// Stream types
-    enum Type {COUT, ENDL};
+    enum class Type {COUT, ENDL};
 
     /// Create log stream of given type
     LogStream(Type type);
@@ -79,7 +76,8 @@ namespace dolfin
     /// Output for variable (calling str() method)
     LogStream& operator<< (const Variable& variable);
 
-    /// Output for mesh entity (not subclass of Variable for efficiency)
+    /// Output for mesh entity (not subclass of Variable for
+    /// efficiency)
     LogStream& operator<< (const MeshEntity& entity);
 
     /// Output for point (not subclass of Variable for efficiency)

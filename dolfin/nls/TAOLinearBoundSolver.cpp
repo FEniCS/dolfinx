@@ -396,11 +396,6 @@ void TAOLinearBoundSolver::set_ksp_options()
   {
     Parameters krylov_parameters = parameters("krylov_solver");
 
-    // GMRES restart parameter
-    const int gmres_restart = krylov_parameters("gmres")["restart"];
-    ierr = KSPGMRESSetRestart(ksp, gmres_restart);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGMRESSetRestart");
-
     // Non-zero initial guess
     const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
     if (nonzero_guess)

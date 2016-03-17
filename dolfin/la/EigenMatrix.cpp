@@ -390,7 +390,7 @@ void EigenMatrix::init(const TensorLayout& tensor_layout)
   _matA.reserve(num_nonzeros_per_row);
 
   const std::vector<std::vector<std::size_t>> pattern
-    = sparsity_pattern->diagonal_pattern(SparsityPattern::sorted);
+    = sparsity_pattern->diagonal_pattern(SparsityPattern::Type::sorted);
 
   if (!eigen_matrix_type::IsRowMajor)
     warning ("Entering sparsity for RowMajor matrix - performance may be affected");

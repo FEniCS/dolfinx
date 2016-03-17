@@ -47,7 +47,7 @@ def compute(nsteps, coordinate_degree, element_degree, gdim):
     V = FunctionSpace(mesh, "Lagrange", element_degree)
 
     # Compute domain area and average h
-    area = assemble(1.0*dx(mesh))
+    area = assemble(1.0*dx(mesh, degree=2))
     h = (area / mesh.num_cells())**(1.0 / mesh.topology().dim())
 
     # Define boundary condition
@@ -58,8 +58,8 @@ def compute(nsteps, coordinate_degree, element_degree, gdim):
     u = TrialFunction(V)
     v = TestFunction(V)
     f = Constant(1.0)
-    a = inner(grad(u), grad(v))*dx
-    L = f*v*dx
+    a = inner(grad(u), grad(v))*dx(degree=3)
+    L = f*v*dx(degree=3)
 
     # Compute solution
     u = Function(V)
