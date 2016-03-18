@@ -1,4 +1,5 @@
-// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson and Anders Logg
+// Copyright (C) 2004-2016 Johan Hoffman, Johan Jansson, Anders Logg
+// and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -28,8 +29,6 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/NoDeleter.h>
-#include <dolfin/common/Set.h>
 #include <dolfin/log/log.h>
 #include "SparsityPattern.h"
 #include "PETScVector.h"
@@ -245,8 +244,6 @@ void PETScVector::set(const double* block, std::size_t m,
                       const dolfin::la_index* rows)
 {
   dolfin_assert(_x);
-  if (m == 0)
-    return;
   PetscErrorCode ierr = VecSetValues(_x, m, rows, block, INSERT_VALUES);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValues");
 }
@@ -255,8 +252,6 @@ void PETScVector::set_local(const double* block, std::size_t m,
                             const dolfin::la_index* rows)
 {
   dolfin_assert(_x);
-  if (m == 0)
-    return;
   PetscErrorCode ierr = VecSetValuesLocal(_x, m, rows, block, INSERT_VALUES);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValuesLocal");
 }
@@ -265,8 +260,6 @@ void PETScVector::add(const double* block, std::size_t m,
                       const dolfin::la_index* rows)
 {
   dolfin_assert(_x);
-  if (m == 0)
-    return;
   PetscErrorCode ierr = VecSetValues(_x, m, rows, block, ADD_VALUES);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValues");
 }
@@ -275,8 +268,6 @@ void PETScVector::add_local(const double* block, std::size_t m,
                             const dolfin::la_index* rows)
 {
   dolfin_assert(_x);
-  if (m == 0)
-    return;
   PetscErrorCode ierr = VecSetValuesLocal(_x, m, rows, block, ADD_VALUES);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetValuesLocal");
 }
@@ -801,7 +792,7 @@ void PETScVector::set_options_prefix(std::string options_prefix)
                  "Cannot set options prefix since PETSc Vec has not been initialized");
   }
 
-  // Set options prefix
+  // Set PETSc options prefix
   PetscErrorCode ierr = VecSetOptionsPrefix(_x, options_prefix.c_str());
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecSetOptionsPrefix");
 }

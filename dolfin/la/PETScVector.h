@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Johan Hoffman, Johan Jansson, Anders Logg
+// Copyright (C) 2004-2016 Johan Hoffman, Johan Jansson, Anders Logg
 // and Garth N. Wells
 //
 // This file is part of DOLFIN.
@@ -106,7 +106,8 @@ namespace dolfin
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range);
 
-    /// Initialize vector with given ownership range and with ghost values
+    /// Initialize vector with given ownership range and with ghost
+    /// values
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range,
                       const std::vector<std::size_t>& local_to_global_map,
@@ -250,7 +251,6 @@ namespace dolfin
     const PETScVector& operator= (const PETScVector& x);
 
     friend class PETScBaseMatrix;
-    friend class PETScMatrix;
 
   private:
 
