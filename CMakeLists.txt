@@ -338,16 +338,6 @@ set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams
     timer)
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
-# Check for required package UFC
-find_package(UFC 1.7.0 QUIET HINTS ${UFC_DIR})
-if (NOT UFC_FOUND)
-  message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 1.7.0.\n"
-    "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
-else()
-  message(STATUS "UFC version: ${UFC_VERSION_STRING}")
-endif()
-
 # Check for required package Eigen3
 find_package(Eigen3 3.2.0 REQUIRED)
 
@@ -420,6 +410,9 @@ if (DOLFIN_ENABLE_PYTHON)
   endif()
 
 endif()
+
+# Check for required package UFC
+find_package(UFC MODULE 1.7.0)
 
 # Check for PETSc, SLEPc and petsc4py, slepc4py
 if (DOLFIN_ENABLE_PETSC)
