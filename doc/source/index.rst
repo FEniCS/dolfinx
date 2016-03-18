@@ -3,15 +3,21 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-DOLFIN's documentation
-======================
+DOLFIN documentation
+====================
 
-This documentation is under development.
+*This documentation is under development*
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
+
+   installation
+   using
+   help
+   api
+   developer
 
 
 

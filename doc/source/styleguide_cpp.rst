@@ -1,7 +1,7 @@
 .. _developers_styleguide_cpp:
 
-FEniCS C++ coding style guide
-=============================
+C++ coding style guide
+======================
 
 Naming conventions
 ------------------

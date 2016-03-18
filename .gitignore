@@ -133,3 +133,5 @@ cmake.local
 
 # Google Test Files
 /GoogleTest/
+
+build/
