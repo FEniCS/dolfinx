@@ -63,10 +63,6 @@ namespace dolfin
     void set_operators(std::shared_ptr<const GenericLinearOperator> A,
                        std::shared_ptr<const GenericLinearOperator> P);
 
-    /// Set null space of the operator (matrix). This is used to solve
-    /// singular systems
-    void set_nullspace(const VectorSpaceBasis& nullspace);
-
     /// Solve linear system Ax = b
     std::size_t solve(GenericVector& x, const GenericVector& b);
 

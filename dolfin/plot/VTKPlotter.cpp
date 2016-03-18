@@ -170,7 +170,8 @@ void VTKPlotter::plot(std::shared_ptr<const Variable> variable)
     for (std::size_t i = 0; i < keys.size(); i++)
     {
       const char c = tolower(keys[i]);
-      const int modifiers = (c == keys[i] ? 0 : SHIFT);
+      const int modifiers
+        = (c == keys[i] ? 0 : static_cast<int>(Modifiers::SHIFT));
       key_pressed(modifiers, c, std::string(&c, 1));
     }
     param_keys.reset();
@@ -348,12 +349,12 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
     vtk_pipeline->render();
     return true;
 
-  case CONTROL + '+': // Up-scale glyphs, etc.
+  case static_cast<int>(Modifiers::CONTROL) + '+': // Up-scale glyphs, etc.
     parameters["scale"] = (double)parameters["scale"] * 1.2;
     rescale();
     vtk_pipeline->render();
     return true;
-  case CONTROL + '-': // Down-scale glyphs, etc.
+  case static_cast<int>(Modifiers::CONTROL) + '-': // Down-scale glyphs, etc.
     parameters["scale"] = (double)parameters["scale"] / 1.2;
     rescale();
     vtk_pipeline->render();
@@ -369,7 +370,7 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
     vtk_pipeline->render();
     return true;
 
-  case SHIFT + 'h': // Print helptext to console
+  case static_cast<int>(Modifiers::SHIFT) + 'h': // Print helptext to console
     std::cout << get_helptext();
     return true;
 
@@ -377,7 +378,7 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
     write_png();
     return true;
 
-  case SHIFT + 'p': // Save plot to PDF
+  case static_cast<int>(Modifiers::SHIFT) + 'p': // Save plot to PDF
     write_pdf();
     return true;
 
@@ -442,9 +443,9 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
     }
 
   case 's':
-  case CONTROL + 's':
-  case SHIFT + 's':
-  case CONTROL + SHIFT + 's':
+  case static_cast<int>(Modifiers::CONTROL) + 's':
+  case static_cast<int>(Modifiers::SHIFT) + 's':
+  case static_cast<int>(Modifiers::CONTROL) + static_cast<int>(Modifiers::SHIFT) + 's':
     // shift/control may be mouse-interaction modifiers
     {
 #if (VTK_MAJOR_VERSION == 6) || ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6))
@@ -469,21 +470,21 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
     vtk_pipeline->render();
     return true;
 
-  case CONTROL + 'w':
+  case static_cast<int>(Modifiers::CONTROL) + 'w':
     active_plotters->remove(this);
     return true;
 
-  case CONTROL + 'q':
+  case static_cast<int>(Modifiers::CONTROL) + 'q':
     active_plotters->clear();
     vtk_pipeline->stop_interaction();
     return true;
 
-  case SHIFT + 'q':
+  case static_cast<int>(Modifiers::SHIFT) + 'q':
     run_to_end = true;
     vtk_pipeline->stop_interaction();
     return true;
 
-  case CONTROL + 'c':
+  case static_cast<int>(Modifiers::CONTROL) + 'c':
     dolfin_error("VTKPlotter", "continue execution", "Aborted by user");
 
   case 'q':

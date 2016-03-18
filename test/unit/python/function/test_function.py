@@ -131,7 +131,7 @@ def test_assign(V, W):
 
         # Test errounious assignments
         uu = Function(V1)
-        f = Expression("1.0")
+        f = Expression("1.0", degree=0)
         with pytest.raises(RuntimeError):
             uu.assign(1.0)
         with pytest.raises(RuntimeError):
@@ -230,8 +230,8 @@ def test_call(R, V, W, mesh):
     u0 = Function(R)
     u1 = Function(V)
     u2 = Function(W)
-    e0=Expression("x[0]+x[1]+x[2]")
-    e1=Expression(("x[0]+x[1]+x[2]", "x[0]-x[1]-x[2]", "x[0]+x[1]+x[2]"))
+    e0=Expression("x[0] + x[1] + x[2]", degree=1)
+    e1=Expression(("x[0] + x[1] + x[2]", "x[0] - x[1] - x[2]", "x[0] + x[1] + x[2]"), degree=1)
 
     u0.vector()[:] = 1.0
     u1.interpolate(e0)
@@ -300,17 +300,17 @@ def test_scalar_conditions(R):
         not c < 0
 
 def test_interpolation_mismatch_rank0(W):
-    f = Expression("1.0")
+    f = Expression("1.0", degree=0)
     with pytest.raises(RuntimeError):
         interpolate(f, W)
 
 def test_interpolation_mismatch_rank1(W):
-    f = Expression(("1.0", "1.0"))
+    f = Expression(("1.0", "1.0"), degree=0)
     with pytest.raises(RuntimeError):
         interpolate(f, W)
 
 def test_interpolation_jit_rank0(V):
-    f = Expression("1.0")
+    f = Expression("1.0", degree=0)
     w = interpolate(f, V)
     x = w.vector()
     assert x.max() == 1
@@ -371,7 +371,7 @@ def test_extrapolation(V):
 
 
 def test_interpolation_jit_rank1(W):
-    f = Expression(("1.0", "1.0", "1.0"))
+    f = Expression(("1.0", "1.0", "1.0"), degree=0)
     w = interpolate(f, W)
     x = w.vector()
     assert x.max() == 1
@@ -394,13 +394,13 @@ def test_interpolation_old(V, W, mesh):
             return (3,)
 
     # Scalar interpolation
-    f0 = F0()
+    f0 = F0(degree=0)
     f = Function(V)
     f.interpolate(f0)
     assert round(f.vector().norm("l1") - mesh.num_vertices(), 7) == 0
 
     # Vector interpolation
-    f1 = F1()
+    f1 = F1(degree=0)
     f = Function(W)
     f.interpolate(f1)
     assert round(f.vector().norm("l1") - 3*mesh.num_vertices(), 7) == 0

@@ -15,21 +15,21 @@ equation. In particular it demonstrates the use of
 Equation and problem definition
 -------------------------------
 
-The Cahn-Hilliard equation is a parabolic equation and is typically used
-to model phase separation in binary mixtures.  It involves first-order
-time derivatives, and second- and fourth-order spatial derivatives.
-The equation reads:
+The Cahn-Hilliard equation is a parabolic equation and is typically
+used to model phase separation in binary mixtures.  It involves
+first-order time derivatives, and second- and fourth-order spatial
+derivatives.  The equation reads:
 
 .. math::
    \frac{\partial c}{\partial t} - \nabla \cdot M \left(\nabla\left(\frac{d f}{d c}
              - \lambda \nabla^{2}c\right)\right) &= 0 \quad {\rm in} \ \Omega, \\
-   M\left(\nabla\left(\frac{d f}{d c} - \lambda \nabla^{2}c\right)\right) &= 0 \quad {\rm on} \ \partial\Omega, \\
+   M\left(\nabla\left(\frac{d f}{d c} - \lambda \nabla^{2}c\right)\right) \cdot n &= 0 \quad {\rm on} \ \partial\Omega, \\
    M \lambda \nabla c \cdot n &= 0 \quad {\rm on} \ \partial\Omega.
 
-where :math:`c` is the unknown field, the function :math:`f` is usually
-non-convex in :math:`c` (a fourth-order polynomial is commonly used),
-:math:`n` is the outward directed boundary normal, and :math:`M` is a
-scalar parameter.
+where :math:`c` is the unknown field, the function :math:`f` is
+usually non-convex in :math:`c` (a fourth-order polynomial is commonly
+used), :math:`n` is the outward directed boundary normal, and
+:math:`M` is a scalar parameter.
 
 Mixed form
 ^^^^^^^^^^
@@ -68,10 +68,10 @@ the equation:
    \int_{\Omega} \mu_{n+1} v  \, {\rm d} x - \int_{\Omega} \frac{d f_{n+1}}{d c} v  \, {\rm d} x - \int_{\Omega} \lambda \nabla c_{n+1} \cdot \nabla v \, {\rm d} x
           &= 0 \quad \forall \ v \in V
 
-where :math:`dt = t_{n+1} - t_{n}`
-and :math:`\mu_{n+\theta} = (1-\theta) \mu_{n} + \theta \mu_{n+1}`.
-The task is: given :math:`c_{n}` and :math:`\mu_{n}`, solve the above
-equation to find :math:`c_{n+1}` and :math:`\mu_{n+1}`.
+where :math:`dt = t_{n+1} - t_{n}` and :math:`\mu_{n+\theta} =
+(1-\theta) \mu_{n} + \theta \mu_{n+1}`.  The task is: given
+:math:`c_{n}` and :math:`\mu_{n}`, solve the above equation to find
+:math:`c_{n+1}` and :math:`\mu_{n+1}`.
 
 
 Demo parameters

@@ -59,8 +59,8 @@ f = Constant((-0.08, 0.0))
 
 # The displacement u must be such that the current configuration
 # doesn't escape the box [xmin, xmax] x [ymin, ymax]
-constraint_u = Expression(("xmax-x[0]", "ymax-x[1]"), xmax=10.0, ymax=2.0)
-constraint_l = Expression(("xmin-x[0]", "ymin-x[1]"), xmin=0.0, ymin=-0.2)
+constraint_u = Expression(("xmax-x[0]", "ymax-x[1]"), xmax=10.0, ymax=2.0, degree=1)
+constraint_l = Expression(("xmin-x[0]", "ymin-x[1]"), xmin=0.0, ymin=-0.2, degree=1)
 u_min = interpolate(constraint_l, V)
 u_max = interpolate(constraint_u, V)
 
@@ -125,9 +125,17 @@ parameters.parse()
 # Solve the problem
 solver.solve(BucklingProblem(), u.vector(), u_min.vector(), u_max.vector())
 
-# Save solution in XDMF format
-out = File("u.xdmf")
-out << u
+# Save solution in XDMF format if available
+out = XDMFFile(mesh.mpi_comm(), "u.xdmf")
+if has_hdf5():
+    out.write(u)
+elif MPI.size(mesh.mpi_comm()) == 1:
+    encoding = XDMFFile.Encoding_ASCII
+    out.write(u, encoding)
+else:
+    # Save solution in vtk format
+    out = File("u.pvd")
+    out << u
 
 # Plot the current configuration
 plot(u, mode="displacement", wireframe=True, title="Displacement field")

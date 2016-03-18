@@ -38,7 +38,7 @@ v = TestFunction(V)
 a = inner(nabla_grad(w), nabla_grad(v))*dx
 f = Expression('4*exp(-0.5*(pow((R*x[0] - x0)/sigma, 2)) '
                      '-0.5*(pow((R*x[1] - y0)/sigma, 2)))',
-               R=R, x0=x0, y0=y0, sigma=sigma)
+               R=R, x0=x0, y0=y0, sigma=sigma, degree=2)
 L = f*v*dx
 
 # Compute solution
@@ -62,7 +62,7 @@ print('Maximum real deflection is', max_D)
 
 # Verification for "flat" pressure (large sigma)
 if sigma >= 50:
-    w_exact = Expression('1 - x[0]*x[0] - x[1]*x[1]')
+    w_exact = Expression('1 - x[0]*x[0] - x[1]*x[1]', degree=2)
     w_e = interpolate(w_exact, V)
     w_e_array = w_e.vector().array()
     w_array = w.vector().array()

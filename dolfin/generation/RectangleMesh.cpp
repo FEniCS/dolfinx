@@ -19,6 +19,7 @@
 // Modified by Nuno Lopes 2008
 // Modified by Kristian B. Oelgaard 2009
 
+#include <cmath>
 #include <boost/multi_array.hpp>
 
 #include <dolfin/common/constants.h>

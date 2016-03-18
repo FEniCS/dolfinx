@@ -45,8 +45,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-# NOTE: The PETSc Makefile returns a bunch of libraries with '-L' and '-l',
-# wheres we would prefer complete paths. For a discussion, see
+# NOTE: The PETSc Makefile returns a bunch of libraries with '-L' and
+# '-l', wheres we would prefer complete paths. For a discussion, see
 # http://www.cmake.org/Wiki/CMake:Improving_Find*_Modules#Current_workarounds
 
 message(STATUS "Checking for package 'PETSc'")
@@ -130,8 +130,7 @@ endif()
 if (FOUND_PETSC_CONF)
 
   # Find PETSc config file
-  find_file(PETSC_VARIABLES_FILE NAMES variables PATHS ${PETSC_DIR}/lib/petsc/conf
-    ${PETSC_DIR}/lib/petsc-conf ${PETSC_DIR}/conf)
+  find_file(PETSC_VARIABLES_FILE NAMES variables PATHS ${PETSC_DIR}/lib/petsc/conf)
 
   # Create a temporary Makefile to probe the PETSc configuration
   set(petsc_config_makefile ${PROJECT_BINARY_DIR}/Makefile.petsc)
@@ -153,27 +152,22 @@ show :
   endmacro()
 
   # Call macro to get the PETSc variables
-  petsc_get_variable(PETSC_INCLUDE PETSC_INCLUDE)          # 3.1
-  petsc_get_variable(PETSC_CC_INCLUDES PETSC_CC_INCLUDES)  # dev
-  set(PETSC_INCLUDE ${PETSC_INCLUDE} ${PETSC_CC_INCLUDES})
-  petsc_get_variable(PETSC_LIB_BASIC PETSC_LIB_BASIC)
+  petsc_get_variable(PETSC_CC_INCLUDES PETSC_CC_INCLUDES)
+  petsc_get_variable(PETSC_LIBS PETSC_LIB)
   petsc_get_variable(PETSC_LIB_DIR PETSC_LIB_DIR)
-  set(PETSC_LIB "-L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}")
-
-  # Call macro to get the PETSc 3rd-party libraries
-  petsc_get_variable(PETSC_EXTERNAL_LIB_BASIC PETSC_EXTERNAL_LIB_BASIC)
+  set(PETSC_LIB "-L${PETSC_LIB_DIR} ${PETSC_LIBS}")
 
   # Extract include paths and libraries from compile command line
   include(ResolveCompilerPaths)
-  resolve_includes(PETSC_INCLUDE_DIRS "${PETSC_INCLUDE}")
+  resolve_includes(PETSC_INCLUDE_DIRS "${PETSC_CC_INCLUDES}")
   resolve_libraries(PETSC_LIBRARIES "${PETSC_LIB}")
-  resolve_libraries(PETSC_EXTERNAL_LIBRARIES "${PETSC_EXTERNAL_LIB_BASIC}")
 
   # Add some extra libraries on OSX
   if (APPLE)
 
-    # CMake will have troubel finding the gfortan libraries if compiling
-    # with clang (the libs may be required by 3rd party Fortran libraries)
+    # CMake will have troubel finding the gfortan libraries if
+    # compiling with clang (the libs may be required by 3rd party
+    # Fortran libraries)
     find_program(GFORTRAN_EXECUTABLE gfortran)
     if (GFORTRAN_EXECUTABLE)
       execute_process(COMMAND ${GFORTRAN_EXECUTABLE} -print-file-name=libgfortran.dylib
@@ -191,7 +185,8 @@ show :
       list(APPEND PETSC_EXTERNAL_LIBRARIES ${X11_LIBRARIES})
     endif()
 
-    # ResolveCompilerPaths strips OSX frameworks, so add BLAS here for OSX
+    # ResolveCompilerPaths strips OSX frameworks, so add BLAS here for
+    # OSX
     petsc_get_variable(PETSC_BLASLAPACK_LIB BLASLAPACK_LIB)
     list(APPEND PETSC_EXTERNAL_LIBRARIES ${PETSC_BLASLAPACK_LIB})
 
@@ -220,9 +215,9 @@ elseif (FOUND_PETSC_CONF)
 
   # Add MPI variables if MPI has been found
   if (MPI_C_FOUND)
-    set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
+    set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
     set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES})
-    set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
   endif()
 
   # Check PETSc version
@@ -314,60 +309,16 @@ int main()
     set(PETSC_TEST_RUNS TRUE)
   else()
     message(STATUS "Performing test PETSC_TEST_RUNS - Failed")
-
-    # Test program does not run - try adding PETSc 3rd party libs and test again
-    list(APPEND CMAKE_REQUIRED_LIBRARIES ${PETSC_EXTERNAL_LIBRARIES})
-
-    try_run(
-      PETSC_TEST_3RD_PARTY_LIBS_EXITCODE
-      PETSC_TEST_3RD_PARTY_LIBS_COMPILED
-      ${CMAKE_CURRENT_BINARY_DIR}
-      ${PETSC_TEST_LIB_CPP}
-      CMAKE_FLAGS
-        "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-	"-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
-      COMPILE_OUTPUT_VARIABLE PETSC_TEST_3RD_PARTY_LIBS_COMPILE_OUTPUT
-      RUN_OUTPUT_VARIABLE PETSC_TEST_3RD_PARTY_LIBS_OUTPUT
-      )
-
-    if (PETSC_TEST_3RD_PARTY_LIBS_COMPILED AND PETSC_TEST_3RD_PARTY_LIBS_EXITCODE EQUAL 0)
-      message(STATUS "Performing test PETSC_TEST_3RD_PARTY_LIBS_RUNS - Success")
-      set(PETSC_LIBRARIES ${PETSC_LIBRARIES} ${PETSC_EXTERNAL_LIBRARIES}
-	CACHE STRING "PETSc libraries." FORCE)
-      set(PETSC_TEST_RUNS TRUE)
-    else()
-      message(STATUS "Performing test PETSC_TEST_3RD_PARTY_LIBS_RUNS - Failed")
-    endif()
-  endif()
-
-  # Run test program to check for PETSc Cusp
-  include(CheckCXXSourceRuns)
-  check_cxx_source_runs("
-#include \"petsc.h\"
-int main()
-{
-#if PETSC_HAVE_CUSP
-  return 0;
-#else
-  return 1;
-#endif
-}
-" PETSC_CUSP_FOUND)
-
-  if (PETSC_CUSP_FOUND)
-    message(STATUS "PETSc configured with Cusp support")
-  else()
-    message(STATUS "PETSc configured without Cusp support")
   endif()
 
 endif()
 
 # Check sizeof(PetscInt)
 if (PETSC_INCLUDE_DIRS)
-   include(CheckTypeSize)
-   set(CMAKE_EXTRA_INCLUDE_FILES petsc.h)
-   check_type_size("PetscInt" PETSC_INT_SIZE)
-   set(CMAKE_EXTRA_INCLUDE_FILES)
+  include(CheckTypeSize)
+  set(CMAKE_EXTRA_INCLUDE_FILES petsc.h)
+  check_type_size("PetscInt" PETSC_INT_SIZE)
+  set(CMAKE_EXTRA_INCLUDE_FILES)
 endif()
 
 # Standard package handling

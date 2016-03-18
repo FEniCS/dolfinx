@@ -48,11 +48,6 @@ Parameters KrylovSolver::default_parameters()
   p.add("error_on_nonconvergence", true);
   p.add("nonzero_initial_guess",   false);
 
-  // GMRES options
-  Parameters p_gmres("gmres");
-  p_gmres.add("restart", 30);
-  p.add(p_gmres);
-
   // General preconditioner options
   Parameters p_pc("preconditioner");
   p_pc.add("shift_nonzero", 0.0);
@@ -120,11 +115,6 @@ KrylovSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
   dolfin_assert(solver);
   solver->parameters.update(parameters);
   solver->set_operators(A, P);
-}
-//-----------------------------------------------------------------------------
-void KrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
-{
-  solver->set_nullspace(nullspace);
 }
 //-----------------------------------------------------------------------------
 std::size_t KrylovSolver::solve(GenericVector& x, const GenericVector& b)

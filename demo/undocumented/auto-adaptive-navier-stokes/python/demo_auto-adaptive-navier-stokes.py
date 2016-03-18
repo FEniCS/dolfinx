@@ -56,7 +56,7 @@ w = Function(W)
 (u, p) = (as_vector((w[0], w[1])), w[2])
 
 # Prescribed pressure
-p0 = Expression("(4.0 - x[0])/4.0")
+p0 = Expression("(4.0 - x[0])/4.0", degree=2)
 
 # Define variational forms
 n = FacetNormal(mesh)

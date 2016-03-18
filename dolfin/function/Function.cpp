@@ -219,22 +219,22 @@ Function& Function::operator[] (std::size_t i) const
 //-----------------------------------------------------------------------------
 FunctionAXPY Function::operator+(const Function& other) const
 {
-  return FunctionAXPY(*this, other, FunctionAXPY::ADD_ADD);
+  return FunctionAXPY(*this, other, FunctionAXPY::Direction::ADD_ADD);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY Function::operator+(const FunctionAXPY& axpy) const
 {
-  return FunctionAXPY(axpy, *this, FunctionAXPY::ADD_ADD);
+  return FunctionAXPY(axpy, *this, FunctionAXPY::Direction::ADD_ADD);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY Function::operator-(const Function& other) const
 {
-  return FunctionAXPY(*this, other, FunctionAXPY::ADD_SUB);
+  return FunctionAXPY(*this, other, FunctionAXPY::Direction::ADD_SUB);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY Function::operator-(const FunctionAXPY& axpy) const
 {
-  return FunctionAXPY(axpy, *this, FunctionAXPY::SUB_ADD);
+  return FunctionAXPY(axpy, *this, FunctionAXPY::Direction::SUB_ADD);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY Function::operator*(double scalar) const

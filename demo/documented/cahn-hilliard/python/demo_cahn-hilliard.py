@@ -28,7 +28,7 @@ from dolfin import *
 
 # Class representing the intial conditions
 class InitialConditions(Expression):
-    def __init__(self):
+    def __init__(self, **kwargs):
         random.seed(2 + MPI.rank(mpi_comm_world()))
     def eval(self, values, x):
         values[0] = 0.63 + 0.02*(0.5 - random.random())
@@ -76,7 +76,7 @@ c,  mu  = split(u)
 c0, mu0 = split(u0)
 
 # Create intial conditions and interpolate
-u_init = InitialConditions()
+u_init = InitialConditions(degree=1)
 u.interpolate(u_init)
 u0.interpolate(u_init)
 

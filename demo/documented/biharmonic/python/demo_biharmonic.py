@@ -72,7 +72,7 @@ v = TestFunction(V)
 h = CellSize(mesh)
 h_avg = (h('+') + h('-'))/2.0
 n = FacetNormal(mesh)
-f = Source()
+f = Source(degree=2)
 
 # Penalty parameter
 alpha = Constant(8.0)

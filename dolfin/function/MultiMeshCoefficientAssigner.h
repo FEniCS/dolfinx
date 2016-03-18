@@ -1,4 +1,4 @@
-// Copyright (C) 2015 Anders Logg
+// Copyright (C) 2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,12 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2015-11-05
-// Last changed: 2015-11-05
+// Last changed: 2016-03-02
 
 #ifndef __MULTIMESH_COEFFICIENT_ASSIGNER_H
 #define __MULTIMESH_COEFFICIENT_ASSIGNER_H
 
 #include <cstddef>
+#include <memory>
 
 namespace dolfin
 {
@@ -54,7 +55,7 @@ namespace dolfin
     ~MultiMeshCoefficientAssigner();
 
     /// Assign coefficient
-    void operator= (const GenericFunction& coefficient);
+    void operator= (std::shared_ptr<const GenericFunction> coefficient);
 
   private:
 

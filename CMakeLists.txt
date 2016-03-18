@@ -78,6 +78,7 @@ option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
 option(DOLFIN_ENABLE_GTEST "Enable C++ unit tests with Google Test if DOLFIN_ENABLE_TESTING is true (requires Internet connection to download Google Test when first configured." ON)
 option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
+option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 option(DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py." OFF)
 
@@ -584,9 +585,29 @@ endif()
 
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
-  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
-    vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
-    NO_MODULE)
+  # Find all modules
+  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
+
+  # Add required modules (depends on VTK version)
+  if(TARGET vtkRenderingOpenGL2)
+    # VTK 7.0
+    find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
+      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL2
+      NO_MODULE)
+  elseif(TARGET vtkRenderingFreeTypeOpenGL)
+    # For VTK < 6.3, vtkRenderingFreeTypeOpenGL module is required, so
+    # add if available (vtkRenderingFreeTypeOpenGL was removed from
+    # VTK 6.3)
+    find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
+      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
+      vtkRenderingFreeTypeOpenGL NO_MODULE)
+  elseif(TARGET vtkRenderingOpenGL)
+    # VTK 6.3
+    find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
+      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture
+      vtkRenderingOpenGL NO_MODULE)
+  endif()
+
   set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
   if (VTK_FOUND)
     if ("${VTK_VERSION}" VERSION_LESS "5.2")
