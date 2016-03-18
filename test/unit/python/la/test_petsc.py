@@ -23,20 +23,28 @@ GenericFoo interface"""
 from __future__ import print_function
 import pytest
 from dolfin import *
-from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel
+from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel, pushpop_parameters
 
 
 #@skip_if_not_PETSc
-#def test_vector():
-#    "Test PETScVector interface"0
-#
-#    x = PETScVector(mpi_comm_world())
-#    x.init(mpi_comm_world(), 300)
+def test_vector():
+    "Test PETScVector interface"
+
+    prefix = "my_vector_"
+    x = PETScVector(mpi_comm_world())
+    x.set_options_prefix(prefix)
+
+    assert x.get_options_prefix() == prefix
+    x.init(mpi_comm_world(), 300)
+    assert x.get_options_prefix() == prefix
 
 
 @skip_if_not_PETSc
-def test_krylov_solver_options_prefix():
+def test_krylov_solver_options_prefix(pushpop_parameters):
     "Test set/get PETScKrylov solver prefix option"
+
+    # Set backend
+    parameters["linear_algebra_backend"] = "PETSc"
 
     # Prefix
     prefix = "test_foo_"
@@ -65,7 +73,7 @@ def test_krylov_solver_options_prefix():
 
 
 @skip_if_not_PETSc
-def test_options_prefix():
+def test_options_prefix(pushpop_parameters):
     "Test set/get prefix option for PETSc objects"
 
     def run_test(A, init_function):
