@@ -447,10 +447,6 @@ void PETScSNESSolver::set_linear_solver_parameters()
 
     Parameters krylov_parameters = parameters("krylov_solver");
 
-    // GMRES restart parameter
-    const int gmres_restart = krylov_parameters("gmres")["restart"];
-    KSPGMRESSetRestart(ksp, gmres_restart);
-
     // Non-zero initial guess
     const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
     if (nonzero_guess)

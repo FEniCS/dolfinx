@@ -31,6 +31,11 @@ namespace dolfin
   {
   public:
 
+    /// Singleton instance. Calling this ensures singleton instance of
+    /// SubSystemsManager is initialized according to the "Construct
+    /// on First Use" idiom.
+    static SubSystemsManager& singleton();
+
     /// Initialise MPI
     static void init_mpi();
 
@@ -81,9 +86,6 @@ namespace dolfin
 
     // Finalize PETSc
     static void finalize_petsc();
-
-    // Singleton instance
-    static SubSystemsManager& singleton();
 
     // State variables
     bool petsc_initialized;

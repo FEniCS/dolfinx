@@ -49,9 +49,8 @@ def _create_dp_problem(dim):
     # Create expression used to interpolate initial data
     y_dim = 1 if dim > 1 else 0
     z_dim = 2 if dim > 2 else (1 if dim > 1 else 0)
-    e = Expression("x[0]+2*x[{}]+x[{}]".format(y_dim, z_dim))
-    ee = Expression(["x[0]+x[{}]".format(z_dim),
-                     "x[0]*x[{}]+x[{}]".format(y_dim, z_dim)])
+    e = Expression("x[0] + 2*x[{}] + x[{}]".format(y_dim, z_dim), degree=2)
+    ee = Expression(["x[0]+x[{}]".format(z_dim), "x[0]*x[{}]+x[{}]".format(y_dim, z_dim)], degree=2)
 
     # Create coefficients
     u = interpolate(e, V)

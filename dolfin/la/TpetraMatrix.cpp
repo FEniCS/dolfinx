@@ -141,9 +141,9 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
                   _global_indices1, 0, _comm));
 
   std::vector<std::vector<std::size_t>> pattern_diag
-    = sparsity_pattern->diagonal_pattern(SparsityPattern::unsorted);
+    = sparsity_pattern->diagonal_pattern(SparsityPattern::Type::unsorted);
   std::vector<std::vector<std::size_t>> pattern_off
-    = sparsity_pattern->off_diagonal_pattern(SparsityPattern::unsorted);
+    = sparsity_pattern->off_diagonal_pattern(SparsityPattern::Type::unsorted);
   const bool has_off_diag = pattern_off.size() > 0;
 
   dolfin_assert(pattern_diag.size() == pattern_off.size() || !has_off_diag);

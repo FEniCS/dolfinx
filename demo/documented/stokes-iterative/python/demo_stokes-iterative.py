@@ -64,7 +64,7 @@ noslip = Constant((0.0, 0.0, 0.0))
 bc0 = DirichletBC(W.sub(0), noslip, top_bottom)
 
 # Inflow boundary condition for velocity
-inflow = Expression(("-sin(x[1]*pi)", "0.0", "0.0"))
+inflow = Expression(("-sin(x[1]*pi)", "0.0", "0.0"), degree=2)
 bc1 = DirichletBC(W.sub(0), inflow, right)
 
 # Collect boundary conditions

@@ -199,19 +199,19 @@ void File::init(MPI_Comm comm, const std::string filename, Type type,
 {
   switch (type)
   {
-  case x3d:
+  case Type::x3d:
     file.reset(new X3DFile(filename));
     break;
-  case xml:
+  case Type::xml:
     file.reset(new XMLFile(comm, filename));
     break;
-  case vtk:
+  case Type::vtk:
     file.reset(new VTKFile(filename, encoding));
     break;
-  case raw:
+  case Type::raw:
     file.reset(new RAWFile(filename));
     break;
-  case xyz:
+  case Type::xyz:
     file.reset(new XYZFile(filename));
     break;
   default:

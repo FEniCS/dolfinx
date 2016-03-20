@@ -77,7 +77,7 @@ vnorm = sqrt(dot(velocity, velocity))
 F -= h/(2.0*vnorm)*dot(velocity, grad(v))*r*dx
 
 # Set up boundary condition
-g = Expression("(t<=ramp_stop) ? t : 1.0", t=t, ramp_stop=1.0)
+g = Expression("(t<=ramp_stop) ? t : 1.0", t=t, ramp_stop=1.0, degeree=1)
 bc = DirichletBC(Q, g, sub_domains, 1)
 
 # Output file

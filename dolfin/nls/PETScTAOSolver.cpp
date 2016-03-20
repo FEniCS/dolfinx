@@ -539,11 +539,6 @@ void PETScTAOSolver::set_ksp_options()
     // In any case, set the KSP options specified by the user
     Parameters krylov_parameters = parameters("krylov_solver");
 
-    // GMRES restart parameter
-    const int gmres_restart = krylov_parameters("gmres")["restart"];
-    ierr = KSPGMRESSetRestart(ksp, gmres_restart);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGMRESSetRestart");
-
     // Non-zero initial guess
     const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
     if (nonzero_guess)
@@ -555,7 +550,7 @@ void PETScTAOSolver::set_ksp_options()
     {
       ierr = KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
       if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetInitialGuessNonzero");
-    } 
+    }
 
     // KSP monitor
     if (krylov_parameters["monitor_convergence"])

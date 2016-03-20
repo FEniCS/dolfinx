@@ -1,6 +1,6 @@
 "This demo program demonstrates how to include additional C++ code in DOLFIN."
 
-# Copyright (C) 2013 Kent-Andre Mardal, Mikael Mortensen, Johan Hake 
+# Copyright (C) 2013 Kent-Andre Mardal, Mikael Mortensen, Johan Hake
 #
 # This file is part of DOLFIN.
 #
@@ -25,7 +25,7 @@ import numpy
 import os
 
 header_file = open("Probe/Probe.h")
-code = "\n".join(header_file.readlines()) 
+code = "\n".join(header_file.readlines())
 compiled_module = compile_extension_module(code=code, source_directory="Probe", \
                                            sources=["Probe.cpp"], \
                                            include_dirs=[".", os.path.abspath("Probe")])
@@ -37,7 +37,7 @@ x = numpy.array((0.5, 0.5, 0.5))
 probe = compiled_module.Probe(x, V)
 
 # Just create some random data to be used for probing
-u0 = interpolate(Expression('x[0]'), V)
+u0 = interpolate(Expression('x[0]', degree=1), V)
 probe.eval(u0)
 print("number of probes: ", probe.value_size())
 print("value at first probe: ", probe.get_probe(0))

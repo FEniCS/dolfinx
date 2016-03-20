@@ -428,8 +428,8 @@ double EigenKrylovSolver::_compute_tolerance(const EigenMatrix& A,
   }
   else if (_method == "gmres")
   {
-    // NOTE: This could be imlemented but requires computation of P^{-1}
-    //       eigen_tol = max(rtol, atol/||P^{-1} r0||)
+    // NOTE: This could be imlemented but requires computation of
+    //       P^{-1} eigen_tol = max(rtol, atol/||P^{-1} r0||)
     if (parameters["absolute_tolerance"].is_set())
     {
       warning("Absolute tolerance parameter not implemented for Eigen GMRES. "
@@ -439,8 +439,9 @@ double EigenKrylovSolver::_compute_tolerance(const EigenMatrix& A,
   }
   else
   {
-    // If a flow ends here, then you have forgotten to handle the newly
-    // implemented method here! Please, look into Eigen code and fix it!
+    // If a flow ends here, then you have forgotten to handle the
+    // newly implemented method here! Please, look into Eigen code and
+    // fix it!
     dolfin_assert(false);
 
     // Fallback option

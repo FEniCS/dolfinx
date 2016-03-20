@@ -257,7 +257,7 @@ namespace dolfin
     /// interactive mode is entered even if 'Q' has been pressed.
     static void all_interactive(bool really=false);
 
-    enum Modifiers
+    enum class Modifiers : int
     {
       // Zero low byte, so that a char can be added
       SHIFT    = 0x100,

@@ -33,7 +33,7 @@ def test_save_and_read_function_timeseries(tempdir):
     Q = FunctionSpace(mesh, "CG", 3)
     F0 = Function(Q)
     F1 = Function(Q)
-    E = Expression("t*x[0]", t = 0.0)
+    E = Expression("t*x[0]", t = 0.0, degree=1)
     F0.interpolate(E)
 
     # Save to HDF5 File
@@ -56,4 +56,3 @@ def test_save_and_read_function_timeseries(tempdir):
         result = F0.vector() - F1.vector()
         assert len(result.array().nonzero()[0]) == 0
     hdf5_file.close()
-

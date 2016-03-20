@@ -47,7 +47,8 @@ namespace dolfin
   private:
 
     // Refinement markers
-    enum { no_refinement=-1, regular_refinement=-2, backtrack_bisection=-3, backtrack_bisection_refine=-4 };
+    enum class marker_type : int { no_refinement=-1, regular_refinement=-2,
+        backtrack_bisection=-3, backtrack_bisection_refine=-4 };
 
     // Compute refinement markers based on initial markers
     static void compute_markers(std::vector<int>& refinement_markers,

@@ -1,0 +1,58 @@
+Documenting DOLFIN demos
+========================
+
+The documentation for the DOLFIN demos is written by hand and located
+together with the demos in the DOLFIN source tree. To document a (new)
+DOLFIN demo located in the directory foo (for instance pde/poisson),
+follow the two steps below. In general, the simplest way is probably
+to look at one of the documented demos for instance
+(demo/pde/poisson/) and follow the same setup.
+
+1) Add these 3 files
+
+  * foo/common.txt -- containing common information such as the main
+    features the demo illustrates and, if applicable, a mathematical
+    description of the differential equation that is solved. This file
+    should then be included in the C++ and Python versions.
+
+  * foo/cpp/documentation.rst -- containing the reST source file with
+    the documentation that is specific to the C++ version of the demo.
+
+  * foo/python/documentation.rst -- containing the reST source file
+    with the documentation that is specific to the Python version of
+    the demo.
+
+   If either the C++ or the Python version of the demo does not exist,
+   feel free to add the version and continue.
+
+2) Move the directory foo from the directory undocumented/ to the
+   suitable directory (for instance pde/ or la/).
+
+
+Note
+
+   The demo documentation is automatically included in the complete
+   DOLFIN documentation when running make doc after building
+   DOLFIN. While documenting a demo, it may be handy to only run
+   make doc_demo and then make doc_html_[python|cpp].
+
+Note
+
+   Tests for the validity of the code snippets used in the demo
+   documentation are included in the standard DOLFIN tests.
+
+C++ and Python specific contents
+================================
+
+The C++ and Python documentation reST source files should
+
+* Explain each step of the solution procedure. Do this by including
+  and explaining code snippets from the demo source code.
+
+* Include links to the API documentation using the :cpp:class: and
+  :py:class: directives. Note that for the Python classes, the
+  full module path is required (for instance
+  py:class:dolfin.cpp.NewtonSolver)
+
+* Include the complete set of files needed to run the demo using the
+  include directive.

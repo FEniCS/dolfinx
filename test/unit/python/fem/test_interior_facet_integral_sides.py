@@ -12,7 +12,7 @@ def test_interior_facet_integral_sides():
     subdomain = AutoSubDomain(lambda x, on_boundary: x[0] > x[1]-DOLFIN_EPS)
 
     V = FunctionSpace(mesh, "DG", 0)
-    f = interpolate(Expression("x[0]"), V)
+    f = interpolate(Expression("x[0]", degree=1), V)
 
     # Define forms picking value of f from + and - sides
     scale = 1.0/ufl.FacetArea(mesh)
