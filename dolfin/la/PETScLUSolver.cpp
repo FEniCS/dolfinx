@@ -38,44 +38,34 @@
 
 using namespace dolfin;
 
-// FIXME: Remove these defines now that we have dropped support for
-// older version of PETSc
-
-#define MAT_SOLVER_UMFPACK      MATSOLVERUMFPACK
-#define MAT_SOLVER_MUMPS        MATSOLVERMUMPS
-#define MAT_SOLVER_PASTIX       MATSOLVERPASTIX
-#define MAT_SOLVER_PETSC        MATSOLVERPETSC
-#define MAT_SOLVER_SUPERLU_DIST MATSOLVERSUPERLU_DIST
-#define MAT_SOLVER_SUPERLU      MATSOLVERSUPERLU
-
 // List of available LU solvers
 const std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods
 = { {"default", ""},
 #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
-    {"umfpack",      MAT_SOLVER_UMFPACK},
+    {"umfpack",      MATSOLVERUMFPACK},
 #endif
 #if PETSC_HAVE_MUMPS
-    {"mumps",        MAT_SOLVER_MUMPS},
+    {"mumps",        MATSOLVERMUMPS},
 #endif
 #if PETSC_HAVE_PASTIX
-    {"pastix",       MAT_SOLVER_PASTIX},
+    {"pastix",       MATSOLVERPASTIX},
 #endif
 #if PETSC_HAVE_SUPERLU
-    {"superlu",      MAT_SOLVER_SUPERLU},
+    {"superlu",      MATSOLVERSUPERLU},
 #endif
 #if PETSC_HAVE_SUPERLU_DIST
-    {"superlu_dist", MAT_SOLVER_SUPERLU_DIST},
+    {"superlu_dist", MATSOLVERSUPERLU_DIST},
 #endif
-    {"petsc",        MAT_SOLVER_PETSC}};
+    {"petsc",        MATSOLVERPETSC}};
 //-----------------------------------------------------------------------------
 const std::map<const MatSolverPackage, const bool>
 PETScLUSolver::_methods_cholesky
-= { {MAT_SOLVER_UMFPACK,      false},
-    {MAT_SOLVER_MUMPS,        true},
-    {MAT_SOLVER_PASTIX,       true},
-    {MAT_SOLVER_SUPERLU,      false},
-    {MAT_SOLVER_SUPERLU_DIST, false},
-    {MAT_SOLVER_PETSC,        true} };
+= { {MATSOLVERUMFPACK,      false},
+    {MATSOLVERMUMPS,        true},
+    {MATSOLVERPASTIX,       true},
+    {MATSOLVERSUPERLU,      false},
+    {MATSOLVERSUPERLU_DIST, false},
+    {MATSOLVERPETSC,        true} };
 //-----------------------------------------------------------------------------
 const std::map<std::string, std::string>
 PETScLUSolver::_methods_descr
@@ -474,8 +464,8 @@ void PETScLUSolver::configure_ksp(const MatSolverPackage solver_package)
 
   // Set preconditioner to LU factorization/Cholesky as appropriate
 
-  const bool symmetric = parameters["symmetric"];
-  if (symmetric && solver_has_cholesky(solver_package))
+  const bool symmetric = parameters["symmetric"].is_set() ? parameters["symmetric"] : false;
+  if (symmetric and solver_has_cholesky(solver_package))
   {
     ierr = PCSetType(pc, PCCHOLESKY);
     if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
@@ -510,8 +500,7 @@ void PETScLUSolver::pre_report(const PETScMatrix& A) const
   if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorGetMatSolverPackage");
 
   // Get parameter
-  const bool report = parameters["report"];
-
+  const bool report = parameters["report"].is_set() ? parameters["report"] : false;
   if (report && dolfin::MPI::rank(MPI_COMM_WORLD) == 0)
   {
     log(PROGRESS,"Solving linear system of size %ld x %ld (PETSc LU solver, %s).",

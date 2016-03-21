@@ -115,7 +115,7 @@ void EigenKrylovSolver::set_operators(std::shared_ptr<const EigenMatrix> A,
   dolfin_assert(_matP);
 }
 //-----------------------------------------------------------------------------
-const EigenMatrix& EigenKrylovSolver::get_operator() const
+std::shared_ptr<const EigenMatrix> EigenKrylovSolver::get_operator() const
 {
   if (!_matA)
   {
@@ -123,7 +123,7 @@ const EigenMatrix& EigenKrylovSolver::get_operator() const
                  "access operator for Eigen Krylov solver",
                  "Operator has not been set");
   }
-  return *_matA;
+  return _matA;
 }
 //-----------------------------------------------------------------------------
 std::size_t EigenKrylovSolver::solve(GenericVector& x, const GenericVector& b)
@@ -320,11 +320,8 @@ void EigenKrylovSolver::init(const std::string method,
   }
 
   // Set method and preconditioner
-  _method = method == "default" ? "gmres" : method;
+  _method = (method == "default" ? "gmres" : method);
   _pc = pc;
-
-  // Prepare parameters according to chosen method
-  _init_parameters();
 }
 //-----------------------------------------------------------------------------
 template <typename Solver>
@@ -338,12 +335,13 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
   EigenVector& _x = as_type<EigenVector>(x);
   const EigenVector& _b = as_type<const EigenVector>(b);
 
-  const double eigen_tolerance = _compute_tolerance(*_matA, _x, _b);
-  solver.setTolerance(eigen_tolerance);
+  if (parameters["relative_tolerance"].is_set())
+    solver.setTolerance(parameters["relative_tolerance"]);
 
-  const int max_iterations = parameters["maximum_iterations"];
-  solver.setMaxIterations(max_iterations);
+  if (parameters["maximum_iterations"].is_set())
+    solver.setMaxIterations(parameters["maximum_iterations"]);
 
+  // Prepare solver
   solver.compute(_matA->mat());
   if (solver.info() != Eigen::Success)
   {
@@ -352,28 +350,37 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
                  "Preconditioner might fail");
   }
 
-  const bool nonzero_guess = parameters["nonzero_initial_guess"];
-  if (nonzero_guess)
-    _x.vec() = solver.solveWithGuess(_b.vec(), _x.vec());
+  // Call approriate solve function
+  if (parameters["nonzero_initial_guess"].is_set())
+  {
+    const bool nonzero_guess = parameters["nonzero_initial_guess"];
+    if (nonzero_guess)
+      _x.vec() = solver.solveWithGuess(_b.vec(), _x.vec());
+    else
+      _x.vec() = solver.solve(_b.vec());
+  }
   else
     _x.vec() = solver.solve(_b.vec());
+
+  // Get number of solver iterations
   const int num_iterations = solver.iterations();
 
-  bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
+  // Handle case that solver fails to converge
+  bool error_on_nonconvergence = parameters["error_on_nonconvergence"].is_set() ? parameters["error_on_nonconvergence"].is_set() : false;
   if (solver.info() != Eigen::Success)
   {
-    if (num_iterations >= max_iterations)
+    if (num_iterations >= solver.maxIterations())
     {
       if (error_on_nonconvergence)
       {
         dolfin_error("EigenKrylovSolver.cpp",
                      "solve A.x = b",
-                     "Max iterations (%d) exceeded", max_iterations);
+                     "Max iterations (%d) exceeded", solver.maxIterations());
       }
       else
       {
         warning("Krylov solver did not converge in %i iterations",
-                max_iterations);
+                solver.maxIterations());
       }
     }
     else
@@ -385,67 +392,5 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
   }
 
   return num_iterations;
-}
-//-----------------------------------------------------------------------------
-void EigenKrylovSolver::_init_parameters()
-{
-  if (_method == "cg" || _method == "bicgstab" || _method == "minres")
-  {
-    const std::set<std::string> allowed = {"true"};
-    parameters.add("convergence_norm_type", "true", allowed);
-  }
-  else if (_method == "gmres")
-  {
-    const std::set<std::string> allowed = {"preconditioned"};
-    parameters.add("convergence_norm_type", "preconditioned", allowed);
-    parameters["absolute_tolerance"].reset();
-  }
-  else
-  {
-    // If a flow ends here, then you have forgotten to handle the newly
-    // implemented method here! Please, look into Eigen code and fix it!
-    dolfin_assert(false);
-  }
-}
-//-----------------------------------------------------------------------------
-double EigenKrylovSolver::_compute_tolerance(const EigenMatrix& A,
-                                             const EigenVector& x,
-                                             const EigenVector& b) const
-{
-  if (_method == "cg" || _method == "bicgstab" || _method == "minres")
-  {
-    const double atol = parameters["absolute_tolerance"];
-    const double rtol = parameters["relative_tolerance"];
-
-    const double b_norm = b.norm("l2");
-
-    // Define lazy evaluated residual vector and compute its norm
-    Eigen::VectorXd r0;
-    r0.noalias() = b.vec() - A.mat()*x.vec();
-    const double r0_norm = r0.norm();
-
-    return std::max(rtol*r0_norm, atol) / b_norm;
-  }
-  else if (_method == "gmres")
-  {
-    // NOTE: This could be imlemented but requires computation of
-    //       P^{-1} eigen_tol = max(rtol, atol/||P^{-1} r0||)
-    if (parameters["absolute_tolerance"].is_set())
-    {
-      warning("Absolute tolerance parameter not implemented for Eigen GMRES. "
-              "Ignoring and using just relative tolerance criterion.");
-    }
-    return parameters["relative_tolerance"];
-  }
-  else
-  {
-    // If a flow ends here, then you have forgotten to handle the
-    // newly implemented method here! Please, look into Eigen code and
-    // fix it!
-    dolfin_assert(false);
-
-    // Fallback option
-    return parameters["relative_tolerance"];
-  }
 }
 //-----------------------------------------------------------------------------

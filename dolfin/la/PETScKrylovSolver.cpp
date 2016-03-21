@@ -238,26 +238,30 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Write a message
-  const bool report = this->parameters["report"];
-  if (report && dolfin::MPI::rank(this->mpi_comm()) == 0)
+  const bool report = this->parameters["report"].is_set() ? this->parameters["report"] : false;
+  if (report and dolfin::MPI::rank(this->mpi_comm()) == 0)
   {
     info("Solving linear system of size %ld x %ld (PETSc Krylov solver).",
          M, N);
   }
 
   // Non-zero initial guess to true/false
-  const bool nonzero_guess = this->parameters["nonzero_initial_guess"];
-  this->set_nonzero_guess(nonzero_guess);
+  if (this->parameters["nonzero_initial_guess"].is_set())
+  {
+    const bool nonzero_guess = this->parameters["nonzero_initial_guess"];
+    this->set_nonzero_guess(nonzero_guess);
+  }
 
   // Monitor convergence
-  const bool monitor_convergence = this->parameters["monitor_convergence"];
+  const bool monitor_convergence = this->parameters["monitor_convergence"].is_set() ? this->parameters["monitor_convergence"] : false;
   this->monitor(monitor_convergence);
 
   // Set tolerances
-  set_tolerances(this->parameters["relative_tolerance"],
-                 this->parameters["absolute_tolerance"],
-                 this->parameters["divergence_limit"],
-                 this->parameters["maximum_iterations"]);
+  const double rtol = this->parameters["relative_tolerance"].is_set() ? this->parameters["relative_tolerance"] : PETSC_DEFAULT;
+  const double atol = this->parameters["absolute_tolerance"].is_set() ? this->parameters["absolute_tolerance"] : PETSC_DEFAULT;
+  const double dtol = this->parameters["divergence_limit"].is_set() ? this->parameters["divergence_limit"] : PETSC_DEFAULT;
+  const int max_it  = this->parameters["maximum_iterations"].is_set() ? this->parameters["maximum_iterations"] : PETSC_DEFAULT;
+  set_tolerances(rtol, atol, dtol, max_it);
 
   // Initialize solution vector, if necessary
   if (x.empty())
@@ -322,7 +326,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     ierr = KSPGetResidualNorm(_ksp, &rnorm);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetResidualNorm");
     const char *reason_str = KSPConvergedReasons[reason];
-    bool error_on_nonconvergence = this->parameters["error_on_nonconvergence"];
+    bool error_on_nonconvergence = this->parameters["error_on_nonconvergence"].is_set() ? this->parameters["error_on_nonconvergence"] : false;
     if (error_on_nonconvergence)
     {
       dolfin_error("PETScKrylovSolver.cpp",
