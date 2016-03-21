@@ -54,6 +54,12 @@ namespace dolfin
   {
   public:
 
+    /// Norm types used in convergence testing. Not all solvers types
+    /// support all norm types (see
+    /// http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPSetNormType.html). Note
+    /// that 'default' is a reserved keyword, so we use 'default_norm'
+    enum class norm_type {none, default_norm, preconditioned, unpreconditioned, natural};
+
     /// Create Krylov solver for a particular method and named
     /// preconditioner
     PETScKrylovSolver(std::string method="default",
@@ -107,12 +113,8 @@ namespace dolfin
     void set_tolerances(double relative, double absolute, double diverged,
                         int max_iter);
 
-    /// Set norm type used in convergence testing. Not all solvers
-    /// types support all norm types (see
-    /// http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPSetNormType.html). Note
-    /// that 'default' is a reserved keyword, so we use 'default_norm'
-    enum class norm_type {none, default_norm, preconditioned, unpreconditioned,
-        natural};
+    /// Set norm type used in convergence testing - not all solvers
+    /// types support all norm types
     void set_norm_type(norm_type type);
 
     /// Get norm type used in convergence testing
