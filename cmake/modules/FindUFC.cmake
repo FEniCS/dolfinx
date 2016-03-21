@@ -7,6 +7,7 @@
 #  UFC_FOUND        - system has UFC with correct version
 #  UFC_INCLUDE_DIRS - where to find ufc.h
 #  UFC_VERSION      - UFC version
+#  UFC_SIGNATURE    - UFC signature
 
 #=============================================================================
 # Copyright (C) 2010 Johannes Ring
@@ -40,18 +41,15 @@
 execute_process(
   COMMAND ${PYTHON_EXECUTABLE} -c "import ffc, sys; sys.stdout.write(ffc.get_ufc_include())"
   OUTPUT_VARIABLE UFC_INCLUDE_DIR
-  RESULT_VARIABLE UFC_NOT_FOUND
-  ERROR_VARIABLE UFC_ERROR
   )
 
-if (NOT UFC_NOT_FOUND)
+if (UFC_INCLUDE_DIR)
   set(UFC_INCLUDE_DIRS ${UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h")
   mark_as_advanced(UFC_INCLUDE_DIRS)
 
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c "import ffc, sys; sys.stdout.write(ffc.__version__)"
     OUTPUT_VARIABLE UFC_VERSION
-    RESULT_VARIABLE UFC_NOT_FOUND
     )
   mark_as_advanced(UFC_VERSION)
 
@@ -66,6 +64,12 @@ if (NOT UFC_NOT_FOUND)
   endif()
   mark_as_advanced(UFC_VERSION_OK)
 
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import ffc, sys; sys.stdout.write(ffc.ufc_signature())"
+    OUTPUT_VARIABLE UFC_SIGNATURE
+    )
+  mark_as_advanced(UFC_SIGNATURE)
+
 endif()
 
 # Standard package handling
@@ -73,4 +77,5 @@ find_package_handle_standard_args(UFC
                                   "UFC could not be found."
                                   UFC_INCLUDE_DIRS
                                   UFC_VERSION
-                                  UFC_VERSION_OK)
+                                  UFC_VERSION_OK
+                                  UFC_SIGNATURE)
