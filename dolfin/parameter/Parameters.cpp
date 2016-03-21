@@ -303,16 +303,21 @@ void Parameters::update(const Parameters& parameters)
     else if (other.type_str() == "string")
       *self = static_cast<std::string>(other);
     else
+    {
       dolfin_error("Parameters.cpp",
                    "update parameter set",
                    "Parameter \"%s\" has unknown type: \"%s\"",
                    other.key().c_str(), other.type_str().c_str());
+    }
   }
 
   // Update nested parameter sets
-  for (const_parameter_set_iterator it = parameters._parameter_sets.begin(); it != parameters._parameter_sets.end(); ++it)
+  for (const_parameter_set_iterator it = parameters._parameter_sets.begin();
+       it != parameters._parameter_sets.end(); ++it)
+  {
     (*this)(it->first).update(*it->second);
-}
+  }
+  }
 //-----------------------------------------------------------------------------
 Parameter& Parameters::operator[] (std::string key)
 {
