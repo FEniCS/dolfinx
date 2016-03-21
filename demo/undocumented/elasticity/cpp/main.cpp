@@ -143,7 +143,6 @@ int main()
 
   // Create PETSc smoothed aggregation AMG preconditioner
   auto pc = std::make_shared<PETScPreconditioner>("petsc_amg");
-  pc->parameters["report"] = true;
 
   // Set some multigrid smoother parameters
   PETScOptions::set("mg_levels_ksp_type", "chebyshev");
