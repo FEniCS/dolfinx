@@ -110,8 +110,12 @@ namespace dolfin
     /// Set norm type used in convergence testing. Not all solvers
     /// types support all norm types (see
     /// http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPSetNormType.html).
-    enum class norm_type {none, preconditioned, unpreconditioned, natural};
+    enum class norm_type {none, default_norm, preconditioned, unpreconditioned,
+        natural};
     void set_norm_type(norm_type type);
+
+    /// Get norm type used in convergence testing
+    norm_type get_norm_type() const;
 
     /// Monitor residual at each iteration
     void monitor(bool monitor_convergence);
