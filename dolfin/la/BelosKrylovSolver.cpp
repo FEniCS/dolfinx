@@ -237,11 +237,13 @@ std::size_t BelosKrylovSolver::_solve(TpetraVector& x, const TpetraVector& b)
                  _matA->size(0), b.size());
   }
 
+  // Get MPI rank
+  const int mpi_rank = MPI::rank(_matA->mpi_comm());
+
   // Write a message
   if (parameters["report"].is_set())
   {
-    const bool report = parameters["report"];
-    const int mpi_rank = MPI::rank(_matA->mpi_comm());
+    const bool report = (bool)parameters["report"];
     if (report && mpi_rank == 0)
     {
       info("Solving linear system of size %ld x %ld (Belos Krylov solver).",
@@ -269,7 +271,7 @@ std::size_t BelosKrylovSolver::_solve(TpetraVector& x, const TpetraVector& b)
   // Clear LHS if unless nonzero_initial_guess is set
   if (parameters["nonzero_initial_guess"].is_set())
   {
-    const bool nonzero_guess = parameters["nonzero_initial_guess"];
+    const bool nonzero_guess = (bool) parameters["nonzero_initial_guess"];
     if (!nonzero_guess)
       x.zero();
   }
@@ -330,19 +332,19 @@ void BelosKrylovSolver::set_options()
 
   if (parameters["maximum_iterations"].is_set())
   {
-    const int max_iterations = parameters["maximum_iterations"];
+    const int max_iterations = (int) parameters["maximum_iterations"];
     solverParams->set("Maximum Iterations", max_iterations);
   }
 
   if (parameters["relative_tolerance"].is_set())
   {
-    const double rtol = parameters["relative_tolerance"];
+    const double rtol = (double) parameters["relative_tolerance"];
     solverParams->set("Convergence Tolerance", rtol);
   }
 
 
-  const bool monitor = parameters["monitor_convergence"].is_set() ? parameters["monitor_convergence"] : false;
-  const bool report = parameters["report"].is_set() ? parameters["report"] : false;
+  const bool monitor = parameters["monitor_convergence"].is_set() ? (bool) parameters["monitor_convergence"] : false;
+  const bool report = parameters["report"].is_set() ? (bool) parameters["report"] : false;
   if (monitor or report)
   {
     solverParams->set("Verbosity",

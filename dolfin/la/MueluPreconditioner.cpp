@@ -76,12 +76,14 @@ std::string MueluPreconditioner::str(bool verbose) const
 //-----------------------------------------------------------------------------
 Parameters MueluPreconditioner::default_parameters()
 {
-  Parameters p(KrylovSolver::default_parameters()("preconditioner"));
-  p.rename("muelu_preconditioner");
+  //Parameters p(KrylovSolver::default_parameters()("preconditioner"));
+  //p.rename("muelu_preconditioner");
 
-  Parameters muelu_parameters("muelu");
-  muelu_parameters.add("verbosity", "low");
-  p.add(muelu_parameters);
+  Parameters p("muelu_preconditioner");
+
+  //Parameters muelu_parameters("muelu");
+  //muelu_parameters.add("verbosity", "low");
+  //p.add(muelu_parameters);
 
   return p;
 }

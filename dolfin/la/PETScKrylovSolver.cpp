@@ -253,14 +253,14 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Monitor convergence
-  const bool monitor_convergence = this->parameters["monitor_convergence"].is_set() ? this->parameters["monitor_convergence"] : false;
+  const bool monitor_convergence = this->parameters["monitor_convergence"].is_set() ? (bool)parameters["monitor_convergence"] : false;
   this->monitor(monitor_convergence);
 
   // Set tolerances
-  const double rtol = this->parameters["relative_tolerance"].is_set() ? this->parameters["relative_tolerance"] : PETSC_DEFAULT;
-  const double atol = this->parameters["absolute_tolerance"].is_set() ? this->parameters["absolute_tolerance"] : PETSC_DEFAULT;
-  const double dtol = this->parameters["divergence_limit"].is_set() ? this->parameters["divergence_limit"] : PETSC_DEFAULT;
-  const int max_it  = this->parameters["maximum_iterations"].is_set() ? this->parameters["maximum_iterations"] : PETSC_DEFAULT;
+  const double rtol = parameters["relative_tolerance"].is_set() ? (double)parameters["relative_tolerance"] : PETSC_DEFAULT;
+  const double atol = parameters["absolute_tolerance"].is_set() ? (double)parameters["absolute_tolerance"] : PETSC_DEFAULT;
+  const double dtol = parameters["divergence_limit"].is_set() ? (double)parameters["divergence_limit"] : PETSC_DEFAULT;
+  const int max_it  = parameters["maximum_iterations"].is_set() ? (int)parameters["maximum_iterations"] : PETSC_DEFAULT;
   set_tolerances(rtol, atol, dtol, max_it);
 
   // Initialize solution vector, if necessary
