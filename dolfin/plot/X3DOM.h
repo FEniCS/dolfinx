@@ -21,6 +21,8 @@
 #ifndef __X3DOM_H
 #define __X3DOM_H
 
+#include "GenericFile.h"
+
 namespace pugi
 {
   class xml_document;
@@ -29,12 +31,8 @@ namespace pugi
 namespace dolfin
 {
 
-  /// This class implements output of meshes to X3D (successor to
-  /// VRML) graphics format (http://www.web3d.org/x3d/). It is
-  /// suitable for output of small to medium size meshes for 3D
-  /// visualisation via browsers, and can also do basic Function and
-  /// MeshFunction output (on the surface) X3D files can be included
-  /// on web pages with WebGL functionality (see www.x3dom.org).
+  /// This class implements output of meshes to X3DOM XML 
+  /// or HTML or string
 
   class X3DOM
   {
@@ -53,6 +51,8 @@ namespace dolfin
     void save(std::string filename) const;
 
   private:
+  	// XML data
+    pugi::xml_document xml_doc;
 
     // Get mesh dimensions and viewpoint distance
     std::vector<double> mesh_min_max(const Mesh& mesh) const;
@@ -88,9 +88,6 @@ namespace dolfin
     // Whether in Face or Edge mode - should either be
     // "IndexedFaceSet" or "IndexedLineSet"
     const std::string facet_type;
-
-    // XML data
-    pugi::xml_document xml_doc;
 
   };
 
