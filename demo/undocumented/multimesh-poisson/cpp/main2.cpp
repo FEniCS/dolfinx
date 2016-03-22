@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2015-12-06
+// Last changed: 2016-03-22
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes. The solution is computed
@@ -32,14 +32,14 @@
 
 using namespace dolfin;
 
-// Source term (right-hand side)
-class Source : public Expression
-{
-  void eval(Array<double>& values, const Array<double>& x) const
-  {
-    values[0] = 1.0;
-  }
-};
+// // Source term (right-hand side)
+// class Source : public Expression
+// {
+//   void eval(Array<double>& values, const Array<double>& x) const
+//   {
+//     values[0] = 1.0;
+//   }
+// };
 
 // Sub domain for Dirichlet boundary condition
 class DirichletBoundary : public SubDomain
@@ -209,7 +209,7 @@ void plot_normals(const MultiMesh& multimesh)
   const std::vector<std::string> marker = {{ "'.'", "'o'", "'x'" }};
 
   //for (std::size_t part = 0; part < multimesh.num_parts(); part++)
-    const std::size_t part = 1;
+  const std::size_t part = 1;
   {
     std::cout << "% part " << part << ' ' <<std::endl;
     const auto& cmap = multimesh.collision_map_cut_cells(part);
@@ -397,25 +397,25 @@ void find_max(std::size_t step,
       if (cells[k].size())
       {
 	// Create meshfunction using markers
-	MeshFunction<std::size_t> foo(*multimesh.part(part),
-				      multimesh.part(part)->topology().dim());
-	foo.set_all(0); // dummy
+	//MeshFunction<std::size_t> foo(*multimesh.part(part), multimesh.part(part)->topology().dim());
+	auto mesh_part = std::make_shared<Mesh>(*multimesh.part(part));
+	auto foo = std::make_shared<MeshFunction<std::size_t> >(mesh_part, mesh_part->topology().dim());
+	foo->set_all(0); // dummy
 	for (const auto cell: cells[k])
-	  foo.set_value(cell, k+1);
+	  foo->set_value(cell, k+1);
 
 	// Create submesh out of meshfunction
-	SubMesh sm(*multimesh.part(part), foo, k+1);
+	auto sm = std::make_shared<SubMesh>(*multimesh.part(part), *foo, k+1);
 
 	// Interpolate on submesh
-	P1::FunctionSpace V(sm);
-	Function usm(V);
-	usm.interpolate(*u.part(part));
+	auto V = std::make_shared<P1::FunctionSpace>(sm);
+	auto usm = std::make_shared<Function>(V);
+	usm->interpolate(*u.part(part));
 
 	// Get max values on submesh
 	std::vector<double> vertex_values;
-	usm.compute_vertex_values(vertex_values);
-	maxvals[k] = *std::max_element(vertex_values.begin(),
-				       vertex_values.end());
+	usm->compute_vertex_values(vertex_values);
+	maxvals[k] = *std::max_element(vertex_values.begin(), vertex_values.end());
 
 	// if (part == 0)
 	//   if (k == 0 or k == 1) {
@@ -434,21 +434,21 @@ void find_max(std::size_t step,
 	// save
 	switch(k) {
 	case 0: { // uncut
-	  if (part == 0) uncut0_file << usm;
-	  else if (part == 1) uncut1_file << usm;
-	  else if (part == 2) uncut2_file << usm;
+	  if (part == 0) uncut0_file << (*usm);
+	  else if (part == 1) uncut1_file << (*usm);
+	  else if (part == 2) uncut2_file << (*usm);
 	  break;
 	}
 	case 1: { // cut
-	  if (part == 0) cut0_file << usm;
-	  else if (part == 1) cut1_file << usm;
-	  else if (part == 2) cut2_file << usm;
+	  if (part == 0) cut0_file << (*usm);
+	  else if (part == 1) cut1_file << (*usm);
+	  else if (part == 2) cut2_file << (*usm);
 	  break;
 	}
 	case 2: { // covered
-	  if (part == 0) covered0_file << usm;
-	  else if (part == 1) covered1_file << usm;
-	  else if (part == 2) covered2_file << usm;
+	  if (part == 0) covered0_file << (*usm);
+	  else if (part == 1) covered1_file << (*usm);
+	  else if (part == 2) covered2_file << (*usm);
 	}
 	}
       }
@@ -478,22 +478,26 @@ void solve_poisson(std::size_t step,
   // Create meshes
   const std::size_t N = 8;
   const double r = 0.5;
-  RectangleMesh mesh_0(Point(-r, -r), Point(r, r), 2*N , 2*N);
-  RectangleMesh mesh_1(Point(x1 - r, y1 - r), Point(x1 + r, y1 + r), N, N);
-  RectangleMesh mesh_2(Point(x2 - r, y2 - r), Point(x2 + r, y2 + r), N, N);
-  mesh_1.rotate(70*t);
-  mesh_2.rotate(-70*t);
+  // RectangleMesh mesh_0(Point(-r, -r), Point(r, r), 2*N , 2*N);
+  // RectangleMesh mesh_1(Point(x1 - r, y1 - r), Point(x1 + r, y1 + r), N, N);
+  // RectangleMesh mesh_2(Point(x2 - r, y2 - r), Point(x2 + r, y2 + r), N, N);
+  auto mesh_0 = std::make_shared<RectangleMesh>(Point(-r, -r), Point(r, r), 2*N , 2*N);
+  auto mesh_1 = std::make_shared<RectangleMesh>(Point(x1 - r, y1 - r), Point(x1 + r, y1 + r), N, N);
+  auto mesh_2 = std::make_shared<RectangleMesh>(Point(x2 - r, y2 - r), Point(x2 + r, y2 + r), N, N);
+  mesh_1->rotate(70*t);
+  mesh_2->rotate(-70*t);
 
   // Build multimesh
-  MultiMesh multimesh;
-  multimesh.add(mesh_0);
-  multimesh.add(mesh_1);
-  multimesh.add(mesh_2);
-  multimesh.build(); // qr generated here
+  //MultiMesh multimesh;
+  auto multimesh = std::make_shared<MultiMesh>();
+  multimesh->add(mesh_0);
+  multimesh->add(mesh_1);
+  multimesh->add(mesh_2);
+  multimesh->build(); // qr generated here
 
   {
-    double volume = compute_volume(multimesh, 0);
-    double area = compute_interface_area(multimesh, 0);
+    double volume = compute_volume(*multimesh, 0);
+    double area = compute_interface_area(*multimesh, 0);
     std::cout << "volume " << volume << '\n'
 	      << "area " << area << std::endl;
   }
@@ -501,59 +505,69 @@ void solve_poisson(std::size_t step,
   {
     // Debug
     //plot_normals(multimesh);
-    writemarkers(step, multimesh);
+    writemarkers(step, *multimesh);
   }
 
 
   // Create function space
-  MultiMeshPoisson::MultiMeshFunctionSpace V(multimesh);
+  //MultiMeshPoisson::MultiMeshFunctionSpace V(multimesh);
+  auto V = std::make_shared<MultiMeshPoisson::MultiMeshFunctionSpace>(multimesh);
 
   // Create forms
-  MultiMeshPoisson::MultiMeshBilinearForm a(V, V);
-  MultiMeshPoisson::MultiMeshLinearForm L(V);
+  // MultiMeshPoisson::MultiMeshBilinearForm a(V, V);
+  // MultiMeshPoisson::MultiMeshLinearForm L(V);
+  auto a = std::make_shared<MultiMeshPoisson::MultiMeshBilinearForm>(V,V);
+  auto L = std::make_shared<MultiMeshPoisson::MultiMeshLinearForm>(V);
 
   // Attach coefficients
-  Source f;
-  L.f = f;
+  //Source f;
+  auto one = std::make_shared<Constant>(1.0);
+  L->f = one;
 
   // Assemble linear system
-  Matrix A;
-  Vector b;
-  assemble_multimesh(A, a);
-  assemble_multimesh(b, L);
+  // Matrix A;
+  // Vector b;
+  auto A = std::make_shared<Matrix>();
+  auto b = std::make_shared<Vector>();
+  assemble_multimesh(*A, *a);
+  assemble_multimesh(*b, *L);
 
   // Apply boundary condition
-  Constant zero(0);
-  DirichletBoundary boundary;
-  MultiMeshDirichletBC bc(V, zero, boundary);
-  bc.apply(A, b);
+  //Constant zero(0);
+  //DirichletBoundary boundary;
+  //MultiMeshDirichletBC bc(V, zero, boundary);
+  auto zero = std::make_shared<Constant>(0);
+  auto boundary = std::make_shared<DirichletBoundary>();
+  auto bc = std::make_shared<MultiMeshDirichletBC>(V, zero, boundary);
+  bc->apply(*A, *b);
 
   // Compute solution
-  MultiMeshFunction u(V);
-  solve(A, *u.vector(), b);
+  //MultiMeshFunction u(V);
+  auto u = std::make_shared<MultiMeshFunction>(V);
+  solve(*A, *u->vector(), *b);
 
   // Debugging
   {
-    find_max(step, multimesh, u,
-	     uncut0_file, uncut1_file, uncut2_file,
-	     cut0_file, cut1_file, cut2_file,
-	     covered0_file, covered1_file, covered2_file);
+    find_max(step, *multimesh, *u,
+  	     uncut0_file, uncut1_file, uncut2_file,
+  	     cut0_file, cut1_file, cut2_file,
+  	     covered0_file, covered1_file, covered2_file);
 
     //evaluate_at_qr(multimesh,u);
   }
 
   // Save to file
-  u0_file << std::make_pair<const Function*, double>(&*u.part(0), (double)step);
-  u1_file << std::make_pair<const Function*, double>(&*u.part(1), (double)step);
-  u2_file << std::make_pair<const Function*, double>(&*u.part(2), (double)step);
+  u0_file << std::make_pair<const Function*, double>(&*u->part(0), (double)step);
+  u1_file << std::make_pair<const Function*, double>(&*u->part(1), (double)step);
+  u2_file << std::make_pair<const Function*, double>(&*u->part(2), (double)step);
 
   // Plot solution (last time)
   if (plot_solution)
   {
-    plot(V.multimesh());
-    plot(u.part(0), "u_0");
-    plot(u.part(1), "u_1");
-    plot(u.part(2), "u_2");
+    plot(V->multimesh());
+    plot(u->part(0), "u_0");
+    plot(u->part(1), "u_1");
+    plot(u->part(2), "u_2");
     interactive();
   }
 
