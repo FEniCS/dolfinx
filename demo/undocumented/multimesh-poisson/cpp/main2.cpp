@@ -397,7 +397,6 @@ void find_max(std::size_t step,
       if (cells[k].size())
       {
 	// Create meshfunction using markers
-	//MeshFunction<std::size_t> foo(*multimesh.part(part), multimesh.part(part)->topology().dim());
 	auto mesh_part = std::make_shared<Mesh>(*multimesh.part(part));
 	auto foo = std::make_shared<MeshFunction<std::size_t> >(mesh_part, mesh_part->topology().dim());
 	foo->set_all(0); // dummy
@@ -460,12 +459,15 @@ void find_max(std::size_t step,
 	      << " uncut " << maxvals[0]
 	      << " cut " << maxvals[1]
 	      << " covered " << maxvals[2] << '\n';
+
+    if (maxvals[0] < 1) { exit(0); }
   }
 
 }
 
 // Compute solution for given mesh configuration
 void solve_poisson(std::size_t step,
+		   int node_no,
 		   double t,
                    double x1, double y1,
                    double x2, double y2,
@@ -478,17 +480,21 @@ void solve_poisson(std::size_t step,
   // Create meshes
   const std::size_t N = 8;
   const double r = 0.5;
-  // RectangleMesh mesh_0(Point(-r, -r), Point(r, r), 2*N , 2*N);
-  // RectangleMesh mesh_1(Point(x1 - r, y1 - r), Point(x1 + r, y1 + r), N, N);
-  // RectangleMesh mesh_2(Point(x2 - r, y2 - r), Point(x2 + r, y2 + r), N, N);
   auto mesh_0 = std::make_shared<RectangleMesh>(Point(-r, -r), Point(r, r), 2*N , 2*N);
   auto mesh_1 = std::make_shared<RectangleMesh>(Point(x1 - r, y1 - r), Point(x1 + r, y1 + r), N, N);
   auto mesh_2 = std::make_shared<RectangleMesh>(Point(x2 - r, y2 - r), Point(x2 + r, y2 + r), N, N);
   mesh_1->rotate(70*t);
   mesh_2->rotate(-70*t);
 
+  {
+    // move node number node_no a little bit in the x direction
+    std::vector<double> coords = mesh_1->coordinates();
+    coords[2*node_no]+=1e-16;
+    mesh_1->coordinates() = coords;
+  }
+
+
   // Build multimesh
-  //MultiMesh multimesh;
   auto multimesh = std::make_shared<MultiMesh>();
   multimesh->add(mesh_0);
   multimesh->add(mesh_1);
@@ -510,39 +516,29 @@ void solve_poisson(std::size_t step,
 
 
   // Create function space
-  //MultiMeshPoisson::MultiMeshFunctionSpace V(multimesh);
   auto V = std::make_shared<MultiMeshPoisson::MultiMeshFunctionSpace>(multimesh);
 
   // Create forms
-  // MultiMeshPoisson::MultiMeshBilinearForm a(V, V);
-  // MultiMeshPoisson::MultiMeshLinearForm L(V);
   auto a = std::make_shared<MultiMeshPoisson::MultiMeshBilinearForm>(V,V);
   auto L = std::make_shared<MultiMeshPoisson::MultiMeshLinearForm>(V);
 
   // Attach coefficients
-  //Source f;
   auto one = std::make_shared<Constant>(1.0);
   L->f = one;
 
   // Assemble linear system
-  // Matrix A;
-  // Vector b;
   auto A = std::make_shared<Matrix>();
   auto b = std::make_shared<Vector>();
   assemble_multimesh(*A, *a);
   assemble_multimesh(*b, *L);
 
   // Apply boundary condition
-  //Constant zero(0);
-  //DirichletBoundary boundary;
-  //MultiMeshDirichletBC bc(V, zero, boundary);
   auto zero = std::make_shared<Constant>(0);
   auto boundary = std::make_shared<DirichletBoundary>();
   auto bc = std::make_shared<MultiMeshDirichletBC>(V, zero, boundary);
   bc->apply(*A, *b);
 
   // Compute solution
-  //MultiMeshFunction u(V);
   auto u = std::make_shared<MultiMeshFunction>(V);
   solve(*A, *u->vector(), *b);
 
@@ -694,12 +690,20 @@ int main(int argc, char* argv[])
     // Compute solution
     // solve_poisson(t, x1, y1, x2, y2, n == N - 1,
     //               u0_file, u1_file, u2_file);
-    solve_poisson(n,
-		  t, x1, y1, x2, y2, n == N - 1,
-		  u0_file, u1_file, u2_file,
-		  uncut0_file, uncut1_file, uncut2_file,
-                  cut0_file, cut1_file, cut2_file,
-		  covered0_file, covered1_file, covered2_file);
+
+    // here we know a priori that we have 289 vertices in mesh_0 and 81 vertices in mesh_1
+    for (std::size_t node_no = 0; node_no < 81; ++node_no)
+    {
+      std::cout << "\n-----------------------------------\n"
+		<< "adjust node no " << node_no << std::endl;
+      solve_poisson(n,
+		    node_no,
+		    t, x1, y1, x2, y2, false,//n == N - 1,
+		    u0_file, u1_file, u2_file,
+		    uncut0_file, uncut1_file, uncut2_file,
+		    cut0_file, cut1_file, cut2_file,
+		    covered0_file, covered1_file, covered2_file);
+    }
 
     manual_area_calculation_start64();
   }
