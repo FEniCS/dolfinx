@@ -274,11 +274,7 @@ namespace dolfin
     /// *Arguments*
     ///     boundary_values (std::unordered_map<std::size_t, double>)
     ///         Map from dof to boundary value.
-    ///     method (std::string)
-    ///         Optional argument: A string specifying which
-    ///         method to use.
-    void get_boundary_values(Map& boundary_values,
-                             std::string method="default") const;
+    void get_boundary_values(Map& boundary_values) const;
 
     /// Get boundary values from neighbour processes. If a method other than
     /// "pointwise" is used, this is necessary to ensure all boundary dofs are
@@ -434,6 +430,9 @@ namespace dolfin
     std::shared_ptr<const SubDomain> _user_sub_domain;
 
   private:
+
+    // Cached number of bc dofs, used for memory allocation on second use
+    mutable std::size_t _num_dofs;
 
     // Boundary facets, stored by facet index (local to process)
     mutable std::vector<std::size_t> _facets;

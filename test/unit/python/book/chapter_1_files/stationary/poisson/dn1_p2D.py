@@ -18,7 +18,7 @@ mesh = UnitSquareMesh(3, 2)
 V = FunctionSpace(mesh, 'Lagrange', 1)
 
 # Define Dirichlet boundary conditions
-u0 = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]')
+u0 = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]', degree=2)
 
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
@@ -33,7 +33,7 @@ bc = DirichletBC(V, u0, u0_boundary)
 u = TrialFunction(V)
 v = TestFunction(V)
 f = Constant(-6.0)
-g = Expression('-4*x[1]')
+g = Expression('-4*x[1]', degree=1)
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx - g*v*ds
 

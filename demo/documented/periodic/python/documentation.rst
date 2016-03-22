@@ -146,7 +146,7 @@ operators). In summary, this reads
     # Define variational problem
     u = TrialFunction(V)
     v = TestFunction(V)
-    f = Source()
+    f = Source(degree=1)
     a = dot(grad(u), grad(v))*dx
     L = f*v*dx
 

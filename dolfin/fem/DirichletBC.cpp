@@ -24,9 +24,10 @@
 // First added:  2007-04-10
 // Last changed: 2014-01-23
 
-#include <map>
 #include <cinttypes>
+#include <cmath>
 #include <cstdlib>
+#include <map>
 #include <utility>
 #include <ufc.h>
 
@@ -71,7 +72,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          bool check_midpoint)
   : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
     _method(method), _user_sub_domain(sub_domain),
-    _check_midpoint(check_midpoint)
+    _num_dofs(0), _check_midpoint(check_midpoint)
 {
   check();
   parameters = default_parameters();
@@ -83,7 +84,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          std::size_t sub_domain,
                          std::string method)
   : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
-    _method(method), _user_mesh_function(sub_domains),
+    _method(method), _num_dofs(0), _user_mesh_function(sub_domains),
     _user_sub_domain_marker(sub_domain), _check_midpoint(true)
 {
   check();
@@ -94,7 +95,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          std::shared_ptr<const GenericFunction> g,
                          std::size_t sub_domain, std::string method)
   : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
-    _method(method), _user_sub_domain_marker(sub_domain), _check_midpoint(true)
+    _method(method), _num_dofs(0), _user_sub_domain_marker(sub_domain),
+    _check_midpoint(true)
 {
   check();
   parameters = default_parameters();
@@ -105,8 +107,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          const std::vector<std::size_t>& markers,
                          std::string method)
   : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
-    _method(method), _facets(markers), _user_sub_domain_marker(0),
-    _check_midpoint(true)
+    _method(method), _num_dofs(0), _facets(markers),
+    _user_sub_domain_marker(0), _check_midpoint(true)
 {
   check();
   parameters = default_parameters();
@@ -129,6 +131,7 @@ const DirichletBC& DirichletBC::operator= (const DirichletBC& bc)
   _g = bc._g;
   _method = bc._method;
   _user_sub_domain = bc._user_sub_domain;
+  _num_dofs = bc._num_dofs;
   _facets = bc._facets;
   _cells_to_localdofs = bc._cells_to_localdofs;
   _user_mesh_function = bc._user_mesh_function;
@@ -216,6 +219,12 @@ void DirichletBC::gather(Map& boundary_values) const
   const std::size_t n1 = dofmap.ownership_range().second;
   const std::size_t owned_size = n1 - n0;
 
+  // Reserve space
+  std::size_t num_dofs = boundary_values.size();
+  for (std::size_t p = 0; p < comm_size; ++p)
+    num_dofs += received_bvc0[p].size();
+  boundary_values.reserve(num_dofs);
+
   // Add the received boundary values to the local boundary values
   for (std::size_t p = 0; p < comm_size; ++p)
   {
@@ -264,15 +273,14 @@ void DirichletBC::gather(Map& boundary_values) const
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::get_boundary_values(Map& boundary_values,
-                                      std::string method) const
+void DirichletBC::get_boundary_values(Map& boundary_values) const
 {
   // Create local data
   dolfin_assert(_function_space);
   LocalData data(*_function_space);
 
   // Compute dofs and values
-  compute_bc(boundary_values, data, method);
+  compute_bc(boundary_values, data, _method);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::zero(GenericMatrix& A) const
@@ -305,7 +313,7 @@ void DirichletBC::zero_columns(GenericMatrix& A,
                                double diag_val) const
 {
   Map bv_map;
-  get_boundary_values(bv_map, _method);
+  get_boundary_values(bv_map);
 
   // Create lookup table of dofs
   //const std::size_t nrows = A.size(0); // should be equal to b.size()
@@ -746,6 +754,10 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
 
+  // Allocate space
+  boundary_values.reserve(boundary_values.size()
+                          + _facets.size()*dofmap.num_facet_dofs());
+
   // Iterate over marked
   dolfin_assert(_function_space->element());
   Progress p("Computing Dirichlet boundary values, topological search",
@@ -832,6 +844,10 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 
   const std::size_t D = mesh.topology().dim();
 
+  // Allocate space using cached size
+  if (_num_dofs > 0)
+    boundary_values.reserve(boundary_values.size() + _num_dofs);
+
   // Iterate over facets
   Progress p("Computing Dirichlet boundary values, geometric search",
              _facets.size());
@@ -906,6 +922,9 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
       }
     }
   }
+
+  // Store num of bc dofs for better performance next time
+  _num_dofs = boundary_values.size();
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_pointwise(Map& boundary_values,
@@ -939,6 +958,10 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   RangedIndexSet already_visited(dofmap.is_view()
                                  ? std::pair<std::size_t, std::size_t>(0,0)
                                  : dofmap.ownership_range());
+
+  // Allocate space using cached size
+  if (_num_dofs > 0)
+    boundary_values.reserve(boundary_values.size() + _num_dofs);
 
   // Iterate over cells
   std::vector<double> coordinate_dofs;
@@ -1046,6 +1069,9 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       }
     }
   }
+
+  // Store num of bc dofs for better performance next time
+  _num_dofs = boundary_values.size();
 }
 //-----------------------------------------------------------------------------
 bool DirichletBC::on_facet(const double* coordinates, const Facet& facet) const

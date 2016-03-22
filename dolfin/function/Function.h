@@ -359,9 +359,6 @@ namespace dolfin
     // Collection of sub-functions which share data with the function
     mutable boost::ptr_map<std::size_t, Function> _sub_functions;
 
-    // Compute lists of off-process dofs
-    void compute_off_process_dofs() const;
-
     // Initialize vector
     void init_vector();
 

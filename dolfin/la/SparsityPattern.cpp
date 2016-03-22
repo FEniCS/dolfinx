@@ -509,7 +509,7 @@ SparsityPattern::diagonal_pattern(Type type) const
   for (std::size_t i = 0; i < diagonal.size(); ++i)
     v[i].insert(v[i].begin(), diagonal[i].begin(), diagonal[i].end());
 
-  if (type == sorted)
+  if (type == Type::sorted)
   {
     for (std::size_t i = 0; i < v.size(); ++i)
       std::sort(v[i].begin(), v[i].end());
@@ -525,7 +525,7 @@ std::vector<std::vector<std::size_t>>
   for (std::size_t i = 0; i < off_diagonal.size(); ++i)
     v[i].insert(v[i].begin(), off_diagonal[i].begin(), off_diagonal[i].end());
 
-  if (type == sorted)
+  if (type == Type::sorted)
   {
     for (std::size_t i = 0; i < v.size(); ++i)
       std::sort(v[i].begin(), v[i].end());

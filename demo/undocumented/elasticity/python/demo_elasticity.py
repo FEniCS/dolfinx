@@ -72,9 +72,8 @@ omega = 300.0
 rho = 10.0
 
 # Loading due to centripetal acceleration (rho*omega^2*x_i)
-f = Expression(("rho*omega*omega*x[0]", \
-                "rho*omega*omega*x[1]", \
-                "0.0"), omega=omega, rho=rho)
+f = Expression(("rho*omega*omega*x[0]", "rho*omega*omega*x[1]", "0.0"),
+               omega=omega, rho=rho, degree=2)
 
 # Elasticity parameters
 E = 1.0e9
@@ -111,10 +110,12 @@ u = Function(V)
 # generate compatible vectors for the nullspace.
 null_space = build_nullspace(V, u.vector())
 
+# Attach near nullspace to matrix
+as_backend_type(A).set_near_nullspace(null_space)
+
 # Create PETSC smoothed aggregation AMG preconditioner and attach near
 # null space
 pc = PETScPreconditioner("petsc_amg")
-pc.set_nullspace(null_space)
 
 # Create CG Krylov solver and turn convergence monitoring on
 solver = PETScKrylovSolver("cg", pc)

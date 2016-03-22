@@ -19,6 +19,7 @@
 #ifndef __UNIT_DISC_MESH_H
 #define __UNIT_DISC_MESH_H
 
+#include <cstddef>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 
@@ -29,10 +30,10 @@ namespace dolfin
   {
   public:
 
-    /// Create a Unit Disc in 2D or 3D geometry
-    /// with n steps, and given degree polynomial mesh
-    UnitDiscMesh(MPI_Comm comm, std::size_t n,
-                 std::size_t degree, std::size_t gdim);
+    /// Create a unit disc mesh in 2D or 3D geometry with n steps, and
+    /// given degree polynomial mesh
+    UnitDiscMesh(MPI_Comm comm, std::size_t n, std::size_t degree,
+                 std::size_t gdim);
 
   };
 

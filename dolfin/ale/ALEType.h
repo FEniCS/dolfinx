@@ -25,7 +25,7 @@ namespace dolfin
 {
 
   /// List of available methods for ALE mesh movement
-  enum ALEType {lagrange, hermite, harmonic};
+  enum class ALEType {lagrange, hermite, harmonic};
 
 }
 

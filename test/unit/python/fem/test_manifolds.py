@@ -98,8 +98,8 @@ def poisson_2d():
     # Define variational problem
     u = TrialFunction(V)
     v = TestFunction(V)
-    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-    g = Expression("sin(5*x[0])")
+    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
+    g = Expression("sin(5*x[0])", degree=2)
     a = inner(grad(u), grad(v))*dx
     L = f*v*dx + g*v*ds
 
@@ -138,8 +138,8 @@ def poisson_manifold():
     f = Expression(("10*exp(-(pow(x[0] - %.17f, 2)" +
                     " + pow(x[1] - %.17f, 2)" +
                     " + pow(x[2] - %.17f, 2)) / 0.02)")
-                   % tuple(rotation.rotate_point([0.5, 0.5, 0])))
-    g = Expression("sin(5*%s)" % rotation.x(0))
+                   % tuple(rotation.rotate_point([0.5, 0.5, 0])), degree=2)
+    g = Expression("sin(5*%s)" % rotation.x(0), degree=2)
 
     a = inner(grad(u), grad(v))*dx
     L = f*v*dx + g*v*ds
@@ -159,7 +159,7 @@ def rotate_2d_mesh(theta):
     boundarymesh = BoundaryMesh(cubemesh, "exterior")
     mesh = SubMesh(boundarymesh, BottomEdge())
 
-    mesh.init_cell_orientations(Expression(("0.", "0.", "1.")))
+    mesh.init_cell_orientations(Expression(("0.", "0.", "1."), degree=0))
 
     rotation = Rotation(theta, theta)
     rotation.rotate(mesh)
@@ -308,7 +308,7 @@ def test_elliptic_eqn_on_intersecting_surface(datadir):
                 value[0] = 0.0
 
     f = Function(V)
-    f.interpolate(Source())
+    f.interpolate(Source(degree=2))
 
     a = inner(grad(u), grad(v))*dx + u*v*dx
     L = f*v*dx

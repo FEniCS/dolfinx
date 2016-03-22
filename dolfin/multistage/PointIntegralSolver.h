@@ -100,22 +100,9 @@ namespace dolfin
 
     // Return number of computations of jacobian
     std::size_t num_jacobian_computations() const
-    {
-      return _num_jacobian_computations;
-    }
+    { return _num_jacobian_computations; }
 
   private:
-
-    // Convergence criteria for simplified Newton solver
-    enum convergence_criteria_t
-    {
-
-      converged,
-      too_slow,
-      exceeds_max_iter,
-      diverge
-
-    };
 
     // In-place LU factorization of jacobian matrix
     void _lu_factorize(std::vector<double>& A);

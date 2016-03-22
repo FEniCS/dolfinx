@@ -22,7 +22,8 @@
 //-----------------------------------------------------------------------------
 // Extend FunctionAXPY
 //-----------------------------------------------------------------------------
-%extend dolfin::FunctionAXPY {
+%extend dolfin::FunctionAXPY
+{
 %pythoncode %{
 __truediv__ = __div__
 %}

@@ -51,7 +51,7 @@ def update(u, u0, v0, a0, beta, gamma, dt):
 # External load
 class Traction(Expression):
 
-    def __init__(self, dt, t, old):
+    def __init__(self, dt, t, old, **kwargs):
         self.t   = t
         self.dt  = dt
         self.old = old
@@ -124,8 +124,8 @@ a0 = Function(V)
 
 # External forces (body and applied tractions
 f  = Constant((0.0, 0.0))
-p  = Traction(dt, t, False)
-p0 = Traction(dt, t, True)
+p  = Traction(dt, t, False, degree=1)
+p0 = Traction(dt, t, True, degree=1)
 
 # Create mesh function over the cell facets
 boundary_subdomains = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)

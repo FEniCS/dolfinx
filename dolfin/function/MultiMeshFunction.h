@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2013-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-25
-// Last changed: 2014-05-23
+// Last changed: 2016-03-02
 
 #ifndef __MULTI_MESH_FUNCTION_H
 #define __MULTI_MESH_FUNCTION_H
@@ -41,20 +41,6 @@ namespace dolfin
   public:
 
     /// Create MultiMesh function on given MultiMesh function space
-    ///
-    /// *Arguments*
-    ///     V (_MultiMeshFunctionSpace_)
-    ///         The MultiMesh function space.
-    ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
-    ///         MultiMeshFunction u(V);
-    ///
-    explicit MultiMeshFunction(const MultiMeshFunctionSpace& V);
-
-    /// Create MultiMesh function on given MultiMesh function space (shared
-    /// pointer version)
     ///
     /// *Arguments*
     ///     V (_MultiMeshFunctionSpace_)

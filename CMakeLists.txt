@@ -344,16 +344,6 @@ set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams
     timer)
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
-# Check for required package UFC
-find_package(UFC 1.7.0 QUIET HINTS ${UFC_DIR})
-if (NOT UFC_FOUND)
-  message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 1.7.0.\n"
-    "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
-else()
-  message(STATUS "UFC version: ${UFC_VERSION_STRING}")
-endif()
-
 # Check for required package Eigen3
 find_package(Eigen3 3.2.0 REQUIRED)
 
@@ -426,6 +416,9 @@ if (DOLFIN_ENABLE_PYTHON)
   endif()
 
 endif()
+
+# Check for required package UFC
+find_package(UFC MODULE 1.7.0)
 
 # Check for PETSc, SLEPc and petsc4py, slepc4py
 if (DOLFIN_ENABLE_PETSC)
@@ -591,17 +584,27 @@ endif()
 
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
-  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
-    vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
-    NO_MODULE)
+  # Find all modules
+  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
 
-  # For VTK < 6.3, vtkRenderingFreeTypeOpenGL module is required, so
-  # add if available (vtkRenderingFreeTypeOpenGL was removed from VTK
-  # 6.3)
-  if(TARGET vtkRenderingFreeTypeOpenGL)
+  # Add required modules (depends on VTK version)
+  if(TARGET vtkRenderingOpenGL2)
+    # VTK 7.0
+    find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
+      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL2
+      NO_MODULE)
+  elseif(TARGET vtkRenderingFreeTypeOpenGL)
+    # For VTK < 6.3, vtkRenderingFreeTypeOpenGL module is required, so
+    # add if available (vtkRenderingFreeTypeOpenGL was removed from
+    # VTK 6.3)
     find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
       vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
       vtkRenderingFreeTypeOpenGL NO_MODULE)
+  elseif(TARGET vtkRenderingOpenGL)
+    # VTK 6.3
+    find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
+      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture
+      vtkRenderingOpenGL NO_MODULE)
   endif()
 
   set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")

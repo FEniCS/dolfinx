@@ -1,4 +1,4 @@
-// Copyright (C) 2014-2015 Anders Logg
+// Copyright (C) 2014-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2015-11-26
+// Last changed: 2016-03-02
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -65,34 +65,19 @@ namespace dolfin
 
     //--- Convenience constructors ---
 
-    /// Create multimesh from one mesh (shared_ptr version)
+    /// Create multimesh from one mesh
     MultiMesh(std::shared_ptr<const Mesh> mesh_0,
               std::size_t quadrature_order);
 
-    /// Create multimesh from one mesh (reference version)
-    MultiMesh(const Mesh& mesh_0,
-              std::size_t quadrature_order);
-
-    /// Create multimesh from two meshes (shared_ptr version)
+    /// Create multimesh from two meshes
     MultiMesh(std::shared_ptr<const Mesh> mesh_0,
               std::shared_ptr<const Mesh> mesh_1,
               std::size_t quadrature_order);
 
-    /// Create multimesh from two meshes (reference version)
-    MultiMesh(const Mesh& mesh_0,
-              const Mesh& mesh_1,
-              std::size_t quadrature_order);
-
-    /// Create multimesh from three meshes (shared_ptr version)
+    /// Create multimesh from three meshes
     MultiMesh(std::shared_ptr<const Mesh> mesh_0,
               std::shared_ptr<const Mesh> mesh_1,
               std::shared_ptr<const Mesh> mesh_2,
-              std::size_t quadrature_order);
-
-    /// Create multimesh from three meshes (reference version)
-    MultiMesh(const Mesh& mesh_0,
-              const Mesh& mesh_1,
-              const Mesh& mesh_2,
               std::size_t quadrature_order);
 
     /// Destructor
@@ -294,19 +279,12 @@ namespace dolfin
     std::shared_ptr<const BoundingBoxTree>
     bounding_box_tree_boundary(std::size_t part) const;
 
-    /// Add mesh (shared pointer version)
+    /// Add mesh
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh
     void add(std::shared_ptr<const Mesh> mesh);
-
-    /// Add mesh (reference version)
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh
-    void add(const Mesh& mesh);
 
     /// Build multimesh
     void build(std::size_t quadrature_order=2);

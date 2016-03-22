@@ -393,7 +393,7 @@ def test_basic_cell_orientations():
     print(len(orientations))
     assert len(orientations) == 0
 
-    mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0")))
+    mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0"), degree=0))
     orientations = mesh.cell_orientations()
     assert len(orientations) == mesh.num_cells()
     for i in range(mesh.num_cells()):
@@ -404,12 +404,12 @@ def test_basic_cell_orientations():
 def test_cell_orientations():
     "Test that cell orientations update as expected."
     mesh = UnitIntervalMesh(12)
-    mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0")))
+    mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0"), degree=0))
     for i in range(mesh.num_cells()):
         assert mesh.cell_orientations()[i] == 0
 
     mesh = UnitSquareMesh(2, 2)
-    mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
+    mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0"), degree=0))
     reference = numpy.array((0, 1, 0, 1, 0, 1, 0, 1))
     # Only compare against reference in serial (don't know how to
     # compare in parallel)
@@ -417,7 +417,7 @@ def test_cell_orientations():
         assert mesh.cell_orientations()[i] == reference[i]
 
     mesh = BoundaryMesh(UnitSquareMesh(2, 2), "exterior")
-    mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
+    mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]"), degree=1))
     print(mesh.cell_orientations())
 
 

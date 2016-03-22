@@ -34,6 +34,11 @@ std::string dolfin::dolfin_version()
   return std::string(DOLFIN_VERSION);
 }
 //-------------------------------------------------------------------------
+std::string dolfin::ufc_signature()
+{
+  return std::string(UFC_SIGNATURE);
+}
+//-------------------------------------------------------------------------
 std::string dolfin::git_commit_hash()
 {
   return std::string(DOLFIN_GIT_COMMIT_HASH);

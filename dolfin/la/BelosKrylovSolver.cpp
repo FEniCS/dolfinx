@@ -319,10 +319,6 @@ void BelosKrylovSolver::set_options()
   Teuchos::RCP<Teuchos::ParameterList> solverParams
     = Teuchos::parameterList(*_solver->getCurrentParameters());
 
-  const int gmres_restart = parameters("gmres")["restart"];
-  if (solverParams->isParameter("Num Blocks"))
-      solverParams->set("Num Blocks", gmres_restart);
-
   const int max_iterations = parameters["maximum_iterations"];
   solverParams->set("Maximum Iterations", max_iterations);
 
