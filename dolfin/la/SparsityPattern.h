@@ -51,7 +51,7 @@ namespace dolfin
 
   public:
 
-    enum Type {sorted, unsorted};
+    enum class Type {sorted, unsorted};
 
     /// Create empty sparsity pattern
     SparsityPattern(std::size_t primary_dim);

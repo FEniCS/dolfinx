@@ -26,6 +26,7 @@ from dolfin_utils.test import *
 
 backends = ["PETSc"]
 
+
 # Backends supporting the LinearOperator interface
 @pytest.mark.parametrize('backend', backends)
 def test_linear_operator(backend):

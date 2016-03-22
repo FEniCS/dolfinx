@@ -64,14 +64,14 @@ namespace dolfin
   {
   public:
 
-    enum SolverType {LU, Cholesky};
+    enum class SolverType {LU, Cholesky};
 
     /// Constructor (shared pointer version)
     LocalSolver(std::shared_ptr<const Form> a, std::shared_ptr<const Form> L,
-                SolverType solver_type=LU);
+                SolverType solver_type=SolverType::LU);
 
     /// Constructor (shared pointer version)
-    LocalSolver(std::shared_ptr<const Form> a, SolverType solver_type=LU);
+    LocalSolver(std::shared_ptr<const Form> a, SolverType solver_type=SolverType::LU);
 
     /// Solve local (cell-wise) problems A_e x_e = b_e, where A_e is
     /// the cell matrix LHS and b_e is the global RHS vector b

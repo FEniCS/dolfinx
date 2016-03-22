@@ -195,9 +195,10 @@ namespace dolfin
     void compute_extrapolation(const Function& z,
          const std::vector<std::shared_ptr<const DirichletBC> > bcs);
 
-    friend const ErrorControl& adapt(const ErrorControl& ec,
-                                     std::shared_ptr<const Mesh> adapted_mesh,
-                                     bool adapt_coefficients);
+    friend std::shared_ptr<ErrorControl>
+      adapt(const ErrorControl& ec,
+            std::shared_ptr<const Mesh> adapted_mesh,
+            bool adapt_coefficients);
 
   private:
 

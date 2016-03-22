@@ -41,13 +41,7 @@ namespace dolfin
   public:
 
     /// Enum to decide what way AXPY is constructed
-    enum Direction
-    {
-      ADD_ADD = 0,
-      SUB_ADD = 1,
-      ADD_SUB = 2,
-      SUB_SUB = 3
-    };
+    enum class Direction : int {ADD_ADD=0, SUB_ADD=1, ADD_SUB=2, SUB_SUB=3};
 
     /// Constructor
     FunctionAXPY(const Function& func, double scalar);
@@ -72,6 +66,9 @@ namespace dolfin
 
     /// Copy constructor
     FunctionAXPY(const FunctionAXPY& axpy);
+
+    /// Destructor
+    ~FunctionAXPY();
 
     /// Addition operator
     FunctionAXPY operator+(const Function& func) const;
@@ -99,7 +96,7 @@ namespace dolfin
     /// Register another AXPY object
     void _register(const FunctionAXPY& axpy0, double scale);
 
-    std::vector<std::pair<double, const Function*> > _pairs;
+    std::vector<std::pair<double, const Function*>> _pairs;
 
   };
 

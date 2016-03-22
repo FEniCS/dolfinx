@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-06-10
-// Last changed: 2015-11-16
+// Last changed: 2016-03-02
 //
 // This demo program solves the Stokes equations on a domain defined
 // by three overlapping and non-matching meshes.
@@ -25,6 +25,7 @@
 #include "MultiMeshStokes.h"
 
 using namespace dolfin;
+using std::make_shared;
 
 // Value for inflow boundary condition for velocity
 class InflowValue : public Expression
@@ -77,61 +78,61 @@ int main(int argc, char* argv[])
   }
 
   // Create meshes
-  UnitSquareMesh mesh_0(16, 16);
-  RectangleMesh  mesh_1(Point(0.2, 0.2), Point(0.6, 0.6), 8, 8);
-  RectangleMesh  mesh_2(Point(0.4, 0.4), Point(0.8, 0.8), 8, 8);
+  auto mesh_0 = make_shared<UnitSquareMesh>(16, 16);
+  auto mesh_1 = make_shared<RectangleMesh>(Point(0.2, 0.2), Point(0.6, 0.6), 8, 8);
+  auto mesh_2 = make_shared<RectangleMesh>(Point(0.4, 0.4), Point(0.8, 0.8), 8, 8);
 
   // Build multimesh
-  MultiMesh multimesh;
-  multimesh.add(mesh_0);
-  multimesh.add(mesh_1);
-  multimesh.add(mesh_2);
-  multimesh.build();
+  auto multimesh = make_shared<MultiMesh>();
+  multimesh->add(mesh_0);
+  multimesh->add(mesh_1);
+  multimesh->add(mesh_2);
+  multimesh->build();
 
   // Create function space
-  MultiMeshStokes::MultiMeshFunctionSpace W(multimesh);
+  auto W = make_shared<MultiMeshStokes::MultiMeshFunctionSpace>(multimesh);
 
   // Create forms
-  MultiMeshStokes::MultiMeshBilinearForm a(W, W);
-  MultiMeshStokes::MultiMeshLinearForm L(W);
+  auto a = make_shared<MultiMeshStokes::MultiMeshBilinearForm>(W, W);
+  auto L = make_shared<MultiMeshStokes::MultiMeshLinearForm>(W);
 
   // Attach coefficients
-  Constant f(0, 0);
-  L.f = f;
+  auto f = make_shared<Constant>(0, 0);
+  L->f = f;
 
   // Assemble linear system
-  Matrix A;
-  Vector b;
-  assemble_multimesh(A, a);
-  assemble_multimesh(b, L);
+  auto A = make_shared<Matrix>();
+  auto b = make_shared<Vector>();
+  assemble_multimesh(*A, *a);
+  assemble_multimesh(*b, *L);
 
   // Create boundary values
-  InflowValue inflow_value;
-  Constant outflow_value(0);
-  Constant noslip_value(0, 0);
+  auto inflow_value  = make_shared<InflowValue>();
+  auto outflow_value = make_shared<Constant>(0);
+  auto noslip_value  = make_shared<Constant>(0, 0);
 
   // Create subdomains for boundary conditions
-  InflowBoundary inflow_boundary;
-  OutflowBoundary outflow_boundary;
-  NoslipBoundary noslip_boundary;
+  auto inflow_boundary  = make_shared<InflowBoundary>();
+  auto outflow_boundary = make_shared<OutflowBoundary>();
+  auto noslip_boundary  = make_shared<NoslipBoundary>();
 
   // Create subspaces for boundary conditions
-  MultiMeshSubSpace V(W, 0);
-  MultiMeshSubSpace Q(W, 1);
+  auto V = make_shared<MultiMeshSubSpace>(*W, 0);
+  auto Q = make_shared<MultiMeshSubSpace>(*W, 1);
 
   // Create boundary conditions
-  MultiMeshDirichletBC bc0(V, noslip_value,  noslip_boundary);
-  MultiMeshDirichletBC bc1(V, inflow_value,  inflow_boundary);
-  MultiMeshDirichletBC bc2(Q, outflow_value, outflow_boundary);
+  auto bc0 = make_shared<MultiMeshDirichletBC>(V, noslip_value,  noslip_boundary);
+  auto bc1 = make_shared<MultiMeshDirichletBC>(V, inflow_value,  inflow_boundary);
+  auto bc2 = make_shared<MultiMeshDirichletBC>(Q, outflow_value, outflow_boundary);
 
   // Apply boundary conditions
-  bc0.apply(A, b);
-  bc1.apply(A, b);
-  bc2.apply(A, b);
+  bc0->apply(*A, *b);
+  bc1->apply(*A, *b);
+  bc2->apply(*A, *b);
 
   // Compute solution
   MultiMeshFunction w(W);
-  solve(A, *w.vector(), b);
+  solve(*A, *w.vector(), *b);
 
   // Extract solution components
   Function& u0 = (*w.part(0))[0];
@@ -156,7 +157,7 @@ int main(int argc, char* argv[])
   p2_file << p2;
 
   // Plot solution
-  plot(W.multimesh());
+  plot(W->multimesh());
   plot(u0, "u_0");
   plot(u1, "u_1");
   plot(u2, "u_2");

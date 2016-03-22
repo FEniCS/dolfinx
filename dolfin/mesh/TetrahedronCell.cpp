@@ -25,6 +25,7 @@
 // Last changed: 2014-02-13
 
 #include <algorithm>
+#include <cmath>
 #include <boost/multi_array.hpp>
 
 #include <dolfin/log/log.h>

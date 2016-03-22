@@ -27,7 +27,7 @@ def test_manifold_point_search():
         me.add_cell(i, *c)
     me.close()
 
-    mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
+    mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0"), degree=0))
 
     bb = mesh.bounding_box_tree()
     p = Point(2.0/3.0, 1.0/3.0, 2.0/3.0)

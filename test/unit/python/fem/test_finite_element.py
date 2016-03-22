@@ -53,8 +53,8 @@ def W(mesh):
 
 def test_evaluate_dofs(W, mesh, V):
 
-    e = Expression("x[0]+x[1]")
-    e2 = Expression(("x[0]+x[1]", "x[0]+x[1]"))
+    e = Expression("x[0] + x[1]", degree=1)
+    e2 = Expression(("x[0] + x[1]", "x[0] + x[1]"), degree=1)
 
     coords = numpy.zeros((3, 2), dtype="d")
     coord = numpy.zeros(2, dtype="d")
@@ -105,7 +105,7 @@ def test_evaluate_dofs_manifolds_affine():
     CG22 = FunctionSpace(mesh2, "CG", 2)
     elements = [DG0, DG1, CG1, CG2, DG20, DG21, CG21, CG22]
 
-    f = Expression("x[0]+x[1]")
+    f = Expression("x[0] + x[1]", degree=1)
     for V in elements:
         sdim = V.element().space_dimension()
         gdim = V.mesh().geometry().dim()

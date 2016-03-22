@@ -36,7 +36,7 @@ T_A = 10
 omega = 7.27E-5
 
 T_0 = Expression('T_R + T_A*sin(omega*t)',
-                 T_R=T_R, T_A=T_A, omega=omega, t=0.0)
+                 T_R=T_R, T_A=T_A, omega=omega, t=0.0, degree=2)
 
 def surface(x, on_boundary):
     return on_boundary and abs(x[d-1]) < 1E-14
@@ -66,7 +66,7 @@ kappa_str[3] = 'x[0] > -W/4 && x[0] < W/4 '\
 
 # Alternative way of defining the kappa function
 class Kappa(Expression):
-    def eval(self, value, x):
+    def eval(self, value, x, **kwargs):
         """x: spatial point, value[0]: function value."""
         d = len(x)  # no of space dimensions
         material = 0  # 0: outside, 1: inside
@@ -85,8 +85,7 @@ class Kappa(Expression):
 
 # Physical parameters
 kappa = Expression(kappa_str[d],
-                   D=D, W=W, kappa_0=kappa_0, kappa_1=kappa_1)
-#kappa = Kappa(V)
+                   D=D, W=W, kappa_0=kappa_0, kappa_1=kappa_1, degree=0)
 
 # soil:
 rho = 1500
@@ -114,7 +113,7 @@ T = Function(V)   # unknown at the new time level
 
 # hack for plotting (first surface must span all values (?))
 dummy = Expression('T_R - T_A/2.0 + 2*T_A*(x[%g]+D)' % (d-1),
-                   T_R=T_R, T_A=T_A, D=D)
+                   T_R=T_R, T_A=T_A, D=D, dgeree=1)
 
 # Make all plot commands inctive
 import scitools.misc
@@ -161,7 +160,7 @@ def line_plot():
 
     ev.savefig('tmp_%04d.png' % counter)
     time.sleep(0.1)
-    
+
 def T_exact(x):
     a = sqrt(omega*rho*c/(2*kappa_0))
     return T_R + T_A*exp(a*x)*numpy.sin(omega*t + a*x)
@@ -185,7 +184,7 @@ while t <= t_stop:
 
     total_flux = assemble(flux)
     print('Total flux:', total_flux)
-    
+
     t += dt
     T_1.assign(T)
     counter += 1

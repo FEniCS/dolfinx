@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2013-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-19
-// Last changed: 2015-11-16
+// Last changed: 2016-03-02
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
@@ -62,11 +62,6 @@ void MultiMeshDofMap::add(std::shared_ptr<const GenericDofMap> dofmap)
   _original_dofmaps.push_back(dofmap);
   log(PROGRESS, "Added dofmap to MultiMesh dofmap; dofmap has %d part(s).",
       _original_dofmaps.size());
-}
-//-----------------------------------------------------------------------------
-void MultiMeshDofMap::add(const GenericDofMap& dofmap)
-{
-  add(reference_to_no_delete_pointer(dofmap));
 }
 //-----------------------------------------------------------------------------
 void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space,

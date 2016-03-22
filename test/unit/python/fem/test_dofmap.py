@@ -251,7 +251,7 @@ def test_dof_to_vertex_map(mesh, reorder_dofs):
     _test_maps_consistency(W)
 
     u = Function(V)
-    e = Expression("x[0]+x[1]")
+    e = Expression("x[0] + x[1]", degree=1)
     u.interpolate(e)
 
     vert_values = mesh.coordinates().sum(1)

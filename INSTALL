@@ -25,7 +25,10 @@ Local installation
 It may sometimes be advantageous to install DOLFIN locally as part
 of the DOLFIN source tree. To do this, simply type
 
-  ./cmake.local
+  mkdir build
+  cd build
+  cmake -DCMAKE_INSTALL_PREFIX=$PWD/../local ..
+  make install
 
 This configures, compiles, and install DOLFIN in a directory named
 'local' in the DOLFIN source tree.

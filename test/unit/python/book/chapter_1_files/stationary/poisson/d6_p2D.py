@@ -23,7 +23,7 @@ def compute(nx, ny, degree):
     # Exact solution
     omega = 1.0
     u_e = Expression('sin(omega*pi*x[0])*sin(omega*pi*x[1])',
-                     omega=omega)
+                     omega=omega, degree=degree+1)
 
     # Define variational problem
     u = TrialFunction(V)
