@@ -823,7 +823,7 @@ install(FILES ${DOLFIN_UTILITIES}
 #------------------------------------------------------------------------------
 # Installation of DOLFIN manual pages
 
-install(DIRECTORY ${DOLFIN_SOURCE_DIR}/doc/man/
+install(DIRECTORY ${DOLFIN_SOURCE_DIR}/doc-old/man/
   DESTINATION ${DOLFIN_MAN_DIR}
   USE_SOURCE_PERMISSIONS
   COMPONENT RuntimeExecutables)
@@ -1013,7 +1013,7 @@ if (DOLFIN_ENABLE_DOCS)
   if (NOT SPHINX_FOUND)
     message(STATUS "Disabling generation of documentation because Sphinx is missing.")
   else()
-    add_subdirectory(doc)
+    add_subdirectory(doc-old)
   endif()
 endif()
 
