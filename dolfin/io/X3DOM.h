@@ -32,12 +32,6 @@ namespace dolfin
   {
   public:
 
-    /// Constructor
-    X3DOM();
-
-    /// Destructor
-    ~X3DOM();
-
     // Whether in Face or Edge mode - should either be
     // "IndexedFaceSet" or "IndexedLineSet"
     static std::string xml_str(const Mesh& mesh, const std::string facet_type, const size_t palette);

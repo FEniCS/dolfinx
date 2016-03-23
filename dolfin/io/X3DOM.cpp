@@ -17,17 +17,6 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-X3DOM::X3DOM() 
-{
-  // Constructor - Do nothing
-}
-//-----------------------------------------------------------------------------
-X3DOM::~X3DOM()
-{
-  // Destructor - Do nothing
-}
-//-----------------------------------------------------------------------------
 std::string X3DOM::xml_str(const Mesh& mesh, const std::string facet_type, const size_t palette)
 {
   // Return xml string for X3D
