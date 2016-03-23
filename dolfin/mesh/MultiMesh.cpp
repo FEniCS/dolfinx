@@ -36,7 +36,7 @@
 #include <iomanip>
 
 //#define Augustcheckqrpositive
-//#define Augustdebug
+#define Augustdebug
 //#define Augustnormaldebug
 
 using namespace dolfin;
@@ -699,6 +699,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
   std::cout.precision(15);
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
+    std::cout << "cut part " << cut_part << std::endl;
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
@@ -743,7 +744,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
-      //      if (cut_part == 0 and it->first == 254)
+      //if (cut_part == 1 and it->first == 16)
     {
 #ifdef Augustdebug
       std::cout << "-------- new cut cell\n";

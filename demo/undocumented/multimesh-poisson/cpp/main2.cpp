@@ -486,12 +486,13 @@ void solve_poisson(std::size_t step,
   mesh_1->rotate(70*t);
   mesh_2->rotate(-70*t);
 
-  {
-    // move node number node_no a little bit in the x direction
-    std::vector<double> coords = mesh_1->coordinates();
-    coords[2*node_no]+=1e-16;
-    mesh_1->coordinates() = coords;
-  }
+  // {
+  //   // move node number node_no a little bit in the x direction
+  //   std::vector<double> coords = mesh_1->coordinates();
+  //   coords[2*node_no]+=1e-16;
+  //   std::cout << coords[2*node_no] << ' '<< coords[2*node_no+1] << std::endl;
+  //   mesh_1->coordinates() = coords;
+  // }
 
 
   // Build multimesh
@@ -512,6 +513,19 @@ void solve_poisson(std::size_t step,
     // Debug
     //plot_normals(multimesh);
     writemarkers(step, *multimesh);
+
+    // // test coll maps
+    // const auto cmap = multimesh->collision_map_cut_cells(1);
+    // const std::vector<std::size_t> ee={{16,19,18,3}};
+    // for (const std::size_t e: ee) {
+    //   const auto it = cmap.find(e);
+    //   assert(it != cmap.end());
+    //   std::cout << it->first<<"   ";
+    //   for (const auto p: it->second)
+    // 	std::cout << p.first <<' '<<p.second<<"    ";
+    //   std::cout << std::endl;
+    // }
+    // PPause;
   }
 
 
@@ -691,8 +705,8 @@ int main(int argc, char* argv[])
     // solve_poisson(t, x1, y1, x2, y2, n == N - 1,
     //               u0_file, u1_file, u2_file);
 
-    // here we know a priori that we have 289 vertices in mesh_0 and 81 vertices in mesh_1
-    for (std::size_t node_no = 0; node_no < 81; ++node_no)
+    // here we know a priori that we have 289 vertices in mesh_0 and 81 vertices in mesh_1 and mesh_2
+    for (std::size_t node_no = 10; node_no < 11; ++node_no)
     {
       std::cout << "\n-----------------------------------\n"
 		<< "adjust node no " << node_no << std::endl;

@@ -259,7 +259,7 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
   case 3:
     // Assign weights
     w.resize(4);
-    w[0] = -27./48;
+    w[0] = -27./48; // NB: we should avoid this qr due to negative weight
     w[1] = w[2] = w[3] = 25./48;
 
     // Assign points
