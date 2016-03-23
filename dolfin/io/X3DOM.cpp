@@ -28,7 +28,7 @@ X3DOM::~X3DOM()
   // Destructor - Do nothing
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::xml_str(const Mesh& mesh, const std::string facet_type)
+std::string X3DOM::xml_str(const Mesh& mesh, const std::string facet_type, const size_t palette)
 {
   // Return xml string for X3D
   // return "This will print XML string.";
@@ -60,14 +60,27 @@ std::string X3DOM::xml_str(const Mesh& mesh, const std::string facet_type)
 
   std::stringstream ss;
   xml_doc.save(ss, "  ");
+  
   return ss.str();
-  // return "If you see this message it is working!!";
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::html_str(const Mesh& mesh, const std::string facet_type)
+std::string X3DOM::html_str(const Mesh& mesh, const std::string facet_type, const size_t palette)
 {
   // Return html string for HTML
-  return "This will print HTML string.";
+  std::string start_str = "<html> \n"
+                          "    <head> \n"
+                          "        <script type='text/javascript' src='http://www.x3dom.org/download/x3dom.js'> </script> \n"
+                          "        <link rel='stylesheet' type='text/css' href='http://www.x3dom.org/download/x3dom.css'></link> \n"
+                          "    </head> \n"
+                          "</html> \n"
+                          "\n"
+                          "<body>\n";
+  std::string end_str = "</body>";
+
+  std::stringstream ss;
+  ss << start_str << xml_str(mesh, facet_type, palette) << "\n" << end_str;
+
+  return ss.str();
 }   
 //-----------------------------------------------------------------------------
 // void X3DOM::xml_to_file(const std::string filename)
@@ -84,7 +97,7 @@ std::string X3DOM::html_str(const Mesh& mesh, const std::string facet_type)
 //-----------------------------------------------------------------------------
 void X3DOM::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
                            const std::vector<std::size_t> vecindex,
-                           const std::vector<double> data_values, const std::string facet_type)
+                           const std::vector<double> data_values, const std::string facet_type, const std::size_t palette)
 {
   const std::size_t tdim = mesh.topology().dim();
 
@@ -163,7 +176,6 @@ void X3DOM::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
     indexed_face_set.append_attribute("colorIndex") = str_output.str().c_str();
 
     // Output colour palette
-    const int palette = 2;
     pugi::xml_node color = indexed_face_set.append_child("Color");
     color.append_attribute("color") = color_palette(palette).c_str();
   }
@@ -293,25 +305,29 @@ void X3DOM::output_xml_header(pugi::xml_document& xml_doc,
     = "http://www.w3.org/2001/XMLSchema-instance";
   x3d.append_attribute("xsd:noNamespaceSchemaLocation")
     = "http://www.web3d.org/specifications/x3d-3.2.xsd";
+  x3d.append_attribute("width") = "500px";
+  x3d.append_attribute("height") = "400px";
 
   pugi::xml_node scene = x3d.append_child("Scene");
-  pugi::xml_node viewpoint = scene.append_child("Viewpoint");
-  std::string xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-      + boost::lexical_cast<std::string>(xpos[1]) + " "
-    + boost::lexical_cast<std::string>(xpos[3]);
-  viewpoint.append_attribute("position") = xyz.c_str();
 
-  viewpoint.append_attribute("orientation") = "0 0 0 1";
-  viewpoint.append_attribute("fieldOfView") = "0.785398";
-  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-    + boost::lexical_cast<std::string>(xpos[1]) + " "
-    + boost::lexical_cast<std::string>(xpos[2]);
-  viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
+  // Uncomment cause these depends on the mesh?
+  // Let X3DOM take care of itself
 
-  viewpoint.append_attribute("zNear") = "-1";
-  viewpoint.append_attribute("zFar") = "-1";
-  pugi::xml_node background = scene.append_child("Background");
-  background.append_attribute("skyColor") = "0.9 0.9 1.0";
+  // pugi::xml_node viewpoint = scene.append_child("Viewpoint");
+  // std::string xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
+  //     + boost::lexical_cast<std::string>(xpos[1]) + " "
+  //   + boost::lexical_cast<std::string>(xpos[3]);
+  // viewpoint.append_attribute("position") = xyz.c_str();
+
+  // viewpoint.append_attribute("orientation") = "0 0 0 1";
+  // viewpoint.append_attribute("fieldOfView") = "0.785398";
+  // xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
+  //   + boost::lexical_cast<std::string>(xpos[1]) + " "
+  //   + boost::lexical_cast<std::string>(xpos[2]);
+  // viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
+
+  // viewpoint.append_attribute("zNear") = "-1";
+  // viewpoint.append_attribute("zFar") = "-1";
 
   pugi::xml_node shape = scene.append_child("Shape");
   pugi::xml_node material
@@ -323,6 +339,10 @@ void X3DOM::output_xml_header(pugi::xml_document& xml_doc,
   material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";
 
   shape.append_child(facet_type.c_str()).append_attribute("solid") = "false";
+
+  // Have to append Background after shape
+  pugi::xml_node background = scene.append_child("Background");
+  background.append_attribute("skyColor") = "0.9 0.9 1.0";
 }
 //-----------------------------------------------------------------------------
 std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh) 
@@ -399,7 +419,7 @@ std::vector<std::size_t> X3DOM::vertex_index(const Mesh& mesh)
   return vecindex;
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::color_palette(const int palette)
+std::string X3DOM::color_palette(const size_t palette)
 {
   // Make a basic palette of 256 colours
   std::stringstream colour;

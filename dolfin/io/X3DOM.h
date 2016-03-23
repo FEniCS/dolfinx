@@ -40,11 +40,11 @@ namespace dolfin
 
     // Whether in Face or Edge mode - should either be
     // "IndexedFaceSet" or "IndexedLineSet"
-    static std::string xml_str(const Mesh& mesh, const std::string facet_type);
+    static std::string xml_str(const Mesh& mesh, const std::string facet_type, const size_t palette);
 
     // static pugi::xml_document xml_doc(const Mesh& mesh);
 
-    static std::string html_str(const Mesh& mesh, const std::string facet_type);
+    static std::string html_str(const Mesh& mesh, const std::string facet_type, const size_t palette);
 
     // static pugi::xml_document html_doc(const Mesh& mesh);
 
@@ -66,14 +66,14 @@ namespace dolfin
     // Output values to XML using a colour palette
     static void write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
                       const std::vector<std::size_t> vecindex,
-                      const std::vector<double> data_values, const std::string facet_type);
+                      const std::vector<double> data_values, const std::string facet_type, const std::size_t palette);
 
     // XML header output
     static void output_xml_header(pugi::xml_document& xml_doc,
                            const std::vector<double>& xpos, const std::string facet_type);
 
     // Get a string representing a color palette
-    static std::string color_palette(const int pal);
+    static std::string color_palette(const size_t pal);
 
   };
 
