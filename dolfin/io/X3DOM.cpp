@@ -82,17 +82,37 @@ std::string X3DOM::html_str(const Mesh& mesh, const std::string facet_type, cons
   return ss.str();
 }   
 //-----------------------------------------------------------------------------
-// void X3DOM::xml_to_file(const std::string filename)
-// {
-//   // Save XML string to file
-//   std::cout<<"This should save to a file"<<std::endl;
-// }
-// //-----------------------------------------------------------------------------
-// void X3DOM::html_to_file(const std::string filename)
-// { 
-//   // Save HTML string to file
-//   std::cout<<"This should save to a file"<<std::endl;
-// }
+void X3DOM::xml_to_file(const std::string filename, const Mesh& mesh, const std::string facet_type, const size_t palette)
+{
+  // Save XML string to file
+  // Check if extension is X3D and give warning
+  if(filename.substr(filename.find_last_of(".") + 1) == "x3d") {
+    std::ofstream out(filename);
+    out << xml_str(mesh, facet_type, palette);
+    out.close();
+  } 
+  else {
+    dolfin_error("X3DOM.cpp",
+             "output file type",
+             "File type should be *.x3d");
+  }
+}
+//-----------------------------------------------------------------------------
+void X3DOM::html_to_file(const std::string filename, const Mesh& mesh, const std::string facet_type, const size_t palette)
+{ 
+  // Save HTMl string to file
+  // Check if extension is X3D and give warning
+  if(filename.substr(filename.find_last_of(".") + 1) == "html") {
+    std::ofstream out(filename);
+    out << html_str(mesh, facet_type, palette);
+    out.close();
+  } 
+  else {
+    dolfin_error("X3DOM.cpp",
+             "output file type",
+             "File type should be *.html");
+  }
+}
 //-----------------------------------------------------------------------------
 void X3DOM::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
                            const std::vector<std::size_t> vecindex,

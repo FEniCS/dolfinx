@@ -48,9 +48,9 @@ namespace dolfin
 
     // static pugi::xml_document html_doc(const Mesh& mesh);
 
-    // void xml_to_file(const std::string filename);
+    void xml_to_file(const std::string filename, const Mesh& mesh, const std::string facet_type, const size_t palette);
 
-    // void html_to_file(const std::string filename);
+    void html_to_file(const std::string filename, const Mesh& mesh, const std::string facet_type, const size_t palette);
 
   private:
     // Get mesh dimensions and viewpoint distance
