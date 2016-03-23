@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <boost/lexical_cast.hpp>
 
@@ -30,7 +31,37 @@ X3DOM::~X3DOM()
 std::string X3DOM::xml_str(const Mesh& mesh, const std::string facet_type)
 {
   // Return xml string for X3D
-  return "This will print XML string.";
+  // return "This will print XML string.";
+
+  const std::size_t gdim = mesh.geometry().dim();
+  if (gdim !=2 && gdim !=3)
+  {
+    dolfin_error("X3DFile.cpp",
+                 "output mesh",
+                 "X3D will only output 2D or 3D meshes");
+  }
+
+  // Create pugi doc
+  pugi::xml_document xml_doc;
+
+  // For serial - ensure connectivity
+  mesh.init(mesh.topology().dim() - 1 , mesh.topology().dim());
+
+  // Get mesh max and min dimensions and viewpoint
+  const std::vector<double> xpos = mesh_min_max(mesh);
+
+  // Create XML for all mesh vertices on surface
+  output_xml_header(xml_doc, xpos, facet_type);
+  const std::vector<std::size_t> vecindex = vertex_index(mesh);
+  write_vertices(xml_doc, mesh, vecindex, facet_type);
+
+  // if (MPI::rank(mesh.mpi_comm()) == 0)
+  //   xml_doc.save_file(_filename.c_str(), "  ");
+
+  std::stringstream ss;
+  xml_doc.save(ss, "  ");
+  return ss.str();
+  // return "If you see this message it is working!!";
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::html_str(const Mesh& mesh, const std::string facet_type)

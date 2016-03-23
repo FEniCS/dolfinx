@@ -38,6 +38,8 @@ namespace dolfin
     /// Destructor
     ~X3DOM();
 
+    // Whether in Face or Edge mode - should either be
+    // "IndexedFaceSet" or "IndexedLineSet"
     static std::string xml_str(const Mesh& mesh, const std::string facet_type);
 
     // static pugi::xml_document xml_doc(const Mesh& mesh);
@@ -73,9 +75,6 @@ namespace dolfin
     // Get a string representing a color palette
     static std::string color_palette(const int pal);
 
-    // // Whether in Face or Edge mode - should either be
-    // // "IndexedFaceSet" or "IndexedLineSet"
-    // static const std::string facet_type;
   };
 
 }
