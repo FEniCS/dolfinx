@@ -75,10 +75,9 @@ std::string X3DOM::html_str(const Mesh& mesh, const std::string facet_type, cons
                           "</html> \n"
                           "\n"
                           "<body>\n";
-  std::string end_str = "</body>";
 
   std::stringstream ss;
-  ss << start_str << xml_str(mesh, facet_type, palette) << "\n" << end_str;
+  ss << start_str << xml_str(mesh, facet_type, palette) << "</body>";
 
   return ss.str();
 }   
@@ -310,25 +309,6 @@ void X3DOM::output_xml_header(pugi::xml_document& xml_doc,
 
   pugi::xml_node scene = x3d.append_child("Scene");
 
-  // Uncomment cause these depends on the mesh?
-  // Let X3DOM take care of itself
-
-  // pugi::xml_node viewpoint = scene.append_child("Viewpoint");
-  // std::string xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-  //     + boost::lexical_cast<std::string>(xpos[1]) + " "
-  //   + boost::lexical_cast<std::string>(xpos[3]);
-  // viewpoint.append_attribute("position") = xyz.c_str();
-
-  // viewpoint.append_attribute("orientation") = "0 0 0 1";
-  // viewpoint.append_attribute("fieldOfView") = "0.785398";
-  // xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-  //   + boost::lexical_cast<std::string>(xpos[1]) + " "
-  //   + boost::lexical_cast<std::string>(xpos[2]);
-  // viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
-
-  // viewpoint.append_attribute("zNear") = "-1";
-  // viewpoint.append_attribute("zFar") = "-1";
-
   pugi::xml_node shape = scene.append_child("Shape");
   pugi::xml_node material
     = shape.append_child("Appearance").append_child("Material");
@@ -343,6 +323,23 @@ void X3DOM::output_xml_header(pugi::xml_document& xml_doc,
   // Have to append Background after shape
   pugi::xml_node background = scene.append_child("Background");
   background.append_attribute("skyColor") = "0.9 0.9 1.0";
+
+  // Append viewpoint after shape
+  pugi::xml_node viewpoint = scene.append_child("Viewpoint");
+  std::string xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
+      + boost::lexical_cast<std::string>(xpos[1]) + " "
+    + boost::lexical_cast<std::string>(xpos[3]);
+  viewpoint.append_attribute("position") = xyz.c_str();
+
+  viewpoint.append_attribute("orientation") = "0 0 0 1";
+  viewpoint.append_attribute("fieldOfView") = "0.785398";
+  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
+    + boost::lexical_cast<std::string>(xpos[1]) + " "
+    + boost::lexical_cast<std::string>(xpos[2]);
+  viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
+
+  viewpoint.append_attribute("zNear") = "-1";
+  viewpoint.append_attribute("zFar") = "-1";
 }
 //-----------------------------------------------------------------------------
 std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh) 
