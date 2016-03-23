@@ -41,6 +41,8 @@ namespace dolfin
 
     // MeshFunction attempt
     static std::string xml_str(const MeshFunction<std::size_t>& meshfunction, const std::string facet_type, const size_t palette);    
+    
+    static std::string html_str(const MeshFunction<std::size_t>& meshfunction, const std::string facet_type, const size_t palette);
 
     void xml_to_file(const std::string filename, const Mesh& mesh, const std::string facet_type, const size_t palette);
 

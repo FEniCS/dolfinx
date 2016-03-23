@@ -196,6 +196,24 @@ std::string X3DOM::html_str(const Mesh& mesh, const std::string facet_type, cons
   return ss.str();
 }   
 //-----------------------------------------------------------------------------
+std::string X3DOM::html_str(const MeshFunction<std::size_t>& meshfunction, const std::string facet_type, const size_t palette)
+{
+  // Return html string for HTML
+  std::string start_str = "<html> \n"
+                          "    <head> \n"
+                          "        <script type='text/javascript' src='http://www.x3dom.org/download/x3dom.js'> </script> \n"
+                          "        <link rel='stylesheet' type='text/css' href='http://www.x3dom.org/download/x3dom.css'></link> \n"
+                          "    </head> \n"
+                          "</html> \n"
+                          "\n"
+                          "<body>\n";
+
+  std::stringstream ss;
+  ss << start_str << xml_str(meshfunction, facet_type, palette) << "</body>";
+
+  return ss.str();
+}
+//-----------------------------------------------------------------------------
 void X3DOM::xml_to_file(const std::string filename, const Mesh& mesh, const std::string facet_type, const size_t palette)
 {
   // Save XML string to file
