@@ -2,8 +2,6 @@
 #include <fstream>
 #include <boost/lexical_cast.hpp>
 
-#include "pugixml.hpp"
-
 #include <dolfin/common/MPI.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -36,7 +34,7 @@ std::string X3DOM::write_xml() const
 //-----------------------------------------------------------------------------
 std::string X3DOM::write_html() const
 {
-  return "This will print XML string.";
+  return "This will print HTML string.";
 }   
 //-----------------------------------------------------------------------------
 void X3DOM::save_to_file(const std::string filename)

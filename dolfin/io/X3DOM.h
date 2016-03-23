@@ -21,10 +21,7 @@
 #ifndef __X3DOM_H
 #define __X3DOM_H
 
-namespace pugi
-{
-  class xml_document;
-}
+#include "pugixml.hpp"
 
 namespace dolfin
 {
@@ -49,7 +46,7 @@ namespace dolfin
 
   private:
   	// XML data
-    pugi::xml_document * xml_doc;
+    pugi::xml_document xml_doc;
   };
 
 }
