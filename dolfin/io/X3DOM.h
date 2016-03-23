@@ -38,44 +38,44 @@ namespace dolfin
     /// Destructor
     ~X3DOM();
 
-    static std::string xml_str(const Mesh& mesh);
+    static std::string xml_str(const Mesh& mesh, const std::string facet_type);
 
-    static pugi::xml_document xml_doc(const Mesh& mesh);
+    // static pugi::xml_document xml_doc(const Mesh& mesh);
 
-    static std::string html_str(const Mesh& mesh);
+    static std::string html_str(const Mesh& mesh, const std::string facet_type);
 
-    static pugi::xml_document html_doc(const Mesh& mesh);
+    // static pugi::xml_document html_doc(const Mesh& mesh);
 
-    void xml_to_file(const std::string filename);
+    // void xml_to_file(const std::string filename);
 
-    void html_to_file(const std::string filename);
+    // void html_to_file(const std::string filename);
 
   private:
     // Get mesh dimensions and viewpoint distance
-    std::vector<double> mesh_min_max(const Mesh& mesh) const;
+    static std::vector<double> mesh_min_max(const Mesh& mesh);
 
     // Get list of vertex indices which are on surface
-    std::vector<std::size_t> vertex_index(const Mesh& mesh) const;
+    static std::vector<std::size_t> vertex_index(const Mesh& mesh);
 
     // Output mesh vertices to XML
-    void write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
-                        const std::vector<std::size_t> vecindex);
+    static void write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
+                        const std::vector<std::size_t> vecindex, const std::string facet_type);
 
     // Output values to XML using a colour palette
-    void write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
+    static void write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
                       const std::vector<std::size_t> vecindex,
-                      const std::vector<double> data_values);
+                      const std::vector<double> data_values, const std::string facet_type);
 
     // XML header output
-    void output_xml_header(pugi::xml_document& xml_doc,
-                           const std::vector<double>& xpos);
+    static void output_xml_header(pugi::xml_document& xml_doc,
+                           const std::vector<double>& xpos, const std::string facet_type);
 
     // Get a string representing a color palette
-    std::string color_palette(const int pal) const;
+    static std::string color_palette(const int pal);
 
-    // Whether in Face or Edge mode - should either be
-    // "IndexedFaceSet" or "IndexedLineSet"
-    const std::string facet_type;
+    // // Whether in Face or Edge mode - should either be
+    // // "IndexedFaceSet" or "IndexedLineSet"
+    // static const std::string facet_type;
   };
 
 }

@@ -27,33 +27,33 @@ X3DOM::~X3DOM()
   // Destructor - Do nothing
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::xml_str(const Mesh& mesh)
+std::string X3DOM::xml_str(const Mesh& mesh, const std::string facet_type)
 {
   // Return xml string for X3D
   return "This will print XML string.";
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::html_str(const Mesh& mesh)
+std::string X3DOM::html_str(const Mesh& mesh, const std::string facet_type)
 {
   // Return html string for HTML
   return "This will print HTML string.";
 }   
 //-----------------------------------------------------------------------------
-void X3DOM::xml_to_file(const std::string filename)
-{
-  // Save XML string to file
-  std::cout<<"This should save to a file"<<std::endl;
-}
-//-----------------------------------------------------------------------------
-void X3DOM::html_to_file(const std::string filename)
-{ 
-  // Save HTML string to file
-  std::cout<<"This should save to a file"<<std::endl;
-}
+// void X3DOM::xml_to_file(const std::string filename)
+// {
+//   // Save XML string to file
+//   std::cout<<"This should save to a file"<<std::endl;
+// }
+// //-----------------------------------------------------------------------------
+// void X3DOM::html_to_file(const std::string filename)
+// { 
+//   // Save HTML string to file
+//   std::cout<<"This should save to a file"<<std::endl;
+// }
 //-----------------------------------------------------------------------------
 void X3DOM::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
                            const std::vector<std::size_t> vecindex,
-                           const std::vector<double> data_values)
+                           const std::vector<double> data_values, const std::string facet_type)
 {
   const std::size_t tdim = mesh.topology().dim();
 
@@ -139,7 +139,7 @@ void X3DOM::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void X3DOM::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
-                             const std::vector<std::size_t> vecindex)
+                             const std::vector<std::size_t> vecindex, const std::string facet_type)
 {
   std::size_t offset = MPI::global_offset(mesh.mpi_comm(), vecindex.size(),
                                           true);
@@ -251,7 +251,7 @@ void X3DOM::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void X3DOM::output_xml_header(pugi::xml_document& xml_doc,
-                                const std::vector<double>& xpos)
+                                const std::vector<double>& xpos, const std::string facet_type)
 {
   xml_doc.append_child(pugi::node_doctype).set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
 
@@ -294,7 +294,7 @@ void X3DOM::output_xml_header(pugi::xml_document& xml_doc,
   shape.append_child(facet_type.c_str()).append_attribute("solid") = "false";
 }
 //-----------------------------------------------------------------------------
-std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh) const
+std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh) 
 {
   // Get MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -347,7 +347,7 @@ std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh) const
   return result;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> X3DOM::vertex_index(const Mesh& mesh) const
+std::vector<std::size_t> X3DOM::vertex_index(const Mesh& mesh) 
 {
   const std::size_t tdim = mesh.topology().dim();
   std::set<std::size_t> vindex;
@@ -368,3 +368,50 @@ std::vector<std::size_t> X3DOM::vertex_index(const Mesh& mesh) const
   return vecindex;
 }
 //-----------------------------------------------------------------------------
+std::string X3DOM::color_palette(const int palette)
+{
+  // Make a basic palette of 256 colours
+  std::stringstream colour;
+  switch (palette)
+  {
+  case 1:
+    for (int i = 0; i < 256; ++i)
+    {
+      const double x = (double)i/255.0;
+      const double y = 1.0 - x;
+      const double r = 4*pow(x, 3) - 3*pow(x, 4);
+      const double g = 4*pow(x, 2)*(1.0 - pow(x, 2));
+      const double b = 4*pow(y, 3) - 3*pow(y, 4);
+      colour << r << " " << g << " " << b << " ";
+    }
+    break;
+
+  case 2:
+    for (int i = 0; i < 256; ++i)
+    {
+      const double lm = 425.0 + 250.0*(double)i/255.0;
+      const double b
+        = 1.8*exp(-pow((lm - 450.0)/((lm>450.0) ? 40.0 : 20.0), 2.0));
+      const double g
+        = 0.9*exp(-pow((lm - 550.0)/((lm>550.0) ? 60 : 40.0), 2.0));
+      double r = 1.0*exp(-pow((lm - 600.0)/((lm>600.0) ? 40.0 : 50.0), 2.0));
+      r += 0.3*exp(-pow((lm - 450.0)/((lm>450.0) ? 20.0 : 30.0), 2.0));
+      const double tot = (r + g + b);
+
+      colour << r/tot << " " << g/tot << " " << b/tot << " ";
+    }
+    break;
+
+  default:
+    for (int i = 0; i < 256 ; ++i)
+    {
+      const double r = (double)i/255.0;
+      const double g = (double)(i*(255 - i))/(128.0*127.0);
+      const double b = (double)(255 - i)/255.0;
+      colour << r << " " << g << " " << b << " ";
+    }
+    break;
+  }
+
+  return colour.str();
+}
