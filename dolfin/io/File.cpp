@@ -37,7 +37,6 @@
 #include "X3DFile.h"
 #include "XMLFile.h"
 #include "XYZFile.h"
-#include "X3DOM.h"
 
 #include "File.h"
 
