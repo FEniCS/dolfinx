@@ -33,20 +33,49 @@ namespace dolfin
   public:
 
     /// Constructor
-    explicit X3DOM(const Mesh& mesh);
+    X3DOM();
 
     /// Destructor
     ~X3DOM();
 
-    std::string write_xml() const;
+    static std::string xml_str(const Mesh& mesh);
 
-    std::string write_html() const;
+    static pugi::xml_document xml_doc(const Mesh& mesh);
 
-    void save_to_file(const std::string filename);
+    static std::string html_str(const Mesh& mesh);
+
+    static pugi::xml_document html_doc(const Mesh& mesh);
+
+    void xml_to_file(const std::string filename);
+
+    void html_to_file(const std::string filename);
 
   private:
-  	// XML data
-    pugi::xml_document xml_doc;
+    // Get mesh dimensions and viewpoint distance
+    std::vector<double> mesh_min_max(const Mesh& mesh) const;
+
+    // Get list of vertex indices which are on surface
+    std::vector<std::size_t> vertex_index(const Mesh& mesh) const;
+
+    // Output mesh vertices to XML
+    void write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
+                        const std::vector<std::size_t> vecindex);
+
+    // Output values to XML using a colour palette
+    void write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
+                      const std::vector<std::size_t> vecindex,
+                      const std::vector<double> data_values);
+
+    // XML header output
+    void output_xml_header(pugi::xml_document& xml_doc,
+                           const std::vector<double>& xpos);
+
+    // Get a string representing a color palette
+    std::string color_palette(const int pal) const;
+
+    // Whether in Face or Edge mode - should either be
+    // "IndexedFaceSet" or "IndexedLineSet"
+    const std::string facet_type;
   };
 
 }
