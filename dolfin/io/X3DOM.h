@@ -34,13 +34,13 @@ namespace dolfin
 
     // Whether in Face or Edge mode - should either be
     // "IndexedFaceSet" or "IndexedLineSet"
+    // Mesh
     static std::string xml_str(const Mesh& mesh, const std::string facet_type, const size_t palette);
-
-    // static pugi::xml_document xml_doc(const Mesh& mesh);
 
     static std::string html_str(const Mesh& mesh, const std::string facet_type, const size_t palette);
 
-    // static pugi::xml_document html_doc(const Mesh& mesh);
+    // MeshFunction attempt
+    static std::string xml_str(const MeshFunction<std::size_t>& meshfunction, const std::string facet_type, const size_t palette);    
 
     void xml_to_file(const std::string filename, const Mesh& mesh, const std::string facet_type, const size_t palette);
 

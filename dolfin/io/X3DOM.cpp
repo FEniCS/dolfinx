@@ -53,6 +53,131 @@ std::string X3DOM::xml_str(const Mesh& mesh, const std::string facet_type, const
   return ss.str();
 }
 //-----------------------------------------------------------------------------
+std::string X3DOM::xml_str(const MeshFunction<std::size_t>& meshfunction, const std::string facet_type, const size_t palette)
+{
+  // Get mesh
+  dolfin_assert(meshfunction.mesh());
+  const Mesh& mesh = *meshfunction.mesh();
+
+  // Ensure connectivity has been computed
+  mesh.init(mesh.topology().dim() - 1 , mesh.topology().dim());
+
+  // Mesh geometric dimension
+  const std::size_t gdim = mesh.geometry().dim();
+
+  // Mesh topological dimension
+  const std::size_t tdim = mesh.topology().dim();
+
+  // MeshFunction dimension
+  const std::size_t cell_dim = meshfunction.dim();
+
+  // Check that MeshFunction dimension is handled
+  if (cell_dim != tdim)
+  {
+    dolfin_error("X3DFile.cpp",
+                 "output meshfunction",
+                 "Can only output CellFunction at present");
+  }
+
+  // Check that X3D type is appropriate
+  if (cell_dim == tdim && facet_type == "IndexedLineSet")
+  {
+    dolfin_error("X3DFile.cpp",
+                 "output meshfunction",
+                 "Cannot output CellFunction with Edge mesh");
+  }
+
+  // Check that mesh is in 2D or 3D
+  if (gdim !=2 && gdim !=3)
+  {
+    dolfin_error("X3DFile.cpp",
+                 "output mesh",
+                 "X3D will only output 2D or 3D meshes");
+  }
+
+  // Pointer to MeshFunction data
+  const std::size_t* values = meshfunction.values();
+
+  // Get min/max values of MeshFunction
+  std::size_t minval = *std::min_element(values, values + meshfunction.size());
+  minval = MPI::min(mesh.mpi_comm(), minval);
+  std::size_t maxval = *std::max_element(values, values + meshfunction.size());
+  maxval = MPI::max(mesh.mpi_comm(), maxval);
+  double dval;
+  if (maxval == minval)
+    dval = 1.0;
+  else
+    dval = 255.0/(double)(maxval - minval);
+
+  // Get mesh min/max  dimensions and viewpoint
+  const std::vector<double> xpos = mesh_min_max(mesh);
+
+  // Get MPI details
+  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
+
+  // Create pugi xml document
+  pugi::xml_document xml_doc;
+
+  // Write XML header
+  if (MPI::rank(mesh.mpi_comm()) == 0)
+    output_xml_header(xml_doc, xpos, facet_type);
+
+  // Make a set of the indices we wish to use. In 3D, we are ignoring
+  // all interior facets, so reducing the number of vertices
+  // substantially
+  const std::vector<std::size_t> vecindex = vertex_index(mesh);
+
+  // Write vertices
+  write_vertices(xml_doc, mesh, vecindex, facet_type);
+
+  // Iterate over mesh facets
+  std::vector<unsigned int> local_output;
+  for (FaceIterator f(mesh); !f.end(); ++f)
+  {
+    // Check if topological dimension is 2, or if we have a boundary
+    // facet in 3D
+    if (tdim == 2 || f->num_global_entities(tdim) == 1)
+    {
+      // Get cell connected to facet
+      CellIterator cell(*f);
+
+      // Write mesh function value to string stream
+      local_output.push_back((unsigned int)
+                             ((meshfunction[*cell] - minval)*dval));
+    }
+  }
+
+  // Gather up data on zero
+  std::vector<unsigned int> gathered_output;
+  MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
+
+  // Export string on root process
+  if (process_number == 0)
+  {
+    pugi::xml_node indexed_face_set = xml_doc.child("X3D")
+      .child("Scene").child("Shape").child(facet_type.c_str());
+    indexed_face_set.append_attribute("colorPerVertex") = "false";
+
+    std::stringstream str_output;
+    for (std::vector<unsigned int>::iterator val = gathered_output.begin();
+         val != gathered_output.end(); ++val)
+    {
+      str_output << *val << " ";
+    }
+
+    indexed_face_set.append_attribute("colorIndex") = str_output.str().c_str();
+
+    // Output palette
+    pugi::xml_node color = indexed_face_set.append_child("Color");
+    color.append_attribute("color") = color_palette(palette).c_str();
+    // xml_doc.save_file(_filename.c_str(), "  ");
+  }
+  // Output string
+  std::stringstream ss;
+  xml_doc.save(ss, "  ");
+  return ss.str();
+}
+//-----------------------------------------------------------------------------
 std::string X3DOM::html_str(const Mesh& mesh, const std::string facet_type, const size_t palette)
 {
   // Return html string for HTML
