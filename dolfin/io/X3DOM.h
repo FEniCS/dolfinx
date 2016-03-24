@@ -26,8 +26,9 @@
 namespace dolfin
 {
 
-  /// This class implements output of meshes to X3DOM XML 
-  /// or HTML or string
+  /// This class implements output of meshes to X3DOM XML or HTML or
+  /// string
+
   class X3DOM
   {
   public:
@@ -35,20 +36,27 @@ namespace dolfin
     // Whether in Face or Edge mode - should either be
     // "IndexedFaceSet" or "IndexedLineSet"
     // Mesh
-    static std::string xml_str(const Mesh& mesh, const std::string facet_type, const size_t palette);
+    static std::string str(const Mesh& mesh, const std::string facet_type,
+                           const size_t palette);
 
-    static std::string html_str(const Mesh& mesh, const std::string facet_type, const size_t palette);
+    //static std::string html_str(const Mesh& mesh, const std::string facet_type,
+    //                            const size_t palette);
 
     // MeshFunction attempt
-    static std::string xml_str(const MeshFunction<std::size_t>& meshfunction, const std::string facet_type, const size_t palette);    
-    
-    static std::string html_str(const MeshFunction<std::size_t>& meshfunction, const std::string facet_type, const size_t palette);
+    //static std::string xml_str(const MeshFunction<std::size_t>& meshfunction, const
+    //                           std::string facet_type, const size_t palette);
 
-    void xml_to_file(const std::string filename, const Mesh& mesh, const std::string facet_type, const size_t palette);
+    //static std::string html_str(const MeshFunction<std::size_t>& meshfunction,
+    //                            const std::string facet_type, const size_t palette);
 
-    void html_to_file(const std::string filename, const Mesh& mesh, const std::string facet_type, const size_t palette);
+    //void xml_to_file(const std::string filename, const Mesh& mesh,
+    //                 const std::string facet_type, const size_t palette);
+
+    //void html_to_file(const std::string filename, const Mesh& mesh,
+    //                  const std::string facet_type, const size_t palette);
 
   private:
+
     // Get mesh dimensions and viewpoint distance
     static std::vector<double> mesh_min_max(const Mesh& mesh);
 
@@ -57,16 +65,19 @@ namespace dolfin
 
     // Output mesh vertices to XML
     static void write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
-                        const std::vector<std::size_t> vecindex, const std::string facet_type);
+                               const std::vector<std::size_t> vecindex,
+                               const std::string facet_type);
 
     // Output values to XML using a colour palette
     static void write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
-                      const std::vector<std::size_t> vecindex,
-                      const std::vector<double> data_values, const std::string facet_type, const std::size_t palette);
+                             const std::vector<std::size_t> vecindex,
+                             const std::vector<double> data_values,
+                             const std::string facet_type, const std::size_t palette);
 
     // XML header output
     static void output_xml_header(pugi::xml_document& xml_doc,
-                           const std::vector<double>& xpos, const std::string facet_type);
+                                  const std::vector<double>& xpos,
+                                  const std::string facet_type);
 
     // Get a string representing a color palette
     static std::string color_palette(const size_t pal);

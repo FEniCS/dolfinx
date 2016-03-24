@@ -17,43 +17,77 @@
 
 using namespace dolfin;
 
-std::string X3DOM::xml_str(const Mesh& mesh, const std::string facet_type, const size_t palette)
+struct xml_string_writer: pugi::xml_writer
 {
-  // Return xml string for X3D
-  // return "This will print XML string.";
-
-  const std::size_t gdim = mesh.geometry().dim();
-  if (gdim !=2 && gdim !=3)
+  std::string result;
+  virtual void write(const void* data, size_t size)
   {
-    dolfin_error("X3DFile.cpp",
-                 "output mesh",
-                 "X3D will only output 2D or 3D meshes");
+    result.append(static_cast<const char*>(data), size);
+  }
+};
+
+//-----------------------------------------------------------------------------
+std::string X3DOM::str(const Mesh& mesh, const std::string facet_type,
+                       const size_t palette)
+{
+  // Check that mesh is embedded in 2D or 3D
+  const std::size_t gdim = mesh.geometry().dim();
+  if (gdim !=2 and gdim !=3)
+  {
+    dolfin_error("X3DOM.cpp",
+                 "get X3DOM string representation of a mesh",
+                 "X3D works only for 2D and 3D meshes");
   }
 
-  // Create pugi doc
+  // Create pugi XML doc
   pugi::xml_document xml_doc;
 
-  // For serial - ensure connectivity
-  mesh.init(mesh.topology().dim() - 1 , mesh.topology().dim());
+  // Intialise facet-to-cell connectivity
+  const std::size_t tdim = mesh.geometry().dim();
+  mesh.init(tdim - 1 , tdim);
 
   // Get mesh max and min dimensions and viewpoint
   const std::vector<double> xpos = mesh_min_max(mesh);
 
   // Create XML for all mesh vertices on surface
   output_xml_header(xml_doc, xpos, facet_type);
+
   const std::vector<std::size_t> vecindex = vertex_index(mesh);
   write_vertices(xml_doc, mesh, vecindex, facet_type);
 
-  // if (MPI::rank(mesh.mpi_comm()) == 0)
-  //   xml_doc.save_file(_filename.c_str(), "  ");
+  xml_string_writer writer;
+  xml_doc.print(writer);
+  return writer.result;
 
-  std::stringstream ss;
-  xml_doc.save(ss, "  ");
-  
-  return ss.str();
+  //std::stringstream ss;
+  //xml_doc.save(ss, "  ");
+  //return ss.str();
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::xml_str(const MeshFunction<std::size_t>& meshfunction, const std::string facet_type, const size_t palette)
+/*
+std::string X3DOM::html_str(const Mesh& mesh, const std::string facet_type,
+                            const size_t palette)
+{
+  // Return html string for HTML
+  std::string start_str = "<html> \n"
+                          "    <head> \n"
+                          "        <script type='text/javascript' src='http://www.x3dom.org/download/x3dom.js'> </script> \n"
+                          "        <link rel='stylesheet' type='text/css' href='http://www.x3dom.org/download/x3dom.css'></link> \n"
+                          "    </head> \n"
+                          "</html> \n"
+                          "\n"
+                          "<body>\n";
+
+  std::stringstream ss;
+  ss << start_str << xml_str(mesh, facet_type, palette) << "</body>";
+
+  return ss.str();
+}
+*/
+//-----------------------------------------------------------------------------
+/*
+std::string X3DOM::xml_str(const MeshFunction<std::size_t>& meshfunction,
+                           const std::string facet_type, const size_t palette)
 {
   // Get mesh
   dolfin_assert(meshfunction.mesh());
@@ -177,26 +211,11 @@ std::string X3DOM::xml_str(const MeshFunction<std::size_t>& meshfunction, const 
   xml_doc.save(ss, "  ");
   return ss.str();
 }
+*/
 //-----------------------------------------------------------------------------
-std::string X3DOM::html_str(const Mesh& mesh, const std::string facet_type, const size_t palette)
-{
-  // Return html string for HTML
-  std::string start_str = "<html> \n"
-                          "    <head> \n"
-                          "        <script type='text/javascript' src='http://www.x3dom.org/download/x3dom.js'> </script> \n"
-                          "        <link rel='stylesheet' type='text/css' href='http://www.x3dom.org/download/x3dom.css'></link> \n"
-                          "    </head> \n"
-                          "</html> \n"
-                          "\n"
-                          "<body>\n";
-
-  std::stringstream ss;
-  ss << start_str << xml_str(mesh, facet_type, palette) << "</body>";
-
-  return ss.str();
-}   
-//-----------------------------------------------------------------------------
-std::string X3DOM::html_str(const MeshFunction<std::size_t>& meshfunction, const std::string facet_type, const size_t palette)
+/*
+std::string X3DOM::html_str(const MeshFunction<std::size_t>& meshfunction,
+                            const std::string facet_type, const size_t palette)
 {
   // Return html string for HTML
   std::string start_str = "<html> \n"
@@ -213,8 +232,11 @@ std::string X3DOM::html_str(const MeshFunction<std::size_t>& meshfunction, const
 
   return ss.str();
 }
+*/
 //-----------------------------------------------------------------------------
-void X3DOM::xml_to_file(const std::string filename, const Mesh& mesh, const std::string facet_type, const size_t palette)
+/*
+void X3DOM::xml_to_file(const std::string filename, const Mesh& mesh,
+                        const std::string facet_type, const size_t palette)
 {
   // Save XML string to file
   // Check if extension is X3D and give warning
@@ -222,33 +244,38 @@ void X3DOM::xml_to_file(const std::string filename, const Mesh& mesh, const std:
     std::ofstream out(filename);
     out << xml_str(mesh, facet_type, palette);
     out.close();
-  } 
+  }
   else {
     dolfin_error("X3DOM.cpp",
              "output file type",
              "File type should be *.x3d");
   }
 }
+*/
 //-----------------------------------------------------------------------------
-void X3DOM::html_to_file(const std::string filename, const Mesh& mesh, const std::string facet_type, const size_t palette)
-{ 
+/*
+void X3DOM::html_to_file(const std::string filename, const Mesh& mesh,
+                         const std::string facet_type, const size_t palette)
+{
   // Save HTMl string to file
   // Check if extension is X3D and give warning
   if(filename.substr(filename.find_last_of(".") + 1) == "html") {
     std::ofstream out(filename);
     out << html_str(mesh, facet_type, palette);
     out.close();
-  } 
+  }
   else {
     dolfin_error("X3DOM.cpp",
              "output file type",
              "File type should be *.html");
   }
 }
+*/
 //-----------------------------------------------------------------------------
 void X3DOM::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
-                           const std::vector<std::size_t> vecindex,
-                           const std::vector<double> data_values, const std::string facet_type, const std::size_t palette)
+                         const std::vector<std::size_t> vecindex,
+                         const std::vector<double> data_values,
+                         const std::string facet_type, const std::size_t palette)
 {
   const std::size_t tdim = mesh.topology().dim();
 
@@ -311,19 +338,17 @@ void X3DOM::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
 
   // Gather up on zero
   std::vector<int> gathered_output;
-  MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
-  if (MPI::rank(mesh.mpi_comm()) == 0)
+  dolfin::MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
+  if (dolfin::MPI::rank(mesh.mpi_comm()) == 0)
   {
     pugi::xml_node indexed_face_set = xml_doc.child("X3D")
       .child("Scene").child("Shape").child(facet_type.c_str());
     indexed_face_set.append_attribute("colorPerVertex") = "true";
 
     std::stringstream str_output;
-    for (std::vector<int>::iterator val = gathered_output.begin();
-         val != gathered_output.end(); ++val)
-    {
+    for (auto  val = gathered_output.begin(); val != gathered_output.end(); ++val)
       str_output << *val << " ";
-    }
+
     indexed_face_set.append_attribute("colorIndex") = str_output.str().c_str();
 
     // Output colour palette
@@ -333,12 +358,13 @@ void X3DOM::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void X3DOM::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
-                             const std::vector<std::size_t> vecindex, const std::string facet_type)
+                           const std::vector<std::size_t> vecindex,
+                           const std::string facet_type)
 {
-  std::size_t offset = MPI::global_offset(mesh.mpi_comm(), vecindex.size(),
-                                          true);
+  std::size_t offset = dolfin::MPI::global_offset(mesh.mpi_comm(),
+                                                  vecindex.size(), true);
 
-  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
+  const std::size_t process_number = dolfin::MPI::rank(mesh.mpi_comm());
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
 
@@ -393,7 +419,7 @@ void X3DOM::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
   }
 
   std::vector<int> gathered_output;
-  MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
+  dolfin::MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
 
   if (process_number == 0)
   {
@@ -417,14 +443,14 @@ void X3DOM::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
     Vertex v(mesh, *index);
     local_geom_output.push_back(v.x(0));
     local_geom_output.push_back(v.x(1));
-    if (gdim == 2) 
+    if (gdim == 2)
       local_geom_output.push_back(0.0);
     else
       local_geom_output.push_back(v.x(2));
   }
 
   std::vector<double> gathered_geom_output;
-  MPI::gather(mesh.mpi_comm(), local_geom_output, gathered_geom_output);
+  dolfin::MPI::gather(mesh.mpi_comm(), local_geom_output, gathered_geom_output);
 
   // Finally, close off with the XML footer on process zero
   if (process_number == 0)
@@ -445,7 +471,8 @@ void X3DOM::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void X3DOM::output_xml_header(pugi::xml_document& xml_doc,
-                                const std::vector<double>& xpos, const std::string facet_type)
+                              const std::vector<double>& xpos,
+                              const std::string facet_type)
 {
   xml_doc.append_child(pugi::node_doctype).set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
 
@@ -494,7 +521,7 @@ void X3DOM::output_xml_header(pugi::xml_document& xml_doc,
   viewpoint.append_attribute("zFar") = "-1";
 }
 //-----------------------------------------------------------------------------
-std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh) 
+std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh)
 {
   // Get MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -508,7 +535,6 @@ std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh)
   double zmax = std::numeric_limits<double>::min();
 
   const std::size_t gdim = mesh.geometry().dim();
-
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     xmin = std::min(xmin, v->x(0));
@@ -527,13 +553,13 @@ std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh)
     }
   }
 
-  xmin = MPI::min(mpi_comm, xmin);
-  ymin = MPI::min(mpi_comm, ymin);
-  zmin = MPI::min(mpi_comm, zmin);
+  xmin = dolfin::MPI::min(mpi_comm, xmin);
+  ymin = dolfin::MPI::min(mpi_comm, ymin);
+  zmin = dolfin::MPI::min(mpi_comm, zmin);
 
-  xmax = MPI::max(mpi_comm, xmax);
-  ymax = MPI::max(mpi_comm, ymax);
-  zmax = MPI::max(mpi_comm, zmax);
+  xmax = dolfin::MPI::max(mpi_comm, xmax);
+  ymax = dolfin::MPI::max(mpi_comm, ymax);
+  zmax = dolfin::MPI::max(mpi_comm, zmax);
 
   std::vector<double> result;
   result.push_back((xmax + xmin)/2.0);
@@ -547,7 +573,7 @@ std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh)
   return result;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> X3DOM::vertex_index(const Mesh& mesh) 
+std::vector<std::size_t> X3DOM::vertex_index(const Mesh& mesh)
 {
   const std::size_t tdim = mesh.topology().dim();
   std::set<std::size_t> vindex;
@@ -615,3 +641,4 @@ std::string X3DOM::color_palette(const size_t palette)
 
   return colour.str();
 }
+//-----------------------------------------------------------------------------
