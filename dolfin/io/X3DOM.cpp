@@ -18,25 +18,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-const char* X3DOM::facet_type_to_x3d_str(Facet_Type facet_type)
-{
-  // Map from enum to X3D string
-  switch (facet_type)
-  {
-  case Facet_Type::facet:
-    return "IndexedFaceSet";
-    break;
-  case Facet_Type::wireframe:
-    return "IndexedLineSet";
-    break;
-  default:
-    dolfin_error("X3DOM.cpp",
-                 "mesh style",
-                 "Unknown mesh output type");
-    return "error";
-  }
-}
-//-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, Facet_Type facet_type,
                        const size_t palette)
 {
@@ -761,5 +742,24 @@ std::string X3DOM::color_palette(const size_t palette)
   }
 
   return colour.str();
+}
+//-----------------------------------------------------------------------------
+const char* X3DOM::facet_type_to_x3d_str(Facet_Type facet_type)
+{
+  // Map from enum to X3D string
+  switch (facet_type)
+  {
+  case Facet_Type::facet:
+    return "IndexedFaceSet";
+    break;
+  case Facet_Type::wireframe:
+    return "IndexedLineSet";
+    break;
+  default:
+    dolfin_error("X3DOM.cpp",
+                 "mesh style",
+                 "Unknown mesh output type");
+    return "error";
+  }
 }
 //-----------------------------------------------------------------------------
