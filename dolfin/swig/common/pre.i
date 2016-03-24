@@ -95,15 +95,33 @@ std::shared_ptr<const ufc::finite_element> make_ufc_finite_element(void * elemen
   return std::shared_ptr<const ufc::finite_element>(p);
 }
 
+std::shared_ptr<const ufc::finite_element> make_ufc_finite_element(std::size_t element)
+{
+  ufc::finite_element * p = reinterpret_cast<ufc::finite_element *>(element);
+  return std::shared_ptr<const ufc::finite_element>(p);
+}
+
 std::shared_ptr<const ufc::dofmap> make_ufc_dofmap(void * dofmap)
 {
   ufc::dofmap * p = static_cast<ufc::dofmap *>(dofmap);
   return std::shared_ptr<const ufc::dofmap>(p);
 }
 
+std::shared_ptr<const ufc::dofmap> make_ufc_dofmap(std::size_t dofmap)
+{
+  ufc::dofmap * p = reinterpret_cast<ufc::dofmap *>(dofmap);
+  return std::shared_ptr<const ufc::dofmap>(p);
+}
+
 std::shared_ptr<const ufc::form> make_ufc_form(void * form)
 {
   ufc::form * p = static_cast<ufc::form *>(form);
+  return std::shared_ptr<const ufc::form>(p);
+}
+
+std::shared_ptr<const ufc::form> make_ufc_form(std::size_t form)
+{
+  ufc::form * p = reinterpret_cast<ufc::form *>(form);
   return std::shared_ptr<const ufc::form>(p);
 }
 %}
