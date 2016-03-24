@@ -80,6 +80,7 @@ std::string X3DOM::html(const Mesh& mesh, const std::string facet_type,
   pugi::xml_node script = head.append_child("script");
   script.append_attribute("type") = "text/javascript";
   script.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
+  script.append_child(pugi::node_pcdata);//.set_value();
 
   // Add link
   pugi::xml_node link = head.append_child("link");
@@ -87,27 +88,16 @@ std::string X3DOM::html(const Mesh& mesh, const std::string facet_type,
   link.append_attribute("type") = "text/css";
   link.append_attribute("href") = "http://www.x3dom.org/download/x3dom.css";
 
+  // Add body node
+  pugi::xml_node body = node.append_child("body");
+
   // Add X3D XML
-  x3dom_xml(head, mesh, facet_type, palette);
+  x3dom_xml(body, mesh, facet_type, palette);
 
-  /*
-  // Return html string for HTML
-  std::string start_str = "<html> \n"
-                          "    <head> \n"
-                          "        <script type='text/javascript' src='http://www.x3dom.org/download/x3dom.js'> </script> \n"
-                          "        <link rel='stylesheet' type='text/css' href='http://www.x3dom.org/download/x3dom.css'></link> \n"
-                          "    </head> \n"
-                          "</html> \n"
-                          "\n"
-                          "<body>\n";
-  */
-  //std::stringstream ss;
-  //ss << start_str << xml_str(mesh, facet_type, palette) << "</body>";
-
-  // Convert XML doc to string
+  // Convert XML doc to string, without default XML header
   std::stringstream s;
   const std::string indent = "  ";
-  xml_doc.save(s, indent.c_str());
+  xml_doc.save(s, indent.c_str(), pugi::format_default | pugi::format_no_declaration);
   return s.str();
 }
 //-----------------------------------------------------------------------------
