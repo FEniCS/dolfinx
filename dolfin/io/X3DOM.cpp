@@ -49,9 +49,15 @@ std::string X3DOM::str(const Mesh& mesh, const std::string facet_type,
   // Get mesh max and min dimensions and viewpoint
   const std::vector<double> xpos = mesh_min_max(mesh);
 
+  // FIXME: use better name than 'output_xml_header'. Maybe break into
+  // multiple functions so its clearer what each does.
+
   // Create XML for all mesh vertices on surface
   output_xml_header(xml_doc, xpos, facet_type);
 
+  // FIXME: use better name and explain what is happening. Write
+  // vertices can't be accurate because there must be connectivity
+  // too.
   const std::vector<std::size_t> vecindex = vertex_index(mesh);
   write_vertices(xml_doc, mesh, vecindex, facet_type);
 

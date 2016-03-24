@@ -33,6 +33,8 @@ namespace dolfin
   {
   public:
 
+    // FIXME: explain 'facet_type', and use enum rather than string
+    // FIXME: pallete
     // Whether in Face or Edge mode - should either be
     // "IndexedFaceSet" or "IndexedLineSet"
     // Mesh
