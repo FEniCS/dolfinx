@@ -339,7 +339,7 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
     solver.setTolerance(parameters["relative_tolerance"]);
 
   if (parameters["maximum_iterations"].is_set())
-    solver.setMaxIterations(parameters["maximum_iterations"]);
+    solver.setMaxIterations((int) parameters["maximum_iterations"]);
 
   // Prepare solver
   solver.compute(_matA->mat());
