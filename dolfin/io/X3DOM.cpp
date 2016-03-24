@@ -589,17 +589,17 @@ void X3DOM::add_xml_header(pugi::xml_node& xml_doc,
   pugi::xml_node shape = scene.append_child("Shape");
   pugi::xml_node material
     = shape.append_child("Appearance").append_child("Material");
-  material.append_attribute("ambientIntensity") = "0.05";
-  material.append_attribute("shininess") = "0.5";
+  material.append_attribute("ambientIntensity") = "0.4";
+  material.append_attribute("shininess") = "0.8";
   material.append_attribute("diffuseColor") = "0.7 0.7 0.7";
-  material.append_attribute("specularColor") = "0.9 0.9 0.9";
+  material.append_attribute("specularColor") = "0.2 0.2 0.2";
   material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";
 
   shape.append_child(facet_type_to_x3d_str(facet_type)).append_attribute("solid") = "false";
 
   // Have to append Background after shape
   pugi::xml_node background = scene.append_child("Background");
-  background.append_attribute("skyColor") = "0.9 0.9 1.0";
+  background.append_attribute("skyColor") = "0.319997 0.340002 0.429999";
 
   // Append viewpoint after shape
   pugi::xml_node viewpoint = scene.append_child("Viewpoint");
@@ -617,6 +617,11 @@ void X3DOM::add_xml_header(pugi::xml_node& xml_doc,
 
   viewpoint.append_attribute("zNear") = "-1";
   viewpoint.append_attribute("zFar") = "-1";
+
+  // Append ambient light
+  pugi::xml_node ambient_light = scene.append_child("DirectionalLight");
+  ambient_light.append_attribute("ambientIntensity") = "1";
+  ambient_light.append_attribute("intensity") = "0";
 }
 //-----------------------------------------------------------------------------
 std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh)
