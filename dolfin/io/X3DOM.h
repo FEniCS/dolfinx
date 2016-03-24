@@ -18,9 +18,12 @@
 // First added:  2012-03-05
 // Last changed: 2013-05-10
 
-#ifndef __X3DOM_H
-#define __X3DOM_H
+#ifndef __DOLFIN_X3DOM_H
+#define __DOLFIN_X3DOM_H
 
+#include <set>
+#include <string>
+#include <vector>
 #include "pugixml.hpp"
 
 namespace dolfin
@@ -41,16 +44,16 @@ namespace dolfin
     static std::string str(const Mesh& mesh, const std::string facet_type,
                            const size_t palette);
 
-    //static std::string html_str(const Mesh& mesh, const std::string facet_type,
-    //                            const size_t palette);
+    static std::string html(const Mesh& mesh, const std::string facet_type,
+                            const size_t palette);
 
     // MeshFunction<std::size_t>
-    static std::string str(const MeshFunction<std::size_t>& meshfunction, const
-                           std::string facet_type, const size_t palette);
+    //static std::string str(const MeshFunction<std::size_t>& meshfunction, const
+    //                       std::string facet_type, const size_t palette);
 
     // Function to X3D string
-    static std::string str(const Function& function, const
-                           std::string facet_type, const size_t palette);
+    //static std::string str(const Function& function, const
+    //                       std::string facet_type, const size_t palette);
 
     //static std::string html_str(const MeshFunction<std::size_t>& meshfunction,
     //                            const std::string facet_type, const size_t palette);
@@ -63,26 +66,30 @@ namespace dolfin
 
   private:
 
+    static void x3dom_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
+                          const std::string facet_type, const size_t palette);
+
     // Get mesh dimensions and viewpoint distance
     static std::vector<double> mesh_min_max(const Mesh& mesh);
 
     // Get list of vertex indices which are on surface
-    static std::vector<std::size_t> vertex_index(const Mesh& mesh);
+    static std::set<int> surface_vertex_indices(const Mesh& mesh);
 
-    // Add mesh topology and geometry to XML, including either Facets or Edges
-    // (depending on the facet_type flag). In 3D, only include surface Facets/Edges.
-    static void add_mesh_to_xml(pugi::xml_document& xml_doc, const Mesh& mesh,
-                                const std::vector<std::size_t>& vecindex,
+    // Add mesh topology and geometry to XML, including either Facets
+    // or Edges (depending on the facet_type flag). In 3D, only
+    // include surface Facets/Edges.
+    static void add_mesh_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
+                                const std::set<int>& vertex_indices,
                                 const std::string facet_type);
 
     // Output values associated with Mesh points to XML using a colour palette
-    static void add_values_to_xml(pugi::xml_document& xml_doc, const Mesh& mesh,
+    static void add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
                                   const std::vector<std::size_t>& vecindex,
                                   const std::vector<double>& data_values,
                                   const std::string facet_type, const std::size_t palette);
 
     // Add header to XML document, adjusting field of view to the size of the object
-    static void add_xml_header(pugi::xml_document& xml_doc,
+    static void add_xml_header(pugi::xml_node& xml_doc,
                                const std::vector<double>& xpos,
                                const std::string facet_type);
 

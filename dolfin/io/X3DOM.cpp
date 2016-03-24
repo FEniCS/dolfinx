@@ -17,18 +17,25 @@
 
 using namespace dolfin;
 
-struct xml_string_writer: pugi::xml_writer
-{
-  std::string result;
-  virtual void write(const void* data, size_t size)
-  {
-    result.append(static_cast<const char*>(data), size);
-  }
-};
-
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, const std::string facet_type,
                        const size_t palette)
+{
+  // Create empty pugi XML doc
+  pugi::xml_document xml_doc;
+
+  // Build XML
+  x3dom_xml(xml_doc, mesh, facet_type, palette);
+
+  // Convert XML doc to string
+  std::stringstream s;
+  const std::string indent = "  ";
+  xml_doc.save(s, indent.c_str());
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+void X3DOM::x3dom_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
+                      const std::string facet_type, const size_t palette)
 {
   // Check that mesh is embedded in 2D or 3D
   const std::size_t gdim = mesh.geometry().dim();
@@ -39,36 +46,51 @@ std::string X3DOM::str(const Mesh& mesh, const std::string facet_type,
                  "X3D works only for 2D and 3D meshes");
   }
 
-  // Create pugi XML doc
-  pugi::xml_document xml_doc;
-
   // Intialise facet-to-cell connectivity
   const std::size_t tdim = mesh.geometry().dim();
   mesh.init(tdim - 1 , tdim);
 
-  // Get mesh max and min dimensions, needed to calculate field of view
+  // Get mesh max and min dimensions, needed to calculate field of
+  // view
   const std::vector<double> xpos = mesh_min_max(mesh);
 
-  // Add standard boilerplate XML for X3D, adjusting field of view
-  // to the size of the object, given by xpos.
+  // Add standard boilerplate XML for X3D, adjusting field of view to
+  // the size of the object, given by xpos.
   add_xml_header(xml_doc, xpos, facet_type);
 
-  const std::vector<std::size_t> vecindex = vertex_index(mesh);
-  add_mesh_to_xml(xml_doc, mesh, vecindex, facet_type);
+  // Compute set of vertices that lie on boundary
+  const std::set<int> surface_vertices = surface_vertex_indices(mesh);
 
-  xml_string_writer writer;
-  xml_doc.print(writer);
-  return writer.result;
-
-  //std::stringstream ss;
-  //xml_doc.save(ss, "  ");
-  //return ss.str();
+  add_mesh_to_xml(xml_doc, mesh, surface_vertices, facet_type);
 }
 //-----------------------------------------------------------------------------
-/*
-std::string X3DOM::html_str(const Mesh& mesh, const std::string facet_type,
-                            const size_t palette)
+std::string X3DOM::html(const Mesh& mesh, const std::string facet_type,
+                        const size_t palette)
 {
+  // Create empty pugi XML doc
+  pugi::xml_document xml_doc;
+
+  // Add html node
+  pugi::xml_node node = xml_doc.append_child("html");
+
+  // Add head node
+  pugi::xml_node head = node.append_child("head");
+
+  // Add script
+  pugi::xml_node script = head.append_child("script");
+  script.append_attribute("type") = "text/javascript";
+  script.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
+
+  // Add link
+  pugi::xml_node link = head.append_child("link");
+  link.append_attribute("rel") = "stylesheet";
+  link.append_attribute("type") = "text/css";
+  link.append_attribute("href") = "http://www.x3dom.org/download/x3dom.css";
+
+  // Add X3D XML
+  x3dom_xml(head, mesh, facet_type, palette);
+
+  /*
   // Return html string for HTML
   std::string start_str = "<html> \n"
                           "    <head> \n"
@@ -78,14 +100,18 @@ std::string X3DOM::html_str(const Mesh& mesh, const std::string facet_type,
                           "</html> \n"
                           "\n"
                           "<body>\n";
+  */
+  //std::stringstream ss;
+  //ss << start_str << xml_str(mesh, facet_type, palette) << "</body>";
 
-  std::stringstream ss;
-  ss << start_str << xml_str(mesh, facet_type, palette) << "</body>";
-
-  return ss.str();
+  // Convert XML doc to string
+  std::stringstream s;
+  const std::string indent = "  ";
+  xml_doc.save(s, indent.c_str());
+  return s.str();
 }
-*/
 //-----------------------------------------------------------------------------
+/*
 std::string X3DOM::str(const MeshFunction<std::size_t>& meshfunction,
                        const std::string facet_type, const size_t palette)
 {
@@ -147,7 +173,7 @@ std::string X3DOM::str(const MeshFunction<std::size_t>& meshfunction,
   const std::vector<double> xpos = mesh_min_max(mesh);
 
   // Get MPI details
-  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
+  const std::size_t rank = dolfin::MPI::rank(mesh.mpi_comm());
 
   // Create pugi xml document
   pugi::xml_document xml_doc;
@@ -186,10 +212,9 @@ std::string X3DOM::str(const MeshFunction<std::size_t>& meshfunction,
   MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
 
   // Export string on root process
-  if (process_number == 0)
+  if (rank == 0)
   {
-    pugi::xml_node indexed_face_set = xml_doc.child("X3D")
-      .child("Scene").child("Shape").child(facet_type.c_str());
+    pugi::xml_node indexed_face_set = xml_doc.child("X3D").child("Scene").child("Shape").child(facet_type.c_str());
     indexed_face_set.append_attribute("colorPerVertex") = "false";
 
     std::stringstream str_output;
@@ -211,7 +236,9 @@ std::string X3DOM::str(const MeshFunction<std::size_t>& meshfunction,
   xml_doc.save(ss, "  ");
   return ss.str();
 }
+*/
 //-----------------------------------------------------------------------------
+/*
 std::string X3DOM::str(const Function& u,
                        const std::string facet_type, const size_t palette)
 {
@@ -284,11 +311,13 @@ std::string X3DOM::str(const Function& u,
   add_xml_header(xml_doc, xpos, facet_type);
 
   // Get indices of vertices on mesh surface
-  const std::vector<std::size_t> surface_vertices = vertex_index(mesh);
+  const std::set<int> surface_vertices = vertex_index(mesh);
+  const std::vector<std::size_t> surface_vertices_vec(surface_vertices.begin(),
+                                                      surface_vertices.end());
 
   // Write vertices and vertex data to XML file
-  add_mesh_to_xml(xml_doc, mesh, surface_vertices, facet_type);
-  add_values_to_xml(xml_doc, mesh, surface_vertices,
+  add_mesh_to_xml(xml_doc, mesh, surface_vertices_vec, facet_type);
+  add_values_to_xml(xml_doc, mesh, surface_vertices_vec,
                     data_values, facet_type, palette);
 
   // Output string
@@ -297,6 +326,7 @@ std::string X3DOM::str(const Function& u,
     xml_doc.save(ss, "  ");
   return ss.str();
 }
+*/
 //-----------------------------------------------------------------------------
 /*
 std::string X3DOM::html_str(const MeshFunction<std::size_t>& meshfunction,
@@ -357,7 +387,7 @@ void X3DOM::html_to_file(const std::string filename, const Mesh& mesh,
 }
 */
 //-----------------------------------------------------------------------------
-void X3DOM::add_values_to_xml(pugi::xml_document& xml_doc, const Mesh& mesh,
+void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
                               const std::vector<std::size_t>& vecindex,
                               const std::vector<double>& data_values,
                               const std::string facet_type, const std::size_t palette)
@@ -426,14 +456,12 @@ void X3DOM::add_values_to_xml(pugi::xml_document& xml_doc, const Mesh& mesh,
   dolfin::MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
   if (dolfin::MPI::rank(mesh.mpi_comm()) == 0)
   {
-    pugi::xml_node indexed_face_set = xml_doc.child("X3D")
-      .child("Scene").child("Shape").child(facet_type.c_str());
+    pugi::xml_node indexed_face_set = xml_doc.child("X3D").child("Scene").child("Shape").child(facet_type.c_str());
     indexed_face_set.append_attribute("colorPerVertex") = "true";
 
     std::stringstream str_output;
-    for (auto  val = gathered_output.begin(); val != gathered_output.end(); ++val)
-      str_output << *val << " ";
-
+    for (auto val : gathered_output)
+      str_output << val << " ";
     indexed_face_set.append_attribute("colorIndex") = str_output.str().c_str();
 
     // Output colour palette
@@ -442,14 +470,14 @@ void X3DOM::add_values_to_xml(pugi::xml_document& xml_doc, const Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-void X3DOM::add_mesh_to_xml(pugi::xml_document& xml_doc, const Mesh& mesh,
-                            const std::vector<std::size_t>& vecindex,
+void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
+                            const std::set<int>& vertex_indices,
                             const std::string facet_type)
 {
   std::size_t offset = dolfin::MPI::global_offset(mesh.mpi_comm(),
-                                                  vecindex.size(), true);
+                                                  vertex_indices.size(), true);
 
-  const std::size_t process_number = dolfin::MPI::rank(mesh.mpi_comm());
+  const std::size_t rank = dolfin::MPI::rank(mesh.mpi_comm());
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
 
@@ -478,10 +506,10 @@ void X3DOM::add_mesh_to_xml(pugi::xml_document& xml_doc, const Mesh& mesh,
       {
         for (VertexIterator v(*e); !v.end(); ++v)
         {
-          std::size_t index_it  = std::find(vecindex.begin(),
-                                            vecindex.end(),
-                                            v->index()) - vecindex.begin();
-          local_output.push_back(index_it + offset);
+          // Find position of vertex in set
+          std::size_t pos = std::distance(vertex_indices.begin(), vertex_indices.find(v->index()));
+
+          local_output.push_back(pos + offset);
         }
         local_output.push_back(-1);
       }
@@ -496,10 +524,10 @@ void X3DOM::add_mesh_to_xml(pugi::xml_document& xml_doc, const Mesh& mesh,
       {
         for (VertexIterator v(*f); !v.end(); ++v)
         {
-          std::size_t index_it = std::find(vecindex.begin(),
-                                           vecindex.end(),
-                                           v->index()) - vecindex.begin();
-          local_output.push_back(index_it + offset);
+          // Find position of vertex in set
+          std::size_t pos = std::distance(vertex_indices.begin(), vertex_indices.find(v->index()));
+
+          local_output.push_back(pos + offset);
         }
         local_output.push_back(-1);
       }
@@ -509,26 +537,22 @@ void X3DOM::add_mesh_to_xml(pugi::xml_document& xml_doc, const Mesh& mesh,
   // Gather up all topology on process 0 and append to xml
   std::vector<int> gathered_output;
   dolfin::MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
-  if (process_number == 0)
+  if (rank == 0)
   {
     pugi::xml_node indexed_face_set
       = xml_doc.child("X3D").child("Scene").child("Shape").child(facet_type.c_str());
 
     std::stringstream str_output;
-    for (std::vector<int>::iterator val = gathered_output.begin();
-         val != gathered_output.end(); ++val)
-    {
-      str_output << *val << " ";
-    }
+    for (auto val : gathered_output)
+      str_output << val << " ";
     indexed_face_set.append_attribute("coordIndex") = str_output.str().c_str();
   }
 
   // Collect up geometry of all local points
   std::vector<double> local_geom_output;
-  for (std::vector<std::size_t>::const_iterator index = vecindex.begin();
-       index != vecindex.end(); ++index)
+  for (auto index : vertex_indices)
   {
-    Vertex v(mesh, *index);
+    Vertex v(mesh, index);
     local_geom_output.push_back(v.x(0));
     local_geom_output.push_back(v.x(1));
     if (gdim == 2)
@@ -540,7 +564,7 @@ void X3DOM::add_mesh_to_xml(pugi::xml_document& xml_doc, const Mesh& mesh,
   // Gather up all geometry on process 0 and append to xml
   std::vector<double> gathered_geom_output;
   dolfin::MPI::gather(mesh.mpi_comm(), local_geom_output, gathered_geom_output);
-  if (process_number == 0)
+  if (rank == 0)
   {
     pugi::xml_node indexed_face_set
       = xml_doc.child("X3D").child("Scene").child("Shape").child(facet_type.c_str());
@@ -548,16 +572,13 @@ void X3DOM::add_mesh_to_xml(pugi::xml_document& xml_doc, const Mesh& mesh,
     pugi::xml_node coordinate = indexed_face_set.append_child("Coordinate");
 
     std::stringstream str_output;
-    for (std::vector<double>::iterator val = gathered_geom_output.begin();
-         val != gathered_geom_output.end(); ++val)
-    {
-      str_output << *val << " ";
-    }
+    for (auto val : gathered_geom_output)
+      str_output << val << " ";
     coordinate.append_attribute("point") = str_output.str().c_str();
   }
 }
 //-----------------------------------------------------------------------------
-void X3DOM::add_xml_header(pugi::xml_document& xml_doc,
+void X3DOM::add_xml_header(pugi::xml_node& xml_doc,
                            const std::vector<double>& xpos,
                            const std::string facet_type)
 {
@@ -660,11 +681,17 @@ std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh)
   return result;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> X3DOM::vertex_index(const Mesh& mesh)
+std::set<int> X3DOM::surface_vertex_indices(const Mesh& mesh)
 {
+  // Get mesh toplogical dimension
   const std::size_t tdim = mesh.topology().dim();
-  std::set<std::size_t> vindex;
 
+  // Initialise connectivities
+  mesh.init(tdim - 1);
+  mesh.init(tdim - 1, 0);
+
+  // Fill set of surface vertex indices
+  std::set<int> vertex_set;
   for (FaceIterator f(mesh); !f.end(); ++f)
   {
     // If in 3D, only output exterior faces
@@ -672,13 +699,11 @@ std::vector<std::size_t> X3DOM::vertex_index(const Mesh& mesh)
     if (tdim == 2 || f->num_global_entities(tdim) == 1)
     {
       for (VertexIterator v(*f); !v.end(); ++v)
-        vindex.insert(v->index());
+        vertex_set.insert(v->index());
     }
   }
 
-  // Copy to vector for wider iterator support
-  const std::vector<std::size_t> vecindex(vindex.begin(), vindex.end());
-  return vecindex;
+  return vertex_set;
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::color_palette(const size_t palette)
