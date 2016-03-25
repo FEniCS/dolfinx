@@ -578,7 +578,7 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& xml_node,
   return shape;
 }
 //-----------------------------------------------------------------------------
-void X3DOM::x3dom_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
+void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
                       FacetType facet_type)
 {
   // Check that mesh is embedded in 2D or 3D
@@ -600,19 +600,19 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
 
   // Add boilerplate XML for X3D, adjusting field of view to the size
   // of the object, given by xpos.
-  pugi::xml_node shape = add_xml_header(xml_doc, xpos, facet_type);
+  pugi::xml_node shape = add_xml_header(xml_node, xpos, facet_type);
   dolfin_assert(shape);
 
   // Compute set of vertices that lie on boundary
   const std::set<int> surface_vertices = surface_vertex_indices(mesh);
 
   // Add mesh to XML doc
-  //add_mesh(shape, mesh, surface_vertices, facet_type);
+  add_mesh(shape, mesh, surface_vertices, facet_type);
 
   // FIXME: Need to first check that node exists before accessing
   // Append text for mesh info
   /*
-  pugi::xml_node mesh_info = xml_doc.child("X3D").append_child("div");
+  pugi::xml_node mesh_info = xml_node.child("X3D").append_child("div");
   mesh_info.append_attribute("style") = "position: absolute; bottom: 2%; left: 2%; text-align: left; font-size: 12px; color: white;";
   mesh_info.append_child(pugi::node_pcdata).set_value("Number of vertices: ");
   mesh_info.append_child(pugi::node_pcdata).set_value(std::to_string(mesh.num_vertices()).c_str());
