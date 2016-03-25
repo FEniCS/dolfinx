@@ -56,9 +56,14 @@ namespace dolfin
 
   private:
 
+    // Add X3D doctype (an XML document should have no more than one
+    // doc_type node)
+    static void add_doctype(pugi::xml_node& xml_node);
+
+    // Add X3D node and attributes, and return handle to node
+    static pugi::xml_node add_x3d(pugi::xml_node& xml_node);
+
     // Add X3DOM mesh data to XML node
-    //static void x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
-    //                      FacetType facet_type);
     static void x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
                           FacetType facet_type);
 

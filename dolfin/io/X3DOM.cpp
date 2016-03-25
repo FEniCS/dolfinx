@@ -521,24 +521,11 @@ void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& xml_node,
+pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
                                      const std::vector<double>& xpos,
                                      FacetType facet_type)
 {
-  xml_node.append_child(pugi::node_doctype).set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
-
-  // Add X3D node and add attributes
-  pugi::xml_node x3d = xml_node.append_child("X3D");
-  x3d.append_attribute("profile") = "Interchange";
-  x3d.append_attribute("version") = "3.2";
-  x3d.append_attribute("xmlns:xsd")
-    = "http://www.w3.org/2001/XMLSchema-instance";
-  x3d.append_attribute("xsd:noNamespaceSchemaLocation")
-    = "http://www.web3d.org/specifications/x3d-3.2.xsd";
-  x3d.append_attribute("width") = "500px";
-  x3d.append_attribute("height") = "400px";
-
-  pugi::xml_node scene = x3d.append_child("Scene");
+  pugi::xml_node scene = x3d_node.append_child("Scene");
   pugi::xml_node shape = scene.append_child("Shape");
   pugi::xml_node appearance = shape.append_child("Appearance");
 
@@ -578,6 +565,30 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& xml_node,
   return shape;
 }
 //-----------------------------------------------------------------------------
+void X3DOM::add_doctype(pugi::xml_node& xml_node)
+{
+  dolfin_assert(xml_node);
+  pugi::xml_node doc_type = xml_node.prepend_child(pugi::node_doctype);
+  doc_type.set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
+}
+//-----------------------------------------------------------------------------
+pugi::xml_node X3DOM::add_x3d(pugi::xml_node& xml_node)
+{
+  pugi::xml_node x3d = xml_node.append_child("X3D");
+  dolfin_assert(x3d);
+
+  x3d.append_attribute("profile") = "Interchange";
+  x3d.append_attribute("version") = "3.2";
+  x3d.append_attribute("xmlns:xsd")
+    = "http://www.w3.org/2001/XMLSchema-instance";
+  x3d.append_attribute("xsd:noNamespaceSchemaLocation")
+    = "http://www.web3d.org/specifications/x3d-3.2.xsd";
+  x3d.append_attribute("width") = "500px";
+  x3d.append_attribute("height") = "400px";
+
+  return x3d;
+}
+//-----------------------------------------------------------------------------
 void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
                       FacetType facet_type)
 {
@@ -598,27 +609,35 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
   // view
   const std::vector<double> xpos = mesh_min_max(mesh);
 
-  // Add boilerplate XML for X3D, adjusting field of view to the size
-  // of the object, given by xpos.
-  pugi::xml_node shape = add_xml_header(xml_node, xpos, facet_type);
+  // X3D doctype
+  add_doctype(xml_node);
+
+  // Add X3D node
+  pugi::xml_node x3d_node = add_x3d(xml_node);
+  dolfin_assert(x3d_node);
+
+  // Add boilerplate XML no X3D node, adjusting field of view to the
+  // size of the object, given by xpos
+  pugi::xml_node shape = add_xml_header(x3d_node, xpos, facet_type);
   dolfin_assert(shape);
 
+  // FIXME: Should this go inside add_mesh?
   // Compute set of vertices that lie on boundary
   const std::set<int> surface_vertices = surface_vertex_indices(mesh);
 
-  // Add mesh to XML doc
+  // Add mesh to 'shape' XML node
   add_mesh(shape, mesh, surface_vertices, facet_type);
 
   // FIXME: Need to first check that node exists before accessing
+  // FIXME: Really want appropiate node handle to be available, rather
+  //        than having to extract it
   // Append text for mesh info
-  /*
-  pugi::xml_node mesh_info = xml_node.child("X3D").append_child("div");
+  pugi::xml_node mesh_info = x3d_node.append_child("div");
+  dolfin_assert(mesh_info);
   mesh_info.append_attribute("style") = "position: absolute; bottom: 2%; left: 2%; text-align: left; font-size: 12px; color: white;";
-  mesh_info.append_child(pugi::node_pcdata).set_value("Number of vertices: ");
-  mesh_info.append_child(pugi::node_pcdata).set_value(std::to_string(mesh.num_vertices()).c_str());
-  mesh_info.append_child(pugi::node_pcdata).set_value(", number of cells: ");
-  mesh_info.append_child(pugi::node_pcdata).set_value(std::to_string(mesh.num_cells()).c_str());
-  */
+  std::string data = "Number of vertices: " + std::to_string(mesh.num_vertices())
+    + ", number of cells: " + std::to_string(mesh.num_cells());
+  mesh_info.append_child(pugi::node_pcdata).set_value(data.c_str());
 }
 //-----------------------------------------------------------------------------
 std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh)
