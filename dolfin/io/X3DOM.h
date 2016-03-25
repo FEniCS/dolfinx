@@ -36,16 +36,14 @@ namespace dolfin
   {
   public:
 
-    // FIXME: explain 'facet_type', and use enum rather than string
-    // Use enum for facet_type, 0 for facet and 1 for wireframe
+    // X3DOM representation type: facet for solid facets, and
+    // wireframe for edges
     enum class FacetType {facet, wireframe};
 
-    // FIXME: pallete
-    // Whether in Face or Edge mode - should either be
-    // "IndexedFaceSet" or "IndexedLineSet"
-    // Mesh
+    /// Return X3D string for a Mesh
     static std::string str(const Mesh& mesh, FacetType facet_type);
 
+    /// Return HTML string with embedded X3D for a Mesh
     static std::string html(const Mesh& mesh, FacetType facet_type);
 
     // MeshFunction<std::size_t>
@@ -67,7 +65,8 @@ namespace dolfin
 
   private:
 
-    static void x3dom_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
+    // Add X3DOM mesh data to XML node
+    static void x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
                           FacetType facet_type);
 
     // Get mesh dimensions and viewpoint distance
@@ -79,26 +78,29 @@ namespace dolfin
     // Add mesh topology and geometry to XML, including either Facets
     // or Edges (depending on the facet_type flag). In 3D, only
     // include surface Facets/Edges.
-    static void add_mesh_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
+    static void add_mesh_to_xml(pugi::xml_node& xml_node, const Mesh& mesh,
                                 const std::set<int>& vertex_indices,
                                 FacetType facet_type);
 
-    // Output values associated with Mesh points to XML using a colour palette
+    // Output values associated with Mesh points to XML using a colour
+    // palette
+    /*
     static void add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
                                   const std::vector<std::size_t>& vecindex,
                                   const std::vector<double>& data_values,
                                   FacetType facet_type, const std::size_t palette);
+    */
 
     // Add header to XML document, adjusting field of view to the size of the object
-    static void add_xml_header(pugi::xml_node& xml_doc,
-                               const std::vector<double>& xpos,
-                               FacetType facet_type);
+    static pugi::xml_node add_xml_header(pugi::xml_node& xml_doc,
+                                         const std::vector<double>& xpos,
+                                         FacetType facet_type);
 
     // Get a string representing a color palette (pal may be 0, 1 or 2)
     static std::string color_palette(const size_t pal);
 
     // Generate X3D string from facet_type
-    static const char* facet_type_to_x3d_str(FacetType facet_type);
+    static std::string facet_type_to_x3d_str(FacetType facet_type);
 
   };
 

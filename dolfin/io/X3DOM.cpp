@@ -23,7 +23,7 @@ std::string X3DOM::str(const Mesh& mesh, FacetType facet_type)
   // Create empty pugi XML doc
   pugi::xml_document xml_doc;
 
-  // Build XML
+  // Build X3D XML and add to XML doc
   x3dom_xml(xml_doc, mesh, facet_type);
 
   // Convert XML doc to string
@@ -53,14 +53,15 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
   // view
   const std::vector<double> xpos = mesh_min_max(mesh);
 
-  // Add standard boilerplate XML for X3D, adjusting field of view to
-  // the size of the object, given by xpos.
-  add_xml_header(xml_doc, xpos, facet_type);
+  // Add boilerplate XML for X3D, adjusting field of view to the size
+  // of the object, given by xpos.
+  pugi::xml_node shape = add_xml_header(xml_doc, xpos, facet_type);
 
   // Compute set of vertices that lie on boundary
   const std::set<int> surface_vertices = surface_vertex_indices(mesh);
 
-  add_mesh_to_xml(xml_doc, mesh, surface_vertices, facet_type);
+  // Add mesh to XML doc
+  add_mesh_to_xml(shape, mesh, surface_vertices, facet_type);
 
   // Append text for mesh info
   std::stringstream s;
@@ -384,6 +385,7 @@ void X3DOM::html_to_file(const std::string filename, const Mesh& mesh,
 }
 */
 //-----------------------------------------------------------------------------
+/*
 void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
                               const std::vector<std::size_t>& vecindex,
                               const std::vector<double>& data_values,
@@ -453,7 +455,9 @@ void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
   dolfin::MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
   if (dolfin::MPI::rank(mesh.mpi_comm()) == 0)
   {
-    pugi::xml_node indexed_face_set = xml_doc.child("X3D").child("Scene").child("Shape").child(facet_type_to_x3d_str(facet_type));
+    // FIXME: Break this line up
+    pugi::xml_node indexed_face_set
+      = xml_doc.child("X3D").child("Scene").child("Shape").child(facet_type_to_x3d_str(facet_type).c_str());
     indexed_face_set.append_attribute("colorPerVertex") = "true";
 
     std::stringstream str_output;
@@ -466,8 +470,9 @@ void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
     color.append_attribute("color") = color_palette(palette).c_str();
   }
 }
+*/
 //-----------------------------------------------------------------------------
-void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
+void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_node, const Mesh& mesh,
                             const std::set<int>& vertex_indices,
                             FacetType facet_type)
 {
@@ -480,7 +485,6 @@ void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
 
   // Collect up topology of the local part of the mesh which should be
   // displayed
-
   std::vector<int> local_output;
   if (facet_type == FacetType::wireframe)
   {
@@ -505,7 +509,6 @@ void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
         {
           // Find position of vertex in set
           std::size_t pos = std::distance(vertex_indices.begin(), vertex_indices.find(v->index()));
-
           local_output.push_back(pos + offset);
         }
         local_output.push_back(-1);
@@ -523,7 +526,6 @@ void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
         {
           // Find position of vertex in set
           std::size_t pos = std::distance(vertex_indices.begin(), vertex_indices.find(v->index()));
-
           local_output.push_back(pos + offset);
         }
         local_output.push_back(-1);
@@ -534,11 +536,16 @@ void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
   // Gather up all topology on process 0 and append to xml
   std::vector<int> gathered_output;
   dolfin::MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
+
+  // Add topology data to XML tree
+  pugi::xml_node indexed_face_set;
   if (rank == 0)
   {
-    pugi::xml_node indexed_face_set
-      = xml_doc.child("X3D").child("Scene").child("Shape").child(facet_type_to_x3d_str(facet_type));
+    // Add edges node
+    indexed_face_set = xml_node.append_child(facet_type_to_x3d_str(facet_type).c_str());
+    indexed_face_set.append_attribute("solid") = "false";
 
+    // Add data to edges node
     std::stringstream str_output;
     for (auto val : gathered_output)
       str_output << val << " ";
@@ -563,9 +570,6 @@ void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
   dolfin::MPI::gather(mesh.mpi_comm(), local_geom_output, gathered_geom_output);
   if (rank == 0)
   {
-    pugi::xml_node indexed_face_set
-      = xml_doc.child("X3D").child("Scene").child("Shape").child(facet_type_to_x3d_str(facet_type));
-
     pugi::xml_node coordinate = indexed_face_set.append_child("Coordinate");
 
     std::stringstream str_output;
@@ -575,9 +579,9 @@ void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-void X3DOM::add_xml_header(pugi::xml_node& xml_doc,
-                           const std::vector<double>& xpos,
-                           FacetType facet_type)
+pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& xml_doc,
+                                     const std::vector<double>& xpos,
+                                     FacetType facet_type)
 {
   xml_doc.append_child(pugi::node_doctype).set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
 
@@ -602,7 +606,8 @@ void X3DOM::add_xml_header(pugi::xml_node& xml_doc,
   material.append_attribute("specularColor") = "0.2 0.2 0.2";
   material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";
 
-  shape.append_child(facet_type_to_x3d_str(facet_type)).append_attribute("solid") = "false";
+  // FIXME: Break this into two lines
+  //shape.append_child(facet_type_to_x3d_str(facet_type).c_str()).append_attribute("solid") = "false";
 
   // Have to append Background after shape
   pugi::xml_node background = scene.append_child("Background");
@@ -629,6 +634,8 @@ void X3DOM::add_xml_header(pugi::xml_node& xml_doc,
   pugi::xml_node ambient_light = scene.append_child("DirectionalLight");
   ambient_light.append_attribute("ambientIntensity") = "1";
   ambient_light.append_attribute("intensity") = "0";
+
+  return shape;
 }
 //-----------------------------------------------------------------------------
 std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh)
@@ -756,17 +763,15 @@ std::string X3DOM::color_palette(const size_t palette)
   return colour.str();
 }
 //-----------------------------------------------------------------------------
-const char* X3DOM::facet_type_to_x3d_str(FacetType facet_type)
+std::string X3DOM::facet_type_to_x3d_str(FacetType facet_type)
 {
   // Map from enum to X3D string
   switch (facet_type)
   {
   case FacetType::facet:
     return "IndexedFaceSet";
-    break;
   case FacetType::wireframe:
     return "IndexedLineSet";
-    break;
   default:
     dolfin_error("X3DOM.cpp",
                  "mesh style",
