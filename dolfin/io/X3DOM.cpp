@@ -18,14 +18,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::string X3DOM::str(const Mesh& mesh, Facet_Type facet_type,
-                       const size_t palette)
+std::string X3DOM::str(const Mesh& mesh, FacetType facet_type)
 {
   // Create empty pugi XML doc
   pugi::xml_document xml_doc;
 
   // Build XML
-  x3dom_xml(xml_doc, mesh, facet_type, palette);
+  x3dom_xml(xml_doc, mesh, facet_type);
 
   // Convert XML doc to string
   std::stringstream s;
@@ -35,7 +34,7 @@ std::string X3DOM::str(const Mesh& mesh, Facet_Type facet_type,
 }
 //-----------------------------------------------------------------------------
 void X3DOM::x3dom_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
-                      Facet_Type facet_type, const size_t palette)
+                      FacetType facet_type)
 {
   // Check that mesh is embedded in 2D or 3D
   const std::size_t gdim = mesh.geometry().dim();
@@ -64,8 +63,7 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
   add_mesh_to_xml(xml_doc, mesh, surface_vertices, facet_type);
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::html(const Mesh& mesh, Facet_Type facet_type,
-                        const size_t palette)
+std::string X3DOM::html(const Mesh& mesh, FacetType facet_type)
 {
   // Create empty pugi XML doc
   pugi::xml_document xml_doc;
@@ -92,7 +90,7 @@ std::string X3DOM::html(const Mesh& mesh, Facet_Type facet_type,
   pugi::xml_node body = node.append_child("body");
 
   // Add X3D XML
-  x3dom_xml(body, mesh, facet_type, palette);
+  x3dom_xml(body, mesh, facet_type);
 
   // Convert XML doc to string, without default XML header
   std::stringstream s;
@@ -380,7 +378,7 @@ void X3DOM::html_to_file(const std::string filename, const Mesh& mesh,
 void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
                               const std::vector<std::size_t>& vecindex,
                               const std::vector<double>& data_values,
-                              Facet_Type facet_type, const std::size_t palette)
+                              FacetType facet_type, const std::size_t palette)
 {
   const std::size_t tdim = mesh.topology().dim();
 
@@ -396,7 +394,7 @@ void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
     scale = 255.0/(maxval - minval);
 
   std::vector<int> local_output;
-  if (facet_type == Facet_Type::wireframe)
+  if (facet_type == FacetType::wireframe)
   {
     for (EdgeIterator e(mesh); !e.end(); ++e)
     {
@@ -424,7 +422,7 @@ void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
       }
     }
   }
-  else if (facet_type == Facet_Type::facet)
+  else if (facet_type == FacetType::facet)
   {
     // Output faces
     for (FaceIterator f(mesh); !f.end(); ++f)
@@ -462,7 +460,7 @@ void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
 //-----------------------------------------------------------------------------
 void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
                             const std::set<int>& vertex_indices,
-                            Facet_Type facet_type)
+                            FacetType facet_type)
 {
   std::size_t offset = dolfin::MPI::global_offset(mesh.mpi_comm(),
                                                   vertex_indices.size(), true);
@@ -475,7 +473,7 @@ void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
   // displayed
 
   std::vector<int> local_output;
-  if (facet_type == Facet_Type::wireframe)
+  if (facet_type == FacetType::wireframe)
   {
     for (EdgeIterator e(mesh); !e.end(); ++e)
     {
@@ -505,7 +503,7 @@ void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
       }
     }
   }
-  else if (facet_type == Facet_Type::facet)
+  else if (facet_type == FacetType::facet)
   {
     // Output faces
     for (FaceIterator f(mesh); !f.end(); ++f)
@@ -570,7 +568,7 @@ void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
 //-----------------------------------------------------------------------------
 void X3DOM::add_xml_header(pugi::xml_node& xml_doc,
                            const std::vector<double>& xpos,
-                           Facet_Type facet_type)
+                           FacetType facet_type)
 {
   xml_doc.append_child(pugi::node_doctype).set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
 
@@ -749,15 +747,15 @@ std::string X3DOM::color_palette(const size_t palette)
   return colour.str();
 }
 //-----------------------------------------------------------------------------
-const char* X3DOM::facet_type_to_x3d_str(Facet_Type facet_type)
+const char* X3DOM::facet_type_to_x3d_str(FacetType facet_type)
 {
   // Map from enum to X3D string
   switch (facet_type)
   {
-  case Facet_Type::facet:
+  case FacetType::facet:
     return "IndexedFaceSet";
     break;
-  case Facet_Type::wireframe:
+  case FacetType::wireframe:
     return "IndexedLineSet";
     break;
   default:
