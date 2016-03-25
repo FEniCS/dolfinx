@@ -1,6 +1,21 @@
-#include <iostream>
+// Copyright (C) 2016 Quang T. Ha, Chris Richardson and Garth N. Wells
+//
+// This file is part of DOLFIN.
+//
+// DOLFIN is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// DOLFIN is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+
 #include <sstream>
-#include <fstream>
 #include <boost/lexical_cast.hpp>
 
 #include <dolfin/common/MPI.h>
@@ -26,50 +41,13 @@ std::string X3DOM::str(const Mesh& mesh, FacetType facet_type)
   // Build X3D XML and add to XML doc
   x3dom_xml(xml_doc, mesh, facet_type);
 
-  // Convert XML doc to string
+  // Save XML doc to stringstream
   std::stringstream s;
   const std::string indent = "  ";
   xml_doc.save(s, indent.c_str());
+
+  // Return string
   return s.str();
-}
-//-----------------------------------------------------------------------------
-void X3DOM::x3dom_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
-                      FacetType facet_type)
-{
-  // Check that mesh is embedded in 2D or 3D
-  const std::size_t gdim = mesh.geometry().dim();
-  if (gdim !=2 and gdim !=3)
-  {
-    dolfin_error("X3DOM.cpp",
-                 "get X3DOM string representation of a mesh",
-                 "X3D works only for 2D and 3D meshes");
-  }
-
-  // Intialise facet-to-cell connectivity
-  const std::size_t tdim = mesh.geometry().dim();
-  mesh.init(tdim - 1 , tdim);
-
-  // Get mesh max and min dimensions, needed to calculate field of
-  // view
-  const std::vector<double> xpos = mesh_min_max(mesh);
-
-  // Add boilerplate XML for X3D, adjusting field of view to the size
-  // of the object, given by xpos.
-  pugi::xml_node shape = add_xml_header(xml_doc, xpos, facet_type);
-
-  // Compute set of vertices that lie on boundary
-  const std::set<int> surface_vertices = surface_vertex_indices(mesh);
-
-  // Add mesh to XML doc
-  add_mesh_to_xml(shape, mesh, surface_vertices, facet_type);
-
-  // Append text for mesh info
-  pugi::xml_node mesh_info = xml_doc.child("X3D").append_child("div");
-  mesh_info.append_attribute("style") = "position: absolute; bottom: 2%; left: 2%; text-align: left; font-size: 12px; color: white;";
-  mesh_info.append_child(pugi::node_pcdata).set_value("Number of vertices: ");
-  mesh_info.append_child(pugi::node_pcdata).set_value(std::to_string(mesh.num_vertices()).c_str());
-  mesh_info.append_child(pugi::node_pcdata).set_value(", number of cells: ");
-  mesh_info.append_child(pugi::node_pcdata).set_value(std::to_string(mesh.num_cells()).c_str());
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh, FacetType facet_type)
@@ -87,7 +65,7 @@ std::string X3DOM::html(const Mesh& mesh, FacetType facet_type)
   pugi::xml_node script = head.append_child("script");
   script.append_attribute("type") = "text/javascript";
   script.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
-  script.append_child(pugi::node_pcdata);//.set_value();
+  script.append_child(pugi::node_pcdata);
 
   // Add link
   pugi::xml_node link = head.append_child("link");
@@ -96,15 +74,17 @@ std::string X3DOM::html(const Mesh& mesh, FacetType facet_type)
   link.append_attribute("href") = "http://www.x3dom.org/download/x3dom.css";
 
   // Add body node
-  pugi::xml_node body = node.append_child("body");
+  pugi::xml_node body_node = node.append_child("body");
 
-  // Add X3D XML
-  x3dom_xml(body, mesh, facet_type);
+  // Add X3D XML data to 'body' node
+  x3dom_xml(body_node, mesh, facet_type);
 
-  // Convert XML doc to string, without default XML header
+  // Save XML doc to stringstream, without default XML header
   std::stringstream s;
   const std::string indent = "  ";
   xml_doc.save(s, indent.c_str(), pugi::format_default | pugi::format_no_declaration);
+
+  // Return string
   return s.str();
 }
 //-----------------------------------------------------------------------------
@@ -185,7 +165,7 @@ std::string X3DOM::str(const MeshFunction<std::size_t>& meshfunction,
   const std::vector<std::size_t> vecindex = vertex_index(mesh);
 
   // Write vertices
-  add_mesh_to_xml(xml_doc, mesh, vecindex, facet_type);
+  add_mesh(xml_doc, mesh, vecindex, facet_type);
 
   // Iterate over mesh facets
   std::vector<unsigned int> local_output;
@@ -313,7 +293,7 @@ std::string X3DOM::str(const Function& u,
                                                       surface_vertices.end());
 
   // Write vertices and vertex data to XML file
-  add_mesh_to_xml(xml_doc, mesh, surface_vertices_vec, facet_type);
+  add_mesh(xml_doc, mesh, surface_vertices_vec, facet_type);
   add_values_to_xml(xml_doc, mesh, surface_vertices_vec,
                     data_values, facet_type, palette);
 
@@ -343,44 +323,6 @@ std::string X3DOM::html_str(const MeshFunction<std::size_t>& meshfunction,
   ss << start_str << xml_str(meshfunction, facet_type, palette) << "</body>";
 
   return ss.str();
-}
-*/
-//-----------------------------------------------------------------------------
-/*
-void X3DOM::xml_to_file(const std::string filename, const Mesh& mesh,
-                        const std::string facet_type, const size_t palette)
-{
-  // Save XML string to file
-  // Check if extension is X3D and give warning
-  if(filename.substr(filename.find_last_of(".") + 1) == "x3d") {
-    std::ofstream out(filename);
-    out << xml_str(mesh, facet_type, palette);
-    out.close();
-  }
-  else {
-    dolfin_error("X3DOM.cpp",
-             "output file type",
-             "File type should be *.x3d");
-  }
-}
-*/
-//-----------------------------------------------------------------------------
-/*
-void X3DOM::html_to_file(const std::string filename, const Mesh& mesh,
-                         const std::string facet_type, const size_t palette)
-{
-  // Save HTMl string to file
-  // Check if extension is X3D and give warning
-  if(filename.substr(filename.find_last_of(".") + 1) == "html") {
-    std::ofstream out(filename);
-    out << html_str(mesh, facet_type, palette);
-    out.close();
-  }
-  else {
-    dolfin_error("X3DOM.cpp",
-             "output file type",
-             "File type should be *.html");
-  }
 }
 */
 //-----------------------------------------------------------------------------
@@ -471,13 +413,12 @@ void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
 }
 */
 //-----------------------------------------------------------------------------
-void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_node, const Mesh& mesh,
-                            const std::set<int>& vertex_indices,
-                            FacetType facet_type)
+void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
+                     const std::set<int>& vertex_indices,
+                     FacetType facet_type)
 {
   std::size_t offset = dolfin::MPI::global_offset(mesh.mpi_comm(),
                                                   vertex_indices.size(), true);
-
   const std::size_t rank = dolfin::MPI::rank(mesh.mpi_comm());
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
@@ -569,8 +510,10 @@ void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_node, const Mesh& mesh,
   dolfin::MPI::gather(mesh.mpi_comm(), local_geom_output, gathered_geom_output);
   if (rank == 0)
   {
+    // Add coordinate node
     pugi::xml_node coordinate = indexed_face_set.append_child("Coordinate");
 
+    // Add data to coordinate node
     std::stringstream str_output;
     for (auto val : gathered_geom_output)
       str_output << val << " ";
@@ -578,13 +521,14 @@ void X3DOM::add_mesh_to_xml(pugi::xml_node& xml_node, const Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& xml_doc,
+pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& xml_node,
                                      const std::vector<double>& xpos,
                                      FacetType facet_type)
 {
-  xml_doc.append_child(pugi::node_doctype).set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
+  xml_node.append_child(pugi::node_doctype).set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
 
-  pugi::xml_node x3d = xml_doc.append_child("X3D");
+  // Add X3D node and add attributes
+  pugi::xml_node x3d = xml_node.append_child("X3D");
   x3d.append_attribute("profile") = "Interchange";
   x3d.append_attribute("version") = "3.2";
   x3d.append_attribute("xmlns:xsd")
@@ -595,18 +539,15 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& xml_doc,
   x3d.append_attribute("height") = "400px";
 
   pugi::xml_node scene = x3d.append_child("Scene");
-
   pugi::xml_node shape = scene.append_child("Shape");
-  pugi::xml_node material
-    = shape.append_child("Appearance").append_child("Material");
+  pugi::xml_node appearance = shape.append_child("Appearance");
+
+  pugi::xml_node material = appearance.append_child("Material");
   material.append_attribute("ambientIntensity") = "0.4";
   material.append_attribute("shininess") = "0.8";
   material.append_attribute("diffuseColor") = "0.7 0.7 0.7";
   material.append_attribute("specularColor") = "0.2 0.2 0.2";
   material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";
-
-  // FIXME: Break this into two lines
-  //shape.append_child(facet_type_to_x3d_str(facet_type).c_str()).append_attribute("solid") = "false";
 
   // Have to append Background after shape
   pugi::xml_node background = scene.append_child("Background");
@@ -615,7 +556,7 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& xml_doc,
   // Append viewpoint after shape
   pugi::xml_node viewpoint = scene.append_child("Viewpoint");
   std::string xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-      + boost::lexical_cast<std::string>(xpos[1]) + " "
+    + boost::lexical_cast<std::string>(xpos[1]) + " "
     + boost::lexical_cast<std::string>(xpos[3]);
   viewpoint.append_attribute("position") = xyz.c_str();
 
@@ -635,6 +576,49 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& xml_doc,
   ambient_light.append_attribute("intensity") = "0";
 
   return shape;
+}
+//-----------------------------------------------------------------------------
+void X3DOM::x3dom_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
+                      FacetType facet_type)
+{
+  // Check that mesh is embedded in 2D or 3D
+  const std::size_t gdim = mesh.geometry().dim();
+  if (gdim !=2 and gdim !=3)
+  {
+    dolfin_error("X3DOM.cpp",
+                 "get X3DOM string representation of a mesh",
+                 "X3D works only for 2D and 3D meshes");
+  }
+
+  // Intialise facet-to-cell connectivity
+  const std::size_t tdim = mesh.geometry().dim();
+  mesh.init(tdim - 1 , tdim);
+
+  // Get mesh max and min dimensions, needed to calculate field of
+  // view
+  const std::vector<double> xpos = mesh_min_max(mesh);
+
+  // Add boilerplate XML for X3D, adjusting field of view to the size
+  // of the object, given by xpos.
+  pugi::xml_node shape = add_xml_header(xml_doc, xpos, facet_type);
+  dolfin_assert(shape);
+
+  // Compute set of vertices that lie on boundary
+  const std::set<int> surface_vertices = surface_vertex_indices(mesh);
+
+  // Add mesh to XML doc
+  //add_mesh(shape, mesh, surface_vertices, facet_type);
+
+  // FIXME: Need to first check that node exists before accessing
+  // Append text for mesh info
+  /*
+  pugi::xml_node mesh_info = xml_doc.child("X3D").append_child("div");
+  mesh_info.append_attribute("style") = "position: absolute; bottom: 2%; left: 2%; text-align: left; font-size: 12px; color: white;";
+  mesh_info.append_child(pugi::node_pcdata).set_value("Number of vertices: ");
+  mesh_info.append_child(pugi::node_pcdata).set_value(std::to_string(mesh.num_vertices()).c_str());
+  mesh_info.append_child(pugi::node_pcdata).set_value(", number of cells: ");
+  mesh_info.append_child(pugi::node_pcdata).set_value(std::to_string(mesh.num_cells()).c_str());
+  */
 }
 //-----------------------------------------------------------------------------
 std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh)

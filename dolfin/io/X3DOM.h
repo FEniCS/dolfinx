@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Chris Richardson
+// Copyright (C) 2016 Quang T. Ha, Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2012-03-05
-// Last changed: 2013-05-10
 
 #ifndef __DOLFIN_X3DOM_H
 #define __DOLFIN_X3DOM_H
@@ -57,15 +54,11 @@ namespace dolfin
     //static std::string html_str(const MeshFunction<std::size_t>& meshfunction,
     //                            const std::string facet_type, const size_t palette);
 
-    //void xml_to_file(const std::string filename, const Mesh& mesh,
-    //                 const std::string facet_type, const size_t palette);
-
-    //void html_to_file(const std::string filename, const Mesh& mesh,
-    //                  const std::string facet_type, const size_t palette);
-
   private:
 
     // Add X3DOM mesh data to XML node
+    //static void x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
+    //                      FacetType facet_type);
     static void x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
                           FacetType facet_type);
 
@@ -78,9 +71,9 @@ namespace dolfin
     // Add mesh topology and geometry to XML, including either Facets
     // or Edges (depending on the facet_type flag). In 3D, only
     // include surface Facets/Edges.
-    static void add_mesh_to_xml(pugi::xml_node& xml_node, const Mesh& mesh,
-                                const std::set<int>& vertex_indices,
-                                FacetType facet_type);
+    static void add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
+                         const std::set<int>& vertex_indices,
+                         FacetType facet_type);
 
     // Output values associated with Mesh points to XML using a colour
     // palette
@@ -92,7 +85,7 @@ namespace dolfin
     */
 
     // Add header to XML document, adjusting field of view to the size of the object
-    static pugi::xml_node add_xml_header(pugi::xml_node& xml_doc,
+    static pugi::xml_node add_xml_header(pugi::xml_node& xml_node,
                                          const std::vector<double>& xpos,
                                          FacetType facet_type);
 
