@@ -63,13 +63,12 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
   add_mesh_to_xml(xml_doc, mesh, surface_vertices, facet_type);
 
   // Append text for mesh info
-  std::stringstream s;
-  s << "Number of vertices: " << mesh.num_vertices() << ", ";
-  s << "number of cells: " << mesh.num_cells() << ".";
-
   pugi::xml_node mesh_info = xml_doc.child("X3D").append_child("div");
   mesh_info.append_attribute("style") = "position: absolute; bottom: 2%; left: 2%; text-align: left; font-size: 12px; color: white;";
-  mesh_info.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+  mesh_info.append_child(pugi::node_pcdata).set_value("Number of vertices: ");
+  mesh_info.append_child(pugi::node_pcdata).set_value(std::to_string(mesh.num_vertices()).c_str());
+  mesh_info.append_child(pugi::node_pcdata).set_value(", number of cells: ");
+  mesh_info.append_child(pugi::node_pcdata).set_value(std::to_string(mesh.num_cells()).c_str());
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh, FacetType facet_type)
