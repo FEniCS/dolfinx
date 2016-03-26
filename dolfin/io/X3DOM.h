@@ -77,8 +77,7 @@ namespace dolfin
     // or Edges (depending on the facet_type flag). In 3D, only
     // include surface Facets/Edges.
     static void add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
-                         const std::set<int>& vertex_indices,
-                         FacetType facet_type);
+                      FacetType facet_type);
 
     // Output values associated with Mesh points to XML using a colour
     // palette

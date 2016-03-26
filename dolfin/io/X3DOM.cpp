@@ -414,9 +414,11 @@ void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
 */
 //-----------------------------------------------------------------------------
 void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
-                     const std::set<int>& vertex_indices,
                      FacetType facet_type)
 {
+  // Get vertex indices
+  const std::set<int> vertex_indices = surface_vertex_indices(mesh);
+
   std::size_t offset = dolfin::MPI::global_offset(mesh.mpi_comm(),
                                                   vertex_indices.size(), true);
   const std::size_t rank = dolfin::MPI::rank(mesh.mpi_comm());
@@ -623,10 +625,10 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
 
   // FIXME: Should this go inside add_mesh?
   // Compute set of vertices that lie on boundary
-  const std::set<int> surface_vertices = surface_vertex_indices(mesh);
+  // const std::set<int> surface_vertices = surface_vertex_indices(mesh);
 
   // Add mesh to 'shape' XML node
-  add_mesh(shape, mesh, surface_vertices, facet_type);
+  add_mesh(shape, mesh, facet_type);
 
   // FIXME: Need to first check that node exists before accessing
   // FIXME: Really want appropiate node handle to be available, rather
