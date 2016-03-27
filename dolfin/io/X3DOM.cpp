@@ -612,6 +612,7 @@ pugi::xml_node X3DOM::add_x3d(pugi::xml_node& xml_node)
 
   // Add on option to show rendering
   x3d.append_attribute("showStats") = "True";
+  
   x3d.append_attribute("profile") = "Interchange";
   x3d.append_attribute("version") = "3.2";
   x3d.append_attribute("xmlns:xsd")
