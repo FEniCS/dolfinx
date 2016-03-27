@@ -528,15 +528,30 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
                                      FacetType facet_type)
 {
   pugi::xml_node scene = x3d_node.append_child("Scene");
-  pugi::xml_node shape = scene.append_child("Shape");
-  pugi::xml_node appearance = shape.append_child("Appearance");
 
-  pugi::xml_node material = appearance.append_child("Material");
-  material.append_attribute("ambientIntensity") = "0.4";
-  material.append_attribute("shininess") = "0.8";
-  material.append_attribute("diffuseColor") = "0.7 0.7 0.7";
-  material.append_attribute("specularColor") = "0.2 0.2 0.2";
-  material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";
+  // Should we write a function that return a shape node?
+  // I think we should, let's do it! 
+  // We can prepend_child!! Woops!
+  // pugi::xml_node shape = scene.append_child("Shape"); // Here is some consideration
+  // pugi::xml_node appearance = shape.append_child("Appearance");
+
+  // pugi::xml_node material = appearance.append_child("Material");
+  // material.append_attribute("ambientIntensity") = "0.4";
+  // material.append_attribute("shininess") = "0.8";
+  // material.append_attribute("diffuseColor") = "0.7 0.7 0.7";
+  // material.append_attribute("specularColor") = "0.2 0.2 0.2";
+  // material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";
+  if (facet_type == FacetType::facet_with_edge)
+  {
+    // Append wireframe mesh first
+    // So the facet will be on top after being appended later
+    add_shape_node(scene, FacetType::wireframe);
+    add_shape_node(scene, FacetType::facet);
+  }
+  else
+  {
+    add_shape_node(scene, facet_type);
+  }
 
   // Have to append Background after shape
   pugi::xml_node background = scene.append_child("Background");
@@ -564,8 +579,24 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   ambient_light.append_attribute("ambientIntensity") = "1";
   ambient_light.append_attribute("intensity") = "0";
 
-  return shape;
+  return scene;
 }
+//-----------------------------------------------------------------------------
+void X3DOM::add_shape_node(pugi::xml_node& x3d_scene, FacetType facet_type)
+{
+  // pugi::xml_node shape = x3d_node.child("Scene").prepend_child("Shape"); 
+  pugi::xml_node shape = x3d_scene.prepend_child("Shape");   
+  shape.append_attribute("id") = facet_type_to_x3d_str(facet_type).c_str();
+  pugi::xml_node appearance = shape.append_child("Appearance");
+
+  pugi::xml_node material = appearance.append_child("Material");
+  material.append_attribute("ambientIntensity") = "0.4";
+  material.append_attribute("shininess") = "0.8";
+  material.append_attribute("diffuseColor") = "0.7 0.7 0.7";
+  material.append_attribute("specularColor") = "0.2 0.2 0.2";
+  material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";      
+}
+
 //-----------------------------------------------------------------------------
 void X3DOM::add_doctype(pugi::xml_node& xml_node)
 {
@@ -620,15 +651,29 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
 
   // Add boilerplate XML no X3D node, adjusting field of view to the
   // size of the object, given by xpos
-  pugi::xml_node shape = add_xml_header(x3d_node, xpos, facet_type);
-  dolfin_assert(shape);
+  pugi::xml_node scene = add_xml_header(x3d_node, xpos, facet_type);
+  dolfin_assert(scene);
 
   // FIXME: Should this go inside add_mesh?
   // Compute set of vertices that lie on boundary
   // const std::set<int> surface_vertices = surface_vertex_indices(mesh);
 
-  // Add mesh to 'shape' XML node
-  add_mesh(shape, mesh, facet_type);
+  // Add mesh to 'shape' XML node, based on shape id
+  // First case is facet_with_edge
+  if (facet_type==FacetType::facet_with_edge)
+  {
+    // First add the facet
+    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(FacetType::facet).c_str());
+    add_mesh(shape, mesh, FacetType::facet);
+    // Then the edge
+    shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(FacetType::wireframe).c_str());
+    add_mesh(shape, mesh, FacetType::wireframe);    
+  }
+  else
+  {
+    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(facet_type).c_str());
+    add_mesh(shape, mesh, facet_type);
+  }
 
   // FIXME: Need to first check that node exists before accessing
   // FIXME: Really want appropiate node handle to be available, rather

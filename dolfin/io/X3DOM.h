@@ -35,7 +35,7 @@ namespace dolfin
 
     // X3DOM representation type: facet for solid facets, and
     // wireframe for edges
-    enum class FacetType {facet, wireframe};
+    enum class FacetType {facet, facet_with_edge, wireframe};
 
     /// Return X3D string for a Mesh
     static std::string str(const Mesh& mesh, FacetType facet_type);
@@ -92,6 +92,9 @@ namespace dolfin
     static pugi::xml_node add_xml_header(pugi::xml_node& xml_node,
                                          const std::vector<double>& xpos,
                                          FacetType facet_type);
+    
+    // Add shape node to XML document, and push the shape node to first child
+    static void add_shape_node(pugi::xml_node& x3d_scene, FacetType facet_type);
 
     // Get a string representing a color palette (pal may be 0, 1 or 2)
     static std::string color_palette(const size_t pal);
