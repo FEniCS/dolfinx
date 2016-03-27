@@ -610,6 +610,8 @@ pugi::xml_node X3DOM::add_x3d(pugi::xml_node& xml_node)
   pugi::xml_node x3d = xml_node.append_child("X3D");
   dolfin_assert(x3d);
 
+  // Add on option to show rendering
+  x3d.append_attribute("showStats") = "True";
   x3d.append_attribute("profile") = "Interchange";
   x3d.append_attribute("version") = "3.2";
   x3d.append_attribute("xmlns:xsd")
