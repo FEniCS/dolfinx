@@ -509,7 +509,7 @@ def test_doc_string_complex_compiled_expression(mesh):
       }
     };'''
 
-    cell_data = CellFunction('uint', mesh)
+    cell_data = CellFunction('size_t', mesh)
     cell_data.set_all(3)
     CompiledSubDomain("x[0] <= 0.25").mark(cell_data, 0)
     CompiledSubDomain("x[0] > 0.25 && x[0] < 0.75").mark(cell_data, 1)
@@ -588,8 +588,8 @@ def test_doc_string_compiled_expression_with_system_headers():
         {
           const std::shared_ptr<const Mesh> mesh = u->function_space()->mesh();
           const std::shared_ptr<const GenericDofMap> dofmap = u->function_space()->dofmap();
-          const uint ncells = mesh->num_cells();
-          uint ndofs_per_cell;
+          const std::size_t ncells = mesh->num_cells();
+          std::size_t ndofs_per_cell;
           if (ncells > 0)
           {
             CellIterator cell(*mesh);
@@ -626,8 +626,8 @@ def test_doc_string_compiled_expression_with_system_headers():
         {
           const std::shared_ptr<const Mesh> mesh = u->function_space()->mesh();
           const std::shared_ptr<const GenericDofMap> dofmap = u->function_space()->dofmap();
-          const uint ncells = mesh->num_cells();
-          uint ndofs_per_cell;
+          const std::size_t ncells = mesh->num_cells();
+          std::size_t ndofs_per_cell;
           if (ncells > 0)
           {
             CellIterator cell(*mesh);
@@ -675,14 +675,15 @@ def test_doc_string_python_expressions(mesh):
 
     class MyExpression1(Expression):
         def eval_cell(self_expr, value, x, ufc_cell):
+            # Check attributes in ufc cell
+            for attr in ufc_cell_attrs:
+                  assert hasattr(ufc_cell, attr)
+
             if ufc_cell.index > 10:
                 value[0] = 1.0
             else:
                 value[0] = -1.0
 
-            # Check attributes in ufc cell
-            for attr in ufc_cell_attrs:
-                  assert hasattr(ufc_cell, attr)
 
     f1 = MyExpression1(degree=0)
     assemble(f1*ds(square))
@@ -694,7 +695,7 @@ def test_doc_string_python_expressions(mesh):
         def eval(self, values, x):
             pass
 
-    cell_data = CellFunction('uint', square)
+    cell_data = CellFunction('size_t', square)
 
     f3 = MyExpression2(square, cell_data, degree=0)
 
