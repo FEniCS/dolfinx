@@ -530,7 +530,7 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   pugi::xml_node scene = x3d_node.append_child("Scene");
 
   // Should we write a function that return a shape node?
-  // I think we should, let's do it! 
+  // I think we should, let's do it!
   // We can prepend_child!! Woops!
   // pugi::xml_node shape = scene.append_child("Shape"); // Here is some consideration
   // pugi::xml_node appearance = shape.append_child("Appearance");
@@ -584,8 +584,8 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
 //-----------------------------------------------------------------------------
 void X3DOM::add_shape_node(pugi::xml_node& x3d_scene, FacetType facet_type)
 {
-  // pugi::xml_node shape = x3d_node.child("Scene").prepend_child("Shape"); 
-  pugi::xml_node shape = x3d_scene.prepend_child("Shape");   
+  // pugi::xml_node shape = x3d_node.child("Scene").prepend_child("Shape");
+  pugi::xml_node shape = x3d_scene.prepend_child("Shape");
   shape.append_attribute("id") = facet_type_to_x3d_str(facet_type).c_str();
   pugi::xml_node appearance = shape.append_child("Appearance");
 
@@ -594,7 +594,7 @@ void X3DOM::add_shape_node(pugi::xml_node& x3d_scene, FacetType facet_type)
   material.append_attribute("shininess") = "0.8";
   material.append_attribute("diffuseColor") = "0.7 0.7 0.7";
   material.append_attribute("specularColor") = "0.2 0.2 0.2";
-  material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";      
+  material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";
 }
 
 //-----------------------------------------------------------------------------
@@ -611,8 +611,8 @@ pugi::xml_node X3DOM::add_x3d(pugi::xml_node& xml_node)
   dolfin_assert(x3d);
 
   // Add on option to show rendering
-  x3d.append_attribute("showStats") = "True";
-  
+  x3d.append_attribute("showStat") = "true";
+
   x3d.append_attribute("profile") = "Interchange";
   x3d.append_attribute("version") = "3.2";
   x3d.append_attribute("xmlns:xsd")
@@ -670,7 +670,7 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
     add_mesh(shape, mesh, FacetType::facet);
     // Then the edge
     shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(FacetType::wireframe).c_str());
-    add_mesh(shape, mesh, FacetType::wireframe);    
+    add_mesh(shape, mesh, FacetType::wireframe);
   }
   else
   {
