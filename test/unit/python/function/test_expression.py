@@ -675,14 +675,15 @@ def test_doc_string_python_expressions(mesh):
 
     class MyExpression1(Expression):
         def eval_cell(self_expr, value, x, ufc_cell):
+            # Check attributes in ufc cell
+            for attr in ufc_cell_attrs:
+                  assert hasattr(ufc_cell, attr)
+
             if ufc_cell.index > 10:
                 value[0] = 1.0
             else:
                 value[0] = -1.0
 
-            # Check attributes in ufc cell
-            for attr in ufc_cell_attrs:
-                  assert hasattr(ufc_cell, attr)
 
     f1 = MyExpression1(degree=0)
     assemble(f1*ds(square))
