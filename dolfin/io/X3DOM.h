@@ -48,8 +48,8 @@ namespace dolfin
     //                       std::string facet_type, const size_t palette);
 
     // Function to X3D string
-    //static std::string str(const Function& function, const
-    //                       std::string facet_type, const size_t palette);
+    static std::string str(const Function& function, const
+                          std::string facet_type, const size_t palette);
 
     //static std::string html_str(const MeshFunction<std::size_t>& meshfunction,
     //                            const std::string facet_type, const size_t palette);
