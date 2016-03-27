@@ -34,8 +34,8 @@ namespace dolfin
   public:
 
     // X3DOM representation type: facet for solid facets, and
-    // wireframe for edges
-    enum class FacetType {facet, facet_with_edge, wireframe};
+    // edge for edges
+    enum class FacetType {facet, polygon, edge};
 
     /// Return X3D string for a Mesh
     static std::string str(const Mesh& mesh, FacetType facet_type);
