@@ -377,6 +377,8 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
   case norm_type::none:
     ksp_norm_type = KSP_NORM_NONE;
     break;
+  case norm_type::default_norm:
+    ksp_norm_type = KSP_NORM_DEFAULT;
   case norm_type::preconditioned:
     ksp_norm_type = KSP_NORM_PRECONDITIONED;
     break;
@@ -394,6 +396,39 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
 
   dolfin_assert(_ksp);
   KSPSetNormType(_ksp, ksp_norm_type);
+}
+//-----------------------------------------------------------------------------
+PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type() const
+{
+  // Get norm type from PETSc
+  dolfin_assert(_ksp);
+  KSPNormType ksp_norm_type = KSP_NORM_DEFAULT;
+  KSPGetNormType(_ksp, &ksp_norm_type);
+
+  // Return appropriate DOLFIN enum type
+  switch (ksp_norm_type)
+  {
+  case KSP_NORM_NONE:
+    std::cout << "get none" << std::endl;
+    return norm_type::none;
+  case KSP_NORM_PRECONDITIONED:
+    std::cout << "get pre" << std::endl;
+    return norm_type::preconditioned;
+  case KSP_NORM_UNPRECONDITIONED:
+    std::cout << "get unpre" << std::endl;
+    return norm_type::unpreconditioned;
+  case KSP_NORM_NATURAL:
+    std::cout << "get nat" << std::endl;
+    return norm_type::natural;
+  case KSP_NORM_DEFAULT:
+    std::cout << "get def" << std::endl;
+    return norm_type::default_norm;
+  default:
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "set convergence norm type",
+                 "Unknown norm type");
+    return norm_type::none;
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::monitor(bool monitor_convergence)
@@ -465,6 +500,8 @@ PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type(std::string norm)
 {
   if (norm == "none")
     return norm_type::none;
+  else if (norm == "default")
+    return norm_type::default_norm;
   else if (norm == "preconditioned")
     return norm_type::preconditioned;
   else if (norm == "true")
