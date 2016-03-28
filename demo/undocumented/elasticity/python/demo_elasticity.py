@@ -117,6 +117,14 @@ as_backend_type(A).set_near_nullspace(null_space)
 # null space
 pc = PETScPreconditioner("petsc_amg")
 
+# Use Chebyshev smoothing for multigrid
+PETScOptions.set("mg_levels_ksp_type", "chebyshev")
+PETScOptions.set("mg_levels_pc_type", "jacobi")
+
+# Improve estimate of eigenvalues for Chebyshev smoothing
+PETScOptions.set("mg_levels_esteig_ksp_type", "cg")
+PETScOptions.set("mg_levels_ksp_chebyshev_esteig_steps", 50)
+
 # Create CG Krylov solver and turn convergence monitoring on
 solver = PETScKrylovSolver("cg", pc)
 solver.parameters["monitor_convergence"] = True

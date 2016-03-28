@@ -27,6 +27,36 @@ from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel
 
 
 @skip_if_not_PETSc
+def test_krylov_solver_norm_type():
+    "Check setting of norm type used in testing for convergence by PETScKrylovSolver"
+
+    norm_type = (PETScKrylovSolver.norm_type_default_norm,
+                 PETScKrylovSolver.norm_type_natural,
+                 PETScKrylovSolver.norm_type_preconditioned,
+                 PETScKrylovSolver.norm_type_none,
+                 PETScKrylovSolver.norm_type_unpreconditioned)
+    for norm in norm_type:
+        # Solve a system of equations
+        mesh = UnitSquareMesh(4, 4)
+        V = FunctionSpace(mesh, "Lagrange", 1)
+        u, v = TrialFunction(V), TestFunction(V)
+        a = u*v*dx
+        L = Constant(1.0)*v*dx
+        A, b = assemble(a), assemble(L)
+
+        solver = PETScKrylovSolver("cg")
+        solver.parameters["maximum_iterations"] = 2
+        solver.parameters["error_on_nonconvergence"] = False
+        solver.set_norm_type(norm)
+        solver.set_operator(A)
+        solver.solve(b.copy(), b)
+        solver.get_norm_type()
+
+        if norm is not PETScKrylovSolver.norm_type_default_norm:
+            assert solver.get_norm_type() == norm
+
+
+@skip_if_not_PETSc
 def test_krylov_solver_options_prefix():
     "Test set/get PETScKrylov solver prefix option"
 
@@ -44,13 +74,10 @@ def test_krylov_solver_options_prefix():
     mesh = UnitSquareMesh(4, 4)
     V = FunctionSpace(mesh, "Lagrange", 1)
     u, v = TrialFunction(V), TestFunction(V)
-    a = u*v*dx
-    L = Constant(1.0)*v*dx
-    A = assemble(a)
-    b = assemble(L)
-    x = b.copy()
+    a, L = u*v*dx, Constant(1.0)*v*dx
+    A,b  = assemble(a), assemble(L)
     solver.set_operator(A)
-    solver.solve(x, b)
+    solver.solve(b.copy(), b)
 
     # Check prefix (post solve)
     assert solver.get_options_prefix() == prefix
