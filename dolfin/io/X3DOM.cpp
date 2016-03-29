@@ -116,6 +116,18 @@ std::string X3DOM::html(const Mesh& mesh, FacetType facet_type)
   viewpoint_option.append_attribute("style") = "display: block";
   viewpoint_option.append_child(pugi::node_pcdata).set_value("Right");
 
+  // This is top
+  viewpoint_option = viewpoint_control.append_child("button");
+  viewpoint_option.append_attribute("onclick") = "document.getElementById('top').setAttribute('set_bind','true');";
+  viewpoint_option.append_attribute("style") = "display: block";
+  viewpoint_option.append_child(pugi::node_pcdata).set_value("Top");
+
+  // This is bottom
+  viewpoint_option = viewpoint_control.append_child("button");
+  viewpoint_option.append_attribute("onclick") = "document.getElementById('bottom').setAttribute('set_bind','true');";
+  viewpoint_option.append_attribute("style") = "display: block";
+  viewpoint_option.append_child(pugi::node_pcdata).set_value("Bottom");
+
   // Save XML doc to stringstream, without default XML header
   std::stringstream s;
   const std::string indent = "  ";
@@ -383,7 +395,7 @@ void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
     scale = 255.0/(maxval - minval);
 
   std::vector<int> local_output;
-  if (facet_type == FacetType::Representation_Wireframe)
+  if (facet_type == FacetType::Wireframe)
   {
     for (EdgeIterator e(mesh); !e.end(); ++e)
     {
@@ -411,7 +423,7 @@ void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
       }
     }
   }
-  else if (facet_type == FacetType::Representation_Surface)
+  else if (facet_type == FacetType::Surface)
   {
     // Output faces
     for (FaceIterator f(mesh); !f.end(); ++f)
@@ -465,7 +477,7 @@ void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
   // Collect up topology of the local part of the mesh which should be
   // displayed
   std::vector<int> local_output;
-  if (facet_type == FacetType::Representation_Wireframe)
+  if (facet_type == FacetType::Wireframe)
   {
     for (EdgeIterator e(mesh); !e.end(); ++e)
     {
@@ -494,7 +506,7 @@ void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
       }
     }
   }
-  else if (facet_type == FacetType::Representation_Surface)
+  else if (facet_type == FacetType::Surface)
   {
     // Output faces
     for (FaceIterator f(mesh); !f.end(); ++f)
@@ -578,12 +590,12 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   // material.append_attribute("diffuseColor") = "0.7 0.7 0.7";
   // material.append_attribute("specularColor") = "0.2 0.2 0.2";
   // material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";
-  if (facet_type == FacetType::Representation_SurfaceWithEdges)
+  if (facet_type == FacetType::SurfaceWithEdges)
   {
     // Append edge mesh first
     // So the facet will be on top after being appended later
-    add_shape_node(scene, FacetType::Representation_Wireframe);
-    add_shape_node(scene, FacetType::Representation_Surface);
+    add_shape_node(scene, FacetType::Wireframe);
+    add_shape_node(scene, FacetType::Surface);
   }
   else
   {
@@ -648,6 +660,43 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
 
   left_viewpoint.append_attribute("zNear") = "-1";
   left_viewpoint.append_attribute("zFar") = "-1";
+
+  // Top viewpoint
+  pugi::xml_node top_viewpoint = scene.append_child("Viewpoint");
+  top_viewpoint.append_attribute("id") = "top";
+  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
+    + boost::lexical_cast<std::string>(xpos[1]+xpos[3]-xpos[2]) + " "
+    + boost::lexical_cast<std::string>(xpos[2]);
+  top_viewpoint.append_attribute("position") = xyz.c_str();
+
+  top_viewpoint.append_attribute("orientation") = "-1 0 0 1.5707963267948";
+  top_viewpoint.append_attribute("fieldOfView") = "0.785398";
+  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
+    + boost::lexical_cast<std::string>(xpos[1]) + " "
+    + boost::lexical_cast<std::string>(xpos[2]);
+  top_viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
+
+  top_viewpoint.append_attribute("zNear") = "-1";
+  top_viewpoint.append_attribute("zFar") = "-1";
+
+  // Bottom viewpoint
+  pugi::xml_node bottom_viewpoint = scene.append_child("Viewpoint");
+  bottom_viewpoint.append_attribute("id") = "bottom";
+  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
+    + boost::lexical_cast<std::string>(xpos[1]-xpos[3]+xpos[2]) + " "
+    + boost::lexical_cast<std::string>(xpos[2]);
+  bottom_viewpoint.append_attribute("position") = xyz.c_str();
+
+  bottom_viewpoint.append_attribute("orientation") = "1 0 0 1.5707963267948";
+  bottom_viewpoint.append_attribute("fieldOfView") = "0.785398";
+  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
+    + boost::lexical_cast<std::string>(xpos[1]) + " "
+    + boost::lexical_cast<std::string>(xpos[2]);
+  bottom_viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
+
+  bottom_viewpoint.append_attribute("zNear") = "-1";
+  bottom_viewpoint.append_attribute("zFar") = "-1";
+
 
   // Front viewpoint
   pugi::xml_node front_viewpoint = scene.append_child("Viewpoint");
@@ -756,14 +805,14 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
 
   // Add mesh to 'shape' XML node, based on shape id
   // First case is polygon
-  if (facet_type==FacetType::Representation_SurfaceWithEdges)
+  if (facet_type==FacetType::SurfaceWithEdges)
   {
     // First add the facet
-    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(FacetType::Representation_Surface).c_str());
-    add_mesh(shape, mesh, FacetType::Representation_Surface);
+    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(FacetType::Surface).c_str());
+    add_mesh(shape, mesh, FacetType::Surface);
     // Then the edge
-    shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(FacetType::Representation_Wireframe).c_str());
-    add_mesh(shape, mesh, FacetType::Representation_Wireframe);
+    shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(FacetType::Wireframe).c_str());
+    add_mesh(shape, mesh, FacetType::Wireframe);
   }
   else
   {
@@ -913,9 +962,9 @@ std::string X3DOM::facet_type_to_x3d_str(FacetType facet_type)
   // Map from enum to X3D string
   switch (facet_type)
   {
-  case FacetType::Representation_Surface:
+  case FacetType::Surface:
     return "IndexedFaceSet";
-  case FacetType::Representation_Wireframe:
+  case FacetType::Wireframe:
     return "IndexedLineSet";
   default:
     dolfin_error("X3DOM.cpp",
