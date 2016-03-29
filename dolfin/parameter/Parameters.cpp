@@ -291,6 +291,7 @@ void Parameters::update(const Parameters& parameters)
     {
       //warning("Ignoring unset parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
       //        other.key().c_str(), parameters.name().c_str(), name().c_str());
+      self->reset();
       continue;
     }
 
