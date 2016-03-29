@@ -91,42 +91,13 @@ std::string X3DOM::html(const Mesh& mesh, Representation facet_type)
   viewpoint_control.append_attribute("style") = "display: block";
 
   // Now append four viewpoints
-
-  // This is front
-  pugi::xml_node viewpoint_option = viewpoint_control.append_child("button");
-  viewpoint_option.append_attribute("onclick") = "document.getElementById('front').setAttribute('set_bind','true');";
-  viewpoint_option.append_attribute("style") = "display: block";
-  viewpoint_option.append_child(pugi::node_pcdata).set_value("Front");
-
-  // This is back
-  viewpoint_option = viewpoint_control.append_child("button");
-  viewpoint_option.append_attribute("onclick") = "document.getElementById('back').setAttribute('set_bind','true');";
-  viewpoint_option.append_attribute("style") = "display: block";
-  viewpoint_option.append_child(pugi::node_pcdata).set_value("Back");
-
-  // This is left
-  viewpoint_option = viewpoint_control.append_child("button");
-  viewpoint_option.append_attribute("onclick") = "document.getElementById('left').setAttribute('set_bind','true');";
-  viewpoint_option.append_attribute("style") = "display: block";
-  viewpoint_option.append_child(pugi::node_pcdata).set_value("Left");
-
-  // This is right
-  viewpoint_option = viewpoint_control.append_child("button");
-  viewpoint_option.append_attribute("onclick") = "document.getElementById('right').setAttribute('set_bind','true');";
-  viewpoint_option.append_attribute("style") = "display: block";
-  viewpoint_option.append_child(pugi::node_pcdata).set_value("Right");
-
-  // This is top
-  viewpoint_option = viewpoint_control.append_child("button");
-  viewpoint_option.append_attribute("onclick") = "document.getElementById('top').setAttribute('set_bind','true');";
-  viewpoint_option.append_attribute("style") = "display: block";
-  viewpoint_option.append_child(pugi::node_pcdata).set_value("Top");
-
-  // This is bottom
-  viewpoint_option = viewpoint_control.append_child("button");
-  viewpoint_option.append_attribute("onclick") = "document.getElementById('bottom').setAttribute('set_bind','true');";
-  viewpoint_option.append_attribute("style") = "display: block";
-  viewpoint_option.append_child(pugi::node_pcdata).set_value("Bottom");
+  // FIXME Write Function to do this
+  add_viewpoint_control_option(viewpoint_control, "Front");
+  add_viewpoint_control_option(viewpoint_control, "Back");
+  add_viewpoint_control_option(viewpoint_control, "Left");
+  add_viewpoint_control_option(viewpoint_control, "Right");
+  add_viewpoint_control_option(viewpoint_control, "Top");
+  add_viewpoint_control_option(viewpoint_control, "Bottom");
 
   // Save XML doc to stringstream, without default XML header
   std::stringstream s;
@@ -135,6 +106,15 @@ std::string X3DOM::html(const Mesh& mesh, Representation facet_type)
 
   // Return string
   return s.str();
+}
+//-----------------------------------------------------------------------------
+void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control, std::string vp)
+{
+  std::string onclick_str = "document.getElementById('" + vp + "').setAttribute('set_bind','true');";
+  pugi::xml_node viewpoint_option = viewpoint_control.append_child("button");
+  viewpoint_option.append_attribute("onclick") = onclick_str.c_str();
+  viewpoint_option.append_attribute("style") = "display: block";
+  viewpoint_option.append_child(pugi::node_pcdata).set_value(vp.c_str());
 }
 //-----------------------------------------------------------------------------
 /*
@@ -655,42 +635,42 @@ void X3DOM::generate_viewpoint_nodes(pugi::xml_node& xml_scene, const size_t vie
   switch (viewpoint)
   {
 	case 0: // top
-	  vp_str = "top";
+	  vp_str = "Top";
 	  ori = "-1 0 0 1.5707963267948";
 	  pos = boost::lexical_cast<std::string>(xpos[0]) + " "
     	+ boost::lexical_cast<std::string>(xpos[1]+xpos[3]-xpos[2]) + " "
     	+ boost::lexical_cast<std::string>(xpos[2]);
 	  break;
 	case 1: // bottom
-	  vp_str = "bottom";
+	  vp_str = "Bottom";
 	  ori = "1 0 0 1.5707963267948";
 	  pos = boost::lexical_cast<std::string>(xpos[0]) + " "
     	+ boost::lexical_cast<std::string>(xpos[1]-xpos[3]+xpos[2]) + " "
     	+ boost::lexical_cast<std::string>(xpos[2]);
 	  break;  	
 	case 2: // left
-	  vp_str = "left";
+	  vp_str = "Left";
 	  ori = "0 1 0 1.5707963267948";
 	  pos = boost::lexical_cast<std::string>(xpos[0]+xpos[3]-xpos[2]) + " "
     	+ boost::lexical_cast<std::string>(xpos[1]) + " "
     	+ boost::lexical_cast<std::string>(xpos[2]);;
 	  break;  	
 	case 3: // right
-	  vp_str = "right";
+	  vp_str = "Right";
 	  ori = "0 -1 0 1.5707963267948";
 	  pos = boost::lexical_cast<std::string>(xpos[0]-xpos[3]+xpos[2]) + " "
     	+ boost::lexical_cast<std::string>(xpos[1]) + " "
     	+ boost::lexical_cast<std::string>(xpos[2]);
 	  break;  	
 	case 4: // back
-	  vp_str = "back";
+	  vp_str = "Back";
 	  ori = "0 1 0 3.1415926535898";
 	  pos = boost::lexical_cast<std::string>(xpos[0]) + " "
     	+ boost::lexical_cast<std::string>(xpos[1]) + " "
     	+ boost::lexical_cast<std::string>(xpos[2]-xpos[3]);
 	  break;  	
 	case 5: // front
-	  vp_str = "front";
+	  vp_str = "Front";
 	  ori = "0 0 0 1";
 	  pos = boost::lexical_cast<std::string>(xpos[0]) + " "
     	+ boost::lexical_cast<std::string>(xpos[1]) + " "

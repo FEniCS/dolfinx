@@ -91,6 +91,8 @@ namespace dolfin
     static pugi::xml_node add_xml_header(pugi::xml_node& xml_node,
                                          const std::vector<double>& xpos,
                                          Representation facet_type);
+   	// Add control tags options for html
+	static void add_viewpoint_control_option(pugi::xml_node& viewpoint_control, std::string viewpoint);
     
     // Add viewpoints to scene node
     static void add_viewpoint_xml_nodes(pugi::xml_node& xml_scene, const std::vector<double>& xpos);
