@@ -34,7 +34,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TpetraVector::TpetraVector()
+TpetraVector::TpetraVector(MPI_Comm comm)
 {
   // Do nothing
 }

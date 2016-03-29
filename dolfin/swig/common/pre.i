@@ -76,6 +76,15 @@
 %rename("%s", regextarget=1, fullname=1) "ufc::form::~form()*$";
 %rename("%s", regextarget=1, fullname=1) "ufc::function::~function()*$";
 
+// Bring back ufc::cell members that are used in user Python
+// implementations of Expression.eval_cell
+%rename(cell_shape) ufc::cell::cell_shape();
+%rename(index) ufc::cell::index;
+%rename(topological_dimension) ufc::cell::topological_dimension;
+%rename(geometric_dimension) ufc::cell::geometric_dimension;
+%rename(local_facet) ufc::cell::local_facet;
+%rename(mesh_identifier) ufc::cell::mesh_identifier;
+
 // Rename only the symbols we need to ufc_* 'namespace'
 %rename(ufc_cell) ufc::cell;
 %rename(ufc_dofmap) ufc::dofmap;
@@ -95,15 +104,33 @@ std::shared_ptr<const ufc::finite_element> make_ufc_finite_element(void * elemen
   return std::shared_ptr<const ufc::finite_element>(p);
 }
 
+std::shared_ptr<const ufc::finite_element> make_ufc_finite_element(std::size_t element)
+{
+  ufc::finite_element * p = reinterpret_cast<ufc::finite_element *>(element);
+  return std::shared_ptr<const ufc::finite_element>(p);
+}
+
 std::shared_ptr<const ufc::dofmap> make_ufc_dofmap(void * dofmap)
 {
   ufc::dofmap * p = static_cast<ufc::dofmap *>(dofmap);
   return std::shared_ptr<const ufc::dofmap>(p);
 }
 
+std::shared_ptr<const ufc::dofmap> make_ufc_dofmap(std::size_t dofmap)
+{
+  ufc::dofmap * p = reinterpret_cast<ufc::dofmap *>(dofmap);
+  return std::shared_ptr<const ufc::dofmap>(p);
+}
+
 std::shared_ptr<const ufc::form> make_ufc_form(void * form)
 {
   ufc::form * p = static_cast<ufc::form *>(form);
+  return std::shared_ptr<const ufc::form>(p);
+}
+
+std::shared_ptr<const ufc::form> make_ufc_form(std::size_t form)
+{
+  ufc::form * p = reinterpret_cast<ufc::form *>(form);
   return std::shared_ptr<const ufc::form>(p);
 }
 %}

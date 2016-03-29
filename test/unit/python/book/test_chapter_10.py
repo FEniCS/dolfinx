@@ -955,7 +955,8 @@ def test_p49_box_1():
 
 @use_gc_barrier
 def test_p50_box_1(pushpop_parameters):
-    parameters["form_compiler"]["name"] = "sfc"
+    # This parameter has been removed, as no other form compilers exist today:
+    pass  # parameters["form_compiler"]["name"] = "sfc"
 
 
 @use_gc_barrier
