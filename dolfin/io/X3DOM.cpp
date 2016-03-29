@@ -383,7 +383,7 @@ void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
     scale = 255.0/(maxval - minval);
 
   std::vector<int> local_output;
-  if (facet_type == FacetType::edge)
+  if (facet_type == FacetType::Representation_Wireframe)
   {
     for (EdgeIterator e(mesh); !e.end(); ++e)
     {
@@ -411,7 +411,7 @@ void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
       }
     }
   }
-  else if (facet_type == FacetType::facet)
+  else if (facet_type == FacetType::Representation_Surface)
   {
     // Output faces
     for (FaceIterator f(mesh); !f.end(); ++f)
@@ -465,7 +465,7 @@ void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
   // Collect up topology of the local part of the mesh which should be
   // displayed
   std::vector<int> local_output;
-  if (facet_type == FacetType::edge)
+  if (facet_type == FacetType::Representation_Wireframe)
   {
     for (EdgeIterator e(mesh); !e.end(); ++e)
     {
@@ -494,7 +494,7 @@ void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
       }
     }
   }
-  else if (facet_type == FacetType::facet)
+  else if (facet_type == FacetType::Representation_Surface)
   {
     // Output faces
     for (FaceIterator f(mesh); !f.end(); ++f)
@@ -578,12 +578,12 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   // material.append_attribute("diffuseColor") = "0.7 0.7 0.7";
   // material.append_attribute("specularColor") = "0.2 0.2 0.2";
   // material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";
-  if (facet_type == FacetType::polygon)
+  if (facet_type == FacetType::Representation_SurfaceWithEdges)
   {
     // Append edge mesh first
     // So the facet will be on top after being appended later
-    add_shape_node(scene, FacetType::edge);
-    add_shape_node(scene, FacetType::facet);
+    add_shape_node(scene, FacetType::Representation_Wireframe);
+    add_shape_node(scene, FacetType::Representation_Surface);
   }
   else
   {
@@ -756,14 +756,14 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
 
   // Add mesh to 'shape' XML node, based on shape id
   // First case is polygon
-  if (facet_type==FacetType::polygon)
+  if (facet_type==FacetType::Representation_SurfaceWithEdges)
   {
     // First add the facet
-    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(FacetType::facet).c_str());
-    add_mesh(shape, mesh, FacetType::facet);
+    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(FacetType::Representation_Surface).c_str());
+    add_mesh(shape, mesh, FacetType::Representation_Surface);
     // Then the edge
-    shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(FacetType::edge).c_str());
-    add_mesh(shape, mesh, FacetType::edge);
+    shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(FacetType::Representation_Wireframe).c_str());
+    add_mesh(shape, mesh, FacetType::Representation_Wireframe);
   }
   else
   {
@@ -913,9 +913,9 @@ std::string X3DOM::facet_type_to_x3d_str(FacetType facet_type)
   // Map from enum to X3D string
   switch (facet_type)
   {
-  case FacetType::facet:
+  case FacetType::Representation_Surface:
     return "IndexedFaceSet";
-  case FacetType::edge:
+  case FacetType::Representation_Wireframe:
     return "IndexedLineSet";
   default:
     dolfin_error("X3DOM.cpp",
