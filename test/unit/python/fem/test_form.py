@@ -311,8 +311,8 @@ def test_basic_rt(RT2, RT3):
     a3 = assemble(w3**2*dx)
 
     # Compare various results
-    assert round((w2.vector() - pw2.vector()).norm("l2"), 5) == 0
-    assert round((w3.vector() - pw3.vector()).norm("l2"), 5) == 0
+    assert round((w2.vector() - pw2.vector()).norm("l2"), 4) == 0
+    assert round((w3.vector() - pw3.vector()).norm("l2"), 4) == 0
     # 2d
     assert round(a2 - 5.0, 7) == 0
     assert round(pa2 - 5.0, 7) == 0

@@ -147,7 +147,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
 
     // Loop over block columns
     std::shared_ptr<GenericVector>
-      z_tmp = _matA.factory().create_vector();
+      z_tmp = _matA.factory().create_vector(_y.mpi_comm());
     for(std::size_t col = 0; col < matrices.shape()[1]; ++col)
     {
       const GenericVector& _x = *(x.get_block(col));

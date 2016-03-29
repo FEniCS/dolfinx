@@ -237,14 +237,18 @@ std::size_t BelosKrylovSolver::_solve(TpetraVector& x, const TpetraVector& b)
                  _matA->size(0), b.size());
   }
 
-  // Write a message
-  const bool report = parameters["report"];
+  // Get MPI rank
   const int mpi_rank = MPI::rank(_matA->mpi_comm());
 
-  if (report && mpi_rank == 0)
+  // Write a message
+  if (parameters["report"].is_set())
   {
-    info("Solving linear system of size %ld x %ld (Belos Krylov solver).",
-         M, N);
+    const bool report = (bool)parameters["report"];
+    if (report && mpi_rank == 0)
+    {
+      info("Solving linear system of size %ld x %ld (Belos Krylov solver).",
+           M, N);
+    }
   }
 
   // Reinitialize solution vector if necessary
@@ -265,17 +269,18 @@ std::size_t BelosKrylovSolver::_solve(TpetraVector& x, const TpetraVector& b)
   }
 
   // Clear LHS if unless nonzero_initial_guess is set
-  const bool nonzero_guess = parameters["nonzero_initial_guess"];
-  if (!nonzero_guess)
-    x.zero();
+  if (parameters["nonzero_initial_guess"].is_set())
+  {
+    const bool nonzero_guess = (bool) parameters["nonzero_initial_guess"];
+    if (!nonzero_guess)
+      x.zero();
+  }
 
   _problem->setProblem(x.vec(), b.vec());
   _solver->setProblem(_problem);
 
   Belos::ReturnType result =_solver->solve();
-
   const std::size_t num_iterations = _solver->getNumIters();
-
   if (result == Belos::Converged)
   {
     log(PROGRESS, "Belos Krylov Solver converged in %d iterations.",
@@ -283,19 +288,25 @@ std::size_t BelosKrylovSolver::_solve(TpetraVector& x, const TpetraVector& b)
   }
     else
   {
-    bool error_non_converge = parameters["error_on_nonconvergence"];
-    if (error_non_converge)
-      dolfin_error("BelosKrylovSolver.cpp",
-                   "solve linear system using Belos Krylov solver",
-                   "Solution failed to converge in %d iterations",
-                   num_iterations);
-    else
+    if (parameters["error_on_nonconvergence"].is_set())
     {
-      log(PROGRESS, "Belos Krylov Solver did not converge in %d iterations.",
-          num_iterations);
+      bool error_non_converge = parameters["error_on_nonconvergence"];
+      if (error_non_converge)
+      {
+        dolfin_error("BelosKrylovSolver.cpp",
+                     "solve linear system using Belos Krylov solver",
+                     "Solution failed to converge in %d iterations",
+                     num_iterations);
+      }
+      else
+      {
+        log(PROGRESS, "Belos Krylov Solver did not converge in %d iterations.",
+            num_iterations);
+      }
     }
   }
 
+  // Update ghosts
   x.update_ghost_values();
 
   return num_iterations;
@@ -319,15 +330,22 @@ void BelosKrylovSolver::set_options()
   Teuchos::RCP<Teuchos::ParameterList> solverParams
     = Teuchos::parameterList(*_solver->getCurrentParameters());
 
-  const int max_iterations = parameters["maximum_iterations"];
-  solverParams->set("Maximum Iterations", max_iterations);
+  if (parameters["maximum_iterations"].is_set())
+  {
+    const int max_iterations = (int) parameters["maximum_iterations"];
+    solverParams->set("Maximum Iterations", max_iterations);
+  }
 
-  const double rel_tol = parameters["relative_tolerance"];
-  solverParams->set("Convergence Tolerance", rel_tol);
+  if (parameters["relative_tolerance"].is_set())
+  {
+    const double rtol = (double) parameters["relative_tolerance"];
+    solverParams->set("Convergence Tolerance", rtol);
+  }
 
-  const bool monitor_convergence = parameters["monitor_convergence"];
-  const bool report = parameters["report"];
-  if (monitor_convergence or report)
+
+  const bool monitor = parameters["monitor_convergence"].is_set() ? (bool) parameters["monitor_convergence"] : false;
+  const bool report = parameters["report"].is_set() ? (bool) parameters["report"] : false;
+  if (monitor or report)
   {
     solverParams->set("Verbosity",
                       Belos::Warnings
@@ -337,7 +355,8 @@ void BelosKrylovSolver::set_options()
                       | Belos::FinalSummary);
     solverParams->set("Output Style", (int)Belos::Brief);
   }
-  if (monitor_convergence)
+
+  if (monitor)
     solverParams->set("Output Frequency", 1);
 
   // Copy over any parameters from dolfin parameters in ["belos"]
