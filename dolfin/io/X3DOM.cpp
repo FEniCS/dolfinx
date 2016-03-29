@@ -558,18 +558,6 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
 {
   pugi::xml_node scene = x3d_node.append_child("Scene");
 
-  // Should we write a function that return a shape node?
-  // I think we should, let's do it!
-  // We can prepend_child!! Woops!
-  // pugi::xml_node shape = scene.append_child("Shape"); // Here is some consideration
-  // pugi::xml_node appearance = shape.append_child("Appearance");
-
-  // pugi::xml_node material = appearance.append_child("Material");
-  // material.append_attribute("ambientIntensity") = "0.4";
-  // material.append_attribute("shininess") = "0.8";
-  // material.append_attribute("diffuseColor") = "0.7 0.7 0.7";
-  // material.append_attribute("specularColor") = "0.2 0.2 0.2";
-  // material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";
   if (facet_type == Representation::SurfaceWithEdges)
   {
     // Append edge mesh first
