@@ -571,7 +571,7 @@ void Function::init_vector()
 
   // Create vector of dofs
   if (!_vector)
-    _vector = factory.create_vector();
+    _vector = factory.create_vector(_function_space->mesh()->mpi_comm());
   dolfin_assert(_vector);
   if (!_vector->empty())
   {

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Johan Hoffman, Johan Jansson, Anders Logg
+// Copyright (C) 2004-2016 Johan Hoffman, Johan Jansson, Anders Logg
 // and Garth N. Wells
 //
 // This file is part of DOLFIN.
@@ -22,8 +22,8 @@
 // Modified by Martin Alnæs, 2008.
 // Modified by Fredrik Valdmanis, 2011.
 
-#ifndef __PETSC_VECTOR_H
-#define __PETSC_VECTOR_H
+#ifndef __DOLFIN_PETSC_VECTOR_H
+#define __DOLFIN_PETSC_VECTOR_H
 
 #ifdef HAS_PETSC
 
@@ -61,6 +61,9 @@ namespace dolfin
 
     /// Create empty vector
     PETScVector();
+
+    /// Create empty vector on an MPI communicator
+    explicit PETScVector(MPI_Comm comm);
 
     /// Create vector of size N
     PETScVector(MPI_Comm comm, std::size_t N);
@@ -103,7 +106,8 @@ namespace dolfin
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range);
 
-    /// Initialize vector with given ownership range and with ghost values
+    /// Initialize vector with given ownership range and with ghost
+    /// values
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range,
                       const std::vector<std::size_t>& local_to_global_map,
@@ -247,20 +251,13 @@ namespace dolfin
     const PETScVector& operator= (const PETScVector& x);
 
     friend class PETScBaseMatrix;
-    friend class PETScMatrix;
 
   private:
 
     // Initialise PETSc vector
-    void _init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
+    void _init(std::pair<std::size_t, std::size_t> range,
                const std::vector<std::size_t>& local_to_global_map,
                const std::vector<la_index>& ghost_indices);
-
-    // Return true if vector is distributed
-    bool distributed() const;
-
-    // Prefix for PETSc options database
-    std::string _petsc_options_prefix;
 
     // PETSc Vec pointer
     Vec _x;

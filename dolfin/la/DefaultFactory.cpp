@@ -35,9 +35,9 @@ std::shared_ptr<GenericMatrix> DefaultFactory::create_matrix() const
   return factory().create_matrix();
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericVector> DefaultFactory::create_vector() const
+std::shared_ptr<GenericVector> DefaultFactory::create_vector(MPI_Comm comm) const
 {
-  return factory().create_vector();
+  return factory().create_vector(comm);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<TensorLayout>

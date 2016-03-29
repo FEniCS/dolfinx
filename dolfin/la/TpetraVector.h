@@ -60,7 +60,7 @@ namespace dolfin
     vector_type;
 
     /// Create empty vector
-    TpetraVector();
+    TpetraVector(MPI_Comm comm=MPI_COMM_WORLD);
 
     /// Create vector of size N
     TpetraVector(MPI_Comm comm, std::size_t N);

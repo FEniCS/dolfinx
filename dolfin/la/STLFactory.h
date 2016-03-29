@@ -50,11 +50,8 @@ namespace dolfin
     }
 
     /// Create empty vector
-    std::shared_ptr<GenericVector> create_vector() const
-    {
-      std::shared_ptr<GenericVector> x(new STLVector);
-      return x;
-    }
+    std::shared_ptr<GenericVector> create_vector(MPI_Comm comm) const
+    { return std::make_shared<STLVector>(); }
 
     /// Create empty tensor layout
     std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
