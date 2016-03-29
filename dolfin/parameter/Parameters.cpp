@@ -277,7 +277,8 @@ void Parameters::update(const Parameters& parameters)
     const Parameter& other = *it->second;
     Parameter* self = find_parameter(other.key());
 
-    // Skip parameters not in this parameter set (no new parameters added)
+    // Skip parameters not in this parameter set (no new parameters
+    // added)
     if (!self)
     {
       warning("Ignoring unknown parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
@@ -288,8 +289,9 @@ void Parameters::update(const Parameters& parameters)
     // Skip unset parameters
     if (!other.is_set())
     {
-      warning("Ignoring unset parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
-              other.key().c_str(), parameters.name().c_str(), name().c_str());
+      //warning("Ignoring unset parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
+      //        other.key().c_str(), parameters.name().c_str(), name().c_str());
+      self->reset();
       continue;
     }
 
@@ -303,16 +305,21 @@ void Parameters::update(const Parameters& parameters)
     else if (other.type_str() == "string")
       *self = static_cast<std::string>(other);
     else
+    {
       dolfin_error("Parameters.cpp",
                    "update parameter set",
                    "Parameter \"%s\" has unknown type: \"%s\"",
                    other.key().c_str(), other.type_str().c_str());
+    }
   }
 
   // Update nested parameter sets
-  for (const_parameter_set_iterator it = parameters._parameter_sets.begin(); it != parameters._parameter_sets.end(); ++it)
+  for (const_parameter_set_iterator it = parameters._parameter_sets.begin();
+       it != parameters._parameter_sets.end(); ++it)
+  {
     (*this)(it->first).update(*it->second);
-}
+  }
+  }
 //-----------------------------------------------------------------------------
 Parameter& Parameters::operator[] (std::string key)
 {

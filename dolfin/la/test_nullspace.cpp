@@ -40,7 +40,7 @@ bool dolfin::in_nullspace(const GenericLinearOperator& A,
   // Get factory and create vector for LHS
   dolfin_assert(basis[0]);
   GenericLinearAlgebraFactory& factory = basis[0]->factory();
-  std::shared_ptr<GenericVector> y = factory.create_vector();
+  std::shared_ptr<GenericVector> y = factory.create_vector(MPI_COMM_WORLD);
 
   const GenericMatrix* _A = NULL;
   if (type == "right")

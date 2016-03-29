@@ -238,26 +238,30 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Write a message
-  const bool report = this->parameters["report"];
-  if (report && dolfin::MPI::rank(this->mpi_comm()) == 0)
+  const bool report = this->parameters["report"].is_set() ? this->parameters["report"] : false;
+  if (report and dolfin::MPI::rank(this->mpi_comm()) == 0)
   {
     info("Solving linear system of size %ld x %ld (PETSc Krylov solver).",
          M, N);
   }
 
   // Non-zero initial guess to true/false
-  const bool nonzero_guess = this->parameters["nonzero_initial_guess"];
-  this->set_nonzero_guess(nonzero_guess);
+  if (this->parameters["nonzero_initial_guess"].is_set())
+  {
+    const bool nonzero_guess = this->parameters["nonzero_initial_guess"];
+    this->set_nonzero_guess(nonzero_guess);
+  }
 
   // Monitor convergence
-  const bool monitor_convergence = this->parameters["monitor_convergence"];
+  const bool monitor_convergence = this->parameters["monitor_convergence"].is_set() ? (bool)parameters["monitor_convergence"] : false;
   this->monitor(monitor_convergence);
 
   // Set tolerances
-  set_tolerances(this->parameters["relative_tolerance"],
-                 this->parameters["absolute_tolerance"],
-                 this->parameters["divergence_limit"],
-                 this->parameters["maximum_iterations"]);
+  const double rtol = parameters["relative_tolerance"].is_set() ? (double)parameters["relative_tolerance"] : PETSC_DEFAULT;
+  const double atol = parameters["absolute_tolerance"].is_set() ? (double)parameters["absolute_tolerance"] : PETSC_DEFAULT;
+  const double dtol = parameters["divergence_limit"].is_set() ? (double)parameters["divergence_limit"] : PETSC_DEFAULT;
+  const int max_it  = parameters["maximum_iterations"].is_set() ? (int)parameters["maximum_iterations"] : PETSC_DEFAULT;
+  set_tolerances(rtol, atol, dtol, max_it);
 
   // Initialize solution vector, if necessary
   if (x.empty())
@@ -322,7 +326,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     ierr = KSPGetResidualNorm(_ksp, &rnorm);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetResidualNorm");
     const char *reason_str = KSPConvergedReasons[reason];
-    bool error_on_nonconvergence = this->parameters["error_on_nonconvergence"];
+    bool error_on_nonconvergence = this->parameters["error_on_nonconvergence"].is_set() ? this->parameters["error_on_nonconvergence"] : false;
     if (error_on_nonconvergence)
     {
       dolfin_error("PETScKrylovSolver.cpp",
@@ -377,6 +381,8 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
   case norm_type::none:
     ksp_norm_type = KSP_NORM_NONE;
     break;
+  case norm_type::default_norm:
+    ksp_norm_type = KSP_NORM_DEFAULT;
   case norm_type::preconditioned:
     ksp_norm_type = KSP_NORM_PRECONDITIONED;
     break;
@@ -394,6 +400,39 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
 
   dolfin_assert(_ksp);
   KSPSetNormType(_ksp, ksp_norm_type);
+}
+//-----------------------------------------------------------------------------
+PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type() const
+{
+  // Get norm type from PETSc
+  dolfin_assert(_ksp);
+  KSPNormType ksp_norm_type = KSP_NORM_DEFAULT;
+  KSPGetNormType(_ksp, &ksp_norm_type);
+
+  // Return appropriate DOLFIN enum type
+  switch (ksp_norm_type)
+  {
+  case KSP_NORM_NONE:
+    std::cout << "get none" << std::endl;
+    return norm_type::none;
+  case KSP_NORM_PRECONDITIONED:
+    std::cout << "get pre" << std::endl;
+    return norm_type::preconditioned;
+  case KSP_NORM_UNPRECONDITIONED:
+    std::cout << "get unpre" << std::endl;
+    return norm_type::unpreconditioned;
+  case KSP_NORM_NATURAL:
+    std::cout << "get nat" << std::endl;
+    return norm_type::natural;
+  case KSP_NORM_DEFAULT:
+    std::cout << "get def" << std::endl;
+    return norm_type::default_norm;
+  default:
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "set convergence norm type",
+                 "Unknown norm type");
+    return norm_type::none;
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::monitor(bool monitor_convergence)
@@ -465,6 +504,8 @@ PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type(std::string norm)
 {
   if (norm == "none")
     return norm_type::none;
+  else if (norm == "default")
+    return norm_type::default_norm;
   else if (norm == "preconditioned")
     return norm_type::preconditioned;
   else if (norm == "true")

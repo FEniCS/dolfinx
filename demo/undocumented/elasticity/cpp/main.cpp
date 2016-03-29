@@ -143,15 +143,14 @@ int main()
 
   // Create PETSc smoothed aggregation AMG preconditioner
   auto pc = std::make_shared<PETScPreconditioner>("petsc_amg");
-  pc->parameters["report"] = true;
 
-  // Set some multigrid smoother parameters
+  // Use Chebyshev smoothing for multigrid
   PETScOptions::set("mg_levels_ksp_type", "chebyshev");
   PETScOptions::set("mg_levels_pc_type", "jacobi");
 
   // Improve estimate of eigenvalues for Chebyshev smoothing
-  PETScOptions::set("gamg_est_ksp_type", "cg");
-  PETScOptions::set("gamg_est_ksp_max_it", 50);
+  PETScOptions::set("mg_levels_esteig_ksp_type", "cg");
+  PETScOptions::set("mg_levels_ksp_chebyshev_esteig_steps", 50);
 
   // Create CG PETSc linear solver and turn on convergence monitor
   PETScKrylovSolver solver("cg", pc);
