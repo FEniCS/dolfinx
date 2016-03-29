@@ -55,7 +55,6 @@ namespace dolfin
     //                            const std::string facet_type, const size_t palette);
 
   private:
-
     // Add X3D doctype (an XML document should have no more than one
     // doc_type node)
     static void add_doctype(pugi::xml_node& xml_node);
@@ -95,6 +94,10 @@ namespace dolfin
     
     // Add viewpoints to scene node
     static void add_viewpoint_xml_nodes(pugi::xml_node& xml_scene, const std::vector<double>& xpos);
+
+	// Generate viewpoint nodes
+    static void generate_viewpoint_nodes(pugi::xml_node& xml_scene, const size_t viewpoint,
+					 const std::string& center_of_rotation, const std::vector<double>& xpos);
 
     // Add shape node to XML document, and push the shape node to first child
     static void add_shape_node(pugi::xml_node& x3d_scene, Representation facet_type);

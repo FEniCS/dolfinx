@@ -620,113 +620,97 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
 void X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene, const std::vector<double>& xpos)
 {
   // FIXME: make it even shorter
-  // Back viewpoint
-  pugi::xml_node back_viewpoint = xml_scene.append_child("Viewpoint");
-  back_viewpoint.append_attribute("id") = "back";
-  std::string xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-    + boost::lexical_cast<std::string>(xpos[1]) + " "
-    + boost::lexical_cast<std::string>(xpos[2]-xpos[3]);
-  back_viewpoint.append_attribute("position") = xyz.c_str();
-
-  back_viewpoint.append_attribute("orientation") = "0 1 0 3.1415926535898";
-  back_viewpoint.append_attribute("fieldOfView") = "0.785398";
-  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
+  // This is center of rotation
+  std::string center_of_rotation = boost::lexical_cast<std::string>(xpos[0]) + " "
     + boost::lexical_cast<std::string>(xpos[1]) + " "
     + boost::lexical_cast<std::string>(xpos[2]);
-  back_viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
-
-  back_viewpoint.append_attribute("zNear") = "-1";
-  back_viewpoint.append_attribute("zFar") = "-1";
-
-  // Right viewpoint
-  pugi::xml_node right_viewpoint = xml_scene.append_child("Viewpoint");
-  right_viewpoint.append_attribute("id") = "right";
-  xyz = boost::lexical_cast<std::string>(xpos[0]-xpos[3]+xpos[2]) + " "
-    + boost::lexical_cast<std::string>(xpos[1]) + " "
-    + boost::lexical_cast<std::string>(xpos[2]);
-  right_viewpoint.append_attribute("position") = xyz.c_str();
-
-  right_viewpoint.append_attribute("orientation") = "0 -1 0 1.5707963267948";
-  right_viewpoint.append_attribute("fieldOfView") = "0.785398";
-  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-    + boost::lexical_cast<std::string>(xpos[1]) + " "
-    + boost::lexical_cast<std::string>(xpos[2]);
-  right_viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
-
-  right_viewpoint.append_attribute("zNear") = "-1";
-  right_viewpoint.append_attribute("zFar") = "-1";
-
-  // Left viewpoint
-  pugi::xml_node left_viewpoint = xml_scene.append_child("Viewpoint");
-  left_viewpoint.append_attribute("id") = "left";
-  xyz = boost::lexical_cast<std::string>(xpos[0]+xpos[3]-xpos[2]) + " "
-    + boost::lexical_cast<std::string>(xpos[1]) + " "
-    + boost::lexical_cast<std::string>(xpos[2]);
-  left_viewpoint.append_attribute("position") = xyz.c_str();
-
-  left_viewpoint.append_attribute("orientation") = "0 1 0 1.5707963267948";
-  left_viewpoint.append_attribute("fieldOfView") = "0.785398";
-  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-    + boost::lexical_cast<std::string>(xpos[1]) + " "
-    + boost::lexical_cast<std::string>(xpos[2]);
-  left_viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
-
-  left_viewpoint.append_attribute("zNear") = "-1";
-  left_viewpoint.append_attribute("zFar") = "-1";
 
   // Top viewpoint
-  pugi::xml_node top_viewpoint = xml_scene.append_child("Viewpoint");
-  top_viewpoint.append_attribute("id") = "top";
-  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-    + boost::lexical_cast<std::string>(xpos[1]+xpos[3]-xpos[2]) + " "
-    + boost::lexical_cast<std::string>(xpos[2]);
-  top_viewpoint.append_attribute("position") = xyz.c_str();
-
-  top_viewpoint.append_attribute("orientation") = "-1 0 0 1.5707963267948";
-  top_viewpoint.append_attribute("fieldOfView") = "0.785398";
-  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-    + boost::lexical_cast<std::string>(xpos[1]) + " "
-    + boost::lexical_cast<std::string>(xpos[2]);
-  top_viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
-
-  top_viewpoint.append_attribute("zNear") = "-1";
-  top_viewpoint.append_attribute("zFar") = "-1";
+  generate_viewpoint_nodes(xml_scene, 0, center_of_rotation, xpos);
 
   // Bottom viewpoint
-  pugi::xml_node bottom_viewpoint = xml_scene.append_child("Viewpoint");
-  bottom_viewpoint.append_attribute("id") = "bottom";
-  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-    + boost::lexical_cast<std::string>(xpos[1]-xpos[3]+xpos[2]) + " "
-    + boost::lexical_cast<std::string>(xpos[2]);
-  bottom_viewpoint.append_attribute("position") = xyz.c_str();
+  generate_viewpoint_nodes(xml_scene, 1, center_of_rotation, xpos);
 
-  bottom_viewpoint.append_attribute("orientation") = "1 0 0 1.5707963267948";
-  bottom_viewpoint.append_attribute("fieldOfView") = "0.785398";
-  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-    + boost::lexical_cast<std::string>(xpos[1]) + " "
-    + boost::lexical_cast<std::string>(xpos[2]);
-  bottom_viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
+  // Left viewpoint
+  generate_viewpoint_nodes(xml_scene, 2, center_of_rotation, xpos);
 
-  bottom_viewpoint.append_attribute("zNear") = "-1";
-  bottom_viewpoint.append_attribute("zFar") = "-1";
+  // Right viewpoint
+  generate_viewpoint_nodes(xml_scene, 3, center_of_rotation, xpos);
+
+  // Back viewpoint
+  generate_viewpoint_nodes(xml_scene, 4, center_of_rotation, xpos);  
 
   // Front viewpoint
-  pugi::xml_node front_viewpoint = xml_scene.append_child("Viewpoint");
-  front_viewpoint.append_attribute("id") = "front";
-  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-    + boost::lexical_cast<std::string>(xpos[1]) + " "
-    + boost::lexical_cast<std::string>(xpos[3]);
-  front_viewpoint.append_attribute("position") = xyz.c_str();
+  generate_viewpoint_nodes(xml_scene, 5, center_of_rotation, xpos);
+}
+//-----------------------------------------------------------------------------
+void X3DOM::generate_viewpoint_nodes(pugi::xml_node& xml_scene, const size_t viewpoint,
+					 const std::string& center_of_rotation, const std::vector<double>& xpos)
+{
+  std::string vp_str; // viewpoint string
+  std::string ori; // orientation
+  std::string pos; // position
 
-  front_viewpoint.append_attribute("orientation") = "0 0 0 1";
-  front_viewpoint.append_attribute("fieldOfView") = "0.785398";
-  xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
-    + boost::lexical_cast<std::string>(xpos[1]) + " "
-    + boost::lexical_cast<std::string>(xpos[2]);
-  front_viewpoint.append_attribute("centerOfRotation") = xyz.c_str();
+  // Get position from string
+  switch (viewpoint)
+  {
+	case 0: // top
+	  vp_str = "top";
+	  ori = "-1 0 0 1.5707963267948";
+	  pos = boost::lexical_cast<std::string>(xpos[0]) + " "
+    	+ boost::lexical_cast<std::string>(xpos[1]+xpos[3]-xpos[2]) + " "
+    	+ boost::lexical_cast<std::string>(xpos[2]);
+	  break;
+	case 1: // bottom
+	  vp_str = "bottom";
+	  ori = "1 0 0 1.5707963267948";
+	  pos = boost::lexical_cast<std::string>(xpos[0]) + " "
+    	+ boost::lexical_cast<std::string>(xpos[1]-xpos[3]+xpos[2]) + " "
+    	+ boost::lexical_cast<std::string>(xpos[2]);
+	  break;  	
+	case 2: // left
+	  vp_str = "left";
+	  ori = "0 1 0 1.5707963267948";
+	  pos = boost::lexical_cast<std::string>(xpos[0]+xpos[3]-xpos[2]) + " "
+    	+ boost::lexical_cast<std::string>(xpos[1]) + " "
+    	+ boost::lexical_cast<std::string>(xpos[2]);;
+	  break;  	
+	case 3: // right
+	  vp_str = "right";
+	  ori = "0 -1 0 1.5707963267948";
+	  pos = boost::lexical_cast<std::string>(xpos[0]-xpos[3]+xpos[2]) + " "
+    	+ boost::lexical_cast<std::string>(xpos[1]) + " "
+    	+ boost::lexical_cast<std::string>(xpos[2]);
+	  break;  	
+	case 4: // back
+	  vp_str = "back";
+	  ori = "0 1 0 3.1415926535898";
+	  pos = boost::lexical_cast<std::string>(xpos[0]) + " "
+    	+ boost::lexical_cast<std::string>(xpos[1]) + " "
+    	+ boost::lexical_cast<std::string>(xpos[2]-xpos[3]);
+	  break;  	
+	case 5: // front
+	  vp_str = "front";
+	  ori = "0 0 0 1";
+	  pos = boost::lexical_cast<std::string>(xpos[0]) + " "
+    	+ boost::lexical_cast<std::string>(xpos[1]) + " "
+    	+ boost::lexical_cast<std::string>(xpos[3]);
+	  break;
+	default:
+	  break;
+  }
 
-  front_viewpoint.append_attribute("zNear") = "-1";
-  front_viewpoint.append_attribute("zFar") = "-1";
+  // Now get the node
+  pugi::xml_node viewpoint_node = xml_scene.append_child("Viewpoint");
+  viewpoint_node.append_attribute("id") = vp_str.c_str();
+  viewpoint_node.append_attribute("position") = pos.c_str();
+
+  viewpoint_node.append_attribute("orientation") = ori.c_str();
+  viewpoint_node.append_attribute("fieldOfView") = "0.785398";
+  viewpoint_node.append_attribute("centerOfRotation") = center_of_rotation.c_str();
+
+  viewpoint_node.append_attribute("zNear") = "-1";
+  viewpoint_node.append_attribute("zFar") = "-1";	
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_shape_node(pugi::xml_node& x3d_scene, Representation facet_type)
