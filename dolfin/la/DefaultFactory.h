@@ -58,11 +58,11 @@ namespace dolfin
 
     /// Create LU solver
     virtual std::shared_ptr<dolfin::GenericLUSolver>
-    create_lu_solver(std::string method) const;
+    create_lu_solver(MPI_Comm comm, std::string method) const;
 
     /// Create Krylov solver
     virtual std::shared_ptr<dolfin::GenericLinearSolver>
-    create_krylov_solver(std::string method, std::string preconditioner) const;
+    create_krylov_solver(MPI_Comm comm, std::string method, std::string preconditioner) const;
 
     /// Return a list of available LU solver methods
     std::map<std::string, std::string> lu_solver_methods() const;

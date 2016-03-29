@@ -52,10 +52,11 @@ namespace dolfin
   public:
 
     /// Constructor
-    PETScLUSolver(std::string method="default");
+    PETScLUSolver(MPI_Comm comm=PETSC_COMM_WORLD, std::string method="default");
 
     /// Constructor
-    PETScLUSolver(std::shared_ptr<const PETScMatrix> A,
+    PETScLUSolver(MPI_Comm comm,
+                  std::shared_ptr<const PETScMatrix> A,
                   std::string method="default");
 
     /// Destructor
@@ -144,7 +145,7 @@ namespace dolfin
     bool solver_has_cholesky(const MatSolverPackage package) const;
 
     // Initialise solver
-    void init_solver(std::string& method);
+    void init_solver(MPI_Comm comm, std::string& method);
 
     // Configure PETSc options
     void configure_ksp(const MatSolverPackage solver_package);

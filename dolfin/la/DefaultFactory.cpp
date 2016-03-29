@@ -53,16 +53,17 @@ DefaultFactory::create_linear_operator() const
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLUSolver>
-  DefaultFactory::create_lu_solver(std::string method) const
+  DefaultFactory::create_lu_solver(MPI_Comm comm, std::string method) const
 {
-  return factory().create_lu_solver(method);
+  return factory().create_lu_solver(comm, method);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearSolver>
-DefaultFactory::create_krylov_solver(std::string method,
+DefaultFactory::create_krylov_solver(MPI_Comm comm,
+                                     std::string method,
                                      std::string preconditioner) const
 {
-  return factory().create_krylov_solver(method, preconditioner);
+  return factory().create_krylov_solver(comm, method, preconditioner);
 }
 //-----------------------------------------------------------------------------
 std::map<std::string, std::string> DefaultFactory::lu_solver_methods() const

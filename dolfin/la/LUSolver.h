@@ -29,6 +29,7 @@
 #include <string>
 #include <memory>
 #include "GenericLUSolver.h"
+#include <dolfin/common/MPI.h>
 
 namespace dolfin
 {
@@ -44,10 +45,11 @@ namespace dolfin
   public:
 
     /// Constructor
-    LUSolver(std::string method= "default");
+    LUSolver(MPI_Comm comm, std::string method= "default");
 
     /// Constructor
-    LUSolver(std::shared_ptr<const GenericLinearOperator> A,
+    LUSolver(MPI_Comm comm,
+             std::shared_ptr<const GenericLinearOperator> A,
              std::string method="default");
 
     /// Destructor
@@ -93,7 +95,7 @@ namespace dolfin
   private:
 
     // Initialize solver
-    void init(std::string method);
+    void init(MPI_Comm comm, std::string method);
 
     // Solver
     std::shared_ptr<GenericLinearSolver> solver;

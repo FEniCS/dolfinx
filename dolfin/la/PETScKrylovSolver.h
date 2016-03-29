@@ -62,17 +62,20 @@ namespace dolfin
 
     /// Create Krylov solver for a particular method and named
     /// preconditioner
-    PETScKrylovSolver(std::string method="default",
+    PETScKrylovSolver(MPI_Comm comm=PETSC_COMM_WORLD,
+                      std::string method="default",
                       std::string preconditioner="default");
 
     /// Create Krylov solver for a particular method and
     /// PETScPreconditioner (shared_ptr version)
-    PETScKrylovSolver(std::string method,
-		      std::shared_ptr<PETScPreconditioner> preconditioner);
+    PETScKrylovSolver(MPI_Comm comm,
+                      std::string method,
+                      std::shared_ptr<PETScPreconditioner> preconditioner);
 
     /// Create Krylov solver for a particular method and
     /// PETScPreconditioner (shared_ptr version)
-    PETScKrylovSolver(std::string method,
+    PETScKrylovSolver(MPI_Comm comm,
+                      std::string method,
                       std::shared_ptr<PETScUserPreconditioner> preconditioner);
 
     /// Create solver wrapper of a PETSc KSP object

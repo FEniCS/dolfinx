@@ -105,16 +105,17 @@ Parameters PETScLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver(std::string method) : _ksp(NULL)
+PETScLUSolver::PETScLUSolver(MPI_Comm comm, std::string method) : _ksp(NULL)
 {
   // Set parameter values
   parameters = default_parameters();
 
   // Initialize PETSc LU solver
-  init_solver(method);
+  init_solver(comm, method);
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver(std::shared_ptr<const PETScMatrix> A,
+PETScLUSolver::PETScLUSolver(MPI_Comm comm,
+                             std::shared_ptr<const PETScMatrix> A,
                              std::string method) : _ksp(NULL), _matA(A)
 {
   // Check dimensions
@@ -129,7 +130,7 @@ PETScLUSolver::PETScLUSolver(std::shared_ptr<const PETScMatrix> A,
   parameters = default_parameters();
 
   // Initialize PETSc LU solver
-  init_solver(method);
+  init_solver(comm, method);
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::~PETScLUSolver()
@@ -419,7 +420,7 @@ bool PETScLUSolver::solver_has_cholesky(const MatSolverPackage package) const
   return _methods_cholesky.find(package)->second;
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::init_solver(std::string& method)
+void PETScLUSolver::init_solver(MPI_Comm comm, std::string& method)
 {
   // Select solver
   _solver_package = select_solver(method);
@@ -431,16 +432,8 @@ void PETScLUSolver::init_solver(std::string& method)
   PetscErrorCode ierr;
 
   // Create solver
-  if (MPI::size(MPI_COMM_WORLD) > 1)
-  {
-    ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
-  }
-  else
-  {
-    ierr = KSPCreate(PETSC_COMM_SELF, &_ksp);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
-  }
+  ierr = KSPCreate(comm, &_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
 
   // Set options prefix (if any)
   ierr = KSPSetOptionsPrefix(_ksp, _petsc_options_prefix.c_str());

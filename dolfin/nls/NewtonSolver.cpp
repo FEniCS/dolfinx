@@ -111,7 +111,8 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   const std::string pc_type = parameters["preconditioner"];
   if (!_solver)
   {
-    _solver = std::shared_ptr<LinearSolver>(new LinearSolver(solver_type,
+    _solver = std::shared_ptr<LinearSolver>(new LinearSolver(x.mpi_comm(),
+                                                             solver_type,
                                                              pc_type));
   }
   dolfin_assert(_solver);

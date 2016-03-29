@@ -64,18 +64,19 @@ PETScFactory::create_linear_operator() const
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLUSolver>
-PETScFactory::create_lu_solver(std::string method) const
+PETScFactory::create_lu_solver(MPI_Comm comm, std::string method) const
 {
-  std::shared_ptr<GenericLUSolver> solver(new PETScLUSolver(method));
+  std::shared_ptr<GenericLUSolver> solver(new PETScLUSolver(comm, method));
   return solver;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearSolver>
-PETScFactory::create_krylov_solver(std::string method,
+PETScFactory::create_krylov_solver(MPI_Comm comm,
+                                   std::string method,
                                    std::string preconditioner) const
 {
   std::shared_ptr<GenericLinearSolver>
-    solver(new PETScKrylovSolver(method, preconditioner));
+    solver(new PETScKrylovSolver(comm, method, preconditioner));
   return solver;
 }
 //-----------------------------------------------------------------------------

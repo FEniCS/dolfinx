@@ -29,7 +29,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearSolver::LinearSolver(std::string method,
+LinearSolver::LinearSolver(MPI_Comm comm,
+                           std::string method,
                            std::string preconditioner)
 {
   // Get default linear algebra factory
@@ -68,7 +69,7 @@ LinearSolver::LinearSolver(std::string method,
       method = "default";
 
     // Initialize solver
-    solver.reset(new LUSolver(method));
+    solver.reset(new LUSolver(comm, method));
 
     // Set parameter type
     _parameter_type = "lu_solver";
@@ -78,7 +79,7 @@ LinearSolver::LinearSolver(std::string method,
     // Method and preconditioner will be checked by KrylovSolver
 
     // Initialize solver
-    solver.reset(new KrylovSolver(method, preconditioner));
+    solver.reset(new KrylovSolver(comm, method, preconditioner));
 
     // Set parameter type
     _parameter_type = "krylov_solver";
