@@ -61,14 +61,18 @@ std::string X3DOM::html(const Mesh& mesh, FacetType facet_type)
   // Add head node
   pugi::xml_node head = node.append_child("head");
 
-  // Add script
+  // Add script node
   pugi::xml_node script = head.append_child("script");
+
+  // Set attributes for script node
   script.append_attribute("type") = "text/javascript";
   script.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
   script.append_child(pugi::node_pcdata);
 
-  // Add link
+  // Add link node
   pugi::xml_node link = head.append_child("link");
+
+  // Set attributes for link node
   link.append_attribute("rel") = "stylesheet";
   link.append_attribute("type") = "text/css";
   link.append_attribute("href") = "http://www.x3dom.org/download/x3dom.css";
@@ -79,32 +83,38 @@ std::string X3DOM::html(const Mesh& mesh, FacetType facet_type)
   // Add X3D XML data to 'body' node
   x3dom_xml(body_node, mesh, facet_type);
 
-  // Add viewpoints control
+  // Add viewpoint control node
   pugi::xml_node viewpoint_control = body_node.append_child("div");
+
+  // Add attributes to viewpoint niode
   viewpoint_control.append_attribute("id") = "camera_buttons";
   viewpoint_control.append_attribute("style") = "display: block";
+
   // Now append four viewpoints
+
   // This is front
   pugi::xml_node viewpoint_option = viewpoint_control.append_child("button");
   viewpoint_option.append_attribute("onclick") = "document.getElementById('front').setAttribute('set_bind','true');";
   viewpoint_option.append_attribute("style") = "display: block";
   viewpoint_option.append_child(pugi::node_pcdata).set_value("Front");
+
   // This is back
   viewpoint_option = viewpoint_control.append_child("button");
   viewpoint_option.append_attribute("onclick") = "document.getElementById('back').setAttribute('set_bind','true');";
   viewpoint_option.append_attribute("style") = "display: block";
   viewpoint_option.append_child(pugi::node_pcdata).set_value("Back");
+
   // This is left
   viewpoint_option = viewpoint_control.append_child("button");
   viewpoint_option.append_attribute("onclick") = "document.getElementById('left').setAttribute('set_bind','true');";
   viewpoint_option.append_attribute("style") = "display: block";
   viewpoint_option.append_child(pugi::node_pcdata).set_value("Left");
+
   // This is right
   viewpoint_option = viewpoint_control.append_child("button");
   viewpoint_option.append_attribute("onclick") = "document.getElementById('right').setAttribute('set_bind','true');";
   viewpoint_option.append_attribute("style") = "display: block";
   viewpoint_option.append_child(pugi::node_pcdata).set_value("Right");
-
 
   // Save XML doc to stringstream, without default XML header
   std::stringstream s;
