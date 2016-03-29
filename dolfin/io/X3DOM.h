@@ -35,13 +35,13 @@ namespace dolfin
 
     // X3DOM representation type: facet for solid facets, and
     // edge for edges
-    enum class FacetType {Surface, SurfaceWithEdges, Wireframe};
+    enum class Representation {Surface, SurfaceWithEdges, Wireframe};
 
     /// Return X3D string for a Mesh
-    static std::string str(const Mesh& mesh, FacetType facet_type);
+    static std::string str(const Mesh& mesh, Representation facet_type);
 
     /// Return HTML string with embedded X3D for a Mesh
-    static std::string html(const Mesh& mesh, FacetType facet_type);
+    static std::string html(const Mesh& mesh, Representation facet_type);
 
     // MeshFunction<std::size_t>
     //static std::string str(const MeshFunction<std::size_t>& meshfunction, const
@@ -65,7 +65,7 @@ namespace dolfin
 
     // Add X3DOM mesh data to XML node
     static void x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
-                          FacetType facet_type);
+                          Representation facet_type);
 
     // Get mesh dimensions and viewpoint distance
     static std::vector<double> mesh_min_max(const Mesh& mesh);
@@ -77,7 +77,7 @@ namespace dolfin
     // or Edges (depending on the facet_type flag). In 3D, only
     // include surface Facets/Edges.
     static void add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
-                      FacetType facet_type);
+                      Representation facet_type);
 
     // Output values associated with Mesh points to XML using a colour
     // palette
@@ -85,22 +85,22 @@ namespace dolfin
     static void add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
                                   const std::vector<std::size_t>& vecindex,
                                   const std::vector<double>& data_values,
-                                  FacetType facet_type, const std::size_t palette);
+                                  Representation facet_type, const std::size_t palette);
     */
 
     // Add header to XML document, adjusting field of view to the size of the object
     static pugi::xml_node add_xml_header(pugi::xml_node& xml_node,
                                          const std::vector<double>& xpos,
-                                         FacetType facet_type);
+                                         Representation facet_type);
     
     // Add shape node to XML document, and push the shape node to first child
-    static void add_shape_node(pugi::xml_node& x3d_scene, FacetType facet_type);
+    static void add_shape_node(pugi::xml_node& x3d_scene, Representation facet_type);
 
     // Get a string representing a color palette (pal may be 0, 1 or 2)
     static std::string color_palette(const size_t pal);
 
     // Generate X3D string from facet_type
-    static std::string facet_type_to_x3d_str(FacetType facet_type);
+    static std::string facet_type_to_x3d_str(Representation facet_type);
 
   };
 
