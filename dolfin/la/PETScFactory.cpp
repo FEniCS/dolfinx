@@ -41,10 +41,9 @@ std::shared_ptr<GenericMatrix> PETScFactory::create_matrix() const
   return A;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericVector> PETScFactory:: create_vector() const
+std::shared_ptr<GenericVector> PETScFactory:: create_vector(MPI_Comm comm) const
 {
-  std::shared_ptr<GenericVector> x(new PETScVector);
-  return x;
+  return std::make_shared<PETScVector>(comm);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<TensorLayout>

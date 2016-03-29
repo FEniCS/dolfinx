@@ -38,10 +38,9 @@ std::shared_ptr<GenericMatrix> TpetraFactory::create_matrix() const
   return A;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericVector> TpetraFactory::create_vector() const
+std::shared_ptr<GenericVector> TpetraFactory::create_vector(MPI_Comm comm) const
 {
-  std::shared_ptr<GenericVector> x(new TpetraVector);
-  return x;
+  return std::make_shared<TpetraVector>(comm);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<TensorLayout>

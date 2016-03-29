@@ -858,7 +858,7 @@ def test_p41_box_2():
     solver.parameters["report"] = True
     #solver.parameters["gmres"]["restart"] = 50
     #solver.parameters["preconditioner"]["reuse"] = True
-    solver.parameters["preconditioner"]["structure"] = "same"
+    #solver.parameters["preconditioner"]["structure"] = "same"
 
 
 @use_gc_barrier
@@ -870,7 +870,7 @@ def test_p42_box_1():
 
 @use_gc_barrier
 def test_p42_box_2(pushpop_parameters):
-    d = dict(num_threads=4, krylov_solver=dict(absolute_tolerance=1e-6))
+    d = dict(num_threads=4, krylov_solver=dict(absolute_tolerance=1.0e-6))
     parameters.update(d)
 
 

@@ -76,6 +76,15 @@
 %rename("%s", regextarget=1, fullname=1) "ufc::form::~form()*$";
 %rename("%s", regextarget=1, fullname=1) "ufc::function::~function()*$";
 
+// Bring back ufc::cell members that are used in user Python
+// implementations of Expression.eval_cell
+%rename(cell_shape) ufc::cell::cell_shape();
+%rename(index) ufc::cell::index;
+%rename(topological_dimension) ufc::cell::topological_dimension;
+%rename(geometric_dimension) ufc::cell::geometric_dimension;
+%rename(local_facet) ufc::cell::local_facet;
+%rename(mesh_identifier) ufc::cell::mesh_identifier;
+
 // Rename only the symbols we need to ufc_* 'namespace'
 %rename(ufc_cell) ufc::cell;
 %rename(ufc_dofmap) ufc::dofmap;

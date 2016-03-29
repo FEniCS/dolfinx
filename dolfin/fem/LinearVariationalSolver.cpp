@@ -69,8 +69,9 @@ void LinearVariationalSolver::solve()
 
   // Create matrix and vector
   dolfin_assert(u->vector());
+  MPI_Comm comm = u->vector()->mpi_comm();
   std::shared_ptr<GenericMatrix> A = u->vector()->factory().create_matrix();
-  std::shared_ptr<GenericVector> b = u->vector()->factory().create_vector();
+  std::shared_ptr<GenericVector> b = u->vector()->factory().create_vector(comm);
 
   // Different assembly depending on whether or not the system is symmetric
   if (symmetric)

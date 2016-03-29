@@ -84,6 +84,7 @@ PETScPreconditioner::preconditioners()
   return PETScPreconditioner::_methods_descr;
 }
 //-----------------------------------------------------------------------------
+/*
 Parameters PETScPreconditioner::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters()("preconditioner"));
@@ -97,6 +98,7 @@ Parameters PETScPreconditioner::default_parameters()
 
   return p;
 }
+*/
 //-----------------------------------------------------------------------------
 void PETScPreconditioner::set_type(PETScKrylovSolver& solver, std::string type)
 {
@@ -134,7 +136,7 @@ PETScPreconditioner::PETScPreconditioner(std::string type) : _type(type),
                                                              gdim(0)
 {
   // Set parameter values
-  parameters = default_parameters();
+  //parameters = default_parameters();
 
   // Check that the requested method is known
   if (_methods.count(type) == 0)
@@ -209,29 +211,6 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
     ierr = PCSetType(pc, PCGAMG);
     if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
   }
-  else if (_type == "additive_schwarz")
-  {
-    // Select method and overlap
-    ierr = PCSetType(pc, _methods.find("additive_schwarz")->second);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
-
-    const int schwarz_overlap = parameters("schwarz")["overlap"];
-    PCASMSetOverlap(pc, schwarz_overlap);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCASMSetOverlap");
-  }
-  else if (_type != "default")
-  {
-    ierr = PCSetType(pc, _methods.find(_type)->second);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
-    ierr = PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetShiftType");
-    ierr = PCFactorSetShiftAmount(pc, parameters["shift_nonzero"]);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetShiftAmount");
-  }
-
-  const int ilu_levels = parameters("ilu")["fill_level"];
-  ierr = PCFactorSetLevels(pc, ilu_levels);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetLevels");
 
   // Set physical coordinates for row dofs
   if (!_coordinates.empty())
@@ -245,30 +224,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
   // Clear memory
   _coordinates.clear();
 
-  std::string prefix = std::string(parameters["options_prefix"]);
-  if (prefix != "default")
-  {
-    // Make sure that the prefix has a '_' at the end if the user
-    // didn't provide it
-    char lastchar = *prefix.rbegin();
-    if (lastchar != '_')
-      prefix += "_";
-
-    PCSetOptionsPrefix(pc, prefix.c_str());
-  }
   PCSetFromOptions(pc);
-
-  // Print preconditioner information
-  /*
-  const bool report = parameters["report"];
-  if (report)
-  {
-    ierr = PCSetUp(pc);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetUp");
-    ierr = PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCView");
-  }
-  */
 }
 //-----------------------------------------------------------------------------
 void PETScPreconditioner::set_coordinates(const std::vector<double>& x,

@@ -98,7 +98,7 @@ void MultiMeshFunction::init_vector()
   if (!_vector)
   {
     DefaultFactory factory;
-    _vector = factory.create_vector();
+    _vector = factory.create_vector(MPI_COMM_WORLD);
   }
   dolfin_assert(_vector);
 
