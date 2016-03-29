@@ -607,8 +607,21 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   background.append_attribute("skyColor") = "0.319997 0.340002 0.429999";
 
   // Append viewpoint after shape
+  add_viewpoint_xml_nodes(scene, xpos);
+
+  // Append ambient light
+  pugi::xml_node ambient_light = scene.append_child("DirectionalLight");
+  ambient_light.append_attribute("ambientIntensity") = "1";
+  ambient_light.append_attribute("intensity") = "0";
+
+  return scene;
+}
+//-----------------------------------------------------------------------------
+void X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene, const std::vector<double>& xpos)
+{
+  // FIXME: make it even shorter
   // Back viewpoint
-  pugi::xml_node back_viewpoint = scene.append_child("Viewpoint");
+  pugi::xml_node back_viewpoint = xml_scene.append_child("Viewpoint");
   back_viewpoint.append_attribute("id") = "back";
   std::string xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
     + boost::lexical_cast<std::string>(xpos[1]) + " "
@@ -626,7 +639,7 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   back_viewpoint.append_attribute("zFar") = "-1";
 
   // Right viewpoint
-  pugi::xml_node right_viewpoint = scene.append_child("Viewpoint");
+  pugi::xml_node right_viewpoint = xml_scene.append_child("Viewpoint");
   right_viewpoint.append_attribute("id") = "right";
   xyz = boost::lexical_cast<std::string>(xpos[0]-xpos[3]+xpos[2]) + " "
     + boost::lexical_cast<std::string>(xpos[1]) + " "
@@ -644,7 +657,7 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   right_viewpoint.append_attribute("zFar") = "-1";
 
   // Left viewpoint
-  pugi::xml_node left_viewpoint = scene.append_child("Viewpoint");
+  pugi::xml_node left_viewpoint = xml_scene.append_child("Viewpoint");
   left_viewpoint.append_attribute("id") = "left";
   xyz = boost::lexical_cast<std::string>(xpos[0]+xpos[3]-xpos[2]) + " "
     + boost::lexical_cast<std::string>(xpos[1]) + " "
@@ -662,7 +675,7 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   left_viewpoint.append_attribute("zFar") = "-1";
 
   // Top viewpoint
-  pugi::xml_node top_viewpoint = scene.append_child("Viewpoint");
+  pugi::xml_node top_viewpoint = xml_scene.append_child("Viewpoint");
   top_viewpoint.append_attribute("id") = "top";
   xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
     + boost::lexical_cast<std::string>(xpos[1]+xpos[3]-xpos[2]) + " "
@@ -680,7 +693,7 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   top_viewpoint.append_attribute("zFar") = "-1";
 
   // Bottom viewpoint
-  pugi::xml_node bottom_viewpoint = scene.append_child("Viewpoint");
+  pugi::xml_node bottom_viewpoint = xml_scene.append_child("Viewpoint");
   bottom_viewpoint.append_attribute("id") = "bottom";
   xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
     + boost::lexical_cast<std::string>(xpos[1]-xpos[3]+xpos[2]) + " "
@@ -697,9 +710,8 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   bottom_viewpoint.append_attribute("zNear") = "-1";
   bottom_viewpoint.append_attribute("zFar") = "-1";
 
-
   // Front viewpoint
-  pugi::xml_node front_viewpoint = scene.append_child("Viewpoint");
+  pugi::xml_node front_viewpoint = xml_scene.append_child("Viewpoint");
   front_viewpoint.append_attribute("id") = "front";
   xyz = boost::lexical_cast<std::string>(xpos[0]) + " "
     + boost::lexical_cast<std::string>(xpos[1]) + " "
@@ -715,13 +727,6 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
 
   front_viewpoint.append_attribute("zNear") = "-1";
   front_viewpoint.append_attribute("zFar") = "-1";
-
-  // Append ambient light
-  pugi::xml_node ambient_light = scene.append_child("DirectionalLight");
-  ambient_light.append_attribute("ambientIntensity") = "1";
-  ambient_light.append_attribute("intensity") = "0";
-
-  return scene;
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_shape_node(pugi::xml_node& x3d_scene, Representation facet_type)

@@ -93,6 +93,9 @@ namespace dolfin
                                          const std::vector<double>& xpos,
                                          Representation facet_type);
     
+    // Add viewpoints to scene node
+    static void add_viewpoint_xml_nodes(pugi::xml_node& xml_scene, const std::vector<double>& xpos);
+
     // Add shape node to XML document, and push the shape node to first child
     static void add_shape_node(pugi::xml_node& x3d_scene, Representation facet_type);
 
