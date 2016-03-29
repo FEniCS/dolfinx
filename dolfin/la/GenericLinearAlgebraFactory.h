@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 
