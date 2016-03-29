@@ -77,7 +77,8 @@ NewtonSolver::NewtonSolver(std::shared_ptr<GenericLinearSolver> solver,
                            GenericLinearAlgebraFactory& factory)
   : Variable("Newton solver", "unamed"), _newton_iteration(0), _residual(0.0),
     _residual0(0.0), _solver(solver), _matA(factory.create_matrix()),
-    _dx(factory.create_vector()), _b(factory.create_vector()),
+    _dx(factory.create_vector(MPI_COMM_WORLD)),
+    _b(factory.create_vector(MPI_COMM_WORLD)),
     _mpi_comm(MPI_COMM_WORLD)
 {
   // Set default parameters

@@ -24,6 +24,7 @@
 #include <memory>
 #include <string>
 
+#include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include "EigenKrylovSolver.h"
 #include "EigenLUSolver.h"
@@ -46,17 +47,11 @@ namespace dolfin
 
     /// Create empty matrix
     std::shared_ptr<GenericMatrix> create_matrix() const
-    {
-      std::shared_ptr<GenericMatrix> A(new EigenMatrix);
-      return A;
-    }
+    { return std::make_shared<EigenMatrix>(); }
 
     /// Create empty vector
-    std::shared_ptr<GenericVector> create_vector() const
-    {
-      std::shared_ptr<GenericVector> x(new EigenVector);
-      return x;
-    }
+    std::shared_ptr<GenericVector> create_vector(MPI_Comm comm) const
+    { return std::make_shared<EigenVector>(); }
 
     /// Create empty tensor layout
     std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const

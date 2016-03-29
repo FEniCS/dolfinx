@@ -65,7 +65,8 @@ LocalSolver::LocalSolver(std::shared_ptr<const Form> a, SolverType solver_type)
 void LocalSolver::solve_global_rhs(Function& u) const
 {
   // Compute RHS (global)
-  std::shared_ptr<GenericVector> b = u.vector()->factory().create_vector();
+  std::shared_ptr<GenericVector> b
+    = u.vector()->factory().create_vector(u.vector()->mpi_comm());
   dolfin_assert(b);
   dolfin_assert(_formL);
   assemble(*b, *_formL);

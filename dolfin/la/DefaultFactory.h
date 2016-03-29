@@ -23,6 +23,7 @@
 
 #include <string>
 #include <memory>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include "GenericLinearAlgebraFactory.h"
 
@@ -46,7 +47,7 @@ namespace dolfin
     virtual std::shared_ptr<GenericMatrix> create_matrix() const;
 
     /// Create empty vector
-    virtual std::shared_ptr<GenericVector> create_vector() const;
+    virtual std::shared_ptr<GenericVector> create_vector(MPI_Comm comm) const;
 
     /// Create empty tensor layout
     virtual std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const;
