@@ -76,9 +76,17 @@
 %rename("%s", regextarget=1, fullname=1) "ufc::form::~form()*$";
 %rename("%s", regextarget=1, fullname=1) "ufc::function::~function()*$";
 
+// Unignore ufc::shape enum
+%rename(ufc_shape) ufc::shape;
+%rename(interval) ufc::shape::interval;
+%rename(triangle) ufc::shape::triangle;
+%rename(quadrilateral) ufc::shape::quadrilateral;
+%rename(tetrahedron) ufc::shape::tetrahedron;
+%rename(hexahedron) ufc::shape::hexahedron;
+
 // Bring back ufc::cell members that are used in user Python
 // implementations of Expression.eval_cell
-%rename(cell_shape) ufc::cell::cell_shape();
+%rename(cell_shape) ufc::cell::cell_shape;
 %rename(index) ufc::cell::index;
 %rename(topological_dimension) ufc::cell::topological_dimension;
 %rename(geometric_dimension) ufc::cell::geometric_dimension;
@@ -86,6 +94,7 @@
 %rename(mesh_identifier) ufc::cell::mesh_identifier;
 
 // Rename only the symbols we need to ufc_* 'namespace'
+
 %rename(ufc_cell) ufc::cell;
 %rename(ufc_dofmap) ufc::dofmap;
 %rename(ufc_finite_element) ufc::finite_element;
