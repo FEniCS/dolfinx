@@ -232,7 +232,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
   switch (mesh.type().cell_type())
   {
   case CellType::interval:
-    if (coordinate_element->cell_shape() != ufc::interval)
+    if (coordinate_element->cell_shape() != ufc::shape::interval)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
@@ -240,7 +240,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
     }
     break;
   case CellType::triangle:
-    if (coordinate_element->cell_shape() != ufc::triangle)
+    if (coordinate_element->cell_shape() != ufc::shape::triangle)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
@@ -248,7 +248,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
     }
     break;
   case CellType::tetrahedron:
-    if (coordinate_element->cell_shape() != ufc::tetrahedron)
+    if (coordinate_element->cell_shape() != ufc::shape::tetrahedron)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
@@ -256,7 +256,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
     }
     break;
   case CellType::quadrilateral:
-    if (coordinate_element->cell_shape() != ufc::quadrilateral)
+    if (coordinate_element->cell_shape() != ufc::shape::quadrilateral)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
@@ -264,7 +264,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
     }
     break;
   case CellType::hexahedron:
-    if (coordinate_element->cell_shape() != ufc::hexahedron)
+    if (coordinate_element->cell_shape() != ufc::shape::hexahedron)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
