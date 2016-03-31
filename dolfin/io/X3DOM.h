@@ -52,6 +52,10 @@ namespace dolfin
     static std::string html(const Mesh& mesh, Representation facet_type, 
                             Viewpoints viewpoint_switch);
 
+    // FIXME: Add option for Material Colour?
+    // static std::string html(const Mesh& mesh, Representation facet_type, 
+    //                         Viewpoints viewpoint_switch, Diffusive);
+
     // MeshFunction<std::size_t>
     //static std::string str(const MeshFunction<std::size_t>& meshfunction, const
     //                       std::string facet_type, const size_t palette);
