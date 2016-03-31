@@ -33,13 +33,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::string X3DOM::str(const Mesh& mesh, Representation facet_type)
+std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
+                      Viewpoints viewpoint_switch)
 {
   // Create empty pugi XML doc
   pugi::xml_document xml_doc;
 
   // Build X3D XML and add to XML doc
-  x3dom_xml(xml_doc, mesh, facet_type);
+  x3dom_xml(xml_doc, mesh, facet_type, viewpoint_switch);
 
   // Save XML doc to stringstream
   std::stringstream s;
@@ -51,6 +52,12 @@ std::string X3DOM::str(const Mesh& mesh, Representation facet_type)
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type)
+{
+  return html(mesh, facet_type, Viewpoints::On);
+}
+//-----------------------------------------------------------------------------
+std::string X3DOM::html(const Mesh& mesh, Representation facet_type, 
+                            Viewpoints viewpoint_switch)
 {
   // Create empty pugi XML doc
   pugi::xml_document xml_doc;
@@ -81,23 +88,26 @@ std::string X3DOM::html(const Mesh& mesh, Representation facet_type)
   pugi::xml_node body_node = node.append_child("body");
 
   // Add X3D XML data to 'body' node
-  x3dom_xml(body_node, mesh, facet_type);
-
-  // Add viewpoint control node
-  pugi::xml_node viewpoint_control = body_node.append_child("div");
-
-  // Add attributes to viewpoint niode
-  viewpoint_control.append_attribute("id") = "camera_buttons";
-  viewpoint_control.append_attribute("style") = "display: block";
+  x3dom_xml(body_node, mesh, facet_type, viewpoint_switch);
 
   // Now append four viewpoints
   // FIXME Write Function to do this
-  add_viewpoint_control_option(viewpoint_control, "Front");
-  add_viewpoint_control_option(viewpoint_control, "Back");
-  add_viewpoint_control_option(viewpoint_control, "Left");
-  add_viewpoint_control_option(viewpoint_control, "Right");
-  add_viewpoint_control_option(viewpoint_control, "Top");
-  add_viewpoint_control_option(viewpoint_control, "Bottom");
+  if (viewpoint_switch == Viewpoints::On)
+  {
+    // Add viewpoint control node
+    pugi::xml_node viewpoint_control = body_node.append_child("div");
+
+    // Add attributes to viewpoint niode
+    viewpoint_control.append_attribute("id") = "camera_buttons";
+    viewpoint_control.append_attribute("style") = "display: block";
+
+    add_viewpoint_control_option(viewpoint_control, "Front");
+    add_viewpoint_control_option(viewpoint_control, "Back");
+    add_viewpoint_control_option(viewpoint_control, "Left");
+    add_viewpoint_control_option(viewpoint_control, "Right");
+    add_viewpoint_control_option(viewpoint_control, "Top");
+    add_viewpoint_control_option(viewpoint_control, "Bottom");
+  }
 
   // Save XML doc to stringstream, without default XML header
   std::stringstream s;
@@ -554,7 +564,8 @@ void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
 //-----------------------------------------------------------------------------
 pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
                                      const std::vector<double>& xpos,
-                                     Representation facet_type)
+                                     Representation facet_type,
+                                     Viewpoints viewpoint_switch)
 {
   pugi::xml_node scene = x3d_node.append_child("Scene");
 
@@ -575,7 +586,7 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   background.append_attribute("skyColor") = "0.319997 0.340002 0.429999";
 
   // Append viewpoint after shape
-  add_viewpoint_xml_nodes(scene, xpos);
+  add_viewpoint_xml_nodes(scene, xpos, viewpoint_switch);
 
   // Append ambient light
   pugi::xml_node ambient_light = scene.append_child("DirectionalLight");
@@ -585,7 +596,8 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   return scene;
 }
 //-----------------------------------------------------------------------------
-void X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene, const std::vector<double>& xpos)
+void X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene, 
+          const std::vector<double>& xpos, Viewpoints viewpoint_switch)
 {
   // FIXME: make it even shorter
   // This is center of rotation
@@ -593,23 +605,26 @@ void X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene, const std::vector
     + boost::lexical_cast<std::string>(xpos[1]) + " "
     + boost::lexical_cast<std::string>(xpos[2]);
 
-  // Top viewpoint
-  generate_viewpoint_nodes(xml_scene, 0, center_of_rotation, xpos);
-
-  // Bottom viewpoint
-  generate_viewpoint_nodes(xml_scene, 1, center_of_rotation, xpos);
-
-  // Left viewpoint
-  generate_viewpoint_nodes(xml_scene, 2, center_of_rotation, xpos);
-
-  // Right viewpoint
-  generate_viewpoint_nodes(xml_scene, 3, center_of_rotation, xpos);
-
-  // Back viewpoint
-  generate_viewpoint_nodes(xml_scene, 4, center_of_rotation, xpos);  
-
-  // Front viewpoint
-  generate_viewpoint_nodes(xml_scene, 5, center_of_rotation, xpos);
+  if (viewpoint_switch == Viewpoints::On)
+  {
+    // Top viewpoint
+    generate_viewpoint_nodes(xml_scene, 0, center_of_rotation, xpos);
+    // Bottom viewpoint
+    generate_viewpoint_nodes(xml_scene, 1, center_of_rotation, xpos);
+    // Left viewpoint
+    generate_viewpoint_nodes(xml_scene, 2, center_of_rotation, xpos);
+    // Right viewpoint
+    generate_viewpoint_nodes(xml_scene, 3, center_of_rotation, xpos);
+    // Back viewpoint
+    generate_viewpoint_nodes(xml_scene, 4, center_of_rotation, xpos);  
+    // Front viewpoint
+    generate_viewpoint_nodes(xml_scene, 5, center_of_rotation, xpos);
+  }
+  else // Just generate the front view
+  {
+    // Front viewpoint
+    generate_viewpoint_nodes(xml_scene, 5, center_of_rotation, xpos);      
+  }
 }
 //-----------------------------------------------------------------------------
 void X3DOM::generate_viewpoint_nodes(pugi::xml_node& xml_scene, const size_t viewpoint,
@@ -725,7 +740,7 @@ pugi::xml_node X3DOM::add_x3d(pugi::xml_node& xml_node)
 }
 //-----------------------------------------------------------------------------
 void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
-                      Representation facet_type)
+                      Representation facet_type, Viewpoints viewpoint_switch)
 {
   // Check that mesh is embedded in 2D or 3D
   const std::size_t gdim = mesh.geometry().dim();
@@ -753,7 +768,7 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
 
   // Add boilerplate XML no X3D node, adjusting field of view to the
   // size of the object, given by xpos
-  pugi::xml_node scene = add_xml_header(x3d_node, xpos, facet_type);
+  pugi::xml_node scene = add_xml_header(x3d_node, xpos, facet_type, viewpoint_switch);
   dolfin_assert(scene);
 
   // FIXME: Should this go inside add_mesh?

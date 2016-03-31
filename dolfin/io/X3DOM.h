@@ -37,11 +37,20 @@ namespace dolfin
     // edge for edges
     enum class Representation {Surface, SurfaceWithEdges, Wireframe};
 
+    // Fixed viewpoint options
+    enum class Viewpoints {On, Off};
+
     /// Return X3D string for a Mesh
-    static std::string str(const Mesh& mesh, Representation facet_type);
+    static std::string str(const Mesh& mesh, Representation facet_type,
+                          Viewpoints viewpoint_switch);
 
     /// Return HTML string with embedded X3D for a Mesh
+    // If Viewpoint not declared view all
     static std::string html(const Mesh& mesh, Representation facet_type);
+
+    // Add option of Viewpoint
+    static std::string html(const Mesh& mesh, Representation facet_type, 
+                            Viewpoints viewpoint_switch);
 
     // MeshFunction<std::size_t>
     //static std::string str(const MeshFunction<std::size_t>& meshfunction, const
@@ -64,7 +73,7 @@ namespace dolfin
 
     // Add X3DOM mesh data to XML node
     static void x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
-                          Representation facet_type);
+                          Representation facet_type, Viewpoints viewpoint_switch);
 
     // Get mesh dimensions and viewpoint distance
     static std::vector<double> mesh_min_max(const Mesh& mesh);
@@ -90,12 +99,14 @@ namespace dolfin
     // Add header to XML document, adjusting field of view to the size of the object
     static pugi::xml_node add_xml_header(pugi::xml_node& xml_node,
                                          const std::vector<double>& xpos,
-                                         Representation facet_type);
+                                         Representation facet_type, 
+                                         Viewpoints viewpoint_switch);
    	// Add control tags options for html
-	static void add_viewpoint_control_option(pugi::xml_node& viewpoint_control, std::string viewpoint);
+	  static void add_viewpoint_control_option(pugi::xml_node& viewpoint_control, std::string viewpoint);
     
     // Add viewpoints to scene node
-    static void add_viewpoint_xml_nodes(pugi::xml_node& xml_scene, const std::vector<double>& xpos);
+    static void add_viewpoint_xml_nodes(pugi::xml_node& xml_scene, 
+            const std::vector<double>& xpos, Viewpoints viewpoint_switch);
 
 	// Generate viewpoint nodes
     static void generate_viewpoint_nodes(pugi::xml_node& xml_scene, const size_t viewpoint,
