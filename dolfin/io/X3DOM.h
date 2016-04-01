@@ -91,15 +91,6 @@ namespace dolfin
     static void add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
                       Representation facet_type);
 
-    // Output values associated with Mesh points to XML using a colour
-    // palette
-    /*
-    static void add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
-                                  const std::vector<std::size_t>& vecindex,
-                                  const std::vector<double>& data_values,
-                                  Representation facet_type, const std::size_t palette);
-    */
-
     // Add header to XML document, adjusting field of view to the size of the object
     static pugi::xml_node add_xml_header(pugi::xml_node& xml_node,
                                          const std::vector<double>& xpos,
@@ -124,6 +115,15 @@ namespace dolfin
 
     // Generate X3D string from facet_type
     static std::string facet_type_to_x3d_str(Representation facet_type);
+
+	// Output values associated with Mesh points to XML using a colour
+    // palette
+    /*
+    static void add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
+                                  const std::vector<std::size_t>& vecindex,
+                                  const std::vector<double>& data_values,
+                                  Representation facet_type, const std::size_t palette);
+    */
 
   };
 
