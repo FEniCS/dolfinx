@@ -39,9 +39,20 @@ namespace dolfin
     // Fixed viewpoint options
     enum class Viewpoints {On, Off};
 
+    /// Return X3D string for a Mesh, default colour and viewpoints
+    static std::string str(const Mesh& mesh, Representation facet_type);
+
+    /// Return X3D string for a Mesh, default colour
+    static std::string str(const Mesh& mesh, Representation facet_type,
+    				Viewpoints viewpoint_switch);
+
+	/// Return X3D string for a Mesh, default viewpoints
+    static std::string str(const Mesh& mesh, Representation facet_type,
+    				const std::vector<double>& material_colour);
+
     /// Return X3D string for a Mesh
     static std::string str(const Mesh& mesh, Representation facet_type,
-                          Viewpoints viewpoint_switch);
+        Viewpoints viewpoint_switch, const std::vector<double>& material_colour);
 
     /// Return HTML string with embedded X3D for a Mesh
     // If Viewpoint not declared view all

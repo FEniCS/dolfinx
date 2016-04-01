@@ -33,16 +33,35 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+std::string X3DOM::str(const Mesh& mesh, Representation facet_type)
+{
+  // Default values for material properties
+  double colours[] = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
+  const std::vector<double> material_colour(colours, colours + 12);
+
+  return str(mesh, facet_type, Viewpoints::On, material_colour);
+}
+//-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
         Viewpoints viewpoint_switch)
 {
-  // Create empty pugi XML doc
-  pugi::xml_document xml_doc;
-
   // Default values for material properties
-  // FIXME: write str function similarly to html
   double colours[] = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
   const std::vector<double> material_colour(colours, colours + 12);
+
+  return str(mesh, facet_type, viewpoint_switch, material_colour);
+}
+std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
+        const std::vector<double>& material_colour)
+{
+  return str(mesh, facet_type, Viewpoints::On, material_colour);
+}
+//-----------------------------------------------------------------------------
+std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
+        Viewpoints viewpoint_switch, const std::vector<double>& material_colour)
+{
+  // Create empty pugi XML doc
+  pugi::xml_document xml_doc;
 
   // Build X3D XML and add to XML doc
   x3dom_xml(xml_doc, mesh, facet_type, viewpoint_switch, material_colour);
