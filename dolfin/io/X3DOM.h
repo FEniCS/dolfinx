@@ -56,6 +56,9 @@ namespace dolfin
     // Diffusive Colour[3], Emissive Colour[3], Specular Colour[3]
     // Ambient Intensity [1], Shininess [1], Transparency [1]
     static std::string html(const Mesh& mesh, Representation facet_type, 
+       	const std::vector<double>& material_colour);
+
+	static std::string html(const Mesh& mesh, Representation facet_type, 
         Viewpoints viewpoint_switch, const std::vector<double>& material_colour);
 
     // FIXME: Add option for Material Colour?

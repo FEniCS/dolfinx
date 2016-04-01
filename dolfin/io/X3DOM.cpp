@@ -71,6 +71,11 @@ std::string X3DOM::html(const Mesh& mesh, Representation facet_type,
   const std::vector<double> material_colour(colours, colours + 12);
   return html(mesh, facet_type, viewpoint_switch, material_colour);
 }
+std::string X3DOM::html(const Mesh& mesh, Representation facet_type, 
+        const std::vector<double>& material_colour)
+{
+  return html(mesh, facet_type, Viewpoints::On, material_colour);
+}
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type, 
         Viewpoints viewpoint_switch, const std::vector<double>& material_colour)
