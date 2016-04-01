@@ -32,7 +32,6 @@ namespace dolfin
   class X3DOM
   {
   public:
-
     // X3DOM representation type: facet for solid facets, and
     // edge for edges
     enum class Representation {Surface, SurfaceWithEdges, Wireframe};
@@ -52,6 +51,13 @@ namespace dolfin
     static std::string html(const Mesh& mesh, Representation facet_type, 
                             Viewpoints viewpoint_switch);
 
+    // Add option for material colour control
+    // Rule to contain the material string is 
+    // Diffusive Colour[3], Emissive Colour[3], Specular Colour[3]
+    // Ambient Intensity [1], Shininess [1], Transparency [1]
+    static std::string html(const Mesh& mesh, Representation facet_type, 
+        Viewpoints viewpoint_switch, const std::vector<double>& material_colour);
+
     // FIXME: Add option for Material Colour?
     // static std::string html(const Mesh& mesh, Representation facet_type, 
     //                         Viewpoints viewpoint_switch, Diffusive);
@@ -68,6 +74,9 @@ namespace dolfin
     //                            const std::string facet_type, const size_t palette);
 
   private:
+  	// Check the material colour vector
+  	static bool check_material_colour(const std::vector<double>& material_colour);
+
     // Add X3D doctype (an XML document should have no more than one
     // doc_type node)
     static void add_doctype(pugi::xml_node& xml_node);
@@ -77,7 +86,8 @@ namespace dolfin
 
     // Add X3DOM mesh data to XML node
     static void x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
-                          Representation facet_type, Viewpoints viewpoint_switch);
+      Representation facet_type, Viewpoints viewpoint_switch, 
+      const std::vector<double>& material_colour);
 
     // Get mesh dimensions and viewpoint distance
     static std::vector<double> mesh_min_max(const Mesh& mesh);
@@ -95,9 +105,10 @@ namespace dolfin
     static pugi::xml_node add_xml_header(pugi::xml_node& xml_node,
                                          const std::vector<double>& xpos,
                                          Representation facet_type, 
-                                         Viewpoints viewpoint_switch);
+                                         Viewpoints viewpoint_switch,
+                                         const std::vector<double>& material_colour);
    	// Add control tags options for html
-	  static void add_viewpoint_control_option(pugi::xml_node& viewpoint_control, std::string viewpoint);
+	static void add_viewpoint_control_option(pugi::xml_node& viewpoint_control, std::string viewpoint);
     
     // Add viewpoints to scene node
     static void add_viewpoint_xml_nodes(pugi::xml_node& xml_scene, 
@@ -108,7 +119,8 @@ namespace dolfin
 					 const std::string& center_of_rotation, const std::vector<double>& xpos);
 
     // Add shape node to XML document, and push the shape node to first child
-    static void add_shape_node(pugi::xml_node& x3d_scene, Representation facet_type);
+    static void add_shape_node(pugi::xml_node& x3d_scene, Representation facet_type,
+    							const std::vector<double>& mat_col);
 
     // Get a string representing a color palette (pal may be 0, 1 or 2)
     static std::string color_palette(const size_t pal);

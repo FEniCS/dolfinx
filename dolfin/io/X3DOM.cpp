@@ -34,13 +34,18 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
-                      Viewpoints viewpoint_switch)
+        Viewpoints viewpoint_switch)
 {
   // Create empty pugi XML doc
   pugi::xml_document xml_doc;
 
+  // Default values for material properties
+  // FIXME: write str function similarly to html
+  double colours[] = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
+  const std::vector<double> material_colour(colours, colours + 12);
+
   // Build X3D XML and add to XML doc
-  x3dom_xml(xml_doc, mesh, facet_type, viewpoint_switch);
+  x3dom_xml(xml_doc, mesh, facet_type, viewpoint_switch, material_colour);
 
   // Save XML doc to stringstream
   std::stringstream s;
@@ -53,80 +58,286 @@ std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type)
 {
-  return html(mesh, facet_type, Viewpoints::On);
+  // Default values for material properties
+  double colours[] = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
+  const std::vector<double> material_colour(colours, colours + 12);
+  return html(mesh, facet_type, Viewpoints::On, material_colour);
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type, 
                             Viewpoints viewpoint_switch)
 {
-  // Create empty pugi XML doc
-  pugi::xml_document xml_doc;
-
-  // Add html node
-  pugi::xml_node node = xml_doc.append_child("html");
-
-  // Add head node
-  pugi::xml_node head = node.append_child("head");
-
-  // Add script node
-  pugi::xml_node script = head.append_child("script");
-
-  // Set attributes for script node
-  script.append_attribute("type") = "text/javascript";
-  script.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
-  script.append_child(pugi::node_pcdata);
-
-  // Add link node
-  pugi::xml_node link = head.append_child("link");
-
-  // Set attributes for link node
-  link.append_attribute("rel") = "stylesheet";
-  link.append_attribute("type") = "text/css";
-  link.append_attribute("href") = "http://www.x3dom.org/download/x3dom.css";
-
-  // Add body node
-  pugi::xml_node body_node = node.append_child("body");
-
-  // Add X3D XML data to 'body' node
-  x3dom_xml(body_node, mesh, facet_type, viewpoint_switch);
-
-  // Now append four viewpoints
-  // FIXME Write Function to do this
-  if (viewpoint_switch == Viewpoints::On)
-  {
-    // Add viewpoint control node
-    pugi::xml_node viewpoint_control = body_node.append_child("div");
-
-    // Add attributes to viewpoint niode
-    viewpoint_control.append_attribute("id") = "camera_buttons";
-    viewpoint_control.append_attribute("style") = "display: block";
-
-    add_viewpoint_control_option(viewpoint_control, "Front");
-    add_viewpoint_control_option(viewpoint_control, "Back");
-    add_viewpoint_control_option(viewpoint_control, "Left");
-    add_viewpoint_control_option(viewpoint_control, "Right");
-    add_viewpoint_control_option(viewpoint_control, "Top");
-    add_viewpoint_control_option(viewpoint_control, "Bottom");
-  }
-
-  // Save XML doc to stringstream, without default XML header
-  std::stringstream s;
-  const std::string indent = "  ";
-  xml_doc.save(s, indent.c_str(), pugi::format_default | pugi::format_no_declaration);
-
-  // Return string
-  return s.str();
+  double colours[] = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
+  const std::vector<double> material_colour(colours, colours + 12);
+  return html(mesh, facet_type, viewpoint_switch, material_colour);
 }
 //-----------------------------------------------------------------------------
-void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control, std::string vp)
+std::string X3DOM::html(const Mesh& mesh, Representation facet_type, 
+        Viewpoints viewpoint_switch, const std::vector<double>& material_colour)
 {
-  std::string onclick_str = "document.getElementById('" + vp + "').setAttribute('set_bind','true');";
-  pugi::xml_node viewpoint_option = viewpoint_control.append_child("button");
-  viewpoint_option.append_attribute("onclick") = onclick_str.c_str();
-  viewpoint_option.append_attribute("style") = "display: block";
-  viewpoint_option.append_child(pugi::node_pcdata).set_value(vp.c_str());
-}
+  if (check_material_colour(material_colour))
+  {
+	// Create empty pugi XML doc
+	pugi::xml_document xml_doc;
 
+	// Add html node
+	pugi::xml_node node = xml_doc.append_child("html");
+
+	// Add head node
+	pugi::xml_node head = node.append_child("head");
+
+	// Add script node
+	pugi::xml_node script = head.append_child("script");
+
+	// Set attributes for script node
+	script.append_attribute("type") = "text/javascript";
+	script.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
+	script.append_child(pugi::node_pcdata);
+
+	// Add link node
+	pugi::xml_node link = head.append_child("link");
+
+	// Set attributes for link node
+	link.append_attribute("rel") = "stylesheet";
+	link.append_attribute("type") = "text/css";
+	link.append_attribute("href") = "http://www.x3dom.org/download/x3dom.css";
+
+	// Add body node
+	pugi::xml_node body_node = node.append_child("body");
+
+	// Add X3D XML data to 'body' node
+	x3dom_xml(body_node, mesh, facet_type, viewpoint_switch, material_colour);
+
+	// Now append four viewpoints
+	// FIXME Write Function to do this
+	if (viewpoint_switch == Viewpoints::On)
+	{
+	// Add viewpoint control node
+	pugi::xml_node viewpoint_control = body_node.append_child("div");
+
+	// Add attributes to viewpoint niode
+	viewpoint_control.append_attribute("id") = "camera_buttons";
+	viewpoint_control.append_attribute("style") = "display: block";
+
+	add_viewpoint_control_option(viewpoint_control, "Front");
+	add_viewpoint_control_option(viewpoint_control, "Back");
+	add_viewpoint_control_option(viewpoint_control, "Left");
+	add_viewpoint_control_option(viewpoint_control, "Right");
+	add_viewpoint_control_option(viewpoint_control, "Top");
+	add_viewpoint_control_option(viewpoint_control, "Bottom");
+	}
+
+	// Save XML doc to stringstream, without default XML header
+	std::stringstream s;
+	const std::string indent = "  ";
+	xml_doc.save(s, indent.c_str(), pugi::format_default | pugi::format_no_declaration);
+
+	// Return string
+	return s.str();
+  }
+  else
+  	return "";
+}
+//-----------------------------------------------------------------------------
+bool X3DOM::check_material_colour(const std::vector<double>& material_colour)
+{
+  // Check if colour is correct size
+  if (material_colour.size() != 12)
+  {
+    dolfin_error("X3DOM.cpp",
+                 "assigning material properties",
+                 "incorrect vector size");
+   	return false;
+  }
+  else
+  {
+  	{
+  		// Now check if all elements in the vector is from 0 to 1
+  		for (int i=0; i<12; i++)
+  		{
+  			if ((material_colour[i] > 1.0) || (material_colour[i] < 0.0))
+  			{
+			    dolfin_error("X3DOM.cpp",
+			                 "assigning material properties",
+			                 "incorrect values of vector"); 
+			    return false;
+			   	break;
+  			}
+  		}
+  	}
+  }
+  return true; 
+}
+//-----------------------------------------------------------------------------
+void X3DOM::add_doctype(pugi::xml_node& xml_node)
+{
+  dolfin_assert(xml_node);
+  pugi::xml_node doc_type = xml_node.prepend_child(pugi::node_doctype);
+  doc_type.set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
+}
+//-----------------------------------------------------------------------------
+pugi::xml_node X3DOM::add_x3d(pugi::xml_node& xml_node)
+{
+  pugi::xml_node x3d = xml_node.append_child("X3D");
+  dolfin_assert(x3d);
+
+  // Add on option to show rendering
+  x3d.append_attribute("showStat") = "true";
+
+  x3d.append_attribute("profile") = "Interchange";
+  x3d.append_attribute("version") = "3.2";
+  x3d.append_attribute("xmlns:xsd")
+    = "http://www.w3.org/2001/XMLSchema-instance";
+  x3d.append_attribute("xsd:noNamespaceSchemaLocation")
+    = "http://www.web3d.org/specifications/x3d-3.2.xsd";
+  x3d.append_attribute("width") = "500px";
+  x3d.append_attribute("height") = "400px";
+
+  return x3d;
+}
+//-----------------------------------------------------------------------------
+void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
+    Representation facet_type, Viewpoints viewpoint_switch,
+    const std::vector<double>& material_colour)
+{
+  // Check that mesh is embedded in 2D or 3D
+  const std::size_t gdim = mesh.geometry().dim();
+  if (gdim !=2 and gdim !=3)
+  {
+    dolfin_error("X3DOM.cpp",
+                 "get X3DOM string representation of a mesh",
+                 "X3D works only for 2D and 3D meshes");
+  }
+
+  // Intialise facet-to-cell connectivity
+  const std::size_t tdim = mesh.geometry().dim();
+  mesh.init(tdim - 1 , tdim);
+
+  // Get mesh max and min dimensions, needed to calculate field of
+  // view
+  const std::vector<double> xpos = mesh_min_max(mesh);
+
+  // X3D doctype
+  add_doctype(xml_node);
+
+  // Add X3D node
+  pugi::xml_node x3d_node = add_x3d(xml_node);
+  dolfin_assert(x3d_node);
+
+  // Add boilerplate XML no X3D node, adjusting field of view to the
+  // size of the object, given by xpos
+  pugi::xml_node scene = add_xml_header(x3d_node, xpos, facet_type, viewpoint_switch, material_colour);
+  dolfin_assert(scene);
+
+  // FIXME: Should this go inside add_mesh?
+  // Compute set of vertices that lie on boundary
+  // const std::set<int> surface_vertices = surface_vertex_indices(mesh);
+
+  // Add mesh to 'shape' XML node, based on shape id
+  // First case is polygon
+  if (facet_type==Representation::SurfaceWithEdges)
+  {
+    // First add the facet
+    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(Representation::Surface).c_str());
+    add_mesh(shape, mesh, Representation::Surface);
+    // Then the edge
+    shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(Representation::Wireframe).c_str());
+    add_mesh(shape, mesh, Representation::Wireframe);
+  }
+  else
+  {
+    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(facet_type).c_str());
+    add_mesh(shape, mesh, facet_type);
+  }
+
+  // FIXME: Need to first check that node exists before accessing
+  // FIXME: Really want appropiate node handle to be available, rather
+  //        than having to extract it
+  // Append text for mesh info
+  pugi::xml_node mesh_info = x3d_node.append_child("div");
+  dolfin_assert(mesh_info);
+  mesh_info.append_attribute("style") = "position: absolute; bottom: 2%; left: 2%; text-align: left; font-size: 12px; color: white;";
+  std::string data = "Number of vertices: " + std::to_string(mesh.num_vertices())
+    + ", number of cells: " + std::to_string(mesh.num_cells());
+  mesh_info.append_child(pugi::node_pcdata).set_value(data.c_str());
+}
+//-----------------------------------------------------------------------------
+std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh)
+{
+  // Get MPI communicator
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
+
+  // Get dimensions
+  double xmin = std::numeric_limits<double>::max();
+  double xmax = std::numeric_limits<double>::min();
+  double ymin = std::numeric_limits<double>::max();
+  double ymax = std::numeric_limits<double>::min();
+  double zmin = std::numeric_limits<double>::max();
+  double zmax = std::numeric_limits<double>::min();
+
+  const std::size_t gdim = mesh.geometry().dim();
+  for (VertexIterator v(mesh); !v.end(); ++v)
+  {
+    xmin = std::min(xmin, v->x(0));
+    xmax = std::max(xmax, v->x(0));
+    ymin = std::min(ymin, v->x(1));
+    ymax = std::max(ymax, v->x(1));
+    if (gdim == 2)
+    {
+      zmin = 0.0;
+      zmax = 0.0;
+    }
+    else
+    {
+      zmin = std::min(zmin, v->x(2));
+      zmax = std::max(zmax, v->x(2));
+    }
+  }
+
+  xmin = dolfin::MPI::min(mpi_comm, xmin);
+  ymin = dolfin::MPI::min(mpi_comm, ymin);
+  zmin = dolfin::MPI::min(mpi_comm, zmin);
+
+  xmax = dolfin::MPI::max(mpi_comm, xmax);
+  ymax = dolfin::MPI::max(mpi_comm, ymax);
+  zmax = dolfin::MPI::max(mpi_comm, zmax);
+
+  std::vector<double> result;
+  result.push_back((xmax + xmin)/2.0);
+  result.push_back((ymax + zmin)/2.0);
+  result.push_back((zmax + zmin)/2.0);
+
+  double d = std::max(xmax - xmin, ymax - ymin);
+  d = 2.0*std::max(d, zmax - zmin) + zmax ;
+  result.push_back(d);
+
+  return result;
+}
+//-----------------------------------------------------------------------------
+std::set<int> X3DOM::surface_vertex_indices(const Mesh& mesh)
+{
+  // Get mesh toplogical dimension
+  const std::size_t tdim = mesh.topology().dim();
+
+  // Initialise connectivities
+  mesh.init(tdim - 1);
+  mesh.init(tdim - 1, 0);
+
+  // Fill set of surface vertex indices
+  std::set<int> vertex_set;
+  for (FaceIterator f(mesh); !f.end(); ++f)
+  {
+    // If in 3D, only output exterior faces
+    // FIXME: num_global_entities not working in serial
+    if (tdim == 2 || f->num_global_entities(tdim) == 1)
+    {
+      for (VertexIterator v(*f); !v.end(); ++v)
+        vertex_set.insert(v->index());
+    }
+  }
+
+  return vertex_set;
+}
 //-----------------------------------------------------------------------------
 void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
                      Representation facet_type)
@@ -241,7 +452,8 @@ void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
 pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
                                      const std::vector<double>& xpos,
                                      Representation facet_type,
-                                     Viewpoints viewpoint_switch)
+                                     Viewpoints viewpoint_switch,
+                                     const std::vector<double>& material_colour)
 {
   pugi::xml_node scene = x3d_node.append_child("Scene");
 
@@ -249,12 +461,12 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   {
     // Append edge mesh first
     // So the facet will be on top after being appended later
-    add_shape_node(scene, Representation::Wireframe);
-    add_shape_node(scene, Representation::Surface);
+    add_shape_node(scene, Representation::Wireframe, material_colour);
+    add_shape_node(scene, Representation::Surface, material_colour);
   }
   else
   {
-    add_shape_node(scene, facet_type);
+    add_shape_node(scene, facet_type, material_colour);
   }
 
   // Have to append Background after shape
@@ -270,6 +482,15 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   ambient_light.append_attribute("intensity") = "0";
 
   return scene;
+}
+//-----------------------------------------------------------------------------
+void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control, std::string vp)
+{
+  std::string onclick_str = "document.getElementById('" + vp + "').setAttribute('set_bind','true');";
+  pugi::xml_node viewpoint_option = viewpoint_control.append_child("button");
+  viewpoint_option.append_attribute("onclick") = onclick_str.c_str();
+  viewpoint_option.append_attribute("style") = "display: block";
+  viewpoint_option.append_child(pugi::node_pcdata).set_value(vp.c_str());
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene, 
@@ -372,189 +593,49 @@ void X3DOM::generate_viewpoint_nodes(pugi::xml_node& xml_scene, const size_t vie
   viewpoint_node.append_attribute("zFar") = "-1";	
 }
 //-----------------------------------------------------------------------------
-void X3DOM::add_shape_node(pugi::xml_node& x3d_scene, Representation facet_type)
+void X3DOM::add_shape_node(pugi::xml_node& x3d_scene, Representation facet_type,
+							const std::vector<double>& mat_col)
 {
-  // pugi::xml_node shape = x3d_node.child("Scene").prepend_child("Shape");
   pugi::xml_node shape = x3d_scene.prepend_child("Shape");
   shape.append_attribute("id") = facet_type_to_x3d_str(facet_type).c_str();
   pugi::xml_node appearance = shape.append_child("Appearance");
 
+  // Getting the string for these colour properties
+  // Diffusive Colour
+  std::string diffusive_col = 
+    boost::lexical_cast<std::string>(mat_col[0]) + " "
+    + boost::lexical_cast<std::string>(mat_col[1]) + " "
+    + boost::lexical_cast<std::string>(mat_col[2]);
+
+  // Emmissive Colour
+  std::string emmissive_col = 
+    boost::lexical_cast<std::string>(mat_col[3]) + " "
+    + boost::lexical_cast<std::string>(mat_col[4]) + " "
+    + boost::lexical_cast<std::string>(mat_col[5]);
+
+  // Specular Colour
+  std::string specular_col = 
+    boost::lexical_cast<std::string>(mat_col[6]) + " "
+    + boost::lexical_cast<std::string>(mat_col[7]) + " "
+    + boost::lexical_cast<std::string>(mat_col[8]);
+
+  // Ambien Intensity
+  std::string ambient = boost::lexical_cast<std::string>(mat_col[9]);
+
+  // Shininess
+  std::string shininess = boost::lexical_cast<std::string>(mat_col[10]);
+
+  // Transparency
+  std::string transparency = boost::lexical_cast<std::string>(mat_col[11]);
+
+  // Now append these attributes
   pugi::xml_node material = appearance.append_child("Material");
-  material.append_attribute("ambientIntensity") = "0.4";
-  material.append_attribute("shininess") = "0.8";
-  material.append_attribute("diffuseColor") = "0.7 0.7 0.7";
-  material.append_attribute("specularColor") = "0.2 0.2 0.2";
-  material.append_attribute("emmisiveColor") = "0.7 0.7 0.7";
-}
-
-//-----------------------------------------------------------------------------
-void X3DOM::add_doctype(pugi::xml_node& xml_node)
-{
-  dolfin_assert(xml_node);
-  pugi::xml_node doc_type = xml_node.prepend_child(pugi::node_doctype);
-  doc_type.set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
-}
-//-----------------------------------------------------------------------------
-pugi::xml_node X3DOM::add_x3d(pugi::xml_node& xml_node)
-{
-  pugi::xml_node x3d = xml_node.append_child("X3D");
-  dolfin_assert(x3d);
-
-  // Add on option to show rendering
-  x3d.append_attribute("showStat") = "true";
-
-  x3d.append_attribute("profile") = "Interchange";
-  x3d.append_attribute("version") = "3.2";
-  x3d.append_attribute("xmlns:xsd")
-    = "http://www.w3.org/2001/XMLSchema-instance";
-  x3d.append_attribute("xsd:noNamespaceSchemaLocation")
-    = "http://www.web3d.org/specifications/x3d-3.2.xsd";
-  x3d.append_attribute("width") = "500px";
-  x3d.append_attribute("height") = "400px";
-
-  return x3d;
-}
-//-----------------------------------------------------------------------------
-void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
-                      Representation facet_type, Viewpoints viewpoint_switch)
-{
-  // Check that mesh is embedded in 2D or 3D
-  const std::size_t gdim = mesh.geometry().dim();
-  if (gdim !=2 and gdim !=3)
-  {
-    dolfin_error("X3DOM.cpp",
-                 "get X3DOM string representation of a mesh",
-                 "X3D works only for 2D and 3D meshes");
-  }
-
-  // Intialise facet-to-cell connectivity
-  const std::size_t tdim = mesh.geometry().dim();
-  mesh.init(tdim - 1 , tdim);
-
-  // Get mesh max and min dimensions, needed to calculate field of
-  // view
-  const std::vector<double> xpos = mesh_min_max(mesh);
-
-  // X3D doctype
-  add_doctype(xml_node);
-
-  // Add X3D node
-  pugi::xml_node x3d_node = add_x3d(xml_node);
-  dolfin_assert(x3d_node);
-
-  // Add boilerplate XML no X3D node, adjusting field of view to the
-  // size of the object, given by xpos
-  pugi::xml_node scene = add_xml_header(x3d_node, xpos, facet_type, viewpoint_switch);
-  dolfin_assert(scene);
-
-  // FIXME: Should this go inside add_mesh?
-  // Compute set of vertices that lie on boundary
-  // const std::set<int> surface_vertices = surface_vertex_indices(mesh);
-
-  // Add mesh to 'shape' XML node, based on shape id
-  // First case is polygon
-  if (facet_type==Representation::SurfaceWithEdges)
-  {
-    // First add the facet
-    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(Representation::Surface).c_str());
-    add_mesh(shape, mesh, Representation::Surface);
-    // Then the edge
-    shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(Representation::Wireframe).c_str());
-    add_mesh(shape, mesh, Representation::Wireframe);
-  }
-  else
-  {
-    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", facet_type_to_x3d_str(facet_type).c_str());
-    add_mesh(shape, mesh, facet_type);
-  }
-
-  // FIXME: Need to first check that node exists before accessing
-  // FIXME: Really want appropiate node handle to be available, rather
-  //        than having to extract it
-  // Append text for mesh info
-  pugi::xml_node mesh_info = x3d_node.append_child("div");
-  dolfin_assert(mesh_info);
-  mesh_info.append_attribute("style") = "position: absolute; bottom: 2%; left: 2%; text-align: left; font-size: 12px; color: white;";
-  std::string data = "Number of vertices: " + std::to_string(mesh.num_vertices())
-    + ", number of cells: " + std::to_string(mesh.num_cells());
-  mesh_info.append_child(pugi::node_pcdata).set_value(data.c_str());
-}
-//-----------------------------------------------------------------------------
-std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh)
-{
-  // Get MPI communicator
-  const MPI_Comm mpi_comm = mesh.mpi_comm();
-
-  // Get dimensions
-  double xmin = std::numeric_limits<double>::max();
-  double xmax = std::numeric_limits<double>::min();
-  double ymin = std::numeric_limits<double>::max();
-  double ymax = std::numeric_limits<double>::min();
-  double zmin = std::numeric_limits<double>::max();
-  double zmax = std::numeric_limits<double>::min();
-
-  const std::size_t gdim = mesh.geometry().dim();
-  for (VertexIterator v(mesh); !v.end(); ++v)
-  {
-    xmin = std::min(xmin, v->x(0));
-    xmax = std::max(xmax, v->x(0));
-    ymin = std::min(ymin, v->x(1));
-    ymax = std::max(ymax, v->x(1));
-    if (gdim == 2)
-    {
-      zmin = 0.0;
-      zmax = 0.0;
-    }
-    else
-    {
-      zmin = std::min(zmin, v->x(2));
-      zmax = std::max(zmax, v->x(2));
-    }
-  }
-
-  xmin = dolfin::MPI::min(mpi_comm, xmin);
-  ymin = dolfin::MPI::min(mpi_comm, ymin);
-  zmin = dolfin::MPI::min(mpi_comm, zmin);
-
-  xmax = dolfin::MPI::max(mpi_comm, xmax);
-  ymax = dolfin::MPI::max(mpi_comm, ymax);
-  zmax = dolfin::MPI::max(mpi_comm, zmax);
-
-  std::vector<double> result;
-  result.push_back((xmax + xmin)/2.0);
-  result.push_back((ymax + zmin)/2.0);
-  result.push_back((zmax + zmin)/2.0);
-
-  double d = std::max(xmax - xmin, ymax - ymin);
-  d = 2.0*std::max(d, zmax - zmin) + zmax ;
-  result.push_back(d);
-
-  return result;
-}
-//-----------------------------------------------------------------------------
-std::set<int> X3DOM::surface_vertex_indices(const Mesh& mesh)
-{
-  // Get mesh toplogical dimension
-  const std::size_t tdim = mesh.topology().dim();
-
-  // Initialise connectivities
-  mesh.init(tdim - 1);
-  mesh.init(tdim - 1, 0);
-
-  // Fill set of surface vertex indices
-  std::set<int> vertex_set;
-  for (FaceIterator f(mesh); !f.end(); ++f)
-  {
-    // If in 3D, only output exterior faces
-    // FIXME: num_global_entities not working in serial
-    if (tdim == 2 || f->num_global_entities(tdim) == 1)
-    {
-      for (VertexIterator v(*f); !v.end(); ++v)
-        vertex_set.insert(v->index());
-    }
-  }
-
-  return vertex_set;
+  material.append_attribute("diffuseColor") = diffusive_col.c_str();
+  material.append_attribute("emmisiveColor") = emmissive_col.c_str();
+  material.append_attribute("specularColor") = specular_col.c_str();
+  material.append_attribute("ambientIntensity") = ambient.c_str();
+  material.append_attribute("shininess") = shininess.c_str();
+  material.append_attribute("transparency") = transparency.c_str();
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::color_palette(const size_t palette)
@@ -621,7 +702,6 @@ std::string X3DOM::facet_type_to_x3d_str(Representation facet_type)
     return "error";
   }
 }
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 /*
 std::string X3DOM::str(const MeshFunction<std::size_t>& meshfunction,
