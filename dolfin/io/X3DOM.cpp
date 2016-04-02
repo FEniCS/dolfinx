@@ -32,12 +32,12 @@
 
 using namespace dolfin;
 
+
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, Representation facet_type)
 {
   // Default values for material properties
-  double colours[] = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
-  const std::vector<double> material_colour(colours, colours + 12);
+  const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
 
   return str(mesh, facet_type, Viewpoints::On, material_colour);
 }
@@ -46,8 +46,7 @@ std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
         Viewpoints viewpoint_switch)
 {
   // Default values for material properties
-  double colours[] = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
-  const std::vector<double> material_colour(colours, colours + 12);
+  const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
 
   return str(mesh, facet_type, viewpoint_switch, material_colour);
 }
@@ -78,16 +77,17 @@ std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type)
 {
   // Default values for material properties
-  double colours[] = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
-  const std::vector<double> material_colour(colours, colours + 12);
+  const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};		 
+
   return html(mesh, facet_type, Viewpoints::On, material_colour);
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type, 
                             Viewpoints viewpoint_switch)
 {
-  double colours[] = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
-  const std::vector<double> material_colour(colours, colours + 12);
+  // Default values for material properties
+  const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};		 
+
   return html(mesh, facet_type, viewpoint_switch, material_colour);
 }
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type, 
