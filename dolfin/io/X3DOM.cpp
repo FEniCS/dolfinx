@@ -104,11 +104,21 @@ std::string X3DOM::html(const Mesh& mesh, Representation facet_type,
 	// Create empty pugi XML doc
 	pugi::xml_document xml_doc;
 
+	// Add doc style to enforce xhtml
+	xml_doc.append_child("!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"");
+
 	// Add html node
 	pugi::xml_node node = xml_doc.append_child("html");
+	node.append_attribute("xmlns") = "http://www.w3.org/1999/xhtml";
+	node.append_attribute("lang") = "en";
 
 	// Add head node
 	pugi::xml_node head = node.append_child("head");
+
+	// Add meta node
+	pugi::xml_node meta = head.append_child("meta");
+	meta.append_attribute("http-equiv") = "content-type";
+	meta.append_attribute("content") = "text/xhtml; charset=UTF-8";
 
 	// Add script node
 	pugi::xml_node script = head.append_child("script");
