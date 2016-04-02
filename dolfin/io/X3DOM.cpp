@@ -32,7 +32,7 @@
 
 using namespace dolfin;
 
-// Why is this not working...?
+// Why is this not working...??
 // std::string X3DOM::get_array(std::vector<double> myvec)
 // {
 //   return "Hello World";
@@ -175,6 +175,27 @@ std::string X3DOM::html(const Mesh& mesh, Representation facet_type,
   }
   else
   	return "";
+}
+//-----------------------------------------------------------------------------
+std::vector<int> X3DOM::hex2rgb(const std::string& hex)
+{
+  // FIXME: Check the condition of hex string
+  std::vector<int> result;
+
+  // Get hex number
+  int num = std::stoi(hex, 0, 16);
+
+  // Then get RGB
+  result.push_back(num/0x10000);
+  result.push_back((num / 0x100) % 0x100);
+  result.push_back(num % 0x100);
+
+  // ... and extract the rgb values.
+  // result.push_back(std::istringstream(hex.substr(0,2)) >> std::hex);
+  // std::istringstream(hex.substr(2,2)) >> std::hex >> rgb[1];
+  // std::istringstream(hex.substr(4,2)) >> std::hex >> rgb[2];
+
+  return result;
 }
 //-----------------------------------------------------------------------------
 bool X3DOM::check_material_colour(const std::vector<double>& material_colour)

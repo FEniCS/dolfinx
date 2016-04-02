@@ -34,7 +34,7 @@ namespace dolfin
   public:
   	// This simple thing doesn't work..??
   	// static std::string get_array(std::vector<double> myvec);
-  	
+
     // X3DOM representation type: facet for solid facets, and
     // edge for edges
     enum class Representation {Surface, SurfaceWithEdges, Wireframe};
@@ -91,6 +91,9 @@ namespace dolfin
     //                            const std::string facet_type, const size_t palette);
 
   private:
+  	// Return RGB colour from hex string
+  	static std::vector<int> hex2rgb(const std::string& hex);
+  	
   	// Check the material colour vector
   	static bool check_material_colour(const std::vector<double>& material_colour);
 
