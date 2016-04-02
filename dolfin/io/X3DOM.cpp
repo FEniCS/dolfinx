@@ -32,7 +32,11 @@
 
 using namespace dolfin;
 
-
+// Why is this not working...?
+// std::string X3DOM::get_array(std::vector<double> myvec)
+// {
+//   return "Hello World";
+// }
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, Representation facet_type)
 {

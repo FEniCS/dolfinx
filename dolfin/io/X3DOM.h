@@ -32,6 +32,9 @@ namespace dolfin
   class X3DOM
   {
   public:
+  	// This simple thing doesn't work..??
+  	// static std::string get_array(std::vector<double> myvec);
+  	
     // X3DOM representation type: facet for solid facets, and
     // edge for edges
     enum class Representation {Surface, SurfaceWithEdges, Wireframe};
