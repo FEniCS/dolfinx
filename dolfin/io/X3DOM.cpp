@@ -81,28 +81,45 @@ std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type)
 {
   // Default values for material properties
-  const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};		 
+  // const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
 
-  return html(mesh, facet_type, Viewpoints::On, material_colour);
+  // return html(mesh, facet_type, Viewpoints::On, material_colour);
+  return html(mesh, facet_type, Viewpoints::On, "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0);
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type, 
                             Viewpoints viewpoint_switch)
 {
   // Default values for material properties
-  const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};		 
+  // const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};		 
 
-  return html(mesh, facet_type, viewpoint_switch, material_colour);
+  // return html(mesh, facet_type, viewpoint_switch, material_colour);
+  return html(mesh, facet_type, Viewpoints::On, "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0);
 }
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type, 
-        const std::vector<double>& material_colour)
+					const std::string& diffusive_colour,
+					const std::string& emissive_colour,
+					const std::string& specular_colour,
+					const double ambient_intensity,
+					const double shininess,
+					const double transparency)
 {
-  return html(mesh, facet_type, Viewpoints::On, material_colour);
+  return html(mesh, facet_type, Viewpoints::On, diffusive_colour, emissive_colour, 
+  	specular_colour, ambient_intensity, shininess, transparency);
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type, 
-        Viewpoints viewpoint_switch, const std::vector<double>& material_colour)
+    Viewpoints viewpoint_switch, const std::string& diffusive_colour,
+    							 const std::string& emissive_colour,
+    							 const std::string& specular_colour,
+    							 const double ambient_intensity,
+    							 const double shininess,
+    							 const double transparency)
 {
+  // Convert string and numpy into in array
+  std::vector<double> material_colour = get_material_vector(diffusive_colour,
+  	  emissive_colour, specular_colour, ambient_intensity, shininess, transparency);
+
   if (check_material_colour(material_colour))
   {
 	// Create empty pugi XML doc
@@ -177,26 +194,47 @@ std::string X3DOM::html(const Mesh& mesh, Representation facet_type,
   	return "";
 }
 //-----------------------------------------------------------------------------
-std::vector<int> X3DOM::hex2rgb(const std::string& hex)
+std::vector<double> X3DOM::hex2rgb(const std::string& hex)
 {
   // FIXME: Check the condition of hex string
-  std::vector<int> result;
+  std::vector<double> result;
 
   // Get hex number
   int num = std::stoi(hex, 0, 16);
 
   // Then get RGB
-  result.push_back(num/0x10000);
-  result.push_back((num / 0x100) % 0x100);
-  result.push_back(num % 0x100);
-
-  // ... and extract the rgb values.
-  // result.push_back(std::istringstream(hex.substr(0,2)) >> std::hex);
-  // std::istringstream(hex.substr(2,2)) >> std::hex >> rgb[1];
-  // std::istringstream(hex.substr(4,2)) >> std::hex >> rgb[2];
+  int tmp;
+  tmp = num/0x10000; result.push_back( (double)tmp/255.0 );
+  tmp = (num / 0x100) % 0x100; result.push_back( (double)tmp/255.0 );
+  tmp = num % 0x100; result.push_back( (double)tmp/255.0 );
 
   return result;
 }
+//-----------------------------------------------------------------------------
+std::vector<double> X3DOM::get_material_vector(const std::string& diffusive_colour,
+  const std::string& emissive_colour, const std::string& specular_colour,
+  const double ambient_intensity, const double shininess, const double transparency)
+{
+  std::vector<double> result;
+  std::vector<double> tmp;
+
+  // Diffusive colour
+  tmp = hex2rgb(diffusive_colour); result.insert(result.end(), tmp.begin(), tmp.end());
+
+  // Emissive colour
+  tmp = hex2rgb(emissive_colour); result.insert(result.end(), tmp.begin(), tmp.end());
+
+  // Specular colour
+  tmp = hex2rgb(specular_colour); result.insert(result.end(), tmp.begin(), tmp.end());
+
+  // Append the last properties
+  result.push_back(ambient_intensity); 
+  result.push_back(shininess); 
+  result.push_back(transparency);
+
+  return result;
+}
+
 //-----------------------------------------------------------------------------
 bool X3DOM::check_material_colour(const std::vector<double>& material_colour)
 {
@@ -211,9 +249,9 @@ bool X3DOM::check_material_colour(const std::vector<double>& material_colour)
   else
   {
   	{
-  		// Now check if all elements in the vector is from 0 to 1
+  		// Now check if all elements in the vector is correct value
   		for (int i=0; i<12; i++)
-  		{
+  		{  			
   			if ((material_colour[i] > 1.0) || (material_colour[i] < 0.0))
   			{
 			    dolfin_error("X3DOM.cpp",
