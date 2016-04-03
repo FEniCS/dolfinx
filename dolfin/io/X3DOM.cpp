@@ -45,36 +45,37 @@ std::string X3DOM::str(const Mesh& mesh)
   return str(mesh, params);
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::str(const Mesh& mesh, X3DOMParams& params)
+std::string X3DOM::str(const Mesh& mesh, X3DOMParams params)
 {
   // Convert string and numpy into in array
-  std::vector<double> material_colour = get_material_vector(params.diffusive_colour,
-  	  params.emissive_colour, params.specular_colour, params.ambient_intensity, params.shininess, params.transparency);
+  std::vector<double> material_colour
+    = get_material_vector(params.diffusive_colour, params.emissive_colour,
+                          params.specular_colour, params.ambient_intensity,
+                          params.shininess, params.transparency);
 
   // FIXME: Check the bg colour as well
   std::vector<double> bg = hex2rgb(params.background_colour);
 
   // Check material vector
-  if (check_colour(material_colour, bg))  
+  if (check_colour(material_colour, bg))
   {
-	// Create empty pugi XML doc
-	pugi::xml_document xml_doc;
+    // Create empty pugi XML doc
+    pugi::xml_document xml_doc;
 
-	// Build X3D XML and add to XML doc
-	x3dom_xml(xml_doc, mesh, params.representation, params.viewpoint_switch, material_colour, bg);
+    // Build X3D XML and add to XML doc
+    x3dom_xml(xml_doc, mesh, params.representation, params.viewpoint_switch,
+              material_colour, bg);
 
-	// Save XML doc to stringstream
-	std::stringstream s;
-	const std::string indent = "  ";
-	xml_doc.save(s, indent.c_str());
+    // Save XML doc to stringstream
+    std::stringstream s;
+    const std::string indent = "  ";
+    xml_doc.save(s, indent.c_str());
 
-	// Return string
-	return s.str();
+    // Return string
+    return s.str();
   }
   else
-  {
-  	return "";
-  }
+    return std::string();
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh)
@@ -83,90 +84,92 @@ std::string X3DOM::html(const Mesh& mesh)
   return html(mesh, params);
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::html(const Mesh& mesh, X3DOMParams& params)
+std::string X3DOM::html(const Mesh& mesh, X3DOMParams params)
 {
   // Convert string and numpy into in array
-  std::vector<double> material_colour = get_material_vector(params.diffusive_colour,
-  	  params.emissive_colour, params.specular_colour, params.ambient_intensity, params.shininess, params.transparency);
+  std::vector<double> material_colour
+    = get_material_vector(params.diffusive_colour, params.emissive_colour,
+                          params.specular_colour, params.ambient_intensity,
+                          params.shininess, params.transparency);
 
   // FIXME: Check the bg colour as well
-  std::vector<double> bg = hex2rgb(params.background_colour);  
+  std::vector<double> bg = hex2rgb(params.background_colour);
 
   if (check_colour(material_colour, bg))
   {
-	// Create empty pugi XML doc
-	pugi::xml_document xml_doc;
+    // Create empty pugi XML doc
+    pugi::xml_document xml_doc;
 
-	// Add doc style to enforce xhtml
-	xml_doc.append_child("!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"");
+    // Add doc style to enforce xhtml
+    xml_doc.append_child("!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"");
 
-	// Add html node
-	pugi::xml_node node = xml_doc.append_child("html");
-	node.append_attribute("xmlns") = "http://www.w3.org/1999/xhtml";
-	node.append_attribute("lang") = "en";
+    // Add html node
+    pugi::xml_node node = xml_doc.append_child("html");
+    node.append_attribute("xmlns") = "http://www.w3.org/1999/xhtml";
+    node.append_attribute("lang") = "en";
 
-	// Add head node
-	pugi::xml_node head = node.append_child("head");
+    // Add head node
+    pugi::xml_node head = node.append_child("head");
 
-	// Add meta node
-	pugi::xml_node meta = head.append_child("meta");
-	meta.append_attribute("http-equiv") = "content-type";
-	meta.append_attribute("content") = "text/xhtml; charset=UTF-8";
+    // Add meta node
+    pugi::xml_node meta = head.append_child("meta");
+    meta.append_attribute("http-equiv") = "content-type";
+    meta.append_attribute("content") = "text/xhtml; charset=UTF-8";
 
-	// Add script node
-	pugi::xml_node script = head.append_child("script");
+    // Add script node
+    pugi::xml_node script = head.append_child("script");
 
-	// Set attributes for script node
-	script.append_attribute("type") = "text/javascript";
-	script.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
-	script.append_child(pugi::node_pcdata);
+    // Set attributes for script node
+    script.append_attribute("type") = "text/javascript";
+    script.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
+    script.append_child(pugi::node_pcdata);
 
-	// Add link node
-	pugi::xml_node link = head.append_child("link");
+    // Add link node
+    pugi::xml_node link = head.append_child("link");
 
-	// Set attributes for link node
-	link.append_attribute("rel") = "stylesheet";
-	link.append_attribute("type") = "text/css";
-	link.append_attribute("href") = "http://www.x3dom.org/download/x3dom.css";
+    // Set attributes for link node
+    link.append_attribute("rel") = "stylesheet";
+    link.append_attribute("type") = "text/css";
+    link.append_attribute("href") = "http://www.x3dom.org/download/x3dom.css";
 
-	// Add body node
-	pugi::xml_node body_node = node.append_child("body");
+    // Add body node
+    pugi::xml_node body_node = node.append_child("body");
 
-	// Add X3D XML data to 'body' node
-	x3dom_xml(body_node, mesh, params.representation, params.viewpoint_switch, material_colour, bg);
+    // Add X3D XML data to 'body' node
+    x3dom_xml(body_node, mesh, params.representation, params.viewpoint_switch, material_colour, bg);
 
-	// Now append four viewpoints
-	// FIXME Write Function to do this
-	if (params.viewpoint_switch == X3DOMParams::Viewpoints::On)
-	{
-	// Add viewpoint control node
-	pugi::xml_node viewpoint_control = body_node.append_child("div");
+    // Now append four viewpoints
+    // FIXME Write Function to do this
+    if (params.viewpoint_switch == X3DOMParams::Viewpoints::On)
+    {
+      // Add viewpoint control node
+      pugi::xml_node viewpoint_control = body_node.append_child("div");
 
-	// Add attributes to viewpoint niode
-	viewpoint_control.append_attribute("id") = "camera_buttons";
-	viewpoint_control.append_attribute("style") = "display: block";
+      // Add attributes to viewpoint niode
+      viewpoint_control.append_attribute("id") = "camera_buttons";
+      viewpoint_control.append_attribute("style") = "display: block";
 
-	add_viewpoint_control_option(viewpoint_control, "Front");
-	add_viewpoint_control_option(viewpoint_control, "Back");
-	add_viewpoint_control_option(viewpoint_control, "Left");
-	add_viewpoint_control_option(viewpoint_control, "Right");
-	add_viewpoint_control_option(viewpoint_control, "Top");
-	add_viewpoint_control_option(viewpoint_control, "Bottom");
-	}
+      add_viewpoint_control_option(viewpoint_control, "Front");
+      add_viewpoint_control_option(viewpoint_control, "Back");
+      add_viewpoint_control_option(viewpoint_control, "Left");
+      add_viewpoint_control_option(viewpoint_control, "Right");
+      add_viewpoint_control_option(viewpoint_control, "Top");
+      add_viewpoint_control_option(viewpoint_control, "Bottom");
+    }
 
-	// Save XML doc to stringstream, without default XML header
-	std::stringstream s;
-	const std::string indent = "  ";
-	xml_doc.save(s, indent.c_str(), pugi::format_default | pugi::format_no_declaration);
+    // Save XML doc to stringstream, without default XML header
+    std::stringstream s;
+    const std::string indent = "  ";
+    xml_doc.save(s, indent.c_str(), pugi::format_default | pugi::format_no_declaration);
 
-	// Return string
-	return s.str();
+    // Return string
+    return s.str();
   }
   else
-  	return "";
+    return std::string();
 }
 //-----------------------------------------------------------------------------
-std::vector<double> X3DOM::hex2rgb(const std::string& hex)
+std::vector<double> X3DOM::hex2rgb(const std::string hex)
 {
   // FIXME: Check the condition of hex string
   std::vector<double> result;
@@ -183,9 +186,12 @@ std::vector<double> X3DOM::hex2rgb(const std::string& hex)
   return result;
 }
 //-----------------------------------------------------------------------------
-std::vector<double> X3DOM::get_material_vector(const std::string& diffusive_colour,
-  const std::string& emissive_colour, const std::string& specular_colour,
-  const double ambient_intensity, const double shininess, const double transparency)
+std::vector<double> X3DOM::get_material_vector(const std::string diffusive_colour,
+                                               const std::string emissive_colour,
+                                               const std::string specular_colour,
+                                               const double ambient_intensity,
+                                               const double shininess,
+                                               const double transparency)
 {
   std::vector<double> result;
   std::vector<double> tmp;
@@ -200,15 +206,15 @@ std::vector<double> X3DOM::get_material_vector(const std::string& diffusive_colo
   tmp = hex2rgb(specular_colour); result.insert(result.end(), tmp.begin(), tmp.end());
 
   // Append the last properties
-  result.push_back(ambient_intensity); 
-  result.push_back(shininess); 
+  result.push_back(ambient_intensity);
+  result.push_back(shininess);
   result.push_back(transparency);
 
   return result;
 }
-
 //-----------------------------------------------------------------------------
-bool X3DOM::check_colour(const std::vector<double>& material_colour, const std::vector<double>& bg)
+bool X3DOM::check_colour(const std::vector<double>& material_colour,
+                         const std::vector<double>& bg)
 {
   // Check if colour is correct size
   if ((material_colour.size() != 12) || (bg.size() != 3))
@@ -216,38 +222,35 @@ bool X3DOM::check_colour(const std::vector<double>& material_colour, const std::
     dolfin_error("X3DOM.cpp",
                  "assigning material properties",
                  "incorrect vector size");
-   	return false;
   }
   else
   {
-  	{
-  		// Now check if all elements in the vector is correct value
-  		for (int i=0; i<12; i++)
-  		{  			
-  			if ((material_colour[i] > 1.0) || (material_colour[i] < 0.0))
-  			{
-			    dolfin_error("X3DOM.cpp",
-			                 "assigning material properties",
-			                 "incorrect values of vector"); 
-			    return false;
-			   	break;
-  			}
-  		}
-  		// Now for bg
-  		for (int i=0; i<3; i++)
-  		{  			
-  			if ((bg[i] > 1.0) || (bg[i] < 0.0))
-  			{
-			    dolfin_error("X3DOM.cpp",
-			                 "assigning material properties",
-			                 "incorrect values of vector"); 
-			    return false;
-			   	break;
-  			}
-  		}
-  	}
+    {
+      // Now check if all elements in the vector is correct value
+      for (int i = 0; i < 12; i++)
+      {
+        if ((material_colour[i] > 1.0) || (material_colour[i] < 0.0))
+        {
+          dolfin_error("X3DOM.cpp",
+                       "assigning material properties",
+                       "incorrect values of vector");
+        }
+      }
+
+      // Now for bg
+      for (int i = 0; i < 3; i++)
+      {
+        if ((bg[i] > 1.0) || (bg[i] < 0.0))
+        {
+          dolfin_error("X3DOM.cpp",
+                       "assigning material properties",
+                       "incorrect values of vector");
+        }
+      }
+    }
   }
-  return true; 
+
+  return true;
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_doctype(pugi::xml_node& xml_node)
@@ -278,8 +281,10 @@ pugi::xml_node X3DOM::add_x3d(pugi::xml_node& xml_node)
 }
 //-----------------------------------------------------------------------------
 void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
-    X3DOMParams::Representation representation, X3DOMParams::Viewpoints viewpoint_switch,
-    const std::vector<double>& material_colour, const std::vector<double>& bg)
+                      X3DOMParams::Representation representation,
+                      X3DOMParams::Viewpoints viewpoint_switch,
+                      const std::vector<double>& material_colour,
+                      const std::vector<double>& bg)
 {
   // Check that mesh is embedded in 2D or 3D
   const std::size_t gdim = mesh.geometry().dim();
@@ -307,7 +312,8 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
 
   // Add boilerplate XML no X3D node, adjusting field of view to the
   // size of the object, given by xpos
-  pugi::xml_node scene = add_xml_header(x3d_node, xpos, representation, viewpoint_switch, material_colour, bg);
+  pugi::xml_node scene = add_xml_header(x3d_node, xpos, representation,
+                                        viewpoint_switch, material_colour, bg);
   dolfin_assert(scene);
 
   // FIXME: Should this go inside add_mesh?
@@ -321,6 +327,7 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
     // First add the facet
     pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", representation_to_x3d_str(X3DOMParams::Representation::Surface).c_str());
     add_mesh(shape, mesh, X3DOMParams::Representation::Surface);
+
     // Then the edge
     shape = scene.find_child_by_attribute("Shape", "id", representation_to_x3d_str(X3DOMParams::Representation::Wireframe).c_str());
     add_mesh(shape, mesh, X3DOMParams::Representation::Wireframe);
@@ -569,7 +576,8 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   return scene;
 }
 //-----------------------------------------------------------------------------
-void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control, std::string vp)
+void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control,
+                                         std::string vp)
 {
   std::string onclick_str = "document.getElementById('" + vp + "').setAttribute('set_bind','true');";
   pugi::xml_node viewpoint_option = viewpoint_control.append_child("button");
@@ -578,7 +586,7 @@ void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control, std:
   viewpoint_option.append_child(pugi::node_pcdata).set_value(vp.c_str());
 }
 //-----------------------------------------------------------------------------
-void X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene, 
+void X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene,
           const std::vector<double>& xpos, X3DOMParams::Viewpoints viewpoint_switch)
 {
   // FIXME: make it even shorter
@@ -591,26 +599,33 @@ void X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene,
   {
     // Top viewpoint
     generate_viewpoint_nodes(xml_scene, 0, center_of_rotation, xpos);
+
     // Bottom viewpoint
     generate_viewpoint_nodes(xml_scene, 1, center_of_rotation, xpos);
+
     // Left viewpoint
     generate_viewpoint_nodes(xml_scene, 2, center_of_rotation, xpos);
+
     // Right viewpoint
     generate_viewpoint_nodes(xml_scene, 3, center_of_rotation, xpos);
+
     // Back viewpoint
-    generate_viewpoint_nodes(xml_scene, 4, center_of_rotation, xpos);  
+    generate_viewpoint_nodes(xml_scene, 4, center_of_rotation, xpos);
+
     // Front viewpoint
     generate_viewpoint_nodes(xml_scene, 5, center_of_rotation, xpos);
   }
   else // Just generate the front view
   {
     // Front viewpoint
-    generate_viewpoint_nodes(xml_scene, 5, center_of_rotation, xpos);      
+    generate_viewpoint_nodes(xml_scene, 5, center_of_rotation, xpos);
   }
 }
 //-----------------------------------------------------------------------------
-void X3DOM::generate_viewpoint_nodes(pugi::xml_node& xml_scene, const size_t viewpoint,
-					 const std::string& center_of_rotation, const std::vector<double>& xpos)
+void X3DOM::generate_viewpoint_nodes(pugi::xml_node& xml_scene,
+                                     const size_t viewpoint,
+                                     const std::string center_of_rotation,
+                                     const std::vector<double>& xpos)
 {
   std::string vp_str; // viewpoint string
   std::string ori; // orientation
@@ -619,50 +634,50 @@ void X3DOM::generate_viewpoint_nodes(pugi::xml_node& xml_scene, const size_t vie
   // Get position from string
   switch (viewpoint)
   {
-	case 0: // top
-	  vp_str = "Top";
-	  ori = "-1 0 0 1.5707963267948";
-	  pos = boost::lexical_cast<std::string>(xpos[0]) + " "
-    	+ boost::lexical_cast<std::string>(xpos[1]+xpos[3]-xpos[2]) + " "
-    	+ boost::lexical_cast<std::string>(xpos[2]);
-	  break;
-	case 1: // bottom
-	  vp_str = "Bottom";
-	  ori = "1 0 0 1.5707963267948";
-	  pos = boost::lexical_cast<std::string>(xpos[0]) + " "
-    	+ boost::lexical_cast<std::string>(xpos[1]-xpos[3]+xpos[2]) + " "
-    	+ boost::lexical_cast<std::string>(xpos[2]);
-	  break;  	
-	case 2: // left
-	  vp_str = "Left";
-	  ori = "0 1 0 1.5707963267948";
-	  pos = boost::lexical_cast<std::string>(xpos[0]+xpos[3]-xpos[2]) + " "
-    	+ boost::lexical_cast<std::string>(xpos[1]) + " "
-    	+ boost::lexical_cast<std::string>(xpos[2]);;
-	  break;  	
-	case 3: // right
-	  vp_str = "Right";
-	  ori = "0 -1 0 1.5707963267948";
-	  pos = boost::lexical_cast<std::string>(xpos[0]-xpos[3]+xpos[2]) + " "
-    	+ boost::lexical_cast<std::string>(xpos[1]) + " "
-    	+ boost::lexical_cast<std::string>(xpos[2]);
-	  break;  	
-	case 4: // back
-	  vp_str = "Back";
-	  ori = "0 1 0 3.1415926535898";
-	  pos = boost::lexical_cast<std::string>(xpos[0]) + " "
-    	+ boost::lexical_cast<std::string>(xpos[1]) + " "
-    	+ boost::lexical_cast<std::string>(xpos[2]-xpos[3]);
-	  break;  	
-	case 5: // front
-	  vp_str = "Front";
-	  ori = "0 0 0 1";
-	  pos = boost::lexical_cast<std::string>(xpos[0]) + " "
-    	+ boost::lexical_cast<std::string>(xpos[1]) + " "
-    	+ boost::lexical_cast<std::string>(xpos[3]);
-	  break;
-	default:
-	  break;
+  case 0: // top
+    vp_str = "Top";
+    ori = "-1 0 0 1.5707963267948";
+    pos = boost::lexical_cast<std::string>(xpos[0]) + " "
+      + boost::lexical_cast<std::string>(xpos[1]+xpos[3]-xpos[2]) + " "
+      + boost::lexical_cast<std::string>(xpos[2]);
+    break;
+  case 1: // bottom
+    vp_str = "Bottom";
+    ori = "1 0 0 1.5707963267948";
+    pos = boost::lexical_cast<std::string>(xpos[0]) + " "
+      + boost::lexical_cast<std::string>(xpos[1]-xpos[3]+xpos[2]) + " "
+      + boost::lexical_cast<std::string>(xpos[2]);
+    break;
+  case 2: // left
+    vp_str = "Left";
+    ori = "0 1 0 1.5707963267948";
+    pos = boost::lexical_cast<std::string>(xpos[0]+xpos[3]-xpos[2]) + " "
+      + boost::lexical_cast<std::string>(xpos[1]) + " "
+      + boost::lexical_cast<std::string>(xpos[2]);;
+    break;
+  case 3: // right
+    vp_str = "Right";
+    ori = "0 -1 0 1.5707963267948";
+    pos = boost::lexical_cast<std::string>(xpos[0]-xpos[3]+xpos[2]) + " "
+            + boost::lexical_cast<std::string>(xpos[1]) + " "
+      + boost::lexical_cast<std::string>(xpos[2]);
+    break;
+  case 4: // back
+    vp_str = "Back";
+    ori = "0 1 0 3.1415926535898";
+    pos = boost::lexical_cast<std::string>(xpos[0]) + " "
+      + boost::lexical_cast<std::string>(xpos[1]) + " "
+      + boost::lexical_cast<std::string>(xpos[2]-xpos[3]);
+    break;
+  case 5: // front
+    vp_str = "Front";
+    ori = "0 0 0 1";
+    pos = boost::lexical_cast<std::string>(xpos[0]) + " "
+      + boost::lexical_cast<std::string>(xpos[1]) + " "
+      + boost::lexical_cast<std::string>(xpos[3]);
+    break;
+  default:
+    break;
   }
 
   // Now get the node
@@ -675,11 +690,12 @@ void X3DOM::generate_viewpoint_nodes(pugi::xml_node& xml_scene, const size_t vie
   viewpoint_node.append_attribute("centerOfRotation") = center_of_rotation.c_str();
 
   viewpoint_node.append_attribute("zNear") = "-1";
-  viewpoint_node.append_attribute("zFar") = "-1";	
+  viewpoint_node.append_attribute("zFar") = "-1";
 }
 //-----------------------------------------------------------------------------
-void X3DOM::add_shape_node(pugi::xml_node& x3d_scene, X3DOMParams::Representation representation,
-							const std::vector<double>& mat_col)
+void X3DOM::add_shape_node(pugi::xml_node& x3d_scene,
+                           X3DOMParams::Representation representation,
+                           const std::vector<double>& mat_col)
 {
   pugi::xml_node shape = x3d_scene.prepend_child("Shape");
   shape.append_attribute("id") = representation_to_x3d_str(representation).c_str();
@@ -687,19 +703,19 @@ void X3DOM::add_shape_node(pugi::xml_node& x3d_scene, X3DOMParams::Representatio
 
   // Getting the string for these colour properties
   // Diffusive Colour
-  std::string diffusive_col = 
+  std::string diffusive_col =
     boost::lexical_cast<std::string>(mat_col[0]) + " "
     + boost::lexical_cast<std::string>(mat_col[1]) + " "
     + boost::lexical_cast<std::string>(mat_col[2]);
 
   // Emmissive Colour
-  std::string emmissive_col = 
+  std::string emmissive_col =
     boost::lexical_cast<std::string>(mat_col[3]) + " "
     + boost::lexical_cast<std::string>(mat_col[4]) + " "
     + boost::lexical_cast<std::string>(mat_col[5]);
 
   // Specular Colour
-  std::string specular_col = 
+  std::string specular_col =
     boost::lexical_cast<std::string>(mat_col[6]) + " "
     + boost::lexical_cast<std::string>(mat_col[7]) + " "
     + boost::lexical_cast<std::string>(mat_col[8]);
