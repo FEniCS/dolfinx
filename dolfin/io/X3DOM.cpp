@@ -40,7 +40,7 @@ using namespace dolfin;
 
 std::string X3DOM::get_array(X3DOMParams& para)
 {
-  return "Hello World";
+  return para.set_diffusive_colour;
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, Representation facet_type)
