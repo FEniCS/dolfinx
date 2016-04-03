@@ -129,8 +129,8 @@ namespace dolfin
 	  const std::string& emissive_colour, const std::string& specular_colour,
 	  const double ambient_intensity, const double shininess, const double transparency);
 
-  	// Check the material colour vector
-  	static bool check_material_colour(const std::vector<double>& material_colour);
+  	// Check the colour vectors
+  	static bool check_colour(const std::vector<double>& material_colour, const std::vector<double>& bg);
 
     // Add X3D doctype (an XML document should have no more than one
     // doc_type node)
@@ -163,7 +163,7 @@ namespace dolfin
                                          Viewpoints viewpoint_switch,
                                          const std::vector<double>& material_colour,
                                          const std::vector<double>& bg);
-    
+
    	// Add control tags options for html
 	static void add_viewpoint_control_option(pugi::xml_node& viewpoint_control, std::string viewpoint);
     

@@ -85,7 +85,7 @@ std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
   std::vector<double> bg = hex2rgb(background_colour);
 
   // Check material vector
-  if (check_material_colour(material_colour))  
+  if (check_colour(material_colour, bg))  
   {
 	// Create empty pugi XML doc
 	pugi::xml_document xml_doc;
@@ -154,7 +154,7 @@ std::string X3DOM::html(const Mesh& mesh, Representation facet_type,
   // FIXME: Check the bg colour as well
   std::vector<double> bg = hex2rgb(background_colour);  
 
-  if (check_material_colour(material_colour))
+  if (check_colour(material_colour, bg))
   {
 	// Create empty pugi XML doc
 	pugi::xml_document xml_doc;
@@ -270,10 +270,10 @@ std::vector<double> X3DOM::get_material_vector(const std::string& diffusive_colo
 }
 
 //-----------------------------------------------------------------------------
-bool X3DOM::check_material_colour(const std::vector<double>& material_colour)
+bool X3DOM::check_colour(const std::vector<double>& material_colour, const std::vector<double>& bg)
 {
   // Check if colour is correct size
-  if (material_colour.size() != 12)
+  if ((material_colour.size() != 12) || (bg.size() != 3))
   {
     dolfin_error("X3DOM.cpp",
                  "assigning material properties",
@@ -287,6 +287,18 @@ bool X3DOM::check_material_colour(const std::vector<double>& material_colour)
   		for (int i=0; i<12; i++)
   		{  			
   			if ((material_colour[i] > 1.0) || (material_colour[i] < 0.0))
+  			{
+			    dolfin_error("X3DOM.cpp",
+			                 "assigning material properties",
+			                 "incorrect values of vector"); 
+			    return false;
+			   	break;
+  			}
+  		}
+  		// Now for bg
+  		for (int i=0; i<3; i++)
+  		{  			
+  			if ((bg[i] > 1.0) || (bg[i] < 0.0))
   			{
 			    dolfin_error("X3DOM.cpp",
 			                 "assigning material properties",
