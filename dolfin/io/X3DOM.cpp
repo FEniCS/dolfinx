@@ -37,6 +37,11 @@ using namespace dolfin;
 // {
 //   return "Hello World";
 // }
+
+std::string X3DOM::get_array(X3DOMParams& para)
+{
+  return "Hello World";
+}
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, Representation facet_type)
 {

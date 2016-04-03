@@ -25,6 +25,35 @@
 
 namespace dolfin
 {
+  // Class data to store all of these options
+  struct X3DOMParams {
+    // Default value
+    X3DOMParams(): set_representation(Representation::SurfaceWithEdges),
+              set_viewpoint_switch(Viewpoints::On),
+              set_diffusive_colour("B3B3B3"),
+              set_emissive_colour("B3B3B3"),
+              set_specular_colour("333333"),
+              set_ambient_intensity(0.4), 
+              set_shininess(0.8),
+              set_transparency(0.0),
+              set_background_colour("FFFFFF") {}
+    // X3DOM representation type: facet for solid facets, and
+    // edge for edges
+    enum class Representation {Surface, SurfaceWithEdges, Wireframe};
+
+    // Fixed viewpoint options
+    enum class Viewpoints {On, Off};    
+
+    const Representation& set_representation;
+    const Viewpoints& set_viewpoint_switch;
+    const std::string& set_diffusive_colour;
+    const std::string& set_emissive_colour;
+    const std::string& set_specular_colour;
+    const double& set_ambient_intensity;
+    const double& set_shininess;
+    const double& set_transparency;
+    const std::string& set_background_colour;
+  };
 
   /// This class implements output of meshes to X3DOM XML or HTML or
   /// string
@@ -34,12 +63,12 @@ namespace dolfin
   public:
   	// This simple thing doesn't work..??
   	// static std::string get_array(std::vector<double> myvec);
+    static std::string get_array(X3DOMParams& para);
 
   	// Default value for material colour control
   	// "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0
   	// Default value for background colour control
-  	// "000000"
-
+  	// "FFFFFF"
 
     // X3DOM representation type: facet for solid facets, and
     // edge for edges
