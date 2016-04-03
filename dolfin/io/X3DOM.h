@@ -28,15 +28,15 @@ namespace dolfin
   // Class data to store all of these options
   struct X3DOMParams {
     // Default value
-    X3DOMParams(): set_representation(Representation::SurfaceWithEdges),
-              set_viewpoint_switch(Viewpoints::On),
-              set_diffusive_colour("B3B3B3"),
-              set_emissive_colour("B3B3B3"),
-              set_specular_colour("333333"),
-              set_ambient_intensity(0.4), 
-              set_shininess(0.8),
-              set_transparency(0.0),
-              set_background_colour("FFFFFF") {}
+    X3DOMParams(): representation(Representation::SurfaceWithEdges),
+              viewpoint_switch(Viewpoints::On),
+              diffusive_colour("B3B3B3"),
+              emissive_colour("B3B3B3"),
+              specular_colour("333333"),
+              ambient_intensity(0.4), 
+              shininess(0.8),
+              transparency(0.0),
+              background_colour("FFFFFF") {}
     // X3DOM representation type: facet for solid facets, and
     // edge for edges
     enum class Representation {Surface, SurfaceWithEdges, Wireframe};
@@ -44,15 +44,15 @@ namespace dolfin
     // Fixed viewpoint options
     enum class Viewpoints {On, Off};    
 
-    Representation set_representation;
-    Viewpoints set_viewpoint_switch;
-    std::string set_diffusive_colour;
-    std::string set_emissive_colour;
-    std::string set_specular_colour;
-    double set_ambient_intensity;
-    double set_shininess;
-    double set_transparency;
-    std::string set_background_colour;
+    Representation representation;
+    Viewpoints viewpoint_switch;
+    std::string diffusive_colour;
+    std::string emissive_colour;
+    std::string specular_colour;
+    double ambient_intensity;
+    double shininess;
+    double transparency;
+    std::string background_colour;
   };
 
   /// This class implements output of meshes to X3DOM XML or HTML or
@@ -66,61 +66,16 @@ namespace dolfin
     static std::string get_array(X3DOMParams& para);
 
     /// Return X3D string for a Mesh, default colour and viewpoints
-    static std::string str(const Mesh& mesh, Representation facet_type);
+    static std::string str(const Mesh& mesh);
 
-    /// Return X3D string for a Mesh, default colour
-    static std::string str(const Mesh& mesh, Representation facet_type,
-    				Viewpoints viewpoint_switch);
+    /// Return X3D string for a Mesh, user-defined parameters
+    static std::string str(const Mesh& mesh, X3DOMParams& param);
 
-	/// Return X3D string for a Mesh, default viewpoints
-    static std::string str(const Mesh& mesh, Representation facet_type,
-					const std::string& diffusive_colour,
-					const std::string& emissive_colour,
-					const std::string& specular_colour,
-					const double ambient_intensity,
-					const double shininess,
-					const double transparency,
-					const std::string& background_colour);    				
+    /// Return HTML string with embedded X3D, default options
+    static std::string html(const Mesh& mesh);
 
-    /// Return X3D string for a Mesh
-    static std::string str(const Mesh& mesh, Representation facet_type,
-        Viewpoints viewpoint_switch, const std::string& diffusive_colour,
-        							 const std::string& emissive_colour,
-        							 const std::string& specular_colour,
-        							 const double ambient_intensity,
-        							 const double shininess,
-        							 const double transparency,
-        							 const std::string& background_colour);
-
-    /// Return HTML string with embedded X3D for a Mesh
-    // If Viewpoint not declared view all
-    static std::string html(const Mesh& mesh, Representation facet_type);
-
-    // Add option of Viewpoint
-    static std::string html(const Mesh& mesh, Representation facet_type, 
-                            Viewpoints viewpoint_switch);
-
-    // Add option for material colour control
-    // Rule to contain the material string is 
-    // Diffusive Colour[3], Emissive Colour[3], Specular Colour[3]
-    // Ambient Intensity [1], Shininess [1], Transparency [1]
-    static std::string html(const Mesh& mesh, Representation facet_type, 
-					const std::string& diffusive_colour,
-					const std::string& emissive_colour,
-					const std::string& specular_colour,
-					const double ambient_intensity,
-					const double shininess,
-					const double transparency,
-					const std::string& background_colour);
-
-	static std::string html(const Mesh& mesh, Representation facet_type, 
-        Viewpoints viewpoint_switch, const std::string& diffusive_colour,
-        							 const std::string& emissive_colour,
-        							 const std::string& specular_colour,
-        							 const double ambient_intensity,
-        							 const double shininess,
-        							 const double transparency,
-        							 const std::string& background_colour);
+    /// Return HTML string with embedded X3D, user-defined
+    static std::string html(const Mesh& mesh, X3DOMParams& param);
 
     // FIXME: Add option for Material Colour?
     // static std::string html(const Mesh& mesh, Representation facet_type, 
@@ -158,7 +113,7 @@ namespace dolfin
 
     // Add X3DOM mesh data to XML node
     static void x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
-      Representation facet_type, Viewpoints viewpoint_switch, 
+      X3DOMParams::Representation facet_type, X3DOMParams::Viewpoints viewpoint_switch, 
       const std::vector<double>& material_colour, const std::vector<double>& bg);
 
     // Get mesh dimensions and viewpoint distance
@@ -171,36 +126,36 @@ namespace dolfin
     // or Edges (depending on the facet_type flag). In 3D, only
     // include surface Facets/Edges.
     static void add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
-                      Representation facet_type);
+                      X3DOMParams::Representation facet_type);
 
     // Add header to XML document, adjusting field of view to the size of the object
     static pugi::xml_node add_xml_header(pugi::xml_node& xml_node,
                                          const std::vector<double>& xpos,
-                                         Representation facet_type, 
-                                         Viewpoints viewpoint_switch,
+                                         X3DOMParams::Representation facet_type, 
+                                         X3DOMParams::Viewpoints viewpoint_switch,
                                          const std::vector<double>& material_colour,
                                          const std::vector<double>& bg);
 
    	// Add control tags options for html
-	static void add_viewpoint_control_option(pugi::xml_node& viewpoint_control, std::string viewpoint);
+	  static void add_viewpoint_control_option(pugi::xml_node& viewpoint_control, std::string viewpoint);
     
     // Add viewpoints to scene node
     static void add_viewpoint_xml_nodes(pugi::xml_node& xml_scene, 
-            const std::vector<double>& xpos, Viewpoints viewpoint_switch);
+            const std::vector<double>& xpos, X3DOMParams::Viewpoints viewpoint_switch);
 
-	// Generate viewpoint nodes
+	  // Generate viewpoint nodes
     static void generate_viewpoint_nodes(pugi::xml_node& xml_scene, const size_t viewpoint,
 					 const std::string& center_of_rotation, const std::vector<double>& xpos);
 
     // Add shape node to XML document, and push the shape node to first child
-    static void add_shape_node(pugi::xml_node& x3d_scene, Representation facet_type,
+    static void add_shape_node(pugi::xml_node& x3d_scene, X3DOMParams::Representation facet_type,
     							const std::vector<double>& mat_col);
 
     // Get a string representing a color palette (pal may be 0, 1 or 2)
     static std::string color_palette(const size_t pal);
 
     // Generate X3D string from facet_type
-    static std::string facet_type_to_x3d_str(Representation facet_type);
+    static std::string representation_to_x3d_str(X3DOMParams::Representation facet_type);
 
 	// Output values associated with Mesh points to XML using a colour
     // palette
