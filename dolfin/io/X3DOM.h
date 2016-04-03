@@ -35,6 +35,12 @@ namespace dolfin
   	// This simple thing doesn't work..??
   	// static std::string get_array(std::vector<double> myvec);
 
+  	// Default value for material colour control
+  	// "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0
+  	// Default value for background colour control
+  	// "000000"
+
+
     // X3DOM representation type: facet for solid facets, and
     // edge for edges
     enum class Representation {Surface, SurfaceWithEdges, Wireframe};

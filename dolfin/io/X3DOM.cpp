@@ -592,7 +592,7 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
 
   // Have to append Background after shape
   pugi::xml_node background = scene.append_child("Background");
-  background.append_attribute("skyColor") = "0.319997 0.340002 0.429999";
+  background.append_attribute("skyColor") = "0.0 0.0 0.0";
 
   // Append viewpoint after shape
   add_viewpoint_xml_nodes(scene, xpos, viewpoint_switch);
