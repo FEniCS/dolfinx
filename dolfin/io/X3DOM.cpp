@@ -43,7 +43,7 @@ std::string X3DOM::str(const Mesh& mesh, Representation facet_type)
   // Default values for material properties
   // const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
 
-  return str(mesh, facet_type, Viewpoints::On, "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0);
+  return str(mesh, facet_type, Viewpoints::On, "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0, "FFFFFF");
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
@@ -52,7 +52,7 @@ std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
   // Default values for material properties
   // const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
 
-  return str(mesh, facet_type, Viewpoints::On, "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0);
+  return str(mesh, facet_type, Viewpoints::On, "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0, "FFFFFF");
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
@@ -61,10 +61,11 @@ std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
 					const std::string& specular_colour,
 					const double ambient_intensity,
 					const double shininess,
-					const double transparency)
+					const double transparency,
+					const std::string& background_colour)
 {
   return str(mesh, facet_type, Viewpoints::On, diffusive_colour, 
-  	emissive_colour, specular_colour, ambient_intensity, shininess, transparency);
+  	emissive_colour, specular_colour, ambient_intensity, shininess, transparency, background_colour);
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
@@ -73,11 +74,15 @@ std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
         							 const std::string& specular_colour,
         							 const double ambient_intensity,
         							 const double shininess,
-        							 const double transparency)
+        							 const double transparency,
+        							 const std::string& background_colour)
 {
   // Convert string and numpy into in array
   std::vector<double> material_colour = get_material_vector(diffusive_colour,
   	  emissive_colour, specular_colour, ambient_intensity, shininess, transparency);
+
+  // FIXME: Check the bg colour as well
+  std::vector<double> bg = hex2rgb(background_colour);
 
   // Check material vector
   if (check_material_colour(material_colour))  
@@ -86,7 +91,7 @@ std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
 	pugi::xml_document xml_doc;
 
 	// Build X3D XML and add to XML doc
-	x3dom_xml(xml_doc, mesh, facet_type, viewpoint_switch, material_colour);
+	x3dom_xml(xml_doc, mesh, facet_type, viewpoint_switch, material_colour, bg);
 
 	// Save XML doc to stringstream
 	std::stringstream s;
@@ -108,7 +113,7 @@ std::string X3DOM::html(const Mesh& mesh, Representation facet_type)
   // const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
 
   // return html(mesh, facet_type, Viewpoints::On, material_colour);
-  return html(mesh, facet_type, Viewpoints::On, "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0);
+  return html(mesh, facet_type, Viewpoints::On, "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0, "FFFFFF");
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type, 
@@ -118,7 +123,7 @@ std::string X3DOM::html(const Mesh& mesh, Representation facet_type,
   // const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};		 
 
   // return html(mesh, facet_type, viewpoint_switch, material_colour);
-  return html(mesh, facet_type, Viewpoints::On, "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0);
+  return html(mesh, facet_type, Viewpoints::On, "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0, "FFFFFF");
 }
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type, 
 					const std::string& diffusive_colour,
@@ -126,10 +131,11 @@ std::string X3DOM::html(const Mesh& mesh, Representation facet_type,
 					const std::string& specular_colour,
 					const double ambient_intensity,
 					const double shininess,
-					const double transparency)
+					const double transparency,
+					const std::string& background_colour)
 {
   return html(mesh, facet_type, Viewpoints::On, diffusive_colour, emissive_colour, 
-  	specular_colour, ambient_intensity, shininess, transparency);
+  	specular_colour, ambient_intensity, shininess, transparency, background_colour);
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type, 
@@ -138,11 +144,15 @@ std::string X3DOM::html(const Mesh& mesh, Representation facet_type,
     							 const std::string& specular_colour,
     							 const double ambient_intensity,
     							 const double shininess,
-    							 const double transparency)
+    							 const double transparency,
+    							 const std::string& background_colour)
 {
   // Convert string and numpy into in array
   std::vector<double> material_colour = get_material_vector(diffusive_colour,
   	  emissive_colour, specular_colour, ambient_intensity, shininess, transparency);
+
+  // FIXME: Check the bg colour as well
+  std::vector<double> bg = hex2rgb(background_colour);  
 
   if (check_material_colour(material_colour))
   {
@@ -185,7 +195,7 @@ std::string X3DOM::html(const Mesh& mesh, Representation facet_type,
 	pugi::xml_node body_node = node.append_child("body");
 
 	// Add X3D XML data to 'body' node
-	x3dom_xml(body_node, mesh, facet_type, viewpoint_switch, material_colour);
+	x3dom_xml(body_node, mesh, facet_type, viewpoint_switch, material_colour, bg);
 
 	// Now append four viewpoints
 	// FIXME Write Function to do this
@@ -319,7 +329,7 @@ pugi::xml_node X3DOM::add_x3d(pugi::xml_node& xml_node)
 //-----------------------------------------------------------------------------
 void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
     Representation facet_type, Viewpoints viewpoint_switch,
-    const std::vector<double>& material_colour)
+    const std::vector<double>& material_colour, const std::vector<double>& bg)
 {
   // Check that mesh is embedded in 2D or 3D
   const std::size_t gdim = mesh.geometry().dim();
@@ -347,7 +357,7 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
 
   // Add boilerplate XML no X3D node, adjusting field of view to the
   // size of the object, given by xpos
-  pugi::xml_node scene = add_xml_header(x3d_node, xpos, facet_type, viewpoint_switch, material_colour);
+  pugi::xml_node scene = add_xml_header(x3d_node, xpos, facet_type, viewpoint_switch, material_colour, bg);
   dolfin_assert(scene);
 
   // FIXME: Should this go inside add_mesh?
@@ -574,7 +584,8 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
                                      const std::vector<double>& xpos,
                                      Representation facet_type,
                                      Viewpoints viewpoint_switch,
-                                     const std::vector<double>& material_colour)
+                                     const std::vector<double>& material_colour,
+                                     const std::vector<double>& bg)
 {
   pugi::xml_node scene = x3d_node.append_child("Scene");
 
@@ -592,7 +603,10 @@ pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
 
   // Have to append Background after shape
   pugi::xml_node background = scene.append_child("Background");
-  background.append_attribute("skyColor") = "0.0 0.0 0.0";
+  std::string background_str = boost::lexical_cast<std::string>(bg[0]) + " "
+    + boost::lexical_cast<std::string>(bg[1]) + " "
+    + boost::lexical_cast<std::string>(bg[2]);
+  background.append_attribute("skyColor") = background_str.c_str();
 
   // Append viewpoint after shape
   add_viewpoint_xml_nodes(scene, xpos, viewpoint_switch);

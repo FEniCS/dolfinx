@@ -62,7 +62,8 @@ namespace dolfin
 					const std::string& specular_colour,
 					const double ambient_intensity,
 					const double shininess,
-					const double transparency);    				
+					const double transparency,
+					const std::string& background_colour);    				
 
     /// Return X3D string for a Mesh
     static std::string str(const Mesh& mesh, Representation facet_type,
@@ -71,7 +72,8 @@ namespace dolfin
         							 const std::string& specular_colour,
         							 const double ambient_intensity,
         							 const double shininess,
-        							 const double transparency);
+        							 const double transparency,
+        							 const std::string& background_colour);
 
     /// Return HTML string with embedded X3D for a Mesh
     // If Viewpoint not declared view all
@@ -91,7 +93,8 @@ namespace dolfin
 					const std::string& specular_colour,
 					const double ambient_intensity,
 					const double shininess,
-					const double transparency);
+					const double transparency,
+					const std::string& background_colour);
 
 	static std::string html(const Mesh& mesh, Representation facet_type, 
         Viewpoints viewpoint_switch, const std::string& diffusive_colour,
@@ -99,7 +102,8 @@ namespace dolfin
         							 const std::string& specular_colour,
         							 const double ambient_intensity,
         							 const double shininess,
-        							 const double transparency);
+        							 const double transparency,
+        							 const std::string& background_colour);
 
     // FIXME: Add option for Material Colour?
     // static std::string html(const Mesh& mesh, Representation facet_type, 
@@ -138,7 +142,7 @@ namespace dolfin
     // Add X3DOM mesh data to XML node
     static void x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
       Representation facet_type, Viewpoints viewpoint_switch, 
-      const std::vector<double>& material_colour);
+      const std::vector<double>& material_colour, const std::vector<double>& bg);
 
     // Get mesh dimensions and viewpoint distance
     static std::vector<double> mesh_min_max(const Mesh& mesh);
@@ -157,7 +161,9 @@ namespace dolfin
                                          const std::vector<double>& xpos,
                                          Representation facet_type, 
                                          Viewpoints viewpoint_switch,
-                                         const std::vector<double>& material_colour);
+                                         const std::vector<double>& material_colour,
+                                         const std::vector<double>& bg);
+    
    	// Add control tags options for html
 	static void add_viewpoint_control_option(pugi::xml_node& viewpoint_control, std::string viewpoint);
     
