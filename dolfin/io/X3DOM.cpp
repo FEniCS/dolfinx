@@ -38,10 +38,6 @@ using namespace dolfin;
 //   return "Hello World";
 // }
 
-std::string X3DOM::get_array(X3DOMParams& para)
-{
-  return para.diffusive_colour;
-}
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh)
 {

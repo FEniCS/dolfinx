@@ -63,7 +63,6 @@ namespace dolfin
   public:
   	// This simple thing doesn't work..??
   	// static std::string get_array(std::vector<double> myvec);
-    static std::string get_array(X3DOMParams& para);
 
     /// Return X3D string for a Mesh, default colour and viewpoints
     static std::string str(const Mesh& mesh);
