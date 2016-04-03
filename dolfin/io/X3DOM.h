@@ -44,15 +44,15 @@ namespace dolfin
     // Fixed viewpoint options
     enum class Viewpoints {On, Off};    
 
-    const Representation& set_representation;
-    const Viewpoints& set_viewpoint_switch;
-    const std::string& set_diffusive_colour;
-    const std::string& set_emissive_colour;
-    const std::string& set_specular_colour;
-    const double& set_ambient_intensity;
-    const double& set_shininess;
-    const double& set_transparency;
-    const std::string& set_background_colour;
+    Representation set_representation;
+    Viewpoints set_viewpoint_switch;
+    std::string set_diffusive_colour;
+    std::string set_emissive_colour;
+    std::string set_specular_colour;
+    double set_ambient_intensity;
+    double set_shininess;
+    double set_transparency;
+    std::string set_background_colour;
   };
 
   /// This class implements output of meshes to X3DOM XML or HTML or
