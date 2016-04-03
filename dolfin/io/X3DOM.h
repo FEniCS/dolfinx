@@ -65,18 +65,6 @@ namespace dolfin
   	// static std::string get_array(std::vector<double> myvec);
     static std::string get_array(X3DOMParams& para);
 
-  	// Default value for material colour control
-  	// "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0
-  	// Default value for background colour control
-  	// "FFFFFF"
-
-    // X3DOM representation type: facet for solid facets, and
-    // edge for edges
-    enum class Representation {Surface, SurfaceWithEdges, Wireframe};
-
-    // Fixed viewpoint options
-    enum class Viewpoints {On, Off};
-
     /// Return X3D string for a Mesh, default colour and viewpoints
     static std::string str(const Mesh& mesh, Representation facet_type);
 
