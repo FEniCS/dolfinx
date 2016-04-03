@@ -51,11 +51,21 @@ namespace dolfin
 
 	/// Return X3D string for a Mesh, default viewpoints
     static std::string str(const Mesh& mesh, Representation facet_type,
-    				const std::vector<double>& material_colour);
+					const std::string& diffusive_colour,
+					const std::string& emissive_colour,
+					const std::string& specular_colour,
+					const double ambient_intensity,
+					const double shininess,
+					const double transparency);    				
 
     /// Return X3D string for a Mesh
     static std::string str(const Mesh& mesh, Representation facet_type,
-        Viewpoints viewpoint_switch, const std::vector<double>& material_colour);
+        Viewpoints viewpoint_switch, const std::string& diffusive_colour,
+        							 const std::string& emissive_colour,
+        							 const std::string& specular_colour,
+        							 const double ambient_intensity,
+        							 const double shininess,
+        							 const double transparency);
 
     /// Return HTML string with embedded X3D for a Mesh
     // If Viewpoint not declared view all

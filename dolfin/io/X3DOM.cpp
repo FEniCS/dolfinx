@@ -41,41 +41,65 @@ using namespace dolfin;
 std::string X3DOM::str(const Mesh& mesh, Representation facet_type)
 {
   // Default values for material properties
-  const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
+  // const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
 
-  return str(mesh, facet_type, Viewpoints::On, material_colour);
+  return str(mesh, facet_type, Viewpoints::On, "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0);
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
         Viewpoints viewpoint_switch)
 {
   // Default values for material properties
-  const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
+  // const std::vector<double> material_colour = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.2, 0.2, 0.2, 0.4, 0.8, 0.0};
 
-  return str(mesh, facet_type, viewpoint_switch, material_colour);
-}
-std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
-        const std::vector<double>& material_colour)
-{
-  return str(mesh, facet_type, Viewpoints::On, material_colour);
+  return str(mesh, facet_type, Viewpoints::On, "B3B3B3", "B3B3B3", "333333", 0.4, 0.8, 0.0);
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
-        Viewpoints viewpoint_switch, const std::vector<double>& material_colour)
+					const std::string& diffusive_colour,
+					const std::string& emissive_colour,
+					const std::string& specular_colour,
+					const double ambient_intensity,
+					const double shininess,
+					const double transparency)
 {
-  // Create empty pugi XML doc
-  pugi::xml_document xml_doc;
+  return str(mesh, facet_type, Viewpoints::On, diffusive_colour, 
+  	emissive_colour, specular_colour, ambient_intensity, shininess, transparency);
+}
+//-----------------------------------------------------------------------------
+std::string X3DOM::str(const Mesh& mesh, Representation facet_type,
+        Viewpoints viewpoint_switch, const std::string& diffusive_colour,
+        							 const std::string& emissive_colour,
+        							 const std::string& specular_colour,
+        							 const double ambient_intensity,
+        							 const double shininess,
+        							 const double transparency)
+{
+  // Convert string and numpy into in array
+  std::vector<double> material_colour = get_material_vector(diffusive_colour,
+  	  emissive_colour, specular_colour, ambient_intensity, shininess, transparency);
 
-  // Build X3D XML and add to XML doc
-  x3dom_xml(xml_doc, mesh, facet_type, viewpoint_switch, material_colour);
+  // Check material vector
+  if (check_material_colour(material_colour))  
+  {
+	// Create empty pugi XML doc
+	pugi::xml_document xml_doc;
 
-  // Save XML doc to stringstream
-  std::stringstream s;
-  const std::string indent = "  ";
-  xml_doc.save(s, indent.c_str());
+	// Build X3D XML and add to XML doc
+	x3dom_xml(xml_doc, mesh, facet_type, viewpoint_switch, material_colour);
 
-  // Return string
-  return s.str();
+	// Save XML doc to stringstream
+	std::stringstream s;
+	const std::string indent = "  ";
+	xml_doc.save(s, indent.c_str());
+
+	// Return string
+	return s.str();
+  }
+  else
+  {
+  	return "";
+  }
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh, Representation facet_type)
