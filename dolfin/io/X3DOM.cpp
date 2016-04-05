@@ -67,7 +67,7 @@ std::string X3DOM::str(const Mesh& mesh, X3DParameters parameters)
 
     // Build X3D XML and add to XML doc
     x3dom_xml(xml_doc, mesh, parameters.representation,
-              parameters.viewpoint_switch, material_colour, bg);
+              parameters.show_viewpoint_buttons, material_colour, bg);
 
     // Save XML doc to stringstream
     std::stringstream s;
@@ -143,11 +143,11 @@ std::string X3DOM::html(const Mesh& mesh, X3DParameters parameters)
 
     // Add X3D XML data to 'body' node
     x3dom_xml(body_node, mesh, parameters.representation,
-              parameters.viewpoint_switch, material_colour, bg);
+              parameters.show_viewpoint_buttons, material_colour, bg);
 
     // Now append four viewpoints
     // FIXME Write Function to do this
-    if (parameters.viewpoint_switch == X3DParameters::Viewpoints::on)
+    if (parameters.show_viewpoint_buttons)
     {
       // Add viewpoint control node
       pugi::xml_node viewpoint_control = body_node.append_child("div");
@@ -294,7 +294,7 @@ pugi::xml_node X3DOM::add_x3d(pugi::xml_node& xml_node)
 //-----------------------------------------------------------------------------
 void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
                       X3DParameters::Representation representation,
-                      X3DParameters::Viewpoints viewpoint_switch,
+                      bool show_viewpoint_buttons,
                       const std::vector<double>& material_colour,
                       const std::vector<double>& bg)
 {
@@ -325,7 +325,8 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
   // Add boilerplate XML no X3D node, adjusting field of view to the
   // size of the object, given by xpos
   pugi::xml_node scene = add_xml_header(x3d_node, xpos, representation,
-                                        viewpoint_switch, material_colour, bg);
+                                        show_viewpoint_buttons,
+                                        material_colour, bg);
   dolfin_assert(scene);
 
   // FIXME: Should this go inside add_mesh?
@@ -555,7 +556,7 @@ pugi::xml_node
 X3DOM::add_xml_header(pugi::xml_node& x3d_node,
                       const std::vector<double>& xpos,
                       X3DParameters::Representation representation,
-                      X3DParameters::Viewpoints viewpoint_switch,
+                      bool show_viewpoint_buttons,
                       const std::vector<double>& material_colour,
                       const std::vector<double>& bg)
 {
@@ -581,7 +582,7 @@ X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   background.append_attribute("skyColor") = background_str.c_str();
 
   // Append viewpoint after shape
-  add_viewpoint_xml_nodes(scene, xpos, viewpoint_switch);
+  add_viewpoint_xml_nodes(scene, xpos, show_viewpoint_buttons);
 
   // Append ambient light
   pugi::xml_node ambient_light = scene.append_child("DirectionalLight");
@@ -595,16 +596,15 @@ void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control,
                                          std::string vp)
 {
   std::string onclick_str = "document.getElementById('" + vp + "').setAttribute('set_bind','true');";
-  pugi::xml_node viewpoint_option = viewpoint_control.append_child("button");
-  viewpoint_option.append_attribute("onclick") = onclick_str.c_str();
-  viewpoint_option.append_attribute("style") = "display: block";
-  viewpoint_option.append_child(pugi::node_pcdata).set_value(vp.c_str());
+  pugi::xml_node viewpoint_buttons = viewpoint_control.append_child("button");
+  viewpoint_buttons.append_attribute("onclick") = onclick_str.c_str();
+  viewpoint_buttons.append_attribute("style") = "display: block";
+  viewpoint_buttons.append_child(pugi::node_pcdata).set_value(vp.c_str());
 }
 //-----------------------------------------------------------------------------
-void
-X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene,
-                               const std::vector<double>& xpos,
-                               X3DParameters::Viewpoints viewpoint_switch)
+void X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene,
+                                    const std::vector<double>& xpos,
+                                    bool show_viewpoint_buttons)
 {
   // FIXME: make it even shorter
   // This is center of rotation
@@ -613,7 +613,7 @@ X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene,
     + boost::lexical_cast<std::string>(xpos[1]) + " "
     + boost::lexical_cast<std::string>(xpos[2]);
 
-  if (viewpoint_switch == X3DParameters::Viewpoints::on)
+  if (show_viewpoint_buttons)
   {
     // Top viewpoint
     generate_viewpoint_nodes(xml_scene, 0, center_of_rotation, xpos);
@@ -728,19 +728,19 @@ void X3DOM::add_shape_node(pugi::xml_node& x3d_scene,
     + boost::lexical_cast<std::string>(mat_col[1]) + " "
     + boost::lexical_cast<std::string>(mat_col[2]);
 
-  // Emmissive Colour
+  // Emmissive colour
   std::string emmissive_col =
     boost::lexical_cast<std::string>(mat_col[3]) + " "
     + boost::lexical_cast<std::string>(mat_col[4]) + " "
     + boost::lexical_cast<std::string>(mat_col[5]);
 
-  // Specular Colour
+  // Specular colour
   std::string specular_col =
     boost::lexical_cast<std::string>(mat_col[6]) + " "
     + boost::lexical_cast<std::string>(mat_col[7]) + " "
     + boost::lexical_cast<std::string>(mat_col[8]);
 
-  // Ambien Intensity
+  // Ambient intensity
   std::string ambient = boost::lexical_cast<std::string>(mat_col[9]);
 
   // Shininess

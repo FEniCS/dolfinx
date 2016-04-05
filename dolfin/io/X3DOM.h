@@ -25,23 +25,20 @@
 
 namespace dolfin
 {
-  // Developer note: X3DParameters is declared outside the X3DOM
-  // class because SWIG cannot wrap nested classes.
 
   /// Class data to store X3DOM view parameters.
   struct X3DParameters
   {
+    // Developer note: X3DParameters is declared outside the X3DOM
+    // class because SWIG cannot wrap nested classes.
 
     // X3DOM representation type: facet for solid facets, and edge for
     // edges
     enum class Representation {surface, surface_with_edges, wireframe};
 
-    // Fixed viewpoint options
-    enum class Viewpoints {on, off};
-
     X3DParameters()
       : representation(Representation::surface_with_edges),
-        viewpoint_switch(Viewpoints::on),
+        show_viewpoint_buttons(true),
         diffusive_colour("B3B3B3"),
         emissive_colour("B3B3B3"),
         specular_colour("333333"),
@@ -54,7 +51,7 @@ namespace dolfin
     }
 
     Representation representation;
-    Viewpoints viewpoint_switch;
+    bool show_viewpoint_buttons;
     std::string diffusive_colour, emissive_colour, specular_colour;
     double ambient_intensity, shininess, transparency;
     std::string background_colour;
@@ -111,7 +108,7 @@ namespace dolfin
     // Add X3DOM mesh data to XML node
     static void x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
                           X3DParameters::Representation facet_type,
-                          X3DParameters::Viewpoints viewpoint_switch,
+                          bool show_viewpoint_buttons,
                           const std::vector<double>& material_colour,
                           const std::vector<double>& bg);
 
@@ -133,7 +130,7 @@ namespace dolfin
     add_xml_header(pugi::xml_node& xml_node,
                    const std::vector<double>& xpos,
                    X3DParameters::Representation facet_type,
-                   X3DParameters::Viewpoints viewpoint_switch,
+                   bool show_viewpoint_button,
                    const std::vector<double>& material_colour,
                    const std::vector<double>& bg);
 
@@ -145,7 +142,7 @@ namespace dolfin
     static void
     add_viewpoint_xml_nodes(pugi::xml_node& xml_scene,
                             const std::vector<double>& xpos,
-                            X3DParameters::Viewpoints viewpoint_switch);
+                            bool show_viewpoint_buttons);
 
     // Generate viewpoint nodes
     static void generate_viewpoint_nodes(pugi::xml_node& xml_scene,
