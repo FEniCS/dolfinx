@@ -59,9 +59,10 @@ namespace dolfin
     }
 
     std::array<double, 3> get_background_colour_array() const
-    {
-      return background_colour;
-    }
+    { return background_colour; }
+
+    void set_background_colour_array(std::array<double, 3> rgb)
+    { background_colour = rgb; }
 
     std::vector<double> get_background_colour() const
     {

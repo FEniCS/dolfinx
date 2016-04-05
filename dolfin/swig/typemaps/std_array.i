@@ -1,5 +1,5 @@
 /* -*- C -*- */
-// Copyright (C) 2009 Johan Hake
+// Copyright (C) 2009-2016 Johan Hake and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,24 +15,16 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2009-08-31
-// Last changed: 2014-12-15
 
 //=============================================================================
-// In this file we declare what types that should be able to be passed using a
-// std::vector typemap.
-//
-// We want to avoid using SWIGs own typemaps in std_vector.i,
-// as we really just want to be able to pass argument, in and a out, using
-// std::vector. We do not want to work with a proxy type of std::vector<Foo>,
-// as the interface reflects the C++ type and is hence not 'pythonic'.
-//=============================================================================
+// In this file we declare what types that should be able to be passed
+// using a std::array typemap.
+// =============================================================================
 
 //-----------------------------------------------------------------------------
-// Declare a dummy vector class
-// This makes SWIG aware of the template type
-//-----------------------------------------------------------------------------
+// Declare a dummy array class. This makes SWIG aware of the template
+// type
+// -----------------------------------------------------------------------------
 namespace std
 {
   template <typename T> class array
@@ -41,13 +33,13 @@ namespace std
 }
 
 //-----------------------------------------------------------------------------
-// Macro for defining an argout typemap for a std::vector of primitives
+// Macro for defining an argout typemap for a std::array of primitives
 // The typemap returns a NumPy array of the primitive
 //
 // TYPE       : The primitive type
 // TYPE_UPPER : The SWIG specific name of the type used in the array type checks
 //              values SWIG use: INT32 for integer, DOUBLE for double aso.
-// ARG_NAME   : The name of the argument that will be maped as an 'argout' argument
+// ARG_NAME   : The name of the argument that will be mapped as an 'argout' argument
 // NUMPY_TYPE : The type of the NumPy array that will be returned
 //-----------------------------------------------------------------------------
 %define ARGOUT_TYPEMAP_STD_ARRAY_OF_PRIMITIVES(TYPE, DIM, TYPE_UPPER, \
@@ -58,7 +50,6 @@ namespace std
 //-----------------------------------------------------------------------------
 %typemap (in,numinputs=0) std::array<TYPE, DIM>& ARG_NAME (std::array<TYPE, DIM> array_temp)
 {
-  // ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME, NUMPY_TYPE)
   $1 = &array_temp;
 }
 
@@ -135,7 +126,7 @@ namespace std
     tmp_array[i] = value;
     Py_DECREF(item);
   }
-  $1 = tmp_vec;
+  $1 = tmp_array;
 }
 %enddef
 
@@ -201,3 +192,6 @@ namespace std
 //-----------------------------------------------------------------------------
 ARGOUT_TYPEMAP_STD_ARRAY_OF_PRIMITIVES(double, 3, DOUBLE, , NPY_DOUBLE)
 OUT_TYPEMAP_STD_ARRAY_OF_PRIMITIVES(double, 3, NPY_DOUBLE)
+ //IN_TYPEMAP_STD_ARRAY_OF_PRIMITIVES(double, 3, DOUBLE, , NPY_DOUBLE, double,
+ //                                  float_)
+PY_SEQUENCE_OF_SCALARS_TO_ARRAY_OF_PRIMITIVES(double, 3, DOUBLE, rgb, double, -1)
