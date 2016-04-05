@@ -41,20 +41,23 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh)
 {
-  X3DOMParams params;
-  return str(mesh, params);
+  X3DOMParameters parameters;
+  return str(mesh, parameters);
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::str(const Mesh& mesh, X3DOMParams params)
+std::string X3DOM::str(const Mesh& mesh, X3DOMParameters parameters)
 {
   // Convert string and numpy into in array
   std::vector<double> material_colour
-    = get_material_vector(params.diffusive_colour, params.emissive_colour,
-                          params.specular_colour, params.ambient_intensity,
-                          params.shininess, params.transparency);
+    = get_material_vector(parameters.diffusive_colour,
+                          parameters.emissive_colour,
+                          parameters.specular_colour,
+                          parameters.ambient_intensity,
+                          parameters.shininess,
+                          parameters.transparency);
 
   // FIXME: Check the bg colour as well
-  std::vector<double> bg = hex2rgb(params.background_colour);
+  std::vector<double> bg = hex2rgb(parameters.background_colour);
 
   // Check material vector
   if (check_colour(material_colour, bg))
@@ -63,8 +66,8 @@ std::string X3DOM::str(const Mesh& mesh, X3DOMParams params)
     pugi::xml_document xml_doc;
 
     // Build X3D XML and add to XML doc
-    x3dom_xml(xml_doc, mesh, params.representation, params.viewpoint_switch,
-              material_colour, bg);
+    x3dom_xml(xml_doc, mesh, parameters.representation,
+              parameters.viewpoint_switch, material_colour, bg);
 
     // Save XML doc to stringstream
     std::stringstream s;
@@ -80,20 +83,23 @@ std::string X3DOM::str(const Mesh& mesh, X3DOMParams params)
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh)
 {
-  X3DOMParams params;
-  return html(mesh, params);
+  X3DOMParameters parameters;
+  return html(mesh, parameters);
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::html(const Mesh& mesh, X3DOMParams params)
+std::string X3DOM::html(const Mesh& mesh, X3DOMParameters parameters)
 {
   // Convert string and numpy into in array
   std::vector<double> material_colour
-    = get_material_vector(params.diffusive_colour, params.emissive_colour,
-                          params.specular_colour, params.ambient_intensity,
-                          params.shininess, params.transparency);
+    = get_material_vector(parameters.diffusive_colour,
+                          parameters.emissive_colour,
+                          parameters.specular_colour,
+                          parameters.ambient_intensity,
+                          parameters.shininess,
+                          parameters.transparency);
 
   // FIXME: Check the bg colour as well
-  std::vector<double> bg = hex2rgb(params.background_colour);
+  std::vector<double> bg = hex2rgb(parameters.background_colour);
 
   if (check_colour(material_colour, bg))
   {
@@ -136,11 +142,12 @@ std::string X3DOM::html(const Mesh& mesh, X3DOMParams params)
     pugi::xml_node body_node = node.append_child("body");
 
     // Add X3D XML data to 'body' node
-    x3dom_xml(body_node, mesh, params.representation, params.viewpoint_switch, material_colour, bg);
+    x3dom_xml(body_node, mesh, parameters.representation,
+              parameters.viewpoint_switch, material_colour, bg);
 
     // Now append four viewpoints
     // FIXME Write Function to do this
-    if (params.viewpoint_switch == X3DOMParams::Viewpoints::On)
+    if (parameters.viewpoint_switch == X3DOMParameters::Viewpoints::on)
     {
       // Add viewpoint control node
       pugi::xml_node viewpoint_control = body_node.append_child("div");
@@ -160,7 +167,8 @@ std::string X3DOM::html(const Mesh& mesh, X3DOMParams params)
     // Save XML doc to stringstream, without default XML header
     std::stringstream s;
     const std::string indent = "  ";
-    xml_doc.save(s, indent.c_str(), pugi::format_default | pugi::format_no_declaration);
+    xml_doc.save(s, indent.c_str(),
+                 pugi::format_default | pugi::format_no_declaration);
 
     // Return string
     return s.str();
@@ -186,24 +194,28 @@ std::vector<double> X3DOM::hex2rgb(const std::string hex)
   return result;
 }
 //-----------------------------------------------------------------------------
-std::vector<double> X3DOM::get_material_vector(const std::string diffusive_colour,
-                                               const std::string emissive_colour,
-                                               const std::string specular_colour,
-                                               const double ambient_intensity,
-                                               const double shininess,
-                                               const double transparency)
+std::vector<double>
+X3DOM::get_material_vector(const std::string diffusive_colour,
+                           const std::string emissive_colour,
+                           const std::string specular_colour,
+                           const double ambient_intensity,
+                           const double shininess,
+                           const double transparency)
 {
   std::vector<double> result;
   std::vector<double> tmp;
 
   // Diffusive colour
-  tmp = hex2rgb(diffusive_colour); result.insert(result.end(), tmp.begin(), tmp.end());
+  tmp = hex2rgb(diffusive_colour);
+  result.insert(result.end(), tmp.begin(), tmp.end());
 
   // Emissive colour
-  tmp = hex2rgb(emissive_colour); result.insert(result.end(), tmp.begin(), tmp.end());
+  tmp = hex2rgb(emissive_colour);
+  result.insert(result.end(), tmp.begin(), tmp.end());
 
   // Specular colour
-  tmp = hex2rgb(specular_colour); result.insert(result.end(), tmp.begin(), tmp.end());
+  tmp = hex2rgb(specular_colour);
+  result.insert(result.end(), tmp.begin(), tmp.end());
 
   // Append the last properties
   result.push_back(ambient_intensity);
@@ -229,7 +241,7 @@ bool X3DOM::check_colour(const std::vector<double>& material_colour,
       // Now check if all elements in the vector is correct value
       for (int i = 0; i < 12; i++)
       {
-        if ((material_colour[i] > 1.0) || (material_colour[i] < 0.0))
+        if (material_colour[i] > 1.0 or material_colour[i] < 0.0)
         {
           dolfin_error("X3DOM.cpp",
                        "assigning material properties",
@@ -240,7 +252,7 @@ bool X3DOM::check_colour(const std::vector<double>& material_colour,
       // Now for bg
       for (int i = 0; i < 3; i++)
       {
-        if ((bg[i] > 1.0) || (bg[i] < 0.0))
+        if (bg[i] > 1.0 or bg[i] < 0.0)
         {
           dolfin_error("X3DOM.cpp",
                        "assigning material properties",
@@ -281,8 +293,8 @@ pugi::xml_node X3DOM::add_x3d(pugi::xml_node& xml_node)
 }
 //-----------------------------------------------------------------------------
 void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
-                      X3DOMParams::Representation representation,
-                      X3DOMParams::Viewpoints viewpoint_switch,
+                      X3DOMParameters::Representation representation,
+                      X3DOMParameters::Viewpoints viewpoint_switch,
                       const std::vector<double>& material_colour,
                       const std::vector<double>& bg)
 {
@@ -322,15 +334,15 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
 
   // Add mesh to 'shape' XML node, based on shape id
   // First case is polygon
-  if (representation==X3DOMParams::Representation::SurfaceWithEdges)
+  if (representation==X3DOMParameters::Representation::surface_with_edges)
   {
     // First add the facet
-    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", representation_to_x3d_str(X3DOMParams::Representation::Surface).c_str());
-    add_mesh(shape, mesh, X3DOMParams::Representation::Surface);
+    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", representation_to_x3d_str(X3DOMParameters::Representation::surface).c_str());
+    add_mesh(shape, mesh, X3DOMParameters::Representation::surface);
 
     // Then the edge
-    shape = scene.find_child_by_attribute("Shape", "id", representation_to_x3d_str(X3DOMParams::Representation::Wireframe).c_str());
-    add_mesh(shape, mesh, X3DOMParams::Representation::Wireframe);
+    shape = scene.find_child_by_attribute("Shape", "id", representation_to_x3d_str(X3DOMParameters::Representation::wireframe).c_str());
+    add_mesh(shape, mesh, X3DOMParameters::Representation::wireframe);
   }
   else
   {
@@ -417,7 +429,7 @@ std::set<int> X3DOM::surface_vertex_indices(const Mesh& mesh)
   {
     // If in 3D, only output exterior faces
     // FIXME: num_global_entities not working in serial
-    if (tdim == 2 || f->num_global_entities(tdim) == 1)
+    if (tdim == 2 or f->num_global_entities(tdim) == 1)
     {
       for (VertexIterator v(*f); !v.end(); ++v)
         vertex_set.insert(v->index());
@@ -428,7 +440,7 @@ std::set<int> X3DOM::surface_vertex_indices(const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
-                     X3DOMParams::Representation representation)
+                     X3DOMParameters::Representation representation)
 {
   // Get vertex indices
   const std::set<int> vertex_indices = surface_vertex_indices(mesh);
@@ -442,7 +454,7 @@ void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
   // Collect up topology of the local part of the mesh which should be
   // displayed
   std::vector<int> local_output;
-  if (representation == X3DOMParams::Representation::Wireframe)
+  if (representation == X3DOMParameters::Representation::wireframe)
   {
     for (EdgeIterator e(mesh); !e.end(); ++e)
     {
@@ -464,24 +476,26 @@ void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
         for (VertexIterator v(*e); !v.end(); ++v)
         {
           // Find position of vertex in set
-          std::size_t pos = std::distance(vertex_indices.begin(), vertex_indices.find(v->index()));
+          std::size_t pos = std::distance(vertex_indices.begin(),
+                                          vertex_indices.find(v->index()));
           local_output.push_back(pos + offset);
         }
         local_output.push_back(-1);
       }
     }
   }
-  else if (representation == X3DOMParams::Representation::Surface)
+  else if (representation == X3DOMParameters::Representation::surface)
   {
     // Output faces
     for (FaceIterator f(mesh); !f.end(); ++f)
     {
-      if (tdim == 2 || f->num_global_entities(tdim) == 1)
+      if (tdim == 2 or f->num_global_entities(tdim) == 1)
       {
         for (VertexIterator v(*f); !v.end(); ++v)
         {
           // Find position of vertex in set
-          std::size_t pos = std::distance(vertex_indices.begin(), vertex_indices.find(v->index()));
+          std::size_t pos = std::distance(vertex_indices.begin(),
+                                          vertex_indices.find(v->index()));
           local_output.push_back(pos + offset);
         }
         local_output.push_back(-1);
@@ -539,24 +553,24 @@ void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
 //-----------------------------------------------------------------------------
 pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
                                      const std::vector<double>& xpos,
-                                     X3DOMParams::Representation representation,
-                                     X3DOMParams::Viewpoints viewpoint_switch,
+                                     X3DOMParameters::Representation representation,
+                                     X3DOMParameters::Viewpoints viewpoint_switch,
                                      const std::vector<double>& material_colour,
                                      const std::vector<double>& bg)
 {
   pugi::xml_node scene = x3d_node.append_child("Scene");
 
-  if (representation == X3DOMParams::Representation::SurfaceWithEdges)
+  if (representation == X3DOMParameters::Representation::surface_with_edges)
   {
     // Append edge mesh first
     // So the facet will be on top after being appended later
-    add_shape_node(scene, X3DOMParams::Representation::Wireframe, material_colour);
-    add_shape_node(scene, X3DOMParams::Representation::Surface, material_colour);
+    add_shape_node(scene, X3DOMParameters::Representation::wireframe,
+                   material_colour);
+    add_shape_node(scene, X3DOMParameters::Representation::surface,
+                   material_colour);
   }
   else
-  {
     add_shape_node(scene, representation, material_colour);
-  }
 
   // Have to append Background after shape
   pugi::xml_node background = scene.append_child("Background");
@@ -586,16 +600,19 @@ void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control,
   viewpoint_option.append_child(pugi::node_pcdata).set_value(vp.c_str());
 }
 //-----------------------------------------------------------------------------
-void X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene,
-          const std::vector<double>& xpos, X3DOMParams::Viewpoints viewpoint_switch)
+void
+X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene,
+                               const std::vector<double>& xpos,
+                               X3DOMParameters::Viewpoints viewpoint_switch)
 {
   // FIXME: make it even shorter
   // This is center of rotation
-  std::string center_of_rotation = boost::lexical_cast<std::string>(xpos[0]) + " "
+  std::string center_of_rotation
+    = boost::lexical_cast<std::string>(xpos[0]) + " "
     + boost::lexical_cast<std::string>(xpos[1]) + " "
     + boost::lexical_cast<std::string>(xpos[2]);
 
-  if (viewpoint_switch == X3DOMParams::Viewpoints::On)
+  if (viewpoint_switch == X3DOMParameters::Viewpoints::on)
   {
     // Top viewpoint
     generate_viewpoint_nodes(xml_scene, 0, center_of_rotation, xpos);
@@ -687,18 +704,20 @@ void X3DOM::generate_viewpoint_nodes(pugi::xml_node& xml_scene,
 
   viewpoint_node.append_attribute("orientation") = ori.c_str();
   viewpoint_node.append_attribute("fieldOfView") = "0.785398";
-  viewpoint_node.append_attribute("centerOfRotation") = center_of_rotation.c_str();
+  viewpoint_node.append_attribute("centerOfRotation")
+    = center_of_rotation.c_str();
 
   viewpoint_node.append_attribute("zNear") = "-1";
   viewpoint_node.append_attribute("zFar") = "-1";
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_shape_node(pugi::xml_node& x3d_scene,
-                           X3DOMParams::Representation representation,
+                           X3DOMParameters::Representation representation,
                            const std::vector<double>& mat_col)
 {
   pugi::xml_node shape = x3d_scene.prepend_child("Shape");
-  shape.append_attribute("id") = representation_to_x3d_str(representation).c_str();
+  shape.append_attribute("id")
+    = representation_to_x3d_str(representation).c_str();
   pugi::xml_node appearance = shape.append_child("Appearance");
 
   // Getting the string for these colour properties
@@ -756,7 +775,6 @@ std::string X3DOM::color_palette(const size_t palette)
       colour << r << " " << g << " " << b << " ";
     }
     break;
-
   case 2:
     for (int i = 0; i < 256; ++i)
     {
@@ -772,7 +790,6 @@ std::string X3DOM::color_palette(const size_t palette)
       colour << r/tot << " " << g/tot << " " << b/tot << " ";
     }
     break;
-
   default:
     for (int i = 0; i < 256 ; ++i)
     {
@@ -787,14 +804,14 @@ std::string X3DOM::color_palette(const size_t palette)
   return colour.str();
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::representation_to_x3d_str(X3DOMParams::Representation representation)
+std::string X3DOM::representation_to_x3d_str(X3DOMParameters::Representation representation)
 {
   // Map from enum to X3D string
   switch (representation)
   {
-  case X3DOMParams::Representation::Surface:
+  case X3DOMParameters::Representation::surface:
     return "IndexedFaceSet";
-  case X3DOMParams::Representation::Wireframe:
+  case X3DOMParameters::Representation::wireframe:
     return "IndexedLineSet";
   default:
     dolfin_error("X3DOM.cpp",
@@ -804,327 +821,3 @@ std::string X3DOM::representation_to_x3d_str(X3DOMParams::Representation represe
   }
 }
 //-----------------------------------------------------------------------------
-/*
-std::string X3DOM::str(const MeshFunction<std::size_t>& meshfunction,
-                       const std::string representation, const size_t palette)
-{
-  // Get mesh
-  dolfin_assert(meshfunction.mesh());
-  const Mesh& mesh = *meshfunction.mesh();
-
-  // Ensure connectivity has been computed
-  mesh.init(mesh.topology().dim() - 1 , mesh.topology().dim());
-
-  // Mesh geometric dimension
-  const std::size_t gdim = mesh.geometry().dim();
-
-  // Mesh topological dimension
-  const std::size_t tdim = mesh.topology().dim();
-
-  // MeshFunction dimension
-  const std::size_t cell_dim = meshfunction.dim();
-
-  // Check that MeshFunction dimension is handled
-  if (cell_dim != tdim)
-  {
-    dolfin_error("X3DFile.cpp",
-                 "output meshfunction",
-                 "Can only output CellFunction at present");
-  }
-
-  // Check that X3D type is appropriate
-  if (cell_dim == tdim && representation == "IndexedLineSet")
-  {
-    dolfin_error("X3DFile.cpp",
-                 "output meshfunction",
-                 "Cannot output CellFunction with Edge mesh");
-  }
-
-  // Check that mesh is in 2D or 3D
-  if (gdim !=2 && gdim !=3)
-  {
-    dolfin_error("X3DFile.cpp",
-                 "output mesh",
-                 "X3D will only output 2D or 3D meshes");
-  }
-
-  // Pointer to MeshFunction data
-  const std::size_t* values = meshfunction.values();
-
-  // Get min/max values of MeshFunction
-  std::size_t minval = *std::min_element(values, values + meshfunction.size());
-  minval = MPI::min(mesh.mpi_comm(), minval);
-  std::size_t maxval = *std::max_element(values, values + meshfunction.size());
-  maxval = MPI::max(mesh.mpi_comm(), maxval);
-  double dval;
-  if (maxval == minval)
-    dval = 1.0;
-  else
-    dval = 255.0/(double)(maxval - minval);
-
-  // Get mesh min/max  dimensions and viewpoint
-  const std::vector<double> xpos = mesh_min_max(mesh);
-
-  // Get MPI details
-  const std::size_t rank = dolfin::MPI::rank(mesh.mpi_comm());
-
-  // Create pugi xml document
-  pugi::xml_document xml_doc;
-
-  // Write XML header
-  if (MPI::rank(mesh.mpi_comm()) == 0)
-    add_xml_header(xml_doc, xpos, representation);
-
-  // Make a set of the indices we wish to use. In 3D, we are ignoring
-  // all interior facets, so reducing the number of vertices
-  // substantially
-  const std::vector<std::size_t> vecindex = vertex_index(mesh);
-
-  // Write vertices
-  add_mesh(xml_doc, mesh, vecindex, representation);
-
-  // Iterate over mesh facets
-  std::vector<unsigned int> local_output;
-  for (FaceIterator f(mesh); !f.end(); ++f)
-  {
-    // Check if topological dimension is 2, or if we have a boundary
-    // facet in 3D
-    if (tdim == 2 || f->num_global_entities(tdim) == 1)
-    {
-      // Get cell connected to facet
-      CellIterator cell(*f);
-
-      // Write mesh function value to string stream
-      local_output.push_back((unsigned int)
-                             ((meshfunction[*cell] - minval)*dval));
-    }
-  }
-
-  // Gather up data on zero
-  std::vector<unsigned int> gathered_output;
-  MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
-
-  // Export string on root process
-  if (rank == 0)
-  {
-    pugi::xml_node indexed_face_set = xml_doc.child("X3D").child("Scene").child("Shape").child(representation_to_x3d_str(representation));
-    indexed_face_set.append_attribute("colorPerVertex") = "false";
-
-    std::stringstream str_output;
-    for (std::vector<unsigned int>::iterator val = gathered_output.begin();
-         val != gathered_output.end(); ++val)
-    {
-      str_output << *val << " ";
-    }
-
-    indexed_face_set.append_attribute("colorIndex") = str_output.str().c_str();
-
-    // Output palette
-    pugi::xml_node color = indexed_face_set.append_child("Color");
-    color.append_attribute("color") = color_palette(palette).c_str();
-    // xml_doc.save_file(_filename.c_str(), "  ");
-  }
-  // Output string
-  std::stringstream ss;
-  xml_doc.save(ss, "  ");
-  return ss.str();
-}
-*/
-//-----------------------------------------------------------------------------
-/*
-std::string X3DOM::str(const Function& u,
-                       const std::string representation, const size_t palette)
-{
-  dolfin_assert(u.function_space()->mesh());
-  const Mesh& mesh = *u.function_space()->mesh();
-
-  // Mesh geometric and topological dimensions
-  const std::size_t gdim = mesh.geometry().dim();
-  const std::size_t tdim = mesh.topology().dim();
-
-  if (gdim !=2 && gdim !=3)
-  {
-    dolfin_error("X3DFile.cpp",
-                 "output mesh",
-                 "X3D will only output 2D or 3D meshes");
-  }
-
-  // Build mesh connectivity
-  mesh.init(tdim - 1 , tdim);
-
-  dolfin_assert(u.function_space()->dofmap());
-  const GenericDofMap& dofmap = *u.function_space()->dofmap();
-
-  // Only allow scalar fields
-  if (u.value_rank() > 1)
-  {
-    dolfin_error("X3DFile.cpp",
-                 "write X3D",
-                 "Can only handle scalar and vector Functions");
-  }
-
-  if (u.value_rank() == 1)
-    warning("X3DFile outputs scalar magnitude of vector field");
-
-  // Only allow vertex centered data
-  const bool vertex_data = (dofmap.max_element_dofs() != 1);
-  if (!vertex_data)
-  {
-    dolfin_error("X3DFile.cpp",
-                 "write X3D",
-                 "Can only handle vertex-based Function at present");
-  }
-
-  // Compute vertex data values
-  std::vector<double> data_values;
-  u.compute_vertex_values(data_values, mesh);
-
-  // Normalise data values
-  if (u.value_rank() == 1)
-  {
-    std::vector<double> magnitude;
-    const std::size_t num_vertices = mesh.num_vertices();
-    for (std::size_t i = 0; i < num_vertices ; ++i)
-    {
-      double val = 0.0;
-      for (std::size_t j = 0; j < u.value_size() ; j++)
-        val += pow(data_values[i + j*num_vertices], 2.0);
-      val = sqrt(val);
-      magnitude.push_back(val);
-    }
-    data_values.resize(magnitude.size());
-    std::copy(magnitude.begin(), magnitude.end(), data_values.begin());
-  }
-
-  // Create pugi document
-  pugi::xml_document xml_doc;
-
-  // Get mesh mix/max dimensions and write XML header
-  const std::vector<double> xpos = mesh_min_max(mesh);
-  add_xml_header(xml_doc, xpos, representation);
-
-  // Get indices of vertices on mesh surface
-  const std::set<int> surface_vertices = vertex_index(mesh);
-  const std::vector<std::size_t> surface_vertices_vec(surface_vertices.begin(),
-                                                      surface_vertices.end());
-
-  // Write vertices and vertex data to XML file
-  add_mesh(xml_doc, mesh, surface_vertices_vec, representation);
-  add_values_to_xml(xml_doc, mesh, surface_vertices_vec,
-                    data_values, representation, palette);
-
-  // Output string
-  std::stringstream ss;
-  if (MPI::rank(mesh.mpi_comm()) == 0)
-    xml_doc.save(ss, "  ");
-  return ss.str();
-}
-*/
-//-----------------------------------------------------------------------------
-/*
-std::string X3DOM::html_str(const MeshFunction<std::size_t>& meshfunction,
-                            const std::string representation, const size_t palette)
-{
-  // Return html string for HTML
-  std::string start_str = "<html> \n"
-                          "    <head> \n"
-                          "        <script type='text/javascript' src='http://www.x3dom.org/download/x3dom.js'> </script> \n"
-                          "        <link rel='stylesheet' type='text/css' href='http://www.x3dom.org/download/x3dom.css'></link> \n"
-                          "    </head> \n"
-                          "</html> \n"
-                          "\n"
-                          "<body>\n";
-
-  std::stringstream ss;
-  ss << start_str << xml_str(meshfunction, representation, palette) << "</body>";
-
-  return ss.str();
-}
-*/
-//-----------------------------------------------------------------------------
-/*
-void X3DOM::add_values_to_xml(pugi::xml_node& xml_doc, const Mesh& mesh,
-                              const std::vector<std::size_t>& vecindex,
-                              const std::vector<double>& data_values,
-                              Representation representation, const std::size_t palette)
-{
-  const std::size_t tdim = mesh.topology().dim();
-
-  double minval = *std::min_element(data_values.begin(), data_values.end());
-  minval = MPI::min(mesh.mpi_comm(), minval);
-  double maxval = *std::max_element(data_values.begin(), data_values.end());
-  maxval = MPI::max(mesh.mpi_comm(), maxval);
-
-  double scale = 0.0;
-  if (maxval == minval)
-    scale = 1.0;
-  else
-    scale = 255.0/(maxval - minval);
-
-  std::vector<int> local_output;
-  if (representation == X3DOMParams::Representation::Wireframe)
-  {
-    for (EdgeIterator e(mesh); !e.end(); ++e)
-    {
-      bool allow_edge = (tdim == 2);
-
-      // If one of the faces connected to this edge is external, then
-      // output the edge
-      if (!allow_edge)
-      {
-        for (FaceIterator f(*e); !f.end(); ++f)
-        {
-          if (f->num_global_entities(tdim) == 1)
-            allow_edge = true;
-        }
-      }
-
-      if (allow_edge)
-      {
-        for (VertexIterator v(*e); !v.end(); ++v)
-        {
-          local_output.push_back((int)((data_values[v->index()] - minval)
-                                       *scale));
-        }
-        local_output.push_back(-1);
-      }
-    }
-  }
-  else if (representation == X3DOMParams::Representation::Surface)
-  {
-    // Output faces
-    for (FaceIterator f(mesh); !f.end(); ++f)
-    {
-      if (tdim == 2 || f->num_global_entities(tdim) == 1)
-      {
-        for (VertexIterator v(*f); !v.end(); ++v)
-        {
-          local_output.push_back((int)((data_values[v->index()] - minval)
-                                       *scale));
-        }
-        local_output.push_back(-1);
-      }
-    }
-  }
-
-  // Gather up on zero
-  std::vector<int> gathered_output;
-  dolfin::MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
-  if (dolfin::MPI::rank(mesh.mpi_comm()) == 0)
-  {
-    // FIXME: Break this line up
-    pugi::xml_node indexed_face_set
-      = xml_doc.child("X3D").child("Scene").child("Shape").child(representation_to_x3d_str(representation).c_str());
-    indexed_face_set.append_attribute("colorPerVertex") = "true";
-
-    std::stringstream str_output;
-    for (auto val : gathered_output)
-      str_output << val << " ";
-    indexed_face_set.append_attribute("colorIndex") = str_output.str().c_str();
-
-    // Output colour palette
-    pugi::xml_node color = indexed_face_set.append_child("Color");
-    color.append_attribute("color") = color_palette(palette).c_str();
-  }
-}
-*/
