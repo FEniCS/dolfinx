@@ -18,6 +18,7 @@
 #ifndef __DOLFIN_X3DOM_H
 #define __DOLFIN_X3DOM_H
 
+#include <array>
 #include <set>
 #include <string>
 #include <vector>
@@ -32,10 +33,10 @@ namespace dolfin
     // Developer note: X3DParameters is declared outside the X3DOM
     // class because SWIG cannot wrap nested classes.
 
-    // X3DOM representation type: facet for solid facets, and edge for
-    // edges
+    /// X3DOM representation type
     enum class Representation {surface, surface_with_edges, wireframe};
 
+    /// Constructor (with default parameter settings)
     X3DParameters()
       : representation(Representation::surface_with_edges),
         show_viewpoint_buttons(true),
@@ -50,10 +51,19 @@ namespace dolfin
       // Do nothing
     }
 
+    /// Surface, surface with edges or wireframe
     Representation representation;
+
+    /// Toggle view point buttons
     bool show_viewpoint_buttons;
+
+    // TODO: document
     std::string diffusive_colour, emissive_colour, specular_colour;
+
+    // TODO: document
     double ambient_intensity, shininess, transparency;
+
+    /// Background colour
     std::string background_colour;
   };
 
@@ -64,9 +74,6 @@ namespace dolfin
   class X3DOM
   {
   public:
-
-    // This simple thing doesn't work..??
-    // static std::string get_array(std::vector<double> myvec);
 
     /// Return X3D string for a Mesh, default colour and viewpoints
     static std::string str(const Mesh& mesh);
@@ -83,7 +90,7 @@ namespace dolfin
   private:
 
     // Return RGB colour from hex string
-    static std::vector<double> hex2rgb(const std::string hex);
+    static std::array<double, 3> hex_to_rgb(const std::string hex);
 
     // Return vector from input materials
     static std::vector<double>
@@ -96,7 +103,7 @@ namespace dolfin
 
     // Check the colour vectors
     static bool check_colour(const std::vector<double>& material_colour,
-                             const std::vector<double>& bg);
+                             const std::array<double, 3> bg);
 
     // Add X3D doctype (an XML document should have no more than one
     // doc_type node)
@@ -110,7 +117,7 @@ namespace dolfin
                           X3DParameters::Representation facet_type,
                           bool show_viewpoint_buttons,
                           const std::vector<double>& material_colour,
-                          const std::vector<double>& bg);
+                          const std::array<double, 3> bg);
 
     // Get mesh dimensions and viewpoint distance
     static std::vector<double> mesh_min_max(const Mesh& mesh);
@@ -132,7 +139,7 @@ namespace dolfin
                    X3DParameters::Representation facet_type,
                    bool show_viewpoint_button,
                    const std::vector<double>& material_colour,
-                   const std::vector<double>& bg);
+                   const std::array<double, 3> bg);
 
     // Add control tags options for html
     static void add_viewpoint_control_option(pugi::xml_node& viewpoint_control,
@@ -160,8 +167,7 @@ namespace dolfin
     static std::string color_palette(const size_t pal);
 
     // Generate X3D string from facet_type
-    static std::string
-    representation_to_x3d_str(X3DParameters::Representation facet_type);
+    static std::string x3d_str(X3DParameters::Representation facet_type);
 
   };
 

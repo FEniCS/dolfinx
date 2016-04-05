@@ -32,12 +32,6 @@
 
 using namespace dolfin;
 
-// Why is this not working...??
-// std::string X3DOM::get_array(std::vector<double> myvec)
-// {
-//   return "Hello World";
-// }
-
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh)
 {
@@ -47,7 +41,8 @@ std::string X3DOM::str(const Mesh& mesh)
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, X3DParameters parameters)
 {
-  // Convert string and numpy into in array
+  // FIXME: make this a map
+  // Collect colour parameters into a vector
   std::vector<double> material_colour
     = get_material_vector(parameters.diffusive_colour,
                           parameters.emissive_colour,
@@ -57,7 +52,7 @@ std::string X3DOM::str(const Mesh& mesh, X3DParameters parameters)
                           parameters.transparency);
 
   // FIXME: Check the bg colour as well
-  std::vector<double> bg = hex2rgb(parameters.background_colour);
+  std::array<double, 3> bg = hex_to_rgb(parameters.background_colour);
 
   // Check material vector
   if (check_colour(material_colour, bg))
@@ -99,7 +94,7 @@ std::string X3DOM::html(const Mesh& mesh, X3DParameters parameters)
                           parameters.transparency);
 
   // FIXME: Check the bg colour as well
-  std::vector<double> bg = hex2rgb(parameters.background_colour);
+  std::array<double, 3> bg = hex_to_rgb(parameters.background_colour);
 
   if (check_colour(material_colour, bg))
   {
@@ -177,21 +172,20 @@ std::string X3DOM::html(const Mesh& mesh, X3DParameters parameters)
     return std::string();
 }
 //-----------------------------------------------------------------------------
-std::vector<double> X3DOM::hex2rgb(const std::string hex)
+std::array<double, 3> X3DOM::hex_to_rgb(const std::string hex)
 {
   // FIXME: Check the condition of hex string
-  std::vector<double> result;
+  std::array<double, 3> rgb;
 
   // Get hex number
   int num = std::stoi(hex, 0, 16);
 
   // Then get RGB
-  int tmp;
-  tmp = num/0x10000; result.push_back( (double)tmp/255.0 );
-  tmp = (num / 0x100) % 0x100; result.push_back( (double)tmp/255.0 );
-  tmp = num % 0x100; result.push_back( (double)tmp/255.0 );
+  rgb[0] = (num/0x10000)/255.0;
+  rgb[1] = ((num/0x100) % 0x100)/255.0;
+  rgb[2] = (num % 0x100)/255.0;
 
-  return result;
+  return rgb;
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
@@ -203,18 +197,18 @@ X3DOM::get_material_vector(const std::string diffusive_colour,
                            const double transparency)
 {
   std::vector<double> result;
-  std::vector<double> tmp;
+  std::array<double, 3> tmp;
 
   // Diffusive colour
-  tmp = hex2rgb(diffusive_colour);
+  tmp = hex_to_rgb(diffusive_colour);
   result.insert(result.end(), tmp.begin(), tmp.end());
 
   // Emissive colour
-  tmp = hex2rgb(emissive_colour);
+  tmp = hex_to_rgb(emissive_colour);
   result.insert(result.end(), tmp.begin(), tmp.end());
 
   // Specular colour
-  tmp = hex2rgb(specular_colour);
+  tmp = hex_to_rgb(specular_colour);
   result.insert(result.end(), tmp.begin(), tmp.end());
 
   // Append the last properties
@@ -226,7 +220,7 @@ X3DOM::get_material_vector(const std::string diffusive_colour,
 }
 //-----------------------------------------------------------------------------
 bool X3DOM::check_colour(const std::vector<double>& material_colour,
-                         const std::vector<double>& bg)
+                         const std::array<double, 3> bg)
 {
   // Check if colour is correct size
   if ((material_colour.size() != 12) || (bg.size() != 3))
@@ -296,7 +290,7 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
                       X3DParameters::Representation representation,
                       bool show_viewpoint_buttons,
                       const std::vector<double>& material_colour,
-                      const std::vector<double>& bg)
+                      const std::array<double, 3> bg)
 {
   // Check that mesh is embedded in 2D or 3D
   const std::size_t gdim = mesh.geometry().dim();
@@ -338,16 +332,16 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
   if (representation == X3DParameters::Representation::surface_with_edges)
   {
     // First add the facet
-    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", representation_to_x3d_str(X3DParameters::Representation::surface).c_str());
+    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", x3d_str(X3DParameters::Representation::surface).c_str());
     add_mesh(shape, mesh, X3DParameters::Representation::surface);
 
     // Then the edge
-    shape = scene.find_child_by_attribute("Shape", "id", representation_to_x3d_str(X3DParameters::Representation::wireframe).c_str());
+    shape = scene.find_child_by_attribute("Shape", "id", x3d_str(X3DParameters::Representation::wireframe).c_str());
     add_mesh(shape, mesh, X3DParameters::Representation::wireframe);
   }
   else
   {
-    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", representation_to_x3d_str(representation).c_str());
+    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", x3d_str(representation).c_str());
     add_mesh(shape, mesh, representation);
   }
 
@@ -513,7 +507,7 @@ void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
   if (rank == 0)
   {
     // Add edges node
-    indexed_face_set = xml_node.append_child(representation_to_x3d_str(representation).c_str());
+    indexed_face_set = xml_node.append_child(x3d_str(representation).c_str());
     indexed_face_set.append_attribute("solid") = "false";
 
     // Add data to edges node
@@ -558,7 +552,7 @@ X3DOM::add_xml_header(pugi::xml_node& x3d_node,
                       X3DParameters::Representation representation,
                       bool show_viewpoint_buttons,
                       const std::vector<double>& material_colour,
-                      const std::vector<double>& bg)
+                      const std::array<double, 3> bg)
 {
   pugi::xml_node scene = x3d_node.append_child("Scene");
 
@@ -595,7 +589,8 @@ X3DOM::add_xml_header(pugi::xml_node& x3d_node,
 void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control,
                                          std::string vp)
 {
-  std::string onclick_str = "document.getElementById('" + vp + "').setAttribute('set_bind','true');";
+  std::string onclick_str
+    = "document.getElementById('" + vp + "').setAttribute('set_bind','true');";
   pugi::xml_node viewpoint_buttons = viewpoint_control.append_child("button");
   viewpoint_buttons.append_attribute("onclick") = onclick_str.c_str();
   viewpoint_buttons.append_attribute("style") = "display: block";
@@ -634,7 +629,7 @@ void X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene,
     generate_viewpoint_nodes(xml_scene, 5, center_of_rotation, xpos);
 
     // Default viewpoint
-    generate_viewpoint_nodes(xml_scene, 6, center_of_rotation, xpos);    
+    generate_viewpoint_nodes(xml_scene, 6, center_of_rotation, xpos);
   }
   else // Just generate the default view
   {
@@ -703,7 +698,7 @@ void X3DOM::generate_viewpoint_nodes(pugi::xml_node& xml_scene,
     pos = boost::lexical_cast<std::string>(xpos[0]+0.7071067812*(xpos[3]-xpos[2])) + " "
       + boost::lexical_cast<std::string>(xpos[1]+0.7071067812*(xpos[3]-xpos[2])) + " "
       + boost::lexical_cast<std::string>(xpos[2]+0.7071067812*(xpos[3]-xpos[2]));
-    break;       
+    break;
   default:
     break;
   }
@@ -727,8 +722,7 @@ void X3DOM::add_shape_node(pugi::xml_node& x3d_scene,
                            const std::vector<double>& mat_col)
 {
   pugi::xml_node shape = x3d_scene.prepend_child("Shape");
-  shape.append_attribute("id")
-    = representation_to_x3d_str(representation).c_str();
+  shape.append_attribute("id") = x3d_str(representation).c_str();
   pugi::xml_node appearance = shape.append_child("Appearance");
 
   // Getting the string for these colour properties
@@ -815,7 +809,7 @@ std::string X3DOM::color_palette(const size_t palette)
   return colour.str();
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::representation_to_x3d_str(X3DParameters::Representation representation)
+std::string X3DOM::x3d_str(X3DParameters::Representation representation)
 {
   // Map from enum to X3D string
   switch (representation)
@@ -828,6 +822,8 @@ std::string X3DOM::representation_to_x3d_str(X3DParameters::Representation repre
     dolfin_error("X3DOM.cpp",
                  "mesh style",
                  "Unknown mesh output type");
+
+    // Return string to keep compiler happy
     return "error";
   }
 }
