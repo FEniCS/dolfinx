@@ -25,9 +25,13 @@
 
 namespace dolfin
 {
-  // Class data to store all of these options
-  struct X3DOMParameters
+  // Developer note: X3DParameters is declared outside the X3DOM
+  // class because SWIG cannot wrap nested classes.
+
+  /// Class data to store X3DOM view parameters.
+  struct X3DParameters
   {
+
     // X3DOM representation type: facet for solid facets, and edge for
     // edges
     enum class Representation {surface, surface_with_edges, wireframe};
@@ -35,7 +39,7 @@ namespace dolfin
     // Fixed viewpoint options
     enum class Viewpoints {on, off};
 
-    X3DOMParameters()
+    X3DParameters()
       : representation(Representation::surface_with_edges),
         viewpoint_switch(Viewpoints::on),
         diffusive_colour("B3B3B3"),
@@ -51,14 +55,11 @@ namespace dolfin
 
     Representation representation;
     Viewpoints viewpoint_switch;
-    std::string diffusive_colour;
-    std::string emissive_colour;
-    std::string specular_colour;
-    double ambient_intensity;
-    double shininess;
-    double transparency;
+    std::string diffusive_colour, emissive_colour, specular_colour;
+    double ambient_intensity, shininess, transparency;
     std::string background_colour;
   };
+
 
   /// This class implements output of meshes to X3DOM XML or HTML or
   /// string
@@ -74,13 +75,13 @@ namespace dolfin
     static std::string str(const Mesh& mesh);
 
     /// Return X3D string for a Mesh, user-defined parameters
-    static std::string str(const Mesh& mesh, X3DOMParameters param);
+    static std::string str(const Mesh& mesh, X3DParameters paramemeters);
 
     /// Return HTML string with embedded X3D, default options
     static std::string html(const Mesh& mesh);
 
     /// Return HTML string with embedded X3D, user-defined
-    static std::string html(const Mesh& mesh, X3DOMParameters param);
+    static std::string html(const Mesh& mesh, X3DParameters parameters);
 
   private:
 
@@ -109,8 +110,8 @@ namespace dolfin
 
     // Add X3DOM mesh data to XML node
     static void x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
-                          X3DOMParameters::Representation facet_type,
-                          X3DOMParameters::Viewpoints viewpoint_switch,
+                          X3DParameters::Representation facet_type,
+                          X3DParameters::Viewpoints viewpoint_switch,
                           const std::vector<double>& material_colour,
                           const std::vector<double>& bg);
 
@@ -124,15 +125,15 @@ namespace dolfin
     // or Edges (depending on the facet_type flag). In 3D, only
     // include surface Facets/Edges.
     static void add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
-                         X3DOMParameters::Representation facet_type);
+                         X3DParameters::Representation facet_type);
 
     // Add header to XML document, adjusting field of view to the size
     // of the object
     static pugi::xml_node
     add_xml_header(pugi::xml_node& xml_node,
                    const std::vector<double>& xpos,
-                   X3DOMParameters::Representation facet_type,
-                   X3DOMParameters::Viewpoints viewpoint_switch,
+                   X3DParameters::Representation facet_type,
+                   X3DParameters::Viewpoints viewpoint_switch,
                    const std::vector<double>& material_colour,
                    const std::vector<double>& bg);
 
@@ -144,7 +145,7 @@ namespace dolfin
     static void
     add_viewpoint_xml_nodes(pugi::xml_node& xml_scene,
                             const std::vector<double>& xpos,
-                            X3DOMParameters::Viewpoints viewpoint_switch);
+                            X3DParameters::Viewpoints viewpoint_switch);
 
     // Generate viewpoint nodes
     static void generate_viewpoint_nodes(pugi::xml_node& xml_scene,
@@ -155,7 +156,7 @@ namespace dolfin
     // Add shape node to XML document, and push the shape node to
     // first child
     static void add_shape_node(pugi::xml_node& x3d_scene,
-                               X3DOMParameters::Representation facet_type,
+                               X3DParameters::Representation facet_type,
                                const std::vector<double>& mat_col);
 
     // Get a string representing a color palette (pal may be 0, 1 or 2)
@@ -163,7 +164,7 @@ namespace dolfin
 
     // Generate X3D string from facet_type
     static std::string
-    representation_to_x3d_str(X3DOMParameters::Representation facet_type);
+    representation_to_x3d_str(X3DParameters::Representation facet_type);
 
   };
 

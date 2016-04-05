@@ -41,11 +41,11 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh)
 {
-  X3DOMParameters parameters;
-  return str(mesh, parameters);
+  X3DParameters default_parameters;
+  return str(mesh, default_parameters);
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::str(const Mesh& mesh, X3DOMParameters parameters)
+std::string X3DOM::str(const Mesh& mesh, X3DParameters parameters)
 {
   // Convert string and numpy into in array
   std::vector<double> material_colour
@@ -83,11 +83,11 @@ std::string X3DOM::str(const Mesh& mesh, X3DOMParameters parameters)
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh)
 {
-  X3DOMParameters parameters;
-  return html(mesh, parameters);
+  X3DParameters default_parameters;
+  return html(mesh, default_parameters);
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::html(const Mesh& mesh, X3DOMParameters parameters)
+std::string X3DOM::html(const Mesh& mesh, X3DParameters parameters)
 {
   // Convert string and numpy into in array
   std::vector<double> material_colour
@@ -147,7 +147,7 @@ std::string X3DOM::html(const Mesh& mesh, X3DOMParameters parameters)
 
     // Now append four viewpoints
     // FIXME Write Function to do this
-    if (parameters.viewpoint_switch == X3DOMParameters::Viewpoints::on)
+    if (parameters.viewpoint_switch == X3DParameters::Viewpoints::on)
     {
       // Add viewpoint control node
       pugi::xml_node viewpoint_control = body_node.append_child("div");
@@ -293,8 +293,8 @@ pugi::xml_node X3DOM::add_x3d(pugi::xml_node& xml_node)
 }
 //-----------------------------------------------------------------------------
 void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
-                      X3DOMParameters::Representation representation,
-                      X3DOMParameters::Viewpoints viewpoint_switch,
+                      X3DParameters::Representation representation,
+                      X3DParameters::Viewpoints viewpoint_switch,
                       const std::vector<double>& material_colour,
                       const std::vector<double>& bg)
 {
@@ -334,15 +334,15 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
 
   // Add mesh to 'shape' XML node, based on shape id
   // First case is polygon
-  if (representation==X3DOMParameters::Representation::surface_with_edges)
+  if (representation == X3DParameters::Representation::surface_with_edges)
   {
     // First add the facet
-    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", representation_to_x3d_str(X3DOMParameters::Representation::surface).c_str());
-    add_mesh(shape, mesh, X3DOMParameters::Representation::surface);
+    pugi::xml_node shape = scene.find_child_by_attribute("Shape", "id", representation_to_x3d_str(X3DParameters::Representation::surface).c_str());
+    add_mesh(shape, mesh, X3DParameters::Representation::surface);
 
     // Then the edge
-    shape = scene.find_child_by_attribute("Shape", "id", representation_to_x3d_str(X3DOMParameters::Representation::wireframe).c_str());
-    add_mesh(shape, mesh, X3DOMParameters::Representation::wireframe);
+    shape = scene.find_child_by_attribute("Shape", "id", representation_to_x3d_str(X3DParameters::Representation::wireframe).c_str());
+    add_mesh(shape, mesh, X3DParameters::Representation::wireframe);
   }
   else
   {
@@ -440,7 +440,7 @@ std::set<int> X3DOM::surface_vertex_indices(const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
-                     X3DOMParameters::Representation representation)
+                     X3DParameters::Representation representation)
 {
   // Get vertex indices
   const std::set<int> vertex_indices = surface_vertex_indices(mesh);
@@ -454,7 +454,7 @@ void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
   // Collect up topology of the local part of the mesh which should be
   // displayed
   std::vector<int> local_output;
-  if (representation == X3DOMParameters::Representation::wireframe)
+  if (representation == X3DParameters::Representation::wireframe)
   {
     for (EdgeIterator e(mesh); !e.end(); ++e)
     {
@@ -484,7 +484,7 @@ void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
       }
     }
   }
-  else if (representation == X3DOMParameters::Representation::surface)
+  else if (representation == X3DParameters::Representation::surface)
   {
     // Output faces
     for (FaceIterator f(mesh); !f.end(); ++f)
@@ -551,22 +551,23 @@ void X3DOM::add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-pugi::xml_node X3DOM::add_xml_header(pugi::xml_node& x3d_node,
-                                     const std::vector<double>& xpos,
-                                     X3DOMParameters::Representation representation,
-                                     X3DOMParameters::Viewpoints viewpoint_switch,
-                                     const std::vector<double>& material_colour,
-                                     const std::vector<double>& bg)
+pugi::xml_node
+X3DOM::add_xml_header(pugi::xml_node& x3d_node,
+                      const std::vector<double>& xpos,
+                      X3DParameters::Representation representation,
+                      X3DParameters::Viewpoints viewpoint_switch,
+                      const std::vector<double>& material_colour,
+                      const std::vector<double>& bg)
 {
   pugi::xml_node scene = x3d_node.append_child("Scene");
 
-  if (representation == X3DOMParameters::Representation::surface_with_edges)
+  if (representation == X3DParameters::Representation::surface_with_edges)
   {
-    // Append edge mesh first
-    // So the facet will be on top after being appended later
-    add_shape_node(scene, X3DOMParameters::Representation::wireframe,
+    // Append edge mesh first so the facet will be on top after being
+    // appended later
+    add_shape_node(scene, X3DParameters::Representation::wireframe,
                    material_colour);
-    add_shape_node(scene, X3DOMParameters::Representation::surface,
+    add_shape_node(scene, X3DParameters::Representation::surface,
                    material_colour);
   }
   else
@@ -603,7 +604,7 @@ void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control,
 void
 X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene,
                                const std::vector<double>& xpos,
-                               X3DOMParameters::Viewpoints viewpoint_switch)
+                               X3DParameters::Viewpoints viewpoint_switch)
 {
   // FIXME: make it even shorter
   // This is center of rotation
@@ -612,7 +613,7 @@ X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene,
     + boost::lexical_cast<std::string>(xpos[1]) + " "
     + boost::lexical_cast<std::string>(xpos[2]);
 
-  if (viewpoint_switch == X3DOMParameters::Viewpoints::on)
+  if (viewpoint_switch == X3DParameters::Viewpoints::on)
   {
     // Top viewpoint
     generate_viewpoint_nodes(xml_scene, 0, center_of_rotation, xpos);
@@ -712,7 +713,7 @@ void X3DOM::generate_viewpoint_nodes(pugi::xml_node& xml_scene,
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_shape_node(pugi::xml_node& x3d_scene,
-                           X3DOMParameters::Representation representation,
+                           X3DParameters::Representation representation,
                            const std::vector<double>& mat_col)
 {
   pugi::xml_node shape = x3d_scene.prepend_child("Shape");
@@ -804,14 +805,14 @@ std::string X3DOM::color_palette(const size_t palette)
   return colour.str();
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::representation_to_x3d_str(X3DOMParameters::Representation representation)
+std::string X3DOM::representation_to_x3d_str(X3DParameters::Representation representation)
 {
   // Map from enum to X3D string
   switch (representation)
   {
-  case X3DOMParameters::Representation::surface:
+  case X3DParameters::Representation::surface:
     return "IndexedFaceSet";
-  case X3DOMParameters::Representation::wireframe:
+  case X3DParameters::Representation::wireframe:
     return "IndexedLineSet";
   default:
     dolfin_error("X3DOM.cpp",
