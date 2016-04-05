@@ -632,11 +632,14 @@ void X3DOM::add_viewpoint_xml_nodes(pugi::xml_node& xml_scene,
 
     // Front viewpoint
     generate_viewpoint_nodes(xml_scene, 5, center_of_rotation, xpos);
+
+    // Default viewpoint
+    generate_viewpoint_nodes(xml_scene, 6, center_of_rotation, xpos);    
   }
-  else // Just generate the front view
+  else // Just generate the default view
   {
-    // Front viewpoint
-    generate_viewpoint_nodes(xml_scene, 5, center_of_rotation, xpos);
+    // Default viewpoint
+    generate_viewpoint_nodes(xml_scene, 6, center_of_rotation, xpos);
   }
 }
 //-----------------------------------------------------------------------------
@@ -694,6 +697,13 @@ void X3DOM::generate_viewpoint_nodes(pugi::xml_node& xml_scene,
       + boost::lexical_cast<std::string>(xpos[1]) + " "
       + boost::lexical_cast<std::string>(xpos[3]);
     break;
+  case 6: // default
+    vp_str = "Default";
+    ori = "-0.7071067812 0.7071067812 0 1";
+    pos = boost::lexical_cast<std::string>(xpos[0]+0.7071067812*(xpos[3]-xpos[2])) + " "
+      + boost::lexical_cast<std::string>(xpos[1]+0.7071067812*(xpos[3]-xpos[2])) + " "
+      + boost::lexical_cast<std::string>(xpos[2]+0.7071067812*(xpos[3]-xpos[2]));
+    break;       
   default:
     break;
   }
