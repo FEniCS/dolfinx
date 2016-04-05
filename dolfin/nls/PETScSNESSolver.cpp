@@ -216,9 +216,15 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
   // Set some options from the parameters
   if (report)
   {
-    SNESMonitorSet(_snes, SNESMonitorDefault,
-                   PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes)),
-                   NULL);
+    PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes));
+    PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
+    PetscViewerAndFormat *vf;
+    PetscViewerAndFormatCreate(viewer,format,&vf);
+    PetscObjectDereference((PetscObject)viewer);
+    SNESMonitorSet(_snes,
+                   (PetscErrorCode (*)(SNES,PetscInt,PetscReal,void*)) SNESMonitorDefault,
+                   vf,
+                   (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
   }
 
   // Set the bounds, if any
@@ -421,9 +427,15 @@ void PETScSNESSolver::set_linear_solver_parameters()
 
   if (parameters["report"])
   {
-    KSPMonitorSet(ksp, KSPMonitorDefault,
-                   PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
-                   NULL);
+    PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
+    PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
+    PetscViewerAndFormat *vf;
+    ierr = PetscViewerAndFormatCreate(viewer,format,&vf);
+    ierr = PetscObjectDereference((PetscObject)viewer);
+    ierr = KSPMonitorSet(ksp,
+                         (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorDefault,
+                         vf,
+                         (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
   }
   const std::string linear_solver  = parameters["linear_solver"];
   const std::string preconditioner = parameters["preconditioner"];
@@ -456,9 +468,15 @@ void PETScSNESSolver::set_linear_solver_parameters()
 
     if (krylov_parameters["monitor_convergence"])
     {
-      KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm,
-                       PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
-                       NULL);
+      PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
+      PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
+      PetscViewerAndFormat *vf;
+      ierr = PetscViewerAndFormatCreate(viewer,format,&vf);
+      ierr = PetscObjectDereference((PetscObject)viewer);
+      ierr = KSPMonitorSet(ksp,
+                         (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
+                         vf,
+                         (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
     }
 
     // Set tolerances
