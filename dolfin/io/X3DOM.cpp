@@ -41,28 +41,15 @@ std::string X3DOM::str(const Mesh& mesh)
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, X3DParameters parameters)
 {
-  // FIXME: make this a map
-  // Collect colour parameters into a vector
-  std::vector<double> material_colour
-    = get_material_vector(parameters.diffusive_colour,
-                          parameters.emissive_colour,
-                          parameters.specular_colour,
-                          parameters.ambient_intensity,
-                          parameters.shininess,
-                          parameters.transparency);
-
-  // FIXME: Check the bg colour as well
-  std::array<double, 3> bg = hex_to_rgb(parameters.background_colour);
-
   // Check material vector
-  if (check_colour(material_colour, bg))
+  //if (check_colour(material_colour, bg))
   {
     // Create empty pugi XML doc
     pugi::xml_document xml_doc;
 
     // Build X3D XML and add to XML doc
     x3dom_xml(xml_doc, mesh, parameters.representation,
-              parameters.show_viewpoint_buttons, material_colour, bg);
+              parameters.show_viewpoint_buttons, parameters.background_colour);
 
     // Save XML doc to stringstream
     std::stringstream s;
@@ -72,8 +59,8 @@ std::string X3DOM::str(const Mesh& mesh, X3DParameters parameters)
     // Return string
     return s.str();
   }
-  else
-    return std::string();
+  //else
+  //  return std::string();
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh)
@@ -84,19 +71,7 @@ std::string X3DOM::html(const Mesh& mesh)
 //-----------------------------------------------------------------------------
 std::string X3DOM::html(const Mesh& mesh, X3DParameters parameters)
 {
-  // Convert string and numpy into in array
-  std::vector<double> material_colour
-    = get_material_vector(parameters.diffusive_colour,
-                          parameters.emissive_colour,
-                          parameters.specular_colour,
-                          parameters.ambient_intensity,
-                          parameters.shininess,
-                          parameters.transparency);
-
-  // FIXME: Check the bg colour as well
-  std::array<double, 3> bg = hex_to_rgb(parameters.background_colour);
-
-  if (check_colour(material_colour, bg))
+  //if (check_colour(material_colour, bg))
   {
     // Create empty pugi XML doc
     pugi::xml_document xml_doc;
@@ -138,7 +113,8 @@ std::string X3DOM::html(const Mesh& mesh, X3DParameters parameters)
 
     // Add X3D XML data to 'body' node
     x3dom_xml(body_node, mesh, parameters.representation,
-              parameters.show_viewpoint_buttons, material_colour, bg);
+              parameters.show_viewpoint_buttons,
+              parameters.background_colour);
 
     // Now append four viewpoints
     // FIXME Write Function to do this
@@ -168,57 +144,11 @@ std::string X3DOM::html(const Mesh& mesh, X3DParameters parameters)
     // Return string
     return s.str();
   }
-  else
-    return std::string();
+  //else
+  //  return std::string();
 }
 //-----------------------------------------------------------------------------
-std::array<double, 3> X3DOM::hex_to_rgb(const std::string hex)
-{
-  // FIXME: Check the condition of hex string
-  std::array<double, 3> rgb;
-
-  // Get hex number
-  int num = std::stoi(hex, 0, 16);
-
-  // Then get RGB
-  rgb[0] = (num/0x10000)/255.0;
-  rgb[1] = ((num/0x100) % 0x100)/255.0;
-  rgb[2] = (num % 0x100)/255.0;
-
-  return rgb;
-}
-//-----------------------------------------------------------------------------
-std::vector<double>
-X3DOM::get_material_vector(const std::string diffusive_colour,
-                           const std::string emissive_colour,
-                           const std::string specular_colour,
-                           const double ambient_intensity,
-                           const double shininess,
-                           const double transparency)
-{
-  std::vector<double> result;
-  std::array<double, 3> tmp;
-
-  // Diffusive colour
-  tmp = hex_to_rgb(diffusive_colour);
-  result.insert(result.end(), tmp.begin(), tmp.end());
-
-  // Emissive colour
-  tmp = hex_to_rgb(emissive_colour);
-  result.insert(result.end(), tmp.begin(), tmp.end());
-
-  // Specular colour
-  tmp = hex_to_rgb(specular_colour);
-  result.insert(result.end(), tmp.begin(), tmp.end());
-
-  // Append the last properties
-  result.push_back(ambient_intensity);
-  result.push_back(shininess);
-  result.push_back(transparency);
-
-  return result;
-}
-//-----------------------------------------------------------------------------
+/*
 bool X3DOM::check_colour(const std::vector<double>& material_colour,
                          const std::array<double, 3> bg)
 {
@@ -258,6 +188,7 @@ bool X3DOM::check_colour(const std::vector<double>& material_colour,
 
   return true;
 }
+*/
 //-----------------------------------------------------------------------------
 void X3DOM::add_doctype(pugi::xml_node& xml_node)
 {
@@ -289,7 +220,6 @@ pugi::xml_node X3DOM::add_x3d(pugi::xml_node& xml_node)
 void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
                       X3DParameters::Representation representation,
                       bool show_viewpoint_buttons,
-                      const std::vector<double>& material_colour,
                       const std::array<double, 3> bg)
 {
   // Check that mesh is embedded in 2D or 3D
@@ -319,8 +249,7 @@ void X3DOM::x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
   // Add boilerplate XML no X3D node, adjusting field of view to the
   // size of the object, given by xpos
   pugi::xml_node scene = add_xml_header(x3d_node, xpos, representation,
-                                        show_viewpoint_buttons,
-                                        material_colour, bg);
+                                        show_viewpoint_buttons, bg);
   dolfin_assert(scene);
 
   // FIXME: Should this go inside add_mesh?
@@ -551,7 +480,6 @@ X3DOM::add_xml_header(pugi::xml_node& x3d_node,
                       const std::vector<double>& xpos,
                       X3DParameters::Representation representation,
                       bool show_viewpoint_buttons,
-                      const std::vector<double>& material_colour,
                       const std::array<double, 3> bg)
 {
   pugi::xml_node scene = x3d_node.append_child("Scene");
@@ -560,13 +488,11 @@ X3DOM::add_xml_header(pugi::xml_node& x3d_node,
   {
     // Append edge mesh first so the facet will be on top after being
     // appended later
-    add_shape_node(scene, X3DParameters::Representation::wireframe,
-                   material_colour);
-    add_shape_node(scene, X3DParameters::Representation::surface,
-                   material_colour);
+    add_shape_node(scene, X3DParameters::Representation::wireframe);
+    add_shape_node(scene, X3DParameters::Representation::surface);
   }
   else
-    add_shape_node(scene, representation, material_colour);
+    add_shape_node(scene, representation);
 
   // Have to append Background after shape
   pugi::xml_node background = scene.append_child("Background");
@@ -718,11 +644,12 @@ void X3DOM::generate_viewpoint_nodes(pugi::xml_node& xml_scene,
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_shape_node(pugi::xml_node& x3d_scene,
-                           X3DParameters::Representation representation,
-                           const std::vector<double>& mat_col)
+                           X3DParameters::Representation representation)
 {
   pugi::xml_node shape = x3d_scene.prepend_child("Shape");
   shape.append_attribute("id") = x3d_str(representation).c_str();
+
+  /*
   pugi::xml_node appearance = shape.append_child("Appearance");
 
   // Getting the string for these colour properties
@@ -761,6 +688,7 @@ void X3DOM::add_shape_node(pugi::xml_node& x3d_scene,
   material.append_attribute("ambientIntensity") = ambient.c_str();
   material.append_attribute("shininess") = shininess.c_str();
   material.append_attribute("transparency") = transparency.c_str();
+  */
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::color_palette(const size_t palette)

@@ -40,15 +40,33 @@ namespace dolfin
     X3DParameters()
       : representation(Representation::surface_with_edges),
         show_viewpoint_buttons(true),
-        diffusive_colour("B3B3B3"),
-        emissive_colour("B3B3B3"),
-        specular_colour("333333"),
+        diffusive_colour({0.7, 0.7, 0.7}),
+        emissive_colour({0.7, 0.7, 0.7}),
+        specular_colour({0.2, 0.2, 0.2}),
+        background_colour({1.0, 1.0, 1.0}),
         ambient_intensity(0.4),
         shininess(0.8),
-        transparency(0.0),
-        background_colour("FFFFFF")
+        transparency(0.0)
     {
       // Do nothing
+    }
+
+    void set_background_colour(std::vector<double> rgb)
+    {
+      background_colour[0] = rgb[0];
+      background_colour[0] = rgb[1];
+      background_colour[0] = rgb[2];
+    }
+
+    std::array<double, 3> get_background_colour_array() const
+    {
+      return background_colour;
+    }
+
+    std::vector<double> get_background_colour() const
+    {
+      return std::vector<double>(background_colour.begin(),
+                                 background_colour.end());
     }
 
     /// Surface, surface with edges or wireframe
@@ -58,13 +76,12 @@ namespace dolfin
     bool show_viewpoint_buttons;
 
     // TODO: document
-    std::string diffusive_colour, emissive_colour, specular_colour;
+    //std::string diffusive_colour, emissive_colour, specular_colour;
+    std::array<double , 3> diffusive_colour, emissive_colour, specular_colour,
+      background_colour;
 
     // TODO: document
     double ambient_intensity, shininess, transparency;
-
-    /// Background colour
-    std::string background_colour;
   };
 
 
@@ -89,21 +106,9 @@ namespace dolfin
 
   private:
 
-    // Return RGB colour from hex string
-    static std::array<double, 3> hex_to_rgb(const std::string hex);
-
-    // Return vector from input materials
-    static std::vector<double>
-    get_material_vector(const std::string diffusive_colour,
-                        const std::string emissive_colour,
-                        const std::string specular_colour,
-                        const double ambient_intensity,
-                        const double shininess,
-                        const double transparency);
-
     // Check the colour vectors
-    static bool check_colour(const std::vector<double>& material_colour,
-                             const std::array<double, 3> bg);
+    //static bool check_colour(const std::vector<double>& material_colour,
+    //                         const std::array<double, 3> bg);
 
     // Add X3D doctype (an XML document should have no more than one
     // doc_type node)
@@ -116,7 +121,6 @@ namespace dolfin
     static void x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
                           X3DParameters::Representation facet_type,
                           bool show_viewpoint_buttons,
-                          const std::vector<double>& material_colour,
                           const std::array<double, 3> bg);
 
     // Get mesh dimensions and viewpoint distance
@@ -138,7 +142,6 @@ namespace dolfin
                    const std::vector<double>& xpos,
                    X3DParameters::Representation facet_type,
                    bool show_viewpoint_button,
-                   const std::vector<double>& material_colour,
                    const std::array<double, 3> bg);
 
     // Add control tags options for html
@@ -160,8 +163,7 @@ namespace dolfin
     // Add shape node to XML document, and push the shape node to
     // first child
     static void add_shape_node(pugi::xml_node& x3d_scene,
-                               X3DParameters::Representation facet_type,
-                               const std::vector<double>& mat_col);
+                               X3DParameters::Representation facet_type);
 
     // Get a string representing a color palette (pal may be 0, 1 or 2)
     static std::string color_palette(const size_t pal);
