@@ -95,6 +95,9 @@ namespace dolfin
     // Check that RGB colors are valid
     static void check_rgb(std::array<double, 3>& rgb);
 
+    // Check that other material properties are valid
+    static void check_material_value(double& value);
+
     // Surface, surface with edges or wireframe
     Representation _representation;
 

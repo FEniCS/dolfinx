@@ -103,6 +103,7 @@ std::array<double, 3> X3DOMParameters::get_background_color() const
 //-----------------------------------------------------------------------------
 void X3DOMParameters::set_ambient_intensity(double intensity)
 {
+  check_material_value(intensity);
   _ambient_intensity = intensity;
 }
 //-----------------------------------------------------------------------------
@@ -113,6 +114,7 @@ double X3DOMParameters::get_ambient_intensity() const
 //-----------------------------------------------------------------------------
 void X3DOMParameters::set_shininess(double shininess)
 {
+  check_material_value(shininess);
   _shininess = shininess;
 }
 //-----------------------------------------------------------------------------
@@ -123,6 +125,7 @@ double X3DOMParameters::get_shininess() const
 //-----------------------------------------------------------------------------
 void X3DOMParameters::set_transparency(double transparency)
 {
+  check_material_value(transparency);	
   _transparency = transparency;
 }
 //-----------------------------------------------------------------------------
@@ -152,6 +155,16 @@ void X3DOMParameters::check_rgb(std::array<double, 3>& rgb)
                    "RGB components must be between 0.0 and 1.0");
     }
   }
+}
+//-----------------------------------------------------------------------------
+void X3DOMParameters::check_material_value(double& value)
+{
+	if (value < 0.0 or value > 1.0)
+	{
+      dolfin_error("X3DOM.cpp",
+                   "check validity of material properties",
+                   "Values for material properties must be between 0.0 and 1.0");
+	}
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, X3DOMParameters parameters)
