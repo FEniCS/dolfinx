@@ -40,12 +40,12 @@ namespace dolfin
     X3DParameters()
       : _representation(Representation::surface_with_edges),
         show_viewpoint_buttons(true),
-        diffusive_colour({0.7, 0.7, 0.7}),
-        emissive_colour({0.7, 0.7, 0.7}),
-        specular_colour({0.2, 0.2, 0.2}),
-        background_colour({1.0, 1.0, 1.0}),
-        _ambient_intensity(0.4),
-        _shininess(0.8),
+        _diffuse_colour({0.1, 0.1, 0.6}),
+        _emissive_colour({0.7, 0.7, 0.7}),
+        _specular_colour({0.0, 0.0, 0.0}),
+        _background_colour({0.95, 0.95, 0.95}),
+        _ambient_intensity(1.0),
+        _shininess(0.5),
         _transparency(0.0)
     {
       // Do nothing
@@ -57,34 +57,34 @@ namespace dolfin
     Representation get_representation() const
     { return _representation; }
 
-    void set_diffusive_colour(std::array<double, 3> rgb)
-    { diffusive_colour = rgb; }
+    void set_diffuse_colour(std::array<double, 3> rgb)
+    { _diffuse_colour = rgb; }
 
-    std::array<double, 3> get_diffusive_colour() const
-    { return diffusive_colour; }
+    std::array<double, 3> get_diffuse_colour() const
+    { return _diffuse_colour; }
 
     void set_emissive_colour(std::array<double, 3> rgb)
-    { emissive_colour = rgb; }
+    { _emissive_colour = rgb; }
 
     std::array<double, 3> get_emmisive_colour() const
-    { return emissive_colour; }
+    { return _emissive_colour; }
 
     void set_specular_colour(std::array<double, 3> rgb)
-    { specular_colour = rgb; }
+    { _specular_colour = rgb; }
 
     std::array<double, 3> get_specular_colour() const
-    { return specular_colour; }
+    { return _specular_colour; }
 
     void set_background_colour(std::array<double, 3> rgb)
-    { background_colour = rgb; }
+    { _background_colour = rgb; }
 
     std::array<double, 3> get_background_colour() const
-    { return background_colour; }
+    { return _background_colour; }
 
-    void set_intensity(double intensity)
+    void set_ambient_intensity(double intensity)
     { _ambient_intensity = intensity; }
 
-    double get_intensity() const
+    double get_ambient_intensity() const
     { return _ambient_intensity; }
 
     void set_shininess(double shininess)
@@ -105,7 +105,8 @@ namespace dolfin
     bool get_viewpoint_buttons() const
     { return show_viewpoint_buttons; }
 
-    //private:
+  private:
+
     // Surface, surface with edges or wireframe
     Representation _representation;
 
@@ -113,9 +114,9 @@ namespace dolfin
     bool show_viewpoint_buttons;
 
     // TODO: document
-    //std::string diffusive_colour, emissive_colour, specular_colour;
-    std::array<double , 3> diffusive_colour, emissive_colour, specular_colour,
-      background_colour;
+    // See http://doc.x3dom.org/author/Shape/Material.html
+    std::array<double, 3> _diffuse_colour, _emissive_colour, _specular_colour,
+      _background_colour;
 
     // TODO: document
     double _ambient_intensity, _shininess, _transparency;
@@ -129,17 +130,11 @@ namespace dolfin
   {
   public:
 
-    /// Return X3D string for a Mesh, default colour and viewpoints
-    //static std::string str(const Mesh& mesh);
-
-    /// Return X3D string for a Mesh, user-defined parameters
+    /// Return X3D string for a Mesh
     static std::string str(const Mesh& mesh,
                            X3DParameters paramemeters=X3DParameters());
 
-    /// Return HTML string with embedded X3D, default options
-    //static std::string html(const Mesh& mesh);
-
-    /// Return HTML string with embedded X3D, user-defined
+    /// Return HTML string with embedded X3D
     static std::string html(const Mesh& mesh,
                             X3DParameters parameters=X3DParameters());
 
@@ -155,43 +150,27 @@ namespace dolfin
     static void add_doctype(pugi::xml_node& xml_node);
 
     // Add X3D node and attributes, and return handle to node
-    static pugi::xml_node add_x3d(pugi::xml_node& xml_node);
+    static pugi::xml_node add_x3d_node(pugi::xml_node& xml_node);
 
     // Add X3DOM mesh data to XML node
-    static void x3dom_xml(pugi::xml_node& xml_node, const Mesh& mesh,
-                          X3DParameters::Representation facet_type,
-                          bool show_viewpoint_buttons,
-                          const std::array<double, 3> bg);
-
-    // Get mesh dimensions and viewpoint distance
-    static std::vector<double> mesh_min_max(const Mesh& mesh);
-
-    // Get list of vertex indices which are on surface
-    static std::set<int> surface_vertex_indices(const Mesh& mesh);
+    static void add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
+                               const X3DParameters& parameters);
 
     // Add mesh topology and geometry to XML, including either Facets
     // or Edges (depending on the facet_type flag). In 3D, only
     // include surface Facets/Edges.
-    static void add_mesh(pugi::xml_node& xml_node, const Mesh& mesh,
-                         X3DParameters::Representation facet_type);
-
-    // Add header to XML document, adjusting field of view to the size
-    // of the object
-    static pugi::xml_node
-    add_xml_header(pugi::xml_node& xml_node,
-                   const std::vector<double>& xpos,
-                   X3DParameters::Representation facet_type,
-                   bool show_viewpoint_button,
-                   const std::array<double, 3> bg);
+    static void add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
+                              const X3DParameters& parameters,
+                              bool surface);
 
     // Add control tags options for html
     static void add_viewpoint_control_option(pugi::xml_node& viewpoint_control,
                                              std::string viewpoint);
 
     // Add viewpoints to scene node (X3D)
-    static void add_viewpoint_xml_nodes(pugi::xml_node& xml_scene,
-                                        const std::vector<double>& xpos,
-                                        bool show_viewpoint_buttons);
+    static void add_viewpoint_nodes(pugi::xml_node& xml_scene,
+                                    const std::vector<double>& xpos,
+                                    bool show_viewpoint_buttons);
 
     // Add a single viewpoint node (X3D)
     static void add_viewpoint_node(pugi::xml_node& xml_scene,
@@ -199,16 +178,20 @@ namespace dolfin
                                    const std::string center_of_rotation,
                                    const std::vector<double>& xpos);
 
-    // Add shape node to XML document, and push the shape node to
-    // first child
-    static void add_shape_node(pugi::xml_node& x3d_scene,
-                               X3DParameters::Representation facet_type);
+    // Get mesh dimensions and viewpoint distance
+    static std::vector<double> mesh_min_max(const Mesh& mesh);
 
-    // Get a string representing a color palette (pal may be 0, 1 or 2)
-    static std::string color_palette(const size_t pal);
+    // Get list of vertex indices which are on surface
+    static std::set<int> surface_vertex_indices(const Mesh& mesh);
 
-    // Generate X3D string from facet_type
-    static std::string x3d_str(X3DParameters::Representation facet_type);
+    // Build topology and geometry data from a Mesh ready for X3DOM
+    // output
+    static void build_mesh_data(std::vector<int>& topology,
+                                std::vector<double>& geometry,
+                                const Mesh& mesh, bool surface);
+
+    // Return "x[0] x[1] x[2]" string from array of colour RGB
+    static std::string array_to_string3(std::array<double, 3> x);
 
   };
 
