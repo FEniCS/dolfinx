@@ -95,7 +95,8 @@ std::array<double, 3> X3DOMParameters::get_specular_color() const
 void X3DOMParameters::set_background_color(std::array<double, 3> rgb)
 {
   check_rgb(rgb);
-  _background_color = rgb; }
+  _background_color = rgb;
+}
 //-----------------------------------------------------------------------------
 std::array<double, 3> X3DOMParameters::get_background_color() const
 {
@@ -104,7 +105,7 @@ std::array<double, 3> X3DOMParameters::get_background_color() const
 //-----------------------------------------------------------------------------
 void X3DOMParameters::set_ambient_intensity(double intensity)
 {
-  check_material_value(intensity);
+  check_value_range(intensity, 0.0, 1.0);
   _ambient_intensity = intensity;
 }
 //-----------------------------------------------------------------------------
@@ -115,7 +116,7 @@ double X3DOMParameters::get_ambient_intensity() const
 //-----------------------------------------------------------------------------
 void X3DOMParameters::set_shininess(double shininess)
 {
-  check_material_value(shininess);
+  check_value_range(shininess, 0.0, 1.0);
   _shininess = shininess;
 }
 //-----------------------------------------------------------------------------
@@ -126,7 +127,7 @@ double X3DOMParameters::get_shininess() const
 //-----------------------------------------------------------------------------
 void X3DOMParameters::set_transparency(double transparency)
 {
-  check_material_value(transparency);	
+  check_value_range(transparency, 0.0, 1.0);
   _transparency = transparency;
 }
 //-----------------------------------------------------------------------------
@@ -168,14 +169,17 @@ void X3DOMParameters::check_rgb(std::array<double, 3>& rgb)
   }
 }
 //-----------------------------------------------------------------------------
-void X3DOMParameters::check_material_value(double& value)
+void X3DOMParameters::check_value_range(double value, double lower,
+                                        double upper)
 {
-	if (value < 0.0 or value > 1.0)
-	{
-      dolfin_error("X3DOM.cpp",
-                   "check validity of material properties",
-                   "Values for material properties must be between 0.0 and 1.0");
-	}
+  dolfin_assert(lower < upper);
+  if (value < lower or value > upper)
+  {
+    dolfin_error("X3DOM.cpp",
+                 "check validity of X3D properties",
+                 "Parameter outside of allowable range of (%f, %f)", lower,
+                 upper);
+  }
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, X3DOMParameters parameters)

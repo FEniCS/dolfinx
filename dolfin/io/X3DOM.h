@@ -103,11 +103,13 @@ namespace dolfin
 
   private:
 
-    // Check that RGB colors are valid
+    // Check that RGB colors are valid. Throws error if value is
+    // not invalid.
     static void check_rgb(std::array<double, 3>& rgb);
 
-    // Check that other material properties are valid
-    static void check_material_value(double& value);
+    // Check that value is valid. Throws error if value is not
+    // invalid.
+    static void check_value_range(double value, double lower, double upper);
 
     // Surface, surface with edges or wireframe
     Representation _representation;
