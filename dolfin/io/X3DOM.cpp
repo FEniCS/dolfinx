@@ -33,7 +33,20 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::string X3DOM::str(const Mesh& mesh, X3DParameters parameters)
+void X3DOMParameters::check_rgb(std::array<double, 3>& rgb)
+{
+  for (auto c : rgb)
+  {
+    if (c < 0.0 or c > 1.0)
+    {
+      dolfin_error("X3DOM.cpp",
+                   "check validity of RGB (color) values",
+                   "RGB components must be between 0.0 and 1.0");
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+std::string X3DOM::str(const Mesh& mesh, X3DOMParameters parameters)
 {
   // Create empty pugi XML doc
   pugi::xml_document xml_doc;
@@ -50,7 +63,7 @@ std::string X3DOM::str(const Mesh& mesh, X3DParameters parameters)
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::html(const Mesh& mesh, X3DParameters parameters)
+std::string X3DOM::html(const Mesh& mesh, X3DOMParameters parameters)
 {
   // Create empty pugi XML doc
   pugi::xml_document xml_doc;
@@ -148,7 +161,7 @@ pugi::xml_node X3DOM::add_x3d_node(pugi::xml_node& xml_node)
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
-                           const X3DParameters& parameters)
+                           const X3DOMParameters& parameters)
 {
   // Check that mesh is embedded in 2D or 3D
   const std::size_t gdim = mesh.geometry().dim();
@@ -166,22 +179,18 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   pugi::xml_node x3d_node = add_x3d_node(xml_node);
   dolfin_assert(x3d_node);
 
-  // Intialise facet-to-cell connectivity
-  const std::size_t tdim = mesh.geometry().dim();
-  mesh.init(tdim - 1 , tdim);
-
   // Add scene node
   pugi::xml_node scene = x3d_node.append_child("Scene");
   dolfin_assert(scene);
 
   // Add mesh to 'scene' XML node
   auto representation = parameters.get_representation();
-  if (representation == X3DParameters::Representation::surface_with_edges)
+  if (representation == X3DOMParameters::Representation::surface_with_edges)
   {
     add_mesh_data(scene, mesh, parameters, true);
     add_mesh_data(scene, mesh, parameters, false);
   }
-  else if (representation == X3DParameters::Representation::surface)
+  else if (representation == X3DOMParameters::Representation::surface)
     add_mesh_data(scene, mesh, parameters, true);
   else
     add_mesh_data(scene, mesh, parameters, false);
@@ -190,10 +199,10 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   const std::vector<double> xpos = mesh_min_max(mesh);
   add_viewpoint_nodes(scene, xpos, parameters.get_viewpoint_buttons());
 
-  // Add background colour
+  // Add background color
   pugi::xml_node background = scene.append_child("Background");
   background.append_attribute("skyColor")
-    = array_to_string3(parameters.get_background_colour()).c_str();
+    = array_to_string3(parameters.get_background_color()).c_str();
 
   // Add ambient light
   pugi::xml_node ambient_light = scene.append_child("DirectionalLight");
@@ -211,7 +220,7 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
-                          const X3DParameters& parameters,
+                          const X3DOMParameters& parameters,
                           bool surface)
 {
   // X3DOM string for surface/wireframe
@@ -231,14 +240,14 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
     // Create appearance node
     pugi::xml_node appearance_node = shape_node.append_child("Appearance");
 
-    // Append colour attributes
+    // Append color attributes
     pugi::xml_node material_node = appearance_node.append_child("Material");
     material_node.append_attribute("diffuseColor")
-      = array_to_string3(parameters.get_diffuse_colour()).c_str();
+      = array_to_string3(parameters.get_diffuse_color()).c_str();
     material_node.append_attribute("emmisiveColor")
-      = array_to_string3(parameters.get_emmisive_colour()).c_str();
+      = array_to_string3(parameters.get_emmisive_color()).c_str();
     material_node.append_attribute("specularColor")
-      = array_to_string3(parameters.get_specular_colour()).c_str();
+      = array_to_string3(parameters.get_specular_color()).c_str();
 
     // Append ??? attributes
     material_node.append_attribute("ambientIntensity") = parameters.get_ambient_intensity();
@@ -249,7 +258,7 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
     pugi::xml_node indexed_face_set = shape_node.append_child(x3d_type.c_str());
     indexed_face_set.append_attribute("solid") = "false";
 
-    // Add data to edges node
+    // Add topology data to edges node
     std::stringstream topology_str;
     for (auto c : topology)
       topology_str << c << " ";
@@ -258,7 +267,7 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
     // Add coordinate node
     pugi::xml_node coordinate = indexed_face_set.append_child("Coordinate");
 
-    // Add data to coordinate node
+    // Add geometry data to coordinate node
     std::stringstream geometry_str;
     for (auto x : geometry)
       geometry_str << x << " ";
@@ -452,13 +461,17 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
                             std::vector<double>& geometry, const Mesh& mesh,
                             bool surface)
 {
+  const std::size_t tdim = mesh.topology().dim();
+  const std::size_t gdim = mesh.geometry().dim();
+
+  // Intialise facet-to-cell connectivity
+  mesh.init(tdim - 1 , tdim);
+
   // Get vertex indices
   const std::set<int> vertex_indices = surface_vertex_indices(mesh);
 
   std::size_t offset = dolfin::MPI::global_offset(mesh.mpi_comm(),
                                                   vertex_indices.size(), true);
-  const std::size_t tdim = mesh.topology().dim();
-  const std::size_t gdim = mesh.geometry().dim();
 
   // Collect up topology of the local part of the mesh which should be
   // displayed

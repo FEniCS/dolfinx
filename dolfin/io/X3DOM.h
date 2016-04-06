@@ -24,26 +24,35 @@
 #include <vector>
 #include "pugixml.hpp"
 
+// TODO:
+// - Can we order vertices so that attribute 'solid' can be set to true?
+// - Make size (height, width) a parameter
+// - Add ambient intensity parameter
+// - Add support for Functions
+// - Add support for MeshFunctions
+
 namespace dolfin
 {
 
   /// Class data to store X3DOM view parameters.
-  struct X3DParameters
+  class X3DOMParameters
   {
-    // Developer note: X3DParameters is declared outside the X3DOM
+    // Developer note: X3DOMParameters is declared outside the X3DOM
     // class because SWIG cannot wrap nested classes.
+
+  public:
 
     /// X3DOM representation type
     enum class Representation {surface, surface_with_edges, wireframe};
 
     /// Constructor (with default parameter settings)
-    X3DParameters()
+    X3DOMParameters()
       : _representation(Representation::surface_with_edges),
-        show_viewpoint_buttons(true),
-        _diffuse_colour({0.1, 0.1, 0.6}),
-        _emissive_colour({0.7, 0.7, 0.7}),
-        _specular_colour({0.0, 0.0, 0.0}),
-        _background_colour({0.95, 0.95, 0.95}),
+        _show_viewpoints(true),
+        _diffuse_color({0.1, 0.1, 0.6}),
+        _emissive_color({0.7, 0.7, 0.7}),
+        _specular_color({0.0, 0.0, 0.0}),
+        _background_color({0.95, 0.95, 0.95}),
         _ambient_intensity(1.0),
         _shininess(0.5),
         _transparency(0.0)
@@ -57,30 +66,31 @@ namespace dolfin
     Representation get_representation() const
     { return _representation; }
 
-    void set_diffuse_colour(std::array<double, 3> rgb)
-    { _diffuse_colour = rgb; }
+    void set_diffuse_color(std::array<double, 3> rgb)
+    { check_rgb(rgb); _diffuse_color = rgb; }
 
-    std::array<double, 3> get_diffuse_colour() const
-    { return _diffuse_colour; }
+    std::array<double, 3> get_diffuse_color() const
+    { return _diffuse_color; }
 
-    void set_emissive_colour(std::array<double, 3> rgb)
-    { _emissive_colour = rgb; }
+    void set_emissive_color(std::array<double, 3> rgb)
+    { check_rgb(rgb); _emissive_color = rgb; }
 
-    std::array<double, 3> get_emmisive_colour() const
-    { return _emissive_colour; }
+    std::array<double, 3> get_emmisive_color() const
+    { return _emissive_color; }
 
-    void set_specular_colour(std::array<double, 3> rgb)
-    { _specular_colour = rgb; }
+    void set_specular_color(std::array<double, 3> rgb)
+    { check_rgb(rgb); _specular_color = rgb; }
 
-    std::array<double, 3> get_specular_colour() const
-    { return _specular_colour; }
+    std::array<double, 3> get_specular_color() const
+    { return _specular_color; }
 
-    void set_background_colour(std::array<double, 3> rgb)
-    { _background_colour = rgb; }
+    void set_background_color(std::array<double, 3> rgb)
+    { check_rgb(rgb); _background_color = rgb; }
 
-    std::array<double, 3> get_background_colour() const
-    { return _background_colour; }
+    std::array<double, 3> get_background_color() const
+    { return _background_color; }
 
+    // Range [0, 1]
     void set_ambient_intensity(double intensity)
     { _ambient_intensity = intensity; }
 
@@ -100,23 +110,26 @@ namespace dolfin
     { return _transparency; }
 
     void set_viewpoint_buttons(bool show)
-    { show_viewpoint_buttons = show; }
+    { _show_viewpoints = show; }
 
     bool get_viewpoint_buttons() const
-    { return show_viewpoint_buttons; }
+    { return _show_viewpoints; }
 
   private:
+
+    // Check that RGB colors are valid
+    static void check_rgb(std::array<double, 3>& rgb);
 
     // Surface, surface with edges or wireframe
     Representation _representation;
 
     // Toggle view point buttons
-    bool show_viewpoint_buttons;
+    bool _show_viewpoints;
 
     // TODO: document
-    // See http://doc.x3dom.org/author/Shape/Material.html
-    std::array<double, 3> _diffuse_colour, _emissive_colour, _specular_colour,
-      _background_colour;
+    // RGB colours, see http://doc.x3dom.org/author/Shape/Material.html
+    std::array<double, 3> _diffuse_color, _emissive_color, _specular_color,
+      _background_color;
 
     // TODO: document
     double _ambient_intensity, _shininess, _transparency;
@@ -132,11 +145,11 @@ namespace dolfin
 
     /// Return X3D string for a Mesh
     static std::string str(const Mesh& mesh,
-                           X3DParameters paramemeters=X3DParameters());
+                           X3DOMParameters paramemeters=X3DOMParameters());
 
     /// Return HTML string with embedded X3D
     static std::string html(const Mesh& mesh,
-                            X3DParameters parameters=X3DParameters());
+                            X3DOMParameters parameters=X3DOMParameters());
 
   private:
 
@@ -154,13 +167,13 @@ namespace dolfin
 
     // Add X3DOM mesh data to XML node
     static void add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
-                               const X3DParameters& parameters);
+                               const X3DOMParameters& parameters);
 
     // Add mesh topology and geometry to XML, including either Facets
     // or Edges (depending on the facet_type flag). In 3D, only
     // include surface Facets/Edges.
     static void add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
-                              const X3DParameters& parameters,
+                              const X3DOMParameters& parameters,
                               bool surface);
 
     // Add control tags options for html
@@ -190,7 +203,7 @@ namespace dolfin
                                 std::vector<double>& geometry,
                                 const Mesh& mesh, bool surface);
 
-    // Return "x[0] x[1] x[2]" string from array of colour RGB
+    // Return "x[0] x[1] x[2]" string from array of color RGB
     static std::string array_to_string3(std::array<double, 3> x);
 
   };
