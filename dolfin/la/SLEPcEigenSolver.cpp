@@ -111,30 +111,10 @@ void SLEPcEigenSolver::solve(std::size_t n)
 
   if (parameters["verbose"])
   {
-    /*
-    KSP ksp;
-    ST st;
-    PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_eps));
-    PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
     PetscViewerAndFormat *vf;
 
-    PetscErrorCode ierr;
-    ierr = PetscViewerAndFormatCreate(viewer, format, &vf);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PetscViewerAndFormatCreate");
-
-    ierr = PetscObjectDereference((PetscObject)viewer);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PetscObjectDereference");
-
-    ierr = KSPMonitorSet(ksp,(PetscErrorCode (*)(KSP, PetscInt, PetscReal,void*))KSPMonitorTrueResidualNorm, vf,
-                         (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
-
-    EPSMonitorSet(_eps, EPSMonitorAll, vf, PetscViewerAndFormatDestroy);
-    EPSGetST(_eps, &st);
-    STGetKSP(st, &ksp);
-    KSPMonitorSet(ksp, KSPMonitorDefault, vf, PetscViewerAndFormatDestroy);
-    EPSView(_eps, PETSC_VIEWER_STDOUT_SELF);
-    */
+    PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD, PETSC_VIEWER_DEFAULT, &vf);
+    EPSMonitorSet(_eps,(PetscErrorCode (*)(EPS,PetscInt,PetscInt,PetscScalar*,PetscScalar*,PetscReal*,PetscInt,void*))EPSMonitorFirst,vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
   }
 
   // Solve
