@@ -53,24 +53,31 @@ namespace dolfin
     /// Constructor (with default parameter settings)
     X3DOMParameters();
 
+    // Set representation of object (wireframe, surface or
+    // surface_with_edges)
     void set_representation(Representation representation);
 
     Representation get_representation() const;
 
+    // Sets the RGB color of the object
     void set_diffuse_color(std::array<double, 3> rgb);
 
+    // Get diffuse color
     std::array<double, 3> get_diffuse_color() const;
 
+    // Set the RGB colour of lines
     void set_emissive_color(std::array<double, 3> rgb);
 
-    std::array<double, 3> get_emmisive_color() const;
+    // Get the emissive color
+    std::array<double, 3> get_emissive_color() const;
 
     void set_specular_color(std::array<double, 3> rgb);
-
     std::array<double, 3> get_specular_color() const;
 
+    // Set background RGB color
     void set_background_color(std::array<double, 3> rgb);
 
+    // Get background color
     std::array<double, 3> get_background_color() const;
 
     void set_ambient_intensity(double intensity);
@@ -90,6 +97,10 @@ namespace dolfin
 
     bool get_viewpoint_buttons() const;
 
+    // Turn X3D 'stats' window on
+    void set_x3d_stats(bool show);
+    bool get_x3d_stats() const;
+
   private:
 
     // Check that RGB colors are valid
@@ -108,6 +119,9 @@ namespace dolfin
 
     // TODO: document
     double _ambient_intensity, _shininess, _transparency;
+
+    // Turn X3D stats on/off
+    bool _show_x3d_stats;
   };
 
 
@@ -138,7 +152,9 @@ namespace dolfin
     static void add_doctype(pugi::xml_node& xml_node);
 
     // Add X3D node and attributes, and return handle to node (x3D)
-    static pugi::xml_node add_x3d_node(pugi::xml_node& xml_node);
+    static pugi::xml_node add_x3d_node(pugi::xml_node& xml_node,
+                                       std::array<double, 2> size,
+                                       bool show_stats);
 
     // Add X3DOM mesh data to XML node (X3D)
     static void add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,

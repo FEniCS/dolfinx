@@ -38,12 +38,13 @@ X3DOMParameters::X3DOMParameters()
   : _representation(Representation::surface_with_edges),
     _show_viewpoints(true),
     _diffuse_color({0.1, 0.1, 0.6}),
-    _emissive_color({0.7, 0.7, 0.7}),
-    _specular_color({0.0, 0.0, 0.0}),
+    _emissive_color({0.0, 0.0, 0.0}),
+    _specular_color({0.0, 0.0, 0.4}),
     _background_color({0.95, 0.95, 0.95}),
     _ambient_intensity(1.0),
     _shininess(0.5),
-    _transparency(0.0)
+    _transparency(0.0),
+    _show_x3d_stats(false)
 {
       // Do nothing
 }
@@ -75,7 +76,7 @@ void X3DOMParameters::set_emissive_color(std::array<double, 3> rgb)
   _emissive_color = rgb;
 }
 //-----------------------------------------------------------------------------
-std::array<double, 3> X3DOMParameters::get_emmisive_color() const
+std::array<double, 3> X3DOMParameters::get_emissive_color() const
 {
   return _emissive_color;
 }
@@ -140,6 +141,16 @@ bool X3DOMParameters::get_viewpoint_buttons() const
 {
   return _show_viewpoints;
 }
+//-----------------------------------------------------------------------------
+void X3DOMParameters::set_x3d_stats(bool show_stats)
+{
+  _show_x3d_stats = show_stats;
+}
+//-----------------------------------------------------------------------------
+bool X3DOMParameters::get_x3d_stats() const
+{
+  return _show_x3d_stats;
+  }
 //-----------------------------------------------------------------------------
 void X3DOMParameters::check_rgb(std::array<double, 3>& rgb)
 {
@@ -248,22 +259,26 @@ void X3DOM::add_doctype(pugi::xml_node& xml_node)
   doc_type.set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
 }
 //-----------------------------------------------------------------------------
-pugi::xml_node X3DOM::add_x3d_node(pugi::xml_node& xml_node)
+pugi::xml_node X3DOM::add_x3d_node(pugi::xml_node& xml_node,
+                                   std::array<double, 2> size, bool show_stats)
 {
-  pugi::xml_node x3d = xml_node.append_child("X3D");
+  pugi::xml_node x3d = xml_node.append_child("x3d");
   dolfin_assert(x3d);
 
   // Add on option to show rendering
-  x3d.append_attribute("showStat") = "true";
+  x3d.append_attribute("showStat") = show_stats;
 
   x3d.append_attribute("profile") = "Interchange";
-  x3d.append_attribute("version") = "3.2";
+  x3d.append_attribute("version") = "3.3";
   x3d.append_attribute("xmlns:xsd")
     = "http://www.w3.org/2001/XMLSchema-instance";
   x3d.append_attribute("xsd:noNamespaceSchemaLocation")
     = "http://www.web3d.org/specifications/x3d-3.2.xsd";
-  x3d.append_attribute("width") = "500px";
-  x3d.append_attribute("height") = "400px";
+
+  std::string width = std::to_string(size[0]) +"px";
+  std::string height = std::to_string(size[1]) +"px";
+  x3d.append_attribute("width") = width.c_str();
+  x3d.append_attribute("height") = height.c_str();
 
   return x3d;
 }
@@ -284,7 +299,8 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   add_doctype(xml_node);
 
   // Add X3D node
-  pugi::xml_node x3d_node = add_x3d_node(xml_node);
+  pugi::xml_node x3d_node = add_x3d_node(xml_node, {500, 400},
+                                         parameters.get_x3d_stats());
   dolfin_assert(x3d_node);
 
   // Add scene node
@@ -295,6 +311,7 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   auto representation = parameters.get_representation();
   if (representation == X3DOMParameters::Representation::surface_with_edges)
   {
+    // Add surface and then wireframe
     add_mesh_data(scene, mesh, parameters, true);
     add_mesh_data(scene, mesh, parameters, false);
   }
@@ -314,9 +331,10 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
     = array_to_string3(parameters.get_background_color()).c_str();
 
   // Add ambient light
-  pugi::xml_node ambient_light = scene.append_child("DirectionalLight");
-  ambient_light.append_attribute("ambientIntensity") = parameters.get_ambient_intensity();
-  ambient_light.append_attribute("intensity") = "0";
+  pugi::xml_node ambient_light_node = scene.append_child("DirectionalLight");
+  ambient_light_node.append_attribute("ambientIntensity")
+    = parameters.get_ambient_intensity();
+  ambient_light_node.append_attribute("intensity") = 1.0;
 
   // Add text mesh info to X3D node
   pugi::xml_node mesh_info = x3d_node.append_child("div");
@@ -351,10 +369,14 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
 
     // Append color attributes
     pugi::xml_node material_node = appearance_node.append_child("Material");
-    material_node.append_attribute("diffuseColor")
-      = array_to_string3(parameters.get_diffuse_color()).c_str();
-    material_node.append_attribute("emmisiveColor")
-      = array_to_string3(parameters.get_emmisive_color()).c_str();
+    if (surface)
+    {
+      material_node.append_attribute("diffuseColor")
+        = array_to_string3(parameters.get_diffuse_color()).c_str();
+    }
+
+    material_node.append_attribute("emissiveColor")
+      = array_to_string3(parameters.get_emissive_color()).c_str();
     material_node.append_attribute("specularColor")
       = array_to_string3(parameters.get_specular_color()).c_str();
 
@@ -486,9 +508,6 @@ void X3DOM::add_viewpoint_node(pugi::xml_node& xml_scene, Viewpoint viewpoint,
 //-----------------------------------------------------------------------------
 std::pair<Point, double> X3DOM::mesh_min_max(const Mesh& mesh)
 {
-  // Get MPI communicator
-  const MPI_Comm mpi_comm = mesh.mpi_comm();
-
   // Get dimensions
   double xmin = std::numeric_limits<double>::max();
   double xmax = std::numeric_limits<double>::min();
@@ -497,34 +516,28 @@ std::pair<Point, double> X3DOM::mesh_min_max(const Mesh& mesh)
   double zmin = std::numeric_limits<double>::max();
   double zmax = std::numeric_limits<double>::min();
 
-  const std::size_t gdim = mesh.geometry().dim();
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
-    xmin = std::min(xmin, v->x(0));
-    xmax = std::max(xmax, v->x(0));
-    ymin = std::min(ymin, v->x(1));
-    ymax = std::max(ymax, v->x(1));
-    if (gdim == 2)
-    {
-      zmin = 0.0;
-      zmax = 0.0;
-    }
-    else
-    {
-      zmin = std::min(zmin, v->x(2));
-      zmax = std::max(zmax, v->x(2));
-    }
+    const Point x = v->point();
+    xmin = std::min(xmin, x[0]);
+    xmax = std::max(xmax, x[0]);
+    ymin = std::min(ymin, x[1]);
+    ymax = std::max(ymax, x[1]);
+    zmin = std::min(zmin, x[2]);
+    zmax = std::max(zmax, x[2]);
   }
+
+  // Get MPI communicator
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   xmin = dolfin::MPI::min(mpi_comm, xmin);
   ymin = dolfin::MPI::min(mpi_comm, ymin);
   zmin = dolfin::MPI::min(mpi_comm, zmin);
-
   xmax = dolfin::MPI::max(mpi_comm, xmax);
   ymax = dolfin::MPI::max(mpi_comm, ymax);
   zmax = dolfin::MPI::max(mpi_comm, zmax);
 
-  // Midpoint of mesh
+  // Compute midpoint of mesh
   Point midpoint((xmax + xmin)/2.0, (ymax + ymin)/2.0, (zmax + zmin)/2.0);
 
   // FIXME: explain this
