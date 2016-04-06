@@ -117,9 +117,16 @@ void SLEPcEigenSolver::solve(std::size_t n)
     PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
     PetscViewerAndFormat *vf;
 
-    ierr = PetscViewerAndFormatCreate(viewer,format,&vf);CHKERRQ(ierr);
-    ierr = PetscObjectDereference((PetscObject)viewer);CHKERRQ(ierr);
-    ierr = KSPMonitorSet(ksp,(PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*))monitor,vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);CHKERRQ(ierr);
+    PetscErrorCode ierr;
+    ierr = PetscViewerAndFormatCreate(viewer, format, &vf);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "PetscViewerAndFormatCreate");
+
+    ierr = PetscObjectDereference((PetscObject)viewer);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "PetscObjectDereference");
+
+    ierr = KSPMonitorSet(ksp,(PetscErrorCode (*)(KSP, PetscInt, PetscReal,void*))monitor, vf,
+                         (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
 
     EPSMonitorSet(_eps, EPSMonitorAll, vf, PetscViewerAndFormatDestroy);
     EPSGetST(_eps, &st);
