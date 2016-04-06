@@ -111,6 +111,7 @@ void SLEPcEigenSolver::solve(std::size_t n)
 
   if (parameters["verbose"])
   {
+    /*
     KSP ksp;
     ST st;
     PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_eps));
@@ -124,7 +125,7 @@ void SLEPcEigenSolver::solve(std::size_t n)
     ierr = PetscObjectDereference((PetscObject)viewer);
     if (ierr != 0) petsc_error(ierr, __FILE__, "PetscObjectDereference");
 
-    ierr = KSPMonitorSet(ksp,(PetscErrorCode (*)(KSP, PetscInt, PetscReal,void*))monitor, vf,
+    ierr = KSPMonitorSet(ksp,(PetscErrorCode (*)(KSP, PetscInt, PetscReal,void*))KSPMonitorTrueResidualNorm, vf,
                          (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
 
@@ -133,6 +134,7 @@ void SLEPcEigenSolver::solve(std::size_t n)
     STGetKSP(st, &ksp);
     KSPMonitorSet(ksp, KSPMonitorDefault, vf, PetscViewerAndFormatDestroy);
     EPSView(_eps, PETSC_VIEWER_STDOUT_SELF);
+    */
   }
 
   // Solve
