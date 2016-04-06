@@ -37,10 +37,10 @@ using namespace dolfin;
 X3DOMParameters::X3DOMParameters()
   : _representation(Representation::surface_with_edges),
     _show_viewpoints(true),
-    _diffuse_color({0.1, 0.1, 0.6}),
-    _emissive_color({0.0, 0.0, 0.0}),
-    _specular_color({0.0, 0.0, 0.4}),
-    _background_color({0.95, 0.95, 0.95}),
+    _diffuse_color({{0.1, 0.1, 0.6}}),
+    _emissive_color({{0.0, 0.0, 0.0}}),
+    _specular_color({{0.0, 0.0, 0.4}}),
+    _background_color({{0.95, 0.95, 0.95}}),
     _ambient_intensity(1.0),
     _shininess(0.5),
     _transparency(0.0),
@@ -292,8 +292,8 @@ pugi::xml_node X3DOM::add_x3d_node(pugi::xml_node& xml_node,
   x3d.append_attribute("xsd:noNamespaceSchemaLocation")
     = "http://www.web3d.org/specifications/x3d-3.2.xsd";
 
-  std::string width = std::to_string(size[0]) +"px";
-  std::string height = std::to_string(size[1]) +"px";
+  std::string width = std::to_string(size[0]) + "px";
+  std::string height = std::to_string(size[1]) + "px";
   x3d.append_attribute("width") = width.c_str();
   x3d.append_attribute("height") = height.c_str();
 
@@ -305,7 +305,7 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
 {
   // Check that mesh is embedded in 2D or 3D
   const std::size_t gdim = mesh.geometry().dim();
-  if (gdim !=2 and gdim !=3)
+  if (gdim != 2 and gdim != 3)
   {
     dolfin_error("X3DOM.cpp",
                  "get X3DOM string representation of a mesh",
@@ -316,7 +316,7 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   add_doctype(xml_node);
 
   // Add X3D node
-  pugi::xml_node x3d_node = add_x3d_node(xml_node, {500, 400},
+  pugi::xml_node x3d_node = add_x3d_node(xml_node, {{500, 400}},
                                          parameters.get_x3d_stats());
   dolfin_assert(x3d_node);
 
@@ -466,39 +466,39 @@ void X3DOM::add_viewpoint_node(pugi::xml_node& xml_scene, Viewpoint viewpoint,
   case Viewpoint::top:
     viewpoint_str = "top";
     orientation = "-1 0 0 1.5707963267948";
-    position = array_to_string3({p[0], p[1] + d - p[2], p[2]});
+    position = array_to_string3({{p[0], p[1] + d - p[2], p[2]}});
     break;
   case Viewpoint::bottom:
     viewpoint_str = "bottom";
     orientation = "1 0 0 1.5707963267948";
-    position = array_to_string3({p[0], p[1] - d + p[2], p[2]});
+    position = array_to_string3({{p[0], p[1] - d + p[2], p[2]}});
     break;
   case Viewpoint::left:
     viewpoint_str = "left";
     orientation = "0 1 0 1.5707963267948";
-    position = array_to_string3({p[0] + d - p[2], p[1], p[2]});
+    position = array_to_string3({{p[0] + d - p[2], p[1], p[2]}});
     break;
   case Viewpoint::right:
     viewpoint_str = "right";
     orientation = "0 -1 0 1.5707963267948";
-    position = array_to_string3({p[0] - d + p[2], p[1], p[2]});
+    position = array_to_string3({{p[0] - d + p[2], p[1], p[2]}});
     break;
   case Viewpoint::back:
     viewpoint_str = "back";
     orientation = "0 1 0 3.1415926535898";
-    position = array_to_string3({p[0], p[1], p[2] - d});
+    position = array_to_string3({{p[0], p[1], p[2] - d}});
     break;
   case Viewpoint::front:
     viewpoint_str = "front";
     orientation = "0 0 0 1";
-    position = array_to_string3({p[0], p[1], d});
+    position = array_to_string3({{p[0], p[1], d}});
     break;
   case Viewpoint::default_view:
     viewpoint_str = "default";
     orientation = "-0.7071067812 0.7071067812 0 1";
-    position = array_to_string3({p[0] + 0.7071067812*(d - p[2]),
-          p[1] + 0.7071067812*(d - p[2]),
-          p[2] + 0.7071067812*(d - p[2])});
+    position = array_to_string3({{p[0] + 0.7071067812*(d - p[2]),
+            p[1] + 0.7071067812*(d - p[2]),
+            p[2] + 0.7071067812*(d - p[2])}});
     break;
   default:
     dolfin_error("X3DOM.cpp",
@@ -517,7 +517,7 @@ void X3DOM::add_viewpoint_node(pugi::xml_node& xml_scene, Viewpoint viewpoint,
   viewpoint_node.append_attribute("orientation") = orientation.c_str();
   viewpoint_node.append_attribute("fieldOfView") = "0.785398";
   viewpoint_node.append_attribute("centerOfRotation")
-    = array_to_string3({p[0], p[1], p[2]}).c_str();
+    = array_to_string3({{p[0], p[1], p[2]}}).c_str();
 
   viewpoint_node.append_attribute("zNear") = "-1";
   viewpoint_node.append_attribute("zFar") = "-1";
