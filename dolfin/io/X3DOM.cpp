@@ -22,6 +22,7 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Edge.h>
@@ -32,6 +33,113 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+X3DOMParameters::X3DOMParameters()
+  : _representation(Representation::surface_with_edges),
+    _show_viewpoints(true),
+    _diffuse_color({0.1, 0.1, 0.6}),
+    _emissive_color({0.7, 0.7, 0.7}),
+    _specular_color({0.0, 0.0, 0.0}),
+    _background_color({0.95, 0.95, 0.95}),
+    _ambient_intensity(1.0),
+    _shininess(0.5),
+    _transparency(0.0)
+{
+      // Do nothing
+}
+//-----------------------------------------------------------------------------
+void X3DOMParameters::set_representation(Representation representation)
+{
+  _representation = representation;
+}
+//-----------------------------------------------------------------------------
+X3DOMParameters::Representation X3DOMParameters::get_representation() const
+{
+  return _representation;
+}
+//-----------------------------------------------------------------------------
+void X3DOMParameters::set_diffuse_color(std::array<double, 3> rgb)
+{
+  check_rgb(rgb);
+  _diffuse_color = rgb;
+}
+//-----------------------------------------------------------------------------
+std::array<double, 3> X3DOMParameters::get_diffuse_color() const
+{
+  return _diffuse_color;
+}
+//-----------------------------------------------------------------------------
+void X3DOMParameters::set_emissive_color(std::array<double, 3> rgb)
+{
+  check_rgb(rgb);
+  _emissive_color = rgb;
+}
+//-----------------------------------------------------------------------------
+std::array<double, 3> X3DOMParameters::get_emmisive_color() const
+{
+  return _emissive_color;
+}
+//-----------------------------------------------------------------------------
+void X3DOMParameters::set_specular_color(std::array<double, 3> rgb)
+{
+  check_rgb(rgb);
+  _specular_color = rgb;
+}
+//-----------------------------------------------------------------------------
+std::array<double, 3> X3DOMParameters::get_specular_color() const
+{
+  return _specular_color;
+}
+//-----------------------------------------------------------------------------
+void X3DOMParameters::set_background_color(std::array<double, 3> rgb)
+{
+  check_rgb(rgb);
+  _background_color = rgb; }
+//-----------------------------------------------------------------------------
+std::array<double, 3> X3DOMParameters::get_background_color() const
+{
+  return _background_color;
+}
+//-----------------------------------------------------------------------------
+void X3DOMParameters::set_ambient_intensity(double intensity)
+{
+  _ambient_intensity = intensity;
+}
+//-----------------------------------------------------------------------------
+double X3DOMParameters::get_ambient_intensity() const
+{
+  return _ambient_intensity;
+}
+//-----------------------------------------------------------------------------
+void X3DOMParameters::set_shininess(double shininess)
+{
+  _shininess = shininess;
+}
+//-----------------------------------------------------------------------------
+double X3DOMParameters::get_shininess() const
+{
+  return _shininess;
+}
+//-----------------------------------------------------------------------------
+void X3DOMParameters::set_transparency(double transparency)
+{
+  _transparency = transparency;
+}
+//-----------------------------------------------------------------------------
+double X3DOMParameters::get_transparency() const
+{
+  return _transparency;
+}
+//-----------------------------------------------------------------------------
+void X3DOMParameters::set_viewpoint_buttons(bool show)
+{
+  _show_viewpoints = show;
+}
+//-----------------------------------------------------------------------------
+bool X3DOMParameters::get_viewpoint_buttons() const
+{
+  return _show_viewpoints;
+}
 //-----------------------------------------------------------------------------
 void X3DOMParameters::check_rgb(std::array<double, 3>& rgb)
 {
@@ -106,7 +214,7 @@ std::string X3DOM::html(const Mesh& mesh, X3DOMParameters parameters)
   // Add X3D XML data to 'body' node
   add_x3dom_data(body_node, mesh, parameters);
 
-  // Append viewpoint buttons to 'body' node
+  // Append viewpoint buttons to 'body' (HTML) node
   if (parameters.get_viewpoint_buttons())
   {
     // Add viewpoint control node
@@ -196,8 +304,9 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
     add_mesh_data(scene, mesh, parameters, false);
 
   // Add viewpoint(s)
-  const std::vector<double> xpos = mesh_min_max(mesh);
-  add_viewpoint_nodes(scene, xpos, parameters.get_viewpoint_buttons());
+  const std::pair<Point, double> position = mesh_min_max(mesh);
+  add_viewpoint_nodes(scene, position.first, position.second,
+                      parameters.get_viewpoint_buttons());
 
   // Add background color
   pugi::xml_node background = scene.append_child("Background");
@@ -287,31 +396,26 @@ void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control,
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_viewpoint_nodes(pugi::xml_node& xml_scene,
-                                const std::vector<double>& xpos,
+                                const Point p, double d,
                                 bool show_viewpoint_buttons)
 {
-  // Create center of rotation string
-  std::string center_of_rotation = array_to_string3({xpos[0], xpos[1], xpos[2]});
-
   // Add viewpoint nodes
   if (show_viewpoint_buttons)
   {
-    add_viewpoint_node(xml_scene, Viewpoint::top, center_of_rotation, xpos);
-    add_viewpoint_node(xml_scene, Viewpoint::bottom, center_of_rotation, xpos);
-    add_viewpoint_node(xml_scene, Viewpoint::left, center_of_rotation, xpos);
-    add_viewpoint_node(xml_scene, Viewpoint::right, center_of_rotation, xpos);
-    add_viewpoint_node(xml_scene, Viewpoint::back, center_of_rotation, xpos);
-    add_viewpoint_node(xml_scene, Viewpoint::front, center_of_rotation, xpos);
+    add_viewpoint_node(xml_scene, Viewpoint::top, p, d);
+    add_viewpoint_node(xml_scene, Viewpoint::bottom, p, d);
+    add_viewpoint_node(xml_scene, Viewpoint::left, p, d);
+    add_viewpoint_node(xml_scene, Viewpoint::right, p, d);
+    add_viewpoint_node(xml_scene, Viewpoint::back, p, d);
+    add_viewpoint_node(xml_scene, Viewpoint::front, p, d);
   }
 
   // Default viewpoint
-  add_viewpoint_node(xml_scene, Viewpoint::default_view, center_of_rotation,
-                     xpos);
+  add_viewpoint_node(xml_scene, Viewpoint::default_view, p, d);
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_viewpoint_node(pugi::xml_node& xml_scene, Viewpoint viewpoint,
-                               const std::string center_of_rotation,
-                               const std::vector<double>& xpos)
+                               const Point p, const double d)
 {
   std::string viewpoint_str;
   std::string orientation;
@@ -323,39 +427,39 @@ void X3DOM::add_viewpoint_node(pugi::xml_node& xml_scene, Viewpoint viewpoint,
   case Viewpoint::top:
     viewpoint_str = "top";
     orientation = "-1 0 0 1.5707963267948";
-    position = array_to_string3({xpos[0], xpos[1] + xpos[3] - xpos[2], xpos[2]});
+    position = array_to_string3({p[0], p[1] + d - p[2], p[2]});
     break;
   case Viewpoint::bottom:
     viewpoint_str = "bottom";
     orientation = "1 0 0 1.5707963267948";
-    position = array_to_string3({xpos[0], xpos[1] - xpos[3] + xpos[2], xpos[2]});
+    position = array_to_string3({p[0], p[1] - d + p[2], p[2]});
     break;
   case Viewpoint::left:
     viewpoint_str = "left";
     orientation = "0 1 0 1.5707963267948";
-    position = array_to_string3({xpos[0] + xpos[3] - xpos[2], xpos[1], xpos[2]});
+    position = array_to_string3({p[0] + d - p[2], p[1], p[2]});
     break;
   case Viewpoint::right:
     viewpoint_str = "right";
     orientation = "0 -1 0 1.5707963267948";
-    position = array_to_string3({xpos[0] - xpos[3] + xpos[2], xpos[1], xpos[2]});
+    position = array_to_string3({p[0] - d + p[2], p[1], p[2]});
     break;
   case Viewpoint::back:
     viewpoint_str = "back";
     orientation = "0 1 0 3.1415926535898";
-    position = array_to_string3({xpos[0], xpos[1], xpos[2] - xpos[3]});
+    position = array_to_string3({p[0], p[1], p[2] - d});
     break;
   case Viewpoint::front:
     viewpoint_str = "front";
     orientation = "0 0 0 1";
-    position = array_to_string3({xpos[0], xpos[1], xpos[3]});
+    position = array_to_string3({p[0], p[1], d});
     break;
   case Viewpoint::default_view:
     viewpoint_str = "default";
     orientation = "-0.7071067812 0.7071067812 0 1";
-    position = array_to_string3({xpos[0] + 0.7071067812*(xpos[3] - xpos[2]),
-          xpos[1] + 0.7071067812*(xpos[3] - xpos[2]),
-          xpos[2] + 0.7071067812*(xpos[3] - xpos[2])});
+    position = array_to_string3({p[0] + 0.7071067812*(d - p[2]),
+          p[1] + 0.7071067812*(d - p[2]),
+          p[2] + 0.7071067812*(d - p[2])});
     break;
   default:
     dolfin_error("X3DOM.cpp",
@@ -374,13 +478,13 @@ void X3DOM::add_viewpoint_node(pugi::xml_node& xml_scene, Viewpoint viewpoint,
   viewpoint_node.append_attribute("orientation") = orientation.c_str();
   viewpoint_node.append_attribute("fieldOfView") = "0.785398";
   viewpoint_node.append_attribute("centerOfRotation")
-    = center_of_rotation.c_str();
+    = array_to_string3({p[0], p[1], p[2]}).c_str();
 
   viewpoint_node.append_attribute("zNear") = "-1";
   viewpoint_node.append_attribute("zFar") = "-1";
 }
 //-----------------------------------------------------------------------------
-std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh)
+std::pair<Point, double> X3DOM::mesh_min_max(const Mesh& mesh)
 {
   // Get MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -420,16 +524,14 @@ std::vector<double> X3DOM::mesh_min_max(const Mesh& mesh)
   ymax = dolfin::MPI::max(mpi_comm, ymax);
   zmax = dolfin::MPI::max(mpi_comm, zmax);
 
-  std::vector<double> result;
-  result.push_back((xmax + xmin)/2.0);
-  result.push_back((ymax + zmin)/2.0);
-  result.push_back((zmax + zmin)/2.0);
+  // Midpoint of mesh
+  Point midpoint((xmax + xmin)/2.0, (ymax + ymin)/2.0, (zmax + zmin)/2.0);
 
+  // FIXME: explain this
   double d = std::max(xmax - xmin, ymax - ymin);
   d = 2.0*std::max(d, zmax - zmin) + zmax ;
-  result.push_back(d);
 
-  return result;
+  return {midpoint, d};
 }
 //-----------------------------------------------------------------------------
 std::set<int> X3DOM::surface_vertex_indices(const Mesh& mesh)
@@ -462,7 +564,6 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
                             bool surface)
 {
   const std::size_t tdim = mesh.topology().dim();
-  const std::size_t gdim = mesh.geometry().dim();
 
   // Intialise facet-to-cell connectivity
   mesh.init(tdim - 1 , tdim);
@@ -532,12 +633,9 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
   for (auto index : vertex_indices)
   {
     Vertex v(mesh, index);
-    local_geom_output.push_back(v.x(0));
-    local_geom_output.push_back(v.x(1));
-    if (gdim == 2)
-      local_geom_output.push_back(0.0);
-    else
-      local_geom_output.push_back(v.x(2));
+    const Point p = v.point();
+    for (std::size_t i = 0; i < 3; ++i)
+      local_geom_output.push_back(p[i]);
   }
 
   // Gather up all geometry on process 0 and append to xml
