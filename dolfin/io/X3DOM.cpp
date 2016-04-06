@@ -17,6 +17,7 @@
 
 #include <string>
 #include <sstream>
+#include "pugixml.hpp"
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/fem/GenericDofMap.h>

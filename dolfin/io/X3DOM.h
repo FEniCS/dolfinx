@@ -23,7 +23,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "pugixml.hpp"
 
 #include <dolfin/geometry/Point.h>
 
@@ -33,6 +32,11 @@
 // - Add ambient intensity parameter
 // - Add support for Functions
 // - Add support for MeshFunctions
+
+namespace pugi
+{
+  class xml_node;
+}
 
 namespace dolfin
 {
