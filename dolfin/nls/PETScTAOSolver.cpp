@@ -24,6 +24,7 @@
 #include <string>
 #include <utility>
 #include <petscsys.h>
+#include <petscversion.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/la/KrylovSolver.h>
@@ -559,6 +560,7 @@ void PETScTAOSolver::set_ksp_options()
     {
       if (krylov_parameters["monitor_convergence"])
       {
+        #if PETSC_VERSION_GT(3, 6, 99)
         PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
         PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
         PetscViewerAndFormat *vf;
@@ -569,6 +571,12 @@ void PETScTAOSolver::set_ksp_options()
                          vf,
                          (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
         if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
+        #else
+        ierr = TaoSetMonitor(_tao, TaoDefaultMonitor,
+                             PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_tao)),
+                             NULL);
+        if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetMonitor");
+        #endif
       }
     }
 
