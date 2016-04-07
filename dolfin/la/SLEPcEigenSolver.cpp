@@ -114,7 +114,7 @@ void SLEPcEigenSolver::solve(std::size_t n)
     PetscViewerAndFormat *vf;
 
     PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD, PETSC_VIEWER_DEFAULT, &vf);
-    EPSMonitorSet(_eps,(PetscErrorCode (*)(EPS,PetscInt,PetscInt,PetscScalar*,PetscScalar*,PetscReal*,PetscInt,void*))EPSMonitorFirst,vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+    EPSMonitorSet(_eps,(PetscErrorCode (*)(EPS,PetscInt,PetscInt,PetscScalar*,PetscScalar*,PetscReal*,PetscInt,void*))EPSMonitorAll,vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
   }
 
   // Solve

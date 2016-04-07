@@ -55,6 +55,7 @@ assemble(a, tensor=A)
 
 # Create eigensolver
 eigensolver = SLEPcEigenSolver(A)
+eigensolver.parameters["verbose"] = True
 
 # Compute all eigenvalues of A x = \lambda x
 print("Computing eigenvalues. This can take a minute.")
