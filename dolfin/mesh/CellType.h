@@ -95,7 +95,8 @@ namespace dolfin
     /// Return orientation of the cell relative to given up direction
     std::size_t orientation(const Cell& cell, const Point& up) const;
 
-    /// Create entities e of given topological dimension from vertices v
+    /// Create entities e of given topological dimension from vertices
+    /// v
     virtual void create_entities(boost::multi_array<unsigned int, 2>& e,
                                  std::size_t dim,
                                  const unsigned int* v) const = 0;
@@ -103,8 +104,11 @@ namespace dolfin
     /// Compute (generalized) volume of mesh entity
     virtual double volume(const MeshEntity& entity) const = 0;
 
-    /// Compute diameter of mesh entity
-    virtual double diameter(const MeshEntity& entity) const = 0;
+    /// Compute diameter of mesh entity (deprecated)
+    double diameter(const MeshEntity& entity) const;
+
+    /// Compute circumradius of mesh entity
+    virtual double circumradius(const MeshEntity& entity) const = 0;
 
     /// Compute inradius of cell
     virtual double inradius(const Cell& cell) const;

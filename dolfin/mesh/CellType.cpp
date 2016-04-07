@@ -159,6 +159,14 @@ CellType::Type CellType::entity_type(std::size_t i) const
  return Type::point;
 }
 //-----------------------------------------------------------------------------
+double CellType::diameter(const MeshEntity& entity) const
+{
+  deprecation("CellType::diameter()", "1.7.0", "1.8.0",
+              "Use CellType::circumradius() or CellType::h() instead");
+
+  return 2.0*circumradius(entity);
+}
+//-----------------------------------------------------------------------------
 bool CellType::ordered(const Cell& cell, const std::vector<std::size_t>&
                        local_to_global_vertex_indices) const
 {
@@ -335,15 +343,17 @@ double CellType::inradius(const Cell& cell) const
   const double V = volume(cell);
 
   // Handle degenerate case
-  if (V == 0.0) {return 0.0;}
+  if (V == 0.0)
+    return 0.0;
 
   // Compute total area of facets
   double A = 0;
   for (std::size_t i = 0; i <= d; i++)
     A += facet_area(cell, i);
 
-  // See Jonathan Richard Shewchuk: What Is a Good Linear Finite Element?,
-  // online: http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
+  // See Jonathan Richard Shewchuk: What Is a Good Linear Finite
+  // Element?, online:
+  // http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
   return d*V/A;
 }
 //-----------------------------------------------------------------------------
