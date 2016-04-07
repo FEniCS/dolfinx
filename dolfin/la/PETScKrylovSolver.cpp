@@ -451,10 +451,23 @@ void PETScKrylovSolver::monitor(bool monitor_convergence)
   PetscErrorCode ierr;
   if (monitor_convergence)
   {
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
     ierr = KSPMonitorSet(_ksp, KSPMonitorTrueResidualNorm,
                          PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_ksp)),
                          NULL);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
+    #else
+    PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_ksp));
+    PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
+    PetscViewerAndFormat *vf;
+    PetscViewerAndFormatCreate(viewer,format,&vf);
+    PetscObjectDereference((PetscObject)viewer);
+    ierr = KSPMonitorSet(_ksp,
+                         (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
+                         vf,
+                         (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
+    #endif
   }
   else
   {
