@@ -23,6 +23,7 @@
 // Last changed: 2013-02-21
 
 #include <algorithm>
+#include <array>
 
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
@@ -41,7 +42,6 @@ using namespace dolfin;
 
 namespace dolfin
 {
-
   // Comparison operator for sorting based on global indices
   class GlobalSort
   {
@@ -56,7 +56,6 @@ namespace dolfin
     const std::vector<std::size_t>& g;
 
   };
-
 }
 
 //-----------------------------------------------------------------------------
@@ -132,7 +131,7 @@ std::string CellType::type2string(Type type)
   case interval:
     return "interval";
   case triangle:
-    return "triangle";
+   return "triangle";
   case tetrahedron:
     return "tetrahedron";
   case quadrilateral:
@@ -159,12 +158,88 @@ CellType::Type CellType::entity_type(std::size_t i) const
  return Type::point;
 }
 //-----------------------------------------------------------------------------
+std::size_t CellType::orientation(const Cell& cell, const Point& up) const
+{
+  Point n = cell.cell_normal();
+  return (n.dot(up) < 0.0 ? 1 : 0);
+}
+//-----------------------------------------------------------------------------
+double CellType::h(const MeshEntity& entity) const
+{
+  // Get mesh geometry
+  const MeshGeometry& geometry = entity.mesh().geometry();
+
+  // Get number of cell vertices
+  const int num_vertices = entity.num_entities(0);
+
+  // Get the coordinates (Points) of the vertices
+  const unsigned int* vertices = entity.entities(0);
+  dolfin_assert(vertices);
+  std::array<Point, 4> points;
+  dolfin_assert(num_vertices <= 4);
+  for (int i = 0; i < num_vertices; ++i)
+    points[i] = geometry.point(vertices[i]);
+
+  // Get maximum edge length
+  double h = 0.0;
+  for (int i = 0; i < num_vertices; ++i)
+  {
+    for (int j = i + 1; j < num_vertices; ++j)
+      h = std::max(h, points[i].distance(points[j]));
+  }
+
+  return h;
+}
+//-----------------------------------------------------------------------------
 double CellType::diameter(const MeshEntity& entity) const
 {
   deprecation("CellType::diameter()", "1.7.0", "1.8.0",
               "Use CellType::circumradius() or CellType::h() instead");
 
   return 2.0*circumradius(entity);
+}
+//-----------------------------------------------------------------------------
+double CellType::inradius(const Cell& cell) const
+{
+  // Check cell type
+  if (_cell_type != interval && _cell_type != triangle
+      && _cell_type != tetrahedron)
+  {
+    dolfin_error("Cell.h",
+                 "compute cell inradius",
+                 "formula not implemented for non-simplicial cells");
+  }
+
+  // Pick dim
+  const size_t d = dim();
+
+  // Compute volume
+  const double V = volume(cell);
+
+  // Handle degenerate case
+  if (V == 0.0)
+    return 0.0;
+
+  // Compute total area of facets
+  double A = 0;
+  for (std::size_t i = 0; i <= d; i++)
+    A += facet_area(cell, i);
+
+  // See Jonathan Richard Shewchuk: What Is a Good Linear Finite
+  // Element?, online:
+  // http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
+  return d*V/A;
+}
+//-----------------------------------------------------------------------------
+double CellType::radius_ratio(const Cell& cell) const
+{
+  const double r = inradius(cell);
+
+  // Handle degenerate case
+  if (r == 0.0)
+    return 0.0;
+  else
+    return dim()*r/circumradius(cell);
 }
 //-----------------------------------------------------------------------------
 bool CellType::ordered(const Cell& cell, const std::vector<std::size_t>&
@@ -317,54 +392,5 @@ bool CellType::increasing(std::size_t n0, const unsigned int* v0,
   }
 
   return true;
-}
-//-----------------------------------------------------------------------------
-std::size_t CellType::orientation(const Cell& cell, const Point& up) const
-{
-  Point n = cell.cell_normal();
-  return (n.dot(up) < 0.0 ? 1 : 0);
-}
-//-----------------------------------------------------------------------------
-double CellType::inradius(const Cell& cell) const
-{
-  // Check cell type
-  if (_cell_type != interval && _cell_type != triangle
-      && _cell_type != tetrahedron)
-  {
-    dolfin_error("Cell.h",
-                 "compute cell inradius",
-                 "formula not implemented for non-simplicial cells");
-  }
-
-  // Pick dim
-  const size_t d = dim();
-
-  // Compute volume
-  const double V = volume(cell);
-
-  // Handle degenerate case
-  if (V == 0.0)
-    return 0.0;
-
-  // Compute total area of facets
-  double A = 0;
-  for (std::size_t i = 0; i <= d; i++)
-    A += facet_area(cell, i);
-
-  // See Jonathan Richard Shewchuk: What Is a Good Linear Finite
-  // Element?, online:
-  // http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
-  return d*V/A;
-}
-//-----------------------------------------------------------------------------
-double CellType::radius_ratio(const Cell& cell) const
-{
-  const double r = inradius(cell);
-
-  // Handle degenerate case
-  if (r == 0.0)
-    return 0.0;
-  else
-    return 2.0*dim()*r/diameter(cell);
 }
 //-----------------------------------------------------------------------------

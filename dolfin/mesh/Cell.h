@@ -107,6 +107,25 @@ namespace dolfin
     double volume() const
     { return _mesh->type().volume(*this); }
 
+    /// Compute greatest distance between any two vertices
+    ///
+    /// *Returns*
+    ///     double
+    ///         The greatest distance between any two vertices of the cell.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         UnitSquareMesh mesh(1, 1);
+    ///         Cell cell(mesh, 0);
+    ///         info("%g", cell.h());
+    ///
+    ///     output::
+    ///
+    ///         1.41421
+    double h() const
+    { return _mesh->type().h(*this); }
+
     /// Compute diameter of cell (deprecated)
     ///
     /// *Returns*
@@ -154,7 +173,7 @@ namespace dolfin
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         UnitSquare mesh(1, 1);
+    ///         UnitSquareMesh mesh(1, 1);
     ///         Cell cell(mesh, 0);
     ///         info("%g", cell.inradius());
     ///
@@ -182,7 +201,7 @@ namespace dolfin
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         UnitSquare mesh(1, 1);
+    ///         UnitSquareMesh mesh(1, 1);
     ///         Cell cell(mesh, 0);
     ///         info("%g", cell.radius_ratio());
     ///
