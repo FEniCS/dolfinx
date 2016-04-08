@@ -189,7 +189,7 @@ namespace dolfin
 
     /// Assignment operator
     const Point& operator= (const Point& p)
-    { _x = {p._x[0], p._x[1], p._x[2]}; return *this; }
+    { _x = {{p._x[0], p._x[1], p._x[2]}}; return *this; }
 
     /// Compute squared distance to given point
     ///
