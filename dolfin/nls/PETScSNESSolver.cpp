@@ -220,6 +220,7 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
       ierr = SNESMonitorSet(_snes, SNESMonitorDefault,
                             PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes)),
                             NULL);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "SNESMonitorSet");
       #else
       warning("SNES monitors need updating for PETSc development version.");
       /*
