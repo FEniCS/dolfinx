@@ -216,20 +216,25 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
     if (parameters["report"])
     {
       #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-      SNESMonitorSet(_snes, SNESMonitorDefault,
-                     PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes)),
-                     NULL);
+      PetscErrorCode ierr;
+      ierr = SNESMonitorSet(_snes, SNESMonitorDefault,
+                            PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes)),
+                            NULL);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "SNESMonitorSet");
       #else
+      warning("SNES monitors need updating for PETSc development version.");
+      /*
       PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes));
       PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
       PetscViewerAndFormat *vf;
       PetscViewerAndFormatCreate(viewer,format,&vf);
       PetscObjectDereference((PetscObject)viewer);
-      SNESMonitorSet(_snes,
-                     (PetscErrorCode (*)(SNES,PetscInt,PetscReal,void*)) SNESMonitorDefault,
-                     vf,
-                     (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
-
+      ierr = SNESMonitorSet(_snes,
+                            (PetscErrorCode (*)(SNES,PetscInt,PetscReal,void*)) SNESMonitorDefault,
+                            vf,
+                            (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "SNESMonitorSet");
+      */
       #endif
     }
   }
@@ -445,6 +450,8 @@ void PETScSNESSolver::set_linear_solver_parameters()
                     NULL);
 
       #else
+      warning("SNES monitors need updating for PETSc development version.");
+      /*
       PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
       PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
       PetscViewerAndFormat *vf;
@@ -454,6 +461,7 @@ void PETScSNESSolver::set_linear_solver_parameters()
                            (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorDefault,
                            vf,
                            (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+      */
       #endif
     }
   }

@@ -430,6 +430,8 @@ void TAOLinearBoundSolver::set_ksp_options()
         ierr = TaoSetMonitor(_tao, __TAOMonitor, this, NULL);
         if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetMonitor");
         #else
+        warning("PETSc monitors need updating for PETSc development version.");
+        /*
         PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
         PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
         PetscViewerAndFormat *vf;
@@ -438,6 +440,7 @@ void TAOLinearBoundSolver::set_ksp_options()
         ierr = KSPMonitorSet(ksp, (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
                              vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
         if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
+        */
         #endif
       }
     }
