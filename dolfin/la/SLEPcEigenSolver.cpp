@@ -109,19 +109,31 @@ void SLEPcEigenSolver::solve(std::size_t n)
   }
   EPSSetFromOptions(_eps);
 
-  if (parameters["verbose"])
+  if (parameters["verbose"].is_set())
   {
-    KSP ksp;
-    ST st;
-    EPSMonitorSet(_eps, EPSMonitorAll,
-                  PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_eps)),
-                  NULL);
-    EPSGetST(_eps, &st);
-    STGetKSP(st, &ksp);
-    KSPMonitorSet(ksp, KSPMonitorDefault,
-                  PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
-                  NULL);
-    EPSView(_eps, PETSC_VIEWER_STDOUT_SELF);
+    if (parameters["verbose"])
+    {
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
+      KSP ksp;
+      ST st;
+      EPSMonitorSet(_eps, EPSMonitorAll,
+                    PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_eps)),
+                    NULL);
+      EPSGetST(_eps, &st);
+      STGetKSP(st, &ksp);
+      KSPMonitorSet(ksp, KSPMonitorDefault,
+                    PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
+                    NULL);
+      EPSView(_eps, PETSC_VIEWER_STDOUT_SELF);
+      #else
+      warning("PETSc/SLEPc monitors need updating for change in PETSc-dev.");
+      /*
+      PetscViewerAndFormat *vf;
+      PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD, PETSC_VIEWER_DEFAULT, &vf);
+      EPSMonitorSet(_eps,(PetscErrorCode (*)(EPS,PetscInt,PetscInt,PetscScalar*,PetscScalar*,PetscReal*,PetscInt,void*))EPSMonitorAll,vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+      */
+      #endif
+    }
   }
 
   // Solve
