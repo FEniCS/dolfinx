@@ -126,9 +126,12 @@ void SLEPcEigenSolver::solve(std::size_t n)
                     NULL);
       EPSView(_eps, PETSC_VIEWER_STDOUT_SELF);
       #else
+      warning("PETSc/SLEPc monitors need updating for change in PETSc-dev.");
+      /*
       PetscViewerAndFormat *vf;
       PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD, PETSC_VIEWER_DEFAULT, &vf);
       EPSMonitorSet(_eps,(PetscErrorCode (*)(EPS,PetscInt,PetscInt,PetscScalar*,PetscScalar*,PetscReal*,PetscInt,void*))EPSMonitorAll,vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+      */
       #endif
     }
   }
