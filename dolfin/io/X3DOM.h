@@ -40,8 +40,6 @@ namespace pugi
 
 namespace dolfin
 {
-  class Mesh;
-  class Point;
 
   /// Class data to store X3DOM view parameters.
   class X3DOMParameters
@@ -133,6 +131,10 @@ namespace dolfin
     bool _show_x3d_stats;
   };
 
+  // Forward declarations
+  class Function;
+  class Mesh;
+  class Point;
 
   /// This class implements output of meshes to X3DOM XML or HTML or
   /// string
@@ -149,6 +151,14 @@ namespace dolfin
     static std::string html(const Mesh& mesh,
                             X3DOMParameters parameters=X3DOMParameters());
 
+    /// Return X3D string for a Function
+    static std::string str(const Function& u,
+                           X3DOMParameters paramemeters=X3DOMParameters());
+
+    /// Return HTML string with embedded X3D for a Function
+    static std::string html(const Function& u,
+                            X3DOMParameters parameters=X3DOMParameters());
+
   private:
 
     // FIXME: This should be a C++11 style enum (enum Viewpoint class
@@ -156,7 +166,10 @@ namespace dolfin
     // (https://github.com/swig/swig/issues/594)
     enum  Viewpoint {top, bottom, left, right, back, front, default_view};
 
-    // Add X3D doctype (an XML document should have no more than one
+    // Add HTML preamble (HTML) to XML doc and return 'html' node
+    static pugi::xml_node add_html_preamble(pugi::xml_node& xml_node);
+
+     // Add X3D doctype (an XML document should have no more than one
     // doc_type node)
     static void add_doctype(pugi::xml_node& xml_node);
 

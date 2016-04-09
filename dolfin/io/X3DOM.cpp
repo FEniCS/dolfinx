@@ -208,41 +208,16 @@ std::string X3DOM::html(const Mesh& mesh, X3DOMParameters parameters)
   // Add doc style to enforce xhtml
   xml_doc.append_child("!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"");
 
-  // Add html node
-  pugi::xml_node node = xml_doc.append_child("html");
-  node.append_attribute("xmlns") = "http://www.w3.org/1999/xhtml";
-  node.append_attribute("lang") = "en";
-
-  // Add head node
-  pugi::xml_node head = node.append_child("head");
-
-  // Add meta node
-  pugi::xml_node meta = head.append_child("meta");
-  meta.append_attribute("http-equiv") = "content-type";
-  meta.append_attribute("content") = "text/xhtml; charset=UTF-8";
-
-  // Add script node
-  pugi::xml_node script = head.append_child("script");
-
-  // Set attributes for script node
-  script.append_attribute("type") = "text/javascript";
-  script.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
-  script.append_child(pugi::node_pcdata);
-
-  // Add link node
-  pugi::xml_node link = head.append_child("link");
-
-  // Set attributes for link node
-  link.append_attribute("rel") = "stylesheet";
-  link.append_attribute("type") = "text/css";
-  link.append_attribute("href") = "http://www.x3dom.org/download/x3dom.css";
+  // Create 'html' node and add HTML preamble
+  pugi::xml_node html_node = add_html_preamble(xml_doc);
 
   // Add body node
-  pugi::xml_node body_node = node.append_child("body");
+  pugi::xml_node body_node = html_node.append_child("body");
 
   // Add X3D XML data to 'body' node
   add_x3dom_data(body_node, mesh, parameters);
 
+  // FIXME: Move to a function
   // Append viewpoint buttons to 'body' (HTML) node
   if (parameters.get_viewpoint_buttons())
   {
@@ -268,6 +243,88 @@ std::string X3DOM::html(const Mesh& mesh, X3DOMParameters parameters)
 
   // Return string
   return s.str();
+}
+//-----------------------------------------------------------------------------
+std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
+{
+  error("Support for X3DOM Function output is not yet implemented");
+
+  // Create empty pugi XML doc
+  pugi::xml_document xml_doc;
+
+  // Build X3D XML and add to XML doc
+  //add_x3dom_data(xml_doc, mesh, parameters);
+
+  // Save XML doc to stringstream
+  std::stringstream s;
+  const std::string indent = "  ";
+  xml_doc.save(s, indent.c_str());
+
+  // Return string
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+std::string X3DOM::html(const Function& mesh, X3DOMParameters parameters)
+{
+  error("Support for X3DOM Function output is not yet implemented");
+
+  // Create empty pugi XML doc
+  pugi::xml_document xml_doc;
+
+  // Add doc style to enforce xhtml
+  xml_doc.append_child("!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"");
+
+  // Create 'html' node and add HTML preamble
+  //pugi::xml_node html_node = add_html_preamble(xml_doc);
+
+  // Add body node
+  //pugi::xml_node body_node = html_node.append_child("body");
+
+  // Add X3D XML data to 'body' node
+  //add_x3dom_data(body_node, u, parameters);
+
+  // Save XML doc to stringstream, without default XML header
+  std::stringstream s;
+  const std::string indent = "  ";
+  xml_doc.save(s, indent.c_str(),
+               pugi::format_default | pugi::format_no_declaration);
+
+  // Return string
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
+{
+  // Add html node
+  pugi::xml_node html_node = xml_node.append_child("html");
+  html_node.append_attribute("xmlns") = "http://www.w3.org/1999/xhtml";
+  html_node.append_attribute("lang") = "en";
+
+  // Add head node
+  pugi::xml_node head_node = html_node.append_child("head");
+
+  // Add meta node
+  pugi::xml_node meta_node = head_node.append_child("meta");
+  meta_node.append_attribute("http-equiv") = "content-type";
+  meta_node.append_attribute("content") = "text/xhtml; charset=UTF-8";
+
+  // Add script node
+  pugi::xml_node script_node = head_node.append_child("script");
+
+  // Set attributes for script node
+  script_node.append_attribute("type") = "text/javascript";
+  script_node.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
+  script_node.append_child(pugi::node_pcdata);
+
+  // Add link node
+  pugi::xml_node link_node = head_node.append_child("link");
+
+  // Set attributes for link node
+  link_node.append_attribute("rel") = "stylesheet";
+  link_node.append_attribute("type") = "text/css";
+  link_node.append_attribute("href") = "http://www.x3dom.org/download/x3dom.css";
+
+  return html_node;
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_doctype(pugi::xml_node& xml_node)
