@@ -63,8 +63,8 @@ namespace dolfin
     /// Compute volume of tetrahedron
     double volume(const MeshEntity& tetrahedron) const;
 
-    /// Compute diameter of tetrahedron
-    double diameter(const MeshEntity& tetrahedron) const;
+    /// Compute circumradius of tetrahedron
+    double circumradius(const MeshEntity& tetrahedron) const;
 
     /// Compute squared distance to given point
     double squared_distance(const Cell& cell, const Point& point) const;
