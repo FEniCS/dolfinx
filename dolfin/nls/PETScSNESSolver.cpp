@@ -215,26 +215,22 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
   {
     if (parameters["report"])
     {
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
       PetscErrorCode ierr;
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
       ierr = SNESMonitorSet(_snes, SNESMonitorDefault,
                             PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes)),
                             NULL);
       if (ierr != 0) petsc_error(ierr, __FILE__, "SNESMonitorSet");
       #else
-      warning("SNES monitors need updating for PETSc development version.");
-      /*
       PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes));
       PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
       PetscViewerAndFormat *vf;
       PetscViewerAndFormatCreate(viewer,format,&vf);
-      PetscObjectDereference((PetscObject)viewer);
       ierr = SNESMonitorSet(_snes,
                             (PetscErrorCode (*)(SNES,PetscInt,PetscReal,void*)) SNESMonitorDefault,
                             vf,
                             (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
       if (ierr != 0) petsc_error(ierr, __FILE__, "SNESMonitorSet");
-      */
       #endif
     }
   }
@@ -450,18 +446,14 @@ void PETScSNESSolver::set_linear_solver_parameters()
                     NULL);
 
       #else
-      warning("SNES monitors need updating for PETSc development version.");
-      /*
       PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
       PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
       PetscViewerAndFormat *vf;
       ierr = PetscViewerAndFormatCreate(viewer,format,&vf);
-      ierr = PetscObjectDereference((PetscObject)viewer);
       ierr = KSPMonitorSet(ksp,
                            (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorDefault,
                            vf,
                            (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
-      */
       #endif
     }
   }
@@ -506,7 +498,6 @@ void PETScSNESSolver::set_linear_solver_parameters()
       PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
       PetscViewerAndFormat *vf;
       ierr = PetscViewerAndFormatCreate(viewer,format,&vf);
-      ierr = PetscObjectDereference((PetscObject)viewer);
       ierr = KSPMonitorSet(ksp,
                          (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
                          vf,

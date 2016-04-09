@@ -566,19 +566,15 @@ void PETScTAOSolver::set_ksp_options()
                              NULL);
         if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetMonitor");
         #else
-        warning("PETSc monitors need updating for PETSc development version.");
-        /*
         PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
         PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
         PetscViewerAndFormat *vf;
         ierr = PetscViewerAndFormatCreate(viewer,format,&vf);
-        ierr = PetscObjectDereference((PetscObject)viewer);
         ierr = KSPMonitorSet(ksp,
                          (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
                          vf,
                          (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
         if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
-        */
         #endif
       }
     }
