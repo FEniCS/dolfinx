@@ -352,6 +352,29 @@ void X3DOM::xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
 
   // Add X3D XML data to 'body' node
   add_x3dom_data(body_node, mesh, vertex_values, facet_values, parameters);
+
+  // FIXME: adding viewpoint buttons here is fragile since to may
+  // change in the X3 node. Need to bring the two closer in the code
+  // to keep consistency
+
+  /*
+  //Append viewpoint buttons to 'body' (HTML) node
+  if (parameters.get_viewpoint_buttons())
+  {
+    // Add viewpoint control node to HTML
+    pugi::xml_node viewpoint_control_node = body_node.append_child("div");
+
+    // Add attributes to viewpoint node
+    viewpoint_control_node.append_attribute("id") = "camera_buttons";
+    viewpoint_control_node.append_attribute("style") = "display: block";
+
+    // Add viewpoints
+    std::vector<std::string> viewpoints = {"front", "back", "left",
+                                           "right", "top", "bottom"};
+    for (auto viewpoint : viewpoints)
+      add_viewpoint_control_option(viewpoint_control_node, viewpoint);
+  }
+  */
 }
 //-----------------------------------------------------------------------------
 pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
@@ -566,8 +589,10 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
     if (color_per_vertex)
     {
       // Get min/max values
-      const double value_min = *std::min_element(vertex_values.begin(), vertex_values.end());
-      const double value_max = *std::max_element(vertex_values.begin(), vertex_values.end());
+      const double value_min = *std::min_element(vertex_values.begin(),
+                                                 vertex_values.end());
+      const double value_max = *std::max_element(vertex_values.begin(),
+                                                 vertex_values.end());
 
       const double scale = (value_max == value_min) ? 1.0 : 255.0/(value_max - value_min);
 

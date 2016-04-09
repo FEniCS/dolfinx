@@ -31,7 +31,9 @@
 // - Can we order vertices so that attribute 'solid' can be set to true?
 // - Make size (height, width) a parameter
 // - Add ambient intensity parameter
-// - Add support for Functions
+// - Test and add more sanity checks for Functions
+// - Add support for GenericFunction
+// - Add support for P0 Functions
 // - Add support for MeshFunctions
 
 namespace pugi
