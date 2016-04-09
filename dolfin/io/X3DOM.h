@@ -23,6 +23,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <boost/multi_array.hpp>
 
 #include <dolfin/geometry/Point.h>
 
@@ -36,6 +37,7 @@
 namespace pugi
 {
   class xml_node;
+  class xml_document;
 }
 
 namespace dolfin
@@ -136,8 +138,12 @@ namespace dolfin
   class Mesh;
   class Point;
 
-  /// This class implements output of meshes to X3DOM XML or HTML or
-  /// string
+  /// This class implements output of meshes to X3DOM XML or XHTML or
+  /// string. We use XHTML as it has full support for X3DOM, and fits
+  /// better with the use of an XML library to produce document tree.
+  ///
+  /// When creating stand-along HTML files, it is necessary to use the
+  /// file extension '.xhtml'.
 
   class X3DOM
   {
@@ -147,17 +153,17 @@ namespace dolfin
     static std::string str(const Mesh& mesh,
                            X3DOMParameters paramemeters=X3DOMParameters());
 
-    /// Return HTML string with embedded X3D for a Mesh
-    static std::string html(const Mesh& mesh,
-                            X3DOMParameters parameters=X3DOMParameters());
+    /// Return XHTML string with embedded X3D for a Mesh
+    static std::string xhtml(const Mesh& mesh,
+                             X3DOMParameters parameters=X3DOMParameters());
 
     /// Return X3D string for a Function
     static std::string str(const Function& u,
                            X3DOMParameters paramemeters=X3DOMParameters());
 
-    /// Return HTML string with embedded X3D for a Function
-    static std::string html(const Function& u,
-                            X3DOMParameters parameters=X3DOMParameters());
+    /// Return XHTML string with embedded X3D for a Function
+    static std::string xhtml(const Function& u,
+                             X3DOMParameters parameters=X3DOMParameters());
 
   private:
 
@@ -166,12 +172,28 @@ namespace dolfin
     // (https://github.com/swig/swig/issues/594)
     enum  Viewpoint {top, bottom, left, right, back, front, default_view};
 
+    // Build X3DOM pugixml tree
+    static void x3dom(pugi::xml_document& xml_doc, const Mesh& mesh,
+                      const std::vector<double>& vertex_values,
+                      const std::vector<double>& facet_values,
+                      const X3DOMParameters& parameters);
+
+    // Build XHTML pugixml tree
+    static void xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
+                      const std::vector<double>& vertex_values,
+                      const std::vector<double>& facet_values,
+                      const X3DOMParameters& parameters);
+
     // Add HTML preamble (HTML) to XML doc and return 'html' node
     static pugi::xml_node add_html_preamble(pugi::xml_node& xml_node);
 
-     // Add X3D doctype (an XML document should have no more than one
+    // Add X3D doctype (an XML document should have no more than one
     // doc_type node)
-    static void add_doctype(pugi::xml_node& xml_node);
+    static void add_x3dom_doctype(pugi::xml_node& xml_node);
+
+    // Add HTML doctype (an XML document should have no more than one
+    // doc_type node)
+    static void add_html_doctype(pugi::xml_node& xml_node);
 
     // Add X3D node and attributes, and return handle to node (x3D)
     static pugi::xml_node add_x3d_node(pugi::xml_node& xml_node,
@@ -207,6 +229,9 @@ namespace dolfin
                                    const Point p,
                                    const double s);
 
+    // Return RGB color map (256 values)
+    static boost::multi_array<float, 2> color_map();
+
     // Get mesh dimensions and viewpoint distance
     static std::pair<Point, double> mesh_min_max(const Mesh& mesh);
 
@@ -225,6 +250,9 @@ namespace dolfin
 
     // Return "x[0] x[1] x[2]" string from array of color RGB
     static std::string array_to_string3(std::array<double, 3> x);
+
+    // Utility to convert pugi::xml_document into a std::string
+    static std::string to_string(pugi::xml_document& xml_doc);
 
   };
 
