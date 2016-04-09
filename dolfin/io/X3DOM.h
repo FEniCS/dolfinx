@@ -178,13 +178,17 @@ namespace dolfin
                                        std::array<double, 2> size,
                                        bool show_stats);
 
-    // Add X3DOM mesh data to XML node (X3D)
+    // Add X3DOM Mesh data to XML node (X3D)
     static void add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
+                               const std::vector<double>& vertex_values,
+                               const std::vector<double>& facet_values,
                                const X3DOMParameters& parameters);
 
     // Add mesh topology and geometry to XML. 'surface' flag controls
     // surface vs wireframe representation (X3D)
     static void add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
+                              const std::vector<double>& vertex_values,
+                              const std::vector<double>& facet_values,
                               const X3DOMParameters& parameters,
                               bool surface);
 
@@ -213,7 +217,11 @@ namespace dolfin
     // output
     static void build_mesh_data(std::vector<int>& topology,
                                 std::vector<double>& geometry,
-                                const Mesh& mesh, bool surface);
+                                std::vector<double>& value_data,
+                                const Mesh& mesh,
+                                const std::vector<double>& vertex_values,
+                                const std::vector<double>& facet_values,
+                                bool surface);
 
     // Return "x[0] x[1] x[2]" string from array of color RGB
     static std::string array_to_string3(std::array<double, 3> x);
