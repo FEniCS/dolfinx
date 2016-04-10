@@ -63,8 +63,8 @@ namespace dolfin
     /// Compute (generalized) volume (area) of triangle
     double volume(const MeshEntity& triangle) const;
 
-    /// Compute diameter of triangle
-    double diameter(const MeshEntity& triangle) const;
+    /// Compute circumradius of PointCell
+    double circumradius(const MeshEntity& point) const;
 
     /// Compute squared distance to given point
     double squared_distance(const Cell& cell, const Point& point) const;
