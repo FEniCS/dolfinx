@@ -35,6 +35,11 @@ LUSolver::LUSolver(MPI_Comm comm, std::string method)
   init(comm, method);
 }
 //-----------------------------------------------------------------------------
+LUSolver::LUSolver(std::string method)
+{
+  init(MPI_COMM_WORLD, method);
+}
+//-----------------------------------------------------------------------------
 LUSolver::LUSolver(MPI_Comm comm,
                    std::shared_ptr<const GenericLinearOperator> A,
                    std::string method)

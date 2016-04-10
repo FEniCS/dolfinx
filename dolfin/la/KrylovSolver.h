@@ -51,6 +51,10 @@ namespace dolfin
                  std::string preconditioner="default");
 
     /// Constructor
+    KrylovSolver(std::string method="default",
+                 std::string preconditioner="default");
+
+    /// Constructor
     KrylovSolver(MPI_Comm comm,
                  std::shared_ptr<const GenericLinearOperator> A,
                  std::string method="default",

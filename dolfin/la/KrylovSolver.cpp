@@ -57,6 +57,12 @@ KrylovSolver::KrylovSolver(MPI_Comm comm, std::string method, std::string precon
   init(method, preconditioner, comm);
 }
 //-----------------------------------------------------------------------------
+KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
+{
+  // Initialize solver
+  init(method, preconditioner, MPI_COMM_WORLD);
+}
+//-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(MPI_Comm comm,
                            std::shared_ptr<const GenericLinearOperator> A,
                            std::string method, std::string preconditioner)

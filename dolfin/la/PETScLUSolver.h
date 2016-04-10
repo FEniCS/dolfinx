@@ -52,7 +52,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    PETScLUSolver(MPI_Comm comm=PETSC_COMM_WORLD, std::string method="default");
+    PETScLUSolver(MPI_Comm comm, std::string method="default");
 
     /// Constructor
     PETScLUSolver(MPI_Comm comm,

@@ -48,6 +48,9 @@ namespace dolfin
     LUSolver(MPI_Comm comm, std::string method= "default");
 
     /// Constructor
+    LUSolver(std::string method= "default");
+
+    /// Constructor
     LUSolver(MPI_Comm comm,
              std::shared_ptr<const GenericLinearOperator> A,
              std::string method="default");
