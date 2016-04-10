@@ -114,6 +114,15 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm, std::string method) : _ksp(NULL)
   init_solver(comm, method);
 }
 //-----------------------------------------------------------------------------
+PETScLUSolver::PETScLUSolver(std::string method) : _ksp(NULL)
+{
+  // Set parameter values
+  parameters = default_parameters();
+
+  // Initialize PETSc LU solver
+  init_solver(PETSC_COMM_WORLD, method);
+}
+//-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(MPI_Comm comm,
                              std::shared_ptr<const PETScMatrix> A,
                              std::string method) : _ksp(NULL), _matA(A)
@@ -131,6 +140,24 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm,
 
   // Initialize PETSc LU solver
   init_solver(comm, method);
+}
+//-----------------------------------------------------------------------------
+PETScLUSolver::PETScLUSolver(std::shared_ptr<const PETScMatrix> A,
+                             std::string method) : _ksp(NULL), _matA(A)
+{
+  // Check dimensions
+  if (A->size(0) != A->size(1))
+  {
+    dolfin_error("PETScLUSolver.cpp",
+                 "create PETSc LU solver",
+                 "Cannot LU factorize non-square PETSc matrix");
+  }
+
+  // Set parameter values
+  parameters = default_parameters();
+
+  // Initialize PETSc LU solver
+  init_solver(PETSC_COMM_WORLD, method);
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::~PETScLUSolver()

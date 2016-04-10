@@ -55,6 +55,10 @@ namespace dolfin
              std::shared_ptr<const GenericLinearOperator> A,
              std::string method="default");
 
+    /// Constructor
+    LUSolver(std::shared_ptr<const GenericLinearOperator> A,
+             std::string method="default");
+
     /// Destructor
     ~LUSolver();
 

@@ -51,6 +51,16 @@ LUSolver::LUSolver(MPI_Comm comm,
   set_operator(A);
 }
 //-----------------------------------------------------------------------------
+LUSolver::LUSolver(std::shared_ptr<const GenericLinearOperator> A,
+                   std::string method)
+{
+  // Initialize solver
+  init(MPI_COMM_WORLD, method);
+
+  // Set operator
+  set_operator(A);
+}
+//-----------------------------------------------------------------------------
 LUSolver::~LUSolver()
 {
   // Do nothing
