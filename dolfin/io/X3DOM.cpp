@@ -582,21 +582,21 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
     material_node.append_attribute("transparency") = parameters.get_transparency();
 
     // Add edges node
-    pugi::xml_node indexed_face_set = shape_node.append_child(x3d_type.c_str());
-    indexed_face_set.append_attribute("solid") = "false";
+    pugi::xml_node indexed_set = shape_node.append_child(x3d_type.c_str());
+    indexed_set.append_attribute("solid") = "false";
 
     // Add color per vertex attribute
     const bool color_per_vertex = !vertex_values.empty();
-    indexed_face_set.append_attribute("colorPerVertex") = color_per_vertex;
+    indexed_set.append_attribute("colorPerVertex") = color_per_vertex;
 
     // Add topology data to edges node
     std::stringstream topology_str;
     for (auto c : topology_data)
       topology_str << c << " ";
-    indexed_face_set.append_attribute("coordIndex") = topology_str.str().c_str();
+    indexed_set.append_attribute("coordIndex") = topology_str.str().c_str();
 
     // Add Coordinate node
-    pugi::xml_node coordinate_node = indexed_face_set.append_child("Coordinate");
+    pugi::xml_node coordinate_node = indexed_set.append_child("Coordinate");
     coordinate_node.append_attribute("DEF") = "dolfin";
 
     // Add geometry data to coordinate node
@@ -629,7 +629,7 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
         color_values << color[0] << " " << color[1] << " " << color[2] << " ";
       }
 
-      pugi::xml_node color_node = indexed_face_set.append_child("Color");
+      pugi::xml_node color_node = indexed_set.append_child("Color");
       dolfin_assert(color_node);
       color_node.append_attribute("color") = color_values.str().c_str();
     }
