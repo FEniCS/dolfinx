@@ -432,18 +432,18 @@ void X3DOM::add_html_doctype(pugi::xml_node& xml_node)
 pugi::xml_node X3DOM::add_x3d_node(pugi::xml_node& xml_node,
                                    std::array<double, 2> size, bool show_stats)
 {
-  pugi::xml_node x3d = xml_node.append_child("x3d");
+  pugi::xml_node x3d = xml_node.append_child("X3D");
   dolfin_assert(x3d);
 
   // Add on option to show rendering
   x3d.append_attribute("showStat") = show_stats;
 
-  x3d.append_attribute("profile") = "Interchange";
-  x3d.append_attribute("version") = "3.3";
-  x3d.append_attribute("xmlns:xsd")
-    = "http://www.w3.org/2001/XMLSchema-instance";
-  x3d.append_attribute("xsd:noNamespaceSchemaLocation")
-    = "http://www.web3d.org/specifications/x3d-3.2.xsd";
+  //x3d.append_attribute("profile") = "Interchange";
+  //x3d.append_attribute("version") = "3.3";
+  x3d.append_attribute("xmlns")
+    = "http://www.web3d.org/specifications/x3d-namespace";
+  //x3d.append_attribute("xsd:noNamespaceSchemaLocation")
+  //  = "http://www.web3d.org/specifications/x3d-3.2.xsd";
 
   std::string width = std::to_string(size[0]) + "px";
   std::string height = std::to_string(size[1]) + "px";
@@ -476,7 +476,7 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   dolfin_assert(x3d_node);
 
   // Add scene node
-  pugi::xml_node scene = x3d_node.append_child("scene");
+  pugi::xml_node scene = x3d_node.append_child("Scene");
   dolfin_assert(scene);
 
   // Add mesh to 'scene' XML node
@@ -485,7 +485,7 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   {
     // Add surface and then wireframe
     add_mesh_data(scene, mesh, vertex_data, facet_data, parameters, true);
-    add_mesh_data(scene, mesh, {}, {}, parameters, false);
+    //add_mesh_data(scene, mesh, {}, {}, parameters, false);
   }
   else if (representation == X3DOMParameters::Representation::surface)
     add_mesh_data(scene, mesh, vertex_data, facet_data, parameters, true);
@@ -493,9 +493,9 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
     add_mesh_data(scene, mesh, {}, {}, parameters, false);
 
   // Add viewpoint(s)
-  const std::pair<Point, double> position = mesh_min_max(mesh);
-  add_viewpoint_nodes(scene, position.first, position.second,
-                      parameters.get_viewpoint_buttons());
+  //const std::pair<Point, double> position = mesh_min_max(mesh);
+  //add_viewpoint_nodes(scene, position.first, position.second,
+  //                    parameters.get_viewpoint_buttons());
 
   // Add background color
   pugi::xml_node background = scene.append_child("Background");
