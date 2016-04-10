@@ -387,14 +387,22 @@ pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
   // Add head node (required for XHTML)
   pugi::xml_node head_node = html_node.append_child("head");
 
-  // Add meta node
-  pugi::xml_node meta_node = head_node.append_child("meta");
-  meta_node.append_attribute("http-equiv") = "content-type";
-  meta_node.append_attribute("content") = "text/xhtml; charset=UTF-8";
+  // Add meta node(s)
+  pugi::xml_node meta_node0 = head_node.append_child("meta");
+  dolfin_assert(meta_node0);
+  meta_node0.append_attribute("http-equiv") = "content-type";
+  meta_node0.append_attribute("content") = "text/html;charset=UTF-8";
+
+  pugi::xml_node meta_node1 = head_node.append_child("meta");
+  dolfin_assert(meta_node1);
+  meta_node1.append_attribute("name") = "generator";
+  meta_node1.append_attribute("content")
+    = "FEniCS/DOLFIN (http://fenicsproject.org)";
+
 
   // Add title node
   pugi::xml_node title_node = head_node.append_child("title");
-  title_node.append_child(pugi::node_pcdata).set_value("FEniCS X3DOM plot");
+  title_node.append_child(pugi::node_pcdata).set_value("FEniCS/DOLFIN X3DOM plot");
 
   // Add script node
   pugi::xml_node script_node = head_node.append_child("script");
@@ -475,6 +483,17 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
                                          parameters.get_x3d_stats());
   dolfin_assert(x3d_node);
 
+  // Add head node
+  pugi::xml_node head_node = x3d_node.append_child("head");
+  dolfin_assert(head_node);
+
+  // Add meta node to head node, and attributes
+  pugi::xml_node meta_node = head_node.append_child("meta");
+  dolfin_assert(meta_node);
+  meta_node.append_attribute("name") = "generator";
+  meta_node.append_attribute("content")
+    = "FEniCS/DOLFIN (http://fenicsproject.org)";
+
   // Add scene node
   pugi::xml_node scene = x3d_node.append_child("Scene");
   dolfin_assert(scene);
@@ -485,7 +504,7 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   {
     // Add surface and then wireframe
     add_mesh_data(scene, mesh, vertex_data, facet_data, parameters, true);
-    //add_mesh_data(scene, mesh, {}, {}, parameters, false);
+    add_mesh_data(scene, mesh, {}, {}, parameters, false);
   }
   else if (representation == X3DOMParameters::Representation::surface)
     add_mesh_data(scene, mesh, vertex_data, facet_data, parameters, true);
