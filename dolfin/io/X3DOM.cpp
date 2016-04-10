@@ -845,6 +845,7 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
                             const std::vector<double>& facet_values,
                             bool surface)
 {
+  // Get topological dimension
   const std::size_t tdim = mesh.topology().dim();
 
   // Intialise facet-to-cell connectivity
@@ -863,7 +864,7 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
   std::vector<double> local_values;
   if (surface)
   {
-    // Output faces
+    // Build face data structure
     for (FaceIterator f(mesh); !f.end(); ++f)
     {
       if (tdim == 2 or f->num_global_entities(tdim) == 1)
@@ -878,27 +879,32 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
           if (!vertex_values.empty())
             local_values.push_back(vertex_values[index]);
         }
+
+        // Add -1 to denote end of entity
         local_topology.push_back(-1);
       }
     }
   }
   else
   {
+    // Build edge data structure
     for (EdgeIterator e(mesh); !e.end(); ++e)
     {
-      // If one of the faces connected to this edge is external, then
-      // output the edge
-      bool allow_edge = (tdim == 2);
-      if (!allow_edge)
+      // For 3D, check if one of the faces connected to this edge is
+      // external, in which case we add the edge
+      bool add_edge = true;
+      if (tdim == 3)
       {
+        add_edge = false;
         for (FaceIterator f(*e); !f.end(); ++f)
         {
           if (f->num_global_entities(tdim) == 1)
-            allow_edge = true;
+            add_edge = true;
         }
       }
 
-      if (allow_edge)
+      // Add edge to data structure, if required
+      if (add_edge)
       {
         for (VertexIterator v(*e); !v.end(); ++v)
         {
@@ -910,6 +916,8 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
           if (!vertex_values.empty())
             local_values.push_back(vertex_values[index]);
         }
+
+        // Add -1 to denote end of entity
         local_topology.push_back(-1);
       }
     }
