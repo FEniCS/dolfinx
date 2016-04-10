@@ -60,6 +60,11 @@ namespace dolfin
                  std::string method="default",
                  std::string preconditioner="default");
 
+    /// Constructor
+    KrylovSolver(std::shared_ptr<const GenericLinearOperator> A,
+                 std::string method="default",
+                 std::string preconditioner="default");
+
     /// Destructor
     ~KrylovSolver();
 
