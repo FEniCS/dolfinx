@@ -158,7 +158,7 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::diameter(const MeshEntity& triangle) const
+double TriangleCell::circumradius(const MeshEntity& triangle) const
 {
   // Check that we get a triangle
   if (triangle.dim() != 2)
@@ -191,8 +191,9 @@ double TriangleCell::diameter(const MeshEntity& triangle) const
   const double b  = p0.distance(p2);
   const double c  = p0.distance(p1);
 
-  // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
-  return 0.5*a*b*c / volume(triangle);
+  // Formula for circumradius from
+  // http://mathworld.wolfram.com/Triangle.html
+  return a*b*c/(4.0*volume(triangle));
 }
 //-----------------------------------------------------------------------------
 double TriangleCell::squared_distance(const Cell& cell,

@@ -93,11 +93,12 @@ double PointCell::volume(const MeshEntity& triangle) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double PointCell::diameter(const MeshEntity& triangle) const
+
+double PointCell::circumradius(const MeshEntity& point) const
 {
   dolfin_error("PointCell.cpp",
-               "find diameter of cell",
-               "Diameter of a point cell is not defined");
+               "find circumradious of cell",
+               "Circumradius of a point cell is not defined");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
