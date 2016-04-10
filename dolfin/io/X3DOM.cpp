@@ -605,13 +605,16 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
       geometry_str << x << " ";
     coordinate_node.append_attribute("point") = geometry_str.str().c_str();
 
+    // Should this be moved?
     if (color_per_vertex)
     {
+      dolfin_assert(3*values_data.size() == geometry_data.size());
+
       // Get min/max values
-      const double value_min = *std::min_element(vertex_values.begin(),
-                                                 vertex_values.end());
-      const double value_max = *std::max_element(vertex_values.begin(),
-                                                 vertex_values.end());
+      const double value_min = *std::min_element(values_data.begin(),
+                                                 values_data.end());
+      const double value_max = *std::max_element(values_data.begin(),
+                                                 values_data.end());
 
       const double scale = (value_max == value_min) ? 1.0 : 255.0/(value_max - value_min);
 
@@ -620,7 +623,7 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
 
       // Add vertex colors
       std::stringstream color_values;
-      for (auto x : vertex_values)
+      for (auto x : values_data)
       {
         const int cindex = scale*std::abs(x - value_min);
         dolfin_assert(cindex < (int)cmap.shape()[0]);
@@ -876,8 +879,6 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
           std::size_t pos = std::distance(vertex_indices.begin(),
                                           vertex_indices.find(index));
           local_topology.push_back(pos + offset);
-          if (!vertex_values.empty())
-            local_values.push_back(vertex_values[index]);
         }
 
         // Add -1 to denote end of entity
@@ -913,8 +914,6 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
           std::size_t pos = std::distance(vertex_indices.begin(),
                                           vertex_indices.find(index));
           local_topology.push_back(pos + offset);
-          if (!vertex_values.empty())
-            local_values.push_back(vertex_values[index]);
         }
 
         // Add -1 to denote end of entity
@@ -934,6 +933,10 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
     const Point p = v.point();
     for (std::size_t i = 0; i < 3; ++i)
       local_geometry.push_back(p[i]);
+
+    // Add vertex data
+    if (!vertex_values.empty())
+      local_values.push_back(vertex_values[index]);
   }
 
   // Gather up all geometry on process 0 and append to xml
