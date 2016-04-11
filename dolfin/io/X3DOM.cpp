@@ -356,7 +356,7 @@ void X3DOM::xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
   // Add text mesh info to body node
   pugi::xml_node mesh_info = body_node.append_child("div");
   dolfin_assert(mesh_info);
-  mesh_info.append_attribute("style") = "position: absolute; margin: 2%; text-align: left; font-size: 12px; color: black;";
+  mesh_info.append_attribute("style") = "position: absolute; margin: 1%; text-align: left; font-size: 12px; color: black;";
   std::string data = "Number of vertices: "
     + std::to_string(mesh.num_vertices())
     + ", number of cells: " + std::to_string(mesh.num_cells());
