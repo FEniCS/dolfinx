@@ -207,25 +207,31 @@ std::string X3DOM::xhtml(const Mesh& mesh, X3DOMParameters parameters)
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
 {
-  // Get dofmap
+  // Get dofmap and mesh
   dolfin_assert(u.function_space()->dofmap());
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
+  dolfin_assert(u.function_space()->mesh());
+  const Mesh& mesh = *u.function_space()->mesh();
 
-  // Only allow scalar or vector fields
-  if (u.value_rank() > 1)
+  const std::size_t value_rank = u.value_rank();
+  // Print warning for vector-valued functions and error for
+  // higher tensors
+  if (value_rank == 1)
+    warning("X3DFile outputs scalar magnitude of vector field");
+  else if (value_rank > 1)
   {
     dolfin_error("X3DFile.cpp",
                  "write X3D",
                  "Can only handle scalar and vector Functions");
   }
 
-  // Print warning for vector-valued functions
-  if (u.value_rank() == 1)
-    warning("X3DFile outputs scalar magnitude of vector field");
+  // Test for cell-centred data
+  const std::size_t tdim = mesh.topology().dim();
+  std::size_t cell_based_dim = 1;
+  for (std::size_t i = 0; i < value_rank; i++)
+    cell_based_dim *= tdim;
+  const bool vertex_data = !(dofmap.max_element_dofs() == cell_based_dim);
 
-  // FIXME: this check looks wrong
-  // Only allow vertex centered data
-  const bool vertex_data = (dofmap.max_element_dofs() != 1);
   if (!vertex_data)
   {
     dolfin_error("X3DFile.cpp",
@@ -233,16 +239,12 @@ std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
                  "Can only handle vertex-based Function at present");
   }
 
-  // Get mesh
-  dolfin_assert(u.function_space()->mesh());
-  const Mesh& mesh = *u.function_space()->mesh();
-
   // Compute vertex data values
   std::vector<double> vertex_values;
   u.compute_vertex_values(vertex_values, mesh);
 
   // Compute l2 norm for vector-valued problems
-  if (u.value_rank() == 1)
+  if (value_rank == 1)
   {
     const std::size_t num_vertices = mesh.num_vertices();
     std::vector<double> magnitude(num_vertices);
