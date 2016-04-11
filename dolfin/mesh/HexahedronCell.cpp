@@ -152,18 +152,18 @@ double HexahedronCell::volume(const MeshEntity& cell) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double HexahedronCell::diameter(const MeshEntity& cell) const
+double HexahedronCell::circumradius(const MeshEntity& cell) const
 {
   // Check that we get a cell
   if (cell.dim() != 2)
   {
     dolfin_error("HexahedronCell.cpp",
-                 "compute diameter of hexahedron cell",
+                 "compute circumradius of hexahedron cell",
                  "Illegal mesh entity");
   }
 
   dolfin_error("HexahedronCell.cpp",
-               "compute diameter of hexahedron cell",
+               "compute circumradius of hexahedron cell",
                "Don't know how to compute diameter");
 
   dolfin_not_implemented();

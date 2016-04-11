@@ -55,7 +55,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
-               _ordered(false), _mpi_comm(MPI_COMM_WORLD)
+  _ordered(false), _mpi_comm(MPI_COMM_WORLD)
 {
   // Do nothing
 }
@@ -353,29 +353,26 @@ std::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const
 //-----------------------------------------------------------------------------
 double Mesh::hmin() const
 {
-  CellIterator cell(*this);
-  double h = cell->diameter();
-  for (; !cell.end(); ++cell)
-    h = std::min(h, cell->diameter());
+  double h = std::numeric_limits<double>::max();
+  for (CellIterator cell(*this); !cell.end(); ++cell)
+    h = std::min(h, cell->h());
 
   return h;
 }
 //-----------------------------------------------------------------------------
 double Mesh::hmax() const
 {
-  CellIterator cell(*this);
-  double h = cell->diameter();
-  for (; !cell.end(); ++cell)
-    h = std::max(h, cell->diameter());
+  double h = 0.0;
+  for (CellIterator cell(*this); !cell.end(); ++cell)
+    h = std::max(h, cell->h());
 
   return h;
 }
 //-----------------------------------------------------------------------------
 double Mesh::rmin() const
 {
-  CellIterator cell(*this);
-  double r = cell->inradius();
-  for (; !cell.end(); ++cell)
+  double r = std::numeric_limits<double>::max();
+  for (CellIterator cell(*this); !cell.end(); ++cell)
     r = std::min(r, cell->inradius());
 
   return r;
@@ -383,9 +380,8 @@ double Mesh::rmin() const
 //-----------------------------------------------------------------------------
 double Mesh::rmax() const
 {
-  CellIterator cell(*this);
-  double r = cell->inradius();
-  for (; !cell.end(); ++cell)
+  double r = 0.0;
+  for (CellIterator cell(*this); !cell.end(); ++cell)
     r = std::max(r, cell->inradius());
 
   return r;
