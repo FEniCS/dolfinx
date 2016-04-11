@@ -357,7 +357,6 @@ void X3DOM::xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
   // change in the X3 node. Need to bring the two closer in the code
   // to keep consistency
 
-  /*
   //Append viewpoint buttons to 'body' (HTML) node
   if (parameters.get_viewpoint_buttons())
   {
@@ -374,7 +373,6 @@ void X3DOM::xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
     for (auto viewpoint : viewpoints)
       add_viewpoint_control_option(viewpoint_control_node, viewpoint);
   }
-  */
 }
 //-----------------------------------------------------------------------------
 pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
@@ -512,9 +510,9 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
     add_mesh_data(scene, mesh, {}, {}, parameters, false);
 
   // Add viewpoint(s)
-  //const std::pair<Point, double> position = mesh_min_max(mesh);
-  //add_viewpoint_nodes(scene, position.first, position.second,
-  //                    parameters.get_viewpoint_buttons());
+  const std::pair<Point, double> position = mesh_min_max(mesh);
+  add_viewpoint_nodes(scene, position.first, position.second,
+                     parameters.get_viewpoint_buttons());
 
   // Add background color
   pugi::xml_node background = scene.append_child("Background");
