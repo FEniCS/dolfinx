@@ -138,7 +138,7 @@ void LinearVariationalSolver::solve()
       lu_method = solver_type;
 
     // Solve linear system
-    LUSolver solver(lu_method);
+    LUSolver solver(comm, lu_method);
     solver.parameters.update(parameters("lu_solver"));
     solver.parameters["symmetric"] = (bool) parameters["symmetric"];
     solver.solve(*A, *u->vector(), *b);
@@ -174,7 +174,7 @@ void LinearVariationalSolver::solve()
     }
 
     // Solve linear system
-    KrylovSolver solver(solver_type, pc_type);
+    KrylovSolver solver(comm, solver_type, pc_type);
     solver.parameters.update(parameters("krylov_solver"));
     solver.solve(*A, *u->vector(), *b);
   }
