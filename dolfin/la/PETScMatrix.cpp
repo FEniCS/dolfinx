@@ -94,6 +94,15 @@ std::shared_ptr<GenericMatrix> PETScMatrix::copy() const
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const TensorLayout& tensor_layout)
 {
+  // Throw error if already initialised
+  if (!empty())
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "init PETSc matrix",
+                 "PETScMatrix may not be initialized more than once.");
+    MatDestroy(&_matA);
+  }
+
   PetscErrorCode ierr;
 
   // Get global dimensions and local range
@@ -110,31 +119,13 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   // Get sparsity pattern
   auto sparsity_pattern = tensor_layout.sparsity_pattern();
 
-  // Throw error if already initialised
-  if (!empty())
-  {
-    dolfin_error("PETScMatrix.cpp",
-                 "init PETSc matrix",
-                 "PETScMatrix may not be initialized more than once.");
-    MatDestroy(&_matA);
-  }
-
   // Get block size
   int block_size = tensor_layout.index_map(0)->block_size();
   if (block_size != tensor_layout.index_map(1)->block_size())
     block_size = 1;
 
-  // Set matrix to MATSEQAIJ in serial to permit the use of
-  // serial-only solvers
-  if (dolfin::MPI::size(sparsity_pattern->mpi_comm()) == 1)
-  {
-    ierr = MatSetType(_matA, MATSEQAIJ);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
-  }
-
   // Get number of nonzeros for each row from sparsity pattern
-  std::vector<std::size_t> num_nonzeros_diagonal;
-  std::vector<std::size_t> num_nonzeros_off_diagonal;
+  std::vector<std::size_t> num_nonzeros_diagonal, num_nonzeros_off_diagonal;
   sparsity_pattern->num_nonzeros_diagonal(num_nonzeros_diagonal);
   sparsity_pattern->num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
 
@@ -205,7 +196,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
   if (ierr != 0) petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
 
-  // Set some options on _matA
+  // Set some options on _matA object
 
   // Do not allow more entries than have been pre-allocated
   ierr = MatSetOption(_matA, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
