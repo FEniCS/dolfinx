@@ -26,6 +26,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Face.h>
@@ -232,37 +233,65 @@ std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
     cell_based_dim *= tdim;
   const bool vertex_data = !(dofmap.max_element_dofs() == cell_based_dim);
 
-  if (!vertex_data)
-  {
-    dolfin_error("X3DFile.cpp",
-                 "write X3D",
-                 "Can only handle vertex-based Function at present");
-  }
-
-  // Compute vertex data values
   std::vector<double> vertex_values;
-  u.compute_vertex_values(vertex_values, mesh);
-
-  // Compute l2 norm for vector-valued problems
-  if (value_rank == 1)
+  std::vector<double> facet_values;
+  if (vertex_data)
   {
-    const std::size_t num_vertices = mesh.num_vertices();
-    std::vector<double> magnitude(num_vertices);
-    for (std::size_t i = 0; i < num_vertices ; ++i)
+    // Compute vertex data values
+    u.compute_vertex_values(vertex_values, mesh);
+
+    // Compute l2 norm for vector-valued problems
+    if (value_rank == 1)
     {
-      double val = 0.0;
-      for (std::size_t j = 0; j < u.value_size() ; j++)
-        val += vertex_values[i + j*num_vertices]*vertex_values[i + j*num_vertices];
-      magnitude[i] = std::sqrt(val);
+      const std::size_t num_vertices = mesh.num_vertices();
+      std::vector<double> magnitude(num_vertices);
+      for (std::size_t i = 0; i < num_vertices ; ++i)
+      {
+        double val = 0.0;
+        for (std::size_t j = 0; j < u.value_size() ; j++)
+          val += vertex_values[i + j*num_vertices]*vertex_values[i + j*num_vertices];
+        magnitude[i] = std::sqrt(val);
+      }
+
+      // Swap data_values and magnitude
+      std::swap(vertex_values, magnitude);
+    }
+  }
+  else
+  {
+    if (value_rank != 0)
+    {
+      dolfin_error("X3DOM.cpp",
+                   "create X3DOM",
+                   "Can only handle scalar cell-centered Function at present");
     }
 
-    // Swap data_values and magnitude
-    std::swap(vertex_values, magnitude);
+    if (MPI::size(mesh.mpi_comm()) != 1)
+    {
+      dolfin_error("X3DOM.cpp",
+                   "create X3DOM",
+                   "Cell-centered data not supported in parallel");
+    }
+
+    // Get dofs for cell centered data
+    std::vector<dolfin::la_index> dofs;
+    for (std::size_t i = 0; i != mesh.num_cells(); ++i)
+    {
+      // Tabulate dofs
+      dolfin_assert(dofmap.num_element_dofs(i) == 1);
+      //      const ArrayView<const dolfin::la_index> cell_dofs = dofmap.cell_dofs(i);
+      dofs.push_back(dofmap.cell_dofs(i)[0]);
+    }
+
+    // Get  values from vector
+    facet_values.resize(dofs.size());
+    dolfin_assert(u.vector());
+    u.vector()->get_local(facet_values.data(), dofs.size(), dofs.data());
   }
 
   // Build XML doc
   pugi::xml_document xml_doc;
-  x3dom(xml_doc, mesh, vertex_values, {}, parameters);
+  x3dom(xml_doc, mesh, vertex_values, facet_values, parameters);
 
   // Return as string
   return to_string(xml_doc);
@@ -589,6 +618,14 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
     const bool color_per_vertex = !vertex_values.empty();
     indexed_set.append_attribute("colorPerVertex") = color_per_vertex;
 
+    if (color_per_vertex)
+      dolfin_assert(3*values_data.size() == geometry_data.size());
+    else
+    {
+    //std::cout << values_data.size() << " " << topology_data.size() << " " << geometry_data.size() << "\n";
+      dolfin_assert(values_data.size() == topology_data.size());
+    }
+
     // Add topology data to edges node
     std::stringstream topology_str;
     for (auto c : topology_data)
@@ -605,38 +642,33 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
       geometry_str << x << " ";
     coordinate_node.append_attribute("point") = geometry_str.str().c_str();
 
-    // Should this be moved?
-    if (color_per_vertex)
+    // Get min/max values
+    const double value_min = *std::min_element(values_data.begin(),
+                                               values_data.end());
+    const double value_max = *std::max_element(values_data.begin(),
+                                               values_data.end());
+
+    const double scale = (value_max == value_min) ? 1.0 : 255.0/(value_max - value_min);
+
+    // Get colour map (256 RGB values)
+    boost::multi_array<float, 2> cmap = color_map();
+
+    // Add vertex colors
+    std::stringstream color_values;
+    for (auto x : values_data)
     {
-      dolfin_assert(3*values_data.size() == geometry_data.size());
-
-      // Get min/max values
-      const double value_min = *std::min_element(values_data.begin(),
-                                                 values_data.end());
-      const double value_max = *std::max_element(values_data.begin(),
-                                                 values_data.end());
-
-      const double scale = (value_max == value_min) ? 1.0 : 255.0/(value_max - value_min);
-
-      // Get colour map (256 RGB values)
-      boost::multi_array<float, 2> cmap = color_map();
-
-      // Add vertex colors
-      std::stringstream color_values;
-      for (auto x : values_data)
-      {
-        const int cindex = scale*std::abs(x - value_min);
-        dolfin_assert(cindex < (int)cmap.shape()[0]);
-        auto color = cmap[cindex];
-        dolfin_assert(color.shape()[0] == 3);
-        color_values << color[0] << " " << color[1] << " " << color[2] << " ";
-      }
-
-      pugi::xml_node color_node = indexed_set.append_child("Color");
-      dolfin_assert(color_node);
-      color_node.append_attribute("color") = color_values.str().c_str();
+      const int cindex = scale*std::abs(x - value_min);
+      dolfin_assert(cindex < (int)cmap.shape()[0]);
+      auto color = cmap[cindex];
+      dolfin_assert(color.shape()[0] == 3);
+      color_values << color[0] << " " << color[1] << " " << color[2] << " ";
     }
+
+    pugi::xml_node color_node = indexed_set.append_child("Color");
+    dolfin_assert(color_node);
+    color_node.append_attribute("color") = color_values.str().c_str();
   }
+
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control,
@@ -848,6 +880,10 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
                             const std::vector<double>& facet_values,
                             bool surface)
 {
+  // Cannot build data from facets and vertices at the same time
+  dolfin_assert(vertex_values.empty() or facet_values.empty());
+  // FIXME: also build value_data from facet_values
+
   // Get topological dimension
   const std::size_t tdim = mesh.topology().dim();
 
@@ -859,7 +895,6 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
 
   std::size_t offset = dolfin::MPI::global_offset(mesh.mpi_comm(),
                                                   vertex_indices.size(), true);
-
 
   // Collect up topology of the local part of the mesh which should be
   // displayed
