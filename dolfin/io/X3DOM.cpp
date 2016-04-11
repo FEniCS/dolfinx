@@ -353,6 +353,15 @@ void X3DOM::xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
   // Add X3D XML data to 'body' node
   add_x3dom_data(body_node, mesh, vertex_values, facet_values, parameters);
 
+  // Add text mesh info to body node
+  pugi::xml_node mesh_info = body_node.append_child("div");
+  dolfin_assert(mesh_info);
+  mesh_info.append_attribute("style") = "position: absolute; margin: 2%; text-align: left; font-size: 12px; color: black;";
+  std::string data = "Number of vertices: "
+    + std::to_string(mesh.num_vertices())
+    + ", number of cells: " + std::to_string(mesh.num_cells());
+  mesh_info.append_child(pugi::node_pcdata).set_value(data.c_str());
+
   // FIXME: adding viewpoint buttons here is fragile since to may
   // change in the X3 node. Need to bring the two closer in the code
   // to keep consistency
@@ -524,15 +533,6 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   ambient_light_node.append_attribute("ambientIntensity")
     = parameters.get_ambient_intensity();
   ambient_light_node.append_attribute("intensity") = 1.0;
-
-  // Add text mesh info to X3D node
-  pugi::xml_node mesh_info = x3d_node.append_child("div");
-  dolfin_assert(mesh_info);
-  mesh_info.append_attribute("style") = "position: absolute; bottom: 2%; left: 2%; text-align: left; font-size: 12px; color: black;";
-  std::string data = "Number of vertices: "
-    + std::to_string(mesh.num_vertices())
-    + ", number of cells: " + std::to_string(mesh.num_cells());
-  mesh_info.append_child(pugi::node_pcdata).set_value(data.c_str());
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
