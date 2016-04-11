@@ -374,7 +374,7 @@ void X3DOM::xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
 
     // Add attributes to viewpoint node
     viewpoint_control_node.append_attribute("id") = "camera_buttons";
-    viewpoint_control_node.append_attribute("style") = "display: inline-flex; position: absolute; top: 420px; left: 2%";
+    viewpoint_control_node.append_attribute("style") = "display: block; position: relative; left: 1%";
 
     // Add viewpoints
     std::vector<std::string> viewpoints = {"front", "back", "left",
