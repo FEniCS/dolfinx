@@ -374,7 +374,7 @@ void X3DOM::xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
 
     // Add attributes to viewpoint node
     viewpoint_control_node.append_attribute("id") = "camera_buttons";
-    viewpoint_control_node.append_attribute("style") = "display: block";
+    viewpoint_control_node.append_attribute("style") = "display: inline-flex; position: absolute; top: 420px; left: 2%";
 
     // Add viewpoints
     std::vector<std::string> viewpoints = {"front", "back", "left",
@@ -644,7 +644,7 @@ void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control,
     = "document.getElementById('" + viewpoint_label + "').setAttribute('set_bind','true');";
   pugi::xml_node viewpoint_buttons = viewpoint_control.append_child("button");
   viewpoint_buttons.append_attribute("onclick") = onclick_str.c_str();
-  viewpoint_buttons.append_attribute("style") = "display: block";
+  viewpoint_buttons.append_attribute("style") = "display: block; margin: 2%";
   viewpoint_buttons.append_child(pugi::node_pcdata).set_value(viewpoint_label.c_str());
 }
 //-----------------------------------------------------------------------------
