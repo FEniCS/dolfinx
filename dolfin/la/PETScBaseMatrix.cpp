@@ -28,7 +28,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PETScBaseMatrix::PETScBaseMatrix(Mat A) : _matA(A)
+PETScBaseMatrix::PETScBaseMatrix(Mat A) : _matA(A), _is_initialised(true)
 {
   // Increase reference count
   if (_matA)
@@ -59,7 +59,7 @@ std::size_t PETScBaseMatrix::size(std::size_t dim) const
                  "Illegal axis (%d), must be 0 or 1", dim);
   }
 
-  if (_matA)
+  if (_matA && _is_initialised)
   {
     PetscInt m(0), n(0);
     PetscErrorCode ierr = MatGetSize(_matA, &m, &n);
@@ -84,7 +84,7 @@ PETScBaseMatrix::local_range(std::size_t dim) const
                  "Only local row range is available for PETSc matrices");
   }
 
-  if (_matA)
+  if (_matA and _is_initialised)
   {
     PetscInt m(0), n(0);
     PetscErrorCode ierr = MatGetOwnershipRange(_matA, &m, &n);

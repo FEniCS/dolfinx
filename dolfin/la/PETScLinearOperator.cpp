@@ -59,7 +59,8 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-PETScLinearOperator::PETScLinearOperator() : _wrapper(0)
+PETScLinearOperator::PETScLinearOperator() : PETScBaseMatrix(),
+                                             _wrapper(nullptr)
 {
   // Do nothing
 }
@@ -117,7 +118,7 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
   // Get local range
   std::size_t m_local = M;
   std::size_t n_local = N;
-  if (MPI::size(MPI_COMM_WORLD) > 1)
+  if (MPI::size(x.mpi_comm()) > 1)
   {
     std::pair<std::size_t, std::size_t> local_range_x = x.local_range();
     std::pair<std::size_t, std::size_t> local_range_y = y.local_range();
@@ -131,7 +132,7 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
     MatDestroy(&_matA);
 
   // Create shell matrix
-  ierr = MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, M, N,
+  ierr = MatCreateShell(x.mpi_comm(), m_local, n_local, M, N,
                         (void*) this, &_matA);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreateShell");
 
@@ -140,6 +141,8 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
 
   ierr = MatShellSetOperation(_matA, MATOP_MULT, (void (*)()) usermult);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatShellSetOperation");
+
+  this->_is_initialised = true;
 }
 //-----------------------------------------------------------------------------
 

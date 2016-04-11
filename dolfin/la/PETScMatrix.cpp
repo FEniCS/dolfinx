@@ -1,4 +1,5 @@
-// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson and Anders Logg
+// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson, Anders Logg
+// and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -48,9 +49,16 @@ const std::map<std::string, NormType> PETScMatrix::norm_types
     {"frobenius", NORM_FROBENIUS} };
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix() : PETScBaseMatrix(NULL)
+PETScMatrix::PETScMatrix() : PETScMatrix(MPI_COMM_WORLD)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+PETScMatrix::PETScMatrix(MPI_Comm comm) : PETScBaseMatrix()
+{
+  // Create uninitialised matrix
+  PetscErrorCode ierr = MatCreate(comm, &_matA);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(Mat A) : PETScBaseMatrix(A)
@@ -58,12 +66,20 @@ PETScMatrix::PETScMatrix(Mat A) : PETScBaseMatrix(A)
   // Do nothing (reference count to A is incremented in base class)
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScBaseMatrix(NULL)
+PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScBaseMatrix()
 {
-  if (A.mat())
+  if (A.mat() && A._is_initialised)
   {
+    this->_is_initialised = A._is_initialised;
     PetscErrorCode ierr = MatDuplicate(A.mat(), MAT_COPY_VALUES, &_matA);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatDuplicate");
+  }
+  else
+  {
+    // Create uninitialised matrix
+    this->_is_initialised = false;
+    PetscErrorCode ierr = MatCreate(A.mpi_comm(), &_matA);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
   }
 }
 //-----------------------------------------------------------------------------
@@ -74,7 +90,7 @@ PETScMatrix::~PETScMatrix()
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericMatrix> PETScMatrix::copy() const
 {
-  return std::shared_ptr<GenericMatrix>(new PETScMatrix(*this));
+  return std::make_shared<PETScMatrix>(*this);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const TensorLayout& tensor_layout)
@@ -95,7 +111,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   // Get sparsity pattern
   auto sparsity_pattern = tensor_layout.sparsity_pattern();
 
-  if (_matA)
+  // Throw error if already initialised
+  if (_is_initialised)
   {
     dolfin_error("PETScMatrix.cpp",
                  "init PETSc matrix",
@@ -111,12 +128,12 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     sparsity_pattern->num_nonzeros_diagonal(num_nonzeros);
 
     // Create matrix
-    ierr = MatCreate(PETSC_COMM_SELF, &_matA);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
+    //ierr = MatCreate(PETSC_COMM_SELF, &_matA);
+    //if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
 
     // Set options prefix (if any)
-    PetscErrorCode ierr = MatSetOptionsPrefix(_matA, _petsc_options_prefix.c_str());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
+    //PetscErrorCode ierr = MatSetOptionsPrefix(_matA, _petsc_options_prefix.c_str());
+    //if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
 
     // Set size
     ierr = MatSetSizes(_matA, M, N, M, N);
@@ -192,13 +209,13 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     sparsity_pattern->num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
 
     // Create matrix
-    ierr = MatCreate(PETSC_COMM_WORLD, &_matA);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
+    //ierr = MatCreate(PETSC_COMM_WORLD, &_matA);
+    //if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
 
     // Set options prefix (if any)
-    PetscErrorCode ierr = MatSetOptionsPrefix(_matA,
-                                              _petsc_options_prefix.c_str());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
+    //PetscErrorCode ierr = MatSetOptionsPrefix(_matA,
+    //                                          _petsc_options_prefix.c_str());
+    //if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
 
     // Set size
     ierr = MatSetSizes(_matA, m, n, M, N);
@@ -274,16 +291,20 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   ierr = MatSetOption(_matA, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOption");
 
+  // Keep nonzero structure after calling MatZeroRows
   ierr = MatSetOption(_matA, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOption");
 
   ierr = MatSetUp(_matA);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetUp");
+
+  _is_initialised = true;
 }
 //-----------------------------------------------------------------------------
 bool PETScMatrix::empty() const
 {
-  return _matA ? false : true;
+  std::cout << "-- Test for empty: " << _is_initialised << std::endl;
+  return !(this->_is_initialised);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(double* block,
@@ -681,30 +702,16 @@ GenericLinearAlgebraFactory& PETScMatrix::factory() const
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_options_prefix(std::string options_prefix)
 {
-  if (_matA)
-  {
-    dolfin_error("PETScMatrix.cpp",
-                 "setting PETSc options prefix",
-                 "Cannot set options prefix since PETSc Mat has already been initialized");
-
-  }
-  else
-    _petsc_options_prefix = options_prefix;
+  dolfin_assert(_matA);
+  MatSetOptionsPrefix(_matA, options_prefix.c_str());
 }
 //-----------------------------------------------------------------------------
 std::string PETScMatrix::get_options_prefix() const
 {
-  if (_matA)
-  {
-    const char* prefix = NULL;
-    MatGetOptionsPrefix(_matA, &prefix);
-    return std::string(prefix);
-  }
-  else
-  {
-    warning("PETSc Mat object has not been initialised, therefore prefix has not been set");
-    return std::string();
-  }
+  dolfin_assert(_matA);
+  const char* prefix = NULL;
+  MatGetOptionsPrefix(_matA, &prefix);
+  return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
@@ -792,7 +799,8 @@ void PETScMatrix::binary_dump(std::string file_name) const
 //-----------------------------------------------------------------------------
 std::string PETScMatrix::str(bool verbose) const
 {
-  if (!_matA)
+  dolfin_assert(_matA);
+  if (this->empty())
     return "<Uninitialized PETScMatrix>";
 
   std::stringstream s;

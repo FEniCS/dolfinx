@@ -47,7 +47,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    PETScBaseMatrix() : _matA(NULL) {}
+    PETScBaseMatrix() : _matA(NULL), _is_initialised(false) {}
 
     /// Constructor
     explicit PETScBaseMatrix(Mat A);
@@ -85,6 +85,7 @@ namespace dolfin
     // PETSc Mat pointer
     Mat _matA;
 
+    bool _is_initialised;
   };
 
 }

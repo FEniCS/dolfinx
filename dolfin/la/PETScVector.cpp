@@ -64,7 +64,7 @@ PETScVector::PETScVector(const SparsityPattern& sparsity_pattern)
   _init(sparsity_pattern.local_range(0), {}, {});
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(Vec x): _x(x)
+PETScVector::PETScVector(Vec x) : _x(x)
 {
   // Increase reference count to PETSc object
   PetscObjectReference((PetscObject)_x);
@@ -809,6 +809,18 @@ std::string PETScVector::get_options_prefix() const
   const char* prefix = NULL;
   VecGetOptionsPrefix(_x, &prefix);
   return std::string(prefix);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::set_from_options()
+{
+  if (!_x)
+  {
+    dolfin_error("PETScVector.cpp",
+                 "call VecSetFromOptions on PETSc Vec object",
+                 "Vec object has not been intialised");
+  }
+
+  VecSetFromOptions(_x);
 }
 //-----------------------------------------------------------------------------
 Vec PETScVector::vec() const

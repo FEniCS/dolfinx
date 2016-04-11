@@ -1,4 +1,5 @@
-// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson and Anders Logg
+// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson, Anders Logg
+// and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -58,8 +59,11 @@ namespace dolfin
   {
   public:
 
-    /// Create empty matrix
+    /// Create empty matrix (on MPI_COMM_WORLD)
     PETScMatrix();
+
+    /// Create empty matrix
+    explicit PETScMatrix(MPI_Comm comm);
 
     /// Create a wrapper around a PETSc Mat pointer
     explicit PETScMatrix(Mat A);
