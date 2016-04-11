@@ -55,7 +55,7 @@ namespace dolfin
 
     /// Create Krylov solver
     std::shared_ptr<GenericLinearSolver>
-    create_krylov_solver(MPI_Comm comm=MPI_COMM_WORLD,
+    create_krylov_solver(MPI_Comm comm,
                          std::string method,
                          std::string preconditioner) const;
 
