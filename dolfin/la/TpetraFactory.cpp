@@ -32,10 +32,9 @@ using namespace dolfin;
 TpetraFactory TpetraFactory::factory;
 
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericMatrix> TpetraFactory::create_matrix() const
+std::shared_ptr<GenericMatrix> TpetraFactory::create_matrix(MPI_Comm comm) const
 {
-  std::shared_ptr<GenericMatrix> A(new TpetraMatrix);
-  return A;
+  return std::make_shared<TpetraMatrix>();
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> TpetraFactory::create_vector(MPI_Comm comm) const

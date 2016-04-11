@@ -141,8 +141,6 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
 
   ierr = MatShellSetOperation(_matA, MATOP_MULT, (void (*)()) usermult);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatShellSetOperation");
-
-  this->_is_initialised = true;
 }
 //-----------------------------------------------------------------------------
 

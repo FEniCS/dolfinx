@@ -63,21 +63,20 @@ PETScMatrix::PETScMatrix(MPI_Comm comm) : PETScBaseMatrix()
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(Mat A) : PETScBaseMatrix(A)
 {
-  // Do nothing (reference count to A is incremented in base class)
+  // Reference count to A is incremented in base class
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScBaseMatrix()
 {
-  if (A.mat() && A._is_initialised)
+  dolfin_assert(A.mat());
+  if (!A.empty())
   {
-    this->_is_initialised = A._is_initialised;
     PetscErrorCode ierr = MatDuplicate(A.mat(), MAT_COPY_VALUES, &_matA);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatDuplicate");
   }
   else
   {
     // Create uninitialised matrix
-    this->_is_initialised = false;
     PetscErrorCode ierr = MatCreate(A.mpi_comm(), &_matA);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
   }
@@ -112,7 +111,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   auto sparsity_pattern = tensor_layout.sparsity_pattern();
 
   // Throw error if already initialised
-  if (_is_initialised)
+  if (!empty())
   {
     dolfin_error("PETScMatrix.cpp",
                  "init PETSc matrix",
@@ -126,14 +125,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // Get number of nonzeros for each row from sparsity pattern
     std::vector<std::size_t> num_nonzeros(M);
     sparsity_pattern->num_nonzeros_diagonal(num_nonzeros);
-
-    // Create matrix
-    //ierr = MatCreate(PETSC_COMM_SELF, &_matA);
-    //if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
-
-    // Set options prefix (if any)
-    //PetscErrorCode ierr = MatSetOptionsPrefix(_matA, _petsc_options_prefix.c_str());
-    //if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
 
     // Set size
     ierr = MatSetSizes(_matA, M, N, M, N);
@@ -207,15 +198,6 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     std::vector<std::size_t> num_nonzeros_off_diagonal;
     sparsity_pattern->num_nonzeros_diagonal(num_nonzeros_diagonal);
     sparsity_pattern->num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
-
-    // Create matrix
-    //ierr = MatCreate(PETSC_COMM_WORLD, &_matA);
-    //if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
-
-    // Set options prefix (if any)
-    //PetscErrorCode ierr = MatSetOptionsPrefix(_matA,
-    //                                          _petsc_options_prefix.c_str());
-    //if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
 
     // Set size
     ierr = MatSetSizes(_matA, m, n, M, N);
@@ -297,14 +279,13 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
   ierr = MatSetUp(_matA);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetUp");
-
-  _is_initialised = true;
 }
 //-----------------------------------------------------------------------------
 bool PETScMatrix::empty() const
 {
-  std::cout << "-- Test for empty: " << _is_initialised << std::endl;
-  return !(this->_is_initialised);
+  auto sizes = PETScBaseMatrix::size();
+  dolfin_assert((sizes.first < 1 and sizes.second < 1) or (sizes.first > 0 and sizes.second > 0));
+  return (sizes.first < 1) and (sizes.second < 1);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(double* block,
@@ -504,7 +485,7 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
   const PETScVector& xx = as_type<const PETScVector>(x);
   PETScVector& yy = as_type<PETScVector>(y);
 
-  if (size(1) != xx.size())
+  if (this->size(1) != xx.size())
   {
     dolfin_error("PETScMatrix.cpp",
                  "compute matrix-vector product with PETSc matrix",
@@ -712,6 +693,12 @@ std::string PETScMatrix::get_options_prefix() const
   const char* prefix = NULL;
   MatGetOptionsPrefix(_matA, &prefix);
   return std::string(prefix);
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::set_from_options()
+{
+  dolfin_assert(_matA);
+  MatSetFromOptions(_matA);
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)

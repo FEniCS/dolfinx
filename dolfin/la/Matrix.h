@@ -44,10 +44,10 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    Matrix()
+    Matrix(MPI_Comm comm=MPI_COMM_WORLD)
     {
       DefaultFactory factory;
-      matrix = factory.create_matrix();
+      matrix = factory.create_matrix(comm);
     }
 
     /// Copy constructor

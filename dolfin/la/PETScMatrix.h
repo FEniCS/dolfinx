@@ -65,7 +65,8 @@ namespace dolfin
     /// Create empty matrix
     explicit PETScMatrix(MPI_Comm comm);
 
-    /// Create a wrapper around a PETSc Mat pointer
+    /// Create a wrapper around a PETSc Mat pointer. The Mat object
+    /// should have been created, e.g. via PETSc MatrCreate.
     explicit PETScMatrix(Mat A);
 
     /// Copy constructor
@@ -218,6 +219,9 @@ namespace dolfin
     /// database
     std::string get_options_prefix() const;
 
+    /// Call PETSc function MatSetFromOptions on the PETSc Mat object
+    void set_from_options();
+
     /// Assignment operator
     const PETScMatrix& operator= (const PETScMatrix& A);
 
@@ -236,9 +240,6 @@ namespace dolfin
 
     // Create PETSc nullspace object
     MatNullSpace create_petsc_nullspace(const VectorSpaceBasis& nullspace) const;
-
-    // Prefix for PETSc options database
-    std::string _petsc_options_prefix;
 
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;

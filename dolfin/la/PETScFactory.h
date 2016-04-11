@@ -46,7 +46,7 @@ namespace dolfin
     virtual ~PETScFactory() {}
 
     /// Create empty matrix
-    std::shared_ptr<GenericMatrix> create_matrix() const;
+    std::shared_ptr<GenericMatrix> create_matrix(MPI_Comm comm) const;
 
     /// Create empty vector
     std::shared_ptr<GenericVector> create_vector(MPI_Comm comm) const;

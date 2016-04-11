@@ -53,7 +53,7 @@ namespace dolfin
     virtual ~GenericLinearAlgebraFactory() {}
 
     /// Create empty matrix
-    virtual std::shared_ptr<GenericMatrix> create_matrix() const = 0;
+    virtual std::shared_ptr<GenericMatrix> create_matrix(MPI_Comm comm) const = 0;
 
     /// Create empty vector
     virtual std::shared_ptr<GenericVector>

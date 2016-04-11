@@ -46,7 +46,7 @@ namespace dolfin
     virtual ~EigenFactory() {}
 
     /// Create empty matrix
-    std::shared_ptr<GenericMatrix> create_matrix() const
+    std::shared_ptr<GenericMatrix> create_matrix(MPI_Comm comm) const
     { return std::make_shared<EigenMatrix>(); }
 
     /// Create empty vector

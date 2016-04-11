@@ -35,10 +35,9 @@ using namespace dolfin;
 PETScFactory PETScFactory::factory;
 
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericMatrix> PETScFactory::create_matrix() const
+std::shared_ptr<GenericMatrix> PETScFactory::create_matrix(MPI_Comm comm) const
 {
-  std::shared_ptr<GenericMatrix> A(new PETScMatrix);
-  return A;
+  return std::make_shared<PETScMatrix>(comm);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> PETScFactory:: create_vector(MPI_Comm comm) const
@@ -52,31 +51,26 @@ PETScFactory::create_layout(std::size_t rank) const
   TensorLayout::Sparsity sparsity = TensorLayout::Sparsity::DENSE;
   if (rank > 1)
     sparsity = TensorLayout::Sparsity::SPARSE;
-  std::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
-  return pattern;
+  return std::make_shared<TensorLayout>(0, sparsity);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearOperator>
 PETScFactory::create_linear_operator() const
 {
-  std::shared_ptr<GenericLinearOperator> A(new PETScLinearOperator);
-  return A;
+  return std::make_shared<PETScLinearOperator>();
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLUSolver>
 PETScFactory::create_lu_solver(std::string method) const
 {
-  std::shared_ptr<GenericLUSolver> solver(new PETScLUSolver(method));
-  return solver;
+  return std::make_shared<PETScLUSolver>(method);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearSolver>
 PETScFactory::create_krylov_solver(std::string method,
                                    std::string preconditioner) const
 {
-  std::shared_ptr<GenericLinearSolver>
-    solver(new PETScKrylovSolver(method, preconditioner));
-  return solver;
+  return std::make_shared<PETScKrylovSolver>(method, preconditioner);
 }
 //-----------------------------------------------------------------------------
 std::map<std::string, std::string> PETScFactory::lu_solver_methods() const

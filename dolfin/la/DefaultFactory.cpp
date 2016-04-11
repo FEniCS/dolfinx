@@ -30,9 +30,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericMatrix> DefaultFactory::create_matrix() const
+std::shared_ptr<GenericMatrix> DefaultFactory::create_matrix(MPI_Comm comm) const
 {
-  return factory().create_matrix();
+  return factory().create_matrix(comm);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> DefaultFactory::create_vector(MPI_Comm comm) const

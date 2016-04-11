@@ -97,24 +97,19 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
     coefficients = a.coefficients();
 
   // Initialize global tensor
-  std::cout << "Init tensor" << std::endl;
   init_global_tensor(A, a);
 
   // Assemble over cells
-  std::cout << "Assemble cells" << std::endl;
   assemble_cells(A, a, ufc, cell_domains, NULL);
 
   // Assemble over exterior facets
-  std::cout << "Assemble ext facets" << std::endl;
   assemble_exterior_facets(A, a, ufc, exterior_facet_domains, NULL);
 
   // Assemble over interior facets
-  std::cout << "Assemble int" << std::endl;
   assemble_interior_facets(A, a, ufc, interior_facet_domains,
                            cell_domains, NULL);
 
   // Assemble over vertices
-  std::cout << "Assemble vert" << std::endl;
   assemble_vertices(A, a, ufc, vertex_domains);
 
   // Finalize assembly of global tensor
