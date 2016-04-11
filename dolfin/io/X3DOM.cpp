@@ -652,6 +652,9 @@ void X3DOM::add_viewpoint_nodes(pugi::xml_node& xml_scene,
                                 const Point p, double d,
                                 bool show_viewpoint_buttons)
 {
+  // Default viewpoint
+  add_viewpoint_node(xml_scene, Viewpoint::default_view, p, d);
+
   // Add viewpoint nodes
   if (show_viewpoint_buttons)
   {
@@ -662,9 +665,6 @@ void X3DOM::add_viewpoint_nodes(pugi::xml_node& xml_scene,
     add_viewpoint_node(xml_scene, Viewpoint::back, p, d);
     add_viewpoint_node(xml_scene, Viewpoint::front, p, d);
   }
-
-  // Default viewpoint
-  add_viewpoint_node(xml_scene, Viewpoint::default_view, p, d);
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_viewpoint_node(pugi::xml_node& xml_scene, Viewpoint viewpoint,
