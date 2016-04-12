@@ -21,6 +21,7 @@
 #define __LINEAR_OPERATOR_H
 
 #include <memory>
+#include <dolfin/common/mpi.h>
 #include "GenericLinearOperator.h"
 
 namespace dolfin
@@ -40,12 +41,12 @@ namespace dolfin
   {
   public:
 
+    /// Create linear operator
+    LinearOperator();
+
     // Create linear operator to match parallel layout of vectors
     // x and y for product y = Ax.
     LinearOperator(const GenericVector& x, const GenericVector& y);
-
-    /// Create linear operator
-    LinearOperator();
 
     /// Destructor
     virtual ~LinearOperator() {}
@@ -55,6 +56,10 @@ namespace dolfin
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
+
+    /// Return the MPI communicator
+    virtual MPI_Comm mpi_comm() const
+    { dolfin_assert(_matA); return _matA->mpi_comm(); }
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;

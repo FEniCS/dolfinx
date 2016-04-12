@@ -501,19 +501,14 @@ PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type() const
   switch (ksp_norm_type)
   {
   case KSP_NORM_NONE:
-    std::cout << "get none" << std::endl;
     return norm_type::none;
   case KSP_NORM_PRECONDITIONED:
-    std::cout << "get pre" << std::endl;
     return norm_type::preconditioned;
   case KSP_NORM_UNPRECONDITIONED:
-    std::cout << "get unpre" << std::endl;
     return norm_type::unpreconditioned;
   case KSP_NORM_NATURAL:
-    std::cout << "get nat" << std::endl;
     return norm_type::natural;
   case KSP_NORM_DEFAULT:
-    std::cout << "get def" << std::endl;
     return norm_type::default_norm;
   default:
     dolfin_error("PETScKrylovSolver.cpp",

@@ -552,10 +552,7 @@ void PETScMatrix::apply(std::string mode)
 //-----------------------------------------------------------------------------
 MPI_Comm PETScMatrix::mpi_comm() const
 {
-  dolfin_assert(_matA);
-  MPI_Comm mpi_comm = MPI_COMM_NULL;
-  PetscObjectGetComm((PetscObject)_matA, &mpi_comm);
-  return mpi_comm;
+  return PETScBaseMatrix::mpi_comm();
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScMatrix::nnz() const
