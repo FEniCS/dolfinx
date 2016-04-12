@@ -30,9 +30,15 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PETScBaseMatrix::PETScBaseMatrix(Mat A) : _matA(A)
 {
-  // Increase reference count
+  // Increase reference count, and throw error if Mat pointer is NULL
   if (_matA)
     PetscObjectReference((PetscObject)_matA);
+  else
+  {
+    dolfin_error("PETScBaseMatrix.cpp",
+                 "intialise with PETSc Mat pointer",
+                 "Cannot wrap PETSc Mat objects that have not been intialized");
+  }
 }
 //-----------------------------------------------------------------------------
 PETScBaseMatrix::~PETScBaseMatrix()
@@ -59,21 +65,26 @@ std::size_t PETScBaseMatrix::size(std::size_t dim) const
                  "Illegal axis (%d), must be 0 or 1", dim);
   }
 
-  if (_matA)
-  {
-    PetscInt m(0), n(0);
-    PetscErrorCode ierr = MatGetSize(_matA, &m, &n);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MetGetSize");
-    if (dim == 0)
-      return m;
-    else
-      return n;
-  }
+  dolfin_assert(_matA);
+  PetscInt m(0), n(0);
+  PetscErrorCode ierr = MatGetSize(_matA, &m, &n);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MetGetSize");
+  if (dim == 0)
+    return m > 0 ? m : 0;
   else
-    return 0;
+    return n > 0 ? n : 0;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t>
+std::pair<std::int64_t, std::int64_t> PETScBaseMatrix::size() const
+{
+  dolfin_assert(_matA);
+  PetscInt m(0), n(0);
+  PetscErrorCode ierr = MatGetSize(_matA, &m, &n);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MetGetSize");
+  return {m, n};
+}
+//-----------------------------------------------------------------------------
+std::pair<std::int64_t, std::int64_t>
 PETScBaseMatrix::local_range(std::size_t dim) const
 {
   dolfin_assert(dim <= 1);
@@ -84,28 +95,23 @@ PETScBaseMatrix::local_range(std::size_t dim) const
                  "Only local row range is available for PETSc matrices");
   }
 
-  if (_matA)
-  {
-    PetscInt m(0), n(0);
-    PetscErrorCode ierr = MatGetOwnershipRange(_matA, &m, &n);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetOwnershipRange");
-    return std::make_pair(m, n);
-  }
-  else
-    return std::make_pair(0, 0);
+  dolfin_assert(_matA);
+  PetscInt m(0), n(0);
+  PetscErrorCode ierr = MatGetOwnershipRange(_matA, &m, &n);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetOwnershipRange");
+  return {m, n};
 }
 //-----------------------------------------------------------------------------
 void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
 {
   dolfin_assert(_matA);
-
   PetscErrorCode ierr;
 
   // Downcast vector
   PETScVector& _z = as_type<PETScVector>(z);
 
   // Create new PETSc vector
-  Vec x = NULL;
+  Vec x = nullptr;
   if (dim == 0)
   {
     ierr = MatCreateVecs(_matA, NULL, &x);
@@ -123,7 +129,7 @@ void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
                  "Dimension must be 0 or 1, not %d", dim);
   }
 
-  // Associate new PETSc vector with _z
+  // Associate new PETSc Vec with _z
   _z._x = x;
 }
 //-----------------------------------------------------------------------------

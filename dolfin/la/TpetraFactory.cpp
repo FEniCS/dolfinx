@@ -32,10 +32,9 @@ using namespace dolfin;
 TpetraFactory TpetraFactory::factory;
 
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericMatrix> TpetraFactory::create_matrix() const
+std::shared_ptr<GenericMatrix> TpetraFactory::create_matrix(MPI_Comm comm) const
 {
-  std::shared_ptr<GenericMatrix> A(new TpetraMatrix);
-  return A;
+  return std::make_shared<TpetraMatrix>();
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> TpetraFactory::create_vector(MPI_Comm comm) const
@@ -63,14 +62,15 @@ TpetraFactory::create_linear_operator() const
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLUSolver>
-TpetraFactory::create_lu_solver(std::string method) const
+TpetraFactory::create_lu_solver(MPI_Comm comm, std::string method) const
 {
   std::shared_ptr<GenericLUSolver> solver(new Amesos2LUSolver(method));
   return solver;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearSolver>
-TpetraFactory::create_krylov_solver(std::string method,
+TpetraFactory::create_krylov_solver(MPI_Comm comm,
+                                    std::string method,
                                     std::string preconditioner) const
 {
   std::shared_ptr<GenericLinearSolver>

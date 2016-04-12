@@ -103,7 +103,8 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
   }
 
   // Read function data from file
-  File file(filename);
+  MPI_Comm comm = _function_space->mesh()->mpi_comm();
+  File file(comm, filename);
   file >> *this;
 }
 //-----------------------------------------------------------------------------
