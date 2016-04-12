@@ -160,7 +160,7 @@ namespace dolfin
 
     // List of timings for tasks, map from string to
     // (num_timings, total_wall_time, total_user_time, total_system_time)
-    std::map<std::string, std::tuple<std::size_t, double, double, double> >
+    std::map<std::string, std::tuple<std::size_t, double, double, double>>
        _timings;
 
     // Thread used for monitoring memory usage

@@ -27,9 +27,8 @@
 #include <map>
 #include <vector>
 
-#include <boost/scoped_array.hpp>
 #include <memory>
-#include <boost/unordered_set.hpp>
+#include <unordered_set>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
@@ -48,11 +47,11 @@ namespace dolfin
   class MeshEntity;
 
   /// A MeshFunction is a function that can be evaluated at a set of
-  /// mesh entities. A MeshFunction is discrete and is only defined
-  /// at the set of mesh entities of a fixed topological dimension.
-  /// A MeshFunction may for example be used to store a global
-  /// numbering scheme for the entities of a (parallel) mesh, marking
-  /// sub domains or boolean markers for mesh refinement.
+  /// mesh entities. A MeshFunction is discrete and is only defined at
+  /// the set of mesh entities of a fixed topological dimension.  A
+  /// MeshFunction may for example be used to store a global numbering
+  /// scheme for the entities of a (parallel) mesh, marking sub
+  /// domains or boolean markers for mesh refinement.
 
   template <typename T> class MeshFunction : public Variable,
     public Hierarchical<MeshFunction<T> >
@@ -319,7 +318,7 @@ namespace dolfin
     // Values at the set of mesh entities. We don't use a
     // std::vector<T> here because it has trouble with bool, which C++
     // specialises.
-    boost::scoped_array<T> _values;
+    std::unique_ptr<T[]> _values;
 
     // The mesh
     std::shared_ptr<const Mesh> _mesh;
@@ -338,37 +337,33 @@ namespace dolfin
   // Implementation of MeshFunction
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshFunction<T>::MeshFunction() : Variable("f", "unnamed MeshFunction"),
-    Hierarchical<MeshFunction<T> >(*this), _values(0), _dim(0),
-    _size(0)
+  MeshFunction<T>::MeshFunction() : MeshFunction(nullptr)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh)
-    : Variable("f", "unnamed MeshFunction"),
-    Hierarchical<MeshFunction<T> >(*this), _mesh(mesh), _dim(0), _size(0)
+  MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh)
+    : MeshFunction(mesh, 0)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
-                                  std::size_t dim)
+  MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
+                                std::size_t dim)
     : Variable("f", "unnamed MeshFunction"),
-    Hierarchical<MeshFunction<T> >(*this), _mesh(mesh), _dim(0), _size(0)
+      Hierarchical<MeshFunction<T> >(*this), _mesh(mesh), _dim(0), _size(0)
   {
     init(dim);
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
-                                   std::size_t dim, const T& value)
-  : Variable("f", "unnamed MeshFunction"),
-    Hierarchical<MeshFunction<T> >(*this), _mesh(mesh), _dim(0), _size(0)
+  MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
+                                std::size_t dim, const T& value)
+    : MeshFunction(mesh, dim)
+
   {
-    init(dim);
     set_all(value);
   }
   //---------------------------------------------------------------------------
@@ -393,8 +388,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
-                                  std::size_t dim, const MeshDomains& domains)
+  MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
+                                std::size_t dim, const MeshDomains& domains)
     : Variable("f", "unnamed MeshFunction"),
       Hierarchical<MeshFunction<T> >(*this), _mesh(mesh), _dim(0), _size(0)
   {
@@ -473,7 +468,7 @@ namespace dolfin
     set_all(std::numeric_limits<T>::max());
 
     // Iterate over all values
-    boost::unordered_set<std::size_t> entities_values_set;
+    std::unordered_set<std::size_t> entities_values_set;
     typename std::map<std::pair<std::size_t, std::size_t>, T>::const_iterator it;
     const std::map<std::pair<std::size_t, std::size_t>, T>& values
       = mesh_value_collection.values();
