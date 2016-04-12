@@ -34,31 +34,42 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A)
-  : _matA(A)
+  : SLEPcEigenSolver(MPI_COMM_WORLD, A)
 {
-  dolfin_assert(A->size(0) == A->size(1));
-
-  // Set default parameter values
-  parameters = default_parameters();
-
-  // Set up solver environment
-  EPSCreate(PETSC_COMM_WORLD, &_eps);
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm, std::shared_ptr<const PETScMatrix> A)
+  : SLEPcEigenSolver(comm, A, nullptr)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,
                                    std::shared_ptr<const PETScMatrix> B)
-  : _matA(A), _matB(B)
+  : SLEPcEigenSolver(MPI_COMM_WORLD, A,  B)
 
 {
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm,
+                                   std::shared_ptr<const PETScMatrix> A,
+                                   std::shared_ptr<const PETScMatrix> B)
+  : _matA(A), _matB(B)
+{
   dolfin_assert(A->size(0) == A->size(1));
-  dolfin_assert(B->size(0) == A->size(0));
-  dolfin_assert(B->size(1) == A->size(1));
+  if (B)
+  {
+    dolfin_assert(B->size(0) == A->size(0));
+    dolfin_assert(B->size(1) == A->size(1));
+  }
 
   // Set default parameter values
   parameters = default_parameters();
 
   // Set up solver environment
-  EPSCreate(PETSC_COMM_WORLD, &_eps);
+  EPSCreate(comm, &_eps);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::~SLEPcEigenSolver()
@@ -109,19 +120,28 @@ void SLEPcEigenSolver::solve(std::size_t n)
   }
   EPSSetFromOptions(_eps);
 
-  if (parameters["verbose"])
+  if (parameters["verbose"].is_set())
   {
-    KSP ksp;
-    ST st;
-    EPSMonitorSet(_eps, EPSMonitorAll,
-                  PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_eps)),
-                  NULL);
-    EPSGetST(_eps, &st);
-    STGetKSP(st, &ksp);
-    KSPMonitorSet(ksp, KSPMonitorDefault,
-                  PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
-                  NULL);
-    EPSView(_eps, PETSC_VIEWER_STDOUT_SELF);
+    if (parameters["verbose"])
+    {
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
+      KSP ksp;
+      ST st;
+      EPSMonitorSet(_eps, EPSMonitorAll,
+                    PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_eps)),
+                    NULL);
+      EPSGetST(_eps, &st);
+      STGetKSP(st, &ksp);
+      KSPMonitorSet(ksp, KSPMonitorDefault,
+                    PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
+                    NULL);
+      EPSView(_eps, PETSC_VIEWER_STDOUT_SELF);
+      #else
+      PetscViewerAndFormat *vf;
+      PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD, PETSC_VIEWER_DEFAULT, &vf);
+      EPSMonitorSet(_eps,(PetscErrorCode (*)(EPS,PetscInt,PetscInt,PetscScalar*,PetscScalar*,PetscReal*,PetscInt,void*))EPSMonitorAll,vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+      #endif
+    }
   }
 
   // Solve

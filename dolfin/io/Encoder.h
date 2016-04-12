@@ -34,7 +34,6 @@ extern "C"
 #include <sstream>
 #include <vector>
 #include <utility>
-#include <boost/shared_array.hpp>
 #include "base64.h"
 
 namespace dolfin
@@ -48,7 +47,6 @@ namespace dolfin
 
   namespace Encoder
   {
-
     template<typename T>
     static void encode_base64(const T* data, std::size_t length,
                               std::stringstream& encoded_data)
@@ -67,7 +65,7 @@ namespace dolfin
 
     #ifdef HAS_ZLIB
     template<typename T>
-    static std::pair<boost::shared_array<unsigned char>, std::size_t> compress_data(const std::vector<T>& data)
+    static std::vector<unsigned char> compress_data(const std::vector<T>& data)
     {
       // Compute length of uncompressed data
       const unsigned long uncompressed_size = data.size()*sizeof(T);
@@ -76,18 +74,19 @@ namespace dolfin
       unsigned long compressed_size = (uncompressed_size + (((uncompressed_size)/1000)+1)+12);;
 
       // Allocate space for compressed data
-      boost::shared_array<unsigned char> compressed_data(new unsigned char[compressed_size]);
+      std::vector<unsigned char> compressed_data(compressed_size);
 
       // Compress data
-      if (compress((Bytef*) compressed_data.get(), &compressed_size, (const Bytef*) &data[0], uncompressed_size) != Z_OK)
+      if (compress((Bytef*) compressed_data.data(), &compressed_size,
+                   (const Bytef*) data.data(), uncompressed_size) != Z_OK)
       {
         dolfin_error("Encoder.h",
                      "compress data when writing file",
                      "Zlib error while compressing data");
       }
 
-      // Make pair and return
-      return std::make_pair(compressed_data, compressed_size);
+      // Return data
+      return compressed_data;
     }
     #endif
 

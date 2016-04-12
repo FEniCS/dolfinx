@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 
@@ -52,25 +53,27 @@ namespace dolfin
     virtual ~GenericLinearAlgebraFactory() {}
 
     /// Create empty matrix
-    virtual std::shared_ptr<GenericMatrix> create_matrix() const = 0;
+    virtual std::shared_ptr<GenericMatrix> create_matrix(MPI_Comm comm) const = 0;
 
     /// Create empty vector
-    virtual std::shared_ptr<GenericVector> create_vector() const = 0;
+    virtual std::shared_ptr<GenericVector>
+      create_vector(MPI_Comm comm) const = 0;
 
     /// Create empty tensor layout
     virtual std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const = 0;
 
     /// Create empty linear operator
     virtual std::shared_ptr<GenericLinearOperator>
-    create_linear_operator() const = 0;
+      create_linear_operator(MPI_Comm comm) const = 0;
 
     /// Create LU solver
     virtual std::shared_ptr<GenericLUSolver>
-    create_lu_solver(std::string method) const = 0;
+    create_lu_solver(MPI_Comm comm, std::string method) const = 0;
 
     /// Create Krylov solver
     virtual std::shared_ptr<GenericLinearSolver>
-    create_krylov_solver(std::string method,
+    create_krylov_solver(MPI_Comm comm,
+                         std::string method,
                          std::string preconditioner) const = 0;
 
     /// Return a list of available LU solver methods.  This function
@@ -102,6 +105,9 @@ namespace dolfin
 
       void mult(const GenericVector& x, GenericVector& y) const
       { dolfin_not_implemented(); }
+
+      MPI_Comm mpi_comm() const
+      { dolfin_not_implemented(); return MPI_COMM_WORLD; }
 
       std::string str(bool verbose) const
       { dolfin_not_implemented(); return ""; }

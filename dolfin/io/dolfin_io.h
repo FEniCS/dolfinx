@@ -8,5 +8,6 @@
 #include <dolfin/io/XDMFFile.h>
 #include <dolfin/io/HDF5File.h>
 #include <dolfin/io/HDF5Attribute.h>
+#include <dolfin/io/X3DOM.h>
 
 #endif

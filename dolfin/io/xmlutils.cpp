@@ -18,14 +18,15 @@
 // First added:  2011-09-15
 // Last changed: 2011-11-15
 
+#include "pugixml.hpp"
 #include <dolfin/log/log.h>
 #include "xmlutils.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-const pugi::xml_node
-  dolfin::get_node(const pugi::xml_node& xml_node, std::string node_name)
+const pugi::xml_node dolfin::get_node(const pugi::xml_node& xml_node,
+                                      std::string node_name)
 {
   // Check node itself
   if (xml_node.name() == node_name)
@@ -39,6 +40,7 @@ const pugi::xml_node
                  "read DOLFIN XML data",
                  "Unable to find tag <%s>", node_name.c_str());
   }
+
   return child_node;
 }
 //-----------------------------------------------------------------------------

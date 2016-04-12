@@ -113,6 +113,10 @@ def test_computed_norms_against_references():
               (UnitCubeMesh(4, 4, 4),  "4x4x4 unit cube")]
     degrees = [1, 2, 3, 4]
 
+    # For MUMPS, increase estimated require memory increase. Typically
+    # required for high order elements on small meshes in 3D
+    PETScOptions.set("mat_mumps_icntl_14", 40)
+
     # Iterate over test cases and collect results
     results = []
     for mesh in meshes:
@@ -120,6 +124,9 @@ def test_computed_norms_against_references():
             gc_barrier()
             norm = compute_norm(mesh[0], degree)
             results.append((mesh[1], degree, norm))
+
+    # Change option back to default
+    PETScOptions.set("mat_mumps_icntl_14", 20)
 
     # Check results
     errors = check_results(results, reference, tol)

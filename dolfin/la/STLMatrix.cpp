@@ -49,13 +49,16 @@ struct CompareIndex
 //-----------------------------------------------------------------------------
 void STLMatrix::init(const TensorLayout& tensor_layout)
 {
-  // Check that sparsity pattern has correct storage (row vs column storage)
-  if (_primary_dim != tensor_layout.primary_dim)
+  // Check that row/col major indicators has not been set
+  if (_primary_dim != -1)
   {
     dolfin_error("STLMatrix.cpp",
                  "initialization of STL matrix",
-                 "Primary storage dim of matrix and tensor layout must be the same");
+                 "Primary storage dim of matrix has already been set");
   }
+
+  // Set storage layout  storage (row vs column storage)
+  _primary_dim = tensor_layout.primary_dim;
 
   // Get MPI communicator
   _mpi_comm = tensor_layout.mpi_comm();

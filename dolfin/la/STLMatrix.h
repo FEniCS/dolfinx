@@ -55,9 +55,9 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-  STLMatrix(std::size_t primary_dim=0) : _mpi_comm(MPI_COMM_SELF),
-      _primary_dim(primary_dim), _block_size(1), _local_range(0, 0),
-      num_codim_entities(0) {}
+    STLMatrix(MPI_Comm comm) : _mpi_comm(comm), _primary_dim(-1),
+                               _block_size(1), _local_range(0, 0),
+                               num_codim_entities(0) {}
 
     /// Destructor
     virtual ~STLMatrix() {}
@@ -262,7 +262,7 @@ namespace dolfin
                             bool symmetric) const;
 
     // Primary dimension (0=row-wise storage, 1=column-wise storage)
-    const std::size_t _primary_dim;
+    int _primary_dim;
 
     // Block size, e.g. 3 for 3D elasticity with appropriate dof ordering
     int _block_size;

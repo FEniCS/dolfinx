@@ -44,7 +44,7 @@ std::size_t dolfin::solve(const GenericLinearOperator& A,
                           std::string preconditioner)
 {
   Timer timer("Solving linear system");
-  LinearSolver solver(method, preconditioner);
+  LinearSolver solver(x.mpi_comm(), method, preconditioner);
   return solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
@@ -164,7 +164,7 @@ double dolfin::residual(const GenericLinearOperator& A,
                         const GenericVector& x,
                         const GenericVector& b)
 {
-  std::shared_ptr<GenericVector> y = x.factory().create_vector();
+  std::shared_ptr<GenericVector> y = x.factory().create_vector(x.mpi_comm());
   A.mult(x, *y);
   *y -= b;
   return y->norm("l2");

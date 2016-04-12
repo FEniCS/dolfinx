@@ -42,8 +42,6 @@ download_mesh demo/documented/stokes-taylor-hood             dolfin_fine_subdoma
 download_mesh demo/documented/stokes-mini                    dolfin_fine.xml.gz
 download_mesh demo/documented/stokes-mini                    dolfin_fine_subdomains.xml.gz
 download_mesh demo/documented/subdomains                     dolfin_fine.xml.gz
-download_mesh demo/documented/stokes-stabilized              dolfin_fine.xml.gz
-download_mesh demo/documented/stokes-stabilized              dolfin_fine_subdomains.xml.gz
 download_mesh demo/documented/bcs                            aneurysm.xml.gz
 download_mesh demo/documented/navier-stokes                  lshape.xml.gz
 download_mesh demo/undocumented/buckling-tao                 buckling.xml.gz

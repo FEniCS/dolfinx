@@ -43,29 +43,22 @@ namespace dolfin
     virtual ~STLFactory() {}
 
     /// Create empty matrix
-    std::shared_ptr<GenericMatrix> create_matrix() const
-    {
-      std::shared_ptr<GenericMatrix> A(new STLMatrix);
-      return A;
-    }
+    std::shared_ptr<GenericMatrix> create_matrix(MPI_Comm comm) const
+    { return  std::make_shared<STLMatrix>(comm); }
 
     /// Create empty vector
-    std::shared_ptr<GenericVector> create_vector() const
-    {
-      std::shared_ptr<GenericVector> x(new STLVector);
-      return x;
-    }
+    std::shared_ptr<GenericVector> create_vector(MPI_Comm comm) const
+    { return std::make_shared<STLVector>(comm); }
 
     /// Create empty tensor layout
     std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
     {
-      std::shared_ptr<TensorLayout>
-        pattern(new TensorLayout(0, TensorLayout::Sparsity::DENSE));
-      return pattern;
+      return std::make_shared<TensorLayout>(0, TensorLayout::Sparsity::DENSE);
     }
 
     /// Create empty linear operator
-    std::shared_ptr<GenericLinearOperator> create_linear_operator() const
+    std::shared_ptr<GenericLinearOperator>
+    create_linear_operator(MPI_Comm comm) const
     {
       dolfin_error("STLFactory.h",
                    "create linear operator",
@@ -77,7 +70,7 @@ namespace dolfin
 
     /// Create LU solver
     std::shared_ptr<GenericLUSolver>
-      create_lu_solver(std::string method) const
+    create_lu_solver(MPI_Comm comm, std::string method) const
     {
       dolfin_error("STLFactory",
                    "create LU solver",
@@ -88,8 +81,9 @@ namespace dolfin
 
     /// Create Krylov solver
     std::shared_ptr<GenericLinearSolver>
-      create_krylov_solver(std::string method,
-                           std::string preconditioner) const
+    create_krylov_solver(MPI_Comm comm,
+                         std::string method,
+                         std::string preconditioner) const
     {
       dolfin_error("STLFactory",
                    "create Krylov solver",
