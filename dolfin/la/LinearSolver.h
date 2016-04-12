@@ -47,9 +47,9 @@ namespace dolfin
   public:
 
     /// Create linear solver
-    LinearSolver(MPI_Comm comm=MPI_COMM_WORLD,
-                 std::string method="default",
-                 std::string preconditioner="default");
+    explicit LinearSolver(MPI_Comm comm=MPI_COMM_WORLD,
+                          std::string method="default",
+                          std::string preconditioner="default");
 
     /// Destructor
     ~LinearSolver();

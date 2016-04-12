@@ -130,11 +130,18 @@ namespace dolfin
   {
   public:
 
-    /// Create eigenvalue solver for Ax = \lambda x
+    /// Create eigenvalue solver for Ax = \lambda x on MPI_COMM_WORLD
     explicit SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A);
 
     /// Create eigenvalue solver for Ax = \lambda x
+    SLEPcEigenSolver(MPI_Comm comm, std::shared_ptr<const PETScMatrix> A);
+
+    /// Create eigenvalue solver for Ax = \lambda x on MPI_COMM_WORLD
     SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,
+                     std::shared_ptr<const PETScMatrix> B);
+
+    /// Create eigenvalue solver for Ax = \lambda x
+    SLEPcEigenSolver(MPI_Comm comm, std::shared_ptr<const PETScMatrix> A,
                      std::shared_ptr<const PETScMatrix> B);
 
     /// Destructor

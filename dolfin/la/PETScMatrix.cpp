@@ -696,7 +696,7 @@ void PETScMatrix::binary_dump(std::string file_name) const
   PetscErrorCode ierr;
 
   PetscViewer view_out;
-  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD, file_name.c_str(),
+  ierr = PetscViewerBinaryOpen(mpi_comm(), file_name.c_str(),
                                FILE_MODE_WRITE, &view_out);
   if (ierr != 0) petsc_error(ierr, __FILE__, "PetscViewerBinaryOpen");
 
@@ -721,7 +721,7 @@ std::string PETScMatrix::str(bool verbose) const
     // FIXME: Maybe this could be an option?
     dolfin_assert(_matA);
     PetscErrorCode ierr;
-    if (MPI::size(MPI_COMM_WORLD) > 1)
+    if (MPI::size(mpi_comm()) > 1)
     {
       ierr = MatView(_matA, PETSC_VIEWER_STDOUT_WORLD);
       if (ierr != 0) petsc_error(ierr, __FILE__, "MatView");

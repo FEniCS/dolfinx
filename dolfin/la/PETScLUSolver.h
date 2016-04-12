@@ -112,6 +112,9 @@ namespace dolfin
     /// database
     std::string get_options_prefix() const;
 
+    /// Returns the MPI communicator
+    MPI_Comm mpi_comm() const;
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
