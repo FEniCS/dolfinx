@@ -21,7 +21,7 @@
 #define __LINEAR_OPERATOR_H
 
 #include <memory>
-#include <dolfin/common/mpi.h>
+#include <dolfin/common/MPI.h>
 #include "GenericLinearOperator.h"
 
 namespace dolfin
