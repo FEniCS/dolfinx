@@ -21,6 +21,7 @@
 // Last changed: 2014-07-02
 
 #include <algorithm>
+#include <string>
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <boost/unordered_map.hpp>
@@ -74,7 +75,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
     erase_visited_facets = true;
 
   // Start timer
-  Timer timer("Compute entities dim = " + to_string(dim));
+  Timer timer("Compute entities dim = " + std::to_string(dim));
 
   // Get cell type
   const CellType& cell_type = mesh.type();
@@ -216,7 +217,8 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
     return;
 
   // Start timer
-  Timer timer("Compute connectivity " + to_string(d0) + "-" + to_string(d1));
+  Timer timer("Compute connectivity " + std::to_string(d0) + "-"
+              + std::to_string(d1));
 
   // Decide how to compute the connectivity
   if (d0 == d1)

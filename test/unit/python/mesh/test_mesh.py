@@ -194,13 +194,13 @@ def test_UnitCubeMeshDistributedLocal():
 
 
 def test_UnitQuadMesh():
-    mesh = UnitQuadMesh(5, 7)
+    mesh = UnitQuadMesh(mpi_comm_world(), 5, 7)
     assert mesh.size_global(0) == 48
     assert mesh.size_global(2) == 35
 
 
 def test_UnitHexMesh():
-    mesh = UnitHexMesh(5, 7, 9)
+    mesh = UnitHexMesh(mpi_comm_world(), 5, 7, 9)
     assert mesh.size_global(0) == 480
     assert mesh.size_global(3) == 315
 

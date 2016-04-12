@@ -47,9 +47,9 @@ DefaultFactory::create_layout(std::size_t rank) const
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearOperator>
-DefaultFactory::create_linear_operator() const
+DefaultFactory::create_linear_operator(MPI_Comm comm) const
 {
-  return factory().create_linear_operator();
+  return factory().create_linear_operator(comm);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLUSolver>

@@ -27,9 +27,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitHexMesh::UnitHexMesh(std::size_t nx, std::size_t ny, std::size_t nz)
+UnitHexMesh::UnitHexMesh(MPI_Comm comm, std::size_t nx, std::size_t ny,
+                         std::size_t nz) : Mesh(comm)
 {
-
   // Receive mesh according to parallel policy
   if (MPI::is_receiver(this->mpi_comm()))
   {

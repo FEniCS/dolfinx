@@ -44,14 +44,12 @@ namespace dolfin
   public:
 
     /// Create zero scalar
-    Scalar() : GenericTensor(), _value(0.0), _local_increment(0.0),
-                                _mpi_comm(MPI_COMM_WORLD)
-    { SubSystemsManager::init_mpi(); }
+    Scalar() : Scalar(MPI_COMM_WORLD) {}
 
     /// Create zero scalar
     Scalar(MPI_Comm comm) : GenericTensor(), _value(0.0), _local_increment(0.0),
-                            _mpi_comm(comm)
-    { SubSystemsManager::init_mpi(); }
+      _mpi_comm(comm)
+      { SubSystemsManager::init_mpi(); }
 
     /// Destructor
     virtual ~Scalar() {}

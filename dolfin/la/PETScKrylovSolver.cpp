@@ -86,8 +86,7 @@ Parameters PETScKrylovSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm,
-                                     std::string method,
+PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm, std::string method,
                                      std::string preconditioner)
   : _ksp(NULL), pc_dolfin(NULL),
     preconditioner_set(false)
@@ -122,35 +121,9 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
                                      std::string preconditioner)
-  : _ksp(NULL), pc_dolfin(NULL),
-    preconditioner_set(false)
+  : PETScKrylovSolver(MPI_COMM_WORLD, method, preconditioner)
 {
-   // Check that the requested method is known
-  if (_methods.find(method) == _methods.end())
-  {
-    dolfin_error("PETScKrylovSolver.cpp",
-                 "create PETSc Krylov solver",
-                 "Unknown Krylov method \"%s\"", method.c_str());
-  }
-
-  // Set parameter values
-  parameters = default_parameters();
-
-  PetscErrorCode ierr;
-
-  // Create PETSc KSP object
-  ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
-
-  // Set Krylov solver type
-  if (method != "default")
-  {
-    ierr = KSPSetType(_ksp, _methods.find(method)->second);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
-  }
-
-  // Set preconditioner type
-  PETScPreconditioner::set_type(*this, preconditioner);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm, std::string method,
@@ -177,24 +150,9 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm, std::string method,
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
   std::shared_ptr<PETScPreconditioner> preconditioner)
-  : _ksp(NULL), pc_dolfin(NULL), _preconditioner(preconditioner),
-  preconditioner_set(false)
+  : PETScKrylovSolver(MPI_COMM_WORLD, method, preconditioner)
 {
-  // Set parameter values
-  parameters = default_parameters();
-
-  PetscErrorCode ierr;
-
-  // Create PETSc KSP object
-  ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
-
-  // Set Krylov solver type
-  if (method != "default")
-  {
-    ierr = KSPSetType(_ksp, _methods.find(method)->second);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
-  }
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm,
@@ -221,23 +179,9 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
                                      std::shared_ptr<PETScUserPreconditioner> preconditioner)
-  : _ksp(NULL), pc_dolfin(preconditioner.get()), preconditioner_set(false)
+  : PETScKrylovSolver(MPI_COMM_WORLD, method, preconditioner)
 {
-  // Set parameter values
-  this->parameters = default_parameters();
-
-  PetscErrorCode ierr;
-
-  // Create PETSc KSP object
-  ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
-
-  // Set Krylov solver type
-  if (method != "default")
-  {
-    ierr = KSPSetType(_ksp, _methods.find(method)->second);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
-  }
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(KSP ksp) : _ksp(ksp), pc_dolfin(0),
@@ -255,9 +199,9 @@ PETScKrylovSolver::PETScKrylovSolver(KSP ksp) : _ksp(ksp), pc_dolfin(0),
   }
   else
   {
-    // Create PETSc KSP object
-    ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "intialise PETScKrylovSolver with PETSc KSP object",
+                 "PETSc KSP must be initialised (KSPCreate) before wrapping");
   }
 }
 //-----------------------------------------------------------------------------
@@ -501,19 +445,14 @@ PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type() const
   switch (ksp_norm_type)
   {
   case KSP_NORM_NONE:
-    std::cout << "get none" << std::endl;
     return norm_type::none;
   case KSP_NORM_PRECONDITIONED:
-    std::cout << "get pre" << std::endl;
     return norm_type::preconditioned;
   case KSP_NORM_UNPRECONDITIONED:
-    std::cout << "get unpre" << std::endl;
     return norm_type::unpreconditioned;
   case KSP_NORM_NATURAL:
-    std::cout << "get nat" << std::endl;
     return norm_type::natural;
   case KSP_NORM_DEFAULT:
-    std::cout << "get def" << std::endl;
     return norm_type::default_norm;
   default:
     dolfin_error("PETScKrylovSolver.cpp",

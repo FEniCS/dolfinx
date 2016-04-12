@@ -33,9 +33,9 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 IntervalMesh::IntervalMesh(std::size_t nx, double a, double b)
-  : Mesh(MPI_COMM_WORLD)
+  : IntervalMesh(MPI_COMM_WORLD, nx, a, b)
 {
-  build(nx, a, b);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 IntervalMesh::IntervalMesh(MPI_Comm comm, std::size_t nx, double a, double b)

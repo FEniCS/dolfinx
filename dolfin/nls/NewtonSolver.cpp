@@ -64,22 +64,23 @@ Parameters NewtonSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver()
+NewtonSolver::NewtonSolver(MPI_Comm comm)
   : Variable("Newton solver", "unamed"), _newton_iteration(0), _residual(0.0),
-    _residual0(0.0), _matA(new Matrix), _dx(new Vector), _b(new Vector),
-    _mpi_comm(MPI_COMM_WORLD)
+    _residual0(0.0), _matA(new Matrix(comm)), _dx(new Vector(comm)),
+    _b(new Vector(comm)), _mpi_comm(comm)
 {
   // Set default parameters
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(std::shared_ptr<GenericLinearSolver> solver,
+NewtonSolver::NewtonSolver(MPI_Comm comm,
+                           std::shared_ptr<GenericLinearSolver> solver,
                            GenericLinearAlgebraFactory& factory)
   : Variable("Newton solver", "unamed"), _newton_iteration(0), _residual(0.0),
-    _residual0(0.0), _solver(solver), _matA(factory.create_matrix(MPI_COMM_WORLD)),
-    _dx(factory.create_vector(MPI_COMM_WORLD)),
-    _b(factory.create_vector(MPI_COMM_WORLD)),
-    _mpi_comm(MPI_COMM_WORLD)
+    _residual0(0.0), _solver(solver), _matA(factory.create_matrix(comm)),
+    _dx(factory.create_vector(comm)),
+    _b(factory.create_vector(comm)),
+    _mpi_comm(comm)
 {
   // Set default parameters
   parameters = default_parameters();
