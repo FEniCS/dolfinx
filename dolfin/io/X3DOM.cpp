@@ -218,10 +218,10 @@ std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
   // Print warning for vector-valued functions and error for
   // higher tensors
   if (value_rank == 1)
-    warning("X3DFile outputs scalar magnitude of vector field");
+    warning("X3DOM outputs scalar magnitude of vector field");
   else if (value_rank > 1)
   {
-    dolfin_error("X3DFile.cpp",
+    dolfin_error("X3DOM.cpp",
                  "write X3D",
                  "Can only handle scalar and vector Functions");
   }
@@ -304,6 +304,9 @@ std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
 //-----------------------------------------------------------------------------
 std::string X3DOM::xhtml(const Function& u, X3DOMParameters parameters)
 {
+  // FIXME: this reuses the same code as str(const Function& u, X3DOMParameters parameters)
+  // - should be consolidated
+
   // Get dofmap
   dolfin_assert(u.function_space()->dofmap());
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
@@ -311,21 +314,21 @@ std::string X3DOM::xhtml(const Function& u, X3DOMParameters parameters)
   // Only allow scalar or vector fields
   if (u.value_rank() > 1)
   {
-    dolfin_error("X3DFile.cpp",
+    dolfin_error("X3DOM.cpp",
                  "write X3D",
                  "Can only handle scalar and vector Functions");
   }
 
   // Print warning for vector-valued functions
   if (u.value_rank() == 1)
-    warning("X3DFile outputs scalar magnitude of vector field");
+    warning("X3DOM outputs scalar magnitude of vector field");
 
   // FIXME: this check looks wrong
   // Only allow vertex centered data
   const bool vertex_data = (dofmap.max_element_dofs() != 1);
   if (!vertex_data)
   {
-    dolfin_error("X3DFile.cpp",
+    dolfin_error("X3DOM.cpp",
                  "write X3D",
                  "Can only handle vertex-based Function at present");
   }
