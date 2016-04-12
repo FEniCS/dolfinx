@@ -40,7 +40,7 @@ using namespace dolfin;
 X3DOMParameters::X3DOMParameters()
   : _representation(Representation::surface_with_edges),
     _size({{500.0, 400.0}}),
-    _show_viewpoints(true),
+    _show_viewpoints(false),
     _diffuse_color({{1.0, 1.0, 1.0}}),
     _emissive_color({{0.0, 0.0, 0.0}}),
     _specular_color({{0.0, 0.0, 0.0}}),
