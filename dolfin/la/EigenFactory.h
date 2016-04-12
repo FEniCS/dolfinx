@@ -64,7 +64,7 @@ namespace dolfin
     }
 
     /// Create empty linear operator
-    std::shared_ptr<GenericLinearOperator> create_linear_operator() const
+    std::shared_ptr<GenericLinearOperator> create_linear_operator(MPI_Comm comm) const
     {
       dolfin_not_implemented();
       std::shared_ptr<GenericLinearOperator> A;

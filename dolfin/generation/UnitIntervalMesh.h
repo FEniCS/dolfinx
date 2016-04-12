@@ -52,7 +52,7 @@ namespace dolfin
     ///         // Create a mesh of 25 cells in the interval [0,1]
     ///         UnitIntervalMesh mesh(25);
     ///
-    UnitIntervalMesh(std::size_t nx) : IntervalMesh(nx, 0.0, 1.0) {}
+    UnitIntervalMesh(std::size_t nx) : UnitIntervalMesh(MPI_COMM_WORLD, nx) {}
 
     /// Constructor
     ///

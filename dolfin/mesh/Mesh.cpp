@@ -54,8 +54,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
-  _ordered(false), _mpi_comm(MPI_COMM_WORLD)
+Mesh::Mesh() : Mesh(MPI_COMM_WORLD)
 {
   // Do nothing
 }
@@ -74,17 +73,14 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
-                                   Hierarchical<Mesh>(*this), _ordered(false),
-                                   _mpi_comm(MPI_COMM_WORLD)
+Mesh::Mesh(std::string filename) : Mesh(MPI_COMM_WORLD, filename)
 {
-  File file(_mpi_comm, filename);
-  file >> *this;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, std::string filename)
   : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this), _ordered(false),
-    _mpi_comm(comm)
+  _mpi_comm(comm)
 {
   File file(_mpi_comm, filename);
   file >> *this;
@@ -92,7 +88,7 @@ Mesh::Mesh(MPI_Comm comm, std::string filename)
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
   : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
-    _ordered(false), _mpi_comm(comm)
+  _ordered(false), _mpi_comm(comm)
 {
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }

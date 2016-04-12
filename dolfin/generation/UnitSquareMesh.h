@@ -60,7 +60,7 @@ namespace dolfin
     ///         UnitSquareMesh mesh2(32, 32, "crossed");
     ///
     UnitSquareMesh(std::size_t nx, std::size_t ny, std::string diagonal="right")
-      : RectangleMesh(Point(0.0, 0.0), Point(1.0, 1.0), nx, ny, diagonal) {}
+      : UnitSquareMesh(MPI_COMM_WORLD, nx, ny, diagonal) {}
 
     /// Create a uniform finite element _Mesh_ over the unit square
     /// [0,1] x [0,1].
