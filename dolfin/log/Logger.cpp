@@ -23,16 +23,14 @@
 
 
 #include <fstream>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <unistd.h>
-
-#include <boost/bind.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread.hpp>
 
 #ifdef __linux__
 #include <sys/types.h>
@@ -53,7 +51,7 @@ using namespace dolfin;
 #ifdef __linux__
 void _monitor_memory_usage(dolfin::Logger* logger)
 {
-  assert(logger);
+  dolfin_assert(logger);
 
   // Open statm
   //std::fstream
@@ -76,7 +74,7 @@ void _monitor_memory_usage(dolfin::Logger* logger)
   while (true)
   {
     // Sleep for a while
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // Read number of pages from statm
     statm.open(filename.str().c_str());
@@ -404,7 +402,7 @@ void Logger::monitor_memory_usage()
   }
 
   // Create thread
-  _thread_monitor_memory_usage.reset(new boost::thread(boost::bind(&_monitor_memory_usage, this)));
+  _thread_monitor_memory_usage.reset(new std::thread(std::bind(&_monitor_memory_usage, this)));
 
   #endif
 }
