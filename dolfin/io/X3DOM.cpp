@@ -39,6 +39,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 X3DOMParameters::X3DOMParameters()
   : _representation(Representation::surface_with_edges),
+    _size({{500.0, 400.0}}),
     _show_viewpoints(true),
     _diffuse_color({{1.0, 1.0, 1.0}}),
     _emissive_color({{0.0, 0.0, 0.0}}),
@@ -60,6 +61,11 @@ void X3DOMParameters::set_representation(Representation representation)
 X3DOMParameters::Representation X3DOMParameters::get_representation() const
 {
   return _representation;
+}
+//-----------------------------------------------------------------------------
+std::array<double, 2> X3DOMParameters::get_viewport_size() const
+{
+  return _size;
 }
 //-----------------------------------------------------------------------------
 void X3DOMParameters::set_diffuse_color(std::array<double, 3> rgb)
@@ -206,7 +212,9 @@ std::string X3DOM::xhtml(const Mesh& mesh, X3DOMParameters parameters)
   return to_string(xml_doc);
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
+void X3DOM::get_function_values(const Function& u,
+                                std::vector<double>& vertex_values,
+                                std::vector<double>& facet_values)
 {
   // Get dofmap and mesh
   dolfin_assert(u.function_space()->dofmap());
@@ -233,8 +241,6 @@ std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
     cell_based_dim *= tdim;
   const bool vertex_data = !(dofmap.max_element_dofs() == cell_based_dim);
 
-  std::vector<double> vertex_values;
-  std::vector<double> facet_values;
   if (vertex_data)
   {
     // Compute vertex data values
@@ -293,6 +299,18 @@ std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
     for (FaceIterator f(mesh); !f.end(); ++f)
       facet_values[f->index()] = cell_values[f->entities(tdim)[0]];
   }
+}
+//-----------------------------------------------------------------------------
+std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
+{
+  // Get values on vertices or facets
+  std::vector<double> vertex_values;
+  std::vector<double> facet_values;
+  get_function_values(u, vertex_values, facet_values);
+
+  // Get mesh
+  dolfin_assert(u.function_space()->mesh());
+  const Mesh& mesh = *u.function_space()->mesh();
 
   // Build XML doc
   pugi::xml_document xml_doc;
@@ -304,63 +322,18 @@ std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
 //-----------------------------------------------------------------------------
 std::string X3DOM::xhtml(const Function& u, X3DOMParameters parameters)
 {
-  // FIXME: this reuses the same code as str(const Function& u, X3DOMParameters parameters)
-  // - should be consolidated
-
-  // Get dofmap
-  dolfin_assert(u.function_space()->dofmap());
-  const GenericDofMap& dofmap = *u.function_space()->dofmap();
-
-  // Only allow scalar or vector fields
-  if (u.value_rank() > 1)
-  {
-    dolfin_error("X3DOM.cpp",
-                 "write X3D",
-                 "Can only handle scalar and vector Functions");
-  }
-
-  // Print warning for vector-valued functions
-  if (u.value_rank() == 1)
-    warning("X3DOM outputs scalar magnitude of vector field");
-
-  // FIXME: this check looks wrong
-  // Only allow vertex centered data
-  const bool vertex_data = (dofmap.max_element_dofs() != 1);
-  if (!vertex_data)
-  {
-    dolfin_error("X3DOM.cpp",
-                 "write X3D",
-                 "Can only handle vertex-based Function at present");
-  }
+  // Get values on vertices or facets
+  std::vector<double> vertex_values;
+  std::vector<double> facet_values;
+  get_function_values(u, vertex_values, facet_values);
 
   // Get mesh
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
 
-  // Compute vertex data values
-  std::vector<double> vertex_values;
-  u.compute_vertex_values(vertex_values, mesh);
-
-  // Compute l2 norm for vector-valued problems
-  if (u.value_rank() == 1)
-  {
-    const std::size_t num_vertices = mesh.num_vertices();
-    std::vector<double> magnitude(num_vertices);
-    for (std::size_t i = 0; i < num_vertices ; ++i)
-    {
-      double val = 0.0;
-      for (std::size_t j = 0; j < u.value_size() ; j++)
-        val += vertex_values[i + j*num_vertices]*vertex_values[i + j*num_vertices];
-      magnitude[i] = std::sqrt(val);
-    }
-
-    // Swap data_values and magnitude
-    std::swap(vertex_values, magnitude);
-  }
-
   // Build XML doc
   pugi::xml_document xml_doc;
-  xhtml(xml_doc, mesh, vertex_values, {}, parameters);
+  xhtml(xml_doc, mesh, vertex_values, facet_values, parameters);
 
   // Return as string
   return to_string(xml_doc);
@@ -525,7 +498,7 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   add_x3dom_doctype(xml_node);
 
   // Add X3D node
-  pugi::xml_node x3d_node = add_x3d_node(xml_node, {{500, 400}},
+  pugi::xml_node x3d_node = add_x3d_node(xml_node, parameters.get_viewport_size(),
                                          parameters.get_x3d_stats());
   dolfin_assert(x3d_node);
 
@@ -986,8 +959,10 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
   }
 
   if (!facet_values.empty())
+  {
     for (auto index : local_facet_indices)
       local_values.push_back(facet_values[index]);
+  }
 
   // Gather up all geometry on process 0 and append to xml
   dolfin::MPI::gather(mesh.mpi_comm(), local_geometry, geometry);

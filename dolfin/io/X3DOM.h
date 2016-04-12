@@ -65,6 +65,9 @@ namespace dolfin
 
     Representation get_representation() const;
 
+    // Get the size of the viewport
+    std::array<double, 2> get_viewport_size() const;
+
     // Sets the RGB color of the object
     void set_diffuse_color(std::array<double, 3> rgb);
 
@@ -119,6 +122,9 @@ namespace dolfin
 
     // Surface, surface with edges or wireframe
     Representation _representation;
+
+    // Dimensions of viewing area
+    std::array<double, 2> _size;
 
     // Toggle view point buttons
     bool _show_viewpoints;
@@ -239,6 +245,12 @@ namespace dolfin
 
     // Get list of vertex indices which are on surface
     static std::set<int> surface_vertex_indices(const Mesh& mesh);
+
+    // Get the values of a function at vertices, (or on facets
+    // for P0)
+    static void get_function_values(const Function& u,
+                                    std::vector<double>& vertex_values,
+                                    std::vector<double>& facet_values);
 
     // Build topology and geometry data from a Mesh ready for X3DOM
     // output
