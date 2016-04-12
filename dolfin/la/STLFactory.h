@@ -39,16 +39,19 @@ namespace dolfin
   {
   public:
 
+    /// Constructor
+    STLFactory(MPI_Comm comm) : _mpi_comm(comm) {}
+
     /// Destructor
     virtual ~STLFactory() {}
 
     /// Create empty matrix
     std::shared_ptr<GenericMatrix> create_matrix(MPI_Comm comm) const
-    { return  std::make_shared<STLMatrix>(); }
+    { return  std::make_shared<STLMatrix>(comm); }
 
     /// Create empty vector
     std::shared_ptr<GenericVector> create_vector(MPI_Comm comm) const
-    { return std::make_shared<STLVector>(); }
+    { return std::make_shared<STLVector>(comm); }
 
     /// Create empty tensor layout
     std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
@@ -57,7 +60,7 @@ namespace dolfin
     }
 
     /// Create empty linear operator
-    std::shared_ptr<GenericLinearOperator> create_linear_operator() const
+    std::shared_ptr<GenericLinearOperator> create_linear_operator(MPI_Comm comm) const
     {
       dolfin_error("STLFactory.h",
                    "create linear operator",
@@ -95,6 +98,10 @@ namespace dolfin
     static STLFactory& instance()
     { return factory; }
 
+    /// Return MPI communicator
+    MPI_Comm mpi_comm() const
+    { return _mpi_comm; }
+
   protected:
 
     // Private Constructor
@@ -102,6 +109,9 @@ namespace dolfin
 
     // Singleton instance
     static STLFactory factory;
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
   };
 }

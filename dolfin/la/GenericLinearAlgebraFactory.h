@@ -64,7 +64,7 @@ namespace dolfin
 
     /// Create empty linear operator
     virtual std::shared_ptr<GenericLinearOperator>
-    create_linear_operator() const = 0;
+      create_linear_operator(MPI_Comm comm) const = 0;
 
     /// Create LU solver
     virtual std::shared_ptr<GenericLUSolver>
@@ -105,6 +105,9 @@ namespace dolfin
 
       void mult(const GenericVector& x, GenericVector& y) const
       { dolfin_not_implemented(); }
+
+      MPI_Comm mpi_comm() const
+      { dolfin_not_implemented(); return MPI_COMM_WORLD; }
 
       std::string str(bool verbose) const
       { dolfin_not_implemented(); return ""; }

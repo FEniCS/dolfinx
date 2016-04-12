@@ -54,7 +54,7 @@ namespace dolfin
 
     /// Create empty linear operator
     virtual std::shared_ptr<GenericLinearOperator>
-    create_linear_operator() const;
+      create_linear_operator(MPI_Comm comm) const;
 
     /// Create LU solver
     virtual std::shared_ptr<dolfin::GenericLUSolver>

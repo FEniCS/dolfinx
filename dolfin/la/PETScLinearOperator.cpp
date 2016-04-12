@@ -59,8 +59,9 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-PETScLinearOperator::PETScLinearOperator() : PETScBaseMatrix(),
-                                             _wrapper(nullptr)
+PETScLinearOperator::PETScLinearOperator(MPI_Comm comm) :  PETScBaseMatrix(),
+                                                           _wrapper(nullptr),
+                                                           _mpi_comm(comm)
 {
   // Do nothing
 }

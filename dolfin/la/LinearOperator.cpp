@@ -19,6 +19,7 @@
 // Last changed: 2012-12-12
 
 #include "DefaultFactory.h"
+#include "GenericVector.h"
 #include "LinearOperator.h"
 
 using namespace dolfin;
@@ -29,7 +30,7 @@ LinearOperator::LinearOperator(const GenericVector& x,
 {
   // Create concrete implementation
   DefaultFactory factory;
-  _matA = factory.create_linear_operator();
+  _matA = factory.create_linear_operator(x.mpi_comm());
   dolfin_assert(_matA);
 
   // Initialize implementation
