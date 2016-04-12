@@ -44,7 +44,7 @@ std::size_t dolfin::solve(const GenericLinearOperator& A,
                           std::string preconditioner)
 {
   Timer timer("Solving linear system");
-  LinearSolver solver(method, preconditioner);
+  LinearSolver solver(x.mpi_comm(), method, preconditioner);
   return solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
