@@ -443,9 +443,6 @@ bool PETScLUSolver::solver_has_cholesky(const MatSolverPackage package) const
 //-----------------------------------------------------------------------------
 void PETScLUSolver::init_solver(MPI_Comm comm, std::string& method)
 {
-  // Select solver
-  _solver_package = select_solver(method);
-
   // Destroy old solver environment if necessary
   if (_ksp)
     KSPDestroy(&_ksp);
@@ -455,6 +452,10 @@ void PETScLUSolver::init_solver(MPI_Comm comm, std::string& method)
   // Create solver
   ierr = KSPCreate(comm, &_ksp);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
+
+  // Select solver (must come after KSPCreate, becuase we get the MPI
+  // communicator from the KSO object)
+  _solver_package = select_solver(method);
 
   // Set options prefix (if any)
   ierr = KSPSetOptionsPrefix(_ksp, _petsc_options_prefix.c_str());
