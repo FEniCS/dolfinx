@@ -274,19 +274,24 @@ std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
     }
 
     // Get dofs for cell centered data
-    std::vector<dolfin::la_index> dofs;
+    std::vector<dolfin::la_index> dofs(mesh.num_cells());
     for (std::size_t i = 0; i != mesh.num_cells(); ++i)
     {
-      // Tabulate dofs
+      // Get dof index of cell data
       dolfin_assert(dofmap.num_element_dofs(i) == 1);
-      //      const ArrayView<const dolfin::la_index> cell_dofs = dofmap.cell_dofs(i);
-      dofs.push_back(dofmap.cell_dofs(i)[0]);
+      dofs[i] = dofmap.cell_dofs(i)[0];
     }
 
     // Get  values from vector
-    facet_values.resize(dofs.size());
+    std::vector<double> cell_values(dofs.size());
     dolfin_assert(u.vector());
-    u.vector()->get_local(facet_values.data(), dofs.size(), dofs.data());
+    u.vector()->get_local(cell_values.data(), dofs.size(), dofs.data());
+
+    // FIXME: this is inefficient and a bit random for interior facets
+    // (which we don't need) - so needs a redesign.
+    facet_values.resize(mesh.num_facets());
+    for (FaceIterator f(mesh); !f.end(); ++f)
+      facet_values[f->index()] = cell_values[f->entities(tdim)[0]];
   }
 
   // Build XML doc
@@ -618,14 +623,6 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
     const bool color_per_vertex = !vertex_values.empty();
     indexed_set.append_attribute("colorPerVertex") = color_per_vertex;
 
-    if (color_per_vertex)
-      dolfin_assert(3*values_data.size() == geometry_data.size());
-    else
-    {
-    //std::cout << values_data.size() << " " << topology_data.size() << " " << geometry_data.size() << "\n";
-      dolfin_assert(values_data.size() == topology_data.size());
-    }
-
     // Add topology data to edges node
     std::stringstream topology_str;
     for (auto c : topology_data)
@@ -642,31 +639,39 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
       geometry_str << x << " ";
     coordinate_node.append_attribute("point") = geometry_str.str().c_str();
 
-    // Get min/max values
-    const double value_min = *std::min_element(values_data.begin(),
-                                               values_data.end());
-    const double value_max = *std::max_element(values_data.begin(),
-                                               values_data.end());
-
-    const double scale = (value_max == value_min) ? 1.0 : 255.0/(value_max - value_min);
-
-    // Get colour map (256 RGB values)
-    boost::multi_array<float, 2> cmap = color_map();
-
-    // Add vertex colors
-    std::stringstream color_values;
-    for (auto x : values_data)
+    if (!values_data.empty())
     {
-      const int cindex = scale*std::abs(x - value_min);
-      dolfin_assert(cindex < (int)cmap.shape()[0]);
-      auto color = cmap[cindex];
-      dolfin_assert(color.shape()[0] == 3);
-      color_values << color[0] << " " << color[1] << " " << color[2] << " ";
-    }
+      if (color_per_vertex)
+        dolfin_assert(3*values_data.size() == geometry_data.size());
+      else
+        dolfin_assert(4*values_data.size() == topology_data.size());
 
-    pugi::xml_node color_node = indexed_set.append_child("Color");
-    dolfin_assert(color_node);
-    color_node.append_attribute("color") = color_values.str().c_str();
+      // Get min/max values
+      const double value_min = *std::min_element(values_data.begin(),
+                                                 values_data.end());
+      const double value_max = *std::max_element(values_data.begin(),
+                                                 values_data.end());
+
+      const double scale = (value_max == value_min) ? 1.0 : 255.0/(value_max - value_min);
+
+      // Get colour map (256 RGB values)
+      boost::multi_array<float, 2> cmap = color_map();
+
+      // Add vertex colors
+      std::stringstream color_values;
+      for (auto x : values_data)
+      {
+        const int cindex = scale*std::abs(x - value_min);
+        dolfin_assert(cindex < (int)cmap.shape()[0]);
+        auto color = cmap[cindex];
+        dolfin_assert(color.shape()[0] == 3);
+        color_values << color[0] << " " << color[1] << " " << color[2] << " ";
+      }
+
+      pugi::xml_node color_node = indexed_set.append_child("Color");
+      dolfin_assert(color_node);
+      color_node.append_attribute("color") = color_values.str().c_str();
+    }
   }
 
 }
@@ -900,6 +905,7 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
   // displayed
   std::vector<int> local_topology;
   std::vector<double> local_values;
+  std::vector<int> local_facet_indices;
   if (surface)
   {
     // Build face data structure
@@ -907,6 +913,8 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
     {
       if (tdim == 2 or f->num_global_entities(tdim) == 1)
       {
+        local_facet_indices.push_back(f->index());
+
         for (VertexIterator v(*f); !v.end(); ++v)
         {
           // Find position of vertex in set
@@ -973,6 +981,10 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
     if (!vertex_values.empty())
       local_values.push_back(vertex_values[index]);
   }
+
+  if (!facet_values.empty())
+    for (auto index : local_facet_indices)
+      local_values.push_back(facet_values[index]);
 
   // Gather up all geometry on process 0 and append to xml
   dolfin::MPI::gather(mesh.mpi_comm(), local_geometry, geometry);
