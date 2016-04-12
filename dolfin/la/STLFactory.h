@@ -39,9 +39,6 @@ namespace dolfin
   {
   public:
 
-    /// Constructor
-    STLFactory(MPI_Comm comm) : _mpi_comm(comm) {}
-
     /// Destructor
     virtual ~STLFactory() {}
 
@@ -60,7 +57,8 @@ namespace dolfin
     }
 
     /// Create empty linear operator
-    std::shared_ptr<GenericLinearOperator> create_linear_operator(MPI_Comm comm) const
+    std::shared_ptr<GenericLinearOperator>
+    create_linear_operator(MPI_Comm comm) const
     {
       dolfin_error("STLFactory.h",
                    "create linear operator",
@@ -72,7 +70,7 @@ namespace dolfin
 
     /// Create LU solver
     std::shared_ptr<GenericLUSolver>
-      create_lu_solver(MPI_Comm comm, std::string method) const
+    create_lu_solver(MPI_Comm comm, std::string method) const
     {
       dolfin_error("STLFactory",
                    "create LU solver",
@@ -83,9 +81,9 @@ namespace dolfin
 
     /// Create Krylov solver
     std::shared_ptr<GenericLinearSolver>
-      create_krylov_solver(MPI_Comm comm,
-                           std::string method,
-                           std::string preconditioner) const
+    create_krylov_solver(MPI_Comm comm,
+                         std::string method,
+                         std::string preconditioner) const
     {
       dolfin_error("STLFactory",
                    "create Krylov solver",
@@ -98,10 +96,6 @@ namespace dolfin
     static STLFactory& instance()
     { return factory; }
 
-    /// Return MPI communicator
-    MPI_Comm mpi_comm() const
-    { return _mpi_comm; }
-
   protected:
 
     // Private Constructor
@@ -109,9 +103,6 @@ namespace dolfin
 
     // Singleton instance
     static STLFactory factory;
-
-    // MPI communicator
-    MPI_Comm _mpi_comm;
 
   };
 }
