@@ -46,7 +46,7 @@ namespace dolfin
     virtual ~EigenFactory() {}
 
     /// Create empty matrix
-    std::shared_ptr<GenericMatrix> create_matrix() const
+    std::shared_ptr<GenericMatrix> create_matrix(MPI_Comm comm) const
     { return std::make_shared<EigenMatrix>(); }
 
     /// Create empty vector
@@ -72,14 +72,15 @@ namespace dolfin
     }
 
     /// Create LU solver
-    std::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const
+    std::shared_ptr<GenericLUSolver> create_lu_solver(MPI_Comm comm, std::string method) const
     {
       return std::shared_ptr<GenericLUSolver>(new EigenLUSolver(method));
     }
 
     /// Create Krylov solver
     std::shared_ptr<GenericLinearSolver>
-    create_krylov_solver(std::string method,
+    create_krylov_solver(MPI_Comm comm,
+                         std::string method,
                          std::string preconditioner) const
     {
       std::shared_ptr<GenericLinearSolver>

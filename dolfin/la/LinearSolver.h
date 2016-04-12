@@ -29,6 +29,7 @@
 #include <memory>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
+#include <dolfin/common/MPI.h>
 
 namespace dolfin
 {
@@ -46,8 +47,9 @@ namespace dolfin
   public:
 
     /// Create linear solver
-    LinearSolver(std::string method = "default",
-                 std::string preconditioner = "default");
+    LinearSolver(MPI_Comm comm=MPI_COMM_WORLD,
+                 std::string method="default",
+                 std::string preconditioner="default");
 
     /// Destructor
     ~LinearSolver();

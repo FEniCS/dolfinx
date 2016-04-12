@@ -24,6 +24,7 @@
 #ifdef HAS_PETSC
 
 #include <cmath>
+#include <cstddef>
 #include <cstring>
 #include <numeric>
 #include <dolfin/common/Timer.h>
@@ -45,7 +46,7 @@ PETScVector::PETScVector() : PETScVector(MPI_COMM_WORLD)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(MPI_Comm comm) : _x(NULL)
+PETScVector::PETScVector(MPI_Comm comm) : _x(nullptr)
 {
   PetscErrorCode ierr = VecCreate(comm, &_x);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecCreate");
@@ -64,7 +65,7 @@ PETScVector::PETScVector(const SparsityPattern& sparsity_pattern)
   _init(sparsity_pattern.local_range(0), {}, {});
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(Vec x): _x(x)
+PETScVector::PETScVector(Vec x) : _x(x)
 {
   // Increase reference count to PETSc object
   PetscObjectReference((PetscObject)_x);
@@ -73,9 +74,9 @@ PETScVector::PETScVector(Vec x): _x(x)
 PETScVector::PETScVector(const PETScVector& v) : _x(nullptr)
 {
   dolfin_assert(v._x);
-  PetscErrorCode ierr;
 
   // Create new vector
+  PetscErrorCode ierr;
   ierr = VecDuplicate(v._x, &_x);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecDuplicate");
 
@@ -310,10 +311,13 @@ bool PETScVector::empty() const
 //-----------------------------------------------------------------------------
 std::size_t PETScVector::size() const
 {
-  // Return zero if vector type has not been set
-  VecType vec_type = NULL;
+  dolfin_assert(_x);
+
+  // Return zero if vector type has not been set (Vec has not been
+  // intialised)
+  VecType vec_type = nullptr;
   VecGetType(_x, &vec_type);
-  if (vec_type == NULL)
+  if (vec_type == nullptr)
     return 0;
 
   PetscInt n = 0;
@@ -321,7 +325,7 @@ std::size_t PETScVector::size() const
   PetscErrorCode ierr = VecGetSize(_x, &n);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetSize");
 
-  return n;
+  return n > 0 ? n : 0;
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScVector::local_size() const
@@ -349,15 +353,12 @@ std::pair<std::size_t, std::size_t> PETScVector::local_range() const
   PetscErrorCode ierr = VecGetOwnershipRange(_x, &n0, &n1);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecGetOwnershipRange");
   dolfin_assert(n0 <= n1);
-  return std::make_pair(n0, n1);
+  return {n0, n1};
 }
 //-----------------------------------------------------------------------------
 bool PETScVector::owns_index(std::size_t i) const
 {
-  if (i >= local_range().first && i < local_range().second)
-    return true;
-  else
-    return false;
+  return i >= local_range().first && i < local_range().second;
 }
 //-----------------------------------------------------------------------------
 const GenericVector& PETScVector::operator= (const GenericVector& v)
@@ -809,6 +810,18 @@ std::string PETScVector::get_options_prefix() const
   const char* prefix = NULL;
   VecGetOptionsPrefix(_x, &prefix);
   return std::string(prefix);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::set_from_options()
+{
+  if (!_x)
+  {
+    dolfin_error("PETScVector.cpp",
+                 "call VecSetFromOptions on PETSc Vec object",
+                 "Vec object has not been intialised");
+  }
+
+  VecSetFromOptions(_x);
 }
 //-----------------------------------------------------------------------------
 Vec PETScVector::vec() const

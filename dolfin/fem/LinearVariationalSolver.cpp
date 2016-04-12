@@ -70,7 +70,7 @@ void LinearVariationalSolver::solve()
   // Create matrix and vector
   dolfin_assert(u->vector());
   MPI_Comm comm = u->vector()->mpi_comm();
-  std::shared_ptr<GenericMatrix> A = u->vector()->factory().create_matrix();
+  std::shared_ptr<GenericMatrix> A = u->vector()->factory().create_matrix(comm);
   std::shared_ptr<GenericVector> b = u->vector()->factory().create_vector(comm);
 
   // Different assembly depending on whether or not the system is symmetric
@@ -138,7 +138,7 @@ void LinearVariationalSolver::solve()
       lu_method = solver_type;
 
     // Solve linear system
-    LUSolver solver(lu_method);
+    LUSolver solver(comm, lu_method);
     solver.parameters.update(parameters("lu_solver"));
     solver.parameters["symmetric"] = (bool) parameters["symmetric"];
     solver.solve(*A, *u->vector(), *b);
@@ -174,7 +174,7 @@ void LinearVariationalSolver::solve()
     }
 
     // Solve linear system
-    KrylovSolver solver(solver_type, pc_type);
+    KrylovSolver solver(comm, solver_type, pc_type);
     solver.parameters.update(parameters("krylov_solver"));
     solver.solve(*A, *u->vector(), *b);
   }

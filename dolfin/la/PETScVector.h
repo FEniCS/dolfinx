@@ -59,7 +59,7 @@ namespace dolfin
   {
   public:
 
-    /// Create empty vector
+    /// Create empty vector (on MPI_COMM_WORLD)
     PETScVector();
 
     /// Create empty vector on an MPI communicator
@@ -74,7 +74,9 @@ namespace dolfin
     /// Copy constructor
     PETScVector(const PETScVector& x);
 
-    /// Create vector wrapper of PETSc Vec pointer
+    /// Create vector wrapper of PETSc Vec pointer. The reference
+    /// counter of the Vec will be increased, and decreased upon
+    /// destruction of this object.
     explicit PETScVector(Vec x);
 
     /// Destructor
@@ -243,6 +245,10 @@ namespace dolfin
     /// Returns the prefix used by PETSc when searching the options
     /// database
     std::string get_options_prefix() const;
+
+    /// Call PETSc function VecSetFromOptions on the underlying Vec
+    /// object
+    void set_from_options();
 
     /// Return pointer to PETSc Vec object
     Vec vec() const;

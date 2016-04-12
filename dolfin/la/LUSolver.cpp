@@ -30,16 +30,32 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+LUSolver::LUSolver(MPI_Comm comm, std::string method)
+{
+  init(comm, method);
+}
+//-----------------------------------------------------------------------------
 LUSolver::LUSolver(std::string method)
 {
-  init(method);
+  init(MPI_COMM_WORLD, method);
+}
+//-----------------------------------------------------------------------------
+LUSolver::LUSolver(MPI_Comm comm,
+                   std::shared_ptr<const GenericLinearOperator> A,
+                   std::string method)
+{
+  // Initialize solver
+  init(comm, method);
+
+  // Set operator
+  set_operator(A);
 }
 //-----------------------------------------------------------------------------
 LUSolver::LUSolver(std::shared_ptr<const GenericLinearOperator> A,
                    std::string method)
 {
   // Initialize solver
-  init(method);
+  init(MPI_COMM_WORLD, method);
 
   // Set operator
   set_operator(A);
@@ -96,7 +112,7 @@ std::size_t LUSolver::solve_transpose(const GenericLinearOperator& A,
   return solver->solve_transpose(A, x, b);
 }
 //-----------------------------------------------------------------------------
-void LUSolver::init(std::string method)
+void LUSolver::init(MPI_Comm comm, std::string method)
 {
   // Get default linear algebra factory
   DefaultFactory factory;
@@ -118,7 +134,7 @@ void LUSolver::init(std::string method)
   parameters = dolfin::parameters("lu_solver");
 
   // Initialize solver
-  solver = factory.create_lu_solver(method);
+  solver = factory.create_lu_solver(comm, method);
   solver->parameters.update(parameters);
 }
 //-----------------------------------------------------------------------------

@@ -86,6 +86,40 @@ Parameters PETScKrylovSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
+PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm,
+                                     std::string method,
+                                     std::string preconditioner)
+  : _ksp(NULL), pc_dolfin(NULL),
+    preconditioner_set(false)
+{
+   // Check that the requested method is known
+  if (_methods.find(method) == _methods.end())
+  {
+    dolfin_error("PETScKrylovSolver.cpp",
+                 "create PETSc Krylov solver",
+                 "Unknown Krylov method \"%s\"", method.c_str());
+  }
+
+  // Set parameter values
+  parameters = default_parameters();
+
+  PetscErrorCode ierr;
+
+  // Create PETSc KSP object
+  ierr = KSPCreate(comm, &_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
+
+  // Set Krylov solver type
+  if (method != "default")
+  {
+    ierr = KSPSetType(_ksp, _methods.find(method)->second);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+  }
+
+  // Set preconditioner type
+  PETScPreconditioner::set_type(*this, preconditioner);
+}
+//-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
                                      std::string preconditioner)
   : _ksp(NULL), pc_dolfin(NULL),
@@ -119,6 +153,28 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
   PETScPreconditioner::set_type(*this, preconditioner);
 }
 //-----------------------------------------------------------------------------
+PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm, std::string method,
+  std::shared_ptr<PETScPreconditioner> preconditioner)
+  : _ksp(NULL), pc_dolfin(NULL), _preconditioner(preconditioner),
+  preconditioner_set(false)
+{
+  // Set parameter values
+  parameters = default_parameters();
+
+  PetscErrorCode ierr;
+
+  // Create PETSc KSP object
+  ierr = KSPCreate(comm, &_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
+
+  // Set Krylov solver type
+  if (method != "default")
+  {
+    ierr = KSPSetType(_ksp, _methods.find(method)->second);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+  }
+}
+//-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
   std::shared_ptr<PETScPreconditioner> preconditioner)
   : _ksp(NULL), pc_dolfin(NULL), _preconditioner(preconditioner),
@@ -131,6 +187,28 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 
   // Create PETSc KSP object
   ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
+
+  // Set Krylov solver type
+  if (method != "default")
+  {
+    ierr = KSPSetType(_ksp, _methods.find(method)->second);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+  }
+}
+//-----------------------------------------------------------------------------
+PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm,
+                                     std::string method,
+                                     std::shared_ptr<PETScUserPreconditioner> preconditioner)
+  : _ksp(NULL), pc_dolfin(preconditioner.get()), preconditioner_set(false)
+{
+  // Set parameter values
+  this->parameters = default_parameters();
+
+  PetscErrorCode ierr;
+
+  // Create PETSc KSP object
+  ierr = KSPCreate(comm, &_ksp);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
 
   // Set Krylov solver type
@@ -457,19 +535,15 @@ void PETScKrylovSolver::monitor(bool monitor_convergence)
                          NULL);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
     #else
-    warning("PETSc KSP monitors need updating for change in PETSc-dev.");
-    /*
     PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_ksp));
     PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
     PetscViewerAndFormat *vf;
     PetscViewerAndFormatCreate(viewer,format,&vf);
-    PetscObjectDereference((PetscObject)viewer);
     ierr = KSPMonitorSet(_ksp,
                          (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
                          vf,
                          (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
-    */
     #endif
   }
   else
