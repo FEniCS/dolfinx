@@ -228,24 +228,6 @@ boost::multi_array<float, 2> X3DOMParameters::default_color_map()
     rgb_map[i][2] = 4*std::pow(y, 3) - 3*std::pow(y, 4);
   }
 
-  /*
-  for (int i = 0; i < 256; ++i)
-  {
-    const double lm = 425.0 + 250.0*(double)i/255.0;
-    const double b
-      = 1.8*exp(-std::pow((lm - 450.0)/((lm > 450.0) ? 40.0 : 20.0), 2.0));
-    const double g
-      = 0.9*exp(-std::pow((lm - 550.0)/((lm > 550.0) ? 60 : 40.0), 2.0));
-    double r = 1.0*exp(-std::pow((lm - 600.0)/((lm > 600.0) ? 40.0 : 50.0), 2.0));
-    r += 0.3*exp(-std::pow((lm - 450.0)/((lm > 450.0) ? 20.0 : 30.0), 2.0));
-    const double total = r + g + b;
-
-    rgb_map[i][0] = r/total;
-    rgb_map[i][1] = g/total;
-    rgb_map[i][2] = b/total;
-  }
-  */
-
   return rgb_map;
 }
 //-----------------------------------------------------------------------------
@@ -260,11 +242,11 @@ std::string X3DOM::str(const Mesh& mesh, X3DOMParameters parameters)
   return to_string(xml_doc);
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::xhtml(const Mesh& mesh, X3DOMParameters parameters)
+std::string X3DOM::html(const Mesh& mesh, X3DOMParameters parameters)
 {
   // Build XML doc
   pugi::xml_document xml_doc;
-  xhtml(xml_doc, mesh, {}, {}, parameters);
+  html(xml_doc, mesh, {}, {}, parameters);
 
   // Return as string
   return to_string(xml_doc);
@@ -364,7 +346,6 @@ void X3DOM::get_function_values(const Function& u,
       // In 2D, facets and cells are the same thing
       std::swap(facet_values, cell_values);
     }
-
   }
 }
 //-----------------------------------------------------------------------------
@@ -387,7 +368,7 @@ std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
   return to_string(xml_doc);
 }
 //-----------------------------------------------------------------------------
-std::string X3DOM::xhtml(const Function& u, X3DOMParameters parameters)
+std::string X3DOM::html(const Function& u, X3DOMParameters parameters)
 {
   // Get values on vertices or facets
   std::vector<double> vertex_values;
@@ -400,7 +381,7 @@ std::string X3DOM::xhtml(const Function& u, X3DOMParameters parameters)
 
   // Build XML doc
   pugi::xml_document xml_doc;
-  xhtml(xml_doc, mesh, vertex_values, facet_values, parameters);
+  html(xml_doc, mesh, vertex_values, facet_values, parameters);
 
   // Return as string
   return to_string(xml_doc);
@@ -415,37 +396,41 @@ void X3DOM::x3dom(pugi::xml_document& xml_doc, const Mesh& mesh,
   add_x3dom_data(xml_doc, mesh, vertex_values, facet_values, parameters);
 }
 //-----------------------------------------------------------------------------
-void X3DOM::xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
-                  const std::vector<double>& vertex_values,
-                  const std::vector<double>& facet_values,
-                  const X3DOMParameters& parameters)
+void X3DOM::html(pugi::xml_document& xml_doc, const Mesh& mesh,
+                 const std::vector<double>& vertex_values,
+                 const std::vector<double>& facet_values,
+                 const X3DOMParameters& parameters)
 {
   // Add DOCTYPE
   add_html_doctype(xml_doc);
 
   // Create 'html' node and add HTML preamble
   pugi::xml_node html_node = add_html_preamble(xml_doc);
+  dolfin_assert(html_node);
 
   // Add body node
   pugi::xml_node body_node = html_node.append_child("body");
+  dolfin_assert(body_node);
   body_node.append_child(pugi::node_pcdata);
 
   // Add division in HTML to fix alignment
   pugi::xml_node div_x3d_node = body_node.append_child("div");
+  dolfin_assert(div_x3d_node);
   div_x3d_node.append_child(pugi::node_pcdata);
 
   // Add X3D XML data to 'div' node
   add_x3dom_data(div_x3d_node, mesh, vertex_values, facet_values, parameters);
 
   // Add text mesh info to body node
-  pugi::xml_node mesh_info = body_node.append_child("div");
-  dolfin_assert(mesh_info);
-  mesh_info.append_child(pugi::node_pcdata);
-  mesh_info.append_attribute("style") = "position: absolute; margin: 1%; text-align: left; font-size: 12px; color: black;";
-  std::string data = "Number of vertices: "
-    + std::to_string(mesh.num_vertices())
+  pugi::xml_node mesh_info_node = body_node.append_child("div");
+  dolfin_assert(mesh_info_node);
+  mesh_info_node.append_child(pugi::node_pcdata);
+  mesh_info_node.append_attribute("style")
+    = "position: absolute; margin: 1%; text-align: left; font-size: 12px; color: black;";
+  std::string data
+    = "Number of vertices: " + std::to_string(mesh.num_vertices())
     + ", number of cells: " + std::to_string(mesh.num_cells());
-  mesh_info.append_child(pugi::node_pcdata).set_value(data.c_str());
+  mesh_info_node.append_child(pugi::node_pcdata).set_value(data.c_str());
 
   // FIXME: adding viewpoint buttons here is fragile since to may
   // change in the X3 node. Need to bring the two closer in the code
@@ -454,9 +439,11 @@ void X3DOM::xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
   //Append viewpoint buttons to 'body' (HTML) node
   if (parameters.get_viewpoint_buttons())
   {
-    // Add viewpoint control node to HTML
-    // Have to add as the first element
+    // Add viewpoint control node to HTML (have to add as the first
+    // element)
     pugi::xml_node viewpoint_control_node = body_node.prepend_child("div");
+    dolfin_assert(viewpoint_control_node);
+    viewpoint_control_node.append_child(pugi::node_pcdata);
 
     // Add attributes to viewpoint node
     viewpoint_control_node.append_attribute("id") = "camera_buttons";
@@ -472,13 +459,13 @@ void X3DOM::xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
 //-----------------------------------------------------------------------------
 pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
 {
-  // Add html node (required for XHTML)
+  // Add html node
   pugi::xml_node html_node = xml_node.append_child("html");
-  //html_node.append_attribute("xmlns") = "http://www.w3.org/1999/xhtml";
-  //html_node.append_attribute("lang") = "en";
+  dolfin_assert(html_node);
 
-  // Add head node (required for XHTML)
+  // Add head node (required for HTML)
   pugi::xml_node head_node = html_node.append_child("head");
+  dolfin_assert(head_node);
 
   // Add meta node(s)
   pugi::xml_node meta_node0 = head_node.append_child("meta");
@@ -496,20 +483,22 @@ pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
 
   // Add title node
   pugi::xml_node title_node = head_node.append_child("title");
+  dolfin_assert(title_node);
   title_node.append_child(pugi::node_pcdata).set_value("FEniCS/DOLFIN X3DOM plot");
 
   // Add script node
   pugi::xml_node script_node = head_node.append_child("script");
+  dolfin_assert(script_node);
+  script_node.append_child(pugi::node_pcdata);
 
   // Set attributes for script node
   script_node.append_attribute("type") = "text/javascript";
   script_node.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
-  script_node.append_child(pugi::node_pcdata);
 
   // Add link node
   pugi::xml_node link_node = head_node.append_child("link");
+  dolfin_assert(link_node);
   link_node.append_child(pugi::node_pcdata);
-
 
   // Set attributes for link node
   link_node.append_attribute("rel") = "stylesheet";
@@ -522,40 +511,44 @@ pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
 void X3DOM::add_x3dom_doctype(pugi::xml_node& xml_node)
 {
   dolfin_assert(xml_node);
-  pugi::xml_node doc_type = xml_node.prepend_child(pugi::node_doctype);
-  doc_type.set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
+
+  // Try adding X3D doctype (this might not be possible since an HTML
+  // outer layer may have added the doctype, and only one doctype node
+  // is permitted)
+  pugi::xml_node doc_type_node = xml_node.prepend_child(pugi::node_doctype);
+
+  // Set doctype value if it was sucessfully created
+  if (doc_type_node)
+    doc_type_node.set_value("X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"http://www.web3d.org/specifications/x3d-3.2.dtd\"");
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_html_doctype(pugi::xml_node& xml_node)
 {
   dolfin_assert(xml_node);
-  pugi::xml_node doc_type = xml_node.prepend_child(pugi::node_doctype);
-  doc_type.set_value("html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"");
+  pugi::xml_node doc_type_node = xml_node.prepend_child(pugi::node_doctype);
+  dolfin_assert(doc_type_node);
+  doc_type_node.set_value("html");
 }
 //-----------------------------------------------------------------------------
 pugi::xml_node X3DOM::add_x3d_node(pugi::xml_node& xml_node,
                                    std::array<double, 2> size, bool show_stats)
 {
-  pugi::xml_node x3d = xml_node.append_child("X3D");
-  dolfin_assert(x3d);
-  xml_node.append_child(pugi::node_pcdata);
+  pugi::xml_node x3d_node = xml_node.append_child("X3D");
+  dolfin_assert(x3d_node);
+  x3d_node.append_child(pugi::node_pcdata);
 
   // Add on option to show rendering
-  x3d.append_attribute("showStat") = show_stats;
+  x3d_node.append_attribute("showStat") = show_stats;
 
-  //x3d.append_attribute("profile") = "Interchange";
-  //x3d.append_attribute("version") = "3.3";
-  x3d.append_attribute("xmlns")
+  x3d_node.append_attribute("xmlns")
     = "http://www.web3d.org/specifications/x3d-namespace";
-  //x3d.append_attribute("xsd:noNamespaceSchemaLocation")
-  //  = "http://www.web3d.org/specifications/x3d-3.2.xsd";
 
   std::string width = std::to_string(size[0]) + "px";
   std::string height = std::to_string(size[1]) + "px";
-  x3d.append_attribute("width") = width.c_str();
-  x3d.append_attribute("height") = height.c_str();
+  x3d_node.append_attribute("width") = width.c_str();
+  x3d_node.append_attribute("height") = height.c_str();
 
-  return x3d;
+  return x3d_node;
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
@@ -588,42 +581,44 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   // Add meta node to head node, and attributes
   pugi::xml_node meta_node = head_node.append_child("meta");
   dolfin_assert(meta_node);
+  meta_node.append_child(pugi::node_pcdata);
   meta_node.append_attribute("name") = "generator";
   meta_node.append_attribute("content")
     = "FEniCS/DOLFIN (http://fenicsproject.org)";
-  meta_node.append_child(pugi::node_pcdata);
 
   // Add scene node
-  pugi::xml_node scene = x3d_node.append_child("Scene");
-  dolfin_assert(scene);
-  scene.append_child(pugi::node_pcdata);
+  pugi::xml_node scene_node = x3d_node.append_child("Scene");
+  dolfin_assert(scene_node);
+  scene_node.append_child(pugi::node_pcdata);
 
   // Add mesh to 'scene' XML node
   auto representation = parameters.get_representation();
   if (representation == X3DOMParameters::Representation::surface_with_edges)
   {
     // Add surface and then wireframe
-    add_mesh_data(scene, mesh, vertex_data, facet_data, parameters, true);
-    add_mesh_data(scene, mesh, {}, {}, parameters, false);
+    add_mesh_data(scene_node, mesh, vertex_data, facet_data, parameters, true);
+    add_mesh_data(scene_node, mesh, {}, {}, parameters, false);
   }
   else if (representation == X3DOMParameters::Representation::surface)
-    add_mesh_data(scene, mesh, vertex_data, facet_data, parameters, true);
+    add_mesh_data(scene_node, mesh, vertex_data, facet_data, parameters, true);
   else
-    add_mesh_data(scene, mesh, {}, {}, parameters, false);
+    add_mesh_data(scene_node, mesh, {}, {}, parameters, false);
 
   // Add viewpoint(s)
   const std::pair<Point, double> position = mesh_min_max(mesh);
-  add_viewpoint_nodes(scene, position.first, position.second,
-                     parameters.get_viewpoint_buttons());
+  add_viewpoint_nodes(scene_node, position.first, position.second,
+                      parameters.get_viewpoint_buttons());
 
   // Add background color
-  pugi::xml_node background = scene.append_child("Background");
-  background.append_attribute("skyColor")
+  pugi::xml_node background_node = scene_node.append_child("Background");
+  dolfin_assert(background_node);
+  background_node.append_child(pugi::node_pcdata);
+  background_node.append_attribute("skyColor")
     = array_to_string3(parameters.get_background_color()).c_str();
-  background.append_child(pugi::node_pcdata);
 
   // Add ambient light
-  pugi::xml_node ambient_light_node = scene.append_child("DirectionalLight");
+  pugi::xml_node ambient_light_node = scene_node.append_child("DirectionalLight");
+  dolfin_assert(ambient_light_node);
   ambient_light_node.append_child(pugi::node_pcdata);
   ambient_light_node.append_attribute("ambientIntensity")
     = parameters.get_ambient_intensity();
@@ -651,14 +646,17 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
   {
     // Create shape node and append ID attribute
     pugi::xml_node shape_node = xml_node.append_child("Shape");
+    dolfin_assert(shape_node);
     shape_node.append_child(pugi::node_pcdata);
 
     // Create appearance node
     pugi::xml_node appearance_node = shape_node.append_child("Appearance");
+    dolfin_assert(appearance_node);
     appearance_node.append_child(pugi::node_pcdata);
 
     // Append color attributes
     pugi::xml_node material_node = appearance_node.append_child("Material");
+    dolfin_assert(material_node);
     material_node.append_child(pugi::node_pcdata);
     if (surface)
     {
@@ -678,22 +676,24 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
     material_node.append_attribute("transparency") = parameters.get_transparency();
 
     // Add edges node
-    pugi::xml_node indexed_set = shape_node.append_child(x3d_type.c_str());
-    indexed_set.append_child(pugi::node_pcdata);
-    indexed_set.append_attribute("solid") = "false";
+    pugi::xml_node indexed_set_node = shape_node.append_child(x3d_type.c_str());
+    dolfin_assert(indexed_set_node);
+    indexed_set_node.append_child(pugi::node_pcdata);
+    indexed_set_node.append_attribute("solid") = "false";
 
     // Add color per vertex attribute
     const bool color_per_vertex = !vertex_values.empty();
-    indexed_set.append_attribute("colorPerVertex") = color_per_vertex;
+    indexed_set_node.append_attribute("colorPerVertex") = color_per_vertex;
 
     // Add topology data to edges node
     std::stringstream topology_str;
     for (auto c : topology_data)
       topology_str << c << " ";
-    indexed_set.append_attribute("coordIndex") = topology_str.str().c_str();
+    indexed_set_node.append_attribute("coordIndex") = topology_str.str().c_str();
 
     // Add Coordinate node
-    pugi::xml_node coordinate_node = indexed_set.append_child("Coordinate");
+    pugi::xml_node coordinate_node = indexed_set_node.append_child("Coordinate");
+    dolfin_assert(coordinate_node);
     coordinate_node.append_child(pugi::node_pcdata);
     coordinate_node.append_attribute("DEF") = "dolfin";
 
@@ -732,7 +732,7 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
         color_values << color[0] << " " << color[1] << " " << color[2] << " ";
       }
 
-      pugi::xml_node color_node = indexed_set.append_child("Color");
+      pugi::xml_node color_node = indexed_set_node.append_child("Color");
       dolfin_assert(color_node);
       color_node.append_child(pugi::node_pcdata);
       color_node.append_attribute("color") = color_values.str().c_str();
@@ -741,37 +741,39 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
 
 }
 //-----------------------------------------------------------------------------
-void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control,
+void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control_node,
                                          std::string viewpoint_label)
 {
-  std::string onclick_str
-    = "document.getElementById('" + viewpoint_label + "').setAttribute('set_bind','true');";
-  pugi::xml_node viewpoint_buttons = viewpoint_control.append_child("button");
-  viewpoint_buttons.append_attribute("onclick") = onclick_str.c_str();
-  viewpoint_buttons.append_attribute("style") = "display: block; margin: 2%";
-  viewpoint_buttons.append_child(pugi::node_pcdata).set_value(viewpoint_label.c_str());
+  dolfin_assert(viewpoint_control_node);
+  pugi::xml_node viewpoint_buttons_node = viewpoint_control_node.append_child("button");
+
+  const std::string one_click_str = "document.getElementById('" + viewpoint_label + "').setAttribute('set_bind','true');";
+  viewpoint_buttons_node.append_attribute("onclick") = one_click_str.c_str();
+  viewpoint_buttons_node.append_attribute("style") = "display: block; margin: 2%";
+  viewpoint_buttons_node.append_child(pugi::node_pcdata).set_value(viewpoint_label.c_str());
 }
 //-----------------------------------------------------------------------------
-void X3DOM::add_viewpoint_nodes(pugi::xml_node& xml_scene,
+void X3DOM::add_viewpoint_nodes(pugi::xml_node& xml_scene_node,
                                 const Point p, double d,
                                 bool show_viewpoint_buttons)
 {
   // Default viewpoint
-  add_viewpoint_node(xml_scene, Viewpoint::default_view, p, d);
+  add_viewpoint_node(xml_scene_node, Viewpoint::default_view, p, d);
 
   // Add viewpoint nodes
   if (show_viewpoint_buttons)
   {
-    add_viewpoint_node(xml_scene, Viewpoint::top, p, d);
-    add_viewpoint_node(xml_scene, Viewpoint::bottom, p, d);
-    add_viewpoint_node(xml_scene, Viewpoint::left, p, d);
-    add_viewpoint_node(xml_scene, Viewpoint::right, p, d);
-    add_viewpoint_node(xml_scene, Viewpoint::back, p, d);
-    add_viewpoint_node(xml_scene, Viewpoint::front, p, d);
+    add_viewpoint_node(xml_scene_node, Viewpoint::top, p, d);
+    add_viewpoint_node(xml_scene_node, Viewpoint::bottom, p, d);
+    add_viewpoint_node(xml_scene_node, Viewpoint::left, p, d);
+    add_viewpoint_node(xml_scene_node, Viewpoint::right, p, d);
+    add_viewpoint_node(xml_scene_node, Viewpoint::back, p, d);
+    add_viewpoint_node(xml_scene_node, Viewpoint::front, p, d);
   }
 }
 //-----------------------------------------------------------------------------
-void X3DOM::add_viewpoint_node(pugi::xml_node& xml_scene, Viewpoint viewpoint,
+void X3DOM::add_viewpoint_node(pugi::xml_node& xml_scene_node,
+                               Viewpoint viewpoint,
                                const Point p, const double d)
 {
   std::string viewpoint_str;
@@ -826,9 +828,9 @@ void X3DOM::add_viewpoint_node(pugi::xml_node& xml_scene, Viewpoint viewpoint,
   }
 
   // Append the node
-  pugi::xml_node viewpoint_node = xml_scene.append_child("Viewpoint");
+  pugi::xml_node viewpoint_node = xml_scene_node.append_child("Viewpoint");
+  dolfin_assert(viewpoint_node);
   viewpoint_node.append_child(pugi::node_pcdata);
-
 
   // Add attributes to node
   viewpoint_node.append_attribute("id") = viewpoint_str.c_str();

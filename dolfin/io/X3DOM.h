@@ -101,12 +101,13 @@ namespace dolfin
 
     double get_transparency() const;
 
-    /// Set the color map by supplying a vector of 768 values (256*RGB)
-    /// (for Python compatibility)
+    /// Set the color map by supplying a vector of 768 values
+    /// (256*RGB) (using std::vector for Python compatibility via
+    /// SWIG)
     void set_color_map(const std::vector<double>& color_data);
 
-    /// Get the color map as a vector of 768 values (256*RGB)
-    /// (for Python compatibility)
+    /// Get the color map as a vector of 768 values (256*RGB) (using
+    /// std::vector for Python compatibility via SWIG)
     std::vector<double> get_color_map() const;
 
     /// Get the color map as a boost::multi_array (256x3)
@@ -117,7 +118,7 @@ namespace dolfin
 
     bool get_viewpoint_buttons() const;
 
-    // Turn X3D 'stats' window on
+    // Turn X3D 'stats' window on/off
     void set_x3d_stats(bool show);
     bool get_x3d_stats() const;
 
@@ -163,12 +164,15 @@ namespace dolfin
   class Mesh;
   class Point;
 
-  /// This class implements output of meshes to X3DOM XML or XHTML or
-  /// string. We use XHTML as it has full support for X3DOM, and fits
-  /// better with the use of an XML library to produce document tree.
+  /// This class implements output of meshes to X3DOM XML or HTML5
+  /// with X3DOM strings. The latter can be used for interactive visualisation
   ///
-  /// When creating stand-along HTML files, it is necessary to use the
-  /// file extension '.xhtml'.
+  /// Developer note: pugixml is used to created X3DOM and HTML5. By
+  /// using pugixml, we produce valid XML, but care must be taken that
+  /// the XML is also valid HTML. This includes not letting pugixml
+  /// create self-closing elements. E.g., <foo bar="foobar"></foo> is
+  /// fine, but the self-closing syntax <foo bar="foobar" /> while
+  /// being valid XML is is not valid HTML5.
 
   class X3DOM
   {
@@ -178,17 +182,17 @@ namespace dolfin
     static std::string str(const Mesh& mesh,
                            X3DOMParameters paramemeters=X3DOMParameters());
 
-    /// Return XHTML string with embedded X3D for a Mesh
-    static std::string xhtml(const Mesh& mesh,
-                             X3DOMParameters parameters=X3DOMParameters());
+    /// Return HTML5 string with embedded X3D for a Mesh
+    static std::string html(const Mesh& mesh,
+                            X3DOMParameters parameters=X3DOMParameters());
 
     /// Return X3D string for a Function
     static std::string str(const Function& u,
                            X3DOMParameters paramemeters=X3DOMParameters());
 
-    /// Return XHTML string with embedded X3D for a Function
-    static std::string xhtml(const Function& u,
-                             X3DOMParameters parameters=X3DOMParameters());
+    /// Return HTML5 string with embedded X3D for a Function
+    static std::string html(const Function& u,
+                            X3DOMParameters parameters=X3DOMParameters());
 
   private:
 
@@ -203,11 +207,11 @@ namespace dolfin
                       const std::vector<double>& facet_values,
                       const X3DOMParameters& parameters);
 
-    // Build XHTML pugixml tree
-    static void xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
-                      const std::vector<double>& vertex_values,
-                      const std::vector<double>& facet_values,
-                      const X3DOMParameters& parameters);
+    // Build HTML pugixml tree
+    static void html(pugi::xml_document& xml_doc, const Mesh& mesh,
+                     const std::vector<double>& vertex_values,
+                     const std::vector<double>& facet_values,
+                     const X3DOMParameters& parameters);
 
     // Add HTML preamble (HTML) to XML doc and return 'html' node
     static pugi::xml_node add_html_preamble(pugi::xml_node& xml_node);
@@ -260,8 +264,7 @@ namespace dolfin
     // Get list of vertex indices which are on surface
     static std::set<int> surface_vertex_indices(const Mesh& mesh);
 
-    // Get the values of a function at vertices, (or on facets
-    // for P0)
+    // Get the values of a function at vertices, (or on facets for P0)
     static void get_function_values(const Function& u,
                                     std::vector<double>& vertex_values,
                                     std::vector<double>& facet_values);
