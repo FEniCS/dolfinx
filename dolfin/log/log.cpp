@@ -26,11 +26,11 @@
 #include <cstdarg>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <stdarg.h>
 #include <stdio.h>
 
-#include <boost/scoped_array.hpp>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/MPI.h>
@@ -40,7 +40,7 @@
 
 using namespace dolfin;
 
-static boost::scoped_array<char> buffer(0);
+static std::unique_ptr<char[]> buffer;
 static unsigned int buffer_size= 0;
 
 // Buffer allocation

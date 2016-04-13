@@ -26,8 +26,8 @@
 
 #include <cstring>
 #include <limits>
-#include <string>
 #include <sstream>
+#include <string>
 #include <vector>
 #include <boost/functional/hash.hpp>
 #include <dolfin/common/MPI.h>
@@ -37,15 +37,6 @@ namespace dolfin
 
   /// Indent string block
   std::string indent(std::string block);
-
-  /// Return string representation of int
-  template <class T>
-    std::string to_string(T x)
-  {
-    std::stringstream s;
-    s << x;
-    return s.str();
-  }
 
   /// Return string representation of given array
   std::string to_string(const double* x, std::size_t n);
@@ -73,30 +64,13 @@ namespace dolfin
     MPI::gather(mpi_comm, local_hash_tmp, all_hashes);
 
     // Hash the received hash keys
-    boost::hash<std::vector<std::size_t> > hash;
+    boost::hash<std::vector<std::size_t>> hash;
     std::size_t global_hash = hash(all_hashes);
 
     // Broadcast hash key to all processes
     MPI::broadcast(mpi_comm, global_hash);
     return global_hash;
   }
-
-  /// Fast zero-fill of numeric vectors/blocks.
-  template <class T>
-    void zerofill(T* arr, std::size_t n)
-  {
-    if (std::numeric_limits<T>::is_integer || std::numeric_limits<T>::is_iec559)
-      std::memset(arr, 0, n*sizeof(T));
-    else
-    {
-      // should never happen in practice
-      std::fill_n(arr, n, T(0));
-    }
-  }
-
-  template <class T>
-    void zerofill(std::vector<T>& vec)
-  { zerofill(&vec[0], vec.size()); }
 
 }
 

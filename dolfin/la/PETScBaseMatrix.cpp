@@ -133,5 +133,13 @@ void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
   _z._x = x;
 }
 //-----------------------------------------------------------------------------
+MPI_Comm PETScBaseMatrix::mpi_comm() const
+{
+  dolfin_assert(_matA);
+  MPI_Comm mpi_comm = MPI_COMM_NULL;
+  PetscObjectGetComm((PetscObject)_matA, &mpi_comm);
+  return mpi_comm;
+}
+//-----------------------------------------------------------------------------
 
 #endif

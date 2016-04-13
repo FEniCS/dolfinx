@@ -55,9 +55,9 @@ PETScFactory::create_layout(std::size_t rank) const
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearOperator>
-PETScFactory::create_linear_operator() const
+PETScFactory::create_linear_operator(MPI_Comm comm) const
 {
-  return std::make_shared<PETScLinearOperator>();
+  return std::make_shared<PETScLinearOperator>(comm);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLUSolver>

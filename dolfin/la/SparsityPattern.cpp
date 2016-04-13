@@ -573,7 +573,5 @@ void SparsityPattern::info_statistics() const
          << "%)";
     cout << endl;
   }
-
-  MPI::barrier(MPI_COMM_WORLD);
 }
 //-----------------------------------------------------------------------------
