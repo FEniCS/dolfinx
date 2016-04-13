@@ -428,16 +428,19 @@ void X3DOM::xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
 
   // Add body node
   pugi::xml_node body_node = html_node.append_child("body");
+  body_node.append_child(pugi::node_pcdata);
 
   // Add division in HTML to fix alignment
   pugi::xml_node div_x3d_node = body_node.append_child("div");
-  
+  div_x3d_node.append_child(pugi::node_pcdata);
+
   // Add X3D XML data to 'div' node
   add_x3dom_data(div_x3d_node, mesh, vertex_values, facet_values, parameters);
 
   // Add text mesh info to body node
   pugi::xml_node mesh_info = body_node.append_child("div");
   dolfin_assert(mesh_info);
+  mesh_info.append_child(pugi::node_pcdata);
   mesh_info.append_attribute("style") = "position: absolute; margin: 1%; text-align: left; font-size: 12px; color: black;";
   std::string data = "Number of vertices: "
     + std::to_string(mesh.num_vertices())
@@ -471,8 +474,8 @@ pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
 {
   // Add html node (required for XHTML)
   pugi::xml_node html_node = xml_node.append_child("html");
-  html_node.append_attribute("xmlns") = "http://www.w3.org/1999/xhtml";
-  html_node.append_attribute("lang") = "en";
+  //html_node.append_attribute("xmlns") = "http://www.w3.org/1999/xhtml";
+  //html_node.append_attribute("lang") = "en";
 
   // Add head node (required for XHTML)
   pugi::xml_node head_node = html_node.append_child("head");
@@ -482,13 +485,14 @@ pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
   dolfin_assert(meta_node0);
   meta_node0.append_attribute("http-equiv") = "content-type";
   meta_node0.append_attribute("content") = "text/html;charset=UTF-8";
+  meta_node0.append_child(pugi::node_pcdata);
 
   pugi::xml_node meta_node1 = head_node.append_child("meta");
   dolfin_assert(meta_node1);
   meta_node1.append_attribute("name") = "generator";
   meta_node1.append_attribute("content")
     = "FEniCS/DOLFIN (http://fenicsproject.org)";
-
+  meta_node1.append_child(pugi::node_pcdata);
 
   // Add title node
   pugi::xml_node title_node = head_node.append_child("title");
@@ -504,6 +508,8 @@ pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
 
   // Add link node
   pugi::xml_node link_node = head_node.append_child("link");
+  link_node.append_child(pugi::node_pcdata);
+
 
   // Set attributes for link node
   link_node.append_attribute("rel") = "stylesheet";
@@ -532,6 +538,7 @@ pugi::xml_node X3DOM::add_x3d_node(pugi::xml_node& xml_node,
 {
   pugi::xml_node x3d = xml_node.append_child("X3D");
   dolfin_assert(x3d);
+  xml_node.append_child(pugi::node_pcdata);
 
   // Add on option to show rendering
   x3d.append_attribute("showStat") = show_stats;
@@ -576,6 +583,7 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   // Add head node
   pugi::xml_node head_node = x3d_node.append_child("head");
   dolfin_assert(head_node);
+  head_node.append_child(pugi::node_pcdata);
 
   // Add meta node to head node, and attributes
   pugi::xml_node meta_node = head_node.append_child("meta");
@@ -583,10 +591,12 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   meta_node.append_attribute("name") = "generator";
   meta_node.append_attribute("content")
     = "FEniCS/DOLFIN (http://fenicsproject.org)";
+  meta_node.append_child(pugi::node_pcdata);
 
   // Add scene node
   pugi::xml_node scene = x3d_node.append_child("Scene");
   dolfin_assert(scene);
+  scene.append_child(pugi::node_pcdata);
 
   // Add mesh to 'scene' XML node
   auto representation = parameters.get_representation();
@@ -610,9 +620,11 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   pugi::xml_node background = scene.append_child("Background");
   background.append_attribute("skyColor")
     = array_to_string3(parameters.get_background_color()).c_str();
+  background.append_child(pugi::node_pcdata);
 
   // Add ambient light
   pugi::xml_node ambient_light_node = scene.append_child("DirectionalLight");
+  ambient_light_node.append_child(pugi::node_pcdata);
   ambient_light_node.append_attribute("ambientIntensity")
     = parameters.get_ambient_intensity();
   ambient_light_node.append_attribute("intensity") = 1.0;
@@ -639,12 +651,15 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
   {
     // Create shape node and append ID attribute
     pugi::xml_node shape_node = xml_node.append_child("Shape");
+    shape_node.append_child(pugi::node_pcdata);
 
     // Create appearance node
     pugi::xml_node appearance_node = shape_node.append_child("Appearance");
+    appearance_node.append_child(pugi::node_pcdata);
 
     // Append color attributes
     pugi::xml_node material_node = appearance_node.append_child("Material");
+    material_node.append_child(pugi::node_pcdata);
     if (surface)
     {
       material_node.append_attribute("diffuseColor")
@@ -664,6 +679,7 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
 
     // Add edges node
     pugi::xml_node indexed_set = shape_node.append_child(x3d_type.c_str());
+    indexed_set.append_child(pugi::node_pcdata);
     indexed_set.append_attribute("solid") = "false";
 
     // Add color per vertex attribute
@@ -678,6 +694,7 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
 
     // Add Coordinate node
     pugi::xml_node coordinate_node = indexed_set.append_child("Coordinate");
+    coordinate_node.append_child(pugi::node_pcdata);
     coordinate_node.append_attribute("DEF") = "dolfin";
 
     // Add geometry data to coordinate node
@@ -717,6 +734,7 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
 
       pugi::xml_node color_node = indexed_set.append_child("Color");
       dolfin_assert(color_node);
+      color_node.append_child(pugi::node_pcdata);
       color_node.append_attribute("color") = color_values.str().c_str();
     }
   }
@@ -809,6 +827,8 @@ void X3DOM::add_viewpoint_node(pugi::xml_node& xml_scene, Viewpoint viewpoint,
 
   // Append the node
   pugi::xml_node viewpoint_node = xml_scene.append_child("Viewpoint");
+  viewpoint_node.append_child(pugi::node_pcdata);
+
 
   // Add attributes to node
   viewpoint_node.append_attribute("id") = viewpoint_str.c_str();
