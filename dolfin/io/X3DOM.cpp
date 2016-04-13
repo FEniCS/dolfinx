@@ -146,12 +146,24 @@ double X3DOMParameters::get_transparency() const
   return _transparency;
 }
 //-----------------------------------------------------------------------------
-void X3DOMParameters::set_color_map(const boost::multi_array<float, 2>& color_data)
+void X3DOMParameters::set_color_map(const std::vector<double>& color_data)
 {
-  _color_map = color_data;
+  dolfin_assert(color_data.size() == 256*3);
+  _color_map.resize(boost::extents[256][3]);
+  std::copy(color_data.begin(), color_data.end(), _color_map.data());
 }
 //-----------------------------------------------------------------------------
-boost::multi_array<float, 2> X3DOMParameters::get_color_map() const
+std::vector<double> X3DOMParameters::get_color_map() const
+{
+  dolfin_assert(_color_map.shape()[0] == 256);
+  dolfin_assert(_color_map.shape()[1] == 3);
+
+  std::vector<double> cmap(256*3);
+  std::copy(_color_map.data(), _color_map.data() + 256*3, cmap.data());
+  return cmap;
+}
+//-----------------------------------------------------------------------------
+boost::multi_array<float, 2> X3DOMParameters::get_color_map_array() const
 {
   return _color_map;
 }
@@ -686,7 +698,7 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
       const double scale = (value_max == value_min) ? 1.0 : 255.0/(value_max - value_min);
 
       // Get colour map (256 RGB values)
-      boost::multi_array<float, 2> cmap = parameters.get_color_map();
+      boost::multi_array<float, 2> cmap = parameters.get_color_map_array();
 
       // Add vertex colors
       std::stringstream color_values;

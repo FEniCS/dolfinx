@@ -101,9 +101,16 @@ namespace dolfin
 
     double get_transparency() const;
 
-    void set_color_map(const boost::multi_array<float, 2>& color_data);
+    /// Set the color map by supplying a vector of 768 values (256*RGB)
+    /// (for Python compatibility)
+    void set_color_map(const std::vector<double>& color_data);
 
-    boost::multi_array<float, 2> get_color_map() const;
+    /// Get the color map as a vector of 768 values (256*RGB)
+    /// (for Python compatibility)
+    std::vector<double> get_color_map() const;
+
+    /// Get the color map as a boost::multi_array (256x3)
+    boost::multi_array<float, 2> get_color_map_array() const;
 
     // Toggle viewpoint buttons
     void set_viewpoint_buttons(bool show);
