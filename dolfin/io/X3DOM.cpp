@@ -417,7 +417,7 @@ void X3DOM::xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
   // Add body node
   pugi::xml_node body_node = html_node.append_child("body");
 
-  // Add divvision in HTML to fix alignment
+  // Add division in HTML to fix alignment
   pugi::xml_node div_x3d_node = body_node.append_child("div");
   
   // Add X3D XML data to 'div' node
