@@ -96,7 +96,8 @@ void SparsityPattern::init(
   else
   {
     dolfin_assert(global_size1 == local_size1);
-    dolfin_assert(MPI::size(_mpi_comm) == 1);
+    // NOTE: MPI::size(_mpi_comm)==1 does not necessarilly hold. It may be
+    //       rectangle tensor with one very small dimension, e.g. Real space
   }
 }
 //-----------------------------------------------------------------------------

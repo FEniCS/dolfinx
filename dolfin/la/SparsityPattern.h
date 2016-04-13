@@ -128,7 +128,8 @@ namespace dolfin
     std::vector<std::vector<std::size_t>> diagonal_pattern(Type type) const;
 
     /// Return underlying sparsity pattern (off-diagonal). Options are
-    /// 'sorted' and 'unsorted'.
+    /// 'sorted' and 'unsorted'. Empty vector is returned if there is no
+    /// off-diagonal contribution.
     std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
 
   private:
@@ -140,11 +141,8 @@ namespace dolfin
     // partition, 1=column partition)
     const std::size_t _primary_dim;
 
-   // MPI communicator
+    // MPI communicator
     MPI_Comm _mpi_comm;
-
-    // Ownership range for each dimension
-    //    std::vector<std::pair<std::size_t, std::size_t>> _local_range;
 
     // IndexMaps for each dimension
     std::vector<std::shared_ptr<const IndexMap>> _index_maps;
