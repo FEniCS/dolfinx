@@ -342,8 +342,17 @@ void X3DOM::get_function_values(const Function& u,
     // FIXME: this is inefficient and a bit random for interior facets
     // (which we don't need) - so needs a redesign.
     facet_values.resize(mesh.num_facets());
-    for (FaceIterator f(mesh); !f.end(); ++f)
-      facet_values[f->index()] = cell_values[f->entities(tdim)[0]];
+    if (tdim == 3)
+    {
+      for (FaceIterator f(mesh); !f.end(); ++f)
+        facet_values[f->index()] = cell_values[f->entities(tdim)[0]];
+    }
+    else
+    {
+      // In 2D, facets and cells are the same thing
+      std::swap(facet_values, cell_values);
+    }
+
   }
 }
 //-----------------------------------------------------------------------------
