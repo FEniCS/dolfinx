@@ -105,16 +105,23 @@ Parameters PETScLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver(std::string method) : _ksp(NULL)
+PETScLUSolver::PETScLUSolver(MPI_Comm comm, std::string method) : _ksp(NULL)
 {
   // Set parameter values
   parameters = default_parameters();
 
   // Initialize PETSc LU solver
-  init_solver(method);
+  init_solver(comm, method);
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver(std::shared_ptr<const PETScMatrix> A,
+PETScLUSolver::PETScLUSolver(std::string method)
+  : PETScLUSolver(MPI_COMM_WORLD, method)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+PETScLUSolver::PETScLUSolver(MPI_Comm comm,
+                             std::shared_ptr<const PETScMatrix> A,
                              std::string method) : _ksp(NULL), _matA(A)
 {
   // Check dimensions
@@ -129,7 +136,14 @@ PETScLUSolver::PETScLUSolver(std::shared_ptr<const PETScMatrix> A,
   parameters = default_parameters();
 
   // Initialize PETSc LU solver
-  init_solver(method);
+  init_solver(comm, method);
+}
+//-----------------------------------------------------------------------------
+PETScLUSolver::PETScLUSolver(std::shared_ptr<const PETScMatrix> A,
+                             std::string method)
+  : PETScLUSolver(MPI_COMM_WORLD, A, method)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::~PETScLUSolver()
@@ -320,6 +334,14 @@ std::string PETScLUSolver::get_options_prefix() const
   }
 }
 //-----------------------------------------------------------------------------
+MPI_Comm PETScLUSolver::mpi_comm() const
+{
+  dolfin_assert(_ksp);
+  MPI_Comm mpi_comm = MPI_COMM_NULL;
+  PetscObjectGetComm((PetscObject)_ksp, &mpi_comm);
+  return mpi_comm;
+}
+//-----------------------------------------------------------------------------
 std::string PETScLUSolver::str(bool verbose) const
 {
   std::stringstream s;
@@ -355,7 +377,7 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
   if (method == "default")
   {
     #if defined(PETSC_USE_64BIT_INDICES)
-    if (MPI::size(MPI_COMM_WORLD) == 1)
+    if (MPI::size(mpi_comm()) == 1)
     {
       #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
       method = "umfpack";
@@ -377,7 +399,7 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
 
     }
     #else
-    if (MPI::size(MPI_COMM_WORLD) == 1)
+    if (MPI::size(mpi_comm()) == 1)
     {
       #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
       method = "umfpack";
@@ -419,11 +441,8 @@ bool PETScLUSolver::solver_has_cholesky(const MatSolverPackage package) const
   return _methods_cholesky.find(package)->second;
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::init_solver(std::string& method)
+void PETScLUSolver::init_solver(MPI_Comm comm, std::string& method)
 {
-  // Select solver
-  _solver_package = select_solver(method);
-
   // Destroy old solver environment if necessary
   if (_ksp)
     KSPDestroy(&_ksp);
@@ -431,16 +450,12 @@ void PETScLUSolver::init_solver(std::string& method)
   PetscErrorCode ierr;
 
   // Create solver
-  if (MPI::size(MPI_COMM_WORLD) > 1)
-  {
-    ierr = KSPCreate(PETSC_COMM_WORLD, &_ksp);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
-  }
-  else
-  {
-    ierr = KSPCreate(PETSC_COMM_SELF, &_ksp);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
-  }
+  ierr = KSPCreate(comm, &_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
+
+  // Select solver (must come after KSPCreate, becuase we get the MPI
+  // communicator from the KSO object)
+  _solver_package = select_solver(method);
 
   // Set options prefix (if any)
   ierr = KSPSetOptionsPrefix(_ksp, _petsc_options_prefix.c_str());
@@ -501,7 +516,7 @@ void PETScLUSolver::pre_report(const PETScMatrix& A) const
 
   // Get parameter
   const bool report = parameters["report"].is_set() ? parameters["report"] : false;
-  if (report && dolfin::MPI::rank(MPI_COMM_WORLD) == 0)
+  if (report && dolfin::MPI::rank(mpi_comm()) == 0)
   {
     log(PROGRESS,"Solving linear system of size %ld x %ld (PETSc LU solver, %s).",
         A.size(0), A.size(1), solver_type);

@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Garth N. Wells
+// Copyright (C) 2010-2016 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -17,10 +17,8 @@
 //
 // Modified by Anders Logg 2011
 // Modified by Johannes Ring 2012
-//
-// First added:  2010-07-19
-// Last changed: 2012-09-14
 
+#include <cstdint>
 #include <fstream>
 #include <ostream>
 #include <sstream>
@@ -303,7 +301,7 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
   const std::size_t num_cell_vertices = mesh.type().num_vertices(cell_dim);
 
   // Get VTK cell type
-  const boost::uint8_t _vtk_cell_type = vtk_cell_type(mesh, cell_dim);
+  const std::uint8_t _vtk_cell_type = vtk_cell_type(mesh, cell_dim);
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -337,8 +335,8 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
   file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\""
        << "binary" << "\">" << std::endl;
   const int size = num_cells*num_cell_vertices;
-  std::vector<boost::uint32_t> cell_data(size);
-  std::vector<boost::uint32_t>::iterator cell_entry = cell_data.begin();
+  std::vector<std::uint32_t> cell_data(size);
+  std::vector<std::uint32_t>::iterator cell_entry = cell_data.begin();
 
   std::unique_ptr<CellType>
     celltype(CellType::create(mesh.type().entity_type(cell_dim)));
@@ -356,8 +354,8 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
   // Write offset into connectivity array for the end of each cell
   file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\""
        << "binary" << "\">" << std::endl;
-  std::vector<boost::uint32_t> offset_data(num_cells*num_cell_vertices);
-  std::vector<boost::uint32_t>::iterator offset_entry = offset_data.begin();
+  std::vector<std::uint32_t> offset_data(num_cells*num_cell_vertices);
+  std::vector<std::uint32_t>::iterator offset_entry = offset_data.begin();
   for (std::size_t offsets = 1; offsets <= num_cells; offsets++)
     *offset_entry++ = offsets*num_cell_vertices;
 
@@ -368,8 +366,8 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
   // Write cell type
   file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"" << "binary"
        << "\">" << std::endl;
-  std::vector<boost::uint8_t> type_data(num_cells);
-  std::vector<boost::uint8_t>::iterator type_entry = type_data.begin();
+  std::vector<std::uint8_t> type_data(num_cells);
+  std::vector<std::uint8_t>::iterator type_entry = type_data.begin();
   for (std::size_t types = 0; types < num_cells; types++)
     *type_entry++ = _vtk_cell_type;
 
@@ -383,14 +381,14 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
   file.close();
 }
 //----------------------------------------------------------------------------
-boost::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh,
-                                        std::size_t cell_dim)
+std::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh,
+                                      std::size_t cell_dim)
 {
   // Get cell type
   CellType::Type cell_type = mesh.type().entity_type(cell_dim);
 
   // Determine VTK cell type
-  boost::uint8_t vtk_cell_type = 0;
+  std::uint8_t vtk_cell_type = 0;
   if (cell_type == CellType::tetrahedron)
     vtk_cell_type = 10;
   else if (cell_type == CellType::hexahedron)

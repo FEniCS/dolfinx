@@ -44,7 +44,7 @@ def W(mesh):
     return VectorFunctionSpace(mesh, 'CG', 1)
 
 
-def test_arbitraryEval(mesh):
+def test_arbitrary_eval(mesh):
     class F0(Expression):
         def eval(self, values, x):
             values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
@@ -95,6 +95,10 @@ def test_arbitraryEval(mesh):
     assert round(u11 - same_result, 7) == 0
     assert round(u21 - same_result, 7) == 0
 
+    # For MUMPS, increase estimated require memory increase. Typically
+    # required for small meshes in 3D (solver is called by 'project')
+    PETScOptions.set("mat_mumps_icntl_14", 40)
+
     x = (mesh.coordinates()[0]+mesh.coordinates()[1])/2
     f2 = Expression("1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
     V2 = FunctionSpace(mesh, 'CG', 2)
@@ -106,6 +110,8 @@ def test_arbitraryEval(mesh):
     u5 = g1(x)
     assert round(u3 - u4, 7) == 0
     assert round(u3 - u5, 4) == 0
+
+    PETScOptions.set("mat_mumps_icntl_14", 20)
 
 
 def test_ufl_eval():

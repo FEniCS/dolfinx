@@ -18,6 +18,7 @@
 #ifdef HAS_PETSC
 
 #include <petsclog.h>
+#include <petscversion.h>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
@@ -425,9 +426,18 @@ void TAOLinearBoundSolver::set_ksp_options()
     {
       if (krylov_parameters["monitor_convergence"])
       {
-        ierr = KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm,
-                             PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)), NULL);
+        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
+        ierr = TaoSetMonitor(_tao, __TAOMonitor, this, NULL);
+        if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetMonitor");
+        #else
+        PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
+        PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
+        PetscViewerAndFormat *vf;
+        ierr = PetscViewerAndFormatCreate(viewer,format,&vf);
+        ierr = KSPMonitorSet(ksp, (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
+                             vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
         if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
+        #endif
       }
     }
 

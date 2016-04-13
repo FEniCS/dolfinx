@@ -1,9 +1,9 @@
 
 .. _styleguides_sphinx_documenting_interface:
 
-=========================================================
-Documenting the DOLFIN interface (Programmer's reference)
-=========================================================
+==================================================
+Documenting the interface (Programmer's reference)
+==================================================
 
 The DOLFIN :ref:`Programmer's Reference <documentation>` is generated
 for the DOLFIN C++ library and Python module from the source code

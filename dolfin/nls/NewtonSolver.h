@@ -47,16 +47,18 @@ namespace dolfin
   public:
 
     /// Create nonlinear solver
-    NewtonSolver();
+    explicit NewtonSolver(MPI_Comm comm=MPI_COMM_WORLD);
 
     /// Create nonlinear solver using provided linear solver
     ///
     /// *Arguments*
+    ///     comm (_MPI_Ccmm_)
+    ///         The MPI communicator.
     ///     solver (_GenericLinearSolver_)
     ///         The linear solver.
     ///     factory (_GenericLinearAlgebraFactory_)
     ///         The factory.
-    NewtonSolver(std::shared_ptr<GenericLinearSolver> solver,
+    NewtonSolver(MPI_Comm comm, std::shared_ptr<GenericLinearSolver> solver,
                  GenericLinearAlgebraFactory& factory);
 
     /// Destructor

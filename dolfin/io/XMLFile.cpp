@@ -299,7 +299,7 @@ void XMLFile::read_mesh_function(MeshFunction<T>& t,
     // Broadcast and set dimension
 
     // Build local data
-    LocalMeshValueCollection<T> local_data(mvc, dim);
+    LocalMeshValueCollection<T> local_data(_mpi_comm, mvc, dim);
 
     // Distribute MeshValueCollection
     MeshPartitioning::build_distributed_value_collection<T>(mvc, local_data,
@@ -354,7 +354,7 @@ void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
     }
 
     // Create local data and build value collection
-    LocalMeshValueCollection<T> local_data(tmp_collection,
+    LocalMeshValueCollection<T> local_data(_mpi_comm, tmp_collection,
                                            tmp_collection.dim());
 
     // Build mesh value collection

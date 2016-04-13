@@ -28,7 +28,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitQuadMesh::UnitQuadMesh(std::size_t nx, std::size_t ny)
+UnitQuadMesh::UnitQuadMesh(MPI_Comm comm, std::size_t nx, std::size_t ny)
+  : Mesh(comm)
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver(this->mpi_comm()))

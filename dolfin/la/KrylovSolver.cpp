@@ -51,20 +51,35 @@ Parameters KrylovSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
+KrylovSolver::KrylovSolver(MPI_Comm comm, std::string method,
+                           std::string preconditioner)
 {
   // Initialize solver
-  init(method, preconditioner);
+  init(method, preconditioner, comm);
+}
+//-----------------------------------------------------------------------------
+KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
+  : KrylovSolver(MPI_COMM_WORLD, method, preconditioner)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+KrylovSolver::KrylovSolver(MPI_Comm comm,
+                           std::shared_ptr<const GenericLinearOperator> A,
+                           std::string method, std::string preconditioner)
+{
+  // Initialize solver
+  init(method, preconditioner, comm);
+
+  // Set operator
+  set_operator(A);
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(std::shared_ptr<const GenericLinearOperator> A,
                            std::string method, std::string preconditioner)
+  : KrylovSolver(MPI_COMM_WORLD, A, method, preconditioner)
 {
-  // Initialize solver
-  init(method, preconditioner);
-
-  // Set operator
-  set_operator(A);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::~KrylovSolver()
@@ -111,7 +126,7 @@ std::size_t KrylovSolver::solve(const GenericLinearOperator& A,
   return solver->solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::init(std::string method, std::string preconditioner)
+void KrylovSolver::init(std::string method, std::string preconditioner, MPI_Comm comm)
 {
   // Get default linear algebra factory
   DefaultFactory factory;
@@ -146,7 +161,7 @@ void KrylovSolver::init(std::string method, std::string preconditioner)
   parameters = dolfin::parameters("krylov_solver");
 
   // Initialize solver
-  solver = factory.create_krylov_solver(method, preconditioner);
+  solver = factory.create_krylov_solver(comm, method, preconditioner);
   solver->parameters.update(parameters);
 }
 //-----------------------------------------------------------------------------

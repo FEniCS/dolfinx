@@ -24,6 +24,7 @@
 #ifndef __POINT_H
 #define __POINT_H
 
+#include <array>
 #include <cmath>
 #include <iostream>
 #include <dolfin/log/log.h>
@@ -50,7 +51,7 @@ namespace dolfin
     ///     z (double)
     ///         The z-coordinate.
     Point(const double x=0.0, const double y=0.0, const double z=0.0)
-    { _x[0] = x; _x[1] = y; _x[2] = z; }
+      : _x({{x, y, z}}) {}
 
     /// Create point from array
     ///
@@ -59,24 +60,29 @@ namespace dolfin
     ///         Dimension of the array.
     ///     x (double)
     ///         The array to create a Point from.
-    Point(std::size_t dim, const double* x)
-    { for (std::size_t i = 0; i < 3; i++) _x[i] = (i < dim ? x[i] : 0.0); }
+    Point(std::size_t dim, const double* x) : _x({{0.0, 0.0, 0.0}})
+    {
+      for (std::size_t i = 0; i < dim; i++)
+        _x[i] = x[i];
+    }
 
     /// Create point from Array
     ///
     /// *Arguments*
     ///     x (Array<double>)
     ///         Array of coordinates.
-    Point(const Array<double>& x)
-    { for (std::size_t i = 0; i < 3; i++) _x[i] = (i < x.size() ? x[i] : 0.0); }
+    Point(const Array<double>& x) : _x({{0.0, 0.0, 0.0}})
+    {
+      for (std::size_t i = 0; i < x.size(); i++)
+        _x[i] = x[i];
+    }
 
     /// Copy constructor
     ///
     /// *Arguments*
     ///     p (_Point_)
     ///         The object to be copied.
-    Point(const Point& p)
-    { _x[0] = p._x[0]; _x[1] = p._x[1]; _x[2] = p._x[2]; }
+    Point(const Point& p) : _x({{p._x[0], p._x[1], p._x[2]}}) {}
 
     /// Destructor
     ~Point() {}
@@ -135,7 +141,7 @@ namespace dolfin
     ///     list of doubles
     ///         The coordinates.
     double* coordinates()
-    { return _x; }
+    { return _x.data(); }
 
     /// Return coordinate array (const. version)
     ///
@@ -143,7 +149,7 @@ namespace dolfin
     ///     list of doubles
     ///         The coordinates.
     const double* coordinates() const
-    { return _x; }
+    { return _x.data(); }
 
     /// Compute sum of two points
     Point operator+ (const Point& p) const
@@ -183,7 +189,7 @@ namespace dolfin
 
     /// Assignment operator
     const Point& operator= (const Point& p)
-    { _x[0] = p._x[0]; _x[1] = p._x[1]; _x[2] = p._x[2]; return *this; }
+    { _x = {{p._x[0], p._x[1], p._x[2]}}; return *this; }
 
     /// Compute squared distance to given point
     ///
@@ -247,9 +253,7 @@ namespace dolfin
     ///
     ///         3
     double norm() const
-    {
-      return std::sqrt(_x[0]*_x[0] + _x[1]*_x[1] + _x[2]*_x[2]);
-    }
+    { return std::sqrt(_x[0]*_x[0] + _x[1]*_x[1] + _x[2]*_x[2]); }
 
     /// Compute norm of point representing a vector from the origin
     ///
@@ -268,9 +272,7 @@ namespace dolfin
     ///
     ///         9
     double squared_norm() const
-    {
-      return _x[0]*_x[0] + _x[1]*_x[1] + _x[2]*_x[2];
-    }
+    { return _x[0]*_x[0] + _x[1]*_x[1] + _x[2]*_x[2]; }
 
     /// Compute cross product with given vector
     ///
@@ -333,7 +335,7 @@ namespace dolfin
 
   private:
 
-    double _x[3];
+    std::array<double, 3> _x;
 
   };
 

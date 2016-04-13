@@ -44,7 +44,7 @@ namespace dolfin
     virtual ~DefaultFactory() {}
 
     /// Create empty matrix
-    virtual std::shared_ptr<GenericMatrix> create_matrix() const;
+    virtual std::shared_ptr<GenericMatrix> create_matrix(MPI_Comm comm) const;
 
     /// Create empty vector
     virtual std::shared_ptr<GenericVector> create_vector(MPI_Comm comm) const;
@@ -54,15 +54,15 @@ namespace dolfin
 
     /// Create empty linear operator
     virtual std::shared_ptr<GenericLinearOperator>
-    create_linear_operator() const;
+      create_linear_operator(MPI_Comm comm) const;
 
     /// Create LU solver
     virtual std::shared_ptr<dolfin::GenericLUSolver>
-    create_lu_solver(std::string method) const;
+    create_lu_solver(MPI_Comm comm, std::string method) const;
 
     /// Create Krylov solver
     virtual std::shared_ptr<dolfin::GenericLinearSolver>
-    create_krylov_solver(std::string method, std::string preconditioner) const;
+    create_krylov_solver(MPI_Comm comm, std::string method, std::string preconditioner) const;
 
     /// Return a list of available LU solver methods
     std::map<std::string, std::string> lu_solver_methods() const;

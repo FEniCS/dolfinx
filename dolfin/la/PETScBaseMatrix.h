@@ -25,9 +25,10 @@
 
 #ifdef HAS_PETSC
 
+#include <cinttypes>
+#include <cstddef>
 #include <string>
 #include <utility>
-#include <memory>
 #include <petscmat.h>
 
 #include <dolfin/common/types.h>
@@ -47,7 +48,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    PETScBaseMatrix() : _matA(NULL) {}
+    PETScBaseMatrix() : _matA(nullptr) {}
 
     /// Constructor
     explicit PETScBaseMatrix(Mat A);
@@ -61,8 +62,12 @@ namespace dolfin
     /// Return number of rows (dim = 0) or columns (dim = 1)
     std::size_t size(std::size_t dim) const;
 
+    /// Return number of rows and columns (num_rows, num_cols). PETSc
+    /// returns -1 if size has not been set.
+    std::pair<std::int64_t, std::int64_t> size() const;
+
     /// Return local range along dimension dim
-    std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const;
+    std::pair<std::int64_t, std::int64_t> local_range(std::size_t dim) const;
 
     /// Initialize vector to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are
@@ -76,6 +81,9 @@ namespace dolfin
     /// Return PETSc Mat pointer
     Mat mat() const
     { return _matA; }
+
+    /// Return the MPI communicator
+    MPI_Comm mpi_comm() const;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;

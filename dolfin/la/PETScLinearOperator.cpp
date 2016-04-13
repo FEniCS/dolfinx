@@ -59,9 +59,12 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-PETScLinearOperator::PETScLinearOperator() : _wrapper(0)
+PETScLinearOperator::PETScLinearOperator(MPI_Comm comm) :  PETScBaseMatrix(),
+                                                           _wrapper(nullptr)
 {
-  // Do nothing
+  // Create uninitialised matrix
+  PetscErrorCode ierr = MatCreate(comm, &_matA);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScLinearOperator::size(std::size_t dim) const
@@ -117,7 +120,7 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
   // Get local range
   std::size_t m_local = M;
   std::size_t n_local = N;
-  if (MPI::size(MPI_COMM_WORLD) > 1)
+  if (MPI::size(x.mpi_comm()) > 1)
   {
     std::pair<std::size_t, std::size_t> local_range_x = x.local_range();
     std::pair<std::size_t, std::size_t> local_range_y = y.local_range();
@@ -125,19 +128,25 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
     n_local = local_range_x.second - local_range_x.first;
   }
 
-  // Initialize PETSc matrix
+  dolfin_assert(_matA);
+
+  // FIXME: check that operator is not being re-initialised
+
   PetscErrorCode ierr;
-  if (_matA)
-    MatDestroy(&_matA);
 
-  // Create shell matrix
-  ierr = MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, M, N,
-                        (void*) this, &_matA);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreateShell");
+  // Set matrix size
+  ierr = MatSetSizes(_matA, m_local, n_local, M, N);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetSizes");
 
-  // Increase reference count
-  PetscObjectReference((PetscObject)_matA);
+  // Set matrix type to 'shell'
+  ierr = MatSetType(_matA, MATSHELL);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
 
+  // Set context
+  ierr = MatShellSetContext(_matA, (void*) this);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetShellContext");
+
+  // Set matrix mult function
   ierr = MatShellSetOperation(_matA, MATOP_MULT, (void (*)()) usermult);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatShellSetOperation");
 }

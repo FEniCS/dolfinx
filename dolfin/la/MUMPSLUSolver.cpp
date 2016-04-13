@@ -155,8 +155,6 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
                  "MUMPS reported an error during the analysis and "
                  "factorisation");
 
-  cout << "Factorisation finished" << endl;
-
   // Gather RHS on root process and attach
   std::vector<double> _b;
   b.gather_on_zero(_b);
