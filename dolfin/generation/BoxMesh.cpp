@@ -36,15 +36,13 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 BoxMesh::BoxMesh(const Point& p0, const Point& p1,
                  std::size_t nx, std::size_t ny, std::size_t nz)
-  : Mesh(MPI_COMM_WORLD)
+  : BoxMesh(MPI_COMM_WORLD, p0, p1, nx, ny, nz)
 {
-  build(p0, p1, nx, ny, nz);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoxMesh::BoxMesh(MPI_Comm comm,
-                 const Point& p0, const Point& p1,
-                 std::size_t nx, std::size_t ny, std::size_t nz)
-  : Mesh(comm)
+BoxMesh::BoxMesh(MPI_Comm comm, const Point& p0, const Point& p1,
+                 std::size_t nx, std::size_t ny, std::size_t nz) : Mesh(comm)
 {
   build(p0, p1, nx, ny, nz);
 }

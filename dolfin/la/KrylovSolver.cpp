@@ -51,16 +51,17 @@ Parameters KrylovSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(MPI_Comm comm, std::string method, std::string preconditioner)
+KrylovSolver::KrylovSolver(MPI_Comm comm, std::string method,
+                           std::string preconditioner)
 {
   // Initialize solver
   init(method, preconditioner, comm);
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
+  : KrylovSolver(MPI_COMM_WORLD, method, preconditioner)
 {
-  // Initialize solver
-  init(method, preconditioner, MPI_COMM_WORLD);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(MPI_Comm comm,
@@ -76,12 +77,9 @@ KrylovSolver::KrylovSolver(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(std::shared_ptr<const GenericLinearOperator> A,
                            std::string method, std::string preconditioner)
+  : KrylovSolver(MPI_COMM_WORLD, A, method, preconditioner)
 {
-  // Initialize solver
-  init(method, preconditioner, MPI_COMM_WORLD);
-
-  // Set operator
-  set_operator(A);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::~KrylovSolver()

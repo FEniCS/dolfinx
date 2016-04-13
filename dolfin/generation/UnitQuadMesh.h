@@ -33,10 +33,9 @@ namespace dolfin
   {
   public:
 
-
     /// NB: this code is experimental, just for testing, and will generally not
     /// work with anything else
-    UnitQuadMesh(std::size_t nx, std::size_t ny);
+    UnitQuadMesh(MPI_Comm comm, std::size_t nx, std::size_t ny);
 
   };
 

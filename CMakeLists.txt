@@ -334,8 +334,7 @@ set(Boost_ADDITIONAL_VERSIONS 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
 find_package(Boost 1.48 QUIET REQUIRED)
 
-set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams
-    timer)
+set(DOLFIN_BOOST_COMPONENTS filesystem program_options system iostreams timer)
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package Eigen3
@@ -816,7 +815,7 @@ install(FILES ${DOLFIN_UTILITIES}
 #------------------------------------------------------------------------------
 # Installation of DOLFIN manual pages
 
-install(DIRECTORY ${DOLFIN_SOURCE_DIR}/doc/man/
+install(DIRECTORY ${DOLFIN_SOURCE_DIR}/doc-old/man/
   DESTINATION ${DOLFIN_MAN_DIR}
   USE_SOURCE_PERMISSIONS
   COMPONENT RuntimeExecutables)
@@ -1006,7 +1005,7 @@ if (DOLFIN_ENABLE_DOCS)
   if (NOT SPHINX_FOUND)
     message(STATUS "Disabling generation of documentation because Sphinx is missing.")
   else()
-    add_subdirectory(doc)
+    add_subdirectory(doc-old)
   endif()
 endif()
 

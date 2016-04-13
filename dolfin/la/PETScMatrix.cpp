@@ -552,10 +552,7 @@ void PETScMatrix::apply(std::string mode)
 //-----------------------------------------------------------------------------
 MPI_Comm PETScMatrix::mpi_comm() const
 {
-  dolfin_assert(_matA);
-  MPI_Comm mpi_comm = MPI_COMM_NULL;
-  PetscObjectGetComm((PetscObject)_matA, &mpi_comm);
-  return mpi_comm;
+  return PETScBaseMatrix::mpi_comm();
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScMatrix::nnz() const
@@ -699,7 +696,7 @@ void PETScMatrix::binary_dump(std::string file_name) const
   PetscErrorCode ierr;
 
   PetscViewer view_out;
-  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD, file_name.c_str(),
+  ierr = PetscViewerBinaryOpen(mpi_comm(), file_name.c_str(),
                                FILE_MODE_WRITE, &view_out);
   if (ierr != 0) petsc_error(ierr, __FILE__, "PetscViewerBinaryOpen");
 
@@ -724,7 +721,7 @@ std::string PETScMatrix::str(bool verbose) const
     // FIXME: Maybe this could be an option?
     dolfin_assert(_matA);
     PetscErrorCode ierr;
-    if (MPI::size(MPI_COMM_WORLD) > 1)
+    if (MPI::size(mpi_comm()) > 1)
     {
       ierr = MatView(_matA, PETSC_VIEWER_STDOUT_WORLD);
       if (ierr != 0) petsc_error(ierr, __FILE__, "MatView");

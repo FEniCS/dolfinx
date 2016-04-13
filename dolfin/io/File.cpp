@@ -44,9 +44,9 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 File::File(const std::string filename, std::string encoding)
-  : _mpi_comm(MPI_COMM_WORLD)
+  : File(MPI_COMM_WORLD, filename, encoding)
 {
-  init(MPI_COMM_WORLD, filename, encoding);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 File::File(MPI_Comm comm, const std::string filename, std::string encoding)
@@ -56,9 +56,9 @@ File::File(MPI_Comm comm, const std::string filename, std::string encoding)
 }
 //-----------------------------------------------------------------------------
 File::File(const std::string filename, Type type, std::string encoding)
-  : _mpi_comm(MPI_COMM_WORLD)
+  : File(MPI_COMM_WORLD, filename, type, encoding)
 {
-  init(MPI_COMM_WORLD, filename, type, encoding);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 File::File(MPI_Comm comm, const std::string filename, Type type,
