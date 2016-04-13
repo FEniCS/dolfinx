@@ -48,6 +48,7 @@ X3DOMParameters::X3DOMParameters()
     _ambient_intensity(0.0),
     _shininess(0.5),
     _transparency(0.0),
+    _color_map(default_color_map()),
     _show_x3d_stats(false)
 {
   // Do nothing
@@ -145,6 +146,16 @@ double X3DOMParameters::get_transparency() const
   return _transparency;
 }
 //-----------------------------------------------------------------------------
+void X3DOMParameters::set_color_map(const boost::multi_array<float, 2>& color_data)
+{
+  _color_map = color_data;
+}
+//-----------------------------------------------------------------------------
+boost::multi_array<float, 2> X3DOMParameters::get_color_map() const
+{
+  return _color_map;
+}
+//-----------------------------------------------------------------------------
 void X3DOMParameters::set_viewpoint_buttons(bool show)
 {
   _show_viewpoints = show;
@@ -189,6 +200,41 @@ void X3DOMParameters::check_value_range(double value, double lower,
                  "Parameter outside of allowable range of (%f, %f)", lower,
                  upper);
   }
+}
+//-----------------------------------------------------------------------------
+boost::multi_array<float, 2> X3DOMParameters::default_color_map()
+{
+  boost::multi_array<float, 2> rgb_map(boost::extents[256][3]);
+
+  // Create RGB palette of 256 colors
+  for (int i = 0; i < 256; ++i)
+  {
+    const double x = (double)i/255.0;
+    const double y = 1.0 - x;
+    rgb_map[i][0] = 4*std::pow(x, 3) - 3*std::pow(x, 4);
+    rgb_map[i][1] = 4*std::pow(x, 2)*(1.0 - std::pow(x, 2));
+    rgb_map[i][2] = 4*std::pow(y, 3) - 3*std::pow(y, 4);
+  }
+
+  /*
+  for (int i = 0; i < 256; ++i)
+  {
+    const double lm = 425.0 + 250.0*(double)i/255.0;
+    const double b
+      = 1.8*exp(-std::pow((lm - 450.0)/((lm > 450.0) ? 40.0 : 20.0), 2.0));
+    const double g
+      = 0.9*exp(-std::pow((lm - 550.0)/((lm > 550.0) ? 60 : 40.0), 2.0));
+    double r = 1.0*exp(-std::pow((lm - 600.0)/((lm > 600.0) ? 40.0 : 50.0), 2.0));
+    r += 0.3*exp(-std::pow((lm - 450.0)/((lm > 450.0) ? 20.0 : 30.0), 2.0));
+    const double total = r + g + b;
+
+    rgb_map[i][0] = r/total;
+    rgb_map[i][1] = g/total;
+    rgb_map[i][2] = b/total;
+  }
+  */
+
+  return rgb_map;
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -631,7 +677,7 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
       const double scale = (value_max == value_min) ? 1.0 : 255.0/(value_max - value_min);
 
       // Get colour map (256 RGB values)
-      boost::multi_array<float, 2> cmap = color_map();
+      boost::multi_array<float, 2> cmap = parameters.get_color_map();
 
       // Add vertex colors
       std::stringstream color_values;
@@ -750,41 +796,6 @@ void X3DOM::add_viewpoint_node(pugi::xml_node& xml_scene, Viewpoint viewpoint,
 
   viewpoint_node.append_attribute("zNear") = "-1";
   viewpoint_node.append_attribute("zFar") = "-1";
-}
-//-----------------------------------------------------------------------------
-boost::multi_array<float, 2> X3DOM::color_map()
-{
-  boost::multi_array<float, 2> rgb_map(boost::extents[256][3]);
-
-  // Create RGB palette of 256 colors
-  for (int i = 0; i < 256; ++i)
-  {
-    const double x = (double)i/255.0;
-    const double y = 1.0 - x;
-    rgb_map[i][0] = 4*std::pow(x, 3) - 3*std::pow(x, 4);
-    rgb_map[i][1] = 4*std::pow(x, 2)*(1.0 - std::pow(x, 2));
-    rgb_map[i][2] = 4*std::pow(y, 3) - 3*std::pow(y, 4);
-  }
-
-  /*
-  for (int i = 0; i < 256; ++i)
-  {
-    const double lm = 425.0 + 250.0*(double)i/255.0;
-    const double b
-      = 1.8*exp(-std::pow((lm - 450.0)/((lm > 450.0) ? 40.0 : 20.0), 2.0));
-    const double g
-      = 0.9*exp(-std::pow((lm - 550.0)/((lm > 550.0) ? 60 : 40.0), 2.0));
-    double r = 1.0*exp(-std::pow((lm - 600.0)/((lm > 600.0) ? 40.0 : 50.0), 2.0));
-    r += 0.3*exp(-std::pow((lm - 450.0)/((lm > 450.0) ? 20.0 : 30.0), 2.0));
-    const double total = r + g + b;
-
-    rgb_map[i][0] = r/total;
-    rgb_map[i][1] = g/total;
-    rgb_map[i][2] = b/total;
-  }
-  */
-
-  return rgb_map;
 }
 //-----------------------------------------------------------------------------
 std::pair<Point, double> X3DOM::mesh_min_max(const Mesh& mesh)

@@ -29,12 +29,12 @@
 
 // TODO:
 // - Can we order vertices so that attribute 'solid' can be set to true?
-// - Make size (height, width) a parameter
 // - Add ambient intensity parameter
 // - Test and add more sanity checks for Functions
 // - Add support for GenericFunction
-// - Add support for P0 Functions
 // - Add support for MeshFunctions
+// - Add support for DG1 Functions
+// - document all class methods below properly
 
 namespace pugi
 {
@@ -101,6 +101,10 @@ namespace dolfin
 
     double get_transparency() const;
 
+    void set_color_map(const boost::multi_array<float, 2>& color_data);
+
+    boost::multi_array<float, 2> get_color_map() const;
+
     // Toggle viewpoint buttons
     void set_viewpoint_buttons(bool show);
 
@@ -120,6 +124,9 @@ namespace dolfin
     // invalid.
     static void check_value_range(double value, double lower, double upper);
 
+    // Return a default RGB color map (256 values)
+    static boost::multi_array<float, 2> default_color_map();
+
     // Surface, surface with edges or wireframe
     Representation _representation;
 
@@ -136,6 +143,9 @@ namespace dolfin
 
     // TODO: document
     double _ambient_intensity, _shininess, _transparency;
+
+    // RGB color map (256 values)
+    boost::multi_array<float, 2> _color_map;
 
     // Turn X3D stats on/off
     bool _show_x3d_stats;
@@ -236,9 +246,6 @@ namespace dolfin
                                    Viewpoint viewpoint,
                                    const Point p,
                                    const double s);
-
-    // Return RGB color map (256 values)
-    static boost::multi_array<float, 2> color_map();
 
     // Get mesh dimensions and viewpoint distance
     static std::pair<Point, double> mesh_min_max(const Mesh& mesh);
