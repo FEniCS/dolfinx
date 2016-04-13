@@ -429,8 +429,11 @@ void X3DOM::xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
   // Add body node
   pugi::xml_node body_node = html_node.append_child("body");
 
-  // Add X3D XML data to 'body' node
-  add_x3dom_data(body_node, mesh, vertex_values, facet_values, parameters);
+  // Add division in HTML to fix alignment
+  pugi::xml_node div_x3d_node = body_node.append_child("div");
+  
+  // Add X3D XML data to 'div' node
+  add_x3dom_data(div_x3d_node, mesh, vertex_values, facet_values, parameters);
 
   // Add text mesh info to body node
   pugi::xml_node mesh_info = body_node.append_child("div");
@@ -449,11 +452,12 @@ void X3DOM::xhtml(pugi::xml_document& xml_doc, const Mesh& mesh,
   if (parameters.get_viewpoint_buttons())
   {
     // Add viewpoint control node to HTML
-    pugi::xml_node viewpoint_control_node = body_node.append_child("div");
+    // Have to add as the first element
+    pugi::xml_node viewpoint_control_node = body_node.prepend_child("div");
 
     // Add attributes to viewpoint node
     viewpoint_control_node.append_attribute("id") = "camera_buttons";
-    viewpoint_control_node.append_attribute("style") = "display: block; position: relative; left: 1%";
+    viewpoint_control_node.append_attribute("style") = "display: inline-flex; position: relative; margin: 1%";
 
     // Add viewpoints
     std::vector<std::string> viewpoints = {"front", "back", "left",
