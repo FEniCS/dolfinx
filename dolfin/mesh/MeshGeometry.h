@@ -127,14 +127,10 @@ namespace dolfin
     /// Return coordinate with local index n as a 3D point value
     Point point(std::size_t n) const;
 
-    /// Clear all data
-    void clear();
-
-    /// Initialize coordinate list to given dimension, number of
-    /// vertices, and degree
+    /// Initialize coordinate list to given dimension and degree
     void init(std::size_t dim, std::size_t degree);
 
-    /// Initialise entities (other than vertices)
+    /// Initialise entities. To be called after init
     void init_entities(const std::vector<std::size_t>& num_entities);
 
     /// Get the number of coordinate points per entity for this degree

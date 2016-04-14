@@ -1013,7 +1013,6 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   const unsigned int tdim = new_mesh_data.tdim;
 
   // Open mesh for editing
-  mesh.clear();
   MeshEditor editor;
   editor.open(mesh, new_mesh_data.cell_type, tdim, gdim);
 

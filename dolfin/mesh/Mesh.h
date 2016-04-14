@@ -377,9 +377,6 @@ namespace dolfin
     /// Compute all entities and connectivity.
     void init() const;
 
-    /// Clear all mesh data.
-    void clear();
-
     /// Clean out all auxiliary topology data. This clears all
     /// topological data, except the connectivity between cells and
     /// vertices.

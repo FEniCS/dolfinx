@@ -70,21 +70,21 @@ namespace dolfin
   ///
   /// Mesh connectivities d-0, d-1, ..., d-r are built on function mesh
   /// (where d is topological dimension of the mesh and r is maximal
-  /// dimension of entity associated with any coordinate/node). Consider
+  /// dimension of entity associated with any coordinate node). Consider
   /// clearing unneeded connectivities when finished.
   ///
   /// *Arguments*
   ///     geometry (_MeshGeometry_)
   ///         Mesh geometry to be set
   ///     position (_Function_)
-  ///         Vectorial Lagrange function of arbitrary degree and mesh
+  ///         Vectorial Lagrange function with matching degree and mesh
   void set_coordinates(MeshGeometry& geometry, const Function& position);
 
   /// Stores mesh coordinates into function
   ///
   /// Mesh connectivities d-0, d-1, ..., d-r are built on function mesh
   /// (where d is topological dimension of the mesh and r is maximal
-  /// dimension of entity associated with any coordinate/node). Consider
+  /// dimension of entity associated with any coordinate node). Consider
   /// clearing unneeded connectivities when finished.
   ///
   /// *Arguments*

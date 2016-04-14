@@ -1,6 +1,6 @@
 #!/usr/bin/env py.test
 
-"""Unit tests for coordinated interface"""
+"""Unit tests for coordinates interface"""
 
 # Copyright (C) 2016 Jan Blechta
 #
@@ -117,8 +117,7 @@ def test_raises(meshes_p1):
     with pytest.raises(RuntimeError):
         set_coordinates(mesh2.geometry(), c)
 
-    # Wrong value shape (incompatible for getting,
-    # too small (< tdim) for setting)
+    # Wrong value shape
     V = VectorFunctionSpace(mesh2, "Lagrange", mesh2.geometry().degree(),
             dim=mesh2.geometry().dim() - 1)
     c = Function(V)
@@ -127,14 +126,10 @@ def test_raises(meshes_p1):
     with pytest.raises(RuntimeError):
         set_coordinates(mesh2.geometry(), c)
 
-    # Non-matching degree (for getting), ok for setting
+    # Non-matching degree
     V = VectorFunctionSpace(mesh2, "Lagrange", mesh2.geometry().degree() + 1)
     c = Function(V)
     with pytest.raises(RuntimeError):
         get_coordinates(c, mesh2.geometry())
-    set_coordinates(mesh2.geometry(), c)
-
-    # Can change gdim and degree by setting
-    V = VectorFunctionSpace(mesh2, "Lagrange", 1,
-            dim=mesh2.geometry().dim() + 1)
-    set_coordinates(mesh2.geometry(), c)
+    with pytest.raises(RuntimeError):
+        set_coordinates(mesh2.geometry(), c)

@@ -121,8 +121,7 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
   return return_map;
 }
 //-----------------------------------------------------------------------------
-void _precheck_coordinates(const MeshGeometry& geometry,
-  const Function& position, const bool setting)
+void _check_coordinates(const MeshGeometry& geometry, const Function& position)
 {
   dolfin_assert(position.function_space());
   dolfin_assert(position.function_space()->mesh());
@@ -130,6 +129,7 @@ void _precheck_coordinates(const MeshGeometry& geometry,
   dolfin_assert(position.function_space()->element());
   dolfin_assert(position.function_space()->element()->ufc_element());
 
+  // FIXME: Do we need to require this?
   if (&position.function_space()->mesh()->geometry() != &geometry)
   {
     dolfin_error("fem_utils.cpp",
@@ -156,39 +156,24 @@ void _precheck_coordinates(const MeshGeometry& geometry,
                  position.value_rank());
   }
 
-  // This msg would be a bit misleading (although not incorrect) when getting
-  if (setting && position.value_dimension(0)
-          < position.function_space()->mesh()->topology().dim())
+  if (position.value_dimension(0) != geometry.dim())
   {
     dolfin_error("fem_utils.cpp",
-                 "set mesh geometry coordinates from function",
-                 "function value dimension %d cannot be smaller than "
-                 "topological dimension %d",
-                 position.value_dimension(0),
-                 position.function_space()->mesh()->topology().dim());
-  }
-
-  // Check just when getting; we will reinit geometry when setting
-  if (!setting && position.value_dimension(0) != geometry.dim())
-  {
-    dolfin_error("fem_utils.cpp",
-                 "get mesh geometry coordinates and store to function",
+                 "set/get mesh geometry coordinates from/to function",
                  "function value dimension %d and geometry dimension %d "
                  "do not match",
                  position.value_dimension(0), geometry.dim());
   }
 
-  // Check just when getting; we will reinit geometry when setting
-  if (!setting && position.function_space()->element()->ufc_element()->degree()
+  if (position.function_space()->element()->ufc_element()->degree()
           != geometry.degree())
   {
     dolfin_error("fem_utils.cpp",
-                 "get mesh geometry coordinates and store to function",
+                 "set/get mesh geometry coordinates from/to function",
                  "function degree %d and geometry degree %d do not match",
                  position.function_space()->element()->ufc_element()->degree(),
                  geometry.degree());
   }
-
 }
 //-----------------------------------------------------------------------------
 // This helper function sets geometry from position (if setting) or stores
@@ -293,26 +278,13 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
 //-----------------------------------------------------------------------------
 void dolfin::set_coordinates(MeshGeometry& geometry, const Function& position)
 {
-  _precheck_coordinates(geometry, position, true);
-
-  // Get number entities of every dim in mesh
-  const auto topology = position.function_space()->mesh()->topology();
-  std::vector<std::size_t> num_entities(topology.dim() + 1);
-  for (std::size_t dim = 0; dim <= topology.dim(); ++dim)
-    num_entities[dim] = topology.size(dim);
-
-  // Initialize new geometry from function
-  geometry.init(position.value_dimension(0),
-          position.function_space()->element()->ufc_element()->degree());
-  geometry.init_entities(num_entities);
-
-  // Call setter
+  _check_coordinates(geometry, position);
   _get_set_coordinates(geometry, const_cast<Function&>(position), true);
 }
 //-----------------------------------------------------------------------------
 void dolfin::get_coordinates(Function& position, const MeshGeometry& geometry)
 {
-  _precheck_coordinates(geometry, position, false);
+  _check_coordinates(geometry, position);
   _get_set_coordinates(const_cast<MeshGeometry&>(geometry), position, false);
 }
 //-----------------------------------------------------------------------------

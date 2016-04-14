@@ -225,17 +225,6 @@ void Mesh::init() const
       init(d0, d1);
 }
 //-----------------------------------------------------------------------------
-void Mesh::clear()
-{
-  _topology.clear();
-  _geometry.clear();
-  _data.clear();
-  _cell_type.reset();
-  _cell_type = 0;
-  _ordered = false;
-  _cell_orientations.clear();
-}
-//-----------------------------------------------------------------------------
 void Mesh::clean()
 {
   const std::size_t D = topology().dim();
