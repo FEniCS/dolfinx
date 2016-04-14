@@ -36,20 +36,20 @@ using namespace dolfin;
 std::shared_ptr<MeshDisplacement> ALE::move(std::shared_ptr<Mesh> mesh,
                                             const BoundaryMesh& new_boundary)
 {
-  deprecation("ALE::move(shared_ptr<Mesh>&, const BoundaryMesh&)", "1.7.0",
-              "1.8.0", "Use ALE::move(Mesh&, const Function&) and/or "
-              "get/set_coordinates() free functions");
-
+  dolfin_assert(mesh);
   return HarmonicSmoothing::move(mesh, new_boundary);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<MeshDisplacement> ALE::move(std::shared_ptr<Mesh> mesh0,
                                             const Mesh& mesh1)
 {
-  deprecation("ALE::move(shared_ptr<Mesh>&, const Mesh&)", "1.7.0",
-              "1.8.0", "Use ALE::move(Mesh&, const Function&) and/or "
-              "Use ALE::move(Mesh&, const Function&) and/or "
-              "get/set_coordinates() free functions");
+  dolfin_assert(mesh0);
+  if (mesh0->geometry().degree() != 1 || mesh1.geometry().degree() != 1)
+  {
+    dolfin_error("ALE.cpp",
+                 "move mesh",
+                 "This function does not support higher-order mesh geometry");
+  }
 
   // FIXME: Maybe this works in parallel but there is no obvious way
   //        to test it as SubMesh::init does not work in parallel
@@ -119,8 +119,12 @@ std::shared_ptr<MeshDisplacement> ALE::move(std::shared_ptr<Mesh> mesh0,
 //-----------------------------------------------------------------------------
 void ALE::move(Mesh& mesh, const GenericFunction& displacement)
 {
-  deprecation("ALE::move(Mesh&, const GenericFunction&)", "1.7.0", "1.8.0",
-              "Use ALE::move(Mesh&, const Function&) instead");
+  if (mesh.geometry().degree() != 1)
+  {
+    dolfin_error("ALE.cpp",
+                 "move mesh",
+                 "This function does not support higher-order mesh geometry");
+  }
 
   // Check dimensions
   const std::size_t gdim = mesh.geometry().dim();

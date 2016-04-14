@@ -44,16 +44,13 @@ namespace dolfin
 
 
     /// Move coordinates of mesh according to new boundary coordinates.
-    /// DEPRECATED in favour of ALE::move(Mesh&, const Function&)
-    /// and/or free functions get/set_coordinates() because the
-    /// current implementation does not generalize to higher-order
-    /// geometries.
+    /// Works only for affine meshes.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
-    ///         The mesh to move.
+    ///         The affine mesh to move.
     ///     boundary (_BoundaryMesh_)
-    ///         A mesh containing just the boundary cells.
+    ///         An affine mesh containing just the boundary cells.
     ///
     /// *Returns*
     ///     MeshDisplacement
@@ -63,17 +60,13 @@ namespace dolfin
       move(std::shared_ptr<Mesh> mesh, const BoundaryMesh& new_boundary);
 
     /// Move coordinates of mesh according to adjacent mesh with
-    /// common global vertices.
-    /// DEPRECATED in favour of ALE::move(Mesh&, const Function&)
-    /// and/or free functions get/set_coordinates() because the
-    /// current implementation does not generalize to higher-order
-    /// geometries.
-    ///
+    /// common global vertices. Works only for affine meshes.
+    //
     /// *Arguments*
     ///     mesh0 (_Mesh_)
-    ///         The mesh to move.
+    ///         The affine mesh to move.
     ///     mesh1 (_Mesh_)
-    ///         A _Mesh_ object.
+    ///         The affine mesh to be fit.
     ///
     /// *Returns*
     ///     MeshDisplacement
@@ -82,17 +75,15 @@ namespace dolfin
                                                   const Mesh& mesh1);
 
     /// Move coordinates of mesh according to displacement function.
-    /// DEPRECATED in favour of ALE::move(Mesh&, const Function&)
-    /// and/or free functions get/set_coordinates() because the
-    /// current implementation does not generalize to higher-order
-    /// geometries.
+    /// This works only for affine meshes.
+    ///
     /// NOTE: This cannot be implemented for higher-order geometries
     ///       as there is no way of constructing function space for
     ///       position unless supplied as an argument.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
-    ///         The mesh to move.
+    ///         The affine mesh to move.
     ///     displacement (_GenericFunction_)
     ///         A vectorial generic function.
     static void move(Mesh& mesh, const GenericFunction& displacement);
