@@ -34,7 +34,8 @@
 // - Add support for GenericFunction
 // - Add support for MeshFunctions
 // - Add support for DG1 Functions
-// - document all class methods below properly
+// - Add vector support (arrows) - including correct placement for RT0 etc. - advanced
+// - Document all class methods below properly
 
 namespace pugi
 {
@@ -59,46 +60,55 @@ namespace dolfin
     /// Constructor (with default parameter settings)
     X3DOMParameters();
 
-    // Set representation of object (wireframe, surface or
-    // surface_with_edges)
+    /// Set representation of object (wireframe, surface or
+    /// surface_with_edges)
     void set_representation(Representation representation);
 
+    /// Get the current representation of the object (wireframe, surface or
+    /// surface_with_edges)
     Representation get_representation() const;
 
-    // Get the size of the viewport
+    /// Get the size of the viewport
     std::array<double, 2> get_viewport_size() const;
 
-    // Sets the RGB color of the object
+    /// Set the RGB color of the object
     void set_diffuse_color(std::array<double, 3> rgb);
 
-    // Get diffuse color
+    /// Get the RGB diffuse color of the object
     std::array<double, 3> get_diffuse_color() const;
 
-    // Set the RGB colour of lines
+    /// Set the RGB emissive color
     void set_emissive_color(std::array<double, 3> rgb);
 
-    // Get the emissive color
+    /// Get the RGB emissive color
     std::array<double, 3> get_emissive_color() const;
 
+    /// Set the RGB specular color
     void set_specular_color(std::array<double, 3> rgb);
     std::array<double, 3> get_specular_color() const;
 
-    // Set background RGB color
+    /// Set background RGB color
     void set_background_color(std::array<double, 3> rgb);
 
-    // Get background color
+    /// Get background RGB color
     std::array<double, 3> get_background_color() const;
 
+    /// Set the ambient lighting intensity
     void set_ambient_intensity(double intensity);
 
+    /// Get the ambient lighting intensity
     double get_ambient_intensity() const;
 
+    /// Set the surface shininess of the object
     void set_shininess(double shininess);
 
+    /// Set the surface shininess of the object
     double get_shininess() const;
 
+    /// Set the transparency (0-1)
     void set_transparency(double transparency);
 
+    /// Get the transparency (0-1)
     double get_transparency() const;
 
     /// Set the color map by supplying a vector of 768 values
@@ -113,13 +123,16 @@ namespace dolfin
     /// Get the color map as a boost::multi_array (256x3)
     boost::multi_array<float, 2> get_color_map_array() const;
 
-    // Toggle viewpoint buttons
+    /// Toggle viewpoint buttons
     void set_viewpoint_buttons(bool show);
 
+    /// Get the viewpoint button state
     bool get_viewpoint_buttons() const;
 
-    // Turn X3D 'stats' window on/off
+    /// Turn X3D 'statistics' window on/off
     void set_x3d_stats(bool show);
+
+    // Get the state of the 'statistics' window
     bool get_x3d_stats() const;
 
   private:
@@ -259,8 +272,8 @@ namespace dolfin
                                    const Point p,
                                    const double s);
 
-    // Get mesh dimensions and viewpoint distance
-    static std::pair<Point, double> mesh_min_max(const Mesh& mesh);
+    // Get centre point of mesh bounds, and a reasonable viewpoint distance from it
+    static std::pair<Point, double> mesh_centre_and_distance(const Mesh& mesh);
 
     // Get list of vertex indices which are on surface
     static std::set<int> surface_vertex_indices(const Mesh& mesh);

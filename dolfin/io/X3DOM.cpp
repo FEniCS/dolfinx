@@ -186,7 +186,7 @@ void X3DOMParameters::set_x3d_stats(bool show_stats)
 bool X3DOMParameters::get_x3d_stats() const
 {
   return _show_x3d_stats;
-  }
+}
 //-----------------------------------------------------------------------------
 void X3DOMParameters::check_rgb(std::array<double, 3>& rgb)
 {
@@ -598,7 +598,7 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
     add_mesh_data(scene_node, mesh, {}, {}, parameters, false);
 
   // Add viewpoint(s)
-  const std::pair<Point, double> position = mesh_min_max(mesh);
+  const std::pair<Point, double> position = mesh_centre_and_distance(mesh);
   add_viewpoint_nodes(scene_node, position.first, position.second,
                       parameters.get_viewpoint_buttons());
 
@@ -833,7 +833,7 @@ void X3DOM::add_viewpoint_node(pugi::xml_node& xml_scene_node,
   viewpoint_node.append_attribute("zFar") = "-1";
 }
 //-----------------------------------------------------------------------------
-std::pair<Point, double> X3DOM::mesh_min_max(const Mesh& mesh)
+std::pair<Point, double> X3DOM::mesh_centre_and_distance(const Mesh& mesh)
 {
   // Get dimensions
   double xmin = std::numeric_limits<double>::max();
