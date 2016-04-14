@@ -194,19 +194,33 @@ namespace dolfin
 
     /// Return X3D string for a Mesh
     static std::string str(const Mesh& mesh,
-                           X3DOMParameters paramemeters=X3DOMParameters());
+                           X3DOMParameters parameters=X3DOMParameters());
+
+    /// Return X3D string for a Function
+    static std::string str(const Function& u,
+                           X3DOMParameters parameters=X3DOMParameters());
 
     /// Return HTML5 string with embedded X3D for a Mesh
     static std::string html(const Mesh& mesh,
                             X3DOMParameters parameters=X3DOMParameters());
 
-    /// Return X3D string for a Function
-    static std::string str(const Function& u,
-                           X3DOMParameters paramemeters=X3DOMParameters());
 
     /// Return HTML5 string with embedded X3D for a Function
     static std::string html(const Function& u,
                             X3DOMParameters parameters=X3DOMParameters());
+
+
+    // Build X3DOM pugixml tree for a Mesh
+    static void
+      build_x3dom_tree(pugi::xml_document& xml_doc,
+                       const Mesh& mesh,
+                       const X3DOMParameters& parameters=X3DOMParameters());
+
+    // Build X3DOM pugixml tree for a Function
+    static void
+      build_x3dom_tree(pugi::xml_document& xml_doc,
+                       const Function& u,
+                       const X3DOMParameters& parameters=X3DOMParameters());
 
   private:
 
@@ -272,7 +286,8 @@ namespace dolfin
                                    const Point p,
                                    const double s);
 
-    // Get centre point of mesh bounds, and a reasonable viewpoint distance from it
+    // Get centre point of mesh bounds, and a reasonable viewpoint
+    // distance from it
     static std::pair<Point, double> mesh_centre_and_distance(const Mesh& mesh);
 
     // Get list of vertex indices which are on surface

@@ -236,118 +236,10 @@ std::string X3DOM::str(const Mesh& mesh, X3DOMParameters parameters)
 {
   // Build XML doc
   pugi::xml_document xml_doc;
-  x3dom(xml_doc, mesh, {}, {}, parameters);
+  build_x3dom_tree(xml_doc, mesh, parameters);
 
   // Return as string
   return to_string(xml_doc, pugi::format_default);
-}
-//-----------------------------------------------------------------------------
-std::string X3DOM::html(const Mesh& mesh, X3DOMParameters parameters)
-{
-  // Build XML doc
-  pugi::xml_document xml_doc;
-  html(xml_doc, mesh, {}, {}, parameters);
-
-  // Return as string
-  return to_string(xml_doc, pugi::format_indent | pugi::format_no_declaration);
-}
-//-----------------------------------------------------------------------------
-void X3DOM::get_function_values(const Function& u,
-                                std::vector<double>& vertex_values,
-                                std::vector<double>& facet_values)
-{
-  // Get dofmap and mesh
-  dolfin_assert(u.function_space()->dofmap());
-  const GenericDofMap& dofmap = *u.function_space()->dofmap();
-  dolfin_assert(u.function_space()->mesh());
-  const Mesh& mesh = *u.function_space()->mesh();
-
-  const std::size_t value_rank = u.value_rank();
-
-  // Print warning for vector-valued functions and error for higher
-  // tensors
-  if (value_rank == 1)
-    warning("X3DOM outputs scalar magnitude of vector field");
-  else if (value_rank > 1)
-  {
-    dolfin_error("X3DOM.cpp",
-                 "write X3D",
-                 "Can only handle scalar and vector Functions");
-  }
-
-  // Test for cell-centred data
-  const std::size_t tdim = mesh.topology().dim();
-  std::size_t cell_based_dim = 1;
-  for (std::size_t i = 0; i < value_rank; i++)
-    cell_based_dim *= tdim;
-  const bool vertex_data = !(dofmap.max_element_dofs() == cell_based_dim);
-
-  if (vertex_data)
-  {
-    // Compute vertex data values
-    u.compute_vertex_values(vertex_values, mesh);
-
-    // Compute l2 norm for vector-valued problems
-    if (value_rank == 1)
-    {
-      const std::size_t num_vertices = mesh.num_vertices();
-      std::vector<double> magnitude(num_vertices);
-      for (std::size_t i = 0; i < num_vertices ; ++i)
-      {
-        double val = 0.0;
-        for (std::size_t j = 0; j < u.value_size() ; j++)
-          val += vertex_values[i + j*num_vertices]*vertex_values[i + j*num_vertices];
-        magnitude[i] = std::sqrt(val);
-      }
-
-      // Swap data_values and magnitude
-      std::swap(vertex_values, magnitude);
-    }
-  }
-  else
-  {
-    if (value_rank != 0)
-    {
-      dolfin_error("X3DOM.cpp",
-                   "create X3DOM",
-                   "Can only handle scalar cell-centered Function at present");
-    }
-
-    if (MPI::size(mesh.mpi_comm()) != 1)
-    {
-      dolfin_error("X3DOM.cpp",
-                   "create X3DOM",
-                   "Cell-centered data not supported in parallel");
-    }
-
-    // Get dofs for cell centered data
-    std::vector<dolfin::la_index> dofs(mesh.num_cells());
-    for (std::size_t i = 0; i != mesh.num_cells(); ++i)
-    {
-      // Get dof index of cell data
-      dolfin_assert(dofmap.num_element_dofs(i) == 1);
-      dofs[i] = dofmap.cell_dofs(i)[0];
-    }
-
-    // Get  values from vector
-    std::vector<double> cell_values(dofs.size());
-    dolfin_assert(u.vector());
-    u.vector()->get_local(cell_values.data(), dofs.size(), dofs.data());
-
-    // FIXME: this is inefficient and a bit random for interior facets
-    // (which we don't need) - so needs a redesign.
-    facet_values.resize(mesh.num_facets());
-    if (tdim == 3)
-    {
-      for (FaceIterator f(mesh); !f.end(); ++f)
-        facet_values[f->index()] = cell_values[f->entities(tdim)[0]];
-    }
-    else
-    {
-      // In 2D, facets and cells are the same thing
-      std::swap(facet_values, cell_values);
-    }
-  }
 }
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
@@ -369,11 +261,20 @@ std::string X3DOM::str(const Function& u, X3DOMParameters parameters)
   return to_string(xml_doc, pugi::format_default);
 }
 //-----------------------------------------------------------------------------
+std::string X3DOM::html(const Mesh& mesh, X3DOMParameters parameters)
+{
+  // Build XML doc
+  pugi::xml_document xml_doc;
+  html(xml_doc, mesh, {}, {}, parameters);
+
+  // Return as string
+  return to_string(xml_doc, pugi::format_indent | pugi::format_no_declaration);
+}
+//-----------------------------------------------------------------------------
 std::string X3DOM::html(const Function& u, X3DOMParameters parameters)
 {
   // Get values on vertices or facets
-  std::vector<double> vertex_values;
-  std::vector<double> facet_values;
+  std::vector<double> vertex_values, facet_values;
   get_function_values(u, vertex_values, facet_values);
 
   // Get mesh
@@ -386,6 +287,28 @@ std::string X3DOM::html(const Function& u, X3DOMParameters parameters)
 
   // Return as string
   return to_string(xml_doc, pugi::format_indent | pugi::format_no_declaration);
+}
+//-----------------------------------------------------------------------------
+void X3DOM::build_x3dom_tree(pugi::xml_document& xml_doc, const Mesh& mesh,
+                             const X3DOMParameters& parameters)
+{
+  x3dom(xml_doc, mesh, {}, {}, parameters);
+}
+//-----------------------------------------------------------------------------
+void X3DOM::build_x3dom_tree(pugi::xml_document& xml_doc,
+                             const Function& u,
+                             const X3DOMParameters& parameters)
+{
+  // Get values on vertices or facets
+  std::vector<double> vertex_values, facet_values;
+  get_function_values(u, vertex_values, facet_values);
+
+  // Get mesh
+  dolfin_assert(u.function_space()->mesh());
+  const Mesh& mesh = *u.function_space()->mesh();
+
+  // Build XML doc
+  x3dom(xml_doc, mesh, vertex_values, facet_values, parameters);
 }
 //-----------------------------------------------------------------------------
 void X3DOM::x3dom(pugi::xml_document& xml_doc, const Mesh& mesh,
@@ -897,6 +820,104 @@ std::set<int> X3DOM::surface_vertex_indices(const Mesh& mesh)
   }
 
   return vertex_set;
+}
+//-----------------------------------------------------------------------------
+void X3DOM::get_function_values(const Function& u,
+                                std::vector<double>& vertex_values,
+                                std::vector<double>& facet_values)
+{
+  // Get dofmap and mesh
+  dolfin_assert(u.function_space()->dofmap());
+  const GenericDofMap& dofmap = *u.function_space()->dofmap();
+  dolfin_assert(u.function_space()->mesh());
+  const Mesh& mesh = *u.function_space()->mesh();
+
+  const std::size_t value_rank = u.value_rank();
+
+  // Print warning for vector-valued functions and error for higher
+  // tensors
+  if (value_rank == 1)
+    warning("X3DOM outputs scalar magnitude of vector field");
+  else if (value_rank > 1)
+  {
+    dolfin_error("X3DOM.cpp",
+                 "write X3D",
+                 "Can only handle scalar and vector Functions");
+  }
+
+  // Test for cell-centred data
+  const std::size_t tdim = mesh.topology().dim();
+  std::size_t cell_based_dim = 1;
+  for (std::size_t i = 0; i < value_rank; i++)
+    cell_based_dim *= tdim;
+  const bool vertex_data = !(dofmap.max_element_dofs() == cell_based_dim);
+
+  if (vertex_data)
+  {
+    // Compute vertex data values
+    u.compute_vertex_values(vertex_values, mesh);
+
+    // Compute l2 norm for vector-valued problems
+    if (value_rank == 1)
+    {
+      const std::size_t num_vertices = mesh.num_vertices();
+      std::vector<double> magnitude(num_vertices);
+      for (std::size_t i = 0; i < num_vertices ; ++i)
+      {
+        double val = 0.0;
+        for (std::size_t j = 0; j < u.value_size() ; j++)
+          val += vertex_values[i + j*num_vertices]*vertex_values[i + j*num_vertices];
+        magnitude[i] = std::sqrt(val);
+      }
+
+      // Swap data_values and magnitude
+      std::swap(vertex_values, magnitude);
+    }
+  }
+  else
+  {
+    if (value_rank != 0)
+    {
+      dolfin_error("X3DOM.cpp",
+                   "create X3DOM",
+                   "Can only handle scalar cell-centered Function at present");
+    }
+
+    if (MPI::size(mesh.mpi_comm()) != 1)
+    {
+      dolfin_error("X3DOM.cpp",
+                   "create X3DOM",
+                   "Cell-centered data not supported in parallel");
+    }
+
+    // Get dofs for cell centered data
+    std::vector<dolfin::la_index> dofs(mesh.num_cells());
+    for (std::size_t i = 0; i != mesh.num_cells(); ++i)
+    {
+      // Get dof index of cell data
+      dolfin_assert(dofmap.num_element_dofs(i) == 1);
+      dofs[i] = dofmap.cell_dofs(i)[0];
+    }
+
+    // Get  values from vector
+    std::vector<double> cell_values(dofs.size());
+    dolfin_assert(u.vector());
+    u.vector()->get_local(cell_values.data(), dofs.size(), dofs.data());
+
+    // FIXME: this is inefficient and a bit random for interior facets
+    // (which we don't need) - so needs a redesign.
+    facet_values.resize(mesh.num_facets());
+    if (tdim == 3)
+    {
+      for (FaceIterator f(mesh); !f.end(); ++f)
+        facet_values[f->index()] = cell_values[f->entities(tdim)[0]];
+    }
+    else
+    {
+      // In 2D, facets and cells are the same thing
+      std::swap(facet_values, cell_values);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void X3DOM::build_mesh_data(std::vector<int>& topology,
