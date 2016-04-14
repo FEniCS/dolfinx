@@ -170,9 +170,10 @@ namespace dolfin
   /// Developer note: pugixml is used to created X3DOM and HTML5. By
   /// using pugixml, we produce valid XML, but care must be taken that
   /// the XML is also valid HTML. This includes not letting pugixml
-  /// create self-closing elements. E.g., <foo bar="foobar"></foo> is
-  /// fine, but the self-closing syntax <foo bar="foobar" /> while
-  /// being valid XML is is not valid HTML5.
+  /// create self-closing elements, in cases. E.g., <foo
+  /// bar="foobar"></foo> is fine, but the self-closing syntax <foo
+  /// bar="foobar" /> while being valid XML is is not valid HTML5. See
+  /// https://github.com/x3dom/x3dom/issues/600.
 
   class X3DOM
   {
@@ -283,7 +284,8 @@ namespace dolfin
     static std::string array_to_string3(std::array<double, 3> x);
 
     // Utility to convert pugi::xml_document into a std::string
-    static std::string to_string(pugi::xml_document& xml_doc);
+    static std::string to_string(pugi::xml_document& xml_doc,
+                                 unsigned int flags);
 
   };
 
