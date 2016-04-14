@@ -673,7 +673,7 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
 
     // Add color per vertex attribute
     const bool color_per_vertex = !vertex_values.empty();
-    indexed_set_node.append_attribute("colorPercVertex") = color_per_vertex;
+    indexed_set_node.append_attribute("colorPerVertex") = color_per_vertex;
 
     // Add topology data to edges node
     std::stringstream topology_str;
