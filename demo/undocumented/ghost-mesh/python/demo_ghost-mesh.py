@@ -9,26 +9,19 @@ import numpy as np
 import sys, os
 import six
 
-display = os.environ.get("DISPLAY")
-noplot = os.environ.get("DOLFIN_NOPLOT", "0") != "0"
+if os.environ.get("DOLFIN_NOPLOT", "0") != "0":
+    print("DOLFIN_NOPLOT set: Bye!")
+    exit()
 
 try:
-    # Avoid interactive backend (such as TkAgg) on headless machine
-    if not display or noplot:
-        import matplotlib
-        try:
-            matplotlib.use("Agg")
-        except ValueError as e:
-            raise ImportError(str(e))
-    # Import pyplot and needed class
+    parameters['plotting_backend'] = 'matplotlib'
+except RuntimeError:
+    print("This demo requires matplotlib! Bye.")
+    exit()
+else:
     import matplotlib.pyplot as plt
     from matplotlib.collections import PolyCollection
-except ImportError as e:
-    print("Import of matplotlib failed with the message:")
-    print('"%s"' % str(e))
-    print()
-    print("Please, make sure matplotlib is installed. Bye!")
-    exit()
+
 
 parameters["ghost_mode"] = "shared_vertex"
 #parameters["ghost_mode"] = "shared_facet"
