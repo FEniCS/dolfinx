@@ -112,36 +112,13 @@ namespace dolfin
     ///     encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
-    void write(const MeshFunction<bool>& meshfunction, Encoding encoding=Encoding::HDF5);
-    void write(const MeshFunction<int>& meshfunction, Encoding encoding=Encoding::HDF5);
+    void write(const MeshFunction<bool>& meshfunction,
+               Encoding encoding=Encoding::HDF5);
+    void write(const MeshFunction<int>& meshfunction,
+               Encoding encoding=Encoding::HDF5);
     void write(const MeshFunction<std::size_t>& meshfunction,
                Encoding encoding=Encoding::HDF5);
     void write(const MeshFunction<double>& meshfunction,
-               Encoding encoding=Encoding::HDF5);
-
-    /// Save a cloud of points to file using an associated HDF5 file,
-    /// or storing the data inline as XML.
-    ///
-    /// *Arguments*
-    ///     points (_std::vector<Point>_)
-    ///         A list of points to save.
-    ///     encoding (_Encoding_)
-    ///         Encoding to use: HDF5 or ASCII
-    ///
-    void write(const std::vector<Point>& points, Encoding encoding=Encoding::HDF5);
-
-    /// Save a cloud of points, with scalar values using an associated
-    /// HDF5 file, or storing the data inline as XML.
-    ///
-    /// *Arguments*
-    ///     points (_std::vector<Point>_)
-    ///         A list of points to save.
-    ///     values (_std::vector<double>_)
-    ///         A list of values at each point.
-    ///     encoding (_Encoding_)
-    ///         Encoding to use: HDF5 or ASCII
-    ///
-    void write(const std::vector<Point>& points, const std::vector<double>& values,
                Encoding encoding=Encoding::HDF5);
 
     /// Write out mesh value collection (subset) using an associated
@@ -156,6 +133,33 @@ namespace dolfin
     void write(const MeshValueCollection<std::size_t>& mvc,
                Encoding encoding=Encoding::HDF5);
 
+    /// Save a cloud of points to file using an associated HDF5 file,
+    /// or storing the data inline as XML.
+    ///
+    /// *Arguments*
+    ///     points (_std::vector<Point>_)
+    ///         A list of points to save.
+    ///     encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
+    void write(const std::vector<Point>& points,
+               Encoding encoding=Encoding::HDF5);
+
+    /// Save a cloud of points, with scalar values using an associated
+    /// HDF5 file, or storing the data inline as XML.
+    ///
+    /// *Arguments*
+    ///     points (_std::vector<Point>_)
+    ///         A list of points to save.
+    ///     values (_std::vector<double>_)
+    ///         A list of values at each point.
+    ///     encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
+    void write(const std::vector<Point>& points,
+               const std::vector<double>& values,
+               Encoding encoding=Encoding::HDF5);
+
     /// Read in a mesh from the associated HDF5 file, optionally using
     /// stored partitioning, if possible when the same number of
     /// processes are being used.
@@ -166,7 +170,8 @@ namespace dolfin
     ///     use_partition_from_file (_UseFilePartition_)
     ///         Use the existing partition information in HDF5 file
     ///
-    void read(Mesh& mesh, UseFilePartition use_file_partition=UseFilePartition::no);
+    void read(Mesh& mesh,
+              UseFilePartition use_file_partition=UseFilePartition::no);
 
     /// Read first MeshFunction from file
     void read(MeshFunction<bool>& meshfunction);
@@ -175,20 +180,6 @@ namespace dolfin
     void read(MeshFunction<double>& meshfunction);
 
   private:
-
-    // MPI communicator
-    MPI_Comm _mpi_comm;
-
-    // HDF5 data file
-#ifdef HAS_HDF5
-    std::unique_ptr<HDF5File> _hdf5_file;
-#endif
-
-    // HDF5 filename
-    std::string _hdf5_filename;
-
-    // HDF5 file mode (r/w)
-    std::string _hdf5_filemode;
 
     // Generic MeshFunction reader
     template<typename T>
@@ -253,6 +244,25 @@ namespace dolfin
     // string E.g. "XML" or "HDF" See XDMFFile::xdmf_format_str
     static Encoding get_file_encoding(std::string xdmf_format);
 
+    // Write MVC to ascii string to store in XDMF XML file
+    template <typename T>
+    void write_ascii_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
+                                             std::string data_name);
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
+
+    // HDF5 data file
+#ifdef HAS_HDF5
+    std::unique_ptr<HDF5File> _hdf5_file;
+#endif
+
+    // HDF5 filename
+    std::string _hdf5_filename;
+
+    // HDF5 file mode (r/w)
+    std::string _hdf5_filemode;
+
     // Most recent mesh name
     std::string _current_mesh_name;
 
@@ -264,11 +274,6 @@ namespace dolfin
 
     // The xml document of the XDMF file
     std::unique_ptr<XDMFxml> _xml;
-
-    // Write MVC to ascii string to store in XDMF XML file
-    template <typename T>
-      void write_ascii_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
-                                             std::string data_name);
 
   };
 }

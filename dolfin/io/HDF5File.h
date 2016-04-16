@@ -215,8 +215,7 @@ namespace dolfin
                     bool use_mpi_io);
 
     // HDF5 file descriptor/handle
-    bool hdf5_file_open;
-    hid_t hdf5_file_id;
+    hid_t _hdf5_file_id;
 
     // MPI communicator
     MPI_Comm _mpi_comm;
@@ -230,7 +229,7 @@ namespace dolfin
                             const std::vector<std::size_t> global_size,
                             bool use_mpi_io)
   {
-    dolfin_assert(hdf5_file_open);
+    dolfin_assert(_hdf5_file_id > 0);
     dolfin_assert(global_size.size() > 0);
 
     // Get number of 'items'
@@ -252,7 +251,7 @@ namespace dolfin
     if (dset_name[0] != '/')
       dset_name = "/" + dataset_name;
 
-    HDF5Interface::write_dataset(hdf5_file_id, dset_name, data,
+    HDF5Interface::write_dataset(_hdf5_file_id, dset_name, data,
                                  range, global_size, use_mpi_io, chunking);
   }
   //---------------------------------------------------------------------------
