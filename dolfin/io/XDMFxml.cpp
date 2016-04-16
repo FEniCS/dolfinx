@@ -41,7 +41,9 @@ XDMFxml::~XDMFxml()
 //-----------------------------------------------------------------------------
 void XDMFxml::header()
 {
-  // If a new file, add a header
+  dolfin_assert(xml_doc);
+
+// If a new file, add a header
   if (!boost::filesystem::exists(_filename) or _is_this_first_write)
   {
     xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
@@ -74,6 +76,7 @@ void XDMFxml::write() const
 //-----------------------------------------------------------------------------
 void XDMFxml::read()
 {
+  // Check that file exsist
   if (!boost::filesystem::exists(_filename))
   {
     dolfin_error("XDMFxml.cpp",
@@ -81,7 +84,10 @@ void XDMFxml::read()
                  "File does not exist");
   }
 
+  // Load XML doc from file
   pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+
+  // Check that file was successfully parsed
   if (!result)
   {
     dolfin_error("XDMFxml.cpp",
@@ -113,12 +119,12 @@ XDMFxml::TopologyData XDMFxml::get_topology() const
   tdata.cell_type = xdmf_topology.attribute("TopologyType").value();
   boost::to_lower(tdata.cell_type);
 
-  std::string topo_dim(xdmf_topology_data.attribute("Dimensions").as_string());
-  std::vector<std::string> topo_dim_vec;
-  boost::split(topo_dim_vec, topo_dim, boost::is_any_of(" "));
+  std::string topology_dim(xdmf_topology_data.attribute("Dimensions").as_string());
+  std::vector<std::string> topology_dim_vec;
+  boost::split(topology_dim_vec, topology_dim, boost::is_any_of(" "));
 
-  tdata.num_cells = std::stol(topo_dim_vec[0]);
-  tdata.points_per_cell = std::stol(topo_dim_vec[1]);
+  tdata.num_cells = std::stol(topology_dim_vec[0]);
+  tdata.points_per_cell = std::stol(topology_dim_vec[1]);
 
   if (tdata.format == "XML")
   {
@@ -127,13 +133,12 @@ XDMFxml::TopologyData XDMFxml::get_topology() const
   }
   else if (tdata.format == "HDF")
   {
-    std::vector<std::string> topo_hdf5_urls;
-    std::string hdf5_full_path = xdmf_topology_data.first_child().value();
-    boost::split(topo_hdf5_urls, hdf5_full_path,
-                 boost::is_any_of(":"));
-    dolfin_assert(topo_hdf5_urls.size() == 2);
-    tdata.hdf5_filename = topo_hdf5_urls[0];
-    tdata.hdf5_dataset = topo_hdf5_urls[1];
+    // Get data paths
+    std::array<std::string, 2> paths = get_hdf5_paths(xdmf_topology_data);
+
+    // Store paths
+    tdata.hdf5_filename = paths[0];
+    tdata.hdf5_dataset = paths[1];
   }
   else
   {
@@ -173,12 +178,12 @@ XDMFxml::GeometryData XDMFxml::get_geometry() const
   }
   else if (gdata.format == "HDF")
   {
-    std::vector<std::string> geom_vec;
-    std::string hdf5_full_path = xdmf_geometry_data.first_child().value();
-    boost::split(geom_vec, hdf5_full_path, boost::is_any_of(":"));
-    dolfin_assert(geom_vec.size() == 2);
-    gdata.hdf5_filename = geom_vec[0];
-    gdata.hdf5_dataset = geom_vec[1];
+    // Get data paths
+    std::array<std::string, 2> paths = get_hdf5_paths(xdmf_geometry_data);
+
+    // Store paths
+    gdata.hdf5_filename = paths[0];
+    gdata.hdf5_dataset = paths[1];
   }
   else
   {
@@ -510,5 +515,25 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
   }
 
   xdmf_geom_data.append_child(pugi::node_pcdata).set_value(xml_value_data.c_str());
+}
+//-----------------------------------------------------------------------------
+std::array<std::string, 2> XDMFxml::get_hdf5_paths(const pugi::xml_node& xml_node)
+{
+  dolfin_assert(xml_node);
+
+  // Get path data
+  pugi::xml_node path_node = xml_node.first_child();
+  dolfin_assert(path_node);
+
+  // Create string from path and trim leading and trailing whitespace
+  std::string path = path_node.text().get();
+  boost::algorithm::trim(path);
+
+  // Split string into file path and HD5 internal path
+  std::vector<std::string> paths;
+  boost::split(paths, path, boost::is_any_of(":"));
+  dolfin_assert(paths.size() == 2);
+
+  return {paths[0], paths[2]};
 }
 //-----------------------------------------------------------------------------

@@ -682,9 +682,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   {
     std::vector<std::size_t> cell_topology;
     for (VertexIterator v(*cell); !v.end(); ++v)
-    {
       cell_topology.push_back(v->global_index());
-    }
     std::sort(cell_topology.begin(), cell_topology.end());
 
     // Use first vertex to decide where to send this request
@@ -805,8 +803,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
     {
       // No ghost cells
       // Exclude shared entities which are on lower rank processes
-      for (auto sh = shared_entities.begin();
-           sh != shared_entities.end(); ++sh)
+      for (auto sh = shared_entities.begin(); sh != shared_entities.end(); ++sh)
       {
         const unsigned int lowest_proc = *(sh->second.begin());
         if (lowest_proc < mpi_rank)
@@ -822,8 +819,10 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
       {
         const unsigned int cell_owner = c->owner();
         for (MeshEntityIterator ent(*c, cell_dim); !ent.end(); ++ent)
+        {
           if (!ent->is_ghost() && cell_owner < mpi_rank)
-              non_local_entities.insert(ent->index());
+            non_local_entities.insert(ent->index());
+        }
       }
     }
 
@@ -1123,10 +1122,9 @@ void HDF5File::read(Function& u, const std::string name)
 
     for (std::size_t i = 0; i != n_vector_vals; ++i)
     {
-      const std::size_t dest = std::upper_bound(all_vec_range.begin(),
-                                                all_vec_range.end(),
-                                                global_dof[i])
-        - all_vec_range.begin();
+      const std::size_t dest
+        = std::upper_bound(all_vec_range.begin(), all_vec_range.end(),
+                           global_dof[i]) - all_vec_range.begin();
       dolfin_assert(dest < num_processes);
       dolfin_assert(i < input_values.size());
       send_indices[dest].push_back(global_dof[i]);
@@ -1187,9 +1185,8 @@ void HDF5File::write(const MeshValueCollection<bool>& mesh_values,
   MeshValueCollection<int> mvc_int(mesh_values.mesh(), mesh_values.dim());
   const std::map<std::pair<std::size_t, std::size_t>, bool>& values
     = mesh_values.values();
-  for (std::map<std::pair<std::size_t, std::size_t>,
-                bool>::const_iterator mesh_value_it = values.begin();
-       mesh_value_it != values.end(); ++mesh_value_it)
+  for (auto mesh_value_it = values.begin(); mesh_value_it != values.end();
+       ++mesh_value_it)
   {
     mvc_int.set_value(mesh_value_it->first.first, mesh_value_it->first.second,
                       mesh_value_it->second ? 1 : 0);
@@ -1208,9 +1205,8 @@ void HDF5File::read(MeshValueCollection<bool>& mesh_values,
 
   const std::map<std::pair<std::size_t, std::size_t>, int>& values
     = mvc_int.values();
-  for (std::map<std::pair<std::size_t, std::size_t>,
-                int>::const_iterator mesh_value_it = values.begin();
-      mesh_value_it != values.end(); ++mesh_value_it)
+  for (auto mesh_value_it = values.begin(); mesh_value_it != values.end();
+       ++mesh_value_it)
   {
     mesh_values.set_value(mesh_value_it->first.first,
                           mesh_value_it->first.second,
@@ -1293,10 +1289,7 @@ void HDF5File::write_mesh_value_collection_old(
   std::vector<T> data_values;
   std::vector<std::size_t> entities;
   std::vector<std::size_t> cells;
-
-  for (typename std::map<std::pair<std::size_t, std::size_t>,
-         T>::const_iterator
-         p = values.begin(); p != values.end(); ++p)
+  for (auto p = values.begin(); p != values.end(); ++p)
   {
     cells.push_back(global_cell_index[p->first.first]);
     entities.push_back(p->first.second);
@@ -1492,8 +1485,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
                      "find entity in map",
                      "Error reading MeshValueCollection");
       }
-      for (auto p = map_it->second.begin(); p != map_it->second.end();
-           p += 2)
+      for (auto p = map_it->second.begin(); p != map_it->second.end(); p += 2)
       {
         const std::size_t dest = *p;
         dolfin_assert(dest < num_processes);
@@ -1623,24 +1615,18 @@ void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
     std::vector<std::size_t>::const_iterator j = cells_data_index.begin();
     while (i!=global_cell_index.end() && j!=cells_data_index.end())
     {
-
-      // Global cell index is less than the cell_data index read from file
+      // Global cell index is less than the cell_data index read from
+      // file, if global cell index is larger than the cell_data index
+      // read from file, else global cell index is the same as the
+      // cell_data index read from file
       if (*i < cells_data[*j])
-      {
         ++i;
-      }
-
-      // Global cell index is larger than the cell_data index read from file
       else if (*i > cells_data[*j])
-      {
         ++j;
-      }
-
-      // Global cell index is the same as the cell_data index read from file
       else
       {
-        // Here we do not increment j because cells_data_index is ordered
-        // but not *strictly* ordered.
+        // Here we do not increment j because cells_data_index is
+        // ordered but not *strictly* ordered.
         std::size_t lidx = i - global_cell_index.begin();
         mvc_map[std::make_pair(lidx, entities_data[*j])] = values_data[*j];
         ++j;
@@ -1710,7 +1696,6 @@ void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
           = local_values[j];
       }
     }
-
   }
 }
 //-----------------------------------------------------------------------------
@@ -1743,7 +1728,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
   */
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
+void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
                     const std::string geometry_name, int gdim,
                     const CellType& cell_type,
                     bool use_partition_from_file) const
@@ -1751,14 +1736,14 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
   Timer t("HDF5: read mesh");
   dolfin_assert(_hdf5_file_id > 0);
 
-  // Structure to store local mesh
+  // Create structure to store local mesh
   LocalMeshData mesh_data(_mpi_comm);
 
   // --- Topology ---
 
-  // Discover size of topology dataset
+  // Discover shape of topology data set
   std::vector<std::size_t> topology_shape
-    = HDF5Interface::get_dataset_shape(_hdf5_file_id, topology_name);
+    = HDF5Interface::get_dataset_shape(_hdf5_file_id, topology_path);
 
   //std::cout << "T dim:" << std::endl;
   //for (auto x : topology_dim)
@@ -1771,9 +1756,9 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
   // If cell type is encoded in HDF5, then use that, otherwise fall
   // back to known_cell_type
   //std::string cell_type_str(known_cell_type);
-  //if (HDF5Interface::has_attribute(_hdf5_file_id, topology_name, "celltype"))
+  //if (HDF5Interface::has_attribute(_hdf5_file_id, topology_path, "celltype"))
   //{
-  //  HDF5Interface::get_attribute(_hdf5_file_id, topology_name, "celltype",
+  //  HDF5Interface::get_attribute(_hdf5_file_id, topology_path, "celltype",
   //                               cell_type_str);
   //}
   //std::cout << "Cell type string: " << cell_type_str << std::endl;
@@ -1781,10 +1766,14 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
   // Create CellType
   //std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
 
+  // Get number of vertices per cell
   const std::size_t num_vertices_per_cell = cell_type.num_entities(0);
 
+  // Set topology dim and cell type
   mesh_data.tdim = cell_type.dim();
   mesh_data.cell_type = cell_type.cell_type();
+
+  std::cout << "Testing size: " << topology_shape.size() << std::endl;
 
   // Get total number of cells, as number of rows in topology dataset
   const std::size_t num_global_cells = topology_shape[0];
@@ -1797,9 +1786,9 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
 
   // Get partition from file, if available
   std::vector<std::size_t> partitions;
-  if (HDF5Interface::has_attribute(_hdf5_file_id, topology_name, "partition"))
+  if (HDF5Interface::has_attribute(_hdf5_file_id, topology_path, "partition"))
   {
-    HDF5Interface::get_attribute(_hdf5_file_id, topology_name, "partition",
+    HDF5Interface::get_attribute(_hdf5_file_id, topology_path, "partition",
                                  partitions);
   }
 
@@ -1835,12 +1824,12 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
   // Read a block of cells
   std::vector<std::size_t> topology_data;
   topology_data.reserve(num_local_cells*num_vertices_per_cell);
-  HDF5Interface::read_dataset(_hdf5_file_id, topology_name, cell_range,
+  HDF5Interface::read_dataset(_hdf5_file_id, topology_path, cell_range,
                               topology_data);
 
   // Reconstruct mesh_name from topology_name - needed for
   // cell_indices and domains
-  std::string mesh_name = topology_name.substr(0, topology_name.rfind("/"));
+  std::string mesh_name = topology_path.substr(0, topology_path.rfind("/"));
   // Look for cell indices in dataset, and use if available
   mesh_data.global_cell_indices.reserve(num_local_cells);
   const std::string cell_indices_name = mesh_name + "/cell_indices";
@@ -1864,8 +1853,10 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
   // Remap vertices to DOLFIN ordering from VTK/XDMF
   std::vector<unsigned int> perm = cell_type.vtk_mapping();
   for (std::size_t i = 0; i != num_local_cells; ++i)
+  {
     for (std::size_t j = 0; j != num_vertices_per_cell; ++j)
       mesh_data.cell_vertices[i][j] = topo_data_array[i][perm[j]];
+  }
 
   // --- Coordinates ---
 

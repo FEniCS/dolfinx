@@ -60,6 +60,9 @@ namespace dolfin
     /// Close file
     void close();
 
+    /// Flush buffered I/O to disk
+    void flush();
+
     /// Write points to file
     void write(const std::vector<Point>& points, const std::string name);
 
@@ -165,9 +168,6 @@ namespace dolfin
 
     // Get/set attributes of an existing dataset
     HDF5Attribute attributes(const std::string dataset_name);
-
-    /// Flush buffered I/O to disk
-    void flush();
 
   private:
 

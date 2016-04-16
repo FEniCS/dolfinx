@@ -625,6 +625,9 @@ void XDMFFile::write(const std::vector<Point>& points,
 //----------------------------------------------------------------------------
 void XDMFFile::read(Mesh& mesh, UseFilePartition use_file_partition)
 {
+  std::cout << "Reads mesh from XDFM" << std::endl;
+
+// Parse XML file
   dolfin_assert(_xml);
   _xml->read();
 
@@ -632,12 +635,12 @@ void XDMFFile::read(Mesh& mesh, UseFilePartition use_file_partition)
   const auto topology = _xml->get_topology();
   const auto geometry = _xml->get_geometry();
 
-  // Create a cell (we need to catch the case where TopologyType ==
-  // "PolyLine")
+  // Create a cell type string (we need to catch the case where
+  // TopologyType == "PolyLine")
   const std::string cell_type_str
     = (topology.cell_type == "polyline") ? "interval" : topology.cell_type;
 
-  // Create a cell
+  // Create a DOLFIN cell type from string
   std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
   dolfin_assert(cell_type);
 
@@ -662,6 +665,8 @@ void XDMFFile::read(Mesh& mesh, UseFilePartition use_file_partition)
     // Prepend directory name of XDMF file...
     // FIXME: not robust - topo.hdf5_filename may already be an
     // absolute path
+    std::cout << "filename: " << _filename << std::endl;
+    std::cout << "topology: " << topology.hdf5_filename << std::endl;
     boost::filesystem::path xdmf_path(_filename);
     boost::filesystem::path hdf5_path(topology.hdf5_filename);
     HDF5File mesh_file(_mpi_comm, (xdmf_path.parent_path()
