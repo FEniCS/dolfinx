@@ -35,6 +35,7 @@
 namespace dolfin
 {
 
+  class CellType;
   class Function;
   class GenericVector;
   class LocalMeshData;
@@ -87,13 +88,13 @@ namespace dolfin
     /// Write Function to file with a timestamp
     void write(const Function& u, const std::string name, double timestamp);
 
-    /// Read Function from file and distribute data according to
-    /// the Mesh and dofmap associated with the Function.
-    /// If the 'name' refers to a HDF5 group, then it is assumed
-    /// that the Function data is stored in the datasets within that group.
-    /// If the 'name' refers to a HDF5 dataset within a group, then
-    /// it is assumed that it is a Vector, and the Function will be filled from
-    /// that Vector
+    /// Read Function from file and distribute data according to the
+    /// Mesh and dofmap associated with the Function.  If the 'name'
+    /// refers to a HDF5 group, then it is assumed that the Function
+    /// data is stored in the datasets within that group.  If the
+    /// 'name' refers to a HDF5 dataset within a group, then it is
+    /// assumed that it is a Vector, and the Function will be filled
+    /// from that Vector
     void read(Function& u, const std::string name);
 
     /// Read Mesh from file and optionally re-use any partition data
@@ -104,7 +105,7 @@ namespace dolfin
     /// Read in Mesh with given topology and geometry datasets
     void read(Mesh& input_mesh, const std::string topology_name,
               const std::string geometry_name,
-              const std::string known_cell_type,
+              int gdim , const CellType& cell_type,
               bool use_partition_from_file) const;
 
     /// Write MeshFunction to file in a format suitable for re-reading

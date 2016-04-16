@@ -117,7 +117,7 @@ XDMFxml::TopologyData XDMFxml::get_topology() const
   std::vector<std::string> topo_dim_vec;
   boost::split(topo_dim_vec, topo_dim, boost::is_any_of(" "));
 
-  tdata.n_cells = std::stol(topo_dim_vec[0]);
+  tdata.num_cells = std::stol(topo_dim_vec[0]);
   tdata.points_per_cell = std::stol(topo_dim_vec[1]);
 
   if (tdata.format == "XML")
@@ -150,8 +150,9 @@ XDMFxml::GeometryData XDMFxml::get_geometry() const
   // Geometry - check format and get dataset name
   pugi::xml_node xdmf_geometry
     = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Geometry");
-  pugi::xml_node xdmf_geometry_data = xdmf_geometry.child("DataItem");
   dolfin_assert(xdmf_geometry);
+
+  pugi::xml_node xdmf_geometry_data = xdmf_geometry.child("DataItem");
   dolfin_assert(xdmf_geometry_data);
 
   GeometryData gdata;
@@ -160,7 +161,7 @@ XDMFxml::GeometryData XDMFxml::get_geometry() const
   std::vector<std::string> geo_vec;
   boost::split(geo_vec, geo_dim, boost::is_any_of(" "));
 
-  gdata.n_points = std::stol(geo_vec[0]);
+  gdata.num_points = std::stol(geo_vec[0]);
   gdata.dim = std::stoul(geo_vec[1]);
 
   gdata.format = xdmf_geometry_data.attribute("Format").value();

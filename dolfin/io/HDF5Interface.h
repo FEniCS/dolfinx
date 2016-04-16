@@ -100,10 +100,10 @@ namespace dolfin
     static std::size_t num_datasets_in_group(const hid_t hdf5_file_handle,
                                              const std::string group_name);
 
-    /// Get dataset size (size of each dimension)
+    /// Get dataset shape (size of each dimension)
     static std::vector<std::size_t>
-      get_dataset_size(const hid_t hdf5_file_handle,
-                       const std::string dataset_name);
+    get_dataset_shape(const hid_t hdf5_file_handle,
+                      const std::string dataset_name);
 
     /// Return list all datasets in named group of file
     static std::vector<std::string> dataset_list(const hid_t hdf5_file_handle,
@@ -111,9 +111,9 @@ namespace dolfin
 
     /// Get type of attribute
     static const std::string
-      get_attribute_type(const hid_t hdf5_file_handle,
-                         const std::string dataset_name,
-                         const std::string attribute_name);
+    get_attribute_type(const hid_t hdf5_file_handle,
+                       const std::string dataset_name,
+                       const std::string attribute_name);
 
     /// Get a named attribute of a dataset of known type
     template <typename T>
@@ -141,8 +141,8 @@ namespace dolfin
 
     // List attributes of dataset or group
     static const std::vector<std::string>
-      list_attributes(const hid_t hdf5_file_handle,
-                      const std::string dataset_name);
+    list_attributes(const hid_t hdf5_file_handle,
+                    const std::string dataset_name);
 
   private:
 
@@ -152,28 +152,28 @@ namespace dolfin
                                                void* str);
 
     template <typename T>
-      static void add_attribute_value(const hid_t dset_id,
-                                      const std::string attribute_name,
-                                      const T& attribute_value);
+    static void add_attribute_value(const hid_t dset_id,
+                                    const std::string attribute_name,
+                                    const T& attribute_value);
 
     template <typename T>
-      static void add_attribute_value(const hid_t dset_id,
-                                      const std::string attribute_name,
-                                      const std::vector<T>& attribute_value);
+    static void add_attribute_value(const hid_t dset_id,
+                                    const std::string attribute_name,
+                                    const std::vector<T>& attribute_value);
 
     template <typename T>
-      static void get_attribute_value(const hid_t attr_type,
-                                      const hid_t attr_id,
-                                      T& attribute_value);
+    static void get_attribute_value(const hid_t attr_type,
+                                    const hid_t attr_id,
+                                    T& attribute_value);
 
     template <typename T>
-      static void get_attribute_value(const hid_t attr_type,
-                                      const hid_t attr_id,
-                                      std::vector<T>& attribute_value);
+    static void get_attribute_value(const hid_t attr_type,
+                                    const hid_t attr_id,
+                                    std::vector<T>& attribute_value);
 
     // Return HDF5 data type
     template <typename T>
-      static hid_t hdf5_type()
+    static hid_t hdf5_type()
     {
       dolfin_error("HDF5Interface.cpp",
                    "get HDF5 primitive data type",
@@ -208,12 +208,12 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename T>
   inline void
-    HDF5Interface::write_dataset(const hid_t file_handle,
-                                 const std::string dataset_name,
-                                 const std::vector<T>& data,
-                                 const std::pair<std::size_t,std::size_t> range,
-                                 const std::vector<std::size_t> global_size,
-                                 bool use_mpi_io, bool use_chunking)
+  HDF5Interface::write_dataset(const hid_t file_handle,
+                               const std::string dataset_name,
+                               const std::vector<T>& data,
+                               const std::pair<std::size_t,std::size_t> range,
+                               const std::vector<std::size_t> global_size,
+                               bool use_mpi_io, bool use_chunking)
   {
     // Data rank
     const std::size_t rank = global_size.size();
@@ -328,10 +328,10 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename T>
   inline void
-    HDF5Interface::read_dataset(const hid_t file_handle,
-                                const std::string dataset_name,
-                                const std::pair<std::size_t, std::size_t> range,
-                                std::vector<T>& data)
+  HDF5Interface::read_dataset(const hid_t file_handle,
+                              const std::string dataset_name,
+                              const std::pair<std::size_t, std::size_t> range,
+                              std::vector<T>& data)
   {
     // Open the dataset
     const hid_t dset_id = H5Dopen2(file_handle, dataset_name.c_str(),
@@ -471,9 +471,9 @@ namespace dolfin
   // Specialization below for string
   template<typename T>
   inline void
-    HDF5Interface::add_attribute_value(const hid_t dset_id,
-                                       const std::string attribute_name,
-                                       const T& attribute_value)
+  HDF5Interface::add_attribute_value(const hid_t dset_id,
+                                     const std::string attribute_name,
+                                     const T& attribute_value)
   {
     // Create a scalar dataspace
     hid_t dataspace_id = H5Screate(H5S_SCALAR);

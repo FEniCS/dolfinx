@@ -347,8 +347,8 @@ std::size_t HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>
-HDF5Interface::get_dataset_size(const hid_t hdf5_file_handle,
-                                const std::string dataset_name)
+HDF5Interface::get_dataset_shape(const hid_t hdf5_file_handle,
+                                 const std::string dataset_name)
 {
   // Open named dataset
   const hid_t dset_id = H5Dopen2(hdf5_file_handle, dataset_name.c_str(),

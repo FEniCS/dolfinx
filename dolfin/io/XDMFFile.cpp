@@ -479,13 +479,28 @@ void XDMFFile::read(Mesh& mesh, UseFilePartition use_file_partition)
   dolfin_assert(_xml);
   _xml->read();
 
-  const auto topo = _xml->get_topology();
-  const auto geom = _xml->get_geometry();
+  // Get topology and geometry data
+  const auto topology = _xml->get_topology();
+  const auto geometry = _xml->get_geometry();
 
-  if (topo.format == "HDF")
+  // Create a cell (we need to catch the case where TopologyType ==
+  // "PolyLine")
+  const std::string cell_type_str
+    = (topology.cell_type == "polyline") ? "interval" : topology.cell_type;
+
+  // Create a cell
+  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
+  dolfin_assert(cell_type);
+
+  // Get geometric and toplogical dimensions
+  const int gdim = geometry.dim;
+  const int tdim = cell_type->dim();
+  dolfin_assert(tdim <= gdim);
+
+  if (topology.format == "HDF")
   {
 #ifdef HAS_HDF5
-    if (geom.hdf5_filename != topo.hdf5_filename)
+    if (geometry.hdf5_filename != topology.hdf5_filename)
     {
       dolfin_error("XDMFFile.cpp",
                    "read XDMF mesh",
@@ -496,85 +511,78 @@ void XDMFFile::read(Mesh& mesh, UseFilePartition use_file_partition)
     _hdf5_file.reset();
 
     // Prepend directory name of XDMF file...
-    // FIXME: not robust - topo.hdf5_filename may already be an absolute path
+    // FIXME: not robust - topo.hdf5_filename may already be an
+    // absolute path
     boost::filesystem::path xdmf_path(_filename);
-    boost::filesystem::path hdf5_path(topo.hdf5_filename);
+    boost::filesystem::path hdf5_path(topology.hdf5_filename);
     HDF5File mesh_file(_mpi_comm, (xdmf_path.parent_path()
                                    / hdf5_path).string(), "r");
 
-    // Try to read the mesh from the associated HDF5 file
-    mesh_file.read(mesh, topo.hdf5_dataset, geom.hdf5_dataset,
-                   topo.cell_type, static_cast<bool>(use_file_partition));
+    // Read the mesh from the associated HDF5 file
+    mesh_file.read(mesh, topology.hdf5_dataset, geometry.hdf5_dataset,
+                   gdim, *cell_type, static_cast<bool>(use_file_partition));
 #else
     dolfin_error("XDMFile.cpp", "open Mesh file", "Need HDF5 support");
 #endif
   }
-  else if (topo.format == "XML")
+  else if (topology.format == "XML")
   {
     if (MPI::rank(mesh.mpi_comm()) == 0)
     {
-      // Create mesh for editing
-      // In the XML we need to catch the case where TopologyType="PolyLine"
-      // When using HDF5, this is already written in the .h5 file
-      const std::string topo_cell_type_fix = (topo.cell_type == "polyline") ?
-        "interval" : topo.cell_type;
-      std::unique_ptr<CellType> cell_type(CellType::create(topo_cell_type_fix));
-      std::size_t tdim = cell_type->dim();
-
       MeshEditor editor;
-      editor.open(mesh, topo_cell_type_fix, tdim, geom.dim);
+      editor.open(mesh, cell_type_str, tdim, gdim);
 
       // Read geometry
-      editor.init_vertices_global(geom.n_points, geom.n_points);
+      editor.init_vertices_global(geometry.num_points, geometry.num_points);
 
-      const auto& g_data = geom.data;
+      const auto& g_data = geometry.data;
       std::istringstream iss(g_data);
       std::string data_line;
-      std::vector<std::string> coords(geom.dim);
-      Point p;
+      std::vector<std::string> coords(gdim);
+      Point p({0.0, 0.0, 0.0});
       std::size_t index = 0;
       while(std::getline(iss, data_line))
       {
         boost::split(coords, data_line, boost::is_any_of(" "));
-        for (std::size_t j = 0; j < geom.dim; ++j)
+        for (int j = 0; j < gdim; ++j)
           p[j] = std::stod(coords[j]);
         editor.add_vertex(index, p);
         ++index;
       }
 
-      if (geom.n_points != index)
+      if (geometry.num_points != index)
       {
         dolfin_error("XDMFFile.cpp",
                      "parse mesh geometry points",
                      (boost::format("number of points found in data (%d) does not match xdmf meta data (%d)")
-                      % index % geom.n_points).str());
+                      % index % geometry.num_points).str());
       }
 
       // Read topology
-      editor.init_cells_global(topo.n_cells, topo.n_cells);
+      editor.init_cells_global(topology.num_cells, topology.num_cells);
 
-      const auto& t_data = topo.data;
+      const auto& t_data = topology.data;
       iss.clear();
       iss.str(t_data);
       index = 0;
-      std::vector<std::string> splt_str_indices(topo.points_per_cell);
-      std::vector<std::size_t> point_indices(topo.points_per_cell);
+      std::vector<std::string> splt_str_indices(topology.points_per_cell);
+      std::vector<std::size_t> point_indices(topology.points_per_cell);
       while(std::getline(iss, data_line))
       {
         boost::split(splt_str_indices, data_line, boost::is_any_of(" "));
-        for (std::size_t j = 0; j < topo.points_per_cell; ++j)
+        for (std::size_t j = 0; j < topology.points_per_cell; ++j)
           point_indices[j] = std::stol(splt_str_indices[j]);
 
         editor.add_cell(index, point_indices);
         ++index;
       }
 
-      if (topo.n_cells != index)
+      if (topology.num_cells != index)
       {
         dolfin_error("XDMFFile.cpp",
                      "parse mesh topology",
                      (boost::format("number of cells found in data (%d) does not match xdmf meta data (%d)")
-                      % index % topo.n_cells).str());
+                      % index % topology.num_cells).str());
       }
 
       editor.close();

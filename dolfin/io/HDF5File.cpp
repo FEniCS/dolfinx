@@ -194,12 +194,12 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
     warning("Reading non-scalar data in HDF5 Vector");
 
   // Get global dataset size
-  const std::vector<std::size_t> data_size
-      = HDF5Interface::get_dataset_size(hdf5_file_id, dataset_name);
+  const std::vector<std::size_t> data_shape
+      = HDF5Interface::get_dataset_shape(hdf5_file_id, dataset_name);
 
   // Check that rank is 1 or 2
-  dolfin_assert(data_size.size() == 1
-                or (data_size.size() == 2 and data_size[1] == 1));
+  dolfin_assert(data_shape.size() == 1
+                or (data_shape.size() == 2 and data_shape[1] == 1));
 
   // Check input vector, and re-size if not already sized
   if (x.empty())
@@ -221,7 +221,7 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
       }
 
       // Add global size at end of partition vectors
-      partitions.push_back(data_size[0]);
+      partitions.push_back(data_shape[0]);
 
       // Initialise vector
       const std::size_t process_num = MPI::rank(_mpi_comm);
@@ -230,9 +230,9 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
       x.init(_mpi_comm, local_range);
     }
     else
-      x.init(_mpi_comm, data_size[0]);
+      x.init(_mpi_comm, data_shape[0]);
   }
-  else if (x.size() != data_size[0])
+  else if (x.size() != data_shape[0])
   {
     dolfin_error("HDF5File.cpp",
                  "read vector from file",
@@ -588,15 +588,16 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   }
 
   // --- Topology ---
+
   // Discover size of topology dataset
-  const std::vector<std::size_t> topology_dim
-      = HDF5Interface::get_dataset_size(hdf5_file_id, topology_name);
+  const std::vector<std::size_t> topology_shape
+      = HDF5Interface::get_dataset_shape(hdf5_file_id, topology_name);
 
   // Some consistency checks
 
-  const std::size_t num_global_cells = topology_dim[0];
-  const std::size_t vert_per_cell = topology_dim[1];
-  const std::size_t cell_dim = vert_per_cell - 1;
+  const std::size_t num_global_cells = topology_shape[0];
+  const std::size_t vertices_per_cell = topology_shape[1];
+  const std::size_t cell_dim = vertices_per_cell - 1;
 
   // Initialise if called from MeshFunction constructor with filename
   // argument
@@ -628,13 +629,13 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
 
   // Read a block of cells
   std::vector<std::size_t> topology_data;
-  topology_data.reserve(num_read_cells*vert_per_cell);
+  topology_data.reserve(num_read_cells*vertices_per_cell);
   HDF5Interface::read_dataset(hdf5_file_id, topology_name, cell_range,
                               topology_data);
 
   boost::multi_array_ref<std::size_t, 2>
     topology_array(topology_data.data(),
-                   boost::extents[num_read_cells][vert_per_cell]);
+                   boost::extents[num_read_cells][vertices_per_cell]);
 
   std::vector<T> value_data;
   value_data.reserve(num_read_cells);
@@ -711,14 +712,14 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
 
   for (std::size_t i = 0; i < receive_values.size(); ++i)
   {
-    dolfin_assert(receive_values[i].size()*vert_per_cell
+    dolfin_assert(receive_values[i].size()*vertices_per_cell
                   == receive_topology[i].size());
     std::vector<std::size_t>::iterator p = receive_topology[i].begin();
     for (std::size_t j = 0; j < receive_values[i].size(); ++j)
     {
-      const std::vector<std::size_t> cell(p, p + vert_per_cell);
+      const std::vector<std::size_t> cell(p, p + vertices_per_cell);
       cell_to_data[cell] = receive_values[i][j];
-      p += vert_per_cell;
+      p += vertices_per_cell;
     }
   }
 
@@ -733,11 +734,11 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   for (std::size_t i = 0; i < receive_requests.size(); ++i)
   {
     for (std::vector<std::size_t>::iterator p = receive_requests[i].begin();
-         p != receive_requests[i].end(); p += (vert_per_cell + 2))
+         p != receive_requests[i].end(); p += (vertices_per_cell + 2))
     {
-      const std::vector<std::size_t> cell(p, p + vert_per_cell);
-      const std::size_t remote_index = *(p + vert_per_cell);
-      const std::size_t send_to_proc = *(p + vert_per_cell + 1);
+      const std::vector<std::size_t> cell(p, p + vertices_per_cell);
+      const std::size_t remote_index = *(p + vertices_per_cell);
+      const std::size_t send_to_proc = *(p + vertices_per_cell + 1);
 
       const typename VectorKeyMap::iterator find_cell = cell_to_data.find(cell);
       dolfin_assert(find_cell != cell_to_data.end());
@@ -1015,11 +1016,11 @@ void HDF5File::read(Function& u, const std::string name)
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
 
   // Get dimension of dataset
-  const std::vector<std::size_t> dataset_size =
-    HDF5Interface::get_dataset_size(hdf5_file_id, cells_dataset_name);
-  const std::size_t num_global_cells = dataset_size[0];
+  const std::vector<std::size_t> dataset_shape =
+    HDF5Interface::get_dataset_shape(hdf5_file_id, cells_dataset_name);
+  const std::size_t num_global_cells = dataset_shape[0];
   if (mesh.size_global(mesh.topology().dim())
-     != num_global_cells)
+      != num_global_cells)
   {
     dolfin_error("HDF5File.cpp",
                  "read Function from file",
@@ -1051,24 +1052,22 @@ void HDF5File::read(Function& u, const std::string name)
 
   GenericVector& x = *u.vector();
 
-  const std::vector<std::size_t> vector_size =
-    HDF5Interface::get_dataset_size(hdf5_file_id, vector_dataset_name);
-  const std::size_t num_global_dofs = vector_size[0];
+  const std::vector<std::size_t> vector_shape =
+    HDF5Interface::get_dataset_shape(hdf5_file_id, vector_dataset_name);
+  const std::size_t num_global_dofs = vector_shape[0];
   dolfin_assert(num_global_dofs == x.size(0));
   const std::pair<dolfin::la_index, dolfin::la_index>
-    input_vector_range = MPI::local_range(_mpi_comm, vector_size[0]);
+    input_vector_range = MPI::local_range(_mpi_comm, vector_shape[0]);
 
   std::vector<double> input_values;
   HDF5Interface::read_dataset(hdf5_file_id, vector_dataset_name,
-                              input_vector_range,
-                              input_values);
+                              input_vector_range, input_values);
 
   // Calculate one (global cell, local_dof_index) to associate
   // with each item in the vector on this process
 
   std::vector<std::size_t> global_cells;
   std::vector<std::size_t> remote_local_dofi;
-
   HDF5Utility::map_gdof_to_cell(_mpi_comm,
                                 input_cells, input_cell_dofs,
                                 x_cell_dofs, input_vector_range,
@@ -1360,15 +1359,15 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
   }
 
   // Check both datasets have the same number of entries
-  const std::vector<std::size_t> values_dim
-      = HDF5Interface::get_dataset_size(hdf5_file_id, values_name);
-  const std::vector<std::size_t> topology_dim
-      = HDF5Interface::get_dataset_size(hdf5_file_id, topology_name);
-  dolfin_assert(values_dim[0] == topology_dim[0]);
+  const std::vector<std::size_t> values_shape
+      = HDF5Interface::get_dataset_shape(hdf5_file_id, values_name);
+  const std::vector<std::size_t> topology_shape
+    = HDF5Interface::get_dataset_shape(hdf5_file_id, topology_name);
+  dolfin_assert(values_shape[0] == topology_shape[0]);
 
   // Divide range between processes
   const std::pair<std::size_t, std::size_t> data_range
-    = MPI::local_range(_mpi_comm, values_dim[0]);
+    = MPI::local_range(_mpi_comm, values_shape[0]);
   const std::size_t local_size = data_range.second - data_range.first;
 
   // Read local range of values and entities
@@ -1551,24 +1550,25 @@ void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
   }
 
   // Check all datasets have the same size
-  const std::vector<std::size_t> values_dim
-      = HDF5Interface::get_dataset_size(hdf5_file_id, values_name);
-  const std::vector<std::size_t> entities_dim
-      = HDF5Interface::get_dataset_size(hdf5_file_id, entities_name);
-  const std::vector<std::size_t> cells_dim
-      = HDF5Interface::get_dataset_size(hdf5_file_id, cells_name);
-  dolfin_assert(values_dim[0] == entities_dim[0]);
-  dolfin_assert(values_dim[0] == cells_dim[0]);
+  const std::vector<std::size_t> values_shape
+      = HDF5Interface::get_dataset_shape(hdf5_file_id, values_name);
+  const std::vector<std::size_t> entities_shape
+      = HDF5Interface::get_dataset_shape(hdf5_file_id, entities_name);
+  const std::vector<std::size_t> cells_shape
+    = HDF5Interface::get_dataset_shape(hdf5_file_id, cells_name);
+  dolfin_assert(values_shape[0] == entities_shape[0]);
+  dolfin_assert(values_shape[0] == cells_shape[0]);
 
-  // Check size of dataset. If small enough, just read on all processes...
+  // Check size of dataset. If small enough, just read on all
+  // processes...
 
   // FIXME: optimise value
   const std::size_t max_data_one = 1048576; // arbitrary 1M
 
-  if (values_dim[0] < max_data_one)
+  if (values_shape[0] < max_data_one)
   {
     // read on all processes
-    const std::pair<std::size_t, std::size_t> range(0, values_dim[0]);
+    const std::pair<std::size_t, std::size_t> range(0, values_shape[0]);
     const std::size_t local_size = range.second - range.first;
 
     std::vector<T> values_data;
@@ -1641,7 +1641,7 @@ void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
 
     // Divide range between processes
     const std::pair<std::size_t, std::size_t> data_range
-      = MPI::local_range(_mpi_comm, values_dim[0]);
+      = MPI::local_range(_mpi_comm, values_shape[0]);
     const std::size_t local_size = data_range.second - data_range.first;
 
     // Read local range of values, entities and cells
@@ -1705,6 +1705,8 @@ void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
 void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
                     bool use_partition_from_file) const
 {
+  error("HDF5File::read needs fixing to pass gdim and celltype");
+  /*
   const std::string topology_name = mesh_name + "/topology";
   if (!HDF5Interface::has_dataset(hdf5_file_id, topology_name))
   {
@@ -1722,12 +1724,14 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
   }
 
   const std::string cell_type("unknown");
-  read(input_mesh, topology_name, geometry_name, cell_type, use_partition_from_file);
+  read(input_mesh, topology_name, geometry_name, gdim, cell_type,
+       use_partition_from_file);
+  */
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
-                    const std::string geometry_name,
-                    const std::string known_cell_type,
+                    const std::string geometry_name, int gdim,
+                    const CellType& cell_type,
                     bool use_partition_from_file) const
 {
   Timer t("HDF5: read mesh");
@@ -1739,27 +1743,42 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
   // --- Topology ---
 
   // Discover size of topology dataset
-  std::vector<std::size_t> topology_dim
-    = HDF5Interface::get_dataset_size(hdf5_file_id, topology_name);
+  std::vector<std::size_t> topology_shape
+    = HDF5Interface::get_dataset_shape(hdf5_file_id, topology_name);
 
-  // If cell type is encoded in HDF5, then use that, otherwise fall back to known_cell_type
-  std::string cell_type_str(known_cell_type);
-  if (HDF5Interface::has_attribute(hdf5_file_id, topology_name, "celltype"))
-    HDF5Interface::get_attribute(hdf5_file_id, topology_name, "celltype", cell_type_str);
+  //std::cout << "T dim:" << std::endl;
+  //for (auto x : topology_dim)
+  //  std::cout << "  " << x << std::endl;
 
-  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
+  // FIXME: This is bad. If there is conflict between the XDMF and the
+  // HDF5 cell type, there should be an error.
+  // FIXME: Why would we want the cell type in the HDF5 anyway?
 
-  const std::size_t num_vertices_per_cell
-    = cell_type->num_entities(0);
+  // If cell type is encoded in HDF5, then use that, otherwise fall
+  // back to known_cell_type
+  //std::string cell_type_str(known_cell_type);
+  //if (HDF5Interface::has_attribute(hdf5_file_id, topology_name, "celltype"))
+  //{
+  //  HDF5Interface::get_attribute(hdf5_file_id, topology_name, "celltype",
+  //                               cell_type_str);
+  //}
+  //std::cout << "Cell type string: " << cell_type_str << std::endl;
 
-  mesh_data.tdim = cell_type->dim();
-  mesh_data.cell_type = cell_type->cell_type();
+  // Create CellType
+  //std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
+
+  const std::size_t num_vertices_per_cell = cell_type.num_entities(0);
+
+  mesh_data.tdim = cell_type.dim();
+  mesh_data.cell_type = cell_type.cell_type();
 
   // Get total number of cells, as number of rows in topology dataset
-  const std::size_t num_global_cells = topology_dim[0];
+  const std::size_t num_global_cells = topology_shape[0];
   mesh_data.num_global_cells = num_global_cells;
 
-  dolfin_assert(num_vertices_per_cell == topology_dim[1]);
+  std::cout << "Test: " << num_vertices_per_cell << ", "
+            <<  topology_shape[1] << std::endl;
+  dolfin_assert(num_vertices_per_cell == topology_shape[1]);
   mesh_data.num_vertices_per_cell = num_vertices_per_cell;
 
   // Get partition from file, if available
@@ -1789,10 +1808,12 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
   {
     if (use_partition_from_file)
       warning("Could not use partition from file: wrong size");
-    // Divide up cells ~equally between processes
+
+    // Divide up cells approximately equally between processes
     cell_range = MPI::local_range(_mpi_comm, num_global_cells);
   }
 
+  // Get number of local cells
   const std::size_t num_local_cells = cell_range.second - cell_range.first;
 
   // Read a block of cells
@@ -1801,8 +1822,8 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
   HDF5Interface::read_dataset(hdf5_file_id, topology_name, cell_range,
                               topology_data);
 
-  // Reconstruct mesh_name from topology_name - needed for cell_indices
-  // and domains
+  // Reconstruct mesh_name from topology_name - needed for
+  // cell_indices and domains
   std::string mesh_name = topology_name.substr(0, topology_name.rfind("/"));
   // Look for cell indices in dataset, and use if available
   mesh_data.global_cell_indices.reserve(num_local_cells);
@@ -1821,11 +1842,11 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
   // Copy to boost::multi_array
   mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
   boost::multi_array_ref<std::size_t, 2>
-    topo_data_array(topology_data.data(), boost::extents[num_local_cells][num_vertices_per_cell]);
+    topo_data_array(topology_data.data(),
+                    boost::extents[num_local_cells][num_vertices_per_cell]);
 
   // Remap vertices to DOLFIN ordering from VTK/XDMF
-  std::vector<unsigned int> perm = cell_type->vtk_mapping();
-
+  std::vector<unsigned int> perm = cell_type.vtk_mapping();
   for (std::size_t i = 0; i != num_local_cells; ++i)
     for (std::size_t j = 0; j != num_vertices_per_cell; ++j)
       mesh_data.cell_vertices[i][j] = topo_data_array[i][perm[j]];
@@ -1833,10 +1854,10 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
   // --- Coordinates ---
 
   // Get dimensions of coordinate dataset
-  std::vector<std::size_t> coords_dim
-    = HDF5Interface::get_dataset_size(hdf5_file_id, geometry_name);
-  mesh_data.num_global_vertices = coords_dim[0];
-  mesh_data.gdim = coords_dim[1];
+  std::vector<std::size_t> coords_shape
+    = HDF5Interface::get_dataset_shape(hdf5_file_id, geometry_name);
+  mesh_data.num_global_vertices = coords_shape[0];
+  mesh_data.gdim = coords_shape[1];
 
   // Divide range into equal blocks for each process
   const std::pair<std::size_t, std::size_t> vertex_range
