@@ -39,35 +39,6 @@ XDMFxml::~XDMFxml()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void XDMFxml::header()
-{
-  dolfin_assert(xml_doc);
-
-// If a new file, add a header
-  if (!boost::filesystem::exists(_filename) or _is_this_first_write)
-  {
-    xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
-    pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
-    xdmf.append_attribute("Version") = "2.0";
-    xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
-    xdmf.append_child("Domain");
-
-    write();
-    _is_this_first_write = false;
-  }
-  else
-  {
-    // Read in existing XDMF file
-    pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
-    if (!result)
-    {
-      dolfin_error("XDMFxml.cpp",
-                   "write data to XDMF file",
-                   "XML parsing error when reading from existing file");
-    }
-  }
-}
-//----------------------------------------------------------------------------
 void XDMFxml::write() const
 {
   // Write XML file
@@ -517,6 +488,35 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
   xdmf_geom_data.append_child(pugi::node_pcdata).set_value(xml_value_data.c_str());
 }
 //-----------------------------------------------------------------------------
+void XDMFxml::header()
+{
+  dolfin_assert(xml_doc);
+
+// If a new file, add a header
+  if (!boost::filesystem::exists(_filename) or _is_this_first_write)
+  {
+    xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+    pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
+    xdmf.append_attribute("Version") = "2.0";
+    xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
+    xdmf.append_child("Domain");
+
+    write();
+    _is_this_first_write = false;
+  }
+  else
+  {
+    // Read in existing XDMF file
+    pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+    if (!result)
+    {
+      dolfin_error("XDMFxml.cpp",
+                   "write data to XDMF file",
+                   "XML parsing error when reading from existing file");
+    }
+  }
+}
+//----------------------------------------------------------------------------
 std::array<std::string, 2> XDMFxml::get_hdf5_paths(const pugi::xml_node& xml_node)
 {
   dolfin_assert(xml_node);
@@ -534,6 +534,6 @@ std::array<std::string, 2> XDMFxml::get_hdf5_paths(const pugi::xml_node& xml_nod
   boost::split(paths, path, boost::is_any_of(":"));
   dolfin_assert(paths.size() == 2);
 
-  return {paths[0], paths[2]};
+  return {paths[0], paths[1]};
 }
 //-----------------------------------------------------------------------------

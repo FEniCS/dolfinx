@@ -625,11 +625,13 @@ void XDMFFile::write(const std::vector<Point>& points,
 //----------------------------------------------------------------------------
 void XDMFFile::read(Mesh& mesh, UseFilePartition use_file_partition)
 {
-  std::cout << "Reads mesh from XDFM" << std::endl;
+  std::cout << "Read mesh from XDMF" << std::endl;
 
-// Parse XML file
+  // Parse XML file
   dolfin_assert(_xml);
   _xml->read();
+
+  std::cout << "End parse XML" << std::endl;
 
   // Get topology and geometry data
   const auto topology = _xml->get_topology();

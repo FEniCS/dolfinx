@@ -1742,8 +1742,10 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
   // --- Topology ---
 
   // Discover shape of topology data set
+  std::cout << "Get HDF5 data shape: " << topology_path << std::endl;
   std::vector<std::size_t> topology_shape
     = HDF5Interface::get_dataset_shape(_hdf5_file_id, topology_path);
+  std::cout << "Got HDF5 data shape: " << topology_path << std::endl;
 
   //std::cout << "T dim:" << std::endl;
   //for (auto x : topology_dim)
