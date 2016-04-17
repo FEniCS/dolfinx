@@ -79,6 +79,9 @@ namespace dolfin
   public:
 
     /// Create TAO bound constrained solver
+    explicit TAOLinearBoundSolver(MPI_Comm comm);
+
+    /// Create TAO bound constrained solver
     TAOLinearBoundSolver(const std::string method = "default",
                          const std::string ksp_type = "default",
                          const std::string pc_type = "default");
@@ -174,13 +177,13 @@ namespace dolfin
     Tao _tao;
 
     // Petsc preconditioner
-    std::shared_ptr<PETScPreconditioner> preconditioner;
+    std::shared_ptr<PETScPreconditioner> _preconditioner;
 
     // Operator (the matrix) and the vector
-    std::shared_ptr<const PETScMatrix> A;
-    std::shared_ptr<const PETScVector> b;
+    std::shared_ptr<const PETScMatrix> _matA;
+    std::shared_ptr<const PETScVector> _b;
 
-    bool preconditioner_set;
+    bool _preconditioner_set;
 
     // Computes the value of the objective function and its gradient.
     static PetscErrorCode
