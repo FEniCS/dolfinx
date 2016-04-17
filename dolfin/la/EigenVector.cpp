@@ -31,18 +31,30 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EigenVector::EigenVector() : _x(new Eigen::VectorXd)
+EigenVector::EigenVector() : EigenVector(MPI_COMM_SELF)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EigenVector::EigenVector(std::size_t N) : _x(new Eigen::VectorXd(N))
+EigenVector::EigenVector(MPI_Comm comm) : _x(new Eigen::VectorXd),
+                                          _mpi_comm(comm)
 {
+  // Check size of communicator
+  check_mpi_size(comm);
+}
+//-----------------------------------------------------------------------------
+EigenVector::EigenVector(MPI_Comm comm, std::size_t N)
+  : _x(new Eigen::VectorXd(N)), _mpi_comm(comm)
+{
+  // Check size of communicator
+  check_mpi_size(comm);
+
+  // Zero vector
   _x->setZero();
 }
 //-----------------------------------------------------------------------------
 EigenVector::EigenVector(const EigenVector& x)
-  : _x(new Eigen::VectorXd(*(x._x)))
+  : _x(new Eigen::VectorXd(*(x._x))), _mpi_comm(x._mpi_comm)
 {
   // Do nothing
 }
