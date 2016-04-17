@@ -1889,8 +1889,6 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
     std::cout << "  " << topology_data[j] << std::endl;
   }
 
-  exit(0);
-
   // Reconstruct mesh_name from topology_name - needed for
   // cell_indices and domains
   std::string mesh_name = topology_path.substr(0, topology_path.rfind("/"));
