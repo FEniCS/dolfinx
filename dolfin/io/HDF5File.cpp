@@ -1742,19 +1742,13 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
 
   // --- Topology ---
 
-  // Discover shape of topology data set
-  std::cout << "Get HDF5 data shape (0): " << topology_path << std::endl;
+  // Discover shape of the topology data set
   std::vector<std::size_t> topology_shape
     = HDF5Interface::get_dataset_shape(_hdf5_file_id, topology_path);
-  std::cout << "Got HDF5 data shape (1): " << topology_path << std::endl;
-
-  //std::cout << "T dim:" << std::endl;
-  //for (auto x : topology_dim)
-  //  std::cout << "  " << x << std::endl;
 
   // FIXME: This is bad. If there is conflict between the XDMF and the
-  // HDF5 cell type, there should be an error.
-  // FIXME: Why would we want the cell type in the HDF5 anyway?
+  // HDF5 cell type, there should be an error.  FIXME: Why would we
+  // want the cell type in the HDF5 anyway?
 
   // If cell type is encoded in HDF5, then use that, otherwise fall
   // back to known_cell_type
@@ -1769,7 +1763,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
   // Create CellType
   //std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
 
-  // Get number of vertices per cell
+  // Get number of vertices per cell from CellType
   const std::size_t num_vertices_per_cell = cell_type.num_entities(0);
 
   // Set topology dim and cell type
@@ -1857,6 +1851,13 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
   // Get number of local cells to read
   const std::size_t num_local_cells = cell_range.second - cell_range.first;
 
+  // Get range of array to read
+  if (topology_shape.size() == 1)
+  {
+    cell_range.first *= num_vertices_per_cell;
+    cell_range.second *= num_vertices_per_cell;
+  }
+
   // Read a block of cells
   std::vector<std::size_t> topology_data;
   topology_data.reserve(num_local_cells*num_vertices_per_cell);
@@ -1864,6 +1865,31 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
   HDF5Interface::read_dataset(_hdf5_file_id, topology_path, cell_range,
                               topology_data);
   std::cout << "End read some data" << std::endl;
+
+  std::cout << "Cell range: " << cell_range.first << ", " << cell_range.second
+            << std::endl;
+
+  std::cout << "Min topology vertex index: "
+            << *std::min_element(topology_data.begin(), topology_data.end())
+            << std::endl;
+  std::cout << "Max topology vertex index: "
+            << *std::max_element(topology_data.begin(), topology_data.end())
+            << std::endl;
+
+  std::set<std::size_t> test_set(topology_data.begin(), topology_data.end());
+  std::cout << "Num vertex indices in topology: " << test_set.size()
+            << std::endl;
+
+  for (std::size_t i = 0; i < 4; ++i)
+    std::cout << "  " << topology_data[i] << std::endl;
+  std::cout << "---" << std::endl;
+  for (std::size_t i = 0; i < 4; ++i)
+  {
+    std::size_t j = topology_data.size() - 1 - i;
+    std::cout << "  " << topology_data[j] << std::endl;
+  }
+
+  exit(0);
 
   // Reconstruct mesh_name from topology_name - needed for
   // cell_indices and domains
@@ -1913,6 +1939,8 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
     // 1D array
     dolfin_assert(coords_shape[0] % gdim == 0);
     mesh_data.num_global_vertices = coords_shape[0]/gdim;
+    std::cout << "Num global vertices: " << mesh_data.num_global_vertices
+              << std::endl;
   }
   else if (coords_shape.size() == 2)
   {
@@ -2001,7 +2029,6 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
         markers[entry->first.first] = entry->second;
     }
   }
-
 }
 //-----------------------------------------------------------------------------
 bool HDF5File::has_dataset(const std::string dataset_name) const

@@ -331,8 +331,10 @@ namespace dolfin
   HDF5Interface::read_dataset(const hid_t file_handle,
                               const std::string dataset_name,
                               const std::pair<std::size_t, std::size_t> range,
-                              std::vector<T>& data)
+                              std::vector<T>& xdata)
   {
+    std::cout << "Datset name: " << dataset_name << std::endl;
+
     // Open the dataset
     const hid_t dset_id = H5Dopen2(file_handle, dataset_name.c_str(),
                                    H5P_DEFAULT);
@@ -346,6 +348,8 @@ namespace dolfin
     const int rank = H5Sget_simple_extent_ndims(dataspace);
     dolfin_assert(rank >= 0);
 
+    std::cout << "Rank of data: " << rank << std::endl;
+
     if (rank > 2)
       warning("HDF5Interface::read_dataset untested for rank > 2.");
 
@@ -357,10 +361,17 @@ namespace dolfin
                                                 dimensions_size.data(), NULL);
     dolfin_assert(ndims == rank);
 
+
+    std::cout << "Data ndims: " << ndims << std::endl;
+
+    std::cout << "Dimensions size: " << std::endl;
+    for (std::size_t i = 0; i < dimensions_size.size(); ++i)
+      std::cout << "  " << dimensions_size[i] << std::endl;
+
     // Hyperslab selection
     std::vector<hsize_t> offset(rank, 0);
     offset[0]= range.first;
-    std::vector<hsize_t> count(dimensions_size);
+    std::vector<hsize_t> count = dimensions_size;
     count[0] = range.second - range.first;
 
     // Select a block in the dataset beginning at offset[], with
@@ -375,16 +386,22 @@ namespace dolfin
     dolfin_assert (memspace != HDF5_FAIL);
 
     // Resize local data to read into
+    std::vector<int> data;
     std::size_t data_size = 1;
     for (std::size_t i = 0; i < count.size(); ++i)
       data_size *= count[i];
     data.resize(data_size);
+    std::cout << "Data size: " << data_size << std::endl;
+
 
     // Read data on each process
-    const int h5type = hdf5_type<T>();
+    //const hid_t h5type = hdf5_type<T>();
+    const hid_t h5type = hdf5_type<int>();
     status = H5Dread(dset_id, h5type, memspace, dataspace, H5P_DEFAULT,
                      data.data());
     dolfin_assert(status != HDF5_FAIL);
+
+    xdata.assign(data.begin(), data.end());
 
     // Close dataspace
     status = H5Sclose(dataspace);
