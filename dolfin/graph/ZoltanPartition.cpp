@@ -37,7 +37,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void
 ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
-                                       std::vector<std::size_t>& cell_partition,
+                                       std::vector<int>& cell_partition,
                                        const LocalMeshData& mesh_data)
 {
   Timer timer0("Partition graph (calling Zoltan PHG)");
@@ -124,7 +124,7 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
   for(int i = 0; i < num_export; ++i)
   {
     const std::size_t idx = export_gids[i] - offset;
-    cell_partition[idx] = (std::size_t)export_procs[i];
+    cell_partition[idx] = (int)export_procs[i];
   }
 
   // Free data structures allocated by Zoltan::LB_Partition
@@ -134,7 +134,7 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
 //-----------------------------------------------------------------------------
 void
 ZoltanPartition::compute_partition_rcb(const MPI_Comm mpi_comm,
-                                       std::vector<std::size_t>& cell_partition,
+                                       std::vector<int>& cell_partition,
                                        const LocalMeshData& mesh_data)
 {
   Timer timer0("Partition graph (calling Zoltan RCB)");
@@ -449,7 +449,7 @@ void ZoltanPartition::get_all_geom(void *data,
 //-----------------------------------------------------------------------------
 #else
 void ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
-                                            std::vector<std::size_t>& cell_partition,
+                                            std::vector<int>& cell_partition,
                                             const LocalMeshData& mesh_data)
 {
   dolfin_error("ZoltanPartition.cpp",
@@ -458,7 +458,7 @@ void ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
 }
 //-----------------------------------------------------------------------------
 void ZoltanPartition::compute_partition_rcb(const MPI_Comm mpi_comm,
-                                            std::vector<std::size_t>& cell_partition,
+                                            std::vector<int>& cell_partition,
                                             const LocalMeshData& mesh_data)
 {
   dolfin_error("ZoltanPartition.cpp",

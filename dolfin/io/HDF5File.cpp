@@ -1873,7 +1873,7 @@ void HDF5File::read(Mesh& input_mesh,
     if (use_partition_from_file)
     {
       local_mesh_data.cell_partition
-        = std::vector<std::size_t>(cell_range.second - cell_range.first, proc);
+        = std::vector<int>(cell_range.second - cell_range.first, proc);
     }
   }
   else
@@ -1909,7 +1909,7 @@ void HDF5File::read(Mesh& input_mesh,
 
   // FIXME: Imrpove comment - it's unclear this is about
   // Look for cell indices in dataset, and use if available
-  std::vector<std::size_t>& global_cell_indices = local_mesh_data.global_cell_indices;
+  std::vector<std::int64_t>& global_cell_indices = local_mesh_data.global_cell_indices;
   global_cell_indices.clear();
   const std::string cell_indices_name = mesh_name + "/cell_indices";
   if (HDF5Interface::has_dataset(_hdf5_file_id, cell_indices_name))

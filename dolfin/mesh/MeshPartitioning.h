@@ -67,7 +67,7 @@ namespace dolfin
     /// with supplied destination processes for each cell
     static void
       build_distributed_mesh(Mesh& mesh,
-                             const std::vector<std::size_t>& cell_partition);
+                             const std::vector<int>& cell_partition);
 
     /// Build a partitioned mesh from local mesh data that is
     /// distributed across processes
@@ -87,12 +87,12 @@ namespace dolfin
     // and a map from local index->processes to which ghost cells must be sent
     static void partition_cells(const MPI_Comm& mpi_comm,
                                 const LocalMeshData& mesh_data,
-         std::vector<std::size_t>& cell_partition,
+         std::vector<int>& cell_partition,
          std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs);
 
     // Build mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,
-     const std::vector<std::size_t>& cell_partition,
+     const std::vector<int>& cell_partition,
      const std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs);
 
     // Distribute a layer of cells attached by vertex to boundary
@@ -125,7 +125,7 @@ namespace dolfin
     static unsigned int
       distribute_cells(const MPI_Comm mpi_comm,
         const LocalMeshData& data,
-        const std::vector<std::size_t>& cell_partition,
+        const std::vector<int>& cell_partition,
         const std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
         std::map<unsigned int, std::set<unsigned int>>& shared_cells,
         LocalMeshData& new_mesh_data);

@@ -76,7 +76,7 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 void ParMETIS::compute_partition(
   const MPI_Comm mpi_comm,
-  std::vector<std::size_t>& cell_partition,
+  std::vector<int>& cell_partition,
   std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
   const LocalMeshData& mesh_data,
   std::string mode)
@@ -111,7 +111,7 @@ void ParMETIS::compute_partition(
 //-----------------------------------------------------------------------------
 void ParMETIS::partition(
   MPI_Comm mpi_comm,
-  std::vector<std::size_t>& cell_partition,
+  std::vector<int>& cell_partition,
   std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
   ParMETISDualGraph& g)
 {
@@ -243,11 +243,11 @@ void ParMETIS::partition(
   timer2.stop();
 
   // Copy cell partition data
-  cell_partition = std::vector<std::size_t>(part.begin(), part.end());
+  cell_partition.assign(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
 void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
-                                    std::vector<std::size_t>& cell_partition,
+                                    std::vector<int>& cell_partition,
                                     ParMETISDualGraph& g)
 {
   Timer timer("Compute graph partition (ParMETIS Adaptive Repartition)");
@@ -283,11 +283,10 @@ void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
   timer1.stop();
 
   // Copy cell partition data
-  cell_partition = std::vector<std::size_t>(part.begin(), part.end());
+  cell_partition.assign(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
-void ParMETIS::refine(MPI_Comm mpi_comm,
-                      std::vector<std::size_t>& cell_partition,
+void ParMETIS::refine(MPI_Comm mpi_comm, std::vector<int>& cell_partition,
                       ParMETISDualGraph& g)
 {
   Timer timer("Compute graph partition (ParMETIS Refine)");
@@ -327,7 +326,7 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
   timer1.stop();
 
   // Copy cell partition data
-  cell_partition = std::vector<std::size_t>(part.begin(), part.end());
+  cell_partition.assign(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
 ParMETISDualGraph::ParMETISDualGraph(MPI_Comm mpi_comm,
@@ -414,7 +413,7 @@ ParMETISDualGraph::~ParMETISDualGraph()
 //-----------------------------------------------------------------------------
 #else
 void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
-                                 std::vector<std::size_t>& cell_partition,
+                                 std::vector<int>& cell_partition,
                                  std::map<std::size_t,
                                  dolfin::Set<unsigned int>>& ghost_procs,
                                  const LocalMeshData& data,

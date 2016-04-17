@@ -26,6 +26,7 @@
 #ifndef __LOCAL_MESH_DATA_H
 #define __LOCAL_MESH_DATA_H
 
+#include <cstdint>
 #include <map>
 #include <vector>
 #include <boost/multi_array.hpp>
@@ -88,40 +89,40 @@ namespace dolfin
     void unpack_vertex_coordinates(const std::vector<double>& values);
 
     // Unpack received cell vertices
-    void unpack_cell_vertices(const std::vector<std::size_t>& values);
+    void unpack_cell_vertices(const std::vector<std::int64_t>& values);
 
     // Coordinates for all vertices stored on local processor
     boost::multi_array<double, 2> vertex_coordinates;
 
     // Global vertex indices for all vertices stored on local processor
-    std::vector<std::size_t> vertex_indices;
+    std::vector<std::int64_t> vertex_indices;
 
     // Global vertex indices for all cells stored on local processor
-    boost::multi_array<std::size_t, 2> cell_vertices;
+    boost::multi_array<std::int64_t, 2> cell_vertices;
 
     // Global cell numbers for all cells stored on local processor
-    std::vector<std::size_t> global_cell_indices;
+    std::vector<std::int64_t> global_cell_indices;
 
     // Optional process owner for each cell in global_cell_indices
-    std::vector<std::size_t> cell_partition;
+    std::vector<int> cell_partition;
 
     // Optional weight for each cell for partitioning
     std::vector<std::size_t> cell_weight;
 
     // Global number of vertices
-    std::size_t num_global_vertices;
+    std::int64_t num_global_vertices;
 
     // Global number of cells
-    std::size_t num_global_cells;
+    std::int64_t num_global_cells;
 
     // Number of vertices per cell
-    std::size_t num_vertices_per_cell;
+    int num_vertices_per_cell;
 
     // Geometrical dimension
-    std::size_t gdim;
+    int gdim;
 
     // Topological dimension
-    std::size_t tdim;
+    int tdim;
 
     // Cell type
     // FIXME: this should replace the need for num_vertices_per_cell and tdim
@@ -129,8 +130,7 @@ namespace dolfin
 
     // Mesh domain data [dim](line, (cell_index, local_index, value))
     std::map<std::size_t, std::vector<std::pair<std::pair<std::size_t,
-      std::size_t>, std::size_t> > >
-        domain_data;
+      std::size_t>, std::size_t>>> domain_data;
 
     // Return MPI communicator
     MPI_Comm mpi_comm() const
@@ -138,8 +138,7 @@ namespace dolfin
 
   private:
 
-    // MPI communicator. It is stored because it is used on some
-    // Zoltan call-back functions.
+    // MPI communicator
     MPI_Comm _mpi_comm;
 
   };

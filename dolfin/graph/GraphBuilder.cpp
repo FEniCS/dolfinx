@@ -179,7 +179,7 @@ void GraphBuilder::compute_local_dual_graph(
   Timer timer("Compute local part of mesh dual graph");
 
   // List of cell vertices
-  const boost::multi_array<std::size_t, 2>& cell_vertices
+  const boost::multi_array<std::int64_t, 2>& cell_vertices
     = mesh_data.cell_vertices;
 
   const std::size_t tdim = mesh_data.tdim;
@@ -266,7 +266,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(
   std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
 
   // List of cell vertices
-  const boost::multi_array<std::size_t, 2>& cell_vertices
+  const boost::multi_array<std::int64_t, 2>& cell_vertices
     = mesh_data.cell_vertices;
   const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
   const std::size_t num_vertices_per_cell = cell_type->num_entities(0);
