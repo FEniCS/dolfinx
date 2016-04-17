@@ -246,16 +246,12 @@ namespace dolfin
   // Specialisations for MPI_Datatypes
   template<> inline MPI_Datatype MPI::mpi_type<float>() { return MPI_FLOAT; }
   template<> inline MPI_Datatype MPI::mpi_type<double>() { return MPI_DOUBLE; }
-  template<> inline MPI_Datatype MPI::mpi_type<short int>()
-  { return MPI_SHORT; }
+  template<> inline MPI_Datatype MPI::mpi_type<short int>() { return MPI_SHORT; }
   template<> inline MPI_Datatype MPI::mpi_type<int>() { return MPI_INT; }
   template<> inline MPI_Datatype MPI::mpi_type<long int>() { return MPI_LONG; }
-  template<> inline MPI_Datatype MPI::mpi_type<unsigned int>()
-  { return MPI_UNSIGNED; }
-  template<> inline MPI_Datatype MPI::mpi_type<unsigned long int>()
-  { return MPI_UNSIGNED_LONG; }
-  template<> inline MPI_Datatype MPI::mpi_type<long long>()
-  { return MPI_LONG_LONG; }
+  template<> inline MPI_Datatype MPI::mpi_type<unsigned int>() { return MPI_UNSIGNED; }
+  template<> inline MPI_Datatype MPI::mpi_type<unsigned long int>() { return MPI_UNSIGNED_LONG; }
+  template<> inline MPI_Datatype MPI::mpi_type<long long>() { return MPI_LONG_LONG; }
   #endif
   //---------------------------------------------------------------------------
   template<typename T>

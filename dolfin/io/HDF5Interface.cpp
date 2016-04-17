@@ -211,7 +211,6 @@ HDF5Interface::list_attributes(const hid_t hdf5_file_handle,
   dolfin_assert(dset_id != HDF5_FAIL);
 
   hsize_t n = 0;
-
   std::vector<std::string> out_string;
   herr_t status = H5Aiterate2(dset_id, H5_INDEX_NAME, H5_ITER_INC, &n,
                               attribute_iteration_function,
@@ -321,8 +320,8 @@ void HDF5Interface::add_group(const hid_t hdf5_file_handle,
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
-                                        const std::string dataset_name)
+int HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
+                                const std::string dataset_name)
 {
   // Open dataset
   const hid_t dset_id = H5Dopen2(hdf5_file_handle, dataset_name.c_str(),
@@ -346,7 +345,7 @@ std::size_t HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
   return rank;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t>
+std::vector<std::int64_t>
 HDF5Interface::get_dataset_shape(const hid_t hdf5_file_handle,
                                  const std::string dataset_name)
 {
@@ -375,11 +374,11 @@ HDF5Interface::get_dataset_shape(const hid_t hdf5_file_handle,
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  return std::vector<std::size_t>(size.begin(), size.end());
+  return std::vector<std::int64_t>(size.begin(), size.end());
 }
 //-----------------------------------------------------------------------------
-std::size_t HDF5Interface::num_datasets_in_group(const hid_t hdf5_file_handle,
-                                                 const std::string group_name)
+int HDF5Interface::num_datasets_in_group(const hid_t hdf5_file_handle,
+                                         const std::string group_name)
 {
   // Get group info by name
   H5G_info_t group_info;

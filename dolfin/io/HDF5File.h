@@ -211,7 +211,7 @@ namespace dolfin
     template <typename T>
     void write_data(const std::string dataset_name,
                     const std::vector<T>& data,
-                    const std::vector<std::size_t> global_size,
+                    const std::vector<std::int64_t> global_size,
                     bool use_mpi_io);
 
     // HDF5 file descriptor/handle
@@ -226,7 +226,7 @@ namespace dolfin
   template <typename T>
   void HDF5File::write_data(const std::string dataset_name,
                             const std::vector<T>& data,
-                            const std::vector<std::size_t> global_size,
+                            const std::vector<std::int64_t> global_size,
                             bool use_mpi_io)
   {
     dolfin_assert(_hdf5_file_id > 0);

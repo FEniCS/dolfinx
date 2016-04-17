@@ -22,6 +22,7 @@
 
 #ifdef HAS_HDF5
 
+#include <cstdint>
 #include <vector>
 #include <string>
 
@@ -67,8 +68,8 @@ namespace dolfin
     static void write_dataset(const hid_t file_handle,
                               const std::string dataset_name,
                               const std::vector<T>& data,
-                              const std::pair<std::size_t, std::size_t> range,
-                              const std::vector<std::size_t> global_size,
+                              const std::pair<std::int64_t, std::int64_t> range,
+                              const std::vector<std::int64_t> global_size,
                               bool use_mpio, bool use_chunking);
 
     /// Read data from a HDF5 dataset "dataset_name" as defined by
@@ -77,7 +78,7 @@ namespace dolfin
     template <typename T>
     static void read_dataset(const hid_t file_handle,
                              const std::string dataset_name,
-                             const std::pair<std::size_t, std::size_t> range,
+                             const std::pair<std::int64_t, std::int64_t> range,
                              std::vector<T>& data);
 
     /// Check for existence of group in HDF5 file
@@ -93,15 +94,15 @@ namespace dolfin
                           const std::string dataset_name);
 
     /// Get dataset rank
-    static std::size_t dataset_rank(const hid_t hdf5_file_handle,
-                                    const std::string dataset_name);
+    static int dataset_rank(const hid_t hdf5_file_handle,
+                            const std::string dataset_name);
 
     /// Return number of data sets in a group
-    static std::size_t num_datasets_in_group(const hid_t hdf5_file_handle,
-                                             const std::string group_name);
+    static int num_datasets_in_group(const hid_t hdf5_file_handle,
+                                     const std::string group_name);
 
     /// Get dataset shape (size of each dimension)
-    static std::vector<std::size_t>
+    static std::vector<std::int64_t>
     get_dataset_shape(const hid_t hdf5_file_handle,
                       const std::string dataset_name);
 
@@ -184,11 +185,17 @@ namespace dolfin
   };
 
   //---------------------------------------------------------------------------
+  template <> inline hid_t HDF5Interface::hdf5_type<float>()
+  { return H5T_NATIVE_FLOAT; }
+  //---------------------------------------------------------------------------
   template <> inline hid_t HDF5Interface::hdf5_type<double>()
   { return H5T_NATIVE_DOUBLE; }
   //---------------------------------------------------------------------------
   template <> inline hid_t HDF5Interface::hdf5_type<int>()
   { return H5T_NATIVE_INT; }
+  //---------------------------------------------------------------------------
+  template <> inline hid_t HDF5Interface::hdf5_type<std::int64_t>()
+  { return H5T_NATIVE_INT64; }
   //---------------------------------------------------------------------------
   template <> inline hid_t HDF5Interface::hdf5_type<std::size_t>()
   {
@@ -203,16 +210,13 @@ namespace dolfin
     return 0;
   }
   //---------------------------------------------------------------------------
-  template <> inline hid_t HDF5Interface::hdf5_type<int64_t>()
-  { return H5T_NATIVE_INT64; }
-  //---------------------------------------------------------------------------
   template <typename T>
   inline void
   HDF5Interface::write_dataset(const hid_t file_handle,
                                const std::string dataset_name,
                                const std::vector<T>& data,
-                               const std::pair<std::size_t,std::size_t> range,
-                               const std::vector<std::size_t> global_size,
+                               const std::pair<std::int64_t, std::int64_t> range,
+                               const std::vector<int64_t> global_size,
                                bool use_mpi_io, bool use_chunking)
   {
     // Data rank
@@ -330,8 +334,8 @@ namespace dolfin
   inline void
   HDF5Interface::read_dataset(const hid_t file_handle,
                               const std::string dataset_name,
-                              const std::pair<std::size_t, std::size_t> range,
-                              std::vector<T>& xdata)
+                              const std::pair<std::int64_t, std::int64_t> range,
+                              std::vector<T>& data)
   {
     std::cout << "Datset name: " << dataset_name << std::endl;
 
@@ -386,22 +390,16 @@ namespace dolfin
     dolfin_assert (memspace != HDF5_FAIL);
 
     // Resize local data to read into
-    std::vector<int> data;
     std::size_t data_size = 1;
     for (std::size_t i = 0; i < count.size(); ++i)
       data_size *= count[i];
     data.resize(data_size);
-    std::cout << "Data size: " << data_size << std::endl;
-
 
     // Read data on each process
-    //const hid_t h5type = hdf5_type<T>();
-    const hid_t h5type = hdf5_type<int>();
+    const hid_t h5type = hdf5_type<T>();
     status = H5Dread(dset_id, h5type, memspace, dataspace, H5P_DEFAULT,
                      data.data());
     dolfin_assert(status != HDF5_FAIL);
-
-    xdata.assign(data.begin(), data.end());
 
     // Close dataspace
     status = H5Sclose(dataspace);

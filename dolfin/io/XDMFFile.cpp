@@ -343,7 +343,7 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
   }
 
   const bool mpi_io = MPI::size(mesh.mpi_comm()) > 1 ? true : false;
-  std::vector<std::size_t> global_size(2);
+  std::vector<std::int64_t> global_size(2);
   global_size[1] = padded_value_size;
 
   std::size_t num_global_points = mesh.size_global(0);
