@@ -671,12 +671,14 @@ void XDMFFile::read(Mesh& mesh, UseFilePartition use_file_partition)
     std::cout << "topology: " << topology.hdf5_filename << std::endl;
     boost::filesystem::path xdmf_path(_filename);
     boost::filesystem::path hdf5_path(topology.hdf5_filename);
-    HDF5File mesh_file(_mpi_comm, (xdmf_path.parent_path()
-                                   / hdf5_path).string(), "r");
+    HDF5File mesh_file(_mpi_comm, (xdmf_path.parent_path() / hdf5_path).string(), "r");
 
     // Read the mesh from the associated HDF5 file
     mesh_file.read(mesh, topology.hdf5_dataset, geometry.hdf5_dataset,
-                   gdim, *cell_type, static_cast<bool>(use_file_partition));
+                   gdim, *cell_type,
+                   topology.num_cells,
+                   geometry.num_points,
+                   static_cast<bool>(use_file_partition));
 #else
     dolfin_error("XDMFile.cpp", "open Mesh file", "Need HDF5 support");
 #endif

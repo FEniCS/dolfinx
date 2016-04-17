@@ -534,6 +534,6 @@ std::array<std::string, 2> XDMFxml::get_hdf5_paths(const pugi::xml_node& xml_nod
   boost::split(paths, path, boost::is_any_of(":"));
   dolfin_assert(paths.size() == 2);
 
-  return {paths[0], paths[1]};
+  return {{paths[0], paths[1]}};
 }
 //-----------------------------------------------------------------------------

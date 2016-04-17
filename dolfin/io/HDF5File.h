@@ -100,15 +100,28 @@ namespace dolfin
     /// from that Vector
     void read(Function& u, const std::string name);
 
-    /// Read Mesh from file and optionally re-use any partition data
-    /// in the file
-    void read(Mesh& mesh, const std::string name,
+    /// Read Mesh from file, using attribute data (e.g., cell type) stored
+    /// in the HDF5 file. Optionally re-use any partition data
+    /// in the file. This function requires all necessary data for
+    /// constructing a Mesh to be present in the HDF5 file.
+    void read(Mesh& mesh, const std::string data_path,
               bool use_partition_from_file) const;
 
-    /// Read in Mesh with given topology and geometry datasets
-    void read(Mesh& input_mesh, const std::string topology_name,
-              const std::string geometry_name,
-              int gdim , const CellType& cell_type,
+    /// Construct Mesh with paths to topology and geometry datasets, and
+    /// providing essential meta-data, e.g. geometric dimension and
+    /// cell type. If this data is available in the HDF5 file, it will
+    /// be checked for consistency. Set expected_num_global_cells to a
+    /// negative value if not known.
+    ///
+    /// This function is typically called when using the XDMF format,
+    /// in which case the meta data has alreayd been read from an XML
+    /// file
+    void read(Mesh& input_mesh,
+              const std::string topology_path,
+              const std::string geometry_path,
+              const int gdim , const CellType& cell_type,
+              const std::int64_t expected_num_global_cells,
+              const std::int64_t expected_num_global_points,
               bool use_partition_from_file) const;
 
     /// Write MeshFunction to file in a format suitable for re-reading

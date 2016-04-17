@@ -262,6 +262,8 @@ void HDF5File::write(const Mesh& mesh, const std::string name)
 void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
                      const std::string name)
 {
+  // FIXME: break up this function
+
   Timer t0("HDF5: write mesh to file");
 
   const std::size_t tdim = mesh.topology().dim();
@@ -1699,40 +1701,77 @@ void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
   }
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(Mesh& input_mesh, const std::string mesh_name,
+void HDF5File::read(Mesh& input_mesh, const std::string data_path,
                     bool use_partition_from_file) const
 {
-  error("HDF5File::read needs fixing to pass gdim and celltype");
-  /*
   dolfin_assert(_hdf5_file_id > 0);
 
-  const std::string topology_name = mesh_name + "/topology";
-  if (!HDF5Interface::has_dataset(_hdf5_file_id, topology_name))
+  // Check that topology data set is found in HDF5 file
+  const std::string topology_path = data_path + "/topology";
+  if (!HDF5Interface::has_dataset(_hdf5_file_id, topology_path))
   {
     dolfin_error("HDF5File.cpp",
                  "read topology dataset",
-                 "Dataset \"%s\" not found", topology_name.c_str());
+                 "Dataset \"%s\" not found", topology_path.c_str());
   }
 
-  const std::string geometry_name = mesh_name + "/coordinates";
-  if (!HDF5Interface::has_dataset(_hdf5_file_id, geometry_name))
+  // Get topology data
+  std::string cell_type_str;
+  if (HDF5Interface::has_attribute(_hdf5_file_id, topology_path, "celltype"))
+  {
+    HDF5Interface::get_attribute(_hdf5_file_id, topology_path, "celltype",
+                                 cell_type_str);
+  }
+
+  // Create CellType from string
+  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
+  dolfin_assert(cell_type);
+
+  // Check that coordinate data set is found in HDF5 file
+  const std::string geometry_path = data_path + "/coordinates";
+  if (!HDF5Interface::has_dataset(_hdf5_file_id, geometry_path))
   {
     dolfin_error("HDF5File.cpp",
                  "read coordinates dataset",
-                 "Dataset \"%s\" not found", geometry_name.c_str());
+                 "Dataset \"%s\" not found", geometry_path.c_str());
   }
 
-  const std::string cell_type("unknown");
-  read(input_mesh, topology_name, geometry_name, gdim, cell_type,
+  // Get dimensions of coordinate dataset
+  std::vector<std::int64_t> coords_shape
+    = HDF5Interface::get_dataset_shape(_hdf5_file_id, geometry_path);
+  dolfin_assert(coords_shape.size() < 3);
+  if (coords_shape.size() == 1)
+  {
+    dolfin_error("HDF5File.cpp",
+                 "get geometric dimension",
+                 "Cannot determine geometric dimension from one-dimensional array storage in HDF5 file");
+  }
+  else if (coords_shape.size() > 2)
+  {
+    dolfin_error("HDF5File.cpp",
+                 "get geometric dimension",
+                 "Cannot determine geometric dimension from high-rank array storage in HDF5 file");
+  }
+
+  // Extract geometric dimension
+  int gdim = coords_shape[1];
+
+  // Build mesh from data in HDF5 file
+  read(input_mesh, topology_path, geometry_path, gdim, *cell_type, -1,
+       coords_shape[0],
        use_partition_from_file);
-  */
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
-                    const std::string geometry_name, int gdim,
-                    const CellType& cell_type,
+void HDF5File::read(Mesh& input_mesh,
+                    const std::string topology_path,
+                    const std::string geometry_path,
+                    const int gdim, const CellType& cell_type,
+                    const std::int64_t expected_num_global_cells,
+                    const std::int64_t expected_num_global_points,
                     bool use_partition_from_file) const
 {
+  // FIXME: This function is too big. Split up.
+
   Timer t("HDF5: read mesh");
   dolfin_assert(_hdf5_file_id > 0);
 
@@ -1754,26 +1793,24 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
   std::vector<std::int64_t> topology_shape
     = HDF5Interface::get_dataset_shape(_hdf5_file_id, topology_path);
 
-  // FIXME: This is bad. If there is conflict between the XDMF and the
-  // HDF5 cell type, there should be an error.  FIXME: Why would we
-  // want the cell type in the HDF5 anyway?
+  // If cell type is encoded in HDF5, then check for consistency with cell
+  // type passed into this function
+  if (HDF5Interface::has_attribute(_hdf5_file_id, topology_path, "celltype"))
+  {
+    std::string cell_type_str;
+    HDF5Interface::get_attribute(_hdf5_file_id, topology_path, "celltype",
+                                 cell_type_str);
+    if (cell_type.cell_type() != CellType:: string2type(cell_type_str))
+    {
+      dolfin_error("HDF5File.cpp",
+                   "read topology data",
+                   "Inconsistency between expected cell type and cell type attribie in HDF file");
 
-  // If cell type is encoded in HDF5, then use that, otherwise fall
-  // back to known_cell_type
-  //std::string cell_type_str(known_cell_type);
-  //if (HDF5Interface::has_attribute(_hdf5_file_id, topology_path, "celltype"))
-  //{
-  //  HDF5Interface::get_attribute(_hdf5_file_id, topology_path, "celltype",
-  //                               cell_type_str);
-  //}
-  //std::cout << "Cell type string: " << cell_type_str << std::endl;
+    }
+  }
 
-  // Create CellType
-  //std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
-
-  // Handle case that topology may be arranged a 1D or 2D array
-
-  // Compute number of global cells
+  // Compute number of global cells (handle case that topology may be
+  // arranged a 1D or 2D array)
   std::size_t num_global_cells = 0;
   if (topology_shape.size() == 1)
   {
@@ -1797,12 +1834,22 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
                  "Topology in HDF5 file has wrong shape");
   }
 
-  // Store number of global cells
+  // Check number of cells (global)
+  if (expected_num_global_cells >= 0)
+  {
+    // Check number of cells for consistency with expected number of cells
+    if (num_global_cells != expected_num_global_cells)
+    {
+      dolfin_error("HDF5File.cpp",
+                   "read cell data",
+                   "Inconsistentcy between expected number of cells and number of cells in topology in HDF5 file");
+    }
+  }
+
+  // Set number of cells (global)
   local_mesh_data.num_global_cells = num_global_cells;
 
-  // FIXME: Add check that number of cells is consistent with XDMF
-  // file
-
+  // FIXME: 'partition' is a poor descriptor
   // Get partition from file, if available
   std::vector<std::size_t> cell_partitions;
   if (HDF5Interface::has_attribute(_hdf5_file_id, topology_path, "partition"))
@@ -1811,7 +1858,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
                                  cell_partitions);
   }
 
-  // Compute range of cells to read on this process
+  // Prepare range of cells to read on this process
   std::pair<std::size_t, std::size_t> cell_range;
 
   // Check whether number of MPI processes matches partitioning, and
@@ -1838,7 +1885,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
     cell_range = MPI::local_range(_mpi_comm, num_global_cells);
   }
 
-  // Get number of local cells to read
+  // Get number of cells to read on this process
   const int num_local_cells = cell_range.second - cell_range.first;
 
   // Modify range of array to read for flat HDF5 storage
@@ -1878,29 +1925,29 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
               cell_range.first);
   }
 
+  // FIXME: allocate multi_array data and pass to HDFr read function
+  // to avoid copy
   // Copy to boost::multi_array
-  std::cout << "Copy data to multi_array" << std::endl;
   local_mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
   boost::multi_array_ref<std::int64_t, 2>
     topology_data_array(topology_data.data(),
                         boost::extents[num_local_cells][num_vertices_per_cell]);
 
-  // Remap vertices to DOLFIN ordering from VTK/XDMF
+  // Remap vertices to DOLFIN ordering from VTK/XDMF ordering
   const std::vector<unsigned int> perm = cell_type.vtk_mapping();
   for (int i = 0; i != num_local_cells; ++i)
   {
     for (int j = 0; j != num_vertices_per_cell; ++j)
       local_mesh_data.cell_vertices[i][j] = topology_data_array[i][perm[j]];
   }
-  std::cout << "End re-map vertices" << std::endl;
 
   // --- Coordinates ---
 
   // Get dimensions of coordinate dataset
   std::vector<std::int64_t> coords_shape
-    = HDF5Interface::get_dataset_shape(_hdf5_file_id, geometry_name);
+    = HDF5Interface::get_dataset_shape(_hdf5_file_id, geometry_path);
 
-  std::cout << "Set sizes for vertices" << std::endl;
+  // Compute number of vertcies
   if (coords_shape.size() == 1)
   {
     dolfin_assert(coords_shape[0] % gdim == 0);
@@ -1918,7 +1965,19 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
                  "Topology in HDF5 file has wrong shape");
   }
 
-  // Divide range into equal blocks for each process
+  // Check number of vertices (global) against expected number
+  if (expected_num_global_points >= 0)
+  {
+    // Check number of cells for consistency with expected number of cells
+    if (local_mesh_data.num_global_vertices != expected_num_global_points)
+    {
+      dolfin_error("HDF5File.cpp",
+                   "read vertex data",
+                   "Inconsistentcy between expected number of vertices and number of vertices in geometry in HDF5 file");
+    }
+  }
+
+  // Divide point range into equal blocks for each process
   std::pair<std::size_t, std::size_t> vertex_range
     = MPI::local_range(_mpi_comm, local_mesh_data.num_global_vertices);
   const std::size_t num_local_vertices
@@ -1936,7 +1995,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
   {
     std::vector<double> coordinates_data;
     coordinates_data.reserve(num_local_vertices*gdim);
-    HDF5Interface::read_dataset(_hdf5_file_id, geometry_name, vertex_data_range,
+    HDF5Interface::read_dataset(_hdf5_file_id, geometry_path, vertex_data_range,
                                 coordinates_data);
 
     // Copy to boost::multi_array
@@ -1966,8 +2025,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
   // Check if we have any domains
   for (std::size_t d = 0; d <= input_mesh.topology().dim(); ++d)
   {
-    const std::string marker_dataset = mesh_name + "/domain_"
-      + std::to_string(d);
+    const std::string marker_dataset = mesh_name + "/domain_" + std::to_string(d);
     if (!has_dataset(marker_dataset))
       continue;
 
@@ -1982,12 +2040,10 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
     // Get mesh domain data and fill
     std::map<std::size_t, std::size_t>& markers
       = input_mesh.domains().markers(d);
-    std::map<std::pair<std::size_t, std::size_t>,
-             std::size_t>::const_iterator entry;
     if (d != input_mesh.topology().dim())
     {
       input_mesh.init(d);
-      for (entry = values.begin(); entry != values.end(); ++entry)
+      for (auto entry = values.begin(); entry != values.end(); ++entry)
       {
         const Cell cell(input_mesh, entry->first.first);
         const std::size_t entity_index
@@ -1998,7 +2054,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
     else
     {
       // Special case for cells
-      for (entry = values.begin(); entry != values.end(); ++entry)
+      for (auto entry = values.begin(); entry != values.end(); ++entry)
         markers[entry->first.first] = entry->second;
     }
   }
