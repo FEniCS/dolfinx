@@ -22,28 +22,14 @@ import ufl
 from six.moves import xrange as range
 import os
 
-display = os.environ.get("DISPLAY")
-noplot = os.environ.get("DOLFIN_NOPLOT", "0") != "0"
-
 try:
-    # Avoid interactive backend (such as TkAgg) on headless machine
-    if not display or noplot:
-        import matplotlib
-        try:
-            matplotlib.use("Agg")
-        except ValueError as e:
-            raise ImportError(str(e))
-    # Import pyplot and 3D plotting extension
+    parameters['plotting_backend'] = 'matplotlib'
+except RuntimeError:
+    print("This demo requires matplotlib! Bye.")
+    exit()
+else:
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import axes3d
-except ImportError as e:
-    print("Import of matplotlib failed with the message:")
-    print('"%s"' % str(e))
-    print()
-    print("Please, make sure matplotlib is installed. Bye!")
-    exit()
-
-parameters['plotting_backend'] = 'matplotlib'
 
 
 def plot_alongside(*args, **kwargs):
@@ -57,6 +43,10 @@ def plot_alongside(*args, **kwargs):
     for i in range(n):
         plt.subplot(1, n, i+1, projection=projection)
         p = plot(args[i], **kwargs)
+
+    # This happens if DOLFIN_NOPLOT=1
+    if p is None:
+        return
 
     plt.tight_layout()
 
@@ -137,4 +127,6 @@ def main(argv=None):
 
 if __name__ == '__main__':
     import sys
+    print("This demo needs updating to respect the DOLFIN_NOPLOT evironment variable")
+    exit(0)
     main(sys.argv)

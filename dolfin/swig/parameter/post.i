@@ -41,6 +41,8 @@ def warn_once(self, msg):
         print(msg)
 
 def value(self):
+    if not self.is_set():
+        return None
     val_type = self.type_str()
     if val_type == "string":
         return str(self)
@@ -100,7 +102,7 @@ def data(self):
         PyObject *o = PyList_GetItem(op,i);
 %#if PY_VERSION_HEX>=0x03000000
         if (PyUnicode_Check(o))
-%#else  
+%#else
         if (PyString_Check(o))
 %#endif
         {
@@ -213,11 +215,13 @@ def update(self, other):
     if not isinstance(other,(Parameters, dict)):
         raise TypeError("expected a 'dict' or a '%s'"%Parameters.__name__)
     for key, other_value in other.items():
-        self_value  = self[key]
-        if isinstance(self_value, Parameters):
+        # Check is self[key] is a Parameter or a parameter set (Parameters)
+        if self.has_parameter_set(key):
+            self_value  = self[key]
             self_value.update(other_value)
         else:
             self.__setitem__(key, other_value)
+
 
 def to_dict(self):
     """Convert the Parameters to a dict"""
@@ -367,4 +371,3 @@ std::shared_ptr<dolfin::Parameters> get_global_parameters()
 //parameters = _common.get_global_parameters()
 //del _common.get_global_parameters
 //%}
-

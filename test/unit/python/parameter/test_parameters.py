@@ -140,4 +140,5 @@ def test_solver_parameters():
     assert krylov_solver.parameters["absolute_tolerance"] == 1.23456
 
     # Reset parameters so that other tests will continue to work
-    parameters["krylov_solver"]["absolute_tolerance"] = absolute_tolerance
+    if absolute_tolerance is not None:
+        parameters["krylov_solver"]["absolute_tolerance"] = absolute_tolerance

@@ -21,9 +21,9 @@
 #ifndef __VTK_WRITER_H
 #define __VTK_WRITER_H
 
+#include <cstdint>
 #include <string>
 #include <vector>
-#include <boost/cstdint.hpp>
 #include "Encoder.h"
 
 namespace dolfin
@@ -75,7 +75,7 @@ namespace dolfin
                                   std::string file, bool compress);
 
     // Get VTK cell type
-    static boost::uint8_t vtk_cell_type(const Mesh& mesh, std::size_t cell_dim);
+    static std::uint8_t vtk_cell_type(const Mesh& mesh, std::size_t cell_dim);
 
     // Compute base64 encoded stream for VTK
     template<typename T>
@@ -113,7 +113,7 @@ namespace dolfin
   {
     std::stringstream stream;
 
-    const boost::uint32_t size = data.size()*sizeof(T);
+    const std::uint32_t size = data.size()*sizeof(T);
     Encoder::encode_base64(&size, 1, stream);
     Encoder::encode_base64(data, stream);
 
@@ -127,24 +127,24 @@ namespace dolfin
   {
     std::stringstream stream;
 
-    boost::uint32_t header[4];
+    std::uint32_t header[4];
     header[0] = 1;
     header[1] = data.size()*sizeof(T);
     header[2] = 0;
 
     // Compress data
-    std::pair<boost::shared_array<unsigned char>, std::size_t>
-      compressed_data = Encoder::compress_data(data);
+    std::vector<unsigned char> compressed_data
+      = Encoder::compress_data(data);
 
     // Length of compressed data
-    header[3] = compressed_data.second;
+    header[3] = compressed_data.size();
 
     // Encode header
     Encoder::encode_base64(&header[0], 4, stream);
 
     // Encode data
-    Encoder::encode_base64(compressed_data.first.get(),
-                           compressed_data.second, stream);
+    Encoder::encode_base64(compressed_data.data(),
+                           compressed_data.size(), stream);
 
     return stream.str();
   }

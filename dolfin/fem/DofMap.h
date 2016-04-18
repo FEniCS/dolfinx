@@ -241,6 +241,18 @@ namespace dolfin
     void tabulate_entity_dofs(std::vector<std::size_t>& dofs,
                               std::size_t dim, std::size_t local_entity) const;
 
+    /// Tabulate globally supported dofs
+    ///
+    /// *Arguments*
+    ///     dofs (std::size_t)
+    ///         Degrees of freedom.
+    void tabulate_global_dofs(std::vector<std::size_t>& dofs) const
+    {
+      dolfin_assert(_global_nodes.empty() || block_size() == 1);
+      dofs.resize(_global_nodes.size());
+      std::copy(_global_nodes.cbegin(), _global_nodes.cend(), dofs.begin());
+    }
+
     /// Create a copy of the dof map
     ///
     /// *Returns*
@@ -370,6 +382,9 @@ namespace dolfin
 
     // Cell-local-to-dof map (dofs for cell dofmap[i])
     std::vector<dolfin::la_index> _dofmap;
+
+    // List of global nodes
+    std::set<std::size_t> _global_nodes;
 
     // Cell dimension (fixed for all cells)
     std::size_t _cell_dimension;

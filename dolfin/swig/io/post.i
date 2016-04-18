@@ -111,4 +111,28 @@ def __exit__(self, type, value, traceback) :
     self.close()
 %}
 }
+
+%extend dolfin::X3DOMParameters
+{
+%pythoncode %{
+def set_color_map(self, colormap):
+    if (isinstance(colormap, str)):
+        # If we are given a string, try to load the corresponding matplotlib cmap
+        try:
+            import matplotlib.cm
+            import numpy
+            mpl_cmap = matplotlib.cm.get_cmap(colormap)
+            # Flatten colormap to simple list
+            cmap_data = [val for s in [list(mpl_cmap(i)[:3]) for i in range(256)] for val in s]
+            self._set_color_map(numpy.array(cmap_data, dtype='double'))
+        except:
+            # FIXME: raise error or print warning
+            pass
+    else:
+        # Not a string - assume user has supplied valid cmap data as an array
+        self._set_color_map(colormap)
+%}
+}
+
+
 #endif

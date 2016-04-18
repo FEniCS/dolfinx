@@ -55,7 +55,7 @@ namespace dolfin
     double volume(const MeshEntity& triangle) const;
 
     /// Compute diameter of triangle
-    double diameter(const MeshEntity& triangle) const;
+    double circumradius(const MeshEntity& triangle) const;
 
     /// Compute squared distance to given point (3D enabled)
     double squared_distance(const Cell& cell, const Point& point) const;

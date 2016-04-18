@@ -103,7 +103,8 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
   }
 
   // Read function data from file
-  File file(filename);
+  MPI_Comm comm = _function_space->mesh()->mpi_comm();
+  File file(comm, filename);
   file >> *this;
 }
 //-----------------------------------------------------------------------------
@@ -164,7 +165,6 @@ const Function& Function::operator= (const Function& v)
       new_rows[i]   = entry->first;
       old_rows[i++] = entry->second;
     }
-    MPI::barrier(MPI_COMM_WORLD);
 
     // Gather values into a vector
     dolfin_assert(v.vector());
