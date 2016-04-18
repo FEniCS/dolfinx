@@ -1811,7 +1811,7 @@ void HDF5File::read(Mesh& input_mesh,
 
   // Compute number of global cells (handle case that topology may be
   // arranged a 1D or 2D array)
-  std::size_t num_global_cells = 0;
+  std::int64_t num_global_cells = 0;
   if (topology_shape.size() == 1)
   {
     dolfin_assert(topology_shape[0] % num_vertices_per_cell == 0);

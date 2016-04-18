@@ -312,7 +312,7 @@ void HDF5Utility::build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data)
   // Iterate over vertices and add to mesh
   editor.init_vertices_global(mesh_data.num_global_vertices,
                               mesh_data.num_global_vertices);
-  for (std::size_t i = 0; i < mesh_data.num_global_vertices; ++i)
+  for (std::int64_t i = 0; i < mesh_data.num_global_vertices; ++i)
   {
     const std::size_t index = mesh_data.vertex_indices[i];
     const std::vector<double> coords(mesh_data.vertex_coordinates[i].begin(),
@@ -325,7 +325,7 @@ void HDF5Utility::build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data)
   editor.init_cells_global(mesh_data.num_global_cells,
                            mesh_data.num_global_cells);
 
-  for (std::size_t i = 0; i < mesh_data.num_global_cells; ++i)
+  for (std::int64_t i = 0; i < mesh_data.num_global_cells; ++i)
   {
     const std::size_t index = mesh_data.global_cell_indices[i];
     const std::vector<std::size_t> v(mesh_data.cell_vertices[i].begin(),

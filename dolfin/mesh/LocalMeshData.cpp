@@ -317,7 +317,7 @@ LocalMeshData::unpack_cell_vertices(const std::vector<std::int64_t>& values)
   for (std::size_t i = 0; i < num_cells; i++)
   {
     global_cell_indices.push_back(values[k++]);
-    for (std::size_t j = 0; j < num_vertices_per_cell; j++)
+    for (int j = 0; j < num_vertices_per_cell; j++)
       cell_vertices[i][j] = values[k++];
   }
 
