@@ -32,6 +32,11 @@ else:
     from mpl_toolkits.mplot3d import axes3d
 
 
+rank = MPI.rank(mpi_comm_world())
+size = MPI.size(mpi_comm_world())
+suffix = "_r%s" % rank if size > 1 else ""
+
+
 def plot_alongside(*args, **kwargs):
     """Plot supplied functions in single figure with common colorbar.
     It is users responsibility to supply 'range_min' and 'range_max' in kwargs.
@@ -43,10 +48,6 @@ def plot_alongside(*args, **kwargs):
     for i in range(n):
         plt.subplot(1, n, i+1, projection=projection)
         p = plot(args[i], **kwargs)
-
-    # This happens if DOLFIN_NOPLOT=1
-    if p is None:
-        return
 
     plt.tight_layout()
 
@@ -90,15 +91,15 @@ def plot_1d_meshes():
     # FIXME: This passes fine in parallel although it's not obvious what does it do
     plt.figure()
     plot(interval_mesh(1, 30))
-    plt.savefig("mesh_1d.png")
+    plt.savefig("mesh_1d%s.png" % suffix)
 
     plt.figure()
     plot(interval_mesh(2, 100))
-    plt.savefig("mesh_2d.png")
+    plt.savefig("mesh_2d%s.png" % suffix)
 
     plt.figure()
     plot(interval_mesh(3, 100))
-    plt.savefig("mesh_3d.png")
+    plt.savefig("mesh_3d%s.png" % suffix)
 
 
 def plot_functions():
@@ -113,16 +114,17 @@ def plot_functions():
 
     plot_alongside(u, v, **r)
     plot_alongside(u, v, mode='color', **r)
-    plt.savefig("color_plot.pdf")
+    plt.savefig("color_plot%s.pdf" % suffix)
     plot_alongside(u, v, mode='warp', **r)
-    plt.savefig("warp_plot.pdf")
+    plt.savefig("warp_plot%s.pdf" % suffix)
     plot_alongside(u, v, v, mode='warp', **r)
 
 
 def main(argv=None):
     plot_1d_meshes()
     plot_functions()
-    plt.show()
+    if os.environ.get("DOLFIN_NOPLOT", "0") == "0":
+        plt.show()
 
 
 if __name__ == '__main__':
