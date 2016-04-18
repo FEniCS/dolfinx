@@ -181,6 +181,9 @@ namespace dolfin
 
   private:
 
+    // Write XML mesh
+    void write_xml(const Mesh& mesh) const;
+
     // Generic MeshFunction reader
     template<typename T>
     void read_mesh_function(MeshFunction<T>& meshfunction);

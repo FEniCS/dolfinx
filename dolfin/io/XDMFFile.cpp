@@ -48,6 +48,7 @@
 #include "HDF5Utility.h"
 #include "XDMFFile.h"
 #include "XDMFxml.h"
+#include "pugixml.hpp"
 
 using namespace dolfin;
 
@@ -774,6 +775,53 @@ void XDMFFile::read(MeshFunction<std::size_t>& meshfunction)
 void XDMFFile::read(MeshFunction<double>& meshfunction)
 {
   read_mesh_function(meshfunction);
+}
+//----------------------------------------------------------------------------
+void write_xml(const Mesh& mesh)
+{
+  // Create pugi doc
+  pugi::xml_document xml_doc;
+
+  // Add XDMF node and version attribute
+  pugi::xml_node xdmf_node = xml_doc.append_child("Xdmf");
+  dolfin_assert(xdmf_node);
+  xdmf_node.append_attribute("Version") = "2.0";
+
+  // Add domain node
+  pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+  dolfin_assert(domain_node);
+
+  // Add grid node and attributes
+  pugi::xml_node grid_node = domain_node.append_child("Grid");
+  dolfin_assert(grid_node);
+  grid_node.append_attribute("Name") = "mesh";
+  grid_node.append_attribute("GridType") = "Uniform";
+
+  // Add topology  node and attributes
+  pugi::xml_node topology_node = grid_node.append_child("Topology");
+  dolfin_assert(topology_node);
+  topology_node.append_attribute("NumberOfElements") = (int) mesh.num_cells();
+  topology_node.append_attribute("TopologyType") = "Triangle";
+  topology_node.append_attribute("NodesPerElement") = 3;
+
+  // Add topology DataItem node and attributes
+  pugi::xml_node topology_data_node = topology_node.append_child("DataItem");
+  dolfin_assert(topology_data_node);
+  topology_node.append_attribute("Format") = "XDMF";
+  const std::string tnum = std::to_string(mesh.num_cells()) + " " + std::to_string(3);
+  topology_node.append_attribute("Dimensions") = tnum.c_str();
+
+  // Add topology data
+  /*
+  std::stringstream ss;
+  for(size_t i = 0; i < v.size(); ++i)
+  {
+    if(i != 0)
+    ss << ",";
+    ss << v[i];
+  }
+  std::string s = ss.str();
+  */
 }
 //----------------------------------------------------------------------------
 template<typename T>
