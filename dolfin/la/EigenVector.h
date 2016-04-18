@@ -46,11 +46,14 @@ namespace dolfin
   {
   public:
 
-    /// Create empty vector
+    /// Create empty vector (on MPI_COMM_SELF)
     EigenVector();
 
+    /// Create empty vector
+    explicit EigenVector(MPI_Comm comm);
+
     /// Create vector of size N
-    explicit EigenVector(std::size_t N);
+    EigenVector(MPI_Comm comm, std::size_t N);
 
     /// Copy constructor
     EigenVector(const EigenVector& x);
@@ -71,7 +74,7 @@ namespace dolfin
 
     /// Return MPI communicator
     virtual MPI_Comm mpi_comm() const
-    { return MPI_COMM_SELF; }
+    { return _mpi_comm; }
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -84,13 +87,14 @@ namespace dolfin
     /// Initialize vector to size N
     virtual void init(MPI_Comm comm, std::size_t N)
     {
-      check_mpi_rank(comm);
+      check_mpi_size(comm);
       if (!empty())
       {
         dolfin_error("EigenVector.cpp",
                      "calling EigenVector::init(...)",
                      "Cannot call init for a non-empty vector. Use EigenVector::resize instead");
       }
+
       resize(N);
     }
 
@@ -98,7 +102,7 @@ namespace dolfin
     virtual void init(MPI_Comm comm,
                       std::pair<std::size_t, std::size_t> range)
     {
-      check_mpi_rank(comm);
+      check_mpi_size(comm);
       if (!empty())
       {
         dolfin_error("EigenVector.cpp",
@@ -117,7 +121,7 @@ namespace dolfin
                       const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index>& ghost_indices)
     {
-      check_mpi_rank(comm);
+      check_mpi_size(comm);
       if (!empty())
       {
         dolfin_error("EigenVector.cpp",
@@ -292,18 +296,21 @@ namespace dolfin
 
   private:
 
-    void check_mpi_rank(const MPI_Comm comm) const
+    static void check_mpi_size(const MPI_Comm comm)
     {
       if (dolfin::MPI::size(comm) > 1)
       {
         dolfin_error("EigenVector.cpp",
                      "creating EigenVector",
-                     "Distributed EigenVector is not supported");
+                     "EigenVector does not support parallel communicators");
       }
     }
 
     // Pointer to Eigen vector object
     std::shared_ptr<Eigen::VectorXd> _x;
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
 
   };
 
