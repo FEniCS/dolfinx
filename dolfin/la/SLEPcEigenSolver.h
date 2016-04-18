@@ -39,8 +39,8 @@ namespace dolfin
   class PETScMatrix;
   class PETScVector;
 
-  /// This class provides an eigenvalue solver for PETSc matrices.
-  /// It is a wrapper for the SLEPc eigenvalue solver.
+  /// This class provides an eigenvalue solver for PETSc matrices. It
+  /// is a wrapper for the SLEPc eigenvalue solver.
   ///
   /// The following parameters may be specified to control the solver.
   ///
@@ -55,14 +55,9 @@ namespace dolfin
   ///   "smallest real"       (eigenvalues with smallest double part)
   ///   "largest imaginary"   (eigenvalues with largest imaginary part)
   ///   "smallest imaginary"  (eigenvalues with smallest imaginary part)
-  ///
-  /// For SLEPc versions >= 3.1 , the following values are also possible
-  ///
   ///   "target magnitude"    (eigenvalues closest to target in magnitude)
   ///   "target real"         (eigenvalues closest to target in real part)
   ///   "target imaginary"    (eigenvalues closest to target in imaginary part)
-  ///
-  /// The default is "largest magnitude"
   ///
   /// 2. "solver"
   ///
@@ -77,14 +72,10 @@ namespace dolfin
   ///   "lapack"              (LAPACK, all values, direct, small systems only)
   ///   "arpack"              (ARPACK)
   ///
-  /// The default is "krylov-schur"
-  ///
   /// 3. "tolerance"
   ///
-  /// This parameter controls the tolerance used by SLEPc.
-  /// Possible values are positive double numbers.
-  ///
-  /// The default is 1e-15;
+  /// This parameter controls the tolerance used by SLEPc.  Possible
+  /// values are positive double numbers.
   ///
   /// 4. "maximum_iterations"
   ///
@@ -126,7 +117,6 @@ namespace dolfin
   /// This parameter controls the spectral shift used by the spectral
   /// transform and must be provided if a spectral transform is
   /// given. The possible values are real numbers.
-  ///
 
   class SLEPcEigenSolver : public Variable, public PETScObject
   {
@@ -212,17 +202,6 @@ namespace dolfin
     static Parameters default_parameters()
     {
       Parameters p("slepc_eigenvalue_solver");
-      /*
-      p.add("problem_type",       "default");
-      p.add("spectrum",           "largest magnitude");
-      p.add("solver",             "krylov-schur");
-      p.add("tolerance",          1e-15);
-      p.add("maximum_iterations", 10000);
-      p.add("spectral_transform", "default");
-      p.add("spectral_shift",     0.0);
-      p.add("verbose",            false);
-      */
-
       p.add<std::string>("problem_type");
       p.add<std::string>("spectrum");
       p.add<std::string>("solver");

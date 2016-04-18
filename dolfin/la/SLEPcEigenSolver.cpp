@@ -441,17 +441,20 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
   else if (spectrum == "target magnitude")
   {
     EPSSetWhichEigenpairs(_eps, EPS_TARGET_MAGNITUDE);
-    EPSSetTarget(_eps, parameters["spectral_shift"]);
+    if (parameters["spectral_shift"].is_set())
+      EPSSetTarget(_eps, parameters["spectral_shift"]);
   }
   else if (spectrum == "target real")
   {
     EPSSetWhichEigenpairs(_eps, EPS_TARGET_REAL);
-    EPSSetTarget(_eps, parameters["spectral_shift"]);
+    if (parameters["spectral_shift"].is_set())
+      EPSSetTarget(_eps, parameters["spectral_shift"]);
   }
   else if (spectrum == "target imaginary")
   {
     EPSSetWhichEigenpairs(_eps, EPS_TARGET_IMAGINARY);
-    EPSSetTarget(_eps, parameters["spectral_shift"]);
+    if (parameters["spectral_shift"].is_set())
+      EPSSetTarget(_eps, parameters["spectral_shift"]);
   }
   else
   {
