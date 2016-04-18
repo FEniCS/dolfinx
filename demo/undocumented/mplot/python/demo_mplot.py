@@ -129,6 +129,4 @@ def main(argv=None):
 
 if __name__ == '__main__':
     import sys
-    print("This demo needs updating to respect the DOLFIN_NOPLOT evironment variable")
-    exit(0)
     main(sys.argv)
