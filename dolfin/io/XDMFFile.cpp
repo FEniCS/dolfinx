@@ -779,7 +779,14 @@ void XDMFFile::read(MeshFunction<double>& meshfunction)
 //----------------------------------------------------------------------------
 void write_xml(const Mesh& mesh)
 {
-  // Create pugi doc
+  // Get number of cells and number of vertices per cell.
+  // Note: the below code uses 'cell_dim' to be able to generalize to
+  // meshes of the faces , edges, etc.
+  const int cell_dim = mesh.topology().dim();
+  const std::int64_t num_cells = mesh.topology().size(cell_dim);
+  const int num_vertices_per_cell = mesh.type().num_vertices(cell_dim);
+
+    // Create pugi doc
   pugi::xml_document xml_doc;
 
   // Add XDMF node and version attribute
@@ -800,28 +807,38 @@ void write_xml(const Mesh& mesh)
   // Add topology  node and attributes
   pugi::xml_node topology_node = grid_node.append_child("Topology");
   dolfin_assert(topology_node);
-  topology_node.append_attribute("NumberOfElements") = (int) mesh.num_cells();
-  topology_node.append_attribute("TopologyType") = "Triangle";
-  topology_node.append_attribute("NodesPerElement") = 3;
+  topology_node.append_attribute("NumberOfElements") = num_cells;
+  topology_node.append_attribute("TopologyType") =   "Triangle";
+  topology_node.append_attribute("NodesPerElement") = num_vertices_per_cell;
 
   // Add topology DataItem node and attributes
   pugi::xml_node topology_data_node = topology_node.append_child("DataItem");
   dolfin_assert(topology_data_node);
   topology_node.append_attribute("Format") = "XDMF";
-  const std::string tnum = std::to_string(mesh.num_cells()) + " " + std::to_string(3);
-  topology_node.append_attribute("Dimensions") = tnum.c_str();
+  const std::string tdim_data = std::to_string(num_cells) + " "
+    + std::to_string(num_vertices_per_cell);
+  topology_node.append_attribute("Dimensions") = tdim_data.c_str();
 
-  // Add topology data
-  /*
-  std::stringstream ss;
-  for(size_t i = 0; i < v.size(); ++i)
+  // Creat stream of cell connectivity
+  std::unique_ptr<CellType>
+    celltype(CellType::create(mesh.type().entity_type(cell_dim)));
+  std::stringstream topology_stream ;
+  const std::vector<unsigned int> perm = celltype->vtk_mapping();
+  for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
   {
-    if(i != 0)
-    ss << ",";
-    ss << v[i];
+    for (unsigned int i = 0; i != c->num_entities(0); ++i)
+      topology_stream << c->entities(0)[perm[i]] << " ";
+    topology_stream << " ";
   }
-  std::string s = ss.str();
-  */
+  topology_node.append_child(pugi::node_pcdata).set_value(topology_stream .str().c_str());
+
+  // Add geometry node and attributes
+  pugi::xml_node geometry_node = grid_node.append_child("Topology");
+  dolfin_assert(geometry_node);
+  geometry_node.append_attribute("NumberOfElements") = num_cells;
+  geometry_node.append_attribute("TopologyType") = "Triangle";
+  geometry_node.append_attribute("NodesPerElement") = num_vertices_per_cell;
+
 }
 //----------------------------------------------------------------------------
 template<typename T>
@@ -1283,5 +1300,32 @@ template <typename T> void XDMFFile::write_ascii_mesh_value_collection(
                        mesh->size_global(0), mesh_values.size(),
                        1, generate_xdmf_ascii_data(value_data),
                        xdmf_format_str(Encoding::ASCII));
+}
+//-----------------------------------------------------------------------------
+std::string XDMFFile::vtk_cell_type_str(CellType::Type cell_type)
+{
+  // FIXME: Move to CellType?
+  // FIXME: Extend to higher degree cells
+  switch (cell_type)
+  {
+    case CellType::Type::point:
+      return "PolyVertex";
+    case CellType::Type::interval:
+      return "PolyLine";
+    case CellType::Type::triangle:
+      return "Triangle";
+    case CellType::Type::quadrilateral:
+      return "Quadrilateral";
+    case CellType::Type::tetrahedron:
+      return "Tetrahedron";
+    case CellType::Type::hexahedron:
+      return "Hexahedron";
+    default:
+      dolfin_error("XDMFFile.cpp",
+                   "output mesh topology",
+                   "Invalid combination of cell type and order");
+  }
+
+  return "error";
 }
 //-----------------------------------------------------------------------------

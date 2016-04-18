@@ -252,6 +252,8 @@ namespace dolfin
     void write_ascii_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
                                              std::string data_name);
 
+    static std::string vtk_cell_type_str(CellType::Type cell_type);
+
     // MPI communicator
     MPI_Comm _mpi_comm;
 
