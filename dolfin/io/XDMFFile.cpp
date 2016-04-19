@@ -810,6 +810,39 @@ void XDMFFile::write_new(const Mesh& mesh, Encoding encoding) const
     xml_doc.save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
+void XDMFFile::read_new_xml(Mesh& mesh) const
+{
+  // FIXME: check for duplicated nodes
+
+  // Load XML doc from file
+  pugi::xml_document xml_doc;
+  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+  dolfin_assert(result);
+
+  // Get XDMF node
+  pugi::xml_node xdmf_node = xml_doc.child("Xdmf");
+  dolfin_assert(xdmf_node);
+
+  // Get domain node
+  pugi::xml_node domain_node = xdmf_node.child("Domain");
+  dolfin_assert(domain_node);
+
+  // Get grid node
+  pugi::xml_node grid_node = domain_node.child("Grid");
+  dolfin_assert(grid_node);
+
+  // Get topology node
+  pugi::xml_node topology_node = grid_node.child("Topology");
+  dolfin_assert(grid_node);
+
+  std::vector<std::int64_t> topology_data = read_topology_data(topology_node);
+
+  //dolfin_assert(topology_type_attr);
+  //pugi::xml_attribute tdim_attr = topology_node..attribute("Dimensions");
+  //dolfin_assert(tdim_attr);
+
+}
+//----------------------------------------------------------------------------
 void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                  hid_t h5_id, std::string path_prefix,
                                  const Mesh& mesh)
@@ -944,6 +977,49 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
     HDF5Interface::write_dataset(h5_id, geometry_path, x, range, global_shape,
                                  use_mpi_io, false);
   }
+}
+//----------------------------------------------------------------------------
+std::vector<int64_t> XDMFFile::read_topology_data(pugi::xml_node& topology_node)
+{
+  // Get topology meta-data
+  pugi::xml_attribute num_cell_attr = topology_node.attribute("NumberOfElements");
+  dolfin_assert(num_cell_attr);
+
+  pugi::xml_attribute type_attr = topology_node.attribute("TopologyType");
+  dolfin_assert(type_attr);
+
+  pugi::xml_attribute points_per_cell_attr = topology_node.attribute("NodesPerElement");
+  dolfin_assert(points_per_cell_attr);
+
+  // Get topology data node
+  pugi::xml_node data_node = topology_node.child("DataItem");
+  dolfin_assert(data_node);
+  std::string data_str = data_node.value();
+
+  // Get topology data attributes
+  pugi::xml_attribute dimensions = data_node.attribute("Dimensions");
+  dolfin_assert(dimensions);
+
+  pugi::xml_attribute format = data_node.attribute("Format");
+  dolfin_assert(format);
+
+  std::string storage = format.as_string();
+  if (storage == "XML")
+  {
+    pugi::xml_node data = data_node.first_child();
+    dolfin_assert(data);
+
+  }
+  else if (storage == "HDF")
+  {
+    // Read HDF data
+  }
+  else
+  {
+    // Throw error
+  }
+
+  return std::vector<std::int64_t>();
 }
 //----------------------------------------------------------------------------
 std::vector<int64_t> XDMFFile::compute_topology_data(const Mesh& mesh,

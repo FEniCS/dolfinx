@@ -63,7 +63,7 @@ namespace dolfin
     /// File encoding type
     enum class Encoding {HDF5, ASCII};
 
-    /// Re-use or recompute mesh partition stored in file
+    /// Re-use any partition stored in file
     enum class UseFilePartition : bool {yes=true, no=false};
 
     /// Constructor
@@ -188,6 +188,9 @@ namespace dolfin
     // Write mesh
     void write_new(const Mesh& mesh, Encoding encoding=Encoding::HDF5) const;
 
+    // Read mesh
+    void read_new_xml(Mesh& mesh) const;
+
   private:
 
     // Add topology node
@@ -199,6 +202,9 @@ namespace dolfin
     static void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   hid_t h5_id, std::string path_prefix,
                                   const Mesh& mesh);
+
+    // Read topology from XDMF Topology node
+    static std::vector<int64_t> read_topology_data(pugi::xml_node& topology_node);
 
     // Return topology data on this process as a flat vector
     static std::vector<int64_t> compute_topology_data(const Mesh& mesh,
