@@ -778,7 +778,7 @@ void XDMFFile::read(MeshFunction<double>& meshfunction)
   read_mesh_function(meshfunction);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::write_xml(const Mesh& mesh) const
+void XDMFFile::write_xml(const Mesh& mesh, Encoding encoding) const
 {
   // Make sure entities are numbered
   const int cell_dim = mesh.topology().dim();
@@ -802,19 +802,28 @@ void XDMFFile::write_xml(const Mesh& mesh) const
   grid_node.append_attribute("Name") = mesh.name().c_str();
   grid_node.append_attribute("GridType") = "Uniform";
 
-  // Add topology node and attributes
-  add_topology_data(grid_node, mesh);
-  //add_h5_topology_data(grid_node, mesh);
+  // Create HDF5 file if required (truncate)
+  hid_t h5_id = -1;
+  std::unique_ptr<HDF5File> h5_file;
+  if (encoding == Encoding::HDF5)
+  {
+    h5_file.reset(new HDF5File(mesh.mpi_comm(), get_hdf5_filename(_filename), "w"));
+    dolfin_assert(h5_file);
+    h5_id = h5_file->h5_id();
+  }
 
   // Add topology node and attributes
-  add_geometry_data(grid_node, mesh);
-  //add_h5_geometry_data(grid_node, mesh);
+  add_topology_data(grid_node, h5_id, mesh);
+
+  // Add topology node and attributes
+  add_geometry_data(grid_node, h5_id, mesh);
 
   // Save file
   xml_doc.save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void XDMFFile::add_topology_data(pugi::xml_node& xml_node, const Mesh& mesh)
+void XDMFFile::add_topology_data(pugi::xml_node& xml_node, hid_t h5_id,
+                                 const Mesh& mesh)
 {
   const int cell_dim = mesh.topology().dim();
   const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
@@ -849,10 +858,8 @@ void XDMFFile::add_topology_data(pugi::xml_node& xml_node, const Mesh& mesh)
     }
   }
 
-  bool use_xml = true;
-
   // Add topology data to XML
-  if (use_xml)
+  if (h5_id < 0)
   {
     topology_data_node.append_attribute("Format") = "XML";
     topology_data_node.append_child(pugi::node_pcdata).set_value(container_to_string(topology_data, " ", 0).c_str());
@@ -861,25 +868,27 @@ void XDMFFile::add_topology_data(pugi::xml_node& xml_node, const Mesh& mesh)
   {
     topology_data_node.append_attribute("Format") = "HDF";
 
+    // Get name of HDF5 file
+    const std::string hdf5_filename = HDF5Interface::get_filename(h5_id);
+    const boost::filesystem::path p(hdf5_filename);
+
     // Add topology data to XML file
     const std::string group_name = "/Mesh/" + mesh.name();
-    const std::string hdf5_filename = "foo.h5";
-    const boost::filesystem::path p(hdf5_filename);
     std::string topology_path = group_name + "/topology";
     std::string topology_xdmf_path = p.filename().string() + ":" + topology_path;
     topology_data_node.append_child(pugi::node_pcdata).set_value(topology_xdmf_path.c_str());
 
-    // Create HDF5 file (truncate)
-    HDF5File h5_file(mesh.mpi_comm(), hdf5_filename, "w");
-
     std::vector<std::int64_t> global_shape(2);
     global_shape[0] = topology_data.size()/num_vertices_per_cell;
     global_shape[1] = num_vertices_per_cell;
-    h5_file.write_data(topology_path, topology_data, global_shape, false);
+    std::pair<std::int64_t, std::int64_t> range = {0, global_shape[0]};
+    HDF5Interface::write_dataset(h5_id, topology_path, topology_data,
+                                range, global_shape, false, false);
   }
 }
 //----------------------------------------------------------------------------
-void XDMFFile::add_geometry_data(pugi::xml_node& xml_node, const Mesh& mesh)
+void XDMFFile::add_geometry_data(pugi::xml_node& xml_node, hid_t h5_id,
+                                 const Mesh& mesh)
 {
   const MeshGeometry& mesh_geometry = mesh.geometry();
   const int gdim = mesh_geometry.dim();
@@ -910,8 +919,7 @@ void XDMFFile::add_geometry_data(pugi::xml_node& xml_node, const Mesh& mesh)
   const std::vector<double>& x = mesh.geometry().x();
 
   // Add geometry data
-  bool use_xml = false;
-  if (use_xml)
+  if (h5_id < 0)
   {
     geometry_data_node.append_attribute("Format") = "XML";
     geometry_data_node.append_child(pugi::node_pcdata).set_value(container_to_string(x, " ", 16).c_str());
@@ -920,23 +928,24 @@ void XDMFFile::add_geometry_data(pugi::xml_node& xml_node, const Mesh& mesh)
   {
     geometry_data_node.append_attribute("Format") = "HDF";
 
+    // Get name of HDF5 file
+    const std::string hdf5_filename = HDF5Interface::get_filename(h5_id);
+    const boost::filesystem::path p(hdf5_filename);
+
     // Add geomtry data to XML file
     const std::string group_name = "/Mesh/" + mesh.name();
-    const std::string hdf5_filename = "foo.h5";
-    const boost::filesystem::path p(hdf5_filename);
     std::string geometry_path = group_name + "/geometry";
     std::string geometry_xdmf_path = p.filename().string() + ":" + geometry_path;
     geometry_data_node.append_child(pugi::node_pcdata).set_value(geometry_xdmf_path.c_str());
 
     // Add geometry data to HDF5 file
-
-    // Create HDF5 file (truncate)
-    HDF5File h5_file(mesh.mpi_comm(), hdf5_filename, "w");
-
     std::vector<std::int64_t> global_shape(2);
     global_shape[0] = x.size()/gdim;
     global_shape[1] = gdim;
-    h5_file.write_data(geometry_path, x, global_shape, false);
+
+    std::pair<std::int64_t, std::int64_t> range = {0, global_shape[0]};
+    HDF5Interface::write_dataset(h5_id, geometry_path, x,
+                                range, global_shape, false, false);
   }
 }
 //----------------------------------------------------------------------------
@@ -976,6 +985,20 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
     for (std::size_t j = 0; j < n_lines; ++j)
       meshfunction[j] = boost::lexical_cast<T>(data_lines[j]);
   }
+}
+//----------------------------------------------------------------------------
+std::string XDMFFile::get_hdf5_filename(std::string xdmf_filename)
+{
+  boost::filesystem::path p(xdmf_filename);
+  p.replace_extension(".h5");
+  if (p.string() == xdmf_filename)
+  {
+    dolfin_error("XDMFile.cpp",
+                  "deduce name of HDF5 file from XDMF filename",
+                  "Filename clash. Check XDMF filename");
+  }
+
+  return p.string();
 }
 //----------------------------------------------------------------------------
 template<typename T>

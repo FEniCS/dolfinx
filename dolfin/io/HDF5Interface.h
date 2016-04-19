@@ -57,6 +57,8 @@ namespace dolfin
     /// interruption
     static void flush_file(const hid_t hdf5_file_handle);
 
+    static std::string get_filename(hid_t hdf5_file_handle);
+
     /// Write data to existing HDF file as defined by range blocks on
     /// each process
     /// data: data to be written, flattened into 1D vector

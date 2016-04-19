@@ -24,6 +24,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <hdf5.h>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
@@ -185,17 +186,19 @@ namespace dolfin
     void read(MeshFunction<double>& meshfunction);
 
     // Write XML mesh
-    void write_xml(const Mesh& mesh) const;
+    void write_xml(const Mesh& mesh, Encoding encoding=Encoding::HDF5) const;
 
   private:
 
     // Add topology node
-    static void add_topology_data(pugi::xml_node& xml_node,
+    static void add_topology_data(pugi::xml_node& xml_node, hid_t h5_id,
                                   const Mesh& mesh);
 
     // Add geometry node and data to xml_node
-    static void add_geometry_data(pugi::xml_node& xml_node,
+    static void add_geometry_data(pugi::xml_node& xml_node, hid_t h5_id,
                                   const Mesh& mesh);
+
+    static std::string get_hdf5_filename(std::string xdmf_filename);
 
     // Generic MeshFunction reader
     template<typename T>

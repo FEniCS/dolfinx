@@ -108,6 +108,22 @@ void HDF5Interface::flush_file(const hid_t hdf5_file_handle)
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
+std::string HDF5Interface::get_filename(hid_t hdf5_file_handle)
+{
+  // Get length of filename
+  ssize_t length = H5Fget_name(hdf5_file_handle, NULL, 0);
+  dolfin_assert(length > 0);
+
+  // Allocate memory
+  std::vector<char> name(length +1);
+
+  // Retrive filename
+  length = H5Fget_name(hdf5_file_handle, name.data(), length + 1);
+  dolfin_assert(length > 0);
+
+  return std::string(name.begin(), name.end());
+}
+//-----------------------------------------------------------------------------
 const std::string HDF5Interface::get_attribute_type(
                   const hid_t hdf5_file_handle,
                   const std::string dataset_name,

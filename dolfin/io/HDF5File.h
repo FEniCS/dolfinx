@@ -182,6 +182,9 @@ namespace dolfin
     // Get/set attributes of an existing dataset
     HDF5Attribute attributes(const std::string dataset_name);
 
+    hid_t h5_id() const
+    { return _hdf5_file_id; }
+
   private:
 
     // Friend
