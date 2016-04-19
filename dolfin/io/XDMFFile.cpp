@@ -31,6 +31,7 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/defines.h>
+#include <dolfin/common/utils.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -802,17 +803,18 @@ void XDMFFile::write_xml(const Mesh& mesh) const
   grid_node.append_attribute("GridType") = "Uniform";
 
   // Add topology node and attributes
-  //add_xml_topology_data(grid_node, mesh);
-  add_h5_topology_data(grid_node, mesh);
+  add_topology_data(grid_node, mesh);
+  //add_h5_topology_data(grid_node, mesh);
 
   // Add topology node and attributes
-  add_xml_geometry_data(grid_node, mesh);
+  add_geometry_data(grid_node, mesh);
+  //add_h5_geometry_data(grid_node, mesh);
 
   // Save file
   xml_doc.save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void XDMFFile::add_xml_topology_data(pugi::xml_node& xml_node, const Mesh& mesh)
+void XDMFFile::add_topology_data(pugi::xml_node& xml_node, const Mesh& mesh)
 {
   const int cell_dim = mesh.topology().dim();
   const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
@@ -830,23 +832,54 @@ void XDMFFile::add_xml_topology_data(pugi::xml_node& xml_node, const Mesh& mesh)
   // Add topology DataItem node and attributes
   pugi::xml_node topology_data_node = topology_node.append_child("DataItem");
   dolfin_assert(topology_data_node);
-  topology_data_node.append_attribute("Format") = "XML";
   topology_data_node.append_attribute("Dimensions") = to_string(num_cells, num_vertices_per_cell).c_str();
 
-  // Create stream of cell connectivity
+  // Pack topology data
+  std::vector<std::int64_t> topology_data;
+  topology_data.reserve(mesh.num_entities(cell_dim)*(num_vertices_per_cell));
+  const std::vector<size_t>& global_vertices = mesh.topology().global_indices(0);
   const std::vector<unsigned int> perm = mesh.type().vtk_mapping();
-  std::stringstream topology_stream ;
   for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
   {
+    const unsigned int* entities = c->entities(0);
     for (unsigned int i = 0; i != c->num_entities(0); ++i)
-      topology_stream << c->entities(0)[perm[i]] << " ";
+    {
+      const unsigned int local_idx = entities[perm[i]];
+      topology_data.push_back(global_vertices[local_idx]);
+    }
   }
 
-  // Add topology data
-  topology_data_node.append_child(pugi::node_pcdata).set_value(topology_stream .str().c_str());
+  bool use_xml = true;
+
+  // Add topology data to XML
+  if (use_xml)
+  {
+    topology_data_node.append_attribute("Format") = "XML";
+    topology_data_node.append_child(pugi::node_pcdata).set_value(container_to_string(topology_data, " ", 0).c_str());
+  }
+  else
+  {
+    topology_data_node.append_attribute("Format") = "HDF";
+
+    // Add topology data to XML file
+    const std::string group_name = "/Mesh/" + mesh.name();
+    const std::string hdf5_filename = "foo.h5";
+    const boost::filesystem::path p(hdf5_filename);
+    std::string topology_path = group_name + "/topology";
+    std::string topology_xdmf_path = p.filename().string() + ":" + topology_path;
+    topology_data_node.append_child(pugi::node_pcdata).set_value(topology_xdmf_path.c_str());
+
+    // Create HDF5 file (truncate)
+    HDF5File h5_file(mesh.mpi_comm(), hdf5_filename, "w");
+
+    std::vector<std::int64_t> global_shape(2);
+    global_shape[0] = topology_data.size()/num_vertices_per_cell;
+    global_shape[1] = num_vertices_per_cell;
+    h5_file.write_data(topology_path, topology_data, global_shape, false);
+  }
 }
 //----------------------------------------------------------------------------
-void XDMFFile::add_xml_geometry_data(pugi::xml_node& xml_node, const Mesh& mesh)
+void XDMFFile::add_geometry_data(pugi::xml_node& xml_node, const Mesh& mesh)
 {
   const MeshGeometry& mesh_geometry = mesh.geometry();
   const int gdim = mesh_geometry.dim();
@@ -871,90 +904,40 @@ void XDMFFile::add_xml_geometry_data(pugi::xml_node& xml_node, const Mesh& mesh)
   // Add geometry data node
   pugi::xml_node geometry_data_node = geometry_node.append_child("DataItem");
   dolfin_assert(geometry_data_node);
-  geometry_data_node.append_attribute("Format") = "XML";
   geometry_data_node.append_attribute("Dimensions") = to_string(num_points, gdim).c_str();
 
-  // Create stream of mesh geometry
-  std::stringstream geometry_stream;
-  geometry_stream.precision(16);
-  const int range = std::min(2, gdim);
-  for (VertexIterator v(mesh); !v.end(); ++v)
-  {
-    const Point p = v->point();
-    for (int i = 0; i < range; ++i)
-      geometry_stream << p[i] << " ";
-  }
+  // Pack geometry data
+  const std::vector<double>& x = mesh.geometry().x();
 
   // Add geometry data
-  geometry_data_node.append_child(pugi::node_pcdata).set_value(geometry_stream .str().c_str());
-}
-//----------------------------------------------------------------------------
-void XDMFFile::add_h5_topology_data(pugi::xml_node& xml_node, const Mesh& mesh)
-{
-  const int cell_dim = mesh.topology().dim();
-  const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
-  const int num_vertices_per_cell = mesh.type().num_vertices(cell_dim);
-
-  const std::string vtk_cell_str
-    = vtk_cell_type_str(mesh.type().entity_type(cell_dim), 1);
-
-  pugi::xml_node topology_node = xml_node.append_child("Topology");
-  dolfin_assert(topology_node);
-  topology_node.append_attribute("NumberOfElements") = std::to_string(num_cells).c_str();
-  topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
-  topology_node.append_attribute("NodesPerElement") = num_vertices_per_cell;
-
-  // Add topology DataItem node and attributes
-  pugi::xml_node topology_data_node = topology_node.append_child("DataItem");
-  dolfin_assert(topology_data_node);
-  topology_data_node.append_attribute("Format") = "HDF";
-  topology_data_node.append_attribute("Dimensions") = to_string(num_cells, num_vertices_per_cell).c_str();
-
-  // Add topology data to HDF5 file
-  const std::string group_name = "/Mesh/" + mesh.name();
-  const std::string hdf5_filename = "foo.h5";
-  const boost::filesystem::path p(hdf5_filename);
-  std::string topology_path = group_name + "/topology";
-  std::string topology_xdmf_path = p.filename().string() + ":" + topology_path;
-
-  topology_data_node.append_child(pugi::node_pcdata).set_value(topology_xdmf_path.c_str());
-
-  // Pack topology data
-  std::vector<std::int64_t> topology_data;
-  topology_data.reserve(mesh.num_entities(cell_dim)*(num_vertices_per_cell));
-  const std::vector<size_t>& global_vertices = mesh.topology().global_indices(0);
-
-  // FIXME: works in serial only
-  const std::vector<unsigned int> perm = mesh.type().vtk_mapping();
-  for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+  bool use_xml = false;
+  if (use_xml)
   {
-    for (unsigned int i = 0; i != c->num_entities(0); ++i)
-    {
-      const unsigned int local_idx = c->entities(0)[perm[i]];
-      topology_data.push_back(global_vertices[local_idx]);
-    }
+    geometry_data_node.append_attribute("Format") = "XML";
+    geometry_data_node.append_child(pugi::node_pcdata).set_value(container_to_string(x, " ", 16).c_str());
   }
+  else
+  {
+    geometry_data_node.append_attribute("Format") = "HDF";
 
-  // Create HDF5 file (truncate)
-  HDF5File h5_file(mesh.mpi_comm(), hdf5_filename, "w");
+    // Add geomtry data to XML file
+    const std::string group_name = "/Mesh/" + mesh.name();
+    const std::string hdf5_filename = "foo.h5";
+    const boost::filesystem::path p(hdf5_filename);
+    std::string geometry_path = group_name + "/geometry";
+    std::string geometry_xdmf_path = p.filename().string() + ":" + geometry_path;
+    geometry_data_node.append_child(pugi::node_pcdata).set_value(geometry_xdmf_path.c_str());
 
-  std::vector<std::int64_t> global_shape(2);
-  global_shape[0] = topology_data.size()/num_vertices_per_cell;
-  global_shape[1] = num_vertices_per_cell;
-  h5_file.write_data(topology_path, topology_data, global_shape, false);
+    // Add geometry data to HDF5 file
 
+    // Create HDF5 file (truncate)
+    HDF5File h5_file(mesh.mpi_comm(), hdf5_filename, "w");
 
-  // Create stream of cell connectivity
-  //const std::vector<unsigned int> perm = mesh.type().vtk_mapping();
-  //std::stringstream topology_stream ;
-  //for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
-  //{
-//    for (unsigned int i = 0; i != c->num_entities(0); ++i)
-  //    topology_stream << c->entities(0)[perm[i]] << " ";
-  //}
-
-  // Add topology data
-  //topology_data_node.append_child(pugi::node_pcdata).set_value(topology_stream .str().c_str());
+    std::vector<std::int64_t> global_shape(2);
+    global_shape[0] = x.size()/gdim;
+    global_shape[1] = gdim;
+    h5_file.write_data(geometry_path, x, global_shape, false);
+  }
 }
 //----------------------------------------------------------------------------
 template<typename T>

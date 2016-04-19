@@ -38,6 +38,23 @@ namespace dolfin
   /// Indent string block
   std::string indent(std::string block);
 
+  /// Return string representation of given container of ints, floats,
+  /// etc.
+  template<typename T>
+    std::string container_to_string(const T& x, std::string delimiter,
+                                    int precision)
+  {
+    std::stringstream s;
+    s.precision(precision);
+    if (!x.empty())
+    {
+      s << *x.begin();
+      for (auto it = x.begin() + 1; it != x.end(); ++it)
+        s << delimiter << *it;
+    }
+    return s.str();
+  }
+
   /// Return string representation of given array
   std::string to_string(const double* x, std::size_t n);
 

@@ -189,17 +189,13 @@ namespace dolfin
 
   private:
 
-    // Add topology node and data to xml_node
-    static void add_xml_topology_data(pugi::xml_node& xml_node,
-                                      const Mesh& mesh);
+    // Add topology node
+    static void add_topology_data(pugi::xml_node& xml_node,
+                                  const Mesh& mesh);
 
     // Add geometry node and data to xml_node
-    static void add_xml_geometry_data(pugi::xml_node& xml_node,
-                                      const Mesh& mesh);
-
-    // Add topology node to xml_node and wrtite data to HDF5 file
-    static void add_h5_topology_data(pugi::xml_node& xml_node,
-                                     const Mesh& mesh);
+    static void add_geometry_data(pugi::xml_node& xml_node,
+                                  const Mesh& mesh);
 
     // Generic MeshFunction reader
     template<typename T>
