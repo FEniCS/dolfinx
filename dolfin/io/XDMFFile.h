@@ -28,6 +28,11 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 
+namespace pugi
+{
+  class xml_node;
+}
+
 namespace dolfin
 {
 
@@ -183,6 +188,18 @@ namespace dolfin
     void write_xml(const Mesh& mesh) const;
 
   private:
+
+    // Add topology node and data to xml_node
+    static void add_xml_topology_data(pugi::xml_node& xml_node,
+                                      const Mesh& mesh);
+
+    // Add geometry node and data to xml_node
+    static void add_xml_geometry_data(pugi::xml_node& xml_node,
+                                      const Mesh& mesh);
+
+    // Add topology node to xml_node and wrtite data to HDF5 file
+    static void add_h5_topology_data(pugi::xml_node& xml_node,
+                                     const Mesh& mesh);
 
     // Generic MeshFunction reader
     template<typename T>
