@@ -777,7 +777,7 @@ void XDMFFile::read(MeshFunction<double>& meshfunction)
   read_mesh_function(meshfunction);
 }
 //----------------------------------------------------------------------------
-void write_xml(const Mesh& mesh)
+void XDMFFile::write_xml(const Mesh& mesh) const
 {
   // Get number of cells and number of vertices per cell.
   // Note: the below code uses 'cell_dim' to be able to generalize to
@@ -786,13 +786,18 @@ void write_xml(const Mesh& mesh)
   const std::int64_t num_cells = mesh.topology().size(cell_dim);
   const int num_vertices_per_cell = mesh.type().num_vertices(cell_dim);
 
-    // Create pugi doc
+  const int gdim = mesh.geometry().dim();
+
+  const std::string vtk_cell_str
+    = vtk_cell_type_str(mesh.type().entity_type(cell_dim), 1);
+
+  // Create pugi doc
   pugi::xml_document xml_doc;
 
   // Add XDMF node and version attribute
   pugi::xml_node xdmf_node = xml_doc.append_child("Xdmf");
   dolfin_assert(xdmf_node);
-  xdmf_node.append_attribute("Version") = "2.0";
+  xdmf_node.append_attribute("Version") = "3.0";
 
   // Add domain node
   pugi::xml_node domain_node = xdmf_node.append_child("Domain");
@@ -804,41 +809,57 @@ void write_xml(const Mesh& mesh)
   grid_node.append_attribute("Name") = "mesh";
   grid_node.append_attribute("GridType") = "Uniform";
 
-  // Add topology  node and attributes
+  // Add topology node and attributes
   pugi::xml_node topology_node = grid_node.append_child("Topology");
   dolfin_assert(topology_node);
-  topology_node.append_attribute("NumberOfElements") = num_cells;
-  topology_node.append_attribute("TopologyType") =   "Triangle";
+  topology_node.append_attribute("NumberOfElements") = std::to_string(num_cells).c_str();
+  topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
   topology_node.append_attribute("NodesPerElement") = num_vertices_per_cell;
 
   // Add topology DataItem node and attributes
   pugi::xml_node topology_data_node = topology_node.append_child("DataItem");
   dolfin_assert(topology_data_node);
-  topology_node.append_attribute("Format") = "XDMF";
-  const std::string tdim_data = std::to_string(num_cells) + " "
-    + std::to_string(num_vertices_per_cell);
-  topology_node.append_attribute("Dimensions") = tdim_data.c_str();
+  topology_data_node.append_attribute("Format") = "XML";
+  topology_data_node.append_attribute("Dimensions") = to_string(num_cells, num_vertices_per_cell).c_str();
 
-  // Creat stream of cell connectivity
-  std::unique_ptr<CellType>
-    celltype(CellType::create(mesh.type().entity_type(cell_dim)));
+  // Create stream of cell connectivity
+  const std::vector<unsigned int> perm = mesh.type().vtk_mapping();
   std::stringstream topology_stream ;
-  const std::vector<unsigned int> perm = celltype->vtk_mapping();
   for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
   {
     for (unsigned int i = 0; i != c->num_entities(0); ++i)
       topology_stream << c->entities(0)[perm[i]] << " ";
-    topology_stream << " ";
   }
-  topology_node.append_child(pugi::node_pcdata).set_value(topology_stream .str().c_str());
+  topology_data_node.append_child(pugi::node_pcdata).set_value(topology_stream .str().c_str());
 
   // Add geometry node and attributes
-  pugi::xml_node geometry_node = grid_node.append_child("Topology");
+  pugi::xml_node geometry_node = grid_node.append_child("Geometry");
   dolfin_assert(geometry_node);
-  geometry_node.append_attribute("NumberOfElements") = num_cells;
-  geometry_node.append_attribute("TopologyType") = "Triangle";
-  geometry_node.append_attribute("NodesPerElement") = num_vertices_per_cell;
+  dolfin_assert(gdim > 0);
+  dolfin_assert(gdim <= 3);
+  const std::string geometry_type = (gdim == 1 or gdim == 2) ? "XY" : "XYX";
+  geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 
+  // Add geometry data node
+  pugi::xml_node geometry_data_node = geometry_node.append_child("DataItem");
+  dolfin_assert(geometry_data_node);
+  geometry_data_node.append_attribute("Format") = "XML";
+  geometry_data_node.append_attribute("Dimensions") = to_string(mesh.num_vertices(), gdim).c_str();
+
+  // Create stream of mesh geometry
+  std::stringstream geometry_stream;
+  geometry_stream.precision(16);
+  const int range = std::min(2, gdim);
+  for (VertexIterator v(mesh); !v.end(); ++v)
+  {
+    const Point p = v->point();
+    for (int i = 0; i < range; ++i)
+      geometry_stream << p[i] << " ";
+  }
+  geometry_data_node.append_child(pugi::node_pcdata).set_value(geometry_stream .str().c_str());
+
+  // TMP: Write file
+  xml_doc.save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
 template<typename T>
@@ -1289,43 +1310,80 @@ template <typename T> void XDMFFile::write_ascii_mesh_value_collection(
       topology += boost::str(boost::format("%d") % v->global_index()) + " ";
 
     topology += "\n";
-    value_data.push_back(p.second);
+
+    dolfin_assert(_xml);
+    _xml->mesh_topology(cell_type, 1, mesh_values.size(), topology,
+                        xdmf_format_str(Encoding::ASCII));
+
+    _xml->data_attribute(mesh_values.name(), 0, false,
+                         mesh->size_global(0), mesh_values.size(),
+                         1, generate_xdmf_ascii_data(value_data),
+                         xdmf_format_str(Encoding::ASCII));
   }
-
-  dolfin_assert(_xml);
-  _xml->mesh_topology(cell_type, 1, mesh_values.size(), topology,
-                      xdmf_format_str(Encoding::ASCII));
-
-  _xml->data_attribute(mesh_values.name(), 0, false,
-                       mesh->size_global(0), mesh_values.size(),
-                       1, generate_xdmf_ascii_data(value_data),
-                       xdmf_format_str(Encoding::ASCII));
 }
 //-----------------------------------------------------------------------------
-std::string XDMFFile::vtk_cell_type_str(CellType::Type cell_type)
+std::string XDMFFile::vtk_cell_type_str(CellType::Type cell_type, int order)
 {
   // FIXME: Move to CellType?
-  // FIXME: Extend to higher degree cells
   switch (cell_type)
   {
-    case CellType::Type::point:
+  case CellType::Type::point:
+    switch (order)
+    {
+    case 1:
       return "PolyVertex";
-    case CellType::Type::interval:
+    }
+  case CellType::Type::interval:
+    switch (order)
+    {
+    case 1:
       return "PolyLine";
-    case CellType::Type::triangle:
+    case 2:
+      return "Edge_3";
+    }
+  case CellType::Type::triangle:
+    switch (order)
+    {
+    case 1:
       return "Triangle";
-    case CellType::Type::quadrilateral:
+    case 2:
+      return "Tri_6";
+    }
+  case CellType::Type::quadrilateral:
+    switch (order)
+    {
+    case 1:
       return "Quadrilateral";
-    case CellType::Type::tetrahedron:
+    case 2:
+      return "Qaud_8";
+    }
+  case CellType::Type::tetrahedron:
+    switch (order)
+    {
+    case 1:
       return "Tetrahedron";
-    case CellType::Type::hexahedron:
+    case 2:
+      return "Tet_10";
+    }
+  case CellType::Type::hexahedron:
+    switch (order)
+    {
+    case 1:
       return "Hexahedron";
-    default:
-      dolfin_error("XDMFFile.cpp",
-                   "output mesh topology",
-                   "Invalid combination of cell type and order");
+    case 2:
+      return "Hex_20";
+    }
+  default:
+    dolfin_error("XDMFFile.cpp",
+                 "output mesh topology",
+                 "Invalid combination of cell type and order");
+    return "error";
   }
-
-  return "error";
+}
+//-----------------------------------------------------------------------------
+template <typename X, typename Y>
+std::string XDMFFile::to_string(X x, Y y)
+{
+  return std::to_string(x) + " " + std::to_string(y);
 }
 //-----------------------------------------------------------------------------

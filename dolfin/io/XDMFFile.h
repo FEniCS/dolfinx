@@ -179,10 +179,10 @@ namespace dolfin
     void read(MeshFunction<std::size_t>& meshfunction);
     void read(MeshFunction<double>& meshfunction);
 
-  private:
-
     // Write XML mesh
     void write_xml(const Mesh& mesh) const;
+
+  private:
 
     // Generic MeshFunction reader
     template<typename T>
@@ -252,7 +252,11 @@ namespace dolfin
     void write_ascii_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
                                              std::string data_name);
 
-    static std::string vtk_cell_type_str(CellType::Type cell_type);
+    static std::string vtk_cell_type_str(CellType::Type cell_type, int order);
+
+    // Return a string of the form "x y"
+    template <typename X, typename Y>
+    static std::string to_string(X x, Y y);
 
     // MPI communicator
     MPI_Comm _mpi_comm;
