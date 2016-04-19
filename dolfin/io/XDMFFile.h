@@ -185,18 +185,24 @@ namespace dolfin
     void read(MeshFunction<std::size_t>& meshfunction);
     void read(MeshFunction<double>& meshfunction);
 
-    // Write XML mesh
-    void write_xml(const Mesh& mesh, Encoding encoding=Encoding::HDF5) const;
+    // Write mesh
+    void write_new(const Mesh& mesh, Encoding encoding=Encoding::HDF5) const;
 
   private:
 
     // Add topology node
-    static void add_topology_data(pugi::xml_node& xml_node, hid_t h5_id,
+    static void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
+                                  hid_t h5_id, std::string path_prefix,
                                   const Mesh& mesh);
 
     // Add geometry node and data to xml_node
-    static void add_geometry_data(pugi::xml_node& xml_node, hid_t h5_id,
+    static void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
+                                  hid_t h5_id, std::string path_prefix,
                                   const Mesh& mesh);
+
+    // Return topology data on this process as a flat vector
+    static std::vector<int64_t> compute_topology_data(const Mesh& mesh,
+                                                      int cell_dim);
 
     static std::string get_hdf5_filename(std::string xdmf_filename);
 
@@ -281,9 +287,6 @@ namespace dolfin
 #ifdef HAS_HDF5
     std::unique_ptr<HDF5File> _hdf5_file;
 #endif
-
-    // HDF5 filename
-    std::string _hdf5_filename;
 
     // HDF5 file mode (r/w)
     std::string _hdf5_filemode;
