@@ -20,6 +20,7 @@
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -204,11 +205,22 @@ namespace dolfin
                                   const Mesh& mesh);
 
     // Read topology from XDMF Topology node
-    static std::vector<int64_t> read_topology_data(pugi::xml_node& topology_node);
+    static std::vector<std::int64_t> read_topology_data(pugi::xml_node& topology_node);
 
     // Return topology data on this process as a flat vector
-    static std::vector<int64_t> compute_topology_data(const Mesh& mesh,
+    static std::vector<std::int64_t> compute_topology_data(const Mesh& mesh,
                                                       int cell_dim);
+
+    // Get DOLFIN cell type string from XML topology node
+    static std::string get_cell_type(pugi::xml_node& topology_node);
+
+    // Get dimensions from an XML DataSet node
+    static std::pair<std::int64_t, int>
+      get_dataset_dimensions(pugi::xml_node& dataset_node);
+
+    // Return data associated with a data set node
+    template <typename T>
+    static std::vector<T> get_dataset(pugi::xml_node& dataset_node);
 
     static std::string get_hdf5_filename(std::string xdmf_filename);
 
@@ -286,6 +298,20 @@ namespace dolfin
     template <typename X, typename Y>
     static std::string to_string(X x, Y y);
 
+    // Return a vector of numerical values from a vector of stringstream
+    template <typename X>
+    static std::vector<X> string_to_vector(const std::vector<std::string>& x_str);
+    /*
+    {
+      std::vector<X> data;
+      data.reserve(x_str.size());
+      for (auto& v : x_str)
+        data.push_back(std::stoll(v));
+
+      return data;
+    }
+*/
+
     // MPI communicator
     MPI_Comm _mpi_comm;
 
@@ -310,6 +336,19 @@ namespace dolfin
     std::unique_ptr<XDMFxml> _xml;
 
   };
+
+  template <>
+  inline std::vector<double> XDMFFile::string_to_vector(const std::vector<std::string>& x_str);
+  /*
+  {
+    std::vector<double> data;
+    data.reserve(x_str.size());
+    for (auto& v : x_str)
+      data.push_back(std::stod(v));
+
+    return data;
+  }
+  */
 }
 
 #endif

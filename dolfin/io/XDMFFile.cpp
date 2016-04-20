@@ -833,14 +833,43 @@ void XDMFFile::read_new_xml(Mesh& mesh) const
 
   // Get topology node
   pugi::xml_node topology_node = grid_node.child("Topology");
-  dolfin_assert(grid_node);
+  dolfin_assert(topology_node);
 
-  std::vector<std::int64_t> topology_data = read_topology_data(topology_node);
+  // Get geometry node
+  pugi::xml_node geometry_node = grid_node.child("Geometry");
+  dolfin_assert(geometry_node);
 
-  //dolfin_assert(topology_type_attr);
-  //pugi::xml_attribute tdim_attr = topology_node..attribute("Dimensions");
-  //dolfin_assert(tdim_attr);
+  // Get cell type
+  const std::string cell_type_str = get_cell_type(topology_node);
 
+  // Get toplogical dimension
+  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
+  dolfin_assert(cell_type);
+  const int tdim = cell_type->dim();
+
+  // Get geometric dimension
+  const int gdim = get_dataset_dimensions(geometry_node).second;
+
+  // Create mesh editor
+  MeshEditor mesh_editor;
+  mesh_editor.open(mesh, cell_type_str, tdim, gdim);
+
+  // -- Below is storage-format dependent
+
+  // Get topology data vector
+  pugi::xml_node topology_dataset_node = topology_dataset_node.child("DataSet");
+  dolfin_assert(topology_dataset_node);
+  std::vector<std::int64_t> topology_data
+    = get_dataset<std::int64_t>(topology_dataset_node);
+
+  // Get geometry data vector
+  pugi::xml_node geometry_dataset_node = geometry_dataset_node.child("DataSet");
+  dolfin_assert(geometry_dataset_node);
+  std::vector<double> geometry_data = get_dataset<double>(geometry_dataset_node);
+
+  // Check dims
+
+  // Add data to mesh
 }
 //----------------------------------------------------------------------------
 void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -997,8 +1026,11 @@ std::vector<int64_t> XDMFFile::read_topology_data(pugi::xml_node& topology_node)
   std::string data_str = data_node.value();
 
   // Get topology data attributes
-  pugi::xml_attribute dimensions = data_node.attribute("Dimensions");
-  dolfin_assert(dimensions);
+  //pugi::xml_attribute dimensions = data_node.attribute("Dimensions");
+  //dolfin_assert(dimensions);
+
+  // Get number of cells
+  //const std::int64_t num_cells = num_cell_attr.as_llong();
 
   pugi::xml_attribute format = data_node.attribute("Format");
   dolfin_assert(format);
@@ -1006,17 +1038,18 @@ std::vector<int64_t> XDMFFile::read_topology_data(pugi::xml_node& topology_node)
   std::string storage = format.as_string();
   if (storage == "XML")
   {
-    pugi::xml_node data = data_node.first_child();
-    dolfin_assert(data);
-
+    //pugi::xml_node data = data_node.first_child();
+    //dolfin_assert(data);
   }
   else if (storage == "HDF")
   {
     // Read HDF data
+    error("Not yet implemented");
   }
   else
   {
     // Throw error
+    error("Wrong storage format");
   }
 
   return std::vector<std::int64_t>();
@@ -1125,6 +1158,67 @@ std::vector<int64_t> XDMFFile::compute_topology_data(const Mesh& mesh,
   }
 
   return topology_data;
+}
+//----------------------------------------------------------------------------
+std::string XDMFFile::get_cell_type(pugi::xml_node& topology_node)
+{
+  dolfin_assert(topology_node);
+  pugi::xml_attribute type_attr = topology_node.attribute("TopologyType");
+  dolfin_assert(type_attr);
+
+  // Convert XDMF cell type string to DOLFIN cell type string
+  std::string cell_type = type_attr.as_string();
+  boost::algorithm::to_lower(cell_type);
+  if (cell_type == "polyline")
+    cell_type = "interval";
+
+  return cell_type;
+}
+//----------------------------------------------------------------------------
+std::pair<std::int64_t, int> XDMFFile::get_dataset_dimensions(pugi::xml_node& dataset_node)
+{
+  dolfin_assert(dataset_node);
+  pugi::xml_attribute dimensions_attr = dataset_node.attribute("Dimensions");
+  dolfin_assert(dimensions_attr);
+
+  // Split dimensions string
+  const std::string dims_str = dimensions_attr.as_string();
+  std::vector<std::string> dims;
+  boost::split(dims, dims_str, boost::is_any_of(" "));
+  dolfin_assert(dims.size() == 2);
+
+  return {std::stoll(dims[0]), std::stoi(dims[1]) };
+}
+//----------------------------------------------------------------------------
+template <typename T>
+std::vector<T> XDMFFile::get_dataset(pugi::xml_node& dataset_node)
+{
+  // FIXME: Generalise to HDF5 storage
+  dolfin_assert(dataset_node);
+  pugi::xml_attribute format = dataset_node.attribute("Format");
+  dolfin_assert(format);
+
+  // Read data and trim any leading/trailing whitespace
+  pugi::xml_node data_node = dataset_node.first_child();
+  dolfin_assert(data_node);
+  std::string data_str = data_node.value();
+  boost::trim(data_str);
+
+  // Split data
+  std::vector<std::string> data_vector_str;
+  boost::split(data_vector_str, data_str, boost::is_any_of(" "));
+
+  // Get dimensions for to check for consitency
+  auto dims = get_dataset_dimensions(dataset_node);
+  if (dims.first*dims.second != (std::int64_t) data_vector_str.size())
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "reading data from XDMF file",
+                 "Data sizes in attribute and size of data read are inconsistent");
+  }
+
+  // Convert string to vector numerical values and return
+  return string_to_vector<T>(data_vector_str);
 }
 //----------------------------------------------------------------------------
 template<typename T>
@@ -1664,5 +1758,27 @@ template <typename X, typename Y>
 std::string XDMFFile::to_string(X x, Y y)
 {
   return std::to_string(x) + " " + std::to_string(y);
+}
+//-----------------------------------------------------------------------------
+template <typename X>
+std::vector<X> XDMFFile::string_to_vector(const std::vector<std::string>& x_str)
+{
+  std::vector<X> data;
+  data.reserve(x_str.size());
+  for (auto& v : x_str)
+    data.push_back(std::stoll(v));
+
+  return data;
+}
+//-----------------------------------------------------------------------------
+template <>
+inline std::vector<double> XDMFFile::string_to_vector(const std::vector<std::string>& x_str)
+{
+  std::vector<double> data;
+  data.reserve(x_str.size());
+  for (auto& v : x_str)
+    data.push_back(std::stod(v));
+
+  return data;
 }
 //-----------------------------------------------------------------------------
