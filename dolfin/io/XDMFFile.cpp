@@ -835,20 +835,41 @@ void XDMFFile::read_new_xml(Mesh& mesh) const
   pugi::xml_node topology_node = grid_node.child("Topology");
   dolfin_assert(topology_node);
 
+  // Get cell type
+  const std::string cell_type_str = get_cell_type(topology_node);
+
+  // Get toplogical dimensions
+  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
+  dolfin_assert(cell_type);
+  const int tdim = cell_type->dim();
+  const std::int64_t num_cells = get_num_cells(topology_node);
+
   // Get geometry node
   pugi::xml_node geometry_node = grid_node.child("Geometry");
   dolfin_assert(geometry_node);
 
-  // Get cell type
-  const std::string cell_type_str = get_cell_type(topology_node);
+  // Determine geometric dimension
+  pugi::xml_attribute geometry_type_attr = geometry_node.attribute("GeometryType");
+  dolfin_assert(geometry_type_attr);
+  int gdim = 0;
+  const std::string geometry_type =  geometry_type_attr.value();
+  if (geometry_type == "XY")
+    gdim = 2;
+  else if (geometry_type == "XYZ")
+    gdim = 3;
+  else
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "determine geometric dimension",
+                 "GeometryType \"%s\" in XDMF file is unknown or unsupported",
+                 geometry_type.c_str());
+  }
 
-  // Get toplogical dimension
-  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
-  dolfin_assert(cell_type);
-  const int tdim = cell_type->dim();
-
-  // Get geometric dimension
-  const int gdim = get_dataset_dimensions(geometry_node).second;
+  // Get number of points
+  pugi::xml_node geometry_data_node = geometry_node.child("DataItem");
+  dolfin_assert(geometry_data_node);
+  const auto gdims = get_dataset_dimensions(geometry_data_node);
+  const std::int64_t num_points = gdims.first;
 
   // Create mesh editor
   MeshEditor mesh_editor;
@@ -856,20 +877,44 @@ void XDMFFile::read_new_xml(Mesh& mesh) const
 
   // -- Below is storage-format dependent
 
-  // Get topology data vector
-  pugi::xml_node topology_dataset_node = topology_dataset_node.child("DataSet");
-  dolfin_assert(topology_dataset_node);
-  std::vector<std::int64_t> topology_data
-    = get_dataset<std::int64_t>(topology_dataset_node);
+  // Get topology data vector and add to mesh
+  {
+    pugi::xml_node topology_dataset_node = topology_node.child("DataItem");
+    dolfin_assert(topology_dataset_node);
+    std::vector<std::int64_t> topology_data
+      = get_dataset<std::int64_t>(topology_dataset_node);
 
-  // Get geometry data vector
-  pugi::xml_node geometry_dataset_node = geometry_dataset_node.child("DataSet");
-  dolfin_assert(geometry_dataset_node);
-  std::vector<double> geometry_data = get_dataset<double>(geometry_dataset_node);
+    // Check dims
 
-  // Check dims
+    mesh_editor.init_cells_global(num_cells, num_cells);
+    const int num_points_per_cell = cell_type->num_vertices();
+    std::vector<std::size_t> cell_topology(num_points_per_cell);
+    for (std::int64_t i = 0; i < num_cells; ++i)
+    {
+      cell_topology.assign(topology_data.begin() +  i*num_points_per_cell,
+                           topology_data.begin() +  (i + 1)*num_points_per_cell);
+      mesh_editor.add_cell(i, cell_topology);
+    }
+  }
 
-  // Add data to mesh
+  // Get geometry data vector and add to mesh
+  {
+    pugi::xml_node geometry_dataset_node = geometry_node.child("DataItem");
+    dolfin_assert(geometry_dataset_node);
+    std::vector<double> geometry_data = get_dataset<double>(geometry_dataset_node);
+
+    // Check dims
+    mesh_editor.init_vertices_global(num_points, num_points);
+    Point p;
+    for (std::int64_t i = 0; i < num_points; ++i)
+    {
+      for (int j = 0; j < gdim; ++j)
+        p[j] = geometry_data[i*gdim + j];
+      mesh_editor.add_vertex(i, p);
+    }
+  }
+
+  mesh_editor.close();
 }
 //----------------------------------------------------------------------------
 void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -1179,6 +1224,7 @@ std::pair<std::int64_t, int> XDMFFile::get_dataset_dimensions(pugi::xml_node& da
 {
   dolfin_assert(dataset_node);
   pugi::xml_attribute dimensions_attr = dataset_node.attribute("Dimensions");
+  std::cout << "Testing: " << dimensions_attr.as_string() << std::endl;
   dolfin_assert(dimensions_attr);
 
   // Split dimensions string
@@ -1188,6 +1234,46 @@ std::pair<std::int64_t, int> XDMFFile::get_dataset_dimensions(pugi::xml_node& da
   dolfin_assert(dims.size() == 2);
 
   return {std::stoll(dims[0]), std::stoi(dims[1]) };
+}
+//----------------------------------------------------------------------------
+std::int64_t XDMFFile::get_num_cells(pugi::xml_node& topology_node)
+{
+  dolfin_assert(topology_node);
+
+  // Get number of cells from topology
+  std::int64_t num_cells_topolgy = -1;
+  pugi::xml_attribute num_cells_attr = topology_node.attribute("NumberOfElements");
+  if (num_cells_attr)
+    num_cells_topolgy = num_cells_attr.as_llong();
+
+  // Get number of cells from topology dataset
+  pugi::xml_node topology_dataset_node = topology_node.child("DataItem");
+  dolfin_assert(topology_dataset_node);
+  auto tdims = get_dataset_dimensions(topology_dataset_node);
+  std::int64_t num_cells_dataset = -1;
+  if (tdims.first != -1)
+    num_cells_dataset = tdims.first;
+
+  // Check that number of cells can be found
+  if (num_cells_topolgy == -1 and num_cells_dataset == -1)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "determine number of cells",
+                 "Cannot determine number of cells if XMDF mesh");
+  }
+
+  // Check for consistency
+  if (num_cells_topolgy != -1 and num_cells_dataset != -1)
+  {
+    if (num_cells_topolgy != num_cells_dataset)
+    {
+      dolfin_error("XDMFFile.cpp",
+                   "determine number of cells",
+                   "Cannot determine number of cells if XMDF mesh");
+     }
+  }
+
+  return std::max(num_cells_topolgy, num_cells_dataset);
 }
 //----------------------------------------------------------------------------
 template <typename T>
@@ -1209,6 +1295,7 @@ std::vector<T> XDMFFile::get_dataset(pugi::xml_node& dataset_node)
   boost::split(data_vector_str, data_str, boost::is_any_of(" "));
 
   // Get dimensions for to check for consitency
+  std::cout << "get dims 3" << std::endl;
   auto dims = get_dataset_dimensions(dataset_node);
   if (dims.first*dims.second != (std::int64_t) data_vector_str.size())
   {
