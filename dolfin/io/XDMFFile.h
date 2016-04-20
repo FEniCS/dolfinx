@@ -302,18 +302,8 @@ namespace dolfin
     static std::string to_string(X x, Y y);
 
     // Return a vector of numerical values from a vector of stringstream
-    template <typename X>
-    static std::vector<X> string_to_vector(const std::vector<std::string>& x_str);
-    /*
-    {
-      std::vector<X> data;
-      data.reserve(x_str.size());
-      for (auto& v : x_str)
-        data.push_back(std::stoll(v));
-
-      return data;
-    }
-*/
+    template <typename T>
+    static std::vector<T> string_to_vector(const std::vector<std::string>& x_str);
 
     // MPI communicator
     MPI_Comm _mpi_comm;
@@ -340,18 +330,6 @@ namespace dolfin
 
   };
 
-  template <>
-  inline std::vector<double> XDMFFile::string_to_vector(const std::vector<std::string>& x_str);
-  /*
-  {
-    std::vector<double> data;
-    data.reserve(x_str.size());
-    for (auto& v : x_str)
-      data.push_back(std::stod(v));
-
-    return data;
-  }
-  */
 }
 
 #endif

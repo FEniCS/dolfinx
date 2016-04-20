@@ -618,13 +618,9 @@ void XDMFFile::write(const std::vector<Point>& points,
 //----------------------------------------------------------------------------
 void XDMFFile::read(Mesh& mesh, UseFilePartition use_file_partition)
 {
-  std::cout << "Read mesh from XDMF" << std::endl;
-
   // Parse XML file
   dolfin_assert(_xml);
   _xml->read();
-
-  std::cout << "End parse XML" << std::endl;
 
   // Get topology and geometry data
   const auto topology = _xml->get_topology();
@@ -1224,7 +1220,6 @@ std::pair<std::int64_t, int> XDMFFile::get_dataset_dimensions(pugi::xml_node& da
 {
   dolfin_assert(dataset_node);
   pugi::xml_attribute dimensions_attr = dataset_node.attribute("Dimensions");
-  std::cout << "Testing: " << dimensions_attr.as_string() << std::endl;
   dolfin_assert(dimensions_attr);
 
   // Split dimensions string
@@ -1288,24 +1283,29 @@ std::vector<T> XDMFFile::get_dataset(pugi::xml_node& dataset_node)
   pugi::xml_node data_node = dataset_node.first_child();
   dolfin_assert(data_node);
   std::string data_str = data_node.value();
-  boost::trim(data_str);
 
-  // Split data
-  std::vector<std::string> data_vector_str;
-  boost::split(data_vector_str, data_str, boost::is_any_of(" "));
+  // Split data based on spaces and line breaks
+  std::vector<boost::iterator_range<std::string::iterator>> data_vector_str;
+  boost::split(data_vector_str, data_str, boost::is_any_of(" \n"));
+
+  // Add data to numerical vector
+  std::vector<T> data_vector;
+  for (auto& v : data_vector_str)
+  {
+    if (!v.empty())
+      data_vector.push_back(boost::lexical_cast<T>(boost::copy_range<std::string>(v)));
+  }
 
   // Get dimensions for to check for consitency
-  std::cout << "get dims 3" << std::endl;
   auto dims = get_dataset_dimensions(dataset_node);
-  if (dims.first*dims.second != (std::int64_t) data_vector_str.size())
+  if (dims.first*dims.second != (std::int64_t) data_vector.size())
   {
     dolfin_error("XDMFFile.cpp",
                  "reading data from XDMF file",
                  "Data sizes in attribute and size of data read are inconsistent");
   }
 
-  // Convert string to vector numerical values and return
-  return string_to_vector<T>(data_vector_str);
+  return data_vector;
 }
 //----------------------------------------------------------------------------
 template<typename T>
@@ -1847,24 +1847,15 @@ std::string XDMFFile::to_string(X x, Y y)
   return std::to_string(x) + " " + std::to_string(y);
 }
 //-----------------------------------------------------------------------------
-template <typename X>
-std::vector<X> XDMFFile::string_to_vector(const std::vector<std::string>& x_str)
+template <typename T>
+std::vector<T> XDMFFile::string_to_vector(const std::vector<std::string>& x_str)
 {
-  std::vector<X> data;
-  data.reserve(x_str.size());
+  std::vector<T> data;
   for (auto& v : x_str)
-    data.push_back(std::stoll(v));
-
-  return data;
-}
-//-----------------------------------------------------------------------------
-template <>
-inline std::vector<double> XDMFFile::string_to_vector(const std::vector<std::string>& x_str)
-{
-  std::vector<double> data;
-  data.reserve(x_str.size());
-  for (auto& v : x_str)
-    data.push_back(std::stod(v));
+  {
+    if (!v.empty())
+      data.push_back(boost::lexical_cast<T>(v));
+  }
 
   return data;
 }
