@@ -215,7 +215,7 @@ namespace dolfin
     static std::string get_cell_type(pugi::xml_node& topology_node);
 
     // Get dimensions from an XML DataSet node
-    static std::pair<std::int64_t, int>
+    static std::vector<std::int64_t>
       get_dataset_dimensions(pugi::xml_node& dataset_node);
 
     // Get number of cells from an XML Topology node

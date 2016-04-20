@@ -864,8 +864,10 @@ void XDMFFile::read_new_xml(Mesh& mesh) const
   // Get number of points
   pugi::xml_node geometry_data_node = geometry_node.child("DataItem");
   dolfin_assert(geometry_data_node);
-  const auto gdims = get_dataset_dimensions(geometry_data_node);
-  const std::int64_t num_points = gdims.first;
+  const std::vector<std::int64_t> gdims = get_dataset_dimensions(geometry_data_node);
+  dolfin_assert(gdims.size() == 2);
+  const std::int64_t num_points = gdims[0];
+  dolfin_assert(gdims[1] == gdim);
 
   // Create mesh editor
   MeshEditor mesh_editor;
@@ -1216,19 +1218,24 @@ std::string XDMFFile::get_cell_type(pugi::xml_node& topology_node)
   return cell_type;
 }
 //----------------------------------------------------------------------------
-std::pair<std::int64_t, int> XDMFFile::get_dataset_dimensions(pugi::xml_node& dataset_node)
+std::vector<std::int64_t> XDMFFile::get_dataset_dimensions(pugi::xml_node& dataset_node)
 {
   dolfin_assert(dataset_node);
   pugi::xml_attribute dimensions_attr = dataset_node.attribute("Dimensions");
-  dolfin_assert(dimensions_attr);
+  if (!dimensions_attr)
+    return {};
 
   // Split dimensions string
   const std::string dims_str = dimensions_attr.as_string();
-  std::vector<std::string> dims;
-  boost::split(dims, dims_str, boost::is_any_of(" "));
-  dolfin_assert(dims.size() == 2);
+  std::vector<std::string> dims_list;
+  boost::split(dims_list, dims_str, boost::is_any_of(" "));
 
-  return {std::stoll(dims[0]), std::stoi(dims[1]) };
+  // Cast dims to integers
+  std::vector<std::int64_t> dims;
+  for (auto d : dims_list)
+    dims.push_back(boost::lexical_cast<std::int64_t>(d));
+
+  return dims;
 }
 //----------------------------------------------------------------------------
 std::int64_t XDMFFile::get_num_cells(pugi::xml_node& topology_node)
@@ -1244,13 +1251,14 @@ std::int64_t XDMFFile::get_num_cells(pugi::xml_node& topology_node)
   // Get number of cells from topology dataset
   pugi::xml_node topology_dataset_node = topology_node.child("DataItem");
   dolfin_assert(topology_dataset_node);
-  auto tdims = get_dataset_dimensions(topology_dataset_node);
-  std::int64_t num_cells_dataset = -1;
-  if (tdims.first != -1)
-    num_cells_dataset = tdims.first;
+  const std::vector<std::int64_t> tdims = get_dataset_dimensions(topology_dataset_node);
 
-  // Check that number of cells can be found
-  if (num_cells_topolgy == -1 and num_cells_dataset == -1)
+  std::int64_t num_cells_dataset = -1;
+  if (tdims.size() == 2)
+    num_cells_dataset = tdims[0];
+
+  // Check that number of cells can be determined
+  if (tdims.size() != 2 and num_cells_topolgy == -1)
   {
     dolfin_error("XDMFFile.cpp",
                  "determine number of cells",
@@ -1258,9 +1266,9 @@ std::int64_t XDMFFile::get_num_cells(pugi::xml_node& topology_node)
   }
 
   // Check for consistency
-  if (num_cells_topolgy != -1 and num_cells_dataset != -1)
+  if (num_cells_topolgy != -1 and tdims.size() == 2)
   {
-    if (num_cells_topolgy != num_cells_dataset)
+    if (num_cells_topolgy != tdims[0])
     {
       dolfin_error("XDMFFile.cpp",
                    "determine number of cells",
@@ -1268,7 +1276,7 @@ std::int64_t XDMFFile::get_num_cells(pugi::xml_node& topology_node)
      }
   }
 
-  return std::max(num_cells_topolgy, num_cells_dataset);
+  return std::max(num_cells_topolgy, tdims[0]);
 }
 //----------------------------------------------------------------------------
 template <typename T>
@@ -1290,22 +1298,26 @@ std::vector<T> XDMFFile::get_dataset(pugi::xml_node& dataset_node)
 
   // Add data to numerical vector
   std::vector<T> data_vector;
+  data_vector.reserve(data_vector_str.size());
   for (auto& v : data_vector_str)
   {
-    if (!v.empty())
+    if (v.begin() != v.end())
       data_vector.push_back(boost::lexical_cast<T>(boost::copy_range<std::string>(v)));
   }
 
-  // Get dimensions for to check for consitency
-  auto dims = get_dataset_dimensions(dataset_node);
-  if (dims.first*dims.second != (std::int64_t) data_vector.size())
+  // Get dimensions for consitency (if available in DataItem node)
+  const std::vector<std::int64_t> dims = get_dataset_dimensions(dataset_node);
+  if (dims.size() == 2)
   {
-    dolfin_error("XDMFFile.cpp",
-                 "reading data from XDMF file",
-                 "Data sizes in attribute and size of data read are inconsistent");
-  }
+    if (dims[0]*dims[1] != (std::int64_t) data_vector.size())
+    {
+      dolfin_error("XDMFFile.cpp",
+                  "reading data from XDMF file",
+                 "  Data sizes in attribute and size of data read are inconsistent");
+     }
+   }
 
-  return data_vector;
+   return data_vector;
 }
 //----------------------------------------------------------------------------
 template<typename T>
