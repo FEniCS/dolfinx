@@ -494,7 +494,7 @@ void PETScKrylovSolver::monitor(bool monitor_convergence)
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
 {
-  // Set options prefix (if any)
+  // Set options prefix
   dolfin_assert(_ksp);
   PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, options_prefix.c_str());
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");

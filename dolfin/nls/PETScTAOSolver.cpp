@@ -78,15 +78,8 @@ Parameters PETScTAOSolver::default_parameters()
   p.add("linear_solver"          , "default");
   p.add("preconditioner"         , "default");
 
-  std::set<std::string> line_searches;
-  line_searches.insert("default");
-  line_searches.insert("unit");
-  line_searches.insert("more-thuente");
-  line_searches.insert("gpcg");
-  line_searches.insert("armijo");
-  line_searches.insert("owarmijo");
-  line_searches.insert("ipm");
-
+  std::set<std::string> line_searches = {"default", "unit", "more-thuente",
+                                         "gpcg", "armijo", "owarmijo", "ipm"};
   p.add("line_search", "default", line_searches);
 
   p.add(KrylovSolver::default_parameters());
@@ -94,9 +87,24 @@ Parameters PETScTAOSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
+PETScTAOSolver::PETScTAOSolver(MPI_Comm comm) : _tao(nullptr),
+                                                _has_bounds(false)
+{
+  // Create TAO object
+  PetscErrorCode ierr = TaoCreate(comm, &_tao);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoCreate");
+
+  // Set parameter values
+  parameters = default_parameters();
+
+  // Update parameters when tao/ksp/pc_types are explictly given
+  update_parameters("default", "default", "default");
+}
+//-----------------------------------------------------------------------------
 PETScTAOSolver::PETScTAOSolver(const std::string tao_type,
                                const std::string ksp_type,
-                               const std::string pc_type) : _tao(NULL)
+                               const std::string pc_type) : _tao(NULL),
+                                                            _has_bounds(false)
 {
   // Create TAO object
   PetscErrorCode ierr = TaoCreate(PETSC_COMM_WORLD, &_tao);
@@ -116,8 +124,8 @@ PETScTAOSolver::~PETScTAOSolver()
 }
 //-----------------------------------------------------------------------------
 void PETScTAOSolver::update_parameters(const std::string tao_type,
-                                  const std::string ksp_type,
-                                  const std::string pc_type)
+                                       const std::string ksp_type,
+                                       const std::string pc_type)
 {
   // Update parameters when tao/ksp/pc_types are explictly given
   if (tao_type != "default")
@@ -145,7 +153,7 @@ void PETScTAOSolver::set_tao(const std::string tao_type)
 
   // In case of an unconstrained minimisation problem, set the TAO
   // method to TAONTL
-  if (!has_bounds && tao_type == "default")
+  if (!_has_bounds && tao_type == "default")
   {
     ierr = TaoSetType(_tao, TAONTL);
     if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetType");
@@ -169,7 +177,7 @@ PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
                       const GenericVector& ub)
 {
   // Bound-constrained minimisation problem
-  has_bounds = true;
+  _has_bounds = true;
 
   return solve(optimisation_problem, x.down_cast<PETScVector>(),
                lb.down_cast<PETScVector>(), ub.down_cast<PETScVector>());
@@ -180,7 +188,7 @@ PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
                       GenericVector& x)
 {
   // Unconstrained minimisation problem
-  has_bounds = false;
+  _has_bounds = false;
   PETScVector lb, ub;
 
   return solve(optimisation_problem, x.down_cast<PETScVector>(), lb, ub);
@@ -190,7 +198,7 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
                           PETScVector& x)
 {
   // Unconstrained minimisation problem
-  has_bounds = false;
+  _has_bounds = false;
   PETScVector lb, ub;
   init(optimisation_problem, x.down_cast<PETScVector>(), lb, ub);
 }
@@ -224,7 +232,7 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetInitialVector");
 
   // Set the bounds in case of a bound-constrained minimisation problem
-  if (has_bounds)
+  if (_has_bounds)
   {
     ierr = TaoSetVariableBounds(_tao, lb.vec(), ub.vec());
     if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetVariableBounds");

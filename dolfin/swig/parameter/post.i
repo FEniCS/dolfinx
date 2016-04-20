@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-05-12
-// Last changed: 2014-08-25
+// Last changed: 2016-04-19
 //
 // ===========================================================================
 // SWIG directives for the DOLFIN parameter kernel module (post)
@@ -202,11 +202,13 @@ def __setitem__(self, key, value):
         return
     if key not in self._get_parameter_keys():
         raise KeyError("'%s' is not a parameter"%key)
-    if not isinstance(value,(int,str,float,bool)):
-        raise TypeError("can only set 'int', 'bool', 'float' and 'str' parameters")
+    if not isinstance(value,(int,str,float,bool)) and (value is not None):
+        raise TypeError("can only set 'int', 'bool', 'float' and 'str' for parameter %s" %key)
     par = self._get_parameter(key)
     if isinstance(value,bool):
         par._assign_bool(value)
+    elif value is None:
+        pass
     else:
         par._assign(value)
 

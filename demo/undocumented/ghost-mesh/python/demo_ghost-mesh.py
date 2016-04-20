@@ -9,10 +9,6 @@ import numpy as np
 import sys, os
 import six
 
-if os.environ.get("DOLFIN_NOPLOT", "0") != "0":
-    print("DOLFIN_NOPLOT set: Bye!")
-    exit()
-
 try:
     parameters['plotting_backend'] = 'matplotlib'
 except RuntimeError:
@@ -166,4 +162,5 @@ for note in facet_note:
 #     xdmf << Q
 
 plt.savefig("mesh-rank%d.png" % rank)
-plt.show()
+if os.environ.get("DOLFIN_NOPLOT", "0") == "0":
+    plt.show()

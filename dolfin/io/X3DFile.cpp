@@ -28,19 +28,20 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Face.h>
 #include <dolfin/mesh/Vertex.h>
-
+#include "X3DOM.h"
 #include "X3DFile.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 X3DFile::X3DFile(const std::string filename) : GenericFile(filename, "X3D"),
-  facet_type("IndexedFaceSet")
+                                               facet_type("IndexedFaceSet")
 {
   // Do nothing
 }
@@ -52,7 +53,13 @@ X3DFile::~X3DFile()
 //-----------------------------------------------------------------------------
 void X3DFile::operator<< (const Mesh& mesh)
 {
-  write_mesh(mesh);
+  // Build XML tree
+  pugi::xml_document xml_doc;
+  X3DOM::build_x3dom_tree(xml_doc, mesh);
+
+  // Write to file
+  if (MPI::rank(mesh.mpi_comm()) == 0)
+    xml_doc.save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 void X3DFile::operator<< (const MeshFunction<std::size_t>& meshfunction)
@@ -62,7 +69,14 @@ void X3DFile::operator<< (const MeshFunction<std::size_t>& meshfunction)
 //-----------------------------------------------------------------------------
 void X3DFile::operator<< (const Function& u)
 {
-  write_function(u);
+  // Build XML tree
+  pugi::xml_document xml_doc;
+  X3DOM::build_x3dom_tree(xml_doc, u);
+
+  // Write to file
+  dolfin_assert(u.vector());
+  if (MPI::rank(u.vector()->mpi_comm()) == 0)
+    xml_doc.save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 std::string X3DFile::color_palette(const int palette) const
@@ -236,203 +250,6 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
 
     // Save XML file
     xml_doc.save_file(_filename.c_str(), "  ");
-  }
-}
-//-----------------------------------------------------------------------------
-void X3DFile::write_function(const Function& u)
-{
-  dolfin_assert(u.function_space()->mesh());
-  const Mesh& mesh = *u.function_space()->mesh();
-
-  // Mesh geometric and topological dimensions
-  const std::size_t gdim = mesh.geometry().dim();
-  const std::size_t tdim = mesh.topology().dim();
-
-  if (gdim !=2 && gdim !=3)
-  {
-    dolfin_error("X3DFile.cpp",
-                 "output mesh",
-                 "X3D will only output 2D or 3D meshes");
-  }
-
-  // Build mesh connectivity
-  mesh.init(tdim - 1 , tdim);
-
-  dolfin_assert(u.function_space()->dofmap());
-  const GenericDofMap& dofmap = *u.function_space()->dofmap();
-
-  // Only allow scalar fields
-  if (u.value_rank() > 1)
-  {
-    dolfin_error("X3DFile.cpp",
-                 "write X3D",
-                 "Can only handle scalar and vector Functions");
-  }
-
-  if (u.value_rank() == 1)
-    warning("X3DFile outputs scalar magnitude of vector field");
-
-  // Only allow vertex centered data
-  const bool vertex_data = (dofmap.max_element_dofs() != 1);
-  if (!vertex_data)
-  {
-    dolfin_error("X3DFile.cpp",
-                 "write X3D",
-                 "Can only handle vertex-based Function at present");
-  }
-
-  // Compute vertex data values
-  std::vector<double> data_values;
-  u.compute_vertex_values(data_values, mesh);
-
-  // Normalise data values
-  if (u.value_rank() == 1)
-  {
-    std::vector<double> magnitude;
-    const std::size_t num_vertices = mesh.num_vertices();
-    for (std::size_t i = 0; i < num_vertices ; ++i)
-    {
-      double val = 0.0;
-      for (std::size_t j = 0; j < u.value_size() ; j++)
-        val += pow(data_values[i + j*num_vertices], 2.0);
-      val = sqrt(val);
-      magnitude.push_back(val);
-    }
-    data_values.resize(magnitude.size());
-    std::copy(magnitude.begin(), magnitude.end(), data_values.begin());
-  }
-
-  // Create pugi document
-  pugi::xml_document xml_doc;
-
-  // Get mesh mix/max dimensions and write XML header
-  const std::vector<double> xpos = mesh_min_max(mesh);
-  output_xml_header(xml_doc, xpos);
-
-  // Get indices of vertices on mesh surface
-  const std::vector<std::size_t> surface_vertices = vertex_index(mesh);
-
-  // Write vertices and vertex data to XML file
-  write_vertices(xml_doc, mesh, surface_vertices);
-  write_values(xml_doc, mesh, surface_vertices, data_values);
-
-  // Save XML file
-  if (MPI::rank(mesh.mpi_comm()) == 0)
-    xml_doc.save_file(_filename.c_str(), "  ");
-}
-//-----------------------------------------------------------------------------
-void X3DFile::write_mesh(const Mesh& mesh)
-{
-  const std::size_t gdim = mesh.geometry().dim();
-  if (gdim !=2 && gdim !=3)
-  {
-    dolfin_error("X3DFile.cpp",
-                 "output mesh",
-                 "X3D will only output 2D or 3D meshes");
-  }
-
-  // Create pugi doc
-  pugi::xml_document xml_doc;
-
-  // For serial - ensure connectivity
-  mesh.init(mesh.topology().dim() - 1 , mesh.topology().dim());
-
-  // Get mesh max and min dimensions and viewpoint
-  const std::vector<double> xpos = mesh_min_max(mesh);
-
-  // Create XML for all mesh vertices on surface
-  output_xml_header(xml_doc, xpos);
-  const std::vector<std::size_t> vecindex = vertex_index(mesh);
-  write_vertices(xml_doc, mesh, vecindex);
-
-  if (MPI::rank(mesh.mpi_comm()) == 0)
-    xml_doc.save_file(_filename.c_str(), "  ");
-}
-//-----------------------------------------------------------------------------
-void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
-                           const std::vector<std::size_t> vecindex,
-                           const std::vector<double> data_values)
-{
-  const std::size_t tdim = mesh.topology().dim();
-
-  double minval = *std::min_element(data_values.begin(), data_values.end());
-  minval = MPI::min(mesh.mpi_comm(), minval);
-  double maxval = *std::max_element(data_values.begin(), data_values.end());
-  maxval = MPI::max(mesh.mpi_comm(), maxval);
-
-  double scale = 0.0;
-  if (maxval == minval)
-    scale = 1.0;
-  else
-    scale = 255.0/(maxval - minval);
-
-  std::vector<int> local_output;
-  if (facet_type == "IndexedLineSet")
-  {
-    for (EdgeIterator e(mesh); !e.end(); ++e)
-    {
-      bool allow_edge = (tdim == 2);
-
-      // If one of the faces connected to this edge is external, then
-      // output the edge
-      if (!allow_edge)
-      {
-        for (FaceIterator f(*e); !f.end(); ++f)
-        {
-          if (f->num_global_entities(tdim) == 1)
-            allow_edge = true;
-        }
-      }
-
-      if (allow_edge)
-      {
-        for (VertexIterator v(*e); !v.end(); ++v)
-        {
-          local_output.push_back((int)((data_values[v->index()] - minval)
-                                       *scale));
-        }
-        local_output.push_back(-1);
-      }
-    }
-  }
-  else if (facet_type == "IndexedFaceSet")
-  {
-    // Output faces
-    for (FaceIterator f(mesh); !f.end(); ++f)
-    {
-      if (tdim == 2 || f->num_global_entities(tdim) == 1)
-      {
-        for (VertexIterator v(*f); !v.end(); ++v)
-        {
-          local_output.push_back((int)((data_values[v->index()] - minval)
-                                       *scale));
-        }
-        local_output.push_back(-1);
-      }
-    }
-  }
-
-  // Gather up on zero
-  std::vector<int> gathered_output;
-  MPI::gather(mesh.mpi_comm(), local_output, gathered_output);
-  if (MPI::rank(mesh.mpi_comm()) == 0)
-  {
-    pugi::xml_node indexed_face_set = xml_doc.child("X3D")
-      .child("Scene").child("Shape").child(facet_type.c_str());
-    indexed_face_set.append_attribute("colorPerVertex") = "true";
-
-    std::stringstream str_output;
-    for (std::vector<int>::iterator val = gathered_output.begin();
-         val != gathered_output.end(); ++val)
-    {
-      str_output << *val << " ";
-    }
-    indexed_face_set.append_attribute("colorIndex") = str_output.str().c_str();
-
-    // Output colour palette
-    const int palette = 2;
-    pugi::xml_node color = indexed_face_set.append_child("Color");
-    color.append_attribute("color") = color_palette(palette).c_str();
   }
 }
 //-----------------------------------------------------------------------------
