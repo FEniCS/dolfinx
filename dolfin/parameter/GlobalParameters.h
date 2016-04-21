@@ -147,7 +147,7 @@ namespace dolfin
 
       // Linear algebra backend
       std::string default_backend = "Eigen";
-      std::set<std::string> allowed_backends = {"STL", "Eigen"};
+      std::set<std::string> allowed_backends = {"Eigen"};
       #ifdef HAS_PETSC
       allowed_backends.insert("PETSc");
       default_backend = "PETSc";
