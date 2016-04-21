@@ -43,6 +43,7 @@
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
 #include "HDF5File.h"
@@ -878,8 +879,7 @@ void XDMFFile::read_new(Mesh& mesh) const
   pugi::xml_node topology_data_node = topology_node.child("DataItem");
   dolfin_assert(topology_data_node);
 
-  bool serial = true;
-  if (serial)
+  if (MPI::size(_mpi_comm) == 1)
   {
     build_mesh(mesh, cell_type_str, num_points_global, num_cells_global,
                cell_type->num_vertices(),
@@ -895,6 +895,7 @@ void XDMFFile::read_new(Mesh& mesh) const
                           topology_data_node, geometry_data_node);
 
     // Build mesh
+    MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data);
 
   }
 }
@@ -976,18 +977,22 @@ XDMFFile::build_local_mesh_data (LocalMeshData& local_mesh_data,
 
   // Get share of topology data
   dolfin_assert(topology_dataset_node);
+  std::cout << "!!!!!!!!!Read topology_data" << std::endl;
   const std::vector<std::int32_t> topology_data
     = get_dataset<std::int32_t>(local_mesh_data.mpi_comm(),
                                 topology_dataset_node);
+  std::cout << "End Read topology_data" << std::endl;
   dolfin_assert(topology_data.size() % num_vertices_per_cell == 0);
 
   // Wrap topology data as multi-dimesional array
+  std::cout << "Wrap topology data" << std::endl;
   const int num_local_cells = topology_data.size()/num_vertices_per_cell;
   const boost::multi_array_ref<const std::int32_t, 2>
     topology_data_array(topology_data.data(),
                         boost::extents[num_local_cells][num_vertices_per_cell]);
 
   // Remap vertices to DOLFIN ordering from VTK/XDMF ordering
+  std::cout << "Re-map topology data" << std::endl;
   local_mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
   const std::vector<unsigned int> perm = cell_type.vtk_mapping();
   for (int i = 0; i < num_local_cells; ++i)
@@ -998,6 +1003,7 @@ XDMFFile::build_local_mesh_data (LocalMeshData& local_mesh_data,
 
   // Set cell global indices
   //const std::int64_t cell_offset = 0;
+  std::cout << "Compute cell indices" << std::endl;
   const std::int64_t cell_offset
     = MPI::global_offset(local_mesh_data.mpi_comm(), num_local_cells, true);
   local_mesh_data.global_cell_indices.resize(num_local_cells);
@@ -1014,9 +1020,11 @@ XDMFFile::build_local_mesh_data (LocalMeshData& local_mesh_data,
 
   // Read dataset
   dolfin_assert(geometry_dataset_node);
+  std::cout << "Read geometry data" << std::endl;
   const std::vector<double> geometry_data
     = get_dataset<double>(local_mesh_data.mpi_comm(), geometry_dataset_node);
   dolfin_assert(geometry_data.size() % gdim == 0);
+  std::cout << "End Read geometry data" << std::endl;
 
   const int num_local_vertices = topology_data.size()/num_vertices_per_cell;
 
@@ -1435,27 +1443,40 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
   }
   else if (format == "HDF")
   {
+    std::cout << "** In read HDF5 dataset" << std::endl;
+
     // Get file and data path
     auto paths = XDMFxml::get_hdf5_paths(dataset_node);
 
     // Open HDF5 for reading
-    HDF5File h5_file(MPI_COMM_WORLD, paths[0], "r");
+    std::cout << "** Open H5 file" << std::endl;
+    HDF5File h5_file(comm, paths[0], "r");
+    std::cout << "** End Open H5 file" << std::endl;
 
     // Get shape
     const std::vector<std::int64_t> shape
       = HDF5Interface::get_dataset_shape(h5_file.h5_id(), paths[1]);
+    std::cout << "** Data shape: " << shape[0] << ", " << shape[1] << std::endl;
 
     // Get data range to read on this process
     dolfin_assert(!shape.empty());
     dolfin_assert(shape[0] != 0);
 
     // Determine data range to read
-    const std::int64_t offset = MPI::global_offset(comm, shape[0], true);
-    const std::pair<std::int64_t, std::int64_t> range
-      = {offset, offset + shape[0]};
+    const auto range = MPI::local_range(comm, shape[0]);
+    MPI::barrier(comm);
+    if (MPI::rank(comm) == 0)
+    {
+      std::cout << "Shape0: " << shape[0] << std::endl;
+      std::cout << "Range to read: " << range.first << ", " << range.second
+                << std::endl;
+    }
+    MPI::barrier(comm);
 
     // Retrieve data
+    std::cout << "**Begin read dataset: " << std::endl;
     HDF5Interface::read_dataset(h5_file.h5_id(), paths[1], range, data_vector);
+    std::cout << "**End read dataset: " << std::endl;
   }
   else
   {
@@ -1466,12 +1487,11 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
 
   }
 
-
   // Get dimensions for consitency (if available in DataItem node)
   const std::vector<std::int64_t> dims = get_dataset_dimensions(dataset_node);
   if (dims.size() == 2)
   {
-    if (dims[0]*dims[1] != (std::int64_t) data_vector.size())
+    if (dims[0]*dims[1] != (std::int64_t) MPI::sum(comm, data_vector.size()))
     {
       dolfin_error("XDMFFile.cpp",
                    "reading data from XDMF file",

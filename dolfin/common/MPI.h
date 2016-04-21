@@ -24,8 +24,8 @@
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H
 
+#include <cstdint>
 #include <iostream>
-
 #include <numeric>
 #include <type_traits>
 #include <utility>
@@ -185,20 +185,18 @@ namespace dolfin
 
     /// Return local range for local process, splitting [0, N - 1] into
     /// size() portions of almost equal size
-    static std::pair<std::size_t, std::size_t>
-      local_range(MPI_Comm comm, std::size_t N);
+    static std::pair<std::int64_t, std::int64_t>
+      local_range(MPI_Comm comm, std::int64_t N);
 
     /// Return local range for given process, splitting [0, N - 1] into
     /// size() portions of almost equal size
-    static std::pair<std::size_t, std::size_t>
-      local_range(MPI_Comm comm, unsigned int process,
-                  std::size_t N);
+    static std::pair<std::int64_t, std::int64_t>
+      local_range(MPI_Comm comm, int process, std::int64_t N);
 
     /// Return local range for given process, splitting [0, N - 1] into
     /// size() portions of almost equal size
-    static std::pair<std::size_t, std::size_t>
-      compute_local_range(unsigned int process, std::size_t N,
-                          unsigned int size);
+    static std::pair<std::int64_t, std::int64_t>
+      compute_local_range(int process, std::int64_t N, int size);
 
     /// Return which process owns index (inverse of local_range)
     static unsigned int index_owner(MPI_Comm comm,
