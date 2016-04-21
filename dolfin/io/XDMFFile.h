@@ -43,6 +43,7 @@ namespace dolfin
 #ifdef HAS_HDF5
   class HDF5File;
 #endif
+  class LocalMeshData;
   class Mesh;
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
@@ -202,6 +203,16 @@ namespace dolfin
                            const pugi::xml_node& topology_dataset_node,
                            const pugi::xml_node& geometry_dataset_node);
 
+   // Build local mesh data
+   static void
+    build_local_mesh_data (LocalMeshData& local_mesh_data,
+                           const CellType& cell_type,
+                           std::int64_t num_points, std::int64_t num_cells,
+                           int num_points_per_cell,
+                           int tdim, int gdim,
+                           const pugi::xml_node& topology_dataset_node,
+                           const pugi::xml_node& geometry_dataset_node);
+
     // Add topology node to xml_node
     template<typename T>
     static void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -233,7 +244,8 @@ namespace dolfin
 
     // Return data associated with a data set node
     template <typename T>
-    static std::vector<T> get_dataset(const pugi::xml_node& dataset_node);
+    static std::vector<T> get_dataset(MPI_Comm comm,
+                                      const pugi::xml_node& dataset_node);
 
     static std::string get_hdf5_filename(std::string xdmf_filename);
 

@@ -61,10 +61,10 @@ namespace dolfin
   public:
 
     /// Create empty local mesh data
-    LocalMeshData(const MPI_Comm mpi_comm);
+    explicit LocalMeshData(const MPI_Comm mpi_comm);
 
     /// Create local mesh data for given mesh
-    LocalMeshData(const Mesh& mesh);
+    explicit LocalMeshData(const Mesh& mesh);
 
     /// Destructor
     ~LocalMeshData();
