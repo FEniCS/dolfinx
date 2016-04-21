@@ -190,11 +190,20 @@ namespace dolfin
     void write_new(const Mesh& mesh, Encoding encoding=Encoding::HDF5) const;
 
     // Read mesh
-    void read_new_xml(Mesh& mesh) const;
+    void read_new(Mesh& mesh) const;
 
   private:
 
-    // Add topology node
+    // Build mesh (serial)
+    static void build_mesh(Mesh& mesh, std::string cell_type_str,
+                           std::int64_t num_points, std::int64_t num_cells,
+                           int num_points_per_cell,
+                           int tdim, int gdim,
+                           const pugi::xml_node& topology_dataset_node,
+                           const pugi::xml_node& geometry_dataset_node);
+
+    // Add topology node to xml_node
+    template<typename T>
     static void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   hid_t h5_id, std::string path_prefix,
                                   const Mesh& mesh);
@@ -205,25 +214,26 @@ namespace dolfin
                                   const Mesh& mesh);
 
     // Read topology from XDMF Topology node
-    static std::vector<std::int64_t> read_topology_data(pugi::xml_node& topology_node);
+    static std::vector<std::int64_t> read_topology_data(const pugi::xml_node& topology_node);
 
     // Return topology data on this process as a flat vector
-    static std::vector<std::int64_t> compute_topology_data(const Mesh& mesh,
-                                                      int cell_dim);
+    template<typename T>
+    static std::vector<T> compute_topology_data(const Mesh& mesh,
+                                                int cell_dim);
 
     // Get DOLFIN cell type string from XML topology node
-    static std::string get_cell_type(pugi::xml_node& topology_node);
+    static std::string get_cell_type(const pugi::xml_node& topology_node);
 
     // Get dimensions from an XML DataSet node
     static std::vector<std::int64_t>
-      get_dataset_dimensions(pugi::xml_node& dataset_node);
+      get_dataset_dimensions(const pugi::xml_node& dataset_node);
 
     // Get number of cells from an XML Topology node
-    static std::int64_t get_num_cells(pugi::xml_node& topology_node);
+    static std::int64_t get_num_cells(const pugi::xml_node& topology_node);
 
     // Return data associated with a data set node
     template <typename T>
-    static std::vector<T> get_dataset(pugi::xml_node& dataset_node);
+    static std::vector<T> get_dataset(const pugi::xml_node& dataset_node);
 
     static std::string get_hdf5_filename(std::string xdmf_filename);
 

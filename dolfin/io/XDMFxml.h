@@ -119,14 +119,15 @@ namespace dolfin
                        const std::string format,
                        const bool is_reference=false);
 
+     // Split HDF5 paths (file path and internal HDF5 path)
+     static
+     std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& xml_node);
+
   private:
 
     // Generate the XML header generic to all files
     void header();
 
-    // Split HDF5 paths (file path and internal HDF5 path)
-    static
-    std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& xml_node);
 
     // The XML document
     pugi::xml_document xml_doc;
