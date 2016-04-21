@@ -1220,20 +1220,23 @@ std::string XDMFFile::get_cell_type(pugi::xml_node& topology_node)
 //----------------------------------------------------------------------------
 std::vector<std::int64_t> XDMFFile::get_dataset_dimensions(pugi::xml_node& dataset_node)
 {
+  // Get Dimensions attribute string
   dolfin_assert(dataset_node);
   pugi::xml_attribute dimensions_attr = dataset_node.attribute("Dimensions");
-  if (!dimensions_attr)
-    return {};
 
-  // Split dimensions string
-  const std::string dims_str = dimensions_attr.as_string();
-  std::vector<std::string> dims_list;
-  boost::split(dims_list, dims_str, boost::is_any_of(" "));
-
-  // Cast dims to integers
+  // Gets dimensions, if attribute is present
   std::vector<std::int64_t> dims;
-  for (auto d : dims_list)
-    dims.push_back(boost::lexical_cast<std::int64_t>(d));
+  if (dimensions_attr)
+  {
+    // Split dimensions string
+    const std::string dims_str = dimensions_attr.as_string();
+    std::vector<std::string> dims_list;
+    boost::split(dims_list, dims_str, boost::is_any_of(" "));
+
+    // Cast dims to integers
+    for (auto d : dims_list)
+      dims.push_back(boost::lexical_cast<std::int64_t>(d));
+  }
 
   return dims;
 }
@@ -1253,10 +1256,6 @@ std::int64_t XDMFFile::get_num_cells(pugi::xml_node& topology_node)
   dolfin_assert(topology_dataset_node);
   const std::vector<std::int64_t> tdims = get_dataset_dimensions(topology_dataset_node);
 
-  std::int64_t num_cells_dataset = -1;
-  if (tdims.size() == 2)
-    num_cells_dataset = tdims[0];
-
   // Check that number of cells can be determined
   if (tdims.size() != 2 and num_cells_topolgy == -1)
   {
@@ -1265,7 +1264,8 @@ std::int64_t XDMFFile::get_num_cells(pugi::xml_node& topology_node)
                  "Cannot determine number of cells if XMDF mesh");
   }
 
-  // Check for consistency
+  // Check for consistency if number of cells appears in both the topology
+  // and DataItem nodes
   if (num_cells_topolgy != -1 and tdims.size() == 2)
   {
     if (num_cells_topolgy != tdims[0])
