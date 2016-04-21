@@ -896,7 +896,6 @@ void XDMFFile::read_new(Mesh& mesh) const
 
     // Build mesh
     MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data);
-
   }
 }
 //----------------------------------------------------------------------------
@@ -972,6 +971,7 @@ XDMFFile::build_local_mesh_data (LocalMeshData& local_mesh_data,
   local_mesh_data.tdim = cell_type.dim();
   local_mesh_data.cell_type = cell_type.cell_type();
   local_mesh_data.num_vertices_per_cell = num_vertices_per_cell;
+  local_mesh_data.num_global_cells = num_cells_global;
 
   // -- Topology --
 
@@ -1003,9 +1003,9 @@ XDMFFile::build_local_mesh_data (LocalMeshData& local_mesh_data,
 
   // Set cell global indices
   //const std::int64_t cell_offset = 0;
-  std::cout << "Compute cell indices" << std::endl;
   const std::int64_t cell_offset
     = MPI::global_offset(local_mesh_data.mpi_comm(), num_local_cells, true);
+  std::cout << "Compute cell indices: " << cell_offset << std::endl;
   local_mesh_data.global_cell_indices.resize(num_local_cells);
   std::iota(local_mesh_data.global_cell_indices.begin(),
             local_mesh_data.global_cell_indices.end(),
@@ -1013,7 +1013,7 @@ XDMFFile::build_local_mesh_data (LocalMeshData& local_mesh_data,
 
   // -- Geometry --
 
-  local_mesh_data.num_global_cells = num_cells_global;
+  local_mesh_data.num_global_vertices = num_points_global;
 
   // Set geometric dimension
   local_mesh_data.gdim = gdim;
@@ -1026,7 +1026,8 @@ XDMFFile::build_local_mesh_data (LocalMeshData& local_mesh_data,
   dolfin_assert(geometry_data.size() % gdim == 0);
   std::cout << "End Read geometry data" << std::endl;
 
-  const int num_local_vertices = topology_data.size()/num_vertices_per_cell;
+  // Deduce number of local vertices
+  const int num_local_vertices = geometry_data.size()/gdim;
 
   // Copy geometry data to boost::multi_array
   local_mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices][gdim]);

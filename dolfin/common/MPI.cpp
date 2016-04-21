@@ -129,13 +129,6 @@ dolfin::MPI::compute_local_range(int process, std::int64_t N, int size)
   const std::int64_t n = N / size;
   const std::int64_t r = N % size;
 
-  if (process == 0)
-  {
-    std::cout << "n, r: " << n << ", " << r << std::endl;
-    std::cout << "N, size: " << N << ", " << size << std::endl;
-
-  }
-
   // Compute local range
   if (process < r)
     return {process*(n + 1), process*(n + 1) + n + 1};

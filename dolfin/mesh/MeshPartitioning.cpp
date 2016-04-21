@@ -126,7 +126,6 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   }
 
   const std::string ghost_mode = parameters["ghost_mode"];
-
   if (ghost_procs.empty() && ghost_mode != "none")
   {
     // FIXME: need to generate ghost cell information here
@@ -195,20 +194,28 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   LocalMeshData new_mesh_data(mesh.mpi_comm());
 
   // Copy over some basic information
+  dolfin_assert(mesh_data.tdim >= 0);
   new_mesh_data.tdim = mesh_data.tdim;
+
+  dolfin_assert(mesh_data.gdim > 0);
   new_mesh_data.gdim = mesh_data.gdim;
+
+  dolfin_assert(mesh_data.num_global_cells >= 0);
   new_mesh_data.num_global_cells = mesh_data.num_global_cells;
-  new_mesh_data.num_vertices_per_cell
-    = mesh_data.num_vertices_per_cell;
+
+  dolfin_assert(mesh_data.num_vertices_per_cell > 0);
+  new_mesh_data.num_vertices_per_cell = mesh_data.num_vertices_per_cell;
+
   new_mesh_data.cell_type = mesh_data.cell_type;
+
+  dolfin_assert(mesh_data.num_global_vertices >= 0);
   new_mesh_data.num_global_vertices = mesh_data.num_global_vertices;
 
   // Keep tabs on ghost cell ownership
   std::map<unsigned int, std::set<unsigned int>> shared_cells;
   // Send cells to processes that need them
   const unsigned int num_regular_cells =
-    distribute_cells(mesh.mpi_comm(), mesh_data,
-                     cell_partition, ghost_procs,
+    distribute_cells(mesh.mpi_comm(), mesh_data, cell_partition, ghost_procs,
                      shared_cells, new_mesh_data);
 
   const std::string ghost_mode = parameters["ghost_mode"];
@@ -218,9 +225,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
     // Send/receive additional cells
     // defined by connectivity to the shared vertices.
     // Add new cells to new_mesh_data
-    distribute_cell_layer(mesh.mpi_comm(),
-                          num_regular_cells,
-                          shared_cells,
+    distribute_cell_layer(mesh.mpi_comm(), num_regular_cells, shared_cells,
                           new_mesh_data);
   }
   else if (ghost_mode == "none")
@@ -229,15 +234,16 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
     new_mesh_data.cell_partition.resize(num_regular_cells);
     new_mesh_data.global_cell_indices.resize(num_regular_cells);
     const std::size_t num_cell_vertices = mesh_data.num_vertices_per_cell;
-    new_mesh_data.cell_vertices.resize
-      (boost::extents[num_regular_cells][num_cell_vertices]);
+    new_mesh_data.cell_vertices.resize(boost::extents[num_regular_cells][num_cell_vertices]);
     shared_cells.clear();
   }
 
 #ifdef HAS_SCOTCH
   if (parameters["reorder_cells_gps"])
-    reorder_cells_gps(mesh.mpi_comm(), num_regular_cells,
-                      shared_cells, new_mesh_data);
+  {
+    reorder_cells_gps(mesh.mpi_comm(), num_regular_cells, shared_cells,
+                      new_mesh_data);
+  }
 #endif
 
   // Generate mapping from global to local indexing for vertices
@@ -245,15 +251,16 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   // at the end of the local range
   std::map<std::size_t, std::size_t> vertex_global_to_local;
   const std::size_t num_regular_vertices
-    = compute_vertex_mapping(mesh.mpi_comm(),
-                             num_regular_cells, new_mesh_data,
+    = compute_vertex_mapping(mesh.mpi_comm(), num_regular_cells, new_mesh_data,
                              vertex_global_to_local);
 
 #ifdef HAS_SCOTCH
   if (parameters["reorder_vertices_gps"])
+  {
     reorder_vertices_gps(mesh.mpi_comm(), num_regular_vertices,
                          num_regular_cells, vertex_global_to_local,
                          new_mesh_data);
+ }
 #endif
 
   // Send vertices to processes that need them, informing all
