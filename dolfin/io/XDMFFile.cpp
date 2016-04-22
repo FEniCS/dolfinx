@@ -894,7 +894,7 @@ void XDMFFile::read_new(Mesh& mesh) const
   // Get number of points from Geometry dataitem node
   pugi::xml_node geometry_data_node = geometry_node.child("DataItem");
   dolfin_assert(geometry_data_node);
-  const std::vector<std::int64_t> gdims = get_dataset_dimensions(geometry_data_node);
+  const std::vector<std::int64_t> gdims = get_dataset_shape(geometry_data_node);
   dolfin_assert(gdims.size() == 2);
   const std::int64_t num_points_global = gdims[0];
   dolfin_assert(gdims[1] == gdim);
@@ -1320,7 +1320,7 @@ std::string XDMFFile::get_cell_type(const pugi::xml_node& topology_node)
 }
 //----------------------------------------------------------------------------
 std::vector<std::int64_t>
-XDMFFile::get_dataset_dimensions(const pugi::xml_node& dataset_node)
+XDMFFile::get_dataset_shape(const pugi::xml_node& dataset_node)
 {
   // Get Dimensions attribute string
   dolfin_assert(dataset_node);
@@ -1356,8 +1356,7 @@ std::int64_t XDMFFile::get_num_cells(const pugi::xml_node& topology_node)
   // Get number of cells from topology dataset
   pugi::xml_node topology_dataset_node = topology_node.child("DataItem");
   dolfin_assert(topology_dataset_node);
-  const std::vector<std::int64_t> tdims
-    = get_dataset_dimensions(topology_dataset_node);
+  const std::vector<std::int64_t> tdims = get_dataset_shape(topology_dataset_node);
 
   // Check that number of cells can be determined
   if (tdims.size() != 2 and num_cells_topolgy == -1)
@@ -1387,7 +1386,8 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
                                     const pugi::xml_node& dataset_node,
                                     const boost::filesystem::path& parent_path)
 {
-  // FIXME: Generalise to HDF5 storage
+  // FIXME: Need to sort out dataste dimensions - can't depend on HDF5 shape
+
   dolfin_assert(dataset_node);
   pugi::xml_attribute format_attr = dataset_node.attribute("Format");
   dolfin_assert(format_attr);
@@ -1415,6 +1415,11 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
   }
   else if (format == "HDF")
   {
+    // FIXME: This may not alwat be present
+    // Get data set dimensions
+    const std::vector<std::int64_t> shape = get_dataset_shape(dataset_node);
+    dolfin_assert(shape.size() < 3);
+
     // Get file and data path
     auto paths = XDMFxml::get_hdf5_paths(dataset_node);
 
@@ -1427,8 +1432,10 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
     HDF5File h5_file(comm, h5_filepath.string(), "r");
 
     // Get data shape
-    const std::vector<std::int64_t> shape
+    const std::vector<std::int64_t> hdf5_shape
       = HDF5Interface::get_dataset_shape(h5_file.h5_id(), paths[1]);
+
+    // FIXME: check for shape consitency between hdf5_shape and shape
 
     // Get data range to read on this process
     dolfin_assert(!shape.empty());
@@ -1451,7 +1458,7 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
   }
 
   // Get dimensions for consitency (if available in DataItem node)
-  const std::vector<std::int64_t> dims = get_dataset_dimensions(dataset_node);
+  const std::vector<std::int64_t> dims = get_dataset_shape(dataset_node);
   if (dims.size() == 2)
   {
     if (dims[0]*dims[1] != (std::int64_t) MPI::sum(comm, data_vector.size()))

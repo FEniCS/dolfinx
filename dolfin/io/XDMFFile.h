@@ -253,7 +253,7 @@ namespace dolfin
 
     // Get dimensions from an XML DataSet node
     static std::vector<std::int64_t>
-      get_dataset_dimensions(const pugi::xml_node& dataset_node);
+      get_dataset_shape(const pugi::xml_node& dataset_node);
 
     // Get number of cells from an XML Topology node
     static std::int64_t get_num_cells(const pugi::xml_node& topology_node);
