@@ -871,7 +871,7 @@ void XDMFFile::read_new(Mesh& mesh) const
   // Determine geometric dimension
   pugi::xml_attribute geometry_type_attr = geometry_node.attribute("GeometryType");
   dolfin_assert(geometry_type_attr);
-  int gdim = 0;
+  int gdim = -1;
   const std::string geometry_type =  geometry_type_attr.value();
   if (geometry_type == "XY")
     gdim = 2;
@@ -1095,7 +1095,7 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                  const Mesh& mesh)
 {
   const MeshGeometry& mesh_geometry = mesh.geometry();
-  const int gdim = mesh_geometry.dim();
+  int gdim = mesh_geometry.dim();
 
   // Compute number of points (global) in mesh (equal to number of vertices
   // for affine meshes)
@@ -1114,13 +1114,24 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 
   // Pack geometry data
-  const std::vector<double> x
+  std::vector<double> x
     = DistributedMeshTools::reorder_vertices_by_global_indices(mesh);
 
-  // Add geometry ad DataItem nodeq
+  // XDMF does not support 1D, so handle as special case
+  if (gdim == 1)
+  {
+    // Pad the coordinates with zeros for a dummy Y
+    gdim = 2;
+    std::vector<double> _x(2*x.size(), 0.0);
+    for (std::size_t i = 0; i < x.size(); ++i)
+      _x[2*i] = x[i];
+    std::swap(x, _x);
+  }
+
+  // Add geometry ad DataItem node
   const std::string group_name = path_prefix + "/" + mesh.name();
   const std::string h5_path = group_name + "/geometry";
-  std::vector<std::int64_t> shape = {num_points, gdim};
+  const std::vector<std::int64_t> shape = {num_points, gdim};
   add_data_item(comm, geometry_node, h5_id, h5_path, x, shape);
 }
 //----------------------------------------------------------------------------
