@@ -30,6 +30,14 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 
+namespace boost
+{
+  namespace filesystem
+  {
+    class path;
+  }
+}
+
 namespace pugi
 {
   class xml_node;
@@ -201,36 +209,44 @@ namespace dolfin
                            int num_points_per_cell,
                            int tdim, int gdim,
                            const pugi::xml_node& topology_dataset_node,
-                           const pugi::xml_node& geometry_dataset_node);
+                           const pugi::xml_node& geometry_dataset_node,
+                           const boost::filesystem::path& parent_path);
 
-   // Build local mesh data
+   // Build local mesh data structure
    static void
-    build_local_mesh_data (LocalMeshData& local_mesh_data,
-                           const CellType& cell_type,
-                           std::int64_t num_points, std::int64_t num_cells,
-                           int num_points_per_cell,
-                           int tdim, int gdim,
-                           const pugi::xml_node& topology_dataset_node,
-                           const pugi::xml_node& geometry_dataset_node);
+   build_local_mesh_data (LocalMeshData& local_mesh_data,
+                          const CellType& cell_type,
+                          const std::int64_t num_points,
+                          const std::int64_t num_cells,
+                          const int num_points_per_cell,
+                          const int tdim, const int gdim,
+                          const pugi::xml_node& topology_dataset_node,
+                          const pugi::xml_node& geometry_dataset_node,
+                          const boost::filesystem::path& parent_path);
 
-    // Add topology node to xml_node
+    // Add topology node to xml_node (includes writing data to XML or  HDF5
+    // file)
     template<typename T>
     static void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                  hid_t h5_id, std::string path_prefix,
+                                  hid_t h5_id, const std::string path_prefix,
                                   const Mesh& mesh);
 
     // Add geometry node and data to xml_node
     static void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                  hid_t h5_id, std::string path_prefix,
+                                  hid_t h5_id, const std::string path_prefix,
                                   const Mesh& mesh);
 
-    // Read topology from XDMF Topology node
-    static std::vector<std::int64_t> read_topology_data(const pugi::xml_node& topology_node);
+    // Add DataItem node to an XML node. If HDF5 is open (h5_id > 0) the data is
+    // written to the HDFF5 file with the path 'h5_path'. Otherwise, data is
+    // witten to the XML node and 'h5_path' is ignored
+    template<typename T>
+    static void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
+                              hid_t h5_id, const std::string h5_path, const T& x,
+                              const std::vector<std::int64_t> dimensions);
 
     // Return topology data on this process as a flat vector
     template<typename T>
-    static std::vector<T> compute_topology_data(const Mesh& mesh,
-                                                int cell_dim);
+    static std::vector<T> compute_topology_data(const Mesh& mesh, int cell_dim);
 
     // Get DOLFIN cell type string from XML topology node
     static std::string get_cell_type(const pugi::xml_node& topology_node);
@@ -245,7 +261,8 @@ namespace dolfin
     // Return data associated with a data set node
     template <typename T>
     static std::vector<T> get_dataset(MPI_Comm comm,
-                                      const pugi::xml_node& dataset_node);
+                                      const pugi::xml_node& dataset_node,
+                                      const boost::filesystem::path& parent_path);
 
     static std::string get_hdf5_filename(std::string xdmf_filename);
 

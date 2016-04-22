@@ -309,7 +309,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       = mesh.topology().global_indices(0);
 
     // Permutation to VTK ordering
-    const std::vector<unsigned int> perm = celltype->vtk_mapping();
+    const std::vector<std::int8_t> perm = celltype->vtk_mapping();
 
     if (cell_dim == tdim or !mpi_io)
     {
@@ -1934,7 +1934,7 @@ void HDF5File::read(Mesh& input_mesh,
                         boost::extents[num_local_cells][num_vertices_per_cell]);
 
   // Remap vertices to DOLFIN ordering from VTK/XDMF ordering
-  const std::vector<unsigned int> perm = cell_type.vtk_mapping();
+  const std::vector<std::int8_t> perm = cell_type.vtk_mapping();
   for (int i = 0; i != num_local_cells; ++i)
   {
     for (int j = 0; j != num_vertices_per_cell; ++j)

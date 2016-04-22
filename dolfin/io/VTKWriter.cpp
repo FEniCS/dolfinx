@@ -266,7 +266,7 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
 
   std::unique_ptr<CellType>
     celltype(CellType::create(mesh.type().entity_type(cell_dim)));
-  const std::vector<unsigned int> perm = celltype->vtk_mapping();
+  const std::vector<std::int8_t> perm = celltype->vtk_mapping();
   for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
   {
     for (unsigned int i = 0; i != c->num_entities(0); ++i)
@@ -340,7 +340,7 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
 
   std::unique_ptr<CellType>
     celltype(CellType::create(mesh.type().entity_type(cell_dim)));
-  const std::vector<unsigned int> perm = celltype->vtk_mapping();
+  const std::vector<std::int8_t> perm = celltype->vtk_mapping();
   for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
   {
     for (unsigned int i = 0; i != c->num_entities(0); ++i)

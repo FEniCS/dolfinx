@@ -25,6 +25,7 @@
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <boost/multi_array.hpp>
@@ -163,7 +164,7 @@ namespace dolfin
     virtual std::string description(bool plural) const = 0;
 
     /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
-    virtual std::vector<unsigned int> vtk_mapping() const = 0;
+    virtual std::vector<std::int8_t> vtk_mapping() const = 0;
 
   protected:
 
