@@ -1,3 +1,4 @@
+- Remove STLMatrix, STLVector, MUMPSLUSolver and PastixLUSolver classes
 - Remove PETScPreconditioner::set_near_nullspace and add
 	PETScMatrix::set_near_nullspace
 - Build system updates for VTK 7.0

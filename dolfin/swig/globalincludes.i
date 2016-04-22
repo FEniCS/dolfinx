@@ -21,7 +21,7 @@
 // Last changed: 2012-01-18
 
 // Global shared_ptr classes
-// NOTE: These classes need to be declared for all classes in all combined 
+// NOTE: These classes need to be declared for all classes in all combined
 // NOTE: modules
 %include "dolfin/swig/shared_ptr_classes.i"
 
@@ -37,11 +37,11 @@
 %include <exception.i>
 %include "dolfin/swig/exceptions.i"
 
-// Do not expand default arguments in C++ by generating two an extra 
+// Do not expand default arguments in C++ by generating two an extra
 // function in the SWIG layer. This reduces code bloat.
-// NOTE: Hake Commenting out compactdefaultargs as it creates problems for SWIG 
+// NOTE: Hake Commenting out compactdefaultargs as it creates problems for SWIG
 // NOTE: to evaluate bool arguments with default values where another method with
-// NOTE: the same number of arguments exists. 
+// NOTE: the same number of arguments exists.
 //%feature("compactdefaultargs");
 
 // STL SWIG string class

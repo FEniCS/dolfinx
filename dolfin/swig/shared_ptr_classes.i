@@ -162,8 +162,6 @@
 %shared_ptr(dolfin::LinearOperator)
 %shared_ptr(dolfin::IndexMap)
 
-%shared_ptr(dolfin::STLMatrix)
-
 %shared_ptr(dolfin::EigenKrylovSolver)
 %shared_ptr(dolfin::EigenLUSolver)
 %shared_ptr(dolfin::EigenMatrix)

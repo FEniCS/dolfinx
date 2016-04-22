@@ -28,8 +28,6 @@ from dolfin_utils.test import *
 
 
 backends = list(linear_algebra_backends().keys())
-if 'STL' in backends:
-    backends.remove('STL')
 if MPI.size(mpi_comm_world()) > 1 and 'Eigen' in backends:
     backends.remove('Eigen')
 backend = set_parameters_fixture("linear_algebra_backend", backends)
