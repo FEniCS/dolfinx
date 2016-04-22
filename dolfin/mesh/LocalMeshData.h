@@ -69,6 +69,10 @@ namespace dolfin
     /// Destructor
     ~LocalMeshData();
 
+    /// Check that all essential data has been intialized, and throw error
+    /// if there is a problem
+    void check() const;
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 

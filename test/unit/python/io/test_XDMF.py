@@ -42,9 +42,6 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
     file.write(mesh, encoding)
     del file
 
-    # See https://bitbucket.org/fenics-project/dolfin/issues/680
-    if MPI.size(mpi_comm_world()) > 1:
-        return
     mesh2 = Mesh()
     file = XDMFFile(mpi_comm_world(), filename)
     file.read(mesh2, False)

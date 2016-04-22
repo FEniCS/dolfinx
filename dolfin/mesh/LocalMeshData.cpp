@@ -60,6 +60,15 @@ LocalMeshData::~LocalMeshData()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+void LocalMeshData::check() const
+{
+  dolfin_assert(num_global_vertices != -1);
+  dolfin_assert(num_global_cells != -1);
+  dolfin_assert(num_vertices_per_cell  != -1);
+  dolfin_assert(gdim  != -1);
+  dolfin_assert(tdim  != -1);
+}
+//-----------------------------------------------------------------------------
 std::string LocalMeshData::str(bool verbose) const
 {
   std::stringstream s;

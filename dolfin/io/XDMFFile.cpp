@@ -919,6 +919,7 @@ void XDMFFile::read_new(Mesh& mesh) const
                           cell_type->num_vertices(), tdim, gdim,
                           topology_data_node, geometry_data_node,
                           parent_path);
+    local_mesh_data.check();
 
     // Build mesh
     MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data);
@@ -1181,7 +1182,16 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
     dolfin_assert(num_items_total == (std::int64_t) MPI::sum(comm, x.size()));
 
     // Compute data offset and range of values
-    const auto local_range = MPI::local_range(comm, shape[0]);
+    std::int64_t local_shape0 = x.size();
+    for (std::size_t i = 1; i < shape.size(); ++i)
+    {
+      dolfin_assert(local_shape0 % shape[i] == 0);
+      local_shape0 /= shape[i];
+    }
+    const std::int64_t offset = MPI::global_offset(comm, local_shape0, true);
+    const std::pair<std::int64_t, std::int64_t> local_range
+      = {offset, offset + local_shape0};
+
     const bool use_mpi_io = MPI::size(comm) == 1 ? false : true;
     HDF5Interface::write_dataset(h5_id, h5_path, x, local_range, shape, use_mpi_io,
                                  false);

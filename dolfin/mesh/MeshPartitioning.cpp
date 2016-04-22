@@ -155,7 +155,6 @@ void MeshPartitioning::partition_cells(
   std::vector<int>& cell_partition,
   std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs)
 {
-
   // Compute cell partition using partitioner from parameter system
   const std::string partitioner = parameters["mesh_partitioner"];
   if (partitioner == "SCOTCH")
@@ -211,12 +210,18 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   dolfin_assert(mesh_data.num_global_vertices >= 0);
   new_mesh_data.num_global_vertices = mesh_data.num_global_vertices;
 
+  //new_mesh_data.vertex_indices = mesh_data.vertex_indices;
+
   // Keep tabs on ghost cell ownership
   std::map<unsigned int, std::set<unsigned int>> shared_cells;
+
   // Send cells to processes that need them
-  const unsigned int num_regular_cells =
-    distribute_cells(mesh.mpi_comm(), mesh_data, cell_partition, ghost_procs,
-                     shared_cells, new_mesh_data);
+  const unsigned int num_regular_cells = distribute_cells(mesh.mpi_comm(),
+                                                          mesh_data,
+                                                          cell_partition,
+                                                          ghost_procs,
+                                                          shared_cells,
+                                                          new_mesh_data);
 
   const std::string ghost_mode = parameters["ghost_mode"];
 
@@ -260,7 +265,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
     reorder_vertices_gps(mesh.mpi_comm(), num_regular_vertices,
                          num_regular_cells, vertex_global_to_local,
                          new_mesh_data);
- }
+  }
 #endif
 
   // Send vertices to processes that need them, informing all
@@ -406,12 +411,14 @@ void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
   // Remap global-to-local mapping
   for (auto p = vertex_global_to_local.begin();
        p != vertex_global_to_local.end(); ++p)
+  {
     if (p->second < num_regular_vertices)
       p->second = (std::size_t)remap[p->second];
+  }
 
   // Remap local-to-global mapping
   std::vector<std::int64_t>
-    remapped_vertex_indices(new_mesh_data.vertex_indices);
+    remapped_vertex_indices = new_mesh_data.vertex_indices;
   for (unsigned int i = 0; i != num_regular_vertices; ++i)
   {
     const unsigned int j = remap[i];
@@ -846,7 +853,7 @@ void MeshPartitioning::distribute_vertices(
 
   Timer timer("Distribute vertices");
 
-  std::vector<std::int64_t>& vertex_indices
+  const std::vector<std::int64_t>& vertex_indices
     = new_mesh_data.vertex_indices;
 
   // Get number of processes
