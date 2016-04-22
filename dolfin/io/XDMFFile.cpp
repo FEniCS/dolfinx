@@ -28,6 +28,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
+#include "pugixml.hpp"
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/defines.h>
@@ -50,7 +51,7 @@
 #include "HDF5Utility.h"
 #include "XDMFFile.h"
 #include "XDMFxml.h"
-#include "pugixml.hpp"
+#include "xmlutils.h"
 
 using namespace dolfin;
 
@@ -827,12 +828,17 @@ void XDMFFile::read_new(Mesh& mesh) const
 {
   // FIXME: check for duplicated XML nodes
 
-  // FIXME: check that file exists
-
   // Extract parent filepath (required to HDF5 when XDMF stores  relative path
   // of the HDF5 files(s) and the XDMF is not opened from its own directory)
   boost::filesystem::path xdmf_filename(_filename);
   const boost::filesystem::path parent_path = xdmf_filename.parent_path();
+
+  if (!boost::filesystem::exists(xdmf_filename))
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "opening check that XDMF file",
+                 "XDMF file \"%s\" does not exist");
+  }
 
   // Load XML doc from file
   pugi::xml_document xml_doc;
@@ -1399,8 +1405,6 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
   }
   else if (format == "HDF")
   {
-    std::cout << "** In read HDF5 dataset" << std::endl;
-
     // Get file and data path
     auto paths = XDMFxml::get_hdf5_paths(dataset_node);
 
@@ -1412,10 +1416,9 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
     // Open HDF5 for reading
     HDF5File h5_file(comm, h5_filepath.string(), "r");
 
-    // Get shape
+    // Get data shape
     const std::vector<std::int64_t> shape
       = HDF5Interface::get_dataset_shape(h5_file.h5_id(), paths[1]);
-    std::cout << "** Data shape: " << shape[0] << ", " << shape[1] << std::endl;
 
     // Get data range to read on this process
     dolfin_assert(!shape.empty());
@@ -1424,18 +1427,9 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
     // Determine data range to read
     const auto range = MPI::local_range(comm, shape[0]);
     MPI::barrier(comm);
-    if (MPI::rank(comm) == 0)
-    {
-      std::cout << "Shape0: " << shape[0] << std::endl;
-      std::cout << "Range to read: " << range.first << ", " << range.second
-                << std::endl;
-    }
-    MPI::barrier(comm);
 
     // Retrieve data
-    std::cout << "**Begin read dataset: " << std::endl;
     HDF5Interface::read_dataset(h5_file.h5_id(), paths[1], range, data_vector);
-    std::cout << "**End read dataset: " << std::endl;
   }
   else
   {
@@ -1461,6 +1455,39 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
    return data_vector;
 }
 //----------------------------------------------------------------------------
+std::array<std::string, 2> XDMFFile::get_hdf5_paths(const pugi::xml_node& dataitem_node)
+{
+  // Check that node is a DataItem node
+  dolfin_assert(dataitem_node);
+  xmlutils::check_node_name(dataitem_node, "DataItem");
+
+  // Check that format is HDF
+  pugi::xml_attribute format_attr = dataitem_node.attribute("Format");
+  dolfin_assert(format_attr);
+  const std::string format = format_attr.as_string();
+  if (format.compare("HDF") != 0)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "extracting HDF5 filename and data path",
+                 "DataItem format \"%s\" is not \"HDF\"", format);
+  }
+
+  // Get path data
+  pugi::xml_node path_node = dataitem_node.first_child();
+  dolfin_assert(path_node);
+
+  // Create string from path and trim leading and trailing whitespace
+  std::string path = path_node.text().get();
+  boost::algorithm::trim(path);
+
+  // Split string into file path and HD5 internal path
+  std::vector<std::string> paths;
+  boost::split(paths, path, boost::is_any_of(":"));
+  dolfin_assert(paths.size() == 2);
+
+  return {{paths[0], paths[1]}};
+}
+//-----------------------------------------------------------------------------
 template<typename T>
 void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
 {

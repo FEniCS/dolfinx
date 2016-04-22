@@ -340,8 +340,6 @@ namespace dolfin
                               const std::pair<std::int64_t, std::int64_t> range,
                               std::vector<T>& data)
   {
-    std::cout << "Datset name: " << dataset_path << std::endl;
-
     // Open the dataset
     const hid_t dset_id = H5Dopen2(file_handle, dataset_path.c_str(),
                                    H5P_DEFAULT);
@@ -355,8 +353,6 @@ namespace dolfin
     const int rank = H5Sget_simple_extent_ndims(dataspace);
     dolfin_assert(rank >= 0);
 
-    std::cout << "Rank of data: " << rank << std::endl;
-
     if (rank > 2)
       warning("HDF5Interface::read_dataset untested for rank > 2.");
 
@@ -366,12 +362,6 @@ namespace dolfin
     // Get size in each dimension
     const int ndims = H5Sget_simple_extent_dims(dataspace, shape.data(), NULL);
     dolfin_assert(ndims == rank);
-
-    std::cout << "Data ndims: " << ndims << std::endl;
-
-    std::cout << "Shape: " << std::endl;
-    for (std::size_t i = 0; i < shape.size(); ++i)
-      std::cout << "  " << shape[i] << std::endl;
 
     // Hyperslab selection
     std::vector<hsize_t> offset(rank, 0);
