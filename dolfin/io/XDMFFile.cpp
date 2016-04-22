@@ -1479,7 +1479,7 @@ std::array<std::string, 2> XDMFFile::get_hdf5_paths(const pugi::xml_node& datait
   {
     dolfin_error("XDMFFile.cpp",
                  "extracting HDF5 filename and data path",
-                 "DataItem format \"%s\" is not \"HDF\"", format);
+                 "DataItem format \"%s\" is not \"HDF\"", format.c_str());
   }
 
   // Get path data
