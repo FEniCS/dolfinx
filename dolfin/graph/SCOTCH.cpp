@@ -47,11 +47,10 @@ using namespace dolfin;
 #ifdef HAS_SCOTCH
 
 //-----------------------------------------------------------------------------
-void SCOTCH::compute_partition(
-  const MPI_Comm mpi_comm,
-  std::vector<std::size_t>& cell_partition,
-  std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
-  const LocalMeshData& mesh_data)
+void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
+                               std::vector<int>& cell_partition,
+                               std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                               const LocalMeshData& mesh_data)
 {
   // Create data structures to hold graph
   std::vector<std::set<std::size_t>> local_graph;
@@ -199,7 +198,7 @@ void SCOTCH::partition(
   const std::set<std::size_t>& ghost_vertices,
   const std::vector<std::size_t>& global_cell_indices,
   const std::size_t num_global_vertices,
-  std::vector<std::size_t>& cell_partition,
+  std::vector<int>& cell_partition,
   std::map<std::int64_t, dolfin::Set<int>>& ghost_procs)
 {
   Timer timer("Compute graph partition (SCOTCH)");
@@ -473,7 +472,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
                        const std::set<std::size_t>& ghost_vertices,
                        const std::vector<std::size_t>& global_cell_indices,
                        const std::size_t num_global_vertices,
-                       std::vector<std::size_t>& cell_partition,
+                       std::vector<int>& cell_partition,
                        std::map<std::int64_t, dolfin::Set<int>>& ghost_procs)
 {
   dolfin_error("SCOTCH.cpp",

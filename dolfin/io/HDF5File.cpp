@@ -1783,7 +1783,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
     if (use_partition_from_file)
     {
       mesh_data.cell_partition
-        = std::vector<std::size_t>(cell_range.second - cell_range.first, proc);
+        = std::vector<int>(cell_range.second - cell_range.first, proc);
     }
   }
   else

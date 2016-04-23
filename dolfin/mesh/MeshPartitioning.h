@@ -67,8 +67,7 @@ namespace dolfin
     /// Build a partitioned mesh based from a local mesh on process 0
     /// with supplied destination processes for each cell
     static void
-      build_distributed_mesh(Mesh& mesh,
-                             const std::vector<std::size_t>& cell_partition,
+      build_distributed_mesh(Mesh& mesh, const std::vector<int>& cell_partition,
                              const std::string ghost_mode);
 
     /// Build a partitioned mesh from local mesh data that is
@@ -91,13 +90,13 @@ namespace dolfin
     static void
     partition_cells(const MPI_Comm& mpi_comm,
                     const LocalMeshData& mesh_data,
-                    std::vector<std::size_t>& cell_partition,
+                    std::vector<int>& cell_partition,
                     std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
                     const std::string partitioner);
 
     // Build mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,
-     const std::vector<std::size_t>& cell_partition,
+     const std::vector<int>& cell_partition,
      const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
      const std::string ghost_mode);
 
@@ -109,7 +108,7 @@ namespace dolfin
       std::map<unsigned int, std::set<unsigned int>>& shared_cells,
       boost::multi_array<std::size_t, 2>& cell_vertices,
       std::vector<std::size_t>& global_cell_indices,
-      std::vector<std::size_t>& cell_partition);
+      std::vector<int>& cell_partition);
 
     // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH)
     static void reorder_cells_gps(MPI_Comm mpi_comm,
@@ -138,12 +137,12 @@ namespace dolfin
     static unsigned int
       distribute_cells(const MPI_Comm mpi_comm,
         const LocalMeshData& data,
-        const std::vector<std::size_t>& cell_partition,
+        const std::vector<int>& cell_partition,
         const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
         std::map<unsigned int, std::set<unsigned int>>& shared_cells,
         boost::multi_array<std::size_t, 2>& new_cell_vertices,
         std::vector<std::size_t>& new_global_cell_indices,
-        std::vector<std::size_t>& new_cell_partition);
+        std::vector<int>& new_cell_partition);
 
     // Utility to convert received_vertex_indices into
     // vertex sharing information

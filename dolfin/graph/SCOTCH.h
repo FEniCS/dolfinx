@@ -50,7 +50,7 @@ namespace dolfin
     /// process numbers.
     static void compute_partition(
       const MPI_Comm mpi_comm,
-      std::vector<std::size_t>& cell_partition,
+      std::vector<int>& cell_partition,
       std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
       const LocalMeshData& mesh_data);
 
@@ -81,7 +81,7 @@ namespace dolfin
       const std::set<std::size_t>& ghost_vertices,
       const std::vector<std::size_t>& global_cell_indices,
       const std::size_t num_global_vertices,
-      std::vector<std::size_t>& cell_partition,
+      std::vector<int>& cell_partition,
       std::map<std::int64_t, dolfin::Set<int>>& ghost_procs);
 
   };

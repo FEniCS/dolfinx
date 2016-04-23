@@ -93,7 +93,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
-                            const std::vector<std::size_t>& cell_destinations,
+                            const std::vector<int>& cell_destinations,
                             const std::string ghost_mode)
 {
   if (MPI::size(mesh.mpi_comm()) > 1)
@@ -118,7 +118,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   const std::string partitioner = parameters["mesh_partitioner"];
 
   // Compute cell partitioning or use partitioning provided in local_data
-  std::vector<std::size_t> cell_partition;
+  std::vector<int> cell_partition;
   std::map<std::int64_t, dolfin::Set<int>> ghost_procs;
   if (local_data.cell_partition.empty())
   {
@@ -159,7 +159,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 void MeshPartitioning::partition_cells(
   const MPI_Comm& mpi_comm,
   const LocalMeshData& mesh_data,
-  std::vector<std::size_t>& cell_partition,
+  std::vector<int>& cell_partition,
   std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
   const std::string partitioner)
 {
@@ -182,7 +182,7 @@ void MeshPartitioning::partition_cells(
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
-     const std::vector<std::size_t>& cell_partition,
+     const std::vector<int>& cell_partition,
      const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
      const std::string ghost_mode)
 {
@@ -425,7 +425,7 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   std::map<unsigned int, std::set<unsigned int>>& shared_cells,
   boost::multi_array<std::size_t, 2>& cell_vertices,
   std::vector<std::size_t>& global_cell_indices,
-  std::vector<std::size_t>& cell_partition)
+  std::vector<int>& cell_partition)
 {
   Timer timer("Distribute cell layer");
 
@@ -618,12 +618,12 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
 unsigned int MeshPartitioning::distribute_cells(
   const MPI_Comm mpi_comm,
   const LocalMeshData& mesh_data,
-  const std::vector<std::size_t>& cell_partition,
+  const std::vector<int>& cell_partition,
   const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
   std::map<unsigned int, std::set<unsigned int>>& shared_cells,
   boost::multi_array<std::size_t, 2>& new_cell_vertices,
   std::vector<std::size_t>& new_global_cell_indices,
-  std::vector<std::size_t>& new_cell_partition)
+  std::vector<int>& new_cell_partition)
 {
   // This function takes the partition computed by the partitioner stored in
   // cell_partition/ghost_procs Some cells go to multiple destinations. Each

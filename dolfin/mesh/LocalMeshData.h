@@ -103,7 +103,7 @@ namespace dolfin
     std::vector<std::size_t> global_cell_indices;
 
     // Optional process owner for each cell in global_cell_indices
-    std::vector<std::size_t> cell_partition;
+    std::vector<int> cell_partition;
 
     // Optional weight for each cell for partitioning
     std::vector<std::size_t> cell_weight;
