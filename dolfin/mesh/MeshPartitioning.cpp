@@ -191,7 +191,7 @@ void MeshPartitioning::partition_cells(
 void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
      const std::vector<std::size_t>& cell_partition,
      const std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
-    const std::string ghost_mode)
+     const std::string ghost_mode)
 {
   // Distribute cells
   Timer timer("Distribute mesh (cells and vertices)");
@@ -248,15 +248,17 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   // at the end of the local range
   std::map<std::size_t, std::size_t> vertex_global_to_local;
   const std::size_t num_regular_vertices
-    = compute_vertex_mapping(mesh.mpi_comm(),
-                             num_regular_cells, new_mesh_data,
+    = compute_vertex_mapping(mesh.mpi_comm(), num_regular_cells,
+                             new_mesh_data.cell_vertices,
+                             new_mesh_data.vertex_indices,
                              vertex_global_to_local);
 
 #ifdef HAS_SCOTCH
   if (parameters["reorder_vertices_gps"])
   {
     reorder_vertices_gps(mesh.mpi_comm(), num_regular_vertices,
-                         num_regular_cells, vertex_global_to_local,
+                         num_regular_cells, mesh_data.num_vertices_per_cell,
+                         vertex_global_to_local,
                          new_mesh_data);
    }
 #endif
@@ -367,25 +369,25 @@ void MeshPartitioning::reorder_cells_gps(
 void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
      unsigned int num_regular_vertices,
      unsigned int num_regular_cells,
+     const int num_vertices_per_cell,
      std::map<std::size_t, std::size_t>& vertex_global_to_local,
      LocalMeshData& new_mesh_data)
 {
-  Timer timer("Reorder vertices using GPS ordering");
+  // FIXME: should vertex_global_to_local be cleared first?
 
-  const unsigned int num_cell_vertices
-    = new_mesh_data.num_vertices_per_cell;
+  Timer timer("Reorder vertices using GPS ordering");
 
   // Make local real graph (vertices are nodes, edges are edges)
   Graph g(num_regular_vertices);
   for (unsigned int i = 0; i != num_regular_cells; ++i)
   {
-    for (unsigned int j = 0; j != num_cell_vertices; ++j)
+    for (unsigned int j = 0; j != num_vertices_per_cell; ++j)
     {
       const unsigned int vj
         = vertex_global_to_local[new_mesh_data.cell_vertices[i][j]];
       if (vj < num_regular_vertices)
       {
-        for (unsigned int k = j + 1; k != num_cell_vertices; ++k)
+        for (unsigned int k = j + 1; k != num_vertices_per_cell; ++k)
         {
           const unsigned int vk
             = vertex_global_to_local[new_mesh_data.cell_vertices[i][k]];
@@ -403,9 +405,11 @@ void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
 
   // Remap global-to-local mapping
   for (auto p = vertex_global_to_local.begin();
-       p != vertex_global_to_local.end(); ++p)
+        p != vertex_global_to_local.end(); ++p)
+  {
     if (p->second < num_regular_vertices)
       p->second = (std::size_t)remap[p->second];
+  }
 
   // Remap local-to-global mapping
   std::vector<std::size_t>
@@ -786,17 +790,11 @@ unsigned int MeshPartitioning::distribute_cells(
 //-----------------------------------------------------------------------------
 std::size_t MeshPartitioning::compute_vertex_mapping(MPI_Comm mpi_comm,
                          unsigned int num_regular_cells,
-                         LocalMeshData& new_mesh_data,
+                         const boost::multi_array<std::size_t, 2>& cell_vertices,
+                         std::vector<std::size_t>& vertex_indices,
                          std::map<std::size_t, std::size_t>& vertex_global_to_local)
 {
   vertex_global_to_local.clear();
-
-  std::vector<std::size_t>& vertex_indices
-    = new_mesh_data.vertex_indices;
-  dolfin_assert(vertex_indices.size() == 0);
-
-  const boost::multi_array<std::size_t, 2>& cell_vertices
-    = new_mesh_data.cell_vertices;
 
   // Get set of unique vertices from cells and start constructing a
   // global_to_local map.  Ghost vertices will be at the end of the
@@ -805,8 +803,7 @@ std::size_t MeshPartitioning::compute_vertex_mapping(MPI_Comm mpi_comm,
   std::size_t num_regular_vertices = 0;
   for (unsigned int i = 0; i != cell_vertices.size(); ++i)
   {
-    for (auto q = cell_vertices[i].begin();
-         q != cell_vertices[i].end(); ++q)
+    for (auto q = cell_vertices[i].begin(); q != cell_vertices[i].end(); ++q)
     {
       auto map_it = vertex_global_to_local.find(*q);
       if (map_it == vertex_global_to_local.end())

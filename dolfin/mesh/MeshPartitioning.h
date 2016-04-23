@@ -116,6 +116,7 @@ namespace dolfin
     static void reorder_vertices_gps(MPI_Comm mpi_comm,
      unsigned int num_regular_vertices,
      unsigned int num_regular_cells,
+     const int  num_cell_vertices,
      std::map<std::size_t, std::size_t>& vertex_global_to_local,
      LocalMeshData& new_mesh_data);
 
@@ -154,7 +155,8 @@ namespace dolfin
     // vertices which are on this process
     static std::size_t compute_vertex_mapping(MPI_Comm mpi_comm,
                   unsigned int num_regular_cells,
-                  LocalMeshData& new_mesh_data,
+                  const boost::multi_array<std::size_t, 2>& cell_vertices,
+                  std::vector<std::size_t>& vertex_indices,
                   std::map<std::size_t, std::size_t>& vertex_global_to_local);
 
     // Build mesh
