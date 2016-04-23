@@ -117,8 +117,9 @@ namespace dolfin
      unsigned int num_regular_vertices,
      unsigned int num_regular_cells,
      const int  num_cell_vertices,
-     std::map<std::size_t, std::size_t>& vertex_global_to_local,
-     LocalMeshData& new_mesh_data);
+     const boost::multi_array<std::size_t, 2>& cell_vertices,
+     std::vector<std::size_t>& vertex_indices,
+     std::map<std::size_t, std::size_t>& vertex_global_to_local);
 
     // This function takes the partition computed by the partitioner
     // (which tells us to which process each of the local cells stored in
@@ -133,7 +134,9 @@ namespace dolfin
         const std::vector<std::size_t>& cell_partition,
         const std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
         std::map<unsigned int, std::set<unsigned int>>& shared_cells,
-        LocalMeshData& new_mesh_data);
+        boost::multi_array<std::size_t, 2>& new_cell_vertices,
+        std::vector<std::size_t>& new_global_cell_indices,
+        std::vector<std::size_t>& new_cell_partition);
 
     // Utility to convert received_vertex_indices into
     // vertex sharing information
