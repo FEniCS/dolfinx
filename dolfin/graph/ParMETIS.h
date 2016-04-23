@@ -23,6 +23,7 @@
 #ifndef __PARMETIS_PARTITIONER_H
 #define __PARMETIS_PARTITIONER_H
 
+#include <cstdint>
 #include <cstddef>
 #include <vector>
 #include <dolfin/common/MPI.h>
@@ -43,20 +44,20 @@ namespace dolfin
   public:
 
     /// Compute cell partition from local mesh data.
-    /// The output vector cell_partition contains the desired 
-    /// destination process numbers for each cell. 
+    /// The output vector cell_partition contains the desired
+    /// destination process numbers for each cell.
     /// Cells shared on multiple processes have an
     /// entry in ghost_procs pointing to
     /// the set of sharing process numbers.
-    /// The mode argument determines which ParMETIS function 
-    /// is called. It can be one of "partition", 
+    /// The mode argument determines which ParMETIS function
+    /// is called. It can be one of "partition",
     /// "adaptive_repartition" or "refine". For meshes
     /// that have already been partitioned or are already well
     /// partitioned, it can be advantageous to use
     /// "adaptive_repartition" or "refine".
     static void compute_partition(const MPI_Comm mpi_comm,
             std::vector<std::size_t>& cell_partition,
-            std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+            std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
             const LocalMeshData& mesh_data,
             std::string mode="partition");
 
@@ -66,7 +67,7 @@ namespace dolfin
     // Standard ParMETIS partition
     static void partition(MPI_Comm mpi_comm,
        std::vector<std::size_t>& cell_partition,
-       std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
+       std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
        ParMETISDualGraph& g);
 
     // ParMETIS adaptive repartition

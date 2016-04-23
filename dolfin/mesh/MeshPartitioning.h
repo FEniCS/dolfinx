@@ -26,6 +26,7 @@
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
 
+#include <cstdint>
 #include <map>
 #include <utility>
 #include <vector>
@@ -87,30 +88,36 @@ namespace dolfin
     // Compute cell partitioning for local mesh data. Returns
     // cell->process vector for cells in LocalMeshData
     // and a map from local index->processes to which ghost cells must be sent
-    static void partition_cells(const MPI_Comm& mpi_comm,
-                                const LocalMeshData& mesh_data,
-         std::vector<std::size_t>& cell_partition,
-         std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
-         const std::string partitioner);
+    static void
+    partition_cells(const MPI_Comm& mpi_comm,
+                    const LocalMeshData& mesh_data,
+                    std::vector<std::size_t>& cell_partition,
+                    std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                    const std::string partitioner);
 
     // Build mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,
      const std::vector<std::size_t>& cell_partition,
-     const std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
+     const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
      const std::string ghost_mode);
 
     // Distribute a layer of cells attached by vertex to boundary
     // updating new_mesh_data and shared_cells
     static void distribute_cell_layer(MPI_Comm mpi_comm,
-      unsigned int num_regular_cells,
+      const unsigned int num_regular_cells,
+      const std::int64_t num_global_vertices,
       std::map<unsigned int, std::set<unsigned int>>& shared_cells,
-      LocalMeshData& new_mesh_data);
+      boost::multi_array<std::size_t, 2>& cell_vertices,
+      std::vector<std::size_t>& global_cell_indices,
+      std::vector<std::size_t>& cell_partition);
 
     // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH)
     static void reorder_cells_gps(MPI_Comm mpi_comm,
-     unsigned int num_regular_cells,
+     const unsigned int num_regular_cells,
+     const CellType& cell_type,
      std::map<unsigned int, std::set<unsigned int>>& shared_cells,
-     LocalMeshData& new_mesh_data);
+     boost::multi_array<std::size_t, 2>& cell_vertices,
+     std::vector<std::size_t>& global_cell_indices);
 
     // Reorder vertices by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH)
     static void reorder_vertices_gps(MPI_Comm mpi_comm,
@@ -132,7 +139,7 @@ namespace dolfin
       distribute_cells(const MPI_Comm mpi_comm,
         const LocalMeshData& data,
         const std::vector<std::size_t>& cell_partition,
-        const std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
+        const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
         std::map<unsigned int, std::set<unsigned int>>& shared_cells,
         boost::multi_array<std::size_t, 2>& new_cell_vertices,
         std::vector<std::size_t>& new_global_cell_indices,
@@ -168,8 +175,7 @@ namespace dolfin
       const LocalMeshData& new_mesh_data);
 
     // Create and attach distributed MeshDomains from local_data
-    static void build_mesh_domains(Mesh& mesh,
-      const LocalMeshData& local_data);
+    static void build_mesh_domains(Mesh& mesh, const LocalMeshData& local_data);
 
     // Create and attach distributed MeshDomains from local_data
     // [entry, (cell_index, local_index, value)]
@@ -178,7 +184,6 @@ namespace dolfin
       const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T>>& local_value_data,
       MeshValueCollection& mesh_values);
   };
-
   //---------------------------------------------------------------------------
   template<typename T>
   void MeshPartitioning::build_distributed_value_collection(MeshValueCollection<T>& values,

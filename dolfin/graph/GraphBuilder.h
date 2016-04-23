@@ -32,6 +32,7 @@ namespace dolfin
 {
 
   // Forward declarations
+  class CellType;
   class GenericDofMap;
   class LocalMeshData;
   class Mesh;
@@ -53,14 +54,14 @@ namespace dolfin
 
     /// Build local graph (specialized version)
     static Graph local_graph(const Mesh& mesh, std::size_t dim0,
-                                               std::size_t dim1);
+                             std::size_t dim1);
 
-    /// Build distributed dual graph (cell-cell connections) for from
+    /// Build distributed dual graph (cell-cell connections) from
     /// LocalMeshData
     static void
       compute_dual_graph(const MPI_Comm mpi_comm,
                          const LocalMeshData& mesh_data,
-                         std::vector<std::set<std::size_t> >& local_graph,
+                         std::vector<std::set<std::size_t>>& local_graph,
                          std::set<std::size_t>& ghost_vertices);
 
   private:
@@ -74,7 +75,15 @@ namespace dolfin
     static void
       compute_local_dual_graph(const MPI_Comm mpi_comm,
                                const LocalMeshData& mesh_data,
-                               std::vector<std::set<std::size_t> >& local_graph,
+                               std::vector<std::set<std::size_t>>& local_graph,
+                               FacetCellMap& facet_cell_map);
+
+    static void
+      compute_local_dual_graph(const MPI_Comm mpi_comm,
+                               const boost::multi_array<std::size_t, 2>& cell_vertices,
+                               const CellType& cell_type,
+                               const std::vector<std::size_t>& global_cell_indices,
+                               std::vector<std::set<std::size_t>>& local_graph,
                                FacetCellMap& facet_cell_map);
 
     // Build nonlocal part of dual graph for mesh.
@@ -82,7 +91,7 @@ namespace dolfin
     static void
       compute_nonlocal_dual_graph(const MPI_Comm mpi_comm,
                                   const LocalMeshData& mesh_data,
-                                  std::vector<std::set<std::size_t> >& local_graph,
+                                  std::vector<std::set<std::size_t>>& local_graph,
                                   FacetCellMap& facet_cell_map,
                                   std::set<std::size_t>& ghost_vertices);
 

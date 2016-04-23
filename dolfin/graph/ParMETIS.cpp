@@ -74,12 +74,11 @@ namespace dolfin
   };
 }
 //-----------------------------------------------------------------------------
-void ParMETIS::compute_partition(
-  const MPI_Comm mpi_comm,
-  std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
-  const LocalMeshData& mesh_data,
-  std::string mode)
+void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
+                                std::vector<std::size_t>& cell_partition,
+                                std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                                const LocalMeshData& mesh_data,
+                                std::string mode)
 {
   // Duplicate MPI communicator (ParMETIS does not take const
   // arguments, so duplicate communicator to be sure it isn't changed)
@@ -109,11 +108,10 @@ void ParMETIS::compute_partition(
   MPI_Comm_free(&comm);
 }
 //-----------------------------------------------------------------------------
-void ParMETIS::partition(
-  MPI_Comm mpi_comm,
-  std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
-  ParMETISDualGraph& g)
+void ParMETIS::partition(MPI_Comm mpi_comm,
+                         std::vector<std::size_t>& cell_partition,
+                         std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                         ParMETISDualGraph& g)
 {
   Timer timer("Compute graph partition (ParMETIS)");
 
@@ -229,7 +227,7 @@ void ParMETIS::partition(
         auto map_it = ghost_procs.find(i);
         if (map_it == ghost_procs.end())
         {
-          dolfin::Set<unsigned int> sharing_processes;
+          dolfin::Set<int> sharing_processes;
           sharing_processes.insert(proc_this);
           sharing_processes.insert(proc_other);
           ghost_procs.insert(std::make_pair(i, sharing_processes));
@@ -415,8 +413,7 @@ ParMETISDualGraph::~ParMETISDualGraph()
 #else
 void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
                                  std::vector<std::size_t>& cell_partition,
-                                 std::map<std::size_t,
-                                 dolfin::Set<unsigned int>>& ghost_procs,
+                                 std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
                                  const LocalMeshData& data,
                                  std::string mode)
 {
