@@ -67,11 +67,13 @@ namespace dolfin
     /// with supplied destination processes for each cell
     static void
       build_distributed_mesh(Mesh& mesh,
-                             const std::vector<std::size_t>& cell_partition);
+                             const std::vector<std::size_t>& cell_partition,
+                             const std::string ghost_mode);
 
     /// Build a partitioned mesh from local mesh data that is
     /// distributed across processes
-    static void build_distributed_mesh(Mesh& mesh, const LocalMeshData& data);
+    static void build_distributed_mesh(Mesh& mesh, const LocalMeshData& data,
+                                       const std::string ghost_mode);
 
     /// Build a MeshValueCollection based on LocalMeshValueCollection
     template<typename T>
@@ -88,12 +90,14 @@ namespace dolfin
     static void partition_cells(const MPI_Comm& mpi_comm,
                                 const LocalMeshData& mesh_data,
          std::vector<std::size_t>& cell_partition,
-         std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs);
+         std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
+         const std::string partitioner);
 
     // Build mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,
      const std::vector<std::size_t>& cell_partition,
-     const std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs);
+     const std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
+     const std::string ghost_mode);
 
     // Distribute a layer of cells attached by vertex to boundary
     // updating new_mesh_data and shared_cells

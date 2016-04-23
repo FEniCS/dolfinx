@@ -1866,7 +1866,10 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_name,
   if (MPI::size(_mpi_comm) == 1)
     HDF5Utility::build_local_mesh(input_mesh, mesh_data);
   else
-    MeshPartitioning::build_distributed_mesh(input_mesh, mesh_data);
+  {
+    const std::string ghost_mode = parameters["ghost_mode"];
+    MeshPartitioning::build_distributed_mesh(input_mesh, mesh_data, ghost_mode);
+  }
 
   // ---- Markers ----
   // Check if we have any domains

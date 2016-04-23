@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Niclas Jansson, Ola Skavhaug, Anders Logg
+// Copyright (C) 2008-2014 Niclas Jansson, Ola Skavhaug, Anders Logg,
 // Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFIN.
@@ -85,12 +85,14 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
     LocalMeshData local_mesh_data(mesh);
 
     // Build distributed mesh
-    build_distributed_mesh(mesh, local_mesh_data);
+    const std::string ghost_mode = parameters["ghost_mode"];
+    build_distributed_mesh(mesh, local_mesh_data, ghost_mode);
   }
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
-                            const std::vector<std::size_t>& cell_destinations)
+                            const std::vector<std::size_t>& cell_destinations,
+                            const std::string ghost_mode)
 {
   if (MPI::size(mesh.mpi_comm()) > 1)
   {
@@ -101,20 +103,24 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
     local_mesh_data.cell_partition = cell_destinations;
 
     // Build distributed mesh
-    build_distributed_mesh(mesh, local_mesh_data);
+    build_distributed_mesh(mesh, local_mesh_data, ghost_mode);
   }
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
-                                              const LocalMeshData& local_data)
+                                              const LocalMeshData& local_data,
+                                              const std::string ghost_mode)
 {
   Timer timer("Build distributed mesh from local mesh data");
+
+  const std::string partitioner = parameters["mesh_partitioner"];
 
   // Compute cell partitioning or use partitioning provided in local_data
   std::vector<std::size_t> cell_partition;
   std::map<std::size_t, dolfin::Set<unsigned int>> ghost_procs;
   if (local_data.cell_partition.empty())
-    partition_cells(mesh.mpi_comm(), local_data, cell_partition, ghost_procs);
+    partition_cells(mesh.mpi_comm(), local_data, cell_partition, ghost_procs,
+                    partitioner);
   else
   {
     cell_partition = local_data.cell_partition;
@@ -124,8 +130,6 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
                                     cell_partition.end())
                   < MPI::size(mesh.mpi_comm()));
   }
-
-  const std::string ghost_mode = parameters["ghost_mode"];
 
   if (ghost_procs.empty() && ghost_mode != "none")
   {
@@ -137,7 +141,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   }
 
   // Build mesh from local mesh data and provided cell partition
-  build(mesh, local_data, cell_partition, ghost_procs);
+  build(mesh, local_data, cell_partition, ghost_procs, ghost_mode);
 
   // Create MeshDomains from local_data
   // FIXME: probably not working with ghost cells?
@@ -154,11 +158,11 @@ void MeshPartitioning::partition_cells(
   const MPI_Comm& mpi_comm,
   const LocalMeshData& mesh_data,
   std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs)
+  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
+  const std::string partitioner)
 {
 
   // Compute cell partition using partitioner from parameter system
-  const std::string partitioner = parameters["mesh_partitioner"];
   if (partitioner == "SCOTCH")
     SCOTCH::compute_partition(mpi_comm, cell_partition, ghost_procs, mesh_data);
   else if (partitioner == "ParMETIS")
@@ -186,7 +190,8 @@ void MeshPartitioning::partition_cells(
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
      const std::vector<std::size_t>& cell_partition,
-     const std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs)
+     const std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
+    const std::string ghost_mode)
 {
   // Distribute cells
   Timer timer("Distribute mesh (cells and vertices)");
@@ -203,24 +208,20 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   new_mesh_data.cell_type = mesh_data.cell_type;
   new_mesh_data.num_global_vertices = mesh_data.num_global_vertices;
 
+  // FIXME:
   // Keep tabs on ghost cell ownership
   std::map<unsigned int, std::set<unsigned int>> shared_cells;
-  // Send cells to processes that need them
-  const unsigned int num_regular_cells =
-    distribute_cells(mesh.mpi_comm(), mesh_data,
-                     cell_partition, ghost_procs,
-                     shared_cells, new_mesh_data);
 
-  const std::string ghost_mode = parameters["ghost_mode"];
+  // Send cells to processes that need them
+  const unsigned int num_regular_cells
+    = distribute_cells(mesh.mpi_comm(), mesh_data, cell_partition, ghost_procs,
+                       shared_cells, new_mesh_data);
 
   if (ghost_mode == "shared_vertex")
   {
-    // Send/receive additional cells
-    // defined by connectivity to the shared vertices.
-    // Add new cells to new_mesh_data
-    distribute_cell_layer(mesh.mpi_comm(),
-                          num_regular_cells,
-                          shared_cells,
+    // Send/receive additional cells defined by connectivity to the shared
+    // vertices. Add new cells to new_mesh_data
+    distribute_cell_layer(mesh.mpi_comm(), num_regular_cells, shared_cells,
                           new_mesh_data);
   }
   else if (ghost_mode == "none")
@@ -236,8 +237,10 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
 
 #ifdef HAS_SCOTCH
   if (parameters["reorder_cells_gps"])
+  {
     reorder_cells_gps(mesh.mpi_comm(), num_regular_cells,
                       shared_cells, new_mesh_data);
+  }
 #endif
 
   // Generate mapping from global to local indexing for vertices
@@ -251,9 +254,11 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
 
 #ifdef HAS_SCOTCH
   if (parameters["reorder_vertices_gps"])
+  {
     reorder_vertices_gps(mesh.mpi_comm(), num_regular_vertices,
                          num_regular_cells, vertex_global_to_local,
                          new_mesh_data);
+   }
 #endif
 
   // Send vertices to processes that need them, informing all
