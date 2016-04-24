@@ -24,7 +24,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
-#include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "GraphBuilder.h"
 #include "ParMETIS.h"
@@ -46,7 +45,9 @@ namespace dolfin
   public:
 
     // Constructor
-    ParMETISDualGraph(MPI_Comm mpi_comm, const LocalMeshData& mesh_data);
+    ParMETISDualGraph(MPI_Comm mpi_comm,
+                      const boost::multi_array<std::size_t, 2>& cell_vertices,
+                      const int num_vertices_per_cell);
 
     // Destructor
     ~ParMETISDualGraph();
@@ -77,8 +78,9 @@ namespace dolfin
 void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
                                 std::vector<int>& cell_partition,
                                 std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
-                                const LocalMeshData& mesh_data,
-                                std::string mode)
+                                const boost::multi_array<std::size_t, 2>& cell_vertices,
+                                const int num_vertices_per_cell,
+                                const std::string mode)
 {
   // Duplicate MPI communicator (ParMETIS does not take const
   // arguments, so duplicate communicator to be sure it isn't changed)
@@ -86,9 +88,9 @@ void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
   MPI_Comm_dup(mpi_comm, &comm);
 
   // Build dual graph
-  ParMETISDualGraph g(mpi_comm, mesh_data);
+  ParMETISDualGraph g(mpi_comm, cell_vertices, num_vertices_per_cell);
 
-  dolfin_assert(g.eptr.size() - 1 == mesh_data.cell_vertices.size());
+  dolfin_assert(g.eptr.size() - 1 == cell_vertices.size());
 
   // Partition graph
   if (mode == "partition")
@@ -328,7 +330,8 @@ void ParMETIS::refine(MPI_Comm mpi_comm, std::vector<int>& cell_partition,
 }
 //-----------------------------------------------------------------------------
 ParMETISDualGraph::ParMETISDualGraph(MPI_Comm mpi_comm,
-                                     const LocalMeshData& mesh_data)
+                  const boost::multi_array<std::size_t, 2>& cell_vertices,
+                  const int num_vertices_per_cell)
 {
   Timer timer("Build mesh dual graph (ParMETIS)");
 
@@ -336,8 +339,8 @@ ParMETISDualGraph::ParMETISDualGraph(MPI_Comm mpi_comm,
   const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Get dimensions of local mesh_data
-  const std::size_t num_local_cells = mesh_data.cell_vertices.size();
-  const std::size_t num_cell_vertices = mesh_data.num_vertices_per_cell;
+  const std::size_t num_local_cells = cell_vertices.size();
+  const std::size_t num_cell_vertices = num_vertices_per_cell;
 
   // Check that number of local graph nodes (cells) is > 0
   if (num_local_cells == 0)
@@ -360,10 +363,10 @@ ParMETISDualGraph::ParMETISDualGraph(MPI_Comm mpi_comm,
   eind.assign(num_local_cells*num_cell_vertices, 0);
   for (std::size_t i = 0; i < num_local_cells; i++)
   {
-    dolfin_assert(mesh_data.cell_vertices[i].size() == num_cell_vertices);
+    dolfin_assert(cell_vertices[i].size() == num_cell_vertices);
     eptr[i] = i*num_cell_vertices;
     for (std::size_t j = 0; j < num_cell_vertices; j++)
-      eind[eptr[i] + j] = mesh_data.cell_vertices[i][j];
+      eind[eptr[i] + j] = cell_vertices[i][j];
   }
   eptr[num_local_cells] = num_local_cells*num_cell_vertices;
 
@@ -413,8 +416,9 @@ ParMETISDualGraph::~ParMETISDualGraph()
 void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
                                  std::vector<int>& cell_partition,
                                  std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
-                                 const LocalMeshData& data,
-                                 std::string mode)
+                                 const boost::multi_array<std::size_t, 2>& cell_vertices,
+                                 const int num_vertices_per_cell,
+                                 const std::string mode)
 {
   dolfin_error("ParMETIS.cpp",
                "compute mesh partitioning using ParMETIS",

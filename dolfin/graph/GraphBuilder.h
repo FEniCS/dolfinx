@@ -34,7 +34,6 @@ namespace dolfin
   // Forward declarations
   class CellType;
   class GenericDofMap;
-  class LocalMeshData;
   class Mesh;
 
   /// This class builds a Graph corresponding to various objects
@@ -57,10 +56,13 @@ namespace dolfin
                              std::size_t dim1);
 
     /// Build distributed dual graph (cell-cell connections) from
-    /// LocalMeshData
+    /// minimal mesh data
     static void
       compute_dual_graph(const MPI_Comm mpi_comm,
-                         const LocalMeshData& mesh_data,
+                         const boost::multi_array<std::size_t, 2>& cell_vertices,
+                         const CellType& cell_type,
+                         const std::vector<std::size_t>& global_cell_indices,
+                         const std::int64_t num_global_vertices,
                          std::vector<std::set<std::size_t>>& local_graph,
                          std::set<std::size_t>& ghost_vertices);
 
@@ -70,13 +72,6 @@ namespace dolfin
 
     typedef boost::unordered_map<std::vector<std::size_t>, std::size_t>
       FacetCellMap;
-
-    // Build local part of dual graph for mesh
-    static void
-      compute_local_dual_graph(const MPI_Comm mpi_comm,
-                               const LocalMeshData& mesh_data,
-                               std::vector<std::set<std::size_t>>& local_graph,
-                               FacetCellMap& facet_cell_map);
 
     static void
       compute_local_dual_graph(const MPI_Comm mpi_comm,
@@ -90,7 +85,10 @@ namespace dolfin
     // GraphBuilder::compute_local_dual_graph should be called first.
     static void
       compute_nonlocal_dual_graph(const MPI_Comm mpi_comm,
-                                  const LocalMeshData& mesh_data,
+                                  const boost::multi_array<std::size_t, 2>& cell_vertices,
+                                  const CellType& cell_type,
+                                  const std::vector<std::size_t>& global_cell_indices,
+                                  const std::int64_t num_global_vertices,
                                   std::vector<std::set<std::size_t>>& local_graph,
                                   FacetCellMap& facet_cell_map,
                                   std::set<std::size_t>& ghost_vertices);

@@ -33,8 +33,6 @@ namespace dolfin
 {
 
   // Forward declarations
-  class LocalMeshData;
-
   class ParMETISDualGraph;
 
   /// This class provides an interface to ParMETIS
@@ -58,8 +56,9 @@ namespace dolfin
     static void compute_partition(const MPI_Comm mpi_comm,
             std::vector<int>& cell_partition,
             std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
-            const LocalMeshData& mesh_data,
-            std::string mode="partition");
+            const boost::multi_array<std::size_t, 2>& cell_vertices,
+            const int num_vertices_per_cell,
+            const std::string mode="partition");
 
   private:
 

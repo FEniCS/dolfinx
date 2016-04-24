@@ -168,7 +168,11 @@ void MeshPartitioning::partition_cells(
   if (partitioner == "SCOTCH")
     SCOTCH::compute_partition(mpi_comm, cell_partition, ghost_procs, mesh_data);
   else if (partitioner == "ParMETIS")
-    ParMETIS::compute_partition(mpi_comm, cell_partition, ghost_procs, mesh_data);
+  {
+    ParMETIS::compute_partition(mpi_comm, cell_partition, ghost_procs,
+                                mesh_data.cell_vertices,
+                                mesh_data.num_vertices_per_cell);
+   }
   else if (partitioner == "Zoltan_RCB")
     ZoltanPartition::compute_partition_rcb(mpi_comm, cell_partition, mesh_data);
   else if (partitioner == "Zoltan_PHG")

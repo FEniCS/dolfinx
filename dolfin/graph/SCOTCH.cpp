@@ -57,7 +57,11 @@ void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
   std::set<std::size_t> ghost_vertices;
 
   // Compute local dual graph
-  GraphBuilder::compute_dual_graph(mpi_comm, mesh_data, local_graph,
+  std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
+  dolfin_assert(cell_type);
+  GraphBuilder::compute_dual_graph(mpi_comm, mesh_data.cell_vertices, *cell_type,
+                                   mesh_data.global_cell_indices,
+                                   mesh_data.num_global_vertices, local_graph,
                                    ghost_vertices);
 
   // Compute partitions
@@ -276,7 +280,7 @@ void SCOTCH::partition(
 
   SCOTCH_Num* veloloctab;
   std::vector<SCOTCH_Num> vload;
-  if (node_weights.size() == 0)
+  if (node_weights.empty())
     veloloctab = NULL;
   else
   {
@@ -288,9 +292,9 @@ void SCOTCH::partition(
   // Build SCOTCH distributed graph
   Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
-                        &vertloctab[0], NULL, veloloctab, NULL,
-                        edgelocnbr, edgelocnbr,
-                        &edgeloctab[0], NULL, NULL) )
+                         &vertloctab[0], NULL, veloloctab, NULL,
+                         edgelocnbr, edgelocnbr,
+                         &edgeloctab[0], NULL, NULL) )
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
@@ -402,6 +406,7 @@ void SCOTCH::partition(
         if (map_it == ghost_procs.end())
         {
           dolfin::Set<int> sharing_processes;
+
           // Owning process goes first into dolfin::Set (unordered
           // set) so will always be first.
           sharing_processes.insert(proc_this);
