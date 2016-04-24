@@ -255,7 +255,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(
 {
   Timer timer("Compute non-local part of mesh dual graph");
 
-  // Get number of MPI processes, and return if mesh is not distributedq
+  // Get number of MPI processes, and return if mesh is not distributed
   const int num_processes = MPI::size(mpi_comm);
   if (num_processes == 1)
     return;

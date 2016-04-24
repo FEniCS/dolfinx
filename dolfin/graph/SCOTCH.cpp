@@ -50,25 +50,25 @@ using namespace dolfin;
 void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
                                std::vector<int>& cell_partition,
                                std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
-                               const LocalMeshData& mesh_data)
+                               const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                               const std::vector<std::int64_t>& global_cell_indices,
+                               const std::vector<std::size_t>& cell_weight,
+                               const std::int64_t num_global_vertices,
+                               const std::int64_t num_global_cells,
+                               const CellType& cell_type)
 {
   // Create data structures to hold graph
   std::vector<std::set<std::size_t>> local_graph;
   std::set<std::size_t> ghost_vertices;
 
   // Compute local dual graph
-  std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
-  dolfin_assert(cell_type);
-  GraphBuilder::compute_dual_graph(mpi_comm, mesh_data.cell_vertices, *cell_type,
-                                   mesh_data.global_cell_indices,
-                                   mesh_data.num_global_vertices, local_graph,
-                                   ghost_vertices);
+  GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type,
+                                   global_cell_indices, num_global_vertices,
+                                   local_graph, ghost_vertices);
 
   // Compute partitions
-  partition(mpi_comm, local_graph, mesh_data.cell_weight,
-            ghost_vertices, mesh_data.global_cell_indices,
-            mesh_data.num_global_cells, cell_partition, ghost_procs);
-
+  partition(mpi_comm, local_graph, cell_weight, ghost_vertices,
+            global_cell_indices, num_global_cells, cell_partition, ghost_procs);
 }
 //-----------------------------------------------------------------------------
 std::vector<int> SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)

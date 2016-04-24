@@ -21,7 +21,10 @@
 #ifndef __DOLFIN_ZOLTAN_PARTITION_H
 #define __DOLFIN_ZOLTAN_PARTITION_H
 
+#include <cstdint>
 #include <vector>
+#include <vector>
+#include <boost/multi_array.hpp>
 #include <dolfin/common/MPI.h>
 
 #ifdef HAS_TRILINOS
@@ -31,6 +34,7 @@
 namespace dolfin
 {
 
+  class CellType;
   class LocalMeshData;
 
   /// This class partitions a graph using Zoltan (part of Trilinos).
@@ -43,13 +47,21 @@ namespace dolfin
     /// Calculate partitioning using Parallel HyperGraph (Zoltan PHG)
     static void compute_partition_phg(const MPI_Comm mpi_comm,
                                       std::vector<int>& cell_partition,
-                                      const LocalMeshData& mesh_data);
+                                      const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                                      const CellType& cell_type,
+                                      const std::vector<std::int64_t>& global_cell_indices,
+                                      const std::int64_t num_global_vertices);
 
     /// Calculate partitioning using recursive block bisection
     /// (Zoltan RCB - geometric partitioner)
+    /*
     static void compute_partition_rcb(const MPI_Comm mpi_comm,
                                       std::vector<int>& cell_partition,
-                                      const LocalMeshData& mesh_data);
+                                      const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                                      const CellType& cell_type,
+                                      const std::vector<std::int64_t>& global_cell_indices,
+                                      const std::int64_t num_global_vertices);
+    */
 
   private:
 

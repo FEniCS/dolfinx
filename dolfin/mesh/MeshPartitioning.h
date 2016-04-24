@@ -61,16 +61,16 @@ namespace dolfin
   {
   public:
 
-    /// Build a partitioned mesh based from a local mesh on process 0
+    /// Build a distributed mesh from a local mesh on process 0
     static void build_distributed_mesh(Mesh& mesh);
 
-    /// Build a partitioned mesh based from a local mesh on process 0
-    /// with supplied destination processes for each cell
+    /// Build a distributed mesh from a local mesh on process 0, with
+    /// distribution of cells supplied (destination processes for each cell)
     static void
       build_distributed_mesh(Mesh& mesh, const std::vector<int>& cell_partition,
                              const std::string ghost_mode);
 
-    /// Build a partitioned mesh from local mesh data that is
+    /// Build a distributed mesh from 'local mesh data' that is
     /// distributed across processes
     static void build_distributed_mesh(Mesh& mesh, const LocalMeshData& data,
                                        const std::string ghost_mode);
@@ -84,9 +84,9 @@ namespace dolfin
 
   private:
 
-    // Compute cell partitioning for local mesh data. Returns
-    // cell->process vector for cells in LocalMeshData
-    // and a map from local index->processes to which ghost cells must be sent
+    // Compute cell partitioning from local mesh data. Returns cell -> process
+    // vector for cells in LocalMeshData and a map from local index->processes
+    // to which ghost cells must be sent
     static void
     partition_cells(const MPI_Comm& mpi_comm,
                     const LocalMeshData& mesh_data,
@@ -94,12 +94,13 @@ namespace dolfin
                     std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
                     const std::string partitioner);
 
-    // Build mesh from local mesh data with a computed partition
+    // Build a distributed mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,
-     const std::vector<int>& cell_partition,
-     const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
-     const std::string ghost_mode);
+                      const std::vector<int>& cell_partition,
+                      const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                      const std::string ghost_mode);
 
+    // FIXME: Improve this docstring
     // Distribute a layer of cells attached by vertex to boundary
     // updating new_mesh_data and shared_cells
     static void distribute_cell_layer(MPI_Comm mpi_comm,
@@ -110,6 +111,7 @@ namespace dolfin
       std::vector<std::int64_t>& global_cell_indices,
       std::vector<int>& cell_partition);
 
+    // FIXME: make clearer what goes in and what comes out
     // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH)
     static void reorder_cells_gps(MPI_Comm mpi_comm,
      const unsigned int num_regular_cells,
@@ -118,6 +120,7 @@ namespace dolfin
      boost::multi_array<std::int64_t, 2>& cell_vertices,
      std::vector<std::int64_t>& global_cell_indices);
 
+    // FIXME: make clearer what goes in and what comes out
     // Reorder vertices by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH)
     static void reorder_vertices_gps(MPI_Comm mpi_comm,
      unsigned int num_regular_vertices,
@@ -127,6 +130,7 @@ namespace dolfin
      std::vector<std::int64_t>& vertex_indices,
      std::map<std::size_t, std::size_t>& vertex_global_to_local);
 
+    // FIXME: Update, making clear exactly what is computed
     // This function takes the partition computed by the partitioner
     // (which tells us to which process each of the local cells stored in
     // LocalMeshData on this process belongs) and sends the cells
@@ -144,6 +148,7 @@ namespace dolfin
         std::vector<std::int64_t>& new_global_cell_indices,
         std::vector<int>& new_cell_partition);
 
+    // FIXME: Improve explaination
     // Utility to convert received_vertex_indices into
     // vertex sharing information
     static void build_shared_vertices(MPI_Comm mpi_comm,
@@ -151,8 +156,9 @@ namespace dolfin
      const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
      const std::vector<std::vector<std::size_t>>& received_vertex_indices);
 
-    // Distribute vertices and vertex sharing information,
-    // returning the number of vertices which are not ghosted.
+    // FIXME: make clear what is computed
+    // Distribute vertices and vertex sharing information, returning the number
+    // of vertices which are not ghosted
     static void
       distribute_vertices(const MPI_Comm mpi_comm,
         const LocalMeshData& mesh_data,
@@ -160,14 +166,16 @@ namespace dolfin
         std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
         std::map<unsigned int, std::set<unsigned int>>& shared_vertices_local);
 
-    // Work out the mapping from global index to local index for the set of
-    // vertices which are on this process
+    // FIXME: why are there two non-const argument?
+    // Work out the global index to local index map for the set of vertices
+    // which are on this process
     static std::size_t compute_vertex_mapping(MPI_Comm mpi_comm,
                   unsigned int num_regular_cells,
                   const boost::multi_array<std::int64_t, 2>& cell_vertices,
                   std::vector<std::int64_t>& vertex_indices,
                   std::map<std::size_t, std::size_t>& vertex_global_to_local);
 
+    // FIXME: Improve pre-conditions explaination
     // Build mesh
     static void build_mesh(Mesh& mesh,
       const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,

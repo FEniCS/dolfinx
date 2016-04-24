@@ -35,6 +35,7 @@
 namespace dolfin
 {
   // Forward declarations
+  class CellType;
   class LocalMeshData;
 
   /// This class provides an interface to SCOTCH-PT (parallel version)
@@ -52,7 +53,12 @@ namespace dolfin
       const MPI_Comm mpi_comm,
       std::vector<int>& cell_partition,
       std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
-      const LocalMeshData& mesh_data);
+      const boost::multi_array<std::int64_t, 2>& cell_vertices,
+      const std::vector<std::int64_t>& global_cell_indices,
+      const std::vector<std::size_t>& cell_weight,
+      const std::int64_t num_global_vertices,
+      const std::int64_t num_global_cells,
+      const CellType& cell_type);
 
     /// Compute reordering (map[old] -> new) using
     /// Gibbs-Poole-Stockmeyer re-ordering

@@ -38,17 +38,19 @@ using namespace dolfin;
 void
 ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
                                        std::vector<int>& cell_partition,
-                                       const LocalMeshData& mesh_data)
+                                       const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                                       const CellType& cell_type,
+                                       const std::vector<std::int64_t>& global_cell_indices,
+                                       const std::int64_t num_global_vertices);
 {
   Timer timer0("Partition graph (calling Zoltan PHG)");
 
-  // Create data structures to hold graph
+  // Compute local dual graph
   std::vector<std::set<std::size_t>> local_graph;
   std::set<std::size_t> ghost_vertices;
-
-  // Compute local dual graph
-  GraphBuilder::compute_dual_graph(mpi_comm, mesh_data, local_graph,
-                                   ghost_vertices);
+  GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type,
+                                   global_cell_indices, num_global_vertices,
+                                   local_graph, ghost_vertices);
 
   // Initialise Zoltan
   float version;
@@ -132,6 +134,7 @@ ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
   zoltan.LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_parts);
 }
 //-----------------------------------------------------------------------------
+/*
 void
 ZoltanPartition::compute_partition_rcb(const MPI_Comm mpi_comm,
                                        std::vector<int>& cell_partition,
@@ -216,6 +219,7 @@ ZoltanPartition::compute_partition_rcb(const MPI_Comm mpi_comm,
   zoltan.LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_parts);
   zoltan.LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_parts);
 }
+*/
 //-----------------------------------------------------------------------------
 int ZoltanPartition::get_number_of_objects(void* data, int* ierr)
 {
@@ -450,13 +454,17 @@ void ZoltanPartition::get_all_geom(void *data,
 #else
 void ZoltanPartition::compute_partition_phg(const MPI_Comm mpi_comm,
                                             std::vector<int>& cell_partition,
-                                            const LocalMeshData& mesh_data)
+                                            const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                                            const CellType& cell_type,
+                                            const std::vector<std::int64_t>& global_cell_indices,
+                                            const std::int64_t num_global_vertices)
 {
   dolfin_error("ZoltanPartition.cpp",
                "partition mesh using Zoltan",
                "DOLFIN has been configured without support for Zoltan from Trilinos");
 }
 //-----------------------------------------------------------------------------
+/*
 void ZoltanPartition::compute_partition_rcb(const MPI_Comm mpi_comm,
                                             std::vector<int>& cell_partition,
                                             const LocalMeshData& mesh_data)
@@ -465,5 +473,6 @@ void ZoltanPartition::compute_partition_rcb(const MPI_Comm mpi_comm,
                "partition mesh using Zoltan",
                "DOLFIN has been configured without support for Zoltan from Trilinos");
 }
+*/
 #endif
 //-----------------------------------------------------------------------------

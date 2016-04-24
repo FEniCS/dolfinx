@@ -127,6 +127,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   }
   else
   {
+    // Copy cell parition
     cell_partition = local_data.cell_partition;
     dolfin_assert(cell_partition.size() == local_data.global_cell_indices.size());
     dolfin_assert(*std::max_element(cell_partition.begin(), cell_partition.end())
@@ -165,17 +166,34 @@ void MeshPartitioning::partition_cells(
 {
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
-    SCOTCH::compute_partition(mpi_comm, cell_partition, ghost_procs, mesh_data);
+  {
+    std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
+    dolfin_assert(cell_type);
+    SCOTCH::compute_partition(mpi_comm, cell_partition, ghost_procs,
+                              mesh_data.cell_vertices,
+                              mesh_data.global_cell_indices,
+                              mesh_data.cell_weight,
+                              mesh_data.num_global_vertices,
+                              mesh_data.num_global_cells,
+                              *cell_type);
+  }
   else if (partitioner == "ParMETIS")
   {
     ParMETIS::compute_partition(mpi_comm, cell_partition, ghost_procs,
                                 mesh_data.cell_vertices,
                                 mesh_data.num_vertices_per_cell);
   }
-  else if (partitioner == "Zoltan_RCB")
-    ZoltanPartition::compute_partition_rcb(mpi_comm, cell_partition, mesh_data);
   else if (partitioner == "Zoltan_PHG")
-    ZoltanPartition::compute_partition_phg(mpi_comm, cell_partition, mesh_data);
+  {
+    std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
+    dolfin_assert(cell_type);
+    ZoltanPartition::compute_partition_phg(mpi_comm, cell_partition,
+                                          mesh_data.cell_vertices, *cell_type,
+                                          mesh_data.global_cell_indices,
+                                          mesh_data.num_global_vertices);
+  }
+  //else if (partitioner == "Zoltan_RCB")
+  //  ZoltanPartition::compute_partition_rcb(mpi_comm, cell_partition, mesh_data);
   else
   {
     dolfin_error("MeshPartitioning.cpp",
@@ -191,6 +209,9 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
 {
   // Distribute cells
   Timer timer("Distribute mesh (cells and vertices)");
+
+  // Topological dimension
+  const int tdim = mesh_data.tdim;
 
   // Structure to hold received data about local mesh
   LocalMeshData new_mesh_data(mesh.mpi_comm());
@@ -296,7 +317,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                     new_mesh_data.cell_partition.end());
 
   // Set the ghost cell offset
-  mesh.topology().init_ghost(mesh_data.tdim, num_regular_cells);
+  mesh.topology().init_ghost(tdim, num_regular_cells);
 
   // Set the ghost vertex offset
   mesh.topology().init_ghost(0, num_regular_vertices);
