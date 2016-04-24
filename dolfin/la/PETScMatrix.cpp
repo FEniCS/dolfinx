@@ -109,9 +109,9 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   dolfin_assert(tensor_layout.rank() == 2);
   const std::size_t M = tensor_layout.size(0);
   const std::size_t N = tensor_layout.size(1);
-  const std::pair<std::size_t, std::size_t> row_range
+  const std::pair<std::int64_t, std::int64_t> row_range
     = tensor_layout.local_range(0);
-  const std::pair<std::size_t, std::size_t> col_range
+  const std::pair<std::int64_t, std::int64_t> col_range
     = tensor_layout.local_range(1);
   const std::size_t m = row_range.second - row_range.first;
   const std::size_t n = col_range.second - col_range.first;

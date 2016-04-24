@@ -18,6 +18,7 @@
 
 #include<map>
 
+#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
@@ -220,7 +221,8 @@ std::shared_ptr<Mesh> MeshHierarchy::rebalance() const
             local_mesh_data.vertex_coordinates.data());
 
   std::shared_ptr<Mesh> mesh(new Mesh(coarse_mesh.mpi_comm()));
-  MeshPartitioning::build_distributed_mesh(*mesh, local_mesh_data);
+  const std::string ghost_mode = dolfin::parameters["ghost_mode"];
+  MeshPartitioning::build_distributed_mesh(*mesh, local_mesh_data, ghost_mode);
 
   return mesh;
 }

@@ -89,7 +89,7 @@ std::size_t EigenVector::size() const
   return _x->size();
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> EigenVector::local_range() const
+std::pair<std::int64_t, std::int64_t> EigenVector::local_range() const
 {
   return std::make_pair(0, size());
 }

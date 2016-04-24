@@ -47,18 +47,21 @@ using namespace dolfin;
 #ifdef HAS_SCOTCH
 
 //-----------------------------------------------------------------------------
-void SCOTCH::compute_partition(
-  const MPI_Comm mpi_comm,
-  std::vector<int>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
-  const LocalMeshData& mesh_data)
+void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
+                               std::vector<int>& cell_partition,
+                               std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                               const LocalMeshData& mesh_data)
 {
   // Create data structures to hold graph
   std::vector<std::set<std::size_t>> local_graph;
   std::set<std::size_t> ghost_vertices;
 
   // Compute local dual graph
-  GraphBuilder::compute_dual_graph(mpi_comm, mesh_data, local_graph,
+  std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
+  dolfin_assert(cell_type);
+  GraphBuilder::compute_dual_graph(mpi_comm, mesh_data.cell_vertices, *cell_type,
+                                   mesh_data.global_cell_indices,
+                                   mesh_data.num_global_vertices, local_graph,
                                    ghost_vertices);
 
   // Compute partitions
@@ -68,8 +71,7 @@ void SCOTCH::compute_partition(
 
 }
 //-----------------------------------------------------------------------------
-std::vector<int> SCOTCH::compute_gps(const Graph& graph,
-                                     std::size_t num_passes)
+std::vector<int> SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
 {
   // Create strategy string for Gibbs-Poole-Stockmeyer ordering
   std::string strategy = "g{pass= " + std::to_string(num_passes) + "}";
@@ -201,7 +203,7 @@ void SCOTCH::partition(
   const std::vector<std::int64_t>& global_cell_indices,
   const std::size_t num_global_vertices,
   std::vector<int>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs)
+  std::map<std::int64_t, dolfin::Set<int>>& ghost_procs)
 {
   Timer timer("Compute graph partition (SCOTCH)");
 
@@ -278,7 +280,7 @@ void SCOTCH::partition(
 
   SCOTCH_Num* veloloctab;
   std::vector<SCOTCH_Num> vload;
-  if (node_weights.size() == 0)
+  if (node_weights.empty())
     veloloctab = NULL;
   else
   {
@@ -290,9 +292,9 @@ void SCOTCH::partition(
   // Build SCOTCH distributed graph
   Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
-                              &vertloctab[0], NULL, veloloctab, NULL,
-                              edgelocnbr, edgelocnbr,
-                              &edgeloctab[0], NULL, NULL) )
+                         &vertloctab[0], NULL, veloloctab, NULL,
+                         edgelocnbr, edgelocnbr,
+                         &edgeloctab[0], NULL, NULL) )
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
@@ -403,7 +405,8 @@ void SCOTCH::partition(
         auto map_it = ghost_procs.find(i);
         if (map_it == ghost_procs.end())
         {
-          dolfin::Set<unsigned int> sharing_processes;
+          dolfin::Set<int> sharing_processes;
+
           // Owning process goes first into dolfin::Set (unordered
           // set) so will always be first.
           sharing_processes.insert(proc_this);
@@ -430,19 +433,25 @@ void SCOTCH::partition(
 //-----------------------------------------------------------------------------
 #else
 //-----------------------------------------------------------------------------
+<<<<<<< HEAD
 void SCOTCH::compute_partition(
   const MPI_Comm mpi_comm,
   std::vector<int>& cell_partition,
   std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
   const LocalMeshData& mesh_data)
+=======
+void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
+                               std::vector<std::size_t>& cell_partition,
+                               std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                               const LocalMeshData& mesh_data)
+>>>>>>> garth/simplify-local-mesh-data
 {
   dolfin_error("SCOTCH.cpp",
                "partition mesh using SCOTCH",
                "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
-std::vector<int> SCOTCH::compute_gps(const Graph& graph,
-                                     std::size_t num_passes)
+std::vector<int> SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
 {
   dolfin_error("SCOTCH.cpp",
                "re-order graph using SCOTCH",
@@ -451,8 +460,7 @@ std::vector<int> SCOTCH::compute_gps(const Graph& graph,
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
-SCOTCH::compute_reordering(const Graph& graph,
-                           std::string scotch_strategy)
+SCOTCH::compute_reordering(const Graph& graph, std::string scotch_strategy)
 {
   dolfin_error("SCOTCH.cpp",
                "re-order graph using SCOTCH",
@@ -478,7 +486,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
                        const std::vector<std::int64_t>& global_cell_indices,
                        const std::size_t num_global_vertices,
                        std::vector<int>& cell_partition,
-                       std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs)
+                       std::map<std::int64_t, dolfin::Set<int>>& ghost_procs)
 {
   dolfin_error("SCOTCH.cpp",
                "partition mesh using SCOTCH",

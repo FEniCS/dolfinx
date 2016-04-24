@@ -23,6 +23,7 @@
 #ifndef __PARMETIS_PARTITIONER_H
 #define __PARMETIS_PARTITIONER_H
 
+#include <cstdint>
 #include <cstddef>
 #include <vector>
 #include <dolfin/common/MPI.h>
@@ -32,8 +33,6 @@ namespace dolfin
 {
 
   // Forward declarations
-  class LocalMeshData;
-
   class ParMETISDualGraph;
 
   /// This class provides an interface to ParMETIS
@@ -56,18 +55,18 @@ namespace dolfin
     /// "adaptive_repartition" or "refine".
     static void compute_partition(const MPI_Comm mpi_comm,
             std::vector<int>& cell_partition,
-            std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
-            const LocalMeshData& mesh_data,
-            std::string mode="partition");
+            std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+            const boost::multi_array<std::int64_t, 2>& cell_vertices,
+            const int num_vertices_per_cell,
+            const std::string mode="partition");
 
   private:
 
 #ifdef HAS_PARMETIS
     // Standard ParMETIS partition
-    static void partition(MPI_Comm mpi_comm,
-       std::vector<int>& cell_partition,
-       std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
-       ParMETISDualGraph& g);
+    static void partition(MPI_Comm mpi_comm, std::vector<int>& cell_partition,
+                          std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                          ParMETISDualGraph& g);
 
     // ParMETIS adaptive repartition
     static void adaptive_repartition(MPI_Comm mpi_comm,
@@ -75,8 +74,8 @@ namespace dolfin
                                      ParMETISDualGraph& g);
 
     // ParMETIS refine repartition
-    static void refine(MPI_Comm mpi_comm,
-                       std::vector<int>& cell_partition,
+
+    static void refine(MPI_Comm mpi_comm, std::vector<int>& cell_partition,
                        ParMETISDualGraph& g);
 #endif
 

@@ -34,6 +34,7 @@
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/parameter/GlobalParameters.h>
 
 #include "ParallelRefinement.h"
 
@@ -329,7 +330,8 @@ void ParallelRefinement::partition(Mesh& new_mesh, bool redistribute) const
                                     MPI::rank(_mesh.mpi_comm()));
   }
 
-  MeshPartitioning::build_distributed_mesh(new_mesh, mesh_data);
+  const std::string ghost_mode = dolfin::parameters["ghost_mode"];
+  MeshPartitioning::build_distributed_mesh(new_mesh, mesh_data, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::new_cell(const Cell& cell)

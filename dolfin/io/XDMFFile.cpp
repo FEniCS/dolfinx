@@ -47,6 +47,7 @@
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "HDF5File.h"
 #include "HDF5Utility.h"
 #include "XDMFFile.h"
@@ -922,7 +923,8 @@ void XDMFFile::read_new(Mesh& mesh) const
     local_mesh_data.check();
 
     // Build mesh
-    MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data);
+    const std::string ghost_mode = dolfin::parameters["ghost_mode"];
+    MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data, ghost_mode);
   }
 }
 //----------------------------------------------------------------------------

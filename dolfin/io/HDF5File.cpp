@@ -46,6 +46,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "HDF5Attribute.h"
 #include "HDF5Interface.h"
 #include "HDF5Utility.h"
@@ -2018,7 +2019,10 @@ void HDF5File::read(Mesh& input_mesh,
   if (MPI::size(_mpi_comm) == 1)
     HDF5Utility::build_local_mesh(input_mesh, local_mesh_data);
   else
-    MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data);
+  {
+    const std::string ghost_mode = dolfin::parameters["ghost_mode"];
+    MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data, ghost_mode);
+  }
 
   // ---- Markers ----
 

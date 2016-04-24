@@ -34,7 +34,6 @@
 #include <dolfin/common/types.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include "GraphBuilder.h"
@@ -153,42 +152,38 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   return graph;
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph(
-  const MPI_Comm mpi_comm,
-  const LocalMeshData& mesh_data,
-  std::vector<std::set<std::size_t>>& local_graph,
-  std::set<std::size_t>& ghost_vertices)
+void GraphBuilder::compute_dual_graph(const MPI_Comm mpi_comm,
+                                      const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                                      const CellType& cell_type,
+                                      const std::vector<std::int64_t>& global_cell_indices,
+                                      const std::int64_t num_global_vertices,
+                                      std::vector<std::set<std::size_t>>& local_graph,
+                                      std::set<std::size_t>& ghost_vertices)
 {
   FacetCellMap facet_cell_map;
+  compute_local_dual_graph(mpi_comm, cell_vertices, cell_type,
+                           global_cell_indices, local_graph, facet_cell_map);
 
-#ifdef HAS_MPI
-  compute_local_dual_graph(mpi_comm, mesh_data, local_graph, facet_cell_map);
-  compute_nonlocal_dual_graph(mpi_comm, mesh_data, local_graph, facet_cell_map,
-                              ghost_vertices);
-  #else
-  compute_local_dual_graph(mpi_comm, mesh_data, local_graph, facet_cell_map);
-  #endif
+  compute_nonlocal_dual_graph(mpi_comm, cell_vertices, cell_type,
+                              global_cell_indices, num_global_vertices,
+                              local_graph, facet_cell_map, ghost_vertices);
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_local_dual_graph(
   const MPI_Comm mpi_comm,
-  const LocalMeshData& mesh_data,
+  const boost::multi_array<std::int64_t, 2>& cell_vertices,
+  const CellType& cell_type,
+  const std::vector<std::int64_t>& global_cell_indices,
   std::vector<std::set<std::size_t>>& local_graph,
   FacetCellMap& facet_cell_map)
 {
   Timer timer("Compute local part of mesh dual graph");
 
-  // List of cell vertices
-  const boost::multi_array<std::int64_t, 2>& cell_vertices
-    = mesh_data.cell_vertices;
-
-  const std::size_t tdim = mesh_data.tdim;
-  std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
-
-  const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
-  const std::size_t num_vertices_per_cell = cell_type->num_entities(0);
-  const std::size_t num_facets_per_cell = cell_type->num_entities(tdim - 1);
-  const std::size_t num_vertices_per_facet = cell_type->num_vertices(tdim - 1);
+  const std::size_t tdim = cell_type.dim();
+  const std::size_t num_local_cells = global_cell_indices.size();
+  const std::size_t num_vertices_per_cell = cell_type.num_entities(0);
+  const std::size_t num_facets_per_cell = cell_type.num_entities(tdim - 1);
+  const std::size_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
 
   dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
   dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
@@ -200,16 +195,15 @@ void GraphBuilder::compute_local_dual_graph(
   // (internal to this function, not the user numbering) numbering
 
   // Get offset for this process
-  const std::size_t cell_offset = MPI::global_offset(mpi_comm, num_local_cells,
-                                                     true);
+  const std::int64_t cell_offset = MPI::global_offset(mpi_comm, num_local_cells,
+                                                      true);
 
   // Create map from facet (list of vertex indices) to cells
   facet_cell_map.rehash((facet_cell_map.size()
                      + num_local_cells)/facet_cell_map.max_load_factor() + 1);
 
-  boost::multi_array<unsigned int, 2> fverts(boost::extents
-                                             [num_facets_per_cell]
-                                             [num_vertices_per_facet]);
+  boost::multi_array<unsigned int, 2>
+    fverts(boost::extents[num_facets_per_cell][num_vertices_per_facet]);
 
   std::vector<unsigned int> cellvtx(num_vertices_per_cell);
   std::pair<std::vector<std::size_t>, std::size_t> map_entry;
@@ -222,13 +216,12 @@ void GraphBuilder::compute_local_dual_graph(
 
     std::copy(cell_vertices[i].begin(), cell_vertices[i].end(),
               cellvtx.begin());
-    cell_type->create_entities(fverts, tdim - 1, cellvtx.data());
+    cell_type.create_entities(fverts, tdim - 1, cellvtx.data());
 
     // Iterate over facets in cell
     for (std::size_t j = 0; j < num_facets_per_cell; ++j)
     {
-      std::copy(fverts[j].begin(),
-                fverts[j].end(), map_entry.first.begin());
+      std::copy(fverts[j].begin(), fverts[j].end(), map_entry.first.begin());
       std::sort(map_entry.first.begin(), map_entry.first.end());
 
       // Map lookup/insert
@@ -252,25 +245,30 @@ void GraphBuilder::compute_local_dual_graph(
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_nonlocal_dual_graph(
   const MPI_Comm mpi_comm,
-  const LocalMeshData& mesh_data,
+  const boost::multi_array<std::int64_t, 2>& cell_vertices,
+  const CellType& cell_type,
+  const std::vector<std::int64_t>& global_cell_indices,
+  const std::int64_t num_global_vertices,
   std::vector<std::set<std::size_t>>& local_graph,
   FacetCellMap& facet_cell_map,
   std::set<std::size_t>& ghost_vertices)
 {
   Timer timer("Compute non-local part of mesh dual graph");
 
+  // Get number of MPI processes, and return if mesh is not distributedq
+  const int num_processes = MPI::size(mpi_comm);
+  if (num_processes == 1)
+    return;
+
   // At this stage facet_cell map only contains facets->cells with
   // edge facets either interprocess or external boundaries
 
-  const std::size_t tdim = mesh_data.tdim;
-  std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
+  const int tdim = cell_type.dim();
 
   // List of cell vertices
-  const boost::multi_array<std::int64_t, 2>& cell_vertices
-    = mesh_data.cell_vertices;
-  const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
-  const std::size_t num_vertices_per_cell = cell_type->num_entities(0);
-  const std::size_t num_vertices_per_facet = cell_type->num_vertices(tdim - 1);
+  const std::int32_t num_local_cells = global_cell_indices.size();
+  const int num_vertices_per_cell = cell_type.num_entities(0);
+  const int num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
 
   dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
   dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
@@ -279,9 +277,8 @@ void GraphBuilder::compute_nonlocal_dual_graph(
   // (internal to this function, not the user numbering) numbering
 
   // Get offset for this process
-  const std::size_t offset = MPI::global_offset(mpi_comm, num_local_cells,
+  const std::int64_t offset = MPI::global_offset(mpi_comm, num_local_cells,
                                                 true);
-  const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Send facet-cell map to intermediary match-making processes
   std::vector<std::vector<std::size_t>> send_buffer(num_processes);
@@ -294,8 +291,8 @@ void GraphBuilder::compute_nonlocal_dual_graph(
     //        skewed towards low values - may not be important
 
     // Use first vertex of facet to partition into blocks
-    std::size_t dest_proc = MPI::index_owner(mpi_comm, (it.first)[0],
-                                             mesh_data.num_global_vertices);
+    const int dest_proc = MPI::index_owner(mpi_comm, (it.first)[0],
+                                           num_global_vertices);
 
     // Pack map into vectors to send
     send_buffer[dest_proc].insert(send_buffer[dest_proc].end(),
@@ -328,8 +325,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(
          it += (num_vertices_per_facet + 1))
     {
       // Build map key
-      std::copy(it, it + num_vertices_per_facet,
-                key.first.begin());
+      std::copy(it, it + num_vertices_per_facet, key.first.begin());
       key.second.first = p;
       key.second.second = *(it + num_vertices_per_facet);
 

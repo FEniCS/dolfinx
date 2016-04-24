@@ -104,7 +104,9 @@ void XMLFile::operator>> (Mesh& input_mesh)
     }
 
     // Partition and build mesh
-    MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data);
+    const std::string ghost_mode = dolfin::parameters["ghost_mode"];
+    MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data,
+                                             ghost_mode);
   }
 }
 //-----------------------------------------------------------------------------

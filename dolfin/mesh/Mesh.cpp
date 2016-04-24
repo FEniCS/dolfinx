@@ -90,7 +90,8 @@ Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
   : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
   _ordered(false), _mpi_comm(comm)
 {
-  MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
+  const std::string ghost_mode = parameters["ghost_mode"];
+  MeshPartitioning::build_distributed_mesh(*this, local_mesh_data, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()
