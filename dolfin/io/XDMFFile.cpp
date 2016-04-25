@@ -1244,7 +1244,7 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
     if (!ghosted)
     {
       // Get shared entities
-      const std::map<unsigned int, std::set<unsigned int>>& shared_entities
+      const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
         = mesh.topology().shared_entities(cell_dim);
 
       // Iterate over shared entities, and add to exlcusion set

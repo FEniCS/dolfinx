@@ -375,7 +375,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       DistributedMeshTools::number_entities(mesh, cell_dim);
 
       const std::size_t mpi_rank = MPI::rank(_mpi_comm);
-      const std::map<unsigned int, std::set<unsigned int>>& shared_entities
+      const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
         = mesh.topology().shared_entities(cell_dim);
 
       std::set<unsigned int> non_local_entities;
@@ -798,7 +798,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
     // Drop duplicate data
     const std::size_t tdim = mesh.topology().dim();
     const std::size_t mpi_rank = MPI::rank(_mpi_comm);
-    const std::map<unsigned int, std::set<unsigned int>>& shared_entities
+    const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
       = mesh.topology().shared_entities(cell_dim);
 
     std::set<unsigned int> non_local_entities;

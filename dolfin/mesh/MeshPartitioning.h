@@ -100,12 +100,12 @@ namespace dolfin
                       const std::string ghost_mode);
 
     // FIXME: Improve this docstring
-    // Distribute a layer of cells attached by vertex to boundary
-    // updating new_mesh_data and shared_cells
+    // Distribute a layer of cells attached by vertex to boundary updating
+    // new_mesh_data and shared_cells. Used when ghosting by vertex.
     static void distribute_cell_layer(MPI_Comm mpi_comm,
       const int num_regular_cells,
       const std::int64_t num_global_vertices,
-      std::map<unsigned int, std::set<unsigned int>>& shared_cells,
+      std::map<std::int32_t, std::set<unsigned int>>& shared_cells,
       boost::multi_array<std::int64_t, 2>& cell_vertices,
       std::vector<std::int64_t>& global_cell_indices,
       std::vector<int>& cell_partition);
@@ -115,7 +115,7 @@ namespace dolfin
     static void reorder_cells_gps(MPI_Comm mpi_comm,
      const unsigned int num_regular_cells,
      const CellType& cell_type,
-     std::map<unsigned int, std::set<unsigned int>>& shared_cells,
+     std::map<std::int32_t, std::set<unsigned int>>& shared_cells,
      boost::multi_array<std::int64_t, 2>& cell_vertices,
      std::vector<std::int64_t>& global_cell_indices);
 
@@ -137,12 +137,12 @@ namespace dolfin
     // along with the list of sharing processes.
     // A new LocalMeshData object is populated with the redistributed
     // cells. Return the number of non-ghost cells on this process.
-    static unsigned int
+    static
+    std::tuple<std::int32_t, std::map<std::int32_t, std::set<unsigned int>>>
       distribute_cells(const MPI_Comm mpi_comm,
         const LocalMeshData& data,
         const std::vector<int>& cell_partition,
         const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
-        std::map<unsigned int, std::set<unsigned int>>& shared_cells,
         boost::multi_array<std::int64_t, 2>& new_cell_vertices,
         std::vector<std::int64_t>& new_global_cell_indices,
         std::vector<int>& new_cell_partition);
@@ -151,7 +151,7 @@ namespace dolfin
     // Utility to convert received_vertex_indices into
     // vertex sharing information
     static void build_shared_vertices(MPI_Comm mpi_comm,
-     std::map<unsigned int, std::set<unsigned int>>& shared_vertices,
+     std::map<std::int32_t, std::set<unsigned int>>& shared_vertices,
      const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
      const std::vector<std::vector<std::size_t>>& received_vertex_indices);
 
@@ -163,7 +163,7 @@ namespace dolfin
         const LocalMeshData& mesh_data,
         LocalMeshData& new_mesh_data,
         std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
-        std::map<unsigned int, std::set<unsigned int>>& shared_vertices_local);
+        std::map<std::int32_t, std::set<unsigned int>>& shared_vertices_local);
 
     // FIXME: why are there two non-const argument?
     // Work out the global index to local index map for the set of vertices
@@ -255,7 +255,7 @@ namespace dolfin
 
     for (std::size_t i = 0; i < ldata.size(); ++i)
     {
-      const std::map<unsigned int, std::set<unsigned int>>& sharing_map
+      const std::map<std::int32_t, std::set<unsigned int>>& sharing_map
         = mesh.topology().shared_entities(D);
 
       const std::size_t global_cell_index = ldata[i].first.first;
