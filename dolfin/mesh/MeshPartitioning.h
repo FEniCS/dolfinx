@@ -138,14 +138,13 @@ namespace dolfin
     // A new LocalMeshData object is populated with the redistributed
     // cells. Return the number of non-ghost cells on this process.
     static
-    std::tuple<std::int32_t, std::map<std::int32_t, std::set<unsigned int>>>
+    std::tuple<std::int32_t, std::vector<int>, std::map<std::int32_t, std::set<unsigned int>>>
       distribute_cells(const MPI_Comm mpi_comm,
         const LocalMeshData& data,
         const std::vector<int>& cell_partition,
         const std::map<std::int64_t, std::vector<int>>& ghost_procs,
         boost::multi_array<std::int64_t, 2>& new_cell_vertices,
-        std::vector<std::int64_t>& new_global_cell_indices,
-        std::vector<int>& new_cell_partition);
+        std::vector<std::int64_t>& new_global_cell_indices);
 
     // FIXME: Improve explaination
     // Utility to convert received_vertex_indices into
