@@ -413,7 +413,13 @@ void SCOTCH::partition(
           ghost_procs.insert(std::make_pair(i, sharing_processes));
         }
         else
-          map_it->second.push_back(proc_other);
+        {
+          // Add to vector if not already there
+          auto it = std::find(map_it->second.begin(), map_it->second.end(),
+                              proc_other);
+          if (it == map_it->second.end())
+            map_it->second.push_back(proc_other);
+        }
       }
     }
   }
