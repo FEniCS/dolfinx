@@ -818,27 +818,29 @@ MeshPartitioning::distribute_cells(
 }
 //-----------------------------------------------------------------------------
 std::int32_t MeshPartitioning::compute_vertex_mapping(MPI_Comm mpi_comm,
-                 unsigned int num_regular_cells,
+                 const std::int32_t num_regular_cells,
                  const boost::multi_array<std::int64_t, 2>& cell_vertices,
                  std::vector<std::int64_t>& vertex_indices,
                  std::map<std::int64_t, std::int32_t>& vertex_global_to_local)
 {
+  vertex_indices.clear();
   vertex_global_to_local.clear();
 
   // Get set of unique vertices from cells and start constructing a
   // global_to_local map.  Ghost vertices will be at the end of the
   // range (v >= num_regular_vertices).
-  int32_t v = 0;
-  int32_t num_regular_vertices = 0;
-  for (unsigned int i = 0; i != cell_vertices.size(); ++i)
+  std::int32_t v = 0;
+  std::int32_t num_regular_vertices = 0;
+  const std::int32_t num_cells = cell_vertices.size();
+  for (std::int32_t i = 0; i < num_cells; ++i)
   {
-    for (auto q = cell_vertices[i].begin(); q != cell_vertices[i].end(); ++q)
+    for (auto q : cell_vertices[i])
     {
-      auto map_it = vertex_global_to_local.find(*q);
+      auto map_it = vertex_global_to_local.find(q);
       if (map_it == vertex_global_to_local.end())
       {
-        vertex_global_to_local.insert({*q, v});
-        vertex_indices.push_back(*q);
+        vertex_global_to_local.insert({q, v});
+        vertex_indices.push_back(q);
         ++v;
         if (i < num_regular_cells)
           num_regular_vertices = v;
