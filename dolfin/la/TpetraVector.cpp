@@ -191,7 +191,7 @@ bool TpetraVector::owns_index(std::size_t i) const
 {
   dolfin_assert(!_x.is_null());
   const std::pair<std::int64_t, std::int64_t> range = local_range();
-  return (i >= range.first and i < range.second);
+  return ((std::int64_t) i >= range.first and (std::int64_t) i < range.second);
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::get(double* block, std::size_t m,

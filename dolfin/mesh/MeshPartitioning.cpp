@@ -37,7 +37,6 @@
 #include <dolfin/graph/GraphBuilder.h>
 #include <dolfin/graph/ParMETIS.h>
 #include <dolfin/graph/SCOTCH.h>
-#include <dolfin/graph/ZoltanPartition.h>
 #include <dolfin/parameter/GlobalParameters.h>
 
 #include "CellType.h"
@@ -131,7 +130,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
     cell_partition = local_data.cell_partition;
     dolfin_assert(cell_partition.size() == local_data.global_cell_indices.size());
     dolfin_assert(*std::max_element(cell_partition.begin(), cell_partition.end())
-                  < MPI::size(mesh.mpi_comm()));
+                  < (int) MPI::size(mesh.mpi_comm()));
   }
 
   if (ghost_procs.empty() && ghost_mode != "none")
@@ -183,17 +182,6 @@ void MeshPartitioning::partition_cells(
                                 mesh_data.cell_vertices,
                                 mesh_data.num_vertices_per_cell);
   }
-  else if (partitioner == "Zoltan_PHG")
-  {
-    std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
-    dolfin_assert(cell_type);
-    ZoltanPartition::compute_partition_phg(mpi_comm, cell_partition,
-                                          mesh_data.cell_vertices, *cell_type,
-                                          mesh_data.global_cell_indices,
-                                          mesh_data.num_global_vertices);
-  }
-  //else if (partitioner == "Zoltan_RCB")
-  //  ZoltanPartition::compute_partition_rcb(mpi_comm, cell_partition, mesh_data);
   else
   {
     dolfin_error("MeshPartitioning.cpp",
@@ -411,14 +399,14 @@ void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
 
   // Make local real graph (vertices are nodes, edges are edges)
   Graph g(num_regular_vertices);
-  for (unsigned int i = 0; i != num_regular_cells; ++i)
+  for (unsigned int i = 0; i < num_regular_cells; ++i)
   {
-    for (unsigned int j = 0; j != num_vertices_per_cell; ++j)
+    for (int j = 0; j < num_vertices_per_cell; ++j)
     {
       const unsigned int vj = vertex_global_to_local[cell_vertices[i][j]];
       if (vj < num_regular_vertices)
       {
-        for (unsigned int k = j + 1; k != num_vertices_per_cell; ++k)
+        for (int k = j + 1; k < num_vertices_per_cell; ++k)
         {
           const unsigned int vk = vertex_global_to_local[cell_vertices[i][k]];
           if (vk < num_regular_vertices)
@@ -454,7 +442,7 @@ void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
-  const unsigned int num_regular_cells,
+  const int num_regular_cells,
   const std::int64_t num_global_vertices,
   std::map<unsigned int, std::set<unsigned int>>& shared_cells,
   boost::multi_array<std::int64_t, 2>& cell_vertices,
@@ -467,10 +455,10 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   const unsigned int mpi_rank = MPI::rank(mpi_comm);
 
   // Get set of vertices in ghost cells
-  std::map<std::size_t, std::vector<std::int64_t>> sh_vert_to_cell;
+  std::map<std::int64_t, std::vector<std::int64_t>> sh_vert_to_cell;
 
   // Make global-to-local map of shared cells
-  std::map<std::int64_t, unsigned int> cell_global_to_local;
+  std::map<std::int64_t, int> cell_global_to_local;
   for (unsigned int i = num_regular_cells; i != cell_vertices.size(); ++i)
   {
     // Add map entry for each vertex
@@ -487,7 +475,7 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
 
   // Go through all regular cells
   // to add any previously unshared cells.
-  for (unsigned int i = 0; i != num_regular_cells; ++i)
+  for (int i = 0; i< num_regular_cells; ++i)
   {
     for (auto v = cell_vertices[i].begin(); v != cell_vertices[i].end(); ++v)
     {
@@ -507,8 +495,8 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   for (auto vc_it = sh_vert_to_cell.begin();
        vc_it != sh_vert_to_cell.end(); ++vc_it)
   {
-    const std::size_t dest = MPI::index_owner(mpi_comm, vc_it->first,
-                                              num_global_vertices);
+    const int dest = MPI::index_owner(mpi_comm, vc_it->first,
+                                      num_global_vertices);
 
     std::vector<std::int64_t>& sendv = send_vertcells[dest];
 
@@ -534,7 +522,7 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   // Reset map
   sh_vert_to_cell.clear();
 
-  for (unsigned int i = 0; i != mpi_size; ++i)
+  for (unsigned int i = 0; i < mpi_size; ++i)
   {
     const std::vector<std::int64_t>& recv_i = recv_vertcells[i];
     for (auto q = recv_i.begin(); q != recv_i.end(); q += num_cell_vertices + 1)

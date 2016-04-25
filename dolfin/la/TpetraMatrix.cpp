@@ -679,7 +679,8 @@ void TpetraMatrix::set_diagonal(const GenericVector& x)
   Teuchos::ArrayView<const double> data(&val, 1);
 
   auto range = xx.local_range();
-  for (std::size_t i = 0; i != (range.second - range.first); ++i)
+  std::int64_t local_size = range.second - range.first;
+  for (std::int64_t i = 0; i < local_size; ++i)
   {
     col_idx = range.first + i;
     val = xarr[i];

@@ -362,7 +362,8 @@ std::pair<std::int64_t, std::int64_t> PETScVector::local_range() const
 bool PETScVector::owns_index(std::size_t i) const
 {
   const auto _local_range = local_range();
-  return i >= _local_range.first && i < _local_range.second;
+  const std::int64_t _i = i;
+  return _i >= _local_range.first && _i < _local_range.second;
 }
 //-----------------------------------------------------------------------------
 const GenericVector& PETScVector::operator= (const GenericVector& v)

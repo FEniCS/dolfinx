@@ -104,7 +104,7 @@ namespace dolfin
     // Distribute a layer of cells attached by vertex to boundary
     // updating new_mesh_data and shared_cells
     static void distribute_cell_layer(MPI_Comm mpi_comm,
-      const unsigned int num_regular_cells,
+      const int num_regular_cells,
       const std::int64_t num_global_vertices,
       std::map<unsigned int, std::set<unsigned int>>& shared_cells,
       boost::multi_array<std::int64_t, 2>& cell_vertices,

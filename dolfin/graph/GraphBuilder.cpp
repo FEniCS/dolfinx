@@ -270,15 +270,15 @@ void GraphBuilder::compute_nonlocal_dual_graph(
   const int num_vertices_per_cell = cell_type.num_entities(0);
   const int num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
 
-  dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
-  dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
+  dolfin_assert(num_local_cells == (int) cell_vertices.shape()[0]);
+  dolfin_assert(num_vertices_per_cell == (int) cell_vertices.shape()[1]);
 
   // Compute local edges (cell-cell connections) using global
   // (internal to this function, not the user numbering) numbering
 
   // Get offset for this process
   const std::int64_t offset = MPI::global_offset(mpi_comm, num_local_cells,
-                                                true);
+                                                 true);
 
   // Send facet-cell map to intermediary match-making processes
   std::vector<std::vector<std::size_t>> send_buffer(num_processes);
@@ -317,7 +317,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(
   std::pair<std::vector<std::size_t>,
             std::pair<std::size_t, std::size_t>> key;
   key.first.resize(num_vertices_per_facet);
-  for (std::size_t p = 0; p < num_processes; ++p)
+  for (int p = 0; p < num_processes; ++p)
   {
     // Unpack into map
     const std::vector<std::size_t>& data_p = received_buffer[p];
@@ -364,8 +364,8 @@ void GraphBuilder::compute_nonlocal_dual_graph(
     const std::vector<std::size_t>& cell_list = received_buffer[p];
     for (std::size_t i = 0; i < cell_list.size(); i += 2)
     {
-      dolfin_assert(cell_list[i] >= offset);
-      dolfin_assert(cell_list[i] - offset < local_graph.size());
+      dolfin_assert((std::int64_t) cell_list[i] >= offset);
+      dolfin_assert((std::int64_t)  (cell_list[i] - offset) < (std::int64_t) local_graph.size());
 
       local_graph[cell_list[i] - offset].insert(cell_list[i + 1]);
       ghost_vertices.insert(cell_list[i + 1]);

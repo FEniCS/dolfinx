@@ -21,6 +21,7 @@
 
 #ifdef HAS_TRILINOS
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
@@ -254,7 +255,7 @@ namespace dolfin
   private:
 
     // Initialise Tpetra vector
-    void _init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
+    void _init(MPI_Comm comm, std::pair<std::int64_t, std::int64_t> range,
                const std::vector<dolfin::la_index>& local_to_global);
 
     // Tpetra multivector - actually a view into the ghosted vector,
