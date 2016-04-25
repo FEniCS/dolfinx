@@ -55,7 +55,7 @@ namespace dolfin
     /// "adaptive_repartition" or "refine".
     static void compute_partition(const MPI_Comm mpi_comm,
             std::vector<int>& cell_partition,
-            std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+            std::map<std::int64_t, std::vector<int>>& ghost_procs,
             const boost::multi_array<std::int64_t, 2>& cell_vertices,
             const int num_vertices_per_cell,
             const std::string mode="partition");
@@ -65,7 +65,7 @@ namespace dolfin
 #ifdef HAS_PARMETIS
     // Standard ParMETIS partition
     static void partition(MPI_Comm mpi_comm, std::vector<int>& cell_partition,
-                          std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                          std::map<std::int64_t, std::vector<int>>& ghost_procs,
                           ParMETISDualGraph& g);
 
     // ParMETIS adaptive repartition

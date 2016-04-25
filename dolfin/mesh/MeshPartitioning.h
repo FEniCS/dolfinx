@@ -88,7 +88,7 @@ namespace dolfin
     // -> process' vector for cells in LocalMeshData, and a map
     // 'local cell index -> processes' to which ghost cells must be sent
     static
-    std::pair<std::vector<int>, std::map<std::int64_t, dolfin::Set<int>>>
+      std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
     partition_cells(const MPI_Comm& mpi_comm,
                     const LocalMeshData& mesh_data,
                     const std::string partitioner);
@@ -96,7 +96,7 @@ namespace dolfin
     // Build a distributed mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,
                       const std::vector<int>& cell_partition,
-                      const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                      const std::map<std::int64_t, std::vector<int>>& ghost_procs,
                       const std::string ghost_mode);
 
     // FIXME: Improve this docstring
@@ -141,7 +141,7 @@ namespace dolfin
       distribute_cells(const MPI_Comm mpi_comm,
         const LocalMeshData& data,
         const std::vector<int>& cell_partition,
-        const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                       const std::map<std::int64_t, std::vector<int>>& ghost_procs,
         std::map<unsigned int, std::set<unsigned int>>& shared_cells,
         boost::multi_array<std::int64_t, 2>& new_cell_vertices,
         std::vector<std::int64_t>& new_global_cell_indices,

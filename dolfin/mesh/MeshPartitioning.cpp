@@ -122,7 +122,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 
   // Compute cell partitioning or use partitioning provided in local_data
   std::vector<int> cell_partition;
-  std::map<std::int64_t, dolfin::Set<int>> ghost_procs;
+  std::map<std::int64_t, std::vector<int>> ghost_procs;
   if (local_data.cell_partition.empty())
   {
     auto partition_data = partition_cells(comm, local_data, partitioner);
@@ -161,13 +161,13 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   DistributedMeshTools::init_facet_cell_connections(mesh);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<int>, std::map<std::int64_t, dolfin::Set<int>>>
+std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
  MeshPartitioning::partition_cells(const MPI_Comm& mpi_comm,
                                    const LocalMeshData& mesh_data,
                                    const std::string partitioner)
 {
   std::vector<int> cell_partition;
-  std::map<std::int64_t, dolfin::Set<int>> ghost_procs;
+  std::map<std::int64_t, std::vector<int>> ghost_procs;
 
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
@@ -200,7 +200,7 @@ std::pair<std::vector<int>, std::map<std::int64_t, dolfin::Set<int>>>
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
      const std::vector<int>& cell_partition,
-     const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+     const std::map<std::int64_t, std::vector<int>>& ghost_procs,
      const std::string ghost_mode)
 {
   // Distribute cells
@@ -649,7 +649,7 @@ unsigned int MeshPartitioning::distribute_cells(
   const MPI_Comm mpi_comm,
   const LocalMeshData& mesh_data,
   const std::vector<int>& cell_partition,
-  const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+  const std::map<std::int64_t, std::vector<int>>& ghost_procs,
   std::map<unsigned int, std::set<unsigned int>>& shared_cells,
   boost::multi_array<std::int64_t, 2>& new_cell_vertices,
   std::vector<std::int64_t>& new_global_cell_indices,
@@ -696,7 +696,7 @@ unsigned int MeshPartitioning::distribute_cells(
     auto map_it = ghost_procs.find(i);
     if (map_it != ghost_procs.end())
     {
-      const dolfin::Set<int>& destinations = map_it->second;
+      const std::vector<int>& destinations = map_it->second;
       for (auto dest = destinations.begin(); dest != destinations.end(); ++dest)
       {
         // Create reference to destination vector
