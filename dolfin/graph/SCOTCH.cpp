@@ -49,7 +49,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
                                std::vector<int>& cell_partition,
-                               std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                               std::map<std::int64_t, std::vector<int>>& ghost_procs,
                                const boost::multi_array<std::int64_t, 2>& cell_vertices,
                                const std::vector<std::int64_t>& global_cell_indices,
                                const std::vector<std::size_t>& cell_weight,
@@ -203,7 +203,7 @@ void SCOTCH::partition(
   const std::vector<std::int64_t>& global_cell_indices,
   const std::size_t num_global_vertices,
   std::vector<int>& cell_partition,
-  std::map<std::int64_t, dolfin::Set<int>>& ghost_procs)
+  std::map<std::int64_t, std::vector<int>>& ghost_procs)
 {
   Timer timer("Compute graph partition (SCOTCH)");
 
@@ -405,16 +405,15 @@ void SCOTCH::partition(
         auto map_it = ghost_procs.find(i);
         if (map_it == ghost_procs.end())
         {
-          dolfin::Set<int> sharing_processes;
+          std::vector<int> sharing_processes;
 
-          // Owning process goes first into dolfin::Set (unordered
-          // set) so will always be first.
-          sharing_processes.insert(proc_this);
-          sharing_processes.insert(proc_other);
+          // Owning process always goes in first to vector
+          sharing_processes.push_back(proc_this);
+          sharing_processes.push_back(proc_other);
           ghost_procs.insert(std::make_pair(i, sharing_processes));
         }
         else
-          map_it->second.insert(proc_other);
+          map_it->second.push_back(proc_other);
       }
     }
   }
@@ -433,18 +432,10 @@ void SCOTCH::partition(
 //-----------------------------------------------------------------------------
 #else
 //-----------------------------------------------------------------------------
-<<<<<<< HEAD
-void SCOTCH::compute_partition(
-  const MPI_Comm mpi_comm,
-  std::vector<int>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
-  const LocalMeshData& mesh_data)
-=======
 void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
                                std::vector<std::size_t>& cell_partition,
-                               std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                               std::map<std::int64_t, std::vector<int>>& ghost_procs,
                                const LocalMeshData& mesh_data)
->>>>>>> garth/simplify-local-mesh-data
 {
   dolfin_error("SCOTCH.cpp",
                "partition mesh using SCOTCH",
@@ -486,7 +477,7 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
                        const std::vector<std::int64_t>& global_cell_indices,
                        const std::size_t num_global_vertices,
                        std::vector<int>& cell_partition,
-                       std::map<std::int64_t, dolfin::Set<int>>& ghost_procs)
+                       std::map<std::int64_t, std::vector<int>>& ghost_procs)
 {
   dolfin_error("SCOTCH.cpp",
                "partition mesh using SCOTCH",

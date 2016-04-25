@@ -52,7 +52,7 @@ namespace dolfin
     static void compute_partition(
       const MPI_Comm mpi_comm,
       std::vector<int>& cell_partition,
-      std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+      std::map<std::int64_t, std::vector<int>>& ghost_procs,
       const boost::multi_array<std::int64_t, 2>& cell_vertices,
       const std::vector<std::int64_t>& global_cell_indices,
       const std::vector<std::size_t>& cell_weight,
@@ -88,7 +88,7 @@ namespace dolfin
       const std::vector<std::int64_t>& global_cell_indices,
       const std::size_t num_global_vertices,
       std::vector<int>& cell_partition,
-      std::map<std::int64_t, dolfin::Set<int>>& ghost_procs);
+      std::map<std::int64_t, std::vector<int>>& ghost_procs);
 
   };
 

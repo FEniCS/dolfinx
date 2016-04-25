@@ -88,7 +88,7 @@ namespace dolfin
     // -> process' vector for cells in LocalMeshData, and a map
     // 'local cell index -> processes' to which ghost cells must be sent
     static
-    std::pair<std::vector<int>, std::map<std::int64_t, dolfin::Set<int>>>
+      std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
     partition_cells(const MPI_Comm& mpi_comm,
                     const LocalMeshData& mesh_data,
                     const std::string partitioner);
@@ -96,7 +96,7 @@ namespace dolfin
     // Build a distributed mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,
                       const std::vector<int>& cell_partition,
-                      const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                      const std::map<std::int64_t, std::vector<int>>& ghost_procs,
                       const std::string ghost_mode);
 
     // FIXME: Improve this docstring
@@ -127,7 +127,7 @@ namespace dolfin
      const int  num_cell_vertices,
      const boost::multi_array<std::int64_t, 2>& cell_vertices,
      std::vector<std::int64_t>& vertex_indices,
-     std::map<std::size_t, std::size_t>& vertex_global_to_local);
+     std::map<std::int64_t, std::int32_t>& vertex_global_to_local);
 
     // FIXME: Update, making clear exactly what is computed
     // This function takes the partition computed by the partitioner
@@ -142,7 +142,7 @@ namespace dolfin
       distribute_cells(const MPI_Comm mpi_comm,
         const LocalMeshData& data,
         const std::vector<int>& cell_partition,
-        const std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+        const std::map<std::int64_t, std::vector<int>>& ghost_procs,
         boost::multi_array<std::int64_t, 2>& new_cell_vertices,
         std::vector<std::int64_t>& new_global_cell_indices,
         std::vector<int>& new_cell_partition);
@@ -152,7 +152,7 @@ namespace dolfin
     // vertex sharing information
     static void build_shared_vertices(MPI_Comm mpi_comm,
      std::map<std::int32_t, std::set<unsigned int>>& shared_vertices,
-     const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+     const std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices,
      const std::vector<std::vector<std::size_t>>& received_vertex_indices);
 
     // FIXME: make clear what is computed
@@ -162,7 +162,7 @@ namespace dolfin
       distribute_vertices(const MPI_Comm mpi_comm,
         const LocalMeshData& mesh_data,
         LocalMeshData& new_mesh_data,
-        std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+        std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices,
         std::map<std::int32_t, std::set<unsigned int>>& shared_vertices_local);
 
     // FIXME: why are there two non-const argument?
@@ -172,12 +172,12 @@ namespace dolfin
                   unsigned int num_regular_cells,
                   const boost::multi_array<std::int64_t, 2>& cell_vertices,
                   std::vector<std::int64_t>& vertex_indices,
-                  std::map<std::size_t, std::size_t>& vertex_global_to_local);
+                  std::map<std::int64_t, std::int32_t>& vertex_global_to_local);
 
     // FIXME: Improve pre-conditions explaination
     // Build mesh
     static void build_mesh(Mesh& mesh,
-      const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+      const std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices,
       const LocalMeshData& new_mesh_data);
 
     // Create and attach distributed MeshDomains from local_data

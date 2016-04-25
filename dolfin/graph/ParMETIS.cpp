@@ -77,7 +77,7 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
                                 std::vector<int>& cell_partition,
-                                std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                                 std::map<std::int64_t, std::vector<int>>& ghost_procs,
                                 const boost::multi_array<std::int64_t, 2>& cell_vertices,
                                 const int num_vertices_per_cell,
                                 const std::string mode)
@@ -112,7 +112,7 @@ void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
 //-----------------------------------------------------------------------------
 void ParMETIS::partition(MPI_Comm mpi_comm,
                          std::vector<int>& cell_partition,
-                         std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                         std::map<std::int64_t, std::vector<int>>& ghost_procs,
                          ParMETISDualGraph& g)
 {
   Timer timer("Compute graph partition (ParMETIS)");
@@ -229,13 +229,13 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
         auto map_it = ghost_procs.find(i);
         if (map_it == ghost_procs.end())
         {
-          dolfin::Set<int> sharing_processes;
-          sharing_processes.insert(proc_this);
-          sharing_processes.insert(proc_other);
+          std::vector<int> sharing_processes;
+          sharing_processes.push_back(proc_this);
+          sharing_processes.push_back(proc_other);
           ghost_procs.insert(std::make_pair(i, sharing_processes));
         }
         else
-          map_it->second.insert(proc_other);
+          map_it->second.push_back(proc_other);
       }
     }
   }
@@ -416,7 +416,7 @@ ParMETISDualGraph::~ParMETISDualGraph()
 #else
 void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
                                  std::vector<int>& cell_partition,
-                                 std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
+                                 std::map<std::int64_t, std::vector<int>>& ghost_procs,
                                  const boost::multi_array<std::int64_t, 2>& cell_vertices,
                                  const int num_vertices_per_cell,
                                  const std::string mode)
