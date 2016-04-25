@@ -230,6 +230,9 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   dolfin_assert(mesh_data.num_global_vertices >= 0);
   new_mesh_data.num_global_vertices = mesh_data.num_global_vertices;
 
+  const std::int64_t num_global_vertices = mesh_data.num_global_vertices;
+  const int num_cell_vertices = mesh_data.num_vertices_per_cell;
+
   // FIXME: explain structure of shared_cells
   // Keep tabs on ghost cell ownership (map from local cell index to sharing
   // processes)
@@ -237,10 +240,12 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   // Send cells to processes that need them. Returns
   // 0. Number of regular cells on this process
   // 1. Map from local cell index to to sharing process for ghosted cells
+  boost::multi_array<std::int64_t, 2> new_cell_vertices;
+  std::vector<std::int64_t> new_global_cell_indices;
   auto dist_cell_data = distribute_cells(mesh.mpi_comm(), mesh_data,
                                          cell_partition, ghost_procs,
-                                         new_mesh_data.cell_vertices,
-                                         new_mesh_data.global_cell_indices);
+                                         new_cell_vertices,
+                                         new_global_cell_indices);
 
   const std::int32_t num_regular_cells = std::get<0>(dist_cell_data);
   std::vector<int> new_cell_partition = std::get<1>(dist_cell_data);
@@ -252,18 +257,15 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
     // Send/receive additional cells defined by connectivity to the shared
     // vertices. Add new cells to new_mesh_data
     distribute_cell_layer(mesh.mpi_comm(), num_regular_cells,
-                          new_mesh_data.num_global_vertices, shared_cells,
-                          new_mesh_data.cell_vertices,
-                          new_mesh_data.global_cell_indices,
-                          new_cell_partition);
+                          num_global_vertices, shared_cells, new_cell_vertices,
+                          new_global_cell_indices, new_cell_partition);
   }
   else if (ghost_mode == "none")
   {
     // Resize to remove all ghost cells
-    new_mesh_data.cell_partition.resize(num_regular_cells);
-    new_mesh_data.global_cell_indices.resize(num_regular_cells);
-    const std::size_t num_cell_vertices = mesh_data.num_vertices_per_cell;
-    new_mesh_data.cell_vertices.resize(boost::extents[num_regular_cells][num_cell_vertices]);
+    new_cell_partition.resize(num_regular_cells);
+    new_global_cell_indices.resize(num_regular_cells);
+    new_cell_vertices.resize(boost::extents[num_regular_cells][num_cell_vertices]);
     shared_cells.clear();
   }
 
@@ -273,8 +275,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
     std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
     dolfin_assert(cell_type);
     reorder_cells_gps(mesh.mpi_comm(), num_regular_cells, *cell_type,
-                      shared_cells, new_mesh_data.cell_vertices,
-                      new_mesh_data.global_cell_indices);
+                      shared_cells, new_cell_vertices, new_global_cell_indices);
   }
 #endif
 
@@ -284,7 +285,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   std::map<std::int64_t, std::int32_t> vertex_global_to_local;
   const std::int32_t num_regular_vertices
     = compute_vertex_mapping(mesh.mpi_comm(), num_regular_cells,
-                             new_mesh_data.cell_vertices,
+                             new_cell_vertices,
                              new_mesh_data.vertex_indices,
                              vertex_global_to_local);
 
@@ -292,14 +293,19 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   if (parameters["reorder_vertices_gps"])
   {
     reorder_vertices_gps(mesh.mpi_comm(), num_regular_vertices,
-                         num_regular_cells, mesh_data.num_vertices_per_cell,
-                         new_mesh_data.cell_vertices,
+                         num_regular_cells, num_cell_vertices,
+                         new_cell_vertices,
                          new_mesh_data.vertex_indices, vertex_global_to_local);
   }
 #endif
 
   // Clean this up later
   new_mesh_data.cell_partition = new_cell_partition;
+  new_mesh_data.global_cell_indices = new_global_cell_indices;
+
+  new_mesh_data.cell_vertices.resize(boost::extents[new_cell_vertices.shape()[0]][new_cell_vertices.shape()[1]]);
+  new_mesh_data.cell_vertices = new_cell_vertices;
+
 
   // Send vertices to processes that need them, informing all
   // sharing processes of their destinations
