@@ -155,8 +155,7 @@ namespace dolfin
      const std::vector<std::vector<std::size_t>>& received_vertex_indices);
 
     // FIXME: make clear what is computed
-    // Distribute vertices and vertex sharing information, returning the number
-    // of vertices which are not ghosted
+    // Distribute vertices and vertex sharing information
     static void
       distribute_vertices(const MPI_Comm mpi_comm,
         const LocalMeshData& mesh_data,
@@ -164,11 +163,11 @@ namespace dolfin
         std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices,
         std::map<std::int32_t, std::set<unsigned int>>& shared_vertices_local);
 
-    // FIXME: why are there two non-const argument?
-    // Work out the global index to local index map for the set of vertices
-    // which are on this process
+    // Compute the local->global and global->local maps for all local vertices
+    // on this process, from the global vertex indices on each local cell.
+    // Returns the number of regular (non-ghosted) vertices.
     static std::int32_t compute_vertex_mapping(MPI_Comm mpi_comm,
-                  unsigned int num_regular_cells,
+                  const std::int32_t num_regular_cells,
                   const boost::multi_array<std::int64_t, 2>& cell_vertices,
                   std::vector<std::int64_t>& vertex_indices,
                   std::map<std::int64_t, std::int32_t>& vertex_global_to_local);
