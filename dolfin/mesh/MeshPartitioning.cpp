@@ -275,7 +275,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   // Generate mapping from global to local indexing for vertices
   // also calculating which vertices are 'ghost' and putting them
   // at the end of the local range
-  std::map<std::size_t, std::size_t> vertex_global_to_local;
+  std::map<std::int64_t, std::int32_t> vertex_global_to_local;
   const std::size_t num_regular_vertices
     = compute_vertex_mapping(mesh.mpi_comm(), num_regular_cells,
                              new_mesh_data.cell_vertices,
@@ -399,7 +399,7 @@ void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
      const int num_vertices_per_cell,
      const boost::multi_array<std::int64_t, 2>& cell_vertices,
      std::vector<std::int64_t>& vertex_indices,
-     std::map<std::size_t, std::size_t>& vertex_global_to_local)
+     std::map<std::int64_t, std::int32_t>& vertex_global_to_local)
 {
   // FIXME: should vertex_global_to_local be cleared first?
 
@@ -411,13 +411,13 @@ void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
   {
     for (int j = 0; j < num_vertices_per_cell; ++j)
     {
-      const unsigned int vj = vertex_global_to_local[cell_vertices[i][j]];
-      if (vj < num_regular_vertices)
+      const std::int32_t vj = vertex_global_to_local[cell_vertices[i][j]];
+      if (vj < (int)num_regular_vertices)
       {
         for (int k = j + 1; k < num_vertices_per_cell; ++k)
         {
-          const unsigned int vk = vertex_global_to_local[cell_vertices[i][k]];
-          if (vk < num_regular_vertices)
+          const std::int32_t vk = vertex_global_to_local[cell_vertices[i][k]];
+          if (vk < (int)num_regular_vertices)
           {
             g[vj].insert(vk);
             g[vk].insert(vj);
@@ -433,7 +433,7 @@ void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
   for (auto p = vertex_global_to_local.begin();
         p != vertex_global_to_local.end(); ++p)
   {
-    if (p->second < num_regular_vertices)
+    if (p->second < (int)num_regular_vertices)
       p->second = (std::size_t)remap[p->second];
   }
 
@@ -446,6 +446,7 @@ void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
   }
 
   // Assign
+  // FIXME: use swap?
   vertex_indices = remapped_vertex_indices;
 }
 //-----------------------------------------------------------------------------
@@ -808,15 +809,15 @@ std::size_t MeshPartitioning::compute_vertex_mapping(MPI_Comm mpi_comm,
                          unsigned int num_regular_cells,
                          const boost::multi_array<std::int64_t, 2>& cell_vertices,
                          std::vector<std::int64_t>& vertex_indices,
-                         std::map<std::size_t, std::size_t>& vertex_global_to_local)
+                         std::map<std::int64_t, std::int32_t>& vertex_global_to_local)
 {
   vertex_global_to_local.clear();
 
   // Get set of unique vertices from cells and start constructing a
   // global_to_local map.  Ghost vertices will be at the end of the
   // range (v >= num_regular_vertices).
-  std::size_t v = 0;
-  std::size_t num_regular_vertices = 0;
+  int32_t v = 0;
+  int32_t num_regular_vertices = 0;
   for (unsigned int i = 0; i != cell_vertices.size(); ++i)
   {
     for (auto q = cell_vertices[i].begin(); q != cell_vertices[i].end(); ++q)
@@ -840,7 +841,7 @@ void MeshPartitioning::distribute_vertices(
   const MPI_Comm mpi_comm,
   const LocalMeshData& mesh_data,
   LocalMeshData& new_mesh_data,
-  std::map<std::size_t, std::size_t>& vertex_global_to_local,
+  std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
   std::map<unsigned int, std::set<unsigned int>>& shared_vertices_local)
 {
   // This function distributes all vertices (coordinates and
@@ -945,7 +946,7 @@ void MeshPartitioning::distribute_vertices(
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_shared_vertices(MPI_Comm mpi_comm,
      std::map<unsigned int, std::set<unsigned int>>& shared_vertices_local,
-     const std::map<std::size_t, std::size_t>& vertex_global_to_local,
+     const std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
      const std::vector<std::vector<std::size_t>>& received_vertex_indices)
 {
   const std::size_t mpi_size = MPI::size(mpi_comm);
@@ -1012,7 +1013,7 @@ void MeshPartitioning::build_shared_vertices(MPI_Comm mpi_comm,
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_mesh(Mesh& mesh,
-  const std::map<std::size_t, std::size_t>& vertex_global_to_local,
+  const std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
   const LocalMeshData& new_mesh_data)
 {
   Timer timer("Build local part of distributed mesh (from local mesh data)");

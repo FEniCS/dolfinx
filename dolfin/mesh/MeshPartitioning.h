@@ -127,7 +127,7 @@ namespace dolfin
      const int  num_cell_vertices,
      const boost::multi_array<std::int64_t, 2>& cell_vertices,
      std::vector<std::int64_t>& vertex_indices,
-     std::map<std::size_t, std::size_t>& vertex_global_to_local);
+     std::map<std::int64_t, std::int32_t>& vertex_global_to_local);
 
     // FIXME: Update, making clear exactly what is computed
     // This function takes the partition computed by the partitioner
@@ -152,7 +152,7 @@ namespace dolfin
     // vertex sharing information
     static void build_shared_vertices(MPI_Comm mpi_comm,
      std::map<unsigned int, std::set<unsigned int>>& shared_vertices,
-     const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+     const std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices,
      const std::vector<std::vector<std::size_t>>& received_vertex_indices);
 
     // FIXME: make clear what is computed
@@ -162,7 +162,7 @@ namespace dolfin
       distribute_vertices(const MPI_Comm mpi_comm,
         const LocalMeshData& mesh_data,
         LocalMeshData& new_mesh_data,
-        std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+        std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices,
         std::map<unsigned int, std::set<unsigned int>>& shared_vertices_local);
 
     // FIXME: why are there two non-const argument?
@@ -172,12 +172,12 @@ namespace dolfin
                   unsigned int num_regular_cells,
                   const boost::multi_array<std::int64_t, 2>& cell_vertices,
                   std::vector<std::int64_t>& vertex_indices,
-                  std::map<std::size_t, std::size_t>& vertex_global_to_local);
+                  std::map<std::int64_t, std::int32_t>& vertex_global_to_local);
 
     // FIXME: Improve pre-conditions explaination
     // Build mesh
     static void build_mesh(Mesh& mesh,
-      const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+      const std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices,
       const LocalMeshData& new_mesh_data);
 
     // Create and attach distributed MeshDomains from local_data
