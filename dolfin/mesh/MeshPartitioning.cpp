@@ -283,7 +283,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   // also calculating which vertices are 'ghost' and putting them
   // at the end of the local range
   std::map<std::int64_t, std::int32_t> vertex_global_to_local;
-  const std::size_t num_regular_vertices
+  const std::int32_t num_regular_vertices
     = compute_vertex_mapping(mesh.mpi_comm(), num_regular_cells,
                              new_mesh_data.cell_vertices,
                              new_mesh_data.vertex_indices,
@@ -401,30 +401,32 @@ void MeshPartitioning::reorder_cells_gps(
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
-     unsigned int num_regular_vertices,
-     unsigned int num_regular_cells,
+     const std::int32_t num_regular_vertices,
+     const std::int32_t num_regular_cells,
      const int num_vertices_per_cell,
      const boost::multi_array<std::int64_t, 2>& cell_vertices,
      std::vector<std::int64_t>& vertex_indices,
      std::map<std::int64_t, std::int32_t>& vertex_global_to_local)
 {
-  // FIXME: should vertex_global_to_local be cleared first?
+  // Reorder vertices using the Gibbs-Poole-Stockmeyer algorithm of
+  // SCOTCH.
+  // "vertex_indices" and "vertex_global_to_local" are modified.
 
   Timer timer("Reorder vertices using GPS ordering");
 
   // Make local real graph (vertices are nodes, edges are edges)
   Graph g(num_regular_vertices);
-  for (unsigned int i = 0; i < num_regular_cells; ++i)
+  for (std::int32_t i = 0; i < num_regular_cells; ++i)
   {
     for (int j = 0; j < num_vertices_per_cell; ++j)
     {
       const std::int32_t vj = vertex_global_to_local[cell_vertices[i][j]];
-      if (vj < (int)num_regular_vertices)
+      if (vj < num_regular_vertices)
       {
         for (int k = j + 1; k < num_vertices_per_cell; ++k)
         {
           const std::int32_t vk = vertex_global_to_local[cell_vertices[i][k]];
-          if (vk < (int)num_regular_vertices)
+          if (vk < num_regular_vertices)
           {
             g[vj].insert(vk);
             g[vk].insert(vj);
@@ -436,25 +438,24 @@ void MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
 
   std::vector<int> remap = SCOTCH::compute_gps(g);
 
-  // Remap global-to-local mapping
+  // Remap global-to-local mapping for regular vertices only
   for (auto p = vertex_global_to_local.begin();
         p != vertex_global_to_local.end(); ++p)
   {
-    if (p->second < (int)num_regular_vertices)
-      p->second = (std::size_t)remap[p->second];
+    if (p->second < num_regular_vertices)
+      p->second = remap[p->second];
   }
 
-  // Remap local-to-global mapping
-  std::vector<std::int64_t> remapped_vertex_indices = vertex_indices;
-  for (unsigned int i = 0; i != num_regular_vertices; ++i)
-  {
-    const unsigned int j = remap[i];
-    remapped_vertex_indices[j] = vertex_indices[i];
-  }
+  // Remap local-to-global mapping for regular vertices
+  const std::int32_t num_indices = vertex_indices.size();
+  std::vector<std::int64_t> remapped_vertex_indices(num_indices);
+  for (std::int32_t i = 0; i < num_regular_vertices; ++i)
+    remapped_vertex_indices[remap[i]] = vertex_indices[i];
+  // Copy ghost vertices
+  for (std::int32_t i = num_regular_vertices; i < num_indices; ++i)
+    remapped_vertex_indices[i] = vertex_indices[i];
 
-  // Assign
-  // FIXME: use swap?
-  vertex_indices = remapped_vertex_indices;
+  std::swap(vertex_indices, remapped_vertex_indices);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
@@ -697,7 +698,7 @@ MeshPartitioning::distribute_cells(
   // First element of vector is cell count of unghosted cells,
   // second element is count of ghost cells.
   std::vector<std::vector<std::size_t>>
-    send_cell_vertices(mpi_size, std::vector<std::size_t>(2, 0) );
+    send_cell_vertices(mpi_size, std::vector<std::size_t>(2, 0));
 
   for (unsigned int i = 0; i != cell_partition.size(); ++i)
   {
@@ -816,11 +817,11 @@ MeshPartitioning::distribute_cells(
 
 }
 //-----------------------------------------------------------------------------
-std::size_t MeshPartitioning::compute_vertex_mapping(MPI_Comm mpi_comm,
-                         unsigned int num_regular_cells,
-                         const boost::multi_array<std::int64_t, 2>& cell_vertices,
-                         std::vector<std::int64_t>& vertex_indices,
-                         std::map<std::int64_t, std::int32_t>& vertex_global_to_local)
+std::int32_t MeshPartitioning::compute_vertex_mapping(MPI_Comm mpi_comm,
+                 unsigned int num_regular_cells,
+                 const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                 std::vector<std::int64_t>& vertex_indices,
+                 std::map<std::int64_t, std::int32_t>& vertex_global_to_local)
 {
   vertex_global_to_local.clear();
 
