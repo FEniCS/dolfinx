@@ -84,14 +84,13 @@ namespace dolfin
 
   private:
 
-    // Compute cell partitioning from local mesh data. Returns cell -> process
-    // vector for cells in LocalMeshData and a map from local index->processes
-    // to which ghost cells must be sent
-    static void
+    // Compute cell partitioning from local mesh data. Returns  a vector 'cell
+    // -> process' vector for cells in LocalMeshData, and a map
+    // 'local cell index -> processes' to which ghost cells must be sent
+    static
+    std::pair<std::vector<int>, std::map<std::int64_t, dolfin::Set<int>>>
     partition_cells(const MPI_Comm& mpi_comm,
                     const LocalMeshData& mesh_data,
-                    std::vector<int>& cell_partition,
-                    std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
                     const std::string partitioner);
 
     // Build a distributed mesh from local mesh data with a computed partition

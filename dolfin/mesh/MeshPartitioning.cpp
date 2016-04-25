@@ -114,23 +114,28 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 {
   Timer timer("Build distributed mesh from local mesh data");
 
+  // Get mesh partitioner
   const std::string partitioner = parameters["mesh_partitioner"];
+
+  // MPI communicator
+  MPI_Comm comm = mesh.mpi_comm();
 
   // Compute cell partitioning or use partitioning provided in local_data
   std::vector<int> cell_partition;
   std::map<std::int64_t, dolfin::Set<int>> ghost_procs;
   if (local_data.cell_partition.empty())
   {
-    partition_cells(mesh.mpi_comm(), local_data, cell_partition, ghost_procs,
-                    partitioner);
+    auto partition_data = partition_cells(comm, local_data, partitioner);
+    std::swap(cell_partition, partition_data.first);
+    std::swap(ghost_procs, partition_data.second);
   }
   else
   {
-    // Copy cell parition
+    // Copy cell partition
     cell_partition = local_data.cell_partition;
     dolfin_assert(cell_partition.size() == local_data.global_cell_indices.size());
     dolfin_assert(*std::max_element(cell_partition.begin(), cell_partition.end())
-                  < (int) MPI::size(mesh.mpi_comm()));
+                  < (int) MPI::size(comm));
   }
 
   if (ghost_procs.empty() && ghost_mode != "none")
@@ -156,13 +161,14 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   DistributedMeshTools::init_facet_cell_connections(mesh);
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::partition_cells(
-  const MPI_Comm& mpi_comm,
-  const LocalMeshData& mesh_data,
-  std::vector<int>& cell_partition,
-  std::map<std::int64_t, dolfin::Set<int>>& ghost_procs,
-  const std::string partitioner)
+std::pair<std::vector<int>, std::map<std::int64_t, dolfin::Set<int>>>
+ MeshPartitioning::partition_cells(const MPI_Comm& mpi_comm,
+                                   const LocalMeshData& mesh_data,
+                                   const std::string partitioner)
 {
+  std::vector<int> cell_partition;
+  std::map<std::int64_t, dolfin::Set<int>> ghost_procs;
+
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
   {
@@ -188,6 +194,8 @@ void MeshPartitioning::partition_cells(
                  "compute cell partition",
                  "Mesh partitioner '%s' is unknown.", partitioner.c_str());
   }
+
+  return {cell_partition, ghost_procs};
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
@@ -459,7 +467,7 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
 
   // Make global-to-local map of shared cells
   std::map<std::int64_t, int> cell_global_to_local;
-  for (unsigned int i = num_regular_cells; i != cell_vertices.size(); ++i)
+  for (unsigned int i = num_regular_cells; i < cell_vertices.size(); ++i)
   {
     // Add map entry for each vertex
     for(auto p = cell_vertices[i].begin(); p != cell_vertices[i].end(); ++p)
