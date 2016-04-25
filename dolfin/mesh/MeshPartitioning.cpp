@@ -125,9 +125,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   std::map<std::int64_t, std::vector<int>> ghost_procs;
   if (local_data.cell_partition.empty())
   {
-    auto partition_data = partition_cells(comm, local_data, partitioner);
-    std::swap(cell_partition, partition_data.first);
-    std::swap(ghost_procs, partition_data.second);
+    partition_cells(comm, local_data, partitioner, cell_partition, ghost_procs);
   }
   else
   {
@@ -161,13 +159,16 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   DistributedMeshTools::init_facet_cell_connections(mesh);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
- MeshPartitioning::partition_cells(const MPI_Comm& mpi_comm,
-                                   const LocalMeshData& mesh_data,
-                                   const std::string partitioner)
+void
+MeshPartitioning::partition_cells(const MPI_Comm& mpi_comm,
+                                 const LocalMeshData& mesh_data,
+                                 const std::string partitioner,
+                                 std::vector<int>& cell_partition,
+                                 std::map<std::int64_t, std::vector<int>>& ghost_procs)
 {
-  std::vector<int> cell_partition;
-  std::map<std::int64_t, std::vector<int>> ghost_procs;
+  // Clear data
+  cell_partition.clear();
+  ghost_procs.clear();
 
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
@@ -194,8 +195,6 @@ std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
                  "compute cell partition",
                  "Mesh partitioner '%s' is unknown.", partitioner.c_str());
   }
-
-  return {cell_partition, ghost_procs};
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
@@ -254,14 +253,22 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   if (parameters["reorder_cells_gps"])
   {
     std::cout << "Reorder cells" << std::endl;
+
     std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
     dolfin_assert(cell_type);
-    auto data = reorder_cells_gps(mesh.mpi_comm(), num_regular_cells, *cell_type,
+    std::map<std::int32_t, std::set<unsigned int>> reordered_shared_cells;
+    boost::multi_array<std::int64_t, 2> reordered_cell_vertices;
+    std::vector<std::int64_t> reordered_global_cell_indices;
+    reorder_cells_gps(mesh.mpi_comm(), num_regular_cells, *cell_type,
                                   shared_cells, new_cell_vertices,
-                                  new_global_cell_indices);
-    std::swap(shared_cells, std::get<0>(data));
-    std::swap(new_cell_vertices, std::get<1>(data));
-    std::swap(new_global_cell_indices, std::get<2>(data));
+                                  new_global_cell_indices,
+                                  reordered_shared_cells,
+                                  reordered_cell_vertices,
+                                  reordered_global_cell_indices);
+
+    std::swap(shared_cells, reordered_shared_cells);
+    std::swap(new_cell_vertices, reordered_cell_vertices);
+    std::swap(new_global_cell_indices, reordered_global_cell_indices);
   }
 #endif
 
@@ -350,17 +357,17 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   mesh.topology().shared_entities(0) = shared_vertices;
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::map<std::int32_t, std::set<unsigned int>>,
-boost::multi_array<std::int64_t, 2>, std::vector<std::int64_t>>
-MeshPartitioning::reorder_cells_gps(
+void MeshPartitioning::reorder_cells_gps(
   MPI_Comm mpi_comm,
   const unsigned int num_regular_cells,
   const CellType& cell_type,
   const std::map<std::int32_t, std::set<unsigned int>>& shared_cells,
   const boost::multi_array<std::int64_t, 2>& cell_vertices,
-  const std::vector<std::int64_t>& global_cell_indices)
+  const std::vector<std::int64_t>& global_cell_indices,
+  std::map<std::int32_t, std::set<unsigned int>>& reordered_shared_cells,
+  boost::multi_array<std::int64_t, 2>& reordered_cell_vertices,
+  std::vector<std::int64_t>& reordered_global_cell_indices)
 {
-  std::cout << "Re-order cells gps" << std::endl;
   Timer timer("Reorder cells using GPS ordering");
 
   // Make dual graph from vertex indices, using GraphBuilder
@@ -397,34 +404,26 @@ MeshPartitioning::reorder_cells_gps(
   }
   std::vector<int> remap = SCOTCH::compute_gps(g_dual);
 
-  boost::multi_array<std::int64_t, 2>
-    remapped_cell_vertices(boost::extents[cell_vertices.shape()[0]][cell_vertices.shape()[1]]);
-  remapped_cell_vertices = cell_vertices;
-
-  std::vector<std::int64_t> remapped_global_cell_indices = global_cell_indices;
+  reordered_cell_vertices.resize(boost::extents[cell_vertices.shape()[0]][cell_vertices.shape()[1]]);
+  reordered_global_cell_indices.resize(global_cell_indices.size());
   for (unsigned int i = 0; i != g_dual.size(); ++i)
   {
     // Remap data
     const unsigned int j = remap[i];
-    remapped_cell_vertices[j] = cell_vertices[i];
-    remapped_global_cell_indices[j] = global_cell_indices[i];
+    reordered_cell_vertices[j] = cell_vertices[i];
+    reordered_global_cell_indices[j] = global_cell_indices[i];
   }
 
-  std::map<std::int32_t, std::set<unsigned int>> remapped_shared_cells;
+  // Clear data
+  reordered_shared_cells.clear();
   for (auto p = shared_cells.begin(); p != shared_cells.end(); ++p)
   {
     const unsigned int cell_index = p->first;
     if (cell_index < num_regular_cells)
-      remapped_shared_cells.insert({remap[cell_index], p->second});
+      reordered_shared_cells.insert({remap[cell_index], p->second});
     else
-      remapped_shared_cells.insert(*p);
+      reordered_shared_cells.insert(*p);
   }
-
-  std::cout << "End Re-order cells gps" << std::endl;
-
-  // Assign
-  return std::make_tuple(remapped_shared_cells, remapped_cell_vertices,
-                         remapped_global_cell_indices);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, std::map<std::int64_t, std::int32_t>>
