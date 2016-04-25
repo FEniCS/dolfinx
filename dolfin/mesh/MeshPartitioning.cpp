@@ -209,33 +209,14 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   // Topological dimension
   const int tdim = mesh_data.tdim;
 
-  // Structure to hold received data about local mesh
-  LocalMeshData new_mesh_data(mesh.mpi_comm());
-
-  // Copy over some basic information
-  dolfin_assert(mesh_data.tdim >= 0);
-  new_mesh_data.tdim = mesh_data.tdim;
-
-  dolfin_assert(mesh_data.gdim > 0);
-  new_mesh_data.gdim = mesh_data.gdim;
-
-  dolfin_assert(mesh_data.num_global_cells >= 0);
-  new_mesh_data.num_global_cells = mesh_data.num_global_cells;
-
-  dolfin_assert(mesh_data.num_vertices_per_cell > 0);
-  new_mesh_data.num_vertices_per_cell = mesh_data.num_vertices_per_cell;
-
-  new_mesh_data.cell_type = mesh_data.cell_type;
-
-  dolfin_assert(mesh_data.num_global_vertices >= 0);
-  new_mesh_data.num_global_vertices = mesh_data.num_global_vertices;
-
   const std::int64_t num_global_vertices = mesh_data.num_global_vertices;
   const int num_cell_vertices = mesh_data.num_vertices_per_cell;
 
   // FIXME: explain structure of shared_cells
   // Keep tabs on ghost cell ownership (map from local cell index to sharing
   // processes)
+
+  std::cout << "Dist cell" << std::endl;
 
   // Send cells to processes that need them. Returns
   // 0. Number of regular cells on this process
@@ -272,6 +253,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
 #ifdef HAS_SCOTCH
   if (parameters["reorder_cells_gps"])
   {
+    std::cout << "Reorder cells" << std::endl;
     std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
     dolfin_assert(cell_type);
     auto data = reorder_cells_gps(mesh.mpi_comm(), num_regular_cells, *cell_type,
@@ -283,10 +265,12 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   }
 #endif
 
+  std::cout << "Vertex mapping" << std::endl;
+
   // Generate mapping from global to local indexing for vertices
   // also calculating which vertices are 'ghost' and putting them
   // at the end of the local range
-  std::vector<std::int64_t>& vertex_indices;
+  std::vector<std::int64_t> vertex_indices;
   std::map<std::int64_t, std::int32_t> vertex_global_to_local;
   const std::int32_t num_regular_vertices
     = compute_vertex_mapping(mesh.mpi_comm(), num_regular_cells,
@@ -296,6 +280,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   #ifdef HAS_SCOTCH
   if (parameters["reorder_vertices_gps"])
   {
+    std::cout << "Reorder verticces" << std::endl;
     auto data = reorder_vertices_gps(mesh.mpi_comm(), num_regular_vertices,
                               num_regular_cells, num_cell_vertices,
                               new_cell_vertices,
@@ -305,18 +290,40 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   }
   #endif
 
-  // Clean this up later
+  // Send vertices to processes that need them, informing all
+  // sharing processes of their destinations
+  std::map<std::int32_t, std::set<unsigned int>> shared_vertices;
+  boost::multi_array<double, 2> vertex_coordinates;
+  distribute_vertices(mesh.mpi_comm(), mesh_data, vertex_indices,
+                      vertex_coordinates, vertex_global_to_local,
+                      shared_vertices);
+
+  // FIXME: Clean this up
+  // Structure to hold received data about local mesh
+  LocalMeshData new_mesh_data(mesh.mpi_comm());
+
+  // Copy over some basic information
+  dolfin_assert(mesh_data.tdim >= 0);
+  new_mesh_data.tdim = mesh_data.tdim;
+  dolfin_assert(mesh_data.gdim > 0);
+  new_mesh_data.gdim = mesh_data.gdim;
+  dolfin_assert(mesh_data.num_global_cells >= 0);
+  new_mesh_data.num_global_cells = mesh_data.num_global_cells;
+  dolfin_assert(mesh_data.num_vertices_per_cell > 0);
+  new_mesh_data.num_vertices_per_cell = mesh_data.num_vertices_per_cell;
+  new_mesh_data.cell_type = mesh_data.cell_type;
+  dolfin_assert(mesh_data.num_global_vertices >= 0);
+  new_mesh_data.num_global_vertices = mesh_data.num_global_vertices;
+
   new_mesh_data.cell_partition = new_cell_partition;
   new_mesh_data.global_cell_indices = new_global_cell_indices;
   new_mesh_data.cell_vertices.resize(boost::extents[new_cell_vertices.shape()[0]][new_cell_vertices.shape()[1]]);
   new_mesh_data.cell_vertices = new_cell_vertices;
   new_mesh_data.vertex_indices = vertex_indices;
+  new_mesh_data.vertex_coordinates.resize(boost::extents[vertex_coordinates.shape()[0]][vertex_coordinates.shape()[1]]);
+  new_mesh_data.vertex_coordinates = vertex_coordinates;
+  // -------
 
-  // Send vertices to processes that need them, informing all
-  // sharing processes of their destinations
-  std::map<std::int32_t, std::set<unsigned int>> shared_vertices;
-  distribute_vertices(mesh.mpi_comm(), mesh_data, new_mesh_data,
-                      vertex_global_to_local, shared_vertices);
   timer.stop();
 
   // Build mesh from new_mesh_data
@@ -353,6 +360,7 @@ MeshPartitioning::reorder_cells_gps(
   const boost::multi_array<std::int64_t, 2>& cell_vertices,
   const std::vector<std::int64_t>& global_cell_indices)
 {
+  std::cout << "Re-order cells gps" << std::endl;
   Timer timer("Reorder cells using GPS ordering");
 
   // Make dual graph from vertex indices, using GraphBuilder
@@ -389,7 +397,10 @@ MeshPartitioning::reorder_cells_gps(
   }
   std::vector<int> remap = SCOTCH::compute_gps(g_dual);
 
-  boost::multi_array<std::int64_t, 2> remapped_cell_vertices = cell_vertices;
+  boost::multi_array<std::int64_t, 2>
+    remapped_cell_vertices(boost::extents[cell_vertices.shape()[0]][cell_vertices.shape()[1]]);
+  remapped_cell_vertices = cell_vertices;
+
   std::vector<std::int64_t> remapped_global_cell_indices = global_cell_indices;
   for (unsigned int i = 0; i != g_dual.size(); ++i)
   {
@@ -409,6 +420,8 @@ MeshPartitioning::reorder_cells_gps(
       remapped_shared_cells.insert(*p);
   }
 
+  std::cout << "End Re-order cells gps" << std::endl;
+
   // Assign
   return std::make_tuple(remapped_shared_cells, remapped_cell_vertices,
                          remapped_global_cell_indices);
@@ -426,6 +439,8 @@ MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
   // Reorder vertices using the Gibbs-Poole-Stockmeyer algorithm of
   // SCOTCH.
   // "vertex_indices" and "vertex_global_to_local" are modified.
+
+  std::cout << "Re-order vertices gps" << std::endl;
 
   Timer timer("Reorder vertices using GPS ordering");
 
@@ -672,6 +687,9 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
     else
       it->second.insert(sharing_procs.begin(), sharing_procs.end());
   }
+
+  std::cout << "End Re-order vertices gps" << std::endl;
+
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::int32_t, std::vector<int>, std::map<std::int32_t, std::set<unsigned int>>>
@@ -873,7 +891,8 @@ std::int32_t MeshPartitioning::compute_vertex_mapping(MPI_Comm mpi_comm,
 void MeshPartitioning::distribute_vertices(
   const MPI_Comm mpi_comm,
   const LocalMeshData& mesh_data,
-  LocalMeshData& new_mesh_data,
+  const std::vector<std::int64_t>& vertex_indices,
+  boost::multi_array<double, 2>& vertex_coordinates,
   std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
   std::map<std::int32_t, std::set<unsigned int>>& shared_vertices_local)
 {
@@ -886,9 +905,6 @@ void MeshPartitioning::distribute_vertices(
   // send its vertices.
 
   Timer timer("Distribute vertices");
-
-  const std::vector<std::int64_t>& vertex_indices
-    = new_mesh_data.vertex_indices;
 
   // Get number of processes
   const std::size_t mpi_size = MPI::size(mpi_comm);
@@ -954,25 +970,20 @@ void MeshPartitioning::distribute_vertices(
     num_received_vertices += received_vertex_coordinates[p].size()/gdim;
   dolfin_assert(num_received_vertices == vertex_indices.size());
 
-  // Reference for convenience
-  boost::multi_array<double, 2>& vertex_coordinates
-    = new_mesh_data.vertex_coordinates;
+  // Initialise coordinates array
   vertex_coordinates.resize(boost::extents[vertex_indices.size()][gdim]);
 
   // Store coordinates according to global_to_local mapping
   for (std::size_t p = 0; p < mpi_size; ++p)
   {
-    for (std::size_t i = 0;
-         i < received_vertex_coordinates[p].size()/gdim; ++i)
+    for (std::size_t i = 0; i < received_vertex_coordinates[p].size()/gdim; ++i)
     {
       const std::int64_t global_vertex_index = vertex_location[p][i];
       auto v = vertex_global_to_local.find(global_vertex_index);
       dolfin_assert(v != vertex_global_to_local.end());
       dolfin_assert(vertex_indices[v->second] == global_vertex_index);
-
       for (std::size_t j = 0; j < gdim; ++j)
-        vertex_coordinates[v->second][j]
-          = received_vertex_coordinates[p][i*gdim + j];
+        vertex_coordinates[v->second][j] = received_vertex_coordinates[p][i*gdim + j];
     }
   }
 }
