@@ -237,16 +237,15 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   // Send cells to processes that need them. Returns
   // 0. Number of regular cells on this process
   // 1. Map from local cell index to to sharing process for ghosted cells
-  std::tuple<std::int32_t, std::map<std::int32_t, std::set<unsigned int>>>
-    dist_cell_data = distribute_cells(mesh.mpi_comm(), mesh_data,
-                                      cell_partition, ghost_procs,
-                                      new_mesh_data.cell_vertices,
-                                      new_mesh_data.global_cell_indices,
-                                      new_mesh_data.cell_partition);
+  auto dist_cell_data = distribute_cells(mesh.mpi_comm(), mesh_data,
+                                         cell_partition, ghost_procs,
+                                         new_mesh_data.cell_vertices,
+                                         new_mesh_data.global_cell_indices);
 
   const std::int32_t num_regular_cells = std::get<0>(dist_cell_data);
+  std::vector<int> new_cell_partition = std::get<1>(dist_cell_data);
   std::map<std::int32_t, std::set<unsigned int>>&
-    shared_cells = std::get<1>(dist_cell_data);
+    shared_cells = std::get<2>(dist_cell_data);
 
   if (ghost_mode == "shared_vertex")
   {
@@ -256,7 +255,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                           new_mesh_data.num_global_vertices, shared_cells,
                           new_mesh_data.cell_vertices,
                           new_mesh_data.global_cell_indices,
-                          new_mesh_data.cell_partition);
+                          new_cell_partition);
   }
   else if (ghost_mode == "none")
   {
@@ -298,6 +297,9 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                          new_mesh_data.vertex_indices, vertex_global_to_local);
   }
 #endif
+
+  // Clean this up later
+  new_mesh_data.cell_partition = new_cell_partition;
 
   // Send vertices to processes that need them, informing all
   // sharing processes of their destinations
@@ -654,15 +656,14 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   }
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::int32_t, std::map<std::int32_t, std::set<unsigned int>>>
+std::tuple<std::int32_t, std::vector<int>, std::map<std::int32_t, std::set<unsigned int>>>
 MeshPartitioning::distribute_cells(
   const MPI_Comm mpi_comm,
   const LocalMeshData& mesh_data,
   const std::vector<int>& cell_partition,
   const std::map<std::int64_t, std::vector<int>>& ghost_procs,
   boost::multi_array<std::int64_t, 2>& new_cell_vertices,
-  std::vector<std::int64_t>& new_global_cell_indices,
-  std::vector<int>& new_cell_partition)
+  std::vector<std::int64_t>& new_global_cell_indices)
 {
   // This function takes the partition computed by the partitioner stored in
   // cell_partition/ghost_procs Some cells go to multiple destinations. Each
@@ -770,7 +771,9 @@ MeshPartitioning::distribute_cells(
   // Put received mesh data into new_mesh_data structure
   new_cell_vertices.resize(boost::extents[all_count][num_cell_vertices]);
   new_global_cell_indices.resize(all_count);
-  new_cell_partition.resize(all_count);
+
+
+  std::vector<int> new_cell_partition(all_count);
 
   // Unpack received data
   // Create a map from cells which are shared, to the remote processes
@@ -812,9 +815,7 @@ MeshPartitioning::distribute_cells(
 
   dolfin_assert(c == local_count);
   dolfin_assert(gc == all_count);
-  //return {local_count, shared_cells};
-  return std::make_tuple(local_count, shared_cells);
-
+  return std::make_tuple(local_count, new_cell_partition, shared_cells);
 }
 //-----------------------------------------------------------------------------
 std::int32_t MeshPartitioning::compute_vertex_mapping(MPI_Comm mpi_comm,
