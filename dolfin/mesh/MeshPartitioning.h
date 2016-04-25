@@ -102,7 +102,8 @@ namespace dolfin
     // FIXME: Improve this docstring
     // Distribute a layer of cells attached by vertex to boundary updating
     // new_mesh_data and shared_cells. Used when ghosting by vertex.
-    static void distribute_cell_layer(MPI_Comm mpi_comm,
+    static
+    void distribute_cell_layer(MPI_Comm mpi_comm,
       const int num_regular_cells,
       const std::int64_t num_global_vertices,
       std::map<std::int32_t, std::set<unsigned int>>& shared_cells,
@@ -111,23 +112,30 @@ namespace dolfin
       std::vector<int>& cell_partition);
 
     // FIXME: make clearer what goes in and what comes out
-    // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH)
-    static void reorder_cells_gps(MPI_Comm mpi_comm,
+    // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH). Returns
+    // the tuple (new_shared_cells, new_cell_vertices,new_global_cell_indices).
+    static
+    std::tuple<std::map<std::int32_t, std::set<unsigned int>>,
+    boost::multi_array<std::int64_t, 2>, std::vector<std::int64_t>>
+    reorder_cells_gps(MPI_Comm mpi_comm,
      const unsigned int num_regular_cells,
      const CellType& cell_type,
-     std::map<std::int32_t, std::set<unsigned int>>& shared_cells,
-     boost::multi_array<std::int64_t, 2>& cell_vertices,
-     std::vector<std::int64_t>& global_cell_indices);
+     const std::map<std::int32_t, std::set<unsigned int>>& shared_cells,
+     const boost::multi_array<std::int64_t, 2>& cell_vertices,
+     const std::vector<std::int64_t>& global_cell_indices);
 
     // FIXME: make clearer what goes in and what comes out
-    // Reorder vertices by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH)
-    static void reorder_vertices_gps(MPI_Comm mpi_comm,
+    // Reorder vertices by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH).
+    // Returns the pair (new_vertex_indices, new_vertex_global_to_local).
+    static
+    std::pair<std::vector<std::int64_t>, std::map<std::int64_t, std::int32_t>>
+    reorder_vertices_gps(MPI_Comm mpi_comm,
      const std::int32_t num_regular_vertices,
      const std::int32_t num_regular_cells,
      const int  num_cell_vertices,
      const boost::multi_array<std::int64_t, 2>& cell_vertices,
-     std::vector<std::int64_t>& vertex_indices,
-     std::map<std::int64_t, std::int32_t>& vertex_global_to_local);
+     const std::vector<std::int64_t>& vertex_indices,
+     const std::map<std::int64_t, std::int32_t>& vertex_global_to_local);
 
     // FIXME: Update, making clear exactly what is computed
     // This function takes the partition computed by the partitioner
