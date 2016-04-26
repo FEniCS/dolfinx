@@ -38,6 +38,8 @@
 #include <dolfin/mesh/Vertex.h>
 #include "GraphBuilder.h"
 
+#include <dolfin/common/timing.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -179,6 +181,7 @@ void GraphBuilder::compute_local_dual_graph(
 {
   Timer timer("Compute local part of mesh dual graph");
 
+  tic();
   const std::size_t tdim = cell_type.dim();
   const std::int64_t num_local_cells = cell_vertices.shape()[0];
   const std::size_t num_vertices_per_cell = cell_type.num_entities(0);
@@ -198,26 +201,29 @@ void GraphBuilder::compute_local_dual_graph(
   const std::int64_t cell_offset = MPI::global_offset(mpi_comm, num_local_cells,
                                                       true);
 
-  // Create map from facet (list of vertex indices) to cells
-  facet_cell_map.rehash((facet_cell_map.size()
-                     + num_local_cells)/facet_cell_map.max_load_factor() + 1);
-
   boost::multi_array<unsigned int, 2>
     fverts(boost::extents[num_facets_per_cell][num_vertices_per_facet]);
 
   std::vector<unsigned int> cellvtx(num_vertices_per_cell);
-  std::pair<std::vector<std::size_t>, std::size_t> map_entry;
-  map_entry.first.resize(num_vertices_per_facet);
 
-  std::vector<std::vector<std::int64_t>>
-    facets(num_facets_per_cell*num_local_cells, std::vector<std::int64_t>(num_vertices_per_facet + 1 ));
+  //std::vector<std::vector<std::int32_t>>
+  //    facets(num_facets_per_cell*num_local_cells, std::vector<std::int32_t>(num_vertices_per_facet + 1 ));
+
+  //std::vector<std::array<std::int32_t, 4>> facets(num_facets_per_cell*num_local_cells);
+  //std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>
+  //  facets(num_facets_per_cell*num_local_cells, std::pair<std::vector<std::int32_t>,
+  //    std::int32_t>(std::vector<std::int32_t>(num_facets_per_cell), 0));
+
+  dolfin_assert(num_facets_per_cell <= 3);
+  std::vector<std::pair<std::array<std::int32_t, 3>, std::int32_t>> facets(num_facets_per_cell*num_local_cells);
+
+  //boost::multi_array<std::int32_t, 2> facets(boost::extents[num_facets_per_cell*num_local_cells][num_vertices_per_facet + 1]);
 
   // Iterate over all cells
   int counter = 0;
   for (int i = 0; i < num_local_cells; ++i)
   {
-    map_entry.second = i;
-
+    // Get all cell facets (each facet is a set of vertices)
     std::copy(cell_vertices[i].begin(), cell_vertices[i].end(),
               cellvtx.begin());
     cell_type.create_entities(fverts, tdim - 1, cellvtx.data());
@@ -225,52 +231,60 @@ void GraphBuilder::compute_local_dual_graph(
     // Iterate over facets in cell
     for (std::size_t j = 0; j < num_facets_per_cell; ++j)
     {
+      // Sort facet vertices
       std::sort(fverts[j].begin(), fverts[j].end());
 
+      // Add facet indices to list of facets
       for (std::size_t k = 0; k < num_vertices_per_facet; ++k)
-        facets[counter][k] = fverts[j][k];
-      fverts[j][num_vertices_per_facet] = i;
+        facets[counter].first[k] = fverts[j][k];
+
+      // Add local cell index at the end
+      facets[counter].second = i;
+      //facets[counter][num_vertices_per_facet] = i;
 
       counter++;
-      /*
-      std::copy(fverts[j].begin(), fverts[j].end(), map_entry.first.begin());
-      std::sort(map_entry.first.begin(), map_entry.first.end());
-
-
-      facets
-      // Map lookup/insert
-      std::pair<FacetCellMap::iterator, bool> map_lookup
-        = facet_cell_map.insert(map_entry);
-
-      // If facet was already in the map
-      if (!map_lookup.second)
-      {
-        // Already in map. Connect cells and delete facet from map
-        // Add offset to cell index when inserting into local_graph
-        local_graph[i].insert(map_lookup.first->second + cell_offset);
-        local_graph[map_lookup.first->second].insert(i + cell_offset);
-
-        // Save memory and search time by erasing
-        facet_cell_map.erase(map_lookup.first);
-      }
-      */
     }
   }
 
-  // Sort
+  // Sort facets
   std::sort(facets.begin(), facets.end());
+  /*
+  std::vector<std::int32_t> permutation(facets.shape()[0]);
+  for(unsigned int i = 0; i < permutation.size(); ++i)
+    permutation[i] = i;
+   std::sort(permutation.begin(), permutation.end(),
+   [&facets](unsigned int a, unsigned int b) { return facets[a] < facets[b];});
+  */
 
+  // Find maching facets
   for (std::size_t i = 1; i < facets.size(); ++i)
   {
-    if (std::equal(facets[i].begin(), facets[i].begin() +  num_vertices_per_facet, facets[i-1].begin()))
+    //const int ii = permutation[i];
+    //const int jj = permutation[i - 1];
+    const int ii = i;
+    const int jj = i - 1;
+    //const int cell_index0 = facets[jj][num_vertices_per_facet];
+    const int cell_index0 = facets[jj].second;
+    if (std::equal(facets[ii].first.begin(), facets[ii].first.begin() +  num_vertices_per_facet, facets[jj].first.begin()))
     {
-      const int cell_index0 = facets[i-1][num_vertices_per_facet];
-      const int cell_index1 = facets[i][num_vertices_per_facet];
+      const int cell_index1 = facets[ii].second;
+      //const int cell_index1 = facets[ii][num_vertices_per_facet];
       local_graph[cell_index0].insert(cell_index1 + cell_offset);
       local_graph[cell_index1].insert(cell_index0 + cell_offset);
+
+      // Since we've just found a matching pair, the next pair cannot be
+      // matching, so advance 1
+      ++i;
+    }
+    else
+    {
+      // No match
+      facet_cell_map.insert({std::vector<std::size_t>(facets[jj].first.begin(),
+          facets[jj].first.begin() +  num_vertices_per_facet), cell_index0});
     }
   }
-
+  const double time = toc();
+  std::cout << "Time to compute local graph: " << time << std::endl;
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_nonlocal_dual_graph(

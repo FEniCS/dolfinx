@@ -37,7 +37,11 @@ du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 from dolfin import *
 
 # Create mesh and define function space
-mesh = UnitSquareMesh(32, 32)
+#mesh = UnitSquareMesh(32, 32)
+mesh = UnitCubeMesh(128, 64, 64)
+
+exit(0)
+
 V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define Dirichlet boundary (x = 0 or x = 1)
