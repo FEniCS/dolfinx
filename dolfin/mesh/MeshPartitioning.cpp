@@ -258,6 +258,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
 
     std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
     dolfin_assert(cell_type);
+
     std::map<std::int32_t, std::set<unsigned int>> reordered_shared_cells;
     boost::multi_array<std::int64_t, 2> reordered_cell_vertices;
     std::vector<std::int64_t> reordered_global_cell_indices;
@@ -409,8 +410,13 @@ void MeshPartitioning::reorder_cells_gps(
   }
   std::vector<int> remap = SCOTCH::compute_gps(g_dual);
 
+  // Resize re-ordered cell topology arrray, and copy (copy iss required because
+  // ghosts are not being re-ordered).
   reordered_cell_vertices.resize(boost::extents[cell_vertices.shape()[0]][cell_vertices.shape()[1]]);
-  reordered_global_cell_indices.resize(global_cell_indices.size());
+  reordered_cell_vertices = cell_vertices;
+
+  reordered_global_cell_indices.clear()
+  reordered_global_cell_indices.resize(global_cell_indices.size(), -1);
   for (unsigned int i = 0; i != g_dual.size(); ++i)
   {
     // Remap data
