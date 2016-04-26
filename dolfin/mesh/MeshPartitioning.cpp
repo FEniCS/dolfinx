@@ -415,7 +415,7 @@ void MeshPartitioning::reorder_cells_gps(
   reordered_cell_vertices.resize(boost::extents[cell_vertices.shape()[0]][cell_vertices.shape()[1]]);
   reordered_cell_vertices = cell_vertices;
 
-  reordered_global_cell_indices.clear()
+  reordered_global_cell_indices.clear();
   reordered_global_cell_indices.resize(global_cell_indices.size(), -1);
   for (unsigned int i = 0; i != g_dual.size(); ++i)
   {

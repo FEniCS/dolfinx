@@ -85,7 +85,6 @@ namespace dolfin
       const std::vector<std::set<std::size_t>>& local_graph,
       const std::vector<std::size_t>& node_weights,
       const std::set<std::size_t>& ghost_vertices,
-      const std::vector<std::int64_t>& global_cell_indices,
       const std::size_t num_global_vertices,
       std::vector<int>& cell_partition,
       std::map<std::int64_t, std::vector<int>>& ghost_procs);
