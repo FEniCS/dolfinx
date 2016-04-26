@@ -210,12 +210,13 @@ void GraphBuilder::compute_local_dual_graph(
   //    facets(num_facets_per_cell*num_local_cells, std::vector<std::int32_t>(num_vertices_per_facet + 1 ));
 
   //std::vector<std::array<std::int32_t, 4>> facets(num_facets_per_cell*num_local_cells);
-  //std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>
-  //  facets(num_facets_per_cell*num_local_cells, std::pair<std::vector<std::int32_t>,
-  //    std::int32_t>(std::vector<std::int32_t>(num_facets_per_cell), 0));
 
-  dolfin_assert(num_vertices_per_facet <= 3);
-  std::vector<std::pair<std::array<std::int32_t, 3>, std::int32_t>> facets(num_facets_per_cell*num_local_cells);
+  std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>
+    facets(num_facets_per_cell*num_local_cells, std::pair<std::vector<std::int32_t>,
+      std::int32_t>(std::vector<std::int32_t>(num_facets_per_cell), -1));
+
+  //dolfin_assert(num_vertices_per_facet <= 3);
+  //std::vector<std::pair<std::array<std::int32_t, 3>, std::int32_t>> facets(num_facets_per_cell*num_local_cells);
 
   //boost::multi_array<std::int32_t, 2> facets(boost::extents[num_facets_per_cell*num_local_cells][num_vertices_per_facet + 1]);
 
@@ -283,6 +284,17 @@ void GraphBuilder::compute_local_dual_graph(
           facets[jj].first.begin() +  num_vertices_per_facet), cell_index0});
     }
   }
+
+  // Add last facet, as it's not covered by the above loop. We could check it
+  // against the preceding facet, but it's easierto just insert it here
+  if (!facets.empty())
+  {
+    const int k = facets.size() - 1;
+    const int cell_index = facets[k].second;
+    facet_cell_map.insert({std::vector<std::size_t>(facets[k].first.begin(),
+        facets[k].first.begin() +  num_vertices_per_facet), cell_index});
+  }
+
   const double time = toc();
   std::cout << "Time to compute local graph: " << time << std::endl;
 }
