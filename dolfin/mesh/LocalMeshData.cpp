@@ -20,6 +20,7 @@
 // First added:  2008-11-28
 // Last changed: 2012-11-24
 
+#include <utility>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
@@ -331,5 +332,34 @@ LocalMeshData::unpack_cell_vertices(const std::vector<std::int64_t>& values)
   }
 
   log(TRACE, "Received %d cell vertices", cell_vertices.size());
+}
+//-----------------------------------------------------------------------------
+void LocalMeshData::reorder()
+{
+  const int dim0 = cell_vertices.shape()[0];
+  const int dim1 = cell_vertices.shape()[1];
+  dolfin_assert((int) global_cell_indices.size() == dim0);
+
+  // Build a vector of first vertex index for each cell in vertex_indices
+  std::vector<std::pair<std::int64_t, std::int32_t>> keys(dim0);
+  for (int i = 0; i < dim0; ++i)
+    keys[i] = {*std::min_element(cell_vertices[i].begin(), cell_vertices[i].end()), i};
+
+  // Sort
+  std::sort(keys.begin(), keys.end());
+
+  // Copy cell_vertices and cell local-to-global array
+  boost::multi_array<std::int64_t, 2> _cell_vertices(boost::extents[dim0][dim1]);
+  _cell_vertices = cell_vertices;
+  std::vector<std::int64_t> _global_cell_indices = global_cell_indices;
+
+  // Re-map data
+  for (int i = 0; i < dim0; ++i)
+  {
+    auto key = keys[i];
+    global_cell_indices[i] = _global_cell_indices[key.second];
+    for (int j = 0; j < dim1; ++j)
+      cell_vertices[i][j] = _cell_vertices[key.second][j];
+  }
 }
 //-----------------------------------------------------------------------------

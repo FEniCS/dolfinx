@@ -109,9 +109,12 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
-                                              const LocalMeshData& local_data,
+                                              LocalMeshData& local_data,
                                               const std::string ghost_mode)
 {
+  local_data.reorder();
+
+
   Timer timer("Build distributed mesh from local mesh data");
 
   // Get mesh partitioner

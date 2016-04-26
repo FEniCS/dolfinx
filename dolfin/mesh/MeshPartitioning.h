@@ -72,7 +72,7 @@ namespace dolfin
 
     /// Build a distributed mesh from 'local mesh data' that is
     /// distributed across processes
-    static void build_distributed_mesh(Mesh& mesh, const LocalMeshData& data,
+    static void build_distributed_mesh(Mesh& mesh, LocalMeshData& data,
                                        const std::string ghost_mode);
 
     /// Build a MeshValueCollection based on LocalMeshValueCollection

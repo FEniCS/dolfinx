@@ -95,6 +95,9 @@ namespace dolfin
     // Unpack received cell vertices
     void unpack_cell_vertices(const std::vector<std::int64_t>& values);
 
+    // Reorder cell data
+    void reorder();
+
     // Coordinates for all vertices stored on local processor
     boost::multi_array<double, 2> vertex_coordinates;
 
