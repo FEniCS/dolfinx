@@ -68,7 +68,7 @@ void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
 
   // Compute partitions
   partition(mpi_comm, local_graph, cell_weight, ghost_vertices,
-            global_cell_indices, num_global_cells, cell_partition, ghost_procs);
+            num_global_cells, cell_partition, ghost_procs);
 }
 //-----------------------------------------------------------------------------
 std::vector<int> SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
@@ -200,7 +200,6 @@ void SCOTCH::partition(
   const std::vector<std::set<std::size_t>>& local_graph,
   const std::vector<std::size_t>& node_weights,
   const std::set<std::size_t>& ghost_vertices,
-  const std::vector<std::int64_t>& global_cell_indices,
   const std::size_t num_global_vertices,
   std::vector<int>& cell_partition,
   std::map<std::int64_t, std::vector<int>>& ghost_procs)
@@ -480,7 +479,6 @@ void SCOTCH::partition(const MPI_Comm mpi_comm,
                        const std::vector<std::set<std::size_t>>& local_graph,
                        const std::vector<std::size_t>& node_weights,
                        const std::set<std::size_t>& ghost_vertices,
-                       const std::vector<std::int64_t>& global_cell_indices,
                        const std::size_t num_global_vertices,
                        std::vector<int>& cell_partition,
                        std::map<std::int64_t, std::vector<int>>& ghost_procs)
