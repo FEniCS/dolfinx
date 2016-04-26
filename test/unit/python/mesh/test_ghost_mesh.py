@@ -39,23 +39,41 @@ def xtest_ghost_facet_1d(pushpop_parameters):
     mesh = UnitIntervalMesh(20)
 
 
-def test_ghost_vertex_2d(pushpop_parameters):
-    parameters["reorder_cells_gps"] = True
-    #parameters["reorder_vertices_gps"] = True
-    parameters["ghost_mode"] = "shared_vertex"
-    mesh = UnitSquareMesh(8, 8)
+def test_ghost_2d(pushpop_parameters):
+    modes = ["shared_vertex", "shared_facet"]
+    for mode in modes:
+        parameters["ghost_mode"] = mode
+
+        mesh = UnitSquareMesh(8, 8)
+
+        parameters["reorder_cells_gps"] = True
+        parameters["reorder_vertices_gps"] = False
+        mesh = UnitSquareMesh(8, 8)
+
+        parameters["reorder_cells_gps"] = True
+        parameters["reorder_vertices_gps"] = True
+        mesh = UnitSquareMesh(8, 8)
+
+        parameters["reorder_cells_gps"] = False
+        parameters["reorder_vertices_gps"] = True
+        mesh = UnitSquareMesh(8, 8)
 
 
-def xtest_ghost_facet_2d(pushpop_parameters):
-    parameters["ghost_mode"] = "shared_facet"
-    mesh = UnitSquareMesh(5, 7)
+def test_ghost_3d(pushpop_parameters):
+    modes = ["shared_vertex", "shared_facet"]
+    for mode in modes:
+        parameters["ghost_mode"] = mode
 
+        mesh = UnitCubeMesh(2, 5, 3)
 
-def xtest_ghost_vertex_3d(pushpop_parameters):
-    parameters["ghost_mode"] = "shared_vertex"
-    mesh = UnitCubeMesh(5, 7, 3)
+        parameters["reorder_cells_gps"] = True
+        parameters["reorder_vertices_gps"] = False
+        mesh = UnitCubeMesh(2, 5, 3)
 
+        parameters["reorder_cells_gps"] = True
+        parameters["reorder_vertices_gps"] = True
+        mesh = UnitCubeMesh(2, 5, 3)
 
-def xtest_ghost_facet_2d(pushpop_parameters):
-    parameters["ghost_mode"] = "shared_facet"
-    mesh = UnitCubeMesh(5, 7, 3)
+        parameters["reorder_cells_gps"] = False
+        parameters["reorder_vertices_gps"] = True
+        mesh = UnitCubeMesh(2, 5, 3)
