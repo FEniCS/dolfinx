@@ -214,7 +214,7 @@ void GraphBuilder::compute_local_dual_graph(
   //  facets(num_facets_per_cell*num_local_cells, std::pair<std::vector<std::int32_t>,
   //    std::int32_t>(std::vector<std::int32_t>(num_facets_per_cell), 0));
 
-  dolfin_assert(num_facets_per_cell <= 3);
+  dolfin_assert(num_vertices_per_facet <= 3);
   std::vector<std::pair<std::array<std::int32_t, 3>, std::int32_t>> facets(num_facets_per_cell*num_local_cells);
 
   //boost::multi_array<std::int32_t, 2> facets(boost::extents[num_facets_per_cell*num_local_cells][num_vertices_per_facet + 1]);
