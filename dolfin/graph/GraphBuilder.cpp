@@ -209,7 +209,11 @@ void GraphBuilder::compute_local_dual_graph(
   std::pair<std::vector<std::size_t>, std::size_t> map_entry;
   map_entry.first.resize(num_vertices_per_facet);
 
+  std::vector<std::vector<std::int64_t>>
+    facets(num_facets_per_cell*num_local_cells, std::vector<std::int64_t>(num_vertices_per_facet + 1 ));
+
   // Iterate over all cells
+  int counter = 0;
   for (int i = 0; i < num_local_cells; ++i)
   {
     map_entry.second = i;
@@ -221,9 +225,19 @@ void GraphBuilder::compute_local_dual_graph(
     // Iterate over facets in cell
     for (std::size_t j = 0; j < num_facets_per_cell; ++j)
     {
+      std::sort(fverts[j].begin(), fverts[j].end());
+
+      for (std::size_t k = 0; k < num_vertices_per_facet; ++k)
+        facets[counter][k] = fverts[j][k];
+      fverts[j][num_vertices_per_facet] = i;
+
+      counter++;
+      /*
       std::copy(fverts[j].begin(), fverts[j].end(), map_entry.first.begin());
       std::sort(map_entry.first.begin(), map_entry.first.end());
 
+
+      facets
       // Map lookup/insert
       std::pair<FacetCellMap::iterator, bool> map_lookup
         = facet_cell_map.insert(map_entry);
@@ -239,8 +253,24 @@ void GraphBuilder::compute_local_dual_graph(
         // Save memory and search time by erasing
         facet_cell_map.erase(map_lookup.first);
       }
+      */
     }
   }
+
+  // Sort
+  std::sort(facets.begin(), facets.end());
+
+  for (std::size_t i = 1; i < facets.size(); ++i)
+  {
+    if (std::equal(facets[i].begin(), facets[i].begin() +  num_vertices_per_facet, facets[i-1].begin()))
+    {
+      const int cell_index0 = facets[i-1][num_vertices_per_facet];
+      const int cell_index1 = facets[i][num_vertices_per_facet];
+      local_graph[cell_index0].insert(cell_index1 + cell_offset);
+      local_graph[cell_index1].insert(cell_index0 + cell_offset);
+    }
+  }
+
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_nonlocal_dual_graph(
