@@ -116,6 +116,10 @@ void SCOTCH::compute_reordering(const Graph& graph,
     edgetab.insert(edgetab.end(), vertex->begin(), vertex->end());
   }
 
+  // Shrink vectors to hopefully recover an unused memory
+  verttab.shrink_to_fit();
+  edgetab.shrink_to_fit();
+
   // Create SCOTCH graph
   SCOTCH_Graph scotch_graph;
 
@@ -242,6 +246,10 @@ void SCOTCH::partition(
   // Handle case that local graph size is zero
   if (edgeloctab.empty())
     edgeloctab.resize(1);
+
+  // Shrink vectors to hopefully recover any unused memory
+  verttab.shrink_to_fit();
+  edgetab.shrink_to_fit();
 
   // Global data ---------------------------------
 

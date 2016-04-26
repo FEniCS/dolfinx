@@ -165,6 +165,10 @@ void GraphBuilder::compute_dual_graph(const MPI_Comm mpi_comm,
   compute_nonlocal_dual_graph(mpi_comm, cell_vertices, cell_type,
                               num_global_vertices, local_graph, facet_cell_map,
                               ghost_vertices);
+
+  // Shrink to fit
+  local_graph.shrink_to_fit();
+  ghost_vertices.shrink_to_fit();
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_local_dual_graph(

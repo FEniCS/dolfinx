@@ -694,6 +694,10 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
     else
       it->second.insert(sharing_procs.begin(), sharing_procs.end());
   }
+
+  // Shrink
+  global_cell_indices.shrink_to_fit();
+  cell_partition.shrink_to_fit();
 }
 //-----------------------------------------------------------------------------
 std::int32_t
