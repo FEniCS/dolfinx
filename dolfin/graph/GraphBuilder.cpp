@@ -168,7 +168,6 @@ void GraphBuilder::compute_dual_graph(const MPI_Comm mpi_comm,
 
   // Shrink to fit
   local_graph.shrink_to_fit();
-  ghost_vertices.shrink_to_fit();
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_local_dual_graph(

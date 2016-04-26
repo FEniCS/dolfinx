@@ -248,8 +248,8 @@ void SCOTCH::partition(
     edgeloctab.resize(1);
 
   // Shrink vectors to hopefully recover any unused memory
-  verttab.shrink_to_fit();
-  edgetab.shrink_to_fit();
+  vertloctab.shrink_to_fit();
+  edgeloctab.shrink_to_fit();
 
   // Global data ---------------------------------
 
