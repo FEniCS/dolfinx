@@ -216,8 +216,6 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   // Keep tabs on ghost cell ownership (map from local cell index to sharing
   // processes)
 
-  std::cout << "Dist cell" << std::endl;
-
   // Send cells to processes that need them. Returns
   // 0. Number of regular cells on this process
   // 1. Map from local cell index to to sharing process for ghosted cells
@@ -250,10 +248,9 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
     shared_cells.clear();
   }
 
-#ifdef HAS_SCOTCH
+  #ifdef HAS_SCOTCH
   if (parameters["reorder_cells_gps"])
   {
-    std::cout << "Reorder cells" << std::endl;
     std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
     dolfin_assert(cell_type);
     auto data = reorder_cells_gps(mesh.mpi_comm(), num_regular_cells, *cell_type,
@@ -263,9 +260,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
     std::swap(new_cell_vertices, std::get<1>(data));
     std::swap(new_global_cell_indices, std::get<2>(data));
   }
-#endif
-
-  std::cout << "Vertex mapping" << std::endl;
+  #endif
 
   // Generate mapping from global to local indexing for vertices
   // also calculating which vertices are 'ghost' and putting them
@@ -280,7 +275,6 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   #ifdef HAS_SCOTCH
   if (parameters["reorder_vertices_gps"])
   {
-    std::cout << "Reorder verticces" << std::endl;
     auto data = reorder_vertices_gps(mesh.mpi_comm(), num_regular_vertices,
                               num_regular_cells, num_cell_vertices,
                               new_cell_vertices,
@@ -346,7 +340,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   mesh.topology().init_ghost(0, num_regular_vertices);
 
   // Assign map of shared cells and vertices
-  mesh.topology().shared_entities(mesh_data.tdim) = shared_cells;
+  mesh.topology().shared_entities(tdim) = shared_cells;
   mesh.topology().shared_entities(0) = shared_vertices;
 }
 //-----------------------------------------------------------------------------
@@ -360,7 +354,6 @@ MeshPartitioning::reorder_cells_gps(
   const boost::multi_array<std::int64_t, 2>& cell_vertices,
   const std::vector<std::int64_t>& global_cell_indices)
 {
-  std::cout << "Re-order cells gps" << std::endl;
   Timer timer("Reorder cells using GPS ordering");
 
   // Make dual graph from vertex indices, using GraphBuilder
@@ -420,9 +413,7 @@ MeshPartitioning::reorder_cells_gps(
       remapped_shared_cells.insert(*p);
   }
 
-  std::cout << "End Re-order cells gps" << std::endl;
-
-  // Assign
+  // Return tuple
   return std::make_tuple(remapped_shared_cells, remapped_cell_vertices,
                          remapped_global_cell_indices);
 }
@@ -439,8 +430,6 @@ MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
   // Reorder vertices using the Gibbs-Poole-Stockmeyer algorithm of
   // SCOTCH.
   // "vertex_indices" and "vertex_global_to_local" are modified.
-
-  std::cout << "Re-order vertices gps" << std::endl;
 
   Timer timer("Reorder vertices using GPS ordering");
 
@@ -687,9 +676,6 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
     else
       it->second.insert(sharing_procs.begin(), sharing_procs.end());
   }
-
-  std::cout << "End Re-order vertices gps" << std::endl;
-
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::int32_t, std::vector<int>, std::map<std::int32_t, std::set<unsigned int>>>
