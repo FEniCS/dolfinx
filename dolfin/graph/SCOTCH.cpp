@@ -51,7 +51,6 @@ void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
                                std::vector<int>& cell_partition,
                                std::map<std::int64_t, std::vector<int>>& ghost_procs,
                                const boost::multi_array<std::int64_t, 2>& cell_vertices,
-                               const std::vector<std::int64_t>& global_cell_indices,
                                const std::vector<std::size_t>& cell_weight,
                                const std::int64_t num_global_vertices,
                                const std::int64_t num_global_cells,
@@ -59,12 +58,12 @@ void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
 {
   // Create data structures to hold graph
   std::vector<std::set<std::size_t>> local_graph;
-  std::set<std::size_t> ghost_vertices;
+  std::set<std::int64_t> ghost_vertices;
 
-  // Compute local dual graph
+  // Compute dual graph (for this parition)
   GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type,
-                                   global_cell_indices, num_global_vertices,
-                                   local_graph, ghost_vertices);
+                                   num_global_vertices, local_graph,
+                                   ghost_vertices);
 
   // Compute partitions
   partition(mpi_comm, local_graph, cell_weight, ghost_vertices,
@@ -199,7 +198,7 @@ void SCOTCH::partition(
   const MPI_Comm mpi_comm,
   const std::vector<std::set<std::size_t>>& local_graph,
   const std::vector<std::size_t>& node_weights,
-  const std::set<std::size_t>& ghost_vertices,
+  const std::set<std::int64_t>& ghost_vertices,
   const std::size_t num_global_vertices,
   std::vector<int>& cell_partition,
   std::map<std::int64_t, std::vector<int>>& ghost_procs)

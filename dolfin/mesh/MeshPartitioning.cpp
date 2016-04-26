@@ -177,7 +177,6 @@ MeshPartitioning::partition_cells(const MPI_Comm& mpi_comm,
     dolfin_assert(cell_type);
     SCOTCH::compute_partition(mpi_comm, cell_partition, ghost_procs,
                               mesh_data.cell_vertices,
-                              mesh_data.global_cell_indices,
                               mesh_data.cell_weight,
                               mesh_data.num_global_vertices,
                               mesh_data.num_global_cells,
@@ -381,8 +380,7 @@ void MeshPartitioning::reorder_cells_gps(
   std::vector<std::set<std::size_t>> local_graph;
   GraphBuilder::FacetCellMap facet_cell_map;
   GraphBuilder::compute_local_dual_graph(mpi_comm, cell_vertices, cell_type,
-                                         global_cell_indices, local_graph,
-                                         facet_cell_map);
+                                         local_graph, facet_cell_map);
 
   const std::size_t num_all_cells = cell_vertices.shape()[0];
   const std::size_t local_cell_offset
