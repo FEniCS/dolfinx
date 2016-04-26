@@ -88,10 +88,11 @@ namespace dolfin
     // -> process' vector for cells in LocalMeshData, and a map
     // 'local cell index -> processes' to which ghost cells must be sent
     static
-      std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-    partition_cells(const MPI_Comm& mpi_comm,
-                    const LocalMeshData& mesh_data,
-                    const std::string partitioner);
+    void partition_cells(const MPI_Comm& mpi_comm,
+                         const LocalMeshData& mesh_data,
+                         const std::string partitioner,
+                         std::vector<int>& cell_partition,
+                         std::map<std::int64_t, std::vector<int>>& ghost_procs);
 
     // Build a distributed mesh from local mesh data with a computed partition
     static void build(Mesh& mesh, const LocalMeshData& data,
@@ -104,38 +105,41 @@ namespace dolfin
     // new_mesh_data and shared_cells. Used when ghosting by vertex.
     static
     void distribute_cell_layer(MPI_Comm mpi_comm,
-      const int num_regular_cells,
-      const std::int64_t num_global_vertices,
-      std::map<std::int32_t, std::set<unsigned int>>& shared_cells,
-      boost::multi_array<std::int64_t, 2>& cell_vertices,
-      std::vector<std::int64_t>& global_cell_indices,
-      std::vector<int>& cell_partition);
+                               const int num_regular_cells,
+                               const std::int64_t num_global_vertices,
+                               std::map<std::int32_t, std::set<unsigned int>>& shared_cells,
+                               boost::multi_array<std::int64_t, 2>& cell_vertices,
+                               std::vector<std::int64_t>& global_cell_indices,
+                               std::vector<int>& cell_partition);
 
     // FIXME: make clearer what goes in and what comes out
     // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH). Returns
     // the tuple (new_shared_cells, new_cell_vertices,new_global_cell_indices).
     static
-    std::tuple<std::map<std::int32_t, std::set<unsigned int>>,
-    boost::multi_array<std::int64_t, 2>, std::vector<std::int64_t>>
-    reorder_cells_gps(MPI_Comm mpi_comm,
+    void reorder_cells_gps(MPI_Comm mpi_comm,
      const unsigned int num_regular_cells,
      const CellType& cell_type,
      const std::map<std::int32_t, std::set<unsigned int>>& shared_cells,
      const boost::multi_array<std::int64_t, 2>& cell_vertices,
-     const std::vector<std::int64_t>& global_cell_indices);
+     const std::vector<std::int64_t>& global_cell_indices,
+     std::map<std::int32_t, std::set<unsigned int>>& reordered_shared_cells,
+     boost::multi_array<std::int64_t, 2>& reordered_cell_vertices,
+     std::vector<std::int64_t>& reordered_global_cell_indices);
 
     // FIXME: make clearer what goes in and what comes out
     // Reorder vertices by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH).
     // Returns the pair (new_vertex_indices, new_vertex_global_to_local).
     static
-    std::pair<std::vector<std::int64_t>, std::map<std::int64_t, std::int32_t>>
+    void
     reorder_vertices_gps(MPI_Comm mpi_comm,
      const std::int32_t num_regular_vertices,
      const std::int32_t num_regular_cells,
      const int  num_cell_vertices,
      const boost::multi_array<std::int64_t, 2>& cell_vertices,
      const std::vector<std::int64_t>& vertex_indices,
-     const std::map<std::int64_t, std::int32_t>& vertex_global_to_local);
+     const std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
+     std::vector<std::int64_t>& reordered_vertex_indices,
+     std::map<std::int64_t, std::int32_t>& reordered_vertex_global_to_local);
 
     // FIXME: Update, making clear exactly what is computed
     // This function takes the partition computed by the partitioner
@@ -146,13 +150,15 @@ namespace dolfin
     // A new LocalMeshData object is populated with the redistributed
     // cells. Return the number of non-ghost cells on this process.
     static
-    std::tuple<std::int32_t, std::vector<int>, std::map<std::int32_t, std::set<unsigned int>>>
+    std::int32_t
       distribute_cells(const MPI_Comm mpi_comm,
         const LocalMeshData& data,
         const std::vector<int>& cell_partition,
         const std::map<std::int64_t, std::vector<int>>& ghost_procs,
         boost::multi_array<std::int64_t, 2>& new_cell_vertices,
-        std::vector<std::int64_t>& new_global_cell_indices);
+        std::vector<std::int64_t>& new_global_cell_indices,
+        std::vector<int>& new_cell_partition,
+        std::map<std::int32_t, std::set<unsigned int>>& shared_cells);
 
     // FIXME: Improve explaination
     // Utility to convert received_vertex_indices into
