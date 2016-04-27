@@ -1040,8 +1040,8 @@ XDMFFile::build_local_mesh_data(LocalMeshData& local_mesh_data,
   // -- Geometry --
 
   // Set geometry attributes
-  local_mesh_data.num_global_vertices = num_points_global;
-  local_mesh_data.gdim = gdim;
+  local_mesh_data.geometry.num_global_vertices = num_points_global;
+  local_mesh_data.geometry.dim = gdim;
 
   // Read geometry dataset
   dolfin_assert(geometry_dataset_node);
@@ -1054,16 +1054,16 @@ XDMFFile::build_local_mesh_data(LocalMeshData& local_mesh_data,
   const int num_local_vertices = geometry_data.size()/gdim;
 
   // Copy geometry data into LocalMeshData
-  local_mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices][gdim]);
+  local_mesh_data.geometry.vertex_coordinates.resize(boost::extents[num_local_vertices][gdim]);
   std::copy(geometry_data.begin(), geometry_data.end(),
-            local_mesh_data.vertex_coordinates.data());
+            local_mesh_data.geometry.vertex_coordinates.data());
 
   // vertex offset
   const std::int64_t vertex_index_offset
     = MPI::global_offset(local_mesh_data.mpi_comm(), num_local_vertices, true);
-  local_mesh_data.vertex_indices.resize(num_local_vertices);
-  std::iota(local_mesh_data.vertex_indices.begin(),
-            local_mesh_data.vertex_indices.end(),
+  local_mesh_data.geometry.vertex_indices.resize(num_local_vertices);
+  std::iota(local_mesh_data.geometry.vertex_indices.begin(),
+            local_mesh_data.geometry.vertex_indices.end(),
             vertex_index_offset);
 }
 //----------------------------------------------------------------------------

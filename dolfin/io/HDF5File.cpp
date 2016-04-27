@@ -1778,7 +1778,7 @@ void HDF5File::read(Mesh& input_mesh,
 
   // Create structure to store local mesh
   LocalMeshData local_mesh_data(_mpi_comm);
-  local_mesh_data.gdim = gdim;
+  local_mesh_data.geometry.dim = gdim;
 
   // --- Topology ---
 
@@ -1952,12 +1952,12 @@ void HDF5File::read(Mesh& input_mesh,
   if (coords_shape.size() == 1)
   {
     dolfin_assert(coords_shape[0] % gdim == 0);
-    local_mesh_data.num_global_vertices = coords_shape[0]/gdim;
+    local_mesh_data.geometry.num_global_vertices = coords_shape[0]/gdim;
   }
   else if (coords_shape.size() == 2)
   {
     dolfin_assert((int) coords_shape[1] == gdim);
-    local_mesh_data.num_global_vertices = coords_shape[0];
+    local_mesh_data.geometry.num_global_vertices = coords_shape[0];
   }
   else
   {
@@ -1970,7 +1970,7 @@ void HDF5File::read(Mesh& input_mesh,
   if (expected_num_global_points >= 0)
   {
     // Check number of cells for consistency with expected number of cells
-    if (local_mesh_data.num_global_vertices != expected_num_global_points)
+    if (local_mesh_data.geometry.num_global_vertices != expected_num_global_points)
     {
       dolfin_error("HDF5File.cpp",
                    "read vertex data",
@@ -1980,7 +1980,7 @@ void HDF5File::read(Mesh& input_mesh,
 
   // Divide point range into equal blocks for each process
   std::pair<std::size_t, std::size_t> vertex_range
-    = MPI::local_range(_mpi_comm, local_mesh_data.num_global_vertices);
+    = MPI::local_range(_mpi_comm, local_mesh_data.geometry.num_global_vertices);
   const std::size_t num_local_vertices
     = vertex_range.second - vertex_range.first;
 
@@ -2000,16 +2000,19 @@ void HDF5File::read(Mesh& input_mesh,
                                 coordinates_data);
 
     // Copy to boost::multi_array
-    local_mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices][gdim]);
+    local_mesh_data.geometry.vertex_coordinates.resize(boost::extents[num_local_vertices][gdim]);
     std::copy(coordinates_data.begin(), coordinates_data.end(),
-              local_mesh_data.vertex_coordinates.data());
+              local_mesh_data.geometry.vertex_coordinates.data());
   }
 
   // FIXME: explain this better - comment is cryptic
   // Fill vertex indices with values - not used in build_distributed_mesh
-  local_mesh_data.vertex_indices.resize(num_local_vertices);
-  for (std::size_t i = 0; i < local_mesh_data.vertex_coordinates.size(); ++i)
-    local_mesh_data.vertex_indices[i] = vertex_range.first + i;
+  local_mesh_data.geometry.vertex_indices.resize(num_local_vertices);
+  for (std::size_t i = 0; i < local_mesh_data.geometry.vertex_coordinates.size(); ++i)
+  {
+    dolfin_assert(i < local_mesh_data.geometry.vertex_indices.size());
+    local_mesh_data.geometry.vertex_indices[i] = vertex_range.first + i;
+  }
 
   t.stop();
 

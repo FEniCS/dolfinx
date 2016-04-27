@@ -98,11 +98,33 @@ namespace dolfin
     // Reorder cell data
     void reorder();
 
-    // Coordinates for all vertices stored on local processor
-    boost::multi_array<double, 2> vertex_coordinates;
+    // Holder for geometry data
+    struct Geometry
+    {
+      Geometry() : dim(-1), num_global_vertices(-1) {}
 
-    // Global vertex indices for all vertices stored on local processor
-    std::vector<std::int64_t> vertex_indices;
+      // Geometric dimension
+      int dim;
+
+      // Global number of vertices
+      std::int64_t num_global_vertices;
+
+      // Coordinates for all vertices stored on local processor
+      boost::multi_array<double, 2> vertex_coordinates;
+
+      // Global vertex indices for all vertices stored on local processor
+      std::vector<std::int64_t> vertex_indices;
+
+      void clear()
+      {
+        dim = -1;
+        num_global_vertices = -1;
+        vertex_coordinates.resize(boost::extents[0][0]);
+        vertex_indices.clear();
+      }
+
+    };
+    Geometry geometry;
 
     // Global vertex indices for all cells stored on local processor
     boost::multi_array<std::int64_t, 2> cell_vertices;
@@ -116,17 +138,11 @@ namespace dolfin
     // Optional weight for each cell for partitioning
     std::vector<std::size_t> cell_weight;
 
-    // Global number of vertices
-    std::int64_t num_global_vertices;
-
     // Global number of cells
     std::int64_t num_global_cells;
 
     // Number of vertices per cell
     int num_vertices_per_cell;
-
-    // Geometrical dimension
-    int gdim;
 
     // Topological dimension
     int tdim;

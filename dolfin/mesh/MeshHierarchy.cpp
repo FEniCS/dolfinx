@@ -186,7 +186,7 @@ std::shared_ptr<Mesh> MeshHierarchy::rebalance() const
   const std::size_t tdim = coarse_mesh.topology().dim();
   local_mesh_data.tdim = tdim;
   const std::size_t gdim = coarse_mesh.geometry().dim();
-  local_mesh_data.gdim = gdim;
+  local_mesh_data.geometry.dim = gdim;
   local_mesh_data.num_vertices_per_cell = tdim + 1;
 
   // Cells
@@ -208,17 +208,16 @@ std::shared_ptr<Mesh> MeshHierarchy::rebalance() const
   // Vertices - must be reordered into global order
 
   const std::size_t num_local_vertices = coarse_mesh.size(0);
-  local_mesh_data.num_global_vertices = coarse_mesh.size_global(0);
-  local_mesh_data.vertex_indices.resize(num_local_vertices);
+  local_mesh_data.geometry.num_global_vertices = coarse_mesh.size_global(0);
+  local_mesh_data.geometry.vertex_indices.resize(num_local_vertices);
   for (VertexIterator v(coarse_mesh); !v.end(); ++v)
-    local_mesh_data.vertex_indices[v->index()] = v->global_index();
-  local_mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices]
-                                            [gdim]);
+    local_mesh_data.geometry.vertex_indices[v->index()] = v->global_index();
+  local_mesh_data.geometry.vertex_coordinates.resize(boost::extents[num_local_vertices][gdim]);
 
-  std::vector<double> vertex_coords =
+  const std::vector<double> vertex_coords =
     DistributedMeshTools::reorder_vertices_by_global_indices(coarse_mesh);
   std::copy(vertex_coords.begin(), vertex_coords.end(),
-            local_mesh_data.vertex_coordinates.data());
+            local_mesh_data.geometry.vertex_coordinates.data());
 
   std::shared_ptr<Mesh> mesh(new Mesh(coarse_mesh.mpi_comm()));
   const std::string ghost_mode = dolfin::parameters["ghost_mode"];

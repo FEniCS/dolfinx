@@ -288,7 +288,7 @@ void ParallelRefinement::partition(Mesh& new_mesh, bool redistribute) const
   LocalMeshData mesh_data(new_mesh.mpi_comm());
   mesh_data.tdim = _mesh.topology().dim();
   const std::size_t gdim = _mesh.geometry().dim();
-  mesh_data.gdim = gdim;
+  mesh_data.geometry.dim = gdim;
 
   mesh_data.cell_type = _mesh.type().cell_type();
   mesh_data.num_vertices_per_cell = mesh_data.tdim + 1;
@@ -309,18 +309,17 @@ void ParallelRefinement::partition(Mesh& new_mesh, bool redistribute) const
             mesh_data.cell_vertices.data());
 
   const std::size_t num_local_vertices = new_vertex_coordinates.size()/gdim;
-  mesh_data.num_global_vertices = MPI::sum(_mesh.mpi_comm(),
-                                           num_local_vertices);
-  mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices]
-                                      [gdim]);
+  mesh_data.geometry.num_global_vertices = MPI::sum(_mesh.mpi_comm(),
+                                                    num_local_vertices);
+  mesh_data.geometry.vertex_coordinates.resize(boost::extents[num_local_vertices][gdim]);
   std::copy(new_vertex_coordinates.begin(), new_vertex_coordinates.end(),
-            mesh_data.vertex_coordinates.data());
+            mesh_data.geometry.vertex_coordinates.data());
 
-  mesh_data.vertex_indices.resize(num_local_vertices);
+  mesh_data.geometry.vertex_indices.resize(num_local_vertices);
   const std::size_t vertex_global_offset
     = MPI::global_offset(_mesh.mpi_comm(), num_local_vertices, true);
   for (std::size_t i = 0; i < num_local_vertices ; ++i)
-    mesh_data.vertex_indices[i] = vertex_global_offset + i;
+    mesh_data.geometry.vertex_indices[i] = vertex_global_offset + i;
 
   if (!redistribute)
   {
