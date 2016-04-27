@@ -63,7 +63,7 @@ namespace dolfin
                          const boost::multi_array<std::int64_t, 2>& cell_vertices,
                          const CellType& cell_type,
                          const std::int64_t num_global_vertices,
-                         std::vector<std::set<std::size_t>>& local_graph,
+                         std::vector<std::vector<std::size_t>>& local_graph,
                          std::set<std::int64_t>& ghost_vertices);
 
   private:
@@ -77,7 +77,7 @@ namespace dolfin
       compute_local_dual_graph(const MPI_Comm mpi_comm,
                                const boost::multi_array<std::int64_t, 2>& cell_vertices,
                                const CellType& cell_type,
-                               std::vector<std::set<std::size_t>>& local_graph,
+                               std::vector<std::vector<std::size_t>>& local_graph,
                                FacetCellMap& facet_cell_map);
 
     // Build nonlocal part of dual graph for mesh.
@@ -87,7 +87,7 @@ namespace dolfin
                                   const boost::multi_array<std::int64_t, 2>& cell_vertices,
                                   const CellType& cell_type,
                                   const std::int64_t num_global_vertices,
-                                  std::vector<std::set<std::size_t>>& local_graph,
+                                  std::vector<std::vector<std::size_t>>& local_graph,
                                   FacetCellMap& facet_cell_map,
                                   std::set<std::int64_t>& ghost_vertices);
 

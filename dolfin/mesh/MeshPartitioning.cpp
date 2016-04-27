@@ -385,7 +385,7 @@ void MeshPartitioning::reorder_cells_gps(
 
   // Make dual graph from vertex indices, using GraphBuilder
   // FIXME: this should be reused later to add the facet-cell topology
-  std::vector<std::set<std::size_t>> local_graph;
+  std::vector<std::vector<std::size_t>> local_graph;
   GraphBuilder::FacetCellMap facet_cell_map;
   GraphBuilder::compute_local_dual_graph(mpi_comm, cell_vertices, cell_type,
                                          local_graph, facet_cell_map);

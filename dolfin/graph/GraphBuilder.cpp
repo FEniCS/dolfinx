@@ -155,7 +155,7 @@ void GraphBuilder::compute_dual_graph(const MPI_Comm mpi_comm,
                                       const boost::multi_array<std::int64_t, 2>& cell_vertices,
                                       const CellType& cell_type,
                                       const std::int64_t num_global_vertices,
-                                      std::vector<std::set<std::size_t>>& local_graph,
+                                      std::vector<std::vector<std::size_t>>& local_graph,
                                       std::set<std::int64_t>& ghost_vertices)
 {
   FacetCellMap facet_cell_map;
@@ -174,7 +174,7 @@ void GraphBuilder::compute_local_dual_graph(
   const MPI_Comm mpi_comm,
   const boost::multi_array<std::int64_t, 2>& cell_vertices,
   const CellType& cell_type,
-  std::vector<std::set<std::size_t>>& local_graph,
+  std::vector<std::vector<std::size_t>>& local_graph,
   FacetCellMap& facet_cell_map)
 {
   Timer timer("Compute local part of mesh dual graph");
@@ -270,8 +270,13 @@ void GraphBuilder::compute_local_dual_graph(
     if (std::equal(facet1.begin(), facet1.begin() + num_vertices_per_facet, facet0.begin()))
     {
       const int cell_index1 = facets[ii].second;
-      local_graph[cell_index0].insert(cell_index1 + cell_offset);
-      local_graph[cell_index1].insert(cell_index0 + cell_offset);
+      //if (std::find(local_graph[cell_index0].begin(), local_graph[cell_index0].end(), cell_index1 + cell_offset))
+      {
+        local_graph[cell_index0].push_back(cell_index1 + cell_offset);
+        local_graph[cell_index1].push_back(cell_index0 + cell_offset);
+      }
+      //local_graph[cell_index0].insert(cell_index1 + cell_offset);
+      //local_graph[cell_index1].insert(cell_index0 + cell_offset);
 
       // Since we've just found a matching pair, the next pair cannot be
       // matching, so advance 1
@@ -301,7 +306,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(
   const boost::multi_array<std::int64_t, 2>& cell_vertices,
   const CellType& cell_type,
   const std::int64_t num_global_vertices,
-  std::vector<std::set<std::size_t>>& local_graph,
+  std::vector<std::vector<std::size_t>>& local_graph,
   FacetCellMap& facet_cell_map,
   std::set<std::int64_t>& ghost_vertices)
 {
@@ -420,8 +425,12 @@ void GraphBuilder::compute_nonlocal_dual_graph(
       dolfin_assert((std::int64_t) cell_list[i] >= offset);
       dolfin_assert((std::int64_t)  (cell_list[i] - offset) < (std::int64_t) local_graph.size());
 
-      local_graph[cell_list[i] - offset].insert(cell_list[i + 1]);
+      //local_graph[cell_list[i] - offset].insert(cell_list[i + 1]);
+      auto it = std::find(local_graph[cell_list[i] - offset].begin(), local_graph[cell_list[i] - offset].end(), cell_list[i + 1]);
+      if (it == local_graph[cell_list[i] - offset].end())
+        local_graph[cell_list[i] - offset].push_back(cell_list[i + 1]);
       ghost_vertices.insert(cell_list[i + 1]);
+
     }
   }
 }
