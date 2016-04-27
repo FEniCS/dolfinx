@@ -38,8 +38,6 @@
 #include <dolfin/mesh/Vertex.h>
 #include "GraphBuilder.h"
 
-#include <dolfin/common/timing.h>
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -181,7 +179,6 @@ void GraphBuilder::compute_local_dual_graph(
 {
   Timer timer("Compute local part of mesh dual graph");
 
-  tic();
   const std::size_t tdim = cell_type.dim();
   const std::int64_t num_local_cells = cell_vertices.shape()[0];
   const std::size_t num_vertices_per_cell = cell_type.num_entities(0);
@@ -203,46 +200,47 @@ void GraphBuilder::compute_local_dual_graph(
 
   boost::multi_array<unsigned int, 2>
     fverts(boost::extents[num_facets_per_cell][num_vertices_per_facet]);
-
   std::vector<unsigned int> cellvtx(num_vertices_per_cell);
 
-  //std::vector<std::vector<std::int32_t>>
-  //    facets(num_facets_per_cell*num_local_cells, std::vector<std::int32_t>(num_vertices_per_facet + 1 ));
 
-  //std::vector<std::array<std::int32_t, 4>> facets(num_facets_per_cell*num_local_cells);
+  // Vector-of-vectors data structure (flexible, but rather slow)
+  //std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>
+  //  facets(num_facets_per_cell*num_local_cells, std::pair<std::vector<std::int32_t>,
+  //    std::int32_t>(std::vector<std::int32_t>(num_facets_per_cell), -1));
 
-  std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>
-    facets(num_facets_per_cell*num_local_cells, std::pair<std::vector<std::int32_t>,
-      std::int32_t>(std::vector<std::int32_t>(num_facets_per_cell), -1));
+  // Vector-of-arrays data structure, which is considerably faster than
+  // vector-of-vectors. However, it assumes that max num vertices per facet is 4.
+  // This could be generalised via specialise templates.
+  dolfin_assert(num_vertices_per_facet <= 4);
+  std::vector<std::pair<std::array<std::int32_t, 4>, std::int32_t>> facets(num_facets_per_cell*num_local_cells);
 
-  //dolfin_assert(num_vertices_per_facet <= 3);
-  //std::vector<std::pair<std::array<std::int32_t, 3>, std::int32_t>> facets(num_facets_per_cell*num_local_cells);
-
+  // Boost multi_array data structure. Difficulty here is that multi_array
+  // cannot be sorted in-place.
   //boost::multi_array<std::int32_t, 2> facets(boost::extents[num_facets_per_cell*num_local_cells][num_vertices_per_facet + 1]);
 
-  // Iterate over all cells
+  // Iterate over all cells and build list of all facets (keyed on sorted vertex
+  // indices), with cell index attached,
   int counter = 0;
   for (int i = 0; i < num_local_cells; ++i)
   {
-    // Get all cell facets (each facet is a set of vertices)
+    // Get all cell facets got teh cell (each facet is a set of vertices)
     std::copy(cell_vertices[i].begin(), cell_vertices[i].end(),
               cellvtx.begin());
     cell_type.create_entities(fverts, tdim - 1, cellvtx.data());
 
-    // Iterate over facets in cell
+    // Iterate over facets of cell
     for (std::size_t j = 0; j < num_facets_per_cell; ++j)
     {
-      // Sort facet vertices
+      // Sort facet vertices for current cell
       std::sort(fverts[j].begin(), fverts[j].end());
 
       // Add facet indices to list of facets
-      for (std::size_t k = 0; k < num_vertices_per_facet; ++k)
-        facets[counter].first[k] = fverts[j][k];
+      std::copy(fverts[j].begin(), fverts[j].end(), facets[counter].first.begin());
 
-      // Add local cell index at the end
+      // Attach local cell index
       facets[counter].second = i;
-      //facets[counter][num_vertices_per_facet] = i;
 
+      // Increment facet counter
       counter++;
     }
   }
@@ -250,6 +248,7 @@ void GraphBuilder::compute_local_dual_graph(
   // Sort facets
   std::sort(facets.begin(), facets.end());
   /*
+  // Sorting for multi_array
   std::vector<std::int32_t> permutation(facets.shape()[0]);
   for(unsigned int i = 0; i < permutation.size(); ++i)
     permutation[i] = i;
@@ -257,19 +256,20 @@ void GraphBuilder::compute_local_dual_graph(
    [&facets](unsigned int a, unsigned int b) { return facets[a] < facets[b];});
   */
 
-  // Find maching facets
+  // Find maching facets by comparing facet i and facet i -1
   for (std::size_t i = 1; i < facets.size(); ++i)
   {
     //const int ii = permutation[i];
     //const int jj = permutation[i - 1];
     const int ii = i;
     const int jj = i - 1;
-    //const int cell_index0 = facets[jj][num_vertices_per_facet];
+
+    const auto& facet0 = facets[jj].first;
+    const auto& facet1 = facets[ii].first;
     const int cell_index0 = facets[jj].second;
-    if (std::equal(facets[ii].first.begin(), facets[ii].first.begin() +  num_vertices_per_facet, facets[jj].first.begin()))
+    if (std::equal(facet1.begin(), facet1.begin() + num_vertices_per_facet, facet0.begin()))
     {
       const int cell_index1 = facets[ii].second;
-      //const int cell_index1 = facets[ii][num_vertices_per_facet];
       local_graph[cell_index0].insert(cell_index1 + cell_offset);
       local_graph[cell_index1].insert(cell_index0 + cell_offset);
 
@@ -279,14 +279,14 @@ void GraphBuilder::compute_local_dual_graph(
     }
     else
     {
-      // No match
-      facet_cell_map.insert({std::vector<std::size_t>(facets[jj].first.begin(),
-          facets[jj].first.begin() +  num_vertices_per_facet), cell_index0});
+      // No match, so add facet0 to map
+      facet_cell_map.insert({std::vector<std::size_t>(facet0.begin(),
+          facet0.begin() +  num_vertices_per_facet), cell_index0});
     }
   }
 
   // Add last facet, as it's not covered by the above loop. We could check it
-  // against the preceding facet, but it's easierto just insert it here
+  // against the preceding facet, but it's easier to just insert it here
   if (!facets.empty())
   {
     const int k = facets.size() - 1;
@@ -294,9 +294,6 @@ void GraphBuilder::compute_local_dual_graph(
     facet_cell_map.insert({std::vector<std::size_t>(facets[k].first.begin(),
         facets[k].first.begin() +  num_vertices_per_facet), cell_index});
   }
-
-  const double time = toc();
-  std::cout << "Time to compute local graph: " << time << std::endl;
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_nonlocal_dual_graph(
@@ -321,9 +318,9 @@ void GraphBuilder::compute_nonlocal_dual_graph(
   const int tdim = cell_type.dim();
 
   // List of cell vertices
-  const std::int64_t num_local_cells = cell_vertices.shape()[0];
-  const int num_vertices_per_cell = cell_type.num_entities(0);
-  const int num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
+  const std::int32_t num_local_cells = cell_vertices.shape()[0];
+  const std::int32_t num_vertices_per_cell = cell_type.num_entities(0);
+  const std::int32_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
 
   dolfin_assert(num_local_cells == (int) cell_vertices.shape()[0]);
   dolfin_assert(num_vertices_per_cell == (int) cell_vertices.shape()[1]);
@@ -357,6 +354,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(
     send_buffer[dest_proc].push_back(it.second + offset);
   }
 
+  // FIXME: This does not look memory scalable. Switch to 'post-office' model.
   // Send data
   MPI::all_to_all(mpi_comm, send_buffer, received_buffer);
 
