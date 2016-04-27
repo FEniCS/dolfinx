@@ -1002,10 +1002,10 @@ XDMFFile::build_local_mesh_data(LocalMeshData& local_mesh_data,
   const int num_vertices_per_cell = cell_type.num_entities(0);
 
   // Set topology attributes
-  local_mesh_data.tdim = cell_type.dim();
-  local_mesh_data.cell_type = cell_type.cell_type();
-  local_mesh_data.num_vertices_per_cell = num_vertices_per_cell;
-  local_mesh_data.num_global_cells = num_cells_global;
+  local_mesh_data.topology.dim = cell_type.dim();
+  local_mesh_data.topology.cell_type = cell_type.cell_type();
+  local_mesh_data.topology.num_vertices_per_cell = num_vertices_per_cell;
+  local_mesh_data.topology.num_global_cells = num_cells_global;
 
   // Get share of topology data
   dolfin_assert(topology_dataset_node);
@@ -1021,20 +1021,20 @@ XDMFFile::build_local_mesh_data(LocalMeshData& local_mesh_data,
                         boost::extents[num_local_cells][num_vertices_per_cell]);
 
   // Remap vertices to DOLFIN ordering from VTK/XDMF ordering
-  local_mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
+  local_mesh_data.topology.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
   const std::vector<std::int8_t> perm = cell_type.vtk_mapping();
   for (int i = 0; i < num_local_cells; ++i)
   {
     for (int j = 0; j < num_vertices_per_cell; ++j)
-      local_mesh_data.cell_vertices[i][j] = topology_data_array[i][perm[j]];
+      local_mesh_data.topology.cell_vertices[i][j] = topology_data_array[i][perm[j]];
   }
 
   // Set cell global indices by adding offset
   const std::int64_t cell_index_offset
     = MPI::global_offset(local_mesh_data.mpi_comm(), num_local_cells, true);
-  local_mesh_data.global_cell_indices.resize(num_local_cells);
-  std::iota(local_mesh_data.global_cell_indices.begin(),
-            local_mesh_data.global_cell_indices.end(),
+  local_mesh_data.topology.global_cell_indices.resize(num_local_cells);
+  std::iota(local_mesh_data.topology.global_cell_indices.begin(),
+            local_mesh_data.topology.global_cell_indices.end(),
             cell_index_offset);
 
   // -- Geometry --

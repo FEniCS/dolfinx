@@ -101,7 +101,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
     LocalMeshData local_mesh_data(mesh);
 
     // Attach cell destinations
-    local_mesh_data.cell_partition = cell_destinations;
+    local_mesh_data.topology.cell_partition = cell_destinations;
 
     // Build distributed mesh
     build_distributed_mesh(mesh, local_mesh_data, ghost_mode);
@@ -126,15 +126,15 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // Compute cell partitioning or use partitioning provided in local_data
   std::vector<int> cell_partition;
   std::map<std::int64_t, std::vector<int>> ghost_procs;
-  if (local_data.cell_partition.empty())
+  if (local_data.topology.cell_partition.empty())
   {
     partition_cells(comm, local_data, partitioner, cell_partition, ghost_procs);
   }
   else
   {
     // Copy cell partition
-    cell_partition = local_data.cell_partition;
-    dolfin_assert(cell_partition.size() == local_data.global_cell_indices.size());
+    cell_partition = local_data.topology.cell_partition;
+    dolfin_assert(cell_partition.size() == local_data.topology.global_cell_indices.size());
     dolfin_assert(*std::max_element(cell_partition.begin(), cell_partition.end())
                   < (int) MPI::size(comm));
   }
@@ -176,20 +176,20 @@ MeshPartitioning::partition_cells(const MPI_Comm& mpi_comm,
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
   {
-    std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
+    std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.topology.cell_type));
     dolfin_assert(cell_type);
     SCOTCH::compute_partition(mpi_comm, cell_partition, ghost_procs,
-                              mesh_data.cell_vertices,
-                              mesh_data.cell_weight,
+                              mesh_data.topology.cell_vertices,
+                              mesh_data.topology.cell_weight,
                               mesh_data.geometry.num_global_vertices,
-                              mesh_data.num_global_cells,
+                              mesh_data.topology.num_global_cells,
                               *cell_type);
   }
   else if (partitioner == "ParMETIS")
   {
     ParMETIS::compute_partition(mpi_comm, cell_partition, ghost_procs,
-                                mesh_data.cell_vertices,
-                                mesh_data.num_vertices_per_cell);
+                                mesh_data.topology.cell_vertices,
+                                mesh_data.topology.num_vertices_per_cell);
   }
   else
   {
@@ -208,10 +208,10 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   Timer timer("Distribute mesh (cells and vertices)");
 
   // Topological dimension
-  const int tdim = mesh_data.tdim;
+  const int tdim = mesh_data.topology.dim;
 
   const std::int64_t num_global_vertices = mesh_data.geometry.num_global_vertices;
-  const std::int32_t num_cell_vertices = mesh_data.num_vertices_per_cell;
+  const std::int32_t num_cell_vertices = mesh_data.topology.num_vertices_per_cell;
 
   // FIXME: explain structure of shared_cells
   // Keep tabs on ghost cell ownership (map from local cell index to sharing
@@ -254,7 +254,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   if (parameters["reorder_cells_gps"])
   {
     // Create CellType objects based on current cell type
-    std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.cell_type));
+    std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.topology.cell_type));
     dolfin_assert(cell_type);
 
     // Allocate objects to hold re-ordering
@@ -318,26 +318,26 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   LocalMeshData new_mesh_data(mesh.mpi_comm());
 
   // Copy over some basic information
-  dolfin_assert(mesh_data.tdim >= 0);
-  new_mesh_data.tdim = mesh_data.tdim;
+  dolfin_assert(mesh_data.topology.dim >= 0);
+  new_mesh_data.topology.dim = mesh_data.topology.dim;
 
   dolfin_assert(mesh_data.geometry.dim > 0);
   new_mesh_data.geometry.dim = mesh_data.geometry.dim;
 
-  dolfin_assert(mesh_data.num_global_cells >= 0);
-  new_mesh_data.num_global_cells = mesh_data.num_global_cells;
+  dolfin_assert(mesh_data.topology.num_global_cells >= 0);
+  new_mesh_data.topology.num_global_cells = mesh_data.topology.num_global_cells;
 
-  dolfin_assert(mesh_data.num_vertices_per_cell > 0);
-  new_mesh_data.num_vertices_per_cell = mesh_data.num_vertices_per_cell;
-  new_mesh_data.cell_type = mesh_data.cell_type;
+  dolfin_assert(mesh_data.topology.num_vertices_per_cell > 0);
+  new_mesh_data.topology.num_vertices_per_cell = mesh_data.topology.num_vertices_per_cell;
+  new_mesh_data.topology.cell_type = mesh_data.topology.cell_type;
 
   dolfin_assert(mesh_data.geometry.num_global_vertices >= 0);
   new_mesh_data.geometry.num_global_vertices = mesh_data.geometry.num_global_vertices;
 
-  new_mesh_data.cell_partition = new_cell_partition;
-  new_mesh_data.global_cell_indices = new_global_cell_indices;
-  new_mesh_data.cell_vertices.resize(boost::extents[new_cell_vertices.shape()[0]][new_cell_vertices.shape()[1]]);
-  new_mesh_data.cell_vertices = new_cell_vertices;
+  new_mesh_data.topology.cell_partition = new_cell_partition;
+  new_mesh_data.topology.global_cell_indices = new_global_cell_indices;
+  new_mesh_data.topology.cell_vertices.resize(boost::extents[new_cell_vertices.shape()[0]][new_cell_vertices.shape()[1]]);
+  new_mesh_data.topology.cell_vertices = new_cell_vertices;
 
   new_mesh_data.geometry.vertex_indices = vertex_indices;
   new_mesh_data.geometry.vertex_coordinates.resize(boost::extents[vertex_coordinates.shape()[0]][vertex_coordinates.shape()[1]]);
@@ -356,8 +356,8 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   std::vector<unsigned int>& cell_owner = mesh.topology().cell_owner();
   cell_owner.clear();
   cell_owner.insert(cell_owner.begin(),
-                    new_mesh_data.cell_partition.begin() + num_regular_cells,
-                    new_mesh_data.cell_partition.end());
+                    new_mesh_data.topology.cell_partition.begin() + num_regular_cells,
+                    new_mesh_data.topology.cell_partition.end());
 
   // Set the ghost cell offset
   mesh.topology().init_ghost(tdim, num_regular_cells);
@@ -366,7 +366,7 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   mesh.topology().init_ghost(0, num_regular_vertices);
 
   // Assign map of shared cells and vertices
-  mesh.topology().shared_entities(mesh_data.tdim) = shared_cells;
+  mesh.topology().shared_entities(mesh_data.topology.dim) = shared_cells;
   mesh.topology().shared_entities(0) = shared_vertices;
 }
 //-----------------------------------------------------------------------------
@@ -734,17 +734,17 @@ MeshPartitioning::distribute_cells(
   shared_cells.clear();
 
   // Get dimensions of local mesh_data
-  const std::size_t num_local_cells = mesh_data.cell_vertices.size();
-  dolfin_assert(mesh_data.global_cell_indices.size() == num_local_cells);
-  const std::size_t num_cell_vertices = mesh_data.num_vertices_per_cell;
-  if (!mesh_data.cell_vertices.empty())
+  const std::size_t num_local_cells = mesh_data.topology.cell_vertices.size();
+  dolfin_assert(mesh_data.topology.global_cell_indices.size() == num_local_cells);
+  const std::size_t num_cell_vertices = mesh_data.topology.num_vertices_per_cell;
+  if (!mesh_data.topology.cell_vertices.empty())
   {
-    if (mesh_data.cell_vertices[0].size() != num_cell_vertices)
+    if (mesh_data.topology.cell_vertices[0].size() != num_cell_vertices)
     {
       dolfin_error("MeshPartitioning.cpp",
                    "distribute cells",
                    "Mismatch in number of cell vertices (%d != %d) on process %d",
-                   mesh_data.cell_vertices[0].size(), num_cell_vertices,
+                   mesh_data.topology.cell_vertices[0].size(), num_cell_vertices,
                    mpi_rank);
     }
   }
@@ -775,11 +775,11 @@ MeshPartitioning::distribute_cells(
                               destinations.end());
 
         // Global cell index
-        send_cell_dest.push_back(mesh_data.global_cell_indices[i]);
+        send_cell_dest.push_back(mesh_data.topology.global_cell_indices[i]);
         // Global vertex indices
         send_cell_dest.insert(send_cell_dest.end(),
-                              mesh_data.cell_vertices[i].begin(),
-                              mesh_data.cell_vertices[i].end());
+                              mesh_data.topology.cell_vertices[i].begin(),
+                              mesh_data.topology.cell_vertices[i].end());
 
         // First entry is the owner, so this counts as a 'local' cell
         // subsequent entries are 'remote ghosts'
@@ -797,12 +797,12 @@ MeshPartitioning::distribute_cells(
       send_cell_dest.push_back(0);
 
       // Global cell index
-      send_cell_dest.push_back(mesh_data.global_cell_indices[i]);
+      send_cell_dest.push_back(mesh_data.topology.global_cell_indices[i]);
 
       // Global vertex indices
       send_cell_dest.insert(send_cell_dest.end(),
-                            mesh_data.cell_vertices[i].begin(),
-                            mesh_data.cell_vertices[i].end());
+                            mesh_data.topology.cell_vertices[i].begin(),
+                            mesh_data.topology.cell_vertices[i].end());
       send_cell_dest[0]++;
     }
   }
@@ -1083,21 +1083,21 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   Timer timer("Build local part of distributed mesh (from local mesh data)");
 
   const std::vector<std::int64_t>& global_cell_indices
-    = new_mesh_data.global_cell_indices;
+    = new_mesh_data.topology.global_cell_indices;
   const boost::multi_array<std::int64_t, 2>& cell_global_vertices
-    = new_mesh_data.cell_vertices;
+    = new_mesh_data.topology.cell_vertices;
   const std::vector<std::int64_t>& vertex_indices
     = new_mesh_data.geometry.vertex_indices;
   const boost::multi_array<double, 2>& vertex_coordinates
     = new_mesh_data.geometry.vertex_coordinates;
 
   const unsigned int gdim = new_mesh_data.geometry.dim;
-  const unsigned int tdim = new_mesh_data.tdim;
+  const unsigned int tdim = new_mesh_data.topology.dim;
 
   // Open mesh for editing
   mesh.clear();
   MeshEditor editor;
-  editor.open(mesh, new_mesh_data.cell_type, tdim, gdim);
+  editor.open(mesh, new_mesh_data.topology.cell_type, tdim, gdim);
 
   // Add vertices
   editor.init_vertices_global(vertex_coordinates.size(),
@@ -1113,8 +1113,8 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Add cells
   editor.init_cells_global(cell_global_vertices.size(),
-                           new_mesh_data.num_global_cells);
-  const std::size_t num_cell_vertices = new_mesh_data.num_vertices_per_cell;
+                           new_mesh_data.topology.num_global_cells);
+  const std::size_t num_cell_vertices = new_mesh_data.topology.num_vertices_per_cell;
   std::vector<std::size_t> cell(num_cell_vertices);
   for (std::size_t i = 0; i < cell_global_vertices.size(); ++i)
   {

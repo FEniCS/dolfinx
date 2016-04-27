@@ -89,12 +89,6 @@ namespace dolfin
     // Receive mesh data from main process
     void receive_mesh_data(const MPI_Comm mpi_comm);
 
-    // Unpack received vertex coordinates
-    void unpack_vertex_coordinates(const std::vector<double>& values);
-
-    // Unpack received cell vertices
-    void unpack_cell_vertices(const std::vector<std::int64_t>& values);
-
     // Reorder cell data
     void reorder();
 
@@ -123,33 +117,57 @@ namespace dolfin
         vertex_indices.clear();
       }
 
+      // Unpack received vertex coordinates
+      void unpack_vertex_coordinates(const std::vector<double>& values);
     };
     Geometry geometry;
 
-    // Global vertex indices for all cells stored on local processor
-    boost::multi_array<std::int64_t, 2> cell_vertices;
+    // Holder for topology data
+    struct Topology
+    {
+      Topology() : dim(-1), num_global_cells(-1) {}
 
-    // Global cell numbers for all cells stored on local processor
-    std::vector<std::int64_t> global_cell_indices;
+      // Topological dimension
+      int dim;
 
-    // Optional process owner for each cell in global_cell_indices
-    std::vector<int> cell_partition;
+      // Global number of cells
+      std::int64_t num_global_cells;
 
-    // Optional weight for each cell for partitioning
-    std::vector<std::size_t> cell_weight;
+      // Number of vertices per cell
+      int num_vertices_per_cell;
 
-    // Global number of cells
-    std::int64_t num_global_cells;
+      // Global vertex indices for all cells stored on local processor
+      boost::multi_array<std::int64_t, 2> cell_vertices;
 
-    // Number of vertices per cell
-    int num_vertices_per_cell;
+      // Global cell numbers for all cells stored on local processor
+      std::vector<std::int64_t> global_cell_indices;
 
-    // Topological dimension
-    int tdim;
+      // Optional process owner for each cell in global_cell_indices
+      std::vector<int> cell_partition;
 
-    // Cell type
-    // FIXME: this should replace the need for num_vertices_per_cell and tdim
-    CellType::Type cell_type;
+      // Optional weight for each cell for partitioning
+      std::vector<std::size_t> cell_weight;
+
+      // Cell type
+      // FIXME: this should replace the need for num_vertices_per_cell and tdim
+      CellType::Type cell_type;
+
+      void clear()
+      {
+        dim = -1;
+        num_global_cells = -1;
+        num_vertices_per_cell = -1;
+        cell_vertices.resize(boost::extents[0][0]);
+        global_cell_indices.clear();
+        cell_partition.clear();
+        cell_weight.clear();
+      }
+
+      // Unpack received cell vertices
+      void unpack_cell_vertices(const std::vector<std::int64_t>& values);
+
+    };
+    Topology topology;
 
     // Mesh domain data [dim](line, (cell_index, local_index, value))
     std::map<std::size_t, std::vector<std::pair<std::pair<std::size_t,

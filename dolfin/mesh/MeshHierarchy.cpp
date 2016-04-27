@@ -181,28 +181,27 @@ std::shared_ptr<Mesh> MeshHierarchy::rebalance() const
                  "rebalance MeshHierarchy", "Not applicable in serial");
 
   LocalMeshData local_mesh_data(coarse_mesh.mpi_comm());
-  local_mesh_data.cell_weight = weight();
+  local_mesh_data.topology.cell_weight = weight();
 
   const std::size_t tdim = coarse_mesh.topology().dim();
-  local_mesh_data.tdim = tdim;
+  local_mesh_data.topology.dim = tdim;
   const std::size_t gdim = coarse_mesh.geometry().dim();
   local_mesh_data.geometry.dim = gdim;
-  local_mesh_data.num_vertices_per_cell = tdim + 1;
+  local_mesh_data.topology.num_vertices_per_cell = tdim + 1;
 
   // Cells
 
-  local_mesh_data.num_global_cells = coarse_mesh.size_global(tdim);
+  local_mesh_data.topology.num_global_cells = coarse_mesh.size_global(tdim);
   const std::size_t num_local_cells = coarse_mesh.size(tdim);
-  local_mesh_data.global_cell_indices.resize(num_local_cells);
-  local_mesh_data.cell_vertices.resize(boost::extents[num_local_cells]
-                               [local_mesh_data.num_vertices_per_cell]);
+  local_mesh_data.topology.global_cell_indices.resize(num_local_cells);
+  local_mesh_data.topology.cell_vertices.resize(boost::extents[num_local_cells][local_mesh_data.topology.num_vertices_per_cell]);
 
   for (CellIterator c(coarse_mesh); !c.end(); ++c)
   {
     const std::size_t cell_index = c->index();
-    local_mesh_data.global_cell_indices[cell_index] = c->global_index();
+    local_mesh_data.topology.global_cell_indices[cell_index] = c->global_index();
     for (VertexIterator v(*c); !v.end(); ++v)
-      local_mesh_data.cell_vertices[cell_index][v.pos()] = v->global_index();
+      local_mesh_data.topology.cell_vertices[cell_index][v.pos()] = v->global_index();
   }
 
   // Vertices - must be reordered into global order

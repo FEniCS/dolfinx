@@ -1786,9 +1786,9 @@ void HDF5File::read(Mesh& input_mesh,
   const int num_vertices_per_cell = cell_type.num_entities(0);
 
   // Set topology dim and cell type
-  local_mesh_data.tdim = cell_type.dim();
-  local_mesh_data.cell_type = cell_type.cell_type();
-  local_mesh_data.num_vertices_per_cell = num_vertices_per_cell;
+  local_mesh_data.topology.dim = cell_type.dim();
+  local_mesh_data.topology.cell_type = cell_type.cell_type();
+  local_mesh_data.topology.num_vertices_per_cell = num_vertices_per_cell;
 
   // Discover shape of the topology data set in HDF5 file
   std::vector<std::int64_t> topology_shape
@@ -1848,7 +1848,7 @@ void HDF5File::read(Mesh& input_mesh,
   }
 
   // Set number of cells (global)
-  local_mesh_data.num_global_cells = num_global_cells;
+  local_mesh_data.topology.num_global_cells = num_global_cells;
 
   // FIXME: 'partition' is a poor descriptor
   // Get partition from file, if available
@@ -1873,7 +1873,7 @@ void HDF5File::read(Mesh& input_mesh,
     // Restore partitioning if requested
     if (use_partition_from_file)
     {
-      local_mesh_data.cell_partition
+      local_mesh_data.topology.cell_partition
         = std::vector<int>(cell_range.second - cell_range.first, proc);
     }
   }
@@ -1910,7 +1910,7 @@ void HDF5File::read(Mesh& input_mesh,
 
   // FIXME: Imrpove comment - it's unclear this is about
   // Look for cell indices in dataset, and use if available
-  std::vector<std::int64_t>& global_cell_indices = local_mesh_data.global_cell_indices;
+  std::vector<std::int64_t>& global_cell_indices = local_mesh_data.topology.global_cell_indices;
   global_cell_indices.clear();
   const std::string cell_indices_name = mesh_name + "/cell_indices";
   if (HDF5Interface::has_dataset(_hdf5_file_id, cell_indices_name))
@@ -1929,7 +1929,7 @@ void HDF5File::read(Mesh& input_mesh,
   // FIXME: allocate multi_array data and pass to HDFr read function
   // to avoid copy
   // Copy to boost::multi_array
-  local_mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
+  local_mesh_data.topology.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
   boost::multi_array_ref<std::int64_t, 2>
     topology_data_array(topology_data.data(),
                         boost::extents[num_local_cells][num_vertices_per_cell]);
@@ -1939,7 +1939,7 @@ void HDF5File::read(Mesh& input_mesh,
   for (int i = 0; i != num_local_cells; ++i)
   {
     for (int j = 0; j != num_vertices_per_cell; ++j)
-      local_mesh_data.cell_vertices[i][j] = topology_data_array[i][perm[j]];
+      local_mesh_data.topology.cell_vertices[i][j] = topology_data_array[i][perm[j]];
   }
 
   // --- Coordinates ---
