@@ -838,7 +838,7 @@ void XDMFFile::read_new(Mesh& mesh) const
   {
     dolfin_error("XDMFFile.cpp",
                  "opening check that XDMF file",
-                 "XDMF file \"%s\" does not exist");
+                 "XDMF file \"%s\" does not exist", _filename.c_str());
   }
 
   // Load XML doc from file
