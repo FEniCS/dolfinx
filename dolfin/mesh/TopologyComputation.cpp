@@ -41,6 +41,149 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t dim)
+{
+  // Get mesh topology and connectivity
+  MeshTopology& topology = mesh.topology();
+  MeshConnectivity& ce = topology(topology.dim(), dim);
+  MeshConnectivity& ev = topology(dim, 0);
+
+  // Check if entities have already been computed
+  if (topology.size(dim) > 0)
+  {
+    // Make sure we really have the connectivity
+    if ((ce.empty() && dim != topology.dim()) || (ev.empty() && dim != 0))
+    {
+      dolfin_error("TopologyComputation.cpp",
+                   "compute topological entities",
+                   "Entities of topological dimension %d exist but connectivity is missing", dim);
+    }
+    return topology.size(dim);
+  }
+
+  // Make sure connectivity does not already exist
+  if (!ce.empty() || !ev.empty())
+  {
+    dolfin_error("TopologyComputation.cpp",
+                 "compute topological entities",
+                 "Connectivity for topological dimension %d exists but entities are missing", dim);
+  }
+
+  // Start timer
+  Timer timer("Compute entities dim = " + std::to_string(dim));
+
+  // Get cell type
+  const CellType& cell_type = mesh.type();
+
+  // Initialize local array of entities
+  const int num_entities = cell_type.num_entities(dim);
+  const int num_vertices = cell_type.num_vertices(dim);
+  boost::multi_array<unsigned int, 2> e_vertices(boost::extents[m][num_vertices]);
+
+  // List of vertex indices connected to entity e
+  std::vector<boost::multi_array<unsigned int, 1>> connectivity_ev;
+
+  //boost::unordered_map<std::vector<unsigned int>, unsigned int>
+  //    evertices_to_index;
+
+  // Reserve space for vector of vertex indices for each entity
+  //std::vector<unsigned int> evec(n);
+
+  std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>
+    keyed_entities(num_entities*mesh.num_cells());
+
+  // Loop over cells to build list of keyed entities
+  int entity_counter = 0;
+  for (CellIterator c(mesh, "all"); !c.end(); ++c)
+  {
+    // Get vertices from cell
+    const unsigned int* vertices = c->entities(0);
+    dolfin_assert(vertices);
+
+    // Create entities from vertices
+    cell_type.create_entities(e_vertices, dim, vertices);
+
+    // Iterate over entities of cell
+    const int cell_index = c->index();
+    for (int i = 0; i < num_entities; ++i)
+    {
+      // Sort entity vertices
+      std::sort(e_vertices[i].begin(), e_vertices[i].end());
+
+      // Add entity indices to list of indices
+      keyed_entities[entity_counter].first.assign(e_vertices[i].begin(),
+                                                  e_vertices[i].end());
+
+      // Attach cell index
+      keyed_entities[entity_counter].second = cell_index;
+    }
+  }
+
+  // Sort entities by key
+  std::sort(keyed_entities.begin(), keyed_entities.end());
+
+  // List of vertex indices connected to entity e
+  std::vector<std::vector<unsigned int>> connectivity_ev;
+
+  // List of entity e indices connected to cell
+  std::vector<unsigned int> connectivity_ce(mesh.num_cells()*num_entities, -1);
+
+  // FIXME: Is it a problem that the vertices have been ordered?
+
+  // Find duplicate keys
+  if (keyed_entities.size() > 1)
+  {
+    const auto& e0 = keyed_entities[0].first;
+    const int cell0 = keyed_entities[0].second;
+    connectivity_ev.push_back(e0);
+
+
+    connectivity_ce
+  }
+
+  for (std::size_t i = 1; i < keyed_entities.size(); ++i)
+  {
+    const auto& e0 = keyed_entities[i - 1].first;
+    const int cell0 = keyed_entities[i - 1].second;
+    const auto& e1 = keyed_entities[i].first;
+    const int cell1 = keyed_entities[i].second;
+
+    if (std::equal(e1.begin(), e1.end(), e0.begin()))
+    {
+      // Shared entity, do not add again
+
+      //++i;
+    }
+    else
+    {
+      // Add entity
+      connectivity_ev.push_back(e1);
+
+    }
+
+  }
+
+
+  // Initialise connectivity data structure
+  topology.init(dim, connectivity_ev.size(), connectivity_ev.size());
+
+  // Initialise ghost entity offset
+  topology.init_ghost(dim, num_regular_entities);
+
+  // Copy connectivity data into static MeshTopology data structures
+  std::size_t* connectivity_ce_ptr = connectivity_ce.data();
+  ce.init(mesh.num_cells(), m);
+  for (unsigned int i = 0; i != mesh.num_cells(); ++i)
+  {
+    ce.set(i, connectivity_ce_ptr);
+    connectivity_ce_ptr += m;
+  }
+
+  ev.set(connectivity_ev);
+
+  return current_entity;
+}
+//-----------------------------------------------------------------------------
 std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
 {
   // Get mesh topology and connectivity

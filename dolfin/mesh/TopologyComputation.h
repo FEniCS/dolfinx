@@ -38,6 +38,9 @@ namespace dolfin
   public:
 
     /// Compute mesh entities of given topological dimension
+    static std::size_t compute_entities_new(Mesh& mesh, std::size_t dim);
+
+    /// Compute mesh entities of given topological dimension
     static std::size_t compute_entities(Mesh& mesh, std::size_t dim);
 
     /// Compute connectivity for given pair of topological dimensions
