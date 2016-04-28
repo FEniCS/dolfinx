@@ -44,7 +44,7 @@ class Source : public Expression
   {
     double dx = x[0] - 0.5;
     double dy = x[1] - 0.5;
-    values[0] = 10*exp(-(dx*dx + dy*dy) / 0.02);
+    values[0] = 100000.0*10*exp(-(dx*dx + dy*dy) / 0.02);
   }
 };
 
@@ -68,12 +68,40 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
+  parameters["reorder_dofs_serial"] = false;
+
+
   // Create mesh and function space
   auto mesh = std::make_shared<UnitSquareMesh>(2, 1);
 
   //TopologyComputation::compute_entities(*mesh, 1);
   //TopologyComputation::compute_entities_new(*mesh, 1);
-  //std::cout << mesh->topology().str(true) << std::endl;
+  //return 0;
+
+  std::cout << mesh->topology().str(true) << std::endl;
+
+  mesh->init(1, 2);
+
+  std::cout << "Facet iterator" << std::endl;
+  int tmp_count = 0;
+  for (FacetIterator f(*mesh); !f.end(); ++f)
+  {
+    std::cout << "  index: " << f->index() << std::endl;
+    Point p = f->midpoint();
+    std::cout << "      x: " << p[0] << ", " << p[1] << std::endl;
+    std::cout << "      e: " << f->entities(0)[0]
+              << ", " << f->entities(0)[1] << std::endl;
+    if (f->num_entities(2) == 2)
+    {
+      std::cout << "      c2: " << f->entities(2)[0]
+                << ", " << f->entities(2)[1] << std::endl;
+    }
+    else
+      std::cout << "      c1: " << f->entities(2)[0] << std::endl;
+
+    ++tmp_count;
+  }
+  std::cout << "Num facets in facet iterator: " << tmp_count << std::endl;
 
   //TopologyComputation::compute_entities_new(*mesh, 1);
   //return 0;
@@ -105,8 +133,8 @@ int main()
   std::cout << "Soln norm: " << u.vector()->norm("l2") << std::endl;
 
   // Plot solution
-  //plot(u);
-  //interactive();
+  plot(u);
+  interactive();
 
   return 0;
 }

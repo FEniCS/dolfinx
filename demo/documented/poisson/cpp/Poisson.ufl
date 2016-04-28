@@ -31,4 +31,4 @@ f = Coefficient(element)
 g = Coefficient(element)
 
 a = inner(grad(u), grad(v))*dx
-L = f*v*dx + g*v*ds
+L = f*v*dx + 0.00000000000001*g*v*ds

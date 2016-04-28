@@ -38,6 +38,8 @@
 #include "MeshTopology.h"
 #include "TopologyComputation.h"
 
+#include "Facet.h"
+
 using namespace dolfin;
 
 /*
@@ -194,7 +196,28 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
     std::cout << "Create new entity" << std::endl;
 
     connectivity_ev.push_back(e0);
-    connectivity_ce[cell0][0] = 0;
+
+    // Tmp
+    const Cell c(mesh, cell0);
+    const unsigned int* vertices = c.entities(0);
+    dolfin_assert(vertices);
+    cell_type.create_entities(e_vertices, dim, vertices);
+    //int k = 0;
+    //for (auto& e : e_vertices)
+    //for (int jj = 0; jj < connectivity_ce[cell1].size(); ++jj)
+    //  std::cout << "ce: " << connectivity_ce[cell1]][jj] << std::endl;
+    int pos = 0;
+    for ( ; pos < num_entities; ++pos)
+    {
+      std::sort(e_vertices[pos].begin(), e_vertices[pos].end());
+      //for (int jj = 0; jj < e_vertices.shape()[1]; ++jj)
+      //  std::cout << "e vert: " << e_vertices[ii][jj] << std::endl;
+
+      if (std::equal(e_vertices[pos].begin(), e_vertices[pos].end(), e0.begin()))
+        break;
+    }
+
+    connectivity_ce[cell0][pos] = entity_index;
     //++entity_index;
   }
 
@@ -236,17 +259,43 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
       //entity_created = true;
     }
 
+    // Tmp
+    const Cell cell(mesh, cell1);
+    const unsigned int* vertices = cell.entities(0);
+    dolfin_assert(vertices);
+    cell_type.create_entities(e_vertices, dim, vertices);
+    //int k = 0;
+    //for (auto& e : e_vertices)
+    //for (int jj = 0; jj < connectivity_ce[cell1].size(); ++jj)
+    //  std::cout << "ce: " << connectivity_ce[cell1]][jj] << std::endl;
+    int pos = 0;
+    for ( ; pos < num_entities; ++pos)
+    {
+      std::sort(e_vertices[pos].begin(), e_vertices[pos].end());
+      //for (int jj = 0; jj < e_vertices.shape()[1]; ++jj)
+      //  std::cout << "e vert: " << e_vertices[ii][jj] << std::endl;
+
+      if (std::equal(e_vertices[pos].begin(), e_vertices[pos].end(), e1.begin()))
+      {
+        std::cout << "position match: " << pos << std::endl;
+        break;
+      }
+      std::cout << "NO position match: "  << std::endl;
+    }
+    std::cout << "-------- " << pos << std::endl;
+
+
+    // FIXME: This need to reflect the UFC ordering
     auto it = std::find(connectivity_ce[cell1].begin(),
                         connectivity_ce[cell1].end(), -1);
-    dolfin_assert(it != connectivity_ce[cell1].end());
-    auto pos = it - connectivity_ce[cell1].begin();
+    //dolfin_assert(it != connectivity_ce[cell1].end());
+    //auto pos = it - connectivity_ce[cell1].begin();
     std::cout << "  Facet, Cell, position: " << i << ", " << cell1 << ", " << pos << std::endl;
+    dolfin_assert(pos < connectivity_ce[cell1].size());
     connectivity_ce[cell1][pos] = entity_index;
 
     //if (entity_created)
   }
-
-
 
   std::cout << "ce vector" << std::endl;
   for (auto c : connectivity_ce)
@@ -269,13 +318,14 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
   topology.init(dim, connectivity_ev.size(), connectivity_ev.size());
 
   // Initialise ghost entity offset
-  topology.init_ghost(dim, num_regular_entities);
+  topology.init_ghost(dim, num_regular_entities + 1);
 
   // Copy connectivity data into static MeshTopology data structures
   //std::size_t* connectivity_ce_ptr = connectivity_ce.data();
   std::vector<std::size_t> tmp;
   ce.init(mesh.num_cells(), num_entities);
-  for (unsigned int i = 0; i != mesh.num_cells(); ++i)
+  dolfin_assert(connectivity_ce.size() == mesh.num_cells());
+  for (unsigned int i = 0; i < mesh.num_cells(); ++i)
   {
     tmp.assign(connectivity_ce[i].begin(), connectivity_ce[i].end());
     ce.set(i, tmp.data());
@@ -284,7 +334,20 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
 
   ev.set(connectivity_ev);
 
-  std::cout << "Num computed ents: " << entity_index << std::endl;
+  /*
+  std::cout << "Facet iterator" << std::endl;
+  int tmp_count = 0;
+  for (FacetIterator f(mesh); !f.end(); ++f)
+  {
+    std::cout << "  index: " << f->index() << std::endl;
+    Point p = f->midpoint();
+    std::cout << "      x: " << p[0] << ", " << p[1] << std::endl;
+    ++ tmp_count;
+  }
+  std::cout << "NUm facets in facet iterator: " << tmp_count << std::endl;
+*/
+
+  std::cout << "Num computed ents: " << entity_index + 1 << std::endl;
   return entity_index + 1;
 }
 //-----------------------------------------------------------------------------
