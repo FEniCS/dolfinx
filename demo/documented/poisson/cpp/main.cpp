@@ -32,6 +32,7 @@
 // du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 
 #include <dolfin.h>
+#include <dolfin/mesh/TopologyComputation.h>
 #include "Poisson.h"
 
 using namespace dolfin;
@@ -68,7 +69,15 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and function space
-  auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
+  auto mesh = std::make_shared<UnitSquareMesh>(2, 1);
+
+  //TopologyComputation::compute_entities(*mesh, 1);
+  //TopologyComputation::compute_entities_new(*mesh, 1);
+  //std::cout << mesh->topology().str(true) << std::endl;
+
+  //TopologyComputation::compute_entities_new(*mesh, 1);
+  //return 0;
+
   auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
   // Define boundary condition
@@ -93,9 +102,11 @@ int main()
   File file("poisson.pvd");
   file << u;
 
+  std::cout << "Soln norm: " << u.vector()->norm("l2") << std::endl;
+
   // Plot solution
-  plot(u);
-  interactive();
+  //plot(u);
+  //interactive();
 
   return 0;
 }
