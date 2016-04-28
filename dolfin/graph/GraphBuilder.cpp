@@ -292,7 +292,7 @@ std::int32_t GraphBuilder::compute_local_dual_graph(
     else
     {
       // No match, so add facet0 to map
-      facet_cell_map.insert({std::vector<std::size_t>(facet0.begin(),
+      facet_cell_map.insert(facet_cell_map.end(), {std::vector<std::size_t>(facet0.begin(),
           facet0.begin() +  num_vertices_per_facet), cell_index0});
     }
   }
