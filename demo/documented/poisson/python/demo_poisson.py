@@ -38,7 +38,7 @@ from dolfin import *
 
 # Create mesh and define function space
 mesh = UnitSquareMesh(32, 32)
-V = FunctionSpace(mesh, "Lagrange", 1)
+V = FunctionSpace(mesh, "Lagrange", 2)
 
 # Define Dirichlet boundary (x = 0 or x = 1)
 def boundary(x):
