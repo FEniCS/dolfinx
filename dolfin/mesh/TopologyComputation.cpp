@@ -67,6 +67,9 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
 {
   std::cout << "*** Calling new topology comp function" << std::endl;
 
+  // Only for facets, at the moment
+  dolfin_assert(mesh.topology().dim() - 1 == dim);
+
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
   MeshConnectivity& ce = topology(topology.dim(), dim);
@@ -137,7 +140,6 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
       keyed_entities[entity_counter].first.assign(e_vertices[i].begin(),
                                                   e_vertices[i].end());
 
-
       // Attach cell index and (ghost flag, local index)
       keyed_entities[entity_counter].second = {cell_index, {{is_ghost, i}}};
 
@@ -161,24 +163,34 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
   // Counter for number of entities that are not ghosts
   //int num_regular_entities = 0;
 
-  // Find duplicate keys
-  if (keyed_entities.size() > 1)
-  {
-    const auto& e0 = keyed_entities[0].first;
-    const auto& cell0 = keyed_entities[0].second;
-
-    connectivity_ev.push_back(e0);
-    connectivity_ce[cell0.first][cell0.second[1]] = connectivity_ev.size() - 1;
-
-    // Handle ghost cells
-    //const Cell cell(mesh, cell0.first);
-    //if (!cell.is_ghost())
-    //  ++num_regular_entities;
-  }
-
   // Marker for whether or not the most recently created entity is a ghost
   // entity
   bool ghost_entity = false;
+
+  // Find duplicate keys
+  if (keyed_entities.size() > 1)
+  {
+    const auto& e = keyed_entities[0].first;
+    const auto& cell = keyed_entities[0].second;
+
+    if (cell.second[0] == 0)
+    {
+      // 'Create' new entity and mark that most recently created entity is not a
+      // ghost
+      connectivity_ev.push_back(e);
+      ghost_entity = false;
+
+      connectivity_ce[cell.first][cell.second[1]] = connectivity_ev.size() - 1;
+    }
+    else
+    {
+      // 'Create' new entity and mark that most recently created entity is a ghost
+      connectivity_ev_ghost.push_back(e);
+      ghost_entity = true;
+
+      connectivity_ce[cell.first][cell.second[1]] = -connectivity_ev_ghost.size();
+    }
+  }
 
   for (std::size_t i = 1; i < keyed_entities.size(); ++i)
   {
@@ -200,12 +212,11 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
       }
       else
       {
-        // Is a ghost
-        ghost_entity = true;
-
         // 'Create' new entity
         connectivity_ev_ghost.push_back(e1);
 
+        // Mark that most recently created entity is a ghost
+        ghost_entity = true;
       }
     }
 
@@ -223,12 +234,12 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
   }
 
   // Initialise connectivity data structure
-  std::cout << "New ev size: " << connectivity_ev.size() << std::endl;
   topology.init(dim, connectivity_ev.size() + connectivity_ev_ghost.size(),
                      connectivity_ev.size() + connectivity_ev_ghost.size());
 
   // Initialise ghost entity offset
   topology.init_ghost(dim, connectivity_ev.size());
+
 
   // Copy connectivity data into static MeshTopology data structures
   //std::size_t* connectivity_ce_ptr = connectivity_ce.data();
@@ -241,20 +252,18 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
     for (auto& x : connectivity_ce[i])
     {
       if (x < 0)
-        x = connectivity_ev.size() - x;
+        x = (connectivity_ev.size() - x) - 1;
     }
 
     tmp.assign(connectivity_ce[i].begin(), connectivity_ce[i].end());
-
     ce.set(i, tmp.data());
   }
 
+  // Add ghost entity-to-vertices connections to list of rectangular entities
   connectivity_ev.insert(connectivity_ev.end(), connectivity_ev_ghost.begin(),
                          connectivity_ev_ghost.end());
   ev.set(connectivity_ev);
 
-
-  std::cout << "Num computed ents: " << connectivity_ev.size() << std::endl;
   return connectivity_ev.size();
 }
 //-----------------------------------------------------------------------------
