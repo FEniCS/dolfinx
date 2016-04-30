@@ -100,14 +100,17 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
   const CellType& cell_type = mesh.type();
 
   // Initialize local array of entities
-  const int num_entities = cell_type.num_entities(dim);
+  const std::int8_t num_entities = cell_type.num_entities(dim);
   const int num_vertices = cell_type.num_vertices(dim);
   boost::multi_array<unsigned int, 2> e_vertices(boost::extents[num_entities][num_vertices]);
 
   // Create data structure to hold entities
   // ([vertices key], (cell_index, cell_local_index))
+  //std::vector<std::pair<std::vector<std::int32_t>,
+  //  std::pair<std::int32_t, std::int8_t>>>
+  //    keyed_entities(num_entities*mesh.num_cells());
   std::vector<std::pair<std::vector<std::int32_t>,
-    std::pair<std::int32_t, std::int8_t>>>
+    std::pair<std::int32_t, std::array<std::int8_t, 2>>>>
       keyed_entities(num_entities*mesh.num_cells());
 
   // Loop over cells to build list of keyed entities
@@ -121,9 +124,11 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
     // Create entities from vertices
     cell_type.create_entities(e_vertices, dim, vertices);
 
+    const std::int8_t is_ghost = c->is_ghost() ? 1 : 0;
+
     // Iterate over entities of cell
     const int cell_index = c->index();
-    for (int i = 0; i < num_entities; ++i)
+    for (std::int8_t i = 0; i < num_entities; ++i)
     {
       // Sort entity vertices
       std::sort(e_vertices[i].begin(), e_vertices[i].end());
@@ -132,8 +137,9 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
       keyed_entities[entity_counter].first.assign(e_vertices[i].begin(),
                                                   e_vertices[i].end());
 
-      // Attach cell index and local index
-      keyed_entities[entity_counter].second = {cell_index, i};
+
+      // Attach cell index and (ghost flag, local index)
+      keyed_entities[entity_counter].second = {cell_index, {{is_ghost, i}}};
 
       ++entity_counter;
     }
@@ -149,7 +155,7 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
   // List of entity e indices connected to cell
   boost::multi_array<int, 2>
     connectivity_ce(boost::extents[mesh.num_cells()][num_entities]);
-  std::fill_n(connectivity_ce.data(), connectivity_ce.num_elements(), -1);
+  //std::fill_n(connectivity_ce.data(), connectivity_ce.num_elements(), -1);
 
   // Counter for number of entities that are not ghosts
   int num_regular_entities = 0;
@@ -163,7 +169,7 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
 
     connectivity_ev.push_back(e0);
 
-    connectivity_ce[cell0.first][cell0.second] = entity_index;
+    connectivity_ce[cell0.first][cell0.second[1]] = entity_index;
     //++entity_index;
 
     // Handle ghost cells
@@ -193,7 +199,7 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
       connectivity_ev.push_back(e1);
     }
 
-    connectivity_ce[cell1.first][cell1.second] = entity_index;
+    connectivity_ce[cell1.first][cell1.second[1]] = entity_index;
   }
 
   // Initialise connectivity data structure
