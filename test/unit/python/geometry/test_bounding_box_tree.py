@@ -66,7 +66,7 @@ def test_compute_collisions_point_2d():
         #assert set(entities) == reference[dim]
 
 @skip_in_parallel
-def xtest_compute_collisions_point_3d():
+def test_compute_collisions_point_3d():
 
     reference = {1: set([1364]),
                   2: set([1967, 1968, 1970, 1972, 1974, 1976]),
@@ -78,7 +78,11 @@ def xtest_compute_collisions_point_3d():
         tree = BoundingBoxTree()
         tree.build(mesh, dim)
         entities = tree.compute_collisions(p)
-        assert set(entities) == reference[dim]
+
+        # FIXME: Facet test is excluded because it mistakingly relies in the
+        # facet indices
+        if dim != mesh.topology().dim() - 1:
+            assert set(entities) == reference[dim]
 
 
 #--- compute_collisions with tree ---
@@ -305,7 +309,7 @@ def test_compute_entity_collisions_tree_3d():
 #--- compute_first_collision ---
 
 @skip_in_parallel
-def xtest_compute_first_collision_1d():
+def test_compute_first_collision_1d():
 
     reference = {1: [4]}
 
@@ -322,8 +326,10 @@ def xtest_compute_first_collision_1d():
     assert first in reference[mesh.topology().dim()]
 
 @skip_in_parallel
-def xtest_compute_first_collision_2d():
+def test_compute_first_collision_2d():
 
+    # FIXME: This test should not use facet indices as there are no guarantees
+    # on how DOLFIN numbers facets
     reference = {1: [226],
                   2: [136, 137]}
 
@@ -333,14 +339,21 @@ def xtest_compute_first_collision_2d():
         tree = BoundingBoxTree()
         tree.build(mesh, dim)
         first = tree.compute_first_collision(p)
-        assert first in reference[dim]
+
+        # FIXME: Facet test is excluded because it mistakingly relies in the
+        # facet indices
+        if dim != mesh.topology().dim() - 1:
+            assert first in reference[dim]
 
     tree = mesh.bounding_box_tree()
     first = tree.compute_first_collision(p)
     assert first in reference[mesh.topology().dim()]
 
 @skip_in_parallel
-def xtest_compute_first_collision_3d():
+def test_compute_first_collision_3d():
+
+    # FIXME: This test should not use facet indices as there are no guarantees
+    # on how DOLFIN numbers facets
 
     reference = {1: [1364],
                   2: [1967, 1968, 1970, 1972, 1974, 1976],
@@ -352,7 +365,11 @@ def xtest_compute_first_collision_3d():
         tree = BoundingBoxTree()
         tree.build(mesh, dim)
         first = tree.compute_first_collision(p)
-        assert first in reference[dim]
+
+        # FIXME: Facet test is excluded because it mistakingly relies in the
+        # facet indices
+        if dim != mesh.topology().dim() - 1:
+            assert first in reference[dim]
 
     tree = mesh.bounding_box_tree()
     first = tree.compute_first_collision(p)
@@ -361,7 +378,7 @@ def xtest_compute_first_collision_3d():
 #--- compute_first_entity_collision ---
 
 @skip_in_parallel
-def xtest_compute_first_entity_collision_1d():
+def test_compute_first_entity_collision_1d():
 
     reference = [4]
 
@@ -377,7 +394,7 @@ def xtest_compute_first_entity_collision_1d():
     assert first in reference
 
 @skip_in_parallel
-def xtest_compute_first_entity_collision_2d():
+def test_compute_first_entity_collision_2d():
 
     reference = [136, 137]
 
@@ -393,7 +410,7 @@ def xtest_compute_first_entity_collision_2d():
     assert first in reference
 
 @skip_in_parallel
-def xtest_compute_first_entity_collision_3d():
+def test_compute_first_entity_collision_3d():
 
     reference = [876, 877, 878, 879, 880, 881]
 
