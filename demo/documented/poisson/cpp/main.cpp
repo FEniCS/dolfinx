@@ -72,7 +72,7 @@ int main()
 
 
   // Create mesh and function space
-  auto mesh = std::make_shared<UnitSquareMesh>(2, 1);
+  auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
 
   //TopologyComputation::compute_entities(*mesh, 1);
   //TopologyComputation::compute_entities_new(*mesh, 1);

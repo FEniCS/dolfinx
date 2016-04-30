@@ -104,27 +104,19 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
   const int num_vertices = cell_type.num_vertices(dim);
   boost::multi_array<unsigned int, 2> e_vertices(boost::extents[num_entities][num_vertices]);
 
-  // List of vertex indices connected to entity e
-  //std::vector<boost::multi_array<unsigned int, 1>> connectivity_ev;
+  // Counter for number of entities that are not ghosts
+  int num_regular_entities = 0;
 
-  //boost::unordered_map<std::vector<unsigned int>, unsigned int>
-  //    evertices_to_index;
-
-  // Reserve space for vector of vertex indices for each entity
-  //std::vector<unsigned int> evec(n);
-
-  // Count number of entities that are not ghosts
-  unsigned int num_regular_entities = 0;
-
-  // Create data structure to hold
-  std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>
-    keyed_entities(num_entities*mesh.num_cells());
+  // Create data structure to hold entities
+  // ([vertices key], (cell_index, cell_local_index))
+  std::vector<std::pair<std::vector<std::int32_t>,
+    std::pair<std::int32_t, std::int8_t>>>
+      keyed_entities(num_entities*mesh.num_cells());
 
   // Loop over cells to build list of keyed entities
   int entity_counter = 0;
   for (CellIterator c(mesh, "all"); !c.end(); ++c)
   {
-    std::cout << "In cell: " << c->index() << std::endl;
     // Get vertices from cell
     const unsigned int* vertices = c->entities(0);
     dolfin_assert(vertices);
@@ -136,8 +128,6 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
     const int cell_index = c->index();
     for (int i = 0; i < num_entities; ++i)
     {
-      std::cout << "  In index: " << i << std::endl;
-
       // Sort entity vertices
       std::sort(e_vertices[i].begin(), e_vertices[i].end());
 
@@ -145,17 +135,14 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
       keyed_entities[entity_counter].first.assign(e_vertices[i].begin(),
                                                   e_vertices[i].end());
 
-      //std::cout << "  key: " << entity_counter << std::endl;
-      //for (auto k : keyed_entities[entity_counter].first)
-      //  std::cout << "     val: " << k << std::endl;
-
-      // Attach cell index
-      keyed_entities[entity_counter].second = cell_index;
+      // Attach cell index and local index
+      keyed_entities[entity_counter].second = {cell_index, i};
 
       ++entity_counter;
     }
   }
 
+  /*
   std::cout << "Pre-ordering" << std::endl;
   for (auto x : keyed_entities)
   {
@@ -163,11 +150,13 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
     for (auto v : x.first)
       std::cout << "  v " << v << std::endl;
   }
+  */
 
   // Sort entities by key
   //std::sort(keyed_entities.begin(), keyed_entities.end(), lt_array());
   std::sort(keyed_entities.begin(), keyed_entities.end());
 
+  /*
   std::cout << "Ordered list" << std::endl;
   for (auto x : keyed_entities)
   {
@@ -175,6 +164,7 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
     for (auto v : x.first)
       std::cout << "  v " << v << std::endl;
   }
+ */
 
   // List of vertex indices connected to entity e
   std::vector<std::vector<int>> connectivity_ev;
@@ -184,49 +174,23 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
     connectivity_ce(boost::extents[mesh.num_cells()][num_entities]);
   std::fill_n(connectivity_ce.data(), connectivity_ce.num_elements(), -1);
 
-  // FIXME: Is it a problem that the vertices have been ordered?
-
   // Find duplicate keys
   int entity_index = 0;
   if (keyed_entities.size() > 1)
   {
     const auto& e0 = keyed_entities[0].first;
-    const int cell0 = keyed_entities[0].second;
-
-    std::cout << "Create new entity" << std::endl;
+    const auto& cell0 = keyed_entities[0].second;
 
     connectivity_ev.push_back(e0);
 
-    // Tmp
-    const Cell c(mesh, cell0);
-    const unsigned int* vertices = c.entities(0);
-    dolfin_assert(vertices);
-    cell_type.create_entities(e_vertices, dim, vertices);
-    //int k = 0;
-    //for (auto& e : e_vertices)
-    //for (int jj = 0; jj < connectivity_ce[cell1].size(); ++jj)
-    //  std::cout << "ce: " << connectivity_ce[cell1]][jj] << std::endl;
-    int pos = 0;
-    for ( ; pos < num_entities; ++pos)
-    {
-      std::sort(e_vertices[pos].begin(), e_vertices[pos].end());
-      //for (int jj = 0; jj < e_vertices.shape()[1]; ++jj)
-      //  std::cout << "e vert: " << e_vertices[ii][jj] << std::endl;
-
-      if (std::equal(e_vertices[pos].begin(), e_vertices[pos].end(), e0.begin()))
-        break;
-    }
-
-    connectivity_ce[cell0][pos] = entity_index;
+    connectivity_ce[cell0.first][cell0.second] = entity_index;
     //++entity_index;
   }
 
   for (std::size_t i = 1; i < keyed_entities.size(); ++i)
   {
-    std::cout << "Facet list index: " << i << std::endl;
-
     const auto& e1 = keyed_entities[i].first;
-    const int cell1 = keyed_entities[i].second;
+    const auto& cell1 = keyed_entities[i].second;
 
     // Compare entity with the preceding entity
     //bool entity_created = false;
@@ -234,7 +198,7 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
     if (std::equal(e1.begin(), e1.end(), e0.begin()))
     {
       // Entity has already been 'created'
-      std::cout << "Entity alread created: " << entity_index << std::endl;
+      //std::cout << "Entity alread created: " << entity_index << std::endl;
 
       // Shared entity, do not add again
       //auto it = std::find(connectivity_ce[cell1].begin(),
@@ -247,19 +211,22 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
     }
     else
     {
+      // Increment entity index
       ++entity_index;
 
-      const Cell cell(mesh, cell1);
+      // Handle ghost cells
+      const Cell cell(mesh, cell1.first);
       if (!cell.is_ghost())
         num_regular_entities = entity_index;
 
       // 'Create' new entity
-      std::cout << "  Create new entity" << std::endl;
+      //std::cout << "  Create new entity" << std::endl;
       connectivity_ev.push_back(e1);
       //entity_created = true;
     }
 
     // Tmp
+    /*
     const Cell cell(mesh, cell1);
     const unsigned int* vertices = cell.entities(0);
     dolfin_assert(vertices);
@@ -293,10 +260,13 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
     std::cout << "  Facet, Cell, position: " << i << ", " << cell1 << ", " << pos << std::endl;
     dolfin_assert(pos < connectivity_ce[cell1].size());
     connectivity_ce[cell1][pos] = entity_index;
+    */
+    connectivity_ce[cell1.first][cell1.second] = entity_index;
 
     //if (entity_created)
   }
 
+  /*
   std::cout << "ce vector" << std::endl;
   for (auto c : connectivity_ce)
   {
@@ -312,6 +282,7 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
     for (auto v : c)
       std::cout << "  "  << v << std::endl;
   }
+  */
 
   // Initialise connectivity data structure
   std::cout << "New ev size: " << connectivity_ev.size() << std::endl;
@@ -353,8 +324,8 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
 //-----------------------------------------------------------------------------
 std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
 {
-  //if (dim == mesh.topology().dim() - 1)
-  //  return TopologyComputation::compute_entities_new(mesh, dim);
+  if (dim == mesh.topology().dim() - 1)
+    return TopologyComputation::compute_entities_new(mesh, dim);
 
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
