@@ -61,9 +61,49 @@ struct lt_array
 
 };
 */
-
 //-----------------------------------------------------------------------------
 std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t dim)
+{
+  // Check if entities have already been computed
+  const MeshTopology& topology = mesh.topology();
+  const MeshConnectivity& ce = topology(topology.dim(), dim);
+  const MeshConnectivity& ev = topology(dim, 0);
+  if (topology.size(dim) > 0)
+  {
+    // Make sure we really have the connectivity
+    if ((ce.empty() && dim != topology.dim()) || (ev.empty() && dim != 0))
+    {
+      dolfin_error("TopologyComputation.cpp",
+                   "compute topological entities",
+                   "Entities of topological dimension %d exist but connectivity is missing", dim);
+    }
+    return topology.size(dim);
+  }
+
+  // Call specialised function to compute entities
+  const CellType& cell_type = mesh.type();
+  const std::int8_t num_entities = cell_type.num_entities(dim);
+  switch (num_entities)
+  {
+    case  1:
+      return TopologyComputation::_compute_entities<1>(mesh, dim);
+    case  2:
+      return TopologyComputation::_compute_entities<2>(mesh, dim);
+    case  3:
+      return TopologyComputation::_compute_entities<3>(mesh, dim);
+    case  4:
+      return TopologyComputation::_compute_entities<4>(mesh, dim);
+    default:
+      dolfin_error("TopologyComputation.cpp",
+                   "compute topological entities",
+                   "Entities of topological dimension %d not supported",
+                   num_entities);
+       return 0;
+   }
+}
+//-----------------------------------------------------------------------------
+template<int N>
+std::size_t TopologyComputation::_compute_entities(Mesh& mesh, std::size_t dim)
 {
   std::cout << "*** Calling new topology comp function" << std::endl;
 
@@ -107,12 +147,18 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
   const int num_vertices = cell_type.num_vertices(dim);
   boost::multi_array<unsigned int, 2> e_vertices(boost::extents[num_entities][num_vertices]);
 
+  dolfin_assert(N == num_entities);
+
   // Create data structure to hold entities
   // ([vertices key], (cell_index, cell_local_index))
   //std::vector<std::pair<std::vector<std::int32_t>,
   //  std::pair<std::int32_t, std::int8_t>>>
   //    keyed_entities(num_entities*mesh.num_cells());
-  std::vector<std::pair<std::vector<std::int32_t>,
+  //std::vector<std::pair<std::vector<std::int32_t>,
+  //  std::pair<std::int32_t, std::array<std::int8_t, 2>>>>
+  //    keyed_entities(num_entities*mesh.num_cells());
+
+  std::vector<std::pair<std::array<std::int32_t, N>,
     std::pair<std::int32_t, std::array<std::int8_t, 2>>>>
       keyed_entities(num_entities*mesh.num_cells());
 
@@ -137,8 +183,10 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
       std::sort(e_vertices[i].begin(), e_vertices[i].end());
 
       // Add entity indices to list of indices
-      keyed_entities[entity_counter].first.assign(e_vertices[i].begin(),
-                                                  e_vertices[i].end());
+      //keyed_entities[entity_counter].first.assign(e_vertices[i].begin(),
+      //                                            e_vertices[i].end());
+      std::copy(e_vertices[i].begin(), e_vertices[i].end(),
+                keyed_entities[entity_counter].first.begin());
 
       // Attach cell index and (ghost flag, local index)
       keyed_entities[entity_counter].second = {cell_index, {{is_ghost, i}}};
@@ -152,8 +200,10 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
   std::sort(keyed_entities.begin(), keyed_entities.end());
 
   // List of vertex indices connected to entity e
-  std::vector<std::vector<int>> connectivity_ev;
-  std::vector<std::vector<int>> connectivity_ev_ghost;
+  //std::vector<std::vector<int>> connectivity_ev;
+  //std::vector<std::vector<int>> connectivity_ev_ghost;
+  std::vector<std::array<int, N>> connectivity_ev;
+  std::vector<std::array<int, N>> connectivity_ev_ghost;
 
   // List of entity e indices connected to cell
   boost::multi_array<int, 2>

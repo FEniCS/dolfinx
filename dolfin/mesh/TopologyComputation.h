@@ -40,6 +40,9 @@ namespace dolfin
     /// Compute mesh entities of given topological dimension
     static std::size_t compute_entities_new(Mesh& mesh, std::size_t dim);
 
+    template<int N>
+    static std::size_t _compute_entities(Mesh& mesh, std::size_t dim);
+
     /// Compute mesh entities of given topological dimension
     static std::size_t compute_entities(Mesh& mesh, std::size_t dim);
 
