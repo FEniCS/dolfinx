@@ -38,29 +38,8 @@
 #include "MeshTopology.h"
 #include "TopologyComputation.h"
 
-#include "Facet.h"
-
 using namespace dolfin;
 
-/*
-struct lt_array
-{
-  bool operator() (const std::pair<std::vector<std::int32_t>, std::int32_t>& a,
-                   const std::pair<std::vector<std::int32_t>, std::int32_t>& b)
-  {
-    _a.assign(a.first.begin(), a.first.end());
-    std::sort(_a.begin(), _a.end());
-
-    _b.assign(b.first.begin(), b.first.end());
-    std::sort(_b.begin(), _b.end());
-
-    return _a < _b;
-  }
-
-  std::vector<std::int32_t> _a, _b;
-
-};
-*/
 //-----------------------------------------------------------------------------
 std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t dim)
 {
@@ -82,8 +61,8 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
 
   // Call specialised function to compute entities
   const CellType& cell_type = mesh.type();
-  const std::int8_t num_entities = cell_type.num_entities(dim);
-  switch (num_entities)
+  const std::int8_t num_vertices = cell_type.num_vertices(dim);
+  switch (num_vertices)
   {
     case  1:
       return TopologyComputation::_compute_entities<1>(mesh, dim);
@@ -96,8 +75,7 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
     default:
       dolfin_error("TopologyComputation.cpp",
                    "compute topological entities",
-                   "Entities of topological dimension %d not supported",
-                   num_entities);
+                   "Entities with %d vertices not supported", num_vertices);
        return 0;
    }
 }
@@ -147,13 +125,11 @@ std::size_t TopologyComputation::_compute_entities(Mesh& mesh, std::size_t dim)
   const int num_vertices = cell_type.num_vertices(dim);
   boost::multi_array<unsigned int, 2> e_vertices(boost::extents[num_entities][num_vertices]);
 
-  dolfin_assert(N == num_entities);
+  dolfin_assert(N == num_vertices);
 
   // Create data structure to hold entities
   // ([vertices key], (cell_index, cell_local_index))
-  //std::vector<std::pair<std::vector<std::int32_t>,
-  //  std::pair<std::int32_t, std::int8_t>>>
-  //    keyed_entities(num_entities*mesh.num_cells());
+
   //std::vector<std::pair<std::vector<std::int32_t>,
   //  std::pair<std::int32_t, std::array<std::int8_t, 2>>>>
   //    keyed_entities(num_entities*mesh.num_cells());
@@ -196,7 +172,6 @@ std::size_t TopologyComputation::_compute_entities(Mesh& mesh, std::size_t dim)
   }
 
   // Sort entities by key
-  //std::sort(keyed_entities.begin(), keyed_entities.end(), lt_array());
   std::sort(keyed_entities.begin(), keyed_entities.end());
 
   // List of vertex indices connected to entity e
@@ -208,10 +183,6 @@ std::size_t TopologyComputation::_compute_entities(Mesh& mesh, std::size_t dim)
   // List of entity e indices connected to cell
   boost::multi_array<int, 2>
     connectivity_ce(boost::extents[mesh.num_cells()][num_entities]);
-  //std::fill_n(connectivity_ce.data(), connectivity_ce.num_elements(), -1);
-
-  // Counter for number of entities that are not ghosts
-  //int num_regular_entities = 0;
 
   // Marker for whether or not the most recently created entity is a ghost
   // entity
