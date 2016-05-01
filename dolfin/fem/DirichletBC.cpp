@@ -666,10 +666,7 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<std::size_t>& sub_d
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     if (sub_domains[*facet] == sub_domain)
-    {
-      std::cout << "Boundary facet: " << facet->index() << std::endl;
       _facets.push_back(facet->index());
-    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -742,10 +739,6 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     return;
   }
 
-  std::cout << "BC facets: " << std::endl;
-  for (auto f : _facets)
-    std::cout << "bc facet: " << f << std::endl;
-
   // Get dofmap
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
@@ -777,8 +770,6 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     // Get cell to which facet belongs.
     dolfin_assert(facet.num_entities(D) > 0);
     const std::size_t cell_index = facet.entities(D)[0];
-    std::cout << "Check cell index: " << cell_index << std::endl;
-
 
     // Create attached cell
     const Cell cell(mesh, cell_index);
@@ -799,15 +790,12 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
       = dofmap.cell_dofs(cell.index());
 
     // Tabulate which dofs are on the facet
-    std::cout << "Local facet index: " << facet_local_index << std::endl;
     dofmap.tabulate_facet_dofs(data.facet_dofs, facet_local_index);
 
     // Pick values for facet
     for (std::size_t i = 0; i < dofmap.num_facet_dofs(); i++)
     {
       const std::size_t local_dof = cell_dofs[data.facet_dofs[i]];
-      std::cout << "Local : " << data.facet_dofs[i] << std::endl;
-      std::cout << "Testing local dof: " << local_dof << std::endl;
       const double value = data.w[data.facet_dofs[i]];
       boundary_values[local_dof] = value;
     }
