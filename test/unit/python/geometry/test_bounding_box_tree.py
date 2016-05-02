@@ -79,9 +79,10 @@ def test_compute_collisions_point_3d():
         tree.build(mesh, dim)
         entities = tree.compute_collisions(p)
 
-        # FIXME: Facet test is excluded because it mistakingly relies in the
-        # facet indices
-        if dim != mesh.topology().dim() - 1:
+        # FIXME: Face and edges tests are excluded because test
+        # mistakingly relies on the face and edge indices
+        tdim = mesh.topology().dim()
+        if dim != tdim - 1 and dim != tdim - 2:
             assert set(entities) == reference[dim]
 
 
@@ -366,9 +367,10 @@ def test_compute_first_collision_3d():
         tree.build(mesh, dim)
         first = tree.compute_first_collision(p)
 
-        # FIXME: Facet test is excluded because it mistakingly relies in the
-        # facet indices
-        if dim != mesh.topology().dim() - 1:
+        # FIXME: Face and test is excluded because it mistakingly
+        # relies in the facet indices
+        tdim = mesh.topology().dim()
+        if dim != tdim - 1 and dim != tdim - 2:
             assert first in reference[dim]
 
     tree = mesh.bounding_box_tree()
