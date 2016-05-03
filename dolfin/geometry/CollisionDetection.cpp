@@ -488,15 +488,15 @@ bool CollisionDetection::collides_interval_point(const Point& p0,
                                                  const Point& point)
 {
   // FIXME: there may be optimizations to do
-  bool result;
+  bool result = false;
 
   // Compute angle between v = p1 - p0 and w = point - p0
   Point v = p1 - p0;
   const double vnorm = v.norm();
 
-  // p0 and p1 are the same points
-  if (vnorm < DOLFIN_EPS_LARGE)
-    result = false;
+  // // p0 and p1 are the same points
+  // if (vnorm < DOLFIN_EPS_LARGE)
+  //   result = false;
 
   const Point w = point - p0;
   const double wnorm = w.norm();
