@@ -112,24 +112,24 @@ def test_triangulate_intersection_2d_3d():
     editor.open(mesh_1,2,3)
     editor.init_cells(2)
     editor.init_vertices(4)
-    # add cells
+
+    # Add cells
     editor.add_cell(0,0,1,2)
     editor.add_cell(1,1,2,3)
-    # add vertices
+
+    # Add vertices
     editor.add_vertex(0,0,0,0.5)
     editor.add_vertex(1,1,0,0.5)
     editor.add_vertex(2,0,1,0.5)
     editor.add_vertex(3,1,1,0.5)
     editor.close()
 
-    # Rotate the triangle mesh around y axis a random angle in
-    # (0,90) degrees
-    #angle = numpy.random.rand()*90
+    # Rotate the triangle mesh around y axis
     angle = 23.46354
     mesh_1.rotate(angle,1)
 
     # Exact area
-    exactvolume = 1
+    exact_volume = 1
 
     # Compute triangulation
     volume = 0
@@ -142,8 +142,7 @@ def test_triangulate_intersection_2d_3d():
                     volume += t.volume()
 
     errorstring = "rotation angle = " + str(angle)
-    assert round(volume - exactvolume, 7) == 0, errorstring
-
+    assert round(volume - exact_volume, 7) == 0, errorstring
 
 @skip_in_parallel
 def test_triangulate_intersection_3d():

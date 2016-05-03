@@ -28,7 +28,6 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
 
-
 @skip_in_parallel
 def test_issue_97():
     "Test from Mikael Mortensen (issue #97)"
@@ -40,7 +39,6 @@ def test_issue_97():
     v = interpolate(Expression('x[0]', degree=1), V)
     x = Point(0.5*L, 0.5*L, 0.5*L)
     vx = v(x)
-
 
 @skip_in_parallel
 def test_issue_168():

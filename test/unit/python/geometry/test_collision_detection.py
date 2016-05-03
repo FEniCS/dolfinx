@@ -27,7 +27,6 @@ from dolfin import *
 from dolfin_utils.test import skip_in_parallel
 import numpy as np
 
-
 @skip_in_parallel
 def create_triangular_mesh_3D():
     editor = MeshEditor()
@@ -44,7 +43,6 @@ def create_triangular_mesh_3D():
     editor.close()
     return mesh;
 
-
 @skip_in_parallel
 def test_inteval_collides_point():
     """Test if point collide with interval"""
@@ -55,7 +53,6 @@ def test_inteval_collides_point():
     assert cell.collides(Point(0.5)) == True
     assert cell.collides(Point(1.5)) == False
 
-
 @skip_in_parallel
 def test_triangle_collides_point():
     """Tests if point collide with triangle"""
@@ -65,7 +62,6 @@ def test_triangle_collides_point():
 
     assert cell.collides(Point(0.5)) == True
     assert cell.collides(Point(1.5)) == False
-
 
 @skip_in_parallel
 def test_triangle_collides_triangle():
@@ -89,7 +85,6 @@ def test_triangle_collides_triangle():
     assert c2.collides(c1) == False
     assert c2.collides(c2) == True
 
-
 @skip_in_parallel
 def test_tetrahedron_collides_point():
     """Test if point collide with tetrahedron"""
@@ -99,7 +94,6 @@ def test_tetrahedron_collides_point():
 
     assert cell.collides(Point(0.5)) == True
     assert cell.collides(Point(1.5)) == False
-
 
 @skip_in_parallel
 def test_tetrahedron_collides_triangle():
@@ -129,7 +123,6 @@ def test_tetrahedron_collides_triangle():
     # face alignment (true or false)
     assert tet1.collides(tri0) == True
     assert tri0.collides(tet1) == True
-
 
 @skip_in_parallel
 def test_tetrahedron_collides_tetrahedron():
@@ -166,7 +159,6 @@ def test_tetrahedron_collides_tetrahedron():
     # touching faces
     assert c3.collides(c43) == True
     assert c43.collides(c3) == True
-
 
 def _test_collision_robustness_2d(aspect, y, step):
     nx = 10
