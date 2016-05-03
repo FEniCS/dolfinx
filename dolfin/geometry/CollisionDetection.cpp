@@ -507,6 +507,48 @@ bool CollisionDetection::dolfin_collides_interval_point(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
+bool CollisionDetection::dolfin_collides_triangle_point(const Point& p0,
+							const Point& p1,
+							const Point& p2,
+							const Point &point)
+{
+  // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
+
+  // Vectors defining each edge in consistent orientation
+  const Point r0 = p0 - p2;
+  const Point r1 = p1 - p0;
+  const Point r2 = p2 - p1;
+
+  // Normal to triangle: should be the same as
+  // r2.cross(r1) and r0.cross(r2).
+  Point normal = r1.cross(r0);
+
+  Point r = point - p0;
+  // Check point is in plane of triangle (for manifold)
+  double volume = r.dot(normal);
+  if (std::abs(volume) > DOLFIN_EPS)
+    return false;
+
+  // Compute normal to triangle based on point and first edge
+  // Dot product of two normals should be positive, if inside.
+  Point pnormal = r.cross(r0);
+  double t1 = normal.dot(pnormal);
+  if (t1 < 0) return false;
+
+  // Repeat for each edge
+  r = point - p1;
+  pnormal = r.cross(r1);
+  double t2 = normal.dot(pnormal);
+  if (t2 < 0) return false;
+
+  r = point - p2;
+  pnormal = r.cross(r2);
+  double t3 = normal.dot(pnormal);
+  if (t3 < 0) return false;
+
+  return true;
+}
+//-----------------------------------------------------------------------------
 bool CollisionDetection::dolfin_collides_triangle_point_2d(const Point& p0,
 							   const Point& p1,
 							   const Point& p2,
@@ -547,45 +589,36 @@ bool CollisionDetection::dolfin_collides_triangle_point_2d(const Point& p0,
   return true;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::dolfin_collides_triangle_point(const Point& p0,
-							const Point& p1,
-							const Point& p2,
-							const Point &point)
+bool
+CollisionDetection::collides_tetrahedron_point(const Point& p0,
+					       const Point& p1,
+					       const Point& p2,
+					       const Point& p3,
+					       const Point& point)
 {
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
+  // See also "Real-Time Collision Detection" by Christer Ericson.
 
-  // Vectors defining each edge in consistent orientation
-  const Point r0 = p0 - p2;
-  const Point r1 = p1 - p0;
-  const Point r2 = p2 - p1;
+  const Point *p[4] = {&p0, &p1, &p2, &p3};
 
-  // Normal to triangle: should be the same as
-  // r2.cross(r1) and r0.cross(r2).
-  Point normal = r1.cross(r0);
-
-  Point r = point - p0;
-  // Check point is in plane of triangle (for manifold)
-  double volume = r.dot(normal);
-  if (std::abs(volume) > DOLFIN_EPS)
-    return false;
-
-  // Compute normal to triangle based on point and first edge
-  // Dot product of two normals should be positive, if inside.
-  Point pnormal = r.cross(r0);
-  double t1 = normal.dot(pnormal);
-  if (t1 < 0) return false;
-
-  // Repeat for each edge
-  r = point - p1;
-  pnormal = r.cross(r1);
-  double t2 = normal.dot(pnormal);
-  if (t2 < 0) return false;
-
-  r = point - p2;
-  pnormal = r.cross(r2);
-  double t3 = normal.dot(pnormal);
-  if (t3 < 0) return false;
-
+  // Consider each face in turn
+  for (unsigned int i = 0; i != 4; ++i)
+  {
+    // Compute vectors relative to p[i]
+    const Point v1 = *p[(i + 1)%4] - *p[i];
+    const Point v2 = *p[(i + 2)%4] - *p[i];
+    const Point v3 = *p[(i + 3)%4] - *p[i];
+    const Point v = point - *p[i];
+    // Normal to plane containing v1 and v2
+    const Point n1 = v1.cross(v2);
+    // Find which side of face plane points v and v3 lie
+    const double t1 = n1.dot(v);
+    const double t2 = n1.dot(v3);
+    // Catch case where point is exactly on plane
+    // otherwise require points to be on same side
+    if (t1 != 0.0 and std::signbit(t1) != std::signbit(t2))
+      return false;
+  }
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -751,39 +784,6 @@ bool CollisionDetection::dolfin_collides_triangle_triangle(const Point& p0,
       isect2[1] < isect1[0])
     return false;
 
-  return true;
-}
-//-----------------------------------------------------------------------------
-bool
-CollisionDetection::collides_tetrahedron_point(const Point& p0,
-					       const Point& p1,
-					       const Point& p2,
-					       const Point& p3,
-					       const Point& point)
-{
-  // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
-  // See also "Real-Time Collision Detection" by Christer Ericson.
-
-  const Point *p[4] = {&p0, &p1, &p2, &p3};
-
-  // Consider each face in turn
-  for (unsigned int i = 0; i != 4; ++i)
-  {
-    // Compute vectors relative to p[i]
-    const Point v1 = *p[(i + 1)%4] - *p[i];
-    const Point v2 = *p[(i + 2)%4] - *p[i];
-    const Point v3 = *p[(i + 3)%4] - *p[i];
-    const Point v = point - *p[i];
-    // Normal to plane containing v1 and v2
-    const Point n1 = v1.cross(v2);
-    // Find which side of face plane points v and v3 lie
-    const double t1 = n1.dot(v);
-    const double t2 = n1.dot(v3);
-    // Catch case where point is exactly on plane
-    // otherwise require points to be on same side
-    if (t1 != 0.0 and std::signbit(t1) != std::signbit(t2))
-      return false;
-  }
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -1100,8 +1100,7 @@ CollisionDetection::separating_plane_face_A_2(const std::vector<Point>& V1,
   return (mask_edges == 15);
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::separating_plane_edge_A(
-						 const std::vector<std::vector<double>>& coord_1,
+bool CollisionDetection::separating_plane_edge_A(const std::vector<std::vector<double>>& coord_1,
 						 const std::vector<int>& masks, int f0, int f1)
 {
   // Helper function for tetrahedron-tetrahedron collision: checks if
