@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-05-28
+// Last changed: 2016-05-03
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -210,26 +210,24 @@ namespace dolfin
                                                   const std::vector<Point>& tri);
 
 
-    // Helper function
+    // Helper function: these must return a point. The predicate
+    // should handle whether or not the intersection exists.
     // FIXME
-    static bool intersection_edge_edge_2d(const Point& a,
-				       const Point& b,
-				       const Point& c,
-				       const Point& d,
-				       Point& pt);
-    static bool intersection_edge_edge(const Point& a,
-				       const Point& b,
-				       const Point& c,
-				       const Point& d,
-				       Point& pt);
+    static Point intersection_edge_edge_2d(const Point& a,
+					   const Point& b,
+					   const Point& c,
+					   const Point& d);
+    static Point intersection_edge_edge(const Point& a,
+					const Point& b,
+					const Point& c,
+					const Point& d);
 
     // Helper function
-    static bool intersection_face_edge(const Point& r,
-				       const Point& s,
-				       const Point& t,
-				       const Point& a,
-				       const Point& b,
-				       Point& pt);
+    static Point intersection_face_edge(const Point& r,
+					const Point& s,
+					const Point& t,
+					const Point& a,
+					const Point& b);
 
     static double minimum_angle(double* a, double* b, double* c);
 

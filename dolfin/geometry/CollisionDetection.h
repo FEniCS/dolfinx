@@ -204,7 +204,6 @@ namespace dolfin
 					   const Point& p2,
 					   const Point& p3,
 					   const Point& point);
-  private:
 
     // The implementation of collides_triangle_interval
     static bool collides_triangle_interval(const Point& p0,
@@ -230,6 +229,7 @@ namespace dolfin
 					      const Point& q0,
 					      const Point& q1,
 					      const Point& q2);
+  private:
 
     // Helper function for triangle-triangle collision
     static bool edge_edge_test(int i0,
