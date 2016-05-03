@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2014 Anders Logg
+// Copyright (C) 2006-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-09
-// Last changed: 2014-08-11
+// Last changed: 2016-05-03
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Array.h>
@@ -272,6 +272,11 @@ dolfin::Mesh Mesh::renumber_by_color() const
   const std::size_t D = topology().dim();
   const std::vector<std::size_t> coloring_type = {{D, 0, D}};
   return MeshRenumbering::renumber_by_color(*this, coloring_type);
+}
+//-----------------------------------------------------------------------------
+void Mesh::scale(double factor)
+{
+  MeshTransformation::scale(*this, factor);
 }
 //-----------------------------------------------------------------------------
 void Mesh::translate(const Point& point)
