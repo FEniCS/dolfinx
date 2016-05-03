@@ -141,7 +141,7 @@ CollisionDetection::collides(const MeshEntity& entity_0,
     switch (entity_1.dim())
     {
     case 0:
-     dolfin_not_implemented();
+      dolfin_not_implemented();
       break;
     case 1:
       dolfin_not_implemented();
@@ -179,8 +179,8 @@ bool CollisionDetection::collides_interval_point(const MeshEntity& entity,
 }
 //-----------------------------------------------------------------------------
 bool
-CollisionDetection::collides_interval_interval(const MeshEntity& interval_0,
-                                               const MeshEntity& interval_1)
+CollisionDetection::dolfin_collides_interval_interval(const MeshEntity& interval_0,
+						      const MeshEntity& interval_1)
 {
   // Get coordinates
   const MeshGeometry& geometry_0 = interval_0.mesh().geometry();
@@ -202,8 +202,7 @@ CollisionDetection::collides_interval_interval(const MeshEntity& interval_0,
   const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
   const bool result = b1 > a0 - eps && a1 < b0 + eps;
 
-  return CHECK_CGAL(result,
-                    cgal_collides_interval_interval(interval_0, interval_1));
+  return result;
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_point(const MeshEntity& triangle,
@@ -435,21 +434,18 @@ CollisionDetection::collides_tetrahedron_tetrahedron
 }
 //-----------------------------------------------------------------------------
 bool
-CollisionDetection::collides_edge_edge(const Point& a,
-				       const Point& b,
-				       const Point& c,
-				       const Point& d)
+CollisionDetection::dolfin_collides_edge_edge(const Point& a,
+					      const Point& b,
+					      const Point& c,
+					      const Point& d)
 {
   const double tol = DOLFIN_EPS_LARGE;
 
-  // FIXME: This can probably be optimized
-  bool result = true;
-
   // Check if two edges are the same
   if ((a - c).norm() < tol and (b - d).norm() < tol)
-    result = false;
+    return false;
   if ((a - d).norm() < tol and (b - c).norm() < tol)
-    result = false;
+    return false;
 
   // Get edges as vectors and compute the normal
   const Point L1 = b - a;
@@ -459,51 +455,47 @@ CollisionDetection::collides_edge_edge(const Point& a,
   // Check if L1 and L2 are coplanar
   const Point ca = c - a;
   if (std::abs(ca.dot(n)) > tol)
-    result = false;
+    return false;
 
   // Find orthogonal plane with normal n1
   const Point n1 = n.cross(L1);
   const double n1dotL2 = n1.dot(L2);
   if (std::abs(n1dotL2) < tol)
-    result = false;
+    return false;
   const double t = n1.dot(a - c) / n1dotL2;
   if (t <= 0 or t >= 1)
-    result = false;
+    return false;
 
   // Find orthogonal plane with normal n2
   const Point n2 = n.cross(L2);
   const double n2dotL1 = n2.dot(L1);
   if (std::abs(n2dotL1) < tol)
-    result = false;
+    return false;
   const double s = n2.dot(c - a) / n2dotL1;
   if (s <= 0 or s >= 1)
-    result = false;
+    return false;
 
-  return CHECK_CGAL(result,
-                    cgal_collides_edge_edge(a, b, c, d));
+  return true;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::collides_interval_point(const Point& p0,
-                                                 const Point& p1,
-                                                 const Point& point)
+bool CollisionDetection::dolfin_collides_interval_point(const Point& p0,
+							const Point& p1,
+							const Point& point)
 {
-  // FIXME: there may be optimizations to do
-  bool result = false;
-
   // Compute angle between v = p1 - p0 and w = point - p0
   Point v = p1 - p0;
   const double vnorm = v.norm();
 
-  // // p0 and p1 are the same points
-  // if (vnorm < DOLFIN_EPS_LARGE)
-  //   result = false;
+  // p0 and p1 are the same points
+  if (vnorm < DOLFIN_EPS_LARGE)
+    return false;
 
   const Point w = point - p0;
   const double wnorm = w.norm();
 
   // point and p0 are the same points
   if (wnorm < DOLFIN_EPS)
-    result = true;
+    return true;
 
   // Compute cosine
   v /= vnorm;
@@ -511,24 +503,20 @@ bool CollisionDetection::collides_interval_point(const Point& p0,
 
   // Cosine should be 1, and point should lie between p0 and p1
   if (std::abs(1-a) < DOLFIN_EPS_LARGE and wnorm <= vnorm)
-    result = true;
+    return true;
 
-  return CHECK_CGAL(result,
-                    cgal_collides_interval_point(p0, p1, point));
+  return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::collides_triangle_point_2d(const Point& p0,
-                                                    const Point& p1,
-                                                    const Point& p2,
-                                                    const Point &point)
+bool CollisionDetection::dolfin_collides_triangle_point_2d(const Point& p0,
+							   const Point& p1,
+							   const Point& p2,
+							   const Point &point)
 {
   // Simplified algorithm for coplanar triangles and points (z=0)
   // This algorithm is robust because it will perform the same numerical
   // test on each edge of neighbouring triangles. Points cannot slip
   // between the edges, and evade detection.
-
-  // FIXME: can be optimized
-  bool result = true;
 
   // Vectors defining each edge in consistent orientation
   const Point r0 = p0 - p2;
@@ -544,32 +532,28 @@ bool CollisionDetection::collides_triangle_point_2d(const Point& p0,
   Point r = point - p0;
   double pnormal = r.x()*r0.y() - r.y()*r0.x();
   if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
-    result = false;
+    return false;
 
   // Repeat for each edge
   r = point - p1;
   pnormal = r.x()*r1.y() - r.y()*r1.x();
   if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
-    result = false;
+    return false;
 
   r = point - p2;
   pnormal = r.x()*r2.y() - r.y()*r2.x();
   if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
-    result = false;
+    return false;
 
-  return CHECK_CGAL(result,
-                    cgal_collides_triangle_point_2d(p0, p1, p2, point));
+  return true;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::collides_triangle_point(const Point& p0,
-                                                 const Point& p1,
-                                                 const Point& p2,
-                                                 const Point &point)
+bool CollisionDetection::dolfin_collides_triangle_point(const Point& p0,
+							const Point& p1,
+							const Point& p2,
+							const Point &point)
 {
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
-
-  // FIXME: this can probably be optimized
-  bool result = true;
 
   // Vectors defining each edge in consistent orientation
   const Point r0 = p0 - p2;
@@ -584,70 +568,62 @@ bool CollisionDetection::collides_triangle_point(const Point& p0,
   // Check point is in plane of triangle (for manifold)
   double volume = r.dot(normal);
   if (std::abs(volume) > DOLFIN_EPS)
-    result = false;
+    return false;
 
   // Compute normal to triangle based on point and first edge
   // Dot product of two normals should be positive, if inside.
   Point pnormal = r.cross(r0);
   double t1 = normal.dot(pnormal);
-  if (t1 < 0) result = false;
+  if (t1 < 0) return false;
 
   // Repeat for each edge
   r = point - p1;
   pnormal = r.cross(r1);
   double t2 = normal.dot(pnormal);
-  if (t2 < 0) result = false;
+  if (t2 < 0) return false;
 
   r = point - p2;
   pnormal = r.cross(r2);
   double t3 = normal.dot(pnormal);
-  if (t3 < 0) result = false;
+  if (t3 < 0) return false;
 
-  return CHECK_CGAL(result,
-                    cgal_collides_triangle_point(p0, p1, p2, point));
+  return true;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::collides_triangle_interval(const Point& p0,
-						    const Point& p1,
-						    const Point& p2,
-						    const Point& q0,
-						    const Point& q1)
+bool CollisionDetection::dolfin_collides_triangle_interval(const Point& p0,
+							   const Point& p1,
+							   const Point& p2,
+							   const Point& q0,
+							   const Point& q1)
 {
-  // FIXME: this can perhaps be optimized
-  bool result = false;
-
   // Check if end points are in triangle
   if (collides_triangle_point(p0, p1, p2, q0))
-    result = true;
+    return true;
   if (collides_triangle_point(p0, p1, p2, q1))
-    result = true;
+    return true;
 
   // Check if any of the triangle edges are cut by the interval
   if (collides_edge_edge(p0, p1, q0, q1))
-    result = true;
+    return true;
   if (collides_edge_edge(p0, p2, q0, q1))
-    result = true;
+    return true;
   if (collides_edge_edge(p1, p2, q0, q1))
-    result = true;
+    return true;
 
-  return CHECK_CGAL(result,
-                    cgal_collides_triangle_interval(p0, p1, p2, q0, q1));
+  return false;
 }
 //------------------------------------------------------------------------------
-bool CollisionDetection::collides_triangle_triangle(const Point& p0,
-                                                    const Point& p1,
-                                                    const Point& p2,
-                                                    const Point& q0,
-                                                    const Point& q1,
-                                                    const Point& q2)
+bool CollisionDetection::dolfin_collides_triangle_triangle(const Point& p0,
+							   const Point& p1,
+							   const Point& p2,
+							   const Point& q0,
+							   const Point& q1,
+							   const Point& q2)
 {
   // Algorithm and code from Tomas Moller: A Fast Triangle-Triangle
   // Intersection Test, Journal of Graphics Tools, 2(2), 1997. Source
   // code is available at
   // http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/opttritri.txt
-
-  // FIXME: this can perhaps be optimized
-  bool result = false;
 
   // First check if the triangles are the same. We need to do this
   // separately if we do _not_ allow for adjacent edges to be
@@ -656,7 +632,7 @@ bool CollisionDetection::collides_triangle_triangle(const Point& p0,
   const Point Vmid = (p0 + p1 + p2) / 3.;
   const Point Umid = (q0 + q1 + q2) / 3.;
   if ((Vmid-Umid).norm() < DOLFIN_EPS_LARGE)
-    result = true;
+    return true;
 
   Point E1, E2;
   Point N1, N2;
@@ -694,7 +670,7 @@ bool CollisionDetection::collides_triangle_triangle(const Point& p0,
 
   // Same sign on all of them + not equal 0?
   if (du0du1 > 0. && du0du2 > 0.)
-    result = false;
+    return false;
 
   // Compute plane of triangle (q0,q1,q2)
   E1 = q1 - q0;
@@ -718,7 +694,7 @@ bool CollisionDetection::collides_triangle_triangle(const Point& p0,
 
   // Same sign on all of them + not equal 0 ?
   if (dv0dv1 > 0. && dv0dv2 > 0.)
-    result = false;
+    return false;
 
   // Compute direction of intersection line
   D = N1.cross(N2);
@@ -746,13 +722,13 @@ bool CollisionDetection::collides_triangle_triangle(const Point& p0,
   double a, b, c, x0, x1;
   if (compute_intervals(vp0, vp1, vp2, dv0, dv1, dv2, dv0dv1, dv0dv2,
                         a, b, c, x0, x1))
-    result = coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
+    return coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
 
   // Compute interval for triangle 2
   double d, e, f, y0, y1;
   if (compute_intervals(up0, up1, up2, du0, du1, du2, du0du1, du0du2,
                         d, e, f, y0, y1))
-    result = coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
+    return coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
 
   double xx, yy, xxyy, tmp;
   xx = x0*x1;
@@ -774,10 +750,9 @@ bool CollisionDetection::collides_triangle_triangle(const Point& p0,
 
   if (isect1[1] < isect2[0] ||
       isect2[1] < isect1[0])
-    result = false;
+    return false;
 
-  return CHECK_CGAL(result,
-                    cgal_collides_triangle_triangle(p0, p1, p2, q0, q1, q2));
+  return true;
 }
 //-----------------------------------------------------------------------------
 bool
@@ -1127,8 +1102,8 @@ CollisionDetection::separating_plane_face_A_2(const std::vector<Point>& V1,
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::separating_plane_edge_A(
-  const std::vector<std::vector<double>>& coord_1,
-  const std::vector<int>& masks, int f0, int f1)
+						 const std::vector<std::vector<double>>& coord_1,
+						 const std::vector<int>& masks, int f0, int f1)
 {
   // Helper function for tetrahedron-tetrahedron collision: checks if
   // edge is in the plane separating faces f0 and f1.
