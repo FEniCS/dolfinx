@@ -29,42 +29,69 @@
 #ifndef __CGAL_EXACT_ARITHMETIC_H
 #define __CGAL_EXACT_ARITHMETIC_H
 
+// FIXME: Debugging
+#define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
+
 #ifndef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
 
-template<typename T>
-bool check_cgal(T a, T b)
-{
-  if (a != b)
-    dolfin_error("CGALExactArithmetic.cpp",
-                 "verifying geometric predicate with exact types",
-                 "Verification failed");
-  return a;
-}
-
-#define CHECK_CGAL(result, ...) check_cgal(result, __VA_ARGS__)
+// Comparison macro just bypasses CGAL and test when not enabled
+#define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) RESULT_DOLFIN
 
 #else
 
-define CHECK_CGAL(result,
+// DOLFIN includes
+#include <sstream>
+#include <dolfin/log/log.h>
+#include "IntersectionTriangulation.h"
 
+// Check that results from DOLFIN and CGAL match
+namespace dolfin
+{
+  template<typename T> bool check_cgal(T result_dolfin, T result_cgal)
+  {
+    if (result_dolfin != result_cgal)
+    {
+      // Convert results to strings
+      std::stringstream s_dolfin;
+      std::stringstream s_cgal;
+      s_dolfin << result_dolfin;
+      s_cgal << result_cgal;
+
+      // Issue error
+      dolfin_error("CGALExactArithmetic.cpp",
+                   "verify geometric predicate with exact types",
+                   "DOLFIN: %s CGAL: %s",
+                   s_dolfin.str().c_str(), s_cgal.str().c_str());
+    }
+
+    return result_dolfin;
+  }
+}
+
+// Comparison macro
+#define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) check_cgal(RESULT_DOLFIN, RESULT_CGAL)
+
+// CGAL includes
 #define CGAL_HEADER_ONLY
-
 #include <CGAL/Cartesian.h>
 #include <CGAL/Quotient.h>
 #include <CGAL/MP_Float.h>
-
 #include <CGAL/Triangle_2.h>
 #include <CGAL/intersection_2.h>
 
-
-typedef CGAL::Quotient<CGAL::MP_Float>   ExactNumber;
-typedef CGAL::Cartesian<ExactNumber>     ExactKernel;
-typedef ExactKernel::Point_2             Point_2;
-typedef ExactKernel::Triangle_2          Triangle_2;
-typedef ExactKernel::Segment_2           Segment_2;
+// CGAL typedefs
+typedef CGAL::Quotient<CGAL::MP_Float> ExactNumber;
+typedef CGAL::Cartesian<ExactNumber>   ExactKernel;
+typedef ExactKernel::Point_2           Point_2;
+typedef ExactKernel::Triangle_2        Triangle_2;
+typedef ExactKernel::Segment_2         Segment_2;
 
 namespace
 {
+  //---------------------------------------------------------------------------
+  // CGAL utility functions
+  //---------------------------------------------------------------------------
+
   inline Point_2 convert_to_cgal(double a, double b)
   {
     return Point_2(a, b);
@@ -72,22 +99,19 @@ namespace
 
   inline Point_2 convert_to_cgal(const dolfin::Point& p)
   {
-    //std::cout << "point convert " << p[0]<<' '<<p[1]<<std::endl;
     return Point_2(p[0], p[1]);
   }
 
   inline Segment_2 convert_to_cgal(const dolfin::Point& a,
                                    const dolfin::Point& b)
   {
-    //std::cout << "segment convert " << std::endl;
-    return Segment_2(convert_to_cgal(a), convert(b));
+    return Segment_2(convert_to_cgal(a), convert_to_cgal(b));
   }
 
   inline Triangle_2 convert_to_cgal(const dolfin::Point& a,
-			    const dolfin::Point& b,
-			    const dolfin::Point& c)
+                                    const dolfin::Point& b,
+                                    const dolfin::Point& c)
   {
-    //std::cout << "triangle convert " << std::endl;
     return Triangle_2(convert_to_cgal(a), convert_to_cgal(b), convert_to_cgal(c));
   }
 
@@ -124,70 +148,12 @@ namespace
     return t.is_degenerate();
   }
 
-
-  // for parsing the intersection, check
-  // http://doc.cgal.org/latest/Kernel_23/group__intersection__linear__grp.html
-  /* inline std::vector<double> parse(const Point_2& p) */
-  /* { */
-  /*   std::vector<double> triangulation(2); */
-  /*   triangulation[0] = CGAL::to_double(p.x()); */
-  /*   triangulation[1] = CGAL::to_double(p.y()); */
-  /*   return triangulation; */
-  /* } */
-
-  /* inline std::vector<double> parse(const Segment_2& s) */
-  /* { */
-  /*   std::vector<double> triangulation(4); */
-  /*   triangulation[0] = CGAL::to_double(s->vertex(0)[0]); */
-  /*   triangulation[1] = CGAL::to_double(s->vertex(0)[1]); */
-  /*   triangulation[2] = CGAL::to_double(s->vertex(1)[0]); */
-  /*   triangulation[3] = CGAL::to_double(s->vertex(1)[1]); */
-  /*   return triangulation; */
-  /* } */
-
-  /* inline std::vector<double> parse(const Line_2& l) */
-  /* { */
-  /*   std::vector<double> triangulation(4); */
-  /*   triangulation[0] = CGAL::to_double(l->point(0)[0]); */
-  /*   triangulation[1] = CGAL::to_double(l->point(0)[1]); */
-  /*   triangulation[2] = CGAL::to_double(l->point(1)[0]); */
-  /*   triangulation[3] = CGAL::to_double(l->point(1)[1]); */
-  /*   return triangulation; */
-  /* } */
-
-  /* inline std::vector<double> parse(const Triangle_2& t) */
-  /* { */
-  /*   std::vector<double> triangulation(6); */
-  /*   triangulation[0] = CGAL::to_double(t->vertex(0)[0]); */
-  /*   triangulation[1] = CGAL::to_double(t->vertex(0)[1]); */
-  /*   triangulation[2] = CGAL::to_double(t->vertex(1)[0]); */
-  /*   triangulation[3] = CGAL::to_double(t->vertex(1)[1]); */
-  /*   triangulation[4] = CGAL::to_double(t->vertex(2)[0]); */
-  /*   triangulation[5] = CGAL::to_double(t->vertex(2)[1]); */
-  /*   return triangulation; */
-  /* } */
-
-  /* inline std::vector<double> parse(const std::vector<Point_2>& pts) */
-  /* { */
-  /*   std::vector<double> triangulation(pts.size()*2); */
-  /*   for (std::size_t i = 0; i < pts.size(); ++i) */
-  /*   { */
-  /*     triangulation[2*i] = CGAL::to_double(pts[i].x()); */
-  /*     triangulation[2*i+1] = CGAL::to_double(pts[i].y()); */
-  /*   } */
-  /*   return triangulation; */
-  /* } */
-
-
-    template<class T>
-    inline std::vector<double> parse(const T& ii)
+  template<class T>
+  inline std::vector<double> parse(const T& ii)
   {
-    //std::cout << __FUNCTION__ << std::endl;
-
     const Point_2* p = boost::get<Point_2>(&*ii);
     if (p)
     {
-      //std::cout << "point\n";
       std::vector<double> triangulation = {{ CGAL::to_double(p->x()),
 					     CGAL::to_double(p->y()) }};
       return triangulation;
@@ -196,8 +162,6 @@ namespace
     const Segment_2* s = boost::get<Segment_2>(&*ii);
     if (s)
     {
-      //std::cout << "segment " << std::endl;
-      //std::cout << (*s)[0][0] <<' '<<(*s)[0][1] <<' '<<(*s)[1][0]<<' '<<(*s)[1][1]<<std::endl;
       std::vector<double> triangulation = {{ CGAL::to_double(s->vertex(0)[0]),
     					     CGAL::to_double(s->vertex(0)[1]),
     					     CGAL::to_double(s->vertex(1)[0]),
@@ -205,10 +169,9 @@ namespace
       return triangulation;
     }
 
-    const Triangle_2* t = boost::relaxed_get<Triangle_2>(&*ii);
+    const Triangle_2* t = boost::get<Triangle_2>(&*ii);
     if (t)
     {
-      /* std::cout << "cgal triangle " << std::endl; */
       std::vector<double> triangulation = {{ CGAL::to_double(t->vertex(0)[0]),
     					     CGAL::to_double(t->vertex(0)[1]),
     					     CGAL::to_double(t->vertex(2)[0]),
@@ -218,117 +181,19 @@ namespace
       return triangulation;
     }
 
-    const std::vector<Point_2>* cgal_points = boost::relaxed_get<std::vector<Point_2>>(&*ii);
+    const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii);
     if (cgal_points)
     {
-      /* std::cout << "cgal triangulation " << std::endl; */
       std::vector<double> triangulation;
-
-      // convert to dolfin::Point
       std::vector<dolfin::Point> points(cgal_points->size());
       for (std::size_t i = 0; i < points.size(); ++i)
     	points[i] = dolfin::Point(CGAL::to_double((*cgal_points)[i].x()),
     				  CGAL::to_double((*cgal_points)[i].y()));
-
       triangulation = dolfin::IntersectionTriangulation::graham_scan(points);
       return triangulation;
-
-/* #ifdef Augustdebug_cgal */
-/*       std::cout << "before duplicates "<< points.size() << '\n'; */
-/*       for (std::size_t i = 0; i < points.size(); ++i) */
-/* 	std::cout << tools::matlabplot(points[i]); */
-/*       std::cout << '\n'; */
-/* #endif */
-
-/*       // remove duplicate points */
-/*       std::vector<Point> tmp; */
-/*       tmp.reserve(points.size()); */
-
-/*       for (std::size_t i = 0; i < points.size(); ++i) */
-/*       { */
-/* 	bool different = true; */
-/* 	for (std::size_t j = i+1; j < points.size(); ++j) */
-/* 	  if ((points[i] - points[j]).norm() < DOLFIN_EPS)//_LARGE) */
-/* 	  { */
-/* 	    different = false; */
-/* 	    break; */
-/* 	  } */
-/* 	if (different) */
-/* 	  tmp.push_back(points[i]); */
-/*       } */
-/*       points = tmp; */
-
-/* #ifdef Augustdebug_cgal */
-/*       std::cout << "After: " << points.size() << '\n'; */
-/*       for (std::size_t i = 0; i < points.size(); ++i) */
-/* 	std::cout << tools::matlabplot(points[i]); */
-/*       std::cout << '\n'; */
-/* #endif */
-
-/*       if (points.size()<3) */
-/*       { */
-/* #ifdef Augustdebug_cgal */
-/* 	std::cout << "too few points to form triangulation" << std::endl; */
-/* #endif */
-/* 	return triangulation; */
-/*       } */
-
-
-/*       // Do simple Graham scan */
-
-/*       // Find left-most point (smallest x-coordinate) */
-/*       std::size_t i_min = 0; */
-/*       double x_min = points[0].x(); */
-/*       for (std::size_t i = 1; i < points.size(); i++) */
-/*       { */
-/* 	const double x = points[i].x(); */
-/* 	if (x < x_min) */
-/* 	{ */
-/* 	  x_min = x; */
-/* 	  i_min = i; */
-/* 	} */
-/*       } */
-
-/*       // Compute signed squared cos of angle with (0, 1) from i_min to all points */
-/*       std::vector<std::pair<double, std::size_t>> order; */
-/*       for (std::size_t i = 0; i < points.size(); i++) */
-/*       { */
-/* 	// Skip left-most point used as origin */
-/* 	if (i == i_min) */
-/* 	  continue; */
-
-/* 	// Compute vector to point */
-/* 	const Point v = points[i] - points[i_min]; */
-
-/* 	// Compute square cos of angle */
-/* 	const double cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_norm(); */
-
-/* 	// Store for sorting */
-/* 	order.push_back(std::make_pair(cos2, i)); */
-/*       } */
-
-/*       // Sort points based on angle */
-/*       std::sort(order.begin(), order.end()); */
-
-/*       // Triangulate polygon by connecting i_min with the ordered points */
-/*       triangulation.reserve((points.size() - 2)*3*2); */
-/*       const Point& p0 = points[i_min]; */
-/*       for (std::size_t i = 0; i < points.size() - 2; i++) */
-/*       { */
-/* 	const Point& p1 = points[order[i].second]; */
-/* 	const Point& p2 = points[order[i + 1].second]; */
-/* 	triangulation.push_back(p0.x()); */
-/* 	triangulation.push_back(p0.y()); */
-/* 	triangulation.push_back(p1.x()); */
-/* 	triangulation.push_back(p1.y()); */
-/* 	triangulation.push_back(p2.x()); */
-/* 	triangulation.push_back(p2.y()); */
-/*       } */
-
-/*       return triangulation; */
     }
 
-    std::cout << "unexpected behavior in dolfin cgal tools, exiting"; exit(1);
+    dolfin::error("Unexpected behavior in CGAL tools.");
 
     return std::vector<double>();
   }
@@ -336,9 +201,8 @@ namespace
 
 namespace dolfin
 {
-
   //---------------------------------------------------------------------------
-  // Reference implementations using CGAL exact arithmetic
+  // Reference implementations of DOLFIN functions using CGAL exact arithmetic
   //---------------------------------------------------------------------------
   bool cgal_collides_interval_interval(const MeshEntity& interval_0,
                                        const MeshEntity& interval_1)
