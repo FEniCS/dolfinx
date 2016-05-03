@@ -63,8 +63,8 @@ namespace dolfin
     /// Return number of connections for given entity
     std::size_t size(std::size_t entity) const
     {
-      return ( (entity + 1) < index_to_position.size()
-          ? index_to_position[entity + 1] - index_to_position[entity] : 0);
+      return (entity + 1) < index_to_position.size()
+          ? index_to_position[entity + 1] - index_to_position[entity] : 0;
     }
 
     /// Return global number of connections for given entity
@@ -82,8 +82,8 @@ namespace dolfin
     /// Return array of connections for given entity
     const unsigned int* operator() (std::size_t entity) const
     {
-      return ((entity + 1) < index_to_position.size()
-        ? &_connections[index_to_position[entity]] : 0);
+      return (entity + 1) < index_to_position.size()
+        ? &_connections[index_to_position[entity]] : 0;
     }
 
     /// Return contiguous array of connections for all entities
@@ -121,17 +121,18 @@ namespace dolfin
     /// Set all connections for given entity
     void set(std::size_t entity, std::size_t* connections);
 
-    /// Set all connections for all entities (T is a container, e.g.
-    /// a std::vector<std::size_t>, std::set<std::size_t>, etc)
+    /// Set all connections for all entities (T is a '2D' container, e.g. a
+    /// std::vector<<std::vector<std::size_t>>,
+    /// std::vector<<std::set<std::size_t>>, etc)
     template <typename T>
-    void set(const std::vector<T>& connections)
+    void set(const T& connections)
     {
       // Clear old data if any
       clear();
 
       // Initialize offsets and compute total size
       index_to_position.resize(connections.size() + 1);
-      unsigned int size = 0;
+      std::int32_t size = 0;
       for (std::size_t e = 0; e < connections.size(); e++)
       {
         index_to_position[e] = size;
@@ -141,9 +142,10 @@ namespace dolfin
 
       // Initialize connections
       _connections.reserve(size);
-      typename std::vector<T>::const_iterator e;
-      for (e = connections.begin(); e != connections.end(); ++e)
+      for (auto e = connections.begin(); e != connections.end(); ++e)
         _connections.insert(_connections.end(), e->begin(), e->end());
+
+      _connections.shrink_to_fit();
     }
 
     /// Set global number of connections for all local entities
