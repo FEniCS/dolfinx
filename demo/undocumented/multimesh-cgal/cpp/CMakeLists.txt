@@ -39,7 +39,11 @@ else()
 endif()
 
 # Executable
-add_executable(${PROJECT_NAME} main2.cpp main3.cpp main.cpp)
+add_executable(multimesh  main.cpp)
+#add_executable(multimesh2 main2.cpp)
+add_executable(multimesh3 main3.cpp)
 
 # Target libraries
-target_link_libraries(${PROJECT_NAME} ${DOLFIN_LIBRARIES})
+target_link_libraries(multimesh ${DOLFIN_LIBRARIES})
+#target_link_libraries(multimesh2 ${DOLFIN_LIBRARIES})
+target_link_libraries(multimesh3 ${DOLFIN_LIBRARIES})

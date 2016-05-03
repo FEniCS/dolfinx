@@ -19,32 +19,36 @@
 // Last changed: 2015-06-08
 //
 
+#define CGAL_HEADER_ONLY
+
 #include <dolfin/mesh/MultiMesh.h>
 #include <dolfin/math/basic.h>
 #include <dolfin/mesh/Cell.h>
 
+#include <CGAL/MP_Float.h>
+#include <CGAL/Quotient.h>
+#include <CGAL/Cartesian.h>
+
 #include <CGAL/Triangle_2.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/intersection_2.h>
 #include <CGAL/Boolean_set_operations_2.h>
 #include <CGAL/Polygon_set_2.h>
 
 #include "common.h"
 
-typedef CGAL::Exact_predicates_exact_constructions_kernel ExactKernel;
-//typedef CGAL::Exact_predicates_inexact_constructions_kernel ExactKernel;
-typedef CGAL::Point_2<ExactKernel>                Point_2;
-typedef CGAL::Vector_2<ExactKernel>               Vector_2;
-typedef CGAL::Segment_2<ExactKernel>              Segment_2;
-typedef CGAL::Triangle_2<ExactKernel>             Triangle_2;
-typedef CGAL::Line_2<ExactKernel>                 Line_2;
+typedef CGAL::Quotient<CGAL::MP_Float>            ExactNumber;
+typedef CGAL::Cartesian<ExactNumber>                       ExactKernel;
+typedef ExactKernel::Point_2                      Point_2;
+typedef ExactKernel::Vector_2                     Vector_2;
+typedef ExactKernel::Segment_2                    Segment_2;
+typedef ExactKernel::Triangle_2                   Triangle_2;
+typedef ExactKernel::Line_2                       Line_2;
 typedef CGAL::Polygon_2<ExactKernel>              Polygon_2;
 typedef Polygon_2::Vertex_const_iterator          Vertex_const_iterator;
 typedef CGAL::Polygon_with_holes_2<ExactKernel>   Polygon_with_holes_2;
 typedef Polygon_with_holes_2::Hole_const_iterator Hole_const_iterator;
 typedef CGAL::Polygon_set_2<ExactKernel>          Polygon_set_2;
-typedef std::vector<std::pair<Point_2, ExactKernel::FT>> cgal_QR;
+typedef std::vector<std::pair<Point_2, ExactNumber>> cgal_QR;
 
 typedef std::vector<Triangle_2> Polygon;
 
@@ -83,7 +87,7 @@ static bool debug_output = false;
 void compute_volume(const MultiMesh& multimesh,
                     std::vector<std::vector<std::pair<CELL_STATUS, double> > >& cells_status)
 {
-  cells_status.reserve(multimesh.num_parts());    
+  cells_status.reserve(multimesh.num_parts());
 
   // Compute contribution from all parts
   for (std::size_t part = 0; part < multimesh.num_parts(); part++)
@@ -105,7 +109,7 @@ void compute_volume(const MultiMesh& multimesh,
         current_cells_status[*it] = std::make_pair(UNCUT, cell.volume());
       }
     }
-      
+
     // Cut cell volume given by quadrature rule
     {
       const std::vector<unsigned int>& cut_cells = multimesh.cut_cells(part);
@@ -133,13 +137,13 @@ void compute_volume(const MultiMesh& multimesh,
   }
 }
 //------------------------------------------------------------------------------
-std::pair<Point_2, ExactKernel::FT> cgal_compute_quadrature_rule(Triangle_2 t, ExactKernel::FT factor)
+std::pair<Point_2, ExactNumber> cgal_compute_quadrature_rule(Triangle_2 t, ExactNumber factor)
 {
   const Vector_2 a = t[1]-t[0];
   const Vector_2 b = t[2]-t[0];
 
   // Compute double the area of the triangle
-  const ExactKernel::FT det = CGAL::abs(a.x()*b.y() - a.y()*b.x());
+  const ExactNumber det = CGAL::abs(a.x()*b.y() - a.y()*b.x());
 
   // qr.push_back(std::make_pair( CGAL::ORIGIN + (t[0]-CGAL::ORIGIN)/3 + (t[1]-CGAL::ORIGIN)/3 + (t[2]-CGAL::ORIGIN)/3,
   return std::make_pair( CGAL::centroid(t), factor*det/2 );
@@ -154,7 +158,7 @@ Polygon compute_intersection_triangulation(Triangle_2 t1, Triangle_2 t2)
     std::cout << t1[0] << " " << t1[1] << " " << t1[2] << std::endl;
     std::cout << t2[0] << " " << t2[1] << " " << t2[2] << std::endl;
   }
-  
+
   Polygon intersection;
   if (CGAL::do_intersect(t1, t2))
   {
@@ -175,7 +179,7 @@ Polygon compute_intersection_triangulation(Triangle_2 t1, Triangle_2 t2)
     {
       // handle triangle intersection
       // Print the triangles in a reproducible order
-      std::vector<std::pair<std::pair<ExactKernel::FT, ExactKernel::FT>, std::size_t>> v{ std::make_pair(std::make_pair(t->vertex(0)[0], t->vertex(0)[1]), 0),
+      std::vector<std::pair<std::pair<ExactNumber, ExactNumber>, std::size_t>> v{ std::make_pair(std::make_pair(t->vertex(0)[0], t->vertex(0)[1]), 0),
                                                                                           std::make_pair(std::make_pair(t->vertex(1)[0], t->vertex(1)[1]), 1),
                                                                                           std::make_pair(std::make_pair(t->vertex(2)[0], t->vertex(2)[1]), 2)};
       std::sort(v.begin(), v.end());
@@ -187,12 +191,12 @@ Polygon compute_intersection_triangulation(Triangle_2 t1, Triangle_2 t2)
                                         t->vertex(v[1].second),
                                         t->vertex(v[2].second)));
     }
-    else 
+    else
     {
       const std::vector<Point_2>* polygon = boost::get<std::vector<Point_2>>(&*cell_intersection);
       dolfin_assert(polygon);
       if (debug_output) std::cout << "Polygon size: " << polygon->size() << std::endl;
-      
+
       // Now triangulate polygon the same way as multimesh does it
       // geometry/IntersectionTriangulation.cpp:598
 
@@ -213,7 +217,7 @@ Polygon compute_intersection_triangulation(Triangle_2 t1, Triangle_2 t2)
       }
 
       // Compute signed squared cos of angle with (0, 1) from i_min to all points
-      std::vector<std::pair<ExactKernel::FT, std::size_t>> order;
+      std::vector<std::pair<ExactNumber, std::size_t>> order;
       for (std::size_t i = 0; i < polygon->size(); i++)
       {
         // Skip left-most point used as origin
@@ -224,7 +228,7 @@ Polygon compute_intersection_triangulation(Triangle_2 t1, Triangle_2 t2)
         const Vector_2 v = (*polygon)[i] - (*polygon)[i_min];
 
         // Compute square cos of angle
-        const ExactKernel::FT cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_length();
+        const ExactNumber cos2 = (v.y() < 0.0 ? -1.0 : 1.0)*v.y()*v.y() / v.squared_length();
 
         // Store for sorting
         order.push_back(std::make_pair(cos2, i));
@@ -234,7 +238,7 @@ Polygon compute_intersection_triangulation(Triangle_2 t1, Triangle_2 t2)
       std::sort(order.begin(), order.end());
 
       // std::cout << "Order: ";
-      // for(const std::pair<ExactKernel::FT, std::size_t>& item : order)
+      // for(const std::pair<ExactNumber, std::size_t>& item : order)
       // {
       //   std::cout << item.second << " ";
       // }
@@ -260,14 +264,14 @@ Polygon compute_intersection_triangulation(Triangle_2 t1, Triangle_2 t2)
 std::vector<cgal_QR> compute_cell_quadrature_rule(std::size_t cut_part,
                                                   unsigned int cut_cell_index)
 {
-                                                  
+
 }
 //------------------------------------------------------------------------------
 void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
                                            std::vector<std::map<unsigned int, std::vector<cgal_QR>>>& qr_rules_overlap)
 {
   std::cout << "CGAL: Computing overlap quadrature rules" << std::endl;
-  
+
   qr_rules_overlap.clear();
 
   // std::ofstream debug_file("cgal-output.txt");
@@ -276,12 +280,12 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
   // Store the intersection from the lower layers as sum of (disjoint) triangles
   // (which together form a polygon).
   // The key (first part of pair) are the layer numbers, eg. [0, 1, 3] is the
-  // intersection of parts 0, 1 and 3. 
+  // intersection of parts 0, 1 and 3.
 
   // std::pair<std::size_t, unsigned int> debug_cell = std::make_pair(std::numeric_limits<std::size_t>::max(),
   //                                                                  std::numeric_limits<unsigned int>::max());
   std::pair<std::size_t, unsigned int> debug_cell = std::make_pair(1, 1);
-  
+
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < multimesh.num_parts(); cut_part++)
   {
@@ -291,7 +295,7 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
     std::cout << "----- cut part: " << cut_part << std::endl;
     std::shared_ptr<const Mesh> cut_mesh = multimesh.part(cut_part);
     const MeshGeometry& cut_mesh_geometry = cut_mesh->geometry();
-    
+
     // Iterate over cut cells for current part
     for (CellIterator cut_it(*cut_mesh); !cut_it.end(); ++cut_it)
     {
@@ -313,7 +317,7 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
       // Store the initial polygon which are the elements used in the
       // inclusion-exclusion principle
       std::vector<Polygon> initial_polygons;
-      
+
       for (std::size_t cutting_part = cut_part+1; cutting_part < multimesh.num_parts(); cutting_part++)
       {
         std::shared_ptr<const Mesh> cutting_mesh = multimesh.part(cutting_part);
@@ -358,13 +362,13 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
           cgal_QR qr_cutting_cell;
           for (const Triangle_2& t : p)
           {
-            const std::pair<Point_2, ExactKernel::FT> qr_current_triangle = cgal_compute_quadrature_rule(t, 1);
+            const std::pair<Point_2, ExactNumber> qr_current_triangle = cgal_compute_quadrature_rule(t, 1);
 
             if (debug_output ) std::cout << "      (" << t[0] << ", " << t[1] << ", " << t[2] << ") => " << qr_current_triangle.first << ", " << qr_current_triangle.second << std::endl;
             qr_cutting_cell.push_back(qr_current_triangle);
           }
 
-          // for (const std::pair<Point_2, ExactKernel::FT>& point_rule : qr_cutting_cell)
+          // for (const std::pair<Point_2, ExactNumber>& point_rule : qr_cutting_cell)
           //   std::cout << "qr rule:   (" << point_rule.first << ") : " << point_rule.second << ", ";
           // std::cout << std::endl;
 
@@ -462,7 +466,7 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
 
           if (debug_output)
             std::cout << "    Number of new intersections: " << new_intersections.size() << std::endl;
-          
+
           // Add quadrature rule with correct sign
           const double sign = std::pow(-1, stage);
           // quadrature_rule overlap_part_qr;
@@ -472,7 +476,7 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
             if (debug_output) std::cout << "      intersection" << std::endl;
             for (const Triangle_2& t : p.second)
             {
-              std::pair<Point_2, ExactKernel::FT> qr_current_triangle = cgal_compute_quadrature_rule(t, sign);
+              std::pair<Point_2, ExactNumber> qr_current_triangle = cgal_compute_quadrature_rule(t, sign);
               if (debug_output)
                 if (debug_output ) std::cout << "      (" << t[0] << ", " << t[1] << ", " << t[2] << ") => " << qr_current_triangle.first << ", " << qr_current_triangle.second << std::endl;
               qr_current_stage.push_back(qr_current_triangle);
@@ -490,15 +494,15 @@ void compute_quadrature_rules_overlap_cgal(const MultiMesh& multimesh,
 }
 //------------------------------------------------------------------------------
 void compute_volume_cgal(const MultiMesh& multimesh,
-                         std::vector<std::vector<std::pair<CELL_STATUS, ExactKernel::FT> > >& cells_status)
+                         std::vector<std::vector<std::pair<CELL_STATUS, ExactNumber> > >& cells_status)
 {
   std::cout << "Computing volume with CGAL" << std::endl;
 
-  cells_status.reserve(multimesh.num_parts());    
+  cells_status.reserve(multimesh.num_parts());
 
   std::vector<std::map<unsigned int, std::vector<cgal_QR>>> qr_rules_overlap;
   compute_quadrature_rules_overlap_cgal(multimesh, qr_rules_overlap);
-  
+
   for (std::size_t part = 0; part < multimesh.num_parts(); part++)
   {
     if (debug_output) std::cout << "  Part " << part << ", cut cells: " << qr_rules_overlap[part].size() << std::endl;
@@ -506,8 +510,8 @@ void compute_volume_cgal(const MultiMesh& multimesh,
     const MeshGeometry& cut_mesh_geometry = cut_mesh->geometry();
     const std::map<unsigned int, std::vector<cgal_QR>>& qr_overlap_current_part = qr_rules_overlap[part];
 
-    cells_status.push_back(std::vector<std::pair<CELL_STATUS, ExactKernel::FT> >());
-    std::vector<std::pair<CELL_STATUS, ExactKernel::FT> >& cells_status_current_part = cells_status.back();
+    cells_status.push_back(std::vector<std::pair<CELL_STATUS, ExactNumber> >());
+    std::vector<std::pair<CELL_STATUS, ExactNumber> >& cells_status_current_part = cells_status.back();
 
     std::shared_ptr<const Mesh> current_mesh = multimesh.part(part);
     cells_status_current_part.resize(current_mesh->num_cells());
@@ -527,7 +531,7 @@ void compute_volume_cgal(const MultiMesh& multimesh,
       if (cut_cell.orientation() == CGAL::CLOCKWISE)
         cut_cell = cut_cell.opposite();
 
-      std::pair<CELL_STATUS, ExactKernel::FT>& status_current_cell = cells_status_current_part[cut_it->index()];
+      std::pair<CELL_STATUS, ExactNumber>& status_current_cell = cells_status_current_part[cut_it->index()];
       status_current_cell.first = UNCUT;
       status_current_cell.second = CGAL::abs(cut_cell.area());
 
@@ -536,11 +540,11 @@ void compute_volume_cgal(const MultiMesh& multimesh,
       {
         // const std::vector<cgal_QR>& qrs = *cutting_cells;
         if (debug_output) std::cout << "      cell is cut" << std::endl;
-        ExactKernel::FT volume = 0;
+        ExactNumber volume = 0;
         for (const cgal_QR& qr : cutting_cells->second)
         {
           if (debug_output) std::cout << "      QR: " << qr.size() << std::endl;
-          for (const std::pair<Point_2, ExactKernel::FT>& qr_point_and_weight : qr)
+          for (const std::pair<Point_2, ExactNumber>& qr_point_and_weight : qr)
           {
             status_current_cell.second -= qr_point_and_weight.second;
           }
@@ -563,40 +567,40 @@ void test_multiple_meshes_with_rotation()
 
   MultiMesh multimesh;
   build_failing_case(multimesh);
-  
+
   // std::cout << multimesh.plot_matplotlib() << std::endl;
   std::cout << "Done building multimesh" << std::endl;
   /* ---------------- Done creating multimesh ----------------------- */
 
   // Compute volume of each cell using cgal
-  std::vector<std::vector<std::pair<CELL_STATUS, ExactKernel::FT>>> cell_status_cgal;
+  std::vector<std::vector<std::pair<CELL_STATUS, ExactNumber>>> cell_status_cgal;
   compute_volume_cgal(multimesh, cell_status_cgal);
   std::cout << "Done computing volumes with cgal" << std::endl;
 
   std::cout << cell_status_cgal.size() << std::endl;
-  for (const std::vector<std::pair<CELL_STATUS, ExactKernel::FT>>& v : cell_status_cgal)
+  for (const std::vector<std::pair<CELL_STATUS, ExactNumber>>& v : cell_status_cgal)
   {
     std::cout << "  part size  " << v.size() << std::endl;
-    for (const std::pair<CELL_STATUS, ExactKernel::FT>& c : v)
+    for (const std::pair<CELL_STATUS, ExactNumber>& c : v)
       std::cout << "    cell, status" << c.first << " : volume " << c.second << std::endl;
   }
-  
+
   // Compute volume of each cell using dolfin::MultiMesh
   std::vector<std::vector<std::pair<CELL_STATUS, double>>> cell_status_multimesh;
   compute_volume(multimesh, cell_status_multimesh);
   std::cout << "Done computing volumes with multimesh" << std::endl;
-  
-  ExactKernel::FT cgal_volume = 0.;
+
+  ExactNumber cgal_volume = 0.;
   double multimesh_volume = 0.;
 
   //dolfin_assert(cell_status_cgal.size() == cell_status_multimesh.size());
   for (std::size_t i = 0; i < cell_status_multimesh.size(); i++)
   {
-    const std::vector<std::pair<CELL_STATUS, ExactKernel::FT> >& current_cgal = cell_status_cgal[i];
+    const std::vector<std::pair<CELL_STATUS, ExactNumber> >& current_cgal = cell_status_cgal[i];
     const std::vector<std::pair<CELL_STATUS, double> >& current_multimesh = cell_status_multimesh[i];
 
     dolfin_assert(current_cgal.size() == current_multimesh.size());
-      
+
     std::cout << "Cells in part " << i << ": " << std::endl;
     for (std::size_t j = 0; j < current_multimesh.size(); j++)
     {
@@ -612,7 +616,7 @@ void test_multiple_meshes_with_rotation()
 
   // Exact volume is known
   const double exact_volume = 1;
-    
+
   std::cout << "Total volume" << std::endl;
   std::cout << "------------" << std::endl;
   std::cout << "Multimesh: " << multimesh_volume << ", error: " << std::abs(exact_volume-multimesh_volume) << std::endl;

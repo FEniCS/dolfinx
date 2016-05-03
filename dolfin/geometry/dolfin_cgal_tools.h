@@ -1,12 +1,15 @@
 #ifndef DOLFIN_CGAL_TOOLS_H
 #define DOLFIN_CGAL_TOOLS_H
 
+#define CGAL_HEADER_ONLY
+
+#include <CGAL/Cartesian.h>
+#include <CGAL/Quotient.h>
+#include <CGAL/MP_Float.h>
+
 #include <CGAL/Triangle_2.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/intersection_2.h>
-#include <CGAL/Boolean_set_operations_2.h>
-#include <CGAL/Polygon_set_2.h>
+
 
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 #include <dolfin/geometry/IntersectionTriangulation.h>
@@ -15,12 +18,11 @@
 #define Augustcgal
 #define Augustdebug_cgal
 
-typedef CGAL::Exact_predicates_exact_constructions_kernel CGALKernel;
-//typedef CGAL::Exact_predicates_inexact_constructions_kernel CGALKernel;
-typedef CGALKernel::FT                            ExactNumber;
-typedef CGAL::Point_2<CGALKernel>                 Point_2;
-typedef CGAL::Triangle_2<CGALKernel>              Triangle_2;
-typedef CGAL::Segment_2<CGALKernel>               Segment_2;
+typedef CGAL::Quotient<CGAL::MP_Float>   ExactNumber;
+typedef CGAL::Cartesian<ExactNumber>     ExactKernel;
+typedef ExactKernel::Point_2             Point_2;
+typedef ExactKernel::Triangle_2          Triangle_2;
+typedef ExactKernel::Segment_2           Segment_2;
 
 namespace cgaltools
 {

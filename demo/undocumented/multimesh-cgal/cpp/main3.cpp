@@ -19,18 +19,22 @@
 // Last changed: 2015-06-08
 //
 
+#define CGAL_HEADER_ONLY
+
 #include <dolfin/geometry/Point.h>
 #include <dolfin/geometry/IntersectionTriangulation.h>
 
-#include <CGAL/Triangle_2.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 
-typedef CGAL::Exact_predicates_exact_constructions_kernel ExactKernel;
-typedef CGAL::Point_2<ExactKernel>                Point_2;
-typedef CGAL::Triangle_2<ExactKernel>             Triangle_2;
+#include <CGAL/MP_Float.h>
+#include <CGAL/Quotient.h>
+#include <CGAL/Cartesian.h>
 
-#include <dolfin/geometry/dolfin_simplex_tools.h>
-#include <dolfin/geometry/dolfin_cgal_tools.h>
+typedef CGAL::Quotient<CGAL::MP_Float>       FT;
+typedef CGAL::Cartesian<FT>                  ExactKernel;
+typedef ExactKernel::Point_2                 Point_2;
+typedef ExactKernel::Triangle_2              Triangle_2;
+typedef ExactKernel::Segment_2               Segment_2;
+
 
 using namespace dolfin;
 
@@ -69,7 +73,7 @@ int main(int argc, char** argv)
     Segment_2 t2(Point_2(0.5, 0.2),
 		 Point_2(0.5, -0.5));
 
-    std::cout << tools::drawtriangle(cgaltools::convert(t1))<<tools::drawtriangle(cgaltools::convert(t2))<<std::endl;
+    // std::cout << tools::drawtriangle(cgaltools::convert(t1))<<tools::drawtriangle(cgaltools::convert(t2))<<std::endl;
 
   }
 
