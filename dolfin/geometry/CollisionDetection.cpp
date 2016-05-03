@@ -202,7 +202,8 @@ CollisionDetection::collides_interval_interval(const MeshEntity& interval_0,
   const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
   const bool result = b1 > a0 - eps && a1 < b0 + eps;
 
-  return CHECK_CGAL(result, interval_0, interval_1);
+  return CHECK_CGAL(result,
+                    cgal_collides_interval_interval(interval_0, interval_1));
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_point(const MeshEntity& triangle,
@@ -223,7 +224,6 @@ bool CollisionDetection::collides_triangle_point(const MeshEntity& triangle,
                                    geometry.point(vertices[1]),
                                    geometry.point(vertices[2]),
                                    point);
-
 }
 //------------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_interval(const MeshEntity& triangle,
@@ -478,7 +478,8 @@ CollisionDetection::collides_edge_edge(const Point& a,
   if (s <= 0 or s >= 1)
     result=false;
 
-  return CHECK_CGAL(result, a, b, c, d);
+  return CHECK_CGAL(result,
+                    cgal_collides_edge_edge(a, b, c, d));
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_interval_point(const Point& p0,
@@ -511,9 +512,9 @@ bool CollisionDetection::collides_interval_point(const Point& p0,
   if (std::abs(1-a) < DOLFIN_EPS_LARGE and wnorm <= vnorm)
     result=true;
 
-  return CHECK_CGAL(result, p0, p1, point);
+  return CHECK_CGAL(result,
+                    cgal_collides_interval_point(p0, p1, point));
 }
-
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_point_2d(const Point& p0,
                                                     const Point& p1,
@@ -555,7 +556,8 @@ bool CollisionDetection::collides_triangle_point_2d(const Point& p0,
   if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
     result=false;
 
-  return CHECK_CGAL(result, p0, p1, p2, point);
+  return CHECK_CGAL(result,
+                    cgal_collides_triangle_point_2d(p0, p1, p2, point));
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_point(const Point& p0,
@@ -600,7 +602,8 @@ bool CollisionDetection::collides_triangle_point(const Point& p0,
   double t3 = normal.dot(pnormal);
   if (t3 < 0) result=false;
 
-  return CHECK_CGAL(result, p0, p1, p2, point);
+  return CHECK_CGAL(result,
+                    cgal_collides_triangle_point(p0, p1, p2, point));
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_interval(const Point& p0,
@@ -610,33 +613,32 @@ bool CollisionDetection::collides_triangle_interval(const Point& p0,
 						    const Point& q1)
 {
   // FIXME: this can perhaps be optimized
-  bool result=false;
+  bool result = false;
 
   // Check if end points are in triangle
   if (collides_triangle_point(p0, p1, p2, q0))
-    result=true;
+    result = true;
   if (collides_triangle_point(p0, p1, p2, q1))
-    result=true;
+    result = true;
 
   // Check if any of the triangle edges are cut by the interval
   if (collides_edge_edge(p0, p1, q0, q1))
-    result=true;
+    result = true;
   if (collides_edge_edge(p0, p2, q0, q1))
-    result=true;
+    result = true;
   if (collides_edge_edge(p1, p2, q0, q1))
-    result=true;
+    result = true;
 
-  return CHECK_CGAL(result, p0, p1, p2, q0, q1);
+  return CHECK_CGAL(result,
+                    cgal_collides_triangle_interval(p0, p1, p2, q0, q1));
 }
-
 //------------------------------------------------------------------------------
-bool
-CollisionDetection::collides_triangle_triangle(const Point& p0,
-					       const Point& p1,
-					       const Point& p2,
-					       const Point& q0,
-					       const Point& q1,
-					       const Point& q2)
+bool CollisionDetection::collides_triangle_triangle(const Point& p0,
+                                                    const Point& p1,
+                                                    const Point& p2,
+                                                    const Point& q0,
+                                                    const Point& q1,
+                                                    const Point& q2)
 {
   // Algorithm and code from Tomas Moller: A Fast Triangle-Triangle
   // Intersection Test, Journal of Graphics Tools, 2(2), 1997. Source
@@ -773,7 +775,8 @@ CollisionDetection::collides_triangle_triangle(const Point& p0,
       isect2[1] < isect1[0])
     result=false;
 
-  return CHECK_CGAL(result, p0, p1, p2, q0, q1, q2);
+  return CHECK_CGAL(result,
+                    cgal_collides_triangle_triangle(p0, p1, p2, q0, q1, q2));
 }
 //-----------------------------------------------------------------------------
 bool
