@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2015-11-27
+// Last changed: 2016-05-03
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -250,12 +250,12 @@ namespace dolfin
 				       const Point& U2);
 
     // Helper function for triangle-triangle collision
-    static bool point_in_tri(int i0,
-                             int i1,
-			     const Point& V0,
-			     const Point& U0,
-			     const Point& U1,
-			     const Point& U2);
+    static bool point_in_triangle(int i0,
+                                  int i1,
+                                  const Point& V0,
+                                  const Point& U0,
+                                  const Point& U1,
+                                  const Point& U2);
 
     // Helper function for triangle-triangle collision
     static bool coplanar_tri_tri(const Point& N,
