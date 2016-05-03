@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2014-04-03
+// Last changed: 2015-11-27
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -107,6 +107,20 @@ namespace dolfin
     static bool collides_triangle_point(const MeshEntity& triangle,
 					const Point& point);
 
+    /// Check whether triangle collides with interval.
+    ///
+    /// *Arguments*
+    ///     triangle (_MeshEntity_)
+    ///         The triangle.
+    ///     interval (_MeshEntity_)
+    ///         The interval.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff objects collide.
+    static bool collides_triangle_interval(const MeshEntity& triangle,
+					   const MeshEntity& interval);
+
     /// Check whether triangle collides with triangle.
     ///
     /// *Arguments*
@@ -191,6 +205,13 @@ namespace dolfin
 					   const Point& p3,
 					   const Point& point);
   private:
+
+    // The implementation of collides_triangle_interval
+    static bool collides_triangle_interval(const Point& p0,
+					   const Point& p1,
+					   const Point& p2,
+					   const Point& q0,
+					   const Point& q1);
 
     // The implementation of collides_triangle_triangle
     static bool collides_triangle_triangle(const Point& p0,

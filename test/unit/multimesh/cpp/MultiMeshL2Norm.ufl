@@ -1,0 +1,19 @@
+from ufl import *
+
+ORDER = 1
+domain = triangle
+
+# Define element
+P1 = FiniteElement("Lagrange", domain, ORDER)
+uh = Coefficient(P1)
+
+# Exact solution
+P3 = FiniteElement("Lagrange", domain, ORDER + 1)
+u = Coefficient(P3)
+
+# Define measure
+dc0 = dc(0, metadata={"num_cells": 1})
+dX = dx + dc0
+
+# Squared L2 norm of error
+M = abs(u - uh)**2*dX

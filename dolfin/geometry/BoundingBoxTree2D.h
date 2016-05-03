@@ -26,6 +26,10 @@
 #include <dolfin/common/constants.h>
 #include "GenericBoundingBoxTree.h"
 
+// FIXME August
+#include <dolfin/geometry/predicates.h>
+
+
 namespace dolfin
 {
 
@@ -81,16 +85,58 @@ namespace dolfin
       const double eps1 = DOLFIN_EPS_LARGE*(b[3] - b[1]);
       return (b[0] - eps0 <= x[0] && x[0] <= b[2] + eps0 &&
               b[1] - eps1 <= x[1] && x[1] <= b[3] + eps1);
+
+      /* // FIXME: August tests Shewchuk robust geometry kit */
+      /* const double* b = _bbox_coordinates.data() + 4*node; */
+      /* double p0[2] = {b[0], b[1]}; */
+      /* double p1[2] = {b[2], b[1]}; */
+      /* if (orient2d(const_cast<double*>(x), p0, p1) > 0) */
+      /* 	return false; */
+
+      /* double p2[2] = {b[0], b[3]}; */
+      /* if (orient2d(const_cast<double*>(x), p0, p2) > 0) */
+      /* 	return false; */
+
+      /* double p3[2] = {b[2], b[3]}; */
+      /* if (orient2d(const_cast<double*>(x), p2, p3) > 0) */
+      /* 	return false; */
+
+      /* if (orient2d(const_cast<double*>(x), p3, p1) > 0) */
+      /* 	return false; */
+
+      /* return true; */
     }
 
     // Check whether bounding box (a) collides with bounding box (node)
     bool bbox_in_bbox(const double* a, unsigned int node) const
     {
+      /* const double* b = _bbox_coordinates.data() + 4*node; */
+      /* const double eps0 = DOLFIN_EPS*(b[2] - b[0]); */
+      /* const double eps1 = DOLFIN_EPS*(b[3] - b[1]); */
+      /* return (b[0] - eps0 <= a[2] && a[0] <= b[2] + eps0 && */
+      /* 	      b[1] - eps1 <= a[3] && a[1] <= b[3] + eps1); */
+
       const double* b = _bbox_coordinates.data() + 4*node;
-      const double eps0 = DOLFIN_EPS_LARGE*(b[2] - b[0]);
-      const double eps1 = DOLFIN_EPS_LARGE*(b[3] - b[1]);
-      return (b[0] - eps0 <= a[2] && a[0] <= b[2] + eps0 &&
-              b[1] - eps1 <= a[3] && a[1] <= b[3] + eps1);
+
+      double ll[2] = {a[2], a[3]};
+      double p0[2] = {b[0], b[1]};
+      double p1[2] = {b[2], b[1]};
+      if (orient2d(ll, p0, p1) < 0) // FIXME: if < then v=1e-13, m=24, n=1 had previously problems with wrong markers. Check that this is fixed.
+      	return false;
+
+      double p2[2] = {b[0], b[3]};
+      if (orient2d(ll, p2, p0) < 0)
+      	return false;
+
+      double ur[2] = {a[0], a[1]};
+      double p3[2] = {b[2], b[3]};
+      if (orient2d(ur, p3, p2) < 0)
+      	return false;
+
+      if (orient2d(ur, p1, p3) < 0)
+      	return false;
+
+      return true;
     }
 
     // Compute squared distance between point and bounding box

@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2014-04-03
+// Last changed: 2015-11-28
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -59,6 +59,9 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include "Point.h"
 #include "CollisionDetection.h"
+
+// FIXME August
+#include <dolfin/geometry/dolfin_cgal_tools.h>
 
 using namespace dolfin;
 
@@ -104,11 +107,9 @@ CollisionDetection::collides(const MeshEntity& entity_0,
       dolfin_not_implemented();
       break;
     case 1:
-      return collides_interval_interval(entity_1, entity_0);
-      break;
+      return collides_interval_interval(entity_0, entity_1);
     case 2:
-      dolfin_not_implemented();
-      break;
+      return collides_triangle_interval(entity_1, entity_0);
     case 3:
       dolfin_not_implemented();
       break;
@@ -126,8 +127,7 @@ CollisionDetection::collides(const MeshEntity& entity_0,
       dolfin_not_implemented();
       break;
     case 1:
-      dolfin_not_implemented();
-      break;
+      return collides_triangle_interval(entity_0, entity_1);
     case 2:
       return collides_triangle_triangle(entity_0, entity_1);
     case 3:
@@ -184,6 +184,26 @@ bool
 CollisionDetection::collides_interval_interval(const MeshEntity& interval_0,
                                                const MeshEntity& interval_1)
 {
+#ifdef Augustcgal
+  const MeshGeometry& geometry_0 = interval_0.mesh().geometry();
+  const MeshGeometry& geometry_1 = interval_1.mesh().geometry();
+  const unsigned int* vertices_0 = interval_0.entities(0);
+  const unsigned int* vertices_1 = interval_1.entities(0);
+
+  const Point a(geometry_0.point(vertices_0[0])[0],
+		geometry_0.point(vertices_0[0])[1]);
+  const Point b(geometry_0.point(vertices_0[1])[0],
+		geometry_0.point(vertices_0[1])[1]);
+  const Point c(geometry_1.point(vertices_1[0])[0],
+		geometry_1.point(vertices_1[0])[1]);
+  const Point d(geometry_1.point(vertices_1[1])[0],
+		geometry_1.point(vertices_1[1])[1]);
+
+  return CGAL::do_intersect(cgaltools::convert(a, b),
+			    cgaltools::convert(c, d));
+
+#else
+
   // Get coordinates
   const MeshGeometry& geometry_0 = interval_0.mesh().geometry();
   const MeshGeometry& geometry_1 = interval_1.mesh().geometry();
@@ -203,6 +223,8 @@ CollisionDetection::collides_interval_interval(const MeshEntity& interval_0,
   const double dx = std::min(b0 - a0, b1 - a1);
   const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
   return b1 > a0 - eps && a1 < b0 + eps;
+
+#endif
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_point(const MeshEntity& triangle,
@@ -224,6 +246,24 @@ bool CollisionDetection::collides_triangle_point(const MeshEntity& triangle,
                                    geometry.point(vertices[2]),
                                    point);
 
+}
+//------------------------------------------------------------------------------
+bool CollisionDetection::collides_triangle_interval(const MeshEntity& triangle,
+						    const MeshEntity& interval)
+{
+  dolfin_assert(triangle.mesh().topology().dim() == 2);
+  dolfin_assert(interval.mesh().topology().dim() == 1);
+
+  const MeshGeometry& geometry_t = triangle.mesh().geometry();
+  const unsigned int* vertices_t = triangle.entities(0);
+  const MeshGeometry& geometry_i = interval.mesh().geometry();
+  const unsigned int* vertices_i = interval.entities(0);
+
+  return collides_triangle_interval(geometry_t.point(vertices_t[0]),
+				    geometry_t.point(vertices_t[1]),
+				    geometry_t.point(vertices_t[2]),
+				    geometry_i.point(vertices_i[0]),
+				    geometry_i.point(vertices_i[1]));
 }
 //-----------------------------------------------------------------------------
 bool
@@ -421,6 +461,12 @@ CollisionDetection::collides_edge_edge(const Point& a,
 				       const Point& c,
 				       const Point& d)
 {
+#ifdef Augustcgal
+  return CGAL::do_intersect(cgaltools::convert(a, b),
+			    cgaltools::convert(c, d));
+
+#else
+
   const double tol = DOLFIN_EPS_LARGE;
 
   // Check if two edges are the same
@@ -458,12 +504,19 @@ CollisionDetection::collides_edge_edge(const Point& a,
     return false;
 
   return true;
+#endif
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_interval_point(const Point& p0,
                                                  const Point& p1,
                                                  const Point& point)
 {
+#ifdef Augustcgal
+
+  return CGAL::do_intersect(cgaltools::convert(p0, p1),
+			    cgaltools::convert(point));
+
+#else
   // Compute angle between v = p1 - p0 and w = point - p0
   Point v = p1 - p0;
   const double vnorm = v.norm();
@@ -488,6 +541,7 @@ bool CollisionDetection::collides_interval_point(const Point& p0,
     return true;
 
   return false;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -496,6 +550,12 @@ bool CollisionDetection::collides_triangle_point_2d(const Point& p0,
                                                     const Point& p2,
                                                     const Point &point)
 {
+#ifdef Augustcgal
+
+  return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
+			    cgaltools::convert(point));
+#else
+
   // Simplified algorithm for coplanar triangles and points (z=0)
   // This algorithm is robust because it will perform the same numerical
   // test on each edge of neighbouring triangles. Points cannot slip
@@ -529,6 +589,7 @@ bool CollisionDetection::collides_triangle_point_2d(const Point& p0,
     return false;
 
   return true;
+#endif
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_point(const Point& p0,
@@ -536,6 +597,10 @@ bool CollisionDetection::collides_triangle_point(const Point& p0,
                                                  const Point& p2,
                                                  const Point &point)
 {
+#ifdef Augustcgal
+  return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
+			    cgaltools::convert(point));
+#else
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
 
   // Vectors defining each edge in consistent orientation
@@ -571,8 +636,38 @@ bool CollisionDetection::collides_triangle_point(const Point& p0,
   if (t3 < 0) return false;
 
   return true;
+#endif
 }
 //-----------------------------------------------------------------------------
+bool CollisionDetection::collides_triangle_interval(const Point& p0,
+						    const Point& p1,
+						    const Point& p2,
+						    const Point& q0,
+						    const Point& q1)
+{
+#ifdef Augustcgal
+  return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
+			    cgaltools::convert(q0, q1));
+#else
+  // Check if end points are in triangle
+  if (collides_triangle_point(p0, p1, p2, q0))
+    return true;
+  if (collides_triangle_point(p0, p1, p2, q1))
+    return true;
+
+  // Check if any of the triangle edges are cut by the interval
+  if (collides_edge_edge(p0, p1, q0, q1))
+    return true;
+  if (collides_edge_edge(p0, p2, q0, q1))
+    return true;
+  if (collides_edge_edge(p1, p2, q0, q1))
+    return true;
+
+  return false;
+#endif
+}
+
+//------------------------------------------------------------------------------
 bool
 CollisionDetection::collides_triangle_triangle(const Point& p0,
 					       const Point& p1,
@@ -581,6 +676,11 @@ CollisionDetection::collides_triangle_triangle(const Point& p0,
 					       const Point& q1,
 					       const Point& q2)
 {
+#ifdef Augustcgal
+  return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
+			    cgaltools::convert(q0, q1, q2));
+
+#else
   // Algorithm and code from Tomas Moller: A Fast Triangle-Triangle
   // Intersection Test, Journal of Graphics Tools, 2(2), 1997. Source
   // code is available at
@@ -714,6 +814,7 @@ CollisionDetection::collides_triangle_triangle(const Point& p0,
     return false;
 
   return true;
+#endif
 }
 //-----------------------------------------------------------------------------
 bool
