@@ -58,7 +58,6 @@
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "Point.h"
-#include "CGALExactArithmetic.h"
 #include "CollisionDetection.h"
 
 using namespace dolfin;

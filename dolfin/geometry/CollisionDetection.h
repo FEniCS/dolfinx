@@ -1,4 +1,4 @@
-// Copyright (C) 2014 Anders Logg and August Johansson
+// Copyright (C) 2014-2016 Anders Logg and August Johansson
 //
 // This file is part of DOLFIN.
 //
@@ -20,6 +20,7 @@
 
 #include <vector>
 #include <dolfin/log/log.h>
+#include "CGALExactArithmetic.h"
 
 #ifndef __COLLISION_DETECTION_H
 #define __COLLISION_DETECTION_H
@@ -77,7 +78,11 @@ namespace dolfin
     ///     bool
     ///         True iff objects collide.
     static bool collides_interval_point(const MeshEntity& interval,
-					const Point& point);
+					const Point& point)
+    {
+      return CHECK_CGAL(dolfin_collides_interval_point(interval, point),
+                        cgal_collides_interval_point(interval, point));
+    }
 
     /// Check whether interval collides with interval.
     ///
@@ -91,7 +96,11 @@ namespace dolfin
     ///     bool
     ///         True iff objects collide.
     static bool collides_interval_interval(const MeshEntity& interval_0,
-					   const MeshEntity& interval_1);
+					   const MeshEntity& interval_1)
+    {
+      return CHECK_CGAL(dolfin_collides_interval_interval(interval_0, interval_1),
+                        cgal_collides_interval_interval(interval_0, interval_1));
+    }
 
     /// Check whether triangle collides with point.
     ///
@@ -179,8 +188,11 @@ namespace dolfin
 
     /// Check whether edge a-b collides with edge c-d.
     static bool collides_edge_edge(const Point& a, const Point& b,
-				   const Point& c, const Point& d);
-
+				   const Point& c, const Point& d)
+    {
+      return CHECK_CGAL(dolfin_collides_edge_edge(a, b, c, d),
+                         cgal_collides_edge_edge(a, b, c, d));
+    }
 
     // The implementation of collides_interval_point
     static bool collides_interval_point(const Point& p0, const Point& p1,
@@ -190,13 +202,21 @@ namespace dolfin
     static bool collides_triangle_point(const Point& p0,
 					const Point& p1,
 					const Point& p2,
-					const Point& point);
+					const Point& point)
+    {
+      return CHECK_CGAL(dolfin_collides_triangle_point(p0, p1, p2, point),
+                        cgal_collides_triangle_point(p0, p1, p2, point));
+    }
 
     // Specialised implementation of collides_triangle_point in 2D
     static bool collides_triangle_point_2d(const Point& p0,
                                            const Point& p1,
                                            const Point& p2,
-                                           const Point& point);
+                                           const Point& point)
+    {
+      return CHECK_CGAL(dolfin_collides_triangle_point_2d(p0, p1, p2, point),
+                        cgal_collides_triangle_point_2d(p0, p1, p2, point));
+    }
 
     // The implementation of collides_tetrahedron_point
     static bool collides_tetrahedron_point(const Point& p0,
@@ -210,7 +230,11 @@ namespace dolfin
 					   const Point& p1,
 					   const Point& p2,
 					   const Point& q0,
-					   const Point& q1);
+					   const Point& q1)
+    {
+      return CHECK_CGAL(dolfin_collides_triangle_interval(p0, p1, p2, q0, q1),
+                        cgal_collides_triangle_interval(p0, p1, p2, q0, q1));
+    }
 
     // The implementation of collides_triangle_triangle
     static bool collides_triangle_triangle(const Point& p0,
@@ -218,8 +242,11 @@ namespace dolfin
 					   const Point& p2,
 					   const Point& q0,
 					   const Point& q1,
-					   const Point& q2);
-
+					   const Point& q2)
+    {
+      return CHECK_CGAL(dolfin_collides_triangle_triangle(p0, p1, p2, q0, q1, q2),
+                        cgal_collides_triangle_triangle(p0, p1, p2, q0, q1, q2));
+    }
 
     // The implementation of collides_tetrahedron_triangle
     static bool collides_tetrahedron_triangle(const Point& p0,
@@ -229,9 +256,46 @@ namespace dolfin
 					      const Point& q0,
 					      const Point& q1,
 					      const Point& q2);
+
   private:
 
-    // Helper function for triangle-triangle collision
+    //--- Predicates that exists as both DOLFIN and CGAL versions ---
+
+    static bool dolfin_collides_interval_point(const MeshEntity& interval,
+                                               const Point& point);
+
+    static bool dolfin_collides_interval_interval(const MeshEntity& interval_0,
+                                                  const MeshEntity& interval_1);
+
+    static bool dolfin_collides_edge_edge(const Point& a, const Point& b,
+                                          const Point& c, const Point& d);
+
+    static bool dolfin_collides_triangle_point(const Point& p0,
+                                               const Point& p1,
+                                               const Point& p2,
+                                               const Point& point);
+
+    static bool dolfin_collides_triangle_point_2d(const Point& p0,
+                                                  const Point& p1,
+                                                  const Point& p2,
+                                                  const Point& point);
+
+    static bool dolfin_collides_triangle_interval(const Point& p0,
+                                                  const Point& p1,
+                                                  const Point& p2,
+                                                  const Point& q0,
+                                                  const Point& q1);
+
+    static bool dolfin_collides_triangle_triangle(const Point& p0,
+                                                  const Point& p1,
+                                                  const Point& p2,
+                                                  const Point& q0,
+                                                  const Point& q1,
+                                                  const Point& q2)
+
+    //--- Utility functions ---
+
+    // Utility function for triangle-triangle collision
     static bool edge_edge_test(int i0,
                                int i1,
                                double Ax,
@@ -240,7 +304,7 @@ namespace dolfin
 			       const Point& U0,
 			       const Point& U1);
 
-    // Helper function for triangle-triangle collision
+    // Utility function for triangle-triangle collision
     static bool edge_against_tri_edges(int i0,
                                        int i1,
 				       const Point& V0,
@@ -249,7 +313,7 @@ namespace dolfin
 				       const Point& U1,
 				       const Point& U2);
 
-    // Helper function for triangle-triangle collision
+    // Utility function for triangle-triangle collision
     static bool point_in_triangle(int i0,
                                   int i1,
                                   const Point& V0,
@@ -257,7 +321,7 @@ namespace dolfin
                                   const Point& U1,
                                   const Point& U2);
 
-    // Helper function for triangle-triangle collision
+    // Utility function for triangle-triangle collision
     static bool coplanar_tri_tri(const Point& N,
 				 const Point& V0,
 				 const Point& V1,
@@ -266,7 +330,7 @@ namespace dolfin
 				 const Point& U1,
 				 const Point& U2);
 
-    // Helper function for triangle-triangle collision
+    // Utility function for triangle-triangle collision
     static bool compute_intervals(double VV0,
                                   double VV1,
                                   double VV2,
@@ -281,7 +345,7 @@ namespace dolfin
 				  double& X0,
                                   double& X1);
 
-    // Helper function for collides_tetrahedron_tetrahedron: checks if
+    // Utility function for collides_tetrahedron_tetrahedron: checks if
     // plane pv1 is a separating plane. Stores local coordinates bc
     // and the mask bit mask_edges.
     static bool separating_plane_face_A_1(const std::vector<Point>& pv1,
@@ -289,7 +353,7 @@ namespace dolfin
 					  std::vector<double>& bc,
 					  int& mask_edges);
 
-    // Helper function for collides_tetrahedron_tetrahedron: checks if
+    // Utility function for collides_tetrahedron_tetrahedron: checks if
     // plane v1, v2 is a separating plane. Stores local coordinates bc
     // and the mask bit mask_edges.
     static bool separating_plane_face_A_2(const std::vector<Point>& v1,
@@ -298,7 +362,7 @@ namespace dolfin
 					  std::vector<double>& bc,
 					  int& mask_edges);
 
-    // Helper function for collides_tetrahedron_tetrahedron: checks if
+    // Utility function for collides_tetrahedron_tetrahedron: checks if
     // plane pv2 is a separating plane.
     static bool separating_plane_face_B_1(const std::vector<Point>& P_V2,
 					  const Point& n)
@@ -309,7 +373,7 @@ namespace dolfin
 	      (P_V2[3].dot(n) > 0));
     }
 
-    // Helper function for collides_tetrahedron_tetrahedron: checks if
+    // Utility function for collides_tetrahedron_tetrahedron: checks if
     // plane v1, v2 is a separating plane.
     static bool separating_plane_face_B_2(const std::vector<Point>& V1,
 					  const std::vector<Point>& V2,
@@ -321,7 +385,7 @@ namespace dolfin
 	      ((V1[3] - V2[1]).dot(n) > 0));
     }
 
-    // Helper function for collides_tetrahedron_tetrahedron: checks if
+    // Utility function for collides_tetrahedron_tetrahedron: checks if
     // edge is in the plane separating faces f0 and f1.
     static bool separating_plane_edge_A(const std::vector<std::vector<double> >& coord_1,
 					const std::vector<int>& masks,
