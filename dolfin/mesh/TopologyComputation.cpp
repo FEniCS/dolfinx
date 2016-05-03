@@ -43,7 +43,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t dim)
+std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
 {
   // Check if entities have already been computed
   const MeshTopology& topology = mesh.topology();
@@ -67,13 +67,13 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
   switch (num_entity_vertices)
   {
     case  1:
-      return TopologyComputation::_compute_entities<1>(mesh, dim);
+      return TopologyComputation::compute_entities_by_key_matching<1>(mesh, dim);
     case  2:
-      return TopologyComputation::_compute_entities<2>(mesh, dim);
+      return TopologyComputation::compute_entities_by_key_matching<2>(mesh, dim);
     case  3:
-      return TopologyComputation::_compute_entities<3>(mesh, dim);
+      return TopologyComputation::compute_entities_by_key_matching<3>(mesh, dim);
     case  4:
-      return TopologyComputation::_compute_entities<4>(mesh, dim);
+      return TopologyComputation::compute_entities_by_key_matching<4>(mesh, dim);
     default:
       dolfin_error("TopologyComputation.cpp",
                    "compute topological entities",
@@ -83,204 +83,8 @@ std::size_t TopologyComputation::compute_entities_new(Mesh& mesh, std::size_t di
    }
 }
 //-----------------------------------------------------------------------------
-template<int N>
-std::size_t TopologyComputation::_compute_entities(Mesh& mesh, std::size_t dim)
+std::size_t TopologyComputation::compute_entities_old(Mesh& mesh, std::size_t dim)
 {
-  // Get mesh topology and connectivity
-  MeshTopology& topology = mesh.topology();
-  MeshConnectivity& ce = topology(topology.dim(), dim);
-  MeshConnectivity& ev = topology(dim, 0);
-
-  // Check if entities have already been computed
-  if (topology.size(dim) > 0)
-  {
-    // Make sure we really have the connectivity
-    if ((ce.empty() && dim != topology.dim()) || (ev.empty() && dim != 0))
-    {
-      dolfin_error("TopologyComputation.cpp",
-                   "compute topological entities",
-                   "Entities of topological dimension %d exist but connectivity is missing", dim);
-    }
-    return topology.size(dim);
-  }
-
-  // Make sure connectivity does not already exist
-  if (!ce.empty() || !ev.empty())
-  {
-    dolfin_error("TopologyComputation.cpp",
-                 "compute topological entities",
-                 "Connectivity for topological dimension %d exists but entities are missing", dim);
-  }
-
-  // Start timer
-  Timer timer("Compute entities dim = " + std::to_string(dim));
-
-  // Get cell type
-  const CellType& cell_type = mesh.type();
-
-  // Initialize local array of entities
-  const std::int8_t num_entities = cell_type.num_entities(dim);
-  const int num_vertices = cell_type.num_vertices(dim);
-  boost::multi_array<unsigned int, 2> e_vertices(boost::extents[num_entities][num_vertices]);
-
-  dolfin_assert(N == num_vertices);
-
-  // Create data structure to hold entities
-  // ([vertices key], (cell_index, (ghost flagm cell_local_index)))
-  std::vector<std::pair<std::array<std::int32_t, N>,
-    std::pair<std::int32_t, std::array<std::int8_t, 2>>>>
-      keyed_entities(num_entities*mesh.num_cells());
-
-  // Loop over cells to build list of keyed entities
-  int entity_counter = 0;
-  for (CellIterator c(mesh, "all"); !c.end(); ++c)
-  {
-    // Get vertices from cell
-    const unsigned int* vertices = c->entities(0);
-    dolfin_assert(vertices);
-
-    // Create entities from vertices
-    cell_type.create_entities(e_vertices, dim, vertices);
-
-    const std::int8_t is_ghost = c->is_ghost() ? 1 : 0;
-
-    // Iterate over entities of cell
-    const int cell_index = c->index();
-    for (std::int8_t i = 0; i < num_entities; ++i)
-    {
-      // Sort entity vertices
-      std::sort(e_vertices[i].begin(), e_vertices[i].end());
-
-      // Add entity indices to list of indices
-      //keyed_entities[entity_counter].first.assign(e_vertices[i].begin(),
-      //                                            e_vertices[i].end());
-      std::copy(e_vertices[i].begin(), e_vertices[i].end(),
-                keyed_entities[entity_counter].first.begin());
-
-      // Attach cell index and (ghost flag, local index)
-      keyed_entities[entity_counter].second = {cell_index, {{is_ghost, i}}};
-
-      ++entity_counter;
-    }
-  }
-
-  // Sort entities by key
-  std::sort(keyed_entities.begin(), keyed_entities.end());
-
-  // List of vertex indices connected to entity e
-  //std::vector<std::vector<int>> connectivity_ev;
-  //std::vector<std::vector<int>> connectivity_ev_ghost;
-  std::vector<std::array<int, N>> connectivity_ev;
-  std::vector<std::array<int, N>> connectivity_ev_ghost;
-
-  // List of entity e indices connected to cell
-  boost::multi_array<int, 2>
-    connectivity_ce(boost::extents[mesh.num_cells()][num_entities]);
-
-  // Marker for whether or not the most recently created entity is a ghost
-  // entity
-  bool ghost_entity = false;
-
-  // Find duplicate keys
-  if (keyed_entities.size() > 1)
-  {
-    const auto& e = keyed_entities[0].first;
-    const auto& cell = keyed_entities[0].second;
-
-    if (cell.second[0] == 0)
-    {
-      // 'Create' new entity and mark that most recently created entity is not a
-      // ghost
-      connectivity_ev.push_back(e);
-      ghost_entity = false;
-
-      connectivity_ce[cell.first][cell.second[1]] = connectivity_ev.size() - 1;
-    }
-    else
-    {
-      // 'Create' new entity and mark that most recently created entity is a ghost
-      connectivity_ev_ghost.push_back(e);
-      ghost_entity = true;
-
-      connectivity_ce[cell.first][cell.second[1]] = -connectivity_ev_ghost.size();
-    }
-  }
-
-  for (std::size_t i = 1; i < keyed_entities.size(); ++i)
-  {
-    const auto& e1 = keyed_entities[i].first;
-    const auto& cell1 = keyed_entities[i].second;
-
-    // Compare entity with the preceding entity
-    const auto& e0 = keyed_entities[i - 1].first;
-    if (!std::equal(e1.begin(), e1.end(), e0.begin()))
-    {
-      dolfin_assert(cell1.second[0] == 0 or cell1.second[0] == 1);
-      if (cell1.second[0] == 0)
-      {
-        // 'Create' new entity and flag that the most recent entity is not a
-        // ghost
-        connectivity_ev.push_back(e1);
-        ghost_entity = false;
-
-      }
-      else
-      {
-        // 'Create' new entity and flag that the most recent entity is a ghost
-        connectivity_ev_ghost.push_back(e1);
-        ghost_entity = true;
-      }
-    }
-
-    // Set entity index. Use negative index for ghost that will be corrected
-    // later once the number of entities is known
-    if (!ghost_entity)
-    {
-      connectivity_ce[cell1.first][cell1.second[1]] = connectivity_ev.size() - 1;
-    }
-    else
-    {
-      dolfin_assert(connectivity_ev_ghost.size() > 0);
-      connectivity_ce[cell1.first][cell1.second[1]] = -connectivity_ev_ghost.size();
-    }
-  }
-
-  // Initialise connectivity data structure
-  topology.init(dim, connectivity_ev.size() + connectivity_ev_ghost.size(),
-                     connectivity_ev.size() + connectivity_ev_ghost.size());
-
-  // Initialise ghost entity offset
-  topology.init_ghost(dim, connectivity_ev.size());
-
-  // Copy connectivity data into static MeshTopology data structures
-  ce.init(mesh.num_cells(), num_entities);
-  dolfin_assert(connectivity_ce.size() == mesh.num_cells());
-  for (unsigned int i = 0; i < mesh.num_cells(); ++i)
-  {
-    // Re-map any ghost enties with correct index
-    for (auto& x : connectivity_ce[i])
-    {
-      if (x < 0)
-        x = (connectivity_ev.size() - x) - 1;
-    }
-
-    ce.set(i, connectivity_ce[i]);
-  }
-
-  // Add ghost entity-to-vertices connections to list of rectangular entities
-  connectivity_ev.insert(connectivity_ev.end(), connectivity_ev_ghost.begin(),
-                         connectivity_ev_ghost.end());
-  ev.set(connectivity_ev);
-
-  return connectivity_ev.size();
-}
-//-----------------------------------------------------------------------------
-std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
-{
-  return TopologyComputation::compute_entities_new(mesh, dim);
-  //if (dim == mesh.topology().dim() - 1)
-  //  return TopologyComputation::compute_entities_new(mesh, dim);
-
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
   MeshConnectivity& ce = topology(topology.dim(), dim);
@@ -394,8 +198,6 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
     }
   }
 
-  std::cout << "Old ev size: " << connectivity_ev.size() << std::endl;
-
   // Initialise connectivity data structure
   topology.init(dim, connectivity_ev.size(), connectivity_ev.size());
 
@@ -413,7 +215,6 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
 
   ev.set(connectivity_ev);
 
-  std::cout << "Num computed ents: " << current_entity << std::endl;
   return current_entity;
 }
 //-----------------------------------------------------------------------------
@@ -484,6 +285,208 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
   }
 }
 //--------------------------------------------------------------------------
+template<int N>
+std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
+                                                                   int dim)
+{
+  // Get mesh topology and connectivity
+  MeshTopology& topology = mesh.topology();
+  MeshConnectivity& ce = topology(topology.dim(), dim);
+  MeshConnectivity& ev = topology(dim, 0);
+
+  // Check if entities have already been computed
+  if (topology.size(dim) > 0)
+  {
+    // Make sure we really have the connectivity
+    if ((ce.empty() && dim != (int) topology.dim()) || (ev.empty() && dim != 0))
+    {
+      dolfin_error("TopologyComputation.cpp",
+                   "compute topological entities",
+                   "Entities of topological dimension %d exist but connectivity is missing", dim);
+    }
+    return topology.size(dim);
+  }
+
+  // Make sure connectivity does not already exist
+  if (!ce.empty() || !ev.empty())
+  {
+    dolfin_error("TopologyComputation.cpp",
+                 "compute topological entities",
+                 "Connectivity for topological dimension %d exists but entities are missing", dim);
+  }
+
+  // Start timer
+  Timer timer("Compute entities dim = " + std::to_string(dim));
+
+  // Get cell type
+  const CellType& cell_type = mesh.type();
+
+  // Initialize local array of entities
+  const std::int8_t num_entities = cell_type.num_entities(dim);
+  const int num_vertices = cell_type.num_vertices(dim);
+  boost::multi_array<unsigned int, 2> e_vertices(boost::extents[num_entities][num_vertices]);
+
+  dolfin_assert(N == num_vertices);
+
+  // Create data structure to hold entities
+  // ([vertices key], (cell_index, (ghost flag, cell_local_index)))
+  std::vector<std::pair<std::array<std::int32_t, N>,
+    std::pair<std::int8_t, std::pair<std::int32_t, std::int8_t>>>>
+      keyed_entities(num_entities*mesh.num_cells());
+
+  // Loop over cells to build list of keyed entities
+  int entity_counter = 0;
+  for (CellIterator c(mesh, "all"); !c.end(); ++c)
+  {
+    // Get vertices from cell
+    const unsigned int* vertices = c->entities(0);
+    dolfin_assert(vertices);
+
+    // Create entities from vertices
+    cell_type.create_entities(e_vertices, dim, vertices);
+
+    const std::int8_t is_ghost = c->is_ghost() ? 1 : 0;
+
+    // Iterate over entities of cell
+    const int cell_index = c->index();
+    for (std::int8_t i = 0; i < num_entities; ++i)
+    {
+      // Sort entity vertices
+      std::sort(e_vertices[i].begin(), e_vertices[i].end());
+
+      // Add entity indices to list of indices
+      //keyed_entities[entity_counter].first.assign(e_vertices[i].begin(),
+      //                                            e_vertices[i].end());
+      std::copy(e_vertices[i].begin(), e_vertices[i].end(),
+                keyed_entities[entity_counter].first.begin());
+
+      // Attach cell index and (ghost flag, local index)
+      //keyed_entities[entity_counter].second = {cell_index, {{is_ghost, i}}};
+      keyed_entities[entity_counter].second = {is_ghost, {cell_index, i}};
+
+      ++entity_counter;
+    }
+  }
+
+  // Sort entities by key
+  std::sort(keyed_entities.begin(), keyed_entities.end());
+
+  // List of vertex indices connected to entity e
+  //std::vector<std::vector<int>> connectivity_ev;
+  //std::vector<std::vector<int>> connectivity_ev_ghost;
+  std::vector<std::array<int, N>> connectivity_ev;
+  std::vector<std::array<int, N>> connectivity_ev_ghost;
+
+  // List of entity e indices connected to cell
+  boost::multi_array<int, 2>
+    connectivity_ce(boost::extents[mesh.num_cells()][num_entities]);
+
+  // Marker for whether or not the most recently created entity is a ghost
+  // entity
+  bool ghost_entity = false;
+
+  // Find duplicate keys
+  if (keyed_entities.size() > 1)
+  {
+    const auto& e = keyed_entities[0].first;
+    const auto& cell = keyed_entities[0].second;
+
+    const std::int32_t cell_index = cell.second.first;
+    const std::int8_t ghost_flag  = cell.first;
+    const std::int8_t local_index = cell.second.second;
+
+    if (ghost_flag == 0)
+    {
+      // 'Create' new entity and mark that most recently created entity is not a
+      // ghost
+      connectivity_ev.push_back(e);
+      ghost_entity = false;
+
+      connectivity_ce[cell_index][local_index] = connectivity_ev.size() - 1;
+    }
+    else
+    {
+      // 'Create' new entity and mark that most recently created entity is a ghost
+      connectivity_ev_ghost.push_back(e);
+      ghost_entity = true;
+
+      connectivity_ce[cell_index][local_index] = -connectivity_ev_ghost.size();
+    }
+  }
+
+  for (std::size_t i = 1; i < keyed_entities.size(); ++i)
+  {
+    const auto& e1 = keyed_entities[i].first;
+    const auto& cell1 = keyed_entities[i].second;
+
+    const std::int32_t cell_index = cell1.second.first;
+    const std::int8_t ghost_flag = cell1.first;
+    const std::int8_t local_index = cell1.second.second;
+
+    // Compare entity with the preceding entity
+    const auto& e0 = keyed_entities[i - 1].first;
+    if (!std::equal(e1.begin(), e1.end(), e0.begin()))
+    {
+      dolfin_assert(ghost_flag == 0 or ghost_flag  == 1);
+      if (ghost_flag  == 0)
+      {
+        // 'Create' new entity and flag that the most recent entity is not a
+        // ghost
+        connectivity_ev.push_back(e1);
+        ghost_entity = false;
+
+      }
+      else
+      {
+        // 'Create' new entity and flag that the most recent entity is a ghost
+        connectivity_ev_ghost.push_back(e1);
+        ghost_entity = true;
+      }
+    }
+
+    // Set entity index. Use negative index for ghost that will be corrected
+    // later once the number of entities is known
+    if (!ghost_entity)
+    {
+      connectivity_ce[cell_index][local_index] = connectivity_ev.size() - 1;
+    }
+    else
+    {
+      dolfin_assert(connectivity_ev_ghost.size() > 0);
+      connectivity_ce[cell_index][local_index] = -connectivity_ev_ghost.size();
+    }
+  }
+
+  // Initialise connectivity data structure
+  topology.init(dim, connectivity_ev.size() + connectivity_ev_ghost.size(),
+                     connectivity_ev.size() + connectivity_ev_ghost.size());
+
+  // Initialise ghost entity offset
+  topology.init_ghost(dim, connectivity_ev.size());
+
+  // Copy connectivity data into static MeshTopology data structures
+  ce.init(mesh.num_cells(), num_entities);
+  dolfin_assert(connectivity_ce.size() == mesh.num_cells());
+  for (unsigned int i = 0; i < mesh.num_cells(); ++i)
+  {
+    // Re-map any ghost enties with correct index
+    for (auto& x : connectivity_ce[i])
+    {
+      if (x < 0)
+        x = (connectivity_ev.size() - x) - 1;
+    }
+
+    ce.set(i, connectivity_ce[i]);
+  }
+
+  // Add ghost entity-to-vertices connections to list of rectangular entities
+  connectivity_ev.insert(connectivity_ev.end(), connectivity_ev_ghost.begin(),
+                         connectivity_ev_ghost.end());
+  ev.set(connectivity_ev);
+
+  return connectivity_ev.size();
+}
+//-----------------------------------------------------------------------------
 void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
                                                  std::size_t d1)
 {
