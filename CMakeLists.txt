@@ -155,11 +155,6 @@ if (NOT CMAKE_BUILD_TYPE)
     "Choose the type of build, options are: Debug Developer MinSizeRel Release RelWithDebInfo." FORCE)
 endif()
 
-#list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS "-v -O0 -ggdb3")
-list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS "-ggdb3")
-set(DOLFIN_ENABLE_PYTHON "0")
-
-
 # Check for some compiler flags
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG(-pipe HAVE_PIPE)
@@ -168,7 +163,7 @@ if (HAVE_PIPE)
 endif()
 
 # Add some strict compiler checks
-CHECK_CXX_COMPILER_FLAG("-O0 -g -v -Wall -Werror -pedantic" HAVE_PEDANTIC)
+CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
@@ -202,7 +197,6 @@ if (CYGWIN OR (WIN32 AND UNIX))
 else()
   CHECK_CXX_COMPILER_FLAG(-std=c++11 HAVE_STD_CPP11)
   if (HAVE_STD_CPP11)
-    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
   else()
     CHECK_CXX_COMPILER_FLAG(-std=c++0x HAVE_STD_CPP0x)
@@ -212,16 +206,16 @@ else()
   endif()
 endif()
 
-# # Debug flags
-# CHECK_CXX_COMPILER_FLAG(-g HAVE_DEBUG)
-# if (HAVE_DEBUG)
-#   set(DOLFIN_CXX_DEVELOPER_FLAGS "-ggdb3 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
-# endif()
+# Debug flags
+CHECK_CXX_COMPILER_FLAG(-g HAVE_DEBUG)
+if (HAVE_DEBUG)
+  set(DOLFIN_CXX_DEVELOPER_FLAGS "-g ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+endif()
 
-# CHECK_CXX_COMPILER_FLAG(-O2 HAVE_O2_OPTIMISATION)
-# if (HAVE_O2_OPTIMISATION)
-#   set(DOLFIN_CXX_DEVELOPER_FLAGS "-O2 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
-# endif()
+CHECK_CXX_COMPILER_FLAG(-O2 HAVE_O2_OPTIMISATION)
+if (HAVE_O2_OPTIMISATION)
+  set(DOLFIN_CXX_DEVELOPER_FLAGS "-O2 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+endif()
 
 # Set 'Developer' build type flags
 set(CMAKE_CXX_FLAGS_DEVELOPER "${DOLFIN_CXX_DEVELOPER_FLAGS}" CACHE STRING
