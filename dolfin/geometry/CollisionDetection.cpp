@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2015-11-28
+// Last changed: 2016-05-03
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -58,10 +58,8 @@
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "Point.h"
+#include "CGALExactArithmetic.h"
 #include "CollisionDetection.h"
-
-// FIXME August
-#include <dolfin/geometry/dolfin_cgal_tools.h>
 
 using namespace dolfin;
 
@@ -184,26 +182,6 @@ bool
 CollisionDetection::collides_interval_interval(const MeshEntity& interval_0,
                                                const MeshEntity& interval_1)
 {
-#ifdef Augustcgal
-  const MeshGeometry& geometry_0 = interval_0.mesh().geometry();
-  const MeshGeometry& geometry_1 = interval_1.mesh().geometry();
-  const unsigned int* vertices_0 = interval_0.entities(0);
-  const unsigned int* vertices_1 = interval_1.entities(0);
-
-  const Point a(geometry_0.point(vertices_0[0])[0],
-		geometry_0.point(vertices_0[0])[1]);
-  const Point b(geometry_0.point(vertices_0[1])[0],
-		geometry_0.point(vertices_0[1])[1]);
-  const Point c(geometry_1.point(vertices_1[0])[0],
-		geometry_1.point(vertices_1[0])[1]);
-  const Point d(geometry_1.point(vertices_1[1])[0],
-		geometry_1.point(vertices_1[1])[1]);
-
-  return CGAL::do_intersect(cgaltools::convert(a, b),
-			    cgaltools::convert(c, d));
-
-#else
-
   // Get coordinates
   const MeshGeometry& geometry_0 = interval_0.mesh().geometry();
   const MeshGeometry& geometry_1 = interval_1.mesh().geometry();
@@ -222,9 +200,9 @@ CollisionDetection::collides_interval_interval(const MeshEntity& interval_0,
   // Check for collisions
   const double dx = std::min(b0 - a0, b1 - a1);
   const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
-  return b1 > a0 - eps && a1 < b0 + eps;
+  const bool result = b1 > a0 - eps && a1 < b0 + eps;
 
-#endif
+  return CHECK_CGAL(result, interval_0, interval_1);
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_point(const MeshEntity& triangle,

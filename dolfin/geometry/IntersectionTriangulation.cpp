@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2015-10-24
+// Last changed: 2016-05-03
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -24,7 +24,6 @@
 
 // FIXME August
 #include <dolfin/geometry/predicates.h>
-#include <dolfin/geometry/dolfin_cgal_tools.h>
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 
 //#define Augustdebug
