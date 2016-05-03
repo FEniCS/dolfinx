@@ -246,7 +246,7 @@ namespace
       return triangulation;
     }
 
-    const Triangle_2* t = boost::relaxed_get<Triangle_2>(&*ii);
+    const Triangle_2* t = boost::get<Triangle_2>(&*ii);
     if (t)
     {
       std::vector<double> triangulation = {{ CGAL::to_double(t->vertex(0)[0]),
@@ -258,7 +258,7 @@ namespace
       return triangulation;
     }
 
-    const std::vector<Point_2>* cgal_points = boost::relaxed_get<std::vector<Point_2>>(&*ii);
+    const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii);
     if (cgal_points)
     {
       std::vector<double> triangulation;

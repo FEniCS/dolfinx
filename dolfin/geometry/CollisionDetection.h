@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-03
+// Last changed: 2016-05-04
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -78,11 +78,7 @@ namespace dolfin
     ///     bool
     ///         True iff objects collide.
     static bool collides_interval_point(const MeshEntity& interval,
-					const Point& point)
-    {
-      return CHECK_CGAL(dolfin_collides_interval_point(interval, point),
-                        cgal_collides_interval_point(interval, point));
-    }
+					const Point& point);
 
     /// Check whether interval collides with interval.
     ///
@@ -195,8 +191,13 @@ namespace dolfin
     }
 
     // The implementation of collides_interval_point
-    static bool collides_interval_point(const Point& p0, const Point& p1,
-                                        const Point& point);
+    static bool collides_interval_point(const Point& p0,
+                                        const Point& p1,
+                                        const Point& point)
+    {
+      return CHECK_CGAL(dolfin_collides_interval_point(p0, p1, point),
+                        cgal_collides_interval_point(p0, p1, point));
+    }
 
     // The implementation of collides_triangle_point
     static bool collides_triangle_point(const Point& p0,
@@ -261,9 +262,6 @@ namespace dolfin
 
     //--- Predicates that exists as both DOLFIN and CGAL versions ---
 
-    static bool dolfin_collides_interval_point(const MeshEntity& interval,
-                                               const Point& point);
-
     static bool dolfin_collides_interval_interval(const MeshEntity& interval_0,
                                                   const MeshEntity& interval_1);
 
@@ -291,7 +289,11 @@ namespace dolfin
                                                   const Point& p2,
                                                   const Point& q0,
                                                   const Point& q1,
-                                                  const Point& q2)
+                                                  const Point& q2);
+
+    static bool dolfin_collides_interval_point(const Point& p0,
+                                               const Point& p1,
+                                               const Point& point);
 
     //--- Utility functions ---
 
