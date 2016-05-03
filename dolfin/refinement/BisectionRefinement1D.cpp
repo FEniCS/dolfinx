@@ -23,16 +23,16 @@
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include "BisectionRefinement1D.h"
+#include "ParallelRefinement.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void BisectionRefinement1D::refine(Mesh& refined_mesh,
-                                  const Mesh& mesh,
-                                  const MeshFunction<bool>& cell_markers)
+                                   const Mesh& mesh,
+                                   const MeshFunction<bool>& cell_markers,
+                                   bool redistribute)
 {
-  not_working_in_parallel("BisectionRefinement1D::refine");
-
   if (mesh.topology().dim() != 1)
   {
     dolfin_error("BisectionRefinement1D.cpp",
@@ -40,62 +40,66 @@ void BisectionRefinement1D::refine(Mesh& refined_mesh,
                  "Mesh is not one-dimensional");
   }
 
-  // Count the number of cells in refined mesh
-  std::size_t num_new_vertices = 0;
+  ParallelRefinement p_ref(mesh);
+  // Edges are the same as cells in 1D
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+    if (cell_markers[*cell])
+      p_ref.mark(cell->index());
 
+  p_ref.create_new_vertices();
+  const std::map<std::size_t, std::size_t>& new_vertex_map
+    = *(p_ref.edge_to_new_vertex());
+
+  std::vector<std::size_t> parent_cell;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    if (cell_markers[*cell])
-      ++num_new_vertices;
-  }
+    std::size_t cell_index = cell->index();
 
-  // Initialize mesh editor
-  const std::size_t vertex_offset = mesh.num_vertices();
-  const std::size_t num_vertices = vertex_offset + num_new_vertices;
-  const std::size_t num_cells = mesh.num_cells() + num_new_vertices;
+    std::vector<std::size_t> indices;
+    for (VertexIterator v(*cell); !v.end(); ++v)
+      indices.push_back(v->global_index());
 
-  MeshEditor editor;
-  editor.open(refined_mesh, mesh.topology().dim(), mesh.geometry().dim());
-  editor.init_vertices_global(num_vertices, num_vertices);
-  editor.init_cells_global(num_cells, num_cells);
-
-  // Set vertex coordinates
-  std::size_t current_vertex = 0;
-  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-  {
-    editor.add_vertex(current_vertex, vertex->point());
-    ++current_vertex;
-  }
-
-  std::size_t current_cell = 0;
-  std::vector<std::size_t> cell_data(2);
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    if (cell_markers[*cell])
+    if (p_ref.is_marked(cell_index))
     {
-      editor.add_vertex(current_vertex, cell->midpoint());
+      auto it = new_vertex_map.find(cell_index);
+      dolfin_assert (it != new_vertex_map.end());
 
-      cell_data[0] = cell->entities(0)[0];
-      cell_data[1] = current_vertex;
-      editor.add_cell(current_cell++, cell_data);
-      cell_data[0] = current_vertex;
-      cell_data[1] = cell->entities(0)[1];
-      editor.add_cell(current_cell, cell_data);
-
-      ++current_vertex;
+      std::vector<std::size_t> new_cells
+        = {indices[0], it->second,
+           it->second, indices[1]};
+      p_ref.new_cells(new_cells);
+      parent_cell.push_back(cell_index);
+      parent_cell.push_back(cell_index);
     }
     else
     {
-      cell_data[0] = cell->entities(0)[0];
-      cell_data[1] = cell->entities(0)[1];
-      editor.add_cell(current_cell, cell_data);
+      p_ref.new_cell(*cell);
+      parent_cell.push_back(cell_index);
     }
-    ++current_cell;
   }
 
-  // Close mesh editor
-  dolfin_assert(num_cells == current_cell);
-  dolfin_assert(num_vertices == current_vertex);
-  editor.close();
+  const bool serial = (MPI::size(mesh.mpi_comm()) == 1);
+
+  if (serial)
+    p_ref.build_local(refined_mesh);
+  else
+    p_ref.partition(refined_mesh, redistribute);
+
+  if (serial || !redistribute)
+  {
+    // Create parent data on new mesh
+    std::vector<std::size_t>& new_parent_cell
+      = refined_mesh.data().create_array("parent_cell", refined_mesh.topology().dim());
+    new_parent_cell = parent_cell;
+  }
+
+}
+//-----------------------------------------------------------------------------
+void BisectionRefinement1D::refine(Mesh& refined_mesh,
+                                   const Mesh& mesh, bool redistribute)
+{
+  auto _mesh = reference_to_no_delete_pointer(mesh);
+  const CellFunction<bool> cell_markers(_mesh, true);
+  BisectionRefinement1D::refine(refined_mesh, mesh, cell_markers, redistribute);
 }
 //-----------------------------------------------------------------------------

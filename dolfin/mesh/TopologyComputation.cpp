@@ -21,6 +21,7 @@
 // Last changed: 2014-07-02
 
 #include <algorithm>
+#include <string>
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <boost/unordered_map.hpp>
@@ -68,8 +69,13 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
                  "Connectivity for topological dimension %d exists but entities are missing", dim);
   }
 
+  // Optimisation for common case where facets lie between two cells
+  bool erase_visited_facets = false;
+  if (mesh.geometry().dim() == topology.dim() and dim == topology.dim() - 1)
+    erase_visited_facets = true;
+
   // Start timer
-  Timer timer("compute entities dim = " + to_string(dim));
+  Timer timer("Compute entities dim = " + std::to_string(dim));
 
   // Get cell type
   const CellType& cell_type = mesh.type();
@@ -80,13 +86,12 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   boost::multi_array<unsigned int, 2> e_vertices(boost::extents[m][n]);
 
   // List of entity e indices connected to cell
-  std::vector<std::vector<unsigned int>> connectivity_ce(mesh.num_cells());
+  std::vector<std::size_t> connectivity_ce;
+  connectivity_ce.reserve(mesh.num_cells()*m);
 
   // List of vertex indices connected to entity e
-  std::vector<boost::multi_array<unsigned int , 1>> connectivity_ev;
+  std::vector<boost::multi_array<unsigned int, 1>> connectivity_ev;
 
-  std::size_t current_entity = 0;
-  std::size_t max_ce_connections = 1;
   boost::unordered_map<std::vector<unsigned int>, unsigned int>
     evertices_to_index;
 
@@ -100,31 +105,28 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   evertices_to_index.reserve(max_elements);
   #endif
 
-  const std::size_t tdim = mesh.topology().dim();
+  unsigned int current_entity = 0;
   unsigned int num_regular_entities = 0;
 
+  // Reserve space for vector of vertex indices for each entity
+  std::vector<unsigned int> evec(n);
+
   // Loop over cells
-  for (MeshEntityIterator c(mesh, tdim, "all"); !c.end(); ++c)
+  for (CellIterator c(mesh, "all"); !c.end(); ++c)
   {
-    // Cell index
-    const std::size_t cell_index = c->index();
-
-    // Reserve space to reduce dynamic allocations
-    connectivity_ce[cell_index].reserve(max_ce_connections);
-
     // Get vertices from cell
     const unsigned int* vertices = c->entities(0);
     dolfin_assert(vertices);
 
-    // Create entities
+    // Create entities from vertices
     cell_type.create_entities(e_vertices, dim, vertices);
 
     // Iterate over the given list of entities
-    for (auto entity = e_vertices.begin(); entity != e_vertices.end(); ++entity)
+    for (auto const &entity : e_vertices)
     {
       // Sort entities (to use as map key)
-      std::vector<unsigned int> evec(entity->begin(), entity->end());
-      std::sort(evec.begin(), evec.end());
+      std::partial_sort_copy(entity.begin(), entity.end(),
+                             evec.begin(), evec.end());
 
       // Insert into map
       auto it = evertices_to_index.insert({evec, current_entity});
@@ -133,22 +135,23 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
       std::size_t e_index = it.first->second;
 
       // Add entity index to cell - e connectivity
-      connectivity_ce[cell_index].push_back(e_index);
+      connectivity_ce.push_back(e_index);
 
       // If new key was inserted, increment entity counter
       if (it.second)
       {
         // Add list of new entity vertices
-        connectivity_ev.push_back(*entity);
-
-        // Update max vector size (used to reserve space for performance);
-        max_ce_connections = std::max(max_ce_connections,
-                                      connectivity_ce[cell_index].size());
+        connectivity_ev.push_back(entity);
 
         // Increase counter
         ++current_entity;
         if (!c->is_ghost())
           num_regular_entities = current_entity;
+      }
+      else
+      {
+        if (erase_visited_facets) // reduce map size for efficiency
+          evertices_to_index.erase(it.first);
       }
     }
   }
@@ -160,7 +163,14 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   topology.init_ghost(dim, num_regular_entities);
 
   // Copy connectivity data into static MeshTopology data structures
-  ce.set(connectivity_ce);
+  std::size_t* connectivity_ce_ptr = connectivity_ce.data();
+  ce.init(mesh.num_cells(), m);
+  for (unsigned int i = 0; i != mesh.num_cells(); ++i)
+  {
+    ce.set(i, connectivity_ce_ptr);
+    connectivity_ce_ptr += m;
+  }
+
   ev.set(connectivity_ev);
 
   return current_entity;
@@ -178,7 +188,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
   //   1. compute_entities():     d  - 0  from dim - 0
   //   2. compute_transpose():    d0 - d1 from d1 - d0
   //   3. compute_intersection(): d0 - d1 from d0 - d' - d1
-  //
+  //   4. compute_from_map():     d0 - d1 from d1 - 0 and d0 - 0
   // Each of these functions assume a set of preconditions that we
   // need to satisfy.
 
@@ -207,7 +217,8 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
     return;
 
   // Start timer
-  Timer timer("compute connectivity " + to_string(d0) + " - " + to_string(d1));
+  Timer timer("Compute connectivity " + std::to_string(d0) + "-"
+              + std::to_string(d1));
 
   // Decide how to compute the connectivity
   if (d0 == d1)
@@ -226,18 +237,9 @@ void TopologyComputation::compute_connectivity(Mesh& mesh,
   }
   else
   {
-    // These connections should already exist
-    dolfin_assert(!(d0 > 0 && d1 == 0));
-
-    // Choose how to take intersection
-    dolfin_assert(d0 != 0);
-    dolfin_assert(d1 != 0);
-    std::size_t d = 0;
-
-    // Compute connectivity d0 - d - d1 and take intersection
-    compute_connectivity(mesh, d0, d);
-    compute_connectivity(mesh, d, d1);
-    compute_from_intersection(mesh, d0, d1, d);
+    // Compute by mapping vertices from a lower dimension entity
+    // to those of a higher dimension entity
+    compute_from_map(mesh, d0, d1);
   }
 }
 //--------------------------------------------------------------------------
@@ -283,6 +285,53 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
       connectivity.set(e0->index(), e1->index(), tmp[e0->index()]++);
 }
 //----------------------------------------------------------------------------
+void TopologyComputation::compute_from_map(Mesh& mesh,
+                                           std::size_t d0,
+                                           std::size_t d1)
+{
+  dolfin_assert(d1 > 0);
+  dolfin_assert(d0 > d1);
+
+  // Get the type of entity d0
+  std::unique_ptr<CellType> cell_type(CellType::create(mesh.type()
+                                                       .entity_type(d0)));
+
+  MeshConnectivity& connectivity = mesh.topology()(d0, d1);
+  connectivity.init(mesh.size(d0), cell_type->num_entities(d1));
+
+  // Make a map from the sorted d1 entity vertices to the d1 entity index
+  boost::unordered_map<std::vector<unsigned int>, unsigned int>
+    entity_to_index;
+  entity_to_index.reserve(mesh.size(d1));
+
+  const std::size_t num_verts_d1 = mesh.type().num_vertices(d1);
+  std::vector<unsigned int> key(num_verts_d1);
+  for (MeshEntityIterator e(mesh, d1, "all"); !e.end(); ++e)
+  {
+    std::partial_sort_copy(e->entities(0), e->entities(0) + num_verts_d1,
+                           key.begin(), key.end());
+    entity_to_index.insert({key, e->index()});
+  }
+
+  // Search for d1 entities of d0 in map, and recover index
+  std::vector<std::size_t> entities;
+  boost::multi_array<unsigned int, 2> keys;
+  for (MeshEntityIterator e(mesh, d0, "all"); !e.end(); ++e)
+  {
+    entities.clear();
+    cell_type->create_entities(keys, d1, e->entities(0));
+    for (const auto &p : keys)
+    {
+      std::partial_sort_copy(p.begin(), p.end(), key.begin(), key.end());
+      const auto it = entity_to_index.find(key);
+      dolfin_assert(it != entity_to_index.end());
+      entities.push_back(it->second);
+    }
+    connectivity.set(e->index(), entities.data());
+  }
+
+}
+//-----------------------------------------------------------------------------
 void TopologyComputation::compute_from_intersection(Mesh& mesh,
                                                     std::size_t d0,
                                                     std::size_t d1,

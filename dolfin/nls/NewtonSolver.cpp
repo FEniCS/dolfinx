@@ -22,7 +22,9 @@
 // First added:  2005-10-23
 // Last changed: 2014-05-27
 
-#include <iostream>
+#include <cmath>
+#include <string>
+
 #include <dolfin/common/constants.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericLinearSolver.h>
@@ -62,21 +64,23 @@ Parameters NewtonSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver()
+NewtonSolver::NewtonSolver(MPI_Comm comm)
   : Variable("Newton solver", "unamed"), _newton_iteration(0), _residual(0.0),
-    _residual0(0.0), _matA(new Matrix), _dx(new Vector), _b(new Vector),
-    _mpi_comm(MPI_COMM_WORLD)
+    _residual0(0.0), _matA(new Matrix(comm)), _dx(new Vector(comm)),
+    _b(new Vector(comm)), _mpi_comm(comm)
 {
   // Set default parameters
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(std::shared_ptr<GenericLinearSolver> solver,
+NewtonSolver::NewtonSolver(MPI_Comm comm,
+                           std::shared_ptr<GenericLinearSolver> solver,
                            GenericLinearAlgebraFactory& factory)
   : Variable("Newton solver", "unamed"), _newton_iteration(0), _residual(0.0),
-    _residual0(0.0), _solver(solver), _matA(factory.create_matrix()),
-    _dx(factory.create_vector()), _b(factory.create_vector()),
-    _mpi_comm(MPI_COMM_WORLD)
+    _residual0(0.0), _solver(solver), _matA(factory.create_matrix(comm)),
+    _dx(factory.create_vector(comm)),
+    _b(factory.create_vector(comm)),
+    _mpi_comm(comm)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -108,8 +112,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   const std::string pc_type = parameters["preconditioner"];
   if (!_solver)
   {
-    _solver = std::shared_ptr<LinearSolver>(new LinearSolver(solver_type,
-                                                             pc_type));
+    _solver = std::make_shared<LinearSolver>(x.mpi_comm(), solver_type, pc_type);
   }
   dolfin_assert(_solver);
 
@@ -208,11 +211,11 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     const bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
     {
-      if (_newton_iteration == maxiter) 
+      if (_newton_iteration == maxiter)
       {
         dolfin_error("NewtonSolver.cpp",
                      "solve nonlinear system with NewtonSolver",
-                     "Newton solver did not converge because maximum number of iterations reached"); 
+                     "Newton solver did not converge because maximum number of iterations reached");
       }
       else
       {

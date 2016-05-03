@@ -33,15 +33,9 @@
 // ===========================================================================
 
 //-----------------------------------------------------------------------------
-// Ignore reference (to FunctionSpaces) constructors of Function
-//-----------------------------------------------------------------------------
-%ignore dolfin::Function::Function(const FunctionSpace&);
-%ignore dolfin::Function::Function(const FunctionSpace&, std::string);
-
-//-----------------------------------------------------------------------------
 // Modifying the interface of Function
 //-----------------------------------------------------------------------------
-%rename(_function_space) dolfin::Function::function_space;
+%rename(_function_space) dolfin::GenericFunction::function_space;
 %rename(sub) dolfin::Function::operator[];
 %rename(_assign) dolfin::Function::operator=;
 %rename(_in) dolfin::Function::in;
@@ -49,8 +43,8 @@
 //-----------------------------------------------------------------------------
 // Modifying the interface of FunctionSpace
 //-----------------------------------------------------------------------------
-%rename(sub) dolfin::FunctionSpace::operator[];
 %rename(assign) dolfin::FunctionSpace::operator=;
+%ignore dolfin::FunctionSpace::operator[];
 %ignore dolfin::FunctionSpace::collapse() const;
 
 //-----------------------------------------------------------------------------
@@ -99,6 +93,7 @@
 %feature("nodirector") dolfin::Expression::value_rank;
 %feature("nodirector") dolfin::Expression::str;
 %feature("nodirector") dolfin::Expression::compute_vertex_values;
+%feature("nodirector") dolfin::Expression::function_space;
 
 //-----------------------------------------------------------------------------
 // Macro for defining an in typemap for a const std::vector<std::pair<double, TYPE*> >&
@@ -217,4 +212,3 @@ IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(Function)
 //-----------------------------------------------------------------------------
 %template (HierarchicalFunctionSpace) dolfin::Hierarchical<dolfin::FunctionSpace>;
 %template (HierarchicalFunction) dolfin::Hierarchical<dolfin::Function>;
-

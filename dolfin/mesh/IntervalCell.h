@@ -63,15 +63,11 @@ namespace dolfin
                          std::size_t dim,
                          const unsigned int* v) const;
 
-    /// Refine cell uniformly
-    void refine_cell(Cell& cell, MeshEditor& editor,
-                     std::size_t& current_cell) const;
-
     /// Compute (generalized) volume (length) of interval
     double volume(const MeshEntity& interval) const;
 
-    /// Compute diameter of interval
-    double diameter(const MeshEntity& interval) const;
+    /// Compute circumradius of interval
+    double circumradius(const MeshEntity& interval) const;
 
     /// Compute squared distance to given point (3D enabled)
     double squared_distance(const Cell& cell, const Point& point) const;

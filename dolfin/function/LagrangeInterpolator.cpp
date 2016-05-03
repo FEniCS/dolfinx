@@ -74,13 +74,9 @@ void LagrangeInterpolator::interpolate(Function& u, const Expression& u0)
   // Create vector to hold all local values of u
   std::vector<double> local_u_vector(u.vector()->local_size());
 
-  // Get dofmap of this Function
-  dolfin_assert(V.dofmap());
-  const GenericDofMap& dofmap = *V.dofmap();
-
   // Create map from coordinates to dofs sharing that coordinate
   const std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
-    coords_to_dofs = tabulate_coordinates_to_dofs(dofmap, mesh);
+    coords_to_dofs = tabulate_coordinates_to_dofs(V);
 
   // Get a map from global dofs to component number in mixed space
   std::unordered_map<std::size_t, std::size_t> dof_component_map;
@@ -193,13 +189,9 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   // Create vector to hold all local values of u
   std::vector<double> local_u_vector(u.vector()->local_size());
 
-  // Get dofmap of u
-  dolfin_assert(V1.dofmap());
-  const GenericDofMap& dofmap = *V1.dofmap();
-
   // Create map from coordinates to dofs sharing that coordinate
   std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
-    coords_to_dofs = tabulate_coordinates_to_dofs(dofmap, mesh1);
+    coords_to_dofs = tabulate_coordinates_to_dofs(V1);
 
   // Get a map from global dofs to component number in mixed space
   std::unordered_map<std::size_t, std::size_t> dof_component_map;
@@ -325,37 +317,45 @@ void LagrangeInterpolator::interpolate(Function& u, const Function& u0)
   u.vector()->apply("insert");
 }
 //-----------------------------------------------------------------------------
-std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
-LagrangeInterpolator::tabulate_coordinates_to_dofs(const GenericDofMap& dofmap,
-                                                   const Mesh& mesh)
+std::map<std::vector<double>, std::vector<std::size_t>,
+         LagrangeInterpolator::lt_coordinate>
+LagrangeInterpolator::tabulate_coordinates_to_dofs(const FunctionSpace& V)
 {
   std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
     coords_to_dofs(lt_coordinate(1.0e-12));
+
+  // Extract mesh, dofmap and element
+  dolfin_assert(V.dofmap());
+  dolfin_assert(V.element());
+  dolfin_assert(V.mesh());
+  const GenericDofMap& dofmap = *V.dofmap();
+  const FiniteElement& element = *V.element();
+  const Mesh& mesh = *V.mesh();
 
   // Geometric dimension
   const std::size_t gdim = mesh.geometry().dim();
 
   // Loop over cells and tabulate dofs
   boost::multi_array<double, 2> coordinates;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   std::vector<double> coors(gdim);
 
   // Speed up the computations by only visiting (most) dofs once
   const std::size_t local_size = dofmap.ownership_range().second
-                               - dofmap.ownership_range().first;
+    - dofmap.ownership_range().first;
   RangedIndexSet already_visited(std::make_pair(0, local_size));
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update UFC cell
-    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_coordinate_dofs(coordinate_dofs);
 
     // Get local-to-global map
     const ArrayView<const dolfin::la_index> dofs
       = dofmap.cell_dofs(cell->index());
 
     // Tabulate dof coordinates on cell
-    dofmap.tabulate_coordinates(coordinates, vertex_coordinates, *cell);
+    element.tabulate_dof_coordinates(coordinates, coordinate_dofs, *cell);
 
     // Map dofs into coords_to_dofs
     for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -388,7 +388,6 @@ LagrangeInterpolator::extract_dof_component_map(std::unordered_map<std::size_t,
                                                 int* component)
 {
   // Extract sub dofmaps recursively and store dof to component map
-
   if (V.element()->num_sub_elements() == 0)
   {
     std::unordered_map<std::size_t, std::size_t> collapsed_map;
@@ -409,9 +408,10 @@ LagrangeInterpolator::extract_dof_component_map(std::unordered_map<std::size_t,
   }
 }
 //-----------------------------------------------------------------------------
-bool LagrangeInterpolator::in_bounding_box(const std::vector<double>& point,
-                                           const std::vector<double>& bounding_box,
-                                           const double tol)
+bool
+LagrangeInterpolator::in_bounding_box(const std::vector<double>& point,
+                                      const std::vector<double>& bounding_box,
+                                      const double tol)
 {
   // Return false if bounding box is empty
   if (bounding_box.empty())

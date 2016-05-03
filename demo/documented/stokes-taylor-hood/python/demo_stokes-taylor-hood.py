@@ -38,9 +38,10 @@ plot(mesh)
 plot(sub_domains)
 
 # Define function spaces
-V = VectorFunctionSpace(mesh, "CG", 2)
-Q = FunctionSpace(mesh, "CG", 1)
-W = V * Q
+P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
+P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+TH = P2 * P1
+W = FunctionSpace(mesh, TH)
 
 # No-slip boundary condition for velocity
 # x1 = 0, x1 = 1 and around the dolphin
@@ -49,7 +50,7 @@ bc0 = DirichletBC(W.sub(0), noslip, sub_domains, 0)
 
 # Inflow boundary condition for velocity
 # x0 = 1
-inflow = Expression(("-sin(x[1]*pi)", "0.0"))
+inflow = Expression(("-sin(x[1]*pi)", "0.0"), degree=2)
 bc1 = DirichletBC(W.sub(0), inflow, sub_domains, 1)
 
 # Collect boundary conditions

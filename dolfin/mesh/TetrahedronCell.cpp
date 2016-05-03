@@ -25,6 +25,7 @@
 // Last changed: 2014-02-13
 
 #include <algorithm>
+#include <cmath>
 #include <boost/multi_array.hpp>
 
 #include <dolfin/log/log.h>
@@ -138,90 +139,6 @@ TetrahedronCell::create_entities(boost::multi_array<unsigned int, 2>& e,
   }
 }
 //-----------------------------------------------------------------------------
-void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
-                                  std::size_t& current_cell) const
-{
-  // Get vertices and edges
-  const unsigned int* v = cell.entities(0);
-  const unsigned int* e = cell.entities(1);
-  dolfin_assert(v);
-  dolfin_assert(e);
-
-  // Get offset for new vertex indices
-  const std::size_t offset = cell.mesh().num_vertices();
-
-  // Compute indices for the ten new vertices
-  const std::size_t v0 = v[0];
-  const std::size_t v1 = v[1];
-  const std::size_t v2 = v[2];
-  const std::size_t v3 = v[3];
-  const std::size_t e0 = offset + e[find_edge(0, cell)];
-  const std::size_t e1 = offset + e[find_edge(1, cell)];
-  const std::size_t e2 = offset + e[find_edge(2, cell)];
-  const std::size_t e3 = offset + e[find_edge(3, cell)];
-  const std::size_t e4 = offset + e[find_edge(4, cell)];
-  const std::size_t e5 = offset + e[find_edge(5, cell)];
-
-  // Regular refinement creates 8 new cells but we need to be careful
-  // to make the partition in a way that does not make the aspect
-  // ratio worse in each refinement. We do this by cutting the middle
-  // octahedron along the shortest of three possible paths.
-  dolfin_assert(editor._mesh);
-  const Point p0 = editor._mesh->geometry().point(e0);
-  const Point p1 = editor._mesh->geometry().point(e1);
-  const Point p2 = editor._mesh->geometry().point(e2);
-  const Point p3 = editor._mesh->geometry().point(e3);
-  const Point p4 = editor._mesh->geometry().point(e4);
-  const Point p5 = editor._mesh->geometry().point(e5);
-  const double d05 = p0.distance(p5);
-  const double d14 = p1.distance(p4);
-  const double d23 = p2.distance(p3);
-
-  // Data structure to hold cells
-  boost::multi_array<std::size_t, 2> cells(boost::extents[8][4]);
-
-  // First create the 4 congruent tetrahedra at the corners
-  cells[0][0] = v0; cells[0][1] = e3; cells[0][2] = e4; cells[0][3] = e5;
-  cells[1][0] = v1; cells[1][1] = e1; cells[1][2] = e2; cells[1][3] = e5;
-  cells[2][0] = v2; cells[2][1] = e0; cells[2][2] = e2; cells[2][3] = e4;
-  cells[3][0] = v3; cells[3][1] = e0; cells[3][2] = e1; cells[3][3] = e3;
-
-  // Then divide the remaining octahedron into 4 tetrahedra
-  if (d05 <= d14 && d14 <= d23)
-  {
-    cells[4][0] = e0; cells[4][1] = e1; cells[4][2] = e2; cells[4][3] = e5;
-    cells[5][0] = e0; cells[5][1] = e1; cells[5][2] = e3; cells[5][3] = e5;
-    cells[6][0] = e0; cells[6][1] = e2; cells[6][2] = e4; cells[6][3] = e5;
-    cells[7][0] = e0; cells[7][1] = e3; cells[7][2] = e4; cells[7][3] = e5;
-  }
-  else if (d14 <= d23)
-  {
-    cells[4][0] = e0; cells[4][1] = e1; cells[4][2] = e2; cells[4][3] = e4;
-    cells[5][0] = e0; cells[5][1] = e1; cells[5][2] = e3; cells[5][3] = e4;
-    cells[6][0] = e1; cells[6][1] = e2; cells[6][2] = e4; cells[6][3] = e5;
-    cells[7][0] = e1; cells[7][1] = e3; cells[7][2] = e4; cells[7][3] = e5;
-  }
-  else
-  {
-    cells[4][0] = e0; cells[4][1] = e1; cells[4][2] = e2; cells[4][3] = e3;
-    cells[5][0] = e0; cells[5][1] = e2; cells[5][2] = e3; cells[5][3] = e4;
-    cells[6][0] = e1; cells[6][1] = e2; cells[6][2] = e3; cells[6][3] = e5;
-    cells[7][0] = e2; cells[7][1] = e3; cells[7][2] = e4; cells[7][3] = e5;
-  }
-
-  // Add cells
-  for (auto _cell = cells.begin(); _cell != cells.end(); ++_cell)
-    editor.add_cell(current_cell++, *_cell);
-}
-//-----------------------------------------------------------------------------
-void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
-					   std::size_t& current_cell,
-                                           std::size_t refinement_rule,
-                                           std::size_t* marked_edges) const
-{
-  dolfin_not_implemented();
-}
-//-----------------------------------------------------------------------------
 double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 {
   // Check that we get a tetrahedron
@@ -245,10 +162,10 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 
   // Get the coordinates of the four vertices
   const unsigned int* vertices = tetrahedron.entities(0);
-  const double* x0 = geometry.x(vertices[0]);
-  const double* x1 = geometry.x(vertices[1]);
-  const double* x2 = geometry.x(vertices[2]);
-  const double* x3 = geometry.x(vertices[3]);
+  const Point x0 = geometry.point(vertices[0]);
+  const Point x1 = geometry.point(vertices[1]);
+  const Point x2 = geometry.point(vertices[2]);
+  const Point x3 = geometry.point(vertices[3]);
 
   // Formula for volume from http://mathworld.wolfram.com
   const double v = (x0[0]*(x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2]
@@ -263,7 +180,7 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   return std::abs(v)/6.0;
 }
 //-----------------------------------------------------------------------------
-double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
+double TetrahedronCell::circumradius(const MeshEntity& tetrahedron) const
 {
   // Check that we get a tetrahedron
   if (tetrahedron.dim() != 3)
@@ -306,9 +223,9 @@ double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
   const double s    = 0.5*(la+lb+lc);
   const double area = sqrt(s*(s-la)*(s-lb)*(s-lc));
 
-  // Formula for diameter (2*circumradius) from
-  // http://mathworld.wolfram.com
-  return area/(3.0*volume(tetrahedron));
+  // Formula for circumradius from
+  // http://mathworld.wolfram.com/Tetrahedron.html
+  return area/(6.0*volume(tetrahedron));
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::squared_distance(const Cell& cell,
@@ -380,16 +297,10 @@ Point TetrahedronCell::normal(const Cell& cell, std::size_t facet) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the four vertices
-  const double* p0 = geometry.x(v0);
-  const double* p1 = geometry.x(v1);
-  const double* p2 = geometry.x(v2);
-  const double* p3 = geometry.x(v3);
-
-  // Create points from vertex coordinates
-  Point P0(p0[0], p0[1], p0[2]);
-  Point P1(p1[0], p1[1], p1[2]);
-  Point P2(p2[0], p2[1], p2[2]);
-  Point P3(p3[0], p3[1], p3[2]);
+  const Point P0 = geometry.point(v0);
+  const Point P1 = geometry.point(v1);
+  const Point P2 = geometry.point(v2);
+  const Point P3 = geometry.point(v3);
 
   // Create vectors
   Point V0 = P0 - P1;
@@ -431,9 +342,9 @@ double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const
 
   // Get the coordinates of the three vertices
   const unsigned int* vertices = f.entities(0);
-  const double* x0 = geometry.x(vertices[0]);
-  const double* x1 = geometry.x(vertices[1]);
-  const double* x2 = geometry.x(vertices[2]);
+  const Point x0 = geometry.point(vertices[0]);
+  const Point x1 = geometry.point(vertices[1]);
+  const Point x2 = geometry.point(vertices[2]);
 
   // Compute area of triangle embedded in R^3
   double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2])

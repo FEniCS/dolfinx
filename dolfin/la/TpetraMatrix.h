@@ -40,6 +40,7 @@ namespace dolfin
 
   class TpetraVector;
   class TensorLayout;
+  class IndexMap;
 
   /// This class provides a simple matrix class based on Tpetra.  It
   /// is a wrapper for a Tpetra matrix pointer
@@ -221,8 +222,8 @@ namespace dolfin
 
     // Row and Column maps to allow local indexing of off-process
     // entries needed in add_local() and set_local()
-    Teuchos::RCP<map_type> _row_map;
-    Teuchos::RCP<map_type> _col_map;
+    std::array<std::shared_ptr<const IndexMap>, 2>
+      index_map;
 
   };
 

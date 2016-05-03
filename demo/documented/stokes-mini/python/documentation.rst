@@ -40,25 +40,19 @@ following way:
     mesh = Mesh("../dolfin_fine.xml.gz")
     sub_domains = MeshFunction("size_t", mesh, "../dolfin_fine_subdomains.xml.gz")
 
-Next, we define a :py:class:`MixedFunctionSpace
-<dolfin.functions.functionspace.MixedFunctionSpace>` composed of a
-:py:class:`VectorFunctionSpace
-<dolfin.functions.functionspace.VectorFunctionSpace>` of the linear
-vector Lagrange elements enriched with the cubic vector Bubble
-elements and a :py:class:`FunctionSpace
-<dolfin.cpp.function.FunctionSpace>` of continuous piecewise
-linears. (This mixed finite element space is known as the Mini space
-where we have the vector Bubble element for the velocity
-approximation.)
+Next, we define a :py:class:`FunctionSpace
+<dolfin.functions.functionspace.FunctionSpace>` on Mini element
+``(P1 + B) * Q``. UFL object ``P1 + B`` stands for the vectorial
+Lagrange element of degree 1 enriched with the cubic Bubble.
+``(P1 + B) * Q`` defines the mixed element for velocity and pressure.
 
 .. code-block:: python
 
-    # Define function spaces
-    P1 = VectorFunctionSpace(mesh, "Lagrange", 1)
-    B  = VectorFunctionSpace(mesh, "Bubble", 3)
-    Q  = FunctionSpace(mesh, "CG",  1)
-    V = P1 + B
-    Mini = V*Q
+    # Build function spaces on Mini element
+    P1 = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    B = VectorElement("Bubble",   mesh.ufl_cell(), 3)
+    Q = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    W = FunctionSpace(mesh, (P1 + B) * Q)
 
 Now that we have our mixed function space and marked subdomains
 defining the boundaries, we define boundary conditions:
@@ -67,13 +61,13 @@ defining the boundaries, we define boundary conditions:
 
     # No-slip boundary condition for velocity
     # NOTE: Projection here is inefficient workaround of issue #489, FFC issue #69
-    noslip = project(Constant((0, 0)), V)
-    bc0 = DirichletBC(Mini.sub(0), noslip, sub_domains, 0)
+    noslip = project(Constant((0, 0)), W.sub(0).collapse())
+    bc0 = DirichletBC(W.sub(0), noslip, sub_domains, 0)
 
     # Inflow boundary condition for velocity
     # NOTE: Projection here is inefficient workaround of issue #489, FFC issue #69
-    inflow = project(Expression(("-sin(x[1]*pi)", "0.0")), V)
-    bc1 = DirichletBC(Mini.sub(0), inflow, sub_domains, 1)
+    inflow = project(Expression(("-sin(x[1]*pi)", "0.0"), degree=2), W.sub(0).collapse())
+    bc1 = DirichletBC(W.sub(0), inflow, sub_domains, 1)
 
     # Collect boundary conditions
     bcs = [bc0, bc1]
@@ -82,9 +76,9 @@ Here, we have given four arguments in the call of
 :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`. The first
 specifies the :py:class:`FunctionSpace
 <dolfin.cpp.function.FunctionSpace>`. Since we have a
-:py:class:`MixedFunctionSpace
-<dolfin.functions.functionspace.MixedFunctionSpace>`, we write
-W.sub(0) for the function space V, and W.sub(1) for Q. The second
+mixed function space, we write
+``W.sub(0)`` for the velocity componenet of the space,
+and ``W.sub(1)`` for the pressure component of the space. The second
 argument specifies the value on the Dirichlet boundary. The two last
 arguments specify the marking of the subdomains; ``sub_domains`` contains
 the subdomain markers and the number given as the last argument is the
@@ -96,8 +90,8 @@ formulation of the Stokes equations are defined as follows:
 .. code-block:: python
 
     # Define variational problem
-    (u, p) = TrialFunctions(Mini)
-    (v, q) = TestFunctions(Mini)
+    (u, p) = TrialFunctions(W)
+    (v, q) = TestFunctions(W)
     f = Constant((0, 0))
     a = (inner(grad(u), grad(v)) - div(v)*p + q*div(u))*dx
     L = inner(f, v)*dx
@@ -105,9 +99,8 @@ formulation of the Stokes equations are defined as follows:
 To compute the solution we use the bilinear and linear forms, and the
 boundary condition, but we also need to create a :py:class:`Function
 <dolfin.cpp.function.Function>` to store the solution(s). The (full)
-solution will be stored in ``w``, which we initialize using the
-:py:class:`MixedFunctionSpace
-<dolfin.functions.functionspace.MixedFunctionSpace>` ``W``. The actual
+solution will be stored in ``w``, which we initialize using the mixed
+function space ``W``. The actual
 computation is performed by calling solve with the arguments ``a``,
 ``L``, ``w`` and ``bcs``. The separate components ``u`` and ``p`` of
 the solution can be extracted by calling the :py:meth:`split
@@ -119,14 +112,14 @@ a deep copy for further computations on the coefficient vectors.
 .. code-block:: python
 
     # Compute solution
-    w = Function(Mini)
+    w = Function(W)
     solve(a == L, w, bcs)
 
     # Split the mixed solution using deepcopy
     # (needed for further computation on coefficient vector)
     (u, p) = w.split(True)
 
-We may be interested in the :math:`L^2` norms of u and p, they can be
+We may be interested in the :math:`l^2` norms of u and p, they can be
 calculated and printed by writing
 
 .. code-block:: python

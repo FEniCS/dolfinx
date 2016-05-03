@@ -29,6 +29,9 @@ namespace dolfin
 
   class Function;
 
+  // FIXME: Straighten out memory management in this class by
+  // switching to smart pointers.
+
   /// This class represents a linear combination of functions. It is
   /// mostly used as an intermediate class for operations such as u =
   /// 3*u0 + 4*u1; where the rhs generates an FunctionAXPY.
@@ -38,13 +41,7 @@ namespace dolfin
   public:
 
     /// Enum to decide what way AXPY is constructed
-    enum Direction
-    {
-      ADD_ADD = 0,
-      SUB_ADD = 1,
-      ADD_SUB = 2,
-      SUB_SUB = 3
-    };
+    enum class Direction : int {ADD_ADD=0, SUB_ADD=1, ADD_SUB=2, SUB_SUB=3};
 
     /// Constructor
     FunctionAXPY(const Function& func, double scalar);
@@ -69,6 +66,9 @@ namespace dolfin
 
     /// Copy constructor
     FunctionAXPY(const FunctionAXPY& axpy);
+
+    /// Destructor
+    ~FunctionAXPY();
 
     /// Addition operator
     FunctionAXPY operator+(const Function& func) const;
@@ -96,7 +96,7 @@ namespace dolfin
     /// Register another AXPY object
     void _register(const FunctionAXPY& axpy0, double scale);
 
-    std::vector<std::pair<double, const Function*> > _pairs;
+    std::vector<std::pair<double, const Function*>> _pairs;
 
   };
 

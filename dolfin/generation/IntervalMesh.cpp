@@ -21,6 +21,7 @@
 // First added:  2007-11-23
 // Last changed: 2014-02-17
 
+#include <cmath>
 #include "dolfin/common/constants.h"
 #include "dolfin/common/MPI.h"
 #include "dolfin/mesh/CellType.h"
@@ -32,9 +33,9 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 IntervalMesh::IntervalMesh(std::size_t nx, double a, double b)
-  : Mesh(MPI_COMM_WORLD)
+  : IntervalMesh(MPI_COMM_WORLD, nx, a, b)
 {
-  build(nx, a, b);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 IntervalMesh::IntervalMesh(MPI_Comm comm, std::size_t nx, double a, double b)

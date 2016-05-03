@@ -23,8 +23,8 @@ mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "Lagrange", 1)
 bc = DirichletBC(V, 0.0, lambda x: near(x[0], 0.0) or near(x[0], 1.0))
 u, v = TrialFunction(V), TestFunction(V)
-f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-g = Expression("sin(5*x[0])")
+f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
+g = Expression("sin(5*x[0])", degree=2)
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
 u = Function(V)

@@ -34,35 +34,34 @@ from dolfin import *
 mesh = Mesh("../dolfin_fine.xml.gz")
 sub_domains = MeshFunction("size_t", mesh, "../dolfin_fine_subdomains.xml.gz")
 
-# Define function spaces
-P1 = VectorFunctionSpace(mesh, "Lagrange", 1)
-B  = VectorFunctionSpace(mesh, "Bubble", 3)
-Q  = FunctionSpace(mesh, "CG",  1)
-V = P1 + B
-Mini = V*Q
+# Build function spaces on Mini element
+P1 = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+B = VectorElement("Bubble",   mesh.ufl_cell(), 3)
+Q = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+W = FunctionSpace(mesh, (P1 + B) * Q)
 
 # No-slip boundary condition for velocity
 # NOTE: Projection here is inefficient workaround of issue #489, FFC issue #69
-noslip = project(Constant((0, 0)), V)
-bc0 = DirichletBC(Mini.sub(0), noslip, sub_domains, 0)
+noslip = project(Constant((0, 0)), W.sub(0).collapse())
+bc0 = DirichletBC(W.sub(0), noslip, sub_domains, 0)
 
 # Inflow boundary condition for velocity
 # NOTE: Projection here is inefficient workaround of issue #489, FFC issue #69
-inflow = project(Expression(("-sin(x[1]*pi)", "0.0")), V)
-bc1 = DirichletBC(Mini.sub(0), inflow, sub_domains, 1)
+inflow = project(Expression(("-sin(x[1]*pi)", "0.0"), degree=2), W.sub(0).collapse())
+bc1 = DirichletBC(W.sub(0), inflow, sub_domains, 1)
 
 # Collect boundary conditions
 bcs = [bc0, bc1]
 
 # Define variational problem
-(u, p) = TrialFunctions(Mini)
-(v, q) = TestFunctions(Mini)
+(u, p) = TrialFunctions(W)
+(v, q) = TestFunctions(W)
 f = Constant((0, 0))
 a = (inner(grad(u), grad(v)) - div(v)*p + q*div(u))*dx
 L = inner(f, v)*dx
 
 # Compute solution
-w = Function(Mini)
+w = Function(W)
 solve(a == L, w, bcs)
 
 # Split the mixed solution using deepcopy

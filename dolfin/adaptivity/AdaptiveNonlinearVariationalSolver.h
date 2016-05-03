@@ -65,16 +65,6 @@ namespace dolfin
   {
   public:
 
-    /// Create AdaptiveNonlinearVariationalSolver
-    ///
-    /// *Arguments*
-    ///     problem (_NonlinearVariationalProblem_)
-    ///         The primal problem
-    ///     goal (_GoalFunctional_)
-    ///         The goal functional
-    AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem,
-                                       GoalFunctional& goal);
-
     /// Create AdaptiveNonlinearVariationalSolver (shared ptr version)
     ///
     /// *Arguments*
@@ -115,7 +105,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<_DirichletBC_>
     ///         The primal boundary conditions
-    virtual std::vector<std::shared_ptr<const DirichletBC> >
+    virtual std::vector<std::shared_ptr<const DirichletBC>>
       extract_bcs() const;
 
     /// Evaluate the goal functional.
@@ -140,6 +130,7 @@ namespace dolfin
     virtual void adapt_problem(std::shared_ptr<const Mesh> mesh);
 
   protected:
+
     /// Return the number of degrees of freedom for primal problem
     ///
     /// *Returns*

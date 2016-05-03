@@ -20,6 +20,8 @@
 // First added:  2008-07-16
 // Last changed: 2011-03-17
 
+#include <cmath>
+
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/constants.h>
@@ -52,7 +54,7 @@ void MeshSmoothing::smooth(Mesh& mesh, std::size_t num_iterations)
   // Mark vertices on the boundary so we may skip them
   BoundaryMesh boundary(mesh, "exterior");
   const MeshFunction<std::size_t> vertex_map = boundary.entity_map(0);
-  MeshFunction<bool> on_boundary(mesh, 0);
+  MeshFunction<bool> on_boundary(reference_to_no_delete_pointer(mesh), 0);
   on_boundary = false;
   if (boundary.num_vertices() > 0)
   {
@@ -72,7 +74,6 @@ void MeshSmoothing::smooth(Mesh& mesh, std::size_t num_iterations)
         continue;
 
       // Get coordinates of vertex
-      double* x = mesh.geometry().x(v->index());
       const Point p = v->point();
 
       // Compute center of mass of neighboring vertices
@@ -128,15 +129,20 @@ void MeshSmoothing::smooth(Mesh& mesh, std::size_t num_iterations)
       double r = 0.0;
       for (std::size_t i = 0; i < d; i++)
       {
-        const double dx = xx[i] - x[i];
+        const double dx = xx[i] - p[i];
         r += dx*dx;
       }
       r = std::sqrt(r);
       if (r < DOLFIN_EPS)
         continue;
       rmin = std::min(0.5*rmin, r);
+
+      std::vector<double> new_vertex(mesh.geometry().x(v->index()),
+                                     mesh.geometry().x(v->index()) + d);
       for (std::size_t i = 0; i < d; i++)
-        x[i] += rmin*(xx[i] - x[i])/r;
+        new_vertex[i] += rmin*(xx[i] - p[i])/r;
+      mesh.geometry().set(v->index(), new_vertex.data());
+
     }
   }
 
@@ -175,8 +181,10 @@ void MeshSmoothing::snap_boundary(Mesh& mesh,
   MeshGeometry& geometry = boundary.geometry();
   for (std::size_t i = 0; i < boundary.num_vertices(); i++)
   {
-    Array<double> x(dim, geometry.x(i));
+    Point p = geometry.point(i);
+    Array<double> x(dim, p.coordinates());
     sub_domain.snap(x);
+    geometry.set(i, p.coordinates());
   }
 
   // Move interior vertices
@@ -189,19 +197,16 @@ void MeshSmoothing::move_interior_vertices(Mesh& mesh,
 {
   // Select smoothing of interior vertices
   if (harmonic_smoothing)
-    ALE::move(mesh, boundary);
+  {
+    std::shared_ptr<Mesh> _mesh(&mesh, [](Mesh*){});
+    ALE::move(_mesh, boundary);
+  }
   else
   {
     // Use vertex map to update boundary coordinates of original mesh
     const MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);
-    const std::size_t d = mesh.geometry().dim();
     for (VertexIterator v(boundary); !v.end(); ++v)
-    {
-      const double* xb = v->x();
-      double* xm = mesh.geometry().x(vertex_map[*v]);
-      for (std::size_t i = 0; i < d; i++)
-        xm[i] = xb[i];
-    }
+      mesh.geometry().set(vertex_map[*v], v->x());
   }
 }
 //-----------------------------------------------------------------------------

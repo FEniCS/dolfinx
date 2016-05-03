@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2014 Anders Logg
+// Copyright (C) 2013-2015 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,17 +16,19 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2014-07-05
+// Last changed: 2016-03-02
 //
 // This demo program solves Poisson's equation on a domain defined by
-// three overlapping and non-matching meshes.
+// three overlapping and non-matching meshes. The solution is computed
+// on a sequence of rotating meshes to test the multimesh
+// functionality.
 
 #include <cmath>
-
 #include <dolfin.h>
 #include "MultiMeshPoisson.h"
 
 using namespace dolfin;
+using std::make_shared;
 
 // Source term (right-hand side)
 class Source : public Expression
@@ -47,96 +49,69 @@ class DirichletBoundary : public SubDomain
 };
 
 // Compute solution for given mesh configuration
-void solve(double t,
-           double x1, double y1,
-           double x2, double y2,
-           bool plot_solution,
-           File& u0_file, File& u1_file, File& u2_file)
+void solve_poisson(double t,
+                   double x1, double y1,
+                   double x2, double y2,
+                   bool plot_solution,
+                   File& u0_file, File& u1_file, File& u2_file)
 {
   // Create meshes
   double r = 0.5;
-  RectangleMesh mesh_0(Point(-r, -r), Point(r, r), 16, 16);
-  RectangleMesh mesh_1(Point(x1 - r, y1 - r), Point(x1 + r, y1 + r), 8, 8);
-  RectangleMesh mesh_2(Point(x2 - r, y2 - r), Point(x2 + r, y2 + r), 8, 8);
-  mesh_1.rotate(70*t);
-  mesh_2.rotate(-70*t);
+  auto mesh_0 = make_shared<RectangleMesh>(Point(-r, -r), Point(r, r), 16, 16);
+  auto mesh_1 = make_shared<RectangleMesh>(Point(x1 - r, y1 - r), Point(x1 + r, y1 + r), 8, 8);
+  auto mesh_2 = make_shared<RectangleMesh>(Point(x2 - r, y2 - r), Point(x2 + r, y2 + r), 8, 8);
+  mesh_1->rotate(70*t);
+  mesh_2->rotate(-70*t);
 
-  // Create function spaces
-  MultiMeshPoisson::FunctionSpace V0(mesh_0);
-  MultiMeshPoisson::FunctionSpace V1(mesh_1);
-  MultiMeshPoisson::FunctionSpace V2(mesh_2);
+  // Build multimesh
+  auto multimesh = make_shared<MultiMesh>();
+  multimesh->add(mesh_0);
+  multimesh->add(mesh_1);
+  multimesh->add(mesh_2);
+  multimesh->build();
 
-  // FIXME: Some of this stuff may be wrapped or automated later to
-  // avoid needing to explicitly call add() and build()
+  // Create function space
+  auto V = make_shared<MultiMeshPoisson::MultiMeshFunctionSpace>(multimesh);
 
   // Create forms
-  MultiMeshPoisson::BilinearForm a0(V0, V0);
-  MultiMeshPoisson::BilinearForm a1(V1, V1);
-  MultiMeshPoisson::BilinearForm a2(V2, V2);
-  MultiMeshPoisson::LinearForm L0(V0);
-  MultiMeshPoisson::LinearForm L1(V1);
-  MultiMeshPoisson::LinearForm L2(V2);
+  auto a = make_shared<MultiMeshPoisson::MultiMeshBilinearForm>(V, V);
+  auto L = make_shared<MultiMeshPoisson::MultiMeshLinearForm>(V);
 
-  // Build multimesh function space
-  MultiMeshFunctionSpace V;
-  V.parameters("multimesh")["quadrature_order"] = 2;
-  V.add(V0);
-  V.add(V1);
-  V.add(V2);
-  V.build();
-
-  // Set coefficients
-  Source f;
-  L0.f = f;
-  L1.f = f;
-  L2.f = f;
-
-  // Build multimesh forms
-  MultiMeshForm a(V, V);
-  MultiMeshForm L(V);
-  a.add(a0);
-  a.add(a1);
-  a.add(a2);
-  L.add(L0);
-  L.add(L1);
-  L.add(L2);
-  a.build();
-  L.build();
-
-  // Create boundary condition
-  Constant zero(0);
-  DirichletBoundary boundary;
-  MultiMeshDirichletBC bc(V, zero, boundary);
+  // Attach coefficients
+  auto f = make_shared<Source>();
+  L->f = f;
 
   // Assemble linear system
-  Matrix A;
-  Vector b;
-  MultiMeshAssembler assembler;
-  assembler.assemble(A, a);
-  assembler.assemble(b, L);
+  auto A = make_shared<Matrix>();
+  auto b = make_shared<Vector>();
+  assemble_multimesh(*A, *a);
+  assemble_multimesh(*b, *L);
 
   // Apply boundary condition
-  bc.apply(A, b);
+  auto zero = make_shared<Constant>(0);
+  auto boundary = make_shared<DirichletBoundary>();
+  auto bc = make_shared<MultiMeshDirichletBC>(V, zero, boundary);
+  bc->apply(*A, *b);
 
   // Compute solution
-  MultiMeshFunction u(V);
-  solve(A, *u.vector(), b);
+  auto u = make_shared<MultiMeshFunction>(V);
+  solve(*A, *u->vector(), *b);
 
   // Save to file
-  u0_file << *u.part(0);
-  u1_file << *u.part(1);
-  u2_file << *u.part(2);
+  u0_file << *u->part(0);
+  u1_file << *u->part(1);
+  u2_file << *u->part(2);
 
   // Plot solution (last time)
   if (plot_solution)
   {
-    plot(V.multimesh());
-    plot(u.part(0), "u_0");
-    plot(u.part(1), "u_1");
-    plot(u.part(2), "u_2");
+    plot(V->multimesh());
+    plot(u->part(0), "u_0");
+    plot(u->part(1), "u_1");
+    plot(u->part(2), "u_2");
     interactive();
   }
-  }
+}
 
 int main(int argc, char* argv[])
 {
@@ -145,10 +120,6 @@ int main(int argc, char* argv[])
     info("Sorry, this demo does not (yet) run in parallel.");
     return 0;
   }
-
-  // FIXME: Testing
-  //set_log_level(DBG);
-  parameters["reorder_dofs_serial"] = false;
 
   // Parameters
   const double T = 40.0;
@@ -173,8 +144,8 @@ int main(int argc, char* argv[])
     const double y2 = sin(t)*cos(2*t);
 
     // Compute solution
-    solve(t, x1, y1, x2, y2, n == N - 1,
-          u0_file, u1_file, u2_file);
+    solve_poisson(t, x1, y1, x2, y2, n == N - 1,
+                  u0_file, u1_file, u2_file);
   }
 
   return 0;

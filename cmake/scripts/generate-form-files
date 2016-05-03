@@ -73,7 +73,7 @@ for subdir in subdirs:
             if f in skip_basis:
                 options += " -fno-evaluate_basis -fno-evaluate_basis_derivatives"
 
-            command = "ffc -v %s -f no_ferari -l dolfin %s %s >> compile.log" % (optimization, options, f)
+            command = "ffc -v %s -l dolfin %s %s >> compile.log" % (optimization, options, f)
             print("  " + command)
             ret = os.system(command)
             if not ret == 0:

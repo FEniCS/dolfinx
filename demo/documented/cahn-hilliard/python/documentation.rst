@@ -33,7 +33,7 @@ created:
 
     # Class representing the intial conditions
     class InitialConditions(Expression):
-        def __init__(self):
+        def __init__(self, **kwargs):
             random.seed(2 + MPI.rank(mpi_comm_world()))
         def eval(self, values, x):
             values[0] = 0.63 + 0.02*(0.5 - random.random())
@@ -112,20 +112,15 @@ the code and the generation phase may use considerably more memory).
 
 A unit square mesh with 97 (= 96 + 1) vertices in each direction is
 created, and on this mesh a :py:class:`FunctionSpace
-<dolfin.functions.functionspace.FunctionSpace>` :math:`V` and a
-:py:class:`MixedFunctionSpace
-<dolfin.functions.functionspace.MixedFunctionSpace>` space :math:`ME =
-V \times V` are defined:
+<dolfin.functions.functionspace.FunctionSpace>` ``ME`` is built
+using a pair of linear Lagrangian elements.
 
 .. code-block:: python
 
-    # Create mesh and define function spaces
+    # Create mesh and build function space
     mesh = UnitSquareMesh(96, 96)
-    V = FunctionSpace(mesh, "Lagrange", 1)
-    ME = V*V
-
-The space ``V`` involves first-order continuous Lagrange basis functions.
-The mixed space is created using the ``*`` operator.
+    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    ME = FunctionSpace(mesh, P1*P1)
 
 Trial and test functions of the space ``ME`` are now defined:
 
@@ -172,7 +167,7 @@ into a finite element space:
 .. code-block:: python
 
     # Create intial conditions and interpolate
-    u_init = InitialConditions()
+    u_init = InitialConditions(degree=1)
     u.interpolate(u_init)
     u0.interpolate(u_init)
 

@@ -10,6 +10,12 @@
 #include <fstream>
 #include <vector>
 
+#include <dolfin/geometry/Point.h>
+#include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/MultiMesh.h>
+#include <dolfin/mesh/Cell.h>
+
+
 namespace tools
 {
 #define PPause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
@@ -29,8 +35,8 @@ namespace tools
     const double s2 = (a+(b+c))*(c-(a-b))*(c+(a-b))*(a+(b-c));
     if (s2 < 0)
     {
-      std::cout << "Heron error, negative sqrt: " << s2 << std::endl;
-      if (std::abs(s2) < DOLFIN_EPS) // If we don't do this v=1e-13, m=24, n=1 doesn't work
+      std::cout << "Heron error, negative sqrt: " << s2 << " is to be replaced with 0" << std::endl;
+      if (std::abs(s2) < DOLFIN_EPS)
 	return 0;
       else
 	exit(1);
@@ -42,57 +48,111 @@ namespace tools
 
   inline double area(const std::vector<dolfin::Point> &simplex)
   {
-    /* const dolfin::Point et=tri[1]-tri[0]; */
-    /* const dolfin::Point es=tri[2]-tri[0]; */
-    /* return Heron(et.norm(), es.norm(), (et-es).norm()); */
-
     if (simplex.size() == 3)
     {
-      double a[2]={simplex[0][0],simplex[0][1]};
-      double b[2]={simplex[1][0],simplex[1][1]};
-      double c[2]={simplex[2][0],simplex[2][1]};
-      return 0.5*orient2d(a,b,c);
+      const dolfin::Point et=simplex[1]-simplex[0];
+      const dolfin::Point es=simplex[2]-simplex[0];
+      return Heron(et.norm(), es.norm(), (et-es).norm());
     }
     else if (simplex.size() == 2)
     {
       return (simplex[0]-simplex[1]).norm();
     }
-    else
-    {
-      PPause;
-      return -9e99;
-    }
+    else { PPause; return -9e99; }
+
+    /* if (simplex.size() == 3) */
+    /* { */
+    /*   double a[2]={simplex[0][0],simplex[0][1]}; */
+    /*   double b[2]={simplex[1][0],simplex[1][1]}; */
+    /*   double c[2]={simplex[2][0],simplex[2][1]}; */
+    /*   return 0.5*orient2d(a,b,c); */
+    /* } */
+    /* else if (simplex.size() == 2) */
+    /* { */
+    /*   return (simplex[0]-simplex[1]).norm(); */
+    /* } */
+    /* else */
+    /* { */
+    /*   PPause; */
+    /*   return -9e99; */
+    /* } */
   }
 
-
   inline std::string drawtriangle(const std::vector<dolfin::Point> &simplex,
-				  const std::string& color = "'b'")
+				  const std::string& color = "'b'",
+				  bool matlab=true)
   {
     std::stringstream ss; ss.precision(15);
     if (simplex.size() == 3)
     {
-      ss << "drawtriangle("
-	 << "["<<simplex[0][0]<<' '<<simplex[0][1]<<"],"
-	 << "["<<simplex[1][0]<<' '<<simplex[1][1]<<"],"
-	 << "["<<simplex[2][0]<<' '<<simplex[2][1]<<"],"
-	 << color << ");";
+      if (matlab)
+	ss << "drawtriangle(";
+      else
+	ss << "drawtriangle2(";
+      ss<< "["<<simplex[0][0]<<','<<simplex[0][1]<<"],"
+	<< "["<<simplex[1][0]<<','<<simplex[1][1]<<"],"
+	<< "["<<simplex[2][0]<<','<<simplex[2][1]<<"]";
+      if (matlab)
+	ss << ","<<color<<");";
+      else {
+	ss << ",color=" << color << ',' //<< ");";
+	   << "plt=plt,axis=gca()"
+	   << ");";
+      }
     }
     else if (simplex.size() == 2)
     {
-      ss << "hline = line([" << simplex[0][0] << ' ' << simplex[1][0] << "],"
-	 << "[" << simplex[0][1] << ' ' << simplex[1][1] << "]);"
-	 << "set(hline,'color'," << color << ");";
+      /* ss << "hline = line([" << simplex[0][0] << ',' << simplex[1][0] << "]," */
+      /* 	 << "[" << simplex[0][1] << ',' << simplex[1][1] << "]);" */
+      /* 	 << "set(hline,'color'," << color << ");"; */
+      ss << "drawline2([" << simplex[0][0] << ',' << simplex[1][0] << "],"
+	 <<  "[" << simplex[0][1] << ',' << simplex[1][1] << "],";
+      if (matlab)
+	ss << color<<");";
+      else
+	ss << "plt=plt,color="<< color << ",linewidth=5.0);";
     }
     return ss.str();
   }
 
   inline std::string drawtriangle(const dolfin::Cell &cell,
-				  const std::string& color = "'b'")
+				  const std::string& color = "'b'",
+				  bool matlab=true)
   {
-    std::vector<dolfin::Point> tri(3);
-    for (int i = 0; i < 3; ++i)
+    const std::size_t tdim = cell.mesh().topology().dim();
+    std::vector<dolfin::Point> tri(tdim+1);
+    for (std::size_t i = 0; i < tdim+1; ++i)
       tri[i] = cell.mesh().geometry().point(cell.entities(0)[i]);
-    return drawtriangle(tri, color);
+    return drawtriangle(tri, color, matlab);
+  }
+
+  inline std::string drawtriangle(const std::vector<double>& s,
+				  const std::string& color = "'b'",
+				  bool matlab = false)
+  {
+    std::vector<dolfin::Point> pp(s.size() / 2);
+    for (std::size_t i = 0; i < pp.size(); ++i)
+    {
+      pp[i][0] = s[2*i];
+      pp[i][1] = s[2*i+1];
+    }
+    return drawtriangle(pp, color, matlab);
+
+    /* std::vector<dolfin::Point> ss(3); */
+    /* ss[0] = dolfin::Point(s[0],s[1]); */
+    /* ss[1] = dolfin::Point(s[2],s[3]); */
+    /* ss[2] = dolfin::Point(s[4],s[5]); */
+    /* return drawtriangle(ss, color); */
+  }
+
+  inline std::string drawtriangle(const dolfin::Point& a,
+				  const dolfin::Point& b,
+				  const dolfin::Point& c,
+				  const std::string color = "'b'",
+				  bool matlab = false)
+  {
+    std::vector<dolfin::Point> t = {{ a, b, c}};
+    return drawtriangle(t, color);
   }
 
   inline std::string matlabplot(const dolfin::Point& p,
@@ -103,12 +163,40 @@ namespace tools
     return ss.str();
   }
 
+  inline std::string plot(const dolfin::Point& p,
+			  const std::string m="'.'")
+  {
+    return matlabplot(p,m);
+  }
+
+  inline std::string drawarrow(const dolfin::Point& v1,
+			       const dolfin::Point& v2,
+			       const std::string& color = "'b'")
+  {
+    std::stringstream ss;ss.precision(15);
+    ss << "drawarrow([" << v1[0] << ' '<<v1[1] <<"],[" << v2[0]<<' '<<v2[1] << "], "<< color << ");";
+    return ss.str();
+    /* const dolfin::Point v = v2-v1; */
+    /* const Point ones(0,0,1); */
+    /* Point n = ones.cross(v); */
+    /* if (n.norm() < 1e-5) { */
+    /*   const Point ones(0,1,0); */
+    /*   n = ones.cross(v); */
+    /* } */
+    /* const double a = 0.03*norm(v); */
+    /* n /= n.norm(); */
+    /* drawline(v1, v2); */
+    /* drawline(v2, v1 + 0.8 * v + a * n); */
+    /* drawline(v2, v1 + 0.8 * v - a * n); */
+  }
+
   //void Pause() { char apa; std::cin >> apa; }
 
+  template<class U=std::size_t, class T=double>
   inline void dolfin_write_medit_triangles(const std::string &filename,
 					   const dolfin::Mesh& mesh,
-					   const int t = 0,
-					   const std::vector<double>* u = 0)
+					   const U t = 0,
+					   const std::vector<T>* u = 0)
   {
     std::stringstream ss;
     ss<<filename<<"."<<t<<".mesh";
@@ -311,6 +399,13 @@ namespace tools
 
     fp << "</Piece>\n</UnstructuredGrid>\n</VTKFile>\n";
     fp.close();
+  }
+
+  inline std::string zoom(bool matlab=true)
+  {
+    if (matlab) return "axis equal;";
+    else
+      return "plt.autoscale(enable=True,axis='both',tight=None);";
   }
 
 }

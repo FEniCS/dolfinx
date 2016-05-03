@@ -28,6 +28,7 @@
 #include <vector>
 #include <memory>
 #include "GenericLinearSolver.h"
+#include <dolfin/common/MPI.h>
 
 namespace dolfin
 {
@@ -45,7 +46,18 @@ namespace dolfin
   public:
 
     /// Constructor
+    KrylovSolver(MPI_Comm comm,
+                 std::string method="default",
+                 std::string preconditioner="default");
+
+    /// Constructor
     KrylovSolver(std::string method="default",
+                 std::string preconditioner="default");
+
+    /// Constructor
+    KrylovSolver(MPI_Comm comm,
+                 std::shared_ptr<const GenericLinearOperator> A,
+                 std::string method="default",
                  std::string preconditioner="default");
 
     /// Constructor
@@ -62,10 +74,6 @@ namespace dolfin
     /// Set operator (matrix) and preconditioner matrix
     void set_operators(std::shared_ptr<const GenericLinearOperator> A,
                        std::shared_ptr<const GenericLinearOperator> P);
-
-    /// Set null space of the operator (matrix). This is used to solve
-    /// singular systems
-    void set_nullspace(const VectorSpaceBasis& nullspace);
 
     /// Solve linear system Ax = b
     std::size_t solve(GenericVector& x, const GenericVector& b);
@@ -95,7 +103,7 @@ namespace dolfin
   private:
 
     // Initialize solver
-    void init(std::string method, std::string preconditioner);
+    void init(std::string method, std::string preconditioner, MPI_Comm comm);
 
     // Solver
     std::shared_ptr<GenericLinearSolver> solver;

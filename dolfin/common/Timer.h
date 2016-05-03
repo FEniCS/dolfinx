@@ -67,9 +67,6 @@ namespace dolfin
     /// into logger
     double stop();
 
-    /// DEPRECATED: Return value of timer (or time at start if not stopped)
-    double value() const;
-
     /// Return wall, user and system time in seconds. Wall-clock time
     /// has precision around 1 microsecond; user and system around
     /// 10 millisecond.

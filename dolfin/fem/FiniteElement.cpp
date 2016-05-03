@@ -20,6 +20,7 @@
 
 #include <dolfin/common/utils.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
 #include "FiniteElement.h"
 
 using namespace dolfin;
@@ -31,12 +32,35 @@ FiniteElement::FiniteElement(std::shared_ptr<const ufc::finite_element> element)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FiniteElement> 
+void FiniteElement::tabulate_dof_coordinates(
+  boost::multi_array<double, 2>& coordinates,
+  const std::vector<double>& coordinate_dofs,
+  const Cell& cell) const
+{
+  dolfin_assert(_ufc_element);
+
+  // Check dimensions
+  const std::size_t dim = this->space_dimension();
+  const std::size_t gdim = this->geometric_dimension();
+  if (coordinates.shape()[0] != dim or coordinates.shape()[1] != gdim)
+  {
+    boost::multi_array<double, 2>::extent_gen extents;
+    coordinates.resize(extents[dim][gdim]);
+  }
+
+  // Tabulate coordinates
+  _ufc_element->tabulate_dof_coordinates(coordinates.data(),
+                                         coordinate_dofs.data());
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const FiniteElement>
 FiniteElement::extract_sub_element(const std::vector<std::size_t>& component) const
 {
   // Recursively extract sub element
-  std::shared_ptr<const FiniteElement> sub_finite_element = extract_sub_element(*this, component);
-  log(DBG, "Extracted finite element for sub system: %s", sub_finite_element->signature().c_str());
+  std::shared_ptr<const FiniteElement> sub_finite_element
+    = extract_sub_element(*this, component);
+  log(DBG, "Extracted finite element for sub system: %s",
+      sub_finite_element->signature().c_str());
 
   return sub_finite_element;
 }
@@ -71,7 +95,8 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   }
 
   // Create sub system
-  std::shared_ptr<const FiniteElement> sub_element = finite_element.create_sub_element(component[0]);
+  std::shared_ptr<const FiniteElement> sub_element
+    = finite_element.create_sub_element(component[0]);
   dolfin_assert(sub_element);
 
   // Return sub system if sub sub system should not be extracted
@@ -82,8 +107,9 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   std::vector<std::size_t> sub_component;
   for (std::size_t i = 1; i < component.size(); i++)
     sub_component.push_back(component[i]);
-  std::shared_ptr<const FiniteElement> sub_sub_element = extract_sub_element(*sub_element, sub_component);
-  //delete sub_element;
+
+  std::shared_ptr<const FiniteElement> sub_sub_element
+    = extract_sub_element(*sub_element, sub_component);
 
   return sub_sub_element;
 }

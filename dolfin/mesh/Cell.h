@@ -107,7 +107,26 @@ namespace dolfin
     double volume() const
     { return _mesh->type().volume(*this); }
 
-    /// Compute diameter of cell
+    /// Compute greatest distance between any two vertices
+    ///
+    /// *Returns*
+    ///     double
+    ///         The greatest distance between any two vertices of the cell.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         UnitSquareMesh mesh(1, 1);
+    ///         Cell cell(mesh, 0);
+    ///         info("%g", cell.h());
+    ///
+    ///     output::
+    ///
+    ///         1.41421
+    double h() const
+    { return _mesh->type().h(*this); }
+
+    /// Compute diameter of cell (deprecated)
     ///
     /// *Returns*
     ///     double
@@ -116,7 +135,7 @@ namespace dolfin
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         UnitSquare mesh(1, 1);
+    ///         UnitSquareMesh mesh(1, 1);
     ///         Cell cell(mesh, 0);
     ///         info("%g", cell.diameter());
     ///
@@ -125,6 +144,25 @@ namespace dolfin
     ///         1.41421
     double diameter() const
     { return _mesh->type().diameter(*this); }
+
+    /// Compute circumradius of cell
+    ///
+    /// *Returns*
+    ///     double
+    ///         The circumradius of the cell.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         UnitSquareMesh mesh(1, 1);
+    ///         Cell cell(mesh, 0);
+    ///         info("%g", cell.circumradius());
+    ///
+    ///     output::
+    ///
+    ///         0.707106
+    double circumradius() const
+    { return _mesh->type().circumradius(*this); }
 
     /// Compute inradius of cell
     ///
@@ -135,7 +173,7 @@ namespace dolfin
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         UnitSquare mesh(1, 1);
+    ///         UnitSquareMesh mesh(1, 1);
     ///         Cell cell(mesh, 0);
     ///         info("%g", cell.inradius());
     ///
@@ -163,7 +201,7 @@ namespace dolfin
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         UnitSquare mesh(1, 1);
+    ///         UnitSquareMesh mesh(1, 1);
     ///         Cell cell(mesh, 0);
     ///         info("%g", cell.radius_ratio());
     ///
@@ -321,20 +359,53 @@ namespace dolfin
     { return IntersectionTriangulation::triangulate_intersection(*this, entity); }
 
     // FIXME: This function is part of a UFC transition
-    /// Get cell vertex coordinates
-    void get_vertex_coordinates(double* coordinates) const
+    /// Get cell coordinate dofs (not vertex coordinates)
+    void get_coordinate_dofs(std::vector<double>& coordinates) const
     {
-      dolfin_assert(coordinates);
-      const std::size_t gdim = _mesh->geometry().dim();
+      const MeshGeometry& geom = _mesh->geometry();
+      const std::size_t gdim = geom.dim();
+      const std::size_t geom_degree = geom.degree();
       const std::size_t num_vertices = this->num_vertices();
       const unsigned int* vertices = this->entities(0);
-      for (std::size_t i = 0; i < num_vertices; i++)
-        for (std::size_t j = 0; j < gdim; j++)
-          coordinates[i*gdim + j] = _mesh->geometry().x(vertices[i])[j];
+
+      if (geom_degree == 1)
+      {
+        coordinates.resize(num_vertices*gdim);
+        for (std::size_t i = 0; i < num_vertices; ++i)
+          for (std::size_t j = 0; j < gdim; ++j)
+            coordinates[i*gdim + j] = geom.x(vertices[i])[j];
+      }
+      else if (geom_degree == 2)
+      {
+        const std::size_t tdim = _mesh->topology().dim();
+        const std::size_t num_edges = this->num_entities(1);
+        const unsigned int* edges = this->entities(1);
+
+        coordinates.resize((num_vertices + num_edges)*gdim);
+
+        for (std::size_t i = 0; i < num_vertices; ++i)
+          for (std::size_t j = 0; j < gdim; j++)
+            coordinates[i*gdim + j] = geom.x(vertices[i])[j];
+
+        for (std::size_t i = 0; i < num_edges; ++i)
+        {
+          const std::size_t entity_index
+              = (tdim == 1) ? index() : edges[i];
+          const std::size_t point_index
+            = geom.get_entity_index(1, 0, entity_index);
+          for (std::size_t j = 0; j < gdim; ++j)
+            coordinates[(i + num_vertices)*gdim + j] = geom.x(point_index)[j];
+        }
+      }
+      else
+      {
+        dolfin_error("Cell.h", "get coordinate_dofs", "Unsupported mesh degree");
+      }
+
     }
 
     // FIXME: This function is part of a UFC transition
-    /// Get cell vertex coordinates
+    /// Get cell vertex coordinates (not coordinate dofs)
     void get_vertex_coordinates(std::vector<double>& coordinates) const
     {
       const std::size_t gdim = _mesh->geometry().dim();
@@ -417,14 +488,8 @@ namespace dolfin
   {
   public:
 
-    CellFunction(const Mesh& mesh)
-      : MeshFunction<T>(mesh, mesh.topology().dim()) {}
-
     CellFunction(std::shared_ptr<const Mesh> mesh)
       : MeshFunction<T>(mesh, mesh->topology().dim()) {}
-
-    CellFunction(const Mesh& mesh, const T& value)
-      : MeshFunction<T>(mesh, mesh.topology().dim(), value) {}
 
     CellFunction(std::shared_ptr<const Mesh> mesh, const T& value)
       : MeshFunction<T>(mesh, mesh->topology().dim(), value) {}

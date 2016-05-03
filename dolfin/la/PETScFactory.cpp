@@ -35,49 +35,43 @@ using namespace dolfin;
 PETScFactory PETScFactory::factory;
 
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericMatrix> PETScFactory::create_matrix() const
+std::shared_ptr<GenericMatrix> PETScFactory::create_matrix(MPI_Comm comm) const
 {
-  std::shared_ptr<GenericMatrix> A(new PETScMatrix);
-  return A;
+  return std::make_shared<PETScMatrix>(comm);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericVector> PETScFactory:: create_vector() const
+std::shared_ptr<GenericVector> PETScFactory:: create_vector(MPI_Comm comm) const
 {
-  std::shared_ptr<GenericVector> x(new PETScVector);
-  return x;
+  return std::make_shared<PETScVector>(comm);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<TensorLayout>
 PETScFactory::create_layout(std::size_t rank) const
 {
-  bool sparsity = false;
+  TensorLayout::Sparsity sparsity = TensorLayout::Sparsity::DENSE;
   if (rank > 1)
-    sparsity = true;
-  std::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
-  return pattern;
+    sparsity = TensorLayout::Sparsity::SPARSE;
+  return std::make_shared<TensorLayout>(0, sparsity);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearOperator>
-PETScFactory::create_linear_operator() const
+PETScFactory::create_linear_operator(MPI_Comm comm) const
 {
-  std::shared_ptr<GenericLinearOperator> A(new PETScLinearOperator);
-  return A;
+  return std::make_shared<PETScLinearOperator>(comm);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLUSolver>
-PETScFactory::create_lu_solver(std::string method) const
+PETScFactory::create_lu_solver(MPI_Comm comm, std::string method) const
 {
-  std::shared_ptr<GenericLUSolver> solver(new PETScLUSolver(method));
-  return solver;
+  return std::make_shared<PETScLUSolver>(comm, method);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearSolver>
-PETScFactory::create_krylov_solver(std::string method,
+PETScFactory::create_krylov_solver(MPI_Comm comm,
+                                   std::string method,
                                    std::string preconditioner) const
 {
-  std::shared_ptr<GenericLinearSolver>
-    solver(new PETScKrylovSolver(method, preconditioner));
-  return solver;
+  return std::make_shared<PETScKrylovSolver>(comm, method, preconditioner);
 }
 //-----------------------------------------------------------------------------
 std::map<std::string, std::string> PETScFactory::lu_solver_methods() const

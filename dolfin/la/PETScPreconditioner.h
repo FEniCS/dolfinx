@@ -34,7 +34,6 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/parameter/Parameters.h>
-#include "GenericPreconditioner.h"
 
 namespace dolfin
 {
@@ -49,10 +48,11 @@ namespace dolfin
   /// PETScKrylovSolver and set the preconditioner type and
   /// parameters.
 
-  class PETScPreconditioner : public PETScObject,
-    public GenericPreconditioner, public Variable
+  class PETScPreconditioner : public PETScObject, public Variable
   {
   public:
+
+    static void set_type(PETScKrylovSolver& solver, std::string type);
 
     /// Create a particular preconditioner object
     explicit PETScPreconditioner(std::string type = "default");
@@ -63,15 +63,6 @@ namespace dolfin
     /// Set the preconditioner type and parameters
     virtual void set(PETScKrylovSolver& solver);
 
-    /// Set the (near) null space of the preconditioner operator
-    /// (matrix). This is required for certain preconditioner types,
-    /// e.g. smoothed aggregation multigrid
-    void set_nullspace(const VectorSpaceBasis& near_nullspace);
-
-    /// Return the PETSc null space
-    MatNullSpace near_nullspace() const
-    { return petsc_near_nullspace; }
-
     /// Set the coordinates of the operator (matrix) rows and
     /// geometric dimension d. This is can be used by required for
     /// certain preconditioners, e.g. ML. The input for this function
@@ -81,7 +72,7 @@ namespace dolfin
     // FIXME: Document
     void
       set_fieldsplit(PETScKrylovSolver& solver,
-                     const std::vector<std::vector<dolfin::la_index> >& fields,
+                     const std::vector<std::vector<dolfin::la_index>>& fields,
                      const std::vector<std::string>& split_names);
 
     /// Return informal string representation (pretty-print)
@@ -91,7 +82,7 @@ namespace dolfin
     static std::map<std::string, std::string> preconditioners();
 
     /// Default parameter values
-    static Parameters default_parameters();
+    //static Parameters default_parameters();
 
     friend class PETScSNESSolver;
 
@@ -108,12 +99,6 @@ namespace dolfin
     // Available preconditioner descriptions
     static const std::map<std::string, std::string>
       _methods_descr;
-
-    // Near null space vectors
-    std::vector<PETScVector> _near_nullspace;
-
-    // PETSc near null space.
-    MatNullSpace petsc_near_nullspace;
 
     // Operator row coordinates
     std::vector<double> _coordinates;

@@ -23,7 +23,7 @@ First, the :py:mod:`dolfin` module is imported
 
 .. code-block:: python
 
-	from dolfin import *
+    from dolfin import *
 
 A subclass of :py:class:`Expression <dolfin.cpp.function.Expression>`,
 ``Source``, is created for the source term ``f``. The function
@@ -32,12 +32,13 @@ for a function at the given point ``x``.
 
 .. code-block:: python
 
-	# Source term
-	class Source(Expression):
-	    def eval(self, values, x):
-	        dx = x[0] - 0.5
-	        dy = x[1] - 0.5
-	        values[0] = x[0]*sin(5.0*DOLFIN_PI*x[1]) + 1.0*exp(-(dx*dx + dy*dy)/0.02)
+    # Source term
+    class Source(Expression):
+        def eval(self, values, x):
+            dx = x[0] - 0.5
+            dy = x[1] - 0.5
+            values[0] = x[0]*sin(5.0*DOLFIN_PI*x[1]) \
+                        + 1.0*exp(-(dx*dx + dy*dy)/0.02)
 
 To define the boundaries, we create subclasses of the class
 :py:class:`SubDomain <dolfin.cpp.mesh.SubDomain>`. A simple Python
@@ -53,10 +54,11 @@ precision).)
 
 .. code-block:: python
 
-	# Sub domain for Dirichlet boundary condition
-	class DirichletBoundary(SubDomain):
-	    def inside(self, x, on_boundary):
-	        return bool((x[1] < DOLFIN_EPS or x[1] > (1.0 - DOLFIN_EPS)) and on_boundary)
+    # Sub domain for Dirichlet boundary condition
+    class DirichletBoundary(SubDomain):
+        def inside(self, x, on_boundary):
+            return bool((x[1] < DOLFIN_EPS or x[1] > (1.0 - DOLFIN_EPS)) \
+                        and on_boundary)
 
 The periodic boundary is defined by PeriodicBoundary and we define
 what is inside the boundary in the same way as in
@@ -68,20 +70,17 @@ the boundary by making an instance of the class.
 
 .. code-block:: python
 
-	# Sub domain for Periodic boundary condition
-	class PeriodicBoundary(SubDomain):
+    # Sub domain for Periodic boundary condition
+    class PeriodicBoundary(SubDomain):
 
-	    # Left boundary is "target domain" G
-	    def inside(self, x, on_boundary):
-	        return bool(x[0] < DOLFIN_EPS and x[0] > -DOLFIN_EPS and on_boundary)
+        # Left boundary is "target domain" G
+        def inside(self, x, on_boundary):
+            return bool(x[0] < DOLFIN_EPS and x[0] > -DOLFIN_EPS and on_boundary)
 
-	    # Map right boundary (H) to left boundary (G)
-	    def map(self, x, y):
-	        y[0] = x[0] - 1.0
-	        y[1] = x[1]
-
-	# Create periodic boundary condition
-	pbc = PeriodicBoundary()
+        # Map right boundary (H) to left boundary (G)
+        def map(self, x, y):
+            y[0] = x[0] - 1.0
+            y[1] = x[1]
 
 A 2D mesh is created using the built-in class
 :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`, and we
@@ -97,9 +96,9 @@ generated ones).
 
 .. code-block:: python
 
-	# Create mesh and finite element
-	mesh = UnitSquareMesh(32, 32)
-	V = FunctionSpace(mesh, "CG", 1, constrained_domain=pbc)
+    # Create mesh and finite element
+    mesh = UnitSquareMesh(32, 32)
+    V = FunctionSpace(mesh, "CG", 1, constrained_domain=PeriodicBoundary())
 
 Now, we create the Dirichlet boundary condition using the class
 :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`. A
@@ -115,18 +114,18 @@ definition of the Dirichlet boundary condition then looks as follows:
 
 .. code-block:: python
 
-	# Create Dirichlet boundary condition
-	u0 = Constant(0.0)
-	dbc = DirichletBoundary()
-	bc0 = DirichletBC(V, u0, dbc)
+    # Create Dirichlet boundary condition
+    u0 = Constant(0.0)
+    dbc = DirichletBoundary()
+    bc0 = DirichletBC(V, u0, dbc)
 
 When all boundary conditions are defined and created we can collect
 them in a list:
 
 .. code-block:: python
 
-	# Collect boundary conditions
-	bcs = [bc0]
+    # Collect boundary conditions
+    bcs = [bc0]
 
 Here only the Dirichlet boundary condition is put into the list
 because the periodic boundary condition is already applied in the
@@ -144,20 +143,20 @@ operators). In summary, this reads
 
 .. code-block:: python
 
-	# Define variational problem
-	u = TrialFunction(V)
-	v = TestFunction(V)
-	f = Source()
-	a = dot(grad(u), grad(v))*dx
-	L = f*v*dx
+    # Define variational problem
+    u = TrialFunction(V)
+    v = TestFunction(V)
+    f = Source(degree=1)
+    a = dot(grad(u), grad(v))*dx
+    L = f*v*dx
 
 Now, we have specified the variational form and can consider the solution of the variational problem. First, we need to define a :py:class:`Function <dolfin.cpp.function.Function>` u to represent the solution. (Upon initialization, it is simply set to the zero function.) A Function represents a function living in a finite element function space. Next, we can call the solve function with the arguments a == L, u and bcs as follows:
 
 .. code-block:: python
 
-	# Compute solution
-	u = Function(V)
-	solve(a == L, u, bcs)
+    # Compute solution
+    u = Function(V)
+    solve(a == L, u, bcs)
 
 The function u will be modified during the call to solve. The default settings for solving a variational problem have been used. However, the solution process can be controlled in much more detail if desired.
 
@@ -165,15 +164,15 @@ A :py:class:`Function <dolfin.cpp.function.Function>` can be manipulated in vari
 
 .. code-block:: python
 
-	# Save solution to file
-	file = File("periodic.pvd")
-	file << u
+    # Save solution to file
+    file = File("periodic.pvd")
+    file << u
 
-	# Plot solution
-	plot(u, interactive=True)
+    # Plot solution
+    plot(u, interactive=True)
 
 Complete code
 -------------
 
 .. literalinclude:: demo_periodic.py
-	:start-after: # Begin demo
+    :start-after: # Begin demo

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2015-06-03
+// Last changed: 2015-10-24
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -24,6 +24,10 @@
 
 // FIXME August
 #include <dolfin/geometry/predicates.h>
+#include <dolfin/geometry/dolfin_cgal_tools.h>
+#include <dolfin/geometry/dolfin_simplex_tools.h>
+
+//#define Augustdebug
 
 using namespace dolfin;
 
@@ -286,6 +290,36 @@ IntersectionTriangulation::triangulate_intersection_interval_interval
  const std::vector<Point>& interval_1,
  std::size_t gdim)
 {
+#ifdef Augustcgal
+  const Point& a = interval_0[0];
+  const Point& b = interval_0[1];
+  const Point& c = interval_1[0];
+  const Point& d = interval_1[1];
+  std::vector<double> triangulation;
+
+  if (cgaltools::is_degenerate(a, b))
+    return triangulation;
+  if (cgaltools::is_degenerate(c, d))
+    return triangulation;
+
+  const auto I0 = cgaltools::convert(a, b);
+  const auto I1 = cgaltools::convert(c, d);
+
+  if (CGAL::do_intersect(I0, I1))
+  {
+    const auto ii = CGAL::intersection(I0, I1);
+    dolfin_assert(ii);
+    triangulation = cgaltools::parse(ii);
+
+    if (triangulation.size() == 0)
+      dolfin_error("IntersectionTriangulation.cpp",
+		   "in intersection_interval_interval function",
+		   "unknown intersection");
+  }
+  return triangulation;
+
+#else
+
   // Flat array for triangulation
   std::vector<double> triangulation;
 
@@ -318,6 +352,7 @@ IntersectionTriangulation::triangulate_intersection_interval_interval
   }
 
   return triangulation;
+#endif
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
@@ -326,6 +361,38 @@ IntersectionTriangulation::triangulate_intersection_triangle_interval
  const std::vector<Point>& interval,
  std::size_t gdim)
 {
+#ifdef Augustcgal
+  dolfin_assert(gdim == 2);
+
+  const Point& r = triangle[0];
+  const Point& s = triangle[1];
+  const Point& t = triangle[2];
+  const Point& a = interval[0];
+  const Point& b = interval[1];
+  std::vector<double> triangulation;
+
+  if (cgaltools::is_degenerate(r, s, t))
+    return triangulation;
+  if (cgaltools::is_degenerate(a, b))
+    return triangulation;
+
+  const auto T = cgaltools::convert(r, s, t);
+  const auto I = cgaltools::convert(a, b);
+
+  if (CGAL::do_intersect(T, I))
+  {
+    const auto ii = CGAL::intersection(T, I);
+    dolfin_assert(ii);
+    triangulation = cgaltools::parse(ii);
+
+    if (triangulation.size() == 0)
+      dolfin_error("IntersectionTriangulation.cpp",
+		   "in intersection_triangle_interval function",
+		   "unknown intersection");
+  }
+  return triangulation;
+
+#else
   std::vector<double> triangulation;
   std::vector<Point> points;
 
@@ -378,10 +445,10 @@ IntersectionTriangulation::triangulate_intersection_triangle_interval
     {
       // Make sure the point interval[k] is not points[0]
       if ((interval[k]-points[0]).norm() > DOLFIN_EPS_LARGE and
-	  CollisionDetection::collides_triangle_point(triangle[0],
-						      triangle[1],
-						      triangle[2],
-						      interval[k]))
+  	  CollisionDetection::collides_triangle_point(triangle[0],
+  						      triangle[1],
+  						      triangle[2],
+  						      interval[k]))
       {
         triangulation.resize(2*gdim);
         for (std::size_t d = 0; d < gdim; ++d)
@@ -407,6 +474,7 @@ IntersectionTriangulation::triangulate_intersection_triangle_interval
   }
 
   return triangulation;
+#endif
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
@@ -414,6 +482,46 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
 (const std::vector<Point>& tri_0,
  const std::vector<Point>& tri_1)
 {
+#ifdef Augustcgal
+  const Point& r = tri_0[0];
+  const Point& s = tri_0[1];
+  const Point& t = tri_0[2];
+  const Point& a = tri_1[0];
+  const Point& b = tri_1[1];
+  const Point& c = tri_1[2];
+  std::vector<double> triangulation;
+
+  if (cgaltools::is_degenerate(r, s, t))
+    return triangulation;
+  if (cgaltools::is_degenerate(a, b, c))
+    return triangulation;
+
+  const auto T0 = cgaltools::convert(r, s, t);
+  const auto T1 = cgaltools::convert(a, b, c);
+
+  if (CGAL::do_intersect(T0, T1))
+  {
+    const auto ii = CGAL::intersection(T0, T1);
+
+    // We can have empty ii if we use CGAL::Exact_predicates_inexact_constructions_kernel
+    if (!ii) { return triangulation; }
+    //dolfin_assert(ii);
+    triangulation = cgaltools::parse(ii);
+
+    // NB: cgaltools::parse can return triangulation of size 0, for
+    // example if it detected a triangle but it was found to be flat.
+
+    // if (triangulation.size() == 0)
+    // {
+    //   std::cout << tools::drawtriangle(tri_0) << tools::drawtriangle(tri_1)<<std::endl;
+    //   dolfin_error("IntersectionTriangulation.cpp",
+    // 		   "find intersection of two triangles in intersection_triangle_triangle function",
+    // 		   "no intersection found");
+    // }
+  }
+  return triangulation;
+#else
+
   // This algorithm computes the (convex) polygon resulting from the
   // intersection of two triangles. It then triangulates the polygon
   // by trivially drawing an edge from one vertex to all other
@@ -558,8 +666,8 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
     for (std::size_t j = i+1; j < points.size(); ++j)
       if ((points[i] - points[j]).norm() < DOLFIN_EPS)//_LARGE)
       {
-	different = false;
-	break;
+  	different = false;
+  	break;
       }
     if (different)
       tmp.push_back(points[i]);
@@ -574,26 +682,11 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   // If the number of points are three, then these form the triangulation
   if (points.size() == 3)
   {
-    // Add the points to the triangulation in a reproducible order
-    std::vector<std::pair<std::pair<double, double>, std::size_t>> v{ std::make_pair(std::make_pair(points[0][0], points[0][1]), 0),
-                                                                      std::make_pair(std::make_pair(points[1][0], points[1][1]), 1),
-                                                                      std::make_pair(std::make_pair(points[2][0], points[2][1]), 2)};
-    std::sort(v.begin(), v.end());
-
     triangulation.resize(6);
 
-    triangulation[0] = points[v[0].second][0];
-    triangulation[1] = points[v[0].second][1];
-
-    triangulation[2] = points[v[1].second][0];
-    triangulation[3] = points[v[1].second][1];
-
-    triangulation[4] = points[v[2].second][0];
-    triangulation[5] = points[v[2].second][1];
-
-    // for (std::size_t i = 0; i < 3; ++i)
-    //   for (std::size_t j = 0; j < 2; ++j)
-    //     triangulation[2*i+j] = points[i][j];
+    for (std::size_t i = 0; i < 3; ++i)
+      for (std::size_t j = 0; j < 2; ++j)
+  	triangulation[2*i+j] = points[i][j];
 
     return triangulation;
   }
@@ -611,17 +704,14 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
 
 
   // Find left-most point (smallest x-coordinate)
-  // Use y-coordinate if x-coordinates are exactly equal.
-  // TODO: Does this work in 3D? Then also include z-coordinate in the
-  // comparison.
   std::size_t i_min = 0;
-  Point point_min = points[0];
+  double x_min = points[0].x();
   for (std::size_t i = 1; i < points.size(); i++)
   {
-    //const double x = points[i].x();
-    if (point_min.x() < points[i].x() || (point_min.x() == points[i].x() && point_min.y() < points[i].y()))
+    const double x = points[i].x();
+    if (x < x_min)
     {
-      point_min = points[i];
+      x_min = x;
       i_min = i;
     }
   }
@@ -707,7 +797,7 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
   // }
 
   // return triangulation;
-
+#endif
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
@@ -1115,7 +1205,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle
                                                        tet[2],
                                                        tet[3],
                                                        tri[i]))
-    points.push_back(tri[i]);
+      points.push_back(tri[i]);
 
   // Check if a tetrahedron edge intersects the triangle
   std::vector<std::vector<int>> tet_edges(6, std::vector<int>(2));
@@ -1408,6 +1498,245 @@ IntersectionTriangulation::triangulate_intersection
   }
 
 }
+
+
+//------------------------------------------------------------------------------
+std::vector<double>
+IntersectionTriangulation::graham_scan(const std::vector<Point>& points0)
+{
+  // Sometimes (at least using CGAL::intersection) we can get an extra
+  // point on an edge: a-----c--b. This point c may cause problems for
+  // the graham scan. To avoid this, use an extra center point.
+
+  std::vector<double> triangulation;
+
+#ifdef Augustdebug
+  std::cout << "before duplicates "<< points0.size() << '\n';
+  for (const auto p: points0)
+    std::cout << tools::matlabplot(p);
+  std::cout << '\n';
+#endif
+
+  // Remove duplicate points
+  std::vector<Point> points;
+  points.reserve(points0.size());
+
+  for (std::size_t i = 0; i < points0.size(); ++i)
+  {
+    bool different = true;
+    for (std::size_t j = i+1; j < points0.size(); ++j)
+      if ((points0[i] - points0[j]).norm() < DOLFIN_EPS)
+      {
+	different = false;
+	break;
+      }
+    if (different)
+      points.push_back(points0[i]);
+  }
+
+  if (points.size() < 3)
+  {
+#ifdef Augustdebug
+    std::cout << "after duplicate removal: " << points.size() << " too few points to form triangulation" << std::endl;
+#endif
+    return triangulation;
+  }
+
+  // Use the center of the points and point no 0 as reference for the
+  // angle calculation
+  Point pointscenter = points[0];
+  for (std::size_t m = 1; m < points.size(); ++m)
+    pointscenter += points[m];
+  pointscenter /= points.size();
+
+  Point n = (points[2] - points[0]).cross(points[1] - points[0]);
+  const double det = n.norm();
+  n /= det;
+
+  std::vector<std::pair<double, std::size_t>> order;
+  Point ref = points[0] - pointscenter;
+  ref /= ref.norm();
+
+  // Calculate and store angles
+  for (std::size_t m = 1; m < points.size(); ++m)
+  {
+    const Point v = points[m] - pointscenter;
+    const double frac = ref.dot(v) / v.norm();
+    double alpha;
+    if (frac <= -1)
+      alpha = DOLFIN_PI;
+    else if (frac >= 1)
+      alpha = 0;
+    else
+    {
+      alpha = acos(frac);
+      if (v.dot(n.cross(ref)) < 0)
+        alpha = 2*DOLFIN_PI-alpha;
+    }
+    order.push_back(std::make_pair(alpha, m));
+  }
+
+  // Sort angles
+  std::sort(order.begin(), order.end());
+
+#ifdef Augustdebug
+  std::cout <<"plot("<<points[0].x()<<","<<points[0].y()<<");\n";
+  for (const auto o: order)
+    std::cout << "plot("<<points[o.second].x()<<','<<points[o.second].y()<<");\n";
+#endif
+
+  // Triangulate polygon by connecting i_min with the ordered points
+  triangulation.reserve((points.size() - 2)*3*2);
+  const Point& p0 = points[0];
+  for (std::size_t i = 0; i < order.size() - 1; i++)
+  {
+    const Point& p1 = points[order[i].second];
+    const Point& p2 = points[order[i + 1].second];
+    triangulation.push_back(p0.x());
+    triangulation.push_back(p0.y());
+    triangulation.push_back(p1.x());
+    triangulation.push_back(p1.y());
+    triangulation.push_back(p2.x());
+    triangulation.push_back(p2.y());
+  }
+
+  return triangulation;
+
+
+//   std::vector<double> triangulation;
+
+// #ifdef Augustdebug
+//   std::cout << "before duplicates "<< points0.size() << '\n';
+//   for (const auto p: points0)
+//     std::cout << tools::matlabplot(p);
+//   std::cout << '\n';
+// #endif
+
+
+//   // Remove duplicate points
+//   std::vector<Point> points;
+//   points.reserve(points0.size());
+
+//   for (std::size_t i = 0; i < points0.size(); ++i)
+//   {
+//     bool different = true;
+//     for (std::size_t j = i+1; j < points0.size(); ++j)
+//       if ((points0[i] - points0[j]).norm() < DOLFIN_EPS)
+//       {
+// 	different = false;
+// 	break;
+//       }
+//     if (different)
+//       points.push_back(points0[i]);
+//   }
+
+//   if (points.size() < 3)
+//   {
+// #ifdef Augustdebug
+//     std::cout << "after duplicate removal: " << points.size() << " too few points to form triangulation" << std::endl;
+// #endif
+//     return triangulation;
+//   }
+
+//   // Do the Graham scan starting at a suitable first node. Compute
+//   // angles using a suitable reference line.
+//   bool small_angle_diff = true;
+//   std::vector<std::pair<double, std::size_t>> order;
+//   std::size_t i_min = 0;
+
+//   while (small_angle_diff and i_min < points.size())
+//   {
+//     order.clear();
+
+//     // Find a suitable reference line (not too small)
+//     std::size_t i_next;
+//     Point ref;
+//     bool small_length = true;
+//     while (small_length and i_min < points.size())
+//     {
+//       i_next = (i_min + 1) % points.size();
+//       ref = points[i_min] - points[i_next];
+//       const double refnorm = ref.norm();
+//       ref /= refnorm;
+//       small_length = false;
+//       if (refnorm < DOLFIN_EPS_LARGE)
+//       {
+// 	small_length = true;
+// 	i_min++;
+//       }
+//     }
+
+// #ifdef Augustdebug
+//     std::cout << "i_min and next: " << i_min << ' '<<i_next << '\n';
+//     std::cout << tools::matlabplot(points[i_min],"'ko'")<<tools::matlabplot(points[i_next],"'kx'")<<'\n';
+// #endif
+
+//     // Compute angles
+//     for (std::size_t i = 0; i < points.size(); ++i)
+//     {
+//       if (i == i_min)
+// 	continue;
+//       const Point v = points[i] - points[i_min];
+//       const double frac = ref.dot(v) / v.norm();
+// #ifdef Augustdebug
+//       std::cout << "frac = " << frac << '\n';
+// #endif
+//       double alpha;
+//       if (frac <= -1)
+// 	alpha = DOLFIN_PI;
+//       else if (frac >= 1)
+// 	alpha = 0;
+//       else
+// 	alpha = std::acos(frac);
+//       order.push_back(std::make_pair(alpha, i));
+//     }
+
+//     // Sort points based on angle
+//     std::sort(order.begin(), order.end());
+
+//     // Compute angle differences. Select new point if angles are close.
+//     small_angle_diff = false;
+//     for (std::size_t i = 1; i < points.size(); ++i)
+//       if (std::abs(order[i-1].first - order[i].first) < DOLFIN_EPS_LARGE)
+//       {
+// 	small_angle_diff = true;
+// 	i_min++;
+// 	break;
+//       }
+//   }
+
+//   // If no points with small angles are found, return empty triangulation
+//   if (small_angle_diff)
+//     return triangulation;
+//   //dolfin_assert(!small_angle_diff);
+//   //dolfin_assert(i_min <= points.size());
+
+// #ifdef Augustdebug
+//   std::cout << "points\n";
+//   for (const auto p: points)
+//     std::cout << tools::matlabplot(p);
+//   std::cout << '\n';
+//   for (const auto o: order)
+//     std::cout << o.second << ' ' << o.first*180/DOLFIN_PI<<'\n';
+// #endif
+
+//   // Triangulate polygon by connecting i_min with the ordered points
+//   triangulation.reserve((points.size() - 2)*3*2);
+//   const Point& p0 = points[i_min];
+//   for (std::size_t i = 0; i < points.size() - 2; i++)
+//   {
+//     const Point& p1 = points[order[i].second];
+//     const Point& p2 = points[order[i + 1].second];
+//     triangulation.push_back(p0.x());
+//     triangulation.push_back(p0.y());
+//     triangulation.push_back(p1.x());
+//     triangulation.push_back(p1.y());
+//     triangulation.push_back(p2.x());
+//     triangulation.push_back(p2.y());
+//   }
+
+//   return triangulation;
+}
 //-----------------------------------------------------------------------------
 bool
 IntersectionTriangulation::intersection_edge_edge_2d(const Point& a,
@@ -1416,19 +1745,46 @@ IntersectionTriangulation::intersection_edge_edge_2d(const Point& a,
 						     const Point& d,
 						     Point& pt)
 {
+#ifdef Augustcgal
+  if (cgaltools::is_degenerate(a, b))
+    return false;
+  if (cgaltools::is_degenerate(c, d))
+    return false;
+
+  const auto E0 = cgaltools::convert(a, b);
+  const auto E1 = cgaltools::convert(c, d);
+
+  if (CGAL::do_intersect(E0, E1))
+  {
+    const auto ii = CGAL::intersection(E0, E1);
+    dolfin_assert(ii);
+    const std::vector<double> triangulation = cgaltools::parse(ii);
+
+    if (triangulation.size() == 0)
+      dolfin_error("IntersectionTriangulation.cpp",
+		   "in intersection_edge_edge function",
+		   "unknown intersection");
+    pt[0] = triangulation[0];
+    pt[1] = triangulation[1];
+    return true;
+  }
+  return false;
+
+#else
+
   // Test Shewchuk style
   const double cda = orient2d(const_cast<double*>(c.coordinates()),
-			      const_cast<double*>(d.coordinates()),
-			      const_cast<double*>(a.coordinates()));
+  			      const_cast<double*>(d.coordinates()),
+  			      const_cast<double*>(a.coordinates()));
   const double cdb = orient2d(const_cast<double*>(c.coordinates()),
-			      const_cast<double*>(d.coordinates()),
-			      const_cast<double*>(b.coordinates()));
+  			      const_cast<double*>(d.coordinates()),
+  			      const_cast<double*>(b.coordinates()));
   const double abc = orient2d(const_cast<double*>(a.coordinates()),
-			      const_cast<double*>(b.coordinates()),
-			      const_cast<double*>(c.coordinates()));
+  			      const_cast<double*>(b.coordinates()),
+  			      const_cast<double*>(c.coordinates()));
   const double abd = orient2d(const_cast<double*>(a.coordinates()),
-			      const_cast<double*>(b.coordinates()),
-			      const_cast<double*>(d.coordinates()));
+  			      const_cast<double*>(b.coordinates()),
+  			      const_cast<double*>(d.coordinates()));
 
   if (cda*cdb < 0.0 and abc*abd < 0.0) // If equality, then they align
   {
@@ -1477,61 +1833,62 @@ IntersectionTriangulation::intersection_edge_edge_2d(const Point& a,
   return false;
 
 
-  // // Check if two edges are the same
-  // const double same_point_tol = DOLFIN_EPS_LARGE;
-  // if ((a - c).squared_norm() < same_point_tol and
-  //     (b - d).squared_norm() < same_point_tol)
+  // Check if two edges are the same
+  const double same_point_tol = DOLFIN_EPS_LARGE;
+  if ((a - c).squared_norm() < same_point_tol and
+      (b - d).squared_norm() < same_point_tol)
+    return false;
+  if ((a - d).squared_norm() < same_point_tol and
+      (b - c).norm() < same_point_tol)
+    return false;
+
+  // Tolerance for orthogonality
+  const double orth_tol = DOLFIN_EPS_LARGE;
+
+  // Tolerance for coplanarity
+  //const double coplanar_tol = DOLFIN_EPS_LARGE;
+
+  const Point L1 = b - a;
+  const Point L2 = d - c;
+  const Point ca = c - a;
+  const Point n = L1.cross(L2);
+
+  // Check if L1 and L2 are coplanar (what if they're overlapping?)
+  // Update: always coplanar in 2D
+  // if (std::abs(ca.dot(n)) > coplanar_tol)
   //   return false;
-  // if ((a - d).squared_norm() < same_point_tol and
-  //     (b - c).norm() < same_point_tol)
-  //   return false;
 
-  // // Tolerance for orthogonality
-  // const double orth_tol = DOLFIN_EPS_LARGE;
+  // Find orthogonal plane with normal n1
+  const Point n1 = n.cross(L1);
+  const double n1dotL2 = n1.dot(L2);
 
-  // // Tolerance for coplanarity
-  // //const double coplanar_tol = DOLFIN_EPS_LARGE;
+  // If we have orthogonality
+  if (std::abs(n1dotL2) > orth_tol)
+  {
+    const double t = -n1.dot(ca) / n1dotL2;
 
-  // const Point L1 = b - a;
-  // const Point L2 = d - c;
-  // const Point ca = c - a;
-  // const Point n = L1.cross(L2);
-
-  // // Check if L1 and L2 are coplanar (what if they're overlapping?)
-  // // Update: always coplanar in 2D
-  // // if (std::abs(ca.dot(n)) > coplanar_tol)
-  // //   return false;
-
-  // // Find orthogonal plane with normal n1
-  // const Point n1 = n.cross(L1);
-  // const double n1dotL2 = n1.dot(L2);
-
-  // // If we have orthogonality
-  // if (std::abs(n1dotL2) > orth_tol)
+    // Find orthogonal plane with normal n2
+    const Point n2 = n.cross(L2);
+    const double n2dotL1 = n2.dot(L1);
+    if (t >= 0 and
+        t <= 1 and
+        std::abs(n2dotL1) > orth_tol)
+    {
+      const double s = n2.dot(ca) / n2dotL1;
+      if (s >= 0 and
+          s <= 1)
+      {
+  	pt = a + s*L1;
+  	return true;
+      }
+    }
+  }
+  // else // Now we have both coplanarity and colinearity, i.e. parallel lines
   // {
-  //   const double t = -n1.dot(ca) / n1dotL2;
-
-  //   // Find orthogonal plane with normal n2
-  //   const Point n2 = n.cross(L2);
-  //   const double n2dotL1 = n2.dot(L1);
-  //   if (t >= 0 and
-  //       t <= 1 and
-  //       std::abs(n2dotL1) > orth_tol)
-  //   {
-  //     const double s = n2.dot(ca) / n2dotL1;
-  //     if (s >= 0 and
-  //         s <= 1)
-  //     {
-  // 	pt = a + s*L1;
-  // 	return true;
-  //     }
-  //   }
   // }
-  // // else // Now we have both coplanarity and colinearity, i.e. parallel lines
-  // // {
-  // // }
 
-  // return false;
+  return false;
+#endif
 }
 //-----------------------------------------------------------------------------
 bool
@@ -1541,6 +1898,13 @@ IntersectionTriangulation::intersection_edge_edge(const Point& a,
 						  const Point& d,
 						  Point& pt)
 {
+#ifdef Augustcgal
+  dolfin_error("IntersectionTriangulation.cpp",
+	       "in intersection_edge_edge function",
+	       "cgal version only for 2d");
+  return false;
+
+#else
   // Check if two edges are the same
   const double same_point_tol = DOLFIN_EPS_LARGE;
   if ((a - c).squared_norm() < same_point_tol and
@@ -1585,8 +1949,8 @@ IntersectionTriangulation::intersection_edge_edge(const Point& a,
       if (s >= 0 and
           s <= 1)
       {
-	pt = a + s*L1;
-	return true;
+  	pt = a + s*L1;
+  	return true;
       }
     }
   }
@@ -1595,6 +1959,7 @@ IntersectionTriangulation::intersection_edge_edge(const Point& a,
   // }
 
   return false;
+#endif
 }
 //-----------------------------------------------------------------------------
 bool
@@ -1605,6 +1970,45 @@ IntersectionTriangulation::intersection_face_edge(const Point& r,
 						  const Point& b,
 						  Point& pt)
 {
+#ifdef Augustcgal
+  // CGAL version only 2D
+  if (cgaltools::is_degenerate(r, s, t))
+    return false;
+  if (cgaltools::is_degenerate(a, b))
+    return false;
+
+  const auto T = cgaltools::convert(r, s, t);
+  const auto I = cgaltools::convert(a, b);
+
+  if (CGAL::do_intersect(T, I))
+  {
+    const auto ii = CGAL::intersection(T, I);
+    dolfin_assert(ii);
+    const std::vector<double> triangulation = cgaltools::parse(ii);
+
+    if (triangulation.size() == 2)
+    {
+      pt[0] = triangulation[0];
+      pt[1] = triangulation[1];
+      return true;
+    }
+    else if (triangulation.size() == 4)
+    {
+      std::cout << __FUNCTION__ << " average" << std::endl;
+      pt[0] = 0.5*(triangulation[0] + triangulation[2]);
+      pt[1] = 0.5*(triangulation[1] + triangulation[3]);
+      return true;
+    }
+    else
+      dolfin_error("IntersectionTriangulation.cpp",
+		   "in intersection_face_edge function",
+		   "unknown intersection");
+  }
+  return false;
+
+#else
+
+
   // This standard edge face intersection test is as follows:
   // - Check if end points of the edge (a,b) on opposite side of plane
   // given by the face (r,s,t)
@@ -1663,6 +2067,7 @@ IntersectionTriangulation::intersection_face_edge(const Point& r,
     return false;
 
   return true;
+#endif
 }
 //------------------------------------------------------------------------------
 double IntersectionTriangulation::minimum_angle(double* a, double* b, double* c)

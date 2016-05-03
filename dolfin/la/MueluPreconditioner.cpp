@@ -22,6 +22,7 @@
 #include "BelosKrylovSolver.h"
 #include "KrylovSolver.h"
 #include "MueluPreconditioner.h"
+#include "TrilinosParameters.h"
 
 using namespace dolfin;
 
@@ -39,29 +40,18 @@ MueluPreconditioner::~MueluPreconditioner()
 //-----------------------------------------------------------------------------
 void MueluPreconditioner::init(std::shared_ptr<const TpetraMatrix> P)
 {
-  Teuchos::ParameterList paramList;
-  paramList.set("verbosity", "extreme");
-
-  paramList.set("max levels", 3);
-  paramList.set("coarse: max size", 10);
-  paramList.set("coarse: type", "Klu2");
-  paramList.set("multigrid algorithm", "sa");
-  paramList.set("smoother: type", "RELAXATION");
-
-  Teuchos::ParameterList sparamList;
-  sparamList.set("relaxation: type", "Jacobi");
-  sparamList.set("relaxation: sweeps", 1);
-  sparamList.set("relaxation: damping factor", 0.9);
-  paramList.set("smoother: params", sparamList);
-
-  paramList.set("aggregation: type", "uncoupled");
-  paramList.set("aggregation: min agg size", 3);
-  paramList.set("aggregation: max agg size", 9);
+  // Generate Trilinos parameters from dolfin parameters
+  Teuchos::RCP<Teuchos::ParameterList> paramList(new Teuchos::ParameterList);
+  Parameters params = parameters("muelu");
+  TrilinosParameters::insert_parameters(params, paramList);
 
   // FIXME: why does it need to be non-const when Ifpack2 uses const?
+  std::shared_ptr<TpetraMatrix> P_non_const
+    = std::const_pointer_cast<TpetraMatrix>(P);
+
   _prec = MueLu::CreateTpetraPreconditioner(
-    std::const_pointer_cast<TpetraMatrix>(P)->mat(),
-    paramList);
+                Teuchos::rcp_dynamic_cast<op_type>(P_non_const->mat()),
+                *paramList);
 }
 //-----------------------------------------------------------------------------
 void MueluPreconditioner::set(BelosKrylovSolver& solver)
@@ -76,16 +66,24 @@ std::string MueluPreconditioner::str(bool verbose) const
   if (verbose)
     s << _prec->description() << std::endl;
 
+  // Print off all the possible parameters
+  // FIXME: pipe this to stringstream and output when verbose is set
+  // Teuchos::RCP<const Teuchos::ParameterList> pList = MueLu::MasterList::List();
+  // pList->print();
+
   return s.str();
 }
 //-----------------------------------------------------------------------------
 Parameters MueluPreconditioner::default_parameters()
 {
-  Parameters p(KrylovSolver::default_parameters()("preconditioner"));
-  p.rename("muelu_preconditioner");
+  //Parameters p(KrylovSolver::default_parameters()("preconditioner"));
+  //p.rename("muelu_preconditioner");
 
-  Teuchos::RCP<const Teuchos::ParameterList> pList = MueLu::MasterList::List();
-  pList->print();
+  Parameters p("muelu_preconditioner");
+
+  //Parameters muelu_parameters("muelu");
+  //muelu_parameters.add("verbosity", "low");
+  //p.add(muelu_parameters);
 
   return p;
 }

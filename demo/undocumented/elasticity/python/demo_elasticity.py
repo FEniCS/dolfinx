@@ -42,17 +42,21 @@ def build_nullspace(V, x):
     V.sub(2).dofmap().set(nullspace_basis[2], 1.0);
 
     # Build rotational null space basis
-    V.sub(0).dofmap().set_x(nullspace_basis[3], -1.0, 1, V.mesh());
-    V.sub(1).dofmap().set_x(nullspace_basis[3],  1.0, 0, V.mesh());
-    V.sub(0).dofmap().set_x(nullspace_basis[4],  1.0, 2, V.mesh());
-    V.sub(2).dofmap().set_x(nullspace_basis[4], -1.0, 0, V.mesh());
-    V.sub(2).dofmap().set_x(nullspace_basis[5],  1.0, 1, V.mesh());
-    V.sub(1).dofmap().set_x(nullspace_basis[5], -1.0, 2, V.mesh());
+    V.sub(0).set_x(nullspace_basis[3], -1.0, 1);
+    V.sub(1).set_x(nullspace_basis[3],  1.0, 0);
+    V.sub(0).set_x(nullspace_basis[4],  1.0, 2);
+    V.sub(2).set_x(nullspace_basis[4], -1.0, 0);
+    V.sub(2).set_x(nullspace_basis[5],  1.0, 1);
+    V.sub(1).set_x(nullspace_basis[5], -1.0, 2);
 
     for x in nullspace_basis:
         x.apply("insert")
 
-    return VectorSpaceBasis(nullspace_basis)
+    # Create vector space basis and orthogonalize
+    basis = VectorSpaceBasis(nullspace_basis)
+    basis.orthonormalize()
+
+    return basis
 
 
 # Load mesh and define function space
@@ -68,9 +72,8 @@ omega = 300.0
 rho = 10.0
 
 # Loading due to centripetal acceleration (rho*omega^2*x_i)
-f = Expression(("rho*omega*omega*x[0]", \
-                "rho*omega*omega*x[1]", \
-                "0.0"), omega=omega, rho=rho)
+f = Expression(("rho*omega*omega*x[0]", "rho*omega*omega*x[1]", "0.0"),
+               omega=omega, rho=rho, degree=2)
 
 # Elasticity parameters
 E = 1.0e9
@@ -80,8 +83,7 @@ lmbda = E*nu/((1.0 + nu)*(1.0 - 2.0*nu))
 
 # Stress computation
 def sigma(v):
-    gdim = v.geometric_dimension()
-    return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(gdim)
+    return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(len(v))
 
 # Create function space
 V = VectorFunctionSpace(mesh, "Lagrange", 1)
@@ -108,10 +110,20 @@ u = Function(V)
 # generate compatible vectors for the nullspace.
 null_space = build_nullspace(V, u.vector())
 
+# Attach near nullspace to matrix
+as_backend_type(A).set_near_nullspace(null_space)
+
 # Create PETSC smoothed aggregation AMG preconditioner and attach near
 # null space
 pc = PETScPreconditioner("petsc_amg")
-pc.set_nullspace(null_space)
+
+# Use Chebyshev smoothing for multigrid
+PETScOptions.set("mg_levels_ksp_type", "chebyshev")
+PETScOptions.set("mg_levels_pc_type", "jacobi")
+
+# Improve estimate of eigenvalues for Chebyshev smoothing
+PETScOptions.set("mg_levels_esteig_ksp_type", "cg")
+PETScOptions.set("mg_levels_ksp_chebyshev_esteig_steps", 50)
 
 # Create CG Krylov solver and turn convergence monitoring on
 solver = PETScKrylovSolver("cg", pc)

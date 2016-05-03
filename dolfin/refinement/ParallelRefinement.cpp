@@ -355,7 +355,7 @@ void ParallelRefinement::new_cell(const std::size_t i0, const std::size_t i1,
   new_cell_topology.push_back(i2);
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::new_cell(const std::vector<std::size_t>& idx)
+void ParallelRefinement::new_cells(const std::vector<std::size_t>& idx)
 {
   new_cell_topology.insert(new_cell_topology.end(), idx.begin(), idx.end());
 }

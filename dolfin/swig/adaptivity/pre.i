@@ -44,10 +44,16 @@
 %ignore dolfin::GoalFunctional;
 
 //-----------------------------------------------------------------------------
-// To simplify handling of shared_ptr types in PyDOLFIN we ignore the reference
-// version of constructors to these types
+// Wrap adapt return value with PyDOLFIN classes
 //-----------------------------------------------------------------------------
-%ignore dolfin::AdaptiveLinearVariationalSolver::AdaptiveLinearVariationalSolver(LinearVariationalProblem&);
-%ignore dolfin::AdaptiveNonlinearVariationalSolver::AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem&);
-
-
+%pythonappend dolfin::adapt %{
+from dolfin import cpp
+from dolfin.functions import Function, FunctionSpace
+if isinstance(val, cpp.Function):
+    return Function(val)
+if isinstance(val, cpp.FunctionSpace):
+    return FunctionSpace(val)
+# NOTE: Mesh will possibly appear here when Mesh has special PyDOLFIN wrapper
+#       subclassing ufl.Domain
+return val
+%}

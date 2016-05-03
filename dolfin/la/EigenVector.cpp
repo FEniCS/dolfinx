@@ -21,6 +21,7 @@
 #include <sstream>
 #include <unordered_set>
 
+#include <dolfin/log/log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include "EigenVector.h"
@@ -30,18 +31,30 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EigenVector::EigenVector() : _x(new Eigen::VectorXd)
+EigenVector::EigenVector() : EigenVector(MPI_COMM_SELF)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EigenVector::EigenVector(std::size_t N) : _x(new Eigen::VectorXd(N))
+EigenVector::EigenVector(MPI_Comm comm) : _x(new Eigen::VectorXd),
+                                          _mpi_comm(comm)
 {
+  // Check size of communicator
+  check_mpi_size(comm);
+}
+//-----------------------------------------------------------------------------
+EigenVector::EigenVector(MPI_Comm comm, std::size_t N)
+  : _x(new Eigen::VectorXd(N)), _mpi_comm(comm)
+{
+  // Check size of communicator
+  check_mpi_size(comm);
+
+  // Zero vector
   _x->setZero();
 }
 //-----------------------------------------------------------------------------
 EigenVector::EigenVector(const EigenVector& x)
-  : _x(new Eigen::VectorXd(*(x._x)))
+  : _x(new Eigen::VectorXd(*(x._x))), _mpi_comm(x._mpi_comm)
 {
   // Do nothing
 }
@@ -120,7 +133,7 @@ void EigenVector::add_local(const Array<double>& values)
 void EigenVector::gather(GenericVector& x,
                          const std::vector<dolfin::la_index>& indices) const
 {
-  error("Not implemented");
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 void EigenVector::gather(std::vector<double>& x,

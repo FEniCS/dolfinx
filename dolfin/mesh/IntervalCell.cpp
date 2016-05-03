@@ -91,31 +91,6 @@ void IntervalCell::create_entities(boost::multi_array<unsigned int, 2>& e,
   e[0][0] = v[0]; e[1][0] = v[1];
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,
-                               std::size_t& current_cell) const
-{
-  // Get vertices
-  const unsigned int* v = cell.entities(0);
-  dolfin_assert(v);
-
-  // Get offset for new vertex indices
-  const std::size_t offset = cell.mesh().num_vertices();
-
-  // Compute indices for the three new vertices
-  const std::size_t v0 = v[0];
-  const std::size_t v1 = v[1];
-  const std::size_t e0 = offset + cell.index();
-
-  // Add the two new cells
-  std::vector<std::size_t> new_cell(2);
-
-  new_cell[0] = v0; new_cell[1] = e0;
-  editor.add_cell(current_cell++, new_cell);
-
-  new_cell[0] = e0; new_cell[1] = v1;
-  editor.add_cell(current_cell++, new_cell);
-}
-//-----------------------------------------------------------------------------
 double IntervalCell::volume(const MeshEntity& interval) const
 {
   // Check that we get an interval
@@ -131,21 +106,13 @@ double IntervalCell::volume(const MeshEntity& interval) const
 
   // Get the coordinates of the two vertices
   const unsigned int* vertices = interval.entities(0);
-  const double* x0 = geometry.x(vertices[0]);
-  const double* x1 = geometry.x(vertices[1]);
+  const Point x0 = geometry.point(vertices[0]);
+  const Point x1 = geometry.point(vertices[1]);
 
-  // Compute length of interval (line segment)
-  double sum = 0.0;
-  for (std::size_t i = 0; i < geometry.dim(); ++i)
-  {
-    const double dx = x1[i] - x0[i];
-    sum += dx*dx;
-  }
-
-  return std::sqrt(sum);
+  return x1.distance(x0);
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::diameter(const MeshEntity& interval) const
+double IntervalCell::circumradius(const MeshEntity& interval) const
 {
   // Check that we get an interval
   if (interval.dim() != 1)
@@ -155,8 +122,8 @@ double IntervalCell::diameter(const MeshEntity& interval) const
                  "Illegal mesh entity, not an interval");
   }
 
-  // Diameter is same as volume for interval (line segment)
-  return volume(interval);
+  // Circumradius is half the volume for an interval (line segment)
+  return volume(interval)/2.0;
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::squared_distance(const Cell& cell,

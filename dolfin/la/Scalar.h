@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2007-2011.
+// Modified by Garth N. Wells, 2007-2015.
 // Modified by Ola Skavhaug, 2007.
 // Modified by Martin Alnaes, 2014.
 
@@ -44,8 +44,12 @@ namespace dolfin
   public:
 
     /// Create zero scalar
-    Scalar() : GenericTensor(), _value(0.0), _local_increment(0.0), _mpi_comm(MPI_COMM_WORLD)
-    { SubSystemsManager::init_mpi(); }
+    Scalar() : Scalar(MPI_COMM_WORLD) {}
+
+    /// Create zero scalar
+    Scalar(MPI_Comm comm) : GenericTensor(), _value(0.0), _local_increment(0.0),
+      _mpi_comm(comm)
+      { SubSystemsManager::init_mpi(); }
 
     /// Destructor
     virtual ~Scalar() {}
@@ -141,7 +145,7 @@ namespace dolfin
 
     /// Add block of values using global indices
     virtual void add(const double* block,
-             const std::vector<ArrayView<const dolfin::la_index> >& rows)
+             const std::vector<ArrayView<const dolfin::la_index>>& rows)
     {
       dolfin_assert(block);
       _local_increment += block[0];
@@ -149,7 +153,7 @@ namespace dolfin
 
     /// Add block of values using local indices
     virtual void add_local(const double* block,
-             const std::vector<ArrayView<const dolfin::la_index> >& rows)
+             const std::vector<ArrayView<const dolfin::la_index>>& rows)
     {
       dolfin_assert(block);
       _local_increment += block[0];
@@ -202,11 +206,13 @@ namespace dolfin
       return f.factory();
     }
 
-    /// Get final value (assumes prior apply(), not part of GenericTensor interface)
+    /// Get final value (assumes prior apply(), not part of
+    /// GenericTensor interface)
     double get_scalar_value() const
     { return _value; }
 
-    /// Add to local increment (added for testing, remove if we add a better way from python)
+    /// Add to local increment (added for testing, remove if we add a
+    /// better way from python)
     void add_local_value(double value)
     { _local_increment += value; }
 

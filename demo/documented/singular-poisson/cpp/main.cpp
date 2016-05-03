@@ -68,20 +68,20 @@ int main()
 {
   #ifdef HAS_PETSC
   // Create mesh and function space
-  UnitSquareMesh mesh(64, 64);
-  Poisson::FunctionSpace V(mesh);
+  auto mesh = std::make_shared<UnitSquareMesh>(64, 64);
+  auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
   // Define variational problem
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
-  Source f;
-  Flux g;
+  auto f = std::make_shared<Source>();
+  auto g = std::make_shared<Flux>();
   L.f = f;
   L.g = g;
 
   // Assemble system
-  std::shared_ptr<GenericMatrix> A(new Matrix);
-  Vector b;
+  auto A = std::make_shared<PETScMatrix>();
+  PETScVector b;
   assemble(*A, a);
   assemble(b, L);
 
@@ -89,17 +89,18 @@ int main()
   Function u(V);
 
   // Create Krylov solver
-  KrylovSolver solver(A, "gmres");
+  PETScKrylovSolver solver("cg");
+  solver.set_operator(A);
 
   // Create vector that spans null space (normalised)
   std::shared_ptr<GenericVector> null_space_ptr(b.copy());
-  V.dofmap()->set(*null_space_ptr, sqrt(1.0/null_space_ptr->size()));
+  V->dofmap()->set(*null_space_ptr, sqrt(1.0/null_space_ptr->size()));
   std::vector<std::shared_ptr<GenericVector>> null_space_basis
     = {{null_space_ptr}};
 
   // Create null space basis object and attach to Krylov solver
   VectorSpaceBasis null_space(null_space_basis);
-  A->down_cast<PETScMatrix>().set_nullspace(null_space);
+  A->set_nullspace(null_space);
 
   // Orthogonalize b with respect to the null space (this gurantees
   // that a solution exists)

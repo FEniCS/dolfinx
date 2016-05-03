@@ -83,12 +83,12 @@ namespace dolfin
     /// Add block of values using global indices
     virtual
       void add(const double* block,
-           const std::vector<ArrayView<const dolfin::la_index> >& rows) = 0;
+           const std::vector<ArrayView<const dolfin::la_index>>& rows) = 0;
 
     /// Add block of values using local indices
     virtual void add_local(
       const double* block,
-      const std::vector<ArrayView<const dolfin::la_index> >& rows) = 0;
+      const std::vector<ArrayView<const dolfin::la_index>>& rows) = 0;
 
 
     /// Add block of values using global indices
@@ -107,7 +107,7 @@ namespace dolfin
     virtual void apply(std::string mode) = 0;
 
     /// Return MPI communicator
-    virtual MPI_Comm mpi_comm() const = 0;
+    //virtual MPI_Comm mpi_comm() const = 0;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;

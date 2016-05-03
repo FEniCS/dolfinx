@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-#ifdef HAS_HDF5
-
+#include <iostream>
 #include <string>
 #include <vector>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 
 #include <dolfin/log/log.h>
@@ -28,7 +28,8 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-XDMFxml::XDMFxml(std::string filename): _filename(filename)
+XDMFxml::XDMFxml(std::string filename): _filename(filename),
+                                        _is_this_first_write(true)
 {
   // Do nothing
 }
@@ -40,11 +41,29 @@ XDMFxml::~XDMFxml()
 //-----------------------------------------------------------------------------
 void XDMFxml::header()
 {
-  xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
-  pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
-  xdmf.append_attribute("Version") = "2.0";
-  xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
-  xdmf.append_child("Domain");
+  // If a new file, add a header
+  if (!boost::filesystem::exists(_filename) or _is_this_first_write)
+  {
+    xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+    pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
+    xdmf.append_attribute("Version") = "2.0";
+    xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
+    xdmf.append_child("Domain");
+
+    write();
+    _is_this_first_write = false;
+  }
+  else
+  {
+    // Read in existing XDMF file
+    pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+    if (!result)
+    {
+      dolfin_error("XDMFxml.cpp",
+                   "write data to XDMF file",
+                   "XML parsing error when reading from existing file");
+    }
+  }
 }
 //----------------------------------------------------------------------------
 void XDMFxml::write() const
@@ -55,66 +74,134 @@ void XDMFxml::write() const
 //-----------------------------------------------------------------------------
 void XDMFxml::read()
 {
+  if (!boost::filesystem::exists(_filename))
+  {
+    dolfin_error("XDMFxml.cpp",
+                 "read XDMF file",
+                 "File does not exist");
+  }
+
   pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
   if (!result)
   {
     dolfin_error("XDMFxml.cpp",
                  "read mesh from XDMF/H5 files",
-                 "XML parsing error.");
+                 "Error opening XML file");
   }
 }
 //-----------------------------------------------------------------------------
-std::string XDMFxml::meshname() const
+XDMFxml::TopologyData XDMFxml::get_topology() const
 {
   // Topology - check format and get dataset name
   pugi::xml_node xdmf_topology
     = xml_doc.child("Xdmf").child("Domain")
-             .child("Grid").child("Topology").child("DataItem");
-  if (!xdmf_topology)
+             .child("Grid").child("Topology");
+  pugi::xml_node xdmf_topology_data = xdmf_topology.child("DataItem");
+
+  if (!xdmf_topology or !xdmf_topology_data)
   {
     dolfin_error("XDMFxml.cpp",
                  "read mesh from XDMF/H5 files",
                  "XML parsing error. XDMF file should contain only one mesh/dataset");
   }
 
-  const std::string
-    topological_data_format(xdmf_topology.attribute("Format").value());
-  if (topological_data_format != "HDF")
+  XDMFxml::TopologyData tdata;
+  tdata.format = xdmf_topology_data.attribute("Format").value();
+
+  // Usually, the DOLFIN CellType is just the lower case of the VTK name
+  // FIXME: this will fail for 1D and quadratic topology
+  tdata.cell_type = xdmf_topology.attribute("TopologyType").value();
+  boost::to_lower(tdata.cell_type);
+
+  std::string topo_dim(xdmf_topology_data.attribute("Dimensions").as_string());
+  std::vector<std::string> topo_dim_vec;
+  boost::split(topo_dim_vec, topo_dim, boost::is_any_of(" "));
+
+  tdata.n_cells = std::stol(topo_dim_vec[0]);
+  tdata.points_per_cell = std::stol(topo_dim_vec[1]);
+
+  if (tdata.format == "XML")
+  {
+    tdata.data = xdmf_topology_data.first_child().value();
+    boost::trim(tdata.data);
+  }
+  else if (tdata.format == "HDF")
+  {
+    std::vector<std::string> topo_hdf5_urls;
+    std::string hdf5_full_path = xdmf_topology_data.first_child().value();
+    boost::split(topo_hdf5_urls, hdf5_full_path,
+                 boost::is_any_of(":"));
+    dolfin_assert(topo_hdf5_urls.size() == 2);
+    tdata.hdf5_filename = topo_hdf5_urls[0];
+    tdata.hdf5_dataset = topo_hdf5_urls[1];
+  }
+  else
   {
     dolfin_error("XDMFxml.cpp",
-                 "read mesh from XDMF/H5 files",
-                 "XML parsing error. Wrong dataset format (not HDF5)");
+                 "get topology",
+                 "Unknown data format");
   }
 
-  const std::string topo_ref(xdmf_topology.first_child().value());
-  std::vector<std::string> topo_bits;
-  boost::split(topo_bits, topo_ref, boost::is_any_of(":/"));
-
-  // Should have 5 elements "filename.h5", "", "Mesh", "meshname", "topology"
-  dolfin_assert(topo_bits.size() == 5);
-  dolfin_assert(topo_bits[2] == "Mesh");
-  dolfin_assert(topo_bits[4] == "topology");
-
+  return tdata;
+}
+//-----------------------------------------------------------------------------
+XDMFxml::GeometryData XDMFxml::get_geometry() const
+{
   // Geometry - check format and get dataset name
-  pugi::xml_node xdmf_geometry =
-    xml_doc.child("Xdmf").child("Domain").child("Grid").child("Geometry").child("DataItem");
+  pugi::xml_node xdmf_geometry
+    = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Geometry");
+  pugi::xml_node xdmf_geometry_data = xdmf_geometry.child("DataItem");
   dolfin_assert(xdmf_geometry);
+  dolfin_assert(xdmf_geometry_data);
 
-  const std::string geom_fmt(xdmf_geometry.attribute("Format").value());
-  dolfin_assert(geom_fmt == "HDF");
+  GeometryData gdata;
 
-  const std::string geom_ref(xdmf_geometry.first_child().value());
-  std::vector<std::string> geom_bits;
-  boost::split(geom_bits, geom_ref, boost::is_any_of(":/"));
+  std::string geo_dim(xdmf_geometry_data.attribute("Dimensions").as_string());
+  std::vector<std::string> geo_vec;
+  boost::split(geo_vec, geo_dim, boost::is_any_of(" "));
 
-  // Should have 5 elements "filename.h5", "", "Mesh", "meshname",
-  // "coordinates"
-  dolfin_assert(geom_bits.size() == 5);
-  dolfin_assert(geom_bits[2] == "Mesh");
-  dolfin_assert(geom_bits[3] == topo_bits[3]);
-  dolfin_assert(geom_bits[4] == "coordinates");
+  gdata.n_points = std::stol(geo_vec[0]);
+  gdata.dim = std::stoul(geo_vec[1]);
 
-  return geom_bits[3];
+  gdata.format = xdmf_geometry_data.attribute("Format").value();
+
+  if (gdata.format == "XML")
+  {
+    gdata.data = xdmf_geometry_data.first_child().value();
+    boost::trim(gdata.data);
+  }
+  else if (gdata.format == "HDF")
+  {
+    std::vector<std::string> geom_vec;
+    std::string hdf5_full_path = xdmf_geometry_data.first_child().value();
+    boost::split(geom_vec, hdf5_full_path, boost::is_any_of(":"));
+    dolfin_assert(geom_vec.size() == 2);
+    gdata.hdf5_filename = geom_vec[0];
+    gdata.hdf5_dataset = geom_vec[1];
+  }
+  else
+  {
+    dolfin_error("XDMFxml.cpp",
+                 "get geometry",
+                 "Unknown data format");
+  }
+
+  return gdata;
+}
+//-----------------------------------------------------------------------------
+std::string XDMFxml::get_first_data_set() const
+{
+  // Values - check format and get dataset name
+  pugi::xml_node xdmf_values = xml_doc.child("Xdmf").child("Domain").
+      child("Grid").child("Grid").child("Attribute").child("DataItem");
+  dolfin_assert(xdmf_values);
+
+  const std::string value_fmt(xdmf_values.attribute("Format").value());
+//  dolfin_assert(value_fmt == "XML");
+
+  std::string data_value(xdmf_values.first_child().value());
+  boost::trim(data_value);
+  return data_value;
 }
 //-----------------------------------------------------------------------------
 std::string XDMFxml::dataname() const
@@ -137,28 +224,42 @@ std::string XDMFxml::dataname() const
   return value_bits[3];
 }
 //-----------------------------------------------------------------------------
+std::string XDMFxml::data_encoding() const
+{
+  // Values - check format and get dataset name
+  pugi::xml_node xdmf_values = xml_doc.child("Xdmf").child("Domain").
+      child("Grid").child("Grid").child("Attribute").child("DataItem");
+  dolfin_assert(xdmf_values);
+
+  const std::string value_fmt(xdmf_values.attribute("Format").value());
+  return value_fmt;
+}
+//-----------------------------------------------------------------------------
 void XDMFxml::data_attribute(std::string name,
                              std::size_t value_rank,
                              bool vertex_data,
                              std::size_t num_total_vertices,
                              std::size_t num_global_cells,
                              std::size_t padded_value_size,
-                             std::string dataset_name)
+                             std::string dataset_name,
+                             std::string format)
 {
   // Grid/Attribute (Function value data)
   pugi::xml_node xdmf_values = xdmf_grid.append_child("Attribute");
   xdmf_values.append_attribute("Name") = name.c_str();
 
   dolfin_assert(value_rank < 3);
+  // 1D Vector should be treated as a Scalar
+  std::size_t apparent_value_rank = (padded_value_size == 1) ? 0 : value_rank;
   static std::vector<std::string> attrib_type
     = {"Scalar", "Vector", "Tensor"};
   xdmf_values.append_attribute("AttributeType")
-    = attrib_type[value_rank].c_str();
+    = attrib_type[apparent_value_rank].c_str();
 
   xdmf_values.append_attribute("Center") = (vertex_data ? "Node" : "Cell");
 
   pugi::xml_node xdmf_data = xdmf_values.append_child("DataItem");
-  xdmf_data.append_attribute("Format") = "HDF";
+  xdmf_data.append_attribute("Format") = format.c_str();
 
   const std::size_t num_total_entities
     = (vertex_data ? num_total_vertices : num_global_cells);
@@ -171,7 +272,9 @@ void XDMFxml::data_attribute(std::string name,
 //-----------------------------------------------------------------------------
 pugi::xml_node XDMFxml::init_mesh(std::string name)
 {
+  // If a new file, add a header
   header();
+
   pugi::xml_node xdmf_domain = xml_doc.child("Xdmf").child("Domain");
   dolfin_assert(xdmf_domain);
   xdmf_grid = xdmf_domain.append_child("Grid");
@@ -185,22 +288,8 @@ pugi::xml_node XDMFxml::init_mesh(std::string name)
 pugi::xml_node XDMFxml::init_timeseries(std::string name, double time_step,
                                         std::size_t counter)
  {
-   if (counter == 0)
-   {
-     // First time step - create document template
-     header();
-   }
-   else
-   {
-     // Subsequent timestep - read in existing XDMF file
-     pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
-     if (!result)
-     {
-       dolfin_error("XDMFxml.cpp",
-                    "write data to XDMF file",
-                    "XML parsing error when reading from existing file");
-     }
-   }
+   // If a new file, add a header
+   header();
 
    pugi::xml_node xdmf_domain = xml_doc.child("Xdmf").child("Domain");
    dolfin_assert(xdmf_domain);
@@ -282,7 +371,8 @@ pugi::xml_node XDMFxml::init_timeseries(std::string name, double time_step,
 void XDMFxml::mesh_topology(const CellType::Type cell_type,
                             const std::size_t cell_order,
                             const std::size_t num_global_cells,
-                            const std::string reference)
+                            const std::string xml_value_data,
+                            const std::string format)
 {
   pugi::xml_node xdmf_topology = xdmf_grid.child("Topology");
   pugi::xml_node xdmf_topology_data = xdmf_topology.child("DataItem");
@@ -338,24 +428,24 @@ void XDMFxml::mesh_topology(const CellType::Type cell_type,
                  "Invalid combination of cell type and order");
   }
 
-  if (reference.size() > 0)
+  if (xml_value_data.size() > 0)
   {
     // Refer to all cells and dimensions
     xdmf_topology_data = xdmf_topology.append_child("DataItem");
-    xdmf_topology_data.append_attribute("Format") = "HDF";
+    xdmf_topology_data.append_attribute("Format") = format.c_str();
     const std::string cell_dims = std::to_string(num_global_cells)
       + " " + std::to_string(nodes_per_element);
     xdmf_topology_data.append_attribute("Dimensions") = cell_dims.c_str();
 
-    const std::string topology_reference = reference + "/topology";
-    xdmf_topology_data.append_child(pugi::node_pcdata)
-      .set_value(topology_reference.c_str());
+    xdmf_topology_data.append_child(pugi::node_pcdata).set_value(xml_value_data.c_str());
   }
 }
 //----------------------------------------------------------------------------
 void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
                             const std::size_t gdim,
-                            const std::string reference)
+                            const std::string xml_value_data,
+                            const std::string format,
+                            const bool is_reference)
 {
   pugi::xml_node xdmf_geometry = xdmf_grid.child("Geometry");
   pugi::xml_node xdmf_geom_data = xdmf_geometry.child("DataItem");
@@ -379,7 +469,10 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
   xdmf_geometry.append_attribute("GeometryType") = geometry_type.c_str();
   xdmf_geom_data = xdmf_geometry.append_child("DataItem");
 
-  xdmf_geom_data.append_attribute("Format") = "HDF";
+  if (is_reference)
+    xdmf_geom_data.append_attribute("Reference") = format.c_str();
+  else
+    xdmf_geom_data.append_attribute("Format") = format.c_str();
   std::string geom_dim = std::to_string(num_total_vertices) + " "
     + std::to_string(gdim);
   xdmf_geom_data.append_attribute("Dimensions") = geom_dim.c_str();
@@ -415,8 +508,6 @@ void XDMFxml::mesh_geometry(const std::size_t num_total_vertices,
     xdmf_geom_2.append_child(pugi::node_pcdata).set_value(dummy_zeros.c_str());
   }
 
-  const std::string geometry_reference = reference + "/coordinates";
-  xdmf_geom_data.append_child(pugi::node_pcdata).set_value(geometry_reference.c_str());
+  xdmf_geom_data.append_child(pugi::node_pcdata).set_value(xml_value_data.c_str());
 }
 //-----------------------------------------------------------------------------
-#endif

@@ -171,13 +171,10 @@ namespace dolfin
 
   private:
 
-    // Friends
-    friend class BinaryFile;
-
     // Number of mesh entities for each topological dimension
     std::vector<unsigned int> num_entities;
 
-    // Number of ghost indices for each topological dimension 
+    // Number of ghost indices for each topological dimension
     std::vector<std::size_t> ghost_offset_index;
 
     // Global number of mesh entities for each topological dimension

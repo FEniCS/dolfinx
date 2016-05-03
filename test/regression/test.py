@@ -112,18 +112,19 @@ def main():
     #       fail. This is meant to protect against usual bad named demos not
     #       executed for ages in regression tests.
     not_implemented = \
-      [os.path.join(demodir, 'undocumented', 'projection-interpolation',    'cpp'), \
-       os.path.join(demodir, 'undocumented', 'interpolation',               'cpp'), \
-       os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'), \
-       os.path.join(demodir, 'undocumented', 'multistage-solver',           'cpp'), \
-       os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'), \
-       os.path.join(demodir, 'undocumented', 'overlapping-regions',         'cpp'), \
-       os.path.join(demodir, 'undocumented', 'sub-function-assignment',     'cpp'), \
-       os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'cpp'), \
-       os.path.join(demodir, 'undocumented', 'timing',                      'cpp'), \
-       os.path.join(demodir, 'documented',   'stokes-mini',                 'cpp'), \
-       os.path.join(demodir, 'documented',   'tensor-weighted-poisson',     'cpp'), \
-       os.path.join(demodir, 'documented',   'subdomains-poisson',          'cpp'), \
+      [os.path.join(demodir, 'undocumented', 'projection-interpolation',    'cpp'),
+       os.path.join(demodir, 'undocumented', 'interpolation',               'cpp'),
+       os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'),
+       os.path.join(demodir, 'undocumented', 'multistage-solver',           'cpp'),
+       os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'),
+       os.path.join(demodir, 'undocumented', 'overlapping-regions',         'cpp'),
+       os.path.join(demodir, 'undocumented', 'sub-function-assignment',     'cpp'),
+       os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'cpp'),
+       os.path.join(demodir, 'undocumented', 'timing',                      'cpp'),
+       os.path.join(demodir, 'undocumented', 'mplot',                       'cpp'),
+       os.path.join(demodir, 'documented',   'stokes-mini',                 'cpp'),
+       os.path.join(demodir, 'documented',   'tensor-weighted-poisson',     'cpp'),
+       os.path.join(demodir, 'documented',   'subdomains-poisson',          'cpp'),
        ]
 
     # Demos to run
@@ -172,32 +173,34 @@ def main():
 
     # List of demos that throw expected errors in parallel
     not_working_in_parallel = \
-      [os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
-       os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'python'), \
-       os.path.join(demodir, 'documented',   'auto-adaptive-poisson',       'cpp'),    \
-       os.path.join(demodir, 'documented',   'auto-adaptive-poisson',       'python'), \
-       os.path.join(demodir, 'undocumented', 'eval',                        'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'eval',                        'python'), \
-       os.path.join(demodir, 'undocumented', 'extrapolation',               'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'extrapolation',               'python'), \
-       os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'python'), \
-       os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'), \
-       os.path.join(demodir, 'undocumented', 'smoothing',                   'python'), \
-       os.path.join(demodir, 'documented',   'subdomains',                  'cpp'),    \
-       os.path.join(demodir, 'documented',   'subdomains',                  'python'), \
-       os.path.join(demodir, 'undocumented', 'submesh',                     'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'submesh',                     'python'), \
-       os.path.join(demodir, 'undocumented', 'time-series',                 'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'time-series',                 'python'), \
-       os.path.join(demodir, 'undocumented', 'triangulate',                 'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'triangulate',                 'python'), \
-       os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'python'), \
-       os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'python'), \
+      [os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'),
+       os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'cpp'),
+       os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'python'),
+       os.path.join(demodir, 'documented',   'auto-adaptive-poisson',       'cpp'),
+       os.path.join(demodir, 'documented',   'auto-adaptive-poisson',       'python'),
+       os.path.join(demodir, 'undocumented', 'eval',                        'cpp'),
+       os.path.join(demodir, 'undocumented', 'eval',                        'python'),
+       os.path.join(demodir, 'undocumented', 'extrapolation',               'cpp'),
+       os.path.join(demodir, 'undocumented', 'extrapolation',               'python'),
+       os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'cpp'),
+       os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'cpp'),
+       os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'python'),
+       os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),
+       os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'),
+       os.path.join(demodir, 'undocumented', 'poisson-disc',                'python'),
+       os.path.join(demodir, 'undocumented', 'poisson-disc',                'cpp'),
+       os.path.join(demodir, 'undocumented', 'smoothing',                   'python'),
+       os.path.join(demodir, 'documented',   'subdomains',                  'cpp'),
+       os.path.join(demodir, 'documented',   'subdomains',                  'python'),
+       os.path.join(demodir, 'undocumented', 'submesh',                     'cpp'),
+       os.path.join(demodir, 'undocumented', 'submesh',                     'python'),
+       os.path.join(demodir, 'undocumented', 'time-series',                 'cpp'),
+       os.path.join(demodir, 'undocumented', 'time-series',                 'python'),
+       os.path.join(demodir, 'undocumented', 'triangulate',                 'cpp'),
+       os.path.join(demodir, 'undocumented', 'triangulate',                 'python'),
+       os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'cpp'),
+       os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'python'),
+       os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'python'),
        ]
 
     failed = []
@@ -256,7 +259,7 @@ def main():
     # Print output for failed tests
     print("")
     if len(failed) > 0:
-        print("%d demo(s) out of %d failed, see demo.log for details." % \
+        print("%d demo(s) out of %d failed, see demo.log for details." %
               (len(failed), total_no_demos))
         file = open("demo.log", "w")
         for (test, interface, prefix, output) in failed:

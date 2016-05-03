@@ -28,7 +28,7 @@ in a box of the same size."""
 from __future__ import print_function
 from dolfin import *
 
-if not has_tao():
+if not has_petsc():
     print("DOLFIN must be compiled with PETSc to run this demo.")
     exit(0)
 
@@ -45,7 +45,7 @@ u  = Function(V)                 # Displacement from previous iteration
 B  = Constant((0.0, -1.5))       # Body force per unit volume
 
 # Kinematics
-I = Identity(u.geometric_dimension())  # Identity tensor
+I = Identity(len(u))  # Identity tensor
 F = I + grad(u)             # Deformation gradient
 C = F.T*F                   # Right Cauchy-Green tensor
 
@@ -93,8 +93,8 @@ class ContactProblem(OptimisationProblem):
 
 # The displacement u must be such that the current configuration
 # doesn't escape the box [xmin, xmax] x [ymin, ymax]
-constraint_u = Expression(("xmax-x[0]", "ymax-x[1]"), xmax=1.0, ymax=1.0)
-constraint_l = Expression(("xmin-x[0]", "ymin-x[1]"), xmin=-1.0, ymin=-1.0)
+constraint_u = Expression(("xmax-x[0]", "ymax-x[1]"), xmax=1.0, ymax=1.0, degree=1)
+constraint_l = Expression(("xmin-x[0]", "ymin-x[1]"), xmin=-1.0, ymin=-1.0, degree=1)
 u_min = interpolate(constraint_l, V)
 u_max = interpolate(constraint_u, V)
 
@@ -125,9 +125,17 @@ parameters.parse()
 # Solve the problem
 solver.solve(ContactProblem(), u.vector(), u_min.vector(), u_max.vector())
 
-# Save solution in XDMF format
-out = File("u.xdmf")
-out << u
+# Save solution in XDMF format if available
+out = XDMFFile(mesh.mpi_comm(), "u.xdmf")
+if has_hdf5():
+    out.write(u)
+elif MPI.size(mesh.mpi_comm()) == 1:
+    encoding = XDMFFile.Encoding_ASCII
+    out.write(u, encoding)
+else:
+    # Save solution in vtk format
+    out = File("u.pvd")
+    out << u
 
 # Plot the current configuration
 plot(u, mode="displacement", wireframe=True, title="Displacement field")

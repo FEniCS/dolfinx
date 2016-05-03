@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2013-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-19
-// Last changed: 2014-07-04
+// Last changed: 2016-03-02
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
@@ -36,7 +36,7 @@ MultiMeshDofMap::MultiMeshDofMap()
 //-----------------------------------------------------------------------------
 MultiMeshDofMap::MultiMeshDofMap(const MultiMeshDofMap& dofmap)
 {
-  _global_dimension = dofmap._global_dimension;
+  _index_map = dofmap._index_map;
   _original_dofmaps = dofmap._original_dofmaps;
   _new_dofmaps = dofmap._new_dofmaps;
 }
@@ -64,17 +64,12 @@ void MultiMeshDofMap::add(std::shared_ptr<const GenericDofMap> dofmap)
       _original_dofmaps.size());
 }
 //-----------------------------------------------------------------------------
-void MultiMeshDofMap::add(const GenericDofMap& dofmap)
-{
-  add(reference_to_no_delete_pointer(dofmap));
-}
-//-----------------------------------------------------------------------------
 void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space,
                             const std::vector<dolfin::la_index>& offsets)
 {
   // Compute global dimension
   begin(PROGRESS, "Computing total dimension.");
-  _global_dimension = 0;
+  std::size_t _global_dimension = 0;
   for (std::size_t i = 0; i < num_parts(); i++)
   {
     const std::size_t d = _original_dofmaps[i]->global_dimension();
@@ -109,37 +104,46 @@ void MultiMeshDofMap::build(const MultiMeshFunctionSpace& function_space,
 
     // Add offset
     DofMap& dofmap = static_cast<DofMap&>(*new_dofmap);
+    dofmap._multimesh_offset = _offset;
     for (auto it = dofmap._dofmap.begin(); it != dofmap._dofmap.end(); ++it)
       *it += _offset;
 
     // Increase offset
     offset += _original_dofmaps[part]->global_dimension();
   }
+
+  _index_map.reset(new IndexMap(MPI_COMM_WORLD, _global_dimension, 1));
 }
 //-----------------------------------------------------------------------------
 void MultiMeshDofMap::clear()
 {
-  _global_dimension = 0;
+  _index_map.reset();
   _original_dofmaps.clear();
   _new_dofmaps.clear();
 }
 //-----------------------------------------------------------------------------
 std::size_t MultiMeshDofMap::global_dimension() const
 {
-  return _global_dimension;
+  return _index_map->size(IndexMap::MapSize::GLOBAL);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> MultiMeshDofMap::ownership_range() const
 {
   // FIXME: Does not run in parallel
-  return std::make_pair<std::size_t, std::size_t>(0, global_dimension());
+  return _index_map->local_range();
 }
 //-----------------------------------------------------------------------------
 const std::vector<int>&
 MultiMeshDofMap::off_process_owner() const
 {
   // FIXME: Does not run in parallel
-  return _original_dofmaps[0]->off_process_owner();
+  return _index_map->off_process_owner();
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<IndexMap> MultiMeshDofMap::index_map() const
+{
+  // FIXME: Does not run in parallel
+  return _index_map;
 }
 //-----------------------------------------------------------------------------
 std::string MultiMeshDofMap::str(bool verbose) const

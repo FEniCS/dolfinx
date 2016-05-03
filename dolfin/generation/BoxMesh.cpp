@@ -21,6 +21,7 @@
 // First added:  2005-12-02
 // Last changed: 2015-06-15
 
+#include <cmath>
 #include <boost/multi_array.hpp>
 
 #include <dolfin/common/constants.h>
@@ -35,15 +36,13 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 BoxMesh::BoxMesh(const Point& p0, const Point& p1,
                  std::size_t nx, std::size_t ny, std::size_t nz)
-  : Mesh(MPI_COMM_WORLD)
+  : BoxMesh(MPI_COMM_WORLD, p0, p1, nx, ny, nz)
 {
-  build(p0, p1, nx, ny, nz);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoxMesh::BoxMesh(MPI_Comm comm,
-                 const Point& p0, const Point& p1,
-                 std::size_t nx, std::size_t ny, std::size_t nz)
-  : Mesh(comm)
+BoxMesh::BoxMesh(MPI_Comm comm, const Point& p0, const Point& p1,
+                 std::size_t nx, std::size_t ny, std::size_t nz) : Mesh(comm)
 {
   build(p0, p1, nx, ny, nz);
 }
@@ -51,7 +50,7 @@ BoxMesh::BoxMesh(MPI_Comm comm,
 void BoxMesh::build(const Point& p0, const Point& p1,
                     std::size_t nx, std::size_t ny, std::size_t nz)
 {
-  Timer timer("Generate Box mesh");
+  Timer timer("Build BoxMesh");
 
   // Receive mesh according to parallel policy
   if (MPI::is_receiver(this->mpi_comm()))

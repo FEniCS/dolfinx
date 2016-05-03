@@ -21,12 +21,14 @@
 
 from dolfin import *
 
+
 def test_scalar_parallel_sum():
     a = Scalar()
     b = 1.0
     a.add_local_value(b)
     a.apply("add")
     assert round(a.get_scalar_value() - b*MPI.size(a.mpi_comm()), 7) == 0
+
 
 def test_scalar_assembly():
     mesh = UnitSquareMesh(3, 3)

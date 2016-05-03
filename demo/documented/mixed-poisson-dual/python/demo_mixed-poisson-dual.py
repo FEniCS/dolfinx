@@ -45,18 +45,18 @@ from dolfin import *
 # Create mesh
 mesh = UnitSquareMesh(32, 32)
 
-# Define function spaces and mixed (product) space
-DRT = FunctionSpace(mesh, "DRT", 2)
-CG  = FunctionSpace(mesh, "CG", 3)
-W = DRT * CG
+# Define finite elements spaces and build mixed space
+DRT = FiniteElement("DRT", mesh.ufl_cell(), 2)
+CG  = FiniteElement("CG", mesh.ufl_cell(), 3)
+W = FunctionSpace(mesh, DRT * CG)
 
 # Define trial and test functions
 (sigma, u) = TrialFunctions(W)
 (tau, v) = TestFunctions(W)
 
 # Define source functions
-f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-g = Expression("sin(5.0*x[0])")
+f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
+g = Expression("sin(5.0*x[0])", degree=2)
 
 # Define variational form
 a = (dot(sigma, tau) + dot(grad(u), tau) + dot(sigma, grad(v)))*dx

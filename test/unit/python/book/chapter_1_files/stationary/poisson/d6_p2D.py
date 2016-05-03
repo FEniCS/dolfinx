@@ -11,7 +11,7 @@ import sys
 def compute(nx, ny, degree):
     # Create mesh and define function space
     mesh = UnitSquareMesh(nx, ny)
-    V = FunctionSpace(mesh, 'Lagrange', degree=degree)
+    V = FunctionSpace(mesh, 'Lagrange', degree)
 
     # Define boundary conditions
 
@@ -23,7 +23,7 @@ def compute(nx, ny, degree):
     # Exact solution
     omega = 1.0
     u_e = Expression('sin(omega*pi*x[0])*sin(omega*pi*x[1])',
-                     omega=omega)
+                     omega=omega, degree=degree+1)
 
     # Define variational problem
     u = TrialFunction(V)
@@ -58,7 +58,7 @@ def compute(nx, ny, degree):
 
     # Explicit interpolation of u_e to higher-order elements,
     # u will also be interpolated to the space Ve before integration
-    Ve = FunctionSpace(mesh, 'Lagrange', degree=5)
+    Ve = FunctionSpace(mesh, 'Lagrange', 5)
     u_e_Ve = interpolate(u_e, Ve)
     error = (u - u_e_Ve)**2*dx
     E3 = sqrt(assemble(error))

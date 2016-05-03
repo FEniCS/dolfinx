@@ -31,7 +31,7 @@ class LowerRobinBoundary(SubDomain):
 
 Gamma_R = LowerRobinBoundary()
 Gamma_R.mark(boundary_parts, 0)
-q = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]')
+q = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]', degree=2)
 p = Constant(100)  # arbitrary function can go here
 
 # Mark upper boundary facets as subdomain 1
@@ -42,7 +42,7 @@ class UpperNeumannBoundary(SubDomain):
 
 Gamma_N = UpperNeumannBoundary()
 Gamma_N.mark(boundary_parts, 1)
-g = Expression('-4*x[1]')
+g = Expression('-4*x[1]', degree=1)
 
 # Mark left boundary as subdomain 2
 class LeftBoundary(SubDomain):
@@ -65,8 +65,8 @@ Gamma_1.mark(boundary_parts, 3)
 #-------------- Solution and problem definition step -----------------
 # given mesh and boundary_parts
 
-u_L = Expression('1 + 2*x[1]*x[1]')
-u_R = Expression('2 + 2*x[1]*x[1]')
+u_L = Expression('1 + 2*x[1]*x[1]', degree=2)
+u_R = Expression('2 + 2*x[1]*x[1]', degree=2)
 bcs = [DirichletBC(V, u_L, boundary_parts, 2),
        DirichletBC(V, u_R, boundary_parts, 3)]
 
@@ -94,7 +94,7 @@ solve(A, u.vector(), b, 'lu')
 print(mesh)
 
 # Verification
-u_exact = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]')
+u_exact = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]', degree=2)
 u_e = interpolate(u_exact, V)
 print('Max error:', abs(u_e.vector().array() - u.vector().array()).max())
 

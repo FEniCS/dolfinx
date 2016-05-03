@@ -40,32 +40,31 @@ project(${PROJECT_NAME})
 #set(CMAKE_VERBOSE_MAKEFILE 1)
 
 # Set CMake behavior
-cmake_policy(SET CMP0004 OLD)
+cmake_policy(SET CMP0004 NEW)
 
 # Get DOLFIN configuration data (DOLFINConfig.cmake must be in
 # DOLFIN_CMAKE_CONFIG_PATH)
-find_package(DOLFIN)
+find_package(DOLFIN REQUIRED)
 
-# Need to get VTK config because VTK uses advanced VTK features which
-# mean it's not enough to just link to the DOLFIN target. See
-# http://www.vtk.org/pipermail/vtk-developers/2013-October/014402.html
-find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE QUIET)
+if (EXISTS ${DOLFIN_USE_FILE})
+  include(${DOLFIN_USE_FILE})
 
-# Default build type (can be overridden by user)
-if (NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
-    "Choose the type of build, options are: Debug MinSizeRel Release RelWithDebInfo." FORCE)
+  # Default build type (can be overridden by user)
+  if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
+      "Choose the type of build, options are: Debug MinSizeRel Release RelWithDebInfo." FORCE)
+  endif()
+else()
+  # Compiler definitions
+  add_definitions(${DOLFIN_CXX_DEFINITIONS})
+
+  # Compiler flags
+  set(CMAKE_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
+
+  # Include directories
+  include_directories(${DOLFIN_INCLUDE_DIRS})
+  include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 endif()
-
-# Compiler definitions
-add_definitions(${DOLFIN_CXX_DEFINITIONS})
-
-# Compiler flags
-set(CMAKE_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
-
-# Include directories
-include_directories(${DOLFIN_INCLUDE_DIRS})
-include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
 %(executables)s
@@ -79,16 +78,14 @@ target_link_libraries_str = "target_link_libraries(%s "\
                             "${DOLFIN_LIBRARIES})"
 
 # Subdirectories
-sub_directories = ['demo', 'test', 'bench']
+sub_directories = ['demo', 'bench']
 
 # Prefix map for subdirectories
-executable_prefixes = dict(test="test_",
-                           demo="demo_",
+executable_prefixes = dict(demo="demo_",
                            bench="bench_")
 
 # Main file name map for subdirectories
-main_file_names = dict(test="test.cpp",
-                       demo="main.cpp",
+main_file_names = dict(demo="main.cpp",
                        bench="main.cpp")
 
 # Projects that use custom CMakeLists.txt (shouldn't overwrite)

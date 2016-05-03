@@ -22,6 +22,7 @@
 #include <map>
 #include <vector>
 
+#include <dolfin/log/log.h>
 #include "Cell.h"
 #include "Mesh.h"
 #include "MeshEditor.h"
@@ -38,7 +39,8 @@ using namespace dolfin;
 SubMesh::SubMesh(const Mesh& mesh, const SubDomain& sub_domain)
 {
   // Create mesh function and mark sub domain
-  MeshFunction<std::size_t> sub_domains(mesh, mesh.topology().dim());
+  MeshFunction<std::size_t> sub_domains(reference_to_no_delete_pointer(mesh),
+                                        mesh.topology().dim());
   sub_domains = 0;
   sub_domain.mark(sub_domains, 1);
 
@@ -191,7 +193,7 @@ void SubMesh::init(const Mesh& mesh,
   {
     Vertex vertex(mesh, it->first);
     if (MPI::size(mesh.mpi_comm()) > 1)
-      error("SubMesh::init not working in parallel");
+      not_working_in_parallel("SubMesh::init");
 
     // FIXME: Get global vertex index
     editor.add_vertex(it->second, vertex.point());

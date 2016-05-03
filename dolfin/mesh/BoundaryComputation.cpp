@@ -176,7 +176,8 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
   std::size_t num_owned_vertices = 0;
   std::size_t num_boundary_cells = 0;
 
-  MeshFunction<bool> boundary_facet(mesh, D - 1, false);
+  MeshFunction<bool> boundary_facet(reference_to_no_delete_pointer(mesh),
+                                    D - 1, false);
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
@@ -247,15 +248,18 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
   */
 
   // Specify number of vertices and cells
-  editor.init_vertices_global(num_boundary_vertices, MPI::sum(mesh.mpi_comm(),
-                                                              num_owned_vertices));
+  editor.init_vertices_global(num_boundary_vertices,
+                              MPI::sum(mesh.mpi_comm(), num_owned_vertices));
   editor.init_cells_global(num_boundary_cells, MPI::sum(mesh.mpi_comm(),
                                                         num_boundary_cells));
 
   // Write vertex map
   MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);
   if (num_boundary_vertices > 0)
-    vertex_map.init(boundary, 0, num_boundary_vertices);
+  {
+    vertex_map.init(reference_to_no_delete_pointer(boundary), 0,
+                    num_boundary_vertices);
+  }
   std::map<std::size_t, std::size_t>::const_iterator it;
   for (it = boundary_vertices.begin(); it != boundary_vertices.end(); ++it)
     vertex_map[it->second] = it->first;
@@ -350,7 +354,10 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
   // Create cells (facets) and map between boundary mesh cells and facets parent
   MeshFunction<std::size_t>& cell_map = boundary.entity_map(D - 1);
   if (num_boundary_cells > 0)
-    cell_map.init(boundary, D - 1, num_boundary_cells);
+  {
+    cell_map.init(reference_to_no_delete_pointer(boundary), D - 1,
+                  num_boundary_cells);
+  }
   std::vector<std::size_t>
     cell(boundary.type().num_vertices(boundary.topology().dim()));
   std::size_t current_cell = 0;

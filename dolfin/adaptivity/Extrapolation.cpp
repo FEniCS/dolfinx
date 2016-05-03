@@ -68,7 +68,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
 
   // UFC cell view of center cell and vertex coordinate holder
   ufc::cell c0;
-  std::vector<double> vertex_coordinates0;
+  std::vector<double> coordinate_dofs0;
 
   // List of values for each dof of w (multivalued until we average)
   std::vector<std::vector<double>> coefficients;
@@ -79,7 +79,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   for (CellIterator cell0(mesh); !cell0.end(); ++cell0)
   {
     // Update UFC view
-    cell0->get_vertex_coordinates(vertex_coordinates0);
+    cell0->get_coordinate_dofs(coordinate_dofs0);
     cell0->get_cell_data(c0);
 
     // Tabulate dofs for w on cell and store values
@@ -88,7 +88,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
 
     // Compute coefficients on this cell
     std::size_t offset = 0;
-    compute_coefficients(coefficients, v, V, W, *cell0, vertex_coordinates0,
+    compute_coefficients(coefficients, v, V, W, *cell0, coordinate_dofs0,
                          c0, dofs, offset);
   }
 
@@ -102,7 +102,7 @@ void Extrapolation::compute_coefficients(
   const FunctionSpace& V,
   const FunctionSpace& W,
   const Cell& cell0,
-  const std::vector<double>& vertex_coordinates0,
+  const std::vector<double>& coordinate_dofs0,
   const ufc::cell& c0,
   const ArrayView<const dolfin::la_index>& dofs,
   std::size_t& offset)
@@ -115,7 +115,7 @@ void Extrapolation::compute_coefficients(
     for (std::size_t k = 0; k < num_sub_spaces; k++)
     {
       compute_coefficients(coefficients, v[k], *V[k], *W[k], cell0,
-                           vertex_coordinates0, c0, dofs, offset);
+                           coordinate_dofs0, c0, dofs, offset);
     }
     return;
   }
@@ -145,7 +145,7 @@ void Extrapolation::compute_coefficients(
   // Add equations on cell and neighboring cells
   dolfin_assert(V.mesh());
   ufc::cell c1;
-  std::vector<double> vertex_coordinates1;
+  std::vector<double> coordinate_dofs1;
 
   // Get unique set of surrounding cells (including cell0)
   std::set<std::size_t> cell_set;
@@ -162,10 +162,10 @@ void Extrapolation::compute_coefficients(
 
     Cell cell1(cell0.mesh(), cell_it);
 
-    cell1.get_vertex_coordinates(vertex_coordinates1);
+    cell1.get_coordinate_dofs(coordinate_dofs1);
     cell1.get_cell_data(c1);
     add_cell_equations(A, b, cell0, cell1,
-                       vertex_coordinates0, vertex_coordinates1,
+                       coordinate_dofs0, coordinate_dofs1,
                        c0, c1, V, W, v,
                        cell2dof2row[cell_it]);
   }
@@ -216,8 +216,8 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
                                   Eigen::VectorXd& b,
                                   const Cell& cell0,
                                   const Cell& cell1,
-                                  const std::vector<double>& vertex_coordinates0,
-                                  const std::vector<double>& vertex_coordinates1,
+                                  const std::vector<double>& coordinate_dofs0,
+                                  const std::vector<double>& coordinate_dofs1,
                                   const ufc::cell& c0,
                                   const ufc::cell& c1,
                                   const FunctionSpace& V,
@@ -228,12 +228,15 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
   // Extract coefficients for v on patch cell
   dolfin_assert(V.element());
   std::vector<double> dof_values(V.element()->space_dimension());
-  v.restrict(&dof_values[0], *V.element(), cell1, vertex_coordinates1.data(),
+  v.restrict(&dof_values[0], *V.element(), cell1, coordinate_dofs1.data(),
              c1);
 
-  // Iterate over given local dofs for V on patch cell
+  // Create basis function
   dolfin_assert(W.element());
-  for (auto const &it: dof2row)
+  BasisFunction phi(0, W.element(), coordinate_dofs0);
+
+  // Iterate over given local dofs for V on patch cell
+  for (auto const &it : dof2row)
   {
     const std::size_t i = it.first;
     const std::size_t row = it.second;
@@ -242,11 +245,11 @@ Extrapolation::add_cell_equations(Eigen::MatrixXd& A,
     for (std::size_t j = 0; j < W.element()->space_dimension(); ++j)
     {
       // Create basis function
-      const BasisFunction phi(j, *W.element(), vertex_coordinates0);
+      phi.update_index(j);
 
       // Evaluate dof on basis function
       const double dof_value
-        = V.element()->evaluate_dof(i, phi,  vertex_coordinates1.data(),
+        = V.element()->evaluate_dof(i, phi,  coordinate_dofs1.data(),
                                     c1.orientation, c1);
 
       // Insert dof_value into matrix

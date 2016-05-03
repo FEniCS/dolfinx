@@ -112,6 +112,12 @@ def test_nested(tempdir):
     assert p1["sub0"]["monitor_convergence"] == True
 
 @skip_in_parallel
+def test_parameters_update(tempdir):
+    p0 = parameters.copy()
+    p1 = parameters.copy()
+    p1.update(p0)
+
+@skip_in_parallel
 def test_nested_read_existing(tempdir):
     """Test that we can read in a nested parameter database into
        an existing (and matching) parameter database"""
@@ -140,4 +146,5 @@ def test_solver_parameters():
     assert krylov_solver.parameters["absolute_tolerance"] == 1.23456
 
     # Reset parameters so that other tests will continue to work
-    parameters["krylov_solver"]["absolute_tolerance"] = absolute_tolerance
+    if absolute_tolerance is not None:
+        parameters["krylov_solver"]["absolute_tolerance"] = absolute_tolerance

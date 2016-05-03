@@ -28,27 +28,33 @@ from dolfin import *
 from six.moves import xrange as range
 from dolfin_utils.test import fixture
 
+
 @fixture
 def mesh():
     return UnitSquareMesh(4, 4)
+
 
 @fixture
 def V(mesh):
     return FunctionSpace(mesh, "CG", 1)
 
+
 @fixture
 def Q(mesh):
     return VectorFunctionSpace(mesh, "CG", 1)
 
+
 @fixture
-def W(V, Q):
-    return V * Q
+def W(mesh):
+    V = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    Q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    return FunctionSpace(mesh, V*Q)
 
 
 def test_evaluate_dofs(W, mesh, V):
 
-    e = Expression("x[0]+x[1]")
-    e2 = Expression(("x[0]+x[1]", "x[0]+x[1]"))
+    e = Expression("x[0] + x[1]", degree=1)
+    e2 = Expression(("x[0] + x[1]", "x[0] + x[1]"), degree=1)
 
     coords = numpy.zeros((3, 2), dtype="d")
     coord = numpy.zeros(2, dtype="d")
@@ -58,17 +64,17 @@ def test_evaluate_dofs(W, mesh, V):
     values3 = numpy.zeros(3, dtype="d")
     values4 = numpy.zeros(6, dtype="d")
 
-    L0  = W.sub(0)
-    L1  = W.sub(1)
+    L0 = W.sub(0)
+    L1 = W.sub(1)
     L01 = L1.sub(0)
     L11 = L1.sub(1)
 
     for cell in cells(mesh):
         vx = cell.get_vertex_coordinates()
         orientation = cell.orientation()
-        V.dofmap().tabulate_coordinates(cell, coords)
+        V.element().tabulate_dof_coordinates(cell, coords)
         for i in range(coords.shape[0]):
-            coord[:] = coords[i,:]
+            coord[:] = coords[i, :]
             values0[i] = e(*coord)
         L0.element().evaluate_dofs(values1, e, vx, orientation, cell)
         L01.element().evaluate_dofs(values2, e, vx, orientation, cell)
@@ -81,6 +87,7 @@ def test_evaluate_dofs(W, mesh, V):
             assert round(values0[i] - values3[i], 7) == 0
             assert round(values4[:3][i] - values0[i], 7) == 0
             assert round(values4[3:][i] - values0[i], 7) == 0
+
 
 def test_evaluate_dofs_manifolds_affine():
     "Testing evaluate_dofs vs tabulated coordinates."
@@ -98,7 +105,7 @@ def test_evaluate_dofs_manifolds_affine():
     CG22 = FunctionSpace(mesh2, "CG", 2)
     elements = [DG0, DG1, CG1, CG2, DG20, DG21, CG21, CG22]
 
-    f = Expression("x[0]+x[1]")
+    f = Expression("x[0] + x[1]", degree=1)
     for V in elements:
         sdim = V.element().space_dimension()
         gdim = V.mesh().geometry().dim()
@@ -109,9 +116,9 @@ def test_evaluate_dofs_manifolds_affine():
         for cell in cells(V.mesh()):
             vx = cell.get_vertex_coordinates()
             orientation = cell.orientation()
-            V.dofmap().tabulate_coordinates(cell, coords)
+            V.element().tabulate_dof_coordinates(cell, coords)
             for i in range(coords.shape[0]):
-                coord[:] = coords[i,:]
+                coord[:] = coords[i, :]
                 values0[i] = f(*coord)
             V.element().evaluate_dofs(values1, f, vx, orientation, cell)
             for i in range(sdim):
@@ -120,23 +127,23 @@ def test_evaluate_dofs_manifolds_affine():
 
 def test_tabulate_coord(V, W, mesh):
 
-    coord0 = numpy.zeros((3,2), dtype="d")
-    coord1 = numpy.zeros((3,2), dtype="d")
-    coord2 = numpy.zeros((3,2), dtype="d")
-    coord3 = numpy.zeros((3,2), dtype="d")
-    coord4 = numpy.zeros((6,2), dtype="d")
+    coord0 = numpy.zeros((3, 2), dtype="d")
+    coord1 = numpy.zeros((3, 2), dtype="d")
+    coord2 = numpy.zeros((3, 2), dtype="d")
+    coord3 = numpy.zeros((3, 2), dtype="d")
+    coord4 = numpy.zeros((6, 2), dtype="d")
 
-    L0  = W.sub(0)
-    L1  = W.sub(1)
+    L0 = W.sub(0)
+    L1 = W.sub(1)
     L01 = L1.sub(0)
     L11 = L1.sub(1)
 
     for cell in cells(mesh):
-        V.dofmap().tabulate_coordinates(cell, coord0)
-        L0.dofmap().tabulate_coordinates(cell, coord1)
-        L01.dofmap().tabulate_coordinates(cell, coord2)
-        L11.dofmap().tabulate_coordinates(cell, coord3)
-        L1.dofmap().tabulate_coordinates(cell, coord4)
+        V.element().tabulate_dof_coordinates(cell, coord0)
+        L0.element().tabulate_dof_coordinates(cell, coord1)
+        L01.element().tabulate_dof_coordinates(cell, coord2)
+        L11.element().tabulate_dof_coordinates(cell, coord3)
+        L1.element().tabulate_dof_coordinates(cell, coord4)
 
         assert (coord0 == coord1).all()
         assert (coord0 == coord2).all()

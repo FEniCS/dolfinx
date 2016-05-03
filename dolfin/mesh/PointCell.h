@@ -60,15 +60,11 @@ namespace dolfin
     void order(Cell& cell, const std::vector<std::size_t>&
                local_to_global_vertex_indices) const;
 
-    /// Refine cell uniformly
-    void refine_cell(Cell& cell, MeshEditor& editor,
-                     std::size_t& current_cell) const;
-
     /// Compute (generalized) volume (area) of triangle
     double volume(const MeshEntity& triangle) const;
 
-    /// Compute diameter of triangle
-    double diameter(const MeshEntity& triangle) const;
+    /// Compute circumradius of PointCell
+    double circumradius(const MeshEntity& point) const;
 
     /// Compute squared distance to given point
     double squared_distance(const Cell& cell, const Point& point) const;

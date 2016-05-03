@@ -26,9 +26,11 @@ import pytest
 import numpy
 from dolfin import *
 
+
 class Quadratic2D(Expression):
     def eval(self, values, x):
         values[0] = x[0]*x[0] + x[1]*x[1] + 1.0
+
 
 class Quadratic3D(Expression):
     def eval(self, values, x):
@@ -38,8 +40,8 @@ class Quadratic3D(Expression):
 def test_functional2D():
     """Test integration of function interpolated in non-matching meshes"""
 
-    f = Quadratic2D()
-    
+    f = Quadratic2D(degree=2)
+
     ll = LagrangeInterpolator()
 
     # Interpolate quadratic function on course mesh
@@ -61,10 +63,11 @@ def test_functional2D():
     ll.interpolate(u1, u0)
     assert round(assemble(u0*dx) - assemble(u1*dx), 10) == 0
 
+
 def test_functional3D():
     """Test integration of function interpolated in non-matching meshes"""
 
-    f = Quadratic3D()
+    f = Quadratic3D(degree=2)
 
     ll = LagrangeInterpolator()
 

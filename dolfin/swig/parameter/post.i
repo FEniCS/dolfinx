@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-05-12
-// Last changed: 2014-08-25
+// Last changed: 2016-04-19
 //
 // ===========================================================================
 // SWIG directives for the DOLFIN parameter kernel module (post)
@@ -41,6 +41,8 @@ def warn_once(self, msg):
         print(msg)
 
 def value(self):
+    if not self.is_set():
+        return None
     val_type = self.type_str()
     if val_type == "string":
         return str(self)
@@ -100,7 +102,7 @@ def data(self):
         PyObject *o = PyList_GetItem(op,i);
 %#if PY_VERSION_HEX>=0x03000000
         if (PyUnicode_Check(o))
-%#else  
+%#else
         if (PyString_Check(o))
 %#endif
         {
@@ -200,11 +202,13 @@ def __setitem__(self, key, value):
         return
     if key not in self._get_parameter_keys():
         raise KeyError("'%s' is not a parameter"%key)
-    if not isinstance(value,(int,str,float,bool)):
-        raise TypeError("can only set 'int', 'bool', 'float' and 'str' parameters")
+    if not isinstance(value,(int,str,float,bool)) and (value is not None):
+        raise TypeError("can only set 'int', 'bool', 'float' and 'str' for parameter %s" %key)
     par = self._get_parameter(key)
     if isinstance(value,bool):
         par._assign_bool(value)
+    elif value is None:
+        pass
     else:
         par._assign(value)
 
@@ -213,11 +217,13 @@ def update(self, other):
     if not isinstance(other,(Parameters, dict)):
         raise TypeError("expected a 'dict' or a '%s'"%Parameters.__name__)
     for key, other_value in other.items():
-        self_value  = self[key]
-        if isinstance(self_value, Parameters):
+        # Check is self[key] is a Parameter or a parameter set (Parameters)
+        if self.has_parameter_set(key):
+            self_value  = self[key]
             self_value.update(other_value)
         else:
-            setattr(self, key, other_value)
+            self.__setitem__(key, other_value)
+
 
 def to_dict(self):
     """Convert the Parameters to a dict"""
@@ -250,8 +256,30 @@ def __str__(self):
     "p.__str__() <==> str(x)"
     return self.str(False)
 
-__getattr__ = __getitem__
-__setattr__ = __setitem__
+def __getattr__(self, key):
+    # Check that there is still SWIG proxy available; otherwise
+    # implementation below may end up in infinite recursion
+    try:
+        self.__dict__["this"]
+    except KeyError:
+        raise AttributeError("SWIG proxy 'this' defunct on 'Parameters' object")
+
+    # Make sure KeyError is reraised as AttributeError
+    try:
+        return self.__getitem__(key)
+    except KeyError as e:
+        raise AttributeError("'Parameters' object has no attribute '%s'" % e.message)
+
+__getattr__.__doc__ = __getitem__.__doc__
+
+def __setattr__(self, key, value):
+    # Make sure KeyError is reraised as AttributeError
+    try:
+        return self.__setitem__(key, value)
+    except KeyError as e:
+        raise AttributeError("'Parameters' object has no attribute '%s'" % e.message)
+
+__setattr__.__doc__ = __setitem__.__doc__
 
 def iterdata(self):
     """Returns an iterator of a tuple of a parameter key together with its value"""
@@ -345,4 +373,3 @@ std::shared_ptr<dolfin::Parameters> get_global_parameters()
 //parameters = _common.get_global_parameters()
 //del _common.get_global_parameters
 //%}
-

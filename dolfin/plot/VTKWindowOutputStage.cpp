@@ -23,12 +23,6 @@
 
 #ifdef HAS_VTK
 
-#ifdef HAS_QVTK
-#include <QApplication>
-#include <QDesktopWidget>
-#include <QVTKWidget.h>
-#endif
-
 #include <vtkSmartPointer.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkLookupTable.h>
@@ -72,9 +66,8 @@ using namespace dolfin;
 
 // The below is a work-around for Intel compilers which have a problem
 // with unnamed namespaces. See
-//     http://software.intel.com/en-us/articles/compiler-reports-error-1757-when-compiling-chromium-os-code
-// and
-//     https://bugs.launchpad.net/dolfin/+bug/1086526
+// http://software.intel.com/en-us/articles/compiler-reports-error-1757-when-compiling-chromium-os-code
+// and https://bugs.launchpad.net/dolfin/+bug/1086526
 
 namespace d_anonymous { /* empty body */ }
 using namespace d_anonymous;
@@ -84,8 +77,8 @@ namespace d_anonymous
   //----------------------------------------------------------------------------
   class PrivateVTKInteractorStyle : public vtkInteractorStyleTrackballCamera
   {
-    // Create a new style instead of observer callbacks, so that we can
-    // intercept keypresses (like q/e) reliably.
+    // Create a new style instead of observer callbacks, so that we
+    // can intercept keypresses (like q/e) reliably.
   public:
     PrivateVTKInteractorStyle() : _plotter(NULL), _highlighted(false) {}
 
@@ -111,9 +104,9 @@ namespace d_anonymous
       // Note: ALT key doesn't seem to be usable as a modifier.
       std::string keysym = Interactor->GetKeySym();
       char key = Interactor->GetKeyCode();
-      int modifiers = (VTKPlotter::SHIFT   * !!Interactor->GetShiftKey() +
-                       VTKPlotter::ALT     * !!Interactor->GetAltKey()   +
-                       VTKPlotter::CONTROL * !!Interactor->GetControlKey());
+      int modifiers = (static_cast<int>(VTKPlotter::Modifiers::SHIFT) * !!Interactor->GetShiftKey() +
+                       static_cast<int>(VTKPlotter::Modifiers::ALT) * !!Interactor->GetAltKey() +
+                       static_cast<int>(VTKPlotter::Modifiers::CONTROL) * !!Interactor->GetControlKey());
       if (keysym.size() == 1)
       {
         // Fix for things like shift+control+q which isn't sent correctly
@@ -124,7 +117,7 @@ namespace d_anonymous
       if (key && key == toupper(key))
       {
         // Things like '+', '&' which are not really shifted
-        modifiers &= ~VTKPlotter::SHIFT;
+        modifiers &= ~static_cast<int>(VTKPlotter::Modifiers::SHIFT);
       }
 
       log(DBG, "Keypress: %c|%d (%s)", key, modifiers, keysym.c_str());
@@ -178,19 +171,6 @@ namespace d_anonymous
   };
   vtkStandardNewMacro(PrivateVTKBalloonWidget)
   //----------------------------------------------------------------------------
-  #ifdef HAS_QVTK
-  void create_qApp()
-  {
-    if (!qApp)
-    {
-      static int dummy_argc = 0;
-      static char dummy_argv0 = '\0';
-      static char *dummy_argv0_ptr = &dummy_argv0;
-      new QApplication(dummy_argc, &dummy_argv0_ptr);
-    }
-  }
-  #endif
-  //----------------------------------------------------------------------------
   unsigned char gauss_120[256*4] =
   {
   #include "gauss_120.dat"
@@ -199,12 +179,8 @@ namespace d_anonymous
 //----------------------------------------------------------------------------
 // Class VTKWindowOutputStage
 //----------------------------------------------------------------------------
-VTKWindowOutputStage::VTKWindowOutputStage(QVTKWidget *user_widget)
+VTKWindowOutputStage::VTKWindowOutputStage()
 {
-  #ifdef HAS_QVTK
-  widget = user_widget;
-  #endif
-
   vtkMapper::GlobalImmediateModeRenderingOn(); // FIXME: Check if faster or not
 
   // Initialize objects
@@ -229,12 +205,6 @@ VTKWindowOutputStage::~VTKWindowOutputStage()
   // Note: VTK (current 5.6.1) seems to very picky about the order of
   // destruction. This destructor tries to impose an order on the most
   // important stuff.
-
-  //log(DBG, "VTK pipeline destroyed");
-
-  #ifdef HAS_QVTK
-  widget = NULL;
-  #endif
 
   helptextActor = NULL;
   balloonRep = NULL;
@@ -268,27 +238,12 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters& p)
     vtkSmartPointer<PrivateVTKInteractorStyle>::New();
   style->_plotter = parent;
 
-  #ifdef HAS_QVTK
-  if (!widget)
-  {
-    // Create new top-level widget -- make sure a QApplication exists first
-    create_qApp();
-    widget = new QVTKWidget();
-  }
-  _renderWindow->SetInteractor(widget->GetInteractor());
-
-  widget->SetRenderWindow(_renderWindow);
-  if (widget->parentWidget())
-    widget->resize(widget->parentWidget()->size());
-  else
-    widget->resize(p["window_width"], p["window_height"]);
-  #else
   _renderWindow->SetInteractor(vtkSmartPointer<vtkRenderWindowInteractor>::New());
   const int width  = p["window_width"];
   const int height = p["window_height"];
   if (width > 0 && height > 0)
     _renderWindow->SetSize(width, height);
-  #endif
+
   _renderWindow->GetInteractor()->SetInteractorStyle(style);
   style->SetCurrentRenderer(_renderer);
 
@@ -378,50 +333,12 @@ void VTKWindowOutputStage::set_helptext(std::string text)
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::set_window_title(std::string title)
 {
-  #ifdef HAS_QVTK
-  widget->setWindowTitle(title.c_str());
-  #else
   _renderWindow->SetWindowName(title.c_str());
-  #endif
 }
 //----------------------------------------------------------------------------
 std::string VTKWindowOutputStage::get_window_title()
 {
-  #ifdef HAS_QVTK
-  return widget->windowTitle().toStdString();
-  #else
   return _renderWindow->GetWindowName();
-  #endif
-}
-//----------------------------------------------------------------------------
-QVTKWidget *VTKWindowOutputStage::get_widget() const
-{
-  #ifdef HAS_QVTK
-  return widget;
-  #else
-  return NULL;
-  #endif
-}
-//----------------------------------------------------------------------------
-void VTKWindowOutputStage::close_window()
-{
-  #ifdef HAS_QVTK
-  widget->close();
-  #else
-  warning("Window close not implemented on VTK event loop");
-  #endif
-}
-//----------------------------------------------------------------------------
-bool VTKWindowOutputStage::resurrect_window()
-{
-  #ifdef HAS_QVTK
-  if (widget->isHidden())
-  {
-    widget->show();
-    return true;
-  }
-  #endif
-  return false;
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::start_interaction(bool enter_eventloop)
@@ -429,22 +346,12 @@ void VTKWindowOutputStage::start_interaction(bool enter_eventloop)
   get_interactor()->Initialize();
   render();
   if (enter_eventloop)
-  {
-    #ifdef HAS_QVTK
-    qApp->exec();
-    #else
     get_interactor()->Start();
-    #endif
-  }
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::stop_interaction()
 {
-  #ifdef HAS_QVTK
-  qApp->quit();
-  #else
   get_interactor()->TerminateApp();
-  #endif
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::write_png(std::string filename)
@@ -567,39 +474,22 @@ void VTKWindowOutputStage::render()
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::get_window_size(int& width, int& height)
 {
-  #ifdef HAS_QVTK
-  QSize size = widget->frameSize();
-  width = size.width();
-  height = size.height();
-  #else
   get_interactor()->GetSize(width, height);
   // Guess window decoration (frame) size
   width += 6;
   height += 30;
-  #endif
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::get_screen_size(int& width, int& height)
 {
-  #ifdef HAS_QVTK
-  QRect geom = QApplication::desktop()->availableGeometry();
-  width = geom.width();
-  height = geom.height();
-  #else
   int *size = _renderWindow->GetScreenSize();
   width = size[0];
   height = size[1];
-  #endif
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::place_window(int x, int y)
 {
-  #ifdef HAS_QVTK
-  widget->move(x, y);
-  widget->show();
-  #else
   _renderWindow->SetPosition(x, y);
-  #endif
 }
 //----------------------------------------------------------------------------
 bool VTKWindowOutputStage::add_viewprop(vtkSmartPointer<vtkProp> prop)

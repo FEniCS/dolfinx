@@ -64,19 +64,6 @@ namespace dolfin
   {
   public:
 
-    /// Create function on given function space
-    ///
-    /// *Arguments*
-    ///     V (_FunctionSpace_)
-    ///         The function space.
-    ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
-    ///         Function u(V);
-    ///
-    explicit Function(const FunctionSpace& V);
-
     /// Create function on given function space (shared data)
     ///
     /// *Arguments*
@@ -96,17 +83,6 @@ namespace dolfin
     ///         The vector.
     Function(std::shared_ptr<const FunctionSpace> V,
              std::shared_ptr<GenericVector> x);
-
-    /// Create function from vector of dofs stored to file
-    ///
-    /// *Arguments*
-    ///     V (_FunctionSpace_)
-    ///         The function space.
-    ///     filename_vector (std::string)
-    ///         The name of the file containing the vector.
-    ///     filename_dofdata (std::string)
-    ///         The name of the file containing the dofmap data.
-    Function(const FunctionSpace& V, std::string filename);
 
     /// Create function from vector of dofs stored to file (shared data)
     ///
@@ -217,7 +193,11 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionSpace_
     ///         Return the shared pointer.
-    std::shared_ptr<const FunctionSpace> function_space() const;
+    virtual std::shared_ptr<const FunctionSpace> function_space() const
+    {
+      dolfin_assert(_function_space);
+      return _function_space;
+    }
 
     /// Return vector of expansion coefficients (non-const version)
     ///
@@ -271,10 +251,8 @@ namespace dolfin
     ///         The cell.
     ///     ufc_cell (ufc::cell)
     ///         The ufc::cell.
-    void eval(Array<double>& values,
-              const Array<double>& x,
-              const Cell& dolfin_cell,
-              const ufc::cell& ufc_cell) const;
+    void eval(Array<double>& values, const Array<double>& x,
+              const Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
 
     /// Interpolate function (on possibly non-matching meshes)
     ///
@@ -322,20 +300,6 @@ namespace dolfin
     virtual void eval(Array<double>& values, const Array<double>& x,
                       const ufc::cell& cell) const;
 
-    /// Evaluate function for given data (non-matching meshes)
-    /// This method is deprecated as of dolfin 1.6.0.
-    /// Please use eval(values, x) instead.
-    ///
-    /// *Arguments*
-    ///     values (_Array_ <double>)
-    ///         The values at the point.
-    ///     x (_Array_ <double>)
-    ///         The coordinates of the point.
-    ///     cell (ufc::cell)
-    ///         The cell.
-    void non_matching_eval(Array<double>& values, const Array<double>& x,
-                           const ufc::cell& ufc_cell) const;
-
     /// Restrict function to local cell (compute expansion coefficients w)
     ///
     /// *Arguments*
@@ -350,7 +314,7 @@ namespace dolfin
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
-                          const double* vertex_coordinates,
+                          const double* coordinate_dofs,
                           const ufc::cell& ufc_cell) const;
 
     /// Compute values at all mesh vertices
@@ -394,9 +358,6 @@ namespace dolfin
 
     // Collection of sub-functions which share data with the function
     mutable boost::ptr_map<std::size_t, Function> _sub_functions;
-
-    // Compute lists of off-process dofs
-    void compute_off_process_dofs() const;
 
     // Initialize vector
     void init_vector();

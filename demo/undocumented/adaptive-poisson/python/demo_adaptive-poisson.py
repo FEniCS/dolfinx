@@ -53,7 +53,7 @@ for level in range(MAX_ITER):
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
     u = TrialFunction(V)
-    f = Expression(source_str)
+    f = Expression(source_str, degree=2)
     a = dot(grad(v), grad(u))*dx
     L = v*f*dx
 
@@ -66,7 +66,7 @@ for level in range(MAX_ITER):
     solve(a == L, u, bc)
 
     # Compute error indicators
-    h = array([c.diameter() for c in cells(mesh)])
+    h = array([c.h() for c in cells(mesh)])
     K = array([c.volume() for c in cells(mesh)])
     R = array([abs(source([c.midpoint().x(), c.midpoint().y()])) for c in cells(mesh)])
     gamma = h*R*sqrt(K)

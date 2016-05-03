@@ -28,6 +28,7 @@
 #include <memory>
 #include <slepceps.h>
 #include "dolfin/common/types.h"
+#include "dolfin/common/MPI.h"
 #include "PETScObject.h"
 
 namespace dolfin
@@ -38,8 +39,8 @@ namespace dolfin
   class PETScMatrix;
   class PETScVector;
 
-  /// This class provides an eigenvalue solver for PETSc matrices.
-  /// It is a wrapper for the SLEPc eigenvalue solver.
+  /// This class provides an eigenvalue solver for PETSc matrices. It
+  /// is a wrapper for the SLEPc eigenvalue solver.
   ///
   /// The following parameters may be specified to control the solver.
   ///
@@ -54,14 +55,9 @@ namespace dolfin
   ///   "smallest real"       (eigenvalues with smallest double part)
   ///   "largest imaginary"   (eigenvalues with largest imaginary part)
   ///   "smallest imaginary"  (eigenvalues with smallest imaginary part)
-  ///
-  /// For SLEPc versions >= 3.1 , the following values are also possible
-  ///
   ///   "target magnitude"    (eigenvalues closest to target in magnitude)
   ///   "target real"         (eigenvalues closest to target in real part)
   ///   "target imaginary"    (eigenvalues closest to target in imaginary part)
-  ///
-  /// The default is "largest magnitude"
   ///
   /// 2. "solver"
   ///
@@ -76,14 +72,10 @@ namespace dolfin
   ///   "lapack"              (LAPACK, all values, direct, small systems only)
   ///   "arpack"              (ARPACK)
   ///
-  /// The default is "krylov-schur"
-  ///
   /// 3. "tolerance"
   ///
-  /// This parameter controls the tolerance used by SLEPc.
-  /// Possible values are positive double numbers.
-  ///
-  /// The default is 1e-15;
+  /// This parameter controls the tolerance used by SLEPc.  Possible
+  /// values are positive double numbers.
   ///
   /// 4. "maximum_iterations"
   ///
@@ -107,10 +99,11 @@ namespace dolfin
   ///
   /// 6. "spectral_transform"
   ///
-  /// This parameter controls the application of a spectral transform. A
-  /// spectral transform can be used to enhance the convergence of the
-  /// eigensolver and in particular to only compute eigenvalues in the
-  /// interior of the spectrum. Possible values are:
+  /// This parameter controls the application of a spectral
+  /// transform. A spectral transform can be used to enhance the
+  /// convergence of the eigensolver and in particular to only compute
+  /// eigenvalues in the interior of the spectrum. Possible values
+  /// are:
   ///
   ///   "shift-and-invert"      (A shift-and-invert transform)
   ///
@@ -122,29 +115,40 @@ namespace dolfin
   /// 7. "spectral_shift"
   ///
   /// This parameter controls the spectral shift used by the spectral
-  /// transform and must be provided if a spectral transform is given. The
-  /// possible values are real numbers.
-  ///
+  /// transform and must be provided if a spectral transform is
+  /// given. The possible values are real numbers.
 
   class SLEPcEigenSolver : public Variable, public PETScObject
   {
   public:
 
-    /// Create eigenvalue solver for Ax = \lambda x
-    SLEPcEigenSolver(const PETScMatrix& A);
+    /// Create eigenvalue solver
+    explicit SLEPcEigenSolver(MPI_Comm comm);
 
-    /// Create eigenvalue solver Ax = \lambda Bx
-    SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B);
+    /// Create eigenvalue solver from EPS object
+    explicit SLEPcEigenSolver(EPS eps);
+
+    /// Create eigenvalue solver for Ax = \lambda
+    explicit SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A);
 
     /// Create eigenvalue solver for Ax = \lambda x
-    SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A);
+    SLEPcEigenSolver(MPI_Comm comm, std::shared_ptr<const PETScMatrix> A);
 
-    /// Create eigenvalue solver for Ax = \lambda x
+    /// Create eigenvalue solver for Ax = \lambda x on MPI_COMM_WORLD
     SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,
+                     std::shared_ptr<const PETScMatrix> B);
+
+    /// Create eigenvalue solver for Ax = \lambda x
+    SLEPcEigenSolver(MPI_Comm comm, std::shared_ptr<const PETScMatrix> A,
                      std::shared_ptr<const PETScMatrix> B);
 
     /// Destructor
     ~SLEPcEigenSolver();
+
+    /// Set opeartors (B may be nullptr for regular eigenvalues
+    /// problems)
+    void set_operators(std::shared_ptr<const PETScMatrix> A,
+                       std::shared_ptr<const PETScMatrix> B);
 
     /// Compute all eigenpairs of the matrix A (solve Ax = \lambda x)
     void solve();
@@ -183,6 +187,14 @@ namespace dolfin
     /// Set deflation space
     void set_deflation_space(const PETScVector& deflation_space);
 
+    /// Sets the prefix used by PETSc when searching the PETSc options
+    /// database
+    void set_options_prefix(std::string options_prefix);
+
+    /// Returns the prefix used by PETSc when searching the PETSc
+    /// options database
+    std::string get_options_prefix() const;
+
     /// Return SLEPc EPS pointer
     EPS eps() const;
 
@@ -190,16 +202,14 @@ namespace dolfin
     static Parameters default_parameters()
     {
       Parameters p("slepc_eigenvalue_solver");
-
-      p.add("problem_type",       "default");
-      p.add("spectrum",           "largest magnitude");
-      p.add("solver",             "krylov-schur");
-      p.add("tolerance",          1e-15);
-      p.add("maximum_iterations", 10000);
-      p.add("spectral_transform", "default");
-      p.add("spectral_shift",     0.0);
-      p.add("verbose",            false);
-      p.add("options_prefix",     "default");
+      p.add<std::string>("problem_type");
+      p.add<std::string>("spectrum");
+      p.add<std::string>("solver");
+      p.add<double>("tolerance");
+      p.add<int>("maximum_iterations");
+      p.add<std::string>("spectral_transform");
+      p.add<double>("spectral_shift");
+      p.add<bool>("verbose");
 
       return p;
     }
@@ -222,11 +232,10 @@ namespace dolfin
     void set_solver(std::string spectrum);
 
     // Set tolerance
-    void set_tolerance(double tolerance, std::size_t maxiter);
+    void set_tolerance(double tolerance, int maxiter);
 
     // Operators (A x = \lambda x or Ax = \lambda B x)
-    std::shared_ptr<const PETScMatrix> _matA;
-    std::shared_ptr<const PETScMatrix> _matB;
+    std::shared_ptr<const PETScMatrix> _matA, _matB;
 
     // SLEPc solver pointer
     EPS _eps;

@@ -26,15 +26,19 @@ import pytest
 import numpy
 from dolfin import *
 
+
 class PeriodicBoundary2(SubDomain):
     def __init__(self, tolerance=DOLFIN_EPS):
         SubDomain.__init__(self, tolerance)
         self.tol = tolerance
+
     def inside(self, x, on_boundary):
         return bool(x[0] < self.tol and x[0] > -self.tol and on_boundary)
+
     def map(self, x, y):
         y[0] = x[0] - 1.0
         y[1] = x[1]
+
 
 class PeriodicBoundary3(SubDomain):
     def inside(self, x, on_boundary):
@@ -45,6 +49,7 @@ class PeriodicBoundary3(SubDomain):
         y[1] = x[1]
         y[2] = x[2]
 
+
 def test_instantiation():
     """ A rudimentary test for instantiation"""
 
@@ -52,23 +57,28 @@ def test_instantiation():
     mesh = UnitCubeMesh(8, 8, 8)
     V = FunctionSpace(mesh, "CG", 1, constrained_domain=sub_domain)
 
+
 def test_instantiation_mixed_element():
-    """ A rudimentary test for instantiation with mixed elements"""
+    """A rudimentary test for instantiation with mixed elements"""
 
     pbc = PeriodicBoundary2()
     mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=pbc)
-    VV = V*V
+    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    VV = FunctionSpace(mesh, P1*P1, constrained_domain=pbc)
+
 
 def test_instantiation_mixed_element_real():
-    """ A rudimentary test for instantiation with mixed elements that include a real space"""
+    """A rudimentary test for instantiation with mixed elements that
+    include a real space
+    """
 
     pbc = PeriodicBoundary2()
     mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=pbc)
-    R = FunctionSpace(mesh, "Real", 0, constrained_domain=pbc)
-    VV = V*R
-    VV = R*V
+    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    R = FiniteElement("Real", mesh.ufl_cell(), 0)
+    VV = FunctionSpace(mesh, P1*R, constrained_domain=pbc)
+    VV = FunctionSpace(mesh, R*P1, constrained_domain=pbc)
+
 
 def test_instantiation_no_vertex_element_2D():
     """ A rudimentary test for instantiation for element that does
@@ -78,6 +88,7 @@ def test_instantiation_no_vertex_element_2D():
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "BDM", 1, constrained_domain=pbc)
 
+
 def test_instantiation_no_vertex_element_3D():
     """ A rudimentary test for instantiation for element that does
     not require number of vertices (3D)"""
@@ -86,12 +97,14 @@ def test_instantiation_no_vertex_element_3D():
     mesh = UnitCubeMesh(8, 8, 9)
     V = FunctionSpace(mesh, "BDM", 1, constrained_domain=pbc)
 
+
 def test_director_lifetime():
     """Test for problems with objects with directors going out
     of scope"""
 
     mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=PeriodicBoundary2())
+    V = FunctionSpace(mesh, "Lagrange", 1,
+                      constrained_domain=PeriodicBoundary2())
 
 
 def test_tolerance():
@@ -111,9 +124,10 @@ def test_tolerance():
 
     for dim in range(mesh.geometry().dim()):
         periodic_pairs = PeriodicBoundaryComputation.compute_periodic_pairs(mesh, pbc, dim)
-        num_periodic_pairs0 =  len(periodic_pairs)
+        num_periodic_pairs0 = len(periodic_pairs)
 
-        periodic_pairs = PeriodicBoundaryComputation.compute_periodic_pairs(mesh_perturb, pbc_tol, dim)
+        periodic_pairs = PeriodicBoundaryComputation.compute_periodic_pairs(mesh_perturb,
+                                                                            pbc_tol, dim)
         num_periodic_pairs1 = len(periodic_pairs)
         assert num_periodic_pairs0 == num_periodic_pairs1
 
@@ -128,7 +142,8 @@ def test_solution():
 
     class DirichletBoundary(SubDomain):
         def inside(self, x, on_boundary):
-            return bool((x[1] < DOLFIN_EPS or x[1] > (1.0 - DOLFIN_EPS)) and on_boundary)
+            return bool((x[1] < DOLFIN_EPS or x[1] > (1.0 - DOLFIN_EPS)) and
+                        on_boundary)
 
     # Dirichlet boundary condition
     dirichlet_boundary = DirichletBoundary()

@@ -19,8 +19,6 @@
 #ifndef __DOLFIN_XDMFXML_H
 #define __DOLFIN_XDMFXML_H
 
-#ifdef HAS_HDF5
-
 #include <string>
 #include <vector>
 #include <dolfin/mesh/CellType.h>
@@ -34,6 +32,29 @@ namespace dolfin
   {
   public:
 
+    class TopologyData
+    {
+    public:
+      std::string format;
+      std::string hdf5_filename;
+      std::string hdf5_dataset;
+      std::string cell_type;
+      std::size_t n_cells;
+      std::size_t points_per_cell;
+      std::string data;
+    };
+
+    class GeometryData
+    {
+    public:
+      std::string format;
+      std::string hdf5_filename;
+      std::string hdf5_dataset;
+      std::size_t n_points;
+      std::size_t dim;
+      std::string data;
+    };
+
     /// Constructor
     XDMFxml(std::string filename);
 
@@ -46,11 +67,24 @@ namespace dolfin
     /// Read from a file
     void read();
 
-    /// Get the (unique) Mesh name from the current XML
-    std::string meshname() const;
+    /// Get the (unique) Mesh topology name, split into three parts
+    /// (file name, dataset name, CellType) from the current XML
+    TopologyData get_topology() const;
 
-    /// Get the (unique) dataset name for a MeshFunction in current XML
+    /// Get the (unique) Mesh geometry name, split into two parts
+    /// (file name, dataset name) from the current XML
+    GeometryData get_geometry() const;
+
+    /// Get the (unique) dataset for a MeshFunction in current
+    /// XML
+    std::string get_first_data_set() const;
+
+    /// Get the (unique) dataset name for a MeshFunction in current
+    /// XML
     std::string dataname() const;
+
+    /// Get the data encoding. "XML" or "HDF"
+    std::string data_encoding() const;
 
     /// Add a data item to the current grid
     void data_attribute(std::string name,
@@ -59,14 +93,15 @@ namespace dolfin
                         std::size_t num_total_vertices,
                         std::size_t num_global_cells,
                         std::size_t padded_value_size,
-                        std::string dataset_name);
+                        std::string dataset_name,
+                        std::string format);
 
-    /// Initalise XML for a Mesh-like single output
-    /// returning the xdmf_grid node
+    /// Initalise XML for a Mesh-like single output returning the
+    /// xdmf_grid node
     pugi::xml_node init_mesh(std::string name);
 
-    /// Initialise XML for a TimeSeries-like output
-    /// returning the xdmf_grid node
+    /// Initialise XML for a TimeSeries-like output returning the
+    /// xdmf_grid node
     pugi::xml_node init_timeseries(std::string name, double time_step,
                                    std::size_t counter);
 
@@ -74,12 +109,15 @@ namespace dolfin
     void mesh_topology(const CellType::Type cell_type,
                        const std::size_t cell_order,
                        const std::size_t num_global_cells,
-                       const std::string reference);
+                       const std::string xml_value_data,
+                       const std::string format);
 
     /// Attach geometry to the current grid node
     void mesh_geometry(const std::size_t num_total_vertices,
                        const std::size_t gdim,
-                       const std::string reference);
+                       const std::string xml_value_data,
+                       const std::string format,
+                       const bool is_reference=false);
 
   private:
 
@@ -94,7 +132,10 @@ namespace dolfin
 
     // Filename
     std::string _filename;
+
+    // This is to ensure that when the file is written for the first
+    // time, it overwrites any existing file with the same name.
+    bool _is_this_first_write;
   };
 }
-#endif
 #endif

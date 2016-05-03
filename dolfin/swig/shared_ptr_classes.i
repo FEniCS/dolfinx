@@ -40,13 +40,12 @@
 %include <std_shared_ptr.i>
 
 //-----------------------------------------------------------------------------
-// Make DOLFIN aware of the types defined in UFC
+// Declare shared_ptr stored types in UFC
 //-----------------------------------------------------------------------------
-%{
-#include <ufc.h>
-%}
-%include <swig/ufc_shared_ptr_classes.i>
-%import(module="ufc") "ufc.h"
+%shared_ptr(ufc::function)
+%shared_ptr(ufc::dofmap)
+%shared_ptr(ufc::finite_element)
+%shared_ptr(ufc::form)
 
 //-----------------------------------------------------------------------------
 // Declare shared_ptr stored types in PyDOLFIN
@@ -112,7 +111,6 @@
 %shared_ptr(dolfin::Hierarchical<dolfin::Mesh>)
 %shared_ptr(dolfin::BoundaryMesh)
 %shared_ptr(dolfin::Mesh)
-%shared_ptr(dolfin::Restriction)
 %shared_ptr(dolfin::SubMesh)
 %shared_ptr(dolfin::UnitTetrahedronMesh)
 %shared_ptr(dolfin::UnitCubeMesh)
@@ -122,6 +120,8 @@
 %shared_ptr(dolfin::UnitSquareMesh)
 %shared_ptr(dolfin::UnitQuadMesh)
 %shared_ptr(dolfin::UnitHexMesh)
+%shared_ptr(dolfin::UnitDiscMesh)
+%shared_ptr(dolfin::SphericalShellMesh)
 %shared_ptr(dolfin::BoxMesh)
 %shared_ptr(dolfin::Box)
 %shared_ptr(dolfin::RectangleMesh)
@@ -160,8 +160,7 @@
 %shared_ptr(dolfin::Matrix)
 %shared_ptr(dolfin::Vector)
 %shared_ptr(dolfin::LinearOperator)
-
-%shared_ptr(dolfin::STLMatrix)
+%shared_ptr(dolfin::IndexMap)
 
 %shared_ptr(dolfin::EigenKrylovSolver)
 %shared_ptr(dolfin::EigenLUSolver)
@@ -184,6 +183,9 @@
 %shared_ptr(dolfin::TpetraVector)
 %shared_ptr(dolfin::TpetraMatrix)
 %shared_ptr(dolfin::BelosKrylovSolver)
+%shared_ptr(dolfin::TrilinosPreconditioner)
+%shared_ptr(dolfin::Ifpack2Preconditioner)
+%shared_ptr(dolfin::MueluPreconditioner)
 #endif
 
 #ifdef HAS_SLEPC
@@ -204,7 +206,6 @@
 %shared_ptr(dolfin::LUSolver)
 
 %shared_ptr(dolfin::TensorLayout)
-%shared_ptr(dolfin::GenericSparsityPattern)
 %shared_ptr(dolfin::SparsityPattern)
 
 // log
@@ -215,6 +216,7 @@
 %shared_ptr(dolfin::File)
 %shared_ptr(dolfin::XDMFFile)
 %shared_ptr(dolfin::HDF5File)
+%shared_ptr(dolfin::X3DOM)
 
 // math
 %shared_ptr(dolfin::Lagrange)

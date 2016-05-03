@@ -22,8 +22,11 @@
 #define __XML_UTILS_H
 
 #include <string>
-#include "pugixml.hpp"
 
+namespace pugi
+{
+  class xml_node;
+}
 
 namespace dolfin
 {

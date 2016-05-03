@@ -67,7 +67,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
   // Initialize storage of meshes and indicators
   std::string label = parameters["data_label"];
 #ifdef HAS_HDF5
-  TimeSeries series(goal->mesh().mpi_comm(), label);
+  TimeSeries series(goal->mesh()->mpi_comm(), label);
 #endif
 
   // Iterate over a series of meshes
@@ -114,7 +114,8 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
     dolfin_assert(u->function_space());
     const FunctionSpace& V = *u->function_space();
     dolfin_assert(V.mesh());
-    const Mesh& mesh = *V.mesh();
+    std::shared_ptr<const Mesh> mesh = V.mesh();
+    dolfin_assert(mesh);
 
     // Evaluate goal functional
     log(PROGRESS, "Evaluating goal functional.");
@@ -130,7 +131,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
     log(PROGRESS, "Error estimate is %g (tol = %g).", error_estimate, tol);
     end();
 
-    const int num_cells = mesh.num_cells();
+    const int num_cells = mesh->num_cells();
     const int num_dofs = V.dim();
     datum->add("num_cells", num_cells);
     datum->add("num_dofs", num_dofs);
@@ -148,7 +149,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
     //--- Stage 2: Compute error indicators
     begin(PROGRESS, "Stage %d.2: Computing error indicators...", i);
     timer.start();
-    MeshFunction<double> indicators(mesh, mesh.topology().dim());
+    MeshFunction<double> indicators(mesh, mesh->topology().dim());
     dolfin_assert(u);
     ec.compute_indicators(indicators, *u);
     datum->add("time_compute_indicators", timer.stop());
@@ -156,7 +157,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
     {
 #ifdef HAS_HDF5
       //series.store(indicators, i); // No TimeSeries storage of MeshFunction
-      series.store(mesh, i);
+      series.store(*mesh, i);
 #else
       warning("HDF5 not available, unable to save refinement data as time series.");
 #endif
@@ -165,7 +166,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
 
     //--- Stage 3: Mark mesh for refinement ---
     begin(PROGRESS, "Stage %d.3: Marking mesh for refinement...", i);
-    MeshFunction<bool> markers(mesh, mesh.topology().dim());
+    MeshFunction<bool> markers(mesh, mesh->topology().dim());
     const std::string strategy = parameters["marking_strategy"];
     const double fraction = parameters["marking_fraction"];
     timer.start();
@@ -176,18 +177,18 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
     //--- Stage 4: Refine mesh ---
     begin(PROGRESS, "Stage %d.4: Refining mesh...", i);
     timer.start();
-    adapt(mesh, markers);
+    adapt(*mesh, markers);
     datum->add("time_adapt_mesh", timer.stop());
     if (parameters["plot_mesh"])
-      plot(mesh.child(), "Refined mesh");
+      plot(mesh->child(), "Refined mesh");
     end();
 
     //--- Stage 5: Update forms ---
     begin(PROGRESS, "Stage %d.5: Updating forms...", i);
     timer.start();
-    adapt_problem(mesh.leaf_node_shared_ptr());
-    adapt(M, mesh.leaf_node_shared_ptr());
-    adapt(ec, mesh.leaf_node_shared_ptr(), false);
+    adapt_problem(mesh->leaf_node_shared_ptr());
+    adapt(M, mesh->leaf_node_shared_ptr());
+    adapt(ec, mesh->leaf_node_shared_ptr(), false);
     datum->add("time_adapt_forms", timer.stop());
     end();
   }

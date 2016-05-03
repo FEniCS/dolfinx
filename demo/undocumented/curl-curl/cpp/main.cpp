@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Bartosz Sawicki
+// Copyright (C) 2009-2015 Bartosz Sawicki, Stefano Zampini and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,11 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2009-03-30
-// Last changed: 2014-08-11
-//
-// Eddy currents phenomena in low conducting body can be
-// described using electric vector potential and curl-curl operator:
+// Eddy currents phenomena in low conducting body can be described
+// using electric vector potential and curl-curl operator:
 //
 //    \nabla \times \nabla \times T = - \frac{\partial B}{\partial t}
 //
@@ -30,87 +27,124 @@
 // Boundary condition
 //
 //    J_n = 0,
-//    T_t=T_w=0, \frac{\partial T_n}{\partial n} = 0
-// which is naturaly fulfilled for zero Dirichlet BC with Nedelec (edge)
-// elements.
+//    T_t = T_w = 0, \frac{\partial T_n}{\partial n} = 0
+//
+// which is naturaly fulfilled for zero Dirichlet BC with Nedelec
+// (edge) elements.
+//
+// This demo uses the auxiliary space Maxwell AMG preconditioner from
+// Hypre, via PETSc. It therefore requires PETSc, configured with
+// Hypre.
 
 #include <dolfin.h>
 #include "EddyCurrents.h"
 #include "CurrentDensity.h"
+#include "P1Space.h"
 
 using namespace dolfin;
 
+#if defined(HAS_PETSC) and defined(PETSC_HAVE_HYPRE)
+
 int main()
 {
-  // Homogenous external magnetic field (dB/dt)
-  class Source : public Expression
-  {
-  public:
+  // Set PETSc as default linear algebra backend
+  parameters["linear_algebra_backend"] = "PETSc";
 
-    Source() : Expression(3) {}
-
-    void eval(Array<double>& values, const Array<double>& x) const
-    {
-      values[0] = 0.0;
-      values[1] = 0.0;
-      values[2] = 1.0;
-    }
-
-  };
-
-  // Zero Dirichlet BC
-  class Zero : public Expression
-  {
-  public:
-
-    Zero() : Expression(3) {}
-
-    void eval(Array<double>& values, const Array<double>& x) const
-    {
-      values[0] = 0.0;
-      values[1] = 0.0;
-      values[2] = 0.0;
-    }
-
-  };
-
-  // Everywhere on external surface
+  // Everywhere on exterior surface
   class DirichletBoundary: public SubDomain
   {
     bool inside(const Array<double>& x, bool on_boundary) const
     { return on_boundary; }
   };
 
-  // Load sphere mesh
-  Mesh mesh("../sphere.xml.gz");
+  // Load sphere mesh and refine uniformly
+  auto mesh = std::make_shared<Mesh>("../sphere.xml.gz");
+  mesh = std::make_shared<Mesh>(refine(*mesh));
 
-  // Define functions
-  Source dbdt;
-  Zero zero;
+  // Homogeneous external magnetic field (dB/dt)
+  auto dbdt = std::make_shared<Constant>(0.0, 0.0, 1.0);
+
+  // Dirichlet boundary condition
+  auto zero = std::make_shared<Constant>(0.0, 0.0, 0.0);
 
   // Define function space and boundary condition
-  EddyCurrents::FunctionSpace V(mesh);
-  DirichletBoundary boundary;
-  DirichletBC bc(V, zero, boundary);
+  auto V = std::make_shared<EddyCurrents::FunctionSpace>(mesh);
+  auto boundary = std::make_shared<DirichletBoundary>();
+  auto bc = std::make_shared<DirichletBC>(V, zero, boundary);
 
   // Define variational problem for T
-  EddyCurrents::BilinearForm a(V,V);
+  EddyCurrents::BilinearForm a(V, V);
   EddyCurrents::LinearForm L(V);
   L.dbdt = dbdt;
 
-  // Compute solution
-  Function T(V);
-  solve(a == L, T, bc);
+  // Solution function
+  auto T = std::make_shared<Function>(V);
+
+  // Assemble system
+  auto A = std::make_shared<PETScMatrix>();
+  PETScVector b;
+  assemble_system(*A, b, a, L, {bc});
+
+  // Create PETSc Krylov solver
+  PETScKrylovSolver solver("cg");
+
+  // Get pointer to PETSc KSP object and set tolerances
+  KSP ksp = solver.ksp();
+  KSPSetTolerances(ksp, 1.0e-8, 1.0e-12, 1.0e10, 1000);
+
+  // Set preconditioner to AMS from HYPRE
+  PC pc;
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCHYPRE);
+  PCHYPRESetType(pc, "ams");
+
+  // Build discrete gradient operator and attach to preconditioner
+  P1Space::FunctionSpace P1(mesh);
+  auto G = DiscreteOperators::build_gradient(*V, P1);
+  PCHYPRESetDiscreteGradient(pc, as_type<PETScMatrix>(*G).mat());
+
+  // Inform preconditioner of constants in the Nedelec space
+  std::vector<Function> constants(3, Function(V));
+  constants[0] = Constant(1.0, 0.0, 0.0);
+  constants[1] = Constant(0.0, 1.0, 0.0);
+  constants[2] = Constant(0.0, 0.0, 1.0);
+
+  PCHYPRESetEdgeConstantVectors(pc,
+               as_type<PETScVector>(*constants[0].vector()).vec(),
+               as_type<PETScVector>(*constants[1].vector()).vec(),
+               as_type<PETScVector>(*constants[2].vector()).vec());
+
+  // We are dealing with a zero conductivity problem (no mass term),
+  // so we need to tell the preconditioner
+  PCHYPRESetBetaPoissonMatrix(pc, NULL);
+
+  // Set PETSc operators
+  solver.set_operator(A);
+
+  // Set PETSc Krylov prefix solver and set some options
+  KSPSetOptionsPrefix(ksp, "eddy_");
+  PETScOptions::set("eddy_ksp_monitor_true_residual");
+  PETScOptions::set("eddy_ksp_view");
+  KSPSetFromOptions(ksp);
+
+  // Solve system
+  KSPSolve(ksp, b.vec(), as_type<PETScVector>(*T->vector()).vec());
+
+  // Update ghost values in solution vector
+  T->vector()->apply("insert");
 
   // Define variational problem for J
-  CurrentDensity::FunctionSpace V1(mesh);
+  auto V1 = std::make_shared<CurrentDensity::FunctionSpace>(mesh);
   CurrentDensity::BilinearForm a1(V1,V1);
   CurrentDensity::LinearForm L1(V1);
   L1.T = T;
 
-  // Solve problem using default solver
+  // Solve problem using an iterative linear solver
   Function J(V1);
-  solve(a1 == L1, J);
+  Parameters p;
+  p.add("linear_solver", "cg");
+  p.add("symmetric", true);
+  solve(a1 == L1, J, p);
 
   File file("current_density.pvd");
   file << J;
@@ -121,3 +155,13 @@ int main()
 
   return 0;
 }
+
+#else
+
+int main()
+{
+  info("This demo requires DOLFIN to be configured with PETSc (with Hypre).");
+  return 0;
+}
+
+#endif

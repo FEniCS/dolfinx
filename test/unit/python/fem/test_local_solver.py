@@ -19,14 +19,16 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Steven Vandekerckhove, 2014.
-#
-# First added:  2013-02-13
-# Last changed: 2014-11-18
+# Modified by Steven Vandekerckhove, 2014
+# Modified by Tormod Landet, 2015
 
 import pytest
 import numpy
 from dolfin import *
+from dolfin_utils.test import skip_in_parallel
+from dolfin_utils.test import set_parameters_fixture
+ghost_mode = set_parameters_fixture("ghost_mode", ["shared_facet"])
+
 
 def test_solve_global_rhs():
     mesh = UnitCubeMesh(2, 3, 3)
@@ -39,7 +41,7 @@ def test_solve_global_rhs():
     # Forms for projection
     a, L = inner(v, u)*dx, inner(v, f)*dx
 
-    solvers = [LocalSolver.LU, LocalSolver.Cholesky]
+    solvers = [LocalSolver.SolverType_LU, LocalSolver.SolverType_Cholesky]
     for solver_type in solvers:
 
         # First solve
@@ -63,7 +65,8 @@ def test_solve_global_rhs():
         error = assemble((u - f)*(u - f)*dx)
         assert round(error, 10) == 0
 
-def test_solve_local_rhs():
+
+def test_solve_local_rhs(ghost_mode):
     mesh = UnitCubeMesh(1, 5, 1)
     V = FunctionSpace(mesh, "Lagrange", 2)
     W = FunctionSpace(mesh, "Lagrange", 2)
@@ -74,7 +77,7 @@ def test_solve_local_rhs():
     # Forms for projection
     a, L = inner(v, u)*dx, inner(v, f)*dx
 
-    solvers = [LocalSolver.LU, LocalSolver.Cholesky]
+    solvers = [LocalSolver.SolverType_LU, LocalSolver.SolverType_Cholesky]
     for solver_type in solvers:
 
         # First solve
@@ -95,12 +98,41 @@ def test_solve_local_rhs():
         local_solver.solve_local_rhs(u)
         assert round((u.vector() - x).norm("l2") - 0.0, 10) == 0
 
-def test_local_solver_dg():
-    mesh = UnitIntervalMesh(50)
+
+def test_solve_local_rhs_facet_integrals(ghost_mode):
+    mesh = UnitSquareMesh(4, 4)
+
+    Vu = VectorFunctionSpace(mesh, 'DG', 1)
+    Vv = FunctionSpace(mesh, 'DGT', 1)
+    u = TrialFunction(Vu)
+    v = TestFunction(Vv)
+
+    n = FacetNormal(mesh)
+    w = Constant([1, 1])
+
+    a = dot(u, n)*v*ds
+    L = dot(w, n)*v*ds
+
+    for R in '+-':
+        a += dot(u(R), n(R))*v(R)*dS
+        L += dot(w(R), n(R))*v(R)*dS
+
+    u = Function(Vu)
+    local_solver = LocalSolver(a, L)
+    local_solver.solve_local_rhs(u)
+
+    x = u.vector().copy()
+    x[:] = 1
+    assert round((u.vector() - x).norm('l2'), 10) == 0
+
+
+def test_local_solver_dg(ghost_mode):
+    # Ghosted mesh in 1D not supported
+    mesh = UnitSquareMesh(50, 1)
     U = FunctionSpace(mesh, "DG", 2)
 
     # Set initial values
-    u0 = interpolate(Expression("cos(pi*x[0])"), U)
+    u0 = interpolate(Expression("cos(pi*x[0])", degree=2), U)
 
     # Define test and trial functions
     v, u = TestFunction(U), TrialFunction(U)
@@ -127,18 +159,19 @@ def test_local_solver_dg():
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
 
     # Compute solution with local solver (Cholesky) and compare
-    local_solver = LocalSolver(a, L, True)
+    local_solver = LocalSolver(a, L, LocalSolver.SolverType_Cholesky)
     u_ls = Function(U)
     local_solver.solve_global_rhs(u_ls)
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
 
 
-def test_solve_local():
-    mesh = UnitIntervalMesh(50)
+def test_solve_local(ghost_mode):
+    # Ghosted mesh in 1D not supported
+    mesh = UnitSquareMesh(50, 1)
     U = FunctionSpace(mesh, "DG", 2)
 
     # Set initial values
-    u0 = interpolate(Expression("cos(pi*x[0])"), U)
+    u0 = interpolate(Expression("cos(pi*x[0])", degree=2), U)
 
     # Define test and trial functions
     v, u = TestFunction(U), TrialFunction(U)
@@ -166,7 +199,7 @@ def test_solve_local():
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
 
     # Compute solution with local solver (Cholesky) and compare
-    local_solver = LocalSolver(a, solver_type=LocalSolver.Cholesky)
+    local_solver = LocalSolver(a, solver_type=LocalSolver.SolverType_Cholesky)
     u_ls = Function(U)
     local_solver.solve_local(u_ls.vector(), b, U.dofmap())
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0

@@ -32,7 +32,6 @@
 #include <dolfin/parameter/Parameters.h>
 
 class vtkObject;
-class QVTKWidget;
 
 namespace dolfin
 {
@@ -44,12 +43,12 @@ namespace dolfin
   class VTKWindowOutputStage;
   template<typename T> class Array;
 
-  /// This class enables visualization of various DOLFIN entities.
-  /// It supports visualization of meshes, functions, expressions, boundary
-  /// conditions and mesh functions. It can plot data wrapped in classes
-  /// conforming to the GenericVTKPlottable interface.
-  /// The plotter has several parameters that the user can set and adjust to
-  /// affect the appearance and behavior of the plot.
+  /// This class enables visualization of various DOLFIN entities.  It
+  /// supports visualization of meshes, functions, expressions,
+  /// boundary conditions and mesh functions. It can plot data wrapped
+  /// in classes conforming to the GenericVTKPlottable interface.  The
+  /// plotter has several parameters that the user can set and adjust
+  /// to affect the appearance and behavior of the plot.
   ///
   /// A plotter can be created and used in the following way:
   ///
@@ -57,8 +56,9 @@ namespace dolfin
   ///   VTKPlotter plotter(mesh);
   ///   plotter.plot();
   ///
-  /// Parameters can be adjusted at any time and will take effect on the next
-  /// call to the plot() method. The following parameters exist:
+  /// Parameters can be adjusted at any time and will take effect on
+  /// the next call to the plot() method. The following parameters
+  /// exist:
   ///
   /// ============== ============ ================ ====================================
   ///  Name           Value type   Default value              Description
@@ -151,24 +151,23 @@ namespace dolfin
   ///                                                          Color mapping (norm)
   /// =========================  ============================ =====================
   ///
-  /// Expressions and boundary conditions are also visualized according to the
-  /// above table.
+  /// Expressions and boundary conditions are also visualized
+  /// according to the above table.
 
   class VTKPlotter : public Variable
   {
   public:
 
-    /// Create plotter for a variable. If a widget is supplied, this widget
-    /// will be used for drawing, instead of a new top-level widget. Ownership
-    /// is transferred.
-    VTKPlotter(std::shared_ptr<const Variable>, QVTKWidget *widget = NULL);
+    /// Create plotter for a variable. If a widget is supplied, this
+    /// widget will be used for drawing, instead of a new top-level
+    /// widget. Ownership is transferred.
+    VTKPlotter(std::shared_ptr<const Variable>);
 
-    /// Create plotter for an Expression with associated Mesh. If a widget is
-    /// supplied, this widget will be used for drawing, instead of a new
-    /// top-level widget. Ownership is transferred.
+    /// Create plotter for an Expression with associated Mesh. If a
+    /// widget is supplied, this widget will be used for drawing,
+    /// instead of a new top-level widget. Ownership is transferred.
     VTKPlotter(std::shared_ptr<const Expression> expression,
-               std::shared_ptr<const Mesh> mesh,
-               QVTKWidget *wiget = NULL);
+               std::shared_ptr<const Mesh> mesh);
 
     /// Destructor
     virtual ~VTKPlotter();
@@ -211,10 +210,12 @@ namespace dolfin
     bool is_compatible(std::shared_ptr<const Variable> variable) const;
 
     /// Plot the object
-    void plot(std::shared_ptr<const Variable> variable=std::shared_ptr<const Variable>());
+    void plot(std::shared_ptr<const Variable>
+              variable=std::shared_ptr<const Variable>());
 
     // FIXME: Deprecated? What should it do?
-    void update(std::shared_ptr<const Variable> variable=std::shared_ptr<const Variable>())
+    void update(std::shared_ptr<const Variable>
+                variable=std::shared_ptr<const Variable>())
     {
       warning("VTKPlotter::update is deprecated, use ::plot instead");
       plot(variable);
@@ -252,11 +253,11 @@ namespace dolfin
 
     void add_polygon(const Array<double>& points);
 
-    /// Make all plot windows interactive. If really is set, the interactive
-    /// mode is entered even if 'Q' has been pressed.
+    /// Make all plot windows interactive. If really is set, the
+    /// interactive mode is entered even if 'Q' has been pressed.
     static void all_interactive(bool really=false);
 
-    enum Modifiers
+    enum class Modifiers : int
     {
       // Zero low byte, so that a char can be added
       SHIFT    = 0x100,
@@ -264,27 +265,24 @@ namespace dolfin
       CONTROL  = 0x400
     };
 
-    // Called (from within VTKWindowOutputStage) when a key is pressed. Public,
-    // but intended for internal (and subclass) use. Returns true if the
-    // keypress is handled.
+    // Called (from within VTKWindowOutputStage) when a key is
+    // pressed. Public, but intended for internal (and subclass)
+    // use. Returns true if the keypress is handled.
     virtual bool key_pressed(int modifiers, char key, std::string keysym);
-
-    // Returns the QVTKWidget that contains the plot (when compiled with Qt).
-    QVTKWidget *get_widget() const;
 
   protected:
 
-    void update_pipeline(std::shared_ptr<const Variable> variable=std::shared_ptr<const Variable>());
+    void update_pipeline(std::shared_ptr<const Variable>
+                         variable=std::shared_ptr<const Variable>());
 
-    // The pool of plotter objects. Objects register
-    // themselves in the list when created and remove themselves when
-    // destroyed.
-    // Used when calling interactive() (which should have effect on
-    // all plot windows)
+    // The pool of plotter objects. Objects register themselves in the
+    // list when created and remove themselves when destroyed.  Used
+    // when calling interactive() (which should have effect on all
+    // plot windows)
     static std::shared_ptr<std::list<VTKPlotter*> > active_plotters;
 
-    // Initialization common to all constructors.
-    // Setup all pipeline objects and connect them.
+    // Initialization common to all constructors.  Setup all pipeline
+    // objects and connect them.
     void init();
 
     // Has init been called
@@ -293,7 +291,8 @@ namespace dolfin
     // Rescales ranges and glyphs
     void rescale();
 
-    // Set the title parameter from the name and label of the Variable to plot
+    // Set the title parameter from the name and label of the Variable
+    // to plot
     void set_title_from(const Variable &variable);
 
     // Return the hover-over help text
@@ -308,7 +307,8 @@ namespace dolfin
     // The number of plotted frames
     std::size_t _frame_counter;
 
-    // The window id (derived from Variable::id unless overridden by user)
+    // The window id (derived from Variable::id unless overridden by
+    // user)
     std::string _key;
 
     // Counter for the automatically named hardcopies
@@ -321,7 +321,8 @@ namespace dolfin
     // destroyed.
     std::shared_ptr<std::list<VTKPlotter*> > active_plotters_local_copy;
 
-    // Usually false, but if true ('Q' keyboard binding) then all event loops are skipped.
+    // Usually false, but if true ('Q' keyboard binding) then all
+    // event loops are skipped.
     static bool run_to_end;
   };
 

@@ -37,24 +37,18 @@ the unit square. In this example, we will let the mesh consist of 32 x
    pair: FunctionSpace; Discontinuous Raviart-Thomas
    pair: FunctionSpace; Lagrange
 
-Next, we need to define the function spaces. We define the two
-function spaces :math:`\Sigma_h = DRT` and :math:`V_h = CG`
-separately, before combining these into a mixed function space:
+Next, we need to build the function space.
 
 .. code-block:: python
 
-    # Define function spaces and mixed (product) space
-    DRT = FunctionSpace(mesh, "DRT", 2)
-    CG = FunctionSpace(mesh, "CG", 3)
-    W = DRT * CG
+    # Define finite elements spaces and build mixed space
+    DRT = FiniteElement("DRT", mesh.ufl_cell(), 2)
+    CG  = FiniteElement("CG", mesh.ufl_cell(), 3)
+    W = FunctionSpace(mesh, DRT * CG)
 
 The second argument to :py:class:`FunctionSpace
-<dolfin.functions.functionspace.FunctionSpace>` specifies the type of
-finite element family, while the third argument specifies the
-polynomial degree. The UFL user manual contains a list of all
-available finite element families and more details.  The * operator
-creates a mixed (product) space ``W`` from the two separate spaces
-``DRT`` and ``CG``. Hence,
+<dolfin.functions.functionspace.FunctionSpace>` specifies underlying
+finite element, here mixed element obtained by ``*`` operator.
 
 .. math::
 
@@ -77,8 +71,8 @@ source functions :math:`f` and :math:`g`. This is done just as for the
 .. code-block:: python
 
     # Define source functions
-    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-    g = Expression("sin(5.0*x[0])")
+    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
+    g = Expression("sin(5.0*x[0])", degree=2)
 
 We are now ready to define the variational forms a and L.
 
@@ -96,10 +90,10 @@ to be applied to, the data for the boundary condition, and the
 relevant part of the boundary.
 
 We want to apply the boundary condition to the second subspace of the
-mixed space. Subspaces of a :py:class:`MixedFunctionSpace
-<dolfin.functions.functionspace.MixedFunctionSpace>` can be accessed
+mixed space. Subspaces of a mixed :py:class:`FunctionSpace
+<dolfin.functions.functionspace.FunctionSpace>` can be accessed
 by the method :py:func:`sub
-<dolfin.functions.functionspace.FunctionSpaceBase.sub>`. In our case,
+<dolfin.functions.functionspace.FunctionSpace.sub>`. In our case,
 this reads ``W.sub(1)``. (Do *not* use the separate space ``CG`` as
 this would mess up the numbering.)
 

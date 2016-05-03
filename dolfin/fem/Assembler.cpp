@@ -132,7 +132,8 @@ void Assembler::assemble_cells(
   Timer timer("Assemble cells");
 
   // Extract mesh
-  const Mesh& mesh = a.mesh();
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
 
   // Form rank
   const std::size_t form_rank = ufc.form.rank();
@@ -156,7 +157,7 @@ void Assembler::assemble_cells(
 
   // Assemble over cells
   ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   Progress p(AssemblerBase::progress_message(A.rank(), "cells"),
              mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -174,8 +175,8 @@ void Assembler::assemble_cells(
 
     // Update to current cell
     cell->get_cell_data(ufc_cell);
-    cell->get_vertex_coordinates(vertex_coordinates);
-    ufc.update(*cell, vertex_coordinates, ufc_cell,
+    cell->get_coordinate_dofs(coordinate_dofs);
+    ufc.update(*cell, coordinate_dofs, ufc_cell,
                integral->enabled_coefficients());
 
     // Get local-to-global dof maps for cell
@@ -192,7 +193,7 @@ void Assembler::assemble_cells(
 
     // Tabulate cell tensor
     integral->tabulate_tensor(ufc.A.data(), ufc.w(),
-                              vertex_coordinates.data(),
+                              coordinate_dofs.data(),
                               ufc_cell.orientation);
 
     // Add entries to global tensor. Either store values cell-by-cell
@@ -221,7 +222,8 @@ void Assembler::assemble_exterior_facets(
   Timer timer("Assemble exterior facets");
 
   // Extract mesh
-  const Mesh& mesh = a.mesh();
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
 
   // Form rank
   const std::size_t form_rank = ufc.form.rank();
@@ -249,7 +251,7 @@ void Assembler::assemble_exterior_facets(
 
   // Assemble over exterior facets (the cells of the boundary)
   ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   Progress p(AssemblerBase::progress_message(A.rank(), "exterior facets"),
              mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -282,10 +284,10 @@ void Assembler::assemble_exterior_facets(
 
     // Update UFC cell
     mesh_cell.get_cell_data(ufc_cell, local_facet);
-    mesh_cell.get_vertex_coordinates(vertex_coordinates);
+    mesh_cell.get_coordinate_dofs(coordinate_dofs);
 
     // Update UFC object
-    ufc.update(mesh_cell, vertex_coordinates, ufc_cell,
+    ufc.update(mesh_cell, coordinate_dofs, ufc_cell,
                integral->enabled_coefficients());
 
     // Get local-to-global dof maps for cell
@@ -295,7 +297,7 @@ void Assembler::assemble_exterior_facets(
     // Tabulate exterior facet tensor
     integral->tabulate_tensor(ufc.A.data(),
                               ufc.w(),
-                              vertex_coordinates.data(),
+                              coordinate_dofs.data(),
                               local_facet,
                               ufc_cell.orientation);
 
@@ -322,7 +324,8 @@ void Assembler::assemble_interior_facets(
   Timer timer("Assemble interior facets");
 
   // Extract mesh and coefficients
-  const Mesh& mesh = a.mesh();
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
 
   // MPI rank
   const int my_mpi_rank = MPI::rank(mesh.mpi_comm());
@@ -355,7 +358,7 @@ void Assembler::assemble_interior_facets(
 
   // Assemble over interior facets (the facets of the mesh)
   ufc::cell ufc_cell[2];
-  std::vector<double> vertex_coordinates[2];
+  std::vector<double> coordinate_dofs[2];
   Progress p(AssemblerBase::progress_message(A.rank(), "interior facets"),
              mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -395,12 +398,12 @@ void Assembler::assemble_interior_facets(
 
     // Update to current pair of cells
     cell0.get_cell_data(ufc_cell[0], local_facet0);
-    cell0.get_vertex_coordinates(vertex_coordinates[0]);
+    cell0.get_coordinate_dofs(coordinate_dofs[0]);
     cell1.get_cell_data(ufc_cell[1], local_facet1);
-    cell1.get_vertex_coordinates(vertex_coordinates[1]);
+    cell1.get_coordinate_dofs(coordinate_dofs[1]);
 
-    ufc.update(cell0, vertex_coordinates[0], ufc_cell[0],
-               cell1, vertex_coordinates[1], ufc_cell[1],
+    ufc.update(cell0, coordinate_dofs[0], ufc_cell[0],
+               cell1, coordinate_dofs[1], ufc_cell[1],
                integral->enabled_coefficients());
 
     // Tabulate dofs for each dimension on macro element
@@ -426,8 +429,8 @@ void Assembler::assemble_interior_facets(
     // Tabulate interior facet tensor on macro element
     integral->tabulate_tensor(ufc.macro_A.data(),
                               ufc.macro_w(),
-                              vertex_coordinates[0].data(),
-                              vertex_coordinates[1].data(),
+                              coordinate_dofs[0].data(),
+                              coordinate_dofs[1].data(),
                               local_facet0,
                               local_facet1,
                               ufc_cell[0].orientation,
@@ -468,7 +471,8 @@ void Assembler::assemble_vertices(
   Timer timer("Assemble vertices");
 
   // Extract mesh
-  const Mesh& mesh = a.mesh();
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
 
   // Compute cell and vertex - cell connectivity if not already
   // computed
@@ -559,7 +563,7 @@ void Assembler::assemble_vertices(
 
   // Assemble over vertices
   ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   Progress p(AssemblerBase::progress_message(A.rank(), "vertices"),
              mesh.num_vertices());
   for (VertexIterator vert(mesh); !vert.end(); ++vert)
@@ -611,16 +615,16 @@ void Assembler::assemble_vertices(
 
     // Update UFC cell
     mesh_cell.get_cell_data(ufc_cell);
-    mesh_cell.get_vertex_coordinates(vertex_coordinates);
+    mesh_cell.get_coordinate_dofs(coordinate_dofs);
 
     // Update UFC object
-    ufc.update(mesh_cell, vertex_coordinates, ufc_cell,
+    ufc.update(mesh_cell, coordinate_dofs, ufc_cell,
                integral->enabled_coefficients());
 
     // Tabulate vertex tensor
     integral->tabulate_tensor(ufc.A.data(),
                               ufc.w(),
-                              vertex_coordinates.data(),
+                              coordinate_dofs.data(),
                               local_vertex,
                               ufc_cell.orientation);
 

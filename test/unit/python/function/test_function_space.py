@@ -42,8 +42,10 @@ def W(mesh):
     return VectorFunctionSpace(mesh, 'CG', 1)
 
 @fixture
-def Q(W, V):
-    return W*V
+def Q(mesh):
+    W = VectorElement('CG', mesh.ufl_cell(), 1)
+    V = FiniteElement('CG', mesh.ufl_cell(), 1)
+    return FunctionSpace(mesh, W*V)
 
 @fixture
 def f(V):
@@ -64,22 +66,19 @@ def W2(g):
 
 def test_python_interface(V, V2, W, W2, Q):
     # Test Python interface of cpp generated FunctionSpace
-    assert isinstance(V, FunctionSpaceBase)
-    assert isinstance(W, FunctionSpaceBase)
-    assert isinstance(V2, FunctionSpaceBase)
-    assert isinstance(W2, FunctionSpaceBase)
+    assert isinstance(V, FunctionSpace)
+    assert isinstance(W, FunctionSpace)
+    assert isinstance(V2, FunctionSpace)
+    assert isinstance(W2, FunctionSpace)
 
-    assert V.cell() == V2.cell()
-    assert W.cell() == W2.cell()
+    assert V.ufl_cell() == V2.ufl_cell()
+    assert W.ufl_cell() == W2.ufl_cell()
     assert V.dolfin_element().signature() == V2.dolfin_element().signature()
     assert W.dolfin_element().signature() == W2.dolfin_element().signature()
     assert V.ufl_element() == V2.ufl_element()
     assert W.ufl_element() == W2.ufl_element()
     assert W.id() == W2.id()
     assert V.id() == V2.id()
-
-    Q2 = W2*V2
-    assert Q2.dim() == Q.dim()
 
 def test_component(V, W, Q):
     assert not W.component()
@@ -123,7 +122,7 @@ def test_collapse(W, V):
     Vs = W.sub(2)
     with pytest.raises(RuntimeError):
         Function(Vs)
-    assert Vs.dofmap().cell_dofs(0)[0] !=  V.dofmap().cell_dofs(0)[0]
+    assert Vs.dofmap().cell_dofs(0)[0] != V.dofmap().cell_dofs(0)[0]
 
     # Collapse the space it should now be the same as V
     Vc, dofmap_new_old = Vs.collapse(True)
@@ -133,7 +132,8 @@ def test_collapse(W, V):
     assert len(f0.vector()) == len(f1.vector())
 
 def test_argument_equality(mesh, V, V2, W, W2):
-    "Placed this test here because it's mainly about detecting differing function spaces."
+    """Placed this test here because it's mainly about detecting differing
+function spaces."""
     mesh2 = UnitCubeMesh(8, 8, 8)
     V3 = FunctionSpace(mesh2, 'CG', 1)
     W3 = VectorFunctionSpace(mesh2, 'CG', 1)
@@ -146,8 +146,8 @@ def test_argument_equality(mesh, V, V2, W, W2):
         assert v2 == v
         assert V != V3
         assert V2 != V3
-        assert not(v == v3)
-        assert not(v2 == v3)
+        assert not v == v3
+        assert not v2 == v3
         assert v != v3
         assert v2 != v3
         assert v != v3

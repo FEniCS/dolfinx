@@ -24,6 +24,7 @@
 #include "TpetraMatrix.h"
 #include "TpetraVector.h"
 #include "TpetraFactory.h"
+#include "Amesos2LUSolver.h"
 
 using namespace dolfin;
 
@@ -31,30 +32,27 @@ using namespace dolfin;
 TpetraFactory TpetraFactory::factory;
 
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericMatrix> TpetraFactory::create_matrix() const
+std::shared_ptr<GenericMatrix> TpetraFactory::create_matrix(MPI_Comm comm) const
 {
-  std::shared_ptr<GenericMatrix> A(new TpetraMatrix);
-  return A;
+  return std::make_shared<TpetraMatrix>();
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericVector> TpetraFactory::create_vector() const
+std::shared_ptr<GenericVector> TpetraFactory::create_vector(MPI_Comm comm) const
 {
-  std::shared_ptr<GenericVector> x(new TpetraVector);
-  return x;
+  return std::make_shared<TpetraVector>(comm);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<TensorLayout>
 TpetraFactory::create_layout(std::size_t rank) const
 {
-  bool sparsity = false;
+  TensorLayout::Sparsity sparsity = TensorLayout::Sparsity::DENSE;
   if (rank > 1)
-    sparsity = true;
-  std::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
-  return pattern;
+    sparsity = TensorLayout::Sparsity::SPARSE;
+  return std::make_shared<TensorLayout>(0, sparsity);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearOperator>
-TpetraFactory::create_linear_operator() const
+TpetraFactory::create_linear_operator(MPI_Comm comm) const
 {
   std::shared_ptr<GenericLinearOperator> A; //(new TpetraLinearOperator);
   dolfin_not_implemented();
@@ -63,20 +61,22 @@ TpetraFactory::create_linear_operator() const
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLUSolver>
-TpetraFactory::create_lu_solver(std::string method) const
+TpetraFactory::create_lu_solver(MPI_Comm comm, std::string method) const
 {
-  std::shared_ptr<GenericLUSolver> solver; //(new TpetraLUSolver(method));
-  dolfin_not_implemented();
-  return solver;
+  return std::make_shared<Amesos2LUSolver>(method);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearSolver>
-TpetraFactory::create_krylov_solver(std::string method,
+TpetraFactory::create_krylov_solver(MPI_Comm comm,
+                                    std::string method,
                                     std::string preconditioner) const
 {
-  std::shared_ptr<GenericLinearSolver>
-    solver(new BelosKrylovSolver(method, preconditioner));
-  return solver;
+  return std::make_shared<BelosKrylovSolver>(method, preconditioner);
+}
+//-----------------------------------------------------------------------------
+std::map<std::string, std::string> TpetraFactory::lu_solver_methods() const
+{
+  return Amesos2LUSolver::methods();
 }
 //-----------------------------------------------------------------------------
 std::map<std::string, std::string> TpetraFactory::krylov_solver_methods() const

@@ -63,14 +63,6 @@ namespace dolfin
   ///         _Table_ with timings
   Table timings(TimingClear clear, std::set<TimingType> type);
 
-  /// **DEPRECATED**: List a summary of timings and tasks, optionally clearing
-  /// stored timings. ``MPI_AVG`` reduction is printed. Collective on
-  /// ``MPI_COMM_WORLD``. Only wall time is printed.
-  void list_timings(bool reset=false);
-  // NOTE: Function marked as 'collective on COMM_WORLD' (instead of
-  //       'collective on Logger::mpi_comm()') as user has no clue what the
-  //       function has to do with Logger
-
   /// List a summary of timings and tasks, optionally clearing stored timings.
   /// ``MPI_AVG`` reduction is printed. Collective on ``MPI_COMM_WORLD``.
   ///

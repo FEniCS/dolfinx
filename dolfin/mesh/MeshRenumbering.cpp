@@ -172,7 +172,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   new_connections.resize(connections_size);
 
   const std::size_t coordinates_size
-    = mesh.geometry().size()*mesh.geometry().dim();
+    = mesh.geometry().num_vertices()*mesh.geometry().dim();
   new_coordinates.resize(coordinates_size);
 
   typedef std::map<std::vector<std::size_t>, std::pair<std::vector<std::size_t>,

@@ -23,6 +23,7 @@
 #ifndef __SPARSITY_PATTERN_H
 #define __SPARSITY_PATTERN_H
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -31,15 +32,16 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
-#include "GenericSparsityPattern.h"
 
 namespace dolfin
 {
 
-  /// This class implements the GenericSparsityPattern interface.  It
-  /// is used by most linear algebra backends.
+  class IndexMap;
 
-  class SparsityPattern : public GenericSparsityPattern
+  /// This class implements a sparsity pattern data structure.  It is
+  /// used by most linear algebra backends.
+
+  class SparsityPattern
   {
 
     // NOTE: Do not change this typedef without performing careful
@@ -49,40 +51,44 @@ namespace dolfin
 
   public:
 
+    enum class Type {sorted, unsorted};
+
     /// Create empty sparsity pattern
     SparsityPattern(std::size_t primary_dim);
 
     /// Create sparsity pattern for a generic tensor
-    SparsityPattern(
-      const MPI_Comm mpi_comm,
-      const std::vector<std::size_t>& dims,
-      const std::vector<std::pair<std::size_t,
-      std::size_t> >& ownership_range,
-      const std::vector<ArrayView<const std::size_t> >& local_to_global,
-      const std::vector<ArrayView<const int> >& off_process_owner,
-      const std::vector<std::size_t>& block_sizes,
-      const std::size_t primary_dim);
+    SparsityPattern(MPI_Comm mpi_comm,
+                    std::vector<std::shared_ptr<const IndexMap>> index_maps,
+                    std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
-    void init(
-      const MPI_Comm mpi_comm,
-      const std::vector<std::size_t>& dims,
-      const std::vector<std::pair<std::size_t,
-      std::size_t> >& ownership_range,
-      const std::vector<ArrayView<const std::size_t> >& local_to_global,
-      const std::vector<ArrayView<const int> >& off_process_owner,
-      const std::vector<std::size_t>& block_sizes);
+    void init(MPI_Comm mpi_comm,
+              std::vector<std::shared_ptr<const IndexMap>> index_maps);
+
+    /// Insert a global entry - will be fixed by apply()
+    void insert_global(dolfin::la_index i, dolfin::la_index j);
 
     /// Insert non-zero entries using global indices
     void insert_global(const std::vector<
-                       ArrayView<const dolfin::la_index> >& entries);
+                       ArrayView<const dolfin::la_index>>& entries);
 
     /// Insert non-zero entries using local (process-wise) indices
     void insert_local(const std::vector<
-                      ArrayView<const dolfin::la_index> >& entries);
+                      ArrayView<const dolfin::la_index>>& entries);
+
+    /// Insert full rows (or columns, according to primary dimension)
+    /// using local (process-wise) indices. This must be called before
+    /// any other sparse insertion occurs to avoid quadratic complexity
+    /// of dense rows insertion
+    void insert_full_rows_local(const std::vector<std::size_t>& rows);
 
     /// Return rank
     std::size_t rank() const;
+
+    /// Return primary dimension (e.g., 0=row partition, 1=column
+    /// partition)
+    std::size_t primary_dim() const
+    { return _primary_dim; }
 
     /// Return local range for dimension dim
     std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const;
@@ -97,7 +103,9 @@ namespace dolfin
 
     /// Fill array with number of nonzeros for off-diagonal block in
     /// local_range for dimension 0. For matrices, fill array with
-    /// number of nonzeros per local row for off-diagonal block
+    /// number of nonzeros per local row for off-diagonal block. If
+    /// there is no off-diagonal pattern, the vector is resized to
+    /// zero-length
     void
       num_nonzeros_off_diagonal(std::vector<std::size_t>& num_nonzeros) const;
 
@@ -117,39 +125,41 @@ namespace dolfin
 
     /// Return underlying sparsity pattern (diagonal). Options are
     /// 'sorted' and 'unsorted'.
-    std::vector<std::vector<std::size_t> > diagonal_pattern(Type type) const;
+    std::vector<std::vector<std::size_t>> diagonal_pattern(Type type) const;
 
     /// Return underlying sparsity pattern (off-diagonal). Options are
-    /// 'sorted' and 'unsorted'.
-    std::vector<std::vector<std::size_t> >
-      off_diagonal_pattern(Type type) const;
+    /// 'sorted' and 'unsorted'. Empty vector is returned if there is no
+    /// off-diagonal contribution.
+    std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
 
   private:
 
     // Print some useful information
     void info_statistics() const;
 
+    // Primary sparsity pattern storage dimension (e.g., 0=row
+    // partition, 1=column partition)
+    const std::size_t _primary_dim;
+
     // MPI communicator
     MPI_Comm _mpi_comm;
 
-    // Ownership range for each dimension
-    std::vector<std::pair<std::size_t, std::size_t> > _local_range;
+    // IndexMaps for each dimension
+    std::vector<std::shared_ptr<const IndexMap>> _index_maps;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;
     std::vector<set_type> off_diagonal;
 
+    // List of full rows (or columns, according to primary dimension).
+    // Full rows are kept separately to circumvent quadratic scaling
+    // (caused by linear insertion time into dolfin::Set; std::set has
+    // logarithmic insertion, which would result in N log(N) overall
+    // complexity for dense rows)
+    set_type full_rows;
+
     // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
     std::vector<std::size_t> non_local;
-
-    // Array map from un-owned local indices to global indices
-    std::vector<std::vector<std::size_t> > _local_to_global;
-
-    // Map from non-local vertex to owning process index
-    std::vector<std::vector<int> > _off_process_owner;
-
-    // Block size
-    std::vector<std::size_t> _block_size;
 
   };
 

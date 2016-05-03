@@ -37,24 +37,18 @@ the unit square. In this example, we will let the mesh consist of 32 x
    pair: FunctionSpace; Brezzi-Douglas-Marini
    pair: FunctionSpace; Discontinous Lagrange
 
-Next, we need to define the function spaces. We define the two
-function spaces :math:`\Sigma_h` and :math:`V_h` separately, before
-combining these into a mixed function space:
+Next, we need to build the function space.
 
 .. code-block:: python
 
-    # Define function spaces and mixed (product) space
-    BDM = FunctionSpace(mesh, "BDM", 1)
-    DG = FunctionSpace(mesh, "DG", 0)
-    W = BDM * DG
+    # Define finite elements spaces and build mixed space
+    BDM = FiniteElement("BDM", mesh.ufl_cell(), 1)
+    DG  = FiniteElement("DG", mesh.ufl_cell(), 0)
+    W = FunctionSpace(mesh, BDM * DG)
 
 The second argument to :py:class:`FunctionSpace
-<dolfin.functions.functionspace.FunctionSpace>` specifies the type of
-finite element family, while the third argument specifies the
-polynomial degree. The UFL user manual contains a list of all
-available finite element families and more details.  The * operator
-creates a mixed (product) space ``W`` from the two separate spaces
-``BDM`` and ``DG``. Hence,
+<dolfin.functions.functionspace.FunctionSpace>` specifies underlying
+finite element, here mixed element obtained by ``*`` operator.
 
 .. math::
 
@@ -76,7 +70,7 @@ demo <demo_pde_poisson_python_documentation>`:
 .. code-block:: python
 
     # Define source function
-    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
 
 We are now ready to define the variational forms a and L. Since,
 :math:`u_0 = 0` in this example, the boundary term on the right-hand
@@ -96,10 +90,10 @@ applied to, the data for the boundary condition, and the relevant part
 of the boundary.
 
 We want to apply the boundary condition to the first subspace of the
-mixed space. Subspaces of a :py:class:`MixedFunctionSpace
-<dolfin.functions.functionspace.MixedFunctionSpace>` can be accessed
+mixed space. Subspaces of a mixed :py:class:`FunctionSpace
+<dolfin.functions.functionspace.FunctionSpace>` can be accessed
 by the method :py:func:`sub
-<dolfin.functions.functionspace.FunctionSpaceBase.sub>`. In our case,
+<dolfin.functions.functionspace.FunctionSpace.sub>`. In our case,
 this reads ``W.sub(0)``. (Do *not* use the separate space ``BDM`` as
 this would mess up the numbering.)
 
@@ -124,7 +118,7 @@ to overload the ``value_shape`` method.
 
     # Define function G such that G \cdot n = g
     class BoundarySource(Expression):
-           def __init__(self, mesh):
+           def __init__(self, mesh, **kwargs):
                self.mesh = mesh
            def eval_cell(self, values, x, ufc_cell):
                cell = Cell(self.mesh, ufc_cell.index)
@@ -135,7 +129,7 @@ to overload the ``value_shape`` method.
            def value_shape(self):
                return (2,)
 
-     G = BoundarySource(mesh)
+     G = BoundarySource(mesh, degree=2)
 
 Specifying the relevant part of the boundary can be done as for the
 Poisson demo (but now the top and bottom of the unit square is the

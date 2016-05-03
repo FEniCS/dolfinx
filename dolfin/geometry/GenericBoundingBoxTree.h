@@ -22,6 +22,7 @@
 #define __GENERIC_BOUNDING_BOX_TREE_H
 
 #include <memory>
+#include <sstream>
 #include <set>
 #include <vector>
 #include <dolfin/geometry/Point.h>
@@ -46,6 +47,9 @@ namespace dolfin
     /// Destructor
     virtual ~GenericBoundingBoxTree() {}
 
+    /// Factory function returning (empty) tree of appropriate dimension
+    static std::shared_ptr<GenericBoundingBoxTree> create(unsigned int dim);
+
     /// Build bounding box tree for mesh entities of given dimension
     void build(const Mesh& mesh, std::size_t tdim);
 
@@ -65,6 +69,10 @@ namespace dolfin
     compute_entity_collisions(const Point& point,
                               const Mesh& mesh) const;
 
+    /// Compute all collisions between processes and _Point_
+    std::vector<unsigned int>
+    compute_process_collisions(const Point& point) const;
+
     /// Compute all collisions between entities and _BoundingBoxTree_
     std::pair<std::vector<unsigned int>, std::vector<unsigned int> >
     compute_entity_collisions(const GenericBoundingBoxTree& tree,
@@ -83,6 +91,9 @@ namespace dolfin
 
     /// Compute closest point and distance to _Point_
     std::pair<unsigned int, double> compute_closest_point(const Point& point) const;
+
+    /// Print out for debugging
+    std::string str(bool verbose=false);
 
   protected:
 
@@ -105,7 +116,10 @@ namespace dolfin
     std::vector<double> _bbox_coordinates;
 
     // Point search tree used to accelerate distance queries
-    mutable std::unique_ptr<GenericBoundingBoxTree> _point_search_tree;
+    mutable std::shared_ptr<GenericBoundingBoxTree> _point_search_tree;
+
+    // Global tree for mesh ownership of each process (same on all processes)
+    std::shared_ptr<GenericBoundingBoxTree> _global_tree;
 
     // Clear existing data if any
     void clear();
@@ -336,6 +350,10 @@ namespace dolfin
                 const std::vector<unsigned int>::iterator& begin,
                 const std::vector<unsigned int>::iterator& middle,
                 const std::vector<unsigned int>::iterator& end) = 0;
+
+    // Print out recursively, for debugging
+    void tree_print(std::stringstream& s, unsigned int i);
+
 
   };
 

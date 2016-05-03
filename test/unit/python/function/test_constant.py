@@ -37,9 +37,9 @@ def test_name_argument():
 
 def testConstantInit():
     c0 = Constant(1.)
-    c1 = Constant([2,3], interval)
-    c2 = Constant([[2,3], [3,4]], triangle)
-    c3 = Constant(array([2,3]), tetrahedron)
+    c1 = Constant([2, 3], interval)
+    c2 = Constant([[2, 3], [3, 4]], triangle)
+    c3 = Constant(array([2, 3]), tetrahedron)
 
     # FIXME:
     assert c0.cell() is None
@@ -47,17 +47,18 @@ def testConstantInit():
     assert c2.cell() == triangle
     assert c3.cell() == tetrahedron
 
-    assert c0.shape() == ()
-    assert c1.shape() == (2,)
-    assert c2.shape() == (2,2)
-    assert c3.shape() == (2,)
+    assert c0.ufl_shape == ()
+    assert c1.ufl_shape == (2,)
+    assert c2.ufl_shape == (2, 2)
+    assert c3.ufl_shape == (2,)
 
 
 def testGrad():
     import ufl
-    zero = ufl.constantvalue.Zero((2,3))
+    zero = ufl.constantvalue.Zero((2, 3))
     c0 = Constant(1.)
-    c3 = Constant(array([2,3]), tetrahedron)
+    c3 = Constant(array([2, 3]), tetrahedron)
+
     def gradient(c):
         return grad(c)
     with pytest.raises(UFLException):
@@ -73,13 +74,39 @@ def test_compute_vertex_values():
     e0 = Constant(1)
     e1 = Constant((1, 2, 3))
 
-    #e0_values = zeros(mesh.num_vertices(),dtype='d')
-    #e1_values = zeros(mesh.num_vertices()*3,dtype='d')
+    # e0_values = zeros(mesh.num_vertices(),dtype='d')
+    # e1_values = zeros(mesh.num_vertices()*3,dtype='d')
 
     e0_values = e0.compute_vertex_values(mesh)
     e1_values = e1.compute_vertex_values(mesh)
 
-    assert all(e0_values==1)
-    assert all(e1_values[:mesh.num_vertices()]==1)
-    assert all(e1_values[mesh.num_vertices():mesh.num_vertices()*2]==2)
-    assert all(e1_values[mesh.num_vertices()*2:mesh.num_vertices()*3]==3)
+    assert all(e0_values == 1)
+    assert all(e1_values[:mesh.num_vertices()] == 1)
+    assert all(e1_values[mesh.num_vertices():mesh.num_vertices()*2] == 2)
+    assert all(e1_values[mesh.num_vertices()*2:mesh.num_vertices()*3] == 3)
+
+
+def test_values():
+    import numpy as np
+
+    c0 = Constant(1.)
+    c0_vals = c0.values()
+    assert np.all(c0_vals == np.array([1.], dtype=np.double))
+
+    c1 = Constant((1., 2.))
+    c1_vals = c1.values()
+    assert np.all(c1_vals == np.array([1., 2.], dtype=np.double))
+
+    c2 = Constant((1., 2., 3.))
+    c2_vals = c2.values()
+    assert np.all(c2_vals == np.array([1., 2., 3.], dtype=np.double))
+
+
+def test_str():
+    c0 = Constant(1.)
+    c0.str(False)
+    c0.str(True)
+
+    c1 = Constant((1., 2., 3.))
+    c1.str(False)
+    c1.str(True)

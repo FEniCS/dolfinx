@@ -69,7 +69,7 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
     {
       dolfin_error("HDF5Interface.cpp",
                    "open HDF5 file",
-                   "File does not exist");
+                   "File \"%s\" does not exist", filename.c_str());
     }
 
     if (mode == "a")

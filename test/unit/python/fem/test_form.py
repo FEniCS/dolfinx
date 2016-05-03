@@ -31,39 +31,48 @@ from dolfin_utils.test import skip_in_parallel, fixture
 
 @fixture
 def square():
-    return UnitSquareMesh(2, 2)
+    return UnitSquareMesh(8, 8)
+
 
 @fixture
 def square_boundary(square):
     return BoundaryMesh(square, "exterior")
 
+
 @fixture
 def cube_boundary(cube):
     return BoundaryMesh(cube, "exterior")
+
 
 @fixture
 def cube():
     return UnitCubeMesh(2, 2, 2)
 
+
 @fixture
 def V1(square_boundary):
     return FunctionSpace(square_boundary, "CG", 1)
+
 
 @fixture
 def VV1(square_boundary):
     return VectorFunctionSpace(square_boundary, "CG", 1)
 
+
 @fixture
 def Q1(square_boundary):
     return FunctionSpace(square_boundary, "DG", 0)
+
 
 @fixture
 def V2(cube_boundary):
     return FunctionSpace(cube_boundary, "CG", 1)
 
+
 @fixture
 def VV2(cube_boundary):
     return VectorFunctionSpace(cube_boundary, "CG", 1)
+
 
 @fixture
 def Q2(cube_boundary):
@@ -71,6 +80,10 @@ def Q2(cube_boundary):
 
 
 def test_assemble_functional(V1, V2):
+
+    mesh = V1.mesh()
+    surfacearea = assemble(1*dx(mesh))
+    assert round(surfacearea - 4.0, 7) == 0
 
     u = Function(V1)
     u.vector()[:] = 1.0
@@ -82,12 +95,12 @@ def test_assemble_functional(V1, V2):
     surfacearea = assemble(u*dx)
     assert round(surfacearea - 6.0, 7) == 0
 
-    f = Expression("1.0")
+    f = Expression("1.0", degree=0)
     u = interpolate(f, V1)
     surfacearea = assemble(u*dx)
     assert round(surfacearea - 4.0, 7) == 0
 
-    f = Expression("1.0")
+    f = Expression("1.0", degree=0)
     u = interpolate(f, V2)
     surfacearea = assemble(u*dx)
     assert round(surfacearea - 6.0, 7) == 0
@@ -99,7 +112,7 @@ def test_assemble_linear(V1, Q1, square_boundary, V2, Q2, cube_boundary):
     w = TestFunction(Q1)
     u.vector()[:] = 0.5
     facetareas = MPI.sum(square_boundary.mpi_comm(),
-                          assemble(u*w*dx).array().sum())
+                         assemble(u*w*dx).array().sum())
     assert round(facetareas - 2.0, 7) == 0
 
     u = Function(V2)
@@ -124,7 +137,7 @@ def test_assemble_linear(V1, Q1, square_boundary, V2, Q2, cube_boundary):
     a = MPI.sum(mesh.mpi_comm(),
                 assemble(inner(u, v)*ds).array().sum())
     b = MPI.sum(bdry.mpi_comm(),
-                 assemble(inner(bu, bv)*dx).array().sum())
+                assemble(inner(bu, bv)*dx).array().sum())
     assert round(a - b, 7) == 0
 
 
@@ -139,7 +152,7 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
     bv = TestFunction(V1)
 
     a = MPI.sum(square.mpi_comm(),
-                 assemble(inner(u, v)*ds).array().sum())
+                assemble(inner(u, v)*ds).array().sum())
     b = MPI.sum(square_boundary.mpi_comm(),
                 assemble(inner(bu, bv)*dx).array().sum())
     assert round(a - b, 7) == 0
@@ -149,10 +162,13 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
     bottom = FacetFunctionSizet(square)
     bottom.set_all(0)
     subdomain.mark(bottom, 1)
-    dss = ds[bottom]
+    dss = ds(subdomain_data=bottom)
     foo = MPI.sum(square.mpi_comm(),
-               abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
-    # Assemble over all cells of submesh created from subset of boundary mesh
+                  abs(assemble(inner(grad(u)[0],
+                                     grad(v)[0])*dss(1)).array()).sum())
+
+    # Assemble over all cells of submesh created from subset of
+    # boundary mesh
     bottom2 = CellFunctionSizet(square_boundary)
     bottom2.set_all(0)
     subdomain.mark(bottom2, 1)
@@ -160,7 +176,8 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
     bu = TrialFunction(BV)
     bv = TestFunction(BV)
     bar = MPI.sum(square_boundary.mpi_comm(),
-                  abs(assemble(inner(grad(bu)[0], grad(bv)[0])*dx).array()).sum())
+                  abs(assemble(inner(grad(bu)[0],
+                                     grad(bv)[0])*dx).array()).sum())
     # Should give same result
     assert round(bar - foo, 7) == 0
 
@@ -187,10 +204,13 @@ def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
     bottom = FacetFunctionSizet(cube)
     bottom.set_all(0)
     subdomain.mark(bottom, 1)
-    dss = ds[bottom]
+    dss = ds(subdomain_data=bottom)
     foo = MPI.sum(cube.mpi_comm(),
-               abs(assemble(inner(grad(u)[0], grad(v)[0])*dss(1)).array()).sum())
-    # Assemble over all cells of submesh created from subset of boundary mesh
+                  abs(assemble(inner(grad(u)[0],
+                                     grad(v)[0])*dss(1)).array()).sum())
+
+    # Assemble over all cells of submesh created from subset of
+    # boundary mesh
     bottom2 = CellFunctionSizet(cube_boundary)
     bottom2.set_all(0)
     subdomain.mark(bottom2, 1)
@@ -198,7 +218,9 @@ def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
     bu = TrialFunction(BV)
     bv = TestFunction(BV)
     bar = MPI.sum(cube_boundary.mpi_comm(),
-                   abs(assemble(inner(grad(bu)[0], grad(bv)[0])*dx).array()).sum())
+                  abs(assemble(inner(grad(bu)[0],
+                                     grad(bv)[0])*dx).array()).sum())
+
     # Should give same result
     assert round(bar - foo, 7) == 0
 
@@ -210,38 +232,56 @@ def base():
     square = UnitSquareMesh(n, n)
 
     square3d = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n), "exterior"), plane)
-    global_normal = Expression(("0.0", "1.0", "0.0"))
+    global_normal = Expression(("0.0", "1.0", "0.0"), degree=0)
     square3d.init_cell_orientations(global_normal)
 
-    RT2 = FunctionSpace(square, "RT", 1)
-    RT3 = FunctionSpace(square3d, "RT", 1)
-    DG2 = FunctionSpace(square, "DG", 0)
-    DG3 = FunctionSpace(square3d, "DG", 0)
+    RT2 = FiniteElement("RT", square.ufl_cell(), 1)
+    RT3 = FiniteElement("RT", square3d.ufl_cell(), 1)
+    DG2 = FiniteElement("DG", square.ufl_cell(), 0)
+    DG3 = FiniteElement("DG", square3d.ufl_cell(), 0)
 
-    return [(RT2, RT3), (DG2, DG3)]
+    return [(RT2, RT3), (DG2, DG3), (square, square3d)]
+
 
 @fixture
 def RT2(base):
-    return base[0][0]
+    return FunctionSpace(base[2][0], base[0][0])
+
 
 @fixture
 def RT3(base):
-    return base[0][1]
+    return FunctionSpace(base[2][1], base[0][1])
+
 
 @fixture
 def W2(base):
-    return base[0][0] * base[1][0]
+    """ RT2 * DG2 """
+    return FunctionSpace(base[2][0], base[0][0] * base[1][0])
+
 
 @fixture
 def W3(base):
-    return base[0][1] * base[1][1]
+    """ RT3 * DG3 """
+    return FunctionSpace(base[2][1], base[0][1] * base[1][1])
+
+
+@fixture
+def QQ2(base):
+    """ DG2 * DG2 """
+    return FunctionSpace(base[2][0], base[1][0] * base[1][0])
+
+
+@fixture
+def QQ3(base):
+    """ DG3 * DG3 """
+    return FunctionSpace(base[2][1], base[1][1] * base[1][1])
 
 
 @skip_in_parallel
 def test_basic_rt(RT2, RT3):
 
-    f2 = Expression(("2.0", "1.0"))
-    f3 = Expression(("1.0", "0.0", "2.0"))
+    f2 = Expression(("2.0", "1.0"), degree=0)
+    f3 = Expression(("1.0", "0.0", "2.0"), degree=0)
 
     u2 = TrialFunction(RT2)
     u3 = TrialFunction(RT3)
@@ -251,8 +291,8 @@ def test_basic_rt(RT2, RT3):
     # Project
     pw2 = project(f2, RT2)
     pw3 = project(f3, RT3)
-    pa2 = assemble(inner(pw2, pw2)*dx)
-    pa3 = assemble(inner(pw3, pw3)*dx)
+    pa2 = assemble(pw2**2*dx)
+    pa3 = assemble(pw3**2*dx)
 
     # Project explicitly
     a2 = inner(u2, v2)*dx
@@ -267,15 +307,18 @@ def test_basic_rt(RT2, RT3):
     b3 = assemble(L3)
     solve(A2, w2.vector(), b2)
     solve(A3, w3.vector(), b3)
-    a2 = assemble(inner(w2, w2)*dx)
-    a3 = assemble(inner(w3, w3)*dx)
+    a2 = assemble(w2**2*dx)
+    a3 = assemble(w3**2*dx)
 
     # Compare various results
-    assert round((w2.vector() - pw2.vector()).norm("l2") - 0.0, 5) == 0
+    assert round((w2.vector() - pw2.vector()).norm("l2"), 4) == 0
+    assert round((w3.vector() - pw3.vector()).norm("l2"), 4) == 0
+    # 2d
+    assert round(a2 - 5.0, 7) == 0
+    assert round(pa2 - 5.0, 7) == 0
+    # 3d
     assert round(a3 - 5.0, 7) == 0
-    assert round(a2 - a3, 7) == 0
-    assert round(pa2 - a2, 7) == 0
-    assert round(pa2 - pa3, 6) == 0
+    assert round(pa3 - 5.0, 6) == 0
 
 
 @skip_in_parallel
@@ -307,38 +350,47 @@ def test_mixed_poisson_solve(W2, W3):
 def m():
     return 3
 
+
 @fixture
 def cube(m):
     return UnitCubeMesh(m, m, m)
+
 
 @fixture
 def cube_boundary(cube):
     return BoundaryMesh(cube, "exterior")
 
+
 @fixture
 def plane():
     return CompiledSubDomain("near(x[1], 0.0)")
+
 
 @fixture
 def square_boundary_(m):
     square = UnitSquareMesh(m, m)
     return BoundaryMesh(square, "exterior")
 
+
 @fixture
 def line():
     return CompiledSubDomain("near(x[0], 0.0)")
+
 
 @fixture
 def mesh3(cube_boundary, plane):
     return BoundaryMesh(SubMesh(cube_boundary, plane), "exterior")
 
+
 @fixture
 def bottom1(square_boundary_, plane):
     return SubMesh(square_boundary_, plane)
 
+
 @fixture
 def bottom2(cube_boundary, plane):
     return SubMesh(cube_boundary, plane)
+
 
 @fixture
 def bottom3(mesh3, line):
@@ -461,3 +513,49 @@ def test_facetarea(bottom1, bottom2, bottom3, m):
     a = area*ds
     b1 = assemble(a)
     assert round(b0 - b1, 7) == 0
+
+
+@skip_in_parallel
+def test_derivative(QQ2, QQ3):
+    for W in [QQ2, QQ3]:
+        w = Function(W)
+        dim = w.value_dimension(0)
+        w.interpolate(Constant([42.0*(i+1) for i in range(dim)]))
+
+        # Derivative w.r.t. mixed space
+        u, v = split(w)
+        F = u*v*dx
+        dF = derivative(F, w)
+        b1 = assemble(dF)
+
+
+def test_coefficient_derivatives(V1, V2):
+    for V in [V1, V2]:
+        f = Function(V)
+        g = Function(V)
+        v = TestFunction(V)
+        u = TrialFunction(V)
+
+        f.interpolate(Expression("1.0 + x[0] + x[1]", degree=1))
+        g.interpolate(Expression("2.0 + x[0] + x[1]", degree=1))
+
+        # Since g = f + 1, define dg/df = 1
+        cd = {g: 1}
+
+        # Handle relation between g and f in derivative
+        M = g**2*dx
+        L = derivative(M, f, v, coefficient_derivatives=cd)
+        a = derivative(L, f, u, coefficient_derivatives=cd)
+        A0 = assemble(a).norm('frobenius')
+        b0 = assemble(L).norm('l2')
+
+        # Manually construct the above case
+        M = g**2*dx
+        L = 2*g*v*dx
+        a = 2*u*v*dx
+        A1 = assemble(a).norm('frobenius')
+        b1 = assemble(L).norm('l2')
+
+        # Compare
+        assert round(A0 - A1, 7) == 0.0
+        assert round(b0 - b1, 7) == 0.0

@@ -22,7 +22,7 @@ First, the :py:mod:`dolfin` module is imported:
 
 .. code-block:: python
 
-	from dolfin import *
+    from dolfin import *
 
 Then, we define a mesh of the domain. We use the built-in mesh,
 provided by the class :py:class:`UnitSquareMesh
@@ -32,8 +32,8 @@ into two triangles, we do as follows:
 
 .. code-block:: python
 
-	# Create mesh
-	mesh = UnitSquareMesh(32, 32)
+    # Create mesh
+    mesh = UnitSquareMesh(32, 32)
 
 Now, we create mesh functions to store the values of the conductivity
 matrix as it varies over the domain.  Since the matrix is symmetric,
@@ -47,10 +47,10 @@ and the second the topological dimension of the mesh function.
 
 .. code-block:: python
 
-	# Create mesh functions for c00, c01, c11
-	c00 = MeshFunction("double", mesh, 2)
-	c01 = MeshFunction("double", mesh, 2)
-	c11 = MeshFunction("double", mesh, 2)
+    # Create mesh functions for c00, c01, c11
+    c00 = MeshFunction("double", mesh, 2)
+    c01 = MeshFunction("double", mesh, 2)
+    c11 = MeshFunction("double", mesh, 2)
 
 To set the values of the mesh functions, we go through all the cells
 in the mesh and check whether the midpoint value of the cell in the
@@ -61,42 +61,42 @@ on which half we are in.
 
 .. code-block:: python
 
-	# Iterate over mesh and set values
-	for cell in cells(mesh):
-	    if cell.midpoint().x() < 0.5:
-			c00[cell] = 1.0
-			c01[cell] = 0.3
-			c11[cell] = 2.0
-	    else:
-			c00[cell] = 3.0
-			c01[cell] = 0.5
-			c11[cell] = 4.0
+    # Iterate over mesh and set values
+    for cell in cells(mesh):
+        if cell.midpoint().x() < 0.5:
+            c00[cell] = 1.0
+            c01[cell] = 0.3
+            c11[cell] = 2.0
+        else:
+            c00[cell] = 3.0
+            c01[cell] = 0.5
+            c11[cell] = 4.0
 
 Create files to store data and save to file:
 
 .. code-block:: python
 
-	# Store to file
-	mesh_file = File("../unitsquare_32_32.xml.gz")
-	c00_file = File("../unitsquare_32_32_c00.xml.gz")
-	c01_file = File("../unitsquare_32_32_c01.xml.gz")
-	c11_file = File("../unitsquare_32_32_c11.xml.gz")
+    # Store to file
+    mesh_file = File("../unitsquare_32_32.xml.gz")
+    c00_file = File("../unitsquare_32_32_c00.xml.gz")
+    c01_file = File("../unitsquare_32_32_c01.xml.gz")
+    c11_file = File("../unitsquare_32_32_c11.xml.gz")
 
-	mesh_file << mesh
-	c00_file << c00
-	c01_file << c01
-	c11_file << c11
+    mesh_file << mesh
+    c00_file << c00
+    c01_file << c01
+    c11_file << c11
 
 Plot the mesh functions using the ``plot`` function:
 
 .. code-block:: python
 
-	# Plot mesh functions
-	plot(c00, title="C00")
-	plot(c01, title="C01")
-	plot(c11, title="C11")
+    # Plot mesh functions
+    plot(c00, title="C00")
+    plot(c01, title="C01")
+    plot(c11, title="C11")
 
-	interactive()
+    interactive()
 
 Implementation of tensor-weighted-poisson.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -110,7 +110,7 @@ First, the :py:mod:`dolfin` module is imported:
 
 .. code-block:: python
 
-	from dolfin import *
+    from dolfin import *
 
 We proceed by defining a mesh of the domain and a finite element
 function space :math:`V` relative to this mesh. We read the mesh file
@@ -119,9 +119,9 @@ space in the following way:
 
 .. code-block:: python
 
-	# Read mesh from file and create function space
-	mesh = Mesh("../unitsquare_32_32.xml.gz")
-	V = FunctionSpace(mesh, "Lagrange", 1)
+    # Read mesh from file and create function space
+    mesh = Mesh("../unitsquare_32_32.xml.gz")
+    V = FunctionSpace(mesh, "Lagrange", 1)
 
 The second argument to :py:class:`FunctionSpace
 <dolfin.cpp.function.FunctionSpace>` is the finite element family,
@@ -143,9 +143,9 @@ small number (such as machine precision).)
 
 .. code-block:: python
 
-	# Define Dirichlet boundary (x = 0 or x = 1)
-	def boundary(x):
-	    return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
+    # Define Dirichlet boundary (x = 0 or x = 1)
+    def boundary(x):
+        return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
 
 Now, the Dirichlet boundary condition can be created using the class
 :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`.  A
@@ -161,9 +161,9 @@ condition then looks as follows:
 
 .. code-block:: python
 
-	# Define boundary condition
-	u0 = Constant(0.0)
-	bc = DirichletBC(V, u0, boundary)
+    # Define boundary condition
+    u0 = Constant(0.0)
+    bc = DirichletBC(V, u0, boundary)
 
 Before we define the conductivity matrix, we create a string
 containing C++ code for evaluation of the conductivity. Later we will
@@ -173,33 +173,33 @@ matrix.
 
 .. code-block:: python
 
-	# Code for C++ evaluation of conductivity
-	conductivity_code = """
+    # Code for C++ evaluation of conductivity
+    conductivity_code = """
 
-	class Conductivity : public Expression
-	{
-	public:
+    class Conductivity : public Expression
+    {
+    public:
 
-	  // Create expression with 3 components
-	  Conductivity() : Expression(3) {}
+      // Create expression with 3 components
+      Conductivity() : Expression(3) {}
 
-	  // Function for evaluating expression on each cell
-	  void eval(Array<double>& values, const Array<double>& x, const ufc::cell& cell) const
-	  {
-	    const uint D = cell.topological_dimension;
-	    const uint cell_index = cell.index;
-	    values[0] = (*c00)[cell_index];
-	    values[1] = (*c01)[cell_index];
-	    values[2] = (*c11)[cell_index];
-	  }
+      // Function for evaluating expression on each cell
+      void eval(Array<double>& values, const Array<double>& x, const ufc::cell& cell) const
+      {
+        const uint D = cell.topological_dimension;
+        const uint cell_index = cell.index;
+        values[0] = (*c00)[cell_index];
+        values[1] = (*c01)[cell_index];
+        values[2] = (*c11)[cell_index];
+      }
 
-	  // The data stored in mesh functions
-	  std::shared_ptr<MeshFunction<double> > c00;
-	  std::shared_ptr<MeshFunction<double> > c01;
-	  std::shared_ptr<MeshFunction<double> > c11;
+      // The data stored in mesh functions
+      std::shared_ptr<MeshFunction<double> > c00;
+      std::shared_ptr<MeshFunction<double> > c01;
+      std::shared_ptr<MeshFunction<double> > c11;
 
-	};
-	"""
+    };
+    """
 
 We define the conductivity matrix by first creating mesh functions
 from the files we stored in :download:`generate_data.py`.  Here, the
@@ -212,16 +212,16 @@ expressions.
 
 .. code-block:: python
 
-	# Define conductivity expression and matrix
-	c00 = MeshFunction("double", mesh, "../unitsquare_32_32_c00.xml.gz")
-	c01 = MeshFunction("double", mesh, "../unitsquare_32_32_c01.xml.gz")
-	c11 = MeshFunction("double", mesh, "../unitsquare_32_32_c11.xml.gz")
+    # Define conductivity expression and matrix
+    c00 = MeshFunction("double", mesh, "../unitsquare_32_32_c00.xml.gz")
+    c01 = MeshFunction("double", mesh, "../unitsquare_32_32_c01.xml.gz")
+    c11 = MeshFunction("double", mesh, "../unitsquare_32_32_c11.xml.gz")
 
-	c = Expression(cppcode=conductivity_code)
-	c.c00 = c00
-	c.c01 = c01
-	c.c11 = c11
-	C = as_matrix(((c[0], c[1]), (c[1], c[2])))
+    c = Expression(cppcode=conductivity_code, degree=0)
+    c.c00 = c00
+    c.c01 = c01
+    c.c11 = c11
+    C = as_matrix(((c[0], c[1]), (c[1], c[2])))
 
 Next, we want to express the variational problem. First, we need to
 specify the trial function :math:`u` and the test function :math:`v`,
@@ -245,12 +245,12 @@ reads:
 
 .. code-block:: python
 
-	# Define variational problem
-	u = TrialFunction(V)
-	v = TestFunction(V)
-	f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-	a = inner(C*grad(u), grad(v))*dx
-	L = f*v*dx
+    # Define variational problem
+    u = TrialFunction(V)
+    v = TestFunction(V)
+    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
+    a = inner(C*grad(u), grad(v))*dx
+    L = f*v*dx
 
 Now, we have specified the bilinear and linear forms and can consider
 the solution of the variational problem.  First, we need to define a
@@ -264,9 +264,9 @@ the arguments ``a == L``, ``u`` and ``bc`` as follows:
 
 .. code-block:: python
 
-	# Compute solution
-	u = Function(V)
-	solve(a == L, u, bc)
+    # Compute solution
+    u = Function(V)
+    solve(a == L, u, bc)
 
 The function ``u`` will be modified during the call to solve. The
 default settings for solving a variational problem have been used.
@@ -281,12 +281,12 @@ suffix .pvd) for later visualization and also plot it using the
 
 .. code-block:: python
 
-	# Save solution in VTK format
-	file = File("poisson.pvd")
-	file << u
+    # Save solution in VTK format
+    file = File("poisson.pvd")
+    file << u
 
-	# Plot solution
-	plot(u, interactive=True)
+    # Plot solution
+    plot(u, interactive=True)
 
 Complete code
 -------------

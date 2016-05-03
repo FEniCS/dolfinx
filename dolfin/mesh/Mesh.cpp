@@ -54,8 +54,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
-               _ordered(false), _mpi_comm(MPI_COMM_WORLD)
+Mesh::Mesh() : Mesh(MPI_COMM_WORLD)
 {
   // Do nothing
 }
@@ -69,22 +68,19 @@ Mesh::Mesh(MPI_Comm comm) : Variable("mesh", "DOLFIN mesh"),
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                Hierarchical<Mesh>(*this), _ordered(false),
-                               _mpi_comm(MPI_COMM_WORLD)
+                               _mpi_comm(mesh.mpi_comm())
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
-                                   Hierarchical<Mesh>(*this), _ordered(false),
-                                   _mpi_comm(MPI_COMM_WORLD)
+Mesh::Mesh(std::string filename) : Mesh(MPI_COMM_WORLD, filename)
 {
-  File file(_mpi_comm, filename);
-  file >> *this;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, std::string filename)
   : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this), _ordered(false),
-    _mpi_comm(comm)
+  _mpi_comm(comm)
 {
   File file(_mpi_comm, filename);
   file >> *this;
@@ -92,7 +88,7 @@ Mesh::Mesh(MPI_Comm comm, std::string filename)
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
   : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
-    _ordered(false), _mpi_comm(comm)
+  _ordered(false), _mpi_comm(comm)
 {
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
@@ -293,21 +289,6 @@ void Mesh::rotate(double angle, std::size_t axis, const Point& point)
   MeshTransformation::rotate(*this, angle, axis, point);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<MeshDisplacement> Mesh::move(BoundaryMesh& boundary)
-{
-  return ALE::move(*this, boundary);
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<MeshDisplacement> Mesh::move(Mesh& mesh)
-{
-  return ALE::move(*this, mesh);
-}
-//-----------------------------------------------------------------------------
-void Mesh::move(const GenericFunction& displacement)
-{
-  ALE::move(*this, displacement);
-}
-//-----------------------------------------------------------------------------
 void Mesh::smooth(std::size_t num_iterations)
 {
   MeshSmoothing::smooth(*this, num_iterations);
@@ -368,29 +349,26 @@ std::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const
 //-----------------------------------------------------------------------------
 double Mesh::hmin() const
 {
-  CellIterator cell(*this);
-  double h = cell->diameter();
-  for (; !cell.end(); ++cell)
-    h = std::min(h, cell->diameter());
+  double h = std::numeric_limits<double>::max();
+  for (CellIterator cell(*this); !cell.end(); ++cell)
+    h = std::min(h, cell->h());
 
   return h;
 }
 //-----------------------------------------------------------------------------
 double Mesh::hmax() const
 {
-  CellIterator cell(*this);
-  double h = cell->diameter();
-  for (; !cell.end(); ++cell)
-    h = std::max(h, cell->diameter());
+  double h = 0.0;
+  for (CellIterator cell(*this); !cell.end(); ++cell)
+    h = std::max(h, cell->h());
 
   return h;
 }
 //-----------------------------------------------------------------------------
 double Mesh::rmin() const
 {
-  CellIterator cell(*this);
-  double r = cell->inradius();
-  for (; !cell.end(); ++cell)
+  double r = std::numeric_limits<double>::max();
+  for (CellIterator cell(*this); !cell.end(); ++cell)
     r = std::min(r, cell->inradius());
 
   return r;
@@ -398,9 +376,8 @@ double Mesh::rmin() const
 //-----------------------------------------------------------------------------
 double Mesh::rmax() const
 {
-  CellIterator cell(*this);
-  double r = cell->inradius();
-  for (; !cell.end(); ++cell)
+  double r = 0.0;
+  for (CellIterator cell(*this); !cell.end(); ++cell)
     r = std::max(r, cell->inradius());
 
   return r;

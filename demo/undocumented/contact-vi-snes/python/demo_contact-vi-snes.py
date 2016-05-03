@@ -41,7 +41,7 @@ u  = Function(V)                 # Displacement from previous iteration
 B  = Constant((0.0, -0.05))      # Body force per unit volume
 
 # Kinematics
-I = Identity(u.geometric_dimension())  # Identity tensor
+I = Identity(len(u))  # Identity tensor
 F = I + grad(u)             # Deformation gradient
 C = F.T*F                   # Right Cauchy-Green tensor
 
@@ -74,23 +74,23 @@ bc = DirichletBC(V.sub(0), 0., symmetry_line, method="pointwise")
 
 # The displacement u must be such that the current configuration x+u
 # remains in the box [xmin,xmax] x [umin,ymax]
-constraint_u = Expression(("xmax - x[0]","ymax - x[1]"), \
-                          xmax=1.0+DOLFIN_EPS,  ymax=1.0)
-constraint_l = Expression(("xmin - x[0]","ymin - x[1]"), \
-                          xmin=-1.0-DOLFIN_EPS, ymin=-1.0)
+constraint_u = Expression(("xmax - x[0]","ymax - x[1]"),
+                          xmax=1.0+DOLFIN_EPS,  ymax=1.0, degree=1)
+constraint_l = Expression(("xmin - x[0]","ymin - x[1]"),
+                          xmin=-1.0-DOLFIN_EPS, ymin=-1.0, degree=1)
 umin = interpolate(constraint_l, V)
 umax = interpolate(constraint_u, V)
 
 # Define the solver parameters
 snes_solver_parameters = {"nonlinear_solver": "snes",
-                          "snes_solver"     : { "linear_solver"   : "lu",
-                                                "maximum_iterations": 20,
-                                                "report": True,
-                                                "error_on_nonconvergence": False,
-                                               }}
+                          "snes_solver": {"linear_solver": "lu",
+                                          "maximum_iterations": 20,
+                                          "report": True,
+                                          "error_on_nonconvergence": False}}
 
 # Set up the non-linear problem
 problem = NonlinearVariationalProblem(F, u, bc, J=J)
+problem.set_bounds(umin, umax)
 
 # Set up the non-linear solver
 solver  = NonlinearVariationalSolver(problem)
@@ -98,7 +98,7 @@ solver.parameters.update(snes_solver_parameters)
 info(solver.parameters, True)
 
 # Solve the problem
-(iter, converged) = solver.solve(umin, umax)
+(iter, converged) = solver.solve()
 
 # Check for convergence
 if not converged:

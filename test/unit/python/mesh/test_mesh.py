@@ -36,6 +36,7 @@ import os
 
 from dolfin_utils.test import fixture, skip_in_parallel, xfail_in_parallel, cd_tempdir
 
+
 @fixture
 def mesh1d():
     # Create 1D mesh with degenerate cell
@@ -43,12 +44,14 @@ def mesh1d():
     mesh1d.coordinates()[4] = mesh1d.coordinates()[3]
     return mesh1d
 
+
 @fixture
 def mesh2d():
     # Create 2D mesh with one equilateral triangle
     mesh2d = UnitSquareMesh(1, 1, 'left')
     mesh2d.coordinates()[3] += 0.5*(sqrt(3.0)-1.0)
     return mesh2d
+
 
 @fixture
 def mesh3d():
@@ -58,44 +61,54 @@ def mesh3d():
     mesh3d.coordinates()[7][1] = 0.0
     return mesh3d
 
+
 @fixture
 def c0(mesh3d):
     # Original tetrahedron from UnitCubeMesh(1, 1, 1)
     return Cell(mesh3d, 0)
+
 
 @fixture
 def c1(mesh3d):
     # Degenerate cell
     return Cell(mesh3d, 1)
 
+
 @fixture
 def c5(mesh3d):
     # Regular tetrahedron with edge sqrt(2)
     return Cell(mesh3d, 5)
 
+
 @fixture
 def interval():
     return UnitIntervalMesh(10)
+
 
 @fixture
 def square():
     return UnitSquareMesh(5, 5)
 
+
 @fixture
 def rectangle():
     return RectangleMesh(Point(0, 0), Point(2, 2), 5, 5)
+
 
 @fixture
 def cube():
     return UnitCubeMesh(3, 3, 3)
 
+
 @fixture
 def box():
     return BoxMesh(Point(0, 0, 0), Point(2, 2, 2), 2, 2, 5)
 
+
 @fixture
 def mesh():
     return UnitSquareMesh(3, 3)
+
 
 @fixture
 def f(mesh):
@@ -113,12 +126,13 @@ def test_UFLCell(interval, square, rectangle, cube, box):
 
 def test_UFLDomain(interval, square, rectangle, cube, box):
     import ufl
+
     def _check_ufl_domain(mesh):
         domain = mesh.ufl_domain()
         assert mesh.geometry().dim() == domain.geometric_dimension()
         assert mesh.topology().dim() == domain.topological_dimension()
-        assert mesh.ufl_cell() == domain.cell()
-        assert str(mesh.id()) in domain.label()
+        assert mesh.ufl_cell() == domain.ufl_cell()
+        assert mesh.id() == domain.ufl_id()
 
     _check_ufl_domain(interval)
     _check_ufl_domain(square)
@@ -178,24 +192,27 @@ def test_UnitCubeMeshDistributedLocal():
     assert mesh.num_vertices() == 480
     assert mesh.num_cells() == 1890
 
+
 def test_UnitQuadMesh():
-    mesh = UnitQuadMesh(5, 7)
+    mesh = UnitQuadMesh(mpi_comm_world(), 5, 7)
     assert mesh.size_global(0) == 48
     assert mesh.size_global(2) == 35
 
+
 def test_UnitHexMesh():
-    mesh = UnitHexMesh(5, 7, 9)
+    mesh = UnitHexMesh(mpi_comm_world(), 5, 7, 9)
     assert mesh.size_global(0) == 480
     assert mesh.size_global(3) == 315
 
-@skip_in_parallel
-def test_LocalRefineUnitIntervalMesh():
+
+def test_RefineUnitIntervalMesh():
     """Refine mesh of unit interval."""
-    mesh = UnitIntervalMesh(10)
+    mesh = UnitIntervalMesh(20)
     cell_markers = CellFunction("bool", mesh)
-    cell_markers[7] = True
+    cell_markers[0] = (MPI.rank(mesh.mpi_comm()) == 0)
     mesh2 = refine(mesh, cell_markers)
-    assert mesh2.num_cells() == 11
+    assert mesh2.size_global(0) == 22
+    assert mesh2.size_global(1) == 21
 
 
 def test_RefineUnitSquareMesh():
@@ -221,6 +238,7 @@ def test_BoundaryComputation():
     assert boundary.size_global(0) == 26
     assert boundary.size_global(2) == 48
 
+
 @xfail_in_parallel
 def test_BoundaryBoundary():
     """Compute boundary of boundary."""
@@ -239,6 +257,7 @@ def test_Assign(mesh, f):
     v = Vertex(mesh, 3)
     assert f[v] == 10
 
+
 @skip_in_parallel
 def test_Write(cd_tempdir, f):
     """Construct and save a simple meshfunction."""
@@ -248,26 +267,29 @@ def test_Write(cd_tempdir, f):
     file = File("saved_mesh_function.xml")
     file << f
 
+
 @skip_in_parallel
 def test_Read(cd_tempdir):
     """Construct and save a simple meshfunction. Then read it back from
     file."""
-    #mf = mesh.data().create_mesh_function("mesh_data_function", 2)
-    #print "***************", mf
-    #mf[0] = 3
-    #mf[1] = 4
+    # mf = mesh.data().create_mesh_function("mesh_data_function", 2)
+    # print "***************", mf
+    # mf[0] = 3
+    # mf[1] = 4
 
-    #f[0] = 1
-    #f[1] = 2
-    #file = File("saved_mesh_function.xml")
-    #file << f
-    #f = MeshFunction('int', mesh, "saved_mesh_function.xml")
-    #assert all(f.array() == f.array())
+    # f[0] = 1
+    # f[1] = 2
+    # file = File("saved_mesh_function.xml")
+    # file << f
+    # f = MeshFunction('int', mesh, "saved_mesh_function.xml")
+    # assert all(f.array() == f.array())
+
 
 @skip_in_parallel
 def test_SubsetIterators(mesh):
     def inside1(x):
         return x[0] <= 0.5
+
     def inside2(x):
         return x[0] >= 0.5
     sd1 = AutoSubDomain(inside1)
@@ -289,7 +311,7 @@ def test_SubsetIterators(mesh):
 def test_MeshXML2D(cd_tempdir):
     """Write and read 2D mesh to/from file"""
     mesh_out = UnitSquareMesh(3, 3)
-    mesh_in  = Mesh()
+    mesh_in = Mesh()
     file = File("unitsquare.xml")
     file << mesh_out
     file >> mesh_in
@@ -300,7 +322,7 @@ def test_MeshXML2D(cd_tempdir):
 def test_MeshXML3D(cd_tempdir):
     """Write and read 3D mesh to/from file"""
     mesh_out = UnitCubeMesh(3, 3, 3)
-    mesh_in  = Mesh()
+    mesh_in = Mesh()
     file = File("unitcube.xml")
     file << mesh_out
     file >> mesh_in
@@ -351,13 +373,21 @@ def test_cell_inradius(c0, c1, c5):
 
 
 @skip_in_parallel
-def test_cell_diameter(c0, c1, c5):
+def test_cell_circumradius(c0, c1, c5):
     from math import isnan
-    assert round(c0.diameter() - sqrt(3.0), 7) == 0
+    assert round(c0.circumradius() - sqrt(3.0)/2.0, 7) == 0
     # Implementation of diameter() does not work accurately
     # for degenerate cells - sometimes yields NaN
-    assert isnan(c1.diameter())
-    assert round(c5.diameter() - sqrt(3.0), 7) == 0
+    assert isnan(c1.circumradius())
+    assert round(c5.circumradius() - sqrt(3.0)/2.0, 7) == 0
+
+
+@skip_in_parallel
+def test_cell_h(c0, c1, c5):
+    from math import isnan
+    assert round(c0.h() - sqrt(2.0), 7) == 0
+    assert round(c1.h() - sqrt(2.0), 7) == 0
+    assert round(c5.h() - sqrt(2.0), 7) == 0
 
 
 @skip_in_parallel
@@ -368,7 +398,7 @@ def test_cell_radius_ratio(c0, c1, c5):
 
 
 @skip_in_parallel
-def test_hmin_hmax(mesh1d, mesh2d, mesh3d):
+def xtest_hmin_hmax(mesh1d, mesh2d, mesh3d):
     assert round(mesh1d.hmin() - 0.0, 7) == 0
     assert round(mesh1d.hmax() - 0.25, 7) == 0
     assert round(mesh2d.hmin() - sqrt(2.0), 7) == 0
@@ -395,7 +425,7 @@ def test_basic_cell_orientations():
     print(len(orientations))
     assert len(orientations) == 0
 
-    mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0")))
+    mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0"), degree=0))
     orientations = mesh.cell_orientations()
     assert len(orientations) == mesh.num_cells()
     for i in range(mesh.num_cells()):
@@ -406,12 +436,12 @@ def test_basic_cell_orientations():
 def test_cell_orientations():
     "Test that cell orientations update as expected."
     mesh = UnitIntervalMesh(12)
-    mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0")))
+    mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0"), degree=0))
     for i in range(mesh.num_cells()):
         assert mesh.cell_orientations()[i] == 0
 
     mesh = UnitSquareMesh(2, 2)
-    mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
+    mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0"), degree=0))
     reference = numpy.array((0, 1, 0, 1, 0, 1, 0, 1))
     # Only compare against reference in serial (don't know how to
     # compare in parallel)
@@ -419,12 +449,13 @@ def test_cell_orientations():
         assert mesh.cell_orientations()[i] == reference[i]
 
     mesh = BoundaryMesh(UnitSquareMesh(2, 2), "exterior")
-    mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
+    mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]"), degree=1))
     print(mesh.cell_orientations())
 
 
 def test_shared_entities():
-    for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
+    for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh,
+                                     UnitCubeMesh]):
         dim = ind+1
         args = [4]*dim
         mesh = MeshClass(*args)
@@ -433,7 +464,8 @@ def test_shared_entities():
         # FIXME: Implement a proper test
         for shared_dim in range(dim+1):
             assert isinstance(mesh.topology().shared_entities(shared_dim), dict)
-            assert isinstance(mesh.topology().global_indices(shared_dim), numpy.ndarray)
+            assert isinstance(mesh.topology().global_indices(shared_dim),
+                              numpy.ndarray)
 
             EntityIterator = {0: vertices, 1: edges, 2: faces, 3: cells}[shared_dim]
             if mesh.topology().have_shared_entities(shared_dim):

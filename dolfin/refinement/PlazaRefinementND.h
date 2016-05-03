@@ -56,34 +56,39 @@ namespace dolfin
 
     /// Get the subdivision of an original simplex into smaller
     /// simplices, for a given set of marked edges, and the
-    /// longest edge of each facet (cell local indexing)
+    /// longest edge of each facet (cell local indexing).
+    /// A flag indicates if a uniform subdivision is preferable in 2D.
     static void get_simplices
-      (std::vector<std::vector<std::size_t> >& simplex_set,
+      (std::vector<std::size_t>& simplex_set,
        const std::vector<bool>& marked_edges,
        const std::vector<std::size_t>& longest_edge,
-       std::size_t tdim);
+       std::size_t tdim, bool uniform);
 
   private:
 
     // Get the longest edge of each face (using local mesh index)
-    static std::vector<std::size_t> face_long_edge(const Mesh& mesh);
+    static void face_long_edge(std::vector<unsigned int>& long_edge,
+                               std::vector<bool>& edge_ratio_ok,
+                               const Mesh& mesh);
 
-    // 2D version of subdivision
+    // 2D version of subdivision allowing for uniform subdivision (flag)
     static void get_triangles
-      (std::vector<std::vector<std::size_t> >& tri_set,
+      (std::vector<std::size_t>& tri_set,
        const std::vector<bool>& marked_edges,
-       const std::size_t longest_edge);
+       const std::size_t longest_edge,
+       bool uniform);
 
     // 3D version of subdivision
     static void get_tetrahedra
-      (std::vector<std::vector<std::size_t> >& tet_set,
+      (std::vector<std::size_t>& tet_set,
        const std::vector<bool>& marked_edges,
-       const std::vector<std::size_t> longest_edge);
+       const std::vector<std::size_t>& longest_edge);
 
     // Convenient interface for both uniform and marker refinement
     static void do_refine(Mesh& new_mesh, const Mesh& mesh,
                           ParallelRefinement& p_ref,
-                          const std::vector<std::size_t>& long_edge,
+                          const std::vector<unsigned int>& long_edge,
+                          const std::vector<bool>& edge_ratio_ok,
                           bool redistribute,
                           bool calculate_parent_facets,
                           MeshRelation& mesh_relation);
@@ -92,7 +97,7 @@ namespace dolfin
     // of each face must be marked, if any edge of face is marked)
     static void enforce_rules(ParallelRefinement& p_ref,
                               const Mesh& mesh,
-                              const std::vector<std::size_t>& long_edge);
+                              const std::vector<unsigned int>& long_edge);
 
     // Add parent facet markers to new mesh, based on new vertices
     // Only works in 2D at present

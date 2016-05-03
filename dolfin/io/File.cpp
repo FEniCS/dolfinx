@@ -36,7 +36,6 @@
 #include "VTKFile.h"
 #include "X3DFile.h"
 #include "XMLFile.h"
-#include "XDMFFile.h"
 #include "XYZFile.h"
 
 #include "File.h"
@@ -45,9 +44,9 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 File::File(const std::string filename, std::string encoding)
-  : _mpi_comm(MPI_COMM_WORLD)
+  : File(MPI_COMM_WORLD, filename, encoding)
 {
-  init(MPI_COMM_WORLD, filename, encoding);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 File::File(MPI_Comm comm, const std::string filename, std::string encoding)
@@ -57,9 +56,9 @@ File::File(MPI_Comm comm, const std::string filename, std::string encoding)
 }
 //-----------------------------------------------------------------------------
 File::File(const std::string filename, Type type, std::string encoding)
-  : _mpi_comm(MPI_COMM_WORLD)
+  : File(MPI_COMM_WORLD, filename, type, encoding)
 {
-  init(MPI_COMM_WORLD, filename, type, encoding);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 File::File(MPI_Comm comm, const std::string filename, Type type,
@@ -80,38 +79,38 @@ File::~File()
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const Mesh*, double> mesh)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << mesh;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<int>*, double> f)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void
 File::operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<double>*, double> f)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << f;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const Function*, double> u)
 {
-  file->write(MPI::rank(_mpi_comm));
+  file->_write(MPI::rank(_mpi_comm));
   *file << u;
 }
 //-----------------------------------------------------------------------------
@@ -184,10 +183,6 @@ void File::init(MPI_Comm comm, const std::string filename,
     file.reset(new RAWFile(filename));
   else if (extension == ".xyz")
     file.reset(new XYZFile(filename));
-#ifdef HAS_HDF5
-  else if (extension == ".xdmf")
-    file.reset(new XDMFFile(comm, filename));
-#endif
   else if (extension == ".svg")
     file.reset(new SVGFile(filename));
   else
@@ -204,24 +199,19 @@ void File::init(MPI_Comm comm, const std::string filename, Type type,
 {
   switch (type)
   {
-  case x3d:
+  case Type::x3d:
     file.reset(new X3DFile(filename));
     break;
-  case xdmf:
-#ifdef HAS_HDF5
-    file.reset(new XDMFFile(comm, filename));
-    break;
-#endif
-  case xml:
+  case Type::xml:
     file.reset(new XMLFile(comm, filename));
     break;
-  case vtk:
+  case Type::vtk:
     file.reset(new VTKFile(filename, encoding));
     break;
-  case raw:
+  case Type::raw:
     file.reset(new RAWFile(filename));
     break;
-  case xyz:
+  case Type::xyz:
     file.reset(new XYZFile(filename));
     break;
   default:

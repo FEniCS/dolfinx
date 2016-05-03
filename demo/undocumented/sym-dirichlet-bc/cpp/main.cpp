@@ -84,22 +84,22 @@ int main()
   };
 
   // Create mesh
-  UnitSquareMesh mesh(300, 300);
+  auto mesh = std::make_shared<UnitSquareMesh>(300, 300);
 
   // Create functions
-  Source f;
-  Flux g;
+  auto f = std::make_shared<Source>();
+  auto g = std::make_shared<Flux>();
 
   // Define forms and attach functions
-  Poisson::FunctionSpace V(mesh);
+  auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
   L.f = f; L.g = g;
 
   // Create boundary condition
-  Constant u0(0.0);
-  DirichletBoundary boundary;
-  DirichletBC bc(V, u0, boundary);
+  auto u0 = std::make_shared<Constant>(0.0);
+  auto boundary = std::make_shared<DirichletBoundary>();
+  auto bc = std::make_shared<DirichletBC>(V, u0, boundary);
 
   // Create function
   Function u(V);
@@ -115,12 +115,12 @@ int main()
   tic();
   assemble(A, a);
   assemble(b, L);
-  bc.apply(A, b);
+  bc->apply(A, b);
   table("Standard", "Assembly time") = toc();
 
   // Assemble A and b together
   tic();
-  assemble_system(A, b, a, L, bc);
+  assemble_system(A, b, a, L, {bc});
   table("Symmetric", "Assembly time") = toc();
 
   // Display summary

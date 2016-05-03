@@ -86,7 +86,7 @@ namespace dolfin
     void new_cell(std::size_t i0, std::size_t i1, std::size_t i2,
                   std::size_t i3);
     void new_cell(std::size_t i0, std::size_t i1, std::size_t i2);
-    void new_cell(const std::vector<std::size_t>& idx);
+    void new_cells(const std::vector<std::size_t>& idx);
 
     /// Use vertex and topology data to partition new mesh across processes
     void partition(Mesh& new_mesh, bool redistribute) const;

@@ -36,10 +36,10 @@ often wise to instead specify :math:`|x - 1| < \epsilon`, where
 
 .. code-block:: python
 
-	# Sub domain for Dirichlet boundary condition
-	class DirichletBoundary(SubDomain):
-	    def inside(self, x, on_boundary):
-	        return abs(x[0] - 1.0) < DOLFIN_EPS and on_boundary
+    # Sub domain for Dirichlet boundary condition
+    class DirichletBoundary(SubDomain):
+        def inside(self, x, on_boundary):
+            return abs(x[0] - 1.0) < DOLFIN_EPS and on_boundary
 
 We then define a mesh of the domain and a finite element function
 space V relative to this mesh. We use the built-in mesh provided by
@@ -50,11 +50,11 @@ into two triangles, we do as follows:
 
 .. code-block:: python
 
-	# Create mesh and define function space
-	mesh = UnitSquareMesh(32, 32)
-	File("mesh.pvd") << mesh
+    # Create mesh and define function space
+    mesh = UnitSquareMesh(32, 32)
+    File("mesh.pvd") << mesh
 
-	V = FunctionSpace(mesh, "CG", 1)
+    V = FunctionSpace(mesh, "CG", 1)
 
 The second argument to :py:class:`FunctionSpace
 <dolfin.cpp.function.FunctionSpace>` is the finite element family,
@@ -76,9 +76,9 @@ of the Dirichlet boundary condition then looks as follows:
 
 .. code-block:: python
 
-	# Define boundary condition
-	g = Constant(1.0)
-	bc = DirichletBC(V, g, DirichletBoundary())
+    # Define boundary condition
+    g = Constant(1.0)
+    bc = DirichletBC(V, g, DirichletBoundary())
 
 Next, we want to express the variational problem. First, we need to
 specify the function u which represents the solution. Upon
@@ -107,11 +107,11 @@ summary, this reads
 
 .. code-block:: python
 
-	# Define variational problem
-	u = Function(V)
-	v = TestFunction(V)
-	f = Expression("x[0]*sin(x[1])")
-	F = inner((1 + u**2)*grad(u), grad(v))*dx - f*v*dx
+    # Define variational problem
+    u = Function(V)
+    v = TestFunction(V)
+    f = Expression("x[0]*sin(x[1])", degree=2)
+    F = inner((1 + u**2)*grad(u), grad(v))*dx - f*v*dx
 
 Now, we have specified the variational forms and can consider the
 solution of the variational problem.  Next, we can call the solve
@@ -120,9 +120,8 @@ follows:
 
 .. code-block:: python
 
-	# Compute solution
-	solve(F == 0, u, bc, solver_parameters={"newton_solver":
-		                                    {"relative_tolerance": 1e-6}})
+    # Compute solution
+    solve(F == 0, u, bc, solver_parameters={"newton_solver": {"relative_tolerance": 1e-6}})
 
 The Newton procedure is considered to have converged when the residual
 :math:`r_n` at iteration :math:`n` is less than the absolute tolerance
@@ -137,14 +136,14 @@ command:
 
 .. code-block:: python
 
-	# Plot solution and solution gradient
-	plot(u, title="Solution")
-	plot(grad(u), title="Solution gradient")
-	interactive()
+    # Plot solution and solution gradient
+    plot(u, title="Solution")
+    plot(grad(u), title="Solution gradient")
+    interactive()
 
-	# Save solution in VTK format
-	file = File("nonlinear_poisson.pvd")
-	file << u
+    # Save solution in VTK format
+    file = File("nonlinear_poisson.pvd")
+    file << u
 
 Complete code
 -------------

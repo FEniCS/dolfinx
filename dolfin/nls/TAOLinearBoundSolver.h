@@ -18,7 +18,7 @@
 #ifndef _TAOLinearBoundSolver_H
 #define _TAOLinearBoundSolver_H
 
-#ifdef ENABLE_PETSC_TAO
+#ifdef HAS_PETSC
 
 #include <map>
 #include <memory>
@@ -79,6 +79,9 @@ namespace dolfin
   public:
 
     /// Create TAO bound constrained solver
+    explicit TAOLinearBoundSolver(MPI_Comm comm);
+
+    /// Create TAO bound constrained solver
     TAOLinearBoundSolver(const std::string method = "default",
                          const std::string ksp_type = "default",
                          const std::string pc_type = "default");
@@ -89,20 +92,20 @@ namespace dolfin
     /// Solve the linear variational inequality defined by A and b
     /// with xl =< x <= xu
     std::size_t solve(const GenericMatrix& A, GenericVector& x,
-		      const GenericVector& b, const GenericVector& xl,
-		      const GenericVector& xu);
+                      const GenericVector& b, const GenericVector& xl,
+                      const GenericVector& xu);
 
     /// Solve the linear variational inequality defined by A and b
     /// with xl =< x <= xu
     std::size_t solve(const PETScMatrix& A, PETScVector& x,
                       const PETScVector& b,
-		      const PETScVector& xl, const PETScVector& xu);
+                      const PETScVector& xl, const PETScVector& xu);
 
     // Set the TAO solver type
     void set_solver(const std::string&);
 
     /// Set PETSC Krylov Solver (ksp) used by TAO
-    void set_ksp( const std::string ksp_type = "default");
+    void set_ksp(const std::string ksp_type = "default");
 
     // Return TAO solver pointer
     Tao tao() const;
@@ -149,11 +152,11 @@ namespace dolfin
 
     // Set operators with GenericMatrix and GenericVector
     void set_operators(std::shared_ptr<const GenericMatrix> A,
-		       std::shared_ptr<const GenericVector> b);
+                       std::shared_ptr<const GenericVector> b);
 
     // Set operators with shared pointer to PETSc objects
     void set_operators(std::shared_ptr<const PETScMatrix> A,
-		       std::shared_ptr<const PETScVector> b);
+                       std::shared_ptr<const PETScVector> b);
 
     // Callback for changes in parameter values
     void read_parameters();
@@ -162,8 +165,7 @@ namespace dolfin
     static const std::map<std::string, const KSPType> _ksp_methods;
 
     // Available tao solvers descriptions
-    static const std::map<std::string, std::string>
-      _methods_descr;
+    static const std::map<std::string, std::string> _methods_descr;
 
     // Set options
     void set_ksp_options();
@@ -175,13 +177,13 @@ namespace dolfin
     Tao _tao;
 
     // Petsc preconditioner
-    std::shared_ptr<PETScPreconditioner> preconditioner;
+    std::shared_ptr<PETScPreconditioner> _preconditioner;
 
     // Operator (the matrix) and the vector
-    std::shared_ptr<const PETScMatrix> A;
-    std::shared_ptr<const PETScVector> b;
+    std::shared_ptr<const PETScMatrix> _matA;
+    std::shared_ptr<const PETScVector> _b;
 
-    bool preconditioner_set;
+    bool _preconditioner_set;
 
     // Computes the value of the objective function and its gradient.
     static PetscErrorCode
@@ -198,9 +200,9 @@ namespace dolfin
     //  Monitor the state of the solution at each iteration. The
     //  output printed to the screen is:
     //
-    //	iterate - the current iterate number (>=0)
-    //	f       - the current function value
-    //	gnorm 	- the square of the gradient norm, duality gap, or other
+    //  iterate - the current iterate number (>=0)
+    //  f       - the current function value
+    //  gnorm   - the square of the gradient norm, duality gap, or other
     //             measure
     //            indicating distance from optimality.
     //  cnorm - the infeasibility of the current solution with regard

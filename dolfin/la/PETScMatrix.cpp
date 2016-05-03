@@ -1,4 +1,5 @@
-// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson and Anders Logg
+// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson, Anders Logg
+// and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -27,12 +28,12 @@
 
 #include <iomanip>
 #include <iostream>
+#include <numeric>
 #include <sstream>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
-#include "GenericSparsityPattern.h"
 #include "PETScFactory.h"
 #include "PETScVector.h"
 #include "SparsityPattern.h"
@@ -48,22 +49,36 @@ const std::map<std::string, NormType> PETScMatrix::norm_types
     {"frobenius", NORM_FROBENIUS} };
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix() : PETScBaseMatrix(NULL)
+PETScMatrix::PETScMatrix() : PETScMatrix(MPI_COMM_WORLD)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(Mat A) : PETScBaseMatrix(A)
+PETScMatrix::PETScMatrix(MPI_Comm comm) : PETScBaseMatrix()
 {
-  // Do nothing (reference count to A is incremented in base class)
+  // Create uninitialised matrix
+  PetscErrorCode ierr = MatCreate(comm, &_matA);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScBaseMatrix(NULL)
+PETScMatrix::PETScMatrix(Mat A) : PETScBaseMatrix(A)
 {
-  if (A.mat())
+  // Reference count to A is incremented in base class
+}
+//-----------------------------------------------------------------------------
+PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScBaseMatrix()
+{
+  dolfin_assert(A.mat());
+  if (!A.empty())
   {
     PetscErrorCode ierr = MatDuplicate(A.mat(), MAT_COPY_VALUES, &_matA);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatDuplicate");
+  }
+  else
+  {
+    // Create uninitialised matrix
+    PetscErrorCode ierr = MatCreate(A.mpi_comm(), &_matA);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
   }
 }
 //-----------------------------------------------------------------------------
@@ -74,11 +89,20 @@ PETScMatrix::~PETScMatrix()
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericMatrix> PETScMatrix::copy() const
 {
-  return std::shared_ptr<GenericMatrix>(new PETScMatrix(*this));
+  return std::make_shared<PETScMatrix>(*this);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const TensorLayout& tensor_layout)
 {
+  // Throw error if already initialised
+  if (!empty())
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "init PETSc matrix",
+                 "PETScMatrix may not be initialized more than once.");
+    MatDestroy(&_matA);
+  }
+
   PetscErrorCode ierr;
 
   // Get global dimensions and local range
@@ -93,220 +117,101 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   const std::size_t n = col_range.second - col_range.first;
 
   // Get sparsity pattern
-  dolfin_assert(tensor_layout.sparsity_pattern());
-  const GenericSparsityPattern& sparsity_pattern
-    = *tensor_layout.sparsity_pattern();
+  auto sparsity_pattern = tensor_layout.sparsity_pattern();
 
-  if (_matA)
-  {
-    dolfin_error("PETScMatrix.cpp",
-                 "init PETSc matrix",
-                 "PETScMatrix may not be initialized more than once.");
-    MatDestroy(&_matA);
-  }
+  // Get block size
+  int block_size = tensor_layout.index_map(0)->block_size();
+  if (block_size != tensor_layout.index_map(1)->block_size())
+    block_size = 1;
 
-  // Initialize matrix
-  if (dolfin::MPI::size(sparsity_pattern.mpi_comm()) == 1)
-  {
-    // Get number of nonzeros for each row from sparsity pattern
-    std::vector<std::size_t> num_nonzeros(M);
-    sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
+  // Get number of nonzeros for each row from sparsity pattern
+  std::vector<std::size_t> num_nonzeros_diagonal, num_nonzeros_off_diagonal;
+  sparsity_pattern->num_nonzeros_diagonal(num_nonzeros_diagonal);
+  sparsity_pattern->num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
 
-    // Create matrix
-    ierr = MatCreate(PETSC_COMM_SELF, &_matA);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
+  // Set matrix size
+  ierr = MatSetSizes(_matA, m, n, M, N);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetSizes");
 
-    // Set options prefix (if any)
-    PetscErrorCode ierr = MatSetOptionsPrefix(_matA, _petsc_options_prefix.c_str());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
+  // Apply PETSc options from the options database to the matrix (this
+  // includes changing the matrix type to one specified by the user)
+  ierr = MatSetFromOptions(_matA);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetFromOptions");
 
-    // Set size
-    ierr = MatSetSizes(_matA, M, N, M, N);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetSizes");
+  // Build data to intialise sparsity pattern (modify for block size)
+  std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.size()/block_size),
+    _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.size()/block_size);
 
-    // Set matrix type according to chosen architecture
-    ierr = MatSetType(_matA, MATSEQAIJ);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
+  for (std::size_t i = 0; i < _num_nonzeros_diagonal.size(); ++i)
+    _num_nonzeros_diagonal[i] = num_nonzeros_diagonal[block_size*i]/block_size;
+  for (std::size_t i = 0; i < _num_nonzeros_off_diagonal.size(); ++i)
+    _num_nonzeros_off_diagonal[i] = num_nonzeros_off_diagonal[block_size*i]/block_size;
 
-    // Set block size
-    if (tensor_layout.block_size > 1)
-    {
-     ierr =  MatSetBlockSize(_matA, tensor_layout.block_size);
-     if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetBlockSize");
-    }
-
-    // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
-
-    // Allocate space (using data from sparsity pattern)
-
-    // Copy number of non-zeros to PetscInt type
-    const std::vector<PetscInt> _num_nonzeros(num_nonzeros.begin(),
-                                              num_nonzeros.end());
-    ierr = MatSeqAIJSetPreallocation(_matA, 0, _num_nonzeros.data());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSeqAIJSetPreallocation");
-
-    ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
-    dolfin_assert(tensor_layout.local_to_global_map.size() == 2);
-
-    // Block size
-    const std::size_t bs = tensor_layout.block_size;
-
-    // Set local-to-global mapping
-    std::vector<PetscInt> _map0, _map1;
-    if (tensor_layout.local_to_global_map[0].empty()
-        && tensor_layout.local_to_global_map[1].empty())
-    {
-      dolfin_assert(bs == 1);
-      _map0.resize(M);
-      _map1.resize(N);
-      for (std::size_t i = 0; i < M; ++i)
-        _map0[i] = i;
-      for (std::size_t i = 0; i < N; ++i)
-        _map1[i] = i;
-    }
-    else
-    {
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-      _map0.assign(tensor_layout.local_to_global_map[0].begin(),
-                   tensor_layout.local_to_global_map[0].end());
-      _map1.assign(tensor_layout.local_to_global_map[1].begin(),
-                   tensor_layout.local_to_global_map[1].end());
-      #else
-      _map0 = std::vector<PetscInt>(tensor_layout.local_to_global_map[0].size()/bs);
-      _map1 = std::vector<PetscInt>(tensor_layout.local_to_global_map[1].size()/bs);
-      for (std::size_t i = 0; i < _map0.size(); ++i)
-        _map0[i] = tensor_layout.local_to_global_map[0][i*bs]/bs;
-      for (std::size_t i = 0; i < _map1.size(); ++i)
-        _map1[i] = tensor_layout.local_to_global_map[1][i*bs]/bs;
-      #endif
-    }
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map0.size(), _map0.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
-    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, _map1.size(), _map1.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
-    #else
-    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map0.size(), _map0.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
-    ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, bs, _map1.size(), _map1.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
-    #endif
-    MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
-                               petsc_local_to_global1);
-    ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
-    ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
-  }
-  else
-  {
-    // Get number of nonzeros for each row from sparsity pattern
-    std::vector<std::size_t> num_nonzeros_diagonal;
-    std::vector<std::size_t> num_nonzeros_off_diagonal;
-    sparsity_pattern.num_nonzeros_diagonal(num_nonzeros_diagonal);
-    sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
-
-    // Create matrix
-    ierr = MatCreate(PETSC_COMM_WORLD, &_matA);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatCreate");
-
-    // Set options prefix (if any)
-    PetscErrorCode ierr = MatSetOptionsPrefix(_matA, _petsc_options_prefix.c_str());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOptionsPrefix");
-
-    // Set size
-    ierr = MatSetSizes(_matA, m, n, M, N);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetSizes");
-
-    // Set matrix type
-    ierr = MatSetType(_matA, MATMPIAIJ);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
-
-    // Set block size
-    if (tensor_layout.block_size > 1)
-    {
-      ierr = MatSetBlockSize(_matA, tensor_layout.block_size);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetBlockSize");
-    }
-
-    // Apply PETSc options from the options database to the matrix
-    // (this includes changing the matrix type to one specified by the
-    // user)
-    ierr = MatSetFromOptions(_matA);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetFromOptions");
-
-    // Allocate space (using data from sparsity pattern)
-    const std::vector<PetscInt>
-      _num_nonzeros_diagonal(num_nonzeros_diagonal.begin(),
-                             num_nonzeros_diagonal.end());
-    const std::vector<PetscInt>
-      _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.begin(),
-                                 num_nonzeros_off_diagonal.end());
-    ierr = MatMPIAIJSetPreallocation(_matA, 0, _num_nonzeros_diagonal.data(),
-                                     0, _num_nonzeros_off_diagonal.data());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatMPIAIJSetPreallocation");
+  // Allocate space (using data from sparsity pattern)
+  ierr = MatXAIJSetPreallocation(_matA, block_size,
+                                 _num_nonzeros_diagonal.data(),
+                                 _num_nonzeros_off_diagonal.data(), NULL, NULL);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatXIJSetPreallocation");
 
 
-    ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
-    dolfin_assert(tensor_layout.local_to_global_map.size() == 2);
+  // Create pointers to PETSc IndexSet for local-to-globa map
+  ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
+  dolfin_assert(tensor_layout.rank() == 2);
 
-    std::vector<PetscInt> _map0, _map1;
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 4
-    _map0.assign(tensor_layout.local_to_global_map[0].begin(),
-                 tensor_layout.local_to_global_map[0].end());
-    _map1.assign(tensor_layout.local_to_global_map[1].begin(),
-                 tensor_layout.local_to_global_map[1].end());
-    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, _map0.size(), _map0.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
-    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, _map1.size(), _map1.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
-    #else
-    // Block size
-    const std::size_t bs = tensor_layout.block_size;
+  std::vector<PetscInt> _map0, _map1;
+  _map0.resize(tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL)/block_size);
+  _map1.resize(tensor_layout.index_map(1)->size(IndexMap::MapSize::ALL)/block_size);
 
-    _map0.resize(tensor_layout.local_to_global_map[0].size()/bs);
-    _map1.resize(tensor_layout.local_to_global_map[1].size()/bs);
-    for (std::size_t i = 0; i < _map0.size(); ++i)
-      _map0[i] = tensor_layout.local_to_global_map[0][i*bs]/bs;
-    for (std::size_t i = 0; i < _map1.size(); ++i)
-      _map1[i] = tensor_layout.local_to_global_map[1][i*bs]/bs;
-    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, bs, _map0.size(),
-                                 _map0.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global0);
-    ISLocalToGlobalMappingCreate(PETSC_COMM_WORLD, bs, _map1.size(),
-                                 _map1.data(),
-                                 PETSC_COPY_VALUES, &petsc_local_to_global1);
-    #endif
+  for (std::size_t i = 0; i < _map0.size(); ++i)
+    _map0[i] = tensor_layout.index_map(0)->local_to_global(i*block_size)/block_size;
+  for (std::size_t i = 0; i < _map1.size(); ++i)
+    _map1[i] = tensor_layout.index_map(1)->local_to_global(i*block_size)/block_size;
 
-    MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
-                               petsc_local_to_global1);
+  // FIXME: In many cases the rows and columns could shared a commin
+  // local-to-global map
 
-#if PETSC_VERSION_GE(3, 6, 0)
-    // Note: This should be called after having set the l2g map for
-    // MATIS (this is a dummy call if _matA is not of type MATIS)
-    ierr = MatISSetPreallocation(_matA, 0, _num_nonzeros_diagonal.data(),
-                                 0, _num_nonzeros_off_diagonal.data());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "MatISSetPreallocation");
-#endif
+  // Create PETSc local-to-global map/index set
+  ISLocalToGlobalMappingCreate(mpi_comm(), block_size, _map0.size(), _map0.data(),
+                               PETSC_COPY_VALUES, &petsc_local_to_global0);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
+  ISLocalToGlobalMappingCreate(mpi_comm(), block_size, _map1.size(), _map1.data(),
+                               PETSC_COPY_VALUES, &petsc_local_to_global1);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
 
-    ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
-    ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
-  }
+  // Set matrix local-to-global maps
+  MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
+                             petsc_local_to_global1);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
 
-  // Set some options
+  // Note: This should be called after having set the local-to-global
+  // map for MATIS (this is a dummy call if _matA is not of type
+  // MATIS)
+  ierr = MatISSetPreallocation(_matA, 0, _num_nonzeros_diagonal.data(),
+                               0, _num_nonzeros_off_diagonal.data());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatISSetPreallocation");
+
+  // Clean up local-to-global maps
+  ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
+  ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
+
+  // Set some options on _matA object
 
   // Do not allow more entries than have been pre-allocated
   ierr = MatSetOption(_matA, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOption");
 
+  // Keep nonzero structure after calling MatZeroRows
   ierr = MatSetOption(_matA, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetOption");
-
-  ierr = MatSetUp(_matA);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetUp");
 }
 //-----------------------------------------------------------------------------
 bool PETScMatrix::empty() const
 {
-  return _matA ? false : true;
+  auto sizes = PETScBaseMatrix::size();
+  dolfin_assert((sizes.first < 1 and sizes.second < 1) or (sizes.first > 0 and sizes.second > 0));
+  return (sizes.first < 1) and (sizes.second < 1);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(double* block,
@@ -506,7 +411,7 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
   const PETScVector& xx = as_type<const PETScVector>(x);
   PETScVector& yy = as_type<PETScVector>(y);
 
-  if (size(1) != xx.size())
+  if (this->size(1) != xx.size())
   {
     dolfin_error("PETScMatrix.cpp",
                  "compute matrix-vector product with PETSc matrix",
@@ -647,10 +552,7 @@ void PETScMatrix::apply(std::string mode)
 //-----------------------------------------------------------------------------
 MPI_Comm PETScMatrix::mpi_comm() const
 {
-  dolfin_assert(_matA);
-  MPI_Comm mpi_comm = MPI_COMM_NULL;
-  PetscObjectGetComm((PetscObject)_matA, &mpi_comm);
-  return mpi_comm;
+  return PETScBaseMatrix::mpi_comm();
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScMatrix::nnz() const
@@ -704,30 +606,22 @@ GenericLinearAlgebraFactory& PETScMatrix::factory() const
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_options_prefix(std::string options_prefix)
 {
-  if (_matA)
-  {
-    dolfin_error("PETScMatrix.cpp",
-                 "setting PETSc options prefix",
-                 "Cannot set options prefix since PETSc Mat has already been initialized");
-
-  }
-  else
-    _petsc_options_prefix = options_prefix;
+  dolfin_assert(_matA);
+  MatSetOptionsPrefix(_matA, options_prefix.c_str());
 }
 //-----------------------------------------------------------------------------
 std::string PETScMatrix::get_options_prefix() const
 {
-  if (_matA)
-  {
-    const char* prefix = NULL;
-    MatGetOptionsPrefix(_matA, &prefix);
-    return std::string(prefix);
-  }
-  else
-  {
-    warning("PETSc Mat object has not been initialised, therefore prefix has not been set");
-    return std::string();
-  }
+  dolfin_assert(_matA);
+  const char* prefix = NULL;
+  MatGetOptionsPrefix(_matA, &prefix);
+  return std::string(prefix);
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::set_from_options()
+{
+  dolfin_assert(_matA);
+  MatSetFromOptions(_matA);
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
@@ -771,44 +665,30 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_nullspace(const VectorSpaceBasis& nullspace)
 {
-  PetscErrorCode ierr;
-
-  // Copy vectors
-  std::vector<PETScVector> _nullspace;
-  for (std::size_t i = 0; i < nullspace.dim(); ++i)
-  {
-    dolfin_assert(nullspace[i]);
-    const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
-
-    // Copy vector
-    _nullspace.push_back(x);
-  }
-
-  // Get pointers to underlying PETSc objects and normalize vectors
-  std::vector<Vec> petsc_vecs;
-  for (auto& basis_vector : _nullspace)
-  {
-    // Store pointer to PETSc Vec
-    petsc_vecs.push_back(basis_vector.vec());
-
-    PetscReal val = 0.0;
-    ierr = VecNormalize(basis_vector.vec(), &val);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "VecNormalize");
-  }
-
-  // Create PETSC nullspace
-  MatNullSpace petsc_nullspace = NULL;
-  ierr = MatNullSpaceCreate(mpi_comm(), PETSC_FALSE, petsc_vecs.size(),
-                            petsc_vecs.data(), &petsc_nullspace);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
+  // Build PETSc nullspace
+  MatNullSpace petsc_ns = create_petsc_nullspace(nullspace);
 
   // Attach PETSc nullspace to matrix
   dolfin_assert(_matA);
-  ierr = MatSetNullSpace(_matA, petsc_nullspace);
+  PetscErrorCode ierr = MatSetNullSpace(_matA, petsc_ns);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetNullSpace");
+
+  // Decrease reference count for nullspace by destroying
+  MatNullSpaceDestroy(&petsc_ns);
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::set_near_nullspace(const VectorSpaceBasis& nullspace)
+{
+  // Create PETSc nullspace
+  MatNullSpace petsc_ns = create_petsc_nullspace(nullspace);
+
+  // Attach near  nullspace to matrix
+  dolfin_assert(_matA);
+  PetscErrorCode ierr = MatSetNearNullSpace(_matA, petsc_ns);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetNullSpace");
 
   // Decrease reference count for nullspace
-  MatNullSpaceDestroy(&petsc_nullspace);
+  MatNullSpaceDestroy(&petsc_ns);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::binary_dump(std::string file_name) const
@@ -816,7 +696,7 @@ void PETScMatrix::binary_dump(std::string file_name) const
   PetscErrorCode ierr;
 
   PetscViewer view_out;
-  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD, file_name.c_str(),
+  ierr = PetscViewerBinaryOpen(mpi_comm(), file_name.c_str(),
                                FILE_MODE_WRITE, &view_out);
   if (ierr != 0) petsc_error(ierr, __FILE__, "PetscViewerBinaryOpen");
 
@@ -829,7 +709,8 @@ void PETScMatrix::binary_dump(std::string file_name) const
 //-----------------------------------------------------------------------------
 std::string PETScMatrix::str(bool verbose) const
 {
-  if (!_matA)
+  dolfin_assert(_matA);
+  if (this->empty())
     return "<Uninitialized PETScMatrix>";
 
   std::stringstream s;
@@ -840,7 +721,7 @@ std::string PETScMatrix::str(bool verbose) const
     // FIXME: Maybe this could be an option?
     dolfin_assert(_matA);
     PetscErrorCode ierr;
-    if (MPI::size(MPI_COMM_WORLD) > 1)
+    if (MPI::size(mpi_comm()) > 1)
     {
       ierr = MatView(_matA, PETSC_VIEWER_STDOUT_WORLD);
       if (ierr != 0) petsc_error(ierr, __FILE__, "MatView");
@@ -857,5 +738,35 @@ std::string PETScMatrix::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+MatNullSpace PETScMatrix::create_petsc_nullspace(const VectorSpaceBasis& nullspace) const
+{
+  PetscErrorCode ierr;
+
+  // Copy vectors in vector space object
+  std::vector<PETScVector> _nullspace;
+  for (std::size_t i = 0; i < nullspace.dim(); ++i)
+  {
+    dolfin_assert(nullspace[i]);
+    const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
+
+    // Copy vector
+    _nullspace.push_back(x);
+  }
+
+  // Get pointers to underlying PETSc objects
+  std::vector<Vec> petsc_vecs;
+  for (auto& basis_vector : _nullspace)
+    petsc_vecs.push_back(basis_vector.vec());
+
+  // Create PETSC nullspace
+  MatNullSpace petsc_nullspace = NULL;
+  ierr = MatNullSpaceCreate(mpi_comm(), PETSC_FALSE, petsc_vecs.size(),
+                            petsc_vecs.data(), &petsc_nullspace);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
+
+  return petsc_nullspace;
+}
+//-----------------------------------------------------------------------------
+
 
 #endif

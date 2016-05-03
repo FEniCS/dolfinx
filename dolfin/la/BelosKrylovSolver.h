@@ -42,6 +42,7 @@ namespace dolfin
   class GenericVector;
   class TpetraMatrix;
   class TpetraVector;
+  class TrilinosPreconditioner;
 
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Belos iterative solver
@@ -61,14 +62,9 @@ namespace dolfin
     BelosKrylovSolver(std::string method = "default",
                       std::string preconditioner = "default");
 
-    /// Create Krylov solver for a particular method and
-    /// BelosPreconditioner
-    ///    BelosKrylovSolver(std::string method, Ifpack2Preconditioner& preconditioner);
-
-    /// Create Krylov solver for a particular method and
-    /// BelosPreconditioner (shared_ptr version)
-    //    BelosKrylovSolver(std::string method,
-    //		      std::shared_ptr<Ifpack2Preconditioner> preconditioner);
+    /// Create Krylov solver for a particular method and TrilinosPreconditioner
+    BelosKrylovSolver(std::string method,
+                      std::shared_ptr<TrilinosPreconditioner> preconditioner);
 
     /// Destructor
     ~BelosKrylovSolver();
@@ -98,7 +94,7 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     /// Return Belos pointer
-    //    Teuchos::RCP<Belos::SolverManager<> > ksp() const;
+    //    Teuchos::RCP<Belos::SolverManager<>> solver_manager() const;
 
     /// Return a list of available solver methods
     static std::map<std::string, std::string> methods();
@@ -106,11 +102,14 @@ namespace dolfin
     /// Return a list of available preconditioners
     static std::map<std::string, std::string> preconditioners();
 
-    ///// Set options prefix
-    //void set_options_prefix(std::string prefix);
-
     /// Default parameter values
     static Parameters default_parameters();
+
+    /// Return parameter type: "krylov_solver" or "lu_solver"
+    std::string parameter_type() const
+    {
+      return "krylov_solver";
+    }
 
   private:
 

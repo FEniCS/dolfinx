@@ -47,7 +47,7 @@ namespace dolfin
   public:
 
     /// Create local mesh data for given LocalMeshValueCollection
-    LocalMeshValueCollection(const MeshValueCollection<T>& values,
+    LocalMeshValueCollection(MPI_Comm comm, const MeshValueCollection<T>& values,
                              std::size_t dim);
 
     /// Destructor
@@ -79,9 +79,10 @@ namespace dolfin
   // Implementation of LocalMeshValueCollection
   //---------------------------------------------------------------------------
   template <typename T>
-  LocalMeshValueCollection<T>::LocalMeshValueCollection(const MeshValueCollection<T>& values,
-                                                        std::size_t dim)
-    : _dim(dim), _mpi_comm(MPI_COMM_WORLD)
+    LocalMeshValueCollection<T>::LocalMeshValueCollection(MPI_Comm comm,
+                                                          const MeshValueCollection<T>& values,
+                                                          std::size_t dim)
+    : _dim(dim), _mpi_comm(comm)
   {
     // Prepare data
     std::vector<std::vector<std::size_t> > send_indices;
@@ -127,9 +128,7 @@ namespace dolfin
       const std::size_t cell_index = indices[2*i];
       const std::size_t local_entity_index = indices[2*i + 1];
       const T value = v[i];
-      _values.push_back(std::make_pair(std::make_pair(cell_index,
-                                                      local_entity_index),
-                                       value));
+      _values.push_back({{cell_index, local_entity_index}, value});
     }
   }
   //---------------------------------------------------------------------------

@@ -32,7 +32,7 @@ possible we will set the log level to 1:
 
 .. code-block:: python
 
-	set_log_level(1)
+    set_log_level(1)
 
 Before we can mark the boundaries, we must specify the boundary
 conditions.  We do this by defining three classes, one for each
@@ -42,27 +42,27 @@ inflow and outflow.
 
 .. code-block:: python
 
-	# Sub domain for no-slip (mark whole boundary, inflow and outflow will overwrite)
-	class Noslip(SubDomain):
-	    def inside(self, x, on_boundary):
-	        return on_boundary
+    # Sub domain for no-slip (mark whole boundary, inflow and outflow will overwrite)
+    class Noslip(SubDomain):
+        def inside(self, x, on_boundary):
+            return on_boundary
 
-	# Sub domain for inflow (right)
-	class Inflow(SubDomain):
-	    def inside(self, x, on_boundary):
-	        return x[0] > 1.0 - DOLFIN_EPS and on_boundary
+    # Sub domain for inflow (right)
+    class Inflow(SubDomain):
+        def inside(self, x, on_boundary):
+            return x[0] > 1.0 - DOLFIN_EPS and on_boundary
 
-	# Sub domain for outflow (left)
-	class Outflow(SubDomain):
-	    def inside(self, x, on_boundary):
-	        return x[0] < DOLFIN_EPS and on_boundary
+    # Sub domain for outflow (left)
+    class Outflow(SubDomain):
+        def inside(self, x, on_boundary):
+            return x[0] < DOLFIN_EPS and on_boundary
 
 Then, we import the mesh:
 
 .. code-block:: python
 
-	# Read mesh
-	mesh = Mesh("dolfin-2.xml.gz")
+    # Read mesh
+    mesh = Mesh("../dolfin_fine.xml.gz")
 
 We create a :py:class:`MeshFunction <dolfin.cpp.MeshFunction>` to
 store the numbering of the subdomains.  When creating a MeshFunction
@@ -73,10 +73,10 @@ the difference of these we will use both ‘size_t’, ‘double’ and
 
 .. code-block:: python
 
-	# Create mesh functions over the cell facets
-	sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
-	sub_domains_bool = MeshFunction("bool", mesh, mesh.topology().dim() - 1)
-	sub_domains_double = MeshFunction("double", mesh, mesh.topology().dim() - 1)
+    # Create mesh functions over the cell facets
+    sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
+    sub_domains_bool = MeshFunction("bool", mesh, mesh.topology().dim() - 1)
+    sub_domains_double = MeshFunction("double", mesh, mesh.topology().dim() - 1)
 
 The second and third arguments are optional. The second argument
 specifies our mesh, while the third argument gives the topological
@@ -99,10 +99,10 @@ all the facets.
 
 .. code-block:: python
 
-	# Mark all facets as sub domain 3
-	sub_domains.set_all(3)
-	sub_domains_bool.set_all(False)
-	sub_domains_double.set_all(0.3)
+    # Mark all facets as sub domain 3
+    sub_domains.set_all(3)
+    sub_domains_bool.set_all(False)
+    sub_domains_double.set_all(0.3)
 
 When all facets are marked, we mark only the boundary facets.  We give
 the noslip boundary the index 0.  To mark the facets of the noslip
@@ -112,10 +112,10 @@ or double).
 
 .. code-block:: python
 
-	# Mark no-slip facets as sub domain 0, 0.0
-	noslip = Noslip()
-	noslip.mark(sub_domains, 0)
-	noslip.mark(sub_domains_double, 0.0)
+    # Mark no-slip facets as sub domain 0, 0.0
+    noslip = Noslip()
+    noslip.mark(sub_domains, 0)
+    noslip.mark(sub_domains_double, 0.0)
 
 The same must be done for the inflow and outflow boundaries.  The
 inflow is marked as subdomain 1 and the outflow is marked as subdomain
@@ -123,16 +123,16 @@ inflow is marked as subdomain 1 and the outflow is marked as subdomain
 
 .. code-block:: python
 
-	# Mark inflow as sub domain 1, 01
-	inflow = Inflow()
-	inflow.mark(sub_domains, 1)
-	inflow.mark(sub_domains_double, 0.1)
+    # Mark inflow as sub domain 1, 01
+    inflow = Inflow()
+    inflow.mark(sub_domains, 1)
+    inflow.mark(sub_domains_double, 0.1)
 
-	# Mark outflow as sub domain 2, 0.2, True
-	outflow = Outflow()
-	outflow.mark(sub_domains, 2)
-	outflow.mark(sub_domains_double, 0.2)
-	outflow.mark(sub_domains_bool, True)
+    # Mark outflow as sub domain 2, 0.2, True
+    outflow = Outflow()
+    outflow.mark(sub_domains, 2)
+    outflow.mark(sub_domains_double, 0.2)
+    outflow.mark(sub_domains_bool, True)
 
 Finally, to be able to use these subdomains together with the mesh in
 other programs, we save the subdomains to file, both as XML and VTK
@@ -140,23 +140,23 @@ files:
 
 .. code-block:: python
 
-	# Save sub domains to file
-	file = File("subdomains.xml")
-	file << sub_domains
+    # Save sub domains to file
+    file = File("subdomains.xml")
+    file << sub_domains
 
-	# FIXME: Not implemented
-	#file_bool = File("subdomains_bool.xml")
-	#file_bool << sub_domains_bool
+    # FIXME: Not implemented
+    #file_bool = File("subdomains_bool.xml")
+    #file_bool << sub_domains_bool
 
-	file_double = File("subdomains_double.xml")
-	file_double << sub_domains_double
+    file_double = File("subdomains_double.xml")
+    file_double << sub_domains_double
 
-	# Save sub domains to VTK files
-	file = File("subdomains.pvd")
-	file << sub_domains
+    # Save sub domains to VTK files
+    file = File("subdomains.pvd")
+    file << sub_domains
 
-	file = File("subdomains_double.pvd")
-	file << sub_domains_double
+    file = File("subdomains_double.pvd")
+    file << sub_domains_double
 
 Complete code
 -------------

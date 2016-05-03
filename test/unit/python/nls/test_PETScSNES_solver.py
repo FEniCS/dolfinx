@@ -88,11 +88,11 @@ def J(V, u, F):
 
 @fixture
 def lb(V):
-    return Function(interpolate(Constant(0.), V))
+    return interpolate(Constant(0.), V)
 
 @fixture
 def ub(V):
-    return Function(interpolate(Constant(100.), V))
+    return interpolate(Constant(100.), V)
 
 @fixture
 def newton_solver_parameters():
@@ -140,19 +140,23 @@ def test_snes_solver_bound_functions(F, u, bcs, J, \
                                      parameter_backend):
     u.interpolate(Constant(-1000.0))
     problem = NonlinearVariationalProblem(F, u, bcs, J)
+    problem.set_bounds(lb, ub)
+
     solver  = NonlinearVariationalSolver(problem)
     solver.parameters.update(snes_solver_parameters_bounds)
-    solver.solve(lb, ub)
+    solver.solve()
     assert u.vector().min() >= 0
 
 
 @skip_if_not_PETSc
 def test_snes_solver_bound_vectors(F, u, bcs, J, snes_solver_parameters_bounds,
-                                    lb, ub, parameter_degree, \
+                                   lb, ub, parameter_degree, \
                                    parameter_backend):
     u.interpolate(Constant(-1000.0))
     problem = NonlinearVariationalProblem(F, u, bcs, J)
+    problem.set_bounds(lb, ub)
+
     solver  = NonlinearVariationalSolver(problem)
     solver.parameters.update(snes_solver_parameters_bounds)
-    solver.solve(lb.vector(), ub.vector())
+    solver.solve()
     assert u.vector().min() >= 0

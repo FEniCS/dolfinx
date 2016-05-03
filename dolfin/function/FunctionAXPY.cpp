@@ -46,17 +46,17 @@ FunctionAXPY::FunctionAXPY(const Function& func0, const Function& func1,
                  "Expected Functions to be in the same FunctionSpace");
   }
 
-  const double scale0 = direction % 2 == 0 ? 1.0 : -1.0;
+  const double scale0 = static_cast<int>(direction) % 2 == 0 ? 1.0 : -1.0;
   _pairs.push_back(std::make_pair(scale0, &func0));
 
-  const double scale1 = direction < 2 ? 1.0 : -1.0;
+  const double scale1 = static_cast<int>(direction) < 2 ? 1.0 : -1.0;
   _pairs.push_back(std::make_pair(scale1, &func1));
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy, const Function& func,
 			   Direction direction) : _pairs()
 {
-  _register(axpy, direction % 2 == 0 ? 1.0 : -1.0);
+  _register(axpy, static_cast<int>(direction) % 2 == 0 ? 1.0 : -1.0);
   if (_pairs.size()>0 && !_pairs[0].second->in(*func.function_space()))
   {
     dolfin_error("FunctionAXPY.cpp",
@@ -64,7 +64,7 @@ FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy, const Function& func,
                  "Expected Functions to have the same FunctionSpace");
   }
 
-  const double scale = direction < 2 ? 1.0 : -1.0;
+  const double scale = static_cast<int>(direction) < 2 ? 1.0 : -1.0;
   _pairs.push_back(std::make_pair(scale, &func));
 }
 //-----------------------------------------------------------------------------
@@ -72,8 +72,8 @@ FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy0,
                            const FunctionAXPY& axpy1,
 			   Direction direction) : _pairs()
 {
-  _register(axpy0, direction % 2 == 0 ? 1.0 : -1.0);
-  _register(axpy1, direction < 2 ? 1.0 : -1.0);
+  _register(axpy0, static_cast<int>(direction) % 2 == 0 ? 1.0 : -1.0);
+  _register(axpy1, static_cast<int>(direction) < 2 ? 1.0 : -1.0);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy) : _pairs(axpy._pairs)
@@ -87,24 +87,29 @@ FunctionAXPY::FunctionAXPY(std::vector<std::pair<double,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+FunctionAXPY::~FunctionAXPY()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 FunctionAXPY FunctionAXPY::operator+(const Function& func) const
 {
-  return FunctionAXPY(*this, func, FunctionAXPY::ADD_ADD);
+  return FunctionAXPY(*this, func, Direction::ADD_ADD);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY FunctionAXPY::operator+(const FunctionAXPY& axpy) const
 {
-  return FunctionAXPY(*this, axpy, FunctionAXPY::ADD_ADD);
+  return FunctionAXPY(*this, axpy, Direction::ADD_ADD);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY FunctionAXPY::operator-(const Function& func) const
 {
-  return FunctionAXPY(*this, func, FunctionAXPY::ADD_SUB);
+  return FunctionAXPY(*this, func, Direction::ADD_SUB);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY FunctionAXPY::operator-(const FunctionAXPY& axpy) const
 {
-  return FunctionAXPY(*this, axpy, FunctionAXPY::ADD_SUB);
+  return FunctionAXPY(*this, axpy, Direction::ADD_SUB);
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::pair<double, const Function*>>&

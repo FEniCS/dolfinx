@@ -1,4 +1,4 @@
-// Copyright (C) 2014 Anders Logg
+// Copyright (C) 2014-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-05-12
-// Last changed: 2014-05-12
+// Last changed: 2016-03-02
 
 #ifndef __MULTI_MESH_DIRICHLET_BC_H
 #define __MULTI_MESH_DIRICHLET_BC_H
@@ -47,37 +47,49 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     V (_MultiMeshFunctionSpace_)
-    ///         The function space.
-    ///     g (_GenericFunction_)
-    ///         The value.
-    ///     sub_domain (_SubDomain_)
-    ///         The subdomain.
-    ///     method (std::string)
-    ///         Optional argument: A string specifying
-    ///         the method to identify dofs.
-    MultiMeshDirichletBC(const MultiMeshFunctionSpace& V,
-                         const GenericFunction& g,
-                         const SubDomain& sub_domain,
-                         std::string method="topological",
-                         bool check_midpoint=true);
-
-    /// Create boundary condition for subdomain
-    ///
-    /// *Arguments*
-    ///     V (_MultiMeshFunctionSpace_)
     ///         The function space
     ///     g (_GenericFunction_)
     ///         The value
     ///     sub_domain (_SubDomain_)
     ///         The subdomain
     ///     method (std::string)
-    ///         Optional argument: A string specifying
-    ///         the method to identify dofs
+    ///         Option passed to DirichletBC.
+    ///     check_midpoint (bool)
+    ///         Option passed to DirichletBC.
+    ///     exclude_overlapped_boundaries (bool)
+    ///         If true, then the variable on_boundary will
+    ///         be set to false for facets that are overlapped
+    ///         by another mesh (irrespective of the layering order
+    ///         of the meshes).
     MultiMeshDirichletBC(std::shared_ptr<const MultiMeshFunctionSpace> V,
                          std::shared_ptr<const GenericFunction> g,
                          std::shared_ptr<const SubDomain> sub_domain,
                          std::string method="topological",
-                         bool check_midpoint=true);
+                         bool check_midpoint=true,
+                         bool exclude_overlapped_boundaries=true);
+
+    /// Create boundary condition for subdomain specified by index
+    ///
+    /// *Arguments*
+    ///     V (_FunctionSpace_)
+    ///         The function space.
+    ///     g (_GenericFunction_)
+    ///         The value.
+    ///     sub_domains (_MeshFunction_ <std::size_t>)
+    ///         Subdomain markers
+    ///     sub_domain (std::size_t)
+    ///         The subdomain index (number)
+    ///     part (std::size_t)
+    ///         The part on which to set boundary conditions
+    ///     method (std::string)
+    ///         Optional argument: A string specifying the
+    ///         method to identify dofs.
+    MultiMeshDirichletBC(std::shared_ptr<const MultiMeshFunctionSpace> V,
+                         std::shared_ptr<const GenericFunction> g,
+                         std::shared_ptr<const MeshFunction<std::size_t>> sub_domains,
+                         std::size_t sub_domain,
+                         std::size_t part,
+                         std::string method="topological");
 
     /// Destructor
     ~MultiMeshDirichletBC();
@@ -138,7 +150,8 @@ namespace dolfin
 
       // Constructor
       MultiMeshSubDomain(std::shared_ptr<const SubDomain> sub_domain,
-                         std::shared_ptr<const MultiMesh> multimesh);
+                         std::shared_ptr<const MultiMesh> multimesh,
+                         bool exclude_overlapped_boundaries);
 
       // Destructor
       ~MultiMeshSubDomain();
@@ -160,20 +173,19 @@ namespace dolfin
       // Current part
       std::size_t _current_part;
 
+      // Check whether to exclude boundaries overlapped by other meshes
+      bool _exclude_overlapped_boundaries;
+
     };
 
-    // Initialize boundary conditions for parts
-    void init(std::shared_ptr<const MultiMeshFunctionSpace> V,
-              std::shared_ptr<const GenericFunction> g,
-              std::shared_ptr<const SubDomain> sub_domain,
-              std::string method,
-              bool check_midpoint);
-
     // List of boundary conditions for parts
-    std::vector<std::shared_ptr<const DirichletBC> > _bcs;
+    std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 
     // Wrapper of user-defined subdomain
     mutable std::shared_ptr<MultiMeshSubDomain> _sub_domain;
+
+    // Check whether to exclude boundaries overlapped by other meshes
+    bool _exclude_overlapped_boundaries;
 
   };
 

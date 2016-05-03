@@ -2,9 +2,8 @@
 DOLFIN
 ======
 
-DOLFIN is the C++/Python interface of FEniCS, providing a consistent
-PSE (Problem Solving Environment) for ordinary and partial
-differential equations.
+DOLFIN is the computational backend of FEniCS and implements
+the FEniCS PSE (Problem Solving Environment) in Python and C++.
 
 Installation
 ============
@@ -41,9 +40,14 @@ Contact
 
 For comments and requests, send an email to the FEniCS mailing list:
 
-  fenics@fenicsproject.org
+  fenics-dev@googlegroups.com
 
-For questions and bug reports, visit the FEniCS Q&A page:
+For questions related to obtaining, building or installing DOLFIN, send
+an email to the FEniCS support mailing list:
+
+  fenics-support@googlegroups.com
+
+For questions about using DOLFIN, visit the FEniCS Q&A page:
 
   http://fenicsproject.org/qa
 
@@ -61,3 +65,10 @@ authors can be found in the file AUTHORS. For more information about
 DOLFIN, visit
 
   http://fenicsproject.org
+
+
+
+Automated Testing
+=================
+
+We use Atlassian Bamboo to perform automatic testing at http://magpie.bpi.cam.ac.uk:8085

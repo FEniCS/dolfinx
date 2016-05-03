@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2014 Anders Logg
+// Copyright (C) 2013-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2014-10-16
+// Last changed: 2016-03-02
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -33,38 +33,18 @@ MultiMeshForm::MultiMeshForm(std::shared_ptr<const MultiMesh> multimesh)
   _multimesh = multimesh;
 }
 //-----------------------------------------------------------------------------
-MultiMeshForm::MultiMeshForm(const MultiMesh& multimesh)
-  : _rank(0)
-{
-  _multimesh = reference_to_no_delete_pointer(multimesh);
-}
-//-----------------------------------------------------------------------------
 MultiMeshForm::MultiMeshForm(std::shared_ptr<const MultiMeshFunctionSpace> function_space)
   : _rank(0)
 {
   _function_spaces.push_back(function_space);
 }
 //-----------------------------------------------------------------------------
-MultiMeshForm::MultiMeshForm(const MultiMeshFunctionSpace& function_space)
-  : _rank(0)
-{
-  _function_spaces.push_back(reference_to_no_delete_pointer(function_space));
-}
-//-----------------------------------------------------------------------------
 MultiMeshForm::MultiMeshForm(std::shared_ptr<const MultiMeshFunctionSpace> function_space_0,
-                     std::shared_ptr<const MultiMeshFunctionSpace> function_space_1)
+                             std::shared_ptr<const MultiMeshFunctionSpace> function_space_1)
   : _rank(0)
 {
   _function_spaces.push_back(function_space_0);
   _function_spaces.push_back(function_space_1);
-}
-//-----------------------------------------------------------------------------
-MultiMeshForm::MultiMeshForm(const MultiMeshFunctionSpace& function_space_0,
-                     const MultiMeshFunctionSpace& function_space_1)
-  : _rank(0)
-{
-  _function_spaces.push_back(reference_to_no_delete_pointer(function_space_0));
-  _function_spaces.push_back(reference_to_no_delete_pointer(function_space_1));
 }
 //-----------------------------------------------------------------------------
 MultiMeshForm::~MultiMeshForm()
@@ -138,11 +118,6 @@ void MultiMeshForm::add(std::shared_ptr<const Form> form)
   _forms.push_back(form);
   log(PROGRESS, "Added form to MultiMesh form; form has %d part(s).",
       _forms.size());
-}
-//-----------------------------------------------------------------------------
-void MultiMeshForm::add(const Form& form)
-{
-  add(reference_to_no_delete_pointer(form));
 }
 //-----------------------------------------------------------------------------
 void MultiMeshForm::build()

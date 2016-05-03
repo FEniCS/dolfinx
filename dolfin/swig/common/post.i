@@ -35,6 +35,51 @@ typedef struct {
 
 
 //-----------------------------------------------------------------------------
+// Wrapper of std::terminate, installed into Python exception hook
+//-----------------------------------------------------------------------------
+%noexception dolfin::dolfin_terminate();
+%inline %{
+  #include <signal.h>
+
+  namespace dolfin {
+    void dolfin_terminate() noexcept
+    {
+      // Uninstall OpenMPI signal handlers cluttering stderr (only on POSIX)
+      #ifndef __MINGW32__
+      struct sigaction act;
+      memset(&act, 0, sizeof(act));
+      act.sa_handler = SIG_IGN;
+      sigaction(SIGABRT, &act, NULL);
+      #endif
+
+      // We don't bother with MPI_Abort. This would require taking care of
+      // MPI state. We just assume mpirun catches SIGABRT and sends SIGTERM
+      // to other ranks.
+      std::abort();
+    }
+  }
+%}
+
+%pythoncode %{
+# Install C++ terminate handler into Python (if not interactive)
+# This ensures that std::abort (which is likely to be appropriately
+# interpreted by MPI implementations) is called by sys.excepthook thus
+# avoiding parallel deadlocks when one process raises
+import sys
+def _is_interactive():
+    return hasattr(sys, "ps1") or sys.flags.interactive
+if not _is_interactive():
+    def _new_excepthook(*args):
+        import sys
+        sys.__excepthook__(*args)
+        dolfin_terminate()
+    sys.excepthook = _new_excepthook
+    del _new_excepthook
+del _is_interactive, sys
+%}
+
+
+//-----------------------------------------------------------------------------
 // Instantiate some DOLFIN MPI templates
 //-----------------------------------------------------------------------------
 
@@ -167,4 +212,5 @@ for f in [timings, list_timings, dump_timings_to_xml, timing]:
     doc = doc.replace(" }", "]")
     f.__doc__ = doc
     del doc
+del f
 %}

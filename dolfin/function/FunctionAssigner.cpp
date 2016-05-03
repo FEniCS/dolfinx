@@ -18,16 +18,15 @@
 // First added:  2013-09-20
 // Last changed: 2014-02-28
 
-#include <utility>
-
 #include <map>
+#include <utility>
 #include <dolfin/common/types.h>
-#include <dolfin/log/log.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericVector.h>
+#include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
 #include "FunctionAssigner.h"
 
 using namespace dolfin;
@@ -424,17 +423,17 @@ void FunctionAssigner::_check_and_build_indices(
     const GenericDofMap& receiving_dofmap = *receiving_spaces[i]->dofmap();
 
     // Get on-process dof ranges
-    const std::size_t bs_assigning = assigning_dofmap.block_size;
+    const std::size_t bs_assigning = assigning_dofmap.block_size();
     const std::size_t assigning_range
       = assigning_dofmap.ownership_range().second
       - assigning_dofmap.ownership_range().first
-      + bs_assigning*assigning_dofmap.local_to_global_unowned().size();
+      + bs_assigning*assigning_dofmap.index_map()->local_to_global_unowned().size();
 
-    const std::size_t bs_receiving = receiving_dofmap.block_size;
+    const std::size_t bs_receiving = receiving_dofmap.block_size();
     const std::size_t receiving_range
       = (receiving_dofmap.ownership_range().second
          - receiving_dofmap.ownership_range().first)
-      + bs_receiving*receiving_dofmap.local_to_global_unowned().size();
+      + bs_receiving*receiving_dofmap.index_map()->local_to_global_unowned().size();
 
     // Create a map between receiving and assigning dofs
     std::map<std::size_t, std::size_t> receiving_assigning_map;

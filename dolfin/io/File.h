@@ -18,9 +18,6 @@
 // Modified by Magnus Vikstrom 2007
 // Modified by Nuno Lopes 2008
 // Modified by Ola Skavhaug 2009
-//
-// First added:  2002-11-12
-// Last changed: 2013-03-11
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -45,7 +42,6 @@ namespace dolfin
   ///     * RAW    (.raw)
   ///     * SVG    (.svg)
   ///     * XD3    (.xd3)
-  ///     * XDMF   (.xdmf)
   ///     * XML    (.xml)
   ///     * XYZ    (.xyz)
   ///     * VTK    (.pvd)
@@ -55,7 +51,7 @@ namespace dolfin
   public:
 
     /// File formats
-    enum Type {x3d, xdmf, xml, vtk, raw, xyz, binary, svg};
+    enum class Type {x3d, xml, vtk, raw, xyz, binary, svg};
 
     /// Create a file with given name
     ///
@@ -159,7 +155,7 @@ namespace dolfin
     /// Read from file
     template<typename T> void operator>>(T& t)
     {
-      file->read();
+      file->_read();
       *file >> t;
     }
 
@@ -230,7 +226,7 @@ namespace dolfin
     /// Write object to file
     template<typename T> void operator<<(const T& t)
     {
-      file->write(MPI::rank(_mpi_comm));
+      file->_write(MPI::rank(_mpi_comm));
       *file << t;
     }
 

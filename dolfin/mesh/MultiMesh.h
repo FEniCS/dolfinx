@@ -1,4 +1,4 @@
-// Copyright (C) 2014 Anders Logg
+// Copyright (C) 2014-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2015-06-02
+// Last changed: 2016-03-02
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -29,9 +29,6 @@
 #include <dolfin/plot/plot.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/geometry/Point.h>
-
-// FIXME
-//#include <dolfin/mesh/dolfin_write_medit.h>
 
 namespace dolfin
 {
@@ -61,6 +58,27 @@ namespace dolfin
 
     /// Create empty multimesh
     MultiMesh();
+
+    /// Create multimesh from given list of meshes
+    MultiMesh(std::vector<std::shared_ptr<const Mesh>> meshes,
+              std::size_t quadrature_order);
+
+    //--- Convenience constructors ---
+
+    /// Create multimesh from one mesh
+    MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+              std::size_t quadrature_order);
+
+    /// Create multimesh from two meshes
+    MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+              std::shared_ptr<const Mesh> mesh_1,
+              std::size_t quadrature_order);
+
+    /// Create multimesh from three meshes
+    MultiMesh(std::shared_ptr<const Mesh> mesh_0,
+              std::shared_ptr<const Mesh> mesh_1,
+              std::shared_ptr<const Mesh> mesh_2,
+              std::size_t quadrature_order);
 
     /// Destructor
     ~MultiMesh();
@@ -261,22 +279,15 @@ namespace dolfin
     std::shared_ptr<const BoundingBoxTree>
     bounding_box_tree_boundary(std::size_t part) const;
 
-    /// Add mesh (shared pointer version)
+    /// Add mesh
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh
     void add(std::shared_ptr<const Mesh> mesh);
 
-    /// Add mesh (reference version)
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh
-    void add(const Mesh& mesh);
-
     /// Build multimesh
-    void build();
+    void build(std::size_t quadrature_order=2);
 
     /// Clear multimesh
     void clear();
@@ -297,7 +308,7 @@ namespace dolfin
 
   private:
 
-    // Friends
+    // Friend (in plot.h)
     friend void plot(std::shared_ptr<const MultiMesh>);
 
     // List of meshes
@@ -444,13 +455,13 @@ namespace dolfin
     //void _build_collision_maps_different_topology();
 
     // Build quadrature rules for the cut cells
-    void _build_quadrature_rules_cut_cells();
+    void _build_quadrature_rules_cut_cells(std::size_t quadrature_order);
 
     // Build quadrature rules for the overlap
-    void _build_quadrature_rules_overlap();
+    void _build_quadrature_rules_overlap(std::size_t quadrature_order);
 
     // FIXME
-    void _build_quadrature_rules_interface();
+    void _build_quadrature_rules_interface(std::size_t quadrature_order);
 
     // Add quadrature rule for simplices in the triangulation
     // array. Returns the number of points generated for each simplex.
@@ -461,6 +472,22 @@ namespace dolfin
                          std::size_t gdim,
                          std::size_t quadrature_order,
                          double factor) const;
+
+    // FIXME: since IntersectionTriangulation uses mostly std::vector<Point> create this function while fixing the interface to all functions
+    std::vector<std::size_t>
+      _add_quadrature_rule(quadrature_rule& qr,
+			   const std::vector<Point>& triangulation,
+			   std::size_t tdim,
+			   std::size_t gdim,
+			   std::size_t quadrature_order,
+			   double factor) const
+      {
+	std::vector<double> flat((tdim+1)*gdim);
+	for (std::size_t i = 0; i < triangulation.size(); ++i)
+	  for (std::size_t d = 0; d < gdim; ++d)
+	    flat[i*gdim+d] = triangulation[i][d];
+	return _add_quadrature_rule(qr, flat, tdim, gdim, quadrature_order, factor);
+      }
 
     // Add quadrature rule to existing quadrature rule (append dqr to
     // qr). Returns number of points added.
@@ -477,16 +504,6 @@ namespace dolfin
 
     // Plot multimesh
     void _plot() const;
-
-    // Helper function to compute n choose k
-    static std::size_t n_choose_k(std::size_t n,
-				  std::size_t k);
-
-    // Helper function to compute the n choose k permutations
-    static std::vector<std::deque<std::size_t> > compute_permutations(std::size_t n,
-								      std::size_t k);
-
-
 
     // FIXME: Helper function to convert between flat triangulation
     // and list of Points (this function should not be needed: fix the
@@ -559,6 +576,7 @@ namespace dolfin
 
       return triangulation;
     }
+
 
     // FIXME:
     //double minimum_angle(double* a, double* b, double* c) const;

@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2014 Anders Logg
+// Copyright (C) 2013-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-19
-// Last changed: 2014-06-11
+// Last changed: 2016-03-02
 
 #ifndef __MULTI_MESH_DOF_MAP_H
 #define __MULTI_MESH_DOF_MAP_H
@@ -59,19 +59,12 @@ namespace dolfin
     ///         Dofmap (part) number i
     std::shared_ptr<const GenericDofMap> part(std::size_t i) const;
 
-    /// Add dofmap (shared pointer version)
+    /// Add dofmap
     ///
     /// *Arguments*
     ///     dofmap (_GenericDofMap_)
     ///         The dofmap.
     void add(std::shared_ptr<const GenericDofMap> dofmap);
-
-    /// Add dofmap (reference version)
-    ///
-    /// *Arguments*
-    ///     dofmap (_DofMap_)
-    ///         The dofmap.
-    void add(const GenericDofMap& dofmap);
 
     /// Build MultiMesh dofmap
     void build(const MultiMeshFunctionSpace& function_space,
@@ -92,19 +85,23 @@ namespace dolfin
     /// to owning process
     const std::vector<int>& off_process_owner() const;
 
+    /// Return the map
+    std::shared_ptr<IndexMap> index_map() const;
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
   private:
 
-    // Total global dimension (sum of parts)
-    std::size_t _global_dimension;
+    // Index Map containing total global dimension (sum of parts)
+    // FIXME: make it work in parallel
+    std::shared_ptr<IndexMap> _index_map;
 
     // List of original dofmaps
-    std::vector<std::shared_ptr<const GenericDofMap> > _original_dofmaps;
+    std::vector<std::shared_ptr<const GenericDofMap>> _original_dofmaps;
 
     // List of modified dofmaps
-    std::vector<std::shared_ptr<GenericDofMap> > _new_dofmaps;
+    std::vector<std::shared_ptr<GenericDofMap>> _new_dofmaps;
 
   };
 

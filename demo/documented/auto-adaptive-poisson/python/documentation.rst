@@ -23,7 +23,7 @@ First, the dolfin module is imported:
 
 .. code-block:: python
 
-	from dolfin import *
+    from dolfin import *
 
 We begin by defining a mesh of the domain and a finite element
 function space V relative to this mesh. We used the built-in mesh
@@ -149,4 +149,4 @@ Complete code
 -------------
 
 .. literalinclude:: demo_auto-adaptive-poisson.py
-	:start-after: # Begin demo
+    :start-after: # Begin demo

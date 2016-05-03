@@ -137,7 +137,7 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
 void SubSystemsManager::init_petsc()
 {
   #ifdef HAS_PETSC
-  if (singleton().petsc_initialized )
+  if (singleton().petsc_initialized)
     return;
 
   log(TRACE, "Initializing PETSc (ignoring command-line arguments).");
@@ -177,29 +177,23 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 
   PetscBool is_initialized;
   PetscInitialized(&is_initialized);
-  if (is_initialized)
-  {
-    PetscOptionsInsert(&argc, &argv, PETSC_NULL);
-  }
-  else
+  if (!is_initialized)
   {
     // Initialize PETSc
     PetscInitializeNoArguments();
-
-    // Set options to avoid common failures with some 3rd party solvers
-    PetscOptionsSetValue("-mat_mumps_icntl_7", "0");
-    PetscOptionsSetValue("-mat_superlu_dist_colperm", "MMD_AT_PLUS_A");
-
-    // Pass command line arguments to PETSc (will overwrite any
-    // default above)
-    PetscOptionsInsert(&argc, &argv, PETSC_NULL);
   }
 
-  // Set PETSc
+  // Pass command line arguments to PETSc (will overwrite any
+  // default above)
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
+  PetscOptionsInsert(&argc, &argv, NULL);
+  #else
+  PetscOptionsInsert(NULL, &argc, &argv, NULL);
+  #endif
 
   #ifdef HAS_SLEPC
   // Initialize SLEPc
-  SlepcInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
+  SlepcInitialize(&argc, &argv, NULL, NULL);
   #endif
 
   // Avoid using default PETSc signal handler

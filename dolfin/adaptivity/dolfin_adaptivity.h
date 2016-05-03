@@ -9,7 +9,6 @@
 #include <dolfin/adaptivity/GoalFunctional.h>
 #include <dolfin/adaptivity/ErrorControl.h>
 #include <dolfin/adaptivity/Extrapolation.h>
-#include <dolfin/adaptivity/LocalAssembler.h>
 #include <dolfin/adaptivity/TimeSeries.h>
 
 #include <dolfin/adaptivity/adapt.h>

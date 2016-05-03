@@ -33,12 +33,12 @@
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/Form.h>
+#include <dolfin/fem/LocalAssembler.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/fem/LinearVariationalProblem.h>
 #include <dolfin/fem/LinearVariationalSolver.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/SubSpace.h>
 #include <dolfin/function/Constant.h>
 #include <dolfin/function/SpecialFacetFunction.h>
 #include <dolfin/la/Matrix.h>
@@ -47,7 +47,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 
-#include "LocalAssembler.h"
 #include "ErrorControl.h"
 
 using namespace dolfin;
@@ -82,7 +81,7 @@ ErrorControl::ErrorControl(std::shared_ptr<Form> a_star,
 
   const Function& bubble = dynamic_cast<const Function&>(*_a_R_T->coefficient(0));
   _bubble_space = bubble.function_space();
-  _cell_bubble.reset(new Function(_bubble_space));
+  _cell_bubble = std::make_shared<Function>(_bubble_space);
   dolfin_assert(_cell_bubble->vector());
   *(_cell_bubble->vector()) = 1.0;
 
@@ -129,8 +128,7 @@ double ErrorControl::estimate_error(const Function& u,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_dual(
-  Function& z,
-  const std::vector<std::shared_ptr<const DirichletBC>> bcs)
+  Function& z, const std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   log(PROGRESS, "Solving dual problem.");
 
@@ -141,7 +139,7 @@ void ErrorControl::compute_dual(
     dolfin_assert(bcs[i]);
 
     // Create shared_ptr to boundary condition
-    std::shared_ptr<DirichletBC> dual_bc_ptr(new DirichletBC(*bcs[i]));
+    auto dual_bc_ptr = std::make_shared<DirichletBC>(*bcs[i]);
 
     // Run homogenize
     dual_bc_ptr->homogenize();
@@ -151,11 +149,11 @@ void ErrorControl::compute_dual(
   }
 
   // Create shared_ptr to dual solution (FIXME: missing interface ...)
-  std::shared_ptr<Function> dual(reference_to_no_delete_pointer(z));
+  auto dual = reference_to_no_delete_pointer(z);
 
   // Solve dual problem
   LinearVariationalProblem dual_problem(_a_star, _L_star, dual, dual_bcs);
-  LinearVariationalSolver solver(dual_problem);
+  LinearVariationalSolver solver(reference_to_no_delete_pointer(dual_problem));
   solver.parameters.update(parameters("dual_variational_solver"));
   solver.solve();
 }
@@ -168,7 +166,7 @@ void ErrorControl::compute_extrapolation(
 
   // Extrapolate
   dolfin_assert(_extrapolation_space);
-  _Ez_h.reset(new Function(_extrapolation_space));
+  _Ez_h = std::make_shared<Function>(_extrapolation_space);
   _Ez_h->extrapolate(z);
 
   // Apply appropriate boundary conditions to extrapolation
@@ -180,7 +178,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
 {
   // Create Function for the strong cell residual (R_T)
   dolfin_assert(_a_R_T);
-  _R_T.reset(new Function(_a_R_T->function_space(1)));
+  _R_T = std::make_shared<Function>(_a_R_T->function_space(1));
 
   // Create SpecialFacetFunction for the strong facet residual (R_dT)
   dolfin_assert(_a_R_dT);
@@ -189,12 +187,16 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
     f_e.push_back(Function(_a_R_dT->function_space(1)));
 
   if (f_e[0].value_rank() == 0)
-    _R_dT.reset(new SpecialFacetFunction(f_e));
+    _R_dT = std::make_shared<SpecialFacetFunction>(f_e);
   else if (f_e[0].value_rank() == 1)
-    _R_dT.reset(new SpecialFacetFunction(f_e, f_e[0].value_dimension(0)));
+  {
+    _R_dT = std::make_shared<SpecialFacetFunction>(f_e,
+                                                   f_e[0].value_dimension(0));
+  }
   else
   {
-    _R_dT.reset(new SpecialFacetFunction(f_e, f_e[0].value_dimension(0)));
+    _R_dT = std::make_shared<SpecialFacetFunction>(f_e,
+                                                   f_e[0].value_dimension(0));
     dolfin_error("ErrorControl.cpp",
                  "compute error indicators",
                  "Not implemented for tensor-valued functions");
@@ -206,7 +208,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   // Interpolate dual extrapolation into primal test (dual trial space)
   dolfin_assert(_a_star);
   dolfin_assert(_Ez_h);
-  _Pi_E_z_h.reset(new Function(_a_star->function_space(1)));
+  _Pi_E_z_h = std::make_shared<Function>(_a_star->function_space(1));
   _Pi_E_z_h->interpolate(*_Ez_h);
 
   // Attach coefficients to error indicator form
@@ -232,7 +234,8 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   // Convert DG_0 vector to mesh function over cells
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const ArrayView<const dolfin::la_index> dofs = dofmap.cell_dofs(cell->index());
+    const ArrayView<const dolfin::la_index> dofs
+      = dofmap.cell_dofs(cell->index());
     dolfin_assert(dofs.size() == 1);
     indicators[cell->index()] = x[dofs[0]];
   }
@@ -291,7 +294,8 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   // Define matrices for cell-residual problems
   dolfin_assert(V.element());
   const std::size_t N = V.element()->space_dimension();
-  Eigen::MatrixXd A(N, N), b(N, 1);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                Eigen::RowMajor> A(N, N), b(N, 1);
   Eigen::VectorXd x(N);
 
   // Extract cell_domains etc from right-hand side form
@@ -304,17 +308,17 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 
   // Assemble and solve local linear systems
   ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get cell vertices
-    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_coordinate_dofs(coordinate_dofs);
 
     // Assemble local linear system
-    LocalAssembler::assemble(A, ufc_lhs, vertex_coordinates,
+    LocalAssembler::assemble(A, ufc_lhs, coordinate_dofs,
                              ufc_cell, *cell, cell_domains,
                              exterior_facet_domains, interior_facet_domains);
-    LocalAssembler::assemble(b, ufc_rhs, vertex_coordinates, ufc_cell,
+    LocalAssembler::assemble(b, ufc_rhs, coordinate_dofs, ufc_cell,
                              *cell, cell_domains,
                              exterior_facet_domains, interior_facet_domains);
 
@@ -322,7 +326,8 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     x = A.partialPivLu().solve(b);
 
     // Get local-to-global dof map for cell
-    const ArrayView<const dolfin::la_index> dofs = dofmap.cell_dofs(cell->index());
+    const ArrayView<const dolfin::la_index> dofs
+      = dofmap.cell_dofs(cell->index());
 
     // Plug local solution into global vector
     dolfin_assert(R_T.vector());
@@ -374,7 +379,8 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   const GenericDofMap& dofmap = *V.dofmap();
 
   // Define matrices for facet-residual problems
-  Eigen::MatrixXd A(N, N), b(N, 1);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                Eigen::RowMajor> A(N, N), b(N, 1);
   Eigen::VectorXd x(N);
 
   // Variables to be used for the construction of the cone function
@@ -420,17 +426,17 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 
     // Assemble and solve local linear systems
     ufc::cell ufc_cell;
-    std::vector<double> vertex_coordinates;
+    std::vector<double> coordinate_dofs;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      // Get cell vertex_coordinates
-      cell->get_vertex_coordinates(vertex_coordinates);
+      // Get cell coordinate_dofs
+      cell->get_coordinate_dofs(coordinate_dofs);
 
       // Assemble linear system
-      LocalAssembler::assemble(A, ufc_lhs, vertex_coordinates,
+      LocalAssembler::assemble(A, ufc_lhs, coordinate_dofs,
                                ufc_cell, *cell, cell_domains,
                                exterior_facet_domains, interior_facet_domains);
-      LocalAssembler::assemble(b, ufc_rhs, vertex_coordinates,
+      LocalAssembler::assemble(b, ufc_rhs, coordinate_dofs,
                                ufc_cell, *cell, cell_domains,
                                exterior_facet_domains, interior_facet_domains);
 
@@ -448,7 +454,8 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       x = A.partialPivLu().solve(b);
 
       // Get local-to-global dof map for cell
-      const ArrayView<const dolfin::la_index> dofs = dofmap.cell_dofs(cell->index());
+      const ArrayView<const dolfin::la_index> dofs
+        = dofmap.cell_dofs(cell->index());
 
       // Plug local solution into global vector
       dolfin_assert(R_dT[local_facet].vector());
@@ -469,7 +476,8 @@ void ErrorControl::apply_bcs_to_extrapolation(
 
     // Extract SubSpace component
     dolfin_assert(bcs[i]->function_space());
-    const std::vector<std::size_t> component = bcs[i]->function_space()->component();
+    const std::vector<std::size_t> component
+      = bcs[i]->function_space()->component();
 
     // Extract sub-domain
     std::shared_ptr<const SubDomain> sub_domain = bcs[i]->user_sub_domain();
@@ -482,17 +490,29 @@ void ErrorControl::apply_bcs_to_extrapolation(
     if (component.empty())
     {
       if (sub_domain)
-        e_bc.reset(new DirichletBC(_extrapolation_space, bcs[i]->value(), sub_domain, bcs[i]->method()));
+      {
+        e_bc.reset(new DirichletBC(_extrapolation_space, bcs[i]->value(),
+                                   sub_domain, bcs[i]->method()));
+      }
       else
-        e_bc.reset(new DirichletBC(_extrapolation_space, bcs[i]->value(), bcs[i]->markers(), bcs[i]->method()));
+      {
+        e_bc.reset(new DirichletBC(_extrapolation_space, bcs[i]->value(),
+                                   bcs[i]->markers(), bcs[i]->method()));
+      }
     }
     else
     {
-      std::shared_ptr<SubSpace> S(new SubSpace(*_extrapolation_space, component));
+      std::shared_ptr<FunctionSpace> S = _extrapolation_space->sub(component);
       if (sub_domain)
-        e_bc.reset(new DirichletBC(S, bcs[i]->value(), sub_domain, bcs[i]->method()));
+      {
+        e_bc.reset(new DirichletBC(S, bcs[i]->value(), sub_domain,
+                                   bcs[i]->method()));
+      }
       else
-        e_bc.reset(new DirichletBC(S, bcs[i]->value(), bcs[i]->markers(), bcs[i]->method()));
+      {
+        e_bc.reset(new DirichletBC(S, bcs[i]->value(), bcs[i]->markers(),
+                                   bcs[i]->method()));
+      }
     }
     e_bc->homogenize();
 

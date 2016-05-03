@@ -20,8 +20,8 @@
 // Modified by Jan Blechta 2013
 // Modified by Martin Alnaes 2013-2015
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <Eigen/Dense>
 
 #include <dolfin/common/ArrayView.h>
@@ -49,58 +49,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(const Form& a, const Form& L)
-  : _a(reference_to_no_delete_pointer(a)),
-    _l(reference_to_no_delete_pointer(L))
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-}
-//-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(const Form& a, const Form& L,
-                                 const DirichletBC& bc)
-  : _a(reference_to_no_delete_pointer(a)),
-    _l(reference_to_no_delete_pointer(L))
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-
-  // Store Dirichlet boundary condition
-  _bcs.push_back(&bc);
-}
-//-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(const Form& a, const Form& L,
-                                 const std::vector<const DirichletBC*> bcs)
-  : _a(reference_to_no_delete_pointer(a)),
-    _l(reference_to_no_delete_pointer(L)), _bcs(bcs)
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-}
-//-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
-                                 std::shared_ptr<const Form> L)
-  : _a(a), _l(L)
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-}
-//-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
                                  std::shared_ptr<const Form> L,
-                                 const DirichletBC& bc)
-  : _a(a), _l(L)
-{
-  // Check arity of forms
-  check_arity(_a, _l);
-
-  // Store Dirichlet boundary condition
-  _bcs.push_back(&bc);
-}
-//-----------------------------------------------------------------------------
-SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
-                                 std::shared_ptr<const Form> L,
-                                 const std::vector<const DirichletBC*> bcs)
+                                 std::vector<std::shared_ptr<const DirichletBC>> bcs)
   : _a(a), _l(L), _bcs(bcs)
 {
   // Check arity of forms
@@ -147,7 +98,7 @@ void SystemAssembler::check_arity(std::shared_ptr<const Form> a,
     }
   }
 
-  // Check that a is a bilinear form
+  // Check that L is a linear form
   if (L)
   {
     if (L->rank() != 1)
@@ -173,6 +124,28 @@ in SystemAssembler. Taking %s subdomains from bilinear form",
   return a ? a: b;
 }
 //-----------------------------------------------------------------------------
+bool SystemAssembler::check_functionspace_for_bc
+    (std::shared_ptr<const FunctionSpace> fs, std::size_t bc_index)
+{
+  std::shared_ptr<const FunctionSpace> bc_function_space
+    = _bcs[bc_index]->function_space();
+
+  if (*bc_function_space == *fs)
+    return true;
+  else
+  {
+    // Recursively check sub-spaces
+    std::size_t num_sub_elements = fs->element()->num_sub_elements();
+    for (std::size_t i = 0; i != num_sub_elements; ++i)
+      {
+        std::shared_ptr<const FunctionSpace> subspace = (*fs)[i];
+        if (check_functionspace_for_bc(subspace, bc_index))
+          return true;
+      }
+  }
+  return false;
+}
+//-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
                                const GenericVector* x0)
 {
@@ -183,7 +156,8 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   Timer timer("Assemble system");
 
   // Get mesh
-  const Mesh& mesh = _a->mesh();
+  dolfin_assert(_a->mesh());
+  const Mesh& mesh = *(_a->mesh());
   dolfin_assert(mesh.ordered());
 
   // Get cell domains
@@ -212,7 +186,7 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   dolfin_assert(_l->rank() == 1);
 
   // Check that forms share a function space
-  if (*_a->function_space(1) != *_l->function_space(0))
+  if (*_a->function_space(0) != *_l->function_space(0))
   {
     dolfin_error("SystemAssembler.cpp",
                  "assemble system",
@@ -246,40 +220,59 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   Scratch data(*_a, *_l);
 
   // Get Dirichlet dofs and values for local mesh
-  DirichletBC::Map boundary_values;
+  // Determine whether _a is bilinear in the same form
+  std::size_t num_fs
+    = (*_a->function_space(0) == *_a->function_space(1)) ? 1 : 2;
+
+  // Bin boundary conditions according to which form they apply to (if any)
+  std::vector<DirichletBC::Map> boundary_values(num_fs);
   for (std::size_t i = 0; i < _bcs.size(); ++i)
   {
-    _bcs[i]->get_boundary_values(boundary_values);
-    if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
-      _bcs[i]->gather(boundary_values);
+    // Match the FunctionSpace of the BC
+    // with the (possible sub-)FunctionSpace on each axis of _a.
+    int axis = -1;
+
+    if (check_functionspace_for_bc(_a->function_space(0), i))
+      axis = 0;
+    else if (check_functionspace_for_bc(_a->function_space(1), i))
+      axis = 1;
+
+    // Found!
+    if (axis != -1)
+    {
+      _bcs[i]->get_boundary_values(boundary_values[axis]);
+      if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
+        _bcs[i]->gather(boundary_values[axis]);
+    }
+
   }
 
   // Modify boundary values for incremental (typically nonlinear)
   // problems
+  // FIXME: not sure what happens when num_fs==2
   if (x0)
   {
     dolfin_assert(x0->size()
                   == _a->function_space(1)->dofmap()->global_dimension());
 
-    const std::size_t num_bc_dofs = boundary_values.size();
+    const std::size_t num_bc_dofs = boundary_values[0].size();
     std::vector<dolfin::la_index> bc_indices;
     std::vector<double> bc_values;
     bc_indices.reserve(num_bc_dofs);
     bc_values.reserve(num_bc_dofs);
 
     // Build list of boundary dofs and values
-    DirichletBC::Map::const_iterator bv;
-    for (bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
+    for (const auto &bv : boundary_values[0])
     {
-      bc_indices.push_back(bv->first);
-      bc_values.push_back(bv->second);
+      bc_indices.push_back(bv.first);
+      bc_values.push_back(bv.second);
     }
 
     // Modify bc values
     std::vector<double> x0_values(num_bc_dofs);
     x0->get_local(x0_values.data(), num_bc_dofs, bc_indices.data());
     for (std::size_t i = 0; i < num_bc_dofs; i++)
-      boundary_values[bc_indices[i]] = x0_values[i] - bc_values[i];
+      boundary_values[0][bc_indices[i]] = x0_values[i] - bc_values[i];
   }
 
   // Check whether we should do cell-wise or facet-wise assembly
@@ -312,12 +305,13 @@ void SystemAssembler::cell_wise_assembly(
   std::array<GenericTensor*, 2>& tensors,
   std::array<UFC*, 2>& ufc,
   Scratch& data,
-  const DirichletBC::Map& boundary_values,
+  const std::vector<DirichletBC::Map>& boundary_values,
   std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
   std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains)
 {
   // Extract mesh
-  const Mesh& mesh = ufc[0]->dolfin_form.mesh();
+  dolfin_assert(ufc[0]->dolfin_form.mesh());
+  const Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
   // Initialize entities if using external facet integrals
   dolfin_assert(mesh.ordered());
@@ -358,7 +352,7 @@ void SystemAssembler::cell_wise_assembly(
 
   // Iterate over all cells
   ufc::cell ufc_cell;
-  std::vector<double> vertex_coordinates;
+  std::vector<double> coordinate_dofs;
   Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -366,7 +360,7 @@ void SystemAssembler::cell_wise_assembly(
     dolfin_assert(!cell->is_ghost());
 
     // Get cell vertex coordinates
-    cell->get_vertex_coordinates(vertex_coordinates);
+    cell->get_coordinate_dofs(coordinate_dofs);
 
     // Get UFC cell data
     cell->get_cell_data(ufc_cell);
@@ -406,13 +400,13 @@ void SystemAssembler::cell_wise_assembly(
       if (tensor_required)
       {
         // Update to current cell
-        ufc[form]->update(*cell, vertex_coordinates, ufc_cell,
+        ufc[form]->update(*cell, coordinate_dofs, ufc_cell,
                           cell_integrals[form]->enabled_coefficients());
 
         // Tabulate cell tensor
         cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
                                               ufc[form]->w(),
-                                              vertex_coordinates.data(),
+                                              coordinate_dofs.data(),
                                               ufc_cell.orientation);
         for (std::size_t i = 0; i < data.Ae[form].size(); ++i)
           data.Ae[form][i] += ufc[form]->A[i];
@@ -460,13 +454,13 @@ void SystemAssembler::cell_wise_assembly(
           {
             // Update to current cell
             cell->get_cell_data(ufc_cell);
-            ufc[form]->update(*cell, vertex_coordinates, ufc_cell,
+            ufc[form]->update(*cell, coordinate_dofs, ufc_cell,
                               exterior_facet_integrals[form]->enabled_coefficients());
 
             // Tabulate exterior facet tensor
             exterior_facet_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
                                                             ufc[form]->w(),
-                                                            vertex_coordinates.data(),
+                                                            coordinate_dofs.data(),
                                                             local_facet,
                                                             ufc_cell.orientation);
             for (std::size_t i = 0; i < data.Ae[form].size(); i++)
@@ -475,9 +469,6 @@ void SystemAssembler::cell_wise_assembly(
         }
       }
     }
-
-    // Check dofmap is the same for LHS columns and RHS vector
-    dolfin_assert(cell_dofs[1][0].data() == cell_dofs[0][1].data());
 
     // Modify local matrix/element for Dirichlet boundary conditions
     apply_bc(data.Ae[0].data(), data.Ae[1].data(), boundary_values,
@@ -498,13 +489,14 @@ void SystemAssembler::facet_wise_assembly(
   std::array<GenericTensor*, 2>& tensors,
   std::array<UFC*, 2>& ufc,
   Scratch& data,
-  const DirichletBC::Map& boundary_values,
+  const std::vector<DirichletBC::Map>& boundary_values,
   std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
   std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains,
   std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains)
 {
   // Extract mesh
-  const Mesh& mesh = ufc[0]->dolfin_form.mesh();
+  dolfin_assert(ufc[0]->dolfin_form.mesh());
+  const Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
   // Compute facets and facet - cell connectivity if not already
   // computed
@@ -568,7 +560,7 @@ void SystemAssembler::facet_wise_assembly(
 
   // Iterate over facets
   std::array<ufc::cell, 2> ufc_cell;
-  std::array<std::vector<double>, 2> vertex_coordinates;
+  std::array<std::vector<double>, 2> coordinate_dofs;
   Progress p("Assembling system (facet-wise)", mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
@@ -600,7 +592,7 @@ void SystemAssembler::facet_wise_assembly(
         cell[c] = Cell(mesh, cell_indices[c]);
         cell_index[c] = cell[c].index();
         local_facet[c] = cell[c].index(*facet);
-        cell[c].get_vertex_coordinates(vertex_coordinates[c]);
+        cell[c].get_coordinate_dofs(coordinate_dofs[c]);
         cell[c].get_cell_data(ufc_cell[c], local_facet[c]);
 
         compute_cell_tensor[c] = !cell_tensor_computed[cell_index[c]];
@@ -721,7 +713,7 @@ void SystemAssembler::facet_wise_assembly(
         vector_size = cell_dofs[1][c][0].size();
       }
       compute_interior_facet_tensor(ufc, ufc_cell,
-                                    vertex_coordinates,
+                                    coordinate_dofs,
                                     tensor_required_cell,
                                     tensor_required_facet,
                                     cell, local_facet,
@@ -834,7 +826,7 @@ void SystemAssembler::facet_wise_assembly(
 
       // Compute cell/facet tensors
       compute_exterior_facet_tensor(data.Ae, ufc, ufc_cell[0],
-                                    vertex_coordinates[0],
+                                    coordinate_dofs[0],
                                     tensor_required_cell,
                                     tensor_required_facet,
                                     cell, *facet,
@@ -864,7 +856,7 @@ void SystemAssembler:: compute_exterior_facet_tensor(
   std::array<std::vector<double>, 2>& Ae,
   std::array<UFC*, 2>& ufc,
   ufc::cell& ufc_cell,
-  std::vector<double>& vertex_coordinates,
+  std::vector<double>& coordinate_dofs,
   const std::array<bool, 2>& tensor_required_cell,
   const std::array<bool, 2>& tensor_required_facet,
   const Cell& cell,
@@ -877,7 +869,7 @@ void SystemAssembler:: compute_exterior_facet_tensor(
   const std::size_t local_facet = cell.index(facet);
 
   // Get cell data
-  cell.get_vertex_coordinates(vertex_coordinates);
+  cell.get_coordinate_dofs(coordinate_dofs);
   cell.get_cell_data(ufc_cell, local_facet);
 
   // Loop over lhs and then rhs facet contributions
@@ -891,11 +883,11 @@ void SystemAssembler:: compute_exterior_facet_tensor(
     if (tensor_required_facet[form])
     {
       // Update UFC object
-      ufc[form]->update(cell, vertex_coordinates, ufc_cell,
+      ufc[form]->update(cell, coordinate_dofs, ufc_cell,
                         exterior_facet_integrals[form]->enabled_coefficients());
       exterior_facet_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
                                                       ufc[form]->w(),
-                                                      vertex_coordinates.data(),
+                                                      coordinate_dofs.data(),
                                                       local_facet,
                                                       ufc_cell.orientation);
       for (std::size_t i = 0; i < Ae[form].size(); i++)
@@ -910,11 +902,11 @@ void SystemAssembler:: compute_exterior_facet_tensor(
       // Compute cell integral, if required
       if (tensor_required_cell[form])
       {
-        ufc[form]->update(cell, vertex_coordinates, ufc_cell,
+        ufc[form]->update(cell, coordinate_dofs, ufc_cell,
                           cell_integrals[form]->enabled_coefficients());
         cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
                                               ufc[form]->w(),
-                                              vertex_coordinates.data(),
+                                              coordinate_dofs.data(),
                                               ufc_cell.orientation);
         for (std::size_t i = 0; i < Ae[form].size(); i++)
           Ae[form][i] += ufc[form]->A[i];
@@ -926,7 +918,7 @@ void SystemAssembler:: compute_exterior_facet_tensor(
 void SystemAssembler::compute_interior_facet_tensor(
   std::array<UFC*, 2>& ufc,
   std::array<ufc::cell, 2>& ufc_cell,
-  std::array<std::vector<double>, 2>& vertex_coordinates,
+  std::array<std::vector<double>, 2>& coordinate_dofs,
   const std::array<bool, 2>& tensor_required_cell,
   const std::array<bool, 2>& tensor_required_facet,
   const std::array<Cell, 2>& cell,
@@ -946,14 +938,14 @@ void SystemAssembler::compute_interior_facet_tensor(
     if (tensor_required_facet[form] && facet_owner)
     {
       // Update to current pair of cells
-      ufc[form]->update(cell[0], vertex_coordinates[0], ufc_cell[0],
-                        cell[1], vertex_coordinates[1], ufc_cell[1],
+      ufc[form]->update(cell[0], coordinate_dofs[0], ufc_cell[0],
+                        cell[1], coordinate_dofs[1], ufc_cell[1],
                         interior_facet_integrals[form]->enabled_coefficients());
       // Integrate over facet
       interior_facet_integrals[form]->tabulate_tensor(ufc[form]->macro_A.data(),
                                                       ufc[form]->macro_w(),
-                                                      vertex_coordinates[0].data(),
-                                                      vertex_coordinates[1].data(),
+                                                      coordinate_dofs[0].data(),
+                                                      coordinate_dofs[1].data(),
                                                       local_facet[0],
                                                       local_facet[1],
                                                       ufc_cell[0].orientation,
@@ -968,11 +960,11 @@ void SystemAssembler::compute_interior_facet_tensor(
         // Compute cell tensor, if required
         if (tensor_required_cell[form] and !cell[c].is_ghost())
         {
-          ufc[form]->update(cell[c], vertex_coordinates[c], ufc_cell[c],
+          ufc[form]->update(cell[c], coordinate_dofs[c], ufc_cell[c],
                             cell_integrals[form]->enabled_coefficients());
           cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
                                                 ufc[form]->w(),
-                                                vertex_coordinates[c].data(),
+                                                coordinate_dofs[c].data(),
                                                 ufc_cell[c].orientation);
 
           // FIXME: Can the below two blocks be consolidated?
@@ -1027,42 +1019,69 @@ void SystemAssembler::matrix_block_add(
 //-----------------------------------------------------------------------------
 void
 SystemAssembler::apply_bc(double* A, double* b,
-                          const DirichletBC::Map& boundary_values,
+                          const std::vector<DirichletBC::Map>& boundary_values,
                           const ArrayView<const dolfin::la_index>& global_dofs0,
                           const ArrayView<const dolfin::la_index>& global_dofs1)
 {
   dolfin_assert(A);
   dolfin_assert(b);
-  dolfin_assert(global_dofs0.size() == global_dofs1.size());
 
   // Wrap matrix and vector using Eigen
   Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                            Eigen::RowMajor>>
     _matA(A, global_dofs0.size(), global_dofs1.size());
-  Eigen::Map<Eigen::VectorXd> _b(b, global_dofs1.size());
+  Eigen::Map<Eigen::VectorXd> _b(b, global_dofs0.size());
 
-  // Loop over rows
-  //for (std::size_t i = 0; i < _matA.n_rows; ++i)
-  for (int i = 0; i < _matA.cols(); ++i)
+  if (boundary_values.size() == 1)
   {
-    const std::size_t ii = global_dofs1[i];
-    DirichletBC::Map::const_iterator bc_value = boundary_values.find(ii);
-    if (bc_value != boundary_values.end())
+    // Square matrix with same FunctionSpace on each axis
+    // Loop over columns/rows
+    for (int i = 0; i < _matA.cols(); ++i)
     {
-      // Zero row
-      _matA.row(i).setZero();
+      const std::size_t ii = global_dofs1[i];
+      DirichletBC::Map::const_iterator bc_value = boundary_values[0].find(ii);
+      if (bc_value != boundary_values[0].end())
+      {
+        // Zero row
+        _matA.row(i).setZero();
 
-      // Modify RHS (subtract (bc_column(A))*bc_val from b)
-      _b -= _matA.col(i)*bc_value->second;
+        // Modify RHS (subtract (bc_column(A))*bc_val from b)
+        _b -= _matA.col(i)*bc_value->second;
 
-      // Zero column
-      _matA.col(i).setZero();
+        // Zero column
+        _matA.col(i).setZero();
 
-      // Place 1 on diagonal and bc on RHS (i th row ).
-      _b(i)    = bc_value->second;
-      _matA(i, i) = 1.0;
+        // Place 1 on diagonal and bc on RHS (i th row ).
+        _b(i)       = bc_value->second;
+        _matA(i, i) = 1.0;
+      }
     }
   }
+  else
+  {
+    // Loop over rows first
+    for (int i = 0; i < _matA.rows(); ++i)
+    {
+      const std::size_t ii = global_dofs0[i];
+      DirichletBC::Map::const_iterator bc_value = boundary_values[0].find(ii);
+      if (bc_value != boundary_values[0].end())
+        _matA.row(i).setZero();
+    }
+
+    // Loop over columns
+    for (int j = 0; j < _matA.cols(); ++j)
+    {
+      const std::size_t jj = global_dofs1[j];
+      DirichletBC::Map::const_iterator bc_value = boundary_values[1].find(jj);
+      if (bc_value != boundary_values[1].end())
+      {
+        // Modify RHS (subtract (bc_column(A))*bc_val from b)
+        _b -= _matA.col(j)*bc_value->second;
+        _matA.col(j).setZero();
+      }
+    }
+  }
+
 }
 //-----------------------------------------------------------------------------
 bool SystemAssembler::has_bc(const DirichletBC::Map& boundary_values,
@@ -1082,12 +1101,12 @@ bool SystemAssembler::has_bc(const DirichletBC::Map& boundary_values,
 bool SystemAssembler::cell_matrix_required(
   const GenericTensor* A,
   const void* integral,
-  const DirichletBC::Map& boundary_values,
+  const std::vector<DirichletBC::Map>& boundary_values,
   const ArrayView<const dolfin::la_index>& dofs)
 {
   if (A && integral)
     return true;
-  else if (integral && has_bc(boundary_values, dofs))
+  else if (integral && has_bc(boundary_values[0], dofs))
     return true;
   else
     return false;

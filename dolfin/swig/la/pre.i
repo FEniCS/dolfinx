@@ -170,17 +170,10 @@
 %ignore dolfin::GenericMatrix::setitem;
 %ignore dolfin::GenericMatrix::operator();
 
-// Ignore reference version of constructor
-%ignore dolfin::PETScKrylovSolver(std::string, PETScPreconditioner&);
-%ignore dolfin::PETScKrylovSolver(std::string, PETScUserPreconditioner&);
-%ignore dolfin::PaStiXLUSolver(const STLMatrix& A);
-
 //-----------------------------------------------------------------------------
 // PETSc/SLEPc backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_PETSC
-// Ignore MatNullSpace not properly wrapped by SWIG
-%ignore dolfin::PETScPreconditioner::near_nullspace() const;
 
 // Only ignore C++ accessors if petsc4py is enabled
 #ifdef HAS_PETSC4PY
@@ -189,6 +182,7 @@
 %ignore dolfin::PETScKrylovSolver::ksp() const;
 %ignore dolfin::PETScLUSolver::ksp() const;
 %ignore dolfin::PETScSNESSolver::snes() const;
+%ignore dolfin::PETScTAOSolver::tao() const;
 #else
 // Ignore everything
 %ignore dolfin::PETScVector::vec;
@@ -196,13 +190,11 @@
 %ignore dolfin::PETScKrylovSolver::ksp;
 %ignore dolfin::PETScLUSolver::ksp;
 %ignore dolfin::PETScSNESSolver::snes;
+%ignore dolfin::PETScTAOSolver::tao;
 #endif
 #endif
 
 #ifdef HAS_SLEPC
-%ignore dolfin::SLEPcEigenSolver(const PETScMatrix&);
-%ignore dolfin::SLEPcEigenSolver(const PETScMatrix&, const PETScMatrix&);
-
 // Only ignore C++ accessors if slepc4py is enabled
 #ifdef HAS_SLEPC4PY
 %ignore dolfin::SLEPcEigenSolver::eps() const;

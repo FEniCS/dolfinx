@@ -78,25 +78,25 @@ int main()
   parameters["std_out_all_processes"] = false;
 
   // Load mesh from file
-  Mesh mesh("../lshape.xml.gz");
+  auto mesh = std::make_shared<Mesh>("../lshape.xml.gz");
 
   // Create function spaces
-  VelocityUpdate::FunctionSpace V(mesh);
-  PressureUpdate::FunctionSpace Q(mesh);
+  auto V = std::make_shared<VelocityUpdate::FunctionSpace>(mesh);
+  auto Q = std::make_shared<PressureUpdate::FunctionSpace>(mesh);
 
   // Set parameter values
   double dt = 0.01;
   double T = 3;
 
   // Define values for boundary conditions
-  InflowPressure p_in;
-  Constant zero(0);
-  Constant zero_vector(0, 0);
+  auto p_in = std::make_shared<InflowPressure>();
+  auto zero = std::make_shared<Constant>(0.0);
+  auto zero_vector = std::make_shared<Constant>(0.0, 0.0);
 
   // Define subdomains for boundary conditions
-  NoslipDomain noslip_domain;
-  InflowDomain inflow_domain;
-  OutflowDomain outflow_domain;
+  auto noslip_domain = std::make_shared<NoslipDomain>();
+  auto inflow_domain = std::make_shared<InflowDomain>();
+  auto outflow_domain = std::make_shared<OutflowDomain>() ;
 
   // Define boundary conditions
   DirichletBC noslip(V, zero_vector, noslip_domain);
@@ -106,13 +106,13 @@ int main()
   std::vector<DirichletBC*> bcp = {{&inflow, &outflow}};
 
   // Create functions
-  Function u0(V);
-  Function u1(V);
-  Function p1(Q);
+  auto u0 = std::make_shared<Function>(V);
+  auto u1 = std::make_shared<Function>(V);
+  auto p1 = std::make_shared<Function>(Q);
 
   // Create coefficients
-  Constant k(dt);
-  Constant f(0, 0);
+  auto k = std::make_shared<Constant>(dt);
+  auto f = std::make_shared<Constant>(0, 0);
 
   // Create forms
   TentativeVelocity::BilinearForm a1(V, V);
@@ -148,14 +148,14 @@ int main()
   while (t < T + DOLFIN_EPS)
   {
     // Update pressure boundary condition
-    p_in.t = t;
+    p_in->t = t;
 
     // Compute tentative velocity step
     begin("Computing tentative velocity");
     assemble(b1, L1);
     for (std::size_t i = 0; i < bcu.size(); i++)
       bcu[i]->apply(A1, b1);
-    solve(A1, *u1.vector(), b1, "gmres", "default");
+    solve(A1, *u1->vector(), b1, "gmres", "default");
     end();
 
     // Pressure correction
@@ -164,9 +164,9 @@ int main()
     for (std::size_t i = 0; i < bcp.size(); i++)
     {
       bcp[i]->apply(A2, b2);
-      bcp[i]->apply(*p1.vector());
+      bcp[i]->apply(*p1->vector());
     }
-    solve(A2, *p1.vector(), b2, "bicgstab", prec);
+    solve(A2, *p1->vector(), b2, "bicgstab", prec);
     end();
 
     // Velocity correction
@@ -174,15 +174,15 @@ int main()
     assemble(b3, L3);
     for (std::size_t i = 0; i < bcu.size(); i++)
       bcu[i]->apply(A3, b3);
-    solve(A3, *u1.vector(), b3, "gmres", "default");
+    solve(A3, *u1->vector(), b3, "gmres", "default");
     end();
 
     // Save to file
-    ufile << u1;
-    pfile << p1;
+    ufile << *u1;
+    pfile << *p1;
 
     // Move to next time step
-    u0 = u1;
+    *u0 = *u1;
     t += dt;
     cout << "t = " << t << endl;
   }

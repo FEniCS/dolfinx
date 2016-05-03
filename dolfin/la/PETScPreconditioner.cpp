@@ -84,6 +84,7 @@ PETScPreconditioner::preconditioners()
   return PETScPreconditioner::_methods_descr;
 }
 //-----------------------------------------------------------------------------
+/*
 Parameters PETScPreconditioner::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters()("preconditioner"));
@@ -97,12 +98,45 @@ Parameters PETScPreconditioner::default_parameters()
 
   return p;
 }
+*/
 //-----------------------------------------------------------------------------
-PETScPreconditioner::PETScPreconditioner(std::string type)
-  : _type(type), petsc_near_nullspace(NULL), gdim(0)
+void PETScPreconditioner::set_type(PETScKrylovSolver& solver, std::string type)
+{
+  // Get KSP object
+  KSP ksp = solver.ksp();
+  if (!ksp)
+  {
+    dolfin_error("PETScPreconditioner.cpp",
+                 "set PETSc preconditioner type",
+                 "PETSc KSP object has not been intialized");
+  }
+
+  // Check that pc type is known
+  auto pc_type_pair = _methods.find(type);
+  if (pc_type_pair == _methods.end())
+  {
+    dolfin_error("PETScPreconditioner.cpp",
+                 "set PETSc preconditioner type",
+                 "Unknown preconditioner type (\"%s\")", type.c_str());
+  }
+
+  PetscErrorCode ierr;
+
+  // Get PETSc PC pointer
+  PC pc = nullptr;
+  ierr = KSPGetPC(ksp, &pc);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
+
+  // Set PC type
+  if (type != "default")
+    ierr = PCSetType(pc, pc_type_pair->second);
+}
+//-----------------------------------------------------------------------------
+PETScPreconditioner::PETScPreconditioner(std::string type) : _type(type),
+                                                             gdim(0)
 {
   // Set parameter values
-  parameters = default_parameters();
+  //parameters = default_parameters();
 
   // Check that the requested method is known
   if (_methods.count(type) == 0)
@@ -115,8 +149,7 @@ PETScPreconditioner::PETScPreconditioner(std::string type)
 //-----------------------------------------------------------------------------
 PETScPreconditioner::~PETScPreconditioner()
 {
-  if (petsc_near_nullspace)
-    MatNullSpaceDestroy(&petsc_near_nullspace);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void PETScPreconditioner::set(PETScKrylovSolver& solver)
@@ -178,29 +211,6 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
     ierr = PCSetType(pc, PCGAMG);
     if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
   }
-  else if (_type == "additive_schwarz")
-  {
-    // Select method and overlap
-    ierr = PCSetType(pc, _methods.find("additive_schwarz")->second);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
-
-    const int schwarz_overlap = parameters("schwarz")["overlap"];
-    PCASMSetOverlap(pc, schwarz_overlap);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCASMSetOverlap");
-  }
-  else if (_type != "default")
-  {
-    ierr = PCSetType(pc, _methods.find(_type)->second);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
-    ierr = PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetShiftType");
-    ierr = PCFactorSetShiftAmount(pc, parameters["shift_nonzero"]);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetShiftAmount");
-  }
-
-  const int ilu_levels = parameters("ilu")["fill_level"];
-  ierr = PCFactorSetLevels(pc, ilu_levels);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetLevels");
 
   // Set physical coordinates for row dofs
   if (!_coordinates.empty())
@@ -214,57 +224,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
   // Clear memory
   _coordinates.clear();
 
-  std::string prefix = std::string(parameters["options_prefix"]);
-  if (prefix != "default")
-  {
-    // Make sure that the prefix has a '_' at the end if the user
-    // didn't provide it
-    char lastchar = *prefix.rbegin();
-    if (lastchar != '_')
-      prefix += "_";
-
-    PCSetOptionsPrefix(pc, prefix.c_str());
-  }
   PCSetFromOptions(pc);
-
-  // Print preconditioner information
-  const bool report = parameters["report"];
-  if (report)
-  {
-    ierr = PCSetUp(pc);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetUp");
-    ierr = PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCView");
-  }
-}
-//-----------------------------------------------------------------------------
-void PETScPreconditioner::set_nullspace(const VectorSpaceBasis& near_nullspace)
-{
-  // Clear near nullspace
-  if (petsc_near_nullspace)
-    MatNullSpaceDestroy(&petsc_near_nullspace);
-  _near_nullspace.clear();
-
-  // Copy vectors
-  for (std::size_t i = 0; i < near_nullspace.dim(); ++i)
-  {
-    dolfin_assert(near_nullspace[i]);
-    const PETScVector& x = near_nullspace[i]->down_cast<PETScVector>();
-
-    // Copy vector
-    _near_nullspace.push_back(x);
-  }
-
-  // Get pointers to underlying PETSc objects
-  std::vector<Vec> petsc_vec(near_nullspace.dim());
-  for (std::size_t i = 0; i < near_nullspace.dim(); ++i)
-    petsc_vec[i] = _near_nullspace[i].vec();
-
-  // Create null space
-  PetscErrorCode ierr;
-  ierr = MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, near_nullspace.dim(),
-                            petsc_vec.data(), &petsc_near_nullspace);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
 }
 //-----------------------------------------------------------------------------
 void PETScPreconditioner::set_coordinates(const std::vector<double>& x,
@@ -296,7 +256,7 @@ void PETScPreconditioner::set_fieldsplit(
   {
     // Create IndexSet
     IS is;
-    ierr = ISCreateGeneral(PETSC_COMM_WORLD, fields[i].size(), fields[i].data(),
+    ierr = ISCreateGeneral(solver.mpi_comm(), fields[i].size(), fields[i].data(),
                            PETSC_USE_POINTER, &is);
     if (ierr != 0) petsc_error(ierr, __FILE__, "ISCreateGeneral");
 

@@ -17,9 +17,6 @@
 //
 // Modified by Martin Sandve Alnes, 2008.
 // Modified by Garth N. Wells, 2008-2011.
-//
-// First added:  2006-02-09
-// Last changed: 2011-05-15
 
 #ifndef __CONSTANT_H
 #define __CONSTANT_H
@@ -29,7 +26,7 @@
 
 namespace dolfin
 {
-
+  template<typename T> class Array;
   class Mesh;
 
   /// This class represents a constant-valued expression.
@@ -48,7 +45,6 @@ namespace dolfin
     ///     .. code-block:: c++
     ///
     ///         Constant c(1.0);
-    ///
     explicit Constant(double value);
 
     /// Create vector constant (dim = 2)
@@ -63,7 +59,6 @@ namespace dolfin
     ///     .. code-block:: c++
     ///
     ///         Constant B(0.0, 1.0);
-    ///
     Constant(double value0, double value1);
 
     /// Create vector constant (dim = 3)
@@ -80,7 +75,6 @@ namespace dolfin
     ///     .. code-block:: c++
     ///
     ///         Constant T(0.0, 1.0, 0.0);
-    ///
     Constant(double value0, double value1, double value2);
 
     /// Create vector-valued constant
@@ -131,9 +125,18 @@ namespace dolfin
     ///         The scalar value.
     operator double() const;
 
+    /// Return copy of this Constant's current values
+    ///
+    /// *Returns*
+    ///     std::vector<double>
+    ///         The vector of scalar values of the constant.
+    std::vector<double> values() const;
+
     //--- Implementation of Expression interface ---
 
     void eval(Array<double>& values, const Array<double>& x) const;
+
+    virtual std::string str(bool verbose) const;
 
   private:
 

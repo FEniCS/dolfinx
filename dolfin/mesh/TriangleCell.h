@@ -57,15 +57,11 @@ namespace dolfin
                          std::size_t dim,
                          const unsigned int* v) const;
 
-    /// Refine cell uniformly
-    void refine_cell(Cell& cell, MeshEditor& editor,
-                     std::size_t& current_cell) const;
-
     /// Compute (generalized) volume (area) of triangle
     double volume(const MeshEntity& triangle) const;
 
     /// Compute diameter of triangle
-    double diameter(const MeshEntity& triangle) const;
+    double circumradius(const MeshEntity& triangle) const;
 
     /// Compute squared distance to given point (3D enabled)
     double squared_distance(const Cell& cell, const Point& point) const;

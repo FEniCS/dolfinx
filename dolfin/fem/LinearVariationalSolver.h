@@ -40,11 +40,7 @@ namespace dolfin
   public:
 
     /// Create linear variational solver for given problem
-    LinearVariationalSolver(LinearVariationalProblem& problem);
-
-    /// Create linear variational solver for given problem (shared
-    /// pointer version)
-    LinearVariationalSolver(std::shared_ptr<LinearVariationalProblem> problem);
+    explicit LinearVariationalSolver(std::shared_ptr<LinearVariationalProblem> problem);
 
     /// Solve variational problem
     void solve();

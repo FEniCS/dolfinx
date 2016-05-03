@@ -21,19 +21,27 @@
 #ifndef __TRILINOS_PRECONDITIONER_H
 #define __TRILINOS_PRECONDITIONER_H
 
-#include "GenericPreconditioner.h"
+#ifdef HAS_TRILINOS
 
+#include <memory>
 
 namespace dolfin
 {
 
   class BelosKrylovSolver;
+  class TpetraMatrix;
 
   /// This class provides a common base for Trilinos preconditioners.
 
-  class TrilinosPreconditioner: public GenericPreconditioner
+  class TrilinosPreconditioner
   {
   public:
+
+    TrilinosPreconditioner()
+    {}
+
+    ~TrilinosPreconditioner()
+    {}
 
     // Set this preconditioner on a solver
     virtual void set(BelosKrylovSolver& solver) = 0;
@@ -43,5 +51,7 @@ namespace dolfin
 
   };
 }
+
+#endif
 
 #endif

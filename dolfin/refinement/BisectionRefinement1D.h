@@ -35,7 +35,13 @@ namespace dolfin
     /// Refine mesh based on cell markers
     static void refine(Mesh& refined_mesh,
                        const Mesh& mesh,
-                       const MeshFunction<bool>& cell_markers);
+                       const MeshFunction<bool>& cell_markers,
+                       bool redistribute=false);
+
+    /// Refine mesh uniformly
+    static void refine(Mesh& refined_mesh,
+                       const Mesh& mesh,
+                       bool redistribute=false);
 
   };
 

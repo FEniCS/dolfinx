@@ -180,6 +180,29 @@ namespace dolfin
     /// Extract subspace for component
     ///
     /// *Arguments*
+    ///     component (std::size_t)
+    ///         Index of the subspace.
+    /// *Returns*
+    ///     _FunctionSpace_
+    ///         The subspace.
+    std::shared_ptr<FunctionSpace> sub(std::size_t component) const
+    { return extract_sub_space({component}); }
+
+    /// Extract subspace for component
+    ///
+    /// *Arguments*
+    ///     component (std::vector<std::size_t>)
+    ///         The component.
+    /// *Returns*
+    ///     _FunctionSpace_
+    ///         The subspace.
+    std::shared_ptr<FunctionSpace>
+    sub(const std::vector<std::size_t>& component) const
+    { return extract_sub_space(component); }
+
+    /// Extract subspace for component
+    ///
+    /// *Arguments*
     ///     component (std::vector<std::size_t>)
     ///         The component.
     ///
@@ -240,6 +263,37 @@ namespace dolfin
     ///         The component (relative to superspace).
     std::vector<std::size_t> component() const;
 
+    /// Tabulate the coordinates of all dofs on this process. This
+    /// function is typically used by preconditioners that require the
+    /// spatial coordinates of dofs, for example for re-partitioning or
+    /// nullspace computations.
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///
+    /// *Returns*
+    ///     std::vector<double>
+    ///         The dof coordinates (x0, y0, x1, y1, . . .)
+    std::vector<double> tabulate_dof_coordinates() const;
+
+    /// Set dof entries in vector to value*x[i], where [x][i] is the
+    /// coordinate of the dof spatial coordinate. Parallel layout of
+    /// vector must be consistent with dof map range This function is
+    /// typically used to construct the null space of a matrix
+    /// operator, e.g. rigid body rotations.
+    ///
+    /// *Arguments*
+    ///     vector (_GenericVector_)
+    ///         The vector to set.
+    ///     value (double)
+    ///         The value to multiply to coordinate by.
+    ///     component (std::size_t)
+    ///         The coordinate index.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    void set_x(GenericVector& x, double value, std::size_t component) const;
+
     /// Return informal string representation (pretty-print)
     ///
     /// *Arguments*
@@ -256,6 +310,15 @@ namespace dolfin
 
   private:
 
+    // General interpolation from any GenericFunction on any mesh
+    void interpolate_from_any(GenericVector& expansion_coefficients,
+                              const GenericFunction& v) const;
+
+    // Specialised interpolate routine when functions are related by a
+    // parent mesh
+    void interpolate_from_parent(GenericVector& expansion_coefficients,
+                                 const GenericFunction& v) const;
+
     // The mesh
     std::shared_ptr<const Mesh> _mesh;
 
@@ -270,7 +333,7 @@ namespace dolfin
 
     // Cache of subspaces
     mutable std::map<std::vector<std::size_t>,
-      std::shared_ptr<FunctionSpace> > _subspaces;
+                     std::shared_ptr<FunctionSpace> > _subspaces;
 
   };
 

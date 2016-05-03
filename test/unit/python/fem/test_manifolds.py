@@ -33,10 +33,12 @@ import os
 import numpy
 from dolfin_utils.test import *
 
+
 # Subdomain to extract bottom boundary.
 class BottomEdge(SubDomain):
     def inside(self, x, on_boundary):
         return near(x[2], 0.0)
+
 
 class Rotation:
     """Class implementing rotations of the unit plane through an angle
@@ -65,18 +67,19 @@ class Rotation:
         of the image of x mapped back to the horizontal plane."""
 
         return "("+" + ".join(["%.17f * x[%d]" % (a, j)
-                               for (j,a) in enumerate(self.invmat[i,:])])+")"
+                               for (j, a) in enumerate(self.invmat[i, :])])+")"
 
     def rotate(self, mesh):
         """Rotate mesh through phi then theta."""
 
-        mesh.coordinates()[:,:] = \
-            numpy.dot(mesh.coordinates()[:,:], self.mat.T)
+        mesh.coordinates()[:, :] = \
+            numpy.dot(mesh.coordinates()[:, :], self.mat.T)
 
     def rotate_point(self, point):
         """Rotate point through phi then theta."""
 
         return numpy.dot(point, self.mat.T)
+
 
 def poisson_2d():
 
@@ -95,8 +98,8 @@ def poisson_2d():
     # Define variational problem
     u = TrialFunction(V)
     v = TestFunction(V)
-    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-    g = Expression("sin(5*x[0])")
+    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
+    g = Expression("sin(5*x[0])", degree=2)
     a = inner(grad(u), grad(v))*dx
     L = f*v*dx + g*v*ds
 
@@ -111,9 +114,7 @@ def poisson_manifold():
 
     # Create mesh
     cubemesh = UnitCubeMesh(32, 32, 2)
-
     boundarymesh = BoundaryMesh(cubemesh, "exterior")
-
     mesh = SubMesh(boundarymesh, BottomEdge())
 
     rotation = Rotation(numpy.pi/4, numpy.pi/4)
@@ -134,11 +135,11 @@ def poisson_manifold():
     # Define variational problem
     u = TrialFunction(V)
     v = TestFunction(V)
-    f = Expression(("10*exp(-(pow(x[0] - %.17f, 2) "
-                    + " + pow(x[1] - %.17f, 2)"
-                    + " + pow(x[2] - %.17f, 2)) / 0.02)")\
-                       % tuple(rotation.rotate_point([0.5,0.5,0])))
-    g = Expression("sin(5*%s)"%rotation.x(0))
+    f = Expression(("10*exp(-(pow(x[0] - %.17f, 2)" +
+                    " + pow(x[1] - %.17f, 2)" +
+                    " + pow(x[2] - %.17f, 2)) / 0.02)")
+                   % tuple(rotation.rotate_point([0.5, 0.5, 0])), degree=2)
+    g = Expression("sin(5*%s)" % rotation.x(0), degree=2)
 
     a = inner(grad(u), grad(v))*dx
     L = f*v*dx + g*v*ds
@@ -154,11 +155,11 @@ def rotate_2d_mesh(theta):
     """Unit square mesh in 2D rotated through theta about the x and z
     axes."""
 
-    cubemesh = UnitCubeMesh(1,1,1)
+    cubemesh = UnitCubeMesh(1, 1, 1)
     boundarymesh = BoundaryMesh(cubemesh, "exterior")
     mesh = SubMesh(boundarymesh, BottomEdge())
 
-    mesh.init_cell_orientations(Expression(("0.","0.","1.")))
+    mesh.init_cell_orientations(Expression(("0.", "0.", "1."), degree=0))
 
     rotation = Rotation(theta, theta)
     rotation.rotate(mesh)
@@ -168,14 +169,17 @@ def rotate_2d_mesh(theta):
 
 @skip_in_parallel
 def test_poisson2D_in_3D():
-    """This test solves Poisson's equation on a unit square in 2D,
-    and then on a unit square embedded in 3D and rotated pi/4
-    radians about each of the z and x axes."""
+    """This test solves Poisson's equation on a unit square in 2D, and
+    then on a unit square embedded in 3D and rotated pi/4 radians
+    about each of the z and x axes.
+
+    """
 
     u_2D = poisson_2d()
     u_manifold = poisson_manifold()
 
-    assert round(u_2D.vector().norm("l2") - u_manifold.vector().norm("l2"), 10) == 0
+    assert round(u_2D.vector().norm("l2") - u_manifold.vector().norm("l2"),
+                 10) == 0
     assert round(u_2D.vector().max() - u_manifold.vector().max(), 10) == 0
     assert round(u_2D.vector().min() - u_manifold.vector().min(), 10) == 0
 
@@ -187,7 +191,7 @@ def test_basis_evaluation_2D_in_3D():
     unaffected by rotations."""
 
     basemesh = rotate_2d_mesh(0.0)
-    rotmesh  = rotate_2d_mesh(numpy.pi/4)
+    rotmesh = rotate_2d_mesh(numpy.pi/4)
     rotation = Rotation(numpy.pi/4, numpy.pi/4)
 
     for i in range(4):
@@ -206,7 +210,8 @@ def test_basis_evaluation_2D_in_3D():
 
 
 def basis_test(family, degree, basemesh, rotmesh, rotation, piola=False):
-    basis_derivatives = parameters["form_compiler"]["no-evaluate_basis_derivatives"]
+    ffc_option = "no-evaluate_basis_derivatives"
+    basis_derivatives = parameters["form_compiler"][ffc_option]
     parameters["form_compiler"]["no-evaluate_basis_derivatives"] = False
 
     f_base = FunctionSpace(basemesh, family, degree)
@@ -236,7 +241,8 @@ def basis_test(family, degree, basemesh, rotmesh, rotation, piola=False):
                                                 cell_base.orientation())
 
                 f_base.element().evaluate_basis_derivatives(i, 1, derivs_base,
-                                                            point, vertex_coordinates_base,
+                                                            point,
+                                                            vertex_coordinates_base,
                                                             cell_base.orientation())
 
                 f_rot.element().evaluate_basis(i, values_rot,
@@ -254,7 +260,8 @@ def basis_test(family, degree, basemesh, rotmesh, rotation, piola=False):
 
                     derivs_rot2 = derivs_rot.reshape(f_rot.element().value_dimension(0),3)
                     derivs_base2 = derivs_base.reshape(f_base.element().value_dimension(0),3)
-                    # If D is the unrotated derivative tensor, then RDR^T is the rotated version.
+                    # If D is the unrotated derivative tensor, then
+                    # RDR^T is the rotated version.
                     derivs_cmp = numpy.dot(rotation.mat,
                                             rotation.rotate_point(derivs_base2))
                 else:
@@ -268,11 +275,13 @@ def basis_test(family, degree, basemesh, rotmesh, rotation, piola=False):
 
     parameters["form_compiler"]["no-evaluate_basis_derivatives"] = basis_derivatives
 
+
 @use_gc_barrier
 def test_elliptic_eqn_on_intersecting_surface(datadir):
     """Solves -grad^2 u + u = f on domain of two intersecting square
      surfaces embedded in 3D with natural bcs. Test passes if at end
      \int u dx = \int f dx over whole domain
+
     """
     # This needs to be odd
     #num_vertices_side = 31
@@ -299,7 +308,7 @@ def test_elliptic_eqn_on_intersecting_surface(datadir):
                 value[0] = 0.0
 
     f = Function(V)
-    f.interpolate(Source())
+    f.interpolate(Source(degree=2))
 
     a = inner(grad(u), grad(v))*dx + u*v*dx
     L = f*v*dx
@@ -312,6 +321,7 @@ def test_elliptic_eqn_on_intersecting_surface(datadir):
 
     # test passes if f_tot = u_tot
     assert abs(f_tot - u_tot) < 1e-7
+
 
 def make_mesh(num_vertices_side):
     # each square has unit side length

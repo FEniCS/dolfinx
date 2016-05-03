@@ -38,14 +38,6 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 LinearVariationalSolver::
-LinearVariationalSolver(LinearVariationalProblem& problem)
-  : _problem(reference_to_no_delete_pointer(problem))
-{
-  // Set parameters
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
-LinearVariationalSolver::
 LinearVariationalSolver(std::shared_ptr<LinearVariationalProblem> problem)
   : _problem(problem)
 {
@@ -66,10 +58,10 @@ void LinearVariationalSolver::solve()
 
   // Get problem data
   dolfin_assert(_problem);
-  std::shared_ptr<const Form> a(_problem->bilinear_form());
-  std::shared_ptr<const Form> L(_problem->linear_form());
-  std::shared_ptr<Function> u(_problem->solution());
-  std::vector<std::shared_ptr<const DirichletBC>> bcs(_problem->bcs());
+  const auto a = _problem->bilinear_form();
+  const auto L = _problem->linear_form();
+  auto u = _problem->solution();
+  auto bcs = _problem->bcs();
 
   dolfin_assert(a);
   dolfin_assert(L);
@@ -77,8 +69,9 @@ void LinearVariationalSolver::solve()
 
   // Create matrix and vector
   dolfin_assert(u->vector());
-  std::shared_ptr<GenericMatrix> A = u->vector()->factory().create_matrix();
-  std::shared_ptr<GenericVector> b = u->vector()->factory().create_vector();
+  MPI_Comm comm = u->vector()->mpi_comm();
+  std::shared_ptr<GenericMatrix> A = u->vector()->factory().create_matrix(comm);
+  std::shared_ptr<GenericVector> b = u->vector()->factory().create_vector(comm);
 
   // Different assembly depending on whether or not the system is symmetric
   if (symmetric)
@@ -91,23 +84,8 @@ void LinearVariationalSolver::solve()
                    "Empty linear forms cannot be used with symmetric assembly");
     }
 
-    // Need to cast to DirichletBC to use assemble_system
-    std::vector<const DirichletBC*> _bcs;
-    for (std::size_t i = 0; i < bcs.size(); i++)
-    {
-      dolfin_assert(bcs[i]);
-      const DirichletBC* _bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
-      if (!_bc)
-      {
-        dolfin_error("LinearVariationalSolver.cpp",
-                     "apply boundary condition in linear variational solver",
-                     "Only Dirichlet boundary conditions may be used for symmetric systems");
-      }
-      _bcs.push_back(_bc);
-    }
-
     // Assemble linear system and apply boundary conditions
-    SystemAssembler assembler(a, L, _bcs);
+    SystemAssembler assembler(a, L, bcs);
     assembler.assemble(*A, *b);
   }
   else
@@ -160,7 +138,7 @@ void LinearVariationalSolver::solve()
       lu_method = solver_type;
 
     // Solve linear system
-    LUSolver solver(lu_method);
+    LUSolver solver(comm, lu_method);
     solver.parameters.update(parameters("lu_solver"));
     solver.parameters["symmetric"] = (bool) parameters["symmetric"];
     solver.solve(*A, *u->vector(), *b);
@@ -196,7 +174,7 @@ void LinearVariationalSolver::solve()
     }
 
     // Solve linear system
-    KrylovSolver solver(solver_type, pc_type);
+    KrylovSolver solver(comm, solver_type, pc_type);
     solver.parameters.update(parameters("krylov_solver"));
     solver.solve(*A, *u->vector(), *b);
   }

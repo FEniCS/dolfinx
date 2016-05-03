@@ -23,6 +23,7 @@
 #define __LINEAR_ALGEBRA_OBJECT_H
 
 #include <memory>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -109,6 +110,9 @@ namespace dolfin
     /// Return concrete shared ptr instance / unwrap (non-const version)
     virtual std::shared_ptr<LinearAlgebraObject> shared_instance()
     { return std::shared_ptr<LinearAlgebraObject>(); }
+
+    /// Return MPI communicator
+    virtual MPI_Comm mpi_comm() const = 0;
 
   };
 

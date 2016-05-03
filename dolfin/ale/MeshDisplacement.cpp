@@ -28,10 +28,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshDisplacement::MeshDisplacement(const Mesh& mesh)
-  : Expression(mesh.geometry().dim()), _dim(mesh.geometry().dim())
+MeshDisplacement::MeshDisplacement(std::shared_ptr<const Mesh> mesh)
+  : Expression(mesh->geometry().dim()), _dim(mesh->geometry().dim())
 {
-  const std::size_t D = mesh.topology().dim();
+  dolfin_assert(mesh);
+  const std::size_t D = mesh->topology().dim();
 
   // Choose form and function space
   std::shared_ptr<FunctionSpace> V;
@@ -53,12 +54,11 @@ MeshDisplacement::MeshDisplacement(const Mesh& mesh)
   }
 
   // Store displacement functions
-  _displacements = std::vector<Function> (_dim, Function(V));
+  _displacements = std::vector<Function>(_dim, Function(V));
 }
 //-----------------------------------------------------------------------------
 MeshDisplacement::MeshDisplacement(const MeshDisplacement& mesh_displacement)
-  : Expression(mesh_displacement._dim),
-    _dim(mesh_displacement._dim),
+  : Expression(mesh_displacement._dim), _dim(mesh_displacement._dim),
     _displacements(mesh_displacement._displacements)
 {
   // Do nothing
@@ -95,9 +95,10 @@ void MeshDisplacement::compute_vertex_values(std::vector<double>& vertex_values,
                                              const Mesh& mesh) const
 {
   // TODO: implement also computation on current mesh by
-  //       _displacements[i].vector()->get_local(block, num_vertices, all_dofs)
-  //       which would be merely moving code from HarmonicSmoothing.cpp here.
-  //       This would save some computation performed by compute_vertex_values()
+  //       _displacements[i].vector()->get_local(block, num_vertices,
+  //       all_dofs) which would be merely moving code from
+  //       HarmonicSmoothing.cpp here.  This would save some
+  //       computation performed by compute_vertex_values()
 
   vertex_values.clear();
 

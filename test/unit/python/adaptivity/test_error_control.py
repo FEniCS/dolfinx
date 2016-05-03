@@ -85,12 +85,12 @@ def ec(problem, goal):
 def test_check_domains(goal, mesh, a, L):
     # Asserting that domains are ok before trying error control generation
     msg = "Expecting only the domain from the mesh to get here through u."
-    assert len(goal.domains()) == 1, msg
-    assert goal.domains()[0] == mesh.ufl_domain(), msg
-    assert len(a.domains()) == 1, msg
-    assert a.domains()[0] == mesh.ufl_domain(), msg
-    assert len(L.domains()) == 1, msg
-    assert L.domains()[0] == mesh.ufl_domain(), msg
+    assert len(goal.ufl_domains()) == 1, msg
+    assert goal.ufl_domains()[0] == mesh.ufl_domain(), msg
+    assert len(a.ufl_domains()) == 1, msg
+    assert a.ufl_domains()[0] == mesh.ufl_domain(), msg
+    assert len(L.ufl_domains()) == 1, msg
+    assert L.ufl_domains()[0] == mesh.ufl_domain(), msg
 
 
 @skip_in_parallel

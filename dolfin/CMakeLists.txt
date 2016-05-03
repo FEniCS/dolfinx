@@ -12,11 +12,6 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin/common/version.h
   )
 include_directories(${CMAKE_BINARY_DIR})
 
-#set(CMAKE_SKIP_BUILD_RPATH  FALSE)
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-# Macros
-
 #------------------------------------------------------------------------------
 # DOLFIN source directories
 
@@ -58,11 +53,6 @@ endforeach()
 #       as unused variable that can cause build errors when using strict
 #       compiler flags, in which case the path should be appended to
 #       DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES
-
-# libXml2
-list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${LIBXML2_INCLUDE_DIR})
-list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${LIBXML2_LIBRARIES})
-list(APPEND DOLFIN_CXX_DEFINITIONS ${LIBXML2_DEFINITIONS})
 
 # UFC
 list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${UFC_INCLUDE_DIRS})
@@ -109,10 +99,6 @@ if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   if (PETSC_CUSP_FOUND)
     list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC_CUSP")
   endif()
-
-  if (PETSC_HAS_TAO)
-      list(APPEND DOLFIN_CXX_DEFINITIONS "-DENABLE_PETSC_TAO")
-  endif()
 endif()
 
 # petsc4py
@@ -139,13 +125,6 @@ if (DOLFIN_ENABLE_CHOLMOD AND CHOLMOD_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_CHOLMOD")
   list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${CHOLMOD_INCLUDE_DIRS})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${CHOLMOD_LIBRARIES})
-endif()
-
-# PaStiX
-if (DOLFIN_ENABLE_PASTIX AND PASTIX_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PASTIX")
-  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${PASTIX_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${PASTIX_LIBRARIES})
 endif()
 
 # SCOTCH
@@ -194,57 +173,19 @@ if (DOLFIN_ENABLE_OPENMP AND OPENMP_FOUND)
   if (MINGW)
     list(APPEND DOLFIN_LINK_FLAGS "${OpenMP_CXX_FLAGS}")
   endif()
-
 endif()
 
-# Qt4
-if (DOLFIN_ENABLE_QT AND QT_FOUND)
-  include(${QT_USE_FILE})
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_QT4")
-  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${QT_INCLUDE_DIR})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${QT_LIBRARIES})
-endif()
 
 # VTK
 if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
   include(${VTK_USE_FILE})
 
-  # The Macports VTK library includes some deprecated gcc code
-  if (APPLE)
-    set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} -Wno-deprecated")
-  endif()
-
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_VTK")
   list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
 
-  foreach (lib ${VTK_LIBRARIES})
-    list(APPEND DOLFIN_VTK_LIBRARIES ${lib})
-  endforeach()
-
-  # Check if the QVTK library is found
-  if (DOLFIN_ENABLE_QT AND QT_FOUND)
-    if ("${VTK_MAJOR_VERSION}" STREQUAL "5")
-      find_library(VTK_LIB_QVTK QVTK HINTS ${VTK_LIBRARY_DIRS} NO_DEFAULT_PATH)
-      find_library(VTK_LIB_QVTK QVTK HINTS ${VTK_LIBRARY_DIRS})
-      if (VTK_LIB_QVTK)
-	list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_QVTK})
-      endif()
-    else()
-      if (TARGET vtkGUISupportQt)
-	set(VTK_LIB_QVTK TRUE)
-      endif()
-    endif()
-
-    if (VTK_LIB_QVTK)
-      list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_QVTK")
-    else()
-      message(STATUS "QVTK not found, disabling QT for plotting")
-    endif()
-  endif()
-
   # Append to EXTRA libraries, so they are not linked with demos (this
   # fails with VTK6 unless the vtk macros are also installed).
-  list(APPEND DOLFIN_EXTRA_TARGET_LINK_LIBRARIES ${DOLFIN_VTK_LIBRARIES})
+  list(APPEND DOLFIN_EXTRA_TARGET_LINK_LIBRARIES ${VTK_LIBRARIES})
 endif()
 
 #------------------------------------------------------------------------------
@@ -259,7 +200,8 @@ add_definitions(${DOLFIN_CXX_DEFINITIONS})
 add_definitions(-DDOLFIN_VERSION="${DOLFIN_VERSION}")
 
 # Just add git revision flag to the one affected file
-set_source_files_properties(common/defines.cpp PROPERTIES COMPILE_FLAGS -DDOLFIN_GIT_COMMIT_HASH=\\\"${GIT_COMMIT_HASH}\\\")
+set_source_files_properties(common/defines.cpp PROPERTIES COMPILE_FLAGS
+  "-DDOLFIN_GIT_COMMIT_HASH=\\\"${GIT_COMMIT_HASH}\\\" -DUFC_SIGNATURE=\\\"${UFC_SIGNATURE}\\\"")
 
 # Add flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
@@ -273,32 +215,22 @@ set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 # Strip leading and trailing whitespaces
 string(STRIP DOLFIN_TARGET_LINK_LIBRARIES "${DOLFIN_TARGET_LINK_LIBRARIES}")
 
+# Remove duplicate libraries
+if (DOLFIN_TARGET_LINK_LIBRARIES)
+  list(REMOVE_DUPLICATES DOLFIN_TARGET_LINK_LIBRARIES)
+endif()
+if(DOLFIN_EXTRA_TARGET_LINK_LIBRARIES)
+  list(REMOVE_DUPLICATES DOLFIN_EXTRA_TARGET_LINK_LIBRARIES)
+endif()
+
 # Add DOLFIN target libraries
 target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES}
   ${DOLFIN_EXTRA_TARGET_LINK_LIBRARIES})
+
 #------------------------------------------------------------------------------
 # SWIG
 
 if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
-
-  # Make sure we can import the UFC module and that it is compiled
-  # with present version of SWIG
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "from ufc import *; import sys; sys.stdout.write('.'.join([str(int(s)) for s in ufc.__swigversion__.split('.')]))"
-    OUTPUT_VARIABLE UFC_SWIGVERSION
-    RESULT_VARIABLE UFC_MODULE_NOT_FOUND
-    )
-
-  # Check that UFC can be imported
-  if (UFC_MODULE_NOT_FOUND)
-    message(WARNING "Unable to import UFC. Install latest UFC or check that PYTHONPATH is set appropriately. Python will be disabled.")
-  endif()
-
-  # Check that UFC was built with the version of SWIG that is being
-  # used
-  if (NOT UFC_MODULE_NOT_FOUND AND (NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}"))
-    message(WARNING "UFC compiled with different version of SWIG. Please install SWIG version ${UFC_SWIGVERSION} or recompile UFC with present SWIG.")
-  endif()
 
   # Add numpy defines to DOLFIN_PYTHON_DEFINITIONS
   if (NUMPY_FOUND)
@@ -306,7 +238,7 @@ if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
     # Set numpy version define
     set(DOLFIN_PYTHON_DEFINITIONS ${DOLFIN_PYTHON_DEFINITIONS};-DNUMPY_VERSION_MAJOR=${NUMPY_VERSION_MAJOR};-DNUMPY_VERSION_MINOR=${NUMPY_VERSION_MINOR};-DNUMPY_VERSION_MICRO=${NUMPY_VERSION_MICRO})
 
-    # Only set define for none depricated API for NUMPY version 1.7
+    # Only set define for none deprecated API for NUMPY version 1.7
     # and larger
     if(NUMPY_VERSION VERSION_GREATER 1.6.2)
       set(DOLFIN_PYTHON_DEFINITIONS ${DOLFIN_PYTHON_DEFINITIONS} -DNPY_NO_DEPRECATED_API=NPY_${NUMPY_VERSION_MAJOR}_${NUMPY_VERSION_MINOR}_API_VERSION)
@@ -314,10 +246,7 @@ if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
 
   endif()
 
-  # If suitble UFC SWIG extension is found, add SWIG subdirectory
-  if (NOT UFC_MODULE_NOT_FOUND AND ("${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}"))
-    add_subdirectory(swig)
-  endif()
+  add_subdirectory(swig)
 
 endif()
 

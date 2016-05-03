@@ -98,12 +98,6 @@ void QuadrilateralCell::create_entities(boost::multi_array<unsigned int, 2>& e,
   e[3][0] = v[2]; e[3][1] = v[3];
 }
 //-----------------------------------------------------------------------------
-void QuadrilateralCell::refine_cell(Cell& cell, MeshEditor& editor,
-                                    std::size_t& current_cell) const
-{
-  dolfin_not_implemented();
-}
-//-----------------------------------------------------------------------------
 double QuadrilateralCell::volume(const MeshEntity& cell) const
 {
   if (cell.dim() != 2)
@@ -138,19 +132,19 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double QuadrilateralCell::diameter(const MeshEntity& cell) const
+double QuadrilateralCell::circumradius(const MeshEntity& cell) const
 {
   // Check that we get a cell
   if (cell.dim() != 2)
   {
     dolfin_error("QuadrilateralCell.cpp",
-                 "compute diameter of quadrilateral cell",
+                 "compute circumradius of quadrilateral cell",
                  "Illegal mesh entity");
   }
 
   dolfin_error("QuadrilateralCell.cpp",
-               "compute diameter of quadrilateral cell",
-               "Don't know how to compute diameter");
+               "compute cirumradius of quadrilateral cell",
+               "Don't know how to compute circumradius");
 
   dolfin_not_implemented();
   return 0.0;

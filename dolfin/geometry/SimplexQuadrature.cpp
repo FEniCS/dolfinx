@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2014-04-25
+// Last changed: 2015-10-24
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -26,6 +26,7 @@
 
 // FIXME:
 #include "predicates.h"
+#include "dolfin_simplex_tools.h"
 
 using namespace dolfin;
 
@@ -96,9 +97,7 @@ SimplexQuadrature::compute_quadrature_rule_interval(const double* coordinates,
     w.assign(2, 1.);
 
     // Assign points corresponding to -1/sqrt(3) and 1/sqrt(3)
-    p.resize(2);
-    p[0] = -1./std::sqrt(3);
-    p[1] = 1./std::sqrt(3);
+    p = { -1./std::sqrt(3), 1./std::sqrt(3) };
 
     break;
   case 3:
@@ -188,11 +187,17 @@ SimplexQuadrature::compute_quadrature_rule_interval(const double* coordinates,
     }
   case 3:
     {
-      const double J[] = {coordinates[3] - coordinates[0],
-                          coordinates[4] - coordinates[1],
-                          coordinates[5] - coordinates[2]};
-      const double det2 = J[0]*J[0] + J[1]*J[1] + J[2]*J[2];
-      det = std::sqrt(det2);
+      // const double J[] = {coordinates[3] - coordinates[0],
+      //                     coordinates[4] - coordinates[1],
+      //                     coordinates[5] - coordinates[2]};
+      // const double det2 = J[0]*J[0] + J[1]*J[1] + J[2]*J[2];
+      // det = std::sqrt(det2);
+
+      const Point a(coordinates[0],coordinates[1]);
+      const Point b(coordinates[2],coordinates[3]);
+      const Point c(coordinates[4],coordinates[5]);
+      det = tools::area({{a,b,c}});
+
       break;
     }
   default:
@@ -211,6 +216,8 @@ SimplexQuadrature::compute_quadrature_rule_interval(const double* coordinates,
         = 0.5*(coordinates[d]*(1 - p[i]) + coordinates[gdim + d]*(1 + p[i]));
     }
   }
+
+  dolfin_assert(det >= 0);
 
   // Store weights
   quadrature_rule.second.assign(w.size(), 0.5*std::abs(det));
@@ -252,7 +259,7 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const double* coordinates,
   case 3:
     // Assign weights
     w.resize(4);
-    w[0] = -27./48;
+    w[0] = -27./48; // NB: we should avoid this qr due to negative weight
     w[1] = w[2] = w[3] = 25./48;
 
     // Assign points

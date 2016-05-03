@@ -214,7 +214,8 @@ void TimeSeries::retrieve(GenericVector& vector, double t,
 
     // Read vectors
     GenericVector& x0(vector);
-    std::shared_ptr<GenericVector> x1 = x0.factory().create_vector();
+    std::shared_ptr<GenericVector> x1
+      = x0.factory().create_vector(x0.mpi_comm());
     hdf5_file.read(x0, "/Vector/" + std::to_string(i0), false);
     hdf5_file.read(*x1, "/Vector/" + std::to_string(i1), false);
 

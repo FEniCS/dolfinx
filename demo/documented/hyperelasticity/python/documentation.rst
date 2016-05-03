@@ -89,11 +89,11 @@ The Dirichlet boundary values are defined using compiled expressions:
 .. code-block:: python
 
     # Define Dirichlet boundary (x = 0 or x = 1)
-    c = Expression(("0.0", "0.0", "0.0"))
+    c = Constant((0.0, 0.0, 0.0))
     r = Expression(("scale*0.0",
                     "scale*(y0 + (x[1] - y0)*cos(theta) - (x[2] - z0)*sin(theta) - x[1])",
                     "scale*(z0 + (x[1] - y0)*sin(theta) + (x[2] - z0)*cos(theta) - x[2])"),
-                    scale = 0.5, y0 = 0.5, z0 = 0.5, theta = pi/3)
+                    scale = 0.5, y0 = 0.5, z0 = 0.5, theta = pi/3, degree=2)
 
 Note the use of setting named parameters in the :py:class:`Expression
 <dolfin.functions.expression.Expression>` for ``r``.
@@ -142,7 +142,7 @@ are defined using UFL syntax:
 .. code-block:: python
 
     # Kinematics
-    d = u.geometric_dimension()
+    d = len(u)
     I = Identity(d)             # Identity tensor
     F = I + grad(u)             # Deformation gradient
     C = F.T*F                   # Right Cauchy-Green tensor

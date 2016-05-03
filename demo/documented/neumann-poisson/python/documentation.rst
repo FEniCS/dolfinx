@@ -32,31 +32,21 @@ triangles, we do as follows:
 
 .. code-block:: python
 
-	# Create mesh
-	mesh = UnitSquareMesh(64, 64)
+    # Create mesh
+    mesh = UnitSquareMesh(64, 64)
 
-Next, we need to define the function spaces. We define the two
-function spaces :math:`V` and :math:`R` separately, before combining
-these into a mixed function space :math:`W`:
+Next, we need to define the function space.
 
 .. code-block:: python
 
-	# Define function spaces and mixed (product) space
-	V = FunctionSpace(mesh, "CG", 1)
-	R = FunctionSpace(mesh, "R", 0)
-	W = V * R
+    # Build function space with Lagrange multiplier
+    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    R = FiniteElement("Real", mesh.ufl_cell(), 0)
+    W = FunctionSpace(mesh, P1 * R)
 
 The second argument to :py:class:`FunctionSpace
-<dolfin.functions.functionspace.FunctionSpace>` specifies the type of
-finite element family, while the third argument specifies the
-polynomial degree.  The UFL user manual contains a list of all
-available finite element families and more details.  The * operator
-creates a mixed (product) space :math:`W` from the two separate spaces
-:math:`V` and :math:`R`.  Hence,
-
-.. math::
-
-	W = \{ (v, d) \ \text{such that} \ v \in V, d \in R \}.
+<dolfin.functions.functionspace.FunctionSpace>` specifies underlying
+finite element, here mixed element obtained by ``*`` operator.
 
 Now, we want to define the variational problem, but first we need to
 specify the trial functions (the unknowns) and the test functions.
@@ -75,13 +65,13 @@ problem:
 
 .. code-block:: python
 
-	# Define variational problem
-	(u, c) = TrialFunction(W)
-	(v, d) = TestFunctions(W)
-	f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-	g = Expression("-sin(5*x[0])")
-	a = (inner(grad(u), grad(v)) + c*v + u*d)*dx
-	L = f*v*dx + g*v*ds
+    # Define variational problem
+    (u, c) = TrialFunction(W)
+    (v, d) = TestFunctions(W)
+    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
+    g = Expression("-sin(5*x[0])", degree=2)
+    a = (inner(grad(u), grad(v)) + c*v + u*d)*dx
+    L = f*v*dx + g*v*ds
 
 Since we have natural (Neumann) boundary conditions in this problem,
 we don´t have to implement boundary conditions.  This is because
@@ -100,13 +90,13 @@ function.  Finally, we plot the solutions to examine the result.
 
 .. code-block:: python
 
-	# Compute solution
-	w = Function(W)
-	solve(a == L, w)
-	(u, c) = w.split()
+    # Compute solution
+    w = Function(W)
+    solve(a == L, w)
+    (u, c) = w.split()
 
-	# Plot solution
-	plot(u, interactive=True)
+    # Plot solution
+    plot(u, interactive=True)
 
 Complete code
 -------------

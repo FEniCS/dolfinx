@@ -26,6 +26,7 @@
 // Last changed: 2014-05-22
 
 #include <algorithm>
+#include <cmath>
 #include <dolfin/log/log.h>
 #include "Cell.h"
 #include "MeshEditor.h"
@@ -106,39 +107,6 @@ void TriangleCell::create_entities(boost::multi_array<unsigned int, 2>&  e,
   e[2][0] = v[0]; e[2][1] = v[1];
 }
 //-----------------------------------------------------------------------------
-void TriangleCell::refine_cell(Cell& cell, MeshEditor& editor,
-                               std::size_t& current_cell) const
-{
-  // Get vertices and edges
-  const unsigned int* v = cell.entities(0);
-  const unsigned int* e = cell.entities(1);
-  dolfin_assert(v);
-  dolfin_assert(e);
-
-  // Get offset for new vertex indices
-  const std::size_t offset = cell.mesh().num_vertices();
-
-  // Compute indices for the six new vertices
-  const std::size_t v0 = v[0];
-  const std::size_t v1 = v[1];
-  const std::size_t v2 = v[2];
-  const std::size_t e0 = offset + e[find_edge(0, cell)];
-  const std::size_t e1 = offset + e[find_edge(1, cell)];
-  const std::size_t e2 = offset + e[find_edge(2, cell)];
-
-  // Create four new cells
-  std::vector<std::vector<std::size_t>> cells(4, std::vector<std::size_t>(3));
-  cells[0][0] = v0; cells[0][1] = e2; cells[0][2] = e1;
-  cells[1][0] = v1; cells[1][1] = e0; cells[1][2] = e2;
-  cells[2][0] = v2; cells[2][1] = e1; cells[2][2] = e0;
-  cells[3][0] = e0; cells[3][1] = e1; cells[3][2] = e2;
-
-  // Add cells
-  std::vector<std::vector<std::size_t>>::const_iterator _cell;
-  for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
-    editor.add_cell(current_cell++, *_cell);
-}
-//-----------------------------------------------------------------------------
 double TriangleCell::volume(const MeshEntity& triangle) const
 {
   // Check that we get a triangle
@@ -154,9 +122,9 @@ double TriangleCell::volume(const MeshEntity& triangle) const
 
   // Get the coordinates of the three vertices
   const unsigned int* vertices = triangle.entities(0);
-  const double* x0 = geometry.x(vertices[0]);
-  const double* x1 = geometry.x(vertices[1]);
-  const double* x2 = geometry.x(vertices[2]);
+  const Point x0 = geometry.point(vertices[0]);
+  const Point x1 = geometry.point(vertices[1]);
+  const Point x2 = geometry.point(vertices[2]);
 
   if (geometry.dim() == 2)
   {
@@ -190,7 +158,7 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::diameter(const MeshEntity& triangle) const
+double TriangleCell::circumradius(const MeshEntity& triangle) const
 {
   // Check that we get a triangle
   if (triangle.dim() != 2)
@@ -223,8 +191,9 @@ double TriangleCell::diameter(const MeshEntity& triangle) const
   const double b  = p0.distance(p2);
   const double c  = p0.distance(p1);
 
-  // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
-  return 0.5*a*b*c / volume(triangle);
+  // Formula for circumradius from
+  // http://mathworld.wolfram.com/Triangle.html
+  return a*b*c/(4.0*volume(triangle));
 }
 //-----------------------------------------------------------------------------
 double TriangleCell::squared_distance(const Cell& cell,
@@ -409,18 +378,10 @@ double TriangleCell::facet_area(const Cell& cell, std::size_t facet) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the two vertices
-  const double* p0 = geometry.x(v0);
-  const double* p1 = geometry.x(v1);
+  const Point p0 = geometry.point(v0);
+  const Point p1 = geometry.point(v1);
 
-  // Compute distance between vertices
-  double d = 0.0;
-  for (std::size_t i = 0; i < geometry.dim(); i++)
-  {
-    const double dp = p0[i] - p1[i];
-    d += dp*dp;
-  }
-
-  return std::sqrt(d);
+  return p1.distance(p0);
 }
 //-----------------------------------------------------------------------------
 void TriangleCell::order(

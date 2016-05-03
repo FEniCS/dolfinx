@@ -34,7 +34,6 @@
 #include <Tpetra_Version.hpp>
 
 #include <dolfin/common/types.h>
-#include <dolfin/log/dolfin_log.h>
 #include "GenericVector.h"
 
 namespace dolfin
@@ -61,13 +60,13 @@ namespace dolfin
     vector_type;
 
     /// Create empty vector
-    TpetraVector();
+    TpetraVector(MPI_Comm comm=MPI_COMM_WORLD);
 
     /// Create vector of size N
     TpetraVector(MPI_Comm comm, std::size_t N);
 
     /// Create vector
-    //explicit TpetraVector(const GenericSparsityPattern& sparsity_pattern);
+    //explicit TpetraVector(const SparsityPattern& sparsity_pattern);
 
     /// Copy constructor
     TpetraVector(const TpetraVector& x);

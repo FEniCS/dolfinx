@@ -45,6 +45,8 @@ using namespace dolfin;
 Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
                                                   const GenericDofMap& dofmap1)
 {
+  Timer timer("Build local sparsity graph from dofmaps");
+
   // Create empty graph
   const std::size_t n = dofmap0.global_dimension();
   Graph graph(n);
@@ -174,7 +176,7 @@ void GraphBuilder::compute_local_dual_graph(
   std::vector<std::set<std::size_t>>& local_graph,
   FacetCellMap& facet_cell_map)
 {
-  Timer timer("Compute local dual graph");
+  Timer timer("Compute local part of mesh dual graph");
 
   // List of cell vertices
   const boost::multi_array<std::size_t, 2>& cell_vertices
@@ -246,7 +248,6 @@ void GraphBuilder::compute_local_dual_graph(
       }
     }
   }
-
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_nonlocal_dual_graph(
@@ -256,7 +257,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(
   FacetCellMap& facet_cell_map,
   std::set<std::size_t>& ghost_vertices)
 {
-  Timer timer("Compute non-local dual graph");
+  Timer timer("Compute non-local part of mesh dual graph");
 
   // At this stage facet_cell map only contains facets->cells with
   // edge facets either interprocess or external boundaries
@@ -289,8 +290,8 @@ void GraphBuilder::compute_nonlocal_dual_graph(
   // Pack map data and send to match-maker process
   for (auto &it : facet_cell_map)
   {
-    // FIXME: Could use a better index? First vertex is slightly skewed
-    //        towards low values - may not be important
+    // FIXME: Could use a better index? First vertex is slightly
+    //        skewed towards low values - may not be important
 
     // Use first vertex of facet to partition into blocks
     std::size_t dest_proc = MPI::index_owner(mpi_comm, (it.first)[0],

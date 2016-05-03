@@ -22,7 +22,8 @@
 //-----------------------------------------------------------------------------
 // Extend FunctionAXPY
 //-----------------------------------------------------------------------------
-%extend dolfin::FunctionAXPY {
+%extend dolfin::FunctionAXPY
+{
 %pythoncode %{
 __truediv__ = __div__
 %}
@@ -41,23 +42,23 @@ def __contains__(self,u):
 
 def leaf_node(self):
     "Return the finest FunctionSpace in hierarchy"
-    from dolfin.functions.functionspace import FunctionSpaceFromCpp
-    return FunctionSpaceFromCpp(HierarchicalFunctionSpace._leaf_node(self))
+    from dolfin.functions.functionspace import FunctionSpace
+    return FunctionSpace(HierarchicalFunctionSpace._leaf_node(self))
 
 def root_node(self):
     "Return the coarsest FunctionSpace in hierarchy"
-    from dolfin.functions.functionspace import FunctionSpaceFromCpp
-    return FunctionSpaceFromCpp(HierarchicalFunctionSpace._root_node(self))
+    from dolfin.functions.functionspace import FunctionSpace
+    return FunctionSpace(HierarchicalFunctionSpace._root_node(self))
 
 def child(self):
     "Return the child FunctionSpace in the hierarchy"
-    from dolfin.functions.functionspace import FunctionSpaceFromCpp
-    return FunctionSpaceFromCpp(HierarchicalFunctionSpace._child(self))
+    from dolfin.functions.functionspace import FunctionSpace
+    return FunctionSpace(HierarchicalFunctionSpace._child(self))
 
 def parent(self):
     "Return the parent FunctionSpace in the hierarchy"
-    from dolfin.functions.functionspace import FunctionSpaceFromCpp
-    return FunctionSpaceFromCpp(HierarchicalFunctionSpace._parent(self))
+    from dolfin.functions.functionspace import FunctionSpace
+    return FunctionSpace(HierarchicalFunctionSpace._parent(self))
 
 %}
 }
@@ -116,8 +117,8 @@ def compute_vertex_values(self, mesh=None):
 %pythoncode %{
 def function_space(self):
     "Return the FunctionSpace"
-    from dolfin.functions.functionspace import FunctionSpaceFromCpp
-    return FunctionSpaceFromCpp(self._function_space())
+    from dolfin.functions.functionspace import FunctionSpace
+    return FunctionSpace(self._function_space())
 
 def copy(self, deepcopy=False):
     """

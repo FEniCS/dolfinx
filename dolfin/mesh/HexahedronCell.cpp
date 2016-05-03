@@ -124,12 +124,6 @@ void HexahedronCell::create_entities(boost::multi_array<unsigned int, 2>& e,
   }
 }
 //-----------------------------------------------------------------------------
-void HexahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
-                               std::size_t& current_cell) const
-{
-  dolfin_not_implemented();
-}
-//-----------------------------------------------------------------------------
 double HexahedronCell::volume(const MeshEntity& cell) const
 {
   if (cell.dim() != 2)
@@ -158,18 +152,18 @@ double HexahedronCell::volume(const MeshEntity& cell) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double HexahedronCell::diameter(const MeshEntity& cell) const
+double HexahedronCell::circumradius(const MeshEntity& cell) const
 {
   // Check that we get a cell
   if (cell.dim() != 2)
   {
     dolfin_error("HexahedronCell.cpp",
-                 "compute diameter of hexahedron cell",
+                 "compute circumradius of hexahedron cell",
                  "Illegal mesh entity");
   }
 
   dolfin_error("HexahedronCell.cpp",
-               "compute diameter of hexahedron cell",
+               "compute circumradius of hexahedron cell",
                "Don't know how to compute diameter");
 
   dolfin_not_implemented();

@@ -1,0 +1,61 @@
+# Copyright (C) 2014 Anders Logg
+#
+# This file is part of DOLFIN.
+#
+# DOLFIN is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DOLFIN is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2013-06-26
+# Last changed: 2015-10-21
+#
+# The bilinear form a(u, v) and linear form L(v) for a multimesh
+# formulation of Poisson's equation.
+#
+# Compile this form with FFC: ffc -l dolfin MultiMeshPoisson.ufl.
+
+# Define element
+element = FiniteElement("Lagrange", triangle, 1)
+
+# Define trial and test functions and right-hand side
+u = TrialFunction(element)
+v = TestFunction(element)
+f = Coefficient(element)
+
+# Define facet normal and mesh size
+n = FacetNormal(triangle)
+h = 2.0*Circumradius(triangle)
+h = (h('+') + h('-')) / 2
+
+# Define custom measures (FIXME: prettify this)
+dc0 = dc(0, metadata={"num_cells": 1})
+dc1 = dc(1, metadata={"num_cells": 2})
+dc2 = dc(2, metadata={"num_cells": 2})
+
+# Define measures for integration
+dX = dx + dc0 # domain integral
+di = dc1      # interface integral
+do = dc2      # overlap integral
+
+# Parameters
+alpha = 4.0
+beta = 4.0
+
+# Bilinear form
+a = dot(grad(u), grad(v))*dX \
+  - dot(avg(grad(u)), jump(v, n))*di \
+  - dot(avg(grad(v)), jump(u, n))*di \
+  + alpha/h*jump(u)*jump(v)*di \
+  + dot(jump(grad(u)), jump(grad(v)))*do
+
+# Linear form
+L = f*v*dX

@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-#ifdef ENABLE_PETSC_TAO
+#ifdef HAS_PETSC
 
 #include <petsclog.h>
+#include <petscversion.h>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
@@ -51,43 +52,55 @@ const std::map<std::string, const KSPType> TAOLinearBoundSolver::_ksp_methods
     {"bicgstab",   KSPBCGS} };
 //-----------------------------------------------------------------------------
 // Mapping from method string to description
-const std::map<std::string, std::string>
-  TAOLinearBoundSolver::_methods_descr
+const std::map<std::string, std::string> TAOLinearBoundSolver::_methods_descr
 = { {"default"  ,  "Default Tao method (tao_tron)"},
     {"tron" ,  "Newton Trust Region method"},
     {"bqpip",  "Interior Point Newton Algorithm"},
     {"gpcg" ,  "Gradient Projection Conjugate Gradient"},
     {"blmvm",  "Limited memory variable metric method"} };
 //-----------------------------------------------------------------------------
-std::map<std::string, std::string>
-TAOLinearBoundSolver::methods()
+std::map<std::string, std::string> TAOLinearBoundSolver::methods()
 {
   return TAOLinearBoundSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
-std::map<std::string, std::string>
-TAOLinearBoundSolver::krylov_solvers()
+std::map<std::string, std::string> TAOLinearBoundSolver::krylov_solvers()
 {
   return PETScKrylovSolver::methods();
 }
 //-----------------------------------------------------------------------------
-std::map<std::string, std::string>
-TAOLinearBoundSolver::preconditioners()
+std::map<std::string, std::string> TAOLinearBoundSolver::preconditioners()
 {
   return PETScPreconditioner::preconditioners();
+}
+//-----------------------------------------------------------------------------
+TAOLinearBoundSolver::TAOLinearBoundSolver(MPI_Comm comm)
+  : _tao(nullptr), _preconditioner_set(false)
+{
+  PetscErrorCode ierr;
+
+  // Create TAO object
+  ierr = TaoCreate(PETSC_COMM_WORLD, &_tao);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoCreate");
 }
 //-----------------------------------------------------------------------------
 TAOLinearBoundSolver::TAOLinearBoundSolver(const std::string method,
                                            const std::string ksp_type,
                                            const std::string pc_type)
-  : _tao(NULL), preconditioner(new PETScPreconditioner(pc_type)),
-    preconditioner_set(false)
+  : _tao(NULL), _preconditioner(new PETScPreconditioner(pc_type)),
+    _preconditioner_set(false)
 {
   // Set parameter values
   parameters = default_parameters();
 
-  //Initialize the Tao solver
-  init(method);
+  PetscErrorCode ierr;
+
+  // Create TAO object
+  ierr = TaoCreate(PETSC_COMM_WORLD, &_tao);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoCreate");
+
+  // Set tao solver
+  set_solver(method);
 
   //Set the PETSC KSP used by TAO
   set_ksp(ksp_type);
@@ -97,9 +110,8 @@ TAOLinearBoundSolver::TAOLinearBoundSolver(const std::string method,
       or (method != "default"))
   {
     log(WARNING, "Some preconditioners may be not be applicable to "\
-	"TAO solvers and generate errors.");
+    "TAO solvers and generate errors.");
   }
-
 }
 //-----------------------------------------------------------------------------
 TAOLinearBoundSolver::~TAOLinearBoundSolver()
@@ -121,127 +133,136 @@ TAOLinearBoundSolver::set_operators(std::shared_ptr<const GenericMatrix> A,
 //-----------------------------------------------------------------------------
 void
 TAOLinearBoundSolver::set_operators(std::shared_ptr<const PETScMatrix> A,
-				    std::shared_ptr<const PETScVector> b)
+                                    std::shared_ptr<const PETScVector> b)
 {
-  this->A = A;
-  this->b = b;
-  dolfin_assert(this->A);
-  dolfin_assert(this->b);
+  this->_matA = A;
+  this->_b = b;
 }
 //-----------------------------------------------------------------------------
 std::size_t TAOLinearBoundSolver::solve(const GenericMatrix& A1,
                                         GenericVector& x,
-					const GenericVector& b1,
+                                        const GenericVector& b1,
                                         const GenericVector& xl,
-					const GenericVector& xu)
+                                        const GenericVector& xu)
 {
   return solve(A1.down_cast<PETScMatrix>(),
-	       x.down_cast<PETScVector>(),
-	       b1.down_cast<PETScVector>(),
-	       xl.down_cast<PETScVector>(),
-	       xu.down_cast<PETScVector>());
+               x.down_cast<PETScVector>(),
+               b1.down_cast<PETScVector>(),
+               xl.down_cast<PETScVector>(),
+               xu.down_cast<PETScVector>());
 }
 //-----------------------------------------------------------------------------
 std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
                                         PETScVector& x,
-					const PETScVector& b1,
+                                        const PETScVector& b1,
                                         const PETScVector& xl,
-					const PETScVector& xu)
+                                        const PETScVector& xu)
 {
+  PetscErrorCode ierr;
 
   // Check symmetry
   dolfin_assert(A1.size(0) == A1.size(1));
 
   // Set operators (A and b)
-  std::shared_ptr<const PETScMatrix> _matA(&A1, NoDeleter());
-  std::shared_ptr<const PETScVector> _b(&b1, NoDeleter());
-  set_operators(_matA,_b);
+  std::shared_ptr<const PETScMatrix> A(&A1, NoDeleter());
+  std::shared_ptr<const PETScVector> b(&b1, NoDeleter());
+  set_operators(A, b);
   dolfin_assert(A->mat());
   //dolfin_assert(b->vec());
 
   // Set initial vector
   dolfin_assert(_tao);
-  TaoSetInitialVector(_tao, x.vec());
+  ierr = TaoSetInitialVector(_tao, x.vec());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetInitialVector");
 
   // Set the bound on the variables
-  TaoSetVariableBounds(_tao, xl.vec(), xu.vec());
+  ierr = TaoSetVariableBounds(_tao, xl.vec(), xu.vec());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetVariableBounds");
 
   // Set the user function, gradient, hessian evaluation routines and
   // data structures
-  TaoSetObjectiveAndGradientRoutine(_tao,
-                                    __TAOFormFunctionGradientQuadraticProblem,
-                                    this);
-  TaoSetHessianRoutine(_tao, A->mat(), A->mat(),
-                       __TAOFormHessianQuadraticProblem, this);
+  ierr = TaoSetObjectiveAndGradientRoutine(_tao,
+           __TAOFormFunctionGradientQuadraticProblem, this);
+  if (ierr != 0) petsc_error(ierr, __FILE__,
+                             "TaoSetObjectiveAndGradientRoutine");
+  ierr = TaoSetHessianRoutine(_tao, A->mat(), A->mat(),
+                              __TAOFormHessianQuadraticProblem, this);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetHessianRoutine");
 
   // Set parameters from local parameters, including ksp parameters
   read_parameters();
 
   // Clear previous monitors
-  TaoCancelMonitors(_tao);
+  ierr = TaoCancelMonitors(_tao);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoCancelMonitors");
 
   // Set the monitor
-  if (parameters["monitor_convergence"])
-    TaoSetMonitor(_tao, __TAOMonitor, this, PETSC_NULL);
-
-
-  // Check for any tao command line options
-  std::string prefix = std::string(parameters["options_prefix"]);
-  if (prefix != "default")
+  if (parameters["monitor_convergence"].is_set())
   {
-    // Make sure that the prefix has a '_' at the end if the user
-    // didn't provide it
-    char lastchar = *prefix.rbegin();
-    if (lastchar != '_')
-      prefix += "_";
-
-    TaoSetOptionsPrefix(_tao, prefix.c_str());
+    if (parameters["monitor_convergence"])
+    {
+      ierr = TaoSetMonitor(_tao, __TAOMonitor, this, NULL);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetMonitor");
+    }
   }
-  TaoSetFromOptions(_tao);
 
   // Solve the bound constrained problem
   Timer timer("TAO solver");
   const char* tao_type;
-  TaoGetType(_tao, &tao_type);
+  ierr = TaoGetType(_tao, &tao_type);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoGetType");
   log(PROGRESS, "Tao solver %s starting to solve %i x %i system", tao_type,
       A->size(0), A->size(1));
 
   // Solve
-  TaoSolve(_tao);
+  ierr = TaoSolve(_tao);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSolve");
 
   // Update ghost values
   x.update_ghost_values();
 
   // Print the report on convergences and methods used
-  if (parameters["report"])
-    TaoView(_tao, PETSC_VIEWER_STDOUT_WORLD);
+  if (parameters["report"].is_set())
+  {
+    if (parameters["report"])
+    {
+      ierr = TaoView(_tao, PETSC_VIEWER_STDOUT_WORLD);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "TaoView");
+    }
+  }
 
   // Check for convergence
   TaoConvergedReason reason;
-  TaoGetConvergedReason(_tao, &reason);
+  ierr = TaoGetConvergedReason(_tao, &reason);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoGetConvergedReason");
 
   // Get the number of iterations
   PetscInt num_iterations = 0;
-  TaoGetMaximumIterations(_tao, &num_iterations);
+  ierr = TaoGetMaximumIterations(_tao, &num_iterations);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoGetMaximumIterations");
 
   // Report number of iterations
   if (reason >= 0)
     log(PROGRESS, "Tao solver converged\n");
   else
   {
-    bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
-    if (error_on_nonconvergence)
+    if (parameters["error_on_nonconvergence"].is_set())
     {
-      TaoView(_tao, PETSC_VIEWER_STDOUT_WORLD);
-      dolfin_error("TAOLinearBoundSolver.cpp",
-                   "solve linear system using Tao solver",
-                   "Solution failed to converge in %i iterations (TAO reason %d)",
-                   num_iterations, reason);
-    }
-    else
-    {
-      log(WARNING,  "Tao solver %s failed to converge. Try a different TAO method," \
-	  " adjust some parameters", tao_type);
+      bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
+      if (error_on_nonconvergence)
+      {
+        ierr = TaoView(_tao, PETSC_VIEWER_STDOUT_WORLD);
+        if (ierr != 0) petsc_error(ierr, __FILE__, "TaoView");
+        dolfin_error("TAOLinearBoundSolver.cpp",
+                     "solve linear system using Tao solver",
+                     "Solution failed to converge in %i iterations (TAO reason %d)",
+                     num_iterations, reason);
+      }
+      else
+      {
+        log(WARNING,  "Tao solver %s failed to converge. Try a different TAO method," \
+            " adjust some parameters", tao_type);
+      }
     }
   }
 
@@ -251,44 +272,53 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
 void TAOLinearBoundSolver::set_solver(const std::string& method)
 {
   dolfin_assert(_tao);
+  PetscErrorCode ierr;
 
   // Do nothing if default type is specified
   if (method == "default")
-    TaoSetType(_tao, "tron");
+    ierr = TaoSetType(_tao, "tron");
   else
   {
     // Choose solver
     if (method == "tron")
-      TaoSetType(_tao, "tron");
+      ierr = TaoSetType(_tao, "tron");
     else if (method == "blmvm")
-      TaoSetType(_tao, "blmvm" );
+      ierr = TaoSetType(_tao, "blmvm" );
     else if (method == "gpcg")
-      TaoSetType(_tao, "gpcg" );
+      ierr = TaoSetType(_tao, "gpcg" );
     else if (method == "bqpip")
-      TaoSetType(_tao, "bqpip");
+      ierr = TaoSetType(_tao, "bqpip");
     else
     {
       dolfin_error("TAOLinearBoundSolver.cpp",
-		   "set solver for TAO solver",
+                   "set solver for TAO solver",
                    "Unknown solver type (\"%s\")", method.c_str());
+      ierr = 0; // Make compiler happy about uninitialized variable
     }
   }
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetType");
 }
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::set_ksp(std::string ksp_type)
 {
+  PetscErrorCode ierr;
+
   // Set ksp type
   if (ksp_type != "default")
   {
     dolfin_assert(_tao);
     KSP ksp;
-    TaoGetKSP(_tao, &ksp);
+    ierr = TaoGetKSP(_tao, &ksp);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "TaoGetKSP");
     if (ksp)
-      KSPSetType(ksp, _ksp_methods.find(ksp_type)->second);
+    {
+      ierr = KSPSetType(ksp, _ksp_methods.find(ksp_type)->second);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+    }
     else
     {
       log(WARNING, "The selected tao solver does not allow to set a specific "\
-	  "Krylov solver. Option %s is ignored", ksp_type.c_str());
+      "Krylov solver. Option %s is ignored", ksp_type.c_str());
     }
   }
 }
@@ -300,28 +330,41 @@ Tao TAOLinearBoundSolver::tao() const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const PETScMatrix> TAOLinearBoundSolver::get_matrix() const
 {
-  return A;
+  return _matA;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const PETScVector> TAOLinearBoundSolver::get_vector() const
 {
-  return b;
+  return _b;
 }
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::read_parameters()
 {
   dolfin_assert(_tao);
+  PetscErrorCode ierr;
 
   // Set tolerances
-  TaoSetTolerances(_tao, parameters["function_absolute_tol"],
-		   parameters["function_relative_tol"],
-		   parameters["gradient_absolute_tol"],
-		   parameters["gradient_relative_tol"],
-		   parameters["gradient_t_tol"]);
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
+  ierr = TaoSetTolerances(_tao, parameters["function_absolute_tol"],
+                                parameters["function_relative_tol"],
+                                parameters["gradient_absolute_tol"],
+                                parameters["gradient_relative_tol"],
+                                parameters["gradient_t_tol"]);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetTolerances");
+  #else
+  ierr = TaoSetTolerances(_tao, parameters["gradient_absolute_tol"],
+                                parameters["gradient_relative_tol"],
+                                parameters["gradient_t_tol"]);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetTolerances");
+  #endif
 
   // Set TAO solver maximum iterations
-  int maxits = parameters["maximum_iterations"];
-  TaoSetMaximumIterations(_tao, maxits);
+  if (parameters["maximum_iterations"].is_set())
+  {
+    int maxits = parameters["maximum_iterations"];
+    ierr = TaoSetMaximumIterations(_tao, maxits);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetMaximumIterations");
+  }
 
   // Set ksp_options
   set_ksp_options();
@@ -329,12 +372,18 @@ void TAOLinearBoundSolver::read_parameters()
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::init(const std::string& method)
 {
+  PetscErrorCode ierr;
+
   // Check that nobody else shares this solver
   if (_tao)
-    TaoDestroy(&_tao);
+  {
+    ierr = TaoDestroy(&_tao);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "TaoDestroy");
+  }
 
   // Set up solver environment
-  TaoCreate(PETSC_COMM_WORLD, &_tao);
+  ierr = TaoCreate(PETSC_COMM_WORLD, &_tao);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoCreate");
 
   // Set tao solver
   set_solver(method);
@@ -343,40 +392,60 @@ void TAOLinearBoundSolver::init(const std::string& method)
 void TAOLinearBoundSolver::set_ksp_options()
 {
   dolfin_assert(_tao);
+  PetscErrorCode ierr;
+
   KSP ksp;
-  TaoGetKSP(_tao, &ksp);
+  ierr = TaoGetKSP(_tao, &ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoGetKSP");
+
   if (ksp)
   {
     Parameters krylov_parameters = parameters("krylov_solver");
 
-    // GMRES restart parameter
-    const int gmres_restart = krylov_parameters("gmres")["restart"];
-    KSPGMRESSetRestart(ksp, gmres_restart);
-
     // Non-zero initial guess
-    const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
-    if (nonzero_guess)
-      KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
-    else
-      KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
+    bool nonzero_guess = false;
+    if (krylov_parameters["nonzero_initial_guess"].is_set())
+      nonzero_guess = krylov_parameters["nonzero_initial_guess"];
 
-    if (krylov_parameters["monitor_convergence"])
-      KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
+    if (nonzero_guess)
+      ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
+    else
+      ierr = KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetInitialGuessNonzero");
+
+    if (krylov_parameters["monitor_convergence"].is_set())
+    {
+      if (krylov_parameters["monitor_convergence"])
+      {
+        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
+        ierr = TaoSetMonitor(_tao, __TAOMonitor, this, NULL);
+        if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetMonitor");
+        #else
+        PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
+        PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
+        PetscViewerAndFormat *vf;
+        ierr = PetscViewerAndFormatCreate(viewer,format,&vf);
+        ierr = KSPMonitorSet(ksp, (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
+                             vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+        if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
+        #endif
+      }
+    }
 
     // Set tolerances
-    const int max_ksp_it = krylov_parameters["maximum_iterations"];
-    KSPSetTolerances(ksp,
-                     krylov_parameters["relative_tolerance"],
-		     krylov_parameters["absolute_tolerance"],
-		     krylov_parameters["divergence_limit"],
-		     max_ksp_it);
+    const double rtol = krylov_parameters["relative_tolerance"].is_set() ? (double)krylov_parameters["relative_tolerance"] : PETSC_DEFAULT;
+    const double atol = krylov_parameters["absolute_tolerance"].is_set() ? (double)krylov_parameters["absolute_tolerance"] : PETSC_DEFAULT;
+    const double dtol = krylov_parameters["divergence_limit"].is_set() ? (double)krylov_parameters["divergence_limit"] : PETSC_DEFAULT;
+    const int max_ksp_it  = krylov_parameters["maximum_iterations"].is_set() ? (int)krylov_parameters["maximum_iterations"] : PETSC_DEFAULT;
+    ierr = KSPSetTolerances(ksp, rtol, atol, dtol, max_ksp_it);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetTolerances");
 
     // Set preconditioner
-    if (preconditioner && !preconditioner_set)
+    if (_preconditioner && !_preconditioner_set)
     {
       PETScKrylovSolver dolfin_ksp(ksp);
-      preconditioner->set(dolfin_ksp);
-      preconditioner_set = true;
+      _preconditioner->set(dolfin_ksp);
+      _preconditioner_set = true;
     }
   }
 }
@@ -388,29 +457,37 @@ TAOLinearBoundSolver::__TAOFormFunctionGradientQuadraticProblem(Tao tao,
                                                                 Vec G,
                                                                 void *ptr)
 {
-   PetscReal AXX, bX;
-   const TAOLinearBoundSolver* solver = static_cast<TAOLinearBoundSolver*>(ptr);
-   const PETScMatrix* A = solver->get_matrix().get();
-   const PETScVector* b = solver->get_vector().get();
+  PetscErrorCode ierr;
+  PetscReal AXX, bX;
 
-   dolfin_assert(A);
-   dolfin_assert(b);
+  dolfin_assert(ptr);
+  const TAOLinearBoundSolver* solver = static_cast<TAOLinearBoundSolver*>(ptr);
+  const PETScMatrix* A = solver->get_matrix().get();
+  const PETScVector* b = solver->get_vector().get();
+  dolfin_assert(A);
+  dolfin_assert(b);
 
-   // Calculate AX=A*X and store in G
-   MatMult(A->mat(), X, G);
+  // Calculate AX=A*X and store in G
+  ierr = MatMult(A->mat(), X, G);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatMult");
 
-   // Calculate AXX=A*X*X
-   VecDot(G, X, &AXX);
+  // Calculate AXX=A*X*X
+  ierr = VecDot(G, X, &AXX);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecDot");
 
-   // Calculate bX=b*X
-   VecDot(b->vec(), X, &bX);
+  // Calculate bX=b*X
+  ierr = VecDot(b->vec(), X, &bX);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecDot");
 
-   // Calculate the functional value ener=1/2*A*X*X-b*X
-   *ener = 0.5*AXX-bX;
+  // Calculate the functional value ener=1/2*A*X*X-b*X
+  dolfin_assert(ener);
+  *ener = 0.5*AXX-bX;
 
-   // Calculate the gradient vector G=A*X-b
-   VecAXPBY(G, -1.0, 1.0, b->vec());
-   return 0;
+  // Calculate the gradient vector G=A*X-b
+  ierr = VecAXPBY(G, -1.0, 1.0, b->vec());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecAXPBY");
+
+  return 0;
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode
@@ -419,26 +496,33 @@ TAOLinearBoundSolver::__TAOFormHessianQuadraticProblem(Tao tao,
                                                        Mat Hpre,
                                                        void *ptr)
 {
-   const TAOLinearBoundSolver* solver = static_cast<TAOLinearBoundSolver*>(ptr);
-   const PETScMatrix* A = solver->get_matrix().get();
+  dolfin_assert(ptr);
+  const TAOLinearBoundSolver* solver = static_cast<TAOLinearBoundSolver*>(ptr);
+  const PETScMatrix* A = solver->get_matrix().get();
+  dolfin_assert(A);
 
-   dolfin_assert(A);
+  // Set the hessian to the matrix A (quadratic problem)
+  Mat Atmp = A->mat();
+  H = Atmp;
 
-   // Set the hessian to the matrix A (quadratic problem)
-   Mat Atmp = A->mat();
-   H = Atmp;
-   return 0;
+  return 0;
 }
 //------------------------------------------------------------------------------
 PetscErrorCode TAOLinearBoundSolver::__TAOMonitor(Tao tao, void *ctx)
 {
   dolfin_assert(tao);
+  PetscErrorCode ierr;
   PetscInt its;
   PetscReal f, gnorm, cnorm, xdiff;
   TaoConvergedReason reason;
-  TaoGetSolutionStatus(tao, &its, &f, &gnorm, &cnorm, &xdiff, &reason);
+
+  ierr = TaoGetSolutionStatus(tao, &its, &f, &gnorm, &cnorm, &xdiff, &reason);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoGetSolutionStatus");
   if (!(its % 5))
-    PetscPrintf(PETSC_COMM_WORLD,"iteration=%D\tf=%g\n", its, (double)f);
+  {
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"iteration=%D\tf=%g\n", its, (double)f);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "PetscPrintf");
+  }
 
   return 0;
 }

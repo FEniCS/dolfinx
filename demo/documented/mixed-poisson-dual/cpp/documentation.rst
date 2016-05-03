@@ -134,7 +134,7 @@ formulation. We also define the bilinear form ``a`` and linear form
 .. code-block:: c++
 
     // Construct function space
-    MixedPoissonDual::FunctionSpace W(mesh);
+    auto W = std::make_shared<MixedPoissonDual::FunctionSpace>(mesh);
     MixedPoissonDual::BilinearForm a(W, W);
     MixedPoissonDual::LinearForm L(W);
 
@@ -144,8 +144,8 @@ linear form.
 .. code-block:: c++
 
     // Create sources and assign to L
-    Source f;
-    BoundarySource g;
+    auto f = std::make_shared<Source>();
+    auto g = std::make_shared<BoundarySource>();
     L.f = f;
     L.g = g;
 
@@ -156,16 +156,14 @@ space the boundary condition is supposed to be applied to, the data
 for the boundary condition, and the relevant part of the boundary.
 
 We want to apply the boundary condition to the second subspace of the
-mixed space. This space can be accessed by the :cpp:class:`Subspace`
-class.
+mixed space.
 
 .. code-block:: c++
 
     // Define boundary condition
-    Constant zero(0.0);
-    SubSpace W1(W, 1);
-    DirichletBoundary boundary;
-    DirichletBC bc(W1, zero, boundary);
+    auto zero = std::make_shared<Constant>(0.0);
+    auto boundary = std::make_shared<DirichletBoundary>();
+    DirichletBC bc(W->sub(1), zero, boundary);
 
 To compute the solution we use the bilinear and linear forms, and the
 boundary condition, but we also need to create a :cpp:class:`Function`

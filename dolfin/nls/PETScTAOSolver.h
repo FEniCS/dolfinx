@@ -21,7 +21,7 @@
 #ifndef __PETSC_TAO_SOLVER_H
 #define __PETSC_TAO_SOLVER_H
 
-#ifdef ENABLE_PETSC_TAO
+#ifdef HAS_PETSC
 
 #include <map>
 #include <petsctao.h>
@@ -48,6 +48,9 @@ namespace dolfin
   {
   public:
 
+    /// Create TAO solver
+    explicit PETScTAOSolver(MPI_Comm comm);
+
     /// Create TAO solver for a particular method
     PETScTAOSolver(const std::string tao_type="default",
                    const std::string ksp_type="default",
@@ -69,12 +72,13 @@ namespace dolfin
     ///         The upper bound.
     ///
     /// *Returns*
-    ///     num_iterations (std::size_t)
-    ///         Number of iterations
-    std::size_t solve(OptimisationProblem& optimisation_problem,
-                      GenericVector& x,
-                      const GenericVector& lb,
-                      const GenericVector& ub);
+    ///     (its, converged) (std::pair<std::size_t, bool>)
+    ///         Pair of number of iterations, and whether
+    ///         iteration converged
+    std::pair<std::size_t, bool> solve(OptimisationProblem& optimisation_problem,
+                                       GenericVector& x,
+                                       const GenericVector& lb,
+                                       const GenericVector& ub);
 
     /// Solve a nonlinear unconstrained minimisation problem
     ///
@@ -85,13 +89,14 @@ namespace dolfin
     ///         The solution vector (initial guess).
     ///
     /// *Returns*
-    ///     num_iterations (std::size_t)
-    ///         Number of iterations
-    std::size_t solve(OptimisationProblem& optimisation_problem,
-                      GenericVector& x);
+    ///     (its, converged) (std::pair<std::size_t, bool>)
+    ///         Pair of number of iterations, and whether
+    ///         iteration converged
+    std::pair<std::size_t, bool> solve(OptimisationProblem& optimisation_problem,
+                                       GenericVector& x);
 
     /// Return a list of available solver methods
-    static std::vector<std::pair<std::string, std::string> > methods();
+    static std::vector<std::pair<std::string, std::string>> methods();
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -129,11 +134,12 @@ namespace dolfin
     ///         The upper bound.
     ///
     /// *Returns*
-    ///     num_iterations (std::size_t)
-    ///         Number of iterations
-    std::size_t solve(OptimisationProblem& optimisation_problem,
-                      PETScVector& x, const PETScVector& lb,
-                      const PETScVector& ub);
+    ///     (its, converged) (std::pair<std::size_t, bool>)
+    ///         Pair of number of iterations, and whether
+    ///         iteration converged
+    std::pair<std::size_t, bool> solve(OptimisationProblem& optimisation_problem,
+                                       PETScVector& x, const PETScVector& lb,
+                                       const PETScVector& ub);
 
     // TAO context for optimisation problems
     struct tao_ctx_t
@@ -159,14 +165,14 @@ namespace dolfin
     void set_tao(const std::string tao_type="default");
 
     // Flag to indicate if the bounds are set
-    bool has_bounds;
+    bool _has_bounds;
 
     // Hessian matrix
     PETScMatrix _matH;
 
     // Available solvers
     static const std::map<std::string,
-                          std::pair<std::string, const TaoType> > _methods;
+      std::pair<std::string, const TaoType>> _methods;
 
     // Compute the nonlinear objective function :math:`f(x)` as well
     // as its gradient :math:`F(x) = f'(x)`

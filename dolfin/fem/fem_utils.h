@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Johan Hake
+// Copyright (C) 2013, 2015 Johan Hake, Jan Blechta
 //
 // This file is part of DOLFIN.
 //
@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2013-09-05
-// Last changed: 2013-09-09
 
 #ifndef __FEM_UTILS_H
 #define __FEM_UTILS_H
@@ -31,15 +28,19 @@ namespace dolfin
   class FunctionSpace;
 
   /// Return a map between dofs indices and vertex indices
-  /// 
+  ///
   /// Only works for FunctionSpace with dofs exclusively on vertices.
-  /// For MixedFunctionSpaces vertex index is offset with the number
-  /// of dofs per vertex. In parallel the returned map only maps local
-  /// (to processor) dofs.
+  /// For mixed FunctionSpaces vertex index is offset with the number
+  /// of dofs per vertex.
+  ///
+  /// In parallel the returned map maps both owned and unowned dofs
+  /// (using local indices) thus covering all the vertices. Hence the
+  /// returned map is an inversion of _vertex_to_dof_map_.
   ///
   /// *Arguments*
   ///     space (_FunctionSpace_)
-  ///         The FunctionSpace for what the dof to vertex map should be computed for
+  ///         The FunctionSpace for what the dof to vertex map should
+  ///         be computed for
   ///
   /// *Returns*
   ///     std::vector<std::size_t>
@@ -49,12 +50,13 @@ namespace dolfin
   /// Return a map between vertex indices and dofs indices
   ///
   /// Only works for FunctionSpace with dofs exclusively on vertices.
-  /// For MixedFunctionSpaces dof index is offset with the number of
+  /// For mixed FunctionSpaces dof index is offset with the number of
   /// dofs per vertex.
   ///
   /// *Arguments*
   ///     space (_FunctionSpace_)
-  ///         The FunctionSpace for what the vertex to dof map should be computed for
+  ///         The FunctionSpace for what the vertex to dof map should
+  ///         be computed for
   ///
   /// *Returns*
   ///     std::vector<dolfin::la_index>

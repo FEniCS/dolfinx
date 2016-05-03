@@ -61,13 +61,10 @@ If not available, costly QMR method is choosen.
         exit()
 
 Next, we define the mesh (a :py:class:`UnitCubeMesh
-<dolfin.cpp.UnitCubeMesh>`) and a :py:class:`MixedFunctionSpace
-<dolfin.functions.functionspace.MixedFunctionSpace>` composed of a
-:py:class:`VectorFunctionSpace
-<dolfin.functions.functionspace.VectorFunctionSpace>` of continuous
-piecewise quadratics and a :py:class:`FunctionSpace
-<dolfin.functions.functionspace.FunctionSpace>` of continuous
-piecewise linears. (This mixed finite element space is known as the
+<dolfin.cpp.UnitCubeMesh>`) and a mixed finite element ``TH``.
+Then we build a :py:class:`FunctionSpace
+<dolfin.functions.functionspace.FunctionSpace>` on this element.
+(This mixed finite element space is known as the
 Taylor--Hood elements and is a stable, standard element pair for the
 Stokes equations.)
 
@@ -76,10 +73,11 @@ Stokes equations.)
     # Load mesh
     mesh = UnitCubeMesh(16, 16, 16)
 
-    # Define function spaces
-    V = VectorFunctionSpace(mesh, "CG", 2)
-    Q = FunctionSpace(mesh, "CG", 1)
-    W = V * Q
+    # Build function space
+    P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    TH = P2 * P1
+    W = FunctionSpace(mesh, TH)
 
 Next, we define the boundary conditions.
 
@@ -96,7 +94,7 @@ Next, we define the boundary conditions.
     bc0 = DirichletBC(W.sub(0), noslip, top_bottom)
 
     # Inflow boundary condition for velocity
-    inflow = Expression(("-sin(x[1]*pi)", "0.0", "0.0"))
+    inflow = Expression(("-sin(x[1]*pi)", "0.0", "0.0"), degree=2)
     bc1 = DirichletBC(W.sub(0), inflow, right)
 
     # Collect boundary conditions

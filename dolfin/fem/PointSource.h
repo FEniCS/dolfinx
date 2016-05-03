@@ -14,9 +14,9 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2011-04-13
-// Last changed: 2013-06-23
+
+#ifndef __POINT_SOURCE_H
+#define __POINT_SOURCE_H
 
 #include <memory>
 #include <dolfin/geometry/Point.h>
@@ -39,13 +39,7 @@ namespace dolfin
   public:
 
     /// Create point source at given point of given magnitude
-    PointSource(const FunctionSpace& V,
-                const Point& p,
-                double magnitude=1.0);
-
-    /// Create point source at given point of given magnitude
-    PointSource(std::shared_ptr<const FunctionSpace> V,
-                const Point& p,
+    PointSource(std::shared_ptr<const FunctionSpace> V, const Point& p,
                 double magnitude=1.0);
 
     /// Destructor
@@ -71,3 +65,5 @@ namespace dolfin
   };
 
 }
+
+#endif

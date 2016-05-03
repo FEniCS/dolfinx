@@ -57,7 +57,7 @@ Probe::Probe(const Array<double>& x, const FunctionSpace& V)
     // Create cell that contains point
     dolfin_cell.reset(new Cell(mesh, id));
     dolfin_cell->get_cell_data(ufc_cell);
-    dolfin_cell->get_vertex_coordinates(_vertex_coordinates);
+    dolfin_cell->get_coordinate_dofs(_coordinate_dofs);
 
     // Create work vector for basis
     std::vector<double> basis(value_size_loc);
@@ -72,7 +72,7 @@ Probe::Probe(const Array<double>& x, const FunctionSpace& V)
     for (std::size_t i = 0; i < _element->space_dimension(); ++i)
     {
       _element->evaluate_basis(i, basis.data(), x.data(),
-                               _vertex_coordinates.data(),
+                               _coordinate_dofs.data(),
                                dolfin_cell->orientation());
       for (std::size_t j = 0; j < value_size_loc; ++j)
         _basis_matrix[j][i] = basis[j];
@@ -96,7 +96,7 @@ void Probe::eval(const Function& u)
 {
   // Restrict function to cell
   u.restrict(&_coefficients[0], *_element, *dolfin_cell,
-             _vertex_coordinates.data(), ufc_cell);
+             _coordinate_dofs.data(), ufc_cell);
 
   // Make room for one more evaluation
   for (std::size_t j = 0; j < value_size_loc; j++)

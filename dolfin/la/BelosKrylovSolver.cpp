@@ -18,6 +18,8 @@
 
 #ifdef HAS_TRILINOS
 
+#include <cctype>
+
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
@@ -29,6 +31,7 @@
 #include "BelosKrylovSolver.h"
 #include "Ifpack2Preconditioner.h"
 #include "MueluPreconditioner.h"
+#include "TrilinosParameters.h"
 
 using namespace dolfin;
 
@@ -38,8 +41,8 @@ std::map<std::string, std::string> BelosKrylovSolver::preconditioners()
   std::map<std::string, std::string> allowed_precs
     = Ifpack2Preconditioner::preconditioners();
 
-  allowed_precs.insert(std::make_pair<std::string, std::string>("muelu",
-                                                                "muelu"));
+  allowed_precs.insert({"muelu", "muelu"});
+  allowed_precs.insert({"amg", "muelu"});
 
   return allowed_precs;
 }
@@ -53,8 +56,11 @@ std::map<std::string, std::string> BelosKrylovSolver::methods()
   result.insert(std::make_pair("default", "default method"));
 
   for (auto &m : methods)
+  {
+    for (auto &c : m)
+      c = std::tolower(c);
     result.insert(std::make_pair(m, m));
-
+  }
   return result;
 }
 //-----------------------------------------------------------------------------
@@ -75,11 +81,30 @@ BelosKrylovSolver::BelosKrylovSolver(std::string method,
 
   if (preconditioner != "none")
   {
-    if (preconditioner == "muelu")
+    if (preconditioner == "muelu" or preconditioner == "amg")
       _prec.reset(new MueluPreconditioner());
     else
       _prec.reset(new Ifpack2Preconditioner(preconditioner));
   }
+
+  init(method);
+}
+//-----------------------------------------------------------------------------
+BelosKrylovSolver::BelosKrylovSolver(std::string method,
+  std::shared_ptr<TrilinosPreconditioner> preconditioner)
+  : _prec(preconditioner)
+{
+  // Check that the requested method is known
+  const std::map<std::string, std::string> _methods = methods();
+  if (_methods.find(method) == _methods.end())
+  {
+    dolfin_error("BelosKrylovSolver.cpp",
+                 "create Belos Krylov solver",
+                 "Unknown Krylov method \"%s\"", method.c_str());
+  }
+
+  // Set parameter values
+  parameters = default_parameters();
 
   init(method);
 }
@@ -94,12 +119,8 @@ Parameters BelosKrylovSolver::default_parameters()
   Parameters p(KrylovSolver::default_parameters());
   p.rename("belos_krylov_solver");
 
-  // Norm type used in convergence test
-  // std::set<std::string> allowed_norm_types;
-  // allowed_norm_types.insert("preconditioned");
-  // allowed_norm_types.insert("true");
-  // allowed_norm_types.insert("none");
-  // p.add("convergence_norm_type", allowed_norm_types);
+  Parameters belos_parameters("belos");
+  p.add(belos_parameters);
 
   return p;
 }
@@ -114,8 +135,8 @@ void
 BelosKrylovSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
                                  std::shared_ptr<const GenericLinearOperator> P)
 {
-  set_operators(as_type<const TpetraMatrix>(A),
-                as_type<const TpetraMatrix>(P));
+  _set_operators(as_type<const TpetraMatrix>(A),
+                 as_type<const TpetraMatrix>(P));
 }
 //-----------------------------------------------------------------------------
 const TpetraMatrix& BelosKrylovSolver::get_operator() const
@@ -160,20 +181,21 @@ std::string BelosKrylovSolver::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void BelosKrylovSolver::init(const std::string& method)
 {
-  Teuchos::RCP<Teuchos::ParameterList> dummyParams = Teuchos::parameterList();
+  Teuchos::RCP<Teuchos::ParameterList> dummy_params = Teuchos::parameterList();
 
   std::string method_name = method;
   if (method=="default")
     method_name = "GMRES";
 
   Belos::SolverFactory<double, TpetraVector::vector_type, op_type> factory;
-  _solver = factory.create(method_name, dummyParams);
+  _solver = factory.create(method_name, dummy_params);
+
   _problem = Teuchos::rcp(new problem_type);
 }
 //-----------------------------------------------------------------------------
 void BelosKrylovSolver::_set_operator(std::shared_ptr<const TpetraMatrix> A)
 {
-  set_operators(A, A);
+  _set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
 void BelosKrylovSolver::_set_operators(std::shared_ptr<const TpetraMatrix> A,
@@ -215,14 +237,18 @@ std::size_t BelosKrylovSolver::_solve(TpetraVector& x, const TpetraVector& b)
                  _matA->size(0), b.size());
   }
 
-  // Write a message
-  const bool report = parameters["report"];
+  // Get MPI rank
   const int mpi_rank = MPI::rank(_matA->mpi_comm());
 
-  if (report && mpi_rank == 0)
+  // Write a message
+  if (parameters["report"].is_set())
   {
-    info("Solving linear system of size %ld x %ld (Belos Krylov solver).",
-         M, N);
+    const bool report = (bool)parameters["report"];
+    if (report && mpi_rank == 0)
+    {
+      info("Solving linear system of size %ld x %ld (Belos Krylov solver).",
+           M, N);
+    }
   }
 
   // Reinitialize solution vector if necessary
@@ -243,16 +269,18 @@ std::size_t BelosKrylovSolver::_solve(TpetraVector& x, const TpetraVector& b)
   }
 
   // Clear LHS if unless nonzero_initial_guess is set
-  const bool nonzero_guess = parameters["nonzero_initial_guess"];
-  if (!nonzero_guess)
-    x.zero();
+  if (parameters["nonzero_initial_guess"].is_set())
+  {
+    const bool nonzero_guess = (bool) parameters["nonzero_initial_guess"];
+    if (!nonzero_guess)
+      x.zero();
+  }
 
   _problem->setProblem(x.vec(), b.vec());
   _solver->setProblem(_problem);
 
   Belos::ReturnType result =_solver->solve();
   const std::size_t num_iterations = _solver->getNumIters();
-
   if (result == Belos::Converged)
   {
     log(PROGRESS, "Belos Krylov Solver converged in %d iterations.",
@@ -260,19 +288,25 @@ std::size_t BelosKrylovSolver::_solve(TpetraVector& x, const TpetraVector& b)
   }
     else
   {
-    bool error_non_converge = parameters["error_on_nonconvergence"];
-    if (error_non_converge)
-      dolfin_error("BelosKrylovSolver.cpp",
-                   "solve linear system using Belos Krylov solver",
-                   "Solution failed to converge in %d iterations",
-                   num_iterations);
-    else
+    if (parameters["error_on_nonconvergence"].is_set())
     {
-      log(PROGRESS, "Belos Krylov Solver did not converge in %d iterations.",
-          num_iterations);
+      bool error_non_converge = parameters["error_on_nonconvergence"];
+      if (error_non_converge)
+      {
+        dolfin_error("BelosKrylovSolver.cpp",
+                     "solve linear system using Belos Krylov solver",
+                     "Solution failed to converge in %d iterations",
+                     num_iterations);
+      }
+      else
+      {
+        log(PROGRESS, "Belos Krylov Solver did not converge in %d iterations.",
+            num_iterations);
+      }
     }
   }
 
+  // Update ghosts
   x.update_ghost_values();
 
   return num_iterations;
@@ -296,18 +330,22 @@ void BelosKrylovSolver::set_options()
   Teuchos::RCP<Teuchos::ParameterList> solverParams
     = Teuchos::parameterList(*_solver->getCurrentParameters());
 
-  const int gmres_restart = parameters("gmres")["restart"];
-  if (solverParams->isParameter("Num Blocks"))
-      solverParams->set("Num Blocks", gmres_restart);
+  if (parameters["maximum_iterations"].is_set())
+  {
+    const int max_iterations = (int) parameters["maximum_iterations"];
+    solverParams->set("Maximum Iterations", max_iterations);
+  }
 
-  const int max_iterations = parameters["maximum_iterations"];
-  solverParams->set("Maximum Iterations", max_iterations);
+  if (parameters["relative_tolerance"].is_set())
+  {
+    const double rtol = (double) parameters["relative_tolerance"];
+    solverParams->set("Convergence Tolerance", rtol);
+  }
 
-  const double rel_tol = parameters["relative_tolerance"];
-  solverParams->set("Convergence Tolerance", rel_tol);
 
-  const bool monitor_convergence = parameters["monitor_convergence"];
-  if (monitor_convergence)
+  const bool monitor = parameters["monitor_convergence"].is_set() ? (bool) parameters["monitor_convergence"] : false;
+  const bool report = parameters["report"].is_set() ? (bool) parameters["report"] : false;
+  if (monitor or report)
   {
     solverParams->set("Verbosity",
                       Belos::Warnings
@@ -316,8 +354,15 @@ void BelosKrylovSolver::set_options()
                       | Belos::TimingDetails
                       | Belos::FinalSummary);
     solverParams->set("Output Style", (int)Belos::Brief);
-    solverParams->set("Output Frequency", 1);
   }
+
+  if (monitor)
+    solverParams->set("Output Frequency", 1);
+
+  // Copy over any parameters from dolfin parameters in ["belos"]
+  const Parameters& params = parameters("belos");
+  TrilinosParameters::insert_parameters(params, solverParams);
+
   _solver->setParameters(solverParams);
 }
 //-----------------------------------------------------------------------------

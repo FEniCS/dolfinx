@@ -46,7 +46,7 @@ from dolfin import *
 
 # Test for PETSc
 if not has_linear_algebra_backend("PETSc"):
-    info("DOLFIN has not been configured with TPETSc. Exiting.")
+    info("DOLFIN has not been configured with PETSc. Exiting.")
     exit()
 
 parameters["linear_algebra_backend"] = "PETSc"
@@ -58,8 +58,8 @@ V = FunctionSpace(mesh, "CG", 1)
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-g = Expression("-sin(5*x[0])")
+f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
+g = Expression("-sin(5*x[0])", degree=2)
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
 
@@ -71,19 +71,20 @@ b = assemble(L)
 u = Function(V)
 
 # Create Krylov solver
-solver = KrylovSolver(A, "gmres")
+solver = PETScKrylovSolver("cg")
+solver.set_operator(A)
 
 # Create vector that spans the null space and normalize
 null_vec = Vector(u.vector())
 V.dofmap().set(null_vec, 1.0)
 null_vec *= 1.0/null_vec.norm("l2")
 
-# Create null space basis object and attach to Krylov solver
+# Create null space basis object and attach to PETSc matrix
 null_space = VectorSpaceBasis([null_vec])
 as_backend_type(A).set_nullspace(null_space)
 
-# Orthogonalize RHS b with respect to the null space (this gurantees a
-# solution exists)
+# Orthogonalize RHS vector b with respect to the null space (this
+# gurantees a solution exists)
 null_space.orthogonalize(b);
 
 # Solve

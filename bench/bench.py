@@ -70,7 +70,7 @@ def run_bench(arg, directory, files):
     f = open(logfile)
     run_timings = [("", elapsed_time)]
     for line in [line for line in f.read().split("\n") if "BENCH" in line]:
-        words = [word.strip() for word in line.split(" ")]
+        words = [word.strip() for word in line.split()]
         # Override total time
         if len(words) == 2:
             run_timings[0] = ("", float(words[1]))
@@ -89,7 +89,7 @@ def run_bench(arg, directory, files):
             d = description
         else:
             n = "%s-%s" % (name, postfix)
-            d = "%s (%s)" % (description, postfix)
+            d = "%s ((%s))" % (description, postfix)
         f.write('%s %s %g "%s"\n'  % (date, n, timing, d))
 
     return status == 0

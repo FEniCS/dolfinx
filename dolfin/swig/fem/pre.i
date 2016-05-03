@@ -48,66 +48,13 @@ PROBLEM_RENAMES(LinearVariational)
 PROBLEM_RENAMES(NonlinearVariational)
 
 //-----------------------------------------------------------------------------
-// To simplify handling of shared_ptr types in PyDOLFIN we ignore the reference
-// version of constructors to these types
-//-----------------------------------------------------------------------------
-%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
-                     const GenericFunction&,
-                     const SubDomain&,
-                     std::string method="topological");
-%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
-                     const GenericFunction&,
-                     const MeshFunction<std::size_t>&,
-                     std::size_t,
-                     std::string method="topological");
-%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
-                     const GenericFunction&,
-                     std::size_t,
-                     std::string method="topological");
+// To simplify handling of shared_ptr types in PyDOLFIN we ignore the
+// reference version of constructors to these types
+// -----------------------------------------------------------------------------
 %ignore dolfin::DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace>,
-                     std::shared_ptr<const GenericFunction>,
-                     const std::vector<std::size_t>&,
-                     std::string method="topological");
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
-                                                                   const Form&,
-                                                                   Function&);
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
-                                                     const Form&,
-                                                     Function&,
-                                                     const DirichletBC&);
-%ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
-                                       const Form&,
-                                       Function&,
-                                       std::vector<const DirichletBC*>);
-
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                                     Function&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                                   Function&,
-                                                                   const Form&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                     Function&,
-                                                     const DirichletBC&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                                     Function&,
-                                                     const DirichletBC&,
-                                                     const Form&);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                       Function&,
-                                       std::vector<const DirichletBC*>);
-%ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
-                                         Function&,
-                                         std::vector<const DirichletBC*>,
-                                         const Form&);
-
-%ignore dolfin::LinearVariationalSolver::LinearVariationalSolver(LinearVariationalProblem&);
-
-%ignore dolfin::NonlinearVariationalSolver::NonlinearVariationalSolver(NonlinearVariationalProblem&);
-
-%ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&);
-%ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&, const DirichletBC&);
-%ignore dolfin::SystemAssembler::SystemAssembler(const Form&, const Form&,
-                         const std::vector<const DirichletBC*>);
+                                         std::shared_ptr<const GenericFunction>,
+                                         const std::vector<std::size_t>&,
+                                         std::string method="topological");
 
 //-----------------------------------------------------------------------------
 // Ignore GenericDofMap::cell_dofs
@@ -124,7 +71,6 @@ PROBLEM_RENAMES(NonlinearVariational)
 // Modifying the interface of DirichletBC
 //-----------------------------------------------------------------------------
 %rename (_function_space) dolfin::DirichletBC::function_space;
-%ignore dolfin::DirichletBC::set_value(const GenericFunction&);
 %ignore dolfin::DirichletBC::gather;
 
 //-----------------------------------------------------------------------------
@@ -145,19 +91,19 @@ PROBLEM_RENAMES(NonlinearVariational)
 // Ignore dolfin::Cell versions of signatures as these now are handled by
 // a typemap
 //-----------------------------------------------------------------------------
-%ignore dolfin::DofMap::tabulate_coordinates(
+%ignore dolfin::FiniteElement::tabulate_dof_coordinates(
                                 boost::multi_array<double, 2>& coordinates,
-                                const std::vector<double>& vertex_coordinates,
+                                const std::vector<double>& coordinate_dofs,
                                 const Cell& cell) const;
 
-%ignore dolfin::GenericDofMap::tabulate_coordinates(
+%ignore dolfin::FiniteElement::tabulate_dof_coordinates(
                                 boost::multi_array<double, 2>& coordinates,
-                                const std::vector<double>& vertex_coordinates,
+                                const std::vector<double>& coordinate_dofs,
                                 const Cell& cell) const;
 
-%ignore dolfin::MultiMeshDofMap::tabulate_coordinates(
+%ignore dolfin::MultiMeshDofMap::tabulate_dof_coordinates(
                                 boost::multi_array<double, 2>& coordinates,
-                                const std::vector<double>& vertex_coordinates,
+                                const std::vector<double>& coordinate_dofs,
                                 const ufc::cell& cell) const;
 
 //-----------------------------------------------------------------------------
@@ -224,7 +170,7 @@ const ufc::cell& (void *argp, bool dolfin_cell, int res)
 //-----------------------------------------------------------------------------
 %typemap (in) std::vector<std::vector<std::shared_ptr<const dolfin::TYPE> > > (std::vector<std::vector<std::shared_ptr<const dolfin::TYPE> > >  tmp_vec_0, std::vector<std::shared_ptr<const dolfin::TYPE> >  tmp_vec_1, std::shared_ptr<dolfin::TYPE> tempshared)
 {
-  // IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR), shared_ptr version
+  // IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_SHARED_POINTERS(TYPE)
   if (!PyList_Check($input))
     SWIG_exception(SWIG_TypeError, "list of lists of TYPE expected");
 
