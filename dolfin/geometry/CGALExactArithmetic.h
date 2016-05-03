@@ -35,7 +35,7 @@
 #ifndef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
 
 // Comparison macro just bypasses CGAL and test when not enabled
-#define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) RESULT_DOLFIN
+#define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL, __FUNCTION__) RESULT_DOLFIN
 
 #else
 
@@ -49,7 +49,9 @@
 namespace dolfin
 {
   template<typename T>
-  inline T check_cgal(T result_dolfin, T result_cgal)
+  inline T check_cgal(T result_dolfin,
+			 T result_cgal,
+			 std::string function)
   {
     if (result_dolfin != result_cgal)
     {
@@ -62,15 +64,16 @@ namespace dolfin
       // Issue error
       dolfin_error("CGALExactArithmetic.h",
                    "verify geometric predicate with exact types",
-                   "DOLFIN: %s CGAL: %s",
-                   s_dolfin.str().c_str(), s_cgal.str().c_str());
+                   "Predicate: %s, DOLFIN: %s CGAL: %s",
+                   function.c_str(), s_dolfin.str().c_str(), s_cgal.str().c_str());
     }
 
     return result_dolfin;
   }
 
   inline std::vector<double> check_cgal(const std::vector<double>& result_dolfin,
-					const std::vector<double>& result_cgal)
+					const std::vector<double>& result_cgal,
+					std::string function)
   {
     if (result_dolfin.size() != result_cgal.size())
     {
@@ -84,8 +87,10 @@ namespace dolfin
 
       dolfin_error("CGALExactArithmetic.h",
 		   "verify intersections due to different sizes",
-		   "DOLFIN: %s\n CGAL: %s",
-		   s_dolfin.str().c_str(), s_cgal.str().c_str());
+		   "Intersection function: %s\n DOLFIN: %s\n CGAL: %s",
+		   function.c_str(),
+		   s_dolfin.str().c_str(),
+		   s_cgal.str().c_str());
     }
     else
     {
@@ -102,8 +107,10 @@ namespace dolfin
 
 	  dolfin_error("CGALExactArithmetic.h",
 		       "verify intersections due to different data",
-		       "DOLFIN: %s\n CGAL: %s",
-		       s_dolfin.str().c_str(), s_cgal.str().c_str());
+		       "Intersection function: %s\n DOLFIN: %s\n CGAL: %s",
+		       function.c_str(),
+		       s_dolfin.str().c_str(),
+		       s_cgal.str().c_str());
 	}
     }
 
@@ -111,7 +118,8 @@ namespace dolfin
   }
 
   inline Point check_cgal(const Point& result_dolfin,
-			  const Point& result_cgal)
+			  const Point& result_cgal,
+			  std::string function)
   {
     for (std::size_t d = 0; d < 3; ++d)
       if (!near(result_dolfin[d], result_cgal[d]))
@@ -126,8 +134,10 @@ namespace dolfin
 
 	dolfin_error("CGALExactArithmetic.h",
 		     "verify intersections due to different Point data",
-		     "DOLFIN: %s\n CGAL: %s",
-		     s_dolfin.str().c_str(), s_cgal.str().c_str());
+		     "Intersection function: %s\n DOLFIN: %s\n CGAL: %s",
+		     function.c_str(),
+		     s_dolfin.str().c_str(),
+		     s_cgal.str().c_str());
       }
 
     return result_dolfin;
@@ -136,7 +146,7 @@ namespace dolfin
 }
 
 // Comparison macro
-#define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) check_cgal(RESULT_DOLFIN, RESULT_CGAL)
+#define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) check_cgal(RESULT_DOLFIN, RESULT_CGAL, __FUNCTION__)
 
 // CGAL includes
 #define CGAL_HEADER_ONLY
