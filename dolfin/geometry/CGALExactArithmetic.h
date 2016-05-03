@@ -47,7 +47,8 @@
 // Check that results from DOLFIN and CGAL match
 namespace dolfin
 {
-  template<typename T> bool check_cgal(T result_dolfin, T result_cgal)
+  template<typename T> bool check_cgal(T result_dolfin, T result_cgal,
+                                       std::string function)
   {
     if (result_dolfin != result_cgal)
     {
@@ -60,8 +61,8 @@ namespace dolfin
       // Issue error
       dolfin_error("CGALExactArithmetic.cpp",
                    "verify geometric predicate with exact types",
-                   "DOLFIN: %s CGAL: %s",
-                   s_dolfin.str().c_str(), s_cgal.str().c_str());
+                   "Predicate: %s, DOLFIN: %s CGAL: %s",
+                   function.c_str(), s_dolfin.str().c_str(), s_cgal.str().c_str());
     }
 
     return result_dolfin;
@@ -69,7 +70,7 @@ namespace dolfin
 }
 
 // Comparison macro
-#define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) check_cgal(RESULT_DOLFIN, RESULT_CGAL)
+#define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) check_cgal(RESULT_DOLFIN, RESULT_CGAL, __FUNCTION__)
 
 // CGAL includes
 #define CGAL_HEADER_ONLY
