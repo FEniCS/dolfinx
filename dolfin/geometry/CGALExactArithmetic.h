@@ -28,9 +28,6 @@
 
 #define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
 
-namespace dolfin
-{
-
 #ifndef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
 
   // Macro that just returns the result when CGAL is not enabled
@@ -41,10 +38,13 @@ namespace dolfin
   // FIXME: Remove this
 #include <dolfin/geometry/dolfin_cgal_tools.h>
 
+namespace dolfin
+{
+
   // Compare results and report any errors
   bool check_cgal(bool result, bool result_cgal)
   {
-    if (results != result_cgal)
+    if (result != result_cgal)
       error("DOLFIN test does not match CGAL reference test.");
     return result;
   }
