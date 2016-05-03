@@ -3,6 +3,8 @@
 
 #include "predicates.h"
 
+#include <dolfin/mesh/Vertex.h>
+
 #include <string>
 #include <sstream>
 #include <fstream>
