@@ -26,6 +26,8 @@
 // debugging of the inexact DOLFIN collision detection algorithms.
 // Enable by setting the flag DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC.
 
+#define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+
 namespace dolfin
 {
 
@@ -51,12 +53,16 @@ namespace dolfin
   // and compares RESULT with the result from the CGAL version.
 #define CHECK_CGAL(RESULT, ...) check_cgal(result, __FUNCTION__(__VA_ARGS__))
 
+  //#define CHECK_CGAL(RESULT, ...) check_cgal(result, cgal_##__FUNCTION__(__VA_ARGS__))
+
   //---------------------------------------------------------------------------
   // Reference implementations using CGAL exact arithmetic
   //---------------------------------------------------------------------------
-  void cgal_collides_interval_interval(const MeshEntity& interval_0,
+  bool cgal_collides_interval_interval(const MeshEntity& interval_0,
                                        const MeshEntity& interval_1)
   {
+    std::cout << __FUNCTION__<<std::endl;
+    exit(1);
     const MeshGeometry& geometry_0 = interval_0.mesh().geometry();
     const MeshGeometry& geometry_1 = interval_1.mesh().geometry();
     const unsigned int* vertices_0 = interval_0.entities(0);
@@ -74,6 +80,70 @@ namespace dolfin
     return CGAL::do_intersect(cgaltools::convert(a, b),
                               cgaltools::convert(c, d));
   }
+
+  bool cgal_collides_edge_edge(const Point& a,
+			       const Point& b,
+			       const Point& c,
+			       const Point& d)
+  {
+    std::cout << __FUNCTION__<<std::endl;
+    exit(1);
+    return CGAL::do_intersect(cgaltools::convert(a, b),
+			      cgaltools::convert(c, d));
+  }
+
+  bool cgal_collides_interval_point(const Point& p0,
+				    const Point& p1,
+				    const Point& point)
+  {
+    return CGAL::do_intersect(cgaltools::convert(p0, p1),
+			      cgaltools::convert(point));
+  }
+
+  bool cgal_collides_triangle_point_2d(const Point& p0,
+				       const Point& p1,
+				       const Point& p2,
+				       const Point &point)
+  {
+    std::cout << __FUNCTION__<<std::endl;
+    exit(1);
+    return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
+			      cgaltools::convert(point));
+  }
+
+  bool cgal_collides_triangle_point(const Point& p0,
+				    const Point& p1,
+				    const Point& p2,
+				    const Point &point)
+  {
+    return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
+			      cgaltools::convert(point));
+  }
+
+  bool cgal_collides_triangle_interval(const Point& p0,
+				       const Point& p1,
+				       const Point& p2,
+				       const Point& q0,
+				       const Point& q1)
+  {
+    return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
+			      cgaltools::convert(q0, q1));
+  }
+
+  bool cgal_collides_triangle_triangle(const Point& p0,
+				       const Point& p1,
+				       const Point& p2,
+				       const Point& q0,
+				       const Point& q1,
+				       const Point& q2)
+  {
+    std::cout << __FUNCTION__<<std::endl;
+    exit(1);
+
+    return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
+			      cgaltools::convert(q0, q1, q2));
+  }
+
   //---------------------------------------------------------------------------
 
 #endif

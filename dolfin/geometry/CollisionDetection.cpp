@@ -439,19 +439,16 @@ CollisionDetection::collides_edge_edge(const Point& a,
 				       const Point& c,
 				       const Point& d)
 {
-#ifdef Augustcgal
-  return CGAL::do_intersect(cgaltools::convert(a, b),
-			    cgaltools::convert(c, d));
-
-#else
-
   const double tol = DOLFIN_EPS_LARGE;
+
+  // FIXME: This can probably be optimized
+  bool result=true;
 
   // Check if two edges are the same
   if ((a - c).norm() < tol and (b - d).norm() < tol)
-    return false;
+    result=false;
   if ((a - d).norm() < tol and (b - c).norm() < tol)
-    return false;
+    result=false;
 
   // Get edges as vectors and compute the normal
   const Point L1 = b - a;
@@ -461,54 +458,50 @@ CollisionDetection::collides_edge_edge(const Point& a,
   // Check if L1 and L2 are coplanar
   const Point ca = c - a;
   if (std::abs(ca.dot(n)) > tol)
-    return false;
+    result=false;
 
   // Find orthogonal plane with normal n1
   const Point n1 = n.cross(L1);
   const double n1dotL2 = n1.dot(L2);
   if (std::abs(n1dotL2) < tol)
-    return false;
+    result=false;
   const double t = n1.dot(a - c) / n1dotL2;
   if (t <= 0 or t >= 1)
-    return false;
+    result=false;
 
   // Find orthogonal plane with normal n2
   const Point n2 = n.cross(L2);
   const double n2dotL1 = n2.dot(L1);
   if (std::abs(n2dotL1) < tol)
-    return false;
+    result=false;
   const double s = n2.dot(c - a) / n2dotL1;
   if (s <= 0 or s >= 1)
-    return false;
+    result=false;
 
-  return true;
-#endif
+  return CHECK_CGAL(result, a, b, c, d);
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_interval_point(const Point& p0,
                                                  const Point& p1,
                                                  const Point& point)
 {
-#ifdef Augustcgal
+  // FIXME: there may be optimizations to do
+  bool result;
 
-  return CGAL::do_intersect(cgaltools::convert(p0, p1),
-			    cgaltools::convert(point));
-
-#else
   // Compute angle between v = p1 - p0 and w = point - p0
   Point v = p1 - p0;
   const double vnorm = v.norm();
 
   // p0 and p1 are the same points
   if (vnorm < DOLFIN_EPS_LARGE)
-    return false;
+    result=false;
 
   const Point w = point - p0;
   const double wnorm = w.norm();
 
   // point and p0 are the same points
   if (wnorm < DOLFIN_EPS)
-    return true;
+    result=true;
 
   // Compute cosine
   v /= vnorm;
@@ -516,10 +509,9 @@ bool CollisionDetection::collides_interval_point(const Point& p0,
 
   // Cosine should be 1, and point should lie between p0 and p1
   if (std::abs(1-a) < DOLFIN_EPS_LARGE and wnorm <= vnorm)
-    return true;
+    result=true;
 
-  return false;
-#endif
+  return CHECK_CGAL(result, p0, p1, point);
 }
 
 //-----------------------------------------------------------------------------
@@ -528,16 +520,13 @@ bool CollisionDetection::collides_triangle_point_2d(const Point& p0,
                                                     const Point& p2,
                                                     const Point &point)
 {
-#ifdef Augustcgal
-
-  return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
-			    cgaltools::convert(point));
-#else
-
   // Simplified algorithm for coplanar triangles and points (z=0)
   // This algorithm is robust because it will perform the same numerical
   // test on each edge of neighbouring triangles. Points cannot slip
   // between the edges, and evade detection.
+
+  // FIXME: can be optimized
+  bool result=true;
 
   // Vectors defining each edge in consistent orientation
   const Point r0 = p0 - p2;
@@ -553,21 +542,20 @@ bool CollisionDetection::collides_triangle_point_2d(const Point& p0,
   Point r = point - p0;
   double pnormal = r.x()*r0.y() - r.y()*r0.x();
   if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
-    return false;
+    result=false;
 
   // Repeat for each edge
   r = point - p1;
   pnormal = r.x()*r1.y() - r.y()*r1.x();
   if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
-    return false;
+    result=false;
 
   r = point - p2;
   pnormal = r.x()*r2.y() - r.y()*r2.x();
   if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
-    return false;
+    result=false;
 
-  return true;
-#endif
+  return CHECK_CGAL(result, p0, p1, p2, point);
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_point(const Point& p0,
@@ -575,11 +563,10 @@ bool CollisionDetection::collides_triangle_point(const Point& p0,
                                                  const Point& p2,
                                                  const Point &point)
 {
-#ifdef Augustcgal
-  return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
-			    cgaltools::convert(point));
-#else
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
+
+  // FIXME: this can probably be optimized
+  bool result=true;
 
   // Vectors defining each edge in consistent orientation
   const Point r0 = p0 - p2;
@@ -594,27 +581,26 @@ bool CollisionDetection::collides_triangle_point(const Point& p0,
   // Check point is in plane of triangle (for manifold)
   double volume = r.dot(normal);
   if (std::abs(volume) > DOLFIN_EPS)
-    return false;
+    result=false;
 
   // Compute normal to triangle based on point and first edge
   // Dot product of two normals should be positive, if inside.
   Point pnormal = r.cross(r0);
   double t1 = normal.dot(pnormal);
-  if (t1 < 0) return false;
+  if (t1 < 0) result=false;
 
   // Repeat for each edge
   r = point - p1;
   pnormal = r.cross(r1);
   double t2 = normal.dot(pnormal);
-  if (t2 < 0) return false;
+  if (t2 < 0) result=false;
 
   r = point - p2;
   pnormal = r.cross(r2);
   double t3 = normal.dot(pnormal);
-  if (t3 < 0) return false;
+  if (t3 < 0) result=false;
 
-  return true;
-#endif
+  return CHECK_CGAL(result, p0, p1, p2, point);
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::collides_triangle_interval(const Point& p0,
@@ -623,26 +609,24 @@ bool CollisionDetection::collides_triangle_interval(const Point& p0,
 						    const Point& q0,
 						    const Point& q1)
 {
-#ifdef Augustcgal
-  return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
-			    cgaltools::convert(q0, q1));
-#else
+  // FIXME: this can perhaps be optimized
+  bool result=false;
+
   // Check if end points are in triangle
   if (collides_triangle_point(p0, p1, p2, q0))
-    return true;
+    result=true;
   if (collides_triangle_point(p0, p1, p2, q1))
-    return true;
+    result=true;
 
   // Check if any of the triangle edges are cut by the interval
   if (collides_edge_edge(p0, p1, q0, q1))
-    return true;
+    result=true;
   if (collides_edge_edge(p0, p2, q0, q1))
-    return true;
+    result=true;
   if (collides_edge_edge(p1, p2, q0, q1))
-    return true;
+    result=true;
 
-  return false;
-#endif
+  return CHECK_CGAL(result, p0, p1, p2, q0, q1);
 }
 
 //------------------------------------------------------------------------------
@@ -654,15 +638,13 @@ CollisionDetection::collides_triangle_triangle(const Point& p0,
 					       const Point& q1,
 					       const Point& q2)
 {
-#ifdef Augustcgal
-  return CGAL::do_intersect(cgaltools::convert(p0, p1, p2),
-			    cgaltools::convert(q0, q1, q2));
-
-#else
   // Algorithm and code from Tomas Moller: A Fast Triangle-Triangle
   // Intersection Test, Journal of Graphics Tools, 2(2), 1997. Source
   // code is available at
   // http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/opttritri.txt
+
+  // FIXME: this can perhaps be optimized
+  bool result=false;
 
   // First check if the triangles are the same. We need to do this
   // separately if we do _not_ allow for adjacent edges to be
@@ -671,7 +653,7 @@ CollisionDetection::collides_triangle_triangle(const Point& p0,
   const Point Vmid = (p0 + p1 + p2) / 3.;
   const Point Umid = (q0 + q1 + q2) / 3.;
   if ((Vmid-Umid).norm() < DOLFIN_EPS_LARGE)
-    return true;
+    result=true;
 
   Point E1, E2;
   Point N1, N2;
@@ -709,7 +691,7 @@ CollisionDetection::collides_triangle_triangle(const Point& p0,
 
   // Same sign on all of them + not equal 0?
   if (du0du1>0. && du0du2>0.)
-    return false;
+    result=false;
 
   // Compute plane of triangle (q0,q1,q2)
   E1 = q1-q0;
@@ -733,7 +715,7 @@ CollisionDetection::collides_triangle_triangle(const Point& p0,
 
   // Same sign on all of them + not equal 0 ?
   if (dv0dv1>0. && dv0dv2>0.)
-    return false;
+    result=false;
 
   // Compute direction of intersection line
   D = N1.cross(N2);
@@ -761,13 +743,13 @@ CollisionDetection::collides_triangle_triangle(const Point& p0,
   double a, b, c, x0, x1;
   if (compute_intervals(vp0, vp1, vp2, dv0, dv1, dv2, dv0dv1, dv0dv2,
                         a, b, c, x0, x1))
-    return coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
+    result=coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
 
   // Compute interval for triangle 2
   double d, e, f, y0, y1;
   if (compute_intervals(up0, up1, up2, du0, du1, du2, du0du1, du0du2,
                         d, e, f, y0, y1))
-    return coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
+    result=coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
 
   double xx, yy, xxyy, tmp;
   xx = x0*x1;
@@ -789,10 +771,9 @@ CollisionDetection::collides_triangle_triangle(const Point& p0,
 
   if (isect1[1] < isect2[0] ||
       isect2[1] < isect1[0])
-    return false;
+    result=false;
 
-  return true;
-#endif
+  return CHECK_CGAL(result, p0, p1, p2, q0, q1, q2);
 }
 //-----------------------------------------------------------------------------
 bool
