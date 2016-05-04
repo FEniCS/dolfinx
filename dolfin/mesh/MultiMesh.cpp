@@ -652,9 +652,9 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       // Data structure for storing the previous intersections: the key
       // and the intersections.
       const std::size_t N = initial_polyhedra.size();
-      std::vector<std::pair<std::vector<std::size_t>, Polyhedron> > previous_intersections(N);
+      std::vector<std::pair<IncExcKey, Polyhedron> > previous_intersections(N);
       for (std::size_t i = 0; i < N; ++i)
-	previous_intersections[i] = std::make_pair(std::vector<std::size_t>(1, initial_polyhedra[i].first), initial_polyhedra[i].second);
+	previous_intersections[i] = std::make_pair(IncExcKey(1, initial_polyhedra[i].first), initial_polyhedra[i].second);
 
       // Do stage = 1 up to stage = polyhedra.size in the
       // principle. Recall that stage 1 is the pairwise
@@ -690,7 +690,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 #endif
 
       	// Structure for storing new intersections
-      	std::vector<std::pair<std::vector<std::size_t>,Polyhedron> > new_intersections;
+      	std::vector<std::pair<IncExcKey,Polyhedron> > new_intersections;
 
       	// Loop over all intersections from the previous stage
       	for (const auto previous_polyhedron: previous_intersections)
@@ -729,7 +729,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	      // polyhedron and the initial polyhedron in one single
 	      // polyhedron.
 	      Polyhedron new_polyhedron;
-	      std::vector<std::size_t> new_keys;
+	      IncExcKey new_keys;
 
 	      // Loop over all simplices in the initial_polyhedron and
 	      // the previous_polyhedron and append the intersection of
@@ -1346,7 +1346,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 #ifdef Augustdebug
 	    std::cout << "\nstage 0" << std::endl;
 #endif
-	    std::vector<std::vector<std::size_t>> previous_intersections_keys;
+	    std::vector<IncExcKey> previous_intersections_keys;
 	    std::vector<Polyhedron> previous_intersections;
 
 	    // Add quadrature rule for stage 0. These are composed of E \cap K_i. Keep track of keys.
@@ -1385,7 +1385,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		const Simplex s = convert(y.data(), tdim, gdim);
 		const Polyhedron p = std::vector<Simplex>(1, s);
 		previous_intersections.push_back(p);
-		previous_intersections_keys.push_back(std::vector<std::size_t>(1, cell.first));
+		previous_intersections_keys.push_back(IncExcKey(1, cell.first));
 		key_added = true;
 	      }
 	    }
@@ -1434,7 +1434,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		std::cout << "stage " << stage << std::endl;
 #endif
 		// Structure for storing new intersections
-		std::vector<std::vector<std::size_t>> new_intersections_keys;
+		std::vector<IncExcKey> new_intersections_keys;
 		std::vector<Polyhedron> new_intersections;
 
 		// Loop over all intersections from previous
@@ -1446,14 +1446,14 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		{
 		  if (previous_intersections_keys[j].size())
 		  {
-		    const std::vector<std::size_t> current_keys = previous_intersections_keys[j];
+		    const IncExcKey current_keys = previous_intersections_keys[j];
 		    const std::size_t max_key = current_keys.back();
 		    const std::size_t cell_start = max_key + 1;
 		    for (std::size_t k = cell_start; k < initial_cells.size(); ++k)
 		    {
 		      // Do the intersection
 		      Polyhedron new_polyhedron;
-		      std::vector<std::size_t> new_polyhedron_keys = current_keys;
+		      IncExcKey new_polyhedron_keys = current_keys;
 		      bool any_intersections = false;
 #ifdef Augustdebug
 		      std::cout << "test collision polyhedra ";

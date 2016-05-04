@@ -45,6 +45,7 @@ namespace dolfin
   // FIXME August:
   typedef std::vector<Point> Simplex;
   typedef std::vector<Simplex> Polyhedron;
+  typedef std::vector<std::size_t> IncExcKey;
 
   /// This class represents a collection of meshes with arbitrary
   /// overlaps. A multimesh may be created from a set of standard
