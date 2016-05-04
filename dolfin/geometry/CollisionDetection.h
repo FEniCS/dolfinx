@@ -38,6 +38,8 @@ namespace dolfin
   {
   public:
 
+    //--- High-level collision detection predicates ---
+
     /// Check whether entity collides with point.
     ///
     /// *Arguments*
@@ -66,16 +68,17 @@ namespace dolfin
     static bool collides(const MeshEntity& entity_0,
 			 const MeshEntity& entity_1);
 
-    /// Check whether a segment and a point collides
-    static bool collides_segment_point(const Point& p0,
-				       const Point& p1,
+    //--- Low-level collision detection predicates ---
+
+    /// Check whether segment p0-p1 collides with point
+    static bool collides_segment_point(const Point& p0, const Point& p1,
 				       const Point& point)
     {
       return CHECK_CGAL(_collides_segment_point(p0, p1, point),
                         cgal_collides_segment_point(p0, p1, point));
     }
 
-    /// Check whether segment a-b collides with segment c-d.
+    /// Check whether segment p0-p1 collides with segment q0-q1
     static bool collides_segment_segment(const Point& p0, const Point& p1,
 					 const Point& q0, const Point& q1)
     {
@@ -83,14 +86,16 @@ namespace dolfin
 			cgal_collides_segment_segment(p0, p1, q0, q1));
     }
 
-    /// Specialised implementation of interval-interval collision in 1D
-    static bool collides_interval_interval_1d(double p0, double p1,
-					      double q0, double q1)
+    /// Check whether segment p0-p1 collides with segment q0-q1 (1D version)
+    static bool collides_segment_segment_1d(double p0,
+                                            double p1,
+                                            double q0,
+                                            double q1)
     {
-      return _collides_interval_interval_1d(p0, p1, q0, q1);
+      return _collides_segment_segment_1d(p0, p1, q0, q1);
     }
 
-    /// Check whether a triangle and a point collides
+    /// Check whether triangle p0-p1-p2 collides with point
     static bool collides_triangle_point(const Point& p0,
 					const Point& p1,
 					const Point& p2,
@@ -100,7 +105,7 @@ namespace dolfin
                         cgal_collides_triangle_point(p0, p1, p2, point));
     }
 
-    /// Specialised implementation of collides_triangle_point in 2D
+    /// Check whether triangle p0-p1-p2 collides with point (2D version)
     static bool collides_triangle_point_2d(const Point& p0,
                                            const Point& p1,
                                            const Point& p2,
@@ -110,7 +115,7 @@ namespace dolfin
                         cgal_collides_triangle_point_2d(p0, p1, p2, point));
     }
 
-    /// Check whether a triangle and a segment collides
+    /// Check whether triangle p0-p1-p2 collides with segment q0-q1
     static bool collides_triangle_segment(const Point& p0,
 					  const Point& p1,
 					  const Point& p2,
@@ -121,7 +126,7 @@ namespace dolfin
                         cgal_collides_triangle_segment(p0, p1, p2, q0, q1));
     }
 
-    /// Check whether two triangles collide
+    /// Check whether triangle p0-p1-p2 collides with triangle q0-q1-q2
     static bool collides_triangle_triangle(const Point& p0,
 					   const Point& p1,
 					   const Point& p2,
@@ -133,7 +138,7 @@ namespace dolfin
                         cgal_collides_triangle_triangle(p0, p1, p2, q0, q1, q2));
     }
 
-    /// Check whether a tetrahedron and a point collides
+    /// Check whether tetrahedron p0-p1-p2-p3 collides with point
     static bool collides_tetrahedron_point(const Point& p0,
 					   const Point& p1,
 					   const Point& p2,
@@ -143,7 +148,7 @@ namespace dolfin
       return _collides_tetrahedron_point(p0, p1, p2, p3, point);
     }
 
-    /// Check whether a tetrahedron and a triangle collides
+    /// Check whether tetrahedron p0-p1-p2-p3 collides with triangle q0-q1-q2
     static bool collides_tetrahedron_triangle(const Point& p0,
 					      const Point& p1,
 					      const Point& p2,
@@ -156,7 +161,7 @@ namespace dolfin
 					    q0, q1, q2);
     }
 
-    /// Check whether two tetrahedra collide
+    /// Check whether tetrahedron p0-p1-p2-p3 collides with tetrahedron q0-q1-q2
     static bool collides_tetrahedron_tetrahedron(const Point& p0,
 						 const Point& p1,
 						 const Point& p2,
@@ -172,17 +177,21 @@ namespace dolfin
 
   private:
 
-    // The implementation of the collision routines
+    // Implementation of collision detection predicates
 
     static bool _collides_segment_point(const Point& p0,
 					const Point& p1,
 					const Point& point);
 
-    static bool _collides_segment_segment(const Point& p0, const Point& p1,
-					  const Point& q0, const Point& q1);
+    static bool _collides_segment_segment(const Point& p0,
+                                          const Point& p1,
+					  const Point& q0,
+                                          const Point& q1);
 
-    static bool _collides_interval_interval_1d(double p0, double p1,
-					       double q0, double q1);
+    static bool _collides_segment_segment_1d(double p0,
+                                             double p1,
+                                             double q0,
+                                             double q1);
 
     static bool _collides_triangle_point(const Point& p0,
 					 const Point& p1,

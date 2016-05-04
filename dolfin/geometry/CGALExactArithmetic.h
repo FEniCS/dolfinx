@@ -48,10 +48,14 @@
 // Check that results from DOLFIN and CGAL match
 namespace dolfin
 {
-  template<typename T>
-  inline T check_cgal(T result_dolfin,
-			 T result_cgal,
-			 std::string function)
+  //---------------------------------------------------------------------------
+  // Functions to compare results between DOLFIN and CGAL
+  //---------------------------------------------------------------------------
+
+  template<typename T> inline T
+  check_cgal(T result_dolfin,
+             T result_cgal,
+             std::string function)
   {
     if (result_dolfin != result_cgal)
     {
@@ -71,9 +75,10 @@ namespace dolfin
     return result_dolfin;
   }
 
-  inline std::vector<double> check_cgal(const std::vector<double>& result_dolfin,
-					const std::vector<double>& result_cgal,
-					std::string function)
+  inline const std::vector<double>&
+  check_cgal(const std::vector<double>& result_dolfin,
+             const std::vector<double>& result_cgal,
+             std::string function)
   {
     // FIXME: do we expect dolfin and cgal data to be in the same order?
 
@@ -119,9 +124,10 @@ namespace dolfin
     return result_dolfin;
   }
 
-  inline Point check_cgal(const Point& result_dolfin,
-			  const Point& result_cgal,
-			  std::string function)
+  inline const Point&
+  check_cgal(const Point& result_dolfin,
+             const Point& result_cgal,
+             std::string function)
   {
     for (std::size_t d = 0; d < 3; ++d)
       if (!near(result_dolfin[d], result_cgal[d]))
@@ -147,7 +153,7 @@ namespace dolfin
 
 }
 
-// Comparison macro
+// Comparison macro that calls comparison function
 #define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) check_cgal(RESULT_DOLFIN, RESULT_CGAL, __FUNCTION__)
 
 // CGAL includes
@@ -281,23 +287,34 @@ namespace
 namespace dolfin
 {
   //---------------------------------------------------------------------------
-  // Reference implementations of DOLFIN collision detection functions
+  // Reference implementations of DOLFIN collision detection predicates
   // using CGAL exact arithmetic
   // ---------------------------------------------------------------------------
-  inline bool cgal_collides_segment_segment(const Point& a,
-				      const Point& b,
-				      const Point& c,
-				      const Point& d)
-  {
-    return CGAL::do_intersect(convert_to_cgal(a, b),
-			      convert_to_cgal(c, d));
-  }
 
   inline bool cgal_collides_segment_point(const Point& p0,
-					   const Point& p1,
-					   const Point& point)
+                                          const Point& p1,
+                                          const Point& point)
   {
     return CGAL::do_intersect(convert_to_cgal(p0, p1),
+			      convert_to_cgal(point));
+  }
+
+  inline bool cgal_collides_segment_segment(const Point& p0,
+                                            const Point& p1,
+                                            const Point& q0,
+                                            const Point& q1)
+  {
+    return CGAL::do_intersect(convert_to_cgal(p0, p1),
+			      convert_to_cgal(q0, q1));
+  }
+
+
+  inline bool cgal_collides_triangle_point(const Point& p0,
+					   const Point& p1,
+					   const Point& p2,
+					   const Point &point)
+  {
+    return CGAL::do_intersect(convert_to_cgal(p0, p1, p2),
 			      convert_to_cgal(point));
   }
 
@@ -310,20 +327,11 @@ namespace dolfin
 			      convert_to_cgal(point));
   }
 
-  inline bool cgal_collides_triangle_point(const Point& p0,
-					   const Point& p1,
-					   const Point& p2,
-					   const Point &point)
-  {
-    return CGAL::do_intersect(convert_to_cgal(p0, p1, p2),
-			      convert_to_cgal(point));
-  }
-
   inline bool cgal_collides_triangle_segment(const Point& p0,
-					      const Point& p1,
-					      const Point& p2,
-					      const Point& q0,
-					      const Point& q1)
+                                             const Point& p1,
+                                             const Point& p2,
+                                             const Point& q0,
+                                             const Point& q1)
   {
     return CGAL::do_intersect(convert_to_cgal(p0, p1, p2),
 			      convert_to_cgal(q0, q1));
@@ -344,6 +352,7 @@ namespace dolfin
   // Reference implementations of DOLFIN intersection triangulation
   // functions using CGAL exact arithmetic
   // ---------------------------------------------------------------------------
+
   inline
   std::vector<double>
   cgal_triangulate_intersection_interval_interval
@@ -371,7 +380,6 @@ namespace dolfin
 		   "unknown intersection");
     return triangulation;
   }
-
 
   inline
   std::vector<double>
@@ -403,7 +411,6 @@ namespace dolfin
 		   "unknown intersection");
     return triangulation;
   }
-
 
   inline
   std::vector<double>
@@ -501,7 +508,6 @@ namespace dolfin
 		 "in intersection_face_edge function",
 		 "unknown intersection");
   }
-
 
 }
 #endif

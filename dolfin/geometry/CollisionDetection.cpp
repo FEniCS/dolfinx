@@ -263,26 +263,26 @@ bool CollisionDetection::_collides_segment_point(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::_collides_segment_segment(const Point& a,
-						   const Point& b,
-						   const Point& c,
-						   const Point& d)
+bool CollisionDetection::_collides_segment_segment(const Point& p0,
+						   const Point& p1,
+						   const Point& q0,
+						   const Point& q1)
 {
   const double tol = DOLFIN_EPS_LARGE;
 
   // Check if two segments are the same
-  if ((a - c).norm() < tol and (b - d).norm() < tol)
+  if ((p0 - q0).norm() < tol and (p1 - q1).norm() < tol)
     return false;
-  if ((a - d).norm() < tol and (b - c).norm() < tol)
+  if ((p0 - q1).norm() < tol and (p1 - q0).norm() < tol)
     return false;
 
   // Get segments as vectors and compute the normal
-  const Point L1 = b - a;
-  const Point L2 = d - c;
+  const Point L1 = p1 - p0;
+  const Point L2 = q1 - q0;
   const Point n = L1.cross(L2);
 
   // Check if L1 and L2 are coplanar
-  const Point ca = c - a;
+  const Point ca = q0 - p0;
   if (std::abs(ca.dot(n)) > tol)
     return false;
 
@@ -291,7 +291,7 @@ bool CollisionDetection::_collides_segment_segment(const Point& a,
   const double n1dotL2 = n1.dot(L2);
   if (std::abs(n1dotL2) < tol)
     return false;
-  const double t = n1.dot(a - c) / n1dotL2;
+  const double t = n1.dot(p0 - q0) / n1dotL2;
   if (t <= 0 or t >= 1)
     return false;
 
@@ -300,23 +300,23 @@ bool CollisionDetection::_collides_segment_segment(const Point& a,
   const double n2dotL1 = n2.dot(L1);
   if (std::abs(n2dotL1) < tol)
     return false;
-  const double s = n2.dot(c - a) / n2dotL1;
+  const double s = n2.dot(q0 - p0) / n2dotL1;
   if (s <= 0 or s >= 1)
     return false;
 
   return true;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::_collides_interval_interval_1d(double a,
-							double b,
-							double r,
-							double s)
+bool CollisionDetection::_collides_segment_segment_1d(double p0,
+                                                      double p1,
+                                                      double q0,
+                                                      double q1)
 {
   // Get range
-  const double a0 = std::min(a, b);
-  const double b0 = std::max(a, b);
-  const double a1 = std::min(r, s);
-  const double b1 = std::max(r, s);
+  const double a0 = std::min(p0, p1);
+  const double b0 = std::max(p0, p1);
+  const double a1 = std::min(q0, q1);
+  const double b1 = std::max(q0, q2);
 
   // Check for collisions
   const double dx = std::min(b0 - a0, b1 - a1);
@@ -638,14 +638,14 @@ bool CollisionDetection::_collides_tetrahedron_triangle(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::_collides_tetrahedron_tetrahedron(const Point& a,
-							   const Point& b,
-							   const Point& c,
-							   const Point& d,
-							   const Point& r,
-							   const Point& s,
-							   const Point& t,
-							   const Point& u)
+bool CollisionDetection::_collides_tetrahedron_tetrahedron(const Point& p0,
+							   const Point& p1,
+							   const Point& p2,
+							   const Point& p3,
+							   const Point& q0,
+							   const Point& q1,
+							   const Point& q2,
+							   const Point& q3)
 {
   // This algorithm checks whether two tetrahedra intersect.
 
@@ -656,8 +656,8 @@ bool CollisionDetection::_collides_tetrahedron_tetrahedron(const Point& a,
   // http://web.archive.org/web/20031130075955/
   // http://www.acm.org/jgt/papers/GanovelliPonchioRocchini02/tet_a_tet.html
 
-  const std::vector<Point> V1 = {{ a, b, c, d }};
-  const std::vector<Point> V2 = {{ r, s, t, u }};
+  const std::vector<Point> V1 = {{ p0, p1, p2, p3 }};
+  const std::vector<Point> V2 = {{ q0, q1, q2, q3 }};
 
   // Get the vectors between V2 and V1[0]
   std::vector<Point> P_V1(4);
