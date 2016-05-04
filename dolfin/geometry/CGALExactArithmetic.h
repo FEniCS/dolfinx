@@ -233,55 +233,120 @@ namespace
     return t.is_degenerate();
   }
 
-  template<class T>
-  inline std::vector<double> parse(const T& ii)
+
+  inline std::vector<double> flatten(const Point_2& p)
+  {
+    const std::vector<double> triangulation = {{ CGAL::to_double(p.x()),
+						 CGAL::to_double(p.y()) }};
+    return triangulation;
+  }
+
+  inline std::vector<double> flatten(const Segment_2& s)
+  {
+    const std::vector<double> triangulation = {{ CGAL::to_double(s.vertex(0)[0]),
+						 CGAL::to_double(s.vertex(0)[1]),
+						 CGAL::to_double(s.vertex(1)[0]),
+						 CGAL::to_double(s.vertex(1)[1]) }};
+    return triangulation;
+  }
+
+  inline std::vector<double> flatten(const Triangle_2& t)
+  {
+    const std::vector<double> triangulation = {{ CGAL::to_double(t.vertex(0)[0]),
+						 CGAL::to_double(t.vertex(0)[1]),
+						 CGAL::to_double(t.vertex(2)[0]),
+						 CGAL::to_double(t.vertex(2)[1]),
+						 CGAL::to_double(t.vertex(1)[0]),
+						 CGAL::to_double(t.vertex(1)[1]) }};
+    return triangulation;
+  }
+
+  inline std::vector<double> flatten(const std::vector<Point_2>& cgal_points)
+  {
+    std::vector<dolfin::Point> points(cgal_points.size());
+    for (std::size_t i = 0; i < points.size(); ++i)
+      points[i] = dolfin::Point(CGAL::to_double(cgal_points[i].x()),
+				CGAL::to_double(cgal_points[i].y()));
+    const std::vector<double> triangulation = dolfin::IntersectionTriangulation::graham_scan(points);
+    return triangulation;
+  }
+
+  inline std::vector<double> parse_segment_segment(const CGAL::cpp11::result_of<ExactKernel::Intersect_2(Segment_2, Segment_2)>::type ii)
   {
     const Point_2* p = boost::get<Point_2>(&*ii);
     if (p)
-    {
-      std::vector<double> triangulation = {{ CGAL::to_double(p->x()),
-					     CGAL::to_double(p->y()) }};
-      return triangulation;
-    }
+      return flatten(*p);
 
     const Segment_2* s = boost::get<Segment_2>(&*ii);
     if (s)
-    {
-      std::vector<double> triangulation = {{ CGAL::to_double(s->vertex(0)[0]),
-    					     CGAL::to_double(s->vertex(0)[1]),
-    					     CGAL::to_double(s->vertex(1)[0]),
-    					     CGAL::to_double(s->vertex(1)[1]) }};
-      return triangulation;
-    }
+      return flatten(*s);
 
-    const Triangle_2* t = boost::relaxed_get<Triangle_2>(&*ii);
-    if (t)
-    {
-      std::vector<double> triangulation = {{ CGAL::to_double(t->vertex(0)[0]),
-    					     CGAL::to_double(t->vertex(0)[1]),
-    					     CGAL::to_double(t->vertex(2)[0]),
-    					     CGAL::to_double(t->vertex(2)[1]),
-    					     CGAL::to_double(t->vertex(1)[0]),
-    					     CGAL::to_double(t->vertex(1)[1]) }};
-      return triangulation;
-    }
-
-    const std::vector<Point_2>* cgal_points = boost::relaxed_get<std::vector<Point_2>>(&*ii);
-    if (cgal_points)
-    {
-      std::vector<double> triangulation;
-      std::vector<dolfin::Point> points(cgal_points->size());
-      for (std::size_t i = 0; i < points.size(); ++i)
-    	points[i] = dolfin::Point(CGAL::to_double((*cgal_points)[i].x()),
-    				  CGAL::to_double((*cgal_points)[i].y()));
-      triangulation = dolfin::IntersectionTriangulation::graham_scan(points);
-      return triangulation;
-    }
-
-    dolfin::error("Unexpected behavior in CGAL tools.");
-
+    dolfin::error("Unexpected behavior in CGALExactArithmetic parse_segment_segment");
     return std::vector<double>();
   }
+
+  inline std::vector<double> parse_triangle_segment(const CGAL::cpp11::result_of<ExactKernel::Intersect_2(Triangle_2, Segment_2)>::type ii)
+  {
+    const Point_2* p = boost::get<Point_2>(&*ii);
+    if (p)
+      return flatten(*p);
+
+    const Segment_2* s = boost::get<Segment_2>(&*ii);
+    if (s)
+      return flatten(*s);
+
+    dolfin::error("Unexpected behavior in CGALExactArithmetic parse_triangle_segment");
+    return std::vector<double>();
+  }
+
+  inline std::vector<double> parse_triangle_triangle(const CGAL::cpp11::result_of<ExactKernel::Intersect_2(Triangle_2, Triangle_2)>::type ii)
+  {
+
+    const Point_2* p = boost::get<Point_2>(&*ii);
+    if (p)
+      return flatten(*p);
+
+    const Segment_2* s = boost::get<Segment_2>(&*ii);
+    if (s)
+      return flatten(*s);
+
+    const Triangle_2* t = boost::get<Triangle_2>(&*ii);
+    if (t)
+      return flatten(*t);
+
+    const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii);
+    if (cgal_points)
+      return flatten(*cgal_points);
+
+    dolfin::error("Unexpected behavior in CGALExactArithmetic parse_triangle_triangle");
+    return std::vector<double>();
+  }
+
+
+  // template<class T>
+  // inline std::vector<double> parse(const T& ii)
+  // {
+  //   const Point_2* p = boost::get<Point_2>(&*ii);
+  //   if (p)
+  //     return flatten(*p);
+
+  //   const Segment_2* s = boost::get<Segment_2>(&*ii);
+  //   if (s)
+  //     return flatten(*s);
+
+  //   const Triangle_2* t = boost::get<Triangle_2>(&*ii);
+  //   if (t)
+  //     return flatten(*t);
+
+  //   const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii);
+  //   if (cgal_points)
+  //     return flatten(*cgal_points);
+
+  //   dolfin::error("Unexpected behavior in CGAL tools.");
+
+  //   return std::vector<double>();
+  // }
+
 }
 
 namespace dolfin
@@ -372,7 +437,7 @@ namespace dolfin
     const auto I1 = convert_to_cgal(c, d);
     const auto ii = CGAL::intersection(I0, I1);
     dolfin_assert(ii);
-    const std::vector<double> triangulation = parse(ii);
+    const std::vector<double> triangulation = parse_segment_segment(ii);
 
     if (triangulation.size() == 0)
       dolfin_error("CGALExactArithmetic.h",
@@ -403,7 +468,7 @@ namespace dolfin
     const auto I = convert_to_cgal(a, b);
     const auto ii = CGAL::intersection(T, I);
     dolfin_assert(ii);
-    const std::vector<double> triangulation = parse(ii);
+    const std::vector<double> triangulation = parse_triangle_segment(ii);
 
     if (triangulation.size() == 0)
       dolfin_error("CGALExactArithmetic.h",
@@ -436,7 +501,7 @@ namespace dolfin
     // CGAL::Exact_predicates_inexact_constructions_kernel
     dolfin_assert(ii);
 
-    const std::vector<double> triangulation = parse(ii);
+    const std::vector<double> triangulation = parse_triangle_triangle(ii);
 
     // NB: cgaltools::parse can return triangulation of size 0, for
     // example if it detected a triangle but it was found to be flat.
@@ -463,7 +528,7 @@ namespace dolfin
     const auto ii = CGAL::intersection(E0, E1);
     dolfin_assert(ii);
 
-    const std::vector<double> triangulation = parse(ii);
+    const std::vector<double> triangulation = parse_segment_segment(ii);
     dolfin_assert(triangulation.size()==2);
 
     const Point pt(triangulation[0], triangulation[1]);
@@ -487,7 +552,7 @@ namespace dolfin
     const auto ii = CGAL::intersection(T, I);
     dolfin_assert(ii);
 
-    const std::vector<double> triangulation = parse(ii);
+    const std::vector<double> triangulation = parse_triangle_segment(ii);
 
     dolfin_assert(triangulation.size()==2 or
 		  triangulation.size()==4);
