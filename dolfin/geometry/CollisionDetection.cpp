@@ -66,49 +66,38 @@ using namespace dolfin;
 bool CollisionDetection::collides(const MeshEntity& entity,
                                   const Point& point)
 {
-  // Get entity coordinates
-  const MeshGeometry& geometry = entity.mesh().geometry();
-  const unsigned int* vertices = entity.entities(0);
+  // Get data
+  const MeshGeometry& g = entity.mesh().geometry();
+  const unsigned int* v = entity.entities(0);
+  const std::size_t tdim = entity.mesh.topology().dim();
+  const std::size_t gdim = entity.mesh.geometry().dim();
 
-  // Choose according to topological dimension
-  switch (entity.dim())
-  {
-  case 0:
-    dolfin_not_implemented();
-    break;
-  case 1:
-    return collides_segment_point(geometry.point(vertices[0]),
-				  geometry.point(vertices[1]),
-				  point);
-  case 2:
-    {
-      switch(geometry.dim())
-      {
-      case 2:
-	return collides_triangle_point_2d(geometry.point(vertices[0]),
-					  geometry.point(vertices[1]),
-					  geometry.point(vertices[2]),
-					  point);
-      case 3:
-	return collides_triangle_point(geometry.point(vertices[0]),
-				       geometry.point(vertices[1]),
-				       geometry.point(vertices[2]),
-				       point);
-      default:
-	break;
-      }
-    }
-  case 3:
-    return collides_tetrahedron_point(geometry.point(vertices[0]),
-				      geometry.point(vertices[1]),
-				      geometry.point(vertices[2]),
-				      geometry.point(vertices[3]),
+  // Pick correct specialized implementation
+  if (tdim == 1)
+    return collides_segment_point(g.point(v[0]), g.point(v[1]), point);
+
+  if (tdim == 2 && gdim == 2)
+    return collides_triangle_point_2d(g.point(v[0]),
+                                      g.point(v[1]),
+                                      g.point(v[2]),
+                                      point);
+
+  if (tdim == 2 && gdim == 3)
+    return collides_triangle_point(g.point(v[0]),
+                                   g.point(v[1]),
+                                   g.point(v[2]),
+                                   point);
+
+  if (tdim == 3)
+    return collides_tetrahedron_point(g.point(v[0]),
+				      g.point(v[1]),
+				      g.point(v[2]),
+				      g.point(v[3]),
 				      point);
-  default:
-    dolfin_error("CollisionDetection.cpp",
-		 "collides entity with point",
-		 "Unknown dimension of entity");
-  }
+
+  dolfin_error("CollisionDetection.cpp",
+               "compute entity-point collision",
+               "Not implemented for dimensions %d / %d", tdim, gdim);
 
   return false;
 }
@@ -116,119 +105,74 @@ bool CollisionDetection::collides(const MeshEntity& entity,
 bool CollisionDetection::collides(const MeshEntity& entity_0,
 				  const MeshEntity& entity_1)
 {
-  // Get coordinates
-  const MeshGeometry& geometry_0 = entity_0.mesh().geometry();
-  const MeshGeometry& geometry_1 = entity_1.mesh().geometry();
-  const unsigned int* vertices_0 = entity_0.entities(0);
-  const unsigned int* vertices_1 = entity_1.entities(0);
+  // Get data
+  const MeshGeometry& g0 = entity_0.mesh().geometry();
+  const MeshGeometry& g1 = entity_1.mesh().geometry();
+  const unsigned int* v0 = entity_0.entities(0);
+  const unsigned int* v1 = entity_1.entities(0);
+  const std::size_t d0 = entity_0.dim();
+  const std::size_t d1 = entity_1.dim();
 
-  switch (entity_0.dim())
-  {
-  case 0:
-    // Collision with PointCell
-    dolfin_not_implemented();
-    break;
-  case 1:
-    // Collision with interval
-    switch (entity_1.dim())
-    {
-    case 0:
-      dolfin_not_implemented();
-      break;
-    case 1:
-      return collides_interval_interval_1d(geometry_0.point(vertices_0[0])[0],
-					   geometry_0.point(vertices_0[1])[0],
-					   geometry_1.point(vertices_1[0])[0],
-					   geometry_1.point(vertices_1[1])[0]);
-    case 2:
-      return collides_triangle_segment(geometry_1.point(vertices_1[0]),
-				       geometry_1.point(vertices_1[1]),
-				       geometry_1.point(vertices_1[2]),
-				       geometry_0.point(vertices_0[0]),
-				       geometry_0.point(vertices_0[1]));
-    case 3:
-      dolfin_not_implemented();
-      break;
-    default:
-      dolfin_error("CollisionDetection.cpp",
-                   "collides entity_0 with entity_1",
-                   "Unknown dimension of entity_1 in IntervalCell collision");
-    }
-    break;
-  case 2:
-    // Collision with triangle
-    switch (entity_1.dim())
-    {
-    case 0:
-      dolfin_not_implemented();
-      break;
-    case 1:
-      return collides_triangle_segment(geometry_0.point(vertices_0[0]),
-				       geometry_0.point(vertices_0[1]),
-				       geometry_0.point(vertices_0[2]),
-				       geometry_1.point(vertices_1[0]),
-				       geometry_1.point(vertices_1[1]));
-    case 2:
-      return collides_triangle_triangle(geometry_0.point(vertices_0[0]),
-					geometry_0.point(vertices_0[1]),
-					geometry_0.point(vertices_0[2]),
-					geometry_1.point(vertices_1[0]),
-					geometry_1.point(vertices_1[1]),
-					geometry_1.point(vertices_1[2]));
-    case 3:
-      return collides_tetrahedron_triangle(geometry_1.point(vertices_1[0]),
-					   geometry_1.point(vertices_1[1]),
-					   geometry_1.point(vertices_1[2]),
-					   geometry_1.point(vertices_1[3]),
-					   geometry_0.point(vertices_0[0]),
-					   geometry_0.point(vertices_0[1]),
-					   geometry_0.point(vertices_0[2]));
-    default:
-      dolfin_error("CollisionDetection.cpp",
-		   "collides entity_0 with entity_1",
-		   "Unknown dimension of entity_1 in TriangleCell collision");
-    }
-    break;
-  case 3:
-    // Collision with tetrahedron
-    switch (entity_1.dim())
-    {
-    case 0:
-      dolfin_not_implemented();
-      break;
-    case 1:
-      dolfin_not_implemented();
-      break;
-    case 2:
-      return collides_tetrahedron_triangle(geometry_0.point(vertices_0[0]),
-					   geometry_0.point(vertices_0[1]),
-					   geometry_0.point(vertices_0[2]),
-					   geometry_0.point(vertices_0[3]),
-					   geometry_1.point(vertices_1[0]),
-					   geometry_1.point(vertices_1[1]),
-					   geometry_1.point(vertices_1[2]));
-      break;
-    case 3:
-      return collides_tetrahedron_tetrahedron(geometry_0.point(vertices_0[0]),
-					      geometry_0.point(vertices_0[1]),
-					      geometry_0.point(vertices_0[2]),
-					      geometry_0.point(vertices_0[3]),
-					      geometry_1.point(vertices_1[0]),
-					      geometry_1.point(vertices_1[1]),
-					      geometry_1.point(vertices_1[2]),
-					      geometry_1.point(vertices_1[3]));
-      break;
-    default:
-      dolfin_error("CollisionDetection.cpp",
-		   "collides entity_0 with entity_1",
-		   "Unknown dimension of entity_1 in TetrahedronCell collision");
-    }
-    break;
-  default:
-    dolfin_error("CollisionDetection.cpp",
-		 "collides entity_0 with entity_1",
-		 "Unknown dimension of entity_0");
-  }
+  // Pick correct specialized implementation
+  if (d0 == 1 && d1 == 1)
+    return collides_segment_segment_1d(g0.point(v0[0])[0],
+                                       g0.point(v0[1])[0],
+                                       g1.point(v1[0])[0],
+                                       g1.point(v1[1])[0]);
+
+  if (d0 == 1 && d1 == 2)
+    return collides_triangle_segment(g1.point(v1[0]),
+                                     g1.point(v1[1]),
+                                     g1.point(v1[2]),
+                                     g0.point(v0[0]),
+                                     g0.point(v0[1]));
+
+  if (d0 == 2 && d1 == 1)
+    return collides_triangle_segment(g0.point(v0[0]),
+                                     g0.point(v0[1]),
+                                     g0.point(v0[2]),
+                                     g1.point(v1[0]),
+                                     g1.point(v1[1]));
+
+  if (d0 == 2 && d1 == 2)
+    return collides_triangle_triangle(g0.point(v0[0]),
+                                      g0.point(v0[1]),
+                                      g0.point(v0[2]),
+                                      g1.point(v1[0]),
+                                      g1.point(v1[1]),
+                                      g1.point(v1[2]));
+
+  if (d0 == 2 && d1 == 3)
+    return collides_tetrahedron_triangle(g1.point(v1[0]),
+                                         g1.point(v1[1]),
+                                         g1.point(v1[2]),
+                                         g1.point(v1[3]),
+                                         g0.point(v0[0]),
+                                         g0.point(v0[1]),
+                                         g0.point(v0[2]));
+
+  if (d0 == 3 && d1 == 2)
+    return collides_tetrahedron_triangle(g0.point(v0[0]),
+                                         g0.point(v0[1]),
+                                         g0.point(v0[2]),
+                                         g0.point(v0[3]),
+                                         g1.point(v1[0]),
+                                         g1.point(v1[1]),
+                                         g1.point(v1[2]));
+
+  if (d0 == 3 && d1 == 3)
+    return collides_tetrahedron_tetrahedron(g0.point(v0[0]),
+                                            g0.point(v0[1]),
+                                            g0.point(v0[2]),
+                                            g0.point(v0[3]),
+                                            g1.point(v1[0]),
+                                            g1.point(v1[1]),
+                                            g1.point(v1[2]),
+                                            g1.point(v1[3]));
+
+  dolfin_error("CollisionDetection.cpp",
+               "compute entity-entity collision",
+               "Not implemented for dimensions %d / %d", d0, d1);
 
   return false;
 }

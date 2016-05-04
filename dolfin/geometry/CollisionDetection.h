@@ -71,7 +71,8 @@ namespace dolfin
     //--- Low-level collision detection predicates ---
 
     /// Check whether segment p0-p1 collides with point
-    static bool collides_segment_point(const Point& p0, const Point& p1,
+    static bool collides_segment_point(const Point& p0,
+                                       const Point& p1,
 				       const Point& point)
     {
       return CHECK_CGAL(_collides_segment_point(p0, p1, point),
@@ -79,8 +80,10 @@ namespace dolfin
     }
 
     /// Check whether segment p0-p1 collides with segment q0-q1
-    static bool collides_segment_segment(const Point& p0, const Point& p1,
-					 const Point& q0, const Point& q1)
+    static bool collides_segment_segment(const Point& p0,
+                                         const Point& p1,
+					 const Point& q0,
+                                         const Point& q1)
     {
       return CHECK_CGAL(_collides_segment_segment(p0, p1, q0, q1),
 			cgal_collides_segment_segment(p0, p1, q0, q1));
