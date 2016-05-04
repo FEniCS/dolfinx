@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-04
+// Last changed: 2016-05-05
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -59,6 +59,7 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include "Point.h"
 #include "CollisionDetection.h"
+#include "predicates.h"
 
 using namespace dolfin;
 
@@ -212,43 +213,59 @@ bool CollisionDetection::_collides_segment_segment(const Point& p0,
 						   const Point& q0,
 						   const Point& q1)
 {
-  const double tol = DOLFIN_EPS_LARGE;
+  const double cda = orient2d(const_cast<double*>(q0.coordinates()),
+  			      const_cast<double*>(q1.coordinates()),
+  			      const_cast<double*>(p0.coordinates()));
+  const double cdb = orient2d(const_cast<double*>(q0.coordinates()),
+  			      const_cast<double*>(q1.coordinates()),
+  			      const_cast<double*>(p1.coordinates()));
+  const double abc = orient2d(const_cast<double*>(p0.coordinates()),
+  			      const_cast<double*>(p1.coordinates()),
+  			      const_cast<double*>(q0.coordinates()));
+  const double abd = orient2d(const_cast<double*>(p0.coordinates()),
+  			      const_cast<double*>(p1.coordinates()),
+  			      const_cast<double*>(q1.coordinates()));
+  const bool result = cda*cdb <= 0.0 and abc*abd <= 0.0;
 
-  // Check if two segments are the same
-  if ((p0 - q0).norm() < tol and (p1 - q1).norm() < tol)
-    return false;
-  if ((p0 - q1).norm() < tol and (p1 - q0).norm() < tol)
-    return false;
+  return result;
 
-  // Get segments as vectors and compute the normal
-  const Point L1 = p1 - p0;
-  const Point L2 = q1 - q0;
-  const Point n = L1.cross(L2);
+  // const double tol = DOLFIN_EPS_LARGE;
 
-  // Check if L1 and L2 are coplanar
-  const Point ca = q0 - p0;
-  if (std::abs(ca.dot(n)) > tol)
-    return false;
+  // // Check if two segments are the same
+  // if ((p0 - q0).norm() < tol and (p1 - q1).norm() < tol)
+  //   return false;
+  // if ((p0 - q1).norm() < tol and (p1 - q0).norm() < tol)
+  //   return false;
 
-  // Find orthogonal plane with normal n1
-  const Point n1 = n.cross(L1);
-  const double n1dotL2 = n1.dot(L2);
-  if (std::abs(n1dotL2) < tol)
-    return false;
-  const double t = n1.dot(p0 - q0) / n1dotL2;
-  if (t <= 0 or t >= 1)
-    return false;
+  // // Get segments as vectors and compute the normal
+  // const Point L1 = p1 - p0;
+  // const Point L2 = q1 - q0;
+  // const Point n = L1.cross(L2);
 
-  // Find orthogonal plane with normal n2
-  const Point n2 = n.cross(L2);
-  const double n2dotL1 = n2.dot(L1);
-  if (std::abs(n2dotL1) < tol)
-    return false;
-  const double s = n2.dot(q0 - p0) / n2dotL1;
-  if (s <= 0 or s >= 1)
-    return false;
+  // // Check if L1 and L2 are coplanar
+  // const Point ca = q0 - p0;
+  // if (std::abs(ca.dot(n)) > tol)
+  //   return false;
 
-  return true;
+  // // Find orthogonal plane with normal n1
+  // const Point n1 = n.cross(L1);
+  // const double n1dotL2 = n1.dot(L2);
+  // if (std::abs(n1dotL2) < tol)
+  //   return false;
+  // const double t = n1.dot(p0 - q0) / n1dotL2;
+  // if (t <= 0 or t >= 1)
+  //   return false;
+
+  // // Find orthogonal plane with normal n2
+  // const Point n2 = n.cross(L2);
+  // const double n2dotL1 = n2.dot(L1);
+  // if (std::abs(n2dotL1) < tol)
+  //   return false;
+  // const double s = n2.dot(q0 - p0) / n2dotL1;
+  // if (s <= 0 or s >= 1)
+  //   return false;
+
+  // return true;
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::_collides_segment_segment_1d(double p0,
