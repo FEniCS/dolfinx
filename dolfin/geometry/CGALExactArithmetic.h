@@ -279,70 +279,6 @@ namespace
     return triangulation;
   }
 
-  //------------------------------------------------------------------------------
-  // Explicit handling of CGAL intersections
-  //------------------------------------------------------------------------------
-
-  inline std::vector<double>
-  parse_segment_segment
-  (const CGAL::cpp11::result_of<Intersect_2(Segment_2, Segment_2)>::type ii)
-  {
-    const Point_2* p = boost::get<Point_2>(&*ii);
-    if (p)
-      return flatten(*p);
-
-    const Segment_2* s = boost::get<Segment_2>(&*ii);
-    if (s)
-      return flatten(*s);
-
-    dolfin::error("Unexpected behavior in CGALExactArithmetic parse_segment_segment");
-    return std::vector<double>();
-  }
-
-  inline std::vector<double>
-  parse_triangle_segment
-  (const CGAL::cpp11::result_of<Intersect_2(Triangle_2, Segment_2)>::type ii)
-  {
-    const Point_2* p = boost::get<Point_2>(&*ii);
-    if (p)
-      return flatten(*p);
-
-    const Segment_2* s = boost::get<Segment_2>(&*ii);
-    if (s)
-      return flatten(*s);
-
-    dolfin::error("Unexpected behavior in CGALExactArithmetic parse_triangle_segment");
-    return std::vector<double>();
-  }
-
-  inline std::vector<double>
-  parse_triangle_triangle
-  (const CGAL::cpp11::result_of<Intersect_2(Triangle_2, Triangle_2)>::type ii)
-  {
-
-    const Point_2* p = boost::get<Point_2>(&*ii);
-    if (p)
-      return flatten(*p);
-
-    const Segment_2* s = boost::get<Segment_2>(&*ii);
-    if (s)
-      return flatten(*s);
-
-    const Triangle_2* t = boost::get<Triangle_2>(&*ii);
-    if (t)
-      return flatten(*t);
-
-    const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii);
-    if (cgal_points)
-    {
-      dolfin_assert(cgal_points->size() == 4);
-      return flatten(*cgal_points);
-    }
-
-    dolfin::error("Unexpected behavior in CGALExactArithmetic parse_triangle_triangle");
-    return std::vector<double>();
-  }
-
 }
 
 namespace dolfin
@@ -433,13 +369,19 @@ namespace dolfin
     const auto I1 = convert_to_cgal(c, d);
     const auto ii = CGAL::intersection(I0, I1);
     dolfin_assert(ii);
-    const std::vector<double> triangulation = parse_segment_segment(ii);
 
-    if (triangulation.size() == 0)
-      dolfin_error("CGALExactArithmetic.h",
-		   "in cgal_intersection_interval_interval function",
-		   "unknown intersection");
-    return triangulation;
+    const Point_2* point = boost::get<Point_2>(&*ii);
+    if (point)
+      return flatten(*point);
+
+    const Segment_2* segment = boost::get<Segment_2>(&*ii);
+    if (segment)
+      return flatten(*segment);
+
+    dolfin_error("CGALExactArithmetic.h",
+		 "in cgal_intersection_interval_interval function",
+		 "unknown intersection");
+    return std::vector<double>();
   }
 
   inline
@@ -464,13 +406,19 @@ namespace dolfin
     const auto I = convert_to_cgal(a, b);
     const auto ii = CGAL::intersection(T, I);
     dolfin_assert(ii);
-    const std::vector<double> triangulation = parse_triangle_segment(ii);
 
-    if (triangulation.size() == 0)
-      dolfin_error("CGALExactArithmetic.h",
-		   "in cgal_intersection_triangle_interval function",
-		   "unknown intersection");
-    return triangulation;
+    const Point_2* point = boost::get<Point_2>(&*ii);
+    if (point)
+      return flatten(*point);
+
+    const Segment_2* segment = boost::get<Segment_2>(&*ii);
+    if (segment)
+      return flatten(*segment);
+
+    dolfin_error("CGALExactArithmetic.h",
+		 "in cgal_intersection_triangle_interval function",
+		 "unknown intersection");
+    return std::vector<double>();
   }
 
   inline
@@ -497,17 +445,29 @@ namespace dolfin
     // CGAL::Exact_predicates_inexact_constructions_kernel
     dolfin_assert(ii);
 
-    const std::vector<double> triangulation = parse_triangle_triangle(ii);
+    const Point_2* point = boost::get<Point_2>(&*ii);
+    if (point)
+      return flatten(*point);
 
-    // NB: cgaltools::parse can return triangulation of size 0, for
-    // example if it detected a triangle but it was found to be flat.
-    if (triangulation.size() == 0)
+    const Segment_2* segment = boost::get<Segment_2>(&*ii);
+    if (segment)
+      return flatten(*segment);
+
+    const Triangle_2* triangle = boost::get<Triangle_2>(&*ii);
+    if (triangle)
+      return flatten(*triangle);
+
+    const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii);
+    if (cgal_points)
     {
-      dolfin_error("CGALExactArithmetic.h",
-    		   "find intersection of two triangles in cgal_intersection_triangle_triangle function",
-    		   "no intersection found");
+      dolfin_assert(cgal_points->size() == 4);
+      return flatten(*cgal_points);
     }
-    return triangulation;
+
+    dolfin_error("CGALExactArithmetic.h",
+		 "find intersection of two triangles in cgal_intersection_triangle_triangle function",
+		 "no intersection found");
+    return std::vector<double>();
   }
 
   inline Point cgal_intersection_edge_edge_2d(const Point& a,
@@ -524,11 +484,31 @@ namespace dolfin
     const auto ii = CGAL::intersection(E0, E1);
     dolfin_assert(ii);
 
-    const std::vector<double> triangulation = parse_segment_segment(ii);
-    dolfin_assert(triangulation.size()==2);
+    std::vector<double> triangulation;
+    const Point_2* p = boost::get<Point_2>(&*ii);
+    if (p)
+      triangulation = flatten(*p);
 
-    const Point pt(triangulation[0], triangulation[1]);
-    return pt;
+    const Segment_2* s = boost::get<Segment_2>(&*ii);
+    if (s)
+      triangulation = flatten(*s);
+
+    if (triangulation.size() == 2)
+    {
+      const Point pt(triangulation[0], triangulation[1]);
+      return pt;
+    }
+    else if (triangulation.size() == 4)
+    {
+      const Point pt(0.5*(triangulation[0] + triangulation[2]),
+		     0.5*(triangulation[1] + triangulation[3]));
+      return pt;
+    }
+
+    dolfin_error("CGALExactArithmetic.h",
+		 "find intersection of two triangles in cgal_intersection_edge_edge_2d function",
+		 "no or strange intersection found");
+    return Point();
   }
 
   inline Point cgal_intersection_face_edge_2d(const Point& r,
@@ -548,10 +528,14 @@ namespace dolfin
     const auto ii = CGAL::intersection(T, I);
     dolfin_assert(ii);
 
-    const std::vector<double> triangulation = parse_triangle_segment(ii);
+    std::vector<double> triangulation;
+    const Point_2* point = boost::get<Point_2>(&*ii);
+    if (point)
+      triangulation = flatten(*point);
 
-    dolfin_assert(triangulation.size()==2 or
-		  triangulation.size()==4);
+    const Segment_2* segment = boost::get<Segment_2>(&*ii);
+    if (segment)
+      triangulation = flatten(*segment);
 
     if (triangulation.size() == 2)
     {
@@ -565,9 +549,10 @@ namespace dolfin
       return pt;
     }
 
-    dolfin_error("IntersectionTriangulation.cpp",
-		 "in intersection_face_edge function",
-		 "unknown intersection");
+    dolfin_error("CGALExactArithmetic.h",
+		 "find intersection of two triangles in cgal_intersection_face_edge_2d function",
+		 "no or strange intersection found");
+    return Point();
   }
 
 }
