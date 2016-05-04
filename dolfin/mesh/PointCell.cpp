@@ -20,9 +20,11 @@
 // Modified by August Johansson 2014
 //
 // First added:  2007-12-12
-// Last changed: 2016-05-04
+// Last changed: 2016-05-05
 
 #include <dolfin/log/log.h>
+#include <dolfin/geometry/CollisionDetection.h>
+#include <dolfin/geometry/IntersectionTriangulation.h>
 #include "Cell.h"
 #include "Facet.h"
 #include "MeshEditor.h"

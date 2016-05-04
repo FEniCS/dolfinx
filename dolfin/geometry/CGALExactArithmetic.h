@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-05-04
+// Last changed: 2016-05-05
 //
 // Developer note:
 //
@@ -25,6 +25,8 @@
 // a normal build but is used as a reference for verification and
 // debugging of the inexact DOLFIN collision detection algorithms.
 // Enable by setting the flag DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC.
+
+// FIXME: This line is a test - remove it
 
 #ifndef __CGAL_EXACT_ARITHMETIC_H
 #define __CGAL_EXACT_ARITHMETIC_H
@@ -39,10 +41,12 @@
 
 #else
 
-// DOLFIN includes
+// Includes
+#include <algorithm>
 #include <sstream>
 #include <dolfin/log/log.h>
 #include <dolfin/math/basic.h>
+#include "Point.h"
 
 // Check that results from DOLFIN and CGAL match
 namespace dolfin
@@ -67,7 +71,7 @@ namespace dolfin
       // Issue error
       dolfin_error("CGALExactArithmetic.h",
                    "verify geometric predicate with exact types",
-                   "Predicate: %s, DOLFIN: %s CGAL: %s",
+                   "%s\n DOLFIN: %s\n CGAL: %s",
                    function.c_str(), s_dolfin.str().c_str(), s_cgal.str().c_str());
     }
 
@@ -93,7 +97,7 @@ namespace dolfin
 
       dolfin_error("CGALExactArithmetic.h",
 		   "verify intersections due to different sizes",
-		   "Intersection function: %s\n DOLFIN: %s\n CGAL: %s",
+		   "%s\n DOLFIN: %s\n CGAL: %s",
 		   function.c_str(),
 		   s_dolfin.str().c_str(),
 		   s_cgal.str().c_str());
@@ -118,7 +122,7 @@ namespace dolfin
 
 	  dolfin_error("CGALExactArithmetic.h",
 		       "verify intersections due to different data (NB: we sort data before comparing)",
-		       "Intersection function: %s\n DOLFIN: %s\n CGAL: %s",
+		       "%s\n DOLFIN: %s\n CGAL: %s",
 		       function.c_str(),
 		       s_dolfin.str().c_str(),
 		       s_cgal.str().c_str());
@@ -134,23 +138,25 @@ namespace dolfin
              std::string function)
   {
     for (std::size_t d = 0; d < 3; ++d)
+    {
       if (!near(result_dolfin[d], result_cgal[d]))
       {
 	std::stringstream s_dolfin;
 	std::stringstream s_cgal;
 	for (std::size_t i = 0; i < 3; ++i)
 	{
-	  s_dolfin << result_dolfin[i];
-	  s_cgal << result_cgal[i];
+	  s_dolfin << result_dolfin[i] << " ";
+	  s_cgal << result_cgal[i] << " ";
 	}
 
 	dolfin_error("CGALExactArithmetic.h",
 		     "verify intersections due to different Point data",
-		     "Intersection function: %s\n DOLFIN: %s\n CGAL: %s",
+		     "%s\n DOLFIN: %s\n CGAL: %s",
 		     function.c_str(),
 		     s_dolfin.str().c_str(),
 		     s_cgal.str().c_str());
       }
+    }
 
     return result_dolfin;
   }

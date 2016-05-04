@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2016-05-04
+// Last changed: 2016-05-05
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -26,6 +26,7 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/SimplexQuadrature.h>
+#include <dolfin/geometry/IntersectionTriangulation.h>
 #include "Cell.h"
 #include "Facet.h"
 #include "BoundaryMesh.h"
