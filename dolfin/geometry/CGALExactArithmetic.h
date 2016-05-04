@@ -233,7 +233,6 @@ namespace
     return t.is_degenerate();
   }
 
-
   inline std::vector<double> flatten(const Point_2& p)
   {
     const std::vector<double> triangulation = {{ CGAL::to_double(p.x()),
@@ -271,7 +270,12 @@ namespace
     return triangulation;
   }
 
-  inline std::vector<double> parse_segment_segment(const CGAL::cpp11::result_of<ExactKernel::Intersect_2(Segment_2, Segment_2)>::type ii)
+  //------------------------------------------------------------------------------
+  // Explicit handling of CGAL intersections
+  //------------------------------------------------------------------------------
+
+  inline std::vector<double>
+  parse_segment_segment(const CGAL::cpp11::result_of<ExactKernel::Intersect_2(Segment_2, Segment_2)>::type ii)
   {
     const Point_2* p = boost::get<Point_2>(&*ii);
     if (p)
@@ -285,7 +289,8 @@ namespace
     return std::vector<double>();
   }
 
-  inline std::vector<double> parse_triangle_segment(const CGAL::cpp11::result_of<ExactKernel::Intersect_2(Triangle_2, Segment_2)>::type ii)
+  inline std::vector<double>
+  parse_triangle_segment(const CGAL::cpp11::result_of<ExactKernel::Intersect_2(Triangle_2, Segment_2)>::type ii)
   {
     const Point_2* p = boost::get<Point_2>(&*ii);
     if (p)
@@ -299,7 +304,8 @@ namespace
     return std::vector<double>();
   }
 
-  inline std::vector<double> parse_triangle_triangle(const CGAL::cpp11::result_of<ExactKernel::Intersect_2(Triangle_2, Triangle_2)>::type ii)
+  inline std::vector<double>
+  parse_triangle_triangle(const CGAL::cpp11::result_of<ExactKernel::Intersect_2(Triangle_2, Triangle_2)>::type ii)
   {
 
     const Point_2* p = boost::get<Point_2>(&*ii);
@@ -321,31 +327,6 @@ namespace
     dolfin::error("Unexpected behavior in CGALExactArithmetic parse_triangle_triangle");
     return std::vector<double>();
   }
-
-
-  // template<class T>
-  // inline std::vector<double> parse(const T& ii)
-  // {
-  //   const Point_2* p = boost::get<Point_2>(&*ii);
-  //   if (p)
-  //     return flatten(*p);
-
-  //   const Segment_2* s = boost::get<Segment_2>(&*ii);
-  //   if (s)
-  //     return flatten(*s);
-
-  //   const Triangle_2* t = boost::get<Triangle_2>(&*ii);
-  //   if (t)
-  //     return flatten(*t);
-
-  //   const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii);
-  //   if (cgal_points)
-  //     return flatten(*cgal_points);
-
-  //   dolfin::error("Unexpected behavior in CGAL tools.");
-
-  //   return std::vector<double>();
-  // }
 
 }
 
