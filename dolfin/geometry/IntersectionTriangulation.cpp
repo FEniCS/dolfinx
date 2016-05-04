@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-04
+// Last changed: 2016-05-05
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -1296,12 +1296,30 @@ Point IntersectionTriangulation::_intersection_edge_edge_2d(const Point& a,
       std::cout << "alt point    plot("<<alt[0]<<','<<alt[1]<<",'o');\n";
     }
   }
-  else
+  else if (cda == 0)
   {
-    // no intersection, but return a point anyway. If we end up here
-    // we have a conflict of interest between the predicate and
+    return a; // a is on top of cd
+  }
+  else if (cdb == 0)
+  {
+    return b; // b is on top of cd
+  }
+  else if (abc == 0)
+  {
+    return c; // c is on top of ab
+  }
+  else if (abd == 0)
+  {
+    return d; // d is on top of ab
+  }
+  else {
+    // No intersection, but return a point anyway? If we end up here
+    // we may have a conflict of interest between the predicate and
     // this function
-    pt = 0.25*(a + b + c + d);
+    // pt = 0.25*(a + b + c + d);
+    dolfin_error("IntersectionTriangulation.cpp",
+		 "intersection_edge_edge_2d function",
+		 "No intersection found");
   }
 
   return CHECK_CGAL(pt, cgal_intersection_edge_edge_2d(a, b, c, d));
