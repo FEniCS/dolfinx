@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2016-03-02
+// Last changed: 2016-05-04
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -328,138 +328,6 @@ void MultiMesh::_build_bounding_box_trees()
 //-----------------------------------------------------------------------------
 void MultiMesh::_build_collision_maps()
 {
-  // begin(PROGRESS, "Building collision maps.");
-
-  // // Clear collision maps
-  // _uncut_cells.clear();
-  // _cut_cells.clear();
-  // _covered_cells.clear();
-  // _collision_maps_cut_cells.clear();
-  // _collision_maps_cut_cells_boundary.clear();
-
-  // // Iterate over all parts
-  // for (std::size_t i = 0; i < num_parts(); i++)
-  // {
-  //   // Extract uncut, cut and covered cells:
-  //   //
-  //   // 0: uncut   = cell not colliding with any higher domain
-  //   // 1: cut     = cell colliding with some higher boundary and is not covered
-  //   // 2: covered = cell colliding with some higher domain but not its boundary
-
-  //   // Create vector of markers for cells in part `i` (0, 1, or 2)
-  //   std::vector<char> markers(_meshes[i]->num_cells(), 0);
-
-  //   // Create local array for marking boundary collisions for cells in
-  //   // part `i`. Note that in contrast to the markers above which are
-  //   // global to part `i`, these markers are local to the collision
-  //   // between part `i` and part `j`.
-  //   std::vector<bool> collides_with_boundary(_meshes[i]->num_cells());
-
-  //   // Create empty collision map for cut cells in part `i`
-  //   std::map<unsigned int, std::vector<std::pair<std::size_t, unsigned int>>>
-  //     collision_map_cut_cells;
-
-  //   // Iterate over covering parts (with higher part number)
-  //   for (std::size_t j = i + 1; j < num_parts(); j++)
-  //   {
-  //     log(PROGRESS, "Computing collisions for mesh %d overlapped by mesh %d.", i, j);
-
-  //     // Reset boundary collision markers
-  //     std::fill(collides_with_boundary.begin(), collides_with_boundary.end(), false);
-
-  //     // Compute domain-boundary collisions
-  //     const auto& boundary_collisions = _trees[i]->compute_collisions(*_boundary_trees[j]);
-
-  //     // Iterate over boundary collisions
-  //     for (auto it = boundary_collisions.first.begin();
-  //          it != boundary_collisions.first.end(); ++it)
-  //     {
-  //       // Mark that cell collides with boundary
-  //       collides_with_boundary[*it] = true;
-
-  //       // Mark as cut cell if not previously covered
-  //       if (markers[*it] != 2)
-  //       {
-  //         // Mark as cut cell
-  //         markers[*it] = 1;
-
-  //         // Add empty list of collisions into map if it does not exist
-  //         if (collision_map_cut_cells.find(*it) == collision_map_cut_cells.end())
-  //         {
-  //           std::vector<std::pair<std::size_t, unsigned int>> collisions;
-  //           collision_map_cut_cells[*it] = collisions;
-  //         }
-  //       }
-  //     }
-
-  //     // Compute domain-domain collisions
-  //     const auto& domain_collisions = _trees[i]->compute_collisions(*_trees[j]);
-
-  //     // Iterate over domain collisions
-  //     dolfin_assert(domain_collisions.first.size() == domain_collisions.second.size());
-  //     for (std::size_t k = 0; k < domain_collisions.first.size(); k++)
-  //     {
-  //       // Get the two colliding cells
-  //       auto cell_i = domain_collisions.first[k];
-  //       auto cell_j = domain_collisions.second[k];
-
-  //       // Store collision in collision map if we have a cut cell
-  //       if (markers[cell_i] == 1)
-  //       {
-  //         auto it = collision_map_cut_cells.find(cell_i);
-  //         dolfin_assert(it != collision_map_cut_cells.end());
-  //         it->second.push_back(std::make_pair(j, cell_j));
-  //       }
-
-  //       // Mark cell as covered if it does not collide with boundary
-  //       if (!collides_with_boundary[cell_i])
-  //       {
-  //         // Remove from collision map if previously marked as as cut cell
-  //         if (markers[cell_i] == 1)
-  //         {
-  //           dolfin_assert(collision_map_cut_cells.find(cell_i) != collision_map_cut_cells.end());
-  //           collision_map_cut_cells.erase(cell_i);
-  //         }
-
-  //         // Mark as covered cell (may already be marked)
-  //         markers[cell_i] = 2;
-  //       }
-  //     }
-  //   }
-
-  //   // Extract uncut, cut and covered cells from markers
-  //   std::vector<unsigned int> uncut_cells;
-  //   std::vector<unsigned int> cut_cells;
-  //   std::vector<unsigned int> covered_cells;
-  //   for (unsigned int c = 0; c < _meshes[i]->num_cells(); c++)
-  //   {
-  //     switch (markers[c])
-  //     {
-  //     case 0:
-  //       uncut_cells.push_back(c);
-  //       break;
-  //     case 1:
-  //       cut_cells.push_back(c);
-  //       break;
-  //     default:
-  //       covered_cells.push_back(c);
-  //     }
-  //   }
-
-  //   // Store data for this mesh
-  //   _uncut_cells.push_back(uncut_cells);
-  //   _cut_cells.push_back(cut_cells);
-  //   _covered_cells.push_back(covered_cells);
-  //   _collision_maps_cut_cells.push_back(collision_map_cut_cells);
-
-  //   // Report results
-  //   log(PROGRESS, "Part %d has %d uncut cells, %d cut cells, and %d covered cells.",
-  //       i, uncut_cells.size(), cut_cells.size(), covered_cells.size());
-  // }
-
-  // end();
-
-
   begin(PROGRESS, "Building collision maps.");
 
   // Clear collision maps
@@ -618,17 +486,17 @@ void MultiMesh::_build_collision_maps()
         i, uncut_cells.size(), cut_cells.size(), covered_cells.size());
   }
 
-// #ifdef Augustwritemarkers
-//   for (std::size_t part = 0; part < num_parts(); ++part)
-//   {
-//     std::vector<std::size_t> marker(_meshes[part]->num_cells(),-1);
-//     for (const auto c: _uncut_cells[part]) marker[c] = 0;
-//     for (const auto c: _cut_cells[part]) marker[c] = 1;
-//     for (const auto c: _covered_cells[part]) marker[c] = 2;
-//     tools::dolfin_write_medit_triangles("markers",*_meshes[part],3*(_counter++)+part,&marker);
-//   }
-//   tools::dolfin_write_medit_triangles("multimesh",*this);
-// #endif
+#ifdef Augustdebug
+  //   for (std::size_t part = 0; part < num_parts(); ++part)
+  //   {
+  //     std::vector<std::size_t> marker(_meshes[part]->num_cells(),-1);
+  //     for (const auto c: _uncut_cells[part]) marker[c] = 0;
+  //     for (const auto c: _cut_cells[part]) marker[c] = 1;
+  //     for (const auto c: _covered_cells[part]) marker[c] = 2;
+  //     tools::dolfin_write_medit_triangles("markers",*_meshes[part],3*(_counter++)+part,&marker);
+  //   }
+  //   tools::dolfin_write_medit_triangles("multimesh",*this);
+#endif
 
   end();
 }
@@ -642,58 +510,9 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 
   // Clear quadrature rules
   _quadrature_rules_overlap.clear();
-  // _quadrature_rules_interface.clear();
 
   // Resize quadrature rules
   _quadrature_rules_overlap.resize(num_parts());
-  // _quadrature_rules_interface.resize(num_parts());
-
-  // // Clear and resize facet normals
-  // _facet_normals.clear();
-  // _facet_normals.resize(num_parts());
-
-  // FIXME: test prebuild map from boundary facets to full mesh cells
-  // for all meshes: Loop over all boundary mesh facets to find the
-  // full mesh cell which contains the facet. This is done in two
-  // steps: Since the facet is on the boundary mesh, we first map this
-  // facet to a facet in the full mesh using the
-  // boundary_cell_map. Then we use the full_facet_cell_map to find
-  // the corresponding cell in the full mesh. This cell is to match
-  // the cutting_cell_no.
-
-  // // Build map from boundary facets to full mesh
-  // std::vector<std::vector<std::vector<std::pair<std::size_t, std::size_t>>>>
-  //   full_to_bdry(num_parts());
-  // for (std::size_t part = 0; part < num_parts(); ++part)
-  // {
-  //   full_to_bdry[part].resize(_meshes[part]->num_cells());
-
-  //   // Get map from boundary mesh to facets of full mesh
-  //   const std::size_t tdim_boundary
-  //     = _boundary_meshes[part]->topology().dim();
-  //   const auto& boundary_cell_map
-  //     = _boundary_meshes[part]->entity_map(tdim_boundary);
-
-  //   // Generate facet to cell connectivity for full mesh
-  //   const std::size_t tdim = _meshes[part]->topology().dim();
-  //   _meshes[part]->init(tdim_boundary, tdim);
-  //   const MeshConnectivity& full_facet_cell_map
-  //     = _meshes[part]->topology()(tdim_boundary, tdim);
-
-  //   for (std::size_t boundary_facet = 0;
-  //        boundary_facet < boundary_cell_map.size(); ++boundary_facet)
-  //   {
-  //     // Find the facet in the full mesh
-  //     const std::size_t full_mesh_facet = boundary_cell_map[boundary_facet];
-
-  //     // Find the cells in the full mesh (for interior facets we
-  //     // can have 2 facets, but here we should only have 1)
-  //     dolfin_assert(full_facet_cell_map.size(full_mesh_facet) == 1);
-  //     const auto& full_cells = full_facet_cell_map(full_mesh_facet);
-  //     full_to_bdry[part][full_cells[0]].push_back(std::make_pair(boundary_facet,
-  //                                                                full_mesh_facet));
-  //   }
-  // }
 
 #ifdef Augustdebug
   std::cout.precision(15);
@@ -728,23 +547,16 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
   PPause;
 #endif
 
-
   std::size_t small_elements_cnt = 0;
-
 
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
     std::cout << "----- cut part: " << cut_part << std::endl;
-// #ifdef Augustdebug
-//     tools::dolfin_write_medit_triangles("cut_part",*(_meshes[cut_part]),cut_part);
-//     //double areapos = 0, areaminus = 0;
-// #endif
 
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
-      //if (cut_part == 1 and it->first == 16)
     {
 #ifdef Augustdebug
       std::cout << "-------- new cut cell\n";
@@ -760,13 +572,11 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 
       // Data structure for the overlap quadrature rule
       std::vector<quadrature_rule> overlap_qr;
-      // std::vector<quadrature_rule> interface_qr;
 
       // Data structure for the first intersections (this is the first
       // stage in the inclusion exclusion principle). These are the
       // polyhedra to be used in the exlusion inclusion.
       std::vector<std::pair<std::size_t, Polyhedron> > initial_polyhedra;
-      // std::vector<std::pair<std::size_t, Polyhedron> > initial_polygons;
 
       // Loop over all cutting cells to construct the polyhedra to be
       // used in the inclusion-exclusion principle
@@ -815,9 +625,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	}
 #endif
 
-	// Flip triangles in polyhedron to maximize minimum angle
-	//const bool flipped = false;//maximize_minimum_angle(polyhedron);
-
+	// FIXME: Flip triangles in polyhedron to maximize minimum angle here?
 
 	// Test only include large polyhedra
 	double area = 0;
@@ -832,39 +640,8 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	else
 	{
 	  small_elements_cnt++;
-	  //PPause;
 	}
-
-	// // Iterate over boundary cells
-        // for (auto boundary_cell_index : full_to_bdry[cutting_part][cutting_cell_index])
-        // {
-        //   // Get the boundary facet as a cell in the boundary mesh
-        //   // (remember that this is of one less topological dimension)
-        //   const Cell boundary_cell(*_boundary_meshes[cutting_part],
-        //                            boundary_cell_index.first);
-
-	//   // Get the boundary facet as a facet in the full mesh
-        //   const Facet boundary_facet(*_meshes[cutting_part],
-        //                              boundary_cell_index.second);
-
-        //   // Triangulate intersection of cut cell and boundary cell
-        //   const auto triangulation_cut_boundary
-        //     = cut_cell.triangulate_intersection(boundary_cell);
-	//   const Polyhedron polygon = convert(triangulation_cut_boundary, tdim-1, gdim);
-
-	//   // Test only include large lines
-	//   double length = 0;
-	//   for (const auto simplex: polygon)
-	//     length += std::abs(tools::area(simplex));
-	//   if (std::isfinite(length))
-	//   {
-	//     // Store key and polygon
-	//     initial_polygon.push_back(std::make_pair(initial_polygons.size(),
-	// 					     polygon));
-	//   }
-	// }
       }
-      //PPause;
 
       // Exclusion-inclusion principle. There are N stages in the
       // principle, where N = polyhedra.size(). The first stage is
@@ -880,14 +657,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       for (std::size_t i = 0; i < N; ++i)
 	previous_intersections[i] = std::make_pair(std::vector<std::size_t>(1, initial_polyhedra[i].first), initial_polyhedra[i].second);
 
-      // const std::size_t Ninterface = initial_polygons.size();
-      // std::vector<std::pair<std::vector<std::size_t>,
-      // 			    Polyhedron> > previous_interface_intersections(Ninterface);
-      // for (std::size_t i = 0; i < Ninterface; ++i)
-      // 	previous_interface_intersections[i]
-      // 	  = std::make_pair(std::vector<std::size_t>(1, initial_polygons[i].first),
-      // 			   initial_polygons[i].second);
-
       // Do stage = 1 up to stage = polyhedra.size in the
       // principle. Recall that stage 1 is the pairwise
       // intersections. There are up to n_choose_k(N,stage)
@@ -895,14 +664,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       // intersections are found using the polyhedra data and the
       // previous_intersections data. We only have to intersect if the key doesn't
       // contain the polyhedron.
-
-      // std::cout << std::endl << "initial setup done, resulted in " << N << " polyhedra to be used in the inclusion exclusion\n\n";
-
-      // // The big data structure
-      // std::vector<std::vector<std::pair<std::vector<std::size_t>, Polyhedron> > > all_intersections(N);
-
-      // // Maybe not needed:
-      // all_intersections[0] = previous_intersections; //initial_polyhedra;
 
       // Add quadrature rule for stage 0 (always positive)
       {
@@ -912,8 +673,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	for (const auto polyhedron: previous_intersections)
 	  for (const auto simplex: polyhedron.second)
 	  {
-	    //areapos += tools::area(simplex);
-	    std::vector<double> x = convert(simplex, tdim, gdim);
+	    const std::vector<double> x = convert(simplex, tdim, gdim);
 	    _add_quadrature_rule(overlap_part_qr, x, tdim, gdim, quadrature_order, sign);
 #ifdef Augustdebug
 	    //PPause;
@@ -922,19 +682,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 
 	// Add quadrature rule for overlap part
 	overlap_qr.push_back(overlap_part_qr);
-
-	// quadrature_rule interface_part_qr;
-	// for (const auto polygon: previous_interface_intersections)
-	//   for (const auto simplex: polygon.second)
-	//   {
-	//     //areapos += tools::area(simplex);
-	//     std::vector<double> x = convert(simplex, tdim-1, gdim);
-	//     _add_quadrature_rule(interface_part_qr, x,
-	// 			 tdim-1, gdim, quadrature_order, sign);
-	//   }
-
-	// // Add quadrature rule for interface part
-	// interface_qr.push_back(interface_part_qr);
       }
 
       for (std::size_t stage = 1; stage < N; ++stage)
@@ -969,7 +716,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	      for (const auto s: initial_polyhedron.second)
 		std::cout << tools::drawtriangle(s,"'r'");
 	      std::cout << tools::zoom()<<'\n';
-#endif
 	      // {
 	      // 	for (const auto previous_simplex: previous_polyhedron.second)
 	      // 	  std::cout << tools::drawtriangle(previous_simplex,"'b'");
@@ -978,7 +724,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	      // 	  std::cout << tools::drawtriangle(initial_simplex,"'r'");
 	      // 	std::cout<<'\n';
 	      // }
-
+#endif
 
 	      // We want to save the intersection of the previous
 	      // polyhedron and the initial polyhedron in one single
@@ -1004,14 +750,12 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 
 		  if (ii.size())
 		  {
-		    //any_intersections = true;
-
 		    // To save all intersections as a single
 		    // polyhedron, we don't call this a polyhedron
 		    // yet, but rather a std::vector<Simplex> since we
 		    // are still filling the polyhedron with simplices
-		    std::vector<Simplex> pii = convert(ii, tdim, gdim);
-		    // Test only add if area is largcane
+		    const std::vector<Simplex> pii = convert(ii, tdim, gdim);
+		    // Test only add if area is finite
 		    for (const auto simplex: pii)
 		    {
 		      const double area = tools::area(simplex);
@@ -1022,7 +766,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 		      }
 		      else
 		      {
-		      	//PPause;
 			small_elements_cnt++;
 		      }
 		    }
@@ -1059,26 +802,18 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 				previous_polyhedron.first.begin(),
 				previous_polyhedron.first.end());
 
-		// std::cout << "new keys: ";
-		// for (const auto key: new_keys)
-		//   std::cout << key <<' ';
-		// std::cout<<std::endl;
-
-
-		// Test improve quality
+		// FIXME: Test improve quality
 		//maximize_minimum_angle(new_polyhedron);
-
 
 		// Save data
 		new_intersections.push_back(std::make_pair(new_keys, new_polyhedron));
-		//PPause;
 	      }
 
 	    }
 	  }
 	}
 
-
+#ifdef Augustdebug
 	// {
 	//   std::cout << "\n summarize at stage="<<stage<<" and part=" << cut_part<< '\n';
 	//   std::cout << "the previous intersections were:\n";
@@ -1117,11 +852,10 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	//   //if (cut_part == 1) { PPause; }
 	//   //if (cut_part == 0) { PPause; }
 	// }
+#endif
 
       	// Update before next stage
-      	//all_intersections[stage] =
 	previous_intersections = new_intersections;
-
 
 	// Add quadrature rule with correct sign
 	const double sign = std::pow(-1, stage);
@@ -1130,36 +864,17 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	for (const auto polyhedron: new_intersections)
 	  for (const auto simplex: polyhedron.second)
 	  {
-	    // if (std::abs(sign-1)<1e-10)
-	    //   areapos += tools::area(simplex);
-	    // else
-	    //   areaminus += tools::area(simplex);
-	    std::vector<double> x = convert(simplex, tdim, gdim);
+	    const std::vector<double> x = convert(simplex, tdim, gdim);
 	    _add_quadrature_rule(overlap_part_qr, x,
 				 tdim, gdim, quadrature_order, sign);
-	    //PPause;
 	  }
 
         // Add quadrature rule for overlap part
         overlap_qr.push_back(overlap_part_qr);
-
-	// {
-	//   // Test the quadrature rule
-	//   double volume = 0;
-	//   for (std::size_t i = 0; i < overlap_part_qr.second.size(); ++i)
-	//   {
-	//     //std::cout << std::setprecision(20) << qr.second[i]<<'\n';
-	//     volume += overlap_part_qr.second[i];
-	//   }
-	//   std::cout << "volume="<<volume<<'\n';
-	//   //if (cut_part == 1) { PPause; }
-	// }
-
-	//PPause;
       } // end exclusion-inclusion principle
 
 
-
+#ifdef Augustdebug
       // std::cout << "\n summarize all intersections for part=" << cut_part<< " (there are "<<all_intersections.size()<< " stages)" << std::endl;
 
       // for (std::size_t stage = 0; stage < all_intersections.size(); ++stage)
@@ -1178,7 +893,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       // }
       // std::cout << std::endl;
 
-
       // // qr is pair of point and weight (each is a vector<double>)
       // for (const auto qr: overlap_qr)
       // 	for (std::size_t i = 0; i < qr.second.size(); ++i)
@@ -1191,9 +905,8 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       // 	  std::cout << std::endl;
       // 	}
 
-
       // PPause;
-
+#endif
 
 #ifdef Augustcheckqrpositive
       // Check qr overlap
@@ -1223,17 +936,11 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 
 #endif
 
-
-
       // Store quadrature rules for cut cell
       _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
-      //_quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
-
-      // Store facet normals for cut cell
-      //_facet_normals[cut_part][cut_cell_index] = interface_n;
-
     }
 
+#ifdef Augustdebug
     // {
     //   // sum
     //   double part_volume = 0;
@@ -1273,261 +980,10 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
     // 	err = (areapos-areaminus)-part_volume;
     //   std::cout << "error " << cut_part << " " << err << '\n';
     // }
+#endif
   }
 
-
   std::cout << "small elements " << small_elements_cnt << std::endl;
-
-
-
-
-
-
-  // // Iterate over all parts
-  // for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
-  // {
-  //   // Iterate over cut cells for current part
-  //   const auto& cmap = collision_map_cut_cells(cut_part);
-  //   for (auto it = cmap.begin(); it != cmap.end(); ++it)
-  //   {
-  //     // Get cut cell
-  //     const unsigned int cut_cell_index = it->first;
-  //     const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
-
-  //     // Get dimensions
-  //     const std::size_t tdim = cut_cell.mesh().topology().dim();
-  //     const std::size_t gdim = cut_cell.mesh().geometry().dim();
-
-  //     // Data structure for the volume triangulation of the cut_cell
-  //     std::vector<double> volume_triangulation;
-
-  //     // Data structure for the overlap quadrature rule
-  //     std::vector<quadrature_rule> overlap_qr;
-
-  //     // Data structure for the interface quadrature rule
-  //     std::vector<quadrature_rule> interface_qr;
-
-  //     // Data structure for the facet normals of the interface. The
-  //     // numbering matches the numbering of interface_qr. This means
-  //     // we have one normal for each quadrature point, since this is
-  //     // how the data are grouped during assembly: for each pair of
-  //     // colliding cells, we build a list of quadrature points and a
-  //     // corresponding list of facet normals.
-  //     std::vector<std::vector<double>> interface_n;
-
-  //     // Data structure for the interface triangulation
-  //     std::vector<double> interface_triangulation;
-
-  //     // Data structure for normals to the interface. The numbering
-  //     // should match the numbering of interface_triangulation.
-  //     std::vector<Point> triangulation_normals;
-
-  //     // Iterate over cutting cells
-  //     const auto& cutting_cells = it->second;
-  //     for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
-  //     {
-  //       // Get cutting part and cutting cell
-  //       const std::size_t cutting_part = jt->first;
-  //       const std::size_t cutting_cell_index = jt->second;
-  //       const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
-
-  //       // Topology of this cut part
-  //       const std::size_t tdim_boundary = _boundary_meshes[cutting_part]->topology().dim();
-
-  //       // Must have the same topology at the moment (FIXME)
-  //       dolfin_assert(cutting_cell.mesh().topology().dim() == tdim);
-
-  //       // Data structure for local interface triangulation
-  //       std::vector<double> local_interface_triangulation;
-
-  //       // Data structure for the local interface normals. The
-  //       // numbering should match the numbering of
-  //       // local_interface_triangulation.
-  //       std::vector<Point> local_triangulation_normals;
-
-  //       // Data structure for the overlap part quadrature rule
-  //       quadrature_rule overlap_part_qr;
-
-  //       // Data structure for the interface part quadrature rule
-  //       quadrature_rule interface_part_qr;
-
-  //       // Data structure for the interface part facet normals. The
-  //       // numbering matches the numbering of interface_part_qr.
-  //       std::vector<double> interface_part_n;
-
-  //       // Iterate over boundary cells
-  //       for (auto boundary_cell_index : full_to_bdry[cutting_part][cutting_cell_index])
-  //       {
-  //         // Get the boundary facet as a cell in the boundary mesh
-  //         const Cell boundary_cell(*_boundary_meshes[cutting_part],
-  //                                  boundary_cell_index.first);
-
-  //         // Get the boundary facet as a facet in the full mesh
-  //         const Facet boundary_facet(*_meshes[cutting_part],
-  //                                    boundary_cell_index.second);
-
-  //         // Triangulate intersection of cut cell and boundary cell
-  //         const auto triangulation_cut_boundary
-  //           = cut_cell.triangulate_intersection(boundary_cell);
-
-  //         // The normals to triangulation_cut_boundary
-  //         std::vector<Point> normals_cut_boundary;
-
-  //         // Add quadrature rule and normals for triangulation
-  //         if (triangulation_cut_boundary.size())
-  //         {
-  //           dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-
-  //           const auto num_qr_points
-  //             = _add_quadrature_rule(interface_part_qr,
-  //                                    triangulation_cut_boundary,
-  //                                    tdim_boundary, gdim,
-  //                                    quadrature_order, 1);
-
-  //           const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
-  //           const Point n = -cutting_cell.normal(local_facet_index);
-  //           for (std::size_t i = 0; i < num_qr_points.size(); ++i)
-  //           {
-  //             _add_normal(interface_part_n,
-  //                         n,
-  //                         num_qr_points[i],
-  //                         gdim);
-  //             normals_cut_boundary.push_back(n);
-  //           }
-
-  //           dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-  //         }
-
-  //         // Triangulate intersection of boundary cell and previous volume triangulation
-  //         const auto triangulation_boundary_prev_volume
-  //           = IntersectionTriangulation::triangulate_intersection(boundary_cell,
-  //                                                                 volume_triangulation,
-  //                                                                 tdim);
-
-  //         // Add quadrature rule and normals for triangulation
-  //         if (triangulation_boundary_prev_volume.size())
-  //         {
-  //           dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-
-  //           const auto num_qr_points
-  //             = _add_quadrature_rule(interface_part_qr,
-  //                                    triangulation_boundary_prev_volume,
-  //                                    tdim_boundary, gdim,
-  //                                    quadrature_order, -1);
-
-  //           const std::size_t local_facet_index = cutting_cell.index(boundary_facet);
-  //           const Point n = -cutting_cell.normal(local_facet_index);
-  //           for (std::size_t i = 0; i < num_qr_points.size(); ++i)
-  //             _add_normal(interface_part_n,
-  //                         n,
-  //                         num_qr_points[i],
-  //                         gdim);
-
-  //           dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-  //         }
-
-  //         // Update triangulation
-  //         local_interface_triangulation.insert(local_interface_triangulation.end(),
-  //                                              triangulation_cut_boundary.begin(),
-  //                                              triangulation_cut_boundary.end());
-
-  //         // Update interface facet normals
-  //         local_triangulation_normals.insert(local_triangulation_normals.end(),
-  //                                            normals_cut_boundary.begin(),
-  //                                            normals_cut_boundary.end());
-  //       }
-
-  //       // Triangulate the intersection of the previous interface
-  //       // triangulation and the cutting cell (to remove)
-  //       std::vector<double> triangulation_prev_cutting;
-  //       std::vector<Point> normals_prev_cutting;
-  //       IntersectionTriangulation::triangulate_intersection(cutting_cell,
-  //                                                           interface_triangulation,
-  //                                                           triangulation_normals,
-  //                                                           triangulation_prev_cutting,
-  //                                                           normals_prev_cutting,
-  //                                                           tdim_boundary);
-
-  //       // Add quadrature rule for triangulation
-  //       if (triangulation_prev_cutting.size())
-  //       {
-  //         dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-
-  //         const auto num_qr_points
-  //           = _add_quadrature_rule(interface_part_qr,
-  //                                  triangulation_prev_cutting,
-  //                                  tdim_boundary, gdim,
-  //                                  quadrature_order, -1);
-
-  //         for (std::size_t i = 0; i < num_qr_points.size(); ++i)
-  //           _add_normal(interface_part_n,
-  //                       normals_prev_cutting[i],
-  //                       num_qr_points[i],
-  //                       gdim);
-
-  //         dolfin_assert(interface_part_n.size() == interface_part_qr.first.size());
-  //       }
-
-  //       // Update triangulation
-  //       interface_triangulation.insert(interface_triangulation.end(),
-  //                                      local_interface_triangulation.begin(),
-  //                                      local_interface_triangulation.end());
-
-  //       // Update normals
-  //       triangulation_normals.insert(triangulation_normals.end(),
-  //                                    local_triangulation_normals.begin(),
-  //                                    local_triangulation_normals.end());
-
-  //       // Do the volume segmentation
-
-  //       // Compute volume triangulation of intersection of cut and cutting cells
-  //       const auto triangulation_cut_cutting
-  //         = cut_cell.triangulate_intersection(cutting_cell);
-
-  //       // Compute triangulation of intersection of cutting cell and
-  //       // the (previous) volume triangulation
-  //       const auto triangulation_cutting_prev
-  //         = IntersectionTriangulation::triangulate_intersection(cutting_cell,
-  //                                                               volume_triangulation,
-  //                                                               tdim);
-
-  //       // Add these new triangulations
-  //       volume_triangulation.insert(volume_triangulation.end(),
-  //                                   triangulation_cut_cutting.begin(),
-  //                                   triangulation_cut_cutting.end());
-
-  //       // Add quadrature rule with weights corresponding to the two
-  //       // triangulations
-  //       _add_quadrature_rule(overlap_part_qr,
-  //                            triangulation_cut_cutting,
-  //                            tdim, gdim, quadrature_order, 1);
-  //       _add_quadrature_rule(overlap_part_qr,
-  //                            triangulation_cutting_prev,
-  //                            tdim, gdim, quadrature_order, -1);
-
-  //       // Add quadrature rule for overlap part
-  //       overlap_qr.push_back(overlap_part_qr);
-
-  //       // Add quadrature rule for interface part
-  //       interface_qr.push_back(interface_part_qr);
-
-  //       // Add facet normal for interface part
-  //       interface_n.push_back(interface_part_n);
-  //     }
-
-  //     // Store quadrature rules for cut cell
-  //     _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
-  //     _quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
-
-  //     // Store facet normals for cut cell
-  //     _facet_normals[cut_part][cut_cell_index] = interface_n;
-  //   }
-  // }
-
-
-  // std::cout << "\n\n" << __FUNCTION__ << " done, exiting.";
-  // exit(0);
-
 
   end();
 }
@@ -1674,8 +1130,6 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
     }
   }
 
-  //std::size_t small_elements_cnt = 0;
-
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
@@ -1686,7 +1140,6 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
     // Iterate over cut cells for current part
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it !=cmap.end(); ++it)
-      //if (cut_part == 0 and it->first == 486)
     {
 #ifdef Augustdebug
       std::cout << "-------- new cut cell "<< it->first << '\n';
@@ -1842,7 +1295,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	// also cut_cutting_normals temporarily save normals:
 	std::cout << cut_cutting_interface.size() << ' ' << cut_cutting_normals.size() << std::endl;
 	dolfin_assert(cut_cutting_interface.size() == cut_cutting_normals.size());
-//PPause;
+	//PPause;
 #endif
 
 #ifdef Augustnormaldebug
@@ -1852,7 +1305,6 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	PPause;
 #endif
 
-
 	// Now subtract the net contribution from all other cutting
 	// elements. By net contribution we mean the
 	// inclusion-exclusion principle on the edge
@@ -1860,24 +1312,20 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	if (cut_cutting_interface.size())
 	{
 	  std::vector<std::pair<std::size_t, const Cell> > initial_cells;
-	  //std::vector<const Cell> initial_cells; // do we really need keys here? they are sorted consecutively
 
 	  // All other cutting cells are to be included in the
 	  // inclusion-exclusion
 	  for (auto kt = it->second.begin(); kt != it->second.end(); kt++)
 	  {
-	    //if (kt != jt)
+	    const std::size_t cutting_part_k = kt->first;
+	    if (cutting_part_k != cutting_part_j) // ignore all cells in same part
 	    {
-	      const std::size_t cutting_part_k = kt->first;
-	      if (cutting_part_k != cutting_part_j) // ignore all cells in same part
-	      {
-		const std::size_t cutting_cell_index_k = kt->second;
-		const Cell cutting_cell_k(*(_meshes[cutting_part_k]), cutting_cell_index_k);
-		initial_cells.push_back(std::make_pair(initial_cells.size(), cutting_cell_k));
+	      const std::size_t cutting_cell_index_k = kt->second;
+	      const Cell cutting_cell_k(*(_meshes[cutting_part_k]), cutting_cell_index_k);
+	      initial_cells.push_back(std::make_pair(initial_cells.size(), cutting_cell_k));
 #ifdef Augustdebug
-		std::cout << tools::drawtriangle(cutting_cell_k);
+	      std::cout << tools::drawtriangle(cutting_cell_k);
 #endif
-	      }
 	    }
 	  }
 
@@ -1909,9 +1357,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	    for (const auto cell: initial_cells)
 	    {
 	      bool add_key = false, key_added = false;
-	      //for (const auto polyhedron: cut_cutting_interface)
 	      for (std::size_t p = 0; p < cut_cutting_interface.size(); ++p)
-		//for (const auto simplex: polyhedron)
 		for (std::size_t s = 0; s < cut_cutting_interface[p].size(); ++s)
 		{
 		  const Simplex& simplex = cut_cutting_interface[p][s];
@@ -1932,12 +1378,13 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		      _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts[j], gdim);
 		  }
 		}
+
 	      if (add_key and !key_added)
 	      {
 		std::vector<double> y;
 		cell.second.get_vertex_coordinates(y);
-		Simplex s = convert(y.data(), tdim, gdim);
-		Polyhedron p = std::vector<Simplex>(1, s);
+		const Simplex s = convert(y.data(), tdim, gdim);
+		const Polyhedron p = std::vector<Simplex>(1, s);
 		previous_intersections.push_back(p);
 		previous_intersections_keys.push_back(std::vector<std::size_t>(1, cell.first));
 		key_added = true;
@@ -1994,7 +1441,8 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		// Loop over all intersections from previous
 		// stage. Intersect with the initial_cell with key >
 		// the keys from the intersection.
-		if (previous_intersections.size() != previous_intersections_keys.size()) { PPause; }
+		dolfin_assert(previous_intersections.size() == previous_intersections_keys.size());
+
 		for (std::size_t j = 0; j < previous_intersections.size(); ++j)
 		{
 		  if (previous_intersections_keys[j].size())
@@ -2019,10 +1467,10 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 			const std::vector<double> ii = IntersectionTriangulation::triangulate_intersection(initial_cells[k].second, x, tdim);
 			if (ii.size())
 			{
-			  std::vector<Simplex> pii = convert(ii, tdim, gdim);
+			  const std::vector<Simplex> pii = convert(ii, tdim, gdim);
 			  // add cell key afterwards
-			  //new_polyhedron.push_back(simplex); // wrong
-			  for (const auto s: pii) new_polyhedron.push_back(s);
+			  for (const auto s: pii)
+			    new_polyhedron.push_back(s);
 			  any_intersections = true;
 #ifdef Augustdebug
 			  std::cout << " Found intersection to be: ";
@@ -2053,9 +1501,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		const double sign = std::pow(-1, stage+1);
 		for (const auto polyhedron: new_intersections)
 		  for (const auto simplex: polyhedron)
-		    // for (const auto interface_polyhedron: cut_cutting_interface)
 		    for (std::size_t p = 0; p < cut_cutting_interface.size(); ++p)
-		      //   for (const auto interface_simplex: interface_polyhedron)
 		      for (std::size_t s = 0; s < cut_cutting_interface[p].size(); ++s)
 		      {
 			const Simplex& interface_simplex = cut_cutting_interface[p][s];
@@ -2101,7 +1547,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	    std::cout << cut_cutting_interface_n[i*gdim+j] << ' ';
 	  std::cout << std::endl;
 	}
-	      //PPause;
+	//PPause;
 #endif
 
       } // end loop over cutting
@@ -2109,8 +1555,8 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
       _quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
       _facet_normals[cut_part][cut_cell_index] = interface_n;
 
- #ifdef Augustcheckqrpositive
-     {
+#ifdef Augustcheckqrpositive
+      {
 	std::cout << "\n\nsummary for cut part and cut cell index " << cut_part << " " << cut_cell_index << std::endl;
 	std::cout << "interface_qr.size() = " << interface_qr.size() << std::endl;
 	std::cout << tools::drawtriangle(cut_cell,"'b'",true)<<'\n';
@@ -2148,9 +1594,6 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
     }
   }
 
-  //std::cout << __FUNCTION__ << " done, exiting"; exit(1);
-
-  //std::cout << "small elements " << small_elements_cnt << std::endl;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>
@@ -2210,17 +1653,17 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
     qr.second.push_back(factor*dqr.second[i]);
   }
 
-  // #ifdef Augustdebug
-  //   std::cout << "# display quadrature rule (last " << num_points << " added):"<< std::endl;
-  //   for (std::size_t i = 0; i < qr.second.size(); ++i)
-  //   {
-  //     std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') # "<<qr.second[i]<<' ';
-  //     if (i > (qr.second.size() - num_points))
-  //       std::cout << "(new)";
-  //     std::cout << std::endl;
-  //     //std::cout  << dqr.first[2*i]<<' '<<dqr.first[2*i+1]<< std::endl;
-  //   }
-  // #endif
+#ifdef Augustdebug
+  // std::cout << "# display quadrature rule (last " << num_points << " added):"<< std::endl;
+  // for (std::size_t i = 0; i < qr.second.size(); ++i)
+  // {
+  //   std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') # "<<qr.second[i]<<' ';
+  //   if (i > (qr.second.size() - num_points))
+  //     std::cout << "(new)";
+  //   std::cout << std::endl;
+  //   //std::cout  << dqr.first[2*i]<<' '<<dqr.first[2*i+1]<< std::endl;
+  // }
+#endif
 
   return num_points;
 }
