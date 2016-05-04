@@ -78,7 +78,7 @@ namespace dolfin
                 std::size_t gdim);
 
     // FIXME: Topological dimension (tdim) of the triangulation is needed here.
-    // FIXME: Would to be needed with vector<Points> instead of vector<double>.
+    // FIXME: Would not be needed with vector<Points> instead of vector<double>.
 
     /// Compute triangulation of intersection of a cell with a triangulation
     static std::vector<double>
@@ -87,7 +87,7 @@ namespace dolfin
                 std::size_t tdim);
 
     // FIXME: Topological dimension (tdim) of the triangulation is needed here.
-    // FIXME: Would to be needed with vector<Points> instead of vector<double>.
+    // FIXME: Would not be needed with vector<Points> instead of vector<double>.
 
     /// Compute triangulation of intersection of a cell with a triangulation.
     /// This version also handles normals (for boundary triangulation).
@@ -106,7 +106,8 @@ namespace dolfin
     triangulate_segment_segment(const Point& p0,
                                 const Point& p1,
                                 const Point& q0,
-                                const Point& q1);
+                                const Point& q1,
+                                std::size_t gdim);
 
     /// Triangulate intersection of triangle p0-p1-p2 with segment q0-q1
     static std::vector<double>
@@ -114,7 +115,8 @@ namespace dolfin
                                  const Point& p1,
                                  const Point& p2,
                                  const Point& q0,
-                                 const Point& q1);
+                                 const Point& q1,
+                                 std::size_t gdim);
 
     /// Triangulate intersection of triangle p0-p1-p2 with triangle q0-q1-q2
     static std::vector<double>
@@ -148,7 +150,7 @@ namespace dolfin
 
     // FIXME: this shouldn't be public.
 
-    // Function for creating the convex triangulation of a set of points
+    // Create triangulation of a convex set of points
     static std::vector<double>
     graham_scan(const std::vector<Point>& points);
 

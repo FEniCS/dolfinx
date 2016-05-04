@@ -355,8 +355,8 @@ namespace dolfin
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
     std::vector<double>
-    triangulate_intersection(const MeshEntity& entity) const
-    { return IntersectionTriangulation::triangulate_intersection(*this, entity); }
+    triangulate(const MeshEntity& entity) const
+    { return IntersectionTriangulation::triangulate(*this, entity); }
 
     // FIXME: This function is part of a UFC transition
     /// Get cell coordinate dofs (not vertex coordinates)

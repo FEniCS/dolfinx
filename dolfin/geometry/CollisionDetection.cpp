@@ -69,8 +69,8 @@ bool CollisionDetection::collides(const MeshEntity& entity,
   // Get data
   const MeshGeometry& g = entity.mesh().geometry();
   const unsigned int* v = entity.entities(0);
-  const std::size_t tdim = entity.mesh.topology().dim();
-  const std::size_t gdim = entity.mesh.geometry().dim();
+  const std::size_t tdim = entity.mesh().topology().dim();
+  const std::size_t gdim = entity.mesh().geometry().dim();
 
   // Pick correct specialized implementation
   if (tdim == 1)

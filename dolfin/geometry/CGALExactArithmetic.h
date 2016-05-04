@@ -352,7 +352,7 @@ namespace dolfin
 
   inline
   std::vector<double>
-  cgal_triangulate_intersection_interval_interval
+  cgal_triangulate_interval_interval
   (const std::vector<Point>& interval_0,
    const std::vector<Point>& interval_1,
    std::size_t gdim)
@@ -386,7 +386,7 @@ namespace dolfin
 
   inline
   std::vector<double>
-  cgal_triangulate_intersection_triangle_interval
+  cgal_triangulate_triangle_interval
   (const std::vector<Point>& triangle,
    const std::vector<Point>& interval,
    std::size_t gdim)
@@ -423,7 +423,7 @@ namespace dolfin
 
   inline
   std::vector<double>
-  cgal_triangulate_intersection_triangle_triangle
+  cgal_triangulate_triangle_triangle
   (const std::vector<Point>& tri_0,
    const std::vector<Point>& tri_1)
   {
