@@ -60,8 +60,8 @@ IntersectionTriangulation::triangulate(const std::vector<Point>& points_0,
                                        std::size_t gdim)
 {
   // Get topological dimensions
-  std::size_t d0 = points_0.size() - 1;
-  std::size_t d1 = points_1.size() - 1;
+  const std::size_t d0 = points_0.size() - 1;
+  const std::size_t d1 = points_1.size() - 1;
 
   // Pick correct specialized implementation
   if (d0 == 2 && d1 == 1)
@@ -219,13 +219,13 @@ IntersectionTriangulation::triangulate(const MeshEntity &entity,
 /// Low-level intersection triangulation functions
 //-----------------------------------------------------------------------------
 std::vector<double>
-IntersectionTriangulation::triangulate_segment_segment(const Point& p0,
-                                                       const Point& p1,
-                                                       const Point& q0,
-                                                       const Point& q1,
-                                                       std::size_t gdim)
+IntersectionTriangulation::_triangulate_segment_segment(const Point& p0,
+							const Point& p1,
+							const Point& q0,
+							const Point& q1,
+							std::size_t gdim)
 {
- // Flat array for triangulation
+  // Flat array for triangulation
   std::vector<double> triangulation;
 
   if (CollisionDetection::collides_segment_segment(p0, p1,
@@ -253,18 +253,16 @@ IntersectionTriangulation::triangulate_segment_segment(const Point& p0,
       }
     }
   }
-
-  return CHECK_CGAL(triangulation,
-		    cgal_triangulate_segment_segment(p0, p1, q0, q1));
+  return triangulation;
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
-IntersectionTriangulation::triangulate_triangle_segment(const Point& p0,
-                                                        const Point& p1,
-                                                        const Point& p2,
-                                                        const Point& q0,
-                                                        const Point& q1,
-                                                        std::size_t gdim)
+IntersectionTriangulation::_triangulate_triangle_segment(const Point& p0,
+							 const Point& p1,
+							 const Point& p2,
+							 const Point& q0,
+							 const Point& q1,
+							 std::size_t gdim)
 {
   std::vector<double> triangulation;
   std::vector<Point> points;
@@ -340,17 +338,16 @@ IntersectionTriangulation::triangulate_triangle_segment(const Point& p0,
     return triangulation;
   }
 
-  return CHECK_CGAL(triangulation,
-		    cgal_triangulate_triangle_segment(p0, p1, p2, q0, q1));
+  return triangulation;
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
-IntersectionTriangulation::triangulate_triangle_triangle(const Point& p0,
-                                                         const Point& p1,
-                                                         const Point& p2,
-                                                         const Point& q0,
-                                                         const Point& q1,
-                                                         const Point& q2)
+IntersectionTriangulation::_triangulate_triangle_triangle(const Point& p0,
+							  const Point& p1,
+							  const Point& p2,
+							  const Point& q0,
+							  const Point& q1,
+							  const Point& q2)
 {
   // This algorithm computes the (convex) polygon resulting from the
   // intersection of two triangles. It then triangulates the polygon
@@ -493,18 +490,17 @@ IntersectionTriangulation::triangulate_triangle_triangle(const Point& p0,
     triangulation.push_back(_p2.y());
   }
 
-  return CHECK_CGAL(triangulation,
-		    cgal_triangulate_triangle_triangle(p0, p1, p2, q0, q1, q2));
+  return triangulation;
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
-IntersectionTriangulation::triangulate_tetrahedron_triangle(const Point& p0,
-                                                            const Point& p1,
-                                                            const Point& p2,
-                                                            const Point& p3,
-                                                            const Point& q0,
-                                                            const Point& q1,
-                                                            const Point& q2)
+IntersectionTriangulation::_triangulate_tetrahedron_triangle(const Point& p0,
+							     const Point& p1,
+							     const Point& p2,
+							     const Point& p3,
+							     const Point& q0,
+							     const Point& q1,
+							     const Point& q2)
 {
   // This code mimics the
   // triangulate_tetrahedron_tetrahedron and the
@@ -580,13 +576,13 @@ IntersectionTriangulation::triangulate_tetrahedron_triangle(const Point& p0,
   for (std::size_t f = 0; f < 4; ++f)
   {
     if (CollisionDetection::collides_triangle_segment(tet[tet_faces[f][0]],
-						       tet[tet_faces[f][1]],
-						       tet[tet_faces[f][2]],
-						       tri[0], tri[1]))
+						      tet[tet_faces[f][1]],
+						      tet[tet_faces[f][2]],
+						      tri[0], tri[1]))
       points.push_back(_intersection_face_edge(tet[tet_faces[f][0]],
-					      tet[tet_faces[f][1]],
-					      tet[tet_faces[f][2]],
-					      tri[0], tri[1]));
+					       tet[tet_faces[f][1]],
+					       tet[tet_faces[f][2]],
+					       tri[0], tri[1]));
 
     if (CollisionDetection::collides_triangle_segment(tet[tet_faces[f][0]],
                                                       tet[tet_faces[f][1]],
@@ -602,9 +598,9 @@ IntersectionTriangulation::triangulate_tetrahedron_triangle(const Point& p0,
                                                       tet[tet_faces[f][2]],
                                                       tri[1], tri[2]))
       points.push_back(_intersection_face_edge(tet[tet_faces[f][0]],
-					      tet[tet_faces[f][1]],
-					      tet[tet_faces[f][2]],
-					      tri[1], tri[2]));
+					       tet[tet_faces[f][1]],
+					       tet[tet_faces[f][2]],
+					       tri[1], tri[2]));
   }
 
   // edge edge intersection
@@ -733,14 +729,14 @@ IntersectionTriangulation::triangulate_tetrahedron_triangle(const Point& p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
-IntersectionTriangulation::triangulate_tetrahedron_tetrahedron(const Point& p0,
-                                                               const Point& p1,
-                                                               const Point& p2,
-                                                               const Point& p3,
-                                                               const Point& q0,
-                                                               const Point& q1,
-                                                               const Point& q2,
-                                                               const Point& q3)
+IntersectionTriangulation::_triangulate_tetrahedron_tetrahedron(const Point& p0,
+								const Point& p1,
+								const Point& p2,
+								const Point& p3,
+								const Point& q0,
+								const Point& q1,
+								const Point& q2,
+								const Point& q3)
 {
   // This algorithm computes the intersection of cell_0 and cell_1 by
   // returning a vector<double> with points describing a tetrahedral

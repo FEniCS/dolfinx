@@ -20,6 +20,7 @@
 
 #include <vector>
 #include <dolfin/log/log.h>
+#include "CGALExactArithmetic.h"
 
 #ifndef __INTERSECTION_TRIANGULATION_H
 #define __INTERSECTION_TRIANGULATION_H
@@ -107,7 +108,12 @@ namespace dolfin
                                 const Point& p1,
                                 const Point& q0,
                                 const Point& q1,
-                                std::size_t gdim);
+                                std::size_t gdim)
+    {
+      // return CHECK_CGAL(_triangulate_segment_segment(p0, p1, q0, q1, gdim),
+      // 			cgal_triangulate_segment_segment(p0, p1, q0, q1, gdim));
+      return _triangulate_segment_segment(p0, p1, q0, q1, gdim);
+    }
 
     /// Triangulate intersection of triangle p0-p1-p2 with segment q0-q1
     static std::vector<double>
@@ -116,7 +122,12 @@ namespace dolfin
                                  const Point& p2,
                                  const Point& q0,
                                  const Point& q1,
-                                 std::size_t gdim);
+                                 std::size_t gdim)
+    {
+      // return CHECK_CGAL(_triangulate_triangle_segment(p0, p1, p2, q0, q1, gdim),
+      // 			cgal_triangulate_triangle_segment(p0, p1, p2, q0, q1, gdim));
+      return _triangulate_triangle_segment(p0, p1, p2, q0, q1, gdim);
+    }
 
     /// Triangulate intersection of triangle p0-p1-p2 with triangle q0-q1-q2
     static std::vector<double>
@@ -125,7 +136,12 @@ namespace dolfin
                                   const Point& p2,
                                   const Point& q0,
                                   const Point& q1,
-                                  const Point& q2);
+                                  const Point& q2)
+    {
+      return CHECK_CGAL(_triangulate_triangle_triangle(p0, p1, p2, q0, q1, q2),
+      			cgal_triangulate_triangle_triangle(p0, p1, p2, q0, q1, q2));
+      // return _triangulate_triangle_triangle(p0, p1, p2, q0, q1, q2);
+    }
 
     /// Triangulate intersection of tetrahedron p0-p1-p2-p3 with triangle q0-q1-q2
     static std::vector<double>
@@ -135,7 +151,10 @@ namespace dolfin
                                      const Point& p3,
                                      const Point& q0,
                                      const Point& q1,
-                                     const Point& q2);
+                                     const Point& q2)
+    {
+      return _triangulate_tetrahedron_triangle(p0, p1, p2, p3, q0, q1, q2);
+    }
 
     /// Triangulate intersection of tetrahedron p0-p1-p2-p3 with tetrahedron q0-q1-q2-q3
     static std::vector<double>
@@ -146,15 +165,59 @@ namespace dolfin
                                         const Point& q0,
                                         const Point& q1,
                                         const Point& q2,
-                                        const Point& q3);
+                                        const Point& q3)
+    {
+      return _triangulate_tetrahedron_tetrahedron(p0, p1, p2, p3, q0, q1, q2, q3);
+    }
 
-    // FIXME: this shouldn't be public.
+  private:
+
+    // Implementation of triangulation functions
+
+    static std::vector<double>
+    _triangulate_segment_segment(const Point& p0,
+				 const Point& p1,
+				 const Point& q0,
+				 const Point& q1,
+				 std::size_t gdim);
+
+    static std::vector<double>
+    _triangulate_triangle_segment(const Point& p0,
+				  const Point& p1,
+				  const Point& p2,
+				  const Point& q0,
+				  const Point& q1,
+				  std::size_t gdim);
+
+    static std::vector<double>
+    _triangulate_triangle_triangle(const Point& p0,
+				   const Point& p1,
+				   const Point& p2,
+				   const Point& q0,
+				   const Point& q1,
+				   const Point& q2);
+
+    static std::vector<double>
+    _triangulate_tetrahedron_triangle(const Point& p0,
+				      const Point& p1,
+				      const Point& p2,
+				      const Point& p3,
+				      const Point& q0,
+				      const Point& q1,
+				      const Point& q2);
+    static std::vector<double>
+    _triangulate_tetrahedron_tetrahedron(const Point& p0,
+                                        const Point& p1,
+                                        const Point& p2,
+                                        const Point& p3,
+                                        const Point& q0,
+                                        const Point& q1,
+                                        const Point& q2,
+					 const Point& q3);
 
     // Create triangulation of a convex set of points
     static std::vector<double>
     graham_scan(const std::vector<Point>& points);
-
-  private:
 
     //--- Utility functions ---
 
@@ -173,6 +236,7 @@ namespace dolfin
                                          const Point& t,
                                          const Point& a,
                                          const Point& b);
+
 
   };
 
