@@ -260,7 +260,7 @@ bool CollisionDetection::_collides_segment_segment_1d(double p0,
   const double a0 = std::min(p0, p1);
   const double b0 = std::max(p0, p1);
   const double a1 = std::min(q0, q1);
-  const double b1 = std::max(q0, q2);
+  const double b1 = std::max(q0, q1);
 
   // Check for collisions
   const double dx = std::min(b0 - a0, b1 - a1);
