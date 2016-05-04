@@ -66,8 +66,7 @@ namespace dolfin
     ///         A flattened array of quadrature points and a
     ///         corresponding array of quadrature weights.
     static std::pair<std::vector<double>, std::vector<double>>
-    compute_quadrature_rule(const std::vector<double>& coordinates,
-                            std::size_t tdim,
+    compute_quadrature_rule(const std::vector<Point>& coordinates,
                             std::size_t gdim,
                             std::size_t order);
 
@@ -86,7 +85,7 @@ namespace dolfin
     ///         A flattened array of quadrature points and a
     ///         corresponding array of quadrature weights.
     static std::pair<std::vector<double>, std::vector<double>>
-    compute_quadrature_rule_interval(const std::vector<double>& coordinates,
+    compute_quadrature_rule_interval(const std::vector<Point>& coordinates,
                                      std::size_t gdim,
                                      std::size_t order);
 
@@ -105,7 +104,7 @@ namespace dolfin
     ///         A flattened array of quadrature points and a
     ///         corresponding array of quadrature weights.
     static std::pair<std::vector<double>, std::vector<double>>
-    compute_quadrature_rule_triangle(const std::vector<double>& coordinates,
+    compute_quadrature_rule_triangle(const std::vector<Point>& coordinates,
                                      std::size_t gdim,
                                      std::size_t order);
 
@@ -124,7 +123,7 @@ namespace dolfin
     ///         A flattened array of quadrature points and a
     ///         corresponding array of quadrature weights.
     static std::pair<std::vector<double>, std::vector<double>>
-    compute_quadrature_rule_tetrahedron(const std::vector<double>& coordinates,
+    compute_quadrature_rule_tetrahedron(const std::vector<Point>& coordinates,
                                         std::size_t gdim,
                                         std::size_t order);
 

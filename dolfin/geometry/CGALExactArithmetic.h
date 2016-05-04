@@ -43,7 +43,6 @@
 #include <sstream>
 #include <dolfin/log/log.h>
 #include <dolfin/math/basic.h>
-#include "IntersectionTriangulation.h"
 
 // Check that results from DOLFIN and CGAL match
 namespace dolfin

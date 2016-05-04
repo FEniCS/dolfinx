@@ -344,7 +344,7 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const std::vector<Point>& co
     {
       double a[] = {coordinates[0].x(), coordinates[0].y()};
       double b[] = {coordinates[1].x(), coordinates[1].y()};
-      double c[] = {coordinates[2].x(), coordinates[2].y()}
+      double c[] = {coordinates[2].x(), coordinates[2].y()};
       det = orient2d(a,b,c);
 
       break;
