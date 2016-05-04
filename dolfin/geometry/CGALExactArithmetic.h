@@ -170,6 +170,7 @@ typedef CGAL::Cartesian<ExactNumber>   ExactKernel;
 typedef ExactKernel::Point_2           Point_2;
 typedef ExactKernel::Triangle_2        Triangle_2;
 typedef ExactKernel::Segment_2         Segment_2;
+typedef ExactKernel::Intersect_2       Intersect_2;
 
 namespace
 {
@@ -262,11 +263,19 @@ namespace
 
   inline std::vector<double> flatten(const std::vector<Point_2>& cgal_points)
   {
-    std::vector<dolfin::Point> points(cgal_points.size());
-    for (std::size_t i = 0; i < points.size(); ++i)
-      points[i] = dolfin::Point(CGAL::to_double(cgal_points[i].x()),
-				CGAL::to_double(cgal_points[i].y()));
-    const std::vector<double> triangulation = dolfin::IntersectionTriangulation::graham_scan(points);
+    dolfin_assert(cgal_points.size() == 4);
+    const std::vector<double> triangulation = {{ CGAL::to_double(cgal_points[0].x()),
+						 CGAL::to_double(cgal_points[0].y()),
+						 CGAL::to_double(cgal_points[2].x()),
+						 CGAL::to_double(cgal_points[2].y()),
+						 CGAL::to_double(cgal_points[1].x()),
+						 CGAL::to_double(cgal_points[1].y()),
+						 CGAL::to_double(cgal_points[0].x()),
+						 CGAL::to_double(cgal_points[0].y()),
+						 CGAL::to_double(cgal_points[3].x()),
+						 CGAL::to_double(cgal_points[3].y()),
+						 CGAL::to_double(cgal_points[2].x()),
+						 CGAL::to_double(cgal_points[2].y()) }};
     return triangulation;
   }
 
@@ -275,7 +284,8 @@ namespace
   //------------------------------------------------------------------------------
 
   inline std::vector<double>
-  parse_segment_segment(const CGAL::cpp11::result_of<ExactKernel::Intersect_2(Segment_2, Segment_2)>::type ii)
+  parse_segment_segment
+  (const CGAL::cpp11::result_of<Intersect_2(Segment_2, Segment_2)>::type ii)
   {
     const Point_2* p = boost::get<Point_2>(&*ii);
     if (p)
@@ -290,7 +300,8 @@ namespace
   }
 
   inline std::vector<double>
-  parse_triangle_segment(const CGAL::cpp11::result_of<ExactKernel::Intersect_2(Triangle_2, Segment_2)>::type ii)
+  parse_triangle_segment
+  (const CGAL::cpp11::result_of<Intersect_2(Triangle_2, Segment_2)>::type ii)
   {
     const Point_2* p = boost::get<Point_2>(&*ii);
     if (p)
@@ -305,7 +316,8 @@ namespace
   }
 
   inline std::vector<double>
-  parse_triangle_triangle(const CGAL::cpp11::result_of<ExactKernel::Intersect_2(Triangle_2, Triangle_2)>::type ii)
+  parse_triangle_triangle
+  (const CGAL::cpp11::result_of<Intersect_2(Triangle_2, Triangle_2)>::type ii)
   {
 
     const Point_2* p = boost::get<Point_2>(&*ii);
@@ -322,7 +334,10 @@ namespace
 
     const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii);
     if (cgal_points)
+    {
+      dolfin_assert(cgal_points->size() == 4);
       return flatten(*cgal_points);
+    }
 
     dolfin::error("Unexpected behavior in CGALExactArithmetic parse_triangle_triangle");
     return std::vector<double>();
