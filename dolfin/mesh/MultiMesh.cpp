@@ -36,7 +36,7 @@
 #include <iomanip>
 
 //#define Augustcheckqrpositive
-#define Augustdebug
+//#define Augustdebug
 //#define Augustnormaldebug
 
 using namespace dolfin;
