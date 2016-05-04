@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-03
+// Last changed: 2016-05-04
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "IntersectionTriangulation.h"
@@ -31,6 +31,12 @@ std::vector<double>
 IntersectionTriangulation::triangulate_intersection(const MeshEntity& entity_0,
 						    const MeshEntity& entity_1)
 {
+  // Get geometry and vertex data
+  const MeshGeometry& geometry_0 = entity_0.mesh().geometry();
+  const MeshGeometry& geometry_1 = entity_1.mesh().geometry();
+  const unsigned int* vertices_0 = entity_0.entities(0);
+  const unsigned int* vertices_1 = entity_1.entities(0);
+
   switch (entity_0.dim())
   {
   case 0:
@@ -288,7 +294,7 @@ IntersectionTriangulation::triangulate_intersection_interval_interval
   // Flat array for triangulation
   std::vector<double> triangulation;
 
-  if (CollisionDetection::collides_edge_edge(interval_0[0], interval_0[1],
+  if (CollisionDetection::collides_segment_segment(interval_0[0], interval_0[1],
                                              interval_1[0], interval_1[1]))
   {
     // List of colliding points
@@ -296,10 +302,10 @@ IntersectionTriangulation::triangulate_intersection_interval_interval
 
     for (std::size_t i = 0; i < 2; ++i)
     {
-      if (CollisionDetection::collides_interval_point(interval_0[0], interval_0[1],
+      if (CollisionDetection::collides_segment_point(interval_0[0], interval_0[1],
                                                       interval_1[i]))
         points.push_back(interval_1[i]);
-      if (CollisionDetection::collides_interval_point(interval_1[0], interval_1[1],
+      if (CollisionDetection::collides_segment_point(interval_1[0], interval_1[1],
                                                       interval_0[i]))
         points.push_back(interval_0[i]);
     }
@@ -345,15 +351,15 @@ IntersectionTriangulation::triangulate_intersection_triangle_interval
   //   points.push_back(pt);
 
   // Detect edge intersection points
-  if (CollisionDetection::collides_edge_edge(triangle[0], triangle[1],
+  if (CollisionDetection::collides_segment_segment(triangle[0], triangle[1],
 					     interval[0], interval[1]))
     points.push_back(intersection_edge_edge(triangle[0], triangle[1],
 					    interval[0], interval[1]));
-  if (CollisionDetection::collides_edge_edge(triangle[0], triangle[2],
+  if (CollisionDetection::collides_segment_segment(triangle[0], triangle[2],
 					     interval[0], interval[1]))
     points.push_back(intersection_edge_edge(triangle[0], triangle[2],
 					    interval[0], interval[1]));
-  if (CollisionDetection::collides_edge_edge(triangle[1], triangle[2],
+  if (CollisionDetection::collides_segment_segment(triangle[1], triangle[2],
 					     interval[0], interval[1]))
     points.push_back(intersection_edge_edge(triangle[1], triangle[2],
 					    interval[0], interval[1]));
@@ -511,7 +517,7 @@ IntersectionTriangulation::triangulate_intersection_triangle_triangle
       // Point point;
       // if (intersection_edge_edge_2d(p0, q0, p1, q1, point))
       //   points.push_back(point);
-      if (CollisionDetection::collides_edge_edge(p0, q0, p1, q1))
+      if (CollisionDetection::collides_segment_segment(p0, q0, p1, q1))
 	points.push_back(intersection_edge_edge_2d(p0, q0, p1, q1));
     }
   }
@@ -844,7 +850,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
       // 				 ptb))
       // 	points.push_back(ptb);
 
-      if (CollisionDetection::collides_triangle_interval(tet_0[faces_0[f][0]],
+      if (CollisionDetection::collides_triangle_segment(tet_0[faces_0[f][0]],
 							 tet_0[faces_0[f][1]],
 							 tet_0[faces_0[f][2]],
 							 tet_1[edges_1[e][0]],
@@ -855,7 +861,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
 						tet_1[edges_1[e][0]],
 						tet_1[edges_1[e][1]]));
 
-      if (CollisionDetection::collides_triangle_interval(tet_1[faces_1[f][0]],
+      if (CollisionDetection::collides_triangle_segment(tet_1[faces_1[f][0]],
 							 tet_1[faces_1[f][1]],
 							 tet_1[faces_1[f][2]],
 							 tet_0[edges_0[e][0]],
@@ -877,7 +883,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_tetrahedron
       // 				 tet_1[edges_1[j][1]],
       // 				 pt))
       // 	points.push_back(pt);
-      if (CollisionDetection::collides_edge_edge(tet_0[edges_0[i][0]],
+      if (CollisionDetection::collides_segment_segment(tet_0[edges_0[i][0]],
 						 tet_0[edges_0[i][1]],
 						 tet_1[edges_1[j][0]],
 						 tet_1[edges_1[j][1]]))
@@ -1170,7 +1176,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle
   //     points.push_back(pt);
 
   for (std::size_t e = 0; e < 6; ++e)
-    if (CollisionDetection::collides_triangle_interval(tri[0], tri[1], tri[2],
+    if (CollisionDetection::collides_triangle_segment(tri[0], tri[1], tri[2],
 						       tet[tet_edges[e][0]],
 						       tet[tet_edges[e][1]]))
       points.push_back(intersection_face_edge(tri[0], tri[1], tri[2],
@@ -1218,7 +1224,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle
 
   for (std::size_t f = 0; f < 4; ++f)
   {
-    if (CollisionDetection::collides_triangle_interval(tet[tet_faces[f][0]],
+    if (CollisionDetection::collides_triangle_segment(tet[tet_faces[f][0]],
 						       tet[tet_faces[f][1]],
 						       tet[tet_faces[f][2]],
 						       tri[0], tri[1]))
@@ -1227,7 +1233,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle
 					      tet[tet_faces[f][2]],
 					      tri[0], tri[1]));
 
-    if (CollisionDetection::collides_triangle_interval(tet[tet_faces[f][0]],
+    if (CollisionDetection::collides_triangle_segment(tet[tet_faces[f][0]],
 						       tet[tet_faces[f][1]],
 						       tet[tet_faces[f][2]],
 						       tri[0], tri[2]))
@@ -1236,7 +1242,7 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle
 					      tet[tet_faces[f][2]],
 					      tri[0], tri[2]));
 
-    if (CollisionDetection::collides_triangle_interval(tet[tet_faces[f][0]],
+    if (CollisionDetection::collides_triangle_segment(tet[tet_faces[f][0]],
 						       tet[tet_faces[f][1]],
 						       tet[tet_faces[f][2]],
 						       tri[1], tri[2]))
@@ -1269,21 +1275,21 @@ IntersectionTriangulation::triangulate_intersection_tetrahedron_triangle
   // edge edge intersection
   for (std::size_t f = 0; f < 6; ++f)
   {
-    if (CollisionDetection::collides_edge_edge(tet[tet_edges[f][0]],
+    if (CollisionDetection::collides_segment_segment(tet[tet_edges[f][0]],
 					       tet[tet_edges[f][1]],
 					       tri[0], tri[1]))
       points.push_back(intersection_edge_edge(tet[tet_edges[f][0]],
 					      tet[tet_edges[f][1]],
 					      tri[0], tri[1]));
 
-    if (CollisionDetection::collides_edge_edge(tet[tet_edges[f][0]],
+    if (CollisionDetection::collides_segment_segment(tet[tet_edges[f][0]],
 					       tet[tet_edges[f][1]],
 					       tri[0], tri[2]))
       points.push_back(intersection_edge_edge(tet[tet_edges[f][0]],
 					      tet[tet_edges[f][1]],
 					      tri[0], tri[2]));
 
-    if (CollisionDetection::collides_edge_edge(tet[tet_edges[f][0]],
+    if (CollisionDetection::collides_segment_segment(tet[tet_edges[f][0]],
 					       tet[tet_edges[f][1]],
 					       tri[1], tri[2]))
       points.push_back(intersection_edge_edge(tet[tet_edges[f][0]],
@@ -2014,22 +2020,5 @@ IntersectionTriangulation::intersection_face_edge(const Point& r,
   // return true;
 
   return CHECK_CGAL(pt, cgal_intersection_face_edge_2d(r, s, t, a, b));
-}
-//------------------------------------------------------------------------------
-double IntersectionTriangulation::minimum_angle(double* a, double* b, double* c)
-{
-  // See Shewchuk: Lecture Notes on Geometric Robustness, April 15, 2013
-  const double ab[2] = {a[0]-b[0], a[1]-b[1]};
-  const double ac[2] = {a[0]-c[0], a[1]-c[1]};
-  const double bc[2] = {b[0]-c[0], b[1]-c[1]};
-  double l1 = std::sqrt(ab[0]*ab[0] + ab[1]*ab[1]);
-  double l2 = std::sqrt(ac[0]*ac[0] + ac[1]*ac[1]);
-  double l3 = std::sqrt(bc[0]*bc[0] + bc[1]*bc[1]);
-  // Sort 3-way with l3 smallest
-  if (l2 > l1) std::swap(l1, l2);
-  if (l3 > l2) std::swap(l2, l3);
-  if (l2 > l1) std::swap(l1, l2);
-  const double sin_alpha = orient2d(a, b, c) / (l1 * l2);
-  return asin(sin_alpha);
 }
 //------------------------------------------------------------------------------

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-05-03
+// Last changed: 2016-05-04
 //
 // Developer note:
 //
@@ -75,6 +75,8 @@ namespace dolfin
 					const std::vector<double>& result_cgal,
 					std::string function)
   {
+    // FIXME: do we expect dolfin and cgal data to be in the same order?
+
     if (result_dolfin.size() != result_cgal.size())
     {
       std::stringstream s_dolfin;
@@ -246,7 +248,7 @@ namespace
       return triangulation;
     }
 
-    const Triangle_2* t = boost::get<Triangle_2>(&*ii);
+    const Triangle_2* t = boost::relaxed_get<Triangle_2>(&*ii);
     if (t)
     {
       std::vector<double> triangulation = {{ CGAL::to_double(t->vertex(0)[0]),
@@ -258,7 +260,7 @@ namespace
       return triangulation;
     }
 
-    const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii);
+    const std::vector<Point_2>* cgal_points = boost::relaxed_get<std::vector<Point_2>>(&*ii);
     if (cgal_points)
     {
       std::vector<double> triangulation;
@@ -282,28 +284,7 @@ namespace dolfin
   // Reference implementations of DOLFIN collision detection functions
   // using CGAL exact arithmetic
   // ---------------------------------------------------------------------------
-  inline bool cgal_collides_interval_interval(const MeshEntity& interval_0,
-					      const MeshEntity& interval_1)
-  {
-    const MeshGeometry& geometry_0 = interval_0.mesh().geometry();
-    const MeshGeometry& geometry_1 = interval_1.mesh().geometry();
-    const unsigned int* vertices_0 = interval_0.entities(0);
-    const unsigned int* vertices_1 = interval_1.entities(0);
-
-    const Point a(geometry_0.point(vertices_0[0])[0],
-                  geometry_0.point(vertices_0[0])[1]);
-    const Point b(geometry_0.point(vertices_0[1])[0],
-                  geometry_0.point(vertices_0[1])[1]);
-    const Point c(geometry_1.point(vertices_1[0])[0],
-                  geometry_1.point(vertices_1[0])[1]);
-    const Point d(geometry_1.point(vertices_1[1])[0],
-                  geometry_1.point(vertices_1[1])[1]);
-
-    return CGAL::do_intersect(convert_to_cgal(a, b),
-                              convert_to_cgal(c, d));
-  }
-
-  inline bool cgal_collides_edge_edge(const Point& a,
+  inline bool cgal_collides_segment_segment(const Point& a,
 				      const Point& b,
 				      const Point& c,
 				      const Point& d)
@@ -312,7 +293,7 @@ namespace dolfin
 			      convert_to_cgal(c, d));
   }
 
-  inline bool cgal_collides_interval_point(const Point& p0,
+  inline bool cgal_collides_segment_point(const Point& p0,
 					   const Point& p1,
 					   const Point& point)
   {
@@ -338,7 +319,7 @@ namespace dolfin
 			      convert_to_cgal(point));
   }
 
-  inline bool cgal_collides_triangle_interval(const Point& p0,
+  inline bool cgal_collides_triangle_segment(const Point& p0,
 					      const Point& p1,
 					      const Point& p2,
 					      const Point& q0,

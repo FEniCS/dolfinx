@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-03
+// Last changed: 2016-05-04
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -66,17 +66,44 @@ using namespace dolfin;
 bool CollisionDetection::collides(const MeshEntity& entity,
                                   const Point& point)
 {
+  // Get entity coordinates
+  const MeshGeometry& geometry = entity.mesh().geometry();
+  const unsigned int* vertices = entity.entities(0);
+
+  // Choose according to topological dimension
   switch (entity.dim())
   {
   case 0:
     dolfin_not_implemented();
     break;
   case 1:
-    return collides_interval_point(entity, point);
+    return collides_segment_point(geometry.point(vertices[0]),
+				  geometry.point(vertices[1]),
+				  point);
   case 2:
-    return collides_triangle_point(entity, point);
+    {
+      switch(geometry.dim())
+      {
+      case 2:
+	return collides_triangle_point_2d(geometry.point(vertices[0]),
+					  geometry.point(vertices[1]),
+					  geometry.point(vertices[2]),
+					  point);
+      case 3:
+	return collides_triangle_point(geometry.point(vertices[0]),
+				       geometry.point(vertices[1]),
+				       geometry.point(vertices[2]),
+				       point);
+      default:
+	break;
+      }
+    }
   case 3:
-    return collides_tetrahedron_point(entity, point);
+    return collides_tetrahedron_point(geometry.point(vertices[0]),
+				      geometry.point(vertices[1]),
+				      geometry.point(vertices[2]),
+				      geometry.point(vertices[3]),
+				      point);
   default:
     dolfin_error("CollisionDetection.cpp",
 		 "collides entity with point",
@@ -86,10 +113,15 @@ bool CollisionDetection::collides(const MeshEntity& entity,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool
-CollisionDetection::collides(const MeshEntity& entity_0,
-			     const MeshEntity& entity_1)
+bool CollisionDetection::collides(const MeshEntity& entity_0,
+				  const MeshEntity& entity_1)
 {
+  // Get coordinates
+  const MeshGeometry& geometry_0 = entity_0.mesh().geometry();
+  const MeshGeometry& geometry_1 = entity_1.mesh().geometry();
+  const unsigned int* vertices_0 = entity_0.entities(0);
+  const unsigned int* vertices_1 = entity_1.entities(0);
+
   switch (entity_0.dim())
   {
   case 0:
@@ -104,9 +136,16 @@ CollisionDetection::collides(const MeshEntity& entity_0,
       dolfin_not_implemented();
       break;
     case 1:
-      return collides_interval_interval(entity_0, entity_1);
+      return collides_interval_interval_1d(geometry_0.point(vertices_0[0])[0],
+					   geometry_0.point(vertices_0[1])[0],
+					   geometry_1.point(vertices_1[0])[0],
+					   geometry_1.point(vertices_1[1])[0]);
     case 2:
-      return collides_triangle_interval(entity_1, entity_0);
+      return collides_triangle_segment(geometry_1.point(vertices_1[0]),
+				       geometry_1.point(vertices_1[1]),
+				       geometry_1.point(vertices_1[2]),
+				       geometry_0.point(vertices_0[0]),
+				       geometry_0.point(vertices_0[1]));
     case 3:
       dolfin_not_implemented();
       break;
@@ -124,11 +163,26 @@ CollisionDetection::collides(const MeshEntity& entity_0,
       dolfin_not_implemented();
       break;
     case 1:
-      return collides_triangle_interval(entity_0, entity_1);
+      return collides_triangle_segment(geometry_0.point(vertices_0[0]),
+				       geometry_0.point(vertices_0[1]),
+				       geometry_0.point(vertices_0[2]),
+				       geometry_1.point(vertices_1[0]),
+				       geometry_1.point(vertices_1[1]));
     case 2:
-      return collides_triangle_triangle(entity_0, entity_1);
+      return collides_triangle_triangle(geometry_0.point(vertices_0[0]),
+					geometry_0.point(vertices_0[1]),
+					geometry_0.point(vertices_0[2]),
+					geometry_1.point(vertices_1[0]),
+					geometry_1.point(vertices_1[1]),
+					geometry_1.point(vertices_1[2]));
     case 3:
-      return collides_tetrahedron_triangle(entity_1, entity_0);
+      return collides_tetrahedron_triangle(geometry_1.point(vertices_1[0]),
+					   geometry_1.point(vertices_1[1]),
+					   geometry_1.point(vertices_1[2]),
+					   geometry_1.point(vertices_1[3]),
+					   geometry_0.point(vertices_0[0]),
+					   geometry_0.point(vertices_0[1]),
+					   geometry_0.point(vertices_0[2]));
     default:
       dolfin_error("CollisionDetection.cpp",
 		   "collides entity_0 with entity_1",
@@ -146,10 +200,23 @@ CollisionDetection::collides(const MeshEntity& entity_0,
       dolfin_not_implemented();
       break;
     case 2:
-      return collides_tetrahedron_triangle(entity_0, entity_1);
+      return collides_tetrahedron_triangle(geometry_0.point(vertices_0[0]),
+					   geometry_0.point(vertices_0[1]),
+					   geometry_0.point(vertices_0[2]),
+					   geometry_0.point(vertices_0[3]),
+					   geometry_1.point(vertices_1[0]),
+					   geometry_1.point(vertices_1[1]),
+					   geometry_1.point(vertices_1[2]));
       break;
     case 3:
-      return collides_tetrahedron_tetrahedron(entity_0, entity_1);
+      return collides_tetrahedron_tetrahedron(geometry_0.point(vertices_0[0]),
+					      geometry_0.point(vertices_0[1]),
+					      geometry_0.point(vertices_0[2]),
+					      geometry_0.point(vertices_0[3]),
+					      geometry_1.point(vertices_1[0]),
+					      geometry_1.point(vertices_1[1]),
+					      geometry_1.point(vertices_1[2]),
+					      geometry_1.point(vertices_1[3]));
       break;
     default:
       dolfin_error("CollisionDetection.cpp",
@@ -166,287 +233,50 @@ CollisionDetection::collides(const MeshEntity& entity_0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::collides_interval_point(const MeshEntity& entity,
-                                                 const Point& point)
+bool CollisionDetection::_collides_segment_point(const Point& p0,
+						 const Point& p1,
+						 const Point& point)
 {
-  // Get coordinates
-  const MeshGeometry& geometry = entity.mesh().geometry();
-  const unsigned int* vertices = entity.entities(0);
-  return collides_interval_point(geometry.point(vertices[0]),
-                                 geometry.point(vertices[1]),
-                                 point);
-}
-//-----------------------------------------------------------------------------
-bool
-CollisionDetection::dolfin_collides_interval_interval(const MeshEntity& interval_0,
-						      const MeshEntity& interval_1)
-{
-  // Get coordinates
-  const MeshGeometry& geometry_0 = interval_0.mesh().geometry();
-  const MeshGeometry& geometry_1 = interval_1.mesh().geometry();
-  const unsigned int* vertices_0 = interval_0.entities(0);
-  const unsigned int* vertices_1 = interval_1.entities(0);
-  const double x00 = geometry_0.point(vertices_0[0])[0];
-  const double x01 = geometry_0.point(vertices_0[1])[0];
-  const double x10 = geometry_1.point(vertices_1[0])[0];
-  const double x11 = geometry_1.point(vertices_1[1])[0];
+  // Compute angle between v = p1 - p0 and w = point - p0
+  Point v = p1 - p0;
+  const double vnorm = v.norm();
 
-  const double a0 = std::min(x00, x01);
-  const double b0 = std::max(x00, x01);
-  const double a1 = std::min(x10, x11);
-  const double b1 = std::max(x10, x11);
-
-  // Check for collisions
-  const double dx = std::min(b0 - a0, b1 - a1);
-  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
-  const bool result = b1 > a0 - eps && a1 < b0 + eps;
-
-  return result;
-}
-//-----------------------------------------------------------------------------
-bool CollisionDetection::collides_triangle_point(const MeshEntity& triangle,
-                                                 const Point& point)
-{
-  dolfin_assert(triangle.mesh().topology().dim() == 2);
-
-  const MeshGeometry& geometry = triangle.mesh().geometry();
-  const unsigned int* vertices = triangle.entities(0);
-
-  if (triangle.mesh().geometry().dim() == 2)
-    return collides_triangle_point_2d(geometry.point(vertices[0]),
-                                      geometry.point(vertices[1]),
-                                      geometry.point(vertices[2]),
-                                      point);
-  else
-    return collides_triangle_point(geometry.point(vertices[0]),
-                                   geometry.point(vertices[1]),
-                                   geometry.point(vertices[2]),
-                                   point);
-}
-//------------------------------------------------------------------------------
-bool CollisionDetection::collides_triangle_interval(const MeshEntity& triangle,
-						    const MeshEntity& interval)
-{
-  dolfin_assert(triangle.mesh().topology().dim() == 2);
-  dolfin_assert(interval.mesh().topology().dim() == 1);
-
-  const MeshGeometry& geometry_t = triangle.mesh().geometry();
-  const unsigned int* vertices_t = triangle.entities(0);
-  const MeshGeometry& geometry_i = interval.mesh().geometry();
-  const unsigned int* vertices_i = interval.entities(0);
-
-  return collides_triangle_interval(geometry_t.point(vertices_t[0]),
-				    geometry_t.point(vertices_t[1]),
-				    geometry_t.point(vertices_t[2]),
-				    geometry_i.point(vertices_i[0]),
-				    geometry_i.point(vertices_i[1]));
-}
-//-----------------------------------------------------------------------------
-bool
-CollisionDetection::collides_triangle_triangle(const MeshEntity& triangle_0,
-                                               const MeshEntity& triangle_1)
-{
-  dolfin_assert(triangle_0.mesh().topology().dim() == 2);
-  dolfin_assert(triangle_1.mesh().topology().dim() == 2);
-
-  // Get vertices as points
-  const MeshGeometry& geometry_0 = triangle_0.mesh().geometry();
-  const unsigned int* vertices_0 = triangle_0.entities(0);
-  const MeshGeometry& geometry_1 = triangle_1.mesh().geometry();
-  const unsigned int* vertices_1 = triangle_1.entities(0);
-
-  return collides_triangle_triangle(geometry_0.point(vertices_0[0]),
-				    geometry_0.point(vertices_0[1]),
-				    geometry_0.point(vertices_0[2]),
-				    geometry_1.point(vertices_1[0]),
-				    geometry_1.point(vertices_1[1]),
-				    geometry_1.point(vertices_1[2]));
-}
-//-----------------------------------------------------------------------------
-bool
-CollisionDetection::collides_tetrahedron_point(const MeshEntity& tetrahedron,
-                                               const Point& point)
-{
-  dolfin_assert(tetrahedron.mesh().topology().dim() == 3);
-
-  // Get the vertices as points
-  const MeshGeometry& geometry = tetrahedron.mesh().geometry();
-  const unsigned int* vertices = tetrahedron.entities(0);
-
-  return collides_tetrahedron_point(geometry.point(vertices[0]),
-				    geometry.point(vertices[1]),
-				    geometry.point(vertices[2]),
-				    geometry.point(vertices[3]),
-				    point);
-}
-//-----------------------------------------------------------------------------
-bool
-CollisionDetection::collides_tetrahedron_triangle(const MeshEntity& tetrahedron,
-                                                  const MeshEntity& triangle)
-{
-  dolfin_assert(tetrahedron.mesh().topology().dim() == 3);
-  dolfin_assert(triangle.mesh().topology().dim() == 2);
-
-  // Get the vertices of the tetrahedron as points
-  const MeshGeometry& geometry_tet = tetrahedron.mesh().geometry();
-  const unsigned int* vertices_tet = tetrahedron.entities(0);
-
-  // Get the vertices of the triangle as points
-  const MeshGeometry& geometry_tri = triangle.mesh().geometry();
-  const unsigned int* vertices_tri = triangle.entities(0);
-
-  return collides_tetrahedron_triangle(geometry_tet.point(vertices_tet[0]),
-				       geometry_tet.point(vertices_tet[1]),
-				       geometry_tet.point(vertices_tet[2]),
-				       geometry_tet.point(vertices_tet[3]),
-				       geometry_tri.point(vertices_tri[0]),
-				       geometry_tri.point(vertices_tri[1]),
-				       geometry_tri.point(vertices_tri[2]));
-}
-//-----------------------------------------------------------------------------
-bool
-CollisionDetection::collides_tetrahedron_tetrahedron
-(const MeshEntity& tetrahedron_0,
- const MeshEntity& tetrahedron_1)
-{
-  // This algorithm checks whether two tetrahedra intersect.
-
-  // Algorithm and source code from Fabio Ganovelli, Federico Ponchio
-  // and Claudio Rocchini: Fast Tetrahedron-Tetrahedron Overlap
-  // Algorithm, Journal of Graphics Tools, 7(2), 2002. DOI:
-  // 10.1080/10867651.2002.10487557. Source code available at
-  // http://web.archive.org/web/20031130075955/
-  // http://www.acm.org/jgt/papers/GanovelliPonchioRocchini02/tet_a_tet.html
-
-  dolfin_assert(tetrahedron_0.mesh().topology().dim() == 3);
-  dolfin_assert(tetrahedron_1.mesh().topology().dim() == 3);
-
-  // Get the vertices as points
-  const MeshGeometry& geometry = tetrahedron_0.mesh().geometry();
-  const unsigned int* vertices = tetrahedron_0.entities(0);
-  const MeshGeometry& geometry_q = tetrahedron_1.mesh().geometry();
-  const unsigned int* vertices_q = tetrahedron_1.entities(0);
-  std::vector<Point> V1(4), V2(4);
-  for (std::size_t i = 0; i < 4; ++i)
-  {
-    V1[i] = geometry.point(vertices[i]);
-    V2[i] = geometry_q.point(vertices_q[i]);
-  }
-
-  // Get the vectors between V2 and V1[0]
-  std::vector<Point> P_V1(4);
-  for (std::size_t i = 0; i < 4; ++i)
-    P_V1[i] = V2[i]-V1[0];
-
-  // Data structure for edges of V1 and V2
-  std::vector<Point> e_v1(5), e_v2(5);
-  e_v1[0] = V1[1] - V1[0];
-  e_v1[1] = V1[2] - V1[0];
-  e_v1[2] = V1[3] - V1[0];
-  Point n = e_v1[1].cross(e_v1[0]);
-
-  // Maybe flip normal. Normal should be outward.
-  if (n.dot(e_v1[2]) > 0)
-    n *= -1;
-  std::vector<int> masks(4);
-  std::vector<std::vector<double>> Coord_1(4, std::vector<double>(4));
-  if (separating_plane_face_A_1(P_V1, n, Coord_1[0], masks[0]))
+  // p0 and p1 are the same points
+  if (vnorm < DOLFIN_EPS_LARGE)
     return false;
-  n = e_v1[0].cross(e_v1[2]);
 
-  // Maybe flip normal
-  if (n.dot(e_v1[1]) > 0)
-    n *= -1;
-  if (separating_plane_face_A_1(P_V1, n, Coord_1[1], masks[1]))
-    return false;
-  if (separating_plane_edge_A(Coord_1, masks, 0, 1))
-    return false;
-  n = e_v1[2].cross(e_v1[1]);
+  const Point w = point - p0;
+  const double wnorm = w.norm();
 
-  // Maybe flip normal
-  if (n.dot(e_v1[0]) > 0)
-    n *= -1;
-  if (separating_plane_face_A_1(P_V1, n, Coord_1[2], masks[2]))
-    return false;
-  if (separating_plane_edge_A(Coord_1, masks, 0, 2))
-    return false;
-  if (separating_plane_edge_A(Coord_1, masks, 1,2))
-    return false;
-  e_v1[4] = V1[3] - V1[1];
-  e_v1[3] = V1[2] - V1[1];
-  n = e_v1[3].cross(e_v1[4]);
-
-  // Maybe flip normal. Note the < since e_v1[0]=v1-v0.
-  if (n.dot(e_v1[0]) < 0)
-    n *= -1;
-  if (separating_plane_face_A_2(V1, V2, n, Coord_1[3], masks[3]))
-    return false;
-  if (separating_plane_edge_A(Coord_1, masks, 0, 3))
-    return false;
-  if (separating_plane_edge_A(Coord_1, masks, 1, 3))
-    return false;
-  if (separating_plane_edge_A(Coord_1, masks, 2, 3))
-    return false;
-  if ((masks[0] | masks[1] | masks[2] | masks[3] )!= 15)
+  // point and p0 are the same points
+  if (wnorm < DOLFIN_EPS)
     return true;
 
-  // From now on, if there is a separating plane, it is parallel to a
-  // face of b.
-  std::vector<Point> P_V2(4);
-  for (std::size_t i = 0; i < 4; ++i)
-    P_V2[i] = V1[i] - V2[0];
-  e_v2[0] = V2[1] - V2[0];
-  e_v2[1] = V2[2] - V2[0];
-  e_v2[2] = V2[3] - V2[0];
-  n = e_v2[1].cross(e_v2[0]);
+  // Compute cosine
+  v /= vnorm;
+  const double a = v.dot(w) / wnorm;
 
-  // Maybe flip normal
-  if (n.dot(e_v2[2]) > 0)
-    n *= -1;
-  if (separating_plane_face_B_1(P_V2, n))
-    return false;
-  n=e_v2[0].cross(e_v2[2]);
+  // Cosine should be 1, and point should lie between p0 and p1
+  if (std::abs(1-a) < DOLFIN_EPS_LARGE and wnorm <= vnorm)
+    return true;
 
-  // Maybe flip normal
-  if (n.dot(e_v2[1]) > 0)
-    n *= -1;
-  if (separating_plane_face_B_1(P_V2, n))
-    return false;
-  n = e_v2[2].cross(e_v2[1]);
-
-  // Maybe flip normal
-  if (n.dot(e_v2[0]) > 0)
-    n *= -1;
-  if (separating_plane_face_B_1(P_V2, n))
-    return false;
-  e_v2[4] = V2[3] - V2[1];
-  e_v2[3] = V2[2] - V2[1];
-  n = e_v2[3].cross(e_v2[4]);
-
-  // Maybe flip normal. Note the < since e_v2[0] = V2[1] - V2[0].
-  if (n.dot(e_v2[0]) < 0)
-    n *= -1;
-  if (separating_plane_face_B_2(V1, V2, n))
-    return false;
-
-  return true;
+  return false;
 }
 //-----------------------------------------------------------------------------
-bool
-CollisionDetection::dolfin_collides_edge_edge(const Point& a,
-					      const Point& b,
-					      const Point& c,
-					      const Point& d)
+bool CollisionDetection::_collides_segment_segment(const Point& a,
+						   const Point& b,
+						   const Point& c,
+						   const Point& d)
 {
   const double tol = DOLFIN_EPS_LARGE;
 
-  // Check if two edges are the same
+  // Check if two segments are the same
   if ((a - c).norm() < tol and (b - d).norm() < tol)
     return false;
   if ((a - d).norm() < tol and (b - c).norm() < tol)
     return false;
 
-  // Get edges as vectors and compute the normal
+  // Get segments as vectors and compute the normal
   const Point L1 = b - a;
   const Point L2 = d - c;
   const Point n = L1.cross(L2);
@@ -477,40 +307,29 @@ CollisionDetection::dolfin_collides_edge_edge(const Point& a,
   return true;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::dolfin_collides_interval_point(const Point& p0,
-							const Point& p1,
-							const Point& point)
+bool CollisionDetection::_collides_interval_interval_1d(double a,
+							double b,
+							double r,
+							double s)
 {
-  // Compute angle between v = p1 - p0 and w = point - p0
-  Point v = p1 - p0;
-  const double vnorm = v.norm();
+  // Get range
+  const double a0 = std::min(a, b);
+  const double b0 = std::max(a, b);
+  const double a1 = std::min(r, s);
+  const double b1 = std::max(r, s);
 
-  // p0 and p1 are the same points
-  if (vnorm < DOLFIN_EPS_LARGE)
-    return false;
+  // Check for collisions
+  const double dx = std::min(b0 - a0, b1 - a1);
+  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
+  const bool result = b1 > a0 - eps && a1 < b0 + eps;
 
-  const Point w = point - p0;
-  const double wnorm = w.norm();
-
-  // point and p0 are the same points
-  if (wnorm < DOLFIN_EPS)
-    return true;
-
-  // Compute cosine
-  v /= vnorm;
-  const double a = v.dot(w) / wnorm;
-
-  // Cosine should be 1, and point should lie between p0 and p1
-  if (std::abs(1-a) < DOLFIN_EPS_LARGE and wnorm <= vnorm)
-    return true;
-
-  return false;
+  return result;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::dolfin_collides_triangle_point(const Point& p0,
-							const Point& p1,
-							const Point& p2,
-							const Point &point)
+bool CollisionDetection::_collides_triangle_point(const Point& p0,
+						  const Point& p1,
+						  const Point& p2,
+						  const Point &point)
 {
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
 
@@ -549,10 +368,10 @@ bool CollisionDetection::dolfin_collides_triangle_point(const Point& p0,
   return true;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::dolfin_collides_triangle_point_2d(const Point& p0,
-							   const Point& p1,
-							   const Point& p2,
-							   const Point &point)
+bool CollisionDetection::_collides_triangle_point_2d(const Point& p0,
+						     const Point& p1,
+						     const Point& p2,
+						     const Point &point)
 {
   // Simplified algorithm for coplanar triangles and points (z=0)
   // This algorithm is robust because it will perform the same numerical
@@ -589,44 +408,11 @@ bool CollisionDetection::dolfin_collides_triangle_point_2d(const Point& p0,
   return true;
 }
 //-----------------------------------------------------------------------------
-bool
-CollisionDetection::collides_tetrahedron_point(const Point& p0,
-					       const Point& p1,
-					       const Point& p2,
-					       const Point& p3,
-					       const Point& point)
-{
-  // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
-  // See also "Real-Time Collision Detection" by Christer Ericson.
-
-  const Point *p[4] = {&p0, &p1, &p2, &p3};
-
-  // Consider each face in turn
-  for (unsigned int i = 0; i != 4; ++i)
-  {
-    // Compute vectors relative to p[i]
-    const Point v1 = *p[(i + 1)%4] - *p[i];
-    const Point v2 = *p[(i + 2)%4] - *p[i];
-    const Point v3 = *p[(i + 3)%4] - *p[i];
-    const Point v = point - *p[i];
-    // Normal to plane containing v1 and v2
-    const Point n1 = v1.cross(v2);
-    // Find which side of face plane points v and v3 lie
-    const double t1 = n1.dot(v);
-    const double t2 = n1.dot(v3);
-    // Catch case where point is exactly on plane
-    // otherwise require points to be on same side
-    if (t1 != 0.0 and std::signbit(t1) != std::signbit(t2))
-      return false;
-  }
-  return true;
-}
-//-----------------------------------------------------------------------------
-bool CollisionDetection::dolfin_collides_triangle_interval(const Point& p0,
-							   const Point& p1,
-							   const Point& p2,
-							   const Point& q0,
-							   const Point& q1)
+bool CollisionDetection::_collides_triangle_segment(const Point& p0,
+						    const Point& p1,
+						    const Point& p2,
+						    const Point& q0,
+						    const Point& q1)
 {
   // Check if end points are in triangle
   if (collides_triangle_point(p0, p1, p2, q0))
@@ -634,23 +420,23 @@ bool CollisionDetection::dolfin_collides_triangle_interval(const Point& p0,
   if (collides_triangle_point(p0, p1, p2, q1))
     return true;
 
-  // Check if any of the triangle edges are cut by the interval
-  if (collides_edge_edge(p0, p1, q0, q1))
+  // Check if any of the triangle edges are cut by the segment
+  if (collides_segment_segment(p0, p1, q0, q1))
     return true;
-  if (collides_edge_edge(p0, p2, q0, q1))
+  if (collides_segment_segment(p0, p2, q0, q1))
     return true;
-  if (collides_edge_edge(p1, p2, q0, q1))
+  if (collides_segment_segment(p1, p2, q0, q1))
     return true;
 
   return false;
 }
 //------------------------------------------------------------------------------
-bool CollisionDetection::dolfin_collides_triangle_triangle(const Point& p0,
-							   const Point& p1,
-							   const Point& p2,
-							   const Point& q0,
-							   const Point& q1,
-							   const Point& q2)
+bool CollisionDetection::_collides_triangle_triangle(const Point& p0,
+						     const Point& p1,
+						     const Point& p2,
+						     const Point& q0,
+						     const Point& q1,
+						     const Point& q2)
 {
   // Algorithm and code from Tomas Moller: A Fast Triangle-Triangle
   // Intersection Test, Journal of Graphics Tools, 2(2), 1997. Source
@@ -787,14 +573,45 @@ bool CollisionDetection::dolfin_collides_triangle_triangle(const Point& p0,
   return true;
 }
 //-----------------------------------------------------------------------------
-bool
-CollisionDetection::collides_tetrahedron_triangle(const Point& p0,
-						  const Point& p1,
-						  const Point& p2,
-						  const Point& p3,
-						  const Point& q0,
-						  const Point& q1,
-						  const Point& q2)
+bool CollisionDetection::_collides_tetrahedron_point(const Point& p0,
+						     const Point& p1,
+						     const Point& p2,
+						     const Point& p3,
+						     const Point& point)
+{
+  // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
+  // See also "Real-Time Collision Detection" by Christer Ericson.
+
+  const Point *p[4] = {&p0, &p1, &p2, &p3};
+
+  // Consider each face in turn
+  for (unsigned int i = 0; i != 4; ++i)
+  {
+    // Compute vectors relative to p[i]
+    const Point v1 = *p[(i + 1)%4] - *p[i];
+    const Point v2 = *p[(i + 2)%4] - *p[i];
+    const Point v3 = *p[(i + 3)%4] - *p[i];
+    const Point v = point - *p[i];
+    // Normal to plane containing v1 and v2
+    const Point n1 = v1.cross(v2);
+    // Find which side of face plane points v and v3 lie
+    const double t1 = n1.dot(v);
+    const double t2 = n1.dot(v3);
+    // Catch case where point is exactly on plane
+    // otherwise require points to be on same side
+    if (t1 != 0.0 and std::signbit(t1) != std::signbit(t2))
+      return false;
+  }
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool CollisionDetection::_collides_tetrahedron_triangle(const Point& p0,
+							const Point& p1,
+							const Point& p2,
+							const Point& p3,
+							const Point& q0,
+							const Point& q1,
+							const Point& q2)
 {
   // Collision is determined by first if any triangle vertex is inside
   // the tetrahedron. If not, we continue checking the intersection of
@@ -819,6 +636,126 @@ CollisionDetection::collides_tetrahedron_triangle(const Point& p0,
     return true;
 
   return false;
+}
+//-----------------------------------------------------------------------------
+bool CollisionDetection::_collides_tetrahedron_tetrahedron(const Point& a,
+							   const Point& b,
+							   const Point& c,
+							   const Point& d,
+							   const Point& r,
+							   const Point& s,
+							   const Point& t,
+							   const Point& u)
+{
+  // This algorithm checks whether two tetrahedra intersect.
+
+  // Algorithm and source code from Fabio Ganovelli, Federico Ponchio
+  // and Claudio Rocchini: Fast Tetrahedron-Tetrahedron Overlap
+  // Algorithm, Journal of Graphics Tools, 7(2), 2002. DOI:
+  // 10.1080/10867651.2002.10487557. Source code available at
+  // http://web.archive.org/web/20031130075955/
+  // http://www.acm.org/jgt/papers/GanovelliPonchioRocchini02/tet_a_tet.html
+
+  const std::vector<Point> V1 = {{ a, b, c, d }};
+  const std::vector<Point> V2 = {{ r, s, t, u }};
+
+  // Get the vectors between V2 and V1[0]
+  std::vector<Point> P_V1(4);
+  for (std::size_t i = 0; i < 4; ++i)
+    P_V1[i] = V2[i]-V1[0];
+
+  // Data structure for edges of V1 and V2
+  std::vector<Point> e_v1(5), e_v2(5);
+  e_v1[0] = V1[1] - V1[0];
+  e_v1[1] = V1[2] - V1[0];
+  e_v1[2] = V1[3] - V1[0];
+  Point n = e_v1[1].cross(e_v1[0]);
+
+  // Maybe flip normal. Normal should be outward.
+  if (n.dot(e_v1[2]) > 0)
+    n *= -1;
+  std::vector<int> masks(4);
+  std::vector<std::vector<double>> Coord_1(4, std::vector<double>(4));
+  if (separating_plane_face_A_1(P_V1, n, Coord_1[0], masks[0]))
+    return false;
+  n = e_v1[0].cross(e_v1[2]);
+
+  // Maybe flip normal
+  if (n.dot(e_v1[1]) > 0)
+    n *= -1;
+  if (separating_plane_face_A_1(P_V1, n, Coord_1[1], masks[1]))
+    return false;
+  if (separating_plane_edge_A(Coord_1, masks, 0, 1))
+    return false;
+  n = e_v1[2].cross(e_v1[1]);
+
+  // Maybe flip normal
+  if (n.dot(e_v1[0]) > 0)
+    n *= -1;
+  if (separating_plane_face_A_1(P_V1, n, Coord_1[2], masks[2]))
+    return false;
+  if (separating_plane_edge_A(Coord_1, masks, 0, 2))
+    return false;
+  if (separating_plane_edge_A(Coord_1, masks, 1,2))
+    return false;
+  e_v1[4] = V1[3] - V1[1];
+  e_v1[3] = V1[2] - V1[1];
+  n = e_v1[3].cross(e_v1[4]);
+
+  // Maybe flip normal. Note the < since e_v1[0]=v1-v0.
+  if (n.dot(e_v1[0]) < 0)
+    n *= -1;
+  if (separating_plane_face_A_2(V1, V2, n, Coord_1[3], masks[3]))
+    return false;
+  if (separating_plane_edge_A(Coord_1, masks, 0, 3))
+    return false;
+  if (separating_plane_edge_A(Coord_1, masks, 1, 3))
+    return false;
+  if (separating_plane_edge_A(Coord_1, masks, 2, 3))
+    return false;
+  if ((masks[0] | masks[1] | masks[2] | masks[3] )!= 15)
+    return true;
+
+  // From now on, if there is a separating plane, it is parallel to a
+  // face of b.
+  std::vector<Point> P_V2(4);
+  for (std::size_t i = 0; i < 4; ++i)
+    P_V2[i] = V1[i] - V2[0];
+  e_v2[0] = V2[1] - V2[0];
+  e_v2[1] = V2[2] - V2[0];
+  e_v2[2] = V2[3] - V2[0];
+  n = e_v2[1].cross(e_v2[0]);
+
+  // Maybe flip normal
+  if (n.dot(e_v2[2]) > 0)
+    n *= -1;
+  if (separating_plane_face_B_1(P_V2, n))
+    return false;
+  n=e_v2[0].cross(e_v2[2]);
+
+  // Maybe flip normal
+  if (n.dot(e_v2[1]) > 0)
+    n *= -1;
+  if (separating_plane_face_B_1(P_V2, n))
+    return false;
+  n = e_v2[2].cross(e_v2[1]);
+
+  // Maybe flip normal
+  if (n.dot(e_v2[0]) > 0)
+    n *= -1;
+  if (separating_plane_face_B_1(P_V2, n))
+    return false;
+  e_v2[4] = V2[3] - V2[1];
+  e_v2[3] = V2[2] - V2[1];
+  n = e_v2[3].cross(e_v2[4]);
+
+  // Maybe flip normal. Note the < since e_v2[0] = V2[1] - V2[0].
+  if (n.dot(e_v2[0]) < 0)
+    n *= -1;
+  if (separating_plane_face_B_2(V1, V2, n))
+    return false;
+
+  return true;
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::edge_edge_test(int i0,
