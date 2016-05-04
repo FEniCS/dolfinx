@@ -72,3 +72,7 @@ def test_volume_2d():
     #M = Constant(1)*dX(multimesh)
 
     assert 1 == 1
+
+# FIXME: Temporary testing
+if __name__ == "__main__":
+    test_volume_2d()

@@ -24,7 +24,7 @@
 #include <dolfin/mesh/MeshGeometry.h>
 #include "SimplexQuadrature.h"
 
-// FIXME:
+// FIXME: What?
 #include "predicates.h"
 #include "dolfin_simplex_tools.h"
 
