@@ -136,10 +136,10 @@ bool CollisionDetection::collides(const MeshEntity& entity_0,
       dolfin_not_implemented();
       break;
     case 1:
-      return collides_interval_interval_1d(geometry_0.point(vertices_0[0])[0],
-					   geometry_0.point(vertices_0[1])[0],
-					   geometry_1.point(vertices_1[0])[0],
-					   geometry_1.point(vertices_1[1])[0]);
+      return collides_segment_segment_1d(geometry_0.point(vertices_0[0])[0],
+					 geometry_0.point(vertices_0[1])[0],
+					 geometry_1.point(vertices_1[0])[0],
+					 geometry_1.point(vertices_1[1])[0]);
     case 2:
       return collides_triangle_segment(geometry_1.point(vertices_1[0]),
 				       geometry_1.point(vertices_1[1]),
@@ -316,7 +316,7 @@ bool CollisionDetection::_collides_segment_segment_1d(double p0,
   const double a0 = std::min(p0, p1);
   const double b0 = std::max(p0, p1);
   const double a1 = std::min(q0, q1);
-  const double b1 = std::max(q0, q2);
+  const double b1 = std::max(q0, q1);
 
   // Check for collisions
   const double dx = std::min(b0 - a0, b1 - a1);
