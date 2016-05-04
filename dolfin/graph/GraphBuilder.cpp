@@ -159,6 +159,8 @@ GraphBuilder::compute_dual_graph(const MPI_Comm mpi_comm,
                                  std::vector<std::vector<std::size_t>>& local_graph,
                                  std::set<std::int64_t>& ghost_vertices)
 {
+  log(PROGRESS, "Build mesh dual graph");
+
   // Compute local part of dual graph
   FacetCellMap facet_cell_map;
   std::int32_t num_local_edges = compute_local_dual_graph(mpi_comm, cell_vertices,
@@ -184,6 +186,8 @@ std::int32_t GraphBuilder::compute_local_dual_graph(
   std::vector<std::vector<std::size_t>>& local_graph,
   FacetCellMap& facet_cell_map)
 {
+  log(TRACE, "Build local part of mesh dual graph");
+
   const std::int8_t tdim = cell_type.dim();
   const std::int8_t num_entity_vertices = cell_type.num_vertices(tdim - 1);
   switch (num_entity_vertices)
@@ -338,6 +342,7 @@ std::int32_t GraphBuilder::compute_nonlocal_dual_graph(
   FacetCellMap& facet_cell_map,
   std::set<std::int64_t>& ghost_vertices)
 {
+  log(TRACE, "Build nonlocal part of mesh dual graph");
   Timer timer("Compute non-local part of mesh dual graph");
 
   // Get number of MPI processes, and return if mesh is not distributed

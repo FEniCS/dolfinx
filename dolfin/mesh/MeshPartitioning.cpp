@@ -114,6 +114,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 {
   local_data.reorder();
 
+  log(PROGRESS, "Building distributed mesh");
 
   Timer timer("Build distributed mesh from local mesh data");
 
@@ -169,6 +170,8 @@ MeshPartitioning::partition_cells(const MPI_Comm& mpi_comm,
                                  std::vector<int>& cell_partition,
                                  std::map<std::int64_t, std::vector<int>>& ghost_procs)
 {
+  log(PROGRESS, "Compute partition of cells across processes");
+
   // Clear data
   cell_partition.clear();
   ghost_procs.clear();
@@ -205,6 +208,8 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                              const std::string ghost_mode)
 {
   // Distribute cells
+  log(PROGRESS, "Distribute mesh (cell and vertices)");
+
   Timer timer("Distribute mesh (cells and vertices)");
 
   // Topological dimension
@@ -381,6 +386,8 @@ void MeshPartitioning::reorder_cells_gps(
   boost::multi_array<std::int64_t, 2>& reordered_cell_vertices,
   std::vector<std::int64_t>& reordered_global_cell_indices)
 {
+  log(PROGRESS, "Re-order cells during distributed mesh construction");
+
   Timer timer("Reorder cells using GPS ordering");
 
   // Make dual graph from vertex indices, using GraphBuilder
@@ -460,6 +467,7 @@ MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
   // SCOTCH.
   // "vertex_indices" and "vertex_global_to_local" are modified.
 
+  log(PROGRESS, "Re-order vertices during distributed mesh construction");
   Timer timer("Reorder vertices using GPS ordering");
 
   // Make local real graph (vertices are nodes, edges are edges)
@@ -725,6 +733,8 @@ MeshPartitioning::distribute_cells(
   // and the cell owner (for ghost cells this will be different from the
   // destination)
 
+  log(PROGRESS, "Distribute cells during distributed mesh construction");
+
   Timer timer("Distribute cells");
 
   const std::size_t mpi_size = MPI::size(mpi_comm);
@@ -924,6 +934,7 @@ void MeshPartitioning::distribute_vertices(
   // then distributed so that each process learns where it needs to
   // send its vertices.
 
+  log(PROGRESS, "Distribute vertices during distributed mesh construction");
   Timer timer("Distribute vertices");
 
   // Get number of processes
@@ -1013,6 +1024,8 @@ void MeshPartitioning::build_shared_vertices(MPI_Comm mpi_comm,
      const std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
      const std::vector<std::vector<std::size_t>>& received_vertex_indices)
 {
+  log(PROGRESS, "Build shared vertices during distributed mesh construction");
+
   const std::size_t mpi_size = MPI::size(mpi_comm);
 
   // Generate vertex sharing information
@@ -1080,6 +1093,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   const std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
   const LocalMeshData& new_mesh_data)
 {
+  log(PROGRESS, "Build local mesh during distributed mesh construction");
   Timer timer("Build local part of distributed mesh (from local mesh data)");
 
   const std::vector<std::int64_t>& global_cell_indices

@@ -96,6 +96,7 @@ std::size_t DistributedMeshTools::number_entities(
   // from mesh global numbering, e.g. when computing mesh entity
   // numbering for problems with periodic boundary conditions.
 
+  log(PROGRESS, "Number mesh entities for distributed mesh (for specified vertex ids).", d);
   Timer timer("Number mesh entities for distributed mesh (for specified vertex ids)");
 
   // Check that we're not re-numbering vertices (these are fixed at
@@ -515,6 +516,7 @@ std::unordered_map<unsigned int,
                    std::vector<std::pair<unsigned int, unsigned int>>>
   DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
 {
+  log(PROGRESS, "Compute shared mesh entities of dimension %d.", d);
   Timer timer("Computed shared mesh entities");
 
   // MPI communicator
@@ -664,6 +666,7 @@ void DistributedMeshTools::compute_entity_ownership(
   std::vector<std::size_t>& owned_entities,
   std::array<std::map<Entity, EntityData>, 2>& shared_entities)
 {
+  log(PROGRESS, "Compute ownership for mesh entities of dimension %d.", d);
   Timer timer("Compute mesh entity ownership");
 
   // Build global-to-local indices map for shared vertices
