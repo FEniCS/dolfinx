@@ -72,7 +72,7 @@ namespace dolfin
 
     friend class MeshPartitioning;
 
-    typedef boost::unordered_map<std::vector<std::size_t>, std::int32_t>
+    typedef std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>
       FacetCellMap;
 
     // Compute local part of the dual graph, and return number of

@@ -314,7 +314,9 @@ std::int32_t GraphBuilder::compute_local_dual_graph_keyed(
     else
     {
       // No match, so add facet0 to map
-      facet_cell_map.insert(facet_cell_map.end(), {std::vector<std::size_t>(facet0.begin(),
+      //facet_cell_map.insert(facet_cell_map.end(), {std::vector<std::size_t>(facet0.begin(),
+      //    facet0.end()), cell_index0});
+      facet_cell_map.push_back({std::vector<std::size_t>(facet0.begin(),
           facet0.end()), cell_index0});
     }
   }
@@ -326,7 +328,7 @@ std::int32_t GraphBuilder::compute_local_dual_graph_keyed(
   {
     const int k = facets.size() - 1;
     const int cell_index = facets[k].second;
-    facet_cell_map.insert({std::vector<std::size_t>(facets[k].first.begin(),
+    facet_cell_map.push_back({std::vector<std::size_t>(facets[k].first.begin(),
         facets[k].first.end()), cell_index});
   }
 
@@ -357,8 +359,8 @@ std::int32_t GraphBuilder::compute_nonlocal_dual_graph(
 
   // List of cell vertices
   const std::int32_t num_local_cells = cell_vertices.shape()[0];
-  const std::int32_t num_vertices_per_cell = cell_type.num_entities(0);
-  const std::int32_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
+  const std::int8_t num_vertices_per_cell = cell_type.num_entities(0);
+  const std::int8_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
 
   dolfin_assert(num_local_cells == (int) cell_vertices.shape()[0]);
   dolfin_assert(num_vertices_per_cell == (int) cell_vertices.shape()[1]);

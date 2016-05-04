@@ -207,6 +207,7 @@ void SCOTCH::partition(
   std::vector<int>& cell_partition,
   std::map<std::int64_t, std::vector<int>>& ghost_procs)
 {
+  log(PROGRESS, "Compute graph partition using PT-SCOTCH");
   Timer timer("Compute graph partition (SCOTCH)");
 
   // C-style array indexing
