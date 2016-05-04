@@ -324,7 +324,14 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
   // Initialize local array of entities
   const std::int8_t num_entities = cell_type.num_entities(dim);
   const int num_vertices = cell_type.num_vertices(dim);
-  boost::multi_array<unsigned int, 2> e_vertices(boost::extents[num_entities][num_vertices]);
+
+  // Create map from cell vertices to entity vertices
+  boost::multi_array<unsigned int, 2>
+    e_vertices(boost::extents[num_entities][num_vertices]);
+  const int num_vertices_per_cell = cell_type.num_vertices();
+  std::vector<unsigned int> v(num_vertices_per_cell);
+  std::iota(v.begin(), v.end(), 0);
+  cell_type.create_entities(e_vertices, dim, v.data());
 
   dolfin_assert(N == num_vertices);
 
@@ -342,27 +349,22 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
     const unsigned int* vertices = c->entities(0);
     dolfin_assert(vertices);
 
-    // Create entities from vertices
-    cell_type.create_entities(e_vertices, dim, vertices);
-
-    // Determine if cell is a ghost
-    const bool is_ghost = c->is_ghost();
 
     // Iterate over entities of cell
     const int cell_index = c->index();
     for (std::int8_t i = 0; i < num_entities; ++i)
     {
-      // Sort entity vertices
-      std::sort(e_vertices[i].begin(), e_vertices[i].end());
+      auto& entity_key = keyed_entities[entity_counter].first;
+      for (std::int8_t j = 0; j < num_vertices; ++j)
+        entity_key[j] = vertices[e_vertices[i][j]];
 
-      // Add entity indices to list of indices
-      std::copy(e_vertices[i].begin(), e_vertices[i].end(),
-                keyed_entities[entity_counter].first.begin());
+      // Sort entity vertices
+      std::sort(entity_key.begin(), entity_key.end());
 
       // Attach (local index, cell index), making local_index negative if it is
       // not a ghost cell. This ensures that non-ghosts come before ghosts when
       // sorted. The index is corrected later.
-      if (!is_ghost)
+      if (!c->is_ghost())
         keyed_entities[entity_counter].second = {-i - 1, cell_index};
       else
         keyed_entities[entity_counter].second = {i, cell_index};
