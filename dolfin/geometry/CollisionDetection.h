@@ -341,6 +341,11 @@ namespace dolfin
 					int f0,
 					int f1);
 
+    //--- Debug functions ---
+
+    // Print entities
+    static void _print(std::vector<Point> entity_0, std::vector<Point> entity_1);
+
   };
 
 }

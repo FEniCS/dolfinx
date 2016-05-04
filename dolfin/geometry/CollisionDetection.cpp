@@ -391,6 +391,8 @@ bool CollisionDetection::_collides_triangle_triangle(const Point& p0,
   // separately if we do _not_ allow for adjacent edges to be
   // classified as colliding (see the edge_edge_test).
 
+  _print({p0, p1, p2}, {q0, q1, q2});
+
   const Point Vmid = (p0 + p1 + p2) / 3.;
   const Point Umid = (q0 + q1 + q2) / 3.;
   if ((Vmid-Umid).norm() < DOLFIN_EPS_LARGE)
@@ -1069,5 +1071,19 @@ bool CollisionDetection::separating_plane_edge_A(const std::vector<std::vector<d
   // Now there exists a separating plane supported by the edge shared
   // by f0 and f1.
   return true;
+}
+//-----------------------------------------------------------------------------
+void CollisionDetection::_print(std::vector<Point> entity_0,
+                                std::vector<Point> entity_1)
+{
+  cout << "Computing collision:" << endl;
+  cout << "  ";
+  for (const Point p : entity_0)
+    cout << p << " ";
+  cout << endl;
+  cout << "  ";
+  for (const Point p : entity_1)
+    cout << p << " ";
+  cout << endl;
 }
 //-----------------------------------------------------------------------------

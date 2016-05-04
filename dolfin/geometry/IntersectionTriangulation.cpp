@@ -1304,7 +1304,7 @@ Point IntersectionTriangulation::_intersection_edge_edge_2d(const Point& a,
     pt = 0.25*(a + b + c + d);
   }
 
-  CHECK_CGAL(pt, cgal_intersection_edge_edge_2d(a, b, c, d));
+  return CHECK_CGAL(pt, cgal_intersection_edge_edge_2d(a, b, c, d));
 }
 //-----------------------------------------------------------------------------
 Point IntersectionTriangulation::_intersection_edge_edge(const Point& a,
@@ -1314,7 +1314,10 @@ Point IntersectionTriangulation::_intersection_edge_edge(const Point& a,
 {
   dolfin_error("IntersectionTriangulation.cpp",
 	       "intersection_edge_edge function",
-	       "Not properly implemented");
+	       "Not yet implemented in 3D");
+
+  Point p;
+  return p;
 }
 //-----------------------------------------------------------------------------
 Point IntersectionTriangulation::_intersection_face_edge(const Point& r,

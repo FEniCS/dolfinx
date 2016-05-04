@@ -166,7 +166,7 @@ SimplexQuadrature::compute_quadrature_rule_interval(const std::vector<Point>& co
   }
 
   // Find the determinant of the Jacobian (inspired by ufc_geometry.h)
-  double det;
+  double det = -1;
 
   switch (gdim)
   {
@@ -735,7 +735,7 @@ SimplexQuadrature::compute_quadrature_rule_interval(const double* coordinates,
   }
 
   // Find the determinant of the Jacobian (inspired by ufc_geometry.h)
-  double det;
+  double det = -1;
 
   switch (gdim)
   {
