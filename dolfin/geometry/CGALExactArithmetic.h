@@ -100,8 +100,13 @@ namespace dolfin
     }
     else
     {
-      for (std::size_t i = 0; i < result_dolfin.size(); ++i)
-	if (!near(result_dolfin[i], result_cgal[i]))
+      std::vector<double> sorted_result_dolfin = result_dolfin;
+      std::sort(sorted_result_dolfin.begin(), sorted_result_dolfin.end());
+      std::vector<double> sorted_result_cgal = result_cgal;
+      std::sort(sorted_result_cgal.begin(), sorted_result_cgal.end());
+
+      for (std::size_t i = 0; i < sorted_result_dolfin.size(); ++i)
+	if (!near(sorted_result_dolfin[i], sorted_result_cgal[i]))
 	{
 	  std::stringstream s_dolfin;
 	  for (const double v: result_dolfin)
@@ -112,7 +117,7 @@ namespace dolfin
 	    s_cgal << v << ' ';
 
 	  dolfin_error("CGALExactArithmetic.h",
-		       "verify intersections due to different data",
+		       "verify intersections due to different data (NB: we sort data before comparing)",
 		       "Intersection function: %s\n DOLFIN: %s\n CGAL: %s",
 		       function.c_str(),
 		       s_dolfin.str().c_str(),
