@@ -88,10 +88,12 @@ namespace dolfin
     if (result_dolfin.size() != result_cgal.size())
     {
       std::stringstream s_dolfin;
+      s_dolfin.precision(16);
       for (const double v: result_dolfin)
 	s_dolfin << v << ' ';
 
       std::stringstream s_cgal;
+      s_cgal.precision(16);
       for (const double v: result_cgal)
 	s_cgal << v << ' ';
 
@@ -113,10 +115,12 @@ namespace dolfin
 	if (!near(sorted_result_dolfin[i], sorted_result_cgal[i]))
 	{
 	  std::stringstream s_dolfin;
+	  s_dolfin.precision(16);
 	  for (const double v: result_dolfin)
 	    s_dolfin << v << ' ';
 
 	  std::stringstream s_cgal;
+	  s_cgal.precision(16);
 	  for (const double v: result_cgal)
 	    s_cgal << v << ' ';
 
@@ -142,7 +146,9 @@ namespace dolfin
       if (!near(result_dolfin[d], result_cgal[d]))
       {
 	std::stringstream s_dolfin;
+	s_dolfin.precision(16);
 	std::stringstream s_cgal;
+	s_cgal.precision(16);
 	for (std::size_t i = 0; i < 3; ++i)
 	{
 	  s_dolfin << result_dolfin[i] << " ";
@@ -276,12 +282,12 @@ namespace
     dolfin_assert(cgal_points.size() == 4);
     const std::vector<double> triangulation = {{ CGAL::to_double(cgal_points[0].x()),
 						 CGAL::to_double(cgal_points[0].y()),
-						 CGAL::to_double(cgal_points[2].x()),
-						 CGAL::to_double(cgal_points[2].y()),
+						 CGAL::to_double(cgal_points[3].x()),
+						 CGAL::to_double(cgal_points[3].y()),
 						 CGAL::to_double(cgal_points[1].x()),
 						 CGAL::to_double(cgal_points[1].y()),
-						 CGAL::to_double(cgal_points[0].x()),
-						 CGAL::to_double(cgal_points[0].y()),
+						 CGAL::to_double(cgal_points[1].x()),
+						 CGAL::to_double(cgal_points[1].y()),
 						 CGAL::to_double(cgal_points[3].x()),
 						 CGAL::to_double(cgal_points[3].y()),
 						 CGAL::to_double(cgal_points[2].x()),
