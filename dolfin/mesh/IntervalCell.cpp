@@ -21,7 +21,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2006-06-05
-// Last changed: 2014-05-22
+// Last changed: 2016-05-04
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -251,7 +251,7 @@ bool IntervalCell::collides(const Cell& cell, const MeshEntity& entity) const
 std::vector<double>
 IntervalCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
 {
-  return IntersectionTriangulation::triangulate_intersection(c0, c1);
+  return IntersectionTriangulation::triangulate(c0, c1);
 }
 //-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const

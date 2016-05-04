@@ -20,7 +20,7 @@
 // Modified by August Johansson 2014
 //
 // First added:  2007-12-12
-// Last changed: 2014-02-13
+// Last changed: 2016-05-04
 
 #include <dolfin/log/log.h>
 #include "Cell.h"
@@ -165,7 +165,7 @@ bool PointCell::collides(const Cell& cell, const MeshEntity& entity) const
 std::vector<double>
 PointCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
 {
-  return IntersectionTriangulation::triangulate_intersection(c0, c1);
+  return IntersectionTriangulation::triangulate(c0, c1);
 }
 //-----------------------------------------------------------------------------
 std::string PointCell::description(bool plural) const

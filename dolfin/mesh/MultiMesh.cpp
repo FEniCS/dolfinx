@@ -602,8 +602,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 
   	// Compute the intersection (a polyhedron)
   	const std::vector<double> intersection
-	  = IntersectionTriangulation::triangulate_intersection(cut_cell,
-								cutting_cell);
+	  = IntersectionTriangulation::triangulate(cut_cell, cutting_cell);
 	const Polyhedron polyhedron = convert(intersection, tdim, gdim);
 
 #ifdef Augustdebug
@@ -746,7 +745,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 		  std::cout << "try collide:\n"
 			    << tools::drawtriangle(initial_simplex,"'r'")<<tools::drawtriangle(previous_simplex)<<tools::zoom()<<'\n';
 #endif
-		  const std::vector<double> ii = IntersectionTriangulation::triangulate_intersection(initial_simplex, tdim, previous_simplex, tdim, gdim);
+		  const std::vector<double> ii = IntersectionTriangulation::triangulate(initial_simplex, previous_simplex, gdim);
 
 		  if (ii.size())
 		  {
@@ -1226,7 +1225,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	  std::cout << tools::drawtriangle(boundary_cell) << std::endl;
 #endif
           // Triangulate intersection of cut cell and boundary cell
-          const std::vector<double> triangulation_cut_boundary = cut_cell.triangulate_intersection(boundary_cell);
+          const std::vector<double> triangulation_cut_boundary = cut_cell.triangulate(boundary_cell);
 	  const Polyhedron polygon = convert(triangulation_cut_boundary, tdim-1, gdim);
 
 #ifdef Augustdebug
@@ -1364,7 +1363,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 
 		  // Compute intersection between the initial polyhedra and cut_cutting_interface
 		  const std::vector<double> x = convert(simplex, tdim-1, gdim);
-		  const std::vector<double> ii = IntersectionTriangulation::triangulate_intersection(cell.second, x, tdim-1);
+		  const std::vector<double> ii = IntersectionTriangulation::triangulate(cell.second, x, tdim-1);
 #ifdef Augustdebug
 		  std::cout << "test collision cell "<< cell.first << ": " << tools::drawtriangle(cell.second) << " and simplex " << tools::drawtriangle(simplex) << std::endl;
 #endif
@@ -1464,7 +1463,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		      for (const auto simplex: previous_intersections[j])
 		      {
 			const std::vector<double> x = convert(simplex, tdim, gdim);
-			const std::vector<double> ii = IntersectionTriangulation::triangulate_intersection(initial_cells[k].second, x, tdim);
+			const std::vector<double> ii = IntersectionTriangulation::triangulate(initial_cells[k].second, x, tdim);
 			if (ii.size())
 			{
 			  const std::vector<Simplex> pii = convert(ii, tdim, gdim);
@@ -1507,7 +1506,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 			const Simplex& interface_simplex = cut_cutting_interface[p][s];
 
 			// Check intersection with edge from cut_cutting_interface
-			const std::vector<double> ii = IntersectionTriangulation::triangulate_intersection(simplex, tdim, interface_simplex, tdim-1, gdim);
+			const std::vector<double> ii = IntersectionTriangulation::triangulate(simplex, interface_simplex, gdim);
 			if (ii.size())
 			{
 			  const auto num_qr_pts =_add_quadrature_rule(cut_cutting_interface_qr, ii, tdim-1, gdim, quadrature_order, sign);
