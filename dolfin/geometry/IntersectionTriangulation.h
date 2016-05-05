@@ -49,11 +49,9 @@ namespace dolfin
     ///         The second entity.
     ///
     /// *Returns*
-    ///     std::vector<double>
-    ///         A flattened array of simplices of dimension
-    ///         num_simplices x num_vertices x gdim =
-    ///         num_simplices x (tdim + 1) x gdim
-    static std::vector<double>
+    ///     std::vector<std::vector<Pointdouble>>
+    ///         A vector of simplices
+    static std::vector<std::vector<Point>>
     triangulate(const MeshEntity& entity_0,
                 const MeshEntity& entity_1);
 
@@ -69,41 +67,32 @@ namespace dolfin
     ///         The geometric dimension.
     ///
     /// *Returns*
-    ///     std::vector<double>
-    ///         A flattened array of simplices of dimension
-    ///         num_simplices x num_vertices x gdim =
-    ///         num_simplices x (tdim + 1) x gdim
-    static std::vector<double>
+    ///     std::vector<std::vector<Point>>
+    ///         A vector of simplices
+    static std::vector<std::vector<Point>>
     triangulate(const std::vector<Point>& points_0,
                 const std::vector<Point>& points_1,
                 std::size_t gdim);
 
-    // FIXME: Topological dimension (tdim) of the triangulation is needed here.
-    // FIXME: Would not be needed with vector<Points> instead of vector<double>.
 
     /// Compute triangulation of intersection of a cell with a triangulation
-    static std::vector<double>
+    static std::vector<std::vector<Point>>
     triangulate(const MeshEntity& entity,
-                const std::vector<double>& triangulation,
-                std::size_t tdim);
-
-    // FIXME: Topological dimension (tdim) of the triangulation is needed here.
-    // FIXME: Would not be needed with vector<Points> instead of vector<double>.
+                const std::vector<std::vector<Point>>& triangulation);
 
     /// Compute triangulation of intersection of a cell with a triangulation.
     /// This version also handles normals (for boundary triangulation).
     static void
     triangulate(const MeshEntity& entity,
-                const std::vector<double>& triangulation,
+                const std::vector<std::vector<Point>>& triangulation,
                 const std::vector<Point>& normals,
-                std::vector<double>& intersection_triangulation,
-                std::vector<Point>& intersection_normals,
-                std::size_t tdim);
+                std::vector<std::vector<Point>>& intersection_triangulation,
+                std::vector<Point>& intersection_normals);
 
     //--- Low-level intersection triangulation functions ---
 
     /// Triangulate intersection of segment p0-p1 with segment q0-q1
-    static std::vector<double>
+    static std::vector<Point>
     triangulate_segment_segment(const Point& p0,
                                 const Point& p1,
                                 const Point& q0,
@@ -115,7 +104,7 @@ namespace dolfin
     }
 
     /// Triangulate intersection of triangle p0-p1-p2 with segment q0-q1
-    static std::vector<double>
+    static std::vector<Point>
     triangulate_triangle_segment(const Point& p0,
                                  const Point& p1,
                                  const Point& p2,
@@ -128,7 +117,7 @@ namespace dolfin
     }
 
     /// Triangulate intersection of triangle p0-p1-p2 with triangle q0-q1-q2
-    static std::vector<double>
+    static std::vector<std::vector<Point>>
     triangulate_triangle_triangle(const Point& p0,
                                   const Point& p1,
                                   const Point& p2,
@@ -141,7 +130,7 @@ namespace dolfin
     }
 
     /// Triangulate intersection of tetrahedron p0-p1-p2-p3 with triangle q0-q1-q2
-    static std::vector<double>
+    static std::vector<std::vector<Point>>
     triangulate_tetrahedron_triangle(const Point& p0,
                                      const Point& p1,
                                      const Point& p2,
@@ -154,7 +143,7 @@ namespace dolfin
     }
 
     /// Triangulate intersection of tetrahedron p0-p1-p2-p3 with tetrahedron q0-q1-q2-q3
-    static std::vector<double>
+    static std::vector<std::vector<Point>>
     triangulate_tetrahedron_tetrahedron(const Point& p0,
                                         const Point& p1,
                                         const Point& p2,
@@ -171,14 +160,14 @@ namespace dolfin
 
     // Implementation of triangulation functions
 
-    static std::vector<double>
+    static std::vector<Point>
     _triangulate_segment_segment(const Point& p0,
 				 const Point& p1,
 				 const Point& q0,
 				 const Point& q1,
 				 std::size_t gdim);
 
-    static std::vector<double>
+    static std::vector<Point>
     _triangulate_triangle_segment(const Point& p0,
 				  const Point& p1,
 				  const Point& p2,
@@ -186,7 +175,7 @@ namespace dolfin
 				  const Point& q1,
 				  std::size_t gdim);
 
-    static std::vector<double>
+    static std::vector<Point>
     _triangulate_triangle_triangle(const Point& p0,
 				   const Point& p1,
 				   const Point& p2,
@@ -194,7 +183,7 @@ namespace dolfin
 				   const Point& q1,
 				   const Point& q2);
 
-    static std::vector<double>
+    static std::vector<Point>
     _triangulate_tetrahedron_triangle(const Point& p0,
 				      const Point& p1,
 				      const Point& p2,
@@ -202,7 +191,7 @@ namespace dolfin
 				      const Point& q0,
 				      const Point& q1,
 				      const Point& q2);
-    static std::vector<double>
+    static std::vector<Point>
     _triangulate_tetrahedron_tetrahedron(const Point& p0,
                                          const Point& p1,
                                          const Point& p2,
@@ -213,26 +202,26 @@ namespace dolfin
 					 const Point& q3);
 
     // Create triangulation of a convex set of points
-    static std::vector<double>
+    static std::vector<std::vector<Point>>
     graham_scan(const std::vector<Point>& points);
 
     //--- Utility functions ---
 
-    static Point _intersection_edge_edge_2d(const Point& a,
-                                            const Point& b,
-                                            const Point& c,
-                                            const Point& d);
+    static std::vector<Point> _intersection_edge_edge_2d(const Point& a,
+                                                         const Point& b,
+                                                         const Point& c,
+                                                         const Point& d);
 
-    static Point _intersection_edge_edge(const Point& a,
-                                         const Point& b,
-                                         const Point& c,
-                                         const Point& d);
+    static std::vector<Point> _intersection_edge_edge(const Point& a,
+                                                      const Point& b,
+                                                      const Point& c,
+                                                      const Point& d);
 
-    static Point _intersection_face_edge(const Point& r,
-                                         const Point& s,
-                                         const Point& t,
-                                         const Point& a,
-                                         const Point& b);
+    static std::vector<Point> _intersection_face_edge(const Point& r,
+                                                      const Point& s,
+                                                      const Point& t,
+                                                      const Point& a,
+                                                      const Point& b);
 
 
   };
