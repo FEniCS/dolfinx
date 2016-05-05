@@ -64,6 +64,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+// High-level collision detection predicates
+//-----------------------------------------------------------------------------
 bool CollisionDetection::collides(const MeshEntity& entity,
                                   const Point& point)
 {
@@ -177,6 +179,8 @@ bool CollisionDetection::collides(const MeshEntity& entity_0,
 
   return false;
 }
+//-----------------------------------------------------------------------------
+// Low-level collision detection predicates
 //-----------------------------------------------------------------------------
 bool CollisionDetection::_collides_segment_point(const Point& p0,
 						 const Point& p1,

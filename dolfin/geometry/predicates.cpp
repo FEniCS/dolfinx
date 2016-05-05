@@ -642,6 +642,9 @@ float uniformfloatrand()
 
 void exactinit()
 {
+  // DOLFIN addition, should perhaps be removed
+  printf("Initializing tolerances for exact arithmetic.\n");
+
   REAL half;
   REAL check, lastcheck;
   int every_other;
@@ -4259,4 +4262,13 @@ REAL insphere(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe)
   }
 
   return insphereadapt(pa, pb, pc, pd, pe, permanent);
+}
+
+//--- DOLFIN-specific additions ---
+
+#include "predicates.h"
+
+namespace dolfin
+{
+  PredicateInitialization predicate_initialization;
 }

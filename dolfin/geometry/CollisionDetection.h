@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-04
+// Last changed: 2016-05-05
 
 #include <vector>
 #include <dolfin/log/log.h>
