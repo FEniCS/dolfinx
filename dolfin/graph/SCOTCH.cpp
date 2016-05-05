@@ -31,6 +31,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/LocalMeshData.h>
+#include "CSRGraph.h"
 #include "GraphBuilder.h"
 #include "SCOTCH.h"
 
@@ -57,16 +58,22 @@ void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
                                const CellType& cell_type)
 {
   // Create data structures to hold graph
-  std::vector<std::vector<std::size_t>> local_graph;
+  CSRGraph<std::size_t> csr_graph;
   std::set<std::int64_t> ghost_vertices;
 
-  // Compute dual graph (for this parition)
-  GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type,
-                                   num_global_vertices, local_graph,
-                                   ghost_vertices);
+  // Build dual graph. Use scoping to clean up memory
+  {
+    // Compute dual graph (for this parition)
+    std::vector<std::vector<std::size_t>> local_graph;
+    GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type,
+                                     num_global_vertices, local_graph,
+                                     ghost_vertices);
+
+    csr_graph = CSRGraph<std::size_t>(MPI_COMM_SELF, local_graph);
+  }
 
   // Compute partitions
-  partition(mpi_comm, local_graph, cell_weight, ghost_vertices,
+  partition(mpi_comm, csr_graph, cell_weight, ghost_vertices,
             num_global_cells, cell_partition, ghost_procs);
 }
 //-----------------------------------------------------------------------------
@@ -198,9 +205,11 @@ void SCOTCH::compute_reordering(const Graph& graph,
             inverse_permutation_indices.end(), inverse_permutation.begin());
 }
 //-----------------------------------------------------------------------------
+template<typename T>
 void SCOTCH::partition(
   const MPI_Comm mpi_comm,
-  const std::vector<std::vector<std::size_t>>& local_graph,
+  const CSRGraph<T>& local_graph,
+  //const std::vector<std::vector<std::size_t>>& local_graph,
   const std::vector<std::size_t>& node_weights,
   const std::set<std::int64_t>& ghost_vertices,
   const std::size_t num_global_vertices,
@@ -236,12 +245,22 @@ void SCOTCH::partition(
   // number of local edges + edges connecting to ghost vertices)
   SCOTCH_Num edgelocnbr = 0;
   vertloctab.push_back((SCOTCH_Num) 0);
+  /*
   std::vector<std::vector<std::size_t>>::const_iterator vertex;
   for(vertex = local_graph.begin(); vertex != local_graph.end(); ++vertex)
   {
     edgelocnbr += vertex->size();
     vertloctab.push_back(vertloctab.back() + vertex->size());
     edgeloctab.insert(edgeloctab.end(), vertex->begin(), vertex->end());
+  }
+  */
+
+  for(std::size_t i = 0; i < local_graph.size(); ++i)
+  {
+    auto& node = local_graph[i];
+    edgelocnbr += node.size();
+    vertloctab.push_back(vertloctab.back() + node.size());
+    edgeloctab.insert(edgeloctab.end(), node.begin(), node.end());
   }
 
   // Handle case that local graph size is zero
