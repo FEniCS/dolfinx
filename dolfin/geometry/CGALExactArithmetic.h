@@ -112,7 +112,7 @@ namespace dolfin
       std::sort(sorted_result_cgal.begin(), sorted_result_cgal.end());
 
       for (std::size_t i = 0; i < sorted_result_dolfin.size(); ++i)
-	if (!near(sorted_result_dolfin[i], sorted_result_cgal[i]))
+	if (!near(sorted_result_dolfin[i], sorted_result_cgal[i], DOLFIN_EPS_LARGE))
 	{
 	  std::stringstream s_dolfin;
 	  s_dolfin.precision(16);
@@ -143,7 +143,7 @@ namespace dolfin
   {
     for (std::size_t d = 0; d < 3; ++d)
     {
-      if (!near(result_dolfin[d], result_cgal[d]))
+      if (!near(result_dolfin[d], result_cgal[d], DOLFIN_EPS_LARGE))
       {
 	std::stringstream s_dolfin;
 	s_dolfin.precision(16);
@@ -335,7 +335,6 @@ namespace
   parse_triangle_triangle_intersection
   (const CGAL::cpp11::result_of<Intersect_2(Triangle_2, Triangle_2)>::type ii)
   {
-
     const Point_2* p = boost::get<Point_2>(&*ii);
     if (p)
       return flatten(*p);
