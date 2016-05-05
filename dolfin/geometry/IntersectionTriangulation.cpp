@@ -376,7 +376,6 @@ IntersectionTriangulation::_triangulate_triangle_triangle(const Point& p0,
   const int s0 = std::signbit(orient2d(t0[0], t0[1], t0[2])) == true ? -1 : 1;
   const int s1 = std::signbit(orient2d(t1[0], t1[1], t1[2])) == true ? -1 : 1;
 
-  // Note: should have >= to allow for 2 meshes, 2 elements each, rotation 100
   for (std::size_t i = 0; i < 3; ++i)
   {
     if (s1*orient2d(t1[0], t1[1], t0[i]) >= 0. and
