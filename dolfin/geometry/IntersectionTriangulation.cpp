@@ -216,7 +216,7 @@ IntersectionTriangulation::triangulate(const MeshEntity &entity,
   }
 }
 //-----------------------------------------------------------------------------
-/// Low-level intersection triangulation functions
+// Low-level intersection triangulation functions
 //-----------------------------------------------------------------------------
 std::vector<double>
 IntersectionTriangulation::_triangulate_segment_segment(const Point& p0,
