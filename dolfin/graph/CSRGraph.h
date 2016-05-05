@@ -106,6 +106,16 @@ namespace dolfin
       calculate_node_distribution();
     }
 
+    /// Create a CSR Graph from ParMETIS style adjacency lists
+    CSRGraph(MPI_Comm mpi_comm, const T* xadj, const T* adjncy, std::size_t n)
+    {
+      _node_offsets.assign(xadj, xadj + n + 1);
+      _edges.assign(adjncy, adjncy + xadj[n]);
+
+      // Compute node offsets
+      calculate_node_distribution();
+    }
+
     /// Destructor
     ~CSRGraph() {}
 
