@@ -109,11 +109,9 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
-                                              LocalMeshData& local_data,
+                                              const LocalMeshData& local_data,
                                               const std::string ghost_mode)
 {
-  local_data.reorder();
-
   log(PROGRESS, "Building distributed mesh");
 
   Timer timer("Build distributed mesh from local mesh data");
@@ -142,8 +140,8 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 
   if (ghost_procs.empty() && ghost_mode != "none")
   {
-    // FIXME: need to generate ghost cell information here
-    // by doing a facet-matching operation "GraphBuilder" style
+    // FIXME: need to generate ghost cell information here by doing a
+    // facet-matching operation "GraphBuilder" style
     dolfin_error("MeshPartitioning.cpp",
                  "build ghost mesh",
                  "Ghost cell information not available");
@@ -156,9 +154,9 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // FIXME: probably not working with ghost cells?
   build_mesh_domains(mesh, local_data);
 
-  // Initialise number of globally connected cells to each facet. This is
-  // necessary to distinguish between facets on an exterior boundary and
-  // facets on a partition boundary (see
+  // Initialise number of globally connected cells to each facet. This
+  // is necessary to distinguish between facets on an exterior
+  // boundary and facets on a partition boundary (see
   // https://bugs.launchpad.net/dolfin/+bug/733834).
   DistributedMeshTools::init_facet_cell_connections(mesh);
 }
@@ -219,8 +217,8 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   const std::int32_t num_cell_vertices = mesh_data.topology.num_vertices_per_cell;
 
   // FIXME: explain structure of shared_cells
-  // Keep tabs on ghost cell ownership (map from local cell index to sharing
-  // processes)
+  // Keep tabs on ghost cell ownership (map from local cell index to
+  // sharing processes)
 
   // Send cells to processes that need them. Returns
   // 0. Number of regular cells on this process
@@ -230,9 +228,9 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   std::vector<int> new_cell_partition;
   std::map<std::int32_t, std::set<unsigned int>> shared_cells;
 
-  // Send cells to owning process accoring to cell_partition, and receive cells
-  // that belong to this process. Also compute auxillary data related to
-  // sharring,
+  // Send cells to owning process accoring to cell_partition, and
+  // receive cells that belong to this process. Also compute auxiliary
+  // data related to sharing,
   const std::int32_t num_regular_cells
     = distribute_cells(mesh.mpi_comm(), mesh_data, cell_partition, ghost_procs,
                        new_cell_vertices, new_global_cell_indices,
@@ -280,9 +278,9 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   }
   #endif
 
-  // Generate mapping from global to local indexing for vertices
-  // also calculating which vertices are 'ghost' and putting them
-  // at the end of the local range
+  // Generate mapping from global to local indexing for vertices also
+  // calculating which vertices are 'ghost' and putting them at the
+  // end of the local range
   std::vector<std::int64_t> vertex_indices;
   std::map<std::int64_t, std::int32_t> vertex_global_to_local;
   const std::int32_t num_regular_vertices
@@ -423,13 +421,13 @@ void MeshPartitioning::reorder_cells_gps(
   }
   std::vector<int> remap = SCOTCH::compute_gps(g_dual);
 
-  // Resize re-ordered cell topology arrray, and copy (copy iss required because
-  // ghosts are not being re-ordered).
+  // Resize re-ordered cell topology arrray, and copy (copy iss
+  // required because ghosts are not being re-ordered).
   reordered_cell_vertices.resize(boost::extents[cell_vertices.shape()[0]][cell_vertices.shape()[1]]);
   reordered_cell_vertices = cell_vertices;
 
-  // Assign old gloabl indeices to re-ordered indices (since ghost will be be
-  // re-ordered, we need to copy them over)
+  // Assign old gloabl indeices to re-ordered indices (since ghost
+  // will be be re-ordered, we need to copy them over)
   reordered_global_cell_indices = global_cell_indices;
 
   for (unsigned int i = 0; i != g_dual.size(); ++i)
@@ -508,9 +506,9 @@ MeshPartitioning::reorder_vertices_gps(MPI_Comm mpi_comm,
   // Remap local-to-global mapping for regular vertices
   const std::int32_t num_indices = vertex_indices.size();
   reordered_vertex_indices.resize(num_indices);
-
   for (std::int32_t i = 0; i < num_regular_vertices; ++i)
     reordered_vertex_indices[remap[i]] = vertex_indices[i];
+
   // Copy ghost vertices
   for (std::int32_t i = num_regular_vertices; i < num_indices; ++i)
     reordered_vertex_indices[i] = vertex_indices[i];
@@ -544,12 +542,12 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
   }
 
   // Reduce vertex set to those which also appear in local cells
-  // giving the effective boundary vertices.
-  // Make a map from these vertices to the set of connected cells
-  // (but only adding locally owned cells)
+  // giving the effective boundary vertices.  Make a map from these
+  // vertices to the set of connected cells (but only adding locally
+  // owned cells)
 
-  // Go through all regular cells
-  // to add any previously unshared cells.
+  // Go through all regular cells to add any previously unshared
+  // cells.
   for (int i = 0; i < num_regular_cells; ++i)
   {
     for (auto v = cell_vertices[i].begin(); v != cell_vertices[i].end(); ++v)
@@ -678,8 +676,8 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
           cell_vertices[local_index][j] = *(q + j + 2);
       }
 
-      // If starting on a new shared vertex, dump old data
-      // into shared_cells
+      // If starting on a new shared vertex, dump old data into
+      // shared_cells
       if (shared_vertex != last_vertex)
       {
         last_vertex = shared_vertex;
@@ -727,11 +725,11 @@ MeshPartitioning::distribute_cells(
   std::vector<int>& new_cell_partition,
   std::map<std::int32_t, std::set<unsigned int>>& shared_cells)
 {
-  // This function takes the partition computed by the partitioner stored in
-  // cell_partition/ghost_procs Some cells go to multiple destinations. Each
-  // cell is transmitted to its final destination(s) including its global index,
-  // and the cell owner (for ghost cells this will be different from the
-  // destination)
+  // This function takes the partition computed by the partitioner
+  // stored in cell_partition/ghost_procs Some cells go to multiple
+  // destinations. Each cell is transmitted to its final
+  // destination(s) including its global index, and the cell owner
+  // (for ghost cells this will be different from the destination)
 
   log(PROGRESS, "Distribute cells during distributed mesh construction");
 
@@ -759,17 +757,16 @@ MeshPartitioning::distribute_cells(
     }
   }
 
-  // Send all cells to their destinations including their global indices.
-  // First element of vector is cell count of unghosted cells,
-  // second element is count of ghost cells.
+  // Send all cells to their destinations including their global
+  // indices.  First element of vector is cell count of unghosted
+  // cells, second element is count of ghost cells.
   std::vector<std::vector<std::size_t>>
     send_cell_vertices(mpi_size, std::vector<std::size_t>(2, 0));
 
   for (unsigned int i = 0; i != cell_partition.size(); ++i)
   {
     // If cell is in ghost_procs map, use that to determine
-    // destinations, otherwise just use the cell_partition
-    // vector
+    // destinations, otherwise just use the cell_partition vector
     auto map_it = ghost_procs.find(i);
     if (map_it != ghost_procs.end())
     {
@@ -821,8 +818,8 @@ MeshPartitioning::distribute_cells(
   std::vector<std::vector<std::size_t>> received_cell_vertices(mpi_size);
   MPI::all_to_all(mpi_comm, send_cell_vertices, received_cell_vertices);
 
-  // Count number of received cells (first entry in vector)
-  // and find out how many ghost cells there are...
+  // Count number of received cells (first entry in vector) and find
+  // out how many ghost cells there are...
   std::size_t local_count = 0;
   std::size_t ghost_count = 0;
   for (std::size_t p = 0; p < mpi_size; ++p)
@@ -863,6 +860,7 @@ MeshPartitioning::distribute_cells(
       if (num_ghosts != 0)
       {
         std::set<unsigned int> proc_set(tmp_it, tmp_it + num_ghosts);
+
         // Remove self from set of sharing processes
         proc_set.erase(mpi_rank);
         shared_cells.insert({idx, proc_set});
@@ -872,6 +870,7 @@ MeshPartitioning::distribute_cells(
       new_global_cell_indices[idx] = *tmp_it++;
       for (std::size_t j = 0; j < num_cell_vertices; ++j)
         new_cell_vertices[idx][j] = *tmp_it++;
+
       if (owner == mpi_rank)
         ++c;
       else
@@ -1143,8 +1142,8 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   }
 
   // Close mesh: Note that this must be done after creating the global
-  // vertex map or otherwise the ordering in mesh.close() will be wrong
-  // (based on local numbers).
+  // vertex map or otherwise the ordering in mesh.close() will be
+  // wrong (based on local numbers).
   editor.close();
 }
 //-----------------------------------------------------------------------------

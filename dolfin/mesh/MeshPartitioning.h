@@ -40,19 +40,20 @@
 
 namespace dolfin
 {
-  // Developer note: MeshFunction and MeshValueCollection cannot appear
-  // in the implementations that appear in this file of the templated
-  // functions as this leads to a circular dependency. Therefore the
-  // functions are templated over these types.
+  // Developer note: MeshFunction and MeshValueCollection cannot
+  // appear in the implementations that appear in this file of the
+  // templated functions as this leads to a circular
+  // dependency. Therefore the functions are templated over these
+  // types.
 
   template <typename T> class MeshFunction;
   template <typename T> class MeshValueCollection;
   class LocalMeshData;
 
   /// This class partitions and distributes a mesh based on
-  /// partitioned local mesh data.The local mesh data will
-  /// also be repartitioned and redistributed during the computation
-  /// of the mesh partitioning.
+  /// partitioned local mesh data.The local mesh data will also be
+  /// repartitioned and redistributed during the computation of the
+  /// mesh partitioning.
   ///
   /// After partitioning, each process has a local mesh and some data
   /// that couples the meshes together.
@@ -65,14 +66,15 @@ namespace dolfin
     static void build_distributed_mesh(Mesh& mesh);
 
     /// Build a distributed mesh from a local mesh on process 0, with
-    /// distribution of cells supplied (destination processes for each cell)
+    /// distribution of cells supplied (destination processes for each
+    /// cell)
     static void
       build_distributed_mesh(Mesh& mesh, const std::vector<int>& cell_partition,
                              const std::string ghost_mode);
 
     /// Build a distributed mesh from 'local mesh data' that is
     /// distributed across processes
-    static void build_distributed_mesh(Mesh& mesh, LocalMeshData& data,
+    static void build_distributed_mesh(Mesh& mesh, const LocalMeshData& data,
                                        const std::string ghost_mode);
 
     /// Build a MeshValueCollection based on LocalMeshValueCollection
@@ -84,9 +86,10 @@ namespace dolfin
 
   private:
 
-    // Compute cell partitioning from local mesh data. Returns  a vector 'cell
-    // -> process' vector for cells in LocalMeshData, and a map
-    // 'local cell index -> processes' to which ghost cells must be sent
+    // Compute cell partitioning from local mesh data. Returns a
+    // vector 'cell -> process' vector for cells in LocalMeshData, and
+    // a map 'local cell index -> processes' to which ghost cells must
+    // be sent
     static
     void partition_cells(const MPI_Comm& mpi_comm,
                          const LocalMeshData& mesh_data,
@@ -94,7 +97,8 @@ namespace dolfin
                          std::vector<int>& cell_partition,
                          std::map<std::int64_t, std::vector<int>>& ghost_procs);
 
-    // Build a distributed mesh from local mesh data with a computed partition
+    // Build a distributed mesh from local mesh data with a computed
+    // partition
     static void build(Mesh& mesh, const LocalMeshData& data,
                       const std::vector<int>& cell_partition,
                       const std::map<std::int64_t, std::vector<int>>& ghost_procs,
