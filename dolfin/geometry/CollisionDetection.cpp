@@ -57,9 +57,10 @@
 //-----------------------------------------------------------------------------
 
 #include <dolfin/mesh/MeshEntity.h>
-#include "Point.h"
-#include "CollisionDetection.h"
 #include "predicates.h"
+#include "Point.h"
+#include "GeometryDebugging.h"
+#include "CollisionDetection.h"
 
 using namespace dolfin;
 
@@ -961,19 +962,5 @@ bool CollisionDetection::separating_plane_edge_A(const std::vector<std::vector<d
   // Now there exists a separating plane supported by the edge shared
   // by f0 and f1.
   return true;
-}
-//-----------------------------------------------------------------------------
-void CollisionDetection::_print(std::vector<Point> entity_0,
-                                std::vector<Point> entity_1)
-{
-  cout << "Computing collision:" << endl;
-  cout << "  ";
-  for (const Point p : entity_0)
-    cout << p << " ";
-  cout << endl;
-  cout << "  ";
-  for (const Point p : entity_1)
-    cout << p << " ";
-  cout << endl;
 }
 //-----------------------------------------------------------------------------

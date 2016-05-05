@@ -461,7 +461,7 @@ void Logger::write(int log_level, std::string msg) const
   }
 
   // Add indentation
-  for (int i = 0; i < indentation_level; i++)
+  for (int i = 0; i < _indentation_level; i++)
     msg = "  " + msg;
 
   // Write to stream

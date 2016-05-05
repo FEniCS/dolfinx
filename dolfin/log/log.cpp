@@ -186,7 +186,7 @@ void dolfin::set_log_level(int level)
 //-----------------------------------------------------------------------------
 void dolfin::set_indentation_level(std::size_t indentation_level)
 {
-  LogManager::set_indentation_level(indentation_level);
+  LogManager::logger().set_indentation_level(indentation_level);
 }
 //-----------------------------------------------------------------------------
 void dolfin::set_output_stream(std::ostream& out)

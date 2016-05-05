@@ -19,10 +19,11 @@
 // Last changed: 2016-05-05
 
 #include <dolfin/mesh/MeshEntity.h>
-#include "IntersectionTriangulation.h"
-#include "CGALExactArithmetic.h"
-#include "CollisionDetection.h"
 #include "predicates.h"
+#include "CGALExactArithmetic.h"
+#include "GeometryDebugging.h"
+#include "CollisionDetection.h"
+#include "IntersectionTriangulation.h"
 
 using namespace dolfin;
 
@@ -360,6 +361,8 @@ IntersectionTriangulation::_triangulate_triangle_triangle(const Point& p0,
   // Tolerance for duplicate points (p and q are the same if
   // (p-q).norm() < same_point_tol)
   //const double same_point_tol = DOLFIN_EPS_LARGE;
+
+  GeometryDebugging::plot({p0, p1, p2}, {q0, q1, q2});
 
   // Pack points as vectors
   std::vector<Point> tri_0({p0, p1, p2});

@@ -71,7 +71,7 @@ namespace dolfin
       // Issue error
       dolfin_error("CGALExactArithmetic.h",
                    "verify geometric predicate with exact types",
-                   "%s\n DOLFIN: %s\n CGAL: %s",
+                   "Error in predicate %s\n DOLFIN: %s\n CGAL: %s",
                    function.c_str(), s_dolfin.str().c_str(), s_cgal.str().c_str());
     }
 
@@ -99,7 +99,7 @@ namespace dolfin
 
       dolfin_error("CGALExactArithmetic.h",
 		   "verify intersections due to different sizes",
-		   "%s\n DOLFIN: %s\n CGAL: %s",
+		   "Error in function %s\n DOLFIN: %s\n CGAL: %s",
 		   function.c_str(),
 		   s_dolfin.str().c_str(),
 		   s_cgal.str().c_str());
@@ -126,7 +126,7 @@ namespace dolfin
 
 	  dolfin_error("CGALExactArithmetic.h",
 		       "verify intersections due to different data (NB: we sort data before comparing)",
-		       "%s\n DOLFIN: %s\n CGAL: %s",
+		       "Error in function %s\n DOLFIN: %s\n CGAL: %s",
 		       function.c_str(),
 		       s_dolfin.str().c_str(),
 		       s_cgal.str().c_str());
@@ -157,7 +157,7 @@ namespace dolfin
 
 	dolfin_error("CGALExactArithmetic.h",
 		     "verify intersections due to different Point data",
-		     "%s\n DOLFIN: %s\n CGAL: %s",
+		     "Error in function %s\n DOLFIN: %s\n CGAL: %s",
 		     function.c_str(),
 		     s_dolfin.str().c_str(),
 		     s_cgal.str().c_str());
