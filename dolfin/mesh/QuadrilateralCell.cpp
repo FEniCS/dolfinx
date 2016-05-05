@@ -268,13 +268,6 @@ bool QuadrilateralCell::collides(const Cell& cell, const MeshEntity& entity) con
   return false;
 }
 //-----------------------------------------------------------------------------
-std::vector<double>
-QuadrilateralCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
-{
-  dolfin_not_implemented();
-  return std::vector<double>();
-}
-//-----------------------------------------------------------------------------
 std::string QuadrilateralCell::description(bool plural) const
 {
   if (plural)

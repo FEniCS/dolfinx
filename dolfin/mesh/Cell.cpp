@@ -37,8 +37,3 @@ bool Cell::collides(const MeshEntity& entity) const
   return CollisionDetection::collides(*this, entity);
 }
 //-----------------------------------------------------------------------------
-std::vector<double> Cell::triangulate(const MeshEntity& entity) const
-{
-  return IntersectionTriangulation::triangulate(*this, entity);
-}
-//-----------------------------------------------------------------------------

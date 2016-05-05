@@ -164,12 +164,6 @@ bool PointCell::collides(const Cell& cell, const MeshEntity& entity) const
   return CollisionDetection::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
-std::vector<double>
-PointCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
-{
-  return IntersectionTriangulation::triangulate(c0, c1);
-}
-//-----------------------------------------------------------------------------
 std::string PointCell::description(bool plural) const
 {
   if (plural)

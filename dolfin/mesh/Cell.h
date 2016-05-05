@@ -338,20 +338,6 @@ namespace dolfin
     ///         True iff entity collides with cell.
     bool collides(const MeshEntity& entity) const;
 
-    /// Compute triangulation of intersection with given entity
-    ///
-    /// *Arguments*
-    ///     entity (_MeshEntity_)
-    ///         The entity with which to intersect.
-    ///
-    /// *Returns*
-    ///     std::vector<double>
-    ///         A flattened array of simplices of dimension
-    ///         num_simplices x num_vertices x gdim =
-    ///         num_simplices x (tdim + 1) x gdim
-    std::vector<double>
-    triangulate(const MeshEntity& entity) const;
-
     // FIXME: This function is part of a UFC transition
     /// Get cell coordinate dofs (not vertex coordinates)
     void get_coordinate_dofs(std::vector<double>& coordinates) const
