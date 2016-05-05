@@ -538,12 +538,6 @@ bool TetrahedronCell::collides(const Cell& cell, const MeshEntity& entity) const
   return CollisionDetection::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
-std::vector<double>
-TetrahedronCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
-{
-  return IntersectionTriangulation::triangulate(c0, c1);
-}
-//-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const
 {
   if (plural)
