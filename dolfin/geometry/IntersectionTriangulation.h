@@ -175,7 +175,7 @@ namespace dolfin
 				  const Point& q1,
 				  std::size_t gdim);
 
-    static std::vector<Point>
+    static std::vector<std::vector<Point>>
     _triangulate_triangle_triangle(const Point& p0,
 				   const Point& p1,
 				   const Point& p2,
@@ -183,7 +183,7 @@ namespace dolfin
 				   const Point& q1,
 				   const Point& q2);
 
-    static std::vector<Point>
+    static std::vector<std::vector<Point>>
     _triangulate_tetrahedron_triangle(const Point& p0,
 				      const Point& p1,
 				      const Point& p2,
@@ -191,7 +191,7 @@ namespace dolfin
 				      const Point& q0,
 				      const Point& q1,
 				      const Point& q2);
-    static std::vector<Point>
+    static std::vector<std::vector<Point>>
     _triangulate_tetrahedron_tetrahedron(const Point& p0,
                                          const Point& p1,
                                          const Point& p2,
@@ -222,10 +222,7 @@ namespace dolfin
                                                       const Point& t,
                                                       const Point& a,
                                                       const Point& b);
-
-
   };
-
 }
 
 #endif
