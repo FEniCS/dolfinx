@@ -213,6 +213,7 @@ bool CollisionDetection::_collides_segment_segment(const Point& p0,
 						   const Point& q0,
 						   const Point& q1)
 {
+  _print({{p0,p1}},{{q0,q1}});
   const double cda = orient2d(const_cast<double*>(q0.coordinates()),
   			      const_cast<double*>(q1.coordinates()),
   			      const_cast<double*>(p0.coordinates()));
@@ -399,141 +400,185 @@ bool CollisionDetection::_collides_triangle_triangle(const Point& p0,
 						     const Point& q1,
 						     const Point& q2)
 {
-  // Algorithm and code from Tomas Moller: A Fast Triangle-Triangle
-  // Intersection Test, Journal of Graphics Tools, 2(2), 1997. Source
-  // code is available at
-  // http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/opttritri.txt
+  // Pack points as vectors
+  std::vector<Point> tri_0({p0, p1, p2});
+  std::vector<Point> tri_1({q0, q1, q2});
 
-  // First check if the triangles are the same. We need to do this
-  // separately if we do _not_ allow for adjacent edges to be
-  // classified as colliding (see the edge_edge_test).
+  // Extract coordinates
+  double t0[3][2] = {{p0[0], p0[1]}, {p1[0], p1[1]}, {p2[0], p2[1]}};
+  double t1[3][2] = {{q0[0], q0[1]}, {q1[0], q1[1]}, {q2[0], q2[1]}};
 
-  _print({p0, p1, p2}, {q0, q1, q2});
+  // Find all vertex-cell collisions
+  const int s0 = std::signbit(orient2d(t0[0], t0[1], t0[2])) == true ? -1 : 1;
+  const int s1 = std::signbit(orient2d(t1[0], t1[1], t1[2])) == true ? -1 : 1;
 
-  const Point Vmid = (p0 + p1 + p2) / 3.;
-  const Point Umid = (q0 + q1 + q2) / 3.;
-  if ((Vmid-Umid).norm() < DOLFIN_EPS_LARGE)
-    return true;
+  for (std::size_t i = 0; i < 3; ++i)
+  {
+    if (s1*orient2d(t1[0], t1[1], t0[i]) >= 0. and
+  	s1*orient2d(t1[1], t1[2], t0[i]) >= 0. and
+  	s1*orient2d(t1[2], t1[0], t0[i]) >= 0.)
+      return true;
 
-  Point E1, E2;
-  Point N1, N2;
-  double d1, d2;
-  double du0, du1, du2, dv0, dv1, dv2;
-  Point D;
-  double isect1[2], isect2[2];
-  double du0du1, du0du2, dv0dv1, dv0dv2;
-  int index;
-  double vp0, vp1, vp2;
-  double up0, up1, up2;
-  double bb, cc, max;
+    if (s0*orient2d(t0[0], t0[1], t1[i]) >= 0. and
+  	s0*orient2d(t0[1], t0[2], t1[i]) >= 0. and
+  	s0*orient2d(t0[2], t0[0], t1[i]) >= 0.)
+      return true;
+  }
 
-  // Compute plane equation of triangle(p0,p1,p2)
-  E1 = p1-p0;
-  E2 = p2-p0;
-  N1 = E1.cross(E2);
-  d1 = -N1.dot(p0);
+  // Find all edge-edge collisions
+  for (std::size_t i0 = 0; i0 < 3; i0++)
+  {
+    const std::size_t j0 = (i0 + 1) % 3;
+    const Point& p0 = tri_0[i0];
+    const Point& q0 = tri_0[j0];
+    for (std::size_t i1 = 0; i1 < 3; i1++)
+    {
+      const std::size_t j1 = (i1 + 1) % 3;
+      const Point& p1 = tri_1[i1];
+      const Point& q1 = tri_1[j1];
+      if (CollisionDetection::collides_segment_segment(p0, q0, p1, q1))
+	return true;
+    }
+  }
 
-  // Plane equation 1: N1.X+d1=0. Put q0,q1,q2 into plane equation 1
-  // to compute signed distances to the plane
-  du0 = N1.dot(q0) + d1;
-  du1 = N1.dot(q1) + d1;
-  du2 = N1.dot(q2) + d1;
+  return false;
 
-  // Coplanarity robustness check
-  if (std::abs(du0) < DOLFIN_EPS_LARGE)
-    du0 = 0.0;
-  if (std::abs(du1) < DOLFIN_EPS_LARGE)
-    du1 = 0.0;
-  if (std::abs(du2) < DOLFIN_EPS_LARGE)
-    du2 = 0.0;
-  du0du1 = du0*du1;
-  du0du2 = du0*du2;
 
-  // Same sign on all of them + not equal 0?
-  if (du0du1 > 0. && du0du2 > 0.)
-    return false;
+  // // Algorithm and code from Tomas Moller: A Fast Triangle-Triangle
+  // // Intersection Test, Journal of Graphics Tools, 2(2), 1997. Source
+  // // code is available at
+  // // http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/opttritri.txt
 
-  // Compute plane of triangle (q0,q1,q2)
-  E1 = q1 - q0;
-  E2 = q2 - q0;
-  N2 = E1.cross(E2);
-  d2 = -N2.dot(q0);
-  // Plane equation 2: N2.X+d2=0. Put p0,p1,p2 into plane equation 2
-  dv0 = N2.dot(p0) + d2;
-  dv1 = N2.dot(p1) + d2;
-  dv2 = N2.dot(p2) + d2;
+  // // First check if the triangles are the same. We need to do this
+  // // separately if we do _not_ allow for adjacent edges to be
+  // // classified as colliding (see the edge_edge_test).
 
-  // Coplanarity check
-  if (std::abs(dv0) < DOLFIN_EPS_LARGE)
-    dv0 = 0.0;
-  if (std::abs(dv1) < DOLFIN_EPS_LARGE)
-    dv1 = 0.0;
-  if (std::abs(dv2) < DOLFIN_EPS_LARGE)
-    dv2 = 0.0;
-  dv0dv1 = dv0*dv1;
-  dv0dv2 = dv0*dv2;
+  // _print({p0, p1, p2}, {q0, q1, q2});
 
-  // Same sign on all of them + not equal 0 ?
-  if (dv0dv1 > 0. && dv0dv2 > 0.)
-    return false;
+  // const Point Vmid = (p0 + p1 + p2) / 3.;
+  // const Point Umid = (q0 + q1 + q2) / 3.;
+  // if ((Vmid-Umid).norm() < DOLFIN_EPS_LARGE)
+  //   return true;
 
-  // Compute direction of intersection line
-  D = N1.cross(N2);
+  // Point E1, E2;
+  // Point N1, N2;
+  // double d1, d2;
+  // double du0, du1, du2, dv0, dv1, dv2;
+  // Point D;
+  // double isect1[2], isect2[2];
+  // double du0du1, du0du2, dv0dv1, dv0dv2;
+  // int index;
+  // double vp0, vp1, vp2;
+  // double up0, up1, up2;
+  // double bb, cc, max;
 
-  // Compute and index to the largest component of D
-  max = (double)std::abs(D[0]);
-  index = 0;
-  bb = (double)std::abs(D[1]);
-  cc = (double)std::abs(D[2]);
-  if (bb > max)
-    max = bb, index = 1;
-  if (cc > max)
-    max = cc, index = 2;
+  // // Compute plane equation of triangle(p0,p1,p2)
+  // E1 = p1-p0;
+  // E2 = p2-p0;
+  // N1 = E1.cross(E2);
+  // d1 = -N1.dot(p0);
 
-  // This is the simplified projection onto L
-  vp0 = p0[index];
-  vp1 = p1[index];
-  vp2 = p2[index];
+  // // Plane equation 1: N1.X+d1=0. Put q0,q1,q2 into plane equation 1
+  // // to compute signed distances to the plane
+  // du0 = N1.dot(q0) + d1;
+  // du1 = N1.dot(q1) + d1;
+  // du2 = N1.dot(q2) + d1;
 
-  up0 = q0[index];
-  up1 = q1[index];
-  up2 = q2[index];
+  // // Coplanarity robustness check
+  // if (std::abs(du0) < DOLFIN_EPS_LARGE)
+  //   du0 = 0.0;
+  // if (std::abs(du1) < DOLFIN_EPS_LARGE)
+  //   du1 = 0.0;
+  // if (std::abs(du2) < DOLFIN_EPS_LARGE)
+  //   du2 = 0.0;
+  // du0du1 = du0*du1;
+  // du0du2 = du0*du2;
 
-  // Compute interval for triangle 1
-  double a, b, c, x0, x1;
-  if (compute_intervals(vp0, vp1, vp2, dv0, dv1, dv2, dv0dv1, dv0dv2,
-                        a, b, c, x0, x1))
-    return coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
+  // // Same sign on all of them + not equal 0?
+  // if (du0du1 > 0. && du0du2 > 0.)
+  //   return false;
 
-  // Compute interval for triangle 2
-  double d, e, f, y0, y1;
-  if (compute_intervals(up0, up1, up2, du0, du1, du2, du0du1, du0du2,
-                        d, e, f, y0, y1))
-    return coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
+  // // Compute plane of triangle (q0,q1,q2)
+  // E1 = q1 - q0;
+  // E2 = q2 - q0;
+  // N2 = E1.cross(E2);
+  // d2 = -N2.dot(q0);
+  // // Plane equation 2: N2.X+d2=0. Put p0,p1,p2 into plane equation 2
+  // dv0 = N2.dot(p0) + d2;
+  // dv1 = N2.dot(p1) + d2;
+  // dv2 = N2.dot(p2) + d2;
 
-  double xx, yy, xxyy, tmp;
-  xx = x0*x1;
-  yy = y0*y1;
-  xxyy = xx*yy;
+  // // Coplanarity check
+  // if (std::abs(dv0) < DOLFIN_EPS_LARGE)
+  //   dv0 = 0.0;
+  // if (std::abs(dv1) < DOLFIN_EPS_LARGE)
+  //   dv1 = 0.0;
+  // if (std::abs(dv2) < DOLFIN_EPS_LARGE)
+  //   dv2 = 0.0;
+  // dv0dv1 = dv0*dv1;
+  // dv0dv2 = dv0*dv2;
 
-  tmp = a*xxyy;
-  isect1[0] = tmp + b*x1*yy;
-  isect1[1] = tmp + c*x0*yy;
+  // // Same sign on all of them + not equal 0 ?
+  // if (dv0dv1 > 0. && dv0dv2 > 0.)
+  //   return false;
 
-  tmp = d*xxyy;
-  isect2[0] = tmp + e*xx*y1;
-  isect2[1] = tmp + f*xx*y0;
+  // // Compute direction of intersection line
+  // D = N1.cross(N2);
 
-  if (isect1[0] > isect1[1])
-    std::swap(isect1[0], isect1[1]);
-  if (isect2[0] > isect2[1])
-    std::swap(isect2[0], isect2[1]);
+  // // Compute and index to the largest component of D
+  // max = (double)std::abs(D[0]);
+  // index = 0;
+  // bb = (double)std::abs(D[1]);
+  // cc = (double)std::abs(D[2]);
+  // if (bb > max)
+  //   max = bb, index = 1;
+  // if (cc > max)
+  //   max = cc, index = 2;
 
-  if (isect1[1] < isect2[0] ||
-      isect2[1] < isect1[0])
-    return false;
+  // // This is the simplified projection onto L
+  // vp0 = p0[index];
+  // vp1 = p1[index];
+  // vp2 = p2[index];
 
-  return true;
+  // up0 = q0[index];
+  // up1 = q1[index];
+  // up2 = q2[index];
+
+  // // Compute interval for triangle 1
+  // double a, b, c, x0, x1;
+  // if (compute_intervals(vp0, vp1, vp2, dv0, dv1, dv2, dv0dv1, dv0dv2,
+  //                       a, b, c, x0, x1))
+  //   return coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
+
+  // // Compute interval for triangle 2
+  // double d, e, f, y0, y1;
+  // if (compute_intervals(up0, up1, up2, du0, du1, du2, du0du1, du0du2,
+  //                       d, e, f, y0, y1))
+  //   return coplanar_tri_tri(N1, p0, p1, p2, q0, q1, q2);
+
+  // double xx, yy, xxyy, tmp;
+  // xx = x0*x1;
+  // yy = y0*y1;
+  // xxyy = xx*yy;
+
+  // tmp = a*xxyy;
+  // isect1[0] = tmp + b*x1*yy;
+  // isect1[1] = tmp + c*x0*yy;
+
+  // tmp = d*xxyy;
+  // isect2[0] = tmp + e*xx*y1;
+  // isect2[1] = tmp + f*xx*y0;
+
+  // if (isect1[0] > isect1[1])
+  //   std::swap(isect1[0], isect1[1]);
+  // if (isect2[0] > isect2[1])
+  //   std::swap(isect2[0], isect2[1]);
+
+  // if (isect1[1] < isect2[0] ||
+  //     isect2[1] < isect1[0])
+  //   return false;
+
+  // return true;
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::_collides_tetrahedron_point(const Point& p0,
