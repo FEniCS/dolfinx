@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2013 Anders Logg and Jim Tilander
+// Copyright (C) 2003-2016 Anders Logg and Jim Tilander
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Ola Skavhaug 2007, 2009
 //
 // First added:  2003-03-13
-// Last changed: 2013-01-07
+// Last changed: 2016-05-05
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -119,6 +119,9 @@ namespace dolfin
 
   /// Set log level
   void set_log_level(int level);
+
+  /// Set indentation level
+  void set_indentation_level(std::size_t indentation_level);
 
   /// Set output stream
   void set_output_stream(std::ostream& out);

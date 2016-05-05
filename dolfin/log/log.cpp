@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2013 Anders Logg
+// Copyright (C) 2003-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2009
 //
 // First added:  2003-03-13
-// Last changed: 2013-04-18
+// Last changed: 2016-05-05
 
 #include <cstdarg>
 #include <cstdlib>
@@ -182,6 +182,11 @@ void dolfin::set_log_active(bool active)
 void dolfin::set_log_level(int level)
 {
   LogManager::logger().set_log_level(level);
+}
+//-----------------------------------------------------------------------------
+void dolfin::set_indentation_level(std::size_t indentation_level)
+{
+  LogManager::set_indentation_level(indentation_level);
 }
 //-----------------------------------------------------------------------------
 void dolfin::set_output_stream(std::ostream& out)
