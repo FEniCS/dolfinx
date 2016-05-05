@@ -55,9 +55,9 @@ namespace dolfin
   // Functions to compare results between DOLFIN and CGAL
   //---------------------------------------------------------------------------
 
-  template<typename T> inline T
-  check_cgal(T result_dolfin,
-             T result_cgal,
+  inline bool
+  check_cgal(bool result_dolfin,
+             bool result_cgal,
              std::string function)
   {
     if (result_dolfin != result_cgal)
