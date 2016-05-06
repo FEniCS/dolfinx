@@ -90,7 +90,7 @@ void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
 //-----------------------------------------------------------------------------
 template <typename T>
 void ParMETIS::partition(MPI_Comm mpi_comm,
-                         const CSRGraph<T>& csr_graph,
+                         CSRGraph<T>& csr_graph,
                          std::vector<int>& cell_partition,
                          std::map<std::int64_t, std::vector<int>>& ghost_procs)
 {
@@ -121,14 +121,17 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
   const std::int32_t num_local_cells = csr_graph.size();
   std::vector<idx_t> part(num_local_cells);
   dolfin_assert(!part.empty());
-  int err = ParMETIS_V3_PartKway(csr_graph.node_distribution().data(),
-                                 csr_graph.nodes().data(),
-                                 csr_graph.edges().data(), elmwgt,
-                                 NULL, &wgtflag, &numflag, &ncon,
-                                 &nparts,
-                                 tpwgts.data(), ubvec.data(), options,
-                                 &edgecut, part.data(),
-                                 &mpi_comm);
+  // FIXME: const cast because ParMETIS does not declare as const
+  // - however, it is unlikely to change the data in the csr_graph.
+  // Even if it does, this is probably the last time it is used.
+  int err
+    = ParMETIS_V3_PartKway(const_cast<idx_t*>(csr_graph.node_distribution().data()),
+                           const_cast<idx_t*>(csr_graph.nodes().data()),
+                           const_cast<idx_t*>(csr_graph.edges().data()), elmwgt,
+                           NULL, &wgtflag, &numflag, &ncon, &nparts,
+                           tpwgts.data(), ubvec.data(), options,
+                           &edgecut, part.data(),
+                           &mpi_comm);
   dolfin_assert(err == METIS_OK);
   timer1.stop();
 
@@ -247,7 +250,7 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
 //-----------------------------------------------------------------------------
 template <typename T>
 void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
-                                    const CSRGraph<T>& csr_graph,
+                                    CSRGraph<T>& csr_graph,
                                     std::vector<int>& cell_partition)
 {
   Timer timer("Compute graph partition (ParMETIS Adaptive Repartition)");
@@ -262,30 +265,46 @@ void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
   // migration if already balanced.  Try PARMETIS_PSR_UNCOUPLED for
   // better edge cut.
 
-  // Call ParMETIS to partition graph
+
   Timer timer1("ParMETIS: call ParMETIS_V3_AdaptiveRepart");
   const double itr = parameters["ParMETIS_repartitioning_weight"];
   real_t _itr = itr;
-  std::vector<idx_t> part(g.eptr.size() - 1);
+  std::vector<idx_t> part(csr_graph.size());
   std::vector<idx_t> vsize(part.size(), 1);
   dolfin_assert(!part.empty());
-  int err = ParMETIS_V3_AdaptiveRepart(g.elmdist.data(), g.xadj, g.adjncy,
-                                       g.elmwgt, NULL, vsize.data(), &g.wgtflag,
-                                       &g.numflag, &g.ncon, &g.nparts,
-                                       g.tpwgts.data(), g.ubvec.data(), &_itr,
-                                       options, &g.edgecut, part.data(),
+
+  // Number of partitions (one for each process)
+  idx_t nparts = MPI::size(mpi_comm);
+  // Remaining ParMETIS parameters
+  idx_t ncon = 1;
+  idx_t* elmwgt = NULL;
+  idx_t wgtflag = 0;
+  idx_t edgecut = 0;
+  idx_t numflag = 0;
+  std::vector<real_t> tpwgts(ncon*nparts, 1.0/static_cast<real_t>(nparts));
+  std::vector<real_t> ubvec(ncon, 1.05);
+
+  // Call ParMETIS to repartition graph
+  // FIXME: const cast because ParMETIS does not declare as const - however, it is unlikely to change
+  // the data in the csr_graph. Even if it does, this is probably the last time it is used.
+  int err = ParMETIS_V3_AdaptiveRepart(const_cast<idx_t*>(csr_graph.node_distribution().data()),
+                                       const_cast<idx_t*>(csr_graph.nodes().data()),
+                                       const_cast<idx_t*>(csr_graph.edges().data()),
+                                       elmwgt, NULL, vsize.data(), &wgtflag,
+                                       &numflag, &ncon, &nparts,
+                                       tpwgts.data(), ubvec.data(), &_itr,
+                                       options, &edgecut, part.data(),
                                        &mpi_comm);
   dolfin_assert(err == METIS_OK);
   timer1.stop();
 
   // Copy cell partition data
   cell_partition.assign(part.begin(), part.end());
-
 }
 //-----------------------------------------------------------------------------
 template<typename T>
 void ParMETIS::refine(MPI_Comm mpi_comm,
-                      const CSRGraph<T>& csr_graph,
+                      CSRGraph<T>& csr_graph,
                       std::vector<int>& cell_partition)
 {
   Timer timer("Compute graph partition (ParMETIS Refine)");
@@ -304,23 +323,36 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
   // migration if already balanced.  Try PARMETIS_PSR_UNCOUPLED for
   // better edge cut.
 
-  // Check that data arrays are not empty
-  dolfin_assert(!g.tpwgts.empty());
-  dolfin_assert(!g.ubvec.empty());
-
   // Partitioning array to be computed by ParMETIS. Prefill with
   // process_number.
-  const std::size_t num_local_cells = g.eptr.size() - 1;
+  const std::size_t num_local_cells = csr_graph.size();
   std::vector<idx_t> part(num_local_cells, process_number);
   dolfin_assert(!part.empty());
 
+  // Number of partitions (one for each process)
+  idx_t nparts = MPI::size(mpi_comm);
+  // Remaining ParMETIS parameters
+  idx_t ncon = 1;
+  idx_t* elmwgt = NULL;
+  idx_t wgtflag = 0;
+  idx_t edgecut = 0;
+  idx_t numflag = 0;
+  std::vector<real_t> tpwgts(ncon*nparts, 1.0/static_cast<real_t>(nparts));
+  std::vector<real_t> ubvec(ncon, 1.05);
+
   // Call ParMETIS to partition graph
   Timer timer1("ParMETIS: call ParMETIS_V3_RefineKway");
-  int err = ParMETIS_V3_RefineKway(g.elmdist.data(), g.xadj, g.adjncy, g.elmwgt,
-                                   NULL, &g.wgtflag, &g.numflag, &g.ncon,
-                                   &g.nparts,
-                                   g.tpwgts.data(), g.ubvec.data(), options,
-                                   &g.edgecut, part.data(), &mpi_comm);
+  // FIXME: const cast because ParMETIS does not declare as const
+  // - however, it is unlikely to change the data in the csr_graph.
+  // Even if it does, this is probably the last time it is used.
+  int err =
+    ParMETIS_V3_RefineKway(const_cast<idx_t*>(csr_graph.node_distribution().data()),
+                           const_cast<idx_t*>(csr_graph.nodes().data()),
+                           const_cast<idx_t*>(csr_graph.edges().data()),
+                           elmwgt, NULL, &wgtflag, &numflag, &ncon,
+                           &nparts,
+                           tpwgts.data(), ubvec.data(), options,
+                           &edgecut, part.data(), &mpi_comm);
   dolfin_assert(err == METIS_OK);
   timer1.stop();
 
@@ -338,12 +370,7 @@ CSRGraph<idx_t> ParMETIS::dual_graph(MPI_Comm mpi_comm,
   std::vector<idx_t> elmdist;
   std::vector<idx_t> eptr;
   std::vector<idx_t> eind;
-  idx_t numflag;
 
-  // Prepare remaining arguments for ParMETIS
-  idx_t* elmwgt;
-  idx_t wgtflag;
-  idx_t edgecut;
 
   // Get number of processes and process number
   const std::size_t num_processes = MPI::size(mpi_comm);
@@ -385,17 +412,15 @@ CSRGraph<idx_t> ParMETIS::dual_graph(MPI_Comm mpi_comm,
 
   // Number of nodes shared for dual graph (partition along facets)
   idx_t ncommonnodes = num_cell_vertices - 1;
-  numflag = 0;
-  xadj = 0;
-  adjncy = 0;
 
   dolfin_assert(!eptr.empty());
   dolfin_assert(!eind.empty());
 
   // Could use GraphBuilder::compute_dual_graph() instead
   Timer timer1("ParMETIS: call ParMETIS_V3_Mesh2Dual");
-  idx_t* xadj;
-  idx_t* adjncy;
+  idx_t* xadj = NULL;
+  idx_t* adjncy = NULL;
+  idx_t numflag = 0;
   int err = ParMETIS_V3_Mesh2Dual(elmdist.data(), eptr.data(), eind.data(),
                                   &numflag, &ncommonnodes,
                                   &xadj, &adjncy,

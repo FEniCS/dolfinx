@@ -74,21 +74,21 @@ namespace dolfin
     // Standard ParMETIS partition
     template <typename T>
     static void partition(MPI_Comm mpi_comm,
-                          const CSRGraph<T>& csr_graph,
+                          CSRGraph<T>& csr_graph,
                           std::vector<int>& cell_partition,
                           std::map<std::int64_t, std::vector<int>>& ghost_procs);
 
     // ParMETIS adaptive repartition
     template <typename T>
     static void adaptive_repartition(MPI_Comm mpi_comm,
-                                     const CSRGraph<T>& csr_graph,
+                                     CSRGraph<T>& csr_graph,
                                      std::vector<int>& cell_partition);
 
     // ParMETIS refine repartition
 
     template <typename T>
     static void refine(MPI_Comm mpi_comm,
-                       const CSRGraph<T>& csr_graph,
+                       CSRGraph<T>& csr_graph,
                        std::vector<int>& cell_partition);
 #endif
 
