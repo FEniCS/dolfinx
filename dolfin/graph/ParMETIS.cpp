@@ -24,6 +24,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/CellType.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "GraphBuilder.h"
 #include "ParMETIS.h"
@@ -35,31 +36,13 @@
 using namespace dolfin;
 
 #ifdef HAS_PARMETIS
-
-namespace dolfin
-{
-  // This class builds a ParMETIS dual graph
-
-  class ParMETISDualGraph
-  {
-  public:
-
-    // Constructor
-    ParMETISDualGraph(MPI_Comm mpi_comm,
-                      const boost::multi_array<std::int64_t, 2>& cell_vertices,
-                      const int num_vertices_per_cell);
-
-    // Destructor
-    ~ParMETISDualGraph();
-
-  };
-}
 //-----------------------------------------------------------------------------
 void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
                                  std::vector<int>& cell_partition,
                                  std::map<std::int64_t, std::vector<int>>& ghost_procs,
                                  const boost::multi_array<std::int64_t, 2>& cell_vertices,
-                                 const int num_vertices_per_cell,
+                                 const std::size_t num_global_vertices,
+                                 const CellType& cell_type,
                                  const std::string mode)
 {
   // Duplicate MPI communicator (ParMETIS does not take const
@@ -67,8 +50,32 @@ void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
   MPI_Comm comm;
   MPI_Comm_dup(mpi_comm, &comm);
 
-  // Build dual graph using ParMETIS builder
-  CSRGraph<idx_t> csr_graph = dual_graph(mpi_comm, cell_vertices, num_vertices_per_cell);
+  const std::int8_t tdim = cell_type.dim();
+  const std::int8_t num_vertices_per_cell = cell_type.num_vertices(tdim);
+
+  // Create data structures to hold graph
+  CSRGraph<idx_t> csr_graph;
+
+  // Use ParMETIS or DOLFIN dual graph
+  bool use_parmetis_dual_graph = false;
+
+  if (use_parmetis_dual_graph)
+  {
+    // Build dual graph using ParMETIS builder
+    csr_graph = dual_graph(mpi_comm, cell_vertices, num_vertices_per_cell);
+  }
+  else
+  {
+    // Compute dual graph with DOLFIN
+    std::vector<std::vector<std::size_t>> local_graph;
+    std::set<std::int64_t> ghost_vertices;
+    GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type,
+                                     num_global_vertices, local_graph,
+                                     ghost_vertices);
+
+    csr_graph = CSRGraph<idx_t>(mpi_comm, local_graph);
+
+  }
 
   // Partition graph
   if (mode == "partition")
@@ -167,17 +174,15 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
   // Do halo exchange of cell partition data
   std::vector<std::vector<std::int64_t>> send_cell_partition(num_processes);
   std::vector<std::vector<std::int64_t>> recv_cell_partition(num_processes);
-  for(std::map<idx_t, std::set<std::int32_t>>::iterator hcell
-        = halo_cell_to_remotes.begin(); hcell != halo_cell_to_remotes.end();
-      ++hcell)
+  for(const auto& hcell : halo_cell_to_remotes)
   {
-    for(auto proc : hcell->second)
+    for(auto proc : hcell.second)
     {
       dolfin_assert(proc < num_processes);
       // global cell number
-      send_cell_partition[proc].push_back(hcell->first + elm_begin);
+      send_cell_partition[proc].push_back(hcell.first + elm_begin);
       //partitioning
-      send_cell_partition[proc].push_back(part[hcell->first]);
+      send_cell_partition[proc].push_back(part[hcell.first]);
     }
   }
 

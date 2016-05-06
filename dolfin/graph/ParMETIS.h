@@ -36,6 +36,7 @@
 
 namespace dolfin
 {
+  class CellType;
 
   /// This class provides an interface to ParMETIS
 
@@ -59,7 +60,8 @@ namespace dolfin
             std::vector<int>& cell_partition,
             std::map<std::int64_t, std::vector<int>>& ghost_procs,
             const boost::multi_array<std::int64_t, 2>& cell_vertices,
-            const int num_vertices_per_cell,
+            const std::size_t num_global_vertices,
+            const CellType& cell_type,
             const std::string mode="partition");
 
   private:
