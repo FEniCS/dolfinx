@@ -108,6 +108,7 @@ namespace dolfin
 
     /// Create a CSR Graph from ParMETIS style adjacency lists
     CSRGraph(MPI_Comm mpi_comm, const T* xadj, const T* adjncy, std::size_t n)
+      : _mpi_comm(mpi_comm)
     {
       _node_offsets.assign(xadj, xadj + n + 1);
       _edges.assign(adjncy, adjncy + xadj[n]);
@@ -120,10 +121,12 @@ namespace dolfin
     ~CSRGraph() {}
 
     /// Vector containing all edges for all local nodes
+    /// ("adjncy" in ParMETIS)
     const std::vector<T>& edges() const
     { return _edges; }
 
     /// Vector containing all edges for all local nodes (non-const)
+    /// ("adjncy" in ParMETIS)
     std::vector<T>& edges()
     { return _edges; }
 
@@ -135,9 +138,15 @@ namespace dolfin
                   _edges.begin() + _node_offsets[i + 1]);
     }
 
+
     /// Vector containing index offsets into edges for all local nodes
-    /// (plus extra entry marking end)
+    /// (plus extra entry marking end) ("xadj" in ParMETIS)
     const std::vector<T>& nodes() const
+    { return _node_offsets; }
+
+    /// Vector containing index offsets into edges for all local nodes
+    /// (plus extra entry marking end) ("xadj" in ParMETIS)
+    std::vector<T>& nodes()
     { return _node_offsets; }
 
     /// Number of local edges in graph
@@ -161,6 +170,10 @@ namespace dolfin
 
     /// Return number of nodes (offset) on each process
     const std::vector<T>& node_distribution() const
+    { return _node_distribution; }
+
+    /// Return number of nodes (offset) on each process (non-const)
+    std::vector<T>& node_distribution()
     { return _node_distribution; }
 
   private:

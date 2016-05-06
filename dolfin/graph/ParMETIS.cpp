@@ -67,7 +67,7 @@ void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
   MPI_Comm comm;
   MPI_Comm_dup(mpi_comm, &comm);
 
-  // Build dual graph
+  // Build dual graph using ParMETIS builder
   CSRGraph<idx_t> csr_graph = dual_graph(mpi_comm, cell_vertices, num_vertices_per_cell);
 
   // Partition graph
@@ -121,13 +121,10 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
   const std::int32_t num_local_cells = csr_graph.size();
   std::vector<idx_t> part(num_local_cells);
   dolfin_assert(!part.empty());
-  // FIXME: const cast because ParMETIS does not declare as const
-  // - however, it is unlikely to change the data in the csr_graph.
-  // Even if it does, this is probably the last time it is used.
   int err
-    = ParMETIS_V3_PartKway(const_cast<idx_t*>(csr_graph.node_distribution().data()),
-                           const_cast<idx_t*>(csr_graph.nodes().data()),
-                           const_cast<idx_t*>(csr_graph.edges().data()), elmwgt,
+    = ParMETIS_V3_PartKway(csr_graph.node_distribution().data(),
+                           csr_graph.nodes().data(),
+                           csr_graph.edges().data(), elmwgt,
                            NULL, &wgtflag, &numflag, &ncon, &nparts,
                            tpwgts.data(), ubvec.data(), options,
                            &edgecut, part.data(),
@@ -285,11 +282,9 @@ void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
   std::vector<real_t> ubvec(ncon, 1.05);
 
   // Call ParMETIS to repartition graph
-  // FIXME: const cast because ParMETIS does not declare as const - however, it is unlikely to change
-  // the data in the csr_graph. Even if it does, this is probably the last time it is used.
-  int err = ParMETIS_V3_AdaptiveRepart(const_cast<idx_t*>(csr_graph.node_distribution().data()),
-                                       const_cast<idx_t*>(csr_graph.nodes().data()),
-                                       const_cast<idx_t*>(csr_graph.edges().data()),
+  int err = ParMETIS_V3_AdaptiveRepart(csr_graph.node_distribution().data(),
+                                       csr_graph.nodes().data(),
+                                       csr_graph.edges().data(),
                                        elmwgt, NULL, vsize.data(), &wgtflag,
                                        &numflag, &ncon, &nparts,
                                        tpwgts.data(), ubvec.data(), &_itr,
@@ -342,13 +337,10 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
 
   // Call ParMETIS to partition graph
   Timer timer1("ParMETIS: call ParMETIS_V3_RefineKway");
-  // FIXME: const cast because ParMETIS does not declare as const
-  // - however, it is unlikely to change the data in the csr_graph.
-  // Even if it does, this is probably the last time it is used.
   int err =
-    ParMETIS_V3_RefineKway(const_cast<idx_t*>(csr_graph.node_distribution().data()),
-                           const_cast<idx_t*>(csr_graph.nodes().data()),
-                           const_cast<idx_t*>(csr_graph.edges().data()),
+    ParMETIS_V3_RefineKway(csr_graph.node_distribution().data(),
+                           csr_graph.nodes().data(),
+                           csr_graph.edges().data(),
                            elmwgt, NULL, &wgtflag, &numflag, &ncon,
                            &nparts,
                            tpwgts.data(), ubvec.data(), options,

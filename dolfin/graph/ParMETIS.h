@@ -67,11 +67,11 @@ namespace dolfin
 #ifdef HAS_PARMETIS
     // Create a dual graph from the cell-vertex topology using ParMETIS built in
     // ParMETIS_V3_Mesh2Dual
-
     static CSRGraph<idx_t> dual_graph(MPI_Comm mpi_comm,
                                              const boost::multi_array<std::int64_t, 2>& cell_vertices,
                                              const int num_vertices_per_cell);
-    // Standard ParMETIS partition
+    // Standard ParMETIS partitio
+    // CSRGraph should be const, but ParMETIS accesses it non-const, so has to be non-const here
     template <typename T>
     static void partition(MPI_Comm mpi_comm,
                           CSRGraph<T>& csr_graph,
@@ -79,13 +79,14 @@ namespace dolfin
                           std::map<std::int64_t, std::vector<int>>& ghost_procs);
 
     // ParMETIS adaptive repartition
+    // CSRGraph should be const, but ParMETIS accesses it non-const, so has to be non-const here
     template <typename T>
     static void adaptive_repartition(MPI_Comm mpi_comm,
                                      CSRGraph<T>& csr_graph,
                                      std::vector<int>& cell_partition);
 
     // ParMETIS refine repartition
-
+    // CSRGraph should be const, but ParMETIS accesses it non-const, so has to be non-const here
     template <typename T>
     static void refine(MPI_Comm mpi_comm,
                        CSRGraph<T>& csr_graph,
