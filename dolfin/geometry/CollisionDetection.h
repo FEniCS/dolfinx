@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-05
+// Last changed: 2016-05-06
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -81,12 +81,14 @@ namespace dolfin
 
     /// Check whether segment p0-p1 collides with segment q0-q1
     static bool collides_segment_segment(const Point& p0,
-                                         const Point& p1,
+					 const Point& p1,
 					 const Point& q0,
-                                         const Point& q1)
+					 const Point& q1,
+					 std::size_t gdim)
     {
-      return CHECK_CGAL(_collides_segment_segment(p0, p1, q0, q1),
-			cgal_collides_segment_segment(p0, p1, q0, q1));
+      dolfin_error("CollisionDetection.h",
+		   "compute segment-segment collision ",
+		   "Not implemented (implemented only for dimension 1 and 2; call these explicitly).");
     }
 
     /// Check whether segment p0-p1 collides with segment q0-q1 (1D version)
@@ -96,6 +98,16 @@ namespace dolfin
                                             double q1)
     {
       return _collides_segment_segment_1d(p0, p1, q0, q1);
+    }
+
+    /// Check whether segment p0-p1 collides with segment q0-q1 (2D version)
+    static bool collides_segment_segment_2d(const Point& p0,
+					    const Point& p1,
+					    const Point& q0,
+					    const Point& q1)
+    {
+      return CHECK_CGAL(_collides_segment_segment_2d(p0, p1, q0, q1),
+			cgal_collides_segment_segment_2d(p0, p1, q0, q1));
     }
 
     /// Check whether triangle p0-p1-p2 collides with point
@@ -186,15 +198,15 @@ namespace dolfin
 					const Point& p1,
 					const Point& point);
 
-    static bool _collides_segment_segment(const Point& p0,
-                                          const Point& p1,
-					  const Point& q0,
-                                          const Point& q1);
-
     static bool _collides_segment_segment_1d(double p0,
                                              double p1,
                                              double q0,
                                              double q1);
+
+    static bool _collides_segment_segment_2d(const Point& p0,
+					     const Point& p1,
+					     const Point& q0,
+					     const Point& q1);
 
     static bool _collides_triangle_point(const Point& p0,
 					 const Point& p1,

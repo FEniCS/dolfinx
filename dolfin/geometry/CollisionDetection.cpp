@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-05
+// Last changed: 2016-05-06
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -213,28 +213,6 @@ bool CollisionDetection::_collides_segment_point(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::_collides_segment_segment(const Point& p0,
-						   const Point& p1,
-						   const Point& q0,
-						   const Point& q1)
-{
-  const double cda = orient2d(const_cast<double*>(q0.coordinates()),
-  			      const_cast<double*>(q1.coordinates()),
-  			      const_cast<double*>(p0.coordinates()));
-  const double cdb = orient2d(const_cast<double*>(q0.coordinates()),
-  			      const_cast<double*>(q1.coordinates()),
-  			      const_cast<double*>(p1.coordinates()));
-  const double abc = orient2d(const_cast<double*>(p0.coordinates()),
-  			      const_cast<double*>(p1.coordinates()),
-  			      const_cast<double*>(q0.coordinates()));
-  const double abd = orient2d(const_cast<double*>(p0.coordinates()),
-  			      const_cast<double*>(p1.coordinates()),
-  			      const_cast<double*>(q1.coordinates()));
-  const bool result = cda*cdb <= 0.0 and abc*abd <= 0.0;
-
-  return result;
-}
-//-----------------------------------------------------------------------------
 bool CollisionDetection::_collides_segment_segment_1d(double p0,
                                                       double p1,
                                                       double q0,
@@ -250,6 +228,28 @@ bool CollisionDetection::_collides_segment_segment_1d(double p0,
   const double dx = std::min(b0 - a0, b1 - a1);
   const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
   const bool result = b1 > a0 - eps && a1 < b0 + eps;
+
+  return result;
+}
+//-----------------------------------------------------------------------------
+bool CollisionDetection::_collides_segment_segment_2d(const Point& p0,
+						      const Point& p1,
+						      const Point& q0,
+						      const Point& q1)
+{
+  const double cda = orient2d(const_cast<double*>(q0.coordinates()),
+  			      const_cast<double*>(q1.coordinates()),
+  			      const_cast<double*>(p0.coordinates()));
+  const double cdb = orient2d(const_cast<double*>(q0.coordinates()),
+  			      const_cast<double*>(q1.coordinates()),
+  			      const_cast<double*>(p1.coordinates()));
+  const double abc = orient2d(const_cast<double*>(p0.coordinates()),
+  			      const_cast<double*>(p1.coordinates()),
+  			      const_cast<double*>(q0.coordinates()));
+  const double abd = orient2d(const_cast<double*>(p0.coordinates()),
+  			      const_cast<double*>(p1.coordinates()),
+  			      const_cast<double*>(q1.coordinates()));
+  const bool result = cda*cdb <= 0.0 and abc*abd <= 0.0;
 
   return result;
 }
