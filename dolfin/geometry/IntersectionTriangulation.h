@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-04
+// Last changed: 2016-05-06
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -207,21 +207,21 @@ namespace dolfin
 
     //--- Utility functions ---
 
-    static std::vector<Point> _intersection_edge_edge_2d(const Point& a,
-                                                         const Point& b,
-                                                         const Point& c,
-                                                         const Point& d);
+    // static std::vector<Point> _intersection_edge_edge_2d(const Point& a,
+    //                                                      const Point& b,
+    //                                                      const Point& c,
+    //                                                      const Point& d);
 
-    static std::vector<Point> _intersection_edge_edge(const Point& a,
-                                                      const Point& b,
-                                                      const Point& c,
-                                                      const Point& d);
+    // static std::vector<Point> _intersection_edge_edge(const Point& a,
+    //                                                   const Point& b,
+    //                                                   const Point& c,
+    //                                                   const Point& d);
 
-    static std::vector<Point> _intersection_face_edge(const Point& r,
-                                                      const Point& s,
-                                                      const Point& t,
-                                                      const Point& a,
-                                                      const Point& b);
+    // static std::vector<Point> _intersection_face_edge(const Point& r,
+    //                                                   const Point& s,
+    //                                                   const Point& t,
+    //                                                   const Point& a,
+    //                                                   const Point& b);
   };
 }
 

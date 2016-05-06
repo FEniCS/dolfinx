@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-05
+// Last changed: 2016-05-06
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -219,42 +219,73 @@ IntersectionTriangulation::triangulate(const MeshEntity &entity,
 //-----------------------------------------------------------------------------
 // Low-level intersection triangulation functions
 //-----------------------------------------------------------------------------
-std::vector<double>
+std::vector<Point>
 IntersectionTriangulation::_triangulate_segment_segment(const Point& p0,
 							const Point& p1,
 							const Point& q0,
 							const Point& q1,
 							std::size_t gdim)
 {
-  // Flat array for triangulation
-  std::vector<double> triangulation;
-
-  if (CollisionDetection::collides_segment_segment(p0, p1,
-                                                   q0, q1))
+  if (gdim == 2)
   {
-    // Compute collisions
-    std::vector<Point> points;
-    if (CollisionDetection::collides_segment_point(p0, p1, q0))
-      points.push_back(q0);
-    if (CollisionDetection::collides_segment_point(p0, p1, q1))
-      points.push_back(q1);
-    if (CollisionDetection::collides_segment_point(q0, q1, p0))
-      points.push_back(p0);
-    if (CollisionDetection::collides_segment_point(q0, q1, p0))
-      points.push_back(p0);
+    // Shewchuk style
+    const double cda = orient2d(const_cast<double*>(q0.coordinates()),
+				const_cast<double*>(q1.coordinates()),
+				const_cast<double*>(p0.coordinates()));
+    const double cdb = orient2d(const_cast<double*>(q0.coordinates()),
+				const_cast<double*>(q1.coordinates()),
+				const_cast<double*>(p1.coordinates()));
+    const double abc = orient2d(const_cast<double*>(p0.coordinates()),
+				const_cast<double*>(p1.coordinates()),
+				const_cast<double*>(q0.coordinates()));
+    const double abd = orient2d(const_cast<double*>(p0.coordinates()),
+				const_cast<double*>(p1.coordinates()),
+				const_cast<double*>(q1.coordinates()));
+    if (cda == 0)
+      return std::vector<Point>(1, p0); // p0 is on top of cd
+    else if (cdb == 0)
+      return std::vector<Point>(1, p1); // p1 is on top of cd
+    else if (abc == 0)
+      return std::vector<Point>(1, q0); // q0 is on top of ab
+    else if (abd == 0)
+      return std::vector<Point>(1, q1); // q1 is on top of ab
+    else {
+      // We assume we have an intersection. We would like to have a
+      // robust determinant calculation (see orient2d routine). Since
+      // this is way more involved we skip this for now. Note that
+      // even Shewchuk (Lecture Notes on Geometric Robustness, Apr 15,
+      // 2013) says the determinant calculation is a difficult and may
+      // need exact arithmetic.
+      const double detleft = (b[0]-a[0]) * (d[1]-c[1]);
+      const double detright = (b[1]-a[1]) * (d[0]-c[0]);
+      const double det = detleft - detright;
 
-    // Must not have more than two points
-    if (points.size() == 2)
-    {
-      triangulation.resize(2*gdim);
-      for (std::size_t d = 0; d < gdim; ++d)
+      // If the determinant is zero, then ab || cd
+      if (std::abs(det) < DOLFIN_EPS)
       {
-        triangulation[d] = points[0][d];
-        triangulation[gdim+d] = points[1][d];
+	// FIXME: implement this
+	dolfin_error("IntersectionTriangulation.cpp",
+		     "compute segment-segment triangulation ",
+		     "Intersection when segments are parallel not implemented.");
       }
+
+      const double alpha = cda / det;
+      Point pt = a + alpha*(b - a);
+
+      // If alpha is close to 1, then pt is close to b. Repeat the
+      // calculation with the points swapped. This is probably not the
+      // way to do it.
+      if (std::abs(1-alpha) < DOLFIN_EPS)
+	Point pt = b + (1-alpha)*(a - b);
+      return std::vector<Point>(1, pt);
     }
   }
-  return triangulation;
+  else
+  {
+    dolfin_error("IntersectionTriangulation.cpp",
+		 "compute segment-segment triangulation ",
+		 "Not implemented (implemented only for dimension 2).");
+  }
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
@@ -265,11 +296,18 @@ IntersectionTriangulation::_triangulate_triangle_segment(const Point& p0,
 							 const Point& q1,
 							 std::size_t gdim)
 {
+  if (gdim != 2)
+  {
+    dolfin_error("IntersectionTriangulation.cpp",
+		 "compute triangle-segment triangulation ",
+		 "Not implemented (implemented only for dimension 2).");
+  }
+
   std::vector<double> triangulation;
   std::vector<Point> points;
 
   // Detect edge intersection points
-  if (CollisionDetection::collides_segment_segment(p0, p1, q0, q1))
+  if (CollisionDetection::collides_segment_segment_2d(p0, p1, q0, q1))
     points.push_back(_intersection_edge_edge(p0, p1, q0, q1));
   if (CollisionDetection::collides_segment_segment(p0, p2, q0, q1))
     points.push_back(_intersection_edge_edge(p0, p2, q0, q1));
@@ -554,9 +592,17 @@ IntersectionTriangulation::_triangulate_tetrahedron_triangle(const Point& p0,
     if (CollisionDetection::collides_triangle_segment(tri[0], tri[1], tri[2],
                                                       tet[tet_edges[e][0]],
                                                       tet[tet_edges[e][1]]))
-      points.push_back(_intersection_face_edge(tri[0], tri[1], tri[2],
-                                               tet[tet_edges[e][0]],
-                                               tet[tet_edges[e][1]]));
+    {
+      const std::vector<Point> ii = triangulate_triangle_segment(tri[0], tri[1], tri[2],
+								 tet[tet_edges[e][0]],
+								 tet[tet_edges[e][1]]);
+      dolfin_assert(ii.size());
+      points.insert(points.end(), ii.begin(), ii.end());
+
+      // points.push_back(_intersection_face_edge(tri[0], tri[1], tri[2],
+      //                                          tet[tet_edges[e][0]],
+      //                                          tet[tet_edges[e][1]]));
+    }
 
   // check if a triangle edge intersects a tetrahedron face
   std::vector<std::vector<std::size_t>>
@@ -575,60 +621,49 @@ IntersectionTriangulation::_triangulate_tetrahedron_triangle(const Point& p0,
   tet_faces[3][1] = 1;
   tet_faces[3][2] = 2;
 
+  const std::array<std::array<std::size_t, 2>, 3> tri_edges = {{ {0, 1}, {0, 2}, {1, 2} }};
+
   for (std::size_t f = 0; f < 4; ++f)
-  {
-    if (CollisionDetection::collides_triangle_segment(tet[tet_faces[f][0]],
-						      tet[tet_faces[f][1]],
-						      tet[tet_faces[f][2]],
-						      tri[0], tri[1]))
-      points.push_back(_intersection_face_edge(tet[tet_faces[f][0]],
-					       tet[tet_faces[f][1]],
-					       tet[tet_faces[f][2]],
-					       tri[0], tri[1]));
+    for (std::size_t e = 0; e < 3; ++e)
+      if (CollisionDetection::collides_triangle_segment(tet[tet_faces[f][0]],
+							tet[tet_faces[f][1]],
+							tet[tet_faces[f][2]],
+							tri[tri_edges[e][0]],
+							tri[tri_edges[e][1]]))
+      {
+	const std::vector<Point> ii = triangulate_triangle_segment(tet[tet_faces[f][0]],
+								   tet[tet_faces[f][1]],
+								   tet[tet_faces[f][2]],
+								   tri[tri_edges[e][0]],
+								   tri[tri_edges[e][1]]);
+	dolfin_assert(ii.size());
+	points.insert(points.end(), ii.begin(), ii.end());
+      }
 
-    if (CollisionDetection::collides_triangle_segment(tet[tet_faces[f][0]],
-                                                      tet[tet_faces[f][1]],
-                                                      tet[tet_faces[f][2]],
-                                                      tri[0], tri[2]))
-      points.push_back(_intersection_face_edge(tet[tet_faces[f][0]],
-                                               tet[tet_faces[f][1]],
-                                               tet[tet_faces[f][2]],
-                                               tri[0], tri[2]));
+  // // edge edge intersection
+  // for (std::size_t f = 0; f < 6; ++f)
+  // {
+  //   if (CollisionDetection::collides_segment_segment(tet[tet_edges[f][0]],
+  //                                                    tet[tet_edges[f][1]],
+  //                                                    tri[0], tri[1]))
+  //     points.push_back(triangulate_segment_segment(tet[tet_edges[f][0]],
+  // 						   tet[tet_edges[f][1]],
+  // 						   tri[0], tri[1]));
 
-    if (CollisionDetection::collides_triangle_segment(tet[tet_faces[f][0]],
-                                                      tet[tet_faces[f][1]],
-                                                      tet[tet_faces[f][2]],
-                                                      tri[1], tri[2]))
-      points.push_back(_intersection_face_edge(tet[tet_faces[f][0]],
-					       tet[tet_faces[f][1]],
-					       tet[tet_faces[f][2]],
-					       tri[1], tri[2]));
-  }
+  //   if (CollisionDetection::collides_segment_segment(tet[tet_edges[f][0]],
+  //                                                    tet[tet_edges[f][1]],
+  //                                                    tri[0], tri[2]))
+  //     points.push_back(_intersection_edge_edge(tet[tet_edges[f][0]],
+  //                                              tet[tet_edges[f][1]],
+  //                                              tri[0], tri[2]));
 
-  // edge edge intersection
-  for (std::size_t f = 0; f < 6; ++f)
-  {
-    if (CollisionDetection::collides_segment_segment(tet[tet_edges[f][0]],
-                                                     tet[tet_edges[f][1]],
-                                                     tri[0], tri[1]))
-      points.push_back(_intersection_edge_edge(tet[tet_edges[f][0]],
-                                               tet[tet_edges[f][1]],
-                                               tri[0], tri[1]));
-
-    if (CollisionDetection::collides_segment_segment(tet[tet_edges[f][0]],
-                                                     tet[tet_edges[f][1]],
-                                                     tri[0], tri[2]))
-      points.push_back(_intersection_edge_edge(tet[tet_edges[f][0]],
-                                               tet[tet_edges[f][1]],
-                                               tri[0], tri[2]));
-
-    if (CollisionDetection::collides_segment_segment(tet[tet_edges[f][0]],
-                                                     tet[tet_edges[f][1]],
-                                                     tri[1], tri[2]))
-      points.push_back(_intersection_edge_edge(tet[tet_edges[f][0]],
-                                               tet[tet_edges[f][1]],
-                                               tri[1], tri[2]));
-  }
+  //   if (CollisionDetection::collides_segment_segment(tet[tet_edges[f][0]],
+  //                                                    tet[tet_edges[f][1]],
+  //                                                    tri[1], tri[2]))
+  //     points.push_back(_intersection_edge_edge(tet[tet_edges[f][0]],
+  //                                              tet[tet_edges[f][1]],
+  //                                              tri[1], tri[2]));
+  // }
 
 
   // Remove duplicate nodes
@@ -1326,63 +1361,64 @@ Point IntersectionTriangulation::_intersection_edge_edge_2d(const Point& a,
 
   return CHECK_CGAL(pt, cgal_intersection_edge_edge_2d(a, b, c, d));
 }
-//-----------------------------------------------------------------------------
-Point IntersectionTriangulation::_intersection_edge_edge(const Point& a,
-                                                         const Point& b,
-                                                         const Point& c,
-                                                         const Point& d)
-{
-  dolfin_error("IntersectionTriangulation.cpp",
-	       "intersection_edge_edge function",
-	       "Not yet implemented in 3D");
+// //-----------------------------------------------------------------------------
+// Point IntersectionTriangulation::_intersection_edge_edge(const Point& a,
+//                                                          const Point& b,
+//                                                          const Point& c,
+//                                                          const Point& d)
+// {
+//   dolfin_error("IntersectionTriangulation.cpp",
+// 	       "intersection_edge_edge function",
+// 	       "Not yet implemented in 3D");
 
-  Point p;
-  return p;
-}
-//-----------------------------------------------------------------------------
-Point IntersectionTriangulation::_intersection_face_edge(const Point& r,
-                                                         const Point& s,
-                                                         const Point& t,
-                                                         const Point& a,
-                                                         const Point& b)
-{
-  // This standard edge face intersection test is as follows:
-  // - Check if end points of the edge (a,b) on opposite side of plane
-  // given by the face (r,s,t)
-  // - If we have sign change, compute intersection with plane.
-  // - Check if computed point is on triangle given by face.
+//   Point p;
+//   return p;
+// }
+// //-----------------------------------------------------------------------------
+// std::vector<Point>
+// IntersectionTriangulation::_intersection_face_edge(const Point& r,
+// 						   const Point& s,
+// 						   const Point& t,
+// 						   const Point& a,
+// 						   const Point& b)
+// {
+//   // This standard edge face intersection test is as follows:
+//   // - Check if end points of the edge (a,b) on opposite side of plane
+//   // given by the face (r,s,t)
+//   // - If we have sign change, compute intersection with plane.
+//   // - Check if computed point is on triangle given by face.
 
-  // If the edge and the face are in the same plane, we return false
-  // and leave this to the edge-edge intersection test.
+//   // If the edge and the face are in the same plane, we return false
+//   // and leave this to the edge-edge intersection test.
 
-  // Tolerance for edge and face in plane (topologically 2D problem)
-  //const double top_2d_tol = DOLFIN_EPS_LARGE;
+//   // Tolerance for edge and face in plane (topologically 2D problem)
+//   //const double top_2d_tol = DOLFIN_EPS_LARGE;
 
-  // Compute normal
-  const Point rs = s - r;
-  const Point rt = t - r;
-  Point n = rs.cross(rt);
-  n /= n.norm();
+//   // Compute normal
+//   const Point rs = s - r;
+//   const Point rt = t - r;
+//   Point n = rs.cross(rt);
+//   n /= n.norm();
 
-  // Check sign change (note that if either dot product is zero it's
-  // orthogonal)
-  const double da = n.dot(a - r);
-  const double db = n.dot(b - r);
+//   // Check sign change (note that if either dot product is zero it's
+//   // orthogonal)
+//   const double da = n.dot(a - r);
+//   const double db = n.dot(b - r);
 
-  // // Note: if da and db we may have edge intersection (detected in
-  // // other routine)
-  // if (da*db > 0)
-  //   return false;
+//   // // Note: if da and db we may have edge intersection (detected in
+//   // // other routine)
+//   // if (da*db > 0)
+//   //   return false;
 
-  // Face and edge are in topological 2d: taken care of in edge-edge
-  // intersection or point in simplex.
-  const double sum = std::abs(da) + std::abs(db);
-  // if (sum < top_2d_tol)
-  //   return false;
+//   // Face and edge are in topological 2d: taken care of in edge-edge
+//   // intersection or point in simplex.
+//   const double sum = std::abs(da) + std::abs(db);
+//   // if (sum < top_2d_tol)
+//   //   return false;
 
-  // Calculate intersection
-  const Point pt = a + std::abs(da) / sum * (b - a);
+//   // Calculate intersection
+//   const Point pt = a + std::abs(da) / sum * (b - a);
 
-  return CHECK_CGAL(pt, cgal_intersection_face_edge_2d(r, s, t, a, b));
-}
-//------------------------------------------------------------------------------
+//   return CHECK_CGAL(pt, cgal_intersection_face_edge_2d(r, s, t, a, b));
+// }
+// //------------------------------------------------------------------------------
