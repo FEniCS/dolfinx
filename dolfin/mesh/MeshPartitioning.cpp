@@ -23,6 +23,7 @@
 //
 
 #include <algorithm>
+#include <cstdint>
 #include <iterator>
 #include <map>
 #include <memory>
@@ -316,41 +317,15 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
                       vertex_coordinates, vertex_global_to_local,
                       shared_vertices);
 
-  // FIXME: Clean this up
-  // Structure to hold received data about local mesh
-  LocalMeshData new_mesh_data(mesh.mpi_comm());
-
-  // Copy over some basic information
-  dolfin_assert(mesh_data.topology.dim >= 0);
-  new_mesh_data.topology.dim = mesh_data.topology.dim;
-
-  dolfin_assert(mesh_data.geometry.dim > 0);
-  new_mesh_data.geometry.dim = mesh_data.geometry.dim;
-
-  dolfin_assert(mesh_data.topology.num_global_cells >= 0);
-  new_mesh_data.topology.num_global_cells = mesh_data.topology.num_global_cells;
-
-  dolfin_assert(mesh_data.topology.num_vertices_per_cell > 0);
-  new_mesh_data.topology.num_vertices_per_cell = mesh_data.topology.num_vertices_per_cell;
-  new_mesh_data.topology.cell_type = mesh_data.topology.cell_type;
-
-  dolfin_assert(mesh_data.geometry.num_global_vertices >= 0);
-  new_mesh_data.geometry.num_global_vertices = mesh_data.geometry.num_global_vertices;
-
-  new_mesh_data.topology.cell_partition = new_cell_partition;
-  new_mesh_data.topology.global_cell_indices = new_global_cell_indices;
-  new_mesh_data.topology.cell_vertices.resize(boost::extents[new_cell_vertices.shape()[0]][new_cell_vertices.shape()[1]]);
-  new_mesh_data.topology.cell_vertices = new_cell_vertices;
-
-  new_mesh_data.geometry.vertex_indices = vertex_indices;
-  new_mesh_data.geometry.vertex_coordinates.resize(boost::extents[vertex_coordinates.shape()[0]][vertex_coordinates.shape()[1]]);
-  new_mesh_data.geometry.vertex_coordinates = vertex_coordinates;
-  // -------
-
   timer.stop();
 
-  // Build mesh from new_mesh_data
-  build_mesh(mesh, vertex_global_to_local, new_mesh_data);
+  // Build lcoal mesh from new_mesh_data
+  build_local_mesh(mesh, new_global_cell_indices, new_cell_vertices,
+                   mesh_data.topology.cell_type, mesh_data.topology.dim,
+                   mesh_data.topology.num_global_cells, vertex_indices,
+                   vertex_coordinates, mesh_data.geometry.dim,
+                   mesh_data.geometry.num_global_vertices,
+                   vertex_global_to_local);
 
   // Fix up some of the ancilliary data about sharing and ownership
   // now that the mesh has been initialised
@@ -359,8 +334,8 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   std::vector<unsigned int>& cell_owner = mesh.topology().cell_owner();
   cell_owner.clear();
   cell_owner.insert(cell_owner.begin(),
-                    new_mesh_data.topology.cell_partition.begin() + num_regular_cells,
-                    new_mesh_data.topology.cell_partition.end());
+                    new_cell_partition.begin() + num_regular_cells,
+                    new_cell_partition.end());
 
   // Set the ghost cell offset
   mesh.topology().init_ghost(tdim, num_regular_cells);
@@ -1088,56 +1063,56 @@ void MeshPartitioning::build_shared_vertices(MPI_Comm mpi_comm,
   }
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::build_mesh(Mesh& mesh,
-  const std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
-  const LocalMeshData& new_mesh_data)
+void MeshPartitioning::build_local_mesh(Mesh& mesh,
+  const std::vector<std::int64_t>& global_cell_indices,
+  const boost::multi_array<std::int64_t, 2>& cell_global_vertices,
+  const CellType::Type cell_type,
+  const int tdim,
+  const std::int64_t num_global_cells,
+  const std::vector<std::int64_t>& vertex_indices,
+  const boost::multi_array<double, 2>& vertex_coordinates,
+  const int gdim,
+  const std::int64_t num_global_vertices,
+  const std::map<std::int64_t, std::int32_t>& vertex_global_to_local)
 {
   log(PROGRESS, "Build local mesh during distributed mesh construction");
   Timer timer("Build local part of distributed mesh (from local mesh data)");
 
-  const std::vector<std::int64_t>& global_cell_indices
-    = new_mesh_data.topology.global_cell_indices;
-  const boost::multi_array<std::int64_t, 2>& cell_global_vertices
-    = new_mesh_data.topology.cell_vertices;
-  const std::vector<std::int64_t>& vertex_indices
-    = new_mesh_data.geometry.vertex_indices;
-  const boost::multi_array<double, 2>& vertex_coordinates
-    = new_mesh_data.geometry.vertex_coordinates;
-
-  const unsigned int gdim = new_mesh_data.geometry.dim;
-  const unsigned int tdim = new_mesh_data.topology.dim;
-
   // Open mesh for editing
   mesh.clear();
   MeshEditor editor;
-  editor.open(mesh, new_mesh_data.topology.cell_type, tdim, gdim);
+  editor.open(mesh, cell_type, tdim, gdim);
 
   // Add vertices
-  editor.init_vertices_global(vertex_coordinates.size(),
-                              new_mesh_data.geometry.num_global_vertices);
+  editor.init_vertices_global(vertex_coordinates.size(), num_global_vertices);
   Point point(gdim);
   dolfin_assert(vertex_indices.size() == vertex_coordinates.size());
   for (std::size_t i = 0; i < vertex_coordinates.size(); ++i)
   {
-    for (std::size_t j = 0; j < gdim; ++j)
+    for (std::int8_t j = 0; j < gdim; ++j)
       point[j] = vertex_coordinates[i][j];
     editor.add_vertex_global(i, vertex_indices[i], point);
   }
 
+  // Create CellType
+  std::unique_ptr<CellType> _cell_type(CellType::create(cell_type));
+  dolfin_assert(_cell_type);
+
   // Add cells
-  editor.init_cells_global(cell_global_vertices.size(),
-                           new_mesh_data.topology.num_global_cells);
-  const std::size_t num_cell_vertices = new_mesh_data.topology.num_vertices_per_cell;
+  editor.init_cells_global(cell_global_vertices.size(), num_global_cells);
+
+  const std::int8_t num_cell_vertices = _cell_type->num_vertices();
   std::vector<std::size_t> cell(num_cell_vertices);
   for (std::size_t i = 0; i < cell_global_vertices.size(); ++i)
   {
-    for (std::size_t j = 0; j < num_cell_vertices; ++j)
+    for (std::int8_t j = 0; j < num_cell_vertices; ++j)
     {
       // Get local cell vertex
       auto iter = vertex_global_to_local.find(cell_global_vertices[i][j]);
       dolfin_assert(iter != vertex_global_to_local.end());
       cell[j] = iter->second;
     }
+
     editor.add_cell(i, global_cell_indices[i], cell);
   }
 

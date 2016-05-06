@@ -236,7 +236,7 @@ std::int32_t GraphBuilder::compute_local_dual_graph_keyed(
 
   dolfin_assert(N == num_vertices_per_facet);
   dolfin_assert(num_local_cells == (int) cell_vertices.shape()[0]);
-  dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
+  dolfin_assert(num_vertices_per_cell == (int) cell_vertices.shape()[1]);
 
   local_graph.resize(num_local_cells);
   facet_cell_map.clear();
@@ -263,10 +263,10 @@ std::int32_t GraphBuilder::compute_local_dual_graph_keyed(
   // Iterate over all cells and build list of all facets (keyed on
   // sorted vertex indices), with cell index attached
   int counter = 0;
-  for (int i = 0; i < num_local_cells; ++i)
+  for (std::int32_t i = 0; i < num_local_cells; ++i)
   {
     // Iterate over facets of cell
-    for (std::size_t j = 0; j < num_facets_per_cell; ++j)
+    for (std::int8_t j = 0; j < num_facets_per_cell; ++j)
     {
       // Get list of facet vertices
       auto& facet = facets[counter].first;

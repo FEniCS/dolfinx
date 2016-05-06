@@ -33,6 +33,7 @@
 #include <boost/multi_array.hpp>
 #include <dolfin/log/log.h>
 #include <dolfin/common/Set.h>
+#include "CellType.h"
 #include "DistributedMeshTools.h"
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
@@ -193,9 +194,17 @@ namespace dolfin
 
     // FIXME: Improve pre-conditions explaination
     // Build mesh
-    static void build_mesh(Mesh& mesh,
-      const std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices,
-      const LocalMeshData& new_mesh_data);
+    static void build_local_mesh(Mesh& mesh,
+      const std::vector<std::int64_t>& global_cell_indices,
+      const boost::multi_array<std::int64_t, 2>& cell_global_vertices,
+      const CellType::Type cell_type,
+      const int tdim,
+      const std::int64_t num_global_cells,
+      const std::vector<std::int64_t>& vertex_indices,
+      const boost::multi_array<double, 2>& vertex_coordinates,
+      const int gdim,
+      const std::int64_t num_global_vertices,
+      const std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices);
 
     // Create and attach distributed MeshDomains from local_data
     static void build_mesh_domains(Mesh& mesh, const LocalMeshData& local_data);
