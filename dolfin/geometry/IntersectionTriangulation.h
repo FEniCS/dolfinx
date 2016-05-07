@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-06
+// Last changed: 2016-05-07
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -97,10 +97,40 @@ namespace dolfin
                                 const Point& p1,
                                 const Point& q0,
                                 const Point& q1,
-                                std::size_t gdim)
+                                std::size_t gdim);
+
+    /// Triangulate intersection of segment p0-p1 with segment q0-q1 (1D version)
+    static std::vector<Point>
+    triangulate_segment_segment_1d(double p0,
+				   double p1,
+				   double q0,
+				   double q1)
     {
-      return CHECK_CGAL(_triangulate_segment_segment(p0, p1, q0, q1, gdim),
-                        cgal_triangulate_segment_segment(p0, p1, q0, q1, gdim));
+      return _triangulate_segment_segment_1d(p0, p1, q0, q1);
+    }
+
+    /// Triangulate intersection of segment p0-p1 with segment q0-q1 (2D version)
+    static std::vector<Point>
+    triangulate_segment_segment_2d(const Point& p0,
+				   const Point& p1,
+				   const Point& q0,
+				   const Point& q1)
+    {
+      return CHECK_CGAL(_triangulate_segment_segment_2d(p0, p1, q0, q1),
+                        cgal_triangulate_segment_segment_2d(p0, p1, q0, q1));
+    }
+
+    /// Triangulate intersection of segment p0-p1 with segment q0-q1 (3D version)
+    static std::vector<Point>
+    triangulate_segment_segment_3d(const Point& p0,
+				   const Point& p1,
+				   const Point& q0,
+				   const Point& q1)
+    {
+      dolfin_error("IntersectionTriangulation.cpp",
+		   "compute segment-segment 3d collision",
+		   "Not implemented.");
+      return std::vector<Point>();
     }
 
     /// Triangulate intersection of triangle p0-p1-p2 with segment q0-q1
@@ -110,10 +140,32 @@ namespace dolfin
                                  const Point& p2,
                                  const Point& q0,
                                  const Point& q1,
-                                 std::size_t gdim)
+                                 std::size_t gdim);
+
+    /// Triangulate intersection of triangle p0-p1-p2 with segment q0-q1 (2D version)
+    static std::vector<Point>
+    triangulate_triangle_segment_2d(const Point& p0,
+				    const Point& p1,
+				    const Point& p2,
+				    const Point& q0,
+				    const Point& q1)
     {
-      return CHECK_CGAL(_triangulate_triangle_segment(p0, p1, p2, q0, q1, gdim),
-       			cgal_triangulate_triangle_segment(p0, p1, p2, q0, q1, gdim));
+      return CHECK_CGAL(_triangulate_triangle_segment_2d(p0, p1, p2, q0, q1),
+       			cgal_triangulate_triangle_segment_2d(p0, p1, p2, q0, q1));
+    }
+
+    /// Triangulate intersection of triangle p0-p1-p2 with segment q0-q1 (2D version)
+    static std::vector<Point>
+    triangulate_triangle_segment_3d(const Point& p0,
+				    const Point& p1,
+				    const Point& p2,
+				    const Point& q0,
+				    const Point& q1)
+    {
+      dolfin_error("IntersectionTriangulation.cpp",
+		   "compute triangle-segment 3d collision",
+		   "Not implemented.");
+      return std::vector<Point>();
     }
 
     /// Triangulate intersection of triangle p0-p1-p2 with triangle q0-q1-q2
@@ -123,10 +175,38 @@ namespace dolfin
                                   const Point& p2,
                                   const Point& q0,
                                   const Point& q1,
-                                  const Point& q2)
+                                  const Point& q2,
+				  std::size_t gdim)
     {
       return CHECK_CGAL(_triangulate_triangle_triangle(p0, p1, p2, q0, q1, q2),
       			cgal_triangulate_triangle_triangle(p0, p1, p2, q0, q1, q2));
+    }
+
+    /// Triangulate intersection of triangle p0-p1-p2 with triangle q0-q1-q2 (2D version)
+    static std::vector<std::vector<Point>>
+    triangulate_triangle_triangle(const Point& p0,
+                                  const Point& p1,
+                                  const Point& p2,
+                                  const Point& q0,
+                                  const Point& q1,
+                                  const Point& q2,
+				  std::size_t gdim)
+    {
+      return CHECK_CGAL(_triangulate_triangle_triangle_2d(p0, p1, p2, q0, q1, q2),
+      			cgal_triangulate_triangle_triangle_2d(p0, p1, p2, q0, q1, q2));
+    }
+
+    /// Triangulate intersection of triangle p0-p1-p2 with triangle q0-q1-q2 (3D version)
+    static std::vector<std::vector<Point>>
+    triangulate_triangle_triangle(const Point& p0,
+                                  const Point& p1,
+                                  const Point& p2,
+                                  const Point& q0,
+                                  const Point& q1,
+                                  const Point& q2,
+				  std::size_t gdim)
+    {
+      return _triangulate_triangle_triangle_2d(p0, p1, p2, q0, q1, q2);
     }
 
     /// Triangulate intersection of tetrahedron p0-p1-p2-p3 with triangle q0-q1-q2
