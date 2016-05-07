@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-05-05
+// Last changed: 2016-05-07
 //
 // Developer note:
 //
@@ -445,15 +445,6 @@ namespace dolfin
 			      convert_to_cgal(point));
   }
 
-  inline bool cgal_collides_triangle_point_2d(const Point& p0,
-					      const Point& p1,
-					      const Point& p2,
-					      const Point &point)
-  {
-    return CGAL::do_intersect(convert_to_cgal(p0, p1, p2),
-			      convert_to_cgal(point));
-  }
-
   inline bool cgal_collides_triangle_segment(const Point& p0,
                                              const Point& p1,
                                              const Point& p2,
@@ -481,13 +472,11 @@ namespace dolfin
   // ---------------------------------------------------------------------------
 
   inline
-  std::vector<Point> cgal_triangulate_segment_segment(const Point& p0,
+  std::vector<Point> cgal_triangulate_segment_segment_2d(const Point& p0,
 						       const Point& p1,
 						       const Point& q0,
-						       const Point& q1,
-						       std::size_t gdim)
+						       const Point& q1)
   {
-    dolfin_assert(gdim == 2);
     dolfin_assert(!is_degenerate(p0, p1));
     dolfin_assert(!is_degenerate(q0, q1));
 
@@ -506,14 +495,12 @@ namespace dolfin
   }
 
   inline
-  std::vector<Point> cgal_triangulate_triangle_segment(const Point& p0,
+  std::vector<Point> cgal_triangulate_triangle_segment_2d(const Point& p0,
                                                        const Point& p1,
                                                        const Point& p2,
                                                        const Point& q0,
-                                                       const Point& q1,
-                                                       std::size_t gdim)
+							  const Point& q1)
   {
-    dolfin_assert(gdim == 2);
     dolfin_assert(!is_degenerate(p0, p1, p2));
     dolfin_assert(!is_degenerate(q0, q1));
 
@@ -532,7 +519,7 @@ namespace dolfin
   }
 
   inline
-  std::vector<std::vector<Point>> cgal_triangulate_triangle_triangle(const Point& p0,
+  std::vector<std::vector<Point>> cgal_triangulate_triangle_triangle_2d(const Point& p0,
                                                                      const Point& p1,
                                                                      const Point& p2,
                                                                      const Point& q0,
@@ -540,8 +527,6 @@ namespace dolfin
                                                                      const Point& q2)
 
   {
-    // FIXME: this is only for 2D
-
     dolfin_assert(!is_degenerate(p0, p1, p2));
     dolfin_assert(!is_degenerate(q0, q1, q2));
 
@@ -566,68 +551,68 @@ namespace dolfin
     return triangulation;
   }
 
-  inline dolfin::Point cgal_intersection_edge_edge_2d(const Point& a,
-                                                      const Point& b,
-                                                      const Point& c,
-                                                      const Point& d)
-  {
-    dolfin_assert(!is_degenerate(a, b));
-    dolfin_assert(!is_degenerate(c, d));
+  // inline dolfin::Point cgal_intersection_edge_edge_2d(const Point& a,
+  //                                                     const Point& b,
+  //                                                     const Point& c,
+  //                                                     const Point& d)
+  // {
+  //   dolfin_assert(!is_degenerate(a, b));
+  //   dolfin_assert(!is_degenerate(c, d));
 
-    const auto E0 = convert_to_cgal(a, b);
-    const auto E1 = convert_to_cgal(c, d);
+  //   const auto E0 = convert_to_cgal(a, b);
+  //   const auto E1 = convert_to_cgal(c, d);
 
-    const auto ii = CGAL::intersection(E0, E1);
-    dolfin_assert(ii);
+  //   const auto ii = CGAL::intersection(E0, E1);
+  //   dolfin_assert(ii);
 
-    const std::vector<Point> triangulation = parse_segment_segment_intersection(ii);
+  //   const std::vector<Point> triangulation = parse_segment_segment_intersection(ii);
 
-    dolfin_assert(triangulation.size() == 2 or
-		  triangulation.size() == 4);
+  //   dolfin_assert(triangulation.size() == 2 or
+  // 		  triangulation.size() == 4);
 
-    if (triangulation.size() == 1)
-      return triangulation[0];
-    else if (triangulation.size() == 2)
-      return triangulation[0]*.5 + triangulation[1];
+  //   if (triangulation.size() == 1)
+  //     return triangulation[0];
+  //   else if (triangulation.size() == 2)
+  //     return triangulation[0]*.5 + triangulation[1];
 
-    dolfin_error("CGALExactArithmetic.h",
-		 "find intersection of two triangles in cgal_intersection_edge_edge_2d function",
-		 "no or strange intersection found");
-    return Point();
-  }
+  //   dolfin_error("CGALExactArithmetic.h",
+  // 		 "find intersection of two triangles in cgal_intersection_edge_edge_2d function",
+  // 		 "no or strange intersection found");
+  //   return Point();
+  // }
 
-  inline Point cgal_intersection_face_edge_2d(const Point& r,
-					      const Point& s,
-					      const Point& t,
-					      const Point& a,
-					      const Point& b)
-  {
-    // NB: this is only for 2D
+  // inline Point cgal_intersection_face_edge_2d(const Point& r,
+  // 					      const Point& s,
+  // 					      const Point& t,
+  // 					      const Point& a,
+  // 					      const Point& b)
+  // {
+  //   // NB: this is only for 2D
 
-    dolfin_assert(!is_degenerate(r, s, t));
-    dolfin_assert(!is_degenerate(a, b));
+  //   dolfin_assert(!is_degenerate(r, s, t));
+  //   dolfin_assert(!is_degenerate(a, b));
 
-    const auto T = convert_to_cgal(r, s, t);
-    const auto I = convert_to_cgal(a, b);
+  //   const auto T = convert_to_cgal(r, s, t);
+  //   const auto I = convert_to_cgal(a, b);
 
-    const auto ii = CGAL::intersection(T, I);
-    dolfin_assert(ii);
+  //   const auto ii = CGAL::intersection(T, I);
+  //   dolfin_assert(ii);
 
-    const std::vector<Point> triangulation = parse_triangle_segment_intersection(ii);
+  //   const std::vector<Point> triangulation = parse_triangle_segment_intersection(ii);
 
-    dolfin_assert(triangulation.size() == 2 or
-		  triangulation.size() == 4);
+  //   dolfin_assert(triangulation.size() == 2 or
+  // 		  triangulation.size() == 4);
 
-    if (triangulation.size() == 1)
-      return triangulation[0];
-    else if (triangulation.size() == 2)
-      return triangulation[0]*.5 + triangulation[1]*.5;
+  //   if (triangulation.size() == 1)
+  //     return triangulation[0];
+  //   else if (triangulation.size() == 2)
+  //     return triangulation[0]*.5 + triangulation[1]*.5;
 
-    dolfin_error("CGALExactArithmetic.h",
-		 "find intersection of two triangles in cgal_intersection_face_edge_2d function",
-		 "no or strange intersection found");
-    return Point();
-  }
+  //   dolfin_error("CGALExactArithmetic.h",
+  // 		 "find intersection of two triangles in cgal_intersection_face_edge_2d function",
+  // 		 "no or strange intersection found");
+  //   return Point();
+  // }
 
 }
 #endif
