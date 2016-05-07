@@ -25,7 +25,12 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#ifdef HAS_HDF5
 #include <hdf5.h>
+#else
+typedef int hid_t;
+#endif
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
