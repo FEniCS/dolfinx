@@ -72,8 +72,9 @@ namespace dolfin
 
     friend class MeshPartitioning;
 
-    typedef boost::unordered_map<std::vector<std::size_t>, std::int32_t>
+    typedef std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>
       FacetCellMap;
+
     // Compute local part of the dual graph, and return number of
     // local edges in the graph (undirected)
     static std::int32_t
@@ -82,6 +83,16 @@ namespace dolfin
                                const CellType& cell_type,
                                std::vector<std::vector<std::size_t>>& local_graph,
                                FacetCellMap& facet_cell_map);
+
+    // Compute local part of the dual graph, and return number of
+    // local edges in the graph (undirected)
+    template<int N>
+    static std::int32_t
+      compute_local_dual_graph_keyed(const MPI_Comm mpi_comm,
+                                     const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                                     const CellType& cell_type,
+                                     std::vector<std::vector<std::size_t>>& local_graph,
+                                     FacetCellMap& facet_cell_map);
 
     // Build nonlocal part of dual graph for mesh and return number of
     // non-local edges. Note: GraphBuilder::compute_local_dual_graph

@@ -44,14 +44,15 @@ namespace dolfin
 
   public:
 
-    /// Access edges individually by using operator()[] to get a node object
+    /// Access edges individually by using operator()[] to get a node
+    /// object
     class node
     {
     public:
-      node(const typename std::vector<T>::const_iterator& begin_it,
-           const typename std::vector<T>::const_iterator& end_it)
-        : begin_edge(begin_it), end_edge(end_it)
-      { }
+
+    node(const typename std::vector<T>::const_iterator& begin_it,
+         const typename std::vector<T>::const_iterator& end_it)
+      : begin_edge(begin_it), end_edge(end_it) {}
 
       /// Iterator pointing to beginning of edges
       typename std::vector<T>::const_iterator begin() const
@@ -70,13 +71,13 @@ namespace dolfin
       { return *(begin_edge + i); }
 
     private:
+
       typename std::vector<T>::const_iterator begin_edge;
       typename std::vector<T>::const_iterator end_edge;
     };
 
     /// Empty CSR Graph
-    CSRGraph() : _node_offsets(1, 0)
-    {}
+    CSRGraph() : _node_offsets(1, 0) {}
 
     /// Create a CSR Graph from a collection of edges (X is a
     /// container some type, e.g. std::vector<unsigned int> or
@@ -158,8 +159,8 @@ namespace dolfin
     void calculate_node_distribution()
     {
       // Communicate number of nodes between all processors
-      const std::size_t num_nodes = size();
-      MPI::all_gather(_mpi_comm, (T) num_nodes, _node_distribution);
+      const T num_nodes = size();
+      MPI::all_gather(_mpi_comm, num_nodes, _node_distribution);
 
       _node_distribution.insert(_node_distribution.begin(), 0);
       for (std::size_t i = 1; i != _node_distribution.size(); ++i)

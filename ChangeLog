@@ -1,3 +1,6 @@
+- Add new algorithm for computing mesh entiites. Typical speed-up
+	of two with gcc and four with clang. Reduced memory usage for
+	meshes with irregularly numbered cells.
 - Remove STLMatrix, STLVector, MUMPSLUSolver and PastixLUSolver classes
 - Remove PETScPreconditioner::set_near_nullspace and add
 	PETScMatrix::set_near_nullspace

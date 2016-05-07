@@ -45,6 +45,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
 {
+  log(TRACE, "Computing mesh entities of dimension %d", dim);
+
   // Check if entities have already been computed
   const MeshTopology& topology = mesh.topology();
   const MeshConnectivity& ce = topology(topology.dim(), dim);

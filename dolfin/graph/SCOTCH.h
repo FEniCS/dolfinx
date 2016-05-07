@@ -32,6 +32,8 @@
 #include <dolfin/common/Set.h>
 #include "Graph.h"
 
+#include "CSRGraph.h"
+
 namespace dolfin
 {
   // Forward declarations
@@ -77,10 +79,14 @@ namespace dolfin
 
   private:
 
+    //template<typename T> class CSRGraph;
+
     // Compute cell partitions from distributed dual graph
+    template<typename T>
     static void partition(
       const MPI_Comm mpi_comm,
-      const std::vector<std::vector<std::size_t>>& local_graph,
+      //const std::vector<std::vector<std::size_t>>& local_graph,
+      const CSRGraph<T>& local_graph,
       const std::vector<std::size_t>& node_weights,
       const std::set<std::int64_t>& ghost_vertices,
       const std::size_t num_global_vertices,
