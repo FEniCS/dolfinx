@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-06
+// Last changed: 2016-05-07
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -87,10 +87,10 @@ bool CollisionDetection::collides(const MeshEntity& entity,
                                       point);
 
   if (tdim == 2 && gdim == 3)
-    return collides_triangle_point(g.point(v[0]),
-                                   g.point(v[1]),
-                                   g.point(v[2]),
-                                   point);
+    return collides_triangle_point_3d(g.point(v[0]),
+				      g.point(v[1]),
+				      g.point(v[2]),
+				      point);
 
   if (tdim == 3)
     return collides_tetrahedron_point(g.point(v[0]),
@@ -116,6 +116,7 @@ bool CollisionDetection::collides(const MeshEntity& entity_0,
   const unsigned int* v1 = entity_1.entities(0);
   const std::size_t d0 = entity_0.dim();
   const std::size_t d1 = entity_1.dim();
+  dolfin_assert(g0.dim() == g1.dim());
 
   // Pick correct specialized implementation
   if (d0 == 1 && d1 == 1)
@@ -126,25 +127,28 @@ bool CollisionDetection::collides(const MeshEntity& entity_0,
 
   if (d0 == 1 && d1 == 2)
     return collides_triangle_segment(g1.point(v1[0]),
-                                     g1.point(v1[1]),
-                                     g1.point(v1[2]),
-                                     g0.point(v0[0]),
-                                     g0.point(v0[1]));
+				     g1.point(v1[1]),
+				     g1.point(v1[2]),
+				     g0.point(v0[0]),
+				     g0.point(v0[1]),
+				     gdim);
 
   if (d0 == 2 && d1 == 1)
     return collides_triangle_segment(g0.point(v0[0]),
-                                     g0.point(v0[1]),
-                                     g0.point(v0[2]),
-                                     g1.point(v1[0]),
-                                     g1.point(v1[1]));
+				     g0.point(v0[1]),
+				     g0.point(v0[2]),
+				     g1.point(v1[0]),
+				     g1.point(v1[1]),
+				     gdim);
 
   if (d0 == 2 && d1 == 2)
     return collides_triangle_triangle(g0.point(v0[0]),
-                                      g0.point(v0[1]),
-                                      g0.point(v0[2]),
-                                      g1.point(v1[0]),
-                                      g1.point(v1[1]),
-                                      g1.point(v1[2]));
+				      g0.point(v0[1]),
+				      g0.point(v0[2]),
+				      g1.point(v1[0]),
+				      g1.point(v1[1]),
+				      g1.point(v1[2]),
+				      gdim);
 
   if (d0 == 2 && d1 == 3)
     return collides_tetrahedron_triangle(g1.point(v1[0]),
@@ -176,12 +180,98 @@ bool CollisionDetection::collides(const MeshEntity& entity_0,
 
   dolfin_error("CollisionDetection.cpp",
                "compute entity-entity collision",
-               "Not implemented for dimensions %d / %d", d0, d1);
+               "Not implemented for topological dimensions %d / %d and geometrical dimension %d", d0, d1, gdim);
 
   return false;
 }
 //-----------------------------------------------------------------------------
 // Low-level collision detection predicates
+//-----------------------------------------------------------------------------
+bool CollisionDetection::collides_segment_segment(const Point& p0,
+						  const Point& p1,
+						  const Point& q0,
+						  const Point& q1,
+						  std::size_t gdim)
+{
+  switch (gdim)
+  {
+  case 1:
+    return collides_segment_segment_1d(p0[0], p1[0], q0[0], q1[0]);
+  case 2:
+    return collides_segment_segment_2d(p0, p1, q0, q1);
+  case 3:
+    return collides_segment_segment_3d(p0, p1, q0, q1);
+  default:
+    dolfin_error("CollisionDetection.cpp",
+		 "compute segment-segment collision ",
+		 "Unknown dimension (Implemented for dimension 1, 2 and 3)");
+  }
+
+  return false;
+}
+//------------------------------------------------------------------------------
+bool CollisionDetection::collides_triangle_point(const Point& p0,
+						 const Point& p1,
+						 const Point& p2,
+						 const Point& point,
+						 std::size_t gdim)
+{
+  switch (gdim)
+  {
+  case 2:
+    return collides_triangle_point_2d(p0, p1, p2, point);
+  case 3:
+    return collides_triangle_point_3d(p0, p1, p2, point);
+  default:
+    dolfin_error("CollisionDetection.cpp",
+		 "compute triangle-point collision ",
+		 "Implemented only for dimension 2 and 3.");
+  }
+  return false;
+}
+//------------------------------------------------------------------------------
+bool CollisionDetection::collides_triangle_segment(const Point& p0,
+						   const Point& p1,
+						   const Point& p2,
+						   const Point& q0,
+						   const Point& q1,
+						   std::size_t gdim)
+{
+  switch (gdim)
+  {
+  case 2:
+    return collides_triangle_segment_2d(p0, p1, p2, q0, q1);
+  case 3:
+    return collides_triangle_segment_3d(p0, p1, p2, q0, q1);
+  default:
+    dolfin_error("CollisionDetection.cpp",
+		 "compute triangle-segment collision ",
+		 "Implmented only for dimension 2 and 3.");
+  }
+  return false;
+}
+//------------------------------------------------------------------------------
+bool CollisionDetection::collides_triangle_triangle(const Point& p0,
+						    const Point& p1,
+						    const Point& p2,
+						    const Point& q0,
+						    const Point& q1,
+						    const Point& q2,
+						    std::size_t gdim)
+{
+  switch (gdim)
+  {
+  case 2:
+    return collides_triangle_triangle_2d(p0, p1, p2, q0, q1, q2);
+  case 3:
+    return collides_triangle_triangle_3d(p0, p1, p2, q0, q1, q2);
+  default:
+    dolfin_error("CollisionDetection.cpp",
+		 "compute triangle-triangle collision ",
+		 "Implmented only for dimension 2 and 3.");
+  }
+  return false;
+}
 //-----------------------------------------------------------------------------
 bool CollisionDetection::_collides_segment_point(const Point& p0,
 						 const Point& p1,
@@ -212,7 +302,7 @@ bool CollisionDetection::_collides_segment_point(const Point& p0,
 
   return false;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool CollisionDetection::_collides_segment_segment_1d(double p0,
                                                       double p1,
                                                       double q0,
@@ -252,48 +342,6 @@ bool CollisionDetection::_collides_segment_segment_2d(const Point& p0,
   const bool result = cda*cdb <= 0.0 and abc*abd <= 0.0;
 
   return result;
-}
-//-----------------------------------------------------------------------------
-bool CollisionDetection::_collides_triangle_point(const Point& p0,
-						  const Point& p1,
-						  const Point& p2,
-						  const Point &point)
-{
-  // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
-
-  // Vectors defining each edge in consistent orientation
-  const Point r0 = p0 - p2;
-  const Point r1 = p1 - p0;
-  const Point r2 = p2 - p1;
-
-  // Normal to triangle: should be the same as
-  // r2.cross(r1) and r0.cross(r2).
-  Point normal = r1.cross(r0);
-
-  Point r = point - p0;
-  // Check point is in plane of triangle (for manifold)
-  double volume = r.dot(normal);
-  if (std::abs(volume) > DOLFIN_EPS)
-    return false;
-
-  // Compute normal to triangle based on point and first edge
-  // Dot product of two normals should be positive, if inside.
-  Point pnormal = r.cross(r0);
-  double t1 = normal.dot(pnormal);
-  if (t1 < 0) return false;
-
-  // Repeat for each edge
-  r = point - p1;
-  pnormal = r.cross(r1);
-  double t2 = normal.dot(pnormal);
-  if (t2 < 0) return false;
-
-  r = point - p2;
-  pnormal = r.cross(r2);
-  double t3 = normal.dot(pnormal);
-  if (t3 < 0) return false;
-
-  return true;
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::_collides_triangle_point_2d(const Point& p0,
@@ -336,35 +384,100 @@ bool CollisionDetection::_collides_triangle_point_2d(const Point& p0,
   return true;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::_collides_triangle_segment(const Point& p0,
-						    const Point& p1,
-						    const Point& p2,
-						    const Point& q0,
-						    const Point& q1)
+bool CollisionDetection::_collides_triangle_point_3d(const Point& p0,
+						     const Point& p1,
+						     const Point& p2,
+						     const Point &point)
+{
+  // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
+
+  // Vectors defining each edge in consistent orientation
+  const Point r0 = p0 - p2;
+  const Point r1 = p1 - p0;
+  const Point r2 = p2 - p1;
+
+  // Normal to triangle: should be the same as
+  // r2.cross(r1) and r0.cross(r2).
+  Point normal = r1.cross(r0);
+
+  Point r = point - p0;
+  // Check point is in plane of triangle (for manifold)
+  double volume = r.dot(normal);
+  if (std::abs(volume) > DOLFIN_EPS)
+    return false;
+
+  // Compute normal to triangle based on point and first edge
+  // Dot product of two normals should be positive, if inside.
+  Point pnormal = r.cross(r0);
+  double t1 = normal.dot(pnormal);
+  if (t1 < 0) return false;
+
+  // Repeat for each edge
+  r = point - p1;
+  pnormal = r.cross(r1);
+  double t2 = normal.dot(pnormal);
+  if (t2 < 0) return false;
+
+  r = point - p2;
+  pnormal = r.cross(r2);
+  double t3 = normal.dot(pnormal);
+  if (t3 < 0) return false;
+
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool CollisionDetection::_collides_triangle_segment_2d(const Point& p0,
+						       const Point& p1,
+						       const Point& p2,
+						       const Point& q0,
+						       const Point& q1)
 {
   // Check if end points are in triangle
-  if (collides_triangle_point(p0, p1, p2, q0))
+  if (collides_triangle_point_2d(p0, p1, p2, q0))
     return true;
-  if (collides_triangle_point(p0, p1, p2, q1))
+  if (collides_triangle_point_2d(p0, p1, p2, q1))
     return true;
 
   // Check if any of the triangle edges are cut by the segment
-  if (collides_segment_segment(p0, p1, q0, q1))
+  if (collides_segment_segment_2d(p0, p1, q0, q1))
     return true;
-  if (collides_segment_segment(p0, p2, q0, q1))
+  if (collides_segment_segment_2d(p0, p2, q0, q1))
     return true;
-  if (collides_segment_segment(p1, p2, q0, q1))
+  if (collides_segment_segment_2d(p1, p2, q0, q1))
+    return true;
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool CollisionDetection::_collides_triangle_segment_3d(const Point& p0,
+						       const Point& p1,
+						       const Point& p2,
+						       const Point& q0,
+						       const Point& q1)
+{
+  // Check if end points are in triangle
+  if (collides_triangle_point_3d(p0, p1, p2, q0))
+    return true;
+  if (collides_triangle_point_3d(p0, p1, p2, q1))
+    return true;
+
+  // Check if any of the triangle edges are cut by the segment
+  if (collides_segment_segment_3d(p0, p1, q0, q1))
+    return true;
+  if (collides_segment_segment_3d(p0, p2, q0, q1))
+    return true;
+  if (collides_segment_segment_3d(p1, p2, q0, q1))
     return true;
 
   return false;
 }
 //------------------------------------------------------------------------------
-bool CollisionDetection::_collides_triangle_triangle(const Point& p0,
-						     const Point& p1,
-						     const Point& p2,
-						     const Point& q0,
-						     const Point& q1,
-						     const Point& q2)
+bool CollisionDetection::_collides_triangle_triangle_2d(const Point& p0,
+							const Point& p1,
+							const Point& p2,
+							const Point& q0,
+							const Point& q1,
+							const Point& q2)
 {
   // Pack points as vectors
   std::vector<Point> tri_0({p0, p1, p2});
@@ -402,7 +515,7 @@ bool CollisionDetection::_collides_triangle_triangle(const Point& p0,
       const std::size_t j1 = (i1 + 1) % 3;
       const Point& p1 = tri_1[i1];
       const Point& q1 = tri_1[j1];
-      if (CollisionDetection::collides_segment_segment(p0, q0, p1, q1))
+      if (CollisionDetection::collides_segment_segment_2d(p0, q0, p1, q1))
 	return true;
     }
   }
@@ -463,13 +576,13 @@ bool CollisionDetection::_collides_tetrahedron_triangle(const Point& p0,
     return true;
 
   // Triangle-triangle collision tests
-  if (collides_triangle_triangle(q0, q1, q2, p1, p2, p3))
+  if (collides_triangle_triangle_3d(q0, q1, q2, p1, p2, p3))
     return true;
-  if (collides_triangle_triangle(q0, q1, q2, p0, p2, p3))
+  if (collides_triangle_triangle_3d(q0, q1, q2, p0, p2, p3))
     return true;
-  if (collides_triangle_triangle(q0, q1, q2, p0, p1, p3))
+  if (collides_triangle_triangle_3d(q0, q1, q2, p0, p1, p3))
     return true;
-  if (collides_triangle_triangle(q0, q1, q2, p0, p1, p2))
+  if (collides_triangle_triangle_3d(q0, q1, q2, p0, p1, p2))
     return true;
 
   return false;
