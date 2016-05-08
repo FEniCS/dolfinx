@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-07
+// Last changed: 2016-05-08
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -116,7 +116,8 @@ bool CollisionDetection::collides(const MeshEntity& entity_0,
   const unsigned int* v1 = entity_1.entities(0);
   const std::size_t d0 = entity_0.dim();
   const std::size_t d1 = entity_1.dim();
-  dolfin_assert(g0.dim() == g1.dim());
+  const std::size_t gdim = g0.dim();
+  dolfin_assert(gdim == g1.dim());
 
   // Pick correct specialized implementation
   if (d0 == 1 && d1 == 1)

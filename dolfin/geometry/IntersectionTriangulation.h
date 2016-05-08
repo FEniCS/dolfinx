@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-07
+// Last changed: 2016-05-08
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -78,7 +78,8 @@ namespace dolfin
     /// Compute triangulation of intersection of a cell with a triangulation
     static std::vector<std::vector<Point>>
     triangulate(const MeshEntity& entity,
-                const std::vector<std::vector<Point>>& triangulation);
+                const std::vector<std::vector<Point>>& triangulation,
+		std::size_t tdim);
 
     /// Compute triangulation of intersection of a cell with a triangulation.
     /// This version also handles normals (for boundary triangulation).
@@ -87,7 +88,8 @@ namespace dolfin
                 const std::vector<std::vector<Point>>& triangulation,
                 const std::vector<Point>& normals,
                 std::vector<std::vector<Point>>& intersection_triangulation,
-                std::vector<Point>& intersection_normals);
+                std::vector<Point>& intersection_normals,
+		std::size_t tdim);
 
     //--- Low-level intersection triangulation functions ---
 
@@ -127,10 +129,7 @@ namespace dolfin
 				   const Point& q0,
 				   const Point& q1)
     {
-      dolfin_error("IntersectionTriangulation.cpp",
-		   "compute segment-segment 3d collision",
-		   "Not implemented.");
-      return std::vector<Point>();
+      return _triangulate_segment_segment_3d(p0, p1, q0, q1);
     }
 
     /// Triangulate intersection of triangle p0-p1-p2 with segment q0-q1
@@ -162,10 +161,7 @@ namespace dolfin
 				    const Point& q0,
 				    const Point& q1)
     {
-      dolfin_error("IntersectionTriangulation.cpp",
-		   "compute triangle-segment 3d collision",
-		   "Not implemented.");
-      return std::vector<Point>();
+      return _triangulate_triangle_segment_3d(p0, p1, p2, q0, q1);
     }
 
     /// Triangulate intersection of triangle p0-p1-p2 with triangle q0-q1-q2
@@ -176,21 +172,16 @@ namespace dolfin
                                   const Point& q0,
                                   const Point& q1,
                                   const Point& q2,
-				  std::size_t gdim)
-    {
-      return CHECK_CGAL(_triangulate_triangle_triangle(p0, p1, p2, q0, q1, q2),
-      			cgal_triangulate_triangle_triangle(p0, p1, p2, q0, q1, q2));
-    }
+				  std::size_t gdim);
 
     /// Triangulate intersection of triangle p0-p1-p2 with triangle q0-q1-q2 (2D version)
     static std::vector<std::vector<Point>>
-    triangulate_triangle_triangle(const Point& p0,
-                                  const Point& p1,
-                                  const Point& p2,
-                                  const Point& q0,
-                                  const Point& q1,
-                                  const Point& q2,
-				  std::size_t gdim)
+    triangulate_triangle_triangle_2d(const Point& p0,
+				     const Point& p1,
+				     const Point& p2,
+				     const Point& q0,
+				     const Point& q1,
+				     const Point& q2)
     {
       return CHECK_CGAL(_triangulate_triangle_triangle_2d(p0, p1, p2, q0, q1, q2),
       			cgal_triangulate_triangle_triangle_2d(p0, p1, p2, q0, q1, q2));
@@ -198,15 +189,14 @@ namespace dolfin
 
     /// Triangulate intersection of triangle p0-p1-p2 with triangle q0-q1-q2 (3D version)
     static std::vector<std::vector<Point>>
-    triangulate_triangle_triangle(const Point& p0,
-                                  const Point& p1,
-                                  const Point& p2,
-                                  const Point& q0,
-                                  const Point& q1,
-                                  const Point& q2,
-				  std::size_t gdim)
+    triangulate_triangle_triangle_3d(const Point& p0,
+				     const Point& p1,
+				     const Point& p2,
+				     const Point& q0,
+				     const Point& q1,
+				     const Point& q2)
     {
-      return _triangulate_triangle_triangle_2d(p0, p1, p2, q0, q1, q2);
+      return _triangulate_triangle_triangle_3d(p0, p1, p2, q0, q1, q2);
     }
 
     /// Triangulate intersection of tetrahedron p0-p1-p2-p3 with triangle q0-q1-q2
@@ -241,27 +231,52 @@ namespace dolfin
     // Implementation of triangulation functions
 
     static std::vector<Point>
-    _triangulate_segment_segment(const Point& p0,
-				 const Point& p1,
-				 const Point& q0,
-				 const Point& q1,
-				 std::size_t gdim);
+    _triangulate_segment_segment_1d(double p0,
+				    double p1,
+				    double q0,
+				    double q1);
 
     static std::vector<Point>
-    _triangulate_triangle_segment(const Point& p0,
-				  const Point& p1,
-				  const Point& p2,
-				  const Point& q0,
-				  const Point& q1,
-				  std::size_t gdim);
+    _triangulate_segment_segment_2d(const Point& p0,
+				    const Point& p1,
+				    const Point& q0,
+				    const Point& q1);
+
+    static std::vector<Point>
+    _triangulate_segment_segment_3d(const Point& p0,
+				    const Point& p1,
+				    const Point& q0,
+				    const Point& q1);
+
+    static std::vector<Point>
+    _triangulate_triangle_segment_2d(const Point& p0,
+				     const Point& p1,
+				     const Point& p2,
+				     const Point& q0,
+				     const Point& q1);
+
+    static std::vector<Point>
+    _triangulate_triangle_segment_3d(const Point& p0,
+				     const Point& p1,
+				     const Point& p2,
+				     const Point& q0,
+				     const Point& q1);
 
     static std::vector<std::vector<Point>>
-    _triangulate_triangle_triangle(const Point& p0,
-				   const Point& p1,
-				   const Point& p2,
-				   const Point& q0,
-				   const Point& q1,
-				   const Point& q2);
+    _triangulate_triangle_triangle_2d(const Point& p0,
+				      const Point& p1,
+				      const Point& p2,
+				      const Point& q0,
+				      const Point& q1,
+				      const Point& q2);
+
+    static std::vector<std::vector<Point>>
+    _triangulate_triangle_triangle_3d(const Point& p0,
+				      const Point& p1,
+				      const Point& p2,
+				      const Point& q0,
+				      const Point& q1,
+				      const Point& q2);
 
     static std::vector<std::vector<Point>>
     _triangulate_tetrahedron_triangle(const Point& p0,
@@ -281,27 +296,11 @@ namespace dolfin
                                          const Point& q2,
 					 const Point& q3);
 
+    //--- Utility functions ---
+
     // Create triangulation of a convex set of points
     static std::vector<std::vector<Point>>
     graham_scan(const std::vector<Point>& points);
-
-    //--- Utility functions ---
-
-    // static std::vector<Point> _intersection_edge_edge_2d(const Point& a,
-    //                                                      const Point& b,
-    //                                                      const Point& c,
-    //                                                      const Point& d);
-
-    // static std::vector<Point> _intersection_edge_edge(const Point& a,
-    //                                                   const Point& b,
-    //                                                   const Point& c,
-    //                                                   const Point& d);
-
-    // static std::vector<Point> _intersection_face_edge(const Point& r,
-    //                                                   const Point& s,
-    //                                                   const Point& t,
-    //                                                   const Point& a,
-    //                                                   const Point& b);
   };
 }
 
