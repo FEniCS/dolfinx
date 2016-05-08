@@ -1,3 +1,5 @@
+- Major performance improvements and simplifications of the XDMF IO.
+- Remove Zoltan graph partitioning interface
 - Add new algorithm for computing mesh entiites. Typical speed-up
 	of two with gcc and four with clang. Reduced memory usage for
 	meshes with irregularly numbered cells.
