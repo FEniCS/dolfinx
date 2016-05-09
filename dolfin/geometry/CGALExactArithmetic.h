@@ -475,32 +475,6 @@ namespace
     return std::vector<dolfin::Point>();
   }
 
-  inline std::vector<std::vector<dolfin::Point>>
-  parse_triangle_triangle_intersection
-  (const CGAL::cpp11::result_of<Intersect_2(Triangle_2, Triangle_2)>::type ii)
-  {
-    const Point_2* p = boost::get<Point_2>(&*ii);
-    if (p)
-      return std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*p)}};
-
-    const Segment_2* s = boost::get<Segment_2>(&*ii);
-    if (s)
-      return std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*s)}};
-
-    const Triangle_2* t = boost::get<Triangle_2>(&*ii);
-    if (t)
-      return std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*t)}};
-
-    const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii);
-    if (cgal_points)
-    {
-      dolfin_assert(cgal_points->size() == 4);
-      return triangulate_polygon(*cgal_points);
-    }
-
-    dolfin::error("Unexpected behavior in CGALExactArithmetic parse_triangle_triangle");
-    return std::vector<std::vector<dolfin::Point>>();
-  }
 }
 
 namespace dolfin
@@ -622,23 +596,50 @@ namespace dolfin
     dolfin_assert(!is_degenerate(p0, p1, p2));
     dolfin_assert(!is_degenerate(q0, q1, q2));
 
-    const auto T0 = convert_to_cgal(p0, p1, p2);
-    const auto T1 = convert_to_cgal(q0, q1, q2);
+    const Triangle_2 T0 = convert_to_cgal(p0, p1, p2);
+    const Triangle_2 T1 = convert_to_cgal(q0, q1, q2);
     const auto ii = CGAL::intersection(T0, T1);
 
     // We can have empty ii if we use
     // CGAL::Exact_predicates_inexact_constructions_kernel
     dolfin_assert(ii);
 
-    const std::vector<std::vector<dolfin::Point>> triangulation =
-      parse_triangle_triangle_intersection(ii);
+    std::vector<std::vector<dolfin::Point>> triangulation;
+
+    if (const Point_2* p = boost::get<Point_2>(&*ii))
+    {
+      std::cout << "Intersection is point" << std::endl;
+      triangulation = std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*p)}};
+    }
+    else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
+    {
+      std::cout << "Intersection is segment" << std::endl;
+      triangulation = std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*s)}};
+    }
+    else if (const Triangle_2* t = boost::get<Triangle_2>(&*ii))
+    {
+      std::cout << "Intersection is triangle" << std::endl;
+      std::cout << "Area: " << t->area() << std::endl;
+      triangulation = std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*t)}};
+    }
+    else if (const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii))
+    {
+      std::cout << "Intersection is polygon" << std::endl;
+      dolfin_assert(cgal_points->size() == 4);
+      triangulation = triangulate_polygon(*cgal_points);
+    }
+    else
+    {
+      dolfin::error("Unexpected behavior in CGALExactArithmetic parse_triangle_triangle");
+      return std::vector<std::vector<dolfin::Point>>();
+    }
 
     // NB: the parsing can return triangulation of size 0, for example
     // if it detected a triangle but it was found to be flat.
     if (triangulation.size() == 0)
       dolfin_error("CGALExactArithmetic.h",
-		 "find intersection of two triangles in cgal_intersection_triangle_triangle function",
-		 "no intersection found");
+                   "find intersection of two triangles in cgal_intersection_triangle_triangle function",
+                   "no intersection found");
 
     return triangulation;
   }
