@@ -478,12 +478,6 @@ void PETScLUSolver::configure_ksp(const MatSolverPackage solver_package)
   // Set solver package
   ierr = PCFactorSetMatSolverPackage(pc, solver_package);
   if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetMatSolverPackage");
-
-  // Allow matrices with zero diagonals to be solved
-  ierr = PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetShiftType");
-  ierr = PCFactorSetShiftAmount(pc, PETSC_DECIDE);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetShiftAmount");
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::pre_report(const PETScMatrix& A) const
