@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-05-07
+// Last changed: 2016-05-09
 //
 // Developer note:
 //
@@ -78,19 +78,83 @@ namespace dolfin
     return result_dolfin;
   }
 
+
+  inline double Heron(double a, double b, double c)
+  {
+    // sort
+    if (b>a) std::swap(b,a);
+    if (c>b) std::swap(c,b);
+    if (b>a) std::swap(b,a);
+
+    const double s2 = (a+(b+c))*(c-(a-b))*(c+(a-b))*(a+(b-c));
+    if (s2 < 0)
+    {
+      std::cout << "Heron error, negative sqrt: " << s2 << " is to be replaced with 0" << std::endl;
+      if (std::abs(s2) < DOLFIN_EPS)
+	return 0;
+      else
+	exit(1);
+    }
+    return 0.25*std::sqrt( (a+(b+c))*(c-(a-b))*(c+(a-b))*(a+(b-c)) );
+  }
+
+  inline double volume(const std::vector<Point>& s)
+  {
+    if (s.size() < 3)
+      return 0;
+    else if (s.size() == 3)
+      return Heron((s[0] - s[1]).norm(),
+		   (s[0] - s[2]).norm(),
+		   (s[1] - s[2]).norm());
+    else if (s.size() == 4)
+    {
+      dolfin_error("CGALExactArithmetic.h",
+		   "verify geometric predicate with exact types",
+		   "Volume of tetrahedron not implemented.");
+    }
+    else {
+      dolfin_error("CGALExactArithmetic.h",
+		   "verify geometric predicate with exact types",
+		   "Volume of simplex with %s points not implemented.", s.size());
+    }
+    return 0;
+  }
+
   inline const std::vector<Point>&
     check_cgal(const std::vector<Point>& result_dolfin,
                const std::vector<Point>& result_cgal,
                std::string function)
   {
-    // FIXME: Not implemented
+    // compare volume
+    const double dolfin_volume = volume(result_dolfin);
+    const double cgal_volume = volume(result_cgal);
+
+    if (std::abs(dolfin_volume - cgal_volume) > DOLFIN_EPS)
+    {
+      std::stringstream s_dolfin, s_cgal, s_error;
+      s_dolfin.precision(16);
+      s_dolfin << dolfin_volume;
+      s_cgal.precision(16);
+      s_cgal << cgal_volume;
+      s_error.precision(16);
+      s_error << std::abs(dolfin_volume - cgal_volume);
+
+      dolfin_error("CGALExactArithmetic.h",
+		   "verify intersections due to different volumes (single simplex version)",
+		   "Error in function %s\n CGAL volume %s\n DOLFIN volume %s\n error %s\n",
+		   function.c_str(),
+		   s_cgal.str().c_str(),
+		   s_dolfin.str().c_str(),
+		   s_error.str().c_str());
+    }
+
     return result_dolfin;
   }
 
   inline const std::vector<std::vector<Point>>&
-    check_cgal(const std::vector<std::vector<Point>>& result_dolfin,
-               const std::vector<std::vector<Point>>& result_cgal,
-               std::string function)
+  check_cgal(const std::vector<std::vector<Point>>& result_dolfin,
+	     const std::vector<std::vector<Point>>& result_cgal,
+	     std::string function)
   {
     // FIXME: do we expect dolfin and cgal data to be in the same order?
 
@@ -127,61 +191,89 @@ namespace dolfin
     }
     else
     {
-      // Flatten to vector<double> for easy sorting and comparison
-      std::vector<double> sorted_result_dolfin;
-      for (std::vector<Point> v : result_dolfin)
+      // compare total volume
+      double dolfin_volume = 0;
+      for (std::vector<Point> s : result_dolfin)
+	dolfin_volume += volume(s);
+
+      double cgal_volume = 0;
+      for (std::vector<Point> s : result_cgal)
+	cgal_volume += volume(s);
+
+      if (std::abs(cgal_volume - dolfin_volume) > DOLFIN_EPS)
       {
-        for (Point p : v)
-        {
-          sorted_result_dolfin.push_back(p.x());
-          sorted_result_dolfin.push_back(p.y());
-          sorted_result_dolfin.push_back(p.z());
-        }
+	std::stringstream s_dolfin, s_cgal, s_error;
+	s_dolfin.precision(16);
+	s_dolfin << dolfin_volume;
+	s_cgal.precision(16);
+	s_cgal << cgal_volume;
+	s_error.precision(16);
+	s_error << std::abs(cgal_volume - dolfin_volume);
+
+	dolfin_error("CGALExactArithmetic.h",
+		     "verify intersections due to different volumes",
+		     "Error in function %s\n CGAL volume %s\n DOLFIN volume %s\n error %s\n",
+		     function.c_str(),
+		     s_cgal.str().c_str(),
+		     s_dolfin.str().c_str(),
+		     s_error.str().c_str());
       }
-      std::sort(sorted_result_dolfin.begin(), sorted_result_dolfin.end());
 
-      std::vector<double> sorted_result_cgal;
-      for (std::vector<Point> v : result_cgal)
-      {
-        for (Point p : v)
-        {
-          sorted_result_cgal.push_back(p.x());
-          sorted_result_cgal.push_back(p.y());
-          sorted_result_cgal.push_back(p.z());
-        }
-      }
-      std::sort(sorted_result_cgal.begin(), sorted_result_cgal.end());
+      // // Flatten to vector<double> for easy sorting and comparison
+      // std::vector<double> sorted_result_dolfin;
+      // for (std::vector<Point> v : result_dolfin)
+      // {
+      //   for (Point p : v)
+      //   {
+      //     sorted_result_dolfin.push_back(p.x());
+      //     sorted_result_dolfin.push_back(p.y());
+      //     sorted_result_dolfin.push_back(p.z());
+      //   }
+      // }
+      // std::sort(sorted_result_dolfin.begin(), sorted_result_dolfin.end());
 
-      for (std::size_t i = 0; i < sorted_result_dolfin.size(); ++i)
-	if (!near(sorted_result_dolfin[i], sorted_result_cgal[i], DOLFIN_EPS_LARGE))
-	{
-	  std::stringstream s_dolfin;
-	  s_dolfin.precision(16);
-	  for (const std::vector<Point> p : result_dolfin)
-          {
-            for (const Point v : p)
-            {
-              s_dolfin << v.str() << ' ';
-            }
-          }
+      // std::vector<double> sorted_result_cgal;
+      // for (std::vector<Point> v : result_cgal)
+      // {
+      //   for (Point p : v)
+      //   {
+      //     sorted_result_cgal.push_back(p.x());
+      //     sorted_result_cgal.push_back(p.y());
+      //     sorted_result_cgal.push_back(p.z());
+      //   }
+      // }
+      // std::sort(sorted_result_cgal.begin(), sorted_result_cgal.end());
 
-	  std::stringstream s_cgal;
-	  s_cgal.precision(16);
-          for (std::vector<Point> p : result_cgal)
-          {
-            for (const Point v : p)
-            {
-              s_cgal << v.str() << ' ';
-            }
-          }
+      // for (std::size_t i = 0; i < sorted_result_dolfin.size(); ++i)
+      // 	if (!near(sorted_result_dolfin[i], sorted_result_cgal[i], DOLFIN_EPS_LARGE))
+      // 	{
+      // 	  std::stringstream s_dolfin;
+      // 	  s_dolfin.precision(16);
+      // 	  for (const std::vector<Point> p : result_dolfin)
+      //     {
+      //       for (const Point v : p)
+      //       {
+      //         s_dolfin << v.str() << ' ';
+      //       }
+      //     }
 
-	  dolfin_error("CGALExactArithmetic.h",
-		       "verify intersections due to different data (NB: we sort data before comparing)",
-		       "Error in function %s\n DOLFIN: %s\n CGAL: %s",
-		       function.c_str(),
-		       s_dolfin.str().c_str(),
-		       s_cgal.str().c_str());
-	}
+      // 	  std::stringstream s_cgal;
+      // 	  s_cgal.precision(16);
+      //     for (std::vector<Point> p : result_cgal)
+      //     {
+      //       for (const Point v : p)
+      //       {
+      //         s_cgal << v.str() << ' ';
+      //       }
+      //     }
+
+      // 	  dolfin_error("CGALExactArithmetic.h",
+      // 		       "verify intersections due to different data (NB: we sort data before comparing)",
+      // 		       "Error in function %s\n DOLFIN: %s\n CGAL: %s",
+      // 		       function.c_str(),
+      // 		       s_dolfin.str().c_str(),
+      // 		       s_cgal.str().c_str());
+      // 	}
     }
 
     return result_dolfin;
