@@ -551,69 +551,6 @@ namespace dolfin
     return triangulation;
   }
 
-  // inline dolfin::Point cgal_intersection_edge_edge_2d(const Point& a,
-  //                                                     const Point& b,
-  //                                                     const Point& c,
-  //                                                     const Point& d)
-  // {
-  //   dolfin_assert(!is_degenerate(a, b));
-  //   dolfin_assert(!is_degenerate(c, d));
-
-  //   const auto E0 = convert_to_cgal(a, b);
-  //   const auto E1 = convert_to_cgal(c, d);
-
-  //   const auto ii = CGAL::intersection(E0, E1);
-  //   dolfin_assert(ii);
-
-  //   const std::vector<Point> triangulation = parse_segment_segment_intersection(ii);
-
-  //   dolfin_assert(triangulation.size() == 2 or
-  // 		  triangulation.size() == 4);
-
-  //   if (triangulation.size() == 1)
-  //     return triangulation[0];
-  //   else if (triangulation.size() == 2)
-  //     return triangulation[0]*.5 + triangulation[1];
-
-  //   dolfin_error("CGALExactArithmetic.h",
-  // 		 "find intersection of two triangles in cgal_intersection_edge_edge_2d function",
-  // 		 "no or strange intersection found");
-  //   return Point();
-  // }
-
-  // inline Point cgal_intersection_face_edge_2d(const Point& r,
-  // 					      const Point& s,
-  // 					      const Point& t,
-  // 					      const Point& a,
-  // 					      const Point& b)
-  // {
-  //   // NB: this is only for 2D
-
-  //   dolfin_assert(!is_degenerate(r, s, t));
-  //   dolfin_assert(!is_degenerate(a, b));
-
-  //   const auto T = convert_to_cgal(r, s, t);
-  //   const auto I = convert_to_cgal(a, b);
-
-  //   const auto ii = CGAL::intersection(T, I);
-  //   dolfin_assert(ii);
-
-  //   const std::vector<Point> triangulation = parse_triangle_segment_intersection(ii);
-
-  //   dolfin_assert(triangulation.size() == 2 or
-  // 		  triangulation.size() == 4);
-
-  //   if (triangulation.size() == 1)
-  //     return triangulation[0];
-  //   else if (triangulation.size() == 2)
-  //     return triangulation[0]*.5 + triangulation[1]*.5;
-
-  //   dolfin_error("CGALExactArithmetic.h",
-  // 		 "find intersection of two triangles in cgal_intersection_face_edge_2d function",
-  // 		 "no or strange intersection found");
-  //   return Point();
-  // }
-
 }
 #endif
 
