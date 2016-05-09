@@ -798,6 +798,7 @@ void XDMFFile::write_new(const Mesh& mesh, Encoding encoding) const
 
   // Open a HDF5 file if using HDF5 encoding (truncate)
   hid_t h5_id = -1;
+  #ifdef HAS_HDF5
   std::unique_ptr<HDF5File> h5_file;
   if (encoding == Encoding::HDF5)
   {
@@ -808,6 +809,7 @@ void XDMFFile::write_new(const Mesh& mesh, Encoding encoding) const
     // Get file handle
     h5_id = h5_file->h5_id();
   }
+  #endif
 
   // Add topology node and attributes (including writa data)
   const int tdim = mesh.topology().dim();
@@ -1166,6 +1168,7 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
   }
   else
   {
+    #ifdef HAS_HDF5
     data_item_node.append_attribute("Format") = "HDF";
 
     // Get name of HDF5 file
@@ -1197,6 +1200,12 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
     const bool use_mpi_io = MPI::size(comm) == 1 ? false : true;
     HDF5Interface::write_dataset(h5_id, h5_path, x, local_range, shape, use_mpi_io,
                                  false);
+    #else
+    // Should never reach this point
+    dolfin_error("XDMFFile.cpp",
+                 "add dataitem",
+                 "DOLFIN has not been configured with hdf5_dataset");
+    #endif
   }
 }
 //----------------------------------------------------------------------------
@@ -1426,6 +1435,7 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
   }
   else if (format == "HDF")
   {
+    #ifdef HAS_HDF5
     // Get file and data path
     auto paths = XDMFxml::get_hdf5_paths(dataset_node);
 
@@ -1482,6 +1492,12 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
 
     // Retrieve data
     HDF5Interface::read_dataset(h5_file.h5_id(), paths[1], range, data_vector);
+    #else
+    // Should never reach this point
+    dolfin_error("XDMFFile.cpp",
+                 "get dataset",
+                 "DOLFIN has not been configured with HDF5");
+    #endif
   }
   else
   {
