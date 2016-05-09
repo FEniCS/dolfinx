@@ -39,7 +39,7 @@
 using namespace dolfin;
 
 // List of available LU solvers
-const std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods
+std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods
 = { {"default", ""},
 #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
     {"umfpack",      MATSOLVERUMFPACK},
@@ -58,7 +58,7 @@ const std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods
 #endif
     {"petsc",        MATSOLVERPETSC}};
 //-----------------------------------------------------------------------------
-const std::map<const MatSolverPackage, const bool>
+std::map<const MatSolverPackage, bool>
 PETScLUSolver::_methods_cholesky
 = { {MATSOLVERUMFPACK,      false},
     {MATSOLVERMUMPS,        true},
@@ -88,8 +88,7 @@ PETScLUSolver::_methods_descr
     {"petsc", "PETSc built in LU solver"} };
 
 //-----------------------------------------------------------------------------
-std::map<std::string, std::string>
-PETScLUSolver::methods()
+std::map<std::string, std::string> PETScLUSolver::methods()
 {
   return PETScLUSolver::_methods_descr;
 }
@@ -105,17 +104,14 @@ Parameters PETScLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver(MPI_Comm comm, std::string method) : _ksp(NULL)
+PETScLUSolver::PETScLUSolver(MPI_Comm comm, std::string method)
+  :  PETScLUSolver(MPI_COMM_WORLD, NULL, method)
 {
-  // Set parameter values
-  parameters = default_parameters();
-
-  // Initialize PETSc LU solver
-  init_solver(comm, method);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(std::string method)
-  : PETScLUSolver(MPI_COMM_WORLD, method)
+  : PETScLUSolver(MPI_COMM_WORLD, NULL, method)
 {
   // Do nothing
 }
@@ -125,18 +121,34 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm,
                              std::string method) : _ksp(NULL), _matA(A)
 {
   // Check dimensions
-  if (A->size(0) != A->size(1))
+  if (A)
   {
-    dolfin_error("PETScLUSolver.cpp",
-                 "create PETSc LU solver",
-                 "Cannot LU factorize non-square PETSc matrix");
+    if (A->size(0) != A->size(1))
+    {
+      dolfin_error("PETScLUSolver.cpp",
+                  "create PETSc LU solver",
+                  "Cannot LU factorize non-square PETSc matrix");
+    }
   }
-
   // Set parameter values
   parameters = default_parameters();
 
-  // Initialize PETSc LU solver
-  init_solver(comm, method);
+  PetscErrorCode ierr;
+
+  // Create solver
+  ierr = KSPCreate(comm, &_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
+
+  // Select solver (must come after KSPCreate, becuase we get the MPI
+  // communicator from the KSP object)
+  _solver_package = select_solver(comm, method);
+
+  // Make solver preconditioner only
+  ierr = KSPSetType(_ksp, KSPPREONLY);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+
+  // Set from PETSc options
+  KSPSetFromOptions(_ksp);
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(std::shared_ptr<const PETScMatrix> A,
@@ -309,29 +321,17 @@ std::size_t PETScLUSolver::solve_transpose(const PETScMatrix& A,
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_options_prefix(std::string options_prefix)
 {
-  if (_ksp)
-  {
-    dolfin_error("PETScLUSolver.cpp",
-                 "setting PETSc options prefix",
-                 "Cannot set options prefix since PETSc KSP has already been initialized");
-  }
-  else
-    _petsc_options_prefix = options_prefix;
+  dolfin_assert(_ksp);
+  PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, options_prefix.c_str());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
 std::string PETScLUSolver::get_options_prefix() const
 {
-  if (_ksp)
-  {
-    const char* prefix = NULL;
-    KSPGetOptionsPrefix(_ksp, &prefix);
-    return std::string(prefix);
-  }
-  else
-  {
-    warning("PETSc KSP object has not been initialised, therefore prefix has not been set");
-    return std::string();
-  }
+  dolfin_assert(_ksp);
+  const char* prefix = NULL;
+  KSPGetOptionsPrefix(_ksp, &prefix);
+  return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_from_options() const
@@ -370,7 +370,8 @@ KSP PETScLUSolver::ksp() const
   return _ksp;
 }
 //-----------------------------------------------------------------------------
-const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
+const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
+                                                    std::string& method)
 {
   // Check package string
   if (_methods.count(method) == 0)
@@ -384,7 +385,7 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
   if (method == "default")
   {
     #if defined(PETSC_USE_64BIT_INDICES)
-    if (MPI::size(mpi_comm()) == 1)
+    if (MPI::size(comm) == 1)
     {
       #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
       method = "umfpack";
@@ -406,7 +407,7 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
 
     }
     #else
-    if (MPI::size(mpi_comm()) == 1)
+    if (MPI::size(comm) == 1)
     {
       #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
       method = "umfpack";
@@ -440,40 +441,16 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
     #endif
   }
 
-  return _methods.find(method)->second;
+  auto it = _methods.find(method);
+  dolfin_assert(it !=  _methods.end());
+  return it->second;
 }
 //-----------------------------------------------------------------------------
-bool PETScLUSolver::solver_has_cholesky(const MatSolverPackage package) const
+bool PETScLUSolver::solver_has_cholesky(const MatSolverPackage package)
 {
-  return _methods_cholesky.find(package)->second;
-}
-//-----------------------------------------------------------------------------
-void PETScLUSolver::init_solver(MPI_Comm comm, std::string& method)
-{
-  // Destroy old solver environment if necessary
-  if (_ksp)
-    KSPDestroy(&_ksp);
-
-  PetscErrorCode ierr;
-
-  // Create solver
-  ierr = KSPCreate(comm, &_ksp);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
-
-  // Select solver (must come after KSPCreate, becuase we get the MPI
-  // communicator from the KSO object)
-  _solver_package = select_solver(method);
-
-  // Set options prefix (if any)
-  ierr = KSPSetOptionsPrefix(_ksp, _petsc_options_prefix.c_str());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
-
-  // Make solver preconditioner only
-  ierr = KSPSetType(_ksp, KSPPREONLY);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
-
-  // Set from PETSc options
-  KSPSetFromOptions(_ksp);
+  auto it = _methods_cholesky.find(package);
+  dolfin_assert(it != _methods_cholesky.end());
+  return it->second;
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::configure_ksp(const MatSolverPackage solver_package)
