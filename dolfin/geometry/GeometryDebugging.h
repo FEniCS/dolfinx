@@ -22,6 +22,9 @@
 #include <string>
 #include "Point.h"
 
+#ifndef __GEOMETRY_DEBUGGING_H
+#define __GEOMETRY_DEBUGGING_H
+
 namespace dolfin
 {
 
@@ -63,3 +66,5 @@ namespace dolfin
   };
 
 }
+
+#endif
