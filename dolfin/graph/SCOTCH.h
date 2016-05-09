@@ -79,8 +79,6 @@ namespace dolfin
 
   private:
 
-    //template<typename T> class CSRGraph;
-
     // Compute cell partitions from distributed dual graph
     template<typename T>
     static void partition(

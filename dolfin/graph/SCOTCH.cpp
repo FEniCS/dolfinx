@@ -58,7 +58,7 @@ void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
                                const CellType& cell_type)
 {
   // Create data structures to hold graph
-  CSRGraph<std::size_t> csr_graph;
+  CSRGraph<SCOTCH_Num> csr_graph;
   std::set<std::int64_t> ghost_vertices;
 
   // Build dual graph. Use scoping to clean up memory
@@ -69,7 +69,7 @@ void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
                                      num_global_vertices, local_graph,
                                      ghost_vertices);
 
-    csr_graph = CSRGraph<std::size_t>(MPI_COMM_SELF, local_graph);
+    csr_graph = CSRGraph<SCOTCH_Num>(MPI_COMM_SELF, local_graph);
   }
 
   // Compute partitions
@@ -209,7 +209,6 @@ template<typename T>
 void SCOTCH::partition(
   const MPI_Comm mpi_comm,
   const CSRGraph<T>& local_graph,
-  //const std::vector<std::vector<std::size_t>>& local_graph,
   const std::vector<std::size_t>& node_weights,
   const std::set<std::int64_t>& ghost_vertices,
   const std::size_t num_global_vertices,
@@ -234,42 +233,11 @@ void SCOTCH::partition(
   const SCOTCH_Num vertlocnbr = local_graph.size();
   const std::size_t vertgstnbr = vertlocnbr + ghost_vertices.size();
 
-  // Data structures for graph input to SCOTCH (add 1 for case that
-  // local graph size is zero)
-  std::vector<SCOTCH_Num> vertloctab;
-  vertloctab.reserve(local_graph.size() + 1);
-  std::vector<SCOTCH_Num> edgeloctab;
-
-  // Build local graph input for SCOTCH
-  // (number of local + ghost graph vertices (cells),
-  // number of local edges + edges connecting to ghost vertices)
-  SCOTCH_Num edgelocnbr = 0;
-  vertloctab.push_back((SCOTCH_Num) 0);
-  /*
-  std::vector<std::vector<std::size_t>>::const_iterator vertex;
-  for(vertex = local_graph.begin(); vertex != local_graph.end(); ++vertex)
-  {
-    edgelocnbr += vertex->size();
-    vertloctab.push_back(vertloctab.back() + vertex->size());
-    edgeloctab.insert(edgeloctab.end(), vertex->begin(), vertex->end());
-  }
-  */
-
-  for(std::size_t i = 0; i < local_graph.size(); ++i)
-  {
-    auto& node = local_graph[i];
-    edgelocnbr += node.size();
-    vertloctab.push_back(vertloctab.back() + node.size());
-    edgeloctab.insert(edgeloctab.end(), node.begin(), node.end());
-  }
-
-  // Handle case that local graph size is zero
-  if (edgeloctab.empty())
-    edgeloctab.resize(1);
-
-  // Shrink vectors to hopefully recover any unused memory
-  vertloctab.shrink_to_fit();
-  edgeloctab.shrink_to_fit();
+  // Get graph data
+  std::vector<SCOTCH_Num>& edgeloctab
+    = const_cast<std::vector<SCOTCH_Num>&>(local_graph.edges());
+  std::vector<SCOTCH_Num>& vertloctab
+    = const_cast<std::vector<SCOTCH_Num>&>(local_graph.nodes());
 
   // Global data ---------------------------------
 
@@ -318,9 +286,9 @@ void SCOTCH::partition(
   // Build SCOTCH distributed graph
   Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
-                         &vertloctab[0], NULL, veloloctab, NULL,
-                         edgelocnbr, edgelocnbr,
-                         &edgeloctab[0], NULL, NULL) )
+                         vertloctab.data(), NULL, veloloctab, NULL,
+                         edgeloctab.size(), edgeloctab.size(),
+                         edgeloctab.data(), NULL, NULL) )
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
