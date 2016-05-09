@@ -195,7 +195,7 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
   for (std::int32_t i = 0; i < num_processes; ++i)
   {
     std::vector<std::int64_t>& recv_data = recv_cell_partition[i];
-    for (std::int32_t j = 0; j != recv_data.size(); j += 2)
+    for (std::size_t j = 0; j < recv_data.size(); j += 2)
     {
       const std::int64_t global_cell = recv_data[j];
       const std::int32_t cell_owner = recv_data[j+1];
@@ -207,7 +207,7 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
   for(std::int32_t i = 0; i < ncells; i++)
   {
     const std::size_t proc_this = part[i];
-    for (idx_t j = xadj[i]; j != xadj[i + 1]; ++j)
+    for (idx_t j = xadj[i]; j < xadj[i + 1]; ++j)
     {
       const idx_t other_cell = adjncy[j];
       std::size_t proc_other;
@@ -267,7 +267,6 @@ void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
   // migration if already balanced.  Try PARMETIS_PSR_UNCOUPLED for
   // better edge cut.
 
-
   Timer timer1("ParMETIS: call ParMETIS_V3_AdaptiveRepart");
   const double itr = parameters["ParMETIS_repartitioning_weight"];
   real_t _itr = itr;
@@ -277,6 +276,7 @@ void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
 
   // Number of partitions (one for each process)
   idx_t nparts = MPI::size(mpi_comm);
+
   // Remaining ParMETIS parameters
   idx_t ncon = 1;
   idx_t* elmwgt = NULL;
@@ -342,14 +342,13 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
 
   // Call ParMETIS to partition graph
   Timer timer1("ParMETIS: call ParMETIS_V3_RefineKway");
-  int err =
-    ParMETIS_V3_RefineKway(csr_graph.node_distribution().data(),
-                           csr_graph.nodes().data(),
-                           csr_graph.edges().data(),
-                           elmwgt, NULL, &wgtflag, &numflag, &ncon,
-                           &nparts,
-                           tpwgts.data(), ubvec.data(), options,
-                           &edgecut, part.data(), &mpi_comm);
+  int err =  ParMETIS_V3_RefineKway(csr_graph.node_distribution().data(),
+                                    csr_graph.nodes().data(),
+                                    csr_graph.edges().data(),
+                                    elmwgt, NULL, &wgtflag, &numflag, &ncon,
+                                    &nparts,
+                                    tpwgts.data(), ubvec.data(), options,
+                                    &edgecut, part.data(), &mpi_comm);
   dolfin_assert(err == METIS_OK);
   timer1.stop();
 
@@ -357,9 +356,10 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
   cell_partition.assign(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
-CSRGraph<idx_t> ParMETIS::dual_graph(MPI_Comm mpi_comm,
-                                     const boost::multi_array<std::int64_t, 2>& cell_vertices,
-                                     const int num_vertices_per_cell)
+CSRGraph<idx_t>
+ParMETIS::dual_graph(MPI_Comm mpi_comm,
+                     const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                     const int num_vertices_per_cell)
 {
   Timer timer("Build mesh dual graph (ParMETIS)");
 
