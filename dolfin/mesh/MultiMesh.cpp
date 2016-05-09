@@ -569,7 +569,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
 
       // Get dimensions
-      //const std::size_t tdim = cut_cell.mesh().topology().dim();
+      // const std::size_t tdim = cut_cell.mesh().topology().dim();
       const std::size_t gdim = cut_cell.mesh().geometry().dim();
 
       // Data structure for the overlap quadrature rule
@@ -599,7 +599,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 #endif
 
   	// Only allow same type of cell for now
-      	dolfin_assert(cutting_cell.mesh().topology().dim() == tdim);
+      	dolfin_assert(cutting_cell.mesh().topology().dim() == cut_cell.mesh().topology().dim());
       	dolfin_assert(cutting_cell.mesh().geometry().dim() == gdim);
 
   	// Compute the intersection (a polyhedron)
