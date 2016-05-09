@@ -272,21 +272,16 @@ void SCOTCH::partition(
                  "Error initializing SCOTCH graph");
   }
 
-  SCOTCH_Num* veloloctab;
+
+  // Handle cell weights (if any)
   std::vector<SCOTCH_Num> vload;
-  if (node_weights.empty())
-    veloloctab = NULL;
-  else
-  {
-    vload.resize(node_weights.size());
-    std::copy(node_weights.begin(), node_weights.end(), vload.begin());
-    veloloctab = vload.data();
-  }
+  if (!node_weights.empty())
+    vload.assign(node_weights.begin(), node_weights.end());
 
   // Build SCOTCH distributed graph
   Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
-                         vertloctab.data(), NULL, veloloctab, NULL,
+                         vertloctab.data(), NULL, vload.data(), NULL,
                          edgeloctab.size(), edgeloctab.size(),
                          edgeloctab.data(), NULL, NULL) )
   {
