@@ -112,6 +112,9 @@ namespace dolfin
     /// database
     std::string get_options_prefix() const;
 
+    /// Set options from the PETSc options database
+    void set_from_options() const;
+
     /// Returns the MPI communicator
     MPI_Comm mpi_comm() const;
 

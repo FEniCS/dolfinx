@@ -334,6 +334,13 @@ std::string PETScLUSolver::get_options_prefix() const
   }
 }
 //-----------------------------------------------------------------------------
+void PETScLUSolver::set_from_options() const
+{
+  dolfin_assert(_ksp);
+  PetscErrorCode ierr = KSPSetFromOptions(_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetFromOptions");
+}
+//-----------------------------------------------------------------------------
 MPI_Comm PETScLUSolver::mpi_comm() const
 {
   dolfin_assert(_ksp);

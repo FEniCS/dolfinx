@@ -509,6 +509,13 @@ std::string PETScKrylovSolver::get_options_prefix() const
   return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_from_options() const
+{
+  dolfin_assert(_ksp);
+  PetscErrorCode ierr = KSPSetFromOptions(_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetFromOptions");
+}
+//-----------------------------------------------------------------------------
 std::string PETScKrylovSolver::str(bool verbose) const
 {
   dolfin_assert(_ksp);
