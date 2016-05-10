@@ -96,8 +96,7 @@ void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void ParMETIS::partition(MPI_Comm mpi_comm,
-                         CSRGraph<T>& csr_graph,
+void ParMETIS::partition(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
                          std::vector<int>& cell_partition,
                          std::map<std::int64_t, std::vector<int>>& ghost_procs)
 {
@@ -134,8 +133,7 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
                            csr_graph.edges().data(), elmwgt,
                            NULL, &wgtflag, &numflag, &ncon, &nparts,
                            tpwgts.data(), ubvec.data(), options,
-                           &edgecut, part.data(),
-                           &mpi_comm);
+                           &edgecut, part.data(), &mpi_comm);
   dolfin_assert(err == METIS_OK);
   timer1.stop();
 
@@ -160,9 +158,10 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
       //      const idx_t other_cell = adjncy[j];
       if (other_cell < elm_begin || other_cell >= elm_end)
       {
-        const int remote = std::upper_bound(elmdist.begin(),
-                                            elmdist.end(),
-                                            other_cell) - elmdist.begin() - 1;
+        const int remote
+          = std::upper_bound(elmdist.begin(), elmdist.end(), other_cell)
+          - elmdist.begin() - 1;
+
         dolfin_assert(remote < num_processes);
         if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
           halo_cell_to_remotes[i] = std::set<std::int32_t>();
@@ -179,8 +178,10 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
     for(auto proc : hcell.second)
     {
       dolfin_assert(proc < num_processes);
+
       // global cell number
       send_cell_partition[proc].push_back(hcell.first + elm_begin);
+
       //partitioning
       send_cell_partition[proc].push_back(part[hcell.first]);
     }
@@ -229,13 +230,12 @@ void ParMETIS::partition(MPI_Comm mpi_comm,
           std::vector<std::int32_t> sharing_processes;
           sharing_processes.push_back(proc_this);
           sharing_processes.push_back(proc_other);
-          ghost_procs.insert(std::make_pair(i, sharing_processes));
+          ghost_procs.insert({i, sharing_processes});
         }
         else
         {
           // Add to vector if not already there
-          auto it = std::find(map_it->second.begin(), map_it->second.end(),
-                              proc_other);
+          auto it = std::find(map_it->second.begin(), map_it->second.end(), proc_other);
           if (it == map_it->second.end())
             map_it->second.push_back(proc_other);
         }
@@ -419,8 +419,7 @@ ParMETIS::dual_graph(MPI_Comm mpi_comm,
   idx_t* adjncy = NULL;
   idx_t numflag = 0;
   int err = ParMETIS_V3_Mesh2Dual(elmdist.data(), eptr.data(), eind.data(),
-                                  &numflag, &ncommonnodes,
-                                  &xadj, &adjncy,
+                                  &numflag, &ncommonnodes, &xadj, &adjncy,
                                   &mpi_comm);
   dolfin_assert(err == METIS_OK);
   timer1.stop();
@@ -437,7 +436,8 @@ void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
                                  std::vector<int>& cell_partition,
                                  std::map<std::int64_t, std::vector<int>>& ghost_procs,
                                  const boost::multi_array<std::int64_t, 2>& cell_vertices,
-                                 const int num_vertices_per_cell,
+                                 const std::size_t num_global_vertices,
+                                 const CellType& cell_type,
                                  const std::string mode)
 {
   dolfin_error("ParMETIS.cpp",

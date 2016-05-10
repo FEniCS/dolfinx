@@ -44,18 +44,15 @@ namespace dolfin
   {
   public:
 
-    /// Compute cell partition from local mesh data.
-    /// The output vector cell_partition contains the desired
-    /// destination process numbers for each cell.
-    /// Cells shared on multiple processes have an
-    /// entry in ghost_procs pointing to
-    /// the set of sharing process numbers.
-    /// The mode argument determines which ParMETIS function
-    /// is called. It can be one of "partition",
-    /// "adaptive_repartition" or "refine". For meshes
-    /// that have already been partitioned or are already well
-    /// partitioned, it can be advantageous to use
-    /// "adaptive_repartition" or "refine".
+    /// Compute cell partition from local mesh data.  The output
+    /// vector cell_partition contains the desired destination process
+    /// numbers for each cell.  Cells shared on multiple processes
+    /// have an entry in ghost_procs pointing to the set of sharing
+    /// process numbers.  The mode argument determines which ParMETIS
+    /// function is called. It can be one of "partition",
+    /// "adaptive_repartition" or "refine". For meshes that have
+    /// already been partitioned or are already well partitioned, it
+    /// can be advantageous to use "adaptive_repartition" or "refine".
     static void compute_partition(const MPI_Comm mpi_comm,
             std::vector<int>& cell_partition,
             std::map<std::int64_t, std::vector<int>>& ghost_procs,
@@ -67,32 +64,33 @@ namespace dolfin
   private:
 
 #ifdef HAS_PARMETIS
-    // Create a dual graph from the cell-vertex topology using ParMETIS built in
-    // ParMETIS_V3_Mesh2Dual
-    static CSRGraph<idx_t> dual_graph(MPI_Comm mpi_comm,
-                                             const boost::multi_array<std::int64_t, 2>& cell_vertices,
-                                             const int num_vertices_per_cell);
-    // Standard ParMETIS partitio
-    // CSRGraph should be const, but ParMETIS accesses it non-const, so has to be non-const here
+    // Create a dual graph from the cell-vertex topology using
+    // ParMETIS built in ParMETIS_V3_Mesh2Dual
+    static CSRGraph<idx_t>
+      dual_graph(MPI_Comm mpi_comm,
+                 const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                 const int num_vertices_per_cell);
+
+    // Standard ParMETIS partition. CSRGraph should be const, but
+    // ParMETIS accesses it non-const, so has to be non-const here
     template <typename T>
     static void partition(MPI_Comm mpi_comm,
                           CSRGraph<T>& csr_graph,
                           std::vector<int>& cell_partition,
                           std::map<std::int64_t, std::vector<int>>& ghost_procs);
 
-    // ParMETIS adaptive repartition
-    // CSRGraph should be const, but ParMETIS accesses it non-const, so has to be non-const here
+    // ParMETIS adaptive repartition. CSRGraph should be const, but
+    // ParMETIS accesses it non-const, so has to be non-const here
     template <typename T>
-    static void adaptive_repartition(MPI_Comm mpi_comm,
-                                     CSRGraph<T>& csr_graph,
-                                     std::vector<int>& cell_partition);
+      static void adaptive_repartition(MPI_Comm mpi_comm,
+                                       CSRGraph<T>& csr_graph,
+                                       std::vector<int>& cell_partition);
 
-    // ParMETIS refine repartition
-    // CSRGraph should be const, but ParMETIS accesses it non-const, so has to be non-const here
+    // ParMETIS refine repartition. CSRGraph should be const, but
+    // ParMETIS accesses it non-const, so has to be non-const here
     template <typename T>
-    static void refine(MPI_Comm mpi_comm,
-                       CSRGraph<T>& csr_graph,
-                       std::vector<int>& cell_partition);
+      static void refine(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
+                         std::vector<int>& cell_partition);
 #endif
 
 

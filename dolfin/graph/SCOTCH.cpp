@@ -208,7 +208,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
 template<typename T>
 void SCOTCH::partition(
   const MPI_Comm mpi_comm,
-  const CSRGraph<T>& local_graph,
+  CSRGraph<T>& local_graph,
   const std::vector<std::size_t>& node_weights,
   const std::set<std::int64_t>& ghost_vertices,
   const std::size_t num_global_vertices,
@@ -234,10 +234,8 @@ void SCOTCH::partition(
   const std::size_t vertgstnbr = vertlocnbr + ghost_vertices.size();
 
   // Get graph data
-  std::vector<SCOTCH_Num>& edgeloctab
-    = const_cast<std::vector<SCOTCH_Num>&>(local_graph.edges());
-  std::vector<SCOTCH_Num>& vertloctab
-    = const_cast<std::vector<SCOTCH_Num>&>(local_graph.nodes());
+  std::vector<SCOTCH_Num>& edgeloctab = local_graph.edges();
+  std::vector<SCOTCH_Num>& vertloctab = local_graph.nodes();
 
   // Global data ---------------------------------
 
@@ -471,7 +469,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
 //-----------------------------------------------------------------------------
 template<typename T>
 void SCOTCH::partition(const MPI_Comm mpi_comm,
-                       const CSRGraph<T>& local_graph,
+                       CSRGraph<T>& local_graph,
                        const std::vector<std::size_t>& node_weights,
                        const std::set<std::int64_t>& ghost_vertices,
                        const std::size_t num_global_vertices,
