@@ -96,6 +96,9 @@ namespace dolfin
     /// user wants to access the SNES object directly
     void init(NonlinearProblem& nonlinear_problem, GenericVector& x);
 
+    /// Set options from the PETSc options database
+    void set_from_options() const;
+
     /// Sets the prefix used by PETSc when searching the PETSc options
     /// database
     void set_options_prefix(std::string options_prefix);
