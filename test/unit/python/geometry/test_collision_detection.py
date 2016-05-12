@@ -203,3 +203,12 @@ def test_collision_robustness_very_slow():
     _test_collision_robustness_2d(4.43, 1e-17,    4.03e-6)
     _test_collision_robustness_2d(  40, 0.5,         1e-6)
     _test_collision_robustness_2d(  10, 0.5 + 1e-16, 1e-7)
+
+@skip_in_parallel
+def test_collision_cases() :
+    """ Some cases that have failed earlier"""
+    res = collides_segment_segment_2d(Point(.5, .3),
+                                      Point(.5, .4),
+                                      Point(.5, .5),
+                                      Point(.5, .6))
+    assert not res

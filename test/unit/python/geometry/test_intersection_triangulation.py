@@ -171,3 +171,13 @@ def test_triangulate_intersection_3d():
     errorstring = "translation="
     errorstring += str(dx[0])+" "+str(dx[1])+" "+str(dx[2])
     assert round(volume - exactvolume, 7) == 0, errorstring
+
+def test_triangle_triangle_2d() :
+    " These two triangles intersect in a common edge"
+    res = IntersectionTriangulation.triangulate_triangle_triangle_2d(Point(0.4960412972015322, 0.3953317542541379),
+	                                                             Point(0.5, 0.3997044273055517),
+							             Point(0.5, 0.4060889538943557),
+							             Point(0.4960412972015322, 0.3953317542541379),
+							             Point(0.5, 0.4060889538943557),
+							             Point(.5, .5))
+    assert len(res) == 2
