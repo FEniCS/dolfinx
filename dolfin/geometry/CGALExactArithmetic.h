@@ -56,9 +56,9 @@ namespace dolfin
   //---------------------------------------------------------------------------
 
   inline bool
-  check_cgal(bool result_dolfin,
-             bool result_cgal,
-             std::string function)
+    check_cgal(bool result_dolfin,
+	       bool result_cgal,
+	       std::string function)
   {
     if (result_dolfin != result_cgal)
     {
@@ -152,9 +152,9 @@ namespace dolfin
   }
 
   inline const std::vector<std::vector<Point>>&
-  check_cgal(const std::vector<std::vector<Point>>& result_dolfin,
-	     const std::vector<std::vector<Point>>& result_cgal,
-	     std::string function)
+    check_cgal(const std::vector<std::vector<Point>>& result_dolfin,
+	       const std::vector<std::vector<Point>>& result_cgal,
+	       std::string function)
   {
     // FIXME: do we expect dolfin and cgal data to be in the same order?
 
@@ -218,71 +218,15 @@ namespace dolfin
 		     s_dolfin.str().c_str(),
 		     s_error.str().c_str());
       }
-
-      // // Flatten to vector<double> for easy sorting and comparison
-      // std::vector<double> sorted_result_dolfin;
-      // for (std::vector<Point> v : result_dolfin)
-      // {
-      //   for (Point p : v)
-      //   {
-      //     sorted_result_dolfin.push_back(p.x());
-      //     sorted_result_dolfin.push_back(p.y());
-      //     sorted_result_dolfin.push_back(p.z());
-      //   }
-      // }
-      // std::sort(sorted_result_dolfin.begin(), sorted_result_dolfin.end());
-
-      // std::vector<double> sorted_result_cgal;
-      // for (std::vector<Point> v : result_cgal)
-      // {
-      //   for (Point p : v)
-      //   {
-      //     sorted_result_cgal.push_back(p.x());
-      //     sorted_result_cgal.push_back(p.y());
-      //     sorted_result_cgal.push_back(p.z());
-      //   }
-      // }
-      // std::sort(sorted_result_cgal.begin(), sorted_result_cgal.end());
-
-      // for (std::size_t i = 0; i < sorted_result_dolfin.size(); ++i)
-      // 	if (!near(sorted_result_dolfin[i], sorted_result_cgal[i], DOLFIN_EPS_LARGE))
-      // 	{
-      // 	  std::stringstream s_dolfin;
-      // 	  s_dolfin.precision(16);
-      // 	  for (const std::vector<Point> p : result_dolfin)
-      //     {
-      //       for (const Point v : p)
-      //       {
-      //         s_dolfin << v.str() << ' ';
-      //       }
-      //     }
-
-      // 	  std::stringstream s_cgal;
-      // 	  s_cgal.precision(16);
-      //     for (std::vector<Point> p : result_cgal)
-      //     {
-      //       for (const Point v : p)
-      //       {
-      //         s_cgal << v.str() << ' ';
-      //       }
-      //     }
-
-      // 	  dolfin_error("CGALExactArithmetic.h",
-      // 		       "verify intersections due to different data (NB: we sort data before comparing)",
-      // 		       "Error in function %s\n DOLFIN: %s\n CGAL: %s",
-      // 		       function.c_str(),
-      // 		       s_dolfin.str().c_str(),
-      // 		       s_cgal.str().c_str());
-      // 	}
     }
 
     return result_dolfin;
   }
 
   inline const Point&
-  check_cgal(const Point& result_dolfin,
-             const Point& result_cgal,
-             std::string function)
+    check_cgal(const Point& result_dolfin,
+	       const Point& result_cgal,
+	       std::string function)
   {
     for (std::size_t d = 0; d < 3; ++d)
     {
@@ -404,19 +348,19 @@ namespace
                                                                       CGAL::to_double(s.vertex(0)[1])),
                                                         dolfin::Point(CGAL::to_double(s.vertex(1)[0]),
                                                                       CGAL::to_double(s.vertex(1)[1]))
-                                                     }};
+      }};
     return triangulation;
   }
 
   inline std::vector<dolfin::Point> convert_from_cgal(const Triangle_2& t)
   {
     const std::vector<dolfin::Point> triangulation = {{ dolfin::Point(CGAL::to_double(t.vertex(0)[0]),
-                                                              CGAL::to_double(t.vertex(0)[1])),
+								      CGAL::to_double(t.vertex(0)[1])),
                                                         dolfin::Point(CGAL::to_double(t.vertex(2)[0]),
-                                                              CGAL::to_double(t.vertex(2)[1])),
+								      CGAL::to_double(t.vertex(2)[1])),
                                                         dolfin::Point(CGAL::to_double(t.vertex(1)[0]),
-                                                              CGAL::to_double(t.vertex(1)[1]))
-                                                     }};
+								      CGAL::to_double(t.vertex(1)[1]))
+      }};
     return triangulation;
   }
 
@@ -424,18 +368,18 @@ namespace
   {
     dolfin_assert(cgal_points.size() == 4);
     const std::vector<std::vector<dolfin::Point>> triangulation = { { dolfin::Point(CGAL::to_double(cgal_points[0].x()),
-                                                                    CGAL::to_double(cgal_points[0].y())),
-                                                              dolfin::Point(CGAL::to_double(cgal_points[3].x()),
-                                                                    CGAL::to_double(cgal_points[3].y())),
-                                                              dolfin::Point(CGAL::to_double(cgal_points[1].x()),
-                                                                    CGAL::to_double(cgal_points[1].y())) },
-                                                            { dolfin::Point(CGAL::to_double(cgal_points[1].x()),
-                                                                    CGAL::to_double(cgal_points[1].y())),
-                                                              dolfin::Point(CGAL::to_double(cgal_points[3].x()),
-                                                                    CGAL::to_double(cgal_points[3].y())),
-                                                              dolfin::Point(CGAL::to_double(cgal_points[2].x()),
-                                                                    CGAL::to_double(cgal_points[2].y()))
-                                                            } };
+										    CGAL::to_double(cgal_points[0].y())),
+								      dolfin::Point(CGAL::to_double(cgal_points[3].x()),
+										    CGAL::to_double(cgal_points[3].y())),
+								      dolfin::Point(CGAL::to_double(cgal_points[1].x()),
+										    CGAL::to_double(cgal_points[1].y())) },
+								    { dolfin::Point(CGAL::to_double(cgal_points[1].x()),
+										    CGAL::to_double(cgal_points[1].y())),
+								      dolfin::Point(CGAL::to_double(cgal_points[3].x()),
+										    CGAL::to_double(cgal_points[3].y())),
+								      dolfin::Point(CGAL::to_double(cgal_points[2].x()),
+										    CGAL::to_double(cgal_points[2].y()))
+								    } };
     return triangulation;
   }
 
@@ -444,8 +388,8 @@ namespace
   //------------------------------------------------------------------------------
 
   inline std::vector<dolfin::Point>
-  parse_segment_segment_intersection
-  (const CGAL::cpp11::result_of<Intersect_2(Segment_2, Segment_2)>::type ii)
+    parse_segment_segment_intersection
+    (const CGAL::cpp11::result_of<Intersect_2(Segment_2, Segment_2)>::type ii)
   {
     const Point_2* p = boost::get<Point_2>(&*ii);
     if (p)
@@ -460,8 +404,8 @@ namespace
   }
 
   inline std::vector<dolfin::Point>
-  parse_triangle_segment_intersection
-  (const CGAL::cpp11::result_of<Intersect_2(Triangle_2, Segment_2)>::type ii)
+    parse_triangle_segment_intersection
+    (const CGAL::cpp11::result_of<Intersect_2(Triangle_2, Segment_2)>::type ii)
   {
     const Point_2* p = boost::get<Point_2>(&*ii);
     if (p)
@@ -475,6 +419,32 @@ namespace
     return std::vector<dolfin::Point>();
   }
 
+  inline std::vector<std::vector<dolfin::Point>>
+    parse_triangle_triangle_intersection
+    (const CGAL::cpp11::result_of<Intersect_2(Triangle_2, Triangle_2)>::type ii)
+  {
+    const Point_2* p = boost::get<Point_2>(&*ii);
+    if (p)
+      return std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*p)}};
+
+    const Segment_2* s = boost::get<Segment_2>(&*ii);
+    if (s)
+      return std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*s)}};
+
+    const Triangle_2* t = boost::get<Triangle_2>(&*ii);
+    if (t)
+      return std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*t)}};
+
+    const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii);
+    if (cgal_points)
+    {
+      dolfin_assert(cgal_points->size() == 4);
+      return triangulate_polygon(*cgal_points);
+    }
+
+    dolfin::error("Unexpected behavior in CGALExactArithmetic parse_triangle_triangle");
+    return std::vector<std::vector<dolfin::Point>>();
+  }
 }
 
 namespace dolfin
@@ -538,10 +508,10 @@ namespace dolfin
   // ---------------------------------------------------------------------------
 
   inline
-  std::vector<Point> cgal_triangulate_segment_segment_2d(const Point& p0,
-						       const Point& p1,
-						       const Point& q0,
-						       const Point& q1)
+    std::vector<Point> cgal_triangulate_segment_segment_2d(const Point& p0,
+							   const Point& p1,
+							   const Point& q0,
+							   const Point& q1)
   {
     dolfin_assert(!is_degenerate(p0, p1));
     dolfin_assert(!is_degenerate(q0, q1));
@@ -561,11 +531,11 @@ namespace dolfin
   }
 
   inline
-  std::vector<Point> cgal_triangulate_triangle_segment_2d(const Point& p0,
-                                                       const Point& p1,
-                                                       const Point& p2,
-                                                       const Point& q0,
-							  const Point& q1)
+    std::vector<Point> cgal_triangulate_triangle_segment_2d(const Point& p0,
+							    const Point& p1,
+							    const Point& p2,
+							    const Point& q0,
+							    const Point& q1)
   {
     dolfin_assert(!is_degenerate(p0, p1, p2));
     dolfin_assert(!is_degenerate(q0, q1));
@@ -585,12 +555,12 @@ namespace dolfin
   }
 
   inline
-  std::vector<std::vector<Point>> cgal_triangulate_triangle_triangle_2d(const Point& p0,
-                                                                     const Point& p1,
-                                                                     const Point& p2,
-                                                                     const Point& q0,
-                                                                     const Point& q1,
-                                                                     const Point& q2)
+    std::vector<std::vector<Point>> cgal_triangulate_triangle_triangle_2d(const Point& p0,
+									  const Point& p1,
+									  const Point& p2,
+									  const Point& q0,
+									  const Point& q1,
+									  const Point& q2)
 
   {
     dolfin_assert(!is_degenerate(p0, p1, p2));
@@ -604,35 +574,8 @@ namespace dolfin
     // CGAL::Exact_predicates_inexact_constructions_kernel
     dolfin_assert(ii);
 
-    std::vector<std::vector<dolfin::Point>> triangulation;
-
-    if (const Point_2* p = boost::get<Point_2>(&*ii))
-    {
-      std::cout << "Intersection is point" << std::endl;
-      triangulation = std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*p)}};
-    }
-    else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
-    {
-      std::cout << "Intersection is segment" << std::endl;
-      triangulation = std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*s)}};
-    }
-    else if (const Triangle_2* t = boost::get<Triangle_2>(&*ii))
-    {
-      std::cout << "Intersection is triangle" << std::endl;
-      std::cout << "Area: " << t->area() << std::endl;
-      triangulation = std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*t)}};
-    }
-    else if (const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii))
-    {
-      std::cout << "Intersection is polygon" << std::endl;
-      dolfin_assert(cgal_points->size() == 4);
-      triangulation = triangulate_polygon(*cgal_points);
-    }
-    else
-    {
-      dolfin::error("Unexpected behavior in CGALExactArithmetic parse_triangle_triangle");
-      return std::vector<std::vector<dolfin::Point>>();
-    }
+    const std::vector<std::vector<dolfin::Point>> triangulation =
+      parse_triangle_triangle_intersection(ii);
 
     // NB: the parsing can return triangulation of size 0, for example
     // if it detected a triangle but it was found to be flat.
