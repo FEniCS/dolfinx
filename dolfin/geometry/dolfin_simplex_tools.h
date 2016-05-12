@@ -58,7 +58,15 @@ namespace tools
     {
       return (simplex[0]-simplex[1]).norm();
     }
-    else { PPause; return -9e99; }
+    else if (simplex.size() == 1)
+    {
+      return 0.;
+    }
+    else {
+      std::cout << "error simplex size = " << simplex.size();
+      PPause;
+      return -9e99;
+    }
 
     /* if (simplex.size() == 3) */
     /* { */

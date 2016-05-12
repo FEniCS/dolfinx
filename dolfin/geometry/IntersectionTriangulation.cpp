@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-08
+// Last changed: 2016-05-10
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -338,10 +338,39 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(const Point& p0,
     // If the determinant is zero, then ab || cd
     if (std::abs(det) < DOLFIN_EPS)
     {
-      // FIXME: implement this
-      dolfin_error("IntersectionTriangulation.cpp",
-		   "compute segment-segment triangulation ",
-		   "Intersection when segments are parallel not implemented.");
+      const Point vp = p1 - p0;
+      const double vpnorm2 = vp.squared_norm();
+      const Point vq = q1 - q0;
+      const double vqnorm2 = vq.squared_norm();
+      dolfin_assert(vpnorm2 > DOLFIN_EPS or vqnorm2 > DOLFIN_EPS);
+      Point a, b;
+
+      // Take the vector with largest length
+      if (vpnorm2 > vqnorm2) {
+	const double t0 = vp.dot(q0 - p0) / vpnorm2;
+	const double t1 = vp.dot(q1 - p0) / vpnorm2;
+	if (t0 < 0 or t0 > 1)
+	  a = p0;
+	else
+	  a = q0;
+	if (t1 < 0 or t1 > 1)
+	  b = p1;
+	else
+	  b = q1;
+      }
+      else {
+	const double t0 = vq.dot(p0 - q0) / vqnorm2;
+	const double t1 = vq.dot(p1 - q0) / vqnorm2;
+	if (t0 < 0 or t0 > 1)
+	  a = q0;
+	else
+	  a = p0;
+	if (t1 < 0 or t1 > 1)
+	  b = q1;
+	else
+	  b = p1;
+      }
+      return std::vector<Point>{{ a, b }};
     }
 
     const double alpha = cda / det;
@@ -536,13 +565,15 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
 
   // If the number of points is less than four, then these form the
   // triangulation
+  std::vector<std::vector<Point>> triangulation;
   if (points.size() < 4)
-    return std::vector<std::vector<Point>>(1, points);
-
-  // If 4 or greater, do graham scan
-  dolfin_assert(points.size() == 4 or
-		points.size() == 6);
-  const std::vector<std::vector<Point>> triangulation = graham_scan(points);
+    triangulation.assign(1, points);
+  else {
+    // If 4 or greater, do graham scan
+    dolfin_assert(points.size() == 4 or
+		  points.size() == 6);
+    triangulation = graham_scan(points);
+  }
 
   return triangulation;
 }

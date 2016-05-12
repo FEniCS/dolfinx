@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2016-05-04
+// Last changed: 2016-05-09
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -56,6 +56,9 @@ std::pair<std::vector<double>, std::vector<double>>
 
   switch (tdim)
   {
+  case 0:
+    // FIXME: should we return empty qr or should we have detected this earlier?
+    break;
   case 1:
     return compute_quadrature_rule_interval(coordinates, gdim, order);
     break;
