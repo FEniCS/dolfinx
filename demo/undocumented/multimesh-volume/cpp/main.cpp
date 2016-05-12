@@ -2,7 +2,7 @@
 #include <fstream>
 #include <dolfin.h>
 
-//include </home/august/dev/fenics-dev/dolfin-multimesh/dolfin/geometry/dolfin_simplex_tools.h>
+#include </home/august/dev/fenics-dev/dolfin-multimesh/dolfin/geometry/dolfin_simplex_tools.h>
 
 using namespace dolfin;
 
@@ -58,7 +58,7 @@ double compute_volume(const MultiMesh& multimesh,
 
     all_volumes.push_back(part_volume);
 
-    //tools::dolfin_write_medit_triangles("status",*multimesh.part(part),part,&status);
+    tools::dolfin_write_medit_triangles("status",*multimesh.part(part),part,&status);
   }
   file.close();
 
@@ -143,12 +143,13 @@ double compute_interface_area(const MultiMesh& multimesh,
 
 int main(int argc, char* argv[])
 {
+  const std::size_t N = 1;
 
-  auto mesh_0 = std::make_shared<UnitSquareMesh>(1, 1);
-  //auto mesh_1 = std::make_shared<RectangleMesh>(Point(0.1, 0.1), Point(0.9, 0.9), 1, 1);
-  auto mesh_1 = std::make_shared<RectangleMesh>(Point(0.1, 0.1), Point(0.9, 0.9), 1, 1);
+  auto mesh_0 = std::make_shared<UnitSquareMesh>(N, N);
+  //auto mesh_1 = std::make_shared<RectangleMesh>(Point(0.1, 0.1), Point(0.9, 0.9), N, N);
+  auto mesh_1 = std::make_shared<RectangleMesh>(Point(0.1, 0.1), Point(0.9, 0.9), N, N);
   mesh_1->translate(Point(-0.05, 0.05));
-  auto mesh_2 = std::make_shared<RectangleMesh>(Point(0.2, 0.2), Point(0.8, 0.8), 1, 1);
+  auto mesh_2 = std::make_shared<RectangleMesh>(Point(0.2, 0.2), Point(0.8, 0.8), N, N);
   // tools::dolfin_write_medit_triangles("mesh0",*mesh_0);
   // tools::dolfin_write_medit_triangles("mesh1",*mesh_1);
   // tools::dolfin_write_medit_triangles("mesh2",*mesh_2);
@@ -164,12 +165,12 @@ int main(int argc, char* argv[])
   multimesh->add(mesh_0);
   multimesh->add(mesh_1);
   //multimesh->add(mesh_2);
-  multimesh->build(); // qr generated here
+  multimesh->build(6); // qr generated here
 
   double volume = compute_volume(*multimesh, 0);
   double area = compute_interface_area(*multimesh, 0);
-  std::cout << "volume " << volume << ' ' << exact_volume << std::abs(volume-exact_volume) << std::endl
-	    << "area " << area << ' ' << exact_area << std::abs(area-exact_area) << std::endl;
+  std::cout << "volume " << volume << ' ' << exact_volume <<' '<< std::abs(volume-exact_volume) << std::endl
+	    << "area " << area << ' ' << exact_area << ' '<<std::abs(area-exact_area) << std::endl;
 
 
 
