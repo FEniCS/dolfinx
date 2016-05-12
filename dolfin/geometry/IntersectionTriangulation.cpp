@@ -298,62 +298,85 @@ IntersectionTriangulation::_triangulate_segment_segment_1d(double p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionTriangulation::_triangulate_segment_segment_2d(const Point& p0,
-							   const Point& p1,
-							   const Point& q0,
-							   const Point& q1)
+IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
+							   Point p1,
+							   Point q0,
+							   Point q1)
 {
+  std::vector<Point> triangulation;
+
   // Shewchuk style
-  const double cda = orient2d(const_cast<double*>(q0.coordinates()),
-			      const_cast<double*>(q1.coordinates()),
-			      const_cast<double*>(p0.coordinates()));
-  const double cdb = orient2d(const_cast<double*>(q0.coordinates()),
-			      const_cast<double*>(q1.coordinates()),
-			      const_cast<double*>(p1.coordinates()));
-  const double abc = orient2d(const_cast<double*>(p0.coordinates()),
-			      const_cast<double*>(p1.coordinates()),
-			      const_cast<double*>(q0.coordinates()));
-  const double abd = orient2d(const_cast<double*>(p0.coordinates()),
-			      const_cast<double*>(p1.coordinates()),
-			      const_cast<double*>(q1.coordinates()));
-  if (cda == 0)
-    return std::vector<Point>(1, p0); // p0 is on top of cd
-  else if (cdb == 0)
-    return std::vector<Point>(1, p1); // p1 is on top of cd
-  else if (abc == 0)
-    return std::vector<Point>(1, q0); // q0 is on top of ab
-  else if (abd == 0)
-    return std::vector<Point>(1, q1); // q1 is on top of ab
-  else {
-    // We assume we have an intersection. We would like to have a
-    // robust determinant calculation (see orient2d routine). Since
-    // this is way more involved we skip this for now. Note that
-    // even Shewchuk (Lecture Notes on Geometric Robustness, Apr 15,
-    // 2013) says the determinant calculation is a difficult and may
-    // need exact arithmetic.
-    const double detleft = (p1[0]-p0[0]) * (q1[1]-q0[1]);
-    const double detright = (p1[1]-p0[1]) * (q1[0]-q0[0]);
-    const double det = detleft - detright;
+  const double q0_q1_p0 = orient2d(q0.coordinates(),
+                                   q1.coordinates(),
+                                   p0.coordinates());
+  const double q0_q1_p1 = orient2d(q0.coordinates(),
+                                   q1.coordinates(),
+                                   p1.coordinates());
+  const double p0_p1_q0 = orient2d(p0.coordinates(),
+                                   p1.coordinates(),
+                                   q0.coordinates());
+  const double p0_p1_q1 = orient2d(p0.coordinates(),
+                                   p1.coordinates(),
+                                   q1.coordinates());
 
-    // If the determinant is zero, then ab || cd
-    if (std::abs(det) < DOLFIN_EPS)
+  if (q0_q1_p0 == 0 && (p0-q0).squared_norm() <= (q1-q0).squared_norm() && (p0-q1).squared_norm() <= (q0-q1).squared_norm())
+    triangulation.push_back(p0);
+
+  if (q0_q1_p1 == 0 && (p1-q0).squared_norm() <= (q1-q0).squared_norm() && (p1-q1).squared_norm() <= (q0-q1).squared_norm())
+    triangulation.push_back(p1);
+
+  if (p0_p1_q0 == 0 && (q0-p0).squared_norm() <= (p1-p0).squared_norm() && (q0-p1).squared_norm() <= (p0-p1).squared_norm())
+    triangulation.push_back(q0);
+
+  if (p0_p1_q1 == 0 && (q1-p0).squared_norm() <= (p1-p0).squared_norm() && (q1-p1).squared_norm() <= (p0-p1).squared_norm())
+    triangulation.push_back(q1);
+
+  if (triangulation.size() == 0)
+  {
+    if (std::signbit(q0_q1_p0) != std::signbit(q0_q1_p1) && std::signbit(p0_p1_q0) != std::signbit(p0_p1_q1))
     {
-      // FIXME: implement this
-      dolfin_error("IntersectionTriangulation.cpp",
-		   "compute segment-segment triangulation ",
-		   "Intersection when segments are parallel not implemented.");
+      // Segments intersect in both's interior.
+      // Compute intersection
+      const double denom = (p0.x()-p1.x())*(q0.y()-q1.y()) - (p0.y()-p1.y())*(q0.x()-q1.x());
+      const double x = (p0.x()*p1.y() - p0.y()*p1.x())*(q0.x()-q1.x()) - (p0.x()-p1.x())*(q0.x()*q1.y() - q0.y()*q1.x());
+      const double y = (p0.x()*p1.y() - p0.y()*p1.x())*(q0.y()-q1.y()) - (p0.y()-p1.y())*(q0.x()*q1.y() - q0.y()*q1.x());
+      triangulation.push_back(Point(x/denom, y/denom));
     }
-
-    const double alpha = cda / det;
-    Point point = p0 + alpha*(p1 - p0);
-
-    // If alpha is close to 1, then pt is close to b. Repeat the
-    // calculation with the points swapped. This is probably not the
-    // way to do it.
-    if (std::abs(1-alpha) < DOLFIN_EPS)
-      point = p1 + (1-alpha)*(p0 - p1);
-    return std::vector<Point>(1, point);
   }
+
+  return triangulation;
+
+  // {
+
+  //  // We assume we have an intersection. We would like to have a
+  // // robust determinant calculation (see orient2d routine). Since
+  // // this is way more involved we skip this for now. Note that
+  // // even Shewchuk (Lecture Notes on Geometric Robustness, Apr 15,
+  // // 2013) says the determinant calculation is a difficult and may
+  // // need exact arithmetic.
+  // const double detleft = (p1[0]-p0[0]) * (q1[1]-q0[1]);
+  // const double detright = (p1[1]-p0[1]) * (q1[0]-q0[0]);
+  // const double det = detleft - detright;
+
+  // // If the determinant is zero, then ab || cd
+  // if (std::abs(det) < DOLFIN_EPS)
+  // {
+  //   // FIXME: implement this
+  //   dolfin_error("IntersectionTriangulation.cpp",
+  //                "compute segment-segment triangulation ",
+  //                "Intersection when segments are parallel not implemented.");
+  // }
+
+  // const double alpha = cda / det;
+  // Point point = p0 + alpha*(p1 - p0);
+
+  // // If alpha is close to 1, then pt is close to b. Repeat the
+  // // calculation with the points swapped. This is probably not the
+  // // way to do it.
+  // if (std::abs(1-alpha) < DOLFIN_EPS)
+  //   point = p1 + (1-alpha)*(p0 - p1);
+  // return std::vector<Point>(1, point);
+  // }
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>

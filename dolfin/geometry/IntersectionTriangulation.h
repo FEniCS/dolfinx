@@ -237,10 +237,10 @@ namespace dolfin
 				    double q1);
 
     static std::vector<Point>
-    _triangulate_segment_segment_2d(const Point& p0,
-				    const Point& p1,
-				    const Point& q0,
-				    const Point& q1);
+    _triangulate_segment_segment_2d(Point p0,
+				    Point p1,
+				    Point q0,
+				    Point q1);
 
     static std::vector<Point>
     _triangulate_segment_segment_3d(const Point& p0,

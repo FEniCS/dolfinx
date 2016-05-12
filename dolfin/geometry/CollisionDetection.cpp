@@ -323,26 +323,37 @@ bool CollisionDetection::_collides_segment_segment_1d(double p0,
   return result;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::_collides_segment_segment_2d(const Point& p0,
-						      const Point& p1,
-						      const Point& q0,
-						      const Point& q1)
+bool CollisionDetection::_collides_segment_segment_2d(Point p0,
+						      Point p1,
+						      Point q0,
+						      Point q1)
 {
-  const double cda = orient2d(const_cast<double*>(q0.coordinates()),
-  			      const_cast<double*>(q1.coordinates()),
-  			      const_cast<double*>(p0.coordinates()));
-  const double cdb = orient2d(const_cast<double*>(q0.coordinates()),
-  			      const_cast<double*>(q1.coordinates()),
-  			      const_cast<double*>(p1.coordinates()));
-  const double abc = orient2d(const_cast<double*>(p0.coordinates()),
-  			      const_cast<double*>(p1.coordinates()),
-  			      const_cast<double*>(q0.coordinates()));
-  const double abd = orient2d(const_cast<double*>(p0.coordinates()),
-  			      const_cast<double*>(p1.coordinates()),
-  			      const_cast<double*>(q1.coordinates()));
-  const bool result = cda*cdb <= 0.0 and abc*abd <= 0.0;
+  const double q0_q1_p0 = orient2d(q0.coordinates(),
+                                   q1.coordinates(),
+                                   p0.coordinates());
+  const double q0_q1_p1 = orient2d(q0.coordinates(),
+                                   q1.coordinates(),
+                                   p1.coordinates());
+  const double p0_p1_q0 = orient2d(p0.coordinates(),
+                                   p1.coordinates(),
+                                   q0.coordinates());
+  const double p0_p1_q1 = orient2d(p0.coordinates(),
+                                   p1.coordinates(),
+                                   q1.coordinates());
 
-  return result;
+  //std::cout << "cda: " << cda << ", cdb: " << cdb << ", abc: " << abc << ", abd: " << abd << std::endl;
+
+  if (q0_q1_p0 == 0 && (p0-q0).squared_norm() <= (q1-q0).squared_norm() && (p0-q1).squared_norm() <= (q0-q1).squared_norm())
+    return true;
+  if (q0_q1_p1 == 0 && (p1-q0).squared_norm() <= (q1-q0).squared_norm() && (p1-q1).squared_norm() <= (q0-q1).squared_norm())
+    return true;
+  if (p0_p1_q0 == 0 && (q0-p0).squared_norm() <= (p1-p0).squared_norm() && (q0-p1).squared_norm() <= (p0-p1).squared_norm())
+    return true;
+  if (p0_p1_q1 == 0 && (q1-p0).squared_norm() <= (p1-p0).squared_norm() && (q1-p1).squared_norm() <= (p0-p1).squared_norm())
+    return true;
+
+  if (std::signbit(q0_q1_p0) != std::signbit(q0_q1_p1) && std::signbit(p0_p1_q0) != std::signbit(p0_p1_q1))
+    return true;
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::_collides_triangle_point_2d(const Point& p0,

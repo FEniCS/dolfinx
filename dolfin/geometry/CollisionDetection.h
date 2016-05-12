@@ -258,10 +258,10 @@ namespace dolfin
                                              double q0,
                                              double q1);
 
-    static bool _collides_segment_segment_2d(const Point& p0,
-					     const Point& p1,
-					     const Point& q0,
-					     const Point& q1);
+    static bool _collides_segment_segment_2d(Point p0,
+					     Point p1,
+					     Point q0,
+					     Point q1);
 
     static bool _collides_triangle_point_2d(const Point& p0,
 					    const Point& p1,
