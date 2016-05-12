@@ -299,6 +299,13 @@ std::string PETScSNESSolver::get_options_prefix() const
   return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
+void PETScSNESSolver::set_from_options() const
+{
+  dolfin_assert(_snes);
+  PetscErrorCode ierr = SNESSetFromOptions(_snes);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetFromOptions");
+}
+//-----------------------------------------------------------------------------
 MPI_Comm PETScSNESSolver::mpi_comm() const
 {
   dolfin_assert(_snes);

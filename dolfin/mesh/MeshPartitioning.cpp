@@ -173,11 +173,12 @@ MeshPartitioning::partition_cells(const MPI_Comm& mpi_comm,
   cell_partition.clear();
   ghost_procs.clear();
 
+  std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.topology.cell_type));
+  dolfin_assert(cell_type);
+
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
   {
-    std::unique_ptr<CellType> cell_type(CellType::create(mesh_data.topology.cell_type));
-    dolfin_assert(cell_type);
     SCOTCH::compute_partition(mpi_comm, cell_partition, ghost_procs,
                               mesh_data.topology.cell_vertices,
                               mesh_data.topology.cell_weight,
@@ -189,7 +190,8 @@ MeshPartitioning::partition_cells(const MPI_Comm& mpi_comm,
   {
     ParMETIS::compute_partition(mpi_comm, cell_partition, ghost_procs,
                                 mesh_data.topology.cell_vertices,
-                                mesh_data.topology.num_vertices_per_cell);
+                                mesh_data.geometry.num_global_vertices,
+                                *cell_type);
   }
   else
   {

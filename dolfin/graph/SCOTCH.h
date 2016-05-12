@@ -46,10 +46,11 @@ namespace dolfin
   {
   public:
 
-    /// Compute cell partition from local mesh data.  The vector cell_partition
-    /// contains the desired destination process numbers for each cell.  Cells
-    /// shared on multiple processes have an entry in ghost_procs pointing to
-    /// the set of sharing process numbers.
+    /// Compute cell partition from local mesh data.  The vector
+    /// cell_partition contains the desired destination process
+    /// numbers for each cell.  Cells shared on multiple processes
+    /// have an entry in ghost_procs pointing to the set of sharing
+    /// process numbers.
     static void compute_partition(
       const MPI_Comm mpi_comm,
       std::vector<int>& cell_partition,
@@ -60,8 +61,8 @@ namespace dolfin
       const std::int64_t num_global_cells,
       const CellType& cell_type);
 
-    /// Compute reordering (map[old] -> new) using Gibbs-Poole-Stockmeyer
-    /// re-ordering
+    /// Compute reordering (map[old] -> new) using
+    /// Gibbs-Poole-Stockmeyer (GPS) re-ordering
     static std::vector<int> compute_gps(const Graph& graph,
                                         std::size_t num_passes=5);
 
@@ -79,14 +80,13 @@ namespace dolfin
 
   private:
 
-    //template<typename T> class CSRGraph;
-
-    // Compute cell partitions from distributed dual graph
+    // Compute cell partitions from distributed dual graph. Note that
+    // local_graph is not const since we share the data with SCOTCH,
+    // and the SCOTCH interface is not const-correct.
     template<typename T>
     static void partition(
       const MPI_Comm mpi_comm,
-      //const std::vector<std::vector<std::size_t>>& local_graph,
-      const CSRGraph<T>& local_graph,
+      CSRGraph<T>& local_graph,
       const std::vector<std::size_t>& node_weights,
       const std::set<std::int64_t>& ghost_vertices,
       const std::size_t num_global_vertices,
