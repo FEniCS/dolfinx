@@ -490,6 +490,12 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
       points.push_back(tri_1[i]);
   }
 
+  if (points.size() == 3)
+  {
+    // Triangle is inside
+    return std::vector<std::vector<Point>>(1, points);
+  }
+
   // Find all edge-edge collisions
   for (std::size_t i0 = 0; i0 < 3; i0++)
   {
@@ -534,7 +540,11 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
     return std::vector<std::vector<Point>>(1, points);
 
   // If 4 or greater, do graham scan
-  return graham_scan(points);
+  dolfin_assert(points.size() == 4 or
+		points.size() == 6);
+  const std::vector<std::vector<Point>> triangulation = graham_scan(points);
+
+  return triangulation;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<Point>>
