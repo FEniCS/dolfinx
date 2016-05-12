@@ -2,7 +2,7 @@
 #include <fstream>
 #include <dolfin.h>
 
-#include </home/august/dev/fenics-dev/dolfin-multimesh/dolfin/geometry/dolfin_simplex_tools.h>
+//#include </home/august/dev/fenics-dev/dolfin-multimesh/dolfin/geometry/dolfin_simplex_tools.h>
 
 using namespace dolfin;
 
@@ -58,7 +58,7 @@ double compute_volume(const MultiMesh& multimesh,
 
     all_volumes.push_back(part_volume);
 
-    tools::dolfin_write_medit_triangles("status",*multimesh.part(part),part,&status);
+    // tools::dolfin_write_medit_triangles("status",*multimesh.part(part),part,&status);
   }
   file.close();
 
