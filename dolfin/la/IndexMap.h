@@ -90,6 +90,9 @@ namespace dolfin
     // MPI Communicator
     MPI_Comm _mpi_comm;
 
+    // Cache rank of mpi_comm (otherwise calls to MPI_Comm_rank can be excessive)
+    unsigned int _rank;
+
     // Range of ownership of index for all processes
     std::vector<std::size_t> _all_ranges;
 
