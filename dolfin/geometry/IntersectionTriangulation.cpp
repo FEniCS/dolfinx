@@ -25,7 +25,23 @@
 #include "CollisionDetection.h"
 #include "IntersectionTriangulation.h"
 
-using namespace dolfin;
+namespace
+{
+struct point_strictly_less
+{
+bool operator()(const dolfin::Point & p0, const dolfin::Point& p1)
+  {
+    if (p0.x() != p1.x())
+      return p0.x() < p1.x();
+
+    return p0.y() < p1.y();
+  }
+};
+}
+
+
+namespace dolfin
+{
 
 //-----------------------------------------------------------------------------
 // High-level intersection triangulation functions
@@ -303,7 +319,7 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 							   Point q0,
 							   Point q1)
 {
-  std::vector<Point> triangulation;
+  std::set<Point, point_strictly_less> triangulation;
 
   // Shewchuk style
   const double q0_q1_p0 = orient2d(q0.coordinates(),
@@ -320,16 +336,16 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
                                    q1.coordinates());
 
   if (q0_q1_p0 == 0 && (p0-q0).squared_norm() <= (q1-q0).squared_norm() && (p0-q1).squared_norm() <= (q0-q1).squared_norm())
-    triangulation.push_back(p0);
+    triangulation.insert(p0);
 
   if (q0_q1_p1 == 0 && (p1-q0).squared_norm() <= (q1-q0).squared_norm() && (p1-q1).squared_norm() <= (q0-q1).squared_norm())
-    triangulation.push_back(p1);
+    triangulation.insert(p1);
 
   if (p0_p1_q0 == 0 && (q0-p0).squared_norm() <= (p1-p0).squared_norm() && (q0-p1).squared_norm() <= (p0-p1).squared_norm())
-    triangulation.push_back(q0);
+    triangulation.insert(q0);
 
   if (p0_p1_q1 == 0 && (q1-p0).squared_norm() <= (p1-p0).squared_norm() && (q1-p1).squared_norm() <= (p0-p1).squared_norm())
-    triangulation.push_back(q1);
+    triangulation.insert(q1);
 
   if (triangulation.size() == 0)
   {
@@ -340,11 +356,11 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
       const double denom = (p0.x()-p1.x())*(q0.y()-q1.y()) - (p0.y()-p1.y())*(q0.x()-q1.x());
       const double x = (p0.x()*p1.y() - p0.y()*p1.x())*(q0.x()-q1.x()) - (p0.x()-p1.x())*(q0.x()*q1.y() - q0.y()*q1.x());
       const double y = (p0.x()*p1.y() - p0.y()*p1.x())*(q0.y()-q1.y()) - (p0.y()-p1.y())*(q0.x()*q1.y() - q0.y()*q1.x());
-      triangulation.push_back(Point(x/denom, y/denom));
+      triangulation.insert(Point(x/denom, y/denom));
     }
   }
 
-  return triangulation;
+  return std::vector<Point>(triangulation.begin(), triangulation.end());
 
   // {
 
@@ -490,7 +506,7 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
   std::vector<Point> tri_1({q0, q1, q2});
 
   // Create empty list of collision points
-  std::vector<Point> points;
+  std::set<Point, point_strictly_less> points;
 
   // Extract coordinates
   double t0[3][2] = {{p0[0], p0[1]}, {p1[0], p1[1]}, {p2[0], p2[1]}};
@@ -528,36 +544,22 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
       {
 	const std::vector<Point> ii = triangulate_segment_segment_2d(p0, q0, p1, q1);
 	dolfin_assert(ii.size());
-	points.insert(points.end(), ii.begin(), ii.end());
+	points.insert(ii.begin(), ii.end());
       }
     }
   }
 
-  // Remove duplicate points
-  std::vector<Point> tmp;
-  tmp.reserve(points.size());
 
-  for (std::size_t i = 0; i < points.size(); ++i)
-  {
-    bool different = true;
-    for (std::size_t j = i+1; j < points.size(); ++j)
-      if ((points[i] - points[j]).norm() < DOLFIN_EPS)
-      {
-  	different = false;
-  	break;
-      }
-    if (different)
-      tmp.push_back(points[i]);
-  }
-  points = tmp;
+  if (points.size() == 0)
+    return std::vector<std::vector<Point>>();
 
   // If the number of points is less than four, then these form the
   // triangulation
   if (points.size() < 4)
-    return std::vector<std::vector<Point>>(1, points);
+    return std::vector<std::vector<Point>>(1, std::vector<Point>(points.begin(), points.end()));
 
   // If 4 or greater, do graham scan
-  return graham_scan(points);
+  return graham_scan(std::vector<Point>(points.begin(), points.end()));
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<Point>>
@@ -1176,5 +1178,6 @@ IntersectionTriangulation::graham_scan(const std::vector<Point>& points)
   }
 
   return triangulation;
+}
 }
 //-----------------------------------------------------------------------------
