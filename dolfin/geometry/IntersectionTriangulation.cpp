@@ -508,12 +508,11 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
   // (p-q).norm() < same_point_tol)
   //const double same_point_tol = DOLFIN_EPS_LARGE;
 
+  std::vector<dolfin::Point> points;
+
   // Pack points as vectors
   std::vector<Point> tri_0({p0, p1, p2});
   std::vector<Point> tri_1({q0, q1, q2});
-
-  // Create empty list of collision points
-  std::set<Point, point_strictly_less> points;
 
   // Extract coordinates
   double t0[3][2] = {{p0[0], p0[1]}, {p1[0], p1[1]}, {p2[0], p2[1]}};
@@ -525,16 +524,30 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
 
   for (std::size_t i = 0; i < 3; ++i)
   {
-    if (s1*orient2d(t1[0], t1[1], t0[i]) >= 0. and
-  	s1*orient2d(t1[1], t1[2], t0[i]) >= 0. and
-  	s1*orient2d(t1[2], t1[0], t0[i]) >= 0.)
-      points.push_back(tri_0[i]);
+    const double q0_q1_pi = s1*orient2d(t1[0], t1[1], t0[i]);
+    const double q1_q2_pi = s1*orient2d(t1[1], t1[2], t0[i]);
+    const double q2_q0_pi = s1*orient2d(t1[2], t1[0], t0[i]);
 
-    if (s0*orient2d(t0[0], t0[1], t1[i]) >= 0. and
-  	s0*orient2d(t0[1], t0[2], t1[i]) >= 0. and
-  	s0*orient2d(t0[2], t0[0], t1[i]) >= 0.)
+    if (q0_q1_pi > 0. and
+        q1_q2_pi > 0. and
+        q2_q0_pi > 0.)
+    {
+      points.push_back(tri_0[i]);
+    }
+
+    const double p0_p1_qi = s0*orient2d(t0[0], t0[1], t1[i]);
+    const double p1_p2_qi = s0*orient2d(t0[1], t0[2], t1[i]);
+    const double p2_p0_qi = s0*orient2d(t0[2], t0[0], t1[i]);
+
+    if (p0_p1_qi > 0. and
+        p1_p2_qi > 0. and
+        p2_p0_qi > 0.)
+    {
       points.push_back(tri_1[i]);
+    }
   }
+
+  std::set<dolfin::Point, point_strictly_less> edge_edge_intersections;
 
   // Find all edge-edge collisions
   for (std::size_t i0 = 0; i0 < 3; i0++)
@@ -551,11 +564,12 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
       {
 	const std::vector<Point> ii = triangulate_segment_segment_2d(p0, q0, p1, q1);
 	dolfin_assert(ii.size());
-	points.insert(ii.begin(), ii.end());
+	edge_edge_intersections.insert(ii.begin(), ii.end());
       }
     }
   }
 
+  points.insert(points.end(), edge_edge_intersections.begin(), edge_edge_intersections.end());
 
   if (points.size() == 0)
     return std::vector<std::vector<Point>>();
