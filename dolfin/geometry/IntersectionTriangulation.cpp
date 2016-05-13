@@ -353,10 +353,17 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
     {
       // Segments intersect in both's interior.
       // Compute intersection
-      const double denom = (p0.x()-p1.x())*(q0.y()-q1.y()) - (p0.y()-p1.y())*(q0.x()-q1.x());
-      const double x = (p0.x()*p1.y() - p0.y()*p1.x())*(q0.x()-q1.x()) - (p0.x()-p1.x())*(q0.x()*q1.y() - q0.y()*q1.x());
-      const double y = (p0.x()*p1.y() - p0.y()*p1.x())*(q0.y()-q1.y()) - (p0.y()-p1.y())*(q0.x()*q1.y() - q0.y()*q1.x());
-      triangulation.insert(Point(x/denom, y/denom));
+      const double denom = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
+      // assert(std::abs(denom) > DOLFIN_EPS);
+      const double numerator = orient2d(q0.coordinates(),
+                                        q1.coordinates(),
+                                        p0.coordinates());
+
+      const double alpha = numerator/denom;
+
+      const dolfin::Point ii = alpha > .5 ? p1 - orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates())/denom * (p0-p1) : p0 + numerator/denom * (p1-p0);
+
+      triangulation.insert(ii);
     }
   }
 
