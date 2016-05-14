@@ -335,17 +335,22 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
                                    p1.coordinates(),
                                    q1.coordinates());
 
+  std::vector<Point> triangulation;
+
+  // std::set<Point, point_strictly_less> triangulation;
   if (q0_q1_p0 == 0 && (p0-q0).squared_norm() <= (q1-q0).squared_norm() && (p0-q1).squared_norm() <= (q0-q1).squared_norm())
-    triangulation.insert(p0);
+  {
+    triangulation.push_back(p0);
+  }
 
   if (q0_q1_p1 == 0 && (p1-q0).squared_norm() <= (q1-q0).squared_norm() && (p1-q1).squared_norm() <= (q0-q1).squared_norm())
-    triangulation.insert(p1);
+    triangulation.push_back(p1);
 
   if (p0_p1_q0 == 0 && (q0-p0).squared_norm() <= (p1-p0).squared_norm() && (q0-p1).squared_norm() <= (p0-p1).squared_norm())
-    triangulation.insert(q0);
+    triangulation.push_back(q0);
 
   if (p0_p1_q1 == 0 && (q1-p0).squared_norm() <= (p1-p0).squared_norm() && (q1-p1).squared_norm() <= (p0-p1).squared_norm())
-    triangulation.insert(q1);
+    triangulation.psuh_back(q1);
 
   if (triangulation.size() == 0)
   {
@@ -361,13 +366,61 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 
       const double alpha = numerator/denom;
 
-      const dolfin::Point ii = alpha > .5 ? p1 - orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates())/denom * (p0-p1) : p0 + numerator/denom * (p1-p0);
+      //const dolfin::Point ii = p0 + alpha*(p1-p0);
 
-      triangulation.insert(ii);
+      if (std::abs(denom) < DOLFIN_EPS_LARGE)
+      {
+        // Segment are almost parallel, so result may vulnerable to roundoff
+        // errors.
+        // Let's do an iterative bisection instead
+
+        dolfin_assert(std::signbit(orient2d(q0.coordinates(), q1.coordinates(), p0.coordinates())) != std::signbit(orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates())));
+
+        // orient2d is more stable what alpha is close to 0
+        dolfin::Point source = alpha < .5 ? p0 : p1;
+        dolfin::Point target = alpha < .5 ? p1 : p0;
+
+        // Shewchuk notation r = ab = p1-p0, s = cd = q1-q0
+        /* const */ dolfin::Point r = target-source;
+
+        int iterations = 0;
+        const int max_iterations = 100;
+        double a = 0;
+        double b = 1;
+
+        const double source_orientation = orient2d(q0.coordinates(), q1.coordinates(), source.coordinates());
+
+        while (std::abs(b-a) > DOLFIN_EPS_LARGE && iterations < max_iterations)
+        {
+          dolfin_assert(std::signbit(orient2d(q0.coordinates(), q1.coordinates(), (source+a*r).coordinates())) != std::signbit(orient2d(q0.coordinates(), q1.coordinates(), (source+b*r).coordinates())));
+          const double new_alpha = (a+b)/2;
+          dolfin::Point new_point = source+new_alpha*r;
+
+          const double orientation = orient2d(q0.coordinates(), q1.coordinates(), new_point.coordinates());
+          if (orientation == 0)
+          {
+            a = new_alpha;
+            b = new_alpha;
+            break;
+          }
+
+          if (std::signbit(source_orientation) == std::signbit(orientation))
+            a = new_alpha;
+          else
+            b = new_alpha;
+
+          iterations++;
+        }
+        triangulation.push_back(source + (a+b)/2*r);
+      }
+      else
+      {
+        triangulation.push_back(alpha > .5 ? p1 - orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates())/denom * (p0-p1) : p0 + numerator/denom * (p1-p0));
+      }
     }
   }
 
-  return std::vector<Point>(triangulation.begin(), triangulation.end());
+  return triangulation;
 
   // {
 
