@@ -122,6 +122,18 @@ namespace dolfin
                         cgal_triangulate_segment_segment_2d(p0, p1, q0, q1));
     }
 
+    /// Triangulate intersection of segment p0-p1 with segment q0-q1 (2D version)
+    static std::vector<Point>
+    triangulate_segment_interior_segment_interior_2d(const Point& p0,
+				   const Point& p1,
+				   const Point& q0,
+				   const Point& q1)
+    {
+      return CHECK_CGAL(_triangulate_segment_interior_segment_interior_2d(p0, p1, q0, q1),
+                        cgal_triangulate_segment_interior_segment_interior_2d(p0, p1, q0, q1));
+    }
+
+
     /// Triangulate intersection of segment p0-p1 with segment q0-q1 (3D version)
     static std::vector<Point>
     triangulate_segment_segment_3d(const Point& p0,
@@ -241,6 +253,14 @@ namespace dolfin
 				    Point p1,
 				    Point q0,
 				    Point q1);
+
+    // return segment segment collisions, excluding collisions (exactly) at vertices
+    static std::vector<Point>
+    _triangulate_segment_interior_segment_interior_2d(Point p0,
+                                                      Point p1,
+                                                      Point q0,
+                                                      Point q1);
+
 
     static std::vector<Point>
     _triangulate_segment_segment_3d(const Point& p0,

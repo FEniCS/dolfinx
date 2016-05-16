@@ -249,9 +249,9 @@ namespace dolfin
 
     // Implementation of collision detection predicates
 
-    static bool _collides_segment_point(const Point& p0,
-					const Point& p1,
-					const Point& point);
+    static bool _collides_segment_point(Point p0,
+					Point p1,
+					Point point);
 
     static bool _collides_segment_segment_1d(double p0,
                                              double p1,

@@ -274,34 +274,15 @@ bool CollisionDetection::collides_triangle_triangle(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::_collides_segment_point(const Point& p0,
-						 const Point& p1,
-						 const Point& point)
+bool CollisionDetection::_collides_segment_point(Point p0,
+						 Point p1,
+						 Point point)
 {
-  // Compute angle between v = p1 - p0 and w = point - p0
-  Point v = p1 - p0;
-  const double vnorm = v.norm();
+  const double orientation = orient2d(p0.coordinates(),
+                                      p1.coordinates(),
+                                      point.coordinates());
 
-  // p0 and p1 are the same points
-  if (vnorm < DOLFIN_EPS_LARGE)
-    return false;
-
-  const Point w = point - p0;
-  const double wnorm = w.norm();
-
-  // point and p0 are the same points
-  if (wnorm < DOLFIN_EPS)
-    return true;
-
-  // Compute cosine
-  v /= vnorm;
-  const double a = v.dot(w) / wnorm;
-
-  // Cosine should be 1, and point should lie between p0 and p1
-  if (std::abs(1-a) < DOLFIN_EPS_LARGE and wnorm <= vnorm)
-    return true;
-
-  return false;
+  return orientation == 0 && (point-p0).squared_norm() <= (p1-p0).squared_norm() && (point-p1).squared_norm() <= (p0-p1).squared_norm();
 }
 //------------------------------------------------------------------------------
 bool CollisionDetection::_collides_segment_segment_1d(double p0,

@@ -41,6 +41,8 @@
 
 #else
 
+#define CGAL_CHECK_TOLERANCE 1e-10
+
 // Includes
 #include <algorithm>
 #include <sstream>
@@ -129,7 +131,7 @@ namespace dolfin
     const double dolfin_volume = volume(result_dolfin);
     const double cgal_volume = volume(result_cgal);
 
-    if (std::abs(dolfin_volume - cgal_volume) > DOLFIN_EPS)
+    if (std::abs(dolfin_volume - cgal_volume) > CGAL_CHECK_TOLERANCE)
     {
       std::stringstream s_dolfin, s_cgal, s_error;
       s_dolfin.precision(16);
@@ -167,7 +169,7 @@ namespace dolfin
         s_dolfin << "[";
         for (const Point v : s)
           s_dolfin << v << ' ';
-        s_dolfin.seekp(-1, s_dolfin.cur);
+        // s_dolfin.seekp(-1, s_dolfin.cur);
         s_dolfin << "]";
       }
 
@@ -178,16 +180,18 @@ namespace dolfin
         s_cgal << "[";
         for (const Point v : s)
           s_cgal << v << ' ';
-        s_cgal.seekp(-1, s_cgal.cur);
+        //s_cgal.seekp(-1, s_cgal.cur);
         s_cgal << "]";
       }
 
       dolfin_error("CGALExactArithmetic.h",
 		   "verify intersections due to different sizes",
-		   "Error in function %s\n DOLFIN: %s\n CGAL: %s",
+		   "Error in function %s\n DOLFIN: %d\n CGAL: %d",
 		   function.c_str(),
-		   s_dolfin.str().c_str(),
-		   s_cgal.str().c_str());
+                   result_dolfin.size(),
+                   result_cgal.size());
+		   /* s_dolfin.str().c_str(), */
+		   /* s_cgal.str().c_str()); */
     }
     else
     {
@@ -200,7 +204,7 @@ namespace dolfin
       for (std::vector<Point> s : result_cgal)
 	cgal_volume += volume(s);
 
-      if (std::abs(cgal_volume - dolfin_volume) > DOLFIN_EPS)
+      if (std::abs(cgal_volume - dolfin_volume) > CGAL_CHECK_TOLERANCE)
       {
 	std::stringstream s_dolfin, s_cgal, s_error;
 	s_dolfin.precision(16);
@@ -212,7 +216,7 @@ namespace dolfin
 
 	dolfin_error("CGALExactArithmetic.h",
 		     "verify intersections due to different volumes",
-		     "Error in function %s\n CGAL volume %s\n DOLFIN volume %s\n error %s\n",
+		     "Error in function %s\n CGAL volume   %s\n DOLFIN volume %s\n error %s\n",
 		     function.c_str(),
 		     s_cgal.str().c_str(),
 		     s_dolfin.str().c_str(),
@@ -245,7 +249,7 @@ namespace dolfin
       // std::sort(sorted_result_cgal.begin(), sorted_result_cgal.end());
 
       // for (std::size_t i = 0; i < sorted_result_dolfin.size(); ++i)
-      // 	if (!near(sorted_result_dolfin[i], sorted_result_cgal[i], DOLFIN_EPS_LARGE))
+      // 	if (!near(sorted_result_dolfin[i], sorted_result_cgal[i], CGAL_CHECK_TOLERANCE))
       // 	{
       // 	  std::stringstream s_dolfin;
       // 	  s_dolfin.precision(16);
@@ -286,7 +290,7 @@ namespace dolfin
   {
     for (std::size_t d = 0; d < 3; ++d)
     {
-      if (!near(result_dolfin[d], result_cgal[d], DOLFIN_EPS_LARGE))
+      if (!near(result_dolfin[d], result_cgal[d], CGAL_CHECK_TOLERANCE))
       {
 	std::stringstream s_dolfin;
 	s_dolfin.precision(16);
@@ -619,6 +623,41 @@ namespace dolfin
 
     return triangulation;
   }
+
+  inline
+  std::vector<Point> cgal_triangulate_segment_interior_segment_interior_2d(const Point& p0,
+                                                                           const Point& p1,
+                                                                           const Point& q0,
+                                                                           const Point& q1)
+  {
+    dolfin_assert(!is_degenerate(p0, p1));
+    dolfin_assert(!is_degenerate(q0, q1));
+
+    std::vector<Point> triangulation;
+
+    const Segment_2 I0 = convert_to_cgal(p0, p1);
+    const Segment_2 I1 = convert_to_cgal(q0, q1);
+    const auto ii = CGAL::intersection(I0, I1);
+
+    if (ii)
+    {
+      if (const Point_2* p = boost::get<Point_2>(&*ii))
+      {
+        if (*p != I0.source() && *p != I0.target() && *p != I1.source() && *p != I1.target())
+          triangulation.push_back(convert_from_cgal(*p));
+      }
+      else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
+      {
+        if (s->source() != I0.source() && s->source() != I0.target() && s->source() != I1.source() && s->source() != I1.target())
+          triangulation.push_back(convert_from_cgal(s->source()));
+        if (s->target() != I0.source() && s->target() != I0.target() && s->target() != I1.source() && s->target() != I1.target())
+          triangulation.push_back(convert_from_cgal(s->target()));
+
+      }
+    }
+    return triangulation;
+  }
+
 
   inline
   std::vector<Point> cgal_triangulate_triangle_segment_2d(const Point& p0,
