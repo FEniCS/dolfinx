@@ -464,33 +464,6 @@ namespace
     dolfin::error("Unexpected behavior in CGALExactArithmetic parse_triangle_segment");
     return std::vector<dolfin::Point>();
   }
-
-  inline std::vector<std::vector<dolfin::Point>>
-    parse_triangle_triangle_intersection
-    (const CGAL::cpp11::result_of<Intersect_2(Triangle_2, Triangle_2)>::type ii)
-  {
-    const Point_2* p = boost::get<Point_2>(&*ii);
-    if (p)
-      return std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*p)}};
-
-    const Segment_2* s = boost::get<Segment_2>(&*ii);
-    if (s)
-      return std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*s)}};
-
-    const Triangle_2* t = boost::get<Triangle_2>(&*ii);
-    if (t)
-      return std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*t)}};
-
-    const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii);
-    if (cgal_points)
-    {
-      dolfin_assert(cgal_points->size() == 4);
-      return triangulate_polygon(*cgal_points);
-    }
-
-    dolfin::error("Unexpected behavior in CGALExactArithmetic parse_triangle_triangle");
-    return std::vector<std::vector<dolfin::Point>>();
-  }
 }
 
 namespace dolfin
