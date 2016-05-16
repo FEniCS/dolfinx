@@ -307,24 +307,6 @@ namespace
     return Triangle_2(convert_to_cgal(a), convert_to_cgal(b), convert_to_cgal(c));
   }
 
-  inline std::vector<dolfin::Point> convert_to_cgal(const Segment_2& t)
-  {
-    std::vector<dolfin::Point> p(2);
-    for (std::size_t i = 0; i < 2; ++i)
-      for (std::size_t j = 0; j < 2; ++j)
-	p[i][j] = CGAL::to_double(t[i][j]);
-    return p;
-  }
-
-  inline std::vector<dolfin::Point> convert_to_cgal(const Triangle_2& t)
-  {
-    std::vector<dolfin::Point> p(3);
-    for (std::size_t i = 0; i < 3; ++i)
-      for (std::size_t j = 0; j < 2; ++j)
-	p[i][j] = CGAL::to_double(t[i][j]);
-    return p;
-  }
-
   inline bool is_degenerate(const dolfin::Point& a,
 			    const dolfin::Point& b)
   {
