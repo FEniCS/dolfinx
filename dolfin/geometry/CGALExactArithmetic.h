@@ -328,7 +328,7 @@ namespace
   inline bool is_degenerate(const dolfin::Point& a,
 			    const dolfin::Point& b)
   {
-    Segment_2 s(convert_to_cgal(a), convert_to_cgal(b));
+    const Segment_2 s(convert_to_cgal(a), convert_to_cgal(b));
     return s.is_degenerate();
   }
 
@@ -336,7 +336,7 @@ namespace
 			    const dolfin::Point& b,
 			    const dolfin::Point& c)
   {
-    Triangle_2 t(convert_to_cgal(a), convert_to_cgal(b), convert_to_cgal(c));
+    const Triangle_2 t(convert_to_cgal(a), convert_to_cgal(b), convert_to_cgal(c));
     return t.is_degenerate();
   }
 
@@ -428,42 +428,6 @@ namespace
 
   return triangulation;
   }
-
-  //------------------------------------------------------------------------------
-  // Explicit handling of CGAL intersections
-  //------------------------------------------------------------------------------
-
-  inline std::vector<dolfin::Point>
-    parse_segment_segment_intersection
-    (const CGAL::cpp11::result_of<Intersect_2(Segment_2, Segment_2)>::type ii)
-  {
-    const Point_2* p = boost::get<Point_2>(&*ii);
-    if (p)
-      return std::vector<dolfin::Point>{convert_from_cgal(*p)};
-
-    const Segment_2* s = boost::get<Segment_2>(&*ii);
-    if (s)
-      return convert_from_cgal(*s);
-
-    dolfin::error("Unexpected behavior in CGALExactArithmetic parse_segment_segment");
-    return std::vector<dolfin::Point>();
-  }
-
-  inline std::vector<dolfin::Point>
-    parse_triangle_segment_intersection
-    (const CGAL::cpp11::result_of<Intersect_2(Triangle_2, Segment_2)>::type ii)
-  {
-    const Point_2* p = boost::get<Point_2>(&*ii);
-    if (p)
-      return std::vector<dolfin::Point>{convert_from_cgal(*p)};
-
-    const Segment_2* s = boost::get<Segment_2>(&*ii);
-    if (s)
-      return convert_from_cgal(*s);
-
-    dolfin::error("Unexpected behavior in CGALExactArithmetic parse_triangle_segment");
-    return std::vector<dolfin::Point>();
-  }
 }
 
 namespace dolfin
@@ -539,14 +503,19 @@ namespace dolfin
     const auto I1 = convert_to_cgal(q0, q1);
     const auto ii = CGAL::intersection(I0, I1);
     dolfin_assert(ii);
-    const std::vector<Point> triangulation = parse_segment_segment_intersection(ii);
+    std::vector<Point> triangulation;
 
-    if (triangulation.size() == 0)
-      dolfin_error("CGALExactArithmetic.h",
-		   "in cgal_intersection_segment_segment function",
-		   "unknown intersection");
+    if (const Point_2* p = boost::get<Point_2>(&*ii))
+    {
+      return std::vector<dolfin::Point>{convert_from_cgal(*p)};
+    }
+    else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
+    {
+      return convert_from_cgal(*s);
+    }
 
-    return triangulation;
+    dolfin::error("Unexpected behavior in CGALExactArithmetic triangulate_segment_segment_2d");
+    return std::vector<dolfin::Point>();
   }
 
   inline
@@ -598,24 +567,25 @@ namespace dolfin
     const auto I = convert_to_cgal(q0, q1);
     const auto ii = CGAL::intersection(T, I);
     dolfin_assert(ii);
-    const std::vector<Point> triangulation = parse_triangle_segment_intersection(ii);
 
-    if (triangulation.size() == 0)
-      dolfin_error("CGALExactArithmetic.h",
-		   "in cgal_intersection_triangle_segment function",
-		   "unknown intersection");
+    if (const Point_2* p = boost::get<Point_2>(&*ii))
+    {
+      return std::vector<dolfin::Point>{convert_from_cgal(*p)};
+    }
+    else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
+      return convert_from_cgal(*s);
 
-    return triangulation;
+    dolfin::error("Unexpected behavior in CGALExactArithmetic parse_triangle_segment");
+    return std::vector<dolfin::Point>();
   }
 
   inline
-    std::vector<std::vector<Point>> cgal_triangulate_triangle_triangle_2d(const Point& p0,
-									  const Point& p1,
-									  const Point& p2,
-									  const Point& q0,
-									  const Point& q1,
-									  const Point& q2)
-
+  std::vector<std::vector<Point>> cgal_triangulate_triangle_triangle_2d(const Point& p0,
+                                                                        const Point& p1,
+                                                                        const Point& p2,
+                                                                        const Point& q0,
+                                                                        const Point& q1,
+                                                                        const Point& q2)
   {
     dolfin_assert(!is_degenerate(p0, p1, p2));
     dolfin_assert(!is_degenerate(q0, q1, q2));
