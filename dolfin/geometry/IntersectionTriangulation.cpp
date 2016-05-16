@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-08
+// Last changed: 2016-05-16
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -371,14 +371,14 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
       // Segments intersect in both's interior.
       // Compute intersection
       const double denom = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
-      std::cout << "Denom: " << denom << std::endl;
+      // std::cout << "Denom: " << denom << std::endl;
       // assert(std::abs(denom) > DOLFIN_EPS);
       const double numerator = orient2d(q0.coordinates(),
                                         q1.coordinates(),
                                         p0.coordinates());
 
       const double alpha = numerator/denom;
-      std::cout << "Alpha: " << alpha << std::endl;
+      // std::cout << "Alpha: " << alpha << std::endl;
 
       //const dolfin::Point ii = p0 + alpha*(p1-p0);
 
@@ -408,16 +408,16 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 
         while (std::abs(b-a) > DOLFIN_EPS_LARGE && iterations < max_iterations)
         {
-          std::cout << "Iteration: a = " << a << ", b = " << b << " (" <<iterations << ")" << std::endl;
+          // std::cout << "Iteration: a = " << a << ", b = " << b << " (" <<iterations << ")" << std::endl;
           dolfin_assert(std::signbit(orient2d(q0.coordinates(), q1.coordinates(), (source+a*r).coordinates())) != std::signbit(orient2d(q0.coordinates(), q1.coordinates(), (source+b*r).coordinates())));
           const double new_alpha = (a+b)/2;
           dolfin::Point new_point = source+new_alpha*r;
-          std::cout << "a   orientation: " << orient2d(q0.coordinates(), q1.coordinates(), (source+a*r).coordinates()) << std::endl;
-          std::cout << "b   orientation: " << orient2d(q0.coordinates(), q1.coordinates(), (source+b*r).coordinates()) << std::endl;
-          std::cout << "mid orientation: " << orient2d(q0.coordinates(), q1.coordinates(), new_point.coordinates()) << std::endl;
+          // std::cout << "a   orientation: " << orient2d(q0.coordinates(), q1.coordinates(), (source+a*r).coordinates()) << std::endl;
+          // std::cout << "b   orientation: " << orient2d(q0.coordinates(), q1.coordinates(), (source+b*r).coordinates()) << std::endl;
+          // std::cout << "mid orientation: " << orient2d(q0.coordinates(), q1.coordinates(), new_point.coordinates()) << std::endl;
 
           const double orientation = orient2d(q0.coordinates(), q1.coordinates(), new_point.coordinates());
-          std::cout << "New point, orientation: " << orientation << std::endl;
+          // std::cout << "New point, orientation: " << orientation << std::endl;
           if (orientation == 0)
           {
             a = new_alpha;
@@ -438,6 +438,40 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
       {
         triangulation.push_back(alpha > .5 ? p1 - orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates())/denom * (p0-p1) : p0 + numerator/denom * (p1-p0));
       }
+
+      // const Point vp = p1 - p0;
+      // const double vpnorm2 = vp.squared_norm();
+      // const Point vq = q1 - q0;
+      // const double vqnorm2 = vq.squared_norm();
+      // dolfin_assert(vpnorm2 > DOLFIN_EPS or vqnorm2 > DOLFIN_EPS);
+      // Point a, b;
+
+      // // Take the vector with largest length
+      // if (vpnorm2 > vqnorm2) {
+      //   const double t0 = vp.dot(q0 - p0) / vpnorm2;
+      //   const double t1 = vp.dot(q1 - p0) / vpnorm2;
+      //   if (t0 < 0 or t0 > 1)
+      //     a = p0;
+      //   else
+      //     a = q0;
+      //   if (t1 < 0 or t1 > 1)
+      //     b = p1;
+      //   else
+      //     b = q1;
+      // }
+      // else {
+      //   const double t0 = vq.dot(p0 - q0) / vqnorm2;
+      //   const double t1 = vq.dot(p1 - q0) / vqnorm2;
+      //   if (t0 < 0 or t0 > 1)
+      //     a = q0;
+      //   else
+      //     a = p0;
+      //   if (t1 < 0 or t1 > 1)
+      //     b = q1;
+      //   else
+      //     b = p1;
+      // }
+      // return std::vector<Point>{{ a, b }};
     }
   }
 
@@ -489,7 +523,7 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
                                                                              Point q1)
 {
   // std::cout.precision(16);
-  std::cout << "triangulate_segment_interior_segment_interior: (" << p0.x() << " " << p0.y() << ", " << p1.x() << " " << p1.y() << ") <--> (" << q0.x() << " " << q0.y() << ", " << q1.x() << " " << q1.y() << ")" << std::endl;
+  // std::cout << "triangulate_segment_interior_segment_interior: (" << p0.x() << " " << p0.y() << ", " << p1.x() << " " << p1.y() << ") <--> (" << q0.x() << " " << q0.y() << ", " << q1.x() << " " << q1.y() << ")" << std::endl;
 
   // Shewchuk style
   const double q0_q1_p0 = orient2d(q0.coordinates(),
@@ -561,9 +595,9 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
 
       while (std::abs(b-a) > DOLFIN_EPS_LARGE)
       {
-        std::cout << "Iteration: a = " << a << ", b = " << b << " (" << (b-a) << ", " << iterations << ")" << std::endl;
-        std::cout << "a   orientation: " << orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates()) << std::endl;
-        std::cout << "b   orientation: " << orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates()) << std::endl;
+        // std::cout << "Iteration: a = " << a << ", b = " << b << " (" << (b-a) << ", " << iterations << ")" << std::endl;
+        // std::cout << "a   orientation: " << orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates()) << std::endl;
+        // std::cout << "b   orientation: " << orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates()) << std::endl;
 
         dolfin_assert(std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates())) !=
                       std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates())));
@@ -572,7 +606,7 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
         dolfin::Point new_point = source+new_alpha*r;
         const double mid_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), new_point.coordinates());
 
-        std::cout << "New point, orientation: " << mid_orientation << std::endl;
+        // std::cout << "New point, orientation: " << mid_orientation << std::endl;
         if (mid_orientation == 0)
         {
           a = new_alpha;
@@ -722,9 +756,10 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
 							     const Point& q1,
 							     const Point& q2)
 {
-  static std::size_t tt_2d_counter = 0;
-  tt_2d_counter++;
-  std::cout << "Counter: " << tt_2d_counter << std::endl;
+  // static std::size_t tt_2d_counter = 0;
+  // tt_2d_counter++;
+  // std::cout << "Counter: " << tt_2d_counter << std::endl;
+
   // This algorithm computes the (convex) polygon resulting from the
   // intersection of two triangles. It then triangulates the polygon
   // by trivially drawing an edge from one vertex to all other
@@ -852,6 +887,7 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
 
   // If the number of points is less than four, then these form the
   // triangulation
+  std::vector<std::vector<Point>> triangulation;
   if (points.size() < 4)
     return std::vector<std::vector<Point>>(1, std::vector<Point>(points.begin(), points.end()));
 
