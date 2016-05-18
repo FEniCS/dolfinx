@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2016-05-08
+// Last changed: 2016-05-18
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -38,7 +38,7 @@
 #include <iomanip>
 
 //#define Augustcheckqrpositive
-//#define Augustdebug
+#define Augustdebug
 //#define Augustnormaldebug
 
 using namespace dolfin;
@@ -196,13 +196,13 @@ void MultiMesh::build(std::size_t quadrature_order)
   begin(PROGRESS, "Building multimesh.");
 
   // Build boundary meshes
-  _build_boundary_meshes();
+  _build_boundary_meshes();PPause;
 
   // Build bounding box trees
-  _build_bounding_box_trees();
+  _build_bounding_box_trees();PPause;
 
   // Build collision maps
-  _build_collision_maps();
+  _build_collision_maps();PPause;
 
   // FIXME: For collisions with meshes of same type we get three types
   // of quadrature rules: the cut cell qr, qr of the overlap part and
@@ -210,13 +210,13 @@ void MultiMesh::build(std::size_t quadrature_order)
 
   // Build quadrature rules of the cut cells' overlap. Do this before
   // we build the quadrature rules of the cut cells
-  _build_quadrature_rules_overlap(quadrature_order);
+  _build_quadrature_rules_overlap(quadrature_order);PPause;
 
   // Build quadrature rules of the cut cells
-  _build_quadrature_rules_cut_cells(quadrature_order);
+  _build_quadrature_rules_cut_cells(quadrature_order);PPause;
 
   // FIXME:
-  _build_quadrature_rules_interface(quadrature_order);
+  _build_quadrature_rules_interface(quadrature_order);PPause;
 
   end();
 }
@@ -609,10 +609,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 
 #ifdef Augustdebug
 	{
-	  std::cout << "% intersection (size="<<intersection.size()<<": ";
-	  for (std::size_t i = 0; i < intersection.size(); ++i)
-	    std::cout << intersection[i]<<' ';
-	  std::cout<<")\n";
+	  std::cout << "% intersection (size="<<polyhedron.size()<<"\n";
 	  if (polyhedron.size())
 	  {
 	    for (const auto simplex: polyhedron)
@@ -1239,11 +1236,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	  {
 	    std::cout << "intersection of:\n";
 	    std::cout << tools::drawtriangle(cut_cell,"'b'")<<tools::drawtriangle(boundary_cell,"'r'")<<tools::zoom()<<'\n';
-	    const auto intersection = triangulation_cut_boundary;
-	    std::cout << "% intersection (size="<<intersection.size()<<": ";
-	    for (std::size_t i = 0; i < intersection.size(); ++i)
-	      std::cout << intersection[i]<<' ';
-	    std::cout<<")\n";
+	    std::cout << "% intersection (size="<<polygon.size()<<"\n";
 	    if (polygon.size())
 	    {
 	      for (const auto simplex: polygon)
@@ -1367,11 +1360,11 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		  const std::vector<Simplex> simplex_tmp(1, cut_cutting_interface[p][s]);
 		  const Polyhedron ii = IntersectionTriangulation::triangulate(cell.second, simplex_tmp, tdim - 1);
 #ifdef Augustdebug
-		  std::cout << "test collision cell "<< cell.first << ": " << tools::drawtriangle(cell.second) << " and simplex " << tools::drawtriangle(simplex) << std::endl;
+		  std::cout << "test collision cell "<< cell.first << ": " << tools::drawtriangle(cell.second) << " and simplex " << tools::drawtriangle(simplex_tmp[0]) << std::endl;
 #endif
 		  if (ii.size()) {
 #ifdef Augustdebug
-		    std::cout << "collided cell " << tools::drawtriangle(cell.second) << " with simplex " << tools::drawtriangle(simplex) << " (cell key " << cell.first << ")" << std::endl;
+		    std::cout << "collided cell " << tools::drawtriangle(cell.second) << " with simplex " << tools::drawtriangle(simplex_tmp[0]) << " (cell key " << cell.first << ")" << std::endl;
 #endif
 		    add_key = true;
 		    const std::vector<std::size_t> num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, ii, gdim, quadrature_order, sign);
