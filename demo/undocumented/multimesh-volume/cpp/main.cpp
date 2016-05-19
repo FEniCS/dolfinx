@@ -23,38 +23,41 @@ double compute_volume(const MultiMesh& multimesh,
   for (std::size_t part = 0; part < multimesh.num_parts(); part++)
   {
     std::cout << "% part " << part;
-    double part_volume = 0;
     std::vector<double> status(multimesh.part(part)->num_cells(), 0);
 
     // Uncut cell volume given by function volume
+    double uncut_volume = 0;
     const auto uncut_cells = multimesh.uncut_cells(part);
     for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
     {
       const Cell cell(*multimesh.part(part), *it);
-      volume += cell.volume();
       //std::cout << std::setprecision(20) << cell.volume() <<'\n';
-      part_volume += cell.volume();
+      uncut_volume += cell.volume();
       status[*it] = 1;
       //file << "0 0 "<< cell.volume() << '\n';
     }
 
-    std::cout << "\t uncut volume "<< part_volume << ' ';
+    std::cout << "\t uncut volume "<< uncut_volume << ' ';
 
     // Cut cell volume given by quadrature rule
-    const auto& cut_cells = multimesh.cut_cells(part);
-    for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
+    double cut_volume = 0;
+    for (const auto it: multimesh.cut_cells(part))
     {
-      const auto& qr = multimesh.quadrature_rule_cut_cell(part, *it);
+      const auto& qr = multimesh.quadrature_rule_cut_cell(part, it);
       for (std::size_t i = 0; i < qr.second.size(); ++i)
       {
+	// std::cout << i << ' '<< qr.second[i]<<'\n';
 	file << qr.first[2*i]<<' '<<qr.first[2*i+1]<<' '<<qr.second[i]<<'\n';
-	volume += qr.second[i];
-	part_volume += qr.second[i];
+	cut_volume += qr.second[i];
 	//std::cout << qr.first[2*i]<<' '<<qr.first[2*i+1]<<'\n';
       }
-      status[*it] = 2;
+      status[it] = 2;
     }
-    std::cout << "\ttotal volume " << part_volume << std::endl;
+    std::cout << "\t cut volume "<< cut_volume << ' ';
+
+    const double part_volume = cut_volume + uncut_volume;
+    volume += part_volume;
+    std::cout << "\t total volume " << part_volume << std::endl;
 
     all_volumes.push_back(part_volume);
 
@@ -150,11 +153,12 @@ int main(int argc, char* argv[])
   auto mesh_1 = std::make_shared<RectangleMesh>(Point(0.1, 0.1), Point(0.9, 0.9), N, N);
   mesh_1->translate(Point(-0.05, 0.05));
   auto mesh_2 = std::make_shared<RectangleMesh>(Point(0.2, 0.2), Point(0.8, 0.8), N, N);
+  mesh_2->translate(Point(-0.025, 0.025));
   // tools::dolfin_write_medit_triangles("mesh0",*mesh_0);
   // tools::dolfin_write_medit_triangles("mesh1",*mesh_1);
   // tools::dolfin_write_medit_triangles("mesh2",*mesh_2);
 
-  const double exact_volume = (0.9 - 0.1)*(0.9 - 0.1)*6; // for mesh_0 and mesh_1
+  const double exact_volume = 1.;
   //exact_volume += (0.8 - 0.2)*(0.8 - 0.2)*6; // mesh_1 and mesh_2
 
   const double exact_area = 4*0.9;
@@ -164,7 +168,7 @@ int main(int argc, char* argv[])
   auto multimesh = std::make_shared<MultiMesh>();
   multimesh->add(mesh_0);
   multimesh->add(mesh_1);
-  //multimesh->add(mesh_2);
+  multimesh->add(mesh_2);
   multimesh->build(1); // qr generated here
 
   double volume = compute_volume(*multimesh, 0);
