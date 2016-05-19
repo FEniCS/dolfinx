@@ -1134,15 +1134,22 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 #endif
 
     // Iterate over cut cells for current part
-    const auto& cmap = collision_map_cut_cells(cut_part);
-    for (auto it = cmap.begin(); it !=cmap.end(); ++it)
+    const std::map<unsigned int,
+                   std::vector<std::pair<std::size_t,
+                                         unsigned int>>>&
+      cmap = collision_map_cut_cells(cut_part);
+
+    for (const std::pair<const unsigned int,
+                         std::vector<std::pair<std::size_t,
+                                               unsigned int>>>&
+           cut : cmap)
     {
 #ifdef Augustdebug
       std::cout << "-------- new cut cell "<< it->first << '\n';
 #endif
       // Get cut cell
-      const unsigned int cut_cell_index = it->first;
-      const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
+      // const unsigned int cut_cell_index = cut_cell.first;
+      const Cell cut_cell(*(_meshes[cut_part]), cut.first);
 
       // Get dimensions
       const std::size_t tdim = cut_cell.mesh().topology().dim();
@@ -1153,11 +1160,11 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
       std::vector<std::vector<double>> interface_n;
 
       // Loop over all cutting cells
-      for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
+      for (const std::pair<size_t, unsigned int>& cutting : cut.second)
       {
 	// Get cutting part and cutting cell
-        const std::size_t cutting_part_j = jt->first;
-        const std::size_t cutting_cell_index_j = jt->second;
+        const std::size_t cutting_part_j = cutting.first;
+        const std::size_t cutting_cell_index_j = cutting.second;
         const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
 
 #ifdef Augustdebug
@@ -1304,7 +1311,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 
 	  // All other cutting cells are to be included in the
 	  // inclusion-exclusion
-	  for (auto kt = it->second.begin(); kt != it->second.end(); kt++)
+	  for (auto kt = cut.second.begin(); kt != cut.second.end(); kt++)
 	  {
 	    const std::size_t cutting_part_k = kt->first;
 	    if (cutting_part_k != cutting_part_j) // ignore all cells in same part
@@ -1518,8 +1525,8 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 
       } // end loop over cutting
 
-      _quadrature_rules_interface[cut_part][cut_cell_index] = interface_qr;
-      _facet_normals[cut_part][cut_cell_index] = interface_n;
+      _quadrature_rules_interface[cut_part][cut.first] = interface_qr;
+      _facet_normals[cut_part][cut.first] = interface_n;
 
 #ifdef Augustcheckqrpositive
       {
@@ -1529,7 +1536,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	const auto& cmap = collision_map_cut_cells(cut_part);
 	for (auto it = cmap.begin(); it != cmap.end(); ++it)
 	{
-	  if (it->first == cut_cell_index)
+	  if (it->first == cut.first)
 	  {
 	    // Loop over all cutting cells
 	    for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
