@@ -27,26 +27,26 @@
 
 namespace
 {
-struct point_strictly_less
-{
-bool operator()(const dolfin::Point & p0, const dolfin::Point& p1)
+  struct point_strictly_less
   {
-    if (p0.x() != p1.x())
-      return p0.x() < p1.x();
+    bool operator()(const dolfin::Point & p0, const dolfin::Point& p1)
+    {
+      if (p0.x() != p1.x())
+	return p0.x() < p1.x();
 
-    return p0.y() < p1.y();
+      return p0.y() < p1.y();
+    }
+  };
+
+  inline bool operator==(const dolfin::Point& p0, const dolfin::Point& p1)
+  {
+    return p0.x() == p1.x() && p0.y() == p1.y() && p0.z() == p1.z();
   }
-};
 
-inline bool operator==(const dolfin::Point& p0, const dolfin::Point& p1)
-{
-  return p0.x() == p1.x() && p0.y() == p1.y() && p0.z() == p1.z();
-}
-
-inline bool operator!=(const dolfin::Point& p0, const dolfin::Point& p1)
-{
-  return p0.x() != p1.x() || p0.y() != p1.y() || p0.z() != p1.z();
-}
+  inline bool operator!=(const dolfin::Point& p0, const dolfin::Point& p1)
+  {
+    return p0.x() != p1.x() || p0.y() != p1.y() || p0.z() != p1.z();
+  }
 }
 
 
