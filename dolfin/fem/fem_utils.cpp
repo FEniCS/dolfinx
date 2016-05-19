@@ -129,15 +129,6 @@ void _check_coordinates(const MeshGeometry& geometry, const Function& position)
   dolfin_assert(position.function_space()->element());
   dolfin_assert(position.function_space()->element()->ufc_element());
 
-  // FIXME: Do we need to require this?
-  if (&position.function_space()->mesh()->geometry() != &geometry)
-  {
-    dolfin_error("fem_utils.cpp",
-                 "set/get mesh geometry coordinates from/to function",
-                 "function mesh geometry and given geometry "
-                 "do not match (address comparison)");
-  }
-
   if (position.function_space()->element()->ufc_element()->family()
           != std::string("Lagrange"))
 
@@ -181,11 +172,6 @@ void _check_coordinates(const MeshGeometry& geometry, const Function& position)
 void _get_set_coordinates(MeshGeometry& geometry, Function& position,
   const bool setting)
 {
-  // Last check that initialization went well
-  dolfin_assert(position.value_dimension(0) == geometry.dim());
-  dolfin_assert(position.function_space()->element()->ufc_element()->degree()
-          == geometry.degree());
-
   auto& x = geometry.x();
   auto& v = *position.vector();
   const auto& dofmap = *position.function_space()->dofmap();
