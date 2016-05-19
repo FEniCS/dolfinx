@@ -466,12 +466,11 @@ namespace dolfin
 
     // Add quadrature rule for simplices in polyhedron. Returns the
     // number of points generated for each simplex.
-    std::vector<std::size_t>
-    _add_quadrature_rule(quadrature_rule& qr,
-                         const Polyhedron& polyhedron,
-                         std::size_t gdim,
-                         std::size_t quadrature_order,
-                         double factor) const;
+    std::size_t _add_quadrature_rule(quadrature_rule& qr,
+				     const Simplex& simplex,
+				     std::size_t gdim,
+				     std::size_t quadrature_order,
+				     double factor) const;
 
     // Add quadrature rule to existing quadrature rule (append dqr to
     // qr). Returns number of points added.

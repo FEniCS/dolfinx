@@ -38,7 +38,7 @@
 #include <iomanip>
 
 //#define Augustcheckqrpositive
-#define Augustdebug
+// #define Augustdebug
 //#define Augustnormaldebug
 
 using namespace dolfin;
@@ -549,8 +549,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
   PPause;
 #endif
 
-  std::size_t small_elements_cnt = 0;
-
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
@@ -569,8 +567,12 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
 
       // Get dimensions
-      // const std::size_t tdim = cut_cell.mesh().topology().dim();
+      const std::size_t tdim = cut_cell.mesh().topology().dim();
       const std::size_t gdim = cut_cell.mesh().geometry().dim();
+#ifdef Augustdebug
+      std::cout << "tdim = " << tdim << '\n'
+		<< "gdim = " << gdim << std::endl;
+#endif
 
       // Data structure for the overlap quadrature rule
       std::vector<quadrature_rule> overlap_qr;
@@ -588,7 +590,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
         const std::size_t cutting_part = jt->first;
         const std::size_t cutting_cell_index = jt->second;
         const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
-
 #ifdef Augustdebug
 	{
 	  std::cout << "\ncut cutting (cut_cell="<<cut_cell_index<<" and cutting part="<<cutting_part<<" and cutting cell="<<cutting_cell_index<<")" << std::endl;
@@ -603,17 +604,17 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       	dolfin_assert(cutting_cell.mesh().geometry().dim() == gdim);
 
   	// Compute the intersection (a polyhedron)
-	//const std::vector<double> intersection = IntersectionTriangulation::triangulate(cut_cell, cutting_cell);
-	//const Polyhedron polyhedron = convert(intersection, tdim, gdim);
   	const Polyhedron polyhedron = IntersectionTriangulation::triangulate(cut_cell, cutting_cell);
-
 #ifdef Augustdebug
 	{
-	  std::cout << "% intersection (size="<<polyhedron.size()<<"\n";
+	  std::cout << "% intersection (size="<<polyhedron.size()<<")\n";
 	  if (polyhedron.size())
 	  {
 	    for (const auto simplex: polyhedron)
+	    {
+	      std::cout << "sub simplex size "<<simplex.size() << '\n';
 	      std::cout << tools::drawtriangle(simplex,"'k'");
+	    }
 	    std::cout <<tools::zoom()<< std::endl;
 	    std::cout << "areas=[";
 	    for (const auto simplex: polyhedron)
@@ -624,21 +625,10 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 #endif
 
 	// FIXME: Flip triangles in polyhedron to maximize minimum angle here?
-
-	// Test only include large polyhedra
-	double area = 0;
-	for (const auto simplex: polyhedron)
-	  area += std::abs(tools::area(simplex));
-	if (std::isfinite(area))// and area > DOLFIN_EPS)
-	{
-	  // Store key and polyhedron
-	  initial_polyhedra.push_back(std::make_pair(initial_polyhedra.size(),
-						     polyhedron));
-	}
-	else
-	{
-	  small_elements_cnt++;
-	}
+	// FIXME: only include large polyhedra
+	// Store key and polyhedron
+	initial_polyhedra.push_back(std::make_pair(initial_polyhedra.size(),
+						   polyhedron));
       }
 
       // Exclusion-inclusion principle. There are N stages in the
@@ -653,35 +643,29 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       const std::size_t N = initial_polyhedra.size();
       std::vector<std::pair<IncExcKey, Polyhedron> > previous_intersections(N);
       for (std::size_t i = 0; i < N; ++i)
-	previous_intersections[i] = std::make_pair(IncExcKey(1, initial_polyhedra[i].first), initial_polyhedra[i].second);
+	previous_intersections[i] = std::make_pair(IncExcKey(1, initial_polyhedra[i].first),
+						   initial_polyhedra[i].second);
 
       // Do stage = 1 up to stage = polyhedra.size in the
       // principle. Recall that stage 1 is the pairwise
       // intersections. There are up to n_choose_k(N,stage)
       // intersections in each stage (there may be less). The
       // intersections are found using the polyhedra data and the
-      // previous_intersections data. We only have to intersect if the key doesn't
-      // contain the polyhedron.
+      // previous_intersections data. We only have to intersect if the
+      // key doesn't contain the polyhedron.
 
       // Add quadrature rule for stage 0 (always positive)
-      {
-	const std::size_t sign = 1;
+      const std::size_t sign = 1;
 
-	quadrature_rule overlap_part_qr;
-	for (const auto polyhedron: previous_intersections)
-// 	  for (const auto simplex: polyhedron.second)
-// 	  {
-// 	    const std::vector<double> x = convert(simplex, tdim, gdim);
-// 	    _add_quadrature_rule(overlap_part_qr, x, gdim, quadrature_order, sign);
-// #ifdef Augustdebug
-// 	    //PPause;
-// #endif
-// 	  }
-	  _add_quadrature_rule(overlap_part_qr, polyhedron.second, gdim, quadrature_order, sign);
+      quadrature_rule overlap_part_qr;
+      for (const std::pair<IncExcKey, Polyhedron> polpair: previous_intersections)
+	for (const Simplex simplex: polpair.second)
+	  if (simplex.size() == tdim + 1)
+	    _add_quadrature_rule(overlap_part_qr, simplex, gdim,
+				 quadrature_order, sign);
 
-	// Add quadrature rule for overlap part
-	overlap_qr.push_back(overlap_part_qr);
-      }
+      // Add quadrature rule for overlap part
+      overlap_qr.push_back(overlap_part_qr);
 
       for (std::size_t stage = 1; stage < N; ++stage)
       {
@@ -737,35 +721,25 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 		  std::cout << "try collide:\n"
 			    << tools::drawtriangle(initial_simplex,"'r'")<<tools::drawtriangle(previous_simplex)<<tools::zoom()<<'\n';
 #endif
-		  // const std::vector<double> ii = IntersectionTriangulation::triangulate(initial_simplex, previous_simplex, gdim);
 		  // To save all intersections as a single polyhedron,
 		  // we don't call this a polyhedron yet, but rather a
 		  // std::vector<Simplex> since we are still filling
 		  // the polyhedron with simplices
-		  const std::vector<Simplex> pii = IntersectionTriangulation::triangulate(initial_simplex, previous_simplex, gdim);
+		  const std::vector<Simplex> ii = IntersectionTriangulation::triangulate(initial_simplex, previous_simplex, gdim);
 
-		  if (pii.size())
+		  if (ii.size())
 		  {
 		    // To save all intersections as a single
 		    // polyhedron, we don't call this a polyhedron
 		    // yet, but rather a std::vector<Simplex> since we
 		    // are still filling the polyhedron with simplices
-		    //const std::vector<Simplex> pii = convert(ii, tdim, gdim);
-		    // Test only add if area is finite
-		    for (const auto simplex: pii)
-		    {
-		      const double area = tools::area(simplex);
-		      if (std::isfinite(area))// and area > DOLFIN_EPS)
+		    // FIXME: We could add only if area is suff large
+		    for (const auto simplex: ii)
+		      if (simplex.size() == tdim + 1)
 		      {
 			new_polyhedron.push_back(simplex);
 			any_intersections = true;
 		      }
-		      else
-		      {
-			small_elements_cnt++;
-		      }
-		    }
-
 #ifdef Augustdebug
 		    {
 		      std::cout << '\n'<<tools::drawtriangle(previous_simplex,"'b'")
@@ -773,13 +747,16 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 		      std::cout << "areas: " << tools::area(previous_simplex)<<' '<<tools::area(initial_simplex)<<'\n';
 		      const double min_area = std::min(tools::area(previous_simplex), tools::area(initial_simplex));
 
-		      std::cout << "resulting intersection:\n";
-		      for (const auto simplex: pii)
+		      std::cout << "resulting intersection size= "<<ii.size()<<": \n";
+		      for (const auto simplex: ii)
+		      {
+			std::cout << "sub simplex size "<<simplex.size() << '\n';
 		    	std::cout << tools::drawtriangle(simplex,"'g'");
+		      }
 		      std::cout<<tools::zoom()<<'\n';
 		      double intersection_area = 0;
 		      std::cout << "areas=[ ";
-		      for (const auto simplex: pii) {
+		      for (const auto simplex: ii) {
 		    	intersection_area += tools::area(simplex);
 		    	std::cout << tools::area(simplex) <<' ';
 		      }
@@ -858,17 +835,13 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
         quadrature_rule overlap_part_qr;
 
 	for (const auto polyhedron: new_intersections)
-	  // for (const auto simplex: polyhedron.second)
-	  // {
-	  //   const std::vector<double> x = convert(simplex, tdim, gdim);
-	  //   _add_quadrature_rule(overlap_part_qr, x, gdim, quadrature_order, sign);
-	  // }
-	  _add_quadrature_rule(overlap_part_qr, polyhedron.second, gdim, quadrature_order, sign);
+	  for (const Simplex simplex: polyhedron.second)
+	    if (simplex.size() == tdim + 1)
+	      _add_quadrature_rule(overlap_part_qr, simplex, gdim, quadrature_order, sign);
 
         // Add quadrature rule for overlap part
         overlap_qr.push_back(overlap_part_qr);
       } // end exclusion-inclusion principle
-
 
 #ifdef Augustdebug
       // std::cout << "\n summarize all intersections for part=" << cut_part<< " (there are "<<all_intersections.size()<< " stages)" << std::endl;
@@ -978,8 +951,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
     // }
 #endif
   }
-
-  std::cout << "small elements " << small_elements_cnt << std::endl;
 
   end();
 }
@@ -1145,7 +1116,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
            cut : cmap)
     {
 #ifdef Augustdebug
-      std::cout << "-------- new cut cell "<< it->first << '\n';
+      std::cout << "-------- new cut cell "<< cut.first << '\n';
 #endif
       // Get cut cell
       // const unsigned int cut_cell_index = cut_cell.first;
@@ -1235,11 +1206,14 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	  {
 	    std::cout << "intersection of:\n";
 	    std::cout << tools::drawtriangle(cut_cell,"'b'")<<tools::drawtriangle(boundary_cell,"'r'")<<tools::zoom()<<'\n';
-	    std::cout << "% intersection (size="<<polygon.size()<<"\n";
+	    std::cout << "% intersection (size="<<polygon.size()<<")\n";
 	    if (polygon.size())
 	    {
 	      for (const auto simplex: polygon)
+	      {
+		std::cout << "sub simplex size "<<simplex.size() << '\n';
 		std::cout << tools::drawtriangle(simplex,"'k'");
+	      }
 	      std::cout << std::endl;
 	      std::cout << "areas=[";
 	      for (const auto simplex: polygon)
@@ -1273,13 +1247,18 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	    cut_cutting_normals.push_back(std::vector<Point>(polygon.size(), facet_normal));
 
 	    // Store quadrature rule and normal
-	    for (const Simplex s: polygon)
-	    {
-	      const std::vector<Simplex> simplex_tmp(1, s);
-	      const std::vector<std::size_t> num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex_tmp, gdim, quadrature_order, 1.);
-	      for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
-		_add_normal(cut_cutting_interface_n, facet_normal, num_qr_pts[j], gdim);
-	    }
+	    for (const Simplex simplex: polygon)
+	      if (simplex.size() == tdim)
+	      {
+		std::cout << "simplex tdim " << simplex.size() << std::endl;
+		const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex, gdim, quadrature_order, 1.);
+		for (std::size_t j = 0; j < num_qr_pts; ++j)
+		  _add_normal(cut_cutting_interface_n, facet_normal, num_qr_pts, gdim);
+		// const std::vector<Simplex> simplex_tmp(1, s);
+		// const std::vector<std::size_t> num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex_tmp, gdim, quadrature_order, 1.);
+		// for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
+		// 	_add_normal(cut_cutting_interface_n, facet_normal, num_qr_pts[j], gdim);
+	      }
 
 	  }
 	} // end this cut cutting pair initialization
@@ -1366,9 +1345,18 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		    std::cout << "collided cell " << tools::drawtriangle(cell.second) << " with simplex " << tools::drawtriangle(simplex_tmp[0]) << " (cell key " << cell.first << ")" << std::endl;
 #endif
 		    add_key = true;
-		    const std::vector<std::size_t> num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, ii, gdim, quadrature_order, sign);
-		    for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
-		      _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts[j], gdim);
+		    // const std::vector<std::size_t> num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, ii, gdim, quadrature_order, sign);
+		    // for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
+		    //   _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts[j], gdim);
+
+		    for (const Simplex simplex: ii)
+		      if (simplex.size() == tdim)
+		      {
+			std::cout << "simplex tdim " << simplex.size() << std::endl;
+			const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex, gdim, quadrature_order, sign);
+			for (std::size_t j = 0; j < num_qr_pts; ++j)
+			  _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
+		      }
 		  }
 		}
 
@@ -1483,9 +1471,17 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 			const Polyhedron ii = IntersectionTriangulation::triangulate(simplex, interface_simplex, gdim);
 			if (ii.size())
 			{
-			  const std::vector<std::size_t> num_qr_pts =_add_quadrature_rule(cut_cutting_interface_qr, ii, gdim, quadrature_order, sign);
-			  for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
-			    _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts[j], gdim);
+			  // const std::vector<std::size_t> num_qr_pts =_add_quadrature_rule(cut_cutting_interface_qr, ii, gdim, quadrature_order, sign);
+			  // for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
+			  //   _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts[j], gdim);
+			  for (const Simplex sii: ii)
+			    if (sii.size() == tdim)
+			    {
+			      std::cout << "simplex tdim " << sii.size() << std::endl;
+			      const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, sii, gdim, quadrature_order, sign);
+			      for (std::size_t j = 0; j < num_qr_pts; ++j)
+				_add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
+			    }
 #ifdef Augustdebug
 			  std::cout<<" qr creation collision was:\n"
 				   <<tools::drawtriangle(simplex)<<tools::drawtriangle(interface_simplex)<<std::endl;
@@ -1568,30 +1564,25 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
   }
 
 }
-//-----------------------------------------------------------------------------
-std::vector<std::size_t>
+
+//------------------------------------------------------------------------------
+std::size_t
 MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
-                                const Polyhedron& polyhedron,
+                                const Simplex& simplex,
                                 std::size_t gdim,
                                 std::size_t quadrature_order,
                                 double factor) const
 {
-  std::vector<std::size_t> num_points(polyhedron.size());
-
-  // Iterate over simplices in triangulation
-  for (std::size_t k = 0; k < polyhedron.size(); ++k)
-  {
-    // Compute quadrature rule for simplex
-    const auto dqr = SimplexQuadrature::compute_quadrature_rule(polyhedron[k],
-								gdim,
-								quadrature_order);
-
-    // Add quadrature rule
-    num_points[k] = _add_quadrature_rule(qr, dqr, gdim, factor);
-  }
+  // Compute quadrature rule for simplex
+  const auto dqr = SimplexQuadrature::compute_quadrature_rule(simplex,
+							      gdim,
+							      quadrature_order);
+  // Add quadrature rule
+  const std::size_t num_points = _add_quadrature_rule(qr, dqr, gdim, factor);
 
   return num_points;
 }
+
 //-----------------------------------------------------------------------------
 std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
                                             const quadrature_rule& dqr,
