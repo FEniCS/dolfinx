@@ -335,6 +335,8 @@ bool CollisionDetection::_collides_segment_segment_2d(Point p0,
 
   if (std::signbit(q0_q1_p0) != std::signbit(q0_q1_p1) && std::signbit(p0_p1_q0) != std::signbit(p0_p1_q1))
     return true;
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::_collides_triangle_point_2d(const Point& p0,
