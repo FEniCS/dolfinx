@@ -196,13 +196,13 @@ void MultiMesh::build(std::size_t quadrature_order)
   begin(PROGRESS, "Building multimesh.");
 
   // Build boundary meshes
-  _build_boundary_meshes();PPause;
+  _build_boundary_meshes();
 
   // Build bounding box trees
-  _build_bounding_box_trees();PPause;
+  _build_bounding_box_trees();
 
   // Build collision maps
-  _build_collision_maps();PPause;
+  _build_collision_maps();
 
   // FIXME: For collisions with meshes of same type we get three types
   // of quadrature rules: the cut cell qr, qr of the overlap part and
@@ -210,13 +210,13 @@ void MultiMesh::build(std::size_t quadrature_order)
 
   // Build quadrature rules of the cut cells' overlap. Do this before
   // we build the quadrature rules of the cut cells
-  _build_quadrature_rules_overlap(quadrature_order);PPause;
+  _build_quadrature_rules_overlap(quadrature_order);
 
   // Build quadrature rules of the cut cells
-  _build_quadrature_rules_cut_cells(quadrature_order);PPause;
+  _build_quadrature_rules_cut_cells(quadrature_order);
 
   // FIXME:
-  _build_quadrature_rules_interface(quadrature_order);PPause;
+  //_build_quadrature_rules_interface(quadrature_order);
 
   end();
 }
@@ -715,14 +715,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	      for (const auto s: initial_polyhedron.second)
 		std::cout << tools::drawtriangle(s,"'r'");
 	      std::cout << tools::zoom()<<'\n';
-	      // {
-	      // 	for (const auto previous_simplex: previous_polyhedron.second)
-	      // 	  std::cout << tools::drawtriangle(previous_simplex,"'b'");
-	      // 	std::cout << '\n';
-	      // 	for (const auto initial_simplex: initial_polyhedron.second)
-	      // 	  std::cout << tools::drawtriangle(initial_simplex,"'r'");
-	      // 	std::cout<<'\n';
-	      // }
 #endif
 
 	      // We want to save the intersection of the previous
@@ -818,44 +810,44 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	}
 
 #ifdef Augustdebug
-	// {
-	//   std::cout << "\n summarize at stage="<<stage<<" and part=" << cut_part<< '\n';
-	//   std::cout << "the previous intersections were:\n";
-	//   for (const auto previous_polyhedron: previous_intersections)
-	//   {
-	//     for (const auto key: previous_polyhedron.first)
-	//       std::cout << key<<' ';
-	//     std::cout << "   ";
-	//   }
-	//   std::cout << '\n';
-	//   for (const auto previous_polyhedron: previous_intersections)
-	//   {
-	//     for (const auto simplex: previous_polyhedron.second)
-	//       std::cout << tools::drawtriangle(simplex);
-	//     std::cout << "    ";
-	//   }
-	//   std::cout << '\n';
+	{
+	  std::cout << "\n summarize at stage="<<stage<<" and part=" << cut_part<< '\n';
+	  std::cout << "the previous intersections were:\n";
+	  for (const auto previous_polyhedron: previous_intersections)
+	  {
+	    for (const auto key: previous_polyhedron.first)
+	      std::cout << key<<' ';
+	    std::cout << "   ";
+	  }
+	  std::cout << '\n';
+	  for (const auto previous_polyhedron: previous_intersections)
+	  {
+	    for (const auto simplex: previous_polyhedron.second)
+	      std::cout << tools::drawtriangle(simplex);
+	    std::cout << "    ";
+	  }
+	  std::cout << '\n';
 
 
-	//   std::cout << "the new intersections are:\n";
-	//   for (const auto new_polyhedron: new_intersections)
-	//   {
-	//     for (const auto key: new_polyhedron.first)
-	//       std::cout << key<<' ';
-	//     std::cout << "   ";
-	//   }
-	//   std::cout << '\n';
-	//   for (const auto new_polyhedron: new_intersections)
-	//   {
-	//     for (const auto simplex: new_polyhedron.second)
-	//       std::cout << tools::drawtriangle(simplex);
-	//     std::cout <<"    ";
-	//   }
-	//   std::cout << '\n';
+	  std::cout << "the new intersections are:\n";
+	  for (const auto new_polyhedron: new_intersections)
+	  {
+	    for (const auto key: new_polyhedron.first)
+	      std::cout << key<<' ';
+	    std::cout << "   ";
+	  }
+	  std::cout << '\n';
+	  for (const auto new_polyhedron: new_intersections)
+	  {
+	    for (const auto simplex: new_polyhedron.second)
+	      std::cout << tools::drawtriangle(simplex);
+	    std::cout <<"    ";
+	  }
+	  std::cout << '\n';
 
-	//   //if (cut_part == 1) { PPause; }
-	//   //if (cut_part == 0) { PPause; }
-	// }
+	  //if (cut_part == 1) { PPause; }
+	  //if (cut_part == 0) { PPause; }
+	}
 #endif
 
       	// Update before next stage
@@ -1622,15 +1614,15 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
   }
 
 #ifdef Augustdebug
-  // std::cout << "# display quadrature rule (last " << num_points << " added):"<< std::endl;
-  // for (std::size_t i = 0; i < qr.second.size(); ++i)
-  // {
-  //   std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') # "<<qr.second[i]<<' ';
-  //   if (i > (qr.second.size() - num_points))
-  //     std::cout << "(new)";
-  //   std::cout << std::endl;
-  //   //std::cout  << dqr.first[2*i]<<' '<<dqr.first[2*i+1]<< std::endl;
-  // }
+  std::cout << "# display quadrature rule (last " << num_points << " added):"<< std::endl;
+  for (std::size_t i = 0; i < qr.second.size(); ++i)
+  {
+    std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') # "<<qr.second[i]<<' ';
+    if (i > (qr.second.size() - num_points))
+      std::cout << "(new)";
+    std::cout << std::endl;
+    //std::cout  << dqr.first[2*i]<<' '<<dqr.first[2*i+1]<< std::endl;
+  }
 #endif
 
   return num_points;
