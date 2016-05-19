@@ -274,3 +274,43 @@ void dolfin::get_coordinates(Function& position, const MeshGeometry& geometry)
   _get_set_coordinates(const_cast<MeshGeometry&>(geometry), position, false);
 }
 //-----------------------------------------------------------------------------
+Mesh dolfin::create_mesh(Function& coordinates)
+{
+  dolfin_assert(coordinates.function_space());
+  dolfin_assert(coordinates.function_space()->element());
+  dolfin_assert(coordinates.function_space()->element()->ufc_element());
+
+  // Fetch old mesh and create new mesh
+  const Mesh& mesh0 = *(coordinates.function_space()->mesh());
+  Mesh mesh1(mesh0.mpi_comm());
+
+  // Assign all data except geometry
+  mesh1._topology = mesh0._topology;
+  mesh1._domains = mesh0._domains;
+  mesh1._data = mesh0._data;
+  if (mesh0._cell_type)
+    mesh1._cell_type.reset(CellType::create(mesh0._cell_type->cell_type()));
+  else
+    mesh1._cell_type.reset();
+  mesh1._ordered = mesh0._ordered;
+  mesh1._cell_orientations = mesh0._cell_orientations;
+
+  // Rename
+  mesh1.rename(mesh0.name(), mesh0.label());
+
+  // Call assignment operator for base class
+  static_cast<Hierarchical<Mesh>>(mesh1) = mesh0;
+
+  // Prepare a new geometry
+  mesh1._geometry.init(mesh0._geometry.dim(),
+    coordinates.function_space()->element()->ufc_element()->degree());
+  std::vector<std::size_t> num_entities(mesh0._topology.dim() + 1);
+  for (std::size_t dim = 0; dim <= mesh0._topology.dim(); ++dim)
+    num_entities[dim] = mesh0._topology.size(dim);
+  mesh1._geometry.init_entities(num_entities);
+
+  // Assign coordinates
+  set_coordinates(mesh1._geometry, coordinates);
+
+  return mesh1;
+}

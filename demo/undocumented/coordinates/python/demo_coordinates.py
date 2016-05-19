@@ -44,3 +44,9 @@ c_vec += displacement.vector()
 # Set coordinates
 set_coordinates(mesh.geometry(), c)
 plot(mesh, interactive=True)
+
+# We can create (cubic) mesh from function
+C3 = VectorFunctionSpace(mesh, "Lagrange", 4)
+c3 = interpolate(c, C3)
+mesh3 = create_mesh(c3)
+plot(mesh3, interactive=True)
