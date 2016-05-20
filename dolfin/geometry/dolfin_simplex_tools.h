@@ -113,8 +113,8 @@ namespace tools
       /* ss << "hline = line([" << simplex[0][0] << ',' << simplex[1][0] << "]," */
       /* 	 << "[" << simplex[0][1] << ',' << simplex[1][1] << "]);" */
       /* 	 << "set(hline,'color'," << color << ");"; */
-      ss << "drawline([" << simplex[0][0] << ',' << simplex[1][0] << "],"
-	 <<  "[" << simplex[0][1] << ',' << simplex[1][1] << "],";
+      ss << "drawline([" << simplex[0][0] << ',' << simplex[0][1] << "],"
+	 <<  "[" << simplex[1][0] << ',' << simplex[1][1] << "],";
       if (matlab)
 	ss << color<<",1,1,15);";
       else
