@@ -180,8 +180,9 @@ SimplexQuadrature::compute_quadrature_rule_interval(const std::vector<Point>& co
   case 2:
     {
       const double J[] = {coordinates[1].x() - coordinates[0].x(),
-                          coordinates[1].x() - coordinates[0].y()};
+                          coordinates[1].y() - coordinates[0].y()};
       const double det2 = J[0]*J[0] + J[1]*J[1];
+
       det = std::sqrt(det2);
       break;
     }
