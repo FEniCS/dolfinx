@@ -38,7 +38,7 @@
 #include <iomanip>
 
 //#define Augustcheckqrpositive
-//#define Augustdebug
+#define Augustdebug
 //#define Augustnormaldebug
 
 using namespace dolfin;
@@ -210,13 +210,13 @@ void MultiMesh::build(std::size_t quadrature_order)
 
   // Build quadrature rules of the cut cells' overlap. Do this before
   // we build the quadrature rules of the cut cells
-  _build_quadrature_rules_overlap(quadrature_order);
+  //_build_quadrature_rules_overlap(quadrature_order);
 
   // Build quadrature rules of the cut cells
-  _build_quadrature_rules_cut_cells(quadrature_order);
+  //_build_quadrature_rules_cut_cells(quadrature_order);
 
   // FIXME:
-  //_build_quadrature_rules_interface(quadrature_order);
+  _build_quadrature_rules_interface(quadrature_order);
 
   end();
 }
@@ -1342,10 +1342,11 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		for (std::size_t s = 0; s < cut_cutting_interface[p].size(); ++s)
 		{
 		  const std::vector<Simplex> simplex_tmp(1, cut_cutting_interface[p][s]);
-		  const Polyhedron ii = IntersectionTriangulation::triangulate(cell.second, simplex_tmp, tdim - 1);
 #ifdef Augustdebug
 		  std::cout << "test collision cell "<< cell.first << ": " << tools::drawtriangle(cell.second) << " and simplex " << tools::drawtriangle(simplex_tmp[0]) << std::endl;
 #endif
+		  const Polyhedron ii = IntersectionTriangulation::triangulate(cell.second, simplex_tmp, tdim - 1);
+
 		  if (ii.size()) {
 #ifdef Augustdebug
 		    std::cout << "collided cell " << tools::drawtriangle(cell.second) << " with simplex " << tools::drawtriangle(simplex_tmp[0]) << " (cell key " << cell.first << ")" << std::endl;
@@ -1579,6 +1580,10 @@ MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
                                 std::size_t quadrature_order,
                                 double factor) const
 {
+#ifdef Augustdebug
+  std::cout << __FUNCTION__<<" simplex size " << simplex.size() << std::endl;
+#endif
+
   // Compute quadrature rule for simplex
   const auto dqr = SimplexQuadrature::compute_quadrature_rule(simplex,
 							      gdim,
@@ -1618,7 +1623,7 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
   }
 
 #ifdef Augustdebug
-  std::cout << "# display quadrature rule (last " << num_points << " added):"<< std::endl;
+  std::cout << "# display quadrature rule w factor = "<<factor<<" (last " << num_points << " added):"<< std::endl;
   for (std::size_t i = 0; i < qr.second.size(); ++i)
   {
     std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') # "<<qr.second[i]<<' ';
