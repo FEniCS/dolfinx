@@ -154,6 +154,7 @@ int main(int argc, char* argv[])
   mesh_1->translate(Point(-0.05, 0.05));
   auto mesh_2 = std::make_shared<RectangleMesh>(Point(0.2, 0.2), Point(0.8, 0.8), N, N);
   mesh_2->translate(Point(-0.025, 0.025));
+
   // tools::dolfin_write_medit_triangles("mesh0",*mesh_0);
   // tools::dolfin_write_medit_triangles("mesh1",*mesh_1);
   // tools::dolfin_write_medit_triangles("mesh2",*mesh_2);
@@ -161,7 +162,7 @@ int main(int argc, char* argv[])
   const double exact_volume = 1.;
   //exact_volume += (0.8 - 0.2)*(0.8 - 0.2)*6; // mesh_1 and mesh_2
 
-  const double exact_area = 4*0.9;
+  const double exact_area = 4*0.8;
 
 
   // Build multimesh
@@ -171,11 +172,11 @@ int main(int argc, char* argv[])
   multimesh->add(mesh_2);
   multimesh->build(1); // qr generated here
 
-  double volume = compute_volume(*multimesh, 0);
-  std::cout << "volume " << volume << ' ' << exact_volume <<' '<< std::abs(volume-exact_volume) << std::endl;
+  // double volume = compute_volume(*multimesh, 0);
+  // std::cout << "volume " << volume << ' ' << exact_volume <<' '<< std::abs(volume-exact_volume) << std::endl;
 
-  //double area = compute_interface_area(*multimesh, 0);
-  //std::cout << "area " << area << ' ' << exact_area << ' '<<std::abs(area-exact_area) << std::endl;
+  double area = compute_interface_area(*multimesh, 0);
+  std::cout << "area " << area << ' ' << exact_area << ' '<<std::abs(area-exact_area) << std::endl;
 
 
 
