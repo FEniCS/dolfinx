@@ -91,16 +91,6 @@ def test_higher_order(meshes_p2):
 def test_raises(meshes_p1):
     mesh1, mesh2 = meshes_p1[:2]
 
-    # Non-matching meshes (different address of mesh2.geometry()
-    # and c.function_space().mesh().geometry())
-    mesh_another = Mesh(mesh2)
-    V = FunctionSpace(mesh_another, mesh_another.ufl_coordinate_element())
-    c = Function(V)
-    with pytest.raises(RuntimeError):
-        get_coordinates(c, mesh2.geometry())
-    with pytest.raises(RuntimeError):
-        set_coordinates(mesh2.geometry(), c)
-
     # Wrong FE family
     V = VectorFunctionSpace(mesh2, "Discontinuous Lagrange", 1)
     c = Function(V)

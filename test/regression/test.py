@@ -121,6 +121,7 @@ def main():
        os.path.join(demodir, 'undocumented', 'sub-function-assignment',     'cpp'), \
        os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'cpp'), \
        os.path.join(demodir, 'undocumented', 'timing',                      'cpp'), \
+       os.path.join(demodir, 'undocumented', 'coordinates',                 'cpp'), \
        os.path.join(demodir, 'documented',   'stokes-mini',                 'cpp'), \
        os.path.join(demodir, 'documented',   'tensor-weighted-poisson',     'cpp'), \
        os.path.join(demodir, 'documented',   'subdomains-poisson',          'cpp'), \
