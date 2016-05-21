@@ -842,6 +842,8 @@ Vec PETScVector::vec() const
 //-----------------------------------------------------------------------------
 void PETScVector::reset(Vec vec)
 {
+  dolfin_assert(_x);
+
   // Decrease reference count to old Vec object
   VecDestroy(&_x);
 
