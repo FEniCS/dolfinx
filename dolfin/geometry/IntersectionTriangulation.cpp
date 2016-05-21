@@ -49,9 +49,7 @@ namespace
   }
 }
 
-
-namespace dolfin
-{
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 // High-level intersection triangulation functions
@@ -684,54 +682,58 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
 {
   std::vector<Point> points;
 
-  // Detect edge intersection points
-  if (CollisionDetection::collides_segment_segment_2d(p0, p1, q0, q1))
+  if (CollisionDetection::collides_triangle_segment_2d(p0, p1, p2, q0, q1))
   {
-    const std::vector<Point> ii = triangulate_segment_segment_2d(p0, p1, q0, q1);
-    dolfin_assert(ii.size());
-    points.insert(points.end(), ii.begin(), ii.end());
-  }
-  if (CollisionDetection::collides_segment_segment_2d(p0, p2, q0, q1))
-  {
-    const std::vector<Point> ii = triangulate_segment_segment_2d(p0, p2, q0, q1);
-    dolfin_assert(ii.size());
-    points.insert(points.end(), ii.begin(), ii.end());
-  }
-  if (CollisionDetection::collides_segment_segment_2d(p1, p2, q0, q1))
-  {
-    const std::vector<Point> ii = triangulate_segment_segment_2d(p1, p2, q0, q1);
-    dolfin_assert(ii.size());
-    points.insert(points.end(), ii.begin(), ii.end());
+    // Detect edge intersection points
+    if (CollisionDetection::collides_segment_segment_2d(p0, p1, q0, q1))
+    {
+      const std::vector<Point> ii = triangulate_segment_segment_2d(p0, p1, q0, q1);
+      dolfin_assert(ii.size());
+      points.insert(points.end(), ii.begin(), ii.end());
+    }
+    if (CollisionDetection::collides_segment_segment_2d(p0, p2, q0, q1))
+    {
+      const std::vector<Point> ii = triangulate_segment_segment_2d(p0, p2, q0, q1);
+      dolfin_assert(ii.size());
+      points.insert(points.end(), ii.begin(), ii.end());
+    }
+    if (CollisionDetection::collides_segment_segment_2d(p1, p2, q0, q1))
+    {
+      const std::vector<Point> ii = triangulate_segment_segment_2d(p1, p2, q0, q1);
+      dolfin_assert(ii.size());
+      points.insert(points.end(), ii.begin(), ii.end());
+    }
+
+    if (points.size() == 0)
+    {
+      // If we get zero intersection points, then both segment ends must
+      // be inside. Note that we here assume that we have called this
+      // routine _after_ a suitable predicate from CollisionDetection,
+      // meaning we know that the triangle and segment collides
+      return std::vector<Point>{{q0, q1}};
+    }
+    else if (points.size() == 1)
+    {
+      // If we get one intersection point, find the segment end point
+      // which is inside the triangle.
+      if (CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q0))
+	return std::vector<Point>{{ q0, points[0] }};
+      else
+	return std::vector<Point>{{ q1, points[0] }};
+    }
+    else if (points.size() == 2)
+    {
+      // If we get two intersection points, this is the intersection
+      return points;
+    }
+    else
+    {
+      dolfin_error("IntersectionTriangulation.cpp",
+		   "compute triangle-segment 2d triangulation ",
+		   "Unknown number of points %d", points.size());
+    }
   }
 
-  if (points.size() == 0)
-  {
-    // If we get zero intersection points, then both segment ends must
-    // be inside. Note that we here assume that we have called this
-    // routine _after_ a suitable predicate from CollisionDetection,
-    // meaning we know that the triangle and segment collides
-    return std::vector<Point>{{q0, q1}};
-  }
-  else if (points.size() == 1)
-  {
-    // If we get one intersection point, find the segment end point
-    // which is inside the triangle.
-    if (CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q0))
-      return std::vector<Point>{{ q0, points[0] }};
-    else
-      return std::vector<Point>{{ q1, points[0] }};
-  }
-  else if (points.size() == 2)
-  {
-    // If we get two intersection points, this is the intersection
-    return points;
-  }
-  else
-  {
-    dolfin_error("IntersectionTriangulation.cpp",
-		 "compute triangle-segment 2d triangulation ",
-		 "Unknown number of points %d", points.size());
-  }
   return points;
 }
 //-----------------------------------------------------------------------------
@@ -777,123 +779,130 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
   // std::cout << "Triangle " << p0.x() << " " << p0.y() << ", " << p1.x() << " " << p1.y() << ", " << p2.x() << " " << p2.y() << std::endl;
   // std::cout << "Triangle " << q0.x() << " " << q0.y() << ", " << q1.x() << " " << q1.y() << ", " << q2.x() << " " << q2.y() << std::endl;
 
-  std::vector<dolfin::Point> points;
-
-  // Pack points as vectors
-  std::array<Point, 3> tri_0({p0, p1, p2});
-  std::array<Point, 3> tri_1({q0, q1, q2});
-
-  // Extract coordinates
-  double t0[3][2] = {{p0[0], p0[1]}, {p1[0], p1[1]}, {p2[0], p2[1]}};
-  double t1[3][2] = {{q0[0], q0[1]}, {q1[0], q1[1]}, {q2[0], q2[1]}};
-
-  // Find all vertex-vertex collision
-  for (std::size_t i = 0; i < 3; i++)
+  if (CollisionDetection::collides_triangle_triangle_2d(p0, p1, p2,
+							q0, q1, q2))
   {
-    for (std::size_t j = 0; j < 3; j++)
+    std::vector<dolfin::Point> points;
+
+    // Pack points as vectors
+    std::array<Point, 3> tri_0({p0, p1, p2});
+    std::array<Point, 3> tri_1({q0, q1, q2});
+
+    // Extract coordinates
+    double t0[3][2] = {{p0[0], p0[1]}, {p1[0], p1[1]}, {p2[0], p2[1]}};
+    double t1[3][2] = {{q0[0], q0[1]}, {q1[0], q1[1]}, {q2[0], q2[1]}};
+
+    // Find all vertex-vertex collision
+    for (std::size_t i = 0; i < 3; i++)
     {
-      if (tri_0[i] == tri_1[j])
-        points.push_back(tri_0[i]);
-    }
-  }
-
-  // std::cout << "Points after vertex-vertex: " << points.size() << std::endl;
-
-  // Find all vertex-"edge interior" intersections
-  for (std::size_t i = 0; i < 3; i++)
-  {
-    for (std::size_t j = 0; j < 3; j++)
-    {
-      if (tri_0[i] != tri_1[j] && tri_0[(i+1)%3] != tri_1[j] &&
-          CollisionDetection::collides_segment_point(tri_0[i], tri_0[(i+1)%3], tri_1[j]))
-        points.push_back(tri_1[j]);
-
-      if (tri_1[i] != tri_0[j] && tri_1[(i+1)%3] != tri_0[j] &&
-          CollisionDetection::collides_segment_point(tri_1[i], tri_1[(i+1)%3], tri_0[j]))
-        points.push_back(tri_0[j]);
-    }
-  }
-
-  // std::cout << "Points are vertex-\"edge interior\": " << points.size() << std::endl;
-
-  // Find all "edge interior"-"edge interior" intersections
-  for (std::size_t i = 0; i < 3; i++)
-  {
-    for (std::size_t j = 0; j < 3; j++)
-    {
+      for (std::size_t j = 0; j < 3; j++)
       {
-        std::vector<Point> triangulation =
-          triangulate_segment_interior_segment_interior_2d(tri_0[i],
-                                                           tri_0[(i+1)%3],
-                                                           tri_1[j],
-                                                           tri_1[(j+1)%3]);
-        points.insert(points.end(), triangulation.begin(), triangulation.end());
+	if (tri_0[i] == tri_1[j])
+	  points.push_back(tri_0[i]);
       }
     }
+
+    // std::cout << "Points after vertex-vertex: " << points.size() << std::endl;
+
+    // Find all vertex-"edge interior" intersections
+    for (std::size_t i = 0; i < 3; i++)
+    {
+      for (std::size_t j = 0; j < 3; j++)
+      {
+	if (tri_0[i] != tri_1[j] && tri_0[(i+1)%3] != tri_1[j] &&
+	    CollisionDetection::collides_segment_point(tri_0[i], tri_0[(i+1)%3], tri_1[j]))
+	  points.push_back(tri_1[j]);
+
+	if (tri_1[i] != tri_0[j] && tri_1[(i+1)%3] != tri_0[j] &&
+	    CollisionDetection::collides_segment_point(tri_1[i], tri_1[(i+1)%3], tri_0[j]))
+	  points.push_back(tri_0[j]);
+      }
+    }
+
+    // std::cout << "Points are vertex-\"edge interior\": " << points.size() << std::endl;
+
+    // Find all "edge interior"-"edge interior" intersections
+    for (std::size_t i = 0; i < 3; i++)
+    {
+      for (std::size_t j = 0; j < 3; j++)
+      {
+	{
+	  std::vector<Point> triangulation =
+	    triangulate_segment_interior_segment_interior_2d(tri_0[i],
+							     tri_0[(i+1)%3],
+							     tri_1[j],
+							     tri_1[(j+1)%3]);
+	  points.insert(points.end(), triangulation.begin(), triangulation.end());
+	}
+      }
+    }
+
+    // std::cout << "Points after edge interior-edge interior: " << points.size() << std::endl;
+
+    // Find alle vertex-"triangle interior" intersections
+    const int s0 = std::signbit(orient2d(t0[0], t0[1], t0[2])) == true ? -1 : 1;
+    const int s1 = std::signbit(orient2d(t1[0], t1[1], t1[2])) == true ? -1 : 1;
+
+    for (std::size_t i = 0; i < 3; ++i)
+    {
+      // std::cout << "Is " << t1[0][0] << ", " << t1[0][1] << " - " << t1[1][0] << ", " << t1[1][1] << " <--> " << t0[i][0] << ", " << t0[i][1] << " = " << (s1*orient2d(t1[0], t1[1], t0[i])) << std::endl;
+      // std::cout << "Is " << t1[1][0] << ", " << t1[1][1] << " - " << t1[2][0] << ", " << t1[2][1] << " <--> " << t0[i][0] << ", " << t0[i][1] << " = " << (s1*orient2d(t1[1], t1[2], t0[i])) << std::endl;
+      // std::cout << "Is " << t1[2][0] << ", " << t1[2][1] << " - " << t1[0][0] << ", " << t1[0][1] << " <--> " << t0[i][0] << ", " << t0[i][1] << " = " << (s1*orient2d(t1[2], t1[0], t0[i])) << std::endl;
+
+      const double q0_q1_pi = s1*orient2d(t1[0], t1[1], t0[i]);
+      const double q1_q2_pi = s1*orient2d(t1[1], t1[2], t0[i]);
+      const double q2_q0_pi = s1*orient2d(t1[2], t1[0], t0[i]);
+
+      if (q0_q1_pi > 0. and
+	  q1_q2_pi > 0. and
+	  q2_q0_pi > 0.)
+      {
+	// std::cout << "Yes: " << tri_0[i][0] << ", " << tri_0[i][1] << std::endl;
+	points.push_back(tri_0[i]);
+      }
+      // else
+      // {
+      //   std::cout << "No!" << std::endl;
+      // }
+
+      // std::cout << "Is " << t0[0][0] << ", " << t0[0][1] << " - " << t0[1][0] << ", " << t0[1][1] << " <--> " << t1[i][0] << ", " << t1[i][1] << " = " << (s0*orient2d(t0[0], t0[1], t1[i])) << std::endl;
+      // std::cout << "Is " << t0[1][0] << ", " << t0[1][1] << " - " << t0[2][0] << ", " << t0[2][1] << " <--> " << t1[i][0] << ", " << t1[i][1] << " = " << (s0*orient2d(t0[1], t0[2], t1[i])) << std::endl;
+      // std::cout << "Is " << t0[2][0] << ", " << t0[2][1] << " - " << t0[0][0] << ", " << t0[0][1] << " <--> " << t1[i][0] << ", " << t1[i][1] << " = " << (s0*orient2d(t0[2], t0[0], t1[i])) << std::endl;
+
+      const double p0_p1_qi = s0*orient2d(t0[0], t0[1], t1[i]);
+      const double p1_p2_qi = s0*orient2d(t0[1], t0[2], t1[i]);
+      const double p2_p0_qi = s0*orient2d(t0[2], t0[0], t1[i]);
+
+      if (p0_p1_qi > 0. and
+	  p1_p2_qi > 0. and
+	  p2_p0_qi > 0.)
+      {
+	// std::cout << "Yes: " << tri_1[i][0] << ", " << tri_1[i][1] << std::endl;
+	points.push_back(tri_1[i]);
+      }
+      // else
+      // {
+      //   std::cout << "No!" << std::endl;
+      // }
+    }
+
+    // std::cout << "Intersections after cell-vertex collisions: " << points.size() << std::endl;
+
+    if (points.size() == 0)
+      return std::vector<std::vector<Point>>();
+
+    // If the number of points is less than four, then these form the
+    // triangulation
+    std::vector<std::vector<Point>> triangulation;
+    if (points.size() < 4)
+      return std::vector<std::vector<Point>>(1, std::vector<Point>(points.begin(), points.end()));
+
+    // If 4 or greater, do graham scan
+    return graham_scan(std::vector<Point>(points.begin(), points.end()));
   }
 
-  // std::cout << "Points after edge interior-edge interior: " << points.size() << std::endl;
+  return std::vector<std::vector<Point>>();
 
-  // Find alle vertex-"triangle interior" intersections
-  const int s0 = std::signbit(orient2d(t0[0], t0[1], t0[2])) == true ? -1 : 1;
-  const int s1 = std::signbit(orient2d(t1[0], t1[1], t1[2])) == true ? -1 : 1;
-
-  for (std::size_t i = 0; i < 3; ++i)
-  {
-    // std::cout << "Is " << t1[0][0] << ", " << t1[0][1] << " - " << t1[1][0] << ", " << t1[1][1] << " <--> " << t0[i][0] << ", " << t0[i][1] << " = " << (s1*orient2d(t1[0], t1[1], t0[i])) << std::endl;
-    // std::cout << "Is " << t1[1][0] << ", " << t1[1][1] << " - " << t1[2][0] << ", " << t1[2][1] << " <--> " << t0[i][0] << ", " << t0[i][1] << " = " << (s1*orient2d(t1[1], t1[2], t0[i])) << std::endl;
-    // std::cout << "Is " << t1[2][0] << ", " << t1[2][1] << " - " << t1[0][0] << ", " << t1[0][1] << " <--> " << t0[i][0] << ", " << t0[i][1] << " = " << (s1*orient2d(t1[2], t1[0], t0[i])) << std::endl;
-
-    const double q0_q1_pi = s1*orient2d(t1[0], t1[1], t0[i]);
-    const double q1_q2_pi = s1*orient2d(t1[1], t1[2], t0[i]);
-    const double q2_q0_pi = s1*orient2d(t1[2], t1[0], t0[i]);
-
-    if (q0_q1_pi > 0. and
-        q1_q2_pi > 0. and
-        q2_q0_pi > 0.)
-    {
-      // std::cout << "Yes: " << tri_0[i][0] << ", " << tri_0[i][1] << std::endl;
-      points.push_back(tri_0[i]);
-    }
-    // else
-    // {
-    //   std::cout << "No!" << std::endl;
-    // }
-
-    // std::cout << "Is " << t0[0][0] << ", " << t0[0][1] << " - " << t0[1][0] << ", " << t0[1][1] << " <--> " << t1[i][0] << ", " << t1[i][1] << " = " << (s0*orient2d(t0[0], t0[1], t1[i])) << std::endl;
-    // std::cout << "Is " << t0[1][0] << ", " << t0[1][1] << " - " << t0[2][0] << ", " << t0[2][1] << " <--> " << t1[i][0] << ", " << t1[i][1] << " = " << (s0*orient2d(t0[1], t0[2], t1[i])) << std::endl;
-    // std::cout << "Is " << t0[2][0] << ", " << t0[2][1] << " - " << t0[0][0] << ", " << t0[0][1] << " <--> " << t1[i][0] << ", " << t1[i][1] << " = " << (s0*orient2d(t0[2], t0[0], t1[i])) << std::endl;
-
-    const double p0_p1_qi = s0*orient2d(t0[0], t0[1], t1[i]);
-    const double p1_p2_qi = s0*orient2d(t0[1], t0[2], t1[i]);
-    const double p2_p0_qi = s0*orient2d(t0[2], t0[0], t1[i]);
-
-    if (p0_p1_qi > 0. and
-        p1_p2_qi > 0. and
-        p2_p0_qi > 0.)
-    {
-      // std::cout << "Yes: " << tri_1[i][0] << ", " << tri_1[i][1] << std::endl;
-      points.push_back(tri_1[i]);
-    }
-    // else
-    // {
-    //   std::cout << "No!" << std::endl;
-    // }
-  }
-
-  // std::cout << "Intersections after cell-vertex collisions: " << points.size() << std::endl;
-
-  if (points.size() == 0)
-    return std::vector<std::vector<Point>>();
-
-  // If the number of points is less than four, then these form the
-  // triangulation
-  std::vector<std::vector<Point>> triangulation;
-  if (points.size() < 4)
-    return std::vector<std::vector<Point>>(1, std::vector<Point>(points.begin(), points.end()));
-
-  // If 4 or greater, do graham scan
-  return graham_scan(std::vector<Point>(points.begin(), points.end()));
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<Point>>
@@ -1134,17 +1143,17 @@ IntersectionTriangulation::_triangulate_tetrahedron_tetrahedron(const Point& p0,
   for (int i = 0; i < 4; ++i)
   {
     if (CollisionDetection::collides_tetrahedron_point(tet_0[0],
-							  tet_0[1],
-							  tet_0[2],
-							  tet_0[3],
-							  tet_1[i]))
+						       tet_0[1],
+						       tet_0[2],
+						       tet_0[3],
+						       tet_1[i]))
       points.push_back(tet_1[i]);
 
     if (CollisionDetection::collides_tetrahedron_point(tet_1[0],
-							  tet_1[1],
-							  tet_1[2],
-							  tet_1[3],
-							  tet_0[i]))
+						       tet_1[1],
+						       tet_1[2],
+						       tet_1[3],
+						       tet_0[i]))
       points.push_back(tet_0[i]);
   }
 
@@ -1512,6 +1521,5 @@ IntersectionTriangulation::graham_scan(const std::vector<Point>& points)
   }
 
   return triangulation;
-}
 }
 //-----------------------------------------------------------------------------
