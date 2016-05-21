@@ -130,6 +130,8 @@ void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
   }
 
   // Associate new PETSc Vec with _z
+  if (_z._x)
+    VecDestroy(&_z._x);
   _z._x = x;
 }
 //-----------------------------------------------------------------------------
