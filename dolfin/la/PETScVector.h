@@ -257,7 +257,9 @@ namespace dolfin
     /// Assignment operator
     const PETScVector& operator= (const PETScVector& x);
 
-    friend class PETScBaseMatrix;
+    /// Switch underlying PETSc object. Intended for internal library
+    /// usage.
+    void reset(Vec vec);
 
   private:
 

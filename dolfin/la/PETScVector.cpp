@@ -790,6 +790,11 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
   }
 }
 //-----------------------------------------------------------------------------
+GenericLinearAlgebraFactory& PETScVector::factory() const
+{
+  return PETScFactory::instance();
+}
+//-----------------------------------------------------------------------------
 void PETScVector::set_options_prefix(std::string options_prefix)
 {
   if (!_x)
@@ -835,9 +840,14 @@ Vec PETScVector::vec() const
   return _x;
 }
 //-----------------------------------------------------------------------------
-GenericLinearAlgebraFactory& PETScVector::factory() const
+void PETScVector::reset(Vec vec)
 {
-  return PETScFactory::instance();
+  // Decrease reference count to old Vec object
+  VecDestroy(&_x);
+
+  // Store new Vec object and increment reference count
+  _x = vec;
+  PetscObjectReference((PetscObject)_x);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
