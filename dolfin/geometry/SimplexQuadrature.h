@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2016-05-04
+// Last changed: 2016-05-21
 
 #ifndef __SIMPLEX_QUADRATURE_H
 #define __SIMPLEX_QUADRATURE_H
@@ -126,32 +126,6 @@ namespace dolfin
     compute_quadrature_rule_tetrahedron(const std::vector<Point>& coordinates,
                                         std::size_t gdim,
                                         std::size_t order);
-
-    // FIXME: Versions below should be removed when MultiMesh.cpp
-    // FIXME: has been changed to work with vector<Point> instead of
-    // FIXME: flattened arrays.
-
-    static std::pair<std::vector<double>, std::vector<double>>
-    compute_quadrature_rule(const double* coordinates,
-                            std::size_t tdim,
-                            std::size_t gdim,
-                            std::size_t order);
-
-    static std::pair<std::vector<double>, std::vector<double>>
-    compute_quadrature_rule_interval(const double* coordinates,
-                                     std::size_t gdim,
-                                     std::size_t order);
-
-    static std::pair<std::vector<double>, std::vector<double>>
-    compute_quadrature_rule_triangle(const double* coordinates,
-                                     std::size_t gdim,
-                                     std::size_t order);
-
-    static std::pair<std::vector<double>, std::vector<double>>
-    compute_quadrature_rule_tetrahedron(const double* coordinates,
-                                        std::size_t gdim,
-                                        std::size_t order);
-
   };
 
 }
