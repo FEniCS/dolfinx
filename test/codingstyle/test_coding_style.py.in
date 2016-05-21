@@ -146,4 +146,5 @@ def includes(code, filename):
     return False
 
 if __name__ == "__main__":
-    pytest.main()
+    import sys
+    sys.exit(pytest.main())
