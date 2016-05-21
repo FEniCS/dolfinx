@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
   const double exact_volume = 1.;
   //exact_volume += (0.8 - 0.2)*(0.8 - 0.2)*6; // mesh_1 and mesh_2
 
-  const double exact_area = 4*0.8;
+  const double exact_area = 4*0.8 + 4*0.6;
 
 
   // Build multimesh
