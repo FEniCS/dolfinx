@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-16
+// Last changed: 2016-05-21
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -66,6 +66,7 @@ IntersectionTriangulation::triangulate(const MeshEntity& entity_0,
   const unsigned int* v0 = entity_0.entities(0);
   const unsigned int* v1 = entity_1.entities(0);
 
+  // FIXME: push_back can be avoided here
   // Pack data as vectors of points
   std::vector<Point> points_0;
   std::vector<Point> points_1;
