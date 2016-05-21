@@ -160,8 +160,6 @@ int main(int argc, char* argv[])
   // tools::dolfin_write_medit_triangles("mesh2",*mesh_2);
 
   const double exact_volume = 1.;
-  //exact_volume += (0.8 - 0.2)*(0.8 - 0.2)*6; // mesh_1 and mesh_2
-
   const double exact_area = 4*0.8 + 4*0.6;
 
 
@@ -172,8 +170,8 @@ int main(int argc, char* argv[])
   multimesh->add(mesh_2);
   multimesh->build(1); // qr generated here
 
-  // double volume = compute_volume(*multimesh, 0);
-  // std::cout << "volume " << volume << ' ' << exact_volume <<' '<< std::abs(volume-exact_volume) << std::endl;
+  double volume = compute_volume(*multimesh, 0);
+  std::cout << "volume " << volume << ' ' << exact_volume <<' '<< std::abs(volume-exact_volume) << std::endl;
 
   double area = compute_interface_area(*multimesh, 0);
   std::cout << "area " << area << ' ' << exact_area << ' '<<std::abs(area-exact_area) << std::endl;
