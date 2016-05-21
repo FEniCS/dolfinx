@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2016-05-18
+// Last changed: 2016-05-21
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -36,7 +36,7 @@
 // FIXME August
 #include <dolfin/geometry/dolfin_simplex_tools.h>
 #include <iomanip>
-
+#include <dolfin/geometry/CollisionDetection.h>
 //#define Augustcheckqrpositive
 #define Augustdebug
 //#define Augustnormaldebug
@@ -1343,27 +1343,35 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		{
 		  const std::vector<Simplex> simplex_tmp(1, cut_cutting_interface[p][s]);
 #ifdef Augustdebug
-		  std::cout << "test collision cell "<< cell.first << ": " << tools::drawtriangle(cell.second) << " and simplex " << tools::drawtriangle(simplex_tmp[0]) << std::endl;
+		  std::cout << "test collision cell number " << cell.first<<" and simplex: " << tools::drawtriangle(cell.second) << tools::drawtriangle(simplex_tmp[0]) << std::endl;
 #endif
-		  const Polyhedron ii = IntersectionTriangulation::triangulate(cell.second, simplex_tmp, tdim - 1);
+		  // convert to Simplex
+		  std::vector<Point> cellsecond(cell.second.mesh().topology().dim() + 1);
+		  for (std::size_t i = 0; i < cellsecond.size(); ++i)
+		    cellsecond[i] = cell.second.mesh().geometry().point(i);
 
-		  if (ii.size()) {
+		  if (CollisionDetection::collides(cellsecond, simplex_tmp))
+		  {
+		    const Polyhedron ii = IntersectionTriangulation::triangulate(cell.second, simplex_tmp, tdim - 1);
+
+		    if (ii.size()) {
 #ifdef Augustdebug
-		    std::cout << "collided cell " << tools::drawtriangle(cell.second) << " with simplex " << tools::drawtriangle(simplex_tmp[0]) << " (cell key " << cell.first << ")" << std::endl;
+		      std::cout << "collided cell " << tools::drawtriangle(cell.second) << " with simplex " << tools::drawtriangle(simplex_tmp[0]) << " (cell key " << cell.first << ")" << std::endl;
 #endif
-		    add_key = true;
-		    // const std::vector<std::size_t> num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, ii, gdim, quadrature_order, sign);
-		    // for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
-		    //   _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts[j], gdim);
+		      add_key = true;
+		      // const std::vector<std::size_t> num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, ii, gdim, quadrature_order, sign);
+		      // for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
+		      //   _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts[j], gdim);
 
-		    for (const Simplex simplex: ii)
-		      if (simplex.size() == tdim)
-		      {
-			std::cout << "simplex tdim " << simplex.size() << std::endl;
-			const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex, gdim, quadrature_order, sign);
-			for (std::size_t j = 0; j < num_qr_pts; ++j)
-			  _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
-		      }
+		      for (const Simplex simplex: ii)
+			if (simplex.size() == tdim)
+			{
+			  std::cout << "simplex tdim " << simplex.size() << std::endl;
+			  const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex, gdim, quadrature_order, sign);
+			  for (std::size_t j = 0; j < num_qr_pts; ++j)
+			    _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
+			}
+		    }
 		  }
 		}
 
