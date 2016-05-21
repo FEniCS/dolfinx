@@ -1,3 +1,5 @@
+- Add interface for manipulating mesh geometry using (higher-order) FE
+    functions: free functions set_coordinates, get_coordinates, create_mesh
 - Fix bug when reading domain data from mesh file for a ghosted mesh.
 - Remove reference versions of constructors for many classes that
 	store a pointer/reference to the object passed to the
