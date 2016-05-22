@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2016-05-21
+// Last changed: 2016-05-22
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -34,12 +34,13 @@
 #include "MultiMesh.h"
 
 // FIXME August
-// #include <dolfin/geometry/dolfin_simplex_tools.h>
-// #include <iomanip>
-
 //#define Augustcheckqrpositive
-// #define Augustdebug
+//#define Augustdebug
 //#define Augustnormaldebug
+
+#ifdef Augustdebug
+#include <dolfin/geometry/dolfin_simplex_tools.h>
+#endif
 
 using namespace dolfin;
 
@@ -1252,20 +1253,21 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	      std::cout << "simplex tdim " << simplex.size() << std::endl;
 #endif
 	      const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex, gdim, quadrature_order, 1.);
-	      for (std::size_t j = 0; j < num_qr_pts; ++j)
-		_add_normal(cut_cutting_interface_n, facet_normal, num_qr_pts, gdim);
+	      _add_normal(cut_cutting_interface_n, facet_normal, num_qr_pts, gdim);
 	    }
 	} // end this cut cutting pair initialization
 
 #ifdef Augustdebug
-	// Remember that cut_cutting_interface_n is vector<double>, i.e. twice the number of actual normals
+	// Remember that cut_cutting_interface_n is a flat array>, i.e. gdim times the number of actual normals
 	std::cout << cut_cutting_interface_qr.first.size() <<' '<<cut_cutting_interface_n.size() << std::endl;
-	dolfin_assert(cut_cutting_interface_qr.first.size() == cut_cutting_interface_n.size());
+
 	// also cut_cutting_normals temporarily save normals:
 	std::cout << cut_cutting_interface.size() << ' ' << cut_cutting_normals.size() << std::endl;
-	dolfin_assert(cut_cutting_interface.size() == cut_cutting_normals.size());
 	//PPause;
 #endif
+	// Make sure everything's correct so far
+	dolfin_assert(cut_cutting_interface_qr.first.size() == cut_cutting_interface_n.size());
+	dolfin_assert(cut_cutting_interface.size() == cut_cutting_normals.size());
 
 #ifdef Augustnormaldebug
 	std::cout << "after cut cutting pair initialization, normals:"<<std::endl;
@@ -1343,10 +1345,6 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		    std::cout << "collided cell and simplex (cell key "<<cell.first<<") " << tools::drawtriangle(cell.second) << tools::drawtriangle(simplex_tmp[0]) << std::endl;
 #endif
 		    add_key = true;
-		    // const std::vector<std::size_t> num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, ii, gdim, quadrature_order, sign);
-		    // for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
-		    //   _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts[j], gdim);
-
 		    for (const Simplex simplex: ii)
 		      if (simplex.size() == tdim)
 		      {
@@ -1354,8 +1352,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 			std::cout << "simplex tdim " << simplex.size() << std::endl;
 #endif
 			const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex, gdim, quadrature_order, sign);
-			for (std::size_t j = 0; j < num_qr_pts; ++j)
-			  _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
+			_add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
 		      }
 		  }
 		}
@@ -1439,17 +1436,17 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		      // Only allow codimension 1
 		      // if (initial_cells[k].second.size() == tdim + 1 &&
 		      // 	  previous_intersections[j].size() == tdim) // really size() - 1 == tdim - 1
-		      {
-			const Polyhedron ii = IntersectionTriangulation::triangulate(initial_cells[k].second, previous_intersections[j], tdim);
+		    {
+		      const Polyhedron ii = IntersectionTriangulation::triangulate(initial_cells[k].second, previous_intersections[j], tdim);
 
-			if (ii.size())
-			{
-			  new_intersections.push_back(ii);
-			  IncExcKey new_polyhedron_keys = current_keys;
-			  new_polyhedron_keys.push_back(initial_cells[k].first);
-			  new_intersections_keys.push_back(new_polyhedron_keys);
-			}
+		      if (ii.size())
+		      {
+			new_intersections.push_back(ii);
+			IncExcKey new_polyhedron_keys = current_keys;
+			new_polyhedron_keys.push_back(initial_cells[k].first);
+			new_intersections_keys.push_back(new_polyhedron_keys);
 		      }
+		    }
 		    }
 		  }
 		}
@@ -1470,29 +1467,22 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		      {
 			const Simplex& interface_simplex = cut_cutting_interface[p][s];
 
-			// Check intersection with edge from cut_cutting_interface
-			//const std::vector<double> ii = IntersectionTriangulation::triangulate(simplex, interface_simplex, gdim);
 			if (simplex.size() == tdim + 1 &&
 			    interface_simplex.size() == tdim)
 			{
 			  const Polyhedron ii = IntersectionTriangulation::triangulate(simplex, interface_simplex, gdim);
 			  if (ii.size())
 			  {
-			    // const std::vector<std::size_t> num_qr_pts =_add_quadrature_rule(cut_cutting_interface_qr, ii, gdim, quadrature_order, sign);
-			    // for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
-			    //   _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts[j], gdim);
 			    for (const Simplex sii: ii)
 			      if (sii.size() == tdim)
 			      {
-				std::cout << "simplex tdim " << sii.size() << std::endl;
 				const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, sii, gdim, quadrature_order, sign);
-				for (std::size_t j = 0; j < num_qr_pts; ++j)
-				  _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
+				_add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
 			      }
 #ifdef Augustdebug
-			  std::cout<<" qr creation collision was:\n"
-				   <<tools::drawtriangle(simplex)<<tools::drawtriangle(interface_simplex)<<std::endl;
-			  //PPause;
+			    std::cout<<" qr creation collision was:\n"
+				     <<tools::drawtriangle(simplex)<<tools::drawtriangle(interface_simplex)<<std::endl;
+			    //PPause;
 #endif
 			  }
 			}
