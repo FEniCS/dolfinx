@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-08
+// Last changed: 2016-05-22
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -309,34 +309,42 @@ bool CollisionDetection::_collides_segment_segment_2d(Point p0,
 						      Point q0,
 						      Point q1)
 {
-  const double q0_q1_p0 = orient2d(q0.coordinates(),
-                                   q1.coordinates(),
-                                   p0.coordinates());
-  const double q0_q1_p1 = orient2d(q0.coordinates(),
-                                   q1.coordinates(),
-                                   p1.coordinates());
-  const double p0_p1_q0 = orient2d(p0.coordinates(),
-                                   p1.coordinates(),
-                                   q0.coordinates());
-  const double p0_p1_q1 = orient2d(p0.coordinates(),
-                                   p1.coordinates(),
-                                   q1.coordinates());
+  if (orient2d(q0.coordinates(), q1.coordinates(), p0.coordinates()) *
+      orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates()) <= 0 and
+      orient2d(p0.coordinates(), p1.coordinates(), q0.coordinates()) *
+      orient2d(p0.coordinates(), p1.coordinates(), q1.coordinates()) <= 0)
+    return true;
+  else
+    return false;
 
-  //std::cout << "cda: " << cda << ", cdb: " << cdb << ", abc: " << abc << ", abd: " << abd << std::endl;
+  // const double q0_q1_p0 = orient2d(q0.coordinates(),
+  //                                  q1.coordinates(),
+  //                                  p0.coordinates());
+  // const double q0_q1_p1 = orient2d(q0.coordinates(),
+  //                                  q1.coordinates(),
+  //                                  p1.coordinates());
+  // const double p0_p1_q0 = orient2d(p0.coordinates(),
+  //                                  p1.coordinates(),
+  //                                  q0.coordinates());
+  // const double p0_p1_q1 = orient2d(p0.coordinates(),
+  //                                  p1.coordinates(),
+  //                                  q1.coordinates());
 
-  if (q0_q1_p0 == 0 && (p0-q0).squared_norm() <= (q1-q0).squared_norm() && (p0-q1).squared_norm() <= (q0-q1).squared_norm())
-    return true;
-  if (q0_q1_p1 == 0 && (p1-q0).squared_norm() <= (q1-q0).squared_norm() && (p1-q1).squared_norm() <= (q0-q1).squared_norm())
-    return true;
-  if (p0_p1_q0 == 0 && (q0-p0).squared_norm() <= (p1-p0).squared_norm() && (q0-p1).squared_norm() <= (p0-p1).squared_norm())
-    return true;
-  if (p0_p1_q1 == 0 && (q1-p0).squared_norm() <= (p1-p0).squared_norm() && (q1-p1).squared_norm() <= (p0-p1).squared_norm())
-    return true;
+  // //std::cout << "cda: " << cda << ", cdb: " << cdb << ", abc: " << abc << ", abd: " << abd << std::endl;
 
-  if (std::signbit(q0_q1_p0) != std::signbit(q0_q1_p1) && std::signbit(p0_p1_q0) != std::signbit(p0_p1_q1))
-    return true;
+  // if (q0_q1_p0 == 0 && (p0-q0).squared_norm() <= (q1-q0).squared_norm() && (p0-q1).squared_norm() <= (q0-q1).squared_norm())
+  //   return true;
+  // if (q0_q1_p1 == 0 && (p1-q0).squared_norm() <= (q1-q0).squared_norm() && (p1-q1).squared_norm() <= (q0-q1).squared_norm())
+  //   return true;
+  // if (p0_p1_q0 == 0 && (q0-p0).squared_norm() <= (p1-p0).squared_norm() && (q0-p1).squared_norm() <= (p0-p1).squared_norm())
+  //   return true;
+  // if (p0_p1_q1 == 0 && (q1-p0).squared_norm() <= (p1-p0).squared_norm() && (q1-p1).squared_norm() <= (p0-p1).squared_norm())
+  //   return true;
 
-  return false;
+  // if (std::signbit(q0_q1_p0) != std::signbit(q0_q1_p1) && std::signbit(p0_p1_q0) != std::signbit(p0_p1_q1))
+  //   return true;
+
+  // return false;
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::_collides_triangle_point_2d(const Point& p0,
