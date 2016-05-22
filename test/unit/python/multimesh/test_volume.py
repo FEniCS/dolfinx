@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2016-05-03
-# Last changed: 2016-05-04
+# Last changed: 2016-05-22
 
 from __future__ import print_function
 import pytest
@@ -35,7 +35,7 @@ def test_volume_2d():
     "Integrate volume of union of 2D meshes"
 
     # Number of meshes
-    num_meshes = 3
+    num_meshes = 2
 
     # Create background mesh so we can easily compute volume...
     mesh_0 = UnitSquareMesh(1, 1)
