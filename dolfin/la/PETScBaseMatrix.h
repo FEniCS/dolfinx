@@ -27,6 +27,7 @@
 
 #include <cinttypes>
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <utility>
 #include <petscmat.h>
@@ -34,11 +35,13 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include "PETScObject.h"
+#include "PETScVector.h"
 
 namespace dolfin
 {
 
   class GenericVector;
+  class PETScVector;
 
   /// This class is a base class for matrices that can be used in
   /// PETScKrylovSolver.

@@ -20,6 +20,7 @@
 
 #ifdef HAS_PETSC
 
+#include <petscvec.h>
 #include <dolfin/log/log.h>
 #include "GenericVector.h"
 #include "PETScVector.h"
@@ -129,10 +130,12 @@ void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
                  "Dimension must be 0 or 1, not %d", dim);
   }
 
-  // Associate new PETSc Vec with _z
-  if (_z._x)
-    VecDestroy(&_z._x);
-  _z._x = x;
+  // Associate new PETSc Vec with _z (this will increase the reference
+  // count to x)
+  _z.reset(x);
+
+  // Decrease reference count
+  VecDestroy(&x);
 }
 //-----------------------------------------------------------------------------
 MPI_Comm PETScBaseMatrix::mpi_comm() const
