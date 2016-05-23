@@ -3,7 +3,7 @@
 """Unit tests for the CollisionDetection class"""
 
 # Copyright (C) 2014 Anders Logg and August Johansson
-#
+  #
 # This file is part of DOLFIN.
 #
 # DOLFIN is free software: you can redistribute it and/or modify
@@ -41,10 +41,6 @@ def create_mesh(a, b):
     return mesh;
 
 @skip_in_parallel
-def eps():
-    return np.finfo(np.float32).eps
-
-@skip_in_parallel
 def test_L_version_1():
     mesh0 = create_mesh(Point(0., 0.), Point(1., 0.))
     mesh1 = create_mesh(Point(0., 0.), Point(0., 1.))
@@ -58,9 +54,22 @@ def test_L_version_2():
     # mesh0 = create_mesh(Point(eps(), 0.), Point(1., 0.))
     mesh0 = create_mesh(Point(2.23e-15, 0.), Point(1., 0.))
     mesh1 = create_mesh(Point(0., 0.), Point(0., 1.))
+    print(mesh0.str(True))
+    print(mesh1.str(True))
     cell0 = Cell(mesh0, 0)
     cell1 = Cell(mesh1, 0)
     assert cell0.collides(cell1) == False
+
+@skip_in_parallel
+def test_L_version_3():
+    # mesh0 = create_mesh(Point(np.finfo(np.float32).eps, 0.), Point(1., 0.))
+    # mesh0 = create_mesh(Point(eps(), 0.), Point(1., 0.))
+    a = Point(2.23e-100, 0.) # assume shewchuk works
+    b = Point(1., 0.)
+    c = Point(0., 0.)
+    d = Point(0., 1.)
+
+    assert CollisionDetection.collides_segment_segment_2d(a, b, c, d) == False
 
 @skip_in_parallel
 def test_aligned_version_1():
