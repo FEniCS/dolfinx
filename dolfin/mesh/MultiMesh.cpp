@@ -1438,17 +1438,17 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		      // Only allow codimension 1
 		      // if (initial_cells[k].second.size() == tdim + 1 &&
 		      // 	  previous_intersections[j].size() == tdim) // really size() - 1 == tdim - 1
-		    {
-		      const Polyhedron ii = IntersectionTriangulation::triangulate(initial_cells[k].second, previous_intersections[j], tdim);
-
-		      if (ii.size())
 		      {
-			new_intersections.push_back(ii);
-			IncExcKey new_polyhedron_keys = current_keys;
-			new_polyhedron_keys.push_back(initial_cells[k].first);
-			new_intersections_keys.push_back(new_polyhedron_keys);
+			const Polyhedron ii = IntersectionTriangulation::triangulate(initial_cells[k].second, previous_intersections[j], tdim);
+
+			if (ii.size())
+			{
+			  new_intersections.push_back(ii);
+			  IncExcKey new_polyhedron_keys = current_keys;
+			  new_polyhedron_keys.push_back(initial_cells[k].first);
+			  new_intersections_keys.push_back(new_polyhedron_keys);
+			}
 		      }
-		    }
 		    }
 		  }
 		}
