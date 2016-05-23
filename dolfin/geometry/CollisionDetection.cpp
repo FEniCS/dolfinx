@@ -121,10 +121,11 @@ bool CollisionDetection::collides(const MeshEntity& entity_0,
 
   // Pick correct specialized implementation
   if (d0 == 1 && d1 == 1)
-    return collides_segment_segment_1d(g0.point(v0[0])[0],
-                                       g0.point(v0[1])[0],
-                                       g1.point(v1[0])[0],
-                                       g1.point(v1[1])[0]);
+    return collides_segment_segment(g0.point(v0[0])[0],
+				    g0.point(v0[1])[0],
+				    g1.point(v1[0])[0],
+				    g1.point(v1[1])[0],
+				    gdim);
 
   if (d0 == 1 && d1 == 2)
     return collides_triangle_segment(g1.point(v1[0]),
@@ -304,47 +305,46 @@ bool CollisionDetection::_collides_segment_segment_1d(double p0,
   return result;
 }
 //-----------------------------------------------------------------------------
+bool operator==(const Point& a, const Point& b)
+{
+  return a.x() == b.x() && a.y() == b.y() && a.z() == b.z();
+}
+
 bool CollisionDetection::_collides_segment_segment_2d(Point p0,
 						      Point p1,
 						      Point q0,
 						      Point q1)
 {
-  if (orient2d(q0.coordinates(), q1.coordinates(), p0.coordinates()) *
-      orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates()) <= 0 and
-      orient2d(p0.coordinates(), p1.coordinates(), q0.coordinates()) *
-      orient2d(p0.coordinates(), p1.coordinates(), q1.coordinates()) <= 0)
+  // Vertex vertex collision
+  if (p0 == q0 || p0 == q1 || p1 == q0 || p1 == q1)
     return true;
-  else
-    return false;
 
-  // const double q0_q1_p0 = orient2d(q0.coordinates(),
-  //                                  q1.coordinates(),
-  //                                  p0.coordinates());
-  // const double q0_q1_p1 = orient2d(q0.coordinates(),
-  //                                  q1.coordinates(),
-  //                                  p1.coordinates());
-  // const double p0_p1_q0 = orient2d(p0.coordinates(),
-  //                                  p1.coordinates(),
-  //                                  q0.coordinates());
-  // const double p0_p1_q1 = orient2d(p0.coordinates(),
-  //                                  p1.coordinates(),
-  //                                  q1.coordinates());
+  const double q0_q1_p0 = orient2d(q0.coordinates(),
+                                   q1.coordinates(),
+                                   p0.coordinates());
+  const double q0_q1_p1 = orient2d(q0.coordinates(),
+                                   q1.coordinates(),
+                                   p1.coordinates());
+  const double p0_p1_q0 = orient2d(p0.coordinates(),
+                                   p1.coordinates(),
+                                   q0.coordinates());
+  const double p0_p1_q1 = orient2d(p0.coordinates(),
+                                   p1.coordinates(),
+                                   q1.coordinates());
 
-  // //std::cout << "cda: " << cda << ", cdb: " << cdb << ", abc: " << abc << ", abd: " << abd << std::endl;
+  // Vertex edge (interior) collision
 
-  // if (q0_q1_p0 == 0 && (p0-q0).squared_norm() <= (q1-q0).squared_norm() && (p0-q1).squared_norm() <= (q0-q1).squared_norm())
-  //   return true;
-  // if (q0_q1_p1 == 0 && (p1-q0).squared_norm() <= (q1-q0).squared_norm() && (p1-q1).squared_norm() <= (q0-q1).squared_norm())
-  //   return true;
-  // if (p0_p1_q0 == 0 && (q0-p0).squared_norm() <= (p1-p0).squared_norm() && (q0-p1).squared_norm() <= (p0-p1).squared_norm())
-  //   return true;
-  // if (p0_p1_q1 == 0 && (q1-p0).squared_norm() <= (p1-p0).squared_norm() && (q1-p1).squared_norm() <= (p0-p1).squared_norm())
-  //   return true;
+  if (q0_q1_p0 == 0 && (p0-q0).squared_norm() < (q1-q0).squared_norm() && (p0-q1).squared_norm() < (q0-q1).squared_norm())
+    return true;
+  if (q0_q1_p1 == 0 && (p1-q0).squared_norm() < (q1-q0).squared_norm() && (p1-q1).squared_norm() < (q0-q1).squared_norm())
+    return true;
+  if (p0_p1_q0 == 0 && (q0-p0).squared_norm() < (p1-p0).squared_norm() && (q0-p1).squared_norm() < (p0-p1).squared_norm())
+    return true;
+  if (p0_p1_q1 == 0 && (q1-p0).squared_norm() < (p1-p0).squared_norm() && (q1-p1).squared_norm() < (p0-p1).squared_norm())
+    return true;
 
-  // if (std::signbit(q0_q1_p0) != std::signbit(q0_q1_p1) && std::signbit(p0_p1_q0) != std::signbit(p0_p1_q1))
-  //   return true;
+  return q0_q1_p0*q0_q1_p1 < 0 && p0_p1_q0*p0_p1_q1 < 0;
 
-  // return false;
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::_collides_triangle_point_2d(const Point& p0,
