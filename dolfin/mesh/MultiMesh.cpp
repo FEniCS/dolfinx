@@ -35,7 +35,7 @@
 
 // FIXME August
 //#define Augustcheckqrpositive
-//#define Augustdebug
+// #define Augustdebug
 //#define Augustnormaldebug
 
 #ifdef Augustdebug
@@ -527,7 +527,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
       //      if (cut_part == 0 and it->first == 254)
     {
-      const std::vector<std::string> color = {{ "'b'", "'g'", "'r'" }};
+      const std::vector<std::string> color = {{ "'b'", "'g'", "'r'", "'m'" }};
 
       // Get cut cell
       const unsigned int cut_cell_index = it->first;
@@ -613,7 +613,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	  {
 	    for (const auto simplex: polyhedron)
 	    {
-	      std::cout << "sub simplex size "<<simplex.size() << '\n';
+	      std::cout << __LINE__<< " sub simplex size "<<simplex.size() << '\n';
 	      std::cout << tools::drawtriangle(simplex,"'k'");
 	    }
 	    std::cout <<tools::zoom()<< std::endl;
@@ -756,7 +756,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 			std::cout << "resulting intersection size= "<<ii.size()<<": \n";
 			for (const auto simplex: ii)
 			{
-			  std::cout << "sub simplex size "<<simplex.size() << '\n';
+			  std::cout << __LINE__ << " sub simplex size "<<simplex.size() << '\n';
 			  std::cout << tools::drawtriangle(simplex,"'g'");
 			}
 			std::cout<<tools::zoom()<<'\n';
@@ -1210,52 +1210,54 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
           // Triangulate intersection of cut cell and boundary cell
 	  // FIXME: here we could include only large lines
           const Polyhedron polygon = IntersectionTriangulation::triangulate(cut_cell, boundary_cell);
-
-#ifdef Augustdebug
+	  if (polygon.size())
 	  {
-	    std::cout << "intersection of:\n";
-	    std::cout << tools::drawtriangle(cut_cell,"'b'")<<tools::drawtriangle(boundary_cell,"'r'")<<tools::zoom()<<'\n';
-	    std::cout << "% intersection (size="<<polygon.size()<<")\n";
-	    if (polygon.size())
-	    {
-	      for (const auto simplex: polygon)
-	      {
-		std::cout << "sub simplex size "<<simplex.size() << '\n';
-		std::cout << tools::drawtriangle(simplex,"'k'");
-	      }
-	      std::cout << std::endl;
-	      std::cout << "areas=[";
-	      for (const auto simplex: polygon)
-		std::cout << tools::area(simplex)<<' ';
-	      std::cout << "];"<<std::endl;
-	    }
-	  }
-	  //PPause;
-#endif
-	  // Get the boundary facet as a facet in the full mesh
-	  const Facet boundary_facet(*_meshes[cutting_part_j], boundary_cell_index.second);
-
-	  // Get the cutting cell normal
-	  const std::size_t local_facet_index = cutting_cell_j.index(boundary_facet);
-	  const Point facet_normal = cutting_cell_j.normal(local_facet_index);
-
-	  // Store polygon
-	  cut_cutting_interface.push_back(polygon);
-
-	  // Temporarily store normal (match simplices in polygon)
-	  cut_cutting_normals.push_back(std::vector<Point>(polygon.size(), facet_normal));
-
-	  // Store quadrature rule and normal
-	  for (const Simplex& simplex: polygon)
-	    if (simplex.size() == tdim) // this is really simplex.size() - 1 == tdim - 1
-	    {
 #ifdef Augustdebug
-	      std::cout << "simplex tdim " << simplex.size() << std::endl;
-#endif
-	      const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex, gdim, quadrature_order, 1.);
-	      _add_normal(cut_cutting_interface_n, facet_normal, num_qr_pts, gdim);
+	    {
+	      std::cout << "intersection of:\n";
+	      std::cout << tools::drawtriangle(cut_cell,"'b'")<<tools::drawtriangle(boundary_cell,"'r'")<<tools::zoom()<<'\n';
+	      std::cout << "% intersection (size="<<polygon.size()<<")\n";
+	      if (polygon.size())
+	      {
+		for (const auto simplex: polygon)
+		{
+		  std::cout << __LINE__ << " sub simplex size "<<simplex.size() << '\n';
+		  std::cout << tools::drawtriangle(simplex,"'k'");
+		}
+		std::cout << std::endl;
+		std::cout << "areas=[";
+		for (const auto simplex: polygon)
+		  std::cout << tools::area(simplex)<<' ';
+		std::cout << "];"<<std::endl;
+	      }
 	    }
-	} // end this cut cutting pair initialization
+	    //PPause;
+#endif
+	    // Get the boundary facet as a facet in the full mesh
+	    const Facet boundary_facet(*_meshes[cutting_part_j], boundary_cell_index.second);
+
+	    // Get the cutting cell normal
+	    const std::size_t local_facet_index = cutting_cell_j.index(boundary_facet);
+	    const Point facet_normal = cutting_cell_j.normal(local_facet_index);
+
+	    // Store polygon
+	    cut_cutting_interface.push_back(polygon);
+
+	    // Temporarily store normal (match simplices in polygon)
+	    cut_cutting_normals.push_back(std::vector<Point>(polygon.size(), facet_normal));
+
+	    // Store quadrature rule and normal
+	    for (const Simplex& simplex: polygon)
+	      if (simplex.size() == tdim) // this is really simplex.size() - 1 == tdim - 1
+	      {
+#ifdef Augustdebug
+		std::cout << "simplex tdim " << simplex.size() << std::endl;
+#endif
+		const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex, gdim, quadrature_order, 1.);
+		_add_normal(cut_cutting_interface_n, facet_normal, num_qr_pts, gdim);
+	      }
+	  } // end this cut cutting pair initialization
+	}
 
 #ifdef Augustdebug
 	// Remember that cut_cutting_interface_n is a flat array>, i.e. gdim times the number of actual normals
