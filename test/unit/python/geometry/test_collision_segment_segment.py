@@ -28,7 +28,7 @@ from dolfin_utils.test import skip_in_parallel
 import numpy as np
 
 @skip_in_parallel
-def create_segment_mesh(a, b):
+def create_mesh(a, b):
     editor = MeshEditor()
     mesh = Mesh()
     editor.open(mesh,1,2)
@@ -45,19 +45,35 @@ def eps():
     return np.finfo(np.float32).eps
 
 @skip_in_parallel
-def test_segments_in_L_version_1():
-    mesh0 = create_segment_mesh(Point(0., 0.), Point(1., 0.))
-    mesh1 = create_segment_mesh(Point(0., 0.), Point(0., 1.))
+def test_L_version_1():
+    mesh0 = create_mesh(Point(0., 0.), Point(1., 0.))
+    mesh1 = create_mesh(Point(0., 0.), Point(0., 1.))
     cell0 = Cell(mesh0, 0)
     cell1 = Cell(mesh1, 0)
     assert cell0.collides(cell1) == True
 
 @skip_in_parallel
-def test_segments_in_L_version_2():
-    # mesh0 = create_segment_mesh(Point(np.finfo(np.float32).eps, 0.), Point(1., 0.))
-    # mesh0 = create_segment_mesh(Point(eps(), 0.), Point(1., 0.))
-    mesh0 = create_segment_mesh(Point(2.23e-15, 0.), Point(1., 0.))
-    mesh1 = create_segment_mesh(Point(0., 0.), Point(0., 1.))
+def test_L_version_2():
+    # mesh0 = create_mesh(Point(np.finfo(np.float32).eps, 0.), Point(1., 0.))
+    # mesh0 = create_mesh(Point(eps(), 0.), Point(1., 0.))
+    mesh0 = create_mesh(Point(2.23e-15, 0.), Point(1., 0.))
+    mesh1 = create_mesh(Point(0., 0.), Point(0., 1.))
+    cell0 = Cell(mesh0, 0)
+    cell1 = Cell(mesh1, 0)
+    assert cell0.collides(cell1) == False
+
+@skip_in_parallel
+def test_aligned_version_1():
+    mesh0 = create_mesh(Point(0,0), Point(1,0))
+    mesh1 = create_mesh(Point(1,0), Point(2,0))
+    cell0 = Cell(mesh0, 0)
+    cell1 = Cell(mesh1, 0)
+    assert cell0.collides(cell1) == True
+
+@skip_in_parallel
+def test_aligned_version_2():
+    mesh0 = create_mesh(Point(0,0), Point(1,0))
+    mesh1 = create_mesh(Point(2,0), Point(3,0))
     cell0 = Cell(mesh0, 0)
     cell1 = Cell(mesh1, 0)
     assert cell0.collides(cell1) == False
