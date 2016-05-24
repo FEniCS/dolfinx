@@ -200,6 +200,14 @@ namespace tools
 
   //void Pause() { char apa; std::cin >> apa; }
 
+  inline std::string drawsimplex(const std::vector<dolfin::Point> &simplex,
+				 const std::string& color = "'b'",
+				 bool matlab=true)
+  {
+    return drawtriangle(simplex,color,matlab);
+  }
+
+
   template<class U=std::size_t, class T=double>
   inline void dolfin_write_medit_triangles(const std::string &filename,
 					   const dolfin::Mesh& mesh,
