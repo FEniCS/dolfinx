@@ -86,3 +86,15 @@ def test_aligned_version_2():
     cell0 = Cell(mesh0, 0)
     cell1 = Cell(mesh1, 0)
     assert cell0.collides(cell1) == False
+
+@skip_in_parallel
+def test_parallel_1():
+    p0 = Point(0.05, 0.15)
+    p1 = Point(0.85, 0.95)
+    q0 = Point(0.2875, 0.3875)
+    q1 = Point(0.6125, 0.7125)
+    meshp = create_mesh(p0, p1)
+    meshq = create_mesh(q0, q1)
+    cellp = Cell(meshp, 0)
+    cellq = Cell(meshq, 0)
+    assert cellp.collides(cellq) == True
