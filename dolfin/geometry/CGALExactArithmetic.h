@@ -37,7 +37,7 @@
 #ifndef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
 
 // Comparison macro just bypasses CGAL and test when not enabled
-#define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL, __FUNCTION__) RESULT_DOLFIN
+#define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) RESULT_DOLFIN
 
 #else
 
