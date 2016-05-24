@@ -25,6 +25,8 @@
 #include "CollisionDetection.h"
 #include "IntersectionTriangulation.h"
 
+#include "dolfin_simplex_tools.h"
+
 namespace
 {
   struct point_strictly_less
@@ -90,6 +92,13 @@ IntersectionTriangulation::triangulate(const std::vector<Point>& points_0,
   const std::size_t d1 = points_1.size() - 1;
 
   // Pick correct specialized implementation
+  if (d0 == 1 && d1 == 1)
+    return std::vector<std::vector<Point>>(1, triangulate_segment_segment(points_0[0],
+									  points_0[1],
+									  points_1[0],
+									  points_1[1],
+									  gdim));
+
   if (d0 == 2 && d1 == 1)
     return std::vector<std::vector<Point>>(1, triangulate_triangle_segment(points_0[0],
 									   points_0[1],
@@ -552,11 +561,23 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
     // Compute intersection
     const double denom = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
     // std::cout << "Denom: " << denom << std::endl;
-    const double numerator = orient2d(q0.coordinates(),
-                                      q1.coordinates(),
-                                      p0.coordinates());
-
+    const double numerator = q0_q1_p0;
     const double alpha = numerator/denom;
+
+    std::cout.precision(16);
+    std::cout << q0<<' '<<q1<<' '<<p0<<' '<<p1<<std::endl;
+
+    std::cout.precision(16);
+    std::cout<< numerator << ' ' << denom << ' ' << alpha << std::endl;
+
+    if (std::abs(numerator) < DOLFIN_EPS and std::abs(denom) < DOLFIN_EPS)
+    {
+      // parallel lines
+    }
+
+
+    std::cout << tools::drawsimplex({{q0,q1}})<<tools::drawsimplex({{p0,p1}})<<std::endl;
+
     // std::cout << "Alpha: " << alpha << std::endl;
     // const dolfin::Point ii = p0 + alpha*(p1-p0);
 
@@ -570,8 +591,8 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
 
       const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
       const Point& ii_intermediate = p0 + alpha*(p1-p0);
-      /* const */ Point& source = use_p ? (alpha < .5 ? p0 : p1) : (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);;
-      /* const */ Point& target = use_p ? (alpha < .5 ? p1 : p0) : (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);;
+      /* const */ Point& source = use_p ? (alpha < .5 ? p0 : p1) : (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
+      /* const */ Point& target = use_p ? (alpha < .5 ? p1 : p0) : (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
 
       /* const */ Point& ref_source = use_p ? q0 : p0;
       /* const */ Point& ref_target = use_p ? q1 : p1;
@@ -598,9 +619,10 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
 
       while (std::abs(b-a) > DOLFIN_EPS_LARGE)
       {
-        // std::cout << "Iteration: a = " << a << ", b = " << b << " (" << (b-a) << ", " << iterations << ")" << std::endl;
-        // std::cout << "a   orientation: " << orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates()) << std::endl;
-        // std::cout << "b   orientation: " << orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates()) << std::endl;
+        std::cout << "Iteration: a = " << a << ", b = " << b << " (" << (b-a) << ", " << iterations << ")" << std::endl;
+        std::cout << "a   orientation: " << orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates()) << std::endl;
+        std::cout << "b   orientation: " << orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates()) << std::endl;
+
 
         dolfin_assert(std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates())) !=
                       std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates())));
