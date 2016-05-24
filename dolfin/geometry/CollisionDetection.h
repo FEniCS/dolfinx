@@ -20,6 +20,7 @@
 
 #include <vector>
 #include <dolfin/log/log.h>
+#include "Point.h"
 #include "CGALExactArithmetic.h"
 
 #ifndef __COLLISION_DETECTION_H
