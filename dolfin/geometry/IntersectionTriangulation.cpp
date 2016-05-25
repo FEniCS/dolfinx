@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-22
+// Last changed: 2016-05-26
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -379,6 +379,10 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
       std::cout << "Segment segment triangulation: Insert interior point" << std::endl;
       if (std::signbit(q0_q1_p0) != std::signbit(q0_q1_p1) && std::signbit(p0_p1_q0) != std::signbit(p0_p1_q1))
       {
+	//std::cout << "Why don't we call triangulate_segment_interior_segment_interior?"<<std::endl;
+	//dolfin_assert(false);
+
+
 	// Segments intersect in both's interior.
 	// Compute intersection
 	const double denom = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
@@ -568,15 +572,57 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
     std::cout << q0<<' '<<q1<<' '<<p0<<' '<<p1<<std::endl;
 
     std::cout.precision(16);
-    std::cout<< numerator << ' ' << denom << ' ' << alpha << std::endl;
+    std::cout<< "numerator /denom = "<< numerator << '/' << denom << '=' << alpha << std::endl;
+    std::cout <<  q0_q1_p0<<' '<<q0_q1_p1<<' '<<p0_p1_q0<<' '<<p0_p1_q1<<std::endl;
+
+
+    // August special routines
+    // It helps to store points in vector (the order is important)
+    std::vector<Point> points(4);
+    points[0] = p0;
+    points[1] = p1;
+    points[2] = q0;
+    points[3] = q1;
 
     if (std::abs(numerator) < DOLFIN_EPS and std::abs(denom) < DOLFIN_EPS)
     {
+      std::cout << "detected parallel lines " << std::endl;
       // parallel lines
+      dolfin_assert((q0-q1).squared_norm() > DOLFIN_EPS and
+		    (p0-p1).squared_norm() > DOLFIN_EPS);
+
+      point_strictly_less psl;
+      std::sort(points.begin(), points.end(), psl);
+
+      return std::vector<Point>{{ points[1], points[2] }};
+    }
+
+    // Check collides_segment_point: only one point should collide
+    std::vector<std::pair<double, std::size_t>> dets(4);
+    // Note the order! It should be the same as the points
+    dets[0].first = std::abs(q0_q1_p0);
+    dets[1].first = std::abs(q0_q1_p1);
+    dets[2].first = std::abs(p0_p1_q0);
+    dets[3].first = std::abs(p0_p1_q1);
+    for (std::size_t i = 0; i < 4; ++i)
+      dets[i].second = i;
+    std::sort(dets.begin(), dets.end());
+
+    if (dets[0].first < DOLFIN_EPS and
+	dets[1].first > DOLFIN_EPS)
+    {
+      std::cout << "detected one single point on line collision\n";
+      std::cout << "after sort:\n";
+      for (const auto d: dets)
+	std::cout << d.first<<' '<<d.second<<std::endl;
+
+      // only one collides
+      std::cout << "collides "<< points[dets[0].second] << std::endl;
+      return std::vector<Point>{{ points[dets[0].second] }};
     }
 
 
-    std::cout << tools::drawsimplex({{q0,q1}})<<tools::drawsimplex({{p0,p1}})<<std::endl;
+    std::cout << tools::drawtriangle({{q0,q1}})<<tools::drawtriangle({{p0,p1}})<<std::endl;
 
     // std::cout << "Alpha: " << alpha << std::endl;
     // const dolfin::Point ii = p0 + alpha*(p1-p0);
@@ -750,6 +796,10 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
     else if (points.size() == 2)
     {
       // If we get two intersection points, this is the intersection
+      std::cout << __FUNCTION__<<std::endl
+		<< tools::plot(points[0])<<tools::plot(points[1])<<std::endl
+		<< tools::area({{points[0],points[1]}})<<std::endl;
+
       return points;
     }
     else

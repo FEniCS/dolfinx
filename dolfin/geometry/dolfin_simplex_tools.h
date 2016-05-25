@@ -20,6 +20,31 @@ namespace tools
 {
 #define PPause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
 
+  // display quadrature_rule
+  // recall typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
+  inline void cout_qr(const std::pair<std::vector<double>, std::vector<double> >& qr,
+		      const std::string marker="'rx'")
+  {
+    for (std::size_t i = 0; i < qr.second.size(); ++i)
+    {
+      std::cout << "plot("<<qr.first[2*i]<<','<<qr.first[2*i+1]<<','<<marker<<"); % "<<qr.second[i]<<' '<<i<<std::endl;
+    }
+  }
+
+  inline void cout_normals(const std::vector<double>& n)
+  {
+    for (std::size_t i = 0; i < n.size()/2; ++i)
+      std::cout << i << ":  "<<n[2*i]<<' '<<n[2*i+1]<<std::endl;
+  }
+
+  inline double area(const std::pair<std::vector<double>, std::vector<double> >& qr)
+  {
+    double a = 0;
+    for (std::size_t i = 0; i < qr.second.size(); ++i)
+      a += qr.second[i];
+    return a;
+  }
+
   // this sorts such that a >= b >= c
   template<class T>
     inline void sort3(T &a, T &b, T &c)
@@ -120,6 +145,20 @@ namespace tools
       else
 	ss << "plt=plt,color="<< color << ",linewidth=5.0);";
     }
+    else if (simplex.size() == 1)
+    {
+      ss << "plot("<<simplex[0][0]<<','<<simplex[0][1]<<',';
+      if (matlab)
+	ss << "'k.','markersize',15);";
+      else {
+	PPause;
+	dolfin_assert(false); // /not implemented
+      }
+    }
+    else {
+      PPause;
+      dolfin_assert(false);
+    }
     return ss.str();
   }
 
@@ -164,7 +203,7 @@ namespace tools
   }
 
   inline std::string matlabplot(const dolfin::Point& p,
-				const std::string m="'.'")
+				const std::string m="'k.','markersize',14")
   {
     std::stringstream ss; ss.precision(15);
     ss<<"plot("<<p[0]<<','<<p[1]<<','<<m<<");";
@@ -172,7 +211,7 @@ namespace tools
   }
 
   inline std::string plot(const dolfin::Point& p,
-			  const std::string m="'.'")
+			  const std::string m="'k.','markersize',14")
   {
     return matlabplot(p,m);
   }
