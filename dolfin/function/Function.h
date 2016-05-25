@@ -362,10 +362,6 @@ namespace dolfin
     // Initialize vector
     void init_vector();
 
-    // Get coefficients from the vector(s)
-    void compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
-                               std::vector<la_index>& ghost_indices) const;
-
     // The function space
     std::shared_ptr<const FunctionSpace> _function_space;
 

@@ -45,7 +45,6 @@ void DynamicMeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
                              std::size_t num_global_cells)
 {
   // Clear old data
-  mesh.clear();
   clear();
 
   // Save data

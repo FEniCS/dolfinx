@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2015 Johan Hake, Jan Blechta
+// Copyright (C) 2013, 2015, 2016 Johan Hake, Jan Blechta
 //
 // This file is part of DOLFIN.
 //
@@ -20,6 +20,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/la/GenericVector.h>
 
 #include "fem_utils.h"
 
@@ -120,3 +121,196 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
   return return_map;
 }
 //-----------------------------------------------------------------------------
+void _check_coordinates(const MeshGeometry& geometry, const Function& position)
+{
+  dolfin_assert(position.function_space());
+  dolfin_assert(position.function_space()->mesh());
+  dolfin_assert(position.function_space()->dofmap());
+  dolfin_assert(position.function_space()->element());
+  dolfin_assert(position.function_space()->element()->ufc_element());
+
+  if (position.function_space()->element()->ufc_element()->family()
+          != std::string("Lagrange"))
+
+  {
+    dolfin_error("fem_utils.cpp",
+                 "set/get mesh geometry coordinates from/to function",
+                 "expecting 'Lagrange' finite element family rather than '%s'",
+                 position.function_space()->element()->ufc_element()->family());
+  }
+
+  if (position.value_rank() != 1)
+  {
+    dolfin_error("fem_utils.cpp",
+                 "set/get mesh geometry coordinates from/to function",
+                 "function has incorrect value rank %d, need 1",
+                 position.value_rank());
+  }
+
+  if (position.value_dimension(0) != geometry.dim())
+  {
+    dolfin_error("fem_utils.cpp",
+                 "set/get mesh geometry coordinates from/to function",
+                 "function value dimension %d and geometry dimension %d "
+                 "do not match",
+                 position.value_dimension(0), geometry.dim());
+  }
+
+  if (position.function_space()->element()->ufc_element()->degree()
+          != geometry.degree())
+  {
+    dolfin_error("fem_utils.cpp",
+                 "set/get mesh geometry coordinates from/to function",
+                 "function degree %d and geometry degree %d do not match",
+                 position.function_space()->element()->ufc_element()->degree(),
+                 geometry.degree());
+  }
+}
+//-----------------------------------------------------------------------------
+// This helper function sets geometry from position (if setting) or stores
+// geometry into position (otherwise)
+void _get_set_coordinates(MeshGeometry& geometry, Function& position,
+  const bool setting)
+{
+  auto& x = geometry.x();
+  auto& v = *position.vector();
+  const auto& dofmap = *position.function_space()->dofmap();
+  const auto& mesh = *position.function_space()->mesh();
+  const auto tdim = mesh.topology().dim();
+  const auto gdim = mesh.geometry().dim();
+
+  std::vector<std::size_t> num_local_entities(tdim+1);
+  std::vector<std::size_t> coords_per_entity(tdim+1);
+  std::vector<std::vector<std::vector<std::size_t>>> local_to_local(tdim+1);
+  std::vector<std::vector<std::size_t>> offsets(tdim+1);
+
+  for (std::size_t dim = 0; dim <= tdim; ++dim)
+  {
+    // Get number local entities
+    num_local_entities[dim] = mesh.type().num_entities(dim);
+
+    // Get local-to-local mapping of dofs
+    local_to_local[dim].resize(num_local_entities[dim]);
+    for (std::size_t local_ind = 0; local_ind != num_local_entities[dim]; ++local_ind)
+      dofmap.tabulate_entity_dofs(local_to_local[dim][local_ind], dim, local_ind);
+
+    // Get entity offsets; could be retrieved directly from geometry
+    coords_per_entity[dim] = geometry.num_entity_coordinates(dim);
+    for (std::size_t coord_ind = 0; coord_ind != coords_per_entity[dim]; ++coord_ind)
+    {
+      const auto offset = geometry.get_entity_index(dim, coord_ind, 0);
+      offsets[dim].push_back(offset);
+    }
+  }
+
+  // Initialize needed connectivities
+  for (std::size_t dim = 0; dim <= tdim; ++dim)
+  {
+    if (coords_per_entity[dim] > 0)
+      mesh.init(tdim, dim);
+  }
+
+  ArrayView<const la_index> cell_dofs;
+  std::vector<double> values;
+  const unsigned int* global_entities;
+  std::size_t xi, vi;
+
+  // Get/set cell-by-cell
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    // Get/prepare values and dofs on cell
+    cell_dofs = dofmap.cell_dofs(c->index());
+    values.resize(cell_dofs.size());
+    if (setting)
+      v.get_local(values.data(), cell_dofs.size(), cell_dofs.data());
+
+    // Iterate over all entities on cell
+    for (std::size_t dim = 0; dim <= tdim; ++dim)
+    {
+      // Get local-to-global entity mapping
+      global_entities = c->entities(dim);
+
+      for (std::size_t local_entity = 0;
+           local_entity != num_local_entities[dim]; ++local_entity)
+      {
+        for (std::size_t local_dof = 0; local_dof != coords_per_entity[dim];
+              ++local_dof)
+        {
+          for (std::size_t component = 0; component != gdim; ++component)
+          {
+            // Compute indices
+            xi = gdim*(offsets[dim][local_dof] + global_entities[local_entity])
+               + component;
+            vi = local_to_local[dim][local_entity][gdim*local_dof + component];
+
+            // Set one or other
+            if (setting)
+              x[xi] = values[vi];
+            else
+              values[vi] = x[xi];
+          }
+        }
+      }
+    }
+
+    // Store cell contribution to dof vector (if getting)
+    if (!setting)
+      v.set_local(values.data(), cell_dofs.size(), cell_dofs.data());
+  }
+
+  if (!setting)
+    v.apply("insert");
+}
+//-----------------------------------------------------------------------------
+void dolfin::set_coordinates(MeshGeometry& geometry, const Function& position)
+{
+  _check_coordinates(geometry, position);
+  _get_set_coordinates(geometry, const_cast<Function&>(position), true);
+}
+//-----------------------------------------------------------------------------
+void dolfin::get_coordinates(Function& position, const MeshGeometry& geometry)
+{
+  _check_coordinates(geometry, position);
+  _get_set_coordinates(const_cast<MeshGeometry&>(geometry), position, false);
+}
+//-----------------------------------------------------------------------------
+Mesh dolfin::create_mesh(Function& coordinates)
+{
+  dolfin_assert(coordinates.function_space());
+  dolfin_assert(coordinates.function_space()->element());
+  dolfin_assert(coordinates.function_space()->element()->ufc_element());
+
+  // Fetch old mesh and create new mesh
+  const Mesh& mesh0 = *(coordinates.function_space()->mesh());
+  Mesh mesh1(mesh0.mpi_comm());
+
+  // Assign all data except geometry
+  mesh1._topology = mesh0._topology;
+  mesh1._domains = mesh0._domains;
+  mesh1._data = mesh0._data;
+  if (mesh0._cell_type)
+    mesh1._cell_type.reset(CellType::create(mesh0._cell_type->cell_type()));
+  else
+    mesh1._cell_type.reset();
+  mesh1._ordered = mesh0._ordered;
+  mesh1._cell_orientations = mesh0._cell_orientations;
+
+  // Rename
+  mesh1.rename(mesh0.name(), mesh0.label());
+
+  // Call assignment operator for base class
+  static_cast<Hierarchical<Mesh>>(mesh1) = mesh0;
+
+  // Prepare a new geometry
+  mesh1._geometry.init(mesh0._geometry.dim(),
+    coordinates.function_space()->element()->ufc_element()->degree());
+  std::vector<std::size_t> num_entities(mesh0._topology.dim() + 1);
+  for (std::size_t dim = 0; dim <= mesh0._topology.dim(); ++dim)
+    num_entities[dim] = mesh0._topology.size(dim);
+  mesh1._geometry.init_entities(num_entities);
+
+  // Assign coordinates
+  set_coordinates(mesh1._geometry, coordinates);
+
+  return mesh1;
+}

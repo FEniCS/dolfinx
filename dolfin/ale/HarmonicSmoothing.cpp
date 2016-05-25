@@ -44,6 +44,12 @@ HarmonicSmoothing::move(std::shared_ptr<Mesh> mesh,
                         const BoundaryMesh& new_boundary)
 {
   dolfin_assert(mesh);
+  if (mesh->geometry().degree() != 1 || new_boundary.geometry().degree() != 1)
+  {
+    dolfin_error("HarmonicSmoothing.cpp",
+                 "move mesh using harmonic smoothing",
+                 "This function does not support higher-order mesh geometry");
+  }
 
   // Now this works regardless of reorder_dofs_serial value
   const bool reorder_dofs_serial = parameters["reorder_dofs_serial"];

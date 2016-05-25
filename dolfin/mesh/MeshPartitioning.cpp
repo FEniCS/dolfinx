@@ -1074,7 +1074,6 @@ void MeshPartitioning::build_local_mesh(Mesh& mesh,
   Timer timer("Build local part of distributed mesh (from local mesh data)");
 
   // Open mesh for editing
-  mesh.clear();
   MeshEditor editor;
   editor.open(mesh, cell_type, tdim, gdim);
 
