@@ -173,11 +173,11 @@ int main(int argc, char* argv[])
   multimesh->add(mesh_3);
   multimesh->build(1); // qr generated here
 
-  double volume = compute_volume(*multimesh, 0);
-  std::cout << "volume " << volume << ' ' << exact_volume <<' '<< std::abs(volume-exact_volume) << std::endl;
+  // double volume = compute_volume(*multimesh, 0);
+  // std::cout << "volume " << volume << ' ' << exact_volume <<" error="<< std::abs(volume-exact_volume) << std::endl;
 
   double area = compute_interface_area(*multimesh, 0);
-  std::cout << "area " << area << ' ' << exact_area << ' '<<std::abs(area-exact_area) << std::endl;
+  std::cout << "area " << area << ' ' << exact_area << " error="<<std::abs(area-exact_area) << std::endl;
 
 
 
