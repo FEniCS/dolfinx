@@ -220,7 +220,7 @@ void MultiMesh::build(std::size_t quadrature_order)
   _build_quadrature_rules_cut_cells(quadrature_order);
 
   // FIXME:
-  _build_quadrature_rules_interface(quadrature_order);
+  //_build_quadrature_rules_interface(quadrature_order);
 
   end();
 }
@@ -620,6 +620,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	      std::cout << tools::drawtriangle(simplex,"'k'");
 	    }
 	    std::cout <<tools::zoom()<< std::endl;
+	    dolfin_assert(tools::tdimcheck(polyhedron));
 	    std::cout << "areas=[";
 	    for (const auto simplex: polyhedron)
 	      std::cout << tools::area(simplex)<<' ';
@@ -738,6 +739,10 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 
 		    if (ii.size())
 		    {
+#ifdef Augustdebug
+		      dolfin_assert(tools::tdimcheck(ii));
+#endif
+
 		      // To save all intersections as a single
 		      // polyhedron, we don't call this a polyhedron
 		      // yet, but rather a std::vector<Simplex> since we
