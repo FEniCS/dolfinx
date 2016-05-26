@@ -1037,7 +1037,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
   //   proceed with A ∩ B as in _build_quadrature_rules_overlap
 
 #ifdef Augustdebug
-  std::cout << __FUNCTION__ << std::endl;
+  std::cout <<"\n\n"<< __FUNCTION__ << " with quadrature_order="<<quadrature_order<<std::endl;
 #endif
 
 #ifdef Augustnormaldebug
@@ -1256,8 +1256,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	      std::cout << "simplex tdim " << simplex.size() << std::endl;
 #endif
 	      const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex, gdim, quadrature_order, 1.);
-	      for (std::size_t j = 0; j < num_qr_pts; ++j)
-		_add_normal(cut_cutting_interface_n, facet_normal, num_qr_pts, gdim);
+	      _add_normal(cut_cutting_interface_n, facet_normal, num_qr_pts, gdim);
 	    }
 	} // end this cut cutting pair initialization
 
@@ -1358,11 +1357,12 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 			std::cout << "simplex tdim " << simplex.size() << std::endl;
 #endif
 			const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex, gdim, quadrature_order, sign);
-			for (std::size_t j = 0; j < num_qr_pts; ++j)
-			  _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
+			_add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
 		      }
 		  }
 		}
+
+	      dolfin_assert(cut_cutting_interface_qr.first.size() == cut_cutting_interface_n.size());
 
 	      if (add_key and !key_added)
 	      {
@@ -1482,25 +1482,23 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 			  const Polyhedron ii = IntersectionTriangulation::triangulate(simplex, interface_simplex, gdim);
 			  if (ii.size())
 			  {
-			    // const std::vector<std::size_t> num_qr_pts =_add_quadrature_rule(cut_cutting_interface_qr, ii, gdim, quadrature_order, sign);
-			    // for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
-			    //   _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts[j], gdim);
 			    for (const Simplex sii: ii)
 			      if (sii.size() == tdim)
 			      {
 				std::cout << "simplex tdim " << sii.size() << std::endl;
 				const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, sii, gdim, quadrature_order, sign);
-				for (std::size_t j = 0; j < num_qr_pts; ++j)
-				  _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
+				_add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
 			      }
 #ifdef Augustdebug
-			  std::cout<<" qr creation collision was:\n"
-				   <<tools::drawtriangle(simplex)<<tools::drawtriangle(interface_simplex)<<std::endl;
-			  //PPause;
+			    std::cout<<" qr creation collision was:\n"
+				     <<tools::drawtriangle(simplex)<<tools::drawtriangle(interface_simplex)<<std::endl;
+			    //PPause;
 #endif
 			  }
 			}
 		      }
+		dolfin_assert(cut_cutting_interface_qr.first.size() == cut_cutting_interface_n.size());
+
 		continue_with_next_stage = cut_cutting_interface_qr.second.size() > old_qr_sz;
 #ifdef Augustdebug
 		std::cout << "created " << cut_cutting_interface_qr.second.size() - old_qr_sz << " quadrature points" << std::endl;
@@ -1632,7 +1630,7 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
   for (std::size_t i = 0; i < qr.second.size(); ++i)
   {
     std::cout << "plot(" << qr.first[2*i]<<","<<qr.first[2*i+1]<<",'ro') % "<<qr.second[i]<<' ';
-    if (i > (qr.second.size() - num_points))
+    if (i >= (qr.second.size() - num_points))
       std::cout << "(new)";
     std::cout << std::endl;
     //std::cout  << dqr.first[2*i]<<' '<<dqr.first[2*i+1]<< std::endl;
@@ -1650,6 +1648,9 @@ void MultiMesh::_add_normal(std::vector<double>& normals,
   for (std::size_t i = 0; i < npts; ++i)
     for (std::size_t j = 0; j < gdim; ++j)
       normals.push_back(normal[j]);
+#ifdef Augustdebug
+  tools::cout_normals(normals);
+#endif
 }
 
 //-----------------------------------------------------------------------------
