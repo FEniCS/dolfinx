@@ -2,7 +2,7 @@
 #include <fstream>
 #include <dolfin.h>
 
-//#include </home/august/dev/fenics-dev/dolfin-multimesh/dolfin/geometry/dolfin_simplex_tools.h>
+#include </home/august/dev/fenics-dev/dolfin-multimesh/dolfin/geometry/dolfin_simplex_tools.h>
 
 using namespace dolfin;
 
@@ -172,6 +172,7 @@ int main(int argc, char* argv[])
   multimesh->add(mesh_2);
   multimesh->add(mesh_3);
   multimesh->build(1); // qr generated here
+  tools::dolfin_write_medit_triangles("multimesh",*multimesh);
 
   // double volume = compute_volume(*multimesh, 0);
   // std::cout << "volume " << volume << ' ' << exact_volume <<" error="<< std::abs(volume-exact_volume) << std::endl;

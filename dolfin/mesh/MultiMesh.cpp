@@ -1411,7 +1411,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	      if (continue_with_next_stage)
 	      {
 #ifdef Augustdebug
-		std::cout << "stage " << stage << std::endl;
+		std::cout << "\n------ stage " << stage << std::endl;
 #endif
 		// Structure for storing new intersections
 		std::vector<IncExcKey> new_intersections_keys;
@@ -1532,7 +1532,10 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		      }
 		continue_with_next_stage = cut_cutting_interface_qr.second.size() > old_qr_sz;
 #ifdef Augustdebug
-		std::cout << "created " << cut_cutting_interface_qr.second.size() - old_qr_sz << " quadrature points" << std::endl;
+		std::cout << "created " << cut_cutting_interface_qr.second.size() - old_qr_sz << " quadrature points in stage = " << stage << std::endl;
+		std::cout << "all points are now:\n";
+		tools::cout_qr(cut_cutting_interface_qr);
+		std::cout << "total area up to this stage = " << tools::area(cut_cutting_interface_qr)<<std::endl;
 #endif
 
 		// Update
