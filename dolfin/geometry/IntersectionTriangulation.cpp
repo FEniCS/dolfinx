@@ -622,7 +622,7 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
     }
 
 
-    std::cout << tools::drawtriangle({{q0,q1}})<<tools::drawtriangle({{p0,p1}})<<std::endl;
+    //std::cout << tools::drawtriangle({{q0,q1}})<<tools::drawtriangle({{p0,p1}})<<std::endl;
 
     // std::cout << "Alpha: " << alpha << std::endl;
     // const dolfin::Point ii = p0 + alpha*(p1-p0);
