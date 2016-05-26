@@ -333,14 +333,6 @@ namespace dolfin
     ///         An informal representation of the function space.
     std::string str(bool verbose=false) const;
 
-    double& at(std::size_t i)
-    { dolfin_assert(i < 3); return _x[i]; }
-
-    double at(std::size_t i) const
-    { dolfin_assert(i < 3); return _x[i]; }
-
-
-
   private:
 
     std::array<double, 3> _x;

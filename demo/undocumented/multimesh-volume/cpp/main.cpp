@@ -156,14 +156,16 @@ int main(int argc, char* argv[])
   mesh_2->translate(Point(-0.025, 0.025));
   auto mesh_3 = std::make_shared<RectangleMesh>(Point(0.3, 0.3), Point(0.7, 0.7), N, N);
   mesh_3->translate(Point(-0.0125, 0.0125));
+  auto mesh_4 = std::make_shared<RectangleMesh>(Point(0.4, 0.4), Point(0.6, 0.6), N, N);
+  mesh_4->translate(Point(-0.0125/2, 0.0125/2));
+
 
   // tools::dolfin_write_medit_triangles("mesh0",*mesh_0);
   // tools::dolfin_write_medit_triangles("mesh1",*mesh_1);
   // tools::dolfin_write_medit_triangles("mesh2",*mesh_2);
 
   const double exact_volume = 1.;
-  const double exact_area = 4*0.8 + 4*0.6 + 4*0.4;
-
+  const double exact_area = 4*0.8 + 4*0.6 + 4*0.4 + 4*0.2;
 
   // Build multimesh
   auto multimesh = std::make_shared<MultiMesh>();
@@ -171,6 +173,7 @@ int main(int argc, char* argv[])
   multimesh->add(mesh_1);
   multimesh->add(mesh_2);
   multimesh->add(mesh_3);
+  multimesh->add(mesh_4);
   multimesh->build(1); // qr generated here
   tools::dolfin_write_medit_triangles("multimesh",*multimesh);
 
