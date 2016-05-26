@@ -488,6 +488,16 @@ namespace dolfin
     // Plot multimesh
     void _plot() const;
 
+    // Inclusion-exclusion
+    void _inclusion_exclusion
+      (const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
+       std::size_t tdim,
+       std::size_t gdim,
+       std::size_t quadrature_order,
+       double factor,
+       std::vector<quadrature_rule>& overlap_qr) const;
+
+
   };
 
 

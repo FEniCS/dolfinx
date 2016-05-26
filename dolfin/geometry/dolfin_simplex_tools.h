@@ -14,11 +14,43 @@
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/MultiMesh.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/log/log.h>
 
 
 namespace tools
 {
 #define PPause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
+
+  /* typedef std::vector<Point> Simplex; */
+  /* typedef std::vector<Simplex> Polyhedron; */
+  inline bool tdimcheck(const std::vector<std::vector<dolfin::Point>>& polygon)
+  {
+    if (polygon.size() == 0) return false;
+
+    const std::size_t tdimtmp = polygon[0].size();
+    for (std::size_t i = 1; i < polygon.size(); ++i)
+      if (polygon.at(i).size() != tdimtmp)
+	return false;
+    return true;
+  }
+
+  inline bool tdimcheck(const std::vector<std::vector<std::vector<dolfin::Point>>>& pvec)
+  {
+    if (pvec.size() == 0) return false;
+    for (std::size_t i = 0; i < pvec.size(); ++i)
+      if (pvec[i].size() == 0)
+	return false;
+
+    const std::size_t tdimtmp = pvec[0][0].size();
+    for (std::size_t i = 1; i < pvec.size(); ++i)
+      for (std::size_t j = 0; j < pvec[i].size(); ++j)
+	if (pvec.at(i).at(j).size() != tdimtmp)
+	  return false;
+    return true;
+  }
+
+
+
 
   // display quadrature_rule
   // recall typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
