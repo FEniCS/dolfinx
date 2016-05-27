@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-26
+// Last changed: 2016-05-28
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -60,20 +60,21 @@ std::vector<std::vector<Point>>
 IntersectionTriangulation::triangulate(const MeshEntity& entity_0,
                                        const MeshEntity& entity_1)
 {
+  // std::cout << __FUNCTION__ << " mesh entities " <<std::endl;
+
   // Get data
   const MeshGeometry& g0 = entity_0.mesh().geometry();
   const MeshGeometry& g1 = entity_1.mesh().geometry();
   const unsigned int* v0 = entity_0.entities(0);
   const unsigned int* v1 = entity_1.entities(0);
 
-  // FIXME: push_back can be avoided here
   // Pack data as vectors of points
-  std::vector<Point> points_0;
-  std::vector<Point> points_1;
+  std::vector<Point> points_0(entity_0.dim() + 1);
+  std::vector<Point> points_1(entity_1.dim() + 1);
   for (std::size_t i = 0; i <= entity_0.dim(); i++)
-    points_0.push_back(g0.point(v0[i]));
+    points_0[i] = g0.point(v0[i]);
   for (std::size_t i = 0; i <= entity_1.dim(); i++)
-    points_1.push_back(g1.point(v1[i]));
+    points_1[i] = g1.point(v1[i]);
 
   // Only look at first entity to get geometric dimension
   std::size_t gdim = g0.dim();
@@ -375,6 +376,7 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
     if (triangulation.size() == 4)
     {
       // all four points added, i.e. the segments are the same!
+      std::cout << "four points found, i.e. same segments" << std::endl;
       return std::vector<Point>{{ p0, p1}};
     }
 
@@ -383,114 +385,120 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
       //std::cout << "Segment segment triangulation: Insert interior point" << std::endl;
       if (std::signbit(q0_q1_p0) != std::signbit(q0_q1_p1) && std::signbit(p0_p1_q0) != std::signbit(p0_p1_q1))
       {
-	//std::cout << "Why don't we call triangulate_segment_interior_segment_interior?"<<std::endl;
-	//dolfin_assert(false);
+	triangulation = triangulate_segment_interior_segment_interior_2d(p0, p1, q0, q1);
 
 
-	// Segments intersect in both's interior.
-	// Compute intersection
-	const double denom = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
-	// std::cout << "Denom: " << denom << std::endl;
-	// assert(std::abs(denom) > DOLFIN_EPS);
-	const double numerator = orient2d(q0.coordinates(),
-					  q1.coordinates(),
-					  p0.coordinates());
 
-	const double alpha = numerator/denom;
-	// std::cout << "Alpha: " << alpha << std::endl;
-
-	//const dolfin::Point ii = p0 + alpha*(p1-p0);
-
-	if (std::abs(denom) < DOLFIN_EPS_LARGE)
-	{
-	  // Segment are almost parallel, so result may vulnerable to roundoff
-	  // errors.
-	  // Let's do an iterative bisection instead
-
-	  dolfin_assert(std::signbit(orient2d(q0.coordinates(), q1.coordinates(), p0.coordinates())) != std::signbit(orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates())));
-
-	  // orient2d is more stable what alpha is close to 0
-	  dolfin::Point source = alpha < .5 ? p0 : p1;
-	  dolfin::Point target = alpha < .5 ? p1 : p0;
-
-	  // Shewchuk notation r = ab = p1-p0, s = cd = q1-q0
-	  /* const */ dolfin::Point r = target-source;
-	  // /* const */ dolfin::Point s = q1-q0;
+	// //std::cout << "Why don't we call triangulate_segment_interior_segment_interior?"<<std::endl;
+	// //dolfin_assert(false);
 
 
-	  int iterations = 0;
-	  const int max_iterations = 100;
-	  double a = 0;
-	  double b = 1;
+	// // Segments intersect in both's interior.
+	// // Compute intersection
+	// const double denom = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
+	// // std::cout << "Denom: " << denom << std::endl;
+	// // assert(std::abs(denom) > DOLFIN_EPS);
+	// const double numerator = orient2d(q0.coordinates(),
+	// 				  q1.coordinates(),
+	// 				  p0.coordinates());
 
-	  const double source_orientation = orient2d(q0.coordinates(), q1.coordinates(), source.coordinates());
+	// const double alpha = numerator/denom;
+	// // std::cout << "Alpha: " << alpha << std::endl;
 
-	  while (std::abs(b-a) > DOLFIN_EPS_LARGE && iterations < max_iterations)
-	  {
-	    // std::cout << "Iteration: a = " << a << ", b = " << b << " (" <<iterations << ")" << std::endl;
-	    dolfin_assert(std::signbit(orient2d(q0.coordinates(), q1.coordinates(), (source+a*r).coordinates())) != std::signbit(orient2d(q0.coordinates(), q1.coordinates(), (source+b*r).coordinates())));
-	    const double new_alpha = (a+b)/2;
-	    dolfin::Point new_point = source+new_alpha*r;
-	    // std::cout << "a   orientation: " << orient2d(q0.coordinates(), q1.coordinates(), (source+a*r).coordinates()) << std::endl;
-	    // std::cout << "b   orientation: " << orient2d(q0.coordinates(), q1.coordinates(), (source+b*r).coordinates()) << std::endl;
-	    // std::cout << "mid orientation: " << orient2d(q0.coordinates(), q1.coordinates(), new_point.coordinates()) << std::endl;
+	// //const dolfin::Point ii = p0 + alpha*(p1-p0);
 
-	    const double orientation = orient2d(q0.coordinates(), q1.coordinates(), new_point.coordinates());
-	    // std::cout << "New point, orientation: " << orientation << std::endl;
-	    if (orientation == 0)
-	    {
-	      a = new_alpha;
-	      b = new_alpha;
-	      break;
-	    }
+	// if (std::abs(denom) < DOLFIN_EPS_LARGE)
+	// {
+	//   // Segment are almost parallel, so result may vulnerable to roundoff
+	//   // errors.
+	//   // Let's do an iterative bisection instead
 
-	    if (std::signbit(source_orientation) == std::signbit(orientation))
-	      a = new_alpha;
-	    else
-	      b = new_alpha;
+	//   dolfin_assert(std::signbit(orient2d(q0.coordinates(), q1.coordinates(), p0.coordinates())) != std::signbit(orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates())));
 
-	    iterations++;
-	  }
-	  triangulation.push_back(source + (a+b)/2*r);
-	}
-	else
-	{
-	  triangulation.push_back(alpha > .5 ? p1 - orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates())/denom * (p0-p1) : p0 + numerator/denom * (p1-p0));
-	}
+	//   // orient2d is more stable what alpha is close to 0
+	//   dolfin::Point source = alpha < .5 ? p0 : p1;
+	//   dolfin::Point target = alpha < .5 ? p1 : p0;
 
-	// const Point vp = p1 - p0;
-	// const double vpnorm2 = vp.squared_norm();
-	// const Point vq = q1 - q0;
-	// const double vqnorm2 = vq.squared_norm();
-	// dolfin_assert(vpnorm2 > DOLFIN_EPS or vqnorm2 > DOLFIN_EPS);
-	// Point a, b;
+	//   // Shewchuk notation r = ab = p1-p0, s = cd = q1-q0
+	//   /* const */ dolfin::Point r = target-source;
+	//   // /* const */ dolfin::Point s = q1-q0;
 
-	// // Take the vector with largest length
-	// if (vpnorm2 > vqnorm2) {
-	//   const double t0 = vp.dot(q0 - p0) / vpnorm2;
-	//   const double t1 = vp.dot(q1 - p0) / vpnorm2;
-	//   if (t0 < 0 or t0 > 1)
-	//     a = p0;
-	//   else
-	//     a = q0;
-	//   if (t1 < 0 or t1 > 1)
-	//     b = p1;
-	//   else
-	//     b = q1;
+
+	//   int iterations = 0;
+	//   const int max_iterations = 100;
+	//   double a = 0;
+	//   double b = 1;
+
+	//   const double source_orientation = orient2d(q0.coordinates(), q1.coordinates(), source.coordinates());
+
+	//   while (std::abs(b-a) > DOLFIN_EPS_LARGE && iterations < max_iterations)
+	//   {
+	//     // std::cout << "Iteration: a = " << a << ", b = " << b << " (" <<iterations << ")" << std::endl;
+	//     dolfin_assert(std::signbit(orient2d(q0.coordinates(), q1.coordinates(), (source+a*r).coordinates())) != std::signbit(orient2d(q0.coordinates(), q1.coordinates(), (source+b*r).coordinates())));
+	//     const double new_alpha = (a+b)/2;
+	//     dolfin::Point new_point = source+new_alpha*r;
+	//     // std::cout << "a   orientation: " << orient2d(q0.coordinates(), q1.coordinates(), (source+a*r).coordinates()) << std::endl;
+	//     // std::cout << "b   orientation: " << orient2d(q0.coordinates(), q1.coordinates(), (source+b*r).coordinates()) << std::endl;
+	//     // std::cout << "mid orientation: " << orient2d(q0.coordinates(), q1.coordinates(), new_point.coordinates()) << std::endl;
+
+	//     const double orientation = orient2d(q0.coordinates(), q1.coordinates(), new_point.coordinates());
+	//     // std::cout << "New point, orientation: " << orientation << std::endl;
+	//     if (orientation == 0)
+	//     {
+	//       a = new_alpha;
+	//       b = new_alpha;
+	//       break;
+	//     }
+
+	//     if (std::signbit(source_orientation) == std::signbit(orientation))
+	//       a = new_alpha;
+	//     else
+	//       b = new_alpha;
+
+	//     iterations++;
+	//   }
+	//   triangulation.push_back(source + (a+b)/2*r);
 	// }
-	// else {
-	//   const double t0 = vq.dot(p0 - q0) / vqnorm2;
-	//   const double t1 = vq.dot(p1 - q0) / vqnorm2;
-	//   if (t0 < 0 or t0 > 1)
-	//     a = q0;
-	//   else
-	//     a = p0;
-	//   if (t1 < 0 or t1 > 1)
-	//     b = q1;
-	//   else
-	//     b = p1;
+	// else
+	// {
+	//   triangulation.push_back(alpha > .5 ? p1 - orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates())/denom * (p0-p1) : p0 + numerator/denom * (p1-p0));
 	// }
-	// return std::vector<Point>{{ a, b }};
+
+	// // const Point vp = p1 - p0;
+	// // const double vpnorm2 = vp.squared_norm();
+	// // const Point vq = q1 - q0;
+	// // const double vqnorm2 = vq.squared_norm();
+	// // dolfin_assert(vpnorm2 > DOLFIN_EPS or vqnorm2 > DOLFIN_EPS);
+	// // Point a, b;
+
+	// // // Take the vector with largest length
+	// // if (vpnorm2 > vqnorm2) {
+	// //   const double t0 = vp.dot(q0 - p0) / vpnorm2;
+	// //   const double t1 = vp.dot(q1 - p0) / vpnorm2;
+	// //   if (t0 < 0 or t0 > 1)
+	// //     a = p0;
+	// //   else
+	// //     a = q0;
+	// //   if (t1 < 0 or t1 > 1)
+	// //     b = p1;
+	// //   else
+	// //     b = q1;
+	// // }
+	// // else {
+	// //   const double t0 = vq.dot(p0 - q0) / vqnorm2;
+	// //   const double t1 = vq.dot(p1 - q0) / vqnorm2;
+	// //   if (t0 < 0 or t0 > 1)
+	// //     a = q0;
+	// //   else
+	// //     a = p0;
+	// //   if (t1 < 0 or t1 > 1)
+	// //     b = q1;
+	// //   else
+	// //     b = p1;
+	// // }
+	// // return std::vector<Point>{{ a, b }};
+
+
       }
     }
   }
@@ -759,44 +767,108 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
 {
   std::vector<Point> points;
 
+  // First call the main collision routine
   if (CollisionDetection::collides_triangle_segment_2d(p0, p1, p2, q0, q1))
   {
-    // Detect edge intersection points
+    // Mimic behaviour of collides_triangle_segment_2d
+    if (CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q0))
+      points.push_back(q0);
+    if (CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q1))
+      points.push_back(q1);
+
+    // We may be done
+    if (points.size() == 2)
+      return points;
+
+    // Detect edge intersection points and save which ones we have
+    // found if we need to analyze the situation afterwards
+    std::vector<bool> collides_segment(3, false);
+    std::vector<std::pair<Point, Point>> segments(3);
+
     if (CollisionDetection::collides_segment_segment_2d(p0, p1, q0, q1))
     {
       const std::vector<Point> ii = triangulate_segment_segment_2d(p0, p1, q0, q1);
       dolfin_assert(ii.size());
       points.insert(points.end(), ii.begin(), ii.end());
+      if (points.size() == 2)
+	return points;
+      collides_segment[0] = true;
+      segments[0] = { p0, p1 };
     }
     if (CollisionDetection::collides_segment_segment_2d(p0, p2, q0, q1))
     {
       const std::vector<Point> ii = triangulate_segment_segment_2d(p0, p2, q0, q1);
       dolfin_assert(ii.size());
       points.insert(points.end(), ii.begin(), ii.end());
+      if (points.size() == 2)
+	return points;
+      collides_segment[1] = true;
+      segments[1] = { p0, p2 };
     }
     if (CollisionDetection::collides_segment_segment_2d(p1, p2, q0, q1))
     {
       const std::vector<Point> ii = triangulate_segment_segment_2d(p1, p2, q0, q1);
       dolfin_assert(ii.size());
       points.insert(points.end(), ii.begin(), ii.end());
+      if (points.size() == 2)
+	return points;
+      collides_segment[2] = true;
+      segments[2] = { p1, p2 };
     }
 
     if (points.size() == 0)
     {
-      // If we get zero intersection points, then both segment ends must
-      // be inside. Note that we here assume that we have called this
-      // routine _after_ a suitable predicate from CollisionDetection,
-      // meaning we know that the triangle and segment collides
+      // If we get zero intersection points, then both segment ends
+      // must be inside. Note that we here assume that we have a
+      // collision (by for example calling
+      // collides_triangle_segment_2d on the top of this routine).
       return std::vector<Point>{{q0, q1}};
     }
     else if (points.size() == 1)
     {
       // If we get one intersection point, find the segment end point
-      // which is inside the triangle.
-      if (CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q0))
+      // that is inside the triangle. Do this cautiously since one
+      // point may be strictly inside and one may be on the boundary.
+      std::cout << "check q0 "<<std::endl;
+      const bool q0_inside = CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q0);
+      std::cout << "check q1 "<<std::endl;
+      const bool q1_inside = CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q1);
+
+      if (q0_inside and q1_inside)
+      {
+	// Which is on the segment and which is inside
+	for (std::size_t i = 0; i < 3; ++i)
+	  if (collides_segment[i])
+	  {
+	    if (CollisionDetection::collides_segment_point(segments[i].first,
+							   segments[i].second,
+							   q0))
+	      return std::vector<Point>{{ q0, points[0] }};
+	    else {
+	      dolfin_assert(CollisionDetection::collides_segment_point(segments[i].first,
+								       segments[i].second,
+								       q1));
+	      return std::vector<Point>{{ q1, points[0] }};
+	    }
+	  }
+      }
+      else if (q0_inside)
 	return std::vector<Point>{{ q0, points[0] }};
-      else
+      else if (q1_inside)
 	return std::vector<Point>{{ q1, points[0] }};
+      else
+      {
+      	std::cout << tools::drawtriangle({{p0,p1,p2}})<<tools::drawtriangle({{q0,q1}})<<std::endl;
+	std::cout << q0_inside << ' ' << q1_inside << std::endl;
+	// dolfin_error("IntersectionTriangulation.cpp",
+	// 	     "compute _triangulate_triangle_segment_2d",
+	// 	     "Unexpected classification - we should have found either q0 or q1 inside");
+	std::cout << "IntersectionTriangulation.cpp\n"
+		  << "_triangulate_triangle_segment_2d\n"
+		  <<"Unexpected classification - we should have found either q0 or q1 inside\n";
+	//PPause;
+	return std::vector<Point>();
+      }
     }
     else if (points.size() == 2)
     {
@@ -1597,8 +1669,8 @@ IntersectionTriangulation::graham_scan(const std::vector<Point>& points)
   {
     // FIXME: We could consider only triangles with area > tolerance here.
     triangulation.at(m) = {{ points[0],
-			  points[order.at(m).second],
-			  points[order[m + 1].second] }};
+			     points[order.at(m).second],
+			     points[order[m + 1].second] }};
   }
 
   return triangulation;

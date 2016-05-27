@@ -79,7 +79,7 @@ namespace tools
 
   // this sorts such that a >= b >= c
   template<class T>
-    inline void sort3(T &a, T &b, T &c)
+  inline void sort3(T &a, T &b, T &c)
   {
     if (b>a) std::swap(b,a);
     if (c>b) std::swap(c,b);
@@ -496,18 +496,14 @@ namespace tools
     switch (s.size())
     {
     case 4:
-      {
       std::cout << "not implemented\n";
       PPause;
       break;
-    }
     case 3:
-      {
-	is_degenerate = orient2d(s[0].coordinates(),
-				 s[1].coordinates(),
-				 s[2].coordinates()) == 0;
-	break;
-      }
+      is_degenerate = orient2d(s[0].coordinates(),
+			       s[1].coordinates(),
+			       s[2].coordinates()) == 0;
+      break;
     case 2:
       {
 	double r[2] = { dolfin::rand(), dolfin::rand() };
@@ -515,16 +511,16 @@ namespace tools
 	break;
       }
     case 1:
-      {
-	is_degenerate = true;
-	break;
-      }
+      is_degenerate = true;
+      break;
     default: { PPause; }
     }
 
     if (is_degenerate)
     {
-      std::cout << drawtriangle(s)<<" is degenerate (s.size() = "<<s.size()<<std::endl; PPause;
+      std::cout << drawtriangle(s)<<" % is degenerate (s.size() = "<<s.size()
+		<<" volume = " << area(s) << std::endl;
+      //PPause;
     }
     return is_degenerate;
   }

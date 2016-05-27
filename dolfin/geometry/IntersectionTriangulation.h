@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-08
+// Last changed: 2016-05-28
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -123,9 +123,9 @@ namespace dolfin
     /// Triangulate intersection of segment p0-p1 with segment q0-q1 (2D version)
     static std::vector<Point>
     triangulate_segment_interior_segment_interior_2d(const Point& p0,
-				   const Point& p1,
-				   const Point& q0,
-				   const Point& q1)
+						     const Point& p1,
+						     const Point& q0,
+						     const Point& q1)
     {
       return CHECK_CGAL(_triangulate_segment_interior_segment_interior_2d(p0, p1, q0, q1),
                         cgal_triangulate_segment_interior_segment_interior_2d(p0, p1, q0, q1));

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-07
+// Last changed: 2016-05-27
 
 #include <vector>
 #include <dolfin/log/log.h>
@@ -126,10 +126,10 @@ namespace dolfin
 					std::size_t gdim);
 
     /// Check whether triangle p0-p1-p2 collides with point (2D version)
-    static bool collides_triangle_point_2d(const Point& p0,
-                                           const Point& p1,
-                                           const Point& p2,
-                                           const Point& point)
+    static bool collides_triangle_point_2d(const Point p0,
+                                           const Point p1,
+                                           const Point p2,
+                                           const Point point)
     {
       return CHECK_CGAL(_collides_triangle_point_2d(p0, p1, p2, point),
                         cgal_collides_triangle_point(p0, p1, p2, point));
@@ -264,10 +264,10 @@ namespace dolfin
 					     Point q0,
 					     Point q1);
 
-    static bool _collides_triangle_point_2d(const Point& p0,
-					    const Point& p1,
-					    const Point& p2,
-					    const Point& point);
+    static bool _collides_triangle_point_2d(Point p0,
+					    Point p1,
+					    Point p2,
+					    Point point);
 
     static bool _collides_triangle_point_3d(const Point& p0,
 					    const Point& p1,

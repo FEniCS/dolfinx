@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-22
+// Last changed: 2016-05-28
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -283,7 +283,9 @@ bool CollisionDetection::_collides_segment_point(Point p0,
                                       p1.coordinates(),
                                       point.coordinates());
 
-  return orientation == 0 && (point-p0).squared_norm() <= (p1-p0).squared_norm() && (point-p1).squared_norm() <= (p0-p1).squared_norm();
+  return orientation == 0 &&
+    (point-p0).squared_norm() <= (p1-p0).squared_norm() &&
+    (point-p1).squared_norm() <= (p0-p1).squared_norm();
 }
 //------------------------------------------------------------------------------
 bool CollisionDetection::_collides_segment_segment_1d(double p0,
@@ -347,50 +349,33 @@ bool CollisionDetection::_collides_segment_segment_2d(Point p0,
 
 }
 //-----------------------------------------------------------------------------
-bool CollisionDetection::_collides_triangle_point_2d(const Point& p0,
-						     const Point& p1,
-						     const Point& p2,
-						     const Point &point)
+bool CollisionDetection::_collides_triangle_point_2d(Point p0,
+						     Point p1,
+						     Point p2,
+						     Point point)
 {
-  // Simplified algorithm for coplanar triangles and points (z=0)
-  // This algorithm is robust because it will perform the same numerical
-  // test on each edge of neighbouring triangles. Points cannot slip
-  // between the edges, and evade detection.
+  // Check triangle orientation
+  const int sign = std::signbit(orient2d(p0.coordinates(),
+					 p1.coordinates(),
+					 p2.coordinates()));
 
-  // Vectors defining each edge in consistent orientation
-  const Point r0 = p0 - p2;
-  const Point r1 = p1 - p0;
-  const Point r2 = p2 - p1;
+  // std::cout << tools::drawtriangle({{p0,p1,p2}})<<tools::drawtriangle({{point}})<<std::endl;
 
-  // Normal to triangle
-  double normal = r1.x()*r0.y() - r1.y()*r0.x();
+  // std::cout << sign <<' '<<std::signbit(orient2d(p0.coordinates(), p1.coordinates(), point.coordinates()))<<' '<<std::signbit(orient2d(p1.coordinates(), p2.coordinates(), point.coordinates()))<<' '<<std::signbit(orient2d(p2.coordinates(), p0.coordinates(), point.coordinates()))<<std::endl;
 
-  // Compute normal to triangle based on point and first edge
-  // Will have opposite sign if outside triangle
-
-  Point r = point - p0;
-  double pnormal = r.x()*r0.y() - r.y()*r0.x();
-  if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
+  // The point is inside if all triangles formed have the same orientation
+  if (sign == std::signbit(orient2d(p0.coordinates(), p1.coordinates(), point.coordinates())) and
+      sign == std::signbit(orient2d(p1.coordinates(), p2.coordinates(), point.coordinates())) and
+      sign == std::signbit(orient2d(p2.coordinates(), p0.coordinates(), point.coordinates())))
+    return true;
+  else
     return false;
-
-  // Repeat for each edge
-  r = point - p1;
-  pnormal = r.x()*r1.y() - r.y()*r1.x();
-  if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
-    return false;
-
-  r = point - p2;
-  pnormal = r.x()*r2.y() - r.y()*r2.x();
-  if (pnormal != 0.0 and std::signbit(normal) != std::signbit(pnormal))
-    return false;
-
-  return true;
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::_collides_triangle_point_3d(const Point& p0,
 						     const Point& p1,
 						     const Point& p2,
-						     const Point &point)
+						     const Point& point)
 {
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
 
