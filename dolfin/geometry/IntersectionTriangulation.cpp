@@ -154,11 +154,10 @@ IntersectionTriangulation::triangulate(const std::vector<Point>& points_0,
 std::vector<std::vector<Point>>
 IntersectionTriangulation::triangulate
 (const MeshEntity &entity,
- const std::vector<std::vector<Point>> &triangulation,
- std::size_t tdim)
+ const std::vector<std::vector<Point>> &triangulation)
 {
   // Compute the triangulation of the intersection of the cell and the
-  // simplices of the flat triangulation vector with topology tdim.
+  // simplices of the triangulation vector
 
   std::vector<std::vector<Point>> total_triangulation;
 
@@ -174,19 +173,12 @@ IntersectionTriangulation::triangulate
   for (std::size_t j = 0; j < cell_tdim + 1; ++j)
     simplex_cell.at(j) = geometry.point(vertices[j]);
 
-  // Simplex in triangulation
-  std::vector<Point> simplex(tdim + 1);
-
   // Loop over all simplices
   for (std::size_t i = 0; i < triangulation.size(); ++i)
   {
-    // Store simplices as std::vector<Point>
-    for (std::size_t j = 0; j < tdim + 1; ++j)
-      simplex.at(j) = triangulation.at(i).at(j);
-
     // Compute intersection
     const std::vector<std::vector<Point>> local_triangulation
-      = triangulate(simplex_cell, simplex, gdim);
+      = triangulate(simplex_cell, triangulation.at(i), gdim);
 
     // Add these to the net triangulation
     total_triangulation.insert(total_triangulation.end(),
@@ -203,8 +195,7 @@ IntersectionTriangulation::triangulate
  const std::vector<std::vector<Point>>& triangulation,
  const std::vector<Point>& normals,
  std::vector<std::vector<Point>>& intersection_triangulation,
- std::vector<Point>& intersection_normals,
- std::size_t tdim)
+ std::vector<Point>& intersection_normals)
 {
   // Compute the triangulation of the intersection of the cell and the
   // simplices of the flat triangulation vector with topology tdim.
@@ -221,19 +212,12 @@ IntersectionTriangulation::triangulate
   for (std::size_t j = 0; j < entity_tdim + 1; ++j)
     simplex_entity.at(j) = geometry.point(vertices[j]);
 
-  // Simplex in triangulation
-  std::vector<Point> simplex(tdim + 1);
-
   // Loop over all simplices
   for (std::size_t i = 0; i < triangulation.size(); ++i)
   {
-    // Store simplices as std::vector<Point>
-    for (std::size_t j = 0; j < tdim + 1; ++j)
-      simplex.at(j) = triangulation.at(i).at(j);
-
     // Compute intersection
     const std::vector<std::vector<Point>> local_triangulation
-      = triangulate(simplex_entity, simplex, gdim);
+      = triangulate(simplex_entity, triangulation.at(i), gdim);
 
     // Add these to the net triangulation
     intersection_triangulation.insert(intersection_triangulation.end(),

@@ -78,8 +78,7 @@ namespace dolfin
     /// Compute triangulation of intersection of a cell with a triangulation
     static std::vector<std::vector<Point>>
     triangulate(const MeshEntity& entity,
-                const std::vector<std::vector<Point>>& triangulation,
-		std::size_t tdim);
+                const std::vector<std::vector<Point>>& triangulation);
 
     /// Compute triangulation of intersection of a cell with a triangulation.
     /// This version also handles normals (for boundary triangulation).
@@ -88,8 +87,7 @@ namespace dolfin
                 const std::vector<std::vector<Point>>& triangulation,
                 const std::vector<Point>& normals,
                 std::vector<std::vector<Point>>& intersection_triangulation,
-                std::vector<Point>& intersection_normals,
-		std::size_t tdim);
+                std::vector<Point>& intersection_normals);
 
     //--- Low-level intersection triangulation functions ---
 
