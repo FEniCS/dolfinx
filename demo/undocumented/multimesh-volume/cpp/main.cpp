@@ -165,23 +165,23 @@ int main(int argc, char* argv[])
   // tools::dolfin_write_medit_triangles("mesh2",*mesh_2);
 
   const double exact_volume = 1.;
-  const double exact_area = 4*0.8 + 4*0.6 + 4*0.4 + 4*0.2;
+  double exact_area = 0;
 
   // Build multimesh
   auto multimesh = std::make_shared<MultiMesh>();
   multimesh->add(mesh_0);
-  multimesh->add(mesh_1);
-  multimesh->add(mesh_2);
-  multimesh->add(mesh_3);
-  multimesh->add(mesh_4);
+  multimesh->add(mesh_1); exact_area += 4*0.8;
+  multimesh->add(mesh_2); exact_area += 4*0.6;
+  // multimesh->add(mesh_3); exact_area += 4*0.4;
+  // multimesh->add(mesh_4); exact_area += 4*0.2;
   multimesh->build(1); // qr generated here
   tools::dolfin_write_medit_triangles("multimesh",*multimesh);
 
-  double volume = compute_volume(*multimesh, 0);
-  std::cout << "volume " << volume << ' ' << exact_volume <<" error="<< std::abs(volume-exact_volume) << std::endl;
+  // double volume = compute_volume(*multimesh, 0);
+  // std::cout << "volume " << volume << ' ' << exact_volume <<" error="<< std::abs(volume-exact_volume) << std::endl;
 
-  // double area = compute_interface_area(*multimesh, 0);
-  // std::cout << "area " << area << ' ' << exact_area << " error="<<std::abs(area-exact_area) << std::endl;
+  double area = compute_interface_area(*multimesh, 0);
+  std::cout << "area " << area << ' ' << exact_area << " error="<<std::abs(area-exact_area) << std::endl;
 
 
 

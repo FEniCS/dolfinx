@@ -333,6 +333,8 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 							   Point q0,
 							   Point q1)
 {
+  std::cout<<__FUNCTION__<<std::endl;
+
   std::vector<Point> triangulation;
 
   if (CollisionDetection::collides_segment_segment_2d(p0, p1, q0, q1))
@@ -369,6 +371,12 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 
     if (p0_p1_q1 == 0 && (q1-p0).squared_norm() <= (p1-p0).squared_norm() && (q1-p1).squared_norm() <= (p0-p1).squared_norm())
       triangulation.push_back(q1);
+
+    if (triangulation.size() == 4)
+    {
+      // all four points added, i.e. the segments are the same!
+      return std::vector<Point>{{ p0, p1}};
+    }
 
     if (triangulation.size() == 0)
     {

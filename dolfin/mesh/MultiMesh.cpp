@@ -214,13 +214,13 @@ void MultiMesh::build(std::size_t quadrature_order)
 
   // Build quadrature rules of the cut cells' overlap. Do this before
   // we build the quadrature rules of the cut cells
-  _build_quadrature_rules_overlap(quadrature_order);
+  //_build_quadrature_rules_overlap(quadrature_order);
 
   // Build quadrature rules of the cut cells
-  _build_quadrature_rules_cut_cells(quadrature_order);
+  //_build_quadrature_rules_cut_cells(quadrature_order);
 
   // FIXME:
-  //_build_quadrature_rules_interface(quadrature_order);
+  _build_quadrature_rules_interface(quadrature_order);
 
   end();
 }
@@ -1855,7 +1855,7 @@ void MultiMesh::_inclusion_exclusion
 		    }
 #ifdef Augustdebug
 		  {
-		    std::cout << "intersected:\n";
+		    std::cout << "we intersected these two:\n";
 		    std::cout << tools::drawtriangle(previous_simplex,"'b'")
 			      << tools::drawtriangle(initial_simplex,"'r'")<<tools::zoom()<<std::endl;
 		    std::cout << "areas: " << tools::area(previous_simplex)<<' '<<tools::area(initial_simplex)<<'\n';
