@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2016-05-26
+// Last changed: 2016-05-27
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -895,12 +895,6 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
       // Data structure for the interface quadrature rule
       std::vector<quadrature_rule> interface_qr;
 
-      // Data structure for the first intersections (this is the first
-      // stage in the inclusion exclusion principle). These are the
-      // polygons to be used in the exlusion inclusion, i.e. E_ij \cap
-      // T_k.
-      std::vector<std::pair<std::size_t, Polyhedron> > initial_polygons;
-
       // Loop over all cutting cells to construct the polyhedra to be
       // used in the inclusion-exclusion principle
       for (const std::pair<size_t, unsigned int>& cutting_j : cut_i.second)
@@ -929,6 +923,13 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
           const Cell boundary_cell_j(*_boundary_meshes[cutting_part_j],
 				     boundary_cell_index_j.first);
 	  dolfin_assert(boundary_cell_j.mesh().topology().dim() == tdim - 1);
+
+
+	  // Data structure for the first intersections (this is the first
+	  // stage in the inclusion exclusion principle). These are the
+	  // polygons to be used in the exlusion inclusion, i.e. E_ij \cap
+	  // T_k.
+	  std::vector<std::pair<std::size_t, Polyhedron> > initial_polygons;
 
 	  // Triangulate intersection of cut cell and boundary cell
 	  const Polyhedron Eij_part = IntersectionTriangulation::triangulate(cut_cell_i,
@@ -1010,6 +1011,9 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	      _inclusion_exclusion(Eij_part_qr, initial_polygons,
 				   tdim - 1, gdim, quadrature_order, factor);
 	    }
+	    else {
+	      std::cout << "   no inc exc"<<std::endl;
+	    }
 
 	    // Flatten the qr
 	    for (const auto qr: Eij_part_qr)
@@ -1017,10 +1021,13 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	      Eij_qr.first.insert(Eij_qr.first.end(), qr.first.begin(), qr.first.end());
 	      Eij_qr.second.insert(Eij_qr.second.end(), qr.second.begin(), qr.second.end());
 	    }
+	    std::cout << "net qr (Eij_qr)"<<std::endl;
+	    tools::cout_qr(Eij_qr);
 	  }
-	}
+	} // end boundary_cell_j loop
 
 	// Save the qr for this Eij (push_back makes order correct)
+	std::cout << "push back this net qr (Eij_qr)"<<std::endl;
 	interface_qr.push_back(Eij_qr);
 
       } // end loop over cutting_j
