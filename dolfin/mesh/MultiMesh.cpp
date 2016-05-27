@@ -636,227 +636,9 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 						   polyhedron));
       }
 
-      // Exclusion-inclusion principle. There are N stages in the
-      // principle, where N = polyhedra.size(). The first stage is
-      // simply the polyhedra themselves A, B, C, ... etc. The second
-      // stage is for the pairwise intersections A \cap B, A \cap C, B
-      // \cap C, etc, with different sign. There are
-      // n_choose_k(N,stage) intersections for each stage.
-
-      // Data structure for storing the previous intersections: the key
-      // and the intersections.
-      const std::size_t N = initial_polyhedra.size();
-      std::vector<std::pair<IncExcKey, Polyhedron> > previous_intersections(N);
-      for (std::size_t i = 0; i < N; ++i)
-	previous_intersections[i] = std::make_pair(IncExcKey(1, initial_polyhedra[i].first),
-						   initial_polyhedra[i].second);
-
-      // Do stage = 1 up to stage = polyhedra.size in the
-      // principle. Recall that stage 1 is the pairwise
-      // intersections. There are up to n_choose_k(N,stage)
-      // intersections in each stage (there may be less). The
-      // intersections are found using the polyhedra data and the
-      // previous_intersections data. We only have to intersect if the
-      // key doesn't contain the polyhedron.
-
-      // Add quadrature rule for stage 0 (always positive)
-      const std::size_t sign = 1;
-
-      quadrature_rule overlap_part_qr;
-      for (const std::pair<IncExcKey, Polyhedron>& pol_pair: previous_intersections)
-	for (const Simplex& simplex: pol_pair.second)
-	  if (simplex.size() == tdim + 1)
-	    _add_quadrature_rule(overlap_part_qr, simplex, gdim,
-				 quadrature_order, sign);
-
-      // Add quadrature rule for overlap part
-      overlap_qr.push_back(overlap_part_qr);
-
-      for (std::size_t stage = 1; stage < N; ++stage)
-      {
-#ifdef Augustdebug
-	std::cout << "----------------- stage " << stage << std::endl;
-#endif
-
-      	// Structure for storing new intersections
-      	std::vector<std::pair<IncExcKey, Polyhedron> > new_intersections;
-
-      	// Loop over all intersections from the previous stage
-      	for (const std::pair<IncExcKey, Polyhedron>& previous_polyhedron: previous_intersections)
-      	{
-      	  // Loop over all initial polyhedra.
-      	  for (const std::pair<std::size_t, Polyhedron>& initial_polyhedron: initial_polyhedra)
-      	  {
-
-	    // test: only check if initial_polyhedron key <
-	    // previous_polyhedron key[0]
-	    if (initial_polyhedron.first < previous_polyhedron.first[0])
-	    {
-#ifdef Augustdebug
-	      std::cout << "----------\nkeys previous_polyhedron: ";
-	      for (const auto key: previous_polyhedron.first)
-		std::cout << key <<' ';
-	      std::cout << "simplices previous polyhedron:\n";
-	      for (const auto s: previous_polyhedron.second)
-		std::cout << tools::drawtriangle(s);
-	      std::cout << "\nkeys initial_polyhedron: " << initial_polyhedron.first <<'\n';
-	      std::cout << "simplices initial polyhedron\n";
-	      for (const auto s: initial_polyhedron.second)
-		std::cout << tools::drawtriangle(s,"'r'");
-	      std::cout << tools::zoom()<<'\n';
-#endif
-
-	      // We want to save the intersection of the previous
-	      // polyhedron and the initial polyhedron in one single
-	      // polyhedron.
-	      Polyhedron new_polyhedron;
-	      IncExcKey new_keys;
-
-	      // Loop over all simplices in the initial_polyhedron and
-	      // the previous_polyhedron and append the intersection of
-	      // these to the new_polyhedron
-	      bool any_intersections = false;
-
-	      for (const Simplex& previous_simplex: previous_polyhedron.second)
-	      {
-		for (const Simplex& initial_simplex: initial_polyhedron.second)
-		{
-		  // Compute the intersection (a polyhedron)
-#ifdef Augustdebug
-		  std::cout << "try intersect:\n"
-			    << tools::drawtriangle(initial_simplex,"'r'")<<tools::drawtriangle(previous_simplex)<<tools::zoom()<<'\n';
-#endif
-		  // To save all intersections as a single polyhedron,
-		  // we don't call this a polyhedron yet, but rather a
-		  // std::vector<Simplex> since we are still filling
-		  // the polyhedron with simplices
-
-		  // Only allow same types for now
-		  if (previous_simplex.size() == tdim + 1 &&
-		      initial_simplex.size() == tdim + 1)
-		  {
-		    const std::vector<Simplex> ii = IntersectionTriangulation::triangulate(initial_simplex, previous_simplex, gdim);
-
-		    if (ii.size())
-		    {
-#ifdef Augustdebug
-		      dolfin_assert(tools::tdimcheck(ii));
-#endif
-
-		      // To save all intersections as a single
-		      // polyhedron, we don't call this a polyhedron
-		      // yet, but rather a std::vector<Simplex> since we
-		      // are still filling the polyhedron with simplices
-		      // FIXME: We could add only if area is suff large
-		      for (const Simplex& simplex: ii)
-			if (simplex.size() == tdim + 1)
-			{
-			  new_polyhedron.push_back(simplex);
-			  any_intersections = true;
-			}
-#ifdef Augustdebug
-		      {
-			std::cout << '\n'<<tools::drawtriangle(previous_simplex,"'b'")
-				  << tools::drawtriangle(initial_simplex,"'r'")<<tools::zoom()<<std::endl;
-			std::cout << "areas: " << tools::area(previous_simplex)<<' '<<tools::area(initial_simplex)<<'\n';
-			const double min_area = std::min(tools::area(previous_simplex), tools::area(initial_simplex));
-
-			std::cout << "resulting intersection size= "<<ii.size()<<": \n";
-			for (const auto simplex: ii)
-			{
-			  std::cout << "sub simplex size "<<simplex.size() << '\n';
-			  std::cout << tools::drawtriangle(simplex,"'g'");
-			}
-			std::cout<<tools::zoom()<<'\n';
-			double intersection_area = 0;
-			std::cout << "areas=[ ";
-			for (const auto simplex: ii) {
-			  intersection_area += tools::area(simplex);
-			  std::cout << tools::area(simplex) <<' ';
-			}
-			std::cout<<"];\n";
-			if (intersection_area >= min_area) { std::cout << "Warning, intersection area ~ minimum area\n"; /*PPause;*/ }
-		      }
-#endif
-		    }
-		  }
-		}
-	      }
-
-	      if (any_intersections)
-	      {
-		new_keys.push_back(initial_polyhedron.first);
-		new_keys.insert(new_keys.end(),
-				previous_polyhedron.first.begin(),
-				previous_polyhedron.first.end());
-
-		// FIXME: Test improve quality
-		//maximize_minimum_angle(new_polyhedron);
-
-		// Save data
-		new_intersections.push_back(std::make_pair(new_keys, new_polyhedron));
-	      }
-
-	    }
-	  }
-	}
-
-#ifdef Augustdebug
-	{
-	  std::cout << "\n summarize at stage="<<stage<<" and part=" << cut_part<< '\n';
-	  std::cout << "the previous intersections were:\n";
-	  for (const auto previous_polyhedron: previous_intersections)
-	  {
-	    for (const auto key: previous_polyhedron.first)
-	      std::cout << key<<' ';
-	    std::cout << "   ";
-	  }
-	  std::cout << '\n';
-	  for (const auto previous_polyhedron: previous_intersections)
-	  {
-	    for (const auto simplex: previous_polyhedron.second)
-	      std::cout << tools::drawtriangle(simplex);
-	    std::cout << "    ";
-	  }
-	  std::cout << '\n';
-
-
-	  std::cout << "the new intersections are:\n";
-	  for (const auto new_polyhedron: new_intersections)
-	  {
-	    for (const auto key: new_polyhedron.first)
-	      std::cout << key<<' ';
-	    std::cout << "   ";
-	  }
-	  std::cout << '\n';
-	  for (const auto new_polyhedron: new_intersections)
-	  {
-	    for (const auto simplex: new_polyhedron.second)
-	      std::cout << tools::drawtriangle(simplex);
-	    std::cout <<"    ";
-	  }
-	  std::cout << '\n';
-
-	  //if (cut_part == 1) { PPause; }
-	  //if (cut_part == 0) { PPause; }
-	}
-#endif
-
-      	// Update before next stage
-	previous_intersections = new_intersections;
-
-	// Add quadrature rule with correct sign
-	const double sign = std::pow(-1, stage);
-        quadrature_rule overlap_part_qr;
-
-	for (const std::pair<IncExcKey, Polyhedron>& polyhedron: new_intersections)
-	  for (const Simplex& simplex: polyhedron.second)
-	    if (simplex.size() == tdim + 1)
-	      _add_quadrature_rule(overlap_part_qr, simplex, gdim, quadrature_order, sign);
-
-        // Add quadrature rule for overlap part
-        overlap_qr.push_back(overlap_part_qr);
-      } // end exclusion-inclusion principle
+      const double factor = 1.;
+      _inclusion_exclusion(initial_polyhedra, tdim, gdim, quadrature_order,
+      			   factor, overlap_qr);
 
 #ifdef Augustdebug
       // std::cout << "\n summarize all intersections for part=" << cut_part<< " (there are "<<all_intersections.size()<< " stages)" << std::endl;
@@ -1700,5 +1482,243 @@ void MultiMesh::_plot() const
     s << "Map of cell types for multimesh part " << p;
     dolfin::plot(f, s.str());
   }
+}
+//------------------------------------------------------------------------------
+void MultiMesh::_inclusion_exclusion
+(const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
+ std::size_t tdim,
+ std::size_t gdim,
+ std::size_t quadrature_order,
+ double factor,
+ std::vector<quadrature_rule>& overlap_qr) const
+{
+
+
+  // Exclusion-inclusion principle. There are N stages in the
+  // principle, where N = polyhedra.size(). The first stage is
+  // simply the polyhedra themselves A, B, C, ... etc. The second
+  // stage is for the pairwise intersections A \cap B, A \cap C, B
+  // \cap C, etc, with different sign. There are
+  // n_choose_k(N,stage) intersections for each stage.
+
+  // Data structure for storing the previous intersections: the key
+  // and the intersections.
+  const std::size_t N = initial_polyhedra.size();
+  std::vector<std::pair<IncExcKey, Polyhedron> > previous_intersections(N);
+  for (std::size_t i = 0; i < N; ++i)
+    previous_intersections[i] = std::make_pair(IncExcKey(1, initial_polyhedra[i].first),
+					       initial_polyhedra[i].second);
+
+  // Do stage = 1 up to stage = polyhedra.size in the
+  // principle. Recall that stage 1 is the pairwise
+  // intersections. There are up to n_choose_k(N,stage)
+  // intersections in each stage (there may be less). The
+  // intersections are found using the polyhedra data and the
+  // previous_intersections data. We only have to intersect if the
+  // key doesn't contain the polyhedron.
+
+  // Add quadrature rule for stage 0 (always positive)
+  const std::size_t sign = 1;
+
+  quadrature_rule overlap_part_qr;
+  for (const std::pair<IncExcKey, Polyhedron>& pol_pair: previous_intersections)
+    for (const Simplex& simplex: pol_pair.second)
+      if (simplex.size() == tdim + 1)
+	_add_quadrature_rule(overlap_part_qr, simplex, gdim,
+			     quadrature_order, sign);
+
+  // Add quadrature rule for overlap part
+  overlap_qr.push_back(overlap_part_qr);
+
+  for (std::size_t stage = 1; stage < N; ++stage)
+  {
+#ifdef Augustdebug
+    std::cout << "----------------- stage " << stage << std::endl;
+#endif
+
+    // Structure for storing new intersections
+    std::vector<std::pair<IncExcKey, Polyhedron> > new_intersections;
+
+    // Loop over all intersections from the previous stage
+    for (const std::pair<IncExcKey, Polyhedron>& previous_polyhedron: previous_intersections)
+    {
+      // Loop over all initial polyhedra.
+      for (const std::pair<std::size_t, Polyhedron>& initial_polyhedron: initial_polyhedra)
+      {
+
+	// test: only check if initial_polyhedron key <
+	// previous_polyhedron key[0]
+	if (initial_polyhedron.first < previous_polyhedron.first[0])
+	{
+#ifdef Augustdebug
+	  std::cout << "----------\nkeys previous_polyhedron: ";
+	  for (const auto key: previous_polyhedron.first)
+	    std::cout << key <<' ';
+	  std::cout << "simplices previous polyhedron:\n";
+	  for (const auto s: previous_polyhedron.second)
+	    std::cout << tools::drawtriangle(s);
+	  std::cout << "\nkeys initial_polyhedron: " << initial_polyhedron.first <<'\n';
+	  std::cout << "simplices initial polyhedron\n";
+	  for (const auto s: initial_polyhedron.second)
+	    std::cout << tools::drawtriangle(s,"'r'");
+	  std::cout << tools::zoom()<<'\n';
+#endif
+
+	  // We want to save the intersection of the previous
+	  // polyhedron and the initial polyhedron in one single
+	  // polyhedron.
+	  Polyhedron new_polyhedron;
+	  IncExcKey new_keys;
+
+	  // Loop over all simplices in the initial_polyhedron and
+	  // the previous_polyhedron and append the intersection of
+	  // these to the new_polyhedron
+	  bool any_intersections = false;
+
+	  for (const Simplex& previous_simplex: previous_polyhedron.second)
+	  {
+	    for (const Simplex& initial_simplex: initial_polyhedron.second)
+	    {
+	      // Compute the intersection (a polyhedron)
+#ifdef Augustdebug
+	      std::cout << "try intersect:\n"
+			<< tools::drawtriangle(initial_simplex,"'r'")<<tools::drawtriangle(previous_simplex)<<tools::zoom()<<'\n';
+#endif
+	      // To save all intersections as a single polyhedron,
+	      // we don't call this a polyhedron yet, but rather a
+	      // std::vector<Simplex> since we are still filling
+	      // the polyhedron with simplices
+
+	      // Only allow same types for now
+	      if (previous_simplex.size() == tdim + 1 &&
+		  initial_simplex.size() == tdim + 1)
+	      {
+		const std::vector<Simplex> ii = IntersectionTriangulation::triangulate(initial_simplex, previous_simplex, gdim);
+
+		if (ii.size())
+		{
+#ifdef Augustdebug
+		  dolfin_assert(tools::tdimcheck(ii));
+#endif
+
+		  // To save all intersections as a single
+		  // polyhedron, we don't call this a polyhedron
+		  // yet, but rather a std::vector<Simplex> since we
+		  // are still filling the polyhedron with simplices
+		  // FIXME: We could add only if area is suff large
+		  for (const Simplex& simplex: ii)
+		    if (simplex.size() == tdim + 1)
+		    {
+		      new_polyhedron.push_back(simplex);
+		      any_intersections = true;
+		    }
+#ifdef Augustdebug
+		  {
+		    std::cout << '\n'<<tools::drawtriangle(previous_simplex,"'b'")
+			      << tools::drawtriangle(initial_simplex,"'r'")<<tools::zoom()<<std::endl;
+		    std::cout << "areas: " << tools::area(previous_simplex)<<' '<<tools::area(initial_simplex)<<'\n';
+		    const double min_area = std::min(tools::area(previous_simplex), tools::area(initial_simplex));
+
+		    std::cout << "resulting intersection size= "<<ii.size()<<": \n";
+		    for (const auto simplex: ii)
+		    {
+		      std::cout << "sub simplex size "<<simplex.size() << '\n';
+		      std::cout << tools::drawtriangle(simplex,"'g'");
+		    }
+		    std::cout<<tools::zoom()<<'\n';
+		    double intersection_area = 0;
+		    std::cout << "areas=[ ";
+		    for (const auto simplex: ii) {
+		      intersection_area += tools::area(simplex);
+		      std::cout << tools::area(simplex) <<' ';
+		    }
+		    std::cout<<"];\n";
+		    if (intersection_area >= min_area) { std::cout << "Warning, intersection area ~ minimum area\n"; /*PPause;*/ }
+		  }
+#endif
+		}
+	      }
+	    }
+	  }
+
+	  if (any_intersections)
+	  {
+	    new_keys.push_back(initial_polyhedron.first);
+	    new_keys.insert(new_keys.end(),
+			    previous_polyhedron.first.begin(),
+			    previous_polyhedron.first.end());
+
+	    // FIXME: Test improve quality
+	    //maximize_minimum_angle(new_polyhedron);
+
+	    // Save data
+	    new_intersections.push_back(std::make_pair(new_keys, new_polyhedron));
+	  }
+
+	}
+      }
+    }
+
+#ifdef Augustdebug
+    {
+      std::cout << "\n summarize at stage="<<stage<<std::endl;
+      std::cout << "the previous intersections were:\n";
+      for (const auto previous_polyhedron: previous_intersections)
+      {
+	for (const auto key: previous_polyhedron.first)
+	  std::cout << key<<' ';
+	std::cout << "   ";
+      }
+      std::cout << '\n';
+      for (const auto previous_polyhedron: previous_intersections)
+      {
+	for (const auto simplex: previous_polyhedron.second)
+	  std::cout << tools::drawtriangle(simplex);
+	std::cout << "    ";
+      }
+      std::cout << '\n';
+
+
+      std::cout << "the new intersections are:\n";
+      for (const auto new_polyhedron: new_intersections)
+      {
+	for (const auto key: new_polyhedron.first)
+	  std::cout << key<<' ';
+	std::cout << "   ";
+      }
+      std::cout << '\n';
+      for (const auto new_polyhedron: new_intersections)
+      {
+	for (const auto simplex: new_polyhedron.second)
+	  std::cout << tools::drawtriangle(simplex);
+	std::cout <<"    ";
+      }
+      std::cout << '\n';
+
+      //if (cut_part == 1) { PPause; }
+      //if (cut_part == 0) { PPause; }
+    }
+#endif
+
+    // Update before next stage
+    previous_intersections = new_intersections;
+
+    // Add quadrature rule with correct sign
+    const double sign = std::pow(-1, stage);
+    quadrature_rule overlap_part_qr;
+
+    for (const std::pair<IncExcKey, Polyhedron>& polyhedron: new_intersections)
+      for (const Simplex& simplex: polyhedron.second)
+	if (simplex.size() == tdim + 1)
+	  _add_quadrature_rule(overlap_part_qr, simplex, gdim, quadrature_order, sign);
+
+    // Add quadrature rule for overlap part
+    overlap_qr.push_back(overlap_part_qr);
+  } // end exclusion-inclusion principle
+
+
+
+
+
 }
 //------------------------------------------------------------------------------
