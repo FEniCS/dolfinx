@@ -490,12 +490,12 @@ namespace dolfin
 
     // Inclusion-exclusion
     void _inclusion_exclusion
-      (const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
+      (std::vector<quadrature_rule>& qr,
+       const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
        std::size_t tdim,
        std::size_t gdim,
        std::size_t quadrature_order,
-       double factor,
-       std::vector<quadrature_rule>& overlap_qr) const;
+       double factor) const;
 
 
   };

@@ -186,12 +186,14 @@ namespace dolfin
 
       dolfin_error("CGALExactArithmetic.h",
 		   "verify intersections due to different sizes",
-		   "Error in function %s\n DOLFIN: %d\n CGAL: %d",
+		   /* "Error in function %s\n DOLFIN: %d\n CGAL: %d", */
+		   /* function.c_str(), */
+                   /* result_dolfin.size(), */
+                   /* result_cgal.size()); */
+		   "Error in function %s\n DOLFIN: %s\n CGAL: %s",
 		   function.c_str(),
-                   result_dolfin.size(),
-                   result_cgal.size());
-      /* s_dolfin.str().c_str(), */
-      /* s_cgal.str().c_str()); */
+		   s_dolfin.str().c_str(),
+		   s_cgal.str().c_str());
     }
     else
     {

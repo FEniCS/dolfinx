@@ -578,9 +578,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 		<< "gdim = " << gdim << std::endl;
 #endif
 
-      // Data structure for the overlap quadrature rule
-      std::vector<quadrature_rule> overlap_qr;
-
       // Data structure for the first intersections (this is the first
       // stage in the inclusion exclusion principle). These are the
       // polyhedra to be used in the exlusion inclusion.
@@ -616,6 +613,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	  {
 	    for (const auto simplex: polyhedron)
 	    {
+	      dolfin_assert(!tools::is_degenerate(simplex));
 	      std::cout << "sub simplex size "<<simplex.size() << '\n';
 	      std::cout << tools::drawtriangle(simplex,"'k'");
 	    }
@@ -636,9 +634,12 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 						   polyhedron));
       }
 
+      // Data structure for the overlap quadrature rule
+      std::vector<quadrature_rule> overlap_qr;
+
       const double factor = 1.;
-      _inclusion_exclusion(initial_polyhedra, tdim, gdim, quadrature_order,
-      			   factor, overlap_qr);
+      _inclusion_exclusion(overlap_qr, initial_polyhedra,
+			   tdim, gdim, quadrature_order, factor);
 
 #ifdef Augustdebug
       // std::cout << "\n summarize all intersections for part=" << cut_part<< " (there are "<<all_intersections.size()<< " stages)" << std::endl;
@@ -818,35 +819,11 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
   begin(PROGRESS, "Building quadrature rules of interface.");
 
   // This is similar to _build_quadrature_rules_overlap, except
-  // - For the edge E_ij, we only intersect with triangles T_k where
-  //   k>i and k!=j
-  // - We note sign changes |E \ (A ∪ B)| = |E| - |E ∩ (A ∩ B)| and
-  //   proceed with A ∩ B as in _build_quadrature_rules_overlap
-
-#ifdef Augustdebug
-  std::cout <<"\n\n"<< __FUNCTION__ << " with quadrature_order="<<quadrature_order<<std::endl;
-#endif
-
-#ifdef Augustnormaldebug
-  for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
-  {
-    std::cout << "cut part = " << cut_part << std::endl;
-    const auto& cmap = collision_map_cut_cells(cut_part);
-    for (auto it = cmap.begin(); it != cmap.end(); ++it)
-    {
-      // Get cut cell
-      const unsigned int cut_cell_index = it->first;
-      const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
-      std::cout << tools::drawtriangle(cut_cell) << std::endl;
-
-      for (std::size_t f = 0; f < 3; ++f)
-      {
-	std::cout << cut_cell.normal(f) << std::endl;
-      }
-    }
-  }
-  PPause;
-#endif
+  // - For the edge E_ij, i<j, we only intersect with triangles T_k
+  //   where k>i and k!=j
+  // - We note that the sign change is opposite of the other inc exc:
+  //   |E_ij \ U_k T_k| = |E_ij| - |E_ij \cap U_k T_k|
+  //                    = |E_ij| - |U_k E_ij \cap T_k|
 
   // Clear quadrature rules
   _quadrature_rules_interface.clear();
@@ -854,13 +831,9 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
   // Resize quadrature rules
   _quadrature_rules_interface.resize(num_parts());
 
-  // Clear and resize facet normals
-  _facet_normals.clear();
-  _facet_normals.resize(num_parts());
-
-  // FIXME: test prebuild map from boundary facets to full mesh cells
-  // for all meshes: Loop over all boundary mesh facets to find the
-  // full mesh cell which contains the facet. This is done in two
+  // First we prebuild a map from the boundary facets to full mesh
+  // cells for all meshes: Loop over all boundary mesh facets to find
+  // the full mesh cell which contains the facet. This is done in two
   // steps: Since the facet is on the boundary mesh, we first map this
   // facet to a facet in the full mesh using the
   // boundary_cell_map. Then we use the full_facet_cell_map to find
@@ -890,475 +863,727 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
       // can have 2 facets, but here we should only have 1)
       dolfin_assert(full_facet_cell_map.size(full_mesh_facet) == 1);
       const auto& full_cells = full_facet_cell_map(full_mesh_facet);
-      full_to_bdry[part][full_cells[0]].push_back(std::make_pair(boundary_facet, full_mesh_facet));
+      full_to_bdry[part][full_cells[0]].push_back(std::make_pair(boundary_facet,
+								 full_mesh_facet));
     }
   }
+
 
   // Iterate over all parts
   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
   {
-#ifdef Augustdebug
     std::cout << "----- cut part: " << cut_part << std::endl;
-#endif
 
     // Iterate over cut cells for current part
     const std::map<unsigned int,
                    std::vector<std::pair<std::size_t,
                                          unsigned int>>>&
       cmap = collision_map_cut_cells(cut_part);
-
-    for (const std::pair<const unsigned int,
-	   std::vector<std::pair<std::size_t,
-	   unsigned int>>>&
-           cut : cmap)
+    for (const auto cut_i: cmap)
     {
-#ifdef Augustdebug
-      std::cout << "-------- new cut cell "<< cut.first << '\n';
-#endif
       // Get cut cell
-      // const unsigned int cut_cell_index = cut_cell.first;
-      const Cell cut_cell(*(_meshes[cut_part]), cut.first);
+      const std::size_t cut_cell_index_i = cut_i.first;
+      const Cell cut_cell_i(*(_meshes[cut_part]), cut_cell_index_i);
 
       // Get dimensions
-      const std::size_t tdim = cut_cell.mesh().topology().dim();
-      const std::size_t gdim = cut_cell.mesh().geometry().dim();
+      const std::size_t tdim = cut_cell_i.mesh().topology().dim();
+      const std::size_t gdim = cut_cell_i.mesh().geometry().dim();
+#ifdef Augustdebug
+      std::cout << "cut cell i=" << cut_cell_index_i << " from part="<<cut_part<<" tdim="<<tdim<<" gdim="<<gdim<<std::endl;
+#endif
 
       // Data structure for the interface quadrature rule
       std::vector<quadrature_rule> interface_qr;
-      std::vector<std::vector<double>> interface_n;
 
-      // Loop over all cutting cells
-      for (const std::pair<size_t, unsigned int>& cutting : cut.second)
+      // Data structure for the first intersections (this is the first
+      // stage in the inclusion exclusion principle). These are the
+      // polygons to be used in the exlusion inclusion, i.e. E_ij \cap
+      // T_k.
+      std::vector<std::pair<std::size_t, Polyhedron> > initial_polygons;
+
+      // Loop over all cutting cells to construct the polyhedra to be
+      // used in the inclusion-exclusion principle
+      for (const std::pair<size_t, unsigned int>& cutting_j : cut_i.second)
       {
 	// Get cutting part and cutting cell
-        const std::size_t cutting_part_j = cutting.first;
-        const std::size_t cutting_cell_index_j = cutting.second;
+        const std::size_t cutting_part_j = cutting_j.first;
+        const std::size_t cutting_cell_index_j = cutting_j.second;
         const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
-
+	dolfin_assert(cutting_part_j > cut_part);
 #ifdef Augustdebug
-	std::cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n";
-	std::cout << "\ncut cutting (cut = " << cut_part << " cutting part_j=" << cutting_part_j << ")\n"
-		  << tools::drawtriangle(cut_cell,"'y'") << tools::drawtriangle(cutting_cell_j,"'m'")<<tools::zoom()<<std::endl;
+	std::cout << "cutting cell j " << cutting_cell_index_j<<" from part j="<<cutting_part_j<<std::endl;
 #endif
 
-#ifdef Augustnormaldebug
-	std::cout << "the FACET normals are:\n ";
-	for (auto boundary_cell_index : full_to_bdry[cutting_part_j][cutting_cell_index_j])
-        {
-	  // Get the boundary facet as a facet in the full mesh
-	  const Facet boundary_facet(*_meshes[cutting_part_j],
-				     boundary_cell_index.second);
+	// Iterate over boundary cells of this cutting cell (for
+	// triangles we have one or two sides that cut). Here we can
+	// change to create a full E_ij used in the E_ij \cap T_k, or
+	// we can only take a part of the Eij
 
-	  // Get the cutting cell normal
-	  const std::size_t local_facet_index = cutting_cell_j.index(boundary_facet);
-	  const Point facet_normal = cutting_cell_j.normal(local_facet_index);
-	  std::cout << boundary_cell_index.second << "   " << facet_normal << std::endl;
-	}
-	std::cout << "the bdry CELL normals are:\n ";
-	for (auto boundary_cell_index: full_to_bdry[cutting_part_j][cutting_cell_index_j])
-	{
-	  const Cell boundary_cell(*_boundary_meshes[cutting_part_j],
-                                   boundary_cell_index.first);
-	  const Point cell_normal0 = boundary_cell.normal(0);
-	  const Point cell_normal1 = boundary_cell.normal(1);
-	  std::cout << tools::drawtriangle(boundary_cell,"'k'") << " % " << cell_normal0<<"  "<<cell_normal1 << std::endl;
-	}
-	// std::cout << "the FULL cell normals are ";
-	// for (auto boundary_cell_index: full_to_bdry[cutting_part_j][cutting_cell_index_j])
-	// {
-	//   const std::size_t full_facet_no =
+	// Net qr for the Eij
+	quadrature_rule Eij_qr;
 
-	PPause;
-#endif
-  	// Only allow same type of cell for now
-      	dolfin_assert(cutting_cell_j.mesh().topology().dim() == tdim);
-      	dolfin_assert(cutting_cell_j.mesh().geometry().dim() == gdim);
-
-	// Data structure for the interface of the cut & cutting cells
-	// (the interface integral is over this interface minus the
-	// colliding elements).
-	std::vector<Polyhedron> cut_cutting_interface; // NB: this is really a single polyhedron
-	std::vector<std::vector<Point>> cut_cutting_normals; // Matches the polyhedron
-	quadrature_rule cut_cutting_interface_qr;
-	std::vector<double> cut_cutting_interface_n; // Matches cut_cutting_interface_qr.first
-
-	// Iterate over boundary cells
-        for (auto boundary_cell_index : full_to_bdry[cutting_part_j][cutting_cell_index_j])
+        for (auto boundary_cell_index_j: full_to_bdry[cutting_part_j][cutting_cell_index_j])
         {
           // Get the boundary facet as a cell in the boundary mesh
           // (remember that this is of one less topological dimension)
-          const Cell boundary_cell(*_boundary_meshes[cutting_part_j], boundary_cell_index.first);
-	  dolfin_assert(boundary_cell.mesh().topology().dim() == tdim - 1);
-#ifdef Augustnormaldebug
-	  std::vector<double> x;
-	  boundary_cell.get_vertex_coordinates(x);
-	  for (const auto i: x)
-	    std::cout << i <<' ';
-	  std::cout << std::endl;
-	  std::cout << tools::drawtriangle(boundary_cell) << std::endl;
-#endif
-          // Triangulate intersection of cut cell and boundary cell
-	  // FIXME: here we could include only large lines
-          const Polyhedron polygon = IntersectionTriangulation::triangulate(cut_cell, boundary_cell);
+          const Cell boundary_cell_j(*_boundary_meshes[cutting_part_j],
+				     boundary_cell_index_j.first);
+	  dolfin_assert(boundary_cell_j.mesh().topology().dim() == tdim - 1);
 
-#ifdef Augustdebug
+	  // Triangulate intersection of cut cell and boundary cell
+	  const Polyhedron Eij_part = IntersectionTriangulation::triangulate(cut_cell_i,
+									     boundary_cell_j);
+	  if (Eij_part.size())
 	  {
-	    std::cout << "intersection of:\n";
-	    std::cout << tools::drawtriangle(cut_cell,"'b'")<<tools::drawtriangle(boundary_cell,"'r'")<<tools::zoom()<<'\n';
-	    std::cout << "% intersection (size="<<polygon.size()<<")\n";
-	    if (polygon.size())
+#ifdef Augustdebug
+	    std::cout << "The intersection of the following cut_cell_i and the boundary of the cutting cell j give the Eij_part\n"
+		      << tools::drawtriangle(cut_cell_i)<<tools::drawtriangle(boundary_cell_j)<<std::endl;
+	    std::cout << "the intersection is Eij_part:\n";
+	    for (const auto s: Eij_part) {
+	      dolfin_assert(!tools::is_degenerate(s));
+	      std::cout << tools::drawtriangle(s) << " % simplex.size="<<s.size()<<' '<<__LINE__<<std::endl;
+	    }
+#endif
+
+
+	    // Need to store qr here as std::vector, but is flattened
+	    std::vector<quadrature_rule> Eij_part_qr;
+
+	    // Store qr for Eij_part since inc exc only for Eij \cap
+	    // T_k (this is actually stage 0)
+	    for (const Simplex& s: Eij_part)
+	      _add_quadrature_rule(Eij_qr, s, gdim, quadrature_order, 1.);
+
+	    for (const std::pair<size_t, unsigned int>& cutting_k: cut_i.second)
 	    {
-	      for (const auto simplex: polygon)
+	      const std::size_t cutting_part_k = cutting_k.first;
+	      if (//cutting_part_k > cut_part and // this is always true
+		  cutting_part_k != cutting_part_j) // ignore cells in same part
 	      {
-		std::cout << "sub simplex size "<<simplex.size() << '\n';
-		std::cout << tools::drawtriangle(simplex,"'k'");
-	      }
-	      std::cout << std::endl;
-	      std::cout << "areas=[";
-	      for (const auto simplex: polygon)
-		std::cout << tools::area(simplex)<<' ';
-	      std::cout << "];"<<std::endl;
-	    }
-	  }
-	  //PPause;
-#endif
-	  // Get the boundary facet as a facet in the full mesh
-	  const Facet boundary_facet(*_meshes[cutting_part_j], boundary_cell_index.second);
-
-	  // Get the cutting cell normal
-	  const std::size_t local_facet_index = cutting_cell_j.index(boundary_facet);
-	  const Point facet_normal = cutting_cell_j.normal(local_facet_index);
-
-	  // Store polygon
-	  cut_cutting_interface.push_back(polygon);
-
-	  // Temporarily store normal (match simplices in polygon)
-	  cut_cutting_normals.push_back(std::vector<Point>(polygon.size(), facet_normal));
-
-	  // Store quadrature rule and normal
-	  for (const Simplex& simplex: polygon)
-	    if (simplex.size() == tdim) // this is really simplex.size() - 1 == tdim - 1
-	    {
+		const std::size_t cutting_cell_index_k = cutting_k.second;
+		const Cell cutting_cell_k(*(_meshes[cutting_part_k]), cutting_cell_index_k);
 #ifdef Augustdebug
-	      std::cout << "simplex tdim " << simplex.size() << std::endl;
+		std::cout << "cutting cell k " << cutting_cell_index_k << " from part k " << cutting_part_k << std::endl;
 #endif
-	      const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex, gdim, quadrature_order, 1.);
-	      _add_normal(cut_cutting_interface_n, facet_normal, num_qr_pts, gdim);
-	    }
-	} // end this cut cutting pair initialization
-
-#ifdef Augustdebug
-	// Remember that cut_cutting_interface_n is vector<double>, i.e. twice the number of actual normals
-	std::cout << cut_cutting_interface_qr.first.size() <<' '<<cut_cutting_interface_n.size() << std::endl;
-	dolfin_assert(cut_cutting_interface_qr.first.size() == cut_cutting_interface_n.size());
-	// also cut_cutting_normals temporarily save normals:
-	std::cout << cut_cutting_interface.size() << ' ' << cut_cutting_normals.size() << std::endl;
-	dolfin_assert(cut_cutting_interface.size() == cut_cutting_normals.size());
-	//PPause;
-#endif
-
-#ifdef Augustnormaldebug
-	std::cout << "after cut cutting pair initialization, normals:"<<std::endl;
-	for (std::size_t i = 0; i < cut_cutting_interface_n.size()/2; ++i)
-	  std::cout << i << ":   "<< cut_cutting_interface_n[2*i]<<' '<<cut_cutting_interface_n[2*i+1] << std::endl;
-	PPause;
-#endif
-
-	// Now subtract the net contribution from all other cutting
-	// elements. By net contribution we mean the
-	// inclusion-exclusion principle on the edge
-	// cut_cutting_interface.
-	if (cut_cutting_interface.size())
-	{
-	  std::vector<std::pair<std::size_t, const Cell> > initial_cells;
-
-	  // All other cutting cells are to be included in the
-	  // inclusion-exclusion
-	  for (auto kt = cut.second.begin(); kt != cut.second.end(); kt++)
-	  {
-	    const std::size_t cutting_part_k = kt->first;
-	    if (cutting_part_k != cutting_part_j) // ignore all cells in same part
-	    {
-	      const std::size_t cutting_cell_index_k = kt->second;
-	      const Cell cutting_cell_k(*(_meshes[cutting_part_k]), cutting_cell_index_k);
-	      initial_cells.push_back(std::make_pair(initial_cells.size(), cutting_cell_k));
-#ifdef Augustdebug
-	      std::cout << tools::drawtriangle(cutting_cell_k);
-#endif
-	    }
-	  }
-
-	  const std::size_t N_cells = initial_cells.size();
-	  const std::size_t N_stages = N_cells;
-#ifdef Augustdebug
-	  std::cout << "\ninitial_cells.size() = #stages = " << N_cells << std::endl;
-	  std::cout << "normals are\n";
-	  for (const auto vec: cut_cutting_normals)
-	    for (const auto n: vec)
-	      std::cout << n << ' ';
-	  std::cout << std::endl;
-#endif
-	  if (N_cells > 0)
-	  {
-	    // Do stage 0: this is the intersection of the edge with
-	    // all the cells. The cells with non-empty intersection
-	    // form the previous intersections.
-#ifdef Augustdebug
-	    std::cout << "\nstage 0" << std::endl;
-#endif
-	    std::vector<IncExcKey> previous_intersections_keys;
-	    std::vector<Polyhedron> previous_intersections;
-
-	    // Add quadrature rule for stage 0. These are composed of E \cap K_i. Keep track of keys.
-	    const double sign = -1;
-	    const std::size_t old_num_qr = cut_cutting_interface_qr.second.size();
-
-	    for (const auto cell: initial_cells)
-	    {
-	      bool add_key = false;
-	      bool key_added = false;
-	      for (std::size_t p = 0; p < cut_cutting_interface.size(); ++p)
-		for (std::size_t s = 0; s < cut_cutting_interface[p].size(); ++s)
+		// Find E_ij_part \cap T_k. This is the initial_polygon
+		const Polyhedron Eij_part_cap_Tk = IntersectionTriangulation::triangulate(cutting_cell_k,
+											  Eij_part);
+		if (Eij_part_cap_Tk.size())
 		{
-		  const std::vector<Simplex> simplex_tmp(1, cut_cutting_interface[p][s]);
 #ifdef Augustdebug
-		  std::cout << "test collision cell number " << cell.first<<" and simplex: " << tools::drawtriangle(cell.second) << tools::drawtriangle(simplex_tmp[0]) << std::endl;
-#endif
-		  // Only allow codimension 1
-		  dolfin_assert(cut_cutting_interface[p][s].size() == tdim); // really size() - 1 == tdim - 1
-		  const Polyhedron ii = IntersectionTriangulation::triangulate(cell.second, simplex_tmp, tdim - 1);
-
-		  if (ii.size()) {
-#ifdef Augustdebug
-		    std::cout << "collided cell and simplex (cell key "<<cell.first<<") " << tools::drawtriangle(cell.second) << tools::drawtriangle(simplex_tmp[0]) << std::endl;
-#endif
-		    add_key = true;
-		    // const std::vector<std::size_t> num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, ii, gdim, quadrature_order, sign);
-		    // for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
-		    //   _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts[j], gdim);
-
-		    for (const Simplex simplex: ii)
-		      if (simplex.size() == tdim)
-		      {
-#ifdef Augustdebug
-			std::cout << "simplex tdim " << simplex.size() << std::endl;
-#endif
-			const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex, gdim, quadrature_order, sign);
-			_add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
-		      }
+		  std::cout << "The cutting cell k and E_ij part is:\n";
+		  std::cout << tools::drawtriangle(cutting_cell_k)<<"   ";
+		  for (const auto s: Eij_part) {
+		    dolfin_assert(!tools::is_degenerate(s));
+		    std::cout << tools::drawtriangle(s);
 		  }
+		  std::cout << std::endl;
+		  std::cout << "the intersection of these is the Eij_part_cap_Tk (size="<<Eij_part_cap_Tk.size()<<"):"<<std::endl;
+		  for (const auto s: Eij_part_cap_Tk) {
+		    dolfin_assert(!tools::is_degenerate(s));
+		    std::cout << tools::drawtriangle(s) << " % simplex.size="<<s.size()<<' '<<__LINE__<<std::endl;
+		  }
+		  std::cout << std::endl;
+#endif
+		  // Store key and polygon
+		  initial_polygons.push_back(std::make_pair(initial_polygons.size(),
+							    Eij_part_cap_Tk));
 		}
-
-	      dolfin_assert(cut_cutting_interface_qr.first.size() == cut_cutting_interface_n.size());
-
-	      if (add_key and !key_added)
-	      {
-		std::vector<double> x;
-		cell.second.get_vertex_coordinates(x);
-		Simplex s(tdim + 1);
-		for (std::size_t t = 0; t < tdim + 1; ++t)
-		  for (std::size_t d = 0; d < gdim; ++d)
-		    s[t][d] = x[gdim*t + d];
-		const Polyhedron p = std::vector<Simplex>(1, s);
-		previous_intersections.push_back(p);
-		previous_intersections_keys.push_back(IncExcKey(1, cell.first));
-		key_added = true;
 	      }
 	    }
+
 #ifdef Augustdebug
-	    {
-	      std::cout << "summary stage 0\n"
-			<< "assert previous_intersections and previous_intersections_keys same size: "
-			<< previous_intersections.size() << ' ' << previous_intersections_keys.size() << '\n';
-	      if (previous_intersections.size() != previous_intersections_keys.size()) { PPause; }
-	      std:: cout << "polyhedra:\n";
-	      for (const auto polyhedron: previous_intersections)
-		for (const auto simplex: polyhedron)
-		  std::cout << tools::drawtriangle(simplex);
-	      std::cout << "\nkeys:\n";
-	      for (std::size_t a = 0; a < previous_intersections_keys.size(); ++a)
-	      {
-		std::cout << a << ": ";
-		for (const auto k: previous_intersections_keys[a])
-		  std::cout << k;
-		std::cout << '\n';
-	      }
-	      std::cout << "normals:\n";
-	      for (const auto n: cut_cutting_interface_n)
-		std::cout << n<<' ';
+	    std::cout << "initial_polygons before calling inc-exc (size="<<initial_polygons.size()<<std::endl;
+	    for (const auto p: initial_polygons) {
+	      std::cout << "key: " << p.first<<std::endl;
+	      std::cout << "polyhedron: ";
+	      for (const auto s: p.second)
+		std::cout << tools::drawtriangle(s);
 	      std::cout << std::endl;
-	      //for (const auto kk: previous_intersections_keys)
-	      //for (const auto k: kk)
-	      //std::cout << k << ' ';
-	      std::cout << "num qr = " << cut_cutting_interface_qr.second.size()<<'\n';
-	      bool newline = true;
-	      for (std::size_t i = 0; i < cut_cutting_interface_qr.second.size(); ++i)
-	      {
-		std::cout << "plot(" << cut_cutting_interface_qr.first[2*i]<<','<<cut_cutting_interface_qr.first[2*i+1]<<",'go') % "<<cut_cutting_interface_qr.second[i]<<std::endl; newline = false;
-	      }
-	      if (newline) std::cout << std::endl;
 	    }
 #endif
-	    bool continue_with_next_stage = cut_cutting_interface_qr.second.size() > old_num_qr;
 
-	    // Now do the inclusion-exclusion. This is only needed if
-	    // we found qr points in stage 0.
-	    for (std::size_t stage = 1; stage < N_stages; ++stage)
-	      if (continue_with_next_stage)
-	      {
-#ifdef Augustdebug
-		std::cout << "stage " << stage << std::endl;
-#endif
-		// Structure for storing new intersections
-		std::vector<IncExcKey> new_intersections_keys;
-		std::vector<Polyhedron> new_intersections;
-
-		// Loop over all intersections from previous
-		// stage. Intersect with the initial_cell with key >
-		// the keys from the intersection.
-		dolfin_assert(previous_intersections.size() == previous_intersections_keys.size());
-
-		for (std::size_t j = 0; j < previous_intersections.size(); ++j)
-		{
-		  if (previous_intersections_keys[j].size())
-		  {
-		    const IncExcKey current_keys = previous_intersections_keys[j];
-		    const std::size_t max_key = current_keys.back();
-		    const std::size_t cell_start = max_key + 1;
-		    for (std::size_t k = cell_start; k < initial_cells.size(); ++k)
-		    {
-		      // Only allow codimension 1
-		      // if (initial_cells[k].second.size() == tdim + 1 &&
-		      // 	  previous_intersections[j].size() == tdim) // really size() - 1 == tdim - 1
-		      {
-			const Polyhedron ii = IntersectionTriangulation::triangulate(initial_cells[k].second, previous_intersections[j], tdim);
-
-			if (ii.size())
-			{
-			  new_intersections.push_back(ii);
-			  IncExcKey new_polyhedron_keys = current_keys;
-			  new_polyhedron_keys.push_back(initial_cells[k].first);
-			  new_intersections_keys.push_back(new_polyhedron_keys);
-			}
-		      }
-		    }
-		  }
-		}
-#ifdef Augustdebug
-		std::cout << " end of stage " << stage << ". Run E_ij cap T for these T:\n";
-		for (const auto polyhedron: new_intersections)
-		  for (const auto simplex: polyhedron)
-		    std::cout << tools::drawtriangle(simplex);
-		std::cout << "\n Now create quadrature rules (if any):"<<std::endl;// if we don't create any quadrature points at all at this stage, we don't have to continue with other stages
-#endif
-		const std::size_t old_qr_sz = cut_cutting_interface_qr.second.size();
-		// Add quadrature rule with correct sign
-		const double sign = std::pow(-1, stage+1);
-		for (const auto polyhedron: new_intersections)
-		  for (const auto simplex: polyhedron)
-		    for (std::size_t p = 0; p < cut_cutting_interface.size(); ++p)
-		      for (std::size_t s = 0; s < cut_cutting_interface[p].size(); ++s)
-		      {
-			const Simplex& interface_simplex = cut_cutting_interface[p][s];
-
-			// Check intersection with edge from cut_cutting_interface
-			//const std::vector<double> ii = IntersectionTriangulation::triangulate(simplex, interface_simplex, gdim);
-			if (simplex.size() == tdim + 1 &&
-			    interface_simplex.size() == tdim)
-			{
-			  const Polyhedron ii = IntersectionTriangulation::triangulate(simplex, interface_simplex, gdim);
-			  if (ii.size())
-			  {
-			    for (const Simplex sii: ii)
-			      if (sii.size() == tdim)
-			      {
-				std::cout << "simplex tdim " << sii.size() << std::endl;
-				const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, sii, gdim, quadrature_order, sign);
-				_add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
-			      }
-#ifdef Augustdebug
-			    std::cout<<" qr creation collision was:\n"
-				     <<tools::drawtriangle(simplex)<<tools::drawtriangle(interface_simplex)<<std::endl;
-			    //PPause;
-#endif
-			  }
-			}
-		      }
-		dolfin_assert(cut_cutting_interface_qr.first.size() == cut_cutting_interface_n.size());
-
-		continue_with_next_stage = cut_cutting_interface_qr.second.size() > old_qr_sz;
-#ifdef Augustdebug
-		std::cout << "created " << cut_cutting_interface_qr.second.size() - old_qr_sz << " quadrature points" << std::endl;
-#endif
-
-		// Update
-		previous_intersections = new_intersections;
-		previous_intersections_keys = new_intersections_keys;
-
-	      } // end stage
-	  }
-	}
-	interface_qr.push_back(cut_cutting_interface_qr);
-	interface_n.push_back(cut_cutting_interface_n);
-
-	dolfin_assert(interface_n.size() == interface_qr.size());
-
-#ifdef Augustdebug
-	std::cout << "\nshort summary of this cut/cutting pair = " << cut_part << ' ' << cutting_part_j << '\n'
-		  << "cut_cutting_interface_qr.size() = " << cut_cutting_interface_qr.second.size() << std::endl;
-	for (std::size_t i = 0; i < cut_cutting_interface_qr.second.size(); ++i)
-	{
-	  std::cout << "plot(" << cut_cutting_interface_qr.first[2*i]<<","<<cut_cutting_interface_qr.first[2*i+1]<<",'rx'); % " << cut_cutting_interface_qr.second[i]<<' '<<i<<" normal: ";
-	  for (std::size_t j = 0; j < gdim; ++j)
-	    std::cout << cut_cutting_interface_n[i*gdim+j] << ' ';
-	  std::cout << std::endl;
-	}
-	//PPause;
-#endif
-
-      } // end loop over cutting
-
-      _quadrature_rules_interface[cut_part][cut.first] = interface_qr;
-      _facet_normals[cut_part][cut.first] = interface_n;
-
-#ifdef Augustcheckqrpositive
-      {
-	std::cout << "\n\nsummary for cut part and cut cell index " << cut_part << " " << cut_cell_index << std::endl;
-	std::cout << "interface_qr.size() = " << interface_qr.size() << std::endl;
-	std::cout << tools::drawtriangle(cut_cell,"'b'",true)<<'\n';
-	const auto& cmap = collision_map_cut_cells(cut_part);
-	for (auto it = cmap.begin(); it != cmap.end(); ++it)
-	{
-	  if (it->first == cut.first)
-	  {
-	    // Loop over all cutting cells
-	    for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
+	    if (initial_polygons.size())
 	    {
-	      // Get cutting part and cutting cell
-	      const std::size_t cutting_part_j = jt->first;
-	      const std::size_t cutting_cell_index_j = jt->second;
-	      const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
-	      std::cout << tools::drawtriangle(cutting_cell_j,"'r'",true);
+	      // Call inclusion exclusion with negative weight
+	      const double factor = -1.;
+	      _inclusion_exclusion(Eij_part_qr, initial_polygons,
+				   tdim - 1, gdim, quadrature_order, factor);
 	    }
-	    std::cout << '\n';
-	  }
-	}
-	std::size_t cnt = 0;
-	for (const auto dqr: interface_qr)
-	{
-	  for (std::size_t i = 0; i < dqr.second.size(); ++i)
-	  {
-	    cnt++;
-	    const std::string m = dqr.second[i] > 0 ? "'rx'" : "'go'";
-	    std::cout<<std::setprecision(15) << "plot(" << dqr.first[2*i]<<","<<dqr.first[2*i+1]<<','<<m<<",'markersize',14); % "<<dqr.second[i]<<' '<<i<<std::endl;
-	  }
-	}
-	if (cnt==0) { PPause; }
-      }
-#endif
 
+	    // Flatten the qr
+	    for (const auto qr: Eij_part_qr)
+	    {
+	      Eij_qr.first.insert(Eij_qr.first.end(), qr.first.begin(), qr.first.end());
+	      Eij_qr.second.insert(Eij_qr.second.end(), qr.second.begin(), qr.second.end());
+	    }
+	  }
+	}
+
+	// Save the qr for this Eij (push_back makes order correct)
+	interface_qr.push_back(Eij_qr);
+
+      } // end loop over cutting_j
+
+
+      _quadrature_rules_interface[cut_part][cut_cell_index_i] = interface_qr;
     }
   }
+
+
+
+
+
+//   begin(PROGRESS, "Building quadrature rules of interface.");
+
+//   // This is similar to _build_quadrature_rules_overlap, except
+//   // - For the edge E_ij, we only intersect with triangles T_k where
+//   //   k>i and k!=j
+//   // - We note sign changes |E \ (A ∪ B)| = |E| - |E ∩ (A ∩ B)| and
+//   //   proceed with A ∩ B as in _build_quadrature_rules_overlap
+
+// #ifdef Augustdebug
+//   std::cout <<"\n\n"<< __FUNCTION__ << " with quadrature_order="<<quadrature_order<<std::endl;
+// #endif
+
+// #ifdef Augustnormaldebug
+//   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
+//   {
+//     std::cout << "cut part = " << cut_part << std::endl;
+//     const auto& cmap = collision_map_cut_cells(cut_part);
+//     for (auto it = cmap.begin(); it != cmap.end(); ++it)
+//     {
+//       // Get cut cell
+//       const unsigned int cut_cell_index = it->first;
+//       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
+//       std::cout << tools::drawtriangle(cut_cell) << std::endl;
+
+//       for (std::size_t f = 0; f < 3; ++f)
+//       {
+// 	std::cout << cut_cell.normal(f) << std::endl;
+//       }
+//     }
+//   }
+//   PPause;
+// #endif
+
+//   // Clear quadrature rules
+//   _quadrature_rules_interface.clear();
+
+//   // Resize quadrature rules
+//   _quadrature_rules_interface.resize(num_parts());
+
+//   // Clear and resize facet normals
+//   _facet_normals.clear();
+//   _facet_normals.resize(num_parts());
+
+//   // FIXME: test prebuild map from boundary facets to full mesh cells
+//   // for all meshes: Loop over all boundary mesh facets to find the
+//   // full mesh cell which contains the facet. This is done in two
+//   // steps: Since the facet is on the boundary mesh, we first map this
+//   // facet to a facet in the full mesh using the
+//   // boundary_cell_map. Then we use the full_facet_cell_map to find
+//   // the corresponding cell in the full mesh. This cell is to match
+//   // the cutting_cell_no.
+
+//   // Build map from boundary facets to full mesh
+//   std::vector<std::vector<std::vector<std::pair<std::size_t, std::size_t>>>> full_to_bdry(num_parts());
+//   for (std::size_t part = 0; part < num_parts(); ++part)
+//   {
+//     full_to_bdry[part].resize(_meshes[part]->num_cells());
+
+//     // Get map from boundary mesh to facets of full mesh
+//     const std::size_t tdim_boundary = _boundary_meshes[part]->topology().dim();
+//     const auto& boundary_cell_map = _boundary_meshes[part]->entity_map(tdim_boundary);
+
+//     // Generate facet to cell connectivity for full mesh
+//     const std::size_t tdim = _meshes[part]->topology().dim();
+//     _meshes[part]->init(tdim_boundary, tdim);
+//     const MeshConnectivity& full_facet_cell_map = _meshes[part]->topology()(tdim_boundary, tdim);
+
+//     for (std::size_t boundary_facet = 0; boundary_facet < boundary_cell_map.size(); ++boundary_facet)
+//     {
+//       // Find the facet in the full mesh
+//       const std::size_t full_mesh_facet = boundary_cell_map[boundary_facet];
+//       // Find the cells in the full mesh (for interior facets we
+//       // can have 2 facets, but here we should only have 1)
+//       dolfin_assert(full_facet_cell_map.size(full_mesh_facet) == 1);
+//       const auto& full_cells = full_facet_cell_map(full_mesh_facet);
+//       full_to_bdry[part][full_cells[0]].push_back(std::make_pair(boundary_facet, full_mesh_facet));
+//     }
+//   }
+
+//   // Iterate over all parts
+//   for (std::size_t cut_part = 0; cut_part < num_parts(); cut_part++)
+//   {
+// #ifdef Augustdebug
+//     std::cout << "----- cut part: " << cut_part << std::endl;
+// #endif
+
+//     // Iterate over cut cells for current part
+//     const std::map<unsigned int,
+//                    std::vector<std::pair<std::size_t,
+//                                          unsigned int>>>&
+//       cmap = collision_map_cut_cells(cut_part);
+
+//     for (const std::pair<const unsigned int,
+// 	   std::vector<std::pair<std::size_t,
+// 	   unsigned int>>>&
+//            cut : cmap)
+//     {
+// #ifdef Augustdebug
+//       std::cout << "-------- new cut cell "<< cut.first << '\n';
+// #endif
+//       // Get cut cell
+//       // const unsigned int cut_cell_index = cut_cell.first;
+//       const Cell cut_cell(*(_meshes[cut_part]), cut.first);
+
+//       // Get dimensions
+//       const std::size_t tdim = cut_cell.mesh().topology().dim();
+//       const std::size_t gdim = cut_cell.mesh().geometry().dim();
+
+//       // Data structure for the interface quadrature rule
+//       std::vector<quadrature_rule> interface_qr;
+//       std::vector<std::vector<double>> interface_n;
+
+
+//       // Data structure for the first intersections (this is the first
+//       // stage in the inclusion exclusion principle). These are the
+//       // polyhedra to be used in the exlusion inclusion.
+//       std::vector<std::pair<std::size_t, Polyhedron> > initial_polyhedra;
+
+//       // Loop over all cutting cells
+//       for (const std::pair<size_t, unsigned int>& cutting : cut.second)
+//       {
+// 	// Get cutting part and cutting cell
+//         const std::size_t cutting_part_j = cutting.first;
+//         const std::size_t cutting_cell_index_j = cutting.second;
+//         const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
+
+// #ifdef Augustdebug
+// 	std::cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n";
+// 	std::cout << "\ncut cutting (cut = " << cut_part << " cutting part_j=" << cutting_part_j << ")\n"
+// 		  << tools::drawtriangle(cut_cell,"'y'") << tools::drawtriangle(cutting_cell_j,"'m'")<<tools::zoom()<<std::endl;
+// #endif
+
+// #ifdef Augustnormaldebug
+// 	std::cout << "the FACET normals are:\n ";
+// 	for (auto boundary_cell_index : full_to_bdry[cutting_part_j][cutting_cell_index_j])
+//         {
+// 	  // Get the boundary facet as a facet in the full mesh
+// 	  const Facet boundary_facet(*_meshes[cutting_part_j],
+// 				     boundary_cell_index.second);
+
+// 	  // Get the cutting cell normal
+// 	  const std::size_t local_facet_index = cutting_cell_j.index(boundary_facet);
+// 	  const Point facet_normal = cutting_cell_j.normal(local_facet_index);
+// 	  std::cout << boundary_cell_index.second << "   " << facet_normal << std::endl;
+// 	}
+// 	std::cout << "the bdry CELL normals are:\n ";
+// 	for (auto boundary_cell_index: full_to_bdry[cutting_part_j][cutting_cell_index_j])
+// 	{
+// 	  const Cell boundary_cell(*_boundary_meshes[cutting_part_j],
+//                                    boundary_cell_index.first);
+// 	  const Point cell_normal0 = boundary_cell.normal(0);
+// 	  const Point cell_normal1 = boundary_cell.normal(1);
+// 	  std::cout << tools::drawtriangle(boundary_cell,"'k'") << " % " << cell_normal0<<"  "<<cell_normal1 << std::endl;
+// 	}
+// 	// std::cout << "the FULL cell normals are ";
+// 	// for (auto boundary_cell_index: full_to_bdry[cutting_part_j][cutting_cell_index_j])
+// 	// {
+// 	//   const std::size_t full_facet_no =
+
+// 	PPause;
+// #endif
+//   	// Only allow same type of cell for now
+//       	dolfin_assert(cutting_cell_j.mesh().topology().dim() == tdim);
+//       	dolfin_assert(cutting_cell_j.mesh().geometry().dim() == gdim);
+
+// 	// Data structure for the interface of the cut & cutting cells
+// 	// (the interface integral is over this interface minus the
+// 	// colliding elements).
+// 	std::vector<Polyhedron> cut_cutting_interface; // NB: this is really a single polyhedron
+// 	std::vector<std::vector<Point>> cut_cutting_normals; // Matches the polyhedron
+// 	quadrature_rule cut_cutting_interface_qr;
+// 	std::vector<double> cut_cutting_interface_n; // Matches cut_cutting_interface_qr.first
+
+// 	// Iterate over boundary cells
+//         for (auto boundary_cell_index : full_to_bdry[cutting_part_j][cutting_cell_index_j])
+//         {
+//           // Get the boundary facet as a cell in the boundary mesh
+//           // (remember that this is of one less topological dimension)
+//           const Cell boundary_cell(*_boundary_meshes[cutting_part_j], boundary_cell_index.first);
+// 	  dolfin_assert(boundary_cell.mesh().topology().dim() == tdim - 1);
+// #ifdef Augustnormaldebug
+// 	  std::vector<double> x;
+// 	  boundary_cell.get_vertex_coordinates(x);
+// 	  for (const auto i: x)
+// 	    std::cout << i <<' ';
+// 	  std::cout << std::endl;
+// 	  std::cout << tools::drawtriangle(boundary_cell) << std::endl;
+// #endif
+//           // Triangulate intersection of cut cell and boundary cell
+// 	  // FIXME: here we could include only large lines
+//           const Polyhedron polygon = IntersectionTriangulation::triangulate(cut_cell, boundary_cell);
+
+// #ifdef Augustdebug
+// 	  {
+// 	    std::cout << "intersection of:\n";
+// 	    std::cout << tools::drawtriangle(cut_cell,"'b'")<<tools::drawtriangle(boundary_cell,"'r'")<<tools::zoom()<<'\n';
+// 	    std::cout << "% intersection (size="<<polygon.size()<<")\n";
+// 	    if (polygon.size())
+// 	    {
+// 	      for (const auto simplex: polygon)
+// 	      {
+// 		std::cout << "sub simplex size "<<simplex.size() << '\n';
+// 		std::cout << tools::drawtriangle(simplex,"'k'");
+// 	      }
+// 	      std::cout << std::endl;
+// 	      std::cout << "areas=[";
+// 	      for (const auto simplex: polygon)
+// 		std::cout << tools::area(simplex)<<' ';
+// 	      std::cout << "];"<<std::endl;
+// 	    }
+// 	  }
+// 	  //PPause;
+// #endif
+// 	  // Get the boundary facet as a facet in the full mesh
+// 	  const Facet boundary_facet(*_meshes[cutting_part_j], boundary_cell_index.second);
+
+// 	  // Get the cutting cell normal
+// 	  const std::size_t local_facet_index = cutting_cell_j.index(boundary_facet);
+// 	  const Point facet_normal = cutting_cell_j.normal(local_facet_index);
+
+// 	  // Store polygon
+// 	  cut_cutting_interface.push_back(polygon);
+
+// 	  // Temporarily store normal (match simplices in polygon)
+// 	  cut_cutting_normals.push_back(std::vector<Point>(polygon.size(), facet_normal));
+
+// 	  // Store quadrature rule and normal
+// 	  for (const Simplex& simplex: polygon)
+// 	    if (simplex.size() == tdim) // this is really simplex.size() - 1 == tdim - 1
+// 	    {
+// #ifdef Augustdebug
+// 	      std::cout << "simplex tdim " << simplex.size() << std::endl;
+// #endif
+// 	      const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex, gdim, quadrature_order, 1.);
+// 	      _add_normal(cut_cutting_interface_n, facet_normal, num_qr_pts, gdim);
+// 	    }
+// 	} // end this cut cutting pair initialization
+
+// #ifdef Augustdebug
+// 	// Remember that cut_cutting_interface_n is vector<double>, i.e. twice the number of actual normals
+// 	std::cout << cut_cutting_interface_qr.first.size() <<' '<<cut_cutting_interface_n.size() << std::endl;
+// 	dolfin_assert(cut_cutting_interface_qr.first.size() == cut_cutting_interface_n.size());
+// 	// also cut_cutting_normals temporarily save normals:
+// 	std::cout << cut_cutting_interface.size() << ' ' << cut_cutting_normals.size() << std::endl;
+// 	dolfin_assert(cut_cutting_interface.size() == cut_cutting_normals.size());
+// 	//PPause;
+// #endif
+
+// #ifdef Augustnormaldebug
+// 	std::cout << "after cut cutting pair initialization, normals:"<<std::endl;
+// 	for (std::size_t i = 0; i < cut_cutting_interface_n.size()/2; ++i)
+// 	  std::cout << i << ":   "<< cut_cutting_interface_n[2*i]<<' '<<cut_cutting_interface_n[2*i+1] << std::endl;
+// 	PPause;
+// #endif
+
+// 	// Now subtract the net contribution from all other cutting
+// 	// elements. By net contribution we mean the
+// 	// inclusion-exclusion principle on the edge
+// 	// cut_cutting_interface.
+// 	if (cut_cutting_interface.size())
+// 	{
+// 	  std::vector<std::pair<std::size_t, const Cell> > initial_cells;
+
+// 	  // All other cutting cells are to be included in the
+// 	  // inclusion-exclusion
+// 	  for (auto kt = cut.second.begin(); kt != cut.second.end(); kt++)
+// 	  {
+// 	    const std::size_t cutting_part_k = kt->first;
+// 	    if (cutting_part_k != cutting_part_j) // ignore all cells in same part
+// 	    {
+// 	      const std::size_t cutting_cell_index_k = kt->second;
+// 	      const Cell cutting_cell_k(*(_meshes[cutting_part_k]), cutting_cell_index_k);
+// 	      initial_cells.push_back(std::make_pair(initial_cells.size(), cutting_cell_k));
+// #ifdef Augustdebug
+// 	      std::cout << tools::drawtriangle(cutting_cell_k);
+// #endif
+// 	    }
+// 	  }
+
+// 	  const std::size_t N_cells = initial_cells.size();
+// 	  const std::size_t N_stages = N_cells;
+// #ifdef Augustdebug
+// 	  std::cout << "\ninitial_cells.size() = #stages = " << N_cells << std::endl;
+// 	  std::cout << "normals are\n";
+// 	  for (const auto vec: cut_cutting_normals)
+// 	    for (const auto n: vec)
+// 	      std::cout << n << ' ';
+// 	  std::cout << std::endl;
+// #endif
+// 	  if (N_cells > 0)
+// 	  {
+// 	    // Do stage 0: this is the intersection of the edge with
+// 	    // all the cells. The cells with non-empty intersection
+// 	    // form the previous intersections.
+// #ifdef Augustdebug
+// 	    std::cout << "\nstage 0" << std::endl;
+// #endif
+// 	    std::vector<IncExcKey> previous_intersections_keys;
+// 	    std::vector<Polyhedron> previous_intersections;
+
+// 	    // Add quadrature rule for stage 0. These are composed of E \cap K_i. Keep track of keys.
+// 	    const double sign = -1;
+// 	    const std::size_t old_num_qr = cut_cutting_interface_qr.second.size();
+
+// 	    for (const auto cell: initial_cells)
+// 	    {
+// 	      bool add_key = false;
+// 	      bool key_added = false;
+// 	      for (std::size_t p = 0; p < cut_cutting_interface.size(); ++p)
+// 		for (std::size_t s = 0; s < cut_cutting_interface[p].size(); ++s)
+// 		{
+// 		  const std::vector<Simplex> simplex_tmp(1, cut_cutting_interface[p][s]);
+// #ifdef Augustdebug
+// 		  std::cout << "test collision cell number " << cell.first<<" and simplex: " << tools::drawtriangle(cell.second) << tools::drawtriangle(simplex_tmp[0]) << std::endl;
+// #endif
+// 		  // Only allow codimension 1
+// 		  dolfin_assert(cut_cutting_interface[p][s].size() == tdim); // really size() - 1 == tdim - 1
+// 		  const Polyhedron ii = IntersectionTriangulation::triangulate(cell.second, simplex_tmp, tdim - 1);
+
+// 		  if (ii.size()) {
+// #ifdef Augustdebug
+// 		    std::cout << "collided cell and simplex (cell key "<<cell.first<<") " << tools::drawtriangle(cell.second) << tools::drawtriangle(simplex_tmp[0]) << std::endl;
+// #endif
+// 		    add_key = true;
+// 		    // const std::vector<std::size_t> num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, ii, gdim, quadrature_order, sign);
+// 		    // for (std::size_t j = 0; j < num_qr_pts.size(); ++j)
+// 		    //   _add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts[j], gdim);
+
+// 		    for (const Simplex simplex: ii)
+// 		      if (simplex.size() == tdim)
+// 		      {
+// #ifdef Augustdebug
+// 			std::cout << "simplex tdim " << simplex.size() << std::endl;
+// #endif
+// 			const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, simplex, gdim, quadrature_order, sign);
+// 			_add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
+// 		      }
+// 		  }
+// 		}
+
+// 	      dolfin_assert(cut_cutting_interface_qr.first.size() == cut_cutting_interface_n.size());
+
+// 	      if (add_key and !key_added)
+// 	      {
+// 		std::vector<double> x;
+// 		cell.second.get_vertex_coordinates(x);
+// 		Simplex s(tdim + 1);
+// 		for (std::size_t t = 0; t < tdim + 1; ++t)
+// 		  for (std::size_t d = 0; d < gdim; ++d)
+// 		    s[t][d] = x[gdim*t + d];
+// 		const Polyhedron p = std::vector<Simplex>(1, s);
+// 		previous_intersections.push_back(p);
+// 		previous_intersections_keys.push_back(IncExcKey(1, cell.first));
+// 		key_added = true;
+// 	      }
+// 	    }
+// #ifdef Augustdebug
+// 	    {
+// 	      std::cout << "summary stage 0\n"
+// 			<< "assert previous_intersections and previous_intersections_keys same size: "
+// 			<< previous_intersections.size() << ' ' << previous_intersections_keys.size() << '\n';
+// 	      if (previous_intersections.size() != previous_intersections_keys.size()) { PPause; }
+// 	      std:: cout << "polyhedra:\n";
+// 	      for (const auto polyhedron: previous_intersections)
+// 		for (const auto simplex: polyhedron)
+// 		  std::cout << tools::drawtriangle(simplex);
+// 	      std::cout << "\nkeys:\n";
+// 	      for (std::size_t a = 0; a < previous_intersections_keys.size(); ++a)
+// 	      {
+// 		std::cout << a << ": ";
+// 		for (const auto k: previous_intersections_keys[a])
+// 		  std::cout << k;
+// 		std::cout << '\n';
+// 	      }
+// 	      std::cout << "normals:\n";
+// 	      for (const auto n: cut_cutting_interface_n)
+// 		std::cout << n<<' ';
+// 	      std::cout << std::endl;
+// 	      //for (const auto kk: previous_intersections_keys)
+// 	      //for (const auto k: kk)
+// 	      //std::cout << k << ' ';
+// 	      std::cout << "num qr = " << cut_cutting_interface_qr.second.size()<<'\n';
+// 	      bool newline = true;
+// 	      for (std::size_t i = 0; i < cut_cutting_interface_qr.second.size(); ++i)
+// 	      {
+// 		std::cout << "plot(" << cut_cutting_interface_qr.first[2*i]<<','<<cut_cutting_interface_qr.first[2*i+1]<<",'go') % "<<cut_cutting_interface_qr.second[i]<<std::endl; newline = false;
+// 	      }
+// 	      if (newline) std::cout << std::endl;
+// 	    }
+// #endif
+// 	    bool continue_with_next_stage = cut_cutting_interface_qr.second.size() > old_num_qr;
+
+// 	    // Now do the inclusion-exclusion. This is only needed if
+// 	    // we found qr points in stage 0.
+// 	    for (std::size_t stage = 1; stage < N_stages; ++stage)
+// 	      if (continue_with_next_stage)
+// 	      {
+// #ifdef Augustdebug
+// 		std::cout << "stage " << stage << std::endl;
+// #endif
+// 		// Structure for storing new intersections
+// 		std::vector<IncExcKey> new_intersections_keys;
+// 		std::vector<Polyhedron> new_intersections;
+
+// 		// Loop over all intersections from previous
+// 		// stage. Intersect with the initial_cell with key >
+// 		// the keys from the intersection.
+// 		dolfin_assert(previous_intersections.size() == previous_intersections_keys.size());
+
+// 		for (std::size_t j = 0; j < previous_intersections.size(); ++j)
+// 		{
+// 		  if (previous_intersections_keys[j].size())
+// 		  {
+// 		    const IncExcKey current_keys = previous_intersections_keys[j];
+// 		    const std::size_t max_key = current_keys.back();
+// 		    const std::size_t cell_start = max_key + 1;
+// 		    for (std::size_t k = cell_start; k < initial_cells.size(); ++k)
+// 		    {
+// 		      // Only allow codimension 1
+// 		      // if (initial_cells[k].second.size() == tdim + 1 &&
+// 		      // 	  previous_intersections[j].size() == tdim) // really size() - 1 == tdim - 1
+// 		      {
+// 			const Polyhedron ii = IntersectionTriangulation::triangulate(initial_cells[k].second, previous_intersections[j], tdim);
+
+// 			if (ii.size())
+// 			{
+// 			  new_intersections.push_back(ii);
+// 			  IncExcKey new_polyhedron_keys = current_keys;
+// 			  new_polyhedron_keys.push_back(initial_cells[k].first);
+// 			  new_intersections_keys.push_back(new_polyhedron_keys);
+// 			}
+// 		      }
+// 		    }
+// 		  }
+// 		}
+// #ifdef Augustdebug
+// 		std::cout << " end of stage " << stage << ". Run E_ij cap T for these T:\n";
+// 		for (const auto polyhedron: new_intersections)
+// 		  for (const auto simplex: polyhedron)
+// 		    std::cout << tools::drawtriangle(simplex);
+// 		std::cout << "\n Now create quadrature rules (if any):"<<std::endl;// if we don't create any quadrature points at all at this stage, we don't have to continue with other stages
+// #endif
+// 		const std::size_t old_qr_sz = cut_cutting_interface_qr.second.size();
+// 		// Add quadrature rule with correct sign
+// 		const double sign = std::pow(-1, stage+1);
+// 		for (const auto polyhedron: new_intersections)
+// 		  for (const auto simplex: polyhedron)
+// 		    for (std::size_t p = 0; p < cut_cutting_interface.size(); ++p)
+// 		      for (std::size_t s = 0; s < cut_cutting_interface[p].size(); ++s)
+// 		      {
+// 			const Simplex& interface_simplex = cut_cutting_interface[p][s];
+
+// 			// Check intersection with edge from cut_cutting_interface
+// 			//const std::vector<double> ii = IntersectionTriangulation::triangulate(simplex, interface_simplex, gdim);
+// 			if (simplex.size() == tdim + 1 &&
+// 			    interface_simplex.size() == tdim)
+// 			{
+// 			  const Polyhedron ii = IntersectionTriangulation::triangulate(simplex, interface_simplex, gdim);
+// 			  if (ii.size())
+// 			  {
+// 			    for (const Simplex sii: ii)
+// 			      if (sii.size() == tdim)
+// 			      {
+// 				std::cout << "simplex tdim " << sii.size() << std::endl;
+// 				const std::size_t num_qr_pts = _add_quadrature_rule(cut_cutting_interface_qr, sii, gdim, quadrature_order, sign);
+// 				_add_normal(cut_cutting_interface_n, cut_cutting_normals[p][s], num_qr_pts, gdim);
+// 			      }
+// #ifdef Augustdebug
+// 			    std::cout<<" qr creation collision was:\n"
+// 				     <<tools::drawtriangle(simplex)<<tools::drawtriangle(interface_simplex)<<std::endl;
+// 			    //PPause;
+// #endif
+// 			  }
+// 			}
+// 		      }
+// 		dolfin_assert(cut_cutting_interface_qr.first.size() == cut_cutting_interface_n.size());
+
+// 		continue_with_next_stage = cut_cutting_interface_qr.second.size() > old_qr_sz;
+// #ifdef Augustdebug
+// 		std::cout << "created " << cut_cutting_interface_qr.second.size() - old_qr_sz << " quadrature points" << std::endl;
+// #endif
+
+// 		// Update
+// 		previous_intersections = new_intersections;
+// 		previous_intersections_keys = new_intersections_keys;
+
+// 	      } // end stage
+// 	  }
+// 	}
+// 	interface_qr.push_back(cut_cutting_interface_qr);
+// 	interface_n.push_back(cut_cutting_interface_n);
+
+// 	dolfin_assert(interface_n.size() == interface_qr.size());
+
+// #ifdef Augustdebug
+// 	std::cout << "\nshort summary of this cut/cutting pair = " << cut_part << ' ' << cutting_part_j << '\n'
+// 		  << "cut_cutting_interface_qr.size() = " << cut_cutting_interface_qr.second.size() << std::endl;
+// 	for (std::size_t i = 0; i < cut_cutting_interface_qr.second.size(); ++i)
+// 	{
+// 	  std::cout << "plot(" << cut_cutting_interface_qr.first[2*i]<<","<<cut_cutting_interface_qr.first[2*i+1]<<",'rx'); % " << cut_cutting_interface_qr.second[i]<<' '<<i<<" normal: ";
+// 	  for (std::size_t j = 0; j < gdim; ++j)
+// 	    std::cout << cut_cutting_interface_n[i*gdim+j] << ' ';
+// 	  std::cout << std::endl;
+// 	}
+// 	//PPause;
+// #endif
+
+//       } // end loop over cutting
+
+//       _quadrature_rules_interface[cut_part][cut.first] = interface_qr;
+//       _facet_normals[cut_part][cut.first] = interface_n;
+
+// #ifdef Augustcheckqrpositive
+//       {
+// 	std::cout << "\n\nsummary for cut part and cut cell index " << cut_part << " " << cut_cell_index << std::endl;
+// 	std::cout << "interface_qr.size() = " << interface_qr.size() << std::endl;
+// 	std::cout << tools::drawtriangle(cut_cell,"'b'",true)<<'\n';
+// 	const auto& cmap = collision_map_cut_cells(cut_part);
+// 	for (auto it = cmap.begin(); it != cmap.end(); ++it)
+// 	{
+// 	  if (it->first == cut.first)
+// 	  {
+// 	    // Loop over all cutting cells
+// 	    for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
+// 	    {
+// 	      // Get cutting part and cutting cell
+// 	      const std::size_t cutting_part_j = jt->first;
+// 	      const std::size_t cutting_cell_index_j = jt->second;
+// 	      const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
+// 	      std::cout << tools::drawtriangle(cutting_cell_j,"'r'",true);
+// 	    }
+// 	    std::cout << '\n';
+// 	  }
+// 	}
+// 	std::size_t cnt = 0;
+// 	for (const auto dqr: interface_qr)
+// 	{
+// 	  for (std::size_t i = 0; i < dqr.second.size(); ++i)
+// 	  {
+// 	    cnt++;
+// 	    const std::string m = dqr.second[i] > 0 ? "'rx'" : "'go'";
+// 	    std::cout<<std::setprecision(15) << "plot(" << dqr.first[2*i]<<","<<dqr.first[2*i+1]<<','<<m<<",'markersize',14); % "<<dqr.second[i]<<' '<<i<<std::endl;
+// 	  }
+// 	}
+// 	if (cnt==0) { PPause; }
+//       }
+// #endif
+
+//     }
+//   }
 
 }
 
@@ -1422,6 +1647,7 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
     std::cout << std::endl;
     //std::cout  << dqr.first[2*i]<<' '<<dqr.first[2*i+1]<< std::endl;
   }
+  std::cout << "_add_quadrature_rule net area " << tools::area(qr) << std::endl;
 #endif
 
   return num_points;
@@ -1485,14 +1711,18 @@ void MultiMesh::_plot() const
 }
 //------------------------------------------------------------------------------
 void MultiMesh::_inclusion_exclusion
-(const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
+(std::vector<quadrature_rule>& qr,
+ const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
  std::size_t tdim,
  std::size_t gdim,
  std::size_t quadrature_order,
- double factor,
- std::vector<quadrature_rule>& overlap_qr) const
+ double factor) const
 {
-
+  begin(PROGRESS, "The inclusion exclusion principle.");
+#ifdef Augustdebug
+  std::cout << '\n'<<__FUNCTION__<<" tdim="<<tdim<<" gdim="<<gdim
+	    <<" quadrature_order="<<quadrature_order<<" factor="<<factor<<std::endl;
+#endif
 
   // Exclusion-inclusion principle. There are N stages in the
   // principle, where N = polyhedra.size(). The first stage is
@@ -1509,6 +1739,17 @@ void MultiMesh::_inclusion_exclusion
     previous_intersections[i] = std::make_pair(IncExcKey(1, initial_polyhedra[i].first),
 					       initial_polyhedra[i].second);
 
+#ifdef Augustdebug
+  std::cout << "---------------- stage 0: the inclusion inclusion is over the following:\n";
+  for (std::size_t i = 0; i < N; ++i)
+  {
+    std::cout << "key "<<previous_intersections[i].first[0]<<":"<<std::endl;
+    for (const auto s: previous_intersections[i].second)
+      std::cout << tools::drawtriangle(s);
+    std::cout << std::endl;
+  }
+#endif
+
   // Do stage = 1 up to stage = polyhedra.size in the
   // principle. Recall that stage 1 is the pairwise
   // intersections. There are up to n_choose_k(N,stage)
@@ -1517,18 +1758,16 @@ void MultiMesh::_inclusion_exclusion
   // previous_intersections data. We only have to intersect if the
   // key doesn't contain the polyhedron.
 
-  // Add quadrature rule for stage 0 (always positive)
-  const std::size_t sign = 1;
-
-  quadrature_rule overlap_part_qr;
+  // Add quadrature rule for stage 0
+  quadrature_rule part_qr;
   for (const std::pair<IncExcKey, Polyhedron>& pol_pair: previous_intersections)
     for (const Simplex& simplex: pol_pair.second)
       if (simplex.size() == tdim + 1)
-	_add_quadrature_rule(overlap_part_qr, simplex, gdim,
-			     quadrature_order, sign);
+	_add_quadrature_rule(part_qr, simplex, gdim,
+			     quadrature_order, factor);
 
   // Add quadrature rule for overlap part
-  overlap_qr.push_back(overlap_part_qr);
+  qr.push_back(part_qr);
 
   for (std::size_t stage = 1; stage < N; ++stage)
   {
@@ -1554,13 +1793,13 @@ void MultiMesh::_inclusion_exclusion
 	  std::cout << "----------\nkeys previous_polyhedron: ";
 	  for (const auto key: previous_polyhedron.first)
 	    std::cout << key <<' ';
-	  std::cout << "simplices previous polyhedron:\n";
+	  std::cout << "\nsimplices previous polyhedron:\n";
 	  for (const auto s: previous_polyhedron.second)
-	    std::cout << tools::drawtriangle(s);
-	  std::cout << "\nkeys initial_polyhedron: " << initial_polyhedron.first <<'\n';
+	    std::cout << tools::drawtriangle(s) << " % simplex.size()="<<s.size()<<' '<<__LINE__<<std::endl;
+	  std::cout << "keys initial_polyhedron: " << initial_polyhedron.first <<'\n';
 	  std::cout << "simplices initial polyhedron\n";
 	  for (const auto s: initial_polyhedron.second)
-	    std::cout << tools::drawtriangle(s,"'r'");
+	    std::cout << tools::drawtriangle(s,"'r'") <<" % simplex.size()="<<s.size()<<' '<<__LINE__<<std::endl;
 	  std::cout << tools::zoom()<<'\n';
 #endif
 
@@ -1605,16 +1844,19 @@ void MultiMesh::_inclusion_exclusion
 		  // polyhedron, we don't call this a polyhedron
 		  // yet, but rather a std::vector<Simplex> since we
 		  // are still filling the polyhedron with simplices
+
 		  // FIXME: We could add only if area is suff large
 		  for (const Simplex& simplex: ii)
-		    if (simplex.size() == tdim + 1)
+		    if (simplex.size() == tdim + 1 and !tools::is_degenerate(simplex))
 		    {
+		      //dolfin_assert(!tools::is_degenerate(simplex));
 		      new_polyhedron.push_back(simplex);
 		      any_intersections = true;
 		    }
 #ifdef Augustdebug
 		  {
-		    std::cout << '\n'<<tools::drawtriangle(previous_simplex,"'b'")
+		    std::cout << "intersected:\n";
+		    std::cout << tools::drawtriangle(previous_simplex,"'b'")
 			      << tools::drawtriangle(initial_simplex,"'r'")<<tools::zoom()<<std::endl;
 		    std::cout << "areas: " << tools::area(previous_simplex)<<' '<<tools::area(initial_simplex)<<'\n';
 		    const double min_area = std::min(tools::area(previous_simplex), tools::area(initial_simplex));
@@ -1659,47 +1901,6 @@ void MultiMesh::_inclusion_exclusion
       }
     }
 
-#ifdef Augustdebug
-    {
-      std::cout << "\n summarize at stage="<<stage<<std::endl;
-      std::cout << "the previous intersections were:\n";
-      for (const auto previous_polyhedron: previous_intersections)
-      {
-	for (const auto key: previous_polyhedron.first)
-	  std::cout << key<<' ';
-	std::cout << "   ";
-      }
-      std::cout << '\n';
-      for (const auto previous_polyhedron: previous_intersections)
-      {
-	for (const auto simplex: previous_polyhedron.second)
-	  std::cout << tools::drawtriangle(simplex);
-	std::cout << "    ";
-      }
-      std::cout << '\n';
-
-
-      std::cout << "the new intersections are:\n";
-      for (const auto new_polyhedron: new_intersections)
-      {
-	for (const auto key: new_polyhedron.first)
-	  std::cout << key<<' ';
-	std::cout << "   ";
-      }
-      std::cout << '\n';
-      for (const auto new_polyhedron: new_intersections)
-      {
-	for (const auto simplex: new_polyhedron.second)
-	  std::cout << tools::drawtriangle(simplex);
-	std::cout <<"    ";
-      }
-      std::cout << '\n';
-
-      //if (cut_part == 1) { PPause; }
-      //if (cut_part == 0) { PPause; }
-    }
-#endif
-
     // Update before next stage
     previous_intersections = new_intersections;
 
@@ -1713,10 +1914,60 @@ void MultiMesh::_inclusion_exclusion
 	  _add_quadrature_rule(overlap_part_qr, simplex, gdim, quadrature_order, sign);
 
     // Add quadrature rule for overlap part
-    overlap_qr.push_back(overlap_part_qr);
-  } // end exclusion-inclusion principle
+    qr.push_back(overlap_part_qr);
+
+#ifdef Augustdebug
+    std::cout << "\n summarize at stage="<<stage<<std::endl;
+    std::cout << "the previous intersections were:\n";
+    for (const auto previous_polyhedron: previous_intersections)
+    {
+      for (const auto key: previous_polyhedron.first)
+	std::cout << key<<' ';
+      std::cout << "   ";
+    }
+    std::cout << '\n';
+    for (const auto previous_polyhedron: previous_intersections)
+    {
+      for (const auto simplex: previous_polyhedron.second)
+	std::cout << tools::drawtriangle(simplex);
+      std::cout << "    ";
+    }
+    std::cout << '\n';
 
 
+    std::cout << "the new intersections are:\n";
+    for (const auto new_polyhedron: new_intersections)
+    {
+      for (const auto key: new_polyhedron.first)
+	std::cout << key<<' ';
+      std::cout << "   ";
+    }
+    std::cout << '\n';
+    for (const auto new_polyhedron: new_intersections)
+    {
+      for (const auto simplex: new_polyhedron.second)
+	std::cout << tools::drawtriangle(simplex);
+      std::cout <<"    ";
+    }
+    std::cout << '\n';
+
+    //if (cut_part == 1) { PPause; }
+    //if (cut_part == 0) { PPause; }
+
+    std::cout << "end summary"<<std::endl;
+#endif
+  } // end loop over stages
+
+#ifdef Augustdebug
+  std::cout << "inc exc summary\n";
+  double area =0;
+  for (const auto qr0: qr) {
+    tools::cout_qr(qr0);
+    area += tools::area(qr0);
+  }
+  std::cout << "net area inc exc " << area << std::endl;
+  std::cout << std::endl;
+#endif
 
 
 

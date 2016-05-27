@@ -3,23 +3,40 @@
 
 #include "predicates.h"
 
-#include <dolfin/mesh/Vertex.h>
 
 #include <string>
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <cstdlib>
 
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/MultiMesh.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/log/log.h>
-
+#include <dolfin/math/basic.h>
 
 namespace tools
 {
 #define PPause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
+
+  inline bool is_degenerate(std::vector<dolfin::Point> s)
+  {
+    switch (s.size())
+    {
+    case 4: { std::cout << "not implemented\n"; PPause; }
+    case 3: { return orient2d(s[0].coordinates(),
+			      s[1].coordinates(),
+			      s[2].coordinates()) == 0; }
+    case 2: {
+      double r[2] = { dolfin::rand(), dolfin::rand() };
+      return orient2d(s[0].coordinates(), s[1].coordinates(), r) == 0;
+    }
+    case 1: return true;
+    default: { PPause; }
+    }
+  }
 
   /* typedef std::vector<Point> Simplex; */
   /* typedef std::vector<Simplex> Polyhedron; */
@@ -188,6 +205,7 @@ namespace tools
       }
     }
     else {
+      std::cout << "simplex size to plot is " << simplex.size() << std::endl;
       PPause;
       dolfin_assert(false);
     }

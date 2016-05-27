@@ -93,19 +93,31 @@ IntersectionTriangulation::triangulate(const std::vector<Point>& points_0,
 
   // Pick correct specialized implementation
   if (d0 == 1 && d1 == 1)
-    return std::vector<std::vector<Point>>(1, triangulate_segment_segment(points_0[0],
-									  points_0[1],
-									  points_1[0],
-									  points_1[1],
-									  gdim));
+  {
+    const std::vector<Point> triangulation = triangulate_segment_segment(points_0[0],
+									 points_0[1],
+									 points_1[0],
+									 points_1[1],
+									 gdim);
+    if (triangulation.size())
+      return std::vector<std::vector<Point>>(1, triangulation);
+    else
+      return std::vector<std::vector<Point>>();
+  }
 
   if (d0 == 2 && d1 == 1)
-    return std::vector<std::vector<Point>>(1, triangulate_triangle_segment(points_0[0],
-									   points_0[1],
-									   points_0[2],
-									   points_1[0],
-									   points_1[1],
-									   gdim));
+  {
+    const std::vector<Point> triangulation = triangulate_triangle_segment(points_0[0],
+									  points_0[1],
+									  points_0[2],
+									  points_1[0],
+									  points_1[1],
+									  gdim);
+    if (triangulation.size())
+      return std::vector<std::vector<Point>>(1, triangulation);
+    else
+      return std::vector<std::vector<Point>>();
+  }
 
   if (d0 == 2 && d1 == 2)
     return triangulate_triangle_triangle(points_0[0],
@@ -360,7 +372,7 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 
     if (triangulation.size() == 0)
     {
-      std::cout << "Segment segment triangulation: Insert interior point" << std::endl;
+      //std::cout << "Segment segment triangulation: Insert interior point" << std::endl;
       if (std::signbit(q0_q1_p0) != std::signbit(q0_q1_p1) && std::signbit(p0_p1_q0) != std::signbit(p0_p1_q1))
       {
 	//std::cout << "Why don't we call triangulate_segment_interior_segment_interior?"<<std::endl;
@@ -578,6 +590,7 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
       point_strictly_less psl;
       std::sort(points.begin(), points.end(), psl);
 
+      // return two mid points
       return std::vector<Point>{{ points[1], points[2] }};
     }
 
