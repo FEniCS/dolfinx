@@ -21,23 +21,6 @@ namespace tools
 {
 #define PPause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
 
-  inline bool is_degenerate(std::vector<dolfin::Point> s)
-  {
-    switch (s.size())
-    {
-    case 4: { std::cout << "not implemented\n"; PPause; }
-    case 3: { return orient2d(s[0].coordinates(),
-			      s[1].coordinates(),
-			      s[2].coordinates()) == 0; }
-    case 2: {
-      double r[2] = { dolfin::rand(), dolfin::rand() };
-      return orient2d(s[0].coordinates(), s[1].coordinates(), r) == 0;
-    }
-    case 1: return true;
-    default: { PPause; }
-    }
-  }
-
   /* typedef std::vector<Point> Simplex; */
   /* typedef std::vector<Simplex> Polyhedron; */
   inline bool tdimcheck(const std::vector<std::vector<dolfin::Point>>& polygon)
@@ -503,6 +486,47 @@ namespace tools
     if (matlab) return "axis equal;";
     else
       return "plt.autoscale(enable=True,axis='both',tight=None);";
+  }
+
+
+
+  inline bool is_degenerate(std::vector<dolfin::Point> s)
+  {
+    bool is_degenerate = false;
+    switch (s.size())
+    {
+    case 4:
+      {
+      std::cout << "not implemented\n";
+      PPause;
+      break;
+    }
+    case 3:
+      {
+	is_degenerate = orient2d(s[0].coordinates(),
+				 s[1].coordinates(),
+				 s[2].coordinates()) == 0;
+	break;
+      }
+    case 2:
+      {
+	double r[2] = { dolfin::rand(), dolfin::rand() };
+	is_degenerate = orient2d(s[0].coordinates(), s[1].coordinates(), r) == 0;
+	break;
+      }
+    case 1:
+      {
+	is_degenerate = true;
+	break;
+      }
+    default: { PPause; }
+    }
+
+    if (is_degenerate)
+    {
+      std::cout << drawtriangle(s)<<" is degenerate (s.size() = "<<s.size()<<std::endl; PPause;
+    }
+    return is_degenerate;
   }
 
 }
