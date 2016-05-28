@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
   multimesh->add(mesh_1); exact_area += 4*L1;
   multimesh->add(mesh_2); exact_area += 4*L2;
   multimesh->add(mesh_3); exact_area += 4*L3;
-  multimesh->add(mesh_4); exact_area += 4*L4;
+  // multimesh->add(mesh_4); exact_area += 4*L4;
   multimesh->build(1); // qr generated here
   tools::dolfin_write_medit_triangles("multimesh",*multimesh);
 

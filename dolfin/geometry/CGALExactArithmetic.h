@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-05-21
+// Last changed: 2016-05-28
 //
 // Developer note:
 //
@@ -633,6 +633,24 @@ namespace dolfin
     }
 
     return triangulation;
+  }
+
+  //----------------------------------------------------------------------------
+  // Reference implementations of DOLFIN is_degenerate
+  // ---------------------------------------------------------------------------
+  inline bool cgal_is_degenerate(const std::vector<Point>& s)
+  {
+    switch (s.size())
+    {
+    case 1: return true;
+    case 2: return is_degenerate(s[0], s[1]);
+    case 3: return is_degenerate(s[0], s[1], s[2]);
+    default:
+      dolfin_error("CGALExactArithmetic.h",
+		   "cgal_is_degenerate",
+		   "Only implemented for simplices of tdim 0, 1 and 2".);
+    }
+    return false;
   }
 }
 #endif

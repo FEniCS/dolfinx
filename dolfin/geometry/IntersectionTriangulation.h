@@ -236,6 +236,13 @@ namespace dolfin
       return _triangulate_tetrahedron_tetrahedron(p0, p1, p2, p3, q0, q1, q2, q3);
     }
 
+    /// Check whether simplex is degenerate
+    static bool is_degenerate(const std::vector<Point>& simplex)
+    {
+      return CHECK_CGAL(_is_degenerate(simplex),
+                        cgal_is_degenerate(simplex));
+    }
+
   private:
 
     // Implementation of triangulation functions
@@ -319,6 +326,11 @@ namespace dolfin
     // Create triangulation of a convex set of points
     static std::vector<std::vector<Point>>
     graham_scan(const std::vector<Point>& points);
+
+    // Implementation of is_degenerate
+    static bool _is_degenerate(std::vector<Point> simplex);
+
+
   };
 }
 

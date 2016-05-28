@@ -488,43 +488,6 @@ namespace tools
       return "plt.autoscale(enable=True,axis='both',tight=None);";
   }
 
-
-
-  inline bool is_degenerate(std::vector<dolfin::Point> s)
-  {
-    bool is_degenerate = false;
-    switch (s.size())
-    {
-    case 4:
-      std::cout << "not implemented\n";
-      PPause;
-      break;
-    case 3:
-      is_degenerate = orient2d(s[0].coordinates(),
-			       s[1].coordinates(),
-			       s[2].coordinates()) == 0;
-      break;
-    case 2:
-      {
-	double r[2] = { dolfin::rand(), dolfin::rand() };
-	is_degenerate = orient2d(s[0].coordinates(), s[1].coordinates(), r) == 0;
-	break;
-      }
-    case 1:
-      is_degenerate = true;
-      break;
-    default: { PPause; }
-    }
-
-    if (is_degenerate)
-    {
-      std::cout << drawtriangle(s)<<" % is degenerate (s.size() = "<<s.size()
-		<<" volume = " << area(s) << std::endl;
-      //PPause;
-    }
-    return is_degenerate;
-  }
-
 }
 
 #endif
