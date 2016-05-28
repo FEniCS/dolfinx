@@ -334,7 +334,7 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 							   Point q0,
 							   Point q1)
 {
-  std::cout<<__FUNCTION__<<std::endl;
+  //std::cout<<__FUNCTION__<<std::endl;
 
   std::vector<Point> triangulation;
 
@@ -829,10 +829,10 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
       // If we get one intersection point, find the segment end point
       // that is inside the triangle. Do this cautiously since one
       // point may be strictly inside and one may be on the boundary.
-      std::cout << "check q0 "<<std::endl;
       const bool q0_inside = CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q0);
-      std::cout << "check q1 "<<std::endl;
       const bool q1_inside = CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q1);
+      // std::cout << "check q0 "<<std::endl;
+      // std::cout << "check q1 "<<std::endl;
 
       if (q0_inside and q1_inside)
       {
@@ -858,13 +858,13 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
 	return std::vector<Point>{{ q1, points[0] }};
       else
       {
-      	std::cout << tools::drawtriangle({{p0,p1,p2}})<<tools::drawtriangle({{q0,q1}})<<std::endl;
-	std::cout << q0_inside << ' ' << q1_inside << std::endl;
+      	// std::cout << tools::drawtriangle({{p0,p1,p2}})<<tools::drawtriangle({{q0,q1}})<<std::endl;
+	// std::cout << q0_inside << ' ' << q1_inside << std::endl;
 	// dolfin_error("IntersectionTriangulation.cpp",
 	// 	     "compute _triangulate_triangle_segment_2d",
 	// 	     "Unexpected classification - we should have found either q0 or q1 inside");
-	std::cout << "IntersectionTriangulation.cpp\n"
-		  << "_triangulate_triangle_segment_2d\n"
+	std::cout << "IntersectionTriangulation.cpp; "
+		  << "_triangulate_triangle_segment_2d; "
 		  <<"Unexpected classification - we should have found either q0 or q1 inside\n";
 	//PPause;
 	return std::vector<Point>();

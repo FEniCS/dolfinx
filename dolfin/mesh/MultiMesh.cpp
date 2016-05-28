@@ -212,15 +212,15 @@ void MultiMesh::build(std::size_t quadrature_order)
   // of quadrature rules: the cut cell qr, qr of the overlap part and
   // qr of the interface.
 
-  // Build quadrature rules of the cut cells' overlap. Do this before
-  // we build the quadrature rules of the cut cells
-  _build_quadrature_rules_overlap(quadrature_order);
+  // // Build quadrature rules of the cut cells' overlap. Do this before
+  // // we build the quadrature rules of the cut cells
+  // _build_quadrature_rules_overlap(quadrature_order);
 
-  // Build quadrature rules of the cut cells
-  _build_quadrature_rules_cut_cells(quadrature_order);
+  // // Build quadrature rules of the cut cells
+  // _build_quadrature_rules_cut_cells(quadrature_order);
 
-  // // Build quadrature rules and normals of the interface
-  // _build_quadrature_rules_interface(quadrature_order);
+  // Build quadrature rules and normals of the interface
+  _build_quadrature_rules_interface(quadrature_order);
 
   end();
 }
@@ -922,7 +922,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
       const std::size_t tdim = cut_cell_i.mesh().topology().dim();
       const std::size_t gdim = cut_cell_i.mesh().geometry().dim();
 #ifdef Augustdebug
-      std::cout << "\ncut cell i=" << cut_cell_index_i << " from part="<<cut_part
+      std::cout << "=====================\ncut cell i=" << cut_cell_index_i << " from part="<<cut_part
 		<<" tdim="<<tdim<<" gdim="<<gdim<<std::endl
 		<< tools::drawtriangle(cut_cell_i)<<std::endl;
 #endif
@@ -990,13 +990,11 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		//dolfin_assert(!tools::is_degenerate(s));
 	      }
 #endif
-
-
-	      // Need to store qr here as std::vector, but is flattened
+	      // Need to store qr here as std::vector, but is flattened later
 	      std::vector<quadrature_rule> Eij_part_qr;
 
-	      // Store qr for Eij_part since inc exc only for Eij \cap
-	      // T_k (this is actually stage 0)
+	      // Store qr for |Eij| (or rather Eij_part) since inc exc
+	      // only for Eij \cap T_k (this is pre stage 0)
 	      for (const Simplex& s: Eij_part)
 		_add_quadrature_rule(Eij_qr, s, gdim, quadrature_order, 1.);
 
@@ -1039,7 +1037,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 								Eij_part_cap_Tk));
 		    }
 		}
-	      }
+	      } // end cutting_k
 
 #ifdef Augustdebug
 	      std::cout << "initial_polygons before calling inc-exc (size="<<initial_polygons.size()<<std::endl;
@@ -1069,21 +1067,45 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		Eij_qr.first.insert(Eij_qr.first.end(), qr.first.begin(), qr.first.end());
 		Eij_qr.second.insert(Eij_qr.second.end(), qr.second.begin(), qr.second.end());
 	      }
+#ifdef Augustdebug
 	      std::cout << "net qr (Eij_qr)"<<std::endl;
 	      tools::cout_qr(Eij_qr);
+	      std::cout << "net qr area = " << tools::area(Eij_qr)<<std::endl;
+#endif
 	    }
 	} // end boundary_cell_j loop
 
 	// Save the qr for this Eij (push_back makes order correct)
-	std::cout << "push back this net qr (Eij_qr)"<<std::endl;
 	interface_qr.push_back(Eij_qr);
+#ifdef Augustdebug
+	std::cout << "push back this net qr (Eij_qr)"<<std::endl;
+	std::cout << "interface_qr is now\n";
+	double area = 0;
+	for (const auto qr: interface_qr)
+	{
+	  tools::cout_qr(qr);
+	  area += tools::area(qr);
+	}
+	std::cout << " area=" << area << std::endl;
+#endif
+
 
       } // end loop over cutting_j
 
+#ifdef Augustdebug
+      std::cout << "  summarize cut part " << cut_part << " cut_cell_index_i " << cut_cell_index_i << std::endl;
+      double area = 0;
+      for (const auto qr: interface_qr)
+      {
+	tools::cout_qr(qr);
+	area += tools::area(qr);
+      }
+      std::cout << " area=" << area << std::endl;
+#endif
 
       _quadrature_rules_interface[cut_part][cut_cell_index_i] = interface_qr;
-    }
-  }
+    } // end loop over cut_i
+  } // end loop over parts
 
 
 
@@ -1960,7 +1982,7 @@ void MultiMesh::_inclusion_exclusion
     previous_intersections = new_intersections;
 
     // Add quadrature rule with correct sign
-    const double sign = std::pow(-1, stage);
+    const double sign = std::pow(-factor, stage);
     quadrature_rule overlap_part_qr;
 
     for (const std::pair<IncExcKey, Polyhedron>& polyhedron: new_intersections)
@@ -2021,7 +2043,7 @@ void MultiMesh::_inclusion_exclusion
     area += tools::area(qr0);
   }
   std::cout << "net area inc exc " << area << std::endl;
-  std::cout << std::endl;
+  std::cout << "end inc exc"<<std::endl<<std::endl;
 #endif
 
 
