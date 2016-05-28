@@ -166,16 +166,16 @@ int main(int argc, char* argv[])
 
 
   auto mesh_1 = std::make_shared<RectangleMesh>(Point(0.1, 0.1), Point(0.9, 0.9), N, N);
-  // mesh_1->translate(Point(-0.05, 0.05));
+  mesh_1->translate(Point(-0.05, 0.05));
   const double L1 = 0.8;
   auto mesh_2 = std::make_shared<RectangleMesh>(Point(0.2, 0.2), Point(0.8, 0.8), N, N);
-  // mesh_2->translate(Point(-0.025, 0.025));
+  mesh_2->translate(Point(-0.025, 0.025));
   const double L2 = 0.6;
   auto mesh_3 = std::make_shared<RectangleMesh>(Point(0.3, 0.3), Point(0.7, 0.7), N, N);
-  // mesh_3->translate(Point(-0.0125, 0.0125));
+  mesh_3->translate(Point(-0.0125, 0.0125));
   const double L3 = 0.4;
   auto mesh_4 = std::make_shared<RectangleMesh>(Point(0.4, 0.4), Point(0.6, 0.6), N, N);
-  // mesh_4->translate(Point(-0.0125/2, 0.0125/2));
+  mesh_4->translate(Point(-0.0125/2, 0.0125/2));
   const double L4 = 0.2;
 
   // tools::dolfin_write_medit_triangles("mesh0",*mesh_0);
