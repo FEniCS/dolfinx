@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2016-05-08
+// Last changed: 2016-05-28
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -495,7 +495,7 @@ namespace dolfin
        std::size_t tdim,
        std::size_t gdim,
        std::size_t quadrature_order,
-       double factor) const;
+       int signflip) const;
 
 
   };

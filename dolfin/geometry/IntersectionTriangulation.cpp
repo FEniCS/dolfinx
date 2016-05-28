@@ -712,19 +712,19 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
 	return std::vector<Point>{{ q1, points[0] }};
       else
       {
-      	// std::cout << tools::drawtriangle({{p0,p1,p2}})<<tools::drawtriangle({{q0,q1}})<<std::endl;
-	// std::cout << q0_inside << ' ' << q1_inside << std::endl;
-	// std::cout << "IntersectionTriangulation.cpp; "
-	// 	  << "_triangulate_triangle_segment_2d; "
-	// 	  <<"Unexpected classification - we should have found either q0 or q1 inside\n";
+      	//std::cout << tools::drawtriangle({{p0,p1,p2}})<<tools::drawtriangle({{q0,q1}})<<std::endl;
+	//std::cout << q0_inside << ' ' << q1_inside << std::endl;
+	std::cout << "IntersectionTriangulation.cpp; "
+		  << "_triangulate_triangle_segment_2d; "
+		  <<"Unexpected classification - we should have found either q0 or q1 inside\n";
 
-	GeometryDebugging::print({{p0,p1,p2}});
-	GeometryDebugging::print({{q0,q1}});
-	std::cout << "q0 q1 inside " << q0_inside << ' ' << q1_inside << std::endl;
+	// GeometryDebugging::print({{p0,p1,p2}});
+	// GeometryDebugging::print({{q0,q1}});
+	// std::cout << "q0 q1 inside " << q0_inside << ' ' << q1_inside << std::endl;
 
-	dolfin_error("IntersectionTriangulation.cpp",
-		     "compute _triangulate_triangle_segment_2d",
-		     "Unexpected classification - we should have found either q0 or q1 inside");
+	// dolfin_error("IntersectionTriangulation.cpp",
+	// 	     "compute _triangulate_triangle_segment_2d",
+	// 	     "Unexpected classification - we should have found either q0 or q1 inside");
 
 	//PPause;
 	return std::vector<Point>();
