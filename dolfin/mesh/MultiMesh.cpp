@@ -209,12 +209,12 @@ void MultiMesh::build(std::size_t quadrature_order)
   // of quadrature rules: the cut cell qr, qr of the overlap part and
   // qr of the interface.
 
-  // Build quadrature rules of the cut cells' overlap. Do this before
-  // we build the quadrature rules of the cut cells
-  _build_quadrature_rules_overlap(quadrature_order);
+  // // Build quadrature rules of the cut cells' overlap. Do this before
+  // // we build the quadrature rules of the cut cells
+  // _build_quadrature_rules_overlap(quadrature_order);
 
-  // Build quadrature rules of the cut cells
-  _build_quadrature_rules_cut_cells(quadrature_order);
+  // // Build quadrature rules of the cut cells
+  // _build_quadrature_rules_cut_cells(quadrature_order);
 
   // Build quadrature rules and normals of the interface
   _build_quadrature_rules_interface(quadrature_order);
