@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2016-05-28
+// Last changed: 2016-05-29
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -488,14 +488,23 @@ namespace dolfin
     // Plot multimesh
     void _plot() const;
 
-    // Inclusion-exclusion
-    void _inclusion_exclusion
-      (std::vector<quadrature_rule>& qr,
-       const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
-       std::size_t tdim,
-       std::size_t gdim,
-       std::size_t quadrature_order,
-       int signflip) const;
+    // Inclusion-exclusion for overlap
+    void _inclusion_exclusion_overlap
+    (std::vector<quadrature_rule>& qr,
+     const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
+     std::size_t tdim,
+     std::size_t gdim,
+     std::size_t quadrature_order) const;
+
+    // Inclusion-exclusion for interface
+    void _inclusion_exclusion_interface
+    (std::vector<quadrature_rule>& qr,
+     const Simplex& Eij,
+     const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polygons,
+     std::size_t tdim,
+     std::size_t gdim,
+     std::size_t quadrature_order) const;
+
 
 
   };

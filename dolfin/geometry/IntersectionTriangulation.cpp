@@ -121,6 +121,20 @@ IntersectionTriangulation::triangulate(const std::vector<Point>& points_0,
       return std::vector<std::vector<Point>>();
   }
 
+  if (d0 == 1 && d1 == 2)
+  {
+    const std::vector<Point> triangulation = triangulate_triangle_segment(points_1[0],
+									  points_1[1],
+									  points_1[2],
+									  points_0[0],
+									  points_0[1],
+									  gdim);
+    if (triangulation.size())
+      return std::vector<std::vector<Point>>(1, triangulation);
+    else
+      return std::vector<std::vector<Point>>();
+  }
+
   if (d0 == 2 && d1 == 2)
     return triangulate_triangle_triangle(points_0[0],
                                          points_0[1],
@@ -335,10 +349,7 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 							   Point q0,
 							   Point q1)
 {
-
-
-
-  std::cout<<__FUNCTION__<<std::endl;
+  //std::cout<<__FUNCTION__<<std::endl;
 
   std::vector<Point> triangulation;
 
@@ -362,7 +373,7 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 				     p1.coordinates(),
 				     q1.coordinates());
 
-    std::cout << std::signbit(q0_q1_p0)<< ' '<< std::signbit(q0_q1_p1)<<' '<< std::signbit(p0_p1_q0) <<' '<< std::signbit(p0_p1_q1) <<std::endl;
+    // std::cout << std::signbit(q0_q1_p0)<< ' '<< std::signbit(q0_q1_p1)<<' '<< std::signbit(p0_p1_q0) <<' '<< std::signbit(p0_p1_q1) <<std::endl;
 
     // std::set<Point, point_strictly_less> triangulation;
     bool collide_p0 = false, collide_p1 = false, collide_q0 = false, collide_q1 = false;
@@ -386,11 +397,11 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
     }
 
 
-    std::cout << tools::plot(p0,"'ko'")<<" % " << collide_p0<<std::endl
-	      <<tools::plot(p1,"'kx'") <<" % " << collide_p1<<std::endl
-	      <<tools::plot(q0,"'k+'") <<" % " << collide_q0<<std::endl
-	      <<tools::plot(q1,"'ks'") <<" % " << collide_q1<<std::endl;
-    std::cout << " triangulation.size was "<<triangulation.size() << std::endl;
+    // std::cout << tools::plot(p0,"'ko'")<<" % " << collide_p0<<std::endl
+    // 	      <<tools::plot(p1,"'kx'") <<" % " << collide_p1<<std::endl
+    // 	      <<tools::plot(q0,"'k+'") <<" % " << collide_q0<<std::endl
+    // 	      <<tools::plot(q1,"'ks'") <<" % " << collide_q1<<std::endl;
+    // std::cout << " triangulation.size was "<<triangulation.size() << std::endl;
 
     if (triangulation.size() == 4)
     {
@@ -467,7 +478,7 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
   // std::cout << __FUNCTION__ <<" returns triangulation of size " << triangulation.size() << std::endl;
 
   // If we end up here, there's no collision
-  std::cout << "no collision"<<std::endl;
+  //std::cout << "no collision"<<std::endl;
   return triangulation;
 
 }
@@ -480,7 +491,7 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
                                                                              Point q0,
                                                                              Point q1)
 {
-  std::cout<<__FUNCTION__<<std::endl;
+  //std::cout<<__FUNCTION__<<std::endl;
   // std::cout.precision(16);
   // std::cout << "triangulate_segment_interior_segment_interior: (" << p0.x() << " " << p0.y() << ", " << p1.x() << " " << p1.y() << ") <--> (" << q0.x() << " " << q0.y() << ", " << q1.x() << " " << q1.y() << ")" << std::endl;
 
@@ -674,7 +685,7 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
     }
   }
 
-  std::cout << __FUNCTION__ <<" returns triangulation of size " << triangulation.size() << std::endl;
+  //std::cout << __FUNCTION__ <<" returns triangulation of size " << triangulation.size() << std::endl;
   return triangulation;
 }
 //-----------------------------------------------------------------------------
