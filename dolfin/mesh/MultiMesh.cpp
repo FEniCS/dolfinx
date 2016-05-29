@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2016-05-28
+// Last changed: 2016-05-29
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -205,9 +205,9 @@ void MultiMesh::build(std::size_t quadrature_order)
   // Build collision maps
   _build_collision_maps();
 
-  // FIXME: For collisions with meshes of same type we get three types
-  // of quadrature rules: the cut cell qr, qr of the overlap part and
-  // qr of the interface.
+  // For collisions with meshes of same type we get three types of
+  // quadrature rules: the cut cell qr, qr of the overlap part and qr
+  // of the interface.
 
   // // Build quadrature rules of the cut cells' overlap. Do this before
   // // we build the quadrature rules of the cut cells
@@ -936,7 +936,8 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
         const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
 	dolfin_assert(cutting_part_j > cut_part);
 #ifdef Augustdebug
-	std::cout << "\ncutting cell j " << cutting_cell_index_j<<" from part j="<<cutting_part_j<<std::endl
+	std::cout << "\ncutting cell j " << cutting_cell_index_j<<" from part j="<<cutting_part_j
+		  <<" (cut cell part is "<< cut_part <<" cut cell no is "<< cut_cell_index_i<<")"<<std::endl
 		  <<' '<<tools::drawtriangle(cutting_cell_j) << std::endl;
 #endif
 
@@ -1116,6 +1117,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	area += tools::area(qr);
       }
       std::cout << " area=" << area << std::endl;
+      std::cout << "xxx Now we reset interface_qr"<<std::endl;
 #endif
 
       _quadrature_rules_interface[cut_part][cut_cell_index_i] = interface_qr;
@@ -1370,6 +1372,14 @@ void MultiMesh::_inclusion_exclusion
 		  initial_simplex.size() == tdim + 1)
 	      {
 		const std::vector<Simplex> ii = IntersectionTriangulation::triangulate(initial_simplex, previous_simplex, gdim);
+#ifdef Augustdebug
+		if (ii.size() == 0)
+		  std::cout << " empty intersection"<<std::endl;
+		if (ii.size() == 1 and ii[0].size() <= tdim)
+		{
+		  std::cout << " intersection is a simplex of size = " << ii[0].size() << " which is too small"<<std::endl;
+		}
+#endif
 
 		if (ii.size())
 		{
@@ -1402,7 +1412,7 @@ void MultiMesh::_inclusion_exclusion
 		    std::cout << "resulting intersection size= "<<ii.size()<<": \n";
 		    for (const auto simplex: ii)
 		    {
-		      std::cout << "sub simplex size "<<simplex.size() << " at line " << __LINE__<<std::endl;
+		      std::cout << "sub simplex size "<<simplex.size() << " at line " << __LINE__<<" degenerate " << IntersectionTriangulation::is_degenerate(simplex)<< std::endl;
 		      std::cout << tools::drawtriangle(simplex,"'g'");
 		    }
 		    std::cout<<tools::zoom()<<std::endl;
@@ -1456,7 +1466,7 @@ void MultiMesh::_inclusion_exclusion
 
 #ifdef Augustdebug
     std::cout << "\n summarize at stage="<<stage<<std::endl;
-    std::cout << "sign = (-1)^stage = "<<sign<<std::endl;
+    std::cout << "sign = signflip*(-1)^stage = "<<signflip<<"*(-1)^"<<stage<<"="<<sign<<std::endl;
     std::cout << "the previous intersections were:\n";
     for (const auto previous_polyhedron: previous_intersections)
     {
@@ -1489,10 +1499,8 @@ void MultiMesh::_inclusion_exclusion
       std::cout <<"    ";
     }
     std::cout << std::endl;
-
-    //if (cut_part == 1) { PPause; }
-    //if (cut_part == 0) { PPause; }
-
+    tools::cout_qr(overlap_part_qr);
+    std::cout << "stage area = " << tools::area(overlap_part_qr) << std::endl;
     std::cout << "end summary"<<std::endl;
 #endif
   } // end loop over stages

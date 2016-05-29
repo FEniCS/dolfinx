@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-28
+// Last changed: 2016-05-29
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -317,6 +317,8 @@ bool CollisionDetection::_collides_segment_segment_2d(Point p0,
 						      Point q0,
 						      Point q1)
 {
+  std::cout << __FUNCTION__ << std::endl;
+
   // Vertex vertex collision
   if (p0 == q0 || p0 == q1 || p1 == q0 || p1 == q1)
     return true;
@@ -344,6 +346,8 @@ bool CollisionDetection::_collides_segment_segment_2d(Point p0,
     return true;
   if (p0_p1_q1 == 0 && (q1-p0).squared_norm() < (p1-p0).squared_norm() && (q1-p1).squared_norm() < (p0-p1).squared_norm())
     return true;
+
+  std::cout << std::signbit(q0_q1_p0)<< ' '<< std::signbit(q0_q1_p1)<<' '<< std::signbit(p0_p1_q0) <<' '<< std::signbit(p0_p1_q1) <<std::endl;
 
   return q0_q1_p0*q0_q1_p1 < 0 && p0_p1_q0*p0_p1_q1 < 0;
 

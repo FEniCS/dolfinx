@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-28
+// Last changed: 2016-05-29
 
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/math/basic.h>
@@ -26,7 +26,7 @@
 #include "CollisionDetection.h"
 #include "IntersectionTriangulation.h"
 
-// #include "dolfin_simplex_tools.h"
+#include "dolfin_simplex_tools.h"
 
 namespace
 {
@@ -335,7 +335,10 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 							   Point q0,
 							   Point q1)
 {
-  //std::cout<<__FUNCTION__<<std::endl;
+
+
+
+  std::cout<<__FUNCTION__<<std::endl;
 
   std::vector<Point> triangulation;
 
@@ -359,20 +362,35 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 				     p1.coordinates(),
 				     q1.coordinates());
 
+    std::cout << std::signbit(q0_q1_p0)<< ' '<< std::signbit(q0_q1_p1)<<' '<< std::signbit(p0_p1_q0) <<' '<< std::signbit(p0_p1_q1) <<std::endl;
+
     // std::set<Point, point_strictly_less> triangulation;
+    bool collide_p0 = false, collide_p1 = false, collide_q0 = false, collide_q1 = false;
     if (q0_q1_p0 == 0 && (p0-q0).squared_norm() <= (q1-q0).squared_norm() && (p0-q1).squared_norm() <= (q0-q1).squared_norm())
     {
       triangulation.push_back(p0);
+      collide_p0 = true;
+    }
+    if (q0_q1_p1 == 0 && (p1-q0).squared_norm() <= (q1-q0).squared_norm() && (p1-q1).squared_norm() <= (q0-q1).squared_norm())
+    {
+      triangulation.push_back(p1);
+      collide_p1 = true;
+    }
+    if (p0_p1_q0 == 0 && (q0-p0).squared_norm() <= (p1-p0).squared_norm() && (q0-p1).squared_norm() <= (p0-p1).squared_norm()) {
+      triangulation.push_back(q0);
+      collide_q0 = true;
+    }
+    if (p0_p1_q1 == 0 && (q1-p0).squared_norm() <= (p1-p0).squared_norm() && (q1-p1).squared_norm() <= (p0-p1).squared_norm()) {
+      triangulation.push_back(q1);
+      collide_q1 = true;
     }
 
-    if (q0_q1_p1 == 0 && (p1-q0).squared_norm() <= (q1-q0).squared_norm() && (p1-q1).squared_norm() <= (q0-q1).squared_norm())
-      triangulation.push_back(p1);
 
-    if (p0_p1_q0 == 0 && (q0-p0).squared_norm() <= (p1-p0).squared_norm() && (q0-p1).squared_norm() <= (p0-p1).squared_norm())
-      triangulation.push_back(q0);
-
-    if (p0_p1_q1 == 0 && (q1-p0).squared_norm() <= (p1-p0).squared_norm() && (q1-p1).squared_norm() <= (p0-p1).squared_norm())
-      triangulation.push_back(q1);
+    std::cout << tools::plot(p0,"'ko'")<<" % " << collide_p0<<std::endl
+	      <<tools::plot(p1,"'kx'") <<" % " << collide_p1<<std::endl
+	      <<tools::plot(q0,"'k+'") <<" % " << collide_q0<<std::endl
+	      <<tools::plot(q1,"'ks'") <<" % " << collide_q1<<std::endl;
+    std::cout << " triangulation.size was "<<triangulation.size() << std::endl;
 
     if (triangulation.size() == 4)
     {
@@ -381,12 +399,63 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
       return std::vector<Point>{{ p0, p1}};
     }
 
+    if (triangulation.size() == 3)
+    {
+      // Now there's only one point outside of the line, i.e. we have
+      // something like
+      //
+      // p0,q0 ------- p1 -- q1
+      //
+      // This means p0,q0 are in the same position and q1 is
+      // outside. We should thus return {{ p0,p1}} (or {{ q0,p1 }}
+
+      if (!collide_p0 or !collide_p1) // don't return p0 or p1
+	return std::vector<Point>{{ q0, q1 }};
+      if (!collide_q0 or !collide_q1) // don't return q0 or q1
+	return std::vector<Point>{{ p0, p1 }};
+    }
+
+    if (triangulation.size() == 2)
+    {
+      // It's not both p0 and p1 that are colliding
+      dolfin_assert(!(collide_p0 and collide_p1));
+      dolfin_assert(!(collide_q0 and collide_q1));
+
+      if (is_degenerate(triangulation))
+      {
+	// check dot product
+	Point a0 = p0, a1 = p1, b0 = q0, b1 = q1;
+	if (collide_p1)
+	  std::swap(a0, a1);
+	if (collide_q1)
+	  std::swap(b0, b1);
+
+	// Now a0 and b0 are the same
+	dolfin_assert(is_degenerate({{a0, b0}}));
+	if ((a1 - a0).dot(b1 - b0) > 0)
+	{
+	  // a1 and b1 are on the same side, take the closest
+	  if ((a1 - a0).squared_norm() < (b1 - b0).squared_norm())
+	    return std::vector<Point>{{ a0, a1 }};
+	  else
+	    return std::vector<Point>{{ b0, b1 }};
+	}
+	else
+	  return triangulation;
+      }
+      else
+	return triangulation;
+    }
+
+    if (triangulation.size() == 1)
+      return triangulation;
+
     if (triangulation.size() == 0)
     {
       //std::cout << "Segment segment triangulation: Insert interior point" << std::endl;
       if (std::signbit(q0_q1_p0) != std::signbit(q0_q1_p1) && std::signbit(p0_p1_q0) != std::signbit(p0_p1_q1))
       {
-	triangulation = triangulate_segment_interior_segment_interior_2d(p0, p1, q0, q1);
+	return triangulate_segment_interior_segment_interior_2d(p0, p1, q0, q1);
       }
     }
   }
@@ -395,6 +464,10 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
   // for (dolfin::Point p : triangulation)
   //   std::cout << "(" << p.x() << ", " << p.y() << ")" << std::endl;
   //return std::vector<Point>(triangulation.begin(), triangulation.end());
+  // std::cout << __FUNCTION__ <<" returns triangulation of size " << triangulation.size() << std::endl;
+
+  // If we end up here, there's no collision
+  std::cout << "no collision"<<std::endl;
   return triangulation;
 
 }
@@ -407,6 +480,7 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
                                                                              Point q0,
                                                                              Point q1)
 {
+  std::cout<<__FUNCTION__<<std::endl;
   // std::cout.precision(16);
   // std::cout << "triangulate_segment_interior_segment_interior: (" << p0.x() << " " << p0.y() << ", " << p1.x() << " " << p1.y() << ") <--> (" << q0.x() << " " << q0.y() << ", " << q1.x() << " " << q1.y() << ")" << std::endl;
 
@@ -600,6 +674,7 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
     }
   }
 
+  std::cout << __FUNCTION__ <<" returns triangulation of size " << triangulation.size() << std::endl;
   return triangulation;
 }
 //-----------------------------------------------------------------------------
