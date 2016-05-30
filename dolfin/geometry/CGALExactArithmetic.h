@@ -32,7 +32,7 @@
 #define __CGAL_EXACT_ARITHMETIC_H
 
 // FIXME: Debugging
-//#define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
+#define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
 
 #ifndef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
 
@@ -648,7 +648,7 @@ namespace dolfin
     default:
       dolfin_error("CGALExactArithmetic.h",
 		   "cgal_is_degenerate",
-		   "Only implemented for simplices of tdim 0, 1 and 2".);
+		   "Only implemented for simplices of tdim 0, 1 and 2");
     }
     return false;
   }
