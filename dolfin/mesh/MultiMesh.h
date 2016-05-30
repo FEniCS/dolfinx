@@ -461,7 +461,7 @@ namespace dolfin
     // Build quadrature rules for the overlap
     void _build_quadrature_rules_overlap(std::size_t quadrature_order);
 
-    // FIXME
+    // Build quadrature rules and normals for the interface
     void _build_quadrature_rules_interface(std::size_t quadrature_order);
 
     // Add quadrature rule for simplices in polyhedron. Returns the
@@ -490,23 +490,26 @@ namespace dolfin
 
     // Inclusion-exclusion for overlap
     void _inclusion_exclusion_overlap
-    (std::vector<quadrature_rule>& qr,
-     const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
-     std::size_t tdim,
-     std::size_t gdim,
-     std::size_t quadrature_order) const;
+      (std::vector<quadrature_rule>& qr,
+       const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
+       std::size_t tdim,
+       std::size_t gdim,
+       std::size_t quadrature_order) const;
 
     // Inclusion-exclusion for interface
     void _inclusion_exclusion_interface
-    (std::vector<quadrature_rule>& qr,
-     const Simplex& Eij,
-     const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polygons,
-     std::size_t tdim,
-     std::size_t gdim,
-     std::size_t quadrature_order) const;
+      (std::vector<quadrature_rule>& qr,
+       std::vector<double>& normals,
+       const Simplex& Eij,
+       const Point& facet_normal,
+       const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polygons,
+       std::size_t tdim,
+       std::size_t gdim,
+       std::size_t quadrature_order) const;
 
-
-
+    // Construct and return mapping from boundary facets to full mesh
+    std::vector<std::vector<std::pair<std::size_t, std::size_t> > >
+      _boundary_facets_to_full_mesh(std::size_t part) const;
   };
 
 

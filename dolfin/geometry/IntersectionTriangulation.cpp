@@ -26,7 +26,7 @@
 #include "CollisionDetection.h"
 #include "IntersectionTriangulation.h"
 
-#include "dolfin_simplex_tools.h"
+//#include "dolfin_simplex_tools.h"
 
 namespace
 {
@@ -548,7 +548,7 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
     {
       std::cout << "detected parallel lines " << std::endl;
 
-      std::cout << tools::drawtriangle({{p0,p1}})<<tools::drawtriangle({{q0,q1}})<<std::endl;
+      //std::cout << tools::drawtriangle({{p0,p1}})<<tools::drawtriangle({{q0,q1}})<<std::endl;
 
       // // parallel lines
       // dolfin_assert((q0-q1).squared_norm() > DOLFIN_EPS and

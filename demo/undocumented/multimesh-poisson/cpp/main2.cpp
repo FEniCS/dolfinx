@@ -390,10 +390,12 @@ void find_max(std::size_t step,
       = {{ multimesh.uncut_cells(part),
 	   multimesh.cut_cells(part),
 	   multimesh.covered_cells(part) }};
+    const std::vector<std::string> type = {{ "uncut", "cut", "covered" }};
     std::vector<double> maxvals(cells.size(), 0);
 
     for (std::size_t k = 0; k < cells.size(); ++k)
     {
+      std::cout << "part " << part << " "<<k << ' '<<type[k]<< std::endl;
       if (cells[k].size())
       {
 	// Create meshfunction using markers
@@ -409,6 +411,10 @@ void find_max(std::size_t step,
 	// Interpolate on submesh
 	auto V = std::make_shared<P1::FunctionSpace>(sm);
 	auto usm = std::make_shared<Function>(V);
+
+	// test
+	usm->set_allow_extrapolation(true);
+
 	usm->interpolate(*u.part(part));
 
 	// Get max values on submesh
