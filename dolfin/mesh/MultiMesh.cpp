@@ -35,7 +35,7 @@
 
 // FIXME August
 //#define Augustcheckqrpositive
-// #define Augustdebug
+#define Augustdebug
 //#define Augustnormaldebug
 
 #ifdef Augustdebug
@@ -559,7 +559,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
     {
 #ifdef Augustdebug
-      std::cout << "-------- new cut cell\n";
+      std::cout << "-------- new cut cell"<<std::endl;
 #endif
 
       // Get cut cell
@@ -609,11 +609,12 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	// Store key and polyhedron but only use polyhedron of same tdim
 	Polyhedron polyhedron_same_tdim;
 	for (const Simplex& s: polyhedron)
-	  if (s.size() == tdim + 1)
+	  if (s.size() == tdim + 1 and
+	      !IntersectionTriangulation::is_degenerate(s))
 	    polyhedron_same_tdim.push_back(s);
 #ifdef Augustdebug
 	{
-	  std::cout << "% intersection same tdim (size="<<polyhedron_same_tdim.size()<<")\n";
+	  std::cout << "% intersection same tdim (size="<<polyhedron_same_tdim.size()<<")"<<std::endl;
 	  if (polyhedron_same_tdim.size())
 	  {
 	    for (const auto simplex: polyhedron_same_tdim)
@@ -991,9 +992,9 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	      const Simplex& Eij = Eij_part[0];
 
 #ifdef Augustdebug
-	      std::cout << "The intersection of the following cut_cell_i and the boundary of the cutting cell j give the Eij_part\n"
+	      std::cout << "The intersection of the following cut_cell_i and the boundary of the cutting cell j give the Eij_part"<<std::endl
 			<< tools::drawtriangle(cut_cell_i)<<tools::drawtriangle(boundary_cell_j)<<std::endl;
-	      std::cout << "the intersection is Eij_part:\n";
+	      std::cout << "the intersection is Eij_part:"<<std::endl;
 	      for (const auto s: Eij_part) {
 		std::cout << tools::drawtriangle(s) << " % simplex.size="<<s.size()<<' '<<__LINE__<<std::endl;
 		//dolfin_assert(!IntersectionTriangulation::is_degenerate(s));
@@ -1042,7 +1043,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	interface_qr.push_back(Eij_qr);
 #ifdef Augustdebug
 	std::cout << "push back this net qr (Eij_qr)"<<std::endl;
-	std::cout << "interface_qr is now\n";
+	std::cout << "interface_qr is now"<<std::endl;
 	double area = 0;
 	for (const auto qr: interface_qr)
 	{
@@ -1226,7 +1227,7 @@ void MultiMesh::_inclusion_exclusion_overlap
 					       initial_polyhedra[i].second);
 
 #ifdef Augustdebug
-  std::cout << "---------------- stage 0: the inclusion inclusion is over the following:\n";
+  std::cout << "---------------- stage 0: the inclusion inclusion is over the following:"<<std::endl;
   for (std::size_t i = 0; i < N; ++i)
   {
     std::cout << "key "<<previous_intersections[i].first[0]<<":"<<std::endl;
@@ -1279,11 +1280,11 @@ void MultiMesh::_inclusion_exclusion_overlap
 	  std::cout << "----------\nkeys previous_polyhedron: ";
 	  for (const auto key: previous_polyhedron.first)
 	    std::cout << key <<' ';
-	  std::cout << "\nsimplices previous polyhedron:\n";
+	  std::cout << "\nsimplices previous polyhedron:"<<std::endl;
 	  for (const auto s: previous_polyhedron.second)
 	    std::cout << ' '<<tools::drawtriangle(s) << " % simplex.size()="<<s.size()<<' '<<__LINE__<<std::endl;
 	  std::cout << "keys initial_polyhedron: " << initial_polyhedron.first <<std::endl;
-	  std::cout << "simplices initial polyhedron\n";
+	  std::cout << "simplices initial polyhedron"<<std::endl;
 	  for (const auto s: initial_polyhedron.second)
 	    std::cout << ' '<<tools::drawtriangle(s,"'r'") <<" % simplex.size()="<<s.size()<<' '<<__LINE__<<std::endl;
 	  std::cout << tools::zoom()<<std::endl;
@@ -1305,10 +1306,6 @@ void MultiMesh::_inclusion_exclusion_overlap
 	    for (const Simplex& initial_simplex: initial_polyhedron.second)
 	    {
 	      // Compute the intersection (a polyhedron)
-#ifdef Augustdebug
-	      std::cout << "try intersect:\n"
-			<< tools::drawtriangle(initial_simplex,"'r'")<<tools::drawtriangle(previous_simplex)<<tools::zoom()<<std::endl;
-#endif
 	      // To save all intersections as a single polyhedron,
 	      // we don't call this a polyhedron yet, but rather a
 	      // std::vector<Simplex> since we are still filling
@@ -1318,6 +1315,10 @@ void MultiMesh::_inclusion_exclusion_overlap
 	      if (previous_simplex.size() == tdim + 1 &&
 		  initial_simplex.size() == tdim + 1)
 	      {
+#ifdef Augustdebug
+	      std::cout << "try intersect:"<<std::endl
+			<< tools::drawtriangle(initial_simplex,"'r'")<<tools::drawtriangle(previous_simplex)<<tools::zoom()<<std::endl;
+#endif
 		const std::vector<Simplex> ii = IntersectionTriangulation::triangulate(initial_simplex, previous_simplex, gdim);
 #ifdef Augustdebug
 		if (ii.size() == 0)
@@ -1348,29 +1349,35 @@ void MultiMesh::_inclusion_exclusion_overlap
 		      new_polyhedron.push_back(simplex);
 		      any_intersections = true;
 		    }
+		    else
+		    {
+#ifdef Augustdebug
+		      std::cout << " intersection not included because either tdim was too small or it was degenerate (s.size()="<<simplex.size()<<" degen="<<IntersectionTriangulation::is_degenerate(simplex)<<std::endl;
+#endif
+		    }
 #ifdef Augustdebug
 		  {
-		    std::cout << "we intersected these two:\n";
-		    std::cout << tools::drawtriangle(previous_simplex,"'b'")
+		    std::cout << "we intersected these two:"<<std::endl;
+		    std::cout << ' '<<tools::drawtriangle(previous_simplex,"'b'")
 			      << tools::drawtriangle(initial_simplex,"'r'")<<tools::zoom()<<std::endl;
 		    std::cout << "areas: " << tools::area(previous_simplex)<<' '<<tools::area(initial_simplex)<<std::endl;
 		    const double min_area = std::min(tools::area(previous_simplex), tools::area(initial_simplex));
 
-		    std::cout << "resulting intersection size= "<<ii.size()<<": \n";
+		    std::cout << "resulting intersection size= "<<ii.size()<<": "<<std::endl;
 		    for (const auto simplex: ii)
 		    {
-		      std::cout << "sub simplex size "<<simplex.size() << " at line " << __LINE__<<" degenerate " << IntersectionTriangulation::is_degenerate(simplex)<< std::endl;
-		      std::cout << tools::drawtriangle(simplex,"'g'");
+		      std::cout << " sub simplex size "<<simplex.size() << " at line " << __LINE__<<" degenerate " << IntersectionTriangulation::is_degenerate(simplex)<< std::endl;
+		      std::cout << ' '<<tools::drawtriangle(simplex,"'g'");
 		    }
 		    std::cout<<tools::zoom()<<std::endl;
 		    double intersection_area = 0;
 		    std::cout << "areas=[ ";
 		    for (const auto simplex: ii) {
 		      intersection_area += tools::area(simplex);
-		      std::cout << tools::area(simplex) <<' ';
+		      std::cout << ' '<<tools::area(simplex) <<' ';
 		    }
-		    std::cout<<"];\n";
-		    if (intersection_area >= min_area) { std::cout << "Warning, intersection area ~ minimum area\n"; /*PPause;*/ }
+		    std::cout<<"];"<<std::endl;
+		    if (intersection_area >= min_area) { std::cout << "Warning, intersection area ~ minimum area"<<std::endl; /*PPause;*/ }
 		  }
 #endif
 		}
@@ -1414,7 +1421,7 @@ void MultiMesh::_inclusion_exclusion_overlap
 #ifdef Augustdebug
     std::cout << "\n summarize at stage="<<stage<<std::endl;
     std::cout << "sign = "<<sign<<std::endl;
-    std::cout << "the previous intersections were:\n";
+    std::cout << "the previous intersections were:"<<std::endl;
     for (const auto previous_polyhedron: previous_intersections)
     {
       for (const auto key: previous_polyhedron.first)
@@ -1431,7 +1438,7 @@ void MultiMesh::_inclusion_exclusion_overlap
     std::cout << std::endl;
 
 
-    std::cout << "the new intersections are:\n";
+    std::cout << "the new intersections are:"<<std::endl;
     for (const auto new_polyhedron: new_intersections)
     {
       for (const auto key: new_polyhedron.first)
@@ -1453,7 +1460,7 @@ void MultiMesh::_inclusion_exclusion_overlap
   } // end loop over stages
 
 #ifdef Augustdebug
-  std::cout << "inc exc summary\n";
+  std::cout << "inc exc summary"<<std::endl;
   double area =0;
   for (const auto qr0: qr) {
     tools::cout_qr(qr0);
@@ -1501,7 +1508,7 @@ void MultiMesh::_inclusion_exclusion_interface
     previous_intersections[i] = std::make_pair(IncExcKey(1, initial_polyhedra[i].first),
 					       initial_polyhedra[i].second);
 #ifdef Augustdebug
-  std::cout << "---------------- stage 0: the inclusion inclusion is over the following:\n";
+  std::cout << "---------------- stage 0: the inclusion inclusion is over the following:"<<std::endl;
   for (std::size_t i = 0; i < N; ++i)
   {
     std::cout << "key "<<previous_intersections[i].first[0]<<":"<<std::endl;
@@ -1524,12 +1531,14 @@ void MultiMesh::_inclusion_exclusion_interface
   quadrature_rule stage0_qr;
   for (const std::pair<IncExcKey, Polyhedron>& pol_pair: previous_intersections)
     for (const Simplex& simplex: pol_pair.second)
-      if (simplex.size() == tdim_bulk + 1)
+      if (simplex.size() == tdim_bulk + 1 and
+	  !IntersectionTriangulation::is_degenerate(simplex))
       {
 	const Polyhedron Eij_cap_Tk
 	  = IntersectionTriangulation::triangulate(Eij, simplex, gdim);
 	for (const Simplex& s: Eij_cap_Tk)
-	  if (s.size() == tdim_interface + 1)
+	  if (s.size() == tdim_interface + 1 and
+	      !IntersectionTriangulation::is_degenerate(simplex))
 	    _add_quadrature_rule(stage0_qr, s, gdim,
 				 quadrature_order, -1.);
       }
@@ -1567,11 +1576,11 @@ void MultiMesh::_inclusion_exclusion_interface
 	  std::cout << "----------\nkeys previous_polyhedron: ";
 	  for (const auto key: previous_polyhedron.first)
 	    std::cout << key <<' ';
-	  std::cout << "\nsimplices previous polyhedron:\n";
+	  std::cout << "\nsimplices previous polyhedron:"<<std::endl;
 	  for (const auto s: previous_polyhedron.second)
 	    std::cout << ' '<<tools::drawtriangle(s) << " % simplex.size()="<<s.size()<<' '<<__LINE__<<std::endl;
 	  std::cout << "keys initial_polyhedron: " << initial_polyhedron.first <<std::endl;
-	  std::cout << "simplices initial polyhedron\n";
+	  std::cout << "simplices initial polyhedron"<<std::endl;
 	  for (const auto s: initial_polyhedron.second)
 	    std::cout << ' '<<tools::drawtriangle(s,"'r'") <<" % simplex.size()="<<s.size()<<' '<<__LINE__<<std::endl;
 	  std::cout << tools::zoom()<<std::endl;
@@ -1594,7 +1603,7 @@ void MultiMesh::_inclusion_exclusion_interface
 	    {
 	      // Compute the intersection (a polyhedron)
 #ifdef Augustdebug
-	      std::cout << "try intersect:\n"
+	      std::cout << "try intersect:"<<std::endl
 			<< tools::drawtriangle(initial_simplex,"'r'")<<tools::drawtriangle(previous_simplex)<<tools::zoom()<<std::endl;
 #endif
 	      // To save all intersections as a single polyhedron,
@@ -1638,13 +1647,13 @@ void MultiMesh::_inclusion_exclusion_interface
 		    }
 #ifdef Augustdebug
 		  {
-		    std::cout << "we intersected these two:\n";
+		    std::cout << "we intersected these two:"<<std::endl;
 		    std::cout << tools::drawtriangle(previous_simplex,"'b'")
 			      << tools::drawtriangle(initial_simplex,"'r'")<<tools::zoom()<<std::endl;
 		    std::cout << "areas: " << tools::area(previous_simplex)<<' '<<tools::area(initial_simplex)<<std::endl;
 		    const double min_area = std::min(tools::area(previous_simplex), tools::area(initial_simplex));
 
-		    std::cout << "resulting intersection size= "<<ii.size()<<": \n";
+		    std::cout << "resulting intersection size= "<<ii.size()<<": "<<std::endl;
 		    for (const auto simplex: ii)
 		    {
 		      std::cout << "sub simplex size "<<simplex.size() << " at line " << __LINE__<<" degenerate " << IntersectionTriangulation::is_degenerate(simplex)<< std::endl;
@@ -1657,8 +1666,8 @@ void MultiMesh::_inclusion_exclusion_interface
 		      intersection_area += tools::area(simplex);
 		      std::cout << tools::area(simplex) <<' ';
 		    }
-		    std::cout<<"];\n";
-		    if (intersection_area >= min_area) { std::cout << "Warning, intersection area ~ minimum area\n"; /*PPause;*/ }
+		    std::cout<<"];"<<std::endl;
+		    if (intersection_area >= min_area) { std::cout << "Warning, intersection area ~ minimum area"<<std::endl; /*PPause;*/ }
 		  }
 #endif
 		}
@@ -1698,7 +1707,8 @@ void MultiMesh::_inclusion_exclusion_interface
 	  const Polyhedron Eij_cap_Tk
 	    = IntersectionTriangulation::triangulate(Eij, simplex, gdim);
 	  for (const Simplex& s: Eij_cap_Tk)
-	    if (s.size() == tdim_interface + 1)
+	    if (s.size() == tdim_interface + 1 and
+		!IntersectionTriangulation::is_degenerate(s))
 	      _add_quadrature_rule(stage_qr, s, gdim,
 				   quadrature_order, sign);
 	}
@@ -1709,7 +1719,7 @@ void MultiMesh::_inclusion_exclusion_interface
 #ifdef Augustdebug
     std::cout << "\n summarize at stage="<<stage<<std::endl;
     std::cout << "sign = "<<sign<<std::endl;
-    std::cout << "the previous intersections were:\n";
+    std::cout << "the previous intersections were:"<<std::endl;
     for (const auto previous_polyhedron: previous_intersections)
     {
       for (const auto key: previous_polyhedron.first)
@@ -1726,7 +1736,7 @@ void MultiMesh::_inclusion_exclusion_interface
     std::cout << std::endl;
 
 
-    std::cout << "the new intersections are:\n";
+    std::cout << "the new intersections are:"<<std::endl;
     for (const auto new_polyhedron: new_intersections)
     {
       for (const auto key: new_polyhedron.first)
@@ -1748,7 +1758,7 @@ void MultiMesh::_inclusion_exclusion_interface
   } // end loop over stages
 
 #ifdef Augustdebug
-  std::cout << "inc exc summary\n";
+  std::cout << "inc exc summary"<<std::endl;
   double area =0;
   for (const auto qr0: qr) {
     tools::cout_qr(qr0);
