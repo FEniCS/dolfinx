@@ -35,7 +35,7 @@
 
 // FIXME August
 //#define Augustcheckqrpositive
-#define Augustdebug
+// #define Augustdebug
 //#define Augustnormaldebug
 
 #ifdef Augustdebug
