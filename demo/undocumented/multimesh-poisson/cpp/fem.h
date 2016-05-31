@@ -13,7 +13,8 @@ namespace fem
   inline
   std::shared_ptr<const MultiMeshFunction>
   solve(std::shared_ptr<const MultiMesh> multimesh,
-	std::shared_ptr<const SubDomain> dirichletboundary)
+	std::shared_ptr<const SubDomain> dirichletboundary,
+	std::shared_ptr<const Expression> source)
   {
     // Create function space
     auto V = std::make_shared<TMultiMeshFunctionSpace>(multimesh);
@@ -23,8 +24,7 @@ namespace fem
     auto L = std::make_shared<TMultiMeshLinearForm>(V);
 
     // Attach coefficients
-    auto one = std::make_shared<Constant>(1.0);
-    L->f = one;
+    L->f = source;
 
     // Assemble linear system
     auto A = std::make_shared<Matrix>();

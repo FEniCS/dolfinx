@@ -519,8 +519,8 @@ namespace tools
   }
 
   //-----------------------------------------------------------------------------
-  inline void writemarkers(std::size_t step,
-			   const MultiMesh& mm)
+  inline void writemarkers(const MultiMesh& mm,
+			   std::size_t step = 0)
   {
     for (std::size_t part = 0; part < mm.num_parts(); ++part)
     {
@@ -897,15 +897,20 @@ namespace tools
 
   //------------------------------------------------------------------------------
   template<class TFunctionSpace>// eg P1::FunctionSpace
-  inline void find_max(std::size_t step,
-		       const MultiMesh& multimesh,
+  inline void find_max(const MultiMesh& multimesh,
 		       const MultiMeshFunction& u,
-		       File& uncut0_file, File& uncut1_file, File& uncut2_file,
-		       File& cut0_file, File& cut1_file, File& cut2_file,
-		       File& covered0_file, File& covered1_file, File& covered2_file)
+		       std::vector<double>& maxvals_parts,
+		       std::size_t step=0
+		       /* , */
+		       /* File& uncut0_file, File& uncut1_file, File& uncut2_file, */
+		       /* File& cut0_file, File& cut1_file, File& cut2_file, */
+		       /* File& covered0_file, File& covered1_file, File& covered2_file */
+		       )
 
   {
     std::cout << "\tSolution: max min step " << step <<' ' << u.vector()->max() << ' ' << u.vector()->min() << std::endl;
+
+    maxvals_parts.assign(multimesh.num_parts(), -9e99);
 
     for (std::size_t part = 0; part < multimesh.num_parts(); ++part)
     {
@@ -967,26 +972,26 @@ namespace tools
 	  //   std::cout << std::endl;
 	  // }
 
-	  // save
-	  switch(k) {
-	  case 0: { // uncut
-	    if (part == 0) uncut0_file << (*usm);
-	    else if (part == 1) uncut1_file << (*usm);
-	    else if (part == 2) uncut2_file << (*usm);
-	    break;
-	  }
-	  case 1: { // cut
-	    if (part == 0) cut0_file << (*usm);
-	    else if (part == 1) cut1_file << (*usm);
-	    else if (part == 2) cut2_file << (*usm);
-	    break;
-	  }
-	  case 2: { // covered
-	    if (part == 0) covered0_file << (*usm);
-	    else if (part == 1) covered1_file << (*usm);
-	    else if (part == 2) covered2_file << (*usm);
-	  }
-	  }
+	  /* // save */
+	  /* switch(k) { */
+	  /* case 0: { // uncut */
+	  /*   if (part == 0) uncut0_file << (*usm); */
+	  /*   else if (part == 1) uncut1_file << (*usm); */
+	  /*   else if (part == 2) uncut2_file << (*usm); */
+	  /*   break; */
+	  /* } */
+	  /* case 1: { // cut */
+	  /*   if (part == 0) cut0_file << (*usm); */
+	  /*   else if (part == 1) cut1_file << (*usm); */
+	  /*   else if (part == 2) cut2_file << (*usm); */
+	  /*   break; */
+	  /* } */
+	  /* case 2: { // covered */
+	  /*   if (part == 0) covered0_file << (*usm); */
+	  /*   else if (part == 1) covered1_file << (*usm); */
+	  /*   else if (part == 2) covered2_file << (*usm); */
+	  /* } */
+	  /* } */
 	}
       }
 
@@ -997,7 +1002,8 @@ namespace tools
 		<< " cut " << maxvals[1]
 		<< " covered " << maxvals[2] << std::endl;
 
-      if (maxvals[0] < 1) { exit(0); }
+      maxvals_parts[part] = std::max(std::max(maxvals[0], maxvals[1]), maxvals[2]);
+      //if (maxvals[0] < 1) { exit(0); }
     }
 
   }

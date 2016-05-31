@@ -358,11 +358,11 @@ bool CollisionDetection::_collides_triangle_point_2d(Point p0,
 						     Point p2,
 						     Point point)
 {
+
   // Check triangle orientation
   const int sign = std::signbit(orient2d(p0.coordinates(),
 					 p1.coordinates(),
 					 p2.coordinates()));
-
   // std::cout << tools::drawtriangle({{p0,p1,p2}})<<tools::drawtriangle({{point}})<<std::endl;
 
   // std::cout << sign <<' '<<std::signbit(orient2d(p0.coordinates(), p1.coordinates(), point.coordinates()))<<' '<<std::signbit(orient2d(p1.coordinates(), p2.coordinates(), point.coordinates()))<<' '<<std::signbit(orient2d(p2.coordinates(), p0.coordinates(), point.coordinates()))<<std::endl;
@@ -372,8 +372,17 @@ bool CollisionDetection::_collides_triangle_point_2d(Point p0,
       sign == std::signbit(orient2d(p1.coordinates(), p2.coordinates(), point.coordinates())) and
       sign == std::signbit(orient2d(p2.coordinates(), p0.coordinates(), point.coordinates())))
     return true;
-  else
-    return false;
+
+  // Check segment point collisions
+  if (collides_segment_point(p0, p1, point))
+    return true;
+  if (collides_segment_point(p1, p2, point))
+    return true;
+  if (collides_segment_point(p2, p0, point))
+    return true;
+
+  // No collision
+  return false;
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::_collides_triangle_point_3d(const Point& p0,

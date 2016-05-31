@@ -325,7 +325,7 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
     {
       dolfin_error("Function.cpp",
                    "evaluate function at point",
-                   "The point is not inside the domain. Consider calling \"Function::set_allow_extrapolation(true)\" on this Function to allow extrapolation");
+                   "The point (%f,%f,%f) is not inside the domain. Consider calling \"Function::set_allow_extrapolation(true)\" on this Function to allow extrapolation", point.x(), point.y(), point.z());
     }
   }
 
