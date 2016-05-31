@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-31
+// Last changed: 2016-05-29
 
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/math/basic.h>
@@ -26,7 +26,7 @@
 #include "CollisionDetection.h"
 #include "IntersectionTriangulation.h"
 
-#include "dolfin_simplex_tools.h"
+//#include "dolfin_simplex_tools.h"
 
 namespace
 {
@@ -584,8 +584,8 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
     if (dets[0].first < DOLFIN_EPS and
 	dets[1].first > DOLFIN_EPS)
     {
-      std::cout << "detected one single point on line collision"<<std::endl;
-      std::cout << "after sort:"<<std::endl;
+      std::cout << "detected one single point on line collision\n";
+      std::cout << "after sort:\n";
       for (const auto d: dets)
 	std::cout << d.first<<' '<<d.second<<std::endl;
 
@@ -820,7 +820,7 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
 	//std::cout << q0_inside << ' ' << q1_inside << std::endl;
 	std::cout << "IntersectionTriangulation.cpp; "
 		  << "_triangulate_triangle_segment_2d; "
-		  <<"Unexpected classification - we should have found either q0 or q1 inside"<<std::endl;
+		  <<"Unexpected classification - we should have found either q0 or q1 inside\n";
 
 	// GeometryDebugging::print({{p0,p1,p2}});
 	// GeometryDebugging::print({{q0,q1}});
