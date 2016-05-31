@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2016-05-29
+// Last changed: 2016-05-31
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -35,7 +35,7 @@
 
 // FIXME August
 //#define Augustcheckqrpositive
-//#define Augustdebug
+// #define Augustdebug
 //#define Augustnormaldebug
 
 #ifdef Augustdebug
@@ -526,12 +526,12 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
     const auto& cmap = collision_map_cut_cells(cut_part);
     for (auto it = cmap.begin(); it != cmap.end(); ++it)
     {
-      const std::vector<std::string> color = {{ "'b'", "'g'", "'r'", "'m'", "'y'" }};
+      const std::vector<std::string> color = {{ "'b'", "'g'", "'r'", "'m'", "'y'", "'c'", "'k'" }};
 
       // Get cut cell
       const unsigned int cut_cell_index = it->first;
       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
-      std::cout << tools::drawtriangle(cut_cell, color[cut_part]);
+      std::cout << tools::drawtriangle(cut_cell, color[cut_part]) << std::endl;
 
       // Loop over all cutting cells to construct the polyhedra to be
       // used in the inclusion-exclusion principle
@@ -540,8 +540,8 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
   	// Get cutting part and cutting cell
 	const std::size_t cutting_part = jt->first;
 	const std::size_t cutting_cell_index = jt->second;
-	const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
-  	std::cout << tools::drawtriangle(cutting_cell, color[cutting_part]);
+	const Cell cutting_cell(*(_meshes.at(cutting_part)), cutting_cell_index);
+  	std::cout << tools::drawtriangle(cutting_cell, color[cutting_part]) << std::endl;
       }
       std::cout << tools::zoom()<<std::endl;
     }
@@ -1282,17 +1282,17 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	      // }
 	      // Eij_normals.insert(Eij_normals.end(), Eij_part_normals.begin(), Eij_part_normals.end());
 #ifdef Augustdebug
-	      std::cout << "net qr (Eij_qr)"<<std::endl;
-	      tools::cout_qr(Eij_qr);
-	      std::cout << "net qr area = " << tools::area(Eij_qr)<<std::endl;
+	      std::cout << "net qr "<<std::endl;
+	      tools::cout_qr(interface_qr[local_cutting_cell_j_index]);
+	      std::cout << "net qr area = " << tools::area(interface_qr[local_cutting_cell_j_index])<<std::endl;
 #endif
 	    }
 	  }
-	  else {
 #ifdef Augustdebug
+	  else {
 	    std::cout << " no intersection Eij_part"<<std::endl;
-#endif
 	  }
+#endif
 	} // end boundary_cell_j loop
 
 	// // Save the qr for this Eij (push_back makes order correct)
@@ -1302,17 +1302,9 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 #ifdef Augustdebug
 	std::cout << "push back this net qr (Eij_qr)"<<std::endl;
 	std::cout << "interface_qr is now"<<std::endl;
-	double area = 0;
-	for (const auto qr: interface_qr)
-	{
-	  tools::cout_qr(qr);
-	  area += tools::area(qr);
-	}
-	std::cout << " area=" << area << std::endl;
+	tools::cout_qr(interface_qr[local_cutting_cell_j_index]);
+	std::cout << tools::area(interface_qr[local_cutting_cell_j_index])<<std::endl;
 #endif
-
-	// _quadrature_rules_interface[cut_part][cut_cell_index_i][local_cutting_cell_j_index] = interface_qr;
-	// _facet_normals[cut_part][cut_cell_index_i][local_cutting_cell_j_index] = interface_normals;
 
       } // end loop over cutting_j
 
@@ -2283,8 +2275,6 @@ void MultiMesh::_inclusion_exclusion_interface
     qr.second.insert(qr.second.end(), qr_stage.second.begin(), qr_stage.second.end());
     normals.insert(normals.end(), normals_stage.begin(), normals_stage.end());
 
-
-
 #ifdef Augustdebug
     std::cout << "\n summarize at stage="<<stage<<std::endl;
     std::cout << "sign = "<<sign<<std::endl;
@@ -2328,12 +2318,8 @@ void MultiMesh::_inclusion_exclusion_interface
 
 #ifdef Augustdebug
   std::cout << "inc exc summary"<<std::endl;
-  double area =0;
-  for (const auto qr0: qr) {
-    tools::cout_qr(qr0);
-    area += tools::area(qr0);
-  }
-  std::cout << "net area inc exc " << area << std::endl;
+  tools::cout_qr(qr);
+  std::cout << "net area inc exc " << tools::area(qr) << std::endl;
   std::cout << "end inc exc"<<std::endl<<std::endl;
 #endif
 
@@ -2424,7 +2410,7 @@ void MultiMesh::_inclusion_exclusion_overlap
     const std::size_t cutting_cell_index = cutting_cells[i].second;
     const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
     //const Polyhedron cell_as_poly(1, tools::convert(cutting_cell));
-    const std::size_t tdim = cutting_cell.mesh().geometry().dim();
+    const std::size_t tdim = cutting_cell.mesh().topology().dim();
     std::vector<Point> cell_simplex(tdim + 1);
     const MeshGeometry& geometry = cutting_cell.mesh().geometry();
     const unsigned int* vertices = cutting_cell.entities(0);
