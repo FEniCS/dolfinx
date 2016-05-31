@@ -29,7 +29,7 @@ namespace tools
   //-----------------------------------------------------------------------------
   inline std::vector<Point> convert(const Cell& cell)
   {
-    const std::size_t tdim = cell.mesh().geometry().dim();
+    const std::size_t tdim = cell.mesh().topology().dim();
     std::vector<Point> simplex(tdim + 1);
     const MeshGeometry& geometry = cell.mesh().geometry();
     const unsigned int* vertices = cell.entities(0);
@@ -224,7 +224,8 @@ namespace tools
 				  const std::string& color = "'b'",
 				  bool matlab=true)
   {
-    return drawtriangle(convert(cell), color, matlab);
+    const std::vector<Point> s = convert(cell);
+    return drawtriangle(s, color, matlab);
   }
 
   //-----------------------------------------------------------------------------
@@ -908,6 +909,7 @@ namespace tools
 		       )
 
   {
+    std::cout << __FUNCTION__ << std::endl;
     std::cout << "\tSolution: max min step " << step <<' ' << u.vector()->max() << ' ' << u.vector()->min() << std::endl;
 
     maxvals_parts.assign(multimesh.num_parts(), -9e99);
