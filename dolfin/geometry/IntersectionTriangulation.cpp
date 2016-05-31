@@ -26,7 +26,7 @@
 #include "CollisionDetection.h"
 #include "IntersectionTriangulation.h"
 
-//#include "dolfin_simplex_tools.h"
+#include "dolfin_simplex_tools.h"
 
 namespace
 {

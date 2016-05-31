@@ -579,9 +579,17 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       // polyhedra to be used in the exlusion inclusion.
       std::vector<std::pair<std::size_t, Polyhedron> > initial_polyhedra;
 
+      // Get the cutting cells
+      const auto cutting_cells = it->second;
+
+      // Data structure for the overlap quadrature rule
+      const std::size_t num_cutting_cells = std::distance(cutting_cells.begin(),
+							  cutting_cells.end());
+      std::vector<quadrature_rule> overlap_qr(num_cutting_cells);
+
       // Loop over all cutting cells to construct the polyhedra to be
       // used in the inclusion-exclusion principle
-      for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
+      for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
       {
 	// Get cutting part and cutting cell
         const std::size_t cutting_part = jt->first;
@@ -628,15 +636,11 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	}
 #endif
 
-	if (polyhedron_same_tdim.size())
-	  initial_polyhedra.emplace_back(initial_polyhedra.size(),
-					 polyhedron_same_tdim);
+	// if (polyhedron_same_tdim.size())
+	initial_polyhedra.emplace_back(initial_polyhedra.size(),
+				       polyhedron_same_tdim); // can be empty
       }
 
-      // Data structure for the overlap quadrature rule
-      std::vector<quadrature_rule> overlap_qr;
-
-      Polyhedron dummy;
       _inclusion_exclusion_overlap(overlap_qr, initial_polyhedra,
 				   tdim, gdim, quadrature_order);
 
@@ -1491,7 +1495,8 @@ void MultiMesh::_inclusion_exclusion_overlap
 			     quadrature_order, 1.);
 
   // Add quadrature rule for overlap part
-  qr.push_back(part_qr);
+  //qr.push_back(part_qr);
+  qr[0] = part_qr;
 
   for (std::size_t stage = 1; stage < N; ++stage)
   {
@@ -1653,7 +1658,8 @@ void MultiMesh::_inclusion_exclusion_overlap
 	  _add_quadrature_rule(overlap_part_qr, simplex, gdim, quadrature_order, sign);
 
     // Add quadrature rule for overlap part
-    qr.push_back(overlap_part_qr);
+    //qr.push_back(overlap_part_qr);
+    qr[stage] = overlap_part_qr;
 
 #ifdef Augustdebug
     std::cout << "\n summarize at stage="<<stage<<std::endl;
