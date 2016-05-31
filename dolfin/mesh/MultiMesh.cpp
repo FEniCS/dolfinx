@@ -580,7 +580,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       std::vector<std::pair<std::size_t, Polyhedron> > initial_polyhedra;
 
       // Get the cutting cells
-      const auto cutting_cells = it->second;
+      const auto& cutting_cells = it->second;
 
       // Data structure for the overlap quadrature rule
       const std::size_t num_cutting_cells = std::distance(cutting_cells.begin(),
@@ -1118,19 +1118,30 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		<< ' '<<tools::drawtriangle(cut_cell_i)<<std::endl;
 #endif
 
+      // Get the cutting cells
+      const auto& cutting_cells_j = cut_i.second;
+
       // Data structures for the interface quadrature rule and the normals
-      std::vector<quadrature_rule> interface_qr;
-      std::vector<std::vector<double>> interface_normals;
+      const std::size_t num_cutting_cells = std::distance(cutting_cells_j.begin(),
+							  cutting_cells_j.end());
+      std::vector<quadrature_rule> interface_qr(num_cutting_cells);
+      std::vector<std::vector<double>> interface_normals(num_cutting_cells);
 
       // Loop over all cutting cells to construct the polyhedra to be
       // used in the inclusion-exclusion principle
-      for (const std::pair<size_t, unsigned int>& cutting_j : cut_i.second)
+      // for (const std::pair<size_t, unsigned int>& cutting_j : cut_i.second)
+      // for (const std::pair<std::size_t, unsigned int>& cutting_j: cutting_cells_j)
+      for (std::vector<std::pair<std::size_t, unsigned int>>::const_iterator
+	     cutting_j = cutting_cells_j.begin();
+	   cutting_j != cutting_cells_j.end(); ++cutting_j)
       {
 	// Get cutting part and cutting cell
-        const std::size_t cutting_part_j = cutting_j.first;
-        const std::size_t cutting_cell_index_j = cutting_j.second;
+        const std::size_t cutting_part_j = cutting_j->first;
+        const std::size_t cutting_cell_index_j = cutting_j->second;
         const Cell cutting_cell_j(*(_meshes[cutting_part_j]), cutting_cell_index_j);
+	const std::size_t local_cutting_cell_j_index = cutting_j - cutting_cells_j.begin();
 	dolfin_assert(cutting_part_j > cut_part);
+
 #ifdef Augustdebug
 	std::cout << "\ncutting cell j " << cutting_cell_index_j<<" from part j="<<cutting_part_j
 		  <<" (cut cell part is "<< cut_part <<" cut cell no is "<< cut_cell_index_i<<")"<<std::endl
@@ -1184,9 +1195,9 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	// optionally use a full (polygon) E_ij used in the E_ij \cap
 	// T_k, or we can only take a part (a simplex) of the Eij.
 
-	// Net qr and normals for the Eij
-	quadrature_rule Eij_qr;
-	std::vector<double> Eij_normals;
+	// // Net qr and normals for the Eij
+	// quadrature_rule Eij_qr;
+	// std::vector<double> Eij_normals;
 
 	// Loop over all Eij parts (i.e. boundary parts of T_j)
 	for (const auto boundary_cell_index_j: full_to_bdry[cutting_part_j][cutting_cell_index_j])
@@ -1229,23 +1240,31 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		//dolfin_assert(!IntersectionTriangulation::is_degenerate(s));
 	      }
 #endif
-	      // Store the |Eij|
-	      const std::size_t num_pts =_add_quadrature_rule(Eij_qr, Eij, gdim,
-							      quadrature_order, 1.);
-	      // Store the normals
-	      _add_normal(Eij_normals, facet_normal, num_pts, gdim);
+	      // Store the |Eij| and normals
+	      // const std::size_t num_pts =_add_quadrature_rule(Eij_qr, Eij, gdim,
+	      // 						      quadrature_order, 1.);
+	      // _add_normal(Eij_normals, facet_normal, num_pts, gdim);
 
-	      // FIXME: Need to store qr here as std::vector, but is flattened later
-	      std::vector<quadrature_rule> Eij_part_qr;
+	      const std::size_t num_pts = _add_quadrature_rule(interface_qr[local_cutting_cell_j_index],
+							       Eij, gdim,
+							       quadrature_order, 1.);
+	      _add_normal(interface_normals[local_cutting_cell_j_index], facet_normal, num_pts, gdim);
 
-	      // Normals for this
-	      std::vector<double> Eij_part_normals;
+	      // // FIXME: Need to store qr here as std::vector, but is flattened later
+	      // std::vector<quadrature_rule> Eij_part_qr;
+
+	      // // Normals for this
+	      // std::vector<double> Eij_part_normals;
 
 	      // No need to run inc exc if there are no cutting cells
 	      if (initial_polygons.size())
 	      {
 		// Call inclusion exclusion
-		_inclusion_exclusion_interface(Eij_part_qr, Eij_part_normals,
+		// _inclusion_exclusion_interface(Eij_part_qr, Eij_part_normals,
+		// 			       Eij, facet_normal, initial_polygons,
+		// 			       tdim_interface, gdim, quadrature_order);
+		_inclusion_exclusion_interface(interface_qr[local_cutting_cell_j_index],
+					       interface_normals[local_cutting_cell_j_index],
 					       Eij, facet_normal, initial_polygons,
 					       tdim_interface, gdim, quadrature_order);
 	      }
@@ -1255,13 +1274,13 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 #endif
 	      }
 
-	      // Flatten the qr
-	      for (auto qr: Eij_part_qr)
-	      {
-		Eij_qr.first.insert(Eij_qr.first.end(), qr.first.begin(), qr.first.end());
-		Eij_qr.second.insert(Eij_qr.second.end(), qr.second.begin(), qr.second.end());
-	      }
-	      Eij_normals.insert(Eij_normals.end(), Eij_part_normals.begin(), Eij_part_normals.end());
+	      // // Flatten the qr
+	      // for (auto qr: Eij_part_qr)
+	      // {
+	      // 	Eij_qr.first.insert(Eij_qr.first.end(), qr.first.begin(), qr.first.end());
+	      // 	Eij_qr.second.insert(Eij_qr.second.end(), qr.second.begin(), qr.second.end());
+	      // }
+	      // Eij_normals.insert(Eij_normals.end(), Eij_part_normals.begin(), Eij_part_normals.end());
 #ifdef Augustdebug
 	      std::cout << "net qr (Eij_qr)"<<std::endl;
 	      tools::cout_qr(Eij_qr);
@@ -1276,9 +1295,9 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	  }
 	} // end boundary_cell_j loop
 
-	// Save the qr for this Eij (push_back makes order correct)
-	interface_qr.push_back(Eij_qr);
-	interface_normals.push_back(Eij_normals);
+	// // Save the qr for this Eij (push_back makes order correct)
+	// interface_qr.push_back(Eij_qr);
+	// interface_normals.push_back(Eij_normals);
 
 #ifdef Augustdebug
 	std::cout << "push back this net qr (Eij_qr)"<<std::endl;
@@ -1292,6 +1311,8 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	std::cout << " area=" << area << std::endl;
 #endif
 
+	// _quadrature_rules_interface[cut_part][cut_cell_index_i][local_cutting_cell_j_index] = interface_qr;
+	// _facet_normals[cut_part][cut_cell_index_i][local_cutting_cell_j_index] = interface_normals;
 
       } // end loop over cutting_j
 
@@ -1992,7 +2013,7 @@ void MultiMesh::_inclusion_exclusion_overlap
 }
 //------------------------------------------------------------------------------
 void MultiMesh::_inclusion_exclusion_interface
-(std::vector<quadrature_rule>& qr,
+(quadrature_rule& qr,
  std::vector<double>& normals,
  const Simplex& Eij,
  const Point& facet_normal,
@@ -2077,8 +2098,15 @@ void MultiMesh::_inclusion_exclusion_interface
 #endif
 
   // Add quadrature rule and normals
-  qr.push_back(qr_stage0);
+  // qr.push_back(qr_stage0);
+  // normals.insert(normals.end(), normals_stage0.begin(), normals_stage0.end());
+  // qr[0] = qr_stage0;
+  // normals[0] = normals_stage0;
+  // Flatten the data
+  qr.first.insert(qr.first.end(), qr_stage0.first.begin(), qr_stage0.first.end());
+  qr.second.insert(qr.second.end(), qr_stage0.second.begin(), qr_stage0.second.end());
   normals.insert(normals.end(), normals_stage0.begin(), normals_stage0.end());
+
 
   for (std::size_t stage = 1; stage < N; ++stage)
   {
@@ -2246,9 +2274,16 @@ void MultiMesh::_inclusion_exclusion_interface
 	}
     dolfin_assert(normals_stage.size() == qr_stage.first.size());
 
-    // Add quadrature rule and normals
-    qr.push_back(qr_stage);
+    // // Add quadrature rule and normals
+    // qr.push_back(qr_stage);
+    // normals.insert(normals.end(), normals_stage.begin(), normals_stage.end());
+    // qr[stage] = qr_stage;
+    // normals[stage] = normals_stage;
+    qr.first.insert(qr.first.end(), qr_stage.first.begin(), qr_stage.first.end());
+    qr.second.insert(qr.second.end(), qr_stage.second.begin(), qr_stage.second.end());
     normals.insert(normals.end(), normals_stage.begin(), normals_stage.end());
+
+
 
 #ifdef Augustdebug
     std::cout << "\n summarize at stage="<<stage<<std::endl;

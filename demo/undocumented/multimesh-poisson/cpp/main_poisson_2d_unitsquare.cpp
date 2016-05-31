@@ -47,19 +47,20 @@ void solve_poisson()
   };
   auto boundary = std::make_shared<DirichletBoundary>();
 
-  PPause;
-
   auto u = fem::solve<MultiMeshPoisson::MultiMeshFunctionSpace,
 		      MultiMeshPoisson::MultiMeshBilinearForm,
 		      MultiMeshPoisson::MultiMeshLinearForm>
     (multimesh,
      boundary);
 
-  PPause;
+  // Files for storing solution
+  File u0_file("u0.pvd");
+  File u1_file("u1.pvd");
+  File u2_file("u2.pvd");
 
-  // // Save to file
-  // u0_file << *u->part(0);
-  // u1_file << *u->part(1);
+  // Save to file
+  u0_file << *u->part(0);
+  u1_file << *u->part(1);
 
 }
 
@@ -72,10 +73,6 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  // Files for storing solution
-  File u0_file("u0.pvd");
-  File u1_file("u1.pvd");
-  File u2_file("u2.pvd");
 
   solve_poisson();
 

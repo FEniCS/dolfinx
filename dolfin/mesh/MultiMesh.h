@@ -506,7 +506,7 @@ namespace dolfin
 
     // Inclusion-exclusion for interface
     void _inclusion_exclusion_interface
-      (std::vector<quadrature_rule>& qr,
+      (quadrature_rule& qr,
        std::vector<double>& normals,
        const Simplex& Eij,
        const Point& facet_normal,
