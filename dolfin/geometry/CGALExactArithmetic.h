@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-05-28
+// Last changed: 2016-05-31
 //
 // Developer note:
 //
@@ -616,7 +616,9 @@ namespace dolfin
           std::cout << p << ", ";
         }
         std::cout << std::endl;
-        dolfin_assert(cgal_points->size() == 4 || cgal_points->size() == 5);
+        dolfin_assert(cgal_points->size() == 4 ||
+		      cgal_points->size() == 5 ||
+		      cgal_points->size() == 6);
         triangulation = triangulate_polygon(points);
       }
       else
