@@ -1,3 +1,6 @@
+#ifndef MMTOOLS_H
+#define MMTOOLS_H
+
 #include <dolfin.h>
 
 #include <dolfin/geometry/dolfin_simplex_tools.h>
@@ -7,8 +10,8 @@ namespace mmtools
   using namespace dolfin;
 
   //------------------------------------------------------------------------------
-  void writemarkers(std::size_t step,
-		    const MultiMesh& mm)
+  inline void writemarkers(std::size_t step,
+			   const MultiMesh& mm)
   {
     for (std::size_t part = 0; part < mm.num_parts(); ++part)
     {
@@ -27,20 +30,20 @@ namespace mmtools
   }
 
   //------------------------------------------------------------------------------
-  double compute_volume(const MultiMesh& multimesh,
-			double exact_volume)
+  inline double compute_volume(const MultiMesh& multimesh,
+			       double exact_volume)
   {
-    std::cout << "\n" << __FUNCTION__<< std::endl;
+    std::cout << std::endl << __FUNCTION__<< std::endl;
 
     double volume = 0;
     std::vector<double> all_volumes;
 
     std::ofstream file("quadrature_volume.txt");
-    if (!file.good()) { std::cout << "file not good\n"; exit(0); }
+    if (!file.good()) { std::cout << "file not good"<<std::endl; exit(0); }
     file.precision(20);
 
     // Sum contribution from all parts
-    std::cout << "Sum contributions\n";
+    std::cout << "Sum contributions"<<std::endl;
     for (std::size_t part = 0; part < multimesh.num_parts(); part++)
     {
       std::cout << "% part " << part;
@@ -53,10 +56,8 @@ namespace mmtools
       {
 	const Cell cell(*multimesh.part(part), *it);
 	volume += cell.volume();
-	//std::cout << std::setprecision(20) << cell.volume() <<'\n';
 	part_volume += cell.volume();
 	status[*it] = 1;
-	//file << "0 0 "<< cell.volume() << '\n';
       }
 
       std::cout << "\t uncut volume "<< part_volume << ' ';
@@ -68,10 +69,9 @@ namespace mmtools
 	const auto& qr = multimesh.quadrature_rule_cut_cell(part, *it);
 	for (std::size_t i = 0; i < qr.second.size(); ++i)
 	{
-	  file << qr.first[2*i]<<' '<<qr.first[2*i+1]<<' '<<qr.second[i]<<'\n';
+	  file << qr.first[2*i]<<' '<<qr.first[2*i+1]<<' '<<qr.second[i]<<std::endl;
 	  volume += qr.second[i];
 	  part_volume += qr.second[i];
-	  //std::cout << qr.first[2*i]<<' '<<qr.first[2*i+1]<<'\n';
 	}
 	status[*it] = 2;
       }
@@ -86,22 +86,78 @@ namespace mmtools
     return volume;
   }
 
+  //-----------------------------------------------------------------------------
+  inline double compute_volume_overlap(const MultiMesh& multimesh)
+  {
+    // Mimic MultiMeshAssembler::_assemble_overlap
+    double vol = 0;
+
+    // Iterate over parts
+    for (std::size_t part = 0; part < multimesh.num_parts(); part++)
+    {
+      double vol_part = 0;
+
+      // Get quadrature rules
+      const auto& quadrature_rules = multimesh.quadrature_rule_overlap(part);
+
+      // Get collision map
+      const auto& cmap = multimesh.collision_map_cut_cells(part);
+      // Iterate over all cut cells in collision map
+      for (auto it = cmap.begin(); it != cmap.end(); ++it)
+      {
+	// Get cut cell
+	const unsigned int cut_cell_index = it->first;
+	const Cell cut_cell(*multimesh.part(part), cut_cell_index);
+
+	// Iterate over cutting cells
+	const auto& cutting_cells = it->second;
+	for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
+	{
+	  // Get cutting part and cutting cell
+	  const std::size_t cutting_part = jt->first;
+	  const std::size_t cutting_cell_index = jt->second;
+	  const Cell cutting_cell(*multimesh.part(cutting_part), cutting_cell_index);
+
+	  // Get quadrature rule for interface part defined by
+	  // intersection of the cut and cutting cells
+	  const std::size_t k = jt - cutting_cells.begin();
+	  dolfin_assert(k < quadrature_rules.at(cut_cell_index).size());
+	  const auto& qr = quadrature_rules.at(cut_cell_index)[k];
+
+	  // Skip if there are no quadrature points
+	  const std::size_t num_quadrature_points = qr.second.size();
+
+	  if (num_quadrature_points > 0)
+	  {
+	    for (std::size_t i = 0; i < num_quadrature_points; ++i)
+	    {
+	      vol_part += qr.second[i];
+	      vol += qr.second[i];
+	    }
+	  }
+	}
+      }
+      std::cout << " part " << part << " overlap volume = " << vol_part << std::endl;
+    }
+    std::cout << " total overlap volume = " << vol << std::endl;
+    return vol;
+  }
 
   //------------------------------------------------------------------------------
-  double compute_interface_area(const MultiMesh& multimesh,
-				double exact_area)
+  inline double compute_interface_area(const MultiMesh& multimesh,
+				       double exact_area)
   {
-    std::cout << "\n" << __FUNCTION__ << std::endl;
+    std::cout << std::endl << __FUNCTION__ << std::endl;
 
     double area = 0;
     std::vector<double> all_areas;
 
     std::ofstream file("quadrature_interface.txt");
-    if (!file.good()) { std::cout << "file not good\n"; exit(0); }
+    if (!file.good()) { std::cout << "file not good"<<std::endl; exit(0); }
     file.precision(20);
 
     // Sum contribution from all parts
-    std::cout << "Sum contributions\n";
+    std::cout << "Sum contributions"<<std::endl;
     for (std::size_t part = 0; part < multimesh.num_parts(); part++)
     {
       std::cout << "% part " << part << ' ';
@@ -114,10 +170,10 @@ namespace mmtools
       // {
       //   const Cell cell(*multimesh.part(part), *it);
       //   area += cell.area();
-      // 	//std::cout << std::setprecision(20) << cell.area() <<'\n';
+      // 	//std::cout << std::setprecision(20) << cell.area() <<std::endl;
       //   part_area += cell.area();
       // 	status[*it] = 1;
-      // 	//file << "0 0 "<< cell.area() << '\n';
+      // 	//file << "0 0 "<< cell.area() << std::endl;
       // }
 
       // std::cout << "\t uncut area "<< part_area << ' ';
@@ -144,11 +200,11 @@ namespace mmtools
 	  std::stringstream ss;
 	  for (std::size_t i = 0; i < qr.second.size(); ++i)
 	  {
-	    file << qr.first[2*i]<<' '<<qr.first[2*i+1]<<' '<<qr.second[i]<<'\n';
+	    file << qr.first[2*i]<<' '<<qr.first[2*i+1]<<' '<<qr.second[i]<<std::endl;
 	    //std::cout << qr.second[i]<<' ';
 	    area += qr.second[i];
 	    part_area += qr.second[i];
-	    //std::cout << qr.first[2*i]<<' '<<qr.first[2*i+1]<<'\n';
+	    //std::cout << qr.first[2*i]<<' '<<qr.first[2*i+1]<<std::endl;
 	  }
 	  //std::cout << std::endl;
 	}
@@ -163,9 +219,9 @@ namespace mmtools
 
 
   //------------------------------------------------------------------------------
-  void plot_normals(const MultiMesh& multimesh)
+  inline void plot_normals(const MultiMesh& multimesh)
   {
-    std::cout << "\n" << __FUNCTION__ << std::endl;
+    std::cout << std::endl << __FUNCTION__ << std::endl;
     const std::vector<std::string> colors = {{ "'b'", "'g'", "'r'" }};
     const std::vector<std::string> marker = {{ "'.'", "'o'", "'x'" }};
 
@@ -243,14 +299,14 @@ namespace mmtools
 
 
   //------------------------------------------------------------------------------
-  void evaluate_at_qr(const MultiMesh& mm,
-		      const MultiMeshFunction& uh)
+  inline void evaluate_at_qr(const MultiMesh& mm,
+			     const MultiMeshFunction& uh)
   {
     std::cout << __FUNCTION__ << std::endl;
 
     for (std::size_t part = 0; part < mm.num_parts(); ++part)
     {
-      std::cout << "\npart " << part << '\n';
+      std::cout << "\npart " << part << std::endl;
 
       // get vertex values
       std::vector<double> vertex_values;
@@ -287,7 +343,7 @@ namespace mmtools
 	    const Cell cell(*mm.part(part), cell_no);
 	    for (std::size_t j = 0; j < cell.num_vertices(); ++j)
 	      std::cout << cell.entities(0)[j] << ' '<<vertex_values[cell.entities(0)[j]] <<' ';
-	    std::cout << ")\n";
+	    std::cout << ")"<<std::endl;
 	  }
 	}
       }
@@ -300,7 +356,7 @@ namespace mmtools
       // loop over all cells with large uh values
       for (const auto cell_no: cells)
       {
-	std::cout << "% cell with large uh:\n";
+	std::cout << "% cell with large uh:"<<std::endl;
 	const Cell cell(*mm.part(part), cell_no);
 	std::cout << tools::drawtriangle(cell);
 
@@ -313,12 +369,12 @@ namespace mmtools
 	  net_weight += w;
 	  std::cout << ' '<<w;
 	}
-	std::cout << "\n% net weight = " << net_weight << '\n';
+	std::cout << "\n% net weight = " << net_weight << std::endl;
 
 	// also display all colliding cells
 	const auto it = collision_map.find(cell_no);
 	dolfin_assert(it->first == cell_no);
-	std::cout << "% colliding:\n";
+	std::cout << "% colliding:"<<std::endl;
 	for (const auto cpair: it->second)
 	{
 	  const Cell cutting_cell(*mm.part(cpair.first), cpair.second);
@@ -331,15 +387,15 @@ namespace mmtools
   }
 
   //------------------------------------------------------------------------------
-  void find_max(std::size_t step,
-		const MultiMesh& multimesh,
-		const MultiMeshFunction& u,
-		File& uncut0_file, File& uncut1_file, File& uncut2_file,
-		File& cut0_file, File& cut1_file, File& cut2_file,
-		File& covered0_file, File& covered1_file, File& covered2_file)
+  inline void find_max(std::size_t step,
+		       const MultiMesh& multimesh,
+		       const MultiMeshFunction& u,
+		       File& uncut0_file, File& uncut1_file, File& uncut2_file,
+		       File& cut0_file, File& cut1_file, File& cut2_file,
+		       File& covered0_file, File& covered1_file, File& covered2_file)
 
   {
-    std::cout << "\tSolution: max min step " << step <<' ' << u.vector()->max() << ' ' << u.vector()->min() << '\n';
+    std::cout << "\tSolution: max min step " << step <<' ' << u.vector()->max() << ' ' << u.vector()->min() << std::endl;
 
     for (std::size_t part = 0; part < multimesh.num_parts(); ++part)
     {
@@ -389,16 +445,16 @@ namespace mmtools
 
 	  // if (part == 0)
 	  //   if (k == 0 or k == 1) {
-	  //     std::cout << k <<'\n';
+	  //     std::cout << k <<std::endl;
 	  //     for (const auto cell: cells[k])
 	  // 	std::cout << cell << ' ';
-	  //     std::cout << '\n';
+	  //     std::cout << std::endl;
 	  //   }
 
 	  // if (marker == 1 and part == 0) {
 	  //   for (const auto v: vertex_values)
 	  //     std::cout << v<<' ';
-	  //   std::cout << '\n';
+	  //   std::cout << std::endl;
 	  // }
 
 	  // save
@@ -429,7 +485,7 @@ namespace mmtools
 		<< " all vertices " << maxvv
 		<< " uncut " << maxvals[0]
 		<< " cut " << maxvals[1]
-		<< " covered " << maxvals[2] << '\n';
+		<< " covered " << maxvals[2] << std::endl;
 
       if (maxvals[0] < 1) { exit(0); }
     }
@@ -438,3 +494,5 @@ namespace mmtools
   //------------------------------------------------------------------------------
 
 }
+
+#endif

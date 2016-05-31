@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2016-05-29
+// Last changed: 2016-05-31
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -495,6 +495,14 @@ namespace dolfin
        std::size_t tdim,
        std::size_t gdim,
        std::size_t quadrature_order) const;
+
+    void _inclusion_exclusion_overlap
+    (quadrature_rule& overlap_qr,
+     const Cell& Tj,
+     const std::vector<std::pair<std::size_t, unsigned int>>& cutting_cells,
+     std::size_t tdim,
+     std::size_t gdim,
+     std::size_t quadrature_order) const;
 
     // Inclusion-exclusion for interface
     void _inclusion_exclusion_interface

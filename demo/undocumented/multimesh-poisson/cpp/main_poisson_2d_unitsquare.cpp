@@ -14,7 +14,6 @@ void solve_poisson()
 
   // Create meshes
   const std::size_t N = 8;
-  const double r = 0.5;
   auto mesh_0 = std::make_shared<UnitSquareMesh>(N, N);
 
   const double L1 = 0.4;
@@ -26,13 +25,13 @@ void solve_poisson()
   auto multimesh = std::make_shared<MultiMesh>();
   multimesh->add(mesh_0);
   multimesh->add(mesh_1);
-  multimesh->add(mesh_2);
+  // multimesh->add(mesh_2);
   multimesh->build(); // qr generated here
 
   {
     double volume = mmtools::compute_volume(*multimesh, 0);
     double area = mmtools::compute_interface_area(*multimesh, 0);
-    std::cout << "volume " << volume << '\n'
+    std::cout << "volume " << volume << std::endl
 	      << "area " << area << std::endl;
   }
 
@@ -48,11 +47,15 @@ void solve_poisson()
   };
   auto boundary = std::make_shared<DirichletBoundary>();
 
+  PPause;
+
   auto u = fem::solve<MultiMeshPoisson::MultiMeshFunctionSpace,
 		      MultiMeshPoisson::MultiMeshBilinearForm,
 		      MultiMeshPoisson::MultiMeshLinearForm>
     (multimesh,
      boundary);
+
+  PPause;
 
   // // Save to file
   // u0_file << *u->part(0);

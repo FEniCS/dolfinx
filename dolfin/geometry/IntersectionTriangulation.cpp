@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-05-29
+// Last changed: 2016-05-31
 
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/math/basic.h>
@@ -26,7 +26,7 @@
 #include "CollisionDetection.h"
 #include "IntersectionTriangulation.h"
 
-//#include "dolfin_simplex_tools.h"
+#include "dolfin_simplex_tools.h"
 
 namespace
 {
@@ -434,9 +434,14 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 
     if (triangulation.size() == 2)
     {
-      // It's not both p0 and p1 that are colliding
-      dolfin_assert(!(collide_p0 and collide_p1));
-      dolfin_assert(!(collide_q0 and collide_q1));
+      std::cout.precision(20);
+      std::cout << collide_p0<<' '<<collide_p1<<' '<<collide_q0<<' '<<collide_q1<<std::endl;
+      std::cout << tools::drawtriangle({{p0,p1}})<<tools::drawtriangle({{q0,q1}})<<std::endl;
+      std::cout << "degen? " << is_degenerate({{p0,p1}})<<' '<<is_degenerate({{q0,q1}})<<std::endl;
+
+      // // It's not both p0 and p1 that are colliding
+      // dolfin_assert(!(collide_p0 and collide_p1));
+      // dolfin_assert(!(collide_q0 and collide_q1));
 
       if (is_degenerate(triangulation))
       {
@@ -461,7 +466,11 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 	  return triangulation;
       }
       else
+      {
+	std::cout << "not degenerate"<<std::endl;
+	// here we have case as q0--p0-------p1--q1 but only p0 and p1 collide
 	return triangulation;
+      }
     }
 
     if (triangulation.size() == 1)
@@ -575,8 +584,8 @@ IntersectionTriangulation::_triangulate_segment_interior_segment_interior_2d(Poi
     if (dets[0].first < DOLFIN_EPS and
 	dets[1].first > DOLFIN_EPS)
     {
-      std::cout << "detected one single point on line collision\n";
-      std::cout << "after sort:\n";
+      std::cout << "detected one single point on line collision"<<std::endl;
+      std::cout << "after sort:"<<std::endl;
       for (const auto d: dets)
 	std::cout << d.first<<' '<<d.second<<std::endl;
 
@@ -811,7 +820,7 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
 	//std::cout << q0_inside << ' ' << q1_inside << std::endl;
 	std::cout << "IntersectionTriangulation.cpp; "
 		  << "_triangulate_triangle_segment_2d; "
-		  <<"Unexpected classification - we should have found either q0 or q1 inside\n";
+		  <<"Unexpected classification - we should have found either q0 or q1 inside"<<std::endl;
 
 	// GeometryDebugging::print({{p0,p1,p2}});
 	// GeometryDebugging::print({{q0,q1}});
@@ -1633,6 +1642,9 @@ bool IntersectionTriangulation::_is_degenerate(std::vector<Point> s)
 
   switch (s.size())
   {
+  case 0:
+    is_degenerate = true;
+    break;
   case 1:
     is_degenerate = true;
     break;

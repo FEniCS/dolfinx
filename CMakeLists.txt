@@ -346,6 +346,9 @@ find_package(Eigen3 3.2.0 REQUIRED)
 #       because it is used to get the installation path for
 #       dolfin_utils
 # FIXME PY3: Select python 3 based on config flag?
+
+set(DOLFIN_ENABLE_PYTHON 0)
+
 find_package(PythonInterp 2)
 if (DOLFIN_ENABLE_PYTHON)
 
