@@ -24,7 +24,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
-#include <dolfin/mesh/LocalMeshData.h>
+#include <dolfin/mesh/CellType.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "GraphBuilder.h"
 #include "ParMETIS.h"
@@ -36,68 +36,54 @@
 using namespace dolfin;
 
 #ifdef HAS_PARMETIS
-
-namespace dolfin
-{
-  // This class builds a ParMETIS dual graph
-
-  class ParMETISDualGraph
-  {
-  public:
-
-    // Constructor
-    ParMETISDualGraph(MPI_Comm mpi_comm, const LocalMeshData& mesh_data);
-
-    // Destructor
-    ~ParMETISDualGraph();
-
-    // ParMETIS data
-    std::vector<idx_t> elmdist;
-    std::vector<idx_t> eptr;
-    std::vector<idx_t> eind;
-    idx_t numflag;
-    idx_t* xadj;
-    idx_t* adjncy;
-
-    // Number of partitions (one for each process)
-    idx_t nparts;
-
-    // Strange weight arrays needed by ParMETIS
-    idx_t ncon;
-    std::vector<real_t> tpwgts;
-    std::vector<real_t> ubvec;
-
-    // Prepare remaining arguments for ParMETIS
-    idx_t* elmwgt;
-    idx_t wgtflag;
-    idx_t edgecut;
-  };
-}
 //-----------------------------------------------------------------------------
-void ParMETIS::compute_partition(
-  const MPI_Comm mpi_comm,
-  std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
-  const LocalMeshData& mesh_data,
-  std::string mode)
+void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
+                                 std::vector<int>& cell_partition,
+                                 std::map<std::int64_t, std::vector<int>>& ghost_procs,
+                                 const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                                 const std::size_t num_global_vertices,
+                                 const CellType& cell_type,
+                                 const std::string mode)
 {
   // Duplicate MPI communicator (ParMETIS does not take const
   // arguments, so duplicate communicator to be sure it isn't changed)
   MPI_Comm comm;
   MPI_Comm_dup(mpi_comm, &comm);
 
-  // Build dual graph
-  ParMETISDualGraph g(mpi_comm, mesh_data);
+  const std::int8_t tdim = cell_type.dim();
+  const std::int8_t num_vertices_per_cell = cell_type.num_vertices(tdim);
 
-  dolfin_assert(g.eptr.size() - 1 == mesh_data.cell_vertices.size());
+  // Create data structures to hold graph
+  CSRGraph<idx_t> csr_graph;
+
+  // Use ParMETIS or DOLFIN dual graph
+  bool use_parmetis_dual_graph = false;
+
+  if (use_parmetis_dual_graph)
+  {
+    // Build dual graph using ParMETIS builder
+    csr_graph = dual_graph(mpi_comm, cell_vertices, num_vertices_per_cell);
+  }
+  else
+  {
+    // Compute dual graph with DOLFIN
+    std::vector<std::vector<std::size_t>> local_graph;
+    std::set<std::int64_t> ghost_vertices;
+    GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type,
+                                     num_global_vertices, local_graph,
+                                     ghost_vertices);
+
+    csr_graph = CSRGraph<idx_t>(mpi_comm, local_graph);
+
+  }
 
   // Partition graph
   if (mode == "partition")
-    partition(comm, cell_partition, ghost_procs, g);
+    partition(comm, csr_graph, cell_partition, ghost_procs);
   else if (mode == "adaptive_repartition")
-    adaptive_repartition(comm, cell_partition, g);
+    adaptive_repartition(comm, csr_graph, cell_partition);
   else if (mode == "refine")
-    refine(comm, cell_partition, g);
+    refine(comm, csr_graph, cell_partition);
   else
   {
     dolfin_error("ParMETIS.cpp",
@@ -109,11 +95,10 @@ void ParMETIS::compute_partition(
   MPI_Comm_free(&comm);
 }
 //-----------------------------------------------------------------------------
-void ParMETIS::partition(
-  MPI_Comm mpi_comm,
-  std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
-  ParMETISDualGraph& g)
+template <typename T>
+void ParMETIS::partition(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
+                         std::vector<int>& cell_partition,
+                         std::map<std::int64_t, std::vector<int>>& ghost_procs)
 {
   Timer timer("Compute graph partition (ParMETIS)");
 
@@ -123,68 +108,82 @@ void ParMETIS::partition(
   options[1] = 0;
   options[2] = 15;
 
-  // Check that data arrays are not empty
-  dolfin_assert(!g.tpwgts.empty());
-  dolfin_assert(!g.ubvec.empty());
+  // Number of partitions (one for each process)
+  idx_t nparts = MPI::size(mpi_comm);
+
+  // Strange weight arrays needed by ParMETIS
+  idx_t ncon = 1;
+
+  // Prepare remaining arguments for ParMETIS
+  idx_t* elmwgt = NULL;
+  idx_t wgtflag = 0;
+  idx_t edgecut = 0;
+  idx_t numflag = 0;
+  std::vector<real_t> tpwgts(ncon*nparts, 1.0/static_cast<real_t>(nparts));
+  std::vector<real_t> ubvec(ncon, 1.05);
 
   // Call ParMETIS to partition graph
   Timer timer1("ParMETIS: call ParMETIS_V3_PartKway");
-  const std::size_t num_local_cells = g.eptr.size() - 1;
+  const std::int32_t num_local_cells = csr_graph.size();
   std::vector<idx_t> part(num_local_cells);
   dolfin_assert(!part.empty());
-  int err = ParMETIS_V3_PartKway(g.elmdist.data(), g.xadj, g.adjncy, g.elmwgt,
-                                 NULL, &g.wgtflag, &g.numflag, &g.ncon,
-                                 &g.nparts,
-                                 g.tpwgts.data(), g.ubvec.data(), options,
-                                 &g.edgecut, part.data(),
-                                 &mpi_comm);
+  int err
+    = ParMETIS_V3_PartKway(csr_graph.node_distribution().data(),
+                           csr_graph.nodes().data(),
+                           csr_graph.edges().data(), elmwgt,
+                           NULL, &wgtflag, &numflag, &ncon, &nparts,
+                           tpwgts.data(), ubvec.data(), options,
+                           &edgecut, part.data(), &mpi_comm);
   dolfin_assert(err == METIS_OK);
   timer1.stop();
 
   Timer timer2("Compute graph halo data (ParMETIS)");
 
   // Work out halo cells for current division of dual graph
-  const unsigned int num_processes = MPI::size(mpi_comm);
-  const unsigned int process_number = MPI::rank(mpi_comm);
-  const idx_t elm_begin = g.elmdist[process_number];
-  const idx_t elm_end = g.elmdist[process_number + 1];
-  const unsigned int ncells = elm_end - elm_begin;
+  const auto& elmdist = csr_graph.node_distribution();
+  const auto& xadj = csr_graph.nodes();
+  const auto& adjncy = csr_graph.edges();
+  const std::int32_t num_processes = MPI::size(mpi_comm);
+  const std::int32_t process_number = MPI::rank(mpi_comm);
+  const idx_t elm_begin = elmdist[process_number];
+  const idx_t elm_end = elmdist[process_number + 1];
+  const std::int32_t ncells = elm_end - elm_begin;
 
-  std::map<idx_t, std::set<unsigned int>> halo_cell_to_remotes;
+  std::map<idx_t, std::set<std::int32_t>> halo_cell_to_remotes;
   // local indexing "i"
-  for(unsigned int i = 0; i < ncells; i++)
+  for(int i = 0; i < ncells; i++)
   {
-    for(idx_t j = g.xadj[i]; j != g.xadj[i + 1]; ++j)
+    for(auto other_cell : csr_graph[i]) //idx_t j = xadj[i]; j != xadj[i + 1]; ++j)
     {
-      const idx_t other_cell = g.adjncy[j];
+      //      const idx_t other_cell = adjncy[j];
       if (other_cell < elm_begin || other_cell >= elm_end)
       {
-        const unsigned int remote = std::upper_bound(g.elmdist.begin(),
-                                       g.elmdist.end() ,
-                                       other_cell) - g.elmdist.begin() - 1;
+        const int remote
+          = std::upper_bound(elmdist.begin(), elmdist.end(), other_cell)
+          - elmdist.begin() - 1;
+
         dolfin_assert(remote < num_processes);
         if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
-          halo_cell_to_remotes[i] = std::set<unsigned int>();
+          halo_cell_to_remotes[i] = std::set<std::int32_t>();
         halo_cell_to_remotes[i].insert(remote);
       }
     }
   }
 
   // Do halo exchange of cell partition data
-  std::vector<std::vector<std::size_t>> send_cell_partition(num_processes);
-  std::vector<std::vector<std::size_t>> recv_cell_partition(num_processes);
-  for(std::map<idx_t, std::set<unsigned int>>::iterator hcell
-        = halo_cell_to_remotes.begin(); hcell != halo_cell_to_remotes.end();
-      ++hcell)
+  std::vector<std::vector<std::int64_t>> send_cell_partition(num_processes);
+  std::vector<std::vector<std::int64_t>> recv_cell_partition(num_processes);
+  for(const auto& hcell : halo_cell_to_remotes)
   {
-    for(std::set<unsigned int>::iterator proc = hcell->second.begin();
-         proc != hcell->second.end(); ++proc)
+    for(auto proc : hcell.second)
     {
-      dolfin_assert(*proc < num_processes);
+      dolfin_assert(proc < num_processes);
+
       // global cell number
-      send_cell_partition[*proc].push_back(hcell->first + elm_begin);
+      send_cell_partition[proc].push_back(hcell.first + elm_begin);
+
       //partitioning
-      send_cell_partition[*proc].push_back(part[hcell->first]);
+      send_cell_partition[proc].push_back(part[hcell.first]);
     }
   }
 
@@ -193,31 +192,30 @@ void ParMETIS::partition(
 
   // Construct a map from all currently foreign cells to their new
   // partition number
-  std::map<std::size_t, unsigned int> cell_ownership;
-  for (unsigned int i = 0; i < num_processes; ++i)
+  std::map<std::int64_t, std::int32_t> cell_ownership;
+  for (std::int32_t i = 0; i < num_processes; ++i)
   {
-    std::vector<std::size_t>& recv_data = recv_cell_partition[i];
-    for (unsigned int j = 0; j != recv_data.size(); j += 2)
+    std::vector<std::int64_t>& recv_data = recv_cell_partition[i];
+    for (std::size_t j = 0; j < recv_data.size(); j += 2)
     {
-      const std::size_t global_cell = recv_data[j];
-      const unsigned int cell_owner = recv_data[j+1];
+      const std::int64_t global_cell = recv_data[j];
+      const std::int32_t cell_owner = recv_data[j+1];
       cell_ownership[global_cell] = cell_owner;
     }
   }
 
   // Generate mapping for where new boundary cells need to be sent
-  for(unsigned int i = 0; i < ncells; i++)
+  for(std::int32_t i = 0; i < ncells; i++)
   {
     const std::size_t proc_this = part[i];
-    for (idx_t j = g.xadj[i]; j != g.xadj[i + 1]; ++j)
+    for (idx_t j = xadj[i]; j < xadj[i + 1]; ++j)
     {
-      const idx_t other_cell = g.adjncy[j];
+      const idx_t other_cell = adjncy[j];
       std::size_t proc_other;
 
       if (other_cell < elm_begin || other_cell >= elm_end)
       { // remote cell - should be in map
-        const std::map<std::size_t, unsigned int>::const_iterator
-          find_other_proc = cell_ownership.find(other_cell);
+        const auto find_other_proc = cell_ownership.find(other_cell);
         dolfin_assert(find_other_proc != cell_ownership.end());
         proc_other = find_other_proc->second;
       }
@@ -229,13 +227,19 @@ void ParMETIS::partition(
         auto map_it = ghost_procs.find(i);
         if (map_it == ghost_procs.end())
         {
-          dolfin::Set<unsigned int> sharing_processes;
-          sharing_processes.insert(proc_this);
-          sharing_processes.insert(proc_other);
-          ghost_procs.insert(std::make_pair(i, sharing_processes));
+          std::vector<std::int32_t> sharing_processes;
+          sharing_processes.push_back(proc_this);
+          sharing_processes.push_back(proc_other);
+          ghost_procs.insert({i, sharing_processes});
         }
         else
-          map_it->second.insert(proc_other);
+        {
+          // Add to vector if not already there
+          auto it = std::find(map_it->second.begin(), map_it->second.end(), proc_other);
+          if (it == map_it->second.end())
+            map_it->second.push_back(proc_other);
+        }
+
       }
     }
   }
@@ -243,12 +247,13 @@ void ParMETIS::partition(
   timer2.stop();
 
   // Copy cell partition data
-  cell_partition = std::vector<std::size_t>(part.begin(), part.end());
+  cell_partition.assign(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
+template <typename T>
 void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
-                                    std::vector<std::size_t>& cell_partition,
-                                    ParMETISDualGraph& g)
+                                    CSRGraph<T>& csr_graph,
+                                    std::vector<int>& cell_partition)
 {
   Timer timer("Compute graph partition (ParMETIS Adaptive Repartition)");
 
@@ -262,33 +267,45 @@ void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm,
   // migration if already balanced.  Try PARMETIS_PSR_UNCOUPLED for
   // better edge cut.
 
-  // Check that data arrays are not empty
-  dolfin_assert(!g.tpwgts.empty());
-  dolfin_assert(!g.ubvec.empty());
-
-  // Call ParMETIS to partition graph
   Timer timer1("ParMETIS: call ParMETIS_V3_AdaptiveRepart");
   const double itr = parameters["ParMETIS_repartitioning_weight"];
   real_t _itr = itr;
-  std::vector<idx_t> part(g.eptr.size() - 1);
+  std::vector<idx_t> part(csr_graph.size());
   std::vector<idx_t> vsize(part.size(), 1);
   dolfin_assert(!part.empty());
-  int err = ParMETIS_V3_AdaptiveRepart(g.elmdist.data(), g.xadj, g.adjncy,
-                                       g.elmwgt, NULL, vsize.data(), &g.wgtflag,
-                                       &g.numflag, &g.ncon, &g.nparts,
-                                       g.tpwgts.data(), g.ubvec.data(), &_itr,
-                                       options, &g.edgecut, part.data(),
+
+  // Number of partitions (one for each process)
+  idx_t nparts = MPI::size(mpi_comm);
+
+  // Remaining ParMETIS parameters
+  idx_t ncon = 1;
+  idx_t* elmwgt = NULL;
+  idx_t wgtflag = 0;
+  idx_t edgecut = 0;
+  idx_t numflag = 0;
+  std::vector<real_t> tpwgts(ncon*nparts, 1.0/static_cast<real_t>(nparts));
+  std::vector<real_t> ubvec(ncon, 1.05);
+
+  // Call ParMETIS to repartition graph
+  int err = ParMETIS_V3_AdaptiveRepart(csr_graph.node_distribution().data(),
+                                       csr_graph.nodes().data(),
+                                       csr_graph.edges().data(),
+                                       elmwgt, NULL, vsize.data(), &wgtflag,
+                                       &numflag, &ncon, &nparts,
+                                       tpwgts.data(), ubvec.data(), &_itr,
+                                       options, &edgecut, part.data(),
                                        &mpi_comm);
   dolfin_assert(err == METIS_OK);
   timer1.stop();
 
   // Copy cell partition data
-  cell_partition = std::vector<std::size_t>(part.begin(), part.end());
+  cell_partition.assign(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
+template<typename T>
 void ParMETIS::refine(MPI_Comm mpi_comm,
-                      std::vector<std::size_t>& cell_partition,
-                      ParMETISDualGraph& g)
+                      CSRGraph<T>& csr_graph,
+                      std::vector<int>& cell_partition)
 {
   Timer timer("Compute graph partition (ParMETIS Refine)");
 
@@ -306,41 +323,58 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
   // migration if already balanced.  Try PARMETIS_PSR_UNCOUPLED for
   // better edge cut.
 
-  // Check that data arrays are not empty
-  dolfin_assert(!g.tpwgts.empty());
-  dolfin_assert(!g.ubvec.empty());
-
   // Partitioning array to be computed by ParMETIS. Prefill with
   // process_number.
-  const std::size_t num_local_cells = g.eptr.size() - 1;
+  const std::size_t num_local_cells = csr_graph.size();
   std::vector<idx_t> part(num_local_cells, process_number);
   dolfin_assert(!part.empty());
 
+  // Number of partitions (one for each process)
+  idx_t nparts = MPI::size(mpi_comm);
+  // Remaining ParMETIS parameters
+  idx_t ncon = 1;
+  idx_t* elmwgt = NULL;
+  idx_t wgtflag = 0;
+  idx_t edgecut = 0;
+  idx_t numflag = 0;
+  std::vector<real_t> tpwgts(ncon*nparts, 1.0/static_cast<real_t>(nparts));
+  std::vector<real_t> ubvec(ncon, 1.05);
+
   // Call ParMETIS to partition graph
   Timer timer1("ParMETIS: call ParMETIS_V3_RefineKway");
-  int err = ParMETIS_V3_RefineKway(g.elmdist.data(), g.xadj, g.adjncy, g.elmwgt,
-                                   NULL, &g.wgtflag, &g.numflag, &g.ncon,
-                                   &g.nparts,
-                                   g.tpwgts.data(), g.ubvec.data(), options,
-                                   &g.edgecut, part.data(), &mpi_comm);
+  int err =  ParMETIS_V3_RefineKway(csr_graph.node_distribution().data(),
+                                    csr_graph.nodes().data(),
+                                    csr_graph.edges().data(),
+                                    elmwgt, NULL, &wgtflag, &numflag, &ncon,
+                                    &nparts,
+                                    tpwgts.data(), ubvec.data(), options,
+                                    &edgecut, part.data(), &mpi_comm);
   dolfin_assert(err == METIS_OK);
   timer1.stop();
 
   // Copy cell partition data
-  cell_partition = std::vector<std::size_t>(part.begin(), part.end());
+  cell_partition.assign(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
-ParMETISDualGraph::ParMETISDualGraph(MPI_Comm mpi_comm,
-                                     const LocalMeshData& mesh_data)
+CSRGraph<idx_t>
+ParMETIS::dual_graph(MPI_Comm mpi_comm,
+                     const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                     const int num_vertices_per_cell)
 {
   Timer timer("Build mesh dual graph (ParMETIS)");
+
+  // ParMETIS data
+  std::vector<idx_t> elmdist;
+  std::vector<idx_t> eptr;
+  std::vector<idx_t> eind;
+
 
   // Get number of processes and process number
   const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Get dimensions of local mesh_data
-  const std::size_t num_local_cells = mesh_data.cell_vertices.size();
-  const std::size_t num_cell_vertices = mesh_data.num_vertices_per_cell;
+  const std::size_t num_local_cells = cell_vertices.size();
+  const std::size_t num_cell_vertices = num_vertices_per_cell;
 
   // Check that number of local graph nodes (cells) is > 0
   if (num_local_cells == 0)
@@ -363,10 +397,10 @@ ParMETISDualGraph::ParMETISDualGraph(MPI_Comm mpi_comm,
   eind.assign(num_local_cells*num_cell_vertices, 0);
   for (std::size_t i = 0; i < num_local_cells; i++)
   {
-    dolfin_assert(mesh_data.cell_vertices[i].size() == num_cell_vertices);
+    dolfin_assert(cell_vertices[i].size() == num_cell_vertices);
     eptr[i] = i*num_cell_vertices;
     for (std::size_t j = 0; j < num_cell_vertices; j++)
-      eind[eptr[i] + j] = mesh_data.cell_vertices[i][j];
+      eind[eptr[i] + j] = cell_vertices[i][j];
   }
   eptr[num_local_cells] = num_local_cells*num_cell_vertices;
 
@@ -375,50 +409,36 @@ ParMETISDualGraph::ParMETISDualGraph(MPI_Comm mpi_comm,
 
   // Number of nodes shared for dual graph (partition along facets)
   idx_t ncommonnodes = num_cell_vertices - 1;
-  numflag = 0;
-  xadj = 0;
-  adjncy = 0;
 
   dolfin_assert(!eptr.empty());
   dolfin_assert(!eind.empty());
 
   // Could use GraphBuilder::compute_dual_graph() instead
   Timer timer1("ParMETIS: call ParMETIS_V3_Mesh2Dual");
+  idx_t* xadj = NULL;
+  idx_t* adjncy = NULL;
+  idx_t numflag = 0;
   int err = ParMETIS_V3_Mesh2Dual(elmdist.data(), eptr.data(), eind.data(),
-                                  &numflag, &ncommonnodes,
-                                  &xadj, &adjncy,
+                                  &numflag, &ncommonnodes, &xadj, &adjncy,
                                   &mpi_comm);
   dolfin_assert(err == METIS_OK);
   timer1.stop();
 
-  // Number of partitions (one for each process)
-  nparts = num_processes;
-
-  // Strange weight arrays needed by ParMETIS
-  ncon = 1;
-  tpwgts.assign(ncon*nparts, 1.0/static_cast<real_t>(nparts));
-  ubvec.assign(ncon, 1.05);
-
-  // Prepare remaining arguments for ParMETIS
-  elmwgt = NULL;
-  wgtflag = 0;
-  edgecut = 0;
-}
-//-----------------------------------------------------------------------------
-ParMETISDualGraph::~ParMETISDualGraph()
-{
-  // Free metis data structures
+  CSRGraph<idx_t> csr_graph(mpi_comm, xadj, adjncy, num_local_cells);
   METIS_Free(xadj);
   METIS_Free(adjncy);
+
+  return csr_graph;
 }
 //-----------------------------------------------------------------------------
 #else
 void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
-                                 std::vector<std::size_t>& cell_partition,
-                                 std::map<std::size_t,
-                                 dolfin::Set<unsigned int>>& ghost_procs,
-                                 const LocalMeshData& data,
-                                 std::string mode)
+                                 std::vector<int>& cell_partition,
+                                 std::map<std::int64_t, std::vector<int>>& ghost_procs,
+                                 const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                                 const std::size_t num_global_vertices,
+                                 const CellType& cell_type,
+                                 const std::string mode)
 {
   dolfin_error("ParMETIS.cpp",
                "compute mesh partitioning using ParMETIS",

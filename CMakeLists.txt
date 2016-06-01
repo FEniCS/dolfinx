@@ -120,7 +120,6 @@ list(APPEND OPTIONAL_PACKAGES "SLEPc4py")
 list(APPEND OPTIONAL_PACKAGES "Trilinos")
 list(APPEND OPTIONAL_PACKAGES "UMFPACK")
 list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
-list(APPEND OPTIONAL_PACKAGES "PaStiX")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
 list(APPEND OPTIONAL_PACKAGES "zlib")
@@ -486,11 +485,6 @@ if (DOLFIN_ENABLE_HDF5)
       set(HDF5_FOUND false)
     endif()
   endif()
-endif()
-
-# Check for PaStiX
-if (DOLFIN_ENABLE_PASTIX)
-  find_package(PaStiX 5.2.1)
 endif()
 
 # Check for Trilinos and the requires Trilinos packages

@@ -180,19 +180,17 @@ const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0,
   return connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
-std::map<unsigned int, std::set<unsigned int>>&
+std::map<std::int32_t, std::set<unsigned int>>&
   MeshTopology::shared_entities(unsigned int dim)
 {
   dolfin_assert(dim <= this->dim());
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
-const std::map<unsigned int, std::set<unsigned int>>&
+const std::map<std::int32_t, std::set<unsigned int>>&
   MeshTopology::shared_entities(unsigned int dim) const
 {
-  std::map<unsigned int, std::map<unsigned int,
-                                  std::set<unsigned int>>>::const_iterator e;
-  e = _shared_entities.find(dim);
+  auto e = _shared_entities.find(dim);
   if (e == _shared_entities.end())
   {
     dolfin_error("MeshTopology.cpp",

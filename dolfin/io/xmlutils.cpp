@@ -25,8 +25,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-const pugi::xml_node dolfin::get_node(const pugi::xml_node& xml_node,
-                                      std::string node_name)
+const pugi::xml_node xmlutils::get_node(const pugi::xml_node& xml_node,
+                                        std::string node_name)
 {
   // Check node itself
   if (xml_node.name() == node_name)
@@ -42,5 +42,32 @@ const pugi::xml_node dolfin::get_node(const pugi::xml_node& xml_node,
   }
 
   return child_node;
+}
+//-----------------------------------------------------------------------------
+void xmlutils::check_node_name(const pugi::xml_node& xml_node,
+                               const std::string name)
+{
+  if (xml_node.name() != name)
+  {
+    dolfin_error("xmlutils.cpp",
+                 "checking XML node name",
+                 "Node name is \"%s\", expecting \"%s\"",
+                  xml_node.name(), name.c_str());
+
+  }
+}
+//-----------------------------------------------------------------------------
+void xmlutils::check_has_attribute(const pugi::xml_node& xml_node,
+                                   const std::string name)
+{
+  const pugi::xml_attribute attr = xml_node.attribute("xml_node");
+  if (!attr)
+  {
+    dolfin_error("xmlutils.cpp",
+                 "checking that XML node has attribute",
+                 "Node  \"%s\" does not have expected attribute \"%s\"",
+                  xml_node.name(), name.c_str());
+
+  }
 }
 //-----------------------------------------------------------------------------

@@ -90,7 +90,8 @@ Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
   : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
   _ordered(false), _mpi_comm(comm)
 {
-  MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
+  const std::string ghost_mode = parameters["ghost_mode"];
+  MeshPartitioning::build_distributed_mesh(*this, local_mesh_data, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()
@@ -219,17 +220,6 @@ void Mesh::init() const
   for (std::size_t d0 = 0; d0 <= topology().dim(); d0++)
     for (std::size_t d1 = 0; d1 <= topology().dim(); d1++)
       init(d0, d1);
-}
-//-----------------------------------------------------------------------------
-void Mesh::clear()
-{
-  _topology.clear();
-  _geometry.clear();
-  _data.clear();
-  _cell_type.reset();
-  _cell_type = 0;
-  _ordered = false;
-  _cell_orientations.clear();
 }
 //-----------------------------------------------------------------------------
 void Mesh::clean()

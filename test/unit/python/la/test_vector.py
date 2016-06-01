@@ -41,15 +41,6 @@ if MPI.size(mpi_comm_world()) == 1:
     # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't
     # used in the old test.
     data_backends += ["Eigen"]
-    no_data_backends += ["PETScCusp"]
-
-# If we have PETSc, STL Vector gets typedefed to one of these and data
-# test will not work. If none of these backends are available
-# STLVector defaults to EigenVEctor, which data will work
-if has_linear_algebra_backend("PETSc"):
-    no_data_backends += ["STL"]
-else:
-    data_backends += ["STL"]
 
 # Remove backends we haven't built with
 data_backends = list(filter(has_linear_algebra_backend, data_backends))

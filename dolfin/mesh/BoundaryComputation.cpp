@@ -83,17 +83,17 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
 
   // Shared vertices for full mesh
   // FIXME: const_cast
-  const std::map<unsigned int, std::set<unsigned int>> &
+  const std::map<std::int32_t, std::set<unsigned int>>&
     shared_vertices = const_cast<Mesh&>(mesh).topology().shared_entities(0);
 
   // Shared vertices for boundary mesh
-  std::map<unsigned int, std::set<unsigned int>> shared_boundary_vertices;
+  std::map<std::int32_t, std::set<unsigned int>> shared_boundary_vertices;
   if (exterior)
   {
     // Extract shared vertices if vertex is identified as part of globally
     // exterior facet.
     std::vector<std::size_t> boundary_global_indices;
-    for (std::map<unsigned int, std::set<unsigned int>>::const_iterator
+    for (std::map<std::int32_t, std::set<unsigned int>>::const_iterator
         sv_it=shared_vertices.begin(); sv_it != shared_vertices.end(); ++sv_it)
     {
       std::size_t local_mesh_index = sv_it->first;
@@ -205,7 +205,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
             // Determine "owner" of global_mesh_index
             std::size_t owner = my_rank;
 
-            std::map<unsigned int, std::set<unsigned int>>::const_iterator
+            std::map<std::int32_t, std::set<unsigned int>>::const_iterator
               other_processes_it
               = shared_boundary_vertices.find(local_mesh_index);
             if (other_processes_it != shared_boundary_vertices.end() && D > 1)

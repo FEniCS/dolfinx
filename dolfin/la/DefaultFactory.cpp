@@ -23,7 +23,6 @@
 #include <dolfin/parameter/GlobalParameters.h>
 #include "EigenFactory.h"
 #include "PETScFactory.h"
-#include "STLFactory.h"
 #include "TpetraFactory.h"
 #include "DefaultFactory.h"
 
@@ -104,8 +103,6 @@ GenericLinearAlgebraFactory& DefaultFactory::factory()
                  "PETSc linear algebra backend is not available");
     #endif
   }
-  else if (backend == "STL")
-    return STLFactory::instance();
   else if (backend == "Tpetra")
   {
     #ifdef HAS_TRILINOS

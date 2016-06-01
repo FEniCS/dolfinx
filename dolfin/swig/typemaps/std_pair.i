@@ -184,6 +184,28 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<bool>)
 
 }
 
+
+%typecheck(SWIG_TYPECHECK_POINTER) std::pair<std::int64_t, std::int64_t>
+{
+  $1 = PyTuple_Check($input) ? 1 : 0;
+}
+%typemap(in) std::pair<std::int64_t, std::int64_t> (std::pair<std::int64_t, std::int64_t> tmp_pair, long tmp)
+{
+  // Check that we have a tuple
+  if (!PyTuple_Check($input) || PyTuple_Size($input) != 2)
+    SWIG_exception(SWIG_TypeError, "expected a tuple of length 2 of ints.");
+
+  // Get pointers to function and time
+  PyObject* py_first  = PyTuple_GetItem($input, 0);
+  PyObject* py_second = PyTuple_GetItem($input, 1);
+
+  tmp_pair = std::make_pair(PyLong_AsLongLong(py_first), PyLong_AsLongLong(py_second));
+
+  // Assign input variable
+  $1 = tmp_pair;
+}
+
+
 %typecheck(SWIG_TYPECHECK_POINTER) std::pair<double, double>
 {
   $1 = PyTuple_Check($input) ? 1 : 0;

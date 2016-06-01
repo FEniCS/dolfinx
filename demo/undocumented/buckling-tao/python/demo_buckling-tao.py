@@ -32,8 +32,9 @@ if not has_petsc():
     print("DOLFIN must be compiled at least with PETSc 3.6 to run this demo.")
     exit(0)
 
-# Read mesh
+# Read mesh and refine once
 mesh = Mesh("../buckling.xml.gz")
+mesh = refine(mesh)
 
 # Create function space
 V = VectorFunctionSpace(mesh, "Lagrange", 1)

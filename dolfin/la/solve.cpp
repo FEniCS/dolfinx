@@ -226,10 +226,8 @@ bool dolfin::has_linear_algebra_backend(std::string backend)
     return false;
     #endif
   }
-  else if (backend == "STL")
-    return true;
-
-  return false;
+  else
+    return false;
 }
 //-------------------------------------------------------------------------
 void dolfin::list_linear_algebra_backends()
@@ -260,8 +258,6 @@ std::map<std::string, std::string> dolfin::linear_algebra_backends()
   backends.insert(std::make_pair("Eigen",
                                  "Template-based linear algebra "
                                  " library" + default_backend["Eigen"]));
-  backends.insert(std::make_pair("STL",
-                                 "Light weight storage backend for Tensors"));
 
   #ifdef HAS_PETSC
   backends.insert(std::make_pair("PETSc",

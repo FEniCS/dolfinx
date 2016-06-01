@@ -1,4 +1,5 @@
-// Copyright (C) 2012 Garth N. Wells
+/* -*- C -*- */
+// Copyright (C) 2016 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -14,13 +15,16 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+
+//=============================================================================
+// SWIG directives for the DOLFIN graph kernel module (pre)
 //
-// First added:  2012-02-21
-// Last changed:
+// The directives in this file are applied _before_ the header files of the
+// modules has been loaded.
+//=============================================================================
 
-#include "STLFactoryCSC.h"
-
-using namespace dolfin;
-
-// Singleton instance
-STLFactoryCSC STLFactoryCSC::factory;
+//-----------------------------------------------------------------------------
+// Ignore low-level functions
+//-----------------------------------------------------------------------------
+%ignore dolfin::GraphBuilder::compute_dual_graph;
+%ignore dolfin::SCOTCH::compute_partition;

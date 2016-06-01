@@ -241,6 +241,11 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
       dofmap._shared_nodes[new_node] = it->second;
     }
 
+    // Update global_nodes for node reordering
+    dofmap._global_nodes.clear();
+    for (auto it = global_nodes0.begin(); it != global_nodes0.end(); ++it)
+      dofmap._global_nodes.insert(node_old_to_new_local[*it]);
+
     // Build dofmap from original node 'dof' map and applying the
     // 'old_to_new_local' map for the re-ordered node indices
     build_dofmap(dofmap_graph, node_graph0, node_old_to_new_local, bs);
@@ -261,6 +266,9 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
 
     dofmap._index_map->init(dofmap._global_dimension, bs);
     dofmap._shared_nodes.clear();
+
+    // Store global nodes
+    dofmap._global_nodes = global_nodes0;
   }
 
   // Clear ufc_local-to-local map if dofmap has no sub-maps
@@ -1368,7 +1376,7 @@ void DofMapBuilder::compute_constrained_mesh_indices(
       else
       {
         // Get number of entities
-        std::map<unsigned int, std::set<unsigned int>> shared_entities;
+        std::map<std::int32_t, std::set<unsigned int>> shared_entities;
         const std::size_t num_entities
           = DistributedMeshTools::number_entities(mesh,
                                                   slave_to_master_mesh_entities,

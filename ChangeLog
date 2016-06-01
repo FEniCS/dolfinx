@@ -1,3 +1,9 @@
+- Major performance improvements and simplifications of the XDMF IO.
+- Remove Zoltan graph partitioning interface
+- Add new algorithm for computing mesh entiites. Typical speed-up
+	of two with gcc and four with clang. Reduced memory usage for
+	meshes with irregularly numbered cells.
+- Remove STLMatrix, STLVector, MUMPSLUSolver and PastixLUSolver classes
 - Remove PETScPreconditioner::set_near_nullspace and add
 	PETScMatrix::set_near_nullspace
 - Build system updates for VTK 7.0
@@ -13,6 +19,9 @@
 	https://bitbucket.org/fenics-project/dolfin/issues/355)
 - Switch to Google Test framwork for C++ unit tests
 - Fix bug when reading domain data from mesh file for a ghosted mesh
+- Add interface for manipulating mesh geometry using (higher-order) FE
+	functions: free functions set_coordinates, get_coordinates, create_mesh
+- Fix bug when reading domain data from mesh file for a ghosted mesh.
 - Remove reference versions of constructors for many classes that
 	store a pointer/reference to the object passed to the
 	constructor. This is an intrusive interface change for C++ users,
@@ -83,11 +92,11 @@
 - list_timings() is now collective and returns MPI average across processes
 - Add dump_timings_to_xml()
 - Add enum TimingType { wall, user, system } for selecting wall-clock,
-  user and system time in timing routines
+	user and system time in timing routines
 - Bump required SWIG version to 3.0.3
 - Increase default maximum iterations in NewtonSolver to 50.
 - Deprecate Python free function homogenize(bc) in favour of member
-  function DirichletBC::homogenize()
+	function DirichletBC::homogenize()
 1.5.0 [2015-01-12]
  - DG demos working in parallel
  - Simplify re-use of LU factorisations

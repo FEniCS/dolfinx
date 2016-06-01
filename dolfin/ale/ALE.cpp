@@ -24,6 +24,9 @@
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/fem/fem_utils.h>
+#include <dolfin/la/GenericVector.h>
+#include <dolfin/log/log.h>
 #include "HarmonicSmoothing.h"
 #include "ALE.h"
 
@@ -33,12 +36,21 @@ using namespace dolfin;
 std::shared_ptr<MeshDisplacement> ALE::move(std::shared_ptr<Mesh> mesh,
                                             const BoundaryMesh& new_boundary)
 {
+  dolfin_assert(mesh);
   return HarmonicSmoothing::move(mesh, new_boundary);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<MeshDisplacement> ALE::move(std::shared_ptr<Mesh> mesh0,
                                             const Mesh& mesh1)
 {
+  dolfin_assert(mesh0);
+  if (mesh0->geometry().degree() != 1 || mesh1.geometry().degree() != 1)
+  {
+    dolfin_error("ALE.cpp",
+                 "move mesh",
+                 "This function does not support higher-order mesh geometry");
+  }
+
   // FIXME: Maybe this works in parallel but there is no obvious way
   //        to test it as SubMesh::init does not work in parallel
   not_working_in_parallel("Move coordinates of mesh0 according "
@@ -107,6 +119,13 @@ std::shared_ptr<MeshDisplacement> ALE::move(std::shared_ptr<Mesh> mesh0,
 //-----------------------------------------------------------------------------
 void ALE::move(Mesh& mesh, const GenericFunction& displacement)
 {
+  if (mesh.geometry().degree() != 1)
+  {
+    dolfin_error("ALE.cpp",
+                 "move mesh",
+                 "This function does not support higher-order mesh geometry");
+  }
+
   // Check dimensions
   const std::size_t gdim = mesh.geometry().dim();
   if (!((displacement.value_rank() == 0 && gdim == 1) ||
@@ -132,5 +151,13 @@ void ALE::move(Mesh& mesh, const GenericFunction& displacement)
       x[j] = geometry.x(i, j) + vertex_values[j*N + i];
     geometry.set(i, x.data());
   }
+}
+//-----------------------------------------------------------------------------
+void ALE::move(Mesh& mesh, const Function& displacement)
+{
+  Function position(displacement.function_space());
+  get_coordinates(position, mesh.geometry());
+  *position.vector() += *displacement.vector();
+  set_coordinates(mesh.geometry(), position);
 }
 //-----------------------------------------------------------------------------

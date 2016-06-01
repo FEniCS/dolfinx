@@ -200,7 +200,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
                  "Requested mesh coloring has not been computed");
   }
 
-  // Get coloring data (copies since the data will be deleted mesh.clear())
+  // Get coloring data
   const std::vector<std::size_t>& colors_old = mesh_coloring->second.first;
   const std::vector<std::vector<std::size_t>>&
     entities_of_color_old = mesh_coloring->second.second;

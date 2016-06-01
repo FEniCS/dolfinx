@@ -20,13 +20,33 @@
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#ifdef HAS_HDF5
+#include <hdf5.h>
+#else
+typedef int hid_t;
+#endif
+
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
+
+namespace boost
+{
+  namespace filesystem
+  {
+    class path;
+  }
+}
+
+namespace pugi
+{
+  class xml_node;
+}
 
 namespace dolfin
 {
@@ -36,6 +56,7 @@ namespace dolfin
 #ifdef HAS_HDF5
   class HDF5File;
 #endif
+  class LocalMeshData;
   class Mesh;
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
@@ -57,7 +78,7 @@ namespace dolfin
     /// File encoding type
     enum class Encoding {HDF5, ASCII};
 
-    /// Re-use or recompute mesh partition stored in file
+    /// Re-use any partition stored in file
     enum class UseFilePartition : bool {yes=true, no=false};
 
     /// Constructor
@@ -112,36 +133,13 @@ namespace dolfin
     ///     encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
-    void write(const MeshFunction<bool>& meshfunction, Encoding encoding=Encoding::HDF5);
-    void write(const MeshFunction<int>& meshfunction, Encoding encoding=Encoding::HDF5);
+    void write(const MeshFunction<bool>& meshfunction,
+               Encoding encoding=Encoding::HDF5);
+    void write(const MeshFunction<int>& meshfunction,
+               Encoding encoding=Encoding::HDF5);
     void write(const MeshFunction<std::size_t>& meshfunction,
                Encoding encoding=Encoding::HDF5);
     void write(const MeshFunction<double>& meshfunction,
-               Encoding encoding=Encoding::HDF5);
-
-    /// Save a cloud of points to file using an associated HDF5 file,
-    /// or storing the data inline as XML.
-    ///
-    /// *Arguments*
-    ///     points (_std::vector<Point>_)
-    ///         A list of points to save.
-    ///     encoding (_Encoding_)
-    ///         Encoding to use: HDF5 or ASCII
-    ///
-    void write(const std::vector<Point>& points, Encoding encoding=Encoding::HDF5);
-
-    /// Save a cloud of points, with scalar values using an associated
-    /// HDF5 file, or storing the data inline as XML.
-    ///
-    /// *Arguments*
-    ///     points (_std::vector<Point>_)
-    ///         A list of points to save.
-    ///     values (_std::vector<double>_)
-    ///         A list of values at each point.
-    ///     encoding (_Encoding_)
-    ///         Encoding to use: HDF5 or ASCII
-    ///
-    void write(const std::vector<Point>& points, const std::vector<double>& values,
                Encoding encoding=Encoding::HDF5);
 
     /// Write out mesh value collection (subset) using an associated
@@ -156,6 +154,33 @@ namespace dolfin
     void write(const MeshValueCollection<std::size_t>& mvc,
                Encoding encoding=Encoding::HDF5);
 
+    /// Save a cloud of points to file using an associated HDF5 file,
+    /// or storing the data inline as XML.
+    ///
+    /// *Arguments*
+    ///     points (_std::vector<Point>_)
+    ///         A list of points to save.
+    ///     encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
+    void write(const std::vector<Point>& points,
+               Encoding encoding=Encoding::HDF5);
+
+    /// Save a cloud of points, with scalar values using an associated
+    /// HDF5 file, or storing the data inline as XML.
+    ///
+    /// *Arguments*
+    ///     points (_std::vector<Point>_)
+    ///         A list of points to save.
+    ///     values (_std::vector<double>_)
+    ///         A list of values at each point.
+    ///     encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
+    void write(const std::vector<Point>& points,
+               const std::vector<double>& values,
+               Encoding encoding=Encoding::HDF5);
+
     /// Read in a mesh from the associated HDF5 file, optionally using
     /// stored partitioning, if possible when the same number of
     /// processes are being used.
@@ -166,7 +191,8 @@ namespace dolfin
     ///     use_partition_from_file (_UseFilePartition_)
     ///         Use the existing partition information in HDF5 file
     ///
-    void read(Mesh& mesh, UseFilePartition use_file_partition=UseFilePartition::no);
+    void read(Mesh& mesh,
+              UseFilePartition use_file_partition=UseFilePartition::no);
 
     /// Read first MeshFunction from file
     void read(MeshFunction<bool>& meshfunction);
@@ -174,21 +200,79 @@ namespace dolfin
     void read(MeshFunction<std::size_t>& meshfunction);
     void read(MeshFunction<double>& meshfunction);
 
+    // Write mesh
+    void write_new(const Mesh& mesh, Encoding encoding=Encoding::HDF5) const;
+
+    // Read mesh
+    void read_new(Mesh& mesh) const;
+
   private:
 
-    // MPI communicator
-    MPI_Comm _mpi_comm;
+    // Build mesh (serial)
+    static void build_mesh(Mesh& mesh, std::string cell_type_str,
+                           std::int64_t num_points, std::int64_t num_cells,
+                           int num_points_per_cell,
+                           int tdim, int gdim,
+                           const pugi::xml_node& topology_dataset_node,
+                           const pugi::xml_node& geometry_dataset_node,
+                           const boost::filesystem::path& parent_path);
 
-    // HDF5 data file
-#ifdef HAS_HDF5
-    std::unique_ptr<HDF5File> _hdf5_file;
-#endif
+   // Build local mesh data structure
+   static void
+   build_local_mesh_data (LocalMeshData& local_mesh_data,
+                          const CellType& cell_type,
+                          const std::int64_t num_points,
+                          const std::int64_t num_cells,
+                          const int num_points_per_cell,
+                          const int tdim, const int gdim,
+                          const pugi::xml_node& topology_dataset_node,
+                          const pugi::xml_node& geometry_dataset_node,
+                          const boost::filesystem::path& parent_path);
 
-    // HDF5 filename
-    std::string _hdf5_filename;
+    // Add topology node to xml_node (includes writing data to XML or  HDF5
+    // file)
+    template<typename T>
+    static void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
+                                  hid_t h5_id, const std::string path_prefix,
+                                  const Mesh& mesh);
 
-    // HDF5 file mode (r/w)
-    std::string _hdf5_filemode;
+    // Add geometry node and data to xml_node
+    static void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
+                                  hid_t h5_id, const std::string path_prefix,
+                                  const Mesh& mesh);
+
+    // Add DataItem node to an XML node. If HDF5 is open (h5_id > 0) the data is
+    // written to the HDFF5 file with the path 'h5_path'. Otherwise, data is
+    // witten to the XML node and 'h5_path' is ignored
+    template<typename T>
+    static void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
+                              hid_t h5_id, const std::string h5_path, const T& x,
+                              const std::vector<std::int64_t> dimensions);
+
+    // Return topology data on this process as a flat vector
+    template<typename T>
+    static std::vector<T> compute_topology_data(const Mesh& mesh, int cell_dim);
+
+    // Get DOLFIN cell type string from XML topology node
+    static std::string get_cell_type(const pugi::xml_node& topology_node);
+
+    // Get dimensions from an XML DataSet node
+    static std::vector<std::int64_t>
+      get_dataset_shape(const pugi::xml_node& dataset_node);
+
+    // Get number of cells from an XML Topology node
+    static std::int64_t get_num_cells(const pugi::xml_node& topology_node);
+
+    // Return data associated with a data set node
+    template <typename T>
+    static std::vector<T> get_dataset(MPI_Comm comm,
+                                      const pugi::xml_node& dataset_node,
+                                      const boost::filesystem::path& parent_path);
+
+    // Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem node
+    std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& dataitem_node);
+
+    static std::string get_hdf5_filename(std::string xdmf_filename);
 
     // Generic MeshFunction reader
     template<typename T>
@@ -253,6 +337,32 @@ namespace dolfin
     // string E.g. "XML" or "HDF" See XDMFFile::xdmf_format_str
     static Encoding get_file_encoding(std::string xdmf_format);
 
+    // Write MVC to ascii string to store in XDMF XML file
+    template <typename T>
+    void write_ascii_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
+                                             std::string data_name);
+
+    static std::string vtk_cell_type_str(CellType::Type cell_type, int order);
+
+    // Return a string of the form "x y"
+    template <typename X, typename Y>
+    static std::string to_string(X x, Y y);
+
+    // Return a vector of numerical values from a vector of stringstream
+    template <typename T>
+    static std::vector<T> string_to_vector(const std::vector<std::string>& x_str);
+
+    // MPI communicator
+    MPI_Comm _mpi_comm;
+
+    // HDF5 data file
+#ifdef HAS_HDF5
+    std::unique_ptr<HDF5File> _hdf5_file;
+#endif
+
+    // HDF5 file mode (r/w)
+    std::string _hdf5_filemode;
+
     // Most recent mesh name
     std::string _current_mesh_name;
 
@@ -265,12 +375,8 @@ namespace dolfin
     // The xml document of the XDMF file
     std::unique_ptr<XDMFxml> _xml;
 
-    // Write MVC to ascii string to store in XDMF XML file
-    template <typename T>
-      void write_ascii_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
-                                             std::string data_name);
-
   };
+
 }
 
 #endif

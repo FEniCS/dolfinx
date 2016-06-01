@@ -494,7 +494,7 @@ void PETScKrylovSolver::monitor(bool monitor_convergence)
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
 {
-  // Set options prefix (if any)
+  // Set options prefix
   dolfin_assert(_ksp);
   PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, options_prefix.c_str());
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
@@ -507,6 +507,13 @@ std::string PETScKrylovSolver::get_options_prefix() const
   PetscErrorCode ierr = KSPGetOptionsPrefix(_ksp, &prefix);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetOptionsPrefix");
   return std::string(prefix);
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_from_options() const
+{
+  dolfin_assert(_ksp);
+  PetscErrorCode ierr = KSPSetFromOptions(_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetFromOptions");
 }
 //-----------------------------------------------------------------------------
 std::string PETScKrylovSolver::str(bool verbose) const

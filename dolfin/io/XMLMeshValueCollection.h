@@ -57,7 +57,7 @@ namespace dolfin
   {
     // Get node
     const pugi::xml_node mvc_node
-      = get_node(xml_node, "mesh_value_collection");
+      = xmlutils::get_node(xml_node, "mesh_value_collection");
     dolfin_assert(mvc_node);
 
     // Get attributes

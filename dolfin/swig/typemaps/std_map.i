@@ -221,6 +221,9 @@ MAP_OUT_TYPEMAPS(std::size_t, int, int, NPY_INT)
 MAP_OUT_TYPEMAPS(std::size_t, double, double, NPY_DOUBLE)
 MAP_OUT_TYPEMAPS(std::size_t, std::size_t, size_t, NPY_UINTP)
 
+// FIXME: Would really like to use std::int32_t
+MAP_OUT_TYPEMAPS(int, unsigned int, uint, NPY_UINT)
+
 
 // Add 'out' typemap for std::map<std::string, std::string>
 %typemap(out) std::map<std::string, std::string> \

@@ -52,43 +52,55 @@ const std::map<std::string, const KSPType> TAOLinearBoundSolver::_ksp_methods
     {"bicgstab",   KSPBCGS} };
 //-----------------------------------------------------------------------------
 // Mapping from method string to description
-const std::map<std::string, std::string>
-  TAOLinearBoundSolver::_methods_descr
+const std::map<std::string, std::string> TAOLinearBoundSolver::_methods_descr
 = { {"default"  ,  "Default Tao method (tao_tron)"},
     {"tron" ,  "Newton Trust Region method"},
     {"bqpip",  "Interior Point Newton Algorithm"},
     {"gpcg" ,  "Gradient Projection Conjugate Gradient"},
     {"blmvm",  "Limited memory variable metric method"} };
 //-----------------------------------------------------------------------------
-std::map<std::string, std::string>
-TAOLinearBoundSolver::methods()
+std::map<std::string, std::string> TAOLinearBoundSolver::methods()
 {
   return TAOLinearBoundSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
-std::map<std::string, std::string>
-TAOLinearBoundSolver::krylov_solvers()
+std::map<std::string, std::string> TAOLinearBoundSolver::krylov_solvers()
 {
   return PETScKrylovSolver::methods();
 }
 //-----------------------------------------------------------------------------
-std::map<std::string, std::string>
-TAOLinearBoundSolver::preconditioners()
+std::map<std::string, std::string> TAOLinearBoundSolver::preconditioners()
 {
   return PETScPreconditioner::preconditioners();
+}
+//-----------------------------------------------------------------------------
+TAOLinearBoundSolver::TAOLinearBoundSolver(MPI_Comm comm)
+  : _tao(nullptr), _preconditioner_set(false)
+{
+  PetscErrorCode ierr;
+
+  // Create TAO object
+  ierr = TaoCreate(PETSC_COMM_WORLD, &_tao);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoCreate");
 }
 //-----------------------------------------------------------------------------
 TAOLinearBoundSolver::TAOLinearBoundSolver(const std::string method,
                                            const std::string ksp_type,
                                            const std::string pc_type)
-  : _tao(NULL), preconditioner(new PETScPreconditioner(pc_type)),
-    preconditioner_set(false)
+  : _tao(NULL), _preconditioner(new PETScPreconditioner(pc_type)),
+    _preconditioner_set(false)
 {
   // Set parameter values
   parameters = default_parameters();
 
-  //Initialize the Tao solver
-  init(method);
+  PetscErrorCode ierr;
+
+  // Create TAO object
+  ierr = TaoCreate(PETSC_COMM_WORLD, &_tao);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoCreate");
+
+  // Set tao solver
+  set_solver(method);
 
   //Set the PETSC KSP used by TAO
   set_ksp(ksp_type);
@@ -100,7 +112,6 @@ TAOLinearBoundSolver::TAOLinearBoundSolver(const std::string method,
     log(WARNING, "Some preconditioners may be not be applicable to "\
     "TAO solvers and generate errors.");
   }
-
 }
 //-----------------------------------------------------------------------------
 TAOLinearBoundSolver::~TAOLinearBoundSolver()
@@ -124,10 +135,8 @@ void
 TAOLinearBoundSolver::set_operators(std::shared_ptr<const PETScMatrix> A,
                                     std::shared_ptr<const PETScVector> b)
 {
-  this->A = A;
-  this->b = b;
-  dolfin_assert(this->A);
-  dolfin_assert(this->b);
+  this->_matA = A;
+  this->_b = b;
 }
 //-----------------------------------------------------------------------------
 std::size_t TAOLinearBoundSolver::solve(const GenericMatrix& A1,
@@ -155,9 +164,9 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
   dolfin_assert(A1.size(0) == A1.size(1));
 
   // Set operators (A and b)
-  std::shared_ptr<const PETScMatrix> _matA(&A1, NoDeleter());
-  std::shared_ptr<const PETScVector> _b(&b1, NoDeleter());
-  set_operators(_matA,_b);
+  std::shared_ptr<const PETScMatrix> A(&A1, NoDeleter());
+  std::shared_ptr<const PETScVector> b(&b1, NoDeleter());
+  set_operators(A, b);
   dolfin_assert(A->mat());
   //dolfin_assert(b->vec());
 
@@ -196,24 +205,6 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
       if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetMonitor");
     }
   }
-
-  // Check for any tao command line options
-  /*
-  std::string prefix = std::string(parameters["options_prefix"]);
-  if (prefix != "default")
-  {
-    // Make sure that the prefix has a '_' at the end if the user
-    // didn't provide it
-    char lastchar = *prefix.rbegin();
-    if (lastchar != '_')
-      prefix += "_";
-
-    ierr = TaoSetOptionsPrefix(_tao, prefix.c_str());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetOptionsPrefix");
-  }
-  ierr = TaoSetFromOptions(_tao);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetFromOptions");
-  */
 
   // Solve the bound constrained problem
   Timer timer("TAO solver");
@@ -339,12 +330,12 @@ Tao TAOLinearBoundSolver::tao() const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const PETScMatrix> TAOLinearBoundSolver::get_matrix() const
 {
-  return A;
+  return _matA;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const PETScVector> TAOLinearBoundSolver::get_vector() const
 {
-  return b;
+  return _b;
 }
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::read_parameters()
@@ -450,11 +441,11 @@ void TAOLinearBoundSolver::set_ksp_options()
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetTolerances");
 
     // Set preconditioner
-    if (preconditioner && !preconditioner_set)
+    if (_preconditioner && !_preconditioner_set)
     {
       PETScKrylovSolver dolfin_ksp(ksp);
-      preconditioner->set(dolfin_ksp);
-      preconditioner_set = true;
+      _preconditioner->set(dolfin_ksp);
+      _preconditioner_set = true;
     }
   }
 }

@@ -377,9 +377,6 @@ namespace dolfin
     /// Compute all entities and connectivity.
     void init() const;
 
-    /// Clear all mesh data.
-    void clear();
-
     /// Clean out all auxiliary topology data. This clears all
     /// topological data, except the connectivity between cells and
     /// vertices.
@@ -598,6 +595,9 @@ namespace dolfin
     /// Mesh MPI communicator
     MPI_Comm mpi_comm() const
     { return _mpi_comm; }
+
+    // Friend in fem_utils.h
+    friend Mesh create_mesh(Function&);
 
   private:
 

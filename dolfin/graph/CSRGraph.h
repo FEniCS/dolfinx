@@ -44,14 +44,15 @@ namespace dolfin
 
   public:
 
-    /// Access edges individually by using operator()[] to get a node object
+    /// Access edges individually by using operator()[] to get a node
+    /// object
     class node
     {
     public:
-      node(const typename std::vector<T>::const_iterator& begin_it,
-           const typename std::vector<T>::const_iterator& end_it)
-        : begin_edge(begin_it), end_edge(end_it)
-      { }
+
+    node(const typename std::vector<T>::const_iterator& begin_it,
+         const typename std::vector<T>::const_iterator& end_it)
+      : begin_edge(begin_it), end_edge(end_it) {}
 
       /// Iterator pointing to beginning of edges
       typename std::vector<T>::const_iterator begin() const
@@ -70,13 +71,13 @@ namespace dolfin
       { return *(begin_edge + i); }
 
     private:
+
       typename std::vector<T>::const_iterator begin_edge;
       typename std::vector<T>::const_iterator end_edge;
     };
 
     /// Empty CSR Graph
-    CSRGraph() : _node_offsets(1, 0)
-    {}
+    CSRGraph() : _node_offsets(1, 0) {}
 
     /// Create a CSR Graph from a collection of edges (X is a
     /// container some type, e.g. std::vector<unsigned int> or
@@ -105,14 +106,27 @@ namespace dolfin
       calculate_node_distribution();
     }
 
+    /// Create a CSR Graph from ParMETIS style adjacency lists
+    CSRGraph(MPI_Comm mpi_comm, const T* xadj, const T* adjncy, std::size_t n)
+      : _mpi_comm(mpi_comm)
+    {
+      _node_offsets.assign(xadj, xadj + n + 1);
+      _edges.assign(adjncy, adjncy + xadj[n]);
+
+      // Compute node offsets
+      calculate_node_distribution();
+    }
+
     /// Destructor
     ~CSRGraph() {}
 
     /// Vector containing all edges for all local nodes
+    /// ("adjncy" in ParMETIS)
     const std::vector<T>& edges() const
     { return _edges; }
 
     /// Vector containing all edges for all local nodes (non-const)
+    /// ("adjncy" in ParMETIS)
     std::vector<T>& edges()
     { return _edges; }
 
@@ -124,9 +138,15 @@ namespace dolfin
                   _edges.begin() + _node_offsets[i + 1]);
     }
 
+
     /// Vector containing index offsets into edges for all local nodes
-    /// (plus extra entry marking end)
+    /// (plus extra entry marking end) ("xadj" in ParMETIS)
     const std::vector<T>& nodes() const
+    { return _node_offsets; }
+
+    /// Vector containing index offsets into edges for all local nodes
+    /// (plus extra entry marking end) ("xadj" in ParMETIS)
+    std::vector<T>& nodes()
     { return _node_offsets; }
 
     /// Number of local edges in graph
@@ -152,14 +172,18 @@ namespace dolfin
     const std::vector<T>& node_distribution() const
     { return _node_distribution; }
 
+    /// Return number of nodes (offset) on each process (non-const)
+    std::vector<T>& node_distribution()
+    { return _node_distribution; }
+
   private:
 
     // Compute offset of number of nodes on each process
     void calculate_node_distribution()
     {
       // Communicate number of nodes between all processors
-      const std::size_t num_nodes = size();
-      MPI::all_gather(_mpi_comm, (T) num_nodes, _node_distribution);
+      const T num_nodes = size();
+      MPI::all_gather(_mpi_comm, num_nodes, _node_distribution);
 
       _node_distribution.insert(_node_distribution.begin(), 0);
       for (std::size_t i = 1; i != _node_distribution.size(); ++i)

@@ -149,6 +149,9 @@ namespace dolfin
     /// options database
     std::string get_options_prefix() const;
 
+    /// Set options from PETSc options database
+    void set_from_options() const;
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 

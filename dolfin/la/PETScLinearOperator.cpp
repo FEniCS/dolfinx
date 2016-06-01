@@ -122,8 +122,8 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
   std::size_t n_local = N;
   if (MPI::size(x.mpi_comm()) > 1)
   {
-    std::pair<std::size_t, std::size_t> local_range_x = x.local_range();
-    std::pair<std::size_t, std::size_t> local_range_y = y.local_range();
+    std::pair<std::int64_t, std::int64_t> local_range_x = x.local_range();
+    std::pair<std::int64_t, std::int64_t> local_range_y = y.local_range();
     m_local = local_range_y.second - local_range_y.first;
     n_local = local_range_x.second - local_range_x.first;
   }
