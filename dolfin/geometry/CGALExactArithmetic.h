@@ -273,11 +273,16 @@ namespace dolfin
 #include <CGAL/Triangle_2.h>
 #include <CGAL/intersection_2.h>
 
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+
 namespace
 {
   // CGAL typedefs
-  typedef CGAL::Quotient<CGAL::MP_Float> ExactNumber;
-  typedef CGAL::Cartesian<ExactNumber>   ExactKernel;
+  /* typedef CGAL::Quotient<CGAL::MP_Float> ExactNumber; */
+  /* typedef CGAL::Cartesian<ExactNumber>   ExactKernel; */
+  typedef CGAL::Exact_predicates_exact_constructions_kernel ExactKernel;
+  typedef ExactKernel::FT ExactNumber;
+
   typedef ExactKernel::Point_2           Point_2;
   typedef ExactKernel::Triangle_2        Triangle_2;
   typedef ExactKernel::Segment_2         Segment_2;
