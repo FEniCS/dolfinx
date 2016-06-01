@@ -827,6 +827,7 @@ namespace tools
 			     const MultiMeshFunction& uh)
   {
     std::cout << __FUNCTION__ << std::endl;
+    double maxee = -1;
 
     for (std::size_t part = 0; part < mm.num_parts(); ++part)
     {
@@ -854,7 +855,9 @@ namespace tools
 	  const Point p(qr.first[2*i], qr.first[2*i+1]);
 	  const double uhval = (*uh.part(part))(p);
 	  const double uexactval = uexact(p);
-	  std::cout << p.x()<<' '<<p.y()<<' '<<uhval<<' '<<uexactval<<' '<<std::abs(uhval-uexactval)<<std::endl;
+	  const double ee = std::abs(uhval-uexactval);
+	  maxee = ee > maxee ? ee : maxee;
+	  std::cout << p.x()<<' '<<p.y()<<' '<<uhval<<' '<<uexactval<<' '<<ee<<' '<<maxee<<std::endl;
 
 	  //   // if evaluated function big...
 	  //   if (std::abs(uhval) > 1)
@@ -909,6 +912,7 @@ namespace tools
       // }
 
     }
+    std::cout << "max error in qr points " << maxee << std::endl;
     PPause;
   }
 
