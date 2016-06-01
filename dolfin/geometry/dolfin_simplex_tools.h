@@ -39,8 +39,8 @@ namespace tools
   }
 
   //-----------------------------------------------------------------------------
-  /* typedef std::vector<Point> Simplex; */
-  /* typedef std::vector<Simplex> Polyhedron; */
+  // typedef std::vector<Point> Simplex;
+  // typedef std::vector<Simplex> Polyhedron;
   inline bool tdimcheck(const std::vector<std::vector<dolfin::Point>>& polygon)
   {
     if (polygon.size() == 0) return false;
@@ -73,11 +73,18 @@ namespace tools
   // display quadrature_rule
   // recall typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
   inline void cout_qr(const std::pair<std::vector<double>, std::vector<double> >& qr,
-		      const std::string marker="'rx'")
+		      std::string color="'b'",
+		      std::size_t markersize=16)
   {
     for (std::size_t i = 0; i < qr.second.size(); ++i)
     {
-      std::cout << "plot("<<qr.first[2*i]<<','<<qr.first[2*i+1]<<','<<marker<<"); % "<<qr.second[i]<<' '<<i<<std::endl;
+      std::stringstream ss;
+      if (qr.second[i] > 0)
+	ss<<"'color',"<<color<<",'marker','.','markersize',"<<markersize;
+      else
+	ss<<"'color',"<<color<<",'marker','o','markersize',"<<markersize-10;
+      //std::cout << "plot("<<qr.first[2*i]<<','<<qr.first[2*i+1]<<','<<marker<<"); % "<<qr.second[i]<<' '<<i<<std::endl;
+      std::cout << "plot("<<qr.first[2*i]<<','<<qr.first[2*i+1]<<','<<ss.str()<<"); % "<<qr.second[i]<<' '<<i<<std::endl;
     }
   }
 
@@ -148,22 +155,22 @@ namespace tools
       return -9e99;
     }
 
-    /* if (simplex.size() == 3) */
-    /* { */
-    /*   double a[2]={simplex[0][0],simplex[0][1]}; */
-    /*   double b[2]={simplex[1][0],simplex[1][1]}; */
-    /*   double c[2]={simplex[2][0],simplex[2][1]}; */
-    /*   return 0.5*orient2d(a,b,c); */
-    /* } */
-    /* else if (simplex.size() == 2) */
-    /* { */
-    /*   return (simplex[0]-simplex[1]).norm(); */
-    /* } */
-    /* else */
-    /* { */
-    /*   PPause; */
-    /*   return -9e99; */
-    /* } */
+    // if (simplex.size() == 3)
+    // {
+    //   double a[2]={simplex[0][0],simplex[0][1]};
+    //   double b[2]={simplex[1][0],simplex[1][1]};
+    //   double c[2]={simplex[2][0],simplex[2][1]};
+    //   return 0.5*orient2d(a,b,c);
+    // }
+    // else if (simplex.size() == 2)
+    // {
+    //   return (simplex[0]-simplex[1]).norm();
+    // }
+    // else
+    // {
+    //   PPause;
+    //   return -9e99;
+    // }
   }
 
   //-----------------------------------------------------------------------------
@@ -191,9 +198,9 @@ namespace tools
     }
     else if (simplex.size() == 2)
     {
-      /* ss << "hline = line([" << simplex[0][0] << ',' << simplex[1][0] << "]," */
-      /* 	 << "[" << simplex[0][1] << ',' << simplex[1][1] << "]);" */
-      /* 	 << "set(hline,'color'," << color << ");"; */
+      // ss << "hline = line([" << simplex[0][0] << ',' << simplex[1][0] << "],"
+      // 	 << "[" << simplex[0][1] << ',' << simplex[1][1] << "]);"
+      // 	 << "set(hline,'color'," << color << ");";
       ss << "drawline([" << simplex[0][0] << ',' << simplex[0][1] << "],"
 	 <<  "[" << simplex[1][0] << ',' << simplex[1][1] << "],";
       if (matlab)
@@ -241,11 +248,11 @@ namespace tools
     }
     return drawtriangle(pp, color, matlab);
 
-    /* std::vector<dolfin::Point> ss(3); */
-    /* ss[0] = dolfin::Point(s[0],s[1]); */
-    /* ss[1] = dolfin::Point(s[2],s[3]); */
-    /* ss[2] = dolfin::Point(s[4],s[5]); */
-    /* return drawtriangle(ss, color); */
+    // std::vector<dolfin::Point> ss(3);
+    // ss[0] = dolfin::Point(s[0],s[1]);
+    // ss[1] = dolfin::Point(s[2],s[3]);
+    // ss[2] = dolfin::Point(s[4],s[5]);
+    // return drawtriangle(ss, color);
   }
 
   //-----------------------------------------------------------------------------
@@ -283,18 +290,18 @@ namespace tools
     std::stringstream ss;ss.precision(15);
     ss << "drawarrow([" << v1[0] << ' '<<v1[1] <<"],[" << v2[0]<<' '<<v2[1] << "], "<< color << ");";
     return ss.str();
-    /* const dolfin::Point v = v2-v1; */
-    /* const Point ones(0,0,1); */
-    /* Point n = ones.cross(v); */
-    /* if (n.norm() < 1e-5) { */
-    /*   const Point ones(0,1,0); */
-    /*   n = ones.cross(v); */
-    /* } */
-    /* const double a = 0.03*norm(v); */
-    /* n /= n.norm(); */
-    /* drawline(v1, v2); */
-    /* drawline(v2, v1 + 0.8 * v + a * n); */
-    /* drawline(v2, v1 + 0.8 * v - a * n); */
+    // const dolfin::Point v = v2-v1;
+    // const Point ones(0,0,1);
+    // Point n = ones.cross(v);
+    // if (n.norm() < 1e-5) {
+    //   const Point ones(0,1,0);
+    //   n = ones.cross(v);
+    // }
+    // const double a = 0.03*norm(v);
+    // n /= n.norm();
+    // drawline(v1, v2);
+    // drawline(v2, v1 + 0.8 * v + a * n);
+    // drawline(v2, v1 + 0.8 * v - a * n);
   }
 
   //void Pause() { char apa; std::cin >> apa; }
@@ -390,10 +397,10 @@ namespace tools
       offset += (i == 0) ? 0 : mm.part(i-1)->num_vertices();
       for (std::size_t e = 0; e < mm.part(i)->num_cells(); ++e)
       	file << cells[3*e]+offset+1<<' '<<cells[3*e+1]+offset+1<<' '<<cells[3*e+2]+offset+1<<' '<<i+1<<'\n';
-      /* for (const auto e: mm.uncut_cells(i)) */
-      /* 	file << cells[3*e]+offset+1<<' '<<cells[3*e+1]+offset+1<<' '<<cells[3*e+2]+offset+1<<' '<<i+1<<'\n'; */
-      /* for (const auto e: mm.cut_cells(i)) */
-      /* 	file << cells[3*e]+offset+1<<' '<<cells[3*e+1]+offset+1<<' '<<cells[3*e+2]+offset+1<<' '<<i+1<<'\n'; */
+      // for (const auto e: mm.uncut_cells(i))
+      // 	file << cells[3*e]+offset+1<<' '<<cells[3*e+1]+offset+1<<' '<<cells[3*e+2]+offset+1<<' '<<i+1<<'\n';
+      // for (const auto e: mm.cut_cells(i))
+      // 	file << cells[3*e]+offset+1<<' '<<cells[3*e+1]+offset+1<<' '<<cells[3*e+2]+offset+1<<' '<<i+1<<'\n';
 
     }
     file.close();
@@ -477,25 +484,25 @@ namespace tools
     //u.compute_vertex_values(values, mesh);
     const std::string encode_string = "ascii";
 
-    /* // write velocity */
-    /* const std::string velocity_name = u.name() + "_velocity"; */
-    /* fp << "<PointData>\n" */
-    /*    << "<DataArray  type=\"Float64\"  Name=\"" << velocity_name << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">"; */
-    /* for (VertexIterator vertex(mesh); !vertex.end(); ++vertex) */
-    /* { */
-    /*   for (std::size_t i = 0; i < 3; ++i) // Only write 3 components! */
-    /* 	fp << values[vertex->index() + i*num_vertices] << " "; */
-    /*   fp << " "; */
-    /* } */
-    /* fp << "</DataArray>\n"; */
+    // // write velocity
+    // const std::string velocity_name = u.name() + "_velocity";
+    // fp << "<PointData>\n"
+    //    << "<DataArray  type=\"Float64\"  Name=\"" << velocity_name << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
+    // for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+    // {
+    //   for (std::size_t i = 0; i < 3; ++i) // Only write 3 components!
+    // 	fp << values[vertex->index() + i*num_vertices] << " ";
+    //   fp << " ";
+    // }
+    // fp << "</DataArray>\n";
 
-    /* // write pressure */
-    /* const std::string pressure_name = u.name() + "_pressure"; */
-    /* fp << "<DataArray  type=\"Float64\"  Name=\"" << pressure_name << "\"  NumberOfComponents=\"1\" format=\""<< encode_string <<"\">"; */
-    /* for (VertexIterator vertex(mesh); !vertex.end(); ++vertex) */
-    /*   fp << values[vertex->index() + 3*num_vertices] << ' '; */
-    /* fp << "</DataArray>\n" */
-    /*    << "</PointData>\n"; */
+    // // write pressure
+    // const std::string pressure_name = u.name() + "_pressure";
+    // fp << "<DataArray  type=\"Float64\"  Name=\"" << pressure_name << "\"  NumberOfComponents=\"1\" format=\""<< encode_string <<"\">";
+    // for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+    //   fp << values[vertex->index() + 3*num_vertices] << ' ';
+    // fp << "</DataArray>\n"
+    //    << "</PointData>\n";
 
     const std::string name = "data_part_"+ss.str();
     fp << "<PointData>\n"
@@ -560,18 +567,21 @@ namespace tools
       std::vector<double> status(multimesh.part(part)->num_cells(), 0);
 
       // Uncut cell volume given by function volume
+      double uncut_volume = 0;
       const auto uncut_cells = multimesh.uncut_cells(part);
       for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
       {
 	const Cell cell(*multimesh.part(part), *it);
 	volume += cell.volume();
 	part_volume += cell.volume();
+	uncut_volume += cell.volume();
 	status[*it] = 1;
       }
 
-      std::cout << "\t uncut volume "<< part_volume << ' ';
+      std::cout << "\t uncut volume "<< uncut_volume<<' ';
 
       // Cut cell volume given by quadrature rule
+      double cut_volume = 0;
       const auto& cut_cells = multimesh.cut_cells(part);
       for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
       {
@@ -581,10 +591,12 @@ namespace tools
 	  file << qr.first[2*i]<<' '<<qr.first[2*i+1]<<' '<<qr.second[i]<<std::endl;
 	  volume += qr.second[i];
 	  part_volume += qr.second[i];
+	  cut_volume += qr.second[i];
 	}
 	status[*it] = 2;
       }
-      std::cout << "\ttotal volume " << part_volume << std::endl;
+
+      std::cout << "\tcut volume " << cut_volume << "\ttotal volume " << part_volume << std::endl;
 
       all_volumes.push_back(part_volume);
 
@@ -735,12 +747,12 @@ namespace tools
     const std::vector<std::string> colors = {{ "'b'", "'g'", "'r'" }};
     const std::vector<std::string> marker = {{ "'.'", "'o'", "'x'" }};
 
-    //for (std::size_t part = 0; part < multimesh.num_parts(); part++)
-    const std::size_t part = 1;
+    for (std::size_t part = 0; part < multimesh.num_parts(); part++)
+      // const std::size_t part = 1;
     {
       std::cout << "% part " << part << ' ' <<std::endl;
       const auto& cmap = multimesh.collision_map_cut_cells(part);
-      const auto& quadrature_rules = multimesh.quadrature_rule_interface(part);
+      const auto& qr_interface = multimesh.quadrature_rule_interface(part);
       const auto& normals = multimesh.facet_normals(part);
 
       for (auto it = cmap.begin(); it != cmap.end(); ++it)
@@ -751,32 +763,33 @@ namespace tools
 	const Cell cut_cell(*multimesh.part(part), cut_cell_index);
 	std::cout << drawtriangle(cut_cell, colors[part]);
 
+	const auto& qr = multimesh.quadrature_rule_cut_cell(part, cut_cell_index);
+	cout_qr(qr, colors[part]);
+
 	// Iterate over cutting cells
 	for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
 	{
 	  const std::size_t cutting_cell_part = jt->first;
 
-	  if (cutting_cell_part == 2)
+	  const Cell cutting_cell(*multimesh.part(cutting_cell_part), jt->second);
+	  std::cout << drawtriangle(cutting_cell, colors[cutting_cell_part]);
+
+	  // Get quadrature rule for interface part defined by
+	  // intersection of the cut and cutting cells
+	  const std::size_t k = jt - cutting_cells.begin();
+	  const auto& qr = qr_interface.at(cut_cell_index)[k];
+	  const auto& nn = normals.at(cut_cell_index)[k];
+
+	  for (std::size_t i = 0; i < qr.second.size(); ++i)
 	  {
-	    const Cell cutting_cell(*multimesh.part(cutting_cell_part), jt->second);
-	    std::cout << drawtriangle(cutting_cell, colors[cutting_cell_part]);
-
-	    // Get quadrature rule for interface part defined by
-	    // intersection of the cut and cutting cells
-	    const std::size_t k = jt - cutting_cells.begin();
-	    const auto& qr = quadrature_rules.at(cut_cell_index)[k];
-	    const auto& nn = normals.at(cut_cell_index)[k];
-
-	    for (std::size_t i = 0; i < qr.second.size(); ++i)
-	    {
-	      const Point p(qr.first[2*i], qr.first[2*i+1]);
-	      std::cout << plot(p,"'k.'");
-	      const Point n(nn[2*i], nn[2*i+1]);
-	      const double d = 0.01;
-	      std::cout << drawarrow(p, p+d*n, colors[cutting_cell_part]);
-	    }
+	    const Point p(qr.first[2*i], qr.first[2*i+1]);
+	    std::cout << plot(p,"'k.','markersize',12");
+	    const Point n(nn[2*i], nn[2*i+1]);
+	    const double d = 0.1;
+	    std::cout << drawarrow(p, p+d*n, colors[cutting_cell_part]);
 	  }
 	}
+	std::cout << std::endl;
       }
 
       // for (const auto cell_no: multimesh.cut_cells(part))
@@ -810,6 +823,7 @@ namespace tools
 
   //------------------------------------------------------------------------------
   inline void evaluate_at_qr(const MultiMesh& mm,
+			     const Expression& uexact,
 			     const MultiMeshFunction& uh)
   {
     std::cout << __FUNCTION__ << std::endl;
@@ -829,68 +843,70 @@ namespace tools
       const auto collision_map = mm.collision_map_cut_cells(part);
 
       // loop over cut cells
-      for (const auto cell_no: mm.cut_cells(part))
+      for (const auto cut_cell_no: mm.cut_cells(part))
       {
-	// all qr on cell_no
-	const auto qr = mm.quadrature_rule_cut_cell(part, cell_no);
+	// all qr on cut_cell_no
+	const auto qr = mm.quadrature_rule_cut_cell(part, cut_cell_no);
 
 	// loop over qr
 	for (std::size_t i = 0; i < qr.second.size(); ++i)
 	{
 	  const Point p(qr.first[2*i], qr.first[2*i+1]);
-	  const double uhval = (*uh.part(part))(p.x(), p.y());
+	  const double uhval = (*uh.part(part))(p);
+	  const double uexactval = uexact(p);
+	  std::cout << p.x()<<' '<<p.y()<<' '<<uhval<<' '<<uexactval<<' '<<std::abs(uhval-uexactval)<<std::endl;
 
-	  // if evaluated function big...
-	  if (std::abs(uhval) > 1)
-	  {
-	    // save cell no
-	    cells.push_back(cell_no);
-	    const std::string color = qr.second[i] > 0 ? "'.'" : "'x'";
-	    std::cout << matlabplot(p,color) <<" % " << qr.second[i] << ' '
-		      << /*std::setprecision(15) <<*/ uhval << " (";
+	  //   // if evaluated function big...
+	  //   if (std::abs(uhval) > 1)
+	  //   {
+	  //     // save cell no
+	  //     cells.push_back(cut_cell_no);
+	  //     const std::string color = qr.second[i] > 0 ? "'.'" : "'x'";
+	  //     std::cout << matlabplot(p,color) <<" % " << qr.second[i] << ' '
+	  // 	      << /\*std::setprecision(15) <<*\/ uhval << " (";
 
-	    // print nodal uh values
-	    const Cell cell(*mm.part(part), cell_no);
-	    for (std::size_t j = 0; j < cell.num_vertices(); ++j)
-	      std::cout << cell.entities(0)[j] << ' '<<vertex_values[cell.entities(0)[j]] <<' ';
-	    std::cout << ")"<<std::endl;
-	  }
+	  //     // print nodal uh values
+	  //     const Cell cell(*mm.part(part), cut_cell_no);
+	  //     for (std::size_t j = 0; j < cell.num_vertices(); ++j)
+	  //       std::cout << cell.entities(0)[j] << ' '<<vertex_values[cell.entities(0)[j]] <<' ';
+	  //     std::cout << ")"<<std::endl;
+	  //   }
 	}
       }
 
-      // make cell numbers unique
-      std::sort(cells.begin(), cells.end());
-      const auto new_end = std::unique(cells.begin(), cells.end());
-      cells.erase(new_end, cells.end());
+      // // make cell numbers unique
+      // std::sort(cells.begin(), cells.end());
+      // const auto new_end = std::unique(cells.begin(), cells.end());
+      // cells.erase(new_end, cells.end());
 
-      // loop over all cells with large uh values
-      for (const auto cell_no: cells)
-      {
-	std::cout << "% cell with large uh:"<<std::endl;
-	const Cell cell(*mm.part(part), cell_no);
-	std::cout << drawtriangle(cell);
+      // // loop over all cells with large uh values
+      // for (const auto cell_no: cells)
+      // {
+      // 	std::cout << "% cell with large uh:"<<std::endl;
+      // 	const Cell cell(*mm.part(part), cell_no);
+      // 	std::cout << drawtriangle(cell);
 
-	// compute net weight (~visible area)
-	const auto qr = mm.quadrature_rule_cut_cell(part, cell_no);
-	double net_weight = 0;
-	std::cout << " % ";
-	for (const auto w: qr.second)
-	{
-	  net_weight += w;
-	  std::cout << ' '<<w;
-	}
-	std::cout << "\n% net weight = " << net_weight << std::endl;
+      // 	// compute net weight (~visible area)
+      // 	const auto qr = mm.quadrature_rule_cut_cell(part, cell_no);
+      // 	double net_weight = 0;
+      // 	std::cout << " % ";
+      // 	for (const auto w: qr.second)
+      // 	{
+      // 	  net_weight += w;
+      // 	  std::cout << ' '<<w;
+      // 	}
+      // 	std::cout << "\n% net weight = " << net_weight << std::endl;
 
-	// also display all colliding cells
-	const auto it = collision_map.find(cell_no);
-	dolfin_assert(it->first == cell_no);
-	std::cout << "% colliding:"<<std::endl;
-	for (const auto cpair: it->second)
-	{
-	  const Cell cutting_cell(*mm.part(cpair.first), cpair.second);
-	  std::cout << drawtriangle(cutting_cell,colors[cpair.first]);
-	}
-      }
+      // 	// also display all colliding cells
+      // 	const auto it = collision_map.find(cell_no);
+      // 	dolfin_assert(it->first == cell_no);
+      // 	std::cout << "% colliding:"<<std::endl;
+      // 	for (const auto cpair: it->second)
+      // 	{
+      // 	  const Cell cutting_cell(*mm.part(cpair.first), cpair.second);
+      // 	  std::cout << drawtriangle(cutting_cell,colors[cpair.first]);
+      // 	}
+      // }
 
     }
     PPause;
@@ -901,11 +917,11 @@ namespace tools
   inline void find_max(const MultiMesh& multimesh,
 		       const MultiMeshFunction& u,
 		       std::vector<double>& maxvals_parts,
-		       std::size_t step=0
-		       /* , */
-		       /* File& uncut0_file, File& uncut1_file, File& uncut2_file, */
-		       /* File& cut0_file, File& cut1_file, File& cut2_file, */
-		       /* File& covered0_file, File& covered1_file, File& covered2_file */
+		       std::size_t step = 0
+		       // ,
+		       // File& uncut0_file, File& uncut1_file, File& uncut2_file,
+		       // File& cut0_file, File& cut1_file, File& cut2_file,
+		       // File& covered0_file, File& covered1_file, File& covered2_file
 		       )
 
   {
@@ -974,26 +990,26 @@ namespace tools
 	  //   std::cout << std::endl;
 	  // }
 
-	  /* // save */
-	  /* switch(k) { */
-	  /* case 0: { // uncut */
-	  /*   if (part == 0) uncut0_file << (*usm); */
-	  /*   else if (part == 1) uncut1_file << (*usm); */
-	  /*   else if (part == 2) uncut2_file << (*usm); */
-	  /*   break; */
-	  /* } */
-	  /* case 1: { // cut */
-	  /*   if (part == 0) cut0_file << (*usm); */
-	  /*   else if (part == 1) cut1_file << (*usm); */
-	  /*   else if (part == 2) cut2_file << (*usm); */
-	  /*   break; */
-	  /* } */
-	  /* case 2: { // covered */
-	  /*   if (part == 0) covered0_file << (*usm); */
-	  /*   else if (part == 1) covered1_file << (*usm); */
-	  /*   else if (part == 2) covered2_file << (*usm); */
-	  /* } */
-	  /* } */
+	  // // save
+	  // switch(k) {
+	  // case 0: { // uncut
+	  //   if (part == 0) uncut0_file << (*usm);
+	  //   else if (part == 1) uncut1_file << (*usm);
+	  //   else if (part == 2) uncut2_file << (*usm);
+	  //   break;
+	  // }
+	  // case 1: { // cut
+	  //   if (part == 0) cut0_file << (*usm);
+	  //   else if (part == 1) cut1_file << (*usm);
+	  //   else if (part == 2) cut2_file << (*usm);
+	  //   break;
+	  // }
+	  // case 2: { // covered
+	  //   if (part == 0) covered0_file << (*usm);
+	  //   else if (part == 1) covered1_file << (*usm);
+	  //   else if (part == 2) covered2_file << (*usm);
+	  // }
+	  // }
 	}
       }
 
