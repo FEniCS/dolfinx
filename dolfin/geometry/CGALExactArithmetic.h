@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-05-31
+// Last changed: 2016-06-02
 //
 // Developer note:
 //
@@ -42,6 +42,9 @@
 #else
 
 #define CGAL_CHECK_TOLERANCE 1e-10
+
+// CGAL debugging output
+#define CGAL_DEBUG_OUTPUT 1
 
 // Includes
 #include <algorithm>
@@ -597,30 +600,42 @@ namespace dolfin
     {
       if (const Point_2* p = boost::get<Point_2>(&*ii))
       {
+#ifdef CGAL_DEBUG_OUTPUT
         std::cout << "CGAL: Intersection is point" << std::endl;
+#endif
         triangulation = std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*p)}};
       }
       else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
       {
+#ifdef CGAL_DEBUG_OUTPUT
         std::cout << "CGAL: Intersection is segment: (" << s->source() << ", " << s->target() << ")" << std::endl;
+#endif
         triangulation = std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*s)}};
       }
       else if (const Triangle_2* t = boost::get<Triangle_2>(&*ii))
       {
+#ifdef CGAL_DEBUG_OUTPUT
         std::cout << "CGAL: Intersection is triangle" << std::endl;
         std::cout << "Area: " << t->area() << std::endl;
+#endif
         triangulation = std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*t)}};
       }
       else if (const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii))
       {
+#ifdef CGAL_DEBUG_OUTPUT
         std::cout << "CGAL: Intersection is polygon (" << cgal_points->size() << ")" << std::endl;
+#endif
         std::vector<dolfin::Point> points;
         for (Point_2 p : *cgal_points)
         {
           points.push_back(dolfin::Point(CGAL::to_double(p.x()), CGAL::to_double(p.y())));
+#ifdef CGAL_DEBUG_OUTPUT
           std::cout << p << ", ";
+#endif
         }
-        std::cout << std::endl;
+ #ifdef CGAL_DEBUG_OUTPUT
+       std::cout << std::endl;
+#endif
         dolfin_assert(cgal_points->size() == 4 ||
 		      cgal_points->size() == 5 ||
 		      cgal_points->size() == 6);
