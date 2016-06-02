@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-06-02
+// Last changed: 2016-05-29
 
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/math/basic.h>
@@ -26,7 +26,7 @@
 #include "CollisionDetection.h"
 #include "IntersectionTriangulation.h"
 
-#include "dolfin_simplex_tools.h"
+//#include "dolfin_simplex_tools.h"
 
 namespace
 {
@@ -726,36 +726,17 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
 							    const Point& q0,
 							    const Point& q1)
 {
-  // std::cout << __FUNCTION__ << std::endl;
-
   std::vector<Point> points;
 
   // First call the main collision routine
   if (CollisionDetection::collides_triangle_segment_2d(p0, p1, p2, q0, q1))
   {
-    // std::cout << __FUNCTION__ << " have collision between" << std::endl;
-    // std::cout << tools::drawtriangle({{p0,p1,p2}})<<tools::drawtriangle({{q0,q1}})<<std::endl;
-
-    // First see if any point collides (either in triangle or on segment)
-    if (CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q0) or
-	CollisionDetection::collides_segment_point(p0, p1, q0) or
-	CollisionDetection::collides_segment_point(p1, p2, q0) or
-	CollisionDetection::collides_segment_point(p2, p0, q0))
-    {
-      // std::cout << __FUNCTION__<< " q0 found"<<std::endl;
+    // Mimic behaviour of collides_triangle_segment_2d (i.e. first
+    // triangle point, then triangle segment)
+    if (CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q0))
       points.push_back(q0);
-    }
-
-    if (CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q1) or
-	CollisionDetection::collides_segment_point(p0, p1, q1) or
-	CollisionDetection::collides_segment_point(p1, p2, q1) or
-	CollisionDetection::collides_segment_point(p2, p0, q1))
-    {
-      // std::cout << __FUNCTION__<< " q1 found"<<std::endl;
+    if (CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q1))
       points.push_back(q1);
-    }
-
-    // std::cout << __FUNCTION__ << " any tri points? " << points.size() << std::endl;
 
     // We're done if both q0 and q1 inside
     if (points.size() == 2)
@@ -771,10 +752,8 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
       const std::vector<Point> ii = triangulate_segment_segment_2d(p0, p1, q0, q1);
       dolfin_assert(ii.size());
       points.insert(points.end(), ii.begin(), ii.end());
-      if (points[0] != points[1])
-	return {{ points[0], points[1] }}; // points may be of size three
-      if (points.size() == 3 and points[0] != points[2])
-	return {{ points[0], points[2] }};
+      if (points.size() == 2)
+	return points;
       collides_segment[0] = true;
       segments[0] = { p0, p1 };
     }
@@ -783,10 +762,8 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
       const std::vector<Point> ii = triangulate_segment_segment_2d(p0, p2, q0, q1);
       dolfin_assert(ii.size());
       points.insert(points.end(), ii.begin(), ii.end());
-      if (points[0] != points[1])
-	return {{ points[0], points[1] }}; // points may be of size three
-      if (points.size() == 3 and points[0] != points[2])
-	return {{ points[0], points[2] }};
+      if (points.size() == 2)
+	return points;
       collides_segment[1] = true;
       segments[1] = { p0, p2 };
     }
@@ -795,25 +772,18 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
       const std::vector<Point> ii = triangulate_segment_segment_2d(p1, p2, q0, q1);
       dolfin_assert(ii.size());
       points.insert(points.end(), ii.begin(), ii.end());
-      if (points[0] != points[1])
-	return {{ points[0], points[1] }}; // points may be of size three
-      if (points.size() == 3 and points[0] != points[2])
-	return {{ points[0], points[2] }};
+      if (points.size() == 2)
+	return points;
       collides_segment[2] = true;
       segments[2] = { p1, p2 };
     }
-
-    // std::cout << points.size() << std::endl;
-    // std::cout << collides_segment[0]<<' '<<collides_segment[1]<<' '<<collides_segment[2]<<std::endl;
 
     // Here we must have at least one intersecting point
     dolfin_assert(points.size() > 0);
 
     if (points.size() == 1)
     {
-      // std::cout << __FUNCTION__ << " one point found " << points[0] << std::endl;
-
-     // If we get one intersection point, find the segment end point
+      // If we get one intersection point, find the segment end point
       // (q0 or q1) that is inside the triangle. Do this cautiously
       // since one point may be strictly inside and one may be on the
       // boundary.
@@ -846,11 +816,11 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
 	return std::vector<Point>{{ q1, points[0] }};
       else
       {
-      	//// std::cout << tools::drawtriangle({{p0,p1,p2}})<<tools::drawtriangle({{q0,q1}})<<std::endl;
-	//// std::cout << q0_inside << ' ' << q1_inside << std::endl;
-	std::cout << "IntersectionTriangulation.cpp; ";
-	std::cout << "_triangulate_triangle_segment_2d; ";
-	std::cout <<"Unexpected classification - we should have found either q0 or q1 inside" << std::endl;
+      	//std::cout << tools::drawtriangle({{p0,p1,p2}})<<tools::drawtriangle({{q0,q1}})<<std::endl;
+	//std::cout << q0_inside << ' ' << q1_inside << std::endl;
+	std::cout << "IntersectionTriangulation.cpp; "
+		  << "_triangulate_triangle_segment_2d; "
+		  <<"Unexpected classification - we should have found either q0 or q1 inside\n";
 
 	// GeometryDebugging::print({{p0,p1,p2}});
 	// GeometryDebugging::print({{q0,q1}});
@@ -866,10 +836,10 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
     }
     else if (points.size() == 2)
     {
-      // If we get two intersection points, this is the intersection
-      // std::cout << __FUNCTION__<<" found two points:"<<std::endl;
-      // std::cout << tools::plot(points[0])<<tools::plot(points[1])<<std::endl;
-      // std::cout << tools::area({{points[0],points[1]}})<<std::endl;
+      // // If we get two intersection points, this is the intersection
+      // std::cout << __FUNCTION__<<std::endl
+      // 		<< tools::plot(points[0])<<tools::plot(points[1])<<std::endl
+      // 		<< tools::area({{points[0],points[1]}})<<std::endl;
 
       return points;
     }
@@ -922,14 +892,9 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
   // std::cout << "Triangle " << p0.x() << " " << p0.y() << ", " << p1.x() << " " << p1.y() << ", " << p2.x() << " " << p2.y() << std::endl;
   // std::cout << "Triangle " << q0.x() << " " << q0.y() << ", " << q1.x() << " " << q1.y() << ", " << q2.x() << " " << q2.y() << std::endl;
 
-  // std::cout << __FUNCTION__ << std::endl;
-
   if (CollisionDetection::collides_triangle_triangle_2d(p0, p1, p2,
 							q0, q1, q2))
   {
-    // std::cout << __FUNCTION__<< " have collision between "<<std::endl;
-    // std::cout << tools::drawtriangle({{p0,p1,p2}})<<tools::drawtriangle({{q0,q1,q2}})<<std::endl;
-
     std::vector<dolfin::Point> points;
 
     // Pack points as vectors
@@ -1037,10 +1002,7 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
     // std::cout << "Intersections after cell-vertex collisions: " << points.size() << std::endl;
 
     if (points.size() == 0)
-    {
-      // std::cout << __FUNCTION__<< " no collisions => return empty"<<std::endl;
       return std::vector<std::vector<Point>>();
-    }
 
     // If the number of points is less than four, then these form the
     // triangulation

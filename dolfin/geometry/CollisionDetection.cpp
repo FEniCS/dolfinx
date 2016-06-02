@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2016-06-02
+// Last changed: 2016-05-29
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -61,8 +61,6 @@
 #include "Point.h"
 #include "GeometryDebugging.h"
 #include "CollisionDetection.h"
-
-#include "dolfin_simplex_tools.h"
 
 using namespace dolfin;
 
@@ -319,8 +317,7 @@ bool CollisionDetection::_collides_segment_segment_2d(Point p0,
 						      Point q0,
 						      Point q1)
 {
-  // std::cout << __FUNCTION__ << std::endl;
-  // std::cout << tools::drawtriangle({{p0,p1}})<<tools::drawtriangle({{q0,q1}})<<std::endl;
+  //std::cout << __FUNCTION__ << std::endl;
 
   // Vertex vertex collision
   if (p0 == q0 || p0 == q1 || p1 == q0 || p1 == q1)
@@ -361,11 +358,11 @@ bool CollisionDetection::_collides_triangle_point_2d(Point p0,
 						     Point p2,
 						     Point point)
 {
-
   // Check triangle orientation
   const int sign = std::signbit(orient2d(p0.coordinates(),
 					 p1.coordinates(),
 					 p2.coordinates()));
+
   // std::cout << tools::drawtriangle({{p0,p1,p2}})<<tools::drawtriangle({{point}})<<std::endl;
 
   // std::cout << sign <<' '<<std::signbit(orient2d(p0.coordinates(), p1.coordinates(), point.coordinates()))<<' '<<std::signbit(orient2d(p1.coordinates(), p2.coordinates(), point.coordinates()))<<' '<<std::signbit(orient2d(p2.coordinates(), p0.coordinates(), point.coordinates()))<<std::endl;
@@ -375,17 +372,8 @@ bool CollisionDetection::_collides_triangle_point_2d(Point p0,
       sign == std::signbit(orient2d(p1.coordinates(), p2.coordinates(), point.coordinates())) and
       sign == std::signbit(orient2d(p2.coordinates(), p0.coordinates(), point.coordinates())))
     return true;
-
-  // Check segment point collisions
-  if (collides_segment_point(p0, p1, point))
-    return true;
-  if (collides_segment_point(p1, p2, point))
-    return true;
-  if (collides_segment_point(p2, p0, point))
-    return true;
-
-  // No collision
-  return false;
+  else
+    return false;
 }
 //-----------------------------------------------------------------------------
 bool CollisionDetection::_collides_triangle_point_3d(const Point& p0,
@@ -483,43 +471,30 @@ bool CollisionDetection::_collides_triangle_triangle_2d(const Point& p0,
 							const Point& q1,
 							const Point& q2)
 {
-  // std::cout << __FUNCTION__ << std::endl;
-
-  if (collides_triangle_point_2d(p0, p1, p2, q0) or
-      collides_triangle_point_2d(p0, p1, p2, q1) or
-      collides_triangle_point_2d(p0, p1, p2, q2) or
-      collides_triangle_point_2d(q0, q1, q2, p0) or
-      collides_triangle_point_2d(q0, q1, q2, p1) or
-      collides_triangle_point_2d(q0, q1, q2, p2))
-  {
-    // std::cout <<  __FUNCTION__<< " point in tri found " << std::endl;
-    return true;
-  }
-
-  // // Extract coordinates
-  // double t0[3][2] = {{p0[0], p0[1]}, {p1[0], p1[1]}, {p2[0], p2[1]}};
-  // double t1[3][2] = {{q0[0], q0[1]}, {q1[0], q1[1]}, {q2[0], q2[1]}};
-
-  // // Find all vertex-cell collisions
-  // const int s0 = std::signbit(orient2d(t0[0], t0[1], t0[2])) == true ? -1 : 1;
-  // const int s1 = std::signbit(orient2d(t1[0], t1[1], t1[2])) == true ? -1 : 1;
-
-  // for (std::size_t i = 0; i < 3; ++i)
-  // {
-  //   if (s1*orient2d(t1[0], t1[1], t0[i]) >= 0. and
-  // 	s1*orient2d(t1[1], t1[2], t0[i]) >= 0. and
-  // 	s1*orient2d(t1[2], t1[0], t0[i]) >= 0.)
-  //     return true;
-
-  //   if (s0*orient2d(t0[0], t0[1], t1[i]) >= 0. and
-  // 	s0*orient2d(t0[1], t0[2], t1[i]) >= 0. and
-  // 	s0*orient2d(t0[2], t0[0], t1[i]) >= 0.)
-  //     return true;
-  // }
-
   // Pack points as vectors
   std::vector<Point> tri_0({p0, p1, p2});
   std::vector<Point> tri_1({q0, q1, q2});
+
+  // Extract coordinates
+  double t0[3][2] = {{p0[0], p0[1]}, {p1[0], p1[1]}, {p2[0], p2[1]}};
+  double t1[3][2] = {{q0[0], q0[1]}, {q1[0], q1[1]}, {q2[0], q2[1]}};
+
+  // Find all vertex-cell collisions
+  const int s0 = std::signbit(orient2d(t0[0], t0[1], t0[2])) == true ? -1 : 1;
+  const int s1 = std::signbit(orient2d(t1[0], t1[1], t1[2])) == true ? -1 : 1;
+
+  for (std::size_t i = 0; i < 3; ++i)
+  {
+    if (s1*orient2d(t1[0], t1[1], t0[i]) >= 0. and
+  	s1*orient2d(t1[1], t1[2], t0[i]) >= 0. and
+  	s1*orient2d(t1[2], t1[0], t0[i]) >= 0.)
+      return true;
+
+    if (s0*orient2d(t0[0], t0[1], t1[i]) >= 0. and
+  	s0*orient2d(t0[1], t0[2], t1[i]) >= 0. and
+  	s0*orient2d(t0[2], t0[0], t1[i]) >= 0.)
+      return true;
+  }
 
   // Find all edge-edge collisions
   for (std::size_t i0 = 0; i0 < 3; i0++)
@@ -532,11 +507,8 @@ bool CollisionDetection::_collides_triangle_triangle_2d(const Point& p0,
       const std::size_t j1 = (i1 + 1) % 3;
       const Point& p1 = tri_1[i1];
       const Point& q1 = tri_1[j1];
-      if (collides_segment_segment_2d(p0, q0, p1, q1))
-      {
-	// std::cout << __FUNCTION__ << " segment segment collides" << std::endl;
+      if (CollisionDetection::collides_segment_segment_2d(p0, q0, p1, q1))
 	return true;
-      }
     }
   }
 
