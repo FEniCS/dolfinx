@@ -18,7 +18,7 @@
 // Modified by August Johansson 2015
 //
 // First added:  2013-08-05
-// Last changed: 2016-05-31
+// Last changed: 2016-06-02
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -34,12 +34,13 @@
 #include "MultiMesh.h"
 
 // FIXME August
-//#define Augustcheckqrpositive
+// #define Augustcheckqrpositive
 // #define Augustdebug
-//#define Augustnormaldebug
+// #define Augustnormaldebug
 
 #ifdef Augustdebug
 #include <dolfin/geometry/dolfin_simplex_tools.h>
+#include <iomanip>
 #endif
 
 using namespace dolfin;
@@ -1316,12 +1317,25 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	tools::cout_qr(qr);
 	area += tools::area(qr);
       }
-      std::cout << " area=" << area << std::endl;
+      std::cout << "total area over this cut cell "<<cut_cell_index_i <<" = " << area << std::endl;
       std::cout << "   Now we reset interface_qr"<<std::endl;
 #endif
 
       _quadrature_rules_interface[cut_part][cut_cell_index_i] = interface_qr;
       _facet_normals[cut_part][cut_cell_index_i] = interface_normals;
+
+#ifdef Augustdebug
+      double totarea = 0;
+      for (const auto cutcelltmp: cmap)
+      {
+	for (const auto qr: _quadrature_rules_interface[cut_part][cutcelltmp.first])
+	  totarea += tools::area(qr);
+	if (cutcelltmp.first == cut_cell_index_i)
+	  break;
+      }
+      std::cout << "total area of all cut cells so far (up to "<<cut_cell_index_i<<") "<<totarea << std::endl;
+#endif
+
     } // end loop over cut_i
   } // end loop over parts
 
@@ -2085,7 +2099,7 @@ void MultiMesh::_inclusion_exclusion_interface
 #ifdef Augustdebug
   std::cout << "summarize stage 0"<<std::endl;
   tools::cout_qr(qr_stage0);
-  std::cout << "stage 0 net area = " << tools::area(qr_stage0) << std::endl;
+  std::cout << std::setprecision(15)<<"stage 0 net area = " << tools::area(qr_stage0) << std::endl;
   std::cout << "end summary"<<std::endl;
 #endif
 
@@ -2319,7 +2333,7 @@ void MultiMesh::_inclusion_exclusion_interface
 #ifdef Augustdebug
   std::cout << "inc exc summary"<<std::endl;
   tools::cout_qr(qr);
-  std::cout << "net area inc exc " << tools::area(qr) << std::endl;
+  std::cout << std::setprecision(15)<<"net area inc exc " << tools::area(qr) << std::endl;
   std::cout << "end inc exc"<<std::endl<<std::endl;
 #endif
 
