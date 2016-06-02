@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2016-05-21
+// Last changed: 2016-06-02
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -253,20 +253,18 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const std::vector<Point>& co
     p[0][0] = p[1][1] = p[2][2] = 2./3;
 
     break;
-  case 3:
+    // case 3: We do not include this case due to negative weights
     // // Assign weights
     // w.resize(4);
-    // w[0] = -27./48; // NB: we should avoid this qr due to negative weight
+    // w[0] = -27./48;
     // w[1] = w[2] = w[3] = 25./48;
-
     // // Assign points
     // p.resize(4);
     // p[0] = { 1./3, 1./3, 1./3 };
     // p[1] = { 0.2, 0.2, 0.6 };
     // p[2] = { 0.2, 0.6, 0.2 };
     // p[3] = { 0.6, 0.2, 0.2 };
-
-    break;
+    // break;
   case 4:
     // Assign weights
     w = { 0.223381589678011,
