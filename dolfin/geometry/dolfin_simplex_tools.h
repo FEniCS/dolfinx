@@ -20,6 +20,7 @@
 #include <dolfin/math/basic.h>
 #include <dolfin/mesh/SubMesh.h>
 #include <dolfin/la/Vector.h>
+#include <dolfin/la/Matrix.h>
 
 namespace tools
 {
@@ -1030,7 +1031,23 @@ namespace tools
     }
 
   }
+
   //------------------------------------------------------------------------------
+  inline std::string write_matrix_raw(const Matrix& A)
+  {
+    std::stringstream s;
+    for (std::size_t r = 0; r < A.size(0); ++r)
+    {
+      std::vector<std::size_t> columns;
+      std::vector<double> values;
+      A.getrow(r, columns, values);
+      for (std::size_t c = 0; c < columns.size(); ++c)
+	s << r << ' '<< columns[c] << ' ' << values[c] << std::endl;
+    }
+    return s.str();
+  }
+
+  //-----------------------------------------------------------------------------
 
 
 
