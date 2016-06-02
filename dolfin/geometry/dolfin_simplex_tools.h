@@ -9,6 +9,7 @@
 #include <fstream>
 #include <vector>
 #include <cstdlib>
+#include <iomanip>
 
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Vertex.h>
@@ -84,7 +85,7 @@ namespace tools
       else
 	ss<<"'color',"<<color<<",'marker','o','markersize',"<<markersize-10;
       //std::cout << "plot("<<qr.first[2*i]<<','<<qr.first[2*i+1]<<','<<marker<<"); % "<<qr.second[i]<<' '<<i<<std::endl;
-      std::cout << "plot("<<qr.first[2*i]<<','<<qr.first[2*i+1]<<','<<ss.str()<<"); % "<<qr.second[i]<<' '<<i<<std::endl;
+      std::cout << "plot("<<qr.first[2*i]<<','<<qr.first[2*i+1]<<','<<ss.str()<<"); % "<<std::setprecision(15)<<qr.second[i]<<' '<<i<<std::endl;
     }
   }
 
