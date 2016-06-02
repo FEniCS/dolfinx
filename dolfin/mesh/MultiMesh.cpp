@@ -1415,7 +1415,7 @@ void MultiMesh::_add_normal(std::vector<double>& normals,
 {
   for (std::size_t i = 0; i < npts; ++i)
     for (std::size_t j = 0; j < gdim; ++j)
-      normals.push_back(normal[j]);
+      normals.push_back(-normal[j]);
 #ifdef Augustdebug
   tools::cout_normals(normals);
 #endif
