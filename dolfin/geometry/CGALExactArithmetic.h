@@ -44,7 +44,7 @@
 #define CGAL_CHECK_TOLERANCE 1e-10
 
 // CGAL debugging output
-#define CGAL_DEBUG_OUTPUT 1
+// #define CGAL_DEBUG_OUTPUT 1
 
 // Includes
 #include <algorithm>
@@ -266,7 +266,8 @@ namespace dolfin
 } // end namespace dolfin
 
 // Comparison macro that calls comparison function
-#define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) check_cgal(RESULT_DOLFIN, RESULT_CGAL, __FUNCTION__)
+#define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) RESULT_CGAL
+//check_cgal(RESULT_DOLFIN, RESULT_CGAL, __FUNCTION__)
 
 // CGAL includes
 #define CGAL_HEADER_ONLY
