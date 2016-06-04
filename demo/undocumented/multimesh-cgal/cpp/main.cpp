@@ -270,7 +270,7 @@ void get_cells_status_cgal(const MultiMesh& multimesh,
             // std::cout << std::endl;
 
             for (auto it = pit->holes_begin(); it != pit->holes_end(); it++)
-              current_volume -= it->area();
+              current_volume += it->area();
           }
           current_cells_status.push_back(std::make_pair(CUT, current_volume));
           // std::cout << "    Cut" << std::endl;
