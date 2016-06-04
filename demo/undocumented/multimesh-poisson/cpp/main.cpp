@@ -23,9 +23,13 @@
 // on a sequence of rotating meshes to test the multimesh
 // functionality.
 
-#include <cmath>
-#include <dolfin.h>
 #include "MultiMeshPoisson.h"
+#include <dolfin.h>
+
+#include <cmath>
+#include <fstream>
+
+
 
 using namespace dolfin;
 using std::make_shared;
@@ -49,11 +53,14 @@ class DirichletBoundary : public SubDomain
 };
 
 // Compute solution for given mesh configuration
-void solve_poisson(double t,
-                   double x1, double y1,
-                   double x2, double y2,
-                   bool plot_solution,
-                   File& u0_file, File& u1_file, File& u2_file)
+std::pair<std::shared_ptr<MultiMesh>,
+          std::shared_ptr<MultiMeshFunction>> solve_poisson(double t,
+                                                 double x1, double y1,
+                                                 double x2, double y2,
+                                                 bool plot_solution,
+                                                 File& u0_file,
+                                                 File& u1_file,
+                                                 File& u2_file)
 {
   // Create meshes
   double r = 0.5;
@@ -98,9 +105,9 @@ void solve_poisson(double t,
   solve(*A, *u->vector(), *b);
 
   // Save to file
-  u0_file << *u->part(0);
-  u1_file << *u->part(1);
-  u2_file << *u->part(2);
+  // u0_file << *u->part(0);
+  // u1_file << *u->part(1);
+  // u2_file << *u->part(2);
 
   // Plot solution (last time)
   if (plot_solution)
@@ -111,6 +118,8 @@ void solve_poisson(double t,
     plot(u->part(2), "u_2");
     interactive();
   }
+
+  return std::make_pair(multimesh, u);
 }
 
 int main(int argc, char* argv[])
@@ -144,8 +153,40 @@ int main(int argc, char* argv[])
     const double y2 = sin(t)*cos(2*t);
 
     // Compute solution
-    solve_poisson(t, x1, y1, x2, y2, n == N - 1,
-                  u0_file, u1_file, u2_file);
+    std::pair<std::shared_ptr<MultiMesh>,
+              std::shared_ptr<MultiMeshFunction>> u = solve_poisson(t, x1, y1, x2, y2, n == N - 1,
+                                                                    u0_file, u1_file, u2_file);
+
+    for (int i = 0; i < 3; i++)
+    {
+      std::stringstream filenamestream;
+      filenamestream << "ref_" << n << "_" << i << ".txt";
+      const std::string filename = filenamestream.str();
+
+      std::vector<double> values;
+      u.second->part(i)->compute_vertex_values(values, *u.first->part(i));
+
+      //   std::cout << "Writing reference file " << filename << std::endl;
+      //   std::ofstream outfile(filename);
+      //   outfile << std::setprecision(16);
+      //   for (double d : values)
+      //     outfile << d << std::endl;
+
+      // Compare with reference value
+      std::ifstream infile(filename);
+      double ref_value;
+      std::size_t j = 0;
+      while (infile >> ref_value)
+      {
+        if (!near(ref_value, values[j], DOLFIN_EPS_LARGE))
+        {
+          std::cout << "Comparison with reference value failed: "
+                    << ref_value << ", " << values[j] << " : "
+                    << ref_value-values[j] << std::endl;
+        }
+        j++;
+      }
+    }
   }
 
   return 0;
