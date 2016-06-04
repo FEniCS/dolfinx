@@ -434,10 +434,10 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 
     if (triangulation.size() == 2)
     {
-      std::cout.precision(20);
-      std::cout << collide_p0<<' '<<collide_p1<<' '<<collide_q0<<' '<<collide_q1<<std::endl;
-      std::cout << tools::drawtriangle({{p0,p1}})<<tools::drawtriangle({{q0,q1}})<<std::endl;
-      std::cout << "degen? " << is_degenerate({{p0,p1}})<<' '<<is_degenerate({{q0,q1}})<<std::endl;
+      // std::cout.precision(20);
+      // std::cout << collide_p0<<' '<<collide_p1<<' '<<collide_q0<<' '<<collide_q1<<std::endl;
+      // std::cout << tools::drawtriangle({{p0,p1}})<<tools::drawtriangle({{q0,q1}})<<std::endl;
+      // std::cout << "degen? " << is_degenerate({{p0,p1}})<<' '<<is_degenerate({{q0,q1}})<<std::endl;
 
       // // It's not both p0 and p1 that are colliding
       // dolfin_assert(!(collide_p0 and collide_p1));
