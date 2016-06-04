@@ -430,12 +430,17 @@ namespace dolfin
   // using CGAL exact arithmetic
   // ---------------------------------------------------------------------------
 
-  inline bool cgal_collides_segment_point(const Point& p0,
-                                          const Point& p1,
-                                          const Point& point)
+  inline bool cgal_collides_segment_point(const Point& q0,
+                                          const Point& q1,
+                                          const Point& p,
+                                          bool only_interior=false)
   {
-    return CGAL::do_intersect(convert_to_cgal(p0, p1),
-			      convert_to_cgal(point));
+    const Point_2 q0_ = convert_to_cgal(q0);
+    const Point_2 q1_ = convert_to_cgal(q1);
+    const Point_2 p_ = convert_to_cgal(p);
+
+    const bool intersects = CGAL::do_intersect(Segment_2(q0_, q1_), p_);
+    return only_interior ? intersects && p_ != q0_ && p_ != q1_ : intersects;
   }
 
   inline bool cgal_collides_segment_segment(const Point& p0,
