@@ -23,7 +23,7 @@
 // Last changed: 2016-05-05
 
 #include <dolfin/log/log.h>
-#include <dolfin/geometry/CollisionDetection.h>
+#include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/geometry/IntersectionTriangulation.h>
 #include "Cell.h"
 #include "Facet.h"
@@ -156,12 +156,12 @@ void PointCell::order(
 //-----------------------------------------------------------------------------
 bool PointCell::collides(const Cell& cell, const Point& point) const
 {
-  return CollisionDetection::collides(cell, point);
+  return CollisionPredicates::collides(cell, point);
 }
 //-----------------------------------------------------------------------------
 bool PointCell::collides(const Cell& cell, const MeshEntity& entity) const
 {
-  return CollisionDetection::collides(cell, entity);
+  return CollisionPredicates::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
 std::string PointCell::description(bool plural) const

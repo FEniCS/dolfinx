@@ -29,7 +29,7 @@
 #include <boost/multi_array.hpp>
 
 #include <dolfin/log/log.h>
-#include <dolfin/geometry/CollisionDetection.h>
+#include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/geometry/IntersectionTriangulation.h>
 #include "Cell.h"
 #include "Facet.h"
@@ -530,12 +530,12 @@ void TetrahedronCell::order(
 //-----------------------------------------------------------------------------
 bool TetrahedronCell::collides(const Cell& cell, const Point& point) const
 {
-  return CollisionDetection::collides(cell, point);
+  return CollisionPredicates::collides(cell, point);
 }
 //-----------------------------------------------------------------------------
 bool TetrahedronCell::collides(const Cell& cell, const MeshEntity& entity) const
 {
-  return CollisionDetection::collides(cell, entity);
+  return CollisionPredicates::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const

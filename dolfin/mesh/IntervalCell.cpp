@@ -25,7 +25,7 @@
 
 #include <algorithm>
 #include <dolfin/log/log.h>
-#include <dolfin/geometry/CollisionDetection.h>
+#include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/geometry/IntersectionTriangulation.h>
 #include "Cell.h"
 #include "MeshEditor.h"
@@ -242,12 +242,12 @@ void IntervalCell::order(Cell& cell,
 //-----------------------------------------------------------------------------
 bool IntervalCell::collides(const Cell& cell, const Point& point) const
 {
-  return CollisionDetection::collides(cell, point);
+  return CollisionPredicates::collides(cell, point);
 }
 //-----------------------------------------------------------------------------
 bool IntervalCell::collides(const Cell& cell, const MeshEntity& entity) const
 {
-  return CollisionDetection::collides(cell, entity);
+  return CollisionPredicates::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const

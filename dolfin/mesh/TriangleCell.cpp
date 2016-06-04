@@ -28,7 +28,7 @@
 #include <algorithm>
 #include <cmath>
 #include <dolfin/log/log.h>
-#include <dolfin/geometry/CollisionDetection.h>
+#include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/geometry/IntersectionTriangulation.h>
 #include "Cell.h"
 #include "MeshEditor.h"
@@ -451,12 +451,12 @@ void TriangleCell::order(
 //-----------------------------------------------------------------------------
 bool TriangleCell::collides(const Cell& cell, const Point& point) const
 {
-  return CollisionDetection::collides(cell, point);
+  return CollisionPredicates::collides(cell, point);
 }
 //-----------------------------------------------------------------------------
 bool TriangleCell::collides(const Cell& cell, const MeshEntity& entity) const
 {
-  return CollisionDetection::collides(cell, entity);
+  return CollisionPredicates::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
 std::string TriangleCell::description(bool plural) const

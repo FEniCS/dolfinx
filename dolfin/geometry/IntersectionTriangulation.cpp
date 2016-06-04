@@ -23,7 +23,7 @@
 #include "predicates.h"
 #include "CGALExactArithmetic.h"
 #include "GeometryDebugging.h"
-#include "CollisionDetection.h"
+#include "CollisionPredicates.h"
 #include "IntersectionTriangulation.h"
 
 //#include "dolfin_simplex_tools.h"
@@ -353,7 +353,7 @@ IntersectionTriangulation::_triangulate_segment_segment_2d(Point p0,
 
   std::vector<Point> triangulation;
 
-  if (CollisionDetection::collides_segment_segment_2d(p0, p1, q0, q1))
+  if (CollisionPredicates::collides_segment_segment_2d(p0, p1, q0, q1))
   {
     // Knowing that the segments collide, the intersection is easy if
     // any segment is degenerate
@@ -729,13 +729,13 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
   std::vector<Point> points;
 
   // First call the main collision routine
-  if (CollisionDetection::collides_triangle_segment_2d(p0, p1, p2, q0, q1))
+  if (CollisionPredicates::collides_triangle_segment_2d(p0, p1, p2, q0, q1))
   {
     // Mimic behaviour of collides_triangle_segment_2d (i.e. first
     // triangle point, then triangle segment)
-    if (CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q0))
+    if (CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q0))
       points.push_back(q0);
-    if (CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q1))
+    if (CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q1))
       points.push_back(q1);
 
     // We're done if both q0 and q1 inside
@@ -747,7 +747,7 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
     std::vector<bool> collides_segment(3, false);
     std::vector<std::pair<Point, Point>> segments(3);
 
-    if (CollisionDetection::collides_segment_segment_2d(p0, p1, q0, q1))
+    if (CollisionPredicates::collides_segment_segment_2d(p0, p1, q0, q1))
     {
       const std::vector<Point> ii = triangulate_segment_segment_2d(p0, p1, q0, q1);
       dolfin_assert(ii.size());
@@ -757,7 +757,7 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
       collides_segment[0] = true;
       segments[0] = { p0, p1 };
     }
-    if (CollisionDetection::collides_segment_segment_2d(p0, p2, q0, q1))
+    if (CollisionPredicates::collides_segment_segment_2d(p0, p2, q0, q1))
     {
       const std::vector<Point> ii = triangulate_segment_segment_2d(p0, p2, q0, q1);
       dolfin_assert(ii.size());
@@ -767,7 +767,7 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
       collides_segment[1] = true;
       segments[1] = { p0, p2 };
     }
-    if (CollisionDetection::collides_segment_segment_2d(p1, p2, q0, q1))
+    if (CollisionPredicates::collides_segment_segment_2d(p1, p2, q0, q1))
     {
       const std::vector<Point> ii = triangulate_segment_segment_2d(p1, p2, q0, q1);
       dolfin_assert(ii.size());
@@ -787,8 +787,8 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
       // (q0 or q1) that is inside the triangle. Do this cautiously
       // since one point may be strictly inside and one may be on the
       // boundary.
-      const bool q0_inside = CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q0);
-      const bool q1_inside = CollisionDetection::collides_triangle_point_2d(p0, p1, p2, q1);
+      const bool q0_inside = CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q0);
+      const bool q1_inside = CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q1);
       // std::cout << "check q0 "<<std::endl;
       // std::cout << "check q1 "<<std::endl;
 
@@ -798,12 +798,12 @@ IntersectionTriangulation::_triangulate_triangle_segment_2d(const Point& p0,
 	for (std::size_t i = 0; i < 3; ++i)
 	  if (collides_segment[i])
 	  {
-	    if (CollisionDetection::collides_segment_point(segments[i].first,
+	    if (CollisionPredicates::collides_segment_point(segments[i].first,
 							   segments[i].second,
 							   q0))
 	      return std::vector<Point>{{ q0, points[0] }};
 	    else {
-	      dolfin_assert(CollisionDetection::collides_segment_point(segments[i].first,
+	      dolfin_assert(CollisionPredicates::collides_segment_point(segments[i].first,
 								       segments[i].second,
 								       q1));
 	      return std::vector<Point>{{ q1, points[0] }};
@@ -892,7 +892,7 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
   // std::cout << "Triangle " << p0.x() << " " << p0.y() << ", " << p1.x() << " " << p1.y() << ", " << p2.x() << " " << p2.y() << std::endl;
   // std::cout << "Triangle " << q0.x() << " " << q0.y() << ", " << q1.x() << " " << q1.y() << ", " << q2.x() << " " << q2.y() << std::endl;
 
-  if (CollisionDetection::collides_triangle_triangle_2d(p0, p1, p2,
+  if (CollisionPredicates::collides_triangle_triangle_2d(p0, p1, p2,
 							q0, q1, q2))
   {
     std::vector<dolfin::Point> points;
@@ -923,11 +923,11 @@ IntersectionTriangulation::_triangulate_triangle_triangle_2d(const Point& p0,
       for (std::size_t j = 0; j < 3; j++)
       {
 	if (tri_0[i] != tri_1[j] && tri_0[(i+1)%3] != tri_1[j] &&
-	    CollisionDetection::collides_segment_point(tri_0[i], tri_0[(i+1)%3], tri_1[j]))
+	    CollisionPredicates::collides_segment_point(tri_0[i], tri_0[(i+1)%3], tri_1[j]))
 	  points.push_back(tri_1[j]);
 
 	if (tri_1[i] != tri_0[j] && tri_1[(i+1)%3] != tri_0[j] &&
-	    CollisionDetection::collides_segment_point(tri_1[i], tri_1[(i+1)%3], tri_0[j]))
+	    CollisionPredicates::collides_segment_point(tri_1[i], tri_1[(i+1)%3], tri_0[j]))
 	  points.push_back(tri_0[j]);
       }
     }
@@ -1065,7 +1065,7 @@ IntersectionTriangulation::_triangulate_tetrahedron_triangle(const Point& p0,
 
   // Triangle node in tetrahedron intersection
   for (std::size_t i = 0; i < 3; ++i)
-    if (CollisionDetection::collides_tetrahedron_point(tet[0],
+    if (CollisionPredicates::collides_tetrahedron_point(tet[0],
                                                        tet[1],
                                                        tet[2],
                                                        tet[3],
@@ -1088,7 +1088,7 @@ IntersectionTriangulation::_triangulate_tetrahedron_triangle(const Point& p0,
   tet_edges[5][1] = 1;
 
   for (std::size_t e = 0; e < 6; ++e)
-    if (CollisionDetection::collides_triangle_segment_3d(tri[0], tri[1], tri[2],
+    if (CollisionPredicates::collides_triangle_segment_3d(tri[0], tri[1], tri[2],
 							 tet[tet_edges[e][0]],
 							 tet[tet_edges[e][1]]))
     {
@@ -1122,7 +1122,7 @@ IntersectionTriangulation::_triangulate_tetrahedron_triangle(const Point& p0,
 
   for (std::size_t f = 0; f < 4; ++f)
     for (std::size_t e = 0; e < 3; ++e)
-      if (CollisionDetection::collides_triangle_segment_3d(tet[tet_faces[f][0]],
+      if (CollisionPredicates::collides_triangle_segment_3d(tet[tet_faces[f][0]],
 							   tet[tet_faces[f][1]],
 							   tet[tet_faces[f][2]],
 							   tri[tri_edges[e][0]],
@@ -1141,21 +1141,21 @@ IntersectionTriangulation::_triangulate_tetrahedron_triangle(const Point& p0,
   // // triangle-segment intersection doesn't miss this
   // for (std::size_t f = 0; f < 6; ++f)
   // {
-  //   if (CollisionDetection::collides_segment_segment_3d(tet[tet_edges[f][0]],
+  //   if (CollisionPredicates::collides_segment_segment_3d(tet[tet_edges[f][0]],
   // 							tet[tet_edges[f][1]],
   // 							tri[0], tri[1]))
   //     points.push_back(triangulate_segment_segment_3d(tet[tet_edges[f][0]],
   // 						      tet[tet_edges[f][1]],
   // 						      tri[0], tri[1]));
 
-  //   if (CollisionDetection::collides_segment_segment_3d(tet[tet_edges[f][0]],
+  //   if (CollisionPredicates::collides_segment_segment_3d(tet[tet_edges[f][0]],
   // 							tet[tet_edges[f][1]],
   // 							tri[0], tri[2]))
   //     points.push_back(_intersection_segment_segment_3d(tet[tet_edges[f][0]],
   // 							tet[tet_edges[f][1]],
   // 							tri[0], tri[2]));
 
-  //   if (CollisionDetection::collides_segment_segment_3d(tet[tet_edges[f][0]],
+  //   if (CollisionPredicates::collides_segment_segment_3d(tet[tet_edges[f][0]],
   // 							tet[tet_edges[f][1]],
   // 							tri[1], tri[2]))
   //     points.push_back(_intersection_segment_segment_3d(tet[tet_edges[f][0]],
@@ -1255,14 +1255,14 @@ IntersectionTriangulation::_triangulate_tetrahedron_tetrahedron(const Point& p0,
   // Node intersection
   for (int i = 0; i < 4; ++i)
   {
-    if (CollisionDetection::collides_tetrahedron_point(tet_0[0],
+    if (CollisionPredicates::collides_tetrahedron_point(tet_0[0],
 						       tet_0[1],
 						       tet_0[2],
 						       tet_0[3],
 						       tet_1[i]))
       points.push_back(tet_1[i]);
 
-    if (CollisionDetection::collides_tetrahedron_point(tet_1[0],
+    if (CollisionPredicates::collides_tetrahedron_point(tet_1[0],
 						       tet_1[1],
 						       tet_1[2],
 						       tet_1[3],
@@ -1332,7 +1332,7 @@ IntersectionTriangulation::_triangulate_tetrahedron_tetrahedron(const Point& p0,
   {
     for (std::size_t f = 0; f < 4; ++f)
     {
-      if (CollisionDetection::collides_triangle_segment_3d(tet_0[faces_0[f][0]],
+      if (CollisionPredicates::collides_triangle_segment_3d(tet_0[faces_0[f][0]],
 							   tet_0[faces_0[f][1]],
 							   tet_0[faces_0[f][2]],
 							   tet_1[edges_1[e][0]],
@@ -1346,7 +1346,7 @@ IntersectionTriangulation::_triangulate_tetrahedron_tetrahedron(const Point& p0,
 	points.insert(points.end(), ii.begin(), ii.end());
       }
 
-      if (CollisionDetection::collides_triangle_segment_3d(tet_1[faces_1[f][0]],
+      if (CollisionPredicates::collides_triangle_segment_3d(tet_1[faces_1[f][0]],
 							   tet_1[faces_1[f][1]],
 							   tet_1[faces_1[f][2]],
 							   tet_0[edges_0[e][0]],
@@ -1368,7 +1368,7 @@ IntersectionTriangulation::_triangulate_tetrahedron_tetrahedron(const Point& p0,
   {
     for (int j = 0; j < 6; ++j)
     {
-      if (CollisionDetection::collides_segment_segment_3d(tet_0[edges_0[i][0]],
+      if (CollisionPredicates::collides_segment_segment_3d(tet_0[edges_0[i][0]],
 							  tet_0[edges_0[i][1]],
 							  tet_1[edges_1[j][0]],
 							  tet_1[edges_1[j][1]]))

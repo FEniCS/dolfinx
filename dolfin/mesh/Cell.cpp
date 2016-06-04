@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-#include <dolfin/geometry/CollisionDetection.h>
+#include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/geometry/IntersectionTriangulation.h>
 #include "Cell.h"
 
@@ -24,16 +24,16 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 bool Cell::contains(const Point& point) const
 {
-  return CollisionDetection::collides(*this, point);
+  return CollisionPredicates::collides(*this, point);
 }
 //-----------------------------------------------------------------------------
 bool Cell::collides(const Point& point) const
 {
-  return CollisionDetection::collides(*this, point);
+  return CollisionPredicates::collides(*this, point);
 }
 //-----------------------------------------------------------------------------
 bool Cell::collides(const MeshEntity& entity) const
 {
-  return CollisionDetection::collides(*this, entity);
+  return CollisionPredicates::collides(*this, entity);
 }
 //-----------------------------------------------------------------------------
