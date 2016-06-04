@@ -342,25 +342,23 @@ std::shared_ptr<MultiMesh> get_test_case(std::size_t num_parts,
     {{ 88.339755, 94.547259, 144.366564, 172.579922, 95.439692, 106.697958, 175.788281, 172.468177, 40.363410, 103.866765, 143.106588, 98.869318, 20.516877, 35.108539, 137.423965, 90.249864, 34.446790, 4.621397, 72.857255, 159.991224, 178.510861, 55.788859, 28.163059, 132.222868, 29.606199, 174.993928, 148.036367, 19.177764, 168.827333, 168.008844, 94.710245, 46.129366, 111.622092, 13.585448, 150.515846, 6.340156, 13.178734, 159.027957, 64.313903, 77.979669, 138.651353, 18.916756, 39.967938, 71.345030, 76.804783, 167.944421, 18.516992, 17.648271, 104.164880, 30.083616}};
 
   dolfin_assert(num_parts <= angles.size());
-  std::vector<std::shared_ptr<Mesh>> meshes(num_parts+1);
+  std::vector<std::shared_ptr<const Mesh>> meshes;
+  meshes.reserve(num_parts);
 
-  meshes[0] = std::make_shared<UnitSquareMesh>(std::round(1./h), std::round(1./h));
+  meshes.push_back(std::make_shared<UnitSquareMesh>(std::round(1./h), std::round(1./h)));
 
-  for (std::size_t i = 0; i < num_parts; ++i)
+  for (std::size_t i = 0; i < num_parts-1; ++i)
   {
-    meshes[i+1] = std::make_shared<RectangleMesh>
-      (points[i][0], points[i][1],
-       std::max<std::size_t>(std::round(std::abs(points[i][0].x()-points[i][1].x()) / h), 1),
-       std::max<std::size_t>(std::round(std::abs(points[i][0].y()-points[i][1].y()) / h), 1));
-    meshes[i+1]->rotate(angles[i]);
+    std::shared_ptr<Mesh> m =
+      std::make_shared<RectangleMesh>(points[i][0], points[i][1],
+                                      std::max<std::size_t>(std::round(std::abs(points[i][0].x()-points[i][1].x()) / h), 1),
+                                      std::max<std::size_t>(std::round(std::abs(points[i][0].y()-points[i][1].y()) / h), 1));
+    m->rotate(angles[i]);
+    meshes.push_back(m);
   }
 
-  std::vector<std::shared_ptr<const Mesh>> copy_meshes(num_parts);
-  for (std::size_t i = 0; i < num_parts; ++i)
-    copy_meshes[i] = meshes[i];
-
   const std::size_t quadrature_order = 1;
-  std::shared_ptr<MultiMesh> multimesh(new MultiMesh(copy_meshes, quadrature_order));
+  std::shared_ptr<MultiMesh> multimesh(new MultiMesh(meshes, quadrature_order));
   return multimesh;
 }
 
