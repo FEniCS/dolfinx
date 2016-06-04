@@ -19,6 +19,8 @@
 // Last changed: 2015-06-08
 //
 
+
+//#define CGAL_HEADER_ONLY 1
 #include <dolfin/mesh/MultiMesh.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/math/basic.h>
@@ -26,18 +28,16 @@
 #include <dolfin/generation/UnitSquareMesh.h>
 
 
-#include <CGAL/Cartesian.h>
-#include <CGAL/Quotient.h>
-#include <CGAL/MP_Float.h>
+// We need to use epeck here. Qoutient<MP_FLOAT> as number type gives overflow
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 
 #include <CGAL/Triangle_2.h>
 #include <CGAL/intersection_2.h>
 #include <CGAL/Boolean_set_operations_2.h>
 #include <CGAL/Polygon_set_2.h>
 
-
-typedef CGAL::Quotient<CGAL::MP_Float>            FT;
-typedef CGAL::Cartesian<FT>                       ExactKernel;
+typedef CGAL::Epeck ExactKernel;
+typedef ExactKernel::FT FT;
 typedef ExactKernel::Point_2                      Point_2;
 typedef ExactKernel::Triangle_2                   Triangle_2;
 typedef ExactKernel::Line_2                       Line_2;
