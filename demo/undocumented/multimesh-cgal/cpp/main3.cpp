@@ -364,59 +364,65 @@ std::shared_ptr<MultiMesh> get_test_case(std::size_t num_parts,
 
 int main(int argc, char** argv)
 {
-  set_log_level(DBG);
+  // set_log_level(TRACE);
 
-  const double h = 0.5;
-
-  std::shared_ptr<MultiMesh> m = get_test_case(2, 1);
-  MultiMesh& multimesh = *m;
-  std::cout << multimesh.plot_matplotlib() << std::endl;
-  std::cout << "Done building multimesh" << std::endl;
-  /* ---------------- Done creating multimesh ----------------------- */
-
-  // Compute volume of each cell using cgal
-  std::vector<std::vector<std::pair<CELL_STATUS, FT>>> cell_status_cgal;
-  get_cells_status_cgal(multimesh, cell_status_cgal);
-  std::cout << "Done computing volumes with cgal" << std::endl;
-
-  // Compute volume of each cell using dolfin::MultiMesh
-  std::vector<std::vector<std::pair<CELL_STATUS, double> > > cell_status_multimesh;
-  compute_volume(multimesh, cell_status_multimesh);
-  std::cout << "Done computing volumes with multimesh" << std::endl;
-
-  FT cgal_volume = 0.;
-  double multimesh_volume = 0.;
-
-  dolfin_assert(cell_status_cgal.size() == cell_status_multimesh.size());
-  for (std::size_t i = 0; i < cell_status_cgal.size(); i++)
+  for (std::size_t Nx = 2; Nx < 50; Nx++)
   {
-    const std::vector<std::pair<CELL_STATUS, FT> >& current_cgal = cell_status_cgal[i];
-    const std::vector<std::pair<CELL_STATUS, double> >& current_multimesh = cell_status_multimesh[i];
-
-    dolfin_assert(current_cgal.size() == current_multimesh.size());
-
-    std::cout << "Cells in part " << i << ": " << std::endl;
-    for (std::size_t j = 0; j < current_cgal.size(); j++)
+    for (std::size_t parts = 2; parts < 20; parts++)
     {
-      std::cout << "  Cell " << j << std::endl;
-      std::cout << "    Multimesh: " << cell_status_str(current_multimesh[j].first) << " (" << current_multimesh[j].second << ")" << std::endl;
-      std::cout << "    CGAL:      " << cell_status_str(current_cgal[j].first) << " (" << current_cgal[j].second << ")" << std::endl;
-      std::cout << "      Diff:    " << (current_cgal[j].second - current_multimesh[j].second) << std::endl;
-      cgal_volume += current_cgal[j].second;
-      multimesh_volume += current_multimesh[j].second;
-      // dolfin_assert(near(current_cgal[j].second, current_multimesh[j].second, DOLFIN_EPS_LARGE));
-      // dolfin_assert(current_cgal[j].first == current_multimesh[j].first);
+      std::cout << "Nx = " << Nx << ", numparts = " << parts << std::endl;
+
+      std::shared_ptr<MultiMesh> m = get_test_case(Nx, parts);
+      MultiMesh& multimesh = *m;
+      // std::cout << multimesh.plot_matplotlib() << std::endl;
+      std::cout << "Done building multimesh" << std::endl;
+      /* ---------------- Done creating multimesh ----------------------- */
+
+      // Compute volume of each cell using cgal
+      std::vector<std::vector<std::pair<CELL_STATUS, FT>>> cell_status_cgal;
+      get_cells_status_cgal(multimesh, cell_status_cgal);
+      std::cout << "Done computing volumes with cgal" << std::endl;
+
+      // Compute volume of each cell using dolfin::MultiMesh
+      std::vector<std::vector<std::pair<CELL_STATUS, double> > > cell_status_multimesh;
+      compute_volume(multimesh, cell_status_multimesh);
+      std::cout << "Done computing volumes with multimesh" << std::endl;
+
+      FT cgal_volume = 0.;
+      double multimesh_volume = 0.;
+
+      dolfin_assert(cell_status_cgal.size() == cell_status_multimesh.size());
+      for (std::size_t i = 0; i < cell_status_cgal.size(); i++)
+      {
+        const std::vector<std::pair<CELL_STATUS, FT> >& current_cgal = cell_status_cgal[i];
+        const std::vector<std::pair<CELL_STATUS, double> >& current_multimesh = cell_status_multimesh[i];
+
+        dolfin_assert(current_cgal.size() == current_multimesh.size());
+
+        // std::cout << "Cells in part " << i << ": " << std::endl;
+        for (std::size_t j = 0; j < current_cgal.size(); j++)
+        {
+          // std::cout << "  Cell " << j << std::endl;
+          // std::cout << "    Multimesh: " << cell_status_str(current_multimesh[j].first) << " (" << current_multimesh[j].second << ")" << std::endl;
+          // std::cout << "    CGAL:      " << cell_status_str(current_cgal[j].first) << " (" << current_cgal[j].second << ")" << std::endl;
+          // std::cout << "      Diff:    " << (current_cgal[j].second - current_multimesh[j].second) << std::endl;
+          cgal_volume += current_cgal[j].second;
+          multimesh_volume += current_multimesh[j].second;
+          dolfin_assert(near(CGAL::to_double(current_cgal[j].second), current_multimesh[j].second, DOLFIN_EPS_LARGE));
+          // dolfin_assert(current_cgal[j].first == current_multimesh[j].first);
+        }
+        std::cout << std::endl;
+      }
+
+      // Exact volume is known
+      const FT exact_volume = 1;
+
+      std::cout << "Total volume" << std::endl;
+      std::cout << "------------" << std::endl;
+      std::cout << "Multimesh: " << multimesh_volume << ", error: " << (exact_volume-multimesh_volume) << std::endl;
+      std::cout << "CGAL:      " << cgal_volume << ", error: " << (exact_volume-cgal_volume) << std::endl;
+
+      dolfin_assert(near(CGAL::to_double(exact_volume), multimesh_volume, DOLFIN_EPS_LARGE));
     }
-    std::cout << std::endl;
   }
-
-  // Exact volume is known
-  const FT exact_volume = 1;
-
-  std::cout << "Total volume" << std::endl;
-  std::cout << "------------" << std::endl;
-  std::cout << "Multimesh: " << multimesh_volume << ", error: " << (exact_volume-multimesh_volume) << std::endl;
-  std::cout << "CGAL:      " << cgal_volume << ", error: " << (exact_volume-cgal_volume) << std::endl;
-
-  //dolfin_assert(near(exact_volume, volume, DOLFIN_EPS_LARGE));
 }
