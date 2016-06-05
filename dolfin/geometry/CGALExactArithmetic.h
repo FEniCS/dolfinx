@@ -577,42 +577,11 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   inline
-  std::vector<Point> cgal_triangulate_triangle_segment_2d(const Point& p0,
-                                                          const Point& p1,
-                                                          const Point& p2,
-                                                          const Point& q0,
-							  const Point& q1)
-  {
-    dolfin_assert(!is_degenerate(p0, p1, p2));
-    dolfin_assert(!is_degenerate(q0, q1));
-
-    const auto T = convert_to_cgal(p0, p1, p2);
-    const auto I = convert_to_cgal(q0, q1);
-
-    if (const auto ii = CGAL::intersection(T, I))
-    {
-      if (const Point_2* p = boost::get<Point_2>(&*ii))
-      {
-	return std::vector<dolfin::Point>{convert_from_cgal(*p)};
-      }
-      else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
-      {
-	return convert_from_cgal(*s);
-      }
-      else
-      {
-	dolfin::error("Unexpected behavior in CGALExactArithmetic cgal_triangulate_triangle_segment_2d");
-      }
-    }
-    return std::vector<dolfin::Point>();
-  }
-//-----------------------------------------------------------------------------
-  inline
   std::vector<Point> cgal_intersection_triangle_segment_2d(const Point& p0,
-                                                          const Point& p1,
-                                                          const Point& p2,
-                                                          const Point& q0,
-							  const Point& q1)
+                                                           const Point& p1,
+                                                           const Point& p2,
+                                                           const Point& q0,
+                                                           const Point& q1)
   {
     dolfin_assert(!is_degenerate(p0, p1, p2));
     dolfin_assert(!is_degenerate(q0, q1));
@@ -636,6 +605,16 @@ namespace dolfin
       }
     }
     return std::vector<dolfin::Point>();
+  }
+  //-----------------------------------------------------------------------------
+  inline
+  std::vector<Point> cgal_triangulate_triangle_segment_2d(const Point& p0,
+                                                          const Point& p1,
+                                                          const Point& p2,
+                                                          const Point& q0,
+							  const Point& q1)
+  {
+    return cgal_intersection_triangle_segment_2d(p0, p1, p2, q0, q1);
   }
   //-----------------------------------------------------------------------------
   inline
