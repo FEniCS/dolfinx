@@ -488,36 +488,6 @@ namespace dolfin
   // functions using CGAL exact arithmetic
   // ---------------------------------------------------------------------------
 
-  inline
-  std::vector<Point> cgal_triangulate_segment_segment_2d(const Point& p0,
-							 const Point& p1,
-							 const Point& q0,
-							 const Point& q1)
-  {
-    dolfin_assert(!is_degenerate(p0, p1));
-    dolfin_assert(!is_degenerate(q0, q1));
-
-    const auto I0 = convert_to_cgal(p0, p1);
-    const auto I1 = convert_to_cgal(q0, q1);
-
-    if (const auto ii = CGAL::intersection(I0, I1))
-    {
-      if (const Point_2* p = boost::get<Point_2>(&*ii))
-      {
-	return std::vector<dolfin::Point>{convert_from_cgal(*p)};
-      }
-      else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
-      {
-	return convert_from_cgal(*s);
-      }
-      else
-      {
-	dolfin::error("Unexpected behavior in CGALExactArithmetic triangulate_segment_segment_2d");
-      }
-    }
-
-    return std::vector<dolfin::Point>();
-  }
   //-----------------------------------------------------------------------------
   inline
   std::vector<Point> cgal_intersection_segment_segment_2d(const Point& p0,
@@ -549,43 +519,18 @@ namespace dolfin
 
     return std::vector<dolfin::Point>();
   }
-  //-----------------------------------------------------------------------------
+
+
   inline
-  std::vector<Point> cgal_triangulate_segment_interior_segment_interior_2d(const Point& p0,
-                                                                           const Point& p1,
-                                                                           const Point& q0,
-                                                                           const Point& q1)
+  std::vector<Point> cgal_triangulate_segment_segment_2d(const Point& p0,
+							 const Point& p1,
+							 const Point& q0,
+							 const Point& q1)
   {
-    dolfin_assert(!is_degenerate(p0, p1));
-    dolfin_assert(!is_degenerate(q0, q1));
-
-    const Segment_2 I0 = convert_to_cgal(p0, p1);
-    const Segment_2 I1 = convert_to_cgal(q0, q1);
-    std::vector<Point> triangulation;
-
-    if (const auto ii = CGAL::intersection(I0, I1))
-    {
-      if (const Point_2* p = boost::get<Point_2>(&*ii))
-      {
-        if (*p != I0.source() && *p != I0.target() && *p != I1.source() && *p != I1.target())
-          triangulation.push_back(convert_from_cgal(*p));
-      }
-      else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
-      {
-        if (s->source() != I0.source() && s->source() != I0.target() && s->source() != I1.source() && s->source() != I1.target())
-          triangulation.push_back(convert_from_cgal(s->source()));
-        if (s->target() != I0.source() && s->target() != I0.target() && s->target() != I1.source() && s->target() != I1.target())
-          triangulation.push_back(convert_from_cgal(s->target()));
-      }
-      else
-      {
-	dolfin::error("Unexpected behavior in CGALExactArithmetic cgal_triangulate_segment_interior_segment_interior_2d");
-      }
-    }
-
-    return triangulation;
+    return cgal_intersection_segment_segment_2d(p0, p1, q0, q1);
   }
   //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
   inline
   std::vector<Point> cgal_intersection_segment_interior_segment_interior_2d(const Point& p0,
                                                                             const Point& p1,
@@ -620,6 +565,15 @@ namespace dolfin
     }
 
     return triangulation;
+  }
+
+  inline
+  std::vector<Point> cgal_triangulate_segment_interior_segment_interior_2d(const Point& p0,
+                                                                           const Point& p1,
+                                                                           const Point& q0,
+                                                                           const Point& q1)
+  {
+    return cgal_intersection_segment_interior_segment_interior_2d(p0, p1, q0, q1);
   }
   //-----------------------------------------------------------------------------
   inline
