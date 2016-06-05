@@ -617,81 +617,6 @@ namespace dolfin
     return cgal_intersection_triangle_segment_2d(p0, p1, p2, q0, q1);
   }
   //-----------------------------------------------------------------------------
-  inline
-  std::vector<std::vector<Point>> cgal_triangulate_triangle_triangle_2d(const Point& p0,
-                                                                        const Point& p1,
-                                                                        const Point& p2,
-                                                                        const Point& q0,
-                                                                        const Point& q1,
-                                                                        const Point& q2)
-  {
-    dolfin_assert(!is_degenerate(p0, p1, p2));
-    dolfin_assert(!is_degenerate(q0, q1, q2));
-
-    const Triangle_2 T0 = convert_to_cgal(p0, p1, p2);
-    const Triangle_2 T1 = convert_to_cgal(q0, q1, q2);
-    std::vector<std::vector<dolfin::Point>> triangulation;
-
-    if (const auto ii = CGAL::intersection(T0, T1))
-    {
-      if (const Point_2* p = boost::get<Point_2>(&*ii))
-      {
-#ifdef CGAL_DEBUG_OUTPUT
-        std::cout << "CGAL: Intersection is point" << std::endl;
-#endif
-        triangulation = std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*p)}};
-      }
-      else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
-      {
-#ifdef CGAL_DEBUG_OUTPUT
-        std::cout << "CGAL: Intersection is segment: (" << s->source() << ", " << s->target() << ")" << std::endl;
-#endif
-        triangulation = std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*s)}};
-      }
-      else if (const Triangle_2* t = boost::get<Triangle_2>(&*ii))
-      {
-#ifdef CGAL_DEBUG_OUTPUT
-        std::cout << "CGAL: Intersection is triangle" << std::endl;
-        std::cout << "Area: " << t->area() << std::endl;
-#endif
-        triangulation = std::vector<std::vector<dolfin::Point>>{{convert_from_cgal(*t)}};
-      }
-      else if (const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii))
-      {
-#ifdef CGAL_DEBUG_OUTPUT
-        std::cout << "CGAL: Intersection is polygon (" << cgal_points->size() << ")" << std::endl;
-#endif
-        std::vector<dolfin::Point> points;
-        for (Point_2 p : *cgal_points)
-        {
-          points.push_back(dolfin::Point(CGAL::to_double(p.x()), CGAL::to_double(p.y())));
-#ifdef CGAL_DEBUG_OUTPUT
-          std::cout << p << ", ";
-#endif
-        }
- #ifdef CGAL_DEBUG_OUTPUT
-       std::cout << std::endl;
-#endif
-        dolfin_assert(cgal_points->size() == 4 ||
-		      cgal_points->size() == 5 ||
-		      cgal_points->size() == 6);
-        triangulation = triangulate_polygon(points);
-      }
-      else
-      {
-	dolfin::error("Unexpected behavior in CGALExactArithmetic cgal_triangulate_triangle_triangle_2d");
-      }
-
-      // NB: the parsing can return triangulation of size 0, for example
-      // if it detected a triangle but it was found to be flat.
-      /* if (triangulation.size() == 0) */
-      /*   dolfin_error("CGALExactArithmetic.h", */
-      /*                "find intersection of two triangles in cgal_intersection_triangle_triangle function", */
-      /*                "no intersection found"); */
-    }
-
-    return triangulation;
-  }
   //-----------------------------------------------------------------------------
   inline
   std::vector<Point> cgal_intersection_triangle_triangle_2d(const Point& p0,
@@ -749,6 +674,29 @@ namespace dolfin
     }
 
     return intersection;
+  }
+  //----------------------------------------------------------------------------
+  inline
+  std::vector<std::vector<Point>> cgal_triangulate_triangle_triangle_2d(const Point& p0,
+                                                                        const Point& p1,
+                                                                        const Point& p2,
+                                                                        const Point& q0,
+                                                                        const Point& q1,
+                                                                        const Point& q2)
+  {
+    std::vector<Point> intersection = cgal_intersection_triangle_triangle_2d(p0, p1, p2, q0, q1, q2);
+
+    if (intersection.size() < 4)
+    {
+      return std::vector<std::vector<Point>>{intersection};
+    }
+    else
+    {
+        dolfin_assert(intersection.size() == 4 ||
+		      intersection.size() == 5 ||
+		      intersection.size() == 6);
+        return triangulate_polygon(intersection);
+    }
   }
 
 
