@@ -193,7 +193,7 @@ def test_krylov_reuse_pc():
     assert num_iter == num_iter_mod
 
 
-def xtest_krylov_tpetra():
+def test_krylov_tpetra():
     if not has_linear_algebra_backend("Tpetra"):
         return
 
@@ -217,8 +217,8 @@ def xtest_krylov_tpetra():
     bc.apply(b)
 
     mp = MueluPreconditioner()
-    mlp = mp.parameters['muelu']
-    mlp['verbosity'] = 'none'
+    mlp = mp.parameters
+    mlp['verbosity'] = 'extreme'
     mlp.add("max_levels", 10)
     mlp.add("coarse:_max_size", 10)
     mlp.add("coarse:_type", "KLU2")
