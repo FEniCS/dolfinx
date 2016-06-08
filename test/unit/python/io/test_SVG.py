@@ -38,3 +38,12 @@ def test_write_mesh_3d(cd_tempdir):
     mesh = UnitCubeMesh(8, 8, 8)
     f = File("3d.svg")
     f << mesh
+
+def test_ipython_svg(cd_tempdir):
+    # Test IPython SVG repr hooks
+    mesh2d = UnitSquareMesh(8, 8)
+    svg = mesh2d._repr_svg_()
+    assert '<svg' in svg
+    mesh3d = UnitCubeMesh(8, 8, 8)
+    svg = mesh3d._repr_svg_()
+    assert svg is None
