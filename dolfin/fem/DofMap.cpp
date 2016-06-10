@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2015 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2016 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -155,8 +155,8 @@ std::size_t DofMap::global_dimension() const
 //-----------------------------------------------------------------------------
 std::size_t DofMap::local_dimension(std::string type) const
 {
-  deprecation("DofMap::local_dimension", "1.7.0",
-              "1.8.0", "Please use dofmap::index_map()->size() instead");
+  deprecation("DofMap::local_dimension", "2016.1",
+              "Please use dofmap::index_map()->size() instead.");
 
   if (type == "owned")
     return _index_map->size(IndexMap::MapSize::OWNED);
