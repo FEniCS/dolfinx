@@ -38,8 +38,6 @@ that removes the component in the null space from the solution vector.
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2012-10-31
-# Last changed: 2013-05-30
 # Begin demo
 
 from dolfin import *
@@ -52,13 +50,14 @@ if not has_linear_algebra_backend("PETSc"):
 parameters["linear_algebra_backend"] = "PETSc"
 
 # Create mesh and define function space
-mesh = UnitSquareMesh(64, 64)
+mesh = UnitSquareMesh(128, 128)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
+f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)",
+               degree=2)
 g = Expression("-sin(5*x[0])", degree=2)
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
@@ -67,25 +66,45 @@ L = f*v*dx + g*v*ds
 A = assemble(a)
 b = assemble(L)
 
-# Solution Function
-u = Function(V)
-
-# Create Krylov solver
-solver = PETScKrylovSolver("cg")
-solver.set_operator(A)
-
 # Create vector that spans the null space and normalize
-null_vec = Vector(u.vector())
-V.dofmap().set(null_vec, 1.0)
-null_vec *= 1.0/null_vec.norm("l2")
+null_space_vector = b.copy()
+V.dofmap().set(null_space_vector, 1.0)
+null_space_vector *= 1.0/null_space_vector.norm("l2")
 
 # Create null space basis object and attach to PETSc matrix
-null_space = VectorSpaceBasis([null_vec])
+null_space = VectorSpaceBasis([null_space_vector])
 as_backend_type(A).set_nullspace(null_space)
 
 # Orthogonalize RHS vector b with respect to the null space (this
 # gurantees a solution exists)
 null_space.orthogonalize(b);
+
+# Set PETSc solve type (conjugate gradient) and preconditioner
+# (algebraic multigrid)
+PETScOptions.set("ksp_type", "cg")
+PETScOptions.set("pc_type", "gamg")
+
+# Since we have a singular problem, use SVD solver on the multigrid
+# 'coarse grid'
+PETScOptions.set("mg_coarse_ksp_type", "preonly");
+PETScOptions.set("mg_coarse_pc_type", "svd");
+
+# Set the solver tolerance
+PETScOptions.set("ksp_rtol", 1.0e-8);
+
+# Print PETSc solver configuration
+PETScOptions.set("ksp_view")
+PETScOptions.set("ksp_monitor")
+
+# Create Krylov solver and set operator
+solver = PETScKrylovSolver()
+solver.set_operator(A)
+
+# Set PETSc options on the solver
+solver.set_from_options()
+
+# Create solution Function
+u = Function(V)
 
 # Solve
 solver.solve(u.vector(), b)
