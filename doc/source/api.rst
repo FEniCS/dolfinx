@@ -4,4 +4,8 @@
 API documentation
 =================
 
+.. doxygenindex::
+
+
+
 *Under development*

@@ -20,6 +20,8 @@ import os
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 
+# sys.path.append(os.path.abspath("./breathe"))
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -32,10 +34,13 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-]
+    'breathe' ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
+
+breathe_projects = { "dolfin" : "../doxygen/xml" }
+breathe_default_project = "dolfin"
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
