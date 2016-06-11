@@ -21,7 +21,7 @@ This is accomplished in this demo by using a Krylov iterative solver
 that removes the component in the null space from the solution vector.
 """
 
-# Copyright (C) 2012 Garth N. Wells
+# Copyright (C) 2012-2016 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -66,17 +66,16 @@ L = f*v*dx + g*v*ds
 A = assemble(a)
 b = assemble(L)
 
-# Create vector that spans the null space and normalize
+# Create vector that spans the null space, and normalize
 null_space_vector = b.copy()
-V.dofmap().set(null_space_vector, 1.0)
-null_space_vector *= 1.0/null_space_vector.norm("l2")
+null_space_vector[:] = sqrt(1.0/null_space_vector.size())
 
 # Create null space basis object and attach to PETSc matrix
 null_space = VectorSpaceBasis([null_space_vector])
 as_backend_type(A).set_nullspace(null_space)
 
 # Orthogonalize RHS vector b with respect to the null space (this
-# gurantees a solution exists)
+# ensures that a solution exists)
 null_space.orthogonalize(b);
 
 # Set PETSc solve type (conjugate gradient) and preconditioner
@@ -86,11 +85,11 @@ PETScOptions.set("pc_type", "gamg")
 
 # Since we have a singular problem, use SVD solver on the multigrid
 # 'coarse grid'
-PETScOptions.set("mg_coarse_ksp_type", "preonly");
-PETScOptions.set("mg_coarse_pc_type", "svd");
+PETScOptions.set("mg_coarse_ksp_type", "preonly")
+PETScOptions.set("mg_coarse_pc_type", "svd")
 
 # Set the solver tolerance
-PETScOptions.set("ksp_rtol", 1.0e-8);
+PETScOptions.set("ksp_rtol", 1.0e-8)
 
 # Print PETSc solver configuration
 PETScOptions.set("ksp_view")
