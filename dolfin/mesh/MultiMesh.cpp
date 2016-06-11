@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by August Johansson 2016
+// Modified by Benjamin Kehket 2016
 //
 // First added:  2013-08-05
-// Last changed: 2016-06-02
+// Last changed: 2016-06-09
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -27,6 +28,8 @@
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/SimplexQuadrature.h>
 #include <dolfin/geometry/IntersectionTriangulation.h>
+#include <dolfin/geometry/IntersectionConstruction.h>
+#include <dolfin/geometry/ConvexTriangulation.h>
 #include "Cell.h"
 #include "Facet.h"
 #include "BoundaryMesh.h"
@@ -534,9 +537,11 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       	dolfin_assert(cutting_cell.mesh().topology().dim() == tdim);
       	dolfin_assert(cutting_cell.mesh().geometry().dim() == gdim);
 
-  	// Compute the intersection (a polyhedron)
-  	const Polyhedron polyhedron
-	  = IntersectionTriangulation::triangulate(cut_cell, cutting_cell);
+        // Compute the intersection (a polyhedron)
+        // const Polyhedron polyhedron
+        //   = IntersectionTriangulation::triangulate(cut_cell, cutting_cell);
+        const Polyhedron polyhedron =
+          ConvexTriangulation::triangulate(IntersectionConstruction::intersection(cut_cell, cutting_cell), gdim);
 
 	// FIXME: Flip triangles in polyhedron to maximize minimum angle here?
 	// FIXME: only include large polyhedra

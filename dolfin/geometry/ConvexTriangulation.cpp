@@ -38,6 +38,17 @@ std::vector<std::vector<Point>>
 ConvexTriangulation::triangulate_graham_scan(std::vector<Point> points,
                                              std::size_t gdim)
 {
+  if (points.size() < 3)
+    return std::vector<std::vector<Point>>();
+
+  std::vector<std::vector<Point>> triangulation;
+
+  if (points.size() == 3)
+  {
+    triangulation.push_back(points);
+    return triangulation;
+  }
+
   // NB: The input points should be unique.
 
   // Sometimes we can get an extra point on an edge: a-----c--b. This
@@ -81,13 +92,14 @@ ConvexTriangulation::triangulate_graham_scan(std::vector<Point> points,
   std::sort(order.begin(), order.end());
 
   // Tessellate
-  std::vector<std::vector<Point>> triangulation(order.size() - 1);
+  triangulation.reserve(order.size() - 1);
   for (std::size_t m = 0; m < order.size()-1; ++m)
   {
     // FIXME: We could consider only triangles with area > tolerance here.
-    triangulation[m] = {{ points[0],
-			     points[order[m].second],
-			     points[order[m + 1].second] }};
+    triangulation.push_back(
+      { points[0],
+          points[order[m].second],
+         points[order[m + 1].second] });
   }
 
   return triangulation;
