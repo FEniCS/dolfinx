@@ -1,4 +1,4 @@
-// Copyright (C) 2006-20013 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2013 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -17,8 +17,6 @@
 //
 // Modified by Niclas Jansson 2009.
 //
-// First added:  2006-06-21
-// Last changed: 2013-02-21
 
 #ifndef __BOUNDARY_COMPUTATION_H
 #define __BOUNDARY_COMPUTATION_H
@@ -34,25 +32,22 @@ namespace dolfin
   class Mesh;
   template <typename T> class MeshFunction;
 
-  /// This class implements provides a set of basic algorithms for
-  /// the computation of boundaries.
+  /// Provide a set of basic algorithms for the computation of boundaries.
 
   class BoundaryComputation
   {
   public:
 
     /// Compute the exterior boundary of a given mesh
+    /// @param[in] Mesh input mesh
+    /// @param[in] std::string type, "internal" or "external"
+    /// @param[out] BoundaryMesh output boundary mesh
     static void compute_boundary(const Mesh& mesh, const std::string type,
                                  BoundaryMesh& boundary);
 
-    /// Compute the boundary of a given mesh
-    static void compute_boundary_common(const Mesh& mesh,
-                                        BoundaryMesh& boundary,
-                                        bool interior_boundary);
-
   private:
 
-    /// Reorder vertices so facet is right-oriented w.r.t. facet normal
+    // Reorder vertices so facet is right-oriented w.r.t. facet normal
     static void reorder(std::vector<std::size_t>& vertices, const Facet& facet);
 
   };

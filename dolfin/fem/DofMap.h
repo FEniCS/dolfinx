@@ -44,6 +44,8 @@ namespace dolfin
 
   class GenericVector;
 
+  /// Degree-of-freedom map
+
   /// This class handles the mapping of degrees of freedom. It builds
   /// a dof map based on a ufc::dofmap on a specific mesh. It will
   /// reorder the dofs when running in parallel. Sub-dofmaps, both

@@ -44,7 +44,7 @@ namespace dolfin
   class SubDomain;
   class UFC;
 
-  /// Documentation of class
+  /// Builds a DofMap on a Mesh
 
   class DofMapBuilder
   {

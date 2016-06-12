@@ -26,6 +26,8 @@ namespace dolfin
   class FunctionSpace;
   class GenericMatrix;
 
+  /// Discrete gradient operators providing derivatives of functions
+
   /// This class computes discrete gradient operators (matrices) that
   /// map derivatives of finite element functions into other finite
   /// element spaces. An example of where discrete gradient operators

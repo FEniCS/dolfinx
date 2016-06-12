@@ -4,8 +4,7 @@
 API documentation
 =================
 
-.. doxygenindex::
-
-
+.. doxygennamespace:: dolfin
+    :members:
 
 *Under development*

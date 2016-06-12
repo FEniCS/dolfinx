@@ -26,6 +26,8 @@
 
 namespace dolfin
 {
+  /// Compressed Sparse Row graph
+
   /// This class provides a Compressed Sparse Row Graph defined by a
   /// vector containing edges for each node and a vector of offsets
   /// into the edge vector for each node

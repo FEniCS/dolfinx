@@ -108,12 +108,10 @@ namespace dolfin
   /// dimension of entity associated with any coordinate node). Consider
   /// clearing unneeded connectivities when finished.
   ///
-  /// *Arguments*
-  ///     position (_Function_)
-  ///         Vectorial Lagrange function with of any degree
+  /// @param position (_Function_)
+  ///         Vector Lagrange function of any degree
   ///
-  /// *Returns*
-  ///     _Mesh_
+  /// @return Mesh
   ///         The mesh
   Mesh create_mesh(Function& position);
 }

@@ -55,16 +55,13 @@ namespace dolfin
   class SubDomain;
   template<typename T> class MeshFunction;
 
-  /// This class specifies the interface for setting (strong)
-  /// Dirichlet boundary conditions for partial differential
-  /// equations,
+  /// Interface for setting (strong) Dirichlet boundary conditions.
+
   ///
-  /// .. math::
+  ///     u = g on G,
   ///
-  ///     u = g \hbox{ on } G,
-  ///
-  /// where :math:`u` is the solution to be computed, :math:`g` is a function
-  /// and :math:`G` is a sub domain of the mesh.
+  /// where u is the solution to be computed, g is a function
+  /// and G is a sub domain of the mesh.
   ///
   /// A DirichletBC is specified by the function g, the function space
   /// (trial space) and boundary indicators on (a subset of) the mesh
@@ -123,6 +120,7 @@ namespace dolfin
   /// by some methods on a first apply(). This means that changing a
   /// supplied object (defining boundary subdomain) after first use may
   /// have no effect. But this is implementation and method specific.
+
   class DirichletBC : public Hierarchical<DirichletBC>, public Variable
   {
 

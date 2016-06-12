@@ -74,23 +74,19 @@ namespace dolfin
 
   /// Create locally refined mesh
   ///
-  /// *Arguments*
-  ///     mesh (_Mesh_)
+  /// @param  mesh (_Mesh_)
   ///         The mesh to refine.
-  ///     cell_markers (_MeshFunction_ <bool>)
+  /// @param cell_markers (_MeshFunction_ <bool>)
   ///         A mesh function over booleans specifying which cells
   ///         that should be refined (and which should not).
-  ///     redistribute (_bool_)
+  /// @param redistribute (_bool_)
   ///         Optional argument to redistribute the refined mesh if mesh is a
   ///         distributed mesh.
   ///
-  /// *Returns*
-  ///     _Mesh_
+  /// @return _Mesh_
   ///         The locally refined mesh.
   ///
-  /// *Example*
-  ///     .. code-block:: c++
-  ///
+  /// @code{.cpp}
   ///         CellFunction<bool> cell_markers(mesh);
   ///         cell_markers.set_all(false);
   ///         Point origin(0.0, 0.0, 0.0);
@@ -101,6 +97,7 @@ namespace dolfin
   ///                 cell_markers[*cell] = true;
   ///         }
   ///         mesh = refine(mesh, cell_markers);
+  /// @endcode
   ///
   Mesh refine(const Mesh& mesh, const MeshFunction<bool>& cell_markers,
               bool redistribute = true);
