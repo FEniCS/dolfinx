@@ -223,7 +223,7 @@ namespace dolfin
         = _mesh->topology().shared_entities(_dim);
       const auto map_it = sharing_map.find(_local_index);
       if (map_it == sharing_map.end())
-        return {};
+        return std::set<unsigned int>();
       else
         return map_it->second;
     }
