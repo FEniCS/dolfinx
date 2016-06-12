@@ -26,7 +26,7 @@ namespace dolfin
   class ParallelRefinement;
 
   /// Implementation of the refinement method described in
-  /// Plaza and Carey "Local reﬁnement of simplicial grids
+  /// Plaza and Carey "Local refinement of simplicial grids
   /// based on the skeleton"
   /// (Applied Numerical Mathematics 32 (2000) 195-218)
   ///
