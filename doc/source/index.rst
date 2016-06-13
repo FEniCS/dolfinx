@@ -16,6 +16,7 @@ Contents:
    installation
    using
    help
+   demos
    api
    developer
 
