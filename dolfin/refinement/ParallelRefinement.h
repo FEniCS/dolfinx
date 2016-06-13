@@ -83,9 +83,14 @@ namespace dolfin
 
     /// Add a new cell to the list in 3D or 2D
     void new_cell(const Cell& cell);
+
+    /// Add a new cell with vertex indices
     void new_cell(std::size_t i0, std::size_t i1, std::size_t i2,
                   std::size_t i3);
+    /// Add a new cell with vertex indices
     void new_cell(std::size_t i0, std::size_t i1, std::size_t i2);
+
+    /// Add new cells with vertex indices
     void new_cells(const std::vector<std::size_t>& idx);
 
     /// Use vertex and topology data to partition new mesh across processes
