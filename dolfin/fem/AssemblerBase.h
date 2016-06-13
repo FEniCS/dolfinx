@@ -37,8 +37,7 @@ namespace dolfin
   class GenericTensor;
   class Form;
 
-  /// This class provides some common functions used in assembler
-  /// classes.
+  /// Provide some common functions used in assembler classes.
   class AssemblerBase
   {
   public:
@@ -67,7 +66,9 @@ namespace dolfin
     ///     if the matrix is finalised.
     bool keep_diagonal;
 
-    // Initialize global tensor
+    /// Initialize global tensor
+    /// @param[out] _GenericTensor_ A
+    /// @param[in] _Form_ a
     void init_global_tensor(GenericTensor& A, const Form& a);
 
   protected:

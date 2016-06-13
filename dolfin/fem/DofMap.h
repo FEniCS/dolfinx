@@ -57,22 +57,20 @@ namespace dolfin
 
     /// Create dof map on mesh (mesh is not stored)
     ///
-    /// *Arguments*
-    ///     ufc_dofmap (ufc::dofmap)
+    /// @param[in] ufc::dofmap   ufc_dofmap
     ///         The ufc::dofmap.
-    ///     mesh (_Mesh_)
+    /// @param[in] _Mesh_   mesh
     ///         The mesh.
     DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
            const Mesh& mesh);
 
     /// Create a periodic dof map on mesh (mesh is not stored)
     ///
-    /// *Arguments*
-    ///     ufc_dofmap (ufc::dofmap)
+    /// @param[in] ufc::dofmap ufc_dofmap
     ///         The ufc::dofmap.
-    ///     mesh (_Mesh_)
+    /// @param[in] _Mesh_ mesh
     ///         The mesh.
-    ///     constrained_boundary (_SubDomain_)
+    /// @param[in] _SubDomain_ constrained_boundary
     ///         The subdomain marking the constrained (tied) boundaries.
     DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
            const Mesh& mesh, std::shared_ptr<const SubDomain> constrained_domain);

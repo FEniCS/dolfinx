@@ -35,6 +35,10 @@ namespace dolfin
   public:
 
     /// Copy over parameters from a dolfin Parameters object to a Teuchos::ParameterList
+    /// @params[in] Parameters params
+    ///   dolfin parameter set
+    /// @params[in,out] Teuchos::RCP<Teuchos::ParameterList> parameter_list
+    ///   Trilinos Teuchos parameter set
     static void insert_parameters(const Parameters& params,
                              Teuchos::RCP<Teuchos::ParameterList> parameter_list);
 

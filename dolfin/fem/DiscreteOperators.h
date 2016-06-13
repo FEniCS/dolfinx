@@ -46,6 +46,13 @@ namespace dolfin
     /// (P1, nodal Lagrange) to v \in H(curl) (lowest order Nedelec),
     /// i.e. v = Aw. V0 is the H(curl) space, and V1 is the P1
     /// Lagrange space.
+    ///
+    /// @param[in] FunctionSpace V0
+    ///  H(curl) space
+    /// @param[in] FunctionSpace V1
+    ///  P1 Lagrange space
+    ///
+    /// @return GenericMatrix
     static std::shared_ptr<GenericMatrix>
       build_gradient(const FunctionSpace& V0, const FunctionSpace& V1);
 

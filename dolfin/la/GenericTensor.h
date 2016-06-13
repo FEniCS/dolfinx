@@ -43,7 +43,7 @@ namespace dolfin
   class TensorLayout;
   class GenericLinearAlgebraFactory;
 
-  /// This class defines a common interface for arbitrary rank tensors.
+  /// A common interface for arbitrary rank tensors.
 
   class GenericTensor : public virtual LinearAlgebraObject
   {

@@ -44,22 +44,34 @@ namespace dolfin
   //--- Refinement of meshes ---
 
   /// Refine mesh uniformly
+  /// @param[in] Mesh input mesh
+  /// @return std::shared_ptr<Mesh> adapted mesh
   std::shared_ptr<Mesh> adapt(const Mesh& mesh);
 
   /// Refine mesh based on cell markers
+  /// @param[in] Mesh input mesh
+  /// @param[in] MeshFunction<bool> markers
   std::shared_ptr<Mesh> adapt(const Mesh& mesh,
                               const MeshFunction<bool>& cell_markers);
 
   //--- Refinement of function spaces ---
 
   /// Refine function space uniformly
+  /// @param[in] FunctionSpace space
+  /// @return FunctionSpace
   std::shared_ptr<FunctionSpace> adapt(const FunctionSpace& space);
 
   /// Refine function space based on cell markers
+  /// @param[in] FunctionSpace space
+  /// @param[in] MeshFunction<bool> cell_markers
+  /// @return FunctionSpace
   std::shared_ptr<FunctionSpace> adapt(const FunctionSpace& space,
                                        const MeshFunction<bool>& cell_markers);
 
   /// Refine function space based on refined mesh
+  /// @param[in] FunctionSpace space
+  /// @param[in] Mesh adapted_mesh
+  /// @return FunctionSpace
   std::shared_ptr<FunctionSpace> adapt(const FunctionSpace& space,
                                        std::shared_ptr<const Mesh> adapted_mesh);
 
@@ -67,24 +79,30 @@ namespace dolfin
 
   /// Adapt Function based on adapted mesh
   ///
-  /// *Arguments*
-  ///     function  (_Function_)
+  /// @param[in] Function function
   ///         The function that should be adapted
-  ///     adapted_mesh  (_Mesh_)
+  /// @param[in] Mesh adapted_mesh
   ///         The new mesh
-  ///     interpolate (bool)
+  /// @param[in] bool interpolate
   ///         Optional argument, default is true. If false, the
   ///         function's function space is adapted, but the values are
   ///         not interpolated.
   ///
-  /// *Returns*
-  ///     _Function__
+  /// @return _Function_
   ///         The adapted function
   std::shared_ptr<Function> adapt(const Function& function,
                                   std::shared_ptr<const Mesh> adapted_mesh,
                                   bool interpolate=true);
 
   /// Refine GenericFunction based on refined mesh
+  ///
+  /// @param[in] GenericFunction function
+  ///         The function that should be adapted
+  /// @param[in] Mesh adapted_mesh
+  ///         The new mesh
+  ///
+  /// @return _GenericFunction_
+  ///         The adapted function
   std::shared_ptr<GenericFunction>
     adapt(std::shared_ptr<const GenericFunction> function,
           std::shared_ptr<const Mesh> adapted_mesh);
@@ -111,18 +129,16 @@ namespace dolfin
 
   /// Adapt form based on adapted mesh
   ///
-  /// *Arguments*
-  ///     form  (_Form_)
+  /// @param[in]    form  (_Form_)
   ///         The form that should be adapted
-  ///     adapted_mesh  (_Mesh_)
+  /// @param[in]    adapted_mesh  (_Mesh_)
   ///         The new mesh
-  ///     adapt_coefficients (bool)
+  /// @param[in]    adapt_coefficients (bool)
   ///         Optional argument, default is true. If false, the form
   ///         coefficients are not explicitly adapted, but pre-adapted
   ///         coefficients will be transferred.
   ///
-  /// *Returns*
-  ///     _Form__
+  /// @return  _Form_
   ///         The adapted form
   std::shared_ptr<Form> adapt(const Form& form,
                               std::shared_ptr<const Mesh> adapted_mesh,
@@ -142,18 +158,16 @@ namespace dolfin
 
   /// Adapt error control object based on adapted mesh
   ///
-  /// *Arguments*
-  ///     ec  (_ErrorControl_)
+  /// @param  ec  (_ErrorControl_)
   ///         The error control object to be adapted
-  ///     adapted_mesh  (_Mesh_)
+  /// @param  adapted_mesh  (_Mesh_)
   ///         The new mesh
-  ///     adapt_coefficients (bool)
+  /// @param  adapt_coefficients (bool)
   ///         Optional argument, default is true. If false, any form
   ///         coefficients are not explicitly adapted, but pre-adapted
   ///         coefficients will be transferred.
   ///
-  /// *Returns*
-  ///     _ErrorControl__
+  /// @return _ErrorControl_
   ///         The adapted error control object
   std::shared_ptr<ErrorControl> adapt(const ErrorControl& ec,
                                       std::shared_ptr<const Mesh> adapted_mesh,
