@@ -6,12 +6,12 @@ cmake_minimum_required(VERSION 2.8)
 # FIXME: Temporary fix for whitespace error
 cmake_policy(SET CMP0004 OLD)
 
-# Find DOLFIN config file (not used here, but check that the demo will be able
-# to find it
+# Find DOLFIN config file (not used here, but check that the demo will
+# be able to find it
 find_package(DOLFIN PATHS ${CMAKE_BINARY_DIR} REQUIRED)
 
-# If config file is found, add all demo sub-directories, else print helper
-# message
+# If config file is found, add all demo sub-directories, else print
+# helper message
 if (DOLFIN_FOUND)
 
   # Build list of all cpp demo directories
@@ -21,7 +21,6 @@ if (DOLFIN_FOUND)
 
   # Add each C++ demo directory
   foreach (demo_dir ${list})
-    #message(STATUS "Adding C++ demo: ${demo_dir}")
     add_subdirectory(${demo_dir})
   endforeach()
 

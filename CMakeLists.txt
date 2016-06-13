@@ -855,7 +855,6 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
   PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
         COMPONENT RuntimeExecutables)
 
-
 #------------------------------------------------------------------------------
 # Generate form files for tests, bench, demos and dolfin if not exists
 # FIXME: Generate files in Build directory instead, at least for
@@ -873,13 +872,12 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
     OUTPUT_VARIABLE FORM_GENERATION_OUTPUT
     ERROR_VARIABLE FORM_GENERATION_OUTPUT
     OUTPUT_QUIET)
-  if (FORM_GENERATION_RESULT)
 
+  if (FORM_GENERATION_RESULT)
     # Cleanup so download is triggered next time we run cmake
     if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
       file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
     endif()
-
     message(FATAL_ERROR "Generation of form files failed: \n${FORM_GENERATION_OUTPUT}")
   endif()
   set(COPY_DEMO_TEST_DEMO_DATA TRUE)
@@ -971,6 +969,17 @@ else()
   set(MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM}")
 endif()
 
+# Add taget to build .py demp files from Python rst input files, and
+# create a target to build .py files from .py.rst files (using pylit)
+file(GLOB_RECURSE rst_files "*.py.rst")
+add_custom_target(python_demos)
+foreach(rst_file ${rst_files})
+  add_custom_command(TARGET python_demos PRE_BUILD
+    COMMAND COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    )
+endforeach()
+
 # Add target "demo" for building the demos
 add_custom_target(demo
   COMMAND ${MAKE_PROGRAM}
@@ -1053,7 +1062,7 @@ if (DOLFIN_ENABLE_TESTING)
   # Add alias for unittests_cpp
   add_custom_target(tests DEPENDS unittests_cpp)
 
-  # Add target "run_memorytests" for running memory tests
+  # Add target "copy_data_test_demo"
   add_custom_target(copy_data_test_demo
     COMMAND ${PYTHON_EXECUTABLE} "-B" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data ${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
@@ -1067,7 +1076,7 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_regressiontests" for running regression tests
   add_custom_target(run_regressiontests
     COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
-    DEPENDS copy_data_test_demo demo
+    DEPENDS copy_data_test_demo demo python_demos
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
   # Add target "run_unittests" for running unit tests
