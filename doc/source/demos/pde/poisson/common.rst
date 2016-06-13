@@ -54,3 +54,12 @@ functions, the domain, and the boundaries:
 * :math:`\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}` (Neumann boundary)
 * :math:`g = \sin(5x)` (normal derivative)
 * :math:`f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)` (source term)
+
+
+Implementations
+---------------
+
+.. toctree::
+   :maxdepth: 1
+
+   Python<demo_poisson.py>
