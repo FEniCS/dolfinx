@@ -54,18 +54,18 @@ namespace dolfin
     /// Build dofmap. The constrained domain may be a null pointer, in
     /// which case it is ignored.
     ///
-    /// @param[out] DofMap dofmap
-    /// @param[in] Mesh dolfin_mesh
-    /// @param[in] SubDomain constrained_domain
+    /// @param[out] dofmap
+    /// @param[in] dolfin_mesh
+    /// @param[in] constrained_domain
     static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
                       std::shared_ptr<const SubDomain> constrained_domain);
 
     /// Build sub-dofmap. This is a view into the parent dofmap.
     ///
-    /// @param[out] DofMap sub_dofmap
-    /// @param[in] DofMap parent_dofmap
-    /// @param[in] std::vector<std::size_t>& component
-    /// @param[in] Mesh mesh
+    /// @param[out] sub_dofmap
+    /// @param[in] parent_dofmap
+    /// @param[in] component
+    /// @param[in] mesh
     static void build_sub_map_view(DofMap& sub_dofmap,
                                    const DofMap& parent_dofmap,
                                    const std::vector<std::size_t>& component,

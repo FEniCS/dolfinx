@@ -42,16 +42,16 @@ namespace dolfin
   public:
 
     /// Create equation a == L
-    /// @param[in] Form a
+    /// @param[in] a
     ///  Form representing the LHS
-    /// @param[in] Form L
+    /// @param[in] L
     ///  Form representing the RHS
     Equation(std::shared_ptr<const Form> a,
              std::shared_ptr<const Form> L);
 
     /// Create equation F == 0
-    /// @param[in] Form F
-    /// @param[in] int rhs
+    /// @param[in] F
+    /// @param[in] rhs
     Equation(std::shared_ptr<const Form> F, int rhs);
 
     /// Destructor

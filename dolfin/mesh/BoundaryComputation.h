@@ -39,9 +39,9 @@ namespace dolfin
   public:
 
     /// Compute the exterior boundary of a given mesh
-    /// @param[in] Mesh input mesh
-    /// @param[in] std::string type, "internal" or "external"
-    /// @param[out] BoundaryMesh output boundary mesh
+    /// @param[in] mesh  input mesh
+    /// @param[in] type "internal" or "external"
+    /// @param[out] boundary  output boundary mesh
     static void compute_boundary(const Mesh& mesh, const std::string type,
                                  BoundaryMesh& boundary);
 

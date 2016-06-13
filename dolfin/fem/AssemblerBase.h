@@ -67,16 +67,18 @@ namespace dolfin
     bool keep_diagonal;
 
     /// Initialize global tensor
-    /// @param[out] _GenericTensor_ A
-    /// @param[in] _Form_ a
+    /// @param[out] A
+    ///  GenericTensor to assemble into
+    /// @param[in] a
+    ///  Form to assemble from
     void init_global_tensor(GenericTensor& A, const Form& a);
 
   protected:
 
-    // Check form
+    /// Check form
     static void check(const Form& a);
 
-    // Pretty-printing for progress bar
+    /// Pretty-printing for progress bar
     static std::string progress_message(std::size_t rank,
                                         std::string integral_type);
 

@@ -59,22 +59,22 @@ namespace dolfin
 
     /// Assemble tensor from given form
     ///
-    /// @param[out] GenericTensor A
+    /// @param[out] A
     ///         The tensor to assemble.
-    /// @param[in]  Form a
+    /// @param[in]  a
     ///         The form to assemble the tensor from.
     void assemble(GenericTensor& A, const Form& a);
 
     /// Assemble tensor from given form over cells. This function is
     /// provided for users who wish to build a customized assembler.
     ///
-    /// @param[out] GenericTensor A
+    /// @param[out] A
     ///         The tensor to assemble.
-    /// @param[in] Form a
+    /// @param[in] a
     ///         The form to assemble the tensor from.
-    /// @param[in] UFC ufc
-    /// @param[in] MeshFunction<std::size_t>_ domains
-    /// @param[in] std::vector<double>*_ values
+    /// @param[in] ufc
+    /// @param[in] domains
+    /// @param[in] values
     void assemble_cells(GenericTensor& A, const Form& a, UFC& ufc,
                         std::shared_ptr<const MeshFunction<std::size_t>> domains,
                         std::vector<double>* values);
@@ -83,13 +83,13 @@ namespace dolfin
     /// function is provided for users who wish to build a customized
     /// assembler.
     ///
-    /// @param[out] GenericTensor A
+    /// @param[out] A
     ///         The tensor to assemble.
-    /// @param[in] Form a
+    /// @param[in] a
     ///         The form to assemble the tensor from.
-    /// @param[in] UFC ufc
-    /// @param[in] MeshFunction<std::size_t>_ domains
-    /// @param[in] std::vector<double>* values
+    /// @param[in] ufc
+    /// @param[in] domains
+    /// @param[in] values
     void assemble_exterior_facets(GenericTensor& A, const Form& a,
                                   UFC& ufc,
                                   std::shared_ptr<const MeshFunction<std::size_t>> domains,
@@ -99,14 +99,14 @@ namespace dolfin
     /// function is provided for users who wish to build a customized
     /// assembler.
     ///
-    /// @param[out] GenericTensor A
+    /// @param[out] A
     ///         The tensor to assemble.
-    /// @param[in] Form a
+    /// @param[in] a
     ///         The form to assemble the tensor from.
-    /// @param[in] UFC ufc
-    /// @param[in] MeshFunction<std::size_t>_ domains
-    /// @param[in] MeshFunction<std::size_t>_ cell_domains
-    /// @param[in] std::vector<double>*_ values
+    /// @param[in] ufc
+    /// @param[in] domains
+    /// @param[in] cell_domains
+    /// @param[in] values
     void assemble_interior_facets(GenericTensor& A, const Form& a,
                                   UFC& ufc,
                                   std::shared_ptr<const MeshFunction<std::size_t>> domains,
@@ -116,12 +116,12 @@ namespace dolfin
     /// Assemble tensor from given form over vertices. This function is
     /// provided for users who wish to build a customized assembler.
     ///
-    /// @param[out] GenericTensor A
+    /// @param[out] A
     ///         The tensor to assemble.
-    /// @param[in]  Form a
+    /// @param[in] a
     ///         The form to assemble the tensor from.
-    /// @param[in] UFC ufc
-    /// @param[in] MeshFunction<std::size_t> domains
+    /// @param[in] ufc
+    /// @param[in] domains
     void assemble_vertices(GenericTensor& A, const Form& a, UFC& ufc,
                            std::shared_ptr<const MeshFunction<std::size_t>> domains);
 

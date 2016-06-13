@@ -44,33 +44,36 @@ namespace dolfin
   //--- Refinement of meshes ---
 
   /// Refine mesh uniformly
-  /// @param[in] Mesh input mesh
+  /// @param[in] mesh
+  ///   Input mesh
   /// @return std::shared_ptr<Mesh> adapted mesh
   std::shared_ptr<Mesh> adapt(const Mesh& mesh);
 
   /// Refine mesh based on cell markers
-  /// @param[in] Mesh input mesh
-  /// @param[in] MeshFunction<bool> markers
+  /// @param[in] mesh
+  ///   Input mesh
+  /// @param[in] cell_markers
+  ///   Markers denoting cells to be refined
   std::shared_ptr<Mesh> adapt(const Mesh& mesh,
                               const MeshFunction<bool>& cell_markers);
 
   //--- Refinement of function spaces ---
 
   /// Refine function space uniformly
-  /// @param[in] FunctionSpace space
+  /// @param[in] space
   /// @return FunctionSpace
   std::shared_ptr<FunctionSpace> adapt(const FunctionSpace& space);
 
   /// Refine function space based on cell markers
-  /// @param[in] FunctionSpace space
-  /// @param[in] MeshFunction<bool> cell_markers
+  /// @param[in] space
+  /// @param[in] cell_markers
   /// @return FunctionSpace
   std::shared_ptr<FunctionSpace> adapt(const FunctionSpace& space,
                                        const MeshFunction<bool>& cell_markers);
 
   /// Refine function space based on refined mesh
-  /// @param[in] FunctionSpace space
-  /// @param[in] Mesh adapted_mesh
+  /// @param[in] space
+  /// @param[in] adapted_mesh
   /// @return FunctionSpace
   std::shared_ptr<FunctionSpace> adapt(const FunctionSpace& space,
                                        std::shared_ptr<const Mesh> adapted_mesh);
@@ -79,11 +82,11 @@ namespace dolfin
 
   /// Adapt Function based on adapted mesh
   ///
-  /// @param[in] Function function
+  /// @param[in] function
   ///         The function that should be adapted
-  /// @param[in] Mesh adapted_mesh
+  /// @param[in] adapted_mesh
   ///         The new mesh
-  /// @param[in] bool interpolate
+  /// @param[in] interpolate
   ///         Optional argument, default is true. If false, the
   ///         function's function space is adapted, but the values are
   ///         not interpolated.
@@ -96,9 +99,9 @@ namespace dolfin
 
   /// Refine GenericFunction based on refined mesh
   ///
-  /// @param[in] GenericFunction function
+  /// @param[in] function
   ///         The function that should be adapted
-  /// @param[in] Mesh adapted_mesh
+  /// @param[in] adapted_mesh
   ///         The new mesh
   ///
   /// @return _GenericFunction_
@@ -129,11 +132,11 @@ namespace dolfin
 
   /// Adapt form based on adapted mesh
   ///
-  /// @param[in]    form  (_Form_)
+  /// @param[in] form  (_Form_)
   ///         The form that should be adapted
-  /// @param[in]    adapted_mesh  (_Mesh_)
+  /// @param[in] adapted_mesh  (_Mesh_)
   ///         The new mesh
-  /// @param[in]    adapt_coefficients (bool)
+  /// @param[in] adapt_coefficients (bool)
   ///         Optional argument, default is true. If false, the form
   ///         coefficients are not explicitly adapted, but pre-adapted
   ///         coefficients will be transferred.

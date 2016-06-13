@@ -37,13 +37,11 @@ namespace dolfin
   /// (using local indices) thus covering all the vertices. Hence the
   /// returned map is an inversion of _vertex_to_dof_map_.
   ///
-  /// *Arguments*
-  ///     space (_FunctionSpace_)
+  /// @param    space (_FunctionSpace_)
   ///         The FunctionSpace for what the dof to vertex map should
   ///         be computed for
   ///
-  /// *Returns*
-  ///     std::vector<std::size_t>
+  /// @return   std::vector<std::size_t>
   ///         The dof to vertex map
   std::vector<std::size_t> dof_to_vertex_map(const FunctionSpace& space);
 
@@ -53,13 +51,11 @@ namespace dolfin
   /// For mixed FunctionSpaces dof index is offset with the number of
   /// dofs per vertex.
   ///
-  /// *Arguments*
-  ///     space (_FunctionSpace_)
+  /// @param    space (_FunctionSpace_)
   ///         The FunctionSpace for what the vertex to dof map should
   ///         be computed for
   ///
-  /// *Returns*
-  ///     std::vector<dolfin::la_index>
+  /// @return    std::vector<dolfin::la_index>
   ///         The vertex to dof map
   std::vector<dolfin::la_index> vertex_to_dof_map(const FunctionSpace& space);
 
@@ -73,10 +69,9 @@ namespace dolfin
   /// dimension of entity associated with any coordinate node). Consider
   /// clearing unneeded connectivities when finished.
   ///
-  /// *Arguments*
-  ///     geometry (_MeshGeometry_)
+  /// @param   geometry (_MeshGeometry_)
   ///         Mesh geometry to be set
-  ///     position (_Function_)
+  /// @param    position (_Function_)
   ///         Vectorial Lagrange function with matching degree and mesh
   void set_coordinates(MeshGeometry& geometry, const Function& position);
 
@@ -87,10 +82,9 @@ namespace dolfin
   /// dimension of entity associated with any coordinate node). Consider
   /// clearing unneeded connectivities when finished.
   ///
-  /// *Arguments*
-  ///     position (_Function_)
+  /// @param   position (_Function_)
   ///         Vectorial Lagrange function with matching degree and mesh
-  ///     geometry (_MeshGeometry_)
+  /// @param    geometry (_MeshGeometry_)
   ///         Mesh geometry to be stored
   void get_coordinates(Function& position, const MeshGeometry& geometry);
 
@@ -108,12 +102,12 @@ namespace dolfin
   /// dimension of entity associated with any coordinate node). Consider
   /// clearing unneeded connectivities when finished.
   ///
-  /// @param position (_Function_)
+  /// @param coordinates (_Function_)
   ///         Vector Lagrange function of any degree
   ///
   /// @return Mesh
   ///         The mesh
-  Mesh create_mesh(Function& position);
+  Mesh create_mesh(Function& coordinates);
 }
 
 #endif

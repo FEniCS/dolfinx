@@ -26,6 +26,7 @@
 
 namespace dolfin
 {
+  /// Solve problems cell-wise
 
   /// This class solves problems cell-wise. It computes the local
   /// left-hand side A_local which must be square locally but not
@@ -64,13 +65,22 @@ namespace dolfin
   {
   public:
 
+    /// SolverType
     enum class SolverType {LU, Cholesky};
 
     /// Constructor (shared pointer version)
+    /// @param a
+    ///   input LHS form
+    /// @param L
+    ///   input RHS form
+    /// @param solver_type
     LocalSolver(std::shared_ptr<const Form> a, std::shared_ptr<const Form> L,
                 SolverType solver_type=SolverType::LU);
 
     /// Constructor (shared pointer version)
+    /// @param a
+    ///   input LHS form
+    /// @param solver_type
     LocalSolver(std::shared_ptr<const Form> a, SolverType solver_type=SolverType::LU);
 
     /// Solve local (cell-wise) problems A_e x_e = b_e, where A_e is
@@ -80,6 +90,8 @@ namespace dolfin
     /// which there is no coupling between cell contributions to the
     /// global matrix A, e.g. the discontinuous Galerkin matrix. The
     /// result is copied into x.
+    /// @param u
+    ///   Function
     void solve_global_rhs(Function& u) const;
 
     /// Solve local (cell-wise) problems A_e x_e = b_e where A_e and
@@ -90,10 +102,16 @@ namespace dolfin
     /// This function is useful for computing (approximate) cell-wise
     /// projections, for example for post-processing. It much more
     /// efficient than computing global projections.
+    /// @param u
+    ///   Function
     void solve_local_rhs(Function& u) const;
 
     /// Solve local problems for given RHS and corresponding dofmap
     /// for RHS
+    /// @param x (GenericVector)
+    /// @param b (GenericVector)
+    /// @param dofmap_b (GenericDofMap)
+    ///
     void solve_local(GenericVector& x, const GenericVector& b,
                      const GenericDofMap& dofmap_b) const;
 

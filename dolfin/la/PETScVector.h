@@ -48,7 +48,8 @@ namespace dolfin
   class SparsityPattern;
   template<typename T> class Array;
 
-  /// This class provides a simple vector class based on PETSc.
+  /// A simple vector class based on PETSc.
+  ///
   /// It is a simple wrapper for a PETSc vector pointer (Vec)
   /// implementing the GenericVector interface.
   ///

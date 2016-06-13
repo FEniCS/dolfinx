@@ -36,21 +36,18 @@ namespace dolfin
 
   /// Create uniformly refined mesh
   ///
-  /// *Arguments*
-  ///     mesh (_Mesh_)
+  /// @param    mesh (_Mesh_)
   ///         The mesh to refine.
-  ///     redistribute (_bool_)
+  /// @param    redistribute (_bool_)
   ///         Optional argument to redistribute the refined mesh if mesh is a
   ///         distributed mesh.
   ///
-  /// *Returns*
-  ///     _Mesh_
+  /// @return    _Mesh_
   ///         The refined mesh.
   ///
-  /// *Example*
-  ///     .. code-block:: c++
-  ///
+  /// @code{.cpp}
   ///         mesh = refine(mesh);
+  /// @endcode
   ///
   Mesh refine(const Mesh& mesh, bool redistribute = true);
 
@@ -61,12 +58,11 @@ namespace dolfin
 
   /// Create uniformly refined mesh
   ///
-  /// *Arguments*
-  ///     refined_mesh (_Mesh_)
+  /// @param    refined_mesh (_Mesh_)
   ///         The mesh that will be the refined mesh.
-  ///     mesh (_Mesh_)
+  /// @param   mesh (_Mesh_)
   ///         The original mesh.
-  ///     redistribute (_bool_)
+  /// @param    redistribute (_bool_)
   ///         Optional argument to redistribute the refined mesh if mesh is a
   ///         distributed mesh.
   void refine(Mesh& refined_mesh, const Mesh& mesh,
@@ -76,7 +72,7 @@ namespace dolfin
   ///
   /// @param  mesh (_Mesh_)
   ///         The mesh to refine.
-  /// @param cell_markers (_MeshFunction_ <bool>)
+  /// @param cell_markers (_MeshFunction<bool>_)
   ///         A mesh function over booleans specifying which cells
   ///         that should be refined (and which should not).
   /// @param redistribute (_bool_)
@@ -104,15 +100,14 @@ namespace dolfin
 
   /// Create locally refined mesh
   ///
-  /// *Arguments*
-  ///     refined_mesh (_Mesh_)
+  /// @param    refined_mesh (_Mesh_)
   ///         The mesh that will be the refined mesh.
-  ///     mesh (_Mesh_)
+  /// @param    mesh (_Mesh_)
   ///         The original mesh.
-  ///     cell_markers (_MeshFunction_ <bool>)
+  /// @param    cell_markers (_MeshFunction<bool>_)
   ///         A mesh function over booleans specifying which cells
   ///         that should be refined (and which should not).
-  ///     redistribute (_bool_)
+  /// @param    redistribute (_bool_)
   ///         Optional argument to redistribute the refined mesh if mesh is a
   ///         distributed mesh.
   void refine(Mesh& refined_mesh, const Mesh& mesh,
@@ -121,10 +116,9 @@ namespace dolfin
   /// Increase the polynomial order of the mesh from 1 to 2, i.e. add points
   /// at the Edge midpoints, to make a quadratic mesh.
   ///
-  /// *Arguments*
-  ///     refined_mesh (_Mesh_)
+  /// @param    refined_mesh (_Mesh_)
   ///         The mesh that will be the quadratic mesh.
-  ///     mesh (_Mesh_)
+  /// @param    mesh (_Mesh_)
   ///         The original linear mesh.
   void p_refine(Mesh& refined_mesh, const Mesh& mesh);
 
@@ -132,9 +126,9 @@ namespace dolfin
   /// Increase the polynomial order of the mesh from 1 to 2, i.e. add points
   /// at the Edge midpoints, to make a quadratic mesh.
   ///
-  /// *Arguments*
-  ///     mesh (_Mesh_)
+  ///  @param   mesh (_Mesh_)
   ///         The original linear mesh.
+  ///  @return _Mesh_
   Mesh p_refine(const Mesh& mesh);
 }
 

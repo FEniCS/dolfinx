@@ -42,14 +42,14 @@ namespace dolfin
   {
   public:
 
-    /// Build the discrete gradient operator A that takes a w \in H^1
-    /// (P1, nodal Lagrange) to v \in H(curl) (lowest order Nedelec),
+    /// Build the discrete gradient operator A that takes a \f$w \in H^1\f$
+    /// (P1, nodal Lagrange) to \f$v \in H(curl)\f$ (lowest order Nedelec),
     /// i.e. v = Aw. V0 is the H(curl) space, and V1 is the P1
     /// Lagrange space.
     ///
-    /// @param[in] FunctionSpace V0
+    /// @param[in] V0
     ///  H(curl) space
-    /// @param[in] FunctionSpace V1
+    /// @param[in] V1
     ///  P1 Lagrange space
     ///
     /// @return GenericMatrix

@@ -315,11 +315,13 @@ namespace dolfin
     /// Comparison operator, returning equation lhs == 0
     Equation operator==(int rhs) const;
 
-    // Domain markers (cells, exterior facets, interior facets,
-    // vertices)
+    /// Domain markers for cells
     std::shared_ptr<const MeshFunction<std::size_t>> dx;
+    /// Domain markers for exterior facets
     std::shared_ptr<const MeshFunction<std::size_t>> ds;
+    /// Domain markers for interior facets
     std::shared_ptr<const MeshFunction<std::size_t>> dS;
+    /// Domain markers for vertices
     std::shared_ptr<const MeshFunction<std::size_t>> dP;
 
   protected:

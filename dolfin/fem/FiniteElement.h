@@ -37,7 +37,8 @@ namespace dolfin
   public:
 
     /// Create finite element from UFC finite element (data may be shared)
-    /// @param ufc::finite_element element
+    /// @param element
+    ///  UFC finite element
     FiniteElement(std::shared_ptr<const ufc::finite_element> element);
 
     /// Destructor
@@ -173,6 +174,11 @@ namespace dolfin
     }
 
     /// Interpolate vertex values from dof values
+    /// @param vertex_values
+    /// @param coefficients
+    /// @param coordinate_dofs
+    /// @param cell_orientation
+    /// @param cell
     void interpolate_vertex_values(double* vertex_values,
                                    double* coefficients,
                                    const double* coordinate_dofs,
@@ -198,6 +204,8 @@ namespace dolfin
                                   const Cell& cell) const;
 
     /// Return the number of sub elements (for a mixed element)
+    /// @return std::size_t
+    ///   number of sub-elements
     std::size_t num_sub_elements() const
     {
       dolfin_assert(_ufc_element);
