@@ -9,4 +9,5 @@ DOLFIN demos
 .. toctree::
    :maxdepth: 1
 
-   Poisson equation<demos/demo_poisson.py>
+   Poisson equation (background)<demos/common>
+   Poisson equation (implementation)<demos/demo_poisson.py>

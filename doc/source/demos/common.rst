@@ -1,3 +1,5 @@
+Poisson equation
+================
 
 This demo illustrates how to:
 

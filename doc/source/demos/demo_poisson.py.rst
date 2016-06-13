@@ -1,18 +1,12 @@
 Poisson equation
 ================
 
-This demo is implemented in a single Python file,
-:download:`demo_poisson.py`, which contains both the variational forms
-and the solver.
-
-.. include:: ./common.txt
-
 Implementation
 --------------
 
 This description goes through the implementation (in
-:download:`demo_poisson.py`) of a solver for the above described Poisson
-equation step-by-step.
+:download:`demo_poisson.py`) of a solver for the above described
+Poisson equation step-by-step.
 
 First, the :py:mod:`dolfin` module is imported: ::
 
@@ -134,4 +128,4 @@ the :py:func:`plot <dolfin.common.plot.plot>` command: ::
 Complete code
 -------------
 
-Complete code is at . . . .
+Complete code is at :download:`demo_poisson.py`.
