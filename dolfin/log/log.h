@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2013 Anders Logg and Jim Tilander
+// Copyright (C) 2003-2016 Anders Logg and Jim Tilander
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Ola Skavhaug 2007, 2009
 //
 // First added:  2003-03-13
-// Last changed: 2013-01-07
+// Last changed: 2016-06-10
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -93,13 +93,10 @@ namespace dolfin
   ///        Name of the feature that has been removed.
   ///     version_deprecated (std::string)
   ///        Version number of the release in which the feature is deprecated.
-  ///     version_remove (std::string)
-  ///        Version number of the release in which the feature will be removed.
   ///     message (std::string)
   ///        A format string explaining the deprecation.
   void deprecation(std::string feature,
                    std::string version_deprecated,
-                   std::string version_remove,
                    std::string message, ...);
 
   /// Print message at given debug level
