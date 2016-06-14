@@ -92,10 +92,9 @@ namespace dolfin
 
     /// Create function from data file (shared_ptr version)
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param mesh (_Mesh_)
     ///         The mesh to create mesh function on.
-    ///     filename (std::string)
+    /// @param filename (std::string)
     ///         The filename to create mesh function from.
     MeshFunction(std::shared_ptr<const Mesh> mesh,
                  const std::string filename);
@@ -103,29 +102,27 @@ namespace dolfin
     /// Create function from a MeshValueCollecion (shared_ptr version)
     ///
     /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param mesh (_Mesh_)
     ///         The mesh to create mesh function on.
-    ///     value_collection (_MeshValueCollection_ <T>)
+    /// @param value_collection (_MeshValueCollection_)
     ///         The mesh value collection for the mesh function data.
     MeshFunction(std::shared_ptr<const Mesh> mesh,
                  const MeshValueCollection<T>& value_collection);
 
     /// Create function from MeshDomains
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param mesh (_Mesh_)
     ///         The mesh to create mesh function on.
-    ///     dim (std::size_t)
+    /// @param dim (std::size_t)
     ///         The dimension of the MeshFunction
-    ///     domains (_MeshDomains)
+    /// @param domains (_MeshDomains)
     ///         The domains from which to extract the domain markers
     MeshFunction(std::shared_ptr<const Mesh> mesh,
                  std::size_t dim, const MeshDomains& domains);
 
     /// Copy constructor
     ///
-    /// *Arguments*
-    ///     f (_MeshFunction_ <T>)
+    /// @param f (_MeshFunction_)
     ///         The object to be copied.
     MeshFunction(const MeshFunction<T>& f);
 
@@ -135,152 +132,132 @@ namespace dolfin
     /// Assign mesh function to other mesh function
     /// Assignment operator
     ///
-    /// *Arguments*
-    ///     f (_MeshFunction_ <T>)
+    /// @param f (_MeshFunction_)
     ///         A _MeshFunction_ object to assign to another MeshFunction.
     MeshFunction<T>& operator= (const MeshFunction<T>& f);
 
     /// Assignment operator
     ///
-    /// *Arguments*
-    ///     mesh (_MeshValueCollection_)
+    /// @param mesh (_MeshValueCollection_)
     ///         A _MeshValueCollection_ object used to construct a MeshFunction.
     MeshFunction<T>& operator=(const MeshValueCollection<T>& mesh);
 
     /// Return mesh associated with mesh function
     ///
-    /// *Returns*
-    ///     _Mesh_
+    /// @return _Mesh_
     ///         The mesh.
     std::shared_ptr<const Mesh> mesh() const;
 
     /// Return topological dimension
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return std::size_t
     ///         The dimension.
     std::size_t dim() const;
 
     /// Return true if empty
     ///
-    /// *Returns*
-    ///     bool
+    /// @return bool
     ///         True if empty.
     bool empty() const;
 
     /// Return size (number of entities)
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return std::size_t
     ///         The size.
     std::size_t size() const;
 
     /// Return array of values (const. version)
     ///
-    /// *Returns*
-    ///     T
+    /// return T
     ///         The values.
     const T* values() const;
 
     /// Return array of values
     ///
-    /// *Returns*
-    ///     T
+    /// return T
     ///         The values.
     T* values();
 
     /// Return value at given mesh entity
     ///
-    /// *Arguments*
-    ///     entity (_MeshEntity_)
+    /// @param entity (_MeshEntity_)
     ///         The mesh entity.
     ///
-    /// *Returns*
-    ///     T
+    /// return    T
     ///         The value at the given entity.
     T& operator[] (const MeshEntity& entity);
 
     /// Return value at given mesh entity (const version)
     ///
-    /// *Arguments*
-    ///     entity (_MeshEntity_)
+    /// @param entity (_MeshEntity_)
     ///         The mesh entity.
     ///
-    /// *Returns*
-    ///     T
+    /// @return T
     ///         The value at the given entity.
     const T& operator[] (const MeshEntity& entity) const;
 
     /// Return value at given index
     ///
-    /// *Arguments*
-    ///     index (std::size_t)
+    /// @param index (std::size_t)
     ///         The index.
     ///
-    /// *Returns*
-    ///     T
+    /// @return T
     ///         The value at the given index.
     T& operator[] (std::size_t index);
 
     /// Return value at given index  (const version)
     ///
-    /// *Arguments*
-    ///     index (std::size_t)
+    /// @param index (std::size_t)
     ///         The index.
     ///
-    /// *Returns*
-    ///     T
+    /// @return T
     ///         The value at the given index.
     const T& operator[] (std::size_t index) const;
 
     /// Set all values to given value
+    /// @param value (T)
     const MeshFunction<T>& operator= (const T& value);
 
     /// Initialize mesh function for given topological dimension
     ///
-    /// *Arguments*
-    ///     dim (std::size_t)
+    /// @param dim (std::size_t)
     ///         The dimension.
     void init(std::size_t dim);
 
     /// Initialize mesh function for given topological dimension of
     /// given size
     ///
-    /// *Arguments*
-    ///     dim (std::size_t)
+    /// @param dim (std::size_t)
     ///         The dimension.
-    ///     size (std::size_t)
+    /// @param size (std::size_t)
     ///         The size.
     void init(std::size_t dim, std::size_t size);
 
     /// Initialize mesh function for given topological dimension
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param mesh (_Mesh_)
     ///         The mesh.
-    ///     dim (std::size_t)
+    /// @param dim (std::size_t)
     ///         The dimension.
     void init(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
     /// Initialize mesh function for given topological dimension of
     /// given size (shared_ptr version)
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param mesh (_Mesh_)
     ///         The mesh.
-    ///     dim (std::size_t)
+    /// @param dim (std::size_t)
     ///         The dimension.
-    ///     size (std::size_t)
+    /// @param size (std::size_t)
     ///         The size.
     void init(std::shared_ptr<const Mesh> mesh, std::size_t dim,
               std::size_t size);
 
     /// Set value at given index
     ///
-    /// *Arguments*
-    ///     index (std::size_t)
+    /// @param index (std::size_t)
     ///         The index.
-    ///     value (T)
+    /// @param value (T)
     ///         The value.
     void set_value(std::size_t index, const T& value);
 
@@ -290,26 +267,22 @@ namespace dolfin
 
     /// Set values
     ///
-    /// *Arguments*
-    ///     values (std::vector<T>)
+    /// @param values (std::vector<T>)
     ///         The values.
     void set_values(const std::vector<T>& values);
 
     /// Set all values to given value
     ///
-    /// *Arguments*
-    ///     value (T)
+    /// @param value (T)
     ///         The value to set all values to.
     void set_all(const T& value);
 
     /// Return informal string representation (pretty-print)
     ///
-    /// *Arguments*
-    ///     verbose (bool)
+    /// @param verbose (bool)
     ///         Flag to turn on additional output.
     ///
-    /// *Returns*
-    ///     std::string
+    /// @return std::string
     ///         An informal representation.
     std::string str(bool verbose) const;
 

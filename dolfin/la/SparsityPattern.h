@@ -46,11 +46,12 @@ namespace dolfin
 
     // NOTE: Do not change this typedef without performing careful
     //       performance profiling
-    // Set type used for the rows of the sparsity pattern
+    /// Set type used for the rows of the sparsity pattern
     typedef dolfin::Set<std::size_t> set_type;
 
   public:
 
+    /// Whether SparsityPattern is sorted
     enum class Type {sorted, unsorted};
 
     /// Create empty sparsity pattern

@@ -38,6 +38,8 @@ namespace dolfin
   // Forward declaration
   class GenericLinearSolver;
 
+  /// Eigen linear algebra factory
+
   class EigenFactory : public GenericLinearAlgebraFactory
   {
   public:

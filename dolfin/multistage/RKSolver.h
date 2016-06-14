@@ -28,11 +28,10 @@
 
 namespace dolfin
 {
-
-  /// This class is a time integrator for general Runge Kutta problems
-
   // Forward declarations
   class MultiStageScheme;
+
+  /// This class is a time integrator for general Runge Kutta problems
 
   class RKSolver
   {

@@ -123,16 +123,19 @@ namespace dolfin
     //--- Implementation of ufc::function interface ---
 
     /// Evaluate function at given point in cell
+    /// @param values
+    /// @param coordinates
+    /// @param cell
     virtual void evaluate(double* values,
                           const double* coordinates,
                           const ufc::cell& cell) const;
 
-    // Pointer to FunctionSpace, if appropriate, otherwise NULL
+    /// Pointer to FunctionSpace, if appropriate, otherwise NULL
     virtual std::shared_ptr<const FunctionSpace> function_space() const = 0;
 
   protected:
 
-    // Restrict as UFC function (by calling eval)
+    /// Restrict as UFC function (by calling eval)
     void restrict_as_ufc_function(double* w,
                                   const FiniteElement& element,
                                   const Cell& dolfin_cell,

@@ -93,8 +93,8 @@ namespace dolfin
     /// process p1 in out_values[p1]
     template<typename T>
       static void all_to_all(MPI_Comm comm,
-                             std::vector<std::vector<T> >& in_values,
-                             std::vector<std::vector<T> >& out_values);
+                             std::vector<std::vector<T>>& in_values,
+                             std::vector<std::vector<T>>& out_values);
 
     /// Broadcast vector of value from broadcaster to all processes
     template<typename T>
@@ -279,8 +279,8 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template<typename T>
     void dolfin::MPI::all_to_all(MPI_Comm comm,
-                                 std::vector<std::vector<T> >& in_values,
-                                 std::vector<std::vector<T> >& out_values)
+                                 std::vector<std::vector<T>>& in_values,
+                                 std::vector<std::vector<T>>& out_values)
   {
     #ifdef HAS_MPI
     const std::size_t comm_size = MPI::size(comm);
@@ -335,8 +335,8 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template<> inline
     void dolfin::MPI::all_to_all(MPI_Comm comm,
-                                 std::vector<std::vector<bool> >& in_values,
-                                 std::vector<std::vector<bool> >& out_values)
+                                 std::vector<std::vector<bool>>& in_values,
+                                 std::vector<std::vector<bool>>& out_values)
   {
     #ifdef HAS_MPI
     // Copy to short int

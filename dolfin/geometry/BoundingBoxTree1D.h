@@ -29,18 +29,18 @@
 namespace dolfin
 {
 
-  // Specialization of bounding box implementation to 1D
+  /// Specialization of bounding box implementation to 1D
 
   class BoundingBoxTree1D : public GenericBoundingBoxTree
   {
   protected:
 
-    // Comparison operator for sorting of bounding boxes. Boxes are
-    // sorted by their midpoints along the longest axis.
-
+    /// Comparison operator for sorting of bounding boxes. Boxes are
+    /// sorted by their midpoints along the longest axis.
     struct less_x
     {
       const std::vector<double>& bboxes;
+
       less_x(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
       inline bool operator()(unsigned int i, unsigned int j)
@@ -51,16 +51,16 @@ namespace dolfin
       }
     };
 
-    // Return geometric dimension
+    /// Return geometric dimension
     std::size_t gdim() const { return 1; }
 
-    // Return bounding box coordinates for node
+    /// Return bounding box coordinates for node
     const double* get_bbox_coordinates(unsigned int node) const
     {
       return _bbox_coordinates.data() + 2*node;
     }
 
-    // Check whether point (x) is in bounding box (node)
+    /// Check whether point (x) is in bounding box (node)
     bool point_in_bbox(const double* x, unsigned int node) const
     {
       const double* b = _bbox_coordinates.data() + 2*node;
@@ -68,7 +68,7 @@ namespace dolfin
       return b[0] - eps <= x[0] && x[0] <= b[1] + eps;
     }
 
-    // Check whether bounding box (a) collides with bounding box (node)
+    /// Check whether bounding box (a) collides with bounding box (node)
     bool bbox_in_bbox(const double* a, unsigned int node) const
     {
       const double* b = _bbox_coordinates.data() + 2*node;
@@ -76,7 +76,7 @@ namespace dolfin
       return b[0] - eps <= a[1] && a[0] <= b[1] + eps;
     }
 
-    // Compute squared distance between point and bounding box
+    /// Compute squared distance between point and bounding box
     double compute_squared_distance_bbox(const double* x,
                                          unsigned int node) const
     {
@@ -94,7 +94,7 @@ namespace dolfin
       return r2;
     }
 
-    // Compute squared distance between point and point
+    /// Compute squared distance between point and point
     double compute_squared_distance_point(const double* x,
                                           unsigned int node) const
     {
@@ -102,7 +102,7 @@ namespace dolfin
       return (x[0] - p[0])*(x[0] - p[0]);
     }
 
-    // Compute bounding box of bounding boxes
+    /// Compute bounding box of bounding boxes
     void compute_bbox_of_bboxes(double* bbox,
                                 std::size_t& axis,
                                 const std::vector<double>& leaf_bboxes,
@@ -129,7 +129,7 @@ namespace dolfin
       axis = 0;
     }
 
-    // Compute bounding box of points
+    /// Compute bounding box of points
     void compute_bbox_of_points(double* bbox,
                                 std::size_t& axis,
                                 const std::vector<Point>& points,
@@ -156,7 +156,7 @@ namespace dolfin
       axis = 0;
     }
 
-    // Sort leaf bounding boxes along given axis
+    /// Sort leaf bounding boxes along given axis
     void sort_bboxes(std::size_t axis,
                      const std::vector<double>& leaf_bboxes,
                      const std::vector<unsigned int>::iterator& begin,

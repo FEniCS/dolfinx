@@ -28,6 +28,8 @@
 namespace dolfin
 {
 
+  /// Logger initialisation
+
   class LogManager
   {
   public:

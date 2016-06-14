@@ -233,31 +233,29 @@ namespace dolfin
 
     /// Evaluate function at given coordinates
     ///
-    /// *Arguments*
-    ///     values (_Array_ <double>)
+    /// @param    values (Array<double>)
     ///         The values.
-    ///     x (_Array_ <double>)
+    /// @param    x (Array<double>)
     ///         The coordinates.
     void eval(Array<double>& values, const Array<double>& x) const;
 
     /// Evaluate function at given coordinates in given cell
     ///
     /// *Arguments*
-    ///     values (_Array_ <double>)
+    /// @param    values (Array<double>)
     ///         The values.
-    ///     x (_Array_ <double>)
+    /// @param    x (Array<double>)
     ///         The coordinates.
-    ///     dolfin_cell (_Cell_)
+    /// @param    dolfin_cell (_Cell_)
     ///         The cell.
-    ///     ufc_cell (ufc::cell)
+    /// @param    ufc_cell (ufc::cell)
     ///         The ufc::cell.
     void eval(Array<double>& values, const Array<double>& x,
               const Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
 
     /// Interpolate function (on possibly non-matching meshes)
     ///
-    /// *Arguments*
-    ///     v (_GenericFunction_)
+    /// @param    v (GenericFunction)
     ///         The function to be interpolated.
     void interpolate(const GenericFunction& v);
 
@@ -290,26 +288,26 @@ namespace dolfin
 
     /// Evaluate at given point in given cell
     ///
-    /// *Arguments*
-    ///     values (_Array_ <double>)
+    /// @param    values (Array<double>)
     ///         The values at the point.
-    ///     x (_Array_ <double>)
+    /// @param   x (Array<double>)
     ///         The coordinates of the point.
-    ///     cell (ufc::cell)
+    /// @param    cell (ufc::cell)
     ///         The cell which contains the given point.
     virtual void eval(Array<double>& values, const Array<double>& x,
                       const ufc::cell& cell) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     ///
-    /// *Arguments*
-    ///     w (list of doubles)
+    /// @param    w (list of doubles)
     ///         Expansion coefficients.
-    ///     element (_FiniteElement_)
+    /// @param    element (_FiniteElement_)
     ///         The element.
-    ///     dolfin_cell (_Cell_)
+    /// @param    dolfin_cell (_Cell_)
     ///         The cell.
-    ///     ufc_cell (ufc::cell).
+    /// @param  coordinate_dofs (double *)
+    ///         The coordinates
+    /// @param    ufc_cell (ufc::cell).
     ///         The ufc::cell.
     virtual void restrict(double* w,
                           const FiniteElement& element,
@@ -319,33 +317,29 @@ namespace dolfin
 
     /// Compute values at all mesh vertices
     ///
-    /// *Arguments*
-    ///     vertex_values (_Array_ <double>)
+    /// @param    vertex_values (Array<double>)
     ///         The values at all vertices.
-    ///     mesh (_Mesh_)
+    /// @param    mesh (_Mesh_)
     ///         The mesh.
     virtual void compute_vertex_values(std::vector<double>& vertex_values,
                                        const Mesh& mesh) const;
 
     /// Compute values at all mesh vertices
     ///
-    /// *Arguments*
-    ///     vertex_values (_Array_ <double>)
+    /// @param    vertex_values (Array<double>)
     ///         The values at all vertices.
     void compute_vertex_values(std::vector<double>& vertex_values);
 
     /// Allow extrapolation when evaluating the Function
     ///
-    /// *Arguments*
-    ///     allow_extrapolation (bool)
+    /// @param allow_extrapolation (bool)
     ///         Whether or not permit extrapolation.
     void set_allow_extrapolation(bool allow_extrapolation)
     { _allow_extrapolation = allow_extrapolation; }
 
     /// Check if extrapolation is permitted when evaluating the Function
     ///
-    /// *Returns*
-    ///     bool
+    /// @return bool
     ///         True if extrapolation is permitted, otherwise false
     bool get_allow_extrapolation() const
     { return _allow_extrapolation; }

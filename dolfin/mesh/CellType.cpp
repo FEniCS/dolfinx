@@ -42,7 +42,7 @@ using namespace dolfin;
 
 namespace dolfin
 {
-  // Comparison operator for sorting based on global indices
+  /// Comparison operator for sorting based on global indices
   class GlobalSort
   {
   public:

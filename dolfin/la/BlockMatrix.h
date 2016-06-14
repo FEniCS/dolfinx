@@ -30,8 +30,10 @@
 namespace dolfin
 {
 
-  /// Forward declarations
+  // Forward declarations
   class GenericMatrix;
+
+  /// Block Matrix
 
   class BlockMatrix
   {

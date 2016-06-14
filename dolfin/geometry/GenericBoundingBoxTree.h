@@ -97,31 +97,31 @@ namespace dolfin
 
   protected:
 
-    // Bounding box data. Leaf nodes are indicated by setting child_0
-    // equal to the node itself. For leaf nodes, child_1 is set to the
-    // index of the entity contained in the leaf bounding box.
+    /// Bounding box data. Leaf nodes are indicated by setting child_0
+    /// equal to the node itself. For leaf nodes, child_1 is set to the
+    /// index of the entity contained in the leaf bounding box.
     struct BBox
     {
       unsigned int child_0;
       unsigned int child_1;
     };
 
-    // Topological dimension of leaf entities
+    /// Topological dimension of leaf entities
     std::size_t _tdim;
 
-    // List of bounding boxes (parent-child-entity relations)
+    /// List of bounding boxes (parent-child-entity relations)
     std::vector<BBox> _bboxes;
 
-    // List of bounding box coordinates
+    /// List of bounding box coordinates
     std::vector<double> _bbox_coordinates;
 
-    // Point search tree used to accelerate distance queries
+    /// Point search tree used to accelerate distance queries
     mutable std::shared_ptr<GenericBoundingBoxTree> _point_search_tree;
 
-    // Global tree for mesh ownership of each process (same on all processes)
+    /// Global tree for mesh ownership of each process (same on all processes)
     std::shared_ptr<GenericBoundingBoxTree> _global_tree;
 
-    // Clear existing data if any
+    /// Clear existing data if any
     void clear();
 
     //--- Recursive build functions ---
@@ -143,7 +143,7 @@ namespace dolfin
     // Note that these functions are made static for consistency as
     // some of them need to deal with more than tree.
 
-    /// Compute collisions with point (recursive)
+    // Compute collisions with point (recursive)
     static void
     _compute_collisions(const GenericBoundingBoxTree& tree,
                         const Point& point,
@@ -151,7 +151,7 @@ namespace dolfin
                         std::vector<unsigned int>& entities,
                         const Mesh* mesh);
 
-    /// Compute collisions with tree (recursive)
+    // Compute collisions with tree (recursive)
     static void
     _compute_collisions(const GenericBoundingBoxTree& A,
                         const GenericBoundingBoxTree& B,
@@ -162,20 +162,20 @@ namespace dolfin
                         const Mesh* mesh_A,
                         const Mesh* mesh_B);
 
-    /// Compute first collision (recursive)
+    // Compute first collision (recursive)
     static unsigned int
     _compute_first_collision(const GenericBoundingBoxTree& tree,
                              const Point& point,
                              unsigned int node);
 
-    /// Compute first entity collision (recursive)
+    // Compute first entity collision (recursive)
     static unsigned int
     _compute_first_entity_collision(const GenericBoundingBoxTree& tree,
                                     const Point& point,
                                     unsigned int node,
                                     const Mesh& mesh);
 
-    /// Compute closest entity (recursive)
+    // Compute closest entity (recursive)
     static void _compute_closest_entity(const GenericBoundingBoxTree& tree,
                                         const Point& point,
                                         unsigned int node,
@@ -183,7 +183,7 @@ namespace dolfin
                                         unsigned int& closest_entity,
                                         double& R2);
 
-    /// Compute closest point (recursive)
+    // Compute closest point (recursive)
     static void
     _compute_closest_point(const GenericBoundingBoxTree& tree,
                            const Point& point,
@@ -193,22 +193,22 @@ namespace dolfin
 
     //--- Utility functions ---
 
-    // Compute point search tree if not already done
+    /// Compute point search tree if not already done
     void build_point_search_tree(const Mesh& mesh) const;
 
-    // Compute bounding box of mesh entity
+    /// Compute bounding box of mesh entity
     void compute_bbox_of_entity(double* b,
                                 const MeshEntity& entity,
                                 std::size_t gdim) const;
 
-    // Sort points along given axis
+    /// Sort points along given axis
     void sort_points(std::size_t axis,
                      const std::vector<Point>& points,
                      const std::vector<unsigned int>::iterator& begin,
                      const std::vector<unsigned int>::iterator& middle,
                      const std::vector<unsigned int>::iterator& end);
 
-    // Add bounding box and coordinates
+    /// Add bounding box and coordinates
     inline unsigned int add_bbox(const BBox& bbox,
                                  const double* b,
                                  std::size_t gdim)
@@ -223,19 +223,19 @@ namespace dolfin
       return _bboxes.size() - 1;
     }
 
-    // Return bounding box for given node
+    /// Return bounding box for given node
     inline const BBox& get_bbox(unsigned int node) const
     {
       return _bboxes[node];
     }
 
-    // Return number of bounding boxes
+    /// Return number of bounding boxes
     inline unsigned int num_bboxes() const
     {
       return _bboxes.size();
     }
 
-    // Add bounding box and point coordinates
+    /// Add bounding box and point coordinates
     inline unsigned int add_point(const BBox& bbox,
                                   const Point& point,
                                   std::size_t gdim)
@@ -253,17 +253,16 @@ namespace dolfin
       return _bboxes.size() - 1;
     }
 
-    // Check whether bounding box is a leaf node
+    /// Check whether bounding box is a leaf node
     inline bool is_leaf(const BBox& bbox, unsigned int node) const
     {
       // Leaf nodes are marked by setting child_0 equal to the node itself
       return bbox.child_0 == node;
     }
 
-    // Comparison operators for sorting of points. The corresponding
-    // comparison operators for bounding boxes are dimension-dependent
-    // and are therefore implemented in the subclasses.
-
+    /// Comparison operator for sorting of points in x-direction. The corresponding
+    /// comparison operators for bounding boxes are dimension-dependent
+    /// and are therefore implemented in the subclasses.
     struct less_x_point
     {
       const std::vector<Point>& points;
@@ -277,6 +276,9 @@ namespace dolfin
       }
     };
 
+    /// Comparison operator for sorting of points in y-direction. The corresponding
+    /// comparison operators for bounding boxes are dimension-dependent
+    /// and are therefore implemented in the subclasses.
     struct less_y_point
     {
       const std::vector<Point>& points;
@@ -290,9 +292,13 @@ namespace dolfin
       }
     };
 
+    /// Comparison operator for sorting of points in z-direction. The corresponding
+    /// comparison operators for bounding boxes are dimension-dependent
+    /// and are therefore implemented in the subclasses.
     struct less_z_point
     {
       const std::vector<Point>& points;
+
       less_z_point(const std::vector<Point>& points): points(points) {}
 
       inline bool operator()(unsigned int i, unsigned int j)
@@ -305,29 +311,29 @@ namespace dolfin
 
     //--- Dimension-dependent functions to be implemented by subclass ---
 
-    // Return geometric dimension
+    /// Return geometric dimension
     virtual std::size_t gdim() const = 0;
 
-    // Return bounding box coordinates for node
+    /// Return bounding box coordinates for node
     virtual const double* get_bbox_coordinates(unsigned int node) const = 0;
 
-    // Check whether point (x) is in bounding box (node)
+    /// Check whether point (x) is in bounding box (node)
     virtual bool
     point_in_bbox(const double* x, unsigned int node) const = 0;
 
-    // Check whether bounding box (a) collides with bounding box (node)
+    /// Check whether bounding box (a) collides with bounding box (node)
     virtual bool
     bbox_in_bbox(const double* a, unsigned int node) const = 0;
 
-    // Compute squared distance between point and bounding box
+    /// Compute squared distance between point and bounding box
     virtual double
     compute_squared_distance_bbox(const double* x, unsigned int node) const = 0;
 
-    // Compute squared distance between point and point
+    /// Compute squared distance between point and point
     virtual double
     compute_squared_distance_point(const double* x, unsigned int node) const = 0;
 
-    // Compute bounding box of bounding boxes
+    /// Compute bounding box of bounding boxes
     virtual void
     compute_bbox_of_bboxes(double* bbox,
                            std::size_t& axis,
@@ -335,7 +341,7 @@ namespace dolfin
                            const std::vector<unsigned int>::iterator& begin,
                            const std::vector<unsigned int>::iterator& end) = 0;
 
-    // Compute bounding box of points
+    /// Compute bounding box of points
     virtual void
     compute_bbox_of_points(double* bbox,
                            std::size_t& axis,
@@ -343,7 +349,7 @@ namespace dolfin
                            const std::vector<unsigned int>::iterator& begin,
                            const std::vector<unsigned int>::iterator& end) = 0;
 
-    // Sort leaf bounding boxes along given axis
+    /// Sort leaf bounding boxes along given axis
     virtual void
     sort_bboxes(std::size_t axis,
                 const std::vector<double>& leaf_bboxes,
@@ -351,7 +357,7 @@ namespace dolfin
                 const std::vector<unsigned int>::iterator& middle,
                 const std::vector<unsigned int>::iterator& end) = 0;
 
-    // Print out recursively, for debugging
+    /// Print out recursively, for debugging
     void tree_print(std::stringstream& s, unsigned int i);
 
 

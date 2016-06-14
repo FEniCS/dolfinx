@@ -50,7 +50,7 @@ namespace dolfin
   /// @param    assigning_funcs (std::vector<std::shared_ptr<_Function_>>)
   ///         The assigning functions
   void assign(std::shared_ptr<Function> receiving_func,
-	      std::vector<std::shared_ptr<const Function> > assigning_funcs);
+	      std::vector<std::shared_ptr<const Function>> assigning_funcs);
 
   /// Assign sub functions of a single mixed function to single
   /// receiving functions. The number of sub functions in the
@@ -61,7 +61,7 @@ namespace dolfin
   ///         The receiving functions
   /// @param    assigning_func (std::shared_ptr<_Function_>)
   ///         The assigning function
-  void assign(std::vector<std::shared_ptr<Function> > receiving_funcs,
+  void assign(std::vector<std::shared_ptr<Function>> receiving_funcs,
 	      std::shared_ptr<const Function> assigning_func);
 
 }

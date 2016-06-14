@@ -62,7 +62,7 @@ namespace dolfin
                  Direction direction);
 
     /// Constructor
-    FunctionAXPY(std::vector<std::pair<double, const Function*> > pairs);
+    FunctionAXPY(std::vector<std::pair<double, const Function*>> pairs);
 
     /// Copy constructor
     FunctionAXPY(const FunctionAXPY& axpy);
@@ -89,7 +89,7 @@ namespace dolfin
     FunctionAXPY operator/(double scale) const;
 
     /// Return the scalar and Function pairs
-    const std::vector<std::pair<double, const Function*> >& pairs() const;
+    const std::vector<std::pair<double, const Function*>>& pairs() const;
 
   private:
 

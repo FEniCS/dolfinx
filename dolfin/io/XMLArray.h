@@ -39,11 +39,13 @@ namespace pugi
 namespace dolfin
 {
 
+  /// I/O of array data in XML format
+
   class XMLArray
   {
   public:
 
-    // Read XML vector. Vector must have correct size.
+    /// Read XML vector. Vector must have correct size.
     template<typename T>
     static void read(std::vector<T>& x, const pugi::xml_node xml_dolfin);
 

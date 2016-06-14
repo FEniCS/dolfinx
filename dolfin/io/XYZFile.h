@@ -32,6 +32,8 @@ namespace dolfin
 
   class Function;
 
+  /// Simple and light file format for use with Xd3d.
+
   class XYZFile : public GenericFile
   {
   public:

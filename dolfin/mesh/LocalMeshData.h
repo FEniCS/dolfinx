@@ -39,9 +39,8 @@ namespace dolfin
 
   class Mesh;
 
-  /// This class stores mesh data on a local processor corresponding
-  /// to a portion of a (larger) global mesh.
-  ///
+  /// This class stores mesh data on a local processor corresponding to a portion of a (larger) global mesh.
+
   /// Note that the data stored in this class does typically not
   /// correspond to a topologically connected mesh; it merely stores a
   /// list of vertex coordinates, a list of cell-vertex mappings and a
@@ -92,7 +91,7 @@ namespace dolfin
     // Reorder cell data
     void reorder();
 
-    // Holder for geometry data
+    /// Holder for geometry data
     struct Geometry
     {
       Geometry() : dim(-1), num_global_vertices(-1) {}
@@ -122,7 +121,7 @@ namespace dolfin
     };
     Geometry geometry;
 
-    // Holder for topology data
+    /// Holder for topology data
     struct Topology
     {
       Topology() : dim(-1), num_global_cells(-1) {}

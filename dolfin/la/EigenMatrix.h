@@ -47,6 +47,7 @@ namespace dolfin
   {
   public:
 
+    /// Eigen Matrix type
     typedef Eigen::SparseMatrix<double, Eigen::RowMajor, int> eigen_matrix_type;
 
     /// Create empty matrix

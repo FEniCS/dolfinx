@@ -26,6 +26,12 @@
 
 namespace dolfin
 {
+  // Forward declarations
+  class Form;
+  class Function;
+  class GenericDofMap;
+  class GenericVector;
+
   /// Solve problems cell-wise
 
   /// This class solves problems cell-wise. It computes the local
@@ -54,13 +60,6 @@ namespace dolfin
   /// This class can be used for post-processing solutions,
   /// e.g. computing stress fields for visualisation, far more cheaply
   /// that using global projections.
-
-  // Forward declarations
-  class Form;
-  class Function;
-  class GenericDofMap;
-  class GenericVector;
-
   class LocalSolver
   {
   public:

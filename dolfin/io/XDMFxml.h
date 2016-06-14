@@ -29,10 +29,13 @@
 namespace dolfin
 {
 
+  /// Representation of XML associated with an XDMF file
+
   class XDMFxml
   {
   public:
 
+    /// Grouping of topological data
     class TopologyData
     {
     public:
@@ -45,6 +48,7 @@ namespace dolfin
       std::string data;
     };
 
+    /// Grouping of geometric data
     class GeometryData
     {
     public:
@@ -119,8 +123,8 @@ namespace dolfin
                        const std::string format,
                        const bool is_reference=false);
 
-     // Split HDF5 paths (file path and internal HDF5 path)
-     static
+    /// Split HDF5 paths (file path and internal HDF5 path)
+    static
      std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& xml_node);
 
   private:

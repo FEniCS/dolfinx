@@ -193,24 +193,17 @@ namespace dolfin
 
     /// Compute squared distance to given point
     ///
-    /// *Arguments*
-    ///     p (_Point_)
+    /// @param p (_Point_)
     ///         The point to compute distance to.
     ///
-    /// *Returns*
-    ///     double
+    /// @return double
     ///         The squared distance.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
+    /// @code{.cpp}
     ///         Point p1(0, 4, 0);
     ///         Point p2(2, 0, 4);
     ///         info("%g", p1.squared_distance(p2));
-    ///
-    ///     output::
-    ///
-    ///         6
+    /// @endcode
     double squared_distance(const Point& p) const;
 
     /// Compute distance to given point

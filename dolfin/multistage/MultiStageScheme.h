@@ -30,15 +30,13 @@
 
 namespace dolfin
 {
-
-  /// This class is a place holder for forms and solutions for a
-  /// multi-stage Butcher tableau based method
-
   // Forward declarations
   class Form;
   class Function;
   class DirichletBC;
   class Constant;
+
+  /// Place-holder for forms and solutions for a multi-stage Butcher tableau based method
 
   class MultiStageScheme : public Variable
   {
