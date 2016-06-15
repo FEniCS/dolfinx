@@ -41,8 +41,10 @@ namespace dolfin
     {
       const std::vector<double>& bboxes;
 
+      /// Constructor
       less_x(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
+      /// Comparison operator
       inline bool operator()(unsigned int i, unsigned int j)
       {
         const double* bi = bboxes.data() + 2*i;

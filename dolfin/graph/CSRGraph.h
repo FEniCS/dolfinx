@@ -52,7 +52,9 @@ namespace dolfin
     {
     public:
 
-    node(const typename std::vector<T>::const_iterator& begin_it,
+      /// Node object, which provides iterators accessing the
+      /// outgoing edge indices of the node
+      node(const typename std::vector<T>::const_iterator& begin_it,
          const typename std::vector<T>::const_iterator& end_it)
       : begin_edge(begin_it), end_edge(end_it) {}
 

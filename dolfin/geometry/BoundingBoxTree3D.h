@@ -43,8 +43,11 @@ namespace dolfin
     struct less_x_bbox
     {
       const std::vector<double>& bboxes;
+
+      /// Constructor
       less_x_bbox(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
+      /// Comparison operator
       inline bool operator()(unsigned int i, unsigned int j)
       {
         const double* bi = bboxes.data() + 6*i;
@@ -57,8 +60,11 @@ namespace dolfin
     struct less_y_bbox
     {
       const std::vector<double>& bboxes;
+
+      /// Constructor
       less_y_bbox(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
+      /// Comparison operator
       inline bool operator()(unsigned int i, unsigned int j)
       {
         const double* bi = bboxes.data() + 6*i;
@@ -71,8 +77,11 @@ namespace dolfin
     struct less_z_bbox
     {
       const std::vector<double>& bboxes;
+
+      /// Constructor
       less_z_bbox(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
+      /// Comparison operator
       inline bool operator()(unsigned int i, unsigned int j)
       {
         const double* bi = bboxes.data() + 6*i;

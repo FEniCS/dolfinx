@@ -39,14 +39,12 @@ namespace dolfin
 
     /// Compute triangulation of intersection of two entities
     ///
-    /// *Arguments*
-    ///     entity_0 (_MeshEntity_)
+    /// @param    entity_0 (_MeshEntity_)
     ///         The first entity.
-    ///     entity_1 (_MeshEntity_)
+    /// @param    entity_1 (_MeshEntity_)
     ///         The second entity.
     ///
-    /// *Returns*
-    ///     std::vector<double>
+    /// @return    std::vector<double>
     ///         A flattened array of simplices of dimension
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
@@ -56,14 +54,12 @@ namespace dolfin
 
     /// Compute triangulation of intersection of two intervals
     ///
-    /// *Arguments*
-    ///     T0 (_MeshEntity_)
+    /// @param    interval_0 (_MeshEntity_)
     ///         The first interval.
-    ///     T1 (_MeshEntity_)
+    /// @param    interval_1 (_MeshEntity_)
     ///         The second interval.
     ///
-    /// *Returns*
-    ///     std::vector<double>
+    /// @return    std::vector<double>
     ///         A flattened array of simplices of dimension
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
@@ -73,14 +69,12 @@ namespace dolfin
 
     /// Compute triangulation of intersection of a triangle and an interval
     ///
-    /// *Arguments*
-    ///     T0 (_MeshEntity_)
+    /// @param    triangle (_MeshEntity_)
     ///         The triangle.
-    ///     T1 (_MeshEntity_)
+    /// @param    interval (_MeshEntity_)
     ///         The interval.
     ///
-    /// *Returns*
-    ///     std::vector<double>
+    /// @return    std::vector<double>
     ///         A flattened array of simplices of dimension
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
@@ -90,14 +84,12 @@ namespace dolfin
 
     /// Compute triangulation of intersection of two triangles
     ///
-    /// *Arguments*
-    ///     T0 (_MeshEntity_)
+    /// @param   triangle_0 (_MeshEntity_)
     ///         The first triangle.
-    ///     T1 (_MeshEntity_)
+    /// @param   triangle_1 (_MeshEntity_)
     ///         The second triangle.
     ///
-    /// *Returns*
-    ///     std::vector<double>
+    /// @return    std::vector<double>
     ///         A flattened array of simplices of dimension
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
@@ -107,14 +99,12 @@ namespace dolfin
 
     /// Compute triangulation of intersection of a tetrahedron and a triangle
     ///
-    /// *Arguments*
-    ///     T0 (_MeshEntity_)
+    /// @param    tetrahedron (_MeshEntity_)
     ///         The tetrahedron.
-    ///     T1 (_MeshEntity_)
+    /// @param   triangle (_MeshEntity_)
     ///         The triangle
     ///
-    /// *Returns*
-    ///     std::vector<double>
+    /// @return    std::vector<double>
     ///         A flattened array of simplices of dimension
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
@@ -124,14 +114,12 @@ namespace dolfin
 
     /// Compute triangulation of intersection of two tetrahedra
     ///
-    /// *Arguments*
-    ///     T0 (_MeshEntity_)
+    /// @param    tetrahedron_0 (_MeshEntity_)
     ///         The first tetrahedron.
-    ///     T1 (_MeshEntity_)
+    /// @param    tetrahedron_1 (_MeshEntity_)
     ///         The second tetrahedron.
     ///
-    /// *Returns*
-    ///     std::vector<double>
+    /// @return    std::vector<double>
     ///         A flattened array of simplices of dimension
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
@@ -139,9 +127,9 @@ namespace dolfin
     triangulate_intersection_tetrahedron_tetrahedron(const MeshEntity& tetrahedron_0,
                                                      const MeshEntity& tetrahedron_1);
 
-    // Function for general intersection computation of two simplices
-    // with different topological dimension but the same geometrical
-    // dimension
+    /// Function for general intersection computation of two simplices
+    /// with different topological dimension but the same geometrical
+    /// dimension
     static std::vector<double>
     triangulate_intersection(const std::vector<Point>& s0,
                              std::size_t tdim0,
@@ -149,19 +137,19 @@ namespace dolfin
                              std::size_t tdim1,
                              std::size_t gdim);
 
-    // Function for computing the intersection of a cell with a flat
-    // vector of simplices with topological dimension tdim. The
-    // geometrical dimension is assumed to be the same as for the
-    // cell.
+    /// Function for computing the intersection of a cell with a flat
+    /// vector of simplices with topological dimension tdim. The
+    /// geometrical dimension is assumed to be the same as for the
+    /// cell.
     static std::vector<double>
     triangulate_intersection(const MeshEntity& cell,
                              const std::vector<double> &triangulation,
                              std::size_t tdim);
 
-    // Function for computing the intersection of a cell with a flat
-    // vector of simplices with topological dimension tdim. The
-    // geometrical dimension is assumed to be the same as for the
-    // cell. The corresponding normals are also saved.
+    /// Function for computing the intersection of a cell with a flat
+    /// vector of simplices with topological dimension tdim. The
+    /// geometrical dimension is assumed to be the same as for the
+    /// cell. The corresponding normals are also saved.
     static void
     triangulate_intersection(const MeshEntity& cell,
                              const std::vector<double>& triangulation,

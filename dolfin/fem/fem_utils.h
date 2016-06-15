@@ -24,8 +24,11 @@
 
 namespace dolfin
 {
-
+  // Forward declarations
+  class Mesh;
   class FunctionSpace;
+  class Function;
+  class MeshGeometry;
 
   /// Return a map between dofs indices and vertex indices
   ///
@@ -59,9 +62,6 @@ namespace dolfin
   ///         The vertex to dof map
   std::vector<dolfin::la_index> vertex_to_dof_map(const FunctionSpace& space);
 
-  class Function;
-  class MeshGeometry;
-
   /// Sets mesh coordinates from function
   ///
   /// Mesh connectivities d-0, d-1, ..., d-r are built on function mesh
@@ -88,8 +88,6 @@ namespace dolfin
   ///         Mesh geometry to be stored
   void get_coordinates(Function& position, const MeshGeometry& geometry);
 
-  class Mesh;
-
   /// Creates mesh from coordinate function
   ///
   /// Topology is given by underlying mesh of the function space and
@@ -107,7 +105,7 @@ namespace dolfin
   ///
   /// @return Mesh
   ///         The mesh
-  Mesh create_mesh(Function& coordinates);
+  Mesh create_mesh(dolfin::Function& coordinates);
 }
 
 #endif

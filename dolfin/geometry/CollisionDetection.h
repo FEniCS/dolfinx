@@ -39,126 +39,108 @@ namespace dolfin
 
     /// Check whether entity collides with point.
     ///
-    /// *Arguments*
-    ///     entity (_MeshEntity_)
+    /// @param    entity (_MeshEntity_)
     ///         The entity.
-    ///     point (_Point_)
+    /// @param    point (_Point_)
     ///         The point.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return    bool
     ///         True iff entity collides with cell.
     static bool collides(const MeshEntity& entity,
 			 const Point& point);
 
     /// Check whether two entities collide.
     ///
-    /// *Arguments*
-    ///     entity_0 (_MeshEntity_)
+    /// @param    entity_0 (_MeshEntity_)
     ///         The first entity.
-    ///     entity_1 (_MeshEntity_)
+    /// @param    entity_1 (_MeshEntity_)
     ///         The second entity.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return    bool
     ///         True iff entity collides with cell.
     static bool collides(const MeshEntity& entity_0,
 			 const MeshEntity& entity_1);
 
     /// Check whether interval collides with point.
     ///
-    /// *Arguments*
-    ///     interval (_MeshEntity_)
+    /// @param    interval (MeshEntity)
     ///         The interval.
-    ///     point (_Point_)
+    /// @param    point (Point)
     ///         The point.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return    bool
     ///         True iff objects collide.
     static bool collides_interval_point(const MeshEntity& interval,
 					const Point& point);
 
     /// Check whether interval collides with interval.
     ///
-    /// *Arguments*
-    ///     interval_0 (_MeshEntity_)
+    /// @param    interval_0 (MeshEntity)
     ///         The first interval.
-    ///     interval_1 (_MeshEntity_)
+    /// @param    interval_1 (MeshEntity)
     ///         The second interval.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return    bool
     ///         True iff objects collide.
     static bool collides_interval_interval(const MeshEntity& interval_0,
 					   const MeshEntity& interval_1);
 
     /// Check whether triangle collides with point.
     ///
-    /// *Arguments*
-    ///     triangle (_MeshEntity_)
+    /// @param    triangle (MeshEntity)
     ///         The triangle.
-    ///     point (_Point_)
+    /// @param    point (Point)
     ///         The point.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return    bool
     ///         True iff objects collide.
     static bool collides_triangle_point(const MeshEntity& triangle,
 					const Point& point);
 
     /// Check whether triangle collides with triangle.
     ///
-    /// *Arguments*
-    ///     triangle_0 (_MeshEntity_)
+    /// @param    triangle_0 (_MeshEntity_)
     ///         The first triangle.
-    ///     triangle_1 (_MeshEntity_)
+    /// @param    triangle_1 (_MeshEntity_)
     ///         The second triangle.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return    bool
     ///         True iff objects collide.
     static bool collides_triangle_triangle(const MeshEntity& triangle_0,
 					   const MeshEntity& triangle_1);
 
     /// Check whether tetrahedron collides with point.
     ///
-    /// *Arguments*
-    ///     tetrahedron (_MeshEntity_)
+    /// @param   tetrahedron (MeshEntity)
     ///         The tetrahedron.
-    ///     point (_Point_)
+    /// @param   point (Point)
     ///         The point.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return    bool
     ///         True iff objects collide.
     static bool collides_tetrahedron_point(const MeshEntity& tetrahedron,
                                            const Point& point);
 
     /// Check whether tetrahedron collides with triangle.
     ///
-    /// *Arguments*
-    ///     tetrahedron (_MeshEntity_)
+    /// @param    tetrahedron (_MeshEntity_)
     ///         The tetrahedron.
-    ///     triangle (_MeshEntity_)
+    /// @param    triangle (_MeshEntity_)
     ///         The triangle.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return    bool
     ///         True iff objects collide.
     static bool collides_tetrahedron_triangle(const MeshEntity& tetrahedron,
                                               const MeshEntity& triangle);
 
     /// Check whether tetrahedron collides with tetrahedron.
     ///
-    /// *Arguments*
-    ///     tetrahedron_0 (_MeshEntity_)
+    /// @param    tetrahedron_0 (_MeshEntity_)
     ///         The first tetrahedron.
-    ///     tetrahedron_1 (_MeshEntity_)
+    /// @param    tetrahedron_1 (_MeshEntity_)
     ///         The second tetrahedron.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return   bool
     ///         True iff objects collide.
     static bool collides_tetrahedron_tetrahedron(const MeshEntity& tetrahedron_0,
                                                  const MeshEntity& tetrahedron_1);
@@ -168,23 +150,23 @@ namespace dolfin
 				   const Point& c, const Point& d);
 
 
-    // The implementation of collides_interval_point
+    /// The implementation of collides_interval_point
     static bool collides_interval_point(const Point& p0, const Point& p1,
                                         const Point& point);
 
-    // The implementation of collides_triangle_point
+    /// The implementation of collides_triangle_point
     static bool collides_triangle_point(const Point& p0,
 					const Point& p1,
 					const Point& p2,
 					const Point& point);
 
-    // Specialised implementation of collides_triangle_point in 2D
+    /// Specialised implementation of collides_triangle_point in 2D
     static bool collides_triangle_point_2d(const Point& p0,
                                            const Point& p1,
                                            const Point& p2,
                                            const Point& point);
 
-    // The implementation of collides_tetrahedron_point
+    /// The implementation of collides_tetrahedron_point
     static bool collides_tetrahedron_point(const Point& p0,
 					   const Point& p1,
 					   const Point& p2,

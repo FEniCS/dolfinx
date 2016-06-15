@@ -110,9 +110,11 @@ namespace dolfin
   {
   public:
 
+    /// Constructor on Mesh
     EdgeFunction(std::shared_ptr<const Mesh> mesh)
       : MeshFunction<T>(mesh, 1) {}
 
+    /// Constructor on Mesh and value
     EdgeFunction(std::shared_ptr<const Mesh> mesh, const T& value)
       : MeshFunction<T>(mesh, 1, value) {}
 

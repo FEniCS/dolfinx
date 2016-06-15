@@ -228,10 +228,10 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    // Return pointer to parameter for given key and 0 if not found
+    /// Return pointer to parameter for given key and 0 if not found
     Parameter* find_parameter(std::string key) const;
 
-    // Return pointer to parameter set for given key and 0 if not found
+    /// Return pointer to parameter set for given key and 0 if not found
     Parameters* find_parameter_set(std::string key) const;
 
 
