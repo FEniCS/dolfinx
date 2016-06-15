@@ -39,10 +39,10 @@ namespace dolfin
   {
   public:
 
-    // Constructor
+    /// Constructor
     BlockMatrix(std::size_t m=0, std::size_t n=0);
 
-    // Destructor
+    /// Destructor
     ~BlockMatrix();
 
     /// Set block

@@ -107,7 +107,7 @@ namespace dolfin
   ///
   /// @return Mesh
   ///         The mesh
-  Mesh create_mesh(const Function& coordinates);
+  Mesh create_mesh(Function& coordinates);
 }
 
 #endif

@@ -38,13 +38,15 @@ namespace dolfin
   {
   public:
 
-    /// Simple and light file format for use with Xd3d. Supports
-    /// scalar solution on 2D convex domains. The files only have a
-    /// list of xyz coordinates 'x y u(x,y)=z'
+    /// Simple and light file format for use with Xd3d.
 
+    /// Supports scalar solution on 2D convex domains. The files only have a
+    /// list of xyz coordinates 'x y u(x,y)=z'
     explicit XYZFile(const std::string filename);
     ~XYZFile();
 
+    /// Output Function
+    /// @param u Function
     void operator<< (const Function& u);
 
   private:

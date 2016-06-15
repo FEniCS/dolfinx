@@ -35,10 +35,10 @@ namespace dolfin
   {
   public:
 
-    // Constructor
+    /// Constructor
     explicit RAWFile(const std::string filename);
 
-    // Destructor
+    /// Destructor
     ~RAWFile();
 
     /// Output MeshFunction (int)

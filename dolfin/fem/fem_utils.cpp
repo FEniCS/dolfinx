@@ -274,7 +274,7 @@ void dolfin::get_coordinates(Function& position, const MeshGeometry& geometry)
   _get_set_coordinates(const_cast<MeshGeometry&>(geometry), position, false);
 }
 //-----------------------------------------------------------------------------
-Mesh dolfin::create_mesh(const Function& coordinates)
+Mesh dolfin::create_mesh(Function& coordinates)
 {
   dolfin_assert(coordinates.function_space());
   dolfin_assert(coordinates.function_space()->element());
