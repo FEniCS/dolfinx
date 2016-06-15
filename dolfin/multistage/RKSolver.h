@@ -32,7 +32,6 @@ namespace dolfin
   class MultiStageScheme;
 
   /// This class is a time integrator for general Runge Kutta problems
-
   class RKSolver
   {
   public:
