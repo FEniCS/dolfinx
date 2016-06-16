@@ -54,9 +54,11 @@ namespace dolfin
   {
   public:
 
-     // Tpetra typedefs with default values
+    /// Node type
     typedef Tpetra::MultiVector<>::node_type node_type;
+    /// TpetraVector map type (local index, global index)
     typedef Tpetra::Map<int, dolfin::la_index, node_type> map_type;
+    /// TpetraVector vector type (scalar, local index, global index, node)
     typedef Tpetra::MultiVector<double, int, dolfin::la_index, node_type>
     vector_type;
 
@@ -65,9 +67,6 @@ namespace dolfin
 
     /// Create vector of size N
     TpetraVector(MPI_Comm comm, std::size_t N);
-
-    /// Create vector
-    //explicit TpetraVector(const SparsityPattern& sparsity_pattern);
 
     /// Copy constructor
     TpetraVector(const TpetraVector& x);
@@ -226,7 +225,7 @@ namespace dolfin
     /// Assignment operator
     virtual const TpetraVector& operator= (double a);
 
-    // Update ghost values in vector
+    /// Update ghost values in vector
     virtual void update_ghost_values();
 
     //--- Special functions ---
@@ -242,12 +241,11 @@ namespace dolfin
     /// Assignment operator
     const TpetraVector& operator= (const TpetraVector& x);
 
-    /// output map
-
+    /// output map for debugging
     static void mapdump(Teuchos::RCP<const map_type> xmap,
                         const std::string desc);
 
-    // Dump x.map and ghost_map
+    /// Dump x.map and ghost_map for debugging
     void mapdump(const std::string desc);
 
     friend class TpetraMatrix;

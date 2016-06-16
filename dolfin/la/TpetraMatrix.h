@@ -56,9 +56,11 @@ namespace dolfin
 
   public:
 
-    // Tpetra typedefs with default values
+    /// Matrix type (scalar, local index, global index)
     typedef Tpetra::CrsMatrix<double, int, dolfin::la_index> matrix_type;
+    /// Graph type (local index, global index)
     typedef Tpetra::CrsGraph<int, dolfin::la_index> graph_type;
+    /// Map type (local index, global index)
     typedef Tpetra::Map<int, dolfin::la_index> map_type;
 
     /// Create empty matrix
@@ -204,18 +206,18 @@ namespace dolfin
     /// Assignment operator
     const TpetraMatrix& operator= (const TpetraMatrix& A);
 
+    /// Return Teuchos reference counted pointer to raw matrix
     Teuchos::RCP<matrix_type> mat()
     { return _matA; }
 
+    /// Return Teuchos reference counted pointer to raw matrix (const)
     Teuchos::RCP<const matrix_type> mat() const
     { return _matA; }
 
+    /// Print out a graph, for debugging
     static void graphdump(const Teuchos::RCP<const graph_type> graph);
 
   private:
-
-    // Tpetra norm types
-    //    static const std::map<std::string, NormType> norm_types;
 
     // The matrix
     Teuchos::RCP<matrix_type> _matA;

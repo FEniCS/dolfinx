@@ -101,13 +101,13 @@ namespace dolfin
                       const PETScVector& b,
                       const PETScVector& xl, const PETScVector& xu);
 
-    // Set the TAO solver type
+    /// Set the TAO solver type
     void set_solver(const std::string&);
 
     /// Set PETSC Krylov Solver (ksp) used by TAO
     void set_ksp(const std::string ksp_type = "default");
 
-    // Return TAO solver pointer
+    /// Return TAO solver pointer
     Tao tao() const;
 
     /// Return a list of available Tao solver methods
@@ -142,10 +142,10 @@ namespace dolfin
       return p;
     }
 
-    // Return Matrix shared pointer
+    /// Return Matrix shared pointer
     std::shared_ptr<const PETScMatrix> get_matrix() const;
 
-    // Return load vector shared pointer
+    /// Return load vector shared pointer
     std::shared_ptr<const PETScVector> get_vector() const;
 
   private:

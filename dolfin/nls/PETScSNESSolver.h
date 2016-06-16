@@ -116,6 +116,7 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
+    /// Parameters
     Parameters parameters;
 
     /// Return PETSc SNES pointer

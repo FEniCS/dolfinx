@@ -231,6 +231,7 @@ namespace dolfin
     /// Assignment operator
     virtual const PETScVector& operator= (double a);
 
+    /// Update values shared from remote processes
     virtual void update_ghost_values();
 
     //--- Special functions ---
