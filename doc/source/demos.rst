@@ -10,3 +10,4 @@ DOLFIN demos
    :maxdepth: 1
 
    Poisson equation <demos/pde/poisson/common>
+   Poisson equation (alt) <demos/pde/poisson/demo_poisson_alt.py>
