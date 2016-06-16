@@ -488,9 +488,11 @@ namespace dolfin
   {
   public:
 
+    /// Constructor on Mesh
     CellFunction(std::shared_ptr<const Mesh> mesh)
       : MeshFunction<T>(mesh, mesh->topology().dim()) {}
 
+    /// Constructor on Mesh and value
     CellFunction(std::shared_ptr<const Mesh> mesh, const T& value)
       : MeshFunction<T>(mesh, mesh->topology().dim(), value) {}
   };

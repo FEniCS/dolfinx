@@ -505,8 +505,8 @@ namespace dolfin
     MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
-    // Friend in fem_utils.h
-    friend Mesh create_mesh(Function&);
+    /// Friend in fem_utils.h
+    ///    friend Mesh create_mesh(Function&);
 
   private:
 

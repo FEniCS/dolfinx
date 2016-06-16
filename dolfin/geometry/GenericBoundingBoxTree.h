@@ -102,7 +102,9 @@ namespace dolfin
     /// index of the entity contained in the leaf bounding box.
     struct BBox
     {
+      /// Child 0
       unsigned int child_0;
+      /// Child 1
       unsigned int child_1;
     };
 
@@ -126,13 +128,13 @@ namespace dolfin
 
     //--- Recursive build functions ---
 
-    // Build bounding box tree for entities (recursive)
+    /// Build bounding box tree for entities (recursive)
     unsigned int _build(const std::vector<double>& leaf_bboxes,
                         const std::vector<unsigned int>::iterator& begin,
                         const std::vector<unsigned int>::iterator& end,
                         std::size_t gdim);
 
-    // Build bounding box tree for points (recursive)
+    /// Build bounding box tree for points (recursive)
     unsigned int _build(const std::vector<Point>& points,
                         const std::vector<unsigned int>::iterator& begin,
                         const std::vector<unsigned int>::iterator& end,
@@ -265,9 +267,13 @@ namespace dolfin
     /// and are therefore implemented in the subclasses.
     struct less_x_point
     {
+      /// Points
       const std::vector<Point>& points;
+
+      /// Constructor
       less_x_point(const std::vector<Point>& points): points(points) {}
 
+      /// Comparison operator
       inline bool operator()(unsigned int i, unsigned int j)
       {
         const double* pi = points[i].coordinates();
@@ -281,9 +287,13 @@ namespace dolfin
     /// and are therefore implemented in the subclasses.
     struct less_y_point
     {
+      /// Points
       const std::vector<Point>& points;
+
+      /// Constructor
       less_y_point(const std::vector<Point>& points): points(points) {}
 
+      /// Comparison operator
       inline bool operator()(unsigned int i, unsigned int j)
       {
         const double* pi = points[i].coordinates();
@@ -297,10 +307,13 @@ namespace dolfin
     /// and are therefore implemented in the subclasses.
     struct less_z_point
     {
+      /// Points
       const std::vector<Point>& points;
 
+      /// Constructor
       less_z_point(const std::vector<Point>& points): points(points) {}
 
+      /// Comparison operator
       inline bool operator()(unsigned int i, unsigned int j)
       {
         const double* pi = points[i].coordinates();

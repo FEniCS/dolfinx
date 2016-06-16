@@ -285,15 +285,16 @@ Mesh dolfin::create_mesh(Function& coordinates)
   Mesh mesh1(mesh0.mpi_comm());
 
   // Assign all data except geometry
-  mesh1._topology = mesh0._topology;
-  mesh1._domains = mesh0._domains;
-  mesh1._data = mesh0._data;
-  if (mesh0._cell_type)
-    mesh1._cell_type.reset(CellType::create(mesh0._cell_type->cell_type()));
-  else
-    mesh1._cell_type.reset();
-  mesh1._ordered = mesh0._ordered;
-  mesh1._cell_orientations = mesh0._cell_orientations;
+  mesh1.topology() = mesh0.topology();
+  mesh1.domains() = mesh0.domains();
+  mesh1.data() = mesh0.data();
+
+  //  if (mesh0.type())
+  //    mesh1.type().reset(CellType::create(mesh0.type()->cell_type()));
+  //  else
+  //    mesh1.type().reset();
+  //  mesh1._ordered = mesh0._ordered;
+  //  mesh1._cell_orientations = mesh0._cell_orientations;
 
   // Rename
   mesh1.rename(mesh0.name(), mesh0.label());
@@ -302,15 +303,15 @@ Mesh dolfin::create_mesh(Function& coordinates)
   static_cast<Hierarchical<Mesh>>(mesh1) = mesh0;
 
   // Prepare a new geometry
-  mesh1._geometry.init(mesh0._geometry.dim(),
+  mesh1.geometry().init(mesh0.geometry().dim(),
     coordinates.function_space()->element()->ufc_element()->degree());
-  std::vector<std::size_t> num_entities(mesh0._topology.dim() + 1);
-  for (std::size_t dim = 0; dim <= mesh0._topology.dim(); ++dim)
-    num_entities[dim] = mesh0._topology.size(dim);
-  mesh1._geometry.init_entities(num_entities);
+  std::vector<std::size_t> num_entities(mesh0.topology().dim() + 1);
+  for (std::size_t dim = 0; dim <= mesh0.topology().dim(); ++dim)
+    num_entities[dim] = mesh0.topology().size(dim);
+  mesh1.geometry().init_entities(num_entities);
 
   // Assign coordinates
-  set_coordinates(mesh1._geometry, coordinates);
+  set_coordinates(mesh1.geometry(), coordinates);
 
   return mesh1;
 }

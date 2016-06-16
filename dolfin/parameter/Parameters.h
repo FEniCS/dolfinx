@@ -228,10 +228,10 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    // Return pointer to parameter for given key and 0 if not found
+    /// Return pointer to parameter for given key and 0 if not found
     Parameter* find_parameter(std::string key) const;
 
-    // Return pointer to parameter set for given key and 0 if not found
+    /// Return pointer to parameter set for given key and 0 if not found
     Parameters* find_parameter_set(std::string key) const;
 
 
@@ -267,6 +267,8 @@ namespace dolfin
 
   };
 
+  // Template specialisations
+#ifndef DOXYGEN_IGNORE
   // Specialised templated for unset parameters
   template<> inline void Parameters::add<std::size_t>(std::string key)
   { _parameters[key] = new IntParameter(key); }
@@ -311,7 +313,8 @@ namespace dolfin
   template<> inline void Parameters::add<bool>(std::string key)
   { _parameters[key] = new BoolParameter(key); }
 
-  // Default empty parameters
+#endif
+  /// Default empty parameters
   extern Parameters empty_parameters;
 
 }

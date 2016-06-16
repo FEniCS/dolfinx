@@ -333,6 +333,7 @@ namespace dolfin
     #endif
   }
   //---------------------------------------------------------------------------
+#ifndef DOXYGEN_IGNORE
   template<> inline
     void dolfin::MPI::all_to_all(MPI_Comm comm,
                                  std::vector<std::vector<bool>>& in_values,
@@ -357,6 +358,7 @@ namespace dolfin
     out_values = in_values;
     #endif
   }
+#endif
   //---------------------------------------------------------------------------
   template<typename T>
     void dolfin::MPI::scatter(MPI_Comm comm,
@@ -413,6 +415,7 @@ namespace dolfin
     #endif
   }
   //---------------------------------------------------------------------------
+#ifndef DOXYGEN_IGNORE
   template<> inline
     void dolfin::MPI::scatter(MPI_Comm comm,
                               const std::vector<std::vector<bool> >& in_values,
@@ -436,6 +439,7 @@ namespace dolfin
     out_value = in_values[0];
     #endif
   }
+#endif
   //---------------------------------------------------------------------------
   template<typename T>
     void dolfin::MPI::scatter(MPI_Comm comm,

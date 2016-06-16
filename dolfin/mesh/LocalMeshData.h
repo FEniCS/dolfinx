@@ -75,39 +75,41 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    // Clear all data
+    /// Clear all data
     void clear();
 
-    // Copy data from mesh
+    /// Copy data from mesh
     void extract_mesh_data(const Mesh& mesh);
 
-    // Broadcast mesh data from main process (used when Mesh is created
-    // on one process)
+    /// Broadcast mesh data from main process (used when Mesh is created
+    /// on one process)
     void broadcast_mesh_data(const MPI_Comm mpi_comm);
 
-    // Receive mesh data from main process
+    /// Receive mesh data from main process
     void receive_mesh_data(const MPI_Comm mpi_comm);
 
-    // Reorder cell data
+    /// Reorder cell data
     void reorder();
 
     /// Holder for geometry data
     struct Geometry
     {
+      /// Constructor
       Geometry() : dim(-1), num_global_vertices(-1) {}
 
-      // Geometric dimension
+      /// Geometric dimension
       int dim;
 
-      // Global number of vertices
+      /// Global number of vertices
       std::int64_t num_global_vertices;
 
-      // Coordinates for all vertices stored on local processor
+      /// Coordinates for all vertices stored on local processor
       boost::multi_array<double, 2> vertex_coordinates;
 
-      // Global vertex indices for all vertices stored on local processor
+      /// Global vertex indices for all vertices stored on local processor
       std::vector<std::int64_t> vertex_indices;
 
+      /// Clear data
       void clear()
       {
         dim = -1;
@@ -116,41 +118,45 @@ namespace dolfin
         vertex_indices.clear();
       }
 
-      // Unpack received vertex coordinates
+      /// Unpack received vertex coordinates
       void unpack_vertex_coordinates(const std::vector<double>& values);
     };
+
+    /// Holder for geometry data
     Geometry geometry;
 
     /// Holder for topology data
     struct Topology
     {
+      /// Constructor
       Topology() : dim(-1), num_global_cells(-1) {}
 
-      // Topological dimension
+      /// Topological dimension
       int dim;
 
-      // Global number of cells
+      /// Global number of cells
       std::int64_t num_global_cells;
 
-      // Number of vertices per cell
+      /// Number of vertices per cell
       int num_vertices_per_cell;
 
-      // Global vertex indices for all cells stored on local processor
+      /// Global vertex indices for all cells stored on local processor
       boost::multi_array<std::int64_t, 2> cell_vertices;
 
-      // Global cell numbers for all cells stored on local processor
+      /// Global cell numbers for all cells stored on local processor
       std::vector<std::int64_t> global_cell_indices;
 
-      // Optional process owner for each cell in global_cell_indices
+      /// Optional process owner for each cell in global_cell_indices
       std::vector<int> cell_partition;
 
-      // Optional weight for each cell for partitioning
+      /// Optional weight for each cell for partitioning
       std::vector<std::size_t> cell_weight;
 
-      // Cell type
-      // FIXME: this should replace the need for num_vertices_per_cell and tdim
+      /// Cell type
+      /// FIXME: this should replace the need for num_vertices_per_cell and tdim
       CellType::Type cell_type;
 
+      /// Clear data
       void clear()
       {
         dim = -1;
@@ -162,17 +168,19 @@ namespace dolfin
         cell_weight.clear();
       }
 
-      // Unpack received cell vertices
+      /// Unpack received cell vertices
       void unpack_cell_vertices(const std::vector<std::int64_t>& values);
 
     };
+
+    /// Holder for topology data
     Topology topology;
 
-    // Mesh domain data [dim](line, (cell_index, local_index, value))
+    /// Mesh domain data [dim](line, (cell_index, local_index, value))
     std::map<std::size_t, std::vector<std::pair<std::pair<std::size_t,
       std::size_t>, std::size_t>>> domain_data;
 
-    // Return MPI communicator
+    /// Return MPI communicator
     MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 

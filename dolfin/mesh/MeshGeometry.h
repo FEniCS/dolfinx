@@ -89,12 +89,14 @@ namespace dolfin
       return coordinates.size()/_dim;
     }
 
+    /// Get vertex coordinates
     const double* vertex_coordinates(std::size_t point_index)
     {
       dolfin_assert(point_index < num_vertices());
       return &coordinates[point_index*_dim];
     }
 
+    /// Get vertex coordinates
     const double* point_coordinates(std::size_t point_index)
     {
       dolfin_assert(point_index*_dim < coordinates.size());

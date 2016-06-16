@@ -39,9 +39,13 @@ namespace dolfin
     /// sorted by their midpoints along the longest axis.
     struct less_x
     {
+      /// Bounding boxes
       const std::vector<double>& bboxes;
+
+      /// Constructor
       less_x(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
+      /// Comparison operator
       inline bool operator()(unsigned int i, unsigned int j)
       {
         const double* bi = bboxes.data() + 4*i;
@@ -54,9 +58,13 @@ namespace dolfin
     /// sorted by their midpoints along the longest axis.
     struct less_y
     {
+      /// Bounding boxes
       const std::vector<double>& bboxes;
+
+      /// Constructor
       less_y(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
+      /// Comparison operator
       inline bool operator()(unsigned int i, unsigned int j)
       {
         const double* bi = bboxes.data() + 4*i;

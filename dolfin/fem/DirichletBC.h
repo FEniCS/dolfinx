@@ -126,6 +126,7 @@ namespace dolfin
 
   public:
 
+    /// Map type for DirichletBC
     typedef std::unordered_map<std::size_t, double> Map;
 
     /// Create boundary condition for subdomain

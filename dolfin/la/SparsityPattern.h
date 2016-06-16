@@ -117,7 +117,7 @@ namespace dolfin
     /// Finalize sparsity pattern
     void apply();
 
-    // Return MPI communicator
+    /// Return MPI communicator
     MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 

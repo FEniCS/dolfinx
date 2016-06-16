@@ -30,15 +30,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-double Point::squared_distance(const Point& p) const
-{
-  const double dx = p._x[0] - _x[0];
-  const double dy = p._x[1] - _x[1];
-  const double dz = p._x[2] - _x[2];
-
-  return dx*dx + dy*dy + dz*dz;
-}
-//-----------------------------------------------------------------------------
 const Point Point::cross(const Point& p) const
 {
   Point q;
@@ -48,6 +39,15 @@ const Point Point::cross(const Point& p) const
   q._x[2] = _x[0]*p._x[1] - _x[1]*p._x[0];
 
   return q;
+}
+//-----------------------------------------------------------------------------
+double Point::squared_distance(const Point& p) const
+{
+  const double dx = p._x[0] - _x[0];
+  const double dy = p._x[1] - _x[1];
+  const double dz = p._x[2] - _x[2];
+
+  return dx*dx + dy*dy + dz*dz;
 }
 //-----------------------------------------------------------------------------
 double Point::dot(const Point& p) const

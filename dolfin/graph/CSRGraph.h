@@ -52,6 +52,7 @@ namespace dolfin
     {
     public:
 
+    /// Node object, listing a set of outgoing edges
     node(const typename std::vector<T>::const_iterator& begin_it,
          const typename std::vector<T>::const_iterator& end_it)
       : begin_edge(begin_it), end_edge(end_it) {}
