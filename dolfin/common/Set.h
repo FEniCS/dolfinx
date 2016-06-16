@@ -86,11 +86,11 @@ namespace dolfin
       }
     }
 
-    /// Start iterator
+    /// Iterator to start of Set
     const_iterator begin() const
     { return _x.begin(); }
 
-    /// Iterator beyond end of range
+    /// Iterator to beyond end of Set
     const_iterator end() const
     { return _x.end(); }
 

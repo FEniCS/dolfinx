@@ -44,7 +44,7 @@ namespace dolfin
     /// @param    entity_1 (_MeshEntity_)
     ///         The second entity.
     ///
-    ///     std::vector<double>
+    /// @return    std::vector<double>
     ///         A flattened array of simplices of dimension
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
@@ -54,12 +54,12 @@ namespace dolfin
 
     /// Compute triangulation of intersection of two intervals
     ///
-    /// @param interval_0 (_MeshEntity_)
+    /// @param    interval_0 (_MeshEntity_)
     ///         The first interval.
-    /// @param interval_1 (_MeshEntity_)
+    /// @param    interval_1 (_MeshEntity_)
     ///         The second interval.
     ///
-    /// @return   std::vector<double>
+    /// @return    std::vector<double>
     ///         A flattened array of simplices of dimension
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
@@ -84,13 +84,12 @@ namespace dolfin
 
     /// Compute triangulation of intersection of two triangles
     ///
-    ///  @param triangle_0 (_MeshEntity_)
+    /// @param   triangle_0 (_MeshEntity_)
     ///         The first triangle.
-    ///  @param triangle_1 (_MeshEntity_)
+    /// @param   triangle_1 (_MeshEntity_)
     ///         The second triangle.
     ///
-    /// *Returns*
-    ///     std::vector<double>
+    /// @return    std::vector<double>
     ///         A flattened array of simplices of dimension
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
@@ -100,9 +99,9 @@ namespace dolfin
 
     /// Compute triangulation of intersection of a tetrahedron and a triangle
     ///
-    /// @param tetrahedron (_MeshEntity_)
+    /// @param    tetrahedron (_MeshEntity_)
     ///         The tetrahedron.
-    /// @param triangle (_MeshEntity_)
+    /// @param   triangle (_MeshEntity_)
     ///         The triangle
     ///
     /// @return    std::vector<double>
@@ -115,9 +114,9 @@ namespace dolfin
 
     /// Compute triangulation of intersection of two tetrahedra
     ///
-    /// @param  tetrahedron_0 (_MeshEntity_)
+    /// @param    tetrahedron_0 (_MeshEntity_)
     ///         The first tetrahedron.
-    /// @param tetrahedron_1 (_MeshEntity_)
+    /// @param    tetrahedron_1 (_MeshEntity_)
     ///         The second tetrahedron.
     ///
     /// @return    std::vector<double>
@@ -131,7 +130,6 @@ namespace dolfin
     /// Function for general intersection computation of two simplices
     /// with different topological dimension but the same geometrical
     /// dimension
-    ///
     static std::vector<double>
     triangulate_intersection(const std::vector<Point>& s0,
                              std::size_t tdim0,
