@@ -17,7 +17,7 @@ import os
 
 # Copy demo files into doc directory
 
-# Check that we can find pylint.py
+# Check that we can find pylint.py for converting foo.py.rst to foo.py
 pylit_parser = "../../utils/pylit/pylit.py"
 if os.path.isfile(pylit_parser):
     pass
@@ -29,7 +29,8 @@ import shutil
 # Directories to scan
 subdirs = ["../../demo"]
 
-# Generate .py files from all .py.rst files
+# Copy demo rst files into doc source tree, and generate .py files
+# from all .py.rst files
 topdir = os.getcwd()
 for subdir in subdirs:
     for root, dirs, files in os.walk(subdir):
@@ -39,28 +40,18 @@ for subdir in subdirs:
         if len(rstfiles) == 0:
             continue
 
-        # Copy files to doc directory
-
-        # Compile files
-        #print(files)
-        #print(dirs)
-        #print(root)
-        #os.chdir(root)
-        #print(root)
-        print"---------"
+        # Copy files to doc directory, and run pylit on file if required
         print("Converting rst files in in {} ...".format(root))
-        #for f in rstfiles:
         for f in files:
-            #print(f)
-            #print(topdir)
             shutil.copy(os.path.join(root, f), './demos/')
-            #print(os.path.relpath(f))
-            #print(os.getcwd())
-            command = pylit_parser + " " + './demos/' + f
-            print(command)
-            ret = os.system(command)
-            if not ret == 0:
-                raise RuntimeError("Unable to convert rst file to a .py ({})".format(f))
+
+            # If file is an rst file, run pylit on file
+            if f in rstfiles:
+                command = pylit_parser + " " + './demos/' + f
+                print(command)
+                ret = os.system(command)
+                if not ret == 0:
+                    raise RuntimeError("Unable to convert rst file to a .py ({})".format(f))
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
