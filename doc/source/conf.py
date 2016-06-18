@@ -15,6 +15,54 @@
 import sys
 import os
 
+# Copy demo files into doc directory
+
+# Check that we can find pylint.py
+pylit_parser = "../../utils/pylit/pylit.py"
+if os.path.isfile(pylit_parser):
+    pass
+else:
+    raise RuntimeError("Cannot find pylit.py")
+
+import shutil
+
+# Directories to scan
+subdirs = ["../../demo"]
+
+# Generate .py files from all .py.rst files
+topdir = os.getcwd()
+for subdir in subdirs:
+    for root, dirs, files in os.walk(subdir):
+
+        # Check for .py.rst files
+        rstfiles = [f for f in files if len(f) > 7 and f[-7:] == ".py.rst"]
+        if len(rstfiles) == 0:
+            continue
+
+        # Copy files to doc directory
+
+        # Compile files
+        #print(files)
+        #print(dirs)
+        #print(root)
+        #os.chdir(root)
+        #print(root)
+        print"---------"
+        print("Converting rst files in in {} ...".format(root))
+        #for f in rstfiles:
+        for f in files:
+            #print(f)
+            #print(topdir)
+            shutil.copy(os.path.join(root, f), './demos/')
+            #print(os.path.relpath(f))
+            #print(os.getcwd())
+            command = pylit_parser + " " + './demos/' + f
+            print(command)
+            ret = os.system(command)
+            if not ret == 0:
+                raise RuntimeError("Unable to convert rst file to a .py ({})".format(f))
+
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
