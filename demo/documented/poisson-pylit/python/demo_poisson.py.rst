@@ -5,7 +5,6 @@ This demo is implemented in a single Python file,
 :download:`demo_poisson.py`, which contains both the variational forms
 and the solver.
 
-
 This demo illustrates how to:
 
 * Solve a linear partial differential equation
@@ -56,18 +55,21 @@ In this demo, we shall consider the following definitions of the input
 functions, the domain, and the boundaries:
 
 * :math:`\Omega = [0,1] \times [0,1]` (a unit square)
-* :math:`\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}` (Dirichlet boundary)
-* :math:`\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}` (Neumann boundary)
+* :math:`\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}`
+  (Dirichlet boundary)
+* :math:`\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}`
+  (Neumann boundary)
 * :math:`g = \sin(5x)` (normal derivative)
-* :math:`f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)` (source term)
+* :math:`f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)` (source
+  term)
 
 
 Implementation
 --------------
 
 This description goes through the implementation (in
-:download:`demo_poisson.py`) of a solver for the above described Poisson
-equation step-by-step.
+:download:`demo_poisson.py`) of a solver for the above described
+Poisson equation step-by-step.
 
 First, the :py:mod:`dolfin` module is imported: ::
 
@@ -169,9 +171,6 @@ default settings for solving a variational problem have been
 used. However, the solution process can be controlled in much more
 detail if desired.
 
-.. index::
-   single: File; (in Poisson demo)
-
 A :py:class:`Function <dolfin.functions.function.Function>` can be
 manipulated in various ways, in particular, it can be plotted and
 saved to file. Here, we output the solution to a ``VTK`` file (using
@@ -184,9 +183,3 @@ the :py:func:`plot <dolfin.common.plot.plot>` command: ::
 
     # Plot solution
     plot(u, interactive=True)
-
-
-Complete code
--------------
-
-.. literalinclude:: demo_poisson.py
