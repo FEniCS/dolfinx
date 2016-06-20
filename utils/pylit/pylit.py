@@ -17,7 +17,7 @@
 
 """pylit: bidirectional text <-> code converter
 
-Convert between a *text document* with embedded code 
+Convert between a *text document* with embedded code
 and *source code* with embedded documentation.
 """
 
@@ -188,6 +188,7 @@ defaults = optparse.Values()
 defaults.languages  = DefaultDict("python", # fallback language
                                   {".c":   "c",
                                    ".cc":  "c++",
+                                   ".cpp": "c++",
                                    ".css": "css",
                                    ".py":  "python",
                                    ".sh":  "shell",
