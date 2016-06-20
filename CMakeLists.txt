@@ -1020,12 +1020,13 @@ else()
 endif()
 
 # Add taget to build .py demp files from Python rst input files, and
-# create a target to build .py files from .py.rst files (using pylit)
-file(GLOB_RECURSE rst_files "*.py.rst")
-add_custom_target(python_demos)
+# create a target to build source files from .cpp.rst and .py.rst
+# files (using pylit)
+file(GLOB_RECURSE rst_files "*.py.rst" "*.cpp.rst")
+add_custom_target(demos_source)
 foreach(rst_file ${rst_files})
-  add_custom_command(TARGET python_demos PRE_BUILD
-    COMMAND COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+  add_custom_command(TARGET demos_source PRE_BUILD
+    COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
 endforeach()
@@ -1033,7 +1034,7 @@ endforeach()
 # Add target "demo" for building the demos
 add_custom_target(demo
   COMMAND ${MAKE_PROGRAM}
-  DEPENDS copy_data_test_demo
+  DEPENDS copy_data_test_demo demos_source
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
@@ -1126,7 +1127,7 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_regressiontests" for running regression tests
   add_custom_target(run_regressiontests
     COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
-    DEPENDS copy_data_test_demo demo python_demos
+    DEPENDS copy_data_test_demo demo demos_source
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
   # Add target "run_unittests" for running unit tests
