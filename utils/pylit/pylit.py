@@ -261,6 +261,10 @@ defaults.header_string = '..'
 # Default is Docutils' marker for a `literal block`_::
 
 defaults.code_block_markers = DefaultDict('::')
+defaults.code_block_markers["c++"] = u".. code-block:: cpp"
+#defaults.code_block_markers['python'] = '.. code-block:: python'
+
+print(defaults)
 
 # The `code_block_marker` string is `inserted into a regular expression`_.
 # Language-specific markers can be defined programmatically, e.g. in a
