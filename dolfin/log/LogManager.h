@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2007 Anders Logg
+// Copyright (C) 2003-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Thanks to Jim Tilander for many helpful hints.
 //
 // First added:  2003-03-13
-// Last changed: 2007-05-11
+// Last changed: 2016-06-10
 
 #ifndef __LOG_MANAGER_H
 #define __LOG_MANAGER_H

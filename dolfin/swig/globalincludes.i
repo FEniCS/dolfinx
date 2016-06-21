@@ -20,6 +20,8 @@
 // First added:  2012-01-17
 // Last changed: 2012-01-18
 
+%include <stdint.i>
+
 // Global shared_ptr classes
 // NOTE: These classes need to be declared for all classes in all combined
 // NOTE: modules

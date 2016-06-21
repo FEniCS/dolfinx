@@ -85,11 +85,11 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   // Get global dimensions and local range
   dolfin_assert(tensor_layout.rank() == 2);
 
-  const std::pair<std::size_t, std::size_t> row_range
+  const std::pair<std::int64_t, std::int64_t> row_range
     = tensor_layout.local_range(0);
   const std::size_t m = row_range.second - row_range.first;
 
-  const std::pair<std::size_t, std::size_t> col_range
+  const std::pair<std::int64_t, std::int64_t> col_range
     = tensor_layout.local_range(1);
   const std::size_t n = col_range.second - col_range.first;
 
@@ -201,7 +201,7 @@ std::size_t TpetraMatrix::size(std::size_t dim) const
   return num_elements;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t>
+std::pair<std::int64_t, std::int64_t>
 TpetraMatrix::local_range(std::size_t dim) const
 {
   dolfin_assert(!_matA.is_null());
@@ -679,7 +679,8 @@ void TpetraMatrix::set_diagonal(const GenericVector& x)
   Teuchos::ArrayView<const double> data(&val, 1);
 
   auto range = xx.local_range();
-  for (std::size_t i = 0; i != (range.second - range.first); ++i)
+  std::int64_t local_size = range.second - range.first;
+  for (std::int64_t i = 0; i < local_size; ++i)
   {
     col_idx = range.first + i;
     val = xarr[i];

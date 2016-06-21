@@ -27,14 +27,15 @@ IndexMap::IndexMap() : _block_size(1)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm mpi_comm) : _mpi_comm(mpi_comm), _block_size(1)
+IndexMap::IndexMap(MPI_Comm mpi_comm)
+  : _mpi_comm(mpi_comm), _rank(MPI::rank(mpi_comm)), _block_size(1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
                    std::size_t block_size)
-  : _mpi_comm(mpi_comm)
+  : _mpi_comm(mpi_comm), _rank(MPI::rank(mpi_comm))
 {
   init(local_size, block_size);
 }
@@ -59,9 +60,6 @@ void IndexMap::init(std::size_t local_size, std::size_t block_size)
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> IndexMap::local_range() const
 {
-  // Get my MPI rank
-  const std::size_t rank = MPI::rank(_mpi_comm);
-
   if(_all_ranges.size() == 0)
   {
     warning("Asking for size of uninitialised range");
@@ -69,24 +67,21 @@ std::pair<std::size_t, std::size_t> IndexMap::local_range() const
   }
   else
   {
-    return std::make_pair(_block_size*_all_ranges[rank],
-                          _block_size*_all_ranges[rank + 1]);
+    return std::make_pair(_block_size*_all_ranges[_rank],
+                          _block_size*_all_ranges[_rank + 1]);
   }
 }
 //-----------------------------------------------------------------------------
 std::size_t IndexMap::size(const IndexMap::MapSize type) const
 {
-  // Get my MPI rank
-  const std::size_t rank = MPI::rank(_mpi_comm);
-
   if(_all_ranges.size() == 0)
   {
     warning("Asking for size of uninitialised range");
     return 0;
   }
 
-  const std::size_t owned_size = _block_size*(_all_ranges[rank + 1]
-                                              - _all_ranges[rank]);
+  const std::size_t owned_size = _block_size*(_all_ranges[_rank + 1]
+                                              - _all_ranges[_rank]);
   if (type == IndexMap::MapSize::OWNED)
     return owned_size;
   else if (type == IndexMap::MapSize::GLOBAL)
@@ -115,14 +110,13 @@ void IndexMap::set_local_to_global(const std::vector<std::size_t>& indices)
 {
   _local_to_global = indices;
 
-  const std::size_t mpi_rank = MPI::rank(_mpi_comm);
   for (const auto &node : _local_to_global)
   {
     const std::size_t p
       = std::upper_bound(_all_ranges.begin(), _all_ranges.end(), node)
       - _all_ranges.begin() - 1;
 
-    dolfin_assert(p != mpi_rank);
+    dolfin_assert(p != _rank);
     _off_process_owner.push_back(p);
   }
 }

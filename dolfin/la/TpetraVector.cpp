@@ -137,7 +137,7 @@ std::shared_ptr<GenericVector> TpetraVector::copy() const
 //-----------------------------------------------------------------------------
 void TpetraVector::init(MPI_Comm comm, std::size_t N)
 {
-  std::pair<std::size_t, std::size_t> range = MPI::local_range(comm, N);
+  const std::pair<std::int64_t, std::int64_t> range = MPI::local_range(comm, N);
   std::vector<dolfin::la_index> local_to_global_map;
   _init(comm, range, local_to_global_map);
 }
@@ -180,7 +180,7 @@ std::size_t TpetraVector::local_size() const
     return _x->getLocalLength();
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> TpetraVector::local_range() const
+std::pair<std::int64_t, std::int64_t> TpetraVector::local_range() const
 {
   dolfin_assert(!_x.is_null());
   return std::make_pair(_x->getMap()->getMinGlobalIndex(),
@@ -190,8 +190,8 @@ std::pair<std::size_t, std::size_t> TpetraVector::local_range() const
 bool TpetraVector::owns_index(std::size_t i) const
 {
   dolfin_assert(!_x.is_null());
-  std::pair<std::size_t, std::size_t> range = local_range();
-  return (i >= range.first and i < range.second);
+  const std::pair<std::int64_t, std::int64_t> range = local_range();
+  return ((std::int64_t) i >= range.first and (std::int64_t) i < range.second);
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::get(double* block, std::size_t m,
@@ -629,7 +629,7 @@ GenericLinearAlgebraFactory& TpetraVector::factory() const
 //-----------------------------------------------------------------------------
 void
 TpetraVector::_init(MPI_Comm comm,
-                    std::pair<std::size_t, std::size_t> local_range,
+                    std::pair<std::int64_t, std::int64_t> local_range,
                     const std::vector<dolfin::la_index>& local_to_global_map)
 {
   if (!_x.is_null())

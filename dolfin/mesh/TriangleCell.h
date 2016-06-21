@@ -101,8 +101,8 @@ namespace dolfin
     std::string description(bool plural) const;
 
     /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
-    std::vector<unsigned int> vtk_mapping() const
-    { return std::vector<unsigned int> {0, 1, 2}; }
+    std::vector<std::int8_t> vtk_mapping() const
+    { return {0, 1, 2}; }
 
   private:
 

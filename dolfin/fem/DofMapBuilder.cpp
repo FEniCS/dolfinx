@@ -1376,7 +1376,7 @@ void DofMapBuilder::compute_constrained_mesh_indices(
       else
       {
         // Get number of entities
-        std::map<unsigned int, std::set<unsigned int>> shared_entities;
+        std::map<std::int32_t, std::set<unsigned int>> shared_entities;
         const std::size_t num_entities
           = DistributedMeshTools::number_entities(mesh,
                                                   slave_to_master_mesh_entities,

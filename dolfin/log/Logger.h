@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2013 Anders Logg, 2015 Jan Blechta
+// Copyright (C) 2003-2016 Anders Logg, 2015 Jan Blechta
 //
 // This file is part of DOLFIN.
 //
@@ -69,7 +69,6 @@ namespace dolfin
     /// Issue deprecation warning for removed feature
     void deprecation(std::string feature,
                      std::string version_deprecated,
-                     std::string version_remove,
                      std::string message) const;
 
     /// Begin task (increase indentation level)

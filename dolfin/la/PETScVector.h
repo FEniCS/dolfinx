@@ -27,6 +27,7 @@
 
 #ifdef HAS_PETSC
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
@@ -128,7 +129,7 @@ namespace dolfin
     virtual std::size_t local_size() const;
 
     /// Return ownership range of a vector
-    virtual std::pair<std::size_t, std::size_t> local_range() const;
+    virtual std::pair<std::int64_t, std::int64_t> local_range() const;
 
     /// Determine whether global vector index is owned by this process
     virtual bool owns_index(std::size_t i) const;
@@ -256,7 +257,9 @@ namespace dolfin
     /// Assignment operator
     const PETScVector& operator= (const PETScVector& x);
 
-    friend class PETScBaseMatrix;
+    /// Switch underlying PETSc object. Intended for internal library
+    /// usage.
+    void reset(Vec vec);
 
   private:
 

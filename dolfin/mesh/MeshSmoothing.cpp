@@ -40,7 +40,14 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void MeshSmoothing::smooth(Mesh& mesh, std::size_t num_iterations)
 {
-  log(PROGRESS, "Smoothing mesh");
+  log(PROGRESS, "Smoothing mesh: %s", mesh.str(false).c_str());
+
+  if (mesh.geometry().degree() != 1)
+  {
+    dolfin_error("MeshSmoothing.cpp",
+                 "smooth mesh",
+                 "This function does not support higher-order mesh geometry");
+  }
 
   // Make sure we have cell-facet connectivity
   mesh.init(mesh.topology().dim(), mesh.topology().dim() - 1);
@@ -154,7 +161,7 @@ void MeshSmoothing::smooth_boundary(Mesh& mesh,
                                     std::size_t num_iterations,
                                     bool harmonic_smoothing)
 {
-  cout << "Smoothing boundary of mesh: " << mesh << endl;
+  log(PROGRESS, "Smoothing boundary of mesh: %s", mesh.str(false).c_str());
 
   // Extract boundary of mesh
   BoundaryMesh boundary(mesh, "exterior");
@@ -170,7 +177,14 @@ void MeshSmoothing::snap_boundary(Mesh& mesh,
                                   const SubDomain& sub_domain,
                                   bool harmonic_smoothing)
 {
-  cout << "Snapping boundary of mesh: " << mesh << endl;
+  log(PROGRESS, "Snapping boundary of mesh: %s", mesh.str(false).c_str());
+
+  if (mesh.geometry().degree() != 1)
+  {
+    dolfin_error("MeshSmoothing.cpp",
+                 "snap mesh boundary",
+                 "This function does not support higher-order mesh geometry");
+  }
 
   // Extract boundary of mesh
   BoundaryMesh boundary(mesh, "exterior");
@@ -203,6 +217,13 @@ void MeshSmoothing::move_interior_vertices(Mesh& mesh,
   }
   else
   {
+    if (mesh.geometry().degree() != 1)
+    {
+      dolfin_error("MeshSmoothing.cpp",
+                   "move interior vertices",
+                   "This function does not support higher-order mesh geometry");
+    }
+
     // Use vertex map to update boundary coordinates of original mesh
     const MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);
     for (VertexIterator v(boundary); !v.end(); ++v)

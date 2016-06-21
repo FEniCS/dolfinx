@@ -110,10 +110,10 @@ namespace dolfin
         #endif
       #endif
       p.add("mesh_partitioner", default_mesh_partitioner,
-            {"ParMETIS", "SCOTCH", "Zoltan_RCB", "Zoltan_PHG", "None"});
+            {"ParMETIS", "SCOTCH", "None"});
 
       // Approaches to partitioning (following Zoltan syntax)
-      // but applies to both Zoltan PHG and ParMETIS
+      // but applies to ParMETIS
       p.add("partitioning_approach", "PARTITION",
             {"PARTITION", "REPARTITION", "REFINE"});
 
@@ -123,14 +123,8 @@ namespace dolfin
       p.add("ParMETIS_repartitioning_weight", 1000.0);
       #endif
 
-      #ifdef HAS_TRILINOS
-      // Zoltan PHG partitioner parameters
-      p.add("Zoltan_PHG_REPART_MULTIPLIER", 1.0);
-      #endif
-
       // Mesh refinement
-      p.add("refinement_algorithm",
-            "plaza",
+      p.add("refinement_algorithm", "plaza",
             {"regular_cut", "plaza", "plaza_with_parent_facets"});
 
       //-- Graphs

@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2010-11-29
+// Last changed: 2016-06-10
 
 #ifndef __MESH_GEOMETRY_H
 #define __MESH_GEOMETRY_H
@@ -63,8 +63,8 @@ namespace dolfin
     /// Return number of coordinates
     std::size_t size() const
     {
-      deprecation("MeshGeometry::size()", "1.7.0", "1.8.0",
-                  "Use MeshGeometry::num_vertices() or MeshGeometry::num_points() instead");
+      deprecation("MeshGeometry::size()", "2016.1",
+                  "Use MeshGeometry::num_vertices() or MeshGeometry::num_points() instead.");
       return num_vertices();
     }
 
@@ -127,14 +127,10 @@ namespace dolfin
     /// Return coordinate with local index n as a 3D point value
     Point point(std::size_t n) const;
 
-    /// Clear all data
-    void clear();
-
-    /// Initialize coordinate list to given dimension, number of
-    /// vertices, and degree
+    /// Initialize coordinate list to given dimension and degree
     void init(std::size_t dim, std::size_t degree);
 
-    /// Initialise entities (other than vertices)
+    /// Initialise entities. To be called after init
     void init_entities(const std::vector<std::size_t>& num_entities);
 
     /// Get the number of coordinate points per entity for this degree

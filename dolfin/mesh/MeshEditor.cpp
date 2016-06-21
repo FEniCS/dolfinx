@@ -68,8 +68,7 @@ void MeshEditor::open(Mesh& mesh, std::size_t tdim,
 void MeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
                       std::size_t gdim, std::size_t degree)
 {
-  // Clear old mesh data
-  mesh.clear();
+  // Clear old data
   clear();
 
   // Save mesh and dimension

@@ -1,4 +1,5 @@
-// Copyright (C) 2008 Solveig Bruvoll and Anders Logg
+/* -*- C -*- */
+// Copyright (C) 2016 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -14,19 +15,16 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+
+//=============================================================================
+// SWIG directives for the DOLFIN graph kernel module (pre)
 //
-// First added:  2008-05-02
-// Last changed: 2008-08-11
+// The directives in this file are applied _before_ the header files of the
+// modules has been loaded.
+//=============================================================================
 
-#ifndef __ALE_TYPE_H
-#define __ALE_TYPE_H
-
-namespace dolfin
-{
-
-  /// List of available methods for ALE mesh movement
-  enum class ALEType {lagrange, hermite, harmonic};
-
-}
-
-#endif
+//-----------------------------------------------------------------------------
+// Ignore low-level functions
+//-----------------------------------------------------------------------------
+%ignore dolfin::GraphBuilder::compute_dual_graph;
+%ignore dolfin::SCOTCH::compute_partition;

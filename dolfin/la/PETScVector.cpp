@@ -123,7 +123,8 @@ void PETScVector::init(MPI_Comm comm,
 void PETScVector::get_local(std::vector<double>& values) const
 {
   dolfin_assert(_x);
-  const std::size_t local_size = local_range().second - local_range().first;
+  const auto _local_range = local_range();
+  const std::size_t local_size = _local_range.second - _local_range.first;
   values.resize(local_size);
 
   if (local_size == 0)
@@ -145,7 +146,8 @@ void PETScVector::get_local(std::vector<double>& values) const
 void PETScVector::set_local(const std::vector<double>& values)
 {
   dolfin_assert(_x);
-  const std::size_t local_size = local_range().second - local_range().first;
+  const auto _local_range = local_range();
+  const std::size_t local_size = _local_range.second - _local_range.first;
   if (values.size() != local_size)
   {
     dolfin_error("PETScVector.cpp",
@@ -168,7 +170,8 @@ void PETScVector::set_local(const std::vector<double>& values)
 void PETScVector::add_local(const Array<double>& values)
 {
   dolfin_assert(_x);
-  const std::size_t local_size = local_range().second - local_range().first;
+  const auto _local_range = local_range();
+  const std::size_t local_size = _local_range.second - _local_range.first;
   if (values.size() != local_size)
   {
     dolfin_error("PETScVector.cpp",
@@ -345,7 +348,7 @@ std::size_t PETScVector::local_size() const
   return n;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> PETScVector::local_range() const
+std::pair<std::int64_t, std::int64_t> PETScVector::local_range() const
 {
   dolfin_assert(_x);
 
@@ -358,7 +361,9 @@ std::pair<std::size_t, std::size_t> PETScVector::local_range() const
 //-----------------------------------------------------------------------------
 bool PETScVector::owns_index(std::size_t i) const
 {
-  return i >= local_range().first && i < local_range().second;
+  const auto _local_range = local_range();
+  const std::int64_t _i = i;
+  return _i >= _local_range.first && _i < _local_range.second;
 }
 //-----------------------------------------------------------------------------
 const GenericVector& PETScVector::operator= (const GenericVector& v)
@@ -596,8 +601,9 @@ double PETScVector::sum() const
 double PETScVector::sum(const Array<std::size_t>& rows) const
 {
   dolfin_assert(_x);
-  const std::size_t n0 = local_range().first;
-  const std::size_t n1 = local_range().second;
+  const auto _local_range = local_range();
+  const std::size_t n0 = _local_range.first;
+  const std::size_t n1 = _local_range.second;
 
   // Build sets of local and nonlocal entries
   Set<PetscInt> local_rows;
@@ -784,6 +790,11 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
   }
 }
 //-----------------------------------------------------------------------------
+GenericLinearAlgebraFactory& PETScVector::factory() const
+{
+  return PETScFactory::instance();
+}
+//-----------------------------------------------------------------------------
 void PETScVector::set_options_prefix(std::string options_prefix)
 {
   if (!_x)
@@ -829,9 +840,16 @@ Vec PETScVector::vec() const
   return _x;
 }
 //-----------------------------------------------------------------------------
-GenericLinearAlgebraFactory& PETScVector::factory() const
+void PETScVector::reset(Vec vec)
 {
-  return PETScFactory::instance();
+  dolfin_assert(_x);
+
+  // Decrease reference count to old Vec object
+  VecDestroy(&_x);
+
+  // Store new Vec object and increment reference count
+  _x = vec;
+  PetscObjectReference((PetscObject)_x);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::_init(std::pair<std::size_t, std::size_t> range,

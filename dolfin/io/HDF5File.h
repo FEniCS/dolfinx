@@ -35,6 +35,7 @@
 namespace dolfin
 {
 
+  class CellType;
   class Function;
   class GenericVector;
   class LocalMeshData;
@@ -58,6 +59,9 @@ namespace dolfin
 
     /// Close file
     void close();
+
+    /// Flush buffered I/O to disk
+    void flush();
 
     /// Write points to file
     void write(const std::vector<Point>& points, const std::string name);
@@ -87,24 +91,37 @@ namespace dolfin
     /// Write Function to file with a timestamp
     void write(const Function& u, const std::string name, double timestamp);
 
-    /// Read Function from file and distribute data according to
-    /// the Mesh and dofmap associated with the Function.
-    /// If the 'name' refers to a HDF5 group, then it is assumed
-    /// that the Function data is stored in the datasets within that group.
-    /// If the 'name' refers to a HDF5 dataset within a group, then
-    /// it is assumed that it is a Vector, and the Function will be filled from
-    /// that Vector
+    /// Read Function from file and distribute data according to the
+    /// Mesh and dofmap associated with the Function.  If the 'name'
+    /// refers to a HDF5 group, then it is assumed that the Function
+    /// data is stored in the datasets within that group.  If the
+    /// 'name' refers to a HDF5 dataset within a group, then it is
+    /// assumed that it is a Vector, and the Function will be filled
+    /// from that Vector
     void read(Function& u, const std::string name);
 
-    /// Read Mesh from file and optionally re-use any partition data
-    /// in the file
-    void read(Mesh& mesh, const std::string name,
+    /// Read Mesh from file, using attribute data (e.g., cell type) stored
+    /// in the HDF5 file. Optionally re-use any partition data
+    /// in the file. This function requires all necessary data for
+    /// constructing a Mesh to be present in the HDF5 file.
+    void read(Mesh& mesh, const std::string data_path,
               bool use_partition_from_file) const;
 
-    /// Read in Mesh with given topology and geometry datasets
-    void read(Mesh& input_mesh, const std::string topology_name,
-              const std::string geometry_name,
-              const std::string known_cell_type,
+    /// Construct Mesh with paths to topology and geometry datasets, and
+    /// providing essential meta-data, e.g. geometric dimension and
+    /// cell type. If this data is available in the HDF5 file, it will
+    /// be checked for consistency. Set expected_num_global_cells to a
+    /// negative value if not known.
+    ///
+    /// This function is typically called when using the XDMF format,
+    /// in which case the meta data has alreayd been read from an XML
+    /// file
+    void read(Mesh& input_mesh,
+              const std::string topology_path,
+              const std::string geometry_path,
+              const int gdim , const CellType& cell_type,
+              const std::int64_t expected_num_global_cells,
+              const std::int64_t expected_num_global_points,
               bool use_partition_from_file) const;
 
     /// Write MeshFunction to file in a format suitable for re-reading
@@ -165,8 +182,8 @@ namespace dolfin
     // Get/set attributes of an existing dataset
     HDF5Attribute attributes(const std::string dataset_name);
 
-    /// Flush buffered I/O to disk
-    void flush();
+    hid_t h5_id() const
+    { return _hdf5_file_id; }
 
   private:
 
@@ -210,12 +227,11 @@ namespace dolfin
     template <typename T>
     void write_data(const std::string dataset_name,
                     const std::vector<T>& data,
-                    const std::vector<std::size_t> global_size,
+                    const std::vector<std::int64_t> global_size,
                     bool use_mpi_io);
 
     // HDF5 file descriptor/handle
-    bool hdf5_file_open;
-    hid_t hdf5_file_id;
+    hid_t _hdf5_file_id;
 
     // MPI communicator
     MPI_Comm _mpi_comm;
@@ -226,10 +242,10 @@ namespace dolfin
   template <typename T>
   void HDF5File::write_data(const std::string dataset_name,
                             const std::vector<T>& data,
-                            const std::vector<std::size_t> global_size,
+                            const std::vector<std::int64_t> global_size,
                             bool use_mpi_io)
   {
-    dolfin_assert(hdf5_file_open);
+    dolfin_assert(_hdf5_file_id > 0);
     dolfin_assert(global_size.size() > 0);
 
     // Get number of 'items'
@@ -251,7 +267,7 @@ namespace dolfin
     if (dset_name[0] != '/')
       dset_name = "/" + dataset_name;
 
-    HDF5Interface::write_dataset(hdf5_file_id, dset_name, data,
+    HDF5Interface::write_dataset(_hdf5_file_id, dset_name, data,
                                  range, global_size, use_mpi_io, chunking);
   }
   //---------------------------------------------------------------------------
