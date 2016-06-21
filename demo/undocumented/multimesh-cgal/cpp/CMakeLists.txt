@@ -44,6 +44,6 @@ add_executable(multimesh  main.cpp)
 add_executable(multimesh3 main3.cpp)
 
 # Target libraries
-target_link_libraries(multimesh "${DOLFIN_LIBRARIES};/home/benjamik/software/CGAL-4.8/local/lib/libCGAL.so;/usr/lib/x86_64-linux-gnu/libgmp.so;/usr/lib/x86_64-linux-gnu/libmpfr.so")
+target_link_libraries(multimesh "${DOLFIN_LIBRARIES};/home/benjamik/software/CGAL-4.8.1/local/lib/libCGAL.so;/usr/lib/x86_64-linux-gnu/libgmp.so;/usr/lib/x86_64-linux-gnu/libmpfr.so")
 #target_link_libraries(multimesh2 ${DOLFIN_LIBRARIES})
-target_link_libraries(multimesh3 "${DOLFIN_LIBRARIES};/home/benjamik/software/CGAL-4.8/local/lib/libCGAL.so;/usr/lib/x86_64-linux-gnu/libgmp.so;/usr/lib/x86_64-linux-gnu/libmpfr.so")
+target_link_libraries(multimesh3 "${DOLFIN_LIBRARIES};/home/benjamik/software/CGAL-4.8.1/local/lib/libCGAL.so;/usr/lib/x86_64-linux-gnu/libgmp.so;/usr/lib/x86_64-linux-gnu/libmpfr.so")
