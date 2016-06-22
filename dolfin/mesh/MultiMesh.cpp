@@ -734,9 +734,11 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	  const Point facet_normal = cutting_cell_j.normal(local_facet_index);
 
 	  // Triangulate intersection of cut cell and boundary cell
-	  const Polyhedron Eij_part
-	    = IntersectionTriangulation::triangulate(cut_cell_i,
-						     boundary_cell_j);
+	  // const Polyhedron Eij_part
+	  //   = IntersectionTriangulation::triangulate(cut_cell_i,
+	  //       				     boundary_cell_j);
+          const Polyhedron Eij_part =
+            ConvexTriangulation::triangulate(IntersectionConstruction::intersection(cut_cell_i, boundary_cell_j), gdim);
 
 	  // The intersection should be either empty or one simplex
 	  dolfin_assert(Eij_part.size() <= 1);
