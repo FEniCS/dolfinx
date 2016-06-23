@@ -46,12 +46,13 @@
 // CGAL debugging output
 // #define CGAL_DEBUG_OUTPUT 1
 
-// Includes
-#include <algorithm>
-#include <sstream>
+#include "Point.h"
 #include <dolfin/log/log.h>
 #include <dolfin/math/basic.h>
-#include "Point.h"
+#include <vector>
+#include <algorithm>
+#include <sstream>
+
 
 // Check that results from DOLFIN and CGAL match
 namespace dolfin
