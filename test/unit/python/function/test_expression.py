@@ -728,7 +728,8 @@ def test_doc_string_python_expressions(mesh):
 
     cell_data = CellFunction('size_t', square)
 
-    f3 = MyExpression2(square, cell_data, degree=0)
+    P1 = FiniteElement("Lagrange", square.ufl_cell(), 1)
+    f3 = MyExpression2(square, cell_data, element=P1)
 
     assert id(f3._mesh) == id(square)
     assert id(f3._domain) == id(cell_data)
