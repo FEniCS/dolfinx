@@ -892,12 +892,12 @@ void MultiMesh::_plot() const
   }
 }
 //------------------------------------------------------------------------------
-void MultiMesh::_inclusion_exclusion_overlap
-(std::vector<quadrature_rule>& qr,
- const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
- std::size_t tdim,
- std::size_t gdim,
- std::size_t quadrature_order) const
+void MultiMesh::_inclusion_exclusion_overlap(
+  std::vector<quadrature_rule>& qr,
+  const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
+  std::size_t tdim,
+  std::size_t gdim,
+  std::size_t quadrature_order) const
 {
   begin(PROGRESS, "The inclusion exclusion principle.");
 
@@ -981,11 +981,12 @@ void MultiMesh::_inclusion_exclusion_overlap
 		//   = IntersectionTriangulation::triangulate(initial_simplex,
 		// 					   previous_simplex,
 		// 					   gdim);
-                const Polyhedron intersection = ConvexTriangulation::triangulate(IntersectionConstruction::intersection(initial_simplex,
-                                                                                                                        previous_simplex,
-                                                                                                                        gdim),
-                                                                                 gdim,
-                                                                                 tdim);
+                const Polyhedron intersection = ConvexTriangulation::triangulate(
+                  IntersectionConstruction::intersection(initial_simplex,
+                                                         previous_simplex,
+                                                         gdim),
+                  gdim,
+                  tdim);
 
 		if (intersection.size())
 		{
@@ -997,12 +998,14 @@ void MultiMesh::_inclusion_exclusion_overlap
 		  // FIXME: We could add only if area is sufficiently
 		  // large
 		  for (const Simplex& simplex: intersection)
+                  {
 		    if (simplex.size() == tdim + 1 and
 			!ConvexTriangulation::is_degenerate(simplex))
 		    {
 		      new_polyhedron.push_back(simplex);
 		      any_intersections = true;
 		    }
+                  }
 		}
 	      }
 	    }
@@ -1021,7 +1024,6 @@ void MultiMesh::_inclusion_exclusion_overlap
 	    // Save data
 	    new_intersections.emplace_back(new_keys, new_polyhedron);
 	  }
-
 	}
       }
     }
@@ -1092,7 +1094,9 @@ void MultiMesh::_inclusion_exclusion_interface
   std::vector<double> normals_stage0;
 
   for (const std::pair<IncExcKey, Polyhedron>& pol_pair: previous_intersections)
+  {
     for (const Simplex& simplex: pol_pair.second)
+    {
       if (simplex.size() == tdim_bulk + 1 and
 	  !ConvexTriangulation::is_degenerate(simplex))
       {
@@ -1102,6 +1106,7 @@ void MultiMesh::_inclusion_exclusion_interface
           = ConvexTriangulation::triangulate(IntersectionConstruction::intersection(Eij, simplex, gdim),
                                              gdim, simplex.size()-1);
 	for (const Simplex& s: Eij_cap_Tk)
+        {
 	  if (s.size() == tdim_interface + 1 and
 	      !ConvexTriangulation::is_degenerate(simplex))
 	  {
@@ -1110,7 +1115,10 @@ void MultiMesh::_inclusion_exclusion_interface
 				     quadrature_order, -1.);
 	    _add_normal(normals_stage0, facet_normal, num_pts, gdim);
 	  }
+        }
       }
+    }
+  }
   dolfin_assert(normals_stage0.size() == qr_stage0.first.size());
 
   // Add quadrature rule and normals
@@ -1174,12 +1182,14 @@ void MultiMesh::_inclusion_exclusion_interface
 
 		  // FIXME: We could add only if area is suff large
 		  for (const Simplex& simplex: intersection)
+                  {
 		    if (simplex.size() == tdim_bulk + 1 and
 			!ConvexTriangulation::is_degenerate(simplex))
 		    {
 		      new_polyhedron.push_back(simplex);
 		      any_intersections = true;
 		    }
+                  }
 		}
 	      }
 	    }
@@ -1198,7 +1208,6 @@ void MultiMesh::_inclusion_exclusion_interface
 	    // Save data
 	    new_intersections.emplace_back(new_keys, new_polyhedron);
 	  }
-
 	}
       }
     }
@@ -1212,7 +1221,9 @@ void MultiMesh::_inclusion_exclusion_interface
     std::vector<double> normals_stage;
 
     for (const std::pair<IncExcKey, Polyhedron>& polyhedron: new_intersections)
+    {
       for (const Simplex& simplex: polyhedron.second)
+      {
 	if (simplex.size() == tdim_bulk + 1)
 	{
 	  // const Polyhedron Eij_cap_Tk
@@ -1223,6 +1234,7 @@ void MultiMesh::_inclusion_exclusion_interface
                                                gdim,
                                                simplex.size()-1);
 	  for (const Simplex& s: Eij_cap_Tk)
+          {
 	    if (s.size() == tdim_interface + 1 and
 		!ConvexTriangulation::is_degenerate(s))
 	    {
@@ -1231,7 +1243,10 @@ void MultiMesh::_inclusion_exclusion_interface
 				       quadrature_order, sign);
 	      _add_normal(normals_stage, facet_normal, num_pts, gdim);
 	    }
+          }
 	}
+      }
+    }
     dolfin_assert(normals_stage.size() == qr_stage.first.size());
 
     // Add quadrature rule and normals
@@ -1243,10 +1258,10 @@ void MultiMesh::_inclusion_exclusion_interface
   end();
 }
 //------------------------------------------------------------------------------
-std::vector<std::vector<std::pair<std::size_t, std::size_t> > >
+std::vector<std::vector<std::pair<std::size_t, std::size_t>>>
 MultiMesh::_boundary_facets_to_full_mesh(std::size_t part) const
 {
-  std::vector<std::vector<std::pair<std::size_t, std::size_t> > >
+  std::vector<std::vector<std::pair<std::size_t, std::size_t>>>
     full_to_bdry(_meshes[part]->num_cells());
 
   // Get map from boundary mesh to facets of full mesh
