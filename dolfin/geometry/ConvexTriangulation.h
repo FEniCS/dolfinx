@@ -21,7 +21,9 @@
 #ifndef __CONVEX_TRIANGULATION
 #define __CONVEX_TRIANGULATION
 
+#include "CGALExactArithmetic.h"
 #include "Point.h"
+
 #include <vector>
 
 namespace dolfin
@@ -34,7 +36,8 @@ class ConvexTriangulation
   // Tdim independent wrapper
   static std::vector<std::vector<Point>>
     triangulate(std::vector<Point> p,
-                std::size_t gdim);
+                std::size_t gdim,
+                std::size_t tdim);
 
 
   static std::vector<std::vector<Point>>
@@ -44,6 +47,19 @@ class ConvexTriangulation
   // TODO: Fix this.
   static std::vector<std::vector<Point>>
   triangulate_3d(std::vector<Point> p);
+
+  /// Check whether simplex is degenerate
+  /// FIXME: This function doesn't belong here
+  static bool is_degenerate(const std::vector<Point>& simplex)
+  {
+    return CHECK_CGAL(_is_degenerate(simplex),
+                      cgal_is_degenerate(simplex));
+  }
+
+ private:
+  // Implementation of is_degenerate
+  static bool _is_degenerate(std::vector<Point> simplex);
+
 
 };
 

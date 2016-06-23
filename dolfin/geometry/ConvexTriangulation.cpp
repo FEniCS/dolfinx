@@ -19,18 +19,61 @@
 // Last changed: 2016-06-05
 
 #include "ConvexTriangulation.h"
-
+#include "predicates.h"
 #include <algorithm>
+
+
+namespace
+{
+  struct point_strictly_less
+  {
+    bool operator()(const dolfin::Point & p0, const dolfin::Point& p1)
+    {
+      if (p0.x() != p1.x())
+	return p0.x() < p1.x();
+
+      return p0.y() < p1.y();
+    }
+  };
+
+  inline bool operator==(const dolfin::Point& p0, const dolfin::Point& p1)
+  {
+    return p0.x() == p1.x() && p0.y() == p1.y() && p0.z() == p1.z();
+  }
+
+  inline bool operator!=(const dolfin::Point& p0, const dolfin::Point& p1)
+  {
+    return p0.x() != p1.x() || p0.y() != p1.y() || p0.z() != p1.z();
+  }
+}
+
 
 using namespace dolfin;
 
 
 std::vector<std::vector<Point>>
 ConvexTriangulation::triangulate(std::vector<Point> p,
-            std::size_t gdim)
+                                 std::size_t gdim,
+                                 std::size_t tdim)
 {
-  // For now assume 2D
-  return triangulate_graham_scan(p, gdim);
+  if (tdim == 2 && gdim == 2)
+    return triangulate_graham_scan(p, gdim);
+
+  if (tdim == 1)
+  {
+    // FIXME: Is this correct?
+    if (p.size() > 2)
+      dolfin_error("ConvexTriangulation.cpp",
+                   "triangulate convex polyhedron",
+                   "a convex polyhedron of topological dimension 1 can not have more then 2 points");
+    std::vector<std::vector<Point>> t;
+    t.push_back(p);
+    return t;
+  }
+
+  dolfin_error("ConvexTriangulation.cpp",
+               "triangulate convex polyhedron",
+               "triangulation of polyhedron of topological dimension %u and geometric dimension %u not implemented", tdim, gdim);
 }
 
 
@@ -281,3 +324,50 @@ ConvexTriangulation::triangulate_graham_scan(std::vector<Point> points,
   }
   return triangulation;
  }
+
+
+//-----------------------------------------------------------------------------
+bool ConvexTriangulation::_is_degenerate(std::vector<Point> s)
+{
+  bool is_degenerate = false;
+
+  switch (s.size())
+  {
+  case 0:
+    // FIXME: Is this correct? Is "nothing" degenerate?
+    is_degenerate = true;
+    break;
+  case 1:
+    /// FIXME: Is this correct? Can a point be degenerate?
+    is_degenerate = true;
+    break;
+  case 2:
+    {
+      is_degenerate = s[0]==s[1];
+      // double r[2] = { dolfin::rand(), dolfin::rand() };
+      // is_degenerate = orient2d(s[0].coordinates(), s[1].coordinates(), r) == 0;
+
+      // // FIXME: compare with ==
+      // dolfin_assert(is_degenerate == (s[0] == s[1]));
+
+      break;
+    }
+  case 3:
+    is_degenerate = orient2d(s[0].coordinates(),
+			     s[1].coordinates(),
+			     s[2].coordinates()) == 0;
+    break;
+  default:
+    dolfin_error("IntersectionTriangulation.cpp",
+		 "_is_degenerate",
+		 "Only implemented for simplices of tdim 0, 1 and 2");
+  }
+
+  // if (is_degenerate)
+  //   std::cout << drawtriangle(s)<<" % is degenerate (s.size() = "<<s.size()
+  // 	      <<" volume = " <<orient2d(s[0].coordinates(),
+  // 					s[1].coordinates(),
+  // 					s[2].coordinates()) << std::endl;
+
+  return is_degenerate;
+}
