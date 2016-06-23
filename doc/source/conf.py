@@ -41,22 +41,53 @@ for subdir in subdirs:
         #print(files)
         if len(rstfiles) == 0:
             continue
-        #print("----")
+
+        # Check if we have Python or C++ code
+        cpp_files = [f for f in files if len(f) > 8 and f[-8:] == ".cpp.rst"]
+        py_files = [f for f in files if len(f) > 7 and f[-7:] == ".py.rst"]
+
+        if len(cpp_files) > 0 and len(py_files) > 0:
+            raise RuntimeError("Ooops, don't know how to handle directiries with C++ and Python demos")
 
         # Copy files to doc directory, and run pylit on file if required
         print("Converting rst files in in {} ...".format(root))
         for f in files:
             print(f)
-            shutil.copy(os.path.join(root, f), './demos/')
+            if py_files:
+                # Copy files into documentation demo directory
+                shutil.copy(os.path.join(root, f), './demos/')
 
-            # If file is an rst file, run pylit on file
-            if f in rstfiles:
-                command = pylit_parser + " " + './demos/' + f
-                #print(command)
-                ret = os.system(command)
-                if not ret == 0:
-                    raise RuntimeError("Unable to convert rst file to a .py ({})".format(f))
+                # If file is an rst file, run pylit on file
+                if f in rstfiles:
+                    command = pylit_parser + " " + './demos/' + f
+                    ret = os.system(command)
+                    if not ret == 0:
+                        raise RuntimeError("Unable to convert rst file to a .cpp/py ({})".format(f))
+            elif cpp_files:
+                # Trim cpp from path
+                demo_root = os.path.split(root)[0]
 
+                # Get demo name
+                demo_name = os.path.split(demo_root)[1]
+
+                # Copy files into documentation demo directory
+                print("Copy")
+                print(f)
+                print('./demos/' + demo_name)
+                demo_dir = './demos/' + demo_name + '/'
+                if not os.path.exists(demo_dir):
+                    os.makedirs(demo_dir)
+                shutil.copy(os.path.join(root, f), demo_dir)
+
+                # If file is an rst file, run pylit on file
+                if f in rstfiles:
+                    command = pylit_parser + " " + demo_dir + f
+                    ret = os.system(command)
+                    if not ret == 0:
+                        raise RuntimeError("Unable to convert rst file to a .cpp/py ({})".format(f))
+
+            else:
+                raise RuntimeError("Ooops")
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the

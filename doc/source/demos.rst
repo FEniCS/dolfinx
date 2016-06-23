@@ -18,4 +18,5 @@ DOLFIN demos
    :caption: C++
    :maxdepth: 1
 
-   Poisson equation<demos/main.cpp>
+   Poisson equation<demos/poisson-pylit/main.cpp>
+   Poisson equation (test)<demos/poisson-pylit-test/main.cpp>

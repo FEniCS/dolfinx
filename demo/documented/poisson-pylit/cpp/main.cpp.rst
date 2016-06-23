@@ -35,7 +35,7 @@ of Poisson equation reads: find :math:`u \in V` such that
 .. math::
    a(u, v) = L(v) \quad \forall \ v \in V,
 
-   where :math:`V` is a suitable function space and
+where :math:`V` is a suitable function space and
 
 .. math::
    a(u, v) &= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
