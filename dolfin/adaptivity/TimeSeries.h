@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2012 Anders Logg
+// Copyright (C) 2009-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -46,6 +46,16 @@ namespace dolfin
   class TimeSeries : public Variable
   {
   public:
+
+    /// Create empty time series
+    ///
+    /// *Arguments*
+    ///     mpi_comm (MPI_Comm)
+    ///         An MPI communicator
+    ///     name (std::string)
+    ///         The time series name
+    TimeSeries(std::string name)
+      : TimeSeries(MPI_COMM_WORLD, name) {}
 
     /// Create empty time series
     ///

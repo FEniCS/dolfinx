@@ -82,6 +82,10 @@ namespace dolfin
     enum class UseFilePartition : bool {yes=true, no=false};
 
     /// Constructor
+    XDMFFile(const std::string filename)
+      : XDMFFile(MPI_COMM_WORLD, filename) {}
+
+    /// Constructor
     XDMFFile(MPI_Comm comm, const std::string filename);
 
     /// Destructor

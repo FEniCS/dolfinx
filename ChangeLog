@@ -1,3 +1,5 @@
+2016.1.0 [2016-06-23]
+- Remove support for 'uint'-valued MeshFunction (replaced by 'size_t')
 - Major performance improvements and simplifications of the XDMF IO.
 - Remove Zoltan graph partitioning interface
 - Add new algorithm for computing mesh entiites. Typical speed-up

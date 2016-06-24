@@ -20,7 +20,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-02-21
+// Last changed: 2016-06-10
 
 #include <algorithm>
 #include <array>
@@ -193,8 +193,8 @@ double CellType::h(const MeshEntity& entity) const
 //-----------------------------------------------------------------------------
 double CellType::diameter(const MeshEntity& entity) const
 {
-  deprecation("CellType::diameter()", "1.7.0", "1.8.0",
-              "Use CellType::circumradius() or CellType::h() instead");
+  deprecation("CellType::diameter()", "2016.1",
+              "Use CellType::circumradius() or CellType::h() instead.");
 
   return 2.0*circumradius(entity);
 }
