@@ -213,14 +213,6 @@ namespace dolfin
     void plot(std::shared_ptr<const Variable>
               variable=std::shared_ptr<const Variable>());
 
-    // FIXME: Deprecated? What should it do?
-    void update(std::shared_ptr<const Variable>
-                variable=std::shared_ptr<const Variable>())
-    {
-      warning("VTKPlotter::update is deprecated, use ::plot instead");
-      plot(variable);
-    }
-
     /// Make the current plot interactive
     void interactive(bool enter_eventloop = true);
 

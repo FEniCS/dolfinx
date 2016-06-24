@@ -256,7 +256,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
 
   // Find shortest edge of cell c
   _collapse_edge = false;
-  lmin = 1.0e10*cell.diameter();
+  lmin = 1.0e10*cell.circumradius();
   for (EdgeIterator e(cell); !e.end(); ++e)
   {
     edge_vertex = e->entities(0);
@@ -401,7 +401,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
     if(nid != -1)
     {
       Cell cn(coarse_mesh, nid);
-      double qm = cn.volume() / cn.diameter();
+      double qm = cn.volume() / cn.circumradius();
       if(qm < vol_tol)
       {
         warning("Cell quality too low");
