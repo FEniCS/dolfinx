@@ -180,8 +180,8 @@ void RAWFile::rawNameUpdate(const int counter)
   fileid.fill('0');
   fileid.width(6);
 
-  filestart.assign(_filename, 0, _filename.find("."));
-  extension.assign(_filename, _filename.find("."), _filename.size());
+  filestart.assign(_filename, 0, _filename.find_last_of("."));
+  extension.assign(_filename, _filename.find_last_of("."), _filename.size());
 
   fileid << counter;
   newfilename << filestart << fileid.str() << ".raw";
