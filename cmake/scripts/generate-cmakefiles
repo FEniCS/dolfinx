@@ -79,17 +79,17 @@ target_link_libraries_str = "target_link_libraries(%s "\
 
 # Subdirectories
 sub_directories = ['demo', 'bench']
-
 # Prefix map for subdirectories
 executable_prefixes = dict(demo="demo_",
                            bench="bench_")
 
 # Main file name map for subdirectories
-main_file_names = dict(demo="main.cpp",
-                       bench="main.cpp")
+main_file_names = dict(demo=set(["main.cpp", "main.cpp.rst"]),
+                       bench=set(["main.cpp"]))
 
 # Projects that use custom CMakeLists.txt (shouldn't overwrite)
-exclude_projects = [os.path.join('demo', 'undocumented', 'plot-qt')]
+#exclude_projects = [os.path.join('demo', 'undocumented', 'plot-qt')]
+exclude_projects = []
 
 def generate_cmake_files(subdirectory, generated_files):
     """Search for C++ code and write CMakeLists.txt files"""
@@ -102,7 +102,7 @@ def generate_cmake_files(subdirectory, generated_files):
 
         # For 'cpp' directories, get list of .cpp files
         if "cpp" in dirs:
-            cpp_files = []
+            cpp_files = set()
             program_dir = root + "/cpp"
             program_name = os.path.split(root)[-1]
 
@@ -125,14 +125,16 @@ def generate_cmake_files(subdirectory, generated_files):
             for f in os.listdir(program_dir):
                 filename, extension = os.path.splitext(f)
                 if extension == ".cpp":
-                    cpp_files.append(f)
+                    cpp_files.add(f)
+                if ".cpp.rst" in f:
+                    cpp_files.add(filename)
 
             # If no .cpp continue
             if not cpp_files:
                 continue
 
             # Name of demo and cpp source files
-            if main_file_name in cpp_files:
+            if not main_file_name.isdisjoint(cpp_files):
 
                 # If directory contains a main file we assume that only one
                 # executable should be generated for this directory and all other
@@ -163,7 +165,7 @@ def generate_cmake_files(subdirectory, generated_files):
             filename = os.path.join(program_dir, "CMakeLists.txt")
             generated_files.append(filename)
             with open(filename, "w") as f:
-                print("Creating CMakeLists.txt file:", program_name, program_dir)
+                #print("Creating CMakeLists.txt file:", program_name, program_dir)
                 f.write(cmakelists_str % name_forms)
 
             # FIXME: add command line option for adding files
