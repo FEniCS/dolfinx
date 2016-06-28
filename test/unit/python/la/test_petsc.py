@@ -39,6 +39,7 @@ def test_vector():
     assert x.get_options_prefix() == prefix
 
 
+@skip_if_not_PETSc
 def test_krylov_solver_norm_type():
     "Check setting of norm type used in testing for convergence by PETScKrylovSolver"
 
