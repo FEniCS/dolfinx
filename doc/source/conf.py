@@ -31,6 +31,12 @@ subdirs = ["../../demo"]
 
 # Copy demo rst files into doc source tree, and generate .py files
 # from all .py.rst files
+
+# Create directory to copy demos into
+demo_dir = './demos'
+if not os.path.exists(demo_dir):
+    os.makedirs(demo_dir)
+
 topdir = os.getcwd()
 for subdir in subdirs:
     for root, dirs, files in os.walk(subdir):
