@@ -178,7 +178,8 @@ namespace tools
   //-----------------------------------------------------------------------------
   inline std::string drawtriangle(const std::vector<dolfin::Point> &simplex,
 				  const std::string& color = "'b'",
-				  bool matlab=true)
+				  bool matlab=true,
+				  bool threeD=true)
   {
     std::stringstream ss; ss.precision(15);
     if (simplex.size() == 3)
@@ -187,9 +188,18 @@ namespace tools
 	ss << "drawtriangle(";
       else
 	ss << "drawtriangle2(";
+      if (threeD)
+      {
+	ss<< "["<<simplex[0][0]<<','<<simplex[0][1]<<','<<simplex[0][2]<<"],"
+	  << "["<<simplex[1][0]<<','<<simplex[1][1]<<','<<simplex[1][2]<<"],"
+	  << "["<<simplex[2][0]<<','<<simplex[2][1]<<','<<simplex[2][2]<<"]";
+      }
+      else
+      {
       ss<< "["<<simplex[0][0]<<','<<simplex[0][1]<<"],"
 	<< "["<<simplex[1][0]<<','<<simplex[1][1]<<"],"
 	<< "["<<simplex[2][0]<<','<<simplex[2][1]<<"]";
+      }
       if (matlab)
 	ss << ","<<color<<");";
       else {
@@ -362,6 +372,36 @@ namespace tools
       file.close();
     }
   }
+  //-----------------------------------------------------------------------------
+  inline void writematlab(const std::string& filename,
+			  const dolfin::MultiMesh& mm,
+			  const bool flat=true,
+			  const int t=0)
+  {
+    const bool threeD=!flat;
+    std::stringstream ss;
+    ss<<filename<<"_"<<t<<".m";
+    std::ofstream file(ss.str().c_str());
+    if (!file.good()) { std::cout << "sth wrong with the file " << ss.str()<<'\n'; exit(0); }
+    file.precision(13);
+
+    for (std::size_t i=0; i<mm.num_parts(); ++i)
+    {
+      for (std::size_t e=0; e<mm.part(i)->num_cells(); ++e)
+      {
+	const Cell cell(*mm.part(i), e);
+	std::vector<Point> s = convert(cell);
+	for (Point& p: s)
+	  p[2] = (flat) ? 0 : i;
+	file << drawtriangle(s,"'b'",true,threeD);
+      }
+    }
+    if (flat)
+      file << ";axis square; axis tight; xlabel x; ylabel y; view(2);\n";
+    else
+      file << ";axis square; axis tight; xlabel x; ylabel y; view(-28,10);\n";
+    file.close();
+  }
 
   //-----------------------------------------------------------------------------
   inline void dolfin_write_medit_triangles(const std::string& filename,
@@ -379,12 +419,19 @@ namespace tools
     std::size_t nno=0;
     for (std::size_t i=0; i<mm.num_parts(); ++i)
       nno += mm.part(i)->num_vertices();
-    file << "MeshVersionFormatted 1\nDimension\n2\nVertices\n"
+    const std::size_t gdim = 2;
+    file << "MeshVersionFormatted 1\nDimension\n"<<gdim<<"\nVertices\n"
 	 << nno<<'\n';
     for (std::size_t i=0; i<mm.num_parts(); ++i) {
       const std::vector<double>& coords = mm.part(i)->coordinates();
       for (std::size_t j=0; j<mm.part(i)->num_vertices(); ++j)
+      {
+	if (gdim == 3)
+	  file << coords[2*j]<<' '<<coords[2*j+1]<<' '<<(double)i/mm.num_parts()<<' '<<i+1<<'\n';
+	else if (gdim == 2)
 	file << coords[2*j]<<' '<<coords[2*j+1]<<' '<<i+1<<'\n';
+	else { PPause; }
+      }
     }
 
     // write connectivity
@@ -529,7 +576,8 @@ namespace tools
   }
 
   //-----------------------------------------------------------------------------
-  inline void writemarkers(const MultiMesh& mm,
+  inline void writemarkers(const std::string& filename,
+			   const MultiMesh& mm,
 			   std::size_t step = 0)
   {
     for (std::size_t part = 0; part < mm.num_parts(); ++part)
@@ -544,7 +592,7 @@ namespace tools
       dolfin_write_medit_triangles("cut"+ss.str(),*mm.part(part),step,&cut);
       dolfin_write_medit_triangles("covered"+ss.str(),*mm.part(part),step,&covered);
     }
-    dolfin_write_medit_triangles("multimesh",mm,step);
+    dolfin_write_medit_triangles(filename,mm,step);
 
   }
 
@@ -574,6 +622,7 @@ namespace tools
       for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
       {
 	const Cell cell(*multimesh.part(part), *it);
+	file << cell.midpoint().x() << ' ' << cell.midpoint().y()<<' '<<cell.volume() << std::endl;
 	volume += cell.volume();
 	part_volume += cell.volume();
 	uncut_volume += cell.volume();
