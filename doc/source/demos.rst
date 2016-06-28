@@ -1,18 +1,22 @@
 .. DOLFIN API documentation
 
 
-DOLFIN demos
-============
+Demo documentation
+==================
 
 *Under development*
+
+.. todo:: Give some structure to the demos, e.g. beginner, advanced,
+          linear nonlinear, etc.
+
 
 .. toctree::
    :caption: Python
    :maxdepth: 1
+   :includehidden:
 
    Poisson equation<demos/demo_poisson.py>
    Poisson equation (singular)<demos/demo_singular-poisson.py>
-
 
 .. toctree::
    :caption: C++
