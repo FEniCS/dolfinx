@@ -15,6 +15,15 @@
 import sys
 import os
 
+
+# Create demo CMakeLists.txt files
+current_dir = os.getcwd()
+os.chdir("../../")
+os.system('./cmake/scripts/generate-cmakefiles')
+os.chdir(current_dir)
+
+#../../cmake/scripts/generate-cmakefiles
+
 # Copy demo files into doc directory
 
 # Check that we can find pylint.py for converting foo.py.rst to foo.py
