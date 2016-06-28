@@ -139,25 +139,25 @@ Then follows the definition of the coefficient functions (for
 
 .. code-block:: cpp
 
-    // Source term (right-hand side)
-    class Source : public Expression
-    {
-      void eval(Array<double>& values, const Array<double>& x) const
-      {
-        double dx = x[0] - 0.5;
-        double dy = x[1] - 0.5;
-        values[0] = 10*exp(-(dx*dx + dy*dy) / 0.02);
-      }
-    };
+   // Source term (right-hand side)
+   class Source : public Expression
+   {
+     void eval(Array<double>& values, const Array<double>& x) const
+     {
+       double dx = x[0] - 0.5;
+       double dy = x[1] - 0.5;
+       values[0] = 10*exp(-(dx*dx + dy*dy) / 0.02);
+     }
+   };
 
-    // Normal derivative (Neumann boundary condition)
-    class dUdN : public Expression
-    {
-      void eval(Array<double>& values, const Array<double>& x) const
-      {
-        values[0] = sin(5*x[0]);
-      }
-    };
+   // Normal derivative (Neumann boundary condition)
+   class dUdN : public Expression
+   {
+     void eval(Array<double>& values, const Array<double>& x) const
+     {
+       values[0] = sin(5*x[0]);
+     }
+   };
 
 The ``DirichletBoundary`` is derived from the :cpp:class:`SubDomain`
 class and defines the part of the boundary to which the Dirichlet
@@ -183,9 +183,11 @@ the form file) defined relative to this mesh, we do as follows
 
 .. code-block:: cpp
 
-   // Create mesh and function space
-   auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
-   auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
+   int main()
+   {
+     // Create mesh and function space
+     auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
+     auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
 using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
@@ -242,9 +244,13 @@ visualization and also plot it using the ``plot`` command:
 
 .. code-block:: cpp
 
-   // Save solution in VTK format
-   File file("poisson.pvd");
-   file << u;
+     // Save solution in VTK format
+     File file("poisson.pvd");
+     file << u;
 
-   // Plot solution
-   plot(u);
+     // Plot solution
+     plot(u);
+     interactive();
+
+     return 0;
+   }

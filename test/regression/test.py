@@ -126,6 +126,7 @@ def main():
        os.path.join(demodir, 'documented',   'stokes-mini',                 'cpp'),
        os.path.join(demodir, 'documented',   'tensor-weighted-poisson',     'cpp'),
        os.path.join(demodir, 'documented',   'subdomains-poisson',          'cpp'),
+       os.path.join(demodir, 'documented',   'singular-poisson-rst',        'cpp'),
        ]
 
     # Demos to run
@@ -142,6 +143,9 @@ def main():
                     "Non-existing demo '%s' not marked as not_implemented" % dpath
         elif os.path.basename(dpath) == 'python':
             tmp = dpath.split(os.path.sep)[-2]
+            print("----")
+            print(tmp)
+            print("****")
             if os.path.isfile(os.path.join(dpath, 'demo_' + tmp + '.py')):
                 pydemos.append(dpath)
                 assert not dpath in not_implemented, \
