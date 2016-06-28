@@ -15,8 +15,8 @@ Demo documentation
    :maxdepth: 1
    :includehidden:
 
-   Poisson equation<demos/demo_poisson.py>
-   Poisson equation (singular)<demos/demo_singular-poisson.py>
+   Poisson equation<demos/demo_poisson-pylit.py>
+   Poisson equation (singular)<demos/demo_singular-poisson-rst.py>
 
 .. toctree::
    :caption: C++
