@@ -971,10 +971,21 @@ else()
   set(MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM}")
 endif()
 
+# Add taget to build .py demp files from Python rst input files, and
+# create a target to build source files from .cpp.rst and .py.rst
+# files (using pylit)
+file(GLOB_RECURSE rst_files "*.py.rst" "*.cpp.rst")
+add_custom_target(demos_source)
+foreach(rst_file ${rst_files})
+  add_custom_command(TARGET demos_source PRE_BUILD
+    COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endforeach()
+
 # Add target "demo" for building the demos
 add_custom_target(demo
   COMMAND ${MAKE_PROGRAM}
-  DEPENDS copy_data_test_demo
+  DEPENDS demos_source copy_data_test_demo
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
@@ -1092,12 +1103,6 @@ if (DOLFIN_ENABLE_TESTING)
     COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-vs" "-k" "'not" "slow'"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
-
-  # Add target "run_doctest" for running documentation tests
-  add_custom_target(run_doctest
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
-    DEPENDS copy_data_test_demo
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/documentation")
 
   # Add target "run_styletest" for running documentation tests
   add_custom_target(run_styletest
