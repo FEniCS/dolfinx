@@ -14,6 +14,9 @@ find_package(DOLFIN PATHS ${CMAKE_BINARY_DIR} REQUIRED)
 # helper message
 if (DOLFIN_FOUND)
 
+  # Directories that are commented out correspond to demos that have
+  # not been implemented in C++
+
   # Documented demos
   add_subdirectory(documented/auto-adaptive-poisson/cpp)
   add_subdirectory(documented/bcs/cpp)
@@ -74,6 +77,7 @@ if (DOLFIN_FOUND)
   add_subdirectory(undocumented/meshfunction-refinement/cpp)
   #add_subdirectory(undocumented/multistage-solver/cpp)
   add_subdirectory(undocumented/nonmatching-projection/cpp)
+  add_subdirectory(undocumented/nonmatching-interpolation/cpp)
   #add_subdirectory(undocumented/optimization/cpp)
   #add_subdirectory(undocumented/overlapping-regions/cpp)
   add_subdirectory(undocumented/parallel-refinement/cpp)
