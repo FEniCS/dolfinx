@@ -26,9 +26,7 @@ This script assumes that all functions and classes lives in the dolfin namespace
 # Modified by Johan Hake 2010
 # Modified by Anders E. Johansen 2011
 # Modified by Anders Logg 2014
-#
-# First added:  2010-08-19
-# Last changed: 2014-03-03
+# Modified by Chris Richardson 2016
 
 from __future__ import print_function
 import os, shutil, types, sys
@@ -41,7 +39,7 @@ from dolfin_utils.documentation import extract_doc_representation
 from dolfin_utils.documentation import indent, add_links
 from codeexamples import codesnippets
 
-debug_output = False
+debug_output = True
 
 def output(out):
     global debug_output
@@ -55,9 +53,7 @@ docstring = '%%feature("docstring")  %s "\n%s\n";\n\n'
 cpp_to_python = {
 "std::string": "str",
 "string": "str",
-
 "enum": "int",
-
 "int": "int",
 "unsigned int": "int",
 "uint": "int",
@@ -66,12 +62,10 @@ cpp_to_python = {
 "uint*": "numpy.array(uint)",
 "dolfin::uint*": "numpy.array(uint)",
 "std::size_t*": "numpy.array(uintp)",
-
 "double": "float",
 "double*": "numpy.array(float)",
 "real": "float",
 "dolfin::real": "float",
-
 "bool": "bool",
 }
 
@@ -272,34 +266,31 @@ def map_cpp_type(cpp_type, classnames):
     return cpp_type
 
 def map_argument_and_return_types(text, classnames):
-    """Map C++ types in the *Arguments* and *Returns* sections to corresponding
+    """Map C++ types in the @param and @return sections to corresponding
     Python types using a simple dictionary.
 
     Current implementation assumes the following format:
 
-    *Returns*
-         type
-             description
+    @param name (type)
+       description
 
-    *Arguments*
-         name0 (type)
-             description
-         name1 (type)
-             description
+    @return type
+       description
 
     possibly separated with blank lines.
     """
 
     new_text = text
 
-    # Could perhaps be handled more elegantly if we rely on the formatting?
-    if "*Returns*" in new_text:
-        # Get lines and find line number with *Returns*
+    if "@return" in new_text:
+        # Get lines and find line number with @return
         lines = new_text.split("\n")
-        r_index = ["*Returns*" in l for l in lines].index(True)
+        r_index = ["@return" in l for l in lines].index(True)
+        lines[r_index]  = lines[r_index].replace("@return", "* Returns *\n")
         arg = False
+        print(lines[r_index])
         for e, l in enumerate(lines):
-            if e > r_index and not arg:
+            if e >= r_index and not arg:
                 # First none blank line contains our argument
                 if l.strip():
                     arg = True
@@ -307,14 +298,14 @@ def map_argument_and_return_types(text, classnames):
                     lines[e] = indent(map_cpp_type(l.strip(), classnames), indentation)
         new_text = "\n".join(lines)
 
-    if "*Arguments*" in new_text:
-        # Get lines and find line number with *Arguments*
+    if "@param" in new_text:
+        # Get lines and find line number with @param
         lines = new_text.split("\n")
-        a_index = ["*Arguments*" in l for l in lines].index(True)
+        a_index = ["@param" in l for l in lines].index(True)
         a_indent = len(lines[a_index]) - len(lines[a_index].lstrip())
         n_indent = 0
         for e, l in enumerate(lines):
-            if e > a_index and l.strip():
+            if e >= a_index and l.strip():
                 indentation = len(l) - len(l.lstrip())
                 # End of argument block
                 if indentation <= a_indent:
@@ -376,6 +367,7 @@ def write_docstrings(output_file, module, header, docs, classnames):
     """Write docstrings from a header file."""
 
     output_file.write("// Documentation extracted from: (module=%s, header=%s)\n" % (module, header))
+    print("// Documentation extracted from: (module=%s, header=%s)\n" % (module, header))
 
     documentation = group_overloaded_functions(docs)
     for (classname, parent, comment, func_docs, order) in documentation:

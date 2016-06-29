@@ -102,7 +102,7 @@ namespace dolfin
 
     /// Copy constructor.
     ///
-    /// @param mesh (_Mesh_)
+    /// @param mesh (Mesh)
     ///         Object to be copied.
     Mesh(const Mesh& mesh);
 
@@ -124,7 +124,7 @@ namespace dolfin
     ///
     /// @param comm (MPI_Comm)
     ///         MPI communicator for the mesh.
-    /// @param local_mesh_data (_LocalMeshData_)
+    /// @param local_mesh_data (LocalMeshData)
     ///         Data from which to build the mesh.
     Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data);
 
@@ -133,8 +133,8 @@ namespace dolfin
 
     /// Assignment operator
     ///
-    /// @param mesh (_Mesh_)
-    ///         Another _Mesh_ object.
+    /// @param mesh (Mesh)
+    ///         Another Mesh object.
     const Mesh& operator=(const Mesh& mesh);
 
     /// Get number of vertices in mesh.
@@ -190,7 +190,7 @@ namespace dolfin
 
     /// Get vertex coordinates.
     ///
-    /// @return    std::vector<double>&
+    /// @return std::vector<double>&
     ///         Coordinates of all vertices.
     ///
     std::vector<double>& coordinates()
@@ -198,7 +198,7 @@ namespace dolfin
 
     /// Return coordinates of all vertices (const version).
     ///
-    /// @return    std::vector<double>&
+    /// @return std::vector<double>&
     ///         Coordinates of all vertices.
     ///
     const std::vector<double>& coordinates() const
@@ -206,7 +206,7 @@ namespace dolfin
 
     /// Get cell connectivity.
     ///
-    /// @return  std::vector<std::size_t>
+    /// @return std::vector<unsigned int>&
     ///         Connectivity for all cells.
     ///
     const std::vector<unsigned int>& cells() const
@@ -236,41 +236,43 @@ namespace dolfin
 
     /// Get mesh topology.
     ///
-    /// @return    _MeshTopology_
+    /// @return MeshTopology
     ///         The topology object associated with the mesh.
     MeshTopology& topology()
     { return _topology; }
 
     /// Get mesh topology (const version).
     ///
-    /// @return    _MeshTopology_
+    /// @return MeshTopology
     ///         The topology object associated with the mesh.
     const MeshTopology& topology() const
     { return _topology; }
 
     /// Get mesh geometry.
     ///
-    ///
-    /// @return  _MeshGeometry_
+    /// @return MeshGeometry
     ///         The geometry object associated with the mesh.
     MeshGeometry& geometry()
     { return _geometry; }
 
     /// Get mesh geometry (const version).
     ///
-    /// @return  _MeshGeometry_
+    /// @return MeshGeometry
     ///         The geometry object associated with the mesh.
     const MeshGeometry& geometry() const
     { return _geometry; }
 
     /// Get mesh (sub)domains.
     ///
-    /// @return    _MeshDomains_
+    /// @return MeshDomains
     ///         The (sub)domains associated with the mesh.
     MeshDomains& domains()
     { return _domains; }
 
-    /// Get mesh (sub)domains.
+    /// Get mesh (sub)domains (const).
+    ///
+    /// @return MeshDomains
+    ///         The (sub)domains associated with the mesh.
     const MeshDomains& domains() const
     { return _domains; }
 
@@ -282,21 +284,23 @@ namespace dolfin
     /// tree. It is stored as a (mutable) member of the mesh to enable
     /// sharing of the bounding box tree data structure.
     ///
-    /// @return std::shared_ptr<BoundingBoxTree> BoundingBoxTree
+    /// @return std::shared_ptr<BoundingBoxTree>
     std::shared_ptr<BoundingBoxTree> bounding_box_tree() const;
 
     /// Get mesh data.
     ///
-    /// @return _MeshData_
+    /// @return MeshData&
     ///         The mesh data object associated with the mesh.
     MeshData& data();
 
     /// Get mesh data (const version).
+    /// @return MeshData&
+    ///         The mesh data object associated with the mesh.
     const MeshData& data() const;
 
     /// Get mesh cell type.
     ///
-    /// @return _CellType_
+    /// @return CellType&
     ///         The cell type object associated with the mesh.
     CellType& type()
     { dolfin_assert(_cell_type); return *_cell_type; }
@@ -385,11 +389,11 @@ namespace dolfin
 
     /// Smooth boundary vertices of mesh by local averaging.
     ///
-    /// @param    num_iterations (std::size_t)
+    /// @param  num_iterations (std::size_t)
     ///         Number of iterations to perform smoothing,
     ///         default value is 1.
     ///
-    /// @param    harmonic_smoothing (bool)
+    /// @param  harmonic_smoothing (bool)
     ///         Flag to turn on harmonics smoothing, default
     ///         value is true.
     void smooth_boundary(std::size_t num_iterations=1,
@@ -397,10 +401,10 @@ namespace dolfin
 
     /// Snap boundary vertices of mesh to match given sub domain.
     ///
-    /// @param    sub_domain (_SubDomain_)
+    /// @param sub_domain (_SubDomain_)
     ///         A _SubDomain_ object.
     ///
-    /// @param    harmonic_smoothing (bool)
+    /// @param harmonic_smoothing (bool)
     ///         Flag to turn on harmonics smoothing, default
     ///         value is true.
     void snap_boundary(const SubDomain& sub_domain,
@@ -411,12 +415,12 @@ namespace dolfin
     /// CellFunction<std::size_t> named "cell colors" as mesh data which
     /// holds the colors of the mesh.
     ///
-    /// @param    coloring_type (std::string)
+    /// @param coloring_type (std::string)
     ///         Coloring type, specifying what relation makes two
     ///         cells neighbors, can be one of "vertex", "edge" or
     ///         "facet".
     ///
-    /// @return    std::vector<std::size_t>
+    /// @return std::vector<std::size_t>&
     ///         The colors as a mesh function over the cells of the mesh.
     const std::vector<std::size_t>& color(std::string coloring_type) const;
 
@@ -425,11 +429,11 @@ namespace dolfin
     /// CellFunction<std::size_t> named "cell colors" as mesh data which
     /// holds the colors of the mesh.
     ///
-    /// @param    coloring_type (std::vector<std::size_t>)
+    /// @param coloring_type (std::vector<std::size_t>&)
     ///         Coloring type given as list of topological dimensions,
     ///         specifying what relation makes two mesh entities neighbors.
     ///
-    /// @return   std::vector<std::size_t>
+    /// @return std::vector<std::size_t>&
     ///         The colors as a mesh function over entities of the mesh.
     const std::vector<std::size_t>&
     color(std::vector<std::size_t> coloring_type) const;
@@ -437,7 +441,7 @@ namespace dolfin
     /// Compute minimum cell size in mesh, measured greatest distance
     /// between any two vertices of a cell.
     ///
-    /// @return    double
+    /// @return double
     ///         The minimum cell size. The size is computed using
     ///         Cell::h()
     ///
@@ -446,7 +450,7 @@ namespace dolfin
     /// Compute maximum cell size in mesh, measured greatest distance
     /// between any two vertices of a cell.
     ///
-    /// @return    double
+    /// @return double
     ///         The maximum cell size. The size is computed using
     ///         Cell::h()
     ///
@@ -454,14 +458,14 @@ namespace dolfin
 
     /// Compute minimum cell inradius.
     ///
-    /// @return    double
+    /// @return double
     ///         The minimum of cells' inscribed sphere radii
     ///
     double rmin() const;
 
     /// Compute maximum cell inradius.
     ///
-    /// @return    double
+    /// @return double
     ///         The maximum of cells' inscribed sphere radii
     ///
     double rmax() const;
@@ -476,17 +480,17 @@ namespace dolfin
 
     /// Informal string representation.
     ///
-    /// @param    verbose (bool)
+    /// @param verbose (bool)
     ///         Flag to turn on additional output.
     ///
-    /// @return    std::string
+    /// @return std::string
     ///         An informal representation of the mesh.
     ///
     std::string str(bool verbose) const;
 
     /// Return cell_orientations (const version)
     ///
-    /// @return    std::vector<int>
+    /// @return std::vector<int>
     ///
     ///         Map from cell index to orientation of cell. Is empty
     ///         if cell orientations have not been computed.
@@ -496,7 +500,7 @@ namespace dolfin
     /// global outward direction/normal/orientation. Only defined if
     /// mesh is orientable.
     ///
-    /// @param     global_normal (Expression)
+    /// @param global_normal (Expression)
     ///         A global normal direction to the mesh
     void init_cell_orientations(const Expression& global_normal);
 

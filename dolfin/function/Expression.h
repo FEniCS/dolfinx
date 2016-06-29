@@ -55,31 +55,27 @@ namespace dolfin
 
     /// Create vector-valued expression with given dimension.
     ///
-    /// *Arguments*
-    ///     dim (std::size_t)
-    ///         Dimension of the vector-valued expression.
+    /// @param dim (std::size_t)
+    ///     Dimension of the vector-valued expression.
     explicit Expression(std::size_t dim);
 
     /// Create matrix-valued expression with given dimensions.
     ///
-    /// *Arguments*
-    ///     dim0 (std::size_t)
+    /// @param dim0 (std::size_t)
     ///         Dimension (rows).
-    ///     dim1 (std::size_t)
+    /// @param dim1 (std::size_t)
     ///         Dimension (columns).
     Expression(std::size_t dim0, std::size_t dim1);
 
     /// Create tensor-valued expression with given shape.
     ///
-    /// *Arguments*
-    ///     value_shape (std::vector<std::size_t>)
+    /// @param value_shape (std::vector<std::size_t>)
     ///         Shape of expression.
     explicit Expression(std::vector<std::size_t> value_shape);
 
     /// Copy constructor
     ///
-    /// *Arguments*
-    ///     expression (_Expression_)
+    /// @param expression (Expression)
     ///         Object to be copied.
     Expression(const Expression& expression);
 
@@ -91,7 +87,6 @@ namespace dolfin
 
     /// Evaluate at given point in given cell.
     ///
-    /// *Arguments*
     /// @param    values (Array<double>)
     ///         The values at the point.
     /// @param    x (Array<double>)
@@ -155,8 +150,7 @@ namespace dolfin
     /// Return shared pointer to function space (NULL)
     /// Expression does not have a FunctionSpace
     ///
-    /// *Returns*
-    ///     _FunctionSpace_
+    /// @return FunctionSpace
     ///         Return the shared pointer.
     virtual std::shared_ptr<const FunctionSpace> function_space() const;
 
