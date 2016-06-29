@@ -851,9 +851,10 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-get-demos.in
                ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
-        DESTINATION ${DOLFIN_BIN_DIR}
-  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-        COMPONENT RuntimeExecutables)
+  DESTINATION ${DOLFIN_BIN_DIR}
+  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE
+  GROUP_EXECUTE WORLD_EXECUTE
+  COMPONENT RuntimeExecutables)
 
 
 #------------------------------------------------------------------------------
@@ -886,8 +887,23 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
 endif()
 
 #------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for bench and demos if not
-# exists
+# Generate demo files from rst
+
+message(STATUS "")
+message(STATUS "Generating demo source files")
+message(STATUS "--------------------------------------------------")
+file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
+foreach(rst_file ${demo_rst_files})
+  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+  #add_custom_command(TARGET demos_source PRE_BUILD
+  #  COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
+  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endforeach()
+
+#------------------------------------------------------------------------------
+# Generate CMakeLists.txt files for bench and demos if not existing
+
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
 if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
