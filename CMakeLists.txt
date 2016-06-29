@@ -1132,7 +1132,7 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "runtests" for running all tests
   add_custom_target(runtests
-    DEPENDS run_doctest run_regressiontests run_unittests run_styletest)
+    DEPENDS run_regressiontests run_unittests run_styletest)
 endif()
 
 #------------------------------------------------------------------------------
