@@ -53,8 +53,7 @@ namespace dolfin
   ///
   /// It is a wrapper for the TAO bound constrained solver.
   ///
-  /// *Example*
-  ///    .. code-block:: python
+  /// @code{.py}
   ///
   ///       # Assemble the linear system
   ///       A, b = assemble_system(a, L, bc)
@@ -73,7 +72,7 @@ namespace dolfin
   ///       # Solve the problem
   ///       solver.solve(A, usol.vector(), b , u_min.vector(), u_max.vector())
   ///       info(solver.parameters,True)
-  ///
+  /// @endcode
   class TAOLinearBoundSolver : public Variable, public PETScObject
   {
   public:

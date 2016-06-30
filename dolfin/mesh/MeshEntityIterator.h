@@ -33,27 +33,28 @@ namespace dolfin
   /// over meshes, boundaries and incidence relations. The basic use
   /// is illustrated below.
   ///
-  /// *Example*
   ///
   ///     The following example shows how to iterate over all mesh entities
   ///     of a mesh of topological dimension dim:
   ///
-  ///     .. code-block:: c++
+  /// @code{.cpp}
   ///
   ///         for (MeshEntityIterator e(mesh, dim); !e.end(); ++e)
   ///         {
   ///           e->foo();
   ///         }
+  /// @endcode
   ///
   ///     The following example shows how to iterate over mesh entities of
   ///     topological dimension dim connected (incident) to some mesh entity f:
   ///
-  ///     .. code-block:: c++
+  /// @code{.cpp}
   ///
   ///         for (MeshEntityIterator e(f, dim); !e.end(); ++e)
   ///         {
   ///           e->foo();
   ///         }
+  /// @endcode
   ///
   /// In addition to the general iterator, a set of specific named iterators
   /// are provided for entities of type _Vertex_, _Edge_, _Face_, _Facet_

@@ -36,47 +36,43 @@ public:
 
   /// Translate mesh according to a given vector.
   ///
-  /// *Arguments*
-  ///     mesh (_Mesh_)
+  /// @param mesh (Mesh)
   ///         The mesh
-  ///     point (Point)
+  /// @param point (Point)
   ///         The vector defining the translation.
   static void translate(Mesh& mesh, const Point& point);
 
   /// Rescale mesh by a given scaling factor with respect to a center
   /// point.
   ///
-  /// *Arguments*
-  ///     mesh (_Mesh_)
+  /// @param mesh (Mesh)
   ///         The mesh
-  ///      scale (double)
+  /// @param scale (double)
   ///         The scaling factor.
-  ///      center (Point)
+  /// @param center (Point)
   ///         The center of the scaling.
   static void rescale(Mesh& mesh, const double scale, const Point& center);
 
   /// Rotate mesh around a coordinate axis through center of mass
   /// of all mesh vertices
   ///
-  /// *Arguments*
-  ///     mesh (_Mesh_)
+  /// @param mesh (Mesh)
   ///         The mesh.
-  ///     angle (double)
+  /// @param angle (double)
   ///         The number of degrees (0-360) of rotation.
-  ///     axis (std::size_t)
+  /// @param axis (std::size_t)
   ///         The coordinate axis around which to rotate the mesh.
   static void rotate(Mesh& mesh, double angle, std::size_t axis);
 
   /// Rotate mesh around a coordinate axis through a given point
   ///
-  /// *Arguments*
-  ///     mesh (_Mesh_)
+  /// @param mesh (Mesh)
   ///         The mesh.
-  ///     angle (double)
+  /// @param angle (double)
   ///         The number of degrees (0-360) of rotation.
-  ///     axis (std::size_t)
+  /// @param axis (std::size_t)
   ///         The coordinate axis around which to rotate the mesh.
-  ///     point (_Point_)
+  /// @param point (Point)
   ///         The point around which to rotate the mesh.
   static void rotate(Mesh& mesh, double angle, std::size_t axis,
                      const Point& p);

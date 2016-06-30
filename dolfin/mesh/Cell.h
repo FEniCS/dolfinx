@@ -49,7 +49,6 @@ namespace dolfin
 
     /// Create cell on given mesh with given index
     ///
-    /// *Arguments*
     /// @param    mesh (_Mesh_)
     ///         The mesh.
     /// @param    index (std::size_t)
@@ -70,7 +69,6 @@ namespace dolfin
 
     /// Compute orientation of cell
     ///
-    /// *Returns*
     /// @return     std::size_t
     ///         Orientation of the cell (0 is 'up'/'right', 1 is 'down'/'left')
     std::size_t orientation() const

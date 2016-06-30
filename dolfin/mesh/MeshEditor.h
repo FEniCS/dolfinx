@@ -45,70 +45,64 @@ namespace dolfin
 
     /// Open mesh of given topological and geometrical dimension
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param    mesh (_Mesh_)
     ///         The mesh to open.
-    ///     tdim (std::size_t)
+    /// @param     tdim (std::size_t)
     ///         The topological dimension.
-    ///     gdim (std::size_t)
+    /// @param     gdim (std::size_t)
     ///         The geometrical dimension.
-    ///     degree (std::size_t)
+    /// @param     degree (std::size_t)
     ///         The polynomial degree.
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         Mesh mesh;
     ///         MeshEditor editor;
     ///         editor.open(mesh, 2, 2, 1);
-    ///
+    /// @endcode
     void open(Mesh& mesh, std::size_t tdim, std::size_t gdim, std::size_t degree=1);
 
     /// Open mesh of given cell type, topological and geometrical dimension
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param    mesh (_Mesh_)
     ///         The mesh to open.
-    ///     type (CellType::Type)
+    /// @param    type (CellType::Type)
     ///         Cell type.
-    ///     tdim (std::size_t)
+    /// @param    tdim (std::size_t)
     ///         The topological dimension.
-    ///     gdim (std::size_t)
+    /// @param    gdim (std::size_t)
     ///         The geometrical dimension.
-    ///     degree (std::size_t)
+    /// @param    degree (std::size_t)
     ///         The polynomial degree.
     void open(Mesh& mesh, CellType::Type type, std::size_t tdim,
               std::size_t gdim, std::size_t degree=1);
 
     /// Open mesh of given cell type, topological and geometrical dimension
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param    mesh (_Mesh_)
     ///         The mesh to open.
-    ///     type (std::string)
+    /// @param    type (std::string)
     ///         Cell type.
-    ///     tdim (std::size_t)
+    /// @param    tdim (std::size_t)
     ///         The topological dimension.
-    ///     gdim (std::size_t)
+    /// @param    gdim (std::size_t)
     ///         The geometrical dimension.
-    ///     degree (std::size_t)
+    /// @param    degree (std::size_t)
     ///         The polynomial degree.
     void open(Mesh& mesh, std::string type, std::size_t tdim,
               std::size_t gdim, std::size_t degree=1);
 
     /// Specify number of vertices (serial version)
     ///
-    /// *Arguments*
-    ///     num_vertices (std::size_t)
+    /// @param    num_vertices (std::size_t)
     ///         The number of vertices.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         Mesh mesh;
     ///         MeshEditor editor;
     ///         editor.open(mesh, 2, 2);
     ///         editor.init_vertices(9);
-    ///
+    /// @endcode
     void init_vertices(std::size_t num_vertices)
     { init_vertices_global(num_vertices, num_vertices); }
 
@@ -122,131 +116,119 @@ namespace dolfin
 
     /// Specify number of vertices (distributed version)
     ///
-    /// *Arguments*
-    ///     num_local_vertices (std::size_t)
+    /// @param num_local_vertices (std::size_t)
     ///         The number of vertices on this process.
-    ///     num_global_vertices (std::size_t)
+    /// @param num_global_vertices (std::size_t)
     ///         The number of vertices in distributed mesh.
-    ///     degree (std::size_t)
+    /// @param degree (std::size_t)
     ///         The polynomial degree of the mesh.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         Mesh mesh;
     ///         MeshEditor editor;
     ///         editor.open(mesh, 2, 2);
     ///         editor.init_vertices(4, 8);
-    ///
+    /// @endcode
     void init_vertices_global(std::size_t num_local_vertices,
                               std::size_t num_global_vertices);
 
     /// Specify number of cells (serial version)
     ///
-    /// *Arguments*
-    ///     num_cells (std::size_t)
+    /// @param    num_cells (std::size_t)
     ///         The number of cells.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         Mesh mesh;
     ///         MeshEditor editor;
     ///         editor.open(mesh, 2, 2);
     ///         editor.init_cells(8);
+    /// @endcode
     void init_cells(std::size_t num_cells)
     { init_cells_global(num_cells, num_cells); }
 
     /// Specify number of cells (distributed version)
     ///
-    /// *Arguments*
-    ///     num_local_cells (std::size_t)
+    /// @param num_local_cells (std::size_t)
     ///         The number of local cells.
-    ///     num_global_cells (std::size_t)
+    /// @param num_global_cells (std::size_t)
     ///         The number of cells in distributed mesh.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         Mesh mesh;
     ///         MeshEditor editor;
     ///         editor.open(mesh, 2, 2);
     ///         editor.init_cells(2, 6);
-    ///
+    /// @endcode
     void init_cells_global(std::size_t num_local_cells,
                            std::size_t num_global_cells);
 
     /// Add vertex v at given point p
     ///
-    /// *Arguments*
-    ///     index (std::size_t)
+    /// @param    index (std::size_t)
     ///         The vertex (index).
-    ///     p (_Point_)
+    /// @param    p (_Point_)
     ///         The point.
     void add_vertex(std::size_t index, const Point& p);
 
     /// Add vertex v at given coordinate x
     ///
-    /// *Arguments*
-    ///     index (std::size_t)
+    /// @param    index (std::size_t)
     ///         The vertex (index).
-    ///     x (std::vector<double>)
+    /// @param    x (std::vector<double>)
     ///         The x-coordinates.
     void add_vertex(std::size_t index, const std::vector<double>& x);
 
     /// Add vertex v at given point x (for a 1D mesh)
     ///
-    /// *Arguments*
-    ///     index (std::size_t)
+    /// @param    index (std::size_t)
     ///         The vertex (index).
-    ///     x (double)
+    /// @param    x (double)
     ///         The x-coordinate.
     void add_vertex(std::size_t index, double x);
 
     /// Add vertex v at given point (x, y) (for a 2D mesh)
     ///
-    /// *Arguments*
-    ///     index (std::size_t)
+    /// @param    index (std::size_t)
     ///         The vertex (index).
-    ///     x (double)
+    /// @param    x (double)
     ///         The x-coordinate.
-    ///     y (double)
+    /// @param    y (double)
     ///         The y-coordinate.
     void add_vertex(std::size_t index, double x, double y);
 
     /// Add vertex v at given point (x, y, z) (for a 3D mesh)
     ///
-    /// *Arguments*
-    ///     index (std::size_t)
+    /// @param    index (std::size_t)
     ///         The vertex (index).
-    ///     x (double)
+    /// @param    x (double)
     ///         The x-coordinate.
-    ///     y (double)
+    /// @param    y (double)
     ///         The y-coordinate.
-    ///     z (double)
+    /// @param    z (double)
     ///         The z-coordinate.
     void add_vertex(std::size_t index, double x, double y, double z);
 
     /// Add vertex v at given point p
     ///
-    /// *Arguments*
-    ///     local_index (std::size_t)
+    /// @param    local_index (std::size_t)
     ///         The vertex (local index).
-    ///     global_index (std::size_t)
+    /// @param    global_index (std::size_t)
     ///         The vertex (global_index).
-    ///     p (_Point_)
+    /// @param    p (_Point_)
     ///         The point.
     void add_vertex_global(std::size_t local_index, std::size_t global_index,
                            const Point& p);
 
     /// Add vertex v at given coordinate x
     ///
-    /// *Arguments*
-    ///     local_index (std::size_t)
+    /// @param    local_index (std::size_t)
     ///         The vertex (local index).
-    ///     global_index (std::size_t)
+    /// @param    global_index (std::size_t)
     ///         The vertex (global_index).
-    ///     x (std::vector<double>)
+    /// @param    x (std::vector<double>)
     ///         The x-coordinates.
     void add_vertex_global(std::size_t local_index, std::size_t global_index,
                            const std::vector<double>& x);
@@ -257,41 +239,38 @@ namespace dolfin
 
     /// Add cell with given vertices (1D)
     ///
-    /// *Arguments*
-    ///     c (std::size_t)
+    /// @param    c (std::size_t)
     ///         The cell (index).
-    ///     v0 (std::vector<std::size_t>)
+    /// @param    v0 (std::vector<std::size_t>)
     ///         The first vertex (local index).
-    ///     v1 (std::vector<std::size_t>)
+    /// @param    v1 (std::vector<std::size_t>)
     ///         The second vertex (local index).
     void add_cell(std::size_t c, std::size_t v0, std::size_t v1);
 
     /// Add cell with given vertices (2D)
     ///
-    /// *Arguments*
-    ///     c (std::size_t)
+    /// @param    c (std::size_t)
     ///         The cell (index).
-    ///     v0 (std::vector<std::size_t>)
+    /// @param    v0 (std::vector<std::size_t>)
     ///         The first vertex (local index).
-    ///     v1 (std::vector<std::size_t>)
+    /// @param    v1 (std::vector<std::size_t>)
     ///         The second vertex (local index).
-    ///     v2 (std::vector<std::size_t>)
+    /// @param    v2 (std::vector<std::size_t>)
     ///         The third vertex (local index).
     void add_cell(std::size_t c, std::size_t v0, std::size_t v1,
                   std::size_t v2);
 
     /// Add cell with given vertices (3D)
     ///
-    /// *Arguments*
-    ///     c (std::size_t)
+    /// @param    c (std::size_t)
     ///         The cell (index).
-    ///     v0 (std::vector<std::size_t>)
+    /// @param    v0 (std::vector<std::size_t>)
     ///         The first vertex (local index).
-    ///     v1 (std::vector<std::size_t>)
+    /// @param    v1 (std::vector<std::size_t>)
     ///         The second vertex (local index).
-    ///     v2 (std::vector<std::size_t>)
+    /// @param    v2 (std::vector<std::size_t>)
     ///         The third vertex (local index).
-    ///     v3 (std::vector<std::size_t>)
+    /// @param    v3 (std::vector<std::size_t>)
     ///         The fourth vertex (local index).
     void add_cell(std::size_t c, std::size_t v0, std::size_t v1,
                   std::size_t v2, std::size_t v3);
@@ -299,20 +278,18 @@ namespace dolfin
     /// Add cell with given vertices (non-templated version for Python
     /// interface)
     ///
-    /// *Arguments*
-    ///     c (std::size_t)
+    /// @param    c (std::size_t)
     ///         The cell (index).
-    ///     v (std::vector<std::size_t>)
+    /// @param    v (std::vector<std::size_t>)
     ///         The vertex indices (local indices)
     void add_cell(std::size_t c, const std::vector<std::size_t>& v)
     { add_cell(c, c, v); }
 
     /// Add cell with given vertices
     ///
-    /// *Arguments*
-    ///     c (std::size_t)
+    /// @param    c (std::size_t)
     ///         The cell (index).
-    ///     v (typename T)
+    /// @param    v (typename T)
     ///         The vertex indices (local indices)
     template<typename T>
     void add_cell(std::size_t c, const T& v)
@@ -320,12 +297,11 @@ namespace dolfin
 
     /// Add cell with given vertices
     ///
-    /// *Arguments*
-    ///     local_index (std::size_t)
+    /// @param     local_index (std::size_t)
     ///         The cell (index).
-    ///     global_index (std::size_t)
+    /// @param    global_index (std::size_t)
     ///         The global (user) cell index.
-    ///     v (std::vector<std::size_t>)
+    /// @param    v (std::vector<std::size_t>)
     ///         The vertex indices (local indices)
     template<typename T>
     void add_cell(std::size_t local_index, std::size_t global_index,
@@ -347,18 +323,16 @@ namespace dolfin
 
     /// Close mesh, finish editing, and order entities locally
     ///
-    /// *Arguments*
-    ///     order (bool)
+    /// @param    order (bool)
     ///         Order entities locally if true. Default values is true.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         MeshEditor editor;
     ///         editor.open(mesh, 2, 2);
     ///         ...
     ///         editor.close()
-    ///
+    /// @endcode
     void close(bool order=true);
 
   private:

@@ -285,7 +285,7 @@ def map_argument_and_return_types(text, classnames):
         lines = new_text.split("\n")
         r_index = ["@return" in l for l in lines].index(True)
         l = "".join(lines[r_index].split()[1:])
-        lines[r_index]  = "Returns\n-------\n%s\n"%(map_cpp_type(l.strip(), classnames))
+        lines[r_index]  = "  Returns\n  -------\n  %s\n"%(map_cpp_type(l.strip(), classnames))
         new_text = "\n".join(lines)
 
     if "@param" in new_text:
@@ -295,10 +295,10 @@ def map_argument_and_return_types(text, classnames):
         for i, l in enumerate(lines):
             if "@param" in l:
                 if not done_header:
-                    newl = "Parameters\n----------\n"
+                    newl = "  Parameters\n  ----------\n  "
                     done_header = True
                 else:
-                    newl = ""
+                    newl = "  "
                 ls = l.split()
                 lines[i] = newl + ls[1] + " : " + map_cpp_type(ls[2].strip("()"), classnames)
 
@@ -310,7 +310,7 @@ def modify_doc(text, classnames, classname, signature):
     "Add links, translate C++ to Python and change C++ types."
 
     # Replace C++ example code with Python example code
-    text = replace_example(text, classname, signature)
+    #    text = replace_example(text, classname, signature)
 
     # Map C++ types to corresponding Python types
     text = map_argument_and_return_types(text, classnames)
@@ -368,7 +368,7 @@ def write_docstrings(output_file, module, header, docs, classnames):
                 func_doc = "**Overloaded versions**"
                 for signature, doc in functions:
                     args = get_args(signature)
-                    doc = "\n\n* %s\ (%s)\n\n" % (name, ", ".join(args)) +\
+                    doc = "\n\n* %s(%s)\n\n" % (name, ", ".join(args)) +\
                           indent(doc, 2)
                     func_doc += modify_doc(doc, classnames, classname, signature)
                 output_file.write(docstring % (func_name, func_doc))

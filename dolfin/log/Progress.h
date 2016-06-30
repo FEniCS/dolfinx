@@ -32,7 +32,6 @@ namespace dolfin
   /// This class provides a simple way to create and update progress
   /// bars during a computation.
   ///
-  /// *Example*
   ///     A progress bar may be used either in an iteration with a known number
   ///     of steps:
   ///

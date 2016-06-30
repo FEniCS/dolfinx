@@ -114,67 +114,57 @@ namespace dolfin
     /// Return number of owned, unowned, or all dofs in the dofmap on
     /// this process
     ///
-    /// *Arguments*
-    ///     type (std::string)
+    /// @param     type (std::string)
     ///         Either "owned", "unowned", or "all"
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         Number of local dofs.
     std::size_t local_dimension(std::string type) const;
 
     /// Return the dimension of the local finite element function
     /// space on a cell
     ///
-    /// *Arguments*
-    ///     cell_index (std::size_t)
+    /// @param      cell_index (std::size_t)
     ///         Index of cell
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         Dimension of the local finite element function space.
     std::size_t num_element_dofs(std::size_t cell_index) const;
 
     /// Return the maximum dimension of the local finite element
     /// function space
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         Maximum dimension of the local finite element function
     ///         space.
     std::size_t max_element_dofs() const;
 
     /// Return the number of dofs for a given entity dimension
     ///
-    /// *Arguments*
-    ///     dim (std::size_t)
+    /// @param     dim (std::size_t)
     ///         Entity dimension
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         Number of dofs associated with given entity dimension
     virtual std::size_t num_entity_dofs(std::size_t dim) const;
 
     /// Return number of facet dofs
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         The number of facet dofs.
     std::size_t num_facet_dofs() const;
 
     /// Return the ownership range (dofs in this range are owned by
     /// this process)
     ///
-    /// *Returns*
-    ///     std::pair<std::size_t, std::size_t>
+    /// @return   std::pair<std::size_t, std::size_t>
     ///         The ownership range.
     std::pair<std::size_t, std::size_t> ownership_range() const;
 
     /// Return map from nonlocal dofs that appear in local dof map to
     /// owning process
     ///
-    /// *Returns*
-    ///     std::vector<unsigned int>
+    /// @return     std::vector<unsigned int>
     ///         The map from non-local dofs.
     const std::vector<int>& off_process_owner() const
     { return _index_map->off_process_owner(); }
@@ -182,15 +172,13 @@ namespace dolfin
     /// Return map from all shared nodes to the sharing processes (not
     /// including the current process) that share it.
     ///
-    /// *Returns*
-    ///     std::unordered_map<std::size_t, std::vector<unsigned int>>
+    /// @return     std::unordered_map<std::size_t, std::vector<unsigned int>>
     ///         The map from dofs to list of processes
     const std::unordered_map<int, std::vector<int>>& shared_nodes() const;
 
     /// Return set of processes that share dofs with this process
     ///
-    /// *Returns*
-    ///     std::set<int>
+    /// @return     std::set<int>
     ///         The set of processes
     const std::set<int>& neighbours() const;
 
@@ -204,12 +192,10 @@ namespace dolfin
 
     /// Local-to-global mapping of dofs on a cell
     ///
-    /// *Arguments*
-    ///     cell_index (std::size_t)
+    /// @param     cell_index (std::size_t)
     ///         The cell index.
     ///
-    /// *Returns*
-    ///     ArrayView<const dolfin::la_index>
+    /// @return     ArrayView<const dolfin::la_index>
     ///         Local-to-global mapping of dofs.
     ArrayView<const dolfin::la_index> cell_dofs(std::size_t cell_index) const
     {
@@ -221,30 +207,27 @@ namespace dolfin
 
     /// Tabulate local-local facet dofs
     ///
-    /// *Arguments*
-    ///     dofs (std::size_t)
+    /// @param     dofs (std::size_t)
     ///         Degrees of freedom.
-    ///     local_facet (std::size_t)
+    /// @return     local_facet (std::size_t)
     ///         The local facet.
     void tabulate_facet_dofs(std::vector<std::size_t>& dofs,
                              std::size_t local_facet) const;
 
     /// Tabulate local-local mapping of dofs on entity (dim, local_entity)
     ///
-    /// *Arguments*
-    ///     dofs (std::size_t)
+    /// @param     dofs (std::size_t)
     ///         Degrees of freedom.
-    ///     dim (std::size_t)
+    /// @param     dim (std::size_t)
     ///         The entity dimension
-    ///     local_entity (std::size_t)
+    /// @param     local_entity (std::size_t)
     ///         The local entity index
     void tabulate_entity_dofs(std::vector<std::size_t>& dofs,
                               std::size_t dim, std::size_t local_entity) const;
 
     /// Tabulate globally supported dofs
     ///
-    /// *Arguments*
-    ///     dofs (std::size_t)
+    /// @param     dofs (std::size_t)
     ///         Degrees of freedom.
     void tabulate_global_dofs(std::vector<std::size_t>& dofs) const
     {
@@ -255,33 +238,28 @@ namespace dolfin
 
     /// Create a copy of the dof map
     ///
-    /// *Returns*
-    ///     DofMap
+    /// @return     DofMap
     ///         The Dofmap copy.
     std::shared_ptr<GenericDofMap> copy() const;
 
     /// Create a copy of the dof map on a new mesh
     ///
-    /// *Arguments*
-    ///     new_mesh (_Mesh_)
+    /// @param     new_mesh (_Mesh_)
     ///         The new mesh to create the dof map on.
     ///
-    /// *Returns*
-    ///     DofMap
+    ///  @return    DofMap
     ///         The new Dofmap copy.
     std::shared_ptr<GenericDofMap> create(const Mesh& new_mesh) const;
 
 
     /// Extract subdofmap component
     ///
-    /// *Arguments*
-    ///     component (std::vector<std::size_t>)
+    /// @param     component (std::vector<std::size_t>)
     ///         The component.
-    ///     mesh (_Mesh_)
+    /// @param     mesh (_Mesh_)
     ///         The mesh.
     ///
-    /// *Returns*
-    ///     DofMap
+    /// @return     DofMap
     ///         The subdofmap component.
     std::shared_ptr<GenericDofMap>
       extract_sub_dofmap(const std::vector<std::size_t>& component,
@@ -289,14 +267,12 @@ namespace dolfin
 
     /// Create a "collapsed" dofmap (collapses a sub-dofmap)
     ///
-    /// *Arguments*
-    ///     collapsed_map (std::unordered_map<std::size_t, std::size_t>)
+    /// @param     collapsed_map (std::unordered_map<std::size_t, std::size_t>)
     ///         The "collapsed" map.
-    ///     mesh (_Mesh_)
+    /// @param     mesh (_Mesh_)
     ///         The mesh.
     ///
-    /// *Returns*
-    ///     DofMap
+    /// @return    DofMap
     ///         The collapsed dofmap.
     std::shared_ptr<GenericDofMap>
       collapse(std::unordered_map<std::size_t, std::size_t>&
@@ -316,10 +292,9 @@ namespace dolfin
     /// function is typically used to construct the null space of a
     /// matrix operator.
     ///
-    /// *Arguments*
-    ///     vector (_GenericVector_)
+    /// @param     vector (GenericVector)
     ///         The vector to set.
-    ///     value (double)
+    /// @param     value (double)
     ///         The value to set.
     void set(GenericVector& x, double value) const;
 
@@ -335,19 +310,16 @@ namespace dolfin
     /// Compute the map from local (this process) dof indices to
     /// global dof indices.
     ///
-    /// *Arguments*
-    ///     local_to_global_map (_std::vector<std::size_t>_)
+    /// @param     local_to_global_map (_std::vector<std::size_t>_)
     ///         The local-to-global map to fill.
     void tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const;
 
     /// Return global dof index for a given local (process) dof index
     ///
-    /// *Arguments*
-    ///     local_index (int)
+    /// @param     local_index (int)
     ///         The local local index.
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         The global dof index.
     std::size_t local_to_global_index(int local_index) const
     { return _index_map->local_to_global(local_index); }
@@ -358,12 +330,10 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     ///
-    /// *Arguments*
-    ///     verbose (bool)
+    /// @param     verbose (bool)
     ///         Flag to turn on additional output.
     ///
-    /// *Returns*
-    ///     std::string
+    /// @return    std::string
     ///         An informal representation of the function space.
     std::string str(bool verbose) const;
 

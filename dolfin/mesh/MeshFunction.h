@@ -63,29 +63,26 @@ namespace dolfin
 
     /// Create empty mesh function on given mesh
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param mesh (Mesh)
     ///         The mesh to create mesh function on.
     explicit MeshFunction(std::shared_ptr<const Mesh> mesh);
 
     /// Create mesh function of given dimension on given mesh
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param     mesh (Mesh)
     ///         The mesh to create mesh function on.
-    ///     dim (std::size_t)
+    /// @param     dim (std::size_t)
     ///         The mesh entity dimension for the mesh function.
     MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
     /// Create mesh of given dimension on given mesh and initialize
     /// to a value
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param     mesh (_Mesh_)
     ///         The mesh to create mesh function on.
-    ///     dim (std::size_t)
+    /// @param     dim (std::size_t)
     ///         The mesh entity dimension.
-    ///     value (T)
+    /// @param     value (T)
     ///         The value.
     MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim,
                  const T& value);
@@ -101,7 +98,6 @@ namespace dolfin
 
     /// Create function from a MeshValueCollecion (shared_ptr version)
     ///
-    /// *Arguments*
     /// @param mesh (_Mesh_)
     ///         The mesh to create mesh function on.
     /// @param value_collection (_MeshValueCollection_)

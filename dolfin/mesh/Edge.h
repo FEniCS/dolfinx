@@ -42,17 +42,15 @@ namespace dolfin
 
     /// Create edge on given mesh
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param    mesh (_Mesh_)
     ///         The mesh.
-    ///     index (std::size_t)
+    /// @param    index (std::size_t)
     ///         Index of the edge.
     Edge(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, 1, index) {}
 
     /// Create edge from mesh entity
     ///
-    /// *Arguments*
-    ///     entity (_MeshEntity_)
+    /// @param    entity (_MeshEntity_)
     ///         The mesh entity to create an edge from.
     Edge(MeshEntity& entity) : MeshEntity(entity.mesh(), 1, entity.index()) {}
 
@@ -61,43 +59,34 @@ namespace dolfin
 
     /// Compute Euclidean length of edge
     ///
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         Euclidean length of edge.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         UnitSquare mesh(2, 2);
     ///         Edge edge(mesh, 0);
     ///         info("%g", edge.length());
     ///
-    ///     output::
-    ///
-    ///         0.5
+    /// @endcode
     double length() const;
 
     /// Compute dot product between edge and other edge
     ///
-    /// *Arguments*
-    ///     edge (_Edge_)
+    /// @param    edge (_Edge_)
     ///         Another edge.
     ///
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         The dot product.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         UnitSquare mesh(2, 2);
     ///         Edge edge1(mesh, 0);
     ///         Edge edge2(mesh, 1);
     ///         info("%g", edge1.dot(edge2));
     ///
-    ///     output::
-    ///
-    ///         0.25
+    /// @endcode
     double dot(const Edge& edge) const;
 
   };

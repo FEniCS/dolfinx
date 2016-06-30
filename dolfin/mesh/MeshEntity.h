@@ -48,12 +48,11 @@ namespace dolfin
 
     /// Constructor
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param   mesh (_Mesh_)
     ///         The mesh.
-    ///     dim (std::size_t)
+    /// @param     dim (std::size_t)
     ///         The topological dimension.
-    ///     index (std::size_t)
+    /// @param     index (std::size_t)
     ///         The index.
     MeshEntity(const Mesh& mesh, std::size_t dim, std::size_t index);
 
@@ -62,23 +61,20 @@ namespace dolfin
 
     /// Initialize mesh entity with given data
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param      mesh (_Mesh_)
     ///         The mesh.
-    ///     dim (std::size_t)
+    /// @param     dim (std::size_t)
     ///         The topological dimension.
-    ///     index (std::size_t)
+    /// @param     index (std::size_t)
     ///         The index.
     void init(const Mesh& mesh, std::size_t dim, std::size_t index);
 
     /// Comparison Operator
     ///
-    /// *Arguments*
-    ///     another (_MeshEntity_)
+    /// @param e (MeshEntity)
     ///         Another mesh entity
     ///
-    /// *Returns*
-    ///     bool
+    ///  @return    bool
     ///         True if the two mesh entities are equal.
     bool operator==(const MeshEntity& e) const
     {
@@ -88,44 +84,38 @@ namespace dolfin
 
     /// Comparison Operator
     ///
-    /// *Arguments*
-    ///     another (MeshEntity)
+    /// @param e (MeshEntity)
     ///         Another mesh entity.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return     bool
     ///         True if the two mesh entities are NOT equal.
     bool operator!=(const MeshEntity& e) const
     { return !operator==(e); }
 
     /// Return mesh associated with mesh entity
     ///
-    /// *Returns*
-    ///     _Mesh_
+    /// @return Mesh
     ///         The mesh.
     const Mesh& mesh() const
     { return *_mesh; }
 
     /// Return topological dimension
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         The dimension.
     std::size_t dim() const
     { return _dim; }
 
     /// Return index of mesh entity
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         The index.
     std::size_t index() const
     { return _local_index; }
 
     /// Return global index of mesh entity
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         The global index. Set to
     ///         std::numerical_limits<std::size_t>::max() if global index
     ///         has not been computed
@@ -135,12 +125,10 @@ namespace dolfin
     /// Return local number of incident mesh entities of given
     /// topological dimension
     ///
-    /// *Arguments*
-    ///     dim (std::size_t)
+    /// @param     dim (std::size_t)
     ///         The topological dimension.
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     /// The number of local incident MeshEntity objects of given
     /// dimension.
     std::size_t num_entities(std::size_t dim) const
@@ -149,12 +137,10 @@ namespace dolfin
     /// Return global number of incident mesh entities of given
     /// topological dimension
     ///
-    /// *Arguments*
-    ///     dim (std::size_t)
+    /// @param     dim (std::size_t)
     ///         The topological dimension.
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         The number of global incident MeshEntity objects of given
     ///         dimension.
     std::size_t num_global_entities(std::size_t dim) const
@@ -163,60 +149,56 @@ namespace dolfin
     /// Return array of indices for incident mesh entities of given
     /// topological dimension
     ///
-    /// *Arguments*
-    ///     dim (std::size_t)
+    /// @param     dim (std::size_t)
     ///         The topological dimension.
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         The index for incident mesh entities of given dimension.
     const unsigned int* entities(std::size_t dim) const
     { return _mesh->topology()(_dim, dim)(_local_index); }
 
     /// Return unique mesh ID
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         The unique mesh ID.
     std::size_t mesh_id() const
     { return _mesh->id(); }
 
     /// Check if given entity is incident
     ///
-    /// *Arguments*
-    ///     entity (_MeshEntity_)
+    /// @param     entity (_MeshEntity_)
     ///         The entity.
     ///
-    /// *Returns*
-    ///     bool
+    ///  @return    bool
     ///         True if the given entity is incident
     bool incident(const MeshEntity& entity) const;
 
     /// Compute local index of given incident entity (error if not
     /// found)
     ///
-    /// *Arguments*
-    ///     entity (_MeshEntity_)
+    /// @param     entity (_MeshEntity_)
     ///         The mesh entity.
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         The local index of given entity.
     std::size_t index(const MeshEntity& entity) const;
 
     /// Compute midpoint of cell
     ///
-    /// *Returns*
-    ///     _Point_
+    /// @return Point
     ///         The midpoint of the cell.
     Point midpoint() const;
 
     /// Determine whether an entity is a 'ghost' from another
     /// process
+    /// @return bool
+    ///    True if entity is a ghost entity
     bool is_ghost() const
     { return (_local_index >= _mesh->topology().ghost_offset(_dim)); }
 
     /// Return set of sharing processes
+    /// @return std::set<unsigned int>
+    ///   List of sharing processes
     std::set<unsigned int> sharing_processes() const
     {
       const std::map<std::int32_t, std::set<unsigned int>>& sharing_map
@@ -229,6 +211,8 @@ namespace dolfin
     }
 
     /// Determine if an entity is shared or not
+    /// @return bool
+    ///    True if entity is shared
     bool is_shared() const
     {
       if (_mesh->topology().have_shared_entities(_dim))
@@ -241,17 +225,17 @@ namespace dolfin
     }
 
     /// Get ownership of this entity - only really valid for cells
+    /// @return unsigned int
+    ///    Owning process
     unsigned int owner() const;
 
     // Note: Not a subclass of Variable for efficiency!
     /// Return informal string representation (pretty-print)
     ///
-    /// *Arguments*
-    ///     verbose (bool)
+    /// @param      verbose (bool)
     ///         Flag to turn on additional output.
     ///
-    /// *Returns*
-    ///     std::string
+    /// @return      std::string
     ///         An informal representation of the function space.
     std::string str(bool verbose) const;
 

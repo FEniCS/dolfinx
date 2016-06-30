@@ -45,18 +45,17 @@ namespace dolfin
 
     /// Create boundary condition for subdomain
     ///
-    /// *Arguments*
-    ///     V (_MultiMeshFunctionSpace_)
+    /// @param    V (_MultiMeshFunctionSpace_)
     ///         The function space
-    ///     g (_GenericFunction_)
+    /// @param    g (_GenericFunction_)
     ///         The value
-    ///     sub_domain (_SubDomain_)
+    /// @param     sub_domain (_SubDomain_)
     ///         The subdomain
-    ///     method (std::string)
+    /// @param     method (std::string)
     ///         Option passed to DirichletBC.
-    ///     check_midpoint (bool)
+    /// @param     check_midpoint (bool)
     ///         Option passed to DirichletBC.
-    ///     exclude_overlapped_boundaries (bool)
+    /// @param     exclude_overlapped_boundaries (bool)
     ///         If true, then the variable on_boundary will
     ///         be set to false for facets that are overlapped
     ///         by another mesh (irrespective of the layering order
@@ -70,18 +69,17 @@ namespace dolfin
 
     /// Create boundary condition for subdomain specified by index
     ///
-    /// *Arguments*
-    ///     V (_FunctionSpace_)
+    /// @param     V (_FunctionSpace_)
     ///         The function space.
-    ///     g (_GenericFunction_)
+    /// @param     g (_GenericFunction_)
     ///         The value.
-    ///     sub_domains (_MeshFunction_ <std::size_t>)
+    /// @param     sub_domains (_MeshFunction_ <std::size_t>)
     ///         Subdomain markers
-    ///     sub_domain (std::size_t)
+    /// @param     sub_domain (std::size_t)
     ///         The subdomain index (number)
-    ///     part (std::size_t)
+    /// @param     part (std::size_t)
     ///         The part on which to set boundary conditions
-    ///     method (std::string)
+    /// @param     method (std::string)
     ///         Optional argument: A string specifying the
     ///         method to identify dofs.
     MultiMeshDirichletBC(std::shared_ptr<const MultiMeshFunctionSpace> V,
@@ -96,46 +94,41 @@ namespace dolfin
 
     /// Apply boundary condition to a matrix
     ///
-    /// *Arguments*
-    ///     A (_GenericMatrix_)
+    /// @param     A (_GenericMatrix_)
     ///         The matrix to apply boundary condition to.
     void apply(GenericMatrix& A) const;
 
     /// Apply boundary condition to a vector
     ///
-    /// *Arguments*
-    ///     b (_GenericVector_)
+    /// @param     b (_GenericVector_)
     ///         The vector to apply boundary condition to.
     void apply(GenericVector& b) const;
 
     /// Apply boundary condition to a linear system
     ///
-    /// *Arguments*
-    ///     A (_GenericMatrix_)
+    /// @param     A (_GenericMatrix_)
     ///         The matrix to apply boundary condition to.
-    ///     b (_GenericVector_)
+    /// @param     b (_GenericVector_)
     ///         The vector to apply boundary condition to.
     void apply(GenericMatrix& A,
                GenericVector& b) const;
 
     /// Apply boundary condition to vectors for a nonlinear problem
     ///
-    /// *Arguments*
-    ///     b (_GenericVector_)
+    /// @param    b (_GenericVector_)
     ///         The vector to apply boundary conditions to.
-    ///     x (_GenericVector_)
+    /// @param     x (_GenericVector_)
     ///         Another vector (nonlinear problem).
     void apply(GenericVector& b,
                const GenericVector& x) const;
 
     /// Apply boundary condition to a linear system for a nonlinear problem
     ///
-    /// *Arguments*
-    ///     A (_GenericMatrix_)
+    /// @param     A (_GenericMatrix_)
     ///         The matrix to apply boundary conditions to.
-    ///     b (_GenericVector_)
+    /// @param     b (_GenericVector_)
     ///         The vector to apply boundary conditions to.
-    ///     x (_GenericVector_)
+    /// @param     x (_GenericVector_)
     ///         Another vector (nonlinear problem).
     void apply(GenericMatrix& A,
                GenericVector& b,

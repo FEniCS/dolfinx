@@ -29,8 +29,7 @@ namespace dolfin
   /// A event is a string message which is displayed
   /// only a limited number of times.
   ///
-  /// *Example*
-  ///     .. code-block:: c++
+  /// @code{.cpp}
   ///
   ///         Event event("System is stiff, damping is needed.");
   ///         while ()
@@ -42,6 +41,7 @@ namespace dolfin
   ///             ...
   ///           }
   ///         }
+  /// @code
 
   class Event
   {
