@@ -17,6 +17,7 @@ Contents:
    using
    help
    demos
+   contributing
    api
    developer
 
