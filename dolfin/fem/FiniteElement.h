@@ -37,7 +37,7 @@ namespace dolfin
   public:
 
     /// Create finite element from UFC finite element (data may be shared)
-    /// @param element
+    /// @param element (ufc::finite_element)
     ///  UFC finite element
     FiniteElement(std::shared_ptr<const ufc::finite_element> element);
 
@@ -174,11 +174,11 @@ namespace dolfin
     }
 
     /// Interpolate vertex values from dof values
-    /// @param vertex_values
-    /// @param coefficients
-    /// @param coordinate_dofs
-    /// @param cell_orientation
-    /// @param cell
+    /// @param vertex_values (double*)
+    /// @param coefficients (double*)
+    /// @param coordinate_dofs (const double*)
+    /// @param cell_orientation (int)
+    /// @param cell (ufc::cell&)
     void interpolate_vertex_values(double* vertex_values,
                                    double* coefficients,
                                    const double* coordinate_dofs,

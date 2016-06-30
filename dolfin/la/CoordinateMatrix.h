@@ -45,7 +45,7 @@ namespace dolfin
     virtual ~CoordinateMatrix() {}
 
     /// Size
-    /// @param dim
+    /// @param dim (std::size_t)
     /// Dimension (0 or 1)
     std::size_t size(std::size_t dim) const
     { return _size[dim]; }

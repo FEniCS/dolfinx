@@ -123,9 +123,9 @@ namespace dolfin
     //--- Implementation of ufc::function interface ---
 
     /// Evaluate function at given point in cell
-    /// @param values
-    /// @param coordinates
-    /// @param cell
+    /// @param values (double*)
+    /// @param coordinates (const double*)
+    /// @param cell (ufc::cell&)
     virtual void evaluate(double* values,
                           const double* coordinates,
                           const ufc::cell& cell) const;

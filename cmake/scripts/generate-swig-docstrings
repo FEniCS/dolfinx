@@ -4,6 +4,13 @@ from the intermediate representation of the documentation which is extracted
 from the C++ source code of DOLFIN.
 
 This script assumes that all functions and classes lives in the dolfin namespace.
+
+We are trying to achieve a layout as close as possible to the numpy docstring
+format, as this is the best (only) available standard. There also exists
+a bridge to sphinx in the "numpydoc" package.
+
+https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
+
 """
 
 # Copyright (C) 2010 Kristian B. Oelgaard
@@ -36,7 +43,7 @@ doc_dir = os.path.abspath("site-packages")
 sys.path.append(doc_dir)
 
 from dolfin_utils.documentation import extract_doc_representation
-from dolfin_utils.documentation import indent, add_links
+from dolfin_utils.documentation import indent
 from codeexamples import codesnippets
 
 debug_output = True
@@ -113,6 +120,9 @@ def replace_example(text, classname, signature):
     # Check if we need to manipulate comment.
     if not "*Example*" in text:
         return text
+    else:
+        print('Example in ', classname, signature)
+
     # Check if we have example code in the dictionary
     examplecode = ".. note::\n\n    No example code available for this function."
     if not classname in codesnippets:
@@ -233,7 +243,7 @@ def map_cpp_type(cpp_type, classnames):
             return cpp_type
 
     # dolfin::Array --> numpy.array (primitives only)
-    elif "_Array_" in cpp_type:
+    elif "Array" in cpp_type:
         arg = cpp_type.split("<")[1].split(">")[0].strip()
         if not arg in cpp_to_python:
             output("No type map for '%s'!" % arg)
@@ -247,18 +257,6 @@ def map_cpp_type(cpp_type, classnames):
             output("No type map for '%s'!" % cpp_type)
             return cpp_type
         return "set of %s" % cpp_to_python[arg]
-
-    # Handle links to classes defined in DOLFIN.
-    elif cpp_type[0] == "_" and cpp_type[-1] == "_" and cpp_type[1:-1] in classnames:
-        return cpp_type
-
-    # Special case, e.g. cpp_type = boost::shared_ptr<_FunctionSpace_>
-    elif "_" in cpp_type:
-        args = cpp_type.split("_")
-        for arg in args:
-            if arg in classnames:
-                return "_" + arg + "_"
-        output("No type map for '%s'!" % cpp_type)
 
     else:
         output("No type map for '%s'!" % cpp_type)
@@ -286,40 +284,23 @@ def map_argument_and_return_types(text, classnames):
         # Get lines and find line number with @return
         lines = new_text.split("\n")
         r_index = ["@return" in l for l in lines].index(True)
-        lines[r_index]  = lines[r_index].replace("@return", "* Returns *\n")
-        arg = False
-        print(lines[r_index])
-        for e, l in enumerate(lines):
-            if e >= r_index and not arg:
-                # First none blank line contains our argument
-                if l.strip():
-                    arg = True
-                    indentation = len(l) - len(l.lstrip())
-                    lines[e] = indent(map_cpp_type(l.strip(), classnames), indentation)
+        l = "".join(lines[r_index].split()[1:])
+        lines[r_index]  = "Returns\n-------\n%s\n"%(map_cpp_type(l.strip(), classnames))
         new_text = "\n".join(lines)
 
     if "@param" in new_text:
-        # Get lines and find line number with @param
+        # Get lines and find line numbers with @param
         lines = new_text.split("\n")
-        a_index = ["@param" in l for l in lines].index(True)
-        a_indent = len(lines[a_index]) - len(lines[a_index].lstrip())
-        n_indent = 0
-        for e, l in enumerate(lines):
-            if e >= a_index and l.strip():
-                indentation = len(l) - len(l.lstrip())
-                # End of argument block
-                if indentation <= a_indent:
-                    break
-                # Determine indentation of lines with argument names
-                # first non blank line determines this
-                if n_indent == 0:
-                    n_indent = indentation
-                # Get type of arguments defined in lines with name and type
-                if indentation == n_indent:
-                    n, t = l.split("(")
-                    n = n.strip()
-                    t = t.split(")")[0]
-                    lines[e] = indent("%s (%s)" % (n, map_cpp_type(t.strip(), classnames)), n_indent)
+        done_header = False
+        for i, l in enumerate(lines):
+            if "@param" in l:
+                if not done_header:
+                    newl = "Parameters\n----------\n"
+                    done_header = True
+                else:
+                    newl = ""
+                ls = l.split()
+                lines[i] = newl + ls[1] + " : " + map_cpp_type(ls[2].strip("()"), classnames)
 
         new_text = "\n".join(lines)
 
@@ -333,9 +314,6 @@ def modify_doc(text, classnames, classname, signature):
 
     # Map C++ types to corresponding Python types
     text = map_argument_and_return_types(text, classnames)
-
-    # Add links
-    text = add_links(text, classnames, ":py:class:")
 
     # Escape '"' otherwise will SWIG complain
     text = text.replace('\"',r'\"')

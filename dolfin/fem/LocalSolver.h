@@ -68,18 +68,18 @@ namespace dolfin
     enum class SolverType {LU, Cholesky};
 
     /// Constructor (shared pointer version)
-    /// @param a
+    /// @param a (Form)
     ///   input LHS form
-    /// @param L
+    /// @param L (Form)
     ///   input RHS form
-    /// @param solver_type
+    /// @param solver_type (SolverType)
     LocalSolver(std::shared_ptr<const Form> a, std::shared_ptr<const Form> L,
                 SolverType solver_type=SolverType::LU);
 
     /// Constructor (shared pointer version)
-    /// @param a
+    /// @param a (Form)
     ///   input LHS form
-    /// @param solver_type
+    /// @param solver_type (SolverType)
     LocalSolver(std::shared_ptr<const Form> a, SolverType solver_type=SolverType::LU);
 
     /// Solve local (cell-wise) problems A_e x_e = b_e, where A_e is
@@ -89,7 +89,7 @@ namespace dolfin
     /// which there is no coupling between cell contributions to the
     /// global matrix A, e.g. the discontinuous Galerkin matrix. The
     /// result is copied into x.
-    /// @param u
+    /// @param u (Function&)
     ///   Function
     void solve_global_rhs(Function& u) const;
 
@@ -101,7 +101,7 @@ namespace dolfin
     /// This function is useful for computing (approximate) cell-wise
     /// projections, for example for post-processing. It much more
     /// efficient than computing global projections.
-    /// @param u
+    /// @param u (Function&)
     ///   Function
     void solve_local_rhs(Function& u) const;
 

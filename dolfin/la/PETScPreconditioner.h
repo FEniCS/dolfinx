@@ -72,9 +72,9 @@ namespace dolfin
 
     /// Assign indices from fields as separate PETSc index sets, with
     /// given names
-    /// @param solver
-    /// @param fields
-    /// @param split_names
+    /// @param solver (PETScKrylovSolver&)
+    /// @param fields (std::vector<std::vector<dolfin::la_index>>&)
+    /// @param split_names (std::vector<std::string>&)
     void
       set_fieldsplit(PETScKrylovSolver& solver,
                      const std::vector<std::vector<dolfin::la_index>>& fields,

@@ -221,28 +221,28 @@ namespace dolfin
 
     /// Read first MeshFunction from file
     ///
-    /// @param meshfunction
+    /// @param meshfunction (MeshFunction)
     ///   MeshFunction to read in
     ///
     void read(MeshFunction<bool>& meshfunction);
 
     /// Read first MeshFunction from file
     ///
-    /// @param meshfunction
+    /// @param meshfunction (MeshFunction)
     ///   MeshFunction to read in
     ///
     void read(MeshFunction<int>& meshfunction);
 
     /// Read first MeshFunction from file
     ///
-    /// @param meshfunction
+    /// @param meshfunction (MeshFunction)
     ///   MeshFunction to read in
     ///
     void read(MeshFunction<std::size_t>& meshfunction);
 
     /// Read first MeshFunction from file
     ///
-    /// @param meshfunction
+    /// @param meshfunction (MeshFunction)
     ///   MeshFunction to read in
     ///
     void read(MeshFunction<double>& meshfunction);

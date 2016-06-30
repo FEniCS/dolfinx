@@ -36,7 +36,7 @@ namespace dolfin
   ///     A progress bar may be used either in an iteration with a known number
   ///     of steps:
   ///
-  ///     .. code-block:: c++
+  /// @code{.cpp}
   ///
   ///         Progress p("Iterating...", n);
   ///         for (int i = 0; i < n; i++)
@@ -44,10 +44,11 @@ namespace dolfin
   ///           ...
   ///           p++;
   ///         }
+  /// @endcode
   ///
   ///     or in an iteration with an unknown number of steps:
   ///
-  ///     .. code-block:: c++
+  /// @code{.cpp}
   ///
   ///         Progress p("Iterating...");
   ///         while (t < T)
@@ -55,6 +56,7 @@ namespace dolfin
   ///           ...
   ///           p = t / T;
   ///         }
+  /// @endcode
 
   class Progress
   {
@@ -62,17 +64,15 @@ namespace dolfin
 
     /// Create progress bar with a known number of steps
     ///
-    /// *Arguments*
-    ///     title (std::string)
+    /// @param    title (std::string)
     ///         The title.
-    ///     n (unsigned int)
+    /// @param    n (unsigned int)
     ///         Number of steps.
     Progress(std::string title, unsigned int n);
 
     /// Create progress bar with an unknown number of steps
     ///
-    /// *Arguments*
-    ///     title (std::string)
+    /// @param    title (std::string)
     ///         The title.
     Progress(std::string title);
 
@@ -81,8 +81,7 @@ namespace dolfin
 
     /// Set current position
     ///
-    /// *Arguments*
-    ///     p (double)
+    /// @param    p (double)
     ///         The position.
     void operator=(double p);
 

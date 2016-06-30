@@ -131,16 +131,16 @@ namespace dolfin
 
     /// Create boundary condition for subdomain
     ///
-    /// @param[in] V
+    /// @param[in] V (FunctionSpace)
     ///         The function space
-    /// @param[in] g
+    /// @param[in] g (GenericFunction)
     ///         The value
-    /// @param[in] sub_domain
+    /// @param[in] sub_domain (SubDomain)
     ///         The subdomain
-    /// @param[in] method
+    /// @param[in] method (std::string)
     ///         Optional argument: A string specifying
     ///         the method to identify dofs
-    /// @param[in] check_midpoint
+    /// @param[in] check_midpoint (bool)
     DirichletBC(std::shared_ptr<const FunctionSpace> V,
                 std::shared_ptr<const GenericFunction> g,
                 std::shared_ptr<const SubDomain> sub_domain,
@@ -149,15 +149,15 @@ namespace dolfin
 
     /// Create boundary condition for subdomain specified by index
     ///
-    /// @param[in] V
+    /// @param[in] V (FunctionSpace)
     ///         The function space.
-    /// @param[in] g
+    /// @param[in] g (GenericFunction)
     ///         The value.
-    /// @param[in] sub_domains
+    /// @param[in] sub_domains (MeshFnunction<std::size_t>)
     ///         Subdomain markers
-    /// @param[in] sub_domain
+    /// @param[in] sub_domain (std::size_t)
     ///         The subdomain index (number)
-    /// @param[in] method
+    /// @param[in] method (std::string)
     ///         Optional argument: A string specifying the
     ///         method to identify dofs.
     DirichletBC(std::shared_ptr<const FunctionSpace> V,
@@ -169,13 +169,13 @@ namespace dolfin
     // TODO: Remove/deprecate this function
     /// Create boundary condition for boundary data included in the mesh
     ///
-    /// @param[in] V
+    /// @param[in] V (FunctionSpace)
     ///         The function space.
-    /// @param[in]  g
+    /// @param[in]  g (GenericFunction)
     ///         The value.
-    /// @param[in] sub_domain
+    /// @param[in] sub_domain (std::size_t)
     ///         The subdomain index (number)
-    /// @param[in] method
+    /// @param[in] method (std::string)
     ///         Optional argument: A string specifying the
     ///         method to identify dofs.
     DirichletBC(std::shared_ptr<const FunctionSpace> V,
@@ -186,13 +186,13 @@ namespace dolfin
     /// Create boundary condition for subdomain by boundary markers
     /// (cells, local facet numbers)
     ///
-    /// @param[in] V
+    /// @param[in] V (FunctionSpace)
     ///         The function space.
-    /// @param[in] g
+    /// @param[in] g (GenericFunction)
     ///         The value.
-    /// @param[in] markers
+    /// @param[in] markers (std::vector<std:size_t>&)
     ///         Subdomain markers (facet index local to process)
-    /// @param[in] method
+    /// @param[in] method (std::string)
     ///         Optional argument: A string specifying the
     ///         method to identify dofs.
     DirichletBC(std::shared_ptr<const FunctionSpace> V,
@@ -202,7 +202,7 @@ namespace dolfin
 
     /// Copy constructor. Either cached DOF data are copied.
     ///
-    /// @param[in] bc
+    /// @param[in] bc (DirichletBC&)
     ///         The object to be copied.
     DirichletBC(const DirichletBC& bc);
 
@@ -211,45 +211,45 @@ namespace dolfin
 
     /// Assignment operator. Either cached DOF data are assigned.
     ///
-    /// @param[in] bc
+    /// @param[in] bc (DirichletBC)
     ///         Another DirichletBC object.
     const DirichletBC& operator= (const DirichletBC& bc);
 
     /// Apply boundary condition to a matrix
     ///
-    /// @param[in,out] A
+    /// @param[in,out] A (GenericMatrix)
     ///         The matrix to apply boundary condition to.
     void apply(GenericMatrix& A) const;
 
     /// Apply boundary condition to a vector
     ///
-    /// @param[in,out] b
+    /// @param[in,out] b (GenericVector)
     ///         The vector to apply boundary condition to.
     void apply(GenericVector& b) const;
 
     /// Apply boundary condition to a linear system
     ///
-    /// @param[in,out] A
+    /// @param[in,out] A (GenericMatrix)
     ///         The matrix to apply boundary condition to.
-    /// @param[in,out] b
+    /// @param[in,out] b (GenericVector)
     ///         The vector to apply boundary condition to.
     void apply(GenericMatrix& A, GenericVector& b) const;
 
     /// Apply boundary condition to vectors for a nonlinear problem
     ///
-    /// @param[in,out] b
+    /// @param[in,out] b (GenericVector)
     ///         The vector to apply boundary conditions to.
-    /// @param[in] x
+    /// @param[in] x (GenericVector)
     ///         Another vector (nonlinear problem).
     void apply(GenericVector& b, const GenericVector& x) const;
 
     /// Apply boundary condition to a linear system for a nonlinear problem
     ///
-    /// @param[in,out] A
+    /// @param[in,out] A (GenericMatrix)
     ///         The matrix to apply boundary conditions to.
-    /// @param[in,out] b
+    /// @param[in,out] b (GenericVector)
     ///         The vector to apply boundary conditions to.
-    /// @param[in] x
+    /// @param[in] x (GenericVector)
     ///         Another vector (nonlinear problem).
     void apply(GenericMatrix& A, GenericVector& b,
                const GenericVector& x) const;
@@ -260,7 +260,7 @@ namespace dolfin
     /// facet on the boundary. To ensure all local boundary dofs are marked,
     /// it is necessary to call gather() on the returned boundary values.
     ///
-    /// @param[in,out] boundary_values
+    /// @param[in,out] boundary_values (Map&)
     ///         Map from dof to boundary value.
     void get_boundary_values(Map& boundary_values) const;
 
@@ -268,14 +268,14 @@ namespace dolfin
     /// "pointwise" is used, this is necessary to ensure all boundary dofs are
     /// marked on all processes.
     ///
-    /// @param[in,out] boundary_values
+    /// @param[in,out] boundary_values (Map&)
     ///         Map from dof to boundary value.
     void gather(Map& boundary_values) const;
 
     /// Make rows of matrix associated with boundary condition zero,
     /// useful for non-diagonal matrices in a block matrix.
     ///
-    /// @param[in,out] A
+    /// @param[in,out] A (GenericMatrix&)
     ///         The matrix
     void zero(GenericMatrix& A) const;
 
@@ -283,11 +283,11 @@ namespace dolfin
     /// zero, and update a (right-hand side) vector to reflect the
     /// changes. Useful for non-diagonals.
     ///
-    /// @param[in,out] A
+    /// @param[in,out] A (GenericMatrix&)
     ///         The matrix
-    /// @param[in,out] b
+    /// @param[in,out] b (GenericVector&)
     ///         The vector
-    /// @param[in] diag_val
+    /// @param[in] diag_val (double)
     ///         This parameter would normally be -1, 0 or 1.
     void zero_columns(GenericMatrix& A, GenericVector& b,
                       double diag_val=0) const;
@@ -320,7 +320,7 @@ namespace dolfin
 
     /// Set value g for boundary condition, domain remains unchanged
     ///
-    /// @param[in] g
+    /// @param[in] g (GenericFucntion)
     ///         The value.
     void set_value(std::shared_ptr<const GenericFunction> g);
 

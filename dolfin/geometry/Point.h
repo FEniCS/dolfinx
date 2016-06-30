@@ -43,22 +43,20 @@ namespace dolfin
 
     /// Create a point at (x, y, z). Default value (0, 0, 0).
     ///
-    /// *Arguments*
-    ///     x (double)
+    /// @param    x (double)
     ///         The x-coordinate.
-    ///     y (double)
+    /// @param    y (double)
     ///         The y-coordinate.
-    ///     z (double)
+    /// @param    z (double)
     ///         The z-coordinate.
     Point(const double x=0.0, const double y=0.0, const double z=0.0)
       : _x({{x, y, z}}) {}
 
     /// Create point from array
     ///
-    /// *Arguments*
-    ///     dim (std::size_t)
+    /// @param    dim (std::size_t)
     ///         Dimension of the array.
-    ///     x (double)
+    /// @param    x (double)
     ///         The array to create a Point from.
     Point(std::size_t dim, const double* x) : _x({{0.0, 0.0, 0.0}})
     {
@@ -68,8 +66,7 @@ namespace dolfin
 
     /// Create point from Array
     ///
-    /// *Arguments*
-    ///     x (Array<double>)
+    /// @param    x (Array<double>)
     ///         Array of coordinates.
     Point(const Array<double>& x) : _x({{0.0, 0.0, 0.0}})
     {
@@ -79,8 +76,7 @@ namespace dolfin
 
     /// Copy constructor
     ///
-    /// *Arguments*
-    ///     p (_Point_)
+    /// @param    p (_Point_)
     ///         The object to be copied.
     Point(const Point& p) : _x({{p._x[0], p._x[1], p._x[2]}}) {}
 
@@ -89,73 +85,69 @@ namespace dolfin
 
     /// Return address of coordinate in direction i
     ///
-    /// *Arguments*
-    ///     i (std::size_t)
+    /// @param    i (std::size_t)
     ///         Direction.
     ///
     /// *Returns*
-    ///     double
+    /// @return    double
     ///         Address of coordinate in the given direction.
     double& operator[] (std::size_t i)
     { dolfin_assert(i < 3); return _x[i]; }
 
     /// Return coordinate in direction i
     ///
-    /// *Arguments*
-    ///     i (std::size_t)
+    /// @param    i (std::size_t)
     ///         Direction.
     ///
-    /// *Returns*
-    ///     double
+    /// @return    double
     ///         The coordinate in the given direction.
     double operator[] (std::size_t i) const
     { dolfin_assert(i < 3); return _x[i]; }
 
     /// Return x-coordinate
     ///
-    /// *Returns*
-    ///     double
+    /// @return    double
     ///         The x-coordinate.
     double x() const
     { return _x[0]; }
 
     /// Return y-coordinate
     ///
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         The y-coordinate.
     double y() const
     { return _x[1]; }
 
     /// Return z-coordinate
     ///
-    /// *Returns*
-    ///     double
+    /// @return    double
     ///         The z-coordinate.
     double z() const
     { return _x[2]; }
 
     /// Return coordinate array
     ///
-    /// *Returns*
-    ///     list of doubles
+    /// @return double*
     ///         The coordinates.
     double* coordinates()
     { return _x.data(); }
 
     /// Return coordinate array (const. version)
     ///
-    /// *Returns*
-    ///     list of doubles
+    /// @return double*
     ///         The coordinates.
     const double* coordinates() const
     { return _x.data(); }
 
     /// Compute sum of two points
+    /// @param p (Point)
+    /// @return Point
     Point operator+ (const Point& p) const
     { Point q(_x[0] + p._x[0], _x[1] + p._x[1], _x[2] + p._x[2]); return q; }
 
     /// Compute difference of two points
+    /// @param p (Point)
+    /// @return Point
     Point operator- (const Point& p) const
     { Point q(_x[0] - p._x[0], _x[1] - p._x[1], _x[2] - p._x[2]); return q; }
 
@@ -209,100 +201,80 @@ namespace dolfin
     /// @return   double
     ///         The distance.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         Point p1(0, 4, 0);
     ///         Point p2(2, 0, 4);
     ///         info("%g", p1.distance(p2));
     ///
-    ///     output::
-    ///
-    ///         6
+    /// @endcode
     inline double distance(const Point& p) const
     { return sqrt(squared_distance(p)); }
 
     /// Compute norm of point representing a vector from the origin
     ///
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         The (Euclidean) norm of the vector from the origin to
     ///         the point.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         Point p(1.0, 2.0, 2.0);
     ///         info("%g", p.norm());
     ///
-    ///     output::
-    ///
-    ///         3
+    /// @endcode
     double norm() const
     { return std::sqrt(_x[0]*_x[0] + _x[1]*_x[1] + _x[2]*_x[2]); }
 
     /// Compute norm of point representing a vector from the origin
     ///
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         The squared (Euclidean) norm of the vector from the
     ///         origin of the point.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         Point p(1.0, 2.0, 2.0);
     ///         info("%g", p.squared_norm());
     ///
-    ///     output::
-    ///
-    ///         9
+    /// @endcode
     double squared_norm() const
     { return _x[0]*_x[0] + _x[1]*_x[1] + _x[2]*_x[2]; }
 
     /// Compute cross product with given vector
     ///
-    /// *Arguments*
-    ///     p (_Point_)
+    /// @param    p (_Point_)
     ///         Another point.
     ///
-    /// *Returns*
-    ///     Point
+    /// @return     Point
     ///         The cross product.
     const Point cross(const Point& p) const;
 
     /// Compute dot product with given vector
     ///
-    /// *Arguments*
-    ///     p (_Point_)
+    /// @param    p (Point)
     ///         Another point.
     ///
-    /// *Returns*
-    ///     double
+    /// @return    double
     ///         The dot product.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         Point p1(1.0, 4.0, 8.0);
     ///         Point p2(2.0, 0.0, 0.0);
     ///         info("%g", p1.dot(p2));
     ///
-    ///     output::
-    ///
-    ///         2
+    /// @endcode
     double dot(const Point& p) const;
 
     /// Rotate around a given axis
     ///
-    /// *Arguments*
-    ///     a (_Point_)
+    /// @param    a (Point)
     ///         The axis to rotate around. Must be unit length.
-    ///     theta (_double_)
+    /// @param    theta (double)
     ///         The rotation angle.
     ///
-    /// *Returns*
-    ///     Point
+    /// @return     Point
     ///         The rotated point.
     Point rotate(const Point& a, double theta) const;
 
@@ -310,12 +282,10 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     ///
-    /// *Arguments*
-    ///     verbose (bool)
+    /// @param    verbose (bool)
     ///         Flag to turn on additional output.
     ///
-    /// *Returns*
-    ///     std::string
+    /// @return     std::string
     ///         An informal representation of the function space.
     std::string str(bool verbose=false) const;
 

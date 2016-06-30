@@ -50,9 +50,9 @@ namespace dolfin
     /// Create cell on given mesh with given index
     ///
     /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param    mesh (_Mesh_)
     ///         The mesh.
-    ///     index (std::size_t)
+    /// @param    index (std::size_t)
     ///         The index.
     Cell(const Mesh& mesh, std::size_t index)
       : MeshEntity(mesh, mesh.topology().dim(), index) {}
@@ -71,115 +71,93 @@ namespace dolfin
     /// Compute orientation of cell
     ///
     /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         Orientation of the cell (0 is 'up'/'right', 1 is 'down'/'left')
     std::size_t orientation() const
     { return _mesh->type().orientation(*this); }
 
     /// Compute orientation of cell relative to given 'up' direction
     ///
-    /// *Arguments*
-    ///     up (_Point_)
+    /// @param    up (_Point_)
     ///         The direction defined as 'up'
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         Orientation of the cell (0 is 'same', 1 is 'opposite')
     std::size_t orientation(const Point& up) const
     { return _mesh->type().orientation(*this, up); }
 
     /// Compute (generalized) volume of cell
     ///
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         The volume of the cell.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         UnitSquare mesh(1, 1);
     ///         Cell cell(mesh, 0);
     ///         info("%g", cell.volume());
     ///
-    ///     output::
-    ///
-    ///         0.5
+    /// @endcode
     double volume() const
     { return _mesh->type().volume(*this); }
 
     /// Compute greatest distance between any two vertices
     ///
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         The greatest distance between any two vertices of the cell.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         UnitSquareMesh mesh(1, 1);
     ///         Cell cell(mesh, 0);
     ///         info("%g", cell.h());
     ///
-    ///     output::
-    ///
-    ///         1.41421
+    /// @endcode
     double h() const
     { return _mesh->type().h(*this); }
 
     /// Compute diameter of cell (deprecated)
     ///
-    /// *Returns*
-    ///     double
+    /// @return      double
     ///         The diameter of the cell.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         UnitSquareMesh mesh(1, 1);
     ///         Cell cell(mesh, 0);
     ///         info("%g", cell.diameter());
     ///
-    ///     output::
-    ///
-    ///         1.41421
+    /// @endcode
     double diameter() const
     { return _mesh->type().diameter(*this); }
 
     /// Compute circumradius of cell
     ///
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         The circumradius of the cell.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         UnitSquareMesh mesh(1, 1);
     ///         Cell cell(mesh, 0);
     ///         info("%g", cell.circumradius());
     ///
-    ///     output::
-    ///
-    ///         0.707106
+    /// @endcode
     double circumradius() const
     { return _mesh->type().circumradius(*this); }
 
     /// Compute inradius of cell
     ///
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         Radius of the sphere inscribed in the cell.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         UnitSquareMesh mesh(1, 1);
     ///         Cell cell(mesh, 0);
     ///         info("%g", cell.inradius());
     ///
-    ///     output::
-    ///
-    ///         0.29289
+    /// @endcode
     double inradius() const
     {
       // We would need facet areas
@@ -194,20 +172,16 @@ namespace dolfin
     /// See Jonathan Richard Shewchuk: What Is a Good Linear Finite Element?,
     /// online: http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
     ///
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         topological_dimension * inradius / circumradius
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         UnitSquareMesh mesh(1, 1);
     ///         Cell cell(mesh, 0);
     ///         info("%g", cell.radius_ratio());
     ///
-    ///     output::
-    ///
-    ///         0.828427
+    /// @endcode
     double radius_ratio() const
     {
       // We would need facet areas
@@ -218,22 +192,18 @@ namespace dolfin
 
     /// Compute squared distance to given point.
     ///
-    /// *Arguments*
-    ///     point (_Point_)
+    /// @param     point (Point)
     ///         The point.
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         The squared distance to the point.
     double squared_distance(const Point& point) const
     { return _mesh->type().squared_distance(*this, point); }
 
     /// Compute distance to given point.
     ///
-    /// *Arguments*
-    ///     point (_Point_)
+    ///  @param    point (_Point_)
     ///         The point.
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         The distance to the point.
     double distance(const Point& point) const
     {
@@ -242,66 +212,56 @@ namespace dolfin
 
     /// Compute component i of normal of given facet with respect to the cell
     ///
-    /// *Arguments*
-    ///     facet (std::size_t)
+    /// @param    facet (std::size_t)
     ///         Index of facet.
-    ///     i (std::size_t)
+    /// @param    i (std::size_t)
     ///         Component.
     ///
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         Component i of the normal of the facet.
     double normal(std::size_t facet, std::size_t i) const
     { return _mesh->type().normal(*this, facet, i); }
 
     /// Compute normal of given facet with respect to the cell
     ///
-    /// *Arguments*
-    ///     facet (std::size_t)
+    /// @param    facet (std::size_t)
     ///         Index of facet.
     ///
-    /// *Returns*
-    ///     _Point_
+    /// @return Point
     ///         Normal of the facet.
     Point normal(std::size_t facet) const
     { return _mesh->type().normal(*this, facet); }
 
     /// Compute normal to cell itself (viewed as embedded in 3D)
     ///
-    /// *Returns*
-    ///     _Point_
+    /// @return Point
     ///         Normal of the cell
     Point cell_normal() const
     { return _mesh->type().cell_normal(*this); }
 
     /// Compute the area/length of given facet with respect to the cell
     ///
-    /// *Arguments*
-    ///     facet (std::size_t)
+    /// @param    facet (std::size_t)
     ///         Index of the facet.
     ///
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         Area/length of the facet.
     double facet_area(std::size_t facet) const
     { return _mesh->type().facet_area(*this, facet); }
 
     /// Order entities locally
     ///
-    /// *Arguments*
-    ///     global_vertex_indices (_std::vector<std::size_t>_)
+    /// @param    global_vertex_indices (_std::vector<std::size_t>_)
     ///         The global vertex indices.
     void order(const std::vector<std::size_t>& local_to_global_vertex_indices)
     { _mesh->type().order(*this, local_to_global_vertex_indices); }
 
     /// Check if entities are ordered
     ///
-    /// *Arguments*
-    ///     global_vertex_indices (_std::vector<std::size_t>)
+    ///  @param    global_vertex_indices (_std::vector<std::size_t>)
     ///         The global vertex indices.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return     bool
     ///         True iff ordered.
     bool ordered(const std::vector<std::size_t>& local_to_global_vertex_indices) const
     { return _mesh->type().ordered(*this, local_to_global_vertex_indices); }
@@ -309,48 +269,40 @@ namespace dolfin
     /// Check whether given point is contained in cell. This function is
     /// identical to the function collides(point).
     ///
-    /// *Arguments*
-    ///     point (_Point_)
+    /// @param     point (_Point_)
     ///         The point to be checked.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return     bool
     ///         True iff point is contained in cell.
     bool contains(const Point& point) const
     { return CollisionDetection::collides(*this, point); }
 
     /// Check whether given point collides with cell
     ///
-    /// *Arguments*
-    ///     point (_Point_)
+    /// @param    point (_Point_)
     ///         The point to be checked.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return     bool
     ///         True iff point collides with cell.
     bool collides(const Point& point) const
     { return CollisionDetection::collides(*this, point); }
 
     /// Check whether given entity collides with cell
     ///
-    /// *Arguments*
-    ///     entity (_MeshEntity_)
+    /// @param    entity (_MeshEntity_)
     ///         The cell to be checked.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return     bool
     ///         True iff entity collides with cell.
     bool collides(const MeshEntity& entity) const
     { return CollisionDetection::collides(*this, entity); }
 
     /// Compute triangulation of intersection with given entity
     ///
-    /// *Arguments*
-    ///     entity (_MeshEntity_)
+    /// @param    entity (_MeshEntity_)
     ///         The entity with which to intersect.
     ///
-    /// *Returns*
-    ///     std::vector<double>
+    /// @return      std::vector<double>
     ///         A flattened array of simplices of dimension
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim

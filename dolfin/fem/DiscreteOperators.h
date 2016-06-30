@@ -47,9 +47,9 @@ namespace dolfin
     /// i.e. v = Aw. V0 is the H(curl) space, and V1 is the P1
     /// Lagrange space.
     ///
-    /// @param[in] V0
+    /// @param[in] V0 (FunctionSpace&)
     ///  H(curl) space
-    /// @param[in] V1
+    /// @param[in] V1 (FunctionSpace&)
     ///  P1 Lagrange space
     ///
     /// @return GenericMatrix

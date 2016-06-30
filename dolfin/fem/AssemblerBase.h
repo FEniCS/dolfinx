@@ -67,9 +67,9 @@ namespace dolfin
     bool keep_diagonal;
 
     /// Initialize global tensor
-    /// @param[out] A
+    /// @param[out] A (GenericTensor&)
     ///  GenericTensor to assemble into
-    /// @param[in] a
+    /// @param[in] a (Form&)
     ///  Form to assemble from
     void init_global_tensor(GenericTensor& A, const Form& a);
 
