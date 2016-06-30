@@ -60,14 +60,6 @@ namespace dolfin
     std::size_t degree() const
     { return _degree; }
 
-    /// Return number of coordinates
-    std::size_t size() const
-    {
-      deprecation("MeshGeometry::size()", "2016.1",
-                  "Use MeshGeometry::num_vertices() or MeshGeometry::num_points() instead.");
-      return num_vertices();
-    }
-
     /// Return the number of vertex coordinates
     std::size_t num_vertices() const
     {

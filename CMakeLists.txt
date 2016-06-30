@@ -851,9 +851,10 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-get-demos.in
                ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
-        DESTINATION ${DOLFIN_BIN_DIR}
-  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-        COMPONENT RuntimeExecutables)
+  DESTINATION ${DOLFIN_BIN_DIR}
+  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE
+  GROUP_EXECUTE WORLD_EXECUTE
+  COMPONENT RuntimeExecutables)
 
 
 #------------------------------------------------------------------------------
@@ -886,8 +887,23 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
 endif()
 
 #------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for bench and demos if not
-# exists
+# Generate demo files from rst
+
+message(STATUS "")
+message(STATUS "Generating demo source files")
+message(STATUS "--------------------------------------------------")
+file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
+foreach(rst_file ${demo_rst_files})
+  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+  #add_custom_command(TARGET demos_source PRE_BUILD
+  #  COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
+  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endforeach()
+
+#------------------------------------------------------------------------------
+# Generate CMakeLists.txt files for bench and demos if not existing
+
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
 if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
@@ -971,10 +987,21 @@ else()
   set(MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM}")
 endif()
 
+# Add taget to build .py demp files from Python rst input files, and
+# create a target to build source files from .cpp.rst and .py.rst
+# files (using pylit)
+file(GLOB_RECURSE rst_files "*.py.rst" "*.cpp.rst")
+add_custom_target(demos_source)
+foreach(rst_file ${rst_files})
+  add_custom_command(TARGET demos_source PRE_BUILD
+    COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endforeach()
+
 # Add target "demo" for building the demos
 add_custom_target(demo
   COMMAND ${MAKE_PROGRAM}
-  DEPENDS copy_data_test_demo
+  DEPENDS demos_source copy_data_test_demo
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
@@ -1093,12 +1120,6 @@ if (DOLFIN_ENABLE_TESTING)
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
-  # Add target "run_doctest" for running documentation tests
-  add_custom_target(run_doctest
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
-    DEPENDS copy_data_test_demo
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/documentation")
-
   # Add target "run_styletest" for running documentation tests
   add_custom_target(run_styletest
     COMMAND ${PYTHON_EXECUTABLE} "-B" "test_coding_style.py"
@@ -1111,7 +1132,7 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "runtests" for running all tests
   add_custom_target(runtests
-    DEPENDS run_doctest run_regressiontests run_unittests run_styletest)
+    DEPENDS run_regressiontests run_unittests run_styletest)
 endif()
 
 #------------------------------------------------------------------------------

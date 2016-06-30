@@ -110,9 +110,6 @@ namespace dolfin
     /// Compute greatest distance between any two vertices
     virtual double h(const MeshEntity& entity) const;
 
-    /// Compute diameter of mesh entity (deprecated)
-    double diameter(const MeshEntity& entity) const;
-
     /// Compute circumradius of mesh entity
     virtual double circumradius(const MeshEntity& entity) const = 0;
 

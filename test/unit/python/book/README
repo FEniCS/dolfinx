@@ -44,7 +44,7 @@ should be listeed in this file:
   - chapter_1_files/transient/diffusion/sin_daD.py:
     update for interface change in RectangleMesh(x0, ...) --> RectangleMesh(Point(x0, y0), ...)
 
-* DOLFIN 1.7
+* DOLFIN 2016.1
 
   - python/book/test_chapter_10.py: change dss = ds[neumann_boundary] -> ds(subdomain_data=neumann_boundary)
   - python/book/chapter_1_files/stationary/poisson/d6_p2D.py: change
