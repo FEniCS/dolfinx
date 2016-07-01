@@ -234,14 +234,14 @@ namespace dolfin
 
     /// Order entities locally
     ///
-    /// @param    global_vertex_indices (_std::vector<std::size_t>_)
+    /// @param    local_to_global_vertex_indices (std::vector<std::size_t>)
     ///         The global vertex indices.
     void order(const std::vector<std::size_t>& local_to_global_vertex_indices)
     { _mesh->type().order(*this, local_to_global_vertex_indices); }
 
     /// Check if entities are ordered
     ///
-    ///  @param    global_vertex_indices (_std::vector<std::size_t>)
+    ///  @param    local_to_global_vertex_indices (std::vector<std::size_t>)
     ///         The global vertex indices.
     ///
     /// @return     bool
@@ -252,7 +252,7 @@ namespace dolfin
     /// Check whether given point is contained in cell. This function is
     /// identical to the function collides(point).
     ///
-    /// @param     point (_Point_)
+    /// @param     point (Point)
     ///         The point to be checked.
     ///
     /// @return     bool
@@ -262,7 +262,7 @@ namespace dolfin
 
     /// Check whether given point collides with cell
     ///
-    /// @param    point (_Point_)
+    /// @param    point (Point)
     ///         The point to be checked.
     ///
     /// @return     bool
@@ -272,7 +272,7 @@ namespace dolfin
 
     /// Check whether given entity collides with cell
     ///
-    /// @param    entity (_MeshEntity_)
+    /// @param    entity (MeshEntity)
     ///         The cell to be checked.
     ///
     /// @return     bool
@@ -282,7 +282,7 @@ namespace dolfin
 
     /// Compute triangulation of intersection with given entity
     ///
-    /// @param    entity (_MeshEntity_)
+    /// @param    entity (MeshEntity)
     ///         The entity with which to intersect.
     ///
     /// @return      std::vector<double>

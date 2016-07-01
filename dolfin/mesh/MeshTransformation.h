@@ -72,7 +72,7 @@ public:
   ///         The number of degrees (0-360) of rotation.
   /// @param axis (std::size_t)
   ///         The coordinate axis around which to rotate the mesh.
-  /// @param point (Point)
+  /// @param p (Point)
   ///         The point around which to rotate the mesh.
   static void rotate(Mesh& mesh, double angle, std::size_t axis,
                      const Point& p);

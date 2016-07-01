@@ -199,7 +199,7 @@ namespace dolfin
     ///
     /// @param     dofs (std::size_t)
     ///         Degrees of freedom.
-    /// @return     local_facet (std::size_t)
+    /// @param     local_facet (std::size_t)
     ///         The local facet.
     void tabulate_facet_dofs(std::vector<std::size_t>& dofs,
                              std::size_t local_facet) const;
@@ -282,9 +282,9 @@ namespace dolfin
     /// function is typically used to construct the null space of a
     /// matrix operator.
     ///
-    /// @param     vector (GenericVector)
+    /// @param  x (GenericVector)
     ///         The vector to set.
-    /// @param     value (double)
+    /// @param  value (double)
     ///         The value to set.
     void set(GenericVector& x, double value) const;
 

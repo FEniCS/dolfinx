@@ -5,6 +5,7 @@ API documentation
 =================
 
 .. doxygenclass:: dolfin::Array
-    :members:
+   :members:
+
 
 *Under development*

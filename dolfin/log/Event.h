@@ -41,7 +41,7 @@ namespace dolfin
   ///             ...
   ///           }
   ///         }
-  /// @code
+  /// @endcode
 
   class Event
   {

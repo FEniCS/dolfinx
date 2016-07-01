@@ -6,8 +6,8 @@ from the C++ source code of DOLFIN.
 This script assumes that all functions and classes lives in the dolfin namespace.
 
 We are trying to achieve a layout as close as possible to the numpy docstring
-format, as this is the best (only) available standard. There also exists
-a bridge to sphinx in the "numpydoc" package.
+format, as this is one of few available standards. There also exists
+a bridge to sphinx in the "napoleon" extension.
 
 https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 
@@ -345,7 +345,7 @@ def write_docstrings(output_file, module, header, docs, classnames):
     """Write docstrings from a header file."""
 
     output_file.write("// Documentation extracted from: (module=%s, header=%s)\n" % (module, header))
-    print("// Documentation extracted from: (module=%s, header=%s)\n" % (module, header))
+    output("// Documentation extracted from: (module=%s, header=%s)\n" % (module, header))
 
     documentation = group_overloaded_functions(docs)
     for (classname, parent, comment, func_docs, order) in documentation:

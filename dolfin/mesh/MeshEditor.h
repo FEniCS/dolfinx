@@ -120,8 +120,6 @@ namespace dolfin
     ///         The number of vertices on this process.
     /// @param num_global_vertices (std::size_t)
     ///         The number of vertices in distributed mesh.
-    /// @param degree (std::size_t)
-    ///         The polynomial degree of the mesh.
     ///
     /// @code{.cpp}
     ///

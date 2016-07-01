@@ -80,6 +80,7 @@ namespace dolfin
     ///
     /// @param     name (std::string)
     ///         The name of the array.
+    /// @param dim (std::size_t)
     ///
     /// @return     bool
     ///         True is array exists, false otherwise.
@@ -91,8 +92,8 @@ namespace dolfin
     ///
     /// @param     name (std::string)
     ///         The name of the array.
-    /// @param     size (std::size_t)
-    ///         The size (length) of the array.
+    /// @param dim (std::size_t)
+    ///          Dimension.
     ///
     ///  @return    std::vector<std::size_t>
     ///         The array.
@@ -116,6 +117,8 @@ namespace dolfin
     ///
     /// @param     name (std::string)
     ///         The name of the array.
+    /// @param dim (std::size_t)
+    ///          Dimension.
     ///
     /// @return      std::vector<std::size_t>
     ///         The array.
@@ -128,6 +131,8 @@ namespace dolfin
     ///
     /// @param     name (std::string)
     ///         The name of the array.
+    /// @param dim (std::size_t)
+    ///          Dimension.
     void erase_array(const std::string name, std::size_t dim);
 
     //--- Misc ---
