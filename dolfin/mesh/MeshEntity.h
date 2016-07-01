@@ -219,21 +219,21 @@ namespace dolfin
     /// Return set of sharing processes
     std::set<unsigned int> sharing_processes() const
     {
-      const std::map<unsigned int, std::set<unsigned int> >& sharing_map
+      const std::map<std::int32_t, std::set<unsigned int>>& sharing_map
         = _mesh->topology().shared_entities(_dim);
       const auto map_it = sharing_map.find(_local_index);
       if (map_it == sharing_map.end())
-        return std::set<unsigned int>();
+        return {};
       else
         return map_it->second;
     }
 
-    /// Determine if an entity is shared or not    
+    /// Determine if an entity is shared or not
     bool is_shared() const
     {
       if (_mesh->topology().have_shared_entities(_dim))
       {
-        const std::map<unsigned int, std::set<unsigned int> >& sharing_map
+        const std::map<std::int32_t, std::set<unsigned int>>& sharing_map
           = _mesh->topology().shared_entities(_dim);
         return (sharing_map.find(_local_index) != sharing_map.end());
       }
@@ -242,7 +242,7 @@ namespace dolfin
 
     /// Get ownership of this entity - only really valid for cells
     unsigned int owner() const;
-    
+
     // Note: Not a subclass of Variable for efficiency!
     /// Return informal string representation (pretty-print)
     ///

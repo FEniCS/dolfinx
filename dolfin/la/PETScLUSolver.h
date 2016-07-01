@@ -30,6 +30,7 @@
 #include <string>
 #include <petscksp.h>
 #include <petscpc.h>
+#include <dolfin/common/MPI.h>
 #include "GenericLUSolver.h"
 #include "PETScObject.h"
 
@@ -52,7 +53,15 @@ namespace dolfin
   public:
 
     /// Constructor
+    PETScLUSolver(MPI_Comm comm, std::string method="default");
+
+    /// Constructor
     PETScLUSolver(std::string method="default");
+
+    /// Constructor
+    PETScLUSolver(MPI_Comm comm,
+                  std::shared_ptr<const PETScMatrix> A,
+                  std::string method="default");
 
     /// Constructor
     PETScLUSolver(std::shared_ptr<const PETScMatrix> A,
@@ -104,6 +113,12 @@ namespace dolfin
     /// database
     std::string get_options_prefix() const;
 
+    /// Set options from the PETSc options database
+    void set_from_options() const;
+
+    /// Returns the MPI communicator
+    MPI_Comm mpi_comm() const;
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
@@ -117,34 +132,26 @@ namespace dolfin
     static Parameters default_parameters();
 
     friend class PETScSNESSolver;
-
     friend class PETScTAOSolver;
 
   private:
 
-    // Prefix for PETSc options database
-    std::string _petsc_options_prefix;
-
     const MatSolverPackage _solver_package;
 
     // Available LU solvers
-    static const std::map<std::string, const MatSolverPackage> _methods;
+    static std::map<std::string, const MatSolverPackage> _methods;
 
     // Whether those solvers support Cholesky
-    static const std::map<const MatSolverPackage, const bool> _methods_cholesky;
+    static std::map<const MatSolverPackage, bool> _methods_cholesky;
 
     // Available LU solvers descriptions
-    static const std::map<std::string, std::string>
-    _methods_descr;
+    static const std::map<std::string, std::string> _methods_descr;
 
     // Select LU solver type
-    const MatSolverPackage select_solver(std::string& method) const;
+    static const MatSolverPackage select_solver(MPI_Comm comm, std::string& method);
 
     // Does an LU solver support Cholesky?
-    bool solver_has_cholesky(const MatSolverPackage package) const;
-
-    // Initialise solver
-    void init_solver(std::string& method);
+    static bool solver_has_cholesky(const MatSolverPackage package);
 
     // Configure PETSc options
     void configure_ksp(const MatSolverPackage solver_package);

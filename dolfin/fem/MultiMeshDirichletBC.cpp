@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-05-12
-// Last changed: 2016-02-15
+// Last changed: 2016-03-02
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -31,122 +31,16 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MultiMeshDirichletBC::MultiMeshDirichletBC(const MultiMeshFunctionSpace& V,
-                                           const GenericFunction& g,
-                                           const SubDomain& sub_domain,
-                                           std::string method,
-                                           bool check_midpoint,
-                                           bool exclude_overlapped_boundaries)
-  : _exclude_overlapped_boundaries(exclude_overlapped_boundaries)
-{
-  // Initialize boundary conditions for parts
-  init(reference_to_no_delete_pointer(V),
-       reference_to_no_delete_pointer(g),
-       reference_to_no_delete_pointer(sub_domain),
-       method,
-       check_midpoint);
-}
-//-----------------------------------------------------------------------------
 MultiMeshDirichletBC::MultiMeshDirichletBC(std::shared_ptr<const MultiMeshFunctionSpace> V,
                                            std::shared_ptr<const GenericFunction> g,
                                            std::shared_ptr<const SubDomain> sub_domain,
                                            std::string method,
                                            bool check_midpoint,
                                            bool exclude_overlapped_boundaries)
-  : _exclude_overlapped_boundaries(exclude_overlapped_boundaries)
-{
-  init(V, g, sub_domain, method, check_midpoint);
-}
-//-----------------------------------------------------------------------------
-MultiMeshDirichletBC::~MultiMeshDirichletBC()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void MultiMeshDirichletBC::apply(GenericMatrix& A) const
-{
-  // Iterate over boundary conditions
-  for (std::size_t part = 0; part < _bcs.size(); part++)
-  {
-    // Set current part for subdomain wrapper
-    dolfin_assert(_sub_domain);
-    _sub_domain->set_current_part(part);
-
-    // Apply boundary condition
-    _bcs[part]->apply(A);
-  }
-}
-//-----------------------------------------------------------------------------
-void MultiMeshDirichletBC::apply(GenericVector& b) const
-{
-  // Iterate over boundary conditions
-  for (std::size_t part = 0; part < _bcs.size(); part++)
-  {
-    // Set current part for subdomain wrapper
-    dolfin_assert(_sub_domain);
-    _sub_domain->set_current_part(part);
-
-    // Apply boundary condition
-    _bcs[part]->apply(b);
-  }
-}
-//-----------------------------------------------------------------------------
-void MultiMeshDirichletBC::apply(GenericMatrix& A,
-                                 GenericVector& b) const
-{
-  // Iterate over boundary conditions
-  for (std::size_t part = 0; part < _bcs.size(); part++)
-  {
-    // Set current part for subdomain wrapper
-    dolfin_assert(_sub_domain);
-    _sub_domain->set_current_part(part);
-
-    // Apply boundary condition
-    _bcs[part]->apply(A, b);
-  }
-}
-//-----------------------------------------------------------------------------
-void MultiMeshDirichletBC::apply(GenericVector& b,
-                                 const GenericVector& x) const
-{
-  // Iterate over boundary conditions
-  for (std::size_t part = 0; part < _bcs.size(); part++)
-  {
-    // Set current part for subdomain wrapper
-    dolfin_assert(_sub_domain);
-    _sub_domain->set_current_part(part);
-
-    // Apply boundary condition
-    _bcs[part]->apply(b, x);
-  }
-}
-//-----------------------------------------------------------------------------
-void MultiMeshDirichletBC::apply(GenericMatrix& A,
-                                 GenericVector& b,
-                                 const GenericVector& x) const
-{
-  // Iterate over boundary conditions
-  for (std::size_t part = 0; part < _bcs.size(); part++)
-  {
-    // Set current part for subdomain wrapper
-    dolfin_assert(_sub_domain);
-    _sub_domain->set_current_part(part);
-
-    // Apply boundary condition
-    _bcs[part]->apply(A, b, x);
-  }
-}
-//-----------------------------------------------------------------------------
-void MultiMeshDirichletBC::init(std::shared_ptr<const MultiMeshFunctionSpace> V,
-                                std::shared_ptr<const GenericFunction> g,
-                                std::shared_ptr<const SubDomain> sub_domain,
-                                std::string method,
-                                bool check_midpoint)
+  : _sub_domain(0),
+    _exclude_overlapped_boundaries(exclude_overlapped_boundaries)
 {
   log(PROGRESS, "Initializing multimesh Dirichlet boundary conditions.");
-
-  // Clear old data if any
-  _bcs.clear();
 
   // Initialize subdomain wrapper
   _sub_domain.reset(new MultiMeshSubDomain(sub_domain,
@@ -168,6 +62,180 @@ void MultiMeshDirichletBC::init(std::shared_ptr<const MultiMeshFunctionSpace> V,
 
     // Add to list
     _bcs.push_back(bc);
+  }
+}
+//-----------------------------------------------------------------------------
+MultiMeshDirichletBC::MultiMeshDirichletBC(std::shared_ptr<const MultiMeshFunctionSpace> V,
+                                          std::shared_ptr<const GenericFunction> g,
+                                          std::shared_ptr<const MeshFunction<std::size_t>> sub_domains,
+                                          std::size_t sub_domain,
+                                          std::size_t part,
+                                          std::string method)
+  : _sub_domain(0),
+    _exclude_overlapped_boundaries(false)
+{
+  // Get view of function space for part
+  std::shared_ptr<const FunctionSpace> V_part = V->view(part);
+
+  // Create Dirichlet boundary condition for part
+  std::shared_ptr<DirichletBC> bc(new DirichletBC(V_part,
+                                                  g,
+                                                  sub_domains,
+                                                  sub_domain,
+                                                  method));
+
+  // Add to list. Note that in this case (as opposed to the case when the
+  // boundary conditions are specified in terms of a subdomain) we will only
+  // have a single boundary condition.
+  _bcs.push_back(bc);
+}
+//-----------------------------------------------------------------------------
+MultiMeshDirichletBC::~MultiMeshDirichletBC()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void MultiMeshDirichletBC::apply(GenericMatrix& A) const
+{
+  // Check whether we have a list of boundary conditions, one for each
+  // part, or if we have a single boundary condition for a single
+  // part.
+
+  if (_sub_domain)
+  {
+    // Iterate over boundary conditions
+    for (std::size_t part = 0; part < _bcs.size(); part++)
+    {
+      // Set current part for subdomain wrapper
+      dolfin_assert(_sub_domain);
+      _sub_domain->set_current_part(part);
+
+      // Apply boundary condition for current part
+      _bcs[part]->apply(A);
+    }
+  }
+  else
+  {
+    dolfin_assert(_bcs.size() == 1);
+
+    // Apply the single boundary condition
+    _bcs[0]->apply(A);
+  }
+}
+//-----------------------------------------------------------------------------
+void MultiMeshDirichletBC::apply(GenericVector& b) const
+{
+  // Check whether we have a list of boundary conditions, one for each
+  // part, or if we have a single boundary condition for a single
+  // part.
+
+  if (_sub_domain)
+  {
+    // Iterate over boundary conditions
+    for (std::size_t part = 0; part < _bcs.size(); part++)
+    {
+      // Set current part for subdomain wrapper
+      dolfin_assert(_sub_domain);
+      _sub_domain->set_current_part(part);
+      
+      // Apply boundary condition
+      _bcs[part]->apply(b);
+    }
+  }
+  else
+  {
+    dolfin_assert(_bcs.size() == 1);
+    
+    // Apply the single boundary condition
+    _bcs[0]->apply(b);
+  }  
+}
+//-----------------------------------------------------------------------------
+void MultiMeshDirichletBC::apply(GenericMatrix& A,
+                                 GenericVector& b) const
+{
+  // Check whether we have a list of boundary conditions, one for each
+  // part, or if we have a single boundary condition for a single
+  // part.
+
+  if (_sub_domain)
+  {
+    // Iterate over boundary conditions
+    for (std::size_t part = 0; part < _bcs.size(); part++)
+    {
+      // Set current part for subdomain wrapper
+      dolfin_assert(_sub_domain);
+      _sub_domain->set_current_part(part);
+      
+      // Apply boundary condition
+      _bcs[part]->apply(A, b);
+    }
+  }
+  else
+  {
+    dolfin_assert(_bcs.size() == 1);
+
+    // Apply the single boundary condition
+    _bcs[0]->apply(A, b);
+  }
+}
+//-----------------------------------------------------------------------------
+void MultiMeshDirichletBC::apply(GenericVector& b,
+                                 const GenericVector& x) const
+{
+  // Check whether we have a list of boundary conditions, one for each
+  // part, or if we have a single boundary condition for a single
+  // part.
+
+  if (_sub_domain)
+  {
+    // Iterate over boundary conditions
+    for (std::size_t part = 0; part < _bcs.size(); part++)
+    {
+      // Set current part for subdomain wrapper
+      dolfin_assert(_sub_domain);
+      _sub_domain->set_current_part(part);
+      
+      // Apply boundary condition
+      _bcs[part]->apply(b, x);
+    }
+  }
+  else
+  {
+    dolfin_assert(_bcs.size() == 1);
+
+    // Apply the single boundary condition
+    _bcs[0]->apply(b, x);
+  }
+}
+//-----------------------------------------------------------------------------
+void MultiMeshDirichletBC::apply(GenericMatrix& A,
+                                 GenericVector& b,
+                                 const GenericVector& x) const
+{
+  // Check whether we have a list of boundary conditions, one for each
+  // part, or if we have a single boundary condition for a single
+  // part.
+
+  if (_sub_domain)
+  {
+    // Iterate over boundary conditions
+    for (std::size_t part = 0; part < _bcs.size(); part++)
+    {
+      // Set current part for subdomain wrapper
+      dolfin_assert(_sub_domain);
+      _sub_domain->set_current_part(part);
+      
+      // Apply boundary condition
+      _bcs[part]->apply(A, b, x);
+    }
+  }
+  else
+  {
+    dolfin_assert(_bcs.size() == 1);
+    
+    // Apply the single boundary condition
+    _bcs[0]->apply(A, b, x);
   }
 }
 //-----------------------------------------------------------------------------

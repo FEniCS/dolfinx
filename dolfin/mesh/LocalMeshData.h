@@ -26,6 +26,7 @@
 #ifndef __LOCAL_MESH_DATA_H
 #define __LOCAL_MESH_DATA_H
 
+#include <cstdint>
 #include <map>
 #include <vector>
 #include <boost/multi_array.hpp>
@@ -60,13 +61,17 @@ namespace dolfin
   public:
 
     /// Create empty local mesh data
-    LocalMeshData(const MPI_Comm mpi_comm);
+    explicit LocalMeshData(const MPI_Comm mpi_comm);
 
     /// Create local mesh data for given mesh
-    LocalMeshData(const Mesh& mesh);
+    explicit LocalMeshData(const Mesh& mesh);
 
     /// Destructor
     ~LocalMeshData();
+
+    /// Check that all essential data has been intialized, and throw error
+    /// if there is a problem
+    void check() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -84,53 +89,89 @@ namespace dolfin
     // Receive mesh data from main process
     void receive_mesh_data(const MPI_Comm mpi_comm);
 
-    // Unpack received vertex coordinates
-    void unpack_vertex_coordinates(const std::vector<double>& values);
+    // Reorder cell data
+    void reorder();
 
-    // Unpack received cell vertices
-    void unpack_cell_vertices(const std::vector<std::size_t>& values);
+    // Holder for geometry data
+    struct Geometry
+    {
+      Geometry() : dim(-1), num_global_vertices(-1) {}
 
-    // Coordinates for all vertices stored on local processor
-    boost::multi_array<double, 2> vertex_coordinates;
+      // Geometric dimension
+      int dim;
 
-    // Global vertex indices for all vertices stored on local processor
-    std::vector<std::size_t> vertex_indices;
+      // Global number of vertices
+      std::int64_t num_global_vertices;
 
-    // Global vertex indices for all cells stored on local processor
-    boost::multi_array<std::size_t, 2> cell_vertices;
+      // Coordinates for all vertices stored on local processor
+      boost::multi_array<double, 2> vertex_coordinates;
 
-    // Global cell numbers for all cells stored on local processor
-    std::vector<std::size_t> global_cell_indices;
+      // Global vertex indices for all vertices stored on local processor
+      std::vector<std::int64_t> vertex_indices;
 
-    // Optional process owner for each cell in global_cell_indices
-    std::vector<std::size_t> cell_partition;
+      void clear()
+      {
+        dim = -1;
+        num_global_vertices = -1;
+        vertex_coordinates.resize(boost::extents[0][0]);
+        vertex_indices.clear();
+      }
 
-    // Optional weight for each cell for partitioning
-    std::vector<std::size_t> cell_weight;
+      // Unpack received vertex coordinates
+      void unpack_vertex_coordinates(const std::vector<double>& values);
+    };
+    Geometry geometry;
 
-    // Global number of vertices
-    std::size_t num_global_vertices;
+    // Holder for topology data
+    struct Topology
+    {
+      Topology() : dim(-1), num_global_cells(-1) {}
 
-    // Global number of cells
-    std::size_t num_global_cells;
+      // Topological dimension
+      int dim;
 
-    // Number of vertices per cell
-    std::size_t num_vertices_per_cell;
+      // Global number of cells
+      std::int64_t num_global_cells;
 
-    // Geometrical dimension
-    std::size_t gdim;
+      // Number of vertices per cell
+      int num_vertices_per_cell;
 
-    // Topological dimension
-    std::size_t tdim;
+      // Global vertex indices for all cells stored on local processor
+      boost::multi_array<std::int64_t, 2> cell_vertices;
 
-    // Cell type
-    // FIXME: this should replace the need for num_vertices_per_cell and tdim
-    CellType::Type cell_type;
+      // Global cell numbers for all cells stored on local processor
+      std::vector<std::int64_t> global_cell_indices;
+
+      // Optional process owner for each cell in global_cell_indices
+      std::vector<int> cell_partition;
+
+      // Optional weight for each cell for partitioning
+      std::vector<std::size_t> cell_weight;
+
+      // Cell type
+      // FIXME: this should replace the need for num_vertices_per_cell and tdim
+      CellType::Type cell_type;
+
+      void clear()
+      {
+        dim = -1;
+        num_global_cells = -1;
+        num_vertices_per_cell = -1;
+        cell_vertices.resize(boost::extents[0][0]);
+        global_cell_indices.clear();
+        cell_partition.clear();
+        cell_weight.clear();
+      }
+
+      // Unpack received cell vertices
+      void unpack_cell_vertices(const std::vector<std::int64_t>& values);
+
+    };
+    Topology topology;
 
     // Mesh domain data [dim](line, (cell_index, local_index, value))
     std::map<std::size_t, std::vector<std::pair<std::pair<std::size_t,
-      std::size_t>, std::size_t> > >
-        domain_data;
+      std::size_t>, std::size_t>>> domain_data;
 
     // Return MPI communicator
     MPI_Comm mpi_comm() const
@@ -138,8 +179,7 @@ namespace dolfin
 
   private:
 
-    // MPI communicator. It is stored because it is used on some
-    // Zoltan call-back functions.
+    // MPI communicator
     MPI_Comm _mpi_comm;
 
   };

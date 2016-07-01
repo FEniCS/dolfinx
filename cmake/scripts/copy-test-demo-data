@@ -21,7 +21,7 @@
 # source directory
 
 import os
-import sys 
+import sys
 import re
 import shutil
 
@@ -29,8 +29,8 @@ import shutil
 sub_directories = ['demo', 'test', 'bench']
 
 # Copy all files with the following suffixes
-suffix_patterns = ["py", "h", "cpp", "ufl", "xml", "xml.gz", "off", "inp", \
-                   "msh", "supp", "rst", "ele", "node", "grid", "edge", "sh"]
+suffix_patterns = ["py", "h", "cpp", "cpp.rst", "ufl", "xml", "xml.gz", "off", "inp", \
+                   "msh", "supp", "rst", "py.rst", "ele", "node", "grid", "edge", "sh"]
 
 suffix_pattern = re.compile("(%s),"%("|".join("[\w-]+\.%s" % pattern \
                                              for pattern in suffix_patterns)))
@@ -46,10 +46,10 @@ def copy_data(top_destdir):
     if abs_destdir == dolfin_dir:
         raise RuntimeError("destination directory cannot be the same as "\
                            "the dolfin source directory")
-    
+
     if not os.path.isdir(abs_destdir):
         raise RuntimeError("%s is not a directory." % abs_destdir)
-        
+
     for subdir in sub_directories:
 
         top_dir = os.path.join(dolfin_dir, subdir)
@@ -61,11 +61,10 @@ def copy_data(top_destdir):
                 "%s,"%f for f in filenames)):
                 srcfile = os.path.join(dirpath, f)
                 shutil.copy(srcfile, destdir)
-                
+
 if __name__ == "__main__":
     # Expecting a destination argument
     if len(sys.argv) != 2:
         raise RuntimeError("Expecting 1 argument with the destination directory")
-    
+
     copy_data(sys.argv[-1])
-    

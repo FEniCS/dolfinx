@@ -1,4 +1,5 @@
-// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson and Anders Logg
+// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson, Anders Logg
+// and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -58,10 +59,14 @@ namespace dolfin
   {
   public:
 
-    /// Create empty matrix
+    /// Create empty matrix (on MPI_COMM_WORLD)
     PETScMatrix();
 
-    /// Create a wrapper around a PETSc Mat pointer
+    /// Create empty matrix
+    explicit PETScMatrix(MPI_Comm comm);
+
+    /// Create a wrapper around a PETSc Mat pointer. The Mat object
+    /// should have been created, e.g. via PETSc MatrCreate.
     explicit PETScMatrix(Mat A);
 
     /// Copy constructor
@@ -83,7 +88,7 @@ namespace dolfin
     { return PETScBaseMatrix::size(dim); }
 
     /// Return local ownership range
-    std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const
+    std::pair<std::int64_t, std::int64_t> local_range(std::size_t dim) const
     { return PETScBaseMatrix::local_range(dim); }
 
     /// Return number of non-zero entries in matrix (collective)
@@ -214,6 +219,9 @@ namespace dolfin
     /// database
     std::string get_options_prefix() const;
 
+    /// Call PETSc function MatSetFromOptions on the PETSc Mat object
+    void set_from_options();
+
     /// Assignment operator
     const PETScMatrix& operator= (const PETScMatrix& A);
 
@@ -232,9 +240,6 @@ namespace dolfin
 
     // Create PETSc nullspace object
     MatNullSpace create_petsc_nullspace(const VectorSpaceBasis& nullspace) const;
-
-    // Prefix for PETSc options database
-    std::string _petsc_options_prefix;
 
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;

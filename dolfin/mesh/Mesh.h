@@ -377,9 +377,6 @@ namespace dolfin
     /// Compute all entities and connectivity.
     void init() const;
 
-    /// Clear all mesh data.
-    void clear();
-
     /// Clean out all auxiliary topology data. This clears all
     /// topological data, except the connectivity between cells and
     /// vertices.
@@ -498,15 +495,15 @@ namespace dolfin
     ///     std::vector<std::size_t>
     ///         The colors as a mesh function over entities of the mesh.
     const std::vector<std::size_t>&
-      color(std::vector<std::size_t> coloring_type) const;
+    color(std::vector<std::size_t> coloring_type) const;
 
-    /// Compute minimum cell diameter.
+    /// Compute minimum cell size in mesh, measured greatest distance
+    /// between any two vertices of a cell.
     ///
     /// *Returns*
     ///     double
-    ///         The minimum cell diameter, the diameter is computed as
-    ///         two times the circumradius
-    ///         (http://mathworld.wolfram.com).
+    ///         The minimum cell size. The size is computed using
+    ///         Cell::h()
     ///
     /// *Example*
     ///     .. note::
@@ -514,13 +511,13 @@ namespace dolfin
     ///         No example code available for this function.
     double hmin() const;
 
-    /// Compute maximum cell diameter.
+    /// Compute maximum cell size in mesh, measured greatest distance
+    /// between any two vertices of a cell.
     ///
     /// *Returns*
     ///     double
-    ///         The maximum cell diameter, the diameter is computed as
-    ///         two times the circumradius
-    ///         (http://mathworld.wolfram.com).
+    ///         The maximum cell size. The size is computed using
+    ///         Cell::h()
     ///
     /// *Example*
     ///     .. note::
@@ -598,6 +595,9 @@ namespace dolfin
     /// Mesh MPI communicator
     MPI_Comm mpi_comm() const
     { return _mpi_comm; }
+
+    // Friend in fem_utils.h
+    friend Mesh create_mesh(Function&);
 
   private:
 

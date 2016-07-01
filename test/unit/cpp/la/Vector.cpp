@@ -70,12 +70,6 @@ TEST(TestVector, test_backends)
   parameters["linear_algebra_backend"] = "Eigen";
   _test_operators(MPI_COMM_SELF);
 
-  // FIXME: Outcommented STL backend to circumvent infinite loops as
-  // FIXME: seen on one buildbot
-  // STL
-  //parameters["linear_algebra_backend"] = "STL";
-  //_test_operators();
-
   // PETSc
 #ifdef HAS_PETSC
   parameters["linear_algebra_backend"] = "PETSc";

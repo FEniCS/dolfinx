@@ -44,7 +44,7 @@ std::size_t dolfin::solve(const GenericLinearOperator& A,
                           std::string preconditioner)
 {
   Timer timer("Solving linear system");
-  LinearSolver solver(method, preconditioner);
+  LinearSolver solver(x.mpi_comm(), method, preconditioner);
   return solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
@@ -164,7 +164,7 @@ double dolfin::residual(const GenericLinearOperator& A,
                         const GenericVector& x,
                         const GenericVector& b)
 {
-  std::shared_ptr<GenericVector> y = x.factory().create_vector();
+  std::shared_ptr<GenericVector> y = x.factory().create_vector(x.mpi_comm());
   A.mult(x, *y);
   *y -= b;
   return y->norm("l2");
@@ -226,10 +226,8 @@ bool dolfin::has_linear_algebra_backend(std::string backend)
     return false;
     #endif
   }
-  else if (backend == "STL")
-    return true;
-
-  return false;
+  else
+    return false;
 }
 //-------------------------------------------------------------------------
 void dolfin::list_linear_algebra_backends()
@@ -260,8 +258,6 @@ std::map<std::string, std::string> dolfin::linear_algebra_backends()
   backends.insert(std::make_pair("Eigen",
                                  "Template-based linear algebra "
                                  " library" + default_backend["Eigen"]));
-  backends.insert(std::make_pair("STL",
-                                 "Light weight storage backend for Tensors"));
 
   #ifdef HAS_PETSC
   backends.insert(std::make_pair("PETSc",

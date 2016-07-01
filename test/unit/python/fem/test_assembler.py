@@ -28,7 +28,7 @@ import os
 import numpy
 from dolfin import *
 
-from dolfin_utils.test import skip_in_parallel, filedir
+from dolfin_utils.test import skip_in_parallel, filedir, pushpop_parameters
 
 
 def test_cell_size_assembly_1D():
@@ -57,7 +57,7 @@ def test_cell_assembly_1D():
 
 
 @skip_in_parallel
-def test_cell_assembly_1D_multithreaded():
+def test_cell_assembly_1D_multithreaded(pushpop_parameters):
 
     mesh = UnitIntervalMesh(48)
     V = FunctionSpace(mesh, "CG", 1)
@@ -76,7 +76,6 @@ def test_cell_assembly_1D_multithreaded():
     parameters["num_threads"] = 4
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
-    parameters["num_threads"] = 0
 
 
 def test_cell_assembly():
@@ -164,7 +163,7 @@ def test_facet_assembly():
 
 
 @skip_in_parallel
-def test_facet_assembly_multithreaded():
+def test_facet_assembly_multithreaded(pushpop_parameters):
     mesh = UnitSquareMesh(24, 24)
     V = FunctionSpace(mesh, "DG", 1)
 
@@ -198,7 +197,6 @@ def test_facet_assembly_multithreaded():
     parameters["num_threads"] = 4
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
-    parameters["num_threads"] = 0
 
 
 def test_functional_assembly():
@@ -213,7 +211,7 @@ def test_functional_assembly():
 
 
 @skip_in_parallel
-def test_functional_assembly_multithreaded():
+def test_functional_assembly_multithreaded(pushpop_parameters):
 
     mesh = UnitSquareMesh(24, 24)
 
@@ -226,7 +224,6 @@ def test_functional_assembly_multithreaded():
 
     parameters["num_threads"] = 4
     assert round(assemble(M0) - 1.0, 7) == 0
-    parameters["num_threads"] = 0
 
 
 def test_subdomain_and_fulldomain_assembly_meshdomains():
@@ -297,18 +294,22 @@ def test_subdomain_assembly_form_1():
 
     mesh = UnitSquareMesh(4, 4)
 
-    # Define some haphazardly chosen cell/facet function
+    # Define cell/facet function
+    class Left(SubDomain):
+        def inside(self, x, on_boundary):
+            return x[0] < 0.49
     subdomains = CellFunction("size_t", mesh)
     subdomains.set_all(0)
-    subdomains[0] = 1
-    subdomains[1] = 1
+    left = Left()
+    left.mark(subdomains, 1)
 
+    class RightBoundary(SubDomain):
+        def inside(self, x, on_boundary):
+            return x[0] > 0.95
     boundaries = FacetFunction("size_t", mesh)
     boundaries.set_all(0)
-    boundaries[0] = 1
-    boundaries[1] = 1
-    boundaries[2] = 1
-    boundaries[3] = 1
+    right = RightBoundary()
+    right.mark(boundaries, 1)
 
     V = FunctionSpace(mesh, "CG", 2)
     f = Expression("x[0] + 2", degree=1)
@@ -336,16 +337,8 @@ def test_subdomain_assembly_form_1():
     assert sd["exterior_facet"] == boundaries
 
     # Check that subdomains are respected
-    reference = 7.33040364583
+    reference = 15.0
     assert round(assemble(M) - reference, 10) == 0
-
-    # This feature has been removed:
-    # Check that given exterior_facet_domains override
-    # new_boundaries = FacetFunction("size_t", mesh)
-    # new_boundaries.set_all(0)
-    # reference2 = 6.2001953125
-    # value2 = assemble(M, exterior_facet_domains=new_boundaries)
-    # assert round(value2 - reference2, 10) == 0
 
     # Check that the form itself assembles as before
     assert round(assemble(M) - reference, 10) == 0
@@ -358,28 +351,32 @@ def test_subdomain_assembly_form_1():
     b = action(F, f)
 
     # Check that domain data carries across transformations:
-    reference = 0.0626219513355
+    reference = 0.136477465659
     assert round(assemble(b).norm("l2") - reference, 8) == 0
 
 
 @skip_in_parallel
-def test_subdomain_assembly_form_1_multithreaded():
+def test_subdomain_assembly_form_1_multithreaded(pushpop_parameters):
     "Test assembly over subdomains with markers stored as part of form"
 
     mesh = UnitSquareMesh(4, 4)
 
-    # Define some haphazardly chosen cell/facet function
+    # Define cell/facet function
+    class Left(SubDomain):
+        def inside(self, x, on_boundary):
+            return x[0] < 0.49
     subdomains = CellFunction("size_t", mesh)
     subdomains.set_all(0)
-    subdomains[0] = 1
-    subdomains[1] = 1
+    left = Left()
+    left.mark(subdomains, 1)
 
+    class RightBoundary(SubDomain):
+        def inside(self, x, on_boundary):
+            return x[0] > 0.95
     boundaries = FacetFunction("size_t", mesh)
     boundaries.set_all(0)
-    boundaries[0] = 1
-    boundaries[1] = 1
-    boundaries[2] = 1
-    boundaries[3] = 1
+    right = RightBoundary()
+    right.mark(boundaries, 1)
 
     V = FunctionSpace(mesh, "CG", 2)
     f = Expression("x[0] + 2", degree=1)
@@ -407,34 +404,18 @@ def test_subdomain_assembly_form_1_multithreaded():
     assert sd["exterior_facet"] == boundaries
 
     # Check that subdomains are respected
-    reference = 7.33040364583
+    reference = 15.0
     assert round(assemble(M) - reference, 10) == 0
 
     # Assemble form (multi-threaded)
     parameters["num_threads"] = 4
     assert round(assemble(M) - reference, 10) == 0
-    parameters["num_threads"] = 0
-
-    # This feature has been removed:
-    # Check that given exterior_facet_domains override
-    # new_boundaries = FacetFunction("size_t", mesh)
-    # new_boundaries.set_all(0)
-    # reference2 = 6.2001953125
-    # value2 = assemble(M, exterior_facet_domains=new_boundaries)
-    # assert round(value2 - reference2, 10) == 0
-    # Assemble form (multi-threaded)
-    # parameters["num_threads"] = 4
-    # assert round(assemble(M, exterior_facet_domains=new_boundaries) -
-    #              reference2, 10) == 0
-    # parameters["num_threads"] = 0
 
     # Check that the form itself assembles as before
     assert round(assemble(M) - reference, 10) == 0
 
     # Assemble form  (multi-threaded)
-    parameters["num_threads"] = 4
     assert round(assemble(M) - reference, 10) == 0
-    parameters["num_threads"] = 0
 
     # Take action of derivative of M on f
     df = TestFunction(V)
@@ -444,13 +425,11 @@ def test_subdomain_assembly_form_1_multithreaded():
     b = action(F, f)
 
     # Check that domain data carries across transformations:
-    reference = 0.0626219513355
+    reference = 0.136477465659
     assert round(assemble(b).norm("l2") - reference, 8) == 0
 
     # Assemble form  (multi-threaded)
-    parameters["num_threads"] = 4
     assert round(assemble(b).norm("l2") - reference, 8) == 0
-    parameters["num_threads"] = 0
 
 
 def test_subdomain_assembly_form_2():
@@ -572,7 +551,7 @@ def test_nonsquare_assembly_multithreaded():
 
 
 @skip_in_parallel
-def test_reference_assembly(filedir):
+def test_reference_assembly(filedir, pushpop_parameters):
     "Test assembly against a reference solution"
 
     # NOTE: This test is not robust as it relies on specific
@@ -611,11 +590,8 @@ def test_reference_assembly(filedir):
         D = M - M0
         assert round(numpy.linalg.norm(D, 'fro') - 0.0, 7) == 0
 
-        parameters["reorder_dofs_serial"] = reorder_dofs
-
     except:
         print("Cannot run this test without SciPy")
-        parameters["reorder_dofs_serial"] = reorder_dofs
 
 
 def test_ways_to_pass_mesh_to_assembler():

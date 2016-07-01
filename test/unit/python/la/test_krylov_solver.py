@@ -22,15 +22,14 @@
 from __future__ import print_function
 import pytest
 from dolfin import *
-from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel
+from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel, pushpop_parameters
 
 
 @skip_if_not_PETSc
-def test_krylov_samg_solver_elasticity():
+def test_krylov_samg_solver_elasticity(pushpop_parameters):
     "Test PETScKrylovSolver with smoothed aggregation AMG"
 
     # Set backend
-    previous_backend = parameters["linear_algebra_backend"]
     parameters["linear_algebra_backend"] = "PETSc"
 
     def build_nullspace(V, x):
@@ -122,8 +121,6 @@ def test_krylov_samg_solver_elasticity():
             print("Testing method '{}' with {} x {} mesh".format(method, N, N))
             niter = amg_solve(N, method)
             assert niter < 18
-
-    parameters["linear_algebra_backend"] = previous_backend
 
 
 @skip_if_not_PETSc
@@ -220,8 +217,8 @@ def test_krylov_tpetra():
     bc.apply(b)
 
     mp = MueluPreconditioner()
-    mlp = mp.parameters['muelu']
-    mlp['verbosity'] = 'none'
+    mlp = mp.parameters
+    mlp['verbosity'] = 'extreme'
     mlp.add("max_levels", 10)
     mlp.add("coarse:_max_size", 10)
     mlp.add("coarse:_type", "KLU2")

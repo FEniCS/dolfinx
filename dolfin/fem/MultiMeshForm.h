@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2015 Anders Logg
+// Copyright (C) 2013-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-12
-// Last changed: 2015-11-05
+// Last changed: 2016-03-02
 
 #ifndef __MULTI_MESH_FORM_H
 #define __MULTI_MESH_FORM_H
@@ -44,25 +44,15 @@ namespace dolfin
     // when instaniated and this constructor should then be removed.
     MultiMeshForm() {}
 
-    /// Create empty multimesh functional (shared pointer version)
+    /// Create empty multimesh functional
     MultiMeshForm(std::shared_ptr<const MultiMesh> multimesh);
 
-    /// Create empty multimesh functional (reference version)
-    MultiMeshForm(const MultiMesh& multimesh);
-
-    /// Create empty linear multimesh variational form (shared pointer version)
+    /// Create empty linear multimesh variational form
     MultiMeshForm(std::shared_ptr<const MultiMeshFunctionSpace> function_space);
 
-    /// Create empty linear multimesh variational form (reference version)
-    MultiMeshForm(const MultiMeshFunctionSpace& function_space);
-
-    /// Create empty bilinear multimesh variational form (shared pointer version)
+    /// Create empty bilinear multimesh variational form
     MultiMeshForm(std::shared_ptr<const MultiMeshFunctionSpace> function_space_0,
-              std::shared_ptr<const MultiMeshFunctionSpace> function_space_1);
-
-    /// Create empty bilinear multimesh variational form (reference version)
-    MultiMeshForm(const MultiMeshFunctionSpace& function_space_0,
-              const MultiMeshFunctionSpace& function_space_1);
+                  std::shared_ptr<const MultiMeshFunctionSpace> function_space_1);
 
     /// Destructor
     ~MultiMeshForm();
@@ -113,13 +103,6 @@ namespace dolfin
     ///     form (_Form_)
     ///         The form.
     void add(std::shared_ptr<const Form> form);
-
-    /// Add form (reference version)
-    ///
-    /// *Arguments*
-    ///     form (_Form_)
-    ///         The form.
-    void add(const Form& form);
 
     /// Build MultiMesh form
     void build();

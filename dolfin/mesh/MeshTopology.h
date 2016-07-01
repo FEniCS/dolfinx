@@ -21,6 +21,7 @@
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
 
+#include <cstdint>
 #include <map>
 #include <utility>
 #include <vector>
@@ -122,12 +123,12 @@ namespace dolfin
 
     /// Return map from shared entities (local index) to processes
     /// that share the entity
-    std::map<unsigned int, std::set<unsigned int> >&
+    std::map<std::int32_t, std::set<unsigned int> >&
       shared_entities(unsigned int dim);
 
     /// Return map from shared entities (local index) to process that
     /// share the entity (const version)
-    const std::map<unsigned int, std::set<unsigned int> >&
+    const std::map<std::int32_t, std::set<unsigned int> >&
       shared_entities(unsigned int dim) const;
 
     /// Return mapping from local ghost cell index to owning process
@@ -167,7 +168,7 @@ namespace dolfin
     //                 to avoid circular dependencies in the header files
     std::map<std::vector<std::size_t>,
       std::pair<std::vector<std::size_t>,
-      std::vector<std::vector<std::size_t> > > > coloring;
+      std::vector<std::vector<std::size_t>>>> coloring;
 
   private:
 
@@ -185,7 +186,7 @@ namespace dolfin
 
     // For entities of a given dimension d , maps each shared entity
     // (local index) to a list of the processes sharing the vertex
-    std::map<unsigned int, std::map<unsigned int, std::set<unsigned int> > >
+    std::map<unsigned int, std::map<std::int32_t, std::set<unsigned int>>>
       _shared_entities;
 
     // For cells which are "ghosted", locate the owning process,

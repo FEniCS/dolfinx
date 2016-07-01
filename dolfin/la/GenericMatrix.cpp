@@ -40,7 +40,7 @@ void GenericMatrix::ident_zeros()
   std::vector<std::size_t> columns;
   std::vector<double> values;
   std::vector<dolfin::la_index> zero_rows;
-  const std::pair<std::size_t, std::size_t> row_range = local_range(0);
+  const std::pair<std::int64_t, std::int64_t> row_range = local_range(0);
   const std::size_t m = row_range.second - row_range.first;
 
   // Check which rows are zero

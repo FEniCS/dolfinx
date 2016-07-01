@@ -28,6 +28,7 @@
 #define __GENERIC_VECTOR_H
 
 #include <algorithm>
+#include <cstdint>
 #include <utility>
 #include <vector>
 #include <dolfin/common/ArrayView.h>
@@ -57,9 +58,12 @@ namespace dolfin
     virtual void init(const TensorLayout& tensor_layout)
     {
       if (!empty())
+      {
         dolfin_error("GenericVector.h",
                      "initialize vector",
                      "Vector cannot be initialised more than once");
+      }
+
       std::vector<dolfin::la_index> ghosts;
       std::vector<std::size_t> local_to_global(tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL));
 
@@ -93,7 +97,7 @@ namespace dolfin
     { dolfin_assert(dim == 0); return size(); }
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t>
+    virtual std::pair<std::int64_t, std::int64_t>
     local_range(std::size_t dim) const
     { dolfin_assert(dim == 0); return local_range(); }
 
@@ -177,7 +181,7 @@ namespace dolfin
     virtual std::size_t local_size() const = 0;
 
     /// Return local ownership range of a vector
-    virtual std::pair<std::size_t, std::size_t> local_range() const = 0;
+    virtual std::pair<std::int64_t, std::int64_t> local_range() const = 0;
 
     /// Determine whether global vector index is owned by this process
     virtual bool owns_index(std::size_t i) const = 0;

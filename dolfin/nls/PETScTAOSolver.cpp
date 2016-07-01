@@ -24,6 +24,7 @@
 #include <string>
 #include <utility>
 #include <petscsys.h>
+#include <petscversion.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/la/KrylovSolver.h>
@@ -77,15 +78,8 @@ Parameters PETScTAOSolver::default_parameters()
   p.add("linear_solver"          , "default");
   p.add("preconditioner"         , "default");
 
-  std::set<std::string> line_searches;
-  line_searches.insert("default");
-  line_searches.insert("unit");
-  line_searches.insert("more-thuente");
-  line_searches.insert("gpcg");
-  line_searches.insert("armijo");
-  line_searches.insert("owarmijo");
-  line_searches.insert("ipm");
-
+  std::set<std::string> line_searches = {"default", "unit", "more-thuente",
+                                         "gpcg", "armijo", "owarmijo", "ipm"};
   p.add("line_search", "default", line_searches);
 
   p.add(KrylovSolver::default_parameters());
@@ -93,9 +87,24 @@ Parameters PETScTAOSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
+PETScTAOSolver::PETScTAOSolver(MPI_Comm comm) : _tao(nullptr),
+                                                _has_bounds(false)
+{
+  // Create TAO object
+  PetscErrorCode ierr = TaoCreate(comm, &_tao);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoCreate");
+
+  // Set parameter values
+  parameters = default_parameters();
+
+  // Update parameters when tao/ksp/pc_types are explictly given
+  update_parameters("default", "default", "default");
+}
+//-----------------------------------------------------------------------------
 PETScTAOSolver::PETScTAOSolver(const std::string tao_type,
                                const std::string ksp_type,
-                               const std::string pc_type) : _tao(NULL)
+                               const std::string pc_type) : _tao(NULL),
+                                                            _has_bounds(false)
 {
   // Create TAO object
   PetscErrorCode ierr = TaoCreate(PETSC_COMM_WORLD, &_tao);
@@ -115,8 +124,8 @@ PETScTAOSolver::~PETScTAOSolver()
 }
 //-----------------------------------------------------------------------------
 void PETScTAOSolver::update_parameters(const std::string tao_type,
-                                  const std::string ksp_type,
-                                  const std::string pc_type)
+                                       const std::string ksp_type,
+                                       const std::string pc_type)
 {
   // Update parameters when tao/ksp/pc_types are explictly given
   if (tao_type != "default")
@@ -144,7 +153,7 @@ void PETScTAOSolver::set_tao(const std::string tao_type)
 
   // In case of an unconstrained minimisation problem, set the TAO
   // method to TAONTL
-  if (!has_bounds && tao_type == "default")
+  if (!_has_bounds && tao_type == "default")
   {
     ierr = TaoSetType(_tao, TAONTL);
     if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetType");
@@ -168,7 +177,7 @@ PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
                       const GenericVector& ub)
 {
   // Bound-constrained minimisation problem
-  has_bounds = true;
+  _has_bounds = true;
 
   return solve(optimisation_problem, x.down_cast<PETScVector>(),
                lb.down_cast<PETScVector>(), ub.down_cast<PETScVector>());
@@ -179,7 +188,7 @@ PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
                       GenericVector& x)
 {
   // Unconstrained minimisation problem
-  has_bounds = false;
+  _has_bounds = false;
   PETScVector lb, ub;
 
   return solve(optimisation_problem, x.down_cast<PETScVector>(), lb, ub);
@@ -189,7 +198,7 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
                           PETScVector& x)
 {
   // Unconstrained minimisation problem
-  has_bounds = false;
+  _has_bounds = false;
   PETScVector lb, ub;
   init(optimisation_problem, x.down_cast<PETScVector>(), lb, ub);
 }
@@ -223,7 +232,7 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetInitialVector");
 
   // Set the bounds in case of a bound-constrained minimisation problem
-  if (has_bounds)
+  if (_has_bounds)
   {
     ierr = TaoSetVariableBounds(_tao, lb.vec(), ub.vec());
     if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetVariableBounds");
@@ -539,13 +548,10 @@ void PETScTAOSolver::set_ksp_options()
     // In any case, set the KSP options specified by the user
     Parameters krylov_parameters = parameters("krylov_solver");
 
-    // GMRES restart parameter
-    const int gmres_restart = krylov_parameters("gmres")["restart"];
-    ierr = KSPGMRESSetRestart(ksp, gmres_restart);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGMRESSetRestart");
-
     // Non-zero initial guess
-    const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
+    bool nonzero_guess = false;
+    if (krylov_parameters["nonzero_initial_guess"].is_set())
+      nonzero_guess = krylov_parameters["nonzero_initial_guess"];
     if (nonzero_guess)
     {
       ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
@@ -555,26 +561,38 @@ void PETScTAOSolver::set_ksp_options()
     {
       ierr = KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
       if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetInitialGuessNonzero");
-    } 
-
-    // KSP monitor
-    if (krylov_parameters["monitor_convergence"])
-    {
-      ierr = KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm,
-                           PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
-                           NULL);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
     }
 
-    // Get integer tolerances (to take care of casting to PetscInt)
-    const int max_iter = krylov_parameters["maximum_iterations"];
+    // KSP monitor
+    if (krylov_parameters["monitor_convergence"].is_set())
+    {
+      if (krylov_parameters["monitor_convergence"])
+      {
+        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
+        ierr = TaoSetMonitor(_tao, TaoDefaultMonitor,
+                             PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_tao)),
+                             NULL);
+        if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetMonitor");
+        #else
+        PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
+        PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
+        PetscViewerAndFormat *vf;
+        ierr = PetscViewerAndFormatCreate(viewer,format,&vf);
+        ierr = KSPMonitorSet(ksp,
+                         (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
+                         vf,
+                         (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+        if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
+        #endif
+      }
+    }
 
     // Set tolerances
-    ierr = KSPSetTolerances(ksp,
-                            krylov_parameters["relative_tolerance"],
-                            krylov_parameters["absolute_tolerance"],
-                            krylov_parameters["divergence_limit"],
-                            max_iter);
+    const double rtol = krylov_parameters["relative_tolerance"].is_set() ? (double)krylov_parameters["relative_tolerance"] : PETSC_DEFAULT;
+    const double atol = krylov_parameters["absolute_tolerance"].is_set() ? (double)krylov_parameters["absolute_tolerance"] : PETSC_DEFAULT;
+    const double dtol = krylov_parameters["divergence_limit"].is_set() ? (double)krylov_parameters["divergence_limit"] : PETSC_DEFAULT;
+    const int max_it  = krylov_parameters["maximum_iterations"].is_set() ? (int)krylov_parameters["maximum_iterations"] : PETSC_DEFAULT;
+    ierr = KSPSetTolerances(ksp, rtol, atol, dtol, max_it);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetTolerances");
   }
   else

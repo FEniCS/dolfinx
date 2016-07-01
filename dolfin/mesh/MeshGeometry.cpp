@@ -42,14 +42,15 @@ MeshGeometry::MeshGeometry(const MeshGeometry& geometry) : _dim(0)
 //-----------------------------------------------------------------------------
 MeshGeometry::~MeshGeometry()
 {
-  clear();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
 {
-  // Copy data
-  _dim = geometry._dim;
-  _degree = geometry._degree;
+  // Try init; may fail with non-matching _dim and _degree
+  init(geometry._dim, geometry._degree);
+
+  // Copy remaining data
   coordinates = geometry.coordinates;
   entity_offsets = geometry.entity_offsets;
 
@@ -61,21 +62,34 @@ Point MeshGeometry::point(std::size_t n) const
   return Point(_dim, x(n));;
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::clear()
+void MeshGeometry::init(std::size_t dim, std::size_t degree)
 {
-  _dim  = 0;
-  _degree = 1;
-  coordinates.clear();
-}
-//-----------------------------------------------------------------------------
-void MeshGeometry::init(std::size_t dim, std::size_t d)
-{
-  // Delete old data if any
-  clear();
+  // Check input
+  if (dim == 0)
+  {
+    dolfin_error("MeshGeometry.cpp",
+                 "initialize mesh geometry",
+                 "Mesh geometry of dimension zero is not supported");
+  }
+  if (degree == 0)
+  {
+    dolfin_error("MeshGeometry.cpp",
+                 "initialize mesh geometry",
+                 "Mesh geometry of degree zero is not supported");
+  }
+
+  // Avoid repeated initialization; would be a hell for UFL
+  if (_dim > 0 && (_dim != dim || _degree != degree))
+  {
+    dolfin_error("MeshGeometry.cpp",
+                 "initialize mesh geometry",
+                 "Mesh geometry cannot be reinitialized with different "
+                 "dimension and/or degree");
+  }
 
   // Save dimension and degree
   _dim = dim;
-  _degree = d;
+  _degree = degree;
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::init_entities(const std::vector<std::size_t>& num_entities)

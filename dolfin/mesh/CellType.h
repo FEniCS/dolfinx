@@ -25,6 +25,7 @@
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <boost/multi_array.hpp>
@@ -68,10 +69,12 @@ namespace dolfin
     static std::string type2string(Type type);
 
     /// Return type of cell
-    Type cell_type() const { return _cell_type; }
+    Type cell_type() const
+    { return _cell_type; }
 
     /// Return type of cell for facets
-    Type facet_type() const { return _facet_type; }
+    Type facet_type() const
+    { return _facet_type; }
 
     /// Return type of cell for entity of dimension i
     Type entity_type(std::size_t i) const;
@@ -95,7 +98,8 @@ namespace dolfin
     /// Return orientation of the cell relative to given up direction
     std::size_t orientation(const Cell& cell, const Point& up) const;
 
-    /// Create entities e of given topological dimension from vertices v
+    /// Create entities e of given topological dimension from
+    /// vertices v
     virtual void create_entities(boost::multi_array<unsigned int, 2>& e,
                                  std::size_t dim,
                                  const unsigned int* v) const = 0;
@@ -103,8 +107,11 @@ namespace dolfin
     /// Compute (generalized) volume of mesh entity
     virtual double volume(const MeshEntity& entity) const = 0;
 
-    /// Compute diameter of mesh entity
-    virtual double diameter(const MeshEntity& entity) const = 0;
+    /// Compute greatest distance between any two vertices
+    virtual double h(const MeshEntity& entity) const;
+
+    /// Compute circumradius of mesh entity
+    virtual double circumradius(const MeshEntity& entity) const = 0;
 
     /// Compute inradius of cell
     virtual double inradius(const Cell& cell) const;
@@ -154,7 +161,7 @@ namespace dolfin
     virtual std::string description(bool plural) const = 0;
 
     /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
-    virtual std::vector<unsigned int> vtk_mapping() const = 0;
+    virtual std::vector<std::int8_t> vtk_mapping() const = 0;
 
   protected:
 

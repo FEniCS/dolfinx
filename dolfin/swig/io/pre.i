@@ -41,3 +41,5 @@
 %ignore dolfin::HDF5Attribute::get;
 %ignore dolfin::HDF5Attribute::set;
 
+%ignore dolfin::X3DOMParameters::get_color_map_array;
+%rename (_set_color_map) dolfin::X3DOMParameters::set_color_map;

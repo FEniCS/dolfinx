@@ -54,7 +54,7 @@ void TimeSeries::store_object(MPI_Comm comm, const T& object, double t,
 
   // Get file handle for low level operations
   HDF5File hdf5_file(comm, series_name, mode);
-  const hid_t fid = hdf5_file.hdf5_file_id;
+  const hid_t fid = hdf5_file._hdf5_file_id;
 
   // Find existing datasets (should be equal to number of times)
   std::size_t nobjs = 0;
@@ -214,7 +214,8 @@ void TimeSeries::retrieve(GenericVector& vector, double t,
 
     // Read vectors
     GenericVector& x0(vector);
-    std::shared_ptr<GenericVector> x1 = x0.factory().create_vector();
+    std::shared_ptr<GenericVector> x1
+      = x0.factory().create_vector(x0.mpi_comm());
     hdf5_file.read(x0, "/Vector/" + std::to_string(i0), false);
     hdf5_file.read(*x1, "/Vector/" + std::to_string(i1), false);
 

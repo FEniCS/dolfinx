@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2013 Anders Logg
+// Copyright (C) 2003-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -17,20 +17,20 @@
 //
 // Thanks to Jim Tilander for many helpful hints.
 //
-// Modified by Ola Skavhaug 2007,
+// Modified by Ola Skavhaug 2007
 // Modified by Garth N. Wells 2009
 //
 // First added:  2003-03-13
-// Last changed: 2013-04-18
+// Last changed: 2016-06-10
 
 #include <cstdarg>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <stdarg.h>
 #include <stdio.h>
 
-#include <boost/scoped_array.hpp>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/MPI.h>
@@ -40,7 +40,7 @@
 
 using namespace dolfin;
 
-static boost::scoped_array<char> buffer(0);
+static std::unique_ptr<char[]> buffer;
 static unsigned int buffer_size= 0;
 
 // Buffer allocation
@@ -136,12 +136,10 @@ void dolfin::dolfin_error(std::string location,
 //-----------------------------------------------------------------------------
 void dolfin::deprecation(std::string feature,
                          std::string version_deprecated,
-                         std::string version_remove,
                          std::string message, ...)
 {
   read(buffer.get(), message);
-  LogManager::logger().deprecation(feature, version_deprecated, version_remove,
-                                 buffer.get());
+  LogManager::logger().deprecation(feature, version_deprecated, buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::log(int log_level, std::string msg, ...)

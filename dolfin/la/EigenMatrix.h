@@ -74,9 +74,9 @@ namespace dolfin
     virtual std::size_t size(std::size_t dim) const;
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t>
+    virtual std::pair<std::int64_t, std::int64_t>
       local_range(std::size_t dim) const
-    { return std::make_pair(0, size(dim)); }
+    { return {0, size(dim)}; }
 
     /// Return number of non-zero entries in matrix
     std::size_t nnz() const;

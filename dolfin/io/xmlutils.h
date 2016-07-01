@@ -22,19 +22,33 @@
 #define __XML_UTILS_H
 
 #include <string>
-#include "pugixml.hpp"
 
+namespace pugi
+{
+  class xml_node;
+}
 
 namespace dolfin
 {
 
-  // This file provides a small number of utility functions that may be
-  // useful when parsing XML using pugixml.
+  namespace xmlutils
+  {
+    // This file provides a small number of utility functions that may be
+    // useful when parsing XML using pugixml.
 
-  /// Get XML node with given name, either the given node itself or a
-  /// child node. An error message is thrown if node is not found.
-  const pugi::xml_node get_node(const pugi::xml_node& xml_node,
-                                std::string node_name);
+    /// Get XML node with given name, either the given node itself or a
+    /// child node. An error message is thrown if node is not found.
+    const pugi::xml_node get_node(const pugi::xml_node& xml_node,
+                                  std::string node_name);
+
+    // Check that xml_node has name 'name'. If not, throw error.
+    void check_node_name(const pugi::xml_node& xml_node,
+                         const std::string name);
+
+    // Check that xml_node has attribute 'name'. If not, throw error.
+    void check_has_attribute(const pugi::xml_node& xml_node,
+                             const std::string name);
+  }
 
 }
 

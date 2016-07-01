@@ -155,7 +155,7 @@ unsigned int MeshEntity::owner() const
     dolfin_error("MeshEntity.cpp",
                  "get ownership of entity",
                  "Ownership of non-ghost cells is local process");
-  
+
   return _mesh->topology().cell_owner()[_local_index - offset];
 }
 //-----------------------------------------------------------------------------

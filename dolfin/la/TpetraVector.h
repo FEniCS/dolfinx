@@ -21,6 +21,7 @@
 
 #ifdef HAS_TRILINOS
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
@@ -60,7 +61,7 @@ namespace dolfin
     vector_type;
 
     /// Create empty vector
-    TpetraVector();
+    TpetraVector(MPI_Comm comm=MPI_COMM_WORLD);
 
     /// Create vector of size N
     TpetraVector(MPI_Comm comm, std::size_t N);
@@ -123,7 +124,7 @@ namespace dolfin
     virtual std::size_t local_size() const;
 
     /// Return ownership range of a vector
-    virtual std::pair<std::size_t, std::size_t> local_range() const;
+    virtual std::pair<std::int64_t, std::int64_t> local_range() const;
 
     /// Determine whether global vector index is owned by this process
     virtual bool owns_index(std::size_t i) const;
@@ -254,7 +255,7 @@ namespace dolfin
   private:
 
     // Initialise Tpetra vector
-    void _init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range,
+    void _init(MPI_Comm comm, std::pair<std::int64_t, std::int64_t> range,
                const std::vector<dolfin::la_index>& local_to_global);
 
     // Tpetra multivector - actually a view into the ghosted vector,

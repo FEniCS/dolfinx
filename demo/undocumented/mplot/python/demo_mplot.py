@@ -22,28 +22,19 @@ import ufl
 from six.moves import xrange as range
 import os
 
-display = os.environ.get("DISPLAY")
-noplot = os.environ.get("DOLFIN_NOPLOT", "0") != "0"
-
 try:
-    # Avoid interactive backend (such as TkAgg) on headless machine
-    if not display or noplot:
-        import matplotlib
-        try:
-            matplotlib.use("Agg")
-        except ValueError as e:
-            raise ImportError(str(e))
-    # Import pyplot and 3D plotting extension
+    parameters['plotting_backend'] = 'matplotlib'
+except RuntimeError:
+    print("This demo requires matplotlib! Bye.")
+    exit()
+else:
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import axes3d
-except ImportError as e:
-    print("Import of matplotlib failed with the message:")
-    print('"%s"' % str(e))
-    print()
-    print("Please, make sure matplotlib is installed. Bye!")
-    exit()
 
-parameters['plotting_backend'] = 'matplotlib'
+
+rank = MPI.rank(mpi_comm_world())
+size = MPI.size(mpi_comm_world())
+suffix = "_r%s" % rank if size > 1 else ""
 
 
 def plot_alongside(*args, **kwargs):
@@ -100,15 +91,15 @@ def plot_1d_meshes():
     # FIXME: This passes fine in parallel although it's not obvious what does it do
     plt.figure()
     plot(interval_mesh(1, 30))
-    plt.savefig("mesh_1d.png")
+    plt.savefig("mesh_1d%s.png" % suffix)
 
     plt.figure()
     plot(interval_mesh(2, 100))
-    plt.savefig("mesh_2d.png")
+    plt.savefig("mesh_2d%s.png" % suffix)
 
     plt.figure()
     plot(interval_mesh(3, 100))
-    plt.savefig("mesh_3d.png")
+    plt.savefig("mesh_3d%s.png" % suffix)
 
 
 def plot_functions():
@@ -123,16 +114,17 @@ def plot_functions():
 
     plot_alongside(u, v, **r)
     plot_alongside(u, v, mode='color', **r)
-    plt.savefig("color_plot.pdf")
+    plt.savefig("color_plot%s.pdf" % suffix)
     plot_alongside(u, v, mode='warp', **r)
-    plt.savefig("warp_plot.pdf")
+    plt.savefig("warp_plot%s.pdf" % suffix)
     plot_alongside(u, v, v, mode='warp', **r)
 
 
 def main(argv=None):
     plot_1d_meshes()
     plot_functions()
-    plt.show()
+    if os.environ.get("DOLFIN_NOPLOT", "0") == "0":
+        plt.show()
 
 
 if __name__ == '__main__':

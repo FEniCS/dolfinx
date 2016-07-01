@@ -23,6 +23,7 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import skip_if_not_PETSc, skip_in_serial, skip_if_not_petsc4py
 
+
 def test_nasty_jit_caching_bug():
 
     # This may result in something like "matrices are not aligned"
@@ -42,13 +43,13 @@ def test_nasty_jit_caching_bug():
 
     parameters["form_compiler"]["representation"] = default_parameters
 
+
 @skip_if_not_PETSc
 def test_compile_extension_module():
 
-    # This test should do basically the same as the docstring of
-    # the compile_extension_module function in compilemodule.py.
-    # Remember to update the docstring if the test is modified!
-
+    # This test should do basically the same as the docstring of the
+    # compile_extension_module function in compilemodule.py.  Remember
+    # to update the docstring if the test is modified!
 
     from numpy import arange, exp
     code = """
@@ -82,6 +83,7 @@ def test_compile_extension_module_kwargs():
     m0 = compile_extension_module('', cppargs='')
     assert not m2.__file__ == m0.__file__
 
+
 @skip_if_not_petsc4py
 @skip_in_serial
 def test_mpi_dependent_jiting():
@@ -114,7 +116,7 @@ def test_mpi_dependent_jiting():
 
     rank = comm.Get_rank()
     group_comm_0 = petsc.Comm(comm.Create(group.Incl(range(1))))
-    group_comm_1 = petsc.Comm(comm.Create(group.Incl(range(1,2))))
+    group_comm_1 = petsc.Comm(comm.Create(group.Incl(range(1, 2))))
 
     if size > 2:
         group_comm_2 = petsc.Comm(comm.Create(group.Incl(range(2,size))))
@@ -123,8 +125,9 @@ def test_mpi_dependent_jiting():
         e = Expression("4", mpi_comm=group_comm_0, degree=0)
 
     elif rank == 1:
-        e = Expression("5", mpi_comm=group_comm_1)
-        domain = CompiledSubDomain("on_boundary", mpi_comm=group_comm_1, degree=0)
+        e = Expression("5", mpi_comm=group_comm_1, degree=0)
+        domain = CompiledSubDomain("on_boundary", mpi_comm=group_comm_1,
+                                   degree=0)
 
     else:
         mesh = UnitSquareMesh(group_comm_2, 2, 2)

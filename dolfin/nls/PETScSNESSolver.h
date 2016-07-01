@@ -23,12 +23,13 @@
 #ifdef HAS_PETSC
 
 #include <map>
-#include <petscsnes.h>
 #include <memory>
+#include <petscsnes.h>
+
+#include <dolfin/common/MPI.h>
+#include <dolfin/la/PETScObject.h>
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/parameter/Parameters.h>
-#include <dolfin/la/PETScObject.h>
-#include <dolfin/la/PETScVector.h>
 
 namespace dolfin
 {
@@ -44,6 +45,9 @@ namespace dolfin
   class PETScSNESSolver : public PETScObject
   {
   public:
+
+    /// Create SNES solver
+    explicit PETScSNESSolver(MPI_Comm comm);
 
     /// Create SNES solver for a particular method
     PETScSNESSolver(std::string nls_type="default");
@@ -92,8 +96,22 @@ namespace dolfin
     /// user wants to access the SNES object directly
     void init(NonlinearProblem& nonlinear_problem, GenericVector& x);
 
+    /// Set options from the PETSc options database
+    void set_from_options() const;
+
+    /// Sets the prefix used by PETSc when searching the PETSc options
+    /// database
+    void set_options_prefix(std::string options_prefix);
+
+    /// Returns the prefix used by PETSc when searching the PETSc
+    /// options database
+    std::string get_options_prefix() const;
+
+    /// Return the MPI communicator
+    MPI_Comm mpi_comm() const;
+
     /// Return a list of available solver methods
-    static std::vector<std::pair<std::string, std::string> > methods();
+    static std::vector<std::pair<std::string, std::string>> methods();
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -129,15 +147,12 @@ namespace dolfin
     // PETSc solver pointer
     SNES _snes;
 
-    // Initialize SNES solver
-    void init(const std::string& method);
-
     // Update the linear solver parameters
     void set_linear_solver_parameters();
 
     // Available solvers
     static const std::map<std::string,
-      std::pair<std::string, const SNESType> > _methods;
+      std::pair<std::string, const SNESType>> _methods;
 
     // The callback for PETSc to compute F, the nonlinear residual
     static PetscErrorCode FormFunction(SNES snes, Vec x, Vec f, void* ctx);
@@ -163,7 +178,7 @@ namespace dolfin
     std::shared_ptr<const PETScVector> ub;
 
     // Flag to indicate if explicit bounds are set
-    bool has_explicit_bounds;
+    bool _has_explicit_bounds;
 
     // SNES context
     struct snes_ctx_t _snes_ctx;

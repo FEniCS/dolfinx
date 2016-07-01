@@ -103,7 +103,8 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
   }
 
   // Read function data from file
-  File file(filename);
+  MPI_Comm comm = _function_space->mesh()->mpi_comm();
+  File file(comm, filename);
   file >> *this;
 }
 //-----------------------------------------------------------------------------
@@ -164,7 +165,6 @@ const Function& Function::operator= (const Function& v)
       new_rows[i]   = entry->first;
       old_rows[i++] = entry->second;
     }
-    MPI::barrier(MPI_COMM_WORLD);
 
     // Gather values into a vector
     dolfin_assert(v.vector());
@@ -219,22 +219,22 @@ Function& Function::operator[] (std::size_t i) const
 //-----------------------------------------------------------------------------
 FunctionAXPY Function::operator+(const Function& other) const
 {
-  return FunctionAXPY(*this, other, FunctionAXPY::ADD_ADD);
+  return FunctionAXPY(*this, other, FunctionAXPY::Direction::ADD_ADD);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY Function::operator+(const FunctionAXPY& axpy) const
 {
-  return FunctionAXPY(axpy, *this, FunctionAXPY::ADD_ADD);
+  return FunctionAXPY(axpy, *this, FunctionAXPY::Direction::ADD_ADD);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY Function::operator-(const Function& other) const
 {
-  return FunctionAXPY(*this, other, FunctionAXPY::ADD_SUB);
+  return FunctionAXPY(*this, other, FunctionAXPY::Direction::ADD_SUB);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY Function::operator-(const FunctionAXPY& axpy) const
 {
-  return FunctionAXPY(axpy, *this, FunctionAXPY::SUB_ADD);
+  return FunctionAXPY(axpy, *this, FunctionAXPY::Direction::SUB_ADD);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY Function::operator*(double scalar) const
@@ -571,7 +571,7 @@ void Function::init_vector()
 
   // Create vector of dofs
   if (!_vector)
-    _vector = factory.create_vector();
+    _vector = factory.create_vector(_function_space->mesh()->mpi_comm());
   dolfin_assert(_vector);
   if (!_vector->empty())
   {
@@ -582,46 +582,5 @@ void Function::init_vector()
   }
   _vector->init(*tensor_layout);
   _vector->zero();
-}
-//-----------------------------------------------------------------------------
-void
-Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
-                                std::vector<la_index>& ghost_indices) const
-{
-  // Clear data
-  ghost_indices.clear();
-
-  // Get mesh
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->mesh());
-  const Mesh& mesh = *_function_space->mesh();
-
-  // Get dof map
-  dolfin_assert(_function_space->dofmap());
-  const GenericDofMap& dofmap = *(_function_space->dofmap());
-
-  // Get local range
-  const std::size_t n0 = range.first;
-  const std::size_t n1 = range.second;
-
-  // Iterate over local mesh and check which dofs are needed
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Get dofs on cell
-    auto dofs = dofmap.cell_dofs(cell->index());
-    for (std::size_t d = 0; d < dofs.size(); ++d)
-    {
-      const std::size_t dof = dofs[d];
-      if (dof < n0 || dof >= n1)
-      {
-        // FIXME: Could we use dolfin::Set here? Or unordered_set?
-        if (std::find(ghost_indices.begin(), ghost_indices.end(), dof)
-            == ghost_indices.end())
-        {
-          ghost_indices.push_back(dof);
-        }
-      }
-    }
-  }
 }
 //-----------------------------------------------------------------------------

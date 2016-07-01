@@ -106,42 +106,34 @@ std::size_t dolfin::MPI::global_offset(const MPI_Comm comm,
 #endif
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t>
-dolfin::MPI::local_range(const MPI_Comm comm, std::size_t N)
+std::pair<std::int64_t, std::int64_t>
+dolfin::MPI::local_range(const MPI_Comm comm, std::int64_t N)
 {
   return local_range(comm, rank(comm), N);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t>
-dolfin::MPI::local_range(const MPI_Comm comm, unsigned int process,
-                         std::size_t N)
+std::pair<std::int64_t, std::int64_t>
+dolfin::MPI::local_range(const MPI_Comm comm, int process, std::int64_t N)
 {
   return compute_local_range(process, N, size(comm));
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t>
-dolfin::MPI::compute_local_range(unsigned int process,
-                                 std::size_t N,
-                                 unsigned int size)
+std::pair<std::int64_t, std::int64_t>
+dolfin::MPI::compute_local_range(int process, std::int64_t N, int size)
 {
+  dolfin_assert(process >= 0);
+  dolfin_assert(N >= 0);
+  dolfin_assert(size > 0);
+
   // Compute number of items per process and remainder
-  const std::size_t n = N / size;
-  const std::size_t r = N % size;
+  const std::int64_t n = N / size;
+  const std::int64_t r = N % size;
 
   // Compute local range
-  std::pair<std::size_t, std::size_t> range;
   if (process < r)
-  {
-    range.first = process*(n + 1);
-    range.second = range.first + n + 1;
-  }
+    return {process*(n + 1), process*(n + 1) + n + 1};
   else
-  {
-    range.first = process*n + r;
-    range.second = range.first + n;
-  }
-
-  return range;
+    return {process*n + r,  process*n + r + n};
 }
 //-----------------------------------------------------------------------------
 unsigned int dolfin::MPI::index_owner(const MPI_Comm comm,

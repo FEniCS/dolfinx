@@ -107,24 +107,43 @@ namespace dolfin
     double volume() const
     { return _mesh->type().volume(*this); }
 
-    /// Compute diameter of cell
+    /// Compute greatest distance between any two vertices
     ///
     /// *Returns*
     ///     double
-    ///         The diameter of the cell.
+    ///         The greatest distance between any two vertices of the cell.
     ///
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         UnitSquare mesh(1, 1);
+    ///         UnitSquareMesh mesh(1, 1);
     ///         Cell cell(mesh, 0);
-    ///         info("%g", cell.diameter());
+    ///         info("%g", cell.h());
     ///
     ///     output::
     ///
     ///         1.41421
-    double diameter() const
-    { return _mesh->type().diameter(*this); }
+    double h() const
+    { return _mesh->type().h(*this); }
+
+    /// Compute circumradius of cell
+    ///
+    /// *Returns*
+    ///     double
+    ///         The circumradius of the cell.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         UnitSquareMesh mesh(1, 1);
+    ///         Cell cell(mesh, 0);
+    ///         info("%g", cell.circumradius());
+    ///
+    ///     output::
+    ///
+    ///         0.707106
+    double circumradius() const
+    { return _mesh->type().circumradius(*this); }
 
     /// Compute inradius of cell
     ///
@@ -135,7 +154,7 @@ namespace dolfin
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         UnitSquare mesh(1, 1);
+    ///         UnitSquareMesh mesh(1, 1);
     ///         Cell cell(mesh, 0);
     ///         info("%g", cell.inradius());
     ///
@@ -163,7 +182,7 @@ namespace dolfin
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         UnitSquare mesh(1, 1);
+    ///         UnitSquareMesh mesh(1, 1);
     ///         Cell cell(mesh, 0);
     ///         info("%g", cell.radius_ratio());
     ///

@@ -52,7 +52,7 @@ namespace dolfin
       const std::map<unsigned int, std::pair<unsigned int,
       unsigned int> >& slave_entities,
       std::vector<std::size_t>& global_entity_indices,
-      std::map<unsigned int, std::set<unsigned int> >& shared_entities,
+      std::map<std::int32_t, std::set<unsigned int> >& shared_entities,
       std::size_t d);
 
     // Compute number of cells connected to each facet
@@ -135,7 +135,7 @@ namespace dolfin
     static void compute_entity_ownership(
       const MPI_Comm mpi_comm,
       const std::map<std::vector<std::size_t>, unsigned int>& entities,
-      const std::map<unsigned int, std::set<unsigned int> >& shared_vertices_local,
+      const std::map<std::int32_t, std::set<unsigned int> >& shared_vertices_local,
       const std::vector<std::size_t>& global_vertex_indices,
       std::size_t d,
       std::vector<std::size_t>& owned_entities,

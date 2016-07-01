@@ -8,8 +8,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(DOLFIN)
 set(DOLFIN_VERSION_RELEASE 0)
-set(DOLFIN_VERSION_MAJOR "1")
-set(DOLFIN_VERSION_MINOR "7")
+set(DOLFIN_VERSION_MAJOR "2016")
+set(DOLFIN_VERSION_MINOR "1")
 set(DOLFIN_VERSION_MICRO "0")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 if (NOT DOLFIN_VERSION_RELEASE)
@@ -120,7 +120,6 @@ list(APPEND OPTIONAL_PACKAGES "SLEPc4py")
 list(APPEND OPTIONAL_PACKAGES "Trilinos")
 list(APPEND OPTIONAL_PACKAGES "UMFPACK")
 list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
-list(APPEND OPTIONAL_PACKAGES "PaStiX")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
 list(APPEND OPTIONAL_PACKAGES "zlib")
@@ -334,19 +333,8 @@ set(Boost_ADDITIONAL_VERSIONS 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
 find_package(Boost 1.48 QUIET REQUIRED)
 
-set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams
-    timer)
+set(DOLFIN_BOOST_COMPONENTS filesystem program_options system iostreams timer)
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
-
-# Check for required package UFC
-find_package(UFC 1.7.0 QUIET HINTS ${UFC_DIR})
-if (NOT UFC_FOUND)
-  message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 1.7.0.\n"
-    "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
-else()
-  message(STATUS "UFC version: ${UFC_VERSION_STRING}")
-endif()
 
 # Check for required package Eigen3
 find_package(Eigen3 3.2.0 REQUIRED)
@@ -411,7 +399,7 @@ if (DOLFIN_ENABLE_PYTHON)
       set(SWIG_EXECUTABLE ${UFC_SWIG_EXECUTABLE})
     endif()
     find_package(SWIG REQUIRED)
-    set(REQUIRED_SWIG_VERSION "3.0.3")
+    set(REQUIRED_SWIG_VERSION "3.0.5")
     if ("${SWIG_VERSION}" VERSION_LESS "${REQUIRED_SWIG_VERSION}")
       message(FATAL_ERROR " DOLFIN requires SWIG version ${REQUIRED_SWIG_VERSION} or greater. You have version ${SWIG_VERSION}. Set DOLFIN_ENABLE_PYTHON to false or install correct SWIG version.")
     endif()
@@ -420,6 +408,9 @@ if (DOLFIN_ENABLE_PYTHON)
   endif()
 
 endif()
+
+# Check for required package UFC
+find_package(UFC MODULE 1.7.0)
 
 # Check for PETSc, SLEPc and petsc4py, slepc4py
 if (DOLFIN_ENABLE_PETSC)
@@ -494,11 +485,6 @@ if (DOLFIN_ENABLE_HDF5)
       set(HDF5_FOUND false)
     endif()
   endif()
-endif()
-
-# Check for PaStiX
-if (DOLFIN_ENABLE_PASTIX)
-  find_package(PaStiX 5.2.1)
 endif()
 
 # Check for Trilinos and the requires Trilinos packages
@@ -823,7 +809,7 @@ install(FILES ${DOLFIN_UTILITIES}
 #------------------------------------------------------------------------------
 # Installation of DOLFIN manual pages
 
-install(DIRECTORY ${DOLFIN_SOURCE_DIR}/doc/man/
+install(DIRECTORY ${DOLFIN_SOURCE_DIR}/doc-old/man/
   DESTINATION ${DOLFIN_MAN_DIR}
   USE_SOURCE_PERMISSIONS
   COMPONENT RuntimeExecutables)
@@ -865,9 +851,10 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-get-demos.in
                ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
-        DESTINATION ${DOLFIN_BIN_DIR}
-  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-        COMPONENT RuntimeExecutables)
+  DESTINATION ${DOLFIN_BIN_DIR}
+  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE
+  GROUP_EXECUTE WORLD_EXECUTE
+  COMPONENT RuntimeExecutables)
 
 
 #------------------------------------------------------------------------------
@@ -900,8 +887,23 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
 endif()
 
 #------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for bench and demos if not
-# exists
+# Generate demo files from rst
+
+message(STATUS "")
+message(STATUS "Generating demo source files")
+message(STATUS "--------------------------------------------------")
+file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
+foreach(rst_file ${demo_rst_files})
+  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+  #add_custom_command(TARGET demos_source PRE_BUILD
+  #  COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
+  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endforeach()
+
+#------------------------------------------------------------------------------
+# Generate CMakeLists.txt files for bench and demos if not existing
+
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
 if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
@@ -985,10 +987,21 @@ else()
   set(MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM}")
 endif()
 
+# Add taget to build .py demp files from Python rst input files, and
+# create a target to build source files from .cpp.rst and .py.rst
+# files (using pylit)
+file(GLOB_RECURSE rst_files "*.py.rst" "*.cpp.rst")
+add_custom_target(demos_source)
+foreach(rst_file ${rst_files})
+  add_custom_command(TARGET demos_source PRE_BUILD
+    COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endforeach()
+
 # Add target "demo" for building the demos
 add_custom_target(demo
   COMMAND ${MAKE_PROGRAM}
-  DEPENDS copy_data_test_demo
+  DEPENDS demos_source copy_data_test_demo
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
@@ -1013,7 +1026,7 @@ if (DOLFIN_ENABLE_DOCS)
   if (NOT SPHINX_FOUND)
     message(STATUS "Disabling generation of documentation because Sphinx is missing.")
   else()
-    add_subdirectory(doc)
+    add_subdirectory(doc-old)
   endif()
 endif()
 
@@ -1107,12 +1120,6 @@ if (DOLFIN_ENABLE_TESTING)
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
-  # Add target "run_doctest" for running documentation tests
-  add_custom_target(run_doctest
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
-    DEPENDS copy_data_test_demo
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/documentation")
-
   # Add target "run_styletest" for running documentation tests
   add_custom_target(run_styletest
     COMMAND ${PYTHON_EXECUTABLE} "-B" "test_coding_style.py"
@@ -1125,7 +1132,7 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "runtests" for running all tests
   add_custom_target(runtests
-    DEPENDS run_doctest run_regressiontests run_unittests run_styletest)
+    DEPENDS run_regressiontests run_unittests run_styletest)
 endif()
 
 #------------------------------------------------------------------------------

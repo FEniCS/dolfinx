@@ -28,8 +28,6 @@ from dolfin_utils.test import *
 
 
 backends = list(linear_algebra_backends().keys())
-if 'STL' in backends:
-    backends.remove('STL')
 if MPI.size(mpi_comm_world()) > 1 and 'Eigen' in backends:
     backends.remove('Eigen')
 backend = set_parameters_fixture("linear_algebra_backend", backends)
@@ -52,8 +50,14 @@ def TH(mesh):
     P1 = FiniteElement('Lagrange', mesh.ufl_cell(), 1)
     return FunctionSpace(mesh, P2*P1)
 
+@fixture
+def VR(mesh):
+    P1 = FiniteElement('Lagrange', mesh.ufl_cell(), 1)
+    R = FiniteElement('Real', mesh.ufl_cell(), 0)
+    return FunctionSpace(mesh, P1*R)
 
-def test_layout_and_pattern_interface(backend, V, VV, TH):
+
+def test_layout_and_pattern_interface(backend, V, VV, TH, VR):
     for V in [V, VV, TH]:
         m = V.mesh()
         c = m.mpi_comm()
@@ -83,7 +87,7 @@ def test_layout_and_pattern_interface(backend, V, VV, TH):
 
         # Build sparse tensor layout (for assembly of matrix)
         t2 = TensorLayout(0, TensorLayout.Sparsity_SPARSE)
-        t2.init(c, [i, i], TensorLayout.Ghosts_GHOSTED)
+        t2.init(c, [i, i], TensorLayout.Ghosts_UNGHOSTED)
         s2 = t2.sparsity_pattern()
         s2.init(c, [i, i])
         SparsityPatternBuilder.build(s2, m, [d, d],

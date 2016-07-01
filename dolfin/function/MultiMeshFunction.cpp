@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2014 Anders Logg
+// Copyright (C) 2013-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-25
-// Last changed: 2014-05-23
+// Last changed: 2016-03-02
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
@@ -29,13 +29,6 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-MultiMeshFunction::MultiMeshFunction(const MultiMeshFunctionSpace& V)
-  : _function_space(reference_to_no_delete_pointer(V))
-{
-  // Initialize vector
-  init_vector();
-}
 //-----------------------------------------------------------------------------
 MultiMeshFunction::MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V)
   : _function_space(V)
@@ -88,6 +81,10 @@ void MultiMeshFunction::init_vector()
   // not handle distributed vectors (since we do not yet handle
   // communication between distributed bounding box trees).
 
+  // FIXME: Dear Developer, this needs to be rewritten as in
+  //        Function::init_vector()! We need to get rid of
+  //        GenericVector::init(MPI_COMM_WORLD, range, local_to_global, ghost_indices);
+
   // Get global size
   const std::size_t N = _function_space->dofmap()->global_dimension();
 
@@ -105,7 +102,7 @@ void MultiMeshFunction::init_vector()
   if (!_vector)
   {
     DefaultFactory factory;
-    _vector = factory.create_vector();
+    _vector = factory.create_vector(MPI_COMM_WORLD);
   }
   dolfin_assert(_vector);
 
@@ -133,6 +130,8 @@ void MultiMeshFunction::init_vector()
 void MultiMeshFunction::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
                                           std::vector<la_index>& ghost_indices) const
 {
+  // NOTE: Well, don't implement me! Rather rewrite init_vector().
+  //       See Function::init_vector().
   dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------

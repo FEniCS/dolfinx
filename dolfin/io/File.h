@@ -42,7 +42,6 @@ namespace dolfin
   ///     * RAW    (.raw)
   ///     * SVG    (.svg)
   ///     * XD3    (.xd3)
-  ///     * XDMF   (.xdmf)
   ///     * XML    (.xml)
   ///     * XYZ    (.xyz)
   ///     * VTK    (.pvd)
@@ -52,7 +51,7 @@ namespace dolfin
   public:
 
     /// File formats
-    enum class Type {x3d, xdmf, xml, vtk, raw, xyz, binary, svg};
+    enum class Type {x3d, xml, vtk, raw, xyz, binary, svg};
 
     /// Create a file with given name
     ///

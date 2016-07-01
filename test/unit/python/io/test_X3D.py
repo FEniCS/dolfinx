@@ -18,6 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import numpy
 from dolfin import *
 import os
 from dolfin_utils.test import fixture, cd_tempdir
@@ -50,11 +51,13 @@ def test_save_facet_meshfunction2D(cd_tempdir):
     #with pytest.raises(RuntimeError):
     #    file << mf
 
+
 def test_save_cell_meshfunctio22D(cd_tempdir):
     mesh = UnitCubeMesh(16, 16, 16)
     mf = CellFunction("size_t", mesh, 12)
     file = File("cell_mf3D.x3d")
     file << mf
+
 
 def test_save_facet_meshfunction3D(cd_tempdir):
     mesh = UnitCubeMesh(16, 16, 16)
@@ -62,3 +65,58 @@ def test_save_facet_meshfunction3D(cd_tempdir):
     file = File("facet_mf3D.x3d")
     #with pytest.raises(RuntimeError):
     #    file << mf
+
+
+def test_mesh_str():
+    mesh = UnitCubeMesh(2, 2, 2)
+    str = X3DOM.str(mesh)
+    mesh = UnitSquareMesh(5, 3)
+    str = X3DOM.str(mesh)
+
+
+def test_mesh_html():
+    mesh = UnitCubeMesh(2, 2, 2)
+    str = X3DOM.html(mesh)
+    mesh = UnitSquareMesh(5, 3)
+    str = X3DOM.html(mesh)
+    # test IPython display hook:
+    html = mesh._repr_html_()
+
+
+def test_x3dom_parameters():
+    p = X3DOMParameters()
+
+    # Test Representation
+
+    # Get colour
+    c0 = p.get_diffuse_color()
+
+    # Set colour
+    c0 = [0.1, 0.2, 0.1]
+    p.set_diffuse_color(c0)
+    c1 = p.get_diffuse_color()
+    assert numpy.array_equal(c0, c1)
+
+    c0 = (0.1, 0.2, 0.1)
+    p.set_diffuse_color(c0)
+    c1 = p.get_diffuse_color()
+    assert numpy.array_equal(c0, c1)
+
+    c0 = numpy.array([0.1, 0.2, 0.1])
+    p.set_diffuse_color(c0)
+    c1 = p.get_diffuse_color()
+    assert numpy.array_equal(c0, c1)
+
+    # Test wrong length color sequences
+    with pytest.raises(TypeError):
+        c0 = [0.1, 0.2, 0.1, 0.2]
+        p.set_diffuse_color(c0)
+
+    with pytest.raises(TypeError):
+        c0 = [0.1, 0.2]
+        p.set_diffuse_color(c0)
+
+    # Test invalid RGB value
+    with pytest.raises(RuntimeError):
+        c0 = [0.1, 0.2, 1.2]
+        p.set_diffuse_color(c0)

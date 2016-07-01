@@ -52,6 +52,8 @@ namespace dolfin
   {
   public:
 
+    static void set_type(PETScKrylovSolver& solver, std::string type);
+
     /// Create a particular preconditioner object
     explicit PETScPreconditioner(std::string type = "default");
 
@@ -80,7 +82,7 @@ namespace dolfin
     static std::map<std::string, std::string> preconditioners();
 
     /// Default parameter values
-    static Parameters default_parameters();
+    //static Parameters default_parameters();
 
     friend class PETScSNESSolver;
 

@@ -85,9 +85,6 @@ if iterative_solver:
     prm['newton_solver']['krylov_solver']['maximum_iterations'] = 1000
     prm['newton_solver']['krylov_solver']['monitor_convergence'] = True
     prm['newton_solver']['krylov_solver']['nonzero_initial_guess'] = False
-    prm['newton_solver']['krylov_solver']['gmres']['restart'] = 40
-    prm['newton_solver']['krylov_solver']['preconditioner']['structure'] = 'same_nonzero_pattern'
-    prm['newton_solver']['krylov_solver']['preconditioner']['ilu']['fill_level'] = 0
 PROGRESS = 16
 set_log_level(PROGRESS)
 

@@ -44,14 +44,12 @@ namespace dolfin
   public:
 
     /// Create zero scalar
-    Scalar() : GenericTensor(), _value(0.0), _local_increment(0.0),
-                                _mpi_comm(MPI_COMM_WORLD)
-    { SubSystemsManager::init_mpi(); }
+    Scalar() : Scalar(MPI_COMM_WORLD) {}
 
     /// Create zero scalar
     Scalar(MPI_Comm comm) : GenericTensor(), _value(0.0), _local_increment(0.0),
-                            _mpi_comm(comm)
-    { SubSystemsManager::init_mpi(); }
+      _mpi_comm(comm)
+      { SubSystemsManager::init_mpi(); }
 
     /// Destructor
     virtual ~Scalar() {}
@@ -93,13 +91,13 @@ namespace dolfin
     }
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t>
+    virtual std::pair<std::int64_t, std::int64_t>
       local_range(std::size_t dim) const
     {
       dolfin_error("Scalar.h",
                    "get local range of scalar",
                    "The local_range() function is not available for scalars");
-      return std::make_pair(0, 0);
+      return {0, 0};
     }
 
     /// Get block of values
