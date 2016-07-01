@@ -1,6 +1,4 @@
-#!/bin/sh
-#
-# Copyright (C) 2006 Anders Logg
+# Copyright (C) 2005-2009 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -17,24 +15,20 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Convert all DOLFIN XML files in a directory from
-# the old DOLFIN XML format to the new format
+# First added:  2005
+# Last changed: 2011-03-08
+#
+# The bilinear form a(u, v) and linear form L(v) for
+# Poisson's equation.
+#
+# Compile this form with FFC: ffc -l dolfin Poisson.ufl.
 
-# Unpack all .xml.gz files if any
-for f in *.xml.gz; do
-	echo "Unpacking $f..."
-	gunzip $f
-done
+element = FiniteElement("Lagrange", triangle, 1)
 
-# Convert all .xml files
-for f in *.xml; do
-	echo "Converting $f..."
-	mv $f $f.old
-	dolfin-convert -i xml-old $f.old $f
-done
+u = TrialFunction(element)
+v = TestFunction(element)
+f = Coefficient(element)
+g = Coefficient(element)
 
-# Pack all .xml files
-for f in *.xml; do
-	echo "Packing $f..."
-	gzip $f
-done
+a = inner(grad(u), grad(v))*dx
+L = f*v*dx + g*v*ds

@@ -5,6 +5,7 @@
 echo "The following scripts will now be run:"
 echo ""
 echo "  cmake/scripts/generate-form-files"
+echo "  cmake/scripts/generate-demo-files"
 echo "  cmake/scripts/generate-cmakefiles"
 echo "  cmake/scripts/generate-swig-docstrings"
 echo "  cmake/scripts/generate-swig-interface"
@@ -14,6 +15,7 @@ echo "Press return to continue."
 read x
 
 ./cmake/scripts/generate-form-files
+./cmake/scripts/generate-demo-files
 ./cmake/scripts/generate-cmakefiles
 ./cmake/scripts/generate-swig-docstrings
 ./cmake/scripts/generate-swig-interface
