@@ -124,25 +124,6 @@ namespace dolfin
     double h() const
     { return _mesh->type().h(*this); }
 
-    /// Compute diameter of cell (deprecated)
-    ///
-    /// *Returns*
-    ///     double
-    ///         The diameter of the cell.
-    ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
-    ///         UnitSquareMesh mesh(1, 1);
-    ///         Cell cell(mesh, 0);
-    ///         info("%g", cell.diameter());
-    ///
-    ///     output::
-    ///
-    ///         1.41421
-    double diameter() const
-    { return _mesh->type().diameter(*this); }
-
     /// Compute circumradius of cell
     ///
     /// *Returns*

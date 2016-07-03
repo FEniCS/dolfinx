@@ -58,7 +58,8 @@ def run_cpp_demo(prefix, demo, rootdir, timing, failed):
 
     t1 = time()
     os.chdir(demo)
-    status, output = get_status_output("%s .%s%s" % (prefix, os.path.sep, cppdemo_executable))
+    status, output = get_status_output("%s .%s%s" % (prefix, os.path.sep,
+                                                     cppdemo_executable))
     os.chdir(rootdir)
     t2 = time()
     timing += [(t2 - t1, demo)]
@@ -81,7 +82,8 @@ def run_python_demo(prefix, demo, rootdir, timing, failed):
 
     t1 = time()
     os.chdir(demo)
-    status, output = get_status_output("%s %s -u %s" % (prefix, sys.executable, demofile))
+    status, output = get_status_output("%s %s -u %s" % (prefix, sys.executable,
+                                                        demofile))
     os.chdir(rootdir)
     t2 = time()
     timing += [(t2 - t1, demo)]
@@ -95,7 +97,8 @@ def run_python_demo(prefix, demo, rootdir, timing, failed):
         print(output)
 
         # Add contents from Instant's compile.log to output
-        instant_compile_log = os.path.join(instant.get_default_error_dir(), "compile.log")
+        instant_compile_log = os.path.join(instant.get_default_error_dir(),
+                                           "compile.log")
         if os.path.isfile(instant_compile_log):
             instant_error = file(instant_compile_log).read()
             output += "\n\nInstant compile.log for %s:\n\n" % demo
@@ -126,6 +129,7 @@ def main():
        os.path.join(demodir, 'documented',   'stokes-mini',                 'cpp'),
        os.path.join(demodir, 'documented',   'tensor-weighted-poisson',     'cpp'),
        os.path.join(demodir, 'documented',   'subdomains-poisson',          'cpp'),
+       os.path.join(demodir, 'documented',   'singular-poisson-rst',        'cpp'),
        ]
 
     # Demos to run
