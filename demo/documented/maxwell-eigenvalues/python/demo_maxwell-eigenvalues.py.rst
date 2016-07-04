@@ -31,13 +31,13 @@ Model problem
 -------------
 
 In this demo we shall consider the Maxwell eigenvalue problem in two dimensions with the
-domain :math:`\Omega` taken to be the square :math:`(0,\pi)\times(0,\pi)`, since it that
+domain :math:`\Omega` taken to be the square :math:`(0,\pi)\times(0,\pi)`, since in that
 case the exact eigenpairs have a simple analytic expression.  They are
 
 .. math::
     u(x,y) = (\sin m x, \sin n y), \quad \lambda = m^2 + n^2,
 
-for any non-negative integers :math:`m` and :math:`n`, not both zero.  Thus the eigenvalues
+for any non-negative integers :math:`m` and :math:`n,` not both zero.  Thus the eigenvalues
 are
 
 .. math::
@@ -65,7 +65,7 @@ Stable and unstable finite elements
 -----------------------------------
 
 We consider here two possible choices of finite element spaces.  The first,
-the Nedelec edge elements, which are obtained in FEniCS as ``FunctionSpace(mesh, 'H1curl', 1)``,
+the Nédélec edge elements, which are obtained in FEniCS as ``FunctionSpace(mesh, 'H1curl', 1)``,
 are well suited to this problem and give an
 accurate discretization.  The second choice is simply the vector-valued Lagrange
 piecewise linears: ``VectorFunctionSpace(mesh, 'Lagrange', 1)``.  To the uninitiated it usually
@@ -75,7 +75,7 @@ the computed eigenvalues do not converge to the true ones as the mesh is refined
 This is a subtle matter connected to the stability theory of mixed finite element methods.
 See `this paper <http://umn.edu/~arnold/papers/icm2002.pdf>`_ for details.
 
-While the Nedelec elements behave stably for any mesh, the failure of the Lagrange elements
+While the Nédélec elements behave stably for any mesh, the failure of the Lagrange elements
 differs on different sorts of meshes.  Here we compute with two structured meshes, the first
 obtained from a :math:`40\times 40` grid of squares by dividing each with its positively-sloped diagonal, and
 the second the crossed mesh obtained by dividing each subsquare into four using both diagonals.
@@ -84,11 +84,11 @@ The output from the first case is:
 .. code-block:: none
 
     diagonal mesh
-    Nedelec:   [ 1.00  1.00  2.00  4.00  4.00  5.00  5.00  8.01  8.98  8.99  9.99  9.99]
+    Nédélec:   [ 1.00  1.00  2.00  4.00  4.00  5.00  5.00  8.01  8.98  8.99  9.99  9.99]
     Lagrange:  [ 5.16  5.26  5.26  5.30  5.39  5.45  5.53  5.61  5.61  5.62  5.71  5.73]
     Exact:     [ 1.00  1.00  2.00  4.00  4.00  5.00  5.00  8.00  9.00  9.00 10.00 10.00]
 
-Note that the eigenvalues calculated using the Nedelec elements are all correct to within a fraction
+Note that the eigenvalues calculated using the Nédélec elements are all correct to within a fraction
 of a percent. But the 12 eigenvalues computed by the Lagrange elements are certainly all *wrong*,
 since they are far from being integers!
 
@@ -97,11 +97,11 @@ On the crossed mesh, we obtain a different mode of failure:
 .. code-block:: none
 
     crossed mesh
-    Nedelec:   [ 1.00  1.00  2.00  4.00  4.00  5.00  5.00  7.99  9.00  9.00 10.00 10.00]
+    Nédélec:   [ 1.00  1.00  2.00  4.00  4.00  5.00  5.00  7.99  9.00  9.00 10.00 10.00]
     Lagrange:  [ 1.00  1.00  2.00  4.00  4.00  5.00  5.00  6.00  8.01  9.01  9.01 10.02]
     Exact:     [ 1.00  1.00  2.00  4.00  4.00  5.00  5.00  8.00  9.00  9.00 10.00 10.00]
 
-Again the Nedelec elements are accurate.  The Lagrange elements also approximate most
+Again the Nédélec elements are accurate.  The Lagrange elements also approximate most
 of the eigenvalues well, but they return a *totally spurious* value of 6.00 as well.
 If we were to compute more eigenvalues, more spurious ones would be returned.
 This mode of failure might be considered more dangerous, since it is harder to spot.
@@ -109,6 +109,7 @@ This mode of failure might be considered more dangerous, since it is harder to s
 The implementation
 ------------------
 
+**Preamble.**
 First we import ``dolfin`` and ``numpy`` and make sure that dolfin has been configured with PETSc
 and SLEPc (since we depend on the SLEPc eigenvalue solver). ::
 
@@ -122,6 +123,7 @@ and SLEPc (since we depend on the SLEPc eigenvalue solver). ::
         print("DOLFIN has not been configured with SLEPc. Exiting.")
         exit()
 
+**Function eigenvalues.**
 The function ``eigenvalues`` takes the finite element space ``V`` and the
 essential boundary conditions ``bcs`` for it, and returns a requested
 set of Maxwell eigenvalues (specified in the code below)
@@ -147,7 +149,7 @@ the essential boundary conditions are incorporated by modifying the rows
 of the matrices corresponding to constrained boundary degrees of freedom.
 We use ``assemble_system`` rather than ``assemble`` to do the assembly,
 since it maintains the symmetry of the matrices.  ``assemble_system``
-is designed for source problems, rather than eigenvalue problems, so
+is designed for source problems, rather than eigenvalue problems, and
 requires a right-hand side linear form, so we define a dummy form to feed it.
 
 ::
@@ -170,13 +172,14 @@ spurious eigenpairs with nonzero boundary DOFs.
         [bc.zero(B) for bc in bcs]
 
 Now we solve the generalized matrix eigenvalue problem
-using the SLEPc package.  The ``SLEPcEigenSolver`` has
-a parameter set (you can use ``info(solver, True)`` to
-see all the possitibilities).  We use parameters to set
-the eigensolve method to Krylov-Schur
-method, which is good for computing a subset of the eigenvalues
+using the SLEPc package.  The behavior of the ``SLEPcEigenSolver`` is
+controlled by a parameter set (use ``info(solver, True)`` to
+see all possible parameters).  We use parameters to set
+the eigensolution method to Krylov-Schur,
+which is good for computing a subset of the eigenvalues
 of a sparse matrix, and to tell SLEPc that the matrices
-``A`` and ``B`` in the generalized eigenvalue problem are Hermitian.
+``A`` and ``B`` in the generalized eigenvalue problem are symmetric
+(Hermitian).
 
 ::
 
@@ -188,8 +191,8 @@ of a sparse matrix, and to tell SLEPc that the matrices
 We specify that we want 12 eigenvalues nearest in magnitude to
 a target value of 5.5.  Note that when the ``spectrum`` parameter
 is set to ``target magnitude``, the ``spectral_transform`` parameter
-should be set to ``shift-and-invert`` and the target should be
-set set as the ``spectral_shift`` parameter.
+should be set to ``shift-and-invert`` and the ``spectral_shift``
+parameter should be set equal to the target.
 
 ::
 
@@ -203,7 +206,7 @@ set set as the ``spectral_shift`` parameter.
 Finally we collect the computed eigenvalues in list which we convert
 to a numpy array and sort before returning.  Note that we are
 not guaranteed to get the number of eigenvalues requested.
-``solver.get_number_converged()`` reports the actual number
+The function ``solver.get_number_converged()`` reports the actual number
 of eigenvalues computed, which may be more or less than the
 number requested.
 
@@ -217,16 +220,17 @@ number requested.
             computed_eigenvalues.append(r)
         return np.sort(np.array(computed_eigenvalues))
    
+**Function print_eigenvalues.**
 Given just a mesh, the function ``print_eigenvalues`` calls the preceding
 function ``eigenvalues`` to solve the Maxwell eigenvalue problem for
-each of the two finite element spaces, and prints the results, together
+each of the two finite element spaces, Nédélec and Lagrange, and prints the results, together
 with the known exact eigenvalues::
 
     def print_eigenvalues(mesh):
 
-First we define the Nedelec edge element space and the essential boundary
-conditions for it, all call ``eigenvalues`` to compute the eigenvalues.
-Since the degrees of freedom for the Nedelec space
+First we define the Nédélec edge element space and the essential boundary
+conditions for it, and call ``eigenvalues`` to compute the eigenvalues.
+Since the degrees of freedom for the Nédélec space
 are tangential components on element edges, we simply need to constrained
 all the DOFs associated to boundary points to zero.
 
@@ -269,6 +273,7 @@ Finally we print the results::
         print "Exact:    ",
         print true_eig
 
+**Calling the functions.**
 To complete the program, we call ``print_eigenvalues`` for each of two different meshes::
 
     mesh = RectangleMesh(Point(0, 0), Point(pi, pi), 40, 40)
