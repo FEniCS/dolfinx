@@ -1,3 +1,5 @@
+.. codeauthor:: Douglas N. Arnold <arnold@umn.edu>, Patrick E. Farrell <patrick.farrell@maths.ox.ac.uk>
+
 Stable and unstable finite elements for the Maxwell eigenvalue problem
 ======================================================================
 
@@ -120,80 +122,145 @@ and SLEPc (since we depend on the SLEPc eigenvalue solver). ::
         print("DOLFIN has not been configured with SLEPc. Exiting.")
         exit()
 
-Given the finite element space ``V`` and the essential boundary conditions ``bcs`` for it,
-the function ``eigenvalues(V, bcs)`` solves the Maxwell eigenvalue problem and
-returns the requested eigenvalues in a sorted numpy array.  It consists of four steps:
-
-    1. Define the bilinear forms on the right- and left-hand sides of the weak formulation.
-
-    2. Assemble these into PETSc matrices to obtain a generalized matrix eigenvalue problem
-       :math:`Ax=\lambda B x`, imposing the essential boundary conditions using
-       ``assemble_system`` in order to maintain symmetry.  Since ``assemble_system``
-       requires a right-hand side linear form even though irrelevant
-       for the eigenvalue problem, we define a dummy form. We also zero out the rows
-       of :math:`B` corresponding to the boundary DOFs, so as not to introduce
-       spurious eigenpairs with nonzero boundary DOFs.
-
-    3. Solve the symmetric generalized matrix eigenvalue problem using SLEPc's Krylov-Schur solver,
-       requesting the 12 eigenvalues nearest 5.5.
-    
-    4. Return the computed eigenvalues in a sorted array.
-    
-::
+The function ``eigenvalues`` takes the finite element space ``V`` and the
+essential boundary conditions ``bcs`` for it, and returns a requested
+set of Maxwell eigenvalues (specified in the code below)
+as a sorted numpy array::
 
     def eigenvalues(V, bcs):
 
+We start by defining the bilinear forms on the right- and left-hand sides of the weak formulation.
+
+::
+
+    #
         # define the bilinear forms on the right- and left-hand sides
         u = TrialFunction(V)
         v = TestFunction(V)
         a = inner(curl(u), curl(v))*dx
         b = inner(u, v)*dx
+
+Next we assemble the bilinear forms ``a`` and ``b`` into PETSc matrices
+``A`` and ``B``, so the eigenvalue problem is converted into a generalized
+matrix eigenvalue problem :math:`Ax=\lambda B x`.  During the assembly step
+the essential boundary conditions are incorporated by modifying the rows
+of the matrices corresponding to constrained boundary degrees of freedom.
+We use ``assemble_system`` rather than ``assemble`` to do the assembly,
+since it maintains the symmetry of the matrices.  ``assemble_system``
+is designed for source problems, rather than eigenvalue problems, so
+requires a right-hand side linear form, so we define a dummy form to feed it.
+
+::
+
+    #
         # assemble into PETSc matrices
         dummy = v[0]*dx
         A = PETScMatrix()
         assemble_system(a, dummy, bcs, A_tensor=A)
         B = PETScMatrix()
         assemble_system(b, dummy, bcs, A_tensor=B)
+
+We zero out the rows of :math:`B` corresponding to constrained
+boundary degrees of freedom, so as not to introduce
+spurious eigenpairs with nonzero boundary DOFs.
+
+::
+
+    #
         [bc.zero(B) for bc in bcs]
-        # solve the generalize matrix eigenvalue problem
+
+Now we solve the generalized matrix eigenvalue problem
+using the SLEPc package.  The ``SLEPcEigenSolver`` has
+a parameter set (you can use ``info(solver, True)`` to
+see all the possitibilities).  We use parameters to set
+the eigensolve method to Krylov-Schur
+method, which is good for computing a subset of the eigenvalues
+of a sparse matrix, and to tell SLEPc that the matrices
+``A`` and ``B`` in the generalized eigenvalue problem are Hermitian.
+
+::
+
+    #
         solver = SLEPcEigenSolver(A, B)
         solver.parameters["solver"] = "krylov-schur"
         solver.parameters["problem_type"] = "gen_hermitian"
+        
+We specify that we want 12 eigenvalues nearest in magnitude to
+a target value of 5.5.  Note that when the ``spectrum`` parameter
+is set to ``target magnitude``, the ``spectral_transform`` parameter
+should be set to ``shift-and-invert`` and the target should be
+set set as the ``spectral_shift`` parameter.
+
+::
+
+    #
         solver.parameters["spectrum"] = "target magnitude"
         solver.parameters["spectral_transform"] = "shift-and-invert"
         solver.parameters["spectral_shift"] = 5.5
         neigs = 12
         solver.solve(neigs)
+        
+Finally we collect the computed eigenvalues in list which we convert
+to a numpy array and sort before returning.  Note that we are
+not guaranteed to get the number of eigenvalues requested.
+``solver.get_number_converged()`` reports the actual number
+of eigenvalues computed, which may be more or less than the
+number requested.
+
+::
+
+    #
         # return the computed eigenvalues in a sorted array
         computed_eigenvalues = []
         for i in range(min(neigs, solver.get_number_converged())):
             r, _ = solver.get_eigenvalue(i) # ignore the imaginary part
             computed_eigenvalues.append(r)
         return np.sort(np.array(computed_eigenvalues))
-
-        
-Given a mesh, the function ``print_eigenvalues(mesh)`` calls ``eigenvalues`` to solve the Maxwell eigenvalue problem for
-each of the two finite element spaces, and prints the results, together with the known exact eigenvalues.
-Note that, since the degrees of freedom for the Nedelec edge space are values of the tangential component,
-specifying the boundary conditions for it just means setting all DOFs on the boundary to zero.  However,
-for the vector Lagrange space, both components are DOFs, so we much specify which component
-must vanish (the x-component on horizontal edges and the y-component on vertical edges).
-
-::
+   
+Given just a mesh, the function ``print_eigenvalues`` calls the preceding
+function ``eigenvalues`` to solve the Maxwell eigenvalue problem for
+each of the two finite element spaces, and prints the results, together
+with the known exact eigenvalues::
 
     def print_eigenvalues(mesh):
 
+First we define the Nedelec edge element space and the essential boundary
+conditions for it, all call ``eigenvalues`` to compute the eigenvalues.
+Since the degrees of freedom for the Nedelec space
+are tangential components on element edges, we simply need to constrained
+all the DOFs associated to boundary points to zero.
+
+::
+
+    #
         nedelec_V   = FunctionSpace(mesh, "N1curl", 1)
         nedelec_bcs = [DirichletBC(nedelec_V, Constant((0.0, 0.0)), DomainBoundary())]
         nedelec_eig = eigenvalues(nedelec_V, nedelec_bcs)
 
+Then we do the same for the vector Lagrange elements.  Since the Lagrange DOFs
+are both components of the vector, we must specify which component must vanish
+on which edges (the x-component on horizontal edges and the y-component on vertical
+edges).
+
+::
+
+    #
         lagrange_V   = VectorFunctionSpace(mesh, "Lagrange", 1)
         lagrange_bcs = [DirichletBC(lagrange_V.sub(1), 0, "near(x[0], 0) || near(x[0], pi)"),
                         DirichletBC(lagrange_V.sub(0), 0, "near(x[1], 0) || near(x[1], pi)")]
         lagrange_eig = eigenvalues(lagrange_V, lagrange_bcs)
 
+The true eigenvalues are  just the 12 smallest numbers of the form :math:`m^2 + n^2`, :math:`m,n\ge0`,
+not counting 0.
+
+::
+
+    #
         true_eig = np.sort(np.array([float(m**2 + n**2) for m in range(6) for n in range(6)]))[1:13]
 
+Finally we print the results::
+
+    #
         np.set_printoptions(formatter={'float': '{:5.2f}'.format})
         print "Nedelec:  ",
         print nedelec_eig 
@@ -202,7 +269,7 @@ must vanish (the x-component on horizontal edges and the y-component on vertical
         print "Exact:    ",
         print true_eig
 
-Finally, we display the results for each of two different meshes. ::
+To complete the program, we call ``print_eigenvalues`` for each of two different meshes::
 
     mesh = RectangleMesh(Point(0, 0), Point(pi, pi), 40, 40)
     print("\ndiagonal mesh")
@@ -211,3 +278,4 @@ Finally, we display the results for each of two different meshes. ::
     mesh = RectangleMesh(Point(0, 0), Point(pi, pi), 40, 40, "crossed")
     print("\ncrossed mesh")
     print_eigenvalues(mesh)
+
