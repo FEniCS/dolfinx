@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2016-05-03
-# Last changed: 2016-05-22
+# Last changed: 2016-07-04
 
 from __future__ import print_function
 import pytest
@@ -29,6 +29,16 @@ from dolfin import *
 from dolfin_utils.test import skip_in_parallel
 
 from math import pi, sin, cos
+
+@skip_in_parallel
+def compute_volume(multimesh):
+    # Create function space
+    V = MultiMeshFunctionSpace(multimesh, "DG", 0)
+
+    # Create and evaluate volume functional
+    v = TestFunction(V)
+    M = v*dX
+    return sum(assemble(M).array())
 
 @skip_in_parallel
 def test_volume_2d():
@@ -70,36 +80,59 @@ def test_volume_2d():
     # Create function space
     V = MultiMeshFunctionSpace(multimesh, "DG", 0)
 
-    # Create and evaluate volume functional
-    v = TestFunction(V)
-    M = v*dX
-    approximative_volume = sum(assemble(M).array())
+    # Compute approximate volume
+    approximative_volume = compute_volume(multimesh)
 
     print("approximative volume ", approximative_volume)
     print("exact volume ", exact_volume)
 
     assert approximative_volume == exact_volume
 
-# @skip_in_parallel
-# def test_volume_7_meshes():
-#     "Integrate volume of 7 2D meshes"
+@skip_in_parallel
+def test_volume_7_meshes():
+    "Integrate volume of 7 2D meshes"
 
-#     # Background mesh
-#     mesh_0 = UnitSquareMesh(1, 1)
+    # Number of elements
+    N = 1
 
-#     # List of points for generating the 6 meshes on top
-#     points = [ 0.747427, 0.186781, 0.849659, 0.417130,
-#                0.152716, 0.471681, 0.455943, 0.741585,
-#                0.464473, 0.251876, 0.585051, 0.533569,
-#                0.230112, 0.511897, 0.646974, 0.892193,
-#                0.080362, 0.422675, 0.580151, 0.454286,
-#                0.054755, 0.534186, 0.444096, 0.743028 ]
+    # Background mesh
+    mesh_0 = UnitSquareMesh(N, N)
 
-#     # std::vector<double> angles =
-#     # 88.339755, 94.547259, 144.366564, 172.579922, 95.439692, 106.697958
+    # 6 meshes plus background mesh
+    num_meshes = 6
 
-#     assert 1 == 1
+    # List of points for generating the 6 meshes on top
+    points = [ 0.747427, 0.186781, 0.849659, 0.417130,
+               0.152716, 0.471681, 0.455943, 0.741585,
+               0.464473, 0.251876, 0.585051, 0.533569,
+               0.230112, 0.511897, 0.646974, 0.892193,
+               0.080362, 0.422675, 0.580151, 0.454286,
+               0.054755, 0.534186, 0.444096, 0.743028 ]
+    angles = [ 88.339755, 94.547259, 144.366564, 172.579922, 95.439692, 106.697958 ]
+
+    # Create multimesh
+    multimesh = MultiMesh()
+    multimesh.add(mesh_0)
+
+    # Add the 6 background meshes
+    for i in range(num_meshes):
+        print(i)
+        mesh = RectangleMesh(Point(points[4*i], points[4*i+1]),
+                             Point(points[4*i+2], points[4*i+3]), N, N)
+        mesh.rotate(angles[i])
+        multimesh.add(mesh)
+    multimesh.build()
+
+    exact_volume = 1
+    approximate_volume = compute_volume(multimesh)
+
+    print("approximate volume ", approximate_volume)
+    print("exact volume ", exact_volume)
+    print("error %1.16f" % (exact_volume - approximate_volume))
+
+    assert exact_volume == approximate_volume
 
 # FIXME: Temporary testing
 if __name__ == "__main__":
     test_volume_2d()
+    test_volume_7_meshes()
