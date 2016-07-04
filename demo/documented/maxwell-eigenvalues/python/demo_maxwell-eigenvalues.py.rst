@@ -7,7 +7,7 @@ Stable and unstable finite elements for the Maxwell eigenvalue problem
 ======================================================================
 
 The Maxwell eigenvalue problem seeks eigenvalues :math:`\lambda` and
-the the corresponding nonzero vector-valued eigenfunctions :math:`u`
+the corresponding nonzero vector-valued eigenfunctions :math:`u`
 satisfying the partial differential equation
 
 .. math::
