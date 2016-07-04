@@ -157,7 +157,7 @@ Next we assemble the bilinear forms ``a`` and ``b`` into PETSc
 matrices ``A`` and ``B``, so the eigenvalue problem is converted into
 a generalized matrix eigenvalue problem :math:`Ax=\lambda B x`.
 During the assembly step the essential boundary conditions are
-incorporated by modifying the rows of the matrices corresponding to
+incorporated by modifying the rows and columns of the matrices corresponding to
 constrained boundary degrees of freedom.  We use ``assemble_system``
 rather than ``assemble`` to do the assembly, since it maintains the
 symmetry of the matrices.  ``assemble_system`` is designed for source
@@ -232,7 +232,7 @@ with the known exact eigenvalues::
 First we define the Nédélec edge element space and the essential
 boundary conditions for it, and call ``eigenvalues`` to compute the
 eigenvalues.  Since the degrees of freedom for the Nédélec space are
-tangential components on element edges, we simply need to constrained
+tangential components on element edges, we simply need to constrain
 all the DOFs associated to boundary points to zero. ::
 
   #
