@@ -261,12 +261,9 @@ Finally we print the results::
 
   #
       np.set_printoptions(formatter={'float': '{:5.2f}'.format})
-      print "Nedelec:  ",
-      print nedelec_eig
-      print "Lagrange: ",
-      print lagrange_eig
-      print "Exact:    ",
-      print true_eig
+      print("Nedelec:  {}".format(nedelec_eig))
+      print("Lagrange: {}".format(lagrange_eig))
+      print("Exact:    {}".format(true_eig))
 
 **Calling the functions.** To complete the program, we call
 ``print_eigenvalues`` for each of two different meshes ::
