@@ -26,8 +26,6 @@
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"
 
-//#include "dolfin_simplex_tools.h"
-
 namespace
 {
   struct point_strictly_less

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by August Johansson 2016
-// Modified by Benjamin Kehket 2016
+// Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
 // Last changed: 2016-06-09
@@ -27,7 +27,6 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/SimplexQuadrature.h>
-//#include <dolfin/geometry/IntersectionTriangulation.h>
 #include <dolfin/geometry/IntersectionConstruction.h>
 #include <dolfin/geometry/ConvexTriangulation.h>
 #include "Cell.h"
