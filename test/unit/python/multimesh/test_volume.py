@@ -98,6 +98,9 @@ def test_volume_2d():
         multimesh.add(mesh)
     multimesh.build()
 
+    M = Constant(1.0)*dx(mesh_0)
+    return assemble(M)
+
     # Create function space
     V = MultiMeshFunctionSpace(multimesh, "DG", 0)
 
