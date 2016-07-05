@@ -319,8 +319,6 @@ bool CollisionPredicates::_collides_segment_segment_2d(Point p0,
 						      Point q0,
 						      Point q1)
 {
-  //std::cout << __FUNCTION__ << std::endl;
-
   // Vertex vertex collision
   if (p0 == q0 || p0 == q1 || p1 == q0 || p1 == q1)
     return true;
@@ -349,8 +347,6 @@ bool CollisionPredicates::_collides_segment_segment_2d(Point p0,
   if (p0_p1_q1 == 0 && (q1-p0).squared_norm() < (p1-p0).squared_norm() && (q1-p1).squared_norm() < (p0-p1).squared_norm())
     return true;
 
-  // std::cout << std::signbit(q0_q1_p0)<< ' '<< std::signbit(q0_q1_p1)<<' '<< std::signbit(p0_p1_q0) <<' '<< std::signbit(p0_p1_q1) <<std::endl;
-
   return q0_q1_p0*q0_q1_p1 < 0 && p0_p1_q0*p0_p1_q1 < 0;
 
 }
@@ -364,10 +360,6 @@ bool CollisionPredicates::_collides_triangle_point_2d(Point p0,
   const int sign = std::signbit(orient2d(p0.coordinates(),
 					 p1.coordinates(),
 					 p2.coordinates()));
-
-  // std::cout << tools::drawtriangle({{p0,p1,p2}})<<tools::drawtriangle({{point}})<<std::endl;
-
-  // std::cout << sign <<' '<<std::signbit(orient2d(p0.coordinates(), p1.coordinates(), point.coordinates()))<<' '<<std::signbit(orient2d(p1.coordinates(), p2.coordinates(), point.coordinates()))<<' '<<std::signbit(orient2d(p2.coordinates(), p0.coordinates(), point.coordinates()))<<std::endl;
 
   // The point is inside if all triangles formed have the same orientation
   if (sign == std::signbit(orient2d(p0.coordinates(), p1.coordinates(), point.coordinates())) and
