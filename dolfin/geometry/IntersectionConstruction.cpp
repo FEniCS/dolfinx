@@ -611,6 +611,7 @@ IntersectionConstruction::_intersection_triangle_triangle_2d(const Point& p0,
 
     for (std::size_t i = 0; i < 3; ++i)
     {
+      const double q0_q1_pi = s1*orient2d(t1[0], t1[1], t0[i]);
       const double q1_q2_pi = s1*orient2d(t1[1], t1[2], t0[i]);
       const double q2_q0_pi = s1*orient2d(t1[2], t1[0], t0[i]);
 
