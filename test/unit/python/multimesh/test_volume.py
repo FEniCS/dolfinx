@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2016-05-03
-# Last changed: 2016-07-04
+# Last changed: 2016-07-05
 
 from __future__ import print_function
 import pytest
@@ -93,10 +93,11 @@ def test_volume_7_meshes():
     "Integrate volume of 7 2D meshes"
 
     # Number of elements
-    N = 1
+    Nx = 8
+    h = 1. / Nx
 
     # Background mesh
-    mesh_0 = UnitSquareMesh(N, N)
+    mesh_0 = UnitSquareMesh(Nx, Nx)
 
     # 6 meshes plus background mesh
     num_meshes = 6
@@ -116,12 +117,19 @@ def test_volume_7_meshes():
 
     # Add the 6 background meshes
     for i in range(num_meshes):
-        print(i)
+        nx = max(int(round(abs(points[4*i]-points[4*i+2]) / h)), 1)
+        ny = max(int(round(abs(points[4*i+1]-points[4*i+3]) / h)), 1)
         mesh = RectangleMesh(Point(points[4*i], points[4*i+1]),
-                             Point(points[4*i+2], points[4*i+3]), N, N)
+                             Point(points[4*i+2], points[4*i+3]),
+                             nx, ny)
         mesh.rotate(angles[i])
         multimesh.add(mesh)
     multimesh.build()
+
+    # Save meshes to file
+    vtkfile = File('output/meshes.pvd')
+    for i in range(multimesh.num_parts()):
+        vtkfile << multimesh.part(i)
 
     exact_volume = 1
     approximate_volume = compute_volume(multimesh)
@@ -134,5 +142,5 @@ def test_volume_7_meshes():
 
 # FIXME: Temporary testing
 if __name__ == "__main__":
-    test_volume_2d()
+    #test_volume_2d()
     test_volume_7_meshes()
