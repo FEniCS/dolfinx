@@ -50,7 +50,7 @@ namespace
 
 using namespace dolfin;
 
-
+//------------------------------------------------------------------------------
 std::vector<std::vector<Point>>
 ConvexTriangulation::triangulate(std::vector<Point> p,
                                  std::size_t gdim,
@@ -75,8 +75,7 @@ ConvexTriangulation::triangulate(std::vector<Point> p,
                "triangulate convex polyhedron",
                "triangulation of polyhedron of topological dimension %u and geometric dimension %u not implemented", tdim, gdim);
 }
-
-
+//------------------------------------------------------------------------------
 std::vector<std::vector<Point>>
 ConvexTriangulation::triangulate_graham_scan(std::vector<Point> points,
                                              std::size_t gdim)
@@ -175,6 +174,8 @@ ConvexTriangulation::triangulate_graham_scan(std::vector<Point> points,
     // Data structure for storing checked triangle indices (do this
     // better with some fancy stl structure?)
     const std::size_t N = points.size(), N2 = points.size()*points.size();
+
+    // FIXME: this is expensive
     std::vector<bool> checked(N*N2 + N2 + N, false);
 
     // Find coplanar points
@@ -344,6 +345,7 @@ bool ConvexTriangulation::_is_degenerate(std::vector<Point> s)
   case 2:
     {
       is_degenerate = s[0]==s[1];
+      // FIXME: verify with orient2d
       // double r[2] = { dolfin::rand(), dolfin::rand() };
       // is_degenerate = orient2d(s[0].coordinates(), s[1].coordinates(), r) == 0;
 
@@ -363,11 +365,6 @@ bool ConvexTriangulation::_is_degenerate(std::vector<Point> s)
 		 "Only implemented for simplices of tdim 0, 1 and 2");
   }
 
-  // if (is_degenerate)
-  //   std::cout << drawtriangle(s)<<" % is degenerate (s.size() = "<<s.size()
-  // 	      <<" volume = " <<orient2d(s[0].coordinates(),
-  // 					s[1].coordinates(),
-  // 					s[2].coordinates()) << std::endl;
-
   return is_degenerate;
 }
+//------------------------------------------------------------------------------
