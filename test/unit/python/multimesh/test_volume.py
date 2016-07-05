@@ -19,6 +19,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by August Johansson 2016
+#
 # First added:  2016-05-03
 # Last changed: 2016-07-05
 
