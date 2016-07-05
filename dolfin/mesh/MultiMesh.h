@@ -41,8 +41,6 @@ namespace dolfin
 
   // Typedefs
   typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
-
-  // FIXME August:
   typedef std::vector<Point> Simplex;
   typedef std::vector<Simplex> Polyhedron;
   typedef std::vector<std::size_t> IncExcKey;
