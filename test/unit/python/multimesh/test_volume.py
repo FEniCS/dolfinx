@@ -39,6 +39,7 @@ def compute_volume(multimesh):
     M = v*dX
     return sum(assemble(M).array())
 
+    # FIXME: This should work, shouldn't it?
     # M = Constant(1.0)*dX(multimesh)
     # return assemble(M)
 
