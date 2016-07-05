@@ -28,9 +28,6 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
 
-from math import pi, sin, cos
-
-@skip_in_parallel
 def compute_volume(multimesh):
     # Create function space
     V = MultiMeshFunctionSpace(multimesh, "DG", 0)
@@ -39,6 +36,30 @@ def compute_volume(multimesh):
     v = TestFunction(V)
     M = v*dX
     return sum(assemble(M).array())
+
+    # M = Constant(1.0)*dX(multimesh)
+    # return assemble(M)
+
+def compute_volume_using_quadrature(multimesh):
+    total_volume = 0
+    for part in range(multimesh.num_parts()):
+        mesh = multimesh.part(part)
+        part_volume = 0
+
+        # Volume of uncut cells
+        for uncut_cell in multimesh.uncut_cells(part):
+            cell = Cell(mesh, uncut_cell)
+            part_volume += cell.volume()
+
+        # Volume of cut cells
+        for cut_cell in multimesh.cut_cells(part):
+            cut_cell_qr = multimesh.quadrature_rule_cut_cell(part, cut_cell)
+            for weight in cut_cell_qr[1]:
+                part_volume += weight
+
+        total_volume += part_volume
+    return total_volume
+
 
 @skip_in_parallel
 def test_volume_2d():
@@ -89,8 +110,8 @@ def test_volume_2d():
     assert approximative_volume == exact_volume
 
 @skip_in_parallel
-def test_volume_7_meshes():
-    "Integrate volume of 7 2D meshes"
+def test_volume_six_meshes():
+    "Integrate volume of six 2D meshes"
 
     # Number of elements
     Nx = 8
@@ -99,29 +120,27 @@ def test_volume_7_meshes():
     # Background mesh
     mesh_0 = UnitSquareMesh(Nx, Nx)
 
-    # 6 meshes plus background mesh
-    num_meshes = 6
+    # 5 meshes plus background mesh
+    num_meshes = 5
 
-    # List of points for generating the 6 meshes on top
-    points = [ 0.747427, 0.186781, 0.849659, 0.417130,
-               0.152716, 0.471681, 0.455943, 0.741585,
-               0.464473, 0.251876, 0.585051, 0.533569,
-               0.230112, 0.511897, 0.646974, 0.892193,
-               0.080362, 0.422675, 0.580151, 0.454286,
-               0.054755, 0.534186, 0.444096, 0.743028 ]
-    angles = [ 88.339755, 94.547259, 144.366564, 172.579922, 95.439692, 106.697958 ]
+    # List of points for generating the meshes on top
+    points = [[ Point(0.747427, 0.186781), Point(0.849659, 0.417130) ],
+              [ Point(0.152716, 0.471681), Point(0.455943, 0.741585) ],
+              [ Point(0.464473, 0.251876), Point(0.585051, 0.533569) ],
+              [ Point(0.230112, 0.511897), Point(0.646974, 0.892193) ],
+              [ Point(0.080362, 0.422675), Point(0.580151, 0.454286) ]]
+
+    angles = [ 88.339755, 94.547259, 144.366564, 172.579922, 95.439692 ]
 
     # Create multimesh
     multimesh = MultiMesh()
     multimesh.add(mesh_0)
 
-    # Add the 6 background meshes
+    # Add the 5 background meshes
     for i in range(num_meshes):
-        nx = max(int(round(abs(points[4*i]-points[4*i+2]) / h)), 1)
-        ny = max(int(round(abs(points[4*i+1]-points[4*i+3]) / h)), 1)
-        mesh = RectangleMesh(Point(points[4*i], points[4*i+1]),
-                             Point(points[4*i+2], points[4*i+3]),
-                             nx, ny)
+        nx = max(int(round(abs(points[i][0].x()-points[i][1].x()) / h)), 1)
+        ny = max(int(round(abs(points[i][0].y()-points[i][1].y()) / h)), 1)
+        mesh = RectangleMesh(points[i][0], points[i][1], nx, ny)
         mesh.rotate(angles[i])
         multimesh.add(mesh)
     multimesh.build()
@@ -133,14 +152,15 @@ def test_volume_7_meshes():
 
     exact_volume = 1
     approximate_volume = compute_volume(multimesh)
+    qr_volume = compute_volume_using_quadrature(multimesh)
 
-    print("approximate volume ", approximate_volume)
     print("exact volume ", exact_volume)
-    print("error %1.16f" % (exact_volume - approximate_volume))
+    print("qr volume ", qr_volume)
+    print("error %1.16e" % (exact_volume - qr_volume))
 
-    assert exact_volume == approximate_volume
+    assert abs(exact_volume - qr_volume) < DOLFIN_EPS_LARGE
 
 # FIXME: Temporary testing
 if __name__ == "__main__":
-    #test_volume_2d()
-    test_volume_7_meshes()
+    test_volume_2d()
+    test_volume_six_meshes()
