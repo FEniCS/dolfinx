@@ -18,13 +18,13 @@
 // First added:  2014-02-03
 // Last changed: 2016-06-01
 
+#ifndef __COLLISION_PREDICATES_H
+#define __COLLISION_PREDICATES_H
+
 #include <vector>
 #include <dolfin/log/log.h>
 #include "Point.h"
 #include "CGALExactArithmetic.h"
-
-#ifndef __COLLISION_PREDICATES_H
-#define __COLLISION_PREDICATES_H
 
 namespace dolfin
 {

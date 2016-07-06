@@ -18,12 +18,12 @@
 // First added:  2014-02-03
 // Last changed: 2016-06-05
 
+#ifndef __INTERSECTION_CONSTRUCTION_H
+#define __INTERSECTION_CONSTRUCTION_H
+
 #include <vector>
 #include <dolfin/log/log.h>
 #include "CGALExactArithmetic.h"
-
-#ifndef __INTERSECTION_CONSTRUCTION_H
-#define __INTERSECTION_CONSTRUCTION_H
 
 namespace dolfin
 {

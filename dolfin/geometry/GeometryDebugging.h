@@ -18,12 +18,12 @@
 // First added:  2016-05-05
 // Last changed: 2016-05-05
 
+#ifndef __GEOMETRY_DEBUGGING_H
+#define __GEOMETRY_DEBUGGING_H
+
 #include <vector>
 #include <string>
 #include "Point.h"
-
-#ifndef __GEOMETRY_DEBUGGING_H
-#define __GEOMETRY_DEBUGGING_H
 
 namespace dolfin
 {
