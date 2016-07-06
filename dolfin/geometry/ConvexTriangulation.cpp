@@ -360,7 +360,7 @@ bool ConvexTriangulation::_is_degenerate(std::vector<Point> s)
 			     s[2].coordinates()) == 0;
     break;
   default:
-    dolfin_error("IntersectionTriangulation.cpp",
+    dolfin_error("ConvexTriangulation.cpp",
 		 "_is_degenerate",
 		 "Only implemented for simplices of tdim 0, 1 and 2");
   }

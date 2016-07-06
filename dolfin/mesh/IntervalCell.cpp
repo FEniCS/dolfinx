@@ -26,7 +26,6 @@
 #include <algorithm>
 #include <dolfin/log/log.h>
 #include <dolfin/geometry/CollisionPredicates.h>
-#include <dolfin/geometry/IntersectionTriangulation.h>
 #include "Cell.h"
 #include "MeshEditor.h"
 #include "MeshEntity.h"

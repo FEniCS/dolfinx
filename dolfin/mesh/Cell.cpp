@@ -16,7 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 #include <dolfin/geometry/CollisionPredicates.h>
-#include <dolfin/geometry/IntersectionTriangulation.h>
 #include "Cell.h"
 
 using namespace dolfin;
