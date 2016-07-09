@@ -934,6 +934,22 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
 endif()
 
 #------------------------------------------------------------------------------
+# Generate demo files from rst
+
+message(STATUS "")
+message(STATUS "Generating demo source files")
+message(STATUS "--------------------------------------------------")
+file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
+foreach(rst_file ${demo_rst_files})
+  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+  #add_custom_command(TARGET demos_source PRE_BUILD
+  #  COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
+  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endforeach()
+
+
+#------------------------------------------------------------------------------
 # Generate CMakeLists.txt files for bench and demos if not
 # exists
 # FIXME: Generate files in Build directory instead?
