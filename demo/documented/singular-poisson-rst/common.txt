@@ -1,0 +1,78 @@
+This demo illustrates how to:
+
+* Solve a linear partial differential equation
+* Apply non-zero Neumann boundary conditions
+* Define Expressions
+* Define a FunctionSpace
+* Use the Krylov solver
+* Solve singular problems
+
+The solution for :math:`u` in this demo will look as follows:
+
+.. image:: ../singular_u.png
+    :scale: 75 %
+
+Equation and problem definition
+-------------------------------
+
+The Poisson equation is the canonical elliptic partial differential
+equation.  For a domain :math:`\Omega \in \mathbb{R}^n` with boundary
+:math:`\Gamma = \partial \Omega`, the Poisson equation with pure
+Neumann boundary conditions reads:
+
+.. math::
+
+	-\nabla^{2} u &= f \quad {\rm in} \ \Omega \\
+	\nabla u \cdot n &= g \quad {\rm on} \ \Gamma \\
+
+Since only Neumann conditions are applied, :math:`u` is only
+determined up to a constant by the above equations. An addition
+constraint is thus required, for instance
+
+.. math::
+  	\int u \, {\rm d} x = 0
+
+The most standard variational form of the Poisson equation reads: find
+:math:`u \in V` such that
+
+.. math::
+   a(u, v) = L(v) \quad \forall \ v \in V,
+
+where :math:`V` is a suitable function space and
+
+.. math::
+   a(u, v) &= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
+   L(v)    &= \int_{\Omega} f v \, {\rm d} x
+            + \int_{\Gamma} g v \, {\rm d} s.
+
+The expression :math:`a(u, v)` is the bilinear form and :math:`L(v)`
+is the linear form.
+
+If we make the Ansatz that :math:`u` can be expressed as a linear
+combination of the basis functions of :math:`V`, and discretize the
+equation, we can write our problem as a linear system:
+
+.. math::
+	AU = b,
+
+where :math:`U` gives the coefficient for the basis functions expressing :math:`u`.
+
+Since we have pure Neumann boundary conditions, the matrix :math:`A`
+is singular. There exists a non-trival vector :math:`e` such that
+
+.. math::
+	Ae=0.
+
+span :math:`\{ e \}` is the null space of A. Consequently, the matrix
+:math:`A` is rank deficient and the right-hand side vector :math:`b`
+may fail to be in the column space of :math:`A`. We therefore need
+to remove the components of :math:`b` that do not lie in the column
+space to make the system solvable.
+
+In this demo, we shall consider the following definitions of the input
+functions, the domain, and the boundaries:
+
+* :math:`\Omega = [0,1] \times [0,1]` (a unit square)
+* :math:`\Gamma = \partial \Omega` (boundary)
+* :math:`g = -\sin(5x)` (normal derivative)
+* :math:`f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)` (source term)

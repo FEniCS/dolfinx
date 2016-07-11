@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2014 Marie E. Rognes
+# Copyright (C) 2005-2009 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -14,27 +14,21 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2005
+# Last changed: 2011-03-08
+#
+# The bilinear form a(u, v) and linear form L(v) for
+# Poisson's equation.
+#
+# Compile this form with FFC: ffc -l dolfin Poisson.ufl.
 
-from __future__ import print_function
-import sys
-from instant import get_status_output
+element = FiniteElement("Lagrange", triangle, 1)
 
-def main():
-    tests = ["verify_demo_code_snippets.py"]
+u = TrialFunction(element)
+v = TestFunction(element)
+f = Coefficient(element)
+g = Coefficient(element)
 
-    failed = []
-    for test in tests:
-        command = "%s %s" % (sys.executable, test)
-        fail, output = get_status_output(command)
-
-        if fail:
-            failed.append(fail)
-            print("*** %s failed" % test)
-            print(output)
-        else:
-            print("OK")
-
-    return len(failed)
-
-if __name__ == "__main__":
-    sys.exit(main())
+a = inner(grad(u), grad(v))*dx
+L = f*v*dx + g*v*ds

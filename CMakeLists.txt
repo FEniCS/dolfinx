@@ -9,11 +9,11 @@ cmake_minimum_required(VERSION 2.8)
 project(DOLFIN)
 set(DOLFIN_VERSION_RELEASE 0)
 set(DOLFIN_VERSION_MAJOR "2016")
-set(DOLFIN_VERSION_MINOR "2")
+set(DOLFIN_VERSION_MINOR "1")
 set(DOLFIN_VERSION_MICRO "0")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 if (NOT DOLFIN_VERSION_RELEASE)
-  set(DOLFIN_VERSION "${DOLFIN_VERSION}.dev0")
+  set(DOLFIN_VERSION "${DOLFIN_VERSION}dev")
 endif()
 
 #------------------------------------------------------------------------------
@@ -69,37 +69,21 @@ set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfin)
 #------------------------------------------------------------------------------
 # Configurable options for how we want to build
 
-include(FeatureSummary)
-
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
 option(DOLFIN_AUTO_DETECT_MPI "Detect MPI automatically (turn this off to use the MPI compiler wrappers directly via setting CXX, CXX, FC)." ON)
 option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
-option(DOLFIN_ENABLE_GTEST "Enable C++ unit tests with Google Test if DOLFIN_ENABLE_TESTING is true (requires Internet connection to download Google Test when first configured)." ON)
+option(DOLFIN_ENABLE_GTEST "Enable C++ unit tests with Google Test if DOLFIN_ENABLE_TESTING is true (requires Internet connection to download Google Test when first configured." ON)
 option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 option(DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py." OFF)
 
-add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFIN with shared libraries.")
-add_feature_info(CMAKE_USE_RELATIVE_PATHS CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects.")
-add_feature_info(DOLFIN_AUTO_DETECT_MPI DOLFIN_AUTO_DETECT_MPI "Detect MPI automatically (turn this off to use the MPI compiler wrappers directly via setting CXX, CXX, FC).")
-add_feature_info(DOLFIN_ENABLE_CODE_COVERAGE DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage.")
-add_feature_info(DOLFIN_WITH_LIBRARY_VERSION DOLFIN_WITH_LIBRARY_VERSION "Build with library version information.")
-add_feature_info(DOLFIN_ENABLE_TESTING DOLFIN_ENABLE_TESTING "Enable testing.")
-add_feature_info(DOLFIN_ENABLE_GTEST DOLFIN_ENABLE_GTEST "Enable C++ unit tests with Google Test if DOLFIN_ENABLE_TESTING is true (requires Internet connection to download Google Test when first configured).")
-add_feature_info(DOLFIN_ENABLE_BENCHMARKS DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs.")
-add_feature_info(DOLFIN_ENABLE_DOCS DOLFIN_ENABLE_DOCS "Enable generation of documentation.")
-add_feature_info(DOLFIN_SKIP_BUILD_TESTS DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
-add_feature_info(DOLFIN_DEPRECATION_ERROR DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors.")
-add_feature_info(DOLFIN_IGNORE_PETSC4PY_VERSION DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py.")
-
 # Add shared library paths so shared libs in non-system paths are found
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
-add_feature_info(CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath.")
 
 # Hande RPATH on OSX when not installing to a system directory, see
 # https://groups.google.com/d/msg/fenics-dev/KSCrob4M_1M/zsJwdN-SCAAJ
@@ -148,7 +132,6 @@ list(APPEND OPTIONAL_PACKAGES "VTK")
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "DOLFIN_ENABLE_${OPTIONAL_PACKAGE}" OPTION_NAME)
   option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
-  add_feature_info(${OPTION_NAME} ${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}.")
 endforeach()
 
 #------------------------------------------------------------------------------
@@ -310,9 +293,6 @@ endif()
 if (DOLFIN_ENABLE_MPI)
   if (DOLFIN_AUTO_DETECT_MPI)
     find_package(MPI)
-    set_package_properties(MPI PROPERTIES TYPE OPTIONAL
-      DESCRIPTION "Message Passing Interface (MPI)"
-      PURPOSE "Enables DOLFIN to run in parallel with MPI")
     if (MPI_CXX_FOUND)
       set(MPI_FOUND TRUE)
     endif()
@@ -328,9 +308,6 @@ endif()
 # Test for OpenMP (but not for Clang, which does not support OpenMP)
 if (DOLFIN_ENABLE_OPENMP)
   find_package(OpenMP)
-  set_package_properties(OpenMP PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Open Multi-Processing API"
-    PURPOSE "Enables DOLFIN to run in parallel with OpenMP")
   include(CheckOpenMP)
   check_openmp_unsigned_int_loop_control_variable(OPENMP_UINT_TEST_RUNS)
   if (NOT OPENMP_UINT_TEST_RUNS)
@@ -358,15 +335,9 @@ find_package(Boost 1.48 QUIET REQUIRED)
 
 set(DOLFIN_BOOST_COMPONENTS filesystem program_options system iostreams timer)
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
-set_package_properties(Boost PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Boost C++ libraries"
-  URL "http://www.boost.org")
 
 # Check for required package Eigen3
 find_package(Eigen3 3.2.0 REQUIRED)
-set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Lightweight C++ template library for linear algebra"
-  URL "http://eigen.tuxfamily.org")
 
 #------------------------------------------------------------------------------
 # Run tests to find optional packages
@@ -376,12 +347,7 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
 #       dolfin_utils
 # FIXME PY3: Select python 3 based on config flag?
 find_package(PythonInterp 2)
-set_package_properties(PythonInterp PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Interactive high-level object-oriented language"
-  URL "http://www.python.org")
-
 if (DOLFIN_ENABLE_PYTHON)
-  set_package_properties(PythonInterp PROPERTIES PURPOSE "Needed for the Python interface to DOLFIN")
 
   # Set variables to help find Python library that is compatible with
   # interpreter
@@ -411,9 +377,7 @@ if (DOLFIN_ENABLE_PYTHON)
     endif()
 
     # Find Pythons libs
-    find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT REQUIRED)
-    set_package_properties(PythonLibs PROPERTIES TYPE REQUIRED
-      DESCRIPTION "Include paths and libraries for Python")
+    find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT QUIET REQUIRED)
     set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH_SAVE})
   endif()
 
@@ -422,18 +386,10 @@ if (DOLFIN_ENABLE_PYTHON)
 
     # Check for NumPy
     find_package(NumPy REQUIRED)
-    set_package_properties(NumPy PROPERTIES TYPE REQUIRED
-      DESCRIPTION "Array processing for numbers, strings, records, and objects in Python."
-      URL "http://www.numpy.org"
-      PURPOSE "Needed for the Python interface to DOLFIN")
 
     # Check for ply
     include(FindPythonModule)
     find_python_module(ply REQUIRED)
-    set_package_properties(ply PROPERTIES TYPE REQUIRED
-      DESCRIPTION "Python Lex & Yacc"
-      URL "http://www.dabeaz.com/ply/"
-      PURPOSE "Needed for the Python interface to DOLFIN")
     if (NOT PY_PLY_FOUND)
       message(FATAL_ERROR "Required Python module 'ply' (http://www.dabeaz.com/ply/) could not be found. Install ply or set DOLFIN_ENABLE_PYTHON to false.")
     endif()
@@ -443,10 +399,6 @@ if (DOLFIN_ENABLE_PYTHON)
       set(SWIG_EXECUTABLE ${UFC_SWIG_EXECUTABLE})
     endif()
     find_package(SWIG REQUIRED)
-    set_package_properties(SWIG PROPERTIES TYPE REQUIRED
-      DESCRIPTION "Tool to wrap C/C++ libraries in high-level languages"
-      URL "http://swig.org"
-      PURPOSE "Needed for the Python interface to DOLFIN")
     set(REQUIRED_SWIG_VERSION "3.0.5")
     if ("${SWIG_VERSION}" VERSION_LESS "${REQUIRED_SWIG_VERSION}")
       message(FATAL_ERROR " DOLFIN requires SWIG version ${REQUIRED_SWIG_VERSION} or greater. You have version ${SWIG_VERSION}. Set DOLFIN_ENABLE_PYTHON to false or install correct SWIG version.")
@@ -458,24 +410,14 @@ if (DOLFIN_ENABLE_PYTHON)
 endif()
 
 # Check for required package UFC
-find_package(UFC MODULE 2016.2)
-set_package_properties(UFC PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Unified language for form-compilers (part of FFC)"
-  URL "https://bitbucket.org/fenics-project/ffc")
+find_package(UFC MODULE 1.7.0)
 
 # Check for PETSc, SLEPc and petsc4py, slepc4py
 if (DOLFIN_ENABLE_PETSC)
   find_package(PETSc 3.6)
-  set_package_properties(PETSc PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation"
-    URL "https://www.mcs.anl.gov/petsc/"
-    PURPOSE "Enables the PETSc linear algebra backend")
 
   if (PETSC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_PETSC4PY)
     find_package(PETSc4py)
-    set_package_properties(PETSc4py PROPERTIES TYPE OPTIONAL
-      DESCRIPTION "Python bindings for PETSc"
-      URL "https://bitbucket.org/petsc/petsc4py/")
     if (PETSC4PY_FOUND)
       if (NOT ("${PETSC4PY_VERSION_MAJOR}" EQUAL "${PETSC_VERSION_MAJOR}"
                AND "${PETSC4PY_VERSION_MINOR}" EQUAL "${PETSC_VERSION_MINOR}") AND NOT DOLFIN_IGNORE_PETSC4PY_VERSION)
@@ -487,15 +429,9 @@ if (DOLFIN_ENABLE_PETSC)
 
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
     find_package(SLEPc 3.6)
-    set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
-      DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
-      URL "http://slepc.upv.es/")
 
     if (SLEPC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_SLEPC4PY)
       find_package(SLEPc4py)
-      set_package_properties(SLEPc4py PROPERTIES TYPE OPTIONAL
-	DESCRIPTION "Python bindings for SLEPc"
-	URL "https://bitbucket.org/slepc/slepc4py/")
       if (SLEPC4PY_FOUND)
         if (NOT ("${SLEPC4PY_VERSION_MAJOR}" EQUAL "${SLEPC_VERSION_MAJOR}"
               AND "${SLEPC4PY_VERSION_MINOR}" EQUAL "${SLEPC_VERSION_MINOR}"))
@@ -511,18 +447,10 @@ endif()
 if (DOLFIN_ENABLE_MPI AND MPI_C_FOUND)
   if (DOLFIN_ENABLE_PARMETIS)
     find_package(ParMETIS 4.0.2)
-    set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
-      DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
-      URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
-      PURPOSE "Enables parallel graph partitioning")
   endif()
 
   if (DOLFIN_ENABLE_SCOTCH)
     find_package(SCOTCH)
-    set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
-      DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
-      URL "https://www.labri.fr/perso/pelegrin/scotch"
-      PURPOSE "Enables parallel graph partitioning")
   endif()
 endif()
 
@@ -530,21 +458,12 @@ endif()
 if (DOLFIN_ENABLE_UMFPACK)
   find_package(AMD QUIET)
   find_package(BLAS QUIET)
-  set_package_properties(BLAS PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Basic Linear Algebra Subprograms"
-    URL "http://netlib.org/blas/")
-  find_package(UMFPACK)
-  set_package_properties(UMFPACK PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Sparse LU factorization library"
-    URL "http://faculty.cse.tamu.edu/davis/suitesparse.html")
+  find_package(UMFPACK QUIET)
 endif()
 
 # Check for CHOLMOD
 if (DOLFIN_ENABLE_CHOLMOD)
-  find_package(CHOLMOD)
-  set_package_properties(CHOLMOD PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Sparse Cholesky factorization library for sparse matrices"
-    URL "http://faculty.cse.tamu.edu/davis/suitesparse.html")
+  find_package(CHOLMOD QUIET)
 endif()
 
 # Check for HDF5
@@ -552,11 +471,7 @@ if (DOLFIN_ENABLE_HDF5)
   if (NOT DEFINED ENV{HDF5_ROOT})
     set(ENV{HDF5_ROOT} "$ENV{HDF5_DIR}")
   endif()
-  set(HDF5_PREFER_PARALLEL TRUE)
   find_package(HDF5)
-  set_package_properties(HDF5 PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
-    URL "https://www.hdfgroup.org/HDF5")
 
   # Check that HDF5 has parallel support
   if (HDF5_FOUND)
@@ -576,17 +491,13 @@ endif()
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
   find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR}
-    $ENV{TRILINOS_DIR})
+    $ENV{TRILINOS_DIR} QUIET)
   set(DOLFIN_TRILINOS_PACKAGES "Tpetra;Zoltan;MueLu;Amesos2;Ifpack2;Belos")
 
   if ("${Trilinos_VERSION}" VERSION_LESS "12.4.0")
     set(Trilinos_FOUND FALSE)
     message(STATUS "Unable to find Trilinos (>= 12.4.0)")
   endif()
-
-  set_package_properties(Trilinos PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Object-oriented framework for large-scale problems"
-    URL "https://trilinos.org")
 
   # Check for required packages
   set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
@@ -651,28 +562,17 @@ endif()
 # Check for zlib
 if (DOLFIN_ENABLE_ZLIB)
   find_package(ZLIB)
-  set_package_properties(ZLIB PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Compression library"
-    URL "http://www.zlib.net")
 endif()
 
 # Check for Sphinx
 if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
   find_package(Sphinx 1.1.0)
-  set_package_properties(Sphinx PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Python documentation generator"
-    URL "http://www.sphinx-doc.org"
-    PURPOSE "Needed to build documentation")
 endif()
 
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
   # Find all modules
   find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
-  set_package_properties(VTK PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "The Visualization Toolkit - A high level 3D visualization library"
-    URL "https://www.vtk.org"
-    PURPOSE "Enables plotting with VTK as backend")
 
   # Add required modules (depends on VTK version)
   if(TARGET vtkRenderingOpenGL2)
@@ -717,7 +617,57 @@ endif()
 #------------------------------------------------------------------------------
 # Print summary of found and not found optional packages
 
-feature_summary(WHAT ALL)
+# FIXME: Use FeatureSummary.cmake to do this
+
+# Gather information about which optional packages were found and not found
+set(OPTIONAL_PACKAGES_FOUND "")
+set(OPTIONAL_PACKAGES_NOT_FOUND "")
+set(OPTIONAL_PACKAGES_NOT_ENABLED "")
+foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
+  string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
+  if (${PKG}_FOUND OR ${OPTIONAL_PACKAGE}_FOUND)
+    list(APPEND OPTIONAL_PACKAGES_FOUND ${PKG})
+  elseif (DOLFIN_ENABLE_${PKG})
+    list(APPEND OPTIONAL_PACKAGES_NOT_FOUND ${PKG})
+  else()
+    list(APPEND OPTIONAL_PACKAGES_NOT_ENABLED ${PKG})
+  endif()
+endforeach()
+
+message(STATUS "")
+
+# Print information about packages that were found
+if (OPTIONAL_PACKAGES_FOUND)
+  message(STATUS "The following optional packages were found:")
+  message(STATUS "-------------------------------------------")
+  foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES_FOUND})
+    string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
+    message(STATUS "(OK) ${OPTIONAL_PACKAGE}")
+  endforeach()
+  message(STATUS "")
+endif()
+
+# Print information about packages that were not enabled
+if (OPTIONAL_PACKAGES_NOT_ENABLED)
+  message(STATUS "The following optional packages were not enabled:")
+  message(STATUS "-------------------------------------------------")
+  foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES_NOT_ENABLED})
+    string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
+    message(STATUS "(--) ${OPTIONAL_PACKAGE}")
+  endforeach()
+  message(STATUS "")
+endif()
+
+# Print information about packages that were not found
+if (OPTIONAL_PACKAGES_NOT_FOUND)
+  message(STATUS "The following optional packages were not found:")
+  message(STATUS "-----------------------------------------------")
+  foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES_NOT_FOUND})
+    string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
+    message(STATUS "(**) ${OPTIONAL_PACKAGE}")
+  endforeach()
+  message(STATUS "")
+endif()
 
 #------------------------------------------------------------------------------
 # Get installation paths for Python modules (pure and platform-dependent)
@@ -901,9 +851,10 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-get-demos.in
                ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
-        DESTINATION ${DOLFIN_BIN_DIR}
-  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-        COMPONENT RuntimeExecutables)
+  DESTINATION ${DOLFIN_BIN_DIR}
+  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE
+  GROUP_EXECUTE WORLD_EXECUTE
+  COMPONENT RuntimeExecutables)
 
 
 #------------------------------------------------------------------------------
@@ -936,8 +887,23 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
 endif()
 
 #------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for bench and demos if not
-# exists
+# Generate demo files from rst
+
+message(STATUS "")
+message(STATUS "Generating demo source files")
+message(STATUS "--------------------------------------------------")
+file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
+foreach(rst_file ${demo_rst_files})
+  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+  #add_custom_command(TARGET demos_source PRE_BUILD
+  #  COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
+  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endforeach()
+
+#------------------------------------------------------------------------------
+# Generate CMakeLists.txt files for bench and demos if not existing
+
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
 if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
@@ -1021,10 +987,21 @@ else()
   set(MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM}")
 endif()
 
+# Add taget to build .py demp files from Python rst input files, and
+# create a target to build source files from .cpp.rst and .py.rst
+# files (using pylit)
+file(GLOB_RECURSE rst_files "*.py.rst" "*.cpp.rst")
+add_custom_target(demos_source)
+foreach(rst_file ${rst_files})
+  add_custom_command(TARGET demos_source PRE_BUILD
+    COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endforeach()
+
 # Add target "demo" for building the demos
 add_custom_target(demo
   COMMAND ${MAKE_PROGRAM}
-  DEPENDS copy_data_test_demo
+  DEPENDS demos_source copy_data_test_demo
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
@@ -1143,12 +1120,6 @@ if (DOLFIN_ENABLE_TESTING)
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
-  # Add target "run_doctest" for running documentation tests
-  add_custom_target(run_doctest
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
-    DEPENDS copy_data_test_demo
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/documentation")
-
   # Add target "run_styletest" for running documentation tests
   add_custom_target(run_styletest
     COMMAND ${PYTHON_EXECUTABLE} "-B" "test_coding_style.py"
@@ -1161,7 +1132,7 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "runtests" for running all tests
   add_custom_target(runtests
-    DEPENDS run_doctest run_regressiontests run_unittests run_styletest)
+    DEPENDS run_regressiontests run_unittests run_styletest)
 endif()
 
 #------------------------------------------------------------------------------
