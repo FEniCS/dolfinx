@@ -36,6 +36,7 @@
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Cell.h>
+#include "GenericFunctionSpace.h"
 
 namespace dolfin
 {
@@ -50,7 +51,7 @@ namespace dolfin
   /// a mesh, a finite element, and a local-to-global mapping of the
   /// degrees of freedom (dofmap).
 
-  class FunctionSpace : public Variable, public Hierarchical<FunctionSpace>
+  class FunctionSpace : public Variable, public Hierarchical<FunctionSpace>, public GenericFunctionSpace
   {
   public:
 
