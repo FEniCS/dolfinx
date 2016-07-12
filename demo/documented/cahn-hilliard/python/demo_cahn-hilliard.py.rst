@@ -96,12 +96,6 @@ in this demo:
 * :math:`dt = 5 \times 10^{-6}`
 * :math:`\theta = 0.5`
 
-With the above input the solution for :math:`c` will look as follows:
-
-.. image:: ../cahn-hilliard_c.png
-    :scale: 75
-    :align: center
-
 
 Implementation
 --------------
