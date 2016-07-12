@@ -48,9 +48,15 @@ def V(multimesh):
 def v(V):
     return MultiMeshFunction(V)
 
+
 def test_measure_mul(v, multimesh):
     assert isinstance(v*dX, ufl.form.Form) 
 
 
 def test_funcspace_storage(v):
     assert isinstance(MultiMeshFunction(v.function_space()), MultiMeshFunction)
+
+
+
+def test_assemble(v, multimesh):
+    assert assemble(v*v*dX)
