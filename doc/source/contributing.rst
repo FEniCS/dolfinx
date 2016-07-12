@@ -18,8 +18,8 @@ http://fenics-dolfin.readthedocs.io/.
 Creating the demo program
 -------------------------
 
-1. Create a directory for the demo under ``demos/documented/``,
-   e.g. ``demos/documented/foo/python/``.
+1. Create a directory for the demo under ``demo/documented/``,
+   e.g. ``demo/documented/foo/python/``.
 2. Write the demo in reStructuredText (rst), with the actual code in
    'code blocks' (see other demos for guidance). The demo file should
    be named ``demo_foo-bar.py.rst``.

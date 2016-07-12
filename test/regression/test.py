@@ -130,6 +130,7 @@ def main():
        os.path.join(demodir, 'documented',   'tensor-weighted-poisson',     'cpp'),
        os.path.join(demodir, 'documented',   'subdomains-poisson',          'cpp'),
        os.path.join(demodir, 'documented',   'singular-poisson-rst',        'cpp'),
+       os.path.join(demodir, 'documented',   'maxwell-eigenvalues',        'cpp'),
        ]
 
     # Demos to run

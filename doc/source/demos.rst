@@ -17,6 +17,7 @@ Demo documentation
 
    Poisson equation<demos/demo_poisson-pylit.py>
    Poisson equation (singular)<demos/demo_singular-poisson-rst.py>
+   Maxwell eigenvalue problem<demos/demo_maxwell-eigenvalues.py>
 
 .. toctree::
    :caption: C++
