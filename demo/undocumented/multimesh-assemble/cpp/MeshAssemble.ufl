@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2015 Anders Logg
+# Copyright (C) 2016 Jørgen Dokken
 #
 # This file is part of DOLFIN.
 #
@@ -15,16 +15,25 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2013-06-26
-# Last changed: 2015-10-16
+# First added:  2016-07-14
+# Last changed: 2016-07-14
 #
-# The bilinear form a(u, v) and linear form L(v) for a multimesh
-# formulation of Poisson's equation.
+# A Functional which is the integral of an argument v.
 #
-# Compile this form with FFC: ffc -l dolfin MultiMeshPoisson.ufl.
+# Compile this form with FFC: ffc -l dolfin MeshAssemble.ufl.
+
 
 # Define element
 element = FiniteElement("Lagrange", triangle, 2)
 
+# Define Coefficent
 v = Coefficient(element)
-M = v*dX
+
+# Define Functional
+M = v*dx
+
+# Additional features that is needed for ffc to run properly
+#x = TestFunction(element)
+#y = TrialFunction(element)
+#X = x*v*dx
+#a = x*y*dx

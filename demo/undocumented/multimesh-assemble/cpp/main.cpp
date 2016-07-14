@@ -25,19 +25,20 @@
 
 #include <cmath>
 #include <dolfin.h>
-#include "MultiMeshPoisson.h"
+#include "MultiMeshAssemble.h"
+#include "MeshAssemble.h"
 
 using namespace dolfin;
 using std::make_shared;
 
-void assemble_scalar(double x1, double y1,
-                     double x2, double y2)
+void assemble_scalar()
 {
   // Create meshes
   double r = 0.5;
-  auto mesh_0 = make_shared<RectangleMesh>(Point(-r, -r), Point(r, r), 16, 16);
-  auto mesh_1 = make_shared<RectangleMesh>(Point(x1 - r, y1 - r), Point(x1 + r, y1 + r), 8, 8);
-  auto mesh_2 = make_shared<RectangleMesh>(Point(x2 - r, y2 - r), Point(x2 + r, y2 + r), 8, 8);
+  auto mesh_0 = make_shared<RectangleMesh>(Point(0.,0.), Point(2., 2.), 16, 16);
+  auto mesh_1 = make_shared<RectangleMesh>(Point(1., 1.), Point(3., 3.), 10, 10);
+  auto mesh_2 = make_shared<RectangleMesh>(Point(-1., -1.),Point(0., 0.), 8, 8);
+					   //Point(0.5, 0.5), 8, 8);
 
   // Build multimesh
   auto multimesh = make_shared<MultiMesh>();
@@ -52,17 +53,33 @@ void assemble_scalar(double x1, double y1,
   public:
 
     void eval(Array<double>& values, const Array<double>& x) const
-    { values[0] = sin(x[0]) + cos(x[1]); }
+    //{ values[0] = sin(x[0]) + cos(x[1]); }
+    { values[0] = 1; }
 
   };
 
+  // Create function space
+  auto V = make_shared<MultiMeshAssemble::MultiMeshFunctionSpace>(multimesh);
 
   // Create forms
   auto v = std::make_shared<MyFunction>();
-  MultiMeshPoisson::MultiMeshFunctional M(multimesh);
+  auto u = make_shared<MultiMeshFunction>(V);
 
-  // Assemble functional
+ 
+  //Assemble Functional
+  MeshAssemble::Functional N(mesh_2);
+  N.v = v;
+  double b2 = assemble(N);
+  cout << "Area of mesh_2"<<endl;
+  cout << b2 << endl;
+  
+  // Assemble MultiMeshFunctional
+  MultiMeshAssemble::MultiMeshFunctional M(multimesh);
+  M.v = v;
+  cout << "Area of the total mesh" <<endl;
+  //cout << M.rank( ) <<endl;
   double b = assemble_multimesh(M);
+  cout << b << endl;
 }
 
 int main(int argc, char* argv[])
@@ -74,7 +91,7 @@ int main(int argc, char* argv[])
   }
 
   // Compute solution
-  assemble_scalar(0, 0, 1, 1);
+  assemble_scalar();
 
   return 0;
 }
