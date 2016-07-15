@@ -5773,23 +5773,27 @@ public:
   MultiMeshForm_M(std::shared_ptr<const dolfin::MultiMesh> mesh):
     dolfin::MultiMeshForm(mesh), v(*this, 0)
   {
-    std::shared_ptr<const dolfin::Form> a(new Form_M(mesh->part(0)));
-    add(a);
-    _mesh=mesh;
+    // Creating a form for each part of the mesh
+    for (std::size_t i=0; i< mesh->num_parts(); i++){
+      std::shared_ptr<const dolfin::Form> a(new Form_M(mesh->part(i))); 
+      add(a);
+    }
     // Build multimesh form
     build();
 
-
-  
-    
     /// Assign coefficients
 
   }
 
   // Constructor
-  MultiMeshForm_M(std::shared_ptr<const dolfin::Mesh> mesh, std::shared_ptr<const dolfin::GenericFunction> v):
-    dolfin::MultiMeshForm(), v(*this, 0)
+  MultiMeshForm_M(std::shared_ptr<const dolfin::MultiMesh> mesh, std::shared_ptr<const dolfin::GenericFunction> v):
+    dolfin::MultiMeshForm(mesh), v(*this, 0)
   {
+    std::shared_ptr<const dolfin::Form> a(new Form_M(mesh->part(0)));
+    add(a);
+
+    // Build multimesh form
+    build();
 
     /// Assign coefficients    this->v = v;
 

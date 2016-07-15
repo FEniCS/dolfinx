@@ -5,16 +5,16 @@ FFCFLAGS  = -l dolfin
 
 # the build target executable:
 TARGET1 = MeshAssemble
-# TARGET2 = MultiMeshAssemble
+TARGET2 = MultiMeshAssemble
 all: 
 	cp Makefile Makefile.org
 	ffc $(FFCFLAGS) $(TARGET1).ufl
-#	ffc $(FFCFLAGS) $(TARGET2).ufl
+	ffc $(FFCFLAGS) $(TARGET2).ufl
 	mkdir build; cd build; cmake ..; make;
 
 clean:
 	$(RM) $(TARGET1).h
-#	$(RM) $(TARGET2).h
+	$(RM) $(TARGET2).h
 	$(RM) -r build CMakeFiles
 	$(RM) CMakeCache.txt cmake_install.cmake
 

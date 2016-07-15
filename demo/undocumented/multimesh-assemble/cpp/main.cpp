@@ -27,18 +27,17 @@
 #include <dolfin.h>
 #include "MultiMeshAssemble.h"
 #include "MeshAssemble.h"
-
+#include "compute_volume.h"
 using namespace dolfin;
 using std::make_shared;
 
 void assemble_scalar()
 {
   // Create meshes
-  double r = 0.5;
   auto mesh_0 = make_shared<RectangleMesh>(Point(0.,0.), Point(2., 2.), 16, 16);
   auto mesh_1 = make_shared<RectangleMesh>(Point(1., 1.), Point(3., 3.), 10, 10);
-  auto mesh_2 = make_shared<RectangleMesh>(Point(-1., -1.),Point(0., 0.), 8, 8);
-					   //Point(0.5, 0.5), 8, 8);
+  auto mesh_2 = make_shared<RectangleMesh>(Point(-1., -1.),
+  					   Point(0.5, 0.5), 8, 8);
 
   // Build multimesh
   auto multimesh = make_shared<MultiMesh>();
@@ -66,19 +65,22 @@ void assemble_scalar()
   auto u = make_shared<MultiMeshFunction>(V);
 
  
-  //Assemble Functional
-  MeshAssemble::Functional N(mesh_2);
-  N.v = v;
-  double b2 = assemble(N);
-  cout << "Area of mesh_2"<<endl;
-  cout << b2 << endl;
+  // //Assemble Functional
+  // MeshAssemble::Functional N(mesh_2);
+  // N.v = v;
+  // double b2 = assemble(N);
+  // cout << "Area of mesh_2"<<endl;
+  // cout << b2 << endl;
   
   // Assemble MultiMeshFunctional
   MultiMeshAssemble::MultiMeshFunctional M(multimesh);
+
   M.v = v;
   cout << "Area of the total mesh" <<endl;
   //cout << M.rank( ) <<endl;
   double b = assemble_multimesh(M);
+  double d = compute_volume(*multimesh);
+  cout << d << endl;
   cout << b << endl;
 }
 
