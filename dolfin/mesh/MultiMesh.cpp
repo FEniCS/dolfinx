@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2016-06-09
+// Last changed: 2016-07-18
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -558,8 +558,9 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 				       polyhedron_same_tdim);
       }
 
-      _inclusion_exclusion_overlap(overlap_qr, initial_polyhedra,
-				   tdim, gdim, quadrature_order);
+      if (num_cutting_cells > 0)
+	_inclusion_exclusion_overlap(overlap_qr, initial_polyhedra,
+				     tdim, gdim, quadrature_order);
 
       // Store quadrature rules for cut cell
       _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
