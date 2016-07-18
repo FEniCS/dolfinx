@@ -630,24 +630,31 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
 
       const double scale = (value_max == value_min) ? 1.0 : 255.0/(value_max - value_min);
 
-      // Get colour map (256 RGB values)
-      boost::multi_array<float, 2> cmap = parameters.get_color_map_array();
+      // Add metadata node to hold color map, vertex indices into color map, min/max val
+      pugi::xml_node metadata_node = indexed_set_node.append_child("metadata");
+      dolfin_assert(metadata_node);
+      metadata_node.append_child(pugi::node_pcdata);
+      metadata_node.append_attribute("min_value") = std::to_string(value_min).c_str();
+      metadata_node.append_attribute("max_value") = std::to_string(value_max).c_str();
 
-      // Add vertex colors
-      std::stringstream color_values;
+      // Add color map
+      std::vector<double> cmap = parameters.get_color_map();
+      std::stringstream cmap_values;
+      for (double i : cmap)
+      {
+        cmap_values << std::to_string(i) << " ";
+      }
+      metadata_node.append_attribute("color_map") = cmap_values.str().c_str();
+
+      // Add indices into color map
+      std::stringstream cmap_indices;
       for (auto x : values_data)
       {
         const int cindex = scale*std::abs(x - value_min);
-        dolfin_assert(cindex < (int)cmap.shape()[0]);
-        auto color = cmap[cindex];
-        dolfin_assert(color.shape()[0] == 3);
-        color_values << color[0] << " " << color[1] << " " << color[2] << " ";
+        dolfin_assert(cindex < 256);
+        cmap_indices << std::to_string(cindex) << " ";
       }
-
-      pugi::xml_node color_node = indexed_set_node.append_child("color");
-      dolfin_assert(color_node);
-      color_node.append_child(pugi::node_pcdata);
-      color_node.append_attribute("color") = color_values.str().c_str();
+      metadata_node.append_attribute("indices") = cmap_indices.str().c_str();
     }
   }
 }
