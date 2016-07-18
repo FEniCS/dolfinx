@@ -401,15 +401,32 @@ pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
   pugi::xml_node title_node = head_node.append_child("title");
   dolfin_assert(title_node);
   title_node.append_child(pugi::node_pcdata).set_value("FEniCS/DOLFIN X3DOM plot");
+  // Add x3dom script node
+  pugi::xml_node x3d_script_node = head_node.append_child("script");
+  dolfin_assert(x3d_script_node);
+  x3d_script_node.append_child(pugi::node_pcdata);
 
-  // Add script node
-  pugi::xml_node script_node = head_node.append_child("script");
-  dolfin_assert(script_node);
-  script_node.append_child(pugi::node_pcdata);
+  // Set attributes for x3dom script node
+  x3d_script_node.append_attribute("type") = "text/javascript";
+  x3d_script_node.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
 
-  // Set attributes for script node
-  script_node.append_attribute("type") = "text/javascript";
-  script_node.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
+  // add jquery script node
+  pugi::xml_node jquery_script_node = head_node.append_child("script");
+  dolfin_assert(jquery_script_node);
+  jquery_script_node.append_child(pugi::node_pcdata);
+
+  // set attriubtes for jquery script node
+  jquery_script_node.append_attribute("type") = "text/javascript";
+  jquery_script_node.append_attribute("src") = "https://rawgit.com/plscott/fenics-x3dom/master/jquery-3.0.0.min.js";
+
+  // add support script node
+  pugi::xml_node support_script_node = head_node.append_child("script");
+  dolfin_assert(support_script_node);
+  support_script_node.append_child(pugi::node_pcdata);
+
+  // set attributes for support script node
+  support_script_node.append_attribute("type") = "text/javascript";
+  support_script_node.append_attribute("src") = "https://rawgit.com/plscott/fenics-x3dom/master/x3dom_support.js";
 
   // Add link node
   pugi::xml_node link_node = head_node.append_child("link");
