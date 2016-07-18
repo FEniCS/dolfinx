@@ -349,6 +349,24 @@ void X3DOM::html(pugi::xml_document& xml_doc, const Mesh& mesh,
     + ", number of cells: " + std::to_string(mesh.num_cells());
   mesh_info_node.append_child(pugi::node_pcdata).set_value(data.c_str());
 
+  // add slider to determine scale factor
+  pugi::xml_node slider_node = warp_item_node.append_child("input");
+  dolfin_assert(slider_node);
+  slider_node.append_attribute("id") = "slider";
+  slider_node.append_attribute("type") = "range";
+  slider_node.append_attribute("min") = "0";
+  slider_node.append_attribute("max") = "5";
+  slider_node.append_attribute("step") = "0.01";
+  slider_node.append_attribute("value") = "1";
+  slider_node.append_attribute("onchange") 
+    = "document.getElementById('slider_val').innerHTML = value; warpByScalar();";
+
+  // add text for slider value
+  pugi::xml_node slider_value_node = warp_item_node.append_child("p");
+  dolfin_assert(slider_value_node);
+  slider_value_node.append_attribute("id") = "slider_val";
+  slider_value_node.append_child(pugi::node_pcdata).set_value("1");
+
   // FIXME: adding viewpoint buttons here is fragile since to may
   // change in the X3 node. Need to bring the two closer in the code
   // (in the same function?) to keep consistency
