@@ -1474,7 +1474,7 @@ class PylitOptions(object):
 # However,  this leaves the uninitiated user with a non-responding application
 # if (s)he just tries the script without any arguments) ::
 
-def open_streams(infile = '-', outfile = '-', overwrite='update', **keyw):
+def open_streams(infile = '-', outfile = '-', overwrite='yes', **keyw):
     """Open and return the input and output stream
 
     open_streams(infile, outfile) -> (in_stream, out_stream)
