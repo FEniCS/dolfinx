@@ -9,7 +9,6 @@ echo "  cmake/scripts/generate-demo-files"
 echo "  cmake/scripts/generate-cmakefiles"
 echo "  cmake/scripts/generate-swig-docstrings"
 echo "  cmake/scripts/generate-swig-interface"
-echo "  cmake/scripts/download-demo-data"
 echo ""
 echo "Press return to continue."
 read x
@@ -19,4 +18,3 @@ read x
 ./cmake/scripts/generate-cmakefiles
 ./cmake/scripts/generate-swig-docstrings
 ./cmake/scripts/generate-swig-interface
-./cmake/scripts/download-demo-data
