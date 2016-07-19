@@ -353,7 +353,7 @@ defaults.codeindent =  2
 #
 # What to do if the outfile already exists? (ignored if `outfile` == '-')::
 
-defaults.overwrite = 'update'
+defaults.overwrite = 'yes'
 
 # Recognised values:
 #
@@ -1474,7 +1474,7 @@ class PylitOptions(object):
 # However,  this leaves the uninitiated user with a non-responding application
 # if (s)he just tries the script without any arguments) ::
 
-def open_streams(infile = '-', outfile = '-', overwrite='yes', **keyw):
+def open_streams(infile = '-', outfile = '-', overwrite='update', **keyw):
     """Open and return the input and output stream
 
     open_streams(infile, outfile) -> (in_stream, out_stream)
@@ -1494,6 +1494,7 @@ def open_streams(infile = '-', outfile = '-', overwrite='yes', **keyw):
         in_stream = sys.stdin
     else:
         in_stream = file(infile, 'r')
+
     if outfile == '-':
         out_stream = sys.stdout
     elif overwrite == 'no' and os.path.exists(outfile):
