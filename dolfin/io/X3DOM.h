@@ -139,7 +139,7 @@ namespace dolfin
     void set_menu_display(bool show);
 
     /// Get the menu display state
-    void get_menu_display();
+    bool get_menu_display() const;
 
   private:
 
