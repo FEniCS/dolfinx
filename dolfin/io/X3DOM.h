@@ -271,9 +271,6 @@ namespace dolfin
                               const X3DOMParameters& parameters,
                               bool surface);
 
-    // Add viewpoint control (HTML)
-    static void add_viewpoint_control_option(pugi::xml_node& viewpoint_control,
-                                             std::string viewpoint);
 
     // Add a collection viewpoint nodes (X3D)
     static void add_viewpoint_nodes(pugi::xml_node& xml_scene,
