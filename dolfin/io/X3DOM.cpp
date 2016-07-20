@@ -348,31 +348,6 @@ void X3DOM::html(pugi::xml_document& xml_doc, const Mesh& mesh,
     = "Number of vertices: " + std::to_string(mesh.num_vertices())
     + ", number of cells: " + std::to_string(mesh.num_cells());
   mesh_info_node.append_child(pugi::node_pcdata).set_value(data.c_str());
-
-  // FIXME: adding viewpoint buttons here is fragile since to may
-  // change in the X3 node. Need to bring the two closer in the code
-  // (in the same function?) to keep consistency
-
-  //Append viewpoint buttons to 'body' (HTML) node
-  if (parameters.get_viewpoint_buttons())
-  {
-    // Add viewpoint control node to HTML (have to add as the first
-    // element)
-    pugi::xml_node viewpoint_control_node = body_node.prepend_child("div");
-    dolfin_assert(viewpoint_control_node);
-    viewpoint_control_node.append_child(pugi::node_pcdata);
-
-    // Add attributes to viewpoint node
-    viewpoint_control_node.append_attribute("id") = "camera_buttons";
-    viewpoint_control_node.append_attribute("style")
-      = "display: inline-flex; position: relative; margin: 1%";
-
-    // Add viewpoints
-    std::vector<std::string> viewpoints = {"front", "back", "left",
-                                           "right", "top", "bottom"};
-    for (auto viewpoint : viewpoints)
-      add_viewpoint_control_option(viewpoint_control_node, viewpoint);
-  }
 }
 //-----------------------------------------------------------------------------
 pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
@@ -683,18 +658,6 @@ void X3DOM::add_mesh_data(pugi::xml_node& xml_node, const Mesh& mesh,
       metadata_node.append_attribute("indices") = cmap_indices.str().c_str();
     }
   }
-}
-//-----------------------------------------------------------------------------
-void X3DOM::add_viewpoint_control_option(pugi::xml_node& viewpoint_control_node,
-                                         std::string viewpoint_label)
-{
-  dolfin_assert(viewpoint_control_node);
-  pugi::xml_node viewpoint_buttons_node = viewpoint_control_node.append_child("button");
-
-  const std::string one_click_str = "document.getElementById('" + viewpoint_label + "').setAttribute('set_bind','true');";
-  viewpoint_buttons_node.append_attribute("onclick") = one_click_str.c_str();
-  viewpoint_buttons_node.append_attribute("style") = "display: block; margin: 2%";
-  viewpoint_buttons_node.append_child(pugi::node_pcdata).set_value(viewpoint_label.c_str());
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_viewpoint_nodes(pugi::xml_node& xml_scene_node,
