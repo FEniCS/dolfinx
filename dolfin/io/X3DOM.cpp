@@ -40,7 +40,7 @@ using namespace dolfin;
 X3DOMParameters::X3DOMParameters()
   : _representation(Representation::surface_with_edges),
     _size({{500.0, 400.0}}),
-    _show_viewpoints(false),
+    _show_viewpoints(true),
     _diffuse_color({{1.0, 1.0, 1.0}}),
     _emissive_color({{0.0, 0.0, 0.0}}),
     _specular_color({{0.0, 0.0, 0.0}}),
@@ -349,24 +349,6 @@ void X3DOM::html(pugi::xml_document& xml_doc, const Mesh& mesh,
     + ", number of cells: " + std::to_string(mesh.num_cells());
   mesh_info_node.append_child(pugi::node_pcdata).set_value(data.c_str());
 
-  // add slider to determine scale factor
-  pugi::xml_node slider_node = warp_item_node.append_child("input");
-  dolfin_assert(slider_node);
-  slider_node.append_attribute("id") = "slider";
-  slider_node.append_attribute("type") = "range";
-  slider_node.append_attribute("min") = "0";
-  slider_node.append_attribute("max") = "5";
-  slider_node.append_attribute("step") = "0.01";
-  slider_node.append_attribute("value") = "1";
-  slider_node.append_attribute("onchange") 
-    = "document.getElementById('slider_val').innerHTML = value; warpByScalar();";
-
-  // add text for slider value
-  pugi::xml_node slider_value_node = warp_item_node.append_child("p");
-  dolfin_assert(slider_value_node);
-  slider_value_node.append_attribute("id") = "slider_val";
-  slider_value_node.append_child(pugi::node_pcdata).set_value("1");
-
   // FIXME: adding viewpoint buttons here is fragile since to may
   // change in the X3 node. Need to bring the two closer in the code
   // (in the same function?) to keep consistency
@@ -446,14 +428,23 @@ pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
   support_script_node.append_attribute("type") = "text/javascript";
   support_script_node.append_attribute("src") = "https://rawgit.com/plscott/fenics-x3dom/master/x3dom_support.js";
 
-  // Add link node
-  pugi::xml_node link_node = head_node.append_child("link");
-  dolfin_assert(link_node);
+  // Add link node for x3dom
+  pugi::xml_node x3d_link_node = head_node.append_child("link");
+  dolfin_assert(x3d_link_node);
 
-  // Set attributes for link node
-  link_node.append_attribute("rel") = "stylesheet";
-  link_node.append_attribute("type") = "text/css";
-  link_node.append_attribute("href") = "http://www.x3dom.org/download/x3dom.css";
+  // Set attributes for x3dom link node
+  x3d_link_node.append_attribute("rel") = "stylesheet";
+  x3d_link_node.append_attribute("type") = "text/css";
+  x3d_link_node.append_attribute("href") = "http://www.x3dom.org/download/x3dom.css";
+
+  // Add link node for support
+  pugi::xml_node support_link_node = head_node.append_child("link");
+  dolfin_assert(support_link_node);
+
+  // Set attributes for support link node
+  support_link_node.append_attribute("rel") = "stylesheet";
+  support_link_node.append_attribute("type") = "text/css";
+  support_link_node.append_attribute("href") = "https://rawgit.com/plscott/fenics-x3dom/master/x3dom_support.css";
 
   return html_node;
 }
