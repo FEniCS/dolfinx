@@ -135,6 +135,12 @@ namespace dolfin
     // Get the state of the 'statistics' window
     bool get_x3d_stats() const;
 
+    /// Toggle menu option
+    void set_menu_display(bool show);
+
+    /// Get the menu display state
+    void get_menu_display();
+
   private:
 
     // Check that RGB colors are valid. Throws error if value is
@@ -170,6 +176,9 @@ namespace dolfin
 
     // Turn X3D stats on/off
     bool _show_x3d_stats;
+
+    // Turn menu on/off
+    bool _menu_display;
   };
 
   // Forward declarations
