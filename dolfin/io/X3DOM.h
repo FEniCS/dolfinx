@@ -123,12 +123,6 @@ namespace dolfin
     /// Get the color map as a boost::multi_array (256x3)
     boost::multi_array<float, 2> get_color_map_array() const;
 
-    /// Toggle viewpoint buttons
-    void set_viewpoint_buttons(bool show);
-
-    /// Get the viewpoint button state
-    bool get_viewpoint_buttons() const;
-
     /// Turn X3D 'statistics' window on/off
     void set_x3d_stats(bool show);
 
@@ -140,6 +134,30 @@ namespace dolfin
 
     /// Get the menu display state
     bool get_menu_display() const;
+
+    /// Toggle summary tab in the menu
+    void set_menu_summary_tab(bool show);
+
+    /// Get the state of the menu summary
+    bool get_menu_summary_tab() const;
+
+    /// Toggle the color tab in the menu
+    void set_menu_color_tab(bool show);
+
+    /// Get the state of the menu color tab
+    bool get_menu_color_tab() const;
+
+    /// Toggle the warp tab in the menu
+    void set_menu_warp_tab(bool show);
+
+    /// Get the state of the menu warp tab
+    bool get_menu_warp_tab() const;
+
+    /// Toggle viewpoint buttons
+    void set_menu_viewpoint_tab(bool show);
+
+    /// Get the viewpoint button state
+    bool get_menu_viewpoint_tab() const;
 
   private:
 
@@ -160,9 +178,6 @@ namespace dolfin
     // Dimensions of viewing area
     std::array<double, 2> _size;
 
-    // Toggle view point buttons
-    bool _show_viewpoints;
-
     // TODO: document
     // RGB colours, see http://doc.x3dom.org/author/Shape/Material.html
     std::array<double, 3> _diffuse_color, _emissive_color, _specular_color,
@@ -179,6 +194,18 @@ namespace dolfin
 
     // Turn menu on/off
     bool _menu_display;
+
+    // Turn menu summary tab on/off
+    bool _menu_summary_tab;
+
+    // Turn menu color tab on/off
+    bool _menu_color_tab;
+
+    // Turn menu warp tab on/off
+    bool _menu_warp_tab;
+
+    // Turn menu viewpoint tab on/off
+    bool _menu_viewpoint_tab;
   };
 
   // Forward declarations
@@ -291,6 +318,31 @@ namespace dolfin
                                    Viewpoint viewpoint,
                                    const Point p,
                                    const double s);
+
+    // Add the menu display and the desired subsections
+    static void add_menu_display(pugi::xml_node& xml_node, const Mesh& mesh,
+                                 const X3DOMParameters& parameters);
+
+    // Add the button for a tab to be added to the menu
+    static void add_menu_tab_button(pugi::xml_node& xml_node, std::string name, bool checked);
+
+    // Create a generic content node to hold specific menu content
+    static pugi::xml_node create_menu_content_node(pugi::xml_node& xml_node, std::string name, bool show);
+
+    // Add the summary tab in the menu display
+    static void add_menu_summary_tab(pugi::xml_node& xml_node, const Mesh& mesh);
+
+    // Add the color tab in the menu display
+    static void add_menu_color_tab(pugi::xml_node& xml_node);
+
+    // Add the warp tab in the menu display
+    static void add_menu_warp_tab(pugi::xml_node& xml_node);
+
+    // Add the viewpoint tab in the menu display
+    static void add_menu_viewpoint_tab(pugi::xml_node& xml_node);
+
+    // Add a viewpoint button to the appropriate parent
+    static void add_menu_viewpoint_button(pugi::xml_node& xml_node, std::string name);
 
     // Get centre point of mesh bounds, and a reasonable viewpoint
     // distance from it

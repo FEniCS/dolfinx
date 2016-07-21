@@ -40,7 +40,6 @@ using namespace dolfin;
 X3DOMParameters::X3DOMParameters()
   : _representation(Representation::surface_with_edges),
     _size({{500.0, 400.0}}),
-    _show_viewpoints(true),
     _diffuse_color({{1.0, 1.0, 1.0}}),
     _emissive_color({{0.0, 0.0, 0.0}}),
     _specular_color({{0.0, 0.0, 0.0}}),
@@ -49,7 +48,12 @@ X3DOMParameters::X3DOMParameters()
     _shininess(0.5),
     _transparency(0.0),
     _color_map(default_color_map()),
-    _show_x3d_stats(false)
+    _show_x3d_stats(false),
+    _menu_display(true),
+    _menu_summary_tab(true),
+    _menu_color_tab(true),
+    _menu_warp_tab(true),
+    _menu_viewpoint_tab(true)
 {
   // Do nothing
 }
@@ -168,16 +172,6 @@ boost::multi_array<float, 2> X3DOMParameters::get_color_map_array() const
   return _color_map;
 }
 //-----------------------------------------------------------------------------
-void X3DOMParameters::set_viewpoint_buttons(bool show)
-{
-  _show_viewpoints = show;
-}
-//-----------------------------------------------------------------------------
-bool X3DOMParameters::get_viewpoint_buttons() const
-{
-  return _show_viewpoints;
-}
-//-----------------------------------------------------------------------------
 void X3DOMParameters::set_x3d_stats(bool show_stats)
 {
   _show_x3d_stats = show_stats;
@@ -194,6 +188,38 @@ void X3DOMParameters::set_menu_display(bool show) {
 //-----------------------------------------------------------------------------
 bool X3DOMParameters::get_menu_display() const {
   return _menu_display;
+}
+//-----------------------------------------------------------------------------
+void X3DOMParameters::set_menu_summary_tab(bool show) {
+  _menu_summary_tab = show;
+}
+//-----------------------------------------------------------------------------
+bool X3DOMParameters::get_menu_summary_tab() const {
+  return _menu_summary_tab;
+}
+//-----------------------------------------------------------------------------
+void X3DOMParameters::set_menu_color_tab(bool show) {
+  _menu_color_tab = show;
+}
+//-----------------------------------------------------------------------------
+bool X3DOMParameters::get_menu_color_tab() const {
+  return _menu_color_tab;
+}
+//-----------------------------------------------------------------------------
+void X3DOMParameters::set_menu_warp_tab(bool show) {
+  _menu_warp_tab = show;
+}
+//-----------------------------------------------------------------------------
+bool X3DOMParameters::get_menu_warp_tab() const {
+  return _menu_warp_tab;
+}
+//-----------------------------------------------------------------------------
+void X3DOMParameters::set_menu_viewpoint_tab(bool show) {
+  _menu_viewpoint_tab = show;
+}
+//-----------------------------------------------------------------------------
+bool X3DOMParameters::get_menu_viewpoint_tab() const {
+  return _menu_viewpoint_tab;
 }
 //-----------------------------------------------------------------------------
 void X3DOMParameters::check_rgb(std::array<double, 3>& rgb)
@@ -347,15 +373,10 @@ void X3DOM::html(pugi::xml_document& xml_doc, const Mesh& mesh,
   // Add X3D XML data
   add_x3dom_data(body_node, mesh, vertex_values, facet_values, parameters);
 
-  // Add text mesh info to body node
-  pugi::xml_node mesh_info_node = body_node.append_child("div");
-  dolfin_assert(mesh_info_node);
-  mesh_info_node.append_attribute("style")
-    = "position: absolute; margin: 1%; text-align: left; font-size: 12px; color: black;";
-  std::string data
-    = "Number of vertices: " + std::to_string(mesh.num_vertices())
-    + ", number of cells: " + std::to_string(mesh.num_cells());
-  mesh_info_node.append_child(pugi::node_pcdata).set_value(data.c_str());
+  // Add the menu display if desired
+  if (parameters.get_menu_display()) {
+    add_menu_display(body_node, mesh, parameters);
+  }
 }
 //-----------------------------------------------------------------------------
 pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
@@ -532,7 +553,7 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   // Add viewpoint(s)
   const std::pair<Point, double> position = mesh_centre_and_distance(mesh);
   add_viewpoint_nodes(scene_node, position.first, position.second,
-                      parameters.get_viewpoint_buttons());
+                      parameters.get_menu_viewpoint_tab());
 
   // Add background color
   pugi::xml_node background_node = scene_node.append_child("background");
@@ -758,6 +779,228 @@ void X3DOM::add_viewpoint_node(pugi::xml_node& xml_scene_node,
 
   viewpoint_node.append_attribute("zNear") = "-1";
   viewpoint_node.append_attribute("zFar") = "-1";
+}
+//-----------------------------------------------------------------------------
+void X3DOM::add_menu_display(pugi::xml_node& xml_node, const Mesh& mesh, 
+                             const X3DOMParameters& parameters)
+{
+  // Append a div node to contain the menu display
+  pugi::xml_node menu = xml_node.append_child("div");
+  dolfin_assert(menu);
+  menu.append_child(pugi::node_pcdata);
+  menu.append_attribute("id") = "menu";
+
+  // Append a form node for the radio buttons to select sections
+  pugi::xml_node menu_items = menu.append_child("form");
+  dolfin_assert(menu_items);
+  menu_items.append_child(pugi::node_pcdata);
+  menu_items.append_attribute("id") = "menu-items";
+
+  // Append a div to hold the menu content
+  pugi::xml_node menu_content = menu.append_child("div");
+  dolfin_assert(menu_content);
+  menu_content.append_child(pugi::node_pcdata);
+  menu_content.append_attribute("id") = "menu-content";
+
+  // Add the sections that are desired to the menu
+  bool start = true;
+  if (parameters.get_menu_summary_tab()) {
+    // add the radio button for the summary section
+    add_menu_tab_button(menu_items, "summary", start);
+
+    // add the content for the summary tab
+    pugi::xml_node summary = create_menu_content_node(menu_content, 
+                                                      "summary", start);
+    add_menu_summary_tab(summary, mesh);
+    start = false;
+  }
+  if (parameters.get_menu_color_tab()) {
+    // add the radio button for the color section
+    add_menu_tab_button(menu_items, "color", start);
+
+    // add the content for the color tab
+    pugi::xml_node color = create_menu_content_node(menu_content, 
+                                                    "color", start);
+    add_menu_color_tab(color);
+    start = false;
+  }
+  if (parameters.get_menu_warp_tab()) {
+    // add the radio button for the warp section
+    add_menu_tab_button(menu_items, "warp", start);
+
+    // add the content for the warp tab
+    pugi::xml_node warp = create_menu_content_node(menu_content,
+                                                   "warp", start);
+    add_menu_warp_tab(warp);
+    start = false;
+  }
+  if (parameters.get_menu_viewpoint_tab()) {
+    // add the radio button for the viewpoint section
+    add_menu_tab_button(menu_items, "viewpoint", start);
+
+    // add the content for the viewpoint tab
+    pugi::xml_node viewpoint = create_menu_content_node(menu_content,
+                                                        "viewpoint", start);
+    add_menu_viewpoint_tab(viewpoint);
+    start = false;
+  }
+}
+//-----------------------------------------------------------------------------
+void X3DOM::add_menu_tab_button(pugi::xml_node& xml_node, std::string name, 
+                                bool checked)
+{
+  // Add an input node of type radio button to parent
+  pugi::xml_node button_node = xml_node.append_child("input");
+  dolfin_assert(button_node);
+  button_node.append_child(pugi::node_pcdata);
+
+  // Set attributes of the button, including type, id, and name
+  button_node.append_attribute("type") = "radio";
+  button_node.append_attribute("id") = ("button-" + name).c_str();
+  button_node.append_attribute("name") = "menu";
+  
+  if (checked) {
+    button_node.append_attribute("checked");
+  }
+
+  // Add label node for corresponding button
+  pugi::xml_node label_node = xml_node.append_child("label");
+  dolfin_assert(label_node);
+
+  // Add attributes and text
+  label_node.append_attribute("for") = ("button-" + name).c_str();
+  name[0] = toupper(name[0]);
+  label_node.append_child(pugi::node_pcdata).set_value(name.c_str());
+}
+//-----------------------------------------------------------------------------
+pugi::xml_node X3DOM::create_menu_content_node(pugi::xml_node& xml_node, 
+                                               std::string name, bool show)
+{
+  // Add a div to parent to hold content
+  pugi::xml_node content_node = xml_node.append_child("div");
+  dolfin_assert(content_node);
+  content_node.append_child(pugi::node_pcdata);
+
+  // Set attributes: id, for and (if needed) hidden
+  content_node.append_attribute("id") = ("content-" + name).c_str();
+  content_node.append_attribute("for") = ("button-" + name).c_str();
+
+  if (!show) {
+    content_node.append_attribute("hidden");
+  }
+
+  return content_node;
+}
+//-----------------------------------------------------------------------------
+void X3DOM::add_menu_summary_tab(pugi::xml_node& xml_node, const Mesh& mesh)
+{
+  // compute the number of vertices and cells to add to the summary tab
+  std::string vertices_data = 
+            "Number of vertices: " + std::to_string(mesh.num_vertices());
+  std::string cells_data =
+            "Number of cells: " + std::to_string(mesh.num_cells());
+
+  // append to the parent node the data (with break in between)
+  xml_node.append_child(pugi::node_pcdata).set_value(vertices_data.c_str());
+  xml_node.append_child("br");
+  xml_node.append_child(pugi::node_pcdata).set_value(cells_data.c_str());
+}
+//-----------------------------------------------------------------------------
+void X3DOM::add_menu_color_tab(pugi::xml_node& xml_node)
+{
+  // add a form node to hold a checkbox to toggle color on/off
+  pugi::xml_node form_node = xml_node.append_child("form");
+  dolfin_assert(form_node);
+
+  // add an input (checkbox) as well as label for toggling color
+  pugi::xml_node input_node = form_node.append_child("input");
+  dolfin_assert(input_node);
+  input_node.append_attribute("id") = "color-checkbox";
+  input_node.append_attribute("type") = "checkbox";
+  input_node.append_attribute("checked");
+
+  pugi::xml_node label_node = form_node.append_child("label");
+  dolfin_assert(label_node);
+  label_node.append_attribute("for") = "color-checkbox";
+  label_node.append_child(pugi::node_pcdata).set_value("Show Color");
+
+  // add the color map title and div to hold it
+  xml_node.append_child(pugi::node_pcdata).set_value("Current Color Map:");
+  pugi::xml_node br_node = xml_node.append_child("br");
+  dolfin_assert(br_node);
+  
+  pugi::xml_node span_node = xml_node.append_child("span");
+  span_node.append_attribute("id") = "color-map";
+}
+//-----------------------------------------------------------------------------
+void X3DOM::add_menu_warp_tab(pugi::xml_node& xml_node)
+{
+  // add a form node to hold a checkbox to toggle warp on/off
+  pugi::xml_node form_node = xml_node.append_child("form");
+  dolfin_assert(form_node);
+
+  // add an input (checkbox) as well as a label for toggling warping
+  pugi::xml_node checkbox_node = form_node.append_child("input");
+  dolfin_assert(checkbox_node);
+  checkbox_node.append_attribute("id") = "warp-checkbox";
+  checkbox_node.append_attribute("type") = "checkbox";
+
+  pugi::xml_node label_node = form_node.append_child("label");
+  dolfin_assert(label_node);
+  label_node.append_attribute("for") = "warp-checkbox";
+  label_node.append_child(pugi::node_pcdata).set_value("Warp By Scalar");
+
+  // add an input (slider) to adjust the warp factor
+  pugi::xml_node slider_node = xml_node.append_child("input");
+  dolfin_assert(slider_node);
+  slider_node.append_attribute("id") = "warp-slider";
+  slider_node.append_attribute("type") = "range";
+  slider_node.append_attribute("min") = "0";
+  slider_node.append_attribute("max") = "5";
+  slider_node.append_attribute("step") = "0.01";
+  slider_node.append_attribute("value") = "1";
+  slider_node.append_attribute("disabled");
+
+  // add a break and label for the slider
+  pugi::xml_node br_node = xml_node.append_child("br");
+  dolfin_assert(br_node);
+
+  label_node = xml_node.append_child("label");
+  dolfin_assert(label_node);
+  label_node.append_attribute("id") = "warp-slider-val";
+  label_node.append_attribute("for") = "warp-slider";
+  label_node.append_child(pugi::node_pcdata).set_value("1");
+}
+//-----------------------------------------------------------------------------
+void X3DOM::add_menu_viewpoint_tab(pugi::xml_node& xml_node)
+{
+  // add a title for the viewpoint buttons
+  xml_node.append_child(pugi::node_pcdata).set_value("Viewpoint Options");
+  pugi::xml_node br_node = xml_node.append_child("br");
+  dolfin_assert(br_node);
+
+  // append the buttons for the different viewpoint options
+  add_menu_viewpoint_button(xml_node, "front");
+  add_menu_viewpoint_button(xml_node, "back");
+  add_menu_viewpoint_button(xml_node, "left");
+
+  br_node = xml_node.append_child("br");
+  dolfin_assert(br_node);
+
+  add_menu_viewpoint_button(xml_node, "right");
+  add_menu_viewpoint_button(xml_node, "top");
+  add_menu_viewpoint_button(xml_node, "bottom");
+}
+//-----------------------------------------------------------------------------
+void X3DOM::add_menu_viewpoint_button(pugi::xml_node& xml_node, std::string name)
+{
+  // add a button node to the parent
+  pugi::xml_node button_node = xml_node.append_child("button");
+  dolfin_assert(button_node);
+
+  // set the text to be the name and the class to be viewpoint
+  button_node.append_attribute("class") = "viewpoint";
+  button_node.append_child(pugi::node_pcdata).set_value(name.c_str());
 }
 //-----------------------------------------------------------------------------
 std::pair<Point, double> X3DOM::mesh_centre_and_distance(const Mesh& mesh)
