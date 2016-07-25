@@ -924,13 +924,23 @@ void X3DOM::add_menu_color_tab(pugi::xml_node& xml_node)
   label_node.append_attribute("for") = "color-checkbox";
   label_node.append_child(pugi::node_pcdata).set_value("Show Color");
 
-  // add the color map title and div to hold it
+  // add the color map title
   xml_node.append_child(pugi::node_pcdata).set_value("Current Color Map:");
   pugi::xml_node br_node = xml_node.append_child("br");
   dolfin_assert(br_node);
   
+  // add the minimum color value, the color-map span container, and max value
+  pugi::xml_node min_color_node = xml_node.append_child("span");
+  dolfin_assert(min_color_node);
+  min_color_node.append_attribute("id") = "min-color-value";
+
   pugi::xml_node span_node = xml_node.append_child("span");
+  dolfin_assert(span_node);
   span_node.append_attribute("id") = "color-map";
+
+  pugi::xml_node max_color_node = xml_node.append_child("span");
+  dolfin_assert(max_color_node);
+  max_color_node.append_attribute("id") = "max-color-value";
 }
 //-----------------------------------------------------------------------------
 void X3DOM::add_menu_warp_tab(pugi::xml_node& xml_node)
@@ -950,8 +960,11 @@ void X3DOM::add_menu_warp_tab(pugi::xml_node& xml_node)
   label_node.append_attribute("for") = "warp-checkbox";
   label_node.append_child(pugi::node_pcdata).set_value("Warp By Scalar");
 
+  pugi::xml_node br_node = form_node.append_child("br");
+  dolfin_assert(br_node);
+
   // add an input (slider) to adjust the warp factor
-  pugi::xml_node slider_node = xml_node.append_child("input");
+  pugi::xml_node slider_node = form_node.append_child("input");
   dolfin_assert(slider_node);
   slider_node.append_attribute("id") = "warp-slider";
   slider_node.append_attribute("type") = "range";
@@ -962,7 +975,7 @@ void X3DOM::add_menu_warp_tab(pugi::xml_node& xml_node)
   slider_node.append_attribute("disabled");
 
   // add a break and label for the slider
-  pugi::xml_node br_node = xml_node.append_child("br");
+  br_node = form_node.append_child("br");
   dolfin_assert(br_node);
 
   label_node = xml_node.append_child("label");
