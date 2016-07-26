@@ -852,7 +852,6 @@ void X3DOM::add_menu_tab_button(pugi::xml_node& xml_node, std::string name,
   // Add an input node of type radio button to parent
   pugi::xml_node button_node = xml_node.append_child("input");
   dolfin_assert(button_node);
-  button_node.append_child(pugi::node_pcdata);
 
   // Set attributes of the button, including type, id, and name
   button_node.append_attribute("type") = "radio";
@@ -978,7 +977,7 @@ void X3DOM::add_menu_warp_tab(pugi::xml_node& xml_node)
   br_node = form_node.append_child("br");
   dolfin_assert(br_node);
 
-  label_node = xml_node.append_child("label");
+  label_node = form_node.append_child("label");
   dolfin_assert(label_node);
   label_node.append_attribute("id") = "warp-slider-val";
   label_node.append_attribute("for") = "warp-slider";
