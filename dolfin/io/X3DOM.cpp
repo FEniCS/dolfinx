@@ -836,12 +836,12 @@ void X3DOM::add_menu_display(pugi::xml_node& xml_node, const Mesh& mesh,
   }
   if (parameters.get_menu_viewpoint_tab()) {
     // add the radio button for the viewpoint section
-    add_menu_tab_button(menu_items, "viewpoint", start);
+    add_menu_tab_button(menu_items, "viewpoints", start);
 
     // add the content for the viewpoint tab
-    pugi::xml_node viewpoint = create_menu_content_node(menu_content,
-                                                        "viewpoint", start);
-    add_menu_viewpoint_tab(viewpoint);
+    pugi::xml_node viewpoints = create_menu_content_node(menu_content,
+                                                        "viewpoints", start);
+    add_menu_viewpoint_tab(viewpoints);
     start = false;
   }
 }
