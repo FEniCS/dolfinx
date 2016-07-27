@@ -931,14 +931,17 @@ void X3DOM::add_menu_color_tab(pugi::xml_node& xml_node)
   // add the minimum color value, the color-map span container, and max value
   pugi::xml_node min_color_node = xml_node.append_child("span");
   dolfin_assert(min_color_node);
+  min_color_node.append_child(pugi::node_pcdata);
   min_color_node.append_attribute("id") = "min-color-value";
 
   pugi::xml_node span_node = xml_node.append_child("span");
   dolfin_assert(span_node);
+  span_node.append_child(pugi::node_pcdata);
   span_node.append_attribute("id") = "color-map";
 
   pugi::xml_node max_color_node = xml_node.append_child("span");
   dolfin_assert(max_color_node);
+  max_color_node.append_child(pugi::node_pcdata);
   max_color_node.append_attribute("id") = "max-color-value";
 }
 //-----------------------------------------------------------------------------
