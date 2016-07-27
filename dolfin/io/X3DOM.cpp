@@ -987,7 +987,9 @@ void X3DOM::add_menu_warp_tab(pugi::xml_node& xml_node)
 void X3DOM::add_menu_viewpoint_tab(pugi::xml_node& xml_node)
 {
   // add a title for the viewpoint buttons
-  xml_node.append_child(pugi::node_pcdata).set_value("Viewpoint Options");
+  pugi::xml_node span_node = xml_node.append_child("span");
+  dolfin_assert(span_node);
+  span_node.append_child(pugi::node_pcdata).set_value("Viewpoint Options");
   pugi::xml_node br_node = xml_node.append_child("br");
   dolfin_assert(br_node);
 
