@@ -34,8 +34,13 @@
 //-----------------------------------------------------------------------------
 %extend dolfin::Point {
 %pythoncode %{
-__truediv__ = __div__
-__itruediv__ = __idiv__
+try:
+    # Workaround for SWIG < 3.0.9
+    __truediv__ = __div__
+    __itruediv__ = __idiv__
+except NameError:
+    # SWIG >= 3.0.9
+    pass
 %}
 }
 
@@ -252,11 +257,6 @@ class MeshFunction(object):
             raise TypeError("expected a 'str' as first argument")
         if tp == "int":
             return MeshFunctionInt(*args)
-        if tp == "uint":
-            from . import common
-            common.deprecation("uint-valued MeshFunction", "1.1.0", "TBA",
-                               "Typename \"uint\" has been changed to \"size_t\".")
-            return MeshFunctionSizet(*args)
         elif tp == "size_t":
             return MeshFunctionSizet(*args)
         elif tp == "double":
@@ -378,11 +378,6 @@ class MeshValueCollection(object):
             raise TypeError("expected a 'str' as first argument")
         if tp == "int":
             return MeshValueCollectionInt(*args)
-        if tp == "uint":
-            from . import common
-            common.deprecation("uint-valued MeshFunction", "1.1.0", "TBA",
-                               "Typename \"uint\" has been changed to \"size_t\".")
-            return MeshValueCollectionSizet(*args)
         elif tp == "size_t":
             return MeshValueCollectionSizet(*args)
         elif tp == "double":

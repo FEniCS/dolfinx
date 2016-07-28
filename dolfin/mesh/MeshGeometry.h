@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2010-11-29
+// Last changed: 2016-06-10
 
 #ifndef __MESH_GEOMETRY_H
 #define __MESH_GEOMETRY_H
@@ -59,14 +59,6 @@ namespace dolfin
     /// Return polynomial degree of coordinate field
     std::size_t degree() const
     { return _degree; }
-
-    /// Return number of coordinates
-    std::size_t size() const
-    {
-      deprecation("MeshGeometry::size()", "1.7.0", "1.8.0",
-                  "Use MeshGeometry::num_vertices() or MeshGeometry::num_points() instead");
-      return num_vertices();
-    }
 
     /// Return the number of vertex coordinates
     std::size_t num_vertices() const

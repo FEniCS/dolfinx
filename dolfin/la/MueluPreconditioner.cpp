@@ -42,8 +42,7 @@ void MueluPreconditioner::init(std::shared_ptr<const TpetraMatrix> P)
 {
   // Generate Trilinos parameters from dolfin parameters
   Teuchos::RCP<Teuchos::ParameterList> paramList(new Teuchos::ParameterList);
-  Parameters params = parameters("muelu");
-  TrilinosParameters::insert_parameters(params, paramList);
+  TrilinosParameters::insert_parameters(parameters, paramList);
 
   // FIXME: why does it need to be non-const when Ifpack2 uses const?
   std::shared_ptr<TpetraMatrix> P_non_const
@@ -76,14 +75,9 @@ std::string MueluPreconditioner::str(bool verbose) const
 //-----------------------------------------------------------------------------
 Parameters MueluPreconditioner::default_parameters()
 {
-  //Parameters p(KrylovSolver::default_parameters()("preconditioner"));
-  //p.rename("muelu_preconditioner");
-
   Parameters p("muelu_preconditioner");
-
-  //Parameters muelu_parameters("muelu");
-  //muelu_parameters.add("verbosity", "low");
-  //p.add(muelu_parameters);
+  p.rename("muelu_preconditioner");
+  p.add("verbosity", "low");
 
   return p;
 }

@@ -79,6 +79,8 @@ def test_mesh_html():
     str = X3DOM.html(mesh)
     mesh = UnitSquareMesh(5, 3)
     str = X3DOM.html(mesh)
+    # test IPython display hook:
+    html = mesh._repr_html_()
 
 
 def test_x3dom_parameters():

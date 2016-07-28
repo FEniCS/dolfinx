@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2012 Anders Logg
+// Copyright (C) 2003-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2003-03-13
-// Last changed: 2013-11-15
+// Last changed: 2016-06-10
 
 
 #include <fstream>
@@ -187,16 +187,15 @@ void Logger::dolfin_error(std::string location,
 //-----------------------------------------------------------------------------
 void Logger::deprecation(std::string feature,
                          std::string version_deprecated,
-                         std::string version_remove,
                          std::string message) const
 {
   std::stringstream s;
   s << "*** "
     << "-------------------------------------------------------------------------"
     << std::endl
-    << "*** Warning: " << feature << " has been deprecated in DOLFIN version "
+    << "*** Warning: " << feature << " has been deprecated in FEniCS version "
     << version_deprecated << "." << std::endl
-    << "*** It will be removed from version " << version_remove << "."
+    << "*** It will (likely) be removed in the next FEniCS release."
     << std::endl
     << "*** " << message << std::endl
     << "*** "

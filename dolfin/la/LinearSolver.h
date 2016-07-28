@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Anders Logg and Garth N. Wells
+// Copyright (C) 2004-2016 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2006-2010.
-// Modified by Ola Skavhaug 2008.
+// Modified by Garth N. Wells 2006-2010
+// Modified by Ola Skavhaug 2008
 //
 // First added:  2004-06-19
-// Last changed: 2014-05-27
+// Last changed: 2016-06-22
 
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
@@ -47,7 +47,12 @@ namespace dolfin
   public:
 
     /// Create linear solver
-    explicit LinearSolver(MPI_Comm comm=MPI_COMM_WORLD,
+    explicit LinearSolver(std::string method="default",
+                          std::string preconditioner="default")
+      : LinearSolver(MPI_COMM_WORLD, method, preconditioner) {}
+
+    /// Create linear solver
+    explicit LinearSolver(MPI_Comm comm,
                           std::string method="default",
                           std::string preconditioner="default");
 

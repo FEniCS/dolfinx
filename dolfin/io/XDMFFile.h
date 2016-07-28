@@ -82,6 +82,10 @@ namespace dolfin
     enum class UseFilePartition : bool {yes=true, no=false};
 
     /// Constructor
+    XDMFFile(const std::string filename)
+      : XDMFFile(MPI_COMM_WORLD, filename) {}
+
+    /// Constructor
     XDMFFile(MPI_Comm comm, const std::string filename);
 
     /// Destructor
@@ -247,7 +251,8 @@ namespace dolfin
     template<typename T>
     static void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
                               hid_t h5_id, const std::string h5_path, const T& x,
-                              const std::vector<std::int64_t> dimensions);
+                              const std::vector<std::int64_t> dimensions,
+                              const std::string number_type="");
 
     // Return topology data on this process as a flat vector
     template<typename T>
