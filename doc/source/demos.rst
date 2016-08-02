@@ -101,6 +101,7 @@ Using the C++ interface
 * :doc:`demos/poisson/main.cpp`
 * :doc:`demos/eigenvalue/main.cpp`
 * :doc:`demos/built-in-meshes/main.cpp`
+* :doc:`demos/biharmonic/main.cpp`
 
 .. todo:: Fix the toctree
 
