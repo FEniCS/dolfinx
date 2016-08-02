@@ -19,12 +19,12 @@ This demo illustrates how to:
 
 The solution for :math:`u` in this demo will look as follows:
 
-.. image:: ../plot_u.png
+.. image:: plot_u.png
     :scale: 75 %
 
 and the gradient of :math:`u` will look like this:
 
-.. image:: ../plot_u_gradient.png
+.. image:: plot_u_gradient.png
     :scale: 75 %
 
 Equation and problem definition
