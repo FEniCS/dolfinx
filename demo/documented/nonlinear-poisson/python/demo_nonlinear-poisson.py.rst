@@ -1,6 +1,5 @@
-.. Documentation for the nonlinear Poisson demo from DOLFIN.
 
-.. _demo_pde_nonlinear-poisson_python_documentation:
+.. _demo_nonlinear_poisson:
 
 Nonlinear Poisson equation
 ==========================
@@ -9,7 +8,90 @@ This demo is implemented in a single Python file,
 :download:`demo_nonlinear-poisson.py`, which contains both the
 variational form and the solver.
 
-.. include:: ../common.txt
+This demo illustrates how to:
+
+* Solve a nonlinear partial differential equation (in this case a
+  nonlinear variant of Poisson's equation)
+* Create and apply Dirichlet boundary conditions
+* Define an :py:class:`Expression <dolfin.cpp.function.Expression>`
+* Define a :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`
+* Create a :py:class:`SubDomain <dolfin.cpp.mesh.SubDomain>`
+
+The solution for :math:`u` in this demo will look as follows:
+
+.. image:: ../plot_u.png
+    :scale: 75 %
+
+and the gradient of :math:`u` will look like this:
+
+.. image:: ../plot_u_gradient.png
+    :scale: 75 %
+
+Equation and problem definition
+-------------------------------
+
+For a domain :math:`\Omega \subset \mathbb{R}^N` with boundary
+:math:`\partial \Omega = \Gamma_{D} \cup \Gamma_{N}`, we consider the
+following nonlinear Poisson equation with given boundary conditions:
+
+.. math::n
+
+    - \nabla\cdot((1 + u^2) \nabla u) &= f \quad {\rm in}\, \Omega,\\
+    u &= 1  \quad  {\rm on}\, \Gamma_D,\\
+    \nabla u\cdot n &= 0 \quad  {\rm on}\, \Gamma_N.
+
+Here :math:`f` is input data and :math:`n` denotes the outward
+directed boundary normal. The nonlinear variational form can be
+written in the following canonical form: find :math:`u \in V` such
+that
+
+.. math::
+
+   F(u;v) = 0 \quad \forall \, v \in \hat{V}
+
+Here :math:`F:V\times\hat{V}\rightarrow\mathbb{R}` is a semilinear
+form, linear in the argument subsequent to the semicolon, and
+:math:`V` is some suitable function space. The semilinear form is
+defined as follows:
+
+.. math::
+
+   F(u;v) = \int_\Omega (1 + u^2)\cdot\nabla u \cdot \nabla v - f v \,{\rm dx} = 0.
+
+To solve the nonlinear system :math:`b(U) = 0` by Newton's method we
+compute the Jacobian :math:`A = b'`, where :math:`U` is the
+coefficients of the linear combination in the finite element solution
+:math:`u_h = \sum_{j=1}^{N}U_j\phi_j, \;
+b:\mathbb{R}^N\rightarrow\mathbb{R}^N` and
+
+.. math::
+
+   b_i(U) = F(u_h;\hat{\phi}_i),\quad i = 1,2,\dotsc,N.
+
+Linearizing the semilinear form :math:`F` around :math:`u = u_h`, we obtain
+
+.. math::
+
+   F'(u_h;\delta u,v) = \int_\Omega [(2 \delta u\nabla u_h)\cdot\nabla v + ((1+u_h^2)\nabla\delta u)\nabla v] \,{\rm dx}
+
+We note that for each fixed :math:`u_h`, :math:`a =
+F'(u_h;\,\cdot\,,\,\cdot\,)` is a bilinear form and :math:`L =
+F(u_h;\,\cdot\,,\,\cdot\,)` is a linear form. In each Newton
+iteration, we thus solve a linear variational problem of the canonical
+form: find :math:`\delta u \in V_{h,0}` such that
+
+.. math::
+
+   F'(u_h;\delta u,v) = -F(u_h;v)\quad\forall\,v\in\hat{V}_h.
+
+
+In this demo, we shall consider the following definitions of the input
+function, the domain, and the boundaries:
+
+* :math:`\Omega = [0,1] \times [0,1]\,\,\,` (a unit square)
+* :math:`\Gamma_{D} = \{(1, y) \subset \partial \Omega\}\,\,\,` (Dirichlet boundary)
+* :math:`\Gamma_{N} = \{(x, 0) \cup (x, 1) \cup (0, y) \subset \partial \Omega\}\,\,\,` (Neumann boundary)
+* :math:`f(x, y) = x\sin(y)\,\,\,` (source term)
 
 Implementation
 --------------
@@ -18,9 +100,7 @@ This description goes through the implementation (in
 :download:`demo_nonlinear-poisson.py`) of a solver for the above
 described nonlinear Poisson equation step-by-step.
 
-First, the :py:mod:`dolfin` module is imported:
-
-.. code-block:: python
+First, the :py:mod:`dolfin` module is imported::
 
     from dolfin import *
 
@@ -32,9 +112,7 @@ False for the points outside. In our case, we want to say that the
 points :math:`(x, y)` such that :math:`x = 1` are inside on the inside
 of :math:`\Gamma_D`. (Note that because of rounding-off errors, it is
 often wise to instead specify :math:`|x - 1| < \epsilon`, where
-:math:`\epsilon` is a small number (such as machine precision).)
-
-.. code-block:: python
+:math:`\epsilon` is a small number (such as machine precision).)::
 
     # Sub domain for Dirichlet boundary condition
     class DirichletBoundary(SubDomain):
@@ -46,9 +124,7 @@ space V relative to this mesh. We use the built-in mesh provided by
 the class :py:class:`UnitSquareMesh
 <dolfin.cpp.mesh.UnitSquareMesh>`. In order to create a mesh
 consisting of :math:`32 \times 32` squares with each square divided
-into two triangles, we do as follows:
-
-.. code-block:: python
+into two triangles, we do as follows::
 
     # Create mesh and define function space
     mesh = UnitSquareMesh(32, 32)
@@ -72,9 +148,7 @@ value of the boundary condition, and the part of the boundary on which
 the condition applies. In our example, the function space is V, the
 value of the boundary condition (1.0) can be represented using a
 Constant and the Dirichlet boundary is defined above. The definition
-of the Dirichlet boundary condition then looks as follows:
-
-.. code-block:: python
+of the Dirichlet boundary condition then looks as follows::
 
     # Define boundary condition
     g = Constant(1.0)
@@ -103,9 +177,7 @@ run-time.
 By defining the function in this step and omitting the trial function
 we tell FEniCS that the problem is nonlinear. With these ingredients,
 we can write down the semilinear form F (using UFL operators). In
-summary, this reads
-
-.. code-block:: python
+summary, this reads::
 
     # Define variational problem
     u = Function(V)
@@ -116,12 +188,11 @@ summary, this reads
 Now, we have specified the variational forms and can consider the
 solution of the variational problem.  Next, we can call the solve
 function with the arguments F == 0, u, bc and solver parameters as
-follows:
-
-.. code-block:: python
+follows::
 
     # Compute solution
-    solve(F == 0, u, bc, solver_parameters={"newton_solver": {"relative_tolerance": 1e-6}})
+    solve(F == 0, u, bc,
+          solver_parameters={"newton_solver":{"relative_tolerance":1e-6}})
 
 The Newton procedure is considered to have converged when the residual
 :math:`r_n` at iteration :math:`n` is less than the absolute tolerance
@@ -132,9 +203,7 @@ A :py:class:`Function <dolfin.cpp.function.Function>` can be
 manipulated in various ways, in particular, it can be plotted and
 saved to file. Here, we output the solution to a VTK file (using the
 suffix .pvd) for later visualization and also plot it using the plot
-command:
-
-.. code-block:: python
+command::
 
     # Plot solution and solution gradient
     plot(u, title="Solution")
@@ -144,9 +213,3 @@ command:
     # Save solution in VTK format
     file = File("nonlinear_poisson.pvd")
     file << u
-
-Complete code
--------------
-
-.. literalinclude:: demo_nonlinear-poisson.py
-   :start-after: # Begin demo
