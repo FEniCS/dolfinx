@@ -62,12 +62,12 @@ How to
 
 * solve :ref:`a basic eigenvalue problem <demo_eigenvalue>`
 
-* setg :ref:`periodic boundary conditions <demo_periodic>`
+* set :ref:`periodic boundary conditions <demo_periodic>`
 
-* :ref:`non-singularize a pure Neumann problem <demo_singular_poisson>`
+* :ref:`de-singularize a pure Neumann problem <demo_singular_poisson>`
   by specifying the nullspace
 
-* :ref:`non-singularize a pure Neumann problem <demo_neumann_poisson>`
+* :ref:`de-singularize a pure Neumann problem <demo_neumann_poisson>`
   by adding a constraint
 
 * use :ref:`automated goal-oriented error control
