@@ -52,13 +52,15 @@ for subdir in subdirs:
 
         # Check for .py.rst files
         #extensions = ['.py.rst', '.cpp.py']
-        rstfiles = [f for f in files if len(f) > 7 and (f[-7:] == ".py.rst" or f[-8:] == ".cpp.rst")]
+        rstfiles = [f for f in files if len(f) > 7 and (f[-7:] == ".py.rst" or
+                                                        f[-8:] == ".cpp.rst" or
+                                                        f[-8:] == ".ufl.rst")]
         #print(files)
         if len(rstfiles) == 0:
             continue
 
         # Check if we have Python or C++ code
-        cpp_files = [f for f in files if len(f) > 8 and f[-8:] == ".cpp.rst"]
+        cpp_files = [f for f in files if len(f) > 8 and (f[-8:] == ".cpp.rst" or f[-8:] == ".ufl.rst")]
         py_files = [f for f in files if len(f) > 7 and f[-7:] == ".py.rst"]
 
         if len(cpp_files) > 0 and len(py_files) > 0:

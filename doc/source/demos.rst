@@ -103,6 +103,7 @@ Using the C++ interface
 * :doc:`demos/eigenvalue/main.cpp`
 * :doc:`demos/built-in-meshes/main.cpp`
 * :doc:`demos/biharmonic/main.cpp`
+* :doc:`demos/auto-adaptive-poisson/main.cpp`
 
 .. todo:: Fix the toctree
 
