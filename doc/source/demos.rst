@@ -93,6 +93,7 @@ Working list of Python demos
 * :doc:`demos/demo_eigenvalue.py`
 * :doc:`demos/demo_built-in-meshes.py`
 * :doc:`demos/demo_biharmonic.py`
+* :doc:`demos/demo_auto-adaptive-poisson.py`
 
 
 Using the C++ interface
