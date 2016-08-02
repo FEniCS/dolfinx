@@ -1,13 +1,9 @@
 .. DOLFIN API documentation
 
-
 Demo documentation
 ==================
 
 *Under development*
-
-.. todo:: Give some structure to the demos, e.g. beginner, advanced,
-          linear nonlinear, etc.
 
 Using the Python interface
 --------------------------
@@ -22,19 +18,34 @@ in the given order.
 1. Getting started: :ref:`Solving the Poisson equation
    <demo_poisson_equation>`.
 
-2. Solving nonlinear PDEs: :ref:`Solving a hyperelasticity equation
-   <demo_hyperelasticity>`
+2. Solving nonlinear PDEs: :ref:`Solving a nonlinear Poisson equation
+   <demo_nonlinear_poisson>`
 
-Advanced DOLFIN demos
-^^^^^^^^^^^^^^^^^^^^^
+3. Using mixed elements: :ref:`Solving the Stokes equations
+   <demo_stokes_taylor_hood>`
+
+4. Using iterative linear solvers: :ref:`Solving the Stokes equations
+   more efficiently <demo_stokes_iterative>`
+
+More advanced DOLFIN demos
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These examples typically demonstrate how to solve a certain PDE using
 more advanced techniques. We recommend that you take a look at these
 demos for tips and tricks on how to use more advanced or lower-level
 functionality and optimizations.
 
-* Using a mixed formulation to solving the time-dependent, nonlinear
+* Implementing a nonlinear :ref:`hyperelasticity equation
+  <demo_hyperelasticity>`
+
+* Implementing a splitting method for solving the :ref:`incompressible
+  Navier-Stokes equations <demo_navier_stokes>`
+
+* Using a mixed formulation to solve the time-dependent, nonlinear
   :ref:`Cahn-Hilliard equation <demo_cahn_hilliard>`
+
+* Computing eigenvalues of the :ref:`Maxwell eigenvalue problem
+  <demos/demo_maxwell-eigenvalues.py>`
 
 Demos illustrating specific features
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -43,40 +54,67 @@ How to
 
 * work with :ref:`built-in meshes <demo_built_in_meshes>`
 
-* solve :ref:`variational eigenvalue problems <demo_eigenvalue>`
+* define and store :ref:`subdomains <demo_subdomains>`
+
+* integrate over :ref:`subdomains <demo_subdomains_poisson>`
 
 * set :ref:`boundary conditions on non-trivial geometries <demo_bcs>`
+
+* solve :ref:`a basic eigenvalue problem <demo_eigenvalue>`
+
+* setg :ref:`periodic boundary conditions <demo_periodic>`
+
+* :ref:`non-singularize a pure Neumann problem <demo_singular_poisson>`
+  by specifying the nullspace
+
+* :ref:`non-singularize a pure Neumann problem <demo_neumann_poisson>`
+  by adding a constraint
 
 * use :ref:`automated goal-oriented error control
   <demo_auto_adaptive_poisson>`
 
 * specify a :ref:`Discontinuous Galerkin formulation <demo_biharmonic>`
 
+* work with :ref:`c++ expressions in Python programs
+  <demo_tensor_weighted_poisson>`
+
+* specify various finite element spaces
+
+  * :ref:`Brezzi-Douglas-Marini elements for mixed Poisson <demo_mixed_poisson>`
+  * :ref:`discontinuous Raviart-Thomas spaces for dual mixed Poisson
+    <demo_mixed_poisson_dual>`
+  * :ref:`the Mini element for Stokes equations <demo_stokes_mini>`
 
 
 Using the C++ interface
 -----------------------
 
+* Poisson equation<demos/poisson-pylit/main.cpp>
+* Poisson equation (test)<demos/poisson-pylit-test/main.cpp>
 
-..
-   Advanced
-   --------
-
-   .. toctree::
-      :caption: Python
-      :maxdepth: 1
-      :includehidden:
-
-      Poisson equation <demos/demo_poisson-pylit.py>
-      Poisson equation (singular)<demos/demo_singular-poisson-rst.py>
-      Maxwell eigenvalue problem<demos/demo_maxwell-eigenvalues.py>
-
-   .. toctree::
-      :caption: C++
-      :maxdepth: 1
-
-      Poisson equation<demos/poisson-pylit/main.cpp>
-      Poisson equation (test)<demos/poisson-pylit-test/main.cpp>
+.. todo:: Fix the toctree
 
 .. toctree::
-   :hidden:
+   :maxdepth: 1
+
+   demo_poisson_equation
+   demo_nonlinear_poisson
+   demo_stokes_taylor_hood
+   demo_stokes_iterative
+   demo_hyperelasticity
+   demo_navier_stokes
+   demo_cahn_hilliard
+   demo_built_in_meshes
+   demo_subdomains
+   demo_subdomains_poisson
+   demo_bcs
+   demo_eigenvalue
+   demo_periodic
+   demo_singular_poisson
+   demo_neumann_poisson
+   demo_auto_adaptive_poisson
+   demo_biharmonic
+   demo_tensor_weighted_poisson
+   demo_mixed_poisson
+   demo_mixed_poisson_dual
+   demo_stokes_mini
