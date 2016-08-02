@@ -89,8 +89,7 @@ How to
 Using the C++ interface
 -----------------------
 
-* Poisson equation<demos/poisson-pylit/main.cpp>
-* Poisson equation (test)<demos/poisson-pylit-test/main.cpp>
+* Poisson equation<demos/poisson/main.cpp>
 
 .. todo:: Fix the toctree
 
