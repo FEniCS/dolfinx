@@ -1,3 +1,6 @@
+
+.. _demo_hyperelasticity:
+
 Hyperelasticity
 ===============
 
