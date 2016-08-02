@@ -4,10 +4,6 @@
 A simple eigenvalue solver
 ==========================
 
-This demo is implemented in a single Python file,
-:download:`demo_eigenvalue.py` and reads in an external mesh
-:download:`../box_with_dent.xml.gz`.
-
 We recommend that you are familiar with the demo for the Poisson equation
 before looking at this demo.
 
@@ -20,8 +16,8 @@ Implementation
 --------------
 
 This demo is implemented in a single Python file,
-:download:`demo_eigenvalue.py`, which contains both the variational
-forms and the solver.
+:download:`demo_eigenvalue.py` and reads in an external mesh
+:download:`box_with_dent.xml.gz`.
 
 The eigensolver functionality in DOLFIN relies on the library SLEPc
 which in turn relies on the linear algebra library PETSc. Therefore,
