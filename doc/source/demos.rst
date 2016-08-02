@@ -86,11 +86,20 @@ How to
   * :ref:`the Mini element for Stokes equations <demo_stokes_mini>`
 
 
+Working list of Python demos
+----------------------------
+
+* :doc:`demos/demo_poisson.py`
+* :doc:`demos/demo_eigenvalue.py`
+* :doc:`demos/demo_built-in-meshes.py`
+
+
 Using the C++ interface
 -----------------------
 
 * :doc:`demos/poisson/main.cpp`
 * :doc:`demos/eigenvalue/main.cpp`
+* :doc:`demos/built-in-meshes/main.cpp`
 
 .. todo:: Fix the toctree
 
