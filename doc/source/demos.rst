@@ -89,7 +89,8 @@ How to
 Using the C++ interface
 -----------------------
 
-* Poisson equation<demos/poisson/main.cpp>
+* :doc:`demos/poisson/main.cpp`
+* :doc:`demos/eigenvalue/main.cpp`
 
 .. todo:: Fix the toctree
 
