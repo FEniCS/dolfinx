@@ -1,4 +1,8 @@
 Anders Logg <logg@chalmers.se>
+Anders Logg <logg@chalmers.se> <ffc@bamse>
+Anders Logg <logg@chalmers.se> <logg@yavanna>
+Anders Logg <logg@chalmers.se> <logg@aule>
+Anders Logg <logg@chalmers.se> logg <logg@localhost.localdomain>
 Anders Logg <logg@chalmers.se> fenics <devnull@localhost>
 Anders Logg <logg@chalmers.se> hg <hg@numenor>
 Anders Logg <logg@chalmers.se> root <root@leja>
@@ -15,6 +19,7 @@ Anders Logg <logg@chalmers.se> logg <logg@olorin>
 Andy R. Terrel <andy.terrel@gmail.com>
 Andy R. Terrel <andy.terrel@gmail.com> <aterrel@uchicago.edu>
 Andy R. Terrel <andy.terrel@gmail.com> aterrel <devnull@localhost>
+Andy R. Terrel <andy.terrel@gmail.com> <aterrel@dhcp-11-20.cs.uchicago.edu>
 Benjamin Kehlet <benjamik@simula.no>
 Benjamin Kehlet <benjamik@simula.no> <benjamik@benjamik-hp.simula.no>
 Benjamin Kehlet <benjamik@simula.no> <benjamik@ifi.uio.no>
@@ -64,6 +69,7 @@ Johan Hoffman <jhoffman@csc.kth.se> <jhoffman@na41.nada.kth.se>
 Johan Hoffman <jhoffman@csc.kth.se> <jhoffman@na42.nada.kth.se>
 Ilmar Wilbers <ilmarw@simula.no>
 Ilmar Wilbers <ilmarw@simula.no> <ilmarw@gogmagog.simula.no>
+Ilmar Wilbers <ilmarw@simula.no> <ilmarw@multiboot.local>
 Jack S. Hale <jack.hale@uni.lu>
 Jack S. Hale <jack.hale@uni.lu> <j.hale09@imperial.ac.uk>
 Johan Hake <hake.dev@gmail.com>
@@ -116,3 +122,11 @@ Steven Vandekerckhove <steven.vandekerckhove@kuleuven-kulak.be> <Steven.Vandeker
 stockli <stockli@carleman.nada.kth.se>
 stockli <stockli@carleman.nada.kth.se> <stockli@localhost>
 Tianyi Li <tianyikillua@gmail.com>
+Steffen Müthing <steffen.muething@ipvs.uni-stuttgart.de>
+Steffen Müthing <steffen.muething@ipvs.uni-stuttgart.de> Steffen Müthing steffen.muething@ipvs.uni-stuttgart.de <>
+Miklós Homolya <m.homolya14@imperial.ac.uk>
+Åsmund Ødegård <aasmund@simula.no>
+Åsmund Ødegård <aasmund@simula.no> <aasmundo@manpower.local>
+Ola Skavhaug <skavhaug@simula.no>
+Andre Massing <massing@simula.no>
+Andrew McRae <a.mcrae12@imperial.ac.uk>
