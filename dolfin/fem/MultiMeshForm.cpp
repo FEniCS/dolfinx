@@ -23,7 +23,7 @@
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 #include "Form.h"
 #include "MultiMeshForm.h"
-
+#include <dolfin/function/MultiMeshFunction.h>
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -100,7 +100,7 @@ std::shared_ptr<const MultiMesh> MultiMeshForm::multimesh() const
   return multimeshes[0];
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const Form> MultiMeshForm::part(std::size_t i) const
+std::shared_ptr<Form> MultiMeshForm::part(std::size_t i) const
 {
   dolfin_assert(i < _forms.size());
   return _forms[i];
@@ -113,7 +113,7 @@ MultiMeshForm::function_space(std::size_t i) const
   return _function_spaces[i];
 }
 //-----------------------------------------------------------------------------
-void MultiMeshForm::add(std::shared_ptr<const Form> form)
+void MultiMeshForm::add(std::shared_ptr<Form> form)
 {
   _forms.push_back(form);
   log(PROGRESS, "Added form to MultiMesh form; form has %d part(s).",

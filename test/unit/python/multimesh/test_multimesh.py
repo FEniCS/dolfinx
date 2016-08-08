@@ -57,6 +57,5 @@ def test_funcspace_storage(v):
     assert isinstance(MultiMeshFunction(v.function_space()), MultiMeshFunction)
 
 
-
 def test_assemble(v, multimesh):
     assert assemble(v*v*dX)

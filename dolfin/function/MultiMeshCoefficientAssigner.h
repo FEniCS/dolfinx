@@ -29,7 +29,7 @@ namespace dolfin
 
   class MultiMeshForm;
   class GenericFunction;
-
+  class MultiMeshFunction;
   /// This class is used for assignment of multimesh coefficients to
   /// forms, which allows magic like
   ///
@@ -56,6 +56,7 @@ namespace dolfin
 
     /// Assign coefficient
     void operator= (std::shared_ptr<const GenericFunction> coefficient);
+    void operator= (std::shared_ptr<const MultiMeshFunction> coefficient);
 
   private:
 

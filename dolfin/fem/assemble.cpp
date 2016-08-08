@@ -80,3 +80,22 @@ double dolfin::assemble(const Form& a)
   return s.get_scalar_value();
 }
 //-----------------------------------------------------------------------------
+double dolfin::assemble_multimesh(const MultiMeshForm& a)
+{
+  /*
+  FIXME: Needs to be implemented 
+  if (a.rank() != 0)
+  {
+    dolfin_error("assemble.cpp",
+                 "assemble form",
+                 "Expecting a scalar form but rank is %d",
+                 a.rank());
+  }
+  */
+
+  Scalar s;
+  MultiMeshAssembler assembler;
+  assembler.assemble(s, a);
+  return s.get_scalar_value();
+}
+//-----------------------------------------------------------------------------

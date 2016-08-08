@@ -27,13 +27,13 @@
 element = FiniteElement("Lagrange", triangle, 2)
 
 # Define Coefficent
-v = Coefficient(element)
+q = Coefficient(element)
 
 # Define Functional
-M = v*dx
+M = (q*q)*dx
 
 # Additional features that is needed for ffc to run properly
-#x = TestFunction(element)
-#y = TrialFunction(element)
-#X = x*v*dx
-#a = x*y*dx
+u = TestFunction(element)
+v = TrialFunction(element)
+X = inner(grad(u),grad(v))*dx
+a = u*v*dx

@@ -51,7 +51,7 @@ Form::Form(std::shared_ptr<const ufc::form> ufc_form,
   : Hierarchical<Form>(*this), _ufc_form(ufc_form),
     _function_spaces(function_spaces), _coefficients(ufc_form->num_coefficients()),
     _rank(ufc_form->rank())
-{
+{;
   // Do nothing
 }
 //-----------------------------------------------------------------------------
