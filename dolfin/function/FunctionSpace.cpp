@@ -42,13 +42,13 @@ FunctionSpace::FunctionSpace(std::shared_ptr<const Mesh> mesh,
                              std::shared_ptr<const FiniteElement> element,
                              std::shared_ptr<const GenericDofMap> dofmap)
   : Hierarchical<FunctionSpace>(*this),
-    _mesh(mesh), _element(element), _dofmap(dofmap)
+    _mesh(mesh), _element(element), _dofmap(dofmap), _root_space_id(id())
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(std::shared_ptr<const Mesh> mesh)
-  : Hierarchical<FunctionSpace>(*this), _mesh(mesh)
+  : Hierarchical<FunctionSpace>(*this), _mesh(mesh), _root_space_id(id())
 {
   // Do nothing
 }
@@ -81,6 +81,7 @@ const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
   _component = V._component;
 
   // Call assignment operator for base class
+  Variable::operator=(V);
   Hierarchical<FunctionSpace>::operator=(V);
 
   return *this;
@@ -291,10 +292,12 @@ FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) cons
     std::shared_ptr<FunctionSpace>
       new_sub_space(new FunctionSpace(_mesh, element, dofmap));
 
-    // Set component
-    new_sub_space->_component.resize(component.size());
-    for (std::size_t i = 0; i < component.size(); i++)
-      new_sub_space->_component[i] = component[i];
+    // Set root space id and component w.r.t. root
+    new_sub_space->_root_space_id = _root_space_id;
+    auto& new_component = new_sub_space->_component;
+    new_component.clear();
+    new_component.insert(new_component.end(), _component.begin(), _component.end());
+    new_component.insert(new_component.end(), component.begin(), component.end());
 
     // Insert new sub space into cache
     _subspaces.insert(std::pair<std::vector<std::size_t>,
@@ -459,5 +462,26 @@ void FunctionSpace::print_dofmap() const
       cout << " " << static_cast<std::size_t>(dofs[i]);
     cout << endl;
   }
+}
+//-----------------------------------------------------------------------------
+bool FunctionSpace::contains(FunctionSpace& V) const
+{
+  // Is the root space same?
+  if (_root_space_id != V._root_space_id)
+    return false;
+
+  // Is V possibly our superspace?
+  if (_component.size() > V._component.size())
+    return false;
+
+  // Are our components same as leading components of V?
+  for (std::size_t i = 0; i < _component.size(); ++i)
+  {
+    if (_component[i] != V._component[i])
+      return false;
+  }
+
+  // Ok, V is really our subspace
+  return true;
 }
 //-----------------------------------------------------------------------------
