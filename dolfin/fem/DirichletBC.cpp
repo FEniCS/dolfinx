@@ -1169,35 +1169,65 @@ void DirichletBC::check_arguments(GenericMatrix* A, GenericVector* b,
                  x->size(), b->size());
   }
 
+  // Check dimension of function space is not "too big"
+  // NOTE: Keeping these primitive inequality tests because detailed range
+  //       checks below may be turned off; needed for MultiMesh stuff
+  if (A && A->size(0) < _function_space->dim())
+  {
+    dolfin_error("BoundaryCondition.cpp",
+                 "apply boundary condition",
+                 "Dimension of function space (%d) too large for application of boundary conditions to linear system (%d rows)",
+                 _function_space->dim(), A->size(0));
+  }
+
+  if (x && x->size() < _function_space->dim())
+  {
+    dolfin_error("BoundaryCondition.cpp",
+                 "apply boundary condition",
+                 "Dimension of function space (%d) too large for application to boundary conditions linear system (%d rows)",
+                 _function_space->dim(), x->size());
+  }
+
+  if (b && b->size() < _function_space->dim())
+  {
+    dolfin_error("BoundaryCondition.cpp",
+                 "apply boundary condition",
+                 "Dimension of function space (%d) too large for application to boundary conditions linear system (%d rows)",
+                 _function_space->dim(), b->size());
+  }
+
   // Check local range of tensors against function space
-  std::pair<std::int64_t, std::int64_t> dofmap_range =
-    _function_space->dofmap()->ownership_range();
-
-  if (A && A->local_range(0) != dofmap_range)
+  if (parameters["check_dofmap_range"])
   {
-    dolfin_error("BoundaryCondition.cpp",
-                 "apply boundary condition",
-                 "Dofmap ownership range (%d,%d) does not match matrix local range (%d,%d)",
-                 dofmap_range.first, dofmap_range.second,
-                 A->local_range(0).first, A->local_range(0).second);
-  }
+    std::pair<std::int64_t, std::int64_t> dofmap_range =
+      _function_space->dofmap()->ownership_range();
 
-  if (x && x->local_range() != dofmap_range)
-  {
-    dolfin_error("BoundaryCondition.cpp",
-                 "apply boundary condition",
-                 "Dofmap ownership range (%d,%d) does not match x vector local range (%d,%d)",
-                 dofmap_range.first, dofmap_range.second,
-                 x->local_range().first, x->local_range().second);
-  }
+    if (A && A->local_range(0) != dofmap_range)
+    {
+      dolfin_error("BoundaryCondition.cpp",
+                   "apply boundary condition",
+                   "Dofmap ownership range (%d,%d) does not match matrix local range (%d,%d)",
+                   dofmap_range.first, dofmap_range.second,
+                   A->local_range(0).first, A->local_range(0).second);
+    }
 
-  if (b && b->local_range() != dofmap_range)
-  {
-    dolfin_error("BoundaryCondition.cpp",
-                 "apply boundary condition",
-                 "Dofmap ownership range (%d,%d) does not match b vector local range (%d,%d)",
-                 dofmap_range.first, dofmap_range.second,
-                 b->local_range().first, b->local_range().second);
+    if (x && x->local_range() != dofmap_range)
+    {
+      dolfin_error("BoundaryCondition.cpp",
+                   "apply boundary condition",
+                   "Dofmap ownership range (%d,%d) does not match x vector local range (%d,%d)",
+                   dofmap_range.first, dofmap_range.second,
+                   x->local_range().first, x->local_range().second);
+    }
+
+    if (b && b->local_range() != dofmap_range)
+    {
+      dolfin_error("BoundaryCondition.cpp",
+                   "apply boundary condition",
+                   "Dofmap ownership range (%d,%d) does not match b vector local range (%d,%d)",
+                   dofmap_range.first, dofmap_range.second,
+                   b->local_range().first, b->local_range().second);
+    }
   }
 }
 //-----------------------------------------------------------------------------
