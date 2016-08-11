@@ -221,25 +221,22 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
     // with the (possible sub-)FunctionSpace on each axis of _a.
     int axis = -1;
 
+    // FIXME: Might want to apply to both axes
     if (check_functionspace_for_bc(_a->function_space(0), i))
       axis = 0;
     else if (num_fs==2 && check_functionspace_for_bc(_a->function_space(1), i))
       axis = 1;
 
-    // Not found!
     if (axis == -1)
     {
-      dolfin_error("SystemAssembler.cpp",
-                   "assemble linear system including boundary conditions",
-                   "Boundary condition %d does not live on any (subspace of) "
-                   "bilinear form domain", i);
+      log(TRACE, "System assembler: ignoring inapplicable boundary condition %d", i);
     }
-
-    // Found!
-    _bcs[i]->get_boundary_values(boundary_values[axis]);
-    if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
-      _bcs[i]->gather(boundary_values[axis]);
-
+    else
+    {
+      _bcs[i]->get_boundary_values(boundary_values[axis]);
+      if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
+        _bcs[i]->gather(boundary_values[axis]);
+    }
   }
 
   // Modify boundary values for incremental (typically nonlinear)
@@ -1054,6 +1051,12 @@ SystemAssembler::apply_bc(double* A, double* b,
   }
   else
   {
+    // Possibly rectangular matrix with different spaces on axes
+    // FIXME: This won't work for forms on W x W.sub(0), which would contain
+    //        diagonal. This is difficult to distinguish from form
+    //        on V x Q which would by accident contain V bc and Q bc with
+    //        same dof index, but that's not diagonal.
+
     // Loop over rows first
     for (int i = 0; i < _matA.rows(); ++i)
     {
