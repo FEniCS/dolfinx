@@ -464,7 +464,7 @@ void FunctionSpace::print_dofmap() const
   }
 }
 //-----------------------------------------------------------------------------
-bool FunctionSpace::contains(FunctionSpace& V) const
+bool FunctionSpace::contains(const FunctionSpace& V) const
 {
   // Is the root space same?
   if (_root_space_id != V._root_space_id)

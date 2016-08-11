@@ -221,7 +221,7 @@ namespace dolfin
     /// *Returns*
     ///     bool
     ///         True if V is contained or equal to this.
-    bool contains(FunctionSpace& V) const;
+    bool contains(const FunctionSpace& V) const;
 
     /// Collapse a subspace and return a new function space
     ///
