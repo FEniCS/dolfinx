@@ -567,7 +567,7 @@ def test_p31_box_1():
 
 @use_gc_barrier
 def test_p31_box_2():
-    mesh = UnitSquareMesh(3, 3)
+    mesh = UnitSquareMesh(4, 4)
     V = FunctionSpace(mesh, "CG", 1)
     A, x, b = create_data()
     u_0 = Expression("sin(x[0])", degree=1)
