@@ -29,7 +29,7 @@ element = FiniteElement("Lagrange", triangle, 2)
 q = Coefficient(element)
 
 # Define Functional
-M = (q*q)*dX
+M = (q)*dX
 
 # ONLY IMPORTANT FOR BILINEAR ASSEMBLE
 # Additional features that is needed for ffc to run properly

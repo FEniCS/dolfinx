@@ -23,7 +23,7 @@
 #include <dolfin/function/MultiMeshFunctionSpace.h>
 #include "Form.h"
 #include "MultiMeshForm.h"
-#include <dolfin/function/MultiMeshFunction.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------

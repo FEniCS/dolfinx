@@ -63,7 +63,6 @@ void assemble_scalar()
   // Create forms
   auto v = std::make_shared<MyFunction>();
   MultiMeshAssemble::MultiMeshFunctional M(multimesh);
-
   // Set MultiMeshFunctional coefficient
   M.q = v;
 
@@ -84,19 +83,18 @@ void assemble_MultiMeshFunction(){
   auto mesh_0 = make_shared<RectangleMesh>(Point(0.,0.), Point(2., 2.), 16, 16);
   auto mesh_1 = make_shared<RectangleMesh>(Point(1., 1.),
 					   Point(3., 3.), 10, 10);
-  auto mesh_2 = make_shared<RectangleMesh>(Point(-1., -1.),
-					   Point(0.2, 0.2), 8, 8);
+  // auto mesh_2 = make_shared<RectangleMesh>(Point(-1., -1.),
+  // 					   Point(0.5, 0.5), 8, 8);
 
   // Build multimesh
   auto multimesh = make_shared<MultiMesh>();
   multimesh->add(mesh_0);
-  // multimesh->add(mesh_1);
+  multimesh->add(mesh_1);
   // multimesh->add(mesh_2);
   multimesh->build();
 
   // Create function spaces
   auto V = make_shared<MultiMeshAssemble::MultiMeshFunctionSpace>(multimesh);
-  auto V0 = make_shared<MeshAssemble::FunctionSpace>(mesh_0);
 
   // Create forms
   MultiMeshAssemble::MultiMeshFunctional M(multimesh);
@@ -104,50 +102,19 @@ void assemble_MultiMeshFunction(){
 
   // Create MultiMeshFunction
   auto v = make_shared<MultiMeshFunction>(V);
-  auto v0 = make_shared<Function>(V0);
-
+  *((*v).vector())+=1;
   // Set MultiMeshFunctional coefficient
   M.q = v;
-  M0.q = v0;
 
   // Compute the MultiMeshFunctional
   double b = assemble_multimesh(M);
   cout << "MultiMeshFunctional" << endl;
   cout << b << endl;
-  double b0 = assemble(M0);
-  cout << "Functional" << endl;
-  cout << b0 << endl;
+  double d = compute_volume(*multimesh);
+  cout << "Area of the total mesh (Compute_volume) "<< endl;
+  cout << d << endl;
+
 }
-
-void assemble_MultiMeshBilinear(){
-  // Create meshes
-  auto mesh_0 = make_shared<RectangleMesh>(Point(0.,0.), Point(2., 2.), 16, 16);
-  auto mesh_1 = make_shared<RectangleMesh>(Point(1., 1.),
-					   Point(3., 3.), 10, 10);
-  auto mesh_2 = make_shared<RectangleMesh>(Point(-1., -1.),
-					   Point(0.2, 0.2), 8, 8);
-
-  // Build multimesh
-  auto multimesh = make_shared<MultiMesh>();
-
-  multimesh->add(mesh_0);
-  // multimesh->add(mesh_1);
-  // multimesh->add(mesh_2);
-  multimesh->build();
-
-  // Create function spaces
-  auto V = make_shared<MultiMeshAssemble::MultiMeshFunctionSpace>(multimesh);
-  MultiMeshAssemble::MultiMeshBilinearForm a(V,V);
-
-  // Create MultiMeshFunction
-  auto v = make_shared<MultiMeshFunction>(V);
-
-  // Compute the MultiMeshFunctional
-  double b = assemble_multimesh(a);
-  cout << "MultiMeshFunctional" << endl;
-  cout << b << endl;
-}
-
 
 int main(int argc, char* argv[])
 {
@@ -159,6 +126,5 @@ int main(int argc, char* argv[])
   // Compute solution
   // assemble_scalar();
   assemble_MultiMeshFunction();
-  assemble_MultiMeshBilinear();
   return 0;
 }
