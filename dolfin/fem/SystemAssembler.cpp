@@ -117,33 +117,22 @@ _pick_one_meshfunction(std::string name,
 {
   if ((a && b) && a != b)
   {
-      warning("Bilinear and linear forms do not have same %s subdomains \
-in SystemAssembler. Taking %s subdomains from bilinear form",
-              name.c_str(), name.c_str());
+    warning("Bilinear and linear forms do not have same %s subdomains in "
+            "SystemAssembler. Taking %s subdomains from bilinear form",
+            name.c_str(), name.c_str());
   }
-  return a ? a: b;
+  return a ? a : b;
 }
 //-----------------------------------------------------------------------------
 bool SystemAssembler::check_functionspace_for_bc
     (std::shared_ptr<const FunctionSpace> fs, std::size_t bc_index)
 {
+  dolfin_assert(_bcs[bc_index]);
   std::shared_ptr<const FunctionSpace> bc_function_space
     = _bcs[bc_index]->function_space();
+  dolfin_assert(bc_function_space);
 
-  if (*bc_function_space == *fs)
-    return true;
-  else
-  {
-    // Recursively check sub-spaces
-    std::size_t num_sub_elements = fs->element()->num_sub_elements();
-    for (std::size_t i = 0; i != num_sub_elements; ++i)
-      {
-        std::shared_ptr<const FunctionSpace> subspace = (*fs)[i];
-        if (check_functionspace_for_bc(subspace, bc_index))
-          return true;
-      }
-  }
-  return false;
+  return fs->contains(*bc_function_space);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
@@ -234,16 +223,22 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
 
     if (check_functionspace_for_bc(_a->function_space(0), i))
       axis = 0;
-    else if (check_functionspace_for_bc(_a->function_space(1), i))
+    else if (num_fs==2 && check_functionspace_for_bc(_a->function_space(1), i))
       axis = 1;
 
-    // Found!
-    if (axis != -1)
+    // Not found!
+    if (axis == -1)
     {
-      _bcs[i]->get_boundary_values(boundary_values[axis]);
-      if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
-        _bcs[i]->gather(boundary_values[axis]);
+      dolfin_error("SystemAssembler.cpp",
+                   "assemble linear system including boundary conditions",
+                   "Boundary condition %d does not live on any (subspace of) "
+                   "bilinear form domain", i);
     }
+
+    // Found!
+    _bcs[i]->get_boundary_values(boundary_values[axis]);
+    if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
+      _bcs[i]->gather(boundary_values[axis]);
 
   }
 
@@ -852,7 +847,7 @@ void SystemAssembler::facet_wise_assembly(
   }
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler:: compute_exterior_facet_tensor(
+void SystemAssembler::compute_exterior_facet_tensor(
   std::array<std::vector<double>, 2>& Ae,
   std::array<UFC*, 2>& ufc,
   ufc::cell& ufc_cell,
