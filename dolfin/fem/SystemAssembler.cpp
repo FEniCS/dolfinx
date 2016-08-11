@@ -210,38 +210,45 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
 
   // Get Dirichlet dofs and values for local mesh
   // Determine whether _a is bilinear in the same form
-  std::size_t num_fs
-    = (*_a->function_space(0) == *_a->function_space(1)) ? 1 : 2;
+  bool rectangular = (*_a->function_space(0) != *_a->function_space(1));
 
   // Bin boundary conditions according to which form they apply to (if any)
-  std::vector<DirichletBC::Map> boundary_values(num_fs);
+  std::vector<DirichletBC::Map> boundary_values(rectangular ? 2 : 1);
   for (std::size_t i = 0; i < _bcs.size(); ++i)
   {
     // Match the FunctionSpace of the BC
     // with the (possible sub-)FunctionSpace on each axis of _a.
-    int axis = -1;
+    bool axis0 = check_functionspace_for_bc(_a->function_space(0), i);
+    bool axis1 = rectangular && check_functionspace_for_bc(_a->function_space(1), i);
 
-    // FIXME: Might want to apply to both axes
-    if (check_functionspace_for_bc(_a->function_space(0), i))
-      axis = 0;
-    else if (num_fs==2 && check_functionspace_for_bc(_a->function_space(1), i))
-      axis = 1;
+    // Fetch bc on axis0
+    if (axis0)
+    {
+      log(TRACE, "System assembler: boundary condition %d applies to axis 0", i);
+      _bcs[i]->get_boundary_values(boundary_values[0]);
+      if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
+        _bcs[i]->gather(boundary_values[0]);
+    }
 
-    if (axis == -1)
+    // Fetch bc on axis1
+    if (axis1)
+    {
+      log(TRACE, "System assembler: boundary condition %d applies to axis 1", i);
+      _bcs[i]->get_boundary_values(boundary_values[1]);
+      if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
+        _bcs[i]->gather(boundary_values[1]);
+    }
+
+    if (!axis0 && !axis1)
     {
       log(TRACE, "System assembler: ignoring inapplicable boundary condition %d", i);
-    }
-    else
-    {
-      _bcs[i]->get_boundary_values(boundary_values[axis]);
-      if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
-        _bcs[i]->gather(boundary_values[axis]);
     }
   }
 
   // Modify boundary values for incremental (typically nonlinear)
   // problems
-  // FIXME: not sure what happens when num_fs==2
+  // FIXME: not sure what happens when rectangular==true,
+  //        should we raise "not implemented error" here?
   if (x0)
   {
     dolfin_assert(x0->size()
@@ -1056,6 +1063,11 @@ SystemAssembler::apply_bc(double* A, double* b,
     //        diagonal. This is difficult to distinguish from form
     //        on V x Q which would by accident contain V bc and Q bc with
     //        same dof index, but that's not diagonal.
+    //
+    //        Essentially we need to detect if _a->function_space(0) and
+    //        _a->function_space(1) share the common super space (use
+    //        FunctionSpace::_root_space_id). In that case dof ids are shared
+    //        and matrix has diagonal. Otherwise it does not have diagonal.
 
     // Loop over rows first
     for (int i = 0; i < _matA.rows(); ++i)
