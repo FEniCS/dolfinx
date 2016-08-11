@@ -29,6 +29,7 @@ import os
 
 from dolfin_utils.test import * #cd_tempdir, pushpop_parameters, skip_in_parallel, use_gc_barrier
 
+@use_gc_barrier
 def create_data(A=None):
     "This function creates data used in the tests below"
     mesh = UnitSquareMesh(4, 4)
