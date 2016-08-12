@@ -49,5 +49,3 @@ should be listeed in this file:
   - python/book/test_chapter_10.py: change dss = ds[neumann_boundary] -> ds(subdomain_data=neumann_boundary)
   - python/book/chapter_1_files/stationary/poisson/d6_p2D.py: change
     'FunctionSpace(mesh, family, degree=degree)' -> 'FunctionSpace(mesh, family, degree)'
-  - python/book/test_chapter_10.py:test_p31_box_2: change 'UnitSquareMesh(3, 3)' -> 'UnitSquareMesh(4, 4)'
-    to make bc function space compatible with tensors

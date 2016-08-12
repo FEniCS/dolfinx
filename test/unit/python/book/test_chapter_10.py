@@ -30,10 +30,13 @@ import os
 from dolfin_utils.test import * #cd_tempdir, pushpop_parameters, skip_in_parallel, use_gc_barrier
 
 @use_gc_barrier
-def create_data(A=None):
+def create_data(A=None, mesh=None, V=None):
     "This function creates data used in the tests below"
-    mesh = UnitSquareMesh(4, 4)
-    V = FunctionSpace(mesh, "Lagrange", 1)
+    assert not (mesh and V)
+    if not V:
+        if not mesh:
+            mesh = UnitSquareMesh(4, 4)
+        V = FunctionSpace(mesh, "Lagrange", 1)
     u = TrialFunction(V)
     v = TestFunction(V)
     if A is None:
@@ -568,9 +571,9 @@ def test_p31_box_1():
 
 @use_gc_barrier
 def test_p31_box_2():
-    mesh = UnitSquareMesh(4, 4)
+    mesh = UnitSquareMesh(3, 3)
     V = FunctionSpace(mesh, "CG", 1)
-    A, x, b = create_data()
+    A, x, b = create_data(V=V)
     u_0 = Expression("sin(x[0])", degree=1)
     bc = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
     u = Function(V)
@@ -721,7 +724,7 @@ def test_p35_box_2(cd_tempdir):
 @skip_in_parallel
 def test_p36_box_1(cd_tempdir, pushpop_parameters):
     mesh = UnitSquareMesh(3, 3)
-    matrix, x, vector = create_data()
+    matrix, x, vector = create_data(mesh=mesh)
 
     vector_file = File("vector.xml")
     vector_file << vector
@@ -788,12 +791,12 @@ def test_p38_box_1():
 
 @use_gc_barrier
 def test_p39_box_1():
-    matrix, vector, b = create_data()
     solver = KrylovSolver()
     mesh = UnitSquareMesh(3, 3)
     mesh_function = MeshFunction("size_t", mesh, 0)
     function_space = FunctionSpace(mesh, "CG", 1)
     function = Function(function_space)
+    matrix, vector, b = create_data(V=function_space)
 
     info(vector)
     info(matrix)
