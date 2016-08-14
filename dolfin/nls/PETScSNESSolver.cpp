@@ -174,7 +174,7 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
                            GenericVector& x)
 {
   Timer timer("SNES solver init");
-  PETScMatrix A;
+  PETScMatrix A(this->mpi_comm());
 
   // Set linear solver parameters
   set_linear_solver_parameters();
@@ -386,7 +386,7 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   _x ->update_ghost_values();
 
   // Compute F(u)
-  PETScMatrix A;
+  PETScMatrix A(_x->mpi_comm());
   nonlinear_problem->form(A, f_wrap, *_x);
   nonlinear_problem->F(f_wrap, *_x);
 
@@ -430,7 +430,7 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat A, Mat P,
   PETScVector x_wrap(x);
 
   // Form Jacobian
-  PETScVector f;
+  PETScVector f(x_wrap.mpi_comm());
   nonlinear_problem->form(A_wrap, f, x_wrap);
   nonlinear_problem->J(A_wrap, x_wrap);
 
