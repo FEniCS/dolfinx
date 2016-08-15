@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2013-08-12
-// Last changed:
 
 #ifdef HAS_PETSC
 
@@ -24,6 +21,16 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+PETScOptions::PETScOptions() : PETScObject()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+PETScOptions::~PETScOptions()
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 void PETScOptions::set(std::string option)
 {
@@ -52,22 +59,17 @@ void PETScOptions::set(std::string option, std::string value)
 //-----------------------------------------------------------------------------
 void PETScOptions::clear(std::string option)
 {
-  SubSystemsManager::init_petsc();
+  if (option[0] != '-')
+    option = '-' + option;
+
   PetscErrorCode ierr;
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
   ierr = PetscOptionsClearValue(option.c_str());
   #else
   ierr = PetscOptionsClearValue(NULL, option.c_str());
   #endif
-  if (ierr != 0)
-  {
-    dolfin_error("PETScOptions.cpp",
-                 "clear PETSc option/parameter '" + option + "'",
-                 "PETSc error code is: %d", ierr);
-
-  }
+  if (ierr != 0) petsc_error(ierr, __FILE__, "PetscOptionsClearValue");
 }
 //-----------------------------------------------------------------------------
-
 
 #endif
