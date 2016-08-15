@@ -21,6 +21,7 @@
 #include <memory>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/GenericFunction.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/MultiMeshForm.h>
 #include "MultiMeshCoefficientAssigner.h"

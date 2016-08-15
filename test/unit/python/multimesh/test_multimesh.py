@@ -21,19 +21,18 @@
 #
 #
 # First added:  2016-06-11
-# Last changed: 2016-06-11
+# Last changed: 2016-08-12
 
 import pytest
 from dolfin import *
-import ufl 
+import ufl
 
-from dolfin_utils.test import fixture    
-
+from dolfin_utils.test import fixture, skip_in_parallel
 
 @fixture
 def multimesh():
-    mesh_0 = RectangleMesh(Point(-1.5, -0.75), Point(1.5, 0.75), 40, 20)
-    mesh_1 = RectangleMesh(Point(0.5, -1.5),  Point(2,1.5),25,40)
+    mesh_0 = RectangleMesh(Point(0,0), Point(0.6, 1), 40, 20)
+    mesh_1 = RectangleMesh(Point(0.5,0),  Point(1,1),25,40)
     multimesh = MultiMesh()
     multimesh.add(mesh_0)
     multimesh.add(mesh_1)
@@ -42,20 +41,22 @@ def multimesh():
 
 @fixture
 def V(multimesh):
-    return MultiMeshFunctionSpace(multimesh, 'CG', 1)
+    element = FiniteElement("Lagrange", triangle, 1)
+    return MultiMeshFunctionSpace(multimesh, element)
 
 @fixture
 def v(V):
     return MultiMeshFunction(V)
 
-
+@skip_in_parallel
 def test_measure_mul(v, multimesh):
-    assert isinstance(v*dX, ufl.form.Form) 
+    assert isinstance(v*dX, ufl.form.Form)
 
+@skip_in_parallel
+def test_assemble_zero(v, multimesh):
+    assert (assemble_multimesh(v*dX)<= 1e-12)
 
-def test_funcspace_storage(v):
-    assert isinstance(MultiMeshFunction(v.function_space()), MultiMeshFunction)
-
-
-def test_assemble(v, multimesh):
-    assert assemble(v*v*dX)
+@skip_in_parallel
+def test_assemble_area(v, multimesh):
+    v.vector()[:] = 1
+    assert (abs(assemble_multimesh(v*dX)-1)<= 1e-12)

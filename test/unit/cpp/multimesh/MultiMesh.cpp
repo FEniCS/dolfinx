@@ -361,6 +361,8 @@ TEST(MultiMeshes, test_assemble_expression)
   ASSERT_NEAR(volume, funcarea, 10*DOLFIN_EPS_LARGE);
 }
 
+// Create test for assemble MultiMeshFunction with zero and non-zero inits
+
 // Test all
 int MultiMesh_main(int argc, char **argv) {
   // Test not working in parallel

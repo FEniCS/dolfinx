@@ -25,6 +25,7 @@
 
 #include <dolfin/la/Scalar.h>
 #include "Form.h"
+#include "MultiMeshForm.h"
 #include "Assembler.h"
 #include "SystemAssembler.h"
 #include "MultiMeshAssembler.h"
@@ -82,17 +83,13 @@ double dolfin::assemble(const Form& a)
 //-----------------------------------------------------------------------------
 double dolfin::assemble_multimesh(const MultiMeshForm& a)
 {
-  /*
-  FIXME: Needs to be implemented 
   if (a.rank() != 0)
   {
     dolfin_error("assemble.cpp",
-                 "assemble form",
+                 "assemble MultiMeshForm",
                  "Expecting a scalar form but rank is %d",
                  a.rank());
   }
-  */
-
   Scalar s;
   MultiMeshAssembler assembler;
   assembler.assemble(s, a);

@@ -25,7 +25,7 @@
 # Define element
 element = FiniteElement("Lagrange", triangle, 2)
 
-# Define coefficent 
+# Define coefficent
 v = Coefficient(element)
 
 # Define Functional

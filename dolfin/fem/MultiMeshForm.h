@@ -23,14 +23,12 @@
 
 #include <vector>
 #include <memory>
-#include <dolfin/function/Function.h>
 
 namespace dolfin
 {
 
   // Forward declarations
   class MultiMeshFunctionSpace;
-  class MultiMeshFunction;
   class MultiMesh;
   class Form;
 
@@ -86,7 +84,7 @@ namespace dolfin
     /// *Returns*
     ///     _Form_
     ///         Form (part) number i.
-    std::shared_ptr<Form> part(std::size_t i) const;
+    std::shared_ptr<const Form> part(std::size_t i) const;
 
     /// Return function space for given argument
     ///
@@ -104,7 +102,7 @@ namespace dolfin
     /// *Arguments*
     ///     form (_Form_)
     ///         The form.
-    void add(std::shared_ptr<Form> form);
+    void add(std::shared_ptr<const Form> form);
 
     /// Build MultiMesh form
     void build();
@@ -124,7 +122,7 @@ namespace dolfin
     std::vector<std::shared_ptr<const MultiMeshFunctionSpace>> _function_spaces;
 
     // List of forms (one for each part)
-    std::vector<std::shared_ptr<Form>> _forms;
+    std::vector<std::shared_ptr<const Form>> _forms;
 
   };
 
