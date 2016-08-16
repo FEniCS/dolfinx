@@ -22,16 +22,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PETScOptions::PETScOptions() : PETScObject()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-PETScOptions::~PETScOptions()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 void PETScOptions::set(std::string option)
 {
   set<std::string>(option, "");
@@ -62,13 +52,15 @@ void PETScOptions::clear(std::string option)
   if (option[0] != '-')
     option = '-' + option;
 
+  SubSystemsManager::init_petsc();
   PetscErrorCode ierr;
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
   ierr = PetscOptionsClearValue(option.c_str());
   #else
   ierr = PetscOptionsClearValue(NULL, option.c_str());
   #endif
-  if (ierr != 0) petsc_error(ierr, __FILE__, "PetscOptionsClearValue");
+  if (ierr != 0)
+    PETScObject::petsc_error(ierr, __FILE__, "PetscOptionsClearValue");
 }
 //-----------------------------------------------------------------------------
 

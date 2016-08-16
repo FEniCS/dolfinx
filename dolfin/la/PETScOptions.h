@@ -26,10 +26,9 @@
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/log/log.h>
 
-#include "PETScObject.h"
-
 namespace dolfin
 {
+  class PETScObject
 
   /// These class provides static functions that permit users to set
   /// and retrieve PETSc options via the PETSc option/parameter
@@ -37,14 +36,9 @@ namespace dolfin
   ///
   ///     PETScOptions::set("mat_mumps_icntl_14", 40);
 
-  class PETScOptions : public PETScObject
+  class PETScOptions
   {
   public:
-    /// Constructor
-    PETScOptions();
-
-    /// Destructor
-    ~PETScOptions();
 
     /// Set PETSc option that takes no value
     static void set(std::string option);
@@ -67,6 +61,7 @@ namespace dolfin
     {
       if (option[0] != '-')
         option = '-' + option;
+      SubSystemsManager::init_petsc();
 
       PetscErrorCode ierr;
       #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
@@ -76,7 +71,8 @@ namespace dolfin
       ierr = PetscOptionsSetValue(NULL, option.c_str(),
                boost::lexical_cast<std::string>(value).c_str());
       #endif
-      if (ierr != 0) petsc_error(ierr, __FILE__, "PetscOptionsSetValue");
+      if (ierr != 0)
+        PETScObject::petsc_error(ierr, __FILE__, "PetscOptionsSetValue");
     }
 
     /// Clear PETSc option
