@@ -332,9 +332,9 @@ PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
   // Log detailed error info
   log(TRACE,
       "PetscDolfinErrorHandler: line '%d', function '%s', file '%s',\n"
-      "                       : error code '%d' (%s), message below",
+      "                       : error code '%d' (%s), message follows:",
       line, fun, file, n, desc);
-  // NOTE: don't put msg as variadic argument; it might get trimmed
+  // NOTE: don't put _mess as variadic argument; it might get trimmed
   log(TRACE, std::string(78, '-'));
   log(TRACE, _mess);
   log(TRACE, std::string(78, '-'));

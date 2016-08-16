@@ -25,11 +25,10 @@
 #include <petscoptions.h>
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/log/log.h>
+#include "PETScObject.h"
 
 namespace dolfin
 {
-  class PETScObject
-
   /// These class provides static functions that permit users to set
   /// and retrieve PETSc options via the PETSc option/parameter
   /// system. The option must not be prefixed by '-', e.g.
@@ -59,9 +58,10 @@ namespace dolfin
     template<typename T>
       static void set(std::string option, const T value)
     {
+      SubSystemsManager::init_petsc();
+
       if (option[0] != '-')
         option = '-' + option;
-      SubSystemsManager::init_petsc();
 
       PetscErrorCode ierr;
       #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1

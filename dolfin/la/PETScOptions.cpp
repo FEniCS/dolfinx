@@ -49,10 +49,11 @@ void PETScOptions::set(std::string option, std::string value)
 //-----------------------------------------------------------------------------
 void PETScOptions::clear(std::string option)
 {
+  SubSystemsManager::init_petsc();
+
   if (option[0] != '-')
     option = '-' + option;
 
-  SubSystemsManager::init_petsc();
   PetscErrorCode ierr;
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
   ierr = PetscOptionsClearValue(option.c_str());

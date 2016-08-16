@@ -21,10 +21,6 @@
 #include <string>
 #include <dolfin/common/SubSystemsManager.h>
 
-#ifdef HAS_PETSC
-#include <petsc.h>
-#endif
-
 namespace dolfin
 {
 
