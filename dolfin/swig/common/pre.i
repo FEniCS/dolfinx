@@ -198,3 +198,9 @@ std::shared_ptr<const ufc::form> make_ufc_form(std::size_t form)
 // Ignores for Variable
 //-----------------------------------------------------------------------------
 %ignore dolfin::Variable::operator=;
+
+//-----------------------------------------------------------------------------
+// Ignores for SubSystemsManager
+//-----------------------------------------------------------------------------
+// Would not be useful from Python without further tweaking probably
+%ignore dolfin::SubSystemsManager::PetscDolfinErrorHandler;

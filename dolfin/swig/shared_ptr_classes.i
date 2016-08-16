@@ -174,6 +174,7 @@
 %shared_ptr(dolfin::PETScLUSolver)
 %shared_ptr(dolfin::PETScMatrix)
 %shared_ptr(dolfin::PETScObject)
+%shared_ptr(dolfin::PETScOptions)
 %shared_ptr(dolfin::PETScPreconditioner)
 %shared_ptr(dolfin::PETScVector)
 %shared_ptr(dolfin::PETScUserPreconditioner)
