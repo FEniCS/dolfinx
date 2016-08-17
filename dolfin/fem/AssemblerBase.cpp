@@ -221,14 +221,15 @@ You might have forgotten to specify the value dimension correctly in an Expressi
                  "assemble form",
                  "Geometric dimension of Mesh does not match value shape of coordinate element in form");
   }
-  /* TODO: Wanted to check this but we don't have degree() available in ufc::finite_element.
+
+  // Check that the coordinate element degree matches the mesh degree
   if (coordinate_element->degree() != mesh.geometry().degree())
   {
     dolfin_error("AssemblerBase.cpp",
                  "assemble form",
                  "Mesh geometry degree does not match degree of coordinate element in form");
   }
-  */
+
   switch (mesh.type().cell_type())
   {
   case CellType::interval:
