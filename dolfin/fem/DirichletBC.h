@@ -360,6 +360,7 @@ namespace dolfin
     {
       Parameters p("dirichlet_bc");
       p.add("use_ident", true);
+      p.add("check_dofmap_range", true);
       return p;
     }
 
