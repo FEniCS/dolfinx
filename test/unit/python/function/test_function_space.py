@@ -94,6 +94,47 @@ def test_equality(V, V2, W, W2):
     assert W == W
     assert W == W2
 
+def test_inclusion(V, Q):
+    assert V.contains(V)
+    assert not Q.contains(V)
+
+    assert Q.contains(Q)
+    assert Q.contains(Q.sub(0))
+    assert Q.contains(Q.sub(1))
+    assert Q.contains(Q.sub(0).sub(0))
+    assert Q.contains(Q.sub(0).sub(1))
+    assert Q.contains(Q.extract_sub_space((0, 0)))
+    assert Q.contains(Q.extract_sub_space((0, 1)))
+    assert Q.contains(Q.extract_sub_space((1,)))
+
+    assert not Q.sub(0).contains(Q)
+    assert Q.sub(0).contains(Q.sub(0))
+    assert not Q.sub(0).contains(Q.sub(1))
+    assert Q.sub(0).contains(Q.sub(0).sub(0))
+    assert Q.sub(0).contains(Q.sub(0).sub(1))
+    assert Q.sub(0).contains(Q.extract_sub_space((0, 0)))
+    assert Q.sub(0).contains(Q.extract_sub_space((0, 1)))
+    assert not Q.sub(0).contains(Q.extract_sub_space((1,)))
+
+    assert not Q.sub(1).contains(Q)
+    assert not Q.sub(1).contains(Q.sub(0))
+    assert Q.sub(1).contains(Q.sub(1))
+    assert not Q.sub(1).contains(Q.sub(0).sub(0))
+    assert not Q.sub(1).contains(Q.sub(0).sub(1))
+    assert not Q.sub(1).contains(Q.extract_sub_space((0, 0)))
+    assert not Q.sub(1).contains(Q.extract_sub_space((0, 1)))
+    assert Q.sub(1).contains(Q.extract_sub_space((1,)))
+
+    assert not Q.sub(0).sub(0).contains(Q)
+    assert not Q.sub(0).sub(0).contains(Q.sub(0))
+    assert not Q.sub(0).sub(0).contains(Q.sub(1))
+    assert Q.sub(0).sub(0).contains(Q.sub(0).sub(0))
+    assert not Q.sub(0).sub(0).contains(Q.sub(0).sub(1))
+    assert Q.sub(0).sub(0).contains(Q.extract_sub_space((0, 0)))
+    assert not Q.sub(0).sub(0).contains(Q.extract_sub_space((0, 1)))
+    assert not Q.sub(0).sub(0).contains(Q.extract_sub_space((1,)))
+
+
 def test_boundary(mesh):
     bmesh = BoundaryMesh(mesh, "exterior")
     Vb = FunctionSpace(bmesh, "DG", 0)

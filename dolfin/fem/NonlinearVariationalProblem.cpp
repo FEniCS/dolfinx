@@ -18,8 +18,10 @@
 // Modified by Corrado Maurini, 2013.
 
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericVector.h>
 #include "Form.h"
+#include "DirichletBC.h"
 #include "NonlinearVariationalProblem.h"
 
 using namespace dolfin;
@@ -129,9 +131,9 @@ void NonlinearVariationalProblem::check_forms() const
   if (_residual->rank() != 1)
   {
    dolfin_error("NonlinearVariationalProblem.cpp",
-                 "define nonlinear variational problem F(u; v) = 0 for all v",
-                 "Expecting the residual F to be a linear form (not rank %d)",
-                 _residual->rank());
+                "define nonlinear variational problem F(u; v) = 0 for all v",
+                "Expecting the residual F to be a linear form (not rank %d)",
+                _residual->rank());
   }
 
   // Check rank of Jacobian J
@@ -146,5 +148,23 @@ void NonlinearVariationalProblem::check_forms() const
   // FIXME: Should we add a check here that matches the function space
   // FIXME: of the solution variable u to a coefficient space for F?
   dolfin_assert(_u);
+
+  // Check that function spaces of bcs are contained in trial space
+  dolfin_assert(_u);
+  const auto trial_space = _u->function_space();
+  dolfin_assert(trial_space);
+  for (const auto bc: _bcs)
+  {
+    dolfin_assert(bc);
+    const auto bc_space = bc->function_space();
+    dolfin_assert(bc_space);
+    if (!trial_space->contains(*bc_space))
+    {
+      dolfin_error("NonlinearVariationalProblem.cpp",
+                   "define nonlinear variational problem F(u; v) = 0 for all v",
+                   "Expecting the boundary conditions to to live on (a "
+                   "subspace of) the trial space");
+    }
+  }
 }
 //-----------------------------------------------------------------------------

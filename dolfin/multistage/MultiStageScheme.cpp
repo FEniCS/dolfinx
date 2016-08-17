@@ -21,6 +21,8 @@
 #include <sstream>
 #include <memory>
 #include <dolfin/log/log.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/fem/DirichletBC.h>
 
 #include "MultiStageScheme.h"
 
@@ -104,9 +106,9 @@ bool MultiStageScheme::implicit(unsigned int stage) const
   if (stage >= _stage_forms.size())
   {
     dolfin_error("MultiStageScheme.cpp",
-		 "querying if stage is implicit",
-		 "Expecting a stage less than the number of total stages in "
-		 "the scheme.");
+     "querying if stage is implicit",
+     "Expecting a stage less than the number of total stages in "
+     "the scheme.");
   }
 
   return _stage_forms[stage].size() == 2;
@@ -123,9 +125,9 @@ int MultiStageScheme::jacobian_index(unsigned int stage) const
   if (stage >= _jacobian_indices.size())
   {
     dolfin_error("MultiStageScheme.cpp",
-		 "querying for jacobian index",
-		 "Expecting a stage less than the number of total stages in "
-		 "the scheme.");
+     "querying for jacobian index",
+     "Expecting a stage less than the number of total stages in "
+     "the scheme.");
   }
 
   return _jacobian_indices[stage];
@@ -147,9 +149,9 @@ void MultiStageScheme::_check_arguments()
   if (_stage_solutions.size()!=_stage_forms.size())
   {
     dolfin_error("MultiStageScheme.cpp",
-		 "construct MultiStageScheme",
-		 "Expecting the number of stage solutions to be the sames as "\
-		 "number of stage forms");
+                 "construct MultiStageScheme",
+                 "Expecting the number of stage solutions to be the sames as "
+                 "number of stage forms");
   }
 
   // Check that the number of coefficients in last form is the same as
@@ -157,9 +159,9 @@ void MultiStageScheme::_check_arguments()
   /*
     if (_last_stage->num_coefficients() != _stage_forms.size())
     dolfin_error("MultiStageScheme.cpp",
-  		 "construct MultiStageScheme",
-  		 "Expecting the number of stage solutions to be the sames as " \
-  		 "number of coefficients in the last form");
+       "construct MultiStageScheme",
+       "Expecting the number of stage solutions to be the sames as " \
+       "number of coefficients in the last form");
   */
 
   // Check solution is in the same space as the last stage solution
@@ -167,8 +169,8 @@ void MultiStageScheme::_check_arguments()
         _u->in(*_stage_solutions[_stage_solutions.size()-1]->function_space())))
   {
     dolfin_error("MultiStageScheme.cpp",
-		 "construct MultiStageScheme",
-		 "Expecting all solutions to be in the same FunctionSpace");
+                 "construct MultiStageScheme",
+                 "Expecting all solutions to be in the same FunctionSpace");
   }
 
   // Check number of passed stage forms
@@ -178,16 +180,16 @@ void MultiStageScheme::_check_arguments()
     if (!_u->in(*_stage_solutions[i]->function_space()))
     {
       dolfin_error("MultiStageScheme.cpp",
-		   "construct MultiStageScheme",
-		   "Expecting all solutions to be in the same FunctionSpace");
+                   "construct MultiStageScheme",
+                   "Expecting all solutions to be in the same FunctionSpace");
     }
 
     // Check we have correct number of forms
     if (_stage_forms[i].size()==0 or _stage_forms[i].size()>2)
     {
       dolfin_error("MultiStageScheme.cpp",
-		   "construct MultiStageScheme",
-		   "Expecting stage_forms to only include vectors of size 1 or 2");
+                   "construct MultiStageScheme",
+                   "Expecting stage_forms to only include vectors of size 1 or 2");
     }
 
     // Check if Scheme is implicit
@@ -198,28 +200,40 @@ void MultiStageScheme::_check_arguments()
       // First form should be the linear (in testfunction) form
       if (_stage_forms[i][0]->rank() != 1)
       {
-	dolfin_error("MultiStageScheme.cpp",
-		     "construct MultiStageScheme",
-		     "Expecting the right-hand side of stage form %d to be a "\
-		     "linear form (not rank %d)", i, _stage_forms[i][0]->rank());
+        dolfin_error("MultiStageScheme.cpp",
+                     "construct MultiStageScheme",
+                     "Expecting the right-hand side of stage form %d to be a "
+                     "linear form (not rank %d)", i, _stage_forms[i][0]->rank());
       }
 
       // Second form should be the bilinear form
       if (_stage_forms[i][1]->rank() != 2)
       {
-	dolfin_error("MultiStageScheme.cpp",
-		     "construct MultiStageScheme",
-		     "Expecting the left-hand side of stage form %d to be a "\
-		     "linear form (not rank %d)", i, _stage_forms[i][1]->rank());
+        dolfin_error("MultiStageScheme.cpp",
+                     "construct MultiStageScheme",
+                     "Expecting the left-hand side of stage form %d to be a "
+                     "linear form (not rank %d)", i, _stage_forms[i][1]->rank());
       }
 
       // Check that function space of solution variable matches trial space
       if (!_stage_solutions[i]->in(*_stage_forms[i][1]->function_space(1)))
       {
-	dolfin_error("MultiStageScheme.cpp",
-		     "construct MultiStageScheme",
-		     "Expecting the stage solution %d to be a member of the "
-		     "trial space of stage form %d", i, i);
+        dolfin_error("MultiStageScheme.cpp",
+                     "construct MultiStageScheme",
+                     "Expecting the stage solution %d to be a member of the "
+                     "trial space of stage form %d", i, i);
+      }
+
+      // Check that function spaces of bcs are contained in trial space
+      for (const auto bc: _bcs)
+      {
+        if (!_stage_forms[i][1]->function_space(1)->contains(*bc->function_space()))
+        {
+          dolfin_error("MultiStageScheme.cpp",
+                       "construct MultiStageScheme",
+                       "Expecting the boundary conditions to to live on (a "
+                       "subspace of) the trial space");
+        }
       }
     }
     else
@@ -227,19 +241,31 @@ void MultiStageScheme::_check_arguments()
       // Check explicit stage form
       if (_stage_forms[i][0]->rank() != 1)
       {
-	dolfin_error("MultiStageScheme.cpp",
-		     "construct MultiStageScheme",
-		     "Expecting stage form %d to be a linear form (not "\
-		     "rank %d)", i, _stage_forms[i][0]->rank());
+        dolfin_error("MultiStageScheme.cpp",
+                     "construct MultiStageScheme",
+                     "Expecting stage form %d to be a linear form (not "
+                     "rank %d)", i, _stage_forms[i][0]->rank());
       }
 
       // Check that function space of solution variable matches trial space
       if (!_stage_solutions[i]->in(*_stage_forms[i][0]->function_space(0)))
       {
-	dolfin_error("MultiStageScheme.cpp",
-		     "construct MultiStageScheme",
-		     "Expecting the stage solution %d to be a member of the "
-		     "test space of stage form %d", i, i);
+        dolfin_error("MultiStageScheme.cpp",
+                     "construct MultiStageScheme",
+                     "Expecting the stage solution %d to be a member of the "
+                     "test space of stage form %d", i, i);
+      }
+
+      // Check that function spaces of bcs are contained in trial space
+      for (const auto bc: _bcs)
+      {
+        if (!_stage_forms[i][0]->function_space(0)->contains(*bc->function_space()))
+        {
+          dolfin_error("MultiStageScheme.cpp",
+                       "construct MultiStageScheme",
+                       "Expecting the boundary conditions to to live on (a "
+                       "subspace of) the trial space");
+        }
       }
     }
   }
