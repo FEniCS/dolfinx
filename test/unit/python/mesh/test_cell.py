@@ -61,8 +61,9 @@ def test_distance_tetrahedron():
     assert round(cell.distance(Point(0.5, 0.5, 0.5)) - 0.0, 7) == 0
 
 
+@skip_in_parallel
 def test_issue_568():
-    mesh = UnitSquareMesh(4, 4, 'right')
+    mesh = UnitSquareMesh(4, 4)
     cell = Cell(mesh, 0)
     
     # Should throw an error, not just segfault
