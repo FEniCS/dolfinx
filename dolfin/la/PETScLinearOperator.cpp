@@ -142,6 +142,10 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
   ierr = MatSetType(_matA, MATSHELL);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetType");
 
+  // Set-up matrix
+  ierr = MatSetUp(_matA);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetUp");
+
   // Set context
   ierr = MatShellSetContext(_matA, (void*) this);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetShellContext");
