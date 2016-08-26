@@ -517,7 +517,7 @@ void X3DOM::add_x3dom_data(pugi::xml_node& xml_node, const Mesh& mesh,
   // Add viewpoint(s)
   const std::pair<Point, double> position = mesh_centre_and_distance(mesh);
   add_viewpoint_nodes(scene_node, position.first, position.second,
-                      parameters.get_menu_viewpoint_tab());
+                      parameters.get_menu_display());
 
   // Add background color
   pugi::xml_node background_node = scene_node.append_child("background");
@@ -773,7 +773,7 @@ void X3DOM::add_menu_display(pugi::xml_node& xml_node, const Mesh& mesh,
   add_menu_options_tab(options);
 
   // add the summary section: radio button and content
-  add_menu_tab_button(menu_itemms, "summary", false);
+  add_menu_tab_button(menu_items, "summary", false);
   pugi::xml_node summary = create_menu_content_node(menu_content,
                                                       "summary", false);  
   add_menu_summary_tab(summary, mesh);
