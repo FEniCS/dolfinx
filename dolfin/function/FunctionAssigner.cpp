@@ -299,9 +299,8 @@ void FunctionAssigner::_assign(
     if (i != 0)
     {
       dolfin_assert(receiving_funcs[i]->_vector);
-      same_receiving_vector
-        = (recieving_vector != receiving_funcs[i]->_vector.get())
-	&& same_receiving_vector;
+      same_receiving_vector = same_receiving_vector
+        && (receiving_vector == receiving_funcs[i]->_vector.get());
     }
 
     // Get assigning values
