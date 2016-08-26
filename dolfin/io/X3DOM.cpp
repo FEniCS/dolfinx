@@ -873,17 +873,17 @@ void X3DOM::add_menu_options_tab(pugi::xml_node& xml_node)
 //-----------------------------------------------------------------------------
 void X3DOM::add_menu_options_option(pugi::xml_node& xml_node, std::string name)
 {
-  pugi::xml_node div_node = xml_node.append_child("div");
-  dolfin_assert(div_node);
-  div_node.append_child(pugi::node_pcdata);
-  div_node.append_attribute("class") = "options";
+  pugi::xml_node form_node = xml_node.append_child("form");
+  dolfin_assert(form_node);
+  form_node.append_child(pugi::node_pcdata);
+  form_node.append_attribute("class") = "options";
   
-  pugi::xml_node input_node = div_node.append_child("input");
+  pugi::xml_node input_node = form_node.append_child("input");
   dolfin_assert(input_node);
   input_node.append_attribute("type") = "checkbox";
   input_node.append_attribute("id") = ("select-" + name).c_str();
 
-  pugi::xml_node label_node = div_node.append_child("label");
+  pugi::xml_node label_node = form_node.append_child("label");
   dolfin_assert(label_node);
   label_node.append_attribute("for") = ("select-" + name).c_str();
   name[0] = toupper(name[0]);
