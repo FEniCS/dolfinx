@@ -207,7 +207,7 @@ void FunctionAssigner::_assign(
 
   // Flag to determine if the receiving vector is the same
   bool same_receiving_vector = true;
-  const GenericVector* recieving_vector = receiving_funcs[0]->_vector.get();
+  const GenericVector* receiving_vector = receiving_funcs[0]->_vector.get();
 
   // Iterate over the spaces and do the assignments
   for (std::size_t i = 0; i < N; i++)
