@@ -33,14 +33,14 @@ regenerating the code. ::
 Finally the bilinear and linear forms are defined. Integrals over
 internal facets are indicated by ``*dS``. ::
 
-    # Bilinear form
-    a = inner(div(grad(u)), div(grad(v)))*dx \
-      - inner(avg(div(grad(u))), jump(grad(v), n))*dS \
-      - inner(jump(grad(u), n), avg(div(grad(v))))*dS \
-      + alpha/h_avg*inner(jump(grad(u), n), jump(grad(v),n))*dS
+   # Bilinear form
+   a = inner(div(grad(u)), div(grad(v)))*dx \
+     - inner(avg(div(grad(u))), jump(grad(v), n))*dS \
+     - inner(jump(grad(u), n), avg(div(grad(v))))*dS \
+     + alpha/h_avg*inner(jump(grad(u), n), jump(grad(v),n))*dS
 
-    # Linear form
-    L = f*v*dx
+   # Linear form
+   L = f*v*dx
 
 Before the form file can be used in the C++ program, it must be
 compiled using FFC by running (on the command-line):

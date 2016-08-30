@@ -909,7 +909,7 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
 # Generate demo files from rst
 
 message(STATUS "")
-message(STATUS "Generating demo source files")
+message(STATUS "Generating demo source files from reStructuredText")
 message(STATUS "--------------------------------------------------")
 file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst" "*.ufl.rst")
 foreach(rst_file ${demo_rst_files})
