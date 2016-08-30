@@ -22,9 +22,11 @@
 
 #ifdef HAS_TRILINOS
 
-#include <map>
+#include <array>
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
@@ -33,14 +35,16 @@
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Version.hpp>
 
+#include <dolfin/common/types.h>
 #include "GenericMatrix.h"
 
 namespace dolfin
 {
 
-  class TpetraVector;
-  class TensorLayout;
+  class GenericLinearAlgebraFactory;
   class IndexMap;
+  class TensorLayout;
+  class TpetraVector;
 
   /// This class provides a simple matrix class based on Tpetra.  It
   /// is a wrapper for a Tpetra matrix pointer
@@ -214,16 +218,12 @@ namespace dolfin
 
   private:
 
-    // Tpetra norm types
-    //    static const std::map<std::string, NormType> norm_types;
-
     // The matrix
     Teuchos::RCP<matrix_type> _matA;
 
     // Row and Column maps to allow local indexing of off-process
     // entries needed in add_local() and set_local()
-    std::array<std::shared_ptr<const IndexMap>, 2>
-      index_map;
+    std::array<std::shared_ptr<const IndexMap>, 2> index_map;
 
   };
 

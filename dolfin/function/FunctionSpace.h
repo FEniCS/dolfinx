@@ -212,6 +212,17 @@ namespace dolfin
     std::shared_ptr<FunctionSpace>
     extract_sub_space(const std::vector<std::size_t>& component) const;
 
+    /// Check whether V is subspace of this, or this itself
+    ///
+    /// *Arguments*
+    ///     V (_FunctionSpace_)
+    ///         The space to be tested for inclusion.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True if V is contained or equal to this.
+    bool contains(const FunctionSpace& V) const;
+
     /// Collapse a subspace and return a new function space
     ///
     /// *Returns*
@@ -256,11 +267,12 @@ namespace dolfin
     bool has_element(const FiniteElement& element) const
     { return element.hash() == _element->hash(); }
 
-    /// Return component
+    /// Return component w.r.t. to root superspace, i.e.
+    ///   W.sub(1).sub(0) == [1, 0].
     ///
     /// *Returns*
     ///     std::vector<std::size_t>
-    ///         The component (relative to superspace).
+    ///         The component (w.r.t to root superspace).
     std::vector<std::size_t> component() const;
 
     /// Tabulate the coordinates of all dofs on this process. This
@@ -328,8 +340,11 @@ namespace dolfin
     // The dofmap
     std::shared_ptr<const GenericDofMap> _dofmap;
 
-    // The component (for subspaces)
+    // The component w.r.t. to root space
     std::vector<std::size_t> _component;
+
+    // The identifier of root space
+    std::size_t _root_space_id;
 
     // Cache of subspaces
     mutable std::map<std::vector<std::size_t>,

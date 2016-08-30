@@ -9,11 +9,11 @@ cmake_minimum_required(VERSION 2.8)
 project(DOLFIN)
 set(DOLFIN_VERSION_RELEASE 0)
 set(DOLFIN_VERSION_MAJOR "2016")
-set(DOLFIN_VERSION_MINOR "1")
+set(DOLFIN_VERSION_MINOR "2")
 set(DOLFIN_VERSION_MICRO "0")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 if (NOT DOLFIN_VERSION_RELEASE)
-  set(DOLFIN_VERSION "${DOLFIN_VERSION}dev")
+  set(DOLFIN_VERSION "${DOLFIN_VERSION}.dev0")
 endif()
 
 #------------------------------------------------------------------------------
@@ -458,7 +458,7 @@ if (DOLFIN_ENABLE_PYTHON)
 endif()
 
 # Check for required package UFC
-find_package(UFC MODULE 1.7.0)
+find_package(UFC MODULE 2016.2)
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified language for form-compilers (part of FFC)"
   URL "https://bitbucket.org/fenics-project/ffc")
@@ -905,7 +905,6 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
   PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
         COMPONENT RuntimeExecutables)
 
-
 #------------------------------------------------------------------------------
 # Generate form files for tests, bench, demos and dolfin if not exists
 # FIXME: Generate files in Build directory instead, at least for
@@ -923,17 +922,32 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
     OUTPUT_VARIABLE FORM_GENERATION_OUTPUT
     ERROR_VARIABLE FORM_GENERATION_OUTPUT
     OUTPUT_QUIET)
-  if (FORM_GENERATION_RESULT)
 
+  if (FORM_GENERATION_RESULT)
     # Cleanup so download is triggered next time we run cmake
     if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
       file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
     endif()
-
     message(FATAL_ERROR "Generation of form files failed: \n${FORM_GENERATION_OUTPUT}")
   endif()
   set(COPY_DEMO_TEST_DEMO_DATA TRUE)
 endif()
+
+#------------------------------------------------------------------------------
+# Generate demo files from rst
+
+message(STATUS "")
+message(STATUS "Generating demo source files")
+message(STATUS "--------------------------------------------------")
+file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
+foreach(rst_file ${demo_rst_files})
+  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+  #add_custom_command(TARGET demos_source PRE_BUILD
+  #  COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
+  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endforeach()
+
 
 #------------------------------------------------------------------------------
 # Generate CMakeLists.txt files for bench and demos if not
@@ -1021,10 +1035,22 @@ else()
   set(MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM}")
 endif()
 
+# Add taget to build .py demo files from Python rst input files, and
+# create a target to build source files from .cpp.rst and .py.rst
+# files (using pylit)
+file(GLOB_RECURSE rst_files "*.py.rst" "*.cpp.rst")
+add_custom_target(demos_source)
+foreach(rst_file ${rst_files})
+  add_custom_command(TARGET demos_source PRE_BUILD
+    COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    )
+endforeach()
+
 # Add target "demo" for building the demos
 add_custom_target(demo
   COMMAND ${MAKE_PROGRAM}
-  DEPENDS copy_data_test_demo
+  DEPENDS copy_data_test_demo demos_source
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
@@ -1103,7 +1129,7 @@ if (DOLFIN_ENABLE_TESTING)
   # Add alias for unittests_cpp
   add_custom_target(tests DEPENDS unittests_cpp)
 
-  # Add target "run_memorytests" for running memory tests
+  # Add target "copy_data_test_demo"
   add_custom_target(copy_data_test_demo
     COMMAND ${PYTHON_EXECUTABLE} "-B" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data ${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
@@ -1117,7 +1143,7 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_regressiontests" for running regression tests
   add_custom_target(run_regressiontests
     COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
-    DEPENDS copy_data_test_demo demo
+    DEPENDS copy_data_test_demo demo demos_source
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
   # Add target "run_unittests" for running unit tests
@@ -1143,12 +1169,6 @@ if (DOLFIN_ENABLE_TESTING)
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
-  # Add target "run_doctest" for running documentation tests
-  add_custom_target(run_doctest
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
-    DEPENDS copy_data_test_demo
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/documentation")
-
   # Add target "run_styletest" for running documentation tests
   add_custom_target(run_styletest
     COMMAND ${PYTHON_EXECUTABLE} "-B" "test_coding_style.py"
@@ -1161,7 +1181,7 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "runtests" for running all tests
   add_custom_target(runtests
-    DEPENDS run_doctest run_regressiontests run_unittests run_styletest)
+    DEPENDS run_regressiontests run_unittests run_styletest)
 endif()
 
 #------------------------------------------------------------------------------

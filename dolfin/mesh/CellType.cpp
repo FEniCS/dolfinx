@@ -191,14 +191,6 @@ double CellType::h(const MeshEntity& entity) const
   return h;
 }
 //-----------------------------------------------------------------------------
-double CellType::diameter(const MeshEntity& entity) const
-{
-  deprecation("CellType::diameter()", "2016.1",
-              "Use CellType::circumradius() or CellType::h() instead.");
-
-  return 2.0*circumradius(entity);
-}
-//-----------------------------------------------------------------------------
 double CellType::inradius(const Cell& cell) const
 {
   // Check cell type

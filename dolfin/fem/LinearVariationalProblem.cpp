@@ -16,7 +16,9 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 #include "Form.h"
+#include "DirichletBC.h"
 #include "LinearVariationalProblem.h"
 
 using namespace dolfin;
@@ -99,11 +101,28 @@ void LinearVariationalProblem::check_forms() const
   // Check that function space of solution variable matches trial space
   dolfin_assert(_a);
   dolfin_assert(_u);
-  if (!_u->in(*_a->function_space(1)))
+  const auto trial_space = _a->function_space(1);
+  dolfin_assert(trial_space);
+  if (!_u->in(*trial_space))
   {
     dolfin_error("LinearVariationalProblem.cpp",
                  "define linear variational problem a(u, v) = L(v) for all v",
                  "Expecting the solution variable u to be a member of the trial space");
+  }
+
+  // Check that function spaces of bcs are contained in trial space
+  for (const auto bc: _bcs)
+  {
+    dolfin_assert(bc);
+    const auto bc_space = bc->function_space();
+    dolfin_assert(bc_space);
+    if (!trial_space->contains(*bc_space))
+    {
+      dolfin_error("LinearVariationalProblem.cpp",
+                   "define linear variational problem a(u, v) = L(v) for all v",
+                   "Expecting the boundary conditions to to live on (a "
+                   "subspace of) the trial space");
+    }
   }
 }
 //-----------------------------------------------------------------------------

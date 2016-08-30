@@ -1,6 +1,0 @@
-set tabstop=2
-set   shiftwidth=2
-map ,ih "%pbd$0"adwp0v$~0"bdwddi// Copyright (C) 2006 :r !echo $USER ~$a.kJo// Licensed under the GNU LGPL Version 2.1.//// First added:  :r !date +'\%F'kJo// Last changed: :r !date +'\%F'kJo#ifndef __FOO_H#define __FOO_H#include <dolfin/constants.h>namespace dolfin{/// Documentation of class Fooclass Foo{public:/// ConstructorFoo();/// Destructor~Foo();private:};}#endif:%s/Foo/\=@a/g:%s/FOO/\=@b/g
-map ,ic "%pbd$0"1dwddi// Copyright (C) 2006 :r !echo $USER ~$a.kJo// Licensed under the GNU LGPL Version 2.1.//// First added:  :r !date +'\%F'kJo// Last changed: :r !date +'\%F'kJo#include <dolfin/Foo.h>using namespace dolfin;//-----------------------------------------------------------------------------Foo::Foo(){// Do nothing}//-----------------------------------------------------------------------------Foo::~Foo(){// Do nothing}//-----------------------------------------------------------------------------:%s/Foo/\=@2/g
-map ,OH :split:e %<.h
-map ,OC :split:e %<.cpp

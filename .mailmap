@@ -1,34 +1,132 @@
-# Mapping of commit names to canonical names. This is useful for
-# listing contributions from users who have either changed email
-# addresses or did not configure their user names correctly at
-# time of a commit.
-#
-# See 'git help shortlog' for details.
-
+Anders Logg <logg@chalmers.se>
+Anders Logg <logg@chalmers.se> <ffc@bamse>
+Anders Logg <logg@chalmers.se> <logg@yavanna>
+Anders Logg <logg@chalmers.se> <logg@aule>
+Anders Logg <logg@chalmers.se> logg <logg@localhost.localdomain>
+Anders Logg <logg@chalmers.se> fenics <devnull@localhost>
+Anders Logg <logg@chalmers.se> hg <hg@numenor>
+Anders Logg <logg@chalmers.se> root <root@leja>
+Anders Logg <logg@chalmers.se> <logg@glaurung>
+Anders Logg <logg@chalmers.se> <logg@simula.no>
+Anders Logg <logg@chalmers.se> <anders.logg+bitbucket@gmail.com>
+Anders Logg <logg@chalmers.se> <logg@olorin>
+Anders Logg <logg@chalmers.se> <logg@tti-c.org>
+Anders Logg <logg@chalmers.se> anders <anders@localhost.localdomain>
+Anders Logg <logg@chalmers.se> logg <devnull@localhost>
+Anders Logg <logg@chalmers.se> logg <logg@bigblue.simula.no>
+Anders Logg <logg@chalmers.se> logg <logg@bunjil.simula.no>
+Anders Logg <logg@chalmers.se> logg <logg@olorin>
+Andy R. Terrel <andy.terrel@gmail.com>
+Andy R. Terrel <andy.terrel@gmail.com> <aterrel@uchicago.edu>
+Andy R. Terrel <andy.terrel@gmail.com> aterrel <devnull@localhost>
+Andy R. Terrel <andy.terrel@gmail.com> <aterrel@dhcp-11-20.cs.uchicago.edu>
 Benjamin Kehlet <benjamik@simula.no>
-Benjamin Kehlet <benjamik@simula.no>    Benjamin Kehlet <benjamik@ifi.uio.no>
-Benjamin Kehlet <benjamik@simula.no>    Benjamin Kehlet <benjamik@login.ifi.uio.no>
-
-Anders Logg <logg@simula.no>
-Anders Logg <logg@simula.no>            logg
-Anders Logg <logg@simula.no>            Anders Logg <logg@glaurung>
-Anders Logg <logg@simula.no>            Anders Logg <logg@olorin>
-Anders Logg <logg@simula.no>            Anders Logg <logg@tti-c.org>
-Anders Logg <logg@simula.no>            logg <devnull@localhost>
-Anders Logg <logg@simula.no>            logg <logg@bigblue.simula.no>
-Anders Logg <logg@simula.no>            logg <logg@bunjil.simula.no>
-Anders Logg <logg@simula.no>            logg <logg@olorin>
-
+Benjamin Kehlet <benjamik@simula.no> <benjamik@benjamik-hp.simula.no>
+Benjamin Kehlet <benjamik@simula.no> <benjamik@ifi.uio.no>
+Benjamin Kehlet <benjamik@simula.no> <benjamik@login.ifi.uio.no>
+Benjamin Kehlet <benjamik@simula.no> <bkehlet@bkehlet-laptop>
+Chris Richardson <chris@bpi.cam.ac.uk>
+Chris Richardson <chris@bpi.cam.ac.uk> chris <chris@Lenovo-Edge.(none)>
+Chris Richardson <chris@bpi.cam.ac.uk> Chris Richardson <bpi.cam.ac.uk>
+Chris Richardson <chris@bpi.cam.ac.uk> root <root@bpi.cam.ac.uk>
+Corrado Maurini <corrado.maurini@upmc.fr>
+Corrado Maurini <corrado.maurini@upmc.fr> <cmaurini@gmail.com>
+Dag Lindbo <dag@csc.kth.se>
+Dag Lindbo <dag@csc.kth.se> dag <dag@dag-laptop>
+Dag Lindbo <dag@csc.kth.se> dag <dag@na55.nada.kth.se>
+David Ham <david.ham@imperial.ac.uk>
+David Ham <david.ham@imperial.ac.uk> david.ham@imperial.ac.uk <>
+Evan Lezar <evanlezar@gmail.com>
+Evan Lezar <evanlezar@gmail.com> <mail@evanlezar.com>
+Evan Lezar <evanlezar@gmail.com> elezar <elezar@labby>
+Evan Lezar <evanlezar@gmail.com> elezar <elezar@lefauve>
+Fredrik Valdmanis <fredrik@valdmanis.com>
+Fredrik Valdmanis <fredrik@valdmanis.com> Fredrik Valdmanis <fredva@ifi.uio.no>
 Garth N. Wells <gnw20@cam.ac.uk>
-Garth N. Wells <gnw20@cam.ac.uk>        Garth N. Wells <g.n.wells@tudelft.nl>
-Garth N. Wells <gnw20@cam.ac.uk>        Garth N. Wells <garth@garth-laptop>
-Garth N. Wells <gnw20@cam.ac.uk>        Garth N. Wells <garth@gnw20pc>
-Garth N. Wells <gnw20@cam.ac.uk>        Garth N. Wells <gnw20@cam.ac.uk>
-Garth N. Wells <gnw20@cam.ac.uk>        Garth Wells <gnw20@cam.ac.uk>
-Garth N. Wells <gnw20@cam.ac.uk>        garth <garth@debian.eng.cam.ac.uk>
-Garth N. Wells <gnw20@cam.ac.uk>        garth <garth@fedora32-virtual>
-Garth N. Wells <gnw20@cam.ac.uk>        garth <garth@gnw20pc>
-Garth N. Wells <gnw20@cam.ac.uk>        garth <garth@home-laptop>
-Garth N. Wells <gnw20@cam.ac.uk>        garth <garth@localhost.localdomain>
-Garth N. Wells <gnw20@cam.ac.uk>        garth <garth@ubuntu.eng.cam.ac.uk>
-Garth N. Wells <gnw20@cam.ac.uk>        garth <garth@ubuntu32-virtual>
+Garth N. Wells <gnw20@cam.ac.uk> root <root@fornax.esc.cam.ac.uk>
+Garth N. Wells <gnw20@cam.ac.uk> garth <devnull@localhost>
+Garth N. Wells <gnw20@cam.ac.uk> <garth@debian.eng.cam.ac.uk>
+Garth N. Wells <gnw20@cam.ac.uk> <garth@fedora32-virtual>
+Garth N. Wells <gnw20@cam.ac.uk> <garth@gnw20pc>
+Garth N. Wells <gnw20@cam.ac.uk> <garth@home-laptop>
+Garth N. Wells <gnw20@cam.ac.uk> <garth@localhost.localdomain>
+Garth N. Wells <gnw20@cam.ac.uk> <garth@ubuntu32-virtual>
+Garth N. Wells <gnw20@cam.ac.uk> <garth@ubuntu.eng.cam.ac.uk>
+Garth N. Wells <gnw20@cam.ac.uk> <garth@garth-laptop>
+Garth N. Wells <gnw20@cam.ac.uk> <garth@gnw20pc>
+Garth N. Wells <gnw20@cam.ac.uk> <g.n.wells@tudelft.nl>
+Garth N. Wells <gnw20@cam.ac.uk> gnw20@cam.ac.uk <>
+gideonsimpson <gideonsimpson@dyn-128-59-151-14.dyn.columbia.edu>
+Gustav Magnus Vikström <gustavv@simula.no>
+Gustav Magnus Vikström <gustavv@simula.no> <gustavv@ifi.uio.no>
+Gustav Magnus Vikström <gustavv@simula.no> <gustavv@ifi.uio.no>
+Gustav Magnus Vikström <gustavv@simula.no> <gustavv@utlaan-laptop-1>
+Harish Narayanan <hnarayanan@gmail.com>
+Harish Narayanan <hnarayanan@gmail.com> Harish Narayanan <harish@simula.no>
+Johan Hoffman <jhoffman@csc.kth.se>
+Johan Hoffman <jhoffman@csc.kth.se> hoffman <devnull@localhost>
+Johan Hoffman <jhoffman@csc.kth.se> <jhoffman@na41.nada.kth.se>
+Johan Hoffman <jhoffman@csc.kth.se> <jhoffman@na42.nada.kth.se>
+Ilmar Wilbers <ilmarw@simula.no>
+Ilmar Wilbers <ilmarw@simula.no> <ilmarw@gogmagog.simula.no>
+Ilmar Wilbers <ilmarw@simula.no> <ilmarw@multiboot.local>
+Jack S. Hale <jack.hale@uni.lu>
+Jack S. Hale <jack.hale@uni.lu> <j.hale09@imperial.ac.uk>
+Johan Hake <hake.dev@gmail.com>
+Johan Hake <hake.dev@gmail.com> <johan.hake@gmail.com>
+Johan Hake <hake.dev@gmail.com> <hake@simula.no>
+Johan Jansson <jjan@csc.kth.se>
+Johan Jansson <jjan@csc.kth.se> johan <johan@localhost.localdomain>
+Johan Jansson <jjan@csc.kth.se> johan <johan@nova>
+Johan Jansson <jjan@csc.kth.se> johanjan <devnull@localhost>
+Johan Jansson <jjan@csc.kth.se> johanjan <johanjan@localhost.localdomain>
+Johan Jansson <jjan@csc.kth.se> Johan Jansson <johanjan@math.chalmers.se>
+Johannes Ring <johannr@simula.no>
+Johannes Ring <johannr@simula.no> <johannr@communalis.simula.no>
+Kent-Andre Mardal <kent-and@simula.no>
+Kent-Andre Mardal <kent-and@simula.no> <kent-and@localhost>
+Kristian B. Ølgaard <k.b.oelgaard@gmail.com>
+Kristian B. Ølgaard <k.b.oelgaard@gmail.com> <k.b.oelgaard@tudelft.nl>
+Kristian B. Ølgaard <k.b.oelgaard@gmail.com> <oelgaard@localhost.localdomain>
+Magnus Vikstrøm <gustavv@ifi.uio.no>
+Marco Morandini <marco.morandini@polimi.it>
+Marco Morandini <marco.morandini@polimi.it> <morandini@aero.polimi.it>
+Marie E. Rognes <meg@simula.no>
+Marie E. Rognes <meg@simula.no> <meg@math.uio.no>
+Marie E. Rognes <meg@simula.no> <meg@meg-laptop>
+Marie E. Rognes <meg@simula.no> Marie E. Rognes (meg@simula.no) <Marie E. Rognes (meg@simula.no)>
+Marie E. Rognes <meg@simula.no> meg@simula.no <>
+Martin Sandve Alnæs <martinal@simula.no>
+Martin Sandve Alnæs <martinal@simula.no> <martinal@localhost>
+Martin Sandve Alnæs <martinal@simula.no> <martinal@martinal-desktop>
+Michele Zaffalon <michele.zaffalon@gmail.com>
+Mikael Mortensen <mikaem@math.uio.no>
+Mikael Mortensen <mikaem@math.uio.no> <mikael.mortensen@gmail.com>
+Nate Sime <njcs4@cam.ac.uk>
+Nate Sime <njcs4@cam.ac.uk> <njcs4@galah.bpi.cam.ac.uk>
+Nuno Lopes <ndl@ptmat.fc.ul.pt>
+Nuno Lopes <ndl@ptmat.fc.ul.pt> N.Lopes <devnull@localhost>
+Patrick Farrell <patrick.farrell@maths.ox.ac.uk>
+Patrick Farrell <patrick.farrell@maths.ox.ac.uk> <patrick.farrell06@imperial.ac.uk>
+Patrick Farrell <patrick.farrell@maths.ox.ac.uk> <patrick.farrell@imperial.ac.uk>
+Quang Ha <qth20@cam.ac.uk>
+Kristoffer Selim <selim@simula.no>
+Kristoffer Selim <selim@simula.no> <selim@selim-laptop>
+Simon Funke <simon@simula.no>
+Simon Funke <simon@simula.no> <simon.funke@gmail.com>
+Simon Funke <simon@simula.no> <s.funke09@imperial.ac.uk>
+Solveig Bruvoll <solveio@ifi.uio.no>
+Solveig Masvie <smasvie@gmail.com>
+Steven Vandekerckhove <steven.vandekerckhove@kuleuven-kulak.be>
+Steven Vandekerckhove <steven.vandekerckhove@kuleuven-kulak.be> <Steven.Vandekerckhove@kuleuven-kulak.be>
+stockli <stockli@carleman.nada.kth.se>
+stockli <stockli@carleman.nada.kth.se> <stockli@localhost>
+Tianyi Li <tianyikillua@gmail.com>
+Steffen Müthing <steffen.muething@ipvs.uni-stuttgart.de>
+Steffen Müthing <steffen.muething@ipvs.uni-stuttgart.de> Steffen Müthing steffen.muething@ipvs.uni-stuttgart.de <>
+Miklós Homolya <m.homolya14@imperial.ac.uk>
+Åsmund Ødegård <aasmund@simula.no>
+Åsmund Ødegård <aasmund@simula.no> <aasmundo@manpower.local>
+Ola Skavhaug <skavhaug@simula.no>
+Andre Massing <massing@simula.no>
+Andrew McRae <a.mcrae12@imperial.ac.uk>

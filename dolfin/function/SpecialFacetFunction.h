@@ -60,6 +60,17 @@ namespace dolfin
     ///         The value-dimension of the Functions
     SpecialFacetFunction(std::vector<Function>& f_e, std::size_t dim);
 
+    /// Create (tensor-valued) SpecialFacetFunction
+    ///
+    /// *Arguments*
+    ///     f_e (std::vector<_Function_>)
+    ///        Separate _Function_s for each facet
+    ///
+    ///     value_shape (std::vector<std::size_t>)
+    ///         The values-shape of the Functions
+    SpecialFacetFunction(std::vector<Function>& f_e,
+                         std::vector<std::size_t> value_shape);
+
     /// Evaluate SpecialFacetFunction (cf _Expression_.eval)
     /// Evaluate function for given cell
     void eval(Array<double>& values, const Array<double>& x,
