@@ -109,7 +109,7 @@ C++ program
 The DOLFIN interface and the code generated from the UFL input is
 included, and the DOLFIN namespace is used:
 
-.. code-block:: c++
+.. code-block:: cpp
 
   #include <dolfin.h>
   #include "Biharmonic.h"
@@ -119,7 +119,7 @@ included, and the DOLFIN namespace is used:
 A class ``Source`` is defined for the function :math:`f`, with the
 function ``Expression::eval`` overloaded:
 
-.. code-block:: c++
+.. code-block:: cpp
 
   // Source term
   class Source : public Expression
@@ -137,7 +137,7 @@ function ``Expression::eval`` overloaded:
 A boundary subdomain is defined, which in this case is the entire
 boundary:
 
-.. code-block:: c++
+.. code-block:: cpp
 
   // Sub domain for Dirichlet boundary condition
   class DirichletBoundary : public SubDomain
@@ -149,7 +149,7 @@ boundary:
 The main part of the program is begun, and a mesh is created with 32
 vertices in each direction:
 
-.. code-block:: c++
+.. code-block:: cpp
 
   int main()
   {
@@ -162,7 +162,7 @@ vertices in each direction:
 The source function, a function for the cell size and the penalty term
 are declared:
 
-.. code-block:: c++
+.. code-block:: cpp
 
     // Create functions
     auto f = std::make_shared<Source>();
@@ -171,7 +171,7 @@ are declared:
 A function space object, which is defined in the generated code, is
 created:
 
-.. code-block:: c++
+.. code-block:: cpp
 
     // Create function space
     auto V = std::make_shared<Biharmonic::FunctionSpace>(mesh);
@@ -181,7 +181,7 @@ defining a :cpp:class:`Constant` which is equal to zero, defining the
 boundary (``DirichletBoundary``), and using these, together with
 ``V``, to create ``bc``:
 
-.. code-block:: c++
+.. code-block:: cpp
 
     // Define boundary condition
     auto u0 = std::make_shared<Constant>(0.0);
@@ -191,7 +191,7 @@ boundary (``DirichletBoundary``), and using these, together with
 Using the function space ``V``, the bilinear and linear forms are
 created, and function are attached:
 
-.. code-block:: c++
+.. code-block:: cpp
 
     // Define variational problem
     Biharmonic::BilinearForm a(V, V);
@@ -201,7 +201,7 @@ created, and function are attached:
 A :cpp:class:`Function` is created to hold the solution and the
 problem is solved:
 
-.. code-block:: c++
+.. code-block:: cpp
 
     // Compute solution
     Function u(V);
@@ -210,7 +210,7 @@ problem is solved:
 The solution is then written to a file in VTK format and plotted to
 the screen:
 
-.. code-block:: c++
+.. code-block:: cpp
 
     // Save solution in VTK format
     File file("biharmonic.pvd");
