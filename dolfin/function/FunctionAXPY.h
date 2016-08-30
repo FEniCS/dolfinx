@@ -29,9 +29,6 @@ namespace dolfin
 
   class Function;
 
-  // FIXME: Straighten out memory management in this class by
-  // switching to smart pointers.
-
   /// This class represents a linear combination of functions. It is
   /// mostly used as an intermediate class for operations such as u =
   /// 3*u0 + 4*u1; where the rhs generates an FunctionAXPY.
@@ -44,25 +41,29 @@ namespace dolfin
     enum class Direction : int {ADD_ADD=0, SUB_ADD=1, ADD_SUB=2, SUB_SUB=3};
 
     /// Constructor
-    FunctionAXPY(const Function& func, double scalar);
+    FunctionAXPY(std::shared_ptr<const Function> func, double scalar);
 
     /// Constructor
     FunctionAXPY(const FunctionAXPY& axpy, double scalar);
 
     /// Constructor
-    FunctionAXPY(const Function& func0, const Function& func1,
+    FunctionAXPY(std::shared_ptr<const Function> func0,
+                 std::shared_ptr<const Function> func1,
                  Direction direction);
 
     /// Constructor
-    FunctionAXPY(const FunctionAXPY& axpy, const Function& func,
+    FunctionAXPY(const FunctionAXPY& axpy,
+                 std::shared_ptr<const Function> func,
                  Direction direction);
 
     /// Constructor
-    FunctionAXPY(const FunctionAXPY& axpy0, const FunctionAXPY& axpy1,
+    FunctionAXPY(const FunctionAXPY& axpy0,
+                 const FunctionAXPY& axpy1,
                  Direction direction);
 
     /// Constructor
-    FunctionAXPY(std::vector<std::pair<double, const Function*> > pairs);
+    FunctionAXPY(
+      std::vector<std::pair<double, std::shared_ptr<const Function>>> pairs);
 
     /// Copy constructor
     FunctionAXPY(const FunctionAXPY& axpy);
@@ -71,13 +72,13 @@ namespace dolfin
     ~FunctionAXPY();
 
     /// Addition operator
-    FunctionAXPY operator+(const Function& func) const;
+    FunctionAXPY operator+(std::shared_ptr<const Function> func) const;
 
     /// Addition operator
     FunctionAXPY operator+(const FunctionAXPY& axpy) const;
 
     /// Subtraction operator
-    FunctionAXPY operator-(const Function& func) const;
+    FunctionAXPY operator-(std::shared_ptr<const Function> func) const;
 
     /// Subtraction operator
     FunctionAXPY operator-(const FunctionAXPY& axpy) const;
@@ -89,14 +90,15 @@ namespace dolfin
     FunctionAXPY operator/(double scale) const;
 
     /// Return the scalar and Function pairs
-    const std::vector<std::pair<double, const Function*> >& pairs() const;
+    const std::vector<std::pair<double, std::shared_ptr<const Function>>>&
+      pairs() const;
 
   private:
 
     /// Register another AXPY object
     void _register(const FunctionAXPY& axpy0, double scale);
 
-    std::vector<std::pair<double, const Function*>> _pairs;
+    std::vector<std::pair<double, std::shared_ptr<const Function>>> _pairs;
 
   };
 

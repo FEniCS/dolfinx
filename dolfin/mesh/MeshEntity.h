@@ -171,7 +171,12 @@ namespace dolfin
     ///     std::size_t
     ///         The index for incident mesh entities of given dimension.
     const unsigned int* entities(std::size_t dim) const
-    { return _mesh->topology()(_dim, dim)(_local_index); }
+    {
+      const unsigned int* initialized_mesh_entities
+        = _mesh->topology()(_dim, dim)(_local_index);
+      dolfin_assert(initialized_mesh_entities);
+      return initialized_mesh_entities;
+    }
 
     /// Return unique mesh ID
     ///

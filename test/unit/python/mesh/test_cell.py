@@ -59,3 +59,17 @@ def test_distance_tetrahedron():
     assert round(cell.distance(Point(-1.0, -1.0, -1.0))-numpy.sqrt(3), 7) == 0
     assert round(cell.distance(Point(-1.0, 0.5, 0.5)) - 1, 7) == 0
     assert round(cell.distance(Point(0.5, 0.5, 0.5)) - 0.0, 7) == 0
+
+
+@skip_in_parallel
+def test_issue_568():
+    mesh = UnitSquareMesh(4, 4)
+    cell = Cell(mesh, 0)
+    
+    # Should throw an error, not just segfault
+    with pytest.raises(RuntimeError):
+        cell.facet_area(0)
+    
+    # Should work after initializing the connectivity
+    mesh.init(2, 1)
+    cell.facet_area(0)
