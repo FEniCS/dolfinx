@@ -23,6 +23,7 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import *
 
+
 @use_gc_barrier
 def test_bcs():
     "Check that the bcs argument is picked up"
@@ -59,6 +60,31 @@ def test_bcs():
     assert round(u2.vector().norm("l2") - 14.9362601686, 10) == 0
     assert round(u3.vector().norm("l2") - 14.9362601686, 10) == 0
     assert round(u4.vector().norm("l2") - 14.9362601686, 10) == 0
+
+
+@use_gc_barrier
+def test_bcs_space():
+    "Check that the bc space is checked to be a subspace of trial space"
+    mesh = UnitSquareMesh(4, 4)
+    V = FunctionSpace(mesh, "Lagrange", 1)
+    u = TrialFunction(V)
+    v = TestFunction(V)
+    f = Constant(100.0)
+
+    a = dot(grad(u), grad(v))*dx + u*v*dx
+    L = f*v*dx
+
+    Q = FunctionSpace(mesh, "Lagrange", 2)
+    bc = DirichletBC(Q, 0.0, DomainBoundary())
+
+    u = Function(V)
+
+    with pytest.raises(RuntimeError):
+        solve(a == L, u, bc)
+
+    with pytest.raises(RuntimeError):
+        solve(action(a, u) - L == 0, u, bc)
+
 
 @use_gc_barrier
 def test_calling():

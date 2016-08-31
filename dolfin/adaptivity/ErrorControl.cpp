@@ -195,11 +195,10 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   }
   else
   {
-    _R_dT = std::make_shared<SpecialFacetFunction>(f_e,
-                                                   f_e[0].value_dimension(0));
-    dolfin_error("ErrorControl.cpp",
-                 "compute error indicators",
-                 "Not implemented for tensor-valued functions");
+    std::vector<std::size_t> value_shape;
+    for (std::size_t i = 0; i < f_e[0].value_rank(); ++i)
+      value_shape.push_back(f_e[0].value_dimension(i));
+    _R_dT = std::make_shared<SpecialFacetFunction>(f_e, value_shape);
   }
 
   // Compute residual representation

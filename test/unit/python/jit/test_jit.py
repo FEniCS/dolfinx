@@ -63,7 +63,7 @@ def test_compile_extension_module():
       }
     }
     """
-    for module_name in ["mypetscmodule", ""]:
+    for module_name in ["mypetscmodule_" + dolfin.__version__, ""]:
         ext_module = compile_extension_module(\
             code, module_name=module_name,\
             additional_system_headers=["petscvec.h"])

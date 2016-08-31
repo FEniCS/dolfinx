@@ -117,33 +117,22 @@ _pick_one_meshfunction(std::string name,
 {
   if ((a && b) && a != b)
   {
-      warning("Bilinear and linear forms do not have same %s subdomains \
-in SystemAssembler. Taking %s subdomains from bilinear form",
-              name.c_str(), name.c_str());
+    warning("Bilinear and linear forms do not have same %s subdomains in "
+            "SystemAssembler. Taking %s subdomains from bilinear form",
+            name.c_str(), name.c_str());
   }
-  return a ? a: b;
+  return a ? a : b;
 }
 //-----------------------------------------------------------------------------
 bool SystemAssembler::check_functionspace_for_bc
     (std::shared_ptr<const FunctionSpace> fs, std::size_t bc_index)
 {
+  dolfin_assert(_bcs[bc_index]);
   std::shared_ptr<const FunctionSpace> bc_function_space
     = _bcs[bc_index]->function_space();
+  dolfin_assert(bc_function_space);
 
-  if (*bc_function_space == *fs)
-    return true;
-  else
-  {
-    // Recursively check sub-spaces
-    std::size_t num_sub_elements = fs->element()->num_sub_elements();
-    for (std::size_t i = 0; i != num_sub_elements; ++i)
-      {
-        std::shared_ptr<const FunctionSpace> subspace = (*fs)[i];
-        if (check_functionspace_for_bc(subspace, bc_index))
-          return true;
-      }
-  }
-  return false;
+  return fs->contains(*bc_function_space);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
@@ -221,35 +210,45 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
 
   // Get Dirichlet dofs and values for local mesh
   // Determine whether _a is bilinear in the same form
-  std::size_t num_fs
-    = (*_a->function_space(0) == *_a->function_space(1)) ? 1 : 2;
+  bool rectangular = (*_a->function_space(0) != *_a->function_space(1));
 
   // Bin boundary conditions according to which form they apply to (if any)
-  std::vector<DirichletBC::Map> boundary_values(num_fs);
+  std::vector<DirichletBC::Map> boundary_values(rectangular ? 2 : 1);
   for (std::size_t i = 0; i < _bcs.size(); ++i)
   {
     // Match the FunctionSpace of the BC
     // with the (possible sub-)FunctionSpace on each axis of _a.
-    int axis = -1;
+    bool axis0 = check_functionspace_for_bc(_a->function_space(0), i);
+    bool axis1 = rectangular && check_functionspace_for_bc(_a->function_space(1), i);
 
-    if (check_functionspace_for_bc(_a->function_space(0), i))
-      axis = 0;
-    else if (check_functionspace_for_bc(_a->function_space(1), i))
-      axis = 1;
-
-    // Found!
-    if (axis != -1)
+    // Fetch bc on axis0
+    if (axis0)
     {
-      _bcs[i]->get_boundary_values(boundary_values[axis]);
+      log(TRACE, "System assembler: boundary condition %d applies to axis 0", i);
+      _bcs[i]->get_boundary_values(boundary_values[0]);
       if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
-        _bcs[i]->gather(boundary_values[axis]);
+        _bcs[i]->gather(boundary_values[0]);
     }
 
+    // Fetch bc on axis1
+    if (axis1)
+    {
+      log(TRACE, "System assembler: boundary condition %d applies to axis 1", i);
+      _bcs[i]->get_boundary_values(boundary_values[1]);
+      if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
+        _bcs[i]->gather(boundary_values[1]);
+    }
+
+    if (!axis0 && !axis1)
+    {
+      log(TRACE, "System assembler: ignoring inapplicable boundary condition %d", i);
+    }
   }
 
   // Modify boundary values for incremental (typically nonlinear)
   // problems
-  // FIXME: not sure what happens when num_fs==2
+  // FIXME: not sure what happens when rectangular==true,
+  //        should we raise "not implemented error" here?
   if (x0)
   {
     dolfin_assert(x0->size()
@@ -852,7 +851,7 @@ void SystemAssembler::facet_wise_assembly(
   }
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler:: compute_exterior_facet_tensor(
+void SystemAssembler::compute_exterior_facet_tensor(
   std::array<std::vector<double>, 2>& Ae,
   std::array<UFC*, 2>& ufc,
   ufc::cell& ufc_cell,
@@ -1059,6 +1058,17 @@ SystemAssembler::apply_bc(double* A, double* b,
   }
   else
   {
+    // Possibly rectangular matrix with different spaces on axes
+    // FIXME: This won't work for forms on W x W.sub(0), which would contain
+    //        diagonal. This is difficult to distinguish from form
+    //        on V x Q which would by accident contain V bc and Q bc with
+    //        same dof index, but that's not diagonal.
+    //
+    //        Essentially we need to detect if _a->function_space(0) and
+    //        _a->function_space(1) share the common super space (use
+    //        FunctionSpace::_root_space_id). In that case dof ids are shared
+    //        and matrix has diagonal. Otherwise it does not have diagonal.
+
     // Loop over rows first
     for (int i = 0; i < _matA.rows(); ++i)
     {

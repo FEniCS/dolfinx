@@ -1,3 +1,6 @@
+
+.. _demo_poisson_equation:
+
 Poisson equation
 ================
 

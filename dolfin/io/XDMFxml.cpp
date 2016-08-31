@@ -410,6 +410,9 @@ void XDMFxml::mesh_topology(const CellType::Type cell_type,
     // Refer to all cells and dimensions
     xdmf_topology_data = xdmf_topology.append_child("DataItem");
     xdmf_topology_data.append_attribute("Format") = format.c_str();
+    // Set type for topology data (needed by XDMF to prevent default to float)
+    xdmf_topology_data.append_attribute("NumberType") = "UInt";
+
     const std::string cell_dims = std::to_string(num_global_cells)
       + " " + std::to_string(nodes_per_element);
     xdmf_topology_data.append_attribute("Dimensions") = cell_dims.c_str();
