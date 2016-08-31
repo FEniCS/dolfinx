@@ -94,6 +94,7 @@ Working list of Python demos
 * :doc:`demos/demo_built-in-meshes.py`
 * :doc:`demos/demo_biharmonic.py`
 * :doc:`demos/demo_auto-adaptive-poisson.py`
+* :doc:`demos/demo_cahn-hilliard.py`
 
 
 Using the C++ interface

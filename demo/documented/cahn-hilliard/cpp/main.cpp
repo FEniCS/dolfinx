@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2007 Garth N. Wells
+// Copyright (C) 2005-2016 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,9 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2011
-//
-// First added:  2006-03-02
-// Last changed: 2013-11-20
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving
 // the Cahn-Hilliard equation.
@@ -41,9 +38,7 @@ class InitialConditions : public Expression
 public:
 
   InitialConditions() : Expression(2)
-  {
-    dolfin::seed(2 + dolfin::MPI::rank(MPI_COMM_WORLD));
-  }
+  { dolfin::seed(2 + dolfin::MPI::rank(MPI_COMM_WORLD)); }
 
   void eval(Array<double>& values, const Array<double>& x) const
   {
@@ -59,87 +54,22 @@ class CahnHilliardEquation : public NonlinearProblem
   public:
 
     // Constructor
-    CahnHilliardEquation(std::shared_ptr<const Mesh> mesh,
-                         std::shared_ptr<const Constant> dt,
-                         std::shared_ptr<const Constant> theta,
-                         std::shared_ptr<const Constant> lambda)
-    {
-      // Initialize class (depending on geometric dimension of the mesh).
-      // Unfortunately C++ does not allow namespaces as template arguments
-      dolfin_assert(mesh);
-      if (mesh->geometry().dim() == 2)
-      {
-        init<CahnHilliard2D::FunctionSpace, CahnHilliard2D::JacobianForm,
-             CahnHilliard2D::ResidualForm>(mesh, dt, theta, lambda);
-      }
-      else if (mesh->geometry().dim() == 3)
-      {
-        init<CahnHilliard3D::FunctionSpace, CahnHilliard3D::JacobianForm,
-             CahnHilliard3D::ResidualForm>(mesh, dt, theta, lambda);
-      }
-      else
-        error("Cahn-Hilliard model is programmed for 2D and 3D only.");
-    }
+    CahnHilliardEquation(std::shared_ptr<const Form> F,
+                         std::shared_ptr<const Form> J) : _F(F), _J(J) {}
 
     // User defined residual vector
     void F(GenericVector& b, const GenericVector& x)
-    {
-      // Assemble RHS (Neumann boundary conditions)
-      Assembler assembler;
-      assembler.assemble(b, *L);
-    }
+    { assemble(b, *_F); }
 
     // User defined assemble of Jacobian
     void J(GenericMatrix& A, const GenericVector& x)
-    {
-      // Assemble system
-      Assembler assembler;
-      assembler.assemble(A, *a);
-    }
-
-    // Return solution function
-    Function& u()
-    { return *_u; }
-
-    // Return solution function
-    Function& u0()
-    { return *_u0; }
+    { assemble(A, *_J); }
 
   private:
 
-    template<class X, class Y, class Z>
-    void init(std::shared_ptr<const Mesh> mesh,
-              std::shared_ptr<const Constant> dt,
-              std::shared_ptr<const Constant> theta,
-              std::shared_ptr<const Constant> lambda)
-    {
-      // Create function space and functions
-      std::shared_ptr<X> V(new X(mesh));
-      _u.reset(new Function(V));
-      _u0.reset(new Function(V));
-
-      // Create forms and attach functions
-      Y* _a = new Y(V, V);
-      Z* _L = new Z(V);
-      _a->u = _u;
-      _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
-      _L->u = _u; _L->u0 = _u0;
-      _L->lmbda = lambda; _L->dt = dt; _L->theta = theta;
-
-      // Wrap pointers in a smart pointer
-      a.reset(_a);
-      L.reset(_L);
-
-      // Set solution to intitial condition
-      InitialConditions u_initial;
-      *_u = u_initial;
-    }
-
-    // Function space, forms and functions
-    std::unique_ptr<Form> a;
-    std::unique_ptr<Form> L;
-    std::shared_ptr<Function> _u;
-    std::shared_ptr<Function> _u0;
+    // Forms
+    std::shared_ptr<const Form> _F;
+    std::shared_ptr<const Form> _J;
 };
 
 
@@ -150,20 +80,56 @@ int main(int argc, char* argv[])
   // Mesh
   auto mesh = std::make_shared<UnitSquareMesh>(96, 96);
 
+  // Create function space and forms, depending on spatial dimension
+  // of the mesh
+  std::shared_ptr<FunctionSpace> V;
+  std::shared_ptr<Form> F, J;
+  if (mesh->geometry().dim() == 2)
+  {
+    V = std::make_shared<CahnHilliard2D::FunctionSpace>(mesh);
+    F = std::make_shared<CahnHilliard2D::ResidualForm>(V);
+    J = std::make_shared<CahnHilliard2D::JacobianForm>(V, V);
+  }
+  else if(mesh->geometry().dim() == 3)
+  {
+    V = std::make_shared<CahnHilliard3D::FunctionSpace>(mesh);
+    F = std::make_shared<CahnHilliard3D::ResidualForm>(V);
+    J = std::make_shared<CahnHilliard3D::JacobianForm>(V, V);
+  }
+  else
+    error("This demo only supports two or three spatial dimensions.");
+
+  // Create solution Functions (at t_n and t_{n+1})
+  auto u0 = std::make_shared<Function>(V);
+  auto u = std::make_shared<Function>(V);
+
+  // Set solution to intitial condition
+  InitialConditions u_initial;
+  *u0 = u_initial;
+  *u = u_initial;
+
   // Time stepping and model parameters
   auto dt = std::make_shared<Constant>(5.0e-6);
   auto theta = std::make_shared<Constant>(0.5);
   auto lambda = std::make_shared<Constant>(1.0e-2);
 
+  // Collect coefficient into groups
+  std::map<std::string, std::shared_ptr<const GenericFunction>> coefficients
+    = {{"u", u}, {"lmbda", lambda}, {"dt", dt}, {"theta", theta}};
+
+  // Add extra coefficient for residual
+  std::map<std::string, std::shared_ptr<const GenericFunction>> coefficients_F = coefficients;
+  coefficients_F.insert({"u0", u0});
+
+  // Attach coefficients to form
+  J->set_coefficients(coefficients);
+  F->set_coefficients(coefficients_F);
+
   double t = 0.0;
   double T = 50*(*dt);
 
   // Create user-defined nonlinear problem
-  CahnHilliardEquation cahn_hilliard(mesh, dt, theta, lambda);
-
-  // Solution functions
-  Function& u = cahn_hilliard.u();
-  Function& u0 = cahn_hilliard.u0();
+  CahnHilliardEquation cahn_hilliard(F, J);
 
   // Create nonlinear solver and set parameters
   NewtonSolver newton_solver;
@@ -175,24 +141,24 @@ int main(int argc, char* argv[])
 
   // Save initial condition to file
   File file("cahn_hilliard.pvd", "compressed");
-  file << u[0];
+  file << (*u)[0];
 
   // Solve
   while (t < T)
   {
     // Update for next time step
     t += *dt;
-    *u0.vector() = *u.vector();
+    *u0->vector() = *u->vector();
 
     // Solve
-    newton_solver.solve(cahn_hilliard, *u.vector());
+    newton_solver.solve(cahn_hilliard, *u->vector());
 
     // Save function to file
-    file << std::pair<const Function*, double>(&(u[0]), t);
+    file << std::pair<const Function*, double>(&((*u)[0]), t);
   }
 
   // Plot solution
-  plot(u[0]);
+  plot((*u)[0]);
   interactive();
 
   return 0;
