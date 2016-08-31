@@ -105,7 +105,7 @@ Parameters PETScLUSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(MPI_Comm comm, std::string method)
-  :  PETScLUSolver(MPI_COMM_WORLD, NULL, method)
+  :  PETScLUSolver(comm, NULL, method)
 {
   // Do nothing
 }

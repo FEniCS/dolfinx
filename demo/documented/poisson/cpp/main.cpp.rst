@@ -71,53 +71,11 @@ Running this demo requires the files: :download:`main.cpp`,
 UFL form file
 ^^^^^^^^^^^^^
 
-The first step is to define the variational problem at hand. We define
-the variational problem in UFL terms in a separate form file
-:download:`Poisson.ufl`.  We begin by defining the finite element:
-
-.. code-block:: python
-
-   element = FiniteElement("Lagrange", triangle, 1)
-
-The first argument to :py:class:`FiniteElement` is the finite element
-family, the second argument specifies the domain, while the third
-argument specifies the polynomial degree. Thus, in this case, our
-element ``element`` consists of first-order, continuous Lagrange basis
-functions on triangles (or in order words, continuous piecewise linear
-polynomials on triangles).
-
-Next, we use this element to initialize the trial and test functions
-(:math:`u` and :math:`v`) and the coefficient functions (:math:`f` and
-:math:`g`):
-
-.. code-block:: python
-
-   u = TrialFunction(element)
-   v = TestFunction(element)
-   f = Coefficient(element)
-   g = Coefficient(element)
-
-Finally, we define the bilinear and linear forms according to the
-variational formulation of the equations:
-
-.. code-block:: python
-
-   a = inner(grad(u), grad(v))*dx
-   L = f*v*dx + g*v*ds
-
-Before the form file can be used in the C++ program, it must be
-compiled using FFC by running (on the command-line):
-
-.. code-block:: sh
-
-   ffc -l dolfin Poisson.ufl
-
-Note the flag ``-l dolfin`` which tells FFC to generate
-DOLFIN-specific wrappers that make it easy to access the generated
-code from within DOLFIN.
+The UFL file is implemented in :download:`Poisson.ufl`, and the
+explanation of the UFL file can be found at :doc:`here <Poisson.ufl>`.
 
 
-cpp program
+C++ program
 ^^^^^^^^^^^
 
 The main solver is implemented in the :download:`main.cpp` file.

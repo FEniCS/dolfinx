@@ -151,7 +151,7 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionAXPY_
     ///         Return a linear combination of Functions
-    FunctionAXPY operator+(const Function& other) const;
+    FunctionAXPY operator+(std::shared_ptr<const Function> other) const;
 
     /// Add operator with other linear combination of functions
     ///
@@ -165,7 +165,7 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionAXPY_
     ///         Return a linear combination of Functions
-    FunctionAXPY operator-(const Function& other) const;
+    FunctionAXPY operator-(std::shared_ptr<const Function> other) const;
 
     /// Subtraction operator with other linear combination of functions
     ///
