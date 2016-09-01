@@ -32,8 +32,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-FunctionAssigner::FunctionAssigner(std::shared_ptr<const FunctionSpace> receiving_space,
-				   std::shared_ptr<const FunctionSpace> assigning_space)
+FunctionAssigner::FunctionAssigner(
+ std::shared_ptr<const FunctionSpace> receiving_space,
+ std::shared_ptr<const FunctionSpace> assigning_space)
   : _receiving_spaces(1, receiving_space),_assigning_spaces(1, assigning_space),
     _receiving_indices(1), _assigning_indices(1), _transfer(1)
 {
@@ -62,9 +63,9 @@ FunctionAssigner::FunctionAssigner(
   if (_assigning_spaces[0]->element()->num_sub_elements() != N)
   {
     dolfin_error("FunctionAssigner.cpp",
-		 "create function assigner",
-		 "Expected the same number of sub spaces in the assigning " \
-		 "FunctionSpace as the number of receiving FunctionSpaces");
+                 "create function assigner",
+                 "Expected the same number of sub spaces in the assigning "
+                 "FunctionSpace as the number of receiving FunctionSpaces");
   }
 
   // Collect assigning sub spaces
@@ -94,9 +95,9 @@ FunctionAssigner::FunctionAssigner(
   if (_receiving_spaces[0]->element()->num_sub_elements()!=N)
   {
     dolfin_error("FunctionAssigner.cpp",
-		 "create function assigner",
-		 "Expected the same number of sub spaces in the receiving "\
-		 "FunctionSpace as the number of assigning FunctionSpaces");
+                 "create function assigner",
+                 "Expected the same number of sub spaces in the receiving "
+                 "FunctionSpace as the number of assigning FunctionSpaces");
   }
 
   // Collect receiving sub spaces
@@ -135,9 +136,9 @@ void FunctionAssigner::assign(
   if (receiving_func->function_space()->element()->num_sub_elements() != N)
   {
     dolfin_error("FunctionAssigner.cpp",
-		 "assigning functions",
-		 "Expected the same number of sub functions in the receiving "\
-		 "Function as the number of assigning Functions");
+                 "assigning functions",
+                 "Expected the same number of sub functions in the receiving "
+                 "Function as the number of assigning Functions");
   }
 
   // Collect receiving sub functions
@@ -162,9 +163,9 @@ FunctionAssigner::assign(std::vector<std::shared_ptr<Function>> receiving_funcs,
   if (assigning_func->function_space()->element()->num_sub_elements() != N)
   {
     dolfin_error("FunctionAssigner.cpp",
-		 "assigning functions",
-		 "Expected the same number of sub functions in the assigning "\
-		 "Function as the number of receiving Functions");
+                 "assigning functions",
+                 "Expected the same number of sub functions in the assigning "
+                 "Function as the number of receiving Functions");
   }
 
   // Collect receiving sub functions
@@ -191,22 +192,22 @@ void FunctionAssigner::_assign(
   if (assigning_funcs.size() != N)
   {
     dolfin_error("FunctionAssigner.cpp",
-		 "assign functions",
-		 "Expected the same number of assigning (sub)functions as "
-		 "the number of assigning (sub)spaces.");
+                 "assign functions",
+                 "Expected the same number of assigning (sub)functions as "
+                 "the number of assigning (sub)spaces.");
   }
 
   if (receiving_funcs.size() != N)
   {
     dolfin_error("FunctionAssigner.cpp",
-		 "assign functions",
-		 "Expected the same number of receiving (sub)functions as "
-		 "the number of receiving (sub)spaces.");
+                 "assign functions",
+                 "Expected the same number of receiving (sub)functions as "
+                 "the number of receiving (sub)spaces.");
   }
 
   // Flag to determine if the receiving vector is the same
   bool same_receiving_vector = true;
-  const GenericVector* recieving_vector = receiving_funcs[0]->_vector.get();
+  const GenericVector* receiving_vector = receiving_funcs[0]->_vector.get();
 
   // Iterate over the spaces and do the assignments
   for (std::size_t i = 0; i < N; i++)
@@ -219,26 +220,28 @@ void FunctionAssigner::_assign(
       // Check 1-1 assignment
       if (_assigning_spaces.size() == 1)
       {
-	dolfin_assert(receiving_funcs[0]);
-	if (!receiving_funcs[0]->in(*_receiving_spaces[0]))
-	{
-	  dolfin_error("FunctionAssigner.cpp",
-		       "assign functions",
-		       "The receiving Function is not in the receiving FunctionSpaces");
-	}
+        dolfin_assert(receiving_funcs[0]);
+        if (!receiving_funcs[0]->in(*_receiving_spaces[0]))
+        {
+          dolfin_error("FunctionAssigner.cpp",
+                       "assign functions",
+                       "The receiving Function is not in the receiving "
+                       "FunctionSpaces");
+        }
       }
 
       // Check N-1 assignment
       else
       {
-	dolfin_assert(receiving_funcs[i]);
-	dolfin_assert((*_receiving_spaces[0])[i]);
-	if (!receiving_funcs[i]->in(*(*_receiving_spaces[0])[i]))
-	{
-	  dolfin_error("FunctionAssigner.cpp",
-		       "assign functions",
-		       "The receiving sub Functions are not in the receiving sub FunctionSpaces");
-	}
+        dolfin_assert(receiving_funcs[i]);
+        dolfin_assert((*_receiving_spaces[0])[i]);
+        if (!receiving_funcs[i]->in(*(*_receiving_spaces[0])[i]))
+        {
+          dolfin_error("FunctionAssigner.cpp",
+                       "assign functions",
+                       "The receiving sub Functions are not in the receiving "
+                       "sub FunctionSpaces");
+        }
       }
     }
     else
@@ -246,9 +249,10 @@ void FunctionAssigner::_assign(
       // Check 1-N assignment
       if (!receiving_funcs[i]->in(*_receiving_spaces[i]))
       {
-	dolfin_error("FunctionAssigner.cpp",
-		     "assign functions",
-		     "The receiving Functions are not in the receiving FunctionSpaces");
+        dolfin_error("FunctionAssigner.cpp",
+                     "assign functions",
+                     "The receiving Functions are not in the receiving "
+                     "FunctionSpaces");
       }
     }
 
@@ -259,26 +263,28 @@ void FunctionAssigner::_assign(
       // Check 1-1 assignment
       if (_receiving_spaces.size() == 1)
       {
-	dolfin_assert(assigning_funcs[0]);
-	if (!assigning_funcs[0]->in(*_assigning_spaces[0]))
-	{
-	  dolfin_error("FunctionAssigner.cpp",
-		       "assign functions",
-		       "The assigning Function is not in the assigning FunctionSpaces");
-	}
+        dolfin_assert(assigning_funcs[0]);
+        if (!assigning_funcs[0]->in(*_assigning_spaces[0]))
+        {
+          dolfin_error("FunctionAssigner.cpp",
+                       "assign functions",
+                       "The assigning Function is not in the assigning "
+                       "FunctionSpaces");
+        }
       }
 
       // Check 1-N assignment
       else
       {
-	dolfin_assert(assigning_funcs[i]);
-	dolfin_assert((*_assigning_spaces[0])[i]);
-	if (!assigning_funcs[i]->in(*(*_assigning_spaces[0])[i]))
-	{
-	  dolfin_error("FunctionAssigner.cpp",
-		       "assign functions",
-		       "The assigning sub Functions are not in the assigning sub FunctionSpaces");
-	}
+        dolfin_assert(assigning_funcs[i]);
+        dolfin_assert((*_assigning_spaces[0])[i]);
+        if (!assigning_funcs[i]->in(*(*_assigning_spaces[0])[i]))
+        {
+          dolfin_error("FunctionAssigner.cpp",
+                       "assign functions",
+                       "The assigning sub Functions are not in the assigning "
+                       "sub FunctionSpaces");
+        }
       }
     }
     else
@@ -289,9 +295,10 @@ void FunctionAssigner::_assign(
       // Check N-1 assignment
       if (!assigning_funcs[i]->in(*_assigning_spaces[i]))
       {
-	dolfin_error("FunctionAssigner.cpp",
-		     "assign function",
-		     "The assigning Functions are not in the assigning FunctionSpaces");
+        dolfin_error("FunctionAssigner.cpp",
+                     "assign function",
+                     "The assigning Functions are not in the assigning "
+                     "FunctionSpaces");
       }
     }
 
@@ -299,29 +306,32 @@ void FunctionAssigner::_assign(
     if (i != 0)
     {
       dolfin_assert(receiving_funcs[i]->_vector);
-      same_receiving_vector
-        = (recieving_vector != receiving_funcs[i]->_vector.get())
-	&& same_receiving_vector;
+      same_receiving_vector = same_receiving_vector
+        && (receiving_vector == receiving_funcs[i]->_vector.get());
     }
 
     // Get assigning values
     assigning_funcs[i]->_vector->get_local(&_transfer[i][0],
                                            _transfer[i].size(),
-					   &_assigning_indices[i][0]);
+             &_assigning_indices[i][0]);
 
     // Set receiving values
     receiving_funcs[i]->_vector->set_local(&_transfer[i][0],
                                            _transfer[i].size(),
                                            &_receiving_indices[i][0]);
 
-    // If not same receiving vector
-    if (!same_receiving_vector)
-      receiving_funcs[i]->_vector->apply("insert");
   }
 
-  // If same receiving vector
+  // Apply to common same vector or all of them
   if (same_receiving_vector)
+  {
     receiving_funcs[0]->_vector->apply("insert");
+  }
+  else
+  {
+    for (std::size_t i = 0; i < N; i++)
+      receiving_funcs[i]->_vector->apply("insert");
+  }
 }
 //-----------------------------------------------------------------------------
 const Mesh& FunctionAssigner::_get_mesh() const
@@ -329,16 +339,18 @@ const Mesh& FunctionAssigner::_get_mesh() const
   // Check for empty space vectors
   if (_assigning_spaces.size() == 0)
   {
-   dolfin_error("FunctionAssigner.cpp",
+    dolfin_error("FunctionAssigner.cpp",
                  "create function assigner",
-                 "Expected at least one FunctionSpace for the assigning spaces");
+                 "Expected at least one FunctionSpace "
+                 "for the assigning spaces");
   }
 
   if (_receiving_spaces.size()==0)
   {
     dolfin_error("FunctionAssigner.cpp",
                  "create function assigner",
-                 "Expected at least one FunctionSpace for the receiving spaces");
+                 "Expected at least one FunctionSpace "
+                 "for the receiving spaces");
   }
 
   // Get mesh
@@ -355,8 +367,9 @@ const Mesh& FunctionAssigner::_get_mesh() const
     if (&mesh != _assigning_spaces[i]->mesh().get())
     {
       dolfin_error("FunctionAssigner.cpp",
-		   "create function assigner",
-		   "Expected all FunctionSpaces to be defined over the same Mesh");
+                   "create function assigner",
+                   "Expected all FunctionSpaces to be defined "
+                   "over the same Mesh");
     }
   }
 
@@ -368,8 +381,9 @@ const Mesh& FunctionAssigner::_get_mesh() const
     if (&mesh != _receiving_spaces[i]->mesh().get())
     {
       dolfin_error("FunctionAssigner.cpp",
-		   "create function assigner",
-		   "Expected all FunctionSpaces to be defined over the same Mesh");
+                   "create function assigner",
+                   "Expected all FunctionSpaces to be defined "
+                   "over the same Mesh");
     }
   }
 
@@ -398,11 +412,12 @@ void FunctionAssigner::_check_and_build_indices(
       if (assigning_spaces[i]->dofmap()->num_entity_dofs(entity_dim)
           != receiving_spaces[i]->dofmap()->num_entity_dofs(entity_dim))
       {
-	dolfin_error("FunctionAssigner.cpp",
-		     "create function assigner",
-		     "The assigning and receiving FunctionSpaces have incompatible"
-		     " number of entity dofs for entity %d and space no: %d",
-		     entity_dim, i);
+        dolfin_error("FunctionAssigner.cpp",
+                     "create function assigner",
+                     "The assigning and receiving FunctionSpaces have "
+                     "incompatible number of entity dofs for entity %d "
+                     "and space no: %d",
+                     entity_dim, i);
       }
     }
   }
@@ -450,19 +465,19 @@ void FunctionAssigner::_check_and_build_indices(
       // Check that both spaces have the same number of dofs
       if (assigning_cell_dofs.size() != receiving_cell_dofs.size())
       {
-	dolfin_error("FunctionAssigner.cpp",
-		     "create function assigner",
-		     "The receiving and assigning spaces do not have the same "
-		     "number of dofs per cell");
+        dolfin_error("FunctionAssigner.cpp",
+                     "create function assigner",
+                     "The receiving and assigning spaces do not have the same "
+                     "number of dofs per cell");
       }
 
       // Iterate over the local dofs and collect on-process dofs
       for (std::size_t j = 0; j < assigning_cell_dofs.size(); j++)
       {
-	const std::size_t assigning_dof = assigning_cell_dofs[j];
-	const std::size_t receiving_dof = receiving_cell_dofs[j];
-	if (assigning_dof < assigning_range && receiving_dof < receiving_range)
-	  receiving_assigning_map[receiving_dof] = assigning_dof;
+        const std::size_t assigning_dof = assigning_cell_dofs[j];
+        const std::size_t receiving_dof = receiving_cell_dofs[j];
+        if (assigning_dof < assigning_range && receiving_dof < receiving_range)
+          receiving_assigning_map[receiving_dof] = assigning_dof;
       }
     }
 
