@@ -2,6 +2,7 @@
 - More careful checks of Dirichlet BC function spaces
 - Change definition of FunctionSpace::component()
 - Adaptive solving now works for tensor-valued unknowns
+- Improve logging of PETSc errors; details logged at level TRACE
 2016.1.0 [2016-06-23]
 - Remove support for 'uint'-valued MeshFunction (replaced by 'size_t')
 - Major performance improvements and simplifications of the XDMF IO.
