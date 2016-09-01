@@ -328,6 +328,9 @@ void FunctionAssigner::_assign(
   // If same receiving vector
   if (same_receiving_vector)
     receiving_funcs[0]->_vector->apply("insert");
+  // Apply first anyway because it has not been done yet
+  else
+    receiving_funcs[0]->_vector->apply("insert");
 }
 //-----------------------------------------------------------------------------
 const Mesh& FunctionAssigner::_get_mesh() const
