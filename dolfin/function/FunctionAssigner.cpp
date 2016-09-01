@@ -320,17 +320,18 @@ void FunctionAssigner::_assign(
                                            _transfer[i].size(),
                                            &_receiving_indices[i][0]);
 
-    // If not same receiving vector
-    if (!same_receiving_vector)
-      receiving_funcs[i]->_vector->apply("insert");
   }
 
-  // If same receiving vector
+  // Apply to common same vector or all of them
   if (same_receiving_vector)
+  {
     receiving_funcs[0]->_vector->apply("insert");
-  // Apply first anyway because it has not been done yet
+  }
   else
-    receiving_funcs[0]->_vector->apply("insert");
+  {
+    for (std::size_t i = 0; i < N; i++)
+      receiving_funcs[i]->_vector->apply("insert");
+  }
 }
 //-----------------------------------------------------------------------------
 const Mesh& FunctionAssigner::_get_mesh() const
