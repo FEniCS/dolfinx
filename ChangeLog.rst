@@ -1,346 +1,396 @@
+Dev
+---
+
 - Add pylit to generate demo doc from rst
 - More careful checks of Dirichlet BC function spaces
 - Change definition of FunctionSpace::component()
 - Adaptive solving now works for tensor-valued unknowns
 - Improve logging of PETSc errors; details logged at level TRACE
+
 2016.1.0 [2016-06-23]
+---------------------
 - Remove support for 'uint'-valued MeshFunction (replaced by 'size_t')
 - Major performance improvements and simplifications of the XDMF IO.
 - Remove Zoltan graph partitioning interface
-- Add new algorithm for computing mesh entiites. Typical speed-up
-	of two with gcc and four with clang. Reduced memory usage for
-	meshes with irregularly numbered cells.
-- Remove STLMatrix, STLVector, MUMPSLUSolver and PastixLUSolver classes
+- Add new algorithm for computing mesh entiites. Typical speed-up of
+  two with gcc and four with clang. Reduced memory usage for meshes
+  with irregularly numbered cells.
+- Remove STLMatrix, STLVector, MUMPSLUSolver and PastixLUSolver
+  classes
 - Remove PETScPreconditioner::set_near_nullspace and add
-	PETScMatrix::set_near_nullspace
+  PETScMatrix::set_near_nullspace
 - Build system updates for VTK 7.0
 - Remove XDMF from File interface. XDMF is XML based, and has many
-	possibilities for file access, which are not accessible through
-	the limited File interface and "<<" ">>" operators. Instead of
-	File, use XDMFFile, and use XDMFFile.read() and XDMFFile.write()
-	for I/O. Demos and tests have been updated to show usage.  XDMF
-	now also supports ASCII I/O in serial, useful for compatibility
-	with users who do not have the HDF5 library available.
-- Require polynomial degree or finite element for Expressions in
-	the Python interface (fixes Issue #355,
-	https://bitbucket.org/fenics-project/dolfin/issues/355)
+  possibilities for file access, which are not accessible through the
+  limited File interface and "<<" ">>" operators. Instead of File, use
+  XDMFFile, and use XDMFFile.read() and XDMFFile.write() for
+  I/O. Demos and tests have been updated to show usage.  XDMF now also
+  supports ASCII I/O in serial, useful for compatibility with users
+  who do not have the HDF5 library available.
+- Require polynomial degree or finite element for Expressions in the
+  Python interface (fixes Issue #355,
+  https://bitbucket.org/fenics-project/dolfin/issues/355)
 - Switch to Google Test framwork for C++ unit tests
 - Fix bug when reading domain data from mesh file for a ghosted mesh
 - Add interface for manipulating mesh geometry using (higher-order) FE
-	functions: free functions set_coordinates, get_coordinates, create_mesh
+  functions: free functions set_coordinates, get_coordinates,
+  create_mesh
 - Fix bug when reading domain data from mesh file for a ghosted mesh.
 - Remove reference versions of constructors for many classes that
-	store a pointer/reference to the object passed to the
-	constructor. This is an intrusive interface change for C++ users,
-	but necessary to improve code maintainabilty and to improve memory
-	safety. The Python interface is (virtually) unaffected.
+  store a pointer/reference to the object passed to the
+  constructor. This is an intrusive interface change for C++ users,
+  but necessary to improve code maintainabilty and to improve memory
+  safety. The Python interface is (virtually) unaffected.
 - Remove class SubSpace. Using FunctionSpace::sub(...) instead
 - Remove reference versions constructors of NonlinearVariationalSolver
 - Remove setting of bounds from NonlinearVariationalSolver (was
-	already available through NonlinearVariationalProblem)
-- Update Trilinos support to include Amesos2, and better support from Python
-- Rewrite interface of TensorLayout and SparsityPattern; local-to-global
-	maps now handled using new IndexMap class; GenericSparsityPattern
-	class removed
+  already available through NonlinearVariationalProblem)
+- Update Trilinos support to include Amesos2, and better support from
+  Python
+- Rewrite interface of TensorLayout and SparsityPattern;
+  local-to-global maps now handled using new IndexMap class;
+  GenericSparsityPattern class removed
 - Remove QT (was an optional dependency)
-- PETScTAOSolver::solve() now returns a pair of number of
-	iterations (std::size_t) and whether iteration converged (bool)
-- Better quality refinement in 2D in Plaza algorithm, by choosing refinement
-	pattern based on max/min edge ratio
+- PETScTAOSolver::solve() now returns a pair of number of iterations
+  (std::size_t) and whether iteration converged (bool)
+- Better quality refinement in 2D in Plaza algorithm, by choosing
+  refinement pattern based on max/min edge ratio
 - Removed refine_cell() method in CellTypes
 - Enable marker refinement to work in parallel for 1D meshes too
 - Add std::abort to Python exception hook to avoid parallel deadlocks
-- Extend dof_to_vertex_map with unowned dofs, thus making dof_to_vertex_map
-	an inverse of vertex_to_dof_map
+- Extend dof_to_vertex_map with unowned dofs, thus making
+  dof_to_vertex_map an inverse of vertex_to_dof_map
 - Clean-up in PyDOLFIN function space design, issue #576
 - Deprecate MixedFunctionSpace and EnrichedFunctionSpace in favour of
-	initialization by suitable UFL element
+  initialization by suitable UFL element
 - Add experimental matplotlib-based plotting backend, see mplot demo
 - Remove method argument of DirichletBC::get_boundary_values()
 - Change return types of free functions adapt() to shared_ptr
+
 1.6.0 [2015-07-28]
+------------------
 - Remove redundant pressure boundary condition in Stokes demos
 - Require Point in RectangleMesh and BoxMesh constructors
 - Remove BinaryFile (TimeSeries now requires HDF5)
-- Add (highly experimental) support for Tpetra matrices and
-	vectors from Trilinos, interfacing to Belos, Amesos2, IfPack2 and
-	Muelu.
-- Enable (highly experimental) support for Quadrilateral and Hexahedral meshes,
-	including some I/O, but no assembly yet.
+- Add (highly experimental) support for Tpetra matrices and vectors
+  from Trilinos, interfacing to Belos, Amesos2, IfPack2 and Muelu.
+- Enable (highly experimental) support for Quadrilateral and
+  Hexahedral meshes, including some I/O, but no assembly yet.
 - Enable UMFPACK and CHOLMOD solvers with Eigen backend
 - Add an MPI_Comm to logger, currently defaulted to MPI_COMM_WORLD
-	allowing better control over output in parallel
-- Experimental output of quadratic geometry in XDMF files,
-	allows more exact visualisation of P2 Functions
+  allowing better control over output in parallel
+- Experimental output of quadratic geometry in XDMF files, allows more
+  exact visualisation of P2 Functions
 - Remove GenericMatrix::compressed (see Issue #61)
 - Deprecate and PETScKryloveSolver::set_nullspace() and add
-	PETScMatrix::set_nullspace()
+  PETScMatrix::set_nullspace()
 - Remove uBLAS backend
 - Remove UmfpackLUSolver and CholmodSolver
 - Add EigenMatrix/Vector::data()
 - Remove GenericMatrix/Vector::data() and GenericMatrix/Vector::data()
-	(to use backends that support data(), cast first to backend type, e.g.
-	A = A.as_backend_type()
+  (to use backends that support data(), cast first to backend type,
+  e.g.  A = A.as_backend_type()
 - Remove cmake.local, replaced by fenics-install-component.sh
-- Make interior facet integrals define - and + cells ordered by cell_domains
-	value.
+- Make interior facet integrals define - and + cells ordered by
+  cell_domains value.
 - Remove deprecated arguments *_domains from assemble() and Form().
 - Change measure definition notation from dx[mesh_function] to
-	dx(subdomain_data=mesh_function).
+  dx(subdomain_data=mesh_function).
 - Set locale to "C" before reading from file
-- Change GenericDofMap::cell_dofs return type from const std::vector<..>&
-	to ArrayView<const ..>
+- Change GenericDofMap::cell_dofs return type from const
+  std::vector<..>& to ArrayView<const ..>
 - Add ArrayView class for views into arrays
 - Change fall back linear algebra backend to Eigen
 - Add Eigen linear algebra backend
-- Remove deprecated GenericDofMap::geometric_dim function (fixes Issue #443)
-- Add quadrature rules for multimesh/cut-cell integration up to order 6
+- Remove deprecated GenericDofMap::geometric_dim function (fixes Issue
+  #443)
+- Add quadrature rules for multimesh/cut-cell integration up to order
+  6
 - Implement MPI reductions and XML ouput of Table class
-- list_timings() is now collective and returns MPI average across processes
+- list_timings() is now collective and returns MPI average across
+  processes
 - Add dump_timings_to_xml()
 - Add enum TimingType { wall, user, system } for selecting wall-clock,
-	user and system time in timing routines
+  user and system time in timing routines
 - Bump required SWIG version to 3.0.3
 - Increase default maximum iterations in NewtonSolver to 50.
 - Deprecate Python free function homogenize(bc) in favour of member
-	function DirichletBC::homogenize()
+  function DirichletBC::homogenize()
+
 1.5.0 [2015-01-12]
- - DG demos working in parallel
- - Simplify re-use of LU factorisations
- - CMake 3 compatibility
- - Make underlying SLEPc object accessible
- - Full support for linear algebra backends with 64-bit integers
- - Add smoothed aggregation AMG elasticity demo
- - Add support for slepc4py
- - Some self-assignment fixes in mesh data structures
- - Deprecated GenericDofMap::geometric_dimension()
- - Experimental support for ghosted meshes (overlapping region in parallel)
- - Significant memory reduction in dofmap storage
- - Re-write dofmap construction with significant performance and scaling
-	improvements in parallel
- - Switch to local (process-wise) indexing for dof indices
- - Support local (process-wise) indexing in linear algerbra backends
- - Added support for PETSc 3.5, require version >= 3.3
- - Exposed DofMap::tabulate_local_to_global_dofs,
-	MeshEntity::sharing_processes in Python
- - Added GenericDofmap::local_dimension("all"|"owned"|"unowned")
- - Added access to SLEPc or slepc4py EPS object of SLEPcEigenSolver
-	(requires slepc4py version >= 3.5.1)
- - LinearOperator can now be accessed using petsc4py
- - Add interface (PETScTAOSolver) for the PETSc nonlinear (bound-constrained)
-	optimisation solver (TAO)
- - Add GenericMatrix::nnz() function to return number of nonzero
-	entries in matrix (fixes #110)
- - Add smoothed aggregation algerbraic multigrid demo for elasticity
- - Add argument 'function' to project, to store the result into a preallocated
-	function
- - Remove CGAL dependency and mesh generation, now provided by mshr
- - Python 2.7 required
- - Add experimental Python 3 support. Need swig version 3.0.3 or later
- - Move to py.test, speed up unit tests and make tests more robust in parallel
- - Repeated initialization of PETScMatrix is now an error
- - MPI interface change: num_processes -> size, process_number -> rank
- - Add optional argument project(..., function=f), to avoid superfluous
-	allocation
- - Remove excessive printing of points during extrapolation
- - Clean up DG demos by dropping restrictions of Constants: c('+') -> c
- - Fix systemassembler warning when a and L both provide the same subdomain
-	data.
- - Require mesh instead of cell argument to FacetArea, FacetNormal,
-	CellSize, CellVolume, SpatialCoordinate, Circumradius,
-	MinFacetEdgeLength, MaxFacetEdgeLength
- - Remove argument reset_sparsity to assemble()
- - Simplify assemble() and Form() signature: remove arguments mesh,
-	coefficients, function_spaces, common_cell. These are now
-	all found by inspecting the UFL form
- - Speed up assembly of forms with multiple integrals depending on
-	different functions, e.g. f*dx(1) + g*dx(2).
- - Handle accessing of GenericVectors using numpy arrays in python layer
-	instead of in hard-to-maintain C++ layer
- - Add support for mpi groups in jit-compilation
- - Make access to HDFAttributes more dict like
- - Add 1st and 2nd order Rush Larsen schemes for the PointIntegralSolver
- - Add vertex assembler for PointIntegrals
- - Add support for assembly of custom_integral
- - Add support for multimesh assembly, function spaces, dofmaps and functions
- - Fix to Cell-Point collision detection to prevent Points inside the mesh
-	from falling between Cells due to rounding errors
- - Enable reordering of cells and vertices in parallel via SCOTCH and the
-	Giibs-Poole-Stockmeyer algorithm
- - Efficiency improvements in dof assignment in parallel, working on HPC up to
-	24000 cores
- - Introduction of PlazaRefinement methods based on refinement of the Mesh
-	skeleton, giving better quality refinement in 3D in parallel
- - Basic support for 'ghost cells' allowing integration over interior facets in
-	parallel
+------------------
+- DG demos working in parallel
+- Simplify re-use of LU factorisations
+- CMake 3 compatibility
+- Make underlying SLEPc object accessible
+- Full support for linear algebra backends with 64-bit integers
+- Add smoothed aggregation AMG elasticity demo
+- Add support for slepc4py
+- Some self-assignment fixes in mesh data structures
+- Deprecated GenericDofMap::geometric_dimension()
+- Experimental support for ghosted meshes (overlapping region in parallel)
+- Significant memory reduction in dofmap storage
+- Re-write dofmap construction with significant performance and
+  scaling improvements in parallel
+- Switch to local (process-wise) indexing for dof indices
+- Support local (process-wise) indexing in linear algerbra backends
+- Added support for PETSc 3.5, require version >= 3.3
+- Exposed DofMap::tabulate_local_to_global_dofs,
+  MeshEntity::sharing_processes in Python
+- Added GenericDofmap::local_dimension("all"|"owned"|"unowned")
+- Added access to SLEPc or slepc4py EPS object of SLEPcEigenSolver
+  (requires slepc4py version >= 3.5.1)
+- LinearOperator can now be accessed using petsc4py
+- Add interface (PETScTAOSolver) for the PETSc nonlinear
+  (bound-constrained) optimisation solver (TAO)
+- Add GenericMatrix::nnz() function to return number of nonzero
+  entries in matrix (fixes #110)
+- Add smoothed aggregation algerbraic multigrid demo for elasticity
+- Add argument 'function' to project, to store the result into a
+  preallocated function
+- Remove CGAL dependency and mesh generation, now provided by mshr
+- Python 2.7 required
+- Add experimental Python 3 support. Need swig version 3.0.3 or later
+- Move to py.test, speed up unit tests and make tests more robust in
+  parallel
+- Repeated initialization of PETScMatrix is now an error
+- MPI interface change: num_processes -> size, process_number -> rank
+- Add optional argument project(..., function=f), to avoid superfluous
+  allocation
+- Remove excessive printing of points during extrapolation
+- Clean up DG demos by dropping restrictions of Constants: c('+') -> c
+- Fix systemassembler warning when a and L both provide the same
+  subdomain data.
+- Require mesh instead of cell argument to FacetArea, FacetNormal,
+  CellSize, CellVolume, SpatialCoordinate, Circumradius,
+  MinFacetEdgeLength, MaxFacetEdgeLength
+- Remove argument reset_sparsity to assemble()
+- Simplify assemble() and Form() signature: remove arguments mesh,
+  coefficients, function_spaces, common_cell. These are now all found
+  by inspecting the UFL form
+- Speed up assembly of forms with multiple integrals depending on
+  different functions, e.g. f*dx(1) + g*dx(2).
+- Handle accessing of GenericVectors using numpy arrays in python
+  layer instead of in hard-to-maintain C++ layer
+- Add support for mpi groups in jit-compilation
+- Make access to HDFAttributes more dict like
+- Add 1st and 2nd order Rush Larsen schemes for the
+  PointIntegralSolver
+- Add vertex assembler for PointIntegrals
+- Add support for assembly of custom_integral
+- Add support for multimesh assembly, function spaces, dofmaps and
+  functions
+- Fix to Cell-Point collision detection to prevent Points inside the
+  mesh from falling between Cells due to rounding errors
+- Enable reordering of cells and vertices in parallel via SCOTCH and
+  the Giibs-Poole-Stockmeyer algorithm
+- Efficiency improvements in dof assignment in parallel, working on
+  HPC up to 24000 cores
+- Introduction of PlazaRefinement methods based on refinement of the
+  Mesh skeleton, giving better quality refinement in 3D in parallel
+- Basic support for 'ghost cells' allowing integration over interior
+  facets in parallel
+
 1.4.0 [2014-06-02]
- - Feature: Add set_diagonal (with GenericVector) to GenericMatrix
- - Fix many bugs associated with cell orientations on manifolds
- - Force all global dofs to be ordered last and to be on the last process
-	in parallel
- - Speed up dof reordering of mixed space including global dofs by removing
-	the latter from graph reordering
- - Force all dofs on a shared facet to be owned by the same process
- - Add FEniCS ('fenics') Python module, identical with DOLFIN Python module
- - Add function Form::set_some_coefficients()
- - Remove Boost.MPI dependency
- - Change GenericMatrix::compresss to return a new matrix (7be3a29)
- - Add function GenericTensor::empty()
- - Deprecate resizing of linear algebra via the GenericFoo interfaces
-	(fixes #213)
- - Deprecate MPI::process_number() in favour of MPI::rank(MPI_Comm)
- - Use PETSc built-in reference counting to manage lifetime of wrapped PETSc
-	objects
- - Remove random access function from MeshEntityIterator (fixes #178)
- - Add support for VTK 6 (fixes #149)
- - Use MPI communicator in interfaces. Permits the creation of distributed and
-	local objects, e.g. Meshes.
- - Reduce memory usage and increase speed of mesh topology computation
+------------------
+- Feature: Add set_diagonal (with GenericVector) to GenericMatrix
+- Fix many bugs associated with cell orientations on manifolds
+- Force all global dofs to be ordered last and to be on the last
+  process in parallel
+- Speed up dof reordering of mixed space including global dofs by
+  removing the latter from graph reordering
+- Force all dofs on a shared facet to be owned by the same process
+- Add FEniCS ('fenics') Python module, identical with DOLFIN Python
+  module
+- Add function Form::set_some_coefficients()
+- Remove Boost.MPI dependency
+- Change GenericMatrix::compresss to return a new matrix (7be3a29)
+- Add function GenericTensor::empty()
+- Deprecate resizing of linear algebra via the GenericFoo interfaces
+  (fixes #213)
+- Deprecate MPI::process_number() in favour of MPI::rank(MPI_Comm)
+- Use PETSc built-in reference counting to manage lifetime of wrapped
+  PETSc objects
+- Remove random access function from MeshEntityIterator (fixes #178)
+- Add support for VTK 6 (fixes #149)
+- Use MPI communicator in interfaces. Permits the creation of
+  distributed and local objects, e.g. Meshes.
+- Reduce memory usage and increase speed of mesh topology computation
+
 1.3.0 [2014-01-07]
- - Feature: Enable assignment of sparse MeshValueCollections to MeshFunctions
- - Feature: Add free function assign that is used for sub function assignment
- - Feature: Add class FunctionAssigner that cache dofs for sub function
-	assignment
- - Fix runtime dependency on checking swig version
- - Deprecate DofMap member methods vertex_to_dof_map and dof_to_vertex_map
- - Add free functions: vertex_to_dof_map and dof_to_vertex_map, and correct the
-	ordering of the map.
- - Introduce CompiledSubDomain a more robust version of compiled_subdomains,
-	which is now deprecated
- - CMake now takes care of calling the correct generate-foo script if so needed.
- - Feature: Add new built-in computational geometry library (BoundingBoxTree)
- - Feature: Add support for setting name and label to an Expression when
-	constructed
- - Feature: Add support for passing a scalar GenericFunction as default value
-	to a CompiledExpression
- - Feature: Add support for distance queries for 3-D meshes
- - Feature: Add PointIntegralSolver, which uses the MultiStageSchemes to solve
-	local ODEs at Vertices
- - Feature: Add RKSolver and MultiStageScheme for general time integral solvers
- - Feature: Add support for assigning a Function with linear combinations of
-	Functions, which lives in the same FunctionSpace
- - Added Python wrapper for SystemAssembler
- - Added a demo using compiled_extension_module with separate source files
- - Fixes for NumPy 1.7
- - Remove DOLFIN wrapper code (moved to FFC)
- - Add set_options_prefix to PETScKrylovSolver
- - Remove base class BoundarCondition
- - Set block size for PETScMatrix when available from TensorLayout
- - Add support to get block compressed format from STLMatrix
- - Add detection of block structures in the dofmap for vector equations
- - Expose PETSc GAMG parameters
- - Modify SystemAssembler to support separate assembly of A and b
+------------------
+- Feature: Enable assignment of sparse MeshValueCollections to
+  MeshFunctions
+- Feature: Add free function assign that is used for sub function
+  assignment
+- Feature: Add class FunctionAssigner that cache dofs for sub function
+  assignment
+- Fix runtime dependency on checking swig version
+- Deprecate DofMap member methods vertex_to_dof_map and
+  dof_to_vertex_map
+- Add free functions: vertex_to_dof_map and dof_to_vertex_map, and
+  correct the ordering of the map.
+- Introduce CompiledSubDomain a more robust version of
+  compiled_subdomains, which is now deprecated
+- CMake now takes care of calling the correct generate-foo script if
+  so needed.
+- Feature: Add new built-in computational geometry library
+  (BoundingBoxTree)
+- Feature: Add support for setting name and label to an Expression
+  when constructed
+- Feature: Add support for passing a scalar GenericFunction as default
+  value to a CompiledExpression
+- Feature: Add support for distance queries for 3-D meshes
+- Feature: Add PointIntegralSolver, which uses the MultiStageSchemes
+  to solve local ODEs at Vertices
+- Feature: Add RKSolver and MultiStageScheme for general time integral
+  solvers
+- Feature: Add support for assigning a Function with linear
+  combinations of Functions, which lives in the same FunctionSpace
+- Added Python wrapper for SystemAssembler
+- Added a demo using compiled_extension_module with separate source
+  files
+- Fixes for NumPy 1.7
+- Remove DOLFIN wrapper code (moved to FFC)
+- Add set_options_prefix to PETScKrylovSolver
+- Remove base class BoundarCondition
+- Set block size for PETScMatrix when available from TensorLayout
+- Add support to get block compressed format from STLMatrix
+- Add detection of block structures in the dofmap for vector equations
+- Expose PETSc GAMG parameters
+- Modify SystemAssembler to support separate assembly of A and b
+
 1.2.0 [2013-03-24]
- - Fixes bug where child/parent hierarchy in Python were destroyed
- - Add utility script dolfin-get-demos
- - MeshFunctions in python now support iterable protocol
- - Add timed VTK output for Mesh and MeshFunction in addtion to Functions
- - Expose ufc::dofmap::tabulate_entity_dofs to GenericDofMap interface
- - Expose ufc::dofmap::num_entity_dofs to GenericDofMap interface
- - Allow setting of row dof coordinates in preconditioners (only works with
-	PETSc backed for now)
- - Expose more PETSc/ML parameters
- - Improve speed to tabulating coordinates in some DofMap functions
- - Feature: Add support for passing a Constant as default value to a
-	CompiledExpression
- - Fix bug in dimension check for 1-D ALE
- - Remove some redundant graph code
- - Improvements in speed of parallel dual graph builder
- - Fix bug in XMDF output for cell-based Functions
- - Fixes for latest version of clang compiler
- - LocalSolver class added to efficiently solve cell-wise problems
- - New implementation of periodic boundary conditions. Now incorporated into
-	the dofmap
- - Optional arguments to assemblers removed
- - SymmetricAssembler removed
- - Domains for assemblers can now only be attached to forms
- - SubMesh can now be constructed without a CellFunction argument, if the
-	MeshDomain contains marked celldomains.
- - MeshDomains are propagated to a SubMesh during construction
- - Simplify generation of a MeshFunction from MeshDomains: No need to call
-	mesh_function with mesh
- - Rename dolfin-config.cmake to DOLFINConfig.cmake
- - Use CMake to configure JIT compilation of extension modules
- - Feature: Add vertex_to_dof_map to DofMap, which map vertex indices to
-	dolfin dofs
- - Feature: Add support for solving on m dimensional meshes embedded in n >= m
-	dimensions
+------------------
+- Fixes bug where child/parent hierarchy in Python were destroyed
+- Add utility script dolfin-get-demos
+- MeshFunctions in python now support iterable protocol
+- Add timed VTK output for Mesh and MeshFunction in addtion to Functions
+- Expose ufc::dofmap::tabulate_entity_dofs to GenericDofMap interface
+- Expose ufc::dofmap::num_entity_dofs to GenericDofMap interface
+- Allow setting of row dof coordinates in preconditioners (only works
+  with PETSc backed for now)
+- Expose more PETSc/ML parameters
+- Improve speed to tabulating coordinates in some DofMap functions
+- Feature: Add support for passing a Constant as default value to a
+  CompiledExpression
+- Fix bug in dimension check for 1-D ALE
+- Remove some redundant graph code
+- Improvements in speed of parallel dual graph builder
+- Fix bug in XMDF output for cell-based Functions
+- Fixes for latest version of clang compiler
+- LocalSolver class added to efficiently solve cell-wise problems
+- New implementation of periodic boundary conditions. Now incorporated
+  into the dofmap
+- Optional arguments to assemblers removed
+- SymmetricAssembler removed
+- Domains for assemblers can now only be attached to forms
+- SubMesh can now be constructed without a CellFunction argument, if
+  the MeshDomain contains marked celldomains.
+- MeshDomains are propagated to a SubMesh during construction
+- Simplify generation of a MeshFunction from MeshDomains: No need to
+  call mesh_function with mesh
+- Rename dolfin-config.cmake to DOLFINConfig.cmake
+- Use CMake to configure JIT compilation of extension modules
+- Feature: Add vertex_to_dof_map to DofMap, which map vertex indices
+  to dolfin dofs
+- Feature: Add support for solving on m dimensional meshes embedded in
+  n >= m dimensions
+
 1.1.0 [2013-01-08]
- - Add support for solving singular problems with Krylov solvers (PETSc only)
- - Add new typedef dolfin::la_index for consistent indexing with linear algebra
-	backends.
- - Change default unsigned integer type to std::size_t
- - Add support to attaching operator null space to preconditioner
-   (required for smoothed aggregation AMG)
- - Add basic interface to the PETSc AMG preconditioner
- - Make SCOTCH default graph partitioner (GNU-compatible free license, unlike
-	ParMETIS)
- - Add scalable construction of mesh dual graph for mesh partitioning
- - Improve performance of mesh building in parallel
- - Add mesh output to SVG
- - Add support for Facet and cell markers to mesh converted from Diffpack
- - Add support for Facet and cell markers/attributes to mesh converted from
-	Triangle
- - Change interface for auto-adaptive solvers: these now take the goal
-   functional as a constructor argument
- - Add memory usage monitor: monitor_memory_usage()
- - Compare mesh hash in interpolate_vertex_values
- - Add hash() for Mesh and MeshTopology
- - Expose GenericVector::operator{+=,-=,+,-}(double) to Python
- - Add function Function::compute_vertex_values not needing a mesh argument
- - Add support for XDMF and HDF5
- - Add new interface LinearOperator for matrix-free linear systems
- - Remove MTL4 linear algebra backend
- - Rename down_cast --> as_type in C++ / as_backend_type in Python
- - Remove KrylovMatrix interface
- - Remove quadrature classes
- - JIT compiled C++ code can now include a dolfin namespace
- - Expression string parsing now understand C++ namespace such as std::cosh
- - Fix bug in Expression so one can pass min, max
- - Fix bug in SystemAssembler, where mesh.init(D-1, D) was not called before assemble
- - Fix bug where the reference count of Py_None was not increased
- - Fix bug in reading TimeSeries of size smaller than 3
- - Improve code design for Mesh FooIterators to avoid dubious down cast
- - Bug fix in destruction of PETSc user preconditioners
- - Add CellVolume(mesh) convenience wrapper to Python interface for UFL function
- - Fix bug in producing outward pointing normals of BoundaryMesh
- - Fix bug introduced by SWIG 2.0.5, where typemaps of templated typedefs
-   are not handled correctly
- - Fix bug introduced by SWIG 2.0.5, which treated uint as Python long
- - Add check that sample points for TimeSeries are monotone
- - Fix handling of parameter "report" in Krylov solvers
- - Add new linear algebra backend "PETScCusp" for GPU-accelerated linear algebra
- - Add sparray method in the Python interface of GenericMatrix, requires scipy.sparse
- - Make methods that return a view of contiguous c-arrays, via a NumPy array, keep a reference from the object so it wont get out of scope
- - Add parameter: "use_petsc_signal_handler", which enables/disable PETSc system signals
- - Avoid unnecessary resize of result vector for A*b
- - MPI functionality for distributing values between neighbours
- - SystemAssembler now works in parallel with topological/geometric boundary search
- - New symmetric assembler with ability for stand-alone RHS assemble
- - Major speed-up of DirichletBC computation and mesh marking
- - Major speed-up of assembly of functions and expressions
- - Major speed-up of mesh topology computation
- - Add simple 2D and 3D mesh generation (via CGAL)
- - Add creation of mesh from triangulations of points (via CGAL)
- - Split the SWIG interface into six combined modules instead of one
- - Add has_foo to easy check what solver and preconditioners are available
- - Add convenience functions for listing available linear_algebra_backends
- - Change naming convention for cpp unit tests test.cpp -> Foo.cpp
- - Added cpp unit test for GenericVector::operator{-,+,*,/}= for all la backends
- - Add functionality for rotating meshes
- - Add mesh generation based on NETGEN constructive solid geometry
- - Generalize SparsityPattern and STLMatrix to support column-wise storage
- - Add interfaces to wrap PaStiX and MUMPS direct solvers
- - Add CoordinateMatrix class
- - Make STLMatrix work in parallel
- - Remove all tr1::tuple and use boost::tuple
- - Fix wrong link in Python quick reference.
+------------------
+- Add support for solving singular problems with Krylov solvers (PETSc
+  only)
+- Add new typedef dolfin::la_index for consistent indexing with linear
+  algebra backends.
+- Change default unsigned integer type to std::size_t
+- Add support to attaching operator null space to preconditioner
+  (required for smoothed aggregation AMG)
+- Add basic interface to the PETSc AMG preconditioner
+- Make SCOTCH default graph partitioner (GNU-compatible free license,
+  unlike ParMETIS)
+- Add scalable construction of mesh dual graph for mesh partitioning
+- Improve performance of mesh building in parallel
+- Add mesh output to SVG
+- Add support for Facet and cell markers to mesh converted from Diffpack
+- Add support for Facet and cell markers/attributes to mesh converted
+  from Triangle
+- Change interface for auto-adaptive solvers: these now take the goal
+  functional as a constructor argument
+- Add memory usage monitor: monitor_memory_usage()
+- Compare mesh hash in interpolate_vertex_values
+- Add hash() for Mesh and MeshTopology
+- Expose GenericVector::operator{+=,-=,+,-}(double) to Python
+- Add function Function::compute_vertex_values not needing a mesh
+  argument
+- Add support for XDMF and HDF5
+- Add new interface LinearOperator for matrix-free linear systems
+- Remove MTL4 linear algebra backend
+- Rename down_cast --> as_type in C++ / as_backend_type in Python
+- Remove KrylovMatrix interface
+- Remove quadrature classes
+- JIT compiled C++ code can now include a dolfin namespace
+- Expression string parsing now understand C++ namespace such as
+  std::cosh
+- Fix bug in Expression so one can pass min, max
+- Fix bug in SystemAssembler, where mesh.init(D-1, D) was not called
+  before assemble
+- Fix bug where the reference count of Py_None was not increased
+- Fix bug in reading TimeSeries of size smaller than 3
+- Improve code design for Mesh FooIterators to avoid dubious down cast
+- Bug fix in destruction of PETSc user preconditioners
+- Add CellVolume(mesh) convenience wrapper to Python interface for UFL
+  function
+- Fix bug in producing outward pointing normals of BoundaryMesh
+- Fix bug introduced by SWIG 2.0.5, where typemaps of templated
+  typedefs are not handled correctly
+- Fix bug introduced by SWIG 2.0.5, which treated uint as Python long
+- Add check that sample points for TimeSeries are monotone
+- Fix handling of parameter "report" in Krylov solvers
+- Add new linear algebra backend "PETScCusp" for GPU-accelerated
+  linear algebra
+- Add sparray method in the Python interface of GenericMatrix,
+  requires scipy.sparse
+- Make methods that return a view of contiguous c-arrays, via a NumPy
+  array, keep a reference from the object so it wont get out of scope
+- Add parameter: "use_petsc_signal_handler", which enables/disable
+  PETSc system signals
+- Avoid unnecessary resize of result vector for A*b
+- MPI functionality for distributing values between neighbours
+- SystemAssembler now works in parallel with topological/geometric
+  boundary search
+- New symmetric assembler with ability for stand-alone RHS assemble
+- Major speed-up of DirichletBC computation and mesh marking
+- Major speed-up of assembly of functions and expressions
+- Major speed-up of mesh topology computation
+- Add simple 2D and 3D mesh generation (via CGAL)
+- Add creation of mesh from triangulations of points (via CGAL)
+- Split the SWIG interface into six combined modules instead of one
+- Add has_foo to easy check what solver and preconditioners are
+  available
+- Add convenience functions for listing available
+  linear_algebra_backends
+- Change naming convention for cpp unit tests test.cpp -> Foo.cpp
+- Added cpp unit test for GenericVector::operator{-,+,*,/}= for all la
+  backends
+- Add functionality for rotating meshes
+- Add mesh generation based on NETGEN constructive solid geometry
+- Generalize SparsityPattern and STLMatrix to support column-wise
+  storage
+- Add interfaces to wrap PaStiX and MUMPS direct solvers
+- Add CoordinateMatrix class
+- Make STLMatrix work in parallel
+- Remove all tr1::tuple and use boost::tuple
+- Fix wrong link in Python quick reference.
+
 1.0.0 [2011-12-07]
- - Change return value of IntervalCell::facet_area() 0.0 --> 1.0.
- - Recompile all forms with FFC 1.0.0
- - Fix for CGAL 3.9 on OS X
- - Improve docstrings for Box and Rectangle
- - Check number of dofs on local patch in extrapolation
+------------------
+- Change return value of IntervalCell::facet_area() 0.0 --> 1.0.
+- Recompile all forms with FFC 1.0.0
+- Fix for CGAL 3.9 on OS X
+- Improve docstrings for Box and Rectangle
+- Check number of dofs on local patch in extrapolation
+
 1.0-rc2 [2011-11-28]
  - Fix bug in 1D mesh refinement
  - Fix bug in handling of subdirectories for TimeSeries
