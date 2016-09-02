@@ -178,11 +178,13 @@ bool X3DOMParameters::get_x3d_stats() const
   return _show_x3d_stats;
 }
 //-----------------------------------------------------------------------------
-void X3DOMParameters::set_menu_display(bool show) {
+void X3DOMParameters::set_menu_display(bool show)
+{
   _menu_display = show;
 }
 //-----------------------------------------------------------------------------
-bool X3DOMParameters::get_menu_display() const {
+bool X3DOMParameters::get_menu_display() const
+{
   return _menu_display;
 }
 //-----------------------------------------------------------------------------
