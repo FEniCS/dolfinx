@@ -356,7 +356,7 @@ set(Boost_ADDITIONAL_VERSIONS 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
 find_package(Boost 1.48 QUIET REQUIRED)
 
-set(DOLFIN_BOOST_COMPONENTS filesystem program_options system iostreams timer)
+set(DOLFIN_BOOST_COMPONENTS filesystem program_options iostreams timer)
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
@@ -906,7 +906,22 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
         COMPONENT RuntimeExecutables)
 
 #------------------------------------------------------------------------------
-# Generate form files for tests, bench, demos and dolfin if not exists
+# Generate demo files from rst
+
+message(STATUS "")
+message(STATUS "Generating demo source files from reStructuredText")
+message(STATUS "--------------------------------------------------")
+file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst" "*.ufl.rst")
+foreach(rst_file ${demo_rst_files})
+  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+  #add_custom_command(TARGET demos_source PRE_BUILD
+  #  COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
+  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endforeach()
+
+#------------------------------------------------------------------------------
+# Generate form files for tests, bench, demos and DOLFIN if not exists
 # FIXME: Generate files in Build directory instead, at least for
 # bench, demo and tests
 
@@ -932,22 +947,6 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
   endif()
   set(COPY_DEMO_TEST_DEMO_DATA TRUE)
 endif()
-
-#------------------------------------------------------------------------------
-# Generate demo files from rst
-
-message(STATUS "")
-message(STATUS "Generating demo source files")
-message(STATUS "--------------------------------------------------")
-file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
-foreach(rst_file ${demo_rst_files})
-  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-  #add_custom_command(TARGET demos_source PRE_BUILD
-  #  COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
-  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-endforeach()
-
 
 #------------------------------------------------------------------------------
 # Generate CMakeLists.txt files for bench and demos if not

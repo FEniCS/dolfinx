@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2013-08-12
-// Last changed:
 
 #ifndef __DOLFIN_PETSC_OPTIONS_H
 #define __DOLFIN_PETSC_OPTIONS_H
@@ -28,10 +25,10 @@
 #include <petscoptions.h>
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/log/log.h>
+#include "PETScObject.h"
 
 namespace dolfin
 {
-
   /// These class provides static functions that permit users to set
   /// and retrieve PETSc options via the PETSc option/parameter
   /// system. The option must not be prefixed by '-', e.g.
@@ -63,21 +60,19 @@ namespace dolfin
     {
       SubSystemsManager::init_petsc();
 
+      if (option[0] != '-')
+        option = '-' + option;
+
       PetscErrorCode ierr;
-      std::string _option = "-" + option;
       #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-      ierr = PetscOptionsSetValue(_option.c_str(),
+      ierr = PetscOptionsSetValue(option.c_str(),
                boost::lexical_cast<std::string>(value).c_str());
       #else
-      ierr = PetscOptionsSetValue(NULL, _option.c_str(),
+      ierr = PetscOptionsSetValue(NULL, option.c_str(),
                boost::lexical_cast<std::string>(value).c_str());
       #endif
       if (ierr != 0)
-      {
-        dolfin_error("PETScOptions.h",
-                     "set PETSc option/parameter '" + option + "'",
-                     "PETSc error code is: %d", ierr);
-      }
+        PETScObject::petsc_error(ierr, __FILE__, "PetscOptionsSetValue");
     }
 
     /// Clear PETSc option
