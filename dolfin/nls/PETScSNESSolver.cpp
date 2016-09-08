@@ -492,14 +492,20 @@ void PETScSNESSolver::set_linear_solver_parameters()
 
     Parameters krylov_parameters = parameters("krylov_solver");
 
-    // Non-zero initial guess
-    const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
-    if (nonzero_guess)
-      KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
-    else
-      KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
+    // Set non-zero initial guess...
+    if (krylov_parameters["nonzero_initial_guess"].is_set())
+    {
+      const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
+      if (nonzero_guess)
+        KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
+      else
+        KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
+    }
+    // ... otherwise use the default, what has been set before,
+    // or directly through PETSc API or parameter system
 
-    if (krylov_parameters["monitor_convergence"])
+    if (krylov_parameters["monitor_convergence"].is_set()
+        && krylov_parameters["monitor_convergence"])
     {
       #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
       KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm,
@@ -518,13 +524,20 @@ void PETScSNESSolver::set_linear_solver_parameters()
       #endif
     }
 
-    // Set tolerances
-    const int max_iters = krylov_parameters["maximum_iterations"];
-    KSPSetTolerances(ksp,
-                     krylov_parameters["relative_tolerance"],
-                     krylov_parameters["absolute_tolerance"],
-                     krylov_parameters["divergence_limit"],
-                     max_iters);
+    // Check if a tolerance has been set
+    if (krylov_parameters["relative_tolerance"].is_set()
+        or krylov_parameters["absolute_tolerance"].is_set()
+        or krylov_parameters["divergence_limit"].is_set()
+        or krylov_parameters["maximum_iterations"].is_set())
+    {
+      // Set tolerances
+      const double rtol = krylov_parameters["relative_tolerance"].is_set() ? (double)krylov_parameters["relative_tolerance"] : PETSC_DEFAULT;
+      const double atol = krylov_parameters["absolute_tolerance"].is_set() ? (double)krylov_parameters["absolute_tolerance"] : PETSC_DEFAULT;
+      const double dtol = krylov_parameters["divergence_limit"].is_set() ? (double)krylov_parameters["divergence_limit"] : PETSC_DEFAULT;
+      const int max_it  = krylov_parameters["maximum_iterations"].is_set() ? (int)krylov_parameters["maximum_iterations"] : PETSC_DEFAULT;
+      ierr = KSPSetTolerances(ksp, rtol, atol, dtol, max_it);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetTolerances");
+    }
   }
   else if (linear_solver == "lu"
            || PETScLUSolver::_methods.count(linear_solver) != 0)

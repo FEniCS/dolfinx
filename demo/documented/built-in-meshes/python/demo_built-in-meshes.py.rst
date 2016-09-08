@@ -1,22 +1,32 @@
-.. Documentation for the built-in-meshes demo from DOLFIN.
-
-.. _demo_pde_built-in-meshes_python_documentation:
-
 Built-in meshes
-====================
+===============
 
 This demo is implemented in a single Python file,
-:download:`demo_built-in-meshes.py`, and demonstrates use of the built-in
-meshes in DOLFIN.
+:download:`demo_built-in-meshes.py`, and demonstrates use of the
+built-in meshes in DOLFIN.
 
-.. include:: ../common.txt
+This demo illustrates:
+
+* How to define some of the different built-in meshes in DOLFIN
+
+
+Problem definition
+------------------
+
+The demo focuses on the built-in meshes. We will look at the following
+meshes:
+
+* :py:class:`UnitIntervalMesh <dolfin.cpp.mesh.UnitIntervalMesh>`
+* :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`
+* :py:class:`RectangleMesh <dolfin.cpp.mesh.RectangleMesh>`
+* :py:class:`UnitCubeMesh <dolfin.cpp.mesh.UnitCubeMesh>`
+* :py:class:`BoxMesh <dolfin.cpp.mesh.BoxMesh>`
+
 
 Implementation
 --------------
 
-First, the :py:mod:`dolfin` module is imported:
-
-.. code-block:: python
+First, the :py:mod:`dolfin` module is imported::
 
    from dolfin import *
 
@@ -24,9 +34,7 @@ The first mesh we make is a mesh over the unit interval
 :math:`(0,1)`. :py:class:`UnitIntervalMesh
 <dolfin.cpp.mesh.UnitIntervalMesh>` takes the number of intervals
 :math:`(n_x)` as input argument, and the total number of vertices is
-therefore :math:`(n_x+1)`.
-
-.. code-block:: python
+therefore :math:`(n_x+1)`. ::
 
    mesh = UnitIntervalMesh(10)
    print("Plotting a UnitIntervalMesh")
@@ -45,9 +53,7 @@ horizontal and vertical directions as the first two arguments to
 argument that indicates the direction of the diagonals. This can be
 set to "left", "right", "right/left", "left/right", or "crossed". We
 can also omit this argument and thereby use the default direction
-"right".
-
-.. code-block:: python
+"right". ::
 
    mesh = UnitSquareMesh(10, 10)
    print("Plotting a UnitSquareMesh")
@@ -58,9 +64,7 @@ can also omit this argument and thereby use the default direction
 
 Our second version of a mesh on the unit square has diagonals to the
 left, the third version has crossed diagonals and our final version
-has diagonals to both left and right:
-
-.. code-block:: python
+has diagonals to both left and right::
 
    mesh = UnitSquareMesh(10, 10, "left")
    print("Plotting a UnitSquareMesh")
@@ -91,9 +95,7 @@ Three additional arguments specify the number of divisions in the
 diagonals is given as a final optional argument ("left", "right",
 "left/right", or "crossed"). In the first mesh we use the default
 direction ("right") of the diagonal, and in the second mesh we use
-diagonals to both left and right.
-
-.. code-block:: python
+diagonals to both left and right. ::
 
    mesh = RectangleMesh(Point(0.0, 0.0), Point(10.0, 4.0), 10, 10)
    print("Plotting a RectangleMesh")
@@ -114,9 +116,7 @@ To make a mesh of the 3D unit cube :math:`[0,1] \times [0,1] \times
 <dolfin.cpp.generation.UnitCubeMesh>`. :py:class:`UnitCubeMesh
 <dolfin.cpp.generation.UnitCubeMesh>` takes the number of cells in the
 :math:`x`-, :math:`y`- and :math:`z`-direction as the only three
-arguments.
-
-.. code-block:: python
+arguments. ::
 
    mesh = UnitCubeMesh(10, 10, 10)
    print("Plotting a UnitCubeMesh")
@@ -125,18 +125,15 @@ arguments.
 .. image:: unitcubemesh.png
    :scale: 75 %
 
-Finally we will demonstrate a mesh on a rectangular prism in
-3D. The prism is specified by two points (opposing corners)
-of the prism. Three additional arguments specify the
-number of divisions in the :math:`x`-, :math:`y`- and
-:math:`z`-directions.
+Finally we will demonstrate a mesh on a rectangular prism in 3D. The
+prism is specified by two points (opposing corners) of the
+prism. Three additional arguments specify the number of divisions in
+the :math:`x`-, :math:`y`- and :math:`z`-directions.
 
 Meshes for more complex geometries may be created using the mshr
-library, which functions as a plugin to DOLFIN, providing support
-for Constructive Solid Geometry (CSG) and mesh generation. For
-more details, refer to the mshr documentation.
-
-.. code-block:: python
+library, which functions as a plugin to DOLFIN, providing support for
+Constructive Solid Geometry (CSG) and mesh generation. For more
+details, refer to the mshr documentation. ::
 
    mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(10.0, 4.0, 2.0), 10, 10, 10)
    print("Plotting a BoxMesh")
@@ -147,14 +144,6 @@ more details, refer to the mshr documentation.
 
 By calling :py:meth:`interactive
 <dolfin.cpp.io.VTKPlotter.interactive>` we are allowed to resize, move
-and rotate the plots.
-
-.. code-block:: python
+and rotate the plots. ::
 
    interactive()
-
-Complete code
--------------
-
-.. literalinclude:: demo_built-in-meshes.py
-   :start-after: # Begin demo
