@@ -194,7 +194,8 @@ defaults.languages  = DefaultDict("python", # fallback language
                                    ".sh":  "shell",
                                    ".sl":  "slang",
                                    ".sty": "latex",
-                                   ".tex": "latex"
+                                   ".tex": "latex",
+                                   ".ufl": "python"
                                   })
 
 # Will be overridden by the ``--language`` command line option.

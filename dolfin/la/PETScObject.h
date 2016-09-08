@@ -14,16 +14,12 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2008-01-07
-// Last changed: 2011-01-24
 
 #ifndef __PETSC_OBJECT_H
 #define __PETSC_OBJECT_H
 
 #include <string>
 #include <dolfin/common/SubSystemsManager.h>
-#include <dolfin/log/log.h>
 
 namespace dolfin
 {
@@ -45,15 +41,8 @@ namespace dolfin
     /// Print error message for PETSc calls that return an error
     static void petsc_error(int error_code,
                             std::string filename,
-                            std::string petsc_function)
-    {
-      dolfin_error(filename,
-               "successfully call PETSc function '" + petsc_function + "'",
-                "PETSc error code is: %d", error_code);
-    }
-
+                            std::string petsc_function);
   };
-
 }
 
 #endif

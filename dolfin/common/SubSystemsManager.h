@@ -21,6 +21,10 @@
 #ifndef __SUB_SYSTEMS_MANAGER_H
 #define __SUB_SYSTEMS_MANAGER_H
 
+#ifdef HAS_PETSC
+#include <petsc.h>
+#endif
+
 namespace dolfin
 {
 
@@ -70,13 +74,25 @@ namespace dolfin
     /// finalised)
     static bool mpi_finalized();
 
+#ifdef HAS_PETSC
+    /// PETSc error handler. Logs everything known to DOLFIN logging
+    /// system (with level TRACE) and stores the error message into
+    /// pests_err_msg member.
+    static PetscErrorCode PetscDolfinErrorHandler(
+      MPI_Comm comm, int line, const char *fun, const char *file,
+      PetscErrorCode n, PetscErrorType p, const char *mess, void *ctx);
+#endif
+
+    /// Last recorded PETSc error message
+    std::string petsc_err_msg;
+
   private:
 
     // Constructor (private)
     SubSystemsManager();
 
     // Copy constructor (private)
-    SubSystemsManager(const SubSystemsManager& sub_sys_manager);
+    SubSystemsManager(const SubSystemsManager&);
 
     // Destructor
     ~SubSystemsManager();

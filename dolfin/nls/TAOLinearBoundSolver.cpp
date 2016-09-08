@@ -47,8 +47,10 @@ const std::map<std::string, const KSPType> TAOLinearBoundSolver::_ksp_methods
     {"minres",     KSPMINRES},
     {"tfqmr",      KSPTFQMR},
     {"richardson", KSPRICHARDSON},
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 7 && PETSC_VERSION_RELEASE == 1
     {"nash",       KSPNASH},
     {"stcg",       KSPSTCG},
+    #endif
     {"bicgstab",   KSPBCGS} };
 //-----------------------------------------------------------------------------
 // Mapping from method string to description
