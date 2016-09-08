@@ -318,7 +318,7 @@ TEST(MultiMeshes, test_assemble_expression)
 
   auto v = std::make_shared<MyFunction>();
   MultiMeshAssemble::MultiMeshFunctional M(multimesh);
-  M.v=v;
+  M.v = v;
 
   // Equvialent to computing area of multimesh
   double funcarea = assemble_multimesh(M);
@@ -326,6 +326,7 @@ TEST(MultiMeshes, test_assemble_expression)
   // Alternative computation of area
   double volume = 0;
   std::vector<double> all_volumes;
+
   // Sum contribution from all parts
   for (std::size_t part = 0; part < multimesh->num_parts(); part++)
     {

@@ -21,7 +21,7 @@
 #
 #
 # First added:  2016-06-11
-# Last changed: 2016-08-12
+# Last changed: 2016-09-08
 
 import pytest
 from dolfin import *
@@ -54,9 +54,9 @@ def test_measure_mul(v, multimesh):
 
 @skip_in_parallel
 def test_assemble_zero(v, multimesh):
-    assert (assemble_multimesh(v*dX)<= 1e-12)
+    assert (assemble_multimesh(v*dX)<= 10*DOLFIN_EPS)
 
 @skip_in_parallel
 def test_assemble_area(v, multimesh):
     v.vector()[:] = 1
-    assert (abs(assemble_multimesh(v*dX)-1)<= 1e-12)
+    assert (abs(assemble_multimesh(v*dX)-1)<= 1000*DOLFIN_EPS)
