@@ -82,4 +82,4 @@ Automated Testing
 =================
 
 We use Atlassian Bamboo to perform automatic testing at
-http://magpie.bpi.cam.ac.uk:8085
+https://bamboo.fenicsproject.org
