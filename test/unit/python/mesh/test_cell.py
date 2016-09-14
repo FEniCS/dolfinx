@@ -26,7 +26,7 @@ import pytest
 import numpy
 from dolfin import *
 
-from dolfin_utils.test import skip_in_parallel
+from dolfin_utils.test import skip_in_parallel, skip_in_release
 
 
 @skip_in_parallel
@@ -61,12 +61,13 @@ def test_distance_tetrahedron():
     assert round(cell.distance(Point(0.5, 0.5, 0.5)) - 0.0, 7) == 0
 
 
+@skip_in_release
 @skip_in_parallel
 def test_issue_568():
     mesh = UnitSquareMesh(4, 4)
     cell = Cell(mesh, 0)
     
-    # Should throw an error, not just segfault
+    # Should throw an error, not just segfault (only works in DEBUG mode!)
     with pytest.raises(RuntimeError):
         cell.facet_area(0)
     
