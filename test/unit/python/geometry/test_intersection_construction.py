@@ -181,3 +181,15 @@ def test_triangle_triangle_2d() :
 							             Point(0.5, 0.4060889538943557),
 							             Point(.5, .5))
     assert len(res) == 2
+
+# FIXME: This test needs an update SWIG because
+# IntersectionConstruction.intersection_segment_segment_2d returns
+# std::vector<Point>
+# @skip_in_parallel
+# def test_segment_segment_2d():
+#     " These two segments should be parallel and the intersection computed accordingly"
+#     Point p0(0.176638957524249,0.509972290857582)
+#     Point p1(0.217189283468892,0.550522616802225)
+#     Point q0(0.333333333333333,0.666666666666667)
+#     Point q1(0.211774439087554,0.545107772420888)
+#     intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
