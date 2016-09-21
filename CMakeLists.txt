@@ -553,7 +553,7 @@ if (DOLFIN_ENABLE_HDF5)
     set(ENV{HDF5_ROOT} "$ENV{HDF5_DIR}")
   endif()
   set(HDF5_PREFER_PARALLEL TRUE)
-  find_package(HDF5)
+  find_package(HDF5 COMPONENTS C)
   set_package_properties(HDF5 PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
     URL "https://www.hdfgroup.org/HDF5")
