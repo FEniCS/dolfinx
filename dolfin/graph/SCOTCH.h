@@ -51,6 +51,15 @@ namespace dolfin
     /// numbers for each cell.  Cells shared on multiple processes
     /// have an entry in ghost_procs pointing to the set of sharing
     /// process numbers.
+    /// @param mpi_comm (MPI_Comm)
+    /// @param cell_partition (std::vector<int>)
+    /// @param ghost_procs (std::map<std::int64_t, std::vector<int>>)
+    /// @param cell_vertices (const boost::multi_array<std::int64_t, 2>)
+    /// @param cell_weight (const std::vector<std::size_t>)
+    /// @param num_global_vertices (const std::int64_t)
+    /// @param num_global_cells (const std::int64_t)
+    /// @param cell_type (const CellType)
+    ///
     static void compute_partition(
       const MPI_Comm mpi_comm,
       std::vector<int>& cell_partition,
@@ -63,15 +72,31 @@ namespace dolfin
 
     /// Compute reordering (map[old] -> new) using
     /// Gibbs-Poole-Stockmeyer (GPS) re-ordering
+    /// @param graph (Graph)
+    ///   Input graph
+    /// @param num_passes (std::size_t)
+    ///   Number of passes to use in GPS algorithm
+    /// @return std::vector<int>
+    ///   Mapping from old to new nodes
     static std::vector<int> compute_gps(const Graph& graph,
                                         std::size_t num_passes=5);
 
     /// Compute graph re-ordering
+    /// @param graph (Graph)
+    ///   Input graph
+    /// @param scotch_strategy (string)
+    ///   SCOTCH parameters
+    /// @return std::vector<int>
+    ///   Mapping from old to new nodes
     static std::vector<int>
       compute_reordering(const Graph& graph,
                          std::string scotch_strategy="");
 
     /// Compute graph re-ordering
+    /// @param graph (Graph)
+    /// @param permutation (std::vector<int>)
+    /// @param inverse_permutation (std::vector<int>)
+    /// @param scotch_strategy (std::string)
     static
       void compute_reordering(const Graph& graph,
                               std::vector<int>& permutation,
