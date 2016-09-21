@@ -129,7 +129,7 @@ namespace dolfin
     /// Turn X3D 'statistics' window on/off
     void set_x3d_stats(bool show);
 
-    // Get the state of the 'statistics' window
+    /// Get the state of the 'statistics' window
     bool get_x3d_stats() const;
 
     /// Toggle menu option
@@ -183,14 +183,15 @@ namespace dolfin
   /// This class implements output of meshes to X3DOM XML or HTML5
   /// with X3DOM strings. The latter can be used for interactive
   /// visualisation
-  ///
-  /// Developer note: pugixml is used to created X3DOM and HTML5. By
-  /// using pugixml, we produce valid XML, but care must be taken that
-  /// the XML is also valid HTML. This includes not letting pugixml
-  /// create self-closing elements, in cases. E.g., <foo
-  /// bar="foobar"></foo> is fine, but the self-closing syntax <foo
-  /// bar="foobar" /> while being valid XML is is not valid HTML5. See
-  /// https://github.com/x3dom/x3dom/issues/600.
+  //
+  // Developer note: pugixml is used to created X3DOM and HTML5. By
+  // using pugixml, we produce valid XML, but care must be taken that
+  // the XML is also valid HTML. This includes not letting pugixml
+  // create self-closing elements, in cases. E.g., <foo
+  // bar="foobar"></foo> is fine, but the self-closing syntax <foo
+  // bar="foobar" /> while being valid XML is is not valid HTML5. See
+  // https://github.com/x3dom/x3dom/issues/600.
+  //
 
   class X3DOM
   {
@@ -214,13 +215,13 @@ namespace dolfin
                             X3DOMParameters parameters=X3DOMParameters());
 
 
-    // Build X3DOM pugixml tree for a Mesh
+    /// Build X3DOM pugixml tree for a Mesh
     static void
       build_x3dom_tree(pugi::xml_document& xml_doc,
                        const Mesh& mesh,
                        const X3DOMParameters& parameters=X3DOMParameters());
 
-    // Build X3DOM pugixml tree for a Function
+    /// Build X3DOM pugixml tree for a Function
     static void
       build_x3dom_tree(pugi::xml_document& xml_doc,
                        const Function& u,

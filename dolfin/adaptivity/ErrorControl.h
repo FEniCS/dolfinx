@@ -53,24 +53,23 @@ namespace dolfin
 
     /// Create error control object
     ///
-    /// *Arguments*
-    ///     a_star (_Form_)
+    /// @param a_star (_Form_)
     ///        the bilinear form for the dual problem
-    ///     L_star (_Form_)
+    /// @param L_star (_Form_)
     ///        the linear form for the dual problem
-    ///     residual (_Form_)
+    /// @param residual (_Form_)
     ///        a functional for the residual (error estimate)
-    ///     a_R_T (_Form_)
+    /// @param a_R_T (_Form_)
     ///        the bilinear form for the strong cell residual problem
-    ///     L_R_T (_Form_)
+    /// @param L_R_T (_Form_)
     ///        the linear form for the strong cell residual problem
-    ///     a_R_dT (_Form_)
+    /// @param a_R_dT (_Form_)
     ///        the bilinear form for the strong facet residual problem
-    ///     L_R_dT (_Form_)
+    /// @param L_R_dT (_Form_)
     ///        the linear form for the strong facet residual problem
-    ///     eta_T (_Form_)
+    /// @param eta_T (_Form_)
     ///        a linear form over DG_0 for error indicators
-    ///     is_linear (bool)
+    /// @param is_linear (bool)
     ///        true iff primal problem is linear
     ErrorControl(std::shared_ptr<Form> a_star,
                  std::shared_ptr<Form> L_star,

@@ -38,7 +38,7 @@ namespace dolfin
   class BoundaryMesh;
   class BoundingBoxTree;
 
-  // Typedefs
+  /// Typedefs
   typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
 
   /// This class represents a collection of meshes with arbitrary

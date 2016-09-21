@@ -299,6 +299,7 @@ namespace dolfin
   inline Point operator*(double a, const Point& p)
   { return p*a; }
 
+  /// Output of Point to stream
   inline std::ostream& operator<<(std::ostream& stream, const Point& point)
   { stream << point.str(false); return stream; }
 
