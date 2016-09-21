@@ -343,7 +343,7 @@ namespace dolfin
     : Variable("f", "unnamed MeshFunction"),
     Hierarchical<MeshFunction<T>>(*this), _mesh(mesh), _dim(0), _size(0)
   {
-    File file(filename);
+    File file(mesh->mpi_comm(), filename);
     file >> *this;
   }
   //---------------------------------------------------------------------------

@@ -29,7 +29,7 @@ import shutil
 sub_directories = ['demo', 'test', 'bench']
 
 # Copy all files with the following suffixes
-suffix_patterns = ["py", "h", "cpp", "cpp.rst", "ufl", "xml", "xml.gz", "off", "inp", \
+suffix_patterns = ["py", "h", "cpp", "cpp.rst", "ufl", "ufl.rst", "xml", "xml.gz", "off", "inp", \
                    "msh", "supp", "rst", "py.rst", "ele", "node", "grid", "edge", "sh"]
 
 suffix_pattern = re.compile("(%s),"%("|".join("[\w-]+\.%s" % pattern \

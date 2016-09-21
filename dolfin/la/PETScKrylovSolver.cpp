@@ -48,8 +48,11 @@ const std::map<std::string, const KSPType> PETScKrylovSolver::_methods
     {"tfqmr",      KSPTFQMR},
     {"richardson", KSPRICHARDSON},
     {"bicgstab",   KSPBCGS},
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 7 && PETSC_VERSION_RELEASE == 1
     {"nash",       KSPNASH},
-    {"stcg",       KSPSTCG} };
+    {"stcg",       KSPSTCG}
+    #endif
+};
 
 // Map from method string to description
 const std::map<std::string, std::string>

@@ -34,8 +34,13 @@
 //-----------------------------------------------------------------------------
 %extend dolfin::Point {
 %pythoncode %{
-__truediv__ = __div__
-__itruediv__ = __idiv__
+try:
+    # Workaround for SWIG < 3.0.9
+    __truediv__ = __div__
+    __itruediv__ = __idiv__
+except NameError:
+    # SWIG >= 3.0.9
+    pass
 %}
 }
 

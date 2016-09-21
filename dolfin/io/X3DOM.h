@@ -34,7 +34,8 @@
 // - Add support for GenericFunction
 // - Add support for MeshFunctions
 // - Add support for DG1 Functions
-// - Add vector support (arrows) - including correct placement for RT0 etc. - advanced
+// - Add vector support (arrows) - including correct placement for RT0
+//   etc. - advanced
 // - Document all class methods below properly
 
 namespace pugi
@@ -64,8 +65,8 @@ namespace dolfin
     /// surface_with_edges)
     void set_representation(Representation representation);
 
-    /// Get the current representation of the object (wireframe, surface or
-    /// surface_with_edges)
+    /// Get the current representation of the object (wireframe,
+    /// surface or surface_with_edges)
     Representation get_representation() const;
 
     /// Get the size of the viewport
@@ -125,22 +126,22 @@ namespace dolfin
     /// Get the color map as a boost::multi_array (256x3)
     boost::multi_array<float, 2> get_color_map_array() const;
 
-    /// Toggle viewpoint buttons
-    void set_viewpoint_buttons(bool show);
-
-    /// Get the viewpoint button state
-    bool get_viewpoint_buttons() const;
-
     /// Turn X3D 'statistics' window on/off
     void set_x3d_stats(bool show);
 
-    /// Get the state of the 'statistics' window
+    // Get the state of the 'statistics' window
     bool get_x3d_stats() const;
+
+    /// Toggle menu option
+    void set_menu_display(bool show);
+
+    /// Get the menu display state
+    bool get_menu_display() const;
 
   private:
 
-    // Check that RGB colors are valid. Throws error if value is
-    // not invalid.
+    // Check that RGB colors are valid. Throws error if value is not
+    // invalid.
     static void check_rgb(std::array<double, 3>& rgb);
 
     // Check that value is valid. Throws error if value is not
@@ -156,9 +157,6 @@ namespace dolfin
     // Dimensions of viewing area
     std::array<double, 2> _size;
 
-    // Toggle view point buttons
-    bool _show_viewpoints;
-
     // TODO: document
     // RGB colours, see http://doc.x3dom.org/author/Shape/Material.html
     std::array<double, 3> _diffuse_color, _emissive_color, _specular_color,
@@ -172,6 +170,9 @@ namespace dolfin
 
     // Turn X3D stats on/off
     bool _show_x3d_stats;
+
+    // Turn menu on/off
+    bool _menu_display;
   };
 
   // Forward declarations
@@ -179,15 +180,17 @@ namespace dolfin
   class Mesh;
   class Point;
 
-  /// Output of meshes to X3DOM XML or HTML5 with X3DOM strings for interactive visualisation.
-
-  // Developer note: pugixml is used to created X3DOM and HTML5. By
-  // using pugixml, we produce valid XML, but care must be taken that
-  // the XML is also valid HTML. This includes not letting pugixml
-  // create self-closing elements, in cases. E.g., <foo
-  // bar="foobar"></foo> is fine, but the self-closing syntax <foo
-  // bar="foobar" /> while being valid XML is is not valid HTML5. See
-  // https://github.com/x3dom/x3dom/issues/600.
+  /// This class implements output of meshes to X3DOM XML or HTML5
+  /// with X3DOM strings. The latter can be used for interactive
+  /// visualisation
+  ///
+  /// Developer note: pugixml is used to created X3DOM and HTML5. By
+  /// using pugixml, we produce valid XML, but care must be taken that
+  /// the XML is also valid HTML. This includes not letting pugixml
+  /// create self-closing elements, in cases. E.g., <foo
+  /// bar="foobar"></foo> is fine, but the self-closing syntax <foo
+  /// bar="foobar" /> while being valid XML is is not valid HTML5. See
+  /// https://github.com/x3dom/x3dom/issues/600.
 
   class X3DOM
   {
@@ -211,13 +214,13 @@ namespace dolfin
                             X3DOMParameters parameters=X3DOMParameters());
 
 
-    /// Build X3DOM pugixml tree for a Mesh
+    // Build X3DOM pugixml tree for a Mesh
     static void
       build_x3dom_tree(pugi::xml_document& xml_doc,
                        const Mesh& mesh,
                        const X3DOMParameters& parameters=X3DOMParameters());
 
-    /// Build X3DOM pugixml tree for a Function
+    // Build X3DOM pugixml tree for a Function
     static void
       build_x3dom_tree(pugi::xml_document& xml_doc,
                        const Function& u,
@@ -272,9 +275,6 @@ namespace dolfin
                               const X3DOMParameters& parameters,
                               bool surface);
 
-    // Add viewpoint control (HTML)
-    static void add_viewpoint_control_option(pugi::xml_node& viewpoint_control,
-                                             std::string viewpoint);
 
     // Add a collection viewpoint nodes (X3D)
     static void add_viewpoint_nodes(pugi::xml_node& xml_scene,
@@ -286,6 +286,42 @@ namespace dolfin
                                    Viewpoint viewpoint,
                                    const Point p,
                                    const double s);
+
+    // Add the menu display and the desired subsections
+    static void add_menu_display(pugi::xml_node& xml_node, const Mesh& mesh,
+                                 const X3DOMParameters& parameters);
+
+    // Add the button for a tab to be added to the menu
+    static void add_menu_tab_button(pugi::xml_node& xml_node, std::string name,
+                                    bool checked);
+
+    // Create a generic content node to hold specific menu content
+    static pugi::xml_node create_menu_content_node(pugi::xml_node& xml_node,
+                                                   std::string name, bool show);
+
+    // Add the options tab in the menu display
+    static void add_menu_options_tab(pugi::xml_node& xml_node);
+
+    // Add an option to the options tab in menu display
+    static void add_menu_options_option(pugi::xml_node& xml_node,
+                                        std::string name);
+
+    // Add the summary tab in the menu display
+    static void add_menu_summary_tab(pugi::xml_node& xml_node,
+                                     const Mesh& mesh);
+
+    // Add the color tab in the menu display
+    static void add_menu_color_tab(pugi::xml_node& xml_node);
+
+    // Add the warp tab in the menu display
+    static void add_menu_warp_tab(pugi::xml_node& xml_node);
+
+    // Add the viewpoint tab in the menu display
+    static void add_menu_viewpoint_tab(pugi::xml_node& xml_node);
+
+    // Add a viewpoint button to the appropriate parent
+    static void add_menu_viewpoint_button(pugi::xml_node& xml_node,
+                                          std::string name);
 
     // Get centre point of mesh bounds, and a reasonable viewpoint
     // distance from it

@@ -194,7 +194,8 @@ defaults.languages  = DefaultDict("python", # fallback language
                                    ".sh":  "shell",
                                    ".sl":  "slang",
                                    ".sty": "latex",
-                                   ".tex": "latex"
+                                   ".tex": "latex",
+                                   ".ufl": "python"
                                   })
 
 # Will be overridden by the ``--language`` command line option.
@@ -353,7 +354,7 @@ defaults.codeindent =  2
 #
 # What to do if the outfile already exists? (ignored if `outfile` == '-')::
 
-defaults.overwrite = 'update'
+defaults.overwrite = 'yes'
 
 # Recognised values:
 #
@@ -1494,6 +1495,7 @@ def open_streams(infile = '-', outfile = '-', overwrite='update', **keyw):
         in_stream = sys.stdin
     else:
         in_stream = file(infile, 'r')
+
     if outfile == '-':
         out_stream = sys.stdout
     elif overwrite == 'no' and os.path.exists(outfile):

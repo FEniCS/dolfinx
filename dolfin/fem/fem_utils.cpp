@@ -228,6 +228,8 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
     for (std::size_t dim = 0; dim <= tdim; ++dim)
     {
       // Get local-to-global entity mapping
+      if (!coords_per_entity[dim])
+        continue;
       global_entities = c->entities(dim);
 
       for (std::size_t local_entity = 0;
