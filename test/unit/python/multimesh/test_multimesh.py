@@ -1,8 +1,8 @@
 #!/usr/bin/env py.test
-
+# -*- coding: utf-8 -*-
 """Unit tests for the MultiMeshFunction class"""
 
-# Copyright (C) 2016 Jorgen S. Dokken
+# Copyright (C) 2016 Jørgen S. Dokken
 #
 # This file is part of DOLFIN.
 #
@@ -21,11 +21,12 @@
 #
 #
 # First added:  2016-06-11
-# Last changed: 2016-09-08
+# Last changed: 2016-09-22
 
 import pytest
 from dolfin import *
 import ufl
+import numpy
 
 from dolfin_utils.test import fixture, skip_in_parallel
 
@@ -54,9 +55,9 @@ def test_measure_mul(v, multimesh):
 
 @skip_in_parallel
 def test_assemble_zero(v, multimesh):
-    assert (assemble_multimesh(v*dX)<= 10*DOLFIN_EPS)
+    assert numpy.isclose(assemble_multimesh(v*dX), 0)
 
 @skip_in_parallel
 def test_assemble_area(v, multimesh):
     v.vector()[:] = 1
-    assert (abs(assemble_multimesh(v*dX)-1)<= 1000*DOLFIN_EPS)
+    assert numpy.isclose(assemble_multimesh(v*dX), 1)

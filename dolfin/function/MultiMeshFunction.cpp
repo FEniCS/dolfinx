@@ -30,6 +30,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+MultiMeshFunction::MultiMeshFunction() : Variable("u", "a function")
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 MultiMeshFunction::MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V)
   : _function_space(V)
 {

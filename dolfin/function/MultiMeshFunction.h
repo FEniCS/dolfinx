@@ -23,6 +23,7 @@
 
 #include <memory>
 #include <boost/ptr_container/ptr_map.hpp>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -37,9 +38,12 @@ namespace dolfin
   /// element function space (MultiMesh) defined on one or more possibly
   /// intersecting meshes.
 
-  class MultiMeshFunction
+  class MultiMeshFunction: public Variable
   {
   public:
+
+    /// Constructor
+    MultiMeshFunction();
 
     /// Create MultiMesh function on given MultiMesh function space
     ///

@@ -54,13 +54,13 @@ void MultiMeshCoefficientAssigner::operator=
 }
 //-----------------------------------------------------------------------------
 void MultiMeshCoefficientAssigner::operator=
-(std::shared_ptr<const MultiMeshFunction> coefficient)
+(const MultiMeshFunction& coefficient)
 {
   // Assign to all parts of form
   for (std::size_t part = 0; part < _form.num_parts(); part++)
-     {
-       Form& a = const_cast<Form&>(*_form.part(part));
-       a.set_coefficient(_number, coefficient->part(part));
-     }
+  {
+    Form& a = const_cast<Form&>(*_form.part(part));
+    a.set_coefficient(_number, coefficient.part(part));
+  }
 }
 //-----------------------------------------------------------------------------

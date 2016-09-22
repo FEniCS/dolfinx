@@ -57,7 +57,7 @@ namespace dolfin
 
     /// Assign coefficient
     void operator= (std::shared_ptr<const GenericFunction> coefficient);
-    void operator= (std::shared_ptr<const MultiMeshFunction> coefficient);
+    void operator= (const MultiMeshFunction& coefficient);
 
   private:
 
