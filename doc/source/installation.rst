@@ -26,14 +26,13 @@ Required
 
 - Boost (http://www.boost.org), with the following compiled Boost
   components
- - filesystem
- - program_options
- - system
- - iostreams
- - timer
+  - filesystem
+  - iostreams
+  - program_options
+  - timer
 - CMake (https://cmake.org)
 - Eigen3 (http://eigen.tuxfamily.org)
-- UFC (part of the FEniCS Form Compiler, FFC)
+- FFC (https://bitbucket.org/fenics-project/ffc)
 - zlib
 
 
