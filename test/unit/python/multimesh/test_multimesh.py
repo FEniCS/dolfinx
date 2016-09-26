@@ -1,4 +1,3 @@
-#!/usr/bin/env py.test
 # -*- coding: utf-8 -*-
 """Unit tests for the MultiMeshFunction class"""
 

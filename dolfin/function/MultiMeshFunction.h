@@ -38,7 +38,7 @@ namespace dolfin
   /// element function space (MultiMesh) defined on one or more possibly
   /// intersecting meshes.
 
-  class MultiMeshFunction: public Variable
+  class MultiMeshFunction : public Variable
   {
   public:
 
@@ -63,7 +63,7 @@ namespace dolfin
     ///     x (_GenericVector_)
     ///         The vector.
     MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V,
-             std::shared_ptr<GenericVector> x);
+		      std::shared_ptr<GenericVector> x);
 
     /// Destructor
     virtual ~MultiMeshFunction();
@@ -96,7 +96,6 @@ namespace dolfin
     ///         Return the shared pointer.
     virtual std::shared_ptr<const MultiMeshFunctionSpace> function_space() const
     {
-      dolfin_assert(_function_space);
       return _function_space;
     }
 
