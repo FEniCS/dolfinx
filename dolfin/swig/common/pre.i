@@ -131,6 +131,18 @@ std::shared_ptr<const ufc::dofmap> make_ufc_dofmap(std::size_t dofmap)
   return std::shared_ptr<const ufc::dofmap>(p);
 }
 
+std::shared_ptr<const ufc::coordinate_mapping> make_ufc_coordinate_mapping(void * element)
+{
+  ufc::coordinate_mapping * p = static_cast<ufc::coordinate_mapping *>(element);
+  return std::shared_ptr<const ufc::coordinate_mapping>(p);
+}
+
+std::shared_ptr<const ufc::coordinate_mapping> make_ufc_coordinate_mapping(std::size_t element)
+{
+  ufc::coordinate_mapping * p = reinterpret_cast<ufc::coordinate_mapping *>(element);
+  return std::shared_ptr<const ufc::coordinate_mapping>(p);
+}
+
 std::shared_ptr<const ufc::form> make_ufc_form(void * form)
 {
   ufc::form * p = static_cast<ufc::form *>(form);
