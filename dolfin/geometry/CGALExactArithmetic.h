@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-06-02
+// Last changed: 2016-09-29
 //
 // Developer note:
 //
@@ -24,14 +24,15 @@
 // algorithms using exact arithmetic with CGAL. It is not included in
 // a normal build but is used as a reference for verification and
 // debugging of the inexact DOLFIN collision detection algorithms.
-// Enable by setting the flag DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC.
-
-// FIXME: This line is a test - remove it
+// Enable by setting the flag
+// DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC. This flag should not be
+// defined by default.
 
 #ifndef __CGAL_EXACT_ARITHMETIC_H
 #define __CGAL_EXACT_ARITHMETIC_H
 
-// FIXME: Debugging
+// Define or undefine this flag for enabling or disabling CGAL's exact
+// arithmetic
 #define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
 
 #ifndef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
@@ -42,9 +43,6 @@
 #else
 
 #define CGAL_CHECK_TOLERANCE 1e-10
-
-// CGAL debugging output
-// #define CGAL_DEBUG_OUTPUT 1
 
 #include "Point.h"
 #include <dolfin/log/log.h>
