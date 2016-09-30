@@ -949,7 +949,6 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
 endif()
 
 #------------------------------------------------------------------------------
-<<<<<<< HEAD
 # Generate demo files from rst
 
 message(STATUS "")
