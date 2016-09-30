@@ -192,7 +192,8 @@ endif()
 # Set compiler flags, include directories and library dependencies
 
 # Add compiler include directories
-include_directories(${DOLFIN_SOURCE_DIR} ${DOLFIN_DEP_INCLUDE_DIRECTORIES})
+include_directories(BEFORE ${DOLFIN_SOURCE_DIR})
+include_directories(${DOLFIN_DEP_INCLUDE_DIRECTORIES})
 include_directories(SYSTEM ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
 
 # Add CXX definitions

@@ -1,6 +1,5 @@
-.. Documentation for the hyperelasticity demo from DOLFIN.
 
-.. _demo_pde_hyperelasticity_python_documentation:
+.. _demo_hyperelasticity:
 
 Hyperelasticity
 ===============
@@ -9,25 +8,19 @@ This demo is implemented in a single Python file,
 :download:`demo_hyperelasticity.py`, which contains both the
 variational forms and the solver.
 
-.. include:: ../common.txt
-
 Implementation
 --------------
 
 This demo is implemented in the :download:`demo_hyperelasticity.py`
 file.
 
-First, the :py:mod:`dolfin` module is imported:
-
-.. code-block:: python
+First, the :py:mod:`dolfin` module is imported ::
 
     from dolfin import *
 
 The behavior of the form compiler FFC can be adjusted by prescribing
 various parameters. Here, we want to use some of the optimization
-features.
-
-.. code-block:: python
+features. ::
 
     # Optimization options for the form compiler
     parameters["form_compiler"]["cpp_optimize"] = True
@@ -48,9 +41,7 @@ on this mesh. Here, we choose to create a unit cube mesh with 25 ( =
 24 + 1) vertices in one direction and 17 ( = 16 + 1) vertices in the
 other two direction. On this mesh, we define a function space of
 continuous piecewise linear vector polynomials (a Lagrange vector
-element space):
-
-.. code-block:: python
+element space) ::
 
     # Create mesh and define function space
     mesh = UnitCubeMesh(24, 16, 16)
@@ -65,9 +56,7 @@ dimension, unless otherwise specified.
 .. index:: compiled subdomain
 
 The portions of the boundary on which Dirichlet boundary conditions
-will be applied are now defined:
-
-.. code-block:: python
+will be applied are now defined ::
 
     # Mark boundary subdomians
     left =  CompiledSubDomain("near(x[0], side) && on_boundary", side = 0.0)
@@ -84,9 +73,7 @@ on the boundary of a domain, and false otherwise.
 
 .. index:: compiled expression
 
-The Dirichlet boundary values are defined using compiled expressions:
-
-.. code-block:: python
+The Dirichlet boundary values are defined using compiled expressions ::
 
     # Define Dirichlet boundary (x = 0 or x = 1)
     c = Constant((0.0, 0.0, 0.0))
@@ -101,9 +88,7 @@ Note the use of setting named parameters in the :py:class:`Expression
 The boundary subdomains and the boundary condition expressions are
 collected together in two :py:class:`DirichletBC
 <dolfin.fem.bcs.DirichletBC>` objects, one for each part of the
-Dirichlet boundary:
-
-.. code-block:: python
+Dirichlet boundary ::
 
     bcl = DirichletBC(V, c, left)
     bcr = DirichletBC(V, r, right)
@@ -118,9 +103,7 @@ an argument to :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>`.
 Trial and test functions, and the most recent approximate displacement
 ``u`` are defined on the finite element space ``V``, and two objects
 of type :py:class:`Constant <dolfin.functions.constant.Constant>` are
-declared for the body force (``B``) and traction (``T``) terms:
-
-.. code-block:: python
+declared for the body force (``B``) and traction (``T``) terms ::
 
     # Define functions
     du = TrialFunction(V)            # Incremental displacement
@@ -137,9 +120,7 @@ code. On the other hand, using ``as_vector`` can eliminate some
 function calls during assembly.
 
 With the functions defined, the kinematic quantities involved in the model
-are defined using UFL syntax:
-
-.. code-block:: python
+are defined using UFL syntax ::
 
     # Kinematics
     d = len(u)
@@ -152,9 +133,7 @@ are defined using UFL syntax:
     J  = det(F)
 
 Next, the material parameters are set and the strain energy density
-and the total potential energy are defined, again using UFL syntax:
-
-.. code-block:: python
+and the total potential energy are defined, again using UFL syntax ::
 
     # Elasticity parameters
     E, nu = 10.0, 0.3
@@ -175,9 +154,7 @@ keyword in Python, hence the misspelling ``lmbda``.
 .. index:: directional derivative; derivative, taking variations; derivative, automatic differentiation; derivative
 
 Directional derivatives are now computed of :math:`\Pi` and :math:`L`
-(see :eq:`first_variation` and :eq:`second_variation`):
-
-.. code-block:: python
+(see :eq:`first_variation` and :eq:`second_variation`) ::
 
     # Compute first variation of Pi (directional derivative about u in the direction of v)
     F = derivative(Pi, u, v)
@@ -186,9 +163,7 @@ Directional derivatives are now computed of :math:`\Pi` and :math:`L`
     J = derivative(F, u, du)
 
 The complete variational problem can now be solved by a single call to
-:py:func:`solve <dolfin.fem.solving.solve>`:
-
-.. code-block:: python
+:py:func:`solve <dolfin.fem.solving.solve>` ::
 
     # Solve variational problem
     solve(F == 0, u, bcs, J=J,
@@ -199,9 +174,7 @@ is supplied using ``form_compiler_parameters = ffc_options``.
 
 Finally, the solution ``u`` is saved to a file named
 ``displacement.pvd`` in VTK format, and the deformed mesh is plotted
-to the screen:
-
-.. code-block:: python
+to the screen ::
 
     # Save solution in VTK format
     file = File("displacement.pvd");
@@ -209,10 +182,3 @@ to the screen:
 
     # Plot and hold solution
     plot(u, mode = "displacement", interactive = True)
-
-
-Complete code
--------------
-
-.. literalinclude:: demo_hyperelasticity.py
-   :start-after: # Begin demo

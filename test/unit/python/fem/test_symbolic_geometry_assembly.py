@@ -11,19 +11,12 @@ CellOrigin, Jacobian, JacobianInverse, JacobianDeterminant
 
 # This was for debugging, don't enable this permanently here in tests
 # parameters["reorder_dofs_serial"] = False
-
-# Hack to skip uflacs parameter if not installed. There's probably a
-# cleaner way to do this with pytest.
-try:
-    import uflacs
-    _uflacs = ["uflacs"]
-except:
-    _uflacs = []
-any_representation = set_parameters_fixture("form_compiler.representation",
-                                            ["quadrature"] + _uflacs)
+any_representation = \
+  set_parameters_fixture("form_compiler.representation",
+                             ["quadrature", "uflacs"])
 uflacs_representation_only \
     = set_parameters_fixture("form_compiler.representation",
-                             _uflacs)
+                             ["uflacs"])
 
 
 def create_mesh(vertices, cells, cellname="simplex"):

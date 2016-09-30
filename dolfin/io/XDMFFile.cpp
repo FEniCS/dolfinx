@@ -1098,7 +1098,8 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const std::string group_name = path_prefix + "/" + mesh.name();
   const std::string h5_path = group_name + "/topology";
   const std::vector<std::int64_t> shape = {num_cells, num_vertices_per_cell};
-  add_data_item(comm, topology_node, h5_id, h5_path, topology_data, shape);
+  const std::string number_type = "UInt";
+  add_data_item(comm, topology_node, h5_id, h5_path, topology_data, shape, number_type);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -1149,7 +1150,8 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 template<typename T>
 void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
                              hid_t h5_id, const std::string h5_path, const T& x,
-                             const std::vector<std::int64_t> shape)
+                             const std::vector<std::int64_t> shape,
+                             const std::string number_type)
 {
   // Add DataItem node
   dolfin_assert(xml_node);
@@ -1159,6 +1161,10 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
   // Add dimensions attribute
   data_item_node.append_attribute("Dimensions")
     = container_to_string(shape, " ", 16).c_str();
+
+  // Set type for topology data (needed by XDMF to prevent default to float)
+  if (!number_type.empty())
+    data_item_node.append_attribute("NumberType") = number_type.c_str();
 
   // Add format attribute
   if (h5_id < 0)

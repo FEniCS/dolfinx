@@ -108,7 +108,7 @@ int main()
   PETScVector& xu = (*xu_f.vector()).down_cast<PETScVector>(); // Upper bound
 
   // Solve the problem with the TAO Solver
-  TAOLinearBoundSolver TAOSolver("tron","stcg");
+  TAOLinearBoundSolver TAOSolver("tron", "cg");
 
   // Set some parameters
   TAOSolver.parameters["monitor_convergence"] = true;
