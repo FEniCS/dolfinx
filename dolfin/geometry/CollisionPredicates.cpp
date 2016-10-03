@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2014.
 //
 // First added:  2014-02-03
-// Last changed: 2016-06-01
+// Last changed: 2016-10-03
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -435,9 +435,9 @@ bool CollisionPredicates::_collides_triangle_segment_2d(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool _collides_interior_point_segment_2d(Point q0,
-                                         Point q1,
-                                         Point p)
+bool CollisionPredicates::_collides_interior_point_segment_2d(Point q0,
+							      Point q1,
+							      Point p)
 {
   const double q0_q1_p = orient2d(q0.coordinates(),
                                   q1.coordinates(),
