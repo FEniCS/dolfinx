@@ -45,8 +45,8 @@ class ConvexTriangulation
                           std::size_t gdim);
 
   // TODO: Fix this.
-  static std::vector<std::vector<Point>>
-  triangulate_3d(std::vector<Point> p);
+  // static std::vector<std::vector<Point>>
+  // triangulate_3d(std::vector<Point> p);
 
   /// Check whether simplex is degenerate
   /// FIXME: This function doesn't belong here

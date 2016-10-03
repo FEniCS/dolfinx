@@ -52,11 +52,12 @@ def test_issue_168():
 
 @skip_in_parallel
 def test_triangle_triangle_collision() :
-    assert collides_triangle_triangle_2d(Point(0.177432070718943, 0.5),
-                                         Point(0.176638957524249, 0.509972290857582),
-                                         Point(0.217189283468892, 0.550522616802225),
-                                         Point(0.333333333333333, 0.52399308981973),
-                                         Point(0.333333333333333, 0.666666666666667),
-                                         Point(0.211774439087554, 0.545107772420888))
+    "Test that has been failing"
+    assert CollisionPredicates.collides_triangle_triangle_2d(Point(0.177432070718943, 0.5),
+                                                             Point(0.176638957524249, 0.509972290857582),
+                                                             Point(0.217189283468892, 0.550522616802225),
+                                                             Point(0.333333333333333, 0.52399308981973),
+                                                             Point(0.333333333333333, 0.666666666666667),
+                                                             Point(0.211774439087554, 0.545107772420888))
 
 
