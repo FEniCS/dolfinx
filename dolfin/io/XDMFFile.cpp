@@ -181,8 +181,6 @@ void XDMFFile::write(const Function& u, Encoding encoding)
 //----------------------------------------------------------------------------
 void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
 {
-  // FIXME: This function is too long. Breal up.
-
   check_encoding(encoding);
 
   // Conditions for starting a new HDF5 file
@@ -249,79 +247,7 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
   if (vertex_data)
     get_point_data_values(data_values, padded_value_size, u);
   else
-  {
-    dolfin_assert(u.function_space()->dofmap());
-    dolfin_assert(u.vector());
-
-    // Allocate memory for function values at cell centres
-    const std::size_t num_local_cells = mesh.topology().ghost_offset(tdim);
-    const std::size_t size = num_local_cells*value_size;
-
-    // Build lists of dofs and create map
-    std::vector<dolfin::la_index> dof_set;
-    std::vector<std::size_t> offset(size + 1);
-    std::vector<std::size_t>::iterator cell_offset = offset.begin();
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      // Tabulate dofs
-      const ArrayView<const dolfin::la_index> dofs
-        = dofmap.cell_dofs(cell->index());
-      for (std::size_t i = 0; i < dofmap.num_element_dofs(cell->index()); ++i)
-        dof_set.push_back(dofs[i]);
-
-      // Add local dimension to cell offset and increment
-      *(cell_offset + 1) = *(cell_offset)
-        + dofmap.num_element_dofs(cell->index());
-      ++cell_offset;
-    }
-
-    // Get  values
-    data_values.resize(dof_set.size());
-    dolfin_assert(u.vector());
-    u.vector()->get_local(data_values.data(), dof_set.size(), dof_set.data());
-
-    cell_offset = offset.begin();
-    std::vector<double> _data_values(padded_value_size*num_local_cells, 0.0);
-    std::size_t count = 0;
-    if (value_rank == 1 && value_size == 2)
-    {
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
-      {
-        _data_values[count++] = data_values[*cell_offset];
-        _data_values[count++] = data_values[*cell_offset + 1];
-        ++count;
-        ++cell_offset;
-      }
-    }
-    else if (value_rank == 2 && value_size == 4)
-    {
-      // Pad with 0.0 to 2D tensors to make them 3D
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
-      {
-        for (std::size_t i = 0; i < 2; i++)
-        {
-          _data_values[count++] = data_values[*cell_offset + 2*i];
-          _data_values[count++] = data_values[*cell_offset + 2*i + 1];
-          ++count;
-        }
-
-        count += 3;
-        ++cell_offset;
-      }
-    }
-    else
-    {
-      // Write all components
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
-      {
-        for (std::size_t i = 0; i < value_size; i++)
-          _data_values[count++] = data_values[*cell_offset + i];
-
-        ++cell_offset;
-      }
-    }
-    data_values = _data_values;
-  }
+    get_cell_data_values(data_values, u);
 
   // FIXME: Below is messy. Should query HDF5 file writer for existing
   //        mesh name
@@ -804,7 +730,8 @@ void XDMFFile::write_new(const Mesh& mesh, Encoding encoding) const
 
   // Open a HDF5 file if using HDF5 encoding (truncate)
   hid_t h5_id = -1;
-  #ifdef HAS_HDF5
+
+#ifdef HAS_HDF5
   std::unique_ptr<HDF5File> h5_file;
   if (encoding == Encoding::HDF5)
   {
@@ -815,7 +742,7 @@ void XDMFFile::write_new(const Mesh& mesh, Encoding encoding) const
     // Get file handle
     h5_id = h5_file->h5_id();
   }
-  #endif
+#endif
 
   // Add topology node and attributes (including writa data)
   const int tdim = mesh.topology().dim();
@@ -1089,7 +1016,7 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Get VTK string for cell type
   const std::string vtk_cell_str
-    = vtk_cell_type_str(mesh.type().entity_type(tdim), 1);
+    = vtk_cell_type_str(mesh.type().entity_type(tdim), mesh.geometry().degree());
 
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   dolfin_assert(topology_node);
@@ -1759,7 +1686,65 @@ void XDMFFile::write_point_xml(const std::string group_name,
     _xml->write();
   }
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void XDMFFile::get_cell_data_values(std::vector<double>& data_values,
+                                    const Function& u) const
+{
+  dolfin_assert(u.function_space()->dofmap());
+  dolfin_assert(u.vector());
+
+  const auto mesh = u.function_space()->mesh();
+  const std::size_t value_size = u.value_size();
+  const std::size_t value_rank = u.value_rank();
+
+  // Allocate memory for function values at cell centres
+  const std::size_t tdim = mesh->topology().dim();
+  const std::size_t num_local_cells = mesh->topology().ghost_offset(tdim);
+  const std::size_t local_size = num_local_cells*value_size;
+
+  // Build lists of dofs and create map
+  std::vector<dolfin::la_index> dof_set;
+  dof_set.reserve(local_size);
+  const auto dofmap = u.function_space()->dofmap();
+  for (CellIterator cell(*mesh); !cell.end(); ++cell)
+  {
+    // Tabulate dofs
+    const ArrayView<const dolfin::la_index> dofs
+      = dofmap->cell_dofs(cell->index());
+    const std::size_t ndofs = dofmap->num_element_dofs(cell->index());
+    dolfin_assert(ndofs == value_size);
+    for (std::size_t i = 0; i < ndofs; ++i)
+      dof_set.push_back(dofs[i]);
+  }
+
+  // Get  values
+  data_values.resize(dof_set.size());
+  dolfin_assert(u.vector());
+  u.vector()->get_local(data_values.data(), dof_set.size(), dof_set.data());
+
+  if (value_rank == 1 && value_size == 2)
+  {
+    // Pad out data for 2D vector to 3D
+    data_values.resize(3*num_local_cells);
+    for (int j = (num_local_cells - 1); j >= 0; --j)
+    {
+      double nd[3] = {data_values[j*2], data_values[j*2 + 1], 0};
+      std::copy(nd, nd + 3, &data_values[j*3]);
+    }
+  }
+  else if (value_rank == 2 && value_size == 4)
+  {
+    data_values.resize(9*num_local_cells);
+    for (int j = (num_local_cells - 1); j >= 0; --j)
+    {
+      double nd[9] = { data_values[j*4], data_values[j*4 + 1], 0,
+                       data_values[j*4 + 2], data_values[j*4 + 3], 0,
+                       0, 0, 0 };
+      std::copy(nd, nd + 9, &data_values[j*9]);
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 void XDMFFile::get_point_data_values(std::vector<double>& data_values,
                                      std::size_t width,
                                      const Function& u) const
@@ -1789,6 +1774,7 @@ void XDMFFile::get_point_data_values(std::vector<double>& data_values,
       data_values = _data_values;
     }
   }
+  // FIXME: need to break up
   else if (mesh.geometry().degree() == 2)
   {
     const std::size_t num_local_points = mesh.size(0) + mesh.size(1);
@@ -2076,7 +2062,7 @@ std::string XDMFFile::vtk_cell_type_str(CellType::Type cell_type, int order)
     case 1:
       return "Quadrilateral";
     case 2:
-      return "Qaud_8";
+      return "Quad_8";
     }
   case CellType::Type::tetrahedron:
     switch (order)
