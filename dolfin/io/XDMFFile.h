@@ -299,6 +299,10 @@ namespace dolfin
     void get_point_data_values(std::vector<double>& data_values,
                                std::size_t width, const Function& u) const;
 
+    // Get cell data values as a flattened 2D array in data_values
+    void get_cell_data_values(std::vector<double>& data_values,
+                              const Function& u) const;
+
     // Check whether the requested encoding is supported
     void check_encoding(Encoding encoding) const;
 
