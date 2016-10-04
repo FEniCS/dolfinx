@@ -74,15 +74,15 @@ include(FeatureSummary)
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
 option(DOLFIN_AUTO_DETECT_MPI "Detect MPI automatically (turn this off to use the MPI compiler wrappers directly via setting CXX, CXX, FC)." ON)
-option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
-option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
-option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
-option(DOLFIN_ENABLE_GTEST "Enable C++ unit tests with Google Test if DOLFIN_ENABLE_TESTING is true (requires Internet connection to download Google Test when first configured)." ON)
-option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
-option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
-option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
+option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
+option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
+option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
+option(DOLFIN_ENABLE_GTEST "Enable C++ unit tests with Google Test if DOLFIN_ENABLE_TESTING is true (requires Internet connection to download Google Test when first configured)." ON)
+option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
 option(DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py." OFF)
+option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
+option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 
 add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFIN with shared libraries.")
 add_feature_info(CMAKE_USE_RELATIVE_PATHS CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects.")
@@ -150,6 +150,9 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
   add_feature_info(${OPTION_NAME} ${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}.")
 endforeach()
+
+# Python version
+option(DOLFIN_USE_PYTHON3 "Use Python 3." OFF)
 
 #------------------------------------------------------------------------------
 # General compiler defintions
@@ -374,8 +377,12 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
 # Note: Check for Python interpreter even when Python is disabled
 #       because it is used to get the installation path for
 #       dolfin_utils
-# FIXME PY3: Select python 3 based on config flag?
-find_package(PythonInterp 2)
+if (DOLFIN_USE_PYTHON3)
+  find_package(PythonInterp 3)
+else()
+  find_package(PythonInterp 2.7)
+endif()
+
 set_package_properties(PythonInterp PROPERTIES TYPE REQUIRED
   DESCRIPTION "Interactive high-level object-oriented language"
   URL "http://www.python.org")
