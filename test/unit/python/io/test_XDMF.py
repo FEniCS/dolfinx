@@ -356,8 +356,11 @@ def test_save_points_2D(tempdir, encoding):
 
     file = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir,
                                                   "points_values_2D.xdmf"))
-
-    file.write(points, vals, encoding)
+    if encoding == XDMFFile.Encoding_ASCII: # Not implemented
+        with pytest.raises(RuntimeError):
+            file.write(points, vals, encoding)
+    else:
+        file.write(points, vals, encoding)
     del file
 
 
@@ -382,10 +385,12 @@ def test_save_points_3D(tempdir, encoding):
     del file
 
     file = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "points_values_3D.xdmf"))
-
-    file.write(points, vals, encoding)
+    if encoding == XDMFFile.Encoding_ASCII: # Not implemented
+        with pytest.raises(RuntimeError):
+            file.write(points, vals, encoding)
+    else:
+        file.write(points, vals, encoding)
     del file
-
 
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_mesh_value_collection(tempdir, encoding):
