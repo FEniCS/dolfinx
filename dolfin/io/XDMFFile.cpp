@@ -568,7 +568,8 @@ void XDMFFile::write(const std::vector<Point>& points, Encoding encoding)
     }
 
     // Write HDF5 file
-    _hdf5_file->write(points, group_name);
+    const std::string coordinates_name = group_name + "/coordinates";
+    _hdf5_file->write(points, coordinates_name);
 #else
     dolfin_error("XDMFile.cpp", "write vector<Point>", "Need HDF5 support");
 #endif
@@ -587,7 +588,6 @@ void XDMFFile::write(const std::vector<Point>& points,
                      const std::vector<double>& values,
                      Encoding encoding)
 {
-  // FIXME: make ASCII output work
   check_encoding(encoding);
 
   // Write clouds of points to XDMF/HDF5 with values
@@ -609,13 +609,19 @@ void XDMFFile::write(const std::vector<Point>& points,
     }
 
     // Write HDF5 file
-    _hdf5_file->write(points, group_name);
+    const std::string coordinates_name = group_name + "/coordinates";
+    _hdf5_file->write(points, coordinates_name);
 
     const std::string values_name = group_name + "/values";
     _hdf5_file->write(values, values_name);
 #else
     dolfin_error("XDMFile.cpp", "write vector<Point>", "Need HDF5 support");
 #endif
+  }
+  else if (encoding == Encoding::ASCII)
+  {
+    // FIXME: Make ASCII output work
+    dolfin_not_implemented();
   }
 
   // The XML created will obliterate any existing XDMF file
