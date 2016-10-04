@@ -21,25 +21,34 @@
 # This script should be run from the top level directory.
 
 import os
+import ffc
 
 # Forms that need special options
-special = {"CahnHilliard2D.ufl":       "-fsplit",
-           "CahnHilliard3D.ufl":       "-fsplit",
-           "Poisson2D_1.ufl":         "-fsplit",
-           "Poisson2D_2.ufl":         "-fsplit",
-           "Poisson2D_3.ufl":         "-fsplit",
-           "Poisson2D_4.ufl":         "-fsplit",
-           "Poisson2D_5.ufl":         "-fsplit",
-           "Poisson3D_1.ufl":         "-fsplit",
-           "Poisson3D_2.ufl":         "-fsplit",
-           "Poisson3D_3.ufl":         "-fsplit",
-           "Poisson3D_4.ufl":         "-fsplit",
-           "Poisson3D_5.ufl":         "-fsplit",
-           "AdaptivePoisson.ufl":      "-e",
-           "AdaptiveNavierStokes.ufl": "-e"}
+use_error = [
+    "AdaptivePoisson.ufl",
+    "AdaptiveNavierStokes.ufl",
+    ]
 
-# Forms for which we should skip optimization
-skip_optimization = ["HyperElasticity.ufl"]
+use_representation = {
+    "HyperElasticity.ufl": "uflacs",
+    "CahnHilliard2D.ufl": "uflacs",
+    "CahnHilliard3D.ufl": "uflacs",
+    }
+
+use_split = [
+    "Poisson2D_1.ufl",
+    "Poisson2D_2.ufl",
+    "Poisson2D_3.ufl",
+    "Poisson2D_4.ufl",
+    "Poisson2D_5.ufl",
+    "Poisson3D_1.ufl",
+    "Poisson3D_2.ufl",
+    "Poisson3D_3.ufl",
+    "Poisson3D_4.ufl",
+    "Poisson3D_5.ufl",
+    "CahnHilliard2D.ufl",
+    "CahnHilliard3D.ufl",
+    ]
 
 # Forms for which we don't want to generate functions for evaluating the basis
 skip_basis = ["Poisson2D_5.ufl", "Poisson3D_4.ufl"]
@@ -51,31 +60,38 @@ subdirs = ["dolfin", "demo", "bench", "test"]
 topdir = os.getcwd()
 for subdir in subdirs:
     for root, dirs, files in os.walk(subdir):
-
         # Check for .ufl files
-        formfiles = [f for f in files if len(f) > 4 and f[-4:] == ".ufl"]
-        if len(formfiles) == 0:
+        formfiles = [f for f in files if f[-4:] == ".ufl"]
+        if not formfiles:
             continue
 
         # Compile files
         os.chdir(root)
-        print("Compiling forms in %s..." % root)
+        print("Compiling %d forms in %s..." % (len(formfiles), root))
         for f in formfiles:
-            if f in special:
-                options = special[f]
-            else:
-                options = ""
-            if f in skip_optimization:
-                optimization = ""
-            else:
-                optimization = "-O"
+            args = ["-l", "dolfin"]
+            args.append("-s")
+            args.append("-O")
+
+            args.append("-r")
+            args.append(use_representation.get(f, "auto"))
+
+            if f in use_split:
+                args.append("-fsplit")
+
+            if f in use_error:
+                args.append("-e")
 
             if f in skip_basis:
-                options += " -fno-evaluate_basis -fno-evaluate_basis_derivatives"
+                args.append("-fno-evaluate_basis")
+                args.append("-fno-evaluate_basis_derivatives")
 
-            command = "ffc -v %s -l dolfin %s %s >> compile.log" % (optimization, options, f)
-            print("  " + command)
-            ret = os.system(command)
-            if not ret == 0:
+            args.append(f)
+
+            command = "ffc " + " ".join(args) # + " >> compile.log"
+            print(command)
+
+            ret = ffc.main(args)
+            if ret != 0:
                 raise RuntimeError("Unable to compile form: %s/%s" % (root, f))
         os.chdir(topdir)
