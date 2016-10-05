@@ -101,7 +101,7 @@ namespace dolfin
     ///     encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
-    void write(const Mesh& mesh, Encoding encoding=Encoding::HDF5);
+    void write(const Mesh& mesh, Encoding encoding=Encoding::HDF5) const;
 
     /// Save a Function to XDMF file for visualisation, using an
     /// associated HDF5 file, or storing the data inline as XML.
@@ -203,9 +203,6 @@ namespace dolfin
     void read(MeshFunction<int>& meshfunction);
     void read(MeshFunction<std::size_t>& meshfunction);
     void read(MeshFunction<double>& meshfunction);
-
-    // Write mesh
-    void write_new(const Mesh& mesh, Encoding encoding=Encoding::HDF5) const;
 
     // Read mesh
     void read_new(Mesh& mesh) const;
