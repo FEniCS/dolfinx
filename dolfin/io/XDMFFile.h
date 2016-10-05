@@ -245,6 +245,11 @@ namespace dolfin
                                   hid_t h5_id, const std::string path_prefix,
                                   const Mesh& mesh);
 
+    // Add attribute node and data to xml_node
+    static void add_attribute_data(MPI_Comm comm, pugi::xml_node& xml_node,
+                                  hid_t h5_id, const std::string path_prefix,
+                                  const std::vector<double>& data);
+
     // Add DataItem node to an XML node. If HDF5 is open (h5_id > 0) the data is
     // written to the HDFF5 file with the path 'h5_path'. Otherwise, data is
     // witten to the XML node and 'h5_path' is ignored
@@ -294,14 +299,19 @@ namespace dolfin
                          const std::size_t num_global_points,
                          const unsigned int value_size, Encoding encoding);
 
+    // Get data width - normally the same as u.value_size(), but expand for 2D
+    // vector/tensor because XDMF presents everything as 3D
+    static std::int64_t get_padded_width(const Function& u);
+
+    // Returns true for DG0 Functions
+    static bool has_cell_centred_data(const Function& u);
+
     // Get point data values for linear or quadratic mesh into
     // flattened 2D array in data_values with given width
-    void get_point_data_values(std::vector<double>& data_values,
-                               std::size_t width, const Function& u) const;
+    static std::vector<double> get_point_data_values(const Function& u);
 
     // Get cell data values as a flattened 2D array in data_values
-    void get_cell_data_values(std::vector<double>& data_values,
-                              const Function& u) const;
+    static std::vector<double> get_cell_data_values(const Function& u);
 
     // Check whether the requested encoding is supported
     void check_encoding(Encoding encoding) const;
