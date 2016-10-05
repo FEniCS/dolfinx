@@ -195,7 +195,8 @@ void XDMFFile::write(const Function& u, Encoding encoding)
   if (encoding == Encoding::HDF5)
   {
     // Open file
-    h5_file.reset(new HDF5File(mesh.mpi_comm(), get_hdf5_filename(_filename), "w"));
+    h5_file.reset(new HDF5File(mesh.mpi_comm(),
+                               get_hdf5_filename(_filename), "w"));
     dolfin_assert(h5_file);
 
     // Get file handle
@@ -233,14 +234,23 @@ void XDMFFile::write(const Function& u, Encoding encoding)
   pugi::xml_node attribute_node = domain_node.append_child("Attribute");
   dolfin_assert(attribute_node);
   attribute_node.append_attribute("Name") = u.name().c_str();
-  attribute_node.append_attribute("AttributeType") = rank_to_string(u.value_rank()).c_str();
+  attribute_node.append_attribute("AttributeType")
+    = rank_to_string(u.value_rank()).c_str();
   attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
   // Add attribute DataItem node and write data
   std::int64_t width = get_padded_width(u);
   dolfin_assert(data_values.size()%width == 0);
-  const std::vector<std::int64_t> shape = {(int64_t)data_values.size()/width, width};
-  add_data_item(_mpi_comm, attribute_node, h5_id, "/VisualisationVector/0", data_values, shape);
+  std::int64_t num_values =  cell_centred ?
+    mesh.size_global(mesh.topology().dim()) : mesh.size_global(0);
+
+  //   std::cout << "width = " << width << ", num_values = " << num_values << "\n";
+  //  std::cout << data_values.size() << "\n";
+
+  //  const std::vector<std::int64_t> shape  = { num_values, width };
+
+  add_data_item(_mpi_comm, attribute_node, h5_id,
+                "/VisualisationVector/0", data_values, {num_values, width});
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm) == 0)
@@ -327,15 +337,9 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
     {
       dolfin_assert(!mpi_io);
       num_global_points = mesh.size(0) + mesh.size(1);
-      global_size[0] = num_global_points;
     }
-    else
-    {
-      // Remove duplicates for vertex-based data in parallel
-      DistributedMeshTools::reorder_values_by_global_indices(mesh, data_values,
-                                                             padded_value_size);
-      global_size[0] = num_global_points;
-    }
+
+    global_size[0] = num_global_points;
   }
   else
     global_size[0] = num_global_cells;
@@ -1836,12 +1840,13 @@ std::vector<double> XDMFFile::get_point_data_values(const Function& u)
   {
     u.compute_vertex_values(data_values, *mesh);
 
+    std::int64_t width = get_padded_width(u);
+
     if (u.value_rank() > 0)
     {
       // Transpose vector/tensor data arrays
       const std::size_t num_local_vertices = mesh->size(0);
       const std::size_t value_size = u.value_size();
-      std::int64_t width = get_padded_width(u);
       std::vector<double> _data_values(width*num_local_vertices, 0.0);
       for (std::size_t i = 0; i < num_local_vertices; i++)
       {
@@ -1853,6 +1858,13 @@ std::vector<double> XDMFFile::get_point_data_values(const Function& u)
         }
       }
       data_values = _data_values;
+    }
+
+    // Remove duplicates for vertex-based data in parallel
+    if (MPI::size(mesh->mpi_comm()) > 1)
+    {
+      DistributedMeshTools::reorder_values_by_global_indices(*mesh,
+                                                             data_values, width);
     }
 
     return data_values;
