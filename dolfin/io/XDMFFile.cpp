@@ -176,34 +176,26 @@ void XDMFFile::write(const Mesh& mesh, Encoding encoding)
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const Function& u, Encoding encoding)
 {
-  // Fallback to old code for now
-  write(u, 0.0, encoding);
-  return;
+  // Fallback to old code
+  //  write(u, 0.0, encoding);
+  //  return;
 
   check_encoding(encoding);
-  const auto mesh = u.function_space()->mesh();
-  write_new(*mesh, encoding);
 
+  // Get Mesh
+  const Mesh& mesh = *u.function_space()->mesh();
+
+  // Create pugi doc
   pugi::xml_document xml_doc;
-  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
-  dolfin_assert(result);
 
-  // Get grid node
-  pugi::xml_node xdmf_node = xml_doc.child("Xdmf");
-  dolfin_assert(xdmf_node);
-  pugi::xml_node domain_node = xdmf_node.child("Domain");
-  dolfin_assert(domain_node);
-  pugi::xml_node grid_node = domain_node.child("Grid");
-  dolfin_assert(grid_node);
-
-  // Open the HDF5 file if using HDF5 encoding (append)
+  // Open the HDF5 file if using HDF5 encoding (truncate)
   hid_t h5_id = -1;
-  std::unique_ptr<HDF5File> h5_file;
 #ifdef HAS_HDF5
+  std::unique_ptr<HDF5File> h5_file;
   if (encoding == Encoding::HDF5)
   {
     // Open file
-    h5_file.reset(new HDF5File(mesh->mpi_comm(), get_hdf5_filename(_filename), "a"));
+    h5_file.reset(new HDF5File(mesh.mpi_comm(), get_hdf5_filename(_filename), "w"));
     dolfin_assert(h5_file);
 
     // Get file handle
@@ -211,19 +203,44 @@ void XDMFFile::write(const Function& u, Encoding encoding)
   }
 #endif
 
+  // Add XDMF node and version attribute
+  pugi::xml_node xdmf_node = xml_doc.append_child("Xdmf");
+  dolfin_assert(xdmf_node);
+  xdmf_node.append_attribute("Version") = "3.0";
+
+  // Add domain node and add name attribute
+  pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+  dolfin_assert(domain_node);
+  domain_node.append_attribute("Name") = "DOLFIN Function Visualisation";
+
+  // Add the mesh Grid to the domain
+  add_mesh(_mpi_comm, domain_node, h5_id, mesh);
+
+  // Get Grid node
+  pugi::xml_node grid_node = domain_node.child("Grid");
+  dolfin_assert(grid_node);
+
+  // Get Function data values and shape
   std::vector<double> data_values;
-  if (has_cell_centred_data(u))
+  bool cell_centred = has_cell_centred_data(u);
+
+  if (cell_centred)
     data_values = get_cell_data_values(u);
   else
     data_values = get_point_data_values(u);
 
-  //  std::int64_t width = get_padded_width(u);
-  //  dolfin_assert(data_values.size()%width == 0);
-  //  std::int64_t ndata = (int64_t)data_values.size()/width;
+  // Add attribute node
+  pugi::xml_node attribute_node = domain_node.append_child("Attribute");
+  dolfin_assert(attribute_node);
+  attribute_node.append_attribute("Name") = u.name().c_str();
+  attribute_node.append_attribute("AttributeType") = rank_to_string(u.value_rank()).c_str();
+  attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
-  // Add geometry node and attributes (including writing data)
-  add_attribute_data(_mpi_comm, grid_node, h5_id, "/VisualisationVector/0",
-                     data_values);
+  // Add attribute DataItem node and write data
+  std::int64_t width = get_padded_width(u);
+  dolfin_assert(data_values.size()%width == 0);
+  const std::vector<std::int64_t> shape = {(int64_t)data_values.size()/width, width};
+  add_data_item(_mpi_comm, attribute_node, h5_id, "/VisualisationVector/0", data_values, shape);
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm) == 0)
@@ -743,26 +760,10 @@ void XDMFFile::write_new(const Mesh& mesh, Encoding encoding) const
   // Create pugi doc
   pugi::xml_document xml_doc;
 
-  // Add XDMF node and version attribute
-  pugi::xml_node xdmf_node = xml_doc.append_child("Xdmf");
-  dolfin_assert(xdmf_node);
-  xdmf_node.append_attribute("Version") = "3.0";
-
-  // Add domain node and add name attribute
-  pugi::xml_node domain_node = xdmf_node.append_child("Domain");
-  dolfin_assert(domain_node);
-  domain_node.append_attribute("Name") = "Mesh produced by DOLFIN";
-
-  // Add grid node and attributes
-  pugi::xml_node grid_node = domain_node.append_child("Grid");
-  dolfin_assert(grid_node);
-  grid_node.append_attribute("Name") = mesh.name().c_str();
-  grid_node.append_attribute("GridType") = "Uniform";
-
   // Open a HDF5 file if using HDF5 encoding (truncate)
   hid_t h5_id = -1;
-  std::unique_ptr<HDF5File> h5_file;
 #ifdef HAS_HDF5
+  std::unique_ptr<HDF5File> h5_file;
   if (encoding == Encoding::HDF5)
   {
     // Open file
@@ -774,22 +775,45 @@ void XDMFFile::write_new(const Mesh& mesh, Encoding encoding) const
   }
 #endif
 
-  // Add topology node and attributes (including writing data)
-  const int tdim = mesh.topology().dim();
-  const std::int64_t num_global_cells = mesh.size_global(tdim);
-  if (num_global_cells < 1e9)
-    add_topology_data<std::int32_t>(_mpi_comm, grid_node, h5_id, "/Mesh", mesh);
-  else
-    add_topology_data<std::int64_t>(_mpi_comm, grid_node, h5_id, "/Mesh", mesh);
+  // Add XDMF node and version attribute
+  pugi::xml_node xdmf_node = xml_doc.append_child("Xdmf");
+  dolfin_assert(xdmf_node);
+  xdmf_node.append_attribute("Version") = "3.0";
 
-  // Add geometry node and attributes (including writing data)
-  add_geometry_data(_mpi_comm, grid_node, h5_id, "/Mesh", mesh);
+  // Add domain node and add name attribute
+  pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+  dolfin_assert(domain_node);
+  domain_node.append_attribute("Name") = "Mesh produced by DOLFIN";
+
+  // Add the mesh Grid to the domain
+  add_mesh(_mpi_comm, domain_node, h5_id, mesh);
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm) == 0)
     xml_doc.save_file(_filename.c_str(), "  ");
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void XDMFFile::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
+                        hid_t h5_id, const Mesh& mesh)
+{
+  // Add grid node and attributes
+  pugi::xml_node grid_node = xml_node.append_child("Grid");
+  dolfin_assert(grid_node);
+  grid_node.append_attribute("Name") = mesh.name().c_str();
+  grid_node.append_attribute("GridType") = "Uniform";
+
+  // Add topology node and attributes (including writing data)
+  const int tdim = mesh.topology().dim();
+  const std::int64_t num_global_cells = mesh.size_global(tdim);
+  if (num_global_cells < 1e9)
+    add_topology_data<std::int32_t>(comm, grid_node, h5_id, "/Mesh", mesh);
+  else
+    add_topology_data<std::int64_t>(comm, grid_node, h5_id, "/Mesh", mesh);
+
+  // Add geometry node and attributes (including writing data)
+  add_geometry_data(comm, grid_node, h5_id, "/Mesh", mesh);
+}
+//-----------------------------------------------------------------------------
 void XDMFFile::read_new(Mesh& mesh) const
 {
   // FIXME: check for duplicated XML nodes
@@ -1109,22 +1133,6 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const std::vector<std::int64_t> shape = {num_points, gdim};
   add_data_item(comm, geometry_node, h5_id, h5_path, x, shape);
 }
-
-//-----------------------------------------------------------------------------
-void XDMFFile::add_attribute_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                  hid_t h5_id, const std::string path_prefix,
-                                  const std::vector<double>& data)
-{
-  pugi::xml_node attribute_node = xml_node.append_child("Attribute");
-  dolfin_assert(attribute_node);
-  attribute_node.append_attribute("Name") = "name";
-  attribute_node.append_attribute("AttributeType") = "Scalar";
-  attribute_node.append_attribute("Center") = "Node";
-
-  // Add attribute DataItem node
-  const std::vector<std::int64_t> shape = {(std::int64_t)data.size(), 1};
-  add_data_item(comm, attribute_node, h5_id, path_prefix, data, shape);
-}
 //-----------------------------------------------------------------------------
 template<typename T>
 void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -1153,7 +1161,7 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
   }
   else
   {
-    #ifdef HAS_HDF5
+#ifdef HAS_HDF5
     data_item_node.append_attribute("Format") = "HDF";
 
     // Get name of HDF5 file
@@ -1185,12 +1193,20 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
     const bool use_mpi_io = MPI::size(comm) == 1 ? false : true;
     HDF5Interface::write_dataset(h5_id, h5_path, x, local_range, shape, use_mpi_io,
                                  false);
-    #else
+
+    // Add partitioning attribute to dataset
+    std::vector<std::size_t> partitions;
+    std::vector<std::size_t> offset_tmp(1, offset);
+    MPI::gather(comm, offset_tmp, partitions);
+    MPI::broadcast(comm, partitions);
+    HDF5Interface::add_attribute(h5_id, h5_path, "partition", partitions);
+
+#else
     // Should never reach this point
     dolfin_error("XDMFFile.cpp",
                  "add dataitem",
-                 "DOLFIN has not been configured with hdf5_dataset");
-    #endif
+                 "DOLFIN has not been configured with HDF5");
+#endif
   }
 }
 //----------------------------------------------------------------------------
@@ -2177,5 +2193,16 @@ std::vector<T> XDMFFile::string_to_vector(const std::vector<std::string>& x_str)
   }
 
   return data;
+}
+//-----------------------------------------------------------------------------
+std::string XDMFFile::rank_to_string(std::size_t value_rank)
+{
+  if (value_rank > 2)
+    dolfin_error("XDMFFile.cpp", "get rank string", "Out of range");
+  if (value_rank == 0)
+    return "Scalar";
+  else if (value_rank == 1)
+    return "Vector";
+  return "Tensor";
 }
 //-----------------------------------------------------------------------------
