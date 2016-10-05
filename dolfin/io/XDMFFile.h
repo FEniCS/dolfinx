@@ -221,17 +221,21 @@ namespace dolfin
                            const pugi::xml_node& geometry_dataset_node,
                            const boost::filesystem::path& parent_path);
 
-   // Build local mesh data structure
-   static void
-   build_local_mesh_data (LocalMeshData& local_mesh_data,
-                          const CellType& cell_type,
-                          const std::int64_t num_points,
-                          const std::int64_t num_cells,
-                          const int num_points_per_cell,
-                          const int tdim, const int gdim,
-                          const pugi::xml_node& topology_dataset_node,
-                          const pugi::xml_node& geometry_dataset_node,
-                          const boost::filesystem::path& parent_path);
+    // Build local mesh data structure
+    static void
+      build_local_mesh_data (LocalMeshData& local_mesh_data,
+                             const CellType& cell_type,
+                             const std::int64_t num_points,
+                             const std::int64_t num_cells,
+                             const int num_points_per_cell,
+                             const int tdim, const int gdim,
+                             const pugi::xml_node& topology_dataset_node,
+                             const pugi::xml_node& geometry_dataset_node,
+                             const boost::filesystem::path& parent_path);
+
+    // Add mesh to XDMF xml_node (usually a Domain or Time Grid) and write data
+    static void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
+                         hid_t h5_id, const Mesh& mesh);
 
     // Add topology node to xml_node (includes writing data to XML or  HDF5
     // file)
@@ -244,11 +248,6 @@ namespace dolfin
     static void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   hid_t h5_id, const std::string path_prefix,
                                   const Mesh& mesh);
-
-    // Add attribute node and data to xml_node
-    static void add_attribute_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                  hid_t h5_id, const std::string path_prefix,
-                                  const std::vector<double>& data);
 
     // Add DataItem node to an XML node. If HDF5 is open (h5_id > 0) the data is
     // written to the HDFF5 file with the path 'h5_path'. Otherwise, data is
@@ -370,6 +369,9 @@ namespace dolfin
     // Return a vector of numerical values from a vector of stringstream
     template <typename T>
     static std::vector<T> string_to_vector(const std::vector<std::string>& x_str);
+
+    // Convert a value_rank to the XDMF string description (Scalar, Vector, Tensor)
+    static std::string rank_to_string(std::size_t value_rank);
 
     // MPI communicator
     MPI_Comm _mpi_comm;
