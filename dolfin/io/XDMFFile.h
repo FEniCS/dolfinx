@@ -234,6 +234,10 @@ namespace dolfin
     static void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
                          hid_t h5_id, const Mesh& mesh);
 
+    // Add set of points to XDMF xml_node and write data
+    static void add_points(MPI_Comm comm, pugi::xml_node& xml_node,
+                           hid_t h5_id, const std::vector<Point>& points);
+
     // Add topology node to xml_node (includes writing data to XML or  HDF5
     // file)
     template<typename T>
