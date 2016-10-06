@@ -26,6 +26,8 @@
 #include <utility>
 #include <vector>
 
+#include "pugixml.hpp"
+
 #ifdef HAS_HDF5
 #include <hdf5.h>
 #else
@@ -101,7 +103,7 @@ namespace dolfin
     ///     encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
-    void write(const Mesh& mesh, Encoding encoding=Encoding::HDF5) const;
+    void write(const Mesh& mesh, Encoding encoding=Encoding::HDF5);
 
     /// Save a Function to XDMF file for visualisation, using an
     /// associated HDF5 file, or storing the data inline as XML.
@@ -231,8 +233,10 @@ namespace dolfin
                              const boost::filesystem::path& parent_path);
 
     // Add mesh to XDMF xml_node (usually a Domain or Time Grid) and write data
-    static void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
-                         hid_t h5_id, const Mesh& mesh);
+    // returning the pugi::xml_node of the grid_node pointing to the mesh
+    static pugi::xml_node add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
+                                   hid_t h5_id, const Mesh& mesh,
+                                   const std::string path_prefix);
 
     // Add set of points to XDMF xml_node and write data
     static void add_points(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -390,6 +394,10 @@ namespace dolfin
 
     // The xml document of the XDMF file
     std::unique_ptr<XDMFxml> _xml;
+
+    // The XML document currently representing the XDMF
+    // which needs to be kept open for time series etc.
+    pugi::xml_document _xml_doc;
 
   };
 
