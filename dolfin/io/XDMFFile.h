@@ -293,12 +293,6 @@ namespace dolfin
     void write_mesh_function(const MeshFunction<T>& meshfunction,
                              std::string format, Encoding encoding);
 
-    // Write XML description of point clouds, with value_size = 0, 1
-    // or 3 (for either no point data, scalar, or vector)
-    void write_point_xml(const std::string dataset_name,
-                         const std::size_t num_global_points,
-                         const unsigned int value_size, Encoding encoding);
-
     // Get data width - normally the same as u.value_size(), but expand for 2D
     // vector/tensor because XDMF presents everything as 3D
     static std::int64_t get_padded_width(const Function& u);

@@ -1743,43 +1743,6 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
   ++_counter;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_point_xml(const std::string group_name,
-                               const std::size_t num_global_points,
-                               const unsigned int value_size,
-                               Encoding encoding)
-{
-  // FIXME: move to XDMFxml.cpp
-
-  // Write the XML meta description on process zero
-  if (MPI::rank(_mpi_comm) == 0)
-  {
-    dolfin_assert(_xml);
-    _xml->init_mesh("Point cloud");
-
-    // Point topology, no connectivity data
-    _xml->mesh_topology(CellType::Type::point, 0, num_global_points, "",
-                        xdmf_format_str(encoding));
-
-    // Describe geometric coordinates
-    // FIXME: assumes 3D
-    boost::filesystem::path p(get_hdf5_filename(_filename));
-    _xml->mesh_geometry(num_global_points, 3,
-                        p.filename().string() + ":/Points",
-                        xdmf_format_str(encoding));
-
-    if(value_size != 0)
-    {
-      dolfin_assert(value_size == 1 || value_size == 3);
-      _xml->data_attribute("point_values", 0, true,
-                           num_global_points, num_global_points, value_size,
-                           p.filename().string() + ":" + group_name + "/values",
-                           xdmf_format_str(encoding));
-    }
-
-    _xml->write();
-  }
-}
-//-----------------------------------------------------------------------------
 std::vector<double> XDMFFile::get_cell_data_values(const Function& u)
 {
   dolfin_assert(u.function_space()->dofmap());
