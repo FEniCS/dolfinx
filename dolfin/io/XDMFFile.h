@@ -282,7 +282,7 @@ namespace dolfin
                                       const boost::filesystem::path& parent_path);
 
     // Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem node
-    std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& dataitem_node);
+    static std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& dataitem_node);
 
     static std::string get_hdf5_filename(std::string xdmf_filename);
 
