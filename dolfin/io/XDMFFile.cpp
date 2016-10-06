@@ -544,7 +544,84 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const std::vector<Point>& points, Encoding encoding)
 {
+  // Check that encoding is supported
   check_encoding(encoding);
+
+  // Create pugi doc
+  pugi::xml_document xml_doc;
+
+  // Open a HDF5 file if using HDF5 encoding (truncate)
+  hid_t h5_id = -1;
+#ifdef HAS_HDF5
+  std::unique_ptr<HDF5File> h5_file;
+  if (encoding == Encoding::HDF5)
+  {
+    // Open file
+    h5_file.reset(new HDF5File(_mpi_comm, get_hdf5_filename(_filename), "w"));
+    dolfin_assert(h5_file);
+
+    // Get file handle
+    h5_id = h5_file->h5_id();
+  }
+#endif
+
+  // Add XDMF node and version attribute
+  xml_doc.append_child(pugi::node_doctype)
+    .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+  pugi::xml_node xdmf_node = xml_doc.append_child("Xdmf");
+  dolfin_assert(xdmf_node);
+
+  add_points(_mpi_comm, xdmf_node, h5_id, points);
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm) == 0)
+    xml_doc.save_file(_filename.c_str(), "  ");
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node,
+                          hid_t h5_id, const std::vector<Point>& points)
+{
+  xdmf_node.append_attribute("Version") = "3.0";
+  xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
+  pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+  dolfin_assert(domain_node);
+  domain_node.append_attribute("Name") = "Point cloud produced by DOLFIN";
+
+  // Add a Grid to the domain
+  pugi::xml_node grid_node = domain_node.append_child("Grid");
+  dolfin_assert(grid_node);
+  grid_node.append_attribute("GridType") = "Uniform";
+  grid_node.append_attribute("Name") = "Point cloud";
+
+  pugi::xml_node topology_node = grid_node.append_child("Topology");
+  dolfin_assert(topology_node);
+  const std::size_t n = points.size();
+  const std::int64_t nglobal = MPI::sum(comm, n);
+  topology_node.append_attribute("NumberOfElements")
+    = std::to_string(nglobal).c_str();
+  topology_node.append_attribute("TopologyType") = "PolyVertex";
+  topology_node.append_attribute("NodesPerElement") = 1;
+
+  pugi::xml_node geometry_node = grid_node.append_child("Geometry");
+  dolfin_assert(geometry_node);
+  geometry_node.append_attribute("GeometryType") = "XYZ";
+
+  // Pack data
+  std::vector<double> x(3*n);
+  for (std::size_t i = 0; i < n; ++i)
+    for (std::size_t j = 0; j < 3; ++j)
+      x[3*i + j] = points[i][j];
+
+  const std::vector<std::int64_t> shape = {nglobal, 3};
+  add_data_item(comm, geometry_node, h5_id, "/Points/coordinates", x, shape);
+}
+//----------------------------------------------------------------------------
+void XDMFFile::write(const std::vector<Point>& points,
+                     const std::vector<double>& values,
+                     Encoding encoding)
+{
+  // Write clouds of points to XDMF/HDF5 with values
+  dolfin_assert(points.size() == values.size());
 
   // Check that encoding is supported
   check_encoding(encoding);
@@ -568,88 +645,32 @@ void XDMFFile::write(const std::vector<Point>& points, Encoding encoding)
 #endif
 
   // Add XDMF node and version attribute
-  xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+  xml_doc.append_child(pugi::node_doctype)
+    .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
   pugi::xml_node xdmf_node = xml_doc.append_child("Xdmf");
   dolfin_assert(xdmf_node);
-  xdmf_node.append_attribute("Version") = "3.0";
-  xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
-  pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+
+  add_points(_mpi_comm, xdmf_node, h5_id, points);
+
+  // Add attribute node
+  pugi::xml_node domain_node = xdmf_node.child("Domain");
   dolfin_assert(domain_node);
-  domain_node.append_attribute("Name") = "Point cloud produced by DOLFIN";
-
-  // Add a Grid to the domain
-  pugi::xml_node grid_node = domain_node.append_child("Grid");
+  pugi::xml_node grid_node = domain_node.child("Grid");
   dolfin_assert(grid_node);
-  grid_node.append_attribute("GridType") = "Uniform";
+  pugi::xml_node attribute_node = grid_node.append_child("Attribute");
+  dolfin_assert(attribute_node);
+  attribute_node.append_attribute("Name") = "Point values";
+  attribute_node.append_attribute("AttributeType") = "Scalar";
+  attribute_node.append_attribute("Center") = "Node";
 
-  pugi::xml_node topology_node = grid_node.append_child("Topology");
-  dolfin_assert(topology_node);
-  const std::size_t n = points.size();
-  const std::int64_t nglobal = MPI::sum(_mpi_comm, n);
-  topology_node.append_attribute("NumberOfElements") = std::to_string(nglobal).c_str();
-  topology_node.append_attribute("TopologyType") = "PolyVertex";
-  topology_node.append_attribute("NodesPerElement") = 1;
-
-  pugi::xml_node geometry_node = grid_node.append_child("Geometry");
-  dolfin_assert(geometry_node);
-  geometry_node.append_attribute("GeometryType") = "XYZ";
-
-  // Pack data
-  std::vector<double> x(3*n);
-  for (std::size_t i = 0; i < n; ++i)
-    for (std::size_t j = 0; j < 3; ++j)
-      x[3*i + j] = points[i][j];
-
-  const std::vector<std::int64_t> shape = {nglobal, 3};
-  add_data_item(_mpi_comm, geometry_node, h5_id, "/Points", x, shape);
+  // Add attribute DataItem node and write data
+  std::int64_t num_values =  MPI::sum(_mpi_comm, values.size());
+  add_data_item(_mpi_comm, attribute_node, h5_id,
+                "/Points/values", values, {num_values, 1});
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm) == 0)
     xml_doc.save_file(_filename.c_str(), "  ");
-}
-//----------------------------------------------------------------------------
-void XDMFFile::write(const std::vector<Point>& points,
-                     const std::vector<double>& values,
-                     Encoding encoding)
-{
-  check_encoding(encoding);
-
-  // Write clouds of points to XDMF/HDF5 with values
-  dolfin_assert(points.size() == values.size());
-
-  // Get number of points (global)
-  const std::size_t num_global_points = MPI::sum(_mpi_comm, points.size());
-  const std::string group_name = "/Points";
-
-  if (encoding == Encoding::HDF5)
-  {
-#ifdef HAS_HDF5
-    // Initialise HDF5 file
-    if (_hdf5_filemode != "w")
-    {
-      // Create HDF5 file (truncate)
-      _hdf5_file.reset(new HDF5File(_mpi_comm, get_hdf5_filename(_filename), "w"));
-      _hdf5_filemode = "w";
-    }
-
-    // Write HDF5 file
-    const std::string coordinates_name = group_name + "/coordinates";
-    _hdf5_file->write(points, coordinates_name);
-
-    const std::string values_name = group_name + "/values";
-    _hdf5_file->write(values, values_name);
-#else
-    dolfin_error("XDMFile.cpp", "write vector<Point>", "Need HDF5 support");
-#endif
-  }
-  else if (encoding == Encoding::ASCII)
-  {
-    // FIXME: Make ASCII output work
-    dolfin_not_implemented();
-  }
-
-  // The XML created will obliterate any existing XDMF file
-  write_point_xml(group_name, num_global_points, 1, encoding);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::read(Mesh& mesh, UseFilePartition use_file_partition)
