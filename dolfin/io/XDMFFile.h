@@ -26,8 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "pugixml.hpp"
-
 #ifdef HAS_HDF5
 #include <hdf5.h>
 #else
@@ -48,6 +46,7 @@ namespace boost
 namespace pugi
 {
   class xml_node;
+  class xml_document;
 }
 
 namespace dolfin
@@ -233,10 +232,9 @@ namespace dolfin
                              const boost::filesystem::path& parent_path);
 
     // Add mesh to XDMF xml_node (usually a Domain or Time Grid) and write data
-    // returning the pugi::xml_node of the grid_node pointing to the mesh
-    static pugi::xml_node add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
-                                   hid_t h5_id, const Mesh& mesh,
-                                   const std::string path_prefix);
+    static void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
+                         hid_t h5_id, const Mesh& mesh,
+                         const std::string path_prefix);
 
     // Add set of points to XDMF xml_node and write data
     static void add_points(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -397,7 +395,7 @@ namespace dolfin
 
     // The XML document currently representing the XDMF
     // which needs to be kept open for time series etc.
-    pugi::xml_document _xml_doc;
+    std::unique_ptr<pugi::xml_document> _xml_doc;
 
   };
 
