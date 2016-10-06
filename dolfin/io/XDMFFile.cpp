@@ -130,6 +130,14 @@ void XDMFFile::write(const Function& u, Encoding encoding)
 {
   check_encoding(encoding);
 
+  // If counter is non-zero, a time series has been saved before
+  if (_counter != 0)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "write Function to XDMF",
+                 "Not writing a time series");
+  }
+
   const Mesh& mesh = *u.function_space()->mesh();
 
   // Clear pugi doc
@@ -400,15 +408,10 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
   }
 #endif
 
-  bool time_series = parameters["time_series"];
-
   if (MPI::rank(mesh->mpi_comm()) == 0)
   {
     dolfin_assert(_xml);
-    if (time_series)
-      _xml->init_timeseries(mvc.name(), (double) _counter, _counter);
-    else
-      _xml->init_mesh(mvc.name());
+    _xml->init_mesh(mvc.name());
 
     if (encoding == Encoding::HDF5)
     {
@@ -437,7 +440,6 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
     _xml->write();
   }
 
-  ++_counter;
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const std::vector<Point>& points, Encoding encoding)
@@ -1368,7 +1370,7 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
   {
     #ifdef HAS_HDF5
     // Get file and data path
-    auto paths = XDMFxml::get_hdf5_paths(dataset_node);
+    auto paths = get_hdf5_paths(dataset_node);
 
     // Handle cases where file path is (a) absolute or (b) relative
     boost::filesystem::path h5_filepath(paths[0]);
@@ -1501,15 +1503,11 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
   {
 #ifdef HAS_HDF5
     const std::string data_name = _xml->dataname();
-    if (_hdf5_filemode != "r")
-    {
-      _hdf5_file.reset(new HDF5File(_mpi_comm, get_hdf5_filename(_filename), "r"));
-      _hdf5_filemode = "r";
-    }
-    dolfin_assert(_hdf5_file);
+    std::unique_ptr<HDF5File>
+      h5_file(new HDF5File(_mpi_comm, get_hdf5_filename(_filename), "r"));
 
     // Try to read the meshfunction from the associated HDF5 file
-    _hdf5_file->read(meshfunction, "/Mesh/" + data_name);
+    h5_file->read(meshfunction, "/Mesh/" + data_name);
 #else
     dolfin_error("XDMFile.cpp", "open MeshFunction file", "Need HDF5 support");
 #endif
