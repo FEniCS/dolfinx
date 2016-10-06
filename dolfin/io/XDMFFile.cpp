@@ -1095,6 +1095,7 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const std::string h5_path = group_name + "/topology";
   const std::vector<std::int64_t> shape = {num_cells, num_vertices_per_cell};
   const std::string number_type = "UInt";
+
   add_data_item(comm, topology_node, h5_id, h5_path, topology_data, shape, number_type);
 }
 //-----------------------------------------------------------------------------
@@ -1251,7 +1252,7 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
 
     // Check if mesh has ghost layers
     const MeshTopology& topology = mesh.topology();
-    const bool ghosted = (topology.size(cell_dim) == topology.ghost_offset(cell_dim));
+    const bool ghosted = (topology.size(cell_dim) != topology.ghost_offset(cell_dim));
 
     // Get MPI rank
     const int mpi_rank = MPI::rank(comm);
