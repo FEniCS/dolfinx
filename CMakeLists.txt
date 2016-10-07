@@ -956,10 +956,26 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
 endif()
 
 #------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for bench and demos if not
-# exists
+# Generate demo files from rst
+
+message(STATUS "")
+message(STATUS "Generating demo source files")
+message(STATUS "--------------------------------------------------")
+file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
+foreach(rst_file ${demo_rst_files})
+  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+  #add_custom_command(TARGET demos_source PRE_BUILD
+  #  COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
+  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endforeach()
+
+#------------------------------------------------------------------------------
+# Generate CMakeLists.txt files for bench and demos if not exists
+
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
+
 if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
   message(STATUS "")
   message(STATUS "Generating CMakeLists.txt files in demo, test and bench directories")
@@ -973,7 +989,7 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
     OUTPUT_QUIET)
   if (CMAKE_GENERATION_RESULT)
 
-    # Cleanup so download is triggered next time we run cmake
+    # Cleanup so FFC rebuild is triggered next time we run cmake
     if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
       file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
     endif()
@@ -984,34 +1000,11 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
 endif()
 
 #------------------------------------------------------------------------------
-# Check if data is downloaded
+# Copy data in demo/bench/test direcories to the build directories
 
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/eigenvalue/box_with_dent.xml.gz)
-  # FIXME: What if we do not have internet connection
-  message(STATUS "")
-  message(STATUS "Download demo and test data. May take some time...")
-  message(STATUS "--------------------------------------------------")
-  execute_process(
-    COMMAND ${DOLFIN_SOURCE_DIR}/cmake/scripts/download-demo-data
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
-    RESULT_VARIABLE DOWNLOAD_DEMO_DATA_RESULT
-    OUTPUT_VARIABLE DOWNLOAD_DEMO_DATA_OUTPUT
-    ERROR_VARIABLE DOWNLOAD_DEMO_DATA_OUTPUT
-    OUTPUT_QUIET)
-  if (DOWNLOAD_DEMO_DATA_RESULT)
+# FIXME: We should probably just generate them directly in the build
+# directory...
 
-    # Cleanup so download is triggered next time we run cmake
-    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/eigenvalue/box_with_dent.xml.gz)
-      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/documented/eigenvalue/box_with_dent.xml.gz)
-    endif()
-    message(WARNING "Download failed: \n${DOWNLOAD_DEMO_DATA_OUTPUT}")
-  endif()
-  set(COPY_DEMO_TEST_DEMO_DATA TRUE)
-endif()
-
-# If data have been generated or downloaded in the demo/bench/test direcories
-# we need to copy them to the build directories
-# FIXME: We should probably just generate them directly in the build directory...
 if (COPY_DEMO_TEST_DEMO_DATA)
   message(STATUS "")
   message(STATUS "Copying demo and test data to build directory.")
