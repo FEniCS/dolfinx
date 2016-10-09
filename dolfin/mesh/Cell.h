@@ -26,12 +26,14 @@
 
 #include <memory>
 
-#include <dolfin/geometry/Point.h>
+
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
+#include <dolfin/geometry/Point.h>
+#include <dolfin/geometry/IntersectionConstruction.h>
 
 namespace dolfin
 {
@@ -318,6 +320,23 @@ namespace dolfin
     ///     bool
     ///         True iff entity collides with cell.
     bool collides(const MeshEntity& entity) const;
+
+    /// Compute triangulation of intersection with given entity
+    ///
+    /// *Arguments*
+    ///     entity (_MeshEntity_)
+    ///         The entity with which to intersect.
+    ///
+    /// *Returns*
+    ///     std::vector<Point>
+    ///         A vector of point representing the convex hull of the intersection
+    ///         If the vector is empty then the cells don't intersection.
+    ///         If the size of the vector < tdim-1 then the intersection is
+    ///         degenerate, ie. the area of the intersection is 0
+    std::vector<Point>
+    intersection(const MeshEntity& entity) const
+    { return IntersectionConstruction::intersection(*this, entity); }
+
 
     // FIXME: This function is part of a UFC transition
     /// Get cell coordinate dofs (not vertex coordinates)
