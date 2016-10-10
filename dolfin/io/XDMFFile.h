@@ -196,17 +196,14 @@ namespace dolfin
     ///     use_partition_from_file (_UseFilePartition_)
     ///         Use the existing partition information in HDF5 file
     ///
-    void read(Mesh& mesh,
-              UseFilePartition use_file_partition=UseFilePartition::no);
+    void read(Mesh& mesh) const;
+    //          UseFilePartition use_file_partition=UseFilePartition::no);
 
     /// Read first MeshFunction from file
     void read(MeshFunction<bool>& meshfunction);
     void read(MeshFunction<int>& meshfunction);
     void read(MeshFunction<std::size_t>& meshfunction);
     void read(MeshFunction<double>& meshfunction);
-
-    // Read mesh
-    void read_new(Mesh& mesh) const;
 
   private:
 
@@ -301,8 +298,7 @@ namespace dolfin
 
     // Generic MeshFunction writer
     template<typename T>
-    void write_mesh_function(const MeshFunction<T>& meshfunction,
-                             std::string format, Encoding encoding);
+    void write_mesh_function(const MeshFunction<T>& meshfunction, Encoding encoding);
 
     // Get data width - normally the same as u.value_size(), but expand for 2D
     // vector/tensor because XDMF presents everything as 3D
@@ -325,34 +321,6 @@ namespace dolfin
     // enumeration
     static std::string xdmf_format_str(Encoding encoding)
     { return (encoding == XDMFFile::Encoding::HDF5) ? "HDF" : "XML"; }
-
-    // Generate the data string to insert in an xdmf file for the mesh
-    // cell to node connectivity
-    static std::string generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh);
-
-    // Generate the data string to insert in an xdmf file for the mesh
-    // for the topology of entitiy dimension edim -> 0
-    static std::string
-    generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh,
-                                           const std::size_t edim);
-
-    // Generate the data string to insert in an xdmf file for the mesh
-    // point cloud
-    static std::string generate_xdmf_ascii_mesh_geometry_data(const Mesh& mesh);
-
-    // Generate a string of the vertex data numeric values contained
-    // in the data argument which can then be inserted into an xdmf
-    // file. The numeric data is formatted according to the format
-    // argument. E.g:
-    //    generate_xdmf_ascii_data(data_values, "%.15e")
-    template<typename T>
-    static std::string generate_xdmf_ascii_data(const T& data,
-                                                std::string format);
-
-    // As XDMFFile::generate_xdmf_ascii_data, using
-    // boost::lexical_cast to format the numeric data as a string.
-    template<typename T>
-    static std::string generate_xdmf_ascii_data(const T& data);
 
     // Determine the encoding of the data from the xml file.
     Encoding get_file_encoding() const;

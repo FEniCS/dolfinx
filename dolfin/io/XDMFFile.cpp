@@ -337,24 +337,24 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const MeshFunction<bool>& meshfunction, Encoding encoding)
 {
-  write_mesh_function(meshfunction, "%d", encoding);
+  write_mesh_function(meshfunction, encoding);
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const MeshFunction<int>& meshfunction, Encoding encoding)
 {
-  write_mesh_function(meshfunction, "%d", encoding);
+  write_mesh_function(meshfunction, encoding);
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const MeshFunction<std::size_t>& meshfunction,
                      Encoding encoding)
 {
-  write_mesh_function(meshfunction, "%d", encoding);
+  write_mesh_function(meshfunction, encoding);
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const MeshFunction<double>& meshfunction,
                      Encoding encoding)
 {
-  write_mesh_function(meshfunction, "%.15e", encoding);
+  write_mesh_function(meshfunction, encoding);
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
@@ -551,128 +551,6 @@ void XDMFFile::write(const std::vector<Point>& points,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void XDMFFile::read(Mesh& mesh, UseFilePartition use_file_partition)
-{
-  read_new(mesh);
-  return;
-
-  // Parse XML file
-  dolfin_assert(_xml);
-  _xml->read();
-
-  // Get topology and geometry data
-  const auto topology = _xml->get_topology();
-  const auto geometry = _xml->get_geometry();
-
-  // Create a cell type string (we need to catch the case where
-  // TopologyType == "PolyLine")
-  const std::string cell_type_str
-    = (topology.cell_type == "polyline") ? "interval" : topology.cell_type;
-
-  // Create a DOLFIN cell type from string
-  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
-  dolfin_assert(cell_type);
-
-  // Get geometric and toplogical dimensions
-  const int gdim = geometry.dim;
-  const int tdim = cell_type->dim();
-  dolfin_assert(tdim <= gdim);
-
-  if (topology.format == "HDF")
-  {
-#ifdef HAS_HDF5
-    if (geometry.hdf5_filename != topology.hdf5_filename)
-    {
-      dolfin_error("XDMFFile.cpp",
-                   "read XDMF mesh",
-                   "Topology and geometry file names do not match");
-    }
-
-    // Close any associated HDF5 which may be open
-    _hdf5_file.reset();
-
-    // Prepend directory name of XDMF file...
-    // FIXME: not robust - topo.hdf5_filename may already be an
-    // absolute path
-    boost::filesystem::path xdmf_path(_filename);
-    boost::filesystem::path hdf5_path(topology.hdf5_filename);
-    HDF5File mesh_file(_mpi_comm, (xdmf_path.parent_path() / hdf5_path).string(), "r");
-
-    // Read the mesh from the associated HDF5 file
-    mesh_file.read(mesh, topology.hdf5_dataset, geometry.hdf5_dataset,
-                   gdim, *cell_type,
-                   topology.num_cells,
-                   geometry.num_points,
-                   static_cast<bool>(use_file_partition));
-#else
-    dolfin_error("XDMFile.cpp", "open Mesh file", "Need HDF5 support");
-#endif
-  }
-  else if (topology.format == "XML")
-  {
-    if (MPI::rank(mesh.mpi_comm()) == 0)
-    {
-      MeshEditor editor;
-      editor.open(mesh, cell_type_str, tdim, gdim);
-
-      // Read geometry
-      editor.init_vertices_global(geometry.num_points, geometry.num_points);
-
-      const auto& g_data = geometry.data;
-      std::istringstream iss(g_data);
-      std::string data_line;
-      std::vector<std::string> coords(gdim);
-      Point p({0.0, 0.0, 0.0});
-      std::size_t index = 0;
-      while(std::getline(iss, data_line))
-      {
-        boost::split(coords, data_line, boost::is_any_of(" "));
-        for (int j = 0; j < gdim; ++j)
-          p[j] = std::stod(coords[j]);
-        editor.add_vertex(index, p);
-        ++index;
-      }
-
-      if (geometry.num_points != index)
-      {
-        dolfin_error("XDMFFile.cpp",
-                     "parse mesh geometry points",
-                     (boost::format("number of points found in data (%d) does not match xdmf meta data (%d)")
-                      % index % geometry.num_points).str());
-      }
-
-      // Read topology
-      editor.init_cells_global(topology.num_cells, topology.num_cells);
-
-      const auto& t_data = topology.data;
-      iss.clear();
-      iss.str(t_data);
-      index = 0;
-      std::vector<std::string> splt_str_indices(topology.points_per_cell);
-      std::vector<std::size_t> point_indices(topology.points_per_cell);
-      while(std::getline(iss, data_line))
-      {
-        boost::split(splt_str_indices, data_line, boost::is_any_of(" "));
-        for (std::size_t j = 0; j < topology.points_per_cell; ++j)
-          point_indices[j] = std::stol(splt_str_indices[j]);
-
-        editor.add_cell(index, point_indices);
-        ++index;
-      }
-
-      if (topology.num_cells != index)
-      {
-        dolfin_error("XDMFFile.cpp",
-                     "parse mesh topology",
-                     (boost::format("number of cells found in data (%d) does not match xdmf meta data (%d)")
-                      % index % topology.num_cells).str());
-      }
-
-      editor.close();
-    }
-  }
-}
-//----------------------------------------------------------------------------
 void XDMFFile::read(MeshFunction<bool>& meshfunction)
 {
   const std::shared_ptr<const Mesh> mesh = meshfunction.mesh();
@@ -725,11 +603,9 @@ void XDMFFile::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::read_new(Mesh& mesh) const
+void XDMFFile::read(Mesh& mesh) const
 {
-  // FIXME: check for duplicated XML nodes
-
-  // Extract parent filepath (required to HDF5 when XDMF stores  relative path
+  // Extract parent filepath (required by HDF5 when XDMF stores relative path
   // of the HDF5 files(s) and the XDMF is not opened from its own directory)
   boost::filesystem::path xdmf_filename(_filename);
   const boost::filesystem::path parent_path = xdmf_filename.parent_path();
@@ -737,7 +613,7 @@ void XDMFFile::read_new(Mesh& mesh) const
   if (!boost::filesystem::exists(xdmf_filename))
   {
     dolfin_error("XDMFFile.cpp",
-                 "opening check that XDMF file",
+                 "open XDMF file",
                  "XDMF file \"%s\" does not exist", _filename.c_str());
   }
 
@@ -1538,7 +1414,7 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
     // Try to read the meshfunction from the associated HDF5 file
     h5_file->read(meshfunction, "/Mesh/" + data_name);
 #else
-    dolfin_error("XDMFile.cpp", "open MeshFunction file", "Need HDF5 support");
+    dolfin_error("XDMFFile.cpp", "open MeshFunction file", "Need HDF5 support");
 #endif
   }
   else if (encoding == Encoding::ASCII)
@@ -1569,7 +1445,7 @@ std::string XDMFFile::get_hdf5_filename(std::string xdmf_filename)
 //----------------------------------------------------------------------------
 template<typename T>
 void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
-                                   std::string format, Encoding encoding)
+                                   Encoding encoding)
 {
   check_encoding(encoding);
 
@@ -1893,84 +1769,6 @@ void XDMFFile::check_encoding(Encoding encoding) const
   }
 }
 //-----------------------------------------------------------------------------
-std::string XDMFFile::generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh)
-{
-  return generate_xdmf_ascii_mesh_topology_data(mesh, mesh.geometry().dim());
-}
-//-----------------------------------------------------------------------------
-std::string
-XDMFFile::generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh,
-                                                 const std::size_t edim)
-{
-  std::unique_ptr<CellType>
-    celltype(CellType::create(mesh.type().entity_type(edim)));
-
-  // Permutation to VTK ordering
-  const std::vector<std::int8_t> perm = celltype->vtk_mapping();
-
-  std::string topology_xml_value;
-  topology_xml_value += "\n";
-  if (edim == 0)
-  {
-    for (VertexIterator v(mesh); !v.end(); ++v)
-    {
-      topology_xml_value
-        += boost::str(boost::format("%d") % v->global_index()) + "\n";
-    }
-  }
-  else
-  {
-    for (MeshEntityIterator c(mesh, edim); !c.end(); ++c)
-    {
-      for (unsigned int i = 0; i != c->num_entities(0); ++i)
-      {
-        const std::size_t local_idx = c->entities(0)[perm[i]];
-        topology_xml_value
-          += boost::str(boost::format("%d") % local_idx) + " ";
-      }
-      topology_xml_value += "\n";
-    }
-  }
-
-  return topology_xml_value;
-}
-//-----------------------------------------------------------------------------
-std::string XDMFFile::generate_xdmf_ascii_mesh_geometry_data(const Mesh& mesh)
-{
-  const std::size_t gdim = mesh.geometry().dim();
-  std::string geometry_xml_value;
-  for (VertexIterator v(mesh); !v.end(); ++v)
-  {
-    geometry_xml_value += "\n";
-    const double* p = v->x();
-    for (size_t i = 0; i < gdim; ++i)
-      geometry_xml_value += boost::str(boost::format("%.15e") % p[i]) + " ";
-  }
-  geometry_xml_value += "\n";
-  return geometry_xml_value;
-}
-//-----------------------------------------------------------------------------
-template<typename T>
-std::string XDMFFile::generate_xdmf_ascii_data(const T& data,
-                                               std::string format)
-{
-  std::string data_str;
-  data_str += "\n";
-  for (std::size_t j = 0; j < data.size(); ++j)
-    data_str += boost::str(boost::format(format) % data[j]) + "\n";
-  return data_str;
-}
-//-----------------------------------------------------------------------------
-template<typename T>
-std::string XDMFFile::generate_xdmf_ascii_data(const T& data)
-{
-  std::string data_str;
-  data_str += "\n";
-  for (std::size_t j = 0; j < data.size(); ++j)
-    data_str += boost::lexical_cast<std::string>(data[j]) + "\n";
-  return data_str;
-}
-//-----------------------------------------------------------------------------
 XDMFFile::Encoding XDMFFile::get_file_encoding() const
 {
   dolfin_assert(_xml);
@@ -1983,51 +1781,6 @@ XDMFFile::Encoding XDMFFile::get_file_encoding() const
 XDMFFile::Encoding XDMFFile::get_file_encoding(std::string xml_encoding_attrib)
 {
   return (xml_encoding_attrib == "XML") ? Encoding::ASCII : Encoding::HDF5;
-}
-//-----------------------------------------------------------------------------
-template <typename T> void XDMFFile::write_ascii_mesh_value_collection(
-  const MeshValueCollection<T>& mesh_values,
-  const std::string name)
-{
-  const std::size_t dim = mesh_values.dim();
-  std::shared_ptr<const Mesh> mesh = mesh_values.mesh();
-
-  const std::map<std::pair<std::size_t, std::size_t>, T>& values
-    = mesh_values.values();
-
-  CellType::Type cell_type = mesh->type().entity_type(dim);
-  std::unique_ptr<CellType> entity_type(CellType::create(cell_type));
-
-  std::vector<T> value_data;
-  value_data.reserve(values.size());
-  std::string topology;
-  topology += "\n";
-
-  const std::size_t tdim = mesh->topology().dim();
-  mesh->init(tdim, dim);
-  for (auto &p : values)
-  {
-    MeshEntity cell = Cell(*mesh, p.first.first);
-    if (dim != tdim)
-    {
-      const unsigned int entity_local_idx = cell.entities(dim)[p.first.second];
-      cell = MeshEntity(*mesh, dim, entity_local_idx);
-    }
-
-    for (VertexIterator v(cell); !v.end(); ++v)
-      topology += boost::str(boost::format("%d") % v->global_index()) + " ";
-
-    topology += "\n";
-
-    dolfin_assert(_xml);
-    _xml->mesh_topology(cell_type, 1, mesh_values.size(), topology,
-                        xdmf_format_str(Encoding::ASCII));
-
-    _xml->data_attribute(mesh_values.name(), 0, false,
-                         mesh->size_global(0), mesh_values.size(),
-                         1, generate_xdmf_ascii_data(value_data),
-                         xdmf_format_str(Encoding::ASCII));
-  }
 }
 //-----------------------------------------------------------------------------
 std::string XDMFFile::vtk_cell_type_str(CellType::Type cell_type, int order)
