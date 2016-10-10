@@ -1125,6 +1125,49 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
   }
 }
 //----------------------------------------------------------------------------
+std::set<unsigned int>
+XDMFFile::compute_nonlocal_entities(const Mesh& mesh, int cell_dim)
+{
+  // If not already numbered, number entities of
+  // order cell_dim so we can get shared_entities
+  DistributedMeshTools::number_entities(mesh, cell_dim);
+
+  const std::size_t mpi_rank = MPI::rank(mesh.mpi_comm());
+  const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
+    = mesh.topology().shared_entities(cell_dim);
+
+  std::set<unsigned int> non_local_entities;
+
+  const std::size_t tdim = mesh.topology().dim();
+  bool ghosted
+    = (mesh.topology().size(tdim) > mesh.topology().ghost_offset(tdim));
+
+  if (!ghosted)
+  {
+    // No ghost cells - exclude shared entities
+    // which are on lower rank processes
+    for (const auto &e : shared_entities)
+    {
+      const unsigned int lowest_rank_owner = *(e.second.begin());
+      if (lowest_rank_owner < mpi_rank)
+        non_local_entities.insert(e.first);
+    }
+  }
+  else
+  {
+    // Iterate through ghost cells, adding non-ghost entities
+    // which are in lower rank process cells
+    for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
+    {
+      const unsigned int cell_owner = c->owner();
+      for (MeshEntityIterator e(*c, cell_dim); !e.end(); ++e)
+        if (!e->is_ghost() && cell_owner < mpi_rank)
+          non_local_entities.insert(e->index());
+    }
+  }
+  return non_local_entities;
+}
+//-----------------------------------------------------------------------------
 template<typename T>
 std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
 {
@@ -1148,7 +1191,8 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
     }
     else
     {
-      const std::vector<size_t>& global_vertices = mesh.topology().global_indices(0);
+      const std::vector<size_t>& global_vertices
+        = mesh.topology().global_indices(0);
       for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
       {
         const unsigned int* entities = c->entities(0);
@@ -1159,41 +1203,8 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
   }
   else
   {
-    // If not already numbered, number entities of
-    // order cell_dim so we can get shared_entities
-    DistributedMeshTools::number_entities(mesh, cell_dim);
-
-    const std::size_t mpi_rank = MPI::rank(comm);
-    const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
-      = mesh.topology().shared_entities(cell_dim);
-
-    std::set<unsigned int> non_local_entities;
-
-    bool ghosted = (mesh.topology().size(tdim) > mesh.topology().ghost_offset(tdim));
-
-    if (!ghosted)
-    {
-      // No ghost cells - exclude shared entities which are on lower rank processes
-      for (const auto &e : shared_entities)
-      {
-        const unsigned int lowest_rank_owner = *(e.second.begin());
-        if (lowest_rank_owner < mpi_rank)
-          non_local_entities.insert(e.first);
-      }
-    }
-    else
-    {
-      // Iterate through ghost cells, adding non-ghost entities
-      // which are in lower rank process cells to a set for
-      // exclusion from output
-      for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
-      {
-        const unsigned int cell_owner = c->owner();
-        for (MeshEntityIterator e(*c, cell_dim); !e.end(); ++e)
-          if (!e->is_ghost() && cell_owner < mpi_rank)
-            non_local_entities.insert(e->index());
-      }
-    }
+    std::set<unsigned int> non_local_entities
+      = compute_nonlocal_entities(mesh, cell_dim);
 
     if (cell_dim == 0)
     {
@@ -1244,6 +1255,7 @@ std::vector<T> XDMFFile::compute_value_data(const MeshFunction<T>& meshfunction)
 
   if (MPI::size(comm) == 1 or cell_dim == tdim)
   {
+    // FIXME: fail with ghosts?
     value_data.resize(meshfunction.size());
     std::copy(meshfunction.values(),
               meshfunction.values() + meshfunction.size(),
@@ -1251,40 +1263,8 @@ std::vector<T> XDMFFile::compute_value_data(const MeshFunction<T>& meshfunction)
   }
   else
   {
-    // If not already numbered, number entities of
-    // order cell_dim so we can get shared_entities
-    DistributedMeshTools::number_entities(*mesh, cell_dim);
-
-    const std::size_t mpi_rank = MPI::rank(comm);
-    const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
-      = mesh->topology().shared_entities(cell_dim);
-
-    // Get list of non-local entities for exclusion
-    std::set<unsigned int> non_local_entities;
-    bool ghosted = (mesh->topology().size(tdim) > mesh->topology().ghost_offset(tdim));
-    if (!ghosted)
-    {
-      // No ghost cells - exclude shared entities which are on lower rank processes
-      for (const auto &e : shared_entities)
-      {
-        const unsigned int lowest_rank_owner = *(e.second.begin());
-        if (lowest_rank_owner < mpi_rank)
-          non_local_entities.insert(e.first);
-      }
-    }
-    else
-    {
-      // Iterate through ghost cells, adding non-ghost entities
-      // which are in lower rank process cells to a set for
-      // exclusion from output
-      for (MeshEntityIterator c(*mesh, tdim, "ghost"); !c.end(); ++c)
-      {
-        const unsigned int cell_owner = c->owner();
-        for (MeshEntityIterator e(*c, cell_dim); !e.end(); ++e)
-          if (!e->is_ghost() && cell_owner < mpi_rank)
-            non_local_entities.insert(e->index());
-      }
-    }
+    std::set<unsigned int> non_local_entities
+      = compute_nonlocal_entities(*mesh, cell_dim);
 
     for (MeshEntityIterator e(*mesh, cell_dim); !e.end(); ++e)
     {

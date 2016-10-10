@@ -261,6 +261,11 @@ namespace dolfin
                               const std::vector<std::int64_t> dimensions,
                               const std::string number_type="");
 
+    // Calculate set of entities of dimension cell_dim which should are duplicated
+    // on other processes and should not be output on this process
+    static std::set<unsigned int> compute_nonlocal_entities(const Mesh& mesh,
+                                                            int cell_dim);
+
     // Return topology data on this process as a flat vector
     template<typename T>
     static std::vector<T> compute_topology_data(const Mesh& mesh, int cell_dim);
