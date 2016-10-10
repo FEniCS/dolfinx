@@ -75,9 +75,6 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
   // HDF5 file restart interval. Use 0 to collect all output in one
   // file.
   parameters.add("multi_file", 0);
-
-  // Whether to save multi-dataset files as time series, or flat
-  parameters.add("time_series", true);
 }
 //-----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -109,9 +106,11 @@ void XDMFFile::write(const Mesh& mesh, Encoding encoding)
 #endif
 
   // Add XDMF node and version attribute
+  _xml_doc->append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
   pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
   dolfin_assert(xdmf_node);
   xdmf_node.append_attribute("Version") = "3.0";
+  xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
 
   // Add domain node and add name attribute
   pugi::xml_node domain_node = xdmf_node.append_child("Domain");
@@ -241,24 +240,26 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
     timedata_node.append_attribute("Format") = "XML";
     timedata_node.append_attribute("Dimensions") = "0";
     timedata_node.append_child(pugi::node_pcdata);
+
+#ifdef HAS_HDF5
+    // Open the HDF5 file for first time, if using HDF5 encoding
+    if (encoding == Encoding::HDF5)
+    {
+      // Truncate the file the first time
+      std::string filemode = "w";
+      // Open file
+      _hdf5_file.reset(new HDF5File(mesh.mpi_comm(),
+                                    get_hdf5_filename(_filename), filemode));
+      dolfin_assert(_hdf5_file);
+    }
+#endif
   }
 
-  // Open the HDF5 file if using HDF5 encoding
+  // Get handle from existing file, (should be already open)
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
-  std::unique_ptr<HDF5File> h5_file;
   if (encoding == Encoding::HDF5)
-  {
-    // Truncate the file the first time
-    std::string filemode = (_counter == 0) ? "w" : "a";
-    // Open file
-    h5_file.reset(new HDF5File(mesh.mpi_comm(),
-                               get_hdf5_filename(_filename), filemode));
-    dolfin_assert(h5_file);
-
-    // Get file handle
-    h5_id = h5_file->h5_id();
-  }
+    h5_id = _hdf5_file->h5_id();
 #endif
 
   pugi::xml_node xdmf_node = _xml_doc->child("Xdmf");
@@ -367,6 +368,9 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
   dolfin_assert(mvc.mesh());
   std::shared_ptr<const Mesh> mesh = mvc.mesh();
 
+  // Reset pugi
+  _xml_doc->reset();
+
   // Open a HDF5 file if using HDF5 encoding (append)
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
@@ -374,15 +378,13 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
   if (encoding == Encoding::HDF5)
   {
     // Open file
-    h5_file.reset(new HDF5File(mesh->mpi_comm(), get_hdf5_filename(_filename), "a"));
+    h5_file.reset(new HDF5File(mesh->mpi_comm(), get_hdf5_filename(_filename), "w"));
     dolfin_assert(h5_file);
 
     // Get file handle
     h5_id = h5_file->h5_id();
   }
 #endif
-
-  std::cout << h5_id << "\n";
 
   if (MPI::sum(mesh->mpi_comm(), mvc.size()) == 0)
   {
@@ -391,55 +393,31 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
                  "No values in MeshValueCollection");
   }
 
-  // Locate Mesh Grid in _xml_doc or fail.
-  pugi::xml_node grid_node = _xml_doc->child("Xdmf").child("Domain").child("Grid");
-  dolfin_assert(grid_node);
+  //  const std::size_t cell_dim = mvc.dim();
+  //  CellType::Type cell_type = mesh->type().entity_type(cell_dim);
 
-  const std::size_t cell_dim = mvc.dim();
-  CellType::Type cell_type = mesh->type().entity_type(cell_dim);
+  // Add XDMF node and version attribute
+  _xml_doc->append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+  pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+  dolfin_assert(xdmf_node);
+  xdmf_node.append_attribute("Version") = "3.0";
+  xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
 
-  const std::string dataset_name = "/MVC/" + mvc.name();
+  // Add domain node and add name attribute
+  pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+  dolfin_assert(domain_node);
+  domain_node.append_attribute("Name") = "MeshValueCollection produced by DOLFIN";
 
-#ifdef HAS_HDF5
-  if (encoding == Encoding::HDF5)
-  {
-    // Use HDF5 function to output MeshValueCollection
-    _hdf5_file->write(mvc, dataset_name);
-  }
-#endif
+  // Add the mesh Grid to the domain
+  add_mesh(_mpi_comm, domain_node, h5_id, *mesh, "/Mesh");
 
-  if (MPI::rank(mesh->mpi_comm()) == 0)
-  {
-    dolfin_assert(_xml);
-    _xml->init_mesh(mvc.name());
+  // FIXME: Add MVC topology
+  // FIXME: Reference back to Mesh geometry
+  // FIXME: Add MVC data
 
-    if (encoding == Encoding::HDF5)
-    {
-      boost::filesystem::path p(get_hdf5_filename(_filename));
-      const std::string dataset_ref = p.filename().string() + ":"
-        + dataset_name;
-
-      _xml->mesh_topology(cell_type, 1, mvc.size(), dataset_ref + "/topology",
-                         xdmf_format_str(encoding));
-      _xml->mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
-                         _current_mesh_name + "/coordinates",
-                         xdmf_format_str(encoding));
-      _xml->data_attribute(mvc.name(), 0, false, mesh->size_global(0),
-                          mvc.size(), 1, dataset_ref + "/values",
-                          xdmf_format_str(encoding));
-    }
-    else if (encoding == Encoding::ASCII)
-    {
-      // FIXME: This will only reference the first mesh geometry
-      _xml->mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
-                         _current_mesh_name + "/Geometry/DataItem",
-                         xdmf_format_str(encoding), true);
-      write_ascii_mesh_value_collection(mvc, dataset_name);
-    }
-
-    _xml->write();
-  }
-
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const std::vector<Point>& points, Encoding encoding)
@@ -737,9 +715,11 @@ void XDMFFile::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
   const int tdim = mesh.topology().dim();
   const std::int64_t num_global_cells = mesh.size_global(tdim);
   if (num_global_cells < 1e9)
-    add_topology_data<std::int32_t>(comm, grid_node, h5_id, path_prefix, mesh);
+    add_topology_data<std::int32_t>(comm, grid_node, h5_id, path_prefix,
+                                    mesh, tdim);
   else
-    add_topology_data<std::int64_t>(comm, grid_node, h5_id, path_prefix, mesh);
+    add_topology_data<std::int64_t>(comm, grid_node, h5_id, path_prefix,
+                                    mesh, tdim);
 
   // Add geometry node and attributes (including writing data)
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh);
@@ -990,11 +970,8 @@ XDMFFile::build_local_mesh_data(LocalMeshData& local_mesh_data,
 template<typename T>
 void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                  hid_t h5_id, const std::string path_prefix,
-                                 const Mesh& mesh)
+                                 const Mesh& mesh, int tdim)
 {
-  // Get topological dimension
-  const int tdim = mesh.topology().dim();
-
   // Get number of cells (global) and vertices per cell from mesh
   const std::int64_t num_cells = mesh.topology().size_global(tdim);
   const int num_vertices_per_cell = mesh.type().num_vertices(tdim);
@@ -1107,8 +1084,14 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
     // Compute total number of items and check for consistency with shape
     dolfin_assert(!shape.empty());
     std::int64_t num_items_total = 1;
+    std::cout << "Shape:";
     for (auto n : shape)
+    {
+      std::cout << n << " ";
       num_items_total *= n;
+    }
+    std::cout << "x = " << x.size() << "\n";
+
     dolfin_assert(num_items_total == (std::int64_t) MPI::sum(comm, x.size()));
 
     // Compute data offset and range of values
@@ -1153,49 +1136,49 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
   // Get mesh communicator
   MPI_Comm comm = mesh.mpi_comm();
 
-  // Pack data
   const std::vector<std::int8_t> perm = mesh.type().vtk_mapping();
-  if (MPI::size(comm) == 1)
+  const int tdim = mesh.topology().dim();
+  if (MPI::size(comm) == 1 or cell_dim == tdim)
   {
-    // Simple case when mesh is not distributed
-    const std::vector<size_t>& global_vertices = mesh.topology().global_indices(0);
-    for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+    // Simple case when nothing is shared between processes
+    if (cell_dim == 0)
     {
-      const unsigned int* entities = c->entities(0);
-      for (unsigned int i = 0; i != c->num_entities(0); ++i)
-        topology_data.push_back(global_vertices[entities[perm[i]]]);
+      for (VertexIterator v(mesh); !v.end(); ++v)
+        topology_data.push_back(v->global_index());
+    }
+    else
+    {
+      const std::vector<size_t>& global_vertices = mesh.topology().global_indices(0);
+      for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+      {
+        const unsigned int* entities = c->entities(0);
+        for (unsigned int i = 0; i != c->num_entities(0); ++i)
+          topology_data.push_back(global_vertices[entities[perm[i]]]);
+      }
     }
   }
   else
   {
-    // If not already numbered, number entities of order tdim so
-    // we can get shared_entities
+    // If not already numbered, number entities of
+    // order cell_dim so we can get shared_entities
     DistributedMeshTools::number_entities(mesh, cell_dim);
 
-    // Check if mesh has ghost layers
-    const MeshTopology& topology = mesh.topology();
-    const bool ghosted = (topology.size(cell_dim) != topology.ghost_offset(cell_dim));
+    const std::size_t mpi_rank = MPI::rank(comm);
+    const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
+      = mesh.topology().shared_entities(cell_dim);
 
-    // Get MPI rank
-    const int mpi_rank = MPI::rank(comm);
+    std::set<unsigned int> non_local_entities;
 
-    // Build set of entities that are on this process but which
-    // should not be output by this process because they will be output
-    // by another process.
-    std::set<int> non_local_entities;
+    bool ghosted = (mesh.topology().size(tdim) > mesh.topology().ghost_offset(tdim));
+
     if (!ghosted)
     {
-      // Get shared entities
-      const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
-        = mesh.topology().shared_entities(cell_dim);
-
-      // Iterate over shared entities, and add to exlcusion set
-      // if there is a lower rank process with the entity
-      for (auto e = shared_entities.begin(); e != shared_entities.end(); ++e)
+      // No ghost cells - exclude shared entities which are on lower rank processes
+      for (const auto &e : shared_entities)
       {
-        const int lowest_rank_owner = *(e->second.begin());
+        const unsigned int lowest_rank_owner = *(e.second.begin());
         if (lowest_rank_owner < mpi_rank)
-          non_local_entities.insert(e->first);
+          non_local_entities.insert(e.first);
       }
     }
     else
@@ -1203,41 +1186,38 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
       // Iterate through ghost cells, adding non-ghost entities
       // which are in lower rank process cells to a set for
       // exclusion from output
-      for (MeshEntityIterator c(mesh, cell_dim, "ghost"); !c.end(); ++c)
+      for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
       {
-        const int cell_owner = c->owner();
+        const unsigned int cell_owner = c->owner();
         for (MeshEntityIterator e(*c, cell_dim); !e.end(); ++e)
-        {
-          if (!e->is_ghost() and cell_owner < mpi_rank)
+          if (!e->is_ghost() && cell_owner < mpi_rank)
             non_local_entities.insert(e->index());
-        }
       }
     }
 
-    // Generate topology data for this process, with special case
-    // for mesh of points
-    topology_data.reserve(mesh.num_entities(cell_dim)*(num_vertices_per_cell));
     if (cell_dim == 0)
     {
+      // Special case for mesh of points
       for (VertexIterator v(mesh); !v.end(); ++v)
       {
-        if (non_local_entities.find(v->index()) == non_local_entities.end())
+        if (non_local_entities.find(v->index())
+            == non_local_entities.end())
           topology_data.push_back(v->global_index());
       }
     }
     else
     {
-      // Local-to-global map for point indices
-      const std::vector<std::size_t>& global_vertices
+      const std::vector<size_t>& global_vertices
         = mesh.topology().global_indices(0);
       for (MeshEntityIterator e(mesh, cell_dim); !e.end(); ++e)
       {
         // If not excluded, add to topology
-        if (non_local_entities.find(e->index()) == non_local_entities.end())
+        if (non_local_entities.find(e->index())
+            == non_local_entities.end())
         {
           for (unsigned int i = 0; i != e->num_entities(0); ++i)
           {
-            const int local_idx = e->entities(0)[perm[i]];
+            const unsigned int local_idx = e->entities(0)[perm[i]];
             topology_data.push_back(global_vertices[local_idx]);
           }
         }
@@ -1246,6 +1226,75 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
   }
 
   return topology_data;
+}
+//----------------------------------------------------------------------------
+template<typename T>
+std::vector<T> XDMFFile::compute_value_data(const MeshFunction<T>& meshfunction)
+{
+  // Create vector to store data
+  std::vector<T> value_data;
+  value_data.reserve(meshfunction.size());
+
+  // Get mesh communicator
+  const auto mesh = meshfunction.mesh();
+  MPI_Comm comm = mesh->mpi_comm();
+
+  const int tdim = mesh->topology().dim();
+  const int cell_dim = meshfunction.dim();
+
+  if (MPI::size(comm) == 1 or cell_dim == tdim)
+  {
+    value_data.resize(meshfunction.size());
+    std::copy(meshfunction.values(),
+              meshfunction.values() + meshfunction.size(),
+              value_data.begin());
+  }
+  else
+  {
+    // If not already numbered, number entities of
+    // order cell_dim so we can get shared_entities
+    DistributedMeshTools::number_entities(*mesh, cell_dim);
+
+    const std::size_t mpi_rank = MPI::rank(comm);
+    const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
+      = mesh->topology().shared_entities(cell_dim);
+
+    // Get list of non-local entities for exclusion
+    std::set<unsigned int> non_local_entities;
+    bool ghosted = (mesh->topology().size(tdim) > mesh->topology().ghost_offset(tdim));
+    if (!ghosted)
+    {
+      // No ghost cells - exclude shared entities which are on lower rank processes
+      for (const auto &e : shared_entities)
+      {
+        const unsigned int lowest_rank_owner = *(e.second.begin());
+        if (lowest_rank_owner < mpi_rank)
+          non_local_entities.insert(e.first);
+      }
+    }
+    else
+    {
+      // Iterate through ghost cells, adding non-ghost entities
+      // which are in lower rank process cells to a set for
+      // exclusion from output
+      for (MeshEntityIterator c(*mesh, tdim, "ghost"); !c.end(); ++c)
+      {
+        const unsigned int cell_owner = c->owner();
+        for (MeshEntityIterator e(*c, cell_dim); !e.end(); ++e)
+          if (!e->is_ghost() && cell_owner < mpi_rank)
+            non_local_entities.insert(e->index());
+      }
+    }
+
+    for (MeshEntityIterator e(*mesh, cell_dim); !e.end(); ++e)
+    {
+      if (non_local_entities.find(e->index())
+          == non_local_entities.end())
+        value_data.push_back(meshfunction[*e]);
+    }
+  }
+
+  return value_data;
 }
 //----------------------------------------------------------------------------
 std::string XDMFFile::get_cell_type(const pugi::xml_node& topology_node)
@@ -1544,22 +1593,6 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
 {
   check_encoding(encoding);
 
-  // Get mesh
-  dolfin_assert(meshfunction.mesh());
-  std::shared_ptr<const Mesh> mesh = meshfunction.mesh();
-
-#ifdef HAS_HDF5
-  if (encoding == Encoding::HDF5)
-  {
-    if (_hdf5_filemode != "w")
-    {
-      // Create HDF5 file (truncate)
-      _hdf5_file.reset(new HDF5File(mesh->mpi_comm(), get_hdf5_filename(_filename), "w"));
-      _hdf5_filemode = "w";
-    }
-  }
-#endif
-
   if (meshfunction.size() == 0)
   {
     dolfin_error("XDMFFile.cpp",
@@ -1567,77 +1600,78 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
                  "No values in MeshFunction");
   }
 
-  const std::size_t cell_dim = meshfunction.dim();
-  CellType::Type cell_type = mesh->type().entity_type(cell_dim);
+  // Get mesh
+  dolfin_assert(meshfunction.mesh());
+  std::shared_ptr<const Mesh> mesh = meshfunction.mesh();
 
+  // Reset pugi doc
+  _xml_doc->reset();
+
+  // Open a HDF5 file if using HDF5 encoding (truncate)
+  hid_t h5_id = -1;
+#ifdef HAS_HDF5
+  std::unique_ptr<HDF5File> h5_file;
   if (encoding == Encoding::HDF5)
   {
-#ifdef HAS_HDF5
-    // Use HDF5 function to output MeshFunction
-    const std::string h5_mesh_name = "/Mesh/" + std::to_string(_counter);
-    boost::filesystem::path p(get_hdf5_filename(_filename));
-    _current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
-    _hdf5_file->write(meshfunction, h5_mesh_name);
+    // Open file
+    h5_file.reset(new HDF5File(mesh->mpi_comm(), get_hdf5_filename(_filename), "w"));
+    dolfin_assert(h5_file);
+
+    // Get file handle
+    h5_id = h5_file->h5_id();
+  }
 #endif
-  }
-  else if (encoding == Encoding::ASCII)
-    _current_mesh_name = "/Xdmf/Domain/Grid";
 
-  // Saved MeshFunction values are in the /Mesh group
-  const std::string dataset_name = _current_mesh_name + "/values";
+  // Add XDMF node and version attribute
+  _xml_doc->append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+  pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+  dolfin_assert(xdmf_node);
+  xdmf_node.append_attribute("Version") = "3.0";
+  xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
 
-  bool time_series = parameters["time_series"];
+  // Add domain node and add name attribute
+  pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+  dolfin_assert(domain_node);
+  domain_node.append_attribute("Name") = "MeshFunction produced by DOLFIN";
 
-  if (MPI::rank(mesh->mpi_comm()) == 0)
-  {
-    dolfin_assert(_xml);
-    const std::string meshfunction_name = meshfunction.name();
-    if (time_series)
-      _xml->init_timeseries(meshfunction_name, (double) _counter, _counter);
-    else
-      _xml->init_mesh(meshfunction_name);
+  // Add grid node and attributes
+  pugi::xml_node grid_node = domain_node.append_child("Grid");
+  dolfin_assert(grid_node);
+  grid_node.append_attribute("Name") = mesh->name().c_str();
+  grid_node.append_attribute("GridType") = "Uniform";
 
-    if (encoding == Encoding::HDF5)
-    {
-      _xml->mesh_topology(cell_type, 1, mesh->size_global(cell_dim),
-                          _current_mesh_name + "/topology",
-                          xdmf_format_str(encoding));
-      _xml->mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
-                          _current_mesh_name + "/coordinates",
-                          xdmf_format_str(encoding));
-      _xml->data_attribute(meshfunction_name, 0, false, mesh->size_global(0),
-                           mesh->size_global(cell_dim), 1, dataset_name,
-                           xdmf_format_str(encoding));
-    }
-    else if (encoding == Encoding::ASCII)
-    {
-      // Add the mesh topology and geometry to the xml data
-      _xml->mesh_topology(cell_type, 1, mesh->size_global(cell_dim),
-                          generate_xdmf_ascii_mesh_topology_data(*mesh,
-                                                                 cell_dim),
-                          xdmf_format_str(encoding));
+  // Add topology node and attributes (including writing data)
+  const std::size_t cell_dim = meshfunction.dim();
+  const std::int64_t num_global_cells = mesh->size_global(cell_dim);
+  if (num_global_cells < 1e9)
+    add_topology_data<std::int32_t>(_mpi_comm, grid_node, h5_id, "/Mesh",
+                                    *mesh, cell_dim);
+  else
+    add_topology_data<std::int64_t>(_mpi_comm, grid_node, h5_id, "/Mesh",
+                                    *mesh, cell_dim);
 
-      _xml->mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
-                          generate_xdmf_ascii_mesh_geometry_data(*mesh),
-                          xdmf_format_str(encoding));
+  // Add geometry node and attributes (including writing data)
+  add_geometry_data(_mpi_comm, grid_node, h5_id, "/Mesh", *mesh);
 
-      // Note: we use boost::container::vector rather than std::vector
-      // to avoid well known problem with std::vector<bool>
-      // No duplicates - ignore ghost cells if present
-      boost::container::vector<T>
-        data_values(meshfunction.values(), meshfunction.values()
-                    + mesh->topology().ghost_offset(cell_dim));
+  // Add attribute node with values
+  pugi::xml_node attribute_node = grid_node.append_child("Attribute");
+  dolfin_assert(attribute_node);
+  attribute_node.append_attribute("Name") = meshfunction.name().c_str();
+  attribute_node.append_attribute("AttributeType") = "Scalar";
+  attribute_node.append_attribute("Center") = "Cell";
 
-      _xml->data_attribute(meshfunction_name, 0, false, mesh->size_global(0),
-                           mesh->size_global(cell_dim), 1,
-                           generate_xdmf_ascii_data(data_values, format),
-                           xdmf_format_str(encoding));
-    }
+  const std::int64_t num_values = mesh->size_global(cell_dim);
+  // Add attribute DataItem node and write data
 
-    _xml->write();
-  }
+  // Copy values to vector, removing duplicates
+  std::vector<T> values = compute_value_data(meshfunction);
 
-  ++_counter;
+  add_data_item(_mpi_comm, attribute_node, h5_id,
+                "/Mesh/values", values, {num_values, 1});
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 std::vector<double> XDMFFile::get_cell_data_values(const Function& u)

@@ -245,7 +245,7 @@ namespace dolfin
     template<typename T>
     static void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   hid_t h5_id, const std::string path_prefix,
-                                  const Mesh& mesh);
+                                  const Mesh& mesh, int tdim);
 
     // Add geometry node and data to xml_node
     static void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -264,6 +264,10 @@ namespace dolfin
     // Return topology data on this process as a flat vector
     template<typename T>
     static std::vector<T> compute_topology_data(const Mesh& mesh, int cell_dim);
+
+    // Return data which is local
+    template<typename T>
+      std::vector<T> compute_value_data(const MeshFunction<T>& meshfunction);
 
     // Get DOLFIN cell type string from XML topology node
     static std::string get_cell_type(const pugi::xml_node& topology_node);
@@ -398,6 +402,21 @@ namespace dolfin
     std::unique_ptr<pugi::xml_document> _xml_doc;
 
   };
+
+  // Specialisation for std::vector<bool>, as HDF5 does not support it natively
+  template<> inline
+  void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
+                               hid_t h5_id, const std::string h5_path,
+                               const std::vector<bool>& x,
+                               const std::vector<std::int64_t> shape,
+                               const std::string number_type)
+  {
+    // HDF5 cannot accept 'bool' so copy to 'int'
+    std::vector<int> x_int(x.size());
+    for (std::size_t i = 0; i < x.size(); ++i)
+      x_int[i] = (int)x[i];
+    add_data_item(comm, xml_node, h5_id, h5_path, x_int, shape, number_type);
+  }
 
 }
 

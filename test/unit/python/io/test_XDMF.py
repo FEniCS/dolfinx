@@ -399,6 +399,5 @@ def test_save_mesh_value_collection(tempdir, encoding):
 
         xdmf = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "mvc_%d.xdmf"
                                                       % mvc_dim))
-        xdmf.parameters['time_series'] = False
         xdmf.write(meshfn, encoding)
         xdmf.write(mvc, encoding)
