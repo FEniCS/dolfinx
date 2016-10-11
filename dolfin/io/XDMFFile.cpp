@@ -51,16 +51,14 @@
 #include "HDF5File.h"
 #include "HDF5Utility.h"
 #include "XDMFFile.h"
-#include "XDMFxml.h"
 #include "xmlutils.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
-  : _mpi_comm(comm), _hdf5_filemode(""), _current_mesh_name(""),
-    _filename(filename), _counter(0), _xml(new XDMFxml(filename)),
-    _xml_doc(new pugi::xml_document)
+  : _mpi_comm(comm), _filename(filename),
+    _counter(0), _xml_doc(new pugi::xml_document)
 {
   // Rewrite the mesh at every time step in a time series. Should be
   // turned off if the mesh remains constant.
@@ -1398,35 +1396,41 @@ std::array<std::string, 2> XDMFFile::get_hdf5_paths(const pugi::xml_node& datait
 template<typename T>
 void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
 {
-  dolfin_assert(_xml);
-  _xml->read();
+  // Load XML doc from file
+  pugi::xml_document xml_doc;
+  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+  dolfin_assert(result);
 
-  Encoding encoding = get_file_encoding();
-  check_encoding(encoding);
+  // Get XDMF node
+  pugi::xml_node xdmf_node = xml_doc.child("Xdmf");
+  dolfin_assert(xdmf_node);
 
-  if (encoding == Encoding::HDF5)
-  {
-#ifdef HAS_HDF5
-    const std::string data_name = _xml->dataname();
-    std::unique_ptr<HDF5File>
-      h5_file(new HDF5File(_mpi_comm, get_hdf5_filename(_filename), "r"));
+  // Get domain node
+  pugi::xml_node domain_node = xdmf_node.child("Domain");
+  dolfin_assert(domain_node);
 
-    // Try to read the meshfunction from the associated HDF5 file
-    h5_file->read(meshfunction, "/Mesh/" + data_name);
-#else
-    dolfin_error("XDMFFile.cpp", "open MeshFunction file", "Need HDF5 support");
-#endif
-  }
-  else if (encoding == Encoding::ASCII)
-  {
-    std::vector<std::string> data_lines;
-    const std::string data_set = _xml->get_first_data_set();
-    boost::split(data_lines, data_set, boost::is_any_of("\n"));
+  // Get grid node
+  pugi::xml_node grid_node = domain_node.child("Grid");
+  dolfin_assert(grid_node);
 
-    const std::size_t n_lines = data_lines.size();
-    for (std::size_t j = 0; j < n_lines; ++j)
-      meshfunction[j] = boost::lexical_cast<T>(data_lines[j]);
-  }
+  // Get topology node
+  pugi::xml_node topology_node = grid_node.child("Topology");
+  dolfin_assert(topology_node);
+
+    // Get value node
+  pugi::xml_node value_node = grid_node.child("Attribute");
+  dolfin_assert(value_node);
+
+  // Get cell type
+  const std::string cell_type_str = get_cell_type(topology_node);
+
+  boost::filesystem::path xdmf_filename(_filename);
+  const boost::filesystem::path parent_path = xdmf_filename.parent_path();
+  std::vector<T> value_data
+    = get_dataset<T>(_mpi_comm, value_node, parent_path);
+
+  // FIXME: Distribute data correctly once read in.
+
 }
 //----------------------------------------------------------------------------
 std::string XDMFFile::get_hdf5_filename(std::string xdmf_filename)
@@ -1767,20 +1771,6 @@ void XDMFFile::check_encoding(Encoding encoding) const
                  "write XDMF file",
                  "ASCII format is not supported in parallel, use HDF5");
   }
-}
-//-----------------------------------------------------------------------------
-XDMFFile::Encoding XDMFFile::get_file_encoding() const
-{
-  dolfin_assert(_xml);
-  _xml->read();
-  const std::string xml_encoding_attrib = _xml->data_encoding();
-
-  return get_file_encoding(xml_encoding_attrib);
-}
-//-----------------------------------------------------------------------------
-XDMFFile::Encoding XDMFFile::get_file_encoding(std::string xml_encoding_attrib)
-{
-  return (xml_encoding_attrib == "XML") ? Encoding::ASCII : Encoding::HDF5;
 }
 //-----------------------------------------------------------------------------
 std::string XDMFFile::vtk_cell_type_str(CellType::Type cell_type, int order)
