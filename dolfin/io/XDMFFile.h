@@ -79,9 +79,6 @@ namespace dolfin
     /// File encoding type
     enum class Encoding {HDF5, ASCII};
 
-    /// Re-use any partition stored in file
-    enum class UseFilePartition : bool {yes=true, no=false};
-
     /// Constructor
     XDMFFile(const std::string filename)
       : XDMFFile(MPI_COMM_WORLD, filename) {}
@@ -186,23 +183,27 @@ namespace dolfin
                const std::vector<double>& values,
                Encoding encoding=Encoding::HDF5);
 
-    /// Read in a mesh from the associated HDF5 file, optionally using
-    /// stored partitioning, if possible when the same number of
-    /// processes are being used.
+    /// Read in a mesh
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///
-    ///     use_partition_from_file (_UseFilePartition_)
-    ///         Use the existing partition information in HDF5 file
-    ///
     void read(Mesh& mesh) const;
-    //          UseFilePartition use_file_partition=UseFilePartition::no);
 
     /// Read first MeshFunction from file
+    /// @param meshfunction
     void read(MeshFunction<bool>& meshfunction);
+
+    /// Read first MeshFunction from file
+    /// @param meshfunction
     void read(MeshFunction<int>& meshfunction);
+
+    /// Read first MeshFunction from file
+    /// @param meshfunction
     void read(MeshFunction<std::size_t>& meshfunction);
+
+    /// Read first MeshFunction from file
+    /// @param meshfunction
     void read(MeshFunction<double>& meshfunction);
 
   private:

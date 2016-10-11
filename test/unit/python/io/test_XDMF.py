@@ -44,7 +44,7 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
 
     mesh2 = Mesh()
     file = XDMFFile(mpi_comm_world(), filename)
-    file.read(mesh2, False)
+    file.read(mesh2)
     assert mesh.size_global(0) == mesh2.size_global(0)
     dim = mesh.topology().dim()
     assert mesh.size_global(dim) == mesh2.size_global(dim)
@@ -63,7 +63,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding):
 
     mesh2 = Mesh()
     file = XDMFFile(mpi_comm_world(), filename)
-    file.read(mesh2, False)
+    file.read(mesh2)
     assert mesh.size_global(0) == mesh2.size_global(0)
     dim = mesh.topology().dim()
     assert mesh.size_global(dim) == mesh2.size_global(dim)
@@ -82,7 +82,7 @@ def test_save_and_load_3d_mesh(tempdir, encoding):
 
     mesh2 = Mesh()
     file = XDMFFile(mpi_comm_world(), filename)
-    file.read(mesh2, False)
+    file.read(mesh2)
     assert mesh.size_global(0) == mesh2.size_global(0)
     dim = mesh.topology().dim()
     assert mesh.size_global(dim) == mesh2.size_global(dim)

@@ -1431,6 +1431,29 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
 
   // FIXME: Distribute data correctly once read in.
 
+  // Initialise empty MeshFunction
+  if (meshfunction.size() == 0)
+    meshfunction.init(cell_dim);
+
+  // Otherwise, pre-existing MeshFunction must have correct dimension
+  if (cell_dim != meshfunction.dim())
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read meshfunction topology",
+                 "Cell dimension mismatch");
+  }
+
+  // Ensure size_global(cell_dim) is set
+  DistributedMeshTools::number_entities(*mesh, cell_dim);
+
+  if (num_global_cells != mesh->size_global(cell_dim))
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read meshfunction topology",
+                 "Mesh dimension mismatch");
+  }
+
+
 }
 //----------------------------------------------------------------------------
 std::string XDMFFile::get_hdf5_filename(std::string xdmf_filename)
