@@ -322,13 +322,6 @@ namespace dolfin
     static std::string xdmf_format_str(Encoding encoding)
     { return (encoding == XDMFFile::Encoding::HDF5) ? "HDF" : "XML"; }
 
-    // Determine the encoding of the data from the xml file.
-    Encoding get_file_encoding() const;
-
-    // Determine the encoding enumeration value from the xdmf format
-    // string E.g. "XML" or "HDF" See XDMFFile::xdmf_format_str
-    static Encoding get_file_encoding(std::string xdmf_format);
-
     // Write MVC to ascii string to store in XDMF XML file
     template <typename T>
     void write_ascii_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
@@ -355,20 +348,11 @@ namespace dolfin
     std::unique_ptr<HDF5File> _hdf5_file;
 #endif
 
-    // HDF5 file mode (r/w)
-    std::string _hdf5_filemode;
-
-    // Most recent mesh name
-    std::string _current_mesh_name;
-
     // Cached filename
     const std::string _filename;
 
     // Counter for time series
     std::size_t _counter;
-
-    // The xml document of the XDMF file
-    std::unique_ptr<XDMFxml> _xml;
 
     // The XML document currently representing the XDMF
     // which needs to be kept open for time series etc.
