@@ -192,19 +192,19 @@ namespace dolfin
 
     /// Read first MeshFunction from file
     /// @param meshfunction
-    void read(MeshFunction<bool>& meshfunction);
+    void read(MeshFunction<bool>& meshfunction, std::string name="");
 
     /// Read first MeshFunction from file
     /// @param meshfunction
-    void read(MeshFunction<int>& meshfunction);
+    void read(MeshFunction<int>& meshfunction, std::string name="");
 
     /// Read first MeshFunction from file
     /// @param meshfunction
-    void read(MeshFunction<std::size_t>& meshfunction);
+    void read(MeshFunction<std::size_t>& meshfunction, std::string name="");
 
     /// Read first MeshFunction from file
     /// @param meshfunction
-    void read(MeshFunction<double>& meshfunction);
+    void read(MeshFunction<double>& meshfunction, std::string name="");
 
   private:
 
@@ -301,7 +301,7 @@ namespace dolfin
 
     // Generic MeshFunction reader
     template<typename T>
-    void read_mesh_function(MeshFunction<T>& meshfunction);
+      void read_mesh_function(MeshFunction<T>& meshfunction, std::string name="");
 
     // Generic MeshFunction writer
     template<typename T>

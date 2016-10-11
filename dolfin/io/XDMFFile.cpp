@@ -113,7 +113,6 @@ void XDMFFile::write(const Mesh& mesh, Encoding encoding)
   // Add domain node and add name attribute
   pugi::xml_node domain_node = xdmf_node.append_child("Domain");
   dolfin_assert(domain_node);
-  domain_node.append_attribute("Name") = "Mesh produced by DOLFIN";
 
   // Add the mesh Grid to the domain
   add_mesh(_mpi_comm, domain_node, h5_id, mesh, "/Mesh");
@@ -164,7 +163,6 @@ void XDMFFile::write(const Function& u, Encoding encoding)
   // Add domain node and add name attribute
   pugi::xml_node domain_node = xdmf_node.append_child("Domain");
   dolfin_assert(domain_node);
-  domain_node.append_attribute("Name") = "DOLFIN Function Visualisation";
 
   // Add the mesh Grid to the domain
   add_mesh(_mpi_comm, domain_node, h5_id, mesh, "/Mesh");
@@ -404,7 +402,6 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
   // Add domain node and add name attribute
   pugi::xml_node domain_node = xdmf_node.append_child("Domain");
   dolfin_assert(domain_node);
-  domain_node.append_attribute("Name") = "MeshValueCollection produced by DOLFIN";
 
   // Add the mesh Grid to the domain
   add_mesh(_mpi_comm, domain_node, h5_id, *mesh, "/Mesh");
@@ -461,7 +458,6 @@ void XDMFFile::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node,
   xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
   pugi::xml_node domain_node = xdmf_node.append_child("Domain");
   dolfin_assert(domain_node);
-  domain_node.append_attribute("Name") = "Point cloud produced by DOLFIN";
 
   // Add a Grid to the domain
   pugi::xml_node grid_node = domain_node.append_child("Grid");
@@ -549,32 +545,32 @@ void XDMFFile::write(const std::vector<Point>& points,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void XDMFFile::read(MeshFunction<bool>& meshfunction)
+void XDMFFile::read(MeshFunction<bool>& meshfunction, std::string name)
 {
   const std::shared_ptr<const Mesh> mesh = meshfunction.mesh();
   dolfin_assert(mesh);
 
   const std::size_t cell_dim = meshfunction.dim();
   MeshFunction<std::size_t> mf(mesh, cell_dim);
-  read_mesh_function(mf);
+  read_mesh_function(mf, name);
 
   for (MeshEntityIterator cell(*mesh, cell_dim); !cell.end(); ++cell)
     meshfunction[cell->index()] = (mf[cell->index()] == 1);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::read(MeshFunction<int>& meshfunction)
+void XDMFFile::read(MeshFunction<int>& meshfunction, std::string name)
 {
-  read_mesh_function(meshfunction);
+  read_mesh_function(meshfunction, name);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::read(MeshFunction<std::size_t>& meshfunction)
+void XDMFFile::read(MeshFunction<std::size_t>& meshfunction, std::string name)
 {
-  read_mesh_function(meshfunction);
+  read_mesh_function(meshfunction, name);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::read(MeshFunction<double>& meshfunction)
+void XDMFFile::read(MeshFunction<double>& meshfunction, std::string name)
 {
-  read_mesh_function(meshfunction);
+  read_mesh_function(meshfunction, name);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -1389,7 +1385,8 @@ std::array<std::string, 2> XDMFFile::get_hdf5_paths(const pugi::xml_node& datait
 }
 //-----------------------------------------------------------------------------
 template<typename T>
-void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
+void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction,
+                                  std::string name)
 {
   // Load XML doc from file
   pugi::xml_document xml_doc;
@@ -1404,15 +1401,30 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
   pugi::xml_node domain_node = xdmf_node.child("Domain");
   dolfin_assert(domain_node);
 
-  // Get grid node
-  pugi::xml_node grid_node = domain_node.child("Grid");
-  dolfin_assert(grid_node);
+  // Check all Grid nodes for suitable dataset
+  pugi::xml_node grid_node;
+  for (pugi::xml_node node: domain_node.children("Grid"))
+  {
+    pugi::xml_node value_node = node.child("Attribute");
+    if (value_node and (name == "" or name == value_node.attribute("Name").as_string()))
+      {
+        grid_node = node;
+        break;
+      }
+  }
+
+  if (!grid_node)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "open MeshFunction for reading",
+                 "Mesh Grid with data Attribute not found in XDMF");
+  }
 
   // Get topology node
   pugi::xml_node topology_node = grid_node.child("Topology");
   dolfin_assert(topology_node);
 
-    // Get value node
+  // Get value node
   pugi::xml_node value_node = grid_node.child("Attribute");
   dolfin_assert(value_node);
 
