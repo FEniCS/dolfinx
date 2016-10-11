@@ -1632,8 +1632,8 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
   // If it already has data, then we may append to it.
 
   pugi::xml_node domain_node;
-  std::string hdf_filemode = "w";
-  if( _xml_doc->child("Xdmf").empty())
+  std::string hdf_filemode = "a";
+  if (_xml_doc->child("Xdmf").empty())
   {
     // Add XDMF node and version attribute
     _xml_doc->append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
@@ -1644,7 +1644,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
 
     // Add domain node and add name attribute
     domain_node = xdmf_node.append_child("Domain");
-    hdf_filemode = "a";
+    hdf_filemode = "w";
   }
   else
     domain_node = _xml_doc->child("Xdmf").child("Domain");
