@@ -1675,6 +1675,11 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
 
   // Add topology node and attributes (including writing data)
   const std::size_t cell_dim = meshfunction.dim();
+
+  // Make sure entities are numbered - only needed for Edge in 3D in parallel
+  // FIXME: remove this once Edge in 3D in parallel works properly
+  DistributedMeshTools::number_entities(*mesh, cell_dim);
+
   const std::int64_t num_global_cells = mesh->size_global(cell_dim);
   if (num_global_cells < 1e9)
     add_topology_data<std::int32_t>(_mpi_comm, grid_node, h5_id, "/MeshFunction",
