@@ -208,6 +208,12 @@ namespace dolfin
 
   private:
 
+    // Remap meshfunction data, scattering data to appropriate processes
+    template <typename T>
+    static void remap_meshfunction_data(MeshFunction<T>& meshfunction,
+                                        const std::vector<std::int64_t>& topology_data,
+                                        const std::vector<T>& value_data);
+
     // Build mesh (serial)
     static void build_mesh(Mesh& mesh, std::string cell_type_str,
                            std::int64_t num_points, std::int64_t num_cells,
