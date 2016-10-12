@@ -39,8 +39,6 @@ include_directories(${NUMPY_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS} ${CMAKE_BINARY_D
 add_definitions(${DOLFIN_PYTHON_DEFINITIONS})
 
 # Check that swig interface is generated, otherwise re-generate it
-message(STATUS "!!!!! Py ${PYTHON_EXECUTABLE}, ${CMAKE_BINARY_DIR}")
-
 if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/modules)
   message(STATUS "")
   message(STATUS "Generating SWIG interface.")
