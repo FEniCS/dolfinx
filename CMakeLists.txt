@@ -359,7 +359,7 @@ set(Boost_ADDITIONAL_VERSIONS 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
 find_package(Boost 1.48 QUIET REQUIRED)
 
-set(DOLFIN_BOOST_COMPONENTS filesystem program_options iostreams timer)
+set(DOLFIN_BOOST_COMPONENTS filesystem system program_options iostreams timer)
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
@@ -943,7 +943,7 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
     RESULT_VARIABLE FORM_GENERATION_RESULT
     OUTPUT_VARIABLE FORM_GENERATION_OUTPUT
     ERROR_VARIABLE FORM_GENERATION_OUTPUT
-    OUTPUT_QUIET)
+    )
 
   if (FORM_GENERATION_RESULT)
     # Cleanup so download is triggered next time we run cmake
@@ -986,7 +986,7 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/CMakeLists.txt)
     RESULT_VARIABLE CMAKE_GENERATION_RESULT
     OUTPUT_VARIABLE CMAKE_GENERATION_OUTPUT
     ERROR_VARIABLE CMAKE_GENERATION_OUTPUT
-    OUTPUT_QUIET)
+    )
   if (CMAKE_GENERATION_RESULT)
 
     # Cleanup so FFC rebuild is triggered next time we run cmake
@@ -1015,7 +1015,7 @@ if (COPY_DEMO_TEST_DEMO_DATA)
     RESULT_VARIABLE COPY_DEMO_DATA_RESULT
     OUTPUT_VARIABLE COPY_DEMO_DATA_OUTPUT
     ERROR_VARIABLE COPY_DEMO_DATA_OUTPUT
-    OUTPUT_QUIET)
+    )
   if (COPY_DEMO_DATA_RESULT)
     message(FATAL_ERROR "Copy demo data failed: \n${COPY_DEMO_DATA_OUTPUT}")
   endif()
