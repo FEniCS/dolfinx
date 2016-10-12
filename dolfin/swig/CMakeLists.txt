@@ -24,8 +24,7 @@ endif()
 
 # Prevent clang emitting warnings for SWIG-generated code
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  set(CLANG_FLAGS "-Wno-logical-not-parentheses -Wno-logical-op-parentheses \
--Wno-tautological-constant-out-of-range-compare")
+  set(CLANG_FLAGS "-Wno-logical-not-parentheses -Wno-logical-op-parentheses -Wno-tautological-constant-out-of-range-compare")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CLANG_FLAGS}")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${CLANG_FLAGS}")
   set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} ${CLANG_FLAGS}")
@@ -40,17 +39,17 @@ include_directories(${NUMPY_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS} ${CMAKE_BINARY_D
 add_definitions(${DOLFIN_PYTHON_DEFINITIONS})
 
 # Check that swig interface is generated, otherwise re-generate it
-message(STATUS "!!!!! Py ${PYTHON_EXECUTABLE}"
+message(STATUS "!!!!! Py ${PYTHON_EXECUTABLE}, ${CMAKE_BINARY_DIR}")
 
 if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/modules)
   message(STATUS "")
   message(STATUS "Generating SWIG interface.")
   message(STATUS "--------------------------")
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-interface ${CMAKE_BINARY_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-interface.py ${CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings ${CMAKE_BINARY_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings.py ${CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
 endif()
 
@@ -72,29 +71,29 @@ add_custom_target(copy_swig_files
 
 # Target to generate all swig interface files
 add_custom_target(generate_swig_files
-  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-interface ${CMAKE_BINARY_DIR}
-  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings ${CMAKE_BINARY_DIR}
+  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-interface.py ${CMAKE_BINARY_DIR}
+  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings.py ${CMAKE_BINARY_DIR}
   WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
   COMMENT "Generating all SWIG interface files"
   )
 
 # Target to generate swig interface files
 add_custom_target(generate_swig_interface
-  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-interface ${CMAKE_BINARY_DIR}
+  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-interface.py ${CMAKE_BINARY_DIR}
   WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
   COMMENT "Generating SWIG interface files"
   )
 
 # Target to generate swig docstring files
 add_custom_target(generate_swig_docstrings
-  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings ${CMAKE_BINARY_DIR}
+  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings.py ${CMAKE_BINARY_DIR}
   WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
   COMMENT "Generating SWIG docstring files from C++ headers"
   )
 
 # Target to generate swig docstring files with debug
 add_custom_target(generate_swig_docstrings_with_debug
-  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings ${CMAKE_BINARY_DIR} DEBUG
+  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings.py ${CMAKE_BINARY_DIR} DEBUG
   WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
   COMMENT "Generating SWIG docstring files from C++ headers (DEBUG modus)"
   )

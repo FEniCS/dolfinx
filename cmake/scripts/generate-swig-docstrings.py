@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Simple functions to update the docstrings.i file for the Python interface
 from the intermediate representation of the documentation which is extracted
 from the C++ source code of DOLFIN.
