@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright (C) 2016 Garth N. Wells
 #
 # This file is part of DOLFIN.
