@@ -63,7 +63,7 @@ file(GLOB_RECURSE ORIGINAL_INTERFACE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.i)
 
 # Target to copy all swig files from source to build directory
 add_custom_target(copy_swig_files
-  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-swig-files ${CMAKE_BINARY_DIR}
+  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-swig-files.py ${CMAKE_BINARY_DIR}
   DEPENDS ${ORIGINAL_INTERFACE_FILES}
   )
 

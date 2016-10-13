@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright (C) 2013 Johan Hake
 #
 # This file is part of DOLFIN.
