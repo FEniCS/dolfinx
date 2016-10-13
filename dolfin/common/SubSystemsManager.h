@@ -21,6 +21,8 @@
 #ifndef __SUB_SYSTEMS_MANAGER_H
 #define __SUB_SYSTEMS_MANAGER_H
 
+#include <string>
+
 #ifdef HAS_PETSC
 #include <petsc.h>
 #endif
