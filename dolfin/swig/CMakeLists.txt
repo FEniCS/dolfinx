@@ -39,8 +39,6 @@ include_directories(${NUMPY_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS} ${CMAKE_BINARY_D
 add_definitions(${DOLFIN_PYTHON_DEFINITIONS})
 
 # Check that swig interface is generated, otherwise re-generate it
-message(STATUS "!!!!! Py ${PYTHON_EXECUTABLE}, ${CMAKE_BINARY_DIR}")
-
 if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/modules)
   message(STATUS "")
   message(STATUS "Generating SWIG interface.")
@@ -65,7 +63,7 @@ file(GLOB_RECURSE ORIGINAL_INTERFACE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.i)
 
 # Target to copy all swig files from source to build directory
 add_custom_target(copy_swig_files
-  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-swig-files ${CMAKE_BINARY_DIR}
+  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-swig-files.py ${CMAKE_BINARY_DIR}
   DEPENDS ${ORIGINAL_INTERFACE_FILES}
   )
 
