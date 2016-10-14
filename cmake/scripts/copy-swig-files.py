@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright (C) 2013 Johan Hake
 #
 # This file is part of DOLFIN.
@@ -20,7 +18,7 @@
 # Copy all swig files to a destination directory
 
 import os
-import sys 
+import sys
 import re
 import shutil
 
@@ -35,12 +33,12 @@ def copy_data(top_destdir):
     if abs_destdir == dolfin_dir:
         raise RuntimeError("destination directory cannot be the same as "\
                            "the dolfin source directory")
-    
+
     if not os.path.isdir(abs_destdir):
         raise RuntimeError("%s is not a directory." % abs_destdir)
 
     top_dir = os.path.join(dolfin_dir, "dolfin", "swig")
-        
+
     for dirpath, dirnames, filenames in os.walk(top_dir):
         destdir = dirpath.replace(dolfin_dir, abs_destdir)
         if not os.path.isdir(destdir):
@@ -49,11 +47,10 @@ def copy_data(top_destdir):
             if f[-2:] == ".i":
                 srcfile = os.path.join(dirpath, f)
                 shutil.copy2(srcfile, destdir)
-                
+
 if __name__ == "__main__":
     # Expecting a destination argument
     if len(sys.argv) != 2:
         raise RuntimeError("Expecting 1 argument with the destination directory")
-    
+
     copy_data(sys.argv[-1])
-    
