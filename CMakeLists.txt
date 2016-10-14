@@ -17,16 +17,20 @@ if (NOT DOLFIN_VERSION_RELEASE)
 endif()
 
 #------------------------------------------------------------------------------
+# Use C++11
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+#------------------------------------------------------------------------------
 # Check compiler version
 
 # Check for GCC version - earlier versions have insuffcient C++11
-# support, or bugs. Version info is only available in CMake 2.8.0 and
-# later.
-if (NOT CMAKE_VERSION VERSION_LESS 2.8.10)
-  if (CMAKE_COMPILER_IS_GNUCXX)
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
-      message(FATAL_ERROR "GCC version must be at least 4.6 (for sufficient C++11  support. You have version ${CMAKE_CXX_COMPILER_VERSION}")
-    endif()
+# support, or bugs.
+if (CMAKE_COMPILER_IS_GNUCXX)
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
+    message(FATAL_ERROR "GCC version must be at least 4.6 (for sufficient C++11  support. You have version ${CMAKE_CXX_COMPILER_VERSION}")
   endif()
 endif()
 
@@ -199,30 +203,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   if ("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.7" AND
       "${CMAKE_CXX_COMPILER_VERSION}" VERSION_GREATER "4.5.99")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
-  endif()
-endif()
-
-if (CYGWIN OR (WIN32 AND UNIX))
-  # Use -std=gnu++11 instead of -std=c++11 on Cygwin to work around
-  # problem when using vsnprintf.
-  CHECK_CXX_COMPILER_FLAG(-std=gnu++11 HAVE_STD_GNUPP11)
-  if (HAVE_STD_GNUPP11)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
-  else()
-    CHECK_CXX_COMPILER_FLAG(-std=gnu++0x HAVE_STD_GNUPP0x)
-    if (HAVE_STD_GNUPP0x)
-      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
-    endif()
-  endif()
-else()
-  CHECK_CXX_COMPILER_FLAG(-std=c++11 HAVE_STD_CPP11)
-  if (HAVE_STD_CPP11)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-  else()
-    CHECK_CXX_COMPILER_FLAG(-std=c++0x HAVE_STD_CPP0x)
-    if (HAVE_STD_CPP0x)
-      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-    endif()
   endif()
 endif()
 
