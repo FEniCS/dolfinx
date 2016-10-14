@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright (C) 2005-2010 Anders Logg
 #
 # This file is part of DOLFIN.
