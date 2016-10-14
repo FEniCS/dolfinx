@@ -34,8 +34,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Check for GCC version - earlier versions have insuffcient C++11
 # support, or bugs.
 if (CMAKE_COMPILER_IS_GNUCXX)
-  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
-    message(FATAL_ERROR "GCC version must be at least 4.6 (for sufficient C++11  support. You have version ${CMAKE_CXX_COMPILER_VERSION}")
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.7)
+    message(FATAL_ERROR "GCC version must be at least 4.7 (for sufficient C++11  support. You have version ${CMAKE_CXX_COMPILER_VERSION}")
   endif()
 endif()
 
@@ -63,9 +63,7 @@ endif()
 if (COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
   cmake_policy(SET CMP0004 NEW)
-  if(POLICY CMP0042)
-    cmake_policy(SET CMP0042 NEW)
-  endif()
+  cmake_policy(SET CMP0042 NEW)
 endif()
 
 # Set location of our FindFoo.cmake modules
@@ -197,20 +195,6 @@ if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
-# Workaround https://bugs.launchpad.net/ubuntu/+source/gcc-4.6/+bug/1352356
-# NOTE: Remove this block when bug is fixed upstream or GCC 4.6
-# support is dropped
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  if (NOT DEFINED CMAKE_CXX_COMPILER_VERSION)
-    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
-                    OUTPUT_VARIABLE CMAKE_CXX_COMPILER_VERSION)
-  endif()
-  if ("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.7" AND
-      "${CMAKE_CXX_COMPILER_VERSION}" VERSION_GREATER "4.5.99")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
-  endif()
-endif()
-
 # Debug flags
 CHECK_CXX_COMPILER_FLAG(-g HAVE_DEBUG)
 if (HAVE_DEBUG)
@@ -256,8 +240,8 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   endif()
 endif()
 
-# Set system include flags to get around CMake bug on OSX with gcc
-# See http://public.kitware.com/Bug/print_bug_page.php?bug_id=10837
+# Set system include flags to get around CMake bug on OSX with gcc See
+# http://public.kitware.com/Bug/print_bug_page.php?bug_id=10837
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
 endif()
@@ -270,9 +254,11 @@ if (APPLE)
 endif()
 
 #------------------------------------------------------------------------------
-# Enable Fortran if available. Used for some configuration tests (e.g. BLAS)
+# Enable Fortran if available. Used for some configuration tests
+# (e.g. BLAS)
 
-# This workaround address a CMake bug (http://cmake.org/Bug/view.php?id=9220)
+# This workaround address a CMake bug
+# (http://cmake.org/Bug/view.php?id=9220)
 include(language_support_v2)
 workaround_9220(Fortran Fortran_language_works)
 if (Fortran_language_works)
@@ -301,13 +287,9 @@ if (DOLFIN_ENABLE_MPI)
     set_package_properties(MPI PROPERTIES TYPE OPTIONAL
       DESCRIPTION "Message Passing Interface (MPI)"
       PURPOSE "Enables DOLFIN to run in parallel with MPI")
-    if (MPI_CXX_FOUND)
-      set(MPI_FOUND TRUE)
-    endif()
   else()
     # Assume user has set MPI compiler wrappers (via CXX, etc or
     # CMAKE_CXX_COMPILER, etc)
-    set(MPI_FOUND TRUE)
     set(MPI_CXX_FOUND TRUE)
     set(MPI_C_FOUND TRUE)
   endif()
@@ -340,8 +322,6 @@ endif()
 set(Boost_NO_BOOST_CMAKE true)
 
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
-set(Boost_ADDITIONAL_VERSIONS 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
-
 find_package(Boost 1.48 QUIET REQUIRED)
 
 set(DOLFIN_BOOST_COMPONENTS filesystem system program_options iostreams timer)
@@ -380,15 +360,15 @@ if (DOLFIN_ENABLE_PYTHON)
   if (PYTHONINTERP_FOUND)
     # Get Python include path from Python interpretter
     execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c
-                           "import distutils.sysconfig, sys; sys.stdout.write(distutils.sysconfig.get_python_inc())"
-                    OUTPUT_VARIABLE _PYTHON_INCLUDE_PATH
-                    RESULT_VARIABLE _PYTHON_INCLUDE_RESULT)
+      "import distutils.sysconfig, sys; sys.stdout.write(distutils.sysconfig.get_python_inc())"
+      OUTPUT_VARIABLE _PYTHON_INCLUDE_PATH
+      RESULT_VARIABLE _PYTHON_INCLUDE_RESULT)
 
     # Get Python library path from interpreter
     execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c
-                          "import os, sys, inspect; sys.stdout.write(os.path.split(os.path.split(inspect.getfile(inspect))[0])[0])"
-                    OUTPUT_VARIABLE _PYTHON_LIB_PATH
-                    RESULT_VARIABLE _PYTHON_LIB_RESULT)
+      "import os, sys, inspect; sys.stdout.write(os.path.split(os.path.split(inspect.getfile(inspect))[0])[0])"
+      OUTPUT_VARIABLE _PYTHON_LIB_PATH
+      RESULT_VARIABLE _PYTHON_LIB_RESULT)
 
     # Set include path, if returned by interpreter
     if ("${_PYTHON_INCLUDE_RESULT}" STREQUAL "0")
@@ -996,8 +976,7 @@ if (COPY_DEMO_TEST_DEMO_DATA)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     RESULT_VARIABLE COPY_DEMO_DATA_RESULT
     OUTPUT_VARIABLE COPY_DEMO_DATA_OUTPUT
-    ERROR_VARIABLE COPY_DEMO_DATA_OUTPUT
-    )
+    ERROR_VARIABLE COPY_DEMO_DATA_OUTPUT)
   if (COPY_DEMO_DATA_RESULT)
     message(FATAL_ERROR "Copy demo data failed: \n${COPY_DEMO_DATA_OUTPUT}")
   endif()
@@ -1024,8 +1003,7 @@ add_custom_target(demos_source)
 foreach(rst_file ${rst_files})
   add_custom_command(TARGET demos_source PRE_BUILD
     COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    )
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endforeach()
 
 # Add target "demo" for building the demos
@@ -1036,17 +1014,17 @@ add_custom_target(demo
 
 # Install the demo source files
 install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
-        FILES_MATCHING
-        PATTERN "CMakeLists.txt"
-        PATTERN "*.cpp"
-        PATTERN "*.ufl"
-        PATTERN "*.h"
-        PATTERN "*.py"
-        PATTERN "*.xml*"
-        PATTERN "*.off"
-        PATTERN "CMakeFiles" EXCLUDE)
+  FILES_MATCHING
+  PATTERN "CMakeLists.txt"
+  PATTERN "*.cpp"
+  PATTERN "*.ufl"
+  PATTERN "*.h"
+  PATTERN "*.py"
+  PATTERN "*.xml*"
+  PATTERN "*.off"
+  PATTERN "CMakeFiles" EXCLUDE)
 
-# Install meshes (data directory)
+ # Install meshes (data directory)
 install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 
 #------------------------------------------------------------------------------
