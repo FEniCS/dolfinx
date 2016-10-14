@@ -254,18 +254,6 @@ if (APPLE)
 endif()
 
 #------------------------------------------------------------------------------
-# Enable Fortran if available. Used for some configuration tests
-# (e.g. BLAS)
-
-# This workaround address a CMake bug
-# (http://cmake.org/Bug/view.php?id=9220)
-include(language_support_v2)
-workaround_9220(Fortran Fortran_language_works)
-if (Fortran_language_works)
-  enable_language(Fortran OPTIONAL)
-endif()
-
-#------------------------------------------------------------------------------
 # Check type sizes
 
 include(CheckTypeSize)
