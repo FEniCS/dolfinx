@@ -1,4 +1,4 @@
-# Copyright (C) 2010 Garth N. Wells
+# Copyright (C) 2010-16 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -28,17 +28,19 @@ cmakelists_str = \
 #
 #     cmake/scripts/generate-cmakefiles
 #
-# Require CMake 2.8
-cmake_minimum_required(VERSION 2.8)
+# Require CMake 3.5
+cmake_minimum_required(VERSION 3.5)
 
 set(PROJECT_NAME %(project_name)s)
 project(${PROJECT_NAME})
 
-# Set verbose output while testing CMake
-#set(CMAKE_VERBOSE_MAKEFILE 1)
-
 # Set CMake behavior
 cmake_policy(SET CMP0004 NEW)
+
+# Require and use C++11
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Get DOLFIN configuration data (DOLFINConfig.cmake must be in
 # DOLFIN_CMAKE_CONFIG_PATH)
@@ -151,17 +153,18 @@ def generate_cmake_files(subdirectory, generated_files):
             # Name of demo and cpp source files
             if not main_file_name.isdisjoint(cpp_files):
 
-                # If directory contains a main file we assume that only one
-                # executable should be generated for this directory and all other
-                # .cpp files should be linked to this
+                # If directory contains a main file we assume that
+                # only one executable should be generated for this
+                # directory and all other .cpp files should be linked
+                # to this
                 name_forms["executables"] = executable_str % \
                                             ("${PROJECT_NAME}",
                                              ' '.join(cpp_files))
                 name_forms["target_libraries"] = target_link_libraries_str % \
                                                  "${PROJECT_NAME}"
             else:
-                # If no main file in source files, we assume each source should
-                # be compiled as an executable
+                # If no main file in source files, we assume each
+                # source should be compiled as an executable
                 name_forms["executables"] = "\n".join(\
                     executable_str % (executable_prefix + f.replace(".cpp", ""), f) \
                     for f in cpp_files)
@@ -180,12 +183,8 @@ def generate_cmake_files(subdirectory, generated_files):
             filename = os.path.join(program_dir, "CMakeLists.txt")
             generated_files.append(filename)
             with open(filename, "w") as f:
-                #print("Creating CMakeLists.txt file:", program_name, program_dir)
                 f.write(cmakelists_str % name_forms)
 
-            # FIXME: add command line option for adding files
-            # Add to version control
-            #subprocess.call(["bzr", "add", program_dir + "/CMakeLists.txt"])
 
 # Generate CMakeLists.txt files for all subdirectories
 generated_files = []
