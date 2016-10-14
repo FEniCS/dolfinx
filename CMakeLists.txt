@@ -17,10 +17,15 @@ if (NOT DOLFIN_VERSION_RELEASE)
 endif()
 
 #------------------------------------------------------------------------------
-# Use C++11
+# Require and use C++11
 
+# Use C++11
 set(CMAKE_CXX_STANDARD 11)
+
+# Require C++11
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Do not enable compler-specific extensions
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 #------------------------------------------------------------------------------

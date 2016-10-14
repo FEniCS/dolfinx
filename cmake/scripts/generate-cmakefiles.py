@@ -1,4 +1,4 @@
-# Copyright (C) 2010 Garth N. Wells
+# Copyright (C) 2010-16 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -34,11 +34,13 @@ cmake_minimum_required(VERSION 3.5)
 set(PROJECT_NAME %(project_name)s)
 project(${PROJECT_NAME})
 
-# Set verbose output while testing CMake
-#set(CMAKE_VERBOSE_MAKEFILE 1)
-
 # Set CMake behavior
 cmake_policy(SET CMP0004 NEW)
+
+# Require and use C++11
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Get DOLFIN configuration data (DOLFINConfig.cmake must be in
 # DOLFIN_CMAKE_CONFIG_PATH)
