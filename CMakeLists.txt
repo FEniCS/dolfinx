@@ -34,8 +34,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Check for GCC version - earlier versions have insuffcient C++11
 # support, or bugs.
 if (CMAKE_COMPILER_IS_GNUCXX)
-  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.7)
-    message(FATAL_ERROR "GCC version must be at least 4.7 (for sufficient C++11  support. You have version ${CMAKE_CXX_COMPILER_VERSION}")
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8.3)
+    message(FATAL_ERROR "GCC version must be at least 4.8.3 (for sufficient C++11  support and to avoid some compiler bugs). You have version ${CMAKE_CXX_COMPILER_VERSION}")
   endif()
 endif()
 
