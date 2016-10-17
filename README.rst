@@ -5,6 +5,10 @@ DOLFIN
 DOLFIN is the computational backend of FEniCS and implements the
 FEniCS Problem Solving Environment in Python and C++.
 
+.. image:: http://fenics-bamboo.simula.no:8085/plugins/servlet/wittified/build-status/DOL-DODO
+   :target: http://fenics-bamboo.simula.no:8085/browse/DOL-DODO
+   :alt: Build Status
+
 
 Installation
 ============
