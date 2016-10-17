@@ -69,10 +69,6 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
   // HDF5 file whilst running, at some performance cost.
   parameters.add("flush_output", false);
 
-  // FIXME: This is only relevant to HDF5
-  // HDF5 file restart interval. Use 0 to collect all output in one
-  // file.
-  parameters.add("multi_file", 0);
 }
 //-----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -236,26 +232,27 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
     timedata_node.append_attribute("Format") = "XML";
     timedata_node.append_attribute("Dimensions") = "0";
     timedata_node.append_child(pugi::node_pcdata);
-
-#ifdef HAS_HDF5
-    // Open the HDF5 file for first time, if using HDF5 encoding
-    if (encoding == Encoding::HDF5)
-    {
-      // Truncate the file the first time
-      std::string filemode = "w";
-      // Open file
-      _hdf5_file.reset(new HDF5File(mesh.mpi_comm(),
-                                    get_hdf5_filename(_filename), filemode));
-      dolfin_assert(_hdf5_file);
-    }
-#endif
   }
 
-  // Get handle from existing file, (should be already open)
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
+  // Open the HDF5 file for first time, if using HDF5 encoding
   if (encoding == Encoding::HDF5)
+  {
+    // Truncate the file the first time
+    if (counter == _0)
+      _hdf5_file.reset(new HDF5File(mesh.mpi_comm(),
+                                    get_hdf5_filename(_filename), "w"));
+    else if (parameters["flush_output"])
+    {
+      // Append to existing HDF5 file
+      dolfin_assert(!_hdf5_file);
+      _hdf5_file.reset(new HDF5File(mesh.mpi_comm(),
+                                    get_hdf5_filename(_filename), "a"));
+    }
+    dolfin_assert(_hdf5_file);
     h5_id = _hdf5_file->h5_id();
+  }
 #endif
 
   pugi::xml_node xdmf_node = _xml_doc->child("Xdmf");
@@ -327,6 +324,15 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
+
+#ifdef HAS_HDF5
+  // Close the HDF5 file if in "flush" mode
+  if (encoding == Encoding::HDF5 and parameters["flush_output"])
+  {
+    dolfin_assert(_hdf5_file);
+    _hdf5_file.reset();
+  }
+#endif
 
   ++_counter;
 }
