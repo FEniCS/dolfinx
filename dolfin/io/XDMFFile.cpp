@@ -240,7 +240,7 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
   if (encoding == Encoding::HDF5)
   {
     // Truncate the file the first time
-    if (counter == _0)
+    if (_counter == 0)
       _hdf5_file.reset(new HDF5File(mesh.mpi_comm(),
                                     get_hdf5_filename(_filename), "w"));
     else if (parameters["flush_output"])
