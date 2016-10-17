@@ -53,8 +53,8 @@ For comments and requests, send an email to the FEniCS mailing list:
 
   fenics-dev@googlegroups.com
 
-For questions related to obtaining, building or installing DOLFIN, send
-an email to the FEniCS support mailing list:
+For questions related to obtaining, building or installing DOLFIN,
+send an email to the FEniCS support mailing list:
 
   fenics-support@googlegroups.com
 
@@ -81,5 +81,9 @@ DOLFIN, visit
 Automated Testing
 =================
 
-We use Atlassian Bamboo to perform automatic testing at
-https://bamboo.fenicsproject.org
+We use Atlassian Bamboo to perform automated testing at
+https://bamboo.fenicsproject.org.
+
+.. image:: http://fenics-bamboo.simula.no:8085/plugins/servlet/wittified/build-status/DOL-DODO
+   :target: http://fenics-bamboo.simula.no:8085/browse/DOL-DODO
+   :alt: Build Status
