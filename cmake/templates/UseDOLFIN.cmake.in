@@ -8,6 +8,11 @@
 if (NOT DOLFIN_USE_FILE_INCLUDED)
   set(DOLFIN_USE_FILE_INCLUDED 1)
 
+  # Require and use C++11
+  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+
   # Need to get VTK config because VTK uses advanced VTK features
   # which mean it's not enough to just link to the DOLFIN target. See
   # http://www.vtk.org/pipermail/vtk-developers/2013-October/014402.html
