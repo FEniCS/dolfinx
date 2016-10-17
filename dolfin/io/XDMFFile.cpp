@@ -997,25 +997,34 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 {
   // Get number of cells (global) and vertices per cell from mesh
   const std::int64_t num_cells = mesh.topology().size_global(tdim);
-  const int num_vertices_per_cell = mesh.type().num_vertices(tdim);
+  int num_nodes_per_cell = mesh.type().num_entities(0);
+  const int degree = mesh.geometry().degree();
+  if (degree == 2)
+    num_nodes_per_cell += mesh.type().num_entities(1);
 
   // Get VTK string for cell type
   const std::string vtk_cell_str
-    = vtk_cell_type_str(mesh.type().entity_type(tdim), mesh.geometry().degree());
+    = vtk_cell_type_str(mesh.type().entity_type(tdim), degree);
 
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   dolfin_assert(topology_node);
   topology_node.append_attribute("NumberOfElements") = std::to_string(num_cells).c_str();
   topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
-  topology_node.append_attribute("NodesPerElement") = num_vertices_per_cell;
+  topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
 
   // Compute packed topology data
-  std::vector<T> topology_data = compute_topology_data<T>(mesh, tdim);
+  std::vector<T> topology_data;
+
+  dolfin_assert(degree == 1 or degree == 2);
+  if (degree == 1)
+    topology_data = compute_topology_data<T>(mesh, tdim);
+  else
+    topology_data = compute_quadratic_topology<T>(mesh);
 
   // Add topology DataItem node
   const std::string group_name = path_prefix + "/" + mesh.name();
   const std::string h5_path = group_name + "/topology";
-  const std::vector<std::int64_t> shape = {num_cells, num_vertices_per_cell};
+  const std::vector<std::int64_t> shape = {num_cells, num_nodes_per_cell};
   const std::string number_type = "UInt";
 
   add_data_item(comm, topology_node, h5_id, h5_path, topology_data, shape, number_type);
@@ -1045,8 +1054,14 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 
   // Pack geometry data
-  std::vector<double> x
-    = DistributedMeshTools::reorder_vertices_by_global_indices(mesh);
+  std::vector<double> x;
+
+  int degree = mesh_geometry.degree();
+  dolfin_assert(degree == 1 or degree == 2);
+  if (degree == 1)
+    x = DistributedMeshTools::reorder_vertices_by_global_indices(mesh);
+  else
+    x = mesh_geometry.x();
 
   // XDMF does not support 1D, so handle as special case
   if (gdim == 1)
@@ -1256,7 +1271,53 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
 
   return topology_data;
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+template<typename T>
+std::vector<T> XDMFFile::compute_quadratic_topology(const Mesh& mesh)
+{
+  const MeshGeometry& geom = mesh.geometry();
+
+  if (geom.degree() != 2 or MPI::size(mesh.mpi_comm()) != 1)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "create topology data",
+                 "XDMF quadratic mesh only supported in serial");
+  }
+
+  const std::size_t tdim = mesh.topology().dim();
+  std::vector<std::size_t> edge_mapping;
+  if (tdim == 1)
+    edge_mapping = {0};
+  else if (tdim == 2)
+    edge_mapping = {2, 0, 1};
+  else
+    edge_mapping = {5, 2, 4, 3, 1, 0};
+
+  // Get number of points per cell
+  const CellType& celltype = mesh.type();
+  std::size_t npoint = celltype.num_entities(0) + celltype.num_entities(1);
+  std::vector<T> topology_data;
+  topology_data.reserve(npoint*mesh.size(tdim));
+
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    // Add indices for vertices and edges
+    for (unsigned int dim = 0; dim != 2; ++dim)
+    {
+      for (unsigned int i = 0; i != celltype.num_entities(dim); ++i)
+      {
+        std::size_t im = (dim == 0) ? i : edge_mapping[i];
+        const std::size_t entity_index
+          = (dim == tdim) ? c->index() : c->entities(dim)[im];
+        const std::size_t local_idx
+          = geom.get_entity_index(dim, 0, entity_index);
+        topology_data.push_back(local_idx);
+      }
+    }
+  }
+  return topology_data;
+}
+//-----------------------------------------------------------------------------
 template<typename T>
 std::vector<T> XDMFFile::compute_value_data(const MeshFunction<T>& meshfunction)
 {

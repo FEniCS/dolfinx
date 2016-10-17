@@ -274,16 +274,20 @@ namespace dolfin
     template<typename T>
     static std::vector<T> compute_topology_data(const Mesh& mesh, int cell_dim);
 
+    // Return quadratic topology for Mesh of degree 2
+    template<typename T>
+    static std::vector<T> compute_quadratic_topology(const Mesh& mesh);
+
     // Return data which is local
     template<typename T>
-      std::vector<T> compute_value_data(const MeshFunction<T>& meshfunction);
+    std::vector<T> compute_value_data(const MeshFunction<T>& meshfunction);
 
     // Get DOLFIN cell type string from XML topology node
     static std::string get_cell_type(const pugi::xml_node& topology_node);
 
     // Get dimensions from an XML DataSet node
     static std::vector<std::int64_t>
-      get_dataset_shape(const pugi::xml_node& dataset_node);
+    get_dataset_shape(const pugi::xml_node& dataset_node);
 
     // Get number of cells from an XML Topology node
     static std::int64_t get_num_cells(const pugi::xml_node& topology_node);
@@ -301,7 +305,7 @@ namespace dolfin
 
     // Generic MeshFunction reader
     template<typename T>
-      void read_mesh_function(MeshFunction<T>& meshfunction, std::string name="");
+    void read_mesh_function(MeshFunction<T>& meshfunction, std::string name="");
 
     // Generic MeshFunction writer
     template<typename T>
