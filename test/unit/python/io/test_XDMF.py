@@ -20,7 +20,7 @@
 import pytest
 import os
 from dolfin import *
-from dolfin_utils.test import skip_if_not_HDF5, skip_in_parallel, fixture, tempdir
+from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 
 # Currently supported XDMF file encoding
 encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)
@@ -401,3 +401,21 @@ def test_save_mesh_value_collection(tempdir, encoding):
                                                       % mvc_dim))
         xdmf.write(meshfn, encoding)
         xdmf.write(mvc, encoding)
+
+@skip_in_parallel
+@pytest.mark.parametrize("encoding", encodings)
+def test_quadratic_mesh(tempdir, encoding):
+    if invalid_config(encoding):
+        pytest.xfail("XDMF unsupported in current configuration")
+    mesh = UnitDiscMesh(mpi_comm_world(), 2, 2, 2)
+    Q = FunctionSpace(mesh, "CG", 1)
+    u = Function(Q)
+    u.interpolate(Constant(1.0))
+    xdmf = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "quadratic1.xdmf"))
+    xdmf.write(u)
+
+    Q = FunctionSpace(mesh, "CG", 2)
+    u = Function(Q)
+    u.interpolate(Constant(1.0))
+    xdmf = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "quadratic2.xdmf"))
+    xdmf.write(u)
