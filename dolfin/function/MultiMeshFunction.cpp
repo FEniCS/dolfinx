@@ -45,6 +45,8 @@ MultiMeshFunction::MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpac
   // creating subfunctions
 
   // Assertion uses '<=' to deal with sub-functions
+  dolfin_assert(x);
+  dolfin_assert(V);
   dolfin_assert(V->dofmap());
   dolfin_assert(V->dofmap()->global_dimension() <= x->size());
 }
