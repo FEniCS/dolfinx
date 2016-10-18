@@ -237,12 +237,23 @@ def test_save_2D_cell_function(tempdir, encoding):
     filename = os.path.join(tempdir, "mf_2D.xdmf")
     mesh = UnitSquareMesh(32, 32)
     mf = CellFunction("size_t", mesh)
+    mf.rename("cells", "cells")
     for cell in cells(mesh):
         mf[cell] = cell.index()
 
     file = XDMFFile(mesh.mpi_comm(), filename)
     file.write(mf, encoding)
     del file
+
+    mf_in = CellFunction("size_t", mesh)
+    xdmf = XDMFFile(mesh.mpi_comm(), filename)
+    xdmf.read(mf_in, "cells")
+    del xdmf
+
+    diff = 0
+    for cell in cells(mesh):
+        diff += (mf_in[cell] - mf[cell])
+    assert diff == 0
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -251,6 +262,7 @@ def test_save_3D_cell_function(tempdir, encoding):
         pytest.xfail("XDMF unsupported in current configuration")
     mesh = UnitCubeMesh(8, 8, 8)
     mf = CellFunction("size_t", mesh)
+    mf.rename("cells", "cells")
     for cell in cells(mesh):
         mf[cell] = cell.index()
     filename = os.path.join(tempdir, "mf_3D.xdmf")
@@ -259,6 +271,15 @@ def test_save_3D_cell_function(tempdir, encoding):
     file.write(mf, encoding)
     del file
 
+    mf_in = CellFunction("size_t", mesh)
+    xdmf = XDMFFile(mesh.mpi_comm(), filename)
+    xdmf.read(mf_in, "cells")
+    del xdmf
+
+    diff = 0
+    for cell in cells(mesh):
+        diff += (mf_in[cell] - mf[cell])
+    assert diff == 0
 
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_2D_facet_function(tempdir, encoding):
@@ -266,14 +287,24 @@ def test_save_2D_facet_function(tempdir, encoding):
         pytest.xfail("XDMF unsupported in current configuration")
     mesh = UnitSquareMesh(32, 32)
     mf = FacetFunction("size_t", mesh)
+    mf.rename("facets", "facets")
     for facet in facets(mesh):
-        mf[facet] = facet.index()
+        mf[facet] = facet.global_index()
     filename = os.path.join(tempdir, "mf_facet_2D.xdmf")
 
-    file = XDMFFile(mesh.mpi_comm(), filename)
-    file.write(mf, encoding)
-    del file
+    xdmf = XDMFFile(mesh.mpi_comm(), filename)
+    xdmf.write(mf, encoding)
+    del xdmf
 
+    mf_in = FacetFunction("size_t", mesh)
+    xdmf = XDMFFile(mesh.mpi_comm(), filename)
+    xdmf.read(mf_in, "facets")
+    del xdmf
+
+    diff = 0
+    for facet in facets(mesh):
+        diff += (mf_in[facet] - mf[facet])
+    assert diff == 0
 
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_3D_facet_function(tempdir, encoding):
@@ -281,14 +312,24 @@ def test_save_3D_facet_function(tempdir, encoding):
         pytest.xfail("XDMF unsupported in current configuration")
     mesh = UnitCubeMesh(8, 8, 8)
     mf = FacetFunction("size_t", mesh)
+    mf.rename("facets", "facets")
     for facet in facets(mesh):
-        mf[facet] = facet.index()
+        mf[facet] = facet.global_index()
     filename = os.path.join(tempdir, "mf_facet_3D.xdmf")
 
     file = XDMFFile(mesh.mpi_comm(), filename)
     file.write(mf, encoding)
     del file
 
+    mf_in = FacetFunction("size_t", mesh)
+    xdmf = XDMFFile(mesh.mpi_comm(), filename)
+    xdmf.read(mf_in, "facets")
+    del xdmf
+
+    diff = 0
+    for facet in facets(mesh):
+        diff += (mf_in[facet] - mf[facet])
+    assert diff == 0
 
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_3D_edge_function(tempdir, encoding):
@@ -296,6 +337,7 @@ def test_save_3D_edge_function(tempdir, encoding):
         pytest.xfail("XDMF unsupported in current configuration")
     mesh = UnitCubeMesh(8, 8, 8)
     mf = EdgeFunction("size_t", mesh)
+    mf.rename("edges", "edges")
     for edge in edges(mesh):
         mf[edge] = edge.index()
 
@@ -303,21 +345,30 @@ def test_save_3D_edge_function(tempdir, encoding):
     file.write(mf, encoding)
     del file
 
-
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_2D_vertex_function(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
     mesh = UnitSquareMesh(32, 32)
     mf = VertexFunction("size_t", mesh)
+    mf.rename("vertices", "vertices")
     for vertex in vertices(mesh):
-        mf[vertex] = vertex.index()
+        mf[vertex] = vertex.global_index()
     filename = os.path.join(tempdir, "mf_vertex_2D.xdmf")
 
     file = XDMFFile(mesh.mpi_comm(), filename)
     file.write(mf, encoding)
     del file
 
+    mf_in = VertexFunction("size_t", mesh)
+    xdmf = XDMFFile(mesh.mpi_comm(), filename)
+    xdmf.read(mf_in, "vertices")
+    del xdmf
+
+    diff = 0
+    for v in vertices(mesh):
+        diff += (mf_in[v] - mf[v])
+    assert diff == 0
 
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_3D_vertex_function(tempdir, encoding):

@@ -1379,7 +1379,9 @@ std::string XDMFFile::get_cell_type(const pugi::xml_node& topology_node)
   // Convert XDMF cell type string to DOLFIN cell type string
   std::string cell_type = type_attr.as_string();
   boost::algorithm::to_lower(cell_type);
-  if (cell_type == "polyline")
+  if (cell_type == "polyvertex")
+    cell_type = "point";
+  else if (cell_type == "polyline")
     cell_type = "interval";
 
   return cell_type;
