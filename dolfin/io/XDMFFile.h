@@ -319,10 +319,14 @@ namespace dolfin
     static bool has_cell_centred_data(const Function& u);
 
     // Get point data values for linear or quadratic mesh into
-    // flattened 2D array in data_values with given width
+    // flattened 2D array
     static std::vector<double> get_point_data_values(const Function& u);
 
-    // Get cell data values as a flattened 2D array in data_values
+    // Get point data values collocated at P2 geometry points (vertices
+    // and edges) flattened as a 2D array
+    static std::vector<double> get_p2_data_values(const Function& u);
+
+    // Get cell data values as a flattened 2D array
     static std::vector<double> get_cell_data_values(const Function& u);
 
     // Check whether the requested encoding is supported
