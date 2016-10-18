@@ -522,10 +522,12 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
   const std::map<std::pair<std::size_t, std::size_t>, std::size_t>& values
     = mvc.values();
   const std::int64_t num_cells = values.size();
+  const std::int64_t num_cells_global = MPI::sum(mesh->mpi_comm(), num_cells);
 
   pugi::xml_node topology_node = mvc_grid_node.append_child("Topology");
   dolfin_assert(topology_node);
-  topology_node.append_attribute("NumberOfElements") = std::to_string(num_cells).c_str();
+  topology_node.append_attribute("NumberOfElements")
+    = std::to_string(num_cells_global).c_str();
   topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
   topology_node.append_attribute("NodesPerElement")
     = std::to_string(num_vertices_per_cell).c_str();
@@ -549,7 +551,7 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
     value_data.push_back(p.second);
   }
 
-  const std::int64_t num_values = value_data.size();
+  const std::int64_t num_values = MPI::sum(mesh->mpi_comm(), value_data.size());
   add_data_item(_mpi_comm, topology_node, h5_id, "/MeshValueCollection/topology",
                 topology_data, {num_values, num_vertices_per_cell});
 
