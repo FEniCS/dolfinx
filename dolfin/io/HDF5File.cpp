@@ -367,12 +367,11 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     }
     else
     {
+      // If not already numbered, number entities of order cell_dim
+      DistributedMeshTools::number_entities(mesh, cell_dim);
+
       // Drop duplicate topology for shared entities of less than mesh
       // dimension
-
-      // If not already numbered, number entities of order cell_dim so
-      // we can get shared_entities
-      DistributedMeshTools::number_entities(mesh, cell_dim);
 
       const std::size_t mpi_rank = MPI::rank(_mpi_comm);
       const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
@@ -438,7 +437,10 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     global_size[0] = MPI::sum(_mpi_comm,
                               topological_data.size()/num_cell_points);
     global_size[1] = num_cell_points;
-    dolfin_assert(global_size[0] == (std::int64_t) mesh.size_global(cell_dim));
+
+    const std::int64_t num_cells
+      = mpi_io ? mesh.size_global(cell_dim) : mesh.size(cell_dim);
+    dolfin_assert(global_size[0] == num_cells);
     const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
     write_data(topology_dataset, topological_data, global_size, mpi_io);
 
