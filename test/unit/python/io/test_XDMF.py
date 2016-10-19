@@ -288,8 +288,13 @@ def test_save_2D_facet_function(tempdir, encoding):
     mesh = UnitSquareMesh(32, 32)
     mf = FacetFunction("size_t", mesh)
     mf.rename("facets", "facets")
-    for facet in facets(mesh):
-        mf[facet] = facet.global_index()
+
+    if (MPI.size(mesh.mpi_comm()) == 1):
+        for facet in facets(mesh):
+            mf[facet] = facet.index()
+    else:
+        for facet in facets(mesh):
+            mf[facet] = facet.global_index()
     filename = os.path.join(tempdir, "mf_facet_2D.xdmf")
 
     xdmf = XDMFFile(mesh.mpi_comm(), filename)
@@ -313,8 +318,13 @@ def test_save_3D_facet_function(tempdir, encoding):
     mesh = UnitCubeMesh(8, 8, 8)
     mf = FacetFunction("size_t", mesh)
     mf.rename("facets", "facets")
-    for facet in facets(mesh):
-        mf[facet] = facet.global_index()
+
+    if (MPI.size(mesh.mpi_comm()) == 1):
+        for facet in facets(mesh):
+            mf[facet] = facet.index()
+    else:
+        for facet in facets(mesh):
+            mf[facet] = facet.global_index()
     filename = os.path.join(tempdir, "mf_facet_3D.xdmf")
 
     file = XDMFFile(mesh.mpi_comm(), filename)
