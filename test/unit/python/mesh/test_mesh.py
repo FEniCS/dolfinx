@@ -459,10 +459,12 @@ def test_shared_entities():
         dim = ind+1
         args = [4]*dim
         mesh = MeshClass(*args)
-        mesh.init()
 
         # FIXME: Implement a proper test
         for shared_dim in range(dim+1):
+            # Initialise global indices (if not already)
+            mesh.init_global(shared_dim)
+
             assert isinstance(mesh.topology().shared_entities(shared_dim), dict)
             assert isinstance(mesh.topology().global_indices(shared_dim),
                               numpy.ndarray)
@@ -473,3 +475,17 @@ def test_shared_entities():
                     sharing = e.sharing_processes()
                     assert isinstance(sharing, numpy.ndarray)
                     assert (sharing.size > 0) == e.is_shared()
+
+            n_entities = mesh.size(shared_dim)
+            n_global_entities = mesh.size_global(shared_dim)
+            shared_entities = mesh.topology().shared_entities(shared_dim)
+
+            # Check that sum(local-shared) = global count
+            rank = MPI.rank(mesh.mpi_comm())
+            ct = 0
+            for key,val in shared_entities.iteritems():
+                if (val[0] < rank):
+                    ct += 1
+            size_global = MPI.sum(mesh.mpi_comm(), mesh.size(shared_dim) - ct)
+
+            assert size_global ==  mesh.size_global(shared_dim)
