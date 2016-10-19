@@ -129,12 +129,12 @@ namespace dolfin
     ///         The global index. Set to
     ///         std::numerical_limits<std::size_t>::max() if global index
     ///         has not been computed
-    std::size_t global_index() const
+    std::int64_t global_index() const
     {
-      const std::vector<std::size_t>& global_indices
+      const std::vector<std::int64_t>& global_indices
         = _mesh->topology().global_indices(_dim);
       if (global_indices.empty())
-        return std::numeric_limits<std::size_t>::max();
+        return -1;
       return global_indices[_local_index];
     }
 

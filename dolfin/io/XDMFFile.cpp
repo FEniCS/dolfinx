@@ -1231,7 +1231,7 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
   if (MPI::size(comm) == 1)
   {
     // Simple case when mesh is not distributed
-    const std::vector<size_t>& global_vertices = mesh.topology().global_indices(0);
+    const auto& global_vertices = mesh.topology().global_indices(0);
     for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
     {
       const unsigned int* entities = c->entities(0);
@@ -1301,7 +1301,7 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
     else
     {
       // Local-to-global map for point indices
-      const std::vector<std::size_t>& global_vertices
+      const auto& global_vertices
         = mesh.topology().global_indices(0);
       for (MeshEntityIterator e(mesh, cell_dim); !e.end(); ++e)
       {

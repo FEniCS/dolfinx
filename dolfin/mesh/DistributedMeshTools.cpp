@@ -68,7 +68,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
     shared_entities = _mesh.topology().shared_entities(d);
 
   // Number entities
-  std::vector<std::size_t> global_entity_indices;
+  std::vector<std::int64_t> global_entity_indices;
   const std::map<unsigned int, std::pair<unsigned int, unsigned int>>
     slave_entities;
   const std::size_t num_global_entities = number_entities(mesh, slave_entities,
@@ -86,7 +86,7 @@ std::size_t DistributedMeshTools::number_entities(
   const Mesh& mesh,
   const std::map<unsigned int, std::pair<unsigned int,
   unsigned int>>& slave_entities,
-  std::vector<std::size_t>& global_entity_indices,
+  std::vector<std::int64_t>& global_entity_indices,
   std::map<std::int32_t, std::set<unsigned int>>& shared_entities,
   std::size_t d)
 {
@@ -159,7 +159,7 @@ std::size_t DistributedMeshTools::number_entities(
   }
 
   // Get vertex global indices
-  const std::vector<std::size_t>& global_vertex_indices
+  const std::vector<std::int64_t>& global_vertex_indices
     = mesh.topology().global_indices(0);
 
   // Get shared vertices (local index, [sharing processes])
@@ -195,10 +195,9 @@ std::size_t DistributedMeshTools::number_entities(
   std::size_t offset = num_global_entities.second;
 
   // Prepare list of global entity numbers. Check later that nothing
-  // is equal to std::numeric_limits<std::size_t>::max()
+  // is equal to -1
   global_entity_indices
-    = std::vector<std::size_t>(mesh.size(d),
-                               std::numeric_limits<std::size_t>::max());
+    = std::vector<std::int64_t>(mesh.size(d), -1);
 
   std::map<Entity, EntityData>::const_iterator it;
 
@@ -224,10 +223,9 @@ std::size_t DistributedMeshTools::number_entities(
   {
     // Get entity index
     const unsigned int local_entity_index = it1->second.local_index;
-    const std::size_t global_entity_index
+    const std::int64_t global_entity_index
       = global_entity_indices[local_entity_index];
-    dolfin_assert(global_entity_index
-                  != std::numeric_limits<std::size_t>::max());
+    dolfin_assert(global_entity_index != -1);
 
     // Get entity processes (processes sharing the entity)
     const std::vector<unsigned int>& entity_processes = it1->second.processes;
@@ -281,8 +279,8 @@ std::size_t DistributedMeshTools::number_entities(
       }
 
       const std::size_t local_entity_index = recv_entity->second.local_index;
-      dolfin_assert(global_entity_indices[local_entity_index]
-                    == std::numeric_limits<std::size_t>::max());
+      dolfin_assert(global_entity_indices[local_entity_index] == -1);
+
       global_entity_indices[local_entity_index] = global_index;
     }
   }
@@ -330,8 +328,7 @@ std::size_t DistributedMeshTools::number_entities(
   // Sanity check
   for (std::size_t i = 0; i < global_entity_indices.size(); ++i)
   {
-    dolfin_assert(global_entity_indices[i]
-                  != std::numeric_limits<std::size_t>::max());
+    dolfin_assert(global_entity_indices[i] != -1);
   }
 
   // Build shared_entities (global index, [sharing processes])
@@ -397,7 +394,7 @@ DistributedMeshTools::locate_off_process_entities(const std::vector<std::size_t>
   }
 
   // Get global cell entity indices on this process
-  const std::vector<std::size_t> global_entity_indices
+  const std::vector<std::int64_t> global_entity_indices
       = mesh.topology().global_indices(dim);
 
   dolfin_assert(global_entity_indices.size() == mesh.num_cells());
@@ -540,7 +537,7 @@ std::unordered_map<unsigned int,
     shared_entities = mesh.topology().shared_entities(d);
 
   // Get local-to-global indices map
-  const std::vector<std::size_t>& global_indices_map
+  const std::vector<std::int64_t>& global_indices_map
     = mesh.topology().global_indices(d);
 
   // Global-to-local map for each process
@@ -661,7 +658,7 @@ void DistributedMeshTools::compute_entity_ownership(
   const MPI_Comm mpi_comm,
   const std::map<std::vector<std::size_t>, unsigned int>& entities,
   const std::map<std::int32_t, std::set<unsigned int>>& shared_vertices_local,
-  const std::vector<std::size_t>& global_vertex_indices,
+  const std::vector<std::int64_t>& global_vertex_indices,
   std::size_t d,
   std::vector<std::size_t>& owned_entities,
   std::array<std::map<Entity, EntityData>, 2>& shared_entities)
@@ -1174,7 +1171,7 @@ void DistributedMeshTools::reorder_values_by_global_indices(const Mesh& mesh,
   boost::multi_array_ref<double, 2>
     data_array(data.data(), boost::extents[mesh.num_vertices()][width]);
 
-  std::vector<std::size_t> global_indices;
+  std::vector<std::int64_t> global_indices;
   std::vector<double> reduced_data;
 
   // Remove clashing data with multiple copies on different processes
@@ -1197,7 +1194,7 @@ void DistributedMeshTools::reorder_values_by_global_indices(const Mesh& mesh,
 void DistributedMeshTools::reorder_values_by_global_indices(MPI_Comm mpi_comm,
                            std::vector<double>& values,
                            const std::size_t width,
-                           const std::vector<std::size_t>& global_indices)
+                           const std::vector<std::int64_t>& global_indices)
 {
 
   // Number of items to redistribute

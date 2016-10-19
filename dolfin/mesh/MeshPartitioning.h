@@ -268,8 +268,7 @@ namespace dolfin
     }
 
     // Get global indices on local process
-    const std::vector<std::size_t> global_entity_indices
-      = mesh.topology().global_indices(D);
+    const auto& global_entity_indices = mesh.topology().global_indices(D);
 
     // Add local (to this process) data to domain marker
     std::vector<std::size_t> off_process_global_cell_entities;
