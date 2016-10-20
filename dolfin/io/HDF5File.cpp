@@ -306,8 +306,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     std::vector<std::int64_t> topological_data;
     topological_data.reserve(mesh.num_entities(cell_dim)*(num_cell_points));
 
-    const std::vector<std::size_t>& global_vertices
-      = mesh.topology().global_indices(0);
+    const auto& global_vertices = mesh.topology().global_indices(0);
 
     // Permutation to VTK ordering
     const std::vector<std::int8_t> perm = celltype->vtk_mapping();
@@ -367,12 +366,11 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     }
     else
     {
+      // If not already numbered, number entities of order cell_dim
+      DistributedMeshTools::number_entities(mesh, cell_dim);
+
       // Drop duplicate topology for shared entities of less than mesh
       // dimension
-
-      // If not already numbered, number entities of order cell_dim so
-      // we can get shared_entities
-      DistributedMeshTools::number_entities(mesh, cell_dim);
 
       const std::size_t mpi_rank = MPI::rank(_mpi_comm);
       const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
@@ -438,7 +436,10 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     global_size[0] = MPI::sum(_mpi_comm,
                               topological_data.size()/num_cell_points);
     global_size[1] = num_cell_points;
-    dolfin_assert(global_size[0] == (std::int64_t) mesh.size_global(cell_dim));
+
+    const std::int64_t num_cells
+      = mpi_io ? mesh.size_global(cell_dim) : mesh.size(cell_dim);
+    dolfin_assert(global_size[0] == num_cells);
     const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
     write_data(topology_dataset, topological_data, global_size, mpi_io);
 
@@ -447,9 +448,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     {
       const std::string cell_index_dataset = name + "/cell_indices";
       global_size.pop_back();
-      const std::vector<std::size_t>& cell_index_ref
-        = mesh.topology().global_indices(cell_dim);
-      const std::vector<std::size_t> cells(cell_index_ref.begin(),
+      const auto& cell_index_ref = mesh.topology().global_indices(cell_dim);
+      const std::vector<std::int64_t> cells(cell_index_ref.begin(),
             cell_index_ref.begin() + mesh.topology().ghost_offset(cell_dim));
       const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
       write_data(cell_index_dataset, cells, global_size, mpi_io);
@@ -1591,8 +1591,8 @@ void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
 
     // Get global mapping to restore values
     const Mesh& mesh = *mesh_vc.mesh();
-    const std::vector<std::size_t>& global_cell_index
-      = mesh.topology().global_indices(mesh.topology().dim());
+    const auto& global_cell_index =
+      mesh.topology().global_indices(mesh.topology().dim());
 
     // Reference to actual map of MeshValueCollection
     std::map<std::pair<std::size_t, std::size_t>, T>& mvc_map
@@ -1605,7 +1605,7 @@ void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
 
     // cells_data in general is not ordered, so we sort it
     // keeping track of the indices
-    std::vector<std::size_t> cells_data_index(cells_data.size());
+    std::vector<std::int64_t> cells_data_index(cells_data.size());
     std::iota(cells_data_index.begin(), cells_data_index.end(), 0);
     std::sort(cells_data_index.begin(), cells_data_index.end(),
               [&cells_data](std::size_t i, size_t j)
@@ -1614,17 +1614,17 @@ void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
     // The implementation follows std::set_intersection, which we are
     // not able to use here since we need the indices of the
     // intersection, not just the values.
-    std::vector<std::size_t>::const_iterator i = global_cell_index.begin();
-    std::vector<std::size_t>::const_iterator j = cells_data_index.begin();
+    std::vector<std::int64_t>::const_iterator i = global_cell_index.begin();
+    std::vector<std::int64_t>::const_iterator j = cells_data_index.begin();
     while (i!=global_cell_index.end() && j!=cells_data_index.end())
     {
       // Global cell index is less than the cell_data index read from
       // file, if global cell index is larger than the cell_data index
       // read from file, else global cell index is the same as the
       // cell_data index read from file
-      if (*i < cells_data[*j])
+      if (*i < (std::int64_t)cells_data[*j])
         ++i;
-      else if (*i > cells_data[*j])
+      else if (*i > (std::int64_t)cells_data[*j])
         ++j;
       else
       {
