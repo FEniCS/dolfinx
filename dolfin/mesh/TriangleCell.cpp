@@ -386,7 +386,7 @@ double TriangleCell::facet_area(const Cell& cell, std::size_t facet) const
 //-----------------------------------------------------------------------------
 void TriangleCell::order(
   Cell& cell,
-  const std::vector<std::size_t>& local_to_global_vertex_indices) const
+  const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1
 

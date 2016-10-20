@@ -201,7 +201,7 @@ std::size_t TopologyComputation::compute_entities_old(Mesh& mesh, std::size_t di
   }
 
   // Initialise connectivity data structure
-  topology.init(dim, connectivity_ev.size(), connectivity_ev.size());
+  topology.init(dim, connectivity_ev.size(), 0);
 
   // Initialise ghost entity offset
   topology.init_ghost(dim, num_regular_entities);
@@ -470,8 +470,7 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
   }
 
   // Initialise connectivity data structure
-  topology.init(dim, connectivity_ev.size() + connectivity_ev_ghost.size(),
-                     connectivity_ev.size() + connectivity_ev_ghost.size());
+  topology.init(dim, connectivity_ev.size() + connectivity_ev_ghost.size(), 0);
 
   // Initialise ghost entity offset
   topology.init_ghost(dim, connectivity_ev.size());

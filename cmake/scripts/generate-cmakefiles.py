@@ -37,11 +37,6 @@ project(${PROJECT_NAME})
 # Set CMake behavior
 cmake_policy(SET CMP0004 NEW)
 
-# Require and use C++11
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 # Get DOLFIN configuration data (DOLFINConfig.cmake must be in
 # DOLFIN_CMAKE_CONFIG_PATH)
 find_package(DOLFIN REQUIRED)

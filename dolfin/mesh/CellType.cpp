@@ -47,13 +47,13 @@ namespace dolfin
   {
   public:
 
-    GlobalSort(const std::vector<std::size_t>& local_to_global_vertex_indices)
+    GlobalSort(const std::vector<std::int64_t>& local_to_global_vertex_indices)
         : g(local_to_global_vertex_indices) {}
 
     bool operator() (const std::size_t& l, const std::size_t& r)
     { return g[l] < g[r]; }
 
-    const std::vector<std::size_t>& g;
+    const std::vector<std::int64_t>& g;
 
   };
 }
@@ -236,7 +236,7 @@ double CellType::radius_ratio(const Cell& cell) const
     return dim()*r/circumradius(cell);
 }
 //-----------------------------------------------------------------------------
-bool CellType::ordered(const Cell& cell, const std::vector<std::size_t>&
+bool CellType::ordered(const Cell& cell, const std::vector<std::int64_t>&
                        local_to_global_vertex_indices) const
 {
   // Get mesh topology
@@ -293,7 +293,7 @@ bool CellType::ordered(const Cell& cell, const std::vector<std::size_t>&
 //-----------------------------------------------------------------------------
 void CellType::sort_entities(std::size_t num_vertices,
                              unsigned int* local_vertices,
-                             const std::vector<std::size_t>&
+                             const std::vector<std::int64_t>&
                              local_to_global_vertex_indices)
 {
   // Two cases here, either sort vertices directly (when running in
@@ -307,7 +307,7 @@ void CellType::sort_entities(std::size_t num_vertices,
 //-----------------------------------------------------------------------------
 bool CellType::increasing(std::size_t num_vertices,
                           const unsigned int* local_vertices,
-                          const std::vector<std::size_t>&
+                          const std::vector<std::int64_t>&
                           local_to_global_vertex_indices)
 {
   // Two cases here, either check vertices directly (when running in serial)
@@ -323,7 +323,7 @@ bool CellType::increasing(std::size_t n0, const unsigned int* v0,
                           std::size_t n1, const unsigned int* v1,
                           std::size_t num_vertices,
                           const unsigned int* local_vertices,
-               const std::vector<std::size_t>& local_to_global_vertex_indices)
+               const std::vector<std::int64_t>& local_to_global_vertex_indices)
 {
   dolfin_assert(n0 == n1);
   dolfin_assert(num_vertices > n0);

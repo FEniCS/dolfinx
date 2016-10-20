@@ -57,7 +57,7 @@ namespace dolfin
                          std::size_t dim, const unsigned int* v) const;
 
     /// Order entities locally (connectivity 1-0, 2-0, 2-1)
-    void order(Cell& cell, const std::vector<std::size_t>&
+    void order(Cell& cell, const std::vector<std::int64_t>&
                local_to_global_vertex_indices) const;
 
     /// Compute (generalized) volume (area) of triangle

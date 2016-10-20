@@ -1238,7 +1238,7 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
     }
     else
     {
-      const std::vector<size_t>& global_vertices
+      const auto& global_vertices
         = mesh.topology().global_indices(0);
       for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
       {
@@ -1265,7 +1265,8 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
     }
     else
     {
-      const std::vector<size_t>& global_vertices
+      // Local-to-global map for point indices
+      const auto& global_vertices
         = mesh.topology().global_indices(0);
       for (MeshEntityIterator e(mesh, cell_dim); !e.end(); ++e)
       {
