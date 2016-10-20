@@ -1053,12 +1053,10 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Compute number of points (global) in mesh (equal to number of vertices
   // for affine meshes)
-  std::int64_t num_points = 0;
-  for (std::size_t i = 0; i <= mesh.topology().dim(); ++i)
-  {
-    num_points +=
-      mesh_geometry.num_entity_coordinates(i)*mesh.size_global(i);
-  }
+  const int degree = mesh_geometry.degree();
+  dolfin_assert(degree == 1 or degree == 2);
+  const std::int64_t num_points
+    = (degree == 1) ? mesh.size_global(0) : (mesh.size(0) + mesh.size(1));
 
   // Add geometry node and attributes
   pugi::xml_node geometry_node = xml_node.append_child("Geometry");
@@ -1069,9 +1067,6 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Pack geometry data
   std::vector<double> x;
-
-  int degree = mesh_geometry.degree();
-  dolfin_assert(degree == 1 or degree == 2);
   if (degree == 1)
     x = DistributedMeshTools::reorder_vertices_by_global_indices(mesh);
   else
@@ -1092,6 +1087,7 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const std::string group_name = path_prefix + "/" + mesh.name();
   const std::string h5_path = group_name + "/geometry";
   const std::vector<std::int64_t> shape = {num_points, gdim};
+
   add_data_item(comm, geometry_node, h5_id, h5_path, x, shape);
 }
 //-----------------------------------------------------------------------------
