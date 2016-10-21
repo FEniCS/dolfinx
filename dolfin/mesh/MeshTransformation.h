@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Anders Logg
+// Copyright (C) 2012-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-16
-// Last changed: 2013-06-27
+// Last changed: 2016-05-03
 
 #ifndef __MESH_TRANSFORMATION_H
 #define __MESH_TRANSFORMATION_H
@@ -33,6 +33,15 @@ namespace dolfin
 class MeshTransformation
 {
 public:
+
+  /// Scale mesh coordinates with given factor.
+  ///
+  /// *Arguments*
+  ///     mesh (_Mesh_)
+  ///         The mesh
+  ///     factor (double)
+  ///         The factor defining the scaling.
+  static void scale(Mesh& mesh, double factor);
 
   /// Translate mesh according to a given vector.
   ///

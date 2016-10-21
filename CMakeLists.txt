@@ -330,16 +330,8 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
 # Note: Check for Python interpreter even when Python is disabled
 #       because it is used to get the installation path for
 #       dolfin_utils
-if (DOLFIN_USE_PYTHON3)
-  find_package(PythonInterp 3)
-else()
-  find_package(PythonInterp 2.7)
-endif()
-
-set_package_properties(PythonInterp PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Interactive high-level object-oriented language"
-  URL "http://www.python.org")
-
+# FIXME PY3: Select python 3 based on config flag?
+find_package(PythonInterp 2)
 if (DOLFIN_ENABLE_PYTHON)
   set_package_properties(PythonInterp PROPERTIES PURPOSE "Needed for the Python interface to DOLFIN")
 

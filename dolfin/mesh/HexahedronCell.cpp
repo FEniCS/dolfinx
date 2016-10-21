@@ -241,13 +241,6 @@ bool HexahedronCell::collides(const Cell& cell, const MeshEntity& entity) const
   return false;
 }
 //-----------------------------------------------------------------------------
-std::vector<double>
-HexahedronCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
-{
-  dolfin_not_implemented();
-  return std::vector<double>();
-}
-//-----------------------------------------------------------------------------
 std::string HexahedronCell::description(bool plural) const
 {
   if (plural)

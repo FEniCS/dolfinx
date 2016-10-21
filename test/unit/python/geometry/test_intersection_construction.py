@@ -1,6 +1,6 @@
 #!/usr/bin/env py.test
 
-"""Unit tests for the IntersectionTriangulation class"""
+"""Unit tests for the IntersectionConstruction class"""
 
 # Copyright (C) 2014 Anders Logg and August Johansson
 #
@@ -88,8 +88,9 @@ def test_triangulate_intersection_2d():
     volume = 0
     for c0 in cells(mesh_0):
         for c1 in cells(mesh_1):
-            triangulation = c0.triangulate_intersection(c1)
-            if (triangulation.size>0):
+            intersection = c0.intersection(c1)
+            if len(intersection) >= 3 :
+                triangulation = ConvexTriangulation.triangulate(intersection, 2, 2)
                 tmesh = triangulation_to_mesh_2d(triangulation)
                 for t in cells(tmesh):
                     volume += t.volume()
@@ -98,6 +99,7 @@ def test_triangulate_intersection_2d():
     assert round(volume - exactvolume, 7) == 0, errorstring
 
 @skip_in_parallel
+@pytest.mark.skipif(True, reason="Not implemented in 3D")
 def test_triangulate_intersection_2d_3d():
 
     # Note: this test will fail if the triangle mesh is aligned
@@ -112,40 +114,41 @@ def test_triangulate_intersection_2d_3d():
     editor.open(mesh_1,2,3)
     editor.init_cells(2)
     editor.init_vertices(4)
-    # add cells
+
+    # Add cells
     editor.add_cell(0,0,1,2)
     editor.add_cell(1,1,2,3)
-    # add vertices
+
+    # Add vertices
     editor.add_vertex(0,0,0,0.5)
     editor.add_vertex(1,1,0,0.5)
     editor.add_vertex(2,0,1,0.5)
     editor.add_vertex(3,1,1,0.5)
     editor.close()
 
-    # Rotate the triangle mesh around y axis a random angle in
-    # (0,90) degrees
-    #angle = numpy.random.rand()*90
+    # Rotate the triangle mesh around y axis
     angle = 23.46354
     mesh_1.rotate(angle,1)
 
     # Exact area
-    exactvolume = 1
+    exact_volume = 1
 
     # Compute triangulation
     volume = 0
     for c0 in cells(mesh_0):
         for c1 in cells(mesh_1):
-            triangulation = c0.triangulate_intersection(c1)
+            intersection = c0.intersection(c1)
+            triangulation = ConvexTriangulation.triangulate(intersection)
             if (triangulation.size>0):
                 tmesh = triangulation_to_mesh_2d_3d(triangulation)
                 for t in cells(tmesh):
                     volume += t.volume()
 
     errorstring = "rotation angle = " + str(angle)
-    assert round(volume - exactvolume, 7) == 0, errorstring
-
+    assert round(volume - exact_volume, 7) == 0, errorstring
 
 @skip_in_parallel
+@pytest.mark.skipif(True, reason="Not implemented in 3D")
 def test_triangulate_intersection_3d():
 
     # Create two meshes of the unit cube
@@ -163,7 +166,8 @@ def test_triangulate_intersection_3d():
     volume = 0
     for c0 in cells(mesh_0):
         for c1 in cells(mesh_1):
-            triangulation = c0.triangulate_intersection(c1)
+            intersection = c0.intersection(c1)
+            triangulation = ConvexTriangulation.triangulate(intersection)
             if (triangulation.size>0):
                 tmesh = triangulation_to_mesh_3d(triangulation)
                 for t in cells(tmesh):
@@ -172,3 +176,37 @@ def test_triangulate_intersection_3d():
     errorstring = "translation="
     errorstring += str(dx[0])+" "+str(dx[1])+" "+str(dx[2])
     assert round(volume - exactvolume, 7) == 0, errorstring
+
+
+def test_triangle_triangle_2d_trivial() :
+    " These two triangles intersect in a common edge"
+    res = IntersectionConstruction.intersection_triangle_triangle_2d(Point(0.0, 0.0),
+	                                                             Point(1.0, 0.0),
+							             Point(0.5, 1.0),
+							             Point(0.5, 0.5),
+							             Point(1.0, 1.5),
+							             Point(0.0, 1.5))
+    assert len(res) == 4
+
+
+def test_triangle_triangle_2d() :
+    " These two triangles intersect in a common edge"
+    res = IntersectionConstruction.intersection_triangle_triangle_2d(Point(0.4960412972015322, 0.3953317542541379),
+	                                                             Point(0.5, 0.3997044273055517),
+							             Point(0.5, 0.4060889538943557),
+							             Point(0.4960412972015322, 0.3953317542541379),
+							             Point(0.5, 0.4060889538943557),
+							             Point(.5, .5))
+    assert len(res) == 2
+
+# FIXME: This test needs an update SWIG because
+# IntersectionConstruction.intersection_segment_segment_2d returns
+# std::vector<Point>
+@skip_in_parallel
+def test_segment_segment_2d():
+    " These two segments should be parallel and the intersection computed accordingly"
+    p0 = Point(0.176638957524249, 0.509972290857582)
+    p1 = Point(0.217189283468892, 0.550522616802225)
+    q0 = Point(0.333333333333333, 0.666666666666667)
+    q1 = Point(0.211774439087554, 0.545107772420888)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
