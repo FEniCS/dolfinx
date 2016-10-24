@@ -483,7 +483,7 @@ def test_shared_entities():
             # Check that sum(local-shared) = global count
             rank = MPI.rank(mesh.mpi_comm())
             ct = 0
-            for key,val in shared_entities.iteritems():
+            for key, val in shared_entities.items():
                 if (val[0] < rank):
                     ct += 1
             size_global = MPI.sum(mesh.mpi_comm(), mesh.size(shared_dim) - ct)
