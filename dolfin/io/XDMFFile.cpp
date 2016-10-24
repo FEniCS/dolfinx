@@ -1114,7 +1114,8 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
   if (h5_id < 0)
   {
     data_item_node.append_attribute("Format") = "XML";
-    data_item_node.append_child(pugi::node_pcdata).set_value(container_to_string(x, " ", 16).c_str());
+    dolfin_assert(shape.size() == 2);
+    data_item_node.append_child(pugi::node_pcdata).set_value(container_to_string(x, " ", 16, shape[1]).c_str());
   }
   else
   {
