@@ -7,7 +7,9 @@ pipelines:
           - pip install git+https://bitbucket.org/fenics-project/fiat.git@master
           - pip install git+https://bitbucket.org/fenics-project/ufl.git@master
           - pip install git+https://bitbucket.org/fenics-project/dijitso.git@master
-          - pip install git+https://bitbucket.org/fenics-project/ffc.git@master
+          - pip install -v -v -v git+https://bitbucket.org/fenics-project/ffc.git@master
+          - python -c 'import ffc; print ffc.__version__'
+
           - mkdir -p build
           - cd build
           - cmake .. -DCMAKE_BUILD_TYPE=Debug
