@@ -1,0 +1,16 @@
+image: quay.io/fenicsproject/dev-env:current
+
+pipelines:
+  default:
+    - step:
+        script:
+          - pip install git+https://bitbucket.org/fenics-project/fiat.git@master
+          - pip install git+https://bitbucket.org/fenics-project/ufl.git@master
+          - pip install git+https://bitbucket.org/fenics-project/dijitso.git@master
+          - pip install git+https://bitbucket.org/fenics-project/ffc.git@master
+          - mkdir -p build
+          - cd build
+          - cmake .. -DCMAKE_BUILD_TYPE=Debug
+          - make
+          - make install
+          
