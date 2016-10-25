@@ -1,4 +1,4 @@
-image: quay.io/fenicsproject/dev-env:current
+image: quay.io/fenicsproject/dev-env:latest
 
 pipelines:
   default:
@@ -13,4 +13,3 @@ pipelines:
           - cmake .. -DCMAKE_BUILD_TYPE=Debug
           - make
           - make install
-          
