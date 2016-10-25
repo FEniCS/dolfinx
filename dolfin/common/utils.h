@@ -42,15 +42,28 @@ namespace dolfin
   /// etc.
   template<typename T>
     std::string container_to_string(const T& x, std::string delimiter,
-                                    int precision)
+                                    int precision, int linebreak=0)
   {
     std::stringstream s;
     s.precision(precision);
     if (!x.empty())
     {
-      s << *x.begin();
-      for (auto it = x.begin() + 1; it != x.end(); ++it)
-        s << delimiter << *it;
+      if (linebreak == 0)
+      {
+        s << *x.begin();
+        for (auto it = x.begin() + 1; it != x.end(); ++it)
+          s << delimiter << *it;
+      }
+      else
+      {
+        for (unsigned int i = 0 ; i != x.size(); ++i)
+        {
+          if ((i + 1)%linebreak == 0)
+            s << x[i] << std::endl;
+          else
+            s << x[i] << delimiter;
+        }
+      }
     }
     return s.str();
   }

@@ -102,7 +102,9 @@ CellType* CellType::create(std::string type)
 //-----------------------------------------------------------------------------
 CellType::Type CellType::string2type(std::string type)
 {
-  if (type == "interval")
+  if (type == "point")
+    return point;
+  else if (type == "interval")
     return interval;
   else if (type == "triangle")
     return triangle;

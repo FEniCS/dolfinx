@@ -121,9 +121,6 @@ void HDF5File::write(const std::vector<Point>& points,
   // Get number of points (global)
   std::size_t num_points_global = MPI::sum(_mpi_comm, points.size());
 
-  // Data set name
-  const std::string coord_dataset =  dataset_name + "/coordinates";
-
   // Pack data
   const std::size_t n = points.size();
   std::vector<double> x(3*n);
@@ -132,13 +129,12 @@ void HDF5File::write(const std::vector<Point>& points,
       x[3*i + j] = points[i][j];
 
   // Write data to file
-  //  const bool chunking = parameters["chunking"];
   std::vector<std::int64_t> global_size(2);
   global_size[0] = num_points_global;
   global_size[1] = 3;
 
   const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
-  write_data(coord_dataset, x, global_size, mpi_io);
+  write_data(dataset_name, x, global_size, mpi_io);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const std::vector<double>& values,
@@ -470,21 +466,6 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     MPI::broadcast(_mpi_comm, partitions);
     HDF5Interface::add_attribute(_hdf5_file_id, topology_dataset,
                                  "partition", partitions);
-
-    // ---------- Markers
-    for (std::size_t d = 0; d <= mesh.domains().max_dim(); d++)
-    {
-      const std::map<std::size_t, std::size_t>& domain
-        = mesh.domains().markers(d);
-      auto _mesh = reference_to_no_delete_pointer(mesh);
-      MeshValueCollection<std::size_t> collection(_mesh, d);
-      std::map<std::size_t, std::size_t>::const_iterator it;
-      for (it = domain.begin(); it != domain.end(); ++it)
-        collection.set_value(it->first, it->second);
-      const std::string marker_dataset
-        = name + "/domain_" + std::to_string(d);
-      write_mesh_value_collection(collection, marker_dataset);
-    }
 
   }
 }
@@ -1261,18 +1242,12 @@ void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_va
   global_size[0] = MPI::sum(_mpi_comm, values.size());
   global_size[1] = num_vertices_per_entity;
 
-  // FIXME: this should throw an error, but is here because
-  // "mesh domains" call write_mesh_value_collection with empty
-  // datasets sometimes. Remove when mesh domains are removed.
-  if (global_size[0] > 0)
-  {
-    write_data(name + "/topology", topology, global_size, mpi_io);
+  write_data(name + "/topology", topology, global_size, mpi_io);
 
-    global_size[1] = 1;
-    write_data(name + "/values", value_data, global_size, mpi_io);
-    HDF5Interface::add_attribute(_hdf5_file_id, name, "dimension",
-                                 mesh_values.dim());
-  }
+  global_size[1] = 1;
+  write_data(name + "/values", value_data, global_size, mpi_io);
+  HDF5Interface::add_attribute(_hdf5_file_id, name, "dimension",
+                               mesh_values.dim());
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -1905,7 +1880,7 @@ void HDF5File::read(Mesh& input_mesh,
 
   // FIXME: explain this more clearly.
   // Reconstruct mesh_name from topology_name - needed for
-  // cell_indices and domains
+  // cell_indices
   std::string mesh_name = topology_path.substr(0, topology_path.rfind("/"));
 
   // FIXME: Imrpove comment - it's unclear this is about
@@ -2017,8 +1992,7 @@ void HDF5File::read(Mesh& input_mesh,
   t.stop();
 
   // Build distributed mesh
-  // FIXME: Why is the mesh built int HDF5Utility? This should be in
-  // the mesh code.
+  // FIXME: Why is the mesh built into HDF5Utility? This should be in the mesh code.
   if (MPI::size(_mpi_comm) == 1)
     HDF5Utility::build_local_mesh(input_mesh, local_mesh_data);
   else
@@ -2027,44 +2001,6 @@ void HDF5File::read(Mesh& input_mesh,
     MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data, ghost_mode);
   }
 
-  // ---- Markers ----
-
-  // Check if we have any domains
-  for (std::size_t d = 0; d <= input_mesh.topology().dim(); ++d)
-  {
-    const std::string marker_dataset = mesh_name + "/domain_" + std::to_string(d);
-    if (!has_dataset(marker_dataset))
-      continue;
-
-    auto _mesh = reference_to_no_delete_pointer(input_mesh);
-    MeshValueCollection<std::size_t> mvc(_mesh, d);
-    read_mesh_value_collection(mvc, marker_dataset);
-
-    // Get mesh value collection data
-    const std::map<std::pair<std::size_t, std::size_t>, std::size_t>&
-      values = mvc.values();
-
-    // Get mesh domain data and fill
-    std::map<std::size_t, std::size_t>& markers
-      = input_mesh.domains().markers(d);
-    if (d != input_mesh.topology().dim())
-    {
-      input_mesh.init(d);
-      for (auto entry = values.begin(); entry != values.end(); ++entry)
-      {
-        const Cell cell(input_mesh, entry->first.first);
-        const std::size_t entity_index
-          = cell.entities(d)[entry->first.second];
-        markers[entity_index] = entry->second;
-      }
-    }
-    else
-    {
-      // Special case for cells
-      for (auto entry = values.begin(); entry != values.end(); ++entry)
-        markers[entry->first.first] = entry->second;
-    }
-  }
 }
 //-----------------------------------------------------------------------------
 bool HDF5File::has_dataset(const std::string dataset_name) const
