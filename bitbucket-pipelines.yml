@@ -11,7 +11,7 @@ pipelines:
           - pip2 install git+https://bitbucket.org/fenics-project/ffc.git@master
           - mkdir -p build
           - cd build
-          - cmake .. -DCMAKE_BUILD_TYPE=Debug
+          - cmake .. -DCMAKE_BUILD_TYPE=Debug -DDOLFIN_ENABLE_TESTING=ON
           - make
           - make install
           - make run_quicktest
