@@ -1261,7 +1261,7 @@ void HDF5File::write_mesh_value_collection_old(
     = mesh_values.values();
 
   const Mesh& mesh = *mesh_values.mesh();
-  const std::vector<std::size_t>& global_cell_index
+  const std::vector<std::int64_t>& global_cell_index
     = mesh.topology().global_indices(mesh.topology().dim());
 
   std::vector<T> data_values;
