@@ -78,7 +78,7 @@ def test_facet_domain_propagation(datadir):
 
     # Boxes contains two subdomains with marked faces between
     # them.  These faces are marked with 5, 10, 15.
-    mesh = Mesh(os.path.join(datadir, "boxes.xml.gz"))
+    mesh = Mesh(os.path.join(datadir, "boxes.xml"))
     inner = SubMesh(mesh, 1)
     outer = SubMesh(mesh, 2)
 
