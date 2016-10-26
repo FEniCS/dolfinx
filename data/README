@@ -4,3 +4,6 @@ a selection of meshes, please visit
 
   http://fenicsproject.org/download/data.html
   http://fenicsproject.org/pub/data/meshes/
+
+Update 2016: The meshes are now stored again as part of the DOLFIN
+repository using Git LFS (https://git-lfs.github.com/).

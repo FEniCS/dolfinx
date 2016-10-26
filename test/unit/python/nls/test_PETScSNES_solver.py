@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-10-17
-# Last changed: 2013-11-22
+# Last changed: 2016-10-26
 
 from __future__ import print_function
 
@@ -52,7 +52,7 @@ parameter_backend = set_parameters_fixture("linear_algebra_backend", ["PETSc"])
 
 @fixture
 def mesh(datadir):
-    return Mesh(os.path.join(datadir, "doughnut.xml.gz"))
+    return Mesh(os.path.join(datadir, "doughnut.xml"))
 
 @fixture
 def V(mesh):
