@@ -1,5 +1,8 @@
-#image: quay.io/fenicsproject/dev-env:latest
-image: quay.io/fenicsproject/pipelines
+image: quay.io/fenicsproject/dev-env:latest
+
+# Note: Our pipelines image does not work for DOLFIN because it's missing
+# Boost, Eigen and possibly other packages.
+#image: quay.io/fenicsproject/pipelines
 
 pipelines:
   default:
