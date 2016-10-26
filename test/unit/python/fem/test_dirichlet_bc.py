@@ -83,7 +83,7 @@ def test_meshdomain_bcs(datadir):
     part of the mesh. This test is also a compatibility test for
     VMTK."""
 
-    mesh = Mesh(os.path.join(datadir, "aneurysm.xml.gz"))
+    mesh = Mesh(os.path.join(datadir, "aneurysm.xml"))
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
 
