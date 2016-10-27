@@ -126,25 +126,6 @@ namespace dolfin
     double h() const
     { return _mesh->type().h(*this); }
 
-    /// Compute diameter of cell (deprecated)
-    ///
-    /// *Returns*
-    ///     double
-    ///         The diameter of the cell.
-    ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
-    ///         UnitSquareMesh mesh(1, 1);
-    ///         Cell cell(mesh, 0);
-    ///         info("%g", cell.diameter());
-    ///
-    ///     output::
-    ///
-    ///         1.41421
-    double diameter() const
-    { return _mesh->type().diameter(*this); }
-
     /// Compute circumradius of cell
     ///
     /// *Returns*
@@ -289,9 +270,9 @@ namespace dolfin
     /// Order entities locally
     ///
     /// *Arguments*
-    ///     global_vertex_indices (_std::vector<std::size_t>_)
+    ///     global_vertex_indices (_std::vector<std::int64_t>_)
     ///         The global vertex indices.
-    void order(const std::vector<std::size_t>& local_to_global_vertex_indices)
+    void order(const std::vector<std::int64_t>& local_to_global_vertex_indices)
     { _mesh->type().order(*this, local_to_global_vertex_indices); }
 
     /// Check if entities are ordered
@@ -303,7 +284,7 @@ namespace dolfin
     /// *Returns*
     ///     bool
     ///         True iff ordered.
-    bool ordered(const std::vector<std::size_t>& local_to_global_vertex_indices) const
+    bool ordered(const std::vector<std::int64_t>& local_to_global_vertex_indices) const
     { return _mesh->type().ordered(*this, local_to_global_vertex_indices); }
 
     /// Check whether given point is contained in cell. This function is
@@ -455,7 +436,7 @@ namespace dolfin
         ufc_cell.entity_indices[d].resize(num_entities(d));
         if (topology.have_global_indices(d))
         {
-          const std::vector<std::size_t>& global_indices
+          const std::vector<std::int64_t>& global_indices
             = topology.global_indices(d);
           for (std::size_t i = 0; i < num_entities(d); ++i)
             ufc_cell.entity_indices[d][i] = global_indices[entities(d)[i]];

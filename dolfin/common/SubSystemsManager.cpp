@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Garth N. Wells
+// Copyright (C) 2008-2016 Garth N. Wells, Anders Logg, Jan Blechta
 //
 // This file is part of DOLFIN.
 //
@@ -14,11 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Anders Logg 2008-2012
-//
-// First added:  2008-01-07
-// Last changed: 2013-02-03
 
 #ifdef HAS_MPI
 #define MPICH_IGNORE_CXX_SEEK 1
@@ -33,6 +28,8 @@
 #ifdef HAS_SLEPC
 #include <slepc.h>
 #endif
+
+#include <boost/algorithm/string/trim.hpp>
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Timer.h>
@@ -53,8 +50,8 @@ SubSystemsManager& SubSystemsManager::singleton()
   return the_instance;
 }
 //-----------------------------------------------------------------------------
-SubSystemsManager::SubSystemsManager() : petsc_initialized(false),
-                                         control_mpi(false)
+SubSystemsManager::SubSystemsManager() : petsc_err_msg(""),
+  petsc_initialized(false), control_mpi(false)
 {
   // Do nothing
 }
@@ -201,6 +198,9 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   if (!use_petsc_signal_handler)
     PetscPopSignalHandler();
 
+  // Use our own error handler so we can pretty print errors from PETSc
+  PetscPushErrorHandler(PetscDolfinErrorHandler, nullptr);
+
   // Remember that PETSc has been initialized
   singleton().petsc_initialized = true;
 
@@ -312,4 +312,35 @@ bool SubSystemsManager::mpi_finalized()
   return false;
   #endif
 }
+//-----------------------------------------------------------------------------
+#ifdef HAS_PETSC
+PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
+  MPI_Comm comm, int line, const char *fun, const char *file,
+  PetscErrorCode n, PetscErrorType p, const char *mess, void *ctx)
+{
+  // Store message for printing later (by PETScObject::petsc_error)
+  // only if it's not empty message (passed by PETSc when repeating error)
+  std::string _mess = mess;
+  boost::algorithm::trim(_mess);
+  if (_mess != "")
+    singleton().petsc_err_msg = _mess;
+
+  // Fetch PETSc error description
+  const char* desc;
+  PetscErrorMessage(n, &desc, nullptr);
+
+  // Log detailed error info
+  log(TRACE,
+      "PetscDolfinErrorHandler: line '%d', function '%s', file '%s',\n"
+      "                       : error code '%d' (%s), message follows:",
+      line, fun, file, n, desc);
+  // NOTE: don't put _mess as variadic argument; it might get trimmed
+  log(TRACE, std::string(78, '-'));
+  log(TRACE, _mess);
+  log(TRACE, std::string(78, '-'));
+
+  // Continue with error handling
+  PetscFunctionReturn(n);
+}
+#endif
 //-----------------------------------------------------------------------------

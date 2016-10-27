@@ -197,8 +197,9 @@ void LocalSolver::_solve_local(GenericVector& x, const GenericVector* global_b,
     {
       // Assemble local RHS vector
       LocalAssembler::assemble(b_e, *ufc_L, coordinate_dofs, ufc_cell,
-                               *cell, cell_domains,
-                               exterior_facet_domains, interior_facet_domains);
+                               *cell, _formL->cell_domains().get(),
+                               _formL->exterior_facet_domains().get(),
+                               _formL->interior_facet_domains().get());
     }
 
     if (use_cache)

@@ -40,7 +40,7 @@ void MeshOrdering::order(Mesh& mesh)
 
   // Get global vertex numbering
   dolfin_assert(mesh.topology().have_global_indices(0));
-  const std::vector<std::size_t>& local_to_global_vertex_indices
+  const auto& local_to_global_vertex_indices
     = mesh.topology().global_indices(0);
 
   // Skip ordering for dimension 0
@@ -64,7 +64,7 @@ bool MeshOrdering::ordered(const Mesh& mesh)
 
   // Get global vertex numbering
   dolfin_assert(mesh.topology().have_global_indices(0));
-  const std::vector<std::size_t>& local_to_global_vertex_indices
+  const auto& local_to_global_vertex_indices
     = mesh.topology().global_indices(0);
 
   // Check if all cells are ordered

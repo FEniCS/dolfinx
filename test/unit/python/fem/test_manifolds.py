@@ -288,7 +288,7 @@ def test_elliptic_eqn_on_intersecting_surface(datadir):
     #mesh = make_mesh(num_vertices_side)
     #file = File("intersecting_surfaces.xml.gz", "compressed")
     #file << mesh
-    filename = os.path.join(datadir, "intersecting_surfaces.xml.gz")
+    filename = os.path.join(datadir, "intersecting_surfaces.xml")
     mesh = Mesh(filename)
 
     # function space, etc

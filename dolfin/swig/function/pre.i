@@ -96,12 +96,13 @@
 %feature("nodirector") dolfin::Expression::function_space;
 
 //-----------------------------------------------------------------------------
-// Macro for defining an in typemap for a const std::vector<std::pair<double, TYPE*> >&
+// Macro for defining an in typemap for a const std::vector<std::pair<double,
+// shared_ptr<TYPE>>>&
 // The typemaps takes a list of tuples of floats and TYPE
 //
 // TYPE       : The Pointer type
 //-----------------------------------------------------------------------------
-%define IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE)
+%define IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_SHARED_POINTER(TYPE)
 
 //-----------------------------------------------------------------------------
 // Make SWIG aware of the shared_ptr version of TYPE
@@ -110,40 +111,39 @@
 
 //-----------------------------------------------------------------------------
 // Run the macros for the combination of const and no const of
-// {const} std::vector<std::pair<double, {const} dolfin::TYPE *> >
+// {const} std::vector<std::pair<double, std::shared_ptr<{const} dolfin::TYPE>>>
 //-----------------------------------------------------------------------------
-CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,const)
-CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,)
+CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_SHARED_POINTER(TYPE,const)
+CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_SHARED_POINTER(TYPE,)
 
 %enddef
 
 //-----------------------------------------------------------------------------
 // Macro for defining in typemaps for
-// {const} std::vector<std::pair<double, {const} dolfin::TYPE *> >
+// {const} std::vector<std::pair<double, std::shared_ptr<{const} dolfin::TYPE>>>
 // using a Python List of TYPE
 //-----------------------------------------------------------------------------
-%define CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,CONST)
+%define CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_SHARED_POINTER(TYPE,CONST)
 
 //-----------------------------------------------------------------------------
 // The typecheck
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_POINTER) std::vector<std::pair<double, CONST dolfin::TYPE *> >
+%typecheck(SWIG_TYPECHECK_POINTER) std::vector<std::pair<double, std::shared_ptr<CONST dolfin::TYPE> > >
 {
   $1 = PyList_Check($input) ? 1 : 0;
 }
 
 //-----------------------------------------------------------------------------
-// The {const} std::vector<std::pair<double, {const} dolfin::TYPE *> > typemap
+// The {const} std::vector<std::pair<double,
+// std::shared_ptr<{const} dolfin::TYPE>>> typemap
 //-----------------------------------------------------------------------------
-%typemap (in) std::vector<std::pair<double, CONST dolfin::TYPE *> >
-  (std::vector<std::pair<double, CONST dolfin::TYPE *> > tmp_vec,
-   std::shared_ptr<dolfin::TYPE> tempshared,
-   dolfin::TYPE* arg)
+%typemap (in) std::vector<std::pair<double, std::shared_ptr<CONST dolfin::TYPE> > >
+  (std::vector<std::pair<double, std::shared_ptr<CONST dolfin::TYPE> > > tmp_vec,
+   std::shared_ptr<dolfin::TYPE> tempshared)
 {
-
-  // CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE, CONST)
+  // CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_SHARED_POINTER(TYPE, CONST)
   if (!PyList_Check($input))
-    SWIG_exception(SWIG_TypeError, "list of TYPE expected");
+    SWIG_exception(SWIG_TypeError, "list of tuples of float and TYPE expected.");
 
   int size = PyList_Size($input);
   int res = 0;
@@ -158,43 +158,34 @@ CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,)
     py_item = PyList_GetItem($input, i);
 
     // Check that it is a tuple with size 2 and first item is a float
-    if (!PyTuple_Check(py_item) || PyTuple_Size(py_item) != 2 || \
-	!PyFloat_Check(PyTuple_GetItem(py_item, 0)))
+    if (!PyTuple_Check(py_item) || PyTuple_Size(py_item) != 2 ||
+	      !PyFloat_Check(PyTuple_GetItem(py_item, 0)))
       SWIG_exception(SWIG_TypeError, "list of tuples of float and TYPE expected.");
 
     // Get double value
     value = PyFloat_AsDouble(PyTuple_GetItem(py_item, 0));
 
     // Try convert the second tuple argument
-    res = SWIG_ConvertPtr(PyTuple_GetItem(py_item, 1), \
-			  &itemp, $descriptor(dolfin::TYPE *), 0);
+    newmem = 0;
+    res = SWIG_ConvertPtrAndOwn(PyTuple_GetItem(py_item, 1), &itemp,
+      $descriptor(std::shared_ptr< dolfin::TYPE > *), 0, &newmem);
 
     if (SWIG_IsOK(res))
     {
-      // We have the pointer and the value, push them back!
-      tmp_vec.push_back(std::make_pair(value, reinterpret_cast<dolfin::TYPE *>(itemp)));
+      if (itemp)
+      {
+        // We have the pointer and the value, push them back!
+        tempshared = *reinterpret_cast<std::shared_ptr<dolfin::TYPE> * >(itemp);
+        tmp_vec.push_back(std::make_pair(value, tempshared));
+      }
+
+      // If we need to release memory
+      if (newmem & SWIG_CAST_NEW_MEMORY)
+        delete reinterpret_cast< std::shared_ptr< dolfin::TYPE > * >(itemp);
     }
     else
     {
-      // If failed with normal pointer conversion then try with shared_ptr conversion
-      newmem = 0;
-      res = SWIG_ConvertPtrAndOwn(PyTuple_GetItem(py_item, 1), &itemp, $descriptor(\
-			std::shared_ptr< dolfin::TYPE > *), \
-				  0, &newmem);
-      if (SWIG_IsOK(res))
-      {
-        if (itemp)
-        {
-          tempshared = *(reinterpret_cast< std::shared_ptr<dolfin::TYPE> * >(itemp));
-	  tmp_vec.push_back(std::make_pair(value, tempshared.get()));
-        }
-
-        // If we need to release memory
-        if (newmem & SWIG_CAST_NEW_MEMORY)
-          delete reinterpret_cast< std::shared_ptr< dolfin::TYPE > * >(itemp);
-      }
-      else
-        SWIG_exception(SWIG_TypeError, "list of tuples of float and TYPE expected. (Bad conversion)");
+      SWIG_exception(SWIG_TypeError, "list of tuples of float and TYPE expected. (Bad conversion)");
     }
   }
 
@@ -203,9 +194,9 @@ CONST_IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(TYPE,)
 %enddef
 
 //-----------------------------------------------------------------------------
-// Instantiate typemap
+// Instantiate typemap for FunctionAXPY interface
 //-----------------------------------------------------------------------------
-IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_POINTER(Function)
+IN_TYPEMAPS_STD_VECTOR_OF_PAIRS_OF_DOUBLE_AND_SHARED_POINTER(Function)
 
 //-----------------------------------------------------------------------------
 // Instantiate Hierarchical FunctionSpace, Function template class

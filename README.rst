@@ -2,8 +2,9 @@
 DOLFIN
 ======
 
-DOLFIN is the computational backend of FEniCS and implements
-the FEniCS PSE (Problem Solving Environment) in Python and C++.
+DOLFIN is the computational backend of FEniCS and implements the
+FEniCS Problem Solving Environment in Python and C++.
+
 
 Installation
 ============
@@ -16,6 +17,16 @@ To build DOLFIN, run::
   make install
 
 For detailed instructions, see the file INSTALL.
+
+
+Documentation
+=============
+
+Documentation can be viewed at http://fenics-dolfin.readthedocs.org/.
+
+.. image:: https://readthedocs.org/projects/fenics-dolfin/badge/?version=latest
+   :target: http://fenics.readthedocs.io/projects/dolfin/en/latest/?badge=latest
+   :alt: Documentation Status
 
 
 License
@@ -42,8 +53,8 @@ For comments and requests, send an email to the FEniCS mailing list:
 
   fenics-dev@googlegroups.com
 
-For questions related to obtaining, building or installing DOLFIN, send
-an email to the FEniCS support mailing list:
+For questions related to obtaining, building or installing DOLFIN,
+send an email to the FEniCS support mailing list:
 
   fenics-support@googlegroups.com
 
@@ -67,8 +78,12 @@ DOLFIN, visit
   http://fenicsproject.org
 
 
-
 Automated Testing
 =================
 
-We use Atlassian Bamboo to perform automatic testing at http://magpie.bpi.cam.ac.uk:8085
+We use Atlassian Bamboo to perform automated testing at
+https://bamboo.fenicsproject.org.
+
+.. image:: http://fenics-bamboo.simula.no:8085/plugins/servlet/wittified/build-status/DOL-DODO
+   :target: http://fenics-bamboo.simula.no:8085/browse/DOL-DODO
+   :alt: Build Status

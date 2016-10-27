@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Garth N. Wells
+// Copyright (C) 2012-2016 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2012-10-31
-// Last changed: 2013-05-30
 //
 // This demo program illustrates how to solve Poisson's equation
 //
@@ -68,7 +65,7 @@ int main()
 {
   #ifdef HAS_PETSC
   // Create mesh and function space
-  auto mesh = std::make_shared<UnitSquareMesh>(64, 64);
+  auto mesh = std::make_shared<UnitSquareMesh>(128, 128);
   auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
   // Define variational problem
@@ -85,26 +82,44 @@ int main()
   assemble(*A, a);
   assemble(b, L);
 
-  // Solution Function
-  Function u(V);
+  // Create constant vector that spans null space (normalised)
+  auto null_space_vector = b.copy();
+  *null_space_vector = sqrt(1.0/null_space_vector->size());
 
-  // Create Krylov solver
-  PETScKrylovSolver solver("cg");
-  solver.set_operator(A);
-
-  // Create vector that spans null space (normalised)
-  std::shared_ptr<GenericVector> null_space_ptr(b.copy());
-  V->dofmap()->set(*null_space_ptr, sqrt(1.0/null_space_ptr->size()));
-  std::vector<std::shared_ptr<GenericVector>> null_space_basis
-    = {{null_space_ptr}};
-
-  // Create null space basis object and attach to Krylov solver
-  VectorSpaceBasis null_space(null_space_basis);
+  // Create null space basis object and attach to PETSc matrix
+  VectorSpaceBasis null_space({null_space_vector});
   A->set_nullspace(null_space);
 
   // Orthogonalize b with respect to the null space (this gurantees
   // that a solution exists)
   null_space.orthogonalize(b);
+
+  // Set PETSc solve type (conjugate gradient) and preconditioner
+  // (algebraic multigrid)
+  PETScOptions::set("ksp_type", "cg");
+  PETScOptions::set("pc_type", "gamg");
+
+  // Since we have a singular problem, use SVD solver on the multigrid
+  // 'coarse grid'
+  PETScOptions::set("mg_coarse_ksp_type", "preonly");
+  PETScOptions::set("mg_coarse_pc_type", "svd");
+
+  // Set the solver tolerance
+  PETScOptions::set("ksp_rtol", 1.0e-8);
+
+  // Print PETSc solver configuration
+  PETScOptions::set("ksp_view");
+  PETScOptions::set("ksp_monitor");
+
+  // Create PETSc Krylov solver and attach operator
+  PETScKrylovSolver solver;
+  solver.set_operator(A);
+
+  // Set PETSc options on the solver
+  solver.set_from_options();
+
+  // Create solution Function
+  Function u(V);
 
   // Solve
   solver.solve(*u.vector(), b);

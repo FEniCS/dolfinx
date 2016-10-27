@@ -223,9 +223,10 @@ double HexahedronCell::facet_area(const Cell& cell, std::size_t facet) const
 }
 //-----------------------------------------------------------------------------
 void HexahedronCell::order(Cell& cell,
-                 const std::vector<std::size_t>& local_to_global_vertex_indices) const
+                 const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
   // Not implemented
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 bool HexahedronCell::collides(const Cell& cell, const Point& point) const

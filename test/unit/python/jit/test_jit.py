@@ -20,6 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import platform
 from dolfin import *
 from dolfin_utils.test import skip_if_not_PETSc, skip_in_serial, skip_if_not_petsc4py
 
@@ -63,7 +64,8 @@ def test_compile_extension_module():
       }
     }
     """
-    for module_name in ["mypetscmodule", ""]:
+    for module_name in ["mypetscmodule_" + dolfin.__version__ +
+                        "_py-" + platform.python_version()[:3], ""]:
         ext_module = compile_extension_module(\
             code, module_name=module_name,\
             additional_system_headers=["petscvec.h"])

@@ -1,7 +1,7 @@
 project(dolfin-tests)
 
 # Require CMake 2.8
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 
 # FIXME: Temporary fix for whitespace error
 cmake_policy(SET CMP0004 OLD)
@@ -74,10 +74,12 @@ if (DOLFIN_FOUND)
   endif()
 
   # Google Test uses threads
-  set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-  find_package(Threads REQUIRED)
-  if (CMAKE_USE_PTHREADS_INIT)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+  if (NOT APPLE)
+    set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+    find_package(Threads REQUIRED)
+    if (CMAKE_USE_PTHREADS_INIT)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+    endif()
   endif()
 
   add_executable(unittests_cpp ${added_files})

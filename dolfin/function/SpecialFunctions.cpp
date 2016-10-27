@@ -31,7 +31,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshCoordinates::MeshCoordinates(std::shared_ptr<const Mesh> mesh)
-  : Expression(_mesh->geometry().dim()), _mesh(mesh)
+  : Expression(mesh->geometry().dim()), _mesh(mesh)
 {
   // Do nothing
 }

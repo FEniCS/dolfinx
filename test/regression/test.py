@@ -58,7 +58,8 @@ def run_cpp_demo(prefix, demo, rootdir, timing, failed):
 
     t1 = time()
     os.chdir(demo)
-    status, output = get_status_output("%s .%s%s" % (prefix, os.path.sep, cppdemo_executable))
+    status, output = get_status_output("%s .%s%s" % (prefix, os.path.sep,
+                                                     cppdemo_executable))
     os.chdir(rootdir)
     t2 = time()
     timing += [(t2 - t1, demo)]
@@ -81,7 +82,8 @@ def run_python_demo(prefix, demo, rootdir, timing, failed):
 
     t1 = time()
     os.chdir(demo)
-    status, output = get_status_output("%s %s -u %s" % (prefix, sys.executable, demofile))
+    status, output = get_status_output("%s %s -u %s" % (prefix, sys.executable,
+                                                        demofile))
     os.chdir(rootdir)
     t2 = time()
     timing += [(t2 - t1, demo)]
@@ -95,7 +97,8 @@ def run_python_demo(prefix, demo, rootdir, timing, failed):
         print(output)
 
         # Add contents from Instant's compile.log to output
-        instant_compile_log = os.path.join(instant.get_default_error_dir(), "compile.log")
+        instant_compile_log = os.path.join(instant.get_default_error_dir(),
+                                           "compile.log")
         if os.path.isfile(instant_compile_log):
             instant_error = file(instant_compile_log).read()
             output += "\n\nInstant compile.log for %s:\n\n" % demo
@@ -126,6 +129,8 @@ def main():
        os.path.join(demodir, 'documented',   'stokes-mini',                 'cpp'),
        os.path.join(demodir, 'documented',   'tensor-weighted-poisson',     'cpp'),
        os.path.join(demodir, 'documented',   'subdomains-poisson',          'cpp'),
+       os.path.join(demodir, 'documented',   'singular-poisson-rst',        'cpp'),
+       os.path.join(demodir, 'documented',   'maxwell-eigenvalues',        'cpp'),
        ]
 
     # Demos to run
@@ -209,15 +214,28 @@ def main():
     timing = []
 
     # Check if we should run only Python tests, use for quick testing
-    if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
+    if (len(sys.argv) == 2 and sys.argv[1] == "--only-python") or \
+       "DISABLE_CPP_TESTING" in os.environ:
         only_python = True
     else:
         only_python = False
+
+    # Check if we should run only C++ tests
+    if (len(sys.argv) == 2 and sys.argv[1] == "--only-cpp") or \
+       "DISABLE_PYTHON_TESTING" in os.environ:
+        only_cpp = True
+    else:
+        only_cpp = False
 
     # Check if we should skip C++ demos
     if only_python:
         print("Skipping C++ demos")
         cppdemos = []
+
+    # Check if we should skip Python demos
+    if only_cpp:
+        print("Skipping Python demos")
+        pydemos = []
 
     # Build prefix list
     prefixes = [""]
@@ -229,7 +247,13 @@ def main():
 
     # Allow to disable parallel testing
     if "DISABLE_PARALLEL_TESTING" in os.environ:
+        print("Skip running demos in parallel")
         prefixes = [""]
+
+    # Allow to disable serial testing
+    if "DISABLE_SERIAL_TESTING" in os.environ:
+        print("Skip running demos in serial")
+        prefixes.remove("")
 
     # Run in serial, then in parallel
     for prefix in prefixes:

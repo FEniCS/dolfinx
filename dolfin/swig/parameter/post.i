@@ -337,14 +337,14 @@ def __new_Parameter_init__(self,*args,**kwargs):
         return
 
     from numpy import isscalar
-    from six import iteritems
+    from six import iteritems, string_types
     for key, value in iteritems(kwargs):
         if isinstance(value,type(self)):
             self.add(value)
         elif isinstance(value,tuple):
             if isscalar(value[0]) and len(value) == 3:
                 self.add(key, *value)
-            elif isinstance(value[0], str) and len(value) == 2:
+            elif isinstance(value[0], string_types) and len(value) == 2:
                 if not isinstance(value[1], list):
                     raise TypeError("expected a list as second item of tuple, when first is a 'str'")
                 self.add(key, *value)
