@@ -29,6 +29,32 @@ Documentation can be viewed at http://fenics-dolfin.readthedocs.org/.
    :alt: Documentation Status
 
 
+Automated Testing
+=================
+
+We use Bitbucket Pipelines and Atlassian Bamboo to perform automated
+testing.
+
+.. image:: https://bitbucket-badges.useast.atlassian.io/badge/fenics-project/dolfin.svg
+   :target: https://bitbucket.org/fenics-project/dolfin/addon/pipelines/home
+   :alt: Pipelines Build Status
+
+.. image:: http://fenics-bamboo.simula.no:8085/plugins/servlet/wittified/build-status/DOL-DODO
+   :target: http://fenics-bamboo.simula.no:8085/browse/DOL-DODO/latest
+   :alt: Bamboo Build Status
+
+
+Code Coverage
+=============
+
+Code coverage reports can be viewed at
+https://coveralls.io/repos/bitbucket/fenics-project/dolfin.
+
+.. image:: https://coveralls.io/repos/bitbucket/fenics-project/dolfin/badge.svg?branch=master
+   :target: https://coveralls.io/bitbucket/fenics-project/dolfin?branch=master
+   :alt: Coverage Status
+
+
 License
 =======
 
@@ -77,13 +103,3 @@ DOLFIN, visit
 
   http://fenicsproject.org
 
-
-Automated Testing
-=================
-
-We use Atlassian Bamboo to perform automated testing at
-https://bamboo.fenicsproject.org.
-
-.. image:: http://fenics-bamboo.simula.no:8085/plugins/servlet/wittified/build-status/DOL-DODO
-   :target: http://fenics-bamboo.simula.no:8085/browse/DOL-DODO
-   :alt: Build Status
