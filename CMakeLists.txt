@@ -1099,20 +1099,20 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "run_unittests_py" for running Python unit tests
   add_custom_target(run_unittests_py
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-vs"
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-s"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
   # Add target "run_unittests_py_mpi" for running Python unit tests with mpi
   add_custom_target(run_unittests_py_mpi
-    COMMAND ${MPIEXEC} "-np" "3" "./mpipipe.sh" ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-vs"
+    COMMAND ${MPIEXEC} "-np" "3" "./mpipipe.sh" ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-s"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
   # Add target "run_quicktest" for running only Python unit tests not
   # marked as 'slow'
   add_custom_target(run_quicktest
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-vs" "-k" "'not" "slow'"
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-s" "-k" "'not" "slow'"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
