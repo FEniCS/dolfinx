@@ -38,10 +38,12 @@ namespace dolfin
     /// Destructor
     virtual ~PETScObject() {}
 
+    #ifdef HAS_PETSC
     /// Print error message for PETSc calls that return an error
     static void petsc_error(int error_code,
                             std::string filename,
                             std::string petsc_function);
+    #endif
   };
 }
 
