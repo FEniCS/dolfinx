@@ -33,7 +33,7 @@
 
 // Define or undefine this flag for enabling or disabling CGAL's exact
 // arithmetic
-#define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
+//#define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
 
 #ifndef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
 
