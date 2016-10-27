@@ -98,6 +98,9 @@ namespace dolfin
     /// Get log level
     inline int get_log_level() const { return _log_level; }
 
+    /// Set indentation level
+    void set_indentation_level(std::size_t indentation_level);
+
     /// Register timing (for later summary)
     void register_timing(std::string task,
                          std::tuple<double, double, double> elapsed);
@@ -152,7 +155,7 @@ namespace dolfin
     int _log_level;
 
     // Current indentation level
-    int indentation_level;
+    int _indentation_level;
 
     // Optional stream for logging
     std::ostream* logstream;

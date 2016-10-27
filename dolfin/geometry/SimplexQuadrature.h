@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2014-04-28
+// Last changed: 2016-05-21
 
 #ifndef __SIMPLEX_QUADRATURE_H
 #define __SIMPLEX_QUADRATURE_H
@@ -52,9 +52,8 @@ namespace dolfin
     /// Compute quadrature rule for simplex.
     ///
     /// *Arguments*
-    ///     coordinates (double *)
-    ///         A flattened array of simplex coordinates of
-    ///         dimension num_vertices x gdim = (tdim + 1)*gdim.
+    ///     coordinates (std::vector<Point>)
+    ///         Vertex coordinates for the simplex
     ///     tdim (std::size_t)
     ///         The topological dimension of the simplex.
     ///     gdim (std::size_t)
@@ -63,79 +62,72 @@ namespace dolfin
     ///         The order of convergence of the quadrature rule.
     ///
     /// *Returns*
-    ///     std::pair<std::vector<double>, std::vector<double> >
+    ///     std::pair<std::vector<double>, std::vector<double>>
     ///         A flattened array of quadrature points and a
     ///         corresponding array of quadrature weights.
-    static std::pair<std::vector<double>, std::vector<double> >
-    compute_quadrature_rule(const double* coordinates,
-                            std::size_t tdim,
+    static std::pair<std::vector<double>, std::vector<double>>
+    compute_quadrature_rule(const std::vector<Point>& coordinates,
                             std::size_t gdim,
                             std::size_t order);
 
     /// Compute quadrature rule for interval.
     ///
     /// *Arguments*
-    ///     coordinates (double *)
-    ///         A flattened array of simplex coordinates of
-    ///         dimension num_vertices x gdim = 2*gdim.
+    ///     coordinates (std::vetor<Point>)
+    ///         Vertex coordinates for the simplex
     ///     gdim (std::size_t)
     ///         The geometric dimension.
     ///     order (std::size_t)
     ///         The order of convergence of the quadrature rule.
     ///
     /// *Returns*
-    ///     std::pair<std::vector<double>, std::vector<double> >
+    ///     std::pair<std::vector<double>, std::vector<double>>
     ///         A flattened array of quadrature points and a
     ///         corresponding array of quadrature weights.
-    static std::pair<std::vector<double>, std::vector<double> >
-    compute_quadrature_rule_interval(const double* coordinates,
+    static std::pair<std::vector<double>, std::vector<double>>
+    compute_quadrature_rule_interval(const std::vector<Point>& coordinates,
                                      std::size_t gdim,
                                      std::size_t order);
 
     /// Compute quadrature rule for triangle.
     ///
     /// *Arguments*
-    ///     coordinates (double *)
-    ///         A flattened array of simplex coordinates of
-    ///         dimension num_vertices x gdim = 3*gdim.
+    ///     coordinates (std::vetor<Point>)
+    ///         Vertex coordinates for the simplex
     ///     gdim (std::size_t)
     ///         The geometric dimension.
     ///     order (std::size_t)
     ///         The order of convergence of the quadrature rule.
     ///
     /// *Returns*
-    ///     std::pair<std::vector<double>, std::vector<double> >
+    ///     std::pair<std::vector<double>, std::vector<double>>
     ///         A flattened array of quadrature points and a
     ///         corresponding array of quadrature weights.
-    static std::pair<std::vector<double>, std::vector<double> >
-    compute_quadrature_rule_triangle(const double* coordinates,
+    static std::pair<std::vector<double>, std::vector<double>>
+    compute_quadrature_rule_triangle(const std::vector<Point>& coordinates,
                                      std::size_t gdim,
                                      std::size_t order);
 
     /// Compute quadrature rule for tetrahedron.
     ///
     /// *Arguments*
-    ///     coordinates (double *)
-    ///         A flattened array of simplex coordinates of
-    ///         dimension num_vertices x gdim = 4*gdim.
+    ///     coordinates (std::vetor<Point>)
+    ///         Vertex coordinates for the simplex
     ///     gdim (std::size_t)
     ///         The geometric dimension.
     ///     order (std::size_t)
     ///         The order of convergence of the quadrature rule.
     ///
     /// *Returns*
-    ///     std::pair<std::vector<double>, std::vector<double> >
+    ///     std::pair<std::vector<double>, std::vector<double>>
     ///         A flattened array of quadrature points and a
     ///         corresponding array of quadrature weights.
-
-    static std::pair<std::vector<double>, std::vector<double> >
-    compute_quadrature_rule_tetrahedron(const double* coordinates,
+    static std::pair<std::vector<double>, std::vector<double>>
+    compute_quadrature_rule_tetrahedron(const std::vector<Point>& coordinates,
                                         std::size_t gdim,
                                         std::size_t order);
-
   };
 
 }
 
 #endif
-

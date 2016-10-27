@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2016-03-02
+// Last changed: 2016-06-02
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -24,6 +24,7 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <deque>
 
 #include <dolfin/plot/plot.h>
 #include <dolfin/common/Variable.h>
@@ -40,6 +41,9 @@ namespace dolfin
 
   // Typedefs
   typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
+  typedef std::vector<Point> Simplex;
+  typedef std::vector<Simplex> Polyhedron;
+  typedef std::vector<std::size_t> IncExcKey;
 
   /// This class represents a collection of meshes with arbitrary
   /// overlaps. A multimesh may be created from a set of standard
@@ -287,6 +291,20 @@ namespace dolfin
     /// Clear multimesh
     void clear();
 
+    // Create matplotlib string to plot 2D multimesh
+    // Only suitable for smaller meshes
+    std::string plot_matplotlib(double delta_z=1) const;
+
+    /// Default parameter values
+    static Parameters default_parameters()
+    {
+      Parameters p("multimesh");
+
+      p.add("quadrature_order", 1);
+
+      return p;
+    }
+
   private:
 
     // Friend (in plot.h)
@@ -441,15 +459,16 @@ namespace dolfin
     // Build quadrature rules for the overlap
     void _build_quadrature_rules_overlap(std::size_t quadrature_order);
 
-    // Add quadrature rule for simplices in the triangulation
-    // array. Returns the number of points generated for each simplex.
-    std::vector<std::size_t>
-    _add_quadrature_rule(quadrature_rule& qr,
-                         const std::vector<double>& triangulation,
-                         std::size_t tdim,
-                         std::size_t gdim,
-                         std::size_t quadrature_order,
-                         double factor) const;
+    // Build quadrature rules and normals for the interface
+    void _build_quadrature_rules_interface(std::size_t quadrature_order);
+
+    // Add quadrature rule for simplices in polyhedron. Returns the
+    // number of points generated for each simplex.
+    std::size_t _add_quadrature_rule(quadrature_rule& qr,
+				     const Simplex& simplex,
+				     std::size_t gdim,
+				     std::size_t quadrature_order,
+				     double factor) const;
 
     // Add quadrature rule to existing quadrature rule (append dqr to
     // qr). Returns number of points added.
@@ -461,14 +480,39 @@ namespace dolfin
     // Append normal to list of normals npts times
     void _add_normal(std::vector<double>& normals,
                      const Point& normal,
-                     const std::size_t npts,
-                     const std::size_t gdim) const;
+                     std::size_t npts,
+                     std::size_t gdim) const;
 
     // Plot multimesh
     void _plot() const;
 
+    // Inclusion-exclusion for overlap
+    void _inclusion_exclusion_overlap
+      (std::vector<quadrature_rule>& qr,
+       const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
+       std::size_t tdim,
+       std::size_t gdim,
+       std::size_t quadrature_order) const;
+
+    // Inclusion-exclusion for interface
+    void _inclusion_exclusion_interface
+      (quadrature_rule& qr,
+       std::vector<double>& normals,
+       const Simplex& Eij,
+       const Point& facet_normal,
+       const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polygons,
+       std::size_t tdim,
+       std::size_t gdim,
+       std::size_t quadrature_order) const;
+
+    // Construct and return mapping from boundary facets to full mesh
+    std::vector<std::vector<std::pair<std::size_t, std::size_t> > >
+      _boundary_facets_to_full_mesh(std::size_t part) const;
   };
 
+
+
 }
+
 
 #endif

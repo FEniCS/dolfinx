@@ -85,7 +85,6 @@ def test_compute_collisions_point_3d():
         if dim != tdim - 1 and dim != tdim - 2:
             assert set(entities) == reference[dim]
 
-
 #--- compute_collisions with tree ---
 
 @skip_in_parallel
@@ -172,7 +171,7 @@ def test_compute_collisions_tree_3d():
         assert set(entities_A) == references[i][0]
         assert set(entities_B) == references[i][1]
 
-#--- compute_entity_collisions ---
+#--- compute_entity_collisions with point ---
 
 @skip_in_parallel
 def test_compute_entity_collisions_1d():
@@ -307,7 +306,7 @@ def test_compute_entity_collisions_tree_3d():
         assert set(entities_A) == references[i][0]
         assert set(entities_B) == references[i][1]
 
-#--- compute_first_collision ---
+#--- compute_first_collision with point ---
 
 @skip_in_parallel
 def test_compute_first_collision_1d():
@@ -377,7 +376,7 @@ def test_compute_first_collision_3d():
     first = tree.compute_first_collision(p)
     assert first in reference[mesh.topology().dim()]
 
-#--- compute_first_entity_collision ---
+#--- compute_first_entity_collision with point ---
 
 @skip_in_parallel
 def test_compute_first_entity_collision_1d():
@@ -427,7 +426,7 @@ def test_compute_first_entity_collision_3d():
     first = tree.compute_first_entity_collision(p)
     assert first in reference
 
-#--- compute_closest_entity ---
+#--- compute_closest_entity with point ---
 
 @skip_in_parallel
 def test_compute_closest_entity_1d():

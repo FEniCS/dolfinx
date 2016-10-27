@@ -20,9 +20,10 @@
 // Modified by August Johansson 2014
 //
 // First added:  2007-12-12
-// Last changed: 2014-02-13
+// Last changed: 2016-05-05
 
 #include <dolfin/log/log.h>
+#include <dolfin/geometry/CollisionPredicates.h>
 #include "Cell.h"
 #include "Facet.h"
 #include "MeshEditor.h"
@@ -154,18 +155,12 @@ void PointCell::order(
 //-----------------------------------------------------------------------------
 bool PointCell::collides(const Cell& cell, const Point& point) const
 {
-  return CollisionDetection::collides(cell, point);
+  return CollisionPredicates::collides(cell, point);
 }
 //-----------------------------------------------------------------------------
 bool PointCell::collides(const Cell& cell, const MeshEntity& entity) const
 {
-  return CollisionDetection::collides(cell, entity);
-}
-//-----------------------------------------------------------------------------
-std::vector<double>
-PointCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
-{
-  return IntersectionTriangulation::triangulate_intersection(c0, c1);
+  return CollisionPredicates::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
 std::string PointCell::description(bool plural) const

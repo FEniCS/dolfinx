@@ -26,14 +26,14 @@
 
 #include <memory>
 
-#include <dolfin/geometry/Point.h>
+
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
-#include <dolfin/geometry/CollisionDetection.h>
-#include <dolfin/geometry/IntersectionTriangulation.h>
+#include <dolfin/geometry/Point.h>
+#include <dolfin/geometry/IntersectionConstruction.h>
 
 namespace dolfin
 {
@@ -297,8 +297,7 @@ namespace dolfin
     /// *Returns*
     ///     bool
     ///         True iff point is contained in cell.
-    bool contains(const Point& point) const
-    { return CollisionDetection::collides(*this, point); }
+    bool contains(const Point& point) const;
 
     /// Check whether given point collides with cell
     ///
@@ -309,8 +308,7 @@ namespace dolfin
     /// *Returns*
     ///     bool
     ///         True iff point collides with cell.
-    bool collides(const Point& point) const
-    { return CollisionDetection::collides(*this, point); }
+    bool collides(const Point& point) const;
 
     /// Check whether given entity collides with cell
     ///
@@ -321,8 +319,7 @@ namespace dolfin
     /// *Returns*
     ///     bool
     ///         True iff entity collides with cell.
-    bool collides(const MeshEntity& entity) const
-    { return CollisionDetection::collides(*this, entity); }
+    bool collides(const MeshEntity& entity) const;
 
     /// Compute triangulation of intersection with given entity
     ///
@@ -331,13 +328,15 @@ namespace dolfin
     ///         The entity with which to intersect.
     ///
     /// *Returns*
-    ///     std::vector<double>
-    ///         A flattened array of simplices of dimension
-    ///         num_simplices x num_vertices x gdim =
-    ///         num_simplices x (tdim + 1) x gdim
-    std::vector<double>
-    triangulate_intersection(const MeshEntity& entity) const
-    { return IntersectionTriangulation::triangulate_intersection(*this, entity); }
+    ///     std::vector<Point>
+    ///         A vector of point representing the convex hull of the intersection
+    ///         If the vector is empty then the cells don't intersection.
+    ///         If the size of the vector < tdim-1 then the intersection is
+    ///         degenerate, ie. the area of the intersection is 0
+    std::vector<Point>
+    intersection(const MeshEntity& entity) const
+    { return IntersectionConstruction::intersection(*this, entity); }
+
 
     // FIXME: This function is part of a UFC transition
     /// Get cell coordinate dofs (not vertex coordinates)
