@@ -476,9 +476,10 @@ const std::vector<TYPE>&  ARG_NAME
 {
   PyObject* l = PyList_New(0);
 
-  for (const TYPE& o : $1)
+  const std::vector<TYPE>& v = $1;
+  for (const TYPE& o : v)
   {
-    PyObject* resultobj = SWIG_NewPointerObj((new dolfin::Point(static_cast< const dolfin::Point& >(o))), SWIGTYPE_p_dolfin__Point, SWIG_POINTER_OWN |  0 );
+    PyObject* resultobj = SWIG_NewPointerObj(new TYPE(o), $descriptor(TYPE*), SWIG_POINTER_OWN );
     PyList_Append(l, resultobj);
     // FIXME: Py_DECREF here?
   }
