@@ -18,6 +18,8 @@
 #ifndef __PETSC_OBJECT_H
 #define __PETSC_OBJECT_H
 
+#ifdef HAS_PETSC
+
 #include <string>
 #include <dolfin/common/SubSystemsManager.h>
 
@@ -45,4 +47,5 @@ namespace dolfin
   };
 }
 
+#endif
 #endif
