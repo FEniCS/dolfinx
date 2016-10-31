@@ -215,9 +215,8 @@ namespace dolfin
                                         const std::vector<T>& value_data);
 
     // Build mesh (serial)
-    static void build_mesh(Mesh& mesh, std::string cell_type_str,
+    static void build_mesh(Mesh& mesh, const CellType& cell_type,
                            std::int64_t num_points, std::int64_t num_cells,
-                           int num_points_per_cell,
                            int tdim, int gdim,
                            const pugi::xml_node& topology_dataset_node,
                            const pugi::xml_node& geometry_dataset_node,
@@ -227,13 +226,20 @@ namespace dolfin
     static void
       build_local_mesh_data (LocalMeshData& local_mesh_data,
                              const CellType& cell_type,
-                             const std::int64_t num_points,
-                             const std::int64_t num_cells,
-                             const int num_points_per_cell,
-                             const int tdim, const int gdim,
+                             std::int64_t num_points, std::int64_t num_cells,
+                             int tdim, int gdim,
                              const pugi::xml_node& topology_dataset_node,
                              const pugi::xml_node& geometry_dataset_node,
                              const boost::filesystem::path& parent_path);
+
+    static void build_mesh_quadratic(Mesh& mesh, const CellType& cell_type,
+                          std::int64_t num_points, std::int64_t num_cells,
+                          int tdim, int gdim,
+                          const pugi::xml_node& topology_dataset_node,
+                          const pugi::xml_node& geometry_dataset_node,
+                              const boost::filesystem::path& relative_path);
+
+
 
     // Add mesh to XDMF xml_node (usually a Domain or Time Grid) and write data
     static void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -283,7 +289,8 @@ namespace dolfin
     std::vector<T> compute_value_data(const MeshFunction<T>& meshfunction);
 
     // Get DOLFIN cell type string from XML topology node
-    static std::string get_cell_type(const pugi::xml_node& topology_node);
+    static std::pair<std::string, int>
+      get_cell_type(const pugi::xml_node& topology_node);
 
     // Get dimensions from an XML DataSet node
     static std::vector<std::int64_t>
