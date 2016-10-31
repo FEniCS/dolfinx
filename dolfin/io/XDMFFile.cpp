@@ -329,8 +329,9 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
 
     pugi::xml_node topology_data_node = topology_node.append_child("DataItem");
     dolfin_assert(topology_data_node);
-    topology_data_node.append_attribute("Reference")
-     = "/Xdmf/Domain/Grid/Grid/Topology/DataItem";
+    topology_data_node.append_attribute("Reference") = "XML";
+    topology_data_node.append_child(pugi::node_pcdata)
+      .set_value("/Xdmf/Domain/Grid/Grid/Topology/DataItem");
 
     // Add geometry node (reference)
     pugi::xml_node geometry_node = grid_node.append_child("Geometry");
@@ -338,8 +339,9 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
     geometry_node.append_attribute("GeometryType") = (gdim == 3) ? "XYZ" : "XY";
     pugi::xml_node geometry_data_node = geometry_node.append_child("DataItem");
     dolfin_assert(geometry_data_node);
-    geometry_data_node.append_attribute("Reference")
-     = "/Xdmf/Domain/Grid/Grid/Geometry/DataItem";
+    geometry_data_node.append_attribute("Reference") = "XML";
+    geometry_data_node.append_child(pugi::node_pcdata)
+      .set_value("/Xdmf/Domain/Grid/Grid/Geometry/DataItem");
   }
 
   pugi::xml_node grid_node = timegrid_node.last_child();
@@ -561,8 +563,9 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
 
   pugi::xml_node geometry_data_node = geometry_node.append_child("DataItem");
   dolfin_assert(geometry_data_node);
-  geometry_data_node.append_attribute("Reference")
-    = "/Xdmf/Domain/Grid/Geometry/DataItem";
+  geometry_data_node.append_attribute("Reference") = "XML";
+  geometry_data_node.append_child(pugi::node_pcdata)
+    .set_value("/Xdmf/Domain/Grid/Geometry/DataItem");
 
   // Add attribute node with values
   pugi::xml_node attribute_node = mvc_grid_node.append_child("Attribute");
@@ -2016,9 +2019,12 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
   pugi::xml_node grid_node = domain_node.child("Grid");
   const std::size_t cell_dim = meshfunction.dim();
   const std::size_t tdim = mesh->topology().dim();
-  if (grid_node.empty() or cell_dim != tdim)
+  const std::size_t gdim = mesh->geometry().dim();
+  const bool grid_empty = grid_node.empty();
+
+  if (grid_empty or cell_dim != tdim)
   {
-    // Add grid node and attributes
+    // Make new grid node
     grid_node = domain_node.append_child("Grid");
     dolfin_assert(grid_node);
     grid_node.append_attribute("Name") = mesh->name().c_str();
@@ -2036,9 +2042,21 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
       add_topology_data<std::int64_t>(_mpi_comm, grid_node, h5_id, mf_name,
                                       *mesh, cell_dim);
 
-    // Add geometry node and attributes (including writing data)
-    // FIXME: should/could be shared with Mesh
-    add_geometry_data(_mpi_comm, grid_node, h5_id, mf_name, *mesh);
+    // Add geometry node if none already, else link back to first existing Mesh
+    if (grid_empty)
+      add_geometry_data(_mpi_comm, grid_node, h5_id, mf_name, *mesh);
+    else
+    {
+      // Add geometry node (reference)
+      pugi::xml_node geometry_node = grid_node.append_child("Geometry");
+      dolfin_assert(geometry_node);
+      geometry_node.append_attribute("GeometryType") = (gdim == 3) ? "XYZ" : "XY";
+      pugi::xml_node geometry_data_node = geometry_node.append_child("DataItem");
+      dolfin_assert(geometry_data_node);
+      geometry_data_node.append_attribute("Reference") = "XML";
+      geometry_data_node.append_child(pugi::node_pcdata)
+        .set_value("/Xdmf/Domain/Grid/Geometry/DataItem");
+    }
   }
 
   // Add attribute node with values
