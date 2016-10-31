@@ -1472,17 +1472,18 @@ XDMFFile::get_cell_type(const pugi::xml_node& topology_node)
 
   const std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
     = {
-    {"Polyvertex", {"point", 1}},
-    {"PolyLine", {"interval", 1}},
-    {"Edge_3", {"interval", 2}},
-    {"Triangle", {"triangle", 1}},
-    {"Tri_6", {"triangle", 2}},
-    {"Tetrahedron", {"tetrahedron", 1}},
-    {"Tet_10", {"tetrahedron", 2}}
+    {"polyvertex", {"point", 1}},
+    {"polyline", {"interval", 1}},
+    {"edge_3", {"interval", 2}},
+    {"triangle", {"triangle", 1}},
+    {"tri_6", {"triangle", 2}},
+    {"tetrahedron", {"tetrahedron", 1}},
+    {"tet_10", {"tetrahedron", 2}}
   };
 
   // Convert XDMF cell type string to DOLFIN cell type string
   std::string cell_type = type_attr.as_string();
+  boost::algorithm::to_lower(cell_type);
   auto it = xdmf_to_dolfin.find(cell_type);
   if (it == xdmf_to_dolfin.end())
   {
