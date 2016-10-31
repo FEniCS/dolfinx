@@ -315,33 +315,16 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
     // Add topology node (reference)
     pugi::xml_node topology_node = grid_node.append_child("Topology");
     dolfin_assert(topology_node);
-
-    // Get number of cells (global) and vertices per cell from mesh
-    const std::size_t tdim = mesh.topology().dim();
-    const std::size_t gdim = mesh.geometry().dim();
-    const std::int64_t num_cells = mesh.topology().size_global(tdim);
-    const int num_vertices_per_cell = mesh.type().num_vertices(tdim);
-    const std::string vtk_cell_str
-      = vtk_cell_type_str(mesh.type().entity_type(tdim), mesh.geometry().degree());
-    topology_node.append_attribute("NumberOfElements") = std::to_string(num_cells).c_str();
-    topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
-    topology_node.append_attribute("NodesPerElement") = num_vertices_per_cell;
-
-    pugi::xml_node topology_data_node = topology_node.append_child("DataItem");
-    dolfin_assert(topology_data_node);
-    topology_data_node.append_attribute("Reference") = "XML";
-    topology_data_node.append_child(pugi::node_pcdata)
-      .set_value("/Xdmf/Domain/Grid/Grid/Topology/DataItem");
+    topology_node.append_attribute("Reference") = "XML";
+    topology_node.append_child(pugi::node_pcdata)
+      .set_value("/Xdmf/Domain/Grid/Grid/Topology");
 
     // Add geometry node (reference)
     pugi::xml_node geometry_node = grid_node.append_child("Geometry");
     dolfin_assert(geometry_node);
-    geometry_node.append_attribute("GeometryType") = (gdim == 3) ? "XYZ" : "XY";
-    pugi::xml_node geometry_data_node = geometry_node.append_child("DataItem");
-    dolfin_assert(geometry_data_node);
-    geometry_data_node.append_attribute("Reference") = "XML";
-    geometry_data_node.append_child(pugi::node_pcdata)
-      .set_value("/Xdmf/Domain/Grid/Grid/Geometry/DataItem");
+    geometry_node.append_attribute("Reference") = "XML";
+    geometry_node.append_child(pugi::node_pcdata)
+      .set_value("/Xdmf/Domain/Grid/Grid/Geometry");
   }
 
   pugi::xml_node grid_node = timegrid_node.last_child();
@@ -560,12 +543,9 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
   // Add geometry node (share with main Mesh)
   pugi::xml_node geometry_node = mvc_grid_node.append_child("Geometry");
   dolfin_assert(geometry_node);
-
-  pugi::xml_node geometry_data_node = geometry_node.append_child("DataItem");
-  dolfin_assert(geometry_data_node);
-  geometry_data_node.append_attribute("Reference") = "XML";
-  geometry_data_node.append_child(pugi::node_pcdata)
-    .set_value("/Xdmf/Domain/Grid/Geometry/DataItem");
+  geometry_node.append_attribute("Reference") = "XML";
+  geometry_node.append_child(pugi::node_pcdata)
+    .set_value("/Xdmf/Domain/Grid/Geometry");
 
   // Add attribute node with values
   pugi::xml_node attribute_node = mvc_grid_node.append_child("Attribute");
@@ -2019,7 +1999,6 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
   pugi::xml_node grid_node = domain_node.child("Grid");
   const std::size_t cell_dim = meshfunction.dim();
   const std::size_t tdim = mesh->topology().dim();
-  const std::size_t gdim = mesh->geometry().dim();
   const bool grid_empty = grid_node.empty();
 
   if (grid_empty or cell_dim != tdim)
@@ -2050,12 +2029,9 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
       // Add geometry node (reference)
       pugi::xml_node geometry_node = grid_node.append_child("Geometry");
       dolfin_assert(geometry_node);
-      geometry_node.append_attribute("GeometryType") = (gdim == 3) ? "XYZ" : "XY";
-      pugi::xml_node geometry_data_node = geometry_node.append_child("DataItem");
-      dolfin_assert(geometry_data_node);
-      geometry_data_node.append_attribute("Reference") = "XML";
-      geometry_data_node.append_child(pugi::node_pcdata)
-        .set_value("/Xdmf/Domain/Grid/Geometry/DataItem");
+      geometry_node.append_attribute("Reference") = "XML";
+      geometry_node.append_child(pugi::node_pcdata)
+        .set_value("/Xdmf/Domain/Grid/Geometry");
     }
   }
 
