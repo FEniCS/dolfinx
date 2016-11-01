@@ -452,7 +452,8 @@ def test_save_mesh_value_collection(tempdir, encoding):
 
     for mvc_dim in range(0, tdim + 1):
         mvc = MeshValueCollection("size_t", mesh, 2)
-        mvc.rename("dim_%d_marker" % mvc_dim, "BC")
+        tag = "dim_%d_marker" % mvc_dim
+        mvc.rename(tag, "BC")
         mesh.init(mvc_dim, tdim)
         for e in cpp.entities(mesh, mvc_dim):
             if (e.midpoint().x() > 0.5):
@@ -462,6 +463,11 @@ def test_save_mesh_value_collection(tempdir, encoding):
                                                       % mvc_dim))
         xdmf.write(meshfn, encoding)
         xdmf.write(mvc, encoding)
+
+        xdmf = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "mvc_%d.xdmf"
+                                                      % mvc_dim))
+        mvc = MeshValueCollection("size_t", mesh)
+        xdmf.read(mvc, tag)
 
 @skip_in_parallel
 @pytest.mark.parametrize("encoding", encodings)
@@ -480,3 +486,14 @@ def test_quadratic_mesh(tempdir, encoding):
     u.interpolate(Constant(1.0))
     xdmf = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "quadratic2.xdmf"))
     xdmf.write(u)
+
+    xdmf = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "qmesh.xdmf"))
+    xdmf.write(mesh)
+    c0 = mesh.coordinates()
+
+    mesh = Mesh()
+    xdmf = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "qmesh.xdmf"))
+    xdmf.read(mesh)
+    c1 = mesh.coordinates()
+
+    assert (c0 - c1).sum() == 0.0
