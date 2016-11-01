@@ -156,6 +156,9 @@ namespace dolfin
     void write(const MeshValueCollection<std::size_t>& mvc,
                Encoding encoding=Encoding::HDF5);
 
+    // Read MeshValueCollection from file
+    void read(MeshValueCollection<std::size_t>& mvc);
+
     /// Save a cloud of points to file using an associated HDF5 file,
     /// or storing the data inline as XML.
     ///

@@ -562,6 +562,11 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
+void XDMFFile::read(MeshValueCollection<std::size_t>& mvc)
+{
+  dolfin_not_implemented();
+}
+//-----------------------------------------------------------------------------
 void XDMFFile::write(const std::vector<Point>& points, Encoding encoding)
 {
   // Check that encoding is supported
@@ -782,12 +787,6 @@ void XDMFFile::read(Mesh& mesh) const
   // Get cell type
   const auto cell_type_str = get_cell_type(topology_node);
   const int degree = cell_type_str.second;
-  if (degree == 2)
-  {
-    dolfin_error("XDMFFile.cpp",
-                 "read quadratic mesh",
-                 "Not yet implemented");
-  }
 
   // Get toplogical dimensions
   std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str.first));
@@ -830,9 +829,19 @@ void XDMFFile::read(Mesh& mesh) const
 
   if (MPI::size(_mpi_comm) == 1)
   {
-    build_mesh(mesh, *cell_type, num_points_global, num_cells_global,
-               tdim, gdim, topology_data_node, geometry_data_node,
-               parent_path);
+    if (degree == 1)
+    {
+      build_mesh(mesh, *cell_type, num_points_global, num_cells_global,
+                 tdim, gdim, topology_data_node, geometry_data_node,
+                 parent_path);
+    }
+    else
+    {
+      dolfin_assert(degree == 2);
+      build_mesh_quadratic(mesh, *cell_type, num_points_global, num_cells_global,
+                           tdim, gdim, topology_data_node, geometry_data_node,
+                           parent_path);
+    }
   }
   else
   {
