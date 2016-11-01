@@ -497,3 +497,62 @@ def test_quadratic_mesh(tempdir, encoding):
     c1 = mesh.coordinates()
 
     assert (c0 - c1).sum() == 0.0
+
+@pytest.mark.parametrize("encoding", encodings)
+def test_append_and_load_mesh_functions(tempdir, encoding):
+    if invalid_config(encoding):
+        pytest.xfail("XDMF unsupported in current configuration")
+
+    meshes = [UnitSquareMesh(32, 32), UnitCubeMesh(8, 8, 8)]
+
+    for mesh in meshes:
+        dim = mesh.topology().dim()
+
+        vf = VertexFunction("size_t", mesh)
+        vf.rename("vertices", "vertices")
+        ff = FacetFunction("size_t", mesh)
+        ff.rename("facets", "facets")
+        cf = CellFunction("size_t", mesh)
+        cf.rename("cells", "cells")
+
+        if (MPI.size(mesh.mpi_comm()) == 1):
+            for vertex in vertices(mesh):
+                vf[vertex] = vertex.index()
+            for facet in facets(mesh):
+                ff[facet] = facet.index()
+            for cell in cells(mesh):
+                cf[cell] = cell.index()
+        else:
+            for vertex in vertices(mesh):
+                vf[vertex] = vertex.global_index()
+            for facet in facets(mesh):
+                ff[facet] = facet.global_index()
+            for cell in cells(mesh):
+                cf[cell] = cell.global_index()
+
+        filename = os.path.join(tempdir, "appended_mf_%dD.xdmf" % dim)
+
+        xdmf = XDMFFile(mesh.mpi_comm(), filename)
+        xdmf.write(vf, encoding)
+        xdmf.write(ff, encoding)
+        xdmf.write(cf, encoding)
+        del xdmf
+
+        xdmf = XDMFFile(mesh.mpi_comm(), filename)
+
+        vf_in = VertexFunction("size_t", mesh)
+        xdmf.read(vf_in, "vertices")
+        ff_in = FacetFunction("size_t", mesh)
+        xdmf.read(ff_in, "facets")
+        cf_in = CellFunction("size_t", mesh)
+        xdmf.read(cf_in, "cells")
+        del xdmf
+
+        diff = 0
+        for vertex in vertices(mesh):
+            diff += (vf_in[vertex] - vf[vertex])
+        for facet in facets(mesh):
+            diff += (ff_in[facet] - ff[facet])
+        for cell in cells(mesh):
+            diff += (cf_in[cell] - cf[cell])
+        assert diff == 0
