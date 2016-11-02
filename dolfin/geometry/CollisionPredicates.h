@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-02
+// Last changed: 2016-11-03
 
 #ifndef __COLLISION_PREDICATES_H
 #define __COLLISION_PREDICATES_H
@@ -82,10 +82,8 @@ namespace dolfin
 					  const Point& p1,
 					  const Point& point)
     {
-      dolfin_error("CollidesPredicates.h",
-		   "collides_segment_point_1d",
-		   "Not implemented");
-      return false;
+      // FIXME: Skip CGAL for now
+      return _collides_segment_point_1d(p0, p1, point);
     }
 
 

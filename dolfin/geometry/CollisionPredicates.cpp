@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-02
+// Last changed: 2016-11-03
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -67,6 +67,9 @@ bool CollisionPredicates::collides(const MeshEntity& entity,
   const std::size_t gdim = entity.mesh().geometry().dim();
 
   // Pick correct specialized implementation
+  if (tdim == 1 && gdim == 1)
+    return collides_segment_point_1d(g.point(v[0]), g.point(v[1]), point);
+
   if (tdim == 1 && gdim == 2)
     return collides_segment_point_2d(g.point(v[0]), g.point(v[1]), point);
 
@@ -308,6 +311,15 @@ bool CollisionPredicates::is_degenerate(const std::vector<Point>& simplex,
 }
 //-----------------------------------------------------------------------------
 // Implementation of private members
+//-----------------------------------------------------------------------------
+bool CollisionPredicates::_collides_segment_point_1d(Point p0,
+						     Point p1,
+						     Point point)
+{
+  if (p0[0] > p1[0])
+    std::swap(p0, p1);
+  return p0[0] <= point[0] and point[0] <= p1[0];
+}
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_segment_point_2d(Point p0,
 						     Point p1,
