@@ -566,29 +566,12 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
 	// return std::vector<Point>();
       }
     }
-    else if (points.size() == 2)
-    {
-      // If we get two intersection points, this is the intersection
-      return points;
-    }
-    else if (points.size() == 3 or
-	     points.size() == 4)
-    {
-      // Here we have found duplicate points. This can happen for
-      // example if the line segment is parallel to the triangle
-      // boundary. For example if q0 is found on the boundary by
-      // intersection_triangle_point_2d. Then q0 and another point is
-      // found by intersection_segment_segment_2d, thus we get
-      // duplicates of q0. Hopefully this will be handled correctly
-      // further down the pipeline (typically in ConvexTriangulation).
-
-      return points;
-    }
     else
     {
-      dolfin_error("IntersectionConstruction.cpp",
-		   "compute triangle-segment 2d triangulation ",
-		   "Unknown number of points %d", points.size());
+      // If we get two intersection points, this is the
+      // intersection. If we get more than two, we have duplicates.
+
+      return points;
     }
   }
 
