@@ -25,7 +25,7 @@ from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 # Currently supported XDMF file encoding
 encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)
 
-# Currently data types
+# Data types supported in templating
 data_types = (('int', int), ('size_t', int), ('double', float), ('bool', bool))
 
 
