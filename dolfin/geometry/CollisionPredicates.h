@@ -1,4 +1,4 @@
-// Copyright (C) 2014-2016 Anders Logg and August Johansson, 2016 Benjamin Kehlet
+// Copyright (C) 2014-2016 Anders Logg, August Johansson and Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-06-01
+// Last changed: 2016-11-02
 
 #ifndef __COLLISION_PREDICATES_H
 #define __COLLISION_PREDICATES_H
@@ -74,10 +74,37 @@ namespace dolfin
     /// Check whether segment p0-p1 collides with point
     static bool collides_segment_point(const Point& p0,
                                        const Point& p1,
-				       const Point& point)
+				       const Point& point,
+				       std::size_t gdim);
+
+    /// Check whether segment p0-p1 collides with point (1D version)
+    static bool collides_segment_point_1d(const Point& p0,
+					  const Point& p1,
+					  const Point& point)
     {
-      return CHECK_CGAL(_collides_segment_point(p0, p1, point),
-                        cgal_collides_segment_point(p0, p1, point));
+      dolfin_error("CollidesPredicates.h",
+		   "collides_segment_point_1d",
+		   "Not implemented");
+      return false;
+    }
+
+
+    /// Check whether segment p0-p1 collides with point (2D version)
+    static bool collides_segment_point_2d(const Point& p0,
+					  const Point& p1,
+					  const Point& point)
+    {
+      return CHECK_CGAL(_collides_segment_point_2d(p0, p1, point),
+                        cgal_collides_segment_point_2d(p0, p1, point));
+    }
+
+    /// Check whether segment p0-p1 collides with point (3D version)
+    static bool collides_segment_point_3d(const Point& p0,
+					  const Point& p1,
+					  const Point& point)
+    {
+      return CHECK_CGAL(_collides_segment_point_3d(p0, p1, point),
+                        cgal_collides_segment_point_3d(p0, p1, point));
     }
 
     /// Check whether segment p0-p1 collides with segment q0-q1
@@ -103,7 +130,17 @@ namespace dolfin
 					    const Point& q1)
     {
       return CHECK_CGAL(_collides_segment_segment_2d(p0, p1, q0, q1),
-			cgal_collides_segment_segment(p0, p1, q0, q1));
+			cgal_collides_segment_segment_2d(p0, p1, q0, q1));
+    }
+
+    /// Check whether segment p0-p1 collides with segment q0-q1 (3D version)
+    static bool collides_segment_segment_3d(const Point& p0,
+					    const Point& p1,
+					    const Point& q0,
+					    const Point& q1)
+    {
+      return CHECK_CGAL(_collides_segment_segment_3d(p0, p1, q0, q1),
+			cgal_collides_segment_segment_3d(p0, p1, q0, q1));
     }
 
     /// Check whether segment p collides with segment q0-q1 in its
@@ -113,20 +150,17 @@ namespace dolfin
                                                    const Point& p)
     {
       return CHECK_CGAL(_collides_interior_point_segment_2d(q0, q1, p),
-			cgal_collides_segment_point(q0, q1, p, true));
+			cgal_collides_segment_point_2d(q0, q1, p, true));
     }
 
-
-    /// Check whether segment p0-p1 collides with segment q0-q1 (3D version)
-    static bool collides_segment_segment_3d(const Point& p0,
-					    const Point& p1,
-					    const Point& q0,
-					    const Point& q1)
+    /// Check whether segment p collides with segment q0-q1 in its
+    /// interior (3D version)
+    static bool collides_interior_point_segment_3d(const Point& q0,
+                                                   const Point& q1,
+                                                   const Point& p)
     {
-      dolfin_error("CollisionPredicates.cpp",
-		   "compute segment-segment collision ",
-		   "Not implemented for dimension 3.");
-      return false;
+      return CHECK_CGAL(_collides_interior_point_segment_3d(q0, q1, p),
+			cgal_collides_segment_point_3d(q0, q1, p, true));
     }
 
     /// Check whether triangle p0-p1-p2 collides with point
@@ -143,15 +177,17 @@ namespace dolfin
                                            const Point point)
     {
       return CHECK_CGAL(_collides_triangle_point_2d(p0, p1, p2, point),
-                        cgal_collides_triangle_point(p0, p1, p2, point));
+                        cgal_collides_triangle_point_2d(p0, p1, p2, point));
     }
 
+    /// Check whether triangle p0-p1-p2 collides with point (3D version)
     static bool collides_triangle_point_3d(const Point& p0,
                                            const Point& p1,
                                            const Point& p2,
                                            const Point& point)
     {
-      return _collides_triangle_point_3d(p0, p1, p2, point);
+      return CHECK_CGAL(_collides_triangle_point_3d(p0, p1, p2, point),
+			cgal_collides_triangle_point_3d(p0, p1, p2, point));
     }
 
     /// Check whether triangle p0-p1-p2 collides with segment q0-q1
@@ -170,7 +206,7 @@ namespace dolfin
 					     const Point& q1)
     {
       return CHECK_CGAL(_collides_triangle_segment_2d(p0, p1, p2, q0, q1),
-                        cgal_collides_triangle_segment(p0, p1, p2, q0, q1));
+                        cgal_collides_triangle_segment_3d(p0, p1, p2, q0, q1));
     }
 
     /// Check whether triangle p0-p1-p2 collides with segment q0-q1 (3D version)
@@ -181,7 +217,7 @@ namespace dolfin
 					     const Point& q1)
     {
       return CHECK_CGAL(_collides_triangle_segment_3d(p0, p1, p2, q0, q1),
-                        cgal_collides_triangle_segment(p0, p1, p2, q0, q1));
+                        cgal_collides_triangle_segment_3d(p0, p1, p2, q0, q1));
     }
 
     /// Check whether triangle p0-p1-p2 collides with triangle q0-q1-q2
@@ -202,7 +238,7 @@ namespace dolfin
 					      const Point& q2)
     {
       return CHECK_CGAL(_collides_triangle_triangle_2d(p0, p1, p2, q0, q1, q2),
-                        cgal_collides_triangle_triangle(p0, p1, p2, q0, q1, q2));
+                        cgal_collides_triangle_triangle_2d(p0, p1, p2, q0, q1, q2));
     }
 
     /// Check whether triangle p0-p1-p2 collides with triangle q0-q1-q2 (3D version)
@@ -213,10 +249,8 @@ namespace dolfin
 					      const Point& q1,
 					      const Point& q2)
     {
-      dolfin_error("CollisionPredicates.cpp",
-		   "compute triangle-triangle collision ",
-		   "Not implemented for dimension 3.");
-      return false;
+      return CHECK_CGAL(_collides_triangle_triangle_3d(p0, p1, p2, q0, q1, q2),
+			cgal_collides_triangle_triangle_3d(p0, p1, p2, q0, q1, q2));
     }
 
 
@@ -227,7 +261,20 @@ namespace dolfin
 					   const Point& p3,
 					   const Point& point)
     {
-      return _collides_tetrahedron_point(p0, p1, p2, p3, point);
+      return CHECK_CGAL(_collides_tetrahedron_point(p0, p1, p2, p3, point),
+			cgal_collides_tetrahedron_point(p0, p1, p2, p3, point));
+    }
+
+    /// Check whether tetrahedron p0-p1-p2-p3 collides with segment q0-q1
+    static bool collides_tetrahedron_segment(const Point& p0,
+					     const Point& p1,
+					     const Point& p2,
+					     const Point& p3,
+					     const Point& q0,
+					     const Point& q1)
+    {
+      return CHECK_CGAL(_collides_tetrahedron_segment(p0, p1, p2, p3, q0, q1),
+			cgal_collides_tetrahedron_segment(p0, p1, p2, p3, q0, q1));
     }
 
     /// Check whether tetrahedron p0-p1-p2-p3 collides with triangle q0-q1-q2
@@ -239,8 +286,10 @@ namespace dolfin
 					      const Point& q1,
 					      const Point& q2)
     {
-      return _collides_tetrahedron_triangle(p0, p1, p2, p3,
-					    q0, q1, q2);
+      return CHECK_CGAL(_collides_tetrahedron_triangle(p0, p1, p2, p3,
+						       q0, q1, q2),
+			cgal_collides_tetrahedron_triangle(p0, p1, p2, p3,
+							   q0, q1, q2));
     }
 
     /// Check whether tetrahedron p0-p1-p2-p3 collides with tetrahedron q0-q1-q2
@@ -253,17 +302,41 @@ namespace dolfin
 						 const Point& q2,
 						 const Point& q3)
     {
-      return _collides_tetrahedron_tetrahedron(p0, p1, p2, p3,
-					       q0, q1, q2, q3);
+      return CHECK_CGAL(_collides_tetrahedron_tetrahedron(p0, p1, p2, p3,
+							  q0, q1, q2, q3),
+			cgal_collides_tetrahedron_tetrahedron(p0, p1, p2, p3,
+							      q0, q1, q2, q3));
+    }
+
+
+    /// Check whether simplex is degenerate
+    // FIXME: Maybe this function should be somewhere else
+    static bool is_degenerate(const std::vector<Point>& simplex,
+			      std::size_t gdim);
+
+    static bool is_degenerate_2d(const std::vector<Point>& simplex)
+    {
+      return CHECK_CGAL(_is_degenerate_2d(simplex),
+			cgal_is_degenerate_2d(simplex));
+    }
+
+    static bool is_degenerate_3d(const std::vector<Point>& simplex)
+    {
+      return CHECK_CGAL(_is_degenerate_3d(simplex),
+			cgal_is_degenerate_3d(simplex));
     }
 
   private:
 
     // Implementation of collision detection predicates
 
-    static bool _collides_segment_point(Point p0,
-					Point p1,
-					Point point);
+    static bool _collides_segment_point_2d(Point p0,
+					   Point p1,
+					   Point point);
+
+    static bool _collides_segment_point_3d(Point p0,
+					   Point p1,
+					   Point point);
 
     static bool _collides_segment_segment_1d(double p0,
                                              double p1,
@@ -275,7 +348,16 @@ namespace dolfin
 					     Point q0,
 					     Point q1);
 
+    static bool _collides_segment_segment_3d(Point p0,
+					     Point p1,
+					     Point q0,
+					     Point q1);
+
     static bool _collides_interior_point_segment_2d(Point q0,
+                                                    Point q1,
+                                                    Point p);
+
+    static bool _collides_interior_point_segment_3d(Point q0,
                                                     Point q1,
                                                     Point p);
 
@@ -284,10 +366,10 @@ namespace dolfin
 					    Point p2,
 					    Point point);
 
-    static bool _collides_triangle_point_3d(const Point& p0,
-					    const Point& p1,
-					    const Point& p2,
-					    const Point& point);
+    static bool _collides_triangle_point_3d(Point p0,
+					    Point p1,
+					    Point p2,
+					    Point point);
 
     static bool _collides_triangle_segment_2d(const Point& p0,
 					      const Point& p1,
@@ -295,11 +377,11 @@ namespace dolfin
 					      const Point& q0,
 					      const Point& q1);
 
-    static bool _collides_triangle_segment_3d(const Point& p0,
-					      const Point& p1,
-					      const Point& p2,
-					      const Point& q0,
-					      const Point& q1);
+    static bool _collides_triangle_segment_3d(Point p0,
+					      Point p1,
+					      Point p2,
+					      Point q0,
+					      Point q1);
 
     static bool _collides_triangle_triangle_2d(const Point& p0,
 					       const Point& p1,
@@ -308,11 +390,25 @@ namespace dolfin
 					       const Point& q1,
 					       const Point& q2);
 
-    static bool _collides_tetrahedron_point(const Point& p0,
-					    const Point& p1,
-					    const Point& p2,
-					    const Point& p3,
-					    const Point& point);
+    static bool _collides_triangle_triangle_3d(const Point& p0,
+					       const Point& p1,
+					       const Point& p2,
+					       const Point& q0,
+					       const Point& q1,
+					       const Point& q2);
+
+    static bool _collides_tetrahedron_point(Point p0,
+					    Point p1,
+					    Point p2,
+					    Point p3,
+					    Point point);
+
+    static bool _collides_tetrahedron_segment(const Point& p0,
+					      const Point& p1,
+					      const Point& p2,
+					      const Point& p3,
+					      const Point& q0,
+					      const Point& q1);
 
     static bool _collides_tetrahedron_triangle(const Point& p0,
 					       const Point& p1,
@@ -430,6 +526,11 @@ namespace dolfin
 					int f0,
 					int f1);
 
+
+    // Implementations of is_degenerate
+    static bool _is_degenerate_2d(std::vector<Point> simplex);
+
+    static bool _is_degenerate_3d(std::vector<Point> simplex);
   };
 
 }

@@ -20,6 +20,9 @@ void exactinit();
 // Compute relative orientation of points pa, pb, pc
 double orient2d(double* pa, double* pb, double* pc);
 
+// Compute relative orientation of points pa, pb, pc, pd
+double orient3d(double* pa, double* pb, double* pc, double *pd);
+
 namespace dolfin
 {
 

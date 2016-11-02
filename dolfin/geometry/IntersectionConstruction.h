@@ -1,4 +1,4 @@
-// Copyright (C) 2014-2016 Anders Logg and August Johansson, 2016 Benjamin Kehlet
+// Copyright (C) 2014-2016 Anders Logg, August Johansson and Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-06-05
+// Last changed: 2016-11-02
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -223,13 +223,6 @@ namespace dolfin
       return _intersection_tetrahedron_tetrahedron(p0, p1, p2, p3, q0, q1, q2, q3);
     }
 
-    /// Check whether simplex is degenerate
-    static bool is_degenerate(const std::vector<Point>& simplex)
-    {
-      return CHECK_CGAL(_is_degenerate(simplex),
-                        cgal_is_degenerate(simplex));
-    }
-
   private:
 
     // Implementation of intersection computation functions
@@ -307,12 +300,6 @@ namespace dolfin
                                           const Point& q1,
                                           const Point& q2,
                                           const Point& q3);
-
-    //--- Utility functions ---
-    // Implementation of is_degenerate
-    static bool _is_degenerate(std::vector<Point> simplex);
-
-
   };
 }
 
