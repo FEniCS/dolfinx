@@ -557,3 +557,56 @@ def test_append_and_load_mesh_functions(tempdir, encoding):
         for cell in cells(mesh):
             diff += (cf_in[cell] - cf[cell])
         assert diff == 0
+
+
+@pytest.mark.parametrize("encoding", encodings)
+def test_append_and_load_mesh_value_collections(tempdir, encoding):
+    if invalid_config(encoding):
+        pytest.xfail("XDMF unsupported in current configuration")
+
+    mesh = UnitCubeMesh(1, 1, 1)
+
+    mvc_v = MeshValueCollection('size_t', mesh, 0)
+    mvc_v.rename("vertices", "vertices")
+    mvc_f = MeshValueCollection('size_t', mesh, 1)
+    mvc_f.rename("facets", "facets")
+    mvc_c = MeshValueCollection('size_t', mesh, 2)
+    mvc_c.rename("cells", "cells")
+
+    mvcs = [mvc_v, mvc_f, mvc_c]
+
+    filename = os.path.join(tempdir, "appended_mvs.xdmf")
+    xdmf = XDMFFile(mesh.mpi_comm(), filename)
+
+    for mvc in mvcs:
+        mvc.set_value(0, 1)
+        mvc.set_value(1, 2)
+        mvc.set_value(2, 3)
+        xdmf.write(mvc)
+
+    del xdmf
+
+    mvc_v_in = MeshValueCollection('size_t', mesh, 0)
+    mvc_f_in = MeshValueCollection('size_t', mesh, 1)
+    mvc_c_in = MeshValueCollection('size_t', mesh, 2)
+
+    xdmf = XDMFFile(mesh.mpi_comm(), filename)
+    xdmf.read(mvc_v_in, "vertices")
+    xdmf.read(mvc_f_in, "facets")
+    xdmf.read(mvc_c_in, "cells")
+
+    mvcs_in = [mvc_v_in, mvc_f_in, mvc_c_in]
+
+    for (mvc, mvc_in) in zip(mvcs, mvcs_in):
+        mvc_data = mvc.values()
+        mvc_data_in = mvc_in.values()
+
+        assert(len(mvc_data) == len(mvc_data_in))
+
+        for j in range(len(mvc_data)):
+            idxs = mvc_data.keys()[j]
+            vals = mvc_data[idxs]
+            idxs_in = mvc_data.keys()[j] 
+            vals_in = mvc_data_in[idxs_in]
+            assert(idxs == idxs_in)
+            assert(vals == vals_in)
