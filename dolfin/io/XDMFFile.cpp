@@ -400,6 +400,13 @@ void XDMFFile::write(const MeshFunction<double>& meshfunction,
 void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
                      Encoding encoding)
 {
+  write_mesh_value_collection(mvc, encoding);
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+void XDMFFile::write_mesh_value_collection(const MeshValueCollection<T>& mvc,
+                                           Encoding encoding)
+{
   check_encoding(encoding);
 
   // Provide some very basic functionality for saving
@@ -519,8 +526,8 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
   topology_node.append_attribute("NodesPerElement")
     = std::to_string(num_vertices_per_cell).c_str();
 
-  std::vector<std::size_t> topology_data;
-  std::vector<std::size_t> value_data;
+  std::vector<std::int32_t> topology_data;
+  std::vector<T> value_data;
   topology_data.reserve(num_cells*num_vertices_per_cell);
   value_data.reserve(num_cells);
 
