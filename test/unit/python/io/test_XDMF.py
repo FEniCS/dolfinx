@@ -451,7 +451,7 @@ def test_save_mesh_value_collection(tempdir, encoding):
             meshfn[c] = 2
 
     for mvc_dim in range(0, tdim + 1):
-        mvc = MeshValueCollection("size_t", mesh, 2)
+        mvc = MeshValueCollection("size_t", mesh, mvc_dim)
         tag = "dim_%d_marker" % mvc_dim
         mvc.rename(tag, "BC")
         mesh.init(mvc_dim, tdim)
@@ -459,13 +459,15 @@ def test_save_mesh_value_collection(tempdir, encoding):
             if (e.midpoint().x() > 0.5):
                 mvc.set_value(e.index(), 1)
 
-        xdmf = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "mvc_%d.xdmf"
-                                                      % mvc_dim))
+        filename = os.path.join(tempdir, "mvc_%d.xdmf" % mvc_dim)
+
+        xdmf = XDMFFile(mesh.mpi_comm(), filename)
         xdmf.write(meshfn, encoding)
         xdmf.write(mvc, encoding)
 
-        xdmf = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "mvc_%d.xdmf"
-                                                      % mvc_dim))
+        del xdmf
+
+        xdmf = XDMFFile(mesh.mpi_comm(), filename)
         mvc = MeshValueCollection("size_t", mesh)
         xdmf.read(mvc, tag)
 
@@ -575,7 +577,7 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding):
 
     mvcs = [mvc_v, mvc_f, mvc_c]
 
-    filename = os.path.join(tempdir, "appended_mvs.xdmf")
+    filename = os.path.join(tempdir, "appended_mvcs.xdmf")
     xdmf = XDMFFile(mesh.mpi_comm(), filename)
 
     for mvc in mvcs:
