@@ -1904,7 +1904,7 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction,
   pugi::xml_node domain_node = xdmf_node.child("Domain");
   dolfin_assert(domain_node);
 
-  // Check all Grid nodes for suitable dataset
+  // Check all top level Grid nodes for suitable dataset
   pugi::xml_node grid_node;
   for (pugi::xml_node node: domain_node.children("Grid"))
   {
@@ -1916,6 +1916,25 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction,
       }
   }
 
+  // Check if a TimeSeries (old format), in which case the Grid will be down one level
+  if (!grid_node)
+  {
+    pugi::xml_node grid_node1 = domain_node.child("Grid");
+    if (grid_node1)
+    {
+      for (pugi::xml_node node: grid_node1.children("Grid"))
+      {
+        pugi::xml_node value_node = node.child("Attribute");
+        if (value_node and (name == "" or name == value_node.attribute("Name").as_string()))
+        {
+          grid_node = node;
+          break;
+        }
+      }
+    }
+  }
+
+  // Still can't find it
   if (!grid_node)
   {
     dolfin_error("XDMFFile.cpp",
@@ -1943,6 +1962,7 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction,
   const unsigned int cell_dim = cell_type->dim();
   dolfin_assert(cell_dim == meshfunction.dim());
   const std::size_t num_entities_global = get_num_cells(topology_node);
+
   // Ensure size_global(cell_dim) is set and check dataset matches
   DistributedMeshTools::number_entities(*mesh, cell_dim);
   dolfin_assert(mesh->size_global(cell_dim) == num_entities_global);
