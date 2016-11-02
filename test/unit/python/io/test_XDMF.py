@@ -537,36 +537,39 @@ def test_quadratic_mesh(tempdir, encoding):
     assert (c0 - c1).sum() == 0.0
 
 @pytest.mark.parametrize("encoding", encodings)
-def test_append_and_load_mesh_functions(tempdir, encoding):
+@pytest.mark.parametrize("data_type", data_types)
+def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
+
+    dtype_str, dtype = data_type
 
     meshes = [UnitSquareMesh(32, 32), UnitCubeMesh(8, 8, 8)]
 
     for mesh in meshes:
         dim = mesh.topology().dim()
 
-        vf = VertexFunction("size_t", mesh)
+        vf = VertexFunction(dtype_str, mesh)
         vf.rename("vertices", "vertices")
-        ff = FacetFunction("size_t", mesh)
+        ff = FacetFunction(dtype_str, mesh)
         ff.rename("facets", "facets")
-        cf = CellFunction("size_t", mesh)
+        cf = CellFunction(dtype_str, mesh)
         cf.rename("cells", "cells")
 
         if (MPI.size(mesh.mpi_comm()) == 1):
             for vertex in vertices(mesh):
-                vf[vertex] = vertex.index()
+                vf[vertex] = dtype(vertex.index())
             for facet in facets(mesh):
-                ff[facet] = facet.index()
+                ff[facet] = dtype(facet.index())
             for cell in cells(mesh):
-                cf[cell] = cell.index()
+                cf[cell] = dtype(cell.index())
         else:
             for vertex in vertices(mesh):
-                vf[vertex] = vertex.global_index()
+                vf[vertex] = dtype(vertex.global_index())
             for facet in facets(mesh):
-                ff[facet] = facet.global_index()
+                ff[facet] = dtype(facet.global_index())
             for cell in cells(mesh):
-                cf[cell] = cell.global_index()
+                cf[cell] = dtype(cell.global_index())
 
         filename = os.path.join(tempdir, "appended_mf_%dD.xdmf" % dim)
 
@@ -579,11 +582,11 @@ def test_append_and_load_mesh_functions(tempdir, encoding):
 
         xdmf = XDMFFile(mesh.mpi_comm(), filename)
 
-        vf_in = VertexFunction("size_t", mesh)
+        vf_in = VertexFunction(dtype_str, mesh)
         xdmf.read(vf_in, "vertices")
-        ff_in = FacetFunction("size_t", mesh)
+        ff_in = FacetFunction(dtype_str, mesh)
         xdmf.read(ff_in, "facets")
-        cf_in = CellFunction("size_t", mesh)
+        cf_in = CellFunction(dtype_str, mesh)
         xdmf.read(cf_in, "cells")
         del xdmf
 
