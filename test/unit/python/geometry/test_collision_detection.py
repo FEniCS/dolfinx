@@ -1,6 +1,6 @@
 #!/usr/bin/env py.test
 
-"""Unit tests for the CollisionDetection class"""
+"""Unit tests for the CollisionPredicates class"""
 
 # Copyright (C) 2014 Anders Logg and August Johansson
 #
@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2014-05-30
+# Last changed: 2016-11-03
 
 import pytest
 from dolfin import *
