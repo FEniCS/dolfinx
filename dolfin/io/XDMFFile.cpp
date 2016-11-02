@@ -439,17 +439,19 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
 
   dolfin_assert(domain_node);
 
-  // Open a HDF5 file if using HDF5 encoding (append)
+  // Open a HDF5 file if using HDF5 encoding
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
+  std::unique_ptr<HDF5File> h5_file;
   if (encoding == Encoding::HDF5)
   {
     // Open file
-    _hdf5_file.reset(new HDF5File(mesh->mpi_comm(), get_hdf5_filename(_filename), hdf_filemode));
-    dolfin_assert(_hdf5_file);
+    h5_file.reset(new HDF5File(mesh->mpi_comm(),
+                               get_hdf5_filename(_filename), hdf_filemode));
+    dolfin_assert(h5_file);
 
     // Get file handle
-    h5_id = _hdf5_file->h5_id();
+    h5_id = h5_file->h5_id();
   }
 #endif
 
@@ -536,8 +538,9 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
     value_data.push_back(p.second);
   }
 
+  const std::string mvc_dataset_name = "/MeshValueCollection/" + std::to_string(_counter);
   const std::int64_t num_values = MPI::sum(mesh->mpi_comm(), value_data.size());
-  add_data_item(_mpi_comm, topology_node, h5_id, "/MeshValueCollection/topology",
+  add_data_item(_mpi_comm, topology_node, h5_id, mvc_dataset_name + "/topology",
                 topology_data, {num_values, num_vertices_per_cell});
 
   // Add geometry node (share with main Mesh)
@@ -555,11 +558,13 @@ void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
   attribute_node.append_attribute("Center") = "Cell";
 
   add_data_item(_mpi_comm, attribute_node, h5_id,
-                "/MeshValueCollection/values", value_data, {num_values, 1});
+                mvc_dataset_name + "/values", value_data, {num_values, 1});
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
+
+  ++_counter;
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::read(MeshValueCollection<std::size_t>& mvc, std::string name)
