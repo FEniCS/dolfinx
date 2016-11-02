@@ -2184,6 +2184,20 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
   const std::size_t tdim = mesh->topology().dim();
   const bool grid_empty = grid_node.empty();
 
+  // Check existing Mesh for compatibility.
+  if (!grid_empty)
+  {
+    pugi::xml_node topology_node = grid_node.child("Topology");
+    dolfin_assert(topology_node);
+    auto cell_type_str = get_cell_type(topology_node);
+    if (CellType::type2string(mesh->type().cell_type()) != cell_type_str.first)
+    {
+      dolfin_error("XDMFFile.cpp",
+                   "add MeshFunction to XDMF",
+                   "Incompatible Mesh type. Try writing the Mesh to XDMF first");
+    }
+  }
+
   if (grid_empty or cell_dim != tdim)
   {
     // Make new grid node

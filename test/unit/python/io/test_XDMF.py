@@ -533,6 +533,7 @@ def test_append_and_load_mesh_functions(tempdir, encoding):
         filename = os.path.join(tempdir, "appended_mf_%dD.xdmf" % dim)
 
         xdmf = XDMFFile(mesh.mpi_comm(), filename)
+        xdmf.write(mesh)
         xdmf.write(vf, encoding)
         xdmf.write(ff, encoding)
         xdmf.write(cf, encoding)
