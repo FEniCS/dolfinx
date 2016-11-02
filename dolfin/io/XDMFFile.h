@@ -211,6 +211,11 @@ namespace dolfin
 
   private:
 
+    // Generic MVC writer
+    template <typename T>
+    void write_mesh_value_collection(const MeshValueCollection<T>& mvc,
+                                     Encoding encoding);
+
     // Remap meshfunction data, scattering data to appropriate processes
     template <typename T>
     static void remap_meshfunction_data(MeshFunction<T>& meshfunction,
