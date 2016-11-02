@@ -180,6 +180,20 @@ if (BLA_VENDOR STREQUAL "Goto" OR BLA_VENDOR STREQUAL "All")
  endif(NOT BLAS_LIBRARIES)
 endif (BLA_VENDOR STREQUAL "Goto" OR BLA_VENDOR STREQUAL "All")
 
+if (BLA_VENDOR STREQUAL "OpenBLAS" OR BLA_VENDOR STREQUAL "All")
+ if(NOT BLAS_LIBRARIES)
+  # openblas (http://www.openblas.net)
+  check_fortran_libraries(
+  BLAS_LIBRARIES
+  BLAS
+  sgemm
+  ""
+  "openblas"
+  ""
+  )
+ endif(NOT BLAS_LIBRARIES)
+endif (BLA_VENDOR STREQUAL "OpenBLAS" OR BLA_VENDOR STREQUAL "All")
+
 if (BLA_VENDOR STREQUAL "ATLAS" OR BLA_VENDOR STREQUAL "All")
  if(NOT BLAS_LIBRARIES)
   # BLAS in ATLAS library? (http://math-atlas.sourceforge.net/)
@@ -611,7 +625,7 @@ else(BLA_F95)
 
   if(NOT BLAS_FIND_QUIETLY)
     if(BLAS_FOUND)
-      message(STATUS "A library with BLAS API found.")
+      message(STATUS "Found BLAS: ${BLAS_LIBRARIES}")
     else(BLAS_FOUND)
       if(BLAS_FIND_REQUIRED)
         message(FATAL_ERROR
