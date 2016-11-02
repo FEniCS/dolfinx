@@ -5,12 +5,15 @@
 
 # FIXME: Check that naming conforms to CMake standards
 
+# Compute path
+get_filename_component(DOLFIN_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
 # Library dependencies (contains definitions for IMPORTED targets)
 # NOTE: DOLFIN demo CMakeLists.txt are written to be stand-alone, as
 # well as the build system building the demo. Therefore, we need the
 # below guard to avoid exporting the targets twice.
 if (NOT TARGET dolfin)
-  include("@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake/DOLFINTargets.cmake")
+  include("${DOLFIN_CMAKE_DIR}/DOLFINTargets.cmake")
 endif()
 
 # Compilers
@@ -40,6 +43,10 @@ set(DOLFIN_PYTHON_DEFINITIONS "@DOLFIN_PYTHON_DEFINITIONS@")
 # Python libraries
 set(DOLFIN_PYTHON_LIBRARIES "@PYTHON_LIBRARIES@")
 
+# Python executable
+set(DOLFIN_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
+
+# SWIG executable
 set(DOLFIN_SWIG_EXECUTABLE "@SWIG_EXECUTABLE@")
 
 # DOLFIN library
@@ -52,4 +59,4 @@ set(DOLFIN_VERSION_MICRO "@DOLFIN_VERSION_MICRO@")
 set(DOLFIN_VERSION_STR   "@DOLFIN_VERSION@")
 
 # The location of the UseDOLFIN.cmake file
-set(DOLFIN_USE_FILE "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake/UseDOLFIN.cmake")
+set(DOLFIN_USE_FILE "${DOLFIN_CMAKE_DIR}/UseDOLFIN.cmake")
