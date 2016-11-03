@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2016-11-02
+// Last changed: 2016-11-03
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -159,6 +159,22 @@ const std::map<unsigned int, std::vector<quadrature_rule>>&
 {
   dolfin_assert(part < num_parts());
   return _quadrature_rules_interface[part];
+}
+//-----------------------------------------------------------------------------
+quadrature_rule
+MultiMesh::quadrature_rule_interface_cut_cell(std::size_t part,
+					      unsigned int cell_index) const
+{
+  auto qr_map = quadrature_rule_interface(part);
+  quadrature_rule qr_flat;
+  for (auto qr: qr_map[cell_index])
+  {
+    qr_flat.first.insert(qr_flat.first.end(),
+			 qr.first.begin(), qr.first.end());
+    qr_flat.second.insert(qr_flat.second.end(),
+			  qr.second.begin(), qr.second.end());
+  }
+  return qr_flat;
 }
 //-----------------------------------------------------------------------------
 const std::map<unsigned int, std::vector<std::vector<double>>>&

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2016-06-02
+// Last changed: 2016-11-03
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -232,6 +232,31 @@ namespace dolfin
     ///         flattened array of quadrature weights.
     const std::map<unsigned int, std::vector<quadrature_rule> >&
     quadrature_rule_interface(std::size_t part) const;
+
+
+    /// Return quadrature rule for the interface of a given cut cell
+    /// on the given part
+    ///
+    /// *Arguments*
+    ///     part (std::size_t)
+    ///         The part number
+    ///     cell (unsigned int)
+    ///         The cell index
+    ///
+    /// *Returns*
+    ///     std::pair<std::vector<double>, std::vector<double> >
+    ///         A quadrature rule represented as a pair of a flattened
+    ///         array of quadrature points and a corresponding array
+    ///         of quadrature weights. An error is raised if the given
+    ///         cell is not in the map.
+    ///
+    /// Developer note: this function is mainly useful from Python and
+    /// could be replaced by a suitable typemap that would make the
+    /// previous more general function accessible from Python.
+    quadrature_rule
+    quadrature_rule_interface_cut_cell(std::size_t part,
+				       unsigned int cell_index) const;
+
 
     /// Return facet normals for the interface on the given part
     ///
