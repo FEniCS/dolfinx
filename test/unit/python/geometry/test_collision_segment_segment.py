@@ -1,6 +1,6 @@
 #!/usr/bin/env py.test
 
-"""Unit tests for the CollisionDetection class"""
+"""Unit tests for the CollisionPredicates class"""
 
 # Copyright (C) 2014 Anders Logg and August Johansson
   #
@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2016-05-23
+# Last changed: 2016-11-03
 
 import pytest
 from dolfin import *
@@ -69,7 +69,7 @@ def test_L_version_3():
     c = Point(0., 0.)
     d = Point(0., 1.)
 
-    assert CollisionDetection.collides_segment_segment_2d(a, b, c, d) == False
+    assert CollisionPredicates.collides_segment_segment_2d(a, b, c, d) == False
 
 @skip_in_parallel
 def test_aligned_version_1():

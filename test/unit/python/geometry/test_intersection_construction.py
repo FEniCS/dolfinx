@@ -71,6 +71,7 @@ def triangulation_to_mesh_3d(triangulation):
     return mesh
 
 @skip_in_parallel
+@pytest.mark.skipif(True, reason="Missing swig typemap")
 def test_triangulate_intersection_2d():
 
     # Create two meshes of the unit square
@@ -82,9 +83,10 @@ def test_triangulate_intersection_2d():
     dx = Point(0.278498, 0.546881)
     mesh_1.translate(dx)
 
+    # Exact volume of intersection
     exactvolume = (1 - abs(dx[0]))*(1 - abs(dx[1]))
 
-    # Compute triangulation
+    # Compute triangulation volume
     volume = 0
     for c0 in cells(mesh_0):
         for c1 in cells(mesh_1):
@@ -100,6 +102,7 @@ def test_triangulate_intersection_2d():
 
 @skip_in_parallel
 @pytest.mark.skipif(True, reason="Not implemented in 3D")
+@pytest.mark.skipif(True, reason="Missing swig typemap")
 def test_triangulate_intersection_2d_3d():
 
     # Note: this test will fail if the triangle mesh is aligned
@@ -149,6 +152,7 @@ def test_triangulate_intersection_2d_3d():
 
 @skip_in_parallel
 @pytest.mark.skipif(True, reason="Not implemented in 3D")
+@pytest.mark.skipif(True, reason="Missing swig typemap")
 def test_triangulate_intersection_3d():
 
     # Create two meshes of the unit cube

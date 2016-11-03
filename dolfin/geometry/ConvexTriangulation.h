@@ -1,4 +1,4 @@
-// Copyright (C) 2016 Anders Logg and August Johansson, Benjamin Kehlet
+// Copyright (C) 2016 Anders Logg, August Johansson and Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2016-06-06
+// Last changed: 2016-11-02
 
 #ifndef __CONVEX_TRIANGULATION
 #define __CONVEX_TRIANGULATION
@@ -29,40 +29,66 @@
 namespace dolfin
 {
 
-class ConvexTriangulation
-{
- public:
+  class ConvexTriangulation
+  {
+  public:
 
-  // Tdim independent wrapper
-  static std::vector<std::vector<Point>>
+    // Tdim independent wrapper
+    static std::vector<std::vector<Point>>
     triangulate(std::vector<Point> p,
                 std::size_t gdim,
                 std::size_t tdim);
 
+    // Triangulate using the Graham scan
+    static std::vector<std::vector<Point>>
+    triangulate_graham_scan(std::vector<Point> p,
+			    std::size_t gdim);
 
-  static std::vector<std::vector<Point>>
-  triangulate_graham_scan(std::vector<Point> p,
-                          std::size_t gdim);
+    // Triangulate using Bowyer-Watson (Delaunay)
+    static std::vector<std::vector<Point>>
+    triangulate_bowyer_watson(std::vector<Point> p,
+			      std::size_t gdim);
 
-  // TODO: Fix this.
-  // static std::vector<std::vector<Point>>
-  // triangulate_3d(std::vector<Point> p);
+    // TODO: Fix this.
+    // static std::vector<std::vector<Point>>
+    // triangulate_3d(std::vector<Point> p);
 
-  /// Check whether simplex is degenerate
-  /// FIXME: This function doesn't belong here
-  static bool is_degenerate(const std::vector<Point>& simplex)
-  {
-    return CHECK_CGAL(_is_degenerate(simplex),
-                      cgal_is_degenerate(simplex));
-  }
+  private:
 
- private:
-  // Implementation of is_degenerate
-  static bool _is_degenerate(std::vector<Point> simplex);
+    static std::vector<Point> unique_points(const std::vector<Point>& points);
 
+    // Help class for Bowyer Watson
+    struct Edge
+    {
+      Edge(const Point p0, const Point p1) : p0(p0), p1(p1) {}
+      Edge(const Edge& e) : p0(e.p0), p1(e.p1) {}
+      bool operator==(const Edge& e) const;
 
-};
+      Point p0;
+      Point p1;
+    };
 
+    // Help class for Bowyer Watson
+    struct Triangle
+    {
+      Triangle(const Point p0,
+	       const Point p1,
+	       const Point p2)
+	: p0(p0), p1(p1), p2(p2),
+	  e0(p0, p1), e1(p1, p2), e2(p2, p0)
+      {}
+      bool contains_vertex(const Point v) const;
+      bool circumcircle_contains(const Point v) const;
+      bool operator==(const Triangle& t) const;
+
+      Point p0;
+      Point p1;
+      Point p2;
+      Edge e0;
+      Edge e1;
+      Edge e2;
+    };
+  };
 
 } // end namespace dolfin
 #endif

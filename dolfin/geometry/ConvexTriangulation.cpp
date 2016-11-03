@@ -1,4 +1,4 @@
-// Copyright (C) 2016 Anders Logg and August Johansson, Benjamin Kehlet
+// Copyright (C) 2016 Anders Logg, August Johansson and Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2016-06-05
+// Last changed: 2016-11-02
 
 #include "ConvexTriangulation.h"
+#include "CollisionPredicates.h"
 #include "predicates.h"
 #include <algorithm>
 
-
+//-----------------------------------------------------------------------------
 namespace
 {
   struct point_strictly_less
@@ -47,27 +48,67 @@ namespace
   }
 }
 
-
 using namespace dolfin;
 
+//------------------------------------------------------------------------------
+bool ConvexTriangulation::Edge::operator==(const Edge& e) const
+{
+  return (p0 == e.p0 and p1 == e.p1) or
+    (p1 == e.p0 and p0 == e.p1);
+}
+//------------------------------------------------------------------------------
+bool ConvexTriangulation::Triangle::operator==(const Triangle& t) const
+{
+  return (p0 == t.p0 or p0 == t.p1 or p0 == t.p2) and
+    (p1 == t.p0 or p1 == t.p1 or p1 == t.p2) and
+    (p2 == t.p0 or p2 == t.p1 or p2 == t.p2);
+}
+//------------------------------------------------------------------------------
+bool ConvexTriangulation::Triangle::contains_vertex(const Point v) const
+{
+  return p0 == v or p1 == v or p2 == v;
+}
+//------------------------------------------------------------------------------
+bool ConvexTriangulation::Triangle::circumcircle_contains(const Point v) const
+{
+  const double ab = p0.squared_norm();
+  const double cd = p1.squared_norm();
+  const double ef = p2.squared_norm();
+
+  const double circum_x = (ab * (p2.y() - p1.y()) + cd * (p0.y() - p2.y()) + ef * (p1.y() - p0.y())) / (p0.x() * (p2.y() - p1.y()) + p1.x() * (p0.y() - p2.y()) + p2.x() * (p1.y() - p0.y())) / 2.;
+  const double circum_y = (ab * (p2.x() - p1.x()) + cd * (p0.x() - p2.x()) + ef * (p1.x() - p0.x())) / (p0.y() * (p2.x() - p1.x()) + p1.y() * (p0.x() - p2.x()) + p2.y() * (p1.x() - p0.x())) / 2.;
+
+  const Point c(circum_x, circum_y);
+  const double circum_radius = (p1 - c).norm();
+
+  const double dist = (v - c).norm();
+  return dist <= circum_radius;
+}
 //------------------------------------------------------------------------------
 std::vector<std::vector<Point>>
 ConvexTriangulation::triangulate(std::vector<Point> p,
                                  std::size_t gdim,
                                  std::size_t tdim)
 {
+  if (p.empty())
+    return std::vector<std::vector<Point>>();
+
   if (tdim == 2 && gdim == 2)
+  {
     return triangulate_graham_scan(p, gdim);
+    // return triangulate_bowyer_watson(p, gdim);
+  }
 
   if (tdim == 1)
   {
-    // FIXME: Is this correct?
-    if (p.size() > 2)
+    const std::vector<Point> unique_p = unique_points(p);
+
+    if (unique_p.size() > 2)
       dolfin_error("ConvexTriangulation.cpp",
                    "triangulate convex polyhedron",
                    "a convex polyhedron of topological dimension 1 can not have more then 2 points");
     std::vector<std::vector<Point>> t;
-    t.push_back(p);
+    t.push_back(unique_p);
     return t;
   }
 
@@ -77,9 +118,12 @@ ConvexTriangulation::triangulate(std::vector<Point> p,
 }
 //------------------------------------------------------------------------------
 std::vector<std::vector<Point>>
-ConvexTriangulation::triangulate_graham_scan(std::vector<Point> points,
+ConvexTriangulation::triangulate_graham_scan(std::vector<Point> input_points,
                                              std::size_t gdim)
 {
+  // Make sure the input points are unique
+  std::vector<Point> points = unique_points(input_points);
+
   if (points.size() < 3)
     return std::vector<std::vector<Point>>();
 
@@ -90,8 +134,6 @@ ConvexTriangulation::triangulate_graham_scan(std::vector<Point> points,
     triangulation.push_back(points);
     return triangulation;
   }
-
-  // NB: The input points should be unique.
 
   // Sometimes we can get an extra point on an edge: a-----c--b. This
   // point c may cause problems for the graham scan. To avoid this,
@@ -138,28 +180,159 @@ ConvexTriangulation::triangulate_graham_scan(std::vector<Point> points,
   for (std::size_t m = 0; m < order.size()-1; ++m)
   {
     // FIXME: We could consider only triangles with area > tolerance here.
-    triangulation.push_back(
-      { points[0],
-          points[order[m].second],
-         points[order[m + 1].second] });
+    triangulation.push_back({ points[0],
+	  points[order[m].second],
+	  points[order[m + 1].second] });
   }
 
   return triangulation;
 }
 //-----------------------------------------------------------------------------
- std::vector<std::vector<Point>> triangulate_3d(std::vector<Point> points)
- {
+std::vector<std::vector<Point>>
+ConvexTriangulation::triangulate_bowyer_watson(std::vector<Point> input_points,
+					       std::size_t gdim)
+{
+  // Delaunay triangulation using Bowyer-Watson
+  // https://en.wikipedia.org/wiki/Bowyer%E2%80%93Watson_algorithm
 
-   // Tolerance for coplanar points.
-   // How is this chosen?
-   const double coplanar_tol = 1000*DOLFIN_EPS_LARGE;
+  // Only do 2D for now
+  dolfin_assert(gdim == 2);
 
-   // Points forming the tetrahedral partitioning of the polyhedron
-   std::vector<std::vector<Point>> triangulation;
+  // Make sure the input points are unique
+  std::vector<Point> points = unique_points(input_points);
+
+  if (points.size() < 3)
+    return std::vector<std::vector<Point>>();
+
+  std::vector<std::vector<Point>> triangulation;
+
+  if (points.size() == 3)
+  {
+    triangulation.push_back(points);
+    return triangulation;
+  }
+
+  // Find point bounds
+  Point pmin = points[0];
+  Point pmax = points[0];
+
+  for (std::size_t i = 1; i < points.size(); ++i)
+  {
+    for (std::size_t d = 0; d < gdim; ++d)
+    {
+      pmin[d] = (pmin[d] > points[i][d]) ? pmin[d] : points[i][d];
+      pmax[d] = (pmax[d] < points[i][d]) ? pmax[d] : points[i][d];
+    }
+  }
+
+  // Find mid point
+  const Point pmid = (pmin + pmax) / 2;
+
+  // Find max bound
+  double dx;
+  for (std::size_t d = 0; d < gdim; ++d)
+    dx = std::max(dx, std::abs(pmin[d] - pmax[d]));
+
+  // Create super triangle containing all points
+  Point a;
+  a[0] = pmid[0] - 20*dx;
+  a[1] = pmid[1] - dx;
+  Point b;
+  b[0] = pmid[0];
+  b[1] = pmid[1] + 20*dx;
+  Point c;
+  c[0] = pmid[0] + 20*dx;
+  c[1] = pmid[1] - dx;
+
+  // Add the super triangle to the triangulation
+  std::vector<Triangle> triangles;
+  triangles.push_back(Triangle(a, b, c));
+
+  // FIXME: this check can be removed
+  for (const Point p: points)
+    dolfin_assert(CollisionPredicates::collides_triangle_point_2d(a,b,c, p));
+
+  for (const Point p: points)
+  {
+    std::vector<Triangle> bad_triangles;
+    std::vector<Edge> polygon;
+
+    for (const Triangle t: triangles)
+    {
+      if (t.circumcircle_contains(p))
+      {
+	bad_triangles.push_back(t);
+	polygon.push_back(t.e0);
+	polygon.push_back(t.e1);
+	polygon.push_back(t.e2);
+      }
+    }
+
+    triangles.erase(std::remove_if(triangles.begin(), triangles.end(), [bad_triangles](const Triangle &t)
+				   {
+				     for (const Triangle bt: bad_triangles)
+				       if (bt == t)
+					 return true;
+				     return false;
+				   }),
+		    triangles.end());
+
+    std::vector<Edge> bad_edges;
+
+    for (std::vector<Edge>::const_iterator e0 = polygon.begin(); e0 != polygon.end(); ++e0)
+      for (std::vector<Edge>::const_iterator e1 = polygon.begin(); e1 != polygon.end(); ++e1)
+      {
+	if (e0 == e1)
+	  continue;
+	if (*e0 == *e1)
+	{
+	  bad_edges.push_back(*e0);
+	  bad_edges.push_back(*e1);
+	}
+      }
+
+    polygon.erase(std::remove_if(polygon.begin(), polygon.end(), [bad_edges](Edge e)
+				 {
+				   for (const Edge be: bad_edges)
+				     if (be == e)
+				       return true;
+				   return false;
+				 }),
+		  polygon.end());
+
+    for (const Edge e: polygon)
+      triangles.push_back(Triangle(e.p0, e.p1, p));
+  } // end loop over points
+
+  triangles.erase(std::remove_if(triangles.begin(), triangles.end(), [a, b, c](Triangle t)
+  				 {
+  				   return t.contains_vertex(a) or
+  				     t.contains_vertex(b) or
+  				     t.contains_vertex(c);
+  				 }),
+		  end(triangles));
+
+  dolfin_assert(triangles.size());
+
+  triangulation.resize(triangles.size());
+  for (std::size_t i = 0; i < triangles.size(); ++i)
+    triangulation[i] = {{ triangles[i].p0, triangles[i].p1, triangles[i].p2 }};
+  return triangulation;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::vector<Point>> triangulate_3d(std::vector<Point> points)
+{
+
+  // Tolerance for coplanar points.
+  // How is this chosen?
+  const double coplanar_tol = 1000*DOLFIN_EPS_LARGE;
+
+  // Points forming the tetrahedral partitioning of the polyhedron
+  std::vector<std::vector<Point>> triangulation;
 
   if (points.size() == 4)
   {
-    // FIXME: Check that the volume is sufficiently large
+    // FIXME: Perhaps check that the volume is sufficiently large
     triangulation.push_back(points);
   }
   else if (points.size() > 4)
@@ -324,47 +497,31 @@ ConvexTriangulation::triangulate_graham_scan(std::vector<Point> points,
     }
   }
   return triangulation;
- }
-
-
+}
 //-----------------------------------------------------------------------------
-bool ConvexTriangulation::_is_degenerate(std::vector<Point> s)
+std::vector<Point>
+ConvexTriangulation::unique_points(const std::vector<Point>& input_points)
 {
-  bool is_degenerate = false;
+  // Create a unique list of points in the sense that |p-q|^2 > DOLFIN_EPS
 
-  switch (s.size())
+  std::vector<Point> points;
+
+  for (std::size_t i = 0; i < input_points.size(); ++i)
   {
-  case 0:
-    // FIXME: Is this correct? Is "nothing" degenerate?
-    is_degenerate = true;
-    break;
-  case 1:
-    /// FIXME: Is this correct? Can a point be degenerate?
-    is_degenerate = true;
-    break;
-  case 2:
+    bool unique = true;
+    for (std::size_t j = i+1; j < input_points.size(); ++j)
     {
-      is_degenerate = s[0]==s[1];
-      // FIXME: verify with orient2d
-      // double r[2] = { dolfin::rand(), dolfin::rand() };
-      // is_degenerate = orient2d(s[0].coordinates(), s[1].coordinates(), r) == 0;
-
-      // // FIXME: compare with ==
-      // dolfin_assert(is_degenerate == (s[0] == s[1]));
-
-      break;
+      if ((input_points[i] - input_points[j]).squared_norm() < DOLFIN_EPS)
+      {
+	unique = false;
+	break;
+      }
     }
-  case 3:
-    is_degenerate = orient2d(s[0].coordinates(),
-			     s[1].coordinates(),
-			     s[2].coordinates()) == 0;
-    break;
-  default:
-    dolfin_error("ConvexTriangulation.cpp",
-		 "_is_degenerate",
-		 "Only implemented for simplices of tdim 0, 1 and 2");
+    if (unique)
+      points.push_back(input_points[i]);
   }
 
-  return is_degenerate;
+  return points;
 }
-//------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------

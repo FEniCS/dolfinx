@@ -20,7 +20,7 @@
 import pytest
 import os
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel, fixture, tempdir
+from dolfin_utils.test import skip_in_parallel, fixture, tempdir, skip_if_not_HDF5
 
 # Currently supported XDMF file encoding
 encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)
@@ -396,6 +396,7 @@ def test_save_3D_vertex_function(tempdir, encoding):
 
 
 @pytest.mark.parametrize("encoding", encodings)
+@pytest.mark.skipif(True, reason="Missing swig typemap")
 def test_save_points_2D(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
@@ -417,6 +418,7 @@ def test_save_points_2D(tempdir, encoding):
 
 
 @pytest.mark.parametrize("encoding", encodings)
+@pytest.mark.skipif(True, reason="Missing swig typemap")
 def test_save_points_3D(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
@@ -465,6 +467,7 @@ def test_save_mesh_value_collection(tempdir, encoding):
 
 @skip_in_parallel
 @pytest.mark.parametrize("encoding", encodings)
+@skip_if_not_HDF5
 def test_quadratic_mesh(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
