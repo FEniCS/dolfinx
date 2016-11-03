@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-09-29
+// Last changed: 2016-11-03
 //
 // Developer note:
 //
@@ -33,7 +33,7 @@
 
 // Define or undefine this flag for enabling or disabling CGAL's exact
 // arithmetic
-//#define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
+#define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
 
 #ifndef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
 
@@ -45,6 +45,7 @@
 #define CGAL_CHECK_TOLERANCE 1e-10
 
 #include "Point.h"
+#include "predicates.h"
 #include <dolfin/log/log.h>
 #include <dolfin/math/basic.h>
 #include <vector>
@@ -82,43 +83,26 @@ namespace dolfin
     return result_dolfin;
   }
 
-
-  inline double Heron(double a, double b, double c)
-  {
-    // sort
-    if (b>a) std::swap(b,a);
-    if (c>b) std::swap(c,b);
-    if (b>a) std::swap(b,a);
-
-    const double s2 = (a+(b+c))*(c-(a-b))*(c+(a-b))*(a+(b-c));
-    if (s2 < 0)
-    {
-      std::cout << "Heron error, negative sqrt: " << s2 << " is to be replaced with 0" << std::endl;
-      if (std::abs(s2) < DOLFIN_EPS)
-	return 0;
-      else
-	exit(1);
-    }
-    return 0.25*std::sqrt( (a+(b+c))*(c-(a-b))*(c+(a-b))*(a+(b-c)) );
-  }
-
-  inline double volume(const std::vector<Point>& s)
+  inline double volume(std::vector<Point> s)
   {
     if (s.size() < 3)
       return 0;
     else if (s.size() == 3)
-      return Heron((s[0] - s[1]).norm(),
-		   (s[0] - s[2]).norm(),
-		   (s[1] - s[2]).norm());
+    {
+      return 0.5 * orient2d(s[0].coordinates(),
+			    s[1].coordinates(),
+			    s[2].coordinates());
+    }
     else if (s.size() == 4)
     {
-      dolfin_error("CGALExactArithmetic.h",
-		   "verify geometric predicate with exact types",
-		   "Volume of tetrahedron not implemented.");
+      return orient3d(s[0].coordinates(),
+		      s[1].coordinates(),
+		      s[2].coordinates(),
+		      s[3].coordinates()) / 6.;
     }
     else {
       dolfin_error("CGALExactArithmetic.h",
-		   "verify geometric predicate with exact types",
+		   "volume",
 		   "Volume of simplex with %s points not implemented.", s.size());
     }
     return 0;
@@ -486,13 +470,11 @@ namespace dolfin
   // Reference implementations of DOLFIN intersection triangulation
   // functions using CGAL exact arithmetic
   // ---------------------------------------------------------------------------
-
-  //-----------------------------------------------------------------------------
   inline
   std::vector<Point> cgal_intersection_segment_segment_2d(const Point& p0,
-							 const Point& p1,
-							 const Point& q0,
-							 const Point& q1)
+							  const Point& p1,
+							  const Point& q0,
+							  const Point& q1)
   {
     dolfin_assert(!is_degenerate(p0, p1));
     dolfin_assert(!is_degenerate(q0, q1));
@@ -504,7 +486,7 @@ namespace dolfin
     {
       if (const Point_2* p = boost::get<Point_2>(&*ii))
       {
-	return std::vector<dolfin::Point>{convert_from_cgal(*p)};
+	return std::vector<Point>{convert_from_cgal(*p)};
       }
       else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
       {
@@ -512,11 +494,13 @@ namespace dolfin
       }
       else
       {
-	dolfin::error("Unexpected behavior in CGALExactArithmetic triangulate_segment_segment_2d");
+	dolfin_error("CGALExactArithmetic.h",
+		     "cgal_intersection_segment_segment_2d",
+		     "Unexpected behavior");
       }
     }
 
-    return std::vector<dolfin::Point>();
+    return std::vector<Point>();
   }
 
 
@@ -529,7 +513,6 @@ namespace dolfin
     return cgal_intersection_segment_segment_2d(p0, p1, q0, q1);
   }
   //-----------------------------------------------------------------------------
-    //-----------------------------------------------------------------------------
   inline
   std::vector<Point> cgal_intersection_segment_interior_segment_interior_2d(const Point& p0,
                                                                             const Point& p1,
@@ -559,7 +542,9 @@ namespace dolfin
       }
       else
       {
-	dolfin::error("Unexpected behavior in CGALExactArithmetic cgal_intersection_segment_interior_segment_interior_2d");
+	dolfin_error("CGALExactArithmetic.h",
+		     "cgal_intersection_segment_interior_segment_interior_2d",
+		     "Unexpected behavior");
       }
     }
 
@@ -592,7 +577,7 @@ namespace dolfin
     {
       if (const Point_2* p = boost::get<Point_2>(&*ii))
       {
-	return std::vector<dolfin::Point>{convert_from_cgal(*p)};
+	return std::vector<Point>{convert_from_cgal(*p)};
       }
       else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
       {
@@ -600,10 +585,12 @@ namespace dolfin
       }
       else
       {
-	dolfin::error("Unexpected behavior in CGALExactArithmetic cgal_intersection_triangle_segment_2d");
+	dolfin_error("CGALExactArithmetic.h",
+		     "cgal_intersection_triangle_segment_2d",
+		     "Unexpected behavior");
       }
     }
-    return std::vector<dolfin::Point>();
+    return std::vector<Point>();
   }
   //-----------------------------------------------------------------------------
   inline
@@ -615,7 +602,6 @@ namespace dolfin
   {
     return cgal_intersection_triangle_segment_2d(p0, p1, p2, q0, q1);
   }
-  //-----------------------------------------------------------------------------
   //-----------------------------------------------------------------------------
   inline
   std::vector<Point> cgal_intersection_triangle_triangle_2d(const Point& p0,
@@ -630,7 +616,7 @@ namespace dolfin
 
     const Triangle_2 T0 = convert_to_cgal(p0, p1, p2);
     const Triangle_2 T1 = convert_to_cgal(q0, q1, q2);
-    std::vector<dolfin::Point> intersection;
+    std::vector<Point> intersection;
 
     if (const auto ii = CGAL::intersection(T0, T1))
     {
@@ -661,7 +647,9 @@ namespace dolfin
       }
       else
       {
-	dolfin::error("Unexpected behavior in CGALExactArithmetic cgal_intersection_triangle_triangle_2d");
+	dolfin_error("CGALExactArithmetic.h",
+		     "cgal_intersection_triangle_triangle_2d",
+		     "Unexpected behavior");
       }
 
       // NB: the parsing can return triangulation of size 0, for example
@@ -676,14 +664,16 @@ namespace dolfin
   }
   //----------------------------------------------------------------------------
   inline
-  std::vector<std::vector<Point>> cgal_triangulate_triangle_triangle_2d(const Point& p0,
-                                                                        const Point& p1,
-                                                                        const Point& p2,
-                                                                        const Point& q0,
-                                                                        const Point& q1,
-                                                                        const Point& q2)
+  std::vector<std::vector<Point>>
+  cgal_triangulate_triangle_triangle_2d(const Point& p0,
+					const Point& p1,
+					const Point& p2,
+					const Point& q0,
+					const Point& q1,
+					const Point& q2)
   {
-    std::vector<Point> intersection = cgal_intersection_triangle_triangle_2d(p0, p1, p2, q0, q1, q2);
+    const std::vector<Point> intersection
+      = cgal_intersection_triangle_triangle_2d(p0, p1, p2, q0, q1, q2);
 
     if (intersection.size() < 4)
     {
@@ -691,10 +681,10 @@ namespace dolfin
     }
     else
     {
-        dolfin_assert(intersection.size() == 4 ||
-		      intersection.size() == 5 ||
-		      intersection.size() == 6);
-        return triangulate_polygon(intersection);
+      dolfin_assert(intersection.size() == 4 ||
+		    intersection.size() == 5 ||
+		    intersection.size() == 6);
+      return triangulate_polygon(intersection);
     }
   }
 
