@@ -605,49 +605,48 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
 
-    mesh = UnitCubeMesh(8, 8, 8)
+    mesh = UnitCubeMesh(2, 2, 2)
+    mesh.init()
 
     mvc_v = MeshValueCollection('size_t', mesh, 0)
     mvc_v.rename("vertices", "vertices")
-    mvc_f = MeshValueCollection('size_t', mesh, 1)
+    mvc_e = MeshValueCollection('size_t', mesh, 1)
+    mvc_e.rename("edges", "edges")
+    mvc_f = MeshValueCollection('size_t', mesh, 2)
     mvc_f.rename("facets", "facets")
-    mvc_c = MeshValueCollection('size_t', mesh, 2)
+    mvc_c = MeshValueCollection('size_t', mesh, 3)
     mvc_c.rename("cells", "cells")
 
-    mvcs = [mvc_v, mvc_f, mvc_c]
+    mvcs = [mvc_v, mvc_e, mvc_f, mvc_c]
 
     filename = os.path.join(tempdir, "appended_mvcs.xdmf")
     xdmf = XDMFFile(mesh.mpi_comm(), filename)
 
     for mvc in mvcs:
-        mvc.set_value(0, 1)
-        mvc.set_value(1, 2)
-        mvc.set_value(2, 3)
+        for ent in entities(mesh, mvc.dim()):
+            mvc.set_value(ent.index(), ent.index())
         xdmf.write(mvc)
 
     del xdmf
 
     mvc_v_in = MeshValueCollection('size_t', mesh, 0)
-    mvc_f_in = MeshValueCollection('size_t', mesh, 1)
-    mvc_c_in = MeshValueCollection('size_t', mesh, 2)
+    mvc_e_in = MeshValueCollection('size_t', mesh, 1)
+    mvc_f_in = MeshValueCollection('size_t', mesh, 2)
+    mvc_c_in = MeshValueCollection('size_t', mesh, 3)
 
     xdmf = XDMFFile(mesh.mpi_comm(), filename)
     xdmf.read(mvc_v_in, "vertices")
+    xdmf.read(mvc_e_in, "edges")
     xdmf.read(mvc_f_in, "facets")
     xdmf.read(mvc_c_in, "cells")
 
-    mvcs_in = [mvc_v_in, mvc_f_in, mvc_c_in]
+    mvcs_in = [mvc_v_in, mvc_e_in, mvc_f_in, mvc_c_in]
 
     for (mvc, mvc_in) in zip(mvcs, mvcs_in):
-        mvc_data = mvc.values()
-        mvc_data_in = mvc_in.values()
+        mf = MeshFunction('size_t', mesh, mvc)
+        mf_in = MeshFunction('size_t', mesh, mvc_in)
 
-        assert(len(mvc_data) == len(mvc_data_in))
-
-        for j in range(len(mvc_data)):
-            idxs = mvc_data.keys()[j]
-            vals = mvc_data[idxs]
-            idxs_in = mvc_data.keys()[j] 
-            vals_in = mvc_data_in[idxs_in]
-            assert(idxs == idxs_in)
-            assert(vals == vals_in)
+        diff = 0
+        for ent in entities(mesh, mf.dim()):
+          diff += (mf_in[ent] - mf[ent])
+        assert(diff == 0)
