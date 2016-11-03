@@ -143,6 +143,17 @@ namespace dolfin
     ///         Number of dofs associated with given entity dimension
     virtual std::size_t num_entity_dofs(std::size_t dim) const;
 
+    /// Return the number of dofs for a subcomplex of a given entity dimension
+    ///
+    /// *Arguments*
+    ///     dim (std::size_t)
+    ///         Entity dimension
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         Number of dofs associated with subcomplex of given entity dimension
+    virtual std::size_t num_subcomplex_dofs(std::size_t dim) const;
+
     /// Return number of facet dofs
     ///
     /// *Returns*
@@ -228,6 +239,18 @@ namespace dolfin
     ///         The local entity index
     void tabulate_entity_dofs(std::vector<std::size_t>& dofs,
                               std::size_t dim, std::size_t local_entity) const;
+
+    /// Tabulate local-local mapping of dofs on subcomplex of entity (dim, local_entity)
+    ///
+    /// *Arguments*
+    ///     dofs (std::size_t)
+    ///         Degrees of freedom.
+    ///     dim (std::size_t)
+    ///         The entity dimension
+    ///     local_entity (std::size_t)
+    ///         The local entity index
+    void tabulate_subcomplex_dofs(std::vector<std::size_t>& dofs,
+                                  std::size_t dim, std::size_t local_entity) const;
 
     /// Tabulate globally supported dofs
     ///
