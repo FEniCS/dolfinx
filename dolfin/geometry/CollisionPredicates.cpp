@@ -539,15 +539,18 @@ bool CollisionPredicates::_collides_triangle_point_3d(Point p0,
 						      Point p2,
 						      Point point)
 {
-  // The determinant must be zero. Otherwise the point is not in the plane
   const double det = orient3d(p0.coordinates(),
 			      p1.coordinates(),
 			      p2.coordinates(),
 			      point.coordinates());
 
-  std::cout << __FUNCTION__ << ' ' << det <<std::endl;
+  // The determinant should be exactly zero for the point to be in the
+  // plane. However, if we take a triangle with vertices (0,0,1),
+  // (1,1,1), (0,1,0) and check the point (1./3,2./3,2./3) this gives
+  // a determinant of ~5.55112e-17
 
-  if (det < 0. or det > 0.)
+  //if (det < 0. or det > 0.)
+  if (std::abs(det) > DOLFIN_EPS)
     return false;
 
   // Check that the point is inside the triangle
@@ -559,7 +562,7 @@ bool CollisionPredicates::_collides_triangle_point_3d(Point p0,
   const double det_xy = std::abs(orient2d(p0.coordinates(),
 					  p1.coordinates(),
 					  p2.coordinates()));
-  std::cout << __FUNCTION__ << "  detxy " << det_xy <<std::endl;
+  // std::cout << __FUNCTION__ << "  detxy " << det_xy <<std::endl;
 
   std::array<Point, 3> xz = { Point(p0.x(), p0.z()),
 			      Point(p1.x(), p1.z()),
@@ -567,7 +570,7 @@ bool CollisionPredicates::_collides_triangle_point_3d(Point p0,
   const double det_xz = std::abs(orient2d(xz[0].coordinates(),
   					  xz[1].coordinates(),
   					  xz[2].coordinates()));
-  std::cout << __FUNCTION__ << "  detxz " << det_xz <<std::endl;
+  // std::cout << __FUNCTION__ << "  detxz " << det_xz <<std::endl;
 
   std::array<Point, 3> yz = { Point(p0.y(), p0.z()),
 			      Point(p1.y(), p1.z()),
@@ -575,7 +578,7 @@ bool CollisionPredicates::_collides_triangle_point_3d(Point p0,
   const double det_yz = std::abs(orient2d(yz[0].coordinates(),
   					  yz[1].coordinates(),
   					  yz[2].coordinates()));
-  std::cout << __FUNCTION__ << "  detyz " << det_yz <<std::endl;
+  // std::cout << __FUNCTION__ << "  detyz " << det_yz <<std::endl;
 
   // Check for degeneracy
   dolfin_assert(det_xy > DOLFIN_EPS or
@@ -604,11 +607,10 @@ bool CollisionPredicates::_collides_triangle_point_3d(Point p0,
     a[1] = point[2];
   }
 
-  std::cout << tri[0]<<' '<<tri[1]<<' '<<tri[2]<<"    " << ' ' << a << std::endl;
+  // std::cout << tri[0]<<' '<<tri[1]<<' '<<tri[2]<<"    " << ' ' << a << std::endl;
 
-  const bool col2d = collides_triangle_point_2d(tri[0], tri[1], tri[2], a);
-
-  std::cout << "2d collision " << col2d << std::endl;
+  // const bool collides_2d = collides_triangle_point_2d(tri[0], tri[1], tri[2], a);
+  // std::cout << "2d collision " << col2d << std::endl;
 
   return collides_triangle_point_2d(tri[0], tri[1], tri[2], a);
 }
