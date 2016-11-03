@@ -601,20 +601,25 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
 
 
 @pytest.mark.parametrize("encoding", encodings)
-def test_append_and_load_mesh_value_collections(tempdir, encoding):
+@pytest.mark.parametrize("data_type", data_types)
+def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
 
-    mesh = UnitCubeMesh(2, 2, 2)
-    mesh.init()
+    dtype_str, dtype = data_type
 
-    mvc_v = MeshValueCollection('size_t', mesh, 0)
+    mesh = UnitCubeMesh(8, 8, 8)
+    mesh.init()
+    for d in range(mesh.geometry().dim() + 1):
+        mesh.init_global(d)
+
+    mvc_v = MeshValueCollection(dtype_str, mesh, 0)
     mvc_v.rename("vertices", "vertices")
-    mvc_e = MeshValueCollection('size_t', mesh, 1)
+    mvc_e = MeshValueCollection(dtype_str, mesh, 1)
     mvc_e.rename("edges", "edges")
-    mvc_f = MeshValueCollection('size_t', mesh, 2)
+    mvc_f = MeshValueCollection(dtype_str, mesh, 2)
     mvc_f.rename("facets", "facets")
-    mvc_c = MeshValueCollection('size_t', mesh, 3)
+    mvc_c = MeshValueCollection(dtype_str, mesh, 3)
     mvc_c.rename("cells", "cells")
 
     mvcs = [mvc_v, mvc_e, mvc_f, mvc_c]
@@ -624,15 +629,15 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding):
 
     for mvc in mvcs:
         for ent in entities(mesh, mvc.dim()):
-            mvc.set_value(ent.index(), ent.index())
+            assert(mvc.set_value(ent.index(), dtype(ent.global_index())))
         xdmf.write(mvc)
 
     del xdmf
 
-    mvc_v_in = MeshValueCollection('size_t', mesh, 0)
-    mvc_e_in = MeshValueCollection('size_t', mesh, 1)
-    mvc_f_in = MeshValueCollection('size_t', mesh, 2)
-    mvc_c_in = MeshValueCollection('size_t', mesh, 3)
+    mvc_v_in = MeshValueCollection(dtype_str, mesh, 0)
+    mvc_e_in = MeshValueCollection(dtype_str, mesh, 1)
+    mvc_f_in = MeshValueCollection(dtype_str, mesh, 2)
+    mvc_c_in = MeshValueCollection(dtype_str, mesh, 3)
 
     xdmf = XDMFFile(mesh.mpi_comm(), filename)
     xdmf.read(mvc_v_in, "vertices")
@@ -643,10 +648,10 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding):
     mvcs_in = [mvc_v_in, mvc_e_in, mvc_f_in, mvc_c_in]
 
     for (mvc, mvc_in) in zip(mvcs, mvcs_in):
-        mf = MeshFunction('size_t', mesh, mvc)
-        mf_in = MeshFunction('size_t', mesh, mvc_in)
+        mf = MeshFunction(dtype_str, mesh, mvc)
+        mf_in = MeshFunction(dtype_str, mesh, mvc_in)
 
         diff = 0
         for ent in entities(mesh, mf.dim()):
-          diff += (mf_in[ent] - mf[ent])
+            diff += (mf_in[ent] - mf[ent])
         assert(diff == 0)
