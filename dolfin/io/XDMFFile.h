@@ -148,7 +148,31 @@ namespace dolfin
     /// HDF5 file, or storing the data inline as XML.
     ///
     /// *Arguments*
-    ///     mvc (_MeshValueCollection<std::size_t>_)
+    ///     mvc (_MeshValueCollection<bool>_)
+    ///         A list of points to save.
+    ///     encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
+    void write(const MeshValueCollection<bool>& mvc,
+               Encoding encoding=Encoding::HDF5);
+
+    /// Write out mesh value collection (subset) using an associated
+    /// HDF5 file, or storing the data inline as XML.
+    ///
+    /// *Arguments*
+    ///     mvc (_MeshValueCollection<int>_)
+    ///         A list of points to save.
+    ///     encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
+    void write(const MeshValueCollection<int>& mvc,
+               Encoding encoding=Encoding::HDF5);
+
+    /// Write out mesh value collection (subset) using an associated
+    /// HDF5 file, or storing the data inline as XML.
+    ///
+    /// *Arguments*
+    ///     mvc (_MeshValueCollection<int>_)
     ///         A list of points to save.
     ///     encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
@@ -156,8 +180,17 @@ namespace dolfin
     void write(const MeshValueCollection<std::size_t>& mvc,
                Encoding encoding=Encoding::HDF5);
 
-    // Read MeshValueCollection from file
-    void read(MeshValueCollection<std::size_t>& mvc, std::string name);
+    /// Write out mesh value collection (subset) using an associated
+    /// HDF5 file, or storing the data inline as XML.
+    ///
+    /// *Arguments*
+    ///     mvc (_MeshValueCollection<double>_)
+    ///         A list of points to save.
+    ///     encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
+    void write(const MeshValueCollection<double>& mvc,
+               Encoding encoding=Encoding::HDF5);
 
     /// Save a cloud of points to file using an associated HDF5 file,
     /// or storing the data inline as XML.
@@ -195,19 +228,28 @@ namespace dolfin
 
     /// Read first MeshFunction from file
     /// @param meshfunction
+    /// @param name
     void read(MeshFunction<bool>& meshfunction, std::string name="");
 
     /// Read first MeshFunction from file
     /// @param meshfunction
+    /// @param name
     void read(MeshFunction<int>& meshfunction, std::string name="");
 
     /// Read first MeshFunction from file
     /// @param meshfunction
+    /// @param name
     void read(MeshFunction<std::size_t>& meshfunction, std::string name="");
 
     /// Read first MeshFunction from file
     /// @param meshfunction
+    /// @param name
     void read(MeshFunction<double>& meshfunction, std::string name="");
+
+    /// Read MeshValueCollection from file
+    void read(MeshValueCollection<int>& mvc, std::string name);
+    void read(MeshValueCollection<std::size_t>& mvc, std::string name);
+    void read(MeshValueCollection<double>& mvc, std::string name);
 
   private:
 
@@ -215,6 +257,11 @@ namespace dolfin
     template <typename T>
     void write_mesh_value_collection(const MeshValueCollection<T>& mvc,
                                      Encoding encoding);
+
+    // Generic MVC reader
+    template <typename T>
+    void read_mesh_value_collection(MeshValueCollection<T>& mvc,
+                                    std::string name);
 
     // Remap meshfunction data, scattering data to appropriate processes
     template <typename T>
@@ -279,7 +326,7 @@ namespace dolfin
                               const std::vector<std::int64_t> dimensions,
                               const std::string number_type="");
 
-    // Calculate set of entities of dimension cell_dim which should are duplicated
+    // Calculate set of entities of dimension cell_dim which are duplicated
     // on other processes and should not be output on this process
     static std::set<unsigned int> compute_nonlocal_entities(const Mesh& mesh,
                                                             int cell_dim);
@@ -324,7 +371,8 @@ namespace dolfin
 
     // Generic MeshFunction writer
     template<typename T>
-    void write_mesh_function(const MeshFunction<T>& meshfunction, Encoding encoding);
+    void write_mesh_function(const MeshFunction<T>& meshfunction,
+                             Encoding encoding);
 
     // Get data width - normally the same as u.value_size(), but expand for 2D
     // vector/tensor because XDMF presents everything as 3D
@@ -351,11 +399,6 @@ namespace dolfin
     // enumeration
     static std::string xdmf_format_str(Encoding encoding)
     { return (encoding == XDMFFile::Encoding::HDF5) ? "HDF" : "XML"; }
-
-    // Write MVC to ascii string to store in XDMF XML file
-    template <typename T>
-    void write_ascii_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
-                                             std::string data_name);
 
     static std::string vtk_cell_type_str(CellType::Type cell_type, int order);
 

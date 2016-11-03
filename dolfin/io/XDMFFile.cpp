@@ -397,7 +397,25 @@ void XDMFFile::write(const MeshFunction<double>& meshfunction,
   write_mesh_function(meshfunction, encoding);
 }
 //-----------------------------------------------------------------------------
+void XDMFFile::write(const MeshValueCollection<bool>& mvc,
+                     Encoding encoding)
+{
+  write_mesh_value_collection(mvc, encoding);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const MeshValueCollection<int>& mvc,
+                     Encoding encoding)
+{
+  write_mesh_value_collection(mvc, encoding);
+}
+//-----------------------------------------------------------------------------
 void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
+                     Encoding encoding)
+{
+  write_mesh_value_collection(mvc, encoding);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const MeshValueCollection<double>& mvc,
                      Encoding encoding)
 {
   write_mesh_value_collection(mvc, encoding);
@@ -513,7 +531,7 @@ void XDMFFile::write_mesh_value_collection(const MeshValueCollection<T>& mvc,
     = vtk_cell_type_str(mesh->type().entity_type(cell_dim), mesh->geometry().degree());
   const std::int64_t num_vertices_per_cell = mesh->type().num_vertices(cell_dim);
 
-  const std::map<std::pair<std::size_t, std::size_t>, std::size_t>& values
+  const std::map<std::pair<std::size_t, std::size_t>, T>& values
     = mvc.values();
   const std::int64_t num_cells = values.size();
   const std::int64_t num_cells_global = MPI::sum(mesh->mpi_comm(), num_cells);
@@ -574,7 +592,24 @@ void XDMFFile::write_mesh_value_collection(const MeshValueCollection<T>& mvc,
   ++_counter;
 }
 //-----------------------------------------------------------------------------
+void XDMFFile::read(MeshValueCollection<int>& mvc, std::string name)
+{
+  read_mesh_value_collection(mvc, name);
+}
+//-----------------------------------------------------------------------------
 void XDMFFile::read(MeshValueCollection<std::size_t>& mvc, std::string name)
+{
+  read_mesh_value_collection(mvc, name);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::read(MeshValueCollection<double>& mvc, std::string name)
+{
+  read_mesh_value_collection(mvc, name);
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+void XDMFFile::read_mesh_value_collection
+(MeshValueCollection<T>& mvc, std::string name)
 {
   // Load XML doc from file
   pugi::xml_document xml_doc;
@@ -632,8 +667,8 @@ void XDMFFile::read(MeshValueCollection<std::size_t>& mvc, std::string name)
   dolfin_assert(attribute_node);
   pugi::xml_node attribute_data_node = attribute_node.child("DataItem");
   dolfin_assert(attribute_data_node);
-  std::vector<std::size_t> values_data
-    = get_dataset<std::size_t>(_mpi_comm, attribute_data_node, parent_path);
+  std::vector<T> values_data
+    = get_dataset<T>(_mpi_comm, attribute_data_node, parent_path);
 
   // Ensure the mesh dimension is initialised
   mesh->init(cell_dim);
@@ -684,8 +719,8 @@ void XDMFFile::read(MeshValueCollection<std::size_t>& mvc, std::string name)
   }
 
   // Send data from MeshValueCollection to sorting process
-  std::vector<std::vector<std::size_t>> send_data(num_processes);
-  std::vector<std::vector<std::size_t>> recv_data(num_processes);
+  std::vector<std::vector<T>> send_data(num_processes);
+  std::vector<std::vector<T>> recv_data(num_processes);
   // Reset send/recv arrays
   send_entities = std::vector<std::vector<std::int32_t>>(num_processes);
   recv_entities = std::vector<std::vector<std::int32_t>>(num_processes);
@@ -708,7 +743,7 @@ void XDMFFile::read(MeshValueCollection<std::size_t>& mvc, std::string name)
   MPI::all_to_all(_mpi_comm, send_data, recv_data);
 
   // Reset send arrays
-  send_data = std::vector<std::vector<std::size_t>>(num_processes);
+  send_data = std::vector<std::vector<T>>(num_processes);
   send_entities = std::vector<std::vector<std::int32_t>>(num_processes);
 
   // Locate entity in map, and send back to data to owning processes
