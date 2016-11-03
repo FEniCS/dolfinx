@@ -78,9 +78,9 @@ namespace dolfin
 				       std::size_t gdim);
 
     /// Check whether segment p0-p1 collides with point (1D version)
-    static bool collides_segment_point_1d(const Point& p0,
-					  const Point& p1,
-					  const Point& point)
+    static bool collides_segment_point_1d(double p0,
+					  double p1,
+					  double point)
     {
       // FIXME: Skip CGAL for now
       return _collides_segment_point_1d(p0, p1, point);
@@ -327,6 +327,10 @@ namespace dolfin
   private:
 
     // Implementation of collision detection predicates
+
+    static bool _collides_segment_point_1d(double p0,
+					   double p1,
+					   double point);
 
     static bool _collides_segment_point_2d(Point p0,
 					   Point p1,

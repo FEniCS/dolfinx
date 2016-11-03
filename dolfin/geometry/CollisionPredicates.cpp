@@ -68,7 +68,7 @@ bool CollisionPredicates::collides(const MeshEntity& entity,
 
   // Pick correct specialized implementation
   if (tdim == 1 && gdim == 1)
-    return collides_segment_point_1d(g.point(v[0]), g.point(v[1]), point);
+    return collides_segment_point_1d(g.point(v[0])[0], g.point(v[1])[0], point[0]);
 
   if (tdim == 1 && gdim == 2)
     return collides_segment_point_2d(g.point(v[0]), g.point(v[1]), point);
@@ -193,7 +193,7 @@ bool CollisionPredicates::collides_segment_point(const Point& p0,
   switch (gdim)
   {
   case 1:
-    return collides_segment_point_1d(p0, p1, point);
+    return collides_segment_point_1d(p0[0], p1[0], point[0]);
   case 2:
     return collides_segment_point_2d(p0, p1, point);
   case 3:
@@ -312,13 +312,13 @@ bool CollisionPredicates::is_degenerate(const std::vector<Point>& simplex,
 //-----------------------------------------------------------------------------
 // Implementation of private members
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_segment_point_1d(Point p0,
-						     Point p1,
-						     Point point)
+bool CollisionPredicates::_collides_segment_point_1d(double p0,
+						     double p1,
+						     double point)
 {
-  if (p0[0] > p1[0])
+  if (p0 > p1)
     std::swap(p0, p1);
-  return p0[0] <= point[0] and point[0] <= p1[0];
+  return p0 <= point and point <= p1;
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_segment_point_2d(Point p0,
