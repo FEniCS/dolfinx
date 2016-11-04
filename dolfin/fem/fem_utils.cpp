@@ -29,7 +29,7 @@ using namespace dolfin;
 
 
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> dolfin::aggregate_subcomplex_dofs(
+std::vector<dolfin::la_index> dolfin::aggregate_entity_closure_dofs(
     const FunctionSpace& space,
     std::size_t entity_dim,
     const std::vector<std::size_t> & entity_indices)
@@ -42,7 +42,7 @@ std::vector<dolfin::la_index> dolfin::aggregate_subcomplex_dofs(
 
   // Get some dimensions
   const std::size_t top_dim = mesh.topology().dim();
-  const std::size_t dofs_per_entity = dofmap.num_subcomplex_dofs(entity_dim);
+  const std::size_t dofs_per_entity = dofmap.num_entity_closure_dofs(entity_dim);
   const std::size_t num_mesh_entities = mesh.num_entities(entity_dim);
 
   // Initialize entity to cell connections
@@ -79,7 +79,7 @@ std::vector<dolfin::la_index> dolfin::aggregate_subcomplex_dofs(
       = dofmap.cell_dofs(cell.index());
 
     // Tabulate local to local map of dofs on local entity
-    dofmap.tabulate_subcomplex_dofs(
+    dofmap.tabulate_entity_closure_dofs(
                 local_to_local_map,
 				entity_dim, local_entity_ind);
 
@@ -95,7 +95,7 @@ std::vector<dolfin::la_index> dolfin::aggregate_subcomplex_dofs(
   return entity_to_dofs;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> dolfin::aggregate_subcomplex_dofs(
+std::vector<dolfin::la_index> dolfin::aggregate_entity_closure_dofs(
     const FunctionSpace& space,
     std::size_t entity_dim)
 {
@@ -107,7 +107,7 @@ std::vector<dolfin::la_index> dolfin::aggregate_subcomplex_dofs(
 
   // Get some dimensions
   const std::size_t top_dim = mesh.topology().dim();
-  const std::size_t dofs_per_entity = dofmap.num_subcomplex_dofs(entity_dim);
+  const std::size_t dofs_per_entity = dofmap.num_entity_closure_dofs(entity_dim);
   const std::size_t num_mesh_entities = mesh.num_entities(entity_dim);
 
   // Initialize entity to cell connections
@@ -141,7 +141,7 @@ std::vector<dolfin::la_index> dolfin::aggregate_subcomplex_dofs(
       = dofmap.cell_dofs(cell.index());
 
     // Tabulate local to local map of dofs on local entity
-    dofmap.tabulate_subcomplex_dofs(
+    dofmap.tabulate_entity_closure_dofs(
                 local_to_local_map,
 				entity_dim, local_entity_ind);
 

@@ -28,62 +28,60 @@ namespace dolfin
   class FunctionSpace;
 
 
-  /// Return a map between entities marked in a meshfunction and dof indices
+  /// Return the dof indices associated with entities of given dimension and entity indices
   ///
   /// *Arguments*
-  ///     num_marked_entities (std::size_t& )
-  ///         Return value: the number of entities in subdomains marked with subdomain_id
-  ///     marked_to_mesh_indices (std::vector<std::size_t>&)
-  ///         Return value: the mesh index of each marked entity
-  ///     entity_to_dofs (std::vector<dolfin::la_index>&)
-  ///         Return value: The set of dofs associated with marked entities,
-  ///         with array dimension num_marked_entities * dofs_per_entity
-  ///     space (_FunctionSpace_)
-  ///         The FunctionSpace for which the entity to
-  ///         dof map should be computed for
-  ///     subdomains (_MeshFunction_)
-  ///         Subdomain markers of any entity dimension, on the
-  ///         same mesh as the function space
-  ///     subdomain_id (std::size_t)
-  ///         Marker value to select entities from subdomain markers
+  ///     entity_dim (std::size_t)
+  ///         Entity dimension.
+  ///     entity_indices (std::vector<dolfin::la_index>&)
+  ///         Entity indices to get dofs for.
   /// *Returns*
-  ///     num_marked_entities, marked_to_mesh_entities, entity_to_dofs
-  /*
-  void entity_to_dof_map(std::size_t& num_marked_entities,
-     std::vector<std::size_t>& marked_to_mesh_indices,
-     std::vector<dolfin::la_index>& entity_to_dofs,
-     const FunctionSpace& space,
-     const MeshFunction<std::size_t>& subdomains,
-     std::size_t subdomain_id);
-  */
-/*
-  // Usage:
-  int num_dofs_per_entity = entity_to_dofs.size() / marked_to_mesh_indices.size();
-  for (int i=0; i < marked_to_mesh_indices.size(); ++i)
-  {
-    int j = marked_to_mesh_indices[i];
-    for (int k=0; k < num_dofs_per_entity; ++k)
-      int dof = entity_to_dofs[i * num_dofs_per_entity + k];
-  }
-*/
-//f.vector()[entitiy_to_dofs] = g.vector()[entitiy_to_dofs]
-
+  ///     std::vector<dolfin::la_index>
+  ///         Dof indices associated with selected entities.
   std::vector<dolfin::la_index>
     aggregate_entity_dofs(const FunctionSpace& space,
                       std::size_t entity_dim,
                       const std::vector<std::size_t> & entity_indices);
 
+  /// Return the dof indices associated with all entities of given dimension
+  ///
+  /// *Arguments*
+  ///     entity_dim (std::size_t)
+  ///         Entity dimension.
+  /// *Returns*
+  ///     std::vector<dolfin::la_index>
+  ///         Dof indices associated with selected entities.
   std::vector<dolfin::la_index>
     aggregate_entity_dofs(const FunctionSpace& space,
                       std::size_t entity_dim);
 
+  /// Return the dof indices associated with the closure of entities of
+  /// given dimension and entity indices
+  ///
+  /// *Arguments*
+  ///     entity_dim (std::size_t)
+  ///         Entity dimension.
+  ///     entity_indices (std::vector<dolfin::la_index>&)
+  ///         Entity indices to get dofs for.
+  /// *Returns*
+  ///     std::vector<dolfin::la_index>
+  ///         Dof indices associated with selected entities and their closure.
   std::vector<dolfin::la_index>
-    aggregate_subcomplex_dofs(const FunctionSpace& space,
+    aggregate_entity_closure_dofs(const FunctionSpace& space,
                       std::size_t entity_dim,
                       const std::vector<std::size_t> & entity_indices);
 
+  /// Return the dof indices associated with the closure of all entities of
+  /// given dimension
+  ///
+  /// *Arguments*
+  ///     entity_dim (std::size_t)
+  ///         Entity dimension.
+  /// *Returns*
+  ///     std::vector<dolfin::la_index>
+  ///         Dof indices associated with selected entities and their closure.
   std::vector<dolfin::la_index>
-    aggregate_subcomplex_dofs(const FunctionSpace& space,
+    aggregate_entity_closure_dofs(const FunctionSpace& space,
                       std::size_t entity_dim);
 
   /// Return a map between dof indices and vertex indices

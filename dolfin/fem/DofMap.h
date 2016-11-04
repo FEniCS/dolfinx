@@ -143,7 +143,7 @@ namespace dolfin
     ///         Number of dofs associated with given entity dimension
     virtual std::size_t num_entity_dofs(std::size_t dim) const;
 
-    /// Return the number of dofs for a subcomplex of a given entity dimension
+    /// Return the number of dofs for the closure of an entity of given dimension
     ///
     /// *Arguments*
     ///     dim (std::size_t)
@@ -151,8 +151,8 @@ namespace dolfin
     ///
     /// *Returns*
     ///     std::size_t
-    ///         Number of dofs associated with subcomplex of given entity dimension
-    virtual std::size_t num_subcomplex_dofs(std::size_t dim) const;
+    ///         Number of dofs associated with closure of an entity of given dimension
+    virtual std::size_t num_entity_closure_dofs(std::size_t dim) const;
 
     /// Return number of facet dofs
     ///
@@ -218,6 +218,58 @@ namespace dolfin
                                                &_dofmap[index]);
     }
 
+    /// Return the dof indices associated with entities of given dimension and entity indices
+    ///
+    /// *Arguments*
+    ///     entity_dim (std::size_t)
+    ///         Entity dimension.
+    ///     entity_indices (std::vector<dolfin::la_index>&)
+    ///         Entity indices to get dofs for.
+    /// *Returns*
+    ///     std::vector<dolfin::la_index>
+    ///         Dof indices associated with selected entities.
+    std::vector<dolfin::la_index>
+      entity_dofs(const Mesh& mesh, std::size_t entity_dim,
+                  const std::vector<std::size_t> & entity_indices) const;
+
+    /// Return the dof indices associated with all entities of given dimension
+    ///
+    /// *Arguments*
+    ///     entity_dim (std::size_t)
+    ///         Entity dimension.
+    /// *Returns*
+    ///     std::vector<dolfin::la_index>
+    ///         Dof indices associated with selected entities.
+    std::vector<dolfin::la_index>
+      entity_dofs(const Mesh& mesh, std::size_t entity_dim) const;
+
+    /// Return the dof indices associated with the closure of entities of
+    /// given dimension and entity indices
+    ///
+    /// *Arguments*
+    ///     entity_dim (std::size_t)
+    ///         Entity dimension.
+    ///     entity_indices (std::vector<dolfin::la_index>&)
+    ///         Entity indices to get dofs for.
+    /// *Returns*
+    ///     std::vector<dolfin::la_index>
+    ///         Dof indices associated with selected entities and their closure.
+    std::vector<dolfin::la_index>
+      entity_closure_dofs(const Mesh& mesh, std::size_t entity_dim,
+                          const std::vector<std::size_t> & entity_indices) const;
+
+    /// Return the dof indices associated with the closure of all entities of
+    /// given dimension
+    ///
+    /// *Arguments*
+    ///     entity_dim (std::size_t)
+    ///         Entity dimension.
+    /// *Returns*
+    ///     std::vector<dolfin::la_index>
+    ///         Dof indices associated with selected entities and their closure.
+    std::vector<dolfin::la_index>
+      entity_closure_dofs(const Mesh& mesh, std::size_t entity_dim) const;
+
     /// Tabulate local-local facet dofs
     ///
     /// *Arguments*
@@ -240,7 +292,7 @@ namespace dolfin
     void tabulate_entity_dofs(std::vector<std::size_t>& dofs,
                               std::size_t dim, std::size_t local_entity) const;
 
-    /// Tabulate local-local mapping of dofs on subcomplex of entity (dim, local_entity)
+    /// Tabulate local-local mapping of dofs on closure of entity (dim, local_entity)
     ///
     /// *Arguments*
     ///     dofs (std::size_t)
@@ -249,8 +301,8 @@ namespace dolfin
     ///         The entity dimension
     ///     local_entity (std::size_t)
     ///         The local entity index
-    void tabulate_subcomplex_dofs(std::vector<std::size_t>& dofs,
-                                  std::size_t dim, std::size_t local_entity) const;
+    void tabulate_entity_closure_dofs(std::vector<std::size_t>& dofs,
+                                      std::size_t dim, std::size_t local_entity) const;
 
     /// Tabulate globally supported dofs
     ///

@@ -170,10 +170,10 @@ std::size_t DofMap::num_entity_dofs(std::size_t dim) const
   return _ufc_dofmap->num_entity_dofs(dim);
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMap::num_subcomplex_dofs(std::size_t dim) const
+std::size_t DofMap::num_entity_closure_dofs(std::size_t dim) const
 {
   dolfin_assert(_ufc_dofmap);
-  return _ufc_dofmap->num_subcomplex_dofs(dim);
+  return _ufc_dofmap->num_entity_closure_dofs(dim);
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_facet_dofs() const
@@ -197,6 +197,229 @@ const std::set<int>& DofMap::neighbours() const
   return _neighbours;
 }
 //-----------------------------------------------------------------------------
+std::vector<dolfin::la_index> DofMap::entity_closure_dofs(
+    const Mesh& mesh,
+    std::size_t entity_dim,
+    const std::vector<std::size_t> & entity_indices) const
+{
+  // Get some dimensions
+  const std::size_t top_dim = mesh.topology().dim();
+  const std::size_t dofs_per_entity = num_entity_closure_dofs(entity_dim);
+  const std::size_t num_mesh_entities = mesh.num_entities(entity_dim);
+
+  // Initialize entity to cell connections
+  mesh.init(entity_dim, top_dim);
+
+  // Allocate the the array to return
+  const std::size_t num_marked_entities = entity_indices.size();
+  std::vector<dolfin::la_index> entity_to_dofs(num_marked_entities * dofs_per_entity);
+
+  // Allocate data for tabulating local to local map
+  std::vector<std::size_t> local_to_local_map(dofs_per_entity);
+
+  // Iterate over entities
+  std::size_t local_entity_ind = 0;
+  for (std::size_t i = 0; i < num_marked_entities; ++i)
+  {
+    MeshEntity entity(mesh, entity_dim, entity_indices[i]);
+
+    // Get the first cell connected to the entity
+    const Cell cell(mesh, entity.entities(top_dim)[0]);
+
+    // Find local entity number
+    for (std::size_t local_i = 0; local_i < cell.num_entities(entity_dim); ++local_i)
+    {
+      if (cell.entities(entity_dim)[local_i] == entity.index())
+      {
+        local_entity_ind = local_i;
+        break;
+      }
+    }
+
+    // Get all cell dofs
+    const auto cell_dof_list = cell_dofs(cell.index());
+
+    // Tabulate local to local map of dofs on local entity
+    tabulate_entity_closure_dofs(local_to_local_map,
+                                 entity_dim, local_entity_ind);
+
+    // Fill local dofs for the entity
+    for (std::size_t local_dof = 0; local_dof < dofs_per_entity; ++local_dof)
+    {
+      // Map dofs
+      const dolfin::la_index global_dof
+        = cell_dof_list[local_to_local_map[local_dof]];
+      entity_to_dofs[dofs_per_entity*i + local_dof] = global_dof;
+    }
+  }
+  return entity_to_dofs;
+}
+//-----------------------------------------------------------------------------
+std::vector<dolfin::la_index> DofMap::entity_closure_dofs(
+    const Mesh& mesh,
+    std::size_t entity_dim) const
+{
+  // Get some dimensions
+  const std::size_t top_dim = mesh.topology().dim();
+  const std::size_t dofs_per_entity = num_entity_closure_dofs(entity_dim);
+  const std::size_t num_mesh_entities = mesh.num_entities(entity_dim);
+
+  // Initialize entity to cell connections
+  mesh.init(entity_dim, top_dim);
+
+  // Allocate the the array to return
+  std::vector<dolfin::la_index> entity_to_dofs(num_mesh_entities * dofs_per_entity);
+
+  // Allocate data for tabulating local to local map
+  std::vector<std::size_t> local_to_local_map(dofs_per_entity);
+
+  // Iterate over entities
+  std::size_t local_entity_ind = 0;
+  for (MeshEntityIterator entity(mesh, entity_dim); !entity.end(); ++entity)
+  {
+    // Get the first cell connected to the entity
+    const Cell cell(mesh, entity->entities(top_dim)[0]);
+
+    // Find local entity number
+    for (std::size_t local_i = 0; local_i < cell.num_entities(entity_dim); ++local_i)
+    {
+      if (cell.entities(entity_dim)[local_i] == entity->index())
+      {
+        local_entity_ind = local_i;
+        break;
+      }
+    }
+
+    // Get all cell dofs
+    const auto cell_dof_list = cell_dofs(cell.index());
+
+    // Tabulate local to local map of dofs on local entity
+    tabulate_entity_closure_dofs(local_to_local_map,
+                                 entity_dim, local_entity_ind);
+
+    // Fill local dofs for the entity
+    for (std::size_t local_dof = 0; local_dof < dofs_per_entity; ++local_dof)
+    {
+      // Map dofs
+      const dolfin::la_index global_dof
+        = cell_dof_list[local_to_local_map[local_dof]];
+      entity_to_dofs[dofs_per_entity*entity->index() + local_dof] = global_dof;
+    }
+  }
+  return entity_to_dofs;
+}
+//-----------------------------------------------------------------------------
+std::vector<dolfin::la_index> DofMap::entity_dofs(
+    const Mesh& mesh,
+    std::size_t entity_dim,
+    const std::vector<std::size_t> & entity_indices) const
+{
+  // Get some dimensions
+  const std::size_t top_dim = mesh.topology().dim();
+  const std::size_t dofs_per_entity = num_entity_dofs(entity_dim);
+
+  // Initialize entity to cell connections
+  mesh.init(entity_dim, top_dim);
+
+  // Allocate the the array to return
+  const std::size_t num_marked_entities = entity_indices.size();
+  std::vector<dolfin::la_index> entity_to_dofs(num_marked_entities * dofs_per_entity);
+
+  // Allocate data for tabulating local to local map
+  std::vector<std::size_t> local_to_local_map(dofs_per_entity);
+
+  // Iterate over entities
+  std::size_t local_entity_ind = 0;
+  for (std::size_t i = 0; i < num_marked_entities; ++i)
+  {
+    MeshEntity entity(mesh, entity_dim, entity_indices[i]);
+
+    // Get the first cell connected to the entity
+    const Cell cell(mesh, entity.entities(top_dim)[0]);
+
+    // Find local entity number
+    for (std::size_t local_i = 0; local_i < cell.num_entities(entity_dim); ++local_i)
+    {
+      if (cell.entities(entity_dim)[local_i] == entity.index())
+      {
+        local_entity_ind = local_i;
+        break;
+      }
+    }
+
+    // Get all cell dofs
+    const auto cell_dof_list = cell_dofs(cell.index());
+
+    // Tabulate local to local map of dofs on local entity
+    tabulate_entity_dofs(local_to_local_map,
+                         entity_dim, local_entity_ind);
+
+    // Fill local dofs for the entity
+    for (std::size_t local_dof = 0; local_dof < dofs_per_entity; ++local_dof)
+    {
+      // Map dofs
+      const dolfin::la_index global_dof
+        = cell_dof_list[local_to_local_map[local_dof]];
+      entity_to_dofs[dofs_per_entity*i + local_dof] = global_dof;
+    }
+  }
+  return entity_to_dofs;
+}
+//-----------------------------------------------------------------------------
+std::vector<dolfin::la_index> DofMap::entity_dofs(
+    const Mesh& mesh,
+    std::size_t entity_dim) const
+{
+  // Get some dimensions
+  const std::size_t top_dim = mesh.topology().dim();
+  const std::size_t dofs_per_entity = num_entity_dofs(entity_dim);
+  const std::size_t num_mesh_entities = mesh.num_entities(entity_dim);
+
+  // Initialize entity to cell connections
+  mesh.init(entity_dim, top_dim);
+
+  // Allocate the the array to return
+  std::vector<dolfin::la_index> entity_to_dofs(num_mesh_entities * dofs_per_entity);
+
+  // Allocate data for tabulating local to local map
+  std::vector<std::size_t> local_to_local_map(dofs_per_entity);
+
+  // Iterate over entities
+  std::size_t local_entity_ind = 0;
+  for (MeshEntityIterator entity(mesh, entity_dim); !entity.end(); ++entity)
+  {
+    // Get the first cell connected to the entity
+    const Cell cell(mesh, entity->entities(top_dim)[0]);
+
+    // Find local entity number
+    for (std::size_t local_i = 0; local_i < cell.num_entities(entity_dim); ++local_i)
+    {
+      if (cell.entities(entity_dim)[local_i] == entity->index())
+      {
+        local_entity_ind = local_i;
+        break;
+      }
+    }
+
+    // Get all cell dofs
+    const auto cell_dof_list = cell_dofs(cell.index());
+
+    // Tabulate local to local map of dofs on local entity
+    tabulate_entity_dofs(local_to_local_map,
+                         entity_dim, local_entity_ind);
+
+    // Fill local dofs for the entity
+    for (std::size_t local_dof = 0; local_dof < dofs_per_entity; ++local_dof)
+    {
+      // Map dofs
+      const dolfin::la_index global_dof
+        = cell_dof_list[local_to_local_map[local_dof]];
+      entity_to_dofs[dofs_per_entity*entity->index() + local_dof] = global_dof;
+    }
+  }
+  return entity_to_dofs;
+}
+//-----------------------------------------------------------------------------
 void
 DofMap::tabulate_entity_dofs(std::vector<std::size_t>& dofs,
                              std::size_t dim, std::size_t local_entity) const
@@ -210,15 +433,15 @@ DofMap::tabulate_entity_dofs(std::vector<std::size_t>& dofs,
 }
 //-----------------------------------------------------------------------------
 void
-DofMap::tabulate_subcomplex_dofs(std::vector<std::size_t>& dofs,
-                                 std::size_t dim, std::size_t local_entity) const
+DofMap::tabulate_entity_closure_dofs(std::vector<std::size_t>& dofs,
+                                     std::size_t dim, std::size_t local_entity) const
 {
   dolfin_assert(_ufc_dofmap);
-  if (_ufc_dofmap->num_subcomplex_dofs(dim) == 0)
+  if (_ufc_dofmap->num_entity_closure_dofs(dim) == 0)
     return;
 
-  dofs.resize(_ufc_dofmap->num_subcomplex_dofs(dim));
-  _ufc_dofmap->tabulate_subcomplex_dofs(&dofs[0], dim, local_entity);
+  dofs.resize(_ufc_dofmap->num_entity_closure_dofs(dim));
+  _ufc_dofmap->tabulate_entity_closure_dofs(&dofs[0], dim, local_entity);
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_facet_dofs(std::vector<std::size_t>& dofs,
