@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2016-11-03
+# Last changed: 2016-11-04
 
 import pytest
 from dolfin import *
@@ -98,3 +98,11 @@ def test_parallel_1():
     cellp = Cell(meshp, 0)
     cellq = Cell(meshq, 0)
     assert cellp.collides(cellq) == True
+
+@skip_in_parallel
+def test_parallel_2():
+    res = CollisionPredicates.collides_segment_segment_2d(Point(.5, .3),
+                                                          Point(.5, .4),
+                                                          Point(.5, .5),
+                                                          Point(.5, .6))
+    assert not res

@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2016-11-03
+# Last changed: 2016-11-04
 
 import pytest
 from dolfin import *
@@ -54,6 +54,57 @@ def test_interval_collides_point():
     assert cell.collides(Point(1.5)) == False
 
 @skip_in_parallel
+def test_segment_collides_point_2D():
+    """Test if segment collide with point in 2D"""
+    mesh = Mesh()
+    editor = MeshEditor()
+    editor.open(mesh, 1, 2)
+    editor.init_vertices(2)
+    editor.init_cells(1)
+    editor.add_vertex(0, 1./7., 1./3.)
+    editor.add_vertex(1, 2./7., 3./3.)
+    editor.add_cell(0,0,1)
+    editor.close()
+    cell = Cell(mesh, 0)
+    mid = Point(1.5/7., 2./3.)
+    assert cell.contains(mid)
+    assert cell.contains(cell.midpoint())
+
+@pytest.mark.skipif(True, reason="Not implemented in 3D")
+def test_segment_collides_point_3D_1():
+    """Test if segment collide with point in 3D"""
+    mesh = Mesh()
+    editor = MeshEditor()
+    editor.open(mesh, 1, 3)
+    editor.init_vertices(2)
+    editor.init_cells(1)
+    editor.add_vertex(0, 1./7., 1./3., 1./DOLFIN_PI)
+    editor.add_vertex(1, 2./7., 3./3., 2./DOLFIN_PI)
+    editor.add_cell(0,0,1)
+    editor.close()
+    cell = Cell(mesh, 0)
+    mid = Point(1.5/7., 2./3., 1.5/DOLFIN_PI)
+    assert cell.contains(mid)
+    assert cell.contains(cell.midpoint())
+
+
+@pytest.mark.skipif(True, reason="Not implemented in 3D")
+def test_segment_collides_point_3D_2():
+    """Test case by Oyvind from https://bitbucket.org/fenics-project/dolfin/issue/296 for segment point collision in 3D"""
+    mesh = Mesh()
+    editor = MeshEditor()
+    editor.open(mesh, 1, 3)
+    editor.init_vertices(2)
+    editor.init_cells(1)
+    editor.add_vertex(0, 41.06309891, 63.74219894, 68.10320282)
+    editor.add_vertex(1, 41.45830154, 62.61560059, 66.43019867)
+    editor.add_cell(0,0,1)
+    editor.close()
+    cell = Cell(mesh, 0)
+    assert cell.contains(cell.midpoint())
+
+
+@skip_in_parallel
 def test_triangle_collides_point():
     """Tests if point collide with triangle"""
 
@@ -63,30 +114,30 @@ def test_triangle_collides_point():
     assert cell.collides(Point(0.5)) == True
     assert cell.collides(Point(1.5)) == False
 
-# @skip_in_parallel
-# def test_triangle_collides_triangle():
-#     """Test if triangle collide with triangle"""
-
-#     m0 = UnitSquareMesh(8, 8)
-#     c0 = Cell(m0, 0)
-
-#     m1 = UnitSquareMesh(8, 8)
-#     m1.translate(Point(0.1, 0.1))
-#     c1 = Cell(m1, 0)
-#     c2 = Cell(m1, 1)
-
-#     assert c0.collides(c0) == True
-#     assert c0.collides(c1) == True
-#     # assert c0.collides(c2) == False # touching edges
-#     assert c1.collides(c0) == True
-#     assert c1.collides(c1) == True
-#     assert c1.collides(c2) == False
-#     # assert c2.collides(c0) == False # touching edges
-#     assert c2.collides(c1) == False
-#     assert c2.collides(c2) == True
-
 @skip_in_parallel
+def test_triangle_collides_triangle():
+    """Test if triangle collide with triangle"""
+
+    m0 = UnitSquareMesh(8, 8)
+    c0 = Cell(m0, 0)
+
+    m1 = UnitSquareMesh(8, 8)
+    m1.translate(Point(0.1, 0.1))
+    c1 = Cell(m1, 0)
+    c2 = Cell(m1, 1)
+
+    assert c0.collides(c0) == True
+    assert c0.collides(c1) == True
+    assert c0.collides(c2) == True # touching edges
+    assert c1.collides(c0) == True
+    assert c1.collides(c1) == True
+    assert c1.collides(c2) == True
+    assert c2.collides(c0) == True # touching edges
+    assert c2.collides(c1) == True
+    assert c2.collides(c2) == True
+
 @pytest.mark.skipif(True, reason="Not implemented in 3D")
+@skip_in_parallel
 def test_tetrahedron_collides_point():
     """Test if point collide with tetrahedron"""
 
@@ -127,6 +178,7 @@ def test_tetrahedron_collides_triangle():
     assert tri0.collides(tet1) == True
 
 @skip_in_parallel
+@pytest.mark.skipif(True, reason="Not implemented in 3D")
 def test_tetrahedron_collides_tetrahedron():
     """Test if point collide with tetrahedron"""
 
@@ -175,6 +227,7 @@ def _test_collision_robustness_2d(aspect, y, step):
         assert c < np.uintc(-1)
         x += step
 
+@pytest.mark.skipif(True, reason="Not implemented in 3D")
 def _test_collision_robustness_3d(aspect, y, z, step):
     nx = nz = 10
     ny = int(aspect*nx)
@@ -188,29 +241,21 @@ def _test_collision_robustness_3d(aspect, y, z, step):
         x += step
 
 @skip_in_parallel
-@pytest.mark.slow
+# @pytest.mark.slow
 def test_collision_robustness_slow():
     """Test cases from https://bitbucket.org/fenics-project/dolfin/issue/296"""
     _test_collision_robustness_2d( 100, 1e-14,       1e-5)
     _test_collision_robustness_2d(  40, 1e-03,       1e-5)
     _test_collision_robustness_2d( 100, 0.5 + 1e-14, 1e-5)
     _test_collision_robustness_2d(4.43, 0.5,      4.03e-6)
-    _test_collision_robustness_3d( 100, 1e-14, 1e-14, 1e-5)
+    #_test_collision_robustness_3d( 100, 1e-14, 1e-14, 1e-5)
 
 @skip_in_parallel
-@pytest.mark.skipif(True, reason='Very slow test cases')
+@pytest.mark.slow
+#@pytest.mark.skipif(True, reason='Very slow test cases')
 def test_collision_robustness_very_slow():
     """Test cases from https://bitbucket.org/fenics-project/dolfin/issue/296"""
     _test_collision_robustness_2d(  10, 1e-16,       1e-7)
     _test_collision_robustness_2d(4.43, 1e-17,    4.03e-6)
     _test_collision_robustness_2d(  40, 0.5,         1e-6)
     _test_collision_robustness_2d(  10, 0.5 + 1e-16, 1e-7)
-
-@skip_in_parallel
-def test_collision_cases() :
-    """ Some cases that have failed earlier"""
-    res = CollisionPredicates.collides_segment_segment_2d(Point(.5, .3),
-                                                          Point(.5, .4),
-                                                          Point(.5, .5),
-                                                          Point(.5, .6))
-    assert not res

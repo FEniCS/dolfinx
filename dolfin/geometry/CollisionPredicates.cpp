@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-03
+// Last changed: 2016-11-04
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -329,7 +329,9 @@ bool CollisionPredicates::_collides_segment_point_2d(Point p0,
                                       p1.coordinates(),
                                       point.coordinates());
 
-  return orientation == 0 &&
+  std::cout << __FUNCTION__ << ' ' << orientation << std::endl;
+
+  return std::abs(orientation) < DOLFIN_EPS &&
     (point-p0).squared_norm() <= (p1-p0).squared_norm() &&
     (point-p1).squared_norm() <= (p0-p1).squared_norm();
 }
@@ -345,52 +347,42 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
 						     Point p1,
 						     Point point)
 {
-  std::cout << __FUNCTION__ <<std::endl;
-
   if (point == p0 or point == p1)
     return true;
 
-  // FIXME
-  const Point u = point - p0;
-  const Point v = point - p1;
-  const Point c = u.cross(v);
+  // Poject to reduce to three 2d problems
+  const double det_xy = orient2d(p0.coordinates(),
+  				 p1.coordinates(),
+  				 point.coordinates());
 
-  std::cout << __FUNCTION__ << ' ' << c << std::endl;
+  std::cout << __FUNCTION__<<" "<<det_xy << std::endl;
 
-  return (std::abs(c[0]) < DOLFIN_EPS and
-  	  std::abs(c[1]) < DOLFIN_EPS and
-  	  std::abs(c[2]) < DOLFIN_EPS);
+  if (std::abs(det_xy) < DOLFIN_EPS)
+  {
+    std::array<std::array<double, 2>, 3> xz = {{ { p0.x(), p0.z() },
+  						 { p1.x(), p1.z() },
+  						 { point.x(), point.z() } }};
+    const double det_xz = orient2d(xz[0].data(),
+  				   xz[1].data(),
+  				   xz[2].data());
 
-  // // test project to reduce to three 2d problems
-  // const double det_xy = orient2d(p0.coordinates(),
-  // 				 p1.coordinates(),
-  // 				 point.coordinates());
+    std::cout << __FUNCTION__<<" "<<det_xz << std::endl;
 
-  // std::cout << __FUNCTION__ << "  detxy " << det_xy <<std::endl;
-  // if (det_xy == 0)
-  // {
-  //   std::array<std::array<double, 2>, 3> xz = {{ { p0.x(), p0.z() },
-  // 						 { p1.x(), p1.z() },
-  // 						 { point.x(), point.z() } }};
-  //   const double det_xz = orient2d(xz[0].data(),
-  // 				   xz[1].data(),
-  // 				   xz[2].data());
+    if (std::abs(det_xz) < DOLFIN_EPS)
+    {
+      std::array<std::array<double, 2>, 3> yz = {{ { p0.y(), p0.z() },
+  						   { p1.y(), p1.z() },
+  						   { point.y(), point.z() } }};
+      const double det_yz = orient2d(yz[0].data(),
+  				     yz[1].data(),
+  				     yz[2].data());
 
-  //   std::cout << __FUNCTION__ << "  detxz " << det_xz <<std::endl;
-  //   if (det_xz == 0)
-  //   {
-  //     std::array<std::array<double, 2>, 3> yz = {{ { p0.y(), p0.z() },
-  // 						   { p1.y(), p1.z() },
-  // 						   { point.y(), point.z() } }};
-  //     const double det_yz = orient2d(yz[0].data(),
-  // 				     yz[1].data(),
-  // 				     yz[2].data());
-  //     std::cout << __FUNCTION__ << "  detyz " << det_yz <<std::endl;
+      std::cout << __FUNCTION__<<" "<<det_yz << std::endl;
 
-  //     if (det_yz == 0)
-  // 	return true;
-  //   }
-  // }
+      if (std::abs(det_yz) < DOLFIN_EPS)
+  	return true;
+    }
+  }
 
   return false;
 }
@@ -526,6 +518,8 @@ bool CollisionPredicates::_collides_triangle_point_2d(Point p0,
 {
   const double ref = orient2d(p0.coordinates(), p1.coordinates(), p2.coordinates());
 
+  std::cout << __FUNCTION__<<" ref " << ref << ' '<<orient2d(p0.coordinates(), p1.coordinates(), point.coordinates())<<' '<<orient2d(p1.coordinates(), p2.coordinates(), point.coordinates())<<' '<<orient2d(p2.coordinates(), p0.coordinates(), point.coordinates())<<'\n';
+
   if (ref*orient2d(p0.coordinates(), p1.coordinates(), point.coordinates()) >= 0 and
       ref*orient2d(p1.coordinates(), p2.coordinates(), point.coordinates()) >= 0 and
       ref*orient2d(p2.coordinates(), p0.coordinates(), point.coordinates()) >= 0)
@@ -560,21 +554,21 @@ bool CollisionPredicates::_collides_triangle_point_3d(Point p0,
   // triangle onto the 2d plane xy, xz or yz that has the largest
   // determinant
   const double det_xy = std::abs(orient2d(p0.coordinates(),
-					  p1.coordinates(),
-					  p2.coordinates()));
+  					  p1.coordinates(),
+  					  p2.coordinates()));
   // std::cout << __FUNCTION__ << "  detxy " << det_xy <<std::endl;
 
   std::array<Point, 3> xz = { Point(p0.x(), p0.z()),
-			      Point(p1.x(), p1.z()),
-			      Point(p2.x(), p2.z()) };
+  			      Point(p1.x(), p1.z()),
+  			      Point(p2.x(), p2.z()) };
   const double det_xz = std::abs(orient2d(xz[0].coordinates(),
   					  xz[1].coordinates(),
   					  xz[2].coordinates()));
   // std::cout << __FUNCTION__ << "  detxz " << det_xz <<std::endl;
 
   std::array<Point, 3> yz = { Point(p0.y(), p0.z()),
-			      Point(p1.y(), p1.z()),
-			      Point(p2.y(), p2.z()) };
+  			      Point(p1.y(), p1.z()),
+  			      Point(p2.y(), p2.z()) };
   const double det_yz = std::abs(orient2d(yz[0].coordinates(),
   					  yz[1].coordinates(),
   					  yz[2].coordinates()));

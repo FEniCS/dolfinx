@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2012.
 //
 // First added:  2006-05-11
-// Last changed: 2013-06-23
+// Last changed: 2016-11-04
 
 #include <dolfin/log/log.h>
 #include "Mesh.h"
@@ -140,7 +140,37 @@ Point MeshEntity::midpoint() const
   z /= double(num_vertices);
 
   Point p(x, y, z);
-  return p;
+
+  std::cout<< __FUNCTION__ << ' '; printf("%1.16f ",x); printf("%1.16f ",y); printf("%1.16f \n",z);
+
+  //return p;
+
+  // Test using Kahan summation
+  auto Kaham_summation = [&](std::size_t d)
+    {
+      double sum = 0.0;
+      double c = 0.0;
+      for (VertexIterator v(*this); !v.end(); ++v)
+      {
+	const double y = v->point()[d];
+	const double t = sum + y;
+	c = (t - sum) - y;
+	sum = t;
+      }
+      return sum;
+    };
+
+  const double xsum = Kaham_summation(0);
+  const double ysum = Kaham_summation(1);
+  const double zsum = Kaham_summation(2);
+  const double xtmp = xsum / num_vertices;
+  const double ytmp = ysum / num_vertices;
+  const double ztmp = zsum / num_vertices;
+  std::cout<< __FUNCTION__ << " Kahan "; printf("%1.16f ",xtmp); printf("%1.16f ",ytmp); printf("%1.16f \n",ztmp);
+
+  Point q(xtmp,ytmp,ztmp);
+  return q;
+
 }
 //-----------------------------------------------------------------------------
 unsigned int MeshEntity::owner() const

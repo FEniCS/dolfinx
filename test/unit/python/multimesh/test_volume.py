@@ -22,7 +22,7 @@
 # Modified by August Johansson 2016
 #
 # First added:  2016-05-03
-# Last changed: 2016-07-05
+# Last changed: 2016-11-04
 
 from __future__ import print_function
 import pytest
@@ -69,7 +69,7 @@ def test_volume_2d():
     "Integrate volume of union of 2D meshes"
 
     # Number of meshes
-    num_meshes = 2
+    num_meshes = 12
 
     # Create background mesh so we can easily compute volume...
     mesh_0 = UnitSquareMesh(1, 1)
@@ -109,11 +109,14 @@ def test_volume_2d():
 
     # Compute approximate volume
     approximative_volume = compute_volume(multimesh)
+    quadrature_volume = compute_volume_using_quadrature(multimesh)
 
     print("approximative volume ", approximative_volume)
+    print("quadrature volume ", quadrature_volume)
     print("exact volume ", exact_volume)
 
     assert approximative_volume == exact_volume
+    assert quadrature_volume == exact_volume
 
 @skip_in_parallel
 def test_volume_six_meshes():
@@ -152,7 +155,7 @@ def test_volume_six_meshes():
     multimesh.build()
 
     # Save meshes to file
-    vtkfile = File('output/meshes.pvd')
+    vtkfile = File('output/test_six_meshes.pvd')
     for i in range(multimesh.num_parts()):
         vtkfile << multimesh.part(i)
 

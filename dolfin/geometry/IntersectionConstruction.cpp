@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-02
+// Last changed: 2016-11-04
 
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/math/basic.h>
@@ -485,6 +485,8 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
     if (CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q1))
       points.push_back(q1);
 
+    std::cout<< __FUNCTION__ << ' ' << __LINE__ << ' ' << points.size() << std::endl;
+
     // We're done if both q0 and q1 inside
     if (points.size() == 2)
       return points;
@@ -504,6 +506,8 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
 	return points;
       collides_segments[0] = std::make_tuple(true, p0, p1);
     }
+    std::cout<< __FUNCTION__ << ' ' << __LINE__ << ' ' << points.size() << std::endl;
+
     if (CollisionPredicates::collides_segment_segment_2d(p0, p2, q0, q1))
     {
       const std::vector<Point> ii = intersection_segment_segment_2d(p0, p2, q0, q1);
@@ -513,6 +517,8 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
 	return points;
       collides_segments[1] = std::make_tuple(true, p0, p2);
     }
+    std::cout<< __FUNCTION__ << ' ' << __LINE__ << ' ' << points.size() << std::endl;
+
     if (CollisionPredicates::collides_segment_segment_2d(p1, p2, q0, q1))
     {
       const std::vector<Point> ii = intersection_segment_segment_2d(p1, p2, q0, q1);
@@ -523,6 +529,8 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
       collides_segments[2] = std::make_tuple(true, p1, p2);
     }
 
+    std::cout<< __FUNCTION__ << ' ' << __LINE__ << ' ' <<p1<<' '<<p2<<' '<<q0<<' '<<q1<<' '<< points.size() << std::endl;
+
     // Here we must have at least one intersecting point
     dolfin_assert(points.size() > 0);
 
@@ -532,8 +540,10 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
       // (q0 or q1) that is inside the triangle. Do this cautiously
       // since one point may be strictly inside and one may be on the
       // boundary.
+      std::cout << "check triangle point collision\n";
       const bool q0_inside = CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q0);
       const bool q1_inside = CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q1);
+      std::cout << q0_inside << ' ' << q1_inside << std::endl;
 
       if (q0_inside and q1_inside)
       {
@@ -559,6 +569,9 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
 	return std::vector<Point>{{ q1, points[0] }};
       else
       {
+	std::cout << p0<<p1<<p2<<'\n'
+		  << q0<<q1<<std::endl;
+
 	dolfin_error("IntersectionConstruction.cpp",
 		     "_triangulate_triangle_segment_2d",
 		     "Unexpected classification - we should have found either q0 or q1 inside");
