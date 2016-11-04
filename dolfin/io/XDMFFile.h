@@ -77,7 +77,7 @@ namespace dolfin
   public:
 
     /// File encoding type
-    enum class Encoding {HDF5, ASCII};
+    enum class Encoding {HDF5, ASCII, HDF5_EXPERIMENTAL};
 
     /// Constructor
     XDMFFile(const std::string filename)
@@ -100,6 +100,9 @@ namespace dolfin
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write(const Mesh& mesh, Encoding encoding=Encoding::HDF5);
+
+    /// Experimental higher-order element support
+    void write_experimental(const Function& u);
 
     /// Save a Function to XDMF file for visualisation, using an
     /// associated HDF5 file, or storing the data inline as XML.
