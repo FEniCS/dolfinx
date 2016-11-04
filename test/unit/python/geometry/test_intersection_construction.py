@@ -214,3 +214,15 @@ def test_segment_segment_2d():
     q0 = Point(0.333333333333333, 0.666666666666667)
     q1 = Point(0.211774439087554, 0.545107772420888)
     intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+@skip_in_parallel
+def test_triangle_segment_2D_1():
+    "The intersection of a specific triangle and a specific segment"
+    #p0 = Point(1e-17, 0)
+    p0 = Point(0.1, 0)
+    p1 = Point(0.5, sqrt(3.)/2.)
+    p2 = Point(sqrt(3.)/2., 0.5)
+    q0 = Point(1, 0)
+    q1 = Point(0, 0)
+    intersection = IntersectionConstruction.intersection_triangle_segment_2d(p0, p1, p2, q0, q1)
+    assert len(intersection) == 2

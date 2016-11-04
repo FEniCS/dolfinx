@@ -541,8 +541,20 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
       // since one point may be strictly inside and one may be on the
       // boundary.
       std::cout << "check triangle point collision\n";
-      const bool q0_inside = CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q0);
-      const bool q1_inside = CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q1);
+      const bool q0_inside
+	= (CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q0) or
+	   CollisionPredicates::collides_segment_point_2d(p0, p1, q0) or
+	   CollisionPredicates::collides_segment_point_2d(p0, p2, q0) or
+	   CollisionPredicates::collides_segment_point_2d(p1, p2, q0) or
+	   (p0 == q0) or (p1 == q0) or (p2 == q0));
+
+      const bool q1_inside
+	= (CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q1) or
+	   CollisionPredicates::collides_segment_point_2d(p0, p1, q1) or
+	   CollisionPredicates::collides_segment_point_2d(p0, p2, q1) or
+	   CollisionPredicates::collides_segment_point_2d(p1, p2, q1) or
+	   (p0 == q0) or (p1 == q0) or (p2 == q0));
+
       std::cout << q0_inside << ' ' << q1_inside << std::endl;
 
       if (q0_inside and q1_inside)
