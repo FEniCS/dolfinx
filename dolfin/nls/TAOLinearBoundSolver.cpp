@@ -314,6 +314,7 @@ void TAOLinearBoundSolver::set_ksp(std::string ksp_type)
     if (ierr != 0) petsc_error(ierr, __FILE__, "TaoGetKSP");
     if (ksp)
     {
+      dolfin_assert(_ksp_methods.find(ksp_type) != _ksp_methods.end());
       ierr = KSPSetType(ksp, _ksp_methods.find(ksp_type)->second);
       if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
     }

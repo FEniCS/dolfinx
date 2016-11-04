@@ -214,15 +214,28 @@ def main():
     timing = []
 
     # Check if we should run only Python tests, use for quick testing
-    if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
+    if (len(sys.argv) == 2 and sys.argv[1] == "--only-python") or \
+       "DISABLE_CPP_TESTING" in os.environ:
         only_python = True
     else:
         only_python = False
+
+    # Check if we should run only C++ tests
+    if (len(sys.argv) == 2 and sys.argv[1] == "--only-cpp") or \
+       "DISABLE_PYTHON_TESTING" in os.environ:
+        only_cpp = True
+    else:
+        only_cpp = False
 
     # Check if we should skip C++ demos
     if only_python:
         print("Skipping C++ demos")
         cppdemos = []
+
+    # Check if we should skip Python demos
+    if only_cpp:
+        print("Skipping Python demos")
+        pydemos = []
 
     # Build prefix list
     prefixes = [""]
@@ -234,7 +247,13 @@ def main():
 
     # Allow to disable parallel testing
     if "DISABLE_PARALLEL_TESTING" in os.environ:
+        print("Skip running demos in parallel")
         prefixes = [""]
+
+    # Allow to disable serial testing
+    if "DISABLE_SERIAL_TESTING" in os.environ:
+        print("Skip running demos in serial")
+        prefixes.remove("")
 
     # Run in serial, then in parallel
     for prefix in prefixes:

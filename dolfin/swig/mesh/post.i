@@ -233,6 +233,8 @@ DECLARE_MESHFUNCTION(bool, Bool)
 // Create docstrings to the MeshFunctions
 %pythoncode
 %{
+from six import string_types
+
 _doc_string = MeshFunctionInt.__doc__
 _doc_string += """
   *Arguments*
@@ -253,7 +255,7 @@ _doc_string += """
 class MeshFunction(object):
     __doc__ = _doc_string
     def __new__(cls, tp, *args):
-        if not isinstance(tp, str):
+        if not isinstance(tp, string_types):
             raise TypeError("expected a 'str' as first argument")
         if tp == "int":
             return MeshFunctionInt(*args)
@@ -269,9 +271,9 @@ class MeshFunction(object):
 del _doc_string
 
 def _new_closure(MeshType):
-    assert(isinstance(MeshType, str))
+    assert isinstance(MeshType, string_types)
     def new(cls, tp, mesh, value=0):
-        if not isinstance(tp, str):
+        if not isinstance(tp, string_types):
             raise TypeError("expected a 'str' as first argument")
         if tp == "int":
             return eval("%sInt(mesh, value)"%MeshType)
@@ -348,6 +350,8 @@ DECLARE_MESHVALUECOLLECTION(bool, Bool)
 // Create docstrings to the MeshValueCollection
 %pythoncode
 %{
+from six import string_types
+
 _meshvaluecollection_doc_string = MeshValueCollectionInt.__doc__
 _meshvaluecollection_doc_string += """
   *Arguments*
@@ -374,7 +378,7 @@ _meshvaluecollection_doc_string += """
 class MeshValueCollection(object):
     __doc__ = _meshvaluecollection_doc_string
     def __new__(cls, tp, *args):
-        if not isinstance(tp, str):
+        if not isinstance(tp, string_types):
             raise TypeError("expected a 'str' as first argument")
         if tp == "int":
             return MeshValueCollectionInt(*args)

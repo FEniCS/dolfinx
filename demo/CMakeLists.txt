@@ -1,7 +1,7 @@
 project(dolfin-demos)
 
 # Require CMake 2.8
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 
 # FIXME: Temporary fix for whitespace error
 cmake_policy(SET CMP0004 OLD)

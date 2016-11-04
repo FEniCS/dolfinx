@@ -192,7 +192,8 @@ endif()
 # Set compiler flags, include directories and library dependencies
 
 # Add compiler include directories
-include_directories(${DOLFIN_SOURCE_DIR} ${DOLFIN_DEP_INCLUDE_DIRECTORIES})
+include_directories(BEFORE ${DOLFIN_SOURCE_DIR})
+include_directories(${DOLFIN_DEP_INCLUDE_DIRECTORIES})
 include_directories(SYSTEM ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
 
 # Add CXX definitions
@@ -287,7 +288,7 @@ string(REPLACE ";" " " PKG_DEFINITIONS "${DOLFIN_CXX_DEFINITIONS}")
 foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
   # Add -Wl,option directives
   if ("${_lib}" MATCHES "-Wl,[^ ]*")
-     set(PKG_LINKFLAGS "${_lib} ${PKG_LINKFLAGS}")
+    set(PKG_LINKFLAGS "${_lib} ${PKG_LINKFLAGS}")
   else()
     string(REGEX REPLACE "(.?:?/[^ ]*)/lib([^ ]*)\\.(a|so|dylib|dll)" "-L\\1 -l\\2"
       _linkflags
@@ -296,7 +297,7 @@ foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
 
     # Add libraries that matches the form -L<libdir> -l<lib>
     if ("${_linkflags}" MATCHES "-L.+ -l.+")
-        set(PKG_LINKFLAGS "${_linkflags} ${PKG_LINKFLAGS}")
+      set(PKG_LINKFLAGS "${_linkflags} ${PKG_LINKFLAGS}")
     endif()
   endif()
 endforeach()
@@ -325,11 +326,6 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake @ONLY)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfigVersion.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake @ONLY)
-# Keep dolfin-config{-version}.cmake for backwards compatability
-configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config.cmake.in
-  ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake @ONLY)
-configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config-version.cmake.in
-  ${CMAKE_BINARY_DIR}/dolfin/dolfin-config-version.cmake @ONLY)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake @ONLY)
 
@@ -337,11 +333,9 @@ install(
   FILES
     ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
     ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
-    ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake
-    ${CMAKE_BINARY_DIR}/dolfin/dolfin-config-version.cmake
     ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake
-  DESTINATION ${DOLFIN_SHARE_DIR}/cmake
-  COMPONENT Development
-  )
+    DESTINATION ${DOLFIN_SHARE_DIR}/cmake
+    COMPONENT Development
+    )
 
 #------------------------------------------------------------------------------

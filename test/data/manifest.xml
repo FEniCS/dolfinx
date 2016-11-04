@@ -1,0 +1,62 @@
+<courseModule>
+
+  <module id="0">
+    <name><![CDATA[  CourseModule  ]]></name>
+    <description><![CDATA[  Course Module  ]]></description>
+    <uri><![CDATA[    ]]></uri>
+  </module>
+
+  <questions>
+
+    <question uid="f7614ec0-4e5d-446d-a5a4-eabd194b2615" modifiedBy="8e899c32-a71f-4ac2-b140-990fee1afa57" school="450a5fd9-9ee9-4425-bc34-7463628c51cf">
+      <mode>Inline</mode>
+      <name><![CDATA[  Extremvärdesproblem 2  ]]></name>
+      <editing>useHTML</editing>
+      <numberOfAttempts>1</numberOfAttempts>
+      <numberOfAttemptsLeft>1</numberOfAttemptsLeft>
+      <numberOfTryAnother>0</numberOfTryAnother>
+      <numberOfTryAnotherLeft>0</numberOfTryAnotherLeft>
+      <privacy>0</privacy>
+      <allowRepublish>false</allowRepublish>
+      <attributeAuthor>true</attributeAuthor>
+      <modifiedIn>10</modifiedIn>
+      <difficulty>0.0</difficulty>
+      <text><![CDATA[  <p>	Bestäm minsta värdet för funktionen \(f(x) = 2/|x| + |x - 3| - \ln |x|\).</p><p>	&nbsp;</p><p>	Svara med en formel.</p><p>	&nbsp;</p><p>	<1></p>  ]]></text>
+      <weighting>1</weighting>
+      <numbering>alpha</numbering>
+
+      <parts>
+
+        <part>
+          <mode>Formula</mode>
+          <name><![CDATA[  sro_id_1  ]]></name>
+          <editing>useHTML</editing>
+          <numberOfAttempts>1</numberOfAttempts>
+          <numberOfAttemptsLeft>1</numberOfAttemptsLeft>
+          <numberOfTryAnother>0</numberOfTryAnother>
+          <numberOfTryAnotherLeft>0</numberOfTryAnotherLeft>
+          <allowRepublish>false</allowRepublish>
+          <attributeAuthor>false</attributeAuthor>
+          <modifiedIn>10</modifiedIn>
+          <difficulty>0.0</difficulty>
+          <text><![CDATA[  (Unset)  ]]></text>
+          <answer><![CDATA[  2/3-ln(3)  ]]></answer>
+        </part>
+      </parts>
+    </question>
+  </questions>
+
+  <authors>
+
+    <author uid="8e899c32-a71f-4ac2-b140-990fee1afa57" instanceUid="7fc22d96-399b-4619-83c6-0560aad32b8d" defaultSchool="450a5fd9-9ee9-4425-bc34-7463628c51cf">
+      <displayName><![CDATA[  Anders Logg  ]]></displayName>
+    </author>
+  </authors>
+
+  <schools>
+
+    <school uid="450a5fd9-9ee9-4425-bc34-7463628c51cf">
+      <name><![CDATA[  Chalmers University of Technology  ]]></name>
+    </school>
+  </schools>
+</courseModule>

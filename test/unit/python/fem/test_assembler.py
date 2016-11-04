@@ -560,7 +560,7 @@ def test_reference_assembly(filedir, pushpop_parameters):
     parameters["reorder_dofs_serial"] = False
 
     # Load reference mesh (just a simple tetrahedron)
-    mesh = Mesh(os.path.join(filedir, "tetrahedron.xml.gz"))
+    mesh = Mesh(os.path.join(filedir, "tetrahedron.xml"))
 
     # Assemble stiffness and mass matrices
     V = FunctionSpace(mesh, "Lagrange", 1)

@@ -49,8 +49,8 @@ namespace dolfin
 
   public:
 
-    /// Constructor. file_mode should "a" (append), "w" (write) or "r"
-    /// (read).
+    /// Constructor. file_mode should be "a" (append),
+    /// "w" (write) or "r" (read).
     HDF5File(MPI_Comm comm, const std::string filename,
              const std::string file_mode);
 

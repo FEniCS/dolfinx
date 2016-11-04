@@ -377,6 +377,9 @@ namespace dolfin
     /// Compute all entities and connectivity.
     void init() const;
 
+    /// Compute global indices for entity dimension dim
+    void init_global(std::size_t dim) const;
+
     /// Clean out all auxiliary topology data. This clears all
     /// topological data, except the connectivity between cells and
     /// vertices.
