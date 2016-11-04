@@ -164,16 +164,16 @@ std::size_t DofMap::max_element_dofs() const
   return _ufc_dofmap->num_element_dofs();
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMap::num_entity_dofs(std::size_t dim) const
+std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
 {
   dolfin_assert(_ufc_dofmap);
-  return _ufc_dofmap->num_entity_dofs(dim);
+  return _ufc_dofmap->num_entity_dofs(entity_dim);
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMap::num_entity_closure_dofs(std::size_t dim) const
+std::size_t DofMap::num_entity_closure_dofs(std::size_t entity_dim) const
 {
   dolfin_assert(_ufc_dofmap);
-  return _ufc_dofmap->num_entity_closure_dofs(dim);
+  return _ufc_dofmap->num_entity_closure_dofs(entity_dim);
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_facet_dofs() const
@@ -420,36 +420,36 @@ std::vector<dolfin::la_index> DofMap::entity_dofs(
   return entity_to_dofs;
 }
 //-----------------------------------------------------------------------------
-void
-DofMap::tabulate_entity_dofs(std::vector<std::size_t>& dofs,
-                             std::size_t dim, std::size_t local_entity) const
+void DofMap::tabulate_facet_dofs(std::vector<std::size_t>& element_dofs,
+                                 std::size_t cell_facet_index) const
 {
   dolfin_assert(_ufc_dofmap);
-  if (_ufc_dofmap->num_entity_dofs(dim) == 0)
-    return;
-
-  dofs.resize(_ufc_dofmap->num_entity_dofs(dim));
-  _ufc_dofmap->tabulate_entity_dofs(&dofs[0], dim, local_entity);
+  element_dofs.resize(_ufc_dofmap->num_facet_dofs());
+  _ufc_dofmap->tabulate_facet_dofs(element_dofs.data(), cell_facet_index);
 }
 //-----------------------------------------------------------------------------
 void
-DofMap::tabulate_entity_closure_dofs(std::vector<std::size_t>& dofs,
-                                     std::size_t dim, std::size_t local_entity) const
+DofMap::tabulate_entity_dofs(std::vector<std::size_t>& element_dofs,
+                             std::size_t entity_dim, std::size_t cell_entity_index) const
 {
   dolfin_assert(_ufc_dofmap);
-  if (_ufc_dofmap->num_entity_closure_dofs(dim) == 0)
+  if (_ufc_dofmap->num_entity_dofs(entity_dim) == 0)
     return;
 
-  dofs.resize(_ufc_dofmap->num_entity_closure_dofs(dim));
-  _ufc_dofmap->tabulate_entity_closure_dofs(&dofs[0], dim, local_entity);
+  element_dofs.resize(_ufc_dofmap->num_entity_dofs(entity_dim));
+  _ufc_dofmap->tabulate_entity_dofs(&element_dofs[0], entity_dim, cell_entity_index);
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_facet_dofs(std::vector<std::size_t>& dofs,
-                                 std::size_t local_facet) const
+void
+DofMap::tabulate_entity_closure_dofs(std::vector<std::size_t>& element_dofs,
+                                     std::size_t entity_dim, std::size_t cell_entity_index) const
 {
   dolfin_assert(_ufc_dofmap);
-  dofs.resize(_ufc_dofmap->num_facet_dofs());
-  _ufc_dofmap->tabulate_facet_dofs(dofs.data(), local_facet);
+  if (_ufc_dofmap->num_entity_closure_dofs(entity_dim) == 0)
+    return;
+
+  element_dofs.resize(_ufc_dofmap->num_entity_closure_dofs(entity_dim));
+  _ufc_dofmap->tabulate_entity_closure_dofs(&element_dofs[0], entity_dim, cell_entity_index);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericDofMap> DofMap::copy() const
