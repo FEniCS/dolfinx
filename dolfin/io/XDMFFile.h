@@ -247,9 +247,16 @@ namespace dolfin
     void read(MeshFunction<double>& meshfunction, std::string name="");
 
     /// Read MeshValueCollection from file
-    void read(MeshValueCollection<int>& mvc, std::string name);
-    void read(MeshValueCollection<std::size_t>& mvc, std::string name);
-    void read(MeshValueCollection<double>& mvc, std::string name);
+    void read(MeshValueCollection<bool>& mvc, std::string name="");
+
+    /// Read MeshValueCollection from file
+    void read(MeshValueCollection<int>& mvc, std::string name="");
+
+    /// Read MeshValueCollection from file
+    void read(MeshValueCollection<std::size_t>& mvc, std::string name="");
+
+    /// Read MeshValueCollection from file
+    void read(MeshValueCollection<double>& mvc, std::string name="");
 
   private:
 

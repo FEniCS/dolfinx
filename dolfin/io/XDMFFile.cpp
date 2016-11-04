@@ -592,6 +592,17 @@ void XDMFFile::write_mesh_value_collection(const MeshValueCollection<T>& mvc,
   ++_counter;
 }
 //-----------------------------------------------------------------------------
+void XDMFFile::read(MeshValueCollection<bool>& mvc, std::string name)
+{
+  // Bool is not really supported, so copy from int
+  MeshValueCollection<int> mvc_int(mvc.mesh());
+  read_mesh_value_collection(mvc_int, name);
+
+  mvc.init(mvc.mesh(), mvc_int.dim());
+  for (const auto &p : mvc_int.values())
+    mvc.set_value(p.first.first, p.first.second, (bool)p.second);
+}
+//-----------------------------------------------------------------------------
 void XDMFFile::read(MeshValueCollection<int>& mvc, std::string name)
 {
   read_mesh_value_collection(mvc, name);

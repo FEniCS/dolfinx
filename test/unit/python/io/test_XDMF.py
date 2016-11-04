@@ -647,7 +647,7 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding):
         for j in range(len(mvc_data)):
             idxs = mvc_data.keys()[j]
             vals = mvc_data[idxs]
-            idxs_in = mvc_data.keys()[j] 
+            idxs_in = mvc_data.keys()[j]
             vals_in = mvc_data_in[idxs_in]
             assert(idxs == idxs_in)
             assert(vals == vals_in)
