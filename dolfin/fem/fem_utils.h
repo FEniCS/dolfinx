@@ -27,63 +27,6 @@ namespace dolfin
 
   class FunctionSpace;
 
-
-  /// Return the dof indices associated with entities of given dimension and entity indices
-  ///
-  /// *Arguments*
-  ///     entity_dim (std::size_t)
-  ///         Entity dimension.
-  ///     entity_indices (std::vector<dolfin::la_index>&)
-  ///         Entity indices to get dofs for.
-  /// *Returns*
-  ///     std::vector<dolfin::la_index>
-  ///         Dof indices associated with selected entities.
-  std::vector<dolfin::la_index>
-    aggregate_entity_dofs(const FunctionSpace& space,
-                      std::size_t entity_dim,
-                      const std::vector<std::size_t> & entity_indices);
-
-  /// Return the dof indices associated with all entities of given dimension
-  ///
-  /// *Arguments*
-  ///     entity_dim (std::size_t)
-  ///         Entity dimension.
-  /// *Returns*
-  ///     std::vector<dolfin::la_index>
-  ///         Dof indices associated with selected entities.
-  std::vector<dolfin::la_index>
-    aggregate_entity_dofs(const FunctionSpace& space,
-                      std::size_t entity_dim);
-
-  /// Return the dof indices associated with the closure of entities of
-  /// given dimension and entity indices
-  ///
-  /// *Arguments*
-  ///     entity_dim (std::size_t)
-  ///         Entity dimension.
-  ///     entity_indices (std::vector<dolfin::la_index>&)
-  ///         Entity indices to get dofs for.
-  /// *Returns*
-  ///     std::vector<dolfin::la_index>
-  ///         Dof indices associated with selected entities and their closure.
-  std::vector<dolfin::la_index>
-    aggregate_entity_closure_dofs(const FunctionSpace& space,
-                      std::size_t entity_dim,
-                      const std::vector<std::size_t> & entity_indices);
-
-  /// Return the dof indices associated with the closure of all entities of
-  /// given dimension
-  ///
-  /// *Arguments*
-  ///     entity_dim (std::size_t)
-  ///         Entity dimension.
-  /// *Returns*
-  ///     std::vector<dolfin::la_index>
-  ///         Dof indices associated with selected entities and their closure.
-  std::vector<dolfin::la_index>
-    aggregate_entity_closure_dofs(const FunctionSpace& space,
-                      std::size_t entity_dim);
-
   /// Return a map between dof indices and vertex indices
   ///
   /// Only works for FunctionSpace with dofs exclusively on vertices.
