@@ -25,9 +25,6 @@ from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 # Currently supported XDMF file encoding
 encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)
 
-# Data types supported in templating
-data_types = (('int', int), ('size_t', int), ('double', float), ('bool', bool))
-
 
 def invalid_config(encoding):
     return (not has_hdf5() and encoding == XDMFFile.Encoding_HDF5) \
@@ -234,25 +231,21 @@ def test_save_1d_mesh(tempdir, encoding):
 
 
 @pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.parametrize("data_type", data_types)
-def test_save_2D_cell_function(tempdir, encoding, data_type):
+def test_save_2D_cell_function(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
-
-    dtype_str, dtype = data_type
-
-    filename = os.path.join(tempdir, "mf_2D_%s.xdmf" % dtype_str)
+    filename = os.path.join(tempdir, "mf_2D.xdmf")
     mesh = UnitSquareMesh(32, 32)
-    mf = CellFunction(dtype_str, mesh)
+    mf = CellFunction("size_t", mesh)
     mf.rename("cells", "cells")
     for cell in cells(mesh):
-        mf[cell] = dtype(cell.index())
+        mf[cell] = cell.index()
 
     file = XDMFFile(mesh.mpi_comm(), filename)
     file.write(mf, encoding)
     del file
 
-    mf_in = CellFunction(dtype_str, mesh)
+    mf_in = CellFunction("size_t", mesh)
     xdmf = XDMFFile(mesh.mpi_comm(), filename)
     xdmf.read(mf_in, "cells")
     del xdmf
@@ -264,25 +257,21 @@ def test_save_2D_cell_function(tempdir, encoding, data_type):
 
 
 @pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.parametrize("data_type", data_types)
-def test_save_3D_cell_function(tempdir, encoding, data_type):
+def test_save_3D_cell_function(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
-
-    dtype_str, dtype = data_type
-
     mesh = UnitCubeMesh(8, 8, 8)
-    mf = CellFunction(dtype_str, mesh)
+    mf = CellFunction("size_t", mesh)
     mf.rename("cells", "cells")
     for cell in cells(mesh):
-        mf[cell] = dtype(cell.index())
-    filename = os.path.join(tempdir, "mf_3D_%s.xdmf" % dtype_str)
+        mf[cell] = cell.index()
+    filename = os.path.join(tempdir, "mf_3D.xdmf")
 
     file = XDMFFile(mesh.mpi_comm(), filename)
     file.write(mf, encoding)
     del file
 
-    mf_in = CellFunction(dtype_str, mesh)
+    mf_in = CellFunction("size_t", mesh)
     xdmf = XDMFFile(mesh.mpi_comm(), filename)
     xdmf.read(mf_in, "cells")
     del xdmf
@@ -293,30 +282,26 @@ def test_save_3D_cell_function(tempdir, encoding, data_type):
     assert diff == 0
 
 @pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.parametrize("data_type", data_types)
-def test_save_2D_facet_function(tempdir, encoding, data_type):
+def test_save_2D_facet_function(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
-
-    dtype_str, dtype = data_type
-
     mesh = UnitSquareMesh(32, 32)
-    mf = FacetFunction(dtype_str, mesh)
+    mf = FacetFunction("size_t", mesh)
     mf.rename("facets", "facets")
 
     if (MPI.size(mesh.mpi_comm()) == 1):
         for facet in facets(mesh):
-            mf[facet] = dtype(facet.index())
+            mf[facet] = facet.index()
     else:
         for facet in facets(mesh):
-            mf[facet] = dtype(facet.global_index())
-    filename = os.path.join(tempdir, "mf_facet_2D_%s.xdmf" % dtype_str)
+            mf[facet] = facet.global_index()
+    filename = os.path.join(tempdir, "mf_facet_2D.xdmf")
 
     xdmf = XDMFFile(mesh.mpi_comm(), filename)
     xdmf.write(mf, encoding)
     del xdmf
 
-    mf_in = FacetFunction(dtype_str, mesh)
+    mf_in = FacetFunction("size_t", mesh)
     xdmf = XDMFFile(mesh.mpi_comm(), filename)
     xdmf.read(mf_in, "facets")
     del xdmf
@@ -327,30 +312,26 @@ def test_save_2D_facet_function(tempdir, encoding, data_type):
     assert diff == 0
 
 @pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.parametrize("data_type", data_types)
-def test_save_3D_facet_function(tempdir, encoding, data_type):
+def test_save_3D_facet_function(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
-
-    dtype_str, dtype = data_type
-
     mesh = UnitCubeMesh(8, 8, 8)
-    mf = FacetFunction(dtype_str, mesh)
+    mf = FacetFunction("size_t", mesh)
     mf.rename("facets", "facets")
 
     if (MPI.size(mesh.mpi_comm()) == 1):
         for facet in facets(mesh):
-            mf[facet] = dtype(facet.index())
+            mf[facet] = facet.index()
     else:
         for facet in facets(mesh):
-            mf[facet] = dtype(facet.global_index())
-    filename = os.path.join(tempdir, "mf_facet_3D_%s.xdmf" % dtype_str)
+            mf[facet] = facet.global_index()
+    filename = os.path.join(tempdir, "mf_facet_3D.xdmf")
 
     file = XDMFFile(mesh.mpi_comm(), filename)
     file.write(mf, encoding)
     del file
 
-    mf_in = FacetFunction(dtype_str, mesh)
+    mf_in = FacetFunction("size_t", mesh)
     xdmf = XDMFFile(mesh.mpi_comm(), filename)
     xdmf.read(mf_in, "facets")
     del xdmf
@@ -361,44 +342,35 @@ def test_save_3D_facet_function(tempdir, encoding, data_type):
     assert diff == 0
 
 @pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.parametrize("data_type", data_types)
-def test_save_3D_edge_function(tempdir, encoding, data_type):
+def test_save_3D_edge_function(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
-
-    dtype_str, dtype = data_type
-
     mesh = UnitCubeMesh(8, 8, 8)
-    mf = EdgeFunction(dtype_str, mesh)
+    mf = EdgeFunction("size_t", mesh)
     mf.rename("edges", "edges")
     for edge in edges(mesh):
-        mf[edge] = dtype(edge.index())
+        mf[edge] = edge.index()
 
-    filename = os.path.join(tempdir, "mf_edge_3D_%s.xdmf" % dtype_str)
-    file = XDMFFile(mesh.mpi_comm(), filename)
+    file = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "mf_edge_3D.xdmf"))
     file.write(mf, encoding)
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.parametrize("data_type", data_types)
-def test_save_2D_vertex_function(tempdir, encoding, data_type):
+def test_save_2D_vertex_function(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
-
-    dtype_str, dtype = data_type
-
     mesh = UnitSquareMesh(32, 32)
-    mf = VertexFunction(dtype_str, mesh)
+    mf = VertexFunction("size_t", mesh)
     mf.rename("vertices", "vertices")
     for vertex in vertices(mesh):
-        mf[vertex] = dtype(vertex.global_index())
-    filename = os.path.join(tempdir, "mf_vertex_2D_%s.xdmf" % dtype_str)
+        mf[vertex] = vertex.global_index()
+    filename = os.path.join(tempdir, "mf_vertex_2D.xdmf")
 
     file = XDMFFile(mesh.mpi_comm(), filename)
     file.write(mf, encoding)
     del file
 
-    mf_in = VertexFunction(dtype_str, mesh)
+    mf_in = VertexFunction("size_t", mesh)
     xdmf = XDMFFile(mesh.mpi_comm(), filename)
     xdmf.read(mf_in, "vertices")
     del xdmf
@@ -409,18 +381,14 @@ def test_save_2D_vertex_function(tempdir, encoding, data_type):
     assert diff == 0
 
 @pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.parametrize("data_type", data_types)
-def test_save_3D_vertex_function(tempdir, encoding, data_type):
+def test_save_3D_vertex_function(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
-
-    dtype_str, dtype = data_type
-
-    filename = os.path.join(tempdir, "mf_vertex_3D_%s.xdmf" % dtype_str)
+    filename = os.path.join(tempdir, "mf_vertex_3D.xdmf")
     mesh = UnitCubeMesh(8, 8, 8)
-    mf = VertexFunction(dtype_str, mesh)
+    mf = VertexFunction("size_t", mesh)
     for vertex in vertices(mesh):
-        mf[vertex] = dtype(vertex.index())
+        mf[vertex] = vertex.index()
 
     file = XDMFFile(mesh.mpi_comm(), filename)
     file.write(mf, encoding)
@@ -468,44 +436,32 @@ def test_save_points_3D(tempdir, encoding):
     del file
 
 @pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.parametrize("data_type", data_types)
-def test_save_mesh_value_collection(tempdir, encoding, data_type):
+def test_save_mesh_value_collection(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
-
-    dtype_str, dtype = data_type
-
     mesh = UnitCubeMesh(4, 4, 4)
     tdim = mesh.topology().dim()
 
-    meshfn = CellFunction(dtype_str, mesh, 0)
+    meshfn = CellFunction("size_t", mesh, 0)
     meshfn.rename("volume_marker", "Volume Markers")
     for c in cells(mesh):
         if c.midpoint().y() > 0.1:
-            meshfn[c] = dtype(1)
+            meshfn[c] = 1
         if c.midpoint().y() > 0.9:
-            meshfn[c] = dtype(2)
+            meshfn[c] = 2
 
     for mvc_dim in range(0, tdim + 1):
-        mvc = MeshValueCollection(dtype_str, mesh, mvc_dim)
-        tag = "dim_%d_marker" % mvc_dim
-        mvc.rename(tag, "BC")
+        mvc = MeshValueCollection("size_t", mesh, 2)
+        mvc.rename("dim_%d_marker" % mvc_dim, "BC")
         mesh.init(mvc_dim, tdim)
         for e in cpp.entities(mesh, mvc_dim):
             if (e.midpoint().x() > 0.5):
-                mvc.set_value(e.index(), dtype(1))
+                mvc.set_value(e.index(), 1)
 
-        filename = os.path.join(tempdir, "mvc_%d.xdmf" % mvc_dim)
-
-        xdmf = XDMFFile(mesh.mpi_comm(), filename)
+        xdmf = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "mvc_%d.xdmf"
+                                                      % mvc_dim))
         xdmf.write(meshfn, encoding)
         xdmf.write(mvc, encoding)
-
-        del xdmf
-
-        xdmf = XDMFFile(mesh.mpi_comm(), filename)
-        mvc = MeshValueCollection(dtype_str, mesh)
-        xdmf.read(mvc, tag)
 
 @skip_in_parallel
 @pytest.mark.parametrize("encoding", encodings)
@@ -524,130 +480,3 @@ def test_quadratic_mesh(tempdir, encoding):
     u.interpolate(Constant(1.0))
     xdmf = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "quadratic2.xdmf"))
     xdmf.write(u)
-
-    xdmf = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "qmesh.xdmf"))
-    xdmf.write(mesh)
-    c0 = mesh.coordinates()
-
-    mesh = Mesh()
-    xdmf = XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "qmesh.xdmf"))
-    xdmf.read(mesh)
-    c1 = mesh.coordinates()
-
-    assert (c0 - c1).sum() == 0.0
-
-@pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.parametrize("data_type", data_types)
-def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
-    if invalid_config(encoding):
-        pytest.xfail("XDMF unsupported in current configuration")
-
-    dtype_str, dtype = data_type
-
-    meshes = [UnitSquareMesh(32, 32), UnitCubeMesh(8, 8, 8)]
-
-    for mesh in meshes:
-        dim = mesh.topology().dim()
-
-        vf = VertexFunction(dtype_str, mesh)
-        vf.rename("vertices", "vertices")
-        ff = FacetFunction(dtype_str, mesh)
-        ff.rename("facets", "facets")
-        cf = CellFunction(dtype_str, mesh)
-        cf.rename("cells", "cells")
-
-        if (MPI.size(mesh.mpi_comm()) == 1):
-            for vertex in vertices(mesh):
-                vf[vertex] = dtype(vertex.index())
-            for facet in facets(mesh):
-                ff[facet] = dtype(facet.index())
-            for cell in cells(mesh):
-                cf[cell] = dtype(cell.index())
-        else:
-            for vertex in vertices(mesh):
-                vf[vertex] = dtype(vertex.global_index())
-            for facet in facets(mesh):
-                ff[facet] = dtype(facet.global_index())
-            for cell in cells(mesh):
-                cf[cell] = dtype(cell.global_index())
-
-        filename = os.path.join(tempdir, "appended_mf_%dD.xdmf" % dim)
-
-        xdmf = XDMFFile(mesh.mpi_comm(), filename)
-        xdmf.write(mesh)
-        xdmf.write(vf, encoding)
-        xdmf.write(ff, encoding)
-        xdmf.write(cf, encoding)
-        del xdmf
-
-        xdmf = XDMFFile(mesh.mpi_comm(), filename)
-
-        vf_in = VertexFunction(dtype_str, mesh)
-        xdmf.read(vf_in, "vertices")
-        ff_in = FacetFunction(dtype_str, mesh)
-        xdmf.read(ff_in, "facets")
-        cf_in = CellFunction(dtype_str, mesh)
-        xdmf.read(cf_in, "cells")
-        del xdmf
-
-        diff = 0
-        for vertex in vertices(mesh):
-            diff += (vf_in[vertex] - vf[vertex])
-        for facet in facets(mesh):
-            diff += (ff_in[facet] - ff[facet])
-        for cell in cells(mesh):
-            diff += (cf_in[cell] - cf[cell])
-        assert diff == 0
-
-
-@pytest.mark.parametrize("encoding", encodings)
-def test_append_and_load_mesh_value_collections(tempdir, encoding):
-    if invalid_config(encoding):
-        pytest.xfail("XDMF unsupported in current configuration")
-
-    mesh = UnitCubeMesh(8, 8, 8)
-
-    mvc_v = MeshValueCollection('size_t', mesh, 0)
-    mvc_v.rename("vertices", "vertices")
-    mvc_f = MeshValueCollection('size_t', mesh, 1)
-    mvc_f.rename("facets", "facets")
-    mvc_c = MeshValueCollection('size_t', mesh, 2)
-    mvc_c.rename("cells", "cells")
-
-    mvcs = [mvc_v, mvc_f, mvc_c]
-
-    filename = os.path.join(tempdir, "appended_mvcs.xdmf")
-    xdmf = XDMFFile(mesh.mpi_comm(), filename)
-
-    for mvc in mvcs:
-        mvc.set_value(0, 1)
-        mvc.set_value(1, 2)
-        mvc.set_value(2, 3)
-        xdmf.write(mvc)
-
-    del xdmf
-
-    mvc_v_in = MeshValueCollection('size_t', mesh, 0)
-    mvc_f_in = MeshValueCollection('size_t', mesh, 1)
-    mvc_c_in = MeshValueCollection('size_t', mesh, 2)
-
-    xdmf = XDMFFile(mesh.mpi_comm(), filename)
-    xdmf.read(mvc_v_in, "vertices")
-    xdmf.read(mvc_f_in, "facets")
-    xdmf.read(mvc_c_in, "cells")
-
-    mvcs_in = [mvc_v_in, mvc_f_in, mvc_c_in]
-
-    for (mvc, mvc_in) in zip(mvcs, mvcs_in):
-        mvc_data = mvc.values()
-        mvc_data_in = mvc_in.values()
-
-        assert(len(mvc_data) == len(mvc_data_in))
-
-        for j in range(len(mvc_data)):
-            idxs = mvc_data.keys()[j]
-            vals = mvc_data[idxs]
-            idxs_in = mvc_data.keys()[j]
-            vals_in = mvc_data_in[idxs_in]
-            assert(idxs == idxs_in)
-            assert(vals == vals_in)
