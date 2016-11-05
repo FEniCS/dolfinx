@@ -163,8 +163,8 @@ void XDMFFile::write_experimental(const Function& u)
   dolfin_assert(grid_node);
 
   // Get Function data values
-  std::vector<double> data_values;
   const std::size_t num_values = u.vector()->local_size();
+  std::vector<double> data_values(num_values);
   std::vector<dolfin::la_index> dofs(num_values);
   for (std::size_t i = 0; i < num_values; ++i)
     dofs[i] = i;
@@ -193,7 +193,7 @@ void XDMFFile::write_experimental(const Function& u)
   pugi::xml_node dofmap_node = grid_node.append_child("Attribute");
   dolfin_assert(dofmap_node);
   dofmap_node.append_attribute("Name") = u_indices.c_str();
-  attribute_node.append_attribute("Center") = "Cell";
+  dofmap_node.append_attribute("Center") = "Cell";
 
   const int tdim = mesh.topology().dim();
   const std::int64_t num_cells = mesh.size_global(tdim);
