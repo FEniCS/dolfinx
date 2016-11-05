@@ -100,6 +100,7 @@ Working list of Python demos
 * :doc:`demos/demo_eigenvalue.py`
 * :doc:`demos/demo_hyperelasticity.py`
 * :doc:`demos/demo_nonlinear-poisson.py`
+* :doc:`demos/demo_nonmatching-interpolation.py`
 
 
 Using the C++ interface
@@ -110,6 +111,7 @@ Using the C++ interface
 * :doc:`demos/built-in-meshes/main.cpp`
 * :doc:`demos/biharmonic/main.cpp`
 * :doc:`demos/auto-adaptive-poisson/main.cpp`
+* :doc:`demos/nonmatching-interpolation/main.cpp`
 
 .. todo:: Fix the toctree
 

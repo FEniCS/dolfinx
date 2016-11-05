@@ -4,6 +4,13 @@ Interpolation from a non-matching mesh
 This example demonstrates how to interpolate functions between
 finite element spaces on non-matching meshes.
 
+.. note::
+
+   Interpolation on non-matching meshes is not presently support in
+   parallel. See
+   https://bitbucket.org/fenics-project/dolfin/issues/162.
+
+
 Implementation
 --------------
 
@@ -14,12 +21,13 @@ containing the runtime code.
 Running this demo requires the files: :download:`main.cpp`,
 :download:`P1.ufl`, :download:`P3.ufl` and :download:`CMakeLists.txt`.
 
+
 UFL form file
 ^^^^^^^^^^^^^
 
 The UFL files are implemented in :download:`P1.ufl` and
 :download:`P1.ufl`, and the explanations of the UFL files can be found
-at :doc:`here (P1) <P1.ufl>` and :doc:`here (P2) <P2.ufl>`.
+at :doc:`here (P1) <P1.ufl>` and :doc:`here (P3) <P3.ufl>`.
 
 At the top we include the DOLFIN header file and the generated header
 files "P1.h" and "P2.h". For convenience we also include the DOLFIN
@@ -33,7 +41,7 @@ namespace.
 
    using namespace dolfin;
 
-We then define an Expression:
+We then define an ``Expression``:
 
 .. code-block:: cpp
 
@@ -48,8 +56,8 @@ We then define an Expression:
 
    };
 
-Next, the `main` function is started and we create two unit square meshes
-with a differing number of vertices in each direction:
+Next, the ``main`` function is started and we create two unit square
+meshes with a differing number of vertices in each direction:
 
 .. code-block:: cpp
 
@@ -76,7 +84,8 @@ One each space we create a finite element function:
      Function v1(P1);
      Function v3(P3);
 
-We create an instantiation of `MyExpression`, and interpolate it into `P3`:
+We create an instantiation of ``MyExpression``, and interpolate it
+into ``P3``:
 
 .. code-block:: cpp
 
@@ -84,13 +93,14 @@ We create an instantiation of `MyExpression`, and interpolate it into `P3`:
      MyExpression e;
      v3.interpolate(e);
 
-Now, we interpolate `v3` into the linear finite element space on a coarser grid:
+Now, we interpolate ``v3`` into the linear finite element space on a
+coarser grid:
 
 .. code-block:: cpp
 
      v1.interpolate(v3);
 
-Finally, we can visualise the function on the twp meshes:
+Finally, we can visualise the function on the two meshes:
 
 .. code-block:: cpp
 
