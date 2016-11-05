@@ -214,7 +214,8 @@ void XDMFFile::write_experimental(const Function& u)
   }
 
   add_data_item(_mpi_comm, dofmap_node, h5_id,
-                "/DofMap/0", dofmap_values, {num_cells, num_dofs_per_cell});
+                "/DofMap/0", dofmap_values,
+                {num_cells, num_dofs_per_cell}, "UInt");
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm) == 0)
