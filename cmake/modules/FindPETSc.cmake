@@ -153,15 +153,14 @@ show :
 
   # Call macro to get the PETSc variables
   petsc_get_variable(PETSC_CC_INCLUDES PETSC_CC_INCLUDES)
-  petsc_get_variable(PETSC_LIBS PETSC_LIB_BASIC)
+  petsc_get_variable(PETSC_LIBS_BASIC PETSC_LIB_BASIC)
   petsc_get_variable(PETSC_LIB_DIR PETSC_LIB_DIR)
-  set(PETSC_LIB "-L${PETSC_LIB_DIR} ${PETSC_LIBS}")
-  message("***** test ${PETSC_LIBS} ****")
+  set(PETSC_LIB_BASIC "-L${PETSC_LIB_DIR} ${PETSC_LIBS_BASIC}")
 
   # Extract include paths and libraries from compile command line
   include(ResolveCompilerPaths)
   resolve_includes(PETSC_INCLUDE_DIRS "${PETSC_CC_INCLUDES}")
-  resolve_libraries(PETSC_LIBRARIES "${PETSC_LIB}")
+  resolve_libraries(PETSC_LIBRARIES "${PETSC_LIB_BASIC}")
 
   # Add some extra libraries on OSX
   #if (APPLE)
