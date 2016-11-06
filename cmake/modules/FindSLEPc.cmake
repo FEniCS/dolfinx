@@ -54,8 +54,7 @@ endforeach()
 # Set libaries with absolute paths to SLEPC_LIBRARIES
 set(SLEPC_LIBRARIES ${_SLEPC_LIBRARIES})
 
-# Create SLEPC_STATIC_LIBRARIES (may be empty if not required)
-set(SLEPC_STATIC_LIBRARIES)
+set(SLEPC_REQUIRES_STATIC_LIB FALSE)
 
 # Compile and run test
 if (DOLFIN_SKIP_BUILD_TESTS)
@@ -113,10 +112,10 @@ int main()
     )
 
   if (SLEPC_TEST_LIB_COMPILED AND SLEPC_TEST_LIB_EXITCODE EQUAL 0)
-    message(STATUS "Performing test SLEPC_TEST_RUNS with shared library linking- Success")
+    message(STATUS "Performing test SLEPC_TEST_RUNS with shared library linking - Success")
     set(SLEPC_TEST_RUNS TRUE)
   else()
-    message(STATUS "Performing test SLEPC_TEST_RUNS with shared library linking- Failed")
+    message(STATUS "Performing test SLEPC_TEST_RUNS with shared library linking - Failed")
 
     # Loop over SLEPcstatic libraries and get absolute paths
     set(_SLEPC_STATIC_LIBRARIES)
@@ -147,6 +146,7 @@ int main()
     if (SLEPC_TEST_STATIC_LIBS_COMPILED AND SLEPC_STATIC_LIBS_EXITCODE EQUAL 0)
       message(STATUS "Performing test SLEPC_TEST__RUNS with static linking - Success")
       set(SLEPC_TEST_RUNS TRUE)
+      set(SLEPC_REQUIRES_STATIC_LIB TRUE)
     else()
       message(STATUS "Performing test SLEPC_TETS_RUNS with static lining - Failed")
       set(SLEPC_TEST_RUNS FALSE)
@@ -158,4 +158,5 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SLEPc
   "SLEPc could not be found. Be sure to set SLEPC_DIR.."
-  SLEPC_LIBRARY_DIRS SLEPC_LIBRARIES SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS SLEPC_VERSION)
+  SLEPC_LIBRARY_DIRS SLEPC_LIBRARIES SLEPC_REQUIRES_STATIC_LIB
+  SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS SLEPC_VERSION)

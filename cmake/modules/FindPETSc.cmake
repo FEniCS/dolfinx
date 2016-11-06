@@ -60,8 +60,7 @@ endforeach()
 # Copy libaries with absolute paths to PETSC_LIBRARIES
 set(PETSC_LIBRARIES ${_PETSC_LIBRARIES})
 
-# Create PETSC_STATIC_LIBRARIES (may be empty is not required)
-set(PETSC_STATIC_LIBRARIES)
+set(PETSC_REQUIRES_STATIC_LIB "OFF")
 
 # Build PETSc test program
 if (DOLFIN_SKIP_BUILD_TESTS)
@@ -159,6 +158,7 @@ int main()
 
     if (PETSC_TEST_LIB_COMPILED AND PETSC_TEST_LIB_EXITCODE EQUAL 0)
       message(STATUS "Performing test PETSC_TEST_RUNS static linking - Success")
+      set(PETSC_REQUIRES_STATIC_LIB "ON")
       set(PETSC_TEST_RUNS TRUE)
     else()
       message(STATUS "Performing test PETSC_TEST_RUNS static linking - Failed")
@@ -176,8 +176,11 @@ if (PETSC_INCLUDE_DIRS)
   set(CMAKE_EXTRA_INCLUDE_FILES)
 endif()
 
+message("RRRR: ${PETSC_REQUIRES_STATIC_LIB}")
+
 # Standard package handling
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(PETSc
-  "PETSc could not be found. Be sure to set PETSC_DIR and PETSC_ARCH."
-  PETSC_LIBRARY_DIRS PETSC_LIBRARIES PETSC_STATIC_LIBRARIES PETSC_INCLUDE_DIRS PETSC_TEST_RUNS PETSC_VERSION)
+  "PETSc could not be found. Be sure to set PETSC_DIR."
+  PETSC_LIBRARY_DIRS PETSC_LIBRARIES PETSC_STATIC_LIBRARIES PETSC_REQUIRES_STATIC_LIB
+  PETSC_INCLUDE_DIRS PETSC_TEST_RUNS PETSC_VERSION)
