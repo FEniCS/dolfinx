@@ -153,9 +153,10 @@ show :
 
   # Call macro to get the PETSc variables
   petsc_get_variable(PETSC_CC_INCLUDES PETSC_CC_INCLUDES)
-  petsc_get_variable(PETSC_LIBS PETSC_LIB)
+  petsc_get_variable(PETSC_LIBS PETSC_LIB_BASIC)
   petsc_get_variable(PETSC_LIB_DIR PETSC_LIB_DIR)
   set(PETSC_LIB "-L${PETSC_LIB_DIR} ${PETSC_LIBS}")
+  message("***** test ${PETSC_LIBS} ****")
 
   # Extract include paths and libraries from compile command line
   include(ResolveCompilerPaths)
@@ -163,34 +164,34 @@ show :
   resolve_libraries(PETSC_LIBRARIES "${PETSC_LIB}")
 
   # Add some extra libraries on OSX
-  if (APPLE)
-
-    # CMake will have troubel finding the gfortan libraries if
-    # compiling with clang (the libs may be required by 3rd party
-    # Fortran libraries)
-    find_program(GFORTRAN_EXECUTABLE gfortran)
-    if (GFORTRAN_EXECUTABLE)
-      execute_process(COMMAND ${GFORTRAN_EXECUTABLE} -print-file-name=libgfortran.dylib
-      OUTPUT_VARIABLE GFORTRAN_LIBRARY
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-      if (EXISTS "${GFORTRAN_LIBRARY}")
-        list(APPEND PETSC_EXTERNAL_LIBRARIES ${GFORTRAN_LIBRARY})
-      endif()
-    endif()
-
-    find_package(X11)
-    if (X11_FOUND)
-      list(APPEND PETSC_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
-      list(APPEND PETSC_EXTERNAL_LIBRARIES ${X11_LIBRARIES})
-    endif()
-
-    # ResolveCompilerPaths strips OSX frameworks, so add BLAS here for
-    # OSX
-    petsc_get_variable(PETSC_BLASLAPACK_LIB BLASLAPACK_LIB)
-    list(APPEND PETSC_EXTERNAL_LIBRARIES ${PETSC_BLASLAPACK_LIB})
-
-  endif()
+  #if (APPLE)
+  #
+  #  # CMake will have trouble finding the gfortan libraries if
+  #  # compiling with clang (the libs may be required by 3rd party
+  #  # Fortran libraries)
+  #  find_program(GFORTRAN_EXECUTABLE gfortran)
+  #  if (GFORTRAN_EXECUTABLE)
+  #    execute_process(COMMAND ${GFORTRAN_EXECUTABLE} -print-file-name=libgfortran.dylib
+  #    OUTPUT_VARIABLE GFORTRAN_LIBRARY
+  #    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  #
+  #    if (EXISTS "${GFORTRAN_LIBRARY}")
+  #      list(APPEND PETSC_EXTERNAL_LIBRARIES ${GFORTRAN_LIBRARY})
+  #    endif()
+  #  endif()
+  #
+  #  find_package(X11)
+  #  if (X11_FOUND)
+  #    list(APPEND PETSC_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
+  #    list(APPEND PETSC_EXTERNAL_LIBRARIES ${X11_LIBRARIES})
+  #  endif()
+  #
+  #  # ResolveCompilerPaths strips OSX frameworks, so add BLAS here for
+  #  # OSX
+  #  petsc_get_variable(PETSC_BLASLAPACK_LIB BLASLAPACK_LIB)
+  #  list(APPEND PETSC_EXTERNAL_LIBRARIES ${PETSC_BLASLAPACK_LIB})
+  #
+  #endif()
 
   # Remove temporary Makefile
   file(REMOVE ${petsc_config_makefile})
@@ -207,6 +208,7 @@ if (DOLFIN_SKIP_BUILD_TESTS)
   set(PETSC_TEST_RUNS TRUE)
   set(PETSC_VERSION "UNKNOWN")
   set(PETSC_VERSION_OK TRUE)
+
 elseif (FOUND_PETSC_CONF)
 
   # Set flags for building test program
