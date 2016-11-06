@@ -2022,5 +2022,17 @@ HDF5Attribute HDF5File::attributes(const std::string dataset_name)
   return HDF5Attribute(_hdf5_file_id, dataset_name);
 }
 //-----------------------------------------------------------------------------
+void HDF5File::set_mpi_atomicity(bool atomic)
+{
+  dolfin_assert(_hdf5_file_id > 0);
+  HDF5Interface::set_mpi_atomicity(_hdf5_file_id, atomic);
+}
+//-----------------------------------------------------------------------------
+bool HDF5File::get_mpi_atomicity() const
+{
+  dolfin_assert(_hdf5_file_id > 0);
+  return HDF5Interface::get_mpi_atomicity(_hdf5_file_id);
+}
+//-----------------------------------------------------------------------------
 
 #endif
