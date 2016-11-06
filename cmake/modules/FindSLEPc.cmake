@@ -1,14 +1,12 @@
 # - Try to find SLEPC
 # Once done this will define
 #
-#  SLEPC_FOUND        - system has SLEPc
-#  SLEPC_INCLUDE_DIR  - include directories for SLEPc
-#  SLEPC_LIBARIES     - libraries for SLEPc
-#  SLEPC_VERSION      - version of SLEPc
-#  SLEPC_PREFIX      - install prefix
-#
-# Assumes that PETSC_DIR and PETSC_ARCH has been set by
-# alredy calling find_package(PETSc)
+#  SLEPC_FOUND           - system has SLEPc
+#  SLEPC_INCLUDE_DIRS    - include directories for SLEPc
+#  SLEPC_LIBRARY_DIRS    - library directories for SLEPc
+#  SLEPC_LIBARIES        - libraries for SLEPc
+#  SLEPC_STATIC_LIBARIES - static libraries for SLEPc
+#  SLEPC_VERSION         - version of SLEPc
 
 #=============================================================================
 # Copyright (C) 2010-2012 Garth N. Wells, Anders Logg and Johannes Ring
@@ -44,7 +42,7 @@ message(STATUS "Checking for package 'SLEPc'")
 # Find SLEPc pkg-config file
 find_package(PkgConfig REQUIRED)
 set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-pkg_search_module(SLEPC REQUIRED SLEPc)
+pkg_search_module(SLEPC SLEPc)
 
 # Loop over SLEPc libraries and get absolute paths
 set(_SLEPC_LIBRARIES)
@@ -55,6 +53,9 @@ endforeach()
 
 # Set libaries with absolute paths to SLEPC_LIBRARIES
 set(SLEPC_LIBRARIES ${_SLEPC_LIBRARIES})
+
+# Create SLEPC_STATIC_LIBRARIES (may be empty if not required)
+set(SLEPC_STATIC_LIBRARIES)
 
 # Compile and run test
 if (DOLFIN_SKIP_BUILD_TESTS)
@@ -112,39 +113,49 @@ int main()
     )
 
   if (SLEPC_TEST_LIB_COMPILED AND SLEPC_TEST_LIB_EXITCODE EQUAL 0)
-    message(STATUS "Performing test SLEPC_TEST_RUNS - Success")
+    message(STATUS "Performing test SLEPC_TEST_RUNS with shared library linking- Success")
     set(SLEPC_TEST_RUNS TRUE)
   else()
-    message(STATUS "Performing test SLEPC_TEST_RUNS - Failed")
+    message(STATUS "Performing test SLEPC_TEST_RUNS with shared library linking- Failed")
 
-    # Test program does not run - try adding SLEPc 3rd party libs and test again
-    #list(APPEND CMAKE_REQUIRED_LIBRARIES ${SLEPC_EXTERNAL_LIBRARIES})
+    # Loop over SLEPcstatic libraries and get absolute paths
+    set(_SLEPC_STATIC_LIBRARIES)
+    foreach (lib ${SLEPC_STATIC_LIBRARIES})
+      find_library(LIB_${lib} ${lib} HINTS ${SLEPC_STATIC_LIBRARY_DIRS})
+      list(APPEND _SLEPC_STATIC_LIBRARIES ${LIB_${lib}})
+    endforeach()
 
-    #try_run(
-    #  SLEPC_TEST_3RD_PARTY_LIBS_EXITCODE
-    #  SLEPC_TEST_3RD_PARTY_LIBS_COMPILED
-    #  ${CMAKE_CURRENT_BINARY_DIR}
-    #  ${SLEPC_TEST_LIB_CPP}
-    #  CMAKE_FLAGS
-    #    "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-    #    "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
-    #  COMPILE_OUTPUT_VARIABLE SLEPC_TEST_3RD_PARTY_LIBS_COMPILE_OUTPUT
-    #  RUN_OUTPUT_VARIABLE SLEPC_TEST_3RD_PARTY_LIBS_OUTPUT
-    #  )
-    #
-    #if (SLEPC_TEST_3RD_PARTY_LIBS_COMPILED AND SLEPC_TEST_3RD_PARTY_LIBS_EXITCODE EQUAL 0)
-    #  message(STATUS "Performing test SLEPC_TEST_3RD_PARTY_LIBS_RUNS - Success")
-    #  set(SLEPC_LIBRARIES ${SLEPC_LIBRARIES} ${SLEPC_EXTERNAL_LIBRARIES}
-    #	CACHE STRING "SLEPc libraries." FORCE)
-    #  set(SLEPC_TEST_RUNS TRUE)
-    #else()
-    #  message(STATUS "Performing test SLEPC_TEST_3RD_PARTY_LIBS_RUNS - Failed")
-    #endif()
+    # Copy libaries with  absolute paths to PETSC_LIBRARIES
+    set(SLEPC_STATIC_LIBRARIES ${_SLEPC_STATIC_LIBRARIES})
+
+    # Set flags for building test program (static libs)
+    set(CMAKE_REQUIRED_INCLUDES ${SLEPC_INCLUDE_DIRS})
+    set(CMAKE_REQUIRED_LIBRARIES ${SLEPC_STATIC_LIBRARIES})
+
+    try_run(
+      SLEPC_TEST_STATIC_LIBS_EXITCODE
+      SLEPC_TEST_STATIC_LIBS_COMPILED
+      ${CMAKE_CURRENT_BINARY_DIR}
+      ${SLEPC_TEST_LIB_CPP}
+      CMAKE_FLAGS
+        "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
+        "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
+      COMPILE_OUTPUT_VARIABLE SLEPC_TEST_STATIC_LIBS_COMPILE_OUTPUT
+      RUN_OUTPUT_VARIABLE SLEPC_TEST_STATIC_LIBS_OUTPUT
+      )
+
+    if (SLEPC_TEST_STATIC_LIBS_COMPILED AND SLEPC_STATIC_LIBS_EXITCODE EQUAL 0)
+      message(STATUS "Performing test SLEPC_TEST__RUNS with static linking - Success")
+      set(SLEPC_TEST_RUNS TRUE)
+    else()
+      message(STATUS "Performing test SLEPC_TETS_RUNS with static lining - Failed")
+      set(SLEPC_TEST_RUNS FALSE)
+    endif()
   endif()
 endif()
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SLEPc
-  "SLEPc could not be found. Be sure to set SLEPC_DIR, PETSC_DIR, and PETSC_ARCH."
-  SLEPC_LIBRARIES SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS SLEPC_VERSION SLEPC_PREFIX)
+  "SLEPc could not be found. Be sure to set SLEPC_DIR.."
+  SLEPC_LIBRARY_DIRS SLEPC_LIBRARIES SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS SLEPC_VERSION)
