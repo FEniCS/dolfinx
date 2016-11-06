@@ -15,28 +15,28 @@ find_package(CHOLMOD QUIET)
 
 # Check for header file
 find_path(UMFPACK_INCLUDE_DIRS umfpack.h
-  HINTS ${UMFPACK_DIR}/include $ENV{UMFPACK_DIR}/include $ENV{PETSC_DIR}/include
+  HINTS ${UMFPACK_DIR}/include $ENV{UMFPACK_DIR}/include ${PETSC_INCLUDE_DIRS} $ENV{PETSC_DIR}/include
   PATH_SUFFIXES suitesparse ufsparse
   DOC "Directory where the UMFPACK header is located")
 mark_as_advanced(UMFPACK_INCLUDE_DIRS)
 
 # Check for UMFPACK library
 find_library(UMFPACK_LIBRARY umfpack
-  HINTS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib $ENV{PETSC_DIR}/lib
+  HINTS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib ${PETSC_LIBRARY_DIRS} $ENV{PETSC_DIR}/lib
   DOC "The UMFPACK library")
 mark_as_advanced(UMFPACK_LIBRARY)
 
 #  Check for SUITESPARSE library on Apple
 if (APPLE)
   find_library(SUITESPARSE_LIBRARY SuiteSparse
-    HINTS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib $ENV{PETSC_DIR}/lib
+    HINTS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib ${PETSC_LIBRARY_DIRS} $ENV{PETSC_DIR}/lib
     DOC "The SUITESPARSE library")
   mark_as_advanced(SUITESPARSE_LIBRARY)
 endif()
 
 # Check for SUITESPARSECONFIG library
 find_library(SUITESPARSECONFIG_LIBRARY suitesparseconfig
-  HINTS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib $ENV{PETSC_DIR}/lib
+  HINTS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib ${PETSC_LIBRARY_DIRS} $ENV{PETSC_DIR}/lib
   DOC "The SUITESPARSE library")
 mark_as_advanced(SUITESPARSECONFIG_LIBRARY)
 
