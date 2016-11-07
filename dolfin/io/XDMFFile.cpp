@@ -130,6 +130,51 @@ void XDMFFile::write_experimental(const Function& u)
 
   const Mesh& mesh = *u.function_space()->mesh();
 
+  // Get 'signature' split into units by brackets or commas
+  std::vector<std::string> signature;
+  const std::string dolfin_signature
+    = u.function_space()->element()->signature();
+  boost::split(signature, dolfin_signature,
+               boost::is_any_of("(,)"));
+
+  std::string element_family;
+  unsigned int element_degree = -1;
+  for (unsigned int i = 0; i != signature.size(); ++i)
+    if (signature[i] == "FiniteElement")
+    {
+      element_family = signature[i + 1];
+      boost::erase_all(element_family, "'");
+      std::cout << "Family = " << element_family << std::endl;
+
+      std::cout << "Cell = " << signature[i + 2] << std::endl;
+
+      element_degree = std::stoul(signature[i + 3]);
+      std::cout << "Degree = " << element_degree << std::endl;
+    }
+
+  const std::map<std::string, std::string> family_abbr = {
+    {"Lagrange", "CG"},
+    {"Discontinuous Lagrange", "DG"},
+    {"Raviart-Thomas", "RT"},
+    {"Brezzi-Douglas-Marini", "BDM"},
+    {"Crouzeix-Raviart", "CR"},
+    {"Nedelec 1st kind H(curl)", "N1curl"},
+    {"Nedelec 2nd kind H(curl)", "N2curl"}
+  };
+
+  auto it = family_abbr.find(element_family);
+  if (it == family_abbr.end())
+  {
+    dolfin_error("XDMFFile.cpp", "find element family",
+                 "Element not yet supported");
+  }
+  element_family = it->second;
+
+  // Create a name for the field and index data
+  // incorporating the family and degree
+  std::string name = u.name() + "_" + element_family
+    + std::to_string(element_degree);
+
   // Clear pugi doc
   _xml_doc->reset();
 
@@ -170,7 +215,7 @@ void XDMFFile::write_experimental(const Function& u)
     dofs[i] = i;
   u.vector()->get_local(data_values.data(), num_values, dofs.data());
 
-  const std::string u_values = u.name() + "_val";
+  const std::string u_values = name + "_val";
 
   // Add attribute node for data (unassociated to cells/nodes)
   pugi::xml_node attribute_node = grid_node.append_child("Attribute");
@@ -187,7 +232,7 @@ void XDMFFile::write_experimental(const Function& u)
   add_data_item(_mpi_comm, attribute_node, h5_id,
                 "/Vector/0", data_values, {(int)num_values, width});
 
-  const std::string u_indices = u.name() + "_idx";
+  const std::string u_indices = name + "_idx";
 
   // Add index node for data (associated to cells)
   pugi::xml_node dofmap_node = grid_node.append_child("Attribute");
