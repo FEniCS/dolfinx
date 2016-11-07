@@ -307,13 +307,13 @@ namespace dolfin
     /// Tabulate globally supported dofs
     ///
     /// *Arguments*
-    ///     dofs (std::size_t)
+    ///     element_dofs (std::size_t)
     ///         Degrees of freedom.
-    void tabulate_global_dofs(std::vector<std::size_t>& dofs) const
+    void tabulate_global_dofs(std::vector<std::size_t>& element_dofs) const
     {
       dolfin_assert(_global_nodes.empty() || block_size() == 1);
-      dofs.resize(_global_nodes.size());
-      std::copy(_global_nodes.cbegin(), _global_nodes.cend(), dofs.begin());
+      element_dofs.resize(_global_nodes.size());
+      std::copy(_global_nodes.cbegin(), _global_nodes.cend(), element_dofs.begin());
     }
 
     /// Create a copy of the dof map
