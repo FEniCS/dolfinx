@@ -5,11 +5,11 @@
 #  SLEPC_INCLUDE_DIRS    - include directories for SLEPc
 #  SLEPC_LIBRARY_DIRS    - library directories for SLEPc
 #  SLEPC_LIBARIES        - libraries for SLEPc
-#  SLEPC_STATIC_LIBARIES - static libraries for SLEPc
+#  SLEPC_STATIC_LIBARIES - ibraries for SLEPc (static linking, undefined if not required)
 #  SLEPC_VERSION         - version of SLEPc
 
 #=============================================================================
-# Copyright (C) 2010-2012 Garth N. Wells, Anders Logg and Johannes Ring
+# Copyright (C) 2010-2016 Garth N. Wells, Anders Logg and Johannes Ring
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -54,27 +54,17 @@ endforeach()
 # Set libaries with absolute paths to SLEPC_LIBRARIES
 set(SLEPC_LIBRARIES ${_SLEPC_LIBRARIES})
 
-set(SLEPC_REQUIRES_STATIC_LIB FALSE)
-
 # Compile and run test
 if (DOLFIN_SKIP_BUILD_TESTS)
 
+  # FIXME: Need to add option for linkage type
+  # Assume SLEPc works, and assume shared linkage
   set(SLEPC_TEST_RUNS TRUE)
+  unset(SLEPC_STATIC_LIBRARIES CACHE)
 
-elseif (SLEPC_LIBRARIES AND SLEPC_INCLUDE_DIRS)
+elseif (SLEPC_FOUND)
 
-  # Set flags for building test program
-  set(CMAKE_REQUIRED_INCLUDES ${SLEPC_INCLUDE_DIRS})
-  set(CMAKE_REQUIRED_LIBRARIES ${SLEPC_LIBRARIES})
-
-  # Add MPI variables if MPI has been found
-  if (MPI_C_FOUND)
-    set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
-    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES})
-    set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
-  endif()
-
-  # Run SLEPc test program
+  # Create SLEPc test program
   set(SLEPC_TEST_LIB_CPP
     "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/slepc_test_lib.cpp")
   file(WRITE ${SLEPC_TEST_LIB_CPP} "
@@ -99,6 +89,18 @@ int main()
 }
 ")
 
+  # Set flags for building test program (shared libs)
+  set(CMAKE_REQUIRED_INCLUDES ${SLEPC_INCLUDE_DIRS})
+  set(CMAKE_REQUIRED_LIBRARIES ${SLEPC_LIBRARIES})
+
+  # Add MPI variables if MPI has been found
+  if (MPI_C_FOUND)
+    set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES})
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
+  endif()
+
+  # Try to run test program (shared linking)
   try_run(
     SLEPC_TEST_LIB_EXITCODE
     SLEPC_TEST_LIB_COMPILED
@@ -112,12 +114,18 @@ int main()
     )
 
   if (SLEPC_TEST_LIB_COMPILED AND SLEPC_TEST_LIB_EXITCODE EQUAL 0)
-    message(STATUS "Performing test SLEPC_TEST_RUNS with shared library linking - Success")
-    set(SLEPC_TEST_RUNS TRUE)
-  else()
-    message(STATUS "Performing test SLEPC_TEST_RUNS with shared library linking - Failed")
 
-    # Loop over SLEPcstatic libraries and get absolute paths
+    message(STATUS "Test SLEPC_TEST_RUNS with shared library linking - Success")
+    set(SLEPC_TEST_RUNS TRUE)
+
+    # Static libraries not required, so unset
+    unset(SLEPC_STATIC_LIBRARIES CACHE)
+
+  else()
+
+    message(STATUS "Test SLEPC_TEST_RUNS with shared library linking - Failed")
+
+    # Loop over SLEPc static libraries and get absolute paths
     set(_SLEPC_STATIC_LIBRARIES)
     foreach (lib ${SLEPC_STATIC_LIBRARIES})
       find_library(LIB_${lib} ${lib} HINTS ${SLEPC_STATIC_LIBRARY_DIRS})
@@ -131,25 +139,39 @@ int main()
     set(CMAKE_REQUIRED_INCLUDES ${SLEPC_INCLUDE_DIRS})
     set(CMAKE_REQUIRED_LIBRARIES ${SLEPC_STATIC_LIBRARIES})
 
+  # Add MPI variables if MPI has been found
+  if (MPI_C_FOUND)
+    set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES})
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
+  endif()
+
+  # Try to run test program (static linking)
     try_run(
       SLEPC_TEST_STATIC_LIBS_EXITCODE
       SLEPC_TEST_STATIC_LIBS_COMPILED
       ${CMAKE_CURRENT_BINARY_DIR}
       ${SLEPC_TEST_LIB_CPP}
       CMAKE_FLAGS
-        "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-        "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
+      "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
+      "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
       COMPILE_OUTPUT_VARIABLE SLEPC_TEST_STATIC_LIBS_COMPILE_OUTPUT
       RUN_OUTPUT_VARIABLE SLEPC_TEST_STATIC_LIBS_OUTPUT
       )
 
     if (SLEPC_TEST_STATIC_LIBS_COMPILED AND SLEPC_STATIC_LIBS_EXITCODE EQUAL 0)
-      message(STATUS "Performing test SLEPC_TEST__RUNS with static linking - Success")
+
+      message(STATUS "Test SLEPC_TEST__RUNS with static linking - Success")
       set(SLEPC_TEST_RUNS TRUE)
-      set(SLEPC_REQUIRES_STATIC_LIB TRUE)
+
     else()
-      message(STATUS "Performing test SLEPC_TETS_RUNS with static lining - Failed")
+
+      message(STATUS "Test SLEPC_TETS_RUNS with static linking - Failed")
       set(SLEPC_TEST_RUNS FALSE)
+
+      # Configuration unsuccessful, so unset
+      unset(SLEPC_STATIC_LIBRARIES CACHE)
+
     endif()
   endif()
 endif()
@@ -157,6 +179,6 @@ endif()
 # Standard package handling
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SLEPc
-  "SLEPc could not be found. Be sure to set SLEPC_DIR.."
-  SLEPC_LIBRARY_DIRS SLEPC_LIBRARIES SLEPC_REQUIRES_STATIC_LIB
+  "SLEPc could not be found. Be sure to set SLEPC_DIR."
+  SLEPC_LIBRARY_DIRS SLEPC_LIBRARIES
   SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS SLEPC_VERSION)
