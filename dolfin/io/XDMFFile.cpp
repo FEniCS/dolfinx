@@ -225,12 +225,8 @@ void XDMFFile::write_experimental(const Function& u)
     = rank_to_string(u.value_rank()).c_str();
   attribute_node.append_attribute("Center") = "Grid";
 
-  // Add attribute DataItem node and write data
-  std::int64_t width = get_padded_width(u);
-  dolfin_assert(width == 1);
-
   add_data_item(_mpi_comm, attribute_node, h5_id,
-                "/Vector/0", data_values, {(int)num_values, width});
+                "/Vector/0", data_values, {(int)num_values, 1});
 
   const std::string u_indices = name + "_idx";
 
