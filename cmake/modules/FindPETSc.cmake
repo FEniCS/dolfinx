@@ -197,6 +197,6 @@ endif()
 # Standard package handling
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(PETSc
-  "PETSc could not be found. Be sure to set PETSC_DIR."
-  PETSC_LIBRARY_DIRS PETSC_LIBRARIES
-  PETSC_INCLUDE_DIRS PETSC_TEST_RUNS PETSC_VERSION)
+  REQUIRED_VARS PETSC_LIBRARY_DIRS PETSC_LIBRARIES PETSC_INCLUDE_DIRS PETSC_TEST_RUNS
+  VERSION_VAR PETSC_VERSION
+  FAIL_MESSAGE "PETSc could not be found. Be sure to set PETSC_DIR.")

@@ -179,6 +179,6 @@ endif()
 # Standard package handling
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SLEPc
-  "SLEPc could not be found. Be sure to set SLEPC_DIR."
-  SLEPC_LIBRARY_DIRS SLEPC_LIBRARIES
-  SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS SLEPC_VERSION)
+  REQUIRED_VARS SLEPC_LIBRARY_DIRS SLEPC_LIBRARIES SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS
+  VERSION_VAR SLEPC_VERSION
+  FAIL_MESSAGE "SLEPc could not be found. Be sure to set SLEPC_DIR.")
