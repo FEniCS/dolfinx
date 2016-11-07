@@ -680,14 +680,14 @@ namespace dolfin
   std::vector<std::size_t> MeshFunction<T>::where_equal(T value)
   {
     dolfin_assert(_values);
+    std::size_t n = std::count(_values.get(), _values.get() + _size, value);
     std::vector<std::size_t> indices;
-    indices.reserve(size());
+    indices.reserve(n);
     for (int i = 0; i < size(); ++i)
     {
       if (_values[i] == value)
         indices.push_back(i);
     }
-    indices.shrink_to_fit();
     return indices;
   }
   //---------------------------------------------------------------------------
