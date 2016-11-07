@@ -49,7 +49,7 @@ message(STATUS "Checking for package 'PETSc'")
 find_package(PkgConfig REQUIRED)
 
 # Note: craypetsc_real is on Cray systems
-set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+set(ENV{PKG_CONFIG_PATH} "$ENV{CRAY_PETSC_PREFIX_DIR}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 pkg_search_module(PETSC craypetsc_real PETSc)
 
 # Loop over PETSc libraries and get absolute paths
