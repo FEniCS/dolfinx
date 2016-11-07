@@ -42,7 +42,7 @@ message(STATUS "Checking for package 'SLEPc'")
 # Find SLEPc pkg-config file
 find_package(PkgConfig REQUIRED)
 set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-pkg_search_module(SLEPC SLEPc)
+pkg_search_module(SLEPC crayslepc_real SLEPc)
 
 # Loop over SLEPc libraries and get absolute paths
 set(_SLEPC_LIBRARIES)
