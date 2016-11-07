@@ -438,5 +438,24 @@ HDF5Interface::dataset_list(const hid_t hdf5_file_handle,
   return list_of_datasets;
 }
 //-----------------------------------------------------------------------------
+void HDF5Interface::set_mpi_atomicity(const hid_t hdf5_file_handle,
+                                      const bool atomic)
+{
+  herr_t status = H5Fset_mpi_atomicity(hdf5_file_handle, atomic);
+  if (status == HDF5_FAIL) dolfin_error("HDF5Interface.cpp",
+                                        "set MPI atomicity flag",
+                                        "Setting the MPI atomicity flag failed");
+}
+//-----------------------------------------------------------------------------
+bool HDF5Interface::get_mpi_atomicity(const hid_t hdf5_file_handle)
+{
+  hbool_t atomic;
+  herr_t status = H5Fget_mpi_atomicity(hdf5_file_handle, &atomic);
+  if (status == HDF5_FAIL) dolfin_error("HDF5Interface.cpp",
+                                        "get MPI atomicity flag",
+                                        "Getting the MPI atomicity flag failed");
+  return (bool) atomic;
+}
+//-----------------------------------------------------------------------------
 
 #endif
