@@ -517,6 +517,10 @@ void SLEPcEigenSolver::set_solver(std::string solver)
     EPSSetType(_eps, EPSLAPACK);
   else if (solver == "arpack")
     EPSSetType(_eps, EPSARPACK);
+  else if (solver == "jacobi-davidson")
+    EPSSetType(_eps, EPSJD);
+  else if (solver == "generalized-davidson")
+    EPSSetType(_eps, EPSGD);
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",
