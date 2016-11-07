@@ -38,6 +38,7 @@ namespace dolfin
   class GenericVector;
   class PETScMatrix;
   class PETScVector;
+  class VectorSpaceBasis;
 
   /// This class provides an eigenvalue solver for PETSc matrices. It
   /// is a wrapper for the SLEPc eigenvalue solver.
@@ -186,6 +187,10 @@ namespace dolfin
 
     /// Set deflation space
     void set_deflation_space(const PETScVector& deflation_space);
+
+    /// Set deflation space. The deflation space is explicitly orthonormalized
+    /// by SLEPc internally.
+    void set_deflation_space(const VectorSpaceBasis& deflation_space);
 
     /// Sets the prefix used by PETSc when searching the PETSc options
     /// database

@@ -29,6 +29,7 @@
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "SLEPcEigenSolver.h"
+#include "VectorSpaceBasis.h"
 
 using namespace dolfin;
 
@@ -317,6 +318,32 @@ void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
   Vec x = deflation_space.vec();
   dolfin_assert(_eps);
   EPSSetDeflationSpace(_eps, 1, &x);
+}
+//-----------------------------------------------------------------------------
+void SLEPcEigenSolver::set_deflation_space(const VectorSpaceBasis& deflation_space)
+{
+  dolfin_assert(_eps);
+
+  PetscErrorCode ierr;
+
+  // Copy vectors in vector space object
+  std::vector<PETScVector> _nullspace;
+  for (std::size_t i = 0; i < deflation_space.dim(); ++i)
+  {
+    dolfin_assert(deflation_space[i]);
+    const PETScVector& x = deflation_space[i]->down_cast<PETScVector>();
+
+    // Copy vector
+    _nullspace.push_back(x);
+  }
+
+  // Get pointers to underlying PETSc objects
+  std::vector<Vec> petsc_vecs;
+  for (auto& basis_vector : _nullspace)
+    petsc_vecs.push_back(basis_vector.vec());
+
+  ierr = EPSSetDeflationSpace(_eps, petsc_vecs.size(), petsc_vecs.data());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetDeflationSpace");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_options_prefix(std::string options_prefix)
