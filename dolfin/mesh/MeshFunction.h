@@ -310,7 +310,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<T>
     ///         The indices.
-    std::vector<T> where_equal(T value);
+    std::vector<std::size_t> where_equal(T value);
 
     /// Return informal string representation (pretty-print)
     ///
@@ -677,17 +677,17 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  std::vector<T> MeshFunction<T>::where_equal(T value)
+  std::vector<std::size_t> MeshFunction<T>::where_equal(T value)
   {
     dolfin_assert(_values);
-    std::vector<T> indices;
+    std::vector<std::size_t> indices;
     indices.reserve(size());
     for (int i = 0; i < size(); ++i)
     {
       if (_values[i] == value)
         indices.push_back(i);
     }
-    indices.resize(indices.size());
+    indices.shrink_to_fit();
     return indices;
   }
   //---------------------------------------------------------------------------
