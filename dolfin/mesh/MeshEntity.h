@@ -119,8 +119,14 @@ namespace dolfin
     ///         The global index. Set to
     ///         std::numerical_limits<std::size_t>::max() if global index
     ///         has not been computed
-    std::size_t global_index() const
-    { return _mesh->topology().global_indices(_dim)[_local_index]; }
+    std::int64_t global_index() const
+    {
+      const std::vector<std::int64_t>& global_indices
+        = _mesh->topology().global_indices(_dim);
+      if (global_indices.empty())
+        return -1;
+      return global_indices[_local_index];
+    }
 
     /// Return local number of incident mesh entities of given
     /// topological dimension

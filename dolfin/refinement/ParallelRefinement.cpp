@@ -237,7 +237,7 @@ void ParallelRefinement::create_new_vertices()
   // Attach global indices to each vertex, old and new, and sort
   // them across processes into this order
 
-  std::vector<std::size_t> global_indices(_mesh.topology().global_indices(0));
+  std::vector<std::int64_t> global_indices(_mesh.topology().global_indices(0));
   for (std::size_t i = 0; i < num_new_vertices; i++)
     global_indices.push_back(i + global_offset);
 

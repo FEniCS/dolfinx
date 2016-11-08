@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2015 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2012-2016 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -51,15 +51,14 @@
 #include "HDF5File.h"
 #include "HDF5Utility.h"
 #include "XDMFFile.h"
-#include "XDMFxml.h"
 #include "xmlutils.h"
 
 using namespace dolfin;
 
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
-  : _mpi_comm(comm), _hdf5_filemode(""), _current_mesh_name(""),
-    _filename(filename), _counter(0), _xml(new XDMFxml(filename))
+  : _mpi_comm(comm), _filename(filename),
+    _counter(0), _xml_doc(new pugi::xml_document)
 {
   // Rewrite the mesh at every time step in a time series. Should be
   // turned off if the mesh remains constant.
@@ -70,735 +69,21 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
   // HDF5 file whilst running, at some performance cost.
   parameters.add("flush_output", false);
 
-  // FIXME: This is only relevant to HDF5
-  // HDF5 file restart interval. Use 0 to collect all output in one
-  // file.
-  parameters.add("multi_file", 0);
-
-  // Whether to save multi-dataset files as time series, or flat
-  parameters.add("time_series", true);
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
 {
   // Do nothing
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void XDMFFile::write(const Mesh& mesh, Encoding encoding)
-{
-  write_new(mesh, encoding);
-  return;
-
-  check_encoding(encoding);
-
-  // Output data name
-  const std::string name = mesh.name();
-
-  // Topological and geometric dimensions
-  const std::size_t gdim = mesh.geometry().dim();
-  const std::size_t cell_dim = mesh.topology().dim();
-
-  // Make sure entities are numbered
-  DistributedMeshTools::number_entities(mesh, cell_dim);
-
-  // Get number of global cells and points
-  const std::size_t num_global_cells = mesh.size_global(cell_dim);
-  std::size_t num_total_points = 0;
-  for (std::size_t i = 0; i <= mesh.topology().dim(); ++i)
-  {
-    num_total_points +=
-      mesh.geometry().num_entity_coordinates(i)*mesh.size_global(i);
-  }
-
-  const std::string group_name = "/Mesh/" + name;
-
-  // Write hdf5 file on all processes
-  if (encoding == Encoding::HDF5)
-  {
-#ifdef HAS_HDF5
-    // Write mesh to HDF5 file
-    // The XML below will obliterate any existing XDMF file
-    if (_hdf5_filemode != "w")
-    {
-      // Create HDF5 file (truncate)
-      _hdf5_file.reset(new HDF5File(mesh.mpi_comm(),
-                       get_hdf5_filename(_filename), "w"));
-      _hdf5_filemode = "w";
-    }
-    _hdf5_file->write(mesh, cell_dim, group_name);
-#else
-    dolfin_error("XDMFile.cpp", "write Mesh", "Need HDF5 support");
-#endif
-  }
-
-  // Write the XML meta description on process zero
-  if (MPI::rank(mesh.mpi_comm()) == 0)
-  {
-    dolfin_assert(_xml);
-    _xml->init_mesh(name);
-
-    // Write the topology
-    std::string topology_xml_value;
-
-    if (encoding == Encoding::ASCII)
-      topology_xml_value = generate_xdmf_ascii_mesh_topology_data(mesh);
-    else if (encoding == Encoding::HDF5)
-    {
-      const boost::filesystem::path p(get_hdf5_filename(_filename));
-      topology_xml_value = p.filename().string() + ":" + group_name
-        + "/topology";
-    }
-
-    // Describe topological connectivity
-    _xml->mesh_topology(mesh.type().cell_type(), mesh.geometry().degree(),
-                       num_global_cells, topology_xml_value,
-                       xdmf_format_str(encoding));
-
-    // Write the geometry
-    std::string geometry_xml_value;
-
-    if (encoding == Encoding::ASCII)
-      geometry_xml_value = generate_xdmf_ascii_mesh_geometry_data(mesh);
-    else if (encoding == Encoding::HDF5)
-    {
-      const boost::filesystem::path p(get_hdf5_filename(_filename));
-      geometry_xml_value = p.filename().string() + ":" + group_name
-        + "/coordinates";
-    }
-
-    // Describe geometric coordinates
-    _xml->mesh_geometry(num_total_points, gdim, geometry_xml_value,
-                        xdmf_format_str(encoding));
-
-    _xml->write();
-  }
-}
-//----------------------------------------------------------------------------
-void XDMFFile::write(const Function& u, Encoding encoding)
-{
-  write(u, (double) _counter, encoding);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
-{
-  // FIXME: This function is too long. Breal up.
-
-  check_encoding(encoding);
-
-  // Conditions for starting a new HDF5 file
-#ifdef HAS_HDF5
-  if (encoding == Encoding::HDF5)
-  {
-    std::string hdf5_filename = get_hdf5_filename(_filename);
-    const int mf_interval = parameters["multi_file"];
-    if ((mf_interval != 0 and _counter % mf_interval == 0)
-        or _hdf5_filemode != "w" )
-    {
-      if (mf_interval != 0)
-      {
-        std::stringstream s;
-        s << std::setw(6) << std::setfill('0') << _counter;
-        hdf5_filename += "_" + s.str();
-      }
-
-      // Create new HDF5 file (truncate),
-      // closing any open file from a previous timestep
-      _hdf5_file.reset(new HDF5File(_mpi_comm, hdf5_filename, "w"));
-      _hdf5_filemode = "w";
-    }
-
-    dolfin_assert(_hdf5_file);
-  }
-#endif
-
-  dolfin_assert(u.function_space()->mesh());
-  const Mesh& mesh = *u.function_space()->mesh();
-  const std::size_t degree = mesh.geometry().degree();
-
-  dolfin_assert(u.function_space()->dofmap());
-  const GenericDofMap& dofmap = *u.function_space()->dofmap();
-
-  // Geometric and topological dimension
-  const std::size_t gdim = mesh.geometry().dim();
-  const std::size_t tdim = mesh.topology().dim();
-
-  // Get some Function and cell information
-  const std::size_t value_rank = u.value_rank();
-  const std::size_t value_size = u.value_size();
-
-  // For 2D vectors and tensors, pad out values with zeros to make 3D
-  // (XDMF does not support 2D data)
-  std::size_t padded_value_size = value_size;
-  if (value_rank > 0)
-  {
-    if (value_size == 2)
-      padded_value_size = 3;
-    if (value_size == 4)
-      padded_value_size = 9;
-  }
-
-  // Test for cell-centred data
-  std::size_t cell_based_dim = 1;
-  for (std::size_t i = 0; i < value_rank; i++)
-    cell_based_dim *= tdim;
-
-  const bool vertex_data = !(dofmap.max_element_dofs() == cell_based_dim);
-
-  // Get Function data at vertices/cell centres
-  std::vector<double> data_values;
-  if (vertex_data)
-    get_point_data_values(data_values, padded_value_size, u);
-  else
-  {
-    dolfin_assert(u.function_space()->dofmap());
-    dolfin_assert(u.vector());
-
-    // Allocate memory for function values at cell centres
-    const std::size_t num_local_cells = mesh.topology().ghost_offset(tdim);
-    const std::size_t size = num_local_cells*value_size;
-
-    // Build lists of dofs and create map
-    std::vector<dolfin::la_index> dof_set;
-    std::vector<std::size_t> offset(size + 1);
-    std::vector<std::size_t>::iterator cell_offset = offset.begin();
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      // Tabulate dofs
-      const ArrayView<const dolfin::la_index> dofs
-        = dofmap.cell_dofs(cell->index());
-      for (std::size_t i = 0; i < dofmap.num_element_dofs(cell->index()); ++i)
-        dof_set.push_back(dofs[i]);
-
-      // Add local dimension to cell offset and increment
-      *(cell_offset + 1) = *(cell_offset)
-        + dofmap.num_element_dofs(cell->index());
-      ++cell_offset;
-    }
-
-    // Get  values
-    data_values.resize(dof_set.size());
-    dolfin_assert(u.vector());
-    u.vector()->get_local(data_values.data(), dof_set.size(), dof_set.data());
-
-    cell_offset = offset.begin();
-    std::vector<double> _data_values(padded_value_size*num_local_cells, 0.0);
-    std::size_t count = 0;
-    if (value_rank == 1 && value_size == 2)
-    {
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
-      {
-        _data_values[count++] = data_values[*cell_offset];
-        _data_values[count++] = data_values[*cell_offset + 1];
-        ++count;
-        ++cell_offset;
-      }
-    }
-    else if (value_rank == 2 && value_size == 4)
-    {
-      // Pad with 0.0 to 2D tensors to make them 3D
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
-      {
-        for (std::size_t i = 0; i < 2; i++)
-        {
-          _data_values[count++] = data_values[*cell_offset + 2*i];
-          _data_values[count++] = data_values[*cell_offset + 2*i + 1];
-          ++count;
-        }
-
-        count += 3;
-        ++cell_offset;
-      }
-    }
-    else
-    {
-      // Write all components
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
-      {
-        for (std::size_t i = 0; i < value_size; i++)
-          _data_values[count++] = data_values[*cell_offset + i];
-
-        ++cell_offset;
-      }
-    }
-    data_values = _data_values;
-  }
-
-  // FIXME: Below is messy. Should query HDF5 file writer for existing
-  //        mesh name
-  // Write mesh to HDF5 file
-  if (parameters["rewrite_function_mesh"] || _counter == 0)
-  {
-    if (encoding == Encoding::HDF5)
-    {
-#ifdef HAS_HDF5
-      const std::string h5_mesh_name = "/Mesh/" + std::to_string(_counter);
-      boost::filesystem::path p(get_hdf5_filename(_filename));
-      _current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
-      _hdf5_file->write(mesh, h5_mesh_name);
-#endif
-    }
-    else if (encoding == Encoding::ASCII)
-      _current_mesh_name = "/Xdmf/Domain/Grid";
-  }
-
-  const bool mpi_io = MPI::size(mesh.mpi_comm()) > 1 ? true : false;
-  std::vector<std::int64_t> global_size(2);
-  global_size[1] = padded_value_size;
-
-  std::size_t num_global_points = mesh.size_global(0);
-  const std::size_t num_global_cells = mesh.size_global(tdim);
-  if (vertex_data)
-  {
-    if (degree == 2)
-    {
-      dolfin_assert(!mpi_io);
-      num_global_points = mesh.size(0) + mesh.size(1);
-      global_size[0] = num_global_points;
-    }
-    else
-    {
-      // Remove duplicates for vertex-based data in parallel
-      DistributedMeshTools::reorder_values_by_global_indices(mesh, data_values,
-                                                             padded_value_size);
-      global_size[0] = num_global_points;
-    }
-  }
-  else
-    global_size[0] = num_global_cells;
-
-  // Save data values to HDF5 file.  Vertex/cell values are saved in
-  // the hdf5 group /VisualisationVector as distinct from /Vector
-  // which is used for solution vectors.
-
-  const std::string dataset_name = "/VisualisationVector/"
-                                   + std::to_string(_counter);
-
-#ifdef HAS_HDF5
-  if (encoding == Encoding::HDF5)
-  {
-    _hdf5_file->write_data(dataset_name, data_values, global_size, mpi_io);
-
-    // Flush file. Improves chances of recovering data if
-    // interrupted. Also makes file somewhat readable between writes.
-    if (parameters["flush_output"])
-      _hdf5_file->flush();
-  }
-#endif
-
-  // Write the XML meta description (see http://www.xdmf.org) on
-  // process zero
-
-  if (MPI::rank(mesh.mpi_comm()) == 0)
-  {
-    dolfin_assert(_xml);
-    _xml->init_timeseries(u.name(), time_step, _counter);
-
-    if (encoding == Encoding::HDF5)
-    {
-      _xml->mesh_topology(mesh.type().cell_type(), degree,
-                          num_global_cells, _current_mesh_name + "/topology",
-                          xdmf_format_str(encoding));
-      _xml->mesh_geometry(num_global_points, gdim,
-                          _current_mesh_name + "/coordinates",
-                          xdmf_format_str(encoding));
-
-      boost::filesystem::path p(get_hdf5_filename(_filename));
-      _xml->data_attribute(u.name(), value_rank, vertex_data,
-                           num_global_points, num_global_cells,
-                           padded_value_size,
-                           p.filename().string() + ":" + dataset_name,
-                           xdmf_format_str(encoding));
-    }
-    else if (encoding == Encoding::ASCII)
-    {
-      // Add the mesh topology and geometry to the xml data
-      std::string topology_data = generate_xdmf_ascii_mesh_topology_data(mesh);
-      std::string geometry_data = generate_xdmf_ascii_mesh_geometry_data(mesh);
-
-      _xml->mesh_topology(mesh.type().cell_type(), degree,
-                          num_global_cells, topology_data,
-                          xdmf_format_str(encoding));
-      _xml->mesh_geometry(num_global_points, gdim, geometry_data,
-                          xdmf_format_str(encoding));
-
-      // Add the Function vertex data to the xml data
-      _xml->data_attribute(u.name(), value_rank, vertex_data,
-                           num_global_points, num_global_cells,
-                           padded_value_size,
-                           generate_xdmf_ascii_data(data_values, "%.15e"),
-                           xdmf_format_str(encoding));
-    }
-    _xml->write();
-  }
-
-  // Increment counter
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void XDMFFile::write(const MeshFunction<bool>& meshfunction, Encoding encoding)
-{
-  write_mesh_function(meshfunction, "%d", encoding);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::write(const MeshFunction<int>& meshfunction, Encoding encoding)
-{
-  write_mesh_function(meshfunction, "%d", encoding);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::write(const MeshFunction<std::size_t>& meshfunction,
-                     Encoding encoding)
-{
-  write_mesh_function(meshfunction, "%d", encoding);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::write(const MeshFunction<double>& meshfunction,
-                     Encoding encoding)
-{
-  write_mesh_function(meshfunction, "%.15e", encoding);
-}
-//-----------------------------------------------------------------------------
-void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
-                     Encoding encoding)
-{
-  //FIXME: make work with ASCII encoding or call dolfin_not_implemented()
-  check_encoding(encoding);
-
-  // Provide some very basic functionality for saving
-  // MeshValueCollections mainly for saving values on a boundary mesh
-
-  dolfin_assert(mvc.mesh());
-  std::shared_ptr<const Mesh> mesh = mvc.mesh();
-
-#ifdef HAS_HDF5
-  if (encoding == Encoding::HDF5)
-  {
-    if (_hdf5_filemode != "w")
-    {
-      // Append to existing HDF5 File
-      _hdf5_file.reset(new HDF5File(mesh->mpi_comm(), get_hdf5_filename(_filename), "a"));
-      _hdf5_filemode = "w";
-    }
-  }
-#endif
-
-  if (MPI::sum(mesh->mpi_comm(), mvc.size()) == 0)
-  {
-    dolfin_error("XDMFFile.cpp",
-                 "save empty MeshValueCollection",
-                 "No values in MeshValueCollection");
-  }
-
-  if (_current_mesh_name == "")
-  {
-    dolfin_error("XDMFFile.cpp",
-                 "save MeshValueCollection",
-                 "A Mesh must be saved first");
-  }
-
-  const std::size_t cell_dim = mvc.dim();
-  CellType::Type cell_type = mesh->type().entity_type(cell_dim);
-
-  const std::string dataset_name = "/MVC/" + mvc.name();
-
-#ifdef HAS_HDF5
-  if (encoding == Encoding::HDF5)
-  {
-    // Use HDF5 function to output MeshValueCollection
-    _hdf5_file->write(mvc, dataset_name);
-  }
-#endif
-
-  bool time_series = parameters["time_series"];
-
-  if (MPI::rank(mesh->mpi_comm()) == 0)
-  {
-    dolfin_assert(_xml);
-    if (time_series)
-      _xml->init_timeseries(mvc.name(), (double) _counter, _counter);
-    else
-      _xml->init_mesh(mvc.name());
-
-    if (encoding == Encoding::HDF5)
-    {
-      boost::filesystem::path p(get_hdf5_filename(_filename));
-      const std::string dataset_ref = p.filename().string() + ":"
-        + dataset_name;
-
-      _xml->mesh_topology(cell_type, 1, mvc.size(), dataset_ref + "/topology",
-                         xdmf_format_str(encoding));
-      _xml->mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
-                         _current_mesh_name + "/coordinates",
-                         xdmf_format_str(encoding));
-      _xml->data_attribute(mvc.name(), 0, false, mesh->size_global(0),
-                          mvc.size(), 1, dataset_ref + "/values",
-                          xdmf_format_str(encoding));
-    }
-    else if (encoding == Encoding::ASCII)
-    {
-      // FIXME: This will only reference the first mesh geometry
-      _xml->mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
-                         _current_mesh_name + "/Geometry/DataItem",
-                         xdmf_format_str(encoding), true);
-      write_ascii_mesh_value_collection(mvc, dataset_name);
-    }
-
-    _xml->write();
-  }
-
-  ++_counter;
-}
-//-----------------------------------------------------------------------------
-void XDMFFile::write(const std::vector<Point>& points, Encoding encoding)
-{
-  check_encoding(encoding);
-
-  const std::string group_name = "/Points";
-  // Get number of points (global)
-  const std::size_t num_global_points = MPI::sum(_mpi_comm, points.size());
-
-  // Initialise HDF5 file
-  if (encoding == Encoding::HDF5)
-  {
-#ifdef HAS_HDF5
-    if (_hdf5_filemode != "w")
-    {
-      // Create HDF5 file (truncate)
-      _hdf5_file.reset(new HDF5File(_mpi_comm, get_hdf5_filename(_filename), "w"));
-      _hdf5_filemode = "w";
-    }
-
-    // Write HDF5 file
-    _hdf5_file->write(points, group_name);
-#else
-    dolfin_error("XDMFile.cpp", "write vector<Point>", "Need HDF5 support");
-#endif
-  }
-  else if (encoding == Encoding::ASCII)
-  {
-    // FIXME: Make ASCII output work
-    dolfin_not_implemented();
-  }
-
-  // The XML created below will obliterate any existing XDMF file
-  write_point_xml(group_name, num_global_points, 0, encoding);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::write(const std::vector<Point>& points,
-                     const std::vector<double>& values,
-                     Encoding encoding)
-{
-  // FIXME: make ASCII output work
-  check_encoding(encoding);
-
-  // Write clouds of points to XDMF/HDF5 with values
-  dolfin_assert(points.size() == values.size());
-
-  // Get number of points (global)
-  const std::size_t num_global_points = MPI::sum(_mpi_comm, points.size());
-  const std::string group_name = "/Points";
-
-  if (encoding == Encoding::HDF5)
-  {
-#ifdef HAS_HDF5
-    // Initialise HDF5 file
-    if (_hdf5_filemode != "w")
-    {
-      // Create HDF5 file (truncate)
-      _hdf5_file.reset(new HDF5File(_mpi_comm, get_hdf5_filename(_filename), "w"));
-      _hdf5_filemode = "w";
-    }
-
-    // Write HDF5 file
-    _hdf5_file->write(points, group_name);
-
-    const std::string values_name = group_name + "/values";
-    _hdf5_file->write(values, values_name);
-#else
-    dolfin_error("XDMFile.cpp", "write vector<Point>", "Need HDF5 support");
-#endif
-  }
-
-  // The XML created will obliterate any existing XDMF file
-  write_point_xml(group_name, num_global_points, 1, encoding);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::read(Mesh& mesh, UseFilePartition use_file_partition)
-{
-  read_new(mesh);
-  return;
-
-  // Parse XML file
-  dolfin_assert(_xml);
-  _xml->read();
-
-  // Get topology and geometry data
-  const auto topology = _xml->get_topology();
-  const auto geometry = _xml->get_geometry();
-
-  // Create a cell type string (we need to catch the case where
-  // TopologyType == "PolyLine")
-  const std::string cell_type_str
-    = (topology.cell_type == "polyline") ? "interval" : topology.cell_type;
-
-  // Create a DOLFIN cell type from string
-  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
-  dolfin_assert(cell_type);
-
-  // Get geometric and toplogical dimensions
-  const int gdim = geometry.dim;
-  const int tdim = cell_type->dim();
-  dolfin_assert(tdim <= gdim);
-
-  if (topology.format == "HDF")
-  {
-#ifdef HAS_HDF5
-    if (geometry.hdf5_filename != topology.hdf5_filename)
-    {
-      dolfin_error("XDMFFile.cpp",
-                   "read XDMF mesh",
-                   "Topology and geometry file names do not match");
-    }
-
-    // Close any associated HDF5 which may be open
-    _hdf5_file.reset();
-
-    // Prepend directory name of XDMF file...
-    // FIXME: not robust - topo.hdf5_filename may already be an
-    // absolute path
-    boost::filesystem::path xdmf_path(_filename);
-    boost::filesystem::path hdf5_path(topology.hdf5_filename);
-    HDF5File mesh_file(_mpi_comm, (xdmf_path.parent_path() / hdf5_path).string(), "r");
-
-    // Read the mesh from the associated HDF5 file
-    mesh_file.read(mesh, topology.hdf5_dataset, geometry.hdf5_dataset,
-                   gdim, *cell_type,
-                   topology.num_cells,
-                   geometry.num_points,
-                   static_cast<bool>(use_file_partition));
-#else
-    dolfin_error("XDMFile.cpp", "open Mesh file", "Need HDF5 support");
-#endif
-  }
-  else if (topology.format == "XML")
-  {
-    if (MPI::rank(mesh.mpi_comm()) == 0)
-    {
-      MeshEditor editor;
-      editor.open(mesh, cell_type_str, tdim, gdim);
-
-      // Read geometry
-      editor.init_vertices_global(geometry.num_points, geometry.num_points);
-
-      const auto& g_data = geometry.data;
-      std::istringstream iss(g_data);
-      std::string data_line;
-      std::vector<std::string> coords(gdim);
-      Point p({0.0, 0.0, 0.0});
-      std::size_t index = 0;
-      while(std::getline(iss, data_line))
-      {
-        boost::split(coords, data_line, boost::is_any_of(" "));
-        for (int j = 0; j < gdim; ++j)
-          p[j] = std::stod(coords[j]);
-        editor.add_vertex(index, p);
-        ++index;
-      }
-
-      if (geometry.num_points != index)
-      {
-        dolfin_error("XDMFFile.cpp",
-                     "parse mesh geometry points",
-                     (boost::format("number of points found in data (%d) does not match xdmf meta data (%d)")
-                      % index % geometry.num_points).str());
-      }
-
-      // Read topology
-      editor.init_cells_global(topology.num_cells, topology.num_cells);
-
-      const auto& t_data = topology.data;
-      iss.clear();
-      iss.str(t_data);
-      index = 0;
-      std::vector<std::string> splt_str_indices(topology.points_per_cell);
-      std::vector<std::size_t> point_indices(topology.points_per_cell);
-      while(std::getline(iss, data_line))
-      {
-        boost::split(splt_str_indices, data_line, boost::is_any_of(" "));
-        for (std::size_t j = 0; j < topology.points_per_cell; ++j)
-          point_indices[j] = std::stol(splt_str_indices[j]);
-
-        editor.add_cell(index, point_indices);
-        ++index;
-      }
-
-      if (topology.num_cells != index)
-      {
-        dolfin_error("XDMFFile.cpp",
-                     "parse mesh topology",
-                     (boost::format("number of cells found in data (%d) does not match xdmf meta data (%d)")
-                      % index % topology.num_cells).str());
-      }
-
-      editor.close();
-    }
-  }
-}
-//----------------------------------------------------------------------------
-void XDMFFile::read(MeshFunction<bool>& meshfunction)
-{
-  const std::shared_ptr<const Mesh> mesh = meshfunction.mesh();
-  dolfin_assert(mesh);
-
-  const std::size_t cell_dim = meshfunction.dim();
-  MeshFunction<std::size_t> mf(mesh, cell_dim);
-  read_mesh_function(mf);
-
-  for (MeshEntityIterator cell(*mesh, cell_dim); !cell.end(); ++cell)
-    meshfunction[cell->index()] = (mf[cell->index()] == 1);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::read(MeshFunction<int>& meshfunction)
-{
-  read_mesh_function(meshfunction);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::read(MeshFunction<std::size_t>& meshfunction)
-{
-  read_mesh_function(meshfunction);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::read(MeshFunction<double>& meshfunction)
-{
-  read_mesh_function(meshfunction);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::write_new(const Mesh& mesh, Encoding encoding) const
 {
   // Check that encoding is supported
   check_encoding(encoding);
 
-  // Create pugi doc
-  pugi::xml_document xml_doc;
-
-  // Add XDMF node and version attribute
-  pugi::xml_node xdmf_node = xml_doc.append_child("Xdmf");
-  dolfin_assert(xdmf_node);
-  xdmf_node.append_attribute("Version") = "3.0";
-
-  // Add domain node and add name attribute
-  pugi::xml_node domain_node = xdmf_node.append_child("Domain");
-  dolfin_assert(domain_node);
-  domain_node.append_attribute("Name") = "Mesh produced by DOLFIN";
-
-  // Add grid node and attributes
-  pugi::xml_node grid_node = domain_node.append_child("Grid");
-  dolfin_assert(grid_node);
-  grid_node.append_attribute("Name") = mesh.name().c_str();
-  grid_node.append_attribute("GridType") = "Uniform";
-
   // Open a HDF5 file if using HDF5 encoding (truncate)
   hid_t h5_id = -1;
-  #ifdef HAS_HDF5
+#ifdef HAS_HDF5
   std::unique_ptr<HDF5File> h5_file;
   if (encoding == Encoding::HDF5)
   {
@@ -809,29 +94,896 @@ void XDMFFile::write_new(const Mesh& mesh, Encoding encoding) const
     // Get file handle
     h5_id = h5_file->h5_id();
   }
-  #endif
+#endif
 
-  // Add topology node and attributes (including writa data)
-  const int tdim = mesh.topology().dim();
-  const std::int64_t num_global_cells = mesh.size_global(tdim) ;
-  if (num_global_cells < 1e9)
-    add_topology_data<std::int32_t>(_mpi_comm, grid_node, h5_id, "/Mesh", mesh);
-  else
-    add_topology_data<std::int64_t>(_mpi_comm, grid_node, h5_id, "/Mesh", mesh);
+  // Reset pugi doc
+  _xml_doc->reset();
 
-  // Add geometry node and attributes (including writa data)
-  add_geometry_data(_mpi_comm, grid_node, h5_id, "/Mesh", mesh);
+  // Add XDMF node and version attribute
+  _xml_doc->append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+  pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+  dolfin_assert(xdmf_node);
+  xdmf_node.append_attribute("Version") = "3.0";
+  xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
+
+  // Add domain node and add name attribute
+  pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+  dolfin_assert(domain_node);
+
+  // Add the mesh Grid to the domain
+  add_mesh(_mpi_comm, domain_node, h5_id, mesh, "/Mesh");
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm) == 0)
-    xml_doc.save_file(_filename.c_str(), "  ");
+    _xml_doc->save_file(_filename.c_str(), "  ");
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const Function& u, Encoding encoding)
+{
+  check_encoding(encoding);
+
+  // If counter is non-zero, a time series has been saved before
+  if (_counter != 0)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "write Function to XDMF",
+                 "Not writing a time series");
+  }
+
+  const Mesh& mesh = *u.function_space()->mesh();
+
+  // Clear pugi doc
+  _xml_doc->reset();
+
+  // Open the HDF5 file if using HDF5 encoding (truncate)
+  hid_t h5_id = -1;
+#ifdef HAS_HDF5
+  std::unique_ptr<HDF5File> h5_file;
+  if (encoding == Encoding::HDF5)
+  {
+    // Open file
+    h5_file.reset(new HDF5File(mesh.mpi_comm(),
+                               get_hdf5_filename(_filename), "w"));
+    dolfin_assert(h5_file);
+
+    // Get file handle
+    h5_id = h5_file->h5_id();
+  }
+#endif
+
+  // Add XDMF node and version attribute
+  pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+  dolfin_assert(xdmf_node);
+  xdmf_node.append_attribute("Version") = "3.0";
+
+  // Add domain node and add name attribute
+  pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+  dolfin_assert(domain_node);
+
+  // Add the mesh Grid to the domain
+  add_mesh(_mpi_comm, domain_node, h5_id, mesh, "/Mesh");
+
+  pugi::xml_node grid_node = domain_node.child("Grid");
+  dolfin_assert(grid_node);
+
+  // Get Function data values and shape
+  std::vector<double> data_values;
+  bool cell_centred = has_cell_centred_data(u);
+
+  const int degree = mesh.geometry().degree();
+  if (cell_centred)
+    data_values = get_cell_data_values(u);
+  else
+  {
+    if (degree == 1)
+      data_values = get_point_data_values(u);
+    else
+      data_values = get_p2_data_values(u);
+  }
+
+  // Add attribute node
+  pugi::xml_node attribute_node = grid_node.append_child("Attribute");
+  dolfin_assert(attribute_node);
+  attribute_node.append_attribute("Name") = u.name().c_str();
+  attribute_node.append_attribute("AttributeType")
+    = rank_to_string(u.value_rank()).c_str();
+  attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
+
+  // Add attribute DataItem node and write data
+  std::int64_t width = get_padded_width(u);
+  dolfin_assert(data_values.size()%width == 0);
+
+  const std::int64_t num_points = (degree == 2) ?
+    (mesh.size(0) + mesh.size(1)) : mesh.size_global(0);
+  const std::int64_t num_values =  cell_centred ?
+    mesh.size_global(mesh.topology().dim()) : num_points;
+
+  add_data_item(_mpi_comm, attribute_node, h5_id,
+                "/VisualisationVector/0", data_values, {num_values, width});
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
+{
+  check_encoding(encoding);
+
+  const Mesh& mesh = *u.function_space()->mesh();
+
+  // Clear the pugi doc the first time
+  if (_counter == 0)
+  {
+    _xml_doc->reset();
+
+    // Create XDMF header
+    _xml_doc->append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+    pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+    dolfin_assert(xdmf_node);
+    xdmf_node.append_attribute("Version") = "3.0";
+    xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
+    pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+    dolfin_assert(domain_node);
+
+    //  /Xdmf/Domain/Grid - actually a TimeSeries, not a spatial grid
+    pugi::xml_node timegrid_node = domain_node.append_child("Grid");
+    dolfin_assert(timegrid_node);
+    timegrid_node.append_attribute("Name") = "TimeSeries";
+    timegrid_node.append_attribute("GridType") = "Collection";
+    timegrid_node.append_attribute("CollectionType") = "Temporal";
+
+    //  /Xdmf/Domain/Grid/Time
+    pugi::xml_node time_node = timegrid_node.append_child("Time");
+    dolfin_assert(time_node);
+    time_node.append_attribute("TimeType") = "List";
+    pugi::xml_node timedata_node = time_node.append_child("DataItem");
+    dolfin_assert(timedata_node);
+    timedata_node.append_attribute("Format") = "XML";
+    timedata_node.append_attribute("Dimensions") = "0";
+    timedata_node.append_child(pugi::node_pcdata);
+  }
+
+  hid_t h5_id = -1;
+#ifdef HAS_HDF5
+  // Open the HDF5 file for first time, if using HDF5 encoding
+  if (encoding == Encoding::HDF5)
+  {
+    // Truncate the file the first time
+    if (_counter == 0)
+      _hdf5_file.reset(new HDF5File(mesh.mpi_comm(),
+                                    get_hdf5_filename(_filename), "w"));
+    else if (parameters["flush_output"])
+    {
+      // Append to existing HDF5 file
+      dolfin_assert(!_hdf5_file);
+      _hdf5_file.reset(new HDF5File(mesh.mpi_comm(),
+                                    get_hdf5_filename(_filename), "a"));
+    }
+    dolfin_assert(_hdf5_file);
+    h5_id = _hdf5_file->h5_id();
+  }
+#endif
+
+  pugi::xml_node xdmf_node = _xml_doc->child("Xdmf");
+  dolfin_assert(xdmf_node);
+  pugi::xml_node domain_node = xdmf_node.child("Domain");
+  dolfin_assert(domain_node);
+
+  // Look for existing TimeSeries and check name
+  pugi::xml_node timegrid_node = domain_node.first_child();
+  dolfin_assert(timegrid_node);
+  if (std::string(timegrid_node.attribute("Name").value()) != "TimeSeries")
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "add Function to XDMF",
+                 "XDMF file does not contain a TimeSeries");
+  }
+
+  pugi::xml_node time_node = timegrid_node.child("Time");
+  dolfin_assert(time_node);
+
+  // Get existing number of timesteps, and values
+  pugi::xml_node timedata_node = time_node.child("DataItem");
+  dolfin_assert(timedata_node);
+  pugi::xml_attribute numsteps_attr = timedata_node.attribute("Dimensions");
+  dolfin_assert(numsteps_attr);
+  pugi::xml_node times_str_node = timedata_node.first_child();
+  dolfin_assert(times_str_node);
+  unsigned int numsteps = std::stoul(numsteps_attr.value());
+  dolfin_assert(numsteps == _counter);
+  std::string times_str(times_str_node.value());
+
+  // Add new values
+  times_str += " " + boost::str((boost::format("%g") % time_step));
+  ++numsteps;
+  numsteps_attr.set_value(numsteps);
+  times_str_node.set_value(times_str.c_str());
+
+  // Add the mesh Grid to the time Grid
+  if (_counter == 0 or parameters["rewrite_function_mesh"])
+  {
+    add_mesh(_mpi_comm, timegrid_node, h5_id, mesh,
+             "/Mesh/" + std::to_string(_counter));
+  }
+  else
+  {
+    // Make reference back to first Mesh of the time series
+    pugi::xml_node grid_node = timegrid_node.append_child("Grid");
+    dolfin_assert(grid_node);
+
+    // Add topology node (reference)
+    pugi::xml_node topology_node = grid_node.append_child("Topology");
+    dolfin_assert(topology_node);
+    topology_node.append_attribute("Reference") = "XML";
+    topology_node.append_child(pugi::node_pcdata)
+      .set_value("/Xdmf/Domain/Grid/Grid/Topology");
+
+    // Add geometry node (reference)
+    pugi::xml_node geometry_node = grid_node.append_child("Geometry");
+    dolfin_assert(geometry_node);
+    geometry_node.append_attribute("Reference") = "XML";
+    geometry_node.append_child(pugi::node_pcdata)
+      .set_value("/Xdmf/Domain/Grid/Grid/Geometry");
+  }
+
+  pugi::xml_node grid_node = timegrid_node.last_child();
+  dolfin_assert(grid_node);
+
+  // Get Function data values and shape
+  std::vector<double> data_values;
+  bool cell_centred = has_cell_centred_data(u);
+
+  if (cell_centred)
+    data_values = get_cell_data_values(u);
+  else
+    data_values = get_point_data_values(u);
+
+  // Add attribute node
+  pugi::xml_node attribute_node = grid_node.append_child("Attribute");
+  dolfin_assert(attribute_node);
+  attribute_node.append_attribute("Name") = u.name().c_str();
+  attribute_node.append_attribute("AttributeType")
+    = rank_to_string(u.value_rank()).c_str();
+  attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
+
+  // Add attribute DataItem node and write data
+  std::int64_t width = get_padded_width(u);
+  dolfin_assert(data_values.size()%width == 0);
+  std::int64_t num_values =  cell_centred ?
+    mesh.size_global(mesh.topology().dim()) : mesh.size_global(0);
+
+  const std::string dataset_name = "/VisualisationVector/"
+                                   + std::to_string(_counter);
+
+  add_data_item(_mpi_comm, attribute_node, h5_id,
+                dataset_name, data_values, {num_values, width});
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+
+#ifdef HAS_HDF5
+  // Close the HDF5 file if in "flush" mode
+  if (encoding == Encoding::HDF5 and parameters["flush_output"])
+  {
+    dolfin_assert(_hdf5_file);
+    _hdf5_file.reset();
+  }
+#endif
+
+  ++_counter;
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const MeshFunction<bool>& meshfunction, Encoding encoding)
+{
+  write_mesh_function(meshfunction, encoding);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const MeshFunction<int>& meshfunction, Encoding encoding)
+{
+  write_mesh_function(meshfunction, encoding);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const MeshFunction<std::size_t>& meshfunction,
+                     Encoding encoding)
+{
+  write_mesh_function(meshfunction, encoding);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const MeshFunction<double>& meshfunction,
+                     Encoding encoding)
+{
+  write_mesh_function(meshfunction, encoding);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const MeshValueCollection<bool>& mvc,
+                     Encoding encoding)
+{
+  write_mesh_value_collection(mvc, encoding);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const MeshValueCollection<int>& mvc,
+                     Encoding encoding)
+{
+  write_mesh_value_collection(mvc, encoding);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const MeshValueCollection<std::size_t>& mvc,
+                     Encoding encoding)
+{
+  write_mesh_value_collection(mvc, encoding);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const MeshValueCollection<double>& mvc,
+                     Encoding encoding)
+{
+  write_mesh_value_collection(mvc, encoding);
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+void XDMFFile::write_mesh_value_collection(const MeshValueCollection<T>& mvc,
+                                           Encoding encoding)
+{
+  check_encoding(encoding);
+
+  // Provide some very basic functionality for saving
+  // MeshValueCollections mainly for saving values on a boundary mesh
+
+  dolfin_assert(mvc.mesh());
+  std::shared_ptr<const Mesh> mesh = mvc.mesh();
+  const std::size_t tdim = mesh->topology().dim();
+  const std::size_t gdim = mesh->geometry().dim();
+
+  if (MPI::sum(mesh->mpi_comm(), mvc.size()) == 0)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "save empty MeshValueCollection",
+                 "No values in MeshValueCollection");
+  }
+
+  pugi::xml_node domain_node;
+  std::string hdf_filemode = "a";
+  if (_xml_doc->child("Xdmf").empty())
+  {
+    // Reset pugi
+    _xml_doc->reset();
+    // Add XDMF node and version attribute
+    _xml_doc->append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+    pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+    dolfin_assert(xdmf_node);
+    xdmf_node.append_attribute("Version") = "3.0";
+    xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
+
+    // Add domain node and add name attribute
+    domain_node = xdmf_node.append_child("Domain");
+    hdf_filemode = "w";
+  }
+  else
+    domain_node = _xml_doc->child("Xdmf").child("Domain");
+
+  dolfin_assert(domain_node);
+
+  // Open a HDF5 file if using HDF5 encoding
+  hid_t h5_id = -1;
+#ifdef HAS_HDF5
+  std::unique_ptr<HDF5File> h5_file;
+  if (encoding == Encoding::HDF5)
+  {
+    // Open file
+    h5_file.reset(new HDF5File(mesh->mpi_comm(),
+                               get_hdf5_filename(_filename), hdf_filemode));
+    dolfin_assert(h5_file);
+
+    // Get file handle
+    h5_id = h5_file->h5_id();
+  }
+#endif
+
+  // Check domain node for existing Mesh Grid and check it is compatible with
+  // this MeshValueCollection, or if none, add Mesh
+
+  pugi::xml_node grid_node = domain_node.child("Grid");
+  if (grid_node.empty())
+    add_mesh(_mpi_comm, domain_node, h5_id, *mesh, "/Mesh");
+  else
+  {
+    // Check topology
+    pugi::xml_node topology_node = grid_node.child("Topology");
+    dolfin_assert(topology_node);
+    const std::int64_t ncells = mesh->topology().size_global(tdim);
+    pugi::xml_attribute num_cells_attr = topology_node.attribute("NumberOfElements");
+    dolfin_assert(num_cells_attr);
+    if (num_cells_attr.as_llong() != ncells)
+    {
+      dolfin_error("XDMFFile.cpp",
+                   "add MeshValueCollection to file",
+                   "Incompatible Mesh");
+    }
+
+    // Check geometry
+    pugi::xml_node geometry_node = grid_node.child("Geometry");
+    dolfin_assert(geometry_node);
+    pugi::xml_node geometry_data_node = geometry_node.child("DataItem");
+    dolfin_assert(geometry_data_node);
+    const std::string dims_str = geometry_data_node.attribute("Dimensions").as_string();
+    std::vector<std::string> dims_list;
+    boost::split(dims_list, dims_str, boost::is_any_of(" "));
+    const std::int64_t npoints = mesh->size_global(0);
+    if (boost::lexical_cast<std::int64_t>(dims_list[0]) != npoints
+        or boost::lexical_cast<std::int64_t>(dims_list[1]) != (int)gdim)
+    {
+      dolfin_error("XDMFFile.cpp",
+                   "add MeshValueCollection to file",
+                   "Incompatible Mesh");
+    }
+  }
+
+  // Add new grid node, for MVC mesh
+  pugi::xml_node mvc_grid_node = domain_node.append_child("Grid");
+  dolfin_assert(mvc_grid_node);
+  mvc_grid_node.append_attribute("Name") = mvc.name().c_str();
+  mvc_grid_node.append_attribute("GridType") = "Uniform";
+
+  // Add topology node and attributes
+  const std::size_t cell_dim = mvc.dim();
+  const std::string vtk_cell_str
+    = vtk_cell_type_str(mesh->type().entity_type(cell_dim), mesh->geometry().degree());
+  const std::int64_t num_vertices_per_cell = mesh->type().num_vertices(cell_dim);
+
+  const std::map<std::pair<std::size_t, std::size_t>, T>& values
+    = mvc.values();
+  const std::int64_t num_cells = values.size();
+  const std::int64_t num_cells_global = MPI::sum(mesh->mpi_comm(), num_cells);
+
+  pugi::xml_node topology_node = mvc_grid_node.append_child("Topology");
+  dolfin_assert(topology_node);
+  topology_node.append_attribute("NumberOfElements")
+    = std::to_string(num_cells_global).c_str();
+  topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
+  topology_node.append_attribute("NodesPerElement")
+    = std::to_string(num_vertices_per_cell).c_str();
+
+  std::vector<std::int32_t> topology_data;
+  std::vector<T> value_data;
+  topology_data.reserve(num_cells*num_vertices_per_cell);
+  value_data.reserve(num_cells);
+
+  mesh->init(tdim, cell_dim);
+  for (auto &p : values)
+  {
+    MeshEntity cell = Cell(*mesh, p.first.first);
+    if (cell_dim != tdim)
+    {
+      const unsigned int entity_local_idx = cell.entities(cell_dim)[p.first.second];
+      cell = MeshEntity(*mesh, cell_dim, entity_local_idx);
+    }
+    for (VertexIterator v(cell); !v.end(); ++v)
+      topology_data.push_back(v->global_index());
+    value_data.push_back(p.second);
+  }
+
+  const std::string mvc_dataset_name = "/MeshValueCollection/" + std::to_string(_counter);
+  const std::int64_t num_values = MPI::sum(mesh->mpi_comm(), value_data.size());
+  add_data_item(_mpi_comm, topology_node, h5_id, mvc_dataset_name + "/topology",
+                topology_data, {num_values, num_vertices_per_cell}, "UInt");
+
+  // Add geometry node (share with main Mesh)
+  pugi::xml_node geometry_node = mvc_grid_node.append_child("Geometry");
+  dolfin_assert(geometry_node);
+  geometry_node.append_attribute("Reference") = "XML";
+  geometry_node.append_child(pugi::node_pcdata)
+    .set_value("/Xdmf/Domain/Grid/Geometry");
+
+  // Add attribute node with values
+  pugi::xml_node attribute_node = mvc_grid_node.append_child("Attribute");
+  dolfin_assert(attribute_node);
+  attribute_node.append_attribute("Name") = mvc.name().c_str();
+  attribute_node.append_attribute("AttributeType") = "Scalar";
+  attribute_node.append_attribute("Center") = "Cell";
+
+  add_data_item(_mpi_comm, attribute_node, h5_id,
+                mvc_dataset_name + "/values", value_data, {num_values, 1});
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+
+  ++_counter;
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::read(MeshValueCollection<bool>& mvc, std::string name)
+{
+  // Bool is not really supported, so copy from int
+  MeshValueCollection<int> mvc_int(mvc.mesh());
+  read_mesh_value_collection(mvc_int, name);
+
+  mvc.init(mvc.mesh(), mvc_int.dim());
+  for (const auto &p : mvc_int.values())
+    mvc.set_value(p.first.first, p.first.second, (bool)p.second);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::read(MeshValueCollection<int>& mvc, std::string name)
+{
+  read_mesh_value_collection(mvc, name);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::read(MeshValueCollection<std::size_t>& mvc, std::string name)
+{
+  read_mesh_value_collection(mvc, name);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::read(MeshValueCollection<double>& mvc, std::string name)
+{
+  read_mesh_value_collection(mvc, name);
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+void XDMFFile::read_mesh_value_collection
+(MeshValueCollection<T>& mvc, std::string name)
+{
+  // Load XML doc from file
+  pugi::xml_document xml_doc;
+  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+  dolfin_assert(result);
+
+  // Get XDMF node
+  pugi::xml_node xdmf_node = xml_doc.child("Xdmf");
+  dolfin_assert(xdmf_node);
+
+  // Get domain node
+  pugi::xml_node domain_node = xdmf_node.child("Domain");
+  dolfin_assert(domain_node);
+
+  // Check all Grid nodes for suitable dataset
+  pugi::xml_node grid_node;
+  for (pugi::xml_node node: domain_node.children("Grid"))
+  {
+    pugi::xml_node value_node = node.child("Attribute");
+    if (value_node and (name == "" or name == value_node.attribute("Name").as_string()))
+      {
+        grid_node = node;
+        break;
+      }
+  }
+
+  // Get MVC topology node
+  pugi::xml_node topology_node = grid_node.child("Topology");
+  dolfin_assert(topology_node);
+
+  // Get description of MVC cell type and dimension from topology node
+  auto cell_type_str = get_cell_type(topology_node);
+  dolfin_assert(cell_type_str.second == 1);
+  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str.first));
+  dolfin_assert(cell_type);
+  const int cell_dim = cell_type->dim();
+  const int num_verts_per_entity = cell_type->num_vertices();
+
+  // Read MVC topology
+  pugi::xml_node topology_data_node = topology_node.child("DataItem");
+  dolfin_assert(topology_data_node);
+  boost::filesystem::path xdmf_filename(_filename);
+  const boost::filesystem::path parent_path = xdmf_filename.parent_path();
+  std::vector<std::int32_t> topology_data
+    = get_dataset<std::int32_t>(_mpi_comm, topology_data_node, parent_path);
+
+  // Ensure MVC is clear, and initialised to correct cell dimension
+  std::shared_ptr<const Mesh> mesh = mvc.mesh();
+  dolfin_assert(mesh);
+  mvc.clear();
+  mvc.init(mesh, cell_dim);
+
+  // Read values associated with each MeshEntity described by topology
+  pugi::xml_node attribute_node = grid_node.child("Attribute");
+  dolfin_assert(attribute_node);
+  pugi::xml_node attribute_data_node = attribute_node.child("DataItem");
+  dolfin_assert(attribute_data_node);
+  std::vector<T> values_data
+    = get_dataset<T>(_mpi_comm, attribute_data_node, parent_path);
+
+  // Ensure the mesh dimension is initialised
+  mesh->init(cell_dim);
+  const std::size_t global_vertex_range = mesh->size_global(0);
+  const std::int32_t num_processes = MPI::size(_mpi_comm);
+
+  // Send entities to processes based on the lowest vertex index
+  std::vector<std::vector<std::int32_t>> send_entities(num_processes);
+  std::vector<std::vector<std::int32_t>> recv_entities(num_processes);
+
+  std::vector<std::int32_t> v(num_verts_per_entity);
+  for (MeshEntityIterator m(*mesh, cell_dim); !m.end(); ++m)
+  {
+    if (cell_dim == 0)
+      v[0] = m->global_index();
+    else
+    {
+      for (VertexIterator vtx(*m); !vtx.end(); ++vtx)
+        v[vtx.pos()] = vtx->global_index();
+      std::sort(v.begin(), v.end());
+    }
+
+    std::size_t dest = MPI::index_owner(_mpi_comm,
+                                        v[0], global_vertex_range);
+    send_entities[dest].push_back(m->index());
+    send_entities[dest].insert(send_entities[dest].end(),
+                               v.begin(), v.end());
+  }
+  MPI::all_to_all(_mpi_comm, send_entities, recv_entities);
+
+  // Map from {entity vertex indices} to {process, local_index}
+  std::map<std::vector<std::int32_t>,
+           std::vector<std::int32_t>> entity_map;
+  for (std::int32_t i = 0; i != num_processes; ++i)
+  {
+    for (auto it = recv_entities[i].begin(); it != recv_entities[i].end();
+         it += (num_verts_per_entity + 1))
+    {
+      std::copy(it + 1, it + num_verts_per_entity + 1, v.begin());
+      auto map_it = entity_map.insert({v, {i, *it}});
+      if (!map_it.second)
+      {
+        // Entry already exists, add to it
+        map_it.first->second.push_back(i);
+        map_it.first->second.push_back(*it);
+      }
+    }
+  }
+
+  // Send data from MeshValueCollection to sorting process
+  std::vector<std::vector<T>> send_data(num_processes);
+  std::vector<std::vector<T>> recv_data(num_processes);
+  // Reset send/recv arrays
+  send_entities = std::vector<std::vector<std::int32_t>>(num_processes);
+  recv_entities = std::vector<std::vector<std::int32_t>>(num_processes);
+
+  std::int32_t i = 0;
+  for (auto it = topology_data.begin(); it != topology_data.end();
+       it += num_verts_per_entity)
+  {
+    std::partial_sort_copy(it, it + num_verts_per_entity,
+                           v.begin(), v.end());
+    std::size_t dest = MPI::index_owner(_mpi_comm,
+                                        v[0], global_vertex_range);
+    send_entities[dest].insert(send_entities[dest].end(),
+                               v.begin(), v.end());
+    send_data[dest].push_back(values_data[i]);
+    ++i;
+  }
+
+  MPI::all_to_all(_mpi_comm, send_entities, recv_entities);
+  MPI::all_to_all(_mpi_comm, send_data, recv_data);
+
+  // Reset send arrays
+  send_data = std::vector<std::vector<T>>(num_processes);
+  send_entities = std::vector<std::vector<std::int32_t>>(num_processes);
+
+  // Locate entity in map, and send back to data to owning processes
+  for (std::int32_t i = 0; i != num_processes; ++i)
+  {
+    dolfin_assert(recv_data[i].size()*num_verts_per_entity
+                  == recv_entities[i].size());
+
+    for (std::size_t j = 0; j != recv_data[i].size(); ++j)
+    {
+      auto it = recv_entities[i].begin() + j*num_verts_per_entity;
+      std::copy(it, it + num_verts_per_entity, v.begin());
+      auto map_it = entity_map.find(v);
+
+      if (map_it == entity_map.end())
+      {
+        dolfin_error("HDF5File.cpp",
+                     "find entity in map",
+                     "Error reading MeshValueCollection");
+      }
+      for (auto p = map_it->second.begin(); p != map_it->second.end(); p += 2)
+      {
+        const std::int32_t dest = *p;
+        dolfin_assert(dest < num_processes);
+        send_entities[dest].push_back(*(p + 1));
+        send_data[dest].push_back(recv_data[i][j]);
+      }
+    }
+  }
+
+  // Send to owning processes and set in MeshValueCollection
+  MPI::all_to_all(_mpi_comm, send_entities, recv_entities);
+  MPI::all_to_all(_mpi_comm, send_data, recv_data);
+
+  for (std::int32_t i = 0; i != num_processes; ++i)
+  {
+    dolfin_assert(recv_entities[i].size() == recv_data[i].size());
+    for (std::size_t j = 0; j != recv_data[i].size(); ++j)
+    {
+      mvc.set_value(recv_entities[i][j], recv_data[i][j]);
+    }
+  }
+
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const std::vector<Point>& points, Encoding encoding)
+{
+  // Check that encoding is supported
+  check_encoding(encoding);
+
+  // Open a HDF5 file if using HDF5 encoding (truncate)
+  hid_t h5_id = -1;
+#ifdef HAS_HDF5
+  std::unique_ptr<HDF5File> h5_file;
+  if (encoding == Encoding::HDF5)
+  {
+    // Open file
+    h5_file.reset(new HDF5File(_mpi_comm, get_hdf5_filename(_filename), "w"));
+    dolfin_assert(h5_file);
+
+    // Get file handle
+    h5_id = h5_file->h5_id();
+  }
+#endif
+
+  // Create pugi doc
+  _xml_doc->reset();
+  // Add XDMF node and version attribute
+  _xml_doc->append_child(pugi::node_doctype)
+    .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+  pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+  dolfin_assert(xdmf_node);
+
+  add_points(_mpi_comm, xdmf_node, h5_id, points);
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node,
+                          hid_t h5_id, const std::vector<Point>& points)
+{
+  xdmf_node.append_attribute("Version") = "3.0";
+  xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
+  pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+  dolfin_assert(domain_node);
+
+  // Add a Grid to the domain
+  pugi::xml_node grid_node = domain_node.append_child("Grid");
+  dolfin_assert(grid_node);
+  grid_node.append_attribute("GridType") = "Uniform";
+  grid_node.append_attribute("Name") = "Point cloud";
+
+  pugi::xml_node topology_node = grid_node.append_child("Topology");
+  dolfin_assert(topology_node);
+  const std::size_t n = points.size();
+  const std::int64_t nglobal = MPI::sum(comm, n);
+  topology_node.append_attribute("NumberOfElements")
+    = std::to_string(nglobal).c_str();
+  topology_node.append_attribute("TopologyType") = "PolyVertex";
+  topology_node.append_attribute("NodesPerElement") = 1;
+
+  pugi::xml_node geometry_node = grid_node.append_child("Geometry");
+  dolfin_assert(geometry_node);
+  geometry_node.append_attribute("GeometryType") = "XYZ";
+
+  // Pack data
+  std::vector<double> x(3*n);
+  for (std::size_t i = 0; i < n; ++i)
+    for (std::size_t j = 0; j < 3; ++j)
+      x[3*i + j] = points[i][j];
+
+  const std::vector<std::int64_t> shape = {nglobal, 3};
+  add_data_item(comm, geometry_node, h5_id, "/Points/coordinates", x, shape);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::read_new(Mesh& mesh) const
+void XDMFFile::write(const std::vector<Point>& points,
+                     const std::vector<double>& values,
+                     Encoding encoding)
 {
-  // FIXME: check for duplicated XML nodes
+  // Write clouds of points to XDMF/HDF5 with values
+  dolfin_assert(points.size() == values.size());
 
-  // Extract parent filepath (required to HDF5 when XDMF stores  relative path
+  // Check that encoding is supported
+  check_encoding(encoding);
+
+  // Create pugi doc
+  _xml_doc->reset();
+
+  // Open a HDF5 file if using HDF5 encoding (truncate)
+  hid_t h5_id = -1;
+#ifdef HAS_HDF5
+  std::unique_ptr<HDF5File> h5_file;
+  if (encoding == Encoding::HDF5)
+  {
+    // Open file
+    h5_file.reset(new HDF5File(_mpi_comm, get_hdf5_filename(_filename), "w"));
+    dolfin_assert(h5_file);
+
+    // Get file handle
+    h5_id = h5_file->h5_id();
+  }
+#endif
+
+  // Add XDMF node and version attribute
+  _xml_doc->append_child(pugi::node_doctype)
+    .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+  pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+  dolfin_assert(xdmf_node);
+
+  add_points(_mpi_comm, xdmf_node, h5_id, points);
+
+  // Add attribute node
+  pugi::xml_node domain_node = xdmf_node.child("Domain");
+  dolfin_assert(domain_node);
+  pugi::xml_node grid_node = domain_node.child("Grid");
+  dolfin_assert(grid_node);
+  pugi::xml_node attribute_node = grid_node.append_child("Attribute");
+  dolfin_assert(attribute_node);
+  attribute_node.append_attribute("Name") = "Point values";
+  attribute_node.append_attribute("AttributeType") = "Scalar";
+  attribute_node.append_attribute("Center") = "Node";
+
+  // Add attribute DataItem node and write data
+  std::int64_t num_values =  MPI::sum(_mpi_comm, values.size());
+  add_data_item(_mpi_comm, attribute_node, h5_id,
+                "/Points/values", values, {num_values, 1});
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+}
+//----------------------------------------------------------------------------
+void XDMFFile::read(MeshFunction<bool>& meshfunction, std::string name)
+{
+  const std::shared_ptr<const Mesh> mesh = meshfunction.mesh();
+  dolfin_assert(mesh);
+
+  const std::size_t cell_dim = meshfunction.dim();
+  MeshFunction<std::size_t> mf(mesh, cell_dim);
+  read_mesh_function(mf, name);
+
+  for (MeshEntityIterator cell(*mesh, cell_dim); !cell.end(); ++cell)
+    meshfunction[cell->index()] = (mf[cell->index()] == 1);
+}
+//----------------------------------------------------------------------------
+void XDMFFile::read(MeshFunction<int>& meshfunction, std::string name)
+{
+  read_mesh_function(meshfunction, name);
+}
+//----------------------------------------------------------------------------
+void XDMFFile::read(MeshFunction<std::size_t>& meshfunction, std::string name)
+{
+  read_mesh_function(meshfunction, name);
+}
+//----------------------------------------------------------------------------
+void XDMFFile::read(MeshFunction<double>& meshfunction, std::string name)
+{
+  read_mesh_function(meshfunction, name);
+}
+//----------------------------------------------------------------------------
+void XDMFFile::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
+                        hid_t h5_id, const Mesh& mesh,
+                        const std::string path_prefix)
+{
+  // Add grid node and attributes
+  pugi::xml_node grid_node = xml_node.append_child("Grid");
+  dolfin_assert(grid_node);
+  grid_node.append_attribute("Name") = mesh.name().c_str();
+  grid_node.append_attribute("GridType") = "Uniform";
+
+  // Add topology node and attributes (including writing data)
+  const int tdim = mesh.topology().dim();
+  const std::int64_t num_global_cells = mesh.size_global(tdim);
+  if (num_global_cells < 1e9)
+    add_topology_data<std::int32_t>(comm, grid_node, h5_id, path_prefix,
+                                    mesh, tdim);
+  else
+    add_topology_data<std::int64_t>(comm, grid_node, h5_id, path_prefix,
+                                    mesh, tdim);
+
+  // Add geometry node and attributes (including writing data)
+  add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::read(Mesh& mesh) const
+{
+  // Extract parent filepath (required by HDF5 when XDMF stores relative path
   // of the HDF5 files(s) and the XDMF is not opened from its own directory)
   boost::filesystem::path xdmf_filename(_filename);
   const boost::filesystem::path parent_path = xdmf_filename.parent_path();
@@ -839,7 +991,7 @@ void XDMFFile::read_new(Mesh& mesh) const
   if (!boost::filesystem::exists(xdmf_filename))
   {
     dolfin_error("XDMFFile.cpp",
-                 "opening check that XDMF file",
+                 "open XDMF file",
                  "XDMF file \"%s\" does not exist", _filename.c_str());
   }
 
@@ -865,10 +1017,11 @@ void XDMFFile::read_new(Mesh& mesh) const
   dolfin_assert(topology_node);
 
   // Get cell type
-  const std::string cell_type_str = get_cell_type(topology_node);
+  const auto cell_type_str = get_cell_type(topology_node);
+  const int degree = cell_type_str.second;
 
   // Get toplogical dimensions
-  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
+  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str.first));
   dolfin_assert(cell_type);
   const int tdim = cell_type->dim();
   const std::int64_t num_cells_global = get_num_cells(topology_node);
@@ -908,10 +1061,19 @@ void XDMFFile::read_new(Mesh& mesh) const
 
   if (MPI::size(_mpi_comm) == 1)
   {
-    build_mesh(mesh, cell_type_str, num_points_global, num_cells_global,
-               cell_type->num_vertices(),
-               tdim, gdim, topology_data_node, geometry_data_node,
-               parent_path);
+    if (degree == 1)
+    {
+      build_mesh(mesh, *cell_type, num_points_global, num_cells_global,
+                 tdim, gdim, topology_data_node, geometry_data_node,
+                 parent_path);
+    }
+    else
+    {
+      dolfin_assert(degree == 2);
+      build_mesh_quadratic(mesh, *cell_type, num_points_global, num_cells_global,
+                           tdim, gdim, topology_data_node, geometry_data_node,
+                           parent_path);
+    }
   }
   else
   {
@@ -919,7 +1081,7 @@ void XDMFFile::read_new(Mesh& mesh) const
     LocalMeshData local_mesh_data(_mpi_comm);
     build_local_mesh_data(local_mesh_data, *cell_type, num_points_global,
                           num_cells_global,
-                          cell_type->num_vertices(), tdim, gdim,
+                          tdim, gdim,
                           topology_data_node, geometry_data_node,
                           parent_path);
     local_mesh_data.check();
@@ -930,16 +1092,104 @@ void XDMFFile::read_new(Mesh& mesh) const
   }
 }
 //----------------------------------------------------------------------------
-void XDMFFile::build_mesh(Mesh& mesh, std::string cell_type_str,
+void XDMFFile::build_mesh_quadratic(Mesh& mesh, const CellType& cell_type,
                           std::int64_t num_points, std::int64_t num_cells,
-                          int num_points_per_cell,
+                          int tdim, int gdim,
+                          const pugi::xml_node& topology_dataset_node,
+                          const pugi::xml_node& geometry_dataset_node,
+                          const boost::filesystem::path& relative_path)
+{
+
+  // Get the topology data
+  dolfin_assert(topology_dataset_node);
+  std::vector<std::int32_t> topology_data
+    = get_dataset<std::int32_t>(mesh.mpi_comm(), topology_dataset_node,
+                                relative_path);
+  dolfin_assert(topology_data.size()%num_cells == 0);
+  const int num_points_per_cell = topology_data.size()/num_cells;
+  const int num_vertices_per_cell = cell_type.num_entities(0);
+  const int num_edges_per_cell = cell_type.num_entities(1);
+  dolfin_assert(num_points_per_cell == num_vertices_per_cell + num_edges_per_cell);
+
+  const boost::const_multi_array_ref<std::int32_t, 2>
+    topology_data_array(topology_data.data(),
+                        boost::extents[num_cells][num_points_per_cell]);
+
+  // Get set of indices for vertices
+  dolfin::Set<std::int32_t> vertex_indices;
+  for(unsigned int i = 0; i < num_cells; ++i)
+  {
+    for (int j = 0; j < num_vertices_per_cell; ++j)
+      vertex_indices.insert(topology_data_array[i][j]);
+  }
+  vertex_indices.sort();
+
+  // Get the geometry data
+  dolfin_assert(geometry_dataset_node);
+  std::vector<double> geometry_data
+    = get_dataset<double>(mesh.mpi_comm(), geometry_dataset_node,
+                          relative_path);
+
+  MeshEditor mesh_editor;
+  mesh_editor.open(mesh, cell_type.cell_type(), tdim, gdim, 2);
+
+  mesh_editor.init_vertices(vertex_indices.size());
+  int c = 0;
+  for (const auto &q : vertex_indices.set())
+  {
+    mesh_editor.add_vertex(c, Point(gdim, &geometry_data[q*gdim]));
+    ++c;
+  }
+
+  mesh_editor.init_cells(num_cells);
+  std::vector<unsigned int> pts(num_vertices_per_cell);
+  for(int i = 0; i < num_cells; ++i)
+  {
+    for (int j = 0; j < num_vertices_per_cell; ++j)
+    {
+      pts[j] = std::lower_bound(vertex_indices.set().begin(),
+                                vertex_indices.set().end(),
+                                topology_data_array[i][j])
+        - vertex_indices.set().begin();
+    }
+    mesh_editor.add_cell(i, pts);
+  }
+
+  std::vector<std::size_t> edge_mapping;
+  if (tdim == 1)
+    edge_mapping = {0};
+  else if (tdim == 2)
+    edge_mapping = {1, 2, 0};
+  else
+    edge_mapping = {5, 4, 1, 3, 2, 0};
+
+  mesh_editor.init_entities();
+  for(unsigned int i = 0; i < num_cells; ++i)
+  {
+    unsigned int j = 0;
+    for (EdgeIterator e(Cell(mesh, i)); !e.end(); ++e)
+    {
+      // fixme: permute j
+      const int32_t c = topology_data_array[i][num_vertices_per_cell + edge_mapping[j]];
+      Point p(gdim, &geometry_data[c*gdim]);
+      mesh_editor.add_entity_point(1, 0, e->index(), p);
+      ++j;
+    }
+  }
+  mesh_editor.close();
+
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::build_mesh(Mesh& mesh, const CellType& cell_type,
+                          std::int64_t num_points, std::int64_t num_cells,
                           int tdim, int gdim,
                           const pugi::xml_node& topology_dataset_node,
                           const pugi::xml_node& geometry_dataset_node,
                           const boost::filesystem::path& relative_path)
 {
   MeshEditor mesh_editor;
-  mesh_editor.open(mesh, cell_type_str, tdim, gdim);
+
+  mesh_editor.open(mesh, cell_type.cell_type(), tdim, gdim);
 
   // Get topology data vector and add to mesh
   {
@@ -951,10 +1201,11 @@ void XDMFFile::build_mesh(Mesh& mesh, std::string cell_type_str,
 
     // Check dims
 
-    // Prepate mesh editor for addition of cells
+    // Prepare mesh editor for addition of cells
     mesh_editor.init_cells_global(num_cells, num_cells);
 
     // Prepare mesh editor for addition of cells, and add cell topology
+    const int num_points_per_cell = cell_type.num_vertices();
     std::vector<std::size_t> cell_topology(num_points_per_cell);
     for (std::int64_t i = 0; i < num_cells; ++i)
     {
@@ -990,10 +1241,9 @@ void XDMFFile::build_mesh(Mesh& mesh, std::string cell_type_str,
 void
 XDMFFile::build_local_mesh_data(LocalMeshData& local_mesh_data,
                                 const CellType& cell_type,
-                                const std::int64_t num_points_global,
-                                const std::int64_t num_cells_global,
-                                const int num_points_per_cell,
-                                const int tdim, const int gdim,
+                                std::int64_t num_points_global,
+                                std::int64_t num_cells_global,
+                                int tdim, int gdim,
                                 const pugi::xml_node& topology_dataset_node,
                                 const pugi::xml_node& geometry_dataset_node,
                                 const boost::filesystem::path& relative_path)
@@ -1072,36 +1322,47 @@ XDMFFile::build_local_mesh_data(LocalMeshData& local_mesh_data,
 template<typename T>
 void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                  hid_t h5_id, const std::string path_prefix,
-                                 const Mesh& mesh)
+                                 const Mesh& mesh, int cell_dim)
 {
-  // Get topological dimension
-  const int tdim = mesh.topology().dim();
-
   // Get number of cells (global) and vertices per cell from mesh
-  const std::int64_t num_cells = mesh.topology().size_global(tdim);
-  const int num_vertices_per_cell = mesh.type().num_vertices(tdim);
+  const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
+  int num_nodes_per_cell = mesh.type().num_vertices(cell_dim);
+  const int degree = mesh.geometry().degree();
+  if (degree == 2)
+  {
+    dolfin_assert(cell_dim == (int)mesh.topology().dim());
+    num_nodes_per_cell += mesh.type().num_entities(1);
+  }
 
   // Get VTK string for cell type
   const std::string vtk_cell_str
-    = vtk_cell_type_str(mesh.type().entity_type(tdim), 1);
+    = vtk_cell_type_str(mesh.type().entity_type(cell_dim), degree);
 
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   dolfin_assert(topology_node);
   topology_node.append_attribute("NumberOfElements") = std::to_string(num_cells).c_str();
   topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
-  topology_node.append_attribute("NodesPerElement") = num_vertices_per_cell;
+  topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
 
   // Compute packed topology data
-  std::vector<T> topology_data = compute_topology_data<T>(mesh, tdim);
+  std::vector<T> topology_data;
+
+  dolfin_assert(degree == 1 or degree == 2);
+  if (degree == 1)
+    topology_data = compute_topology_data<T>(mesh, cell_dim);
+  else
+    topology_data = compute_quadratic_topology<T>(mesh);
 
   // Add topology DataItem node
   const std::string group_name = path_prefix + "/" + mesh.name();
   const std::string h5_path = group_name + "/topology";
-  const std::vector<std::int64_t> shape = {num_cells, num_vertices_per_cell};
+  const std::vector<std::int64_t> shape = {num_cells, num_nodes_per_cell};
   const std::string number_type = "UInt";
-  add_data_item(comm, topology_node, h5_id, h5_path, topology_data, shape, number_type);
+
+  add_data_item(comm, topology_node, h5_id, h5_path,
+                topology_data, shape, number_type);
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                  hid_t h5_id, const std::string path_prefix,
                                  const Mesh& mesh)
@@ -1111,23 +1372,24 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Compute number of points (global) in mesh (equal to number of vertices
   // for affine meshes)
-  std::int64_t num_points = 0;
-  for (std::size_t i = 0; i <= mesh.topology().dim(); ++i)
-  {
-    num_points +=
-      mesh_geometry.num_entity_coordinates(i)*mesh.size_global(i);
-  }
+  const int degree = mesh_geometry.degree();
+  dolfin_assert(degree == 1 or degree == 2);
+  const std::int64_t num_points
+    = (degree == 1) ? mesh.size_global(0) : (mesh.size(0) + mesh.size(1));
 
   // Add geometry node and attributes
   pugi::xml_node geometry_node = xml_node.append_child("Geometry");
   dolfin_assert(geometry_node);
   dolfin_assert(gdim > 0 and gdim <= 3);
-  const std::string geometry_type = ( gdim == 1 or gdim == 2) ? "XY" : "XYZ";
+  const std::string geometry_type = (gdim == 3) ? "XYZ" : "XY";
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 
   // Pack geometry data
-  std::vector<double> x
-    = DistributedMeshTools::reorder_vertices_by_global_indices(mesh);
+  std::vector<double> x;
+  if (degree == 1)
+    x = DistributedMeshTools::reorder_vertices_by_global_indices(mesh);
+  else
+    x = mesh_geometry.x();
 
   // XDMF does not support 1D, so handle as special case
   if (gdim == 1)
@@ -1140,13 +1402,14 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
     std::swap(x, _x);
   }
 
-  // Add geometry ad DataItem node
+  // Add geometry DataItem node
   const std::string group_name = path_prefix + "/" + mesh.name();
   const std::string h5_path = group_name + "/geometry";
   const std::vector<std::int64_t> shape = {num_points, gdim};
+
   add_data_item(comm, geometry_node, h5_id, h5_path, x, shape);
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 template<typename T>
 void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
                              hid_t h5_id, const std::string h5_path, const T& x,
@@ -1170,11 +1433,13 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
   if (h5_id < 0)
   {
     data_item_node.append_attribute("Format") = "XML";
-    data_item_node.append_child(pugi::node_pcdata).set_value(container_to_string(x, " ", 16).c_str());
+    dolfin_assert(shape.size() == 2);
+    data_item_node.append_child(pugi::node_pcdata)
+      .set_value(container_to_string(x, " ", 16, shape[1]).c_str());
   }
   else
   {
-    #ifdef HAS_HDF5
+#ifdef HAS_HDF5
     data_item_node.append_attribute("Format") = "HDF";
 
     // Get name of HDF5 file
@@ -1190,6 +1455,7 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
     std::int64_t num_items_total = 1;
     for (auto n : shape)
       num_items_total *= n;
+
     dolfin_assert(num_items_total == (std::int64_t) MPI::sum(comm, x.size()));
 
     // Compute data offset and range of values
@@ -1203,18 +1469,69 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
     const std::pair<std::int64_t, std::int64_t> local_range
       = {offset, offset + local_shape0};
 
-    const bool use_mpi_io = MPI::size(comm) == 1 ? false : true;
+    const bool use_mpi_io = (MPI::size(comm) > 1);
     HDF5Interface::write_dataset(h5_id, h5_path, x, local_range, shape, use_mpi_io,
                                  false);
-    #else
+
+    // Add partitioning attribute to dataset
+    std::vector<std::size_t> partitions;
+    std::vector<std::size_t> offset_tmp(1, offset);
+    MPI::gather(comm, offset_tmp, partitions);
+    MPI::broadcast(comm, partitions);
+    HDF5Interface::add_attribute(h5_id, h5_path, "partition", partitions);
+
+#else
     // Should never reach this point
     dolfin_error("XDMFFile.cpp",
                  "add dataitem",
-                 "DOLFIN has not been configured with hdf5_dataset");
-    #endif
+                 "DOLFIN has not been configured with HDF5");
+#endif
   }
 }
 //----------------------------------------------------------------------------
+std::set<unsigned int>
+XDMFFile::compute_nonlocal_entities(const Mesh& mesh, int cell_dim)
+{
+  // If not already numbered, number entities of
+  // order cell_dim so we can get shared_entities
+  DistributedMeshTools::number_entities(mesh, cell_dim);
+
+  const std::size_t mpi_rank = MPI::rank(mesh.mpi_comm());
+  const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
+    = mesh.topology().shared_entities(cell_dim);
+
+  std::set<unsigned int> non_local_entities;
+
+  const std::size_t tdim = mesh.topology().dim();
+  bool ghosted
+    = (mesh.topology().size(tdim) > mesh.topology().ghost_offset(tdim));
+
+  if (!ghosted)
+  {
+    // No ghost cells - exclude shared entities
+    // which are on lower rank processes
+    for (const auto &e : shared_entities)
+    {
+      const unsigned int lowest_rank_owner = *(e.second.begin());
+      if (lowest_rank_owner < mpi_rank)
+        non_local_entities.insert(e.first);
+    }
+  }
+  else
+  {
+    // Iterate through ghost cells, adding non-ghost entities
+    // which are in lower rank process cells
+    for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
+    {
+      const unsigned int cell_owner = c->owner();
+      for (MeshEntityIterator e(*c, cell_dim); !e.end(); ++e)
+        if (!e->is_ghost() && cell_owner < mpi_rank)
+          non_local_entities.insert(e->index());
+    }
+  }
+  return non_local_entities;
+}
+//-----------------------------------------------------------------------------
 template<typename T>
 std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
 {
@@ -1226,91 +1543,57 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
   // Get mesh communicator
   MPI_Comm comm = mesh.mpi_comm();
 
-  // Pack data
   const std::vector<std::int8_t> perm = mesh.type().vtk_mapping();
-  if (MPI::size(comm) == 1)
+  const int tdim = mesh.topology().dim();
+  if (MPI::size(comm) == 1 or cell_dim == tdim)
   {
-    // Simple case when mesh is not distributed
-    const std::vector<size_t>& global_vertices = mesh.topology().global_indices(0);
-    for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+    // Simple case when nothing is shared between processes
+    if (cell_dim == 0)
     {
-      const unsigned int* entities = c->entities(0);
-      for (unsigned int i = 0; i != c->num_entities(0); ++i)
-        topology_data.push_back(global_vertices[entities[perm[i]]]);
+      for (VertexIterator v(mesh); !v.end(); ++v)
+        topology_data.push_back(v->global_index());
+    }
+    else
+    {
+      const auto& global_vertices
+        = mesh.topology().global_indices(0);
+      for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+      {
+        const unsigned int* entities = c->entities(0);
+        for (unsigned int i = 0; i != c->num_entities(0); ++i)
+          topology_data.push_back(global_vertices[entities[perm[i]]]);
+      }
     }
   }
   else
   {
-    // If not already numbered, number entities of order tdim so
-    // we can get shared_entities
-    DistributedMeshTools::number_entities(mesh, cell_dim);
+    std::set<unsigned int> non_local_entities
+      = compute_nonlocal_entities(mesh, cell_dim);
 
-    // Check if mesh has ghost layers
-    const MeshTopology& topology = mesh.topology();
-    const bool ghosted = (topology.size(cell_dim) == topology.ghost_offset(cell_dim));
-
-    // Get MPI rank
-    const int mpi_rank = MPI::rank(comm);
-
-    // Build set of entities that are on this process but which
-    // should not be output by this process because they will be output
-    // by another process.
-    std::set<int> non_local_entities;
-    if (!ghosted)
-    {
-      // Get shared entities
-      const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
-        = mesh.topology().shared_entities(cell_dim);
-
-      // Iterate over shared entities, and add to exlcusion set
-      // if there is a lower rank process with the entity
-      for (auto e = shared_entities.begin(); e != shared_entities.end(); ++e)
-      {
-        const int lowest_rank_owner = *(e->second.begin());
-        if (lowest_rank_owner < mpi_rank)
-          non_local_entities.insert(e->first);
-      }
-    }
-    else
-    {
-      // Iterate through ghost cells, adding non-ghost entities
-      // which are in lower rank process cells to a set for
-      // exclusion from output
-      for (MeshEntityIterator c(mesh, cell_dim, "ghost"); !c.end(); ++c)
-      {
-        const int cell_owner = c->owner();
-        for (MeshEntityIterator e(*c, cell_dim); !e.end(); ++e)
-        {
-          if (!e->is_ghost() and cell_owner < mpi_rank)
-            non_local_entities.insert(e->index());
-        }
-      }
-    }
-
-    // Generate topology data for this process, with special case
-    // for mesh of points
-    topology_data.reserve(mesh.num_entities(cell_dim)*(num_vertices_per_cell));
     if (cell_dim == 0)
     {
+      // Special case for mesh of points
       for (VertexIterator v(mesh); !v.end(); ++v)
       {
-        if (non_local_entities.find(v->index()) == non_local_entities.end())
+        if (non_local_entities.find(v->index())
+            == non_local_entities.end())
           topology_data.push_back(v->global_index());
       }
     }
     else
     {
       // Local-to-global map for point indices
-      const std::vector<std::size_t>& global_vertices
+      const auto& global_vertices
         = mesh.topology().global_indices(0);
       for (MeshEntityIterator e(mesh, cell_dim); !e.end(); ++e)
       {
         // If not excluded, add to topology
-        if (non_local_entities.find(e->index()) == non_local_entities.end())
+        if (non_local_entities.find(e->index())
+            == non_local_entities.end())
         {
           for (unsigned int i = 0; i != e->num_entities(0); ++i)
           {
-            const int local_idx = e->entities(0)[perm[i]];
+            const unsigned int local_idx = e->entities(0)[perm[i]];
             topology_data.push_back(global_vertices[local_idx]);
           }
         }
@@ -1320,20 +1603,120 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
 
   return topology_data;
 }
+//-----------------------------------------------------------------------------
+template<typename T>
+std::vector<T> XDMFFile::compute_quadratic_topology(const Mesh& mesh)
+{
+  const MeshGeometry& geom = mesh.geometry();
+
+  if (geom.degree() != 2 or MPI::size(mesh.mpi_comm()) != 1)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "create topology data",
+                 "XDMF quadratic mesh only supported in serial");
+  }
+
+  const std::size_t tdim = mesh.topology().dim();
+  std::vector<std::size_t> edge_mapping;
+  if (tdim == 1)
+    edge_mapping = {0};
+  else if (tdim == 2)
+    edge_mapping = {2, 0, 1};
+  else
+    edge_mapping = {5, 2, 4, 3, 1, 0};
+
+  // Get number of points per cell
+  const CellType& celltype = mesh.type();
+  std::size_t npoint = celltype.num_entities(0) + celltype.num_entities(1);
+  std::vector<T> topology_data;
+  topology_data.reserve(npoint*mesh.size(tdim));
+
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    // Add indices for vertices and edges
+    for (unsigned int dim = 0; dim != 2; ++dim)
+    {
+      for (unsigned int i = 0; i != celltype.num_entities(dim); ++i)
+      {
+        std::size_t im = (dim == 0) ? i : edge_mapping[i];
+        const std::size_t entity_index
+          = (dim == tdim) ? c->index() : c->entities(dim)[im];
+        const std::size_t local_idx
+          = geom.get_entity_index(dim, 0, entity_index);
+        topology_data.push_back(local_idx);
+      }
+    }
+  }
+  return topology_data;
+}
+//-----------------------------------------------------------------------------
+template<typename T>
+std::vector<T> XDMFFile::compute_value_data(const MeshFunction<T>& meshfunction)
+{
+  // Create vector to store data
+  std::vector<T> value_data;
+  value_data.reserve(meshfunction.size());
+
+  // Get mesh communicator
+  const auto mesh = meshfunction.mesh();
+  MPI_Comm comm = mesh->mpi_comm();
+
+  const int tdim = mesh->topology().dim();
+  const int cell_dim = meshfunction.dim();
+
+  if (MPI::size(comm) == 1 or cell_dim == tdim)
+  {
+    // FIXME: fail with ghosts?
+    value_data.resize(meshfunction.size());
+    std::copy(meshfunction.values(),
+              meshfunction.values() + meshfunction.size(),
+              value_data.begin());
+  }
+  else
+  {
+    std::set<unsigned int> non_local_entities
+      = compute_nonlocal_entities(*mesh, cell_dim);
+
+    for (MeshEntityIterator e(*mesh, cell_dim); !e.end(); ++e)
+    {
+      if (non_local_entities.find(e->index())
+          == non_local_entities.end())
+        value_data.push_back(meshfunction[*e]);
+    }
+  }
+
+  return value_data;
+}
 //----------------------------------------------------------------------------
-std::string XDMFFile::get_cell_type(const pugi::xml_node& topology_node)
+std::pair<std::string, int>
+XDMFFile::get_cell_type(const pugi::xml_node& topology_node)
 {
   dolfin_assert(topology_node);
   pugi::xml_attribute type_attr = topology_node.attribute("TopologyType");
   dolfin_assert(type_attr);
 
+  const std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
+    = {
+    {"polyvertex", {"point", 1}},
+    {"polyline", {"interval", 1}},
+    {"edge_3", {"interval", 2}},
+    {"triangle", {"triangle", 1}},
+    {"tri_6", {"triangle", 2}},
+    {"tetrahedron", {"tetrahedron", 1}},
+    {"tet_10", {"tetrahedron", 2}}
+  };
+
   // Convert XDMF cell type string to DOLFIN cell type string
   std::string cell_type = type_attr.as_string();
   boost::algorithm::to_lower(cell_type);
-  if (cell_type == "polyline")
-    cell_type = "interval";
-
-  return cell_type;
+  auto it = xdmf_to_dolfin.find(cell_type);
+  if (it == xdmf_to_dolfin.end())
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "recognise cell type",
+                 "Unknown value \"%s\"", cell_type.c_str());
+  }
+  return it->second;
 }
 //----------------------------------------------------------------------------
 std::vector<std::int64_t>
@@ -1406,10 +1789,10 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
   // FIXME: Need to sort out datasset dimensions - can't depend on
   // HDF5 shape, and a Topology data item is not required to have a
   // 'Dimensions' attribute since the dimensions can be determined
-  // from the number of cells and the cell type (for topology, once
+  // from the number of cells and the cell type (for topology, one
   // must supply cell type + (number of cells or dimensions).
   //
-  // A geometry data item must have 'Dimensions' attribute
+  // A geometry data item must have 'Dimensions' attribute.
 
   dolfin_assert(dataset_node);
   pugi::xml_attribute format_attr = dataset_node.attribute("Format");
@@ -1443,7 +1826,7 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
   {
     #ifdef HAS_HDF5
     // Get file and data path
-    auto paths = XDMFxml::get_hdf5_paths(dataset_node);
+    auto paths = get_hdf5_paths(dataset_node);
 
     // Handle cases where file path is (a) absolute or (b) relative
     boost::filesystem::path h5_filepath(paths[0]);
@@ -1564,40 +1947,236 @@ std::array<std::string, 2> XDMFFile::get_hdf5_paths(const pugi::xml_node& datait
 }
 //-----------------------------------------------------------------------------
 template<typename T>
-void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
+void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction,
+                                  std::string name)
 {
-  dolfin_assert(_xml);
-  _xml->read();
+  // Load XML doc from file
+  pugi::xml_document xml_doc;
+  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+  dolfin_assert(result);
 
-  Encoding encoding = get_file_encoding();
-  check_encoding(encoding);
+  // Get XDMF node
+  pugi::xml_node xdmf_node = xml_doc.child("Xdmf");
+  dolfin_assert(xdmf_node);
 
-  if (encoding == Encoding::HDF5)
+  // Get domain node
+  pugi::xml_node domain_node = xdmf_node.child("Domain");
+  dolfin_assert(domain_node);
+
+  // Check all top level Grid nodes for suitable dataset
+  pugi::xml_node grid_node;
+  for (pugi::xml_node node: domain_node.children("Grid"))
   {
-#ifdef HAS_HDF5
-    const std::string data_name = _xml->dataname();
-    if (_hdf5_filemode != "r")
-    {
-      _hdf5_file.reset(new HDF5File(_mpi_comm, get_hdf5_filename(_filename), "r"));
-      _hdf5_filemode = "r";
-    }
-    dolfin_assert(_hdf5_file);
-
-    // Try to read the meshfunction from the associated HDF5 file
-    _hdf5_file->read(meshfunction, "/Mesh/" + data_name);
-#else
-    dolfin_error("XDMFile.cpp", "open MeshFunction file", "Need HDF5 support");
-#endif
+    pugi::xml_node value_node = node.child("Attribute");
+    if (value_node and (name == "" or name == value_node.attribute("Name").as_string()))
+      {
+        grid_node = node;
+        break;
+      }
   }
-  else if (encoding == Encoding::ASCII)
-  {
-    std::vector<std::string> data_lines;
-    const std::string data_set = _xml->get_first_data_set();
-    boost::split(data_lines, data_set, boost::is_any_of("\n"));
 
-    const std::size_t n_lines = data_lines.size();
-    for (std::size_t j = 0; j < n_lines; ++j)
-      meshfunction[j] = boost::lexical_cast<T>(data_lines[j]);
+  // Check if a TimeSeries (old format), in which case the Grid will be down one level
+  if (!grid_node)
+  {
+    pugi::xml_node grid_node1 = domain_node.child("Grid");
+    if (grid_node1)
+    {
+      for (pugi::xml_node node: grid_node1.children("Grid"))
+      {
+        pugi::xml_node value_node = node.child("Attribute");
+        if (value_node and (name == "" or name == value_node.attribute("Name").as_string()))
+        {
+          grid_node = node;
+          break;
+        }
+      }
+    }
+  }
+
+  // Still can't find it
+  if (!grid_node)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "open MeshFunction for reading",
+                 "Mesh Grid with data Attribute not found in XDMF");
+  }
+
+  // Get topology node
+  pugi::xml_node topology_node = grid_node.child("Topology");
+  dolfin_assert(topology_node);
+
+  // Get value node
+  pugi::xml_node value_node = grid_node.child("Attribute");
+  dolfin_assert(value_node);
+
+  // Get existing Mesh of MeshFunction
+  const auto mesh = meshfunction.mesh();
+
+  // Get cell type and topology of MeshFunction (may be different from Mesh)
+  const auto cell_type_str = get_cell_type(topology_node);
+  dolfin_assert(cell_type_str.second == 1);
+  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str.first));
+  dolfin_assert(cell_type);
+  const unsigned int num_vertices_per_cell = cell_type->num_entities(0);
+  const unsigned int cell_dim = cell_type->dim();
+  dolfin_assert(cell_dim == meshfunction.dim());
+  const std::size_t num_entities_global = get_num_cells(topology_node);
+
+  // Ensure size_global(cell_dim) is set and check dataset matches
+  DistributedMeshTools::number_entities(*mesh, cell_dim);
+  dolfin_assert(mesh->size_global(cell_dim) == num_entities_global);
+
+  boost::filesystem::path xdmf_filename(_filename);
+  const boost::filesystem::path parent_path = xdmf_filename.parent_path();
+
+  // Get topology dataset
+  pugi::xml_node topology_data_node = topology_node.child("DataItem");
+  dolfin_assert(topology_data_node);
+  const auto topology_data = get_dataset<std::int64_t>(mesh->mpi_comm(),
+                                                       topology_data_node,
+                                                       parent_path);
+  dolfin_assert(topology_data.size() % num_vertices_per_cell == 0);
+
+  // Get value dataset
+  pugi::xml_node value_data_node = value_node.child("DataItem");
+  dolfin_assert(value_data_node);
+  std::vector<T> value_data
+    = get_dataset<T>(_mpi_comm, value_data_node, parent_path);
+
+  // Scatter/gather data across processes
+  remap_meshfunction_data(meshfunction, topology_data, value_data);
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+void XDMFFile::remap_meshfunction_data(MeshFunction<T>& meshfunction,
+                      const std::vector<std::int64_t>& topology_data,
+                                    const std::vector<T>& value_data)
+{
+  // Send the read data to each process on the basis of the first
+  // vertex of the entity, since we do not know the global_index
+  const int cell_dim = meshfunction.dim();
+  const auto mesh = meshfunction.mesh();
+  // FIXME : get vertices_per_entity properly
+  const int vertices_per_entity = meshfunction.dim() + 1;
+  const MPI_Comm comm = mesh->mpi_comm();
+  const std::size_t num_processes = MPI::size(comm);
+
+  // Wrap topology data in boost array
+  dolfin_assert(topology_data.size()%vertices_per_entity == 0);
+  const std::size_t num_entities = topology_data.size()/vertices_per_entity;
+
+  // Send (sorted) entity topology and data to a post-office process
+  // determined by the lowest global vertex index of the entity
+  std::vector<std::vector<std::int64_t>> send_topology(num_processes);
+  std::vector<std::vector<T>> send_values(num_processes);
+  const std::size_t max_vertex = mesh->size_global(0);
+  for (std::size_t i = 0; i < num_entities ; ++i)
+  {
+    std::vector<std::int64_t>
+      cell_topology(topology_data.begin() + i*vertices_per_entity,
+                    topology_data.begin() + (i + 1)*vertices_per_entity);
+    std::sort(cell_topology.begin(), cell_topology.end());
+
+    // Use first vertex to decide where to send this data
+    const std::size_t destination_process
+      = MPI::index_owner(comm, cell_topology.front(), max_vertex);
+
+    send_topology[destination_process]
+      .insert(send_topology[destination_process].end(),
+              cell_topology.begin(),
+              cell_topology.end());
+    send_values[destination_process].push_back(value_data[i]);
+  }
+
+  std::vector<std::vector<std::int64_t>> receive_topology(num_processes);
+  std::vector<std::vector<T>> receive_values(num_processes);
+  MPI::all_to_all(comm, send_topology, receive_topology);
+  MPI::all_to_all(comm, send_values, receive_values);
+
+  // Generate requests for data from remote processes, based on the
+  // first vertex of the MeshEntities which belong on this process
+  // Send our process number, and our local index, so it can come back
+  // directly to the right place
+  std::vector<std::vector<std::int64_t>> send_requests(num_processes);
+  const std::size_t rank = MPI::rank(comm);
+  for (MeshEntityIterator cell(*mesh, cell_dim, "all"); !cell.end(); ++cell)
+  {
+    std::vector<std::int64_t> cell_topology;
+    for (VertexIterator v(*cell); !v.end(); ++v)
+      cell_topology.push_back(v->global_index());
+    std::sort(cell_topology.begin(), cell_topology.end());
+
+    // Use first vertex to decide where to send this request
+    std::size_t send_to_process = MPI::index_owner(comm,
+                                                   cell_topology.front(),
+                                                   max_vertex);
+    // Map to this process and local index by appending to send data
+    cell_topology.push_back(cell->index());
+    cell_topology.push_back(rank);
+    send_requests[send_to_process].insert(send_requests[send_to_process].end(),
+                                          cell_topology.begin(),
+                                          cell_topology.end());
+  }
+
+  std::vector<std::vector<std::int64_t>> receive_requests(num_processes);
+  MPI::all_to_all(comm, send_requests, receive_requests);
+
+  // At this point, the data with its associated vertices is in
+  // receive_values and receive_topology and the final destinations
+  // are stored in receive_requests as
+  // [vertices][index][process][vertices][index][process]...  Some
+  // data will have more than one destination
+
+  // Create a mapping from the topology vector to the desired data
+  std::map<std::vector<std::int64_t>, T> cell_to_data;
+
+  for (std::size_t i = 0; i < receive_values.size(); ++i)
+  {
+    dolfin_assert(receive_values[i].size()*vertices_per_entity
+                  == receive_topology[i].size());
+    auto p = receive_topology[i].begin();
+    for (std::size_t j = 0; j < receive_values[i].size(); ++j)
+    {
+      const std::vector<std::int64_t> cell(p, p + vertices_per_entity);
+      cell_to_data.insert({cell, receive_values[i][j]});
+      p += vertices_per_entity;
+    }
+  }
+
+  // Clear vectors for reuse - now to send values and indices to final
+  // destination
+  send_topology = std::vector<std::vector<std::int64_t>>(num_processes);
+  send_values = std::vector<std::vector<T>>(num_processes);
+
+  // Go through requests, which are stacked as [vertex, vertex, ...]
+  // [index] [proc] etc.  Use the vertices as the key for the map
+  // (above) to retrieve the data to send to proc
+  for (std::size_t i = 0; i < receive_requests.size(); ++i)
+  {
+    for (auto p = receive_requests[i].begin();
+         p != receive_requests[i].end(); p += (vertices_per_entity + 2))
+    {
+      const std::vector<std::int64_t> cell(p, p + vertices_per_entity);
+      const std::size_t remote_index = *(p + vertices_per_entity);
+      const std::size_t send_to_proc = *(p + vertices_per_entity + 1);
+
+      const auto find_cell = cell_to_data.find(cell);
+      dolfin_assert(find_cell != cell_to_data.end());
+      send_values[send_to_proc].push_back(find_cell->second);
+      send_topology[send_to_proc].push_back(remote_index);
+    }
+  }
+
+  MPI::all_to_all(comm, send_topology, receive_topology);
+  MPI::all_to_all(comm, send_values, receive_values);
+
+  // At this point, receive_topology should only list the local indices
+  // and received values should have the appropriate values for each
+  for (std::size_t i = 0; i < receive_values.size(); ++i)
+  {
+    dolfin_assert(receive_values[i].size() == receive_topology[i].size());
+    for (std::size_t j = 0; j < receive_values[i].size(); ++j)
+      meshfunction[receive_topology[i][j]] = receive_values[i][j];
   }
 }
 //----------------------------------------------------------------------------
@@ -1617,25 +2196,9 @@ std::string XDMFFile::get_hdf5_filename(std::string xdmf_filename)
 //----------------------------------------------------------------------------
 template<typename T>
 void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
-                                   std::string format, Encoding encoding)
+                                   Encoding encoding)
 {
   check_encoding(encoding);
-
-  // Get mesh
-  dolfin_assert(meshfunction.mesh());
-  std::shared_ptr<const Mesh> mesh = meshfunction.mesh();
-
-#ifdef HAS_HDF5
-  if (encoding == Encoding::HDF5)
-  {
-    if (_hdf5_filemode != "w")
-    {
-      // Create HDF5 file (truncate)
-      _hdf5_file.reset(new HDF5File(mesh->mpi_comm(), get_hdf5_filename(_filename), "w"));
-      _hdf5_filemode = "w";
-    }
-  }
-#endif
 
   if (meshfunction.size() == 0)
   {
@@ -1644,243 +2207,356 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
                  "No values in MeshFunction");
   }
 
-  const std::size_t cell_dim = meshfunction.dim();
-  CellType::Type cell_type = mesh->type().entity_type(cell_dim);
+  // Get mesh
+  dolfin_assert(meshfunction.mesh());
+  std::shared_ptr<const Mesh> mesh = meshfunction.mesh();
 
+  // Check if _xml_doc already has data. If not, create an outer structure
+  // If it already has data, then we may append to it.
+
+  pugi::xml_node domain_node;
+  std::string hdf_filemode = "a";
+  if (_xml_doc->child("Xdmf").empty())
+  {
+    // Reset pugi
+    _xml_doc->reset();
+
+    // Add XDMF node and version attribute
+    _xml_doc->append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+    pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+    dolfin_assert(xdmf_node);
+    xdmf_node.append_attribute("Version") = "3.0";
+    xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
+
+    // Add domain node and add name attribute
+    domain_node = xdmf_node.append_child("Domain");
+    hdf_filemode = "w";
+  }
+  else
+    domain_node = _xml_doc->child("Xdmf").child("Domain");
+
+  dolfin_assert(domain_node);
+
+  // Open a HDF5 file if using HDF5 encoding
+  hid_t h5_id = -1;
+#ifdef HAS_HDF5
+  std::unique_ptr<HDF5File> h5_file;
   if (encoding == Encoding::HDF5)
   {
-#ifdef HAS_HDF5
-    // Use HDF5 function to output MeshFunction
-    const std::string h5_mesh_name = "/Mesh/" + std::to_string(_counter);
-    boost::filesystem::path p(get_hdf5_filename(_filename));
-    _current_mesh_name = p.filename().string() + ":" + h5_mesh_name;
-    _hdf5_file->write(meshfunction, h5_mesh_name);
+    // Open file
+    h5_file.reset(new HDF5File(mesh->mpi_comm(),
+                               get_hdf5_filename(_filename), hdf_filemode));
+    dolfin_assert(h5_file);
+
+    // Get file handle
+    h5_id = h5_file->h5_id();
+  }
 #endif
-  }
-  else if (encoding == Encoding::ASCII)
-    _current_mesh_name = "/Xdmf/Domain/Grid";
 
-  // Saved MeshFunction values are in the /Mesh group
-  const std::string dataset_name = _current_mesh_name + "/values";
+  const std::string mf_name = "/MeshFunction/" + std::to_string(_counter);
 
-  bool time_series = parameters["time_series"];
+  // If adding a CellFunction to an existing Mesh, do not rewrite Mesh
+  // FIXME: do some checks on the existing Mesh to make sure it is the same
+  // as the meshfunction's mesh.
+  pugi::xml_node grid_node = domain_node.child("Grid");
+  const std::size_t cell_dim = meshfunction.dim();
+  const std::size_t tdim = mesh->topology().dim();
+  const bool grid_empty = grid_node.empty();
 
-  if (MPI::rank(mesh->mpi_comm()) == 0)
+  // Check existing Mesh for compatibility.
+  if (!grid_empty)
   {
-    dolfin_assert(_xml);
-    const std::string meshfunction_name = meshfunction.name();
-    if (time_series)
-      _xml->init_timeseries(meshfunction_name, (double) _counter, _counter);
-    else
-      _xml->init_mesh(meshfunction_name);
-
-    if (encoding == Encoding::HDF5)
+    pugi::xml_node topology_node = grid_node.child("Topology");
+    dolfin_assert(topology_node);
+    auto cell_type_str = get_cell_type(topology_node);
+    if (CellType::type2string(mesh->type().cell_type()) != cell_type_str.first)
     {
-      _xml->mesh_topology(cell_type, 1, mesh->size_global(cell_dim),
-                          _current_mesh_name + "/topology",
-                          xdmf_format_str(encoding));
-      _xml->mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
-                          _current_mesh_name + "/coordinates",
-                          xdmf_format_str(encoding));
-      _xml->data_attribute(meshfunction_name, 0, false, mesh->size_global(0),
-                           mesh->size_global(cell_dim), 1, dataset_name,
-                           xdmf_format_str(encoding));
+      dolfin_error("XDMFFile.cpp",
+                   "add MeshFunction to XDMF",
+                   "Incompatible Mesh type. Try writing the Mesh to XDMF first");
     }
-    else if (encoding == Encoding::ASCII)
-    {
-      // Add the mesh topology and geometry to the xml data
-      _xml->mesh_topology(cell_type, 1, mesh->size_global(cell_dim),
-                          generate_xdmf_ascii_mesh_topology_data(*mesh,
-                                                                 cell_dim),
-                          xdmf_format_str(encoding));
-
-      _xml->mesh_geometry(mesh->size_global(0), mesh->geometry().dim(),
-                          generate_xdmf_ascii_mesh_geometry_data(*mesh),
-                          xdmf_format_str(encoding));
-
-      // Note: we use boost::container::vector rather than std::vector
-      // to avoid well known problem with std::vector<bool>
-      // No duplicates - ignore ghost cells if present
-      boost::container::vector<T>
-        data_values(meshfunction.values(), meshfunction.values()
-                    + mesh->topology().ghost_offset(cell_dim));
-
-      _xml->data_attribute(meshfunction_name, 0, false, mesh->size_global(0),
-                           mesh->size_global(cell_dim), 1,
-                           generate_xdmf_ascii_data(data_values, format),
-                           xdmf_format_str(encoding));
-    }
-
-    _xml->write();
   }
 
+  if (grid_empty or cell_dim != tdim)
+  {
+    // Make new grid node
+    grid_node = domain_node.append_child("Grid");
+    dolfin_assert(grid_node);
+    grid_node.append_attribute("Name") = mesh->name().c_str();
+    grid_node.append_attribute("GridType") = "Uniform";
+
+    // Make sure entities are numbered - only needed for Edge in 3D in parallel
+    // FIXME: remove this once Edge in 3D in parallel works properly
+    DistributedMeshTools::number_entities(*mesh, cell_dim);
+
+    const std::int64_t num_global_cells = mesh->size_global(cell_dim);
+    if (num_global_cells < 1e9)
+      add_topology_data<std::int32_t>(_mpi_comm, grid_node, h5_id, mf_name,
+                                      *mesh, cell_dim);
+    else
+      add_topology_data<std::int64_t>(_mpi_comm, grid_node, h5_id, mf_name,
+                                      *mesh, cell_dim);
+
+    // Add geometry node if none already, else link back to first existing Mesh
+    if (grid_empty)
+      add_geometry_data(_mpi_comm, grid_node, h5_id, mf_name, *mesh);
+    else
+    {
+      // Add geometry node (reference)
+      pugi::xml_node geometry_node = grid_node.append_child("Geometry");
+      dolfin_assert(geometry_node);
+      geometry_node.append_attribute("Reference") = "XML";
+      geometry_node.append_child(pugi::node_pcdata)
+        .set_value("/Xdmf/Domain/Grid/Geometry");
+    }
+  }
+
+  // Add attribute node with values
+  pugi::xml_node attribute_node = grid_node.append_child("Attribute");
+  dolfin_assert(attribute_node);
+  attribute_node.append_attribute("Name") = meshfunction.name().c_str();
+  attribute_node.append_attribute("AttributeType") = "Scalar";
+  attribute_node.append_attribute("Center") = "Cell";
+
+  const std::int64_t num_values = mesh->size_global(cell_dim);
+  // Add attribute DataItem node and write data
+
+  // Copy values to vector, removing duplicates
+  std::vector<T> values = compute_value_data(meshfunction);
+
+  add_data_item(_mpi_comm, attribute_node, h5_id,
+                mf_name +"/values", values, {num_values, 1});
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+
+  // Increment the counter, so we can save multiple MeshFunctions in one file
   ++_counter;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_point_xml(const std::string group_name,
-                               const std::size_t num_global_points,
-                               const unsigned int value_size,
-                               Encoding encoding)
+std::vector<double> XDMFFile::get_cell_data_values(const Function& u)
 {
-  // FIXME: move to XDMFxml.cpp
+  dolfin_assert(u.function_space()->dofmap());
+  dolfin_assert(u.vector());
 
-  // Write the XML meta description on process zero
-  if (MPI::rank(_mpi_comm) == 0)
-  {
-    dolfin_assert(_xml);
-    _xml->init_mesh("Point cloud");
-
-    // Point topology, no connectivity data
-    _xml->mesh_topology(CellType::Type::point, 0, num_global_points, "",
-                        xdmf_format_str(encoding));
-
-    // Describe geometric coordinates
-    // FIXME: assumes 3D
-    boost::filesystem::path p(get_hdf5_filename(_filename));
-    _xml->mesh_geometry(num_global_points, 3,
-                        p.filename().string() + ":/Points",
-                        xdmf_format_str(encoding));
-
-    if(value_size != 0)
-    {
-      dolfin_assert(value_size == 1 || value_size == 3);
-      _xml->data_attribute("point_values", 0, true,
-                           num_global_points, num_global_points, value_size,
-                           p.filename().string() + ":" + group_name + "/values",
-                           xdmf_format_str(encoding));
-    }
-
-    _xml->write();
-  }
-}
-//----------------------------------------------------------------------------
-void XDMFFile::get_point_data_values(std::vector<double>& data_values,
-                                     std::size_t width,
-                                     const Function& u) const
-{
-  const Mesh& mesh = *u.function_space()->mesh();
+  const auto mesh = u.function_space()->mesh();
   const std::size_t value_size = u.value_size();
   const std::size_t value_rank = u.value_rank();
 
-  if (mesh.geometry().degree() == 1)
+  // Allocate memory for function values at cell centres
+  const std::size_t tdim = mesh->topology().dim();
+  const std::size_t num_local_cells = mesh->topology().ghost_offset(tdim);
+  const std::size_t local_size = num_local_cells*value_size;
+
+  // Build lists of dofs and create map
+  std::vector<dolfin::la_index> dof_set;
+  dof_set.reserve(local_size);
+  const auto dofmap = u.function_space()->dofmap();
+  for (CellIterator cell(*mesh); !cell.end(); ++cell)
   {
-    u.compute_vertex_values(data_values, mesh);
-    const std::size_t num_local_vertices = mesh.size(0);
+    // Tabulate dofs
+    const ArrayView<const dolfin::la_index> dofs
+      = dofmap->cell_dofs(cell->index());
+    const std::size_t ndofs = dofmap->num_element_dofs(cell->index());
+    dolfin_assert(ndofs == value_size);
+    for (std::size_t i = 0; i < ndofs; ++i)
+      dof_set.push_back(dofs[i]);
+  }
 
-    if (value_rank > 0)
+  // Get  values
+  std::vector<double> data_values(dof_set.size());
+  dolfin_assert(u.vector());
+  u.vector()->get_local(data_values.data(), dof_set.size(), dof_set.data());
+
+  if (value_rank == 1 && value_size == 2)
+  {
+    // Pad out data for 2D vector to 3D
+    data_values.resize(3*num_local_cells);
+    for (int j = (num_local_cells - 1); j >= 0; --j)
     {
-      std::vector<double> _data_values(width*num_local_vertices, 0.0);
-      for (std::size_t i = 0; i < num_local_vertices; i++)
-      {
-        for (std::size_t j = 0; j < value_size; j++)
-        {
-          std::size_t tensor_2d_offset = (j > 1 && value_size == 4) ? 1 : 0;
-          _data_values[i*width + j + tensor_2d_offset]
-            = data_values[i + j*num_local_vertices];
-        }
-      }
-
-      data_values = _data_values;
+      double nd[3] = {data_values[j*2], data_values[j*2 + 1], 0};
+      std::copy(nd, nd + 3, &data_values[j*3]);
     }
   }
-  else if (mesh.geometry().degree() == 2)
+  else if (value_rank == 2 && value_size == 4)
   {
-    const std::size_t num_local_points = mesh.size(0) + mesh.size(1);
-    data_values.resize(width*num_local_points);
-    std::vector<dolfin::la_index> data_dofs(data_values.size(), 0);
-
-    dolfin_assert(u.function_space()->dofmap());
-    const GenericDofMap& dofmap = *u.function_space()->dofmap();
-
-    // Function can be P1 or P2
-    if (dofmap.num_entity_dofs(1) == 0)
+    data_values.resize(9*num_local_cells);
+    for (int j = (num_local_cells - 1); j >= 0; --j)
     {
-      // P1
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
-      {
-        const ArrayView<const dolfin::la_index> dofs
-          = dofmap.cell_dofs(cell->index());
-        std::size_t c = 0;
-        for (std::size_t i = 0; i != value_size; ++i)
-        {
-          for (VertexIterator v(*cell); !v.end(); ++v)
-          {
-            const std::size_t v0 = v->index()*width;
-            data_dofs[v0 + i] = dofs[c];
-            ++c;
-          }
-        }
-      }
-
-      // Get the values at the vertex points
-      const GenericVector& uvec = *u.vector();
-      uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
-
-      // Get midpoint values for Edge points
-      for (EdgeIterator e(mesh); !e.end(); ++e)
-      {
-        const std::size_t v0 = e->entities(0)[0];
-        const std::size_t v1 = e->entities(0)[1];
-        const std::size_t e0 = (e->index() + mesh.size(0))*width;
-        for (std::size_t i = 0; i != value_size; ++i)
-          data_values[e0 + i] = (data_values[v0 + i] + data_values[v1 + i])/2.0;
-      }
-    }
-    else if (dofmap.num_entity_dofs(0) == dofmap.num_entity_dofs(1))
-    {
-      // P2
-      // Go over all cells inserting values
-      // FIXME: a lot of duplication here
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
-      {
-        const ArrayView<const dolfin::la_index> dofs
-          = dofmap.cell_dofs(cell->index());
-        std::size_t c = 0;
-        for (std::size_t i = 0; i != value_size; ++i)
-        {
-          for (VertexIterator v(*cell); !v.end(); ++v)
-          {
-            const std::size_t v0 = v->index()*width;
-            data_dofs[v0 + i] = dofs[c];
-            ++c;
-          }
-          for (EdgeIterator e(*cell); !e.end(); ++e)
-          {
-            const std::size_t e0 = (e->index() + mesh.size(0))*width;
-            data_dofs[e0 + i] = dofs[c];
-            ++c;
-          }
-        }
-      }
-
-      const GenericVector& uvec = *u.vector();
-      uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
-    }
-    else
-    {
-      dolfin_error("XDMFFile.cpp",
-                   "get point values for Function",
-                   "Function appears not to be defined on a P1 or P2 type FunctionSpace");
-    }
-
-    // Blank out empty values of 2D vector and tensor
-    if (value_rank == 1 and value_size == 2)
-    {
-      for (std::size_t i = 0; i < data_values.size(); i += 3)
-        data_values[i + 2] = 0.0;
-    }
-    else if (value_rank == 2 and value_size == 4)
-    {
-      for (std::size_t i = 0; i < data_values.size(); i += 9)
-      {
-        data_values[i + 2] = 0.0;
-        data_values[i + 5] = 0.0;
-        data_values[i + 6] = 0.0;
-        data_values[i + 7] = 0.0;
-        data_values[i + 8] = 0.0;
-      }
+      double nd[9] = { data_values[j*4], data_values[j*4 + 1], 0,
+                       data_values[j*4 + 2], data_values[j*4 + 3], 0,
+                       0, 0, 0 };
+      std::copy(nd, nd + 9, &data_values[j*9]);
     }
   }
+  return data_values;
+}
+//-----------------------------------------------------------------------------
+std::int64_t XDMFFile::get_padded_width(const Function& u)
+{
+  std::int64_t width = u.value_size();
+  std::int64_t rank = u.value_rank();
+  if (rank == 1 and width == 2)
+    return 3;
+  else if (rank == 2 and width == 4)
+    return 9;
+  return width;
+}
+//-----------------------------------------------------------------------------
+bool XDMFFile::has_cell_centred_data(const Function& u)
+{
+  // Test for cell-centred data
+  std::size_t cell_based_dim = 1;
+  for (std::size_t i = 0; i < u.value_rank(); i++)
+    cell_based_dim *= u.function_space()->mesh()->topology().dim();
+  return (u.function_space()->dofmap()->max_element_dofs() == cell_based_dim);
+}
+//-----------------------------------------------------------------------------
+std::vector<double> XDMFFile::get_point_data_values(const Function& u)
+{
+  const auto mesh = u.function_space()->mesh();
+
+  std::vector<double> data_values;
+  dolfin_assert(mesh->geometry().degree() == 1);
+
+  u.compute_vertex_values(data_values, *mesh);
+
+  std::int64_t width = get_padded_width(u);
+
+  if (u.value_rank() > 0)
+  {
+    // Transpose vector/tensor data arrays
+    const std::size_t num_local_vertices = mesh->size(0);
+    const std::size_t value_size = u.value_size();
+    std::vector<double> _data_values(width*num_local_vertices, 0.0);
+    for (std::size_t i = 0; i < num_local_vertices; i++)
+    {
+      for (std::size_t j = 0; j < value_size; j++)
+      {
+        std::size_t tensor_2d_offset = (j > 1 && value_size == 4) ? 1 : 0;
+        _data_values[i*width + j + tensor_2d_offset]
+          = data_values[i + j*num_local_vertices];
+      }
+    }
+    data_values = _data_values;
+  }
+
+  // Remove duplicates for vertex-based data in parallel
+  if (MPI::size(mesh->mpi_comm()) > 1)
+  {
+    DistributedMeshTools::reorder_values_by_global_indices(*mesh,
+                                                           data_values, width);
+  }
+
+  return data_values;
+}
+//-----------------------------------------------------------------------------
+std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
+{
+  const auto mesh = u.function_space()->mesh();
+  dolfin_assert(mesh->geometry().degree() == 2);
+
+  const std::size_t value_size = u.value_size();
+  const std::size_t value_rank = u.value_rank();
+  const std::size_t num_local_points = mesh->size(0) + mesh->size(1);
+  const std::size_t width = get_padded_width(u);
+  std::vector<double> data_values(width*num_local_points);
+  std::vector<dolfin::la_index> data_dofs(data_values.size(), 0);
+
+  dolfin_assert(u.function_space()->dofmap());
+  const auto dofmap = u.function_space()->dofmap();
+
+  // Function can be P1 or P2
+  if (dofmap->num_entity_dofs(1) == 0)
+  {
+    // P1
+    for (CellIterator cell(*mesh); !cell.end(); ++cell)
+    {
+      const ArrayView<const dolfin::la_index> dofs
+        = dofmap->cell_dofs(cell->index());
+      std::size_t c = 0;
+      for (std::size_t i = 0; i != value_size; ++i)
+      {
+        for (VertexIterator v(*cell); !v.end(); ++v)
+        {
+          const std::size_t v0 = v->index()*width;
+          data_dofs[v0 + i] = dofs[c];
+          ++c;
+        }
+      }
+    }
+
+    // Get the values at the vertex points
+    const GenericVector& uvec = *u.vector();
+    uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
+
+    // Get midpoint values for Edge points
+    for (EdgeIterator e(*mesh); !e.end(); ++e)
+    {
+      const std::size_t v0 = e->entities(0)[0];
+      const std::size_t v1 = e->entities(0)[1];
+      const std::size_t e0 = (e->index() + mesh->size(0))*width;
+      for (std::size_t i = 0; i != value_size; ++i)
+        data_values[e0 + i] = (data_values[v0 + i] + data_values[v1 + i])/2.0;
+    }
+  }
+  else if (dofmap->num_entity_dofs(0) == dofmap->num_entity_dofs(1))
+  {
+    // P2
+    // Go over all cells inserting values
+    // FIXME: a lot of duplication here
+    for (CellIterator cell(*mesh); !cell.end(); ++cell)
+    {
+      const ArrayView<const dolfin::la_index> dofs
+        = dofmap->cell_dofs(cell->index());
+      std::size_t c = 0;
+      for (std::size_t i = 0; i != value_size; ++i)
+      {
+        for (VertexIterator v(*cell); !v.end(); ++v)
+        {
+          const std::size_t v0 = v->index()*width;
+          data_dofs[v0 + i] = dofs[c];
+          ++c;
+        }
+        for (EdgeIterator e(*cell); !e.end(); ++e)
+        {
+          const std::size_t e0 = (e->index() + mesh->size(0))*width;
+          data_dofs[e0 + i] = dofs[c];
+          ++c;
+        }
+      }
+    }
+
+    const GenericVector& uvec = *u.vector();
+    uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
+  }
+  else
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "get point values for Function",
+                 "Function appears not to be defined on a P1 or P2 type FunctionSpace");
+  }
+
+  // Blank out empty values of 2D vector and tensor
+  if (value_rank == 1 and value_size == 2)
+  {
+    for (std::size_t i = 0; i < data_values.size(); i += 3)
+      data_values[i + 2] = 0.0;
+  }
+  else if (value_rank == 2 and value_size == 4)
+  {
+    for (std::size_t i = 0; i < data_values.size(); i += 9)
+    {
+      data_values[i + 2] = 0.0;
+      data_values[i + 5] = 0.0;
+      data_values[i + 6] = 0.0;
+      data_values[i + 7] = 0.0;
+      data_values[i + 8] = 0.0;
+    }
+  }
+
+  return data_values;
 }
 //----------------------------------------------------------------------------
 void XDMFFile::check_encoding(Encoding encoding) const
@@ -1897,143 +2573,6 @@ void XDMFFile::check_encoding(Encoding encoding) const
     dolfin_error("XDMFFile.cpp",
                  "write XDMF file",
                  "ASCII format is not supported in parallel, use HDF5");
-  }
-}
-//-----------------------------------------------------------------------------
-std::string XDMFFile::generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh)
-{
-  return generate_xdmf_ascii_mesh_topology_data(mesh, mesh.geometry().dim());
-}
-//-----------------------------------------------------------------------------
-std::string
-XDMFFile::generate_xdmf_ascii_mesh_topology_data(const Mesh& mesh,
-                                                 const std::size_t edim)
-{
-  std::unique_ptr<CellType>
-    celltype(CellType::create(mesh.type().entity_type(edim)));
-
-  // Permutation to VTK ordering
-  const std::vector<std::int8_t> perm = celltype->vtk_mapping();
-
-  std::string topology_xml_value;
-  topology_xml_value += "\n";
-  if (edim == 0)
-  {
-    for (VertexIterator v(mesh); !v.end(); ++v)
-    {
-      topology_xml_value
-        += boost::str(boost::format("%d") % v->global_index()) + "\n";
-    }
-  }
-  else
-  {
-    for (MeshEntityIterator c(mesh, edim); !c.end(); ++c)
-    {
-      for (unsigned int i = 0; i != c->num_entities(0); ++i)
-      {
-        const std::size_t local_idx = c->entities(0)[perm[i]];
-        topology_xml_value
-          += boost::str(boost::format("%d") % local_idx) + " ";
-      }
-      topology_xml_value += "\n";
-    }
-  }
-
-  return topology_xml_value;
-}
-//-----------------------------------------------------------------------------
-std::string XDMFFile::generate_xdmf_ascii_mesh_geometry_data(const Mesh& mesh)
-{
-  const std::size_t gdim = mesh.geometry().dim();
-  std::string geometry_xml_value;
-  for (VertexIterator v(mesh); !v.end(); ++v)
-  {
-    geometry_xml_value += "\n";
-    const double* p = v->x();
-    for (size_t i = 0; i < gdim; ++i)
-      geometry_xml_value += boost::str(boost::format("%.15e") % p[i]) + " ";
-  }
-  geometry_xml_value += "\n";
-  return geometry_xml_value;
-}
-//-----------------------------------------------------------------------------
-template<typename T>
-std::string XDMFFile::generate_xdmf_ascii_data(const T& data,
-                                               std::string format)
-{
-  std::string data_str;
-  data_str += "\n";
-  for (std::size_t j = 0; j < data.size(); ++j)
-    data_str += boost::str(boost::format(format) % data[j]) + "\n";
-  return data_str;
-}
-//-----------------------------------------------------------------------------
-template<typename T>
-std::string XDMFFile::generate_xdmf_ascii_data(const T& data)
-{
-  std::string data_str;
-  data_str += "\n";
-  for (std::size_t j = 0; j < data.size(); ++j)
-    data_str += boost::lexical_cast<std::string>(data[j]) + "\n";
-  return data_str;
-}
-//-----------------------------------------------------------------------------
-XDMFFile::Encoding XDMFFile::get_file_encoding() const
-{
-  dolfin_assert(_xml);
-  _xml->read();
-  const std::string xml_encoding_attrib = _xml->data_encoding();
-
-  return get_file_encoding(xml_encoding_attrib);
-}
-//-----------------------------------------------------------------------------
-XDMFFile::Encoding XDMFFile::get_file_encoding(std::string xml_encoding_attrib)
-{
-  return (xml_encoding_attrib == "XML") ? Encoding::ASCII : Encoding::HDF5;
-}
-//-----------------------------------------------------------------------------
-template <typename T> void XDMFFile::write_ascii_mesh_value_collection(
-  const MeshValueCollection<T>& mesh_values,
-  const std::string name)
-{
-  const std::size_t dim = mesh_values.dim();
-  std::shared_ptr<const Mesh> mesh = mesh_values.mesh();
-
-  const std::map<std::pair<std::size_t, std::size_t>, T>& values
-    = mesh_values.values();
-
-  CellType::Type cell_type = mesh->type().entity_type(dim);
-  std::unique_ptr<CellType> entity_type(CellType::create(cell_type));
-
-  std::vector<T> value_data;
-  value_data.reserve(values.size());
-  std::string topology;
-  topology += "\n";
-
-  const std::size_t tdim = mesh->topology().dim();
-  mesh->init(tdim, dim);
-  for (auto &p : values)
-  {
-    MeshEntity cell = Cell(*mesh, p.first.first);
-    if (dim != tdim)
-    {
-      const unsigned int entity_local_idx = cell.entities(dim)[p.first.second];
-      cell = MeshEntity(*mesh, dim, entity_local_idx);
-    }
-
-    for (VertexIterator v(cell); !v.end(); ++v)
-      topology += boost::str(boost::format("%d") % v->global_index()) + " ";
-
-    topology += "\n";
-
-    dolfin_assert(_xml);
-    _xml->mesh_topology(cell_type, 1, mesh_values.size(), topology,
-                        xdmf_format_str(Encoding::ASCII));
-
-    _xml->data_attribute(mesh_values.name(), 0, false,
-                         mesh->size_global(0), mesh_values.size(),
-                         1, generate_xdmf_ascii_data(value_data),
-                         xdmf_format_str(Encoding::ASCII));
   }
 }
 //-----------------------------------------------------------------------------
@@ -2070,7 +2609,7 @@ std::string XDMFFile::vtk_cell_type_str(CellType::Type cell_type, int order)
     case 1:
       return "Quadrilateral";
     case 2:
-      return "Qaud_8";
+      return "Quad_8";
     }
   case CellType::Type::tetrahedron:
     switch (order)
@@ -2113,5 +2652,16 @@ std::vector<T> XDMFFile::string_to_vector(const std::vector<std::string>& x_str)
   }
 
   return data;
+}
+//-----------------------------------------------------------------------------
+std::string XDMFFile::rank_to_string(std::size_t value_rank)
+{
+  if (value_rank > 2)
+    dolfin_error("XDMFFile.cpp", "get rank string", "Out of range");
+  if (value_rank == 0)
+    return "Scalar";
+  else if (value_rank == 1)
+    return "Vector";
+  return "Tensor";
 }
 //-----------------------------------------------------------------------------

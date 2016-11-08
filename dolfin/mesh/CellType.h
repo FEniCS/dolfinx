@@ -141,11 +141,11 @@ namespace dolfin
 
     /// Order entities locally
     virtual void order(Cell& cell,
-            const std::vector<std::size_t>& local_to_global_vertex_indices) const = 0;
+            const std::vector<std::int64_t>& local_to_global_vertex_indices) const = 0;
 
     /// Check if entities are ordered
     bool ordered(const Cell& cell,
-                 const std::vector<std::size_t>& local_to_global_vertex_indices) const;
+                 const std::vector<std::int64_t>& local_to_global_vertex_indices) const;
 
     /// Check whether given point collides with cell
     virtual bool collides(const Cell& cell, const Point& point) const = 0;
@@ -168,22 +168,22 @@ namespace dolfin
     Type _cell_type;
     Type _facet_type;
 
-    /// Sort vertices based on global entity indices
+    // Sort vertices based on global entity indices
     static void sort_entities(std::size_t num_vertices,
                       unsigned int* vertices,
-                      const std::vector<std::size_t>& local_to_global_vertex_indices);
+                      const std::vector<std::int64_t>& local_to_global_vertex_indices);
 
   private:
 
     // Check if list of vertices is increasing
     static bool increasing(std::size_t num_vertices, const unsigned int* vertices,
-                     const std::vector<std::size_t>& local_to_global_vertex_indices);
+                     const std::vector<std::int64_t>& local_to_global_vertex_indices);
 
     // Check that <entity e0 with vertices v0> <= <entity e1 with vertices v1>
     static bool increasing(std::size_t n0, const unsigned int* v0,
                        std::size_t n1,     const unsigned int* v1,
                        std::size_t num_vertices, const unsigned int* vertices,
-                       const std::vector<std::size_t>& local_to_global_vertex_indices);
+                       const std::vector<std::int64_t>& local_to_global_vertex_indices);
 
   };
 

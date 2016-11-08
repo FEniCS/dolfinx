@@ -73,6 +73,7 @@
 %rename("%s", regextarget=1, fullname=1) "ufc::cell::~cell()$";
 %rename("%s", regextarget=1, fullname=1) "ufc::dofmap::~dofmap()$";
 %rename("%s", regextarget=1, fullname=1) "ufc::finite_element::~finite_element()*$";
+%rename("%s", regextarget=1, fullname=1) "ufc::coordinate_mapping::~coordinate_mapping()*$";
 %rename("%s", regextarget=1, fullname=1) "ufc::form::~form()*$";
 %rename("%s", regextarget=1, fullname=1) "ufc::function::~function()*$";
 
@@ -96,8 +97,9 @@
 // Rename only the symbols we need to ufc_* 'namespace'
 
 %rename(ufc_cell) ufc::cell;
-%rename(ufc_dofmap) ufc::dofmap;
 %rename(ufc_finite_element) ufc::finite_element;
+%rename(ufc_dofmap) ufc::dofmap;
+%rename(ufc_coordinate_mapping) ufc::coordinate_mapping;
 %rename(ufc_form) ufc::form;
 %rename(ufc_function) ufc::function;
 %include <ufc.h>
@@ -106,6 +108,7 @@
 // void * to a new object, these functions will cast them into our
 // swig wrapper type system and make them shared_ptrs in the process
 // to manage their lifetime.
+// Note: assuming std::size_t == std::uint_ptr_t here, should rather use that one
 %inline %{
 std::shared_ptr<const ufc::finite_element> make_ufc_finite_element(void * element)
 {
@@ -129,6 +132,18 @@ std::shared_ptr<const ufc::dofmap> make_ufc_dofmap(std::size_t dofmap)
 {
   ufc::dofmap * p = reinterpret_cast<ufc::dofmap *>(dofmap);
   return std::shared_ptr<const ufc::dofmap>(p);
+}
+
+std::shared_ptr<const ufc::coordinate_mapping> make_ufc_coordinate_mapping(void * element)
+{
+  ufc::coordinate_mapping * p = static_cast<ufc::coordinate_mapping *>(element);
+  return std::shared_ptr<const ufc::coordinate_mapping>(p);
+}
+
+std::shared_ptr<const ufc::coordinate_mapping> make_ufc_coordinate_mapping(std::size_t element)
+{
+  ufc::coordinate_mapping * p = reinterpret_cast<ufc::coordinate_mapping *>(element);
+  return std::shared_ptr<const ufc::coordinate_mapping>(p);
 }
 
 std::shared_ptr<const ufc::form> make_ufc_form(void * form)

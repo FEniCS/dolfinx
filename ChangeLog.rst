@@ -5,6 +5,14 @@ Change log
 dev
 ---
 
+- Updates to XDMFFile interface, now fully supporting MeshFunction and
+  MeshValueCollection with multiple named datasets in one file (useful for
+  volume/boundary markers). Time series now only when a time is explicitly
+  specified for each step. Full support for ASCII/XML XDMF.
+- Improved X3DOM support
+- Improved detection of UFC
+- Add CMake option `-DDOLFIN_USE_PYTHON3` to create a Python 3 build
+- Require CMake version 3.5 or higher
 - Add pylit to generate demo doc from rst
 - More careful checks of Dirichlet BC function spaces
 - Change definition of FunctionSpace::component()

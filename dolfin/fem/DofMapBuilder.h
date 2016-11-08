@@ -79,7 +79,7 @@ namespace dolfin
       const Mesh& mesh,
       const std::map<unsigned int, std::pair<unsigned int,
       unsigned int>>& slave_to_master_vertices,
-      std::vector<std::size_t>& modified_vertex_indices_global);
+      std::vector<std::int64_t>& modified_vertex_indices_global);
 
     // Build simple local UFC-based dofmap data structure (does not
     // account for master/slave constraints)
@@ -144,7 +144,7 @@ namespace dolfin
     static std::size_t compute_blocksize(const ufc::dofmap& ufc_dofmap);
 
     static void compute_constrained_mesh_indices(
-      std::vector<std::vector<std::size_t>>& global_entity_indices,
+      std::vector<std::vector<std::int64_t>>& global_entity_indices,
       std::vector<std::size_t>& num_mesh_entities_global,
       const std::vector<bool>& needs_mesh_entities,
       const Mesh& mesh,
@@ -203,7 +203,7 @@ namespace dolfin
 
     static void get_cell_entities_global_constrained(const Cell& cell,
       std::vector<std::vector<std::size_t>>& entity_indices,
-      const std::vector<std::vector<std::size_t>>& global_entity_indices,
+      const std::vector<std::vector<std::int64_t>>& global_entity_indices,
       const std::vector<bool>& needs_mesh_entities);
 
     // Compute number of mesh entities for dimensions required by

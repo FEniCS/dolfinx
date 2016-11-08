@@ -161,7 +161,7 @@ void MeshTopology::init_global_indices(std::size_t dim, std::size_t size)
 {
   dolfin_assert(dim < _global_indices.size());
   _global_indices[dim]
-    = std::vector<std::size_t>(size, std::numeric_limits<std::size_t>::max());
+    = std::vector<std::int64_t>(size, -1);
 }
 //-----------------------------------------------------------------------------
 dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0,

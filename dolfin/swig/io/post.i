@@ -116,7 +116,8 @@ def __exit__(self, type, value, traceback) :
 {
 %pythoncode %{
 def set_color_map(self, colormap):
-    if (isinstance(colormap, str)):
+    from six import string_types
+    if isinstance(colormap, string_types):
         # If we are given a string, try to load the corresponding matplotlib cmap
         try:
             import matplotlib.cm

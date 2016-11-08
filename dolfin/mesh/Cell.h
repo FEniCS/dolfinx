@@ -236,7 +236,7 @@ namespace dolfin
     ///
     /// @param    local_to_global_vertex_indices (std::vector<std::size_t>)
     ///         The global vertex indices.
-    void order(const std::vector<std::size_t>& local_to_global_vertex_indices)
+    void order(const std::vector<std::int64_t>& local_to_global_vertex_indices)
     { _mesh->type().order(*this, local_to_global_vertex_indices); }
 
     /// Check if entities are ordered
@@ -246,7 +246,7 @@ namespace dolfin
     ///
     /// @return     bool
     ///         True iff ordered.
-    bool ordered(const std::vector<std::size_t>& local_to_global_vertex_indices) const
+    bool ordered(const std::vector<std::int64_t>& local_to_global_vertex_indices) const
     { return _mesh->type().ordered(*this, local_to_global_vertex_indices); }
 
     /// Check whether given point is contained in cell. This function is
@@ -390,7 +390,7 @@ namespace dolfin
         ufc_cell.entity_indices[d].resize(num_entities(d));
         if (topology.have_global_indices(d))
         {
-          const std::vector<std::size_t>& global_indices
+          const std::vector<std::int64_t>& global_indices
             = topology.global_indices(d);
           for (std::size_t i = 0; i < num_entities(d); ++i)
             ufc_cell.entity_indices[d][i] = global_indices[entities(d)[i]];

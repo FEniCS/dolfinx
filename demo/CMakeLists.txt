@@ -1,7 +1,7 @@
 project(dolfin-demos)
 
 # Require CMake 2.8
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 
 # FIXME: Temporary fix for whitespace error
 cmake_policy(SET CMP0004 OLD)
@@ -30,6 +30,7 @@ if (DOLFIN_FOUND)
   add_subdirectory(documented/navier-stokes/cpp)
   add_subdirectory(documented/neumann-poisson/cpp)
   add_subdirectory(documented/nonlinear-poisson/cpp)
+  add_subdirectory(documented/nonmatching-interpolation/cpp)
   add_subdirectory(documented/periodic/cpp)
   add_subdirectory(documented/poisson/cpp)
   add_subdirectory(documented/singular-poisson/cpp)
@@ -76,7 +77,6 @@ if (DOLFIN_FOUND)
   add_subdirectory(undocumented/meshfunction-refinement/cpp)
   #add_subdirectory(undocumented/multistage-solver/cpp)
   add_subdirectory(undocumented/nonmatching-projection/cpp)
-  add_subdirectory(undocumented/nonmatching-interpolation/cpp)
   #add_subdirectory(undocumented/optimization/cpp)
   #add_subdirectory(undocumented/overlapping-regions/cpp)
   add_subdirectory(undocumented/parallel-refinement/cpp)

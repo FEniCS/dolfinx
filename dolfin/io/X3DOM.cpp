@@ -388,7 +388,7 @@ pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
 
   // set attriubtes for jquery script node
   jquery_script_node.append_attribute("type") = "text/javascript";
-  jquery_script_node.append_attribute("src") = "https://rawgit.com/plscott/fenics-x3dom/master/jquery-3.0.0.min.js";
+  jquery_script_node.append_attribute("src") = "https://code.jquery.com/jquery-3.1.0.js";
 
   // add support script node
   pugi::xml_node support_script_node = head_node.append_child("script");

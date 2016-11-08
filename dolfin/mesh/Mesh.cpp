@@ -39,6 +39,7 @@
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
+#include "DistributedMeshTools.h"
 #include "Facet.h"
 #include "LocalMeshData.h"
 #include "MeshColoring.h"
@@ -220,6 +221,12 @@ void Mesh::init() const
   for (std::size_t d0 = 0; d0 <= topology().dim(); d0++)
     for (std::size_t d1 = 0; d1 <= topology().dim(); d1++)
       init(d0, d1);
+}
+//-----------------------------------------------------------------------------
+void Mesh::init_global(std::size_t dim) const
+{
+  init(dim);
+  DistributedMeshTools::number_entities(*this, dim);
 }
 //-----------------------------------------------------------------------------
 void Mesh::clean()

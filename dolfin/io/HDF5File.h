@@ -49,8 +49,8 @@ namespace dolfin
 
   public:
 
-    /// Constructor. file_mode should "a" (append), "w" (write) or "r"
-    /// (read).
+    /// Constructor. file_mode should be "a" (append),
+    /// "w" (write) or "r" (read).
     HDF5File(MPI_Comm comm, const std::string filename,
              const std::string file_mode);
 
@@ -181,6 +181,12 @@ namespace dolfin
 
     // Get/set attributes of an existing dataset
     HDF5Attribute attributes(const std::string dataset_name);
+
+    /// Set the MPI atomicity
+    void set_mpi_atomicity(bool atomic);
+
+    /// Get the MPI atomicity
+    bool get_mpi_atomicity() const;
 
     hid_t h5_id() const
     { return _hdf5_file_id; }

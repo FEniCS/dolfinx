@@ -19,10 +19,8 @@ import os
 # Create demo CMakeLists.txt files
 current_dir = os.getcwd()
 os.chdir("../../")
-os.system('./cmake/scripts/generate-cmakefiles')
+os.system('python ./cmake/scripts/generate-cmakefiles.py')
 os.chdir(current_dir)
-
-#../../cmake/scripts/generate-cmakefiles
 
 # Copy demo files into doc directory
 
