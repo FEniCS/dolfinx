@@ -68,7 +68,9 @@ list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${EIGEN3_INCLUDE_DIR})
 
 # Boost
 list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-target_link_libraries(dolfin PUBLIC ${Boost_LIBRARIES})
+foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS})
+  target_link_libraries(dolfin PRIVATE "Boost::${BOOST_PACKAGE}")
+endforeach()
 
 #------------------------------------------------------------------------------
 
