@@ -48,7 +48,7 @@ Code Coverage
 =============
 
 Code coverage reports can be viewed at
-https://coveralls.io/repos/bitbucket/fenics-project/dolfin.
+https://coveralls.io/bitbucket/fenics-project/dolfin.
 
 .. image:: https://coveralls.io/repos/bitbucket/fenics-project/dolfin/badge.svg?branch=master
    :target: https://coveralls.io/bitbucket/fenics-project/dolfin?branch=master
@@ -102,4 +102,3 @@ authors can be found in the file AUTHORS. For more information about
 DOLFIN, visit
 
   http://fenicsproject.org
-
