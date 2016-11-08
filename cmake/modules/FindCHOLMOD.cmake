@@ -54,38 +54,38 @@ find_package(ParMETIS 4.0.2 QUIET)
 
 # Check for header file
 find_path(CHOLMOD_INCLUDE_DIRS cholmod.h
-  HINTS ${CHOLMOD_DIR}/include $ENV{CHOLMOD_DIR}/include $ENV{PETSC_DIR}/include
+  HINTS ${CHOLMOD_DIR}/include $ENV{CHOLMOD_DIR}/include ${PETSC_INCLUDE_DIRS} $ENV{PETSC_DIR}/include
   PATH_SUFFIXES suitesparse ufsparse
   DOC "Directory where the CHOLMOD header is located")
 
 # Check for CHOLMOD library
 find_library(CHOLMOD_LIBRARY cholmod
-  HINTS ${CHOLMOD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{PETSC_DIR}/lib
+  HINTS ${CHOLMOD_DIR}/lib $ENV{CHOLMOD_DIR}/lib ${PETSC_LIBRARY_DIRS} $ENV{PETSC_DIR}/lib
   DOC "The CHOLMOD library")
 
 # Check for CAMD library
 find_library(CAMD_LIBRARY camd
   HINTS ${CHOLMOD_DIR}/lib ${CAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib
-  $ENV{CAMD_DIR}/lib $ENV{PETSC_DIR}/lib
+  $ENV{CAMD_DIR}/lib ${PETSC_LIBRARY_DIRS} $ENV{PETSC_DIR}/lib
   DOC "The CAMD library")
 
 # Check for COLAMD library
 find_library(COLAMD_LIBRARY colamd
   HINTS ${CHOLMOD_DIR}/lib ${COLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib
-  $ENV{COLAMD_DIR}/lib $ENV{PETSC_DIR}/lib
+  $ENV{COLAMD_DIR}/lib ${PETSC_LIBRARY_DIRS} $ENV{PETSC_DIR}/lib
   DOC "The COLAMD library"
   )
 
 # Check for CCOLAMD library
 find_library(CCOLAMD_LIBRARY ccolamd
   HINTS ${CHOLMOD_DIR}/lib ${CCOLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib
-  $ENV{CCOLAMD_DIR}/lib $ENV{PETSC_DIR}/lib
+  $ENV{CCOLAMD_DIR}/lib ${PETSC_LIBRARY_DIRS} $ENV{PETSC_DIR}/lib
   DOC "The CCOLAMD library")
 
 # Check for SUITESPARSECONFIG library
 find_library(SUITESPARSECONFIG_LIBRARY suitesparseconfig
   HINTS ${CHOLMOD_DIR}/lib ${CCOLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib
-  $ENV{CCOLAMD_DIR}/lib $ENV{PETSC_DIR}/lib
+  $ENV{CCOLAMD_DIR}/lib ${PETSC_LIBRARY_DIRS} $ENV{PETSC_DIR}/lib
   DOC "The SUITESPARSECONFIG library")
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND NOT APPLE)
