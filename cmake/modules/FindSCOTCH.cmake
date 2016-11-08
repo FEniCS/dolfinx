@@ -48,7 +48,7 @@ message(STATUS "Checking for package 'SCOTCH-PT'")
 
 # Check for header file
 find_path(SCOTCH_INCLUDE_DIRS ptscotch.h
-  HINTS ${SCOTCH_DIR}/include $ENV{SCOTCH_DIR}/include ${PETSC_DIR}/include ${PETSC_DIR}/${PETSC_ARCH}/include
+  HINTS ${SCOTCH_DIR}/include $ENV{SCOTCH_DIR}/include ${PETSC_INCLUDE_DIRS}
   PATH_SUFFIXES scotch
   DOC "Directory where the SCOTCH-PT header is located"
   )
@@ -56,7 +56,7 @@ find_path(SCOTCH_INCLUDE_DIRS ptscotch.h
 # Check for scotch
 find_library(SCOTCH_LIBRARY
   NAMES scotch
-  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_LIBRARY_DIRS}
   NO_DEFAULT_PATH
   DOC "The SCOTCH library"
   )
@@ -80,7 +80,7 @@ find_library(SCOTCHERR_LIBRARY
 # Check for ptscotch
 find_library(PTSCOTCH_LIBRARY
   NAMES ptscotch
-  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_LIBRARY_DIRS}
   NO_DEFAULT_PATH
   DOC "The PTSCOTCH library"
   )
@@ -92,7 +92,7 @@ find_library(PTSCOTCH_LIBRARY
 # Check for ptesmumps
 find_library(PTESMUMPS_LIBRARY
   NAMES ptesmumps esmumps
-  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_LIBRARY_DIRS}
   NO_DEFAULT_PATH
   DOC "The PTSCOTCH-ESMUMPS library"
   )
@@ -104,7 +104,7 @@ find_library(PTESMUMPS_LIBRARY
 # Check for ptscotcherr
 find_library(PTSCOTCHERR_LIBRARY
   NAMES ptscotcherr
-  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_LIBRARY_DIRS}
   NO_DEFAULT_PATH
   DOC "The PTSCOTCH-ERROR library"
   )
