@@ -7,6 +7,9 @@
 #  PETSC_LIBRARIES         - libraries for PETSc
 #  PETSC_STATIC_LIBRARIES  - libraries for PETSc (static linking, undefined if not required)
 #  PETSC_VERSION           - version for PETSc
+#  PETSC_VERSION_MAJOR     - First number in PETSC_VERSION
+#  PETSC_VERSION_MINOR     - Second number in PETSC_VERSION
+#  PETSC_VERSION_SUBMINOR  - Third number in PETSC_VERSION
 #  PETSC_INT_SIZE          - sizeof(PetscInt)
 #
 #=============================================================================
@@ -51,6 +54,12 @@ find_package(PkgConfig REQUIRED)
 # Note: craypetsc_real is on Cray systems
 set(ENV{PKG_CONFIG_PATH} "$ENV{CRAY_PETSC_PREFIX_DIR}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 pkg_search_module(PETSC craypetsc_real PETSc)
+
+# Extract major, minor, etc from version string
+string(REPLACE "." ";" VERSION_LIST ${PETSC_VERSION})
+list(GET VERSION_LIST 0 PETSC_VERSION_MAJOR)
+list(GET VERSION_LIST 1 PETSC_VERSION_MINOR)
+list(GET VERSION_LIST 2 PETSC_VERSION_SUBMINOR)
 
 # Loop over PETSc libraries and get absolute paths
 set(_PETSC_LIBRARIES)

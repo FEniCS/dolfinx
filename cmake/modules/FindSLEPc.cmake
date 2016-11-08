@@ -1,12 +1,16 @@
 # - Try to find SLEPC
 # Once done this will define
 #
-#  SLEPC_FOUND           - system has SLEPc
-#  SLEPC_INCLUDE_DIRS    - include directories for SLEPc
-#  SLEPC_LIBRARY_DIRS    - library directories for SLEPc
-#  SLEPC_LIBARIES        - libraries for SLEPc
-#  SLEPC_STATIC_LIBARIES - ibraries for SLEPc (static linking, undefined if not required)
-#  SLEPC_VERSION         - version of SLEPc
+#  SLEPC_FOUND            - system has SLEPc
+#  SLEPC_INCLUDE_DIRS     - include directories for SLEPc
+#  SLEPC_LIBRARY_DIRS     - library directories for SLEPc
+#  SLEPC_LIBARIES         - libraries for SLEPc
+#  SLEPC_STATIC_LIBARIES  - ibraries for SLEPc (static linking, undefined if not required)
+#  SLEPC_VERSION          - version of SLEPc
+#  SLEPC_VERSION_MAJOR    - First number in SLEPC_VERSION
+#  SLEPC_VERSION_MINOR    - Second number in SLEPC_VERSION
+#  SLEPC_VERSION_SUBMINOR - Third number in SLEPC_VERSION
+
 
 #=============================================================================
 # Copyright (C) 2010-2016 Garth N. Wells, Anders Logg and Johannes Ring
@@ -50,6 +54,12 @@ foreach (lib ${SLEPC_LIBRARIES})
   find_library(LIB_${lib} ${lib} PATHS ${SLEPC_LIBRARY_DIRS} NO_DEFAULT_PATH)
   list(APPEND _SLEPC_LIBRARIES ${LIB_${lib}})
 endforeach()
+
+# Extract major, minor, etc from version string
+string(REPLACE "." ";" VERSION_LIST ${SLEPC_VERSION})
+list(GET VERSION_LIST 0 SLEPC_VERSION_MAJOR)
+list(GET VERSION_LIST 1 SLEPC_VERSION_MINOR)
+list(GET VERSION_LIST 2 SLEPC_VERSION_SUBMINOR)
 
 # Set libaries with absolute paths to SLEPC_LIBRARIES
 set(SLEPC_LIBRARIES ${_SLEPC_LIBRARIES})
