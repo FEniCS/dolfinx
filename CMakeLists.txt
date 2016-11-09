@@ -313,9 +313,16 @@ set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 find_package(Boost 1.48 QUIET REQUIRED)
 
 # Boost public/private libraries to linl to. Note: These should all be
-# private, but there is a linking issues with older Boost or CMake
-set(DOLFIN_BOOST_COMPONENTS_PUBLIC filesystem)
-set(DOLFIN_BOOST_COMPONENTS_PRIVATE program_options iostreams timer)
+# private, but there is a linking issues with older Boost or
+# CMake. Ubuntu 16.04 requires linking DOLFIN programs with
+# filesystem, whereas Ubuntu 16.10 does not.
+if (Boost_VERSION VERSION_LESS "1.61.0")
+  set(DOLFIN_BOOST_COMPONENTS_PUBLIC filesystem)
+  set(DOLFIN_BOOST_COMPONENTS_PRIVATE program_options iostreams timer)
+else()
+  set(DOLFIN_BOOST_COMPONENTS_PUBLIC)
+  set(DOLFIN_BOOST_COMPONENTS_PRIVATE filesystem program_options iostreams timer)
+endif()
 
 find_package(Boost COMPONENTS
   ${DOLFIN_BOOST_COMPONENTS_PUBLIC} ${DOLFIN_BOOST_COMPONENTS_PRIVATE} REQUIRED)
