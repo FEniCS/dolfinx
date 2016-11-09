@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-04
+// Last changed: 2016-11-09
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -331,7 +331,7 @@ bool CollisionPredicates::_collides_segment_point_2d(Point p0,
 
   std::cout << __FUNCTION__ << ' ' << orientation << std::endl;
 
-  return std::abs(orientation) < DOLFIN_EPS &&
+  return orientation == 0.0 &&
     (point-p0).squared_norm() <= (p1-p0).squared_norm() &&
     (point-p1).squared_norm() <= (p0-p1).squared_norm();
 }
@@ -357,7 +357,7 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
 
   std::cout << __FUNCTION__<<" "<<det_xy << std::endl;
 
-  if (std::abs(det_xy) < DOLFIN_EPS)
+  if (det_xy == 0.0)
   {
     std::array<std::array<double, 2>, 3> xz = {{ { p0.x(), p0.z() },
   						 { p1.x(), p1.z() },
@@ -368,7 +368,7 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
 
     std::cout << __FUNCTION__<<" "<<det_xz << std::endl;
 
-    if (std::abs(det_xz) < DOLFIN_EPS)
+    if (det_xz == 0.0)
     {
       std::array<std::array<double, 2>, 3> yz = {{ { p0.y(), p0.z() },
   						   { p1.y(), p1.z() },
@@ -379,7 +379,7 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
 
       std::cout << __FUNCTION__<<" "<<det_yz << std::endl;
 
-      if (std::abs(det_yz) < DOLFIN_EPS)
+      if (det_yz == 0.0)
   	return true;
     }
   }
@@ -543,8 +543,8 @@ bool CollisionPredicates::_collides_triangle_point_3d(Point p0,
   // (1,1,1), (0,1,0) and check the point (1./3,2./3,2./3) this gives
   // a determinant of ~5.55112e-17
 
-  //if (det < 0. or det > 0.)
-  if (std::abs(det) > DOLFIN_EPS)
+  if (det < 0. or det > 0.)
+  //if (std::abs(det) > DOLFIN_EPS)
     return false;
 
   // Check that the point is inside the triangle

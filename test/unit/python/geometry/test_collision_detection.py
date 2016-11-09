@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2016-11-04
+# Last changed: 2016-11-09
 
 import pytest
 from dolfin import *
@@ -61,13 +61,17 @@ def test_segment_collides_point_2D():
     editor.open(mesh, 1, 2)
     editor.init_vertices(2)
     editor.init_cells(1)
-    editor.add_vertex(0, 1./7., 1./3.)
-    editor.add_vertex(1, 2./7., 3./3.)
+    a = Point(1./8., 1./4.)
+    b = Point(2./8., 3./4.)
+    editor.add_vertex(0, a)
+    editor.add_vertex(1, b)
     editor.add_cell(0,0,1)
     editor.close()
     cell = Cell(mesh, 0)
-    mid = Point(1.5/7., 2./3.)
+    mid = Point(1.5/8., 2./4.)
+    mid_average = (a + b) / 2
     assert cell.contains(mid)
+    assert cell.contains(mid_average)
     assert cell.contains(cell.midpoint())
 
 @pytest.mark.skipif(True, reason="Not implemented in 3D")

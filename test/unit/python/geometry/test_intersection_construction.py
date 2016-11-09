@@ -218,8 +218,8 @@ def test_segment_segment_2d():
 @skip_in_parallel
 def test_triangle_segment_2D_1():
     "The intersection of a specific triangle and a specific segment"
-    #p0 = Point(1e-17, 0)
-    p0 = Point(0.1, 0)
+    p0 = Point(1e-17, 0)
+    #p0 = Point(0.1, 0)
     p1 = Point(0.5, sqrt(3.)/2.)
     p2 = Point(sqrt(3.)/2., 0.5)
     q0 = Point(1, 0)
