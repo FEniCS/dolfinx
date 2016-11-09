@@ -25,7 +25,6 @@
 import pytest
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
-import numpy as np
 
 @skip_in_parallel
 def create_triangular_mesh_3D():
@@ -82,31 +81,14 @@ def test_segment_collides_point_3D_1():
     editor.open(mesh, 1, 3)
     editor.init_vertices(2)
     editor.init_cells(1)
-    editor.add_vertex(0, 1./7., 1./3., 1./DOLFIN_PI)
-    editor.add_vertex(1, 2./7., 3./3., 2./DOLFIN_PI)
+    editor.add_vertex(0, 1./16., 1./8., 1./4.)
+    editor.add_vertex(1, 2./16., 3./8., 2./4.)
     editor.add_cell(0,0,1)
     editor.close()
     cell = Cell(mesh, 0)
-    mid = Point(1.5/7., 2./3., 1.5/DOLFIN_PI)
+    mid = Point(1.5/16., 2./8., 1.5/4.)
     assert cell.contains(mid)
     assert cell.contains(cell.midpoint())
-
-
-@pytest.mark.skipif(True, reason="Not implemented in 3D")
-def test_segment_collides_point_3D_2():
-    """Test case by Oyvind from https://bitbucket.org/fenics-project/dolfin/issue/296 for segment point collision in 3D"""
-    mesh = Mesh()
-    editor = MeshEditor()
-    editor.open(mesh, 1, 3)
-    editor.init_vertices(2)
-    editor.init_cells(1)
-    editor.add_vertex(0, 41.06309891, 63.74219894, 68.10320282)
-    editor.add_vertex(1, 41.45830154, 62.61560059, 66.43019867)
-    editor.add_cell(0,0,1)
-    editor.close()
-    cell = Cell(mesh, 0)
-    assert cell.contains(cell.midpoint())
-
 
 @skip_in_parallel
 def test_triangle_collides_point():
@@ -139,6 +121,18 @@ def test_triangle_collides_triangle():
     assert c2.collides(c0) == True # touching edges
     assert c2.collides(c1) == True
     assert c2.collides(c2) == True
+
+
+@skip_in_parallel
+def test_triangle_triangle_collision() :
+    "Test that has been failing"
+    assert CollisionPredicates.collides_triangle_triangle_2d(Point(0.177432070718943, 0.5),
+                                                             Point(0.176638957524249, 0.509972290857582),
+                                                             Point(0.217189283468892, 0.550522616802225),
+                                                             Point(0.333333333333333, 0.52399308981973),
+                                                             Point(0.333333333333333, 0.666666666666667),
+                                                             Point(0.211774439087554, 0.545107772420888))
+
 
 @pytest.mark.skipif(True, reason="Not implemented in 3D")
 @skip_in_parallel
@@ -217,49 +211,3 @@ def test_tetrahedron_collides_tetrahedron():
     # touching faces
     assert c3.collides(c43) == True
     assert c43.collides(c3) == True
-
-def _test_collision_robustness_2d(aspect, y, step):
-    nx = 10
-    ny = int(aspect*nx)
-    mesh = UnitSquareMesh(nx, ny, 'crossed')
-    bb = mesh.bounding_box_tree()
-
-    x = 0.0
-    p = Point(x, y)
-    while x <= 1.0:
-        c = bb.compute_first_entity_collision(Point(x, y))
-        assert c < np.uintc(-1)
-        x += step
-
-@pytest.mark.skipif(True, reason="Not implemented in 3D")
-def _test_collision_robustness_3d(aspect, y, z, step):
-    nx = nz = 10
-    ny = int(aspect*nx)
-    mesh = UnitCubeMesh(nx, ny, nz)
-    bb = mesh.bounding_box_tree()
-
-    x = 0.0
-    while x <= 1.0:
-        c = bb.compute_first_entity_collision(Point(x, y, z))
-        assert c < np.uintc(-1)
-        x += step
-
-@skip_in_parallel
-# @pytest.mark.slow
-def test_collision_robustness_slow():
-    """Test cases from https://bitbucket.org/fenics-project/dolfin/issue/296"""
-    _test_collision_robustness_2d( 100, 1e-14,       1e-5)
-    _test_collision_robustness_2d(  40, 1e-03,       1e-5)
-    _test_collision_robustness_2d( 100, 0.5 + 1e-14, 1e-5)
-    _test_collision_robustness_2d(4.43, 0.5,      4.03e-6)
-    #_test_collision_robustness_3d( 100, 1e-14, 1e-14, 1e-5)
-
-@skip_in_parallel
-@pytest.mark.slow
-#@pytest.mark.skipif(True, reason='Very slow test cases')
-def test_collision_robustness_very_slow():
-    """Test cases from https://bitbucket.org/fenics-project/dolfin/issue/296"""
-    _test_collision_robustness_2d(  10, 1e-16,       1e-7)
-    _test_collision_robustness_2d(4.43, 1e-17,    4.03e-6)
-    _test_collision_robustness_2d(  40, 0.5,         1e-6)
-    _test_collision_robustness_2d(  10, 0.5 + 1e-16, 1e-7)
