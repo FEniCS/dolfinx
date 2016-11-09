@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-04
+// Last changed: 2016-11-09
 
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/math/basic.h>
@@ -258,13 +258,9 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
   std::vector<Point> intersection;
 
   // Add vertex-vertex collision to the intersection
-  if (p0 == q0)
+  if (p0 == q0 or p0 == q1)
     intersection.push_back(p0);
-  if (p0 == q1)
-    intersection.push_back(p0);
-  if (p1 == q0)
-    intersection.push_back(p1);
-  if (p1 == q1)
+  if (p1 == q0 or p1 == q1)
     intersection.push_back(p1);
 
   // Add vertex-"segment interior" collisions to the intersection
