@@ -36,11 +36,33 @@ namespace dolfin
 
     /// Uniform refine, optionally redistributing and
     /// optionally calculating the parent-child relation for facets (in 2D)
+    ///
+    ///  @param new_mesh
+    ///     New Mesh
+    ///  @param mesh
+    ///     Input mesh to be refined
+    ///  @param redistribute
+    ///     Flag to call the Mesh Partitioner to redistribute after refinement
+    ///  @param calculate_parent_facets
+    ///     Flag to build parent facet information, needed to propagate information
+    ///     on boundaries
     static void refine(Mesh& new_mesh, const Mesh& mesh, bool redistribute,
                        bool calculate_parent_facets);
 
     /// Refine with markers, optionally redistributing
     /// and optionally calculating the parent-child relation for facets (in 2D)
+    ///
+    /// @param new_mesh
+    ///    New Mesh
+    /// @param mesh
+    ///    Input mesh to be refined
+    /// @param refinement_marker
+    ///    MeshFunction listing MeshEntities which should be split by this refinement
+    /// @param redistribute
+    ///     Flag to call the Mesh Partitioner to redistribute after refinement
+    /// @param calculate_parent_facets
+    ///     Flag to build parent facet information, needed to propagate information
+    ///     on boundaries
     static void refine(Mesh& new_mesh, const Mesh& mesh,
                        const MeshFunction<bool>& refinement_marker,
                        bool redistribute,
@@ -48,6 +70,17 @@ namespace dolfin
 
     /// Refine with markers, optionally calculating facet relations, and
     /// saving relation data in MeshRelation structure
+    /// @param new_mesh
+    ///    New Mesh
+    /// @param mesh
+    ///    Input mesh to be refined
+    /// @param refinement_marker
+    ///    MeshFunction listing MeshEntities which should be split by this refinement
+    /// @param calculate_parent_facets
+    ///    Flag to build parent facet information, needed to propagate information
+    ///    on boundaries
+    /// @param mesh_relation
+    ///    New relationship between the two meshes
     static void refine(Mesh& new_mesh, const Mesh& mesh,
                        const MeshFunction<bool>& refinement_marker,
                        bool calculate_parent_facets,
@@ -58,6 +91,17 @@ namespace dolfin
     /// simplices, for a given set of marked edges, and the
     /// longest edge of each facet (cell local indexing).
     /// A flag indicates if a uniform subdivision is preferable in 2D.
+    /// @param simplex_set
+    ///   Returned set of triangles/tets topological description
+    /// @param marked_edges
+    ///   Vector indicating which edges are to be split
+    /// @param longest_edge
+    ///   Vector indicating the longest edge for each triangle. For tdim=2, one entry,
+    ///   for tdim=3, four entries.
+    /// @param tdim
+    ///   Topological dimension (2 or 3)
+    /// @param uniform
+    ///   Make a "uniform" subdivision with all triangles being similar shape
     static void get_simplices
       (std::vector<std::size_t>& simplex_set,
        const std::vector<bool>& marked_edges,
