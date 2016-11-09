@@ -482,6 +482,7 @@ namespace dolfin
 
   };
 
+#ifndef DOXYGEN_IGNORE
   // Specialisation for std::vector<bool>, as HDF5 does not support it natively
   template<> inline
   void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -496,6 +497,7 @@ namespace dolfin
       x_int[i] = (int)x[i];
     add_data_item(comm, xml_node, h5_id, h5_path, x_int, shape, number_type);
   }
+#endif
 
 }
 
