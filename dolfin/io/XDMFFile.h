@@ -172,10 +172,9 @@ namespace dolfin
     /// Write out mesh value collection (subset) using an associated
     /// HDF5 file, or storing the data inline as XML.
     ///
-    /// *Arguments*
-    ///     mvc (_MeshValueCollection<bool>_)
-    ///         A list of points to save.
-    ///     encoding (_Encoding_)
+    /// @param mvc (_MeshValueCollection<bool>_)
+    ///         MeshValueCollection to save
+    /// @param encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write(const MeshValueCollection<bool>& mvc,
@@ -184,10 +183,9 @@ namespace dolfin
     /// Write out mesh value collection (subset) using an associated
     /// HDF5 file, or storing the data inline as XML.
     ///
-    /// *Arguments*
-    ///     mvc (_MeshValueCollection<int>_)
-    ///         A list of points to save.
-    ///     encoding (_Encoding_)
+    /// @param mvc (_MeshValueCollection<int>_)
+    ///         MeshValueCollection to save
+    /// @param encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write(const MeshValueCollection<int>& mvc,
@@ -196,10 +194,9 @@ namespace dolfin
     /// Write out mesh value collection (subset) using an associated
     /// HDF5 file, or storing the data inline as XML.
     ///
-    /// *Arguments*
-    ///     mvc (_MeshValueCollection<int>_)
-    ///         A list of points to save.
-    /// @param    encoding (_Encoding_)
+    /// @param  mvc (_MeshValueCollection<int>_)
+    ///         MeshValueCollection to save
+    /// @param  encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write(const MeshValueCollection<std::size_t>& mvc,
@@ -208,10 +205,9 @@ namespace dolfin
     /// Write out mesh value collection (subset) using an associated
     /// HDF5 file, or storing the data inline as XML.
     ///
-    /// *Arguments*
-    ///     mvc (_MeshValueCollection<double>_)
-    ///         A list of points to save.
-    ///     encoding (_Encoding_)
+    /// @param mvc (_MeshValueCollection<double>_)
+    ///         MeshValueCollection to save
+    /// @param encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write(const MeshValueCollection<double>& mvc,
@@ -242,42 +238,66 @@ namespace dolfin
                const std::vector<double>& values,
                Encoding encoding=Encoding::HDF5);
 
-    /// Read in a mesh
+    /// Read in the first Mesh in XDMF file
     ///
-    /// @param    mesh (_Mesh_)
-    ///
+    /// @param mesh (_Mesh_)
+    ///        Mesh to fill from XDMF file
     void read(Mesh& mesh) const;
 
     /// Read first MeshFunction from file
-    /// @param meshfunction
-    /// @param name
+    /// @param meshfunction (_MeshFunction<bool>_)
+    ///        MeshFunction to restore
+    /// @param name (std::string)
+    ///        Name of data attribute in XDMF file
     void read(MeshFunction<bool>& meshfunction, std::string name="");
 
     /// Read first MeshFunction from file
-    /// @param meshfunction
-    /// @param name
+    /// @param meshfunction (_MeshFunction<int>_)
+    ///        MeshFunction to restore
+    /// @param name (std::string)
+    ///        Name of data attribute in XDMF file
     void read(MeshFunction<int>& meshfunction, std::string name="");
 
-    /// Read first MeshFunction from file
-    /// @param meshfunction
-    /// @param name
+    /// Read MeshFunction from file, optionally specifying dataset name
+    /// @param meshfunction (_MeshFunction<std::size_t>_)
+    ///        MeshFunction to restore
+    /// @param name (std::string)
+    ///        Name of data attribute in XDMF file
     void read(MeshFunction<std::size_t>& meshfunction, std::string name="");
 
-    /// Read first MeshFunction from file
-    /// @param meshfunction
-    /// @param name
+    /// Read MeshFunction from file, optionally specifying dataset name
+    /// @param meshfunction (_MeshFunction<double>_)
+    ///        MeshFunction to restore
+    /// @param name (std::string)
+    ///        Name of data attribute in XDMF file
     void read(MeshFunction<double>& meshfunction, std::string name="");
 
-    /// Read MeshValueCollection from file
+    /// Read MeshValueCollection from file, optionally specifying dataset name
+    /// @param mvc (_MeshValueCollection<bool>_)
+    ///        MeshValueCollection to restore
+    /// @param name (std::string)
+    ///        Name of data attribute in XDMF file
     void read(MeshValueCollection<bool>& mvc, std::string name="");
 
-    /// Read MeshValueCollection from file
+    /// Read MeshValueCollection from file, optionally specifying dataset name
+    /// @param mvc (_MeshValueCollection<int>_)
+    ///        MeshValueCollection to restore
+    /// @param name (std::string)
+    ///        Name of data attribute in XDMF file
     void read(MeshValueCollection<int>& mvc, std::string name="");
 
-    /// Read MeshValueCollection from file
+    /// Read MeshValueCollection from file, optionally specifying dataset name
+    /// @param mvc (_MeshValueCollection<std::size_t>_)
+    ///        MeshValueCollection to restore
+    /// @param name (std::string)
+    ///        Name of data attribute in XDMF file
     void read(MeshValueCollection<std::size_t>& mvc, std::string name="");
 
-    /// Read MeshValueCollection from file
+    /// Read MeshValueCollection from file, optionally specifying dataset name
+    /// @param mvc (_MeshValueCollection<double>_)
+    ///        MeshValueCollection to restore
+    /// @param name (std::string)
+    ///        Name of data attribute in XDMF file
     void read(MeshValueCollection<double>& mvc, std::string name="");
 
   private:

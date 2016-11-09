@@ -37,60 +37,85 @@ namespace dolfin
   public:
 
     /// Create parameter for given key
+    /// @param key (std::string)
+    ///
     explicit Parameter(std::string key);
 
     /// Destructor
     virtual ~Parameter();
 
     /// Return parameter key
+    /// @return std::string
     std::string key() const;
 
     /// Return parameter description
+    /// @return std::string
     std::string description() const;
 
     /// Return true if parameter is set, return false otherwise
+    /// @return bool
     bool is_set() const;
 
     /// Reset the parameter to empty, so that is_set() returns false.
     void reset();
 
     /// Return access count (number of times parameter has been accessed)
+    /// @return std::size_t
     std::size_t access_count() const;
 
     /// Return change count (number of times parameter has been changed)
+    /// @return std::size_t
     std::size_t change_count() const;
 
     /// Set range for int-valued parameter
+    /// @param min_value (int)
+    /// @param max_value (int)
+    ///
     virtual void set_range(int min_value, int max_value);
 
     /// Set range for double-valued parameter
+    /// @param min_value (double)
+    /// @param max_value (double)
+    ///
     virtual void set_range(double min_value, double max_value);
 
     /// Set range for string-valued parameter
+    /// @param range (std::set<std::string>)
+    ///
     virtual void set_range(std::set<std::string> range);
 
     /// Get range for int-valued parameter
+    /// @param [out] min_value (int)
+    /// @param [out] max_value (int)
     virtual void get_range(int& min_value, int& max_value) const;
 
     /// Get range for double-valued parameter
+    /// @param [out] min_value (double)
+    /// @param [out] max_value (double)
     virtual void get_range(double& min_value, double& max_value) const;
 
     /// Get range for string-valued parameter
+    /// @param [out] range (std::set<std::string>)
     virtual void get_range(std::set<std::string>& range) const;
 
     /// Assignment from int
+    /// @param value (int)
     virtual const Parameter& operator= (int value);
 
     /// Assignment from double
+    /// @param value (double)
     virtual const Parameter& operator= (double value);
 
     /// Assignment from string
+    /// @param value (std::string)
     virtual const Parameter& operator= (std::string value);
 
     /// Assignment from string
+    /// @param value (char *)
     virtual const Parameter& operator= (const char* value);
 
     /// Assignment from bool
+    /// @param value (bool)
     virtual const Parameter& operator= (bool value);
 
     /// Cast parameter to int
