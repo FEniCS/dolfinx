@@ -64,7 +64,8 @@ namespace dolfin
                const Cell& cell, ///< [in]
                const MeshFunction<std::size_t>* cell_domains, ///< [in]
                const MeshFunction<std::size_t>* exterior_facet_domains, ///< [in]
-               const MeshFunction<std::size_t>* interior_facet_domains /*!< [in] */);
+               const MeshFunction<std::size_t>* interior_facet_domains ///< [in]
+               );
 
     /// Worker method called by assemble() to perform assembly of
     /// volume integrals (UFL measure dx).
@@ -75,7 +76,8 @@ namespace dolfin
                               const std::vector<double>& coordinate_dofs, ///< [in]
                               const ufc::cell& ufc_cell, ///< [in]
                               const Cell& cell, ///< [in]
-                              const MeshFunction<std::size_t>* cell_domains /*!< [in] */);
+                              const MeshFunction<std::size_t>* cell_domains ///< [in]
+                              );
 
     /// Worker method called by assemble() for each of the cell's
     /// external facets to perform assembly of external facet
@@ -90,7 +92,8 @@ namespace dolfin
                               const Cell& cell, ///< [in]
                               const Facet& facet, ///< [in]
                               const std::size_t local_facet, ///< [in]
-                              const MeshFunction<std::size_t>* exterior_facet_domains /*!< [in] */);
+                              const MeshFunction<std::size_t>* exterior_facet_domains ///< [in]
+                              );
 
     /// Worker method called by assemble() for each of the cell's
     /// internal facets to perform assembly of internal facet
@@ -98,7 +101,7 @@ namespace dolfin
     static void
       assemble_interior_facet(Eigen::Matrix<double, Eigen::Dynamic,
                                             Eigen::Dynamic,
-                                            Eigen::RowMajor>& A, ///< [out] 
+                                            Eigen::RowMajor>& A, ///< [out] The tensor to assemble.  
                               UFC& ufc, ///< [in]
                               const std::vector<double>& coordinate_dofs, ///< [in]
                               const ufc::cell& ufc_cell, ///< [in]
@@ -106,7 +109,8 @@ namespace dolfin
                               const Facet& facet, ///< [in] 
                               const std::size_t local_facet, ///< [in]
                               const MeshFunction<std::size_t>* interior_facet_domains, ///< [in]
-                              const MeshFunction<std::size_t>* cell_domains /*!< [in] */ );
+                              const MeshFunction<std::size_t>* cell_domains ///< [in]
+                              );
   };
 
 }
