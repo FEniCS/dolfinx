@@ -34,7 +34,7 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
   set(Boost_NO_BOOST_CMAKE true)
 
   set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
-  find_package(Boost 1.62 COMPONENTS filesystem REQUIRED)
+  find_package(Boost COMPONENTS filesystem REQUIRED QUIET)
 
   # Add compiler definitions needed to use DOLFIN
   add_definitions(${DOLFIN_CXX_DEFINITIONS})
