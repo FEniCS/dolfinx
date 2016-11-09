@@ -49,9 +49,9 @@ namespace dolfin
 
     /// Create cell on given mesh with given index
     ///
-    /// @param    mesh (_Mesh_)
+    /// @param    mesh
     ///         The mesh.
-    /// @param    index (std::size_t)
+    /// @param    index
     ///         The index.
     Cell(const Mesh& mesh, std::size_t index)
       : MeshEntity(mesh, mesh.topology().dim(), index) {}
@@ -76,7 +76,7 @@ namespace dolfin
 
     /// Compute orientation of cell relative to given 'up' direction
     ///
-    /// @param    up (_Point_)
+    /// @param    up
     ///         The direction defined as 'up'
     ///
     /// @return     std::size_t
@@ -175,7 +175,7 @@ namespace dolfin
 
     /// Compute squared distance to given point.
     ///
-    /// @param     point (Point)
+    /// @param     point
     ///         The point.
     /// @return     double
     ///         The squared distance to the point.
@@ -184,7 +184,7 @@ namespace dolfin
 
     /// Compute distance to given point.
     ///
-    ///  @param    point (_Point_)
+    ///  @param    point
     ///         The point.
     /// @return     double
     ///         The distance to the point.
@@ -195,9 +195,9 @@ namespace dolfin
 
     /// Compute component i of normal of given facet with respect to the cell
     ///
-    /// @param    facet (std::size_t)
+    /// @param    facet
     ///         Index of facet.
-    /// @param    i (std::size_t)
+    /// @param    i
     ///         Component.
     ///
     /// @return     double
@@ -207,7 +207,7 @@ namespace dolfin
 
     /// Compute normal of given facet with respect to the cell
     ///
-    /// @param    facet (std::size_t)
+    /// @param    facet
     ///         Index of facet.
     ///
     /// @return Point
@@ -224,7 +224,7 @@ namespace dolfin
 
     /// Compute the area/length of given facet with respect to the cell
     ///
-    /// @param    facet (std::size_t)
+    /// @param    facet
     ///         Index of the facet.
     ///
     /// @return     double
@@ -234,14 +234,14 @@ namespace dolfin
 
     /// Order entities locally
     ///
-    /// @param    local_to_global_vertex_indices (std::vector<std::size_t>)
+    /// @param    local_to_global_vertex_indices
     ///         The global vertex indices.
     void order(const std::vector<std::int64_t>& local_to_global_vertex_indices)
     { _mesh->type().order(*this, local_to_global_vertex_indices); }
 
     /// Check if entities are ordered
     ///
-    ///  @param    local_to_global_vertex_indices (std::vector<std::size_t>)
+    ///  @param    local_to_global_vertex_indices
     ///         The global vertex indices.
     ///
     /// @return     bool
@@ -252,7 +252,7 @@ namespace dolfin
     /// Check whether given point is contained in cell. This function is
     /// identical to the function collides(point).
     ///
-    /// @param     point (Point)
+    /// @param     point
     ///         The point to be checked.
     ///
     /// @return     bool
@@ -262,7 +262,7 @@ namespace dolfin
 
     /// Check whether given point collides with cell
     ///
-    /// @param    point (Point)
+    /// @param    point
     ///         The point to be checked.
     ///
     /// @return     bool
@@ -272,7 +272,7 @@ namespace dolfin
 
     /// Check whether given entity collides with cell
     ///
-    /// @param    entity (MeshEntity)
+    /// @param    entity
     ///         The cell to be checked.
     ///
     /// @return     bool
@@ -282,7 +282,7 @@ namespace dolfin
 
     /// Compute triangulation of intersection with given entity
     ///
-    /// @param    entity (MeshEntity)
+    /// @param    entity
     ///         The entity with which to intersect.
     ///
     /// @return      std::vector<double>
