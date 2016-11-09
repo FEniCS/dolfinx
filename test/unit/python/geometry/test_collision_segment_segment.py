@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2016-11-04
+# Last changed: 2016-11-09
 
 import pytest
 from dolfin import *
@@ -106,3 +106,15 @@ def test_parallel_2():
                                                           Point(.5, .5),
                                                           Point(.5, .6))
     assert not res
+
+@skip_in_parallel
+def test_point_on_segment():
+    p0 = Point(1e-17, 0)
+    p1 = Point(1, 2)
+    p2 = Point(2, 1)
+    q0 = Point(1, 0)
+    q1 = Point(0, 0)
+    assert CollisionPredicates.collides_segment_segment_2d(p0,p1,q0,q1)
+    assert CollisionPredicates.collides_segment_segment_2d(p0,p2,q0,q1)
+    assert CollisionPredicates.collides_segment_segment_2d(p0,p1,q1,q0)
+    assert CollisionPredicates.collides_segment_segment_2d(p0,p2,q1,q0)

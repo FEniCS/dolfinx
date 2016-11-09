@@ -411,6 +411,8 @@ bool CollisionPredicates::_collides_segment_segment_2d(Point p0,
 						       Point q0,
 						       Point q1)
 {
+  std::cout << __FUNCTION__ << std::endl;
+
   // Vertex vertex collision
   if (p0 == q0 || p0 == q1 || p1 == q0 || p1 == q1)
     return true;
@@ -428,6 +430,8 @@ bool CollisionPredicates::_collides_segment_segment_2d(Point p0,
                                    p1.coordinates(),
                                    q1.coordinates());
 
+  std::cout << q0_q1_p0<<' '<<q0_q1_p1<<' '<<p0_p1_q0<<' '<<p0_p1_q1<<std::endl;
+
   // Vertex edge (interior) collision
 
   if (q0_q1_p0 == 0 && (p0-q0).squared_norm() < (q1-q0).squared_norm() && (p0-q1).squared_norm() < (q0-q1).squared_norm())
@@ -439,7 +443,9 @@ bool CollisionPredicates::_collides_segment_segment_2d(Point p0,
   if (p0_p1_q1 == 0 && (q1-p0).squared_norm() < (p1-p0).squared_norm() && (q1-p1).squared_norm() < (p0-p1).squared_norm())
     return true;
 
-  return q0_q1_p0*q0_q1_p1 < 0 && p0_p1_q0*p0_p1_q1 < 0;
+  std::cout << __FUNCTION__<<" no interior collision"<<std::endl;
+
+  return q0_q1_p0*q0_q1_p1 <= 0.0 && p0_p1_q0*p0_p1_q1 <= 0.0;
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_segment_segment_3d(Point p0,
@@ -518,7 +524,7 @@ bool CollisionPredicates::_collides_triangle_point_2d(Point p0,
 {
   const double ref = orient2d(p0.coordinates(), p1.coordinates(), p2.coordinates());
 
-  std::cout << __FUNCTION__<<" ref " << ref << ' '<<orient2d(p0.coordinates(), p1.coordinates(), point.coordinates())<<' '<<orient2d(p1.coordinates(), p2.coordinates(), point.coordinates())<<' '<<orient2d(p2.coordinates(), p0.coordinates(), point.coordinates())<<'\n';
+  std::cout << __FUNCTION__<<" ref " << ref << '\t'<<orient2d(p0.coordinates(), p1.coordinates(), point.coordinates())<<' '<<orient2d(p1.coordinates(), p2.coordinates(), point.coordinates())<<' '<<orient2d(p2.coordinates(), p0.coordinates(), point.coordinates())<<'\n';
 
   if (ref*orient2d(p0.coordinates(), p1.coordinates(), point.coordinates()) >= 0 and
       ref*orient2d(p1.coordinates(), p2.coordinates(), point.coordinates()) >= 0 and
@@ -615,6 +621,8 @@ bool CollisionPredicates::_collides_triangle_segment_2d(const Point& p0,
 							const Point& q0,
 							const Point& q1)
 {
+  std::cout << __FUNCTION__ << std::endl;
+
   // Check if end points are in triangle
   if (collides_triangle_point_2d(p0, p1, p2, q0))
     return true;
