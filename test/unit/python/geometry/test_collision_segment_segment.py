@@ -110,12 +110,27 @@ def test_parallel_2():
 @skip_in_parallel
 def test_point_on_segment():
     # p0 is on segment q0-q1
-    p0 = Point(1e-17, 0)
+    p0 = Point(1e-30, 0)
     p1 = Point(1, 2)
     p2 = Point(2, 1)
     q0 = Point(1, 0)
     q1 = Point(0, 0)
     assert CollisionPredicates.collides_segment_segment_2d(p0, p1, q0, q1)
-    assert CollisionPredicates.collides_segment_segment_2d(p0, p2, q0, q1)
+    assert CollisionPredicates.collides_segment_segment_2d(p1, p0, q0, q1)
     assert CollisionPredicates.collides_segment_segment_2d(p0, p1, q1, q0)
+    assert CollisionPredicates.collides_segment_segment_2d(p1, p0, q1, q0)
+
+    assert CollisionPredicates.collides_segment_segment_2d(p0, p2, q0, q1)
+    assert CollisionPredicates.collides_segment_segment_2d(p2, p0, q0, q1)
     assert CollisionPredicates.collides_segment_segment_2d(p0, p2, q1, q0)
+    assert CollisionPredicates.collides_segment_segment_2d(p2, p0, q1, q0)
+
+    assert CollisionPredicates.collides_segment_segment_2d(p0, p1, q1, q0)
+    assert CollisionPredicates.collides_segment_segment_2d(p1, p0, q1, q0)
+    assert CollisionPredicates.collides_segment_segment_2d(p0, p1, q0, q1)
+    assert CollisionPredicates.collides_segment_segment_2d(p1, p0, q0, q1)
+
+    assert CollisionPredicates.collides_segment_segment_2d(p0, p2, q1, q0)
+    assert CollisionPredicates.collides_segment_segment_2d(p2, p0, q1, q0)
+    assert CollisionPredicates.collides_segment_segment_2d(p0, p2, q0, q1)
+    assert CollisionPredicates.collides_segment_segment_2d(p2, p0, q0, q1)

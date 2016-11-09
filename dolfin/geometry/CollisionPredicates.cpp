@@ -445,17 +445,29 @@ bool CollisionPredicates::_collides_segment_segment_2d(Point p0,
 
   // Vertex edge (interior) collision
 
-  if (q0_q1_p0 == 0 && (p0-q0).squared_norm() < (q1-q0).squared_norm() && (p0-q1).squared_norm() < (q0-q1).squared_norm())
-    {
-      std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-      return true;
-    }
-  if (q0_q1_p1 == 0 && (p1-q0).squared_norm() < (q1-q0).squared_norm() && (p1-q1).squared_norm() < (q0-q1).squared_norm())
-    { std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl; return true; }
-  if (p0_p1_q0 == 0 && (q0-p0).squared_norm() < (p1-p0).squared_norm() && (q0-p1).squared_norm() < (p0-p1).squared_norm())
-    { std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl; return true; }
-  if (p0_p1_q1 == 0 && (q1-p0).squared_norm() < (p1-p0).squared_norm() && (q1-p1).squared_norm() < (p0-p1).squared_norm())
-    { std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl; return true; }
+  if (q0_q1_p0 == 0 &&
+      (p0-q0).squared_norm() <= (q1-q0).squared_norm() &&
+      (p0-q1).squared_norm() <= (q0-q1).squared_norm() &&
+      (q1-q0).dot(q1-p0) > 0 && (q1-q0).dot(p0-q0) > 0)
+  {
+    std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
+    return true;
+  }
+  if (q0_q1_p1 == 0 &&
+      (p1-q0).squared_norm() <= (q1-q0).squared_norm() &&
+      (p1-q1).squared_norm() <= (q0-q1).squared_norm() &&
+      (q1-q0).dot(q1-p1) > 0 && (q1-q0).dot(p1-q0) > 0)
+  { std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl; return true; }
+  if (p0_p1_q0 == 0 &&
+      (q0-p0).squared_norm() <= (p1-p0).squared_norm() &&
+      (q0-p1).squared_norm() <= (p0-p1).squared_norm() &&
+      (p1-p0).dot(p1-q0) > 0 && (p1-p0).dot(q0-p0) > 0)
+  { std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl; return true; }
+  if (p0_p1_q1 == 0 &&
+      (q1-p0).squared_norm() < (p1-p0).squared_norm() &&
+      (q1-p1).squared_norm() < (p0-p1).squared_norm() &&
+      (p1-p0).dot(p1-q1) > 0 && (p1-p0).dot(q1-p0) > 0)
+  { std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl; return true; }
 
   // //test
   // if (_collides_segment_point_2d(p0, p1, q0)) return true;
@@ -463,12 +475,10 @@ bool CollisionPredicates::_collides_segment_segment_2d(Point p0,
   // if (_collides_segment_point_2d(q0, q1, p0)) return true;
   // if (_collides_segment_point_2d(q0, q1, p1)) return true;
 
-  // Products must be strictly smaller
-  return q0_q1_p0*q0_q1_p1 < 0.0 && p0_p1_q0*p0_p1_q1 < 0.0;
-
   std::cout << __FUNCTION__<<" no interior collision"<<std::endl;
 
-  return q0_q1_p0*q0_q1_p1 <= 0.0 && p0_p1_q0*p0_p1_q1 <= 0.0;
+  // Products must be strictly smaller
+  return q0_q1_p0*q0_q1_p1 < 0.0 && p0_p1_q0*p0_p1_q1 < 0.0;
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_segment_segment_3d(Point p0,
