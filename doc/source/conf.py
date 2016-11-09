@@ -11,10 +11,16 @@
 #
 # All configuration values have a default; values that are commented out
 # serve to show the default.
-
+import subprocess
 import sys
 import os
 
+# Run doxygen on C++ sources, generates XML output for breathe to
+# convert into Sphinx format.
+current_dir = os.getcwd()
+os.chdir("../")
+subprocess.call('doxygen', shell=True)
+os.chdir(current_dir)
 
 # Create demo CMakeLists.txt files
 current_dir = os.getcwd()
