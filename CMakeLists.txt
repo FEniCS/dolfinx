@@ -312,8 +312,13 @@ set(Boost_NO_BOOST_CMAKE true)
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 find_package(Boost 1.48 QUIET REQUIRED)
 
-set(DOLFIN_BOOST_COMPONENTS filesystem system program_options iostreams timer)
-find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
+# Boost public/private libraries to linl to. Note: These should all be
+# private, but there is a linking issues with older Boost or CMake
+set(DOLFIN_BOOST_COMPONENTS_PUBLIC filesystem)
+set(DOLFIN_BOOST_COMPONENTS_PRIVATE program_options iostreams timer)
+
+find_package(Boost COMPONENTS
+  ${DOLFIN_BOOST_COMPONENTS_PUBLIC} ${DOLFIN_BOOST_COMPONENTS_PRIVATE} REQUIRED)
 set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")

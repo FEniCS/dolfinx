@@ -23,6 +23,19 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
     endif()
   endif()
 
+  # Check for Boost
+  set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
+  if (BOOST_ROOT)
+    set(Boost_NO_SYSTEM_PATHS on)
+  endif()
+
+  # Prevent FindBoost.cmake from looking for system Boost{foo}.cmake
+  # files
+  set(Boost_NO_BOOST_CMAKE true)
+
+  set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
+  find_package(Boost COMPONENTS filesystem REQUIRED QUIET)
+
   # Add compiler definitions needed to use DOLFIN
   add_definitions(${DOLFIN_CXX_DEFINITIONS})
 
