@@ -108,7 +108,7 @@ def test_parallel_2():
     assert not res
 
 @skip_in_parallel
-def test_point_on_segment():
+def test_segment_segment_2d():
     # p0 is on segment q0-q1
     p0 = Point(1e-30, 0)
     p1 = Point(1, 2)
