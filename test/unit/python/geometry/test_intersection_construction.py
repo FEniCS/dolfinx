@@ -220,8 +220,8 @@ def test_triangle_segment_2D_1():
     "The intersection of a specific triangle and a specific segment"
     p0 = Point(1e-17, 0)
     #p0 = Point(0.1, 0)
-    p1 = Point(0.5, sqrt(3.)/2.)
-    p2 = Point(sqrt(3.)/2., 0.5)
+    p1 = Point(1, 2)
+    p2 = Point(2, 1)
     q0 = Point(1, 0)
     q1 = Point(0, 0)
     intersection = IntersectionConstruction.intersection_triangle_segment_2d(p0, p1, p2, q0, q1)
