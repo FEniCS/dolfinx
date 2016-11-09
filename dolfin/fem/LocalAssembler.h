@@ -42,18 +42,31 @@ namespace dolfin
   /// Assembly of local cell tensors. Used by the adaptivity and
   /// LocalSolver functionality in dolfin. The local assembly
   /// functionality provided here is also wrapped as a free function
-  /// assemble_local(form_a, cell) in Python for easier usage. Used
-  /// from C++ the versions defined below will be faster than the free
-  /// function as less objects need to be created and thrown away
+  /// assemble_local(form_a, cell) in Python for easier usage. Use
+  /// from the C++ interface defined below will be faster than the
+  /// free function as less objects need to be created and destroyed.
 
   class LocalAssembler
   {
 
   public:
 
-    /// Assemble a local tensor on a cell
+    /// Assemble a local tensor on a cell. Internally calls
+    /// assemble_cell(), assemble_exterior_facet(),
+    /// assemble_interior_facet().
+    ///
+    /// @param[out] A
+    ///         The tensor to assemble.
+    /// @param[in] ufc 
+    /// @param[in] coordinate_dofs
+    /// @param[in] ufc_cell
+    /// @param[in] cell
+    /// @param[in] cell_domains
+    /// @param[in] exterior_facet_domains
+    /// @param[in] interior_facet_domains
     static void
-      assemble(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+      assemble(Eigen::Matrix<double, Eigen::Dynamic, 
+                             Eigen::Dynamic,
                              Eigen::RowMajor>& A,
                UFC& ufc,
                const std::vector<double>& coordinate_dofs,
@@ -64,7 +77,15 @@ namespace dolfin
                const MeshFunction<std::size_t>* interior_facet_domains);
 
     /// Worker method called by assemble() to perform assembly of
-    /// volume integrals (dx)
+    /// volume integrals (UFL measure dx).
+    ///
+    /// @param[out] A 
+    ///         The tensor to assemble.
+    /// @param[in] ufc
+    /// @param[in] coordinate_dofs 
+    /// @param[in] ufc_cell
+    /// @param[in] cell
+    /// @param[in] cell_domains
     static void assemble_cell(Eigen::Matrix<double, Eigen::Dynamic,
                                             Eigen::Dynamic,
                                             Eigen::RowMajor>& A,
@@ -76,12 +97,22 @@ namespace dolfin
 
     /// Worker method called by assemble() for each of the cell's
     /// external facets to perform assembly of external facet
-    /// integrals (ds)
+    /// integrals (UFL measure ds).
+    ///
+    /// @param[out] A
+    ///         The tensor to assemble.
+    /// @param[in] ufc
+    /// @param[in] coordinate_dofs
+    /// @param[in] ufc_cell
+    /// @param[in] cell
+    /// @param[in] facet
+    /// @param[in] local_facet
+    /// @param[in] exterior_facet_domains
     static void
       assemble_exterior_facet(Eigen::Matrix<double, Eigen::Dynamic,
                                             Eigen::Dynamic,
                                             Eigen::RowMajor>& A,
-                      UFC& ufc,
+                              UFC& ufc,
                               const std::vector<double>& coordinate_dofs,
                               const ufc::cell& ufc_cell,
                               const Cell& cell,
@@ -91,7 +122,18 @@ namespace dolfin
 
     /// Worker method called by assemble() for each of the cell's
     /// internal facets to perform assembly of internal facet
-    /// integrals (dS)
+    /// integrals (UFL measure dS)
+    ///
+    /// @param[out] A
+    ///         The tensor to assemble.
+    /// @param[in] ufc
+    /// @param[in] coordinate_dofs
+    /// @param[in] ufc_cell
+    /// @param[in] cell
+    /// @param[in] facet
+    /// @param[in] local_facet
+    /// @param[in] interior_facet_domains
+    /// @param[in] cell_domains
     static void
       assemble_interior_facet(Eigen::Matrix<double, Eigen::Dynamic,
                                             Eigen::Dynamic,
