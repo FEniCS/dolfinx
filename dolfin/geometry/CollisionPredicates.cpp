@@ -46,9 +46,6 @@
 //
 //-----------------------------------------------------------------------------
 
-// FIXME
-#include <iomanip>
-
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
 #include "Point.h"
@@ -332,7 +329,7 @@ bool CollisionPredicates::_collides_segment_point_2d(Point p0,
                                       p1.coordinates(),
                                       point.coordinates());
 
-  std::cout << __FUNCTION__ << ' ' << orientation << std::endl;
+  //std::cout << __FUNCTION__ << ' ' << orientation << std::endl;
   const Point dp = p1 - p0;
   const double segment_length = dp.squared_norm();
 
@@ -361,7 +358,7 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
   				 p1.coordinates(),
   				 point.coordinates());
 
-  std::cout << __FUNCTION__<<" "<<det_xy << std::endl;
+  // std::cout << __FUNCTION__<<" "<<det_xy << std::endl;
 
   if (det_xy == 0.0)
   {
@@ -372,7 +369,7 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
   				   xz[1].data(),
   				   xz[2].data());
 
-    std::cout << __FUNCTION__<<" "<<det_xz << std::endl;
+    // std::cout << __FUNCTION__<<" "<<det_xz << std::endl;
 
     if (det_xz == 0.0)
     {
@@ -383,7 +380,7 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
   				     yz[1].data(),
   				     yz[2].data());
 
-      std::cout << __FUNCTION__<<" "<<det_yz << std::endl;
+      // std::cout << __FUNCTION__<<" "<<det_yz << std::endl;
 
       if (det_yz == 0.0)
   	return true;
@@ -550,7 +547,7 @@ bool CollisionPredicates::_collides_segment_segment_3d(Point p0,
 			      p1.coordinates(),
 			      q0.coordinates(),
 			      q1.coordinates());
-  std::cout << __FUNCTION__ << ' ' << det << std::endl;
+  // std::cout << __FUNCTION__ << ' ' << det << std::endl;
 
   if (det < 0. or det > 0.)
     return false;
@@ -582,7 +579,7 @@ bool CollisionPredicates::_collides_triangle_point_2d(Point p0,
 {
   const double ref = orient2d(p0.coordinates(), p1.coordinates(), p2.coordinates());
 
-  std::cout << __FUNCTION__<<" ref " << ref << '\t'<<orient2d(p0.coordinates(), p1.coordinates(), point.coordinates())<<' '<<orient2d(p1.coordinates(), p2.coordinates(), point.coordinates())<<' '<<orient2d(p2.coordinates(), p0.coordinates(), point.coordinates())<<'\n';
+  // std::cout << __FUNCTION__<<" ref " << ref << '\t'<<orient2d(p0.coordinates(), p1.coordinates(), point.coordinates())<<' '<<orient2d(p1.coordinates(), p2.coordinates(), point.coordinates())<<' '<<orient2d(p2.coordinates(), p0.coordinates(), point.coordinates())<<'\n';
 
   if (ref*orient2d(p0.coordinates(), p1.coordinates(), point.coordinates()) >= 0 and
       ref*orient2d(p1.coordinates(), p2.coordinates(), point.coordinates()) >= 0 and
@@ -679,7 +676,7 @@ bool CollisionPredicates::_collides_triangle_segment_2d(const Point& p0,
 							const Point& q0,
 							const Point& q1)
 {
-  std::cout << __FUNCTION__ << std::endl;
+  // std::cout << __FUNCTION__ << std::endl;
 
   // Check if end points are in triangle
   if (collides_triangle_point_2d(p0, p1, p2, q0))
