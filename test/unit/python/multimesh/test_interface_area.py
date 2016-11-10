@@ -70,8 +70,22 @@ def create_multimesh_with_meshes_on_diagonal(width, offset, Nx):
         num_parts = multimesh.num_parts()
 
     multimesh.build()
+
+    area = compute_area_using_quadrature(multimesh)
     exact_area = 0 if multimesh.num_parts() == 1 else 4*width + (multimesh.num_parts()-2)*(2*width + 2*offset)
-    return [multimesh, exact_area]
+    error = abs(area - exact_area)
+    relative_error = error / exact_area
+    tol = max(DOLFIN_EPS_LARGE, multimesh.num_parts()*multimesh.part(0).num_cells()*DOLFIN_EPS)
+    print("width = {}, offset = {}, Nx = {}, num_parts = {}".format(width, offset, Nx, multimesh.num_parts()))
+    print("error", error)
+    print("relative error", relative_error)
+    print("tol", tol)
+    return relative_error < tol
+
+def area_equal(multimesh, area, exact_area):
+    tol = max(DOLFIN_EPS_LARGE, multimesh.num_parts()*multimesh.part(0).num_cells()*DOLFIN_EPS)
+    error = abs(area - exact_area) / exact_area
+    return error < tol
 
 @skip_in_parallel
 def test_meshes_on_diagonal():
@@ -79,33 +93,18 @@ def test_meshes_on_diagonal():
 
     width = 0.3
     offset = 0.1111
-    Nx = 1
-    [multimesh, exact_area] = create_multimesh_with_meshes_on_diagonal(width, offset, Nx)
-    area = compute_area_using_quadrature(multimesh)
-    print("area ", area)
-    print("exact area ", exact_area)
-    print("num parts ", multimesh.num_parts())
-    assert abs(area - exact_area) < DOLFIN_EPS_LARGE
+    for Nx in range(1, 50):
+        assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
 
-    width = 0.6
-    offset = 0.1
-    Nx = 1
-    [multimesh, exact_area] = create_multimesh_with_meshes_on_diagonal(width, offset, Nx)
-    area = compute_area_using_quadrature(multimesh)
-    print("area ", area)
-    print("exact area ", exact_area)
-    print("num parts ", multimesh.num_parts())
-    assert abs(area - exact_area) < DOLFIN_EPS_LARGE
+    # width = 0.6
+    # offset = 0.1
+    # for Nx in range(1, 50):
+    #     assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
 
     width = 1/DOLFIN_PI #0.18888
     offset = 0.04 #1e-10
-    Nx = 1
-    [multimesh, exact_area] = create_multimesh_with_meshes_on_diagonal(width, offset, Nx)
-    area = compute_area_using_quadrature(multimesh)
-    print("area ", area)
-    print("exact area ", exact_area)
-    print("num parts ", multimesh.num_parts())
-    assert abs(area - exact_area) < DOLFIN_EPS_LARGE
+    for Nx in range(1, 50):
+        assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
 
 # @skip_in_parallel
 # def test_meshes_with_boundary_edge_overlap_2D():
