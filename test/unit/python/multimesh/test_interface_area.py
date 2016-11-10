@@ -43,12 +43,14 @@ def compute_area_using_quadrature(multimesh):
         total_area += part_area
     return total_area
 
-@skip_in_parallel
-def test_meshes_on_diagonal():
-    "Place meshes on the diagonal inside a background mesh and check the interface area"
 
-    # Number of elements
-    Nx = 3
+def create_multimesh_with_meshes_on_diagonal(width, offset, Nx):
+
+    # Mesh width (must be less than 1)
+    assert width < 1
+
+    # Mesh placement (must be less than the width)
+    assert offset < width
 
     # Background mesh
     mesh_0 = UnitSquareMesh(Nx, Nx)
@@ -57,67 +59,89 @@ def test_meshes_on_diagonal():
     multimesh = MultiMesh()
     multimesh.add(mesh_0)
 
-    # Mesh width (must be less than 1)
-    width = 0.3
-    assert width < 1
-
-    # Mesh placement (must be less than the width)
-    offset = 0.1111
-    assert offset < width
-
-    # Exact area for there are one mesh on top
-    exact_area = 4*width
-
+    # Now we have num_parts = 1
     num_parts = multimesh.num_parts()
-    while num_parts*width + offset < 1:
+
+    while num_parts*offset + width < 1:
         a = num_parts*offset
         b = a + width
         mesh_top = RectangleMesh(Point(a,a), Point(b,b), Nx, Nx)
         multimesh.add(mesh_top)
-        if num_parts > 1:
-            exact_area += 2*offset + 2*width
         num_parts = multimesh.num_parts()
 
     multimesh.build()
-
-    area = compute_area_using_quadrature(multimesh)
-    assert abs(area - exact_area) < DOLFIN_EPS_LARGE
+    exact_area = 0 if multimesh.num_parts() == 1 else 4*width + (multimesh.num_parts()-2)*(2*width + 2*offset)
+    return [multimesh, exact_area]
 
 @skip_in_parallel
-def test_meshes_with_boundary_edge_overlap_2D():
-    # start with boundary of mesh 1 overlapping edges of mesg 0
-    mesh0 = UnitSquareMesh(4,4)
-    mesh1 = UnitSquareMesh(1,1)
+def test_meshes_on_diagonal():
+    "Place meshes on the diagonal inside a background mesh and check the interface area"
 
-    mesh1_coords = mesh1.coordinates()
-    mesh1_coords *= 0.5
-    mesh1.translate(Point(0.25, 0.25))
-
-    multimesh = MultiMesh()
-    multimesh.add(mesh0)
-    multimesh.add(mesh1)
-    multimesh.build()
-
-    exact_area = 2.0
-
+    width = 0.3
+    offset = 0.1111
+    Nx = 1
+    [multimesh, exact_area] = create_multimesh_with_meshes_on_diagonal(width, offset, Nx)
     area = compute_area_using_quadrature(multimesh)
-    assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
+    print("area ", area)
+    print("exact area ", exact_area)
+    print("num parts ", multimesh.num_parts())
+    assert abs(area - exact_area) < DOLFIN_EPS_LARGE
 
-    # next translate mesh 1 such that only the horizontal part of the boundary overlaps
-    mesh1.translate(Point(0.1, 0.0))
-    multimesh.build()
+    width = 0.6
+    offset = 0.1
+    Nx = 1
+    [multimesh, exact_area] = create_multimesh_with_meshes_on_diagonal(width, offset, Nx)
     area = compute_area_using_quadrature(multimesh)
-    assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
+    print("area ", area)
+    print("exact area ", exact_area)
+    print("num parts ", multimesh.num_parts())
+    assert abs(area - exact_area) < DOLFIN_EPS_LARGE
 
-    # next translate mesh 1 such that no boundaries overlap with edges
-    mesh1.translate(Point(0.0, 0.1))
-    multimesh.build()
+    width = 1/DOLFIN_PI #0.18888
+    offset = 0.04 #1e-10
+    Nx = 1
+    [multimesh, exact_area] = create_multimesh_with_meshes_on_diagonal(width, offset, Nx)
     area = compute_area_using_quadrature(multimesh)
-    assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
+    print("area ", area)
+    print("exact area ", exact_area)
+    print("num parts ", multimesh.num_parts())
+    assert abs(area - exact_area) < DOLFIN_EPS_LARGE
+
+# @skip_in_parallel
+# def test_meshes_with_boundary_edge_overlap_2D():
+#     # start with boundary of mesh 1 overlapping edges of mesg 0
+#     mesh0 = UnitSquareMesh(4,4)
+#     mesh1 = UnitSquareMesh(1,1)
+
+#     mesh1_coords = mesh1.coordinates()
+#     mesh1_coords *= 0.5
+#     mesh1.translate(Point(0.25, 0.25))
+
+#     multimesh = MultiMesh()
+#     multimesh.add(mesh0)
+#     multimesh.add(mesh1)
+#     multimesh.build()
+
+#     exact_area = 2.0
+
+#     area = compute_area_using_quadrature(multimesh)
+#     assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
+
+#     # next translate mesh 1 such that only the horizontal part of the boundary overlaps
+#     mesh1.translate(Point(0.1, 0.0))
+#     multimesh.build()
+#     area = compute_area_using_quadrature(multimesh)
+#     assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
+
+#     # next translate mesh 1 such that no boundaries overlap with edges
+#     mesh1.translate(Point(0.0, 0.1))
+#     multimesh.build()
+#     area = compute_area_using_quadrature(multimesh)
+#     assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
 
 
 
-# FIXME: Temporary testing
-if __name__ == "__main__":
-    test_meshes_on_diagonal()
-    test_meshes_with_boundary_edge_overlap_2D()
+# # FIXME: Temporary testing
+# if __name__ == "__main__":
+#     test_meshes_on_diagonal()
+#     test_meshes_with_boundary_edge_overlap_2D()
