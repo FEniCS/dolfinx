@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-09
+// Last changed: 2016-11-10
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -333,12 +333,13 @@ bool CollisionPredicates::_collides_segment_point_2d(Point p0,
                                       point.coordinates());
 
   std::cout << __FUNCTION__ << ' ' << orientation << std::endl;
-  const double segment_length = (p1-p0).squared_norm();
+  const Point dp = p1 - p0;
+  const double segment_length = dp.squared_norm();
 
   return orientation == 0.0 &&
     (point-p0).squared_norm() <= segment_length &&
     (point-p1).squared_norm() <= segment_length &&
-    (p1-p0).dot(p1-point) >= 0 && (p1-p0).dot(point-p0) >= 0;
+    dp.dot(p1-point) >= 0 && dp.dot(point-p0) >= 0;
 }
 //-----------------------------------------------------------------------------
 namespace
@@ -391,6 +392,30 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
 
   return false;
 }
+//-----------------------------------------------------------------------------
+bool CollisionPredicates::_collides_interior_point_segment_2d(Point q0,
+							      Point q1,
+							      Point p)
+{
+  const double q0_q1_p = orient2d(q0.coordinates(),
+                                  q1.coordinates(),
+                                  p.coordinates());
+  const Point dq = q1-q0;
+  const double segment_length = dq.squared_norm();
+
+  return q0_q1_p == 0 && (p-q0).squared_norm() <= segment_length && (p-q1).squared_norm() <= segment_length && dq.dot(q1-p) > 0 && dq.dot(p-q0) > 0;
+}
+//-----------------------------------------------------------------------------
+bool CollisionPredicates::_collides_interior_point_segment_3d(Point q0,
+							      Point q1,
+							      Point p)
+{
+  // FIXME
+  dolfin_error("CollisionPredicates",
+	       "_collides_interior_point_segment_3d",
+	       "Not implemented");
+  return false;
+}
 //------------------------------------------------------------------------------
 bool CollisionPredicates::_collides_segment_segment_1d(double p0,
 						       double p1,
@@ -416,24 +441,24 @@ bool CollisionPredicates::_collides_segment_segment_2d(Point p0,
 						       Point q0,
 						       Point q1)
 {
-  std::cout << __FUNCTION__ << std::endl;
+  // std::cout << __FUNCTION__ << std::endl;
 
-  // Vertex vertex collision
-  if (p0 == q0 || p0 == q1 || p1 == q0 || p1 == q1)
-    return true;
+  // // Vertex vertex collision
+  // if (p0 == q0 || p0 == q1 || p1 == q0 || p1 == q1)
+  //   return true;
 
-  const double q0_q1_p0 = orient2d(q0.coordinates(),
-                                   q1.coordinates(),
-                                   p0.coordinates());
-  const double q0_q1_p1 = orient2d(q0.coordinates(),
-                                   q1.coordinates(),
-                                   p1.coordinates());
-  const double p0_p1_q0 = orient2d(p0.coordinates(),
-                                   p1.coordinates(),
-                                   q0.coordinates());
-  const double p0_p1_q1 = orient2d(p0.coordinates(),
-                                   p1.coordinates(),
-                                   q1.coordinates());
+  // const double q0_q1_p0 = orient2d(q0.coordinates(),
+  //                                  q1.coordinates(),
+  //                                  p0.coordinates());
+  // const double q0_q1_p1 = orient2d(q0.coordinates(),
+  //                                  q1.coordinates(),
+  //                                  p1.coordinates());
+  // const double p0_p1_q0 = orient2d(p0.coordinates(),
+  //                                  p1.coordinates(),
+  //                                  q0.coordinates());
+  // const double p0_p1_q1 = orient2d(p0.coordinates(),
+  //                                  p1.coordinates(),
+  //                                  q1.coordinates());
 
   // std::cout<<std::setprecision(20) << q0_q1_p0<<' '<<q0_q1_p1<<' '<<p0_p1_q0<<' '<<p0_p1_q1<<std::endl;
 
@@ -447,46 +472,59 @@ bool CollisionPredicates::_collides_segment_segment_2d(Point p0,
 
   // Vertex edge (interior) collision
 
-  if (q0_q1_p0 == 0 &&
-      (p0-q0).squared_norm() <= (q1-q0).squared_norm() &&
-      (p0-q1).squared_norm() <= (q0-q1).squared_norm() &&
-      (q1-q0).dot(q1-p0) > 0 && (q1-q0).dot(p0-q0) > 0)
-  {
-    // std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-    return true;
-  }
-  if (q0_q1_p1 == 0 &&
-      (p1-q0).squared_norm() <= (q1-q0).squared_norm() &&
-      (p1-q1).squared_norm() <= (q0-q1).squared_norm() &&
-      (q1-q0).dot(q1-p1) > 0 && (q1-q0).dot(p1-q0) > 0)
-  {
-    //std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-    return true;
-  }
-  if (p0_p1_q0 == 0 &&
-      (q0-p0).squared_norm() <= (p1-p0).squared_norm() &&
-      (q0-p1).squared_norm() <= (p0-p1).squared_norm() &&
-      (p1-p0).dot(p1-q0) > 0 && (p1-p0).dot(q0-p0) > 0)
-  {
-    //std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-    return true;
-  }
-  if (p0_p1_q1 == 0 &&
-      (q1-p0).squared_norm() <= (p1-p0).squared_norm() &&
-      (q1-p1).squared_norm() <= (p0-p1).squared_norm() &&
-      (p1-p0).dot(p1-q1) > 0 && (p1-p0).dot(q1-p0) > 0)
-  {
-    //std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-    return true;
-  }
+  // if (q0_q1_p0 == 0 &&
+  //     (p0-q0).squared_norm() <= (q1-q0).squared_norm() &&
+  //     (p0-q1).squared_norm() <= (q0-q1).squared_norm() &&
+  //     (q1-q0).dot(q1-p0) > 0 && (q1-q0).dot(p0-q0) > 0)
+  // {
+  //   // std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
+  //   return true;
+  // }
+  // if (q0_q1_p1 == 0 &&
+  //     (p1-q0).squared_norm() <= (q1-q0).squared_norm() &&
+  //     (p1-q1).squared_norm() <= (q0-q1).squared_norm() &&
+  //     (q1-q0).dot(q1-p1) > 0 && (q1-q0).dot(p1-q0) > 0)
+  // {
+  //   //std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
+  //   return true;
+  // }
+  // if (p0_p1_q0 == 0 &&
+  //     (q0-p0).squared_norm() <= (p1-p0).squared_norm() &&
+  //     (q0-p1).squared_norm() <= (p0-p1).squared_norm() &&
+  //     (p1-p0).dot(p1-q0) > 0 && (p1-p0).dot(q0-p0) > 0)
+  // {
+  //   //std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
+  //   return true;
+  // }
+  // if (p0_p1_q1 == 0 &&
+  //     (q1-p0).squared_norm() <= (p1-p0).squared_norm() &&
+  //     (q1-p1).squared_norm() <= (p0-p1).squared_norm() &&
+  //     (p1-p0).dot(p1-q1) > 0 && (p1-p0).dot(q1-p0) > 0)
+  // {
+  //   //std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
+  //   return true;
+  // }
 
-  // //test
-  // if (_collides_segment_point_2d(p0, p1, q0)) return true;
-  // if (_collides_segment_point_2d(p0, p1, q1)) return true;
-  // if (_collides_segment_point_2d(q0, q1, p0)) return true;
-  // if (_collides_segment_point_2d(q0, q1, p1)) return true;
+  //test
+  if (_collides_segment_point_2d(p0, p1, q0)) return true;
+  if (_collides_segment_point_2d(p0, p1, q1)) return true;
+  if (_collides_segment_point_2d(q0, q1, p0)) return true;
+  if (_collides_segment_point_2d(q0, q1, p1)) return true;
 
   // std::cout << __FUNCTION__<<" no interior collision"<<std::endl;
+
+  const double q0_q1_p0 = orient2d(q0.coordinates(),
+                                   q1.coordinates(),
+                                   p0.coordinates());
+  const double q0_q1_p1 = orient2d(q0.coordinates(),
+                                   q1.coordinates(),
+                                   p1.coordinates());
+  const double p0_p1_q0 = orient2d(p0.coordinates(),
+                                   p1.coordinates(),
+                                   q0.coordinates());
+  const double p0_p1_q1 = orient2d(p0.coordinates(),
+                                   p1.coordinates(),
+                                   q1.coordinates());
 
   // Products must be strictly smaller
   return q0_q1_p0*q0_q1_p1 < 0.0 && p0_p1_q0*p0_p1_q1 < 0.0;
@@ -534,30 +572,6 @@ bool CollisionPredicates::_collides_segment_segment_3d(Point p0,
       (q1-p1).squared_norm() <= (p0-p1).squared_norm())
     return true;
 
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_interior_point_segment_2d(Point q0,
-							      Point q1,
-							      Point p)
-{
-  const double q0_q1_p = orient2d(q0.coordinates(),
-                                  q1.coordinates(),
-                                  p.coordinates());
-
-  const double segment_length = (q1-q0).squared_norm();
-
-  return q0_q1_p == 0 && (p-q0).squared_norm() <= segment_length && (p-q1).squared_norm() <= segment_length && (q1-q0).dot(q1-p) > 0 && (q1-q0).dot(p-q0) > 0;
-}
-//-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_interior_point_segment_3d(Point q0,
-							      Point q1,
-							      Point p)
-{
-  // FIXME
-  dolfin_error("CollisionPredicates",
-	       "_collides_interior_point_segment_3d",
-	       "Not implemented");
   return false;
 }
 //-----------------------------------------------------------------------------
