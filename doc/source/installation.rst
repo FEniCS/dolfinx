@@ -33,6 +33,7 @@ Required
 - CMake (https://cmake.org)
 - Eigen3 (http://eigen.tuxfamily.org)
 - FFC (https://bitbucket.org/fenics-project/ffc)
+- pkg-config (https://www.freedesktop.org/wiki/Software/pkg-config/)
 - zlib
 
 
