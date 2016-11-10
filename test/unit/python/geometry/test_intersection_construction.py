@@ -202,7 +202,7 @@ def test_triangle_triangle_2d() :
     assert len(res) == 2
 
 @skip_in_parallel
-def test_segment_segment_2d():
+def test_parallel_segments_2d():
     " These two segments should be parallel and the intersection computed accordingly"
     p0 = Point(0, 0)
     p1 = Point(1, 0)
@@ -211,13 +211,24 @@ def test_segment_segment_2d():
     intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
     assert len(intersection) == 2
 
+def test_equal_segments_2d():
+    " These two segments are equal and the intersection computed accordingly"
+    p0 = Point(DOLFIN_PI / 7., 9. / DOLFIN_PI)
+    p1 = Point(9. / DOLFIN_PI, DOLFIN_PI / 7.)
+    q0 = Point(DOLFIN_PI / 7., 9. / DOLFIN_PI)
+    q1 = Point(9. / DOLFIN_PI, DOLFIN_PI / 7.)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+    assert len(intersection) == 2
+
 @skip_in_parallel
 def test_triangle_segment_2D_1():
     "The intersection of a specific triangle and a specific segment"
-    p0 = Point(1e-17, 0)
+    p0 = Point(1e-30, 0)
     p1 = Point(1, 2)
     p2 = Point(2, 1)
     q0 = Point(1, 0)
     q1 = Point(0, 0)
     intersection = IntersectionConstruction.intersection_triangle_segment_2d(p0, p1, p2, q0, q1)
-    assert len(intersection) == 2
+    assert len(intersection) == 1
+    intersection = IntersectionConstruction.intersection_triangle_segment_2d(p0, p1, p2, q1, q0)
+    assert len(intersection) == 1
