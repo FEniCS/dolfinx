@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2016-11-09
+# Last changed: 2016-11-10
 
 import pytest
 from dolfin import *
@@ -54,8 +54,8 @@ def test_L_version_2():
     # mesh0 = create_mesh(Point(eps(), 0.), Point(1., 0.))
     mesh0 = create_mesh(Point(2.23e-15, 0.), Point(1., 0.))
     mesh1 = create_mesh(Point(0., 0.), Point(0., 1.))
-    print(mesh0.str(True))
-    print(mesh1.str(True))
+    # print(mesh0.str(True))
+    # print(mesh1.str(True))
     cell0 = Cell(mesh0, 0)
     cell1 = Cell(mesh1, 0)
     assert cell0.collides(cell1) == False
