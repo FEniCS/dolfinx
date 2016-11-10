@@ -201,16 +201,16 @@ ARRAY_EXTENSIONS(int, Int, int)
 //-----------------------------------------------------------------------------
 // Fixup docstrings
 //-----------------------------------------------------------------------------
-%pythoncode
-%{
-for f in [timings, list_timings, dump_timings_to_xml, timing]:
-    doc = f.__doc__
-    doc = doc.replace("TimingType::", "TimingType_")
-    doc = doc.replace("TimingClear::", "TimingClear_")
-    doc = doc.replace("std::set<TimingType>", "list")
-    doc = doc.replace("{ ", "[")
-    doc = doc.replace(" }", "]")
-    f.__doc__ = doc
-    del doc
-del f
-%}
+//%pythoncode
+//%{
+//for f in [timings, list_timings, dump_timings_to_xml, timing]:
+//    doc = f.__doc__
+//    doc = doc.replace("TimingType::", "TimingType_")
+//    doc = doc.replace("TimingClear::", "TimingClear_")
+//    doc = doc.replace("std::set<TimingType>", "list")
+//    doc = doc.replace("{ ", "[")
+//    doc = doc.replace(" }", "]")
+//    f.__doc__ = doc
+//    del doc
+//del f
+//%}

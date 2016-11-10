@@ -425,7 +425,7 @@ def write_module_interface_file(module, dependencies, submodule_info, parsed_mod
         include_lines.append("// %%include types from submodule %s" % submodule)
 
         # Add docstrings
-        docstring_lines.append("%%include \"dolfin/swig/%s/docstrings.i\"" % submodule)
+        #docstring_lines.append("%%include \"dolfin/swig/%s/docstrings.i\"" % submodule)
 
         # Check for pre includes
         if submod_info["has_pre"]:

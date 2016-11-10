@@ -46,9 +46,9 @@ if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/modules)
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-interface.py ${CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings.py ${CMAKE_BINARY_DIR}
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+#execute_process(
+#    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings.py ${CMAKE_BINARY_DIR}
+#    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
 endif()
 
 # Get combined modules
@@ -83,18 +83,18 @@ add_custom_target(generate_swig_interface
   )
 
 # Target to generate swig docstring files
-add_custom_target(generate_swig_docstrings
-  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings.py ${CMAKE_BINARY_DIR}
-  WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
-  COMMENT "Generating SWIG docstring files from C++ headers"
-  )
+#add_custom_target(generate_swig_docstrings
+#  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings.py ${CMAKE_BINARY_DIR}
+#  WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
+#  COMMENT "Generating SWIG docstring files from C++ headers"
+#)
 
 # Target to generate swig docstring files with debug
-add_custom_target(generate_swig_docstrings_with_debug
-  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings.py ${CMAKE_BINARY_DIR} DEBUG
-  WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
-  COMMENT "Generating SWIG docstring files from C++ headers (DEBUG modus)"
-  )
+#add_custom_target(generate_swig_docstrings_with_debug
+#  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings.py ${CMAKE_BINARY_DIR} DEBUG
+#  WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
+#  COMMENT "Generating SWIG docstring files from C++ headers (DEBUG modus)"
+#)
 
 # Iterate over the combined modules and add each as a target
 foreach(COMBINED_MODULE_DIR ${COMBINED_MODULES})

@@ -20,6 +20,8 @@
 // First added:  2012-01-17
 // Last changed: 2012-01-18
 
+%include "dolfin/swig/docstrings.i"
+
 %include <stdint.i>
 
 // Global shared_ptr classes
