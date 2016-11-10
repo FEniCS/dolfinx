@@ -102,7 +102,6 @@ def test_triangulate_intersection_2d():
 
 @skip_in_parallel
 @pytest.mark.skipif(True, reason="Not implemented in 3D")
-@pytest.mark.skipif(True, reason="Missing swig typemap")
 def test_triangulate_intersection_2d_3d():
 
     # Note: this test will fail if the triangle mesh is aligned
@@ -152,7 +151,6 @@ def test_triangulate_intersection_2d_3d():
 
 @skip_in_parallel
 @pytest.mark.skipif(True, reason="Not implemented in 3D")
-@pytest.mark.skipif(True, reason="Missing swig typemap")
 def test_triangulate_intersection_3d():
 
     # Create two meshes of the unit cube
@@ -203,23 +201,20 @@ def test_triangle_triangle_2d() :
 							             Point(.5, .5))
     assert len(res) == 2
 
-# FIXME: This test needs an update SWIG because
-# IntersectionConstruction.intersection_segment_segment_2d returns
-# std::vector<Point>
 @skip_in_parallel
 def test_segment_segment_2d():
     " These two segments should be parallel and the intersection computed accordingly"
-    p0 = Point(0.176638957524249, 0.509972290857582)
-    p1 = Point(0.217189283468892, 0.550522616802225)
-    q0 = Point(0.333333333333333, 0.666666666666667)
-    q1 = Point(0.211774439087554, 0.545107772420888)
+    p0 = Point(0, 0)
+    p1 = Point(1, 0)
+    q0 = Point(0.4, 0)
+    q1 = Point(1.4, 0)
     intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+    assert len(intersection) == 2
 
 @skip_in_parallel
 def test_triangle_segment_2D_1():
     "The intersection of a specific triangle and a specific segment"
     p0 = Point(1e-17, 0)
-    #p0 = Point(0.1, 0)
     p1 = Point(1, 2)
     p2 = Point(2, 1)
     q0 = Point(1, 0)
