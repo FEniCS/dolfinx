@@ -22,7 +22,7 @@
 # Modified by August Johansson 2016
 #
 # First added:  2016-11-02
-# Last changed: 2016-11-04
+# Last changed: 2016-11-10
 
 from __future__ import print_function
 import pytest
@@ -48,7 +48,7 @@ def test_meshes_on_diagonal():
     "Place meshes on the diagonal inside a background mesh and check the interface area"
 
     # Number of elements
-    Nx = 2
+    Nx = 3
 
     # Background mesh
     mesh_0 = UnitSquareMesh(Nx, Nx)
@@ -83,7 +83,41 @@ def test_meshes_on_diagonal():
     area = compute_area_using_quadrature(multimesh)
     assert abs(area - exact_area) < DOLFIN_EPS_LARGE
 
+@skip_in_parallel
+def test_meshes_with_boundary_edge_overlap_2D():
+    # start with boundary of mesh 1 overlapping edges of mesg 0
+    mesh0 = UnitSquareMesh(4,4)
+    mesh1 = UnitSquareMesh(1,1)
+
+    mesh1_coords = mesh1.coordinates()
+    mesh1_coords *= 0.5
+    mesh1.translate(Point(0.25, 0.25))
+
+    multimesh = MultiMesh()
+    multimesh.add(mesh0)
+    multimesh.add(mesh1)
+    multimesh.build()
+
+    exact_area = 2.0
+
+    area = compute_area_using_quadrature(multimesh)
+    assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
+
+    # next translate mesh 1 such that only the horizontal part of the boundary overlaps
+    mesh1.translate(Point(0.1, 0.0))
+    multimesh.build()
+    area = compute_area_using_quadrature(multimesh)
+    assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
+
+    # next translate mesh 1 such that no boundaries overlap with edges
+    mesh1.translate(Point(0.0, 0.1))
+    multimesh.build()
+    area = compute_area_using_quadrature(multimesh)
+    assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
+
+
 
 # FIXME: Temporary testing
 if __name__ == "__main__":
     test_meshes_on_diagonal()
+    test_meshes_with_boundary_edge_overlap_2D()
