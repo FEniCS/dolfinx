@@ -56,10 +56,12 @@ set(ENV{PKG_CONFIG_PATH} "$ENV{CRAY_PETSC_PREFIX_DIR}/lib/pkgconfig:$ENV{PETSC_D
 pkg_search_module(PETSC craypetsc_real PETSc)
 
 # Extract major, minor, etc from version string
-string(REPLACE "." ";" VERSION_LIST ${PETSC_VERSION})
-list(GET VERSION_LIST 0 PETSC_VERSION_MAJOR)
-list(GET VERSION_LIST 1 PETSC_VERSION_MINOR)
-list(GET VERSION_LIST 2 PETSC_VERSION_SUBMINOR)
+if (PETSC_VERSION)
+  string(REPLACE "." ";" VERSION_LIST ${PETSC_VERSION})
+  list(GET VERSION_LIST 0 PETSC_VERSION_MAJOR)
+  list(GET VERSION_LIST 1 PETSC_VERSION_MINOR)
+  list(GET VERSION_LIST 2 PETSC_VERSION_SUBMINOR)
+endif()
 
 # Loop over PETSc libraries and get absolute paths
 set(_PETSC_LIBRARIES)
@@ -96,11 +98,7 @@ int main()
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);CHKERRQ(ierr);
   ierr = TSCreate(PETSC_COMM_WORLD,&ts);CHKERRQ(ierr);
   ierr = TSSetFromOptions(ts);CHKERRQ(ierr);
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
-  ierr = TSDestroy(ts);CHKERRQ(ierr);
-#else
   ierr = TSDestroy(&ts);CHKERRQ(ierr);
-#endif
   ierr = PetscFinalize();CHKERRQ(ierr);
   return 0;
 }
@@ -205,7 +203,13 @@ endif()
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(PETSc
-  REQUIRED_VARS PETSC_LIBRARY_DIRS PETSC_LIBRARIES PETSC_INCLUDE_DIRS PETSC_TEST_RUNS
-  VERSION_VAR PETSC_VERSION
-  FAIL_MESSAGE "PETSc could not be found. Be sure to set PETSC_DIR.")
+if (PETSC_FOUND)
+  find_package_handle_standard_args(PETSc
+    REQUIRED_VARS PETSC_FOUND PETSC_LIBRARY_DIRS PETSC_LIBRARIES PETSC_INCLUDE_DIRS PETSC_TEST_RUNS
+    VERSION_VAR PETSC_VERSION
+    FAIL_MESSAGE "PETSc could not be found. Be sure to set PETSC_DIR.")
+else()
+  find_package_handle_standard_args(PETSc
+    REQUIRED_VARS PETSC_FOUND
+    FAIL_MESSAGE "PETSc could not be found. Be sure to set PETSC_DIR.")
+endif()
