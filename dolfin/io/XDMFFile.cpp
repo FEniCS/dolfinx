@@ -130,27 +130,8 @@ void XDMFFile::write_experimental(const Function& u)
 
   const Mesh& mesh = *u.function_space()->mesh();
 
-  // Get 'signature' split into units by brackets or commas
-  std::vector<std::string> signature;
-  const std::string dolfin_signature
-    = u.function_space()->element()->signature();
-  boost::split(signature, dolfin_signature,
-               boost::is_any_of("(,)"));
-
-  std::string element_family;
-  unsigned int element_degree = -1;
-  for (unsigned int i = 0; i != signature.size(); ++i)
-    if (signature[i] == "FiniteElement")
-    {
-      element_family = signature[i + 1];
-      boost::erase_all(element_family, "'");
-      std::cout << "Family = " << element_family << std::endl;
-
-      std::cout << "Cell = " << signature[i + 2] << std::endl;
-
-      element_degree = std::stoul(signature[i + 3]);
-      std::cout << "Degree = " << element_degree << std::endl;
-    }
+  std::string element_family = u.function_space()->element()->ufc_element()->family();
+  unsigned int element_degree = u.function_space()->element()->ufc_element()->degree();
 
   const std::map<std::string, std::string> family_abbr = {
     {"Lagrange", "CG"},
