@@ -15,6 +15,23 @@ import subprocess
 import sys
 import os
 
+# We can't compile the swig generated headers on RTD.  Instead, we
+# generate the python part as usual, and then mock the cpp objects
+# according to the advice given on:
+# https://read-the-docs.readthedocs.io/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
+try: 
+    from unittest.mock import MagicMock
+except ImportError:
+    from mock import Mock as MagicMock
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+            return Mock()
+
+MOCK_MODULES = ["_common", "_la", "_function", "_io", "_mesh", "_fem"]
+sys.modules.update(('dolfin.cpp.' + mod_name, Mock()) for mod_name in MOCK_MODULES)
+
 # Run doxygen on C++ sources, generates XML output for breathe to
 # convert into Sphinx format.
 current_dir = os.getcwd()
