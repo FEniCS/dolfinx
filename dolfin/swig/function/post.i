@@ -179,7 +179,7 @@ def copy(self, deepcopy=False):
              The MultiMeshFunction
 
     """
-    from dolfin import MultiMeshFunction
+    from dolfin.functions.multimeshfunction import MultiMeshFunction
     if deepcopy:
         return MultiMeshFunction(self.function_space(), self.vector().copy())
     return MultiMeshFunction(self.function_space(), self.vector())
