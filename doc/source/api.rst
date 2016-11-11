@@ -4,10 +4,7 @@
 API documentation
 =================
 
-.. doxygenclass:: dolfin::Array
-   :members:
+.. doxygennamespace:: dolfin
 
-.. doxygenclass:: dolfin::LocalAssembler
-   :members:
 
 *Under development*
