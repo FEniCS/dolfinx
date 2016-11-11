@@ -45,7 +45,7 @@ message(STATUS "Checking for package 'SLEPc'")
 
 # Find SLEPc pkg-config file
 find_package(PkgConfig REQUIRED)
-set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 pkg_search_module(SLEPC crayslepc_real SLEPc)
 
 # Loop over SLEPc libraries and get absolute paths
@@ -56,10 +56,12 @@ foreach (lib ${SLEPC_LIBRARIES})
 endforeach()
 
 # Extract major, minor, etc from version string
-string(REPLACE "." ";" VERSION_LIST ${SLEPC_VERSION})
-list(GET VERSION_LIST 0 SLEPC_VERSION_MAJOR)
-list(GET VERSION_LIST 1 SLEPC_VERSION_MINOR)
-list(GET VERSION_LIST 2 SLEPC_VERSION_SUBMINOR)
+if (SLPEC_VERSION)
+  string(REPLACE "." ";" VERSION_LIST ${SLEPC_VERSION})
+  list(GET VERSION_LIST 0 SLEPC_VERSION_MAJOR)
+  list(GET VERSION_LIST 1 SLEPC_VERSION_MINOR)
+  list(GET VERSION_LIST 2 SLEPC_VERSION_SUBMINOR)
+endif()
 
 # Set libaries with absolute paths to SLEPC_LIBRARIES
 set(SLEPC_LIBRARIES ${_SLEPC_LIBRARIES})
@@ -89,11 +91,7 @@ int main()
   EPS eps;
   ierr = EPSCreate(PETSC_COMM_SELF, &eps); CHKERRQ(ierr);
   //ierr = EPSSetFromOptions(eps); CHKERRQ(ierr);
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
-  ierr = EPSDestroy(eps); CHKERRQ(ierr);
-#else
   ierr = EPSDestroy(&eps); CHKERRQ(ierr);
-#endif
   ierr = SlepcFinalize(); CHKERRQ(ierr);
   return 0;
 }
@@ -188,7 +186,13 @@ endif()
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(SLEPc
-  REQUIRED_VARS SLEPC_LIBRARY_DIRS SLEPC_LIBRARIES SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS
-  VERSION_VAR SLEPC_VERSION
-  FAIL_MESSAGE "SLEPc could not be found. Be sure to set SLEPC_DIR.")
+if (SLEPC_FOUND)
+  find_package_handle_standard_args(SLEPc
+    REQUIRED_VARS SLEPC_LIBRARY_DIRS SLEPC_LIBRARIES SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS
+    VERSION_VAR SLEPC_VERSION
+    FAIL_MESSAGE "SLEPc could not be found. Be sure to set SLEPC_DIR.")
+else()
+  find_package_handle_standard_args(SLEPc
+    REQUIRED_VARS SLEPC_FOUND
+    FAIL_MESSAGE "SLEPc could not be found. Be sure to set SLEPC_DIR.")
+endif()
