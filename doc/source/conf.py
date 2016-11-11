@@ -15,6 +15,8 @@ import subprocess
 import sys
 import os
 
+# TODO: Run doxy2swig to make docstrings.i file.
+
 # We can't compile the swig generated headers on RTD.  Instead, we
 # generate the python part as usual, and then mock the cpp objects
 # according to the advice given on:
@@ -31,6 +33,12 @@ class Mock(MagicMock):
 
 MOCK_MODULES = ["_common", "_la", "_function", "_io", "_mesh", "_fem"]
 sys.modules.update(('dolfin.cpp.' + mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+# TODO: Copy site-packages/dolfin to tmp-dolfin/
+# Run cmake/scripts/generate-generate-swig-interface.py with output to tmp-swig/
+# Run swig in every directory tmp-swig/modules/*
+# Copy generated tmp-swig/modules/*/*.py to tmp-dolfin/cpp/
+# Now it should be possible to import dolfin and let Sphinx do its magic on the docstrings. 
 
 # Run doxygen on C++ sources, generates XML output for breathe to
 # convert into Sphinx format.
