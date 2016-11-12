@@ -24,7 +24,7 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
   endif()
 
   if (@PETSC_FOUND@)
-    list(APPEND CMAKE_PREFIX_PATH "/Users/garth/code/fenics/dev/dolfin.d/dolfin/local.master/share/dolfin/cmake")
+    list(APPEND CMAKE_MODULE_PATH "/Users/garth/code/fenics/dev/dolfin.d/dolfin/local.master/share/dolfin/cmake")
     find_package(PkgConfig REQUIRED)
     set(ENV{PKG_CONFIG_PATH} "$ENV{CRAY_PETSC_PREFIX_DIR}/lib/pkgconfig:$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfi\
 g:$ENV{PKG_CONFIG_PATH}")
