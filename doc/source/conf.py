@@ -19,10 +19,8 @@ import os
 # Create demo CMakeLists.txt files
 current_dir = os.getcwd()
 os.chdir("../../")
-os.system('./cmake/scripts/generate-cmakefiles')
+os.system('python ./cmake/scripts/generate-cmakefiles.py')
 os.chdir(current_dir)
-
-#../../cmake/scripts/generate-cmakefiles
 
 # Copy demo files into doc directory
 
@@ -52,13 +50,15 @@ for subdir in subdirs:
 
         # Check for .py.rst files
         #extensions = ['.py.rst', '.cpp.py']
-        rstfiles = [f for f in files if len(f) > 7 and (f[-7:] == ".py.rst" or f[-8:] == ".cpp.rst")]
+        rstfiles = [f for f in files if len(f) > 7 and (f[-7:] == ".py.rst" or
+                                                        f[-8:] == ".cpp.rst" or
+                                                        f[-8:] == ".ufl.rst")]
         #print(files)
         if len(rstfiles) == 0:
             continue
 
         # Check if we have Python or C++ code
-        cpp_files = [f for f in files if len(f) > 8 and f[-8:] == ".cpp.rst"]
+        cpp_files = [f for f in files if len(f) > 8 and (f[-8:] == ".cpp.rst" or f[-8:] == ".ufl.rst")]
         py_files = [f for f in files if len(f) > 7 and f[-7:] == ".py.rst"]
 
         if len(cpp_files) > 0 and len(py_files) > 0:
@@ -444,3 +444,51 @@ epub_exclude_files = ['search.html']
 
 # If false, no index is generated.
 #epub_use_index = True
+
+
+# Hack to support avoid renaming download files with same names coming
+# from different directories (CMakeLists.txt, Makefile etc)
+
+# From Tormod Landet - see
+# https://github.com/sphinx-doc/sphinx/issues/2720)
+from sphinx.util import FilenameUniqDict
+from os import path
+def add_file(self, docname, newfile):
+    if newfile in self:
+        self[newfile][0].add(docname)
+        return self[newfile][1]
+    uniquename = path.basename(newfile)
+    i = 0
+    while uniquename in self._existing:
+        i += 1
+        uniquename = path.join('subdir%s' % i, path.basename(newfile))
+    self[newfile] = (set([docname]), uniquename)
+    self._existing.add(uniquename)
+    return uniquename
+FilenameUniqDict.add_file = add_file
+
+# Hack to support sub-directories within the download directory
+from sphinx.builders.html import StandaloneHTMLBuilder, ensuredir, copyfile
+from docutils.utils import relative_path
+from sphinx.util.console import brown
+def copy_download_files(self):
+    def to_relpath(f):
+        return relative_path(self.srcdir, f)
+    # copy downloadable files
+    if self.env.dlfiles:
+        ensuredir(path.join(self.outdir, '_downloads'))
+        for src in self.status_iterator(self.env.dlfiles,  # self.app.status_iterator in master ...
+                                        'copying downloadable files... ',
+                                        brown, len(self.env.dlfiles),
+                                        stringify_func=to_relpath):
+            dest = self.env.dlfiles[src][1]
+            subdirs, filename = os.path.split(dest)
+            if subdirs:
+                ensuredir(path.join(self.outdir, '_downloads', subdirs))
+            try:
+                copyfile(path.join(self.srcdir, src),
+                         path.join(self.outdir, '_downloads', dest))
+            except Exception as err:
+                self.warn('cannot copy downloadable file %r: %s' %
+                          (path.join(self.srcdir, src), err))
+StandaloneHTMLBuilder.copy_download_files = copy_download_files

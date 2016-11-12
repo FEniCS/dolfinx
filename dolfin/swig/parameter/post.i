@@ -202,7 +202,8 @@ def __setitem__(self, key, value):
         return
     if key not in self._get_parameter_keys():
         raise KeyError("'%s' is not a parameter"%key)
-    if not isinstance(value,(int,str,float,bool)) and (value is not None):
+    from six import string_types
+    if not isinstance(value, string_types + (int,float,bool)) and (value is not None):
         raise TypeError("can only set 'int', 'bool', 'float' and 'str' for parameter %s" %key)
     par = self._get_parameter(key)
     if isinstance(value,bool):
@@ -326,25 +327,25 @@ def __new_Parameter_init__(self,*args,**kwargs):
     Parameters(name, dim=(3, 0, 4), foo=("Foo", ["Foo", "Bar"])
        create parameter set with given parameters and ranges
     """
+    from six import string_types
+    from numpy import isscalar
 
     if len(args) == 0:
         old_init(self, "parameters")
-    elif len(args) == 1 and isinstance(args[0], (str,type(self))):
+    elif len(args) == 1 and isinstance(args[0], string_types + (type(self),)):
         old_init(self, args[0])
     else:
         raise TypeError("expected a single optional argument of type 'str' or ''"%type(self).__name__)
     if len(kwargs) == 0:
         return
 
-    from numpy import isscalar
-    from six import iteritems
-    for key, value in iteritems(kwargs):
+    for key, value in kwargs.items():
         if isinstance(value,type(self)):
             self.add(value)
         elif isinstance(value,tuple):
             if isscalar(value[0]) and len(value) == 3:
                 self.add(key, *value)
-            elif isinstance(value[0], str) and len(value) == 2:
+            elif isinstance(value[0], string_types) and len(value) == 2:
                 if not isinstance(value[1], list):
                     raise TypeError("expected a list as second item of tuple, when first is a 'str'")
                 self.add(key, *value)

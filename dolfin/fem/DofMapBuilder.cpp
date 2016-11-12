@@ -404,7 +404,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
   const Mesh& mesh,
   const std::map<unsigned int,
   std::pair<unsigned int, unsigned int>>& slave_to_master_vertices,
-  std::vector<std::size_t>& modified_vertex_indices_global)
+  std::vector<std::int64_t>& modified_vertex_indices_global)
 {
   // MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -445,8 +445,8 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
   // Compute modified global vertex indices
   std::size_t new_index = 0;
   modified_vertex_indices_global
-    = std::vector<std::size_t>(mesh.num_vertices(),
-                               std::numeric_limits<std::size_t>::max());
+    = std::vector<std::int64_t>(mesh.num_vertices(), -1);
+
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     const std::size_t local_index = vertex->index();
@@ -1204,7 +1204,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   }
 
   // Get constrained mesh entities
-  std::vector<std::vector<std::size_t>> global_entity_indices;
+  std::vector<std::vector<std::int64_t>> global_entity_indices;
   compute_constrained_mesh_indices(global_entity_indices,
                                    num_mesh_entities_global,
                                    required_mesh_entities,
@@ -1325,7 +1325,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_constrained_mesh_indices(
-  std::vector<std::vector<std::size_t>>& global_entity_indices,
+  std::vector<std::vector<std::int64_t>>& global_entity_indices,
   std::vector<std::size_t>& num_mesh_entities_global,
   const std::vector<bool>& needs_mesh_entities,
   const Mesh& mesh,
@@ -1723,7 +1723,7 @@ void DofMapBuilder::get_cell_entities_global(const Cell& cell,
     {
       if (topology.have_global_indices(d)) // TODO: Check if this ever will be false in here
       {
-        const std::vector<std::size_t>& global_indices = topology.global_indices(d);
+        const auto& global_indices = topology.global_indices(d);
         for (std::size_t i = 0; i < cell.num_entities(d); ++i)
           entity_indices[d][i] = global_indices[cell.entities(d)[i]];
       }
@@ -1747,7 +1747,7 @@ void DofMapBuilder::get_cell_entities_global(const Cell& cell,
 //-----------------------------------------------------------------------------
 void DofMapBuilder::get_cell_entities_global_constrained(const Cell& cell,
   std::vector<std::vector<std::size_t>>& entity_indices,
-  const std::vector<std::vector<std::size_t>>& global_entity_indices,
+  const std::vector<std::vector<std::int64_t>>& global_entity_indices,
   const std::vector<bool>& needs_mesh_entities)
 {
   const std::size_t D = cell.mesh().topology().dim();
@@ -1763,7 +1763,7 @@ void DofMapBuilder::get_cell_entities_global_constrained(const Cell& cell,
       }
       if (!global_entity_indices[d].empty()) // TODO: Can this be false? If so the entity_indices array will contain garbage
       {
-        const std::vector<std::size_t>& global_indices = global_entity_indices[d];
+        const auto& global_indices = global_entity_indices[d];
         for (std::size_t i = 0; i < cell.num_entities(d); ++i)
           entity_indices[d][i] = global_indices[cell.entities(d)[i]];
       }

@@ -285,6 +285,9 @@ void DirichletBC::get_boundary_values(Map& boundary_values) const
 //-----------------------------------------------------------------------------
 void DirichletBC::zero(GenericMatrix& A) const
 {
+  // Check arguments
+  check_arguments(&A, NULL, NULL);
+
   // A map to hold the mapping from boundary dofs to boundary values
   Map boundary_values;
 
@@ -312,6 +315,10 @@ void DirichletBC::zero_columns(GenericMatrix& A,
                                GenericVector& b,
                                double diag_val) const
 {
+  // Check arguments
+  check_arguments(&A, &b, NULL);
+
+  // A map to hold the mapping from boundary dofs to boundary values
   Map bv_map;
   get_boundary_values(bv_map);
 
@@ -1137,22 +1144,23 @@ void DirichletBC::check_arguments(GenericMatrix* A, GenericVector* b,
   dolfin_assert(_function_space);
 
   // Check matrix and vector dimensions
-  if (A && x && A->size(0) != x->size())
+  if (A && x && A->size(1) != x->size())
   {
     dolfin_error("BoundaryCondition.cpp",
                  "apply boundary condition",
-                 "Matrix dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions",
-                 A->size(0), x->size());
+                 "Matrix dimension (%d columns) does not match x vector dimension (%d) for application of boundary conditions",
+                 A->size(1), x->size());
   }
 
   if (A && b && A->size(0) != b->size())
   {
     dolfin_error("BoundaryCondition.cpp",
                  "apply boundary condition",
-                 "Matrix dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions",
+                 "Matrix dimension (%d rows) does not match b vector dimension (%d) for application of boundary conditions",
                  A->size(0), b->size());
   }
 
+  // This extra assumption should be needed only when x != NULL
   if (x && b && x->size() != b->size())
   {
     dolfin_error("BoundaryCondition.cpp",
@@ -1161,7 +1169,9 @@ void DirichletBC::check_arguments(GenericMatrix* A, GenericVector* b,
                  x->size(), b->size());
   }
 
-  // Check dimension of function space
+  // Check dimension of function space is not "too big"
+  // NOTE: Keeping these primitive inequality tests because detailed range
+  //       checks below may be turned off; needed for MultiMesh stuff
   if (A && A->size(0) < _function_space->dim())
   {
     dolfin_error("BoundaryCondition.cpp",
@@ -1186,7 +1196,39 @@ void DirichletBC::check_arguments(GenericMatrix* A, GenericVector* b,
                  _function_space->dim(), b->size());
   }
 
-  // FIXME: Check case A.size() > _function_space->dim() for subspaces
+  // Check local range of tensors against function space
+  if (parameters["check_dofmap_range"])
+  {
+    std::pair<std::int64_t, std::int64_t> dofmap_range =
+      _function_space->dofmap()->ownership_range();
+
+    if (A && A->local_range(0) != dofmap_range)
+    {
+      dolfin_error("BoundaryCondition.cpp",
+                   "apply boundary condition",
+                   "Dofmap ownership range (%d,%d) does not match matrix local range (%d,%d)",
+                   dofmap_range.first, dofmap_range.second,
+                   A->local_range(0).first, A->local_range(0).second);
+    }
+
+    if (x && x->local_range() != dofmap_range)
+    {
+      dolfin_error("BoundaryCondition.cpp",
+                   "apply boundary condition",
+                   "Dofmap ownership range (%d,%d) does not match x vector local range (%d,%d)",
+                   dofmap_range.first, dofmap_range.second,
+                   x->local_range().first, x->local_range().second);
+    }
+
+    if (b && b->local_range() != dofmap_range)
+    {
+      dolfin_error("BoundaryCondition.cpp",
+                   "apply boundary condition",
+                   "Dofmap ownership range (%d,%d) does not match b vector local range (%d,%d)",
+                   dofmap_range.first, dofmap_range.second,
+                   b->local_range().first, b->local_range().second);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 DirichletBC::LocalData::LocalData(const FunctionSpace& V)

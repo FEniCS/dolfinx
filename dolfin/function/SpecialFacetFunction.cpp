@@ -18,12 +18,21 @@
 // First added:  2010-10-13
 // Last changed: 2011-01-04
 
+#include <cstring>
+
 #include <dolfin/common/Array.h>
 #include <dolfin/function/Function.h>
 #include "SpecialFacetFunction.h"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e,
+                                           std::vector<std::size_t> value_shape)
+  : Expression(value_shape), _f_e(f_e)
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e, std::size_t dim)
   : Expression(dim), _f_e(f_e)
@@ -46,7 +55,7 @@ Function& SpecialFacetFunction::operator[] (std::size_t i) const
 void SpecialFacetFunction::eval(Array<double>& values, const Array<double>& x,
                                 const ufc::cell& cell) const
 {
-  values[0] = 0.0;
+  memset(values.data(), 0, values.size()*sizeof(double));
   if (cell.local_facet >= 0)
     _f_e[cell.local_facet].eval(values, x, cell);
 }

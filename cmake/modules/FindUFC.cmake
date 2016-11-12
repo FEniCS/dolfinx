@@ -39,7 +39,7 @@
 #=============================================================================
 
 execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} -c "import ffc, sys; sys.stdout.write(ffc.get_ufc_include())"
+  COMMAND ${PYTHON_EXECUTABLE} -c "import ffc, sys; sys.stdout.write(ffc.backends.ufc.get_include_path())"
   OUTPUT_VARIABLE UFC_INCLUDE_DIR
   )
 

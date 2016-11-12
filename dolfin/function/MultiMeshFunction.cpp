@@ -30,11 +30,30 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+MultiMeshFunction::MultiMeshFunction() : Variable("u", "a function")
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 MultiMeshFunction::MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V)
   : _function_space(V)
 {
   // Initialize vector
   init_vector();
+}
+//-----------------------------------------------------------------------------
+MultiMeshFunction::MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V,
+                   std::shared_ptr<GenericVector> x)
+  : _function_space(V), _vector(x)
+{
+  // We do not check for a subspace since this constructor is used for
+  // creating subfunctions
+
+  // Assertion uses '<=' to deal with sub-functions
+  dolfin_assert(x);
+  dolfin_assert(V);
+  dolfin_assert(V->dofmap());
+  dolfin_assert(V->dofmap()->global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
 MultiMeshFunction::~MultiMeshFunction()

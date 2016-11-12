@@ -15,6 +15,8 @@
 #
 # ::
 
+from __future__ import print_function
+
 """pylit: bidirectional text <-> code converter
 
 Convert between a *text document* with embedded code
@@ -134,7 +136,7 @@ __docformat__ = 'restructuredtext'
 #
 # ::
 
-import __builtin__, os, sys
+import os, sys
 import re, optparse
 
 
@@ -194,7 +196,8 @@ defaults.languages  = DefaultDict("python", # fallback language
                                    ".sh":  "shell",
                                    ".sl":  "slang",
                                    ".sty": "latex",
-                                   ".tex": "latex"
+                                   ".tex": "latex",
+                                   ".ufl": "python"
                                   })
 
 # Will be overridden by the ``--language`` command line option.
@@ -353,7 +356,7 @@ defaults.codeindent =  2
 #
 # What to do if the outfile already exists? (ignored if `outfile` == '-')::
 
-defaults.overwrite = 'update'
+defaults.overwrite = 'yes'
 
 # Recognised values:
 #
@@ -622,7 +625,7 @@ class TextCodeConverter(object):
         try:
             return getattr(defaults, filter_set)[key]
         except (AttributeError, KeyError):
-            # print "there is no %r filter in %r"%(key, filter_set)
+            # print("there is no %r filter in %r"%(key, filter_set))
             pass
         return identity_filter
 
@@ -687,7 +690,7 @@ class Text2Code(TextCodeConverter):
 # the  `header_string` indicating a leading code block::
 
         if self.state == "":
-            # print "set state for %r"%block
+            # print("set state for %r"%block)
             if block[0].startswith(self.header_string):
                 self.state = "header"
             else:
@@ -707,7 +710,7 @@ class Text2Code(TextCodeConverter):
         elif self.state in ["code_block", "header"]:
             indents = [self.get_indent(line) for line in block
                        if line.rstrip()]
-            # print "set_state:", indents, self._textindent
+            # print("set_state:", indents, self._textindent)
             if indents and min(indents) <= self._textindent:
                 self.state = 'documentation'
             else:
@@ -842,8 +845,8 @@ class Text2Code(TextCodeConverter):
 
         for line in block:
             if line.lstrip() and self.get_indent(line) < self._codeindent:
-                raise ValueError, "code block contains line less indented " \
-                      "than %d spaces \n%r"%(self._codeindent, block)
+                raise ValueError("code block contains line less indented "
+                      "than %d spaces \n%r" % (self._codeindent, block))
             yield line.replace(" "*self._codeindent, "", 1)
 
 
@@ -1250,7 +1253,7 @@ class OptionValues(optparse.Values):
         have a corresponding attribute in `self`,
         """
         for key in keyw:
-            if not self.__dict__.has_key(key):
+            if not self.__dict__.__contains__(key):
                 setattr(self, key, keyw[key])
 
 # .. _OptionValues.__getattr__:
@@ -1299,7 +1302,7 @@ class PylitOptions(object):
         p.add_option("-t", "--txt2code", action="store_true",
                      help="convert text source to code source")
         p.add_option("--language",
-                     choices = defaults.languages.values(),
+                     choices = list(defaults.languages.values()),
                      help="use LANGUAGE native comment style")
         p.add_option("--comment-string", dest="comment_string",
                      help="documentation block marker in code source "
@@ -1479,8 +1482,8 @@ def open_streams(infile = '-', outfile = '-', overwrite='update', **keyw):
 
     open_streams(infile, outfile) -> (in_stream, out_stream)
 
-    in_stream   --  file(infile) or sys.stdin
-    out_stream  --  file(outfile) or sys.stdout
+    in_stream   --  open(infile) or sys.stdin
+    out_stream  --  open(outfile) or sys.stdout
     overwrite   --  'yes': overwrite eventually existing `outfile`,
                     'update': fail if the `outfile` is newer than `infile`,
                     'no': fail if `outfile` exists.
@@ -1489,19 +1492,20 @@ def open_streams(infile = '-', outfile = '-', overwrite='update', **keyw):
     """
     if not infile:
         strerror = "Missing input file name ('-' for stdin; -h for help)"
-        raise IOError, (2, strerror, infile)
+        raise IOError((2, strerror, infile))
     if infile == '-':
         in_stream = sys.stdin
     else:
-        in_stream = file(infile, 'r')
+        in_stream = open(infile, 'r')
+
     if outfile == '-':
         out_stream = sys.stdout
     elif overwrite == 'no' and os.path.exists(outfile):
-        raise IOError, (1, "Output file exists!", outfile)
+        raise IOError((1, "Output file exists!", outfile))
     elif overwrite == 'update' and is_newer(outfile, infile):
-        raise IOError, (1, "Output file is newer than input file!", outfile)
+        raise IOError((1, "Output file is newer than input file!", outfile))
     else:
-        out_stream = file(outfile, 'w')
+        out_stream = open(outfile, 'w')
     return (in_stream, out_stream)
 
 # is_newer
@@ -1529,7 +1533,7 @@ def is_newer(path1, path2):
         mtime2 = os.path.getmtime(path2)
     except OSError:
         mtime2 = -1
-    # print "mtime1", mtime1, path1, "\n", "mtime2", mtime2, path2
+    # print("mtime1", mtime1, path1, "\n", "mtime2", mtime2, path2)
 
     if mtime1 == mtime2:
         return None
@@ -1599,7 +1603,7 @@ def run_doctest(infile="-", txt2code=True,
     runner.summarize
     # give feedback also if no failures occurred
     if not runner.failures:
-        print "%d failures in %d tests"%(runner.failures, runner.tries)
+        print("%d failures in %d tests"%(runner.failures, runner.tries))
     return runner.failures, runner.tries
 
 
@@ -1617,7 +1621,7 @@ def diff(infile='-', outfile='-', txt2code=True, **keyw):
 
     import difflib
 
-    instream = file(infile)
+    instream = open(infile)
     # for diffing, we need a copy of the data as list::
     data = instream.readlines()
     # convert
@@ -1625,7 +1629,7 @@ def diff(infile='-', outfile='-', txt2code=True, **keyw):
     new = converter()
 
     if outfile != '-' and os.path.exists(outfile):
-        outstream = file(outfile)
+        outstream = open(outfile)
         old = outstream.readlines()
         oldname = outfile
         newname = "<conversion of %s>"%infile
@@ -1639,18 +1643,18 @@ def diff(infile='-', outfile='-', txt2code=True, **keyw):
 
     # find and print the differences
     is_different = False
-    # print type(old), old
-    # print type(new), new
+    # print(type(old), old)
+    # print(type(new), new)
     delta = difflib.unified_diff(old, new,
     # delta = difflib.unified_diff(["heute\n", "schon\n"], ["heute\n", "noch\n"],
                                       fromfile=oldname, tofile=newname)
     for line in delta:
         is_different = True
-        print line,
+        print(line, end="")
     if not is_different:
-        print oldname
-        print newname
-        print "no differences found"
+        print(oldname)
+        print(newname)
+        print("no differences found")
     return is_different
 
 
@@ -1665,11 +1669,11 @@ def execute(infile="-", txt2code=True, **keyw):
     """Execute the input file. Convert first, if it is a text source.
     """
 
-    data = file(infile)
+    data = open(infile)
     if txt2code:
         data = str(Text2Code(data, **keyw))
-    # print "executing " + options.infile
-    exec data
+    # print("executing " + options.infile)
+    exec(data)
 
 
 # main
@@ -1700,7 +1704,7 @@ def main(args=sys.argv[1:], **defaults):
 # Parse and complete the options::
 
     options = PylitOptions()(args, **defaults)
-    # print "infile", repr(options.infile)
+    # print("infile", repr(options.infile))
 
 # Special actions with early return::
 
@@ -1717,8 +1721,8 @@ def main(args=sys.argv[1:], **defaults):
 
     try:
         (data, out_stream) = open_streams(**options.as_dict())
-    except IOError, ex:
-        print "IOError: %s %s" % (ex.filename, ex.strerror)
+    except IOError as ex:
+        print("IOError: %s %s" % (ex.filename, ex.strerror))
         sys.exit(ex.errno)
 
 # Get a converter instance::
@@ -1730,7 +1734,7 @@ def main(args=sys.argv[1:], **defaults):
     out_stream.write(str(converter))
 
     if out_stream is not sys.stdout:
-        print "extract written to", out_stream.name
+        print("extract written to", out_stream.name)
         out_stream.close()
 
 # If input and output are from files, set the modification time (`mtime`) of
@@ -1744,8 +1748,8 @@ def main(args=sys.argv[1:], **defaults):
         except OSError:
             pass
 
-    ## print "mtime", os.path.getmtime(options.infile),  options.infile
-    ## print "mtime", os.path.getmtime(options.outfile), options.outfile
+    ## print("mtime", os.path.getmtime(options.infile),  options.infile)
+    ## print("mtime", os.path.getmtime(options.outfile), options.outfile)
 
 
 # .. [#] Make sure the corresponding file object (here `out_stream`) is

@@ -103,6 +103,7 @@
 %shared_ptr(dolfin::MeshCoordinates)
 %shared_ptr(dolfin::MultiMeshFunctionSpace)
 %shared_ptr(dolfin::MultiMeshSubSpace)
+%shared_ptr(dolfin::MultiMeshFunction)
 
 // geometry
 %shared_ptr(dolfin::BoundingBoxTree)

@@ -8,6 +8,11 @@
 if (NOT DOLFIN_USE_FILE_INCLUDED)
   set(DOLFIN_USE_FILE_INCLUDED 1)
 
+  # Require and use C++11
+  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+
   # Need to get VTK config because VTK uses advanced VTK features
   # which mean it's not enough to just link to the DOLFIN target. See
   # http://www.vtk.org/pipermail/vtk-developers/2013-October/014402.html
@@ -16,6 +21,23 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
     if (VTK_FOUND)
       include(${VTK_USE_FILE})
     endif()
+  endif()
+
+  # Import Boost targets, if required
+  set(DOLFIN_BOOST_COMPONENTS_PUBLIC @DOLFIN_BOOST_COMPONENTS_PUBLIC@)
+  if (DOLFIN_BOOST_COMPONENTS_PUBLIC)
+    # Check for Boost
+    set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
+    if (BOOST_ROOT)
+      set(Boost_NO_SYSTEM_PATHS on)
+    endif()
+
+    # Prevent FindBoost.cmake from looking for system Boost{foo}.cmake
+    # files
+    set(Boost_NO_BOOST_CMAKE true)
+
+    set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
+    find_package(Boost COMPONENTS @DOLFIN_BOOST_COMPONENTS_PUBLIC@ REQUIRED QUIET)
   endif()
 
   # Add compiler definitions needed to use DOLFIN

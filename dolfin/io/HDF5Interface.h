@@ -148,6 +148,21 @@ namespace dolfin
     list_attributes(const hid_t hdf5_file_handle,
                     const std::string dataset_path);
 
+    /// Set MPI atomicity. See
+    /// https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-SetMpiAtomicity
+    /// and
+    /// https://www.open-mpi.org/doc/v2.0/man3/MPI_File_set_atomicity.3.php
+    /// Writes must be followed by an MPI_Barrier on the communicator before
+    /// any subsequent reads are guaranteed to return the same data.
+    static void set_mpi_atomicity(const hid_t hdf5_file_handle,
+                                  const bool atomic);
+
+    /// Get MPI atomicity. See
+    /// https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-GetMpiAtomicity
+    /// and
+    /// https://www.open-mpi.org/doc/v2.0/man3/MPI_File_get_atomicity.3.php
+    static bool get_mpi_atomicity(const hid_t hdf5_file_handle);
+
   private:
 
     static herr_t attribute_iteration_function(hid_t loc_id,

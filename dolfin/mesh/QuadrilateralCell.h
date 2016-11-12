@@ -74,7 +74,7 @@ namespace dolfin
 
     /// Order entities locally
     void order(Cell& cell,
-               const std::vector<std::size_t>& local_to_global_vertex_indices) const;
+               const std::vector<std::int64_t>& local_to_global_vertex_indices) const;
 
     /// Check whether given point collides with cell
     bool collides(const Cell& cell, const Point& point) const;
