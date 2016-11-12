@@ -23,6 +23,26 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
     endif()
   endif()
 
+  if (@PETSC_FOUND@)
+    list(APPEND CMAKE_PREFIX_PATH "/Users/garth/code/fenics/dev/dolfin.d/dolfin/local.master/share/dolfin/cmake")
+    find_package(PkgConfig REQUIRED)
+    set(ENV{PKG_CONFIG_PATH} "$ENV{CRAY_PETSC_PREFIX_DIR}/lib/pkgconfig:$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfi\
+g:$ENV{PKG_CONFIG_PATH}")
+    pkg_search_module(PETSC REQUIRED IMPORTED_TARGET crayslepc_real PETSc)
+
+    get_target_property(LINK_LIBS PkgConfig::PETSC INTERFACE_INCLUDE_DIRECTORIES)
+    message("*****: ${LINK_LIBS}")
+    get_target_property(LINK_LIBS PkgConfig::PETSC INTERFACE_LINK_LIBRARIES)
+    message("*****: ${LINK_LIBS}")
+
+  endif()
+
+  if (@SLEPC_FOUND@)
+    find_package(PkgConfig REQUIRED)
+    set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+    pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET crayslepc_real SLEPc)
+  endif()
+
   # Import Boost targets, if required
   set(DOLFIN_BOOST_COMPONENTS_PUBLIC @DOLFIN_BOOST_COMPONENTS_PUBLIC@)
   if (DOLFIN_BOOST_COMPONENTS_PUBLIC)
