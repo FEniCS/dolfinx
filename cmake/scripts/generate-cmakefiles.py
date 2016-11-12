@@ -145,6 +145,9 @@ def generate_cmake_files(subdirectory, generated_files):
             if not cpp_files:
                 continue
 
+            # Ensure deterministic output across py2/py3
+            cpp_files = sorted(cpp_files)
+
             # Name of demo and cpp source files
             if not main_file_name.isdisjoint(cpp_files):
 

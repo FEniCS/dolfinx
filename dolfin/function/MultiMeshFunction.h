@@ -23,6 +23,7 @@
 
 #include <memory>
 #include <boost/ptr_container/ptr_map.hpp>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -31,14 +32,18 @@ namespace dolfin
   class MultiMeshFunctionSpace;
   class GenericVector;
   class Function;
+  class MultiMeshFunction;
 
   /// This class represents a function on a cut and composite finite
   /// element function space (MultiMesh) defined on one or more possibly
   /// intersecting meshes.
 
-  class MultiMeshFunction
+  class MultiMeshFunction : public Variable
   {
   public:
+
+    /// Constructor
+    MultiMeshFunction();
 
     /// Create MultiMesh function on given MultiMesh function space
     ///
@@ -46,6 +51,19 @@ namespace dolfin
     ///     V (_MultiMeshFunctionSpace_)
     ///         The MultiMesh function space.
     explicit MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V);
+
+    /// Create MultiMesh function on given MultiMesh function space with a given vector
+    /// (shared data)
+    ///
+    /// *Warning: This constructor is intended for internal library use only*
+    ///
+    /// *Arguments*
+    ///     V (_MultiMeshFunctionSpace_)
+    ///         The multimesh function space.
+    ///     x (_GenericVector_)
+    ///         The vector.
+    MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V,
+		      std::shared_ptr<GenericVector> x);
 
     /// Destructor
     virtual ~MultiMeshFunction();
@@ -70,6 +88,16 @@ namespace dolfin
     ///     _GenericVector_
     ///         The vector of expansion coefficients (const).
     std::shared_ptr<const GenericVector> vector() const;
+
+    /// Return shared pointer to multi mesh function space
+    ///
+    /// *Returns*
+    ///     _MultiMeshFunctionSpace_
+    ///         Return the shared pointer.
+    virtual std::shared_ptr<const MultiMeshFunctionSpace> function_space() const
+    {
+      return _function_space;
+    }
 
   private:
 
