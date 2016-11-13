@@ -118,13 +118,12 @@ endif()
 # PETSc
 if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC")
-
-  #list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${PETSC_INCLUDE_DIRS})
-  #target_link_libraries(dolfin PUBLIC ${PETSC_LIBRARIES})
-
-  #target_include_directories(dolfin SYSTEM PUBLIC PETSC::petsc)
   target_link_libraries(dolfin PUBLIC PETSC::petsc)
 
+  get_target_property(SLINK_LIBS PETSC::petsc_static INTERFACE_LINK_LIBRARIES)
+  message("S(1) *****: ${SLINK_LIBS}")
+
+  target_link_libraries(dolfin PRIVATE PETSC::petsc_static)
   #if (PETSC_STATIC_LIBRARIES)
   #  target_link_libraries(dolfin PRIVATE ${PETSC_STATIC_LIBRARIES})
   #endif()
@@ -333,7 +332,6 @@ install(
   FILES
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindPETSc.cmake
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
-  ${CMAKE_SOURCE_DIR}/cmake/modules/FindPkgConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
   ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake

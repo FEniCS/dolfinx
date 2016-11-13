@@ -55,10 +55,19 @@ find_package(PkgConfig REQUIRED)
 set(ENV{PKG_CONFIG_PATH} "$ENV{CRAY_PETSC_PREFIX_DIR}/lib/pkgconfig:$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 pkg_search_module(PETSC craypetsc_real PETSc IMPORTED_TARGET)
 
+# Extract major, minor, etc from version string
+if (PETSC_VERSION)
+  string(REPLACE "." ";" VERSION_LIST ${PETSC_VERSION})
+  list(GET VERSION_LIST 0 PETSC_VERSION_MAJOR)
+  list(GET VERSION_LIST 1 PETSC_VERSION_MINOR)
+  list(GET VERSION_LIST 2 PETSC_VERSION_SUBMINOR)
+endif()
+
 # Configure PETSc IMPORT (this involves creating an 'imported' target
 # and attaching 'properties')
 if (PETSC_FOUND AND NOT TARGET PETSC::petsc)
   add_library(PETSC::petsc INTERFACE IMPORTED)
+  add_library(PETSC::petsc_static INTERFACE IMPORTED)
 
   # Add include paths
   set_property(TARGET PETSC::petsc PROPERTY
@@ -71,35 +80,23 @@ if (PETSC_FOUND AND NOT TARGET PETSC::petsc)
     list(APPEND _libs ${LIB_${lib}})
   endforeach()
   set_property(TARGET PETSC::petsc PROPERTY INTERFACE_LINK_LIBRARIES "${_libs}")
+
+  # Add libraries (static)
+  unset(_libs)
+  set(_PETSC_STATIC_LIBRARIES)
+  foreach (lib ${PETSC_STATIC_LIBRARIES})
+    find_library(LIB_${lib} ${lib} HINTS ${PETSC_STATIC_LIBRARY_DIRS})
+    list(APPEND _PETSC_STATIC_LIBRARIES ${LIB_${lib}})
+    message("adding: ${LIB_${lib}}")
+  endforeach()
+  set_property(TARGET PETSC::petsc_static PROPERTY INTERFACE_LINK_LIBRARIES "${_PETSC_STATIC_LIBRARIES}")
+
 endif()
 
-get_target_property(LINK_LIBS PETSC::petsc INTERFACE_INCLUDE_DIRECTORIES)
-message("P(1) *****: ${LINK_LIBS}")
-get_target_property(LINK_LIBS PkgConfig::PETSC INTERFACE_INCLUDE_DIRECTORIES)
-message("P(2) *****: ${LINK_LIBS}")
-
-
-#get_target_property(LINK_LIBS PETSC::petsc INTERFACE_LINK_LIBRARIES)
-#message("P*****: ${LINK_LIBS}")
-#message("P cflags: ${PETSC_CFLAGS_OTHER}")
-
-# Extract major, minor, etc from version string
-if (PETSC_VERSION)
-  string(REPLACE "." ";" VERSION_LIST ${PETSC_VERSION})
-  list(GET VERSION_LIST 0 PETSC_VERSION_MAJOR)
-  list(GET VERSION_LIST 1 PETSC_VERSION_MINOR)
-  list(GET VERSION_LIST 2 PETSC_VERSION_SUBMINOR)
-endif()
-
-# Loop over PETSc libraries and get absolute paths
-set(_PETSC_LIBRARIES)
-foreach (lib ${PETSC_LIBRARIES})
-  find_library(_LIB ${lib} PATHS ${PETSC_LIBRARY_DIRS} NO_DEFAULT_PATH)
-  list(APPEND _PETSC_LIBRARIES ${_LIB})
-endforeach()
-
-# Copy libaries with absolute paths to PETSC_LIBRARIES
-set(PETSC_LIBRARIES ${_PETSC_LIBRARIES})
+#get_target_property(SLINK_LIBS PETSC::petsc_static INTERFACE_LINK_LIBRARIES)
+#message("P(1) *****: ${SLINK_LIBS}")
+#get_target_property(LINK_LIBS PkgConfig::PETSC INTERFACE_INCLUDE_DIRECTORIES)
+#message("P(2) *****: ${LINK_LIBS}")
 
 # Attempt to build and run PETSc test program
 if (DOLFIN_SKIP_BUILD_TESTS)
@@ -132,10 +129,6 @@ int main()
 }
 ")
 
-  # Set flags for building test program (shared libs)
-  set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
-  set(CMAKE_REQUIRED_LIBRARIES ${PETSC_LIBRARIES})
-
   # Add MPI variables if MPI has been found
   if (MPI_C_FOUND)
     set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
@@ -144,45 +137,31 @@ int main()
   endif()
 
   # Try to run test program (shared linking)
-  #try_run(
-  #  PETSC_TEST_LIB_EXITCODE
-  #  PETSC_TEST_LIB_COMPILED
-  #  ${CMAKE_CURRENT_BINARY_DIR}
-  #  ${PETSC_TEST_LIB_CPP}
-  #  CMAKE_FLAGS
-  #    "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-  #    "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
-  #  COMPILE_OUTPUT_VARIABLE PETSC_TEST_LIB_COMPILE_OUTPUT
-  #  RUN_OUTPUT_VARIABLE PETSC_TEST_LIB_OUTPUT
-  #  )
+  try_run(
+    PETSC_TEST_LIB_EXITCODE
+    PETSC_TEST_LIB_COMPILED
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${PETSC_TEST_LIB_CPP}
+    CMAKE_FLAGS
+    "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
+    "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
+    LINK_LIBRARIES PETSC::petsc
+    COMPILE_OUTPUT_VARIABLE PETSC_TEST_LIB_COMPILE_OUTPUT
+    RUN_OUTPUT_VARIABLE PETSC_TEST_LIB_OUTPUT
+    )
 
   # Check program output
-  #if (PETSC_TEST_LIB_COMPILED AND PETSC_TEST_LIB_EXITCODE EQUAL 0)
-  if (1)
+  if (PETSC_TEST_LIB_COMPILED AND PETSC_TEST_LIB_EXITCODE EQUAL 0)
 
     message(STATUS "Test PETSC_TEST_RUNS with shared library linking - Success")
     set(PETSC_TEST_RUNS TRUE)
 
     # Static libraries not required, so unset
-    unset(PETSC_STATIC_LIBRARIES CACHE)
+    set_property(TARGET PETSC::petsc_static PROPERTY INTERFACE_LINK_LIBRARIES)
 
   else()
 
     message(STATUS "Test PETSC_TEST_RUNS with shared library linking - Failed")
-
-    # Loop over PETSc static libraries and get absolute paths
-    set(_PETSC_STATIC_LIBRARIES)
-    foreach (lib ${PETSC_STATIC_LIBRARIES})
-      find_library(LIB_${lib} ${lib} HINTS ${PETSC_STATIC_LIBRARY_DIRS})
-      list(APPEND _PETSC_STATIC_LIBRARIES ${LIB_${lib}})
-    endforeach()
-
-    # Copy libaries with  absolute paths to PETSC_LIBRARIES
-    set(PETSC_STATIC_LIBRARIES ${_PETSC_STATIC_LIBRARIES})
-
-    # Set flags for building test program (static libs)
-    set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
-    set(CMAKE_REQUIRED_LIBRARIES ${PETSC_STATIC_LIBRARIES})
 
     # Add MPI variables if MPI has been found
     if (MPI_C_FOUND)
@@ -192,20 +171,20 @@ int main()
     endif()
 
     # Try to run test program (static linking)
-    #try_run(
-    #  PETSC_TEST_LIB_EXITCODE
-    #  PETSC_TEST_LIB_COMPILED
-    #  ${CMAKE_CURRENT_BINARY_DIR}
-    #  ${PETSC_TEST_LIB_CPP}
-    #  CMAKE_FLAGS
-    #  "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-    #  "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
-    #  COMPILE_OUTPUT_VARIABLE PETSC_TEST_LIB_COMPILE_OUTPUT
-    #  RUN_OUTPUT_VARIABLE PETSC_TEST_LIB_OUTPUT
-    #  )
+    try_run(
+      PETSC_TEST_LIB_EXITCODE
+      PETSC_TEST_LIB_COMPILED
+      ${CMAKE_CURRENT_BINARY_DIR}
+      ${PETSC_TEST_LIB_CPP}
+      CMAKE_FLAGS
+      "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
+      "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
+      LINK_LIBRARIES PETSC::petsc PETSC::petsc_static
+      COMPILE_OUTPUT_VARIABLE PETSC_TEST_LIB_COMPILE_OUTPUT
+      RUN_OUTPUT_VARIABLE PETSC_TEST_LIB_OUTPUT
+      )
 
-    #if (PETSC_TEST_LIB_COMPILED AND PETSC_TEST_LIB_EXITCODE EQUAL 0)
-    if (1)
+    if (PETSC_TEST_LIB_COMPILED AND PETSC_TEST_LIB_EXITCODE EQUAL 0)
 
       message(STATUS "Test PETSC_TEST_RUNS static linking - Success")
       set(PETSC_TEST_RUNS TRUE)
@@ -214,9 +193,6 @@ int main()
 
       message(STATUS "Test PETSC_TEST_RUNS static linking - Failed")
       set(PETSC_TEST_RUNS FALSE)
-
-      # Configuration unsuccessful, so unset static libs
-      unset(PETSC_STATIC_LIBRARIES CACHE)
 
     endif()
 
@@ -262,12 +238,8 @@ message("AAAAA: ${MYOUTPUT_LIST}")
 # Standard package handling
 include(FindPackageHandleStandardArgs)
 if (PETSC_FOUND)
-  #find_package_handle_standard_args(PETSc
-  #  REQUIRED_VARS PETSC_FOUND PETSC_LIBRARY_DIRS PETSC_LIBRARIES PETSC_INCLUDE_DIRS PETSC_TEST_RUNS
-  #  VERSION_VAR PETSC_VERSION
-  #  FAIL_MESSAGE "PETSc could not be found. Be sure to set PETSC_DIR.")
   find_package_handle_standard_args(PETSc
-    REQUIRED_VARS PETSC_FOUND PETSC_LIBRARY_DIRS PETSC_LIBRARIES PETSC_INCLUDE_DIRS
+    REQUIRED_VARS PETSC_FOUND PETSC_TEST_RUNS
     VERSION_VAR PETSC_VERSION
     FAIL_MESSAGE "PETSc could not be found. Be sure to set PETSC_DIR.")
 else()

@@ -51,10 +51,19 @@ unset(SLEPC_LIBRARIES)
 unset(SLEPC_INCLUDE_DIRS)
 pkg_search_module(SLEPC crayslepc_real SLEPc IMPORTED_TARGET)
 
+# Extract major, minor, etc from version string
+if (SLPEC_VERSION)
+  string(REPLACE "." ";" VERSION_LIST ${SLEPC_VERSION})
+  list(GET VERSION_LIST 0 SLEPC_VERSION_MAJOR)
+  list(GET VERSION_LIST 1 SLEPC_VERSION_MINOR)
+  list(GET VERSION_LIST 2 SLEPC_VERSION_SUBMINOR)
+endif()
+
 # Configure SLEPc IMPORT (this involves creating an 'imported' target
 # and attaching 'properties')
 if (SLEPC_FOUND AND NOT TARGET SLEPC::slepc)
   add_library(SLEPC::slepc INTERFACE IMPORTED)
+  add_library(SLEPC::slepc_static INTERFACE IMPORTED)
 
   # Add include paths
   set_property(TARGET SLEPC::slepc PROPERTY
@@ -68,32 +77,16 @@ if (SLEPC_FOUND AND NOT TARGET SLEPC::slepc)
   endforeach()
   set_property(TARGET SLEPC::slepc PROPERTY INTERFACE_LINK_LIBRARIES "${_libs}")
 
+    # Add libraries (static)
+  unset(_libs)
+  set(_SLEPC_STATIC_LIBRARIES)
+  foreach (lib ${SLEPC_STATIC_LIBRARIES})
+    find_library(LIB_${lib} ${lib} HINTS ${SLEPC_STATIC_LIBRARY_DIRS})
+    list(APPEND _SLEPC_STATIC_LIBRARIES ${LIB_${lib}})
+  endforeach()
+  set_property(TARGET SLEPC::slepc_static PROPERTY INTERFACE_LINK_LIBRARIES "${_SLEPC_STATIC_LIBRARIES}")
+
 endif()
-
-#get_target_property(LINK_LIBS SLEPC::slepc INTERFACE_INCLUDE_DIRECTORIES)
-#message("*****: ${LINK_LIBS}")
-#get_target_property(LINK_LIBS SLEPC::slepc INTERFACE_LINK_LIBRARIES)
-#message("N*****: ${LINK_LIBS}")
-#message("^^ cflags: ${SLEPC_CFLAGS_OTHER}")
-
-
-# Loop over SLEPc libraries and get absolute paths
-unset(_SLEPC_LIBRARIES)
-foreach (lib ${SLEPC_LIBRARIES})
-  find_library(LIB_${lib} ${lib} PATHS ${SLEPC_LIBRARY_DIRS} NO_DEFAULT_PATH)
-  list(APPEND _SLEPC_LIBRARIES ${LIB_${lib}})
-endforeach()
-
-# Extract major, minor, etc from version string
-if (SLPEC_VERSION)
-  string(REPLACE "." ";" VERSION_LIST ${SLEPC_VERSION})
-  list(GET VERSION_LIST 0 SLEPC_VERSION_MAJOR)
-  list(GET VERSION_LIST 1 SLEPC_VERSION_MINOR)
-  list(GET VERSION_LIST 2 SLEPC_VERSION_SUBMINOR)
-endif()
-
-# Set libaries with absolute paths to SLEPC_LIBRARIES
-set(SLEPC_LIBRARIES ${_SLEPC_LIBRARIES})
 
 # Compile and run test
 if (DOLFIN_SKIP_BUILD_TESTS)
@@ -101,7 +94,7 @@ if (DOLFIN_SKIP_BUILD_TESTS)
   # FIXME: Need to add option for linkage type
   # Assume SLEPc works, and assume shared linkage
   set(SLEPC_TEST_RUNS TRUE)
-  unset(SLEPC_STATIC_LIBRARIES CACHE)
+  set_property(TARGET SLEPC::slepc_static PROPERTY INTERFACE_LINK_LIBRARIES)
 
 elseif (SLEPC_FOUND)
 
@@ -126,10 +119,6 @@ int main()
 }
 ")
 
-  # Set flags for building test program (shared libs)
-  set(CMAKE_REQUIRED_INCLUDES ${SLEPC_INCLUDE_DIRS})
-  set(CMAKE_REQUIRED_LIBRARIES ${SLEPC_LIBRARIES})
-
   # Add MPI variables if MPI has been found
   if (MPI_C_FOUND)
     set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
@@ -138,53 +127,39 @@ int main()
   endif()
 
   # Try to run test program (shared linking)
-  #try_run(
-  #  SLEPC_TEST_LIB_EXITCODE
-  #  SLEPC_TEST_LIB_COMPILED
-  #  ${CMAKE_CURRENT_BINARY_DIR}
-  #  ${SLEPC_TEST_LIB_CPP}
-  #  CMAKE_FLAGS
-  #    "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-  #    "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
-  #  COMPILE_OUTPUT_VARIABLE SLEPC_TEST_LIB_COMPILE_OUTPUT
-  #  RUN_OUTPUT_VARIABLE SLEPC_TEST_LIB_OUTPUT
-  #  )
+  try_run(
+    SLEPC_TEST_LIB_EXITCODE
+    SLEPC_TEST_LIB_COMPILED
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${SLEPC_TEST_LIB_CPP}
+    CMAKE_FLAGS
+    "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
+    "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
+    LINK_LIBRARIES SLEPC::slepc
+    COMPILE_OUTPUT_VARIABLE SLEPC_TEST_LIB_COMPILE_OUTPUT
+    RUN_OUTPUT_VARIABLE SLEPC_TEST_LIB_OUTPUT
+    )
 
-  #if (SLEPC_TEST_LIB_COMPILED AND SLEPC_TEST_LIB_EXITCODE EQUAL 0)
-  if (1)
+  if (SLEPC_TEST_LIB_COMPILED AND SLEPC_TEST_LIB_EXITCODE EQUAL 0)
 
     message(STATUS "Test SLEPC_TEST_RUNS with shared library linking - Success")
     set(SLEPC_TEST_RUNS TRUE)
 
     # Static libraries not required, so unset
-    unset(SLEPC_STATIC_LIBRARIES CACHE)
+    set_property(TARGET SLEPC::slepc_static PROPERTY INTERFACE_LINK_LIBRARIES)
 
   else()
 
     message(STATUS "Test SLEPC_TEST_RUNS with shared library linking - Failed")
 
-    # Loop over SLEPc static libraries and get absolute paths
-    set(_SLEPC_STATIC_LIBRARIES)
-    foreach (lib ${SLEPC_STATIC_LIBRARIES})
-      find_library(LIB_${lib} ${lib} HINTS ${SLEPC_STATIC_LIBRARY_DIRS})
-      list(APPEND _SLEPC_STATIC_LIBRARIES ${LIB_${lib}})
-    endforeach()
+    # Add MPI variables if MPI has been found
+    if (MPI_C_FOUND)
+      set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
+      set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES})
+      set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
+    endif()
 
-    # Copy libaries with  absolute paths to PETSC_LIBRARIES
-    set(SLEPC_STATIC_LIBRARIES ${_SLEPC_STATIC_LIBRARIES})
-
-    # Set flags for building test program (static libs)
-    set(CMAKE_REQUIRED_INCLUDES ${SLEPC_INCLUDE_DIRS})
-    set(CMAKE_REQUIRED_LIBRARIES ${SLEPC_STATIC_LIBRARIES})
-
-  # Add MPI variables if MPI has been found
-  if (MPI_C_FOUND)
-    set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
-    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES})
-    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
-  endif()
-
-  # Try to run test program (static linking)
+    # Try to run test program (static linking)
     try_run(
       SLEPC_TEST_STATIC_LIBS_EXITCODE
       SLEPC_TEST_STATIC_LIBS_COMPILED
@@ -193,6 +168,7 @@ int main()
       CMAKE_FLAGS
       "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
       "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
+      LINK_LIBRARIES SLEPC::slepc SLEPC::slepc_static
       COMPILE_OUTPUT_VARIABLE SLEPC_TEST_STATIC_LIBS_COMPILE_OUTPUT
       RUN_OUTPUT_VARIABLE SLEPC_TEST_STATIC_LIBS_OUTPUT
       )
@@ -207,9 +183,6 @@ int main()
       message(STATUS "Test SLEPC_TETS_RUNS with static linking - Failed")
       set(SLEPC_TEST_RUNS FALSE)
 
-      # Configuration unsuccessful, so unset
-      unset(SLEPC_STATIC_LIBRARIES CACHE)
-
     endif()
   endif()
 endif()
@@ -217,12 +190,8 @@ endif()
 # Standard package handling
 include(FindPackageHandleStandardArgs)
 if (SLEPC_FOUND)
-  #find_package_handle_standard_args(SLEPc
-  #  REQUIRED_VARS SLEPC_LIBRARY_DIRS SLEPC_LIBRARIES SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS
-  #  VERSION_VAR SLEPC_VERSION
-  #  FAIL_MESSAGE "SLEPc could not be found. Be sure to set SLEPC_DIR.")
   find_package_handle_standard_args(SLEPc
-    REQUIRED_VARS SLEPC_LIBRARY_DIRS SLEPC_LIBRARIES SLEPC_INCLUDE_DIRS
+    REQUIRED_VARS SLEPC_FOUND SLEPC_TEST_RUNS
     VERSION_VAR SLEPC_VERSION
     FAIL_MESSAGE "SLEPc could not be found. Be sure to set SLEPC_DIR.")
 else()

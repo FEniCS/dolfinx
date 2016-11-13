@@ -24,11 +24,12 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
   endif()
 
   if (@PETSC_FOUND@)
-    #list(APPEND CMAKE_MODULE_PATH @${DOLFIN_SHARE_DIR}/cmake@)
+    list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
     find_package(PETSc REQUIRED)
   endif()
 
   if (@SLEPC_FOUND@)
+    list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
     find_package(SLEPc REQUIRED)
   endif()
 
