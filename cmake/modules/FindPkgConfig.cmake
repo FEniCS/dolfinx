@@ -202,9 +202,11 @@ function(_pkg_create_imp_target _prefix _no_cmake_path _no_cmake_environment_pat
       continue()
     endif()
 
+    message("Looking for ${_pkg_search}")
     find_library(pkgcfg_lib_${_prefix}_${_pkg_search}
                  NAMES ${_pkg_search}
                  ${_find_opts})
+    message("Found  ${pkgcfg_lib_${_prefix}_${_pkg_search}}")
     list(APPEND _libs "${pkgcfg_lib_${_prefix}_${_pkg_search}}")
   endforeach()
 

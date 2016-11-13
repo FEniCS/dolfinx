@@ -68,11 +68,20 @@ list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${EIGEN3_INCLUDE_DIR})
 
 # Boost
 list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
+#target_include_directories(dolfin SYSTEM PUBLIC
+#  $<BUILD_INTERFACE:${Boost::boost}>
+#  $<INSTALL_INTERFACE:${Boost::boost}>)
+#get_target_property(LINK_LIBS Boost::boost INTERFACE_INCLUDE_DIRECTORIES)
+#message("Boost *****: ${LINK_LIBS}")
+
+
 foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS_PUBLIC})
   target_link_libraries(dolfin PUBLIC "Boost::${BOOST_PACKAGE}")
+  #target_include_directories(dolfin PUBLIC "Boost::${BOOST_PACKAGE}")
 endforeach()
 foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS_PRIVATE})
   target_link_libraries(dolfin PRIVATE "Boost::${BOOST_PACKAGE}")
+  #target_include_directories(dolfin PRIVATE "Boost::${BOOST_PACKAGE}")
 endforeach()
 
 #------------------------------------------------------------------------------
@@ -99,7 +108,8 @@ if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_SLEPC AND SLEPC_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_SLEPC")
   list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${SLEPC_INCLUDE_DIRS})
   #target_link_libraries(dolfin PUBLIC ${SLEPC_LIBRARIES})
-  target_link_libraries(dolfin PUBLIC PkgConfig::SLEPC)
+  #target_include_directories(dolfin PUBLIC SLEPC::slepc)
+  target_link_libraries(dolfin PUBLIC SLEPC::slepc)
   if (SLEPC_STATIC_LIBRARIES)
     target_link_libraries(dolfin PRIVATE ${SLEPC_STATIC_LIBRARIES})
   endif()
@@ -108,9 +118,13 @@ endif()
 # PETSc
 if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC")
-  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${PETSC_INCLUDE_DIRS})
+
+  #list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${PETSC_INCLUDE_DIRS})
   #target_link_libraries(dolfin PUBLIC ${PETSC_LIBRARIES})
-  target_link_libraries(dolfin PUBLIC PkgConfig::PETSC)
+
+  #target_include_directories(dolfin SYSTEM PUBLIC PETSC::petsc)
+  target_link_libraries(dolfin PUBLIC PETSC::petsc)
+
   #if (PETSC_STATIC_LIBRARIES)
   #  target_link_libraries(dolfin PRIVATE ${PETSC_STATIC_LIBRARIES})
   #endif()
@@ -317,6 +331,8 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
 
 install(
   FILES
+  ${CMAKE_SOURCE_DIR}/cmake/modules/FindPETSc.cmake
+  ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindPkgConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake

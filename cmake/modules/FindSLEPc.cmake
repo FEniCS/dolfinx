@@ -51,8 +51,34 @@ unset(SLEPC_LIBRARIES)
 unset(SLEPC_INCLUDE_DIRS)
 pkg_search_module(SLEPC crayslepc_real SLEPc IMPORTED_TARGET)
 
+# Configure SLEPc IMPORT (this involves creating an 'imported' target
+# and attaching 'properties')
+if (SLEPC_FOUND AND NOT TARGET SLEPC::slepc)
+  add_library(SLEPC::slepc INTERFACE IMPORTED)
+
+  # Add include paths
+  set_property(TARGET SLEPC::slepc PROPERTY
+    INTERFACE_INCLUDE_DIRECTORIES ${SLEPC_INCLUDE_DIRS})
+
+  # Add libraries
+  unset(_libs)
+  foreach (lib ${SLEPC_LIBRARIES})
+    find_library(LIB_${lib} NAMES ${lib} PATHS ${SLEPC_LIBRARY_DIRS} NO_DEFAULT_PATH)
+    list(APPEND _libs ${LIB_${lib}})
+  endforeach()
+  set_property(TARGET SLEPC::slepc PROPERTY INTERFACE_LINK_LIBRARIES "${_libs}")
+
+endif()
+
+#get_target_property(LINK_LIBS SLEPC::slepc INTERFACE_INCLUDE_DIRECTORIES)
+#message("*****: ${LINK_LIBS}")
+#get_target_property(LINK_LIBS SLEPC::slepc INTERFACE_LINK_LIBRARIES)
+#message("N*****: ${LINK_LIBS}")
+#message("^^ cflags: ${SLEPC_CFLAGS_OTHER}")
+
+
 # Loop over SLEPc libraries and get absolute paths
-set(_SLEPC_LIBRARIES)
+unset(_SLEPC_LIBRARIES)
 foreach (lib ${SLEPC_LIBRARIES})
   find_library(LIB_${lib} ${lib} PATHS ${SLEPC_LIBRARY_DIRS} NO_DEFAULT_PATH)
   list(APPEND _SLEPC_LIBRARIES ${LIB_${lib}})
