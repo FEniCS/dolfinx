@@ -22,7 +22,7 @@
 # Modified by August Johansson 2016
 #
 # First added:  2016-11-02
-# Last changed: 2016-11-10
+# Last changed: 2016-11-12
 
 from __future__ import print_function
 import pytest
@@ -76,35 +76,52 @@ def create_multimesh_with_meshes_on_diagonal(width, offset, Nx):
     error = abs(area - exact_area)
     relative_error = error / exact_area
     tol = max(DOLFIN_EPS_LARGE, multimesh.num_parts()*multimesh.part(0).num_cells()*DOLFIN_EPS)
+
+    n_qr = 0
+    for cut_cell in multimesh.collision_map_cut_cells(0):
+        local_qr = multimesh.quadrature_rule_interface_cut_cell(0, cut_cell)
+        n_qr += len(local_qr[1])
+
+    n_weight_per_cell = float(n_qr) / len(multimesh.collision_map_cut_cells(0))
+
+    print("")
+    print("weights ", n_qr)
+    print("cells ", len(multimesh.collision_map_cut_cells(0)))
+    print("weights per cell ", n_weight_per_cell)
+    print("test tol " , n_weight_per_cell*DOLFIN_EPS)
     print("width = {}, offset = {}, Nx = {}, num_parts = {}".format(width, offset, Nx, multimesh.num_parts()))
     print("error", error)
     print("relative error", relative_error)
     print("tol", tol)
     return relative_error < tol
 
-def area_equal(multimesh, area, exact_area):
-    tol = max(DOLFIN_EPS_LARGE, multimesh.num_parts()*multimesh.part(0).num_cells()*DOLFIN_EPS)
-    error = abs(area - exact_area) / exact_area
-    return error < tol
-
 @skip_in_parallel
 def test_meshes_on_diagonal():
     "Place meshes on the diagonal inside a background mesh and check the interface area"
 
-    width = 0.3
-    offset = 0.1111
     for Nx in range(1, 50):
-        assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
+        for width_factor in range(1, 100):
+            width = 3*width_factor/(100*DOLFIN_PI)
+            for offset_factor in range(1, 100):
+                offset = offset_factor*DOLFIN_PI / (100*3.2)
+                if (offset < width):
+                    assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
+
+
+    # width = 0.9
+    # offset = 0.01111
+    # for Nx in range(1, 50):
+    #     assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
 
     # width = 0.6
     # offset = 0.1
     # for Nx in range(1, 50):
     #     assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
 
-    width = 1/DOLFIN_PI #0.18888
-    offset = 0.04 #1e-10
-    for Nx in range(1, 50):
-        assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
+    # width = 1/DOLFIN_PI #0.18888
+    # offset = DOLFIN_PI/100 #1e-10
+    # for Nx in range(1, 50):
+    #     assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
 
 # @skip_in_parallel
 # def test_meshes_with_boundary_edge_overlap_2D():

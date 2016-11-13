@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2016-11-10
+// Last changed: 2016-11-12
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -39,7 +39,7 @@
 #include "MeshFunction.h"
 #include "MultiMesh.h"
 
-// #include </home/august/dolfin_simplex_tools.h>
+#include </home/august/dolfin_simplex_tools.h>
 
 using namespace dolfin;
 
@@ -235,6 +235,11 @@ void MultiMesh::build(std::size_t quadrature_order)
   _build_quadrature_rules_interface(quadrature_order);
 
   end();
+
+  //fixme
+  std::stringstream ss;
+  ss << "multimesh_num_parts"<<num_parts();
+  tools::dolfin_write_medit_triangles(ss.str(),*this,part(0)->num_cells());
 }
 //-----------------------------------------------------------------------------
 void MultiMesh::clear()
