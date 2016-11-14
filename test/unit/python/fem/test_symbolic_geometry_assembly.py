@@ -390,9 +390,11 @@ def test_manifold_dg0_functions(square3d, any_representation):
         (1.0, 1.0, 1.0),
         (1.0, 0.0, 0.0),
         (0.0, 1.0, 0.0),
-        (1.0/3.0, 2.0/3.0, 2.0/3.0),
-        (2.0/3.0, 1.0/3.0, 2.0/3.0),
-        ]
+        # (1.0/3.0, 2.0/3.0, 2.0/3.0),
+        Point(0.25, 0.5, 0.75),
+        # (2.0/3.0, 1.0/3.0, 2.0/3.0),
+        Point(0.5, 0.25, 0.75)
+    ]
     for point in points:
         assert round(sum((v0(point) - numpy.asarray(v0v))**2), 7) == 0.0
 

@@ -603,8 +603,8 @@ bool CollisionPredicates::_collides_triangle_point_3d(Point p0,
   // in the plane. However, if we take a triangle with vertices
   // (0,0,1), (1,1,1), (0,1,0) and check the point (1./3,2./3,2./3)
   // this gives a determinant of ~5.55112e-17
-  if (std::abs(det) > DOLFIN_EPS)
-  //if (det < 0. or det > 0.)
+  //if (std::abs(det) > DOLFIN_EPS)
+  if (det < 0. or det > 0.)
     return false;
 
   // Check that the point is inside the triangle
