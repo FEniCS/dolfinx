@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-10
+// Last changed: 2016-11-14
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -599,13 +599,12 @@ bool CollisionPredicates::_collides_triangle_point_3d(Point p0,
 			      p2.coordinates(),
 			      point.coordinates());
 
-  // The determinant should be exactly zero for the point to be in the
-  // plane. However, if we take a triangle with vertices (0,0,1),
-  // (1,1,1), (0,1,0) and check the point (1./3,2./3,2./3) this gives
-  // a determinant of ~5.55112e-17
-
-  if (det < 0. or det > 0.)
-  //if (std::abs(det) > DOLFIN_EPS)
+  // FIXME: The determinant should be exactly zero for the point to be
+  // in the plane. However, if we take a triangle with vertices
+  // (0,0,1), (1,1,1), (0,1,0) and check the point (1./3,2./3,2./3)
+  // this gives a determinant of ~5.55112e-17
+  if (std::abs(det) > DOLFIN_EPS)
+  //if (det < 0. or det > 0.)
     return false;
 
   // Check that the point is inside the triangle

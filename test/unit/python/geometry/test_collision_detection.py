@@ -20,25 +20,25 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2016-11-09
+# Last changed: 2016-11-14
 
 import pytest
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
 
 @skip_in_parallel
-def create_triangular_mesh_3D():
+def create_triangular_mesh_3D(vertices, cells):
     editor = MeshEditor()
     mesh = Mesh()
     editor.open(mesh,2,3)
     editor.init_cells(2)
     editor.init_vertices(4)
-    editor.add_cell(0, 0,1,2)
-    editor.add_cell(1, 1,2,3)
-    editor.add_vertex(0, 0,0,0.5)
-    editor.add_vertex(1, 1,0,0.5)
-    editor.add_vertex(2, 0,1,0.5)
-    editor.add_vertex(3, 1,1,0.5)
+    editor.add_cell(0, cells[0][0],cells[0][1],cells[0][2])
+    editor.add_cell(1, cells[1][0],cells[1][1],cells[1][2])
+    editor.add_vertex(0, vertices[0])
+    editor.add_vertex(1, vertices[1])
+    editor.add_vertex(2, vertices[2])
+    editor.add_vertex(3, vertices[3])
     editor.close()
     return mesh;
 
@@ -117,8 +117,8 @@ def test_interior_point_on_small_segment():
     assert CollisionPredicates.collides_interior_point_segment_2d(q0, q1, a)
     assert not CollisionPredicates.collides_interior_point_segment_2d(q0, q1, b)
 
-@pytest.mark.skipif(True, reason="Not implemented in 3D")
-def test_segment_collides_point_3D_1():
+@skip_in_parallel
+def test_segment_collides_point_3D():
     """Test if segment collide with point in 3D"""
     mesh = Mesh()
     editor = MeshEditor()
@@ -178,7 +178,40 @@ def test_triangle_triangle_collision() :
                                                              Point(0.211774439087554, 0.545107772420888))
 
 
-@pytest.mark.skipif(True, reason="Not implemented in 3D")
+
+@skip_in_parallel
+def test_triangle_collides_point_3D():
+    """Test if point collide with triangle (inspired by test_manifold_dg0_functions)"""
+    vertices = [ Point(0.0, 0.0, 1.0),
+                 Point(1.0, 1.0, 1.0),
+                 Point(1.0, 0.0, 0.0),
+                 Point(0.0, 1.0, 0.0) ]
+    cells = [ (0, 1, 2),
+              (0, 1, 3) ]
+    mesh = create_triangular_mesh_3D(vertices, cells)
+    points = [ Point(0.0, 0.0, 1.0),
+               Point(1.0, 1.0, 1.0),
+               Point(1.0, 0.0, 0.0),
+               Point(0.0, 1.0, 0.0),
+               Point(1.0/3.0, 2.0/3.0, 2.0/3.0),
+               Point(2.0/3.0, 1.0/3.0, 2.0/3.0)
+              ]
+    A = Cell(mesh, 0)
+    B = Cell(mesh, 1)
+    assert A.collides(points[0]) == True
+    assert B.collides(points[0]) == True
+    assert A.collides(points[1]) == True
+    assert B.collides(points[1]) == True
+    assert A.collides(points[2]) == True
+    assert B.collides(points[2]) == False
+    assert A.collides(points[3]) == False
+    assert B.collides(points[3]) == True
+    assert A.collides(points[4]) == False
+    assert B.collides(points[4]) == True
+    assert A.collides(points[5]) == True
+    assert B.collides(points[5]) == False
+
+#@pytest.mark.skipif(True, reason="Not implemented in 3D")
 @skip_in_parallel
 def test_tetrahedron_collides_point():
     """Test if point collide with tetrahedron"""
@@ -195,9 +228,16 @@ def test_tetrahedron_collides_triangle():
     """Test if point collide with tetrahedron"""
 
     tetmesh = UnitCubeMesh(2, 2, 2)
-    trimesh = create_triangular_mesh_3D()
+    vertices = [ Point(0, 0, 0.5),
+                 Point(1, 0, 0.5),
+                 Point(0, 1, 0.5),
+                 Point(1, 1, 0.5) ]
+    cells = [ (0, 1, 2),
+              (1, 2, 3) ]
+
+    trimesh = create_triangular_mesh_3D(vertices, cells)
     dx = Point(0.1, 0.1, -0.1)
-    trimesh_shift = create_triangular_mesh_3D()
+    trimesh_shift = create_triangular_mesh_3D(vertices, cells)
     trimesh_shift.translate(dx)
 
     tet0 = Cell(tetmesh, 18)
