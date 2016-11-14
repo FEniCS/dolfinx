@@ -118,8 +118,11 @@ void XDMFFile::write(const Mesh& mesh, Encoding encoding)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_experimental(const Function& u)
+void XDMFFile::write_experimental(const Function& u, Encoding encoding)
 {
+
+  check_encoding(encoding);
+
   // If counter is non-zero, a time series has been saved before
   if (_counter != 0)
   {
@@ -129,6 +132,25 @@ void XDMFFile::write_experimental(const Function& u)
   }
 
   const Mesh& mesh = *u.function_space()->mesh();
+
+  // Clear pugi doc
+  _xml_doc->reset();
+
+  // Open the HDF5 file if using HDF5 encoding (truncate)
+  hid_t h5_id = -1;
+#ifdef HAS_HDF5
+  std::unique_ptr<HDF5File> h5_file;
+  if (encoding == Encoding::HDF5)
+  {
+    // Open file
+    h5_file.reset(new HDF5File(mesh.mpi_comm(),
+                               get_hdf5_filename(_filename), "w"));
+    dolfin_assert(h5_file);
+
+    // Get file handle
+    h5_id = h5_file->h5_id();
+  }
+#endif
 
   std::string element_family = u.function_space()->element()->ufc_element()->family();
   unsigned int element_degree = u.function_space()->element()->ufc_element()->degree();
@@ -155,23 +177,6 @@ void XDMFFile::write_experimental(const Function& u)
   // incorporating the family and degree
   std::string name = u.name() + "_" + element_family
     + std::to_string(element_degree);
-
-  // Clear pugi doc
-  _xml_doc->reset();
-
-  // Open the HDF5 file if using HDF5 encoding (truncate)
-  hid_t h5_id = -1;
-#ifdef HAS_HDF5
-  std::unique_ptr<HDF5File> h5_file;
-
-  // Open file
-  h5_file.reset(new HDF5File(mesh.mpi_comm(),
-                             get_hdf5_filename(_filename), "w"));
-  dolfin_assert(h5_file);
-
-  // Get file handle
-  h5_id = h5_file->h5_id();
-#endif
 
   // Add XDMF node and version attribute
   pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
@@ -246,11 +251,6 @@ void XDMFFile::write_experimental(const Function& u)
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const Function& u, Encoding encoding)
 {
-  if (encoding == Encoding::HDF5_EXPERIMENTAL)
-  {
-    write_experimental(u);
-    return;
-  }
 
   check_encoding(encoding);
 
