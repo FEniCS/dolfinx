@@ -22,7 +22,7 @@
 # Modified by August Johansson 2016
 #
 # First added:  2016-11-02
-# Last changed: 2016-11-12
+# Last changed: 2016-11-14
 
 from __future__ import print_function
 import pytest
@@ -99,65 +99,52 @@ def create_multimesh_with_meshes_on_diagonal(width, offset, Nx):
 def test_meshes_on_diagonal():
     "Place meshes on the diagonal inside a background mesh and check the interface area"
 
-    for Nx in range(1, 50):
-        for width_factor in range(1, 100):
-            width = 3*width_factor/(100*DOLFIN_PI)
-            for offset_factor in range(1, 100):
-                offset = offset_factor*DOLFIN_PI / (100*3.2)
-                if (offset < width):
-                    assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
-
-
-    # width = 0.9
-    # offset = 0.01111
     # for Nx in range(1, 50):
-    #     assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
+    #     for width_factor in range(1, 100):
+    #         width = 3*width_factor/(100*DOLFIN_PI)
+    #         for offset_factor in range(1, 100):
+    #             offset = offset_factor*DOLFIN_PI / (100*3.2)
+    #             if (offset < width):
+    #                 assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
 
-    # width = 0.6
-    # offset = 0.1
-    # for Nx in range(1, 50):
-    #     assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
+    width = DOLFIN_PI / 5
+    offset = 0.1111
+    Nx = 1
+    assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
 
     # width = 1/DOLFIN_PI #0.18888
     # offset = DOLFIN_PI/100 #1e-10
     # for Nx in range(1, 50):
     #     assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
 
-# @skip_in_parallel
-# def test_meshes_with_boundary_edge_overlap_2D():
-#     # start with boundary of mesh 1 overlapping edges of mesg 0
-#     mesh0 = UnitSquareMesh(4,4)
-#     mesh1 = UnitSquareMesh(1,1)
+@skip_in_parallel
+def test_meshes_with_boundary_edge_overlap_2D():
+    # start with boundary of mesh 1 overlapping edges of mesg 0
+    mesh0 = UnitSquareMesh(4,4)
+    mesh1 = UnitSquareMesh(1,1)
 
-#     mesh1_coords = mesh1.coordinates()
-#     mesh1_coords *= 0.5
-#     mesh1.translate(Point(0.25, 0.25))
+    mesh1_coords = mesh1.coordinates()
+    mesh1_coords *= 0.5
+    mesh1.translate(Point(0.25, 0.25))
 
-#     multimesh = MultiMesh()
-#     multimesh.add(mesh0)
-#     multimesh.add(mesh1)
-#     multimesh.build()
+    multimesh = MultiMesh()
+    multimesh.add(mesh0)
+    multimesh.add(mesh1)
+    multimesh.build()
 
-#     exact_area = 2.0
+    exact_area = 2.0
 
-#     area = compute_area_using_quadrature(multimesh)
-#     assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
+    area = compute_area_using_quadrature(multimesh)
+    assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
 
-#     # next translate mesh 1 such that only the horizontal part of the boundary overlaps
-#     mesh1.translate(Point(0.1, 0.0))
-#     multimesh.build()
-#     area = compute_area_using_quadrature(multimesh)
-#     assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
+    # next translate mesh 1 such that only the horizontal part of the boundary overlaps
+    mesh1.translate(Point(0.1, 0.0))
+    multimesh.build()
+    area = compute_area_using_quadrature(multimesh)
+    assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
 
-#     # next translate mesh 1 such that no boundaries overlap with edges
-#     mesh1.translate(Point(0.0, 0.1))
-#     multimesh.build()
-#     area = compute_area_using_quadrature(multimesh)
-#     assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
-
-
-
-# # FIXME: Temporary testing
-# if __name__ == "__main__":
-#     test_meshes_on_diagonal()
-#     test_meshes_with_boundary_edge_overlap_2D()
+    # next translate mesh 1 such that no boundaries overlap with edges
+    mesh1.translate(Point(0.0, 0.1))
+    multimesh.build()
+    area = compute_area_using_quadrature(multimesh)
+    assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
