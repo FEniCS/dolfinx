@@ -56,7 +56,7 @@ foreach (lib ${SLEPC_LIBRARIES})
 endforeach()
 
 # Extract major, minor, etc from version string
-if (SLPEC_VERSION)
+if (SLEPC_VERSION)
   string(REPLACE "." ";" VERSION_LIST ${SLEPC_VERSION})
   list(GET VERSION_LIST 0 SLEPC_VERSION_MAJOR)
   list(GET VERSION_LIST 1 SLEPC_VERSION_MINOR)
