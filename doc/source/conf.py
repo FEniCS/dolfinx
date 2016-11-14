@@ -15,13 +15,20 @@ import subprocess
 import sys
 import os
 
-# TODO: Run doxy2swig to make docstrings.i file.
+# Run doxygen on C++ sources, generates XML output for breathe to
+# convert into Sphinx format.
+current_dir = os.getcwd()
+os.chdir("../")
+subprocess.call('doxygen', shell=True)
+# Convert doxygen XML output to SWIG docstrings
+subprocess.call(["python", "./doxy2swig.py", "./doxygen/xml/index.xml", "docstrings.i"])
+os.chdir(current_dir)
 
 # We can't compile the swig generated headers on RTD.  Instead, we
 # generate the python part as usual, and then mock the cpp objects
 # according to the advice given on:
 # https://read-the-docs.readthedocs.io/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
-try: 
+try:
     from unittest.mock import MagicMock
 except ImportError:
     from mock import Mock as MagicMock
@@ -38,14 +45,7 @@ sys.modules.update(('dolfin.cpp.' + mod_name, Mock()) for mod_name in MOCK_MODUL
 # Run cmake/scripts/generate-generate-swig-interface.py with output to tmp-swig/
 # Run swig in every directory tmp-swig/modules/*
 # Copy generated tmp-swig/modules/*/*.py to tmp-dolfin/cpp/
-# Now it should be possible to import dolfin and let Sphinx do its magic on the docstrings. 
-
-# Run doxygen on C++ sources, generates XML output for breathe to
-# convert into Sphinx format.
-current_dir = os.getcwd()
-os.chdir("../")
-subprocess.call('doxygen', shell=True)
-os.chdir(current_dir)
+# Now it should be possible to import dolfin and let Sphinx do its magic on the docstrings.
 
 # Create demo CMakeLists.txt files
 current_dir = os.getcwd()
