@@ -329,7 +329,7 @@ namespace dolfin
 
       return p;
     }
-
+    bool _is_overlapped_interface(std::vector<Point> simplex, const Cell cut_cell, Point simplex_normal) const;
   private:
 
     // Friend (in plot.h)
