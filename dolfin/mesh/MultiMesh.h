@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2016-11-03
+// Last changed: 2016-11-14
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -486,6 +486,12 @@ namespace dolfin
 
     // Build quadrature rules and normals for the interface
     void _build_quadrature_rules_interface(std::size_t quadrature_order);
+
+    // Help function to determine if interface intersection is
+    // (exactly) overlapped by a cutting cell
+    bool _is_overlapped_interface(std::vector<Point> simplex,
+				  const Cell cut_cell,
+				  Point simplex_normal) const;
 
     // Add quadrature rule for simplices in polyhedron. Returns the
     // number of points generated for each simplex.

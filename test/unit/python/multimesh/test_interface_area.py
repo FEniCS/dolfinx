@@ -43,7 +43,6 @@ def compute_area_using_quadrature(multimesh):
         total_area += part_area
     return total_area
 
-
 def create_multimesh_with_meshes_on_diagonal(width, offset, Nx):
 
     # Mesh width (must be less than 1)
@@ -77,18 +76,7 @@ def create_multimesh_with_meshes_on_diagonal(width, offset, Nx):
     relative_error = error / exact_area
     tol = max(DOLFIN_EPS_LARGE, multimesh.num_parts()*multimesh.part(0).num_cells()*DOLFIN_EPS)
 
-    n_qr = 0
-    for cut_cell in multimesh.collision_map_cut_cells(0):
-        local_qr = multimesh.quadrature_rule_interface_cut_cell(0, cut_cell)
-        n_qr += len(local_qr[1])
-
-    n_weight_per_cell = float(n_qr) / len(multimesh.collision_map_cut_cells(0))
-
     print("")
-    print("weights ", n_qr)
-    print("cells ", len(multimesh.collision_map_cut_cells(0)))
-    print("weights per cell ", n_weight_per_cell)
-    print("test tol " , n_weight_per_cell*DOLFIN_EPS)
     print("width = {}, offset = {}, Nx = {}, num_parts = {}".format(width, offset, Nx, multimesh.num_parts()))
     print("error", error)
     print("relative error", relative_error)
@@ -135,7 +123,7 @@ def test_meshes_with_boundary_edge_overlap_2D():
     exact_area = 2.0
 
     area = compute_area_using_quadrature(multimesh)
-    assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
+    assert abs(area - exact_area) < DOLFIN_EPS_LARGE
 
     # next translate mesh 1 such that only the horizontal part of the boundary overlaps
     mesh1.translate(Point(0.1, 0.0))
@@ -143,8 +131,9 @@ def test_meshes_with_boundary_edge_overlap_2D():
     area = compute_area_using_quadrature(multimesh)
     assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
 
-    # next translate mesh 1 such that no boundaries overlap with edges
+    # next translate mesh 1 such that no boundaries overlap with edges 
     mesh1.translate(Point(0.0, 0.1))
     multimesh.build()
     area = compute_area_using_quadrature(multimesh)
     assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
+

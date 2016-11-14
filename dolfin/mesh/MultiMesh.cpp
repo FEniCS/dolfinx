@@ -35,6 +35,7 @@
 
 #include "Cell.h"
 #include "Facet.h"
+#include "Vertex.h"
 #include "BoundaryMesh.h"
 #include "MeshFunction.h"
 #include "MultiMesh.h"
@@ -756,8 +757,13 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	  // Triangulate intersection of cut cell and boundary cell
 	  const std::vector<Point> Eij_part_points
 	    = IntersectionConstruction::intersection(cut_cell_i, boundary_cell_j);
-	  const Polyhedron Eij_part
-	    = ConvexTriangulation::triangulate(Eij_part_points, gdim, tdim_interface);
+
+	  // Check that the triangulation is not part of the cut cell boundary
+	  if (_is_overlapped_interface(Eij_part_points, cut_cell_i, facet_normal))
+	    continue;
+
+	  const Polyhedron Eij_part =
+            ConvexTriangulation::triangulate(Eij_part_points, gdim, tdim_interface);
 
 	  // The intersection should be either empty or one simplex
 	  dolfin_assert(Eij_part.size() <= 1);
@@ -801,7 +807,49 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 
   end();
 }
+//------------------------------------------------------------------------------
+bool
+MultiMesh::_is_overlapped_interface(std::vector<Point> simplex,
+				    const Cell cut_cell,
+				    Point simplex_normal) const
+{
+  // Returns true if an interface intersection is overlapped by the cutting cell.
+  // The criterion for the edge being overlapped should be that
+  //  (1) The intersection is contained within the cell facets
+  //  (2) The (outwards) normals of the cut and the cutting cutting cell are equal.
 
+  // First, use inner products with a tolerance
+  // TODO: Maybe faster to call orient2dfast instead
+  Point simplex_midpoint(0.0, 0.0, 0.0);
+  for (Point p : simplex)
+    simplex_midpoint += p;
+  simplex_midpoint /= simplex.size();
+
+  const unsigned int* vertex_indices = cut_cell.entities(0);
+  for (int j = 0; j < cut_cell.num_entities(0); j++)
+  {
+    Vertex vertex_j(cut_cell.mesh(), vertex_indices[j]);
+    double c = simplex_normal.dot(vertex_j.point() - simplex_midpoint);
+    if (c > DOLFIN_EPS_LARGE)
+      return false;
+  }
+  // Identify a facet being cut, if any
+  std::size_t tdim = cut_cell.dim();
+  const unsigned int* facet_indices = cut_cell.entities(tdim - 1);
+  for (int j = 0; j < cut_cell.num_entities(tdim - 1); j++)
+  {
+    Facet facet_j(cut_cell.mesh(), facet_indices[j]);
+    simplex.push_back(facet_j.midpoint());
+    if (CollisionPredicates::is_degenerate(simplex, tdim))
+    {
+      // then we have found the right facet
+      simplex.pop_back();
+      return (simplex_normal.dot(cut_cell.normal(j)) > 0);
+    }
+    simplex.pop_back();
+  }
+  return false;
+}
 //------------------------------------------------------------------------------
 std::size_t
 MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
@@ -1114,19 +1162,25 @@ void MultiMesh::_inclusion_exclusion_interface
       if (simplex.size() == tdim_bulk + 1 and
 	  !CollisionPredicates::is_degenerate(simplex, gdim))
       {
+
 	const std::vector<Point> Eij_cap_Tk_points
 	  = IntersectionConstruction::intersection(Eij, simplex, gdim);
-	const Polyhedron Eij_cap_Tk
-	  = ConvexTriangulation::triangulate(Eij_cap_Tk_points, gdim, tdim_interface);
-	for (const Simplex& s: Eij_cap_Tk)
+
+	if (Eij_cap_Tk_points.size())
 	{
-	  if (s.size() == tdim_interface + 1 and
-	      !CollisionPredicates::is_degenerate(simplex, gdim))
+	  const Polyhedron Eij_cap_Tk
+	    = ConvexTriangulation::triangulate(Eij_cap_Tk_points, gdim, tdim_interface);
+
+	  for (const Simplex& s: Eij_cap_Tk)
 	  {
-	    const std::size_t num_pts
-	      = _add_quadrature_rule(qr_stage0, s, gdim,
-				     quadrature_order, -1.); // Stage 0 is negative
-	    _add_normal(normals_stage0, facet_normal, num_pts, gdim);
+	    if (s.size() == tdim_interface + 1 and
+		!CollisionPredicates::is_degenerate(simplex, gdim))
+	    {
+	      const std::size_t num_pts
+		= _add_quadrature_rule(qr_stage0, s, gdim,
+				       quadrature_order, -1.); // Stage 0 is negative
+	      _add_normal(normals_stage0, facet_normal, num_pts, gdim);
+	    }
 	  }
 	}
       }
@@ -1150,6 +1204,7 @@ void MultiMesh::_inclusion_exclusion_interface
       // Loop over all initial polyhedra.
       for (const std::pair<std::size_t, Polyhedron>& initial_polyhedron: initial_polyhedra)
       {
+
 	// Check if the initial_polyhedron's key < previous_polyhedron
 	// key[0]
 	if (initial_polyhedron.first < previous_polyhedron.first[0])
@@ -1178,29 +1233,38 @@ void MultiMesh::_inclusion_exclusion_interface
 		  = IntersectionConstruction::intersection(initial_simplex,
 							   previous_simplex,
 							   gdim);
-		const Polyhedron intersection
-		  = ConvexTriangulation::triangulate(intersection_points,
-						     gdim,
-						     tdim_bulk);
-
-		// To save all intersections as a single
-		// polyhedron, we don't call this a polyhedron
-		// yet, but rather a std::vector<Simplex> since we
-		// are still filling the polyhedron with simplices
-
-		// FIXME: We could add only if area is sufficiently large
-		for (const Simplex& simplex: intersection)
+		// FIXME: Should we avoid this if statement and let
+		// ConvexTriangulation deal with empty input?
+		if (intersection_points.size())
 		{
-		  if (simplex.size() == tdim_bulk + 1 and
-		      !CollisionPredicates::is_degenerate(simplex, gdim))
+		  const Polyhedron intersection
+		    = ConvexTriangulation::triangulate(intersection_points,
+						       gdim,
+						       tdim_bulk);
+
+		  if (intersection.size())
 		  {
-		    new_polyhedron.push_back(simplex);
-		    any_intersections = true;
+		    // To save all intersections as a single
+		    // polyhedron, we don't call this a polyhedron
+		    // yet, but rather a std::vector<Simplex> since we
+		    // are still filling the polyhedron with simplices
+
+		    // FIXME: We could add only if area is sufficiently large
+		    for (const Simplex& simplex: intersection)
+		    {
+		      if (simplex.size() == tdim_bulk + 1 and
+			  !CollisionPredicates::is_degenerate(simplex, gdim))
+		      {
+			new_polyhedron.push_back(simplex);
+			any_intersections = true;
+		      }
+		    }
 		  }
 		}
 	      }
 	    }
 	  }
+
 
 	  if (any_intersections)
 	  {
