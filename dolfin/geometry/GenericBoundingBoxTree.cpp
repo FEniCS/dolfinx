@@ -270,7 +270,13 @@ GenericBoundingBoxTree::compute_closest_entity(const Point& point,
 
   // Search point cloud to get a good starting guess
   dolfin_assert(_point_search_tree);
-  double r = _point_search_tree->compute_closest_point(point).second;
+  std::pair<unsigned int, double> guess
+    = _point_search_tree->compute_closest_point(point);
+  double r = guess.second;
+
+  // Return if we have found the point
+  if (r == 0.)
+    return guess;
 
   // Initialize index and distance to closest entity
   unsigned int closest_entity = std::numeric_limits<unsigned int>::max();
@@ -617,8 +623,6 @@ GenericBoundingBoxTree::_compute_first_entity_collision(const GenericBoundingBox
     if (c1 != not_found)
       return c1;
   }
-
-  std::cout << __FUNCTION__ << " not found"<<std::endl;
 
   // Point not found
   return not_found;
