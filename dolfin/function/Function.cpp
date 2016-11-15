@@ -327,11 +327,17 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   unsigned int id
     = mesh.bounding_box_tree()->compute_first_entity_collision(point);
 
+  std::cout << __FUNCTION__<< " found id = " << id << std::endl;
+
   // If not found, use the closest cell
   if (id == std::numeric_limits<unsigned int>::max())
   {
-    if (_allow_extrapolation)
-      id = mesh.bounding_box_tree()->compute_closest_entity(point).first;
+    // Check if the closest cell is within DOLFIN_EPS. This we can
+    // allow without _allow_extrapolation
+    std::pair<unsigned int, double> close_id = mesh.bounding_box_tree()->compute_closest_entity(point);
+    std::cout << __FUNCTION__<<' '<<close_id.second << std::endl;
+    if (_allow_extrapolation or close_id.second < DOLFIN_EPS)
+      id = close_id.first;
     else
     {
       dolfin_error("Function.cpp",

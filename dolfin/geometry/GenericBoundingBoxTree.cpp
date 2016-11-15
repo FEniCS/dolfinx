@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2014-02-06
+// Last changed: 2016-11-15
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -617,6 +617,8 @@ GenericBoundingBoxTree::_compute_first_entity_collision(const GenericBoundingBox
     if (c1 != not_found)
       return c1;
   }
+
+  std::cout << __FUNCTION__ << " not found"<<std::endl;
 
   // Point not found
   return not_found;
