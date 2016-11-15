@@ -642,9 +642,6 @@ float uniformfloatrand()
 
 void exactinit()
 {
-  // DOLFIN addition, should perhaps be removed
-  printf("Initializing tolerances for exact arithmetic.\n");
-
   REAL half;
   REAL check, lastcheck;
   int every_other;
