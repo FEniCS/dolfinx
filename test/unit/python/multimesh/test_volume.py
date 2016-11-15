@@ -22,7 +22,7 @@
 # Modified by August Johansson 2016
 #
 # First added:  2016-05-03
-# Last changed: 2016-11-04
+# Last changed: 2016-11-15
 
 from __future__ import print_function
 import pytest
@@ -101,22 +101,18 @@ def test_volume_2d():
         multimesh.add(mesh)
     multimesh.build()
 
-    M = Constant(1.0)*dx(mesh_0)
-    return assemble(M)
-
-    # Create function space
-    V = MultiMeshFunctionSpace(multimesh, "DG", 0)
-
     # Compute approximate volume
     approximative_volume = compute_volume(multimesh)
-    quadrature_volume = compute_volume_using_quadrature(multimesh)
+    qr_volume = compute_volume_using_quadrature(multimesh)
 
-    print("approximative volume ", approximative_volume)
-    print("quadrature volume ", quadrature_volume)
     print("exact volume ", exact_volume)
+    print("approximative volume ", approximative_volume)
+    print("relative approximate volume error %1.16e" % ((exact_volume - approximative_volume) / exact_volume))
+    print("qr volume ", qr_volume)
+    print("relative qr volume error %1.16e" % ((exact_volume - qr_volume) / exact_volume))
 
-    assert approximative_volume == exact_volume
-    assert quadrature_volume == exact_volume
+    assert abs(exact_volume - qr_volume) / exact_volume < DOLFIN_EPS
+    assert abs(exact_volume - approximate_volume) / exact_volume < DOLFIN_EPS
 
 @skip_in_parallel
 def test_volume_six_meshes():
@@ -164,12 +160,70 @@ def test_volume_six_meshes():
     qr_volume = compute_volume_using_quadrature(multimesh)
 
     print("exact volume ", exact_volume)
+    print("approximative volume ", approximate_volume)
+    print("approximate volume error %1.16e" % (exact_volume - approximate_volume))
     print("qr volume ", qr_volume)
-    print("error %1.16e" % (exact_volume - qr_volume))
+    print("qr volume error %1.16e" % (exact_volume - qr_volume))
 
-    assert abs(exact_volume - qr_volume) < DOLFIN_EPS_LARGE
+    assert abs(exact_volume - qr_volume) < 7e-15
+    assert abs(exact_volume - approximate_volume) < DOLFIN_EPS
 
-# FIXME: Temporary testing
-if __name__ == "__main__":
-    test_volume_2d()
-    test_volume_six_meshes()
+@skip_in_parallel
+def test_main2_volume():
+    "Test with four meshes that previously failed"
+
+    # Create multimesh
+    multimesh = MultiMesh()
+
+    # Mesh size
+    h = 0.5
+    Nx = int(round(1 / h))
+
+    # Background mesh
+    mesh_0 = UnitSquareMesh(Nx, Nx)
+    multimesh.add(mesh_0)
+
+    # Mesh 1
+    x0 = 0.35404867974764142602
+    y0 = 0.16597416632155614913
+    x1 = 0.63997881656511634851
+    y1 = 0.68786139026650294781
+    mesh_1 = RectangleMesh(Point(x0, y0), Point(x1, y1),
+                           max(int(round((x1-x0)/h)), 1), max(int(round((y1-y0)/h)), 1))
+    mesh_1.rotate(39.609407484349517858)
+    multimesh.add(mesh_1)
+
+    # Mesh 2
+    x0 = 0.33033712968711609337
+    y0 = 0.22896817104377231722
+    x1 = 0.82920109332967595339
+    y1 = 0.89337241458397931293
+    mesh_2 = RectangleMesh(Point(x0, y0), Point(x1, y1),
+                           max(int(round((x1-x0)/h)), 1), max(int(round((y1-y0)/h)), 1))
+    mesh_2.rotate(31.532416069662392744)
+    multimesh.add(mesh_2)
+
+    # Mesh 3
+    x0 = 0.28105941241656401397
+    y0 = 0.30745787374091237965
+    x1 = 0.61959648394007071914
+    y1 = 0.78600209801737319637
+    mesh_3 = RectangleMesh(Point(x0, y0), Point(x1, y1),
+                           max(int(round((x1-x0)/h)), 1), max(int(round((y1-y0)/h)), 1))
+    mesh_3.rotate(40.233022128340330426)
+    multimesh.add(mesh_3)
+
+    multimesh.build()
+
+    exact_volume = 1
+    approximate_volume = compute_volume(multimesh)
+    qr_volume = compute_volume_using_quadrature(multimesh)
+
+    print("exact volume ", exact_volume)
+    print("approximative volume ", approximate_volume)
+    print("approximate volume error %1.16e" % (exact_volume - approximate_volume))
+    print("qr volume ", qr_volume)
+    print("qr volume error %1.16e" % (exact_volume - qr_volume))
+
+    assert abs(exact_volume - qr_volume) < 7e-16
+    assert abs(exact_volume - approximate_volume) < DOLFIN_EPS
