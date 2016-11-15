@@ -41,11 +41,11 @@ endif()
 # Executable
 #add_executable(multimesh  main.cpp)
 #add_executable(multimesh2 main2.cpp)
-#add_executable(multimesh3 main3.cpp)
-add_executable(multimesh4 main4.cpp)
+add_executable(multimesh3 main3.cpp)
+#add_executable(multimesh4 main4.cpp)
 
 # Target libraries
 #target_link_libraries(multimesh "${DOLFIN_LIBRARIES};/home/august/Software/lib/libCGAL.so;/usr/lib/x86_64-linux-gnu/libgmp.so;/usr/lib/x86_64-linux-gnu/libmpfr.so")
 #target_link_libraries(multimesh2 ${DOLFIN_LIBRARIES})
-#target_link_libraries(multimesh3 "${DOLFIN_LIBRARIES};/home/august/Software/lib/libCGAL.so;/usr/lib/x86_64-linux-gnu/libgmp.so;/usr/lib/x86_64-linux-gnu/libmpfr.so")
-target_link_libraries(multimesh4 "${DOLFIN_LIBRARIES};/home/august/Software/lib/libCGAL.so;/usr/lib/x86_64-linux-gnu/libgmp.so;/usr/lib/x86_64-linux-gnu/libmpfr.so")
+target_link_libraries(multimesh3 "${DOLFIN_LIBRARIES};/home/august/Software/lib/libCGAL.so;/usr/lib/x86_64-linux-gnu/libgmp.so;/usr/lib/x86_64-linux-gnu/libmpfr.so")
+#target_link_libraries(multimesh4 "${DOLFIN_LIBRARIES};/home/august/Software/lib/libCGAL.so;/usr/lib/x86_64-linux-gnu/libgmp.so;/usr/lib/x86_64-linux-gnu/libmpfr.so")

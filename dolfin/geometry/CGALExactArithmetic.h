@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-11-03
+// Last changed: 2016-11-15
 //
 // Developer note:
 //
@@ -34,7 +34,7 @@
 // Define or undefine this flag for enabling or disabling CGAL and
 // exact arithmetic:
 
-// #define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
+#define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
 
 #ifndef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
 

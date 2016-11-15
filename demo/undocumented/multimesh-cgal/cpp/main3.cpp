@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2015-06-08
+// Last changed: 2016-11-15
 //
 
 
@@ -121,7 +121,17 @@ void compute_volume(const MultiMesh& multimesh,
       for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
       {
         const Cell cell(*multimesh.part(part), *it);
-        current_cells_status[*it] = std::make_pair(UNCUT, cell.volume());
+	const double vol = cell.volume();
+
+	// // orient2d volume from CGALExactArithmetic
+	// const MeshGeometry& geometry = cell.mesh().geometry();
+	// const unsigned int* vertices = cell.entities(0);
+	// const Point x0 = geometry.point(vertices[0]);
+	// const Point x1 = geometry.point(vertices[1]);
+	// const Point x2 = geometry.point(vertices[2]);
+	// const double vol = std::abs(volume({x0, x1, x2}));
+
+	current_cells_status[*it] = std::make_pair(UNCUT, vol);
       }
     }
 
@@ -130,10 +140,10 @@ void compute_volume(const MultiMesh& multimesh,
       const std::vector<unsigned int>& cut_cells = multimesh.cut_cells(part);
       for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
       {
-        // std::cout << "Cut cell in part " << part << ": " << *it << std::endl;
+        std::cout << "Cut cell in part " << part << ": " << *it << std::endl;
         double volume = 0;
         const quadrature_rule& qr = multimesh.quadrature_rule_cut_cell(part, *it);
-        // std::cout << "QR: " << qr.first.size() << ", " << qr.second.size() << std::endl;
+	std::cout << "QR: " << qr.first.size() << ", " << qr.second.size() << std::endl;
         for (std::size_t i = 0; i < qr.second.size(); ++i)
         {
           volume += qr.second[i];
@@ -149,6 +159,8 @@ void compute_volume(const MultiMesh& multimesh,
         current_cells_status[*it] = std::make_pair(COVERED, 0.);
       }
     }
+
+    std::cout << "part "<< part << " qr volume " << volume << std::endl;
   }
 }
 //------------------------------------------------------------------------------
@@ -361,19 +373,61 @@ std::shared_ptr<MultiMesh> get_test_case(std::size_t num_parts,
   std::shared_ptr<MultiMesh> multimesh(new MultiMesh(meshes, quadrature_order));
   return multimesh;
 }
+//-----------------------------------------------------------------------------
+std::shared_ptr<MultiMesh> test_volume_2d_rot(std::size_t /*Nx*/,
+					      std::size_t num_meshes)
+{
+  // Background mesh
+  auto mesh_0  = std::make_shared<UnitSquareMesh>(1, 1);
+  mesh_0->scale(10.0);
+  mesh_0->translate(Point(-5,-5));
 
+  // List of meshes
+  std::vector<std::shared_ptr<const Mesh> > meshes;
+  meshes.reserve(num_meshes + 1);
+  meshes.push_back(mesh_0);
+
+  for (std::size_t i = 0; i < num_meshes; ++i)
+  {
+    auto mesh = std::make_shared<UnitSquareMesh>(1, 1);
+    const double angle = 2*DOLFIN_PI*i / num_meshes;
+    std::cout << i<<' '<<angle << std::endl;
+    mesh->translate(Point(-0.5, -0.5));
+    mesh->scale(2.0);
+    mesh->rotate(180.0*angle / DOLFIN_PI);
+    mesh->translate(Point(cos(angle), sin(angle)));
+    meshes.push_back(mesh);
+  }
+
+  // // Save meshes to file so we can examine them
+  // File('background_mesh.pvd') << mesh_0;
+  // File vtkfile('meshes.pvd');
+  // for (const auto mesh: meshes)
+  //   vtkfile << mesh;
+
+  // Create multimesh
+  const std::size_t quadrature_order = 1;
+  std::shared_ptr<MultiMesh> multimesh(new MultiMesh(meshes, quadrature_order));
+
+  return multimesh;
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
   // set_log_level(TRACE);
 
-  for (std::size_t Nx = 2; Nx < 50; Nx++)
+  for (std::size_t Nx = 1; Nx < 2; Nx++)
   {
-    for (std::size_t parts = 2; parts < 20; parts++)
+    for (std::size_t parts = 8; parts < 9; parts++)
     {
-      std::cout << "Nx = " << Nx << ", numparts = " << parts << std::endl;
+      std::cout << "\n\nNx = " << Nx << ", numparts = " << parts << std::endl;
 
-      std::shared_ptr<MultiMesh> m = get_test_case(Nx, parts);
+      //std::shared_ptr<MultiMesh> m = get_test_case(Nx, parts);
+      std::shared_ptr<MultiMesh> m = test_volume_2d_rot(Nx, parts);
+
       MultiMesh& multimesh = *m;
+
       // std::cout << multimesh.plot_matplotlib() << std::endl;
       std::cout << "Done building multimesh" << std::endl;
       /* ---------------- Done creating multimesh ----------------------- */
@@ -399,13 +453,13 @@ int main(int argc, char** argv)
 
         dolfin_assert(current_cgal.size() == current_multimesh.size());
 
-        // std::cout << "Cells in part " << i << ": " << std::endl;
+	std::cout << "Cells in part " << i << ": " << std::endl;
         for (std::size_t j = 0; j < current_cgal.size(); j++)
         {
-          // std::cout << "  Cell " << j << std::endl;
-          // std::cout << "    Multimesh: " << cell_status_str(current_multimesh[j].first) << " (" << current_multimesh[j].second << ")" << std::endl;
-          // std::cout << "    CGAL:      " << cell_status_str(current_cgal[j].first) << " (" << current_cgal[j].second << ")" << std::endl;
-          // std::cout << "      Diff:    " << (current_cgal[j].second - current_multimesh[j].second) << std::endl;
+          std::cout << "  Cell " << j << std::endl;
+          std::cout << "    Multimesh: " << cell_status_str(current_multimesh[j].first) << " (" << current_multimesh[j].second << ")" << std::endl;
+          std::cout << "    CGAL:      " << cell_status_str(current_cgal[j].first) << " (" << current_cgal[j].second << ")" << std::endl;
+          std::cout << "      Diff:    " << (current_cgal[j].second - current_multimesh[j].second) << std::endl;
           cgal_volume += current_cgal[j].second;
           multimesh_volume += current_multimesh[j].second;
           dolfin_assert(near(CGAL::to_double(current_cgal[j].second), current_multimesh[j].second, DOLFIN_EPS_LARGE));
@@ -415,7 +469,7 @@ int main(int argc, char** argv)
       }
 
       // Exact volume is known
-      const FT exact_volume = 1;
+      const FT exact_volume = 100;
 
       std::cout << "Total volume" << std::endl;
       std::cout << "------------" << std::endl;
