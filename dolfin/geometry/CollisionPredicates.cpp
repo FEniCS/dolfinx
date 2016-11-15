@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-14
+// Last changed: 2016-11-15
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -329,7 +329,6 @@ bool CollisionPredicates::_collides_segment_point_2d(Point p0,
                                       p1.coordinates(),
                                       point.coordinates());
 
-  //std::cout << __FUNCTION__ << ' ' << orientation << std::endl;
   const Point dp = p1 - p0;
   const double segment_length = dp.squared_norm();
 
@@ -438,77 +437,10 @@ bool CollisionPredicates::_collides_segment_segment_2d(Point p0,
 						       Point q0,
 						       Point q1)
 {
-  // std::cout << __FUNCTION__ << std::endl;
-
-  // // Vertex vertex collision
-  // if (p0 == q0 || p0 == q1 || p1 == q0 || p1 == q1)
-  //   return true;
-
-  // const double q0_q1_p0 = orient2d(q0.coordinates(),
-  //                                  q1.coordinates(),
-  //                                  p0.coordinates());
-  // const double q0_q1_p1 = orient2d(q0.coordinates(),
-  //                                  q1.coordinates(),
-  //                                  p1.coordinates());
-  // const double p0_p1_q0 = orient2d(p0.coordinates(),
-  //                                  p1.coordinates(),
-  //                                  q0.coordinates());
-  // const double p0_p1_q1 = orient2d(p0.coordinates(),
-  //                                  p1.coordinates(),
-  //                                  q1.coordinates());
-
-  // std::cout<<std::setprecision(20) << q0_q1_p0<<' '<<q0_q1_p1<<' '<<p0_p1_q0<<' '<<p0_p1_q1<<std::endl;
-
-  // // investigate q0_q1_p0
-  // std::cout<<std::setprecision(20) <<(p0-q0).squared_norm()<<' '<<(q1-q0).squared_norm()<<' '<<((p0-q0).squared_norm()<(q1-q0).squared_norm())<<' '<<(q0.squared_distance(p0) < q0.squared_distance(q1))<<"   fdsfds  "<< (p0-q0).squared_norm()+(p0-q1).squared_norm() - (q0-q1).squared_norm() <<' '<< ((p0-q0).squared_norm()+(p0-q1).squared_norm() - (q0-q1).squared_norm()==0.) << "    ss  " << (q1-q0).dot(q1-p0)<<' '<<(q1-q0).dot(p0-q0) <<  '\n'
-  // 	   <<" test replace with\n"
-  // 	   << ((p0-q0).squared_norm() <= (q1-q0).squared_norm() and
-  // 	       (p0-q1).squared_norm() <= (q0-q1).squared_norm() and
-  // 	       (q1-q0).dot(q1-p0) > 0 and (q1-q0).dot(p0-q0) > 0) << '\n'
-  // 	    <<(p0-q1).squared_norm()<<' '<< (q0-q1).squared_norm()<<' '<<((p0-q1).squared_norm()<(q0-q1).squared_norm())<<std::endl;
-
-  // Vertex edge (interior) collision
-
-  // if (q0_q1_p0 == 0 &&
-  //     (p0-q0).squared_norm() <= (q1-q0).squared_norm() &&
-  //     (p0-q1).squared_norm() <= (q0-q1).squared_norm() &&
-  //     (q1-q0).dot(q1-p0) > 0 && (q1-q0).dot(p0-q0) > 0)
-  // {
-  //   // std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-  //   return true;
-  // }
-  // if (q0_q1_p1 == 0 &&
-  //     (p1-q0).squared_norm() <= (q1-q0).squared_norm() &&
-  //     (p1-q1).squared_norm() <= (q0-q1).squared_norm() &&
-  //     (q1-q0).dot(q1-p1) > 0 && (q1-q0).dot(p1-q0) > 0)
-  // {
-  //   //std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-  //   return true;
-  // }
-  // if (p0_p1_q0 == 0 &&
-  //     (q0-p0).squared_norm() <= (p1-p0).squared_norm() &&
-  //     (q0-p1).squared_norm() <= (p0-p1).squared_norm() &&
-  //     (p1-p0).dot(p1-q0) > 0 && (p1-p0).dot(q0-p0) > 0)
-  // {
-  //   //std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-  //   return true;
-  // }
-  // if (p0_p1_q1 == 0 &&
-  //     (q1-p0).squared_norm() <= (p1-p0).squared_norm() &&
-  //     (q1-p1).squared_norm() <= (p0-p1).squared_norm() &&
-  //     (p1-p0).dot(p1-q1) > 0 && (p1-p0).dot(q1-p0) > 0)
-  // {
-  //   //std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-  //   return true;
-  // }
-
-  //test
   if (_collides_segment_point_2d(p0, p1, q0)) return true;
   if (_collides_segment_point_2d(p0, p1, q1)) return true;
   if (_collides_segment_point_2d(q0, q1, p0)) return true;
   if (_collides_segment_point_2d(q0, q1, p1)) return true;
-
-  // std::cout << __FUNCTION__<<" no interior collision"<<std::endl;
 
   const double q0_q1_p0 = orient2d(q0.coordinates(),
                                    q1.coordinates(),
@@ -578,8 +510,6 @@ bool CollisionPredicates::_collides_triangle_point_2d(Point p0,
 						      Point point)
 {
   const double ref = orient2d(p0.coordinates(), p1.coordinates(), p2.coordinates());
-
-  // std::cout << __FUNCTION__<<" ref " << ref << '\t'<<orient2d(p0.coordinates(), p1.coordinates(), point.coordinates())<<' '<<orient2d(p1.coordinates(), p2.coordinates(), point.coordinates())<<' '<<orient2d(p2.coordinates(), p0.coordinates(), point.coordinates())<<'\n';
 
   if (ref*orient2d(p0.coordinates(), p1.coordinates(), point.coordinates()) >= 0 and
       ref*orient2d(p1.coordinates(), p2.coordinates(), point.coordinates()) >= 0 and
@@ -675,8 +605,6 @@ bool CollisionPredicates::_collides_triangle_segment_2d(const Point& p0,
 							const Point& q0,
 							const Point& q1)
 {
-  // std::cout << __FUNCTION__ << std::endl;
-
   // Check if end points are in triangle
   if (collides_triangle_point_2d(p0, p1, p2, q0))
     return true;

@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2016-11-14
+# Last changed: 2016-11-15
 
 import pytest
 from dolfin import *
@@ -193,9 +193,7 @@ def test_triangle_collides_point_3D():
                Point(1.0, 1.0, 1.0),
                Point(1.0, 0.0, 0.0),
                Point(0.0, 1.0, 0.0),
-               # Point(1.0/3.0, 2.0/3.0, 2.0/3.0),
                Point(0.25, 0.5, 0.75),
-               # Point(2.0/3.0, 1.0/3.0, 2.0/3.0)
                Point(0.5, 0.25, 0.75)
               ]
     A = Cell(mesh, 0)
