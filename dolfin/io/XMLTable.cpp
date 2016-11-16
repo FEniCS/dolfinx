@@ -64,3 +64,51 @@ void XMLTable::write(const Table& table, pugi::xml_node xml_node)
   }
 }
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void XMLTable::read(Table& table, pugi::xml_node xml_node)
+{
+
+  // Check that we have a XML Table
+  const pugi::xml_node xml_table = xml_node.child("table");
+  if (!xml_table)
+  {
+    dolfin_error("XMLTable.cpp",
+                 "read Table from XML file",
+                 "Not a DOLFIN Table XML file");
+  }
+
+  // Rename table in accordance with file input
+  const std::string name = xml_table.attribute("name").value();
+  table.rename(name);
+
+  // Iterate over rows
+  for (auto i = xml_node.begin(); i != xml_node.end(); ++i)
+  {
+    // Get row name
+    const std::string row = i->attribute("key").value();
+    
+    // Iterate over columns
+    for (auto j = xml_node.begin(); j != xml_node.end(); ++j)
+    {
+      // Get column name
+      const std::string col = j->attribute("key").value();
+
+      // Get type of value
+      const std::string type = j->attribute("type").value();
+
+      // Set table entry
+      if (type == "double")
+        table.set(row, col, value.as_double());
+      else if (type == "int")
+        table.set(row, col, value.as_int());
+      else
+      {
+        dolfin_error("XMLTable.cpp",
+                     "read Table from XML file",
+                     "Not supported type (\"%s\") of table entry (\"%s\", \"%s\")",
+                     type.c_str(), row.c_str(), col.c_str());
+      }
+    }
+  }
+  
+}
