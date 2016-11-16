@@ -22,7 +22,7 @@
 # Modified by August Johansson 2016
 #
 # First added:  2016-05-03
-# Last changed: 2016-11-15
+# Last changed: 2016-11-16
 
 from __future__ import print_function
 import pytest
@@ -116,6 +116,7 @@ def test_volume_2d():
     print("approximative volume ", approximative_volume)
     print("relative approximate volume error %1.16e" % ((exact_volume - approximative_volume) / exact_volume))
     print("qr volume ", qr_volume)
+<<<<<<< HEAD
     print("relative qr volume error %1.16e" % ((exact_volume - qr_volume) / exact_volume))
 
     assert (abs(exact_volume - qr_volume) / exact_volume) < DOLFIN_EPS_LARGE

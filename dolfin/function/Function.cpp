@@ -330,8 +330,13 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   // If not found, use the closest cell
   if (id == std::numeric_limits<unsigned int>::max())
   {
-    if (_allow_extrapolation)
-      id = mesh.bounding_box_tree()->compute_closest_entity(point).first;
+    // Check if the closest cell is within DOLFIN_EPS. This we can
+    // allow without _allow_extrapolation
+    std::pair<unsigned int, double> close
+      = mesh.bounding_box_tree()->compute_closest_entity(point);
+
+    if (_allow_extrapolation or close.second < DOLFIN_EPS)
+      id = close.first;
     else
     {
       dolfin_error("Function.cpp",

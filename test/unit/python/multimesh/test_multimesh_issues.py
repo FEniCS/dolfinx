@@ -22,7 +22,7 @@
 # Modified by August Johansson 2016
 #
 # First added:  2016-05-03
-# Last changed: 2016-11-02
+# Last changed: 2016-11-16
 
 
 from __future__ import print_function
@@ -68,7 +68,3 @@ def test_issue_754():
     # print("  p = {0:1.4f} (exact value is 2.0)".format(p))
     assert(abs(a - 0.25) < DOLFIN_EPS_LARGE)
     assert(abs(p - 2.) < DOLFIN_EPS_LARGE)
-
-# FIXME: Temporary testing
-if __name__ == "__main__":
-    test_issue_754()

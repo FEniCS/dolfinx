@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2016-05-03
-# Last changed: 2016-05-22
+# Last changed: 2016-11-16
 
 from __future__ import print_function
 import pytest
@@ -40,7 +40,3 @@ def test_multimesh_init_1():
   mm.build(2)
 
   return 1 == 1
-
-# # FIXME: Temporary testing
-# if __name__ == "__main__":
-#     test_multimesh_init_1()

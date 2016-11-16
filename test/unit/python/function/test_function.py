@@ -269,6 +269,18 @@ def test_call(R, V, W, mesh):
     with pytest.raises(TypeError):
         u0([0, 0])
 
+    # Test that we allow point evaluation that are slightly outside
+    parameters["allow_extrapolation"] = False
+
+    a = Vertex(mesh, 0).point()
+    offset = 0.99*DOLFIN_EPS
+    ax = Point(a[0] - offset, a[1], a[2])
+    assert round(u0(a) - u0(ax), 7) == 0
+
+    axyz = Point(a[0] - offset / sqrt(3),
+                 a[1] - offset / sqrt(3),
+                 a[2] - offset / sqrt(3))
+    assert round(u0(a) - u0(axyz), 7) == 0
 
 def test_constant_float_conversion():
     c = Constant(3.45)
