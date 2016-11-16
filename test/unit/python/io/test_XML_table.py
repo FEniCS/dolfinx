@@ -21,28 +21,28 @@
 
 import pytest
 from dolfin import *
-from dolfin_utils.test import cd_tempdir, skip_in_parallel
+from dolfin_utils.test import cd_tempdir
 
-@skip_in_parallel
 def test_write_and_read_table(cd_tempdir):
     # Do something that takes time
     x = PETScVector(mpi_comm_world(), 197)
 
-    # Create table for timings
-    t = timings(TimingClear_keep, [TimingType_wall, TimingType_system])
-    t_str = t.str(True)
+    if MPI.rank(mpi_comm_world()) == 0:
+        # Create table for timings
+        t = timings(TimingClear_keep, [TimingType_wall, TimingType_system])
+        t_str = t.str(True)
 
-    # Write table to file
-    file = File("my_table.xml")
-    file << t
-    del t
-    del file
+        # Write table to file
+        file = File(mpi_comm_self(), "my_table.xml")
+        file << t
+        del t
+        del file
     
-    # Read table from file
-    file = File("my_table.xml")
-    t = Table("My Table")
-    file >> t
+        # Read table from file
+        file = File(mpi_comm_self(), "my_table.xml")
+        t = Table("My Table")
+        file >> t
 
-    t_new_str = t.str(True)
+        t_new_str = t.str(True)
 
-    assert t_new_str == t_str
+        assert t_new_str == t_str
