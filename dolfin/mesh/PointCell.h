@@ -57,14 +57,14 @@ namespace dolfin
                          std::size_t dim, const unsigned int* v) const;
 
     /// Order entities locally (connectivity 1-0, 2-0, 2-1)
-    void order(Cell& cell, const std::vector<std::size_t>&
+    void order(Cell& cell, const std::vector<std::int64_t>&
                local_to_global_vertex_indices) const;
 
     /// Compute (generalized) volume (area) of triangle
     double volume(const MeshEntity& triangle) const;
 
-    /// Compute diameter of triangle
-    double diameter(const MeshEntity& triangle) const;
+    /// Compute circumradius of PointCell
+    double circumradius(const MeshEntity& point) const;
 
     /// Compute squared distance to given point
     double squared_distance(const Cell& cell, const Point& point) const;
@@ -100,8 +100,8 @@ namespace dolfin
     std::string description(bool plural) const;
 
     /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
-    std::vector<unsigned int> vtk_mapping() const
-    { return std::vector<unsigned int> {0}; }
+    std::vector<std::int8_t> vtk_mapping() const
+    { return {0}; }
 
   private:
 

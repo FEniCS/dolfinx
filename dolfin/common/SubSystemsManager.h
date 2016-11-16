@@ -21,6 +21,12 @@
 #ifndef __SUB_SYSTEMS_MANAGER_H
 #define __SUB_SYSTEMS_MANAGER_H
 
+#include <string>
+
+#ifdef HAS_PETSC
+#include <petsc.h>
+#endif
+
 namespace dolfin
 {
 
@@ -30,6 +36,11 @@ namespace dolfin
   class SubSystemsManager
   {
   public:
+
+    /// Singleton instance. Calling this ensures singleton instance of
+    /// SubSystemsManager is initialized according to the "Construct
+    /// on First Use" idiom.
+    static SubSystemsManager& singleton();
 
     /// Initialise MPI
     static void init_mpi();
@@ -65,13 +76,25 @@ namespace dolfin
     /// finalised)
     static bool mpi_finalized();
 
+#ifdef HAS_PETSC
+    /// PETSc error handler. Logs everything known to DOLFIN logging
+    /// system (with level TRACE) and stores the error message into
+    /// pests_err_msg member.
+    static PetscErrorCode PetscDolfinErrorHandler(
+      MPI_Comm comm, int line, const char *fun, const char *file,
+      PetscErrorCode n, PetscErrorType p, const char *mess, void *ctx);
+#endif
+
+    /// Last recorded PETSc error message
+    std::string petsc_err_msg;
+
   private:
 
     // Constructor (private)
     SubSystemsManager();
 
     // Copy constructor (private)
-    SubSystemsManager(const SubSystemsManager& sub_sys_manager);
+    SubSystemsManager(const SubSystemsManager&);
 
     // Destructor
     ~SubSystemsManager();
@@ -81,9 +104,6 @@ namespace dolfin
 
     // Finalize PETSc
     static void finalize_petsc();
-
-    // Singleton instance
-    static SubSystemsManager& singleton();
 
     // State variables
     bool petsc_initialized;

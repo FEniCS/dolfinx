@@ -75,6 +75,17 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
   // Create vector to point to dofs
   std::vector<ArrayView<const dolfin::la_index>> dofs(rank);
 
+  // Build sparsity pattern for reals (globally supported basis members)
+  // NOTE: It is very important that this is done before other integrals
+  //       so that insertion of global nodes is no-op below
+  // NOTE: We assume that global dofs contribute a whole row which is
+  //       memory suboptimal (for restricted Lagrange multipliers) but very
+  //       fast and certainly much better than quadratic scaling of usual
+  //       insertion below
+  std::vector<std::size_t> global_dofs0;
+  dofmaps[sparsity_pattern.primary_dim()]->tabulate_global_dofs(global_dofs0);
+  sparsity_pattern.insert_full_rows_local(global_dofs0);
+
   // FIXME: We iterate over the entire mesh even if the function space
   // is restricted. This works out fine since the local dofmap
   // returned on each cell will be an empty vector, but we might think

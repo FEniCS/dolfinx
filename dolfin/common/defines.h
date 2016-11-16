@@ -32,6 +32,9 @@ namespace dolfin
   /// Return DOLFIN version string
   std::string dolfin_version();
 
+  /// Return UFC signature string
+  std::string ufc_signature();
+
   /// Return git changeset hash (returns "unknown" if changeset is
   /// not known)
   std::string git_commit_hash();
@@ -68,6 +71,9 @@ namespace dolfin
 
   /// Return true if DOLFIN is compiled with HDF5
   bool has_hdf5();
+
+  /// Return true if DOLFIN is compiled with VTK
+  bool has_vtk();
 
 }
 

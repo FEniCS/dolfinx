@@ -34,6 +34,11 @@ std::string dolfin::dolfin_version()
   return std::string(DOLFIN_VERSION);
 }
 //-------------------------------------------------------------------------
+std::string dolfin::ufc_signature()
+{
+  return std::string(UFC_SIGNATURE);
+}
+//-------------------------------------------------------------------------
 std::string dolfin::git_commit_hash()
 {
   return std::string(DOLFIN_GIT_COMMIT_HASH);
@@ -128,6 +133,15 @@ bool dolfin::has_zlib()
 bool dolfin::has_hdf5()
 {
 #ifdef HAS_HDF5
+  return true;
+#else
+  return false;
+#endif
+}
+//-------------------------------------------------------------------------
+bool dolfin::has_vtk()
+{
+#ifdef HAS_VTK
   return true;
 #else
   return false;

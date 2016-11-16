@@ -1,4 +1,4 @@
-// Copyright (C) 2015 Anders Logg
+// Copyright (C) 2015-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,14 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2015-11-05
-// Last changed: 2015-11-05
+// Last changed: 2016-03-02
 
 #include <memory>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/GenericFunction.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/MultiMeshForm.h>
 #include "MultiMeshCoefficientAssigner.h"
+#include "MultiMeshFunction.h"
 
 using namespace dolfin;
 
@@ -41,14 +43,24 @@ MultiMeshCoefficientAssigner::~MultiMeshCoefficientAssigner()
 }
 //-----------------------------------------------------------------------------
 void MultiMeshCoefficientAssigner::operator=
-(const GenericFunction& coefficient)
+(std::shared_ptr<const GenericFunction> coefficient)
 {
   // Assign to all parts of form
   for (std::size_t part = 0; part < _form.num_parts(); part++)
   {
     Form& a = const_cast<Form&>(*_form.part(part));
-    a.set_coefficient(_number,
-                      reference_to_no_delete_pointer(coefficient));
+    a.set_coefficient(_number, coefficient);
+  }
+}
+//-----------------------------------------------------------------------------
+void MultiMeshCoefficientAssigner::operator=
+(const MultiMeshFunction& coefficient)
+{
+  // Assign to all parts of form
+  for (std::size_t part = 0; part < _form.num_parts(); part++)
+  {
+    Form& a = const_cast<Form&>(*_form.part(part));
+    a.set_coefficient(_number, coefficient.part(part));
   }
 }
 //-----------------------------------------------------------------------------

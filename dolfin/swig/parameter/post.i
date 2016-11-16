@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-05-12
-// Last changed: 2014-08-25
+// Last changed: 2016-04-19
 //
 // ===========================================================================
 // SWIG directives for the DOLFIN parameter kernel module (post)
@@ -41,6 +41,8 @@ def warn_once(self, msg):
         print(msg)
 
 def value(self):
+    if not self.is_set():
+        return None
     val_type = self.type_str()
     if val_type == "string":
         return str(self)
@@ -100,7 +102,7 @@ def data(self):
         PyObject *o = PyList_GetItem(op,i);
 %#if PY_VERSION_HEX>=0x03000000
         if (PyUnicode_Check(o))
-%#else  
+%#else
         if (PyString_Check(o))
 %#endif
         {
@@ -200,11 +202,14 @@ def __setitem__(self, key, value):
         return
     if key not in self._get_parameter_keys():
         raise KeyError("'%s' is not a parameter"%key)
-    if not isinstance(value,(int,str,float,bool)):
-        raise TypeError("can only set 'int', 'bool', 'float' and 'str' parameters")
+    from six import string_types
+    if not isinstance(value, string_types + (int,float,bool)) and (value is not None):
+        raise TypeError("can only set 'int', 'bool', 'float' and 'str' for parameter %s" %key)
     par = self._get_parameter(key)
     if isinstance(value,bool):
         par._assign_bool(value)
+    elif value is None:
+        pass
     else:
         par._assign(value)
 
@@ -213,11 +218,13 @@ def update(self, other):
     if not isinstance(other,(Parameters, dict)):
         raise TypeError("expected a 'dict' or a '%s'"%Parameters.__name__)
     for key, other_value in other.items():
-        self_value  = self[key]
-        if isinstance(self_value, Parameters):
+        # Check is self[key] is a Parameter or a parameter set (Parameters)
+        if self.has_parameter_set(key):
+            self_value  = self[key]
             self_value.update(other_value)
         else:
             self.__setitem__(key, other_value)
+
 
 def to_dict(self):
     """Convert the Parameters to a dict"""
@@ -320,25 +327,25 @@ def __new_Parameter_init__(self,*args,**kwargs):
     Parameters(name, dim=(3, 0, 4), foo=("Foo", ["Foo", "Bar"])
        create parameter set with given parameters and ranges
     """
+    from six import string_types
+    from numpy import isscalar
 
     if len(args) == 0:
         old_init(self, "parameters")
-    elif len(args) == 1 and isinstance(args[0], (str,type(self))):
+    elif len(args) == 1 and isinstance(args[0], string_types + (type(self),)):
         old_init(self, args[0])
     else:
         raise TypeError("expected a single optional argument of type 'str' or ''"%type(self).__name__)
     if len(kwargs) == 0:
         return
 
-    from numpy import isscalar
-    from six import iteritems
-    for key, value in iteritems(kwargs):
+    for key, value in kwargs.items():
         if isinstance(value,type(self)):
             self.add(value)
         elif isinstance(value,tuple):
             if isscalar(value[0]) and len(value) == 3:
                 self.add(key, *value)
-            elif isinstance(value[0], str) and len(value) == 2:
+            elif isinstance(value[0], string_types) and len(value) == 2:
                 if not isinstance(value[1], list):
                     raise TypeError("expected a list as second item of tuple, when first is a 'str'")
                 self.add(key, *value)
@@ -367,4 +374,3 @@ std::shared_ptr<dolfin::Parameters> get_global_parameters()
 //parameters = _common.get_global_parameters()
 //del _common.get_global_parameters
 //%}
-

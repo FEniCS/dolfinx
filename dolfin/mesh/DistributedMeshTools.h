@@ -51,8 +51,8 @@ namespace dolfin
       const Mesh& mesh,
       const std::map<unsigned int, std::pair<unsigned int,
       unsigned int> >& slave_entities,
-      std::vector<std::size_t>& global_entity_indices,
-      std::map<unsigned int, std::set<unsigned int> >& shared_entities,
+      std::vector<std::int64_t>& global_entity_indices,
+      std::map<std::int32_t, std::set<unsigned int> >& shared_entities,
       std::size_t d);
 
     // Compute number of cells connected to each facet
@@ -94,7 +94,7 @@ namespace dolfin
     static void reorder_values_by_global_indices(MPI_Comm mpi_comm,
                           std::vector<double>& values,
                           const std::size_t width,
-                          const std::vector<std::size_t>& global_indices);
+                          const std::vector<std::int64_t>& global_indices);
 
   private:
 
@@ -135,8 +135,8 @@ namespace dolfin
     static void compute_entity_ownership(
       const MPI_Comm mpi_comm,
       const std::map<std::vector<std::size_t>, unsigned int>& entities,
-      const std::map<unsigned int, std::set<unsigned int> >& shared_vertices_local,
-      const std::vector<std::size_t>& global_vertex_indices,
+      const std::map<std::int32_t, std::set<unsigned int> >& shared_vertices_local,
+      const std::vector<std::int64_t>& global_vertex_indices,
       std::size_t d,
       std::vector<std::size_t>& owned_entities,
       std::array<std::map<Entity, EntityData>, 2>& shared_entities);

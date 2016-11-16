@@ -61,11 +61,11 @@ def test_butcher_schemes_scalar_time(Scheme, optimize):
     tstop = 1.0
     weight = Constant(2)
     u_true = Expression("u0 + 2*t + pow(t, 2)/2. + weight*pow(t, 3)/3. - "\
-                        "pow(t, 5)/5.", t=tstop, u0=u0, weight=weight)
+                        "pow(t, 5)/5.", t=tstop, u0=u0, weight=weight, degree=2)
 
     u = Function(V)
-    compound_time_expr = Expression("weight*time*time", weight=weight, \
-                                    element=time.ufl_element(), time=time)
+    compound_time_expr = Expression("weight*time*time", weight=weight,
+                                    element=time.ufl_element(), time=time, degree=2)
     form = (2+time+compound_time_expr-time**4)*v*dP
 
     scheme = Scheme(form, u, time)
@@ -94,7 +94,7 @@ def test_butcher_schemes_scalar(Scheme, optimize):
     v = TestFunction(V)
 
     tstop = 1.0
-    u_true = Expression("1.0-(exp(-t))", t=tstop)
+    u_true = Expression("1.0-(exp(-t))", t=tstop, degree=2)
 
     u = Function(V)
     form = (1-u)*v*dP
@@ -133,7 +133,7 @@ def test_butcher_schemes_vector(Scheme, optimize):
     V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
     v = TestFunction(V)
     tstop = 1.0
-    u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
+    u_true = Expression(("cos(t)", "sin(t)"), t=tstop, degree=2)
 
     u = Function(V)
     form = (-u[1]*v[0]+u[0]*v[1])*dP

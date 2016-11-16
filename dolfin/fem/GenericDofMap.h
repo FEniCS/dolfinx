@@ -66,11 +66,6 @@ namespace dolfin
     /// space
     virtual std::size_t global_dimension() const = 0;
 
-    /// Return number of owned (type="owned"), unowned
-    /// (type="unowned"), or all (type="all") dofs in the map on this
-    /// process
-    virtual std::size_t local_dimension(std::string type) const = 0;
-
     /// Return the dimension of the local finite element function
     /// space on a cell (deprecated API)
     std::size_t cell_dimension(std::size_t index) const
@@ -122,6 +117,9 @@ namespace dolfin
     virtual void tabulate_entity_dofs(std::vector<std::size_t>& dofs,
                                       std::size_t dim,
                                       std::size_t local_entity) const = 0;
+
+    /// Tabulate globally supported dofs
+    virtual void tabulate_global_dofs(std::vector<std::size_t>& dofs) const = 0;
 
     /// Create a copy of the dof map
     virtual std::shared_ptr<GenericDofMap> copy() const = 0;

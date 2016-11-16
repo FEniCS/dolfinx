@@ -28,6 +28,7 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DirichletBC.h>
@@ -103,7 +104,8 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
   }
 
   // Read function data from file
-  File file(filename);
+  MPI_Comm comm = _function_space->mesh()->mpi_comm();
+  File file(comm, filename);
   file >> *this;
 }
 //-----------------------------------------------------------------------------
@@ -164,7 +166,6 @@ const Function& Function::operator= (const Function& v)
       new_rows[i]   = entry->first;
       old_rows[i++] = entry->second;
     }
-    MPI::barrier(MPI_COMM_WORLD);
 
     // Gather values into a vector
     dolfin_assert(v.vector());
@@ -217,34 +218,38 @@ Function& Function::operator[] (std::size_t i) const
   }
 }
 //-----------------------------------------------------------------------------
-FunctionAXPY Function::operator+(const Function& other) const
+FunctionAXPY Function::operator+(std::shared_ptr<const Function> other) const
 {
-  return FunctionAXPY(*this, other, FunctionAXPY::ADD_ADD);
+  return FunctionAXPY(reference_to_no_delete_pointer(*this), other,
+                      FunctionAXPY::Direction::ADD_ADD);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY Function::operator+(const FunctionAXPY& axpy) const
 {
-  return FunctionAXPY(axpy, *this, FunctionAXPY::ADD_ADD);
+  return FunctionAXPY(axpy, reference_to_no_delete_pointer(*this),
+                      FunctionAXPY::Direction::ADD_ADD);
 }
 //-----------------------------------------------------------------------------
-FunctionAXPY Function::operator-(const Function& other) const
+FunctionAXPY Function::operator-(std::shared_ptr<const Function> other) const
 {
-  return FunctionAXPY(*this, other, FunctionAXPY::ADD_SUB);
+  return FunctionAXPY(reference_to_no_delete_pointer(*this), other,
+                      FunctionAXPY::Direction::ADD_SUB);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY Function::operator-(const FunctionAXPY& axpy) const
 {
-  return FunctionAXPY(axpy, *this, FunctionAXPY::SUB_ADD);
+  return FunctionAXPY(axpy, reference_to_no_delete_pointer(*this),
+                      FunctionAXPY::Direction::SUB_ADD);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY Function::operator*(double scalar) const
 {
-  return FunctionAXPY(*this, scalar);
+  return FunctionAXPY(reference_to_no_delete_pointer(*this), scalar);
 }
 //-----------------------------------------------------------------------------
 FunctionAXPY Function::operator/(double scalar) const
 {
-  return FunctionAXPY(*this, 1.0/scalar);
+  return FunctionAXPY(reference_to_no_delete_pointer(*this), 1.0/scalar);
 }
 //-----------------------------------------------------------------------------
 void Function::operator=(const FunctionAXPY& axpy)
@@ -257,14 +262,20 @@ void Function::operator=(const FunctionAXPY& axpy)
   }
 
   // Make an initial assign and scale
+  dolfin_assert(axpy.pairs()[0].second);
   *this = *(axpy.pairs()[0].second);
   if (axpy.pairs()[0].first != 1.0)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  std::vector<std::pair<double, const Function*>>::const_iterator it;
+  std::vector<std::pair<double, std::shared_ptr<const Function>>>
+    ::const_iterator it;
   for (it = axpy.pairs().begin()+1; it != axpy.pairs().end(); it++)
+  {
+    dolfin_assert(it->second);
+    dolfin_assert(it->second->vector());
     _vector->axpy(it->first, *(it->second->vector()));
+  }
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> Function::vector()
@@ -571,7 +582,7 @@ void Function::init_vector()
 
   // Create vector of dofs
   if (!_vector)
-    _vector = factory.create_vector();
+    _vector = factory.create_vector(_function_space->mesh()->mpi_comm());
   dolfin_assert(_vector);
   if (!_vector->empty())
   {
@@ -582,46 +593,5 @@ void Function::init_vector()
   }
   _vector->init(*tensor_layout);
   _vector->zero();
-}
-//-----------------------------------------------------------------------------
-void
-Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
-                                std::vector<la_index>& ghost_indices) const
-{
-  // Clear data
-  ghost_indices.clear();
-
-  // Get mesh
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->mesh());
-  const Mesh& mesh = *_function_space->mesh();
-
-  // Get dof map
-  dolfin_assert(_function_space->dofmap());
-  const GenericDofMap& dofmap = *(_function_space->dofmap());
-
-  // Get local range
-  const std::size_t n0 = range.first;
-  const std::size_t n1 = range.second;
-
-  // Iterate over local mesh and check which dofs are needed
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Get dofs on cell
-    auto dofs = dofmap.cell_dofs(cell->index());
-    for (std::size_t d = 0; d < dofs.size(); ++d)
-    {
-      const std::size_t dof = dofs[d];
-      if (dof < n0 || dof >= n1)
-      {
-        // FIXME: Could we use dolfin::Set here? Or unordered_set?
-        if (std::find(ghost_indices.begin(), ghost_indices.end(), dof)
-            == ghost_indices.end())
-        {
-          ghost_indices.push_back(dof);
-        }
-      }
-    }
-  }
 }
 //-----------------------------------------------------------------------------

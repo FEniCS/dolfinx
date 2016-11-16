@@ -68,3 +68,17 @@ namespace dolfin
   class GenericMatrix;
 
 }
+
+//=============================================================================
+// Forward declarations of common types in UFC needed for template
+// instantiations
+//=============================================================================
+
+namespace ufc
+{
+  class cell;
+  class function;
+  class finite_element;
+  class dofmap;
+  class form;
+}

@@ -168,7 +168,7 @@ def test_save_and_read_function(tempdir):
     Q = FunctionSpace(mesh, "CG", 3)
     F0 = Function(Q)
     F1 = Function(Q)
-    E = Expression("x[0]")
+    E = Expression("x[0]", degree=1)
     F0.interpolate(E)
 
     # Save to HDF5 File
@@ -223,3 +223,13 @@ def test_save_and_read_mesh_3D(tempdir):
     assert mesh0.size_global(0) == mesh1.size_global(0)
     dim = mesh0.topology().dim()
     assert mesh0.size_global(dim) == mesh1.size_global(dim)
+
+@skip_if_not_HDF5
+def test_mpi_atomicity(tempdir):
+    comm_world = mpi_comm_world()
+    if MPI.size(comm_world) > 1:
+        filename = os.path.join(tempdir, "mpiatomic.h5")
+        with HDF5File(mpi_comm_world(), filename, "w") as f:
+            assert f.get_mpi_atomicity() is False
+            f.set_mpi_atomicity(True)
+            assert f.get_mpi_atomicity() is True

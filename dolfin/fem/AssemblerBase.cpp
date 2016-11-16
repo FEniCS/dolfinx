@@ -221,18 +221,19 @@ You might have forgotten to specify the value dimension correctly in an Expressi
                  "assemble form",
                  "Geometric dimension of Mesh does not match value shape of coordinate element in form");
   }
-  /* TODO: Wanted to check this but we don't have degree() available in ufc::finite_element.
+
+  // Check that the coordinate element degree matches the mesh degree
   if (coordinate_element->degree() != mesh.geometry().degree())
   {
     dolfin_error("AssemblerBase.cpp",
                  "assemble form",
                  "Mesh geometry degree does not match degree of coordinate element in form");
   }
-  */
+
   switch (mesh.type().cell_type())
   {
   case CellType::interval:
-    if (coordinate_element->cell_shape() != ufc::interval)
+    if (coordinate_element->cell_shape() != ufc::shape::interval)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
@@ -240,7 +241,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
     }
     break;
   case CellType::triangle:
-    if (coordinate_element->cell_shape() != ufc::triangle)
+    if (coordinate_element->cell_shape() != ufc::shape::triangle)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
@@ -248,7 +249,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
     }
     break;
   case CellType::tetrahedron:
-    if (coordinate_element->cell_shape() != ufc::tetrahedron)
+    if (coordinate_element->cell_shape() != ufc::shape::tetrahedron)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
@@ -256,7 +257,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
     }
     break;
   case CellType::quadrilateral:
-    if (coordinate_element->cell_shape() != ufc::quadrilateral)
+    if (coordinate_element->cell_shape() != ufc::shape::quadrilateral)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
@@ -264,7 +265,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
     }
     break;
   case CellType::hexahedron:
-    if (coordinate_element->cell_shape() != ufc::hexahedron)
+    if (coordinate_element->cell_shape() != ufc::shape::hexahedron)
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",

@@ -64,7 +64,7 @@ namespace dolfin
                        std::shared_ptr<const EigenMatrix> P);
 
     /// Get operator (matrix)
-    const EigenMatrix& get_operator() const;
+    std::shared_ptr<const EigenMatrix> get_operator() const;
 
     /// Solve linear system Ax = b and return number of iterations
     std::size_t solve(GenericVector& x, const GenericVector& b);
@@ -92,6 +92,10 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
+    /// Return parameter type: "krylov_solver" or "lu_solver"
+    std::string parameter_type() const
+    { return "krylov_solver"; }
+
   private:
 
     // Initialize solver
@@ -118,13 +122,6 @@ namespace dolfin
     // Matrix used to construct the preconditioner
     std::shared_ptr<const EigenMatrix> _matP;
 
-    // Prepare parameters; this cannot be done in static update_parameters
-    // as it depends on the method
-    void _init_parameters();
-
-    // Compute tolerance to be passed to Eigen
-    double _compute_tolerance(const EigenMatrix& A, const EigenVector& x,
-                              const EigenVector& b) const;
   };
 
 }

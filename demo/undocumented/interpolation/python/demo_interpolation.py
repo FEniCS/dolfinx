@@ -35,7 +35,7 @@ mesh = UnitSquareMesh(16, 16)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Create a function on the original mesh
-f = Expression("sin(5.0*x[0])*sin(5.0*x[1])")
+f = Expression("sin(5.0*x[0])*sin(5.0*x[1])", degree=2)
 v = interpolate(f, V)
 
 # Refine mesh and create a new function space

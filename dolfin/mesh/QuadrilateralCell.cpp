@@ -132,19 +132,19 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double QuadrilateralCell::diameter(const MeshEntity& cell) const
+double QuadrilateralCell::circumradius(const MeshEntity& cell) const
 {
   // Check that we get a cell
   if (cell.dim() != 2)
   {
     dolfin_error("QuadrilateralCell.cpp",
-                 "compute diameter of quadrilateral cell",
+                 "compute circumradius of quadrilateral cell",
                  "Illegal mesh entity");
   }
 
   dolfin_error("QuadrilateralCell.cpp",
-               "compute diameter of quadrilateral cell",
-               "Don't know how to compute diameter");
+               "compute cirumradius of quadrilateral cell",
+               "Don't know how to compute circumradius");
 
   dolfin_not_implemented();
   return 0.0;
@@ -251,9 +251,10 @@ double QuadrilateralCell::facet_area(const Cell& cell, std::size_t facet) const
 }
 //-----------------------------------------------------------------------------
 void QuadrilateralCell::order(Cell& cell,
-                 const std::vector<std::size_t>& local_to_global_vertex_indices) const
+                 const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
   // Not implemented
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 bool QuadrilateralCell::collides(const Cell& cell, const Point& point) const

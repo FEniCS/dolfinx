@@ -66,8 +66,8 @@ namespace dolfin
     /// Compute (generalized) volume (length) of interval
     double volume(const MeshEntity& interval) const;
 
-    /// Compute diameter of interval
-    double diameter(const MeshEntity& interval) const;
+    /// Compute circumradius of interval
+    double circumradius(const MeshEntity& interval) const;
 
     /// Compute squared distance to given point (3D enabled)
     double squared_distance(const Cell& cell, const Point& point) const;
@@ -94,7 +94,7 @@ namespace dolfin
     double facet_area(const Cell& cell, std::size_t facet) const;
 
     /// Order entities locally
-    void order(Cell& cell, const std::vector<std::size_t>&
+    void order(Cell& cell, const std::vector<std::int64_t>&
                local_to_global_vertex_indices) const;
 
     /// Check whether given point collides with cell
@@ -113,8 +113,8 @@ namespace dolfin
     std::string description(bool plural) const;
 
     /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
-    std::vector<unsigned int> vtk_mapping() const
-    { return std::vector<unsigned int> {0, 1}; }
+    std::vector<std::int8_t> vtk_mapping() const
+    { return {0, 1}; }
 
   };
 

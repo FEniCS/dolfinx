@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2015 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2016 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -151,27 +151,6 @@ DofMap::~DofMap()
 std::size_t DofMap::global_dimension() const
 {
   return _global_dimension;
-}
-//-----------------------------------------------------------------------------
-std::size_t DofMap::local_dimension(std::string type) const
-{
-  deprecation("DofMap::local_dimension", "1.7.0",
-              "1.8.0", "Please use dofmap::index_map()->size() instead");
-
-  if (type == "owned")
-    return _index_map->size(IndexMap::MapSize::OWNED);
-  else if (type == "unowned")
-    return _index_map->size(IndexMap::MapSize::UNOWNED);
-  else if (type == "all")
-    return _index_map->size(IndexMap::MapSize::ALL);
-  else
-  {
-    dolfin_error("DofMap.cpp",
-                 "get local dimension",
-                 "Unknown type %s", type.c_str());
-  }
-
-  return 0;
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_element_dofs(std::size_t cell_index) const

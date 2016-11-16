@@ -46,17 +46,17 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    Vector()
+    Vector(MPI_Comm comm=MPI_COMM_WORLD)
     {
       DefaultFactory factory;
-      vector = factory.create_vector();
+      vector = factory.create_vector(comm);
     }
 
     /// Create vector of size N
     Vector(MPI_Comm comm, std::size_t N)
     {
       DefaultFactory factory;
-      vector = factory.create_vector();
+      vector = factory.create_vector(comm);
       vector->init(comm, N);
     }
 
@@ -125,7 +125,7 @@ namespace dolfin
     { return vector->local_size(); }
 
     /// Return local ownership range of a vector
-    virtual std::pair<std::size_t, std::size_t> local_range() const
+    virtual std::pair<std::int64_t, std::int64_t> local_range() const
     { return vector->local_range(); }
 
     /// Determine whether global vector index is owned by this process

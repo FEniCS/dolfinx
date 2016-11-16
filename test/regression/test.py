@@ -58,7 +58,8 @@ def run_cpp_demo(prefix, demo, rootdir, timing, failed):
 
     t1 = time()
     os.chdir(demo)
-    status, output = get_status_output("%s .%s%s" % (prefix, os.path.sep, cppdemo_executable))
+    status, output = get_status_output("%s .%s%s" % (prefix, os.path.sep,
+                                                     cppdemo_executable))
     os.chdir(rootdir)
     t2 = time()
     timing += [(t2 - t1, demo)]
@@ -81,7 +82,8 @@ def run_python_demo(prefix, demo, rootdir, timing, failed):
 
     t1 = time()
     os.chdir(demo)
-    status, output = get_status_output("%s %s -u %s" % (prefix, sys.executable, demofile))
+    status, output = get_status_output("%s %s -u %s" % (prefix, sys.executable,
+                                                        demofile))
     os.chdir(rootdir)
     t2 = time()
     timing += [(t2 - t1, demo)]
@@ -95,7 +97,8 @@ def run_python_demo(prefix, demo, rootdir, timing, failed):
         print(output)
 
         # Add contents from Instant's compile.log to output
-        instant_compile_log = os.path.join(instant.get_default_error_dir(), "compile.log")
+        instant_compile_log = os.path.join(instant.get_default_error_dir(),
+                                           "compile.log")
         if os.path.isfile(instant_compile_log):
             instant_error = file(instant_compile_log).read()
             output += "\n\nInstant compile.log for %s:\n\n" % demo
@@ -112,18 +115,22 @@ def main():
     #       fail. This is meant to protect against usual bad named demos not
     #       executed for ages in regression tests.
     not_implemented = \
-      [os.path.join(demodir, 'undocumented', 'projection-interpolation',    'cpp'), \
-       os.path.join(demodir, 'undocumented', 'interpolation',               'cpp'), \
-       os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'), \
-       os.path.join(demodir, 'undocumented', 'multistage-solver',           'cpp'), \
-       os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'), \
-       os.path.join(demodir, 'undocumented', 'overlapping-regions',         'cpp'), \
-       os.path.join(demodir, 'undocumented', 'sub-function-assignment',     'cpp'), \
-       os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'cpp'), \
-       os.path.join(demodir, 'undocumented', 'timing',                      'cpp'), \
-       os.path.join(demodir, 'documented',   'stokes-mini',                 'cpp'), \
-       os.path.join(demodir, 'documented',   'tensor-weighted-poisson',     'cpp'), \
-       os.path.join(demodir, 'documented',   'subdomains-poisson',          'cpp'), \
+      [os.path.join(demodir, 'undocumented', 'projection-interpolation',    'cpp'),
+       os.path.join(demodir, 'undocumented', 'interpolation',               'cpp'),
+       os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'),
+       os.path.join(demodir, 'undocumented', 'multistage-solver',           'cpp'),
+       os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'),
+       os.path.join(demodir, 'undocumented', 'overlapping-regions',         'cpp'),
+       os.path.join(demodir, 'undocumented', 'sub-function-assignment',     'cpp'),
+       os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'cpp'),
+       os.path.join(demodir, 'undocumented', 'timing',                      'cpp'),
+       os.path.join(demodir, 'undocumented', 'mplot',                       'cpp'),
+       os.path.join(demodir, 'undocumented', 'coordinates',                 'cpp'),
+       os.path.join(demodir, 'documented',   'stokes-mini',                 'cpp'),
+       os.path.join(demodir, 'documented',   'tensor-weighted-poisson',     'cpp'),
+       os.path.join(demodir, 'documented',   'subdomains-poisson',          'cpp'),
+       os.path.join(demodir, 'documented',   'singular-poisson-rst',        'cpp'),
+       os.path.join(demodir, 'documented',   'maxwell-eigenvalues',        'cpp'),
        ]
 
     # Demos to run
@@ -172,49 +179,63 @@ def main():
 
     # List of demos that throw expected errors in parallel
     not_working_in_parallel = \
-      [os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
-       os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'python'), \
-       os.path.join(demodir, 'documented',   'auto-adaptive-poisson',       'cpp'),    \
-       os.path.join(demodir, 'documented',   'auto-adaptive-poisson',       'python'), \
-       os.path.join(demodir, 'undocumented', 'eval',                        'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'eval',                        'python'), \
-       os.path.join(demodir, 'undocumented', 'extrapolation',               'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'extrapolation',               'python'), \
-       os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'python'), \
-       os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'), \
-       os.path.join(demodir, 'undocumented', 'poisson-disc',                'python'), \
-       os.path.join(demodir, 'undocumented', 'poisson-disc',                'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'smoothing',                   'python'), \
-       os.path.join(demodir, 'documented',   'subdomains',                  'cpp'),    \
-       os.path.join(demodir, 'documented',   'subdomains',                  'python'), \
-       os.path.join(demodir, 'undocumented', 'submesh',                     'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'submesh',                     'python'), \
-       os.path.join(demodir, 'undocumented', 'time-series',                 'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'time-series',                 'python'), \
-       os.path.join(demodir, 'undocumented', 'triangulate',                 'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'triangulate',                 'python'), \
-       os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'cpp'),    \
-       os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'python'), \
-       os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'python'), \
+      [os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'),
+       os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'cpp'),
+       os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'python'),
+       os.path.join(demodir, 'documented',   'auto-adaptive-poisson',       'cpp'),
+       os.path.join(demodir, 'documented',   'auto-adaptive-poisson',       'python'),
+       os.path.join(demodir, 'undocumented', 'eval',                        'cpp'),
+       os.path.join(demodir, 'undocumented', 'eval',                        'python'),
+       os.path.join(demodir, 'undocumented', 'extrapolation',               'cpp'),
+       os.path.join(demodir, 'undocumented', 'extrapolation',               'python'),
+       os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'cpp'),
+       os.path.join(demodir, 'documented',   'nonmatching-interpolation',   'cpp'),
+       os.path.join(demodir, 'documented',   'nonmatching-interpolation',   'python'),
+       os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),
+       os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'),
+       os.path.join(demodir, 'undocumented', 'poisson-disc',                'python'),
+       os.path.join(demodir, 'undocumented', 'poisson-disc',                'cpp'),
+       os.path.join(demodir, 'undocumented', 'smoothing',                   'python'),
+       os.path.join(demodir, 'documented',   'subdomains',                  'cpp'),
+       os.path.join(demodir, 'documented',   'subdomains',                  'python'),
+       os.path.join(demodir, 'undocumented', 'submesh',                     'cpp'),
+       os.path.join(demodir, 'undocumented', 'submesh',                     'python'),
+       os.path.join(demodir, 'undocumented', 'time-series',                 'cpp'),
+       os.path.join(demodir, 'undocumented', 'time-series',                 'python'),
+       os.path.join(demodir, 'undocumented', 'triangulate',                 'cpp'),
+       os.path.join(demodir, 'undocumented', 'triangulate',                 'python'),
+       os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'cpp'),
+       os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'python'),
+       os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'python'),
+       os.path.join(demodir, 'undocumented', 'coordinates',                 'python'),
        ]
 
     failed = []
     timing = []
 
     # Check if we should run only Python tests, use for quick testing
-    if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
+    if (len(sys.argv) == 2 and sys.argv[1] == "--only-python") or \
+       "DISABLE_CPP_TESTING" in os.environ:
         only_python = True
     else:
         only_python = False
+
+    # Check if we should run only C++ tests
+    if (len(sys.argv) == 2 and sys.argv[1] == "--only-cpp") or \
+       "DISABLE_PYTHON_TESTING" in os.environ:
+        only_cpp = True
+    else:
+        only_cpp = False
 
     # Check if we should skip C++ demos
     if only_python:
         print("Skipping C++ demos")
         cppdemos = []
+
+    # Check if we should skip Python demos
+    if only_cpp:
+        print("Skipping Python demos")
+        pydemos = []
 
     # Build prefix list
     prefixes = [""]
@@ -226,7 +247,13 @@ def main():
 
     # Allow to disable parallel testing
     if "DISABLE_PARALLEL_TESTING" in os.environ:
+        print("Skip running demos in parallel")
         prefixes = [""]
+
+    # Allow to disable serial testing
+    if "DISABLE_SERIAL_TESTING" in os.environ:
+        print("Skip running demos in serial")
+        prefixes.remove("")
 
     # Run in serial, then in parallel
     for prefix in prefixes:
@@ -258,7 +285,7 @@ def main():
     # Print output for failed tests
     print("")
     if len(failed) > 0:
-        print("%d demo(s) out of %d failed, see demo.log for details." % \
+        print("%d demo(s) out of %d failed, see demo.log for details." %
               (len(failed), total_no_demos))
         file = open("demo.log", "w")
         for (test, interface, prefix, output) in failed:

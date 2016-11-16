@@ -30,8 +30,8 @@ V = FunctionSpace(mesh, "CG", 1)
 VV = VectorFunctionSpace(mesh, "CG", 1)
 
 # Define function
-v0 = Expression("sin(2*pi*x[0])*sin(2*pi*x[1])")
-v1 = Expression("cos(2*pi*x[0])*cos(2*pi*x[1])")
+v0 = Expression("sin(2*pi*x[0])*sin(2*pi*x[1])", degree=2)
+v1 = Expression("cos(2*pi*x[0])*cos(2*pi*x[1])", degree=2)
 
 vv1 = Function(VV)
 vv2 = Function(VV)
@@ -50,7 +50,7 @@ tp = time.time() - t0
 
 # Compute interpolation (evaluating dofs)
 t0 = time.time()
-vv1.interpolate(Expression(("v0", "v1"), v0=v0, v1=v1))
+vv1.interpolate(Expression(("v0", "v1"), v0=v0, v1=v1, degree=2))
 ti = time.time() - t0
 
 # Assign mixed function from two scalar functions

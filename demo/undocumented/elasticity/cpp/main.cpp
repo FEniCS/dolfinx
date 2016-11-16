@@ -26,8 +26,8 @@ using namespace dolfin;
 
 // Function to compute the near nullspace for elasticity - it is made
 // up of the six rigid body modes
-dolfin::VectorSpaceBasis build_nullspace(const dolfin::FunctionSpace& V,
-                                         const GenericVector& x)
+dolfin::VectorSpaceBasis build_near_nullspace(const dolfin::FunctionSpace& V,
+                                              const GenericVector& x)
 {
   // Get subspaces
   auto V0 = V.sub(0);
@@ -136,20 +136,21 @@ int main()
   // Create near null space basis (required for smoothed aggregation
   // AMG). The solution vector is passed so that it can be copied to
   // generate compatible vectors for the nullspace.
-  VectorSpaceBasis null_space = build_nullspace(*V, *u->vector());
+  VectorSpaceBasis near_null_space = build_near_nullspace(*V, *u->vector());
+
+  // Attach near nullspace to matrix
+  A.set_near_nullspace(near_null_space);
 
   // Create PETSc smoothed aggregation AMG preconditioner
   auto pc = std::make_shared<PETScPreconditioner>("petsc_amg");
-  pc->parameters["report"] = true;
-  pc->set_nullspace(null_space);
 
-  // Set some multigrid smoother parameters
+  // Use Chebyshev smoothing for multigrid
   PETScOptions::set("mg_levels_ksp_type", "chebyshev");
   PETScOptions::set("mg_levels_pc_type", "jacobi");
 
   // Improve estimate of eigenvalues for Chebyshev smoothing
-  PETScOptions::set("gamg_est_ksp_type", "cg");
-  PETScOptions::set("gamg_est_ksp_max_it", 50);
+  PETScOptions::set("mg_levels_esteig_ksp_type", "cg");
+  PETScOptions::set("mg_levels_ksp_chebyshev_esteig_steps", 50);
 
   // Create CG PETSc linear solver and turn on convergence monitor
   PETScKrylovSolver solver("cg", pc);
@@ -183,7 +184,7 @@ int main()
   Function stress(W);
   LocalSolver local_solver(std::shared_ptr<Form>(&a_s, NoDeleter()),
                            std::shared_ptr<Form>(&L_s, NoDeleter()),
-                           LocalSolver::Cholesky);
+                           LocalSolver::SolverType::Cholesky);
   local_solver.solve_local_rhs(stress);
 
   File file_stress("stress.pvd");

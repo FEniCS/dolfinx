@@ -29,6 +29,7 @@
 #include <string>
 #include <memory>
 #include "GenericLUSolver.h"
+#include <dolfin/common/MPI.h>
 
 namespace dolfin
 {
@@ -44,7 +45,15 @@ namespace dolfin
   public:
 
     /// Constructor
+    LUSolver(MPI_Comm comm, std::string method= "default");
+
+    /// Constructor
     LUSolver(std::string method= "default");
+
+    /// Constructor
+    LUSolver(MPI_Comm comm,
+             std::shared_ptr<const GenericLinearOperator> A,
+             std::string method="default");
 
     /// Constructor
     LUSolver(std::shared_ptr<const GenericLinearOperator> A,
@@ -90,16 +99,10 @@ namespace dolfin
       solver->parameters.update(parameters);
     }
 
-    // FIXME: This should not be needed. Need to cleanup linear solver
-    // name jungle: default, lu, iterative, direct, krylov, etc /
-    // Return parameter type: "krylov_solver" or "lu_solver"
-    std::string parameter_type() const
-    { return "lu_solver"; }
-
   private:
 
     // Initialize solver
-    void init(std::string method);
+    void init(MPI_Comm comm, std::string method);
 
     // Solver
     std::shared_ptr<GenericLinearSolver> solver;

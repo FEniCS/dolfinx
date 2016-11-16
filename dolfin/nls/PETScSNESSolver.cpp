@@ -82,7 +82,6 @@ Parameters PETScSNESSolver::default_parameters()
   p.rename("snes_solver");
   p.add("solution_tolerance", 1.0e-16);
   p.add("maximum_residual_evaluations", 2000);
-  p.add("options_prefix", "default");
   p.remove("convergence_criterion");
   p.remove("relaxation_parameter");
   p.remove("method");
@@ -93,12 +92,33 @@ Parameters PETScSNESSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScSNESSolver::PETScSNESSolver(std::string nls_type) :
-  _snes(NULL)
+PETScSNESSolver::PETScSNESSolver(MPI_Comm comm) : _snes(nullptr),
+                                                  _has_explicit_bounds(false)
 {
+  // Create SNES object
+  SNESCreate(comm, &_snes);
+
+  // Set parameter values
+  parameters = default_parameters();
+}
+//-----------------------------------------------------------------------------
+PETScSNESSolver::PETScSNESSolver(std::string nls_type) : _snes(nullptr),
+                                                         _has_explicit_bounds(false)
+{
+  // Create SNES object
+  SNESCreate(MPI_COMM_WORLD, &_snes);
+
+  const std::map<std::string, std::pair<std::string, const SNESType>>::const_iterator
+    method = _methods.find(nls_type);
 
   // Check that the requested method is known
-  if (_methods.count(nls_type) == 0)
+  if (method != _methods.end())
+  {
+    // Set solver type
+    if (method->first != "default")
+      SNESSetType(_snes, method->second.second);
+  }
+  else
   {
     dolfin_error("PETScSNESSolver.cpp",
                  "create PETSc SNES solver",
@@ -107,34 +127,12 @@ PETScSNESSolver::PETScSNESSolver(std::string nls_type) :
 
   // Set parameter values
   parameters = default_parameters();
-
-  init(nls_type);
 }
 //-----------------------------------------------------------------------------
 PETScSNESSolver::~PETScSNESSolver()
 {
   if (_snes)
     SNESDestroy(&_snes);
-}
-//-----------------------------------------------------------------------------
-void PETScSNESSolver::init(const std::string& method)
-{
-  if (_snes)
-    SNESDestroy(&_snes);
-
-  // Create SNES object
-  SNESCreate(PETSC_COMM_WORLD, &_snes);
-
-  // Set solver type
-  if (method != "default")
-  {
-    auto it = _methods.find(method);
-    dolfin_assert(it != _methods.end());
-    SNESSetType(_snes, it->second.second);
-  }
-
-  // Set to default to not having explicit bounds
-  has_explicit_bounds = false;
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>
@@ -167,23 +165,19 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
     _lb(&lb.down_cast<PETScVector>(), NoDeleter());
   this->lb = _lb;
   this->ub = _ub;
-  has_explicit_bounds = true;
+  _has_explicit_bounds = true;
 
   return this->solve(nonlinear_problem, x);
 }
 //-----------------------------------------------------------------------------
-void
-PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
-                       GenericVector& x)
+void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
+                           GenericVector& x)
 {
   Timer timer("SNES solver init");
-  PETScMatrix A;
+  PETScMatrix A(this->mpi_comm());
 
   // Set linear solver parameters
   set_linear_solver_parameters();
-
-  const bool report = parameters["report"];
-
 
   _snes_ctx.nonlinear_problem = &nonlinear_problem;
   _snes_ctx.x = &x.down_cast<PETScVector>();
@@ -201,24 +195,29 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
                   &_snes_ctx);
   SNESSetObjective(_snes, PETScSNESSolver::FormObjective, &_snes_ctx);
 
-  std::string prefix = std::string(parameters["options_prefix"]);
-  if (prefix != "default")
-  {
-    // Make sure that the prefix has a '_' at the end if the user
-    // didn't provide it
-    char lastchar = *prefix.rbegin();
-    if (lastchar != '_')
-      prefix += "_";
-
-    SNESSetOptionsPrefix(_snes, prefix.c_str());
-  }
-
   // Set some options from the parameters
-  if (report)
+  if (parameters["report"].is_set())
   {
-    SNESMonitorSet(_snes, SNESMonitorDefault,
-                   PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes)),
-                   NULL);
+    if (parameters["report"])
+    {
+      PetscErrorCode ierr;
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
+      ierr = SNESMonitorSet(_snes, SNESMonitorDefault,
+                            PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes)),
+                            NULL);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "SNESMonitorSet");
+      #else
+      PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes));
+      PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
+      PetscViewerAndFormat *vf;
+      PetscViewerAndFormatCreate(viewer,format,&vf);
+      ierr = SNESMonitorSet(_snes,
+                            (PetscErrorCode (*)(SNES,PetscInt,PetscReal,void*)) SNESMonitorDefault,
+                            vf,
+                            (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "SNESMonitorSet");
+      #endif
+    }
   }
 
   // Set the bounds, if any
@@ -256,13 +255,16 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
   SNESLineSearch linesearch;
   SNESGetLineSearch(_snes, &linesearch);
 
-  if (report)
+  if (parameters["report"].is_set())
   {
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-    SNESLineSearchSetMonitor(linesearch, PETSC_TRUE);
-    #else
-    SNESLineSearchMonitor(linesearch);
-    #endif
+    if (parameters["report"])
+    {
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
+      SNESLineSearchSetMonitor(linesearch, PETSC_TRUE);
+      #else
+      SNESLineSearchMonitor(linesearch);
+      #endif
+    }
   }
 
   const std::string line_search_type = std::string(parameters["line_search"]);
@@ -278,6 +280,38 @@ PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
 
   // Set some options
   SNESSetFromOptions(_snes);
+}
+//-----------------------------------------------------------------------------
+void PETScSNESSolver::set_options_prefix(std::string options_prefix)
+{
+  // Set options prefix
+  dolfin_assert(_snes);
+  PetscErrorCode ierr = SNESSetOptionsPrefix(_snes, options_prefix.c_str());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetOptionsPrefix");
+}
+//-----------------------------------------------------------------------------
+std::string PETScSNESSolver::get_options_prefix() const
+{
+  dolfin_assert(_snes);
+  const char* prefix = NULL;
+  PetscErrorCode ierr = SNESGetOptionsPrefix(_snes, &prefix);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESGetOptionsPrefix");
+  return std::string(prefix);
+}
+//-----------------------------------------------------------------------------
+void PETScSNESSolver::set_from_options() const
+{
+  dolfin_assert(_snes);
+  PetscErrorCode ierr = SNESSetFromOptions(_snes);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetFromOptions");
+}
+//-----------------------------------------------------------------------------
+MPI_Comm PETScSNESSolver::mpi_comm() const
+{
+  dolfin_assert(_snes);
+  MPI_Comm mpi_comm = MPI_COMM_NULL;
+  PetscObjectGetComm((PetscObject)_snes, &mpi_comm);
+  return mpi_comm;
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>
@@ -309,8 +343,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
 
   const bool report = parameters["report"];
 
-  MPI_Comm comm = MPI_COMM_NULL;
-  PetscObjectGetComm((PetscObject)_snes, &comm);
+  MPI_Comm comm = mpi_comm();
   if (reason > 0 && report && dolfin::MPI::rank(comm) == 0)
   {
     info("PETSc SNES solver converged in %d iterations with convergence reason %s.",
@@ -353,7 +386,7 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   _x ->update_ghost_values();
 
   // Compute F(u)
-  PETScMatrix A;
+  PETScMatrix A(_x->mpi_comm());
   nonlinear_problem->form(A, f_wrap, *_x);
   nonlinear_problem->F(f_wrap, *_x);
 
@@ -397,7 +430,7 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat A, Mat P,
   PETScVector x_wrap(x);
 
   // Form Jacobian
-  PETScVector f;
+  PETScVector f(x_wrap.mpi_comm());
   nonlinear_problem->form(A_wrap, f, x_wrap);
   nonlinear_problem->J(A_wrap, x_wrap);
 
@@ -416,14 +449,26 @@ void PETScSNESSolver::set_linear_solver_parameters()
   ierr = KSPGetPC(ksp, &pc);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
 
-  MPI_Comm comm = MPI_COMM_NULL;
-  PetscObjectGetComm((PetscObject)_snes, &comm);
+  // Get MPI communicator
+  MPI_Comm comm = mpi_comm();
 
-  if (parameters["report"])
+  if (parameters["report"].is_set())
   {
-    KSPMonitorSet(ksp, KSPMonitorDefault,
-                   PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
-                   NULL);
+    if (parameters["report"])
+    {
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
+      KSPMonitorSet(ksp, KSPMonitorDefault, PETSC_VIEWER_STDOUT_(comm), NULL);
+      #else
+      PetscViewer viewer = PETSC_VIEWER_STDOUT_(comm);
+      PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
+      PetscViewerAndFormat *vf;
+      ierr = PetscViewerAndFormatCreate(viewer,format,&vf);
+      ierr = KSPMonitorSet(ksp,
+                           (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorDefault,
+                           vf,
+                           (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+      #endif
+    }
   }
   const std::string linear_solver  = parameters["linear_solver"];
   const std::string preconditioner = parameters["preconditioner"];
@@ -447,31 +492,52 @@ void PETScSNESSolver::set_linear_solver_parameters()
 
     Parameters krylov_parameters = parameters("krylov_solver");
 
-    // GMRES restart parameter
-    const int gmres_restart = krylov_parameters("gmres")["restart"];
-    KSPGMRESSetRestart(ksp, gmres_restart);
-
-    // Non-zero initial guess
-    const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
-    if (nonzero_guess)
-      KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
-    else
-      KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
-
-    if (krylov_parameters["monitor_convergence"])
+    // Set non-zero initial guess...
+    if (krylov_parameters["nonzero_initial_guess"].is_set())
     {
+      const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
+      if (nonzero_guess)
+        KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
+      else
+        KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
+    }
+    // ... otherwise use the default, what has been set before,
+    // or directly through PETSc API or parameter system
+
+    if (krylov_parameters["monitor_convergence"].is_set()
+        && krylov_parameters["monitor_convergence"])
+    {
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
       KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm,
-                       PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
-                       NULL);
+                    PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
+                    NULL);
+
+      #else
+      PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
+      PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
+      PetscViewerAndFormat *vf;
+      ierr = PetscViewerAndFormatCreate(viewer,format,&vf);
+      ierr = KSPMonitorSet(ksp,
+                         (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
+                         vf,
+                         (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+      #endif
     }
 
-    // Set tolerances
-    const int max_iters = krylov_parameters["maximum_iterations"];
-    KSPSetTolerances(ksp,
-                     krylov_parameters["relative_tolerance"],
-                     krylov_parameters["absolute_tolerance"],
-                     krylov_parameters["divergence_limit"],
-                     max_iters);
+    // Check if a tolerance has been set
+    if (krylov_parameters["relative_tolerance"].is_set()
+        or krylov_parameters["absolute_tolerance"].is_set()
+        or krylov_parameters["divergence_limit"].is_set()
+        or krylov_parameters["maximum_iterations"].is_set())
+    {
+      // Set tolerances
+      const double rtol = krylov_parameters["relative_tolerance"].is_set() ? (double)krylov_parameters["relative_tolerance"] : PETSC_DEFAULT;
+      const double atol = krylov_parameters["absolute_tolerance"].is_set() ? (double)krylov_parameters["absolute_tolerance"] : PETSC_DEFAULT;
+      const double dtol = krylov_parameters["divergence_limit"].is_set() ? (double)krylov_parameters["divergence_limit"] : PETSC_DEFAULT;
+      const int max_it  = krylov_parameters["maximum_iterations"].is_set() ? (int)krylov_parameters["maximum_iterations"] : PETSC_DEFAULT;
+      ierr = KSPSetTolerances(ksp, rtol, atol, dtol, max_it);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetTolerances");
+    }
   }
   else if (linear_solver == "lu"
            || PETScLUSolver::_methods.count(linear_solver) != 0)
@@ -573,7 +639,7 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
       VecDestroy(&ub);
       VecDestroy(&lb);
     }
-    else if (has_explicit_bounds == true)
+    else if (_has_explicit_bounds)
     {
       const PETScVector* lb = this->lb.get();
       const PETScVector* ub = this->ub.get();
@@ -585,14 +651,14 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
 bool PETScSNESSolver::is_vi() const
 {
   const std::string sign = parameters["sign"];
-  if (sign != "default" && this->has_explicit_bounds == true)
+  if (sign != "default" && this->_has_explicit_bounds)
   {
     dolfin_error("PETScSNESSolver.cpp",
                  "set variational inequality bounds",
                  "Both the sign parameter and the explicit bounds are set");
     return false;
   }
-  else if (sign != "default" || this->has_explicit_bounds == true)
+  else if (sign != "default" || this->_has_explicit_bounds)
     return true;
   else
     return false;

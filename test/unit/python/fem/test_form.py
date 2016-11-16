@@ -95,12 +95,12 @@ def test_assemble_functional(V1, V2):
     surfacearea = assemble(u*dx)
     assert round(surfacearea - 6.0, 7) == 0
 
-    f = Expression("1.0")
+    f = Expression("1.0", degree=0)
     u = interpolate(f, V1)
     surfacearea = assemble(u*dx)
     assert round(surfacearea - 4.0, 7) == 0
 
-    f = Expression("1.0")
+    f = Expression("1.0", degree=0)
     u = interpolate(f, V2)
     surfacearea = assemble(u*dx)
     assert round(surfacearea - 6.0, 7) == 0
@@ -232,7 +232,7 @@ def base():
     square = UnitSquareMesh(n, n)
 
     square3d = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n), "exterior"), plane)
-    global_normal = Expression(("0.0", "1.0", "0.0"))
+    global_normal = Expression(("0.0", "1.0", "0.0"), degree=0)
     square3d.init_cell_orientations(global_normal)
 
     RT2 = FiniteElement("RT", square.ufl_cell(), 1)
@@ -280,8 +280,8 @@ def QQ3(base):
 @skip_in_parallel
 def test_basic_rt(RT2, RT3):
 
-    f2 = Expression(("2.0", "1.0"))
-    f3 = Expression(("1.0", "0.0", "2.0"))
+    f2 = Expression(("2.0", "1.0"), degree=0)
+    f3 = Expression(("1.0", "0.0", "2.0"), degree=0)
 
     u2 = TrialFunction(RT2)
     u3 = TrialFunction(RT3)
@@ -311,8 +311,8 @@ def test_basic_rt(RT2, RT3):
     a3 = assemble(w3**2*dx)
 
     # Compare various results
-    assert round((w2.vector() - pw2.vector()).norm("l2"), 5) == 0
-    assert round((w3.vector() - pw3.vector()).norm("l2"), 5) == 0
+    assert round((w2.vector() - pw2.vector()).norm("l2"), 4) == 0
+    assert round((w3.vector() - pw3.vector()).norm("l2"), 4) == 0
     # 2d
     assert round(a2 - 5.0, 7) == 0
     assert round(pa2 - 5.0, 7) == 0
@@ -536,8 +536,8 @@ def test_coefficient_derivatives(V1, V2):
         v = TestFunction(V)
         u = TrialFunction(V)
 
-        f.interpolate(Expression("1.0 + x[0] + x[1]"))
-        g.interpolate(Expression("2.0 + x[0] + x[1]"))
+        f.interpolate(Expression("1.0 + x[0] + x[1]", degree=1))
+        g.interpolate(Expression("2.0 + x[0] + x[1]", degree=1))
 
         # Since g = f + 1, define dg/df = 1
         cd = {g: 1}

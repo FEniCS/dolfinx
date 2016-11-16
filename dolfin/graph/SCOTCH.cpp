@@ -31,6 +31,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/LocalMeshData.h>
+#include "CSRGraph.h"
 #include "GraphBuilder.h"
 #include "SCOTCH.h"
 
@@ -47,29 +48,36 @@ using namespace dolfin;
 #ifdef HAS_SCOTCH
 
 //-----------------------------------------------------------------------------
-void SCOTCH::compute_partition(
-  const MPI_Comm mpi_comm,
-  std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
-  const LocalMeshData& mesh_data)
+void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
+                               std::vector<int>& cell_partition,
+                               std::map<std::int64_t, std::vector<int>>& ghost_procs,
+                               const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                               const std::vector<std::size_t>& cell_weight,
+                               const std::int64_t num_global_vertices,
+                               const std::int64_t num_global_cells,
+                               const CellType& cell_type)
 {
   // Create data structures to hold graph
-  std::vector<std::set<std::size_t>> local_graph;
-  std::set<std::size_t> ghost_vertices;
+  CSRGraph<SCOTCH_Num> csr_graph;
+  std::set<std::int64_t> ghost_vertices;
 
-  // Compute local dual graph
-  GraphBuilder::compute_dual_graph(mpi_comm, mesh_data, local_graph,
-                                   ghost_vertices);
+  // Build dual graph. Use scoping to clean up memory
+  {
+    // Compute dual graph (for this parition)
+    std::vector<std::vector<std::size_t>> local_graph;
+    GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type,
+                                     num_global_vertices, local_graph,
+                                     ghost_vertices);
+
+    csr_graph = CSRGraph<SCOTCH_Num>(MPI_COMM_SELF, local_graph);
+  }
 
   // Compute partitions
-  partition(mpi_comm, local_graph, mesh_data.cell_weight,
-            ghost_vertices, mesh_data.global_cell_indices,
-            mesh_data.num_global_cells, cell_partition, ghost_procs);
-
+  partition(mpi_comm, csr_graph, cell_weight, ghost_vertices,
+            num_global_cells, cell_partition, ghost_procs);
 }
 //-----------------------------------------------------------------------------
-std::vector<int> SCOTCH::compute_gps(const Graph& graph,
-                                     std::size_t num_passes)
+std::vector<int> SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
 {
   // Create strategy string for Gibbs-Poole-Stockmeyer ordering
   std::string strategy = "g{pass= " + std::to_string(num_passes) + "}";
@@ -114,6 +122,10 @@ void SCOTCH::compute_reordering(const Graph& graph,
     verttab.push_back(verttab.back() + vertex->size());
     edgetab.insert(edgetab.end(), vertex->begin(), vertex->end());
   }
+
+  // Shrink vectors to hopefully recover an unused memory
+  verttab.shrink_to_fit();
+  edgetab.shrink_to_fit();
 
   // Create SCOTCH graph
   SCOTCH_Graph scotch_graph;
@@ -193,16 +205,17 @@ void SCOTCH::compute_reordering(const Graph& graph,
             inverse_permutation_indices.end(), inverse_permutation.begin());
 }
 //-----------------------------------------------------------------------------
+template<typename T>
 void SCOTCH::partition(
   const MPI_Comm mpi_comm,
-  const std::vector<std::set<std::size_t>>& local_graph,
+  CSRGraph<T>& local_graph,
   const std::vector<std::size_t>& node_weights,
-  const std::set<std::size_t>& ghost_vertices,
-  const std::vector<std::size_t>& global_cell_indices,
+  const std::set<std::int64_t>& ghost_vertices,
   const std::size_t num_global_vertices,
-  std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs)
+  std::vector<int>& cell_partition,
+  std::map<std::int64_t, std::vector<int>>& ghost_procs)
 {
+  log(PROGRESS, "Compute graph partition using PT-SCOTCH");
   Timer timer("Compute graph partition (SCOTCH)");
 
   // C-style array indexing
@@ -220,28 +233,9 @@ void SCOTCH::partition(
   const SCOTCH_Num vertlocnbr = local_graph.size();
   const std::size_t vertgstnbr = vertlocnbr + ghost_vertices.size();
 
-  // Data structures for graph input to SCOTCH (add 1 for case that
-  // local graph size is zero)
-  std::vector<SCOTCH_Num> vertloctab;
-  vertloctab.reserve(local_graph.size() + 1);
-  std::vector<SCOTCH_Num> edgeloctab;
-
-  // Build local graph input for SCOTCH
-  // (number of local + ghost graph vertices (cells),
-  // number of local edges + edges connecting to ghost vertices)
-  SCOTCH_Num edgelocnbr = 0;
-  vertloctab.push_back((SCOTCH_Num) 0);
-  std::vector<std::set<std::size_t>>::const_iterator vertex;
-  for(vertex = local_graph.begin(); vertex != local_graph.end(); ++vertex)
-  {
-    edgelocnbr += vertex->size();
-    vertloctab.push_back(vertloctab.back() + vertex->size());
-    edgeloctab.insert(edgeloctab.end(), vertex->begin(), vertex->end());
-  }
-
-  // Handle case that local graph size is zero
-  if (edgeloctab.empty())
-    edgeloctab.resize(1);
+  // Get graph data
+  std::vector<SCOTCH_Num>& edgeloctab = local_graph.edges();
+  std::vector<SCOTCH_Num>& vertloctab = local_graph.nodes();
 
   // Global data ---------------------------------
 
@@ -276,23 +270,18 @@ void SCOTCH::partition(
                  "Error initializing SCOTCH graph");
   }
 
-  SCOTCH_Num* veloloctab;
+
+  // Handle cell weights (if any)
   std::vector<SCOTCH_Num> vload;
-  if (node_weights.size() == 0)
-    veloloctab = NULL;
-  else
-  {
-    vload.resize(node_weights.size());
-    std::copy(node_weights.begin(), node_weights.end(), vload.begin());
-    veloloctab = vload.data();
-  }
+  if (!node_weights.empty())
+    vload.assign(node_weights.begin(), node_weights.end());
 
   // Build SCOTCH distributed graph
   Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
-                              &vertloctab[0], NULL, veloloctab, NULL,
-                              edgelocnbr, edgelocnbr,
-                              &edgeloctab[0], NULL, NULL) )
+                         vertloctab.data(), NULL, vload.data(), NULL,
+                         edgeloctab.size(), edgeloctab.size(),
+                         edgeloctab.data(), NULL, NULL) )
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
@@ -403,15 +392,21 @@ void SCOTCH::partition(
         auto map_it = ghost_procs.find(i);
         if (map_it == ghost_procs.end())
         {
-          dolfin::Set<unsigned int> sharing_processes;
-          // Owning process goes first into dolfin::Set (unordered
-          // set) so will always be first.
-          sharing_processes.insert(proc_this);
-          sharing_processes.insert(proc_other);
+          std::vector<int> sharing_processes;
+
+          // Owning process always goes in first to vector
+          sharing_processes.push_back(proc_this);
+          sharing_processes.push_back(proc_other);
           ghost_procs.insert(std::make_pair(i, sharing_processes));
         }
         else
-          map_it->second.insert(proc_other);
+        {
+          // Add to vector if not already there
+          auto it = std::find(map_it->second.begin(), map_it->second.end(),
+                              proc_other);
+          if (it == map_it->second.end())
+            map_it->second.push_back(proc_other);
+        }
       }
     }
   }
@@ -430,19 +425,21 @@ void SCOTCH::partition(
 //-----------------------------------------------------------------------------
 #else
 //-----------------------------------------------------------------------------
-void SCOTCH::compute_partition(
-  const MPI_Comm mpi_comm,
-  std::vector<std::size_t>& cell_partition,
-  std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs,
-  const LocalMeshData& mesh_data)
+void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
+                               std::vector<int>& cell_partition,
+                               std::map<std::int64_t, std::vector<int>>& ghost_procs,
+                               const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                               const std::vector<std::size_t>& cell_weight,
+                               const std::int64_t num_global_vertices,
+                               const std::int64_t num_global_cells,
+                               const CellType& cell_type)
 {
   dolfin_error("SCOTCH.cpp",
                "partition mesh using SCOTCH",
                "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
-std::vector<int> SCOTCH::compute_gps(const Graph& graph,
-                                     std::size_t num_passes)
+std::vector<int> SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
 {
   dolfin_error("SCOTCH.cpp",
                "re-order graph using SCOTCH",
@@ -451,8 +448,7 @@ std::vector<int> SCOTCH::compute_gps(const Graph& graph,
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
-SCOTCH::compute_reordering(const Graph& graph,
-                           std::string scotch_strategy)
+SCOTCH::compute_reordering(const Graph& graph, std::string scotch_strategy)
 {
   dolfin_error("SCOTCH.cpp",
                "re-order graph using SCOTCH",
@@ -471,14 +467,14 @@ void SCOTCH::compute_reordering(const Graph& graph,
                "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
+template<typename T>
 void SCOTCH::partition(const MPI_Comm mpi_comm,
-                       const std::vector<std::set<std::size_t>>& local_graph,
+                       CSRGraph<T>& local_graph,
                        const std::vector<std::size_t>& node_weights,
-                       const std::set<std::size_t>& ghost_vertices,
-                       const std::vector<std::size_t>& global_cell_indices,
+                       const std::set<std::int64_t>& ghost_vertices,
                        const std::size_t num_global_vertices,
-                       std::vector<std::size_t>& cell_partition,
-                       std::map<std::size_t, dolfin::Set<unsigned int>>& ghost_procs)
+                       std::vector<int>& cell_partition,
+                       std::map<std::int64_t, std::vector<int>>& ghost_procs)
 {
   dolfin_error("SCOTCH.cpp",
                "partition mesh using SCOTCH",

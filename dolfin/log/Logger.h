@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2013 Anders Logg, 2015 Jan Blechta
+// Copyright (C) 2003-2016 Anders Logg, 2015 Jan Blechta
 //
 // This file is part of DOLFIN.
 //
@@ -27,15 +27,13 @@
 #include <ostream>
 #include <string>
 #include <set>
+#include <thread>
 #include <tuple>
 
 #include <dolfin/common/timing.h>
 #include <dolfin/common/MPI.h>
 #include "Table.h"
 #include "LogLevel.h"
-
-// Forward declarations
-namespace boost { class thread; }
 
 namespace dolfin
 {
@@ -71,7 +69,6 @@ namespace dolfin
     /// Issue deprecation warning for removed feature
     void deprecation(std::string feature,
                      std::string version_deprecated,
-                     std::string version_remove,
                      std::string message) const;
 
     /// Begin task (increase indentation level)
@@ -162,11 +159,11 @@ namespace dolfin
 
     // List of timings for tasks, map from string to
     // (num_timings, total_wall_time, total_user_time, total_system_time)
-    std::map<std::string, std::tuple<std::size_t, double, double, double> >
+    std::map<std::string, std::tuple<std::size_t, double, double, double>>
        _timings;
 
     // Thread used for monitoring memory usage
-    std::unique_ptr<boost::thread> _thread_monitor_memory_usage;
+    std::unique_ptr<std::thread> _thread_monitor_memory_usage;
 
     // Maximum memory usage so far
     long int _maximum_memory_usage;

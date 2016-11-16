@@ -48,6 +48,9 @@ namespace dolfin
   {
   public:
 
+    /// Create TAO solver
+    explicit PETScTAOSolver(MPI_Comm comm);
+
     /// Create TAO solver for a particular method
     PETScTAOSolver(const std::string tao_type="default",
                    const std::string ksp_type="default",
@@ -93,7 +96,7 @@ namespace dolfin
                                        GenericVector& x);
 
     /// Return a list of available solver methods
-    static std::vector<std::pair<std::string, std::string> > methods();
+    static std::vector<std::pair<std::string, std::string>> methods();
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -162,14 +165,14 @@ namespace dolfin
     void set_tao(const std::string tao_type="default");
 
     // Flag to indicate if the bounds are set
-    bool has_bounds;
+    bool _has_bounds;
 
     // Hessian matrix
     PETScMatrix _matH;
 
     // Available solvers
     static const std::map<std::string,
-                          std::pair<std::string, const TaoType> > _methods;
+      std::pair<std::string, const TaoType>> _methods;
 
     // Compute the nonlinear objective function :math:`f(x)` as well
     // as its gradient :math:`F(x) = f'(x)`

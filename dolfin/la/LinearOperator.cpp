@@ -19,22 +19,11 @@
 // Last changed: 2012-12-12
 
 #include "DefaultFactory.h"
+#include "GenericVector.h"
 #include "LinearOperator.h"
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-LinearOperator::LinearOperator(const GenericVector& x,
-                               const GenericVector& y)
-{
-  // Create concrete implementation
-  DefaultFactory factory;
-  _matA = factory.create_linear_operator();
-  dolfin_assert(_matA);
-
-  // Initialize implementation
-  _matA->init_layout(x, y, this);
-}
 //-----------------------------------------------------------------------------
 LinearOperator::LinearOperator()
 {
@@ -42,6 +31,18 @@ LinearOperator::LinearOperator()
   // enable accessing the member function size() to extract the size.
   // The size would otherwise need to be passed to the constructor of
   // LinearOperator which is often impractical for subclasses.
+}
+//-----------------------------------------------------------------------------
+LinearOperator::LinearOperator(const GenericVector& x,
+                               const GenericVector& y)
+{
+  // Create concrete implementation
+  DefaultFactory factory;
+  _matA = factory.create_linear_operator(x.mpi_comm());
+  dolfin_assert(_matA);
+
+  // Initialize implementation
+  _matA->init_layout(x, y, this);
 }
 //-----------------------------------------------------------------------------
 std::string LinearOperator::str(bool verbose) const

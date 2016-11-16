@@ -93,11 +93,12 @@ double PointCell::volume(const MeshEntity& triangle) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double PointCell::diameter(const MeshEntity& triangle) const
+
+double PointCell::circumradius(const MeshEntity& point) const
 {
   dolfin_error("PointCell.cpp",
-               "find diameter of cell",
-               "Diameter of a point cell is not defined");
+               "find circumradious of cell",
+               "Circumradius of a point cell is not defined");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
@@ -144,7 +145,7 @@ double PointCell::facet_area(const Cell& cell, std::size_t facet) const
 //-----------------------------------------------------------------------------
 void PointCell::order(
   Cell& cell,
-  const std::vector<std::size_t>& local_to_global_vertex_indices) const
+  const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
   dolfin_error("PointCell.cpp",
                "order cell",

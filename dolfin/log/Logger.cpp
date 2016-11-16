@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2012 Anders Logg
+// Copyright (C) 2003-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,20 +19,18 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2003-03-13
-// Last changed: 2013-11-15
+// Last changed: 2016-06-10
 
 
 #include <fstream>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <unistd.h>
-
-#include <boost/bind.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread.hpp>
 
 #ifdef __linux__
 #include <sys/types.h>
@@ -53,7 +51,7 @@ using namespace dolfin;
 #ifdef __linux__
 void _monitor_memory_usage(dolfin::Logger* logger)
 {
-  assert(logger);
+  dolfin_assert(logger);
 
   // Open statm
   //std::fstream
@@ -76,7 +74,7 @@ void _monitor_memory_usage(dolfin::Logger* logger)
   while (true)
   {
     // Sleep for a while
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // Read number of pages from statm
     statm.open(filename.str().c_str());
@@ -189,16 +187,15 @@ void Logger::dolfin_error(std::string location,
 //-----------------------------------------------------------------------------
 void Logger::deprecation(std::string feature,
                          std::string version_deprecated,
-                         std::string version_remove,
                          std::string message) const
 {
   std::stringstream s;
   s << "*** "
     << "-------------------------------------------------------------------------"
     << std::endl
-    << "*** Warning: " << feature << " has been deprecated in DOLFIN version "
+    << "*** Warning: " << feature << " has been deprecated in FEniCS version "
     << version_deprecated << "." << std::endl
-    << "*** It will be removed from version " << version_remove << "."
+    << "*** It will (likely) be removed in the next FEniCS release."
     << std::endl
     << "*** " << message << std::endl
     << "*** "
@@ -404,7 +401,7 @@ void Logger::monitor_memory_usage()
   }
 
   // Create thread
-  _thread_monitor_memory_usage.reset(new boost::thread(boost::bind(&_monitor_memory_usage, this)));
+  _thread_monitor_memory_usage.reset(new std::thread(std::bind(&_monitor_memory_usage, this)));
 
   #endif
 }

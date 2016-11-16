@@ -11,19 +11,12 @@ CellOrigin, Jacobian, JacobianInverse, JacobianDeterminant
 
 # This was for debugging, don't enable this permanently here in tests
 # parameters["reorder_dofs_serial"] = False
-
-# Hack to skip uflacs parameter if not installed. There's probably a
-# cleaner way to do this with pytest.
-try:
-    import uflacs
-    _uflacs = ["uflacs"]
-except:
-    _uflacs = []
-any_representation = set_parameters_fixture("form_compiler.representation",
-                                            ["quadrature"] + _uflacs)
+any_representation = \
+  set_parameters_fixture("form_compiler.representation",
+                             ["quadrature", "uflacs"])
 uflacs_representation_only \
     = set_parameters_fixture("form_compiler.representation",
-                             _uflacs)
+                             ["uflacs"])
 
 
 def create_mesh(vertices, cells, cellname="simplex"):
@@ -139,7 +132,7 @@ def line2d(request):
     us = [i/float(n-1) for i in range(n)]
     vertices = [(cos(DOLFIN_PI*u), sin(DOLFIN_PI*u)) for u in us]
     mesh = create_line_mesh(vertices)
-    mesh.init_cell_orientations(Expression(("0.0", "1.0")))
+    mesh.init_cell_orientations(Expression(("0.0", "1.0"), degree=0))
     return mesh
 
 
@@ -150,7 +143,7 @@ def rline2d(request):
     vertices = [(cos(DOLFIN_PI*u), sin(DOLFIN_PI*u)) for u in us]
     vertices = list(reversed(vertices))  # same as line2d, just reversed here
     mesh = create_line_mesh(vertices)
-    mesh.init_cell_orientations(Expression(("0.0", "1.0")))
+    mesh.init_cell_orientations(Expression(("0.0", "1.0"), degree=0))
     return mesh
 
 
@@ -162,7 +155,6 @@ def line3d(request):
                  sin(4.0*DOLFIN_PI*u),
                  2.0*u) for u in us]
     mesh = create_line_mesh(vertices)
-    # mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
     return mesh
 
 
@@ -175,7 +167,6 @@ def rline3d(request):
                  2.0*u) for u in us]
     vertices = list(reversed(vertices))  # same as line3d, just reversed here
     mesh = create_line_mesh(vertices)
-    # mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
     return mesh
 
 
@@ -211,7 +202,7 @@ def square3d(request):
         (0, 1, 3),
         ]
     mesh = create_mesh(vertices, cells)
-    mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
+    mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0"), degree=0))
 
     return mesh
 

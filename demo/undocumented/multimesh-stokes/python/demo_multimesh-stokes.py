@@ -110,7 +110,7 @@ A = assemble_multimesh(a)
 b = assemble_multimesh(L)
 
 # Create boundary values
-inflow_value = Expression(("sin(x[1]*DOLFIN_PI)", "0.0"))
+inflow_value = Expression(("sin(x[1]*DOLFIN_PI)", "0.0"), degree=2)
 outflow_value = Constant(0)
 noslip_value = Constant((0, 0))
 

@@ -63,8 +63,8 @@ namespace dolfin
     /// Compute volume of tetrahedron
     double volume(const MeshEntity& tetrahedron) const;
 
-    /// Compute diameter of tetrahedron
-    double diameter(const MeshEntity& tetrahedron) const;
+    /// Compute circumradius of tetrahedron
+    double circumradius(const MeshEntity& tetrahedron) const;
 
     /// Compute squared distance to given point
     double squared_distance(const Cell& cell, const Point& point) const;
@@ -83,7 +83,7 @@ namespace dolfin
     double facet_area(const Cell& cell, std::size_t facet) const;
 
     /// Order entities locally
-    void order(Cell& cell, const std::vector<std::size_t>&
+    void order(Cell& cell, const std::vector<std::int64_t>&
                local_to_global_vertex_indices) const;
 
     /// Check whether given point collides with cell
@@ -100,8 +100,8 @@ namespace dolfin
     std::string description(bool plural) const;
 
     /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
-    std::vector<unsigned int> vtk_mapping() const
-    { return std::vector<unsigned int> {0, 1, 2, 3}; }
+    std::vector<std::int8_t> vtk_mapping() const
+    { return {0, 1, 2, 3}; }
 
   private:
 

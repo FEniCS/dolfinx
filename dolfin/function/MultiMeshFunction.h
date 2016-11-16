@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2013-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-25
-// Last changed: 2014-05-23
+// Last changed: 2016-03-02
 
 #ifndef __MULTI_MESH_FUNCTION_H
 #define __MULTI_MESH_FUNCTION_H
 
 #include <memory>
 #include <boost/ptr_container/ptr_map.hpp>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -31,35 +32,38 @@ namespace dolfin
   class MultiMeshFunctionSpace;
   class GenericVector;
   class Function;
+  class MultiMeshFunction;
 
   /// This class represents a function on a cut and composite finite
   /// element function space (MultiMesh) defined on one or more possibly
   /// intersecting meshes.
 
-  class MultiMeshFunction
+  class MultiMeshFunction : public Variable
   {
   public:
+
+    /// Constructor
+    MultiMeshFunction();
 
     /// Create MultiMesh function on given MultiMesh function space
     ///
     /// *Arguments*
     ///     V (_MultiMeshFunctionSpace_)
     ///         The MultiMesh function space.
-    ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
-    ///         MultiMeshFunction u(V);
-    ///
-    explicit MultiMeshFunction(const MultiMeshFunctionSpace& V);
+    explicit MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V);
 
-    /// Create MultiMesh function on given MultiMesh function space (shared
-    /// pointer version)
+    /// Create MultiMesh function on given MultiMesh function space with a given vector
+    /// (shared data)
+    ///
+    /// *Warning: This constructor is intended for internal library use only*
     ///
     /// *Arguments*
     ///     V (_MultiMeshFunctionSpace_)
-    ///         The MultiMesh function space.
-    explicit MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V);
+    ///         The multimesh function space.
+    ///     x (_GenericVector_)
+    ///         The vector.
+    MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V,
+		      std::shared_ptr<GenericVector> x);
 
     /// Destructor
     virtual ~MultiMeshFunction();
@@ -84,6 +88,16 @@ namespace dolfin
     ///     _GenericVector_
     ///         The vector of expansion coefficients (const).
     std::shared_ptr<const GenericVector> vector() const;
+
+    /// Return shared pointer to multi mesh function space
+    ///
+    /// *Returns*
+    ///     _MultiMeshFunctionSpace_
+    ///         Return the shared pointer.
+    virtual std::shared_ptr<const MultiMeshFunctionSpace> function_space() const
+    {
+      return _function_space;
+    }
 
   private:
 

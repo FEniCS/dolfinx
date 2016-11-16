@@ -44,10 +44,10 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    Matrix()
+    Matrix(MPI_Comm comm=MPI_COMM_WORLD)
     {
       DefaultFactory factory;
-      matrix = factory.create_matrix();
+      matrix = factory.create_matrix(comm);
     }
 
     /// Copy constructor
@@ -74,7 +74,7 @@ namespace dolfin
     { return matrix->size(dim); }
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t>
+    virtual std::pair<std::int64_t, std::int64_t>
       local_range(std::size_t dim) const
     { return matrix->local_range(dim); }
 

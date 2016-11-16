@@ -41,7 +41,7 @@ def test_solve_global_rhs():
     # Forms for projection
     a, L = inner(v, u)*dx, inner(v, f)*dx
 
-    solvers = [LocalSolver.LU, LocalSolver.Cholesky]
+    solvers = [LocalSolver.SolverType_LU, LocalSolver.SolverType_Cholesky]
     for solver_type in solvers:
 
         # First solve
@@ -77,7 +77,7 @@ def test_solve_local_rhs(ghost_mode):
     # Forms for projection
     a, L = inner(v, u)*dx, inner(v, f)*dx
 
-    solvers = [LocalSolver.LU, LocalSolver.Cholesky]
+    solvers = [LocalSolver.SolverType_LU, LocalSolver.SolverType_Cholesky]
     for solver_type in solvers:
 
         # First solve
@@ -102,6 +102,12 @@ def test_solve_local_rhs(ghost_mode):
 def test_solve_local_rhs_facet_integrals(ghost_mode):
     mesh = UnitSquareMesh(4, 4)
 
+    # Facet function is used here to verify that the proper domains
+    # of the rhs are used unlike before where the rhs domains were
+    # taken to be the same as the lhs domains
+    marker = FacetFunction("size_t", mesh)
+    ds0 = Measure("ds", domain=mesh, subdomain_data=marker, subdomain_id=0) 
+
     Vu = VectorFunctionSpace(mesh, 'DG', 1)
     Vv = FunctionSpace(mesh, 'DGT', 1)
     u = TrialFunction(Vu)
@@ -111,7 +117,7 @@ def test_solve_local_rhs_facet_integrals(ghost_mode):
     w = Constant([1, 1])
 
     a = dot(u, n)*v*ds
-    L = dot(w, n)*v*ds
+    L = dot(w, n)*v*ds0
 
     for R in '+-':
         a += dot(u(R), n(R))*v(R)*dS
@@ -132,7 +138,7 @@ def test_local_solver_dg(ghost_mode):
     U = FunctionSpace(mesh, "DG", 2)
 
     # Set initial values
-    u0 = interpolate(Expression("cos(pi*x[0])"), U)
+    u0 = interpolate(Expression("cos(pi*x[0])", degree=2), U)
 
     # Define test and trial functions
     v, u = TestFunction(U), TrialFunction(U)
@@ -159,7 +165,7 @@ def test_local_solver_dg(ghost_mode):
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
 
     # Compute solution with local solver (Cholesky) and compare
-    local_solver = LocalSolver(a, L, True)
+    local_solver = LocalSolver(a, L, LocalSolver.SolverType_Cholesky)
     u_ls = Function(U)
     local_solver.solve_global_rhs(u_ls)
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
@@ -171,7 +177,7 @@ def test_solve_local(ghost_mode):
     U = FunctionSpace(mesh, "DG", 2)
 
     # Set initial values
-    u0 = interpolate(Expression("cos(pi*x[0])"), U)
+    u0 = interpolate(Expression("cos(pi*x[0])", degree=2), U)
 
     # Define test and trial functions
     v, u = TestFunction(U), TrialFunction(U)
@@ -199,7 +205,7 @@ def test_solve_local(ghost_mode):
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
 
     # Compute solution with local solver (Cholesky) and compare
-    local_solver = LocalSolver(a, solver_type=LocalSolver.Cholesky)
+    local_solver = LocalSolver(a, solver_type=LocalSolver.SolverType_Cholesky)
     u_ls = Function(U)
     local_solver.solve_local(u_ls.vector(), b, U.dofmap())
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0

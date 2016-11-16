@@ -86,7 +86,7 @@ solve(a == L, u, bcs)
 # Compare numerical and exact solution
 u_e_expr = Expression('x[1] <= 0.5 ? 2*x[1]*k1/(k0+k1) : '\
                       '((2*x[1]-1)*k0 + k1)/(k0+k1)',
-                      k0=k_values[0], k1=k_values[1])
+                      k0=k_values[0], k1=k_values[1], degree=3)
 u_e = interpolate(u_e_expr, V)
 u_e_array = u_e.vector().array()
 u_nodal_values = u.vector()

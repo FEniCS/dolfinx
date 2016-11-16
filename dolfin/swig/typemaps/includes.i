@@ -29,5 +29,6 @@
 %include dolfin/swig/typemaps/numpy.i
 %include dolfin/swig/typemaps/array.i
 %include dolfin/swig/typemaps/std_vector.i
+%include dolfin/swig/typemaps/std_array.i
 %include dolfin/swig/typemaps/std_set.i
 %include dolfin/swig/typemaps/std_map.i

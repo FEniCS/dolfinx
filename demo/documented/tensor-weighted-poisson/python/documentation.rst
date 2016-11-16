@@ -217,7 +217,7 @@ expressions.
     c01 = MeshFunction("double", mesh, "../unitsquare_32_32_c01.xml.gz")
     c11 = MeshFunction("double", mesh, "../unitsquare_32_32_c11.xml.gz")
 
-    c = Expression(cppcode=conductivity_code)
+    c = Expression(cppcode=conductivity_code, degree=0)
     c.c00 = c00
     c.c01 = c01
     c.c11 = c11
@@ -248,7 +248,7 @@ reads:
     # Define variational problem
     u = TrialFunction(V)
     v = TestFunction(V)
-    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
     a = inner(C*grad(u), grad(v))*dx
     L = f*v*dx
 

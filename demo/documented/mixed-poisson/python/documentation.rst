@@ -70,7 +70,7 @@ demo <demo_pde_poisson_python_documentation>`:
 .. code-block:: python
 
     # Define source function
-    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
 
 We are now ready to define the variational forms a and L. Since,
 :math:`u_0 = 0` in this example, the boundary term on the right-hand
@@ -118,7 +118,7 @@ to overload the ``value_shape`` method.
 
     # Define function G such that G \cdot n = g
     class BoundarySource(Expression):
-           def __init__(self, mesh):
+           def __init__(self, mesh, **kwargs):
                self.mesh = mesh
            def eval_cell(self, values, x, ufc_cell):
                cell = Cell(self.mesh, ufc_cell.index)
@@ -129,7 +129,7 @@ to overload the ``value_shape`` method.
            def value_shape(self):
                return (2,)
 
-     G = BoundarySource(mesh)
+     G = BoundarySource(mesh, degree=2)
 
 Specifying the relevant part of the boundary can be done as for the
 Poisson demo (but now the top and bottom of the unit square is the

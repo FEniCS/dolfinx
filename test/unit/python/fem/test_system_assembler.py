@@ -133,8 +133,7 @@ def test_facet_assembly():
         n = FacetNormal(mesh)
         h = CellSize(mesh)
         h_avg = (h('+') + h('-'))/2
-        f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) \
-+ pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
+        f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
 
         # Define bilinear form
         a = dot(grad(v), grad(u))*dx \
@@ -223,7 +222,7 @@ def test_incremental_assembly():
         V = FunctionSpace(mesh, 'CG', 1)
         u, v = TrialFunction(V), TestFunction(V)
         a, L = inner(grad(u), grad(v))*dx, f*v*dx
-        uD = Expression("42.0*(2.0*x[0]-1.0)")
+        uD = Expression("42.0*(2.0*x[0]-1.0)", degree=1)
         bc = DirichletBC(V, uD, "on_boundary")
 
         # Initialize initial guess by some number

@@ -93,7 +93,7 @@ def test_tao_linear_bound_solver(backend):
     # Take the PETScVector of the solution function
     xsol = usol.vector()
 
-    solver = TAOLinearBoundSolver("tron","stcg")
+    solver = TAOLinearBoundSolver("tron", "cg")
     solver.solve(A,xsol,b,xl,xu)
 
     # Test that F(usol) = Ly

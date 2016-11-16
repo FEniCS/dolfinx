@@ -483,7 +483,7 @@ void Assembler::assemble_vertices(
 
   // Logics for shared vertices
   const bool has_shared_vertices = mesh.topology().have_shared_entities(0);
-  const std::map<unsigned int, std::set<unsigned int>>&
+  const std::map<std::int32_t, std::set<unsigned int>>&
     shared_vertices = mesh.topology().shared_entities(0);
 
   // Form rank
@@ -580,7 +580,7 @@ void Assembler::assemble_vertices(
     if (form_rank == 0 && has_shared_vertices)
     {
       // Find shared processes for this global vertex
-      std::map<unsigned int, std::set<unsigned int>>::const_iterator e;
+      std::map<std::int32_t, std::set<unsigned int>>::const_iterator e;
       e = shared_vertices.find(vert->index());
 
       // If vertex is shared and this rank is not the lowest do not

@@ -29,10 +29,14 @@ import os
 
 from dolfin_utils.test import * #cd_tempdir, pushpop_parameters, skip_in_parallel, use_gc_barrier
 
-def create_data(A=None):
+@use_gc_barrier
+def create_data(A=None, mesh=None, V=None):
     "This function creates data used in the tests below"
-    mesh = UnitSquareMesh(4, 4)
-    V = FunctionSpace(mesh, "Lagrange", 1)
+    assert not (mesh and V)
+    if not V:
+        if not mesh:
+            mesh = UnitSquareMesh(4, 4)
+        V = FunctionSpace(mesh, "Lagrange", 1)
     u = TrialFunction(V)
     v = TestFunction(V)
     if A is None:
@@ -441,7 +445,7 @@ def test_p24_box_1():
     class MyExpression(Expression):
         def eval(self, values, x):
             values[0] = sin(x[0])*cos(x[1])
-    f = MyExpression()
+    f = MyExpression(degree=1)
     print(f((0.5, 0.5)))
 
 
@@ -453,14 +457,14 @@ def test_p24_box_2():
             values[1] = cos(x[1])
         def value_shape(self):
             return (2,)
-    g = MyExpression()
+    g = MyExpression(degree=1)
     print(g((0.5, 0.5)))
 
 
 @use_gc_barrier
 def test_p24_box_3():
-    f = Expression("sin(x[0])*cos(x[1])")
-    g = Expression(("sin(x[0])", "cos(x[1])"))
+    f = Expression("sin(x[0])*cos(x[1])", degree=1)
+    g = Expression(("sin(x[0])", "cos(x[1])"), degree=1)
 
 
 @use_gc_barrier
@@ -469,7 +473,7 @@ def test_p25_box_1():
     T = 1.0
     dt = 0.5
 
-    h = Expression("t*sin(x[0])*cos(x[1])", t=0.0)
+    h = Expression("t*sin(x[0])*cos(x[1])", t=0.0, degree=1)
     while t < T:
         h.t = t
         t += dt
@@ -481,7 +485,7 @@ def test_p26_box_1():
     V = VectorFunctionSpace(mesh, "Lagrange", 1)
     u = TrialFunction(V)
     v = TestFunction(V)
-    f = Expression(("0.0", "0.0"))
+    f = Expression(("0.0", "0.0"), degree=0)
 
     E = 10.0
     nu = 0.3
@@ -552,7 +556,7 @@ def test_p30_box_2():
     class DirichletBoundary(SubDomain):
         def inside(self, x, on_boundary):
             return x[0] > 0.5 - DOLFIN_EPS and on_boundary
-    u_0 = DirichletValue()
+    u_0 = DirichletValue(degree=2)
     Gamma_D = DirichletBoundary()
     bc = DirichletBC(V, u_0, Gamma_D)
 
@@ -561,7 +565,7 @@ def test_p30_box_2():
 def test_p31_box_1():
     mesh = UnitSquareMesh(3, 3)
     V = FunctionSpace(mesh, "CG", 1)
-    u_0 = Expression("sin(x[0])")
+    u_0 = Expression("sin(x[0])", degree=1)
     bc = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
 
 
@@ -569,8 +573,8 @@ def test_p31_box_1():
 def test_p31_box_2():
     mesh = UnitSquareMesh(3, 3)
     V = FunctionSpace(mesh, "CG", 1)
-    A, x, b = create_data()
-    u_0 = Expression("sin(x[0])")
+    A, x, b = create_data(V=V)
+    u_0 = Expression("sin(x[0])", degree=1)
     bc = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
     u = Function(V)
 
@@ -582,7 +586,7 @@ def test_p31_box_2():
 def test_p32_box_1():
     mesh = UnitSquareMesh(3, 3)
     V = FunctionSpace(mesh, "CG", 1)
-    u_0 = Expression("sin(x[0])")
+    u_0 = Expression("sin(x[0])", degree=1)
     bc0 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
     bc1 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
     bc2 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
@@ -600,8 +604,8 @@ def test_p32_box_1():
 def test_p32_box_2():
     mesh = UnitSquareMesh(3, 3)
     V = FunctionSpace(mesh, "CG", 1)
-    f = Expression("0.0")
-    u_0 = Expression("sin(x[0])")
+    f = Expression("0.0", degree=0)
+    u_0 = Expression("sin(x[0])", degree=1)
     bc0 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
     bc1 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
     bc2 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
@@ -622,8 +626,8 @@ def test_p32_box_2():
 def test_p32_box_3():
     mesh = UnitSquareMesh(3, 3)
     V = FunctionSpace(mesh, "CG", 1)
-    f = Expression("0.0")
-    u_0 = Expression("sin(x[0])")
+    f = Expression("0.0", degree=0)
+    u_0 = Expression("sin(x[0])", degree=1)
     bc0 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
     bc1 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
     bc2 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
@@ -647,8 +651,8 @@ def test_p32_box_3():
 def test_p33_box_1():
     mesh = UnitSquareMesh(3, 3)
     V = FunctionSpace(mesh, "CG", 1)
-    f = Expression("0.0")
-    u_0 = Expression("sin(x[0])")
+    f = Expression("0.0", degree=0)
+    u_0 = Expression("sin(x[0])", degree=1)
     bc0 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
     bc1 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
     bc2 = DirichletBC(V, u_0, "x[0] > 0.5 && on_boundary")
@@ -720,7 +724,7 @@ def test_p35_box_2(cd_tempdir):
 @skip_in_parallel
 def test_p36_box_1(cd_tempdir, pushpop_parameters):
     mesh = UnitSquareMesh(3, 3)
-    matrix, x, vector = create_data()
+    matrix, x, vector = create_data(mesh=mesh)
 
     vector_file = File("vector.xml")
     vector_file << vector
@@ -734,6 +738,7 @@ def test_p36_box_1(cd_tempdir, pushpop_parameters):
 
 
 @skip_in_parallel
+@skip_if_not_HDF5
 def test_p37_box_1(cd_tempdir):
     mesh = UnitSquareMesh(3, 3)
     V = FunctionSpace(mesh, "CG", 1)
@@ -750,6 +755,7 @@ def test_p37_box_1(cd_tempdir):
 
 
 @skip_in_parallel
+@skip_if_not_HDF5
 def test_p37_box_2():
     time_series = TimeSeries(mpi_comm_world(), "simulation_data")
     mesh = UnitSquareMesh(3, 3)
@@ -785,12 +791,12 @@ def test_p38_box_1():
 
 @use_gc_barrier
 def test_p39_box_1():
-    matrix, vector, b = create_data()
     solver = KrylovSolver()
     mesh = UnitSquareMesh(3, 3)
     mesh_function = MeshFunction("size_t", mesh, 0)
     function_space = FunctionSpace(mesh, "CG", 1)
     function = Function(function_space)
+    matrix, vector, b = create_data(V=function_space)
 
     info(vector)
     info(matrix)
@@ -854,9 +860,9 @@ def test_p41_box_2():
     solver = KrylovSolver()
     solver.parameters["absolute_tolerance"] = 1e-6
     solver.parameters["report"] = True
-    solver.parameters["gmres"]["restart"] = 50
+    #solver.parameters["gmres"]["restart"] = 50
     #solver.parameters["preconditioner"]["reuse"] = True
-    solver.parameters["preconditioner"]["structure"] = "same"
+    #solver.parameters["preconditioner"]["structure"] = "same"
 
 
 @use_gc_barrier
@@ -868,7 +874,7 @@ def test_p42_box_1():
 
 @use_gc_barrier
 def test_p42_box_2(pushpop_parameters):
-    d = dict(num_threads=4, krylov_solver=dict(absolute_tolerance=1e-6))
+    d = dict(num_threads=4, krylov_solver=dict(absolute_tolerance=1.0e-6))
     parameters.update(d)
 
 
@@ -930,14 +936,14 @@ def test_p47_box_2():
         def eval(self, values, x):
             values[0] = sin(x[0])
     v = TestFunction(V)
-    f = Source()
+    f = Source(degree=1)
     L = f*v*dx
     assemble(L)
 
 
 @use_gc_barrier
 def test_p48_box_1():
-    e = Expression("sin(x[0])")
+    e = Expression("sin(x[0])", degree=2)
 
 
 @use_gc_barrier
@@ -946,14 +952,15 @@ def test_p49_box_1():
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = TrialFunction(V)
     v = TestFunction(V)
-    c = Expression("sin(x[0])")
+    c = Expression("sin(x[0])", degree=2)
     a = c*dot(grad(u), grad(v))*dx
     A = assemble(a)
 
 
 @use_gc_barrier
 def test_p50_box_1(pushpop_parameters):
-    parameters["form_compiler"]["name"] = "sfc"
+    # This parameter has been removed, as no other form compilers exist today:
+    pass  # parameters["form_compiler"]["name"] = "sfc"
 
 
 @use_gc_barrier

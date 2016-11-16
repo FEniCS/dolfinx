@@ -14,7 +14,6 @@
 #include <dolfin/la/VectorSpaceBasis.h>
 #include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/GenericLUSolver.h>
-#include <dolfin/la/GenericPreconditioner.h>
 
 #include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScObject.h>
@@ -35,10 +34,7 @@
 #include <dolfin/la/TrilinosPreconditioner.h>
 #include <dolfin/la/MueluPreconditioner.h>
 #include <dolfin/la/Ifpack2Preconditioner.h>
-#include <dolfin/la/MUMPSLUSolver.h>
-#include <dolfin/la/PaStiXLUSolver.h>
 
-#include <dolfin/la/STLMatrix.h>
 #include <dolfin/la/CoordinateMatrix.h>
 #include <dolfin/la/EigenVector.h>
 #include <dolfin/la/PETScVector.h>
@@ -55,7 +51,6 @@
 #include <dolfin/la/PETScUserPreconditioner.h>
 #include <dolfin/la/PETScFactory.h>
 #include <dolfin/la/TpetraFactory.h>
-#include <dolfin/la/STLFactory.h>
 #include <dolfin/la/SLEPcEigenSolver.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/la/Matrix.h>

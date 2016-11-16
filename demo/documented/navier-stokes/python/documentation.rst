@@ -70,7 +70,7 @@ class:
 .. code-block:: python
 
     # Define time-dependent pressure boundary condition
-    p_in = Expression("sin(3.0*t)", t=0.0)
+    p_in = Expression("sin(3.0*t)", t=0.0, degree=2)
 
 Note that the variable ``t`` is not automatically updated during
 time-stepping, so we must remember to manually update the value of the

@@ -47,10 +47,9 @@ Form::Form(std::size_t rank, std::size_t num_coefficients)
 }
 //-----------------------------------------------------------------------------
 Form::Form(std::shared_ptr<const ufc::form> ufc_form,
-           std::vector<std::shared_ptr<const FunctionSpace>> function_spaces,
-           std::vector<std::shared_ptr<const GenericFunction>> coefficients)
+           std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
   : Hierarchical<Form>(*this), _ufc_form(ufc_form),
-    _function_spaces(function_spaces), _coefficients(coefficients),
+    _function_spaces(function_spaces), _coefficients(ufc_form->num_coefficients()),
     _rank(ufc_form->rank())
 {
   // Do nothing
@@ -81,6 +80,12 @@ std::size_t Form::num_coefficients() const
     dolfin_assert(_ufc_form->num_coefficients() == _coefficients.size());
     return _coefficients.size();
   }
+}
+//-----------------------------------------------------------------------------
+std::size_t Form::original_coefficient_position(std::size_t i) const
+{
+  dolfin_assert(_ufc_form);
+  return _ufc_form->original_coefficient_position(i);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> Form::coloring(std::size_t entity_dim) const

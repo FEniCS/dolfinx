@@ -15,6 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+#ifndef __POINT_SOURCE_H
+#define __POINT_SOURCE_H
+
 #include <memory>
 #include <dolfin/geometry/Point.h>
 
@@ -62,3 +65,5 @@ namespace dolfin
   };
 
 }
+
+#endif

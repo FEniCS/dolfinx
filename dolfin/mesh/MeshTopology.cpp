@@ -161,7 +161,7 @@ void MeshTopology::init_global_indices(std::size_t dim, std::size_t size)
 {
   dolfin_assert(dim < _global_indices.size());
   _global_indices[dim]
-    = std::vector<std::size_t>(size, std::numeric_limits<std::size_t>::max());
+    = std::vector<std::int64_t>(size, -1);
 }
 //-----------------------------------------------------------------------------
 dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0,
@@ -180,19 +180,17 @@ const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0,
   return connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
-std::map<unsigned int, std::set<unsigned int>>&
+std::map<std::int32_t, std::set<unsigned int>>&
   MeshTopology::shared_entities(unsigned int dim)
 {
   dolfin_assert(dim <= this->dim());
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
-const std::map<unsigned int, std::set<unsigned int>>&
+const std::map<std::int32_t, std::set<unsigned int>>&
   MeshTopology::shared_entities(unsigned int dim) const
 {
-  std::map<unsigned int, std::map<unsigned int,
-                                  std::set<unsigned int>>>::const_iterator e;
-  e = _shared_entities.find(dim);
+  auto e = _shared_entities.find(dim);
   if (e == _shared_entities.end())
   {
     dolfin_error("MeshTopology.cpp",

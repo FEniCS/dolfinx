@@ -56,10 +56,10 @@ def test_director_lifetime():
     v, u = TestFunction(V), TrialFunction(V)
 
     A0 = assemble(v*u*dx)
-    bc0 = DirichletBC(V, BoundaryFunction(), Boundary())
+    bc0 = DirichletBC(V, BoundaryFunction(degree=1), Boundary())
     bc0.apply(A0)
 
-    bc1 = DirichletBC(V, Expression("1.0"), CompiledSubDomain("on_boundary"))
+    bc1 = DirichletBC(V, Expression("1.0", degree=0), CompiledSubDomain("on_boundary"))
     A1 = assemble(v*u*dx)
     bc1.apply(A1)
 
@@ -83,7 +83,7 @@ def test_meshdomain_bcs(datadir):
     part of the mesh. This test is also a compatibility test for
     VMTK."""
 
-    mesh = Mesh(os.path.join(datadir, "aneurysm.xml.gz"))
+    mesh = Mesh(os.path.join(datadir, "aneurysm.xml"))
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
 
@@ -123,7 +123,7 @@ def test_bc_for_piola_on_manifolds():
     side = CompiledSubDomain("near(x[2], 0.0)")
     mesh = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n), "exterior"), side)
     square = UnitSquareMesh(n, n)
-    mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
+    mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0"), degree=0))
 
     RT1 = lambda mesh: FunctionSpace(mesh, "RT", 1)
     RT2 = lambda mesh: FunctionSpace(mesh, "RT", 2)

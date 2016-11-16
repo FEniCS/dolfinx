@@ -22,6 +22,7 @@
 #define __SCOTCH_PARTITIONER_H
 
 #include <cstddef>
+#include <cstdint>
 #include <map>
 #include <set>
 #include <string>
@@ -31,9 +32,12 @@
 #include <dolfin/common/Set.h>
 #include "Graph.h"
 
+#include "CSRGraph.h"
+
 namespace dolfin
 {
   // Forward declarations
+  class CellType;
   class LocalMeshData;
 
   /// This class provides an interface to SCOTCH-PT (parallel version)
@@ -49,12 +53,16 @@ namespace dolfin
     /// process numbers.
     static void compute_partition(
       const MPI_Comm mpi_comm,
-      std::vector<std::size_t>& cell_partition,
-      std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs,
-      const LocalMeshData& mesh_data);
+      std::vector<int>& cell_partition,
+      std::map<std::int64_t, std::vector<int>>& ghost_procs,
+      const boost::multi_array<std::int64_t, 2>& cell_vertices,
+      const std::vector<std::size_t>& cell_weight,
+      const std::int64_t num_global_vertices,
+      const std::int64_t num_global_cells,
+      const CellType& cell_type);
 
     /// Compute reordering (map[old] -> new) using
-    /// Gibbs-Poole-Stockmeyer re-ordering
+    /// Gibbs-Poole-Stockmeyer (GPS) re-ordering
     static std::vector<int> compute_gps(const Graph& graph,
                                         std::size_t num_passes=5);
 
@@ -72,16 +80,18 @@ namespace dolfin
 
   private:
 
-    // Compute cell partitions from distributed dual graph
+    // Compute cell partitions from distributed dual graph. Note that
+    // local_graph is not const since we share the data with SCOTCH,
+    // and the SCOTCH interface is not const-correct.
+    template<typename T>
     static void partition(
       const MPI_Comm mpi_comm,
-      const std::vector<std::set<std::size_t> >& local_graph,
+      CSRGraph<T>& local_graph,
       const std::vector<std::size_t>& node_weights,
-      const std::set<std::size_t>& ghost_vertices,
-      const std::vector<std::size_t>& global_cell_indices,
+      const std::set<std::int64_t>& ghost_vertices,
       const std::size_t num_global_vertices,
-      std::vector<std::size_t>& cell_partition,
-      std::map<std::size_t, dolfin::Set<unsigned int> >& ghost_procs);
+      std::vector<int>& cell_partition,
+      std::map<std::int64_t, std::vector<int>>& ghost_procs);
 
   };
 

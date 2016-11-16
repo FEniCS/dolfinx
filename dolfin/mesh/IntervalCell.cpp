@@ -112,7 +112,7 @@ double IntervalCell::volume(const MeshEntity& interval) const
   return x1.distance(x0);
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::diameter(const MeshEntity& interval) const
+double IntervalCell::circumradius(const MeshEntity& interval) const
 {
   // Check that we get an interval
   if (interval.dim() != 1)
@@ -122,8 +122,8 @@ double IntervalCell::diameter(const MeshEntity& interval) const
                  "Illegal mesh entity, not an interval");
   }
 
-  // Diameter is same as volume for interval (line segment)
-  return volume(interval);
+  // Circumradius is half the volume for an interval (line segment)
+  return volume(interval)/2.0;
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::squared_distance(const Cell& cell,
@@ -222,7 +222,7 @@ double IntervalCell::facet_area(const Cell& cell, std::size_t facet) const
 }
 //-----------------------------------------------------------------------------
 void IntervalCell::order(Cell& cell,
-                         const std::vector<std::size_t>&
+                         const std::vector<std::int64_t>&
                          local_to_global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0

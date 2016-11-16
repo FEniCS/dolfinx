@@ -46,6 +46,12 @@ foreach(DIR ${DOLFIN_DIRS})
 endforeach()
 
 #------------------------------------------------------------------------------
+# Define libraries
+
+add_library(dolfin ${DOLFIN_H} ${HEADERS} ${SOURCES})
+set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
+
+#------------------------------------------------------------------------------
 # Add include directories and libs of required packages
 
 # NOTE: The include path for dependecies should be appended to
@@ -53,11 +59,6 @@ endforeach()
 #       as unused variable that can cause build errors when using strict
 #       compiler flags, in which case the path should be appended to
 #       DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES
-
-# libXml2
-list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${LIBXML2_INCLUDE_DIR})
-list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${LIBXML2_LIBRARIES})
-list(APPEND DOLFIN_CXX_DEFINITIONS ${LIBXML2_DEFINITIONS})
 
 # UFC
 list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${UFC_INCLUDE_DIRS})
@@ -67,8 +68,12 @@ list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${EIGEN3_INCLUDE_DIR})
 
 # Boost
 list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${Boost_LIBRARIES})
-list(APPEND APPEND DOLFIN_TARGET_LINK_LIBRARIES_DIRS ${Boost_LIBRARY_DIRS})
+foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS_PUBLIC})
+  target_link_libraries(dolfin PUBLIC "Boost::${BOOST_PACKAGE}")
+endforeach()
+foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS_PRIVATE})
+  target_link_libraries(dolfin PRIVATE "Boost::${BOOST_PACKAGE}")
+endforeach()
 
 #------------------------------------------------------------------------------
 
@@ -77,8 +82,8 @@ if (DOLFIN_ENABLE_HDF5 AND HDF5_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_HDF5")
   list(APPEND DOLFIN_CXX_DEFINITIONS ${HDF5_DEFINITIONS})
   list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${HDF5_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${HDF5_LIBRARIES})
   list(APPEND DOLFIN_LINK_FLAGS ${HDF5_LINK_FLAGS})
+  target_link_libraries(dolfin PRIVATE ${HDF5_C_LIBRARIES})
 endif()
 
 # Trilinos
@@ -86,23 +91,26 @@ if (DOLFIN_ENABLE_TRILINOS AND DOLFIN_TRILINOS_PACKAGES_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_TRILINOS")
   list(APPEND DOLFIN_CXX_DEFINITIONS ${DOLFIN_TRILINOS_DEFINITIONS})
   list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${Trilinos_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${DOLFIN_TRILINOS_LIBRARIES})
+  target_link_libraries(dolfin PUBLIC ${DOLFIN_TRILINOS_LIBRARIES})
 endif()
 
 # SLEPC
 if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_SLEPC AND SLEPC_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_SLEPC")
   list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${SLEPC_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${SLEPC_LIBRARIES})
+  target_link_libraries(dolfin PUBLIC ${SLEPC_LIBRARIES})
+  if (SLEPC_STATIC_LIBRARIES)
+    target_link_libraries(dolfin PRIVATE ${SLEPC_STATIC_LIBRARIES})
+  endif()
 endif()
 
 # PETSc
 if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC")
   list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${PETSC_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${PETSC_LIBRARIES})
-  if (PETSC_CUSP_FOUND)
-    list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC_CUSP")
+  target_link_libraries(dolfin PUBLIC ${PETSC_LIBRARIES})
+  if (PETSC_STATIC_LIBRARIES)
+    target_link_libraries(dolfin PRIVATE ${PETSC_STATIC_LIBRARIES})
   endif()
 endif()
 
@@ -122,59 +130,44 @@ endif()
 if (DOLFIN_ENABLE_UMFPACK AND UMFPACK_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_UMFPACK")
   list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${UMFPACK_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${UMFPACK_LIBRARIES})
+  target_link_libraries(dolfin PRIVATE ${UMFPACK_LIBRARIES})
 endif()
 
 # CHOLMOD
 if (DOLFIN_ENABLE_CHOLMOD AND CHOLMOD_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_CHOLMOD")
   list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${CHOLMOD_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${CHOLMOD_LIBRARIES})
-endif()
-
-# PaStiX
-if (DOLFIN_ENABLE_PASTIX AND PASTIX_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PASTIX")
-  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${PASTIX_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${PASTIX_LIBRARIES})
+  target_link_libraries(dolfin PRIVATE ${CHOLMOD_LIBRARIES})
 endif()
 
 # SCOTCH
 if (DOLFIN_ENABLE_SCOTCH AND SCOTCH_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_SCOTCH")
   list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${SCOTCH_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${SCOTCH_LIBRARIES})
+  target_link_libraries(dolfin PRIVATE ${SCOTCH_LIBRARIES})
 endif()
 
 # ParMETIS
 if (DOLFIN_ENABLE_PARMETIS AND PARMETIS_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PARMETIS")
   list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${PARMETIS_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${PARMETIS_LIBRARIES})
+  target_link_libraries(dolfin PRIVATE ${PARMETIS_LIBRARIES})
 endif()
 
 # ZLIB
 if (DOLFIN_ENABLE_ZLIB AND ZLIB_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_ZLIB")
   list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${ZLIB_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${ZLIB_LIBRARIES})
-endif()
-
-# CppUnit
-if (DOLFIN_ENABLE_UNIT_TESTS AND CPPUNIT_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_CPPUNIT")
-  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${CPPUNIT_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${CPPUNIT_LIBRARIES})
+  target_link_libraries(dolfin PRIVATE ${ZLIB_LIBRARIES})
 endif()
 
 # MPI
 if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_MPI")
   list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${MPI_CXX_INCLUDE_PATH})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${MPI_CXX_LIBRARIES})
   list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${MPI_CXX_INCLUDE_PATH})
   set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-
+  target_link_libraries(dolfin PUBLIC ${MPI_CXX_LIBRARIES})
 endif()
 
 # OpenMP
@@ -194,17 +187,15 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
 
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_VTK")
   list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
-
-  # Append to EXTRA libraries, so they are not linked with demos (this
-  # fails with VTK6 unless the vtk macros are also installed).
-  list(APPEND DOLFIN_EXTRA_TARGET_LINK_LIBRARIES ${VTK_LIBRARIES})
+  target_link_libraries(dolfin PRIVATE ${VTK_LIBRARIES})
 endif()
 
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 
 # Add compiler include directories
-include_directories(${DOLFIN_SOURCE_DIR} ${DOLFIN_DEP_INCLUDE_DIRECTORIES})
+include_directories(BEFORE ${DOLFIN_SOURCE_DIR})
+include_directories(${DOLFIN_DEP_INCLUDE_DIRECTORIES})
 include_directories(SYSTEM ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
 
 # Add CXX definitions
@@ -212,46 +203,18 @@ add_definitions(${DOLFIN_CXX_DEFINITIONS})
 add_definitions(-DDOLFIN_VERSION="${DOLFIN_VERSION}")
 
 # Just add git revision flag to the one affected file
-set_source_files_properties(common/defines.cpp PROPERTIES COMPILE_FLAGS -DDOLFIN_GIT_COMMIT_HASH=\\\"${GIT_COMMIT_HASH}\\\")
+set_source_files_properties(common/defines.cpp PROPERTIES COMPILE_FLAGS
+  "-DDOLFIN_GIT_COMMIT_HASH=\\\"${GIT_COMMIT_HASH}\\\" -DUFC_SIGNATURE=\\\"${UFC_SIGNATURE}\\\"")
 
 # Add flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${DOLFIN_LINK_FLAGS}")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${DOLFIN_LINK_FLAGS}")
 
-# Define libraries
-add_library(dolfin ${DOLFIN_H} ${HEADERS} ${SOURCES})
-set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
-
-# Strip leading and trailing whitespaces
-string(STRIP DOLFIN_TARGET_LINK_LIBRARIES "${DOLFIN_TARGET_LINK_LIBRARIES}")
-
-# Add DOLFIN target libraries
-target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES}
-  ${DOLFIN_EXTRA_TARGET_LINK_LIBRARIES})
 #------------------------------------------------------------------------------
 # SWIG
 
 if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
-
-  # Make sure we can import the UFC module and that it is compiled
-  # with present version of SWIG
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "from ufc import *; import sys; sys.stdout.write('.'.join([str(int(s)) for s in ufc.__swigversion__.split('.')]))"
-    OUTPUT_VARIABLE UFC_SWIGVERSION
-    RESULT_VARIABLE UFC_MODULE_NOT_FOUND
-    )
-
-  # Check that UFC can be imported
-  if (UFC_MODULE_NOT_FOUND)
-    message(WARNING "Unable to import UFC. Install latest UFC or check that PYTHONPATH is set appropriately. Python will be disabled.")
-  endif()
-
-  # Check that UFC was built with the version of SWIG that is being
-  # used
-  if (NOT UFC_MODULE_NOT_FOUND AND (NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}"))
-    message(WARNING "UFC compiled with different version of SWIG. Please install SWIG version ${UFC_SWIGVERSION} or recompile UFC with present SWIG.")
-  endif()
 
   # Add numpy defines to DOLFIN_PYTHON_DEFINITIONS
   if (NUMPY_FOUND)
@@ -259,7 +222,7 @@ if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
     # Set numpy version define
     set(DOLFIN_PYTHON_DEFINITIONS ${DOLFIN_PYTHON_DEFINITIONS};-DNUMPY_VERSION_MAJOR=${NUMPY_VERSION_MAJOR};-DNUMPY_VERSION_MINOR=${NUMPY_VERSION_MINOR};-DNUMPY_VERSION_MICRO=${NUMPY_VERSION_MICRO})
 
-    # Only set define for none depricated API for NUMPY version 1.7
+    # Only set define for none deprecated API for NUMPY version 1.7
     # and larger
     if(NUMPY_VERSION VERSION_GREATER 1.6.2)
       set(DOLFIN_PYTHON_DEFINITIONS ${DOLFIN_PYTHON_DEFINITIONS} -DNPY_NO_DEPRECATED_API=NPY_${NUMPY_VERSION_MAJOR}_${NUMPY_VERSION_MINOR}_API_VERSION)
@@ -267,10 +230,7 @@ if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
 
   endif()
 
-  # If suitble UFC SWIG extension is found, add SWIG subdirectory
-  if (NOT UFC_MODULE_NOT_FOUND AND ("${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}"))
-    add_subdirectory(swig)
-  endif()
+  add_subdirectory(swig)
 
 endif()
 
@@ -282,10 +242,8 @@ install(TARGETS dolfin EXPORT DOLFINTargets
   LIBRARY DESTINATION ${DOLFIN_LIB_DIR} COMPONENT RuntimeLibraries
   ARCHIVE DESTINATION ${DOLFIN_LIB_DIR} COMPONENT Development
   )
-install(EXPORT DOLFINTargets
-  DESTINATION ${DOLFIN_SHARE_DIR}/cmake
-  COMPONENT Development
-  )
+
+install(EXPORT DOLFINTargets DESTINATION ${DOLFIN_SHARE_DIR}/cmake)
 
 #------------------------------------------------------------------------------
 # Generate pkg-config file and install it
@@ -307,11 +265,14 @@ string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
 string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 string(REPLACE ";" " " PKG_DEFINITIONS "${DOLFIN_CXX_DEFINITIONS}")
 
+# Get link libraries
+get_target_property(DOLFIN_TARGET_LINK_LIBRARIES dolfin INTERFACE_LINK_LIBRARIES)
+
 # Convert libraries to -L<libdir> -l<lib> form
 foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
   # Add -Wl,option directives
   if ("${_lib}" MATCHES "-Wl,[^ ]*")
-     set(PKG_LINKFLAGS "${_lib} ${PKG_LINKFLAGS}")
+    set(PKG_LINKFLAGS "${_lib} ${PKG_LINKFLAGS}")
   else()
     string(REGEX REPLACE "(.?:?/[^ ]*)/lib([^ ]*)\\.(a|so|dylib|dll)" "-L\\1 -l\\2"
       _linkflags
@@ -320,7 +281,7 @@ foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
 
     # Add libraries that matches the form -L<libdir> -l<lib>
     if ("${_linkflags}" MATCHES "-L.+ -l.+")
-        set(PKG_LINKFLAGS "${_linkflags} ${PKG_LINKFLAGS}")
+      set(PKG_LINKFLAGS "${_linkflags} ${PKG_LINKFLAGS}")
     endif()
   endif()
 endforeach()
@@ -349,11 +310,6 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake @ONLY)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfigVersion.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake @ONLY)
-# Keep dolfin-config{-version}.cmake for backwards compatability
-configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config.cmake.in
-  ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake @ONLY)
-configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config-version.cmake.in
-  ${CMAKE_BINARY_DIR}/dolfin/dolfin-config-version.cmake @ONLY)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake @ONLY)
 
@@ -361,11 +317,9 @@ install(
   FILES
     ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
     ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
-    ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake
-    ${CMAKE_BINARY_DIR}/dolfin/dolfin-config-version.cmake
     ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake
-  DESTINATION ${DOLFIN_SHARE_DIR}/cmake
-  COMPONENT Development
-  )
+    DESTINATION ${DOLFIN_SHARE_DIR}/cmake
+    COMPONENT Development
+    )
 
 #------------------------------------------------------------------------------

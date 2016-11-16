@@ -65,9 +65,9 @@ h = CellSize(mesh)
 h_avg = (h('+') + h('-'))/2
 
 # Define the source term f, Dirichlet term u0 and Neumann term g
-f = Expression('-100.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)')
-u0 = Expression('x[0] + 0.25*sin(2*pi*x[1])')
-g = Expression('(x[1] - 0.5)*(x[1] - 0.5)')
+f = Expression('-100.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)', degree=2)
+u0 = Expression('x[0] + 0.25*sin(2*pi*x[1])', degree=2)
+g = Expression('(x[1] - 0.5)*(x[1] - 0.5)', degree=2)
 
 # Mark facets of the mesh
 boundaries = FacetFunction('size_t', mesh, 0)

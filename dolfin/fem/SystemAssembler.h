@@ -98,9 +98,9 @@ namespace dolfin
     static void check_arity(std::shared_ptr<const Form> a,
                             std::shared_ptr<const Form> L);
 
-    // Check if _bcs[i] is part of FunctionSpace fs
+    // Check if _bcs[bc_index] is part of FunctionSpace fs
     bool check_functionspace_for_bc
-      (std::shared_ptr<const FunctionSpace> fs, std::size_t i);
+      (std::shared_ptr<const FunctionSpace> fs, std::size_t bc_index);
 
     // Assemble system
     void assemble(GenericMatrix* A, GenericVector* b,

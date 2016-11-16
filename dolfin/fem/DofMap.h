@@ -111,18 +111,6 @@ namespace dolfin
     ///         The dimension of the global finite element function space.
     std::size_t global_dimension() const;
 
-    /// Return number of owned, unowned, or all dofs in the dofmap on
-    /// this process
-    ///
-    /// *Arguments*
-    ///     type (std::string)
-    ///         Either "owned", "unowned", or "all"
-    ///
-    /// *Returns*
-    ///     std::size_t
-    ///         Number of local dofs.
-    std::size_t local_dimension(std::string type) const;
-
     /// Return the dimension of the local finite element function
     /// space on a cell
     ///
@@ -240,6 +228,18 @@ namespace dolfin
     ///         The local entity index
     void tabulate_entity_dofs(std::vector<std::size_t>& dofs,
                               std::size_t dim, std::size_t local_entity) const;
+
+    /// Tabulate globally supported dofs
+    ///
+    /// *Arguments*
+    ///     dofs (std::size_t)
+    ///         Degrees of freedom.
+    void tabulate_global_dofs(std::vector<std::size_t>& dofs) const
+    {
+      dolfin_assert(_global_nodes.empty() || block_size() == 1);
+      dofs.resize(_global_nodes.size());
+      std::copy(_global_nodes.cbegin(), _global_nodes.cend(), dofs.begin());
+    }
 
     /// Create a copy of the dof map
     ///
@@ -370,6 +370,9 @@ namespace dolfin
 
     // Cell-local-to-dof map (dofs for cell dofmap[i])
     std::vector<dolfin::la_index> _dofmap;
+
+    // List of global nodes
+    std::set<std::size_t> _global_nodes;
 
     // Cell dimension (fixed for all cells)
     std::size_t _cell_dimension;

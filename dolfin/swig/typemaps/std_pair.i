@@ -184,6 +184,28 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<bool>)
 
 }
 
+
+%typecheck(SWIG_TYPECHECK_POINTER) std::pair<std::int64_t, std::int64_t>
+{
+  $1 = PyTuple_Check($input) ? 1 : 0;
+}
+%typemap(in) std::pair<std::int64_t, std::int64_t> (std::pair<std::int64_t, std::int64_t> tmp_pair, long tmp)
+{
+  // Check that we have a tuple
+  if (!PyTuple_Check($input) || PyTuple_Size($input) != 2)
+    SWIG_exception(SWIG_TypeError, "expected a tuple of length 2 of ints.");
+
+  // Get pointers to function and time
+  PyObject* py_first  = PyTuple_GetItem($input, 0);
+  PyObject* py_second = PyTuple_GetItem($input, 1);
+
+  tmp_pair = std::make_pair(PyLong_AsLongLong(py_first), PyLong_AsLongLong(py_second));
+
+  // Assign input variable
+  $1 = tmp_pair;
+}
+
+
 %typecheck(SWIG_TYPECHECK_POINTER) std::pair<double, double>
 {
   $1 = PyTuple_Check($input) ? 1 : 0;
@@ -209,29 +231,26 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<bool>)
 // Out typemap for std::pair<TYPE,TYPE>
 //-----------------------------------------------------------------------------
 %typemap(out) std::pair<std::size_t, std::size_t>
-{
-  $result = Py_BuildValue("ii", $1.first, $1.second);
-}
+{ $result = Py_BuildValue("ii", $1.first, $1.second); }
+
+%typemap(out) std::pair<std::int64_t, std::int64_t>
+{ $result = Py_BuildValue("LL", $1.first, $1.second); }
+
 %typemap(out) std::pair<std::size_t, bool>
-{
-  $result = Py_BuildValue("ib", $1.first, $1.second);
-}
+{ $result = Py_BuildValue("ib", $1.first, $1.second); }
+
 %typemap(out) std::pair<unsigned int, unsigned int>
-{
-  $result = Py_BuildValue("ii", $1.first, $1.second);
-}
+{ $result = Py_BuildValue("ii", $1.first, $1.second); }
+
 %typemap(out) std::pair<unsigned int, bool>
-{
-  $result = Py_BuildValue("ib", $1.first, $1.second);
-}
+{ $result = Py_BuildValue("ib", $1.first, $1.second); }
+
 %typemap(out) std::pair<double, double>
-{
-  $result = Py_BuildValue("dd", $1.first, $1.second);
-}
+{ $result = Py_BuildValue("dd", $1.first, $1.second); }
+
 %typemap(out) std::pair<unsigned int, double>
-{
-  $result = Py_BuildValue("id", $1.first, $1.second);
-}
+{ $result = Py_BuildValue("id", $1.first, $1.second); }
+
 
 // FIXME: Add macro for the two typemaps below
 

@@ -151,7 +151,7 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionAXPY_
     ///         Return a linear combination of Functions
-    FunctionAXPY operator+(const Function& other) const;
+    FunctionAXPY operator+(std::shared_ptr<const Function> other) const;
 
     /// Add operator with other linear combination of functions
     ///
@@ -165,7 +165,7 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionAXPY_
     ///         Return a linear combination of Functions
-    FunctionAXPY operator-(const Function& other) const;
+    FunctionAXPY operator-(std::shared_ptr<const Function> other) const;
 
     /// Subtraction operator with other linear combination of functions
     ///
@@ -359,15 +359,8 @@ namespace dolfin
     // Collection of sub-functions which share data with the function
     mutable boost::ptr_map<std::size_t, Function> _sub_functions;
 
-    // Compute lists of off-process dofs
-    void compute_off_process_dofs() const;
-
     // Initialize vector
     void init_vector();
-
-    // Get coefficients from the vector(s)
-    void compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
-                               std::vector<la_index>& ghost_indices) const;
 
     // The function space
     std::shared_ptr<const FunctionSpace> _function_space;

@@ -31,6 +31,9 @@
 // modules has been loaded.
 //=============================================================================
 
+%ignore dolfin::LocalMeshData::Geometry;
+%ignore dolfin::LocalMeshData::Topology;
+
 //-----------------------------------------------------------------------------
 // Return NumPy arrays for Mesh::cells() and Mesh::coordinates()
 //-----------------------------------------------------------------------------
@@ -84,6 +87,7 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 %ignore dolfin::Mesh::coordinates;
 %ignore dolfin::Mesh::cell_orientations;
 %ignore dolfin::MeshFunction::values;
+%warnfilter(503) dolfin::create_mesh;
 
 //-----------------------------------------------------------------------------
 // Rename methods which get called by a re-implemented method from the

@@ -129,8 +129,14 @@ namespace dolfin
     ///         The global index. Set to
     ///         std::numerical_limits<std::size_t>::max() if global index
     ///         has not been computed
-    std::size_t global_index() const
-    { return _mesh->topology().global_indices(_dim)[_local_index]; }
+    std::int64_t global_index() const
+    {
+      const std::vector<std::int64_t>& global_indices
+        = _mesh->topology().global_indices(_dim);
+      if (global_indices.empty())
+        return -1;
+      return global_indices[_local_index];
+    }
 
     /// Return local number of incident mesh entities of given
     /// topological dimension
@@ -171,7 +177,12 @@ namespace dolfin
     ///     std::size_t
     ///         The index for incident mesh entities of given dimension.
     const unsigned int* entities(std::size_t dim) const
-    { return _mesh->topology()(_dim, dim)(_local_index); }
+    {
+      const unsigned int* initialized_mesh_entities
+        = _mesh->topology()(_dim, dim)(_local_index);
+      dolfin_assert(initialized_mesh_entities);
+      return initialized_mesh_entities;
+    }
 
     /// Return unique mesh ID
     ///
@@ -219,7 +230,7 @@ namespace dolfin
     /// Return set of sharing processes
     std::set<unsigned int> sharing_processes() const
     {
-      const std::map<unsigned int, std::set<unsigned int> >& sharing_map
+      const std::map<std::int32_t, std::set<unsigned int>>& sharing_map
         = _mesh->topology().shared_entities(_dim);
       const auto map_it = sharing_map.find(_local_index);
       if (map_it == sharing_map.end())
@@ -228,12 +239,12 @@ namespace dolfin
         return map_it->second;
     }
 
-    /// Determine if an entity is shared or not    
+    /// Determine if an entity is shared or not
     bool is_shared() const
     {
       if (_mesh->topology().have_shared_entities(_dim))
       {
-        const std::map<unsigned int, std::set<unsigned int> >& sharing_map
+        const std::map<std::int32_t, std::set<unsigned int>>& sharing_map
           = _mesh->topology().shared_entities(_dim);
         return (sharing_map.find(_local_index) != sharing_map.end());
       }
@@ -242,7 +253,7 @@ namespace dolfin
 
     /// Get ownership of this entity - only really valid for cells
     unsigned int owner() const;
-    
+
     // Note: Not a subclass of Variable for efficiency!
     /// Return informal string representation (pretty-print)
     ///
