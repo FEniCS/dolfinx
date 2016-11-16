@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2016-11-15
+// Last changed: 2016-11-16
 //
 
 
@@ -35,6 +35,8 @@
 #include <CGAL/Boolean_set_operations_2.h>
 #include <CGAL/Polygon_set_2.h>
 
+#include "common.h"
+
 typedef CGAL::Epeck ExactKernel;
 typedef ExactKernel::FT FT;
 typedef ExactKernel::Point_2                      Point_2;
@@ -50,29 +52,6 @@ typedef CGAL::Polygon_set_2<ExactKernel>          Polygon_set_2;
 #define MULTIMESH_DEBUG_OUTPUT 0
 
 using namespace dolfin;
-
-enum CELL_STATUS
-{
-  UNKNOWN,
-  COVERED,
-  CUT,
-  UNCUT
-};
-
-std::string cell_status_str(CELL_STATUS cs)
-{
-  switch(cs)
-  {
-   case UNKNOWN :
-    return "UNKNOWN";
-   case COVERED :
-    return "COVERED";
-   case CUT :
-    return "CUT    ";
-   case UNCUT :
-    return "UNCUT  ";
-  }
-}
 
 //------------------------------------------------------------------------------
 double rotate(double x, double y, double cx, double cy, double w,
@@ -96,199 +75,6 @@ bool rotation_inside(double x,double y, double cx, double cy, double w,
   rotate(x,y,cx,cy,w, xr,yr);
   if (xr>0 and xr<1 and yr>0 and yr<1) return true;
   else return false;
-}
-//------------------------------------------------------------------------------
-// Compute volume contributions from each cell
-void compute_volume(const MultiMesh& multimesh,
-                    std::vector<std::vector<std::pair<CELL_STATUS, double> > >& cells_status)
-{
-  cells_status.reserve(multimesh.num_parts());
-
-  // Compute contribution from all parts
-  for (std::size_t part = 0; part < multimesh.num_parts(); part++)
-  {
-    // std::cout << "Testing part " << part << std::endl;
-    cells_status.push_back(std::vector<std::pair<CELL_STATUS, double> >());
-    std::vector<std::pair<CELL_STATUS, double> >& current_cells_status = cells_status.back();
-
-    std::shared_ptr<const Mesh> current_mesh = multimesh.part(part);
-    current_cells_status.resize(current_mesh->num_cells());
-    // std::cout << "Number of cells: " << current_cells_status.size() << std::endl;
-
-    // Uncut cell volume given by function volume
-    {
-      const std::vector<unsigned int>& uncut_cells = multimesh.uncut_cells(part);
-      for (auto it = uncut_cells.begin(); it != uncut_cells.end(); ++it)
-      {
-        const Cell cell(*multimesh.part(part), *it);
-	const double vol = cell.volume();
-
-	// // orient2d volume from CGALExactArithmetic
-	// const MeshGeometry& geometry = cell.mesh().geometry();
-	// const unsigned int* vertices = cell.entities(0);
-	// const Point x0 = geometry.point(vertices[0]);
-	// const Point x1 = geometry.point(vertices[1]);
-	// const Point x2 = geometry.point(vertices[2]);
-	// const double vol = std::abs(volume({x0, x1, x2}));
-
-	current_cells_status[*it] = std::make_pair(UNCUT, vol);
-      }
-    }
-
-    // Cut cell volume given by quadrature rule
-    {
-      const std::vector<unsigned int>& cut_cells = multimesh.cut_cells(part);
-      for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
-      {
-        std::cout << "Cut cell in part " << part << ": " << *it << std::endl;
-        double volume = 0;
-        const quadrature_rule& qr = multimesh.quadrature_rule_cut_cell(part, *it);
-	std::cout << "QR: " << qr.first.size() << ", " << qr.second.size() << std::endl;
-        for (std::size_t i = 0; i < qr.second.size(); ++i)
-        {
-          volume += qr.second[i];
-        }
-        current_cells_status[*it] = std::make_pair(CUT, volume);
-      }
-    }
-
-    {
-      const std::vector<unsigned int>& covered_cells = multimesh.covered_cells(part);
-      for (auto it = covered_cells.begin(); it != covered_cells.end(); ++it)
-      {
-        current_cells_status[*it] = std::make_pair(COVERED, 0.);
-      }
-    }
-
-    std::cout << "part "<< part << " qr volume " << volume << std::endl;
-  }
-}
-//------------------------------------------------------------------------------
-void get_cells_status_cgal(const MultiMesh& multimesh,
-                           std::vector<std::vector<std::pair<CELL_STATUS, FT> > >& cells_status)
-{
-  cells_status.reserve(multimesh.num_parts());
-
-  FT volume = 0;
-
-  for (std::size_t i = 0; i < multimesh.num_parts(); i++)
-  {
-    // std::cout << "Testing part " << i << std::endl;
-    cells_status.push_back(std::vector<std::pair<CELL_STATUS, FT> >());
-    std::vector<std::pair<CELL_STATUS, FT> >& current_cells_status = cells_status.back();
-
-    std::shared_ptr<const Mesh> current_mesh = multimesh.part(i);
-    const MeshGeometry& current_geometry = current_mesh->geometry();
-
-    for (CellIterator cit(*current_mesh); !cit.end(); ++cit)
-    {
-      // Test every cell against every cell in overlaying meshes
-      Triangle_2 current_cell(Point_2(current_geometry.x(cit->entities(0)[0], 0),
-                                      current_geometry.x(cit->entities(0)[0], 1)),
-                              Point_2(current_geometry.x(cit->entities(0)[1], 0),
-                                      current_geometry.x(cit->entities(0)[1], 1)),
-                              Point_2(current_geometry.x(cit->entities(0)[2], 0),
-                                      current_geometry.x(cit->entities(0)[2], 1)));
-      if (current_cell.orientation() == CGAL::CLOCKWISE)
-      {
-        //std::cout << "Orig: " << current_cell << std::endl;
-        current_cell = current_cell.opposite();
-        //std::cout << "Opposite: " << current_cell << std::endl;
-      }
-      Polygon_set_2 polygon_set;
-      {
-        std::vector<Point_2> vertices;
-        vertices.push_back(current_cell[0]);
-        vertices.push_back(current_cell[1]);
-        vertices.push_back(current_cell[2]);
-
-        Polygon_2 p(vertices.begin(), vertices.end());
-        polygon_set.insert(p);
-      }
-
-      // std::cout << "  Testing cell: " << current_cell << std::endl;
-      bool is_uncut = true;
-      for (std::size_t j = i+1; j < multimesh.num_parts(); j++)
-      {
-        // std::cout << "    Testing against part " << j << std::endl;
-        std::shared_ptr<const Mesh> other_mesh = multimesh.part(j);
-        const MeshGeometry& other_geometry = other_mesh->geometry();
-        for (CellIterator cit_other(*other_mesh); !cit_other.end(); ++cit_other)
-        {
-          std::vector<Point_2> vertices;
-          Point_2 p0(other_geometry.x(cit_other->entities(0)[0], 0),
-                     other_geometry.x(cit_other->entities(0)[0], 1));
-          Point_2 p1(other_geometry.x(cit_other->entities(0)[1], 0),
-                     other_geometry.x(cit_other->entities(0)[1], 1));
-          Point_2 p2(other_geometry.x(cit_other->entities(0)[2], 0),
-                     other_geometry.x(cit_other->entities(0)[2], 1));
-
-          vertices.push_back(p0);
-          if (Line_2(p0, p1).has_on_positive_side(p2))
-          {
-            vertices.push_back(p1);
-            vertices.push_back(p2);
-          }
-          else
-          {
-            vertices.push_back(p2);
-            vertices.push_back(p1);
-          }
-          Polygon_2 p(vertices.begin(), vertices.end());
-          polygon_set.difference(p);
-        }
-      }
-
-      std::vector<Polygon_with_holes_2> result;
-      polygon_set.polygons_with_holes(std::back_inserter(result));
-
-      if (result.size() == 0)
-      {
-        current_cells_status.push_back(std::make_pair(COVERED, 0.0));
-        //std::cout << "    Covered" << std::endl;
-      }
-      else
-      {
-        // if (result.size() > 1)
-        //   std::cout << "!!!!!!!! Several polygons !!!!!!!" << std::endl;
-
-        Polygon_2::Vertex_const_iterator v = result[0].outer_boundary().vertices_begin();
-        Polygon_2::Vertex_const_iterator v_end = result[0].outer_boundary().vertices_end();
-        const std::size_t num_vertices = std::distance(v, v_end);
-        const Point_2& v0 = *v; ++v;
-        const Point_2& v1 = *v; ++v;
-        const Point_2& v2 = *v;
-
-        if (result.size() == 1 &&
-            result[0].holes_begin() == result[0].holes_end() &&
-            num_vertices == 3 &&
-            Triangle_2(v0, v1, v2) == current_cell)
-        {
-          current_cells_status.push_back(std::make_pair(UNCUT,
-                                                        result[0].outer_boundary().area()));
-          // std::cout << "    Uncut" << std::endl;
-        }
-        else
-        {
-          FT current_volume = 0;
-
-          for(auto pit = result.begin(); pit != result.end(); pit++)
-          {
-            const Polygon_2& outerboundary = pit->outer_boundary();
-            current_volume += outerboundary.area();
-            // std::cout << "    Polygon ";
-            // for (auto it = outerboundary.vertices_begin(); it != outerboundary.vertices_end(); it++) std::cout << *it << ", ";
-            // std::cout << std::endl;
-
-            for (auto it = pit->holes_begin(); it != pit->holes_end(); it++)
-              current_volume += it->area();
-          }
-          current_cells_status.push_back(std::make_pair(CUT, current_volume));
-          // std::cout << "    Cut" << std::endl;
-        }
-      }
-    }
-  }
 }
 //------------------------------------------------------------------------------
 std::shared_ptr<MultiMesh> get_test_case(std::size_t num_parts,
