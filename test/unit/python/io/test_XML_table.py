@@ -34,13 +34,13 @@ def test_write_and_read_table(cd_tempdir):
 
 
     # Write table to file
-    file = File("/tmp/my_table.xml")
+    file = File("my_table.xml")
     file << t
     del t
     del file
     
     # Read table from file
-    file = File("/tmp/my_table.xml")
+    file = File("my_table.xml")
     t = Table("My Table")
     file >> t
 
