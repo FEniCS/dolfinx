@@ -18,7 +18,7 @@
 // Modified by August Johansson 2016
 //
 // First added:  2013-05-02
-// Last changed: 2016-07-05
+// Last changed: 2016-11-15
 
 #ifndef __BOUNDING_BOX_TREE_2D_H
 #define __BOUNDING_BOX_TREE_2D_H
@@ -27,7 +27,6 @@
 #include <vector>
 #include <dolfin/common/constants.h>
 #include "GenericBoundingBoxTree.h"
-#include <dolfin/geometry/predicates.h>
 
 namespace dolfin
 {
@@ -84,61 +83,16 @@ namespace dolfin
       const double eps1 = DOLFIN_EPS_LARGE*(b[3] - b[1]);
       return (b[0] - eps0 <= x[0] && x[0] <= b[2] + eps0 &&
               b[1] - eps1 <= x[1] && x[1] <= b[3] + eps1);
-
-      // // FIXME: It is possible to also use Shewchuk robust geometry
-      // // here as well, just as in bbox_in_bbox
-      // const double* b = _bbox_coordinates.data() + 4*node;
-      // double p0[2] = {b[0], b[1]};
-      // double p1[2] = {b[2], b[1]};
-      // if (orient2d(const_cast<double*>(x), p0, p1) > 0)
-      // 	return false;
-
-      // double p2[2] = {b[0], b[3]};
-      // if (orient2d(const_cast<double*>(x), p0, p2) > 0)
-      // 	return false;
-
-      // double p3[2] = {b[2], b[3]};
-      // if (orient2d(const_cast<double*>(x), p2, p3) > 0)
-      // 	return false;
-
-      // if (orient2d(const_cast<double*>(x), p3, p1) > 0)
-      // 	return false;
-
-      // return true;
     }
 
     // Check whether bounding box (a) collides with bounding box (node)
     bool bbox_in_bbox(const double* a, unsigned int node) const
     {
-      // FIXME: Some testing suggests that we should use Shewchuk's
-      // routines for collision testing
-      // const double* b = _bbox_coordinates.data() + 4*node;
-      // const double eps0 = DOLFIN_EPS*(b[2] - b[0]);
-      // const double eps1 = DOLFIN_EPS*(b[3] - b[1]);
-      // return (b[0] - eps0 <= a[2] && a[0] <= b[2] + eps0 &&
-      // 	      b[1] - eps1 <= a[3] && a[1] <= b[3] + eps1);
-
       const double* b = _bbox_coordinates.data() + 4*node;
-
-      double ll[2] = {a[2], a[3]};
-      double p0[2] = {b[0], b[1]};
-      double p1[2] = {b[2], b[1]};
-      if (orient2d(ll, p0, p1) < 0)
-      	return false;
-
-      double p2[2] = {b[0], b[3]};
-      if (orient2d(ll, p2, p0) < 0)
-      	return false;
-
-      double ur[2] = {a[0], a[1]};
-      double p3[2] = {b[2], b[3]};
-      if (orient2d(ur, p3, p2) < 0)
-      	return false;
-
-      if (orient2d(ur, p1, p3) < 0)
-      	return false;
-
-      return true;
+      const double eps0 = DOLFIN_EPS_LARGE*(b[2] - b[0]);
+      const double eps1 = DOLFIN_EPS_LARGE*(b[3] - b[1]);
+      return (b[0] - eps0 <= a[2] && a[0] <= b[2] + eps0 &&
+      	      b[1] - eps1 <= a[3] && a[1] <= b[3] + eps1);
     }
 
     // Compute squared distance between point and bounding box
