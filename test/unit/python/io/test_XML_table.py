@@ -32,7 +32,6 @@ def test_write_and_read_table(cd_tempdir):
     t = timings(TimingClear_keep, [TimingType_wall, TimingType_system])
     t_str = t.str(True)
 
-
     # Write table to file
     file = File("my_table.xml")
     file << t

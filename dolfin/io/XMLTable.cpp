@@ -78,7 +78,7 @@ void XMLTable::read(Table& table, pugi::xml_node xml_node)
   }
 
   // Check that there is only one root XML Table 
-  if (xml_table.first_child().next_sibling())
+  if (xml_node.first_child().next_sibling())
   {
     dolfin_error("XMLTable.cpp",
                  "read table from XML file",
