@@ -77,24 +77,37 @@ void XMLTable::read(Table& table, pugi::xml_node xml_node)
                  "Not a DOLFIN Table XML file");
   }
 
+  // Check that there is only one root XML Table 
+  if (xml_table.first_child().next_sibling())
+  {
+    dolfin_error("XMLTable.cpp",
+                 "read table from XML file",
+                 "Two tables are defined in XML file");
+  }
+
   // Rename table in accordance with file input
   const std::string name = xml_table.attribute("name").value();
-  table.rename(name);
+  table.rename(name, "");
 
   // Iterate over rows
-  for (auto i = xml_node.begin(); i != xml_node.end(); ++i)
+  for (auto i = xml_table.begin(); i != xml_table.end(); ++i)
   {
+
     // Get row name
     const std::string row = i->attribute("key").value();
     
     // Iterate over columns
-    for (auto j = xml_node.begin(); j != xml_node.end(); ++j)
+    pugi::xml_node xml_row_node = *i; 
+    for (auto j = xml_row_node.begin(); j != xml_row_node.end(); ++j)
     {
       // Get column name
       const std::string col = j->attribute("key").value();
 
       // Get type of value
       const std::string type = j->attribute("type").value();
+
+      // Get value
+      const pugi::xml_attribute value = j->attribute("value");
 
       // Set table entry
       if (type == "double")
