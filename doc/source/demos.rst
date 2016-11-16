@@ -92,12 +92,12 @@ Working list of Python demos
 * :doc:`demos/demo_poisson.py`
 * :doc:`demos/demo_eigenvalue.py`
 * :doc:`demos/demo_built-in-meshes.py`
+* :doc:`demos/demo_mixed-poisson.py`
 * :doc:`demos/demo_biharmonic.py`
 * :doc:`demos/demo_auto-adaptive-poisson.py`
 * :doc:`demos/demo_cahn-hilliard.py`
 * :doc:`demos/demo_maxwell-eigenvalues.py`
 * :doc:`demos/demo_built-in-meshes.py`
-* :doc:`demos/demo_eigenvalue.py`
 * :doc:`demos/demo_hyperelasticity.py`
 * :doc:`demos/demo_nonlinear-poisson.py`
 * :doc:`demos/demo_nonmatching-interpolation.py`
