@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-11-03
+// Last changed: 2016-11-17
 //
 // Developer note:
 //
@@ -90,16 +90,16 @@ namespace dolfin
       return 0;
     else if (s.size() == 3)
     {
-      return 0.5 * orient2d(s[0].coordinates(),
-			    s[1].coordinates(),
-			    s[2].coordinates());
+      return 0.5 * std::abs(orient2d(s[0].coordinates(),
+				     s[1].coordinates(),
+				     s[2].coordinates()));
     }
     else if (s.size() == 4)
     {
-      return orient3d(s[0].coordinates(),
-		      s[1].coordinates(),
-		      s[2].coordinates(),
-		      s[3].coordinates()) / 6.;
+      return std::abs(orient3d(s[0].coordinates(),
+			       s[1].coordinates(),
+			       s[2].coordinates(),
+			       s[3].coordinates())) / 6.;
     }
     else {
       dolfin_error("CGALExactArithmetic.h",
