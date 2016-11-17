@@ -26,10 +26,12 @@ Required
 
 - Boost (http://www.boost.org), with the following compiled Boost
   components
+
   - filesystem
   - iostreams
   - program_options
   - timer
+
 - CMake (https://cmake.org)
 - Eigen3 (http://eigen.tuxfamily.org)
 - FFC (https://bitbucket.org/fenics-project/ffc)
