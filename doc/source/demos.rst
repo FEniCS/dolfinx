@@ -109,6 +109,7 @@ Using the C++ interface
 * :doc:`demos/poisson/main.cpp`
 * :doc:`demos/eigenvalue/main.cpp`
 * :doc:`demos/built-in-meshes/main.cpp`
+* :doc:`demos/mixed-poisson/main.cpp`
 * :doc:`demos/biharmonic/main.cpp`
 * :doc:`demos/auto-adaptive-poisson/main.cpp`
 * :doc:`demos/nonmatching-interpolation/main.cpp`

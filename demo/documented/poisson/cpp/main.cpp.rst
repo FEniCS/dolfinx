@@ -12,7 +12,9 @@ This demo illustrates how to:
 The solution for :math:`u` in this demo will look as follows:
 
 .. image:: ../poisson_u.png
-                         :scale: 75 %
+    :scale: 75 %
+
+.. todo:: Fix the link to image
 
 
 Equation and problem definition
