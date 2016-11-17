@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2016-06-02
+// Last changed: 2016-11-17
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -211,6 +211,7 @@ SimplexQuadrature::compute_quadrature_rule_interval(const std::vector<Point>& co
     {
       quadrature_rule.first[d + i*gdim]
         = 0.5*(coordinates[0][d]*(1 - p[i]) + coordinates[1][d]*(1 + p[i]));
+      dolfin_assert(std::isfinite(quadrature_rule.first[d + i*gdim]));
     }
   }
 
@@ -219,7 +220,10 @@ SimplexQuadrature::compute_quadrature_rule_interval(const std::vector<Point>& co
   // Store weights
   quadrature_rule.second.assign(w.size(), 0.5*std::abs(det));
   for (std::size_t i = 0; i < w.size(); ++i)
+  {
     quadrature_rule.second[i] *= w[i];
+    dolfin_assert(std::isfinite(quadrature_rule.second[i]));
+  }
 
   return quadrature_rule;
 }
@@ -382,15 +386,21 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const std::vector<Point>& co
   quadrature_rule.first.resize(gdim*p.size());
   for (std::size_t i = 0; i < p.size(); ++i)
     for (std::size_t d = 0; d < gdim; ++d)
+    {
       quadrature_rule.first[d + i*gdim]
         = p[i][0]*coordinates[0][d]
         + p[i][1]*coordinates[1][d]
         + p[i][2]*coordinates[2][d];
+      dolfin_assert(std::isfinite(quadrature_rule.first[d + i*gdim]));
+    }
 
   // Store weights
   quadrature_rule.second.assign(w.size(), 0.5*std::abs(det));
   for (std::size_t i = 0; i < w.size(); ++i)
+  {
     quadrature_rule.second[i] *= w[i];
+    dolfin_assert(std::isfinite(quadrature_rule.second[i]));
+  }
 
   return quadrature_rule;
 }

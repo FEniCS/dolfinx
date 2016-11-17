@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2016-11-14
+// Last changed: 2016-11-17
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -39,6 +39,10 @@
 #include "BoundaryMesh.h"
 #include "MeshFunction.h"
 #include "MultiMesh.h"
+
+
+// FIXME
+#include </home/august/dolfin_simplex_tools.h>
 
 using namespace dolfin;
 
@@ -527,6 +531,9 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       const unsigned int cut_cell_index = it->first;
       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
 
+      std::cout << "cut part " << cut_part <<" cell no " << cut_cell_index << std::endl
+		<< tools::drawtriangle(cut_cell) << std::endl;
+
       // Get dimensions
       const std::size_t tdim = cut_cell.mesh().topology().dim();
       const std::size_t gdim = cut_cell.mesh().geometry().dim();
@@ -552,6 +559,12 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
         const std::size_t cutting_part = jt->first;
         const std::size_t cutting_cell_index = jt->second;
         const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
+
+	std::cout// << "cut part " << cut_part <<" cell no " << cut_cell_index << std::endl
+		  << "cutting part " << cutting_part << " cutting cell no " << cutting_cell_index << std::endl
+	  //<< tools::drawtriangle(cut_cell)
+		  << tools::drawtriangle(cutting_cell)<<std::endl;
+
 
   	// Only allow same type of cell for now
       	dolfin_assert(cutting_cell.mesh().topology().dim() == tdim);
@@ -581,6 +594,14 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       if (num_cutting_cells > 0)
 	_inclusion_exclusion_overlap(overlap_qr, initial_polyhedra,
 				     tdim, gdim, quadrature_order);
+
+      double vol = 0;
+      for (const auto qr: overlap_qr)
+      {
+	for (const double w: qr.second)
+	  vol += w;
+      }
+      std::cout << "net vol for cut part " << cut_part << " cut cell " << cut_cell_index << vol << std::endl;
 
       // Store quadrature rules for cut cell
       _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
@@ -987,19 +1008,61 @@ void MultiMesh::_inclusion_exclusion_overlap
   // previous_intersections data. We only have to intersect if the
   // key doesn't contain the polyhedron.
 
+  std::cout << '\n'<<__FUNCTION__ << "\n\n";
+
   // Add quadrature rule for stage 0
   quadrature_rule part_qr;
   for (const std::pair<IncExcKey, Polyhedron>& pol_pair: previous_intersections)
     for (const Simplex& simplex: pol_pair.second)
       if (simplex.size() == tdim + 1)
+      {
+	std::size_t prevsz = part_qr.second.size();
 	_add_quadrature_rule(part_qr, simplex, gdim,
 			     quadrature_order, 1.);
+	std::cout << tools::drawtriangle(simplex);
+	quadrature_rule qqqq;
+	for (std::size_t i = prevsz, j = 0; i < part_qr.second.size(); ++i)
+	{
+	  qqqq.first.push_back(part_qr.first[2*i]);
+	  qqqq.first.push_back(part_qr.first[2*i+1]);
+	  qqqq.second.push_back(part_qr.second[i]);
+	}
+	tools::cout_qr(qqqq);
+
+	//dolfin_assert(std::abs(tools::area(simplex) - std::abs(tools::area(qqqq))) < DOLFIN_EPS);
+	const double heron = tools::area(simplex);
+	const double area_qr = std::abs(tools::area(qqqq));
+	const double ee = std::abs(heron - area_qr);
+	if (ee > DOLFIN_EPS)
+	{
+	  std::cout << "areas " << heron <<' '<<area_qr << " err " << ee << std::endl;
+	}
+      }
 
   // Add quadrature rule for overlap part
   qr[0] = part_qr;
 
+  {
+    // std::cout << __FUNCTION__<<std::endl;
+    // std::cout << "stage 0 polyhedra\n";
+    // for (const std::pair<IncExcKey, Polyhedron>& pol_pair: previous_intersections)
+    //   for (const Simplex& simplex: pol_pair.second)
+    // 	std::cout << tools::drawtriangle(simplex);
+    // std::cout << '\n';
+
+    // std::cout << "net qr stage " << "0" << std::endl;
+    // tools::cout_qr(part_qr);
+    double vol = 0;
+    for (const double w: part_qr.second)
+      vol += w;
+    std::cout << "net vol " << vol << " stage 0 " << std::endl;
+  }
+
   for (std::size_t stage = 1; stage < N; ++stage)
   {
+
+    std::cout << "\n stage " << stage << std::endl;
+
     // Structure for storing new intersections
     std::vector<std::pair<IncExcKey, Polyhedron> > new_intersections;
 
@@ -1009,9 +1072,8 @@ void MultiMesh::_inclusion_exclusion_overlap
       // Loop over all initial polyhedra.
       for (const std::pair<std::size_t, Polyhedron>& initial_polyhedron: initial_polyhedra)
       {
-
-	// test: only check if initial_polyhedron key <
-	// previous_polyhedron key[0]
+	// Only check if initial_polyhedron key < previous_polyhedron
+	// key[0]
 	if (initial_polyhedron.first < previous_polyhedron.first[0])
 	{
 	  // We want to save the intersection of the previous
@@ -1055,6 +1117,9 @@ void MultiMesh::_inclusion_exclusion_overlap
 		  // yet, but rather a std::vector<Simplex> since we
 		  // are still filling the polyhedron with simplices
 
+		  std::cout << "% collision of\n";
+		  std::cout << "clf,hold on;"<<tools::drawtriangle(previous_simplex)<<tools::drawtriangle(initial_simplex,"'r'")<<std::endl;
+
 		  // FIXME: We could add only if area is sufficiently
 		  // large
 		  for (const Simplex& simplex: intersection)
@@ -1062,10 +1127,16 @@ void MultiMesh::_inclusion_exclusion_overlap
 		    if (simplex.size() == tdim + 1 and
 			!CollisionPredicates::is_degenerate(simplex, gdim))
 		    {
+		      std::cout << tools::drawtriangle(simplex,"'g'");
+
 		      new_polyhedron.push_back(simplex);
 		      any_intersections = true;
 		    }
                   }
+
+		  if (any_intersections)
+		    std::cout << std::endl<<"pause;\n";
+
 		}
 	      }
 	    }
@@ -1098,8 +1169,36 @@ void MultiMesh::_inclusion_exclusion_overlap
     for (const std::pair<IncExcKey, Polyhedron>& polyhedron: new_intersections)
       for (const Simplex& simplex: polyhedron.second)
 	if (simplex.size() == tdim + 1)
+	{
+	  std::size_t prevsz = overlap_part_qr.second.size();
 	  _add_quadrature_rule(overlap_part_qr, simplex, gdim,
 			       quadrature_order, sign);
+	  std::cout << tools::drawtriangle(simplex);
+	  quadrature_rule qqqq;
+	  for (std::size_t i = prevsz, j = 0; i < overlap_part_qr.second.size(); ++i)
+	  {
+	    qqqq.first.push_back(overlap_part_qr.first[2*i]);
+	    qqqq.first.push_back(overlap_part_qr.first[2*i+1]);
+	    qqqq.second.push_back(overlap_part_qr.second[i]);
+	  }
+	  tools::cout_qr(qqqq);
+	  // dolfin_assert(std::abs(tools::area(simplex) - std::abs(tools::area(qqqq))) < DOLFIN_EPS);
+	  const double heron = tools::area(simplex);
+	  const double area_qr = std::abs(tools::area(qqqq));
+	  const double ee = std::abs(heron - area_qr);
+	  if (ee > DOLFIN_EPS)
+	  {
+	    std::cout << "areas " << heron <<' '<<area_qr << " err " << ee << std::endl;
+	  }
+	}
+
+    {
+      // tools::cout_qr(overlap_part_qr);
+      double vol = 0;
+      for (const double w: overlap_part_qr.second)
+	vol += w;
+      std::cout << "% net vol " << vol << " stage " << stage << std::endl;
+    }
 
     // Add quadrature rule for overlap part
     qr[stage] = overlap_part_qr;

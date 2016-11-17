@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-15
+// Last changed: 2016-11-17
 
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/math/basic.h>
@@ -25,6 +25,12 @@
 #include "GeometryDebugging.h"
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"
+
+
+// FIXME august
+#include <ttmath/ttmath.h>
+#include </home/august/dolfin_simplex_tools.h>
+
 
 namespace
 {
@@ -321,61 +327,178 @@ IntersectionConstruction::_intersection_segment_interior_segment_interior_2d(Poi
 
     if (std::abs(denom) < DOLFIN_EPS_LARGE)
     {
-      // FIXME: assume we have parallel lines that intersect. This needs further testing
-      Point a = p0, b = p1, c = q0, d = q1;
+      // std::cout << __FUNCTION__ << "points " << p0<<' '<<p1<<' '<<q0<<' '<<q1<<'\n'
+      // 		<< " parallel numerator/denomenator="<<numerator<<" / " << denom << " = " << alpha << std::endl;
+      // std::cout << tools::drawtriangle({p0,p1})<<tools::drawtriangle({q0,q1})<<std::endl;
 
-      // Take the longest distance as a,b
-      if (a.squared_distance(b) < c.squared_distance(d))
+
+      // Test exact arithmetic for the denominator
       {
-	std::swap(a, c);
-	std::swap(b, d);
-      }
+	typedef ttmath::Big<TTMATH_BITS(64), TTMATH_BITS(128)> TT;
+	const TT p0x(p0.x()), p0y(p0.y()), p1x(p1.x()), p1y(p1.y()), q0x(q0.x()), q0y(q0.y()), q1x(q1.x()), q1y(q1.y()), numerator_tt(numerator);
+	const TT denom_tt = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
 
-      // Assume line is l(t) = a + t*v, where v = b-a. Find location of c and d:
-      const Point v = b - a;
-      const double vnorm2 = v.squared_norm();
+	// std::cout <<"denom zero? " << (denom_tt == 0) << " p0==p1 " << (p0==p1)<<" q0 == q1 " << (q0==q1)<<" dists " << (p1-p0).squared_norm() << ' ' << (q1-q0).squared_norm() << std::endl;
 
-      // FIXME Investigate this further if vnorm2 is small
-      dolfin_assert(vnorm2 > DOLFIN_EPS);
-
-      const double tc = v.dot(c - a) / vnorm2;
-      const double td = v.dot(d - a) / vnorm2;
-
-      // Find if c and d are to the left or to the right. Remember
-      // that we assume there is a collision between ab and cd.
-      bool found_a = false;
-      bool found_b = false;
-      if (tc > 0)
-      {
-	if (tc < 1) // tc is now 0 < tc < 1 => between a and b
-	  intersection.push_back(c);
-	else // tc must be larger than b
+	if (denom_tt == 0) // exactly parallel
 	{
-	  intersection.push_back(b);
-	  found_b = true;
-	}
-      }
-      else // tc is to the left of a
-      {
-	intersection.push_back(a);
-	found_a = true;
-      }
+	  // Take the longest distance as a,b
+	  Point a = p0, b = p1, c = q0, d = q1;
+	  if (a.squared_distance(b) < c.squared_distance(d))
+	  {
+	    std::swap(a, c);
+	    std::swap(b, d);
+	  }
 
-      if (td > 0)
-      {
-	if (td < 1)
-	  intersection.push_back(d);
+	  // Assume line is l(t) = a + t*v, where v = b-a. Find location of c and d:
+	  const Point v = b - a;
+	  const double vnorm2 = v.squared_norm();
+
+	  // FIXME Investigate this further if vnorm2 is small
+	  dolfin_assert(vnorm2 > DOLFIN_EPS);
+
+	  const double tc = v.dot(c - a) / vnorm2;
+	  const double td = v.dot(d - a) / vnorm2;
+	  // Find if c and d are to the left or to the right. Remember
+	  // that we assume there is a collision between ab and cd.
+	  bool found_a = false;
+	  bool found_b = false;
+	  if (tc > 0)
+	  {
+	    if (tc < 1) // tc is now 0 < tc < 1 => between a and b
+	      intersection.push_back(c);
+	    else // tc must be larger than b
+	    {
+	      intersection.push_back(b);
+	      found_b = true;
+	    }
+	  }
+	  else // tc is to the left of a
+	  {
+	    intersection.push_back(a);
+	    found_a = true;
+	  }
+
+	  if (td > 0)
+	  {
+	    if (td < 1)
+	      intersection.push_back(d);
+	    else
+	    {
+	      dolfin_assert(!found_b);
+	      intersection.push_back(b);
+	    }
+	  }
+	  else
+	  {
+	    dolfin_assert(!found_a);
+	    intersection.push_back(a);
+	  }
+	  // std::cout << "% intersection(s):\n";
+	  // for (const Point p: intersection)
+	  //   std::cout << tools::plot(p,"'gx'");
+	  // std::cout << std::endl;
+
+
+	}
 	else
 	{
-	  dolfin_assert(!found_b);
-	  intersection.push_back(b);
+
+	  const TT alpha_tt = numerator_tt / denom_tt;
+
+	  // std::cout << "numerator_tt / denom_tt = alpha_tt = " << numerator_tt << ' ' << denom_tt << ' ' << alpha_tt << std::endl;
+
+
+	  const TT n_tt = orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates());
+
+
+	  intersection.push_back(alpha > .5 ?
+				 //p1 - n / denom * (p0 - p1) :
+				 p1 * (1 + (n_tt / denom_tt).ToDouble()) - p0 * (n_tt / denom_tt).ToDouble() :
+				 //p0 + numerator / denom * (p1 - p0)
+				 p0 * (1 - alpha_tt.ToDouble()) + p1 * alpha_tt.ToDouble()
+				 );
+
+	  // std::cout << "% intersection(s):\n";
+	  // for (const Point p: intersection)
+	  //   std::cout << tools::plot(p,"'gx'");
+	  // std::cout << std::endl;
+
+
+	  // ttmath::UInt<2> a,b,c;
+
+	  // a = "1234";
+	  // b = 3456;
+	  // c = a*b;
+
+	  // std::cout << c << " exit "<<std::endl;
+	  // exit(0);
 	}
       }
-      else
-      {
-	dolfin_assert(!found_a);
-	intersection.push_back(a);
-      }
+
+      // // FIXME: assume we have parallel lines that intersect. This needs further testing
+      // Point a = p0, b = p1, c = q0, d = q1;
+
+      // // Take the longest distance as a,b
+      // if (a.squared_distance(b) < c.squared_distance(d))
+      // {
+      // 	std::swap(a, c);
+      // 	std::swap(b, d);
+      // }
+
+      // // Assume line is l(t) = a + t*v, where v = b-a. Find location of c and d:
+      // const Point v = b - a;
+      // const double vnorm2 = v.squared_norm();
+
+      // // FIXME Investigate this further if vnorm2 is small
+      // dolfin_assert(vnorm2 > DOLFIN_EPS);
+
+      // const double tc = v.dot(c - a) / vnorm2;
+      // const double td = v.dot(d - a) / vnorm2;
+
+      // // Find if c and d are to the left or to the right. Remember
+      // // that we assume there is a collision between ab and cd.
+      // bool found_a = false;
+      // bool found_b = false;
+      // if (tc > 0)
+      // {
+      // 	if (tc < 1) // tc is now 0 < tc < 1 => between a and b
+      // 	  intersection.push_back(c);
+      // 	else // tc must be larger than b
+      // 	{
+      // 	  intersection.push_back(b);
+      // 	  found_b = true;
+      // 	}
+      // }
+      // else // tc is to the left of a
+      // {
+      // 	intersection.push_back(a);
+      // 	found_a = true;
+      // }
+
+      // if (td > 0)
+      // {
+      // 	if (td < 1)
+      // 	  intersection.push_back(d);
+      // 	else
+      // 	{
+      // 	  dolfin_assert(!found_b);
+      // 	  intersection.push_back(b);
+      // 	}
+      // }
+      // else
+      // {
+      // 	dolfin_assert(!found_a);
+      // 	intersection.push_back(a);
+      // }
+
+      // std::cout << "% intersection(s):\n";
+      // for (const Point p: intersection)
+      // 	std::cout << tools::plot(p,"'gx'");
+      // std::cout << std::endl;
+
+
+
 
       // // Segment are almost parallel, so result may vulnerable to roundoff
       // // errors.
