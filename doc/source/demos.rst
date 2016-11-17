@@ -81,8 +81,6 @@ How to
 * specify various finite element spaces
 
   * :ref:`Brezzi-Douglas-Marini elements for mixed Poisson <demo_mixed_poisson>`
-  * :ref:`discontinuous Raviart-Thomas spaces for dual mixed Poisson
-    <demo_mixed_poisson_dual>`
   * :ref:`the Mini element for Stokes equations <demo_stokes_mini>`
 
 
@@ -138,5 +136,4 @@ Using the C++ interface
    demo_biharmonic
    demo_tensor_weighted_poisson
    demo_mixed_poisson
-   demo_mixed_poisson_dual
    demo_stokes_mini
