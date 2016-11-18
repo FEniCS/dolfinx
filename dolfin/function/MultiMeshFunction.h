@@ -23,6 +23,7 @@
 
 #include <memory>
 #include <boost/ptr_container/ptr_map.hpp>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -31,14 +32,18 @@ namespace dolfin
   class MultiMeshFunctionSpace;
   class GenericVector;
   class Function;
+  class MultiMeshFunction;
 
   /// This class represents a function on a cut and composite finite
   /// element function space (MultiMesh) defined on one or more possibly
   /// intersecting meshes.
 
-  class MultiMeshFunction
+  class MultiMeshFunction : public Variable
   {
   public:
+
+    /// Constructor
+    MultiMeshFunction();
 
     /// Create MultiMesh function on given MultiMesh function space
     ///
@@ -58,7 +63,7 @@ namespace dolfin
     ///     x (_GenericVector_)
     ///         The vector.
     MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V,
-             std::shared_ptr<GenericVector> x);
+		      std::shared_ptr<GenericVector> x);
 
     /// Destructor
     virtual ~MultiMeshFunction();
@@ -91,7 +96,6 @@ namespace dolfin
     ///         Return the shared pointer.
     virtual std::shared_ptr<const MultiMeshFunctionSpace> function_space() const
     {
-      dolfin_assert(_function_space);
       return _function_space;
     }
 

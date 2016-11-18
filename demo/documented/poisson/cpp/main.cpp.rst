@@ -12,7 +12,9 @@ This demo illustrates how to:
 The solution for :math:`u` in this demo will look as follows:
 
 .. image:: ../poisson_u.png
-                         :scale: 75 %
+    :scale: 75 %
+
+.. todo:: Fix the link to image
 
 
 Equation and problem definition
@@ -160,10 +162,10 @@ as follows:
 
 .. code-block:: cpp
 
-   // Define boundary condition
-   auto u0 = std::make_shared<Constant>(0.0);
-   auto boundary = std::make_shared<DirichletBoundary>();
-   DirichletBC bc(V, u0, boundary);
+     // Define boundary condition
+     auto u0 = std::make_shared<Constant>(0.0);
+     auto boundary = std::make_shared<DirichletBoundary>();
+     DirichletBC bc(V, u0, boundary);
 
 Next, we define the variational formulation by initializing the
 bilinear and linear forms (:math:`a`, :math:`L`) using the previously
@@ -173,13 +175,13 @@ to the linear form.
 
 .. code-block:: cpp
 
-   // Define variational forms
-   Poisson::BilinearForm a(V, V);
-   Poisson::LinearForm L(V);
-   auto f = std::make_shared<Source>();
-   auto g = std::make_shared<dUdN>();
-   L.f = f;
-   L.g = g;
+     // Define variational forms
+     Poisson::BilinearForm a(V, V);
+     Poisson::LinearForm L(V);
+     auto f = std::make_shared<Source>();
+     auto g = std::make_shared<dUdN>();
+     L.f = f;
+     L.g = g;
 
 Now, we have specified the variational forms and can consider the
 solution of the variational problem. First, we need to define a
@@ -190,9 +192,9 @@ call the ``solve`` function with the arguments ``a == L``, ``u`` and
 
 .. code-block:: cpp
 
-   // Compute solution
-   Function u(V);
-   solve(a == L, u, bc);
+     // Compute solution
+     Function u(V);
+     solve(a == L, u, bc);
 
 The function ``u`` will be modified during the call to solve. A
 :cpp:class:`Function` can be manipulated in various ways, in

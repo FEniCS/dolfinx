@@ -55,13 +55,39 @@ def test_creation_and_marking():
         def inside(self, x, on_boundary):
             return x[0] > 1.0 - DOLFIN_EPS
 
+    left_cpp = """
+        class Left : public SubDomain
+        {
+        public:
+
+          virtual bool inside(const Array<double>& x, bool on_boundary) const
+          {
+            return x[0] < DOLFIN_EPS;
+          }
+        };
+    """
+
+    right_cpp = """
+        class Right : public SubDomain
+        {
+        public:
+
+          virtual bool inside(const Array<double>& x, bool on_boundary) const
+          {
+            return x[0] > 1.0 - DOLFIN_EPS;
+          }
+        };
+    """
+
     subdomain_pairs = [(Left(), Right()),
                        (AutoSubDomain(lambda x, on_boundary: x[0] < DOLFIN_EPS),
                         AutoSubDomain(lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS)),
                        (CompiledSubDomain("near(x[0], a)", a=0.0),
                         CompiledSubDomain("near(x[0], a)", a=1.0)),
                        (CompiledSubDomain("near(x[0], 0.0)"),
-                        CompiledSubDomain("near(x[0], 1.0)"))]
+                        CompiledSubDomain("near(x[0], 1.0)")),
+                       (CompiledSubDomain(left_cpp),
+                        CompiledSubDomain(right_cpp))]
 
     empty = CompiledSubDomain("false")
     every = CompiledSubDomain("true")
