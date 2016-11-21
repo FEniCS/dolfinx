@@ -1,0 +1,29 @@
+set(DIR nls)
+
+# Headers
+set(DOLFIN_${DIR}_HEADERS
+  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_nls.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/NewtonSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/NonlinearProblem.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/OptimisationProblem.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScSNESSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScTAOSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/TAOLinearBoundSolver.h
+  )
+
+# Install headers
+install(FILES ${DOLFIN_${DIR}_HEADERS}
+  DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
+  COMPONENT Development)
+
+# Append headers
+set(DOLFIN_HEADERS ${DOLFIN_HEADERS} ${DOLFIN_${DIR}_HEADERS} PARENT_SCOPE)
+
+# Append sources
+set(DOLFIN_SOURCES
+  ${DOLFIN_SOURCES}
+  ${CMAKE_CURRENT_SOURCE_DIR}/NewtonSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScSNESSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScTAOSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/TAOLinearBoundSolver.cpp
+  PARENT_SCOPE)

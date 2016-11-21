@@ -1,0 +1,25 @@
+set(DIR math)
+
+# Headers
+set(DOLFIN_${DIR}_HEADERS
+  ${CMAKE_CURRENT_SOURCE_DIR}/basic.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_math.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Lagrange.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Legendre.h
+  )
+
+# Install headers
+install(FILES ${DOLFIN_${DIR}_HEADERS}
+  DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
+  COMPONENT Development)
+
+# Append headers
+set(DOLFIN_HEADERS ${DOLFIN_HEADERS} ${DOLFIN_${DIR}_HEADERS} PARENT_SCOPE)
+
+# Append sources
+set(DOLFIN_SOURCES
+  ${DOLFIN_SOURCES}
+  ${CMAKE_CURRENT_SOURCE_DIR}/basic.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Lagrange.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Legendre.cpp
+  PARENT_SCOPE)

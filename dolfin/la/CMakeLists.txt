@@ -1,0 +1,111 @@
+set(DIR ale)
+
+# Headers
+set(DOLFIN_${DIR}_HEADERS
+  ${CMAKE_CURRENT_SOURCE_DIR}/Amesos2LUSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/BelosKrylovSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/BlockMatrix.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/BlockVector.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateMatrix.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/DefaultFactory.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_la.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/EigenFactory.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/EigenKrylovSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/EigenLUSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/EigenMatrix.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/EigenVector.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/GenericLinearAlgebraFactory.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/GenericLinearOperator.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/GenericLinearSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/GenericLUSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/GenericMatrix.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/GenericTensor.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/GenericVector.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Ifpack2Preconditioner.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/KrylovSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/LinearAlgebraObject.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/LinearOperator.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/LinearSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/LUSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Matrix.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/MueluPreconditioner.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScBaseMatrix.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScFactory.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScKrylovSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScLinearOperator.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScLUSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScMatrix.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScObject.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScOptions.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScPreconditioner.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScUserPreconditioner.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScVector.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Scalar.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/SLEPcEigenSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/solve.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPattern.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/TensorLayout.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_nullspace.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/TpetraFactory.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/TpetraMatrix.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/TpetraVector.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosParameters.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPreconditioner.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Vector.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/VectorSpaceBasis.h
+  )
+
+# Install headers
+install(FILES ${DOLFIN_${DIR}_HEADERS}
+  DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
+  COMPONENT Development)
+
+# Append headers
+set(DOLFIN_HEADERS ${DOLFIN_HEADERS} ${DOLFIN_${DIR}_HEADERS} PARENT_SCOPE)
+
+# Append sources
+set(DOLFIN_SOURCES
+  ${DOLFIN_SOURCES}
+  ${CMAKE_CURRENT_SOURCE_DIR}/Amesos2LUSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/BelosKrylovSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/BlockMatrix.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/BlockVector.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateMatrix.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/DefaultFactory.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/EigenFactory.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/EigenKrylovSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/EigenLUSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/EigenMatrix.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/EigenVector.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/GenericLinearSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/GenericMatrix.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Ifpack2Preconditioner.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/KrylovSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/LinearOperator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/LinearSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/LUSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/MueluPreconditioner.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScBaseMatrix.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScFactory.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScKrylovSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScLinearOperator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScLUSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScMatrix.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScObject.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScOptions.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScPreconditioner.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScUserPreconditioner.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScVector.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/SLEPcEigenSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solve.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPattern.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/TensorLayout.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_nullspace.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/TpetraFactory.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/TpetraMatrix.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/TpetraVector.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosParameters.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/VectorSpaceBasis.cpp
+  PARENT_SCOPE)

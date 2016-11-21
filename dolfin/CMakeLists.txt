@@ -15,41 +15,37 @@ include_directories(${CMAKE_BINARY_DIR})
 #------------------------------------------------------------------------------
 # DOLFIN source directories
 
-# All files and directories in this directory
-file(GLOB DOLFIN_CONTENT RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *)
+# These will be populated by the add_subdirectory commands below
+set(DOLFIN_HEADERS)
+set(DOLFIN_SOURCES)
 
-# Initialize list
-set(DOLFIN_DIRS)
-
-# List of excluded files and directories
-set(EXCLUDES ${DOLFIN_H} swig CMakeLists.txt)
-
-# Iterate over all directories and files and append to DOLFIN_DIRS
-foreach(_DIR_NAME ${DOLFIN_CONTENT})
-  list(FIND EXCLUDES ${_DIR_NAME} INDEX_EXCLUDES)
-  if (${INDEX_EXCLUDES} LESS 0)
-    list(APPEND DOLFIN_DIRS ${_DIR_NAME})
-  endif()
-endforeach()
-
-#------------------------------------------------------------------------------
-# Install header files
-
-foreach(DIR ${DOLFIN_DIRS})
-  file(GLOB _HEADERS ${DIR}/*.h)
-  list(APPEND HEADERS ${_HEADERS})
-  install(FILES ${_HEADERS} DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
-    COMPONENT Development)
-
-  file(GLOB _SOURCES ${DIR}/*.cpp)
-  list(APPEND SOURCES ${_SOURCES})
-endforeach()
+add_subdirectory(adaptivity)
+add_subdirectory(ale)
+add_subdirectory(common)
+add_subdirectory(fem)
+add_subdirectory(function)
+add_subdirectory(generation)
+add_subdirectory(geometry)
+add_subdirectory(graph)
+add_subdirectory(io)
+add_subdirectory(la)
+add_subdirectory(log)
+add_subdirectory(math)
+add_subdirectory(mesh)
+add_subdirectory(multistage)
+add_subdirectory(nls)
+add_subdirectory(parameter)
+add_subdirectory(plot)
+add_subdirectory(refinement)
 
 #------------------------------------------------------------------------------
 # Define libraries
 
-add_library(dolfin ${DOLFIN_H} ${HEADERS} ${SOURCES})
+add_library(dolfin ${DOLFIN_H} ${DOLFIN_HEADERS} ${DOLFIN_SOURCES})
 set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
+
+# Add dependency on the compile_ale_forms target
+add_dependencies(dolfin compile_ale_forms)
 
 #------------------------------------------------------------------------------
 # Add include directories and libs of required packages
