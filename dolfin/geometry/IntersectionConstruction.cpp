@@ -16,12 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-17
+// Last changed: 2016-11-21
 
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/math/basic.h>
 #include "predicates.h"
-#include "CGALExactArithmetic.h"
 #include "GeometryDebugging.h"
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"

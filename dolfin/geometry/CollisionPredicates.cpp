@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-15
+// Last changed: 2016-11-21
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -287,25 +287,6 @@ bool CollisionPredicates::collides_triangle_triangle(const Point& p0,
     dolfin_error("CollisionPredicates.cpp",
 		 "compute triangle-triangle collision ",
 		 "Implmented only for dimension 2 and 3.");
-  }
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool CollisionPredicates::is_degenerate(const std::vector<Point>& simplex,
-					std::size_t gdim)
-{
-  // FIXME: Maybe this function should be somewhere else
-
-  switch (gdim)
-  {
-  case 2:
-    return is_degenerate_2d(simplex);
-  case 3:
-    return is_degenerate_3d(simplex);
-  default:
-    dolfin_error("CollisionPredicates.cpp",
-		 "is_degenerate",
-		 "Unkonwn dimension (only implemented for dimension 2 and 3");
   }
   return false;
 }
@@ -1393,53 +1374,4 @@ bool CollisionPredicates::separating_plane_edge_A(const std::vector<std::vector<
   // by f0 and f1.
   return true;
 }
-//-----------------------------------------------------------------------------
-bool CollisionPredicates::_is_degenerate_2d(std::vector<Point> s)
-{
-  bool is_degenerate = false;
-
-  switch (s.size())
-  {
-  case 0:
-    // FIXME: Is this correct? Is "nothing" degenerate?
-    is_degenerate = true;
-    break;
-  case 1:
-    /// FIXME: Is this correct? Can a point be degenerate?
-    is_degenerate = true;
-    break;
-  case 2:
-    {
-      is_degenerate = s[0]==s[1];
-      // FIXME: verify with orient2d
-      // double r[2] = { dolfin::rand(), dolfin::rand() };
-      // is_degenerate = orient2d(s[0].coordinates(), s[1].coordinates(), r) == 0;
-
-      // // FIXME: compare with ==
-      // dolfin_assert(is_degenerate == (s[0] == s[1]));
-
-      break;
-    }
-  case 3:
-    is_degenerate = orient2d(s[0].coordinates(),
-			     s[1].coordinates(),
-			     s[2].coordinates()) == 0;
-    break;
-  default:
-    dolfin_error("CollisionPredicates.cpp",
-		 "_is_degenerate_2d",
-		 "Only implemented for simplices of tdim 0, 1 and 2");
-  }
-
-  return is_degenerate;
-}
-//------------------------------------------------------------------------------
-bool CollisionPredicates::_is_degenerate_3d(std::vector<Point> s)
-{
-  dolfin_error("CollisionPredicates.cpp",
-	       "_is_degenerate_3d",
-	       "Not implemented");
-  return false;
-}
-
 //-----------------------------------------------------------------------------

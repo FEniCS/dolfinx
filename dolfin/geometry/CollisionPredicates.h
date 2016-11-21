@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-03
+// Last changed: 2016-11-21
 
 #ifndef __COLLISION_PREDICATES_H
 #define __COLLISION_PREDICATES_H
@@ -306,24 +306,6 @@ namespace dolfin
 							      q0, q1, q2, q3));
     }
 
-
-    /// Check whether simplex is degenerate
-    // FIXME: Maybe this function should be somewhere else
-    static bool is_degenerate(const std::vector<Point>& simplex,
-			      std::size_t gdim);
-
-    static bool is_degenerate_2d(const std::vector<Point>& simplex)
-    {
-      return CHECK_CGAL(_is_degenerate_2d(simplex),
-			cgal_is_degenerate_2d(simplex));
-    }
-
-    static bool is_degenerate_3d(const std::vector<Point>& simplex)
-    {
-      return CHECK_CGAL(_is_degenerate_3d(simplex),
-			cgal_is_degenerate_3d(simplex));
-    }
-
   private:
 
     // Implementation of collision detection predicates
@@ -527,12 +509,6 @@ namespace dolfin
 					const std::vector<int>& masks,
 					int f0,
 					int f1);
-
-
-    // Implementations of is_degenerate
-    static bool _is_degenerate_2d(std::vector<Point> simplex);
-
-    static bool _is_degenerate_3d(std::vector<Point> simplex);
   };
 
 }

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-11-17
+// Last changed: 2016-11-21
 //
 // Developer note:
 //
@@ -119,30 +119,78 @@ namespace dolfin
 	     const std::vector<Point>& result_cgal,
 	     std::string function)
   {
-    // compare volume
-    const double dolfin_volume = volume(result_dolfin);
-    const double cgal_volume = volume(result_cgal);
+    std::cout << __FUNCTION__<<' '
+	      << "dolfin ";
+    for (const Point& p: result_dolfin)
+      std::cout << p;
+    std::cout << " cgal ";
+    for (const Point& p: result_cgal)
+      std::cout << p;
+    std::cout << std::endl;
 
-    if (std::abs(dolfin_volume - cgal_volume) > CGAL_CHECK_TOLERANCE)
+    // Make sure all points are found
+    for (std::size_t i = 0; i < result_dolfin.size(); ++i)
     {
-      std::stringstream s_dolfin, s_cgal, s_error;
-      s_dolfin.precision(16);
-      s_dolfin << dolfin_volume;
-      s_cgal.precision(16);
-      s_cgal << cgal_volume;
-      s_error.precision(16);
-      s_error << std::abs(dolfin_volume - cgal_volume);
+      bool found = false;
+      for (std::size_t j = 0; j < result_cgal.size(); ++j)
+      {
+	if ((result_dolfin[i] - result_cgal[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
+	{
+	  found = true;
+	  break;
+	}
+      }
+      if (!found)
+	dolfin_error("CGALExactArithmetic.h",
+		     "check_cgal",
+		     "Point in result_dolfin not found.");
+    }
 
-      dolfin_error("CGALExactArithmetic.h",
-		   "verify intersections due to different volumes (single simplex version)",
-		   "Error in function %s\n CGAL volume %s\n DOLFIN volume %s\n error %s\n",
-		   function.c_str(),
-		   s_cgal.str().c_str(),
-		   s_dolfin.str().c_str(),
-		   s_error.str().c_str());
+    // Make sure all points are found
+    for (std::size_t i = 0; i < result_cgal.size(); ++i)
+    {
+      bool found = false;
+      for (std::size_t j = 0; j < result_dolfin.size(); ++j)
+      {
+	if ((result_cgal[i] - result_dolfin[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
+	{
+	  found = true;
+	  break;
+	}
+      }
+      if (!found)
+	dolfin_error("CGALExactArithmetic.h",
+		     "check_cgal",
+		     "Point in result_cgal not found.");
     }
 
     return result_dolfin;
+
+
+    // // compare volume
+    // const double dolfin_volume = volume(result_dolfin);
+    // const double cgal_volume = volume(result_cgal);
+
+    // if (std::abs(dolfin_volume - cgal_volume) > CGAL_CHECK_TOLERANCE)
+    // {
+    //   std::stringstream s_dolfin, s_cgal, s_error;
+    //   s_dolfin.precision(16);
+    //   s_dolfin << dolfin_volume;
+    //   s_cgal.precision(16);
+    //   s_cgal << cgal_volume;
+    //   s_error.precision(16);
+    //   s_error << std::abs(dolfin_volume - cgal_volume);
+
+    //   dolfin_error("CGALExactArithmetic.h",
+    // 		   "verify intersections due to different volumes (single simplex version)",
+    // 		   "Error in function %s\n CGAL volume %s\n DOLFIN volume %s\n error %s\n",
+    // 		   function.c_str(),
+    // 		   s_cgal.str().c_str(),
+    // 		   s_dolfin.str().c_str(),
+    // 		   s_error.str().c_str());
+    // }
+
+    // return result_dolfin;
   }
 
   inline const std::vector<std::vector<Point>>&
@@ -1047,7 +1095,7 @@ namespace dolfin
       else if (const Triangle_2* t = boost::get<Triangle_2>(&*ii))
       {
         std::cout << "CGAL: Intersection is triangle" << std::endl;
-        std::cout << "Area: " << t->area() << std::endl;
+        std::cout << "Area: " << std::abs(CGAL::to_double(t->area())) << std::endl;
         intersection = convert_from_cgal(*t);;
       }
       else if (const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii))
