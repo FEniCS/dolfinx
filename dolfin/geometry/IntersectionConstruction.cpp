@@ -260,6 +260,9 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 							   Point q0,
 							   Point q1)
 {
+  std::cout << __FUNCTION__<< "points " << tools::plot(p0)<<tools::plot(p1)<<tools::plot(q0)<<tools::plot(q1)<<std::endl;
+
+
   std::vector<Point> intersection;
 
   // Add vertex-vertex collision to the intersection
@@ -283,6 +286,8 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 
   if (intersection.empty())
   {
+    std::cout << ' '<<__FUNCTION__<<" gave empty intersection: must check interior\n";
+
     // No collisions in any vertices, so check interior
     return _intersection_segment_interior_segment_interior_2d(p0, p1, q0, q1);
   }
@@ -313,6 +318,11 @@ IntersectionConstruction::_intersection_segment_interior_segment_interior_2d(Poi
                                    p1.coordinates(),
                                    q1.coordinates());
 
+  std::cout << __FUNCTION__<< " points: " << tools::plot(p0)<<tools::plot(p1)<<tools::plot(q0)<<tools::plot(q1)<<'\n'
+	    <<' '<<q0_q1_p0<<' '<<q0_q1_p1<<' '<<p0_p1_q0<<' '<<p0_p1_q1<<std::endl;
+
+  std::cout << " test collision: " << CollisionPredicates::collides_interior_point_segment_2d(p0,p1,q0)<<' '<<CollisionPredicates::collides_interior_point_segment_2d(p0,p1,q1)<<std::endl;
+
   std::vector<Point> intersection;
 
   if (q0_q1_p0 != 0 && q0_q1_p1 != 0 && p0_p1_q0 != 0 && p0_p1_q1 != 0 &&
@@ -326,9 +336,9 @@ IntersectionConstruction::_intersection_segment_interior_segment_interior_2d(Poi
 
     if (std::abs(denom) < DOLFIN_EPS_LARGE)
     {
-      // std::cout << __FUNCTION__ << "points " << p0<<' '<<p1<<' '<<q0<<' '<<q1<<'\n'
-      // 		<< " parallel numerator/denomenator="<<numerator<<" / " << denom << " = " << alpha << std::endl;
-      // std::cout << tools::drawtriangle({p0,p1})<<tools::drawtriangle({q0,q1})<<std::endl;
+      std::cout << __FUNCTION__ << "points " << p0<<' '<<p1<<' '<<q0<<' '<<q1<<'\n'
+      		<< " parallel numerator/denomenator="<<numerator<<" / " << denom << " = " << alpha << std::endl;
+      std::cout << tools::drawtriangle({p0,p1})<<tools::drawtriangle({q0,q1})<<std::endl;
 
 
       // Test exact arithmetic for the denominator
@@ -337,7 +347,7 @@ IntersectionConstruction::_intersection_segment_interior_segment_interior_2d(Poi
 	const TT p0x(p0.x()), p0y(p0.y()), p1x(p1.x()), p1y(p1.y()), q0x(q0.x()), q0y(q0.y()), q1x(q1.x()), q1y(q1.y()), numerator_tt(numerator);
 	const TT denom_tt = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
 
-	// std::cout <<"denom zero? " << (denom_tt == 0) << " p0==p1 " << (p0==p1)<<" q0 == q1 " << (q0==q1)<<" dists " << (p1-p0).squared_norm() << ' ' << (q1-q0).squared_norm() << std::endl;
+	std::cout <<"denom zero? " << (denom_tt == 0) << " p0==p1 " << (p0==p1)<<" q0 == q1 " << (q0==q1)<<" dists " << (p1-p0).squared_norm() << ' ' << (q1-q0).squared_norm() << std::endl;
 
 	if (denom_tt == 0) // exactly parallel
 	{
@@ -393,10 +403,10 @@ IntersectionConstruction::_intersection_segment_interior_segment_interior_2d(Poi
 	    dolfin_assert(!found_a);
 	    intersection.push_back(a);
 	  }
-	  // std::cout << "% intersection(s):\n";
-	  // for (const Point p: intersection)
-	  //   std::cout << tools::plot(p,"'gx'");
-	  // std::cout << std::endl;
+	  std::cout << "% intersection(s):\n";
+	  for (const Point p: intersection)
+	    std::cout << tools::plot(p,"'gx'");
+	  std::cout << std::endl;
 
 
 	}
@@ -433,7 +443,9 @@ IntersectionConstruction::_intersection_segment_interior_segment_interior_2d(Poi
 	  // std::cout << c << " exit "<<std::endl;
 	  // exit(0);
 	}
-      }
+      } // end test of exact arithmetic
+
+
 
       // // FIXME: assume we have parallel lines that intersect. This needs further testing
       // Point a = p0, b = p1, c = q0, d = q1;
@@ -565,6 +577,15 @@ IntersectionConstruction::_intersection_segment_interior_segment_interior_2d(Poi
     }
     else
     {
+      std::cout << "denom is not small, but numerator/denom = alpha = " << numerator<<" / " << denom << " = " << alpha << std::endl;
+
+      typedef ttmath::Big<TTMATH_BITS(64), TTMATH_BITS(128)> TT;
+      const TT p0x(p0.x()), p0y(p0.y()), p1x(p1.x()), p1y(p1.y()), q0x(q0.x()), q0y(q0.y()), q1x(q1.x()), q1y(q1.y()), numerator_tt(numerator);
+      const TT denom_tt = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
+      const TT alpha_tt = numerator_tt / denom_tt;
+
+      std::cout << " or with TT: numerator_tt / denom_tt = alpha_tt = " << numerator_tt << ' ' << denom_tt << ' ' << alpha_tt << std::endl;
+
       intersection.push_back(alpha > .5 ? p1 - orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates())/denom * (p0-p1) : p0 + numerator/denom * (p1-p0));
     }
   }
@@ -661,92 +682,166 @@ IntersectionConstruction::_intersection_triangle_triangle_2d(const Point& p0,
 							     const Point& q1,
 							     const Point& q2)
 {
-  std::vector<dolfin::Point> points;
+  std::vector<Point> points_0 = intersection_triangle_segment_2d(p0, p1, p2,
+								 q0, q1);
 
-  if (CollisionPredicates::collides_triangle_triangle_2d(p0, p1, p2,
-							 q0, q1, q2))
+  std::vector<Point> points_1 = intersection_triangle_segment_2d(p0, p1, p2,
+								 q0, q2);
+
+  std::vector<Point> points_2 = intersection_triangle_segment_2d(p0, p1, p2,
+								 q1, q2);
+
+  std::vector<Point> points_3 = intersection_triangle_segment_2d(q0, q1, q2,
+								 p0, p1);
+
+  std::vector<Point> points_4 = intersection_triangle_segment_2d(q0, q1, q2,
+								 p0, p2);
+
+  std::vector<Point> points_5 = intersection_triangle_segment_2d(q0, q1, q2,
+								 p1, p2);
+
+  std::vector<Point> points;
+  points.insert(points.end(),
+		points_0.begin(), points_0.end());
+  points.insert(points.end(),
+		points_1.begin(), points_1.end());
+  points.insert(points.end(),
+		points_2.begin(), points_2.end());
+  points.insert(points.end(),
+		points_3.begin(), points_3.end());
+  points.insert(points.end(),
+		points_4.begin(), points_4.end());
+  points.insert(points.end(),
+		points_5.begin(), points_5.end());
+
+
+  // Remove strict duplictes. Use exact equality here. Approximate
+  // equality is for ConvexTriangulation.
+  // FIXME: This can be avoided if we use interior segment tests.
+  std::vector<Point> unique_points;
+
+  for (std::size_t i = 0; i < points.size(); ++i)
   {
-    // Pack points as vectors
-    std::array<Point, 3> tri_0({p0, p1, p2});
-    std::array<Point, 3> tri_1({q0, q1, q2});
-
-    // Extract coordinates
-    double t0[3][2] = {{p0[0], p0[1]}, {p1[0], p1[1]}, {p2[0], p2[1]}};
-    double t1[3][2] = {{q0[0], q0[1]}, {q1[0], q1[1]}, {q2[0], q2[1]}};
-
-    // Find all vertex-vertex collision
-    for (std::size_t i = 0; i < 3; i++)
+    bool unique = true;
+    for (std::size_t j = i+1; j < points.size(); ++j)
     {
-      for (std::size_t j = 0; j < 3; j++)
+      if (points[i] == points[j])
       {
-	if (tri_0[i] == tri_1[j])
-	  points.push_back(tri_0[i]);
+	unique = false;
+	break;
       }
     }
-
-    // Find all vertex-"edge interior" intersections
-    for (std::size_t i = 0; i < 3; i++)
-    {
-      for (std::size_t j = 0; j < 3; j++)
-      {
-	if (tri_0[i] != tri_1[j] && tri_0[(i+1)%3] != tri_1[j] &&
-	    CollisionPredicates::collides_segment_point_2d(tri_0[i], tri_0[(i+1)%3], tri_1[j]))
-	  points.push_back(tri_1[j]);
-
-	if (tri_1[i] != tri_0[j] && tri_1[(i+1)%3] != tri_0[j] &&
-	    CollisionPredicates::collides_segment_point_2d(tri_1[i], tri_1[(i+1)%3], tri_0[j]))
-	  points.push_back(tri_0[j]);
-      }
-    }
-
-    // Find all "edge interior"-"edge interior" intersections
-    for (std::size_t i = 0; i < 3; i++)
-    {
-      for (std::size_t j = 0; j < 3; j++)
-      {
-	{
-	  std::vector<Point> triangulation =
-	    intersection_segment_interior_segment_interior_2d(tri_0[i],
-							      tri_0[(i+1)%3],
-							      tri_1[j],
-							      tri_1[(j+1)%3]);
-	  points.insert(points.end(), triangulation.begin(), triangulation.end());
-	}
-      }
-    }
-
-    // Find alle vertex-"triangle interior" intersections
-    const int s0 = std::signbit(orient2d(t0[0], t0[1], t0[2])) == true ? -1 : 1;
-    const int s1 = std::signbit(orient2d(t1[0], t1[1], t1[2])) == true ? -1 : 1;
-
-    for (std::size_t i = 0; i < 3; ++i)
-    {
-      const double q0_q1_pi = s1*orient2d(t1[0], t1[1], t0[i]);
-      const double q1_q2_pi = s1*orient2d(t1[1], t1[2], t0[i]);
-      const double q2_q0_pi = s1*orient2d(t1[2], t1[0], t0[i]);
-
-      if (q0_q1_pi > 0. and
-	  q1_q2_pi > 0. and
-	  q2_q0_pi > 0.)
-      {
-	points.push_back(tri_0[i]);
-      }
-
-      const double p0_p1_qi = s0*orient2d(t0[0], t0[1], t1[i]);
-      const double p1_p2_qi = s0*orient2d(t0[1], t0[2], t1[i]);
-      const double p2_p0_qi = s0*orient2d(t0[2], t0[0], t1[i]);
-
-      if (p0_p1_qi > 0. and
-	  p1_p2_qi > 0. and
-	  p2_p0_qi > 0.)
-      {
-	points.push_back(tri_1[i]);
-      }
-    }
-
+    if (unique)
+      unique_points.push_back(points[i]);
   }
 
-  return points;
+  return unique_points;
+
+  // std::cout << __FUNCTION__<<" "<<tools::drawtriangle({p0,p1,p2})<<tools::drawtriangle({q0,q1,q2})<<std::endl;
+
+  // std::vector<Point> points;
+
+  // if (CollisionPredicates::collides_triangle_triangle_2d(p0, p1, p2,
+  // 							 q0, q1, q2))
+  // {
+  //   // Pack points as vectors
+  //   std::array<Point, 3> tri_0({p0, p1, p2});
+  //   std::array<Point, 3> tri_1({q0, q1, q2});
+
+  //   // Extract coordinates
+  //   double t0[3][2] = {{p0[0], p0[1]}, {p1[0], p1[1]}, {p2[0], p2[1]}};
+  //   double t1[3][2] = {{q0[0], q0[1]}, {q1[0], q1[1]}, {q2[0], q2[1]}};
+
+  //   // Find all vertex-vertex collision
+  //   for (std::size_t i = 0; i < 3; i++)
+  //   {
+  //     for (std::size_t j = 0; j < 3; j++)
+  //     {
+  // 	if (tri_0[i] == tri_1[j])
+  // 	  points.push_back(tri_0[i]);
+  //     }
+  //   }
+
+  //   std::cout << " after vertex--vertex collisions: total " << points.size() <<" points: ";
+  //   for (const Point p: points) std::cout << tools::plot(p);
+  //   std::cout << std::endl;
+
+  //   // Find all vertex-"edge interior" intersections
+  //   for (std::size_t i = 0; i < 3; i++)
+  //   {
+  //     for (std::size_t j = 0; j < 3; j++)
+  //     {
+  // 	if (tri_0[i] != tri_1[j] && tri_0[(i+1)%3] != tri_1[j] &&
+  // 	    CollisionPredicates::collides_segment_point_2d(tri_0[i], tri_0[(i+1)%3], tri_1[j]))
+  // 	  points.push_back(tri_1[j]);
+
+  // 	if (tri_1[i] != tri_0[j] && tri_1[(i+1)%3] != tri_0[j] &&
+  // 	    CollisionPredicates::collides_segment_point_2d(tri_1[i], tri_1[(i+1)%3], tri_0[j]))
+  // 	  points.push_back(tri_0[j]);
+  //     }
+  //   }
+
+  //   std::cout << " after vertex edge interior collisions: total " << points.size() <<" points: ";
+  //   for (const Point p: points) std::cout << tools::plot(p);
+  //   std::cout << std::endl;
+
+  //   // Find all "edge interior"-"edge interior" intersections
+  //   for (std::size_t i = 0; i < 3; i++)
+  //   {
+  //     for (std::size_t j = 0; j < 3; j++)
+  //     {
+  // 	{
+  // 	  std::vector<Point> triangulation =
+  // 	    intersection_segment_interior_segment_interior_2d(tri_0[i],
+  // 							      tri_0[(i+1)%3],
+  // 							      tri_1[j],
+  // 							      tri_1[(j+1)%3]);
+  // 	  points.insert(points.end(), triangulation.begin(), triangulation.end());
+  // 	}
+  //     }
+  //   }
+
+  //   std::cout << " after edge interior -- edge interior collisions: total " << points.size() <<" points: ";
+  //   for (const Point p: points) std::cout << tools::plot(p);
+  //   std::cout << std::endl;
+
+  //   // Find alle vertex-"triangle interior" intersections
+  //   const int s0 = std::signbit(orient2d(t0[0], t0[1], t0[2])) == true ? -1 : 1;
+  //   const int s1 = std::signbit(orient2d(t1[0], t1[1], t1[2])) == true ? -1 : 1;
+
+  //   for (std::size_t i = 0; i < 3; ++i)
+  //   {
+  //     const double q0_q1_pi = s1*orient2d(t1[0], t1[1], t0[i]);
+  //     const double q1_q2_pi = s1*orient2d(t1[1], t1[2], t0[i]);
+  //     const double q2_q0_pi = s1*orient2d(t1[2], t1[0], t0[i]);
+
+  //     if (q0_q1_pi > 0. and
+  // 	  q1_q2_pi > 0. and
+  // 	  q2_q0_pi > 0.)
+  //     {
+  // 	points.push_back(tri_0[i]);
+  //     }
+
+  //     const double p0_p1_qi = s0*orient2d(t0[0], t0[1], t1[i]);
+  //     const double p1_p2_qi = s0*orient2d(t0[1], t0[2], t1[i]);
+  //     const double p2_p0_qi = s0*orient2d(t0[2], t0[0], t1[i]);
+
+  //     if (p0_p1_qi > 0. and
+  // 	  p1_p2_qi > 0. and
+  // 	  p2_p0_qi > 0.)
+  //     {
+  // 	points.push_back(tri_1[i]);
+  //     }
+  //   }
+
+  //   std::cout << " after vertex -- triangle collisions: total " << points.size() <<" points: ";
+  //   for (const Point p: points) std::cout << tools::plot(p);
+  //   std::cout << std::endl;
+
+  // }
+
+
+  // return points;
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>

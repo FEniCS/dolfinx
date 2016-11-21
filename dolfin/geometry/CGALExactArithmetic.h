@@ -119,7 +119,7 @@ namespace dolfin
 	     const std::vector<Point>& result_cgal,
 	     std::string function)
   {
-    std::cout << __FUNCTION__<<' '
+    std::cout << __FUNCTION__<<" from function " << function << ": "
 	      << "dolfin ";
     for (const Point& p: result_dolfin)
       std::cout << p;
