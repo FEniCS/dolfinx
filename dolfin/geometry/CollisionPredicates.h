@@ -16,13 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-21
+// Last changed: 2016-11-22
 
 #ifndef __COLLISION_PREDICATES_H
 #define __COLLISION_PREDICATES_H
 
 #include <vector>
-#include <dolfin/log/log.h>
 #include "Point.h"
 #include "CGALExactArithmetic.h"
 

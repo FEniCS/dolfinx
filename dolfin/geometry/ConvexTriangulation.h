@@ -16,14 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2016-11-02
+// Last changed: 2016-11-22
 
 #ifndef __CONVEX_TRIANGULATION
 #define __CONVEX_TRIANGULATION
 
-#include "CGALExactArithmetic.h"
 #include "Point.h"
-
 #include <vector>
 
 namespace dolfin
