@@ -1,4 +1,4 @@
-set(DIR ale)
+set(DIR la)
 
 # Headers
 set(DOLFIN_${DIR}_HEADERS
