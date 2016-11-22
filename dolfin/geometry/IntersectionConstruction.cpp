@@ -254,33 +254,43 @@ IntersectionConstruction::_intersection_segment_segment_1d(double p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
-							   Point p1,
-							   Point q0,
-							   Point q1)
+IntersectionConstruction::_intersection_segment_segment_2d(Point a,
+							   Point b,
+							   Point c,
+							   Point d)
 {
   std::cout << __FUNCTION__<<std::endl
-  	    << tools::plot(p0)<<tools::plot(p1)<<tools::plot(q0)<<tools::plot(q1)<<tools::drawtriangle({p0,p1})<<tools::drawtriangle({q0,q1})<<std::endl;
+  	    << tools::plot(a)<<tools::plot(b)<<tools::plot(c)<<tools::plot(d)<<tools::drawtriangle({a,b})<<tools::drawtriangle({c,d})<<std::endl;
 
-  // First test points (match procedure of _collides_segment_segment_2d)
   std::vector<Point> intersection;
-  if (CollisionPredicates::collides_segment_point_2d(p0, p1, q0))
-    intersection.push_back(q0);
-  if (CollisionPredicates::collides_segment_point_2d(p0, p1, q1))
-    intersection.push_back(q1);
-  if (CollisionPredicates::collides_segment_point_2d(q0, q1, p0))
-    intersection.push_back(p0);
-  if (CollisionPredicates::collides_segment_point_2d(q0, q1, p1))
-    intersection.push_back(p1);
 
-  const double denom = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
-  const double numer = orient2d(q0.coordinates(), p1.coordinates(), p0.coordinates());
+  // First test points to match procedure of
+  // _collides_segment_segment_2d.
+  if (CollisionPredicates::collides_segment_point_2d(a, b, c))
+  {
+    intersection.push_back(c);
+  }
+  if (CollisionPredicates::collides_segment_point_2d(a, b, d))
+  {
+    intersection.push_back(d);
+  }
+  if (CollisionPredicates::collides_segment_point_2d(c, d, a))
+  {
+    intersection.push_back(a);
+  }
+  if (CollisionPredicates::collides_segment_point_2d(c, d, b))
+  {
+    intersection.push_back(b);
+  }
+
+  const double denom = (b.x()-a.x())*(d.y()-c.y()) - (b.y()-a.y())*(d.x()-c.x());
+  //const double numer = orient2d(c.coordinates(), b.coordinates(), a.coordinates());
+  const double numer = orient2d(c.coordinates(),d.coordinates(),a.coordinates());
 
   if (denom == 0. and numer == 0.)
   {
-    // p0, p1 is collinear with q0, q1.
+    // a, b is collinear with c, d.
     // Take the longest distance as a,b
-    Point a = p0, b = p1, c = q0, d = q1;
     if (a.squared_distance(b) < c.squared_distance(d))
     {
       std::swap(a, c);
@@ -309,12 +319,12 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
       //PPause;
       intersection.push_back(z0);
       intersection.push_back(z1);
-      return intersection;
+      // return intersection;
     }
     else // Disjoint: no intersection
     {
       std::cout << "case 1b"<<std::endl;
-      return intersection;
+      //return intersection;
     }
   }
   else if (denom == 0. and numer != 0.)
@@ -322,83 +332,74 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     // Parallel, disjoint
     std::cout << "case 2"<<std::endl;
     std::cout << denom<<' '<<numer << std::endl;
-    return intersection;
+    // return intersection;
   }
   else if (denom != 0.)
   {
-    const double u = numer / denom;
-    const Point z = q0 + u*(q1-q0);
-    std::cout << "case 3:\n"
-    	      << "numer / denom = u = " << numer <<'/'<<denom<<'='<<u << std::endl
-    	      << orient2d(q0.coordinates(), p1.coordinates(), p0.coordinates()) <<' '
-    	      << orient2d(p0.coordinates(), p1.coordinates(), q0.coordinates()) <<' '
-    	      << orient2d(q0.coordinates(), q1.coordinates(), p0.coordinates()) <<' '
-      	      << orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates()) <<'\n'
-    	      <<tools::plot(z)<<std::endl;
+    // const double u = numer / denom;
+    // const Point z = c + u*(d-c);
+    // std::cout << "case 3:\n"
+    // 	      << "numer / denom = u = " << numer <<'/'<<denom<<'='<<u << std::endl
+    // 	      << orient2d(c.coordinates(), b.coordinates(), a.coordinates()) <<' '
+    // 	      << orient2d(a.coordinates(), b.coordinates(), c.coordinates()) <<' '
+    // 	      << orient2d(c.coordinates(), d.coordinates(), a.coordinates()) <<' '
+    //   	      << orient2d(c.coordinates(), d.coordinates(), b.coordinates()) <<'\n'
+    // 	      <<tools::plot(z)<<std::endl;
 
-    {
-      std::cout << "case 3 with TT:\n";
-      typedef ttmath::Big<TTMATH_BITS(22), TTMATH_BITS(104)> TT;
-      const TT p0x(p0.x()), p0y(p0.y()), p1x(p1.x()), p1y(p1.y()), q0x(q0.x()), q0y(q0.y()), q1x(q1.x()), q1y(q1.y());
-      const TT numer_tt(numer);
-      const TT denom_tt = (p1x-p0x)*(q1y-q0y) - (p1y-p0y)*(q1x-q0x);
-      const TT u_tt = numer_tt / denom_tt;
-      const TT zx = q0x + u_tt*(q1x - q0x);
-      const TT zy = q0y + u_tt*(q1y - q0y);
-      std::cout << "numer_tt / denom_tt = u_tt = " << u_tt << std::endl
-		<< "plot("<<zx<<','<<zy<<",'mx','markersize',18);"<<std::endl;
-    }
+    //{
+      // Following shewchuk (same denom, other numer)
+      std::cout << " case 3 following shewchuk\n";
+      // const double numer = orient2d(c.coordinates(),d.coordinates(),a.coordinates());
+      const double alpha = numer / denom;
+      const Point z = a + alpha*(b-a);
+      std::cout << " numer / denom = u = " << numer <<'/'<<denom<<'='<<alpha << std::endl
+		<< tools::plot(z) << std::endl;
+    // }
+
+    // {
+    //   std::cout << " case 3 with TT:\n";
+    //   typedef ttmath::Big<TTMATH_BITS(22), TTMATH_BITS(104)> TT;
+    //   const TT ax(a.x()), ay(a.y()), bx(b.x()), by(b.y()), cx(c.x()), cy(c.y()), dx(d.x()), dy(d.y());
+    //   const TT numer_tt(numer);
+    //   const TT denom_tt = (bx-ax)*(dy-cy) - (by-ay)*(dx-cx);
+    //   const TT u_tt = numer_tt / denom_tt;
+    //   const TT zx = cx + u_tt*(dx - cx);
+    //   const TT zy = cy + u_tt*(dy - cy);
+    //   std::cout << " numer_tt / denom_tt = u_tt = " << u_tt << std::endl
+    // 		<< " plot("<<zx<<','<<zy<<",'mx','markersize',18);"<<std::endl;
+    // }
 
     intersection.push_back(z);
-    return intersection;
-
-    // // Take the longest distance as a,b
-    // Point a = p0, b = p1, c = q0, d = q1;
-    // if (a.squared_distance(b) < c.squared_distance(d))
-    // {
-    //   std::swap(a, c);
-    //   std::swap(b, d);
-    // }
-    // const Point r = b - a;
-    // const double r2 = r.squared_norm();
-
-    // // FIXME: what to do if small?
-    // dolfin_assert(r2 > DOLFIN_EPS);
-
-    // const double t0 = (c-a).dot(r) / r2;
-    // const double t1 = (d-a).dot(r) / r2;
-    // double t;
-    // bool tfound = false;
-
-    // if (0 <= t0 and t0 <= 1)
-    // {
-    //   t = t0;
-    //   tfound = true;
-    // }
-    // else if (0 <= t1 and t1 <= 1)
-    // {
-    //   t = t1;
-    //   tfound = true;
-    // }
-
-    // if (tfound)
-    // {
-    //   const Point z = a + t*r;
-    //   std::vector<Point> intersection(1, z);
-    //   std::cout << "case 4:\n"
-    // 		<<t0<<','<<t1<<tools::plot(a)<<tools::plot(b)
-    // 		<<tools::plot(z)<<std::endl;
-    //   return intersection;
-    // }
+    // return intersection;
   }
-  else // Not parallel and no intersection
+  // else // Not parallel and no intersection
+  // {
+  //   // std::cout << "case 5"<<std::endl;
+  //   return intersection;
+  // }
+
+  const std::vector<Point>& points = intersection;
+  std::vector<Point> unique_points;
+
+  for (std::size_t i = 0; i < points.size(); ++i)
   {
-    // std::cout << "case 5"<<std::endl;
-    return intersection;
+    bool unique = true;
+    for (std::size_t j = i+1; j < points.size(); ++j)
+    {
+      if (points[i] == points[j])
+      {
+	unique = false;
+	break;
+      }
+    }
+    if (unique)
+      unique_points.push_back(points[i]);
   }
+
+  return unique_points;
 
   // std::cout << "case 6"<<std::endl;
-  return intersection;
+  // return intersection;
 
 
 
