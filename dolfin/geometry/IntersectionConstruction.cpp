@@ -260,7 +260,18 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 							   Point q1)
 {
   std::cout << __FUNCTION__<<std::endl
-	    << tools::plot(p0)<<tools::plot(p1)<<tools::plot(q0)<<tools::plot(q1)<<tools::drawtriangle({p0,p1})<<tools::drawtriangle({q0,q1})<<std::endl;
+  	    << tools::plot(p0)<<tools::plot(p1)<<tools::plot(q0)<<tools::plot(q1)<<tools::drawtriangle({p0,p1})<<tools::drawtriangle({q0,q1})<<std::endl;
+
+  // First test points (match procedure of _collides_segment_segment_2d)
+  std::vector<Point> intersection;
+  if (CollisionPredicates::collides_segment_point_2d(p0, p1, q0))
+    intersection.push_back(q0);
+  if (CollisionPredicates::collides_segment_point_2d(p0, p1, q1))
+    intersection.push_back(q1);
+  if (CollisionPredicates::collides_segment_point_2d(q0, q1, p0))
+    intersection.push_back(p0);
+  if (CollisionPredicates::collides_segment_point_2d(q0, q1, p1))
+    intersection.push_back(p1);
 
   const double denom = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
   const double numer = orient2d(q0.coordinates(), p1.coordinates(), p0.coordinates());
@@ -294,15 +305,16 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 
       std::cout << "case 1a"<<std::endl;
       std::cout << t0<<','<<t1<<','<<tools::plot(a)<<tools::plot(b)
-		<<tools::plot(z0,"'r.'")<<tools::plot(z1,"'g.'")<<std::endl;
+      		<<tools::plot(z0,"'r.'")<<tools::plot(z1,"'g.'")<<std::endl;
       //PPause;
-      const std::vector<Point> intersection = {z0, z1};
+      intersection.push_back(z0);
+      intersection.push_back(z1);
       return intersection;
     }
     else // Disjoint: no intersection
     {
       std::cout << "case 1b"<<std::endl;
-      return std::vector<Point>();
+      return intersection;
     }
   }
   else if (denom == 0. and numer != 0.)
@@ -310,17 +322,34 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     // Parallel, disjoint
     std::cout << "case 2"<<std::endl;
     std::cout << denom<<' '<<numer << std::endl;
-    return std::vector<Point>();
+    return intersection;
   }
   else if (denom != 0.)
   {
     const double u = numer / denom;
     const Point z = q0 + u*(q1-q0);
     std::cout << "case 3:\n"
-	      << denom<<' '<<numer << std::endl
-	      <<u<<' '<<tools::plot(p0)<<tools::plot(p1)<<'\n'
-	      <<tools::plot(z)<<std::endl;
-    std::vector<Point> intersection(1, z);
+    	      << "numer / denom = u = " << numer <<'/'<<denom<<'='<<u << std::endl
+    	      << orient2d(q0.coordinates(), p1.coordinates(), p0.coordinates()) <<' '
+    	      << orient2d(p0.coordinates(), p1.coordinates(), q0.coordinates()) <<' '
+    	      << orient2d(q0.coordinates(), q1.coordinates(), p0.coordinates()) <<' '
+      	      << orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates()) <<'\n'
+    	      <<tools::plot(z)<<std::endl;
+
+    {
+      std::cout << "case 3 with TT:\n";
+      typedef ttmath::Big<TTMATH_BITS(22), TTMATH_BITS(104)> TT;
+      const TT p0x(p0.x()), p0y(p0.y()), p1x(p1.x()), p1y(p1.y()), q0x(q0.x()), q0y(q0.y()), q1x(q1.x()), q1y(q1.y());
+      const TT numer_tt(numer);
+      const TT denom_tt = (p1x-p0x)*(q1y-q0y) - (p1y-p0y)*(q1x-q0x);
+      const TT u_tt = numer_tt / denom_tt;
+      const TT zx = q0x + u_tt*(q1x - q0x);
+      const TT zy = q0y + u_tt*(q1y - q0y);
+      std::cout << "numer_tt / denom_tt = u_tt = " << u_tt << std::endl
+		<< "plot("<<zx<<','<<zy<<",'mx','markersize',18);"<<std::endl;
+    }
+
+    intersection.push_back(z);
     return intersection;
 
     // // Take the longest distance as a,b
@@ -364,12 +393,12 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
   }
   else // Not parallel and no intersection
   {
-    std::cout << "case 5"<<std::endl;
-    return std::vector<Point>();
+    // std::cout << "case 5"<<std::endl;
+    return intersection;
   }
 
-  std::cout << "case 6"<<std::endl;
-  return std::vector<Point>();
+  // std::cout << "case 6"<<std::endl;
+  return intersection;
 
 
 
@@ -735,18 +764,21 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
   if (CollisionPredicates::collides_segment_segment_2d(p0, p1, q0, q1))
   {
     const std::vector<Point> intersection = intersection_segment_segment_2d(p0, p1, q0, q1);
+    dolfin_assert(intersection.size());
     points.insert(points.end(), intersection.begin(), intersection.end());
   }
 
   if (CollisionPredicates::collides_segment_segment_2d(p0, p2, q0, q1))
   {
     const std::vector<Point> intersection = intersection_segment_segment_2d(p0, p2, q0, q1);
+    dolfin_assert(intersection.size());
     points.insert(points.end(), intersection.begin(), intersection.end());
   }
 
   if (CollisionPredicates::collides_segment_segment_2d(p1, p2, q0, q1))
   {
     const std::vector<Point> intersection = intersection_segment_segment_2d(p1, p2, q0, q1);
+    dolfin_assert(intersection.size());
     points.insert(points.end(), intersection.begin(), intersection.end());
   }
 
@@ -847,6 +879,12 @@ IntersectionConstruction::_intersection_triangle_triangle_2d(const Point& p0,
     if (unique)
       unique_points.push_back(points[i]);
   }
+
+  std::cout << __FUNCTION__<<" intersection of\n"
+	    << tools::drawtriangle({p0,p1,p2})<<tools::drawtriangle({q0,q1,q2})<<std::endl;
+  for (const Point p: unique_points)
+    std::cout << tools::plot(p);
+  std::cout << std::endl;
 
   return unique_points;
 
