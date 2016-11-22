@@ -16,11 +16,9 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2016-11-17
+// Last changed: 2016-11-22
 
 #include "ConvexTriangulation.h"
-#include "CollisionPredicates.h"
-#include "predicates.h"
 #include <algorithm>
 
 
@@ -109,9 +107,16 @@ ConvexTriangulation::triangulate(std::vector<Point> p,
     const std::vector<Point> unique_p = unique_points(p);
 
     if (unique_p.size() > 2)
+    {
+      std::cout << __FUNCTION__<<std::endl;
+      for (const Point p: unique_p)
+	std::cout << tools::plot(p);
+      std::cout << std::endl;
       dolfin_error("ConvexTriangulation.cpp",
                    "triangulate convex polyhedron",
                    "a convex polyhedron of topological dimension 1 can not have more then 2 points");
+    }
+
     std::vector<std::vector<Point>> t;
     t.push_back(unique_p);
     return t;

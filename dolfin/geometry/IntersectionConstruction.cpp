@@ -16,12 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-21
+// Last changed: 2016-11-22
 
 #include <dolfin/mesh/MeshEntity.h>
-#include <dolfin/math/basic.h>
 #include "predicates.h"
-#include "GeometryDebugging.h"
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"
 
@@ -29,6 +27,7 @@
 // FIXME august
 #include <ttmath/ttmath.h>
 #include </home/august/dolfin_simplex_tools.h>
+
 
 
 namespace
@@ -260,39 +259,153 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 							   Point q0,
 							   Point q1)
 {
-  std::cout << __FUNCTION__<< "points " << tools::plot(p0)<<tools::plot(p1)<<tools::plot(q0)<<tools::plot(q1)<<std::endl;
+  std::cout << __FUNCTION__<<std::endl
+	    << tools::plot(p0)<<tools::plot(p1)<<tools::plot(q0)<<tools::plot(q1)<<tools::drawtriangle({p0,p1})<<tools::drawtriangle({q0,q1})<<std::endl;
 
+  const double denom = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
+  const double numer = orient2d(q0.coordinates(), p1.coordinates(), p0.coordinates());
 
-  std::vector<Point> intersection;
-
-  // Add vertex-vertex collision to the intersection
-  if (p0 == q0 or p0 == q1)
-    intersection.push_back(p0);
-  if (p1 == q0 or p1 == q1)
-    intersection.push_back(p1);
-
-  // Add vertex-"segment interior" collisions to the intersection
-  if (CollisionPredicates::collides_interior_point_segment_2d(q0, q1, p0))
-    intersection.push_back(p0);
-
-  if (CollisionPredicates::collides_interior_point_segment_2d(q0, q1, p1))
-    intersection.push_back(p1);
-
-  if (CollisionPredicates::collides_interior_point_segment_2d(p0, p1, q0))
-    intersection.push_back(q0);
-
-  if (CollisionPredicates::collides_interior_point_segment_2d(p0, p1, q1))
-    intersection.push_back(q1);
-
-  if (intersection.empty())
+  if (denom == 0. and numer == 0.)
   {
-    std::cout << ' '<<__FUNCTION__<<" gave empty intersection: must check interior\n";
+    // p0, p1 is collinear with q0, q1.
+    // Take the longest distance as a,b
+    Point a = p0, b = p1, c = q0, d = q1;
+    if (a.squared_distance(b) < c.squared_distance(d))
+    {
+      std::swap(a, c);
+      std::swap(b, d);
+    }
+    const Point r = b - a;
+    const double r2 = r.squared_norm();
 
-    // No collisions in any vertices, so check interior
-    return _intersection_segment_interior_segment_interior_2d(p0, p1, q0, q1);
+    // FIXME: what to do if small?
+    dolfin_assert(r2 > DOLFIN_EPS);
+
+    double t0 = (c-a).dot(r) / r2;
+    double t1 = (d-a).dot(r) / r2;
+    if (t0 > t1)
+      std::swap(t0, t1);
+
+    if (CollisionPredicates::collides_segment_segment_1d(t0, t1, 0, 1))
+    {
+      // Compute two intersection points
+      const Point z0 = a + std::max(0., t0)*r;
+      const Point z1 = a + std::min(1., t1)*r;
+
+      std::cout << "case 1a"<<std::endl;
+      std::cout << t0<<','<<t1<<','<<tools::plot(a)<<tools::plot(b)
+		<<tools::plot(z0,"'r.'")<<tools::plot(z1,"'g.'")<<std::endl;
+      //PPause;
+      const std::vector<Point> intersection = {z0, z1};
+      return intersection;
+    }
+    else // Disjoint: no intersection
+    {
+      std::cout << "case 1b"<<std::endl;
+      return std::vector<Point>();
+    }
+  }
+  else if (denom == 0. and numer != 0.)
+  {
+    // Parallel, disjoint
+    std::cout << "case 2"<<std::endl;
+    std::cout << denom<<' '<<numer << std::endl;
+    return std::vector<Point>();
+  }
+  else if (denom != 0.)
+  {
+    const double u = numer / denom;
+    const Point z = q0 + u*(q1-q0);
+    std::cout << "case 3:\n"
+	      << denom<<' '<<numer << std::endl
+	      <<u<<' '<<tools::plot(p0)<<tools::plot(p1)<<'\n'
+	      <<tools::plot(z)<<std::endl;
+    std::vector<Point> intersection(1, z);
+    return intersection;
+
+    // // Take the longest distance as a,b
+    // Point a = p0, b = p1, c = q0, d = q1;
+    // if (a.squared_distance(b) < c.squared_distance(d))
+    // {
+    //   std::swap(a, c);
+    //   std::swap(b, d);
+    // }
+    // const Point r = b - a;
+    // const double r2 = r.squared_norm();
+
+    // // FIXME: what to do if small?
+    // dolfin_assert(r2 > DOLFIN_EPS);
+
+    // const double t0 = (c-a).dot(r) / r2;
+    // const double t1 = (d-a).dot(r) / r2;
+    // double t;
+    // bool tfound = false;
+
+    // if (0 <= t0 and t0 <= 1)
+    // {
+    //   t = t0;
+    //   tfound = true;
+    // }
+    // else if (0 <= t1 and t1 <= 1)
+    // {
+    //   t = t1;
+    //   tfound = true;
+    // }
+
+    // if (tfound)
+    // {
+    //   const Point z = a + t*r;
+    //   std::vector<Point> intersection(1, z);
+    //   std::cout << "case 4:\n"
+    // 		<<t0<<','<<t1<<tools::plot(a)<<tools::plot(b)
+    // 		<<tools::plot(z)<<std::endl;
+    //   return intersection;
+    // }
+  }
+  else // Not parallel and no intersection
+  {
+    std::cout << "case 5"<<std::endl;
+    return std::vector<Point>();
   }
 
-  return intersection;
+  std::cout << "case 6"<<std::endl;
+  return std::vector<Point>();
+
+
+
+  // std::cout << __FUNCTION__<< "points " << tools::plot(p0)<<tools::plot(p1)<<tools::plot(q0)<<tools::plot(q1)<<std::endl;
+
+
+  // std::vector<Point> intersection;
+
+  // // Add vertex-vertex collision to the intersection
+  // if (p0 == q0 or p0 == q1)
+  //   intersection.push_back(p0);
+  // if (p1 == q0 or p1 == q1)
+  //   intersection.push_back(p1);
+
+  // // Add vertex-"segment interior" collisions to the intersection
+  // if (CollisionPredicates::collides_interior_point_segment_2d(q0, q1, p0))
+  //   intersection.push_back(p0);
+
+  // if (CollisionPredicates::collides_interior_point_segment_2d(q0, q1, p1))
+  //   intersection.push_back(p1);
+
+  // if (CollisionPredicates::collides_interior_point_segment_2d(p0, p1, q0))
+  //   intersection.push_back(q0);
+
+  // if (CollisionPredicates::collides_interior_point_segment_2d(p0, p1, q1))
+  //   intersection.push_back(q1);
+
+  // if (intersection.empty())
+  // {
+  //   std::cout << ' '<<__FUNCTION__<<" gave empty intersection: must check interior\n";
+
+  //   // No collisions in any vertices, so check interior
+  //   return _intersection_segment_interior_segment_interior_2d(p0, p1, q0, q1);
+  // }
+
+  // return intersection;
 
 }
 //-----------------------------------------------------------------------------

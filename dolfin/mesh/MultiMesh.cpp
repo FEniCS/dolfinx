@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2016-11-21
+// Last changed: 2016-11-22
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -1393,8 +1393,16 @@ void MultiMesh::_inclusion_exclusion_interface
       {
 	if (simplex.size() == tdim_bulk + 1)
 	{
+	  std::cout << "compute intersection of\n"
+		    << tools::drawtriangle(Eij)<<tools::drawtriangle(simplex)<<std::endl;
 	  const std::vector<Point> Eij_cap_Tk_points
 	    = IntersectionConstruction::intersection(Eij, simplex, gdim);
+
+	  std::cout <<"intersection is\n";
+	  for (const Point p: Eij_cap_Tk_points)
+	    std::cout << tools::plot(p);
+	  std::cout << std::endl;
+
 	  const Polyhedron Eij_cap_Tk
 	    = ConvexTriangulation::triangulate(Eij_cap_Tk_points,
 					       gdim,
