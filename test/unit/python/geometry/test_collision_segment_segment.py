@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2016-11-10
+# Last changed: 2016-11-22
 
 import pytest
 from dolfin import *
@@ -88,7 +88,7 @@ def test_aligned_version_2():
     assert cell0.collides(cell1) == False
 
 @skip_in_parallel
-def test_parallel_1():
+def test_collinear_1():
     p0 = Point(0.05, 0.15)
     p1 = Point(0.85, 0.95)
     q0 = Point(0.2875, 0.3875)
@@ -100,7 +100,7 @@ def test_parallel_1():
     assert cellp.collides(cellq) == True
 
 @skip_in_parallel
-def test_parallel_2():
+def test_collinear_2():
     res = CollisionPredicates.collides_segment_segment_2d(Point(.5, .3),
                                                           Point(.5, .4),
                                                           Point(.5, .5),
