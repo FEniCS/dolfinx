@@ -1,34 +1,21 @@
-set(DIR log)
+set(HEADERS
+  dolfin_log.h
+  Event.h
+  Logger.h
+  log.h
+  LogLevel.h
+  LogManager.h
+  LogStream.h
+  Progress.h
+  Table.h
+  PARENT_SCOPE)
 
-# Headers
-set(DOLFIN_${DIR}_HEADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_log.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Event.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Logger.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/log.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/LogLevel.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/LogManager.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/LogStream.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Progress.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Table.h
-  )
-
-# Install headers
-install(FILES ${DOLFIN_${DIR}_HEADERS}
-  DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
-  COMPONENT Development)
-
-# Append headers
-set(DOLFIN_HEADERS ${DOLFIN_HEADERS} ${DOLFIN_${DIR}_HEADERS} PARENT_SCOPE)
-
-# Append sources
-set(DOLFIN_SOURCES
-  ${DOLFIN_SOURCES}
-  ${CMAKE_CURRENT_SOURCE_DIR}/Event.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/log.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Logger.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/LogManager.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/LogStream.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Progress.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Table.cpp
+set(SOURCES
+  Event.cpp
+  log.cpp
+  Logger.cpp
+  LogManager.cpp
+  LogStream.cpp
+  Progress.cpp
+  Table.cpp
   PARENT_SCOPE)

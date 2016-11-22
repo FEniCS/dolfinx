@@ -1,47 +1,34 @@
-set(DIR common)
+set(HEADERS
+  Array.h
+  ArrayView.h
+  constants.h
+  defines.h
+  dolfin_common.h
+  dolfin_doc.h
+  Hierarchical.h
+  IndexSet.h
+  init.h
+  MPI.h
+  NoDeleter.h
+  RangedIndexSet.h
+  Set.h
+  SubSystemsManager.h
+  Timer.h
+  timing.h
+  types.h
+  UniqueIdGenerator.h
+  utils.h
+  Variable.h
+  PARENT_SCOPE)
 
-# Headers
-set(DOLFIN_${DIR}_HEADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/Array.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/ArrayView.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/constants.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/defines.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_common.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_doc.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Hierarchical.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/IndexSet.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/init.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/MPI.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/NoDeleter.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/RangedIndexSet.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Set.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/SubSystemsManager.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Timer.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/timing.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/types.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/UniqueIdGenerator.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Variable.h
-  )
-
-# Install headers
-install(FILES ${DOLFIN_${DIR}_HEADERS}
-  DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
-  COMPONENT Development)
-
-# Append headers
-set(DOLFIN_HEADERS ${DOLFIN_HEADERS} ${DOLFIN_${DIR}_HEADERS} PARENT_SCOPE)
-
-# Append sources
-set(DOLFIN_SOURCES
-  ${DOLFIN_SOURCES}
-  ${CMAKE_CURRENT_SOURCE_DIR}/defines.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/init.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/MPI.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/SubSystemsManager.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Timer.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/timing.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/UniqueIdGenerator.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Variable.cpp
+set(SOURCES
+  defines.cpp
+  init.cpp
+  MPI.cpp
+  SubSystemsManager.cpp
+  Timer.cpp
+  timing.cpp
+  UniqueIdGenerator.cpp
+  utils.cpp
+  Variable.cpp
   PARENT_SCOPE)

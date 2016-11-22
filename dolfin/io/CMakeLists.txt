@@ -1,68 +1,55 @@
-set(DIR io)
+set(HEADERS
+  base64.h
+  dolfin_io.h
+  Encoder.h
+  File.h
+  GenericFile.h
+  HDF5Attribute.h
+  HDF5File.h
+  HDF5Interface.h
+  HDF5Utility.h
+  RAWFile.h
+  SVGFile.h
+  VTKFile.h
+  VTKWriter.h
+  X3DFile.h
+  X3DOM.h
+  XDMFFile.h
+  XMLArray.h
+  XMLFile.h
+  XMLFunctionData.h
+  XMLMeshFunction.h
+  XMLMesh.h
+  XMLMeshValueCollection.h
+  XMLParameters.h
+  XMLTable.h
+  xmlutils.h
+  XMLVector.h
+  XYZFile.h
+  PARENT_SCOPE)
 
-# Headers
-set(DOLFIN_${DIR}_HEADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/base64.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_io.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Encoder.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/File.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/GenericFile.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Attribute.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5File.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Utility.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/RAWFile.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/SVGFile.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/VTKWriter.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/X3DFile.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/X3DOM.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/XDMFFile.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLArray.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLFile.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLFunctionData.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLMeshFunction.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLMesh.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLMeshValueCollection.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLParameters.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLTable.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/xmlutils.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLVector.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/XYZFile.h
-  )
-
-# Install headers
-install(FILES ${DOLFIN_${DIR}_HEADERS}
-  DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
-  COMPONENT Development)
-
-# Append headers
-set(DOLFIN_HEADERS ${DOLFIN_HEADERS} ${DOLFIN_${DIR}_HEADERS} PARENT_SCOPE)
-
-# Append sources
-set(DOLFIN_SOURCES
-  ${DOLFIN_SOURCES}
-  ${CMAKE_CURRENT_SOURCE_DIR}/base64.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/File.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/GenericFile.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Attribute.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5File.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Utility.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/pugixml.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/RAWFile.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/SVGFile.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/VTKWriter.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/X3DFile.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/X3DOM.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/XDMFFile.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLFile.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLFunctionData.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLMesh.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLParameters.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLTable.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xmlutils.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/XMLVector.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/XYZFile.cpp
+set(SOURCES
+  base64.cpp
+  File.cpp
+  GenericFile.cpp
+  HDF5Attribute.cpp
+  HDF5File.cpp
+  HDF5Interface.cpp
+  HDF5Utility.cpp
+  pugixml.cpp
+  RAWFile.cpp
+  SVGFile.cpp
+  VTKFile.cpp
+  VTKWriter.cpp
+  X3DFile.cpp
+  X3DOM.cpp
+  XDMFFile.cpp
+  XMLFile.cpp
+  XMLFunctionData.cpp
+  XMLMesh.cpp
+  XMLParameters.cpp
+  XMLTable.cpp
+  xmlutils.cpp
+  XMLVector.cpp
+  XYZFile.cpp
   PARENT_SCOPE)

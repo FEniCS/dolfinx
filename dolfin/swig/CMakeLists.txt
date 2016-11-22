@@ -105,16 +105,17 @@ endforeach()
 set(NOT_INSTALL )
 
 # Iterate over each sub module and add install targets
-file(GLOB MODULE_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *)
-foreach(MODULE_DIR ${MODULE_DIRS})
-  if (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${MODULE_DIR})
-    # Install pre.i if exists
-    if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${MODULE_DIR}/pre.i)
-      install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${MODULE_DIR}/pre.i
-        DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/swig/${MODULE_DIR}
-        COMPONENT Development)
-    endif()
+foreach(MODULE_DIR ${DOLFIN_DIRS})
+
+  # Install pre.i if exists
+  if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${MODULE_DIR}/pre.i)
+    install(FILES
+      ${CMAKE_CURRENT_SOURCE_DIR}/${MODULE_DIR}/pre.i
+      DESTINATION
+      ${DOLFIN_INCLUDE_DIR}/dolfin/swig/${MODULE_DIR}
+      COMPONENT Development)
   endif()
+
 endforeach()
 
 # Add global interface files

@@ -1,34 +1,21 @@
-set(DIR graph)
+set(HEADERS
+  BoostGraphColoring.h
+  BoostGraphOrdering.h
+  CSRGraph.h
+  dolfin_graph.h
+  GraphBuilder.h
+  GraphColoring.h
+  Graph.h
+  ParMETIS.h
+  SCOTCH.h
+  ZoltanInterface.h
+  PARENT_SCOPE)
 
-# Headers
-set(DOLFIN_${DIR}_HEADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/BoostGraphColoring.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/BoostGraphOrdering.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/CSRGraph.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_graph.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/GraphBuilder.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/GraphColoring.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Graph.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/ParMETIS.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/SCOTCH.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/ZoltanInterface.h
-  )
-
-# Install headers
-install(FILES ${DOLFIN_${DIR}_HEADERS}
-  DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
-  COMPONENT Development)
-
-# Append headers
-set(DOLFIN_HEADERS ${DOLFIN_HEADERS} ${DOLFIN_${DIR}_HEADERS} PARENT_SCOPE)
-
-# Append sources
-set(DOLFIN_SOURCES
-  ${DOLFIN_SOURCES}
-  ${CMAKE_CURRENT_SOURCE_DIR}/BoostGraphOrdering.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/GraphBuilder.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/GraphColoring.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ParMETIS.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/SCOTCH.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ZoltanInterface.cpp
+set(SOURCES
+  BoostGraphOrdering.cpp
+  GraphBuilder.cpp
+  GraphColoring.cpp
+  ParMETIS.cpp
+  SCOTCH.cpp
+  ZoltanInterface.cpp
   PARENT_SCOPE)

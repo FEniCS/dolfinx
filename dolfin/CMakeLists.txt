@@ -15,28 +15,44 @@ include_directories(${CMAKE_BINARY_DIR})
 #------------------------------------------------------------------------------
 # DOLFIN source directories
 
-# These will be populated by the add_subdirectory commands below
+# All files and directories in this directory
+file(GLOB DOLFIN_CONTENT RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *)
+
+# Initialize list
+set(DOLFIN_DIRS)
+
+# List of excluded files and directories
+set(EXCLUDES ${DOLFIN_H} swig CMakeLists.txt)
+
+# Iterate over all directories and files and append to DOLFIN_DIRS
+foreach(_DIR_NAME ${DOLFIN_CONTENT})
+  list(FIND EXCLUDES ${_DIR_NAME} INDEX_EXCLUDES)
+  if (${INDEX_EXCLUDES} LESS 0)
+    list(APPEND DOLFIN_DIRS ${_DIR_NAME})
+  endif()
+endforeach()
+
+#------------------------------------------------------------------------------
+# Install header files
+
+# Initialize lists
 set(DOLFIN_HEADERS)
 set(DOLFIN_SOURCES)
 
-add_subdirectory(adaptivity)
-add_subdirectory(ale)
-add_subdirectory(common)
-add_subdirectory(fem)
-add_subdirectory(function)
-add_subdirectory(generation)
-add_subdirectory(geometry)
-add_subdirectory(graph)
-add_subdirectory(io)
-add_subdirectory(la)
-add_subdirectory(log)
-add_subdirectory(math)
-add_subdirectory(mesh)
-add_subdirectory(multistage)
-add_subdirectory(nls)
-add_subdirectory(parameter)
-add_subdirectory(plot)
-add_subdirectory(refinement)
+foreach(DIR ${DOLFIN_DIRS})
+  # Each subdirectory defines HEADERS and SOURCES
+  add_subdirectory(${DIR})
+  set(HEADERS_FULL_PATH)
+  foreach(HEADER_FILE ${HEADERS})
+    list(APPEND HEADERS_FULL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/${HEADER_FILE})
+  endforeach()
+  install(FILES ${HEADERS_FULL_PATH} DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
+    COMPONENT Development)
+  list(APPEND DOLFIN_HEADERS ${HEADERS_FULL_PATH})
+  foreach(SOURCE_FILE ${SOURCES})
+    list(APPEND DOLFIN_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/${SOURCE_FILE})
+  endforeach()
+endforeach()
 
 #------------------------------------------------------------------------------
 # Define libraries
