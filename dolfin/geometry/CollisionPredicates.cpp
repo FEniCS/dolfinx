@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-21
+// Last changed: 2016-11-22
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -49,7 +49,6 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
 #include "Point.h"
-#include "GeometryDebugging.h"
 #include "CollisionPredicates.h"
 
 using namespace dolfin;
@@ -405,10 +404,14 @@ bool CollisionPredicates::_collides_segment_segment_1d(double p0,
   const double a1 = std::min(q0, q1);
   const double b1 = std::max(q0, q1);
 
-  // Check for collisions
+  // FIXME
+  // // Check for collisions
+  // const double dx = std::min(b0 - a0, b1 - a1);
+  // const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
+  // const bool result = b1 > a0 - eps && a1 < b0 + eps;
+
   const double dx = std::min(b0 - a0, b1 - a1);
-  const double eps = std::max(DOLFIN_EPS_LARGE, DOLFIN_EPS_LARGE*dx);
-  const bool result = b1 > a0 - eps && a1 < b0 + eps;
+  const bool result = b1 >= a0 - dx && a1 <= b0 + dx;
 
   return result;
 }
