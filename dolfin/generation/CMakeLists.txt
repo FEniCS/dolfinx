@@ -1,0 +1,27 @@
+set(HEADERS
+  BoxMesh.h
+  dolfin_generation.h
+  IntervalMesh.h
+  RectangleMesh.h
+  SphericalShellMesh.h
+  UnitCubeMesh.h
+  UnitDiscMesh.h
+  UnitHexMesh.h
+  UnitIntervalMesh.h
+  UnitQuadMesh.h
+  UnitSquareMesh.h
+  UnitTetrahedronMesh.h
+  UnitTriangleMesh.h
+  PARENT_SCOPE)
+
+set(SOURCES
+  BoxMesh.cpp
+  IntervalMesh.cpp
+  RectangleMesh.cpp
+  SphericalShellMesh.cpp
+  UnitDiscMesh.cpp
+  UnitHexMesh.cpp
+  UnitQuadMesh.cpp
+  UnitTetrahedronMesh.cpp
+  UnitTriangleMesh.cpp
+  PARENT_SCOPE)

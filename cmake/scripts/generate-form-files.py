@@ -52,7 +52,7 @@ use_split = [
 skip_basis = ["Poisson2D_5.ufl", "Poisson3D_4.ufl"]
 
 # Directories to scan
-subdirs = ["dolfin", "demo", "bench", "test"]
+subdirs = ["demo", "bench", "test"]
 
 # Compile all form files
 topdir = os.getcwd()

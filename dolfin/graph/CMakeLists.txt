@@ -1,0 +1,21 @@
+set(HEADERS
+  BoostGraphColoring.h
+  BoostGraphOrdering.h
+  CSRGraph.h
+  dolfin_graph.h
+  GraphBuilder.h
+  GraphColoring.h
+  Graph.h
+  ParMETIS.h
+  SCOTCH.h
+  ZoltanInterface.h
+  PARENT_SCOPE)
+
+set(SOURCES
+  BoostGraphOrdering.cpp
+  GraphBuilder.cpp
+  GraphColoring.cpp
+  ParMETIS.cpp
+  SCOTCH.cpp
+  ZoltanInterface.cpp
+  PARENT_SCOPE)
