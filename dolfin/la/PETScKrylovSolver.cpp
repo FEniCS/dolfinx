@@ -418,6 +418,7 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
     break;
   case norm_type::default_norm:
     ksp_norm_type = KSP_NORM_DEFAULT;
+    break;
   case norm_type::preconditioned:
     ksp_norm_type = KSP_NORM_PRECONDITIONED;
     break;
