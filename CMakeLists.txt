@@ -903,7 +903,7 @@ endforeach()
 set(COPY_DEMO_TEST_DEMO_DATA FALSE)
 if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
   message(STATUS "")
-  message(STATUS "Generating form files in demo, test, bench and dolfin directories. May take some time...")
+  message(STATUS "Generating form files in demo, test and bench directories. May take some time...")
   message(STATUS "----------------------------------------------------------------------------------------")
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-form-files.py

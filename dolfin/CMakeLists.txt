@@ -35,21 +35,33 @@ endforeach()
 #------------------------------------------------------------------------------
 # Install header files
 
-foreach(DIR ${DOLFIN_DIRS})
-  file(GLOB _HEADERS ${DIR}/*.h)
-  list(APPEND HEADERS ${_HEADERS})
-  install(FILES ${_HEADERS} DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
-    COMPONENT Development)
+# Initialize lists
+set(DOLFIN_HEADERS)
+set(DOLFIN_SOURCES)
 
-  file(GLOB _SOURCES ${DIR}/*.cpp)
-  list(APPEND SOURCES ${_SOURCES})
+foreach(DIR ${DOLFIN_DIRS})
+  # Each subdirectory defines HEADERS and SOURCES
+  add_subdirectory(${DIR})
+  set(HEADERS_FULL_PATH)
+  foreach(HEADER_FILE ${HEADERS})
+    list(APPEND HEADERS_FULL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/${HEADER_FILE})
+  endforeach()
+  install(FILES ${HEADERS_FULL_PATH} DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
+    COMPONENT Development)
+  list(APPEND DOLFIN_HEADERS ${HEADERS_FULL_PATH})
+  foreach(SOURCE_FILE ${SOURCES})
+    list(APPEND DOLFIN_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/${SOURCE_FILE})
+  endforeach()
 endforeach()
 
 #------------------------------------------------------------------------------
 # Define libraries
 
-add_library(dolfin ${DOLFIN_H} ${HEADERS} ${SOURCES})
+add_library(dolfin ${DOLFIN_H} ${DOLFIN_HEADERS} ${DOLFIN_SOURCES})
 set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
+
+# Add dependency on the compile_ale_forms target
+add_dependencies(dolfin compile_ale_forms)
 
 #------------------------------------------------------------------------------
 # Add include directories and libs of required packages

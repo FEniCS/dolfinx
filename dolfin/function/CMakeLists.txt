@@ -1,0 +1,38 @@
+set(HEADERS
+  assign.h
+  CoefficientAssigner.h
+  Constant.h
+  dolfin_function.h
+  Expression.h
+  FunctionAssigner.h
+  FunctionAXPY.h
+  Function.h
+  FunctionSpace.h
+  GenericFunction.h
+  LagrangeInterpolator.h
+  MultiMeshCoefficientAssigner.h
+  MultiMeshFunction.h
+  MultiMeshFunctionSpace.h
+  MultiMeshSubSpace.h
+  SpecialFacetFunction.h
+  SpecialFunctions.h
+  PARENT_SCOPE)
+
+set(SOURCES
+  assign.cpp
+  CoefficientAssigner.cpp
+  Constant.cpp
+  Expression.cpp
+  FunctionAssigner.cpp
+  FunctionAXPY.cpp
+  Function.cpp
+  FunctionSpace.cpp
+  GenericFunction.cpp
+  LagrangeInterpolator.cpp
+  MultiMeshCoefficientAssigner.cpp
+  MultiMeshFunction.cpp
+  MultiMeshFunctionSpace.cpp
+  MultiMeshSubSpace.cpp
+  SpecialFacetFunction.cpp
+  SpecialFunctions.cpp
+  PARENT_SCOPE)
