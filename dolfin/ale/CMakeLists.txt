@@ -14,18 +14,21 @@ set(SOURCES
 # Add custom command for compiling Poisson1D.ufl
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/Poisson1D.h
   MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/Poisson1D.ufl
+  DEPENDS ${UFC_INCLUDE_DIR}/ufc.h
   COMMAND ${PYTHON_EXECUTABLE} -m ffc -l dolfin -O -r auto -o ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/Poisson1D.ufl
   COMMENT "Compiling form Poisson1D.ufl")
 
 # Add custom command for compiling Poisson2D.ufl
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/Poisson2D.h
   MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/Poisson2D.ufl
+  DEPENDS ${UFC_INCLUDE_DIR}/ufc.h
   COMMAND ${PYTHON_EXECUTABLE} -m ffc -l dolfin -O -r auto -o ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/Poisson2D.ufl
   COMMENT "Compiling form Poisson2D.ufl")
 
 # Add custom command for compiling Poisson3D.ufl
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/Poisson3D.h
   MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/Poisson3D.ufl
+  DEPENDS ${UFC_INCLUDE_DIR}/ufc.h
   COMMAND ${PYTHON_EXECUTABLE} -m ffc -l dolfin -O -r auto -o ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/Poisson3D.ufl
   COMMENT "Compiling form Poisson3D.ufl")
 
