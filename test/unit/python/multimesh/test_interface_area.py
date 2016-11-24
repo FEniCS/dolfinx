@@ -35,11 +35,11 @@ def compute_area_using_quadrature(multimesh):
     for part in range(multimesh.num_parts()):
         part_area = 0
 
-        for cut_cell in multimesh.collision_map_cut_cells(part):
-            local_qr = multimesh.quadrature_rule_interface_cut_cell(part, cut_cell)
-            for weight in local_qr[1]:
-                part_area += weight
-
+        qr = multimesh.quadrature_rule_interface(part)
+        for cell, cell_qr in qr.iteritems():
+            weights = cell_qr[1]
+            part_area += sum(weights)
+ 
         total_area += part_area
     return total_area
 
