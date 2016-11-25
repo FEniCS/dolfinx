@@ -57,6 +57,16 @@ def test_slepc_eigensolver_gen_hermitian():
     nevs = 20
     esolver.solve(20)
 
+    re_0, im_0 = esolver.get_eigenvalue()
+    assert near(re_0, 0.0, eps=1e-12)
+    assert near(im_0, 0.0)
+
+    re_0, im_0, v_re_0, v_im_0 = esolver.get_eigenpair()
+    assert near(re_0, 0.0, eps=1e-12)
+    assert near(im_0, 0.0)
+    assert v_re_0.norm("l2") > 0.0
+    assert near(v_im_0.norm("l2"), 0.0)
+
     for j in range(1, nevs):
       re, im = esolver.get_eigenvalue(j)
       assert re > 0.0
