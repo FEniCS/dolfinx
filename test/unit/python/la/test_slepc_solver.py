@@ -112,6 +112,7 @@ def test_slepc_null_space():
       assert v_re.norm("l2") > 0.0
       assert near(v_im.norm("l2"), 0.0)
 
+
 @skip_if_not_PETsc_or_not_slepc
 def test_slepc_vector_null_space():
 
