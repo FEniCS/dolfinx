@@ -70,7 +70,7 @@ def test_slepc_null_space():
     # Set backend
     parameters["linear_algebra_backend"] = "PETSc"
 
-    mesh = UnitSquareMesh(32, 32)
+    mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "CG", 1)
 
     u, v = TrialFunction(V), TestFunction(V)
@@ -93,6 +93,59 @@ def test_slepc_null_space():
     u0 = Function(V)
     nullspace_basis = as_backend_type(u0.vector().copy())
     V.dofmap().set(nullspace_basis, 1.0)
+    esolver.set_deflation_space(nullspace_basis)
+
+    nevs = 20
+    esolver.solve(20)
+
+    for j in range(1, nevs):
+      re, im = esolver.get_eigenvalue(j)
+      assert re > 0.0
+      assert near(im, 0.0)
+
+@skip_if_not_PETsc_or_not_slepc
+def test_slepc_vector_null_space():
+
+    def build_nullspace(V, x):
+        nullspace_basis = [x.copy() for i in range(2)]
+
+        V.sub(0).dofmap().set(nullspace_basis[0], 1.0)
+        V.sub(1).dofmap().set(nullspace_basis[1], 1.0)
+
+        for x in nullspace_basis:
+            x.apply("insert")
+
+        # Create vector space basis and orthogonalize
+        basis = VectorSpaceBasis(nullspace_basis)
+        basis.orthonormalize()
+
+        return basis
+
+    # Set backend
+    parameters["linear_algebra_backend"] = "PETSc"
+
+    mesh = UnitSquareMesh(8, 8)
+    V = VectorFunctionSpace(mesh, "CG", 1)
+
+    u, v = TrialFunction(V), TestFunction(V)
+    k = inner(grad(u), grad(v))*dx
+    m = dot(u, v)*dx
+    L = dot(Constant((0.0, 0.0)), v)*dx
+
+    K = PETScMatrix()
+    M = PETScMatrix()
+    x0 = PETScVector()
+
+    assemble_system(k, L, bcs=[], A_tensor=K, b_tensor=x0)
+    assemble_system(m, L, bcs=[], A_tensor=M, b_tensor=x0)
+
+    esolver = SLEPcEigenSolver(K, M)
+
+    esolver.parameters["solver"] = "jacobi-davidson"
+    esolver.parameters["problem_type"] = 'gen_hermitian'
+    
+    u0 = Function(V)
+    nullspace_basis = build_nullspace(V, u0.vector())
     esolver.set_deflation_space(nullspace_basis)
 
     nevs = 20
