@@ -57,6 +57,7 @@ def test_slepc_eigensolver_gen_hermitian():
     nevs = 20
     esolver.solve(20)
 
+    # Test default eigenvalue
     re_0, im_0 = esolver.get_eigenvalue()
     assert near(re_0, 0.0, eps=1e-12)
     assert near(im_0, 0.0)
@@ -67,6 +68,7 @@ def test_slepc_eigensolver_gen_hermitian():
     assert v_re_0.norm("l2") > 0.0
     assert near(v_im_0.norm("l2"), 0.0)
 
+    # Test remaining eigenvalues and eigenpairs
     for j in range(1, nevs):
       re, im = esolver.get_eigenvalue(j)
       assert re > 0.0
@@ -82,7 +84,7 @@ def test_slepc_eigensolver_gen_hermitian():
 
 @skip_if_not_PETsc_or_not_slepc
 def test_slepc_null_space():
-    "Test SLEPc eigen solver"
+    "Test SLEPc eigen solver with nullspace as PETScVector"
 
     # Set backend
     parameters["linear_algebra_backend"] = "PETSc"
@@ -125,6 +127,7 @@ def test_slepc_null_space():
 
 @skip_if_not_PETsc_or_not_slepc
 def test_slepc_vector_null_space():
+    "Test SLEPc eigen solver with nullspace as VectorSpaceBasis"
 
     def build_nullspace(V, x):
         nullspace_basis = [x.copy() for i in range(2)]
