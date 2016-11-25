@@ -106,9 +106,11 @@ def test_slepc_null_space():
     esolver.solve(20)
 
     for j in range(1, nevs):
-      re, im = esolver.get_eigenvalue(j)
+      re, im, v_re, v_im = esolver.get_eigenpair(j)
       assert re > 0.0
       assert near(im, 0.0)
+      assert v_re.norm("l2") > 0.0
+      assert near(v_im.norm("l2"), 0.0)
 
 @skip_if_not_PETsc_or_not_slepc
 def test_slepc_vector_null_space():
@@ -159,7 +161,9 @@ def test_slepc_vector_null_space():
     esolver.solve(20)
 
     for j in range(1, nevs):
-      re, im = esolver.get_eigenvalue(j)
+      re, im, v_re, v_im = esolver.get_eigenpair(j)
       assert re > 0.0
       assert near(im, 0.0)
+      assert v_re.norm("l2") > 0.0
+      assert near(v_im.norm("l2"), 0.0)
 
