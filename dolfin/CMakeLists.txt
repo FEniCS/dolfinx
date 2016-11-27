@@ -119,14 +119,7 @@ endif()
 if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC")
   target_link_libraries(dolfin PUBLIC PETSC::petsc)
-
-  get_target_property(SLINK_LIBS PETSC::petsc_static INTERFACE_LINK_LIBRARIES)
-  message("S(1) *****: ${SLINK_LIBS}")
-
   target_link_libraries(dolfin PRIVATE PETSC::petsc_static)
-  #if (PETSC_STATIC_LIBRARIES)
-  #  target_link_libraries(dolfin PRIVATE ${PETSC_STATIC_LIBRARIES})
-  #endif()
 endif()
 
 # petsc4py
