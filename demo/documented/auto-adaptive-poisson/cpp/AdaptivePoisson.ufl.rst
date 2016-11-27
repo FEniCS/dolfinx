@@ -19,4 +19,7 @@ compiled using FFC by running (on the command-line):
 
 .. code-block:: sh
 
-   ffc -l dolfin AdaptivePoisson.ufl
+   ffc -l dolfin -e AdaptivePoisson.ufl
+
+Parameter ``-e`` ensures that a code for forms used for error control
+is generated.

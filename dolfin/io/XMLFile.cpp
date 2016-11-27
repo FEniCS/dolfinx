@@ -216,9 +216,19 @@ void XMLFile::operator<< (const Parameters& output)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Table& input)
 {
-  dolfin_error("XMLFile.cpp",
-               "read table from XML file",
-               "Not implemented");
+  if (MPI::size(_mpi_comm) > 1)
+    dolfin_error("XMLFile.cpp",
+                 "read table into XML file",
+                 "XMLTable is not colletive. Use separate XMLFile with "
+                 "MPI_COMM_SELF on each process or single process only");
+
+  // Create XML doc and get DOLFIN node
+  pugi::xml_document xml_doc;
+  load_xml_doc(xml_doc);
+  const pugi::xml_node node = get_dolfin_xml_node(xml_doc);
+
+  // Read into Table 'input'
+  XMLTable::read(input, node);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Table& output)

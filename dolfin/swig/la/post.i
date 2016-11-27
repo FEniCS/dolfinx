@@ -734,9 +734,11 @@ def la_index_dtype():
         """x.__radd__(y) <==> y+x"""
         return self.__add__(other)
 
-    def __rsub__(self,other):
+    def __rsub__(self, other):
         """x.__rsub__(y) <==> y-x"""
-        return self.__sub__(other)
+        ret = self.__sub__(other)
+        ret.__imul__(-1.0)
+        return ret
 
     def __rmul__(self,other):
         """x.__rmul__(y) <==> y*x"""
