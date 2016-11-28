@@ -539,6 +539,10 @@ namespace dolfin
     // Construct and return mapping from boundary facets to full mesh
     std::vector<std::vector<std::pair<std::size_t, std::size_t> > >
       _boundary_facets_to_full_mesh(std::size_t part) const;
+
+    // Impose consistency of _cut_cells, so that only the cells with
+    // a nontrivial interface quadrature rule are classified as cut.
+    void _impose_cut_cell_consistency();
   };
 
 

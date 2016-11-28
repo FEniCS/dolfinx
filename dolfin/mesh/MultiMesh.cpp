@@ -233,6 +233,10 @@ void MultiMesh::build(std::size_t quadrature_order)
   // Build quadrature rules and normals of the interface
   _build_quadrature_rules_interface(quadrature_order);
 
+  // Make sure that cut cells are actually cut
+  // TODO: Do this while building interface quadrature rules
+  _impose_cut_cell_consistency();
+
   end();
 }
 //-----------------------------------------------------------------------------
@@ -1360,5 +1364,63 @@ MultiMesh::_boundary_facets_to_full_mesh(std::size_t part) const
   }
 
   return full_to_bdry;
+}
+//-----------------------------------------------------------------------------
+void MultiMesh::_impose_cut_cell_consistency()
+{
+  std::vector<std::vector<unsigned int> > new_cut_cells;
+  std::size_t num_cells_covered = 0;
+  std::size_t num_cells_uncut = 0;
+  for (std::size_t part = 0; part < num_parts(); part++)
+  {
+    std::vector<unsigned int> new_cut_cells_part;
+    for (unsigned int cell : _cut_cells[part])
+    {
+      // Decide if cell has quadrature points
+      // TODO: Do this in _build_quadrature_rules_interface
+      bool cell_has_quadrature_points = false;
+      for (quadrature_rule qr : _quadrature_rules_interface[part][cell])
+      {
+        if (qr.first.size() > 0)
+        {
+          cell_has_quadrature_points = true;
+          break;
+        }
+      }
+      if (cell_has_quadrature_points)
+        new_cut_cells_part.push_back(cell);
+      else
+      {
+        // Decide if cell is overlapped or uncut
+        // TODO: Implement decision to allow update before generating all the quadrature rules
+        // For now, we use cut cell and overlap quadrature
+        double overlap_area = 0;
+        for (auto _qr : _quadrature_rules_overlap[part][cell])
+          for (double w : _qr.second)
+            overlap_area += w;
+
+        double cut_cell_area = 0;
+        for (double w : _quadrature_rules_cut_cells[part][cell].second)
+          cut_cell_area += w;
+
+        // Append to _cut_cells or _overlapped_cells
+        // One of cut cell area and overlapped cell area should be zero
+        if (overlap_area > cut_cell_area)
+        {
+          _covered_cells[part].push_back(cell);
+          num_cells_covered++;
+        }
+        else
+        {
+          _uncut_cells[part].push_back(cell);
+          num_cells_uncut++;
+        }
+      }
+    }
+    new_cut_cells.push_back(new_cut_cells_part);
+  }
+  _cut_cells.swap(new_cut_cells);
+  log(PROGRESS, "Identified %d cut cells as covered.", num_cells_covered);
+  log(PROGRESS, "Identified %d cut cells as uncut.", num_cells_uncut);
 }
 //-----------------------------------------------------------------------------
