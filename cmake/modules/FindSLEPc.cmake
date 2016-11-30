@@ -47,8 +47,6 @@ message(STATUS "Checking for package 'SLEPc'")
 find_package(PkgConfig REQUIRED)
 set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 
-unset(SLEPC_LIBRARIES)
-unset(SLEPC_INCLUDE_DIRS)
 pkg_search_module(SLEPC crayslepc_real SLEPc IMPORTED_TARGET)
 
 # Extract major, minor, etc from version string

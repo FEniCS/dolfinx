@@ -203,9 +203,12 @@ endif()
 # Check sizeof(PetscInt)
 if (PETSC_INCLUDE_DIRS)
   include(CheckTypeSize)
-  set(CMAKE_EXTRA_INCLUDE_FILES petsc.h)
+  set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${PETSC_INCLUDE_DIRS})
+  set(CMAKE_EXTRA_INCLUDE_FILES petscsys.h)
   check_type_size("PetscInt" PETSC_INT_SIZE)
-  set(CMAKE_EXTRA_INCLUDE_FILES)
+
+  unset(CMAKE_EXTRA_INCLUDE_FILES)
+  unset(CMAKE_REQUIRED_INCLUDES)
 endif()
 
 function(get_link_libraries OUTPUT_LIST TARGET)
@@ -233,8 +236,6 @@ endfunction()
 
 get_link_libraries(MYOUTPUT_LIST PkgConfig::PETSC)
 message("AAAAA: ${MYOUTPUT_LIST}")
-
-
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
