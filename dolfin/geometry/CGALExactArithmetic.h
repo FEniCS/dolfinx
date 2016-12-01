@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-11-21
+// Last changed: 2016-11-28
 //
 // Developer note:
 //
@@ -52,6 +52,10 @@
 #include <vector>
 #include <algorithm>
 #include <sstream>
+
+// FIXME
+#define PPause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
+
 
 
 // Check that results from DOLFIN and CGAL match
@@ -93,16 +97,16 @@ namespace dolfin
 
     else if (s.size() == 3)
     {
-      return 0.5 * std::abs(orient2d(s[0].coordinates(),
-				     s[1].coordinates(),
-				     s[2].coordinates()));
+      return std::abs(orient2d(s[0].coordinates(),
+			       s[1].coordinates(),
+			       s[2].coordinates())) / 2;
     }
     else if (s.size() == 4)
     {
       return std::abs(orient3d(s[0].coordinates(),
 			       s[1].coordinates(),
 			       s[2].coordinates(),
-			       s[3].coordinates())) / 6.;
+			       s[3].coordinates())) / 6;
     }
     else {
 
@@ -114,12 +118,50 @@ namespace dolfin
     return 0;
   }
 
-  inline const std::vector<Point>&
-  check_cgal(const std::vector<Point>& result_dolfin,
-	     const std::vector<Point>& result_cgal,
+  inline std::vector<Point>
+  unique_points(const std::vector<Point>& input_points)
+  {
+    // Create a unique list of points in the sense that |p-q|^2 > DOLFIN_EPS
+
+    std::vector<Point> points;
+
+    for (std::size_t i = 0; i < input_points.size(); ++i)
+    {
+      bool unique = true;
+      for (std::size_t j = i+1; j < input_points.size(); ++j)
+      {
+	if ((input_points[i] - input_points[j]).squared_norm() < DOLFIN_EPS)
+	{
+	  unique = false;
+	  break;
+	}
+      }
+      if (unique)
+	points.push_back(input_points[i]);
+    }
+    return points;
+  }
+
+  //inline const std::vector<Point>&
+  inline std::vector<Point>
+  check_cgal(const std::vector<Point>& input_result_dolfin,
+	     const std::vector<Point>& input_result_cgal,
 	     std::string function)
   {
     std::cout << __FUNCTION__<<" from function " << function << ": "
+	      << "dolfin ";
+    for (const Point& p: input_result_dolfin)
+      std::cout << p;
+    std::cout << " cgal ";
+    for (const Point& p: input_result_cgal)
+      std::cout << p;
+    std::cout << std::endl;
+
+    // create unique
+    const std::vector<Point> result_dolfin = unique_points(input_result_dolfin);
+    const std::vector<Point> result_cgal = unique_points(input_result_cgal);
+
+    std::cout << " after unique: "
 	      << "dolfin ";
     for (const Point& p: result_dolfin)
       std::cout << p;
@@ -141,9 +183,12 @@ namespace dolfin
 	}
       }
       if (!found)
-	dolfin_error("CGALExactArithmetic.h",
-		     "check_cgal",
-		     "Point in result_dolfin not found.");
+      {
+	// dolfin_error("CGALExactArithmetic.h",
+	// 	     "check_cgal",
+	// 	     "Point in result_dolfin not found.");
+	PPause;
+      }
     }
 
     // Make sure all points are found
@@ -159,9 +204,12 @@ namespace dolfin
 	}
       }
       if (!found)
-	dolfin_error("CGALExactArithmetic.h",
-		     "check_cgal",
-		     "Point in result_cgal not found.");
+      {
+	// dolfin_error("CGALExactArithmetic.h",
+	// 	     "check_cgal",
+	// 	     "Point in result_cgal not found.");
+	PPause;
+      }
     }
 
     return result_dolfin;
@@ -299,6 +347,7 @@ namespace dolfin
 
     return result_dolfin;
   }
+
 
 } // end namespace dolfin
 
