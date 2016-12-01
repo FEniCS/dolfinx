@@ -8,7 +8,11 @@
 if (NOT DOLFIN_USE_FILE_INCLUDED)
   set(DOLFIN_USE_FILE_INCLUDED 1)
 
-  # Require and use C++11
+  if(POLICY CMP0012)
+    cmake_policy(SET CMP0012 NEW)
+  endif()
+
+# Require and use C++11
   set(CMAKE_CXX_STANDARD 11)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   set(CMAKE_CXX_EXTENSIONS OFF)
