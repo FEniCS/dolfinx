@@ -53,7 +53,7 @@ find_package(PkgConfig REQUIRED)
 
 # Note: craypetsc_real is on Cray systems
 set(ENV{PKG_CONFIG_PATH} "$ENV{CRAY_PETSC_PREFIX_DIR}/lib/pkgconfig:$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-pkg_search_module(PETSC craypetsc_real PETSc IMPORTED_TARGET)
+pkg_search_module(PETSC craypetsc_real PETSc)
 
 # Extract major, minor, etc from version string
 if (PETSC_VERSION)
@@ -210,32 +210,6 @@ if (PETSC_INCLUDE_DIRS)
   unset(CMAKE_EXTRA_INCLUDE_FILES)
   unset(CMAKE_REQUIRED_INCLUDES)
 endif()
-
-function(get_link_libraries OUTPUT_LIST TARGET)
-  get_target_property(IMPORTED ${TARGET} IMPORTED)
-  list(APPEND VISITED_TARGETS ${TARGET})
-  if (IMPORTED)
-    get_target_property(LIBS ${TARGET} INTERFACE_LINK_LIBRARIES)
-  else()
-    get_target_property(LIBS ${TARGET} LINK_LIBRARIES)
-  endif()
-  set(LIB_FILES "")
-  foreach(LIB ${LIBS})
-    if (TARGET ${LIB})
-      list(FIND VISITED_TARGETS ${LIB} VISITED)
-      if (${VISITED} EQUAL -1)
-        get_target_property(LIB_FILE ${LIB} LOCATION)
-        get_link_libraries(LINK_LIB_FILES ${LIB})
-        list(APPEND LIB_FILES ${LIB_FILE} ${LINK_LIB_FILES})
-      endif()
-    endif()
-  endforeach()
-  set(VISITED_TARGETS ${VISITED_TARGETS} PARENT_SCOPE)
-  set(${OUTPUT_LIST} ${LIB_FILES} PARENT_SCOPE)
-endfunction()
-
-get_link_libraries(MYOUTPUT_LIST PkgConfig::PETSC)
-message("AAAAA: ${MYOUTPUT_LIST}")
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
