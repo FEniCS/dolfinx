@@ -439,6 +439,7 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
   URL "https://bitbucket.org/fenics-project/ffc")
 
 # Check for PETSc, SLEPc and petsc4py, slepc4py
+set(PETSC_FOUND FALSE)
 if (DOLFIN_ENABLE_PETSC)
   find_package(PETSc 3.6)
   set_package_properties(PETSc PROPERTIES TYPE OPTIONAL
@@ -460,6 +461,7 @@ if (DOLFIN_ENABLE_PETSC)
     endif()
   endif()
 
+  set(SLEPC_FOUND FALSE)
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
     find_package(SLEPc 3.6)
     set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
