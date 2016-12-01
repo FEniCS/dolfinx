@@ -94,14 +94,13 @@ if (SLEPC_FOUND AND NOT TARGET SLEPC::slepc)
 
 endif()
 
-
-
 # Compile and run test
 if (DOLFIN_SKIP_BUILD_TESTS)
 
   # FIXME: Need to add option for linkage type
   # Assume SLEPc works, and assume shared linkage
   set(SLEPC_TEST_RUNS TRUE)
+  #unset(PETSC_STATIC_LIBRARIES CACHE)
   set_property(TARGET SLEPC::slepc_static PROPERTY INTERFACE_LINK_LIBRARIES)
 
 elseif (SLEPC_FOUND)
