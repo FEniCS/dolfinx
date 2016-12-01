@@ -232,3 +232,91 @@ def test_triangle_segment_2D_1():
     assert len(intersection) == 1
     intersection = IntersectionConstruction.intersection_triangle_segment_2d(p0, p1, p2, q1, q0)
     assert len(intersection) == 1
+
+
+
+@skip_in_parallel
+def test_segment_segment_1():
+    "Case that previously failed in CGAL comparison."
+    p0 = Point(0.70710678118654746172,0.70710678118654746172)
+    p1 = Point(-0.70710678118654757274,-0.70710678118654735069)
+    q0 = Point(-5,-5)
+    q1 = Point(5,5)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    # intersection should be p0 0.70710678118654746172 0.70710678118654746172
+    for p in intersection:
+        print p[0],p[1]
+
+    assert len(intersection) == 1
+
+@skip_in_parallel
+def test_segment_segment_2():
+    "Case that previously failed in CGAL comparison."
+    p0 = Point(0.70710678118654746172, 0.70710678118654746172)
+    p1 = Point(-2.1213203435596423851, 0.70710678118654768376)
+    q0 = Point(-5, -5)
+    q1 = Point(5, 5)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    # intersection should be p0 0.70710678118654746172 0.70710678118654746172
+    for p in intersection:
+        print p[0],p[1]
+
+    assert len(intersection) == 1
+
+@skip_in_parallel
+def test_segment_segment_3():
+    "Case that previously failed in CGAL comparison."
+    p0 = Point(-5, -5)
+    p1 = Point(5, 5)
+    q0 = Point(-0.70710678118654757274,-0.70710678118654735069)
+    q1 = Point(0.70710678118654768376,0.70710678118654723967)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    # intersection should be  -0.23570226039551583908 -0.23570226039551583908
+    for p in intersection:
+        print p[0],p[1]
+
+    assert len(intersection) == 1
+
+@skip_in_parallel
+def test_segment_segment_4():
+    "Case that previously failed in CGAL comparison."
+    p0 = Point(-5, -5)
+    p1 = Point(5, 5)
+    q0 = Point(-0.70710678118654757274,-0.70710678118654735069)
+    q1 = Point(2.1213203435596423851,-0.70710678118654801683)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    # intersection should be  -0.23570226039551583908 -0.23570226039551583908
+    for p in intersection:
+        print p[0],p[1]
+
+    assert len(intersection) == 1
+
+@skip_in_parallel
+def test_triangle_triangle():
+    "Tri tri case corresponding to test_segment_segment_1 - 4 above"
+    p0 = Point(-5,-5)
+    p1 = Point(5,-5)
+    p2 = Point(5,5)
+    q0 = Point(-0.70710678118654757274,-0.70710678118654735069)
+    q1 = Point(0.70710678118654768376,0.70710678118654723967)
+    q2 = Point(2.1213203435596423851,-0.70710678118654801683)
+    intersection
+    = IntersectionConstruction.intersection_triangle_triangle_2d(p0, p1, p2,
+                                                                 q0, q1, q2)
+
+    '''
+    intersection should be
+    2.1213203435596423851 -0.70710678118654801683
+    -0.70710678118654746172 -0.70710678118654746172
+    -0.23570226039551583908 -0.23570226039551583908
+    0.70710678118654768376 0.70710678118654723967
+    '''
+
+    for p in intersection:
+        print p[0],p[1]
+
+    assert len(intersection) == 4
