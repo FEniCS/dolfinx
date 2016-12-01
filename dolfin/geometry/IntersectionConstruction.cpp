@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-23
+// Last changed: 2016-12-01
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -27,7 +27,7 @@
 // FIXME august
 #include <ttmath/ttmath.h>
 #include </home/august/dolfin_simplex_tools.h>
-
+#include <Eigen/Dense>
 
 
 namespace
@@ -259,8 +259,8 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
 							   Point c,
 							   Point d)
 {
-  // std::cout << __FUNCTION__<<std::endl
-  // 	    << tools::plot(a)<<tools::plot(b)<<tools::plot(c)<<tools::plot(d)<<tools::drawtriangle({a,b})<<tools::drawtriangle({c,d})<<std::endl;
+  std::cout << __FUNCTION__<<std::endl
+  	    << tools::plot(a)<<tools::plot(b)<<tools::plot(c)<<tools::plot(d)<<tools::drawtriangle({a,b})<<tools::drawtriangle({c,d})<<std::endl;
 
   std::vector<Point> intersection;
 
@@ -283,10 +283,10 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
     intersection.push_back(b);
   }
 
-  // std::cout << " after point collisions: " <<intersection.size()<<" points: ";
-  // for (const Point p: intersection)
-  //   std::cout << tools::plot(p);
-  // std::cout << std::endl;
+  std::cout << " after point collisions: " <<intersection.size()<<" points: ";
+  for (const Point p: intersection)
+    std::cout << tools::plot(p);
+  std::cout << std::endl;
 
   const double denom = (b.x()-a.x())*(d.y()-c.y()) - (b.y()-a.y())*(d.x()-c.x());
   const double numer = orient2d(c.coordinates(),d.coordinates(),a.coordinates());
@@ -297,11 +297,13 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
     // Take the longest distance as a, b
     if (a.squared_distance(b) < c.squared_distance(d))
     {
+      std::cout << "  swapped a,b,c,d\n";
       std::swap(a, c);
       std::swap(b, d);
     }
     const Point r = b - a;
     const double r2 = r.squared_norm();
+    const Point rn = r / std::sqrt(r2);
 
     // FIXME: what to do if small?
     dolfin_assert(r2 > DOLFIN_EPS);
@@ -309,31 +311,37 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
     double t0 = (c-a).dot(r) / r2;
     double t1 = (d-a).dot(r) / r2;
     if (t0 > t1)
+    {
+      std::cout << "  swapped t0 and t1\n";
       std::swap(t0, t1);
+    }
 
     if (CollisionPredicates::collides_segment_segment_1d(t0, t1, 0, 1))
     {
       // Compute two intersection points
       const Point z0 = a + std::max(0., t0)*r;
-      const Point z1 = a + std::min(1., t1)*r;
+      //const Point z1 = a + std::min(1., t1)*r;
+      const Point z1 = a + std::min(1.,(c-a).dot(r) / r2 )*r;
+      //const Point z1 = a + std::min(1., (d-a).dot(rn))*rn;
 
-      // std::cout << "case 1a"<<std::endl;
-      // std::cout << t0<<','<<t1<<','<<tools::plot(a)<<tools::plot(b)
-      // 		<<tools::plot(z0,"'r.'")<<tools::plot(z1,"'g.'")<<std::endl;
+      std::cout << "case 1a"<<std::endl;
+      std::cout.precision(22);
+      std::cout <<"t0="<< t0<<"; t1="<<t1<<"; "<<tools::plot(a)<<tools::plot(b)<<" gave:\n"
+      		<<tools::plot(z0,"'r.'")<<tools::plot(z1,"'g.'")<<std::endl;
 
       intersection.push_back(z0);
       intersection.push_back(z1);
     }
     else // Disjoint: no intersection
     {
-      // std::cout << "case 1b"<<std::endl;
+      std::cout << "case 1b"<<std::endl;
     }
   }
   else if (denom == 0. and numer != 0.)
   {
     // Parallel, disjoint
-    // std::cout << "case 2"<<std::endl;
-    // std::cout << denom<<' '<<numer << std::endl;
+    std::cout << "case 2"<<std::endl;
+    std::cout << denom<<' '<<numer << std::endl;
 
     // {
     //   std::cout << "case 2 with TT\n";
@@ -353,21 +361,59 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
   {
     const double alpha = numer / denom;
     const Point z = a + alpha*(b-a);
-    // std::cout << " numer / denom = u = " << numer <<'/'<<denom<<'='<<alpha << std::endl
-    // 	      << tools::plot(z) << std::endl;
+    std::cout << "case 3 numer / denom = u = " << numer <<'/'<<denom<<'='<<alpha << std::endl
+    	      << tools::plot(z) << std::endl;
 
-    // {
-    //   std::cout << " case 3 with TT:\n";
-    //   typedef ttmath::Big<TTMATH_BITS(22), TTMATH_BITS(104)> TT;
-    //   const TT ax(a.x()), ay(a.y()), bx(b.x()), by(b.y()), cx(c.x()), cy(c.y()), dx(d.x()), dy(d.y());
-    //   const TT numer_tt(numer);
-    //   const TT denom_tt = (bx-ax)*(dy-cy) - (by-ay)*(dx-cx);
-    //   const TT u_tt = numer_tt / denom_tt;
-    //   const TT zx = cx + u_tt*(dx - cx);
-    //   const TT zy = cy + u_tt*(dy - cy);
-    //   std::cout << " numer_tt / denom_tt = u_tt = " << u_tt << std::endl
-    // 		<< " plot("<<zx<<','<<zy<<",'mx','markersize',18);"<<std::endl;
-    // }
+    {
+      std::cout << "   case 3 with TT:\n";
+      typedef ttmath::Big<TTMATH_BITS(22), TTMATH_BITS(104)> TT;
+      const TT ax(a.x()), ay(a.y()), bx(b.x()), by(b.y()), cx(c.x()), cy(c.y()), dx(d.x()), dy(d.y());
+      const TT numer_tt(numer);
+      const TT denom_tt = (bx-ax)*(dy-cy) - (by-ay)*(dx-cx);
+      const TT u_tt = numer_tt / denom_tt;
+      const TT zx = cx + u_tt*(dx - cx);
+      const TT zy = cy + u_tt*(dy - cy);
+      std::cout << "   numer_tt / denom_tt = u_tt = " << u_tt << std::endl
+    		<< "   plot("<<zx<<','<<zy<<",'mx','markersize',18);"<<std::endl;
+    }
+
+    {
+      // Test newton for f(t,u) = p0 + t(p1 - p0) - q0 - u(q1-q0)
+      Eigen::Vector2d p0(a[0], a[1]), p1(b[0], b[1]);
+      Eigen::Vector2d dp = p1-p0;
+      Eigen::Vector2d q0(c[0], c[1]), q1(d[0], d[1]);
+      Eigen::Vector2d dq = q1-q0;
+
+      Eigen::Matrix2d J;
+      J(0,0) = dp[0];
+      J(0,1) = -dq[0];
+      J(1,0) = dp[1];
+      J(1,1) = -dq[1];
+      const double det = J.determinant();
+      assert(det != 0);
+      const Eigen::Matrix2d Jinv = J.inverse();
+
+      // Start guess
+      Eigen::Vector2d xi(0.5, 0.5);
+
+      double error = DOLFIN_EPS + 1;
+      int cnt=0;
+
+      while (error > DOLFIN_EPS and cnt < 100)
+      {
+	const Eigen::Vector2d f(p0 + xi(0)*dp - (q0 + xi(1)*dq));
+	const Eigen::Vector2d dxi = Jinv*f;
+	xi -= dxi;
+	error = std::max(std::abs(dxi[0]), std::abs(dxi[1]));
+	cnt++;
+      }
+
+      assert(cnt < 100);
+
+      const Point z = a + xi(0)*(b-a);
+      std::cout << "      Case 3 with Newton:\n"
+		<< "      " <<tools::plot(z,"'go'") << std::endl;
+    }
 
     intersection.push_back(z);
   }
@@ -390,15 +436,34 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
 	unique = false;
 	break;
       }
+      std::cout.precision(22);
+      std::cout << " found " << tools::plot(points[i])<<"=="<<tools::plot(points[j])<<": " << (!unique) << std::endl;
+      //std::cout << " found " << points[i].x()-points[j].x() << ' ' << points[i].y()-points[j].y()<< ' '<<(!unique) << std::endl;
     }
     if (unique)
       unique_points.push_back(points[i]);
   }
 
+  std::cout << __FUNCTION__<< " gave unique points: ";
+  for (const Point p: unique_points)
+    std::cout << tools::plot(p);
+  std::cout << std::endl;
+
   return unique_points;
 
   // std::cout << "case 6"<<std::endl;
   // return intersection;
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -828,6 +893,10 @@ IntersectionConstruction::_intersection_triangle_triangle_2d(const Point& p0,
 							     const Point& q1,
 							     const Point& q2)
 {
+
+  std::cout << __FUNCTION__<<" intersection of\n"
+  	    << tools::drawtriangle({p0,p1,p2})<<tools::drawtriangle({q0,q1,q2})<<std::endl;
+
   std::vector<Point> points_0 = intersection_triangle_segment_2d(p0, p1, p2,
 								 q0, q1);
 
