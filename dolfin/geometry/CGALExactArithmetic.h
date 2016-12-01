@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-11-28
+// Last changed: 2016-12-01
 //
 // Developer note:
 //
@@ -55,7 +55,7 @@
 
 // FIXME
 #define PPause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
-
+#include <iomanip>
 
 
 // Check that results from DOLFIN and CGAL match
@@ -148,14 +148,14 @@ namespace dolfin
 	     const std::vector<Point>& input_result_cgal,
 	     std::string function)
   {
-    std::cout << __FUNCTION__<<" from function " << function << ": "
-	      << "dolfin ";
-    for (const Point& p: input_result_dolfin)
-      std::cout << p;
-    std::cout << " cgal ";
-    for (const Point& p: input_result_cgal)
-      std::cout << p;
-    std::cout << std::endl;
+    std::cout << __FUNCTION__<<" from function " << function << ": ";
+    // 	      << "dolfin ";
+    // for (const Point& p: input_result_dolfin)
+    //   std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << p;
+    // std::cout << " cgal ";
+    // for (const Point& p: input_result_cgal)
+    //   std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << p;
+    // std::cout << std::endl;
 
     // create unique
     const std::vector<Point> result_dolfin = unique_points(input_result_dolfin);
@@ -164,11 +164,18 @@ namespace dolfin
     std::cout << " after unique: "
 	      << "dolfin ";
     for (const Point& p: result_dolfin)
-      std::cout << p;
+    {
+      for (std::size_t d = 0; d < 3; ++d)
+	std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << p[d] << ' ';
+      std::cout << std::endl;
+    }
     std::cout << " cgal ";
     for (const Point& p: result_cgal)
-      std::cout << p;
-    std::cout << std::endl;
+    {
+      for (std::size_t d = 0; d < 3; ++d)
+	std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << p[d] << ' ';
+      std::cout << std::endl;
+    }
 
     // Make sure all points are found
     for (std::size_t i = 0; i < result_dolfin.size(); ++i)
