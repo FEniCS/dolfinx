@@ -46,8 +46,15 @@ message(STATUS "Checking for package 'SLEPc'")
 # Find SLEPc pkg-config file
 find_package(PkgConfig REQUIRED)
 set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 
-pkg_search_module(SLEPC crayslepc_real SLEPc IMPORTED_TARGET)
+set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}:$ENV{PETSC_DIR}:$ENV{PKG_CONFIG_PATH}")
+
+message("*** Boo")
+pkg_search_module(PETSC PETSc)
+message("*** Search SLEPc")
+pkg_search_module(SLEPC crayslepc_real SLEPc)
+#message(FATAL_ERROR "*** End search SLEPc")
 
 # Extract major, minor, etc from version string
 if (SLEPC_VERSION)
@@ -56,6 +63,7 @@ if (SLEPC_VERSION)
   list(GET VERSION_LIST 1 SLEPC_VERSION_MINOR)
   list(GET VERSION_LIST 2 SLEPC_VERSION_SUBMINOR)
 endif()
+message("*** version: ${SLEPC_VERSION}")
 
 # Configure SLEPc IMPORT (this involves creating an 'imported' target
 # and attaching 'properties')
@@ -75,7 +83,7 @@ if (SLEPC_FOUND AND NOT TARGET SLEPC::slepc)
   endforeach()
   set_property(TARGET SLEPC::slepc PROPERTY INTERFACE_LINK_LIBRARIES "${_libs}")
 
-    # Add libraries (static)
+  # Add libraries (static)
   unset(_libs)
   set(_SLEPC_STATIC_LIBRARIES)
   foreach (lib ${SLEPC_STATIC_LIBRARIES})
@@ -85,6 +93,8 @@ if (SLEPC_FOUND AND NOT TARGET SLEPC::slepc)
   set_property(TARGET SLEPC::slepc_static PROPERTY INTERFACE_LINK_LIBRARIES "${_SLEPC_STATIC_LIBRARIES}")
 
 endif()
+
+
 
 # Compile and run test
 if (DOLFIN_SKIP_BUILD_TESTS)

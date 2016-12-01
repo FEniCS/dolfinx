@@ -118,13 +118,8 @@ endif()
 # SLEPC
 if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_SLEPC AND SLEPC_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_SLEPC")
-  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${SLEPC_INCLUDE_DIRS})
-  #target_link_libraries(dolfin PUBLIC ${SLEPC_LIBRARIES})
-  #target_include_directories(dolfin PUBLIC SLEPC::slepc)
   target_link_libraries(dolfin PUBLIC SLEPC::slepc)
-  if (SLEPC_STATIC_LIBRARIES)
-    target_link_libraries(dolfin PRIVATE ${SLEPC_STATIC_LIBRARIES})
-  endif()
+  target_link_libraries(dolfin PRIVATE PETSC::petsc_static)
 endif()
 
 # PETSc

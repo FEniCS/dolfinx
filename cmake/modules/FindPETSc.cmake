@@ -105,7 +105,7 @@ if (DOLFIN_SKIP_BUILD_TESTS)
   # FIXME: Need to add option for linkage type
   # Assume PETSc works, and assume shared linkage
   set(PETSC_TEST_RUNS TRUE)
-  unset(PETSC_STATIC_LIBRARIES CACHE)
+  set_property(TARGET PETSC::petsc_static PROPERTY INTERFACE_LINK_LIBRARIES)
 
 elseif (PETSC_FOUND)
 
