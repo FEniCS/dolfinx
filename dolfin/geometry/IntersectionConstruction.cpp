@@ -377,42 +377,144 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
     		<< "   plot("<<zx<<','<<zy<<",'mx','markersize',18);"<<std::endl;
     }
 
+    // {
+    //   // Test newton for f(t,u) = p0 + t(p1 - p0) - q0 - u(q1-q0)
+    //   Eigen::Vector2d p0(a[0], a[1]), p1(b[0], b[1]);
+    //   Eigen::Vector2d dp = p1-p0;
+    //   Eigen::Vector2d q0(c[0], c[1]), q1(d[0], d[1]);
+    //   Eigen::Vector2d dq = q1-q0;
+
+    //   Eigen::Matrix2d J;
+    //   J(0,0) = dp[0];
+    //   J(0,1) = -dq[0];
+    //   J(1,0) = dp[1];
+    //   J(1,1) = -dq[1];
+    //   const double det = J.determinant();
+    //   dolfin_assert(det != 0);
+    //   const Eigen::Matrix2d Jinv = J.inverse();
+
+    //   // Start guess
+    //   Eigen::Vector2d xi(0.5, 0.5);
+
+    //   double error = DOLFIN_EPS + 1;
+    //   int cnt=0;
+
+    //   while (error > DOLFIN_EPS and cnt < 100)
+    //   {
+    // 	const Eigen::Vector2d f(p0 + xi(0)*dp - (q0 + xi(1)*dq));
+    // 	const Eigen::Vector2d dxi = Jinv*f;
+    // 	xi -= dxi;
+    // 	error = std::max(std::abs(dxi[0]), std::abs(dxi[1]));
+    // 	cnt++;
+    //   }
+
+    //   const Point z = a + xi(0)*(b-a);
+    //   std::cout << "      Case 3 with Newton:\n"
+    // 		<< "      " <<tools::plot(z,"'go'") << std::endl;
+
+    //   if (cnt == 100)
+    //   {
+    // 	// No convergence. Check that the newton point is close to a real point
+    // 	bool found = false;
+    // 	for (const Point p: intersection)
+    // 	{
+    // 	  std::cout <<" check point distance " << p.squared_distance(z) << std::endl;
+    // 	  if (p.squared_distance(z) < DOLFIN_EPS_LARGE)
+    // 	  {
+    // 	    found = true;
+    // 	    break;
+    // 	  }
+    // 	}
+    // 	dolfin_assert(found);
+    //   }
+
+    //   const Point w = c + xi(1)*(d-c);
+    //   dolfin_assert((z-w).squared_norm() < DOLFIN_EPS_LARGE);
+    // }
+
+    Point p0 = a, p1 = b, q0 = c, q1 = d;
     {
-      // Test newton for f(t,u) = p0 + t(p1 - p0) - q0 - u(q1-q0)
-      Eigen::Vector2d p0(a[0], a[1]), p1(b[0], b[1]);
-      Eigen::Vector2d dp = p1-p0;
-      Eigen::Vector2d q0(c[0], c[1]), q1(d[0], d[1]);
-      Eigen::Vector2d dq = q1-q0;
+      // Test bisection
 
-      Eigen::Matrix2d J;
-      J(0,0) = dp[0];
-      J(0,1) = -dq[0];
-      J(1,0) = dp[1];
-      J(1,1) = -dq[1];
-      const double det = J.determinant();
-      assert(det != 0);
-      const Eigen::Matrix2d Jinv = J.inverse();
+      const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
+      const Point& ii_intermediate = p0 + alpha*(p1-p0);
+      Point& source = use_p ? (alpha < .5 ? p0 : p1) : (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
+      Point& target = use_p ? (alpha < .5 ? p1 : p0) : (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
 
-      // Start guess
-      Eigen::Vector2d xi(0.5, 0.5);
+      Point& ref_source = use_p ? q0 : p0;
+      Point& ref_target = use_p ? q1 : p1;
 
-      double error = DOLFIN_EPS + 1;
-      int cnt=0;
-
-      while (error > DOLFIN_EPS and cnt < 100)
+      // This should have been picked up earlier
+      //dolfin_assert(std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates())) !=
+      //            std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates())));
+      if (std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates())) == std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates())))
       {
-	const Eigen::Vector2d f(p0 + xi(0)*dp - (q0 + xi(1)*dq));
-	const Eigen::Vector2d dxi = Jinv*f;
-	xi -= dxi;
-	error = std::max(std::abs(dxi[0]), std::abs(dxi[1]));
-	cnt++;
+	dolfin_assert(intersection.size() > 0);
       }
 
-      assert(cnt < 100);
+      // Shewchuk notation
+      Point r = target-source;
 
-      const Point z = a + xi(0)*(b-a);
-      std::cout << "      Case 3 with Newton:\n"
-		<< "      " <<tools::plot(z,"'go'") << std::endl;
+      int iterations = 0;
+      double a = 0;
+      double b = 1;
+
+      const double source_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), source.coordinates());
+      double a_orientation = source_orientation;
+      double b_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), target.coordinates());
+
+      while (std::abs(b-a) > DOLFIN_EPS_LARGE)
+      {
+        // dolfin_assert(std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates())) !=
+        //               std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates())));
+	if (std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates())) ==
+	    std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates())))
+	{
+	  dolfin_assert(intersection.size() > 0);
+	  break;
+	}
+
+        const double new_alpha = (a+b)/2;
+        Point new_point = source+new_alpha*r;
+        const double mid_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), new_point.coordinates());
+
+        if (mid_orientation == 0)
+        {
+          a = new_alpha;
+          b = new_alpha;
+          break;
+        }
+
+        if (std::signbit(source_orientation) == std::signbit(mid_orientation))
+        {
+          a_orientation = mid_orientation;
+          a = new_alpha;
+        }
+        else
+        {
+          b_orientation = mid_orientation;
+          b = new_alpha;
+        }
+
+        iterations++;
+      }
+
+      if (a == b)
+      {
+        //intersection.push_back(source + a*r);
+	const Point z = source + a*r;
+	std::cout << "        Case 3 with bisection equal:\n"
+		  << "        " <<tools::plot(z,"'mo'") << std::endl;
+      }
+      else
+      {
+        //intersection.push_back(source + (a+b)/2*r);
+	const Point z = source + (a+b)/2*r;
+	std::cout << "        Case 3 with bisection half half:\n"
+		  << "        " <<tools::plot(z,"'mo'") << std::endl;
+      }
+
+
     }
 
     intersection.push_back(z);
