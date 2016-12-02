@@ -28,14 +28,18 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
   endif()
 
   if (@PETSC_FOUND@)
-    list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
-    find_package(MPI)
+    set(DOLFIN_SKIP_BUILD_TESTS TRUE)
+    list(APPEND CMAKE_MODULE_PATH
+      "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
+    #find_package(MPI)
     find_package(PETSc REQUIRED)
   endif()
 
   if (@SLEPC_FOUND@)
-    list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
-    find_package(MPI)
+    set(DOLFIN_SKIP_BUILD_TESTS TRUE)
+    list(APPEND CMAKE_MODULE_PATH
+      "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
+    #find_package(MPI)
     find_package(SLEPc REQUIRED)
   endif()
 

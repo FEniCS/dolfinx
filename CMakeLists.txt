@@ -867,20 +867,21 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-version.in
                ${CMAKE_BINARY_DIR}/dolfin-version @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
-        DESTINATION ${DOLFIN_BIN_DIR}
+  DESTINATION ${DOLFIN_BIN_DIR}
   PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
-        OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-        COMPONENT RuntimeExecutables)
+  OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+  COMPONENT RuntimeExecutables)
 
 #------------------------------------------------------------------------------
 # Generate and install utility script dolfin-get-demos
 
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-get-demos.in
-               ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
+  ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
-        DESTINATION ${DOLFIN_BIN_DIR}
-  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-        COMPONENT RuntimeExecutables)
+  DESTINATION ${DOLFIN_BIN_DIR}
+  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+  OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+  COMPONENT RuntimeExecutables)
 
 #------------------------------------------------------------------------------
 # Generate demo files from rst
@@ -993,7 +994,7 @@ endif()
 # Add demo but do not add to default target
 message("**** Add demo dir")
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
-#add_subdirectory(demo EXCLUDE_FROM_ALL)
+add_subdirectory(demo EXCLUDE_FROM_ALL)
 message("**** End Add demo dir")
 
 # Set make program
