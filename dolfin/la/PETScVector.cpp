@@ -703,18 +703,18 @@ void PETScVector::gather(GenericVector& y,
   // Prepare data for index sets (local indices)
   const std::size_t n = indices.size();
 
+  // Initialize vector if empty
   if (_y.empty())
-  {
-    // Initialise vector and make local
-    y.init(MPI_COMM_SELF, n);
-  }
-  else if (y.size() != n || dolfin::MPI::size(y.mpi_comm()))
+    _y.init(MPI_COMM_SELF, n);
+
+  // Check that passed vector is local (and of expected size)
+  if (MPI::size(_y.mpi_comm()) != 1 || _y.size() != n)
   {
     dolfin_error("PETScVector.cpp",
                  "gather vector entries",
-                 "Cannot re-initialize gather vector. Must be empty, or have correct size and be a local vector");
+                 "Gather vector must be empty, or have correct size, "
+                 "and be a local vector");
   }
-
 
   // PETSc will bail out if it receives a NULL pointer even though m
   // == 0.  Can't return from function since function calls are

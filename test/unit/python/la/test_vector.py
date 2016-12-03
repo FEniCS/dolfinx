@@ -23,6 +23,7 @@
 
 from __future__ import print_function
 import pytest
+import numpy
 from dolfin import *
 
 from dolfin_utils.test import *
@@ -165,7 +166,44 @@ class TestVectorForAnyBackend:
         with pytest.raises(TypeError):
             v0.add_local(data[::2])
 
-    #def test_gather(self, any_backend):
+    def test_gather(self, any_backend):
+        # Gather not implemented in Eigen
+        if any_backend == "Eigen":
+            return
+
+        # Create distributed vector of local size 1
+        x = DefaultFactory().create_vector(mpi_comm_world())
+        r = MPI.rank(x.mpi_comm())
+        x.init(x.mpi_comm(), (r, r+1))
+
+        # Create local vector
+        y = DefaultFactory().create_vector(mpi_comm_self())
+
+        # Do the actual test across all rank permutations
+        for target_rank in range(MPI.size(x.mpi_comm())):
+
+            # Set nonzero value on single rank
+            if r == target_rank:
+                x[0] = 42.0  # Set using local index
+            else:
+                x[0] = 0.0  # Set using local index
+            assert numpy.isclose(x.sum(), 42.0)
+
+            # Gather (using global index) and check the result
+            x.gather(y, numpy.array([target_rank], dtype=la_index_dtype()))
+            assert numpy.isclose(y[0], 42.0)
+
+        # Check that distributed gather vector is not accepted
+        if MPI.size(mpi_comm_world()) > 1:
+            z = DefaultFactory().create_vector(mpi_comm_world())
+            with pytest.raises(RuntimeError):
+                x.gather(z, numpy.array([0], dtype=la_index_dtype()))
+
+        # Check that gather vector of wrong size is not accepted
+        z = DefaultFactory().create_vector(mpi_comm_self())
+        z.init(z.mpi_comm(), 3)
+        with pytest.raises(RuntimeError):
+            x.gather(z, numpy.array([0], dtype=la_index_dtype()))
 
     def test_axpy(self, any_backend):
         n = 301
