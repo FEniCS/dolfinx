@@ -193,6 +193,28 @@ class TestVectorForAnyBackend:
             x.gather(y, numpy.array([target_rank], dtype=la_index_dtype()))
             assert numpy.isclose(y[0], 42.0)
 
+            # NumPy array version
+            out = x.gather(numpy.array([target_rank], dtype=la_index_dtype()))
+            assert out.shape == (1,) and numpy.isclose(out[0], 42.0)
+
+            # Test gather on zero
+            out = x.gather_on_zero()
+            if r == 0:
+                expected = numpy.array([42.0 if i == target_rank else 0.0
+                                        for i in range(x.size())])
+            else:
+                expected = numpy.array([])
+            assert out.shape == expected.shape and numpy.allclose(out, expected)
+
+            # Test also the corner case of empty indices on one process
+            if r == target_rank:
+                out = x.gather(numpy.array([], dtype=la_index_dtype()))
+                expected = numpy.array([])
+            else:
+                out = x.gather(numpy.array([target_rank], dtype=la_index_dtype()))
+                expected = numpy.array([42.0])
+            assert out.shape == expected.shape and numpy.allclose(out, expected)
+
         # Check that distributed gather vector is not accepted
         if MPI.size(mpi_comm_world()) > 1:
             z = DefaultFactory().create_vector(mpi_comm_world())
