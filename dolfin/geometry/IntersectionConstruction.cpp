@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-01
+// Last changed: 2016-12-04
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -449,6 +449,11 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
       //            std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates())));
       if (std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates())) == std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates())))
       {
+	std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl
+		  <<"   "<<p0<<p1<<q0<<q1<<std::endl
+		  << "   "<<source <<target<<std::endl
+		  << "   "<<ref_source<<ref_target<<std::endl;
+
 	dolfin_assert(intersection.size() > 0);
       }
 
@@ -470,6 +475,12 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
 	if (std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates())) ==
 	    std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates())))
 	{
+	  std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl
+		    <<"   "<<p0<<p1<<q0<<q1<<std::endl
+		    << "   "<<a<<' '<<b<<std::endl
+		    << "   "<<source <<target <<r<<std::endl
+		    << "   "<<ref_source<<ref_target<<std::endl;
+
 	  dolfin_assert(intersection.size() > 0);
 	  break;
 	}
