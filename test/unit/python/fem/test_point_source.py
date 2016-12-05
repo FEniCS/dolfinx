@@ -27,35 +27,48 @@ parameters["ghost_mode"] = "shared_facet"
 def test_pointsource_vector_node():
     """Tests point source when given constructor PointSource(V, point, mag)
     with a vector """
-    data = [[UnitIntervalMesh(2), Point(0.5), 1],
+    data = [[UnitIntervalMesh(10), Point(0.5), 5],
             [UnitSquareMesh(2,2), Point(0.5, 0.5), 4],
             [UnitCubeMesh(2,2,2), Point(0.5, 0.5, 0.5), 6]]
 
-    for dim in range(3):
-        V = FunctionSpace(data[dim][0], "CG", 1)
+    for dim in range(1):
+        mesh = data[dim][0]
+        point = data[dim][1]
+        g_indices = data[dim][2]
+        V = FunctionSpace(mesh, "CG", 1)
         v = TestFunction(V)
         b = assemble(Constant(0.0)*v*dx)
-        ps = PointSource(V, data[dim][1], 10.0)
+        ps = PointSource(V, point, 10.0)
         ps.apply(b)
-        assert sum(b) == pytest.approx(10.0)
+        print b.array()
+        b_sum = MPI.sum(mesh.mpi_comm(), np.sum(b.array()))
+        assert b_sum == pytest.approx(10.0)
         assert b.array()[data[dim][2]] == pytest.approx(10.0)
 
 def test_pointsource_vector():
     """Tests point source when given constructor PointSource(V, point, mag)
     with a vector that isn't placed at a node for 1D, 2D and 3D. """
-    data = [[UnitIntervalMesh(2), Point(0.25), [1,2]],
+    data = [[UnitIntervalMesh(10), Point(0.05), [9,10]],
             [UnitSquareMesh(1,1), Point(2.0/3.0, 1.0/3.0), [1,2,3]],
             [UnitCubeMesh(1,1,1), Point(2.0/3.0, 1.0/3.0, 1.0/3.0), [1,2,5]]]
 
-    for dim in range(3):
-        V = FunctionSpace(data[dim][0], "CG", 1)
+    for dim in range(1):
+        mesh = data[dim][0]
+        point = data[dim][1]
+        g_indices = data[dim][2]
+
+        V = FunctionSpace(mesh, "CG", 1)
         v = TestFunction(V)
         b = assemble(Constant(0.0)*v*dx)
-        ps = PointSource(V, data[dim][1], 10.0)
+        ps = PointSource(V, point, 10.0)
         ps.apply(b)
-        assert sum(b) == pytest.approx(10.0)
-        n = len(data[dim][2])
+        print b.str(True)
+        b_sum = MPI.sum(mesh.mpi_comm(), np.sum(b.array()))
+        assert b_sum == pytest.approx(10.0)
+
+
+        n = len(g_indices)
         for i in range(n):
-            assert b.array()[data[dim][2][i]] == pytest.approx(10.0/n)
+            assert b.array()[g_indices[i]] == pytest.approx(10.0/n)
 
 test_pointsource_vector_node()

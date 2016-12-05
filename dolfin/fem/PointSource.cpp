@@ -28,6 +28,8 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntityIteratorBase.h>
+#include <dolfin/mesh/Vertex.h>
 #include "FiniteElement.h"
 #include "GenericDofMap.h"
 #include "PointSource.h"
@@ -62,6 +64,7 @@ void PointSource::apply(GenericVector& b)
   const Mesh& mesh = *_function_space->mesh();
   std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
   const unsigned int cell_index = tree->compute_first_entity_collision(_p);
+  info("Cell index: " + std::to_string(cell_index));
 
   // Check that we found the point on at least one processor
   int num_found = 0;
@@ -79,16 +82,41 @@ void PointSource::apply(GenericVector& b)
   // Return if point not found
   if (cell_index == std::numeric_limits<unsigned int>::max())
   {
+    info("Not found on this processor");
     b.apply("add");
     return;
   }
 
   // Create cell
   const Cell cell(mesh, static_cast<std::size_t>(cell_index));
+  int shared = 0;
+  for (VertexIterator v(cell); !v.end(); ++v)
+  {
+    if(v->is_shared()==true)
+    {
+      shared = 1;
+    }
+    info("Is it shared?: " + std::to_string(shared));
+  }
+
+  if(shared == 1)
+  {
+    if (MPI::rank(mesh.mpi_comm()) !=
+	MPI::min(mesh.mpi_comm(), MPI::rank(mesh.mpi_comm())))
+    {
+      info("Not found on this processor");
+      b.apply("add");
+      return;
+    }
+  }
 
   // Cell coordinates
   std::vector<double> coordinate_dofs;
   cell.get_coordinate_dofs(coordinate_dofs);
+  for(int j=0; j<coordinate_dofs.size(); j++)
+  {
+    info("Coords"+ std::to_string(coordinate_dofs[j]));
+  }
 
   // Evaluate all basis functions at the point()
   dolfin_assert(_function_space->element());
