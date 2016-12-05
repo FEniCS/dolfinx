@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-02
+// Last changed: 2016-12-05
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -300,6 +300,10 @@ namespace dolfin
                                           const Point& q1,
                                           const Point& q2,
                                           const Point& q3);
+
+    // Utility function
+    static std::vector<Point> unique_points(std::vector<Point> points);
+
   };
 }
 

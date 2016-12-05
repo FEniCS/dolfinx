@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-04
+// Last changed: 2016-12-05
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -263,30 +263,136 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
   	    << tools::plot(a)<<tools::plot(b)<<tools::plot(c)<<tools::plot(d)<<tools::drawtriangle({a,b})<<tools::drawtriangle({c,d})<<std::endl;
 
   std::vector<Point> intersection;
+  intersection.reserve(4);
+
+  // Check if the segment is actually a point
+  if (a == b)
+  {
+    if (CollisionPredicates::collides_segment_point_2d(c, d, a))
+    {
+      intersection.push_back(a);
+      return intersection;
+    }
+  }
+
+  if (c == d)
+  {
+    if (CollisionPredicates::collides_segment_point_2d(a, b, c))
+    {
+      intersection.push_back(c);
+      return intersection;
+    }
+  }
 
   // First test points to match procedure of
   // _collides_segment_segment_2d.
+  bool found_c = false;
   if (CollisionPredicates::collides_segment_point_2d(a, b, c))
   {
     intersection.push_back(c);
+    found_c = true;
   }
+  bool found_d = false;
   if (CollisionPredicates::collides_segment_point_2d(a, b, d))
   {
     intersection.push_back(d);
+    found_d = true;
   }
+  bool found_a = false;
   if (CollisionPredicates::collides_segment_point_2d(c, d, a))
   {
     intersection.push_back(a);
+    found_a = true;
   }
+  bool found_b = false;
   if (CollisionPredicates::collides_segment_point_2d(c, d, b))
   {
     intersection.push_back(b);
+    found_b = true;
   }
 
   std::cout << " after point collisions: " <<intersection.size()<<" points: ";
   for (const Point p: intersection)
     std::cout << tools::plot(p);
   std::cout << std::endl;
+
+  if (intersection.size() == 1)
+  {
+    return intersection;
+  }
+  else if (intersection.size() > 1)
+  {
+    std::vector<Point> unique = unique_points(intersection);
+    dolfin_assert(intersection.size() == 2 ?
+		  (unique.size() == 1 or unique.size() == 2) :
+		  unique.size() == 2);
+    return unique;
+  }
+
+  // if (intersection.size() == 1)
+  // {
+  //   std::cout << "check " << intersection.size() << " points"<<std::endl;
+  //   // PPause;
+  //   return intersection;
+  // }
+
+  // if (intersection.size() == 2)
+  // {
+  //   std::cout << "check " << intersection.size() << " points"<<std::endl;
+  //   if (intersection[0] == intersection[1])
+  //   {
+  //     std::cout << "same points\n";
+  //     intersection.pop_back();
+  //   }
+  //   else {
+  //     PPause;
+  //   }
+  //   return intersection;
+  // }
+
+  // if (intersection.size() == 3)
+  // {
+  //   std::cout << "check " << intersection.size() << " points"<<std::endl;
+  //   std::vector<Point> unique = unique_points(intersection);
+  //   dolfin_assert(unique.size() == 2);
+
+
+  //   std::vector<Point> unique(2);
+  //   unique[0] = intersection[0];
+  //   bool found = false;
+  //   for (std::size_t i = 1; i < 4; ++i)
+  //     if (unique[0] != intersection[i]) {
+  // 	unique[1] = intersection[i];
+  // 	found = true;
+  // 	break;
+  //     }
+
+  //   if (!found)
+
+  //   PPause;
+  //   return intersection;
+  // }
+
+  // if (intersection.size() == 4)
+  // {
+  //   std::cout << "check " << intersection.size() << " points"<<std::endl;
+  //   std::vector<Point> unique = unique_points(intersection);
+  //   dolfin_assert(unique.size() == 2);
+
+  //   // unique[0] = intersection[0];
+  //   // bool found = false;
+  //   // for (std::size_t i = 1; i < 4; ++i)
+  //   //   if (unique[0] != intersection[i]) {
+  //   // 	unique[1] = intersection[i];
+  //   // 	found = true;
+  //   // 	break;
+  //   //   }
+
+  //   // dolfin_assert(found);
+  //   // PPause;
+  //   return unique;
+  // }
+
 
   const double denom = (b.x()-a.x())*(d.y()-c.y()) - (b.y()-a.y())*(d.x()-c.x());
   const double numer = orient2d(c.coordinates(),d.coordinates(),a.coordinates());
@@ -359,23 +465,23 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
   }
   else if (denom != 0.)
   {
-    const double alpha = numer / denom;
-    const Point z = a + alpha*(b-a);
-    std::cout << "case 3 numer / denom = u = " << numer <<'/'<<denom<<'='<<alpha << std::endl
-    	      << tools::plot(z) << std::endl;
+    //const double alpha = numer / denom;
+    // const Point z = a + alpha*(b-a);
+    // std::cout << "case 3 numer / denom = u = " << numer <<'/'<<denom<<'='<<alpha << std::endl
+    // 	//       << tools::plot(z) << std::endl;
 
-    {
-      std::cout << "   case 3 with TT:\n";
-      typedef ttmath::Big<TTMATH_BITS(22), TTMATH_BITS(104)> TT;
-      const TT ax(a.x()), ay(a.y()), bx(b.x()), by(b.y()), cx(c.x()), cy(c.y()), dx(d.x()), dy(d.y());
-      const TT numer_tt(numer);
-      const TT denom_tt = (bx-ax)*(dy-cy) - (by-ay)*(dx-cx);
-      const TT u_tt = numer_tt / denom_tt;
-      const TT zx = cx + u_tt*(dx - cx);
-      const TT zy = cy + u_tt*(dy - cy);
-      std::cout << "   numer_tt / denom_tt = u_tt = " << u_tt << std::endl
-    		<< "   plot("<<zx<<','<<zy<<",'mx','markersize',18);"<<std::endl;
-    }
+    // {
+    //   std::cout << "   case 3 with TT:\n";
+    //   typedef ttmath::Big<TTMATH_BITS(22), TTMATH_BITS(104)> TT;
+    //   const TT ax(a.x()), ay(a.y()), bx(b.x()), by(b.y()), cx(c.x()), cy(c.y()), dx(d.x()), dy(d.y());
+    //   const TT numer_tt(numer);
+    //   const TT denom_tt = (bx-ax)*(dy-cy) - (by-ay)*(dx-cx);
+    //   const TT u_tt = numer_tt / denom_tt;
+    //   const TT zx = cx + u_tt*(dx - cx);
+    //   const TT zy = cy + u_tt*(dy - cy);
+    //   std::cout << "   numer_tt / denom_tt = u_tt = " << u_tt << std::endl
+    // 		<< "   plot("<<zx<<','<<zy<<",'mx','markersize',18);"<<std::endl;
+    // }
 
     // {
     //   // Test newton for f(t,u) = p0 + t(p1 - p0) - q0 - u(q1-q0)
@@ -432,11 +538,14 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
     //   dolfin_assert((z-w).squared_norm() < DOLFIN_EPS_LARGE);
     // }
 
+
+    Point z;
     Point p0 = a, p1 = b, q0 = c, q1 = d;
     {
       // Test bisection
 
       const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
+      const double alpha = numer / denom;
       const Point& ii_intermediate = p0 + alpha*(p1-p0);
       Point& source = use_p ? (alpha < .5 ? p0 : p1) : (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
       Point& target = use_p ? (alpha < .5 ? p1 : p0) : (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
@@ -513,14 +622,14 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
       if (a == b)
       {
         //intersection.push_back(source + a*r);
-	const Point z = source + a*r;
+	z = source + a*r;
 	std::cout << "        Case 3 with bisection equal:\n"
 		  << "        " <<tools::plot(z,"'mo'") << std::endl;
       }
       else
       {
         //intersection.push_back(source + (a+b)/2*r);
-	const Point z = source + (a+b)/2*r;
+	z = source + (a+b)/2*r;
 	std::cout << "        Case 3 with bisection half half:\n"
 		  << "        " <<tools::plot(z,"'mo'") << std::endl;
       }
@@ -536,33 +645,25 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
   //   return intersection;
   // }
 
-  const std::vector<Point>& points = intersection;
-  std::vector<Point> unique_points;
 
-  for (std::size_t i = 0; i < points.size(); ++i)
-  {
-    bool unique = true;
-    for (std::size_t j = i+1; j < points.size(); ++j)
-    {
-      if (points[i] == points[j])
-      {
-	unique = false;
-	break;
-      }
-      std::cout.precision(22);
-      std::cout << " found " << tools::plot(points[i])<<"=="<<tools::plot(points[j])<<": " << (!unique) << std::endl;
-      //std::cout << " found " << points[i].x()-points[j].x() << ' ' << points[i].y()-points[j].y()<< ' '<<(!unique) << std::endl;
-    }
-    if (unique)
-      unique_points.push_back(points[i]);
-  }
+  std::vector<Point> unique = unique_points(intersection);
 
-  std::cout << __FUNCTION__<< " gave unique points: ";
-  for (const Point p: unique_points)
+  std::cout << __FUNCTION__<< " gave unique points";
+  std::cout << " (" << intersection.size()-unique.size()<< " duplicate pts found)\n";
+  for (const Point p: unique)
     std::cout << tools::plot(p);
   std::cout << std::endl;
 
-  return unique_points;
+
+
+  {
+    std::cout << tools::generate_test(a,b,c,d,__FUNCTION__)<<std::endl;
+  }
+
+
+
+
+  return unique;
 
   // std::cout << "case 6"<<std::endl;
   // return intersection;
@@ -1452,4 +1553,30 @@ IntersectionConstruction::_intersection_tetrahedron_tetrahedron(const Point& p0,
 
 
 }
+//-----------------------------------------------------------------------------
+std::vector<Point>
+IntersectionConstruction::unique_points(std::vector<Point> input_points)
+{
+  // Create a strictly unique list of points
+
+  std::vector<Point> points;
+
+  for (std::size_t i = 0; i < input_points.size(); ++i)
+  {
+    bool unique = true;
+    for (std::size_t j = i+1; j < input_points.size(); ++j)
+    {
+      if (input_points[i] == input_points[j])
+      {
+	unique = false;
+	break;
+      }
+    }
+    if (unique)
+      points.push_back(input_points[i]);
+  }
+
+  return points;
+}
+
 //-----------------------------------------------------------------------------
