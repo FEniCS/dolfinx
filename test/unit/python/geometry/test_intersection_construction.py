@@ -199,6 +199,9 @@ def test_triangle_triangle_2d() :
 							             Point(0.4960412972015322, 0.3953317542541379),
 							             Point(0.5, 0.4060889538943557),
 							             Point(.5, .5))
+    for p in res:
+        print p[0],p[1]
+
     assert len(res) == 2
 
 @skip_in_parallel
@@ -235,88 +238,75 @@ def test_triangle_segment_2D_1():
 
 
 
+'''
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+'''
 @skip_in_parallel
 def test_segment_segment_1():
-    "Case that previously failed in CGAL comparison."
-    p0 = Point(0.70710678118654746172,0.70710678118654746172)
-    p1 = Point(-0.70710678118654757274,-0.70710678118654735069)
-    q0 = Point(-5,-5)
-    q1 = Point(5,5)
+    "Case that failed in CGAL comparison."
+    p0 = Point(-0.50000000000000710543,-0.50000000000000710543)
+    p1 = Point(0.99999999999999955591,-2)
+    q0 = Point(0.9142135623730932581,-1.9142135623730944793)
+    q1 = Point(-0.29289321881346941367,-0.70710678118654635149)
     intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+    # intersection should be 0.91066799144849319703 -1.9106679914484945293
 
-    # intersection should be p0 0.70710678118654746172 0.70710678118654746172
     for p in intersection:
         print p[0],p[1]
 
     assert len(intersection) == 1
+    assert abs(intersection[0] - 0.91066799144849319703) < DOLFIN_EPS
+    assert abs(intersection[1] + 1.9106679914484945293) < DOLFIN_EPS
 
-@skip_in_parallel
+    @skip_in_parallel
 def test_segment_segment_2():
-    "Case that previously failed in CGAL comparison."
-    p0 = Point(0.70710678118654746172, 0.70710678118654746172)
-    p1 = Point(-2.1213203435596423851, 0.70710678118654768376)
-    q0 = Point(-5, -5)
-    q1 = Point(5, 5)
+    "Case that failed in CGAL comparison."
+    p0 = Point(0.70710678118654746172,-0.70710678118654746172)
+    p1 = Point(0.70710678118654612945,0.70710678118654612945)
+    q0 = Point(0.70710678118654612945,0.70710678118654113344)
+    q1 = Point(0.70710678118654657354,0.2928932188134645842)
     intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
-
-    # intersection should be p0 0.70710678118654746172 0.70710678118654746172
+    # intersection should be 0.70710678118654612945 0.7071067811865050512
     for p in intersection:
         print p[0],p[1]
 
     assert len(intersection) == 1
+    assert abs(intersection[0] - 0.70710678118654612945) < DOLFIN_EPS
+    assert abs(intersection[1] - 0.7071067811865050512) < DOLFIN_EPS
 
 @skip_in_parallel
 def test_segment_segment_3():
-    "Case that previously failed in CGAL comparison."
-    p0 = Point(-5, -5)
-    p1 = Point(5, 5)
-    q0 = Point(-0.70710678118654757274,-0.70710678118654735069)
-    q1 = Point(0.70710678118654768376,0.70710678118654723967)
+    "Case that failed in CGAL comparison."
+    p0 = Point(0.70710678118654746172,-0.70710678118654746172)
+    p1 = Point(0.70710678118654612945,0.70710678118654612945)
+    q0 = Point(0.70710678118654757274,-0.097631072937819973756)
+    q1 = Point(0.70710678118654257673,-0.1601886205085209236)
     intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
-
-    # intersection should be  -0.23570226039551583908 -0.23570226039551583908
+    # intersection should be 0.70710678118654679558 -0.10611057050352221132
     for p in intersection:
         print p[0],p[1]
 
     assert len(intersection) == 1
+    assert abs(intersection[0] - 0.70710678118654679558) < DOLFIN_EPS
+    assert abs(intersection[1] + 0.10611057050352221132) < DOLFIN_EPS
 
 @skip_in_parallel
 def test_segment_segment_4():
-    "Case that previously failed in CGAL comparison."
-    p0 = Point(-5, -5)
-    p1 = Point(5, 5)
-    q0 = Point(-0.70710678118654757274,-0.70710678118654735069)
-    q1 = Point(2.1213203435596423851,-0.70710678118654801683)
+    "Case that failed in CGAL comparison."
+    p0 = Point(0.70710678118654746172,-0.70710678118654746172)
+    p1 = Point(3.5527136788005009294e-14,3.5527136788005009294e-14)
+    q0 = Point(0.35355339059326984508,-0.35355339059327078877)
+    q1 = Point(0.70710678118655057034,-0.70710678118654701763)
     intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
-
-    # intersection should be  -0.23570226039551583908 -0.23570226039551583908
+    # intersection should be 0.67572340116162599166 -0.67572340116162288304
     for p in intersection:
         print p[0],p[1]
 
     assert len(intersection) == 1
-
-@skip_in_parallel
-def test_triangle_triangle():
-    "Tri tri case corresponding to test_segment_segment_1 - 4 above"
-    p0 = Point(-5,-5)
-    p1 = Point(5,-5)
-    p2 = Point(5,5)
-    q0 = Point(-0.70710678118654757274,-0.70710678118654735069)
-    q1 = Point(0.70710678118654768376,0.70710678118654723967)
-    q2 = Point(2.1213203435596423851,-0.70710678118654801683)
-    intersection
-    = IntersectionConstruction.intersection_triangle_triangle_2d(p0, p1, p2,
-                                                                 q0, q1, q2)
-
-    '''
-    intersection should be
-    2.1213203435596423851 -0.70710678118654801683
-    -0.70710678118654746172 -0.70710678118654746172
-    -0.23570226039551583908 -0.23570226039551583908
-    0.70710678118654768376 0.70710678118654723967
-    '''
-
-    for p in intersection:
-        print p[0],p[1]
-
-    assert len(intersection) == 4
+    assert abs(intersection[0] - 0.67572340116162599166) < DOLFIN_EPS
+    assert abs(intersection[1] + 0.67572340116162288304) < DOLFIN_EPS
