@@ -64,7 +64,6 @@ void PointSource::apply(GenericVector& b)
   const Mesh& mesh = *_function_space->mesh();
   std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
   const unsigned int cell_index = tree->compute_first_entity_collision(_p);
-  info("Cell index: " + std::to_string(cell_index));
 
   // Check that we found the point on at least one processor
   int num_found = 0;
@@ -89,6 +88,8 @@ void PointSource::apply(GenericVector& b)
 
   // Create cell
   const Cell cell(mesh, static_cast<std::size_t>(cell_index));
+
+  // Finds out if any vertices in that cell are shared
   int shared = 0;
   for (VertexIterator v(cell); !v.end(); ++v)
   {
@@ -99,12 +100,13 @@ void PointSource::apply(GenericVector& b)
     info("Is it shared?: " + std::to_string(shared));
   }
 
+  // If shared only apply point source to lowest ranked process.
   if(shared == 1)
   {
     if (MPI::rank(mesh.mpi_comm()) !=
 	MPI::min(mesh.mpi_comm(), MPI::rank(mesh.mpi_comm())))
     {
-      info("Not found on this processor");
+      info("Added on other processor");
       b.apply("add");
       return;
     }
@@ -113,10 +115,6 @@ void PointSource::apply(GenericVector& b)
   // Cell coordinates
   std::vector<double> coordinate_dofs;
   cell.get_coordinate_dofs(coordinate_dofs);
-  for(int j=0; j<coordinate_dofs.size(); j++)
-  {
-    info("Coords"+ std::to_string(coordinate_dofs[j]));
-  }
 
   // Evaluate all basis functions at the point()
   dolfin_assert(_function_space->element());

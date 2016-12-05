@@ -22,53 +22,67 @@
 import pytest
 import numpy as np
 from dolfin import *
-parameters["ghost_mode"] = "shared_facet"
+#parameters["ghost_mode"] = "shared_facet"
 
 def test_pointsource_vector_node():
     """Tests point source when given constructor PointSource(V, point, mag)
     with a vector """
-    data = [[UnitIntervalMesh(10), Point(0.5), 5],
-            [UnitSquareMesh(2,2), Point(0.5, 0.5), 4],
-            [UnitCubeMesh(2,2,2), Point(0.5, 0.5, 0.5), 6]]
+    data = [[UnitIntervalMesh(10), Point(0.5)],
+            [UnitSquareMesh(10,10), Point(0.5, 0.5)],
+            [UnitCubeMesh(10,10,10), Point(0.5, 0.5, 0.5)]]
 
-    for dim in range(1):
+    for dim in range(3):
         mesh = data[dim][0]
         point = data[dim][1]
-        g_indices = data[dim][2]
         V = FunctionSpace(mesh, "CG", 1)
         v = TestFunction(V)
         b = assemble(Constant(0.0)*v*dx)
         ps = PointSource(V, point, 10.0)
         ps.apply(b)
         print b.array()
+
         b_sum = MPI.sum(mesh.mpi_comm(), np.sum(b.array()))
         assert b_sum == pytest.approx(10.0)
-        assert b.array()[data[dim][2]] == pytest.approx(10.0)
+
+        v2d = vertex_to_dof_map(V)
+        for v in vertices(mesh):
+            if near(v.midpoint().distance(point), 0.0):
+                ind = v2d[v.index()]
+                if ind<len(b.array()):
+                    assert b.array()[ind] == pytest.approx(10.0)
 
 def test_pointsource_vector():
     """Tests point source when given constructor PointSource(V, point, mag)
     with a vector that isn't placed at a node for 1D, 2D and 3D. """
-    data = [[UnitIntervalMesh(10), Point(0.05), [9,10]],
-            [UnitSquareMesh(1,1), Point(2.0/3.0, 1.0/3.0), [1,2,3]],
-            [UnitCubeMesh(1,1,1), Point(2.0/3.0, 1.0/3.0, 1.0/3.0), [1,2,5]]]
+    data = [[UnitIntervalMesh(10), Point(0.05), [0.05]],
+            [UnitSquareMesh(10,10), Point(0.2/3.0, 0.1/3.0),
+             [np.sqrt(2*(0.1/3.0)**2), np.sqrt((0.1/3.0)**2+(0.2/3.0)**2)]],
+            [UnitCubeMesh(1,1,1), Point(3.0/4.0, 1.0/2.0, 1.0/4.0),
+             [np.sqrt((3.0/4.0)**2 + (1.0/2.0)**2 + (1.0/4.0)**2),
+              np.sqrt((1.0/2.0)**2 + 2*(1.0/4.0)**2)]]]
 
-    for dim in range(1):
+
+    for dim in range(3):
         mesh = data[dim][0]
         point = data[dim][1]
-        g_indices = data[dim][2]
+        length = data[dim][2]
 
         V = FunctionSpace(mesh, "CG", 1)
         v = TestFunction(V)
         b = assemble(Constant(0.0)*v*dx)
         ps = PointSource(V, point, 10.0)
         ps.apply(b)
-        print b.str(True)
         b_sum = MPI.sum(mesh.mpi_comm(), np.sum(b.array()))
         assert b_sum == pytest.approx(10.0)
 
+        print b.array()
+        v2d = vertex_to_dof_map(V)
+        for i in range(len(length)):
+            for v in vertices(mesh):
+                if near(v.midpoint().distance(point), length[i]):
+                    ind = v2d[v.index()]
+                    print ind
+                    print b.array()[ind]
+                    #assert b.array()[ind] == pytest.approx(10.0/(mesh.geometry().dim()+1))
 
-        n = len(g_indices)
-        for i in range(n):
-            assert b.array()[g_indices[i]] == pytest.approx(10.0/n)
-
-test_pointsource_vector_node()
+test_pointsource_vector()
