@@ -260,10 +260,10 @@ def test_segment_segment_1():
         print p[0],p[1]
 
     assert len(intersection) == 1
-    assert abs(intersection[0] - 0.91066799144849319703) < DOLFIN_EPS
-    assert abs(intersection[1] + 1.9106679914484945293) < DOLFIN_EPS
+    assert abs(intersection[0][0] - 0.91066799144849319703) < DOLFIN_EPS
+    assert abs(intersection[0][1] + 1.9106679914484945293) < DOLFIN_EPS
 
-    @skip_in_parallel
+@skip_in_parallel
 def test_segment_segment_2():
     "Case that failed in CGAL comparison."
     p0 = Point(0.70710678118654746172,-0.70710678118654746172)
@@ -276,8 +276,8 @@ def test_segment_segment_2():
         print p[0],p[1]
 
     assert len(intersection) == 1
-    assert abs(intersection[0] - 0.70710678118654612945) < DOLFIN_EPS
-    assert abs(intersection[1] - 0.7071067811865050512) < DOLFIN_EPS
+    assert abs(intersection[0][0] - 0.70710678118654612945) < DOLFIN_EPS
+    assert abs(intersection[0][1] - 0.7071067811865050512) < DOLFIN_EPS
 
 @skip_in_parallel
 def test_segment_segment_3():
@@ -292,8 +292,8 @@ def test_segment_segment_3():
         print p[0],p[1]
 
     assert len(intersection) == 1
-    assert abs(intersection[0] - 0.70710678118654679558) < DOLFIN_EPS
-    assert abs(intersection[1] + 0.10611057050352221132) < DOLFIN_EPS
+    assert abs(intersection[0][0] - 0.70710678118654679558) < DOLFIN_EPS
+    assert abs(intersection[0][1] + 0.10611057050352221132) < DOLFIN_EPS
 
 @skip_in_parallel
 def test_segment_segment_4():
@@ -308,5 +308,5 @@ def test_segment_segment_4():
         print p[0],p[1]
 
     assert len(intersection) == 1
-    assert abs(intersection[0] - 0.67572340116162599166) < DOLFIN_EPS
-    assert abs(intersection[1] + 0.67572340116162288304) < DOLFIN_EPS
+    assert abs(intersection[0][0] - 0.67572340116162599166) < DOLFIN_EPS
+    assert abs(intersection[0][1] + 0.67572340116162288304) < DOLFIN_EPS
