@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-05
+// Last changed: 2016-12-06
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -28,6 +28,8 @@
 #include <ttmath/ttmath.h>
 #include </home/august/dolfin_simplex_tools.h>
 #include <Eigen/Dense>
+#include <algorithm>
+// #define augustdebug
 
 
 namespace
@@ -52,6 +54,11 @@ namespace
   {
     return p0.x() != p1.x() || p0.y() != p1.y() || p0.z() != p1.z();
   }
+
+  // inline bool operator<(const dolfin::Point& p0, const dolfin::Point& p1)
+  // {
+  //   return p0.x() < p1.x() && p0.y() < p1.y() && p0.z() < p1.z();
+  // }
 }
 
 using namespace dolfin;
@@ -259,8 +266,10 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
 							   Point c,
 							   Point d)
 {
+#ifdef augustdebug
   std::cout << __FUNCTION__<<std::endl
   	    << tools::plot(a)<<tools::plot(b)<<tools::plot(c)<<tools::plot(d)<<tools::drawtriangle({a,b})<<tools::drawtriangle({c,d})<<std::endl;
+#endif
 
   std::vector<Point> intersection;
   intersection.reserve(4);
@@ -311,11 +320,12 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
     found_b = true;
   }
 
+#ifdef augustdebug
   std::cout << " after point collisions: " <<intersection.size()<<" points: ";
   for (const Point p: intersection)
     std::cout << tools::plot(p);
   std::cout << std::endl;
-
+#endif
   if (intersection.size() == 1)
   {
     return intersection;
@@ -324,9 +334,16 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
   {
     std::vector<Point> unique = unique_points(intersection);
     dolfin_assert(intersection.size() == 2 ?
-		  (unique.size() == 1 or unique.size() == 2) :
-		  unique.size() == 2);
+    		  (unique.size() == 1 or unique.size() == 2) :
+    		  unique.size() == 2);
     return unique;
+    // std::sort(intersection.begin(), intersection.end(), operator<);
+    // std::vector<Point>::iterator last = std::unique(intersection.begin(), intersection.end(), operator==);
+    // std::cout << intersection.size()<<' '<<std::distance(last, intersection.end())<<std::endl;
+    // dolfin_assert(intersection.size() == 2 ?
+    // 		  (last == intersection.end() or std::distance(last, intersection.end()) == 1) :
+    // 		  std::distance(last, intersection.end()) == 1);
+    // return intersection;
   }
 
   // if (intersection.size() == 1)
@@ -403,7 +420,9 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
     // Take the longest distance as a, b
     if (a.squared_distance(b) < c.squared_distance(d))
     {
+#ifdef augustdebug
       std::cout << "  swapped a,b,c,d\n";
+#endif
       std::swap(a, c);
       std::swap(b, d);
     }
@@ -418,7 +437,9 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
     double t1 = (d-a).dot(r) / r2;
     if (t0 > t1)
     {
+#ifdef augustdebug
       std::cout << "  swapped t0 and t1\n";
+#endif
       std::swap(t0, t1);
     }
 
@@ -430,25 +451,29 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
       const Point z1 = a + std::min(1.,(c-a).dot(r) / r2 )*r;
       //const Point z1 = a + std::min(1., (d-a).dot(rn))*rn;
 
+#ifdef augustdebug
       std::cout << "case 1a"<<std::endl;
       std::cout.precision(22);
       std::cout <<"t0="<< t0<<"; t1="<<t1<<"; "<<tools::plot(a)<<tools::plot(b)<<" gave:\n"
       		<<tools::plot(z0,"'r.'")<<tools::plot(z1,"'g.'")<<std::endl;
-
+#endif
       intersection.push_back(z0);
       intersection.push_back(z1);
     }
     else // Disjoint: no intersection
     {
+#ifdef augustdebug
       std::cout << "case 1b"<<std::endl;
+#endif
     }
   }
   else if (denom == 0. and numer != 0.)
   {
     // Parallel, disjoint
+#ifdef augustdebug
     std::cout << "case 2"<<std::endl;
     std::cout << denom<<' '<<numer << std::endl;
-
+#endif
     // {
     //   std::cout << "case 2 with TT\n";
     //   typedef ttmath::Big<TTMATH_BITS(22), TTMATH_BITS(104)> TT;
@@ -554,20 +579,11 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
       Point& ref_target = use_p ? q1 : p1;
 
       // This should have been picked up earlier
-      //dolfin_assert(std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates())) !=
-      //            std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates())));
-      if (std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates())) == std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates())))
-      {
-	std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl
-		  <<"   "<<p0<<p1<<q0<<q1<<std::endl
-		  << "   "<<source <<target<<std::endl
-		  << "   "<<ref_source<<ref_target<<std::endl;
-
-	dolfin_assert(intersection.size() > 0);
-      }
+      dolfin_assert(std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates())) !=
+		    std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates())));
 
       // Shewchuk notation
-      Point r = target-source;
+      const Point r = target-source;
 
       int iterations = 0;
       double a = 0;
@@ -577,22 +593,10 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
       double a_orientation = source_orientation;
       double b_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), target.coordinates());
 
-      while (std::abs(b-a) > DOLFIN_EPS_LARGE)
+      while (std::abs(b-a) > DOLFIN_EPS)
       {
-        // dolfin_assert(std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates())) !=
-        //               std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates())));
-	if (std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates())) ==
-	    std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates())))
-	{
-	  std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl
-		    <<"   "<<p0<<p1<<q0<<q1<<std::endl
-		    << "   "<<a<<' '<<b<<std::endl
-		    << "   "<<source <<target <<r<<std::endl
-		    << "   "<<ref_source<<ref_target<<std::endl;
-
-	  dolfin_assert(intersection.size() > 0);
-	  break;
-	}
+        dolfin_assert(std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates())) !=
+                      std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates())));
 
         const double new_alpha = (a+b)/2;
         Point new_point = source+new_alpha*r;
@@ -615,7 +619,9 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
           b_orientation = mid_orientation;
           b = new_alpha;
         }
-
+#ifdef augustdebug
+	std::cout << iterations << ' ' << a<<' '<<b<<' '<<std::abs(b-a)<<' '<<tools::plot(source + (a+b)/2*r)<<' '<<tools::plot(source+a*r)<<std::endl;
+#endif
         iterations++;
       }
 
@@ -623,15 +629,19 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
       {
         //intersection.push_back(source + a*r);
 	z = source + a*r;
+#ifdef augustdebug
 	std::cout << "        Case 3 with bisection equal:\n"
 		  << "        " <<tools::plot(z,"'mo'") << std::endl;
+#endif
       }
       else
       {
         //intersection.push_back(source + (a+b)/2*r);
 	z = source + (a+b)/2*r;
+#ifdef augustdebug
 	std::cout << "        Case 3 with bisection half half:\n"
 		  << "        " <<tools::plot(z,"'mo'") << std::endl;
+#endif
       }
 
 
@@ -648,17 +658,17 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
 
   std::vector<Point> unique = unique_points(intersection);
 
+#ifdef augustdebug
   std::cout << __FUNCTION__<< " gave unique points";
   std::cout << " (" << intersection.size()-unique.size()<< " duplicate pts found)\n";
   for (const Point p: unique)
     std::cout << tools::plot(p);
   std::cout << std::endl;
-
-
-
   {
     std::cout << tools::generate_test(a,b,c,d,__FUNCTION__)<<std::endl;
   }
+#endif
+
 
 
 
@@ -1107,10 +1117,10 @@ IntersectionConstruction::_intersection_triangle_triangle_2d(const Point& p0,
 							     const Point& q1,
 							     const Point& q2)
 {
-
+#ifdef augustdebug
   std::cout << __FUNCTION__<<" intersection of\n"
   	    << tools::drawtriangle({p0,p1,p2})<<tools::drawtriangle({q0,q1,q2})<<std::endl;
-
+#endif
   std::vector<Point> points_0 = intersection_triangle_segment_2d(p0, p1, p2,
 								 q0, q1);
 
