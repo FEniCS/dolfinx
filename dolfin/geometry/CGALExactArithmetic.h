@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-12-06
+// Last changed: 2016-12-07
 //
 // Developer note:
 //
@@ -52,11 +52,7 @@
 #include <vector>
 #include <algorithm>
 #include <sstream>
-
-// FIXME
-#define PPause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
 #include <iomanip>
-
 
 // Check that results from DOLFIN and CGAL match
 namespace dolfin
@@ -148,34 +144,9 @@ namespace dolfin
 	     const std::vector<Point>& input_result_cgal,
 	     std::string function)
   {
-    std::cout << __FUNCTION__<<" from function " << function << ": ";
-    // 	      << "dolfin ";
-    // for (const Point& p: input_result_dolfin)
-    //   std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << p;
-    // std::cout << " cgal ";
-    // for (const Point& p: input_result_cgal)
-    //   std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << p;
-    // std::cout << std::endl;
-
     // create unique
     const std::vector<Point> result_dolfin = unique_points(input_result_dolfin);
     const std::vector<Point> result_cgal = unique_points(input_result_cgal);
-
-    std::cout << " after unique: "
-	      << "dolfin ";
-    for (const Point& p: result_dolfin)
-    {
-      for (std::size_t d = 0; d < 3; ++d)
-	std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << p[d] << ' ';
-      std::cout << std::endl;
-    }
-    std::cout << " cgal ";
-    for (const Point& p: result_cgal)
-    {
-      for (std::size_t d = 0; d < 3; ++d)
-	std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << p[d] << ' ';
-      std::cout << std::endl;
-    }
 
     // Make sure all points are found
     for (std::size_t i = 0; i < result_dolfin.size(); ++i)
@@ -191,10 +162,9 @@ namespace dolfin
       }
       if (!found)
       {
-	// dolfin_error("CGALExactArithmetic.h",
-	// 	     "check_cgal",
-	// 	     "Point in result_dolfin not found.");
-	PPause;
+	dolfin_error("CGALExactArithmetic.h",
+		     "check_cgal",
+		     "Point in result_dolfin not found.");
       }
     }
 
@@ -212,10 +182,9 @@ namespace dolfin
       }
       if (!found)
       {
-	// dolfin_error("CGALExactArithmetic.h",
-	// 	     "check_cgal",
-	// 	     "Point in result_cgal not found.");
-	PPause;
+	dolfin_error("CGALExactArithmetic.h",
+		     "check_cgal",
+		     "Point in result_cgal not found.");
       }
     }
 
@@ -1140,27 +1109,27 @@ namespace dolfin
     {
       if (const Point_2* p = boost::get<Point_2>(&*ii))
       {
-        std::cout << "CGAL: Intersection is point" << std::endl;
+        //std::cout << "CGAL: Intersection is point" << std::endl;
         intersection.push_back(convert_from_cgal(*p));;
       }
       else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
       {
-        std::cout << "CGAL: Intersection is segment: (" << s->source() << ", " << s->target() << ")" << std::endl;
+        //std::cout << "CGAL: Intersection is segment: (" << s->source() << ", " << s->target() << ")" << std::endl;
         intersection = convert_from_cgal(*s);
       }
       else if (const Triangle_2* t = boost::get<Triangle_2>(&*ii))
       {
-        std::cout << "CGAL: Intersection is triangle" << std::endl;
-        std::cout << "Area: " << std::abs(CGAL::to_double(t->area())) << std::endl;
+        //std::cout << "CGAL: Intersection is triangle" << std::endl;
+        //std::cout << "Area: " << std::abs(CGAL::to_double(t->area())) << std::endl;
         intersection = convert_from_cgal(*t);;
       }
       else if (const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii))
       {
-        std::cout << "CGAL: Intersection is polygon (" << cgal_points->size() << ")" << std::endl;
+        //std::cout << "CGAL: Intersection is polygon (" << cgal_points->size() << ")" << std::endl;
         for (Point_2 p : *cgal_points)
         {
           intersection.push_back(convert_from_cgal(p));
-          std::cout << p << ", ";
+          //std::cout << p << ", ";
         }
       }
       else
@@ -1200,26 +1169,26 @@ namespace dolfin
     {
       if (const Point_3* p = boost::get<Point_3>(&*ii))
       {
-	std::cout << "CGAL: Intersection is point" << std::endl;
+	//std::cout << "CGAL: Intersection is point" << std::endl;
 	intersection.push_back(convert_from_cgal(*p));;
       }
       else if (const Segment_3* s = boost::get<Segment_3>(&*ii))
       {
-	std::cout << "CGAL: Intersection is segment: (" << s->source() << ", " << s->target() << ")" << std::endl;
+	//std::cout << "CGAL: Intersection is segment: (" << s->source() << ", " << s->target() << ")" << std::endl;
 	intersection = convert_from_cgal(*s);
       }
       else if (const Triangle_3* t = boost::get<Triangle_3>(&*ii))
       {
-	std::cout << "CGAL: Intersection is triangle" << std::endl;
+	//std::cout << "CGAL: Intersection is triangle" << std::endl;
 	intersection = convert_from_cgal(*t);;
       }
       else if (const std::vector<Point_3>* cgal_points = boost::get<std::vector<Point_3>>(&*ii))
       {
-	std::cout << "CGAL: Intersection is polygon (" << cgal_points->size() << ")" << std::endl;
+	//std::cout << "CGAL: Intersection is polygon (" << cgal_points->size() << ")" << std::endl;
 	for (Point_3 p : *cgal_points)
 	{
 	  intersection.push_back(convert_from_cgal(p));
-	  std::cout << p << ", ";
+	  //std::cout << p << ", ";
 	}
       }
       else
