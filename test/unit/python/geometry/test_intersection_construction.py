@@ -318,3 +318,88 @@ def test_segment_segment_4():
     assert len(intersection) == 1
     assert (abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS) or \
         (abs(intersection[0][0] - computed[0]) < DOLFIN_EPS and abs(intersection[0][1] - computed[1]) < DOLFIN_EPS)
+
+'''
+    //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+'''
+@skip_in_parallel
+def test_segment_segment_10():
+    "Case that faila CGAL comparison. We get a different intersection point but still correct area."
+    p0 = Point(0.5257311121191330372,0.5257311121191330372)
+    p1 = Point(-0.3330225275452586287,2.211130026965254736)
+    q0 = Point(0.4584638764865089366,0.6577504954480113408)
+    q1 = Point(0.3968022466674201443,0.7787682579175255748)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    # The intersection should according to CGAL be
+    cgal = Point(0.43271476769028760501, 0.70828596687887079852 )
+
+    # We get
+    computed = Point(0.43175174708592745088, 0.71017600123400592693 )
+
+    assert len(intersection) == 1
+    assert (abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS) or \
+        (abs(intersection[0][0] - computed[0]) < DOLFIN_EPS and abs(intersection[0][1] - computed[1]) < DOLFIN_EPS)
+
+@skip_in_parallel
+def test_segment_segment_11():
+    "Case that faila CGAL comparison. We get a different intersection point but still correct area."
+    p0 = Point(0.5877852522924732481,0.8090169943749473402)
+    p1 = Point(-2.205819241042367818,0.366553510209999156)
+    q0 = Point(-0.6180339887498947915,0.6180339887498949025)
+    q1 = Point(-0.6623669916539393077,0.6110123308970318856)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    # The intersection should according to CGAL be
+    cgal = Point(-0.62784103695643067589, 0.61648070490846706981)
+
+    # We get
+    computed = Point(-0.64532926296564563362, 0.61371084201972847527)
+
+    assert len(intersection) == 1
+    assert (abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS) or \
+        (abs(intersection[0][0] - computed[0]) < DOLFIN_EPS and abs(intersection[0][1] - computed[1]) < DOLFIN_EPS)
+
+def test_segment_segment_12():
+    "Case that faila CGAL comparison. We get a different intersection point but still correct area."
+    p0 = Point(0.2840790438404123819,1)
+    p1 = Point(0.8632712640026805051,-0.1367287359973194949)
+    q0 = Point(0.3404406452539165961,0.8893841289587627319)
+    q1 = Point(0.3968022466674206994,0.7787682579175255748)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    # The intersection should according to CGAL be
+    cgal = Point(0.46507661264164801285, 0.64477226999980374877)
+
+    # We get
+    computed = Point(0.3829134612675635374, 0.80602653405199187198)
+
+    assert len(intersection) == 1
+    assert (abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS) or \
+        (abs(intersection[0][0] - computed[0]) < DOLFIN_EPS and abs(intersection[0][1] - computed[1]) < DOLFIN_EPS)
+
+
+@skip_in_parallel
+def test_segment_segment_13():
+    "Case that faila CGAL comparison. We get a different intersection point but still correct area."
+    p0 = Point(0.3404406452539165961,0.8893841289587627319)
+    p1 = Point(0.3968022466674206994,0.7787682579175255748)
+    q0 = Point(0.2840790438404123819,1)
+    q1 = Point(0.8632712640026805051,-0.1367287359973194949)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    # The intersection should according to CGAL be
+    cgal = Point(0.3829134612675635374, 0.80602653405199187198)
+
+    # We get
+    computed = Point(0.46507661264164801285, 0.64477226999980374877)
+
+    assert len(intersection) == 1
+    assert (abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS) or \
+        (abs(intersection[0][0] - computed[0]) < DOLFIN_EPS and abs(intersection[0][1] - computed[1]) < DOLFIN_EPS)
