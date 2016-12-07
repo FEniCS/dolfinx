@@ -16,13 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-15
+// Last changed: 2016-12-07
 
 #include <dolfin/mesh/MeshEntity.h>
-#include <dolfin/math/basic.h>
 #include "predicates.h"
-#include "CGALExactArithmetic.h"
-#include "GeometryDebugging.h"
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"
 
@@ -256,198 +253,193 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 							   Point q1)
 {
   std::vector<Point> intersection;
+  intersection.reserve(4);
 
-  // Add vertex-vertex collision to the intersection
-  if (p0 == q0 or p0 == q1)
-    intersection.push_back(p0);
-  if (p1 == q0 or p1 == q1)
-    intersection.push_back(p1);
-
-  // Add vertex-"segment interior" collisions to the intersection
-  if (CollisionPredicates::collides_interior_point_segment_2d(q0, q1, p0))
-    intersection.push_back(p0);
-
-  if (CollisionPredicates::collides_interior_point_segment_2d(q0, q1, p1))
-    intersection.push_back(p1);
-
-  if (CollisionPredicates::collides_interior_point_segment_2d(p0, p1, q0))
-    intersection.push_back(q0);
-
-  if (CollisionPredicates::collides_interior_point_segment_2d(p0, p1, q1))
-    intersection.push_back(q1);
-
-  if (intersection.empty())
+  // Check if the segment is actually a point
+  if (p0 == p1)
   {
-    // No collisions in any vertices, so check interior
-    return _intersection_segment_interior_segment_interior_2d(p0, p1, q0, q1);
+    if (CollisionPredicates::collides_segment_point_2d(q0, q1, p0))
+    {
+      intersection.push_back(p0);
+      return intersection;
+    }
   }
 
-  return intersection;
-
-}
-//-----------------------------------------------------------------------------
-// Note that for parallel segments, only vertex-"edge interior" collisions will
-// be returned
-std::vector<Point>
-IntersectionConstruction::_intersection_segment_interior_segment_interior_2d(Point p0,
-                                                                             Point p1,
-                                                                             Point q0,
-                                                                             Point q1)
-{
-  // Shewchuk style
-  const double q0_q1_p0 = orient2d(q0.coordinates(),
-                                   q1.coordinates(),
-                                   p0.coordinates());
-  const double q0_q1_p1 = orient2d(q0.coordinates(),
-                                   q1.coordinates(),
-                                   p1.coordinates());
-  const double p0_p1_q0 = orient2d(p0.coordinates(),
-                                   p1.coordinates(),
-                                   q0.coordinates());
-  const double p0_p1_q1 = orient2d(p0.coordinates(),
-                                   p1.coordinates(),
-                                   q1.coordinates());
-
-  std::vector<Point> intersection;
-
-  if (q0_q1_p0 != 0 && q0_q1_p1 != 0 && p0_p1_q0 != 0 && p0_p1_q1 != 0 &&
-      std::signbit(q0_q1_p0) != std::signbit(q0_q1_p1) && std::signbit(p0_p1_q0) != std::signbit(p0_p1_q1))
+  if (q0 == q1)
   {
-    // Segments intersect in both's interior.
-    // Compute intersection
-    const double denom = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
-    const double numerator = q0_q1_p0;
-    const double alpha = numerator/denom;
-
-    if (std::abs(denom) < DOLFIN_EPS_LARGE)
+    if (CollisionPredicates::collides_segment_point_2d(p0, p1, q0))
     {
-      // FIXME: assume we have parallel lines that intersect. This needs further testing
-      Point a = p0, b = p1, c = q0, d = q1;
+      intersection.push_back(q0);
+      return intersection;
+    }
+  }
 
-      // Take the longest distance as a,b
-      if (a.squared_distance(b) < c.squared_distance(d))
+  // First test points to match procedure of
+  // _collides_segment_segment_2d.
+  if (CollisionPredicates::collides_segment_point_2d(p0, p1, q0))
+  {
+    intersection.push_back(q0);
+  }
+  if (CollisionPredicates::collides_segment_point_2d(p0, p1, q1))
+  {
+    intersection.push_back(q1);
+  }
+  if (CollisionPredicates::collides_segment_point_2d(q0, q1, p0))
+  {
+    intersection.push_back(p0);
+  }
+  if (CollisionPredicates::collides_segment_point_2d(q0, q1, p1))
+  {
+    intersection.push_back(p1);
+  }
+
+  // Due to topology constraints, we may return
+  if (intersection.size() == 1)
+  {
+    return intersection;
+  }
+  else if (intersection.size() > 1)
+  {
+    std::vector<Point> unique = unique_points(intersection);
+    dolfin_assert(intersection.size() == 2 ?
+    		  (unique.size() == 1 or unique.size() == 2) :
+    		  unique.size() == 2);
+    return unique;
+  }
+
+  // Compute numerator and denominator
+  const double denom = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
+  const double numer = orient2d(q0.coordinates(), q1.coordinates(), p0.coordinates());
+
+  if (denom == 0. and numer == 0.)
+  {
+    // p0, p1 is collinear with c, d.
+    // Take the longest distance as p0, p1
+    if (p0.squared_distance(p1) < q0.squared_distance(q1))
+    {
+      std::swap(p0, q0);
+      std::swap(p1, q1);
+    }
+    const Point r = p1 - p0;
+    const double r2 = r.squared_norm();
+    const Point rn = r / std::sqrt(r2);
+
+    // FIXME: what to do if the distance small?
+    dolfin_assert(r2 > DOLFIN_EPS);
+
+    double t0 = (q0 - p0).dot(r) / r2;
+    double t1 = (q1 - p0).dot(r) / r2;
+    if (t0 > t1)
+    {
+      std::swap(t0, t1);
+    }
+
+    if (CollisionPredicates::collides_segment_segment_1d(t0, t1, 0, 1))
+    {
+      // Compute two intersection points
+      const Point z0 = p0 + std::max(0., t0)*r;
+      const Point z1 = p0 + std::min(1., (q0 - p0).dot(r) / r2 )*r;
+      intersection.push_back(z0);
+      intersection.push_back(z1);
+    }
+    // else // Disjoint: no intersection
+    // {
+    // }
+  }
+  // else if (denom == 0. and numer != 0.)
+  // {
+  //   // Parallel, disjoint
+  // }
+  else if (denom != 0.)
+  {
+    // Run bisection
+    const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
+    const double alpha = numer / denom;
+    const Point& ii_intermediate = p0 + alpha*(p1 - p0);
+    Point& source = use_p ? (alpha < .5 ? p0 : p1) :
+      (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
+    Point& target = use_p ? (alpha < .5 ? p1 : p0) :
+      (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
+
+    Point& ref_source = use_p ? q0 : p0;
+    Point& ref_target = use_p ? q1 : p1;
+
+    // This should have been picked up earlier
+    dolfin_assert(std::signbit(orient2d(source.coordinates(),
+					target.coordinates(),
+					ref_source.coordinates())) !=
+		  std::signbit(orient2d(source.coordinates(),
+					target.coordinates(),
+					ref_target.coordinates())));
+
+    // Shewchuk notation
+    const Point r = target - source;
+
+    int iterations = 0;
+    double a = 0;
+    double b = 1;
+
+    const double source_orientation = orient2d(ref_source.coordinates(),
+					       ref_target.coordinates(),
+					       source.coordinates());
+    double a_orientation = source_orientation;
+    double b_orientation = orient2d(ref_source.coordinates(),
+				    ref_target.coordinates(),
+				    target.coordinates());
+
+    while (std::abs(b-a) > DOLFIN_EPS)
+    {
+      dolfin_assert(std::signbit(orient2d(ref_source.coordinates(),
+					  ref_target.coordinates(),
+					  (source + a*r).coordinates())) !=
+		    std::signbit(orient2d(ref_source.coordinates(),
+					  ref_target.coordinates(),
+					  (source + b*r).coordinates())));
+
+      const double new_alpha = (a + b) / 2;
+      Point new_point = source + new_alpha*r;
+      const double mid_orientation = orient2d(ref_source.coordinates(),
+					      ref_target.coordinates(),
+					      new_point.coordinates());
+
+      if (mid_orientation == 0)
       {
-	std::swap(a, c);
-	std::swap(b, d);
+	a = new_alpha;
+	b = new_alpha;
+	break;
       }
 
-      // Assume line is l(t) = a + t*v, where v = b-a. Find location of c and d:
-      const Point v = b - a;
-      const double vnorm2 = v.squared_norm();
-
-      // FIXME Investigate this further if vnorm2 is small
-      dolfin_assert(vnorm2 > DOLFIN_EPS);
-
-      const double tc = v.dot(c - a) / vnorm2;
-      const double td = v.dot(d - a) / vnorm2;
-
-      // Find if c and d are to the left or to the right. Remember
-      // that we assume there is a collision between ab and cd.
-      bool found_a = false;
-      bool found_b = false;
-      if (tc > 0)
+      if (std::signbit(source_orientation) == std::signbit(mid_orientation))
       {
-	if (tc < 1) // tc is now 0 < tc < 1 => between a and b
-	  intersection.push_back(c);
-	else // tc must be larger than b
-	{
-	  intersection.push_back(b);
-	  found_b = true;
-	}
-      }
-      else // tc is to the left of a
-      {
-	intersection.push_back(a);
-	found_a = true;
-      }
-
-      if (td > 0)
-      {
-	if (td < 1)
-	  intersection.push_back(d);
-	else
-	{
-	  dolfin_assert(!found_b);
-	  intersection.push_back(b);
-	}
+	a_orientation = mid_orientation;
+	a = new_alpha;
       }
       else
       {
-	dolfin_assert(!found_a);
-	intersection.push_back(a);
+	b_orientation = mid_orientation;
+	b = new_alpha;
       }
+      iterations++;
+    }
 
-      // // Segment are almost parallel, so result may vulnerable to roundoff
-      // // errors.
-      // // Let's do an iterative bisection instead
-
-      // // FIXME: Investigate using long double for even better precision
-      // // or fall back to exact arithmetic?
-
-      // const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
-      // const Point& ii_intermediate = p0 + alpha*(p1-p0);
-      // Point& source = use_p ? (alpha < .5 ? p0 : p1) : (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
-      // Point& target = use_p ? (alpha < .5 ? p1 : p0) : (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
-
-      // Point& ref_source = use_p ? q0 : p0;
-      // Point& ref_target = use_p ? q1 : p1;
-
-      // dolfin_assert(std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates())) !=
-      //               std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates())));
-
-      // // Shewchuk notation
-      // dolfin::Point r = target-source;
-
-      // int iterations = 0;
-      // double a = 0;
-      // double b = 1;
-
-      // const double source_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), source.coordinates());
-      // double a_orientation = source_orientation;
-      // double b_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), target.coordinates());
-
-      // while (std::abs(b-a) > DOLFIN_EPS_LARGE)
-      // {
-      //   dolfin_assert(std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates())) !=
-      //                 std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates())));
-
-      //   const double new_alpha = (a+b)/2;
-      //   dolfin::Point new_point = source+new_alpha*r;
-      //   const double mid_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), new_point.coordinates());
-
-      //   if (mid_orientation == 0)
-      //   {
-      //     a = new_alpha;
-      //     b = new_alpha;
-      //     break;
-      //   }
-
-      //   if (std::signbit(source_orientation) == std::signbit(mid_orientation))
-      //   {
-      //     a_orientation = mid_orientation;
-      //     a = new_alpha;
-      //   }
-      //   else
-      //   {
-      //     b_orientation = mid_orientation;
-      //     b = new_alpha;
-      //   }
-
-      //   iterations++;
-      // }
-
-      // if (a == b)
-      //   intersection.push_back(source + a*r);
-      // else
-      //   intersection.push_back(source + (a+b)/2*r);
+    Point z;
+    if (a == b)
+    {
+      z = source + a*r;
     }
     else
     {
-      intersection.push_back(alpha > .5 ? p1 - orient2d(q0.coordinates(), q1.coordinates(), p1.coordinates())/denom * (p0-p1) : p0 + numerator/denom * (p1-p0));
+      z = source + (a+b)/2*r;
     }
-  }
 
-  return intersection;
+    intersection.push_back(z);
+  }
+  // else // Not parallel and no intersection
+  // {
+  // }
+
+  std::vector<Point> unique = unique_points(intersection);
+  return unique;
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -479,42 +471,30 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
   if (CollisionPredicates::collides_segment_segment_2d(p0, p1, q0, q1))
   {
     const std::vector<Point> intersection = intersection_segment_segment_2d(p0, p1, q0, q1);
+    // FIXME: Should we require consistency between collision and intersection
+    //dolfin_assert(intersection.size());
     points.insert(points.end(), intersection.begin(), intersection.end());
   }
 
   if (CollisionPredicates::collides_segment_segment_2d(p0, p2, q0, q1))
   {
     const std::vector<Point> intersection = intersection_segment_segment_2d(p0, p2, q0, q1);
+    //dolfin_assert(intersection.size());
     points.insert(points.end(), intersection.begin(), intersection.end());
   }
 
   if (CollisionPredicates::collides_segment_segment_2d(p1, p2, q0, q1))
   {
     const std::vector<Point> intersection = intersection_segment_segment_2d(p1, p2, q0, q1);
+    //dolfin_assert(intersection.size());
     points.insert(points.end(), intersection.begin(), intersection.end());
   }
 
   // Remove strict duplictes. Use exact equality here. Approximate
   // equality is for ConvexTriangulation.
   // FIXME: This can be avoided if we use interior segment tests.
-  std::vector<Point> unique_points;
-
-  for (std::size_t i = 0; i < points.size(); ++i)
-  {
-    bool unique = true;
-    for (std::size_t j = i+1; j < points.size(); ++j)
-    {
-      if (points[i] == points[j])
-      {
-	unique = false;
-	break;
-      }
-    }
-    if (unique)
-      unique_points.push_back(points[i]);
-  }
-
-  return unique_points;
+  std::vector<Point> unique = unique_points(points);
+  return unique;
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -539,92 +519,44 @@ IntersectionConstruction::_intersection_triangle_triangle_2d(const Point& p0,
 							     const Point& q1,
 							     const Point& q2)
 {
-  std::vector<dolfin::Point> points;
+  std::vector<Point> points_0 = intersection_triangle_segment_2d(p0, p1, p2,
+								 q0, q1);
 
-  if (CollisionPredicates::collides_triangle_triangle_2d(p0, p1, p2,
-							 q0, q1, q2))
-  {
-    // Pack points as vectors
-    std::array<Point, 3> tri_0({p0, p1, p2});
-    std::array<Point, 3> tri_1({q0, q1, q2});
+  std::vector<Point> points_1 = intersection_triangle_segment_2d(p0, p1, p2,
+								 q0, q2);
 
-    // Extract coordinates
-    double t0[3][2] = {{p0[0], p0[1]}, {p1[0], p1[1]}, {p2[0], p2[1]}};
-    double t1[3][2] = {{q0[0], q0[1]}, {q1[0], q1[1]}, {q2[0], q2[1]}};
+  std::vector<Point> points_2 = intersection_triangle_segment_2d(p0, p1, p2,
+								 q1, q2);
 
-    // Find all vertex-vertex collision
-    for (std::size_t i = 0; i < 3; i++)
-    {
-      for (std::size_t j = 0; j < 3; j++)
-      {
-	if (tri_0[i] == tri_1[j])
-	  points.push_back(tri_0[i]);
-      }
-    }
+  std::vector<Point> points_3 = intersection_triangle_segment_2d(q0, q1, q2,
+								 p0, p1);
 
-    // Find all vertex-"edge interior" intersections
-    for (std::size_t i = 0; i < 3; i++)
-    {
-      for (std::size_t j = 0; j < 3; j++)
-      {
-	if (tri_0[i] != tri_1[j] && tri_0[(i+1)%3] != tri_1[j] &&
-	    CollisionPredicates::collides_segment_point_2d(tri_0[i], tri_0[(i+1)%3], tri_1[j]))
-	  points.push_back(tri_1[j]);
+  std::vector<Point> points_4 = intersection_triangle_segment_2d(q0, q1, q2,
+								 p0, p2);
 
-	if (tri_1[i] != tri_0[j] && tri_1[(i+1)%3] != tri_0[j] &&
-	    CollisionPredicates::collides_segment_point_2d(tri_1[i], tri_1[(i+1)%3], tri_0[j]))
-	  points.push_back(tri_0[j]);
-      }
-    }
+  std::vector<Point> points_5 = intersection_triangle_segment_2d(q0, q1, q2,
+								 p1, p2);
 
-    // Find all "edge interior"-"edge interior" intersections
-    for (std::size_t i = 0; i < 3; i++)
-    {
-      for (std::size_t j = 0; j < 3; j++)
-      {
-	{
-	  std::vector<Point> triangulation =
-	    intersection_segment_interior_segment_interior_2d(tri_0[i],
-							      tri_0[(i+1)%3],
-							      tri_1[j],
-							      tri_1[(j+1)%3]);
-	  points.insert(points.end(), triangulation.begin(), triangulation.end());
-	}
-      }
-    }
+  std::vector<Point> points;
+  points.insert(points.end(),
+		points_0.begin(), points_0.end());
+  points.insert(points.end(),
+		points_1.begin(), points_1.end());
+  points.insert(points.end(),
+		points_2.begin(), points_2.end());
+  points.insert(points.end(),
+		points_3.begin(), points_3.end());
+  points.insert(points.end(),
+		points_4.begin(), points_4.end());
+  points.insert(points.end(),
+		points_5.begin(), points_5.end());
 
-    // Find alle vertex-"triangle interior" intersections
-    const int s0 = std::signbit(orient2d(t0[0], t0[1], t0[2])) == true ? -1 : 1;
-    const int s1 = std::signbit(orient2d(t1[0], t1[1], t1[2])) == true ? -1 : 1;
 
-    for (std::size_t i = 0; i < 3; ++i)
-    {
-      const double q0_q1_pi = s1*orient2d(t1[0], t1[1], t0[i]);
-      const double q1_q2_pi = s1*orient2d(t1[1], t1[2], t0[i]);
-      const double q2_q0_pi = s1*orient2d(t1[2], t1[0], t0[i]);
-
-      if (q0_q1_pi > 0. and
-	  q1_q2_pi > 0. and
-	  q2_q0_pi > 0.)
-      {
-	points.push_back(tri_0[i]);
-      }
-
-      const double p0_p1_qi = s0*orient2d(t0[0], t0[1], t1[i]);
-      const double p1_p2_qi = s0*orient2d(t0[1], t0[2], t1[i]);
-      const double p2_p0_qi = s0*orient2d(t0[2], t0[0], t1[i]);
-
-      if (p0_p1_qi > 0. and
-	  p1_p2_qi > 0. and
-	  p2_p0_qi > 0.)
-      {
-	points.push_back(tri_1[i]);
-      }
-    }
-
-  }
-
-  return points;
+  // Remove strict duplictes. Use exact equality here. Approximate
+  // equality is for ConvexTriangulation.
+  // FIXME: This can be avoided if we use interior segment tests.
+  std::vector<Point> unique = unique_points(points);
+  return unique;
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -901,4 +833,30 @@ IntersectionConstruction::_intersection_tetrahedron_tetrahedron(const Point& p0,
 
 
 }
+//-----------------------------------------------------------------------------
+std::vector<Point>
+IntersectionConstruction::unique_points(std::vector<Point> input_points)
+{
+  // Create a strictly unique list of points
+
+  std::vector<Point> points;
+
+  for (std::size_t i = 0; i < input_points.size(); ++i)
+  {
+    bool unique = true;
+    for (std::size_t j = i+1; j < input_points.size(); ++j)
+    {
+      if (input_points[i] == input_points[j])
+      {
+	unique = false;
+	break;
+      }
+    }
+    if (unique)
+      points.push_back(input_points[i]);
+  }
+
+  return points;
+}
+
 //-----------------------------------------------------------------------------

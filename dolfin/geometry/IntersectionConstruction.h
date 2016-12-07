@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-02
+// Last changed: 2016-12-07
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -106,18 +106,6 @@ namespace dolfin
       return CHECK_CGAL(_intersection_segment_segment_2d(p0, p1, q0, q1),
                         cgal_intersection_segment_segment_2d(p0, p1, q0, q1));
     }
-
-    /// Compute intersection of segment p0-p1 with segment q0-q1 (2D version)
-    static std::vector<Point>
-    intersection_segment_interior_segment_interior_2d(const Point& p0,
-                                                      const Point& p1,
-                                                      const Point& q0,
-                                                      const Point& q1)
-    {
-      return CHECK_CGAL(_intersection_segment_interior_segment_interior_2d(p0, p1, q0, q1),
-                        cgal_intersection_segment_interior_segment_interior_2d(p0, p1, q0, q1));
-    }
-
 
     /// Compute intersection of segment p0-p1 with segment q0-q1 (3D version)
     static std::vector<Point>
@@ -239,14 +227,6 @@ namespace dolfin
                                      Point q0,
                                      Point q1);
 
-    // return segment segment collisions, excluding collisions (exactly) at vertices
-    static std::vector<Point>
-    _intersection_segment_interior_segment_interior_2d(Point p0,
-                                                       Point p1,
-                                                       Point q0,
-                                                       Point q1);
-
-
     static std::vector<Point>
     _intersection_segment_segment_3d(const Point& p0,
                                      const Point& p1,
@@ -300,6 +280,10 @@ namespace dolfin
                                           const Point& q1,
                                           const Point& q2,
                                           const Point& q3);
+
+    // Utility function
+    static std::vector<Point> unique_points(std::vector<Point> points);
+
   };
 }
 

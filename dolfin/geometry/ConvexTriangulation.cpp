@@ -16,11 +16,9 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2016-11-02
+// Last changed: 2016-12-07
 
 #include "ConvexTriangulation.h"
-#include "CollisionPredicates.h"
-#include "predicates.h"
 #include <algorithm>
 
 //-----------------------------------------------------------------------------
@@ -104,9 +102,12 @@ ConvexTriangulation::triangulate(std::vector<Point> p,
     const std::vector<Point> unique_p = unique_points(p);
 
     if (unique_p.size() > 2)
+    {
       dolfin_error("ConvexTriangulation.cpp",
                    "triangulate convex polyhedron",
                    "a convex polyhedron of topological dimension 1 can not have more then 2 points");
+    }
+
     std::vector<std::vector<Point>> t;
     t.push_back(unique_p);
     return t;
@@ -246,11 +247,8 @@ ConvexTriangulation::triangulate_bowyer_watson(std::vector<Point> input_points,
 
   // Add the super triangle to the triangulation
   std::vector<Triangle> triangles;
-  triangles.push_back(Triangle(a, b, c));
-
-  // FIXME: this check can be removed
-  for (const Point p: points)
-    dolfin_assert(CollisionPredicates::collides_triangle_point_2d(a,b,c, p));
+  Triangle abc(a, b, c);
+  triangles.push_back(abc);
 
   for (const Point p: points)
   {
@@ -301,7 +299,10 @@ ConvexTriangulation::triangulate_bowyer_watson(std::vector<Point> input_points,
 		  polygon.end());
 
     for (const Edge e: polygon)
-      triangles.push_back(Triangle(e.p0, e.p1, p));
+    {
+      Triangle te(e.p0, e.p1, p);
+      triangles.push_back(te);
+    }
   } // end loop over points
 
   triangles.erase(std::remove_if(triangles.begin(), triangles.end(), [a, b, c](Triangle t)

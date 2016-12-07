@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2016-11-14
+// Last changed: 2016-12-07
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -29,9 +29,7 @@
 #include <dolfin/geometry/SimplexQuadrature.h>
 #include <dolfin/geometry/IntersectionConstruction.h>
 #include <dolfin/geometry/ConvexTriangulation.h>
-
-// FIXME: CollisionPredicates is only for is_degenerate
-#include <dolfin/geometry/CollisionPredicates.h>
+#include <dolfin/geometry/GeometryPredicates.h>
 
 #include "Cell.h"
 #include "Facet.h"
@@ -574,7 +572,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	Polyhedron polyhedron_same_tdim;
 	for (const Simplex& s: polyhedron)
 	  if (s.size() == tdim + 1 and
-	      !CollisionPredicates::is_degenerate(s, gdim))
+	      !GeometryPredicates::is_degenerate(s, gdim))
 	    polyhedron_same_tdim.push_back(s);
 
 	// Note that this can be empty
@@ -585,6 +583,13 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       if (num_cutting_cells > 0)
 	_inclusion_exclusion_overlap(overlap_qr, initial_polyhedra,
 				     tdim, gdim, quadrature_order);
+
+      double vol = 0;
+      for (const auto qr: overlap_qr)
+      {
+	for (const double w: qr.second)
+	  vol += w;
+      }
 
       // Store quadrature rules for cut cell
       _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
@@ -777,7 +782,7 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	    // Do not include if the point (or line) is degenerate,
 	    // neither here nor below
 	    if (Eij_part[0].size() == tdim_interface + 1 and
-		!CollisionPredicates::is_degenerate(Eij_part[0], gdim))
+		!GeometryPredicates::is_degenerate(Eij_part[0], gdim))
 	    {
 	      const Simplex& Eij = Eij_part[0];
 
@@ -844,7 +849,7 @@ MultiMesh::_is_overlapped_interface(std::vector<Point> simplex,
   {
     Facet facet_j(cut_cell.mesh(), facet_indices[j]);
     simplex.push_back(facet_j.midpoint());
-    if (CollisionPredicates::is_degenerate(simplex, tdim))
+    if (GeometryPredicates::is_degenerate(simplex, tdim))
     {
       // then we have found the right facet
       simplex.pop_back();
@@ -996,8 +1001,11 @@ void MultiMesh::_inclusion_exclusion_overlap
   for (const std::pair<IncExcKey, Polyhedron>& pol_pair: previous_intersections)
     for (const Simplex& simplex: pol_pair.second)
       if (simplex.size() == tdim + 1)
+      {
+	// std::size_t prevsz = part_qr.second.size();
 	_add_quadrature_rule(part_qr, simplex, gdim,
 			     quadrature_order, 1.);
+      }
 
   // Add quadrature rule for overlap part
   qr[0] = part_qr;
@@ -1013,9 +1021,8 @@ void MultiMesh::_inclusion_exclusion_overlap
       // Loop over all initial polyhedra.
       for (const std::pair<std::size_t, Polyhedron>& initial_polyhedron: initial_polyhedra)
       {
-
-	// test: only check if initial_polyhedron key <
-	// previous_polyhedron key[0]
+	// Only check if initial_polyhedron key < previous_polyhedron
+	// key[0]
 	if (initial_polyhedron.first < previous_polyhedron.first[0])
 	{
 	  // We want to save the intersection of the previous
@@ -1064,7 +1071,7 @@ void MultiMesh::_inclusion_exclusion_overlap
 		  for (const Simplex& simplex: intersection)
                   {
 		    if (simplex.size() == tdim + 1 and
-			!CollisionPredicates::is_degenerate(simplex, gdim))
+			!GeometryPredicates::is_degenerate(simplex, gdim))
 		    {
 		      new_polyhedron.push_back(simplex);
 		      any_intersections = true;
@@ -1102,8 +1109,11 @@ void MultiMesh::_inclusion_exclusion_overlap
     for (const std::pair<IncExcKey, Polyhedron>& polyhedron: new_intersections)
       for (const Simplex& simplex: polyhedron.second)
 	if (simplex.size() == tdim + 1)
+	{
+	  // std::size_t prevsz = overlap_part_qr.second.size();
 	  _add_quadrature_rule(overlap_part_qr, simplex, gdim,
 			       quadrature_order, sign);
+	}
 
     // Add quadrature rule for overlap part
     qr[stage] = overlap_part_qr;
@@ -1164,7 +1174,7 @@ void MultiMesh::_inclusion_exclusion_interface
     for (const Simplex& simplex: pol_pair.second)
     {
       if (simplex.size() == tdim_bulk + 1 and
-	  !CollisionPredicates::is_degenerate(simplex, gdim))
+	  !GeometryPredicates::is_degenerate(simplex, gdim))
       {
 
 	const std::vector<Point> Eij_cap_Tk_points
@@ -1178,7 +1188,7 @@ void MultiMesh::_inclusion_exclusion_interface
 	  for (const Simplex& s: Eij_cap_Tk)
 	  {
 	    if (s.size() == tdim_interface + 1 and
-		!CollisionPredicates::is_degenerate(simplex, gdim))
+		!GeometryPredicates::is_degenerate(simplex, gdim))
 	    {
 	      const std::size_t num_pts
 		= _add_quadrature_rule(qr_stage0, s, gdim,
@@ -1257,7 +1267,7 @@ void MultiMesh::_inclusion_exclusion_interface
 		    for (const Simplex& simplex: intersection)
 		    {
 		      if (simplex.size() == tdim_bulk + 1 and
-			  !CollisionPredicates::is_degenerate(simplex, gdim))
+			  !GeometryPredicates::is_degenerate(simplex, gdim))
 		      {
 			new_polyhedron.push_back(simplex);
 			any_intersections = true;
@@ -1309,7 +1319,7 @@ void MultiMesh::_inclusion_exclusion_interface
 	  for (const Simplex& s: Eij_cap_Tk)
 	  {
 	    if (s.size() == tdim_interface + 1 and
-		!CollisionPredicates::is_degenerate(s, gdim))
+		!GeometryPredicates::is_degenerate(s, gdim))
 	    {
 	      const std::size_t num_pts
 		= _add_quadrature_rule(qr_stage, s, gdim,

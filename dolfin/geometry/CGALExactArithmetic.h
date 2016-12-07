@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-11-17
+// Last changed: 2016-12-07
 //
 // Developer note:
 //
@@ -34,7 +34,7 @@
 // Define or undefine this flag for enabling or disabling CGAL and
 // exact arithmetic:
 
-// #define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
+//#define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
 
 #ifndef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
 
@@ -52,7 +52,7 @@
 #include <vector>
 #include <algorithm>
 #include <sstream>
-
+#include <iomanip>
 
 // Check that results from DOLFIN and CGAL match
 namespace dolfin
@@ -86,58 +86,135 @@ namespace dolfin
 
   inline double volume(std::vector<Point> s)
   {
+    // Compute volume of simplex s
+
     if (s.size() < 3)
       return 0;
+
     else if (s.size() == 3)
     {
-      return 0.5 * std::abs(orient2d(s[0].coordinates(),
-				     s[1].coordinates(),
-				     s[2].coordinates()));
+      return std::abs(orient2d(s[0].coordinates(),
+			       s[1].coordinates(),
+			       s[2].coordinates())) / 2;
     }
     else if (s.size() == 4)
     {
       return std::abs(orient3d(s[0].coordinates(),
 			       s[1].coordinates(),
 			       s[2].coordinates(),
-			       s[3].coordinates())) / 6.;
+			       s[3].coordinates())) / 6;
     }
     else {
+
       dolfin_error("CGALExactArithmetic.h",
 		   "volume",
 		   "Volume of simplex with %s points not implemented.", s.size());
     }
+
     return 0;
   }
 
-  inline const std::vector<Point>&
-  check_cgal(const std::vector<Point>& result_dolfin,
-	     const std::vector<Point>& result_cgal,
+  inline std::vector<Point>
+  unique_points(const std::vector<Point>& input_points)
+  {
+    // Create a unique list of points in the sense that |p-q|^2 > DOLFIN_EPS
+
+    std::vector<Point> points;
+
+    for (std::size_t i = 0; i < input_points.size(); ++i)
+    {
+      bool unique = true;
+      for (std::size_t j = i+1; j < input_points.size(); ++j)
+      {
+	if ((input_points[i] - input_points[j]).squared_norm() < DOLFIN_EPS)
+	{
+	  unique = false;
+	  break;
+	}
+      }
+      if (unique)
+	points.push_back(input_points[i]);
+    }
+    return points;
+  }
+
+  //inline const std::vector<Point>&
+  inline std::vector<Point>
+  check_cgal(const std::vector<Point>& input_result_dolfin,
+	     const std::vector<Point>& input_result_cgal,
 	     std::string function)
   {
-    // compare volume
-    const double dolfin_volume = volume(result_dolfin);
-    const double cgal_volume = volume(result_cgal);
+    // create unique
+    const std::vector<Point> result_dolfin = unique_points(input_result_dolfin);
+    const std::vector<Point> result_cgal = unique_points(input_result_cgal);
 
-    if (std::abs(dolfin_volume - cgal_volume) > CGAL_CHECK_TOLERANCE)
+    // Make sure all points are found
+    for (std::size_t i = 0; i < result_dolfin.size(); ++i)
     {
-      std::stringstream s_dolfin, s_cgal, s_error;
-      s_dolfin.precision(16);
-      s_dolfin << dolfin_volume;
-      s_cgal.precision(16);
-      s_cgal << cgal_volume;
-      s_error.precision(16);
-      s_error << std::abs(dolfin_volume - cgal_volume);
+      bool found = false;
+      for (std::size_t j = 0; j < result_cgal.size(); ++j)
+      {
+	if ((result_dolfin[i] - result_cgal[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
+	{
+	  found = true;
+	  break;
+	}
+      }
+      if (!found)
+      {
+	dolfin_error("CGALExactArithmetic.h",
+		     "check_cgal",
+		     "Point in result_dolfin not found.");
+      }
+    }
 
-      dolfin_error("CGALExactArithmetic.h",
-		   "verify intersections due to different volumes (single simplex version)",
-		   "Error in function %s\n CGAL volume %s\n DOLFIN volume %s\n error %s\n",
-		   function.c_str(),
-		   s_cgal.str().c_str(),
-		   s_dolfin.str().c_str(),
-		   s_error.str().c_str());
+    // Make sure all points are found
+    for (std::size_t i = 0; i < result_cgal.size(); ++i)
+    {
+      bool found = false;
+      for (std::size_t j = 0; j < result_dolfin.size(); ++j)
+      {
+	if ((result_cgal[i] - result_dolfin[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
+	{
+	  found = true;
+	  break;
+	}
+      }
+      if (!found)
+      {
+	dolfin_error("CGALExactArithmetic.h",
+		     "check_cgal",
+		     "Point in result_cgal not found.");
+      }
     }
 
     return result_dolfin;
+
+
+    // // compare volume
+    // const double dolfin_volume = volume(result_dolfin);
+    // const double cgal_volume = volume(result_cgal);
+
+    // if (std::abs(dolfin_volume - cgal_volume) > CGAL_CHECK_TOLERANCE)
+    // {
+    //   std::stringstream s_dolfin, s_cgal, s_error;
+    //   s_dolfin.precision(16);
+    //   s_dolfin << dolfin_volume;
+    //   s_cgal.precision(16);
+    //   s_cgal << cgal_volume;
+    //   s_error.precision(16);
+    //   s_error << std::abs(dolfin_volume - cgal_volume);
+
+    //   dolfin_error("CGALExactArithmetic.h",
+    // 		   "verify intersections due to different volumes (single simplex version)",
+    // 		   "Error in function %s\n CGAL volume %s\n DOLFIN volume %s\n error %s\n",
+    // 		   function.c_str(),
+    // 		   s_cgal.str().c_str(),
+    // 		   s_dolfin.str().c_str(),
+    // 		   s_error.str().c_str());
+    // }
+
+    // return result_dolfin;
   }
 
   inline const std::vector<std::vector<Point>>&
@@ -247,11 +324,11 @@ namespace dolfin
     return result_dolfin;
   }
 
+
 } // end namespace dolfin
 
 // Comparison macro that calls comparison function
-#define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) RESULT_CGAL
-//check_cgal(RESULT_DOLFIN, RESULT_CGAL, __FUNCTION__)
+#define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) check_cgal(RESULT_DOLFIN, RESULT_CGAL, __FUNCTION__)
 
 // CGAL includes
 #define CGAL_HEADER_ONLY
@@ -1032,27 +1109,27 @@ namespace dolfin
     {
       if (const Point_2* p = boost::get<Point_2>(&*ii))
       {
-        std::cout << "CGAL: Intersection is point" << std::endl;
+        //std::cout << "CGAL: Intersection is point" << std::endl;
         intersection.push_back(convert_from_cgal(*p));;
       }
       else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
       {
-        std::cout << "CGAL: Intersection is segment: (" << s->source() << ", " << s->target() << ")" << std::endl;
+        //std::cout << "CGAL: Intersection is segment: (" << s->source() << ", " << s->target() << ")" << std::endl;
         intersection = convert_from_cgal(*s);
       }
       else if (const Triangle_2* t = boost::get<Triangle_2>(&*ii))
       {
-        std::cout << "CGAL: Intersection is triangle" << std::endl;
-        std::cout << "Area: " << t->area() << std::endl;
+        //std::cout << "CGAL: Intersection is triangle" << std::endl;
+        //std::cout << "Area: " << std::abs(CGAL::to_double(t->area())) << std::endl;
         intersection = convert_from_cgal(*t);;
       }
       else if (const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii))
       {
-        std::cout << "CGAL: Intersection is polygon (" << cgal_points->size() << ")" << std::endl;
+        //std::cout << "CGAL: Intersection is polygon (" << cgal_points->size() << ")" << std::endl;
         for (Point_2 p : *cgal_points)
         {
           intersection.push_back(convert_from_cgal(p));
-          std::cout << p << ", ";
+          //std::cout << p << ", ";
         }
       }
       else
@@ -1092,26 +1169,26 @@ namespace dolfin
     {
       if (const Point_3* p = boost::get<Point_3>(&*ii))
       {
-	std::cout << "CGAL: Intersection is point" << std::endl;
+	//std::cout << "CGAL: Intersection is point" << std::endl;
 	intersection.push_back(convert_from_cgal(*p));;
       }
       else if (const Segment_3* s = boost::get<Segment_3>(&*ii))
       {
-	std::cout << "CGAL: Intersection is segment: (" << s->source() << ", " << s->target() << ")" << std::endl;
+	//std::cout << "CGAL: Intersection is segment: (" << s->source() << ", " << s->target() << ")" << std::endl;
 	intersection = convert_from_cgal(*s);
       }
       else if (const Triangle_3* t = boost::get<Triangle_3>(&*ii))
       {
-	std::cout << "CGAL: Intersection is triangle" << std::endl;
+	//std::cout << "CGAL: Intersection is triangle" << std::endl;
 	intersection = convert_from_cgal(*t);;
       }
       else if (const std::vector<Point_3>* cgal_points = boost::get<std::vector<Point_3>>(&*ii))
       {
-	std::cout << "CGAL: Intersection is polygon (" << cgal_points->size() << ")" << std::endl;
+	//std::cout << "CGAL: Intersection is polygon (" << cgal_points->size() << ")" << std::endl;
 	for (Point_3 p : *cgal_points)
 	{
 	  intersection.push_back(convert_from_cgal(p));
-	  std::cout << p << ", ";
+	  //std::cout << p << ", ";
 	}
       }
       else

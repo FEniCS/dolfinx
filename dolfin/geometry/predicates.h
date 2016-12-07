@@ -12,8 +12,6 @@
 #ifndef PREDICATES_H
 #define PREDICATES_H
 
-#include <dolfin/log/log.h>
-
 // Initialize tolerances for exact arithmetic
 void exactinit();
 
