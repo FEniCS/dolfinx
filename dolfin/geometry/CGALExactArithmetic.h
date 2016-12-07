@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-12-06
+// Last changed: 2016-12-07
 //
 // Developer note:
 //
@@ -34,7 +34,7 @@
 // Define or undefine this flag for enabling or disabling CGAL and
 // exact arithmetic:
 
-//#define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
+#define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
 
 #ifndef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
 
@@ -177,47 +177,60 @@ namespace dolfin
       std::cout << std::endl;
     }
 
-    // Make sure all points are found
-    for (std::size_t i = 0; i < result_dolfin.size(); ++i)
+    if (result_cgal.size() and
+	std::abs(result_cgal[0][0] - 0.3829134612675635374) < DOLFIN_EPS and
+	std::abs(result_cgal[0][1] - 0.80602653405199187198) < DOLFIN_EPS)
     {
-      bool found = false;
-      for (std::size_t j = 0; j < result_cgal.size(); ++j)
-      {
-	if ((result_dolfin[i] - result_cgal[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
-	{
-	  found = true;
-	  break;
-	}
-      }
-      if (!found)
-      {
-	// dolfin_error("CGALExactArithmetic.h",
-	// 	     "check_cgal",
-	// 	     "Point in result_dolfin not found.");
-	PPause;
-      }
+      PPause;
     }
 
-    // Make sure all points are found
-    for (std::size_t i = 0; i < result_cgal.size(); ++i)
-    {
-      bool found = false;
-      for (std::size_t j = 0; j < result_dolfin.size(); ++j)
-      {
-	if ((result_cgal[i] - result_dolfin[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
-	{
-	  found = true;
-	  break;
-	}
-      }
-      if (!found)
-      {
-	// dolfin_error("CGALExactArithmetic.h",
-	// 	     "check_cgal",
-	// 	     "Point in result_cgal not found.");
-	PPause;
-      }
-    }
+    // // Make sure all points are found
+    // for (std::size_t i = 0; i < result_dolfin.size(); ++i)
+    // {
+    //   bool found = false;
+    //   for (std::size_t j = 0; j < result_cgal.size(); ++j)
+    //   {
+    // 	if ((result_dolfin[i] - result_cgal[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
+    // 	{
+    // 	  found = true;
+    // 	  break;
+    // 	}
+    //   }
+    //   if (!found)
+    //   {
+    // 	// dolfin_error("CGALExactArithmetic.h",
+    // 	// 	     "check_cgal",
+    // 	// 	     "Point in result_dolfin not found.");
+    // 	// if (function == "intersection_triangle_triangle_2d")
+    // 	// {
+    // 	//   PPause;
+    // 	// }
+    //   }
+    // }
+
+    // // Make sure all points are found
+    // for (std::size_t i = 0; i < result_cgal.size(); ++i)
+    // {
+    //   bool found = false;
+    //   for (std::size_t j = 0; j < result_dolfin.size(); ++j)
+    //   {
+    // 	if ((result_cgal[i] - result_dolfin[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
+    // 	{
+    // 	  found = true;
+    // 	  break;
+    // 	}
+    //   }
+    //   if (!found)
+    //   {
+    // 	// dolfin_error("CGALExactArithmetic.h",
+    // 	// 	     "check_cgal",
+    // 	// 	     "Point in result_cgal not found.");
+    // 	// if (function == "intersection_triangle_triangle_2d")
+    // 	// {
+    // 	//   PPause;
+    // 	// }
+    //   }
+    // }
 
     return result_dolfin;
 
