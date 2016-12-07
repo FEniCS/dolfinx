@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-06
+// Last changed: 2016-12-07
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -29,7 +29,7 @@
 #include </home/august/dolfin_simplex_tools.h>
 #include <Eigen/Dense>
 #include <algorithm>
-// #define augustdebug
+#define augustdebug
 
 
 namespace
@@ -569,14 +569,31 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
     {
       // Test bisection
 
-      const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
-      const double alpha = numer / denom;
-      const Point& ii_intermediate = p0 + alpha*(p1-p0);
-      Point& source = use_p ? (alpha < .5 ? p0 : p1) : (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
-      Point& target = use_p ? (alpha < .5 ? p1 : p0) : (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
+      // const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
+      // const double alpha = numer / denom;
+      // const Point& ii_intermediate = p0 + alpha*(p1-p0);
+      // Point& source = use_p ?
+      // 	(alpha < .5 ? p0 : p1) :
+      // 	(ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
+      // Point& target = use_p ?
+      // 	(alpha < .5 ? p1 : p0) :
+      // 	(ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
 
-      Point& ref_source = use_p ? q0 : p0;
-      Point& ref_target = use_p ? q1 : p1;
+      // Point& ref_source = use_p ? q0 : p0;
+      // Point& ref_target = use_p ? q1 : p1;
+
+      // std::cout << " source " << tools::plot(source)<<'\n'
+      // 		<< " target " << tools::plot(target) << '\n'
+      // 		<< " ii_intermediate " << tools::plot(ii_intermediate) <<'\n'
+      // 		<< " ref_source " << tools::plot(ref_source) << '\n'
+      // 		<< " ref_target " << tools::plot(ref_target) << '\n'
+      // 		<< " p0p1q0 " << orient2d(p0.coordinates(),p1.coordinates(),q0.coordinates()) << '\n'
+      // 		<< " p0p1q1 " << orient2d(p0.coordinates(),p1.coordinates(),q1.coordinates()) << std::endl;
+
+      Point source = q0;
+      Point target = q1;
+      Point ref_source = p0;
+      Point ref_target = p1;
 
       // This should have been picked up earlier
       dolfin_assert(std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates())) !=
@@ -620,7 +637,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
           b = new_alpha;
         }
 #ifdef augustdebug
-	std::cout << iterations << ' ' << a<<' '<<b<<' '<<std::abs(b-a)<<' '<<tools::plot(source + (a+b)/2*r)<<' '<<tools::plot(source+a*r)<<std::endl;
+	std::cout << iterations << ' ' << a<<' '<<b<<' '<<std::abs(b-a)<<' '<< source_orientation << ' '<< mid_orientation<<' ' << tools::plot(source + (a+b)/2*r)<<' '<<tools::plot(source+a*r)<<std::endl;
 #endif
         iterations++;
       }
