@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-07
+// Last changed: 2016-12-08
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -55,10 +55,10 @@ namespace
     return p0.x() != p1.x() || p0.y() != p1.y() || p0.z() != p1.z();
   }
 
-  // inline bool operator<(const dolfin::Point& p0, const dolfin::Point& p1)
-  // {
-  //   return p0.x() < p1.x() && p0.y() < p1.y() && p0.z() < p1.z();
-  // }
+  inline bool operator<(const dolfin::Point& p0, const dolfin::Point& p1)
+  {
+    return p0.x() <= p1.x() && p0.y() <= p1.y() && p0.z() <= p1.z();
+  }
 }
 
 using namespace dolfin;
@@ -582,7 +582,8 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
       // Point& ref_source = use_p ? q0 : p0;
       // Point& ref_target = use_p ? q1 : p1;
 
-      // std::cout << " source " << tools::plot(source)<<'\n'
+      // std::cout << "denom " << denom << '\n'
+      // 		<< " source " << tools::plot(source)<<'\n'
       // 		<< " target " << tools::plot(target) << '\n'
       // 		<< " ii_intermediate " << tools::plot(ii_intermediate) <<'\n'
       // 		<< " ref_source " << tools::plot(ref_source) << '\n'
@@ -590,10 +591,113 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
       // 		<< " p0p1q0 " << orient2d(p0.coordinates(),p1.coordinates(),q0.coordinates()) << '\n'
       // 		<< " p0p1q1 " << orient2d(p0.coordinates(),p1.coordinates(),q1.coordinates()) << std::endl;
 
-      Point source = q0;
-      Point target = q1;
-      Point ref_source = p0;
-      Point ref_target = p1;
+      // Point source = q0;
+      // Point target = q1;
+      // Point ref_source = p0;
+      // Point ref_target = p1;
+
+      // Create start guess based on topology if almost segments are almost parallel
+      Point source, target, ref_source, ref_target;
+      if (std::abs(denom) > DOLFIN_EPS)
+      {
+	const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
+	const double alpha = numer / denom;
+	const Point& ii_intermediate = p0 + alpha*(p1-p0);
+	source = use_p ?
+	  (alpha < .5 ? p0 : p1) :
+	  (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
+	target = use_p ?
+	  (alpha < .5 ? p1 : p0) :
+	  (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
+
+	ref_source = use_p ? q0 : p0;
+	ref_target = use_p ? q1 : p1;
+      }
+      else
+      {
+
+	// Almost parallel: take interior points as source and target
+	// and the outer points as ref_source and ref_target. Make
+	// also sure that the segments cross (this can be difficult if
+	// t0 or t1 are close to 0 or 1)
+	const Point r = p1 - p0;
+	const double r2 = r.squared_norm();
+	const double t0 = r.dot(q0 - p0);
+	const bool q0_interior = t0 > 0 and q0.squared_distance(p0) < r2;
+	const double t1 = r.dot(q1 - p0);
+	const bool q1_interior = t1 > 0 and q1.squared_distance(p0) < r2;
+
+#ifdef augustdebug
+	std::cout << "XXXX small denom\n";
+	std::cout << " q0_interior " << q0_interior << '\n'
+		  << " q1_interior " << q1_interior << '\n'
+		  << "t0  t1 " << t0 <<  "    "<<t1<<std::endl;
+#endif
+
+	if (q0_interior)
+	{
+	  source = q0;
+	  ref_source = p0;
+	  if (q1_interior)
+	  {
+	    target = q1;
+	    ref_target = p1;
+	  }
+	  else {
+	    target = (t0*t1 > 0) ? p1 : p0;
+	    ref_target = q1;
+	  }
+	}
+	else if (q1_interior)
+	{
+	  source = q1;
+	  ref_source = q0;
+	  if (t0*t1 > 0)
+	  {
+	    target = p1;
+	    ref_target = p0;
+	  }
+	  else
+	  {
+	    target = p0;
+	    ref_target = p1;
+	  }
+	}
+	else { // neither q0 nor q1 is in interior
+	  source = p0;
+	  target = p1;
+	  ref_source = q0;
+	  ref_target = q1;
+	}
+
+	// Verify orientation
+	const double os = orient2d(source.coordinates(),target.coordinates(),ref_source.coordinates());
+	const double ot = orient2d(source.coordinates(),target.coordinates(),ref_target.coordinates());
+	if (std::signbit(os) == std::signbit(ot))
+	{
+	  // This should only happen if the t0 or t1 are ~0 or ~1
+	  dolfin_assert(std::abs(t0) < DOLFIN_EPS_LARGE or std::abs(1-t0) < DOLFIN_EPS_LARGE or
+			std::abs(t1) < DOLFIN_EPS_LARGE or std::abs(1-t1) < DOLFIN_EPS_LARGE);
+	  if (source.squared_distance(ref_target) < DOLFIN_EPS)
+	    std::swap(source, ref_target);
+	  else if (target.squared_distance(ref_target) < DOLFIN_EPS)
+	    std::swap(target, ref_target);
+	  else if (source.squared_distance(ref_source) < DOLFIN_EPS)
+	    std::swap(source, ref_source);
+	  else
+	    std::swap(target, ref_source);
+	}
+      }
+
+#ifdef augustdebug
+      std::cout << "denom " << denom << '\n'
+      		<< " source " << tools::plot(source)<<'\n'
+      		<< " target " << tools::plot(target) << '\n'
+      		<< " ref_source " << tools::plot(ref_source) << '\n'
+      		<< " ref_target " << tools::plot(ref_target) << '\n'
+      		<< " orient2d ref source " << orient2d(source.coordinates(),target.coordinates(),ref_source.coordinates()) << '\n'
+      		<< " orient2d ref target " << orient2d(source.coordinates(),target.coordinates(),ref_target.coordinates()) << std::endl;
+#endif
 
       // This should have been picked up earlier
       dolfin_assert(std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates())) !=
@@ -613,7 +717,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
       while (std::abs(b-a) > DOLFIN_EPS)
       {
         dolfin_assert(std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates())) !=
-                      std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates())));
+		      std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates())));
 
         const double new_alpha = (a+b)/2;
         Point new_point = source+new_alpha*r;
