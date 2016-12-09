@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-12-07
+// Last changed: 2016-12-09
 //
 // Developer note:
 //
@@ -56,6 +56,7 @@
 // FIXME
 #define PPause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
 #include <iomanip>
+
 
 
 // Check that results from DOLFIN and CGAL match
@@ -148,7 +149,7 @@ namespace dolfin
 	     const std::vector<Point>& input_result_cgal,
 	     std::string function)
   {
-    std::cout << __FUNCTION__<<" from function " << function << ": ";
+    std::cout << __FUNCTION__<<" from function " << function << ": \n";
     // 	      << "dolfin ";
     // for (const Point& p: input_result_dolfin)
     //   std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << p;
@@ -168,6 +169,7 @@ namespace dolfin
       for (std::size_t d = 0; d < 3; ++d)
 	std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << p[d] << ' ';
       std::cout << std::endl;
+      std::cout << "plot("<<p[0]<<','<<p[1]<<",'gx');"<<std::endl;
     }
     std::cout << " cgal ";
     for (const Point& p: result_cgal)
@@ -175,62 +177,90 @@ namespace dolfin
       for (std::size_t d = 0; d < 3; ++d)
 	std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << p[d] << ' ';
       std::cout << std::endl;
+      std::cout << "plot("<<p[0]<<','<<p[1]<<",'mo');"<<std::endl;
     }
 
-    if (result_cgal.size() and
-	std::abs(result_cgal[0][0] - 0.3829134612675635374) < DOLFIN_EPS and
-	std::abs(result_cgal[0][1] - 0.80602653405199187198) < DOLFIN_EPS)
+    // Make sure all points are found
+    bool difference = false;
+    for (std::size_t i = 0; i < result_dolfin.size(); ++i)
+    {
+      bool found = false;
+      for (std::size_t j = 0; j < result_cgal.size(); ++j)
+      {
+    	if ((result_dolfin[i] - result_cgal[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
+    	{
+    	  found = true;
+    	  break;
+    	}
+      }
+      if (!found)
+      {
+    	// dolfin_error("CGALExactArithmetic.h",
+    	// 	     "check_cgal",
+    	// 	     "Point in result_dolfin not found.");
+    	// if (function == "intersection_triangle_triangle_2d")
+    	// {
+    	//   PPause;
+    	// }
+	//PPause;
+	difference = true;
+      }
+    }
+
+    // Make sure all points are found
+    for (std::size_t i = 0; i < result_cgal.size(); ++i)
+    {
+      bool found = false;
+      for (std::size_t j = 0; j < result_dolfin.size(); ++j)
+      {
+    	if ((result_cgal[i] - result_dolfin[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
+    	{
+    	  found = true;
+    	  break;
+    	}
+      }
+      if (!found)
+      {
+    	// dolfin_error("CGALExactArithmetic.h",
+    	// 	     "check_cgal",
+    	// 	     "Point in result_cgal not found.");
+    	// if (function == "intersection_triangle_triangle_2d")
+    	// {
+    	//   PPause;
+    	// }
+	// PPause;
+	difference = true;
+      }
+    }
+
+    Point p0(0.43388373911755828694,0.90096886790241903498);
+    Point p1(-0.43388373911755823142,-0.90096886790241903498);
+    Point p2(-2.2358214749223961348,-0.033201389667302572128);
+    const double ref = orient2d(p0.coordinates(), p1.coordinates(), p2.coordinates());
+    bool collides;
+    for (Point point: result_cgal)
+    {
+      if (ref*orient2d(p0.coordinates(), p1.coordinates(), point.coordinates()) >= 0 and
+	  ref*orient2d(p1.coordinates(), p2.coordinates(), point.coordinates()) >= 0 and
+	  ref*orient2d(p2.coordinates(), p0.coordinates(), point.coordinates()) >= 0)
+	collides = true;
+      else
+	collides = false;
+    }
+    for (Point point: result_dolfin)
+    {
+      if (ref*orient2d(p0.coordinates(), p1.coordinates(), point.coordinates()) >= 0 and
+	  ref*orient2d(p1.coordinates(), p2.coordinates(), point.coordinates()) >= 0 and
+	  ref*orient2d(p2.coordinates(), p0.coordinates(), point.coordinates()) >= 0)
+	collides = true;
+      else
+	collides = false;
+    }
+
+    if (difference and collides)
     {
       PPause;
     }
-
-    // // Make sure all points are found
-    // for (std::size_t i = 0; i < result_dolfin.size(); ++i)
-    // {
-    //   bool found = false;
-    //   for (std::size_t j = 0; j < result_cgal.size(); ++j)
-    //   {
-    // 	if ((result_dolfin[i] - result_cgal[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
-    // 	{
-    // 	  found = true;
-    // 	  break;
-    // 	}
-    //   }
-    //   if (!found)
-    //   {
-    // 	// dolfin_error("CGALExactArithmetic.h",
-    // 	// 	     "check_cgal",
-    // 	// 	     "Point in result_dolfin not found.");
-    // 	// if (function == "intersection_triangle_triangle_2d")
-    // 	// {
-    // 	//   PPause;
-    // 	// }
-    //   }
-    // }
-
-    // // Make sure all points are found
-    // for (std::size_t i = 0; i < result_cgal.size(); ++i)
-    // {
-    //   bool found = false;
-    //   for (std::size_t j = 0; j < result_dolfin.size(); ++j)
-    //   {
-    // 	if ((result_cgal[i] - result_dolfin[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
-    // 	{
-    // 	  found = true;
-    // 	  break;
-    // 	}
-    //   }
-    //   if (!found)
-    //   {
-    // 	// dolfin_error("CGALExactArithmetic.h",
-    // 	// 	     "check_cgal",
-    // 	// 	     "Point in result_cgal not found.");
-    // 	// if (function == "intersection_triangle_triangle_2d")
-    // 	// {
-    // 	//   PPause;
-    // 	// }
-    //   }
-    // }
 
     return result_dolfin;
 
