@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-07
+// Last changed: 2016-12-09
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -373,7 +373,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 					ref_target.coordinates())));
 
     // Shewchuk notation
-    const Point r = target - source;
+    // const Point r = target - source;
 
     int iterations = 0;
     double a = 0;
@@ -391,13 +391,13 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     {
       dolfin_assert(std::signbit(orient2d(ref_source.coordinates(),
 					  ref_target.coordinates(),
-					  (source + a*r).coordinates())) !=
+					  ((1-a)*source + a*target).coordinates())) !=
 		    std::signbit(orient2d(ref_source.coordinates(),
 					  ref_target.coordinates(),
-					  (source + b*r).coordinates())));
+					  ((1-b)*source + b*target).coordinates())));
 
       const double new_alpha = (a + b) / 2;
-      Point new_point = source + new_alpha*r;
+      Point new_point = (1-new_alpha)*source + new_alpha*target;
       const double mid_orientation = orient2d(ref_source.coordinates(),
 					      ref_target.coordinates(),
 					      new_point.coordinates());
@@ -425,11 +425,12 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     Point z;
     if (a == b)
     {
-      z = source + a*r;
+      z = (1-a)*source + a*target;
     }
     else
     {
-      z = source + (a+b)/2*r;
+      const double new_alpha = (a + b) / 2;
+      z = (1-new_alpha)*source + new_alpha*target;
     }
 
     intersection.push_back(z);
