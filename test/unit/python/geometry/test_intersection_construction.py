@@ -282,7 +282,7 @@ def test_segment_segment_2():
 
 @skip_in_parallel
 def test_segment_segment_3():
-    "Case that faila CGAL comparison. We get a different intersection point but still correct area."
+    "Case that fails CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.70710678118654746172,-0.70710678118654746172)
     p1 = Point(0.70710678118654612945,0.70710678118654612945)
     q0 = Point(0.70710678118654757274,-0.097631072937819973756)
@@ -302,7 +302,7 @@ def test_segment_segment_3():
 
 @skip_in_parallel
 def test_segment_segment_4():
-    "Case that faila CGAL comparison. We get a different intersection point but still correct area."
+    "Case that fails CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.70710678118654746172,-0.70710678118654746172)
     p1 = Point(3.5527136788005009294e-14,3.5527136788005009294e-14)
     q0 = Point(0.35355339059326984508,-0.35355339059327078877)
@@ -330,7 +330,7 @@ def test_segment_segment_4():
 '''
 @skip_in_parallel
 def test_segment_segment_10():
-    "Case that faila CGAL comparison. We get a different intersection point but still correct area."
+    "Case that fails CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.5257311121191330372,0.5257311121191330372)
     p1 = Point(-0.3330225275452586287,2.211130026965254736)
     q0 = Point(0.4584638764865089366,0.6577504954480113408)
@@ -349,7 +349,7 @@ def test_segment_segment_10():
 
 @skip_in_parallel
 def test_segment_segment_11():
-    "Case that faila CGAL comparison. We get a different intersection point but still correct area."
+    "Case that fails CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.5877852522924732481,0.8090169943749473402)
     p1 = Point(-2.205819241042367818,0.366553510209999156)
     q0 = Point(-0.6180339887498947915,0.6180339887498949025)
@@ -367,7 +367,7 @@ def test_segment_segment_11():
         (abs(intersection[0][0] - computed[0]) < DOLFIN_EPS and abs(intersection[0][1] - computed[1]) < DOLFIN_EPS)
 
 def test_segment_segment_12():
-    "Case that faila CGAL comparison. We get a different intersection point but still correct area."
+    "Case that fails CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.2840790438404123819,1)
     p1 = Point(0.8632712640026805051,-0.1367287359973194949)
     q0 = Point(0.3404406452539165961,0.8893841289587627319)
@@ -387,7 +387,7 @@ def test_segment_segment_12():
 
 @skip_in_parallel
 def test_segment_segment_13():
-    "Case that faila CGAL comparison. We get a different intersection point but still correct area."
+    "Case that fails CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.3404406452539165961,0.8893841289587627319)
     p1 = Point(0.3968022466674206994,0.7787682579175255748)
     q0 = Point(0.2840790438404123819,1)
@@ -407,7 +407,7 @@ def test_segment_segment_13():
 
 @skip_in_parallel
 def test_segment_segment_14():
-    "Case that faila CGAL comparison. We get a different intersection point but still correct area."
+    "Case that fails CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.2840790438404123819,1)
     p1 = Point(0.8632712640026805051,-0.1367287359973194949)
     q0 = Point(0.3404406452539165961,0.8893841289587627319)
