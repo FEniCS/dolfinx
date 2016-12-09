@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-08
+// Last changed: 2016-12-09
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -689,10 +689,14 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
 	}
       }
 
+      // Shewchuk notation
+      // const Point r = target-source;
+
 #ifdef augustdebug
       std::cout << "denom " << denom << '\n'
       		<< " source " << tools::plot(source)<<'\n'
       		<< " target " << tools::plot(target) << '\n'
+		// << " r " << tools::plot(r) << '\n'
       		<< " ref_source " << tools::plot(ref_source) << '\n'
       		<< " ref_target " << tools::plot(ref_target) << '\n'
       		<< " orient2d ref source " << orient2d(source.coordinates(),target.coordinates(),ref_source.coordinates()) << '\n'
@@ -702,9 +706,6 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
       // This should have been picked up earlier
       dolfin_assert(std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates())) !=
 		    std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates())));
-
-      // Shewchuk notation
-      const Point r = target-source;
 
       int iterations = 0;
       double a = 0;
@@ -716,11 +717,14 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
 
       while (std::abs(b-a) > DOLFIN_EPS)
       {
-        dolfin_assert(std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+a*r).coordinates())) !=
-		      std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), (source+b*r).coordinates())));
+#ifdef augustdebug
+	std::cout << orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-a)*source+a*target).coordinates()) <<' '<<orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-b)*source+b*target).coordinates())<<' '<< tools::plot((1-b)*source+b*target)<<' '<<tools::plot(target) <<orient2d(ref_source.coordinates(), ref_target.coordinates(), target.coordinates())<< ' '<<orient2d(ref_source.coordinates(),ref_target.coordinates(), ((1-b)*source+b*target).coordinates())<<std::endl;
+#endif
+        dolfin_assert(std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-a)*source+a*target).coordinates())) !=
+		      std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-b)*source+b*target).coordinates())));
 
         const double new_alpha = (a+b)/2;
-        Point new_point = source+new_alpha*r;
+        Point new_point = (1-new_alpha)*source+new_alpha*target;
         const double mid_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), new_point.coordinates());
 
         if (mid_orientation == 0)
@@ -741,7 +745,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
           b = new_alpha;
         }
 #ifdef augustdebug
-	std::cout << iterations << ' ' << a<<' '<<b<<' '<<std::abs(b-a)<<' '<< source_orientation << ' '<< mid_orientation<<' ' << tools::plot(source + (a+b)/2*r)<<' '<<tools::plot(source+a*r)<<std::endl;
+	std::cout << iterations << ' ' << a<<' '<<b<<' '<<std::abs(b-a)<<' '<< source_orientation << ' '<< mid_orientation<<' ' << tools::plot((1-(a+b)/2)*source + (a+b)/2*target)<<' '<<tools::plot((1-a)*source+a*target)<<std::endl;
 #endif
         iterations++;
       }
@@ -749,7 +753,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
       if (a == b)
       {
         //intersection.push_back(source + a*r);
-	z = source + a*r;
+	z = (1-a)*source + a*target;
 #ifdef augustdebug
 	std::cout << "        Case 3 with bisection equal:\n"
 		  << "        " <<tools::plot(z,"'mo'") << std::endl;
@@ -758,7 +762,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
       else
       {
         //intersection.push_back(source + (a+b)/2*r);
-	z = source + (a+b)/2*r;
+	z = (1-(a+b)/2)*source + (a+b)/2*target;
 #ifdef augustdebug
 	std::cout << "        Case 3 with bisection half half:\n"
 		  << "        " <<tools::plot(z,"'mo'") << std::endl;
