@@ -1,9 +1,13 @@
 Change log
 ==========
 
-
 dev
 ---
+
+- 
+
+2016.2.0 [2016-11-30]
+---------------------
 
 - Updates to XDMFFile interface, now fully supporting MeshFunction and
   MeshValueCollection with multiple named datasets in one file (useful for
