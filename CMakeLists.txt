@@ -858,13 +858,23 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
-# Generate and install helper file dolfin-version
+# Generate and install helper scripts dolfin-version, fenics-version
 
 # FIXME: not cross-platform compatible
-# Create and install dolfin-version file
+
+# Create and install dolfin-version
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-version.in
                ${CMAKE_BINARY_DIR}/dolfin-version @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
+        DESTINATION ${DOLFIN_BIN_DIR}
+  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+        OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+        COMPONENT RuntimeExecutables)
+
+# Create and install fenics-version
+configure_file(${DOLFIN_CMAKE_DIR}/templates/fenics-version.in
+               ${CMAKE_BINARY_DIR}/fenics-version @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/fenics-version
         DESTINATION ${DOLFIN_BIN_DIR}
   PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
         OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
