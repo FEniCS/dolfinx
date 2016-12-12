@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-09
+// Last changed: 2016-12-12
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -29,7 +29,7 @@
 #include </home/august/dolfin_simplex_tools.h>
 #include <Eigen/Dense>
 #include <algorithm>
-#define augustdebug
+// #define augustdebug
 
 
 namespace
@@ -571,266 +571,202 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
 
     Point z;
     Point p0 = a, p1 = b, q0 = c, q1 = d;
-    {
-      // Test bisection
+    // Test bisection
 
-      // const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
-      // const double alpha = numer / denom;
-      // const Point& ii_intermediate = p0 + alpha*(p1-p0);
-      // Point& source = use_p ?
-      // 	(alpha < .5 ? p0 : p1) :
-      // 	(ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
-      // Point& target = use_p ?
-      // 	(alpha < .5 ? p1 : p0) :
-      // 	(ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
+    // const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
+    // const double alpha = numer / denom;
+    // const Point& ii_intermediate = p0 + alpha*(p1-p0);
+    // Point& source = use_p ?
+    // 	(alpha < .5 ? p0 : p1) :
+    // 	(ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
+    // Point& target = use_p ?
+    // 	(alpha < .5 ? p1 : p0) :
+    // 	(ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
 
-      // Point& ref_source = use_p ? q0 : p0;
-      // Point& ref_target = use_p ? q1 : p1;
+    // Point& ref_source = use_p ? q0 : p0;
+    // Point& ref_target = use_p ? q1 : p1;
 
-      // std::cout << "denom " << denom << '\n'
-      // 		<< " source " << tools::plot(source)<<'\n'
-      // 		<< " target " << tools::plot(target) << '\n'
-      // 		<< " ii_intermediate " << tools::plot(ii_intermediate) <<'\n'
-      // 		<< " ref_source " << tools::plot(ref_source) << '\n'
-      // 		<< " ref_target " << tools::plot(ref_target) << '\n'
-      // 		<< " p0p1q0 " << orient2d(p0.coordinates(),p1.coordinates(),q0.coordinates()) << '\n'
-      // 		<< " p0p1q1 " << orient2d(p0.coordinates(),p1.coordinates(),q1.coordinates()) << std::endl;
+    // std::cout << "denom " << denom << '\n'
+    // 		<< " source " << tools::plot(source)<<'\n'
+    // 		<< " target " << tools::plot(target) << '\n'
+    // 		<< " ii_intermediate " << tools::plot(ii_intermediate) <<'\n'
+    // 		<< " ref_source " << tools::plot(ref_source) << '\n'
+    // 		<< " ref_target " << tools::plot(ref_target) << '\n'
+    // 		<< " p0p1q0 " << orient2d(p0.coordinates(),p1.coordinates(),q0.coordinates()) << '\n'
+    // 		<< " p0p1q1 " << orient2d(p0.coordinates(),p1.coordinates(),q1.coordinates()) << std::endl;
 
-      // Point source = q0;
-      // Point target = q1;
-      // Point ref_source = p0;
-      // Point ref_target = p1;
+    // Point source = q0;
+    // Point target = q1;
+    // Point ref_source = p0;
+    // Point ref_target = p1;
 
-      // Create start guess based on topology if almost segments are almost parallel
-      //Point& source = a, target = b, ref_source = c, ref_target = d;
-      // if (std::abs(denom) > DOLFIN_EPS)
-      // {
-      const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
-      const double alpha = numer / denom;
-      const Point& ii_intermediate = (1-alpha)*p0 + alpha*p1;
-      Point& ref_source = use_p ?
-	(alpha < .5 ? p0 : p1) :
-	(ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
-      Point& ref_target = use_p ?
-	(alpha < .5 ? p1 : p0) :
-	(ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
+    // Create start guess based on topology if almost segments are almost parallel
+    //Point& source = a, target = b, ref_source = c, ref_target = d;
+    // if (std::abs(denom) > DOLFIN_EPS)
+    // {
+    const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
+    const double alpha = numer / denom;
+    const Point& ii_intermediate = (1-alpha)*p0 + alpha*p1;
+    Point& source = use_p ?
+      (alpha < .5 ? p0 : p1) :
+      (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
+    Point& target = use_p ?
+      (alpha < .5 ? p1 : p0) :
+      (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
 
-      Point& source = use_p ? q0 : p0;
-      Point& target = use_p ? q1 : p1;
+    Point& ref_source = use_p ? q0 : p0;
+    Point& ref_target = use_p ? q1 : p1;
 
-      // std::cout << "ii_intermediate " << tools::plot(ii_intermediate) << " alpha "<<alpha<<" ii q0 " <<ii_intermediate.squared_distance(q0) <<" ii q1 " <<  ii_intermediate.squared_distance(q1)<< std::endl;
+    // std::cout << "ii_intermediate " << tools::plot(ii_intermediate) << " alpha "<<alpha<<" ii q0 " <<ii_intermediate.squared_distance(q0) <<" ii q1 " <<  ii_intermediate.squared_distance(q1)<< std::endl;
 
-//       }
-//       else
-//       {
+    //       }
+    //       else
+    //       {
 
-// 	// Almost parallel: take interior points as source and target
-// 	// and the outer points as ref_source and ref_target. Make
-// 	// also sure that the segments cross. If t0 or t1 are close to
-// 	// 0 or 1, then we should simply be able to swap eg. source
-// 	// and ref_source. If t0 and t1 are properly inside (0,1)
-// 	// maybe we can try to just select
-// 	const Point r = p1 - p0;
-// 	const double r2 = r.squared_norm();
-// 	const double t0 = r.dot(q0 - p0);
-// 	const bool q0_interior = t0 > 0 and q0.squared_distance(p0) < r2;
-// 	const double t1 = r.dot(q1 - p0);
-// 	const bool q1_interior = t1 > 0 and q1.squared_distance(p0) < r2;
+    // 	// Almost parallel: take interior points as source and target
+    // 	// and the outer points as ref_source and ref_target. Make
+    // 	// also sure that the segments cross. If t0 or t1 are close to
+    // 	// 0 or 1, then we should simply be able to swap eg. source
+    // 	// and ref_source. If t0 and t1 are properly inside (0,1)
+    // 	// maybe we can try to just select
+    // 	const Point r = p1 - p0;
+    // 	const double r2 = r.squared_norm();
+    // 	const double t0 = r.dot(q0 - p0);
+    // 	const bool q0_interior = t0 > 0 and q0.squared_distance(p0) < r2;
+    // 	const double t1 = r.dot(q1 - p0);
+    // 	const bool q1_interior = t1 > 0 and q1.squared_distance(p0) < r2;
 
-// #ifdef augustdebug
-// 	std::cout << "XXXX small denom\n";
-// 	std::cout << " q0_interior " << q0_interior << '\n'
-// 		  << " q1_interior " << q1_interior << '\n'
-// 		  << "t0  t1 " << t0 <<  "    "<<t1<<std::endl;
-// #endif
+    // #ifdef augustdebug
+    // 	std::cout << "XXXX small denom\n";
+    // 	std::cout << " q0_interior " << q0_interior << '\n'
+    // 		  << " q1_interior " << q1_interior << '\n'
+    // 		  << "t0  t1 " << t0 <<  "    "<<t1<<std::endl;
+    // #endif
 
-// 	if (q0_interior)
-// 	{
-// 	  source = q0;
-// 	  if (q1_interior)
-// 	  {
-// 	    target = q1;
-// 	    ref_source = p0;
-// 	    ref_target = p1;
-// 	  }
-// 	  else {
-// 	    if (t0*t1 > 0) {
-// 	      target = p1;
-// 	      ref_source = p0;
-// 	    }
-// 	    else
-// 	    {
-// 	      target = p0;
-// 	      ref_source = p1;
-// 	    }
-// 	    ref_target = q1;
-// 	  }
-// 	}
-// 	else if (q1_interior)
-// 	{
-// 	  source = q1;
-// 	  ref_source = q0;
-// 	  if (t0*t1 > 0)
-// 	  {
-// 	    target = p1;
-// 	    ref_target = p0;
-// 	  }
-// 	  else
-// 	  {
-// 	    target = p0;
-// 	    ref_target = p1;
-// 	  }
-// 	}
-// 	else { // neither q0 nor q1 is in interior
-// 	  source = p0;
-// 	  target = p1;
-// 	  ref_source = q0;
-// 	  ref_target = q1;
-// 	}
+    // 	if (q0_interior)
+    // 	{
+    // 	  source = q0;
+    // 	  if (q1_interior)
+    // 	  {
+    // 	    target = q1;
+    // 	    ref_source = p0;
+    // 	    ref_target = p1;
+    // 	  }
+    // 	  else {
+    // 	    if (t0*t1 > 0) {
+    // 	      target = p1;
+    // 	      ref_source = p0;
+    // 	    }
+    // 	    else
+    // 	    {
+    // 	      target = p0;
+    // 	      ref_source = p1;
+    // 	    }
+    // 	    ref_target = q1;
+    // 	  }
+    // 	}
+    // 	else if (q1_interior)
+    // 	{
+    // 	  source = q1;
+    // 	  ref_source = q0;
+    // 	  if (t0*t1 > 0)
+    // 	  {
+    // 	    target = p1;
+    // 	    ref_target = p0;
+    // 	  }
+    // 	  else
+    // 	  {
+    // 	    target = p0;
+    // 	    ref_target = p1;
+    // 	  }
+    // 	}
+    // 	else { // neither q0 nor q1 is in interior
+    // 	  source = p0;
+    // 	  target = p1;
+    // 	  ref_source = q0;
+    // 	  ref_target = q1;
+    // 	}
 
-// 	// Verify orientation
-// 	const double os = orient2d(ref_source.coordinates(),ref_target.coordinates(),source.coordinates());
-// 	const double ot = orient2d(ref_source.coordinates(),ref_target.coordinates(),target.coordinates());
-// 	if (std::signbit(os) == std::signbit(ot))
-// 	{
-// #ifdef augustdebug
-//       std::cout << "denom " << denom << '\n'
-//       		<< " source " << tools::plot(source)<<'\n'
-//       		<< " target " << tools::plot(target) << '\n'
-// 		// << " r " << tools::plot(r) << '\n'
-//       		<< " ref_source " << tools::plot(ref_source) << '\n'
-//       		<< " ref_target " << tools::plot(ref_target) << '\n'
-//       		<< " orient2d ref source " << orient2d(source.coordinates(),target.coordinates(),ref_source.coordinates()) << '\n'
-//       		<< " orient2d ref target " << orient2d(source.coordinates(),target.coordinates(),ref_target.coordinates()) << std::endl;
-// #endif
-// #ifdef augustdebug
-// 	  std::cout << "check collision:\n"
-// 		    << "rs rt s " << CollisionPredicates::collides_segment_point_2d(ref_source,ref_target,source)<<'\n'
-// 		    <<"rs rt t " << CollisionPredicates::collides_segment_point_2d(ref_source,ref_target,target)<<'\n'
-// 		    <<"seg seg "<< CollisionPredicates::collides_segment_segment_2d(ref_source,ref_target,source,target) << '\n'
-// 		    <<"seg seg p0p1q0q1 "<< CollisionPredicates::collides_segment_segment_2d(p0,p1,q0,q1) << '\n'
-// 		    << "seg seg org " << CollisionPredicates::collides_segment_segment_2d(a, b, c, d)<<'\n'
-// 		    <<"q0 q1 p0 " << CollisionPredicates::collides_segment_point_2d(q0,q1,p0)<<'\n'
-// 		    << "p0p1q0 " << orient2d(p0.coordinates(),p1.coordinates(),q0.coordinates()) << '\n'
-// 		    << "q0q1p0 " << orient2d(q0.coordinates(),q1.coordinates(),p0.coordinates()) << '\n'
-// 		    << std::endl;
-// #endif
+    // 	// Verify orientation
+    // 	const double os = orient2d(ref_source.coordinates(),ref_target.coordinates(),source.coordinates());
+    // 	const double ot = orient2d(ref_source.coordinates(),ref_target.coordinates(),target.coordinates());
+    // 	if (std::signbit(os) == std::signbit(ot))
+    // 	{
+    // #ifdef augustdebug
+    //       std::cout << "denom " << denom << '\n'
+    //       		<< " source " << tools::plot(source)<<'\n'
+    //       		<< " target " << tools::plot(target) << '\n'
+    // 		// << " r " << tools::plot(r) << '\n'
+    //       		<< " ref_source " << tools::plot(ref_source) << '\n'
+    //       		<< " ref_target " << tools::plot(ref_target) << '\n'
+    //       		<< " orient2d ref source " << orient2d(source.coordinates(),target.coordinates(),ref_source.coordinates()) << '\n'
+    //       		<< " orient2d ref target " << orient2d(source.coordinates(),target.coordinates(),ref_target.coordinates()) << std::endl;
+    // #endif
+    // #ifdef augustdebug
+    // 	  std::cout << "check collision:\n"
+    // 		    << "rs rt s " << CollisionPredicates::collides_segment_point_2d(ref_source,ref_target,source)<<'\n'
+    // 		    <<"rs rt t " << CollisionPredicates::collides_segment_point_2d(ref_source,ref_target,target)<<'\n'
+    // 		    <<"seg seg "<< CollisionPredicates::collides_segment_segment_2d(ref_source,ref_target,source,target) << '\n'
+    // 		    <<"seg seg p0p1q0q1 "<< CollisionPredicates::collides_segment_segment_2d(p0,p1,q0,q1) << '\n'
+    // 		    << "seg seg org " << CollisionPredicates::collides_segment_segment_2d(a, b, c, d)<<'\n'
+    // 		    <<"q0 q1 p0 " << CollisionPredicates::collides_segment_point_2d(q0,q1,p0)<<'\n'
+    // 		    << "p0p1q0 " << orient2d(p0.coordinates(),p1.coordinates(),q0.coordinates()) << '\n'
+    // 		    << "q0q1p0 " << orient2d(q0.coordinates(),q1.coordinates(),p0.coordinates()) << '\n'
+    // 		    << std::endl;
+    // #endif
 
-// 	  // This should only happen if the t0 or t1 are ~0 or ~1
-// 	  dolfin_assert(std::abs(t0) < DOLFIN_EPS_LARGE or std::abs(1-t0) < DOLFIN_EPS_LARGE or
-// 			std::abs(t1) < DOLFIN_EPS_LARGE or std::abs(1-t1) < DOLFIN_EPS_LARGE);
-// 	  if (source.squared_distance(ref_target) < DOLFIN_EPS)
-// 	    std::swap(source, ref_target);
-// 	  else if (target.squared_distance(ref_target) < DOLFIN_EPS)
-// 	    std::swap(target, ref_target);
-// 	  else if (source.squared_distance(ref_source) < DOLFIN_EPS)
-// 	    std::swap(source, ref_source);
-// 	  else
-// 	    std::swap(target, ref_source);
-// 	}
-//       }
+    // 	  // This should only happen if the t0 or t1 are ~0 or ~1
+    // 	  dolfin_assert(std::abs(t0) < DOLFIN_EPS_LARGE or std::abs(1-t0) < DOLFIN_EPS_LARGE or
+    // 			std::abs(t1) < DOLFIN_EPS_LARGE or std::abs(1-t1) < DOLFIN_EPS_LARGE);
+    // 	  if (source.squared_distance(ref_target) < DOLFIN_EPS)
+    // 	    std::swap(source, ref_target);
+    // 	  else if (target.squared_distance(ref_target) < DOLFIN_EPS)
+    // 	    std::swap(target, ref_target);
+    // 	  else if (source.squared_distance(ref_source) < DOLFIN_EPS)
+    // 	    std::swap(source, ref_source);
+    // 	  else
+    // 	    std::swap(target, ref_source);
+    // 	}
+    //       }
 
-//       // Shewchuk notation
-//       // const Point r = target-source;
+    //       // Shewchuk notation
+    //       // const Point r = target-source;
 
 #ifdef augustdebug
-      std::cout << "denom " << denom << '\n'
-      		<< " source " << tools::plot(source)<<'\n'
-      		<< " target " << tools::plot(target) << '\n'
-		// << " r " << tools::plot(r) << '\n'
-      		<< " ref_source " << tools::plot(ref_source) << '\n'
-      		<< " ref_target " << tools::plot(ref_target) << '\n'
-      		<< " orient2d ref source " << orient2d(source.coordinates(),target.coordinates(),ref_source.coordinates()) << '\n'
-      		<< " orient2d ref target " << orient2d(source.coordinates(),target.coordinates(),ref_target.coordinates()) << std::endl;
+    std::cout << "denom " << denom << " (numer = " << numer << "  alpha = "<<numer/denom<<'\n'
+	      << " source " << tools::plot(source)<<'\n'
+	      << " target " << tools::plot(target) << '\n'
+	      << " ii_intermediate " << tools::plot(ii_intermediate) << '\n'
+      // << " r " << tools::plot(r) << '\n'
+	      << " ref_source " << tools::plot(ref_source) << '\n'
+	      << " ref_target " << tools::plot(ref_target) << '\n'
+	      << " orient2d ref source " << orient2d(source.coordinates(),target.coordinates(),ref_source.coordinates()) << '\n'
+	      << " orient2d ref target " << orient2d(source.coordinates(),target.coordinates(),ref_target.coordinates()) << std::endl;
 #endif
 
-      // This should have been picked up earlier
-      dolfin_assert(std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates())) !=
-		    std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates())));
+    // This should have been picked up earlier
+    dolfin_assert(std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates())) !=
+		  std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates())));
 
-      int iterations = 0;
-      double a = 0;
-      double b = 1;
-
-      const double source_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), source.coordinates());
-      double a_orientation = source_orientation;
-      double b_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), target.coordinates());
-
-      while (std::abs(b-a) > DOLFIN_EPS)
-      {
-// #ifdef augustdebug
-// 	std::cout << orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-a)*source+a*target).coordinates()) <<' '<<orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-b)*source+b*target).coordinates())<<' '<< tools::plot((1-b)*source+b*target)<<' '<<tools::plot(target) <<orient2d(ref_source.coordinates(), ref_target.coordinates(), target.coordinates())<< ' '<<orient2d(ref_source.coordinates(),ref_target.coordinates(), ((1-b)*source+b*target).coordinates())<<std::endl;
-// #endif
-        dolfin_assert(std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-a)*source+a*target).coordinates())) !=
-		      std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-b)*source+b*target).coordinates())));
-
-        const double new_alpha = (a+b)/2;
-        Point new_point = (1-new_alpha)*source+new_alpha*target;
-        const double mid_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), new_point.coordinates());
-
-        if (mid_orientation == 0)
-        {
-          a = new_alpha;
-          b = new_alpha;
-          break;
-        }
-
-        if (std::signbit(source_orientation) == std::signbit(mid_orientation))
-        {
-          a_orientation = mid_orientation;
-          a = new_alpha;
-        }
-        else
-        {
-          b_orientation = mid_orientation;
-          b = new_alpha;
-        }
-// #ifdef augustdebug
-// 	std::cout << iterations << ' ' << a<<' '<<b<<' '<<std::abs(b-a)<<' '<< source_orientation << ' '<< mid_orientation<<' ' << tools::plot((1-(a+b)/2)*source + (a+b)/2*target)<<' '<<tools::plot((1-a)*source+a*target)<<std::endl;
-// #endif
-        iterations++;
-      }
-
-      if (a == b)
-      {
-        //intersection.push_back(source + a*r);
-	z = (1-a)*source + a*target;
-#ifdef augustdebug
-	std::cout << "        Case 3 with bisection equal:\n"
-		  << "        " <<tools::plot(z,"'mo'") << std::endl;
-#endif
-      }
-      else
-      {
-        //intersection.push_back(source + (a+b)/2*r);
-        const double new_alpha = (a+b)/2;
-	z = (1-new_alpha)*source + new_alpha*target;
-#ifdef augustdebug
-	std::cout << "        Case 3 with bisection half half:\n"
-		  << "        " <<tools::plot(z,"'mo'") << std::endl;
-#endif
-      }
-
-
-    }
+    z = bisection(source, target, ref_source, ref_target);
 
     if (std::abs(denom) < DOLFIN_EPS_LARGE)
     {
       // check that z is inside the smallest interval
-      std::vector<std::pair<double,Point> > d;
-      d.emplace_back(z.squared_distance(p0), p0);
-      d.emplace_back(z.squared_distance(p1), p1);
-      d.emplace_back(z.squared_distance(q0), q0);
-      d.emplace_back(z.squared_distance(q1), q1);
-      std::sort(d.begin(), d.end(), [](std::pair<double,Point> left,
-				       std::pair<double,Point> right) {
-	  return left.first < right.first;
-	});
-      const Point r = d[3].second-d[2].second;
-      const double t0 = r.dot(z-d[0].second);
-      const double t1 = r.dot(z-d[1].second);
-      const double t2 = r.dot(z-d[2].second);
-      const double t3 = r.dot(z-d[3].second);
+      std::vector<std::pair<double,Point> > ii;
+      ii.emplace_back(z.squared_distance(p0), p0);
+      ii.emplace_back(z.squared_distance(p1), p1);
+      ii.emplace_back(z.squared_distance(q0), q0);
+      ii.emplace_back(z.squared_distance(q1), q1);
+      std::sort(ii.begin(), ii.end(), [](std::pair<double,Point> left,
+					 std::pair<double,Point> right) {
+		  return left.first < right.first;
+		});
+      const Point r = ii[3].second-ii[2].second;
+      const double t0 = r.dot(z-ii[0].second);
+      const double t1 = r.dot(z-ii[1].second);
+      const double t2 = r.dot(z-ii[2].second);
+      const double t3 = r.dot(z-ii[3].second);
       int cnt=0;
       if (t0<0) cnt++;
       if (t1<0) cnt++;
@@ -839,7 +775,15 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
       //dolfin_assert(cnt==2);
       if (cnt!=2) {
 	std::cout << t0<<' '<<t1<<' '<<t2<<' '<<t3<<std::endl;
-	PPause;
+	if (std::abs(t0)>DOLFIN_EPS or std::abs(t1)>DOLFIN_EPS or
+	    std::abs(t2)>DOLFIN_EPS or std::abs(t3)>DOLFIN_EPS)
+	{
+	  //std::cout << tools::generate_test(a,b,c,d,__FUNCTION__)<<std::endl;
+	  //PPause;
+
+	  std::cout << "call bisection again with points swapped\n";
+	  z = bisection(ref_source, ref_target, source, target);
+	}
       }
     }
 
@@ -1785,4 +1729,83 @@ IntersectionConstruction::unique_points(std::vector<Point> input_points)
   return points;
 }
 
+//-----------------------------------------------------------------------------
+Point IntersectionConstruction::bisection(Point source,
+					  Point target,
+					  Point ref_source,
+					  Point ref_target)
+{
+
+  int iterations = 0;
+  double a = 0;
+  double b = 1;
+
+  const double source_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), source.coordinates());
+  double a_orientation = source_orientation;
+  double b_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), target.coordinates());
+
+#ifdef augustdebug
+  std::cout << "a_orientation " << a_orientation << '\n'
+	    << "b_orientation " << b_orientation << std::endl;
+#endif
+
+  while (std::abs(b-a) > DOLFIN_EPS)
+  {
+    // #ifdef augustdebug
+    // 	std::cout << orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-a)*source+a*target).coordinates()) <<' '<<orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-b)*source+b*target).coordinates())<<' '<< tools::plot((1-b)*source+b*target)<<' '<<tools::plot(target) <<orient2d(ref_source.coordinates(), ref_target.coordinates(), target.coordinates())<< ' '<<orient2d(ref_source.coordinates(),ref_target.coordinates(), ((1-b)*source+b*target).coordinates())<<std::endl;
+    // #endif
+    dolfin_assert(std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-a)*source+a*target).coordinates())) !=
+		  std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-b)*source+b*target).coordinates())));
+
+    const double new_alpha = (a+b)/2;
+    Point new_point = (1-new_alpha)*source+new_alpha*target;
+    const double mid_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), new_point.coordinates());
+
+    if (mid_orientation == 0)
+    {
+      a = new_alpha;
+      b = new_alpha;
+      break;
+    }
+
+    if (std::signbit(source_orientation) == std::signbit(mid_orientation))
+    {
+      a_orientation = mid_orientation;
+      a = new_alpha;
+    }
+    else
+    {
+      b_orientation = mid_orientation;
+      b = new_alpha;
+    }
+    // #ifdef augustdebug
+    // 	std::cout << iterations << ' ' << a<<' '<<b<<' '<<std::abs(b-a)<<' '<< source_orientation << ' '<< mid_orientation<<' ' << tools::plot((1-(a+b)/2)*source + (a+b)/2*target)<<' '<<tools::plot((1-a)*source+a*target)<<std::endl;
+    // #endif
+    iterations++;
+  }
+
+  Point z;
+
+  if (a == b)
+  {
+    //intersection.push_back(source + a*r);
+    z = (1-a)*source + a*target;
+#ifdef augustdebug
+    std::cout << "        Case 3 with bisection equal:\n"
+	      << "        " <<tools::plot(z,"'mo'") << std::endl;
+#endif
+  }
+  else
+  {
+    //intersection.push_back(source + (a+b)/2*r);
+    const double new_alpha = (a+b)/2;
+    z = (1-new_alpha)*source + new_alpha*target;
+#ifdef augustdebug
+    std::cout << "        Case 3 with bisection half half:\n"
+	      << "        " <<tools::plot(z,"'mo'") << std::endl;
+#endif
+  }
+
+  return z;
+}
 //-----------------------------------------------------------------------------

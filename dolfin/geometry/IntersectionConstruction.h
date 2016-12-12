@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-05
+// Last changed: 2016-12-12
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -303,6 +303,12 @@ namespace dolfin
 
     // Utility function
     static std::vector<Point> unique_points(std::vector<Point> points);
+
+    //test
+    static Point bisection(Point source,
+			   Point target,
+			   Point ref_source,
+			   Point ref_target);
 
   };
 }
