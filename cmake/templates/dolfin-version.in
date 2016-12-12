@@ -1,4 +1,4 @@
 #!/bin/bash
 
-# Helper file to print the version of DOLFIN
+# Helper script to print the version of DOLFIN
 echo @DOLFIN_VERSION@
