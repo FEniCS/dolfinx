@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-12
+// Last changed: 2016-12-13
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -87,7 +87,7 @@ namespace dolfin
                                  std::size_t gdim);
 
     /// Compute intersection of segment p0-p1 with segment q0-q1 (1D version)
-    static std::vector<Point>
+    static std::vector<double>
     intersection_segment_segment_1d(double p0,
                                     double p1,
                                     double q0,
@@ -227,7 +227,7 @@ namespace dolfin
 
     // Implementation of intersection computation functions
 
-    static std::vector<Point>
+    static std::vector<double>
     _intersection_segment_segment_1d(double p0,
                                      double p1,
                                      double q0,
@@ -268,12 +268,12 @@ namespace dolfin
                                       const Point& q1);
 
     static std::vector<Point>
-    _intersection_triangle_triangle_2d(const Point& p0,
-                                       const Point& p1,
-                                       const Point& p2,
-                                       const Point& q0,
-                                       const Point& q1,
-                                       const Point& q2);
+    _intersection_triangle_triangle_2d(Point p0,
+                                       Point p1,
+                                       Point p2,
+                                       Point q0,
+                                       Point q1,
+                                       Point q2);
 
     static std::vector<Point>
     _intersection_triangle_triangle_3d(const Point& p0,

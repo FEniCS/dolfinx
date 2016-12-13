@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-12
+// Last changed: 2016-12-13
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -29,7 +29,7 @@
 #include </home/august/dolfin_simplex_tools.h>
 #include <Eigen/Dense>
 #include <algorithm>
-// #define augustdebug
+#define augustdebug
 
 
 namespace
@@ -187,7 +187,14 @@ IntersectionConstruction::intersection_segment_segment(const Point& p0,
   switch (gdim)
   {
   case 1:
-    return intersection_segment_segment_1d(p0[0], p1[0], q0[0], q1[0]);
+    {
+      const std::vector<double> intersection_1d
+	= intersection_segment_segment_1d(p0[0], p1[0], q0[0], q1[0]);
+      std::vector<Point> intersection(intersection_1d.size());
+      for (std::size_t i = 0; i < intersection.size(); ++i)
+	intersection[i][0] = intersection_1d[i];
+      return intersection;
+    }
   case 2:
     return intersection_segment_segment_2d(p0, p1, q0, q1);
   case 3:
@@ -247,17 +254,46 @@ IntersectionConstruction::intersection_triangle_triangle(const Point& p0,
 //-----------------------------------------------------------------------------
 // Implementation of triangulation functions (private)
 //-----------------------------------------------------------------------------
-std::vector<Point>
+std::vector<double>
 IntersectionConstruction::_intersection_segment_segment_1d(double p0,
 							   double p1,
 							   double q0,
 							   double q1)
 {
-  dolfin_error("IntersectionConstruction.cpp",
-	       "compute segment-segment intersection",
-	       "Not implemented for dimension 1.");
+  std::vector<double> intersection;
 
-  return std::vector<Point>();
+  if (CollisionPredicates::collides_segment_segment_1d(p0, p1, q0, q1))
+  {
+    // Get range
+    const double a0 = std::min(p0, p1);
+    const double b0 = std::max(p0, p1);
+    const double a1 = std::min(q0, q1);
+    const double b1 = std::max(q0, q1);
+    const double dx = std::min(b0 - a0, b1 - a1);
+    intersection.resize(2);
+    if (b0 - a1 < dx)
+    {
+      intersection[0] = a1;
+      intersection[1] = b0;
+    }
+    else if (b1 - a0 < dx)
+    {
+      intersection[0] = a0;
+      intersection[1] = b1;
+    }
+    else if (b0 - a0 < b1 - a1)
+    {
+      intersection[0] = a0;
+      intersection[1] = b0;
+    }
+    else
+    {
+      intersection[0] = a1;
+      intersection[1] = b1;
+    }
+  }
+
+  return intersection;
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -273,8 +309,27 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
 
   std::vector<Point> intersection;
 
+  // Avoid some unnecessary computations
   if (!CollisionPredicates::collides_segment_segment_2d(a, b, c, d))
     return intersection;
+
+  // Can we reduce to 1d?
+  for (std::size_t i = 0; i < 2; ++i)
+  {
+    const bool reduce = (a[i] == b[i] and b[i] == c[i] and c[i] == d[i]);
+    if (reduce)
+    {
+      const std::size_t j = (i+1) % 2;
+      const std::vector<double> intersection_1d = intersection_segment_segment_1d(a[j], b[j], c[j], d[j]);
+      intersection.resize(intersection_1d.size());
+      for (std::size_t k = 0; k < intersection.size(); ++k)
+      {
+	intersection[k][i] = a[i];
+	intersection[k][j] = intersection_1d[k];
+      }
+      return intersection;
+    }
+  }
 
   intersection.reserve(4);
 
@@ -417,7 +472,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
 
 
   const double denom = (b.x()-a.x())*(d.y()-c.y()) - (b.y()-a.y())*(d.x()-c.x());
-  const double numer = orient2d(c.coordinates(),d.coordinates(),a.coordinates());
+  const double numer = orient2d(c.coordinates(), d.coordinates(), a.coordinates());
 
   if (denom == 0. and numer == 0.)
   {
@@ -750,6 +805,9 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
 
     z = bisection(source, target, ref_source, ref_target);
 
+    // Tempting to assert collides_segment_point_1d or 2d, but this is not possible
+
+    // Check the solution if the lines are almost parallel
     if (std::abs(denom) < DOLFIN_EPS_LARGE)
     {
       // check that z is inside the smallest interval
@@ -772,17 +830,119 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
       if (t1<0) cnt++;
       if (t2<0) cnt++;
       if (t3<0) cnt++;
+
+      // test collision
+#ifdef augustdebug
+      for (std::size_t d = 0; d < 2; ++d)
+	std::cout << CollisionPredicates::collides_segment_point_1d(p0[d],p1[d],z[d])<<' ';
+      std::cout << std::endl;
+      for (std::size_t d = 0; d < 2; ++d)
+	std::cout << CollisionPredicates::collides_segment_point_1d(q0[d],q1[d],z[d])<<' ';
+      std::cout << std::endl;
+      std::cout << t0<<' '<<t1<<' '<<t2<<' '<<t3<<std::endl;
+#endif
+      const bool all_inside = CollisionPredicates::collides_segment_point_1d(p0[0],p1[0],z[0]) and
+	CollisionPredicates::collides_segment_point_1d(p0[1],p1[1],z[1]) and
+	CollisionPredicates::collides_segment_point_1d(q0[0],q1[0],z[0]) and
+	CollisionPredicates::collides_segment_point_1d(q0[1],q1[1],z[1]);
+
       //dolfin_assert(cnt==2);
       if (cnt!=2) {
-	std::cout << t0<<' '<<t1<<' '<<t2<<' '<<t3<<std::endl;
 	if (std::abs(t0)>DOLFIN_EPS or std::abs(t1)>DOLFIN_EPS or
-	    std::abs(t2)>DOLFIN_EPS or std::abs(t3)>DOLFIN_EPS)
+	    std::abs(t2)>DOLFIN_EPS or std::abs(t3)>DOLFIN_EPS or
+	    !all_inside)
 	{
 	  //std::cout << tools::generate_test(a,b,c,d,__FUNCTION__)<<std::endl;
 	  //PPause;
 
+#ifdef augustdebug
 	  std::cout << "call bisection again with points swapped\n";
-	  z = bisection(ref_source, ref_target, source, target);
+#endif
+	  const Point z1 = bisection(ref_source, ref_target, source, target);
+
+	  std::vector<std::pair<double,Point> > ii;
+	  ii.emplace_back(z1.squared_distance(p0), p0);
+	  ii.emplace_back(z1.squared_distance(p1), p1);
+	  ii.emplace_back(z1.squared_distance(q0), q0);
+	  ii.emplace_back(z1.squared_distance(q1), q1);
+	  std::sort(ii.begin(), ii.end(), [](std::pair<double,Point> left,
+					     std::pair<double,Point> right) {
+		      return left.first < right.first;
+		    });
+	  const Point r = ii[3].second-ii[2].second;
+	  const double t0 = r.dot(z1-ii[0].second);
+	  const double t1 = r.dot(z1-ii[1].second);
+	  const double t2 = r.dot(z1-ii[2].second);
+	  const double t3 = r.dot(z1-ii[3].second);
+	  int cnt=0;
+	  if (t0<0) cnt++;
+	  if (t1<0) cnt++;
+	  if (t2<0) cnt++;
+	  if (t3<0) cnt++;
+
+#ifdef augustdebug
+	  // test collision
+	  for (std::size_t d = 0; d < 2; ++d)
+	    std::cout << CollisionPredicates::collides_segment_point_1d(p0[d],p1[d],z1[d])<<' ';
+	  std::cout << std::endl;
+	  for (std::size_t d = 0; d < 2; ++d)
+	    std::cout << CollisionPredicates::collides_segment_point_1d(q0[d],q1[d],z1[d])<<' ';
+	  std::cout << std::endl;
+	  std::cout << t0<<' '<<t1<<' '<<t2<<' '<<t3<<std::endl;
+#endif
+
+	  const bool all_inside = CollisionPredicates::collides_segment_point_1d(p0[0],p1[0],z1[0]) and
+	    CollisionPredicates::collides_segment_point_1d(p0[1],p1[1],z1[1]) and
+	    CollisionPredicates::collides_segment_point_1d(q0[0],q1[0],z1[0]) and
+	    CollisionPredicates::collides_segment_point_1d(q0[1],q1[1],z1[1]);
+
+	  //dolfin_assert(cnt==2);
+	  if (cnt!=2) {
+	    if (std::abs(t0)>DOLFIN_EPS or std::abs(t1)>DOLFIN_EPS or
+		std::abs(t2)>DOLFIN_EPS or std::abs(t3)>DOLFIN_EPS or
+		!all_inside)
+	    {
+
+	      std::vector<std::pair<double, Point> > dists(4);
+	      dists[0] = std::pair<double, Point>(p0.squared_distance(z), p0);
+	      dists[1] = std::pair<double, Point>(p1.squared_distance(z), p1);
+	      dists[2] = std::pair<double, Point>(q0.squared_distance(z), q0);
+	      dists[3] = std::pair<double, Point>(q1.squared_distance(z), q1);
+	      std::sort(dists.begin(), dists.end(), [](std::pair<double, Point> p1,
+						       std::pair<double, Point> p2) {
+			  return p1.first < p2.first;
+			});
+
+	      std::vector<std::pair<double, Point> > dists1(4);
+	      dists1[0] = std::pair<double, Point>(p0.squared_distance(z1), p0);
+	      dists1[1] = std::pair<double, Point>(p1.squared_distance(z1), p1);
+	      dists1[2] = std::pair<double, Point>(q0.squared_distance(z1), q0);
+	      dists1[3] = std::pair<double, Point>(q1.squared_distance(z1), q1);
+	      std::sort(dists1.begin(), dists1.end(), [](std::pair<double, Point> p1,
+							 std::pair<double, Point> p2) {
+			  return p1.first < p2.first;
+			});
+	      std::cout << "possible error, take closest which is of distance = " << dists[0].first <<" or " << dists1[0].first << "\n";
+	      dolfin_assert(dists[0].first < DOLFIN_EPS or dists1[0].first < DOLFIN_EPS);
+	      z = dists[0].first < dists1[0].first ? z : z1;
+
+	      // z = z1;
+	      // std::cout << "possible error, check what CGAL says\n";
+	      // const std::vector<Point> cgal_intersection = cgal_intersection_segment_segment_2d(a,b,c,d);
+	      // for (const Point p: cgal_intersection)
+	      // 	std::cout << p << std::endl;
+	      PPause;
+	    }
+	  }
+	  else
+	  {
+#ifdef augustdebug
+	    std::cout << "new point accepted\n";
+#endif
+
+	    z = z1;
+	  }
+
 	}
       }
     }
@@ -796,7 +956,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
   // }
 
 
-  std::vector<Point> unique = unique_points(intersection);
+  const std::vector<Point> unique = unique_points(intersection);
 
 #ifdef augustdebug
   std::cout << __FUNCTION__<< " gave unique points";
@@ -1215,24 +1375,8 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
   // Remove strict duplictes. Use exact equality here. Approximate
   // equality is for ConvexTriangulation.
   // FIXME: This can be avoided if we use interior segment tests.
-  std::vector<Point> unique_points;
-
-  for (std::size_t i = 0; i < points.size(); ++i)
-  {
-    bool unique = true;
-    for (std::size_t j = i+1; j < points.size(); ++j)
-    {
-      if (points[i] == points[j])
-      {
-	unique = false;
-	break;
-      }
-    }
-    if (unique)
-      unique_points.push_back(points[i]);
-  }
-
-  return unique_points;
+  const std::vector<Point> unique = unique_points(points);
+  return unique;
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -1250,183 +1394,187 @@ IntersectionConstruction::_intersection_triangle_segment_3d(const Point& p0,
 
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::_intersection_triangle_triangle_2d(const Point& p0,
-							     const Point& p1,
-							     const Point& p2,
-							     const Point& q0,
-							     const Point& q1,
-							     const Point& q2)
+IntersectionConstruction::_intersection_triangle_triangle_2d(Point p0,
+							     Point p1,
+							     Point p2,
+							     Point q0,
+							     Point q1,
+							     Point q2)
 {
 #ifdef augustdebug
   std::cout << __FUNCTION__<<" intersection of\n"
   	    << tools::drawtriangle({p0,p1,p2})<<tools::drawtriangle({q0,q1,q2})<<std::endl;
 #endif
-  std::vector<Point> points_0 = intersection_triangle_segment_2d(p0, p1, p2,
-								 q0, q1);
-
-  std::vector<Point> points_1 = intersection_triangle_segment_2d(p0, p1, p2,
-								 q0, q2);
-
-  std::vector<Point> points_2 = intersection_triangle_segment_2d(p0, p1, p2,
-								 q1, q2);
-
-  std::vector<Point> points_3 = intersection_triangle_segment_2d(q0, q1, q2,
-								 p0, p1);
-
-  std::vector<Point> points_4 = intersection_triangle_segment_2d(q0, q1, q2,
-								 p0, p2);
-
-  std::vector<Point> points_5 = intersection_triangle_segment_2d(q0, q1, q2,
-								 p1, p2);
-
-  std::vector<Point> points;
-  points.insert(points.end(),
-		points_0.begin(), points_0.end());
-  points.insert(points.end(),
-		points_1.begin(), points_1.end());
-  points.insert(points.end(),
-		points_2.begin(), points_2.end());
-  points.insert(points.end(),
-		points_3.begin(), points_3.end());
-  points.insert(points.end(),
-		points_4.begin(), points_4.end());
-  points.insert(points.end(),
-		points_5.begin(), points_5.end());
 
 
-  // Remove strict duplictes. Use exact equality here. Approximate
-  // equality is for ConvexTriangulation.
-  // FIXME: This can be avoided if we use interior segment tests.
-  std::vector<Point> unique_points;
+  // std::vector<Point> points_0 = intersection_triangle_segment_2d(p0, p1, p2,
+  // 								 q0, q1);
 
-  for (std::size_t i = 0; i < points.size(); ++i)
-  {
-    bool unique = true;
-    for (std::size_t j = i+1; j < points.size(); ++j)
-    {
-      if (points[i] == points[j])
-      {
-	unique = false;
-	break;
-      }
-    }
-    if (unique)
-      unique_points.push_back(points[i]);
-  }
+  // std::vector<Point> points_1 = intersection_triangle_segment_2d(p0, p1, p2,
+  // 								 q0, q2);
 
-  // std::cout << __FUNCTION__<<" intersection of\n"
-  // 	    << tools::drawtriangle({p0,p1,p2})<<tools::drawtriangle({q0,q1,q2})<<std::endl<<" gave these points (if any): ";
-  // for (const Point p: unique_points)
-  //   std::cout << tools::plot(p);
-  // std::cout << std::endl;
+  // std::vector<Point> points_2 = intersection_triangle_segment_2d(p0, p1, p2,
+  // 								 q1, q2);
 
-  return unique_points;
+  // std::vector<Point> points_3 = intersection_triangle_segment_2d(q0, q1, q2,
+  // 								 p0, p1);
+
+  // std::vector<Point> points_4 = intersection_triangle_segment_2d(q0, q1, q2,
+  // 								 p0, p2);
+
+  // std::vector<Point> points_5 = intersection_triangle_segment_2d(q0, q1, q2,
+  // 								 p1, p2);
+
+  // std::vector<Point> points;
+  // points.insert(points.end(),
+  // 		points_0.begin(), points_0.end());
+  // points.insert(points.end(),
+  // 		points_1.begin(), points_1.end());
+  // points.insert(points.end(),
+  // 		points_2.begin(), points_2.end());
+  // points.insert(points.end(),
+  // 		points_3.begin(), points_3.end());
+  // points.insert(points.end(),
+  // 		points_4.begin(), points_4.end());
+  // points.insert(points.end(),
+  // 		points_5.begin(), points_5.end());
+
+
+  // // Remove strict duplictes. Use exact equality here. Approximate
+  // // equality is for ConvexTriangulation.
+  // // FIXME: This can be avoided if we use interior segment tests.
+  // const std::vector<Point> unique = unique_points(points);
+
+  // // std::cout << __FUNCTION__<<" intersection of\n"
+  // // 	    << tools::drawtriangle({p0,p1,p2})<<tools::drawtriangle({q0,q1,q2})<<std::endl<<" gave these points (if any): ";
+  // // for (const Point p: unique_points)
+  // //   std::cout << tools::plot(p);
+  // // std::cout << std::endl;
+
+  // return unique;
 
   // std::cout << __FUNCTION__<<" "<<tools::drawtriangle({p0,p1,p2})<<tools::drawtriangle({q0,q1,q2})<<std::endl;
 
-  // std::vector<Point> points;
+  std::vector<Point> points;
 
-  // if (CollisionPredicates::collides_triangle_triangle_2d(p0, p1, p2,
-  // 							 q0, q1, q2))
-  // {
-  //   // Pack points as vectors
-  //   std::array<Point, 3> tri_0({p0, p1, p2});
-  //   std::array<Point, 3> tri_1({q0, q1, q2});
+  if (CollisionPredicates::collides_triangle_triangle_2d(p0, p1, p2,
+  							 q0, q1, q2))
+  {
+    // Pack points as vectors
+    std::array<Point, 3> tri_0({p0, p1, p2});
+    std::array<Point, 3> tri_1({q0, q1, q2});
 
-  //   // Extract coordinates
-  //   double t0[3][2] = {{p0[0], p0[1]}, {p1[0], p1[1]}, {p2[0], p2[1]}};
-  //   double t1[3][2] = {{q0[0], q0[1]}, {q1[0], q1[1]}, {q2[0], q2[1]}};
+    // Find all vertex-vertex collision
+    for (std::size_t i = 0; i < 3; i++)
+    {
+      for (std::size_t j = 0; j < 3; j++)
+      {
+  	if (tri_0[i] == tri_1[j])
+  	  points.push_back(tri_0[i]);
+      }
+    }
 
-  //   // Find all vertex-vertex collision
-  //   for (std::size_t i = 0; i < 3; i++)
-  //   {
-  //     for (std::size_t j = 0; j < 3; j++)
-  //     {
-  // 	if (tri_0[i] == tri_1[j])
-  // 	  points.push_back(tri_0[i]);
-  //     }
-  //   }
+#ifdef augustdebug
+    std::cout << " after vertex--vertex collisions: total " << points.size() <<" points: ";
+    for (const Point p: points) std::cout << tools::plot(p);
+    std::cout << std::endl;
+#endif
 
-  //   std::cout << " after vertex--vertex collisions: total " << points.size() <<" points: ";
-  //   for (const Point p: points) std::cout << tools::plot(p);
-  //   std::cout << std::endl;
+    // Find all vertex-"edge interior" intersections
+    for (std::size_t i = 0; i < 3; i++)
+    {
+      for (std::size_t j = 0; j < 3; j++)
+      {
+  	if (tri_0[i] != tri_1[j] && tri_0[(i+1)%3] != tri_1[j] &&
+  	    CollisionPredicates::collides_segment_point_2d(tri_0[i], tri_0[(i+1)%3], tri_1[j]))
+  	  points.push_back(tri_1[j]);
 
-  //   // Find all vertex-"edge interior" intersections
-  //   for (std::size_t i = 0; i < 3; i++)
-  //   {
-  //     for (std::size_t j = 0; j < 3; j++)
-  //     {
-  // 	if (tri_0[i] != tri_1[j] && tri_0[(i+1)%3] != tri_1[j] &&
-  // 	    CollisionPredicates::collides_segment_point_2d(tri_0[i], tri_0[(i+1)%3], tri_1[j]))
-  // 	  points.push_back(tri_1[j]);
+  	if (tri_1[i] != tri_0[j] && tri_1[(i+1)%3] != tri_0[j] &&
+  	    CollisionPredicates::collides_segment_point_2d(tri_1[i], tri_1[(i+1)%3], tri_0[j]))
+  	  points.push_back(tri_0[j]);
+      }
+    }
 
-  // 	if (tri_1[i] != tri_0[j] && tri_1[(i+1)%3] != tri_0[j] &&
-  // 	    CollisionPredicates::collides_segment_point_2d(tri_1[i], tri_1[(i+1)%3], tri_0[j]))
-  // 	  points.push_back(tri_0[j]);
-  //     }
-  //   }
+#ifdef augustdebug
+    std::cout << " after vertex edge interior collisions: total " << points.size() <<" points: ";
+    for (const Point p: points) std::cout << tools::plot(p);
+    std::cout << std::endl;
+#endif
 
-  //   std::cout << " after vertex edge interior collisions: total " << points.size() <<" points: ";
-  //   for (const Point p: points) std::cout << tools::plot(p);
-  //   std::cout << std::endl;
+    // Find all "edge interior"-"edge interior" intersections
+    for (std::size_t i = 0; i < 3; i++)
+    {
+      for (std::size_t j = 0; j < 3; j++)
+      {
+  	{
+  	  // std::vector<Point> triangulation =
+  	  //   intersection_segment_interior_segment_interior_2d(tri_0[i],
+  	  // 						      tri_0[(i+1)%3],
+  	  // 						      tri_1[j],
+  	  // 						      tri_1[(j+1)%3]);
+  	  std::vector<Point> triangulation =
+  	    intersection_segment_segment_2d(tri_0[i],
+					    tri_0[(i+1)%3],
+					    tri_1[j],
+					    tri_1[(j+1)%3]);
+	  // // FIXME Remove edge vertices
+	  // std::vector<Point> triangulation;
+	  // for (const Point& p: triangulation_tmp)
+	  // {
+	  //   if (p != tri_0[i] and p != tri_0[(i+1)%3] and
+	  // 	p != tri_1[i] and p != tri_1[(i+1)%3])
+	  //     triangulation.push_back(p);
+	  // }
 
-  //   // Find all "edge interior"-"edge interior" intersections
-  //   for (std::size_t i = 0; i < 3; i++)
-  //   {
-  //     for (std::size_t j = 0; j < 3; j++)
-  //     {
-  // 	{
-  // 	  std::vector<Point> triangulation =
-  // 	    intersection_segment_interior_segment_interior_2d(tri_0[i],
-  // 							      tri_0[(i+1)%3],
-  // 							      tri_1[j],
-  // 							      tri_1[(j+1)%3]);
-  // 	  points.insert(points.end(), triangulation.begin(), triangulation.end());
-  // 	}
-  //     }
-  //   }
+  	  points.insert(points.end(), triangulation.begin(), triangulation.end());
+  	}
+      }
+    }
 
-  //   std::cout << " after edge interior -- edge interior collisions: total " << points.size() <<" points: ";
-  //   for (const Point p: points) std::cout << tools::plot(p);
-  //   std::cout << std::endl;
+#ifdef augustdebug
+    std::cout << " after edge interior -- edge interior collisions: total " << points.size() <<" points: ";
+    for (const Point p: points) std::cout << tools::plot(p);
+    std::cout << std::endl;
+#endif
 
-  //   // Find alle vertex-"triangle interior" intersections
-  //   const int s0 = std::signbit(orient2d(t0[0], t0[1], t0[2])) == true ? -1 : 1;
-  //   const int s1 = std::signbit(orient2d(t1[0], t1[1], t1[2])) == true ? -1 : 1;
+    // Find alle vertex-"triangle interior" intersections
+    const int s0 = std::signbit(orient2d(tri_0[0].coordinates(), tri_0[1].coordinates(), tri_0[2].coordinates())) == true ? -1 : 1;
+    const int s1 = std::signbit(orient2d(tri_1[0].coordinates(), tri_1[1].coordinates(), tri_1[2].coordinates())) == true ? -1 : 1;
 
-  //   for (std::size_t i = 0; i < 3; ++i)
-  //   {
-  //     const double q0_q1_pi = s1*orient2d(t1[0], t1[1], t0[i]);
-  //     const double q1_q2_pi = s1*orient2d(t1[1], t1[2], t0[i]);
-  //     const double q2_q0_pi = s1*orient2d(t1[2], t1[0], t0[i]);
+    for (std::size_t i = 0; i < 3; ++i)
+    {
+      const double q0_q1_pi = s1*orient2d(tri_1[0].coordinates(), tri_1[1].coordinates(), tri_0[i].coordinates());
+      const double q1_q2_pi = s1*orient2d(tri_1[1].coordinates(), tri_1[2].coordinates(), tri_0[i].coordinates());
+      const double q2_q0_pi = s1*orient2d(tri_1[2].coordinates(), tri_1[0].coordinates(), tri_0[i].coordinates());
 
-  //     if (q0_q1_pi > 0. and
-  // 	  q1_q2_pi > 0. and
-  // 	  q2_q0_pi > 0.)
-  //     {
-  // 	points.push_back(tri_0[i]);
-  //     }
+      if (q0_q1_pi > 0. and
+  	  q1_q2_pi > 0. and
+  	  q2_q0_pi > 0.)
+      {
+  	points.push_back(tri_0[i]);
+      }
 
-  //     const double p0_p1_qi = s0*orient2d(t0[0], t0[1], t1[i]);
-  //     const double p1_p2_qi = s0*orient2d(t0[1], t0[2], t1[i]);
-  //     const double p2_p0_qi = s0*orient2d(t0[2], t0[0], t1[i]);
+      const double p0_p1_qi = s0*orient2d(tri_0[0].coordinates(), tri_0[1].coordinates(), tri_1[i].coordinates());
+      const double p1_p2_qi = s0*orient2d(tri_0[1].coordinates(), tri_0[2].coordinates(), tri_1[i].coordinates());
+      const double p2_p0_qi = s0*orient2d(tri_0[2].coordinates(), tri_0[0].coordinates(), tri_1[i].coordinates());
 
-  //     if (p0_p1_qi > 0. and
-  // 	  p1_p2_qi > 0. and
-  // 	  p2_p0_qi > 0.)
-  //     {
-  // 	points.push_back(tri_1[i]);
-  //     }
-  //   }
+      if (p0_p1_qi > 0. and
+  	  p1_p2_qi > 0. and
+  	  p2_p0_qi > 0.)
+      {
+  	points.push_back(tri_1[i]);
+      }
+    }
 
-  //   std::cout << " after vertex -- triangle collisions: total " << points.size() <<" points: ";
-  //   for (const Point p: points) std::cout << tools::plot(p);
-  //   std::cout << std::endl;
-
-  // }
+#ifdef augustdebug
+    std::cout << " after vertex -- triangle collisions: total " << points.size() <<" points: ";
+    for (const Point p: points) std::cout << tools::plot(p);
+    std::cout << std::endl;
+#endif
+  }
 
 
-  // return points;
+  return points;
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -1708,25 +1856,10 @@ std::vector<Point>
 IntersectionConstruction::unique_points(std::vector<Point> input_points)
 {
   // Create a strictly unique list of points
-
-  std::vector<Point> points;
-
-  for (std::size_t i = 0; i < input_points.size(); ++i)
-  {
-    bool unique = true;
-    for (std::size_t j = i+1; j < input_points.size(); ++j)
-    {
-      if (input_points[i] == input_points[j])
-      {
-	unique = false;
-	break;
-      }
-    }
-    if (unique)
-      points.push_back(input_points[i]);
-  }
-
-  return points;
+  std::sort(input_points.begin(), input_points.end(), operator<);
+  const std::vector<Point>::iterator last = std::unique(input_points.begin(), input_points.end(), operator==);
+  input_points.erase(last, input_points.end());
+  return input_points;
 }
 
 //-----------------------------------------------------------------------------
@@ -1758,7 +1891,11 @@ Point IntersectionConstruction::bisection(Point source,
 		  std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-b)*source+b*target).coordinates())));
 
     const double new_alpha = (a+b)/2;
+    if (new_alpha != (b+a)/2) { PPause; }
     Point new_point = (1-new_alpha)*source+new_alpha*target;
+
+    if (new_point != (new_alpha*target + (1-new_alpha)*source)) { PPause; }
+
     const double mid_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), new_point.coordinates());
 
     if (mid_orientation == 0)
