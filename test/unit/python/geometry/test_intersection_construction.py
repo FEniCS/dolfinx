@@ -71,7 +71,7 @@ def triangulation_to_mesh_3d(triangulation):
     return mesh
 
 @skip_in_parallel
-@pytest.mark.skipif(True, reason="Missing swig typemap")
+#@pytest.mark.skipif(True, reason="Missing swig typemap")
 def test_triangulate_intersection_2d():
 
     # Create two meshes of the unit square
@@ -319,6 +319,46 @@ def test_segment_segment_4():
     assert (abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS) or \
         (abs(intersection[0][0] - computed[0]) < DOLFIN_EPS and abs(intersection[0][1] - computed[1]) < DOLFIN_EPS)
 
+
+@skip_in_parallel
+def test_parallel_segments_topological_1d():
+    "Parallel segments with small intersection"
+    p0 = Point(0.70710678118654757274, 1)
+    p1 = Point(0, 1)
+    q0 = Point(2.2204460492503130808e-16, 1)
+    q1 = Point(-2, 1)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    assert len(intersection) == 2
+    assert abs(intersection[0][0]) < DOLFIN_EPS and abs(intersection[0][1]-1) < DOLFIN_EPS and abs(intersection[1][0]-2.2204460492503130808e-16)<DOLFIN_EPS and abs(intersection[1][1]-1)<DOLFIN_EPS
+
+@skip_in_parallel
+def test_parallel_segments_topological_1d():
+    "Parallel segments with small intersection"
+    p0 = Point(0.70710678118654757274, 1)
+    p1 = Point(0, 1)
+    q0 = Point(2.2204460492503130808e-16, 1)
+    q1 = Point(-2, 1)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    assert len(intersection) == 2
+    assert abs(intersection[0][0]) < DOLFIN_EPS and abs(intersection[0][1]-1) < DOLFIN_EPS and abs(intersection[1][0]-2.2204460492503130808e-16)<DOLFIN_EPS and abs(intersection[1][1]-1)<DOLFIN_EPS
+
+@skip_in_parallel
+def test_parallel_segments_almost_topological_1d():
+    "Almost parallel segments"
+    p0 = Point(0.70710678118654757274, 1.000000000000000222)
+    p1 = Point(0, 1)
+    q0 = Point(2.2204460492503130808e-16, 1)
+    q1 = Point(-2, 1.0000000000000004441)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    # exact intersection points found using CGAL
+    assert len(intersection) == 1
+    assert abs(intersection[0][0]-9.19739e-17) < DOLFIN_EPS and abs(intersection[0][1]-1)<DOLFIN_EPS
+
+
+
 '''
     //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -421,5 +461,20 @@ def test_segment_segment_14():
     computed = Point(0.37649557393344845746, 0.81862234715707460353)
 
     assert len(intersection) == 1
-    assert (abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS) or
+    assert (abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS) or \
         (abs(intersection[0][0] - computed[0]) < DOLFIN_EPS and abs(intersection[0][1] - computed[1]) < DOLFIN_EPS)
+
+@skip_in_parallel
+def test_segment_segment_15():
+    "Case that fails CGAL comparison. We get an intersection point outside the interval."
+    p0 = Point(0.5877852522924732481,0.8090169943749473402)
+    p1 = Point(-2.205819241042367818,0.366553510209999156)
+    q0 = Point(-0.6623669916539391966,0.6110123308970317746)
+    q1 = Point(-0.9154969939148456248,0.5709204771595896011)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    # The intersection should according to CGAL be
+    cgal = Point(-0.83988301296301948184, 0.58289655521335470567)
+
+    assert len(intersection) == 1
+    assert abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS
