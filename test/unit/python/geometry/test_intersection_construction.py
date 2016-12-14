@@ -319,19 +319,6 @@ def test_segment_segment_4():
     assert (abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS) or \
         (abs(intersection[0][0] - computed[0]) < DOLFIN_EPS and abs(intersection[0][1] - computed[1]) < DOLFIN_EPS)
 
-
-@skip_in_parallel
-def test_parallel_segments_topological_1d():
-    "Parallel segments with small intersection"
-    p0 = Point(0.70710678118654757274, 1)
-    p1 = Point(0, 1)
-    q0 = Point(2.2204460492503130808e-16, 1)
-    q1 = Point(-2, 1)
-    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
-
-    assert len(intersection) == 2
-    assert abs(intersection[0][0]) < DOLFIN_EPS and abs(intersection[0][1]-1) < DOLFIN_EPS and abs(intersection[1][0]-2.2204460492503130808e-16)<DOLFIN_EPS and abs(intersection[1][1]-1)<DOLFIN_EPS
-
 @skip_in_parallel
 def test_parallel_segments_topological_1d():
     "Parallel segments with small intersection"
