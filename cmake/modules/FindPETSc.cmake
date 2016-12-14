@@ -67,7 +67,6 @@ endif()
 # and attaching 'properties')
 if (PETSC_FOUND AND NOT TARGET PETSC::petsc)
   add_library(PETSC::petsc INTERFACE IMPORTED)
-  add_library(PETSC::petsc_static INTERFACE IMPORTED)
 
   # Add include paths
   set_property(TARGET PETSC::petsc PROPERTY
@@ -78,19 +77,26 @@ if (PETSC_FOUND AND NOT TARGET PETSC::petsc)
   foreach (lib ${PETSC_LIBRARIES})
     find_library(LIB_${lib} NAMES ${lib} PATHS ${PETSC_LIBRARY_DIRS} NO_DEFAULT_PATH)
     list(APPEND _libs ${LIB_${lib}})
-    message("adding (shared): ${LIB_${lib}}")
+    #message("adding (shared): ${LIB_${lib}}")
   endforeach()
   set_property(TARGET PETSC::petsc PROPERTY INTERFACE_LINK_LIBRARIES "${_libs}")
 
+endif()
+
+# Configure PETSc IMPORT (this involves creating an 'imported' target
+# and attaching 'properties')
+if (PETSC_FOUND AND NOT TARGET PETSC::petsc_static)
+  add_library(PETSC::petsc_static INTERFACE IMPORTED)
+
   # Add libraries (static)
   unset(_libs)
-  set(_PETSC_STATIC_LIBRARIES)
   foreach (lib ${PETSC_STATIC_LIBRARIES})
     find_library(LIB_${lib} ${lib} HINTS ${PETSC_STATIC_LIBRARY_DIRS})
-    list(APPEND _PETSC_STATIC_LIBRARIES ${LIB_${lib}})
-    message("adding (static): ${LIB_${lib}}")
+    list(APPEND _libs ${LIB_${lib}})
+    #message("adding (static): ${LIB_${lib}}")
   endforeach()
-  set_property(TARGET PETSC::petsc_static PROPERTY INTERFACE_LINK_LIBRARIES "${_PETSC_STATIC_LIBRARIES}")
+  set_property(TARGET PETSC::petsc_static PROPERTY INTERFACE_LINK_LIBRARIES "${_libs}")
+  #message("*** static petsc libs: ${_PETSC_STATIC_LIBRARIES}")
 
 endif()
 
@@ -105,7 +111,7 @@ if (DOLFIN_SKIP_BUILD_TESTS)
   # FIXME: Need to add option for linkage type
   # Assume PETSc works, and assume shared linkage
   set(PETSC_TEST_RUNS TRUE)
-  set_property(TARGET PETSC::petsc_static PROPERTY INTERFACE_LINK_LIBRARIES)
+  #set_property(TARGET PETSC::petsc_static PROPERTY INTERFACE_LINK_LIBRARIES)
 
 elseif (PETSC_FOUND)
 

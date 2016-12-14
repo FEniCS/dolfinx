@@ -119,7 +119,7 @@ endif()
 if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_SLEPC AND SLEPC_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_SLEPC")
   target_link_libraries(dolfin PUBLIC SLEPC::slepc)
-  target_link_libraries(dolfin PRIVATE PETSC::petsc_static)
+  target_link_libraries(dolfin PRIVATE SLEPC::slepc_static)
 endif()
 
 # PETSc
