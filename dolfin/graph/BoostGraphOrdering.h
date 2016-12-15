@@ -36,11 +36,13 @@ namespace dolfin
 
   public:
 
-    /// Compute re-ordering (map[old] -> new) using Cuthill-McKee algorithm
+    /// Compute re-ordering (map[old] -> new) using Cuthill-McKee
+    /// algorithm
     static std::vector<int> compute_cuthill_mckee(const Graph& graph,
                                                   bool reverse=false);
 
-    /// Compute re-ordering (map[old] -> new) using Cuthill-McKee algorithm
+    /// Compute re-ordering (map[old] -> new) using Cuthill-McKee
+    /// algorithm
     static std::vector<int>
       compute_cuthill_mckee(const std::set<std::pair<std::size_t, std::size_t> >& edges,
                             std::size_t size, bool reverse=false);
@@ -49,15 +51,15 @@ namespace dolfin
 
     // Build Boost undirected graph
     template<typename T, typename X>
-    static T build_undirected_graph(const X& graph);
+      static T build_undirected_graph(const X& graph);
 
     // Build Boost directed graph
     template<typename T, typename X>
-    static T build_directed_graph(const X& graph);
+      static T build_directed_graph(const X& graph);
 
     // Build Boost compressed sparse row graph
     template<typename T, typename X>
-    static T build_csr_directed_graph(const X& graph);
+      static T build_csr_directed_graph(const X& graph);
 
   };
 

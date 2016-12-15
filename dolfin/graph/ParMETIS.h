@@ -21,9 +21,12 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <map>
+#include <string>
 #include <vector>
+#include <boost/multi_array.hpp>
+
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/Set.h>
 #include "CSRGraph.h"
 
 namespace dolfin
@@ -45,13 +48,14 @@ namespace dolfin
     /// "adaptive_repartition" or "refine". For meshes that have
     /// already been partitioned or are already well partitioned, it
     /// can be advantageous to use "adaptive_repartition" or "refine".
-    static void compute_partition(const MPI_Comm mpi_comm,
-            std::vector<int>& cell_partition,
-            std::map<std::int64_t, std::vector<int>>& ghost_procs,
-            const boost::multi_array<std::int64_t, 2>& cell_vertices,
-            const std::size_t num_global_vertices,
-            const CellType& cell_type,
-            const std::string mode="partition");
+    static void
+      compute_partition(const MPI_Comm mpi_comm,
+                        std::vector<int>& cell_partition,
+                        std::map<std::int64_t, std::vector<int>>& ghost_procs,
+                        const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                        const std::size_t num_global_vertices,
+                        const CellType& cell_type,
+                        const std::string mode="partition");
 
   private:
 

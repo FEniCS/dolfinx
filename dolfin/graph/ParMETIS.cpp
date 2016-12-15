@@ -44,17 +44,15 @@ namespace
   {
     Timer timer("Build mesh dual graph (ParMETIS)");
 
-    // ParMETIS data
-    std::vector<idx_t> elmdist;
-    std::vector<idx_t> eptr;
-    std::vector<idx_t> eind;
+    // ParMETIS data structures
+    std::vector<idx_t> elmdist, eptr, eind;
 
     // Get number of processes and process number
-    const std::size_t num_processes = dolfin::MPI::size(mpi_comm);
+    const std::int32_t num_processes = dolfin::MPI::size(mpi_comm);
 
     // Get dimensions of local mesh_data
-    const std::size_t num_local_cells = cell_vertices.size();
-    const std::size_t num_cell_vertices = num_vertices_per_cell;
+    const std::int32_t num_local_cells = cell_vertices.size();
+    const std::int32_t num_cell_vertices = num_vertices_per_cell;
 
     // Check that number of local graph nodes (cells) is > 0
     if (num_local_cells == 0)
@@ -64,22 +62,22 @@ namespace
                    "ParMETIS cannot be used if a process has no cells (graph nodes). Use SCOTCH to perform partitioning instead");
     }
 
-    // Communicate number of cells between all processors
-    std::vector<std::size_t> num_cells;
+    // Communicate number of cells on each process between all processors
+    std::vector<std::int32_t> num_cells;
     dolfin::MPI::all_gather(mpi_comm, num_local_cells, num_cells);
 
     // Build elmdist array with cell offsets for all processors
     elmdist.assign(num_processes + 1, 0);
-    for (std::size_t i = 1; i < num_processes + 1; ++i)
+    for (std::int32_t i = 1; i < num_processes + 1; ++i)
       elmdist[i] = elmdist[i - 1] + num_cells[i - 1];
 
     eptr.resize(num_local_cells + 1);
     eind.assign(num_local_cells*num_cell_vertices, 0);
-    for (std::size_t i = 0; i < num_local_cells; i++)
+    for (std::int32_t i = 0; i < num_local_cells; i++)
     {
       dolfin_assert(cell_vertices[i].size() == num_cell_vertices);
       eptr[i] = i*num_cell_vertices;
-      for (std::size_t j = 0; j < num_cell_vertices; j++)
+      for (std::int32_t j = 0; j < num_cell_vertices; j++)
         eind[eptr[i] + j] = cell_vertices[i][j];
     }
     eptr[num_local_cells] = num_local_cells*num_cell_vertices;
@@ -104,13 +102,15 @@ namespace
     dolfin_assert(err == METIS_OK);
     timer1.stop();
 
+    // Build graph
     CSRGraph<idx_t> csr_graph(mpi_comm, xadj, adjncy, num_local_cells);
+
+    // Clean up ParMETIS
     METIS_Free(xadj);
     METIS_Free(adjncy);
 
     return csr_graph;
   }
-
 }
 
 //-----------------------------------------------------------------------------
@@ -387,7 +387,7 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
   Timer timer("Compute graph partition (ParMETIS Refine)");
 
   // Get some MPI data
-  const std::size_t process_number = dolfin::MPI::rank(mpi_comm);
+  const std::int32_t process_number = dolfin::MPI::rank(mpi_comm);
 
   // Options for ParMETIS
   idx_t options[4];
@@ -402,7 +402,7 @@ void ParMETIS::refine(MPI_Comm mpi_comm,
 
   // Partitioning array to be computed by ParMETIS. Prefill with
   // process_number.
-  const std::size_t num_local_cells = csr_graph.size();
+  const std::int32_t num_local_cells = csr_graph.size();
   std::vector<idx_t> part(num_local_cells, process_number);
   dolfin_assert(!part.empty());
 
