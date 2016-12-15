@@ -1,4 +1,5 @@
-// Copyright (C) 2008-2009 Niclas Jansson, Ola Skavhaug and Anders Logg
+// Copyright (C) 2008-2009 Niclas Jansson, Ola Skavhaug, Anders Logg,
+// Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFIN.
 //
@@ -14,11 +15,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Garth N. Wells, 2010
-//
-// First added:  2010-02-10
-// Last changed:
 
 #ifndef __PARMETIS_PARTITIONER_H
 #define __PARMETIS_PARTITIONER_H
@@ -28,10 +24,6 @@
 #include <vector>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
-
-#ifdef HAS_PARMETIS
-#include <parmetis.h>
-#endif
 #include "CSRGraph.h"
 
 namespace dolfin
@@ -64,20 +56,14 @@ namespace dolfin
   private:
 
 #ifdef HAS_PARMETIS
-    // Create a dual graph from the cell-vertex topology using
-    // ParMETIS built in ParMETIS_V3_Mesh2Dual
-    static CSRGraph<idx_t>
-      dual_graph(MPI_Comm mpi_comm,
-                 const boost::multi_array<std::int64_t, 2>& cell_vertices,
-                 const int num_vertices_per_cell);
 
     // Standard ParMETIS partition. CSRGraph should be const, but
     // ParMETIS accesses it non-const, so has to be non-const here
     template <typename T>
-    static void partition(MPI_Comm mpi_comm,
-                          CSRGraph<T>& csr_graph,
-                          std::vector<int>& cell_partition,
-                          std::map<std::int64_t, std::vector<int>>& ghost_procs);
+      static void partition(MPI_Comm mpi_comm,
+                            CSRGraph<T>& csr_graph,
+                            std::vector<int>& cell_partition,
+                            std::map<std::int64_t, std::vector<int>>& ghost_procs);
 
     // ParMETIS adaptive repartition. CSRGraph should be const, but
     // ParMETIS accesses it non-const, so has to be non-const here
