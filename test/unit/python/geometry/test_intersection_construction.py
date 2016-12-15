@@ -344,8 +344,6 @@ def test_parallel_segments_almost_topological_1d():
     assert len(intersection) == 1
     assert abs(intersection[0][0]-9.19739e-17) < DOLFIN_EPS and abs(intersection[0][1]-1)<DOLFIN_EPS
 
-
-
 '''
     //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -462,6 +460,21 @@ def test_segment_segment_15():
 
     # The intersection should according to CGAL be
     cgal = Point(-0.83988301296301948184, 0.58289655521335470567)
+
+    assert len(intersection) == 1
+    assert abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS
+
+
+@skip_in_parallel
+def test_segment_segment_16():
+    "Case that fails CGAL comparison"
+    p0 = Point(0.19615242270663213464,2)
+    p1 = Point(0.63397459621556140341,0.36602540378443870761)
+    q0 = Point(0.50000000000000055511,0.86602540378443704228)
+    q1 = Point(0.86602540378443859659,-0.50000000000000022204)
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    cgal = Point(0.50614970528545843997, 0.84307439120753291384)
 
     assert len(intersection) == 1
     assert abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS
