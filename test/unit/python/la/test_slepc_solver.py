@@ -22,31 +22,59 @@
 from __future__ import print_function
 import pytest
 from dolfin import *
-from dolfin_utils.test import skip_if_not_PETsc_or_not_slepc
+from dolfin_utils.test import skip_if_not_PETsc_or_not_slepc, fixture
 
+# Stiffness and mass bilinear formulations
+
+def k(u, v):
+    return inner(grad(u), grad(v))*dx
+
+def m(u, v):
+    return dot(u, v)*dx
+
+
+# Fixtures
+
+@fixture
+def mesh():
+    return UnitSquareMesh(32, 32)
+
+@fixture
+def V(mesh):
+    return FunctionSpace(mesh, "CG", 1)
+
+@fixture
+def V_vec(mesh):
+    return VectorFunctionSpace(mesh, "CG", 1)
+
+@fixture
+def K_M(V):
+    u, v = TrialFunction(V), TestFunction(V)
+    K_mat, M_mat = PETScMatrix(), PETScMatrix()
+    x0 = PETScVector()
+    L = Constant(0.0)*v*dx
+    assemble_system(k(u, v), L, bcs=[], A_tensor=K_mat, b_tensor=x0)
+    assemble_system(m(u, v), L, bcs=[], A_tensor=M_mat, b_tensor=x0)
+    return K_mat, M_mat
+
+@fixture
+def K_M_vec(V_vec):
+    u, v = TrialFunction(V_vec), TestFunction(V_vec)
+    K_mat, M_mat = PETScMatrix(), PETScMatrix()
+    x0 = PETScVector()
+    L = dot(Constant([0.0]*V_vec.mesh().geometry().dim()), v)*dx
+    assemble_system(k(u, v), L, bcs=[], A_tensor=K_mat, b_tensor=x0)
+    assemble_system(m(u, v), L, bcs=[], A_tensor=M_mat, b_tensor=x0)
+    return K_mat, M_mat
+
+
+# Tests
 
 @skip_if_not_PETsc_or_not_slepc
-def test_slepc_eigensolver_gen_hermitian():
+def test_slepc_eigensolver_gen_hermitian(K_M):
     "Test SLEPc eigen solver"
 
-    # Set backend
-    parameters["linear_algebra_backend"] = "PETSc"
-
-    mesh = UnitSquareMesh(32, 32)
-    V = FunctionSpace(mesh, "CG", 1)
-
-    u, v = TrialFunction(V), TestFunction(V)
-    k = dot(grad(u), grad(v))*dx
-    m = u*v*dx
-    L = Constant(1.0)*v*dx
-
-    K = PETScMatrix()
-    M = PETScMatrix()
-    x0 = PETScVector()
-
-    assemble_system(k, L, bcs=[], A_tensor=K, b_tensor=x0)
-    assemble_system(m, L, bcs=[], A_tensor=M, b_tensor=x0)
-
+    K, M = K_M
     esolver = SLEPcEigenSolver(K, M)
 
     esolver.parameters["solver"] = "krylov-schur"
@@ -70,40 +98,23 @@ def test_slepc_eigensolver_gen_hermitian():
 
     # Test remaining eigenvalues and eigenpairs
     for j in range(1, nevs):
-      re, im = esolver.get_eigenvalue(j)
-      assert re > 0.0
-      assert near(im, 0.0)
+        re, im = esolver.get_eigenvalue(j)
+        assert re > 0.0
+        assert near(im, 0.0)
 
     for j in range(1, nevs):
-      re, im, v_re, v_im = esolver.get_eigenpair(j)
-      assert re > 0.0
-      assert near(im, 0.0)
-      assert v_re.norm("l2") > 0.0
-      assert near(v_im.norm("l2"), 0.0)
+        re, im, v_re, v_im = esolver.get_eigenpair(j)
+        assert re > 0.0
+        assert near(im, 0.0)
+        assert v_re.norm("l2") > 0.0
+        assert near(v_im.norm("l2"), 0.0)
 
 
 @skip_if_not_PETsc_or_not_slepc
-def test_slepc_null_space():
+def test_slepc_null_space(K_M, V):
     "Test SLEPc eigen solver with nullspace as PETScVector"
 
-    # Set backend
-    parameters["linear_algebra_backend"] = "PETSc"
-
-    mesh = UnitSquareMesh(8, 8)
-    V = FunctionSpace(mesh, "CG", 1)
-
-    u, v = TrialFunction(V), TestFunction(V)
-    k = dot(grad(u), grad(v))*dx
-    m = u*v*dx
-    L = Constant(1.0)*v*dx
-
-    K = PETScMatrix()
-    M = PETScMatrix()
-    x0 = PETScVector()
-
-    assemble_system(k, L, bcs=[], A_tensor=K, b_tensor=x0)
-    assemble_system(m, L, bcs=[], A_tensor=M, b_tensor=x0)
-
+    K, M = K_M
     esolver = SLEPcEigenSolver(K, M)
 
     esolver.parameters["solver"] = "jacobi-davidson"
@@ -118,15 +129,15 @@ def test_slepc_null_space():
     esolver.solve(20)
 
     for j in range(1, nevs):
-      re, im, v_re, v_im = esolver.get_eigenpair(j)
-      assert re > 0.0
-      assert near(im, 0.0)
-      assert v_re.norm("l2") > 0.0
-      assert near(v_im.norm("l2"), 0.0)
+        re, im, v_re, v_im = esolver.get_eigenpair(j)
+        assert re > 0.0
+        assert near(im, 0.0)
+        assert v_re.norm("l2") > 0.0
+        assert near(v_im.norm("l2"), 0.0)
 
 
 @skip_if_not_PETsc_or_not_slepc
-def test_slepc_vector_null_space():
+def test_slepc_vector_null_space(K_M_vec, V_vec):
     "Test SLEPc eigen solver with nullspace as VectorSpaceBasis"
 
     def build_nullspace(V, x):
@@ -144,40 +155,23 @@ def test_slepc_vector_null_space():
 
         return basis
 
-    # Set backend
-    parameters["linear_algebra_backend"] = "PETSc"
-
-    mesh = UnitSquareMesh(8, 8)
-    V = VectorFunctionSpace(mesh, "CG", 1)
-
-    u, v = TrialFunction(V), TestFunction(V)
-    k = inner(grad(u), grad(v))*dx
-    m = dot(u, v)*dx
-    L = dot(Constant((0.0, 0.0)), v)*dx
-
-    K = PETScMatrix()
-    M = PETScMatrix()
-    x0 = PETScVector()
-
-    assemble_system(k, L, bcs=[], A_tensor=K, b_tensor=x0)
-    assemble_system(m, L, bcs=[], A_tensor=M, b_tensor=x0)
-
+    K, M = K_M_vec
     esolver = SLEPcEigenSolver(K, M)
 
     esolver.parameters["solver"] = "jacobi-davidson"
     esolver.parameters["problem_type"] = 'gen_hermitian'
     
-    u0 = Function(V)
-    nullspace_basis = build_nullspace(V, u0.vector())
+    u0 = Function(V_vec)
+    nullspace_basis = build_nullspace(V_vec, u0.vector())
     esolver.set_deflation_space(nullspace_basis)
 
     nevs = 20
     esolver.solve(20)
 
     for j in range(1, nevs):
-      re, im, v_re, v_im = esolver.get_eigenpair(j)
-      assert re > 0.0
-      assert near(im, 0.0)
-      assert v_re.norm("l2") > 0.0
-      assert near(v_im.norm("l2"), 0.0)
+        re, im, v_re, v_im = esolver.get_eigenpair(j)
+        assert re > 0.0
+        assert near(im, 0.0)
+        assert v_re.norm("l2") > 0.0
+        assert near(v_im.norm("l2"), 0.0)
 
