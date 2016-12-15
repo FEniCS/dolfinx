@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-12-13
+// Last changed: 2016-12-14
 //
 // Developer note:
 //
@@ -34,7 +34,7 @@
 // Define or undefine this flag for enabling or disabling CGAL and
 // exact arithmetic:
 
-#define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
+// #define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
 
 #ifndef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
 
@@ -151,7 +151,7 @@ namespace dolfin
   {
     using Point = dolfin::Point;
 
-    if (points.size() < 3)
+    if (points.size() <= 3)
       return std::vector<std::vector<Point> >(1, points);
 
     // Sometimes we can get an extra point on an edge: a-----c--b. This
@@ -163,33 +163,52 @@ namespace dolfin
       pointscenter += points[m];
     pointscenter /= points.size();
 
-    std::vector<std::pair<double, std::size_t>> order;
-    Point ref = points[0] - pointscenter;
-    ref /= ref.norm();
 
-    // Compute normal
-    Point normal = (points[2] - points[0]).cross(points[1] - points[0]);
-    const double det = normal.norm();
-    normal /= det;
+    // Reference
+    Point ref = points[0] - pointscenter;
 
     // Calculate and store angles
+    std::vector<std::pair<double, std::size_t>> order;
     for (std::size_t m = 1; m < points.size(); ++m)
     {
-      const Point v = points[m] - pointscenter;
-      const double frac = ref.dot(v) / v.norm();
-      double alpha;
-      if (frac <= -1)
-	alpha = DOLFIN_PI;
-      else if (frac >= 1)
-	alpha = 0;
-      else
-      {
-	alpha = acos(frac);
-	if (v.dot(normal.cross(ref)) < 0)
-	  alpha = 2*DOLFIN_PI-alpha;
-      }
-      order.push_back(std::make_pair(alpha, m));
+      const double A = orient2d(pointscenter.coordinates(),
+				const_cast<double*>(points[0].coordinates()),
+				const_cast<double*>(points[m].coordinates()));
+      const Point s = points[m] - pointscenter;
+      double alpha = std::atan2(A, s.dot(ref));
+      if (alpha < 0)
+	alpha += 2*DOLFIN_PI;
+      order.emplace_back(alpha, m);
     }
+
+
+    // std::vector<std::pair<double, std::size_t>> order;
+    // Point ref = points[0] - pointscenter;
+    // ref /= ref.norm();
+
+    // // Compute normal
+    // Point normal = (points[2] - points[0]).cross(points[1] - points[0]);
+    // const double det = normal.norm();
+    // normal /= det;
+
+    // // Calculate and store angles
+    // for (std::size_t m = 1; m < points.size(); ++m)
+    // {
+    //   const Point v = points[m] - pointscenter;
+    //   const double frac = ref.dot(v) / v.norm();
+    //   double alpha;
+    //   if (frac <= -1)
+    // 	alpha = DOLFIN_PI;
+    //   else if (frac >= 1)
+    // 	alpha = 0;
+    //   else
+    //   {
+    // 	alpha = acos(frac);
+    // 	if (v.dot(normal.cross(ref)) < 0)
+    // 	  alpha = 2*DOLFIN_PI-alpha;
+    //   }
+    //   order.push_back(std::make_pair(alpha, m));
+    // }
 
     // Sort angles
     std::sort(order.begin(), order.end());
@@ -298,17 +317,23 @@ namespace dolfin
       {
 	std::vector<std::vector<Point> > tri_dolfin = FIXME_triangulate_polygon_2d(unique_result_dolfin);
 	double vol_dolfin;
+	std::cout << "vol dolfin: ";
 	for (const std::vector<Point> tri: tri_dolfin)
 	{
 	  vol_dolfin += volume(tri);
+	  std::cout << volume(tri)<<' ';
 	}
+	std::cout << "\n";
 
 	std::vector<std::vector<Point> > tri_cgal = FIXME_triangulate_polygon_2d(unique_result_cgal);
 	double vol_cgal;
+	std::cout << "vol cgal: ";
 	for (const std::vector<Point> tri: tri_cgal)
 	{
+	  std::cout << volume(tri)<<' ';
 	  vol_cgal += volume(tri);
 	}
+	std::cout << "\n";
 
 	// double vol_dolfin;
 	// if (unique_result_dolfin.size() < 3)
@@ -709,33 +734,51 @@ namespace
       pointscenter += points[m];
     pointscenter /= points.size();
 
-    std::vector<std::pair<double, std::size_t>> order;
+    // Reference
     Point ref = points[0] - pointscenter;
-    ref /= ref.norm();
-
-    // Compute normal
-    Point normal = (points[2] - points[0]).cross(points[1] - points[0]);
-    const double det = normal.norm();
-    normal /= det;
 
     // Calculate and store angles
+    std::vector<std::pair<double, std::size_t>> order;
     for (std::size_t m = 1; m < points.size(); ++m)
     {
-      const Point v = points[m] - pointscenter;
-      const double frac = ref.dot(v) / v.norm();
-      double alpha;
-      if (frac <= -1)
-	alpha = DOLFIN_PI;
-      else if (frac >= 1)
-	alpha = 0;
-      else
-      {
-	alpha = acos(frac);
-	if (v.dot(normal.cross(ref)) < 0)
-	  alpha = 2*DOLFIN_PI-alpha;
-      }
-      order.push_back(std::make_pair(alpha, m));
+      const double A = orient2d(pointscenter.coordinates(),
+				const_cast<double*>(points[0].coordinates()),
+				const_cast<double*>(points[m].coordinates()));
+      const Point s = points[m] - pointscenter;
+      double alpha = std::atan2(A, s.dot(ref));
+      if (alpha < 0)
+	alpha += 2*DOLFIN_PI;
+      order.emplace_back(alpha, m);
     }
+
+
+    // std::vector<std::pair<double, std::size_t>> order;
+    // Point ref = points[0] - pointscenter;
+    // ref /= ref.norm();
+
+    // // Compute normal
+    // Point normal = (points[2] - points[0]).cross(points[1] - points[0]);
+    // const double det = normal.norm();
+    // normal /= det;
+
+    // // Calculate and store angles
+    // for (std::size_t m = 1; m < points.size(); ++m)
+    // {
+    //   const Point v = points[m] - pointscenter;
+    //   const double frac = ref.dot(v) / v.norm();
+    //   double alpha;
+    //   if (frac <= -1)
+    // 	alpha = DOLFIN_PI;
+    //   else if (frac >= 1)
+    // 	alpha = 0;
+    //   else
+    //   {
+    // 	alpha = acos(frac);
+    // 	if (v.dot(normal.cross(ref)) < 0)
+    // 	  alpha = 2*DOLFIN_PI-alpha;
+    //   }
+    //   order.push_back(std::make_pair(alpha, m));
+    // }
 
     // Sort angles
     std::sort(order.begin(), order.end());
