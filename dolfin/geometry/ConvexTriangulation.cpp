@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2016-11-22
+// Last changed: 2016-12-14
 
 #include "ConvexTriangulation.h"
 #include <algorithm>
@@ -131,6 +131,9 @@ std::vector<std::vector<Point>>
 ConvexTriangulation::triangulate_graham_scan(std::vector<Point> input_points,
                                              std::size_t gdim)
 {
+  // Only do 2D for now
+  dolfin_assert(gdim == 2);
+
   // Make sure the input points are unique
   std::vector<Point> points = unique_points(input_points);
 
@@ -154,33 +157,50 @@ ConvexTriangulation::triangulate_graham_scan(std::vector<Point> input_points,
     pointscenter += points[m];
   pointscenter /= points.size();
 
-  std::vector<std::pair<double, std::size_t>> order;
+  // Reference
   Point ref = points[0] - pointscenter;
-  ref /= ref.norm();
-
-  // Compute normal
-  Point normal = (points[2] - points[0]).cross(points[1] - points[0]);
-  const double det = normal.norm();
-  normal /= det;
 
   // Calculate and store angles
+  std::vector<std::pair<double, std::size_t>> order;
   for (std::size_t m = 1; m < points.size(); ++m)
   {
-    const Point v = points[m] - pointscenter;
-    const double frac = ref.dot(v) / v.norm();
-    double alpha;
-    if (frac <= -1)
-      alpha = DOLFIN_PI;
-    else if (frac >= 1)
-      alpha = 0;
-    else
-    {
-      alpha = acos(frac);
-      if (v.dot(normal.cross(ref)) < 0)
-        alpha = 2*DOLFIN_PI-alpha;
-    }
-    order.push_back(std::make_pair(alpha, m));
+    const double A = orient2d(pointscenter.coordinates(),
+			      points[0].coordinates(),
+			      points[m].coordinates());
+    const Point s = points[m] - pointscenter;
+    double alpha = std::atan2(A, s.dot(ref));
+    if (alpha < 0)
+      alpha += 2*DOLFIN_PI;
+    order.emplace_back(alpha, m);
   }
+
+  // std::vector<std::pair<double, std::size_t>> order;
+  // Point ref = points[0] - pointscenter;
+  // ref /= ref.norm();
+
+  // // Compute normal
+  // Point normal = (points[2] - points[0]).cross(points[1] - points[0]);
+  // const double det = normal.norm();
+  // normal /= det;
+
+  // // Calculate and store angles
+  // for (std::size_t m = 1; m < points.size(); ++m)
+  // {
+  //   const Point v = points[m] - pointscenter;
+  //   const double frac = ref.dot(v) / v.norm();
+  //   double alpha;
+  //   if (frac <= -1)
+  //     alpha = DOLFIN_PI;
+  //   else if (frac >= 1)
+  //     alpha = 0;
+  //   else
+  //   {
+  //     alpha = acos(frac);
+  //     if (v.dot(normal.cross(ref)) < 0)
+  //       alpha = 2*DOLFIN_PI-alpha;
+  //   }
+  //   order.push_back(std::make_pair(alpha, m));
+  // }
 
   // Sort angles
   std::sort(order.begin(), order.end());
