@@ -326,21 +326,14 @@ void SLEPcEigenSolver::set_deflation_space(const VectorSpaceBasis& deflation_spa
 
   PetscErrorCode ierr;
 
-  // Copy vectors in vector space object
-  std::vector<PETScVector> _nullspace;
+  // Get PETSc vector pointers from VectorSpaceBasis
+  std::vector<Vec> petsc_vecs;
   for (std::size_t i = 0; i < deflation_space.dim(); ++i)
   {
     dolfin_assert(deflation_space[i]);
     const PETScVector& x = deflation_space[i]->down_cast<PETScVector>();
-
-    // Copy vector
-    _nullspace.push_back(x);
+    petsc_vecs.push_back(x.vec());
   }
-
-  // Get pointers to underlying PETSc objects
-  std::vector<Vec> petsc_vecs;
-  for (auto& basis_vector : _nullspace)
-    petsc_vecs.push_back(basis_vector.vec());
 
   ierr = EPSSetDeflationSpace(_eps, petsc_vecs.size(), petsc_vecs.data());
   if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetDeflationSpace");
