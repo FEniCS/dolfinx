@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-13
+// Last changed: 2016-12-14
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -309,6 +309,11 @@ namespace dolfin
 			   Point target,
 			   Point ref_source,
 			   Point ref_target);
+
+    // static Point bisection_TT(Point source,
+    // 			      Point target,
+    // 			      Point ref_source,
+    // 			      Point ref_target);
 
   };
 }

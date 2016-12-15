@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-13
+// Last changed: 2016-12-15
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -29,7 +29,7 @@
 #include </home/august/dolfin_simplex_tools.h>
 #include <Eigen/Dense>
 #include <algorithm>
-#define augustdebug
+// #define augustdebug
 
 
 namespace
@@ -880,6 +880,16 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
 	  if (t2<0) cnt++;
 	  if (t3<0) cnt++;
 
+	  std::vector<std::pair<double, Point> > dists(4);
+	  dists[0] = std::pair<double, Point>(p0.squared_distance(z), p0);
+	  dists[1] = std::pair<double, Point>(p1.squared_distance(z), p1);
+	  dists[2] = std::pair<double, Point>(q0.squared_distance(z), q0);
+	  dists[3] = std::pair<double, Point>(q1.squared_distance(z), q1);
+	  std::sort(dists.begin(), dists.end(), [](std::pair<double, Point> p1,
+						   std::pair<double, Point> p2) {
+		      return p1.first < p2.first;
+		    });
+
 #ifdef augustdebug
 	  // test collision
 	  for (std::size_t d = 0; d < 2; ++d)
@@ -903,16 +913,6 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
 		!all_inside)
 	    {
 
-	      std::vector<std::pair<double, Point> > dists(4);
-	      dists[0] = std::pair<double, Point>(p0.squared_distance(z), p0);
-	      dists[1] = std::pair<double, Point>(p1.squared_distance(z), p1);
-	      dists[2] = std::pair<double, Point>(q0.squared_distance(z), q0);
-	      dists[3] = std::pair<double, Point>(q1.squared_distance(z), q1);
-	      std::sort(dists.begin(), dists.end(), [](std::pair<double, Point> p1,
-						       std::pair<double, Point> p2) {
-			  return p1.first < p2.first;
-			});
-
 	      std::vector<std::pair<double, Point> > dists1(4);
 	      dists1[0] = std::pair<double, Point>(p0.squared_distance(z1), p0);
 	      dists1[1] = std::pair<double, Point>(p1.squared_distance(z1), p1);
@@ -922,22 +922,93 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point a,
 							 std::pair<double, Point> p2) {
 			  return p1.first < p2.first;
 			});
-	      std::cout << "possible error, take closest which is of distance = " << dists[0].first <<" or " << dists1[0].first << "\n";
-	      dolfin_assert(dists[0].first < DOLFIN_EPS or dists1[0].first < DOLFIN_EPS);
-	      z = dists[0].first < dists1[0].first ? z : z1;
+	      std::cout << "possible error, take closest which is of distance = " << dists[0].first <<" or " << dists1[0].first << " (points are " << dists[0].second << " and " << dists1[0].second;
+#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+	      std::<< ". CGAL says:\n";
+	      const std::vector<Point> cgal_intersection = cgal_intersection_segment_segment_2d(a,b,c,d);
+	      for (const Point p: cgal_intersection)
+	      	std::cout <<std::setprecision(std::numeric_limits<long double>::digits10+2)  << p[0]<<' '<<p[1];
+	      dolfin_assert(cgal_intersection.size() == 1);
+#endif
+	      std::cout << std::endl;
 
-	      // z = z1;
-	      // std::cout << "possible error, check what CGAL says\n";
-	      // const std::vector<Point> cgal_intersection = cgal_intersection_segment_segment_2d(a,b,c,d);
-	      // for (const Point p: cgal_intersection)
-	      // 	std::cout << p << std::endl;
-	      PPause;
+	      //dolfin_assert(dists[0].first < DOLFIN_EPS or dists1[0].first < DOLFIN_EPS);
+	      if (dists[0].first < DOLFIN_EPS or dists1[0].first < DOLFIN_EPS)
+	      {
+		z = dists[0].first < dists1[0].first ? z : z1;
+	      }
+	      else
+	      {
+
+		// z = z1;
+		// std::cout << "possible error, check what CGAL says\n";
+		// const std::vector<Point> cgal_intersection = cgal_intersection_segment_segment_2d(a,b,c,d);
+		// for (const Point p: cgal_intersection)
+		// 	std::cout << p << std::endl;
+
+#ifdef augustdebug
+		std::cout << "do bisection with the points found as start points\n";
+#endif
+		Point z2 = bisection(z,z1,ref_source,ref_target);
+
+		std::vector<std::pair<double,Point> > ii;
+		ii.emplace_back(z1.squared_distance(p0), p0);
+		ii.emplace_back(z1.squared_distance(p1), p1);
+		ii.emplace_back(z1.squared_distance(q0), q0);
+		ii.emplace_back(z1.squared_distance(q1), q1);
+		std::sort(ii.begin(), ii.end(), [](std::pair<double,Point> left,
+						   std::pair<double,Point> right) {
+			    return left.first < right.first;
+			  });
+		const Point r = ii[3].second-ii[2].second;
+		const double t0 = r.dot(z2-ii[0].second);
+		const double t1 = r.dot(z2-ii[1].second);
+		const double t2 = r.dot(z2-ii[2].second);
+		const double t3 = r.dot(z2-ii[3].second);
+		int cnt=0;
+		if (t0<0) cnt++;
+		if (t1<0) cnt++;
+		if (t2<0) cnt++;
+		if (t3<0) cnt++;
+
+#ifdef augustdebug
+		// test collision
+		for (std::size_t d = 0; d < 2; ++d)
+		  std::cout << CollisionPredicates::collides_segment_point_1d(p0[d],p1[d],z2[d])<<' ';
+		std::cout << std::endl;
+		for (std::size_t d = 0; d < 2; ++d)
+		  std::cout << CollisionPredicates::collides_segment_point_1d(q0[d],q1[d],z2[d])<<' ';
+		std::cout << std::endl;
+		std::cout << t0<<' '<<t1<<' '<<t2<<' '<<t3<<std::endl;
+#endif
+		const bool all_inside = CollisionPredicates::collides_segment_point_1d(p0[0],p1[0],z1[0]) and
+		  CollisionPredicates::collides_segment_point_1d(p0[1],p1[1],z2[1]) and
+		  CollisionPredicates::collides_segment_point_1d(q0[0],q1[0],z2[0]) and
+		  CollisionPredicates::collides_segment_point_1d(q0[1],q1[1],z2[1]);
+
+		if (cnt!=2) {
+		  if (std::abs(t0)>DOLFIN_EPS or std::abs(t1)>DOLFIN_EPS or
+		      std::abs(t2)>DOLFIN_EPS or std::abs(t3)>DOLFIN_EPS or
+		      !all_inside)
+		  {
+		    PPause;
+		  }
+		}
+		else
+		{
+#ifdef augustdebug
+		  std::cout << "new point z2 accepted\n";
+#endif
+		  z = z2;
+		}
+	      }
+
 	    }
 	  }
 	  else
 	  {
 #ifdef augustdebug
-	    std::cout << "new point accepted\n";
+	    std::cout << "new point z1 accepted\n";
 #endif
 
 	    z = z1;
@@ -1574,7 +1645,7 @@ IntersectionConstruction::_intersection_triangle_triangle_2d(Point p0,
   }
 
 
-  return points;
+  return unique_points(points);
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -1891,10 +1962,7 @@ Point IntersectionConstruction::bisection(Point source,
 		  std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-b)*source+b*target).coordinates())));
 
     const double new_alpha = (a+b)/2;
-    if (new_alpha != (b+a)/2) { PPause; }
     Point new_point = (1-new_alpha)*source+new_alpha*target;
-
-    if (new_point != (new_alpha*target + (1-new_alpha)*source)) { PPause; }
 
     const double mid_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), new_point.coordinates());
 
@@ -1915,9 +1983,9 @@ Point IntersectionConstruction::bisection(Point source,
       b_orientation = mid_orientation;
       b = new_alpha;
     }
-    // #ifdef augustdebug
-    // 	std::cout << iterations << ' ' << a<<' '<<b<<' '<<std::abs(b-a)<<' '<< source_orientation << ' '<< mid_orientation<<' ' << tools::plot((1-(a+b)/2)*source + (a+b)/2*target)<<' '<<tools::plot((1-a)*source+a*target)<<std::endl;
-    // #endif
+    #ifdef augustdebug
+    	std::cout << iterations << ' ' << a<<' '<<b<<' '<<std::abs(b-a)<<' '<< source_orientation << ' '<< mid_orientation<<' ' << tools::plot((1-(a+b)/2)*source + (a+b)/2*target)<<' '<<tools::plot((1-a)*source+a*target)<<std::endl;
+    #endif
     iterations++;
   }
 
@@ -1945,4 +2013,92 @@ Point IntersectionConstruction::bisection(Point source,
 
   return z;
 }
-//-----------------------------------------------------------------------------
+// //-----------------------------------------------------------------------------
+// Point IntersectionConstruction::bisection_TT(Point source,
+// 					     Point target,
+// 					     Point ref_source,
+// 					     Point ref_target)
+// {
+//   typedef ttmath::Big<TTMATH_BITS(22), TTMATH_BITS(104)> TT;
+//   const TT one = 1;
+
+//   int iterations = 0;
+//   TT a = 0;
+//   TT b = 1;
+
+//   const TT source_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), source.coordinates());
+//   TT a_orientation = source_orientation;
+//   TT b_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), target.coordinates());
+
+// #ifdef augustdebug
+//   std::cout << "a_orientation " << a_orientation << '\n'
+// 	    << "b_orientation " << b_orientation << std::endl;
+// #endif
+
+//   while (ttmath::Abs(b-a) > 1e-16)
+//   {
+//     // #ifdef augustdebug
+//     // 	std::cout << orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-a)*source+a*target).coordinates()) <<' '<<orient2d(ref_source.coordinates(), ref_target.coordinates(), ((1-b)*source+b*target).coordinates())<<' '<< tools::plot((1-b)*source+b*target)<<' '<<tools::plot(target) <<orient2d(ref_source.coordinates(), ref_target.coordinates(), target.coordinates())<< ' '<<orient2d(ref_source.coordinates(),ref_target.coordinates(), ((1-b)*source+b*target).coordinates())<<std::endl;
+//     // #endif
+
+//     std::cout << orient2d(ref_source.coordinates(), ref_target.coordinates(), ((one-a).ToDouble()*source+a.ToDouble()*target).coordinates())<<' '<<orient2d(ref_source.coordinates(), ref_target.coordinates(), ((one-b).ToDouble()*source+b.ToDouble()*target).coordinates()) << std::endl;
+
+//     dolfin_assert(std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), ((one-a).ToDouble()*source+a.ToDouble()*target).coordinates())) !=
+// 		  std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), ((one-b).ToDouble()*source+b.ToDouble()*target).coordinates())));
+
+//     const TT new_alpha = (a+b)/2;
+//     // Point new_point = (one-new_alpha).ToDouble()*source+new_alpha.ToDouble()*target;
+//     std::array<TT, 2> new_point_tmp = { (one-new_alpha)*source[0] + new_alpha*target[0],
+// 					(one-new_alpha)*source[1] + new_alpha*target[1]};
+//     Point new_point(new_point_tmp[0].ToDouble(), new_point_tmp[1].ToDouble());
+
+//     const TT mid_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), new_point.coordinates());
+
+//     if (mid_orientation == 0)
+//     {
+//       a = new_alpha;
+//       b = new_alpha;
+//       break;
+//     }
+
+//     if (std::signbit(source_orientation.ToDouble()) == std::signbit(mid_orientation.ToDouble()))
+//     {
+//       a_orientation = mid_orientation;
+//       a = new_alpha;
+//     }
+//     else
+//     {
+//       b_orientation = mid_orientation;
+//       b = new_alpha;
+//     }
+// #ifdef augustdebug
+//     std::cout << iterations << ' ' << a<<' '<<b<<' '<< source_orientation << ' '<< mid_orientation<<' ' << tools::plot((one-(a+b)/2).ToDouble()*source + (a+b).ToDouble()/2*target)<<' '<<tools::plot((one-a).ToDouble()*source+a.ToDouble()*target)<<std::endl;
+// #endif
+//     iterations++;
+//   }
+
+//   Point z;
+
+//   if (a == b)
+//   {
+//     //intersection.push_back(source + a*r);
+//     z = (one-a).ToDouble()*source + a.ToDouble()*target;
+// #ifdef augustdebug
+//     std::cout << "        Case 3 with bisection equal:\n"
+// 	      << "        " <<tools::plot(z,"'mo'") << std::endl;
+// #endif
+//   }
+//   else
+//   {
+//     //intersection.push_back(source + (a+b)/2*r);
+//     const TT new_alpha = (a+b)/2;
+//     z = (one-new_alpha).ToDouble()*source + new_alpha.ToDouble()*target;
+// #ifdef augustdebug
+//     std::cout << "        Case 3 with bisection half half:\n"
+// 	      << "        " <<tools::plot(z,"'mo'") << std::endl;
+// #endif
+//   }
+
+//   return z;
+// }
+// //-----------------------------------------------------------------------------
