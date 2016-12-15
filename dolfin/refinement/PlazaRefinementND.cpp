@@ -40,11 +40,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void PlazaRefinementND::get_simplices(
-  std::vector<std::size_t>& simplex_set,
-  const std::vector<bool>& marked_edges,
-  const std::vector<std::size_t>& longest_edge,
-  std::size_t tdim, bool uniform)
+void PlazaRefinementND::get_simplices(std::vector<std::size_t>& simplex_set,
+                                      const std::vector<bool>& marked_edges,
+                                      const std::vector<std::size_t>& longest_edge,
+                                      std::size_t tdim, bool uniform)
 {
   if (tdim == 2)
   {
@@ -58,11 +57,10 @@ void PlazaRefinementND::get_simplices(
   }
 }
 //-----------------------------------------------------------------------------
-void PlazaRefinementND::get_triangles
-(std::vector<std::size_t>& tri_set,
- const std::vector<bool>& marked_edges,
- const std::size_t longest_edge,
- bool uniform)
+void PlazaRefinementND::get_triangles(std::vector<std::size_t>& tri_set,
+                                      const std::vector<bool>& marked_edges,
+                                      const std::size_t longest_edge,
+                                      bool uniform)
 {
   Timer t0("PLAZA: Get triangles");
 
@@ -108,10 +106,9 @@ void PlazaRefinementND::get_triangles
     tri_set.insert(tri_set.end(), {e2, v2, v0});
 }
 //-----------------------------------------------------------------------------
-void PlazaRefinementND::get_tetrahedra(
-  std::vector<std::size_t>& tet_set,
-  const std::vector<bool>& marked_edges,
-  const std::vector<std::size_t>& longest_edge)
+void PlazaRefinementND::get_tetrahedra(std::vector<std::size_t>& tet_set,
+                                       const std::vector<bool>& marked_edges,
+                                       const std::vector<std::size_t>& longest_edge)
 {
   Timer t0("PLAZA: Get tetrahedra");
 
@@ -124,12 +121,12 @@ void PlazaRefinementND::get_tetrahedra(
   std::fill(conn.data(), conn.data() + 100, false);
 
   // Edge connectivity to vertices (and by extension facets)
-  static std::size_t edges[6][2] = {{2, 3},
-                                    {1, 3},
-                                    {1, 2},
-                                    {0, 3},
-                                    {0, 2},
-                                    {0, 1}};
+  static const std::int32_t edges[6][2] = {{2, 3},
+                                           {1, 3},
+                                           {1, 2},
+                                           {0, 3},
+                                           {0, 2},
+                                           {0, 1}};
 
   // Iterate through cell edges
   for (unsigned int ei = 0; ei != 6; ++ei)
@@ -260,9 +257,9 @@ void PlazaRefinementND::face_long_edge(std::vector<unsigned int>& long_edge,
       }
       else if (tdim == 3 and e_len == max_len)
       {
-        // If edges are the same length, compare global index of opposite vertex.
-        // Only important so that tetrahedral faces have a matching refinement pattern
-        // across processes.
+        // If edges are the same length, compare global index of
+        // opposite vertex.  Only important so that tetrahedral faces
+        // have a matching refinement pattern across processes.
         const Vertex vmax(mesh, f->entities(0)[imax]);
         const Vertex vi(mesh, f->entities(0)[i]);
         if (vi.global_index() > vmax.global_index())
@@ -284,8 +281,8 @@ void PlazaRefinementND::enforce_rules(ParallelRefinement& p_ref,
 {
   Timer t0("PLAZA: Enforce rules");
 
-  // Enforce rule, that if any edge of a face is marked,
-  // longest edge must also be marked
+  // Enforce rule, that if any edge of a face is marked, longest edge
+  // must also be marked
 
   std::size_t update_count = 1;
   while (update_count != 0)
@@ -307,7 +304,7 @@ void PlazaRefinementND::enforce_rules(ParallelRefinement& p_ref,
         ++update_count;
       }
     }
-    update_count = MPI::sum(mesh.mpi_comm(), update_count);
+    update_count = dolfin::MPI::sum(mesh.mpi_comm(), update_count);
   }
 }
 //-----------------------------------------------------------------------------
@@ -320,7 +317,8 @@ void PlazaRefinementND::refine(Mesh& new_mesh, const Mesh& mesh,
   {
     dolfin_error("PlazaRefinementND.cpp",
                  "refine mesh",
-                 "Cell type %s not supported", mesh.type().description(false).c_str());
+                 "Cell type %s not supported",
+                 mesh.type().description(false).c_str());
   }
 
   Timer t0("PLAZA: refine");
@@ -415,14 +413,13 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // Create vector of indices in the order
-    // [vertices][edges], 3+3 in 2D, 4+6 in 3D
+    // Create vector of indices in the order [vertices][edges], 3+3 in
+    // 2D, 4+6 in 3D
     std::size_t j = 0;
     for (VertexIterator v(*cell); !v.end(); ++v)
       indices[j++] = v->global_index();
 
     marked_edge_list = p_ref.marked_edge_list(*cell);
-
     if (marked_edge_list.size() == 0)
     {
       p_ref.new_cell(*cell);
@@ -431,8 +428,8 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
     else
     {
       indices.resize(num_cell_vertices + num_cell_edges);
-      // Get the marked edge indices for new vertices
-      // and make bool vector of marked edges
+      // Get the marked edge indices for new vertices and make bool
+      // vector of marked edges
       std::vector<bool> markers(num_cell_edges, false);
       for (auto &p : marked_edge_list)
       {
@@ -479,8 +476,7 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
     }
   }
 
-  const bool serial = (MPI::size(mesh.mpi_comm()) == 1);
-
+  const bool serial = (dolfin::MPI::size(mesh.mpi_comm()) == 1);
   if (serial)
     p_ref.build_local(new_mesh);
   else
@@ -501,7 +497,6 @@ void PlazaRefinementND::do_refine(Mesh& new_mesh, const Mesh& mesh,
   }
   else if (calculate_parent_facets)
     warning("Cannot calculate parent facets if redistributing cells");
-
 }
 //-----------------------------------------------------------------------------
 void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
@@ -513,8 +508,7 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
   const std::size_t tdim = mesh.topology().dim();
 
   std::vector<std::size_t>& new_parent_facet
-    = new_mesh.data().create_array("parent_facet",
-                                   tdim - 1);
+    = new_mesh.data().create_array("parent_facet", tdim - 1);
 
   new_mesh.init(tdim - 1);
   new_parent_facet.clear();
@@ -532,8 +526,8 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
     reverse_cell_map[parent_cell[cell_index]].insert(cell_index);
   }
 
-  // Go through all parent cells, calculating sets of vertices
-  // which make up eligible facets
+  // Go through all parent cells, calculating sets of vertices which
+  // make up eligible facets
   std::vector<std::set<std::size_t>> facet_sets;
   for (CellIterator pcell(mesh); !pcell.end(); ++pcell)
   {
@@ -555,8 +549,8 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
       facet_sets.push_back(vset);
     }
 
-    // Now check child facet vertices to see
-    // if they belong to any of the parent facet sets
+    // Now check child facet vertices to see if they belong to any of
+    // the parent facet sets
     for (const auto &child_index : reverse_cell_map[pcell->index()])
     {
       Cell cell(new_mesh, child_index);
@@ -566,11 +560,12 @@ void PlazaRefinementND::set_parent_facet_markers(const Mesh& mesh,
         if (new_parent_facet[f->index()]
             == std::numeric_limits<std::size_t>::max())
         {
-          // Iterate through parent sets of vertices representing facets
-          for (unsigned int i = 0; i != facet_sets.size(); ++i)
+          // Iterate through parent sets of vertices representing
+          // facets
+          for (unsigned int i = 0; i < facet_sets.size(); ++i)
           {
             // Check all vertices of child facet lie on parent facet
-            std::set<std::size_t>& vset = facet_sets[i];
+            const std::set<std::size_t>& vset = facet_sets[i];
             bool vertex_match = true;
             for (VertexIterator v(*f); !v.end(); ++v)
             {
