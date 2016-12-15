@@ -75,7 +75,7 @@ namespace
     eind.assign(num_local_cells*num_cell_vertices, 0);
     for (std::int32_t i = 0; i < num_local_cells; i++)
     {
-      dolfin_assert(cell_vertices[i].size() == num_cell_vertices);
+      dolfin_assert((std::int32_t) cell_vertices[i].size() == num_cell_vertices);
       eptr[i] = i*num_cell_vertices;
       for (std::int32_t j = 0; j < num_cell_vertices; j++)
         eind[eptr[i] + j] = cell_vertices[i][j];
