@@ -69,7 +69,6 @@ message("*** version: ${SLEPC_VERSION}")
 # and attaching 'properties')
 if (SLEPC_FOUND AND NOT TARGET SLEPC::slepc)
   add_library(SLEPC::slepc INTERFACE IMPORTED)
-  add_library(SLEPC::slepc_static INTERFACE IMPORTED)
 
   # Add include paths
   set_property(TARGET SLEPC::slepc PROPERTY
@@ -82,17 +81,21 @@ if (SLEPC_FOUND AND NOT TARGET SLEPC::slepc)
     list(APPEND _libs ${LIB_${lib}})
   endforeach()
   set_property(TARGET SLEPC::slepc PROPERTY INTERFACE_LINK_LIBRARIES "${_libs}")
+endif()
+
+if (SLEPC_FOUND AND NOT TARGET SLEPC::slepc_static)
+  add_library(SLEPC::slepc_static INTERFACE IMPORTED)
 
   # Add libraries (static)
   unset(_libs)
-  set(_SLEPC_STATIC_LIBRARIES)
   foreach (lib ${SLEPC_STATIC_LIBRARIES})
     find_library(LIB_${lib} ${lib} HINTS ${SLEPC_STATIC_LIBRARY_DIRS})
-    list(APPEND _SLEPC_STATIC_LIBRARIES ${LIB_${lib}})
+    list(APPEND _libs ${LIB_${lib}})
   endforeach()
-  set_property(TARGET SLEPC::slepc_static PROPERTY INTERFACE_LINK_LIBRARIES "${_SLEPC_STATIC_LIBRARIES}")
+  set_property(TARGET SLEPC::slepc_static PROPERTY INTERFACE_LINK_LIBRARIES "${_libs}")
 
 endif()
+
 
 # Compile and run test
 if (DOLFIN_SKIP_BUILD_TESTS)
@@ -101,7 +104,7 @@ if (DOLFIN_SKIP_BUILD_TESTS)
   # Assume SLEPc works, and assume shared linkage
   set(SLEPC_TEST_RUNS TRUE)
   #unset(PETSC_STATIC_LIBRARIES CACHE)
-  set_property(TARGET SLEPC::slepc_static PROPERTY INTERFACE_LINK_LIBRARIES)
+  #set_property(TARGET SLEPC::slepc_static PROPERTY INTERFACE_LINK_LIBRARIES)
 
 elseif (SLEPC_FOUND)
 
@@ -142,7 +145,7 @@ int main()
     CMAKE_FLAGS
     "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
     "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
-    LINK_LIBRARIES SLEPC::slepc
+    LINK_LIBRARIES PETSC::petsc SLEPC::slepc
     COMPILE_OUTPUT_VARIABLE SLEPC_TEST_LIB_COMPILE_OUTPUT
     RUN_OUTPUT_VARIABLE SLEPC_TEST_LIB_OUTPUT
     )
@@ -179,8 +182,11 @@ int main()
       COMPILE_OUTPUT_VARIABLE SLEPC_TEST_STATIC_LIBS_COMPILE_OUTPUT
       RUN_OUTPUT_VARIABLE SLEPC_TEST_STATIC_LIBS_OUTPUT
       )
+    message("*** ${SLEPC_TEST_STATIC_LIBS_COMPILE_OUTPUT}")
+    message("*** ${SLEPC_TEST_STATIC_LIBS_EXITCODE}")
+    message("*** ${SLEPC_TEST_STATIC_LIBS_COMPILE_OUTPUT}")
 
-    if (SLEPC_TEST_STATIC_LIBS_COMPILED AND SLEPC_STATIC_LIBS_EXITCODE EQUAL 0)
+    if (SLEPC_TEST_STATIC_LIBS_COMPILED AND SLEPC_TEST_STATIC_LIBS_EXITCODE EQUAL 0)
 
       message(STATUS "Test SLEPC_TEST__RUNS with static linking - Success")
       set(SLEPC_TEST_RUNS TRUE)
