@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # very rough demo to test out ghost cells
 # run with mpirun
 #
@@ -10,14 +8,11 @@ import sys, os
 import six
 
 try:
-    parameters['plotting_backend'] = 'matplotlib'
-except RuntimeError:
-    print("This demo requires matplotlib! Bye.")
-    exit()
-else:
     import matplotlib.pyplot as plt
     from matplotlib.collections import PolyCollection
-
+except ImortError:
+    print("This demo requires matplotlib! Bye.")
+    exit()
 
 parameters["ghost_mode"] = "shared_vertex"
 #parameters["ghost_mode"] = "shared_facet"

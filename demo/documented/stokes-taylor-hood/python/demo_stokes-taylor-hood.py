@@ -84,6 +84,5 @@ pfile_pvd = File("pressure.pvd")
 pfile_pvd << p
 
 # Plot solution
-plot(u)
-plot(p)
-interactive()
+plot(u, interactive=True)
+plot(p, interactive=True)
