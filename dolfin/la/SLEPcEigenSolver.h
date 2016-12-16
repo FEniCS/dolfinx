@@ -188,8 +188,7 @@ namespace dolfin
     /// Set deflation space
     void set_deflation_space(const PETScVector& deflation_space);
 
-    /// Set deflation space. The deflation space is explicitly orthonormalized
-    /// by SLEPc internally.
+    /// Set deflation space
     void set_deflation_space(const VectorSpaceBasis& deflation_space);
 
     /// Sets the prefix used by PETSc when searching the PETSc options

@@ -83,7 +83,7 @@ def test_slepc_eigensolver_gen_hermitian(K_M):
     esolver.parameters["problem_type"] = 'gen_hermitian'
 
     nevs = 20
-    esolver.solve(20)
+    esolver.solve(nevs)
 
     # Test default eigenvalue
     re_0, im_0 = esolver.get_eigenvalue()
@@ -126,7 +126,7 @@ def test_slepc_null_space(K_M, V):
     esolver.set_deflation_space(nullspace_basis)
 
     nevs = 20
-    esolver.solve(20)
+    esolver.solve(nevs)
 
     for j in range(1, nevs):
         re, im, v_re, v_im = esolver.get_eigenpair(j)
@@ -166,7 +166,7 @@ def test_slepc_vector_null_space(K_M_vec, V_vec):
     esolver.set_deflation_space(nullspace_basis)
 
     nevs = 20
-    esolver.solve(20)
+    esolver.solve(nevs)
 
     for j in range(1, nevs):
         re, im, v_re, v_im = esolver.get_eigenpair(j)
