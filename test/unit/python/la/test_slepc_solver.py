@@ -2,7 +2,7 @@
 
 """Unit tests for the KrylovSolver interface"""
 
-# Copyright (C) 2016 INSERT NAME HERE
+# Copyright (C) 2016 Nate Sime
 #
 # This file is part of DOLFIN.
 #
