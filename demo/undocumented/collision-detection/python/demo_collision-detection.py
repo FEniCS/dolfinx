@@ -17,11 +17,6 @@
 
 from dolfin import *
 
-# Sequence of plots eats a lot of memory with matplotlib (maybe leak)
-if parameters['plotting_backend'] == 'matplotlib':
-    warning("Collision detection demo does not work with matplotlib. Bye!")
-    exit(0)
-
 # Some parameters
 L = 10.0
 h = 0.1
