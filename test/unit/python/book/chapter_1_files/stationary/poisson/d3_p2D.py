@@ -60,4 +60,4 @@ file = File('poisson.pvd')
 file << u
 
 # Hold plot
-interactive()
+#interactive()

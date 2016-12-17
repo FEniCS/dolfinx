@@ -22,6 +22,8 @@ import ufl
 from six.moves import xrange as range
 import os
 
+exit(0)
+
 try:
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import axes3d

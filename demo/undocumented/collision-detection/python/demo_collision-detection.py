@@ -17,6 +17,8 @@
 
 from dolfin import *
 
+# There is an issue with the Matplotlib backend that needs to be investigated
+
 # Some parameters
 L = 10.0
 h = 0.1
@@ -82,10 +84,10 @@ for n in range(num_steps):
         f.set_value(i, 3)
 
     # Plot
-    p = plot(f, wireframe=(n > num_steps / 2))
+    #p = plot(f, wireframe=(n > num_steps / 2))
     #p.write_png("collision-detection-%.4d" % n)
 
-interactive()
+#interactive()
 
 # Generate movie using
 # ffmpeg -r 25 -b 1800 -i collision-detection-%04d.png collision-detection.mp4
