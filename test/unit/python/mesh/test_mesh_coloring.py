@@ -1,8 +1,6 @@
-#!/usr/bin/env py.test
-
 """Unit tests for mesh coloring"""
 
-# Copyright (C) 2013 Garth N. Wells
+# Copyright (C) 2013-2016 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -18,19 +16,15 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2013-08-10
-# Last changed:
 
 import pytest
 from dolfin import *
+from dolfin_utils.test import pushpop_parameters
 
-
-def test_by_entity_cell_coloring():
+def test_by_entity_cell_coloring(pushpop_parameters):
     """Color mesh cells by connections."""
 
     # Get coloring libraries
-    default_parameter = parameters["graph_coloring_library"]
     coloring_libraries = parameters.get_range("graph_coloring_library")
     for coloring_library in coloring_libraries:
         parameters["graph_coloring_library"] = coloring_library
@@ -39,4 +33,8 @@ def test_by_entity_cell_coloring():
         mesh.color("edge")
         mesh.color("facet")
 
-    parameters["graph_coloring_library"] = default_parameter
+        # Compute facet-based coloring with distance 2
+        dim = mesh.topology().dim()
+        coloring_type = (dim, dim - 1, dim, dim - 1, dim)
+        mesh.color(coloring_type);
+        colors = MeshColoring.cell_colors(mesh, coloring_type)
