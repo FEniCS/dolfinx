@@ -188,7 +188,8 @@ namespace dolfin
     /// Set deflation space
     void set_deflation_space(const PETScVector& deflation_space);
 
-    /// Set deflation space
+    /// Set deflation space. The VectorSpaceBasis used for deflation need
+    /// not be an orthonormal set.
     void set_deflation_space(const VectorSpaceBasis& deflation_space);
 
     /// Sets the prefix used by PETSc when searching the PETSc options
