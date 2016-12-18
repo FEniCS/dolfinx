@@ -14,18 +14,14 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Ola Skavhaug, 2008.
-// Modified by Anders Logg, 2008.
-// Modified by Marie Rognes, 2009.
 
 #ifndef __SLEPC_EIGEN_SOLVER_H
 #define __SLEPC_EIGEN_SOLVER_H
 
 #ifdef HAS_SLEPC
 
-#include <string>
 #include <memory>
+#include <string>
 #include <slepceps.h>
 #include "dolfin/common/types.h"
 #include "dolfin/common/MPI.h"
@@ -38,6 +34,7 @@ namespace dolfin
   class GenericVector;
   class PETScMatrix;
   class PETScVector;
+  class VectorSpaceBasis;
 
   /// This class provides an eigenvalue solver for PETSc matrices. It
   /// is a wrapper for the SLEPc eigenvalue solver.
@@ -186,6 +183,10 @@ namespace dolfin
 
     /// Set deflation space
     void set_deflation_space(const PETScVector& deflation_space);
+
+    /// Set deflation space. The VectorSpaceBasis does not need
+    /// orthonormal.
+    void set_deflation_space(const VectorSpaceBasis& deflation_space);
 
     /// Sets the prefix used by PETSc when searching the PETSc options
     /// database
