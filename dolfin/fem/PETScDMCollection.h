@@ -42,6 +42,10 @@ namespace dolfin
     /// Destructor
     ~PETScDMCollection();
 
+    DM fine()
+    { return _dms[_dms.size() - 1]; }
+
+
   private:
 
     static PetscErrorCode create_global_vector(DM dm, Vec* vec);

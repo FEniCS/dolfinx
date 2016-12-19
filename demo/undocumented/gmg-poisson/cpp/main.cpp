@@ -111,52 +111,9 @@ int main()
   KSPGetPC(ksp, &pc);
   PCSetType(pc, "lu");
 
-  //PETScVector& x = u.vector()->down_cast<PETScVector>();
-  //KSPSolve(ksp, b.vec(), x.vec());
-
-  // Coarse grid (grid 0)
-  Function u0(V0);
-  PETScVector& x0 = u0.vector()->down_cast<PETScVector>();
-
-  DM dm0;
-  DMShellCreate(MPI_COMM_WORLD, &dm0);
-  DMShellSetGlobalVector(dm0, x0.vec());
-  DMShellSetContext(dm0, (void*)&V0);
-
-  // Grid 1
-  Function u1(V1);
-  PETScVector& x1 = u1.vector()->down_cast<PETScVector>();
-  DM dm1;
-  DMShellCreate(MPI_COMM_WORLD, &dm1);
-  DMShellSetGlobalVector(dm1, x1.vec());
-  DMShellSetContext(dm1, (void*)&V1);
-
-  // Grid 2
-  Function u2(V2);
-  PETScVector& x2 = u2.vector()->down_cast<PETScVector>();
-  DM dm2;
-  DMShellCreate(MPI_COMM_WORLD, &dm2);
-  DMShellSetGlobalVector(dm2, x2.vec());
-  DMShellSetContext(dm2, (void*)&V2);
-
-  // Set interpolation matrix
-  DMShellSetCreateInterpolation(dm2, create_interpolation);  // coarse-to-fine interpolation
-  DMShellSetCreateInterpolation(dm1, create_interpolation);  // coarse-to-fine interpolation, i.e. level 1 to level 2
-  DMShellSetCreateInterpolation(dm0, create_interpolation);
-
-
   PETScDMCollection dm_collection({V0, V1, V2});
 
-  // Set grid relationships
-  DMSetCoarseDM(dm1, dm0);
-  DMSetCoarseDM(dm2, dm1);
-  DMShellSetCoarsen(dm1, coarsen);
-  DMShellSetCoarsen(dm2, coarsen);
-
-  DMSetFineDM(dm0, dm1);
-  DMSetFineDM(dm1, dm2);
-  DMShellSetRefine(dm0, refine);
-  DMShellSetRefine(dm1, refine);
+  DM dm = dm_collection.fine();
 
   KSPSetType(ksp, "richardson");
   PCSetType(pc, "mg");
@@ -168,9 +125,12 @@ int main()
   PETScOptions::set("ksp_rtol", 1.0e-10);
   KSPSetFromOptions(ksp);
 
-  KSPSetDM(ksp, dm2);
+
+  Function u(V2);
+  PETScVector& x = u.vector()->down_cast<PETScVector>();
+  KSPSetDM(ksp, dm);
   KSPSetDMActive(ksp, PETSC_FALSE);
-  ierr = KSPSolve(ksp, b.vec(), x2.vec());CHKERRQ(ierr);
+  ierr = KSPSolve(ksp, b.vec(), x.vec());CHKERRQ(ierr);
 
   KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
 

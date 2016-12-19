@@ -127,7 +127,8 @@ namespace dolfin
     return coords_to_dofs;
   }
 
-  std::shared_ptr<PETScMatrix> create_transfer_matrix(std::shared_ptr<const FunctionSpace> coarse_space, std::shared_ptr<const FunctionSpace> fine_space)
+  std::shared_ptr<PETScMatrix> create_transfer_matrix(std::shared_ptr<const FunctionSpace> coarse_space,
+                                                      std::shared_ptr<const FunctionSpace> fine_space)
   {
     // Initialise PETSc Mat and error code
     PetscErrorCode ierr;
@@ -420,7 +421,8 @@ namespace dolfin
             // if found, store information
             found_ids.push_back(id);
             found_points.insert(found_points.end(), _x.begin(), _x.end());
-            global_row_indices.insert(global_row_indices.end(), &found_elsewhere_global_row_indices_recv[sender][data_size*i], &found_elsewhere_global_row_indices_recv[sender][data_size*i + data_size]);
+            global_row_indices.insert(global_row_indices.end(), &found_elsewhere_global_row_indices_recv[sender][data_size*i],
+                                      &found_elsewhere_global_row_indices_recv[sender][data_size*i + data_size]);
             found_points_senders.push_back(sender);
           }
         }
@@ -460,9 +462,13 @@ namespace dolfin
         continue;
 
       // flattening not_found_global_row_indices_recv one step at a time.
-      not_found_global_row_indices_flattened.insert(not_found_global_row_indices_flattened.end(), not_found_global_row_indices_recv[proc].begin(), not_found_global_row_indices_recv[proc].end());
+      not_found_global_row_indices_flattened.insert(not_found_global_row_indices_flattened.end(),
+                                                    not_found_global_row_indices_recv[proc].begin(),
+                                                    not_found_global_row_indices_recv[proc].end());
       // updating the std::vector of who owns the fine points
-      not_found_points_senders_flattened.insert(not_found_points_senders_flattened.end(), not_found_points_senders_recv[proc].begin(), not_found_points_senders_recv[proc].end());
+      not_found_points_senders_flattened.insert(not_found_points_senders_flattened.end(),
+                                                not_found_points_senders_recv[proc].begin(),
+                                                not_found_points_senders_recv[proc].end());
 
       // reserve memory for speed
       not_found_cell_indices.reserve(not_found_cell_indices.size() + how_many);
@@ -537,7 +543,8 @@ namespace dolfin
         // allocate cell id to current worker if distance is minimum
         id = not_found_cell_indices[i];
         found_ids.push_back(id);
-        global_row_indices.insert(global_row_indices.end(), &not_found_global_row_indices_flattened[data_size*i], &not_found_global_row_indices_flattened[data_size*i + data_size]);
+        global_row_indices.insert(global_row_indices.end(), &not_found_global_row_indices_flattened[data_size*i],
+                                  &not_found_global_row_indices_flattened[data_size*i + data_size]);
         found_points.insert(found_points.end(), found_not_found_points.begin() + dim*i, found_not_found_points.begin() + dim*(i+1));
         sender = not_found_points_senders_flattened[i];
         found_points_senders.push_back(sender);
