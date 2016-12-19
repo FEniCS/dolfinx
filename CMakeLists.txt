@@ -1118,6 +1118,30 @@ if (DOLFIN_ENABLE_TESTING)
     DEPENDS copy_data_test_demo demo demos_source
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
+  # Add target "run_regressiontests_cpp" for running C++ regression tests
+  add_custom_target(run_regressiontests_cpp
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_PYTHON_TESTING=1 DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
+    DEPENDS copy_data_test_demo demo demos_source
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+
+  # Add target "run_regressiontests_cpp_mpi" for running C++ regression tests with mpi
+  add_custom_target(run_regressiontests_cpp_mpi
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_PYTHON_TESTING=1 DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
+    DEPENDS copy_data_test_demo demo demos_source
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+
+  # Add target "run_regressiontests_py" for running Python regression tests
+  add_custom_target(run_regressiontests_py
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_CPP_TESTING=1 DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
+    DEPENDS copy_data_test_demo demo demos_source
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+
+  # Add target "run_regressiontests_py_mpi" for running Python regression tests with mpi
+  add_custom_target(run_regressiontests_py_mpi
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_CPP_TESTING=1 DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
+    DEPENDS copy_data_test_demo demo demos_source
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
     DEPENDS run_unittests_cpp run_unittests_py run_unittests_py_mpi)
