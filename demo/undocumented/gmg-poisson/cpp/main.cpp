@@ -48,7 +48,7 @@ static PetscErrorCode create_interpolation(DM dmc, DM dmf, Mat *mat, Vec *vec)
   *mat = P->mat();
   *vec = NULL;
 
-  //xsPetscObjectReference((PetscObject)P->mat());
+  PetscObjectReference((PetscObject)*mat);
 
   return 0;
 }
@@ -121,10 +121,6 @@ int main()
   DMShellSetGlobalVector(dm0, x0.vec());
   DMShellSetContext(dm0, (void*)&V0);
 
-  // Set interpolation matrix
-  //DMShellSetCreateInterpolation(dm1, create_interpolation);  // coarse-to-fine interpolation
-  DMShellSetCreateInterpolation(dm0, create_interpolation);
-
   // Grid 1
   Function u1(V1);
   PETScVector& x1 = u1.vector()->down_cast<PETScVector>();
@@ -141,6 +137,11 @@ int main()
   DMShellSetGlobalVector(dm2, x2.vec());
   DMShellSetContext(dm2, (void*)&V2);
 
+  // Set interpolation matrix
+  DMShellSetCreateInterpolation(dm2, create_interpolation);  // coarse-to-fine interpolation
+  DMShellSetCreateInterpolation(dm1, create_interpolation);  // coarse-to-fine interpolation
+  DMShellSetCreateInterpolation(dm0, create_interpolation);
+
   // Set grid relationships
   DMSetCoarseDM(dm1, dm0);
   DMSetCoarseDM(dm2, dm1);
@@ -156,7 +157,8 @@ int main()
   PCSetType(pc, "mg");
   PCMGSetLevels(pc, 3, NULL);
   PCMGSetGalerkin(pc, PC_MG_GALERKIN_BOTH);
-  PETScOptions::set("ksp_monitor");
+  PETScOptions::set("ksp_monitor_true_residual");
+  PETScOptions::set("mg_levels_ksp_monitor_true_residual");
   PETScOptions::set("ksp_atol", 1.0e-10);
   PETScOptions::set("ksp_rtol", 1.0e-10);
   KSPSetFromOptions(ksp);
