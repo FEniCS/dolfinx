@@ -1,36 +1,13 @@
-// Copyright (C) 2016 Patrick E. Farrell and Garth N. Wells
-//
-// This file is part of DOLFIN.
-//
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+// Taken verbatim from Defcon
+// (https://bitbucket.org/pefarrell/defcon/src/31094c67f4b705893271ed0ee7850e32c0d262c9/defcon/mg.py?at=master&fileviewer=file-view-default)
 
-#ifdef HAS_PETSC
-
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/log/log.h>
-#include <dolfin/la/PETScMatrix.h>
-#include <dolfin/la/PETScVector.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/common/RangedIndexSet.h>
 #include <petscmat.h>
-#include "PETScDMCollection.h"
 
-using namespace dolfin;
-
-namespace
+namespace dolfin
 {
   // Coordinate comparison operator
   struct lt_coordinate
@@ -127,15 +104,13 @@ namespace
     return coords_to_dofs;
   }
 
-  std::shared_ptr<PETScMatrix> create_transfer_matrix(std::shared_ptr<const FunctionSpace> coarse_space,
-                                                      std::shared_ptr<const FunctionSpace> fine_space)
+  std::shared_ptr<PETScMatrix> create_transfer_matrix(std::shared_ptr<const FunctionSpace> coarse_space, std::shared_ptr<const FunctionSpace> fine_space)
   {
     // Initialise PETSc Mat and error code
     PetscErrorCode ierr;
     Mat I;
 
     // Get coarse mesh and dimension of the domain
-    dolfin_assert(coarse_space->mesh());
     const Mesh meshc = *coarse_space->mesh();
     std::size_t dim = meshc.geometry().dim();
 
@@ -225,9 +200,11 @@ namespace
     // number of dofs per cell for the finite element.
     std::size_t eldim = el->space_dimension();
     // Number of dofs associated with each fine point
-    unsigned int data_size = 1;
+    int data_size = 1;
     for (unsigned data_dim = 0; data_dim < el->value_rank(); data_dim++)
       data_size *= el->value_dimension(data_dim);
+    // Number of points in a fine cell
+    int num_points = eldim / data_size;
 
     // Miscellaneous initialisations, these will all be needed later
     Point curr_point; // point variable
@@ -372,7 +349,7 @@ namespace
 
     // we loop over the processors that own the fine points that need to be found
     // we call them senders here.
-    for (unsigned sender = 0;sender < mpi_size; ++sender)
+    for (unsigned sender=0;sender<mpi_size;sender++)
     {
       // We already searched on the current processor
       if (sender == receiver)
@@ -386,7 +363,7 @@ namespace
       // for each fine point, create a Point variable and try to find the
       // coarse cell it lives in. If we cannot, mark the fine point as not found
       // for robustness.
-      for (unsigned int i = 0; i < how_many; ++i)
+      for (unsigned i=0; i<how_many;i++)
       {
         if (receiver == which_processor_recv[sender][i])
         {
@@ -423,8 +400,7 @@ namespace
             // if found, store information
             found_ids.push_back(id);
             found_points.insert(found_points.end(), _x.begin(), _x.end());
-            global_row_indices.insert(global_row_indices.end(), &found_elsewhere_global_row_indices_recv[sender][data_size*i],
-                                      &found_elsewhere_global_row_indices_recv[sender][data_size*i + data_size]);
+            global_row_indices.insert(global_row_indices.end(), &found_elsewhere_global_row_indices_recv[sender][data_size*i], &found_elsewhere_global_row_indices_recv[sender][data_size*i + data_size]);
             found_points_senders.push_back(sender);
           }
         }
@@ -464,13 +440,9 @@ namespace
         continue;
 
       // flattening not_found_global_row_indices_recv one step at a time.
-      not_found_global_row_indices_flattened.insert(not_found_global_row_indices_flattened.end(),
-                                                    not_found_global_row_indices_recv[proc].begin(),
-                                                    not_found_global_row_indices_recv[proc].end());
+      not_found_global_row_indices_flattened.insert(not_found_global_row_indices_flattened.end(), not_found_global_row_indices_recv[proc].begin(), not_found_global_row_indices_recv[proc].end());
       // updating the std::vector of who owns the fine points
-      not_found_points_senders_flattened.insert(not_found_points_senders_flattened.end(),
-                                                not_found_points_senders_recv[proc].begin(),
-                                                not_found_points_senders_recv[proc].end());
+      not_found_points_senders_flattened.insert(not_found_points_senders_flattened.end(), not_found_points_senders_recv[proc].begin(), not_found_points_senders_recv[proc].end());
 
       // reserve memory for speed
       not_found_cell_indices.reserve(not_found_cell_indices.size() + how_many);
@@ -545,8 +517,7 @@ namespace
         // allocate cell id to current worker if distance is minimum
         id = not_found_cell_indices[i];
         found_ids.push_back(id);
-        global_row_indices.insert(global_row_indices.end(), &not_found_global_row_indices_flattened[data_size*i],
-                                  &not_found_global_row_indices_flattened[data_size*i + data_size]);
+        global_row_indices.insert(global_row_indices.end(), &not_found_global_row_indices_flattened[data_size*i], &not_found_global_row_indices_flattened[data_size*i + data_size]);
         found_points.insert(found_points.end(), found_not_found_points.begin() + dim*i, found_not_found_points.begin() + dim*(i+1));
         sender = not_found_points_senders_flattened[i];
         found_points_senders.push_back(sender);
@@ -564,31 +535,25 @@ namespace
     std::size_t m_owned = found_ids.size()*data_size;
 
     // initialise row and column indices and values of the transfer matrix
-    // FIXME: replace with boost::multi_array
-    std::vector<std::vector<int>> col_indices(m_owned);
-    std::vector<int> fine_row_indices(m_owned);
-    std::vector<std::vector<double>> values(m_owned);
+    int row_indices = 0;
+    int** col_indices = new int*[m_owned];
+    int*  fine_row_indices = new int[m_owned];
+    double** values = new double*[m_owned];
     for(unsigned i = 0; i < m_owned; ++i)
     {
-      col_indices[i].resize(eldim);
-      values[i].resize(eldim);
+      col_indices[i] = new int[eldim];
+      values[i] = new double[eldim];
     }
     // initialise a single chunk of values (needed for later)
-    std::vector<double> temp_values(eldim*data_size);
+    double temp_values[eldim*data_size];
 
     // initialise column ownership range
-    PetscInt n_own_begin;
-    PetscInt n_own_end;
+    std::size_t n_own_begin;
+    std::size_t n_own_end;
 
     // initialise global sparsity pattern: record on-process and off-process dependencies of fine dofs
-
-    // FIXME: replace PETSc Vec with direct MPI calls (using send_dnnz instead of vd_nnz) when satisfied
-    // they are equivalent
     Vec vd_nnz;
     Vec vo_nnz;
-    std::vector<std::vector<dolfin::la_index>> send_dnnz(mpi_size);
-    std::vector<std::vector<dolfin::la_index>> send_onnz(mpi_size);
-
     if (mpi_size == 0)
     {
       ierr = VecCreateSeq(mpi_comm, M, &vd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
@@ -637,7 +602,7 @@ namespace
       curr_cell.get_cell_data(ufc_cell);
       // evaluate the basis functions of the coarse cells
       // at the fine point and store the values into temp_values
-      el->evaluate_basis_all(temp_values.data(),
+      el->evaluate_basis_all(temp_values,
                              curr_point.coordinates(),
                              coordinate_dofs.data(),
                              ufc_cell.orientation);
@@ -671,41 +636,18 @@ namespace
           n_own_begin = global_n_range_recv[sender][0];
           n_own_end = global_n_range_recv[sender][1];
           // check and allocate sparsity pattern
-          int p = finemap->index_map()->global_index_owner(global_fine_dof);
           if ((n_own_begin <= coarse_dof) && (coarse_dof < n_own_end))
           {
             // Add one to the vd_nnz[global_fine_dof]
             ierr = VecSetValue(vd_nnz, global_fine_dof, one, ADD_VALUES); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-            send_dnnz[p].push_back(global_fine_dof);
           }
           else
           {
             ierr = VecSetValue(vo_nnz, global_fine_dof, one, ADD_VALUES); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-            send_onnz[p].push_back(global_fine_dof);
           }
         } // end loop over all coarse dofs in the cell
       } // end loop over fine dofs associated with this collision
     } // end loop over found points
-
-    std::vector<std::vector<dolfin::la_index>> recv_onnz;
-    MPI::all_to_all(mpi_comm, send_onnz, recv_onnz);
-    std::vector<int> onnz(m, 0);
-    for (auto &p : recv_onnz)
-      for (auto &q : p)
-      {
-        dolfin_assert(q >= (dolfin::la_index)mbegin and q < (dolfin::la_index)mend);
-        ++onnz[q - mbegin];
-      }
-
-    std::vector<std::vector<dolfin::la_index>> recv_dnnz;
-    MPI::all_to_all(mpi_comm, send_dnnz, recv_dnnz);
-    std::vector<int> dnnz(m, 0);
-    for (auto &p : recv_dnnz)
-      for (auto &q : p)
-      {
-        dolfin_assert(q >= (dolfin::la_index)mbegin and q < (dolfin::la_index)mend);
-        ++dnnz[q - mbegin];
-      }
 
     // Now communicate the cached vd_nnz and vo_nnz; PETSc takes care of the gory details
     ierr = VecAssemblyBegin(vd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
@@ -723,12 +665,10 @@ namespace
 
     PetscInt* d_nnz = new PetscInt[m];
     PetscInt* o_nnz = new PetscInt[m];
-    for (std::size_t i = 0; i < m; i++)
+    for (dolfin::la_index i = 0; i < m; i++)
     {
       d_nnz[i] = (PetscInt) pd_nnz[i];
-      dolfin_assert(d_nnz[i] == dnnz[i]);
       o_nnz[i] = (PetscInt) po_nnz[i];
-      dolfin_assert(o_nnz[i] == onnz[i]);
     }
 
     ierr = VecRestoreArray(vd_nnz, &pd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
@@ -738,13 +678,11 @@ namespace
 
     if (mpi_size > 1)
     {
-      ierr = MatMPIAIJSetPreallocation(I, PETSC_DEFAULT, dnnz.data(), PETSC_DEFAULT, onnz.data());
-      CHKERRABORT(PETSC_COMM_WORLD, ierr);
+      ierr = MatMPIAIJSetPreallocation(I, PETSC_DEFAULT, d_nnz, PETSC_DEFAULT, o_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
     }
     else
     {
-      ierr = MatSeqAIJSetPreallocation(I, PETSC_DEFAULT, dnnz.data());
-      CHKERRABORT(PETSC_COMM_WORLD, ierr);
+      ierr = MatSeqAIJSetPreallocation(I, PETSC_DEFAULT, d_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
     }
 
     delete [] d_nnz;
@@ -754,9 +692,15 @@ namespace
     for (unsigned fine_row = 0; fine_row < m_owned; fine_row++)
     {
       PetscInt fine_dof = fine_row_indices[fine_row];
-      ierr = MatSetValues(I, 1, &fine_dof, eldim, col_indices[fine_row].data(), values[fine_row].data(), INSERT_VALUES);
-      CHKERRABORT(PETSC_COMM_WORLD, ierr);
+      ierr = MatSetValues(I, 1, &fine_dof, eldim, col_indices[fine_row], values[fine_row], INSERT_VALUES); CHKERRABORT(PETSC_COMM_WORLD, ierr);
+
+      delete [] col_indices[fine_row];
+      delete [] values[fine_row];
     }
+
+    delete [] col_indices;
+    delete [] values;
+    delete [] fine_row_indices;
 
     // Assemble the transfer matrix
     ierr = MatAssemblyBegin(I, MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_WORLD, ierr);
@@ -768,93 +712,3 @@ namespace
     return ptr;
   }
 }
-
-
-//-----------------------------------------------------------------------------
-PETScDMCollection::PETScDMCollection(std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
- : _spaces(function_spaces)
-{
-  for (auto &V : _spaces)
-  {
-    dolfin_assert(V);
-
-    DM dm;
-    dolfin_assert(V->mesh());
-    DMShellCreate(V->mesh()->mpi_comm(), &dm);
-    DMShellSetContext(dm, (void*)&V);
-
-    DMShellSetCreateGlobalVector(dm, PETScDMCollection::create_global_vector);
-    DMShellSetCreateInterpolation(dm, PETScDMCollection::create_interpolation);
-
-    _dms.push_back(dm);
-  }
-
-  for (std::size_t i = 0; i < function_spaces.size() - 1; i++)
-  {
-    //DM dmc = function_spaces[i];
-    //DM dmf = function_spaces[i+1];
-    //DMSetFineDM(dmc, dmf)
-    //DMShellSetRefine(dmc, PETScDMCollection::refine);
-    DMSetFineDM(_dms[i], _dms[i + 1]);
-    DMShellSetRefine(_dms[i], PETScDMCollection::refine);
-  }
-
-  for (std::size_t i = 1; i < function_spaces.size(); i++)
-  {
-    //DM dmc = function_spaces[i-1];
-    //DM dmf = function_spaces[i];
-    //DMSetCoarseDM(dmf, dmc);
-    //DMShellSetRefine(dmf, PETScDMCollection::coarsen);
-
-    DMSetCoarseDM(_dms[i],_dms[i - 1]);
-    DMShellSetCoarsen(_dms[i], PETScDMCollection::coarsen);
-
-  }
-}
-//-----------------------------------------------------------------------------
-PETScDMCollection::~PETScDMCollection()
-{
-  for (auto dm : _dms)
-    DMDestroy(&dm);
-}
-//-----------------------------------------------------------------------------
-PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
-{
-  std::shared_ptr<FunctionSpace> *V;
-  DMShellGetContext(dm, (void**)&V);
-
-  Function u(*V);
-  *vec = u.vector()->down_cast<PETScVector>().vec();
-  PetscObjectReference((PetscObject)*vec);
-  return 0;
-}
-//-----------------------------------------------------------------------------
-PetscErrorCode PETScDMCollection::create_interpolation(DM dmc, DM dmf, Mat *mat, Vec *vec)
-{
-  std::shared_ptr<FunctionSpace> *Vc, *Vf;
-  DMShellGetContext(dmc, (void**)&Vc);
-  DMShellGetContext(dmf, (void**)&Vf);
-
-  std::shared_ptr<PETScMatrix> P = create_transfer_matrix(*Vc, *Vf);
-
-  *mat = P->mat();
-  *vec = NULL;
-
-  PetscObjectReference((PetscObject)*mat);
-
-  return 0;
-}
-//-----------------------------------------------------------------------------
-PetscErrorCode PETScDMCollection::coarsen(DM dmf, MPI_Comm comm, DM* dmc)
-{
-  DMGetCoarseDM(dmf, dmc);
-  return 0;
-}
-//-----------------------------------------------------------------------------
-PetscErrorCode PETScDMCollection::refine(DM dmc, MPI_Comm comm, DM* dmf)
-{
-  DMGetFineDM(dmc, dmf);
-  return 0;
-}
-//-----------------------------------------------------------------------------
-#endif

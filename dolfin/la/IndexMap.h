@@ -79,6 +79,9 @@ namespace dolfin
     /// Get off process owner for unowned indices
     const std::vector<int>& off_process_owner() const;
 
+    /// Get process owner of any global index
+    int global_index_owner(std::size_t index) const;
+
     /// Get block size
     int block_size() const;
 
