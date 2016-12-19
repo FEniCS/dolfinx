@@ -8,8 +8,8 @@ cmake_minimum_required(VERSION 3.5)
 
 project(DOLFIN)
 set(DOLFIN_VERSION_RELEASE 0)
-set(DOLFIN_VERSION_MAJOR "2016")
-set(DOLFIN_VERSION_MINOR "2")
+set(DOLFIN_VERSION_MAJOR "2017")
+set(DOLFIN_VERSION_MINOR "1")
 set(DOLFIN_VERSION_MICRO "0")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 if (NOT DOLFIN_VERSION_RELEASE)
@@ -433,7 +433,7 @@ if (DOLFIN_ENABLE_PYTHON)
 endif()
 
 # Check for required package UFC
-find_package(UFC MODULE 2016.2)
+find_package(UFC MODULE 2017.1)
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified language for form-compilers (part of FFC)"
   URL "https://bitbucket.org/fenics-project/ffc")
@@ -858,13 +858,23 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
-# Generate and install helper file dolfin-version
+# Generate and install helper scripts dolfin-version, fenics-version
 
 # FIXME: not cross-platform compatible
-# Create and install dolfin-version file
+
+# Create and install dolfin-version
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-version.in
                ${CMAKE_BINARY_DIR}/dolfin-version @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
+        DESTINATION ${DOLFIN_BIN_DIR}
+  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+        OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+        COMPONENT RuntimeExecutables)
+
+# Create and install fenics-version
+configure_file(${DOLFIN_CMAKE_DIR}/templates/fenics-version.in
+               ${CMAKE_BINARY_DIR}/fenics-version @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/fenics-version
         DESTINATION ${DOLFIN_BIN_DIR}
   PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
         OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
@@ -903,7 +913,7 @@ endforeach()
 set(COPY_DEMO_TEST_DEMO_DATA FALSE)
 if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
   message(STATUS "")
-  message(STATUS "Generating form files in demo, test, bench and dolfin directories. May take some time...")
+  message(STATUS "Generating form files in demo, test and bench directories. May take some time...")
   message(STATUS "----------------------------------------------------------------------------------------")
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-form-files.py

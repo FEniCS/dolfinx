@@ -102,6 +102,7 @@ moc_*
 CMakeLists.txt
 !/CMakeLists.txt
 !dolfin/CMakeLists.txt
+!dolfin/*/CMakeLists.txt
 !bench/CMakeLists.txt
 !dolfin/swig/CMakeLists.txt
 !doc/CMakeLists.txt
