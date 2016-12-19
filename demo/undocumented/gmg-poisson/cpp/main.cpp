@@ -2,6 +2,8 @@
 #include "Poisson.h"
 #include "interpolation.h"
 
+#include <dolfin/fem/PETScDMCollection.h>
+
 #include <petscdmshell.h>
 #include <petscksp.h>
 
@@ -139,8 +141,11 @@ int main()
 
   // Set interpolation matrix
   DMShellSetCreateInterpolation(dm2, create_interpolation);  // coarse-to-fine interpolation
-  DMShellSetCreateInterpolation(dm1, create_interpolation);  // coarse-to-fine interpolation
+  DMShellSetCreateInterpolation(dm1, create_interpolation);  // coarse-to-fine interpolation, i.e. level 1 to level 2
   DMShellSetCreateInterpolation(dm0, create_interpolation);
+
+
+  PETScDMCollection dm_collection({V0, V1, V2});
 
   // Set grid relationships
   DMSetCoarseDM(dm1, dm0);
