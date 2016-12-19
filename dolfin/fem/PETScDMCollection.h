@@ -25,10 +25,10 @@
 #include <petscdm.h>
 #include <petscvec.h>
 #include <dolfin/la/PETScObject.h>
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
-
 
   class FunctionSpace;
 
@@ -43,7 +43,10 @@ namespace dolfin
     ~PETScDMCollection();
 
     DM fine()
-    { return _dms[_dms.size() - 1]; }
+    {
+      dolfin_assert(!_dms.empty());
+      return _dms.back();
+    }
 
 
   private:
