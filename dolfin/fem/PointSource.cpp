@@ -43,7 +43,7 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
   : _function_space(V), _p(p), _magnitude(magnitude)
 {
   // Check that function space is scalar
-  check_is_scalar(*V);
+  //check_is_scalar(*V);
 }
 //-----------------------------------------------------------------------------
 PointSource::~PointSource()
@@ -64,7 +64,11 @@ void PointSource::apply(GenericVector& b)
   const Mesh& mesh = *_function_space->mesh();
   std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
   const unsigned int cell_index = tree->compute_first_entity_collision(_p);
-
+  std::vector<unsigned int> entities2 = tree->compute_entity_collisions(_p);
+  for(int i=0; i<entities2.size(); i++)
+  {
+    info("Entities" + std::to_string(entities2[i]));
+  }
   // Check that we found the point on at least one processor
   int num_found = 0;
   if (cell_index == std::numeric_limits<unsigned int>::max())
