@@ -3,6 +3,7 @@
 #include "interpolation.h"
 
 #include <petscdmshell.h>
+#include <petscksp.h>
 
 using namespace dolfin;
 
@@ -35,8 +36,9 @@ class DirichletBoundary : public SubDomain
   }
 };
 
-PetscErrorCode create_interpolation(DM dmc, DM dmf, Mat *mat, Vec *vec)
+static PetscErrorCode create_interpolation(DM dmc, DM dmf, Mat *mat, Vec *vec)
 {
+  std::cout << "Inside create_interpolation";
   std::shared_ptr<FunctionSpace> *Vc, *Vf;
   DMShellGetContext(dmc, (void**)&Vc);
   DMShellGetContext(dmf, (void**)&Vf);
@@ -51,7 +53,17 @@ PetscErrorCode create_interpolation(DM dmc, DM dmf, Mat *mat, Vec *vec)
   return 0;
 }
 
+PetscErrorCode coarsen(DM dmf, MPI_Comm comm, DM* dmc)
+{
+  DMGetCoarseDM(dmf, dmc);
+  return 0;
+}
 
+PetscErrorCode refine(DM dmc, MPI_Comm comm, DM* dmf)
+{
+  DMGetFineDM(dmc, dmf);
+  return 0;
+}
 
 int main()
 {
@@ -79,6 +91,8 @@ int main()
   PETScMatrix A;
   PETScVector b;
   assemble_system(A, b, a, L, {bc});
+
+  PetscErrorCode ierr;
 
   KSP ksp;
   KSPCreate(MPI_COMM_WORLD, &ksp);
@@ -109,19 +123,28 @@ int main()
   DMShellSetGlobalVector(dm0, x0.vec());
   DMShellSetContext(dm0, (void*)&V0);
 
-  // Set grids
-  DMSetCoarseDM(dm1, dm0);
-  DMSetFineDM(dm0, dm1);
-
   // Set interpolation matrix
   DMShellSetCreateInterpolation(dm1, create_interpolation);
   DMShellSetCreateInterpolation(dm0, create_interpolation);
 
+  // Set grid relationships
+  DMSetCoarseDM(dm1, dm0);
+  DMShellSetCoarsen(dm1, coarsen);
+  DMSetFineDM(dm0, dm1);
+  DMShellSetRefine(dm0, refine);
+
   KSPSetType(ksp, "richardson");
   PCSetType(pc, "mg");
+  PCMGSetLevels(pc, 2, NULL);
   PCMGSetGalerkin(pc, PC_MG_GALERKIN_BOTH);
+  PETScOptions::set("ksp_monitor");
+  KSPSetFromOptions(ksp);
 
-  KSPSolve(ksp, b.vec(), x.vec());
+  KSPSetDM(ksp, dm1);
+  KSPSetDMActive(ksp, PETSC_FALSE);
+  ierr = KSPSolve(ksp, b.vec(), x.vec());CHKERRQ(ierr);
+
+  KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
 
   return 0;
 }
