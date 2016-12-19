@@ -30,7 +30,7 @@
 
 using namespace dolfin;
 
-namespace dolfin
+namespace
 {
   // Coordinate comparison operator
   struct lt_coordinate
@@ -135,6 +135,7 @@ namespace dolfin
     Mat I;
 
     // Get coarse mesh and dimension of the domain
+    dolfin_assert(coarse_space->mesh());
     const Mesh meshc = *coarse_space->mesh();
     std::size_t dim = meshc.geometry().dim();
 
