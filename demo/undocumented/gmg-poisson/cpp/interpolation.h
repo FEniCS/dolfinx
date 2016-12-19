@@ -536,13 +536,13 @@ namespace dolfin
 
     // initialise row and column indices and values of the transfer matrix
     int row_indices = 0;
-    int** col_indices = new int*[m_owned];
-    int*  fine_row_indices = new int[m_owned];
-    double** values = new double*[m_owned];
+    std::vector<std::vector<int>> col_indices(m_owned);
+    std::vector<int>  fine_row_indices(m_owned);
+    std::vector<std::vector<double>> values(m_owned);
     for(unsigned i = 0; i < m_owned; ++i)
     {
-      col_indices[i] = new int[eldim];
-      values[i] = new double[eldim];
+      col_indices[i].resize(eldim);
+      values[i].resize(eldim);
     }
     // initialise a single chunk of values (needed for later)
     double temp_values[eldim*data_size];
@@ -657,14 +657,13 @@ namespace dolfin
 
     // Now copy sparsity pattern into integer arrays (we had to use floats before because
     // we wanted to store it in a PETSc Vec).
-    // We use new here rather than std::vector because we need to pass this to C.
     PetscScalar *pd_nnz;
     PetscScalar *po_nnz;
     ierr = VecGetArray(vd_nnz, &pd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
     ierr = VecGetArray(vo_nnz, &po_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
 
-    PetscInt* d_nnz = new PetscInt[m];
-    PetscInt* o_nnz = new PetscInt[m];
+    std::vector<PetscInt> d_nnz(m);
+    std::vector<PetscInt> o_nnz(m);
     for (dolfin::la_index i = 0; i < m; i++)
     {
       d_nnz[i] = (PetscInt) pd_nnz[i];
@@ -678,29 +677,21 @@ namespace dolfin
 
     if (mpi_size > 1)
     {
-      ierr = MatMPIAIJSetPreallocation(I, PETSC_DEFAULT, d_nnz, PETSC_DEFAULT, o_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
+      ierr = MatMPIAIJSetPreallocation(I, PETSC_DEFAULT, d_nnz.data(), PETSC_DEFAULT, o_nnz.data());
+      CHKERRABORT(PETSC_COMM_WORLD, ierr);
     }
     else
     {
-      ierr = MatSeqAIJSetPreallocation(I, PETSC_DEFAULT, d_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
+      ierr = MatSeqAIJSetPreallocation(I, PETSC_DEFAULT, d_nnz.data()); CHKERRABORT(PETSC_COMM_WORLD, ierr);
     }
-
-    delete [] d_nnz;
-    delete [] o_nnz;
 
     // Setting transfer matrix values row by row
     for (unsigned fine_row = 0; fine_row < m_owned; fine_row++)
     {
       PetscInt fine_dof = fine_row_indices[fine_row];
-      ierr = MatSetValues(I, 1, &fine_dof, eldim, col_indices[fine_row], values[fine_row], INSERT_VALUES); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-
-      delete [] col_indices[fine_row];
-      delete [] values[fine_row];
+      ierr = MatSetValues(I, 1, &fine_dof, eldim, col_indices[fine_row].data(), values[fine_row].data(), INSERT_VALUES);
+      CHKERRABORT(PETSC_COMM_WORLD, ierr);
     }
-
-    delete [] col_indices;
-    delete [] values;
-    delete [] fine_row_indices;
 
     // Assemble the transfer matrix
     ierr = MatAssemblyBegin(I, MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_WORLD, ierr);
