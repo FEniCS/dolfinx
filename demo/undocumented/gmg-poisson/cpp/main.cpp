@@ -48,7 +48,7 @@ static PetscErrorCode create_interpolation(DM dmc, DM dmf, Mat *mat, Vec *vec)
   *mat = P->mat();
   *vec = NULL;
 
-  PetscObjectReference((PetscObject)P->mat());
+  //xsPetscObjectReference((PetscObject)P->mat());
 
   return 0;
 }
@@ -67,25 +67,31 @@ PetscErrorCode refine(DM dmc, MPI_Comm comm, DM* dmf)
 
 int main()
 {
-  // Create mesh and function space
-  auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
-  auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
+  // Create meshes and function spaces
+  auto mesh0 = std::make_shared<UnitSquareMesh>(16, 16);
+  auto V0 = std::make_shared<Poisson::FunctionSpace>(mesh0);
+
+  auto mesh1 = std::make_shared<UnitSquareMesh>(32, 32);
+  auto V1 = std::make_shared<Poisson::FunctionSpace>(mesh1);
+
+  auto mesh2 = std::make_shared<UnitSquareMesh>(64, 64);
+  auto V2 = std::make_shared<Poisson::FunctionSpace>(mesh2);
 
   // Define boundary condition
   auto ubc = std::make_shared<Constant>(0.0);
   auto boundary = std::make_shared<DirichletBoundary>();
-  auto bc = std::make_shared<DirichletBC>(V, ubc, boundary);
+  auto bc = std::make_shared<DirichletBC>(V2, ubc, boundary);
 
   // Define variational forms
-  Poisson::BilinearForm a(V, V);
-  Poisson::LinearForm L(V);
+  Poisson::BilinearForm a(V2, V2);
+  Poisson::LinearForm L(V2);
   auto f = std::make_shared<Source>();
   auto g = std::make_shared<dUdN>();
   L.f = f;
   L.g = g;
 
   // Compute solution
-  Function u(V);
+  //Function u(V);
   //solve(a == L, u, bc);
 
   PETScMatrix A;
@@ -103,18 +109,10 @@ int main()
   KSPGetPC(ksp, &pc);
   PCSetType(pc, "lu");
 
-  PETScVector& x = u.vector()->down_cast<PETScVector>();
+  //PETScVector& x = u.vector()->down_cast<PETScVector>();
   //KSPSolve(ksp, b.vec(), x.vec());
 
-  // Gine grid
-  DM dm1;
-  DMShellCreate(MPI_COMM_WORLD, &dm1);
-  DMShellSetGlobalVector(dm1, x.vec());
-  DMShellSetContext(dm1, (void*)&V);
-
-  // Coarse grid
-  auto mesh0 = std::make_shared<UnitSquareMesh>(16, 16);
-  auto V0 = std::make_shared<Poisson::FunctionSpace>(mesh0);
+  // Coarse grid (grid 0)
   Function u0(V0);
   PETScVector& x0 = u0.vector()->down_cast<PETScVector>();
 
@@ -124,25 +122,48 @@ int main()
   DMShellSetContext(dm0, (void*)&V0);
 
   // Set interpolation matrix
-  DMShellSetCreateInterpolation(dm1, create_interpolation);
+  //DMShellSetCreateInterpolation(dm1, create_interpolation);  // coarse-to-fine interpolation
   DMShellSetCreateInterpolation(dm0, create_interpolation);
+
+  // Grid 1
+  Function u1(V1);
+  PETScVector& x1 = u1.vector()->down_cast<PETScVector>();
+  DM dm1;
+  DMShellCreate(MPI_COMM_WORLD, &dm1);
+  DMShellSetGlobalVector(dm1, x1.vec());
+  DMShellSetContext(dm1, (void*)&V1);
+
+  // Grid 2
+  Function u2(V2);
+  PETScVector& x2 = u2.vector()->down_cast<PETScVector>();
+  DM dm2;
+  DMShellCreate(MPI_COMM_WORLD, &dm2);
+  DMShellSetGlobalVector(dm2, x2.vec());
+  DMShellSetContext(dm2, (void*)&V2);
 
   // Set grid relationships
   DMSetCoarseDM(dm1, dm0);
+  DMSetCoarseDM(dm2, dm1);
   DMShellSetCoarsen(dm1, coarsen);
+  DMShellSetCoarsen(dm2, coarsen);
+
   DMSetFineDM(dm0, dm1);
+  DMSetFineDM(dm1, dm2);
   DMShellSetRefine(dm0, refine);
+  DMShellSetRefine(dm1, refine);
 
   KSPSetType(ksp, "richardson");
   PCSetType(pc, "mg");
-  PCMGSetLevels(pc, 2, NULL);
+  PCMGSetLevels(pc, 3, NULL);
   PCMGSetGalerkin(pc, PC_MG_GALERKIN_BOTH);
   PETScOptions::set("ksp_monitor");
+  PETScOptions::set("ksp_atol", 1.0e-10);
+  PETScOptions::set("ksp_rtol", 1.0e-10);
   KSPSetFromOptions(ksp);
 
-  KSPSetDM(ksp, dm1);
+  KSPSetDM(ksp, dm2);
   KSPSetDMActive(ksp, PETSC_FALSE);
-  ierr = KSPSolve(ksp, b.vec(), x.vec());CHKERRQ(ierr);
+  ierr = KSPSolve(ksp, b.vec(), x2.vec());CHKERRQ(ierr);
 
   KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
 
