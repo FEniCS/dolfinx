@@ -1,6 +1,5 @@
 #include <dolfin.h>
 #include "Poisson.h"
-#include "interpolation.h"
 
 #include <dolfin/fem/PETScDMCollection.h>
 
@@ -37,23 +36,6 @@ class DirichletBoundary : public SubDomain
     return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS;
   }
 };
-
-static PetscErrorCode create_interpolation(DM dmc, DM dmf, Mat *mat, Vec *vec)
-{
-  std::cout << "Inside create_interpolation";
-  std::shared_ptr<FunctionSpace> *Vc, *Vf;
-  DMShellGetContext(dmc, (void**)&Vc);
-  DMShellGetContext(dmf, (void**)&Vf);
-
-  std::shared_ptr<PETScMatrix> P = create_transfer_matrix(*Vc, *Vf);
-
-  *mat = P->mat();
-  *vec = NULL;
-
-  PetscObjectReference((PetscObject)*mat);
-
-  return 0;
-}
 
 PetscErrorCode coarsen(DM dmf, MPI_Comm comm, DM* dmc)
 {
@@ -111,7 +93,8 @@ int main()
   KSPGetPC(ksp, &pc);
   PCSetType(pc, "lu");
 
-  PETScDMCollection dm_collection({V0, V1, V2});
+  std::vector<std::shared_ptr<const FunctionSpace>> spaces = {V0, V1, V2};
+  PETScDMCollection dm_collection(spaces);
 
   DM dm = dm_collection.fine();
 

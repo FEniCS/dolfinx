@@ -57,6 +57,7 @@ namespace dolfin
     static PetscErrorCode refine(DM dmc, MPI_Comm comm, DM* dmf);
 
     std::vector<DM> _dms;
+    std::vector<std::shared_ptr<const FunctionSpace>> _spaces;
 
   };
 

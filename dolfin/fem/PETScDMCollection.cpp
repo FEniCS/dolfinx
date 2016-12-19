@@ -743,8 +743,9 @@ namespace
 
 //-----------------------------------------------------------------------------
 PETScDMCollection::PETScDMCollection(std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
+ : _spaces(function_spaces)
 {
-  for (auto V : function_spaces)
+  for (auto &V : _spaces)
   {
     dolfin_assert(V);
 
