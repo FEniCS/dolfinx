@@ -122,15 +122,16 @@ void PointSource::apply(GenericVector& b)
 
   // Evaluate all basis functions at the point()
   dolfin_assert(_function_space->element());
-  dolfin_assert(_function_space->element()->value_rank() == 0);
-  std::vector<double> values(_function_space->element()->space_dimension());
+  //dolfin_assert(_function_space->element()->value_rank() == 0);
+  std::vector<double> values(_function_space->element()->space_dimension()*std::max(_function_space->element()->num_sub_elements(), (std::size_t) 1));
 
   ufc::cell ufc_cell;
   cell.get_cell_data(ufc_cell);
+
   _function_space->element()->evaluate_basis_all(values.data(),
                                                  _p.coordinates(),
                                                  coordinate_dofs.data(),
-                                                 ufc_cell.orientation);
+						 ufc_cell.orientation);
 
   // Scale by magnitude
   for (std::size_t i = 0; i < _function_space->element()->space_dimension(); i++)
@@ -147,6 +148,7 @@ void PointSource::apply(GenericVector& b)
   b.add_local(values.data(), _function_space->element()->space_dimension(),
               dofs.data());
   b.apply("add");
+
 }
 //-----------------------------------------------------------------------------
 void PointSource::check_is_scalar(const FunctionSpace& V)
