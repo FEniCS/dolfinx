@@ -776,7 +776,7 @@ PETScDMCollection::PETScDMCollection(std::vector<std::shared_ptr<const FunctionS
     //DMShellSetRefine(dmf, PETScDMCollection::coarsen);
 
     DMSetCoarseDM(_dms[i],_dms[i - 1]);
-    DMShellSetRefine(_dms[i], PETScDMCollection::coarsen);
+    DMShellSetCoarsen(_dms[i], PETScDMCollection::coarsen);
 
   }
 }
