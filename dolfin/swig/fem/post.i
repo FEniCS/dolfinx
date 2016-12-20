@@ -33,16 +33,16 @@
 // These are wrapped up by petsc4py typemaps so that
 // we see a petsc4py object on the python side.
 
-%feature("docstring") dolfin::PETScDMCollection::dm "Return petsc4py representation of PETSc DM";
+%feature("docstring") dolfin::PETScDMCollection::get_dm "Return petsc4py representation of PETSc DM";
 %extend dolfin::PETScDMCollection
 {
-  void dm(DM& dm)
-  { dm = self->dm(); }
+  void get_dm(DM& dm, int i)
+  { dm = self->get_dm(i); }
 }
 #else
 %extend dolfin::PETScDMCollection {
     %pythoncode %{
-        def dm(self):
+     def get_dm(self, i):
             common.dolfin_error("dolfin/swig/fem/post.i",
                                 "access PETScDMCollection objects in Python",
                                 "dolfin must be configured with petsc4py enabled")

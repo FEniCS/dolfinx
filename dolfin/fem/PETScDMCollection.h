@@ -46,7 +46,7 @@ namespace dolfin
 
     /// Return the ith DM objects. The coarest DM has index 0. Use
     /// i=-1 to get the DM for the finest level.
-    DM dm(int i)
+    DM get_dm(int i)
     {
       if (i >= 0)
       {

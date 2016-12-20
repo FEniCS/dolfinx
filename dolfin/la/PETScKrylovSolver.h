@@ -177,7 +177,6 @@ namespace dolfin
     { return "krylov_solver"; }
 
     void set_dm(DM dm);
-    void set_dm(PETScDMCollection& dm);
     void set_dm_active(bool val);
 
     friend class PETScSNESSolver;

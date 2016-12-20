@@ -786,8 +786,55 @@ PETScDMCollection::~PETScDMCollection()
   // Only destroy the finest one.
   // This is highly counterintuitive, and possibly a bug in PETSc, but
   // it took Garth and Patrick an entire day to figure out.
-  if (!_dms.empty())
-    DMDestroy(&_dms.back());
+
+  //if (!_dms.empty())
+  //  DMDestroy(&_dms.back());
+
+  /*
+  for (std::size_t i = _dms.size(); i > 0; --i)
+  {
+    PetscInt cnt = 0;
+    PetscObjectGetReference((PetscObject)_dms[i-1], &cnt);
+    std::cout << "(A) *** destroy dm: " << cnt << std::endl;
+    if (cnt > 0)
+    {
+      DMDestroy(&_dms[i-1]);
+      cnt = 0;
+      PetscObjectGetReference((PetscObject)_dms[i-1], &cnt);
+      std::cout << "  (P) *** destroy dm: " << cnt << std::endl;
+
+    }
+  }
+  */
+
+  for (std::size_t i = 0; i < _dms.size(); ++i)
+  {
+    PetscInt cnt = 0;
+    PetscObjectGetReference((PetscObject)_dms[i], &cnt);
+    std::cout << "(A) *** destroy dm: " << cnt << std::endl;
+    if (cnt > 0)
+    {
+      PetscObjectDereference((PetscObject)_dms[i]);
+      //DMDestroy(&_dms[i]);
+      for (std::size_t j = i; j < _dms.size(); ++j)
+      {
+        cnt = 0;
+        PetscObjectGetReference((PetscObject)_dms[j], &cnt);
+        std::cout << "  (P) *** destroy dm " << j << ", " << cnt << std::endl;
+      }
+
+    }
+  }
+
+  for (std::size_t i = 0; i < _dms.size(); ++i)
+  {
+    PetscInt cnt = 0;
+    PetscObjectGetReference((PetscObject)_dms[i], &cnt);
+    std::cout << "(B) *** destroy dm: " << cnt << std::endl;
+    //DMDestroy(&dm);
+  }
+
+
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
