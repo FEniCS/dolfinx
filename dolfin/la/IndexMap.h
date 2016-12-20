@@ -114,7 +114,7 @@ namespace dolfin
   // Function which may appear in a hot loop
   inline std::size_t IndexMap::local_to_global(std::size_t i) const
   {
-    // These two calls get hepefully optimized out of hot loops due
+    // These two calls get hopefully optimized out of hot loops due
     // to inlining
     const std::size_t local_size = size(IndexMap::MapSize::OWNED);
     const std::size_t global_offset = local_range().first;
