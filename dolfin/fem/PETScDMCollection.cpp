@@ -645,40 +645,38 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
 }
 //-----------------------------------------------------------------------------
 PETScDMCollection::PETScDMCollection(std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
- : _spaces(function_spaces)
+  : _spaces(function_spaces), _dms(function_spaces.size(), nullptr)
 {
-  for (auto &V : _spaces)
+  for (std::size_t i = 0; i < _spaces.size(); ++i)
   {
-    dolfin_assert(V);
+    dolfin_assert(_spaces[i]);
 
-    DM dm;
-    dolfin_assert(V->mesh());
-    DMShellCreate(V->mesh()->mpi_comm(), &dm);
-    DMShellSetContext(dm, (void*)&V);
+    // Get MPI communicator from Mesh
+    dolfin_assert(_spaces[i]->mesh());
+    MPI_Comm comm = _spaces[i]->mesh()->mpi_comm();
 
-    DMShellSetCreateGlobalVector(dm, PETScDMCollection::create_global_vector);
-    DMShellSetCreateInterpolation(dm, PETScDMCollection::create_interpolation);
+    // Create DM
+    DMShellCreate(comm, &_dms[i]);
+    DMShellSetContext(_dms[i], (void*)&_spaces[i]);
 
-    _dms.push_back(dm);
+    // Suppy function to create global vector on DM
+    DMShellSetCreateGlobalVector(_dms[i], PETScDMCollection::create_global_vector);
+
+    // Supply function to create interpolation matrix (coarse-to-fine
+    // interpolation, i.e. level n to level n+1)
+    DMShellSetCreateInterpolation(_dms[i], PETScDMCollection::create_interpolation);
   }
 
-  for (std::size_t i = 0; i < function_spaces.size() - 1; i++)
+  for (std::size_t i = 0; i < _spaces.size() - 1; i++)
   {
-    //DM dmc = function_spaces[i];
-    //DM dmf = function_spaces[i+1];
-    //DMSetFineDM(dmc, dmf)
-    //DMShellSetRefine(dmc, PETScDMCollection::refine);
+    // Set the fine 'mesh' associated with _dms[i]
     DMSetFineDM(_dms[i], _dms[i + 1]);
     DMShellSetRefine(_dms[i], PETScDMCollection::refine);
   }
 
-  for (std::size_t i = 1; i < function_spaces.size(); i++)
+  for (std::size_t i = 1; i < _spaces.size(); i++)
   {
-    //DM dmc = function_spaces[i-1];
-    //DM dmf = function_spaces[i];
-    //DMSetCoarseDM(dmf, dmc);
-    //DMShellSetRefine(dmf, PETScDMCollection::coarsen);
-
+    // Set the coarse 'mesh' associated with _dms[i]
     DMSetCoarseDM(_dms[i], _dms[i - 1]);
     DMShellSetCoarsen(_dms[i], PETScDMCollection::coarsen);
   }
@@ -688,48 +686,61 @@ PETScDMCollection::~PETScDMCollection()
 {
   // Don't destroy all the DMs!
   // Only destroy the finest one.
-  // This is highly counterintuitive, and possibly a bug in PETSc,
-  // but it took Garth and Patrick an entire day to figure out.
-  DMDestroy(&_dms[_dms.size()-1]);
+  // This is highly counterintuitive, and possibly a bug in PETSc, but
+  // it took Garth and Patrick an entire day to figure out.
+  if (!_dms.empty())
+    DMDestroy(&_dms.back());
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
 {
+  // Get DOLFIN FunctiobSpace from the PETSc DM object
   std::shared_ptr<FunctionSpace> *V;
   DMShellGetContext(dm, (void**)&V);
 
+  // Create Vector
   Function u(*V);
   *vec = u.vector()->down_cast<PETScVector>().vec();
+
+  // FIXME: Does increasing the reference count lead to a memory leak?
+  // Increment PETSc reference counter the Vec
   PetscObjectReference((PetscObject)*vec);
+
   return 0;
 }
 //-----------------------------------------------------------------------------
-PetscErrorCode PETScDMCollection::create_interpolation(DM dmc, DM dmf, Mat *mat, Vec *vec)
+PetscErrorCode PETScDMCollection::create_interpolation(DM dmc, DM dmf, Mat *mat,
+                                                       Vec *vec)
 {
-  std::shared_ptr<FunctionSpace> *Vc, *Vf;
-  DMShellGetContext(dmc, (void**)&Vc);
-  DMShellGetContext(dmf, (void**)&Vf);
+  // Get DOLFIN FunctionSpaces from PETSc DM objects (V0 is coarse
+  // space, V1 is fine space)
+  std::shared_ptr<FunctionSpace> *V0, *V1;
+  DMShellGetContext(dmc, (void**)&V0);
+  DMShellGetContext(dmf, (void**)&V1);
 
-  std::shared_ptr<PETScMatrix> P = create_transfer_matrix(*Vc, *Vf);
+  // Build interpolation matrix (V0 to V1)
+  std::shared_ptr<PETScMatrix> P = create_transfer_matrix(*V0, *V1);
 
+  // Copy PETSc matrix pointer and inrease reference count
   *mat = P->mat();
-  *vec = NULL;
-
   PetscObjectReference((PetscObject)*mat);
+
+  // Set optional vector to NULL
+  *vec = NULL;
 
   return 0;
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScDMCollection::coarsen(DM dmf, MPI_Comm comm, DM* dmc)
 {
-  DMGetCoarseDM(dmf, dmc);
-  return 0;
+  // Get the coarse DM from the fine DM
+  return DMGetCoarseDM(dmf, dmc);
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScDMCollection::refine(DM dmc, MPI_Comm comm, DM* dmf)
 {
-  DMGetFineDM(dmc, dmf);
-  return 0;
+  // Get the fine DM from the coarse DM
+  return DMGetFineDM(dmc, dmf);
 }
 //-----------------------------------------------------------------------------
 #endif

@@ -41,8 +41,6 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
-  set_log_level(DEBUG);
-
   // Create meshes and function spaces
   auto mesh0 = std::make_shared<UnitSquareMesh>(16, 16);
   auto V0 = std::make_shared<Poisson::FunctionSpace>(mesh0);
@@ -62,14 +60,6 @@ int main()
   Poisson::BilinearForm a(V2, V2);
   Poisson::LinearForm L(V2);
   auto f = std::make_shared<Source>();
-  //auto g = std::make_shared<dUdN>();
-  //auto g = std::make_shared<Constant>(0.0);
-  //L.f = f;
-  //L.g = g;
-
-  // Compute solution
-  //Function u(V);
-  //solve(a == L, u, bc);
 
   PETScMatrix A;
   PETScVector b;
@@ -84,33 +74,34 @@ int main()
 
   PC pc;
   KSPGetPC(ksp, &pc);
-  //PCSetType(pc, "lu");
 
   std::vector<std::shared_ptr<const FunctionSpace>> spaces = {V0, V1, V2};
   {
+    // Build DM for each level
     PETScDMCollection dm_collection(spaces);
 
-  DM dm = dm_collection.dm();
+    // Get fine level DM
+    DM dm = dm_collection.dm(-1);
 
-  KSPSetType(ksp, "richardson");
-  PCSetType(pc, "mg");
-  PCMGSetLevels(pc, 3, NULL);
-  PCMGSetGalerkin(pc, PC_MG_GALERKIN_BOTH);
-  PETScOptions::set("ksp_monitor_true_residual");
-  //PETScOptions::set("mg_levels_ksp_monitor_true_residual");
-  PETScOptions::set("ksp_atol", 1.0e-10);
-  PETScOptions::set("ksp_rtol", 1.0e-10);
-  KSPSetFromOptions(ksp);
+    KSPSetType(ksp, "richardson");
+    PCSetType(pc, "mg");
+    PCMGSetLevels(pc, 3, NULL);
+    PCMGSetGalerkin(pc, PC_MG_GALERKIN_BOTH);
+    PETScOptions::set("ksp_monitor_true_residual");
+    //PETScOptions::set("mg_levels_ksp_monitor_true_residual");
+    PETScOptions::set("ksp_atol", 1.0e-10);
+    PETScOptions::set("ksp_rtol", 1.0e-10);
+    KSPSetFromOptions(ksp);
 
-  Function u(V2);
-  PETScVector& x = u.vector()->down_cast<PETScVector>();
-  KSPSetDM(ksp, dm);
-  KSPSetDMActive(ksp, PETSC_FALSE);
-  ierr = KSPSolve(ksp, b.vec(), x.vec());CHKERRQ(ierr);
+    Function u(V2);
+    PETScVector& x = u.vector()->down_cast<PETScVector>();
+    KSPSetDM(ksp, dm);
+    KSPSetDMActive(ksp, PETSC_FALSE);
+    ierr = KSPSolve(ksp, b.vec(), x.vec());CHKERRQ(ierr);
 
-  std::cout << "Soln vector norm: " << x.norm("l2") << std::endl;
+    std::cout << "Soln vector norm: " << x.norm("l2") << std::endl;
 
-  //KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
+    //KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
   }
 
   KSPDestroy(&ksp);

@@ -439,10 +439,16 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
   KSPSetNormType(_ksp, ksp_norm_type);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_dm(PETScDMCollection& dm_collection)
+void PETScKrylovSolver::set_dm(DM dm)
 {
   dolfin_assert(_ksp);
-  KSPSetDM(_ksp, dm_collection.dm());
+  KSPSetDM(_ksp, dm);
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_dm(PETScDMCollection& dm)
+{
+  dolfin_assert(_ksp);
+  KSPSetDM(_ksp, dm.dm(-1));
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_dm_active(bool val)
