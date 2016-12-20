@@ -443,8 +443,15 @@ void PETScKrylovSolver::set_dm(PETScDMCollection& dm_collection)
 {
   dolfin_assert(_ksp);
   KSPSetDM(_ksp, dm_collection.dm());
-
-  KSPSetDMActive(_ksp, PETSC_FALSE);
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_dm_active(bool val)
+{
+  dolfin_assert(_ksp);
+  if (val)
+    KSPSetDMActive(_ksp, PETSC_TRUE);
+  else
+    KSPSetDMActive(_ksp, PETSC_FALSE);
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type() const

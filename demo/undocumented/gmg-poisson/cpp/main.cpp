@@ -84,10 +84,11 @@ int main()
 
   PC pc;
   KSPGetPC(ksp, &pc);
-  PCSetType(pc, "lu");
+  //PCSetType(pc, "lu");
 
   std::vector<std::shared_ptr<const FunctionSpace>> spaces = {V0, V1, V2};
-  PETScDMCollection dm_collection(spaces);
+  {
+    PETScDMCollection dm_collection(spaces);
 
   DM dm = dm_collection.dm();
 
@@ -110,6 +111,7 @@ int main()
   std::cout << "Soln vector norm: " << x.norm("l2") << std::endl;
 
   //KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
+  }
 
   KSPDestroy(&ksp);
 

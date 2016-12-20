@@ -35,7 +35,7 @@ from dolfin import *
 import pytest
 from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_petsc4py, pushpop_parameters
 
-@skip_if_not_petsc4py
+#@skip_if_not_petsc4py
 def test_mg_solver_laplace(pushpop_parameters):
 
     set_log_level(DEBUG)
@@ -72,8 +72,6 @@ def test_mg_solver_laplace(pushpop_parameters):
 
     PETScOptions.set("pc_mg_galerkin")
     PETScOptions.set("ksp_monitor_true_residual")
-    #PETScOptions.set("mg_levels_ksp_monitor_true_residual")
-
     PETScOptions.set("ksp_atol", 1.0e-10)
     PETScOptions.set("ksp_rtol", 1.0e-10)
     solver.set_from_options()
@@ -89,7 +87,7 @@ def test_mg_solver_laplace(pushpop_parameters):
 
     #ksp.setDM(dm)
     solver.set_dm(dm_collection)
-    #ksp.setDMActive(False)
+    solver.set_dm_active(False)
 
     x = PETScVector()
     solver.solve(x, b)
