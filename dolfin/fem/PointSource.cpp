@@ -122,10 +122,8 @@ void PointSource::apply(GenericVector& b)
 
   // Evaluate all basis functions at the point()
   dolfin_assert(_function_space->element());
-  //dolfin_assert(_function_space->element()->value_rank() == 0);
-  //std::size_t size = _function_space->element()->space_dimension()*std::max(_function_space->element()->num_sub_elements(), (std::size_t) 1);
 
-// Compute in tensor (one for scalar function, . . .)
+  // Compute in tensor (one for scalar function, . . .)
   const std::size_t rank = _function_space->element()->value_rank();
   info("rank " + std::to_string(rank));
 
@@ -139,28 +137,43 @@ void PointSource::apply(GenericVector& b)
   std::vector<double> basis(size_basis);
   std::vector<double> values(size_values);
 
+  info("value size " + std::to_string(size_values));
   ufc::cell ufc_cell;
   cell.get_cell_data(ufc_cell);
-  info("here");
 
   std::string msg = "";
   for (auto& v : values)
     msg += std::to_string(v) + ", ";
   info("values:\n" + msg);
 
-  for (std::size_t i = 0; i < size_values/(size_basis); ++i)
+  std::size_t tmp0 = 0;
+  std::size_t tmp1 = 0;
+  for (std::size_t i = 0; i < size_values; ++i)
   {
     _function_space->element()->evaluate_basis(i, basis.data(), _p.coordinates(),
                            coordinate_dofs.data(),
                            ufc_cell.orientation);
-    info(std::to_string(*basis.data()));
-    for (std::size_t j = 0; j < rank+1; ++j)
+    info("shape" + std::to_string(basis.size()));
+    msg = "";
+    for (auto& v : basis)
+      msg += std::to_string(v) + ", ";
+    info("values:\n" + msg);
+
+
+    values[i] = basis[tmp0];
+
+    if (tmp1 == size_values/size_basis-1)
     {
-      info("i" + std::to_string(i));
-      info("j" + std::to_string(j));
-      values[i+j*size_basis] = *basis.data();
+      tmp0 +=1;
+      tmp1 = 0;
+    }
+    else
+    {
+    tmp1 += 1;
     }
 
+    info("tmp0:" + std::to_string(tmp0));
+    info("tmp1:" + std::to_string(tmp1));
   }
 
   msg = "";

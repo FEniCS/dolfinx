@@ -92,7 +92,6 @@ def test_pointsource_vector_fs():
             [UnitCubeMesh(10,10,10), Point(0.5, 0.5, 0.5)]]
 
     for dim in range(1):
-        dim = 1
         mesh = data[dim][0]
         point = data[dim][1]
         V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
@@ -101,8 +100,12 @@ def test_pointsource_vector_fs():
         ps = PointSource(V, point, 10.0)
         ps.apply(b)
 
+        print b.array()
+
         b_sum = MPI.sum(mesh.mpi_comm(), np.sum(b.array()))
-        assert b_sum == pytest.approx(10.0)
+        print b_sum
+        print 10.0*V.num_sub_spaces()
+        assert b_sum == pytest.approx(10.0*V.num_sub_spaces())
 
         v2d = vertex_to_dof_map(V)
         for v in vertices(mesh):
