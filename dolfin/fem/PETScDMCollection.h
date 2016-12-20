@@ -44,7 +44,7 @@ namespace dolfin
     /// Destructor
     ~PETScDMCollection();
 
-    DM fine()
+    DM dm()
     {
       dolfin_assert(!_dms.empty());
       return _dms.back();
