@@ -126,13 +126,13 @@ def test_vector_p1_3d():
     diff.assign(Vuc - uf)
     assert diff.vector().norm("l2") < 1.0e-12
 
-@pytest.mark.skip
 def test_taylor_hood_cube():
+    pytest.xfail("Problem with Mixed Function Spaces")
     meshc = UnitCubeMesh(2, 2, 2)
     meshf = UnitCubeMesh(3, 4, 5)
 
-    Ve = VectorElement("CG", mesh0.ufl_cell(), 2)
-    Qe = FiniteElement("CG", mesh0.ufl_cell(), 1)
+    Ve = VectorElement("CG", meshc.ufl_cell(), 2)
+    Qe = FiniteElement("CG", meshc.ufl_cell(), 1)
     Ze = MixedElement([Ve, Qe])
 
     Zc = FunctionSpace(meshc, Ze)
@@ -150,4 +150,3 @@ def test_taylor_hood_cube():
     diff = Function(Zf)
     diff.assign(Zuc - zf)
     assert diff.vector().norm("l2") < 1.0e-12
-
