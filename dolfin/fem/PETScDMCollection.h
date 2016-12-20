@@ -44,10 +44,22 @@ namespace dolfin
     /// Destructor
     ~PETScDMCollection();
 
-    DM dm()
+    /// Return the ith DM objects. The coarest DM has index 0. Use
+    /// i=-1 to get the DM for the finest level.
+    DM dm(int i)
     {
-      dolfin_assert(!_dms.empty());
-      return _dms.back();
+      if (i >= 0)
+      {
+        dolfin_assert(i < _dms.size() - 1);
+        return _dms[i];
+      }
+      else if (i == -1)
+        return _dms.back();
+      else
+      {
+        // FIXME: throw error
+        return nullptr;
+      }
     }
 
     /// Create the interpolation matrix from the coarse to the fine space
@@ -62,8 +74,8 @@ namespace dolfin
     static PetscErrorCode coarsen(DM dmf, MPI_Comm comm, DM* dmc);
     static PetscErrorCode refine(DM dmc, MPI_Comm comm, DM* dmf);
 
-    std::vector<DM> _dms;
     std::vector<std::shared_ptr<const FunctionSpace>> _spaces;
+    std::vector<DM> _dms;
 
   };
 
