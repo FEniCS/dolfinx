@@ -89,7 +89,7 @@ namespace
     // Speed up the computations by only visiting (most) dofs once
     const std::size_t local_size = dofmap.ownership_range().second
       - dofmap.ownership_range().first;
-    RangedIndexSet already_visited(std::make_pair(0, local_size));
+    RangedIndexSet already_visited({0, local_size});
 
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
@@ -117,8 +117,8 @@ namespace
           std::copy(coordinates[i].begin(), coordinates[i].end(), coors.begin());
 
           // Add dof to list at this coord
-          const auto ins = coords_to_dofs.insert
-            (std::make_pair(coors, std::vector<std::size_t>{local_to_global[dof]}));
+          const auto ins = coords_to_dofs.insert({coors, {local_to_global[dof]}});
+
           if (!ins.second)
             ins.first->second.push_back(local_to_global[dof]);
         }
@@ -372,7 +372,7 @@ namespace
 
     // we loop over the processors that own the fine points that need to be found
     // we call them senders here.
-    for (unsigned sender = 0;sender < mpi_size; ++sender)
+    for (unsigned sender = 0; sender < mpi_size; ++sender)
     {
       // We already searched on the current processor
       if (sender == receiver)
@@ -456,7 +456,7 @@ namespace
     // compute id and distance of the closest owned coarse cell to the
     // fine point, then send the distances to all the processors, so that
     // each processor can determine which processor owns the closest coarse cell
-    for (unsigned int proc=0; proc<mpi_size; proc++)
+    for (unsigned int proc = 0; proc < mpi_size; ++proc)
     {
       how_many = not_found_points_recv[proc].size()/dim;
 
@@ -480,7 +480,7 @@ namespace
       // same trick as before, store the fine point coordinates into a Point
       // variable, then run compute_closest_entity to find the closest owned
       // cell id and distance from the fine point
-      for (unsigned i=0; i<how_many;i++)
+      for (unsigned int i = 0; i < how_many; ++i)
       {
         if (dim == 3)
         {
@@ -566,7 +566,7 @@ namespace
     // initialise row and column indices and values of the transfer matrix
     // FIXME: replace with boost::multi_array
     std::vector<std::vector<int>> col_indices(m_owned);
-    std::vector<int> fine_row_indices(m_owned);
+    //    std::vector<int> fine_row_indices(m_owned);
     std::vector<std::vector<double>> values(m_owned);
     for(unsigned i = 0; i < m_owned; ++i)
     {
@@ -576,35 +576,12 @@ namespace
     // initialise a single chunk of values (needed for later)
     std::vector<double> temp_values(eldim*data_size);
 
-    // initialise column ownership range
-    PetscInt n_own_begin;
-    PetscInt n_own_end;
-
-    // initialise global sparsity pattern: record on-process and off-process dependencies of fine dofs
-
-    // FIXME: replace PETSc Vec with direct MPI calls (using send_dnnz instead of vd_nnz) when satisfied
-    // they are equivalent
-    Vec vd_nnz;
-    Vec vo_nnz;
+    // Initialise global sparsity pattern: record on-process and off-process dependencies of fine dofs
     std::vector<std::vector<dolfin::la_index>> send_dnnz(mpi_size);
     std::vector<std::vector<dolfin::la_index>> send_onnz(mpi_size);
 
-    if (mpi_size == 0)
-    {
-      ierr = VecCreateSeq(mpi_comm, M, &vd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-      ierr = VecCreateSeq(mpi_comm, M, &vo_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    }
-    else
-    {
-      ierr = VecCreateMPI(mpi_comm, m, M, &vd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-      ierr = VecCreateMPI(mpi_comm, m, M, &vo_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    }
-    ierr = VecSet(vd_nnz, 0); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecSet(vo_nnz, 0); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    const PetscScalar one = 1.0;
-
     // loop over the found coarse cells
-    for (unsigned i=0; i<found_ids.size(); i++)
+    for (unsigned int i = 0; i < found_ids.size(); ++i)
     {
       // get coarse cell id
       id = found_ids[i];
@@ -660,7 +637,7 @@ namespace
           // Set the value
           values[fine_row][j] = temp_values[data_size*j + k];
           // Record which global row we're actually talking about
-          fine_row_indices[fine_row] = global_fine_dof;
+          //          fine_row_indices[fine_row] = global_fine_dof;
 
           // Once we have the global column indices, determine the sparsity pattern.
           // Which columns are owned by the process that owns the fine point?
@@ -668,21 +645,15 @@ namespace
           // get the fine point owner processor
           sender = found_points_senders[i];
           // get its column ownership range
-          n_own_begin = global_n_range_recv[sender][0];
-          n_own_end = global_n_range_recv[sender][1];
+          PetscInt n_own_begin = global_n_range_recv[sender][0];
+          PetscInt n_own_end = global_n_range_recv[sender][1];
           // check and allocate sparsity pattern
           int p = finemap->index_map()->global_index_owner(global_fine_dof);
           if ((n_own_begin <= coarse_dof) && (coarse_dof < n_own_end))
-          {
-            // Add one to the vd_nnz[global_fine_dof]
-            ierr = VecSetValue(vd_nnz, global_fine_dof, one, ADD_VALUES); CHKERRABORT(PETSC_COMM_WORLD, ierr);
             send_dnnz[p].push_back(global_fine_dof);
-          }
           else
-          {
-            ierr = VecSetValue(vo_nnz, global_fine_dof, one, ADD_VALUES); CHKERRABORT(PETSC_COMM_WORLD, ierr);
             send_onnz[p].push_back(global_fine_dof);
-          }
+
         } // end loop over all coarse dofs in the cell
       } // end loop over fine dofs associated with this collision
     } // end loop over found points
@@ -690,8 +661,8 @@ namespace
     std::vector<std::vector<dolfin::la_index>> recv_onnz;
     MPI::all_to_all(mpi_comm, send_onnz, recv_onnz);
     std::vector<int> onnz(m, 0);
-    for (auto &p : recv_onnz)
-      for (auto &q : p)
+    for (const auto &p : recv_onnz)
+      for (const auto &q : p)
       {
         dolfin_assert(q >= (dolfin::la_index)mbegin and q < (dolfin::la_index)mend);
         ++onnz[q - mbegin];
@@ -700,41 +671,12 @@ namespace
     std::vector<std::vector<dolfin::la_index>> recv_dnnz;
     MPI::all_to_all(mpi_comm, send_dnnz, recv_dnnz);
     std::vector<int> dnnz(m, 0);
-    for (auto &p : recv_dnnz)
-      for (auto &q : p)
+    for (const auto &p : recv_dnnz)
+      for (const auto &q : p)
       {
         dolfin_assert(q >= (dolfin::la_index)mbegin and q < (dolfin::la_index)mend);
         ++dnnz[q - mbegin];
       }
-
-    // Now communicate the cached vd_nnz and vo_nnz; PETSc takes care of the gory details
-    ierr = VecAssemblyBegin(vd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecAssemblyBegin(vo_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecAssemblyEnd(vd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecAssemblyEnd(vo_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-
-    // Now copy sparsity pattern into integer arrays (we had to use floats before because
-    // we wanted to store it in a PETSc Vec).
-    // We use new here rather than std::vector because we need to pass this to C.
-    PetscScalar *pd_nnz;
-    PetscScalar *po_nnz;
-    ierr = VecGetArray(vd_nnz, &pd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecGetArray(vo_nnz, &po_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-
-    PetscInt* d_nnz = new PetscInt[m];
-    PetscInt* o_nnz = new PetscInt[m];
-    for (std::size_t i = 0; i < m; i++)
-    {
-      d_nnz[i] = (PetscInt) pd_nnz[i];
-      dolfin_assert(d_nnz[i] == dnnz[i]);
-      o_nnz[i] = (PetscInt) po_nnz[i];
-      dolfin_assert(o_nnz[i] == onnz[i]);
-    }
-
-    ierr = VecRestoreArray(vd_nnz, &pd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecRestoreArray(vo_nnz, &po_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecDestroy(&vd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecDestroy(&vo_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
 
     if (mpi_size > 1)
     {
@@ -747,13 +689,10 @@ namespace
       CHKERRABORT(PETSC_COMM_WORLD, ierr);
     }
 
-    delete [] d_nnz;
-    delete [] o_nnz;
-
     // Setting transfer matrix values row by row
-    for (unsigned fine_row = 0; fine_row < m_owned; fine_row++)
+    for (unsigned int fine_row = 0; fine_row < m_owned; ++fine_row)
     {
-      PetscInt fine_dof = fine_row_indices[fine_row];
+      PetscInt fine_dof = global_row_indices[fine_row];
       ierr = MatSetValues(I, 1, &fine_dof, eldim, col_indices[fine_row].data(), values[fine_row].data(), INSERT_VALUES);
       CHKERRABORT(PETSC_COMM_WORLD, ierr);
     }
