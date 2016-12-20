@@ -19,9 +19,10 @@
 
 from dolfin import *
 import pytest
-from dolfin_utils.test import skip_if_not_PETSc, pushpop_parameters
+from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_petsc4py, pushpop_parameters
 
 @skip_if_not_PETSc
+@skip_if_not_petsc4py
 def test_mg_solver(pushpop_parameters):
 
     parameters["linear_algebra_backend"] = "PETSc"
@@ -54,16 +55,11 @@ def test_mg_solver(pushpop_parameters):
     PETScOptions.set("pc_mg_galerkin")
     PETScOptions.set("ksp_monitor_true_residual")
 
-    PETScOptions.set("ksp_atol", 1.0e-10)
-    PETScOptions.set("ksp_rtol", 1.0e-10)
+    PETScOptions.set("ksp_atol", 1.0e-12)
+    PETScOptions.set("ksp_rtol", 1.0e-12)
     solver.set_from_options()
 
-    #KSPSetDMActive(ksp, PETSC_FALSE);
-    #KSPSetDM(ksp, dm);
-
     from petsc4py import PETSc
-
-    #ksp = PETSc.KSP(solver.ksp())
     ksp = solver.ksp()
 
     ksp.setDM(dm_collection.fine())
@@ -71,15 +67,9 @@ def test_mg_solver(pushpop_parameters):
 
     x = PETScVector()
     solver.solve(x, b)
-    #assert round(x.norm("l2") - norm, 10) == 0
 
-    #solver = LUSolver(A)
-    #x = Vector()
-    #solver.solve(x, b)
-    #assert round(x.norm("l2") - norm, 10) == 0
-
-    #solver = LUSolver()
-    #x = Vector()
-    #solver.set_operator(A)
-    #solver.solve(x, b)
-    #assert round(x.norm("l2") - norm, 10) == 0
+    # Check multigrid solution against LU solver
+    solver = LUSolver(A)
+    x_lu = Vector()
+    solver.solve(x_lu, b)
+    assert round((x - x_lu).norm("l2"), 10) == 0
