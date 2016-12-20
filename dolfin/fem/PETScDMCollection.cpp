@@ -785,13 +785,11 @@ PETScDMCollection::PETScDMCollection(std::vector<std::shared_ptr<const FunctionS
 //-----------------------------------------------------------------------------
 PETScDMCollection::~PETScDMCollection()
 {
-  for (auto dm : _dms)
-  {
-    PetscInt cnt = 0;
-    PetscObjectGetReference((PetscObject)dm, &cnt);
-    std::cout << "**** dm ref count: " << cnt << std::endl;
-    DMDestroy(&dm);
-  }
+  // Don't destroy all the DMs!
+  // Only destroy the finest one.
+  // This is highly counterintuitive, and possibly a bug in PETSc,
+  // but it took Garth and Patrick an entire day to figure out.
+  DMDestroy(&_dms[_dms.size()-1]);
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
