@@ -123,32 +123,75 @@ void PointSource::apply(GenericVector& b)
   // Evaluate all basis functions at the point()
   dolfin_assert(_function_space->element());
   //dolfin_assert(_function_space->element()->value_rank() == 0);
-  std::vector<double> values(_function_space->element()->space_dimension()*std::max(_function_space->element()->num_sub_elements(), (std::size_t) 1));
+  //std::size_t size = _function_space->element()->space_dimension()*std::max(_function_space->element()->num_sub_elements(), (std::size_t) 1);
+
+// Compute in tensor (one for scalar function, . . .)
+  const std::size_t rank = _function_space->element()->value_rank();
+  info("rank " + std::to_string(rank));
+
+  std::size_t size_basis = 1;
+  for (std::size_t i = 0; i < rank; ++i)
+    size_basis *= _function_space->element()->value_dimension(i);
+
+  info("size basis" + std::to_string(size_basis));
+
+  std::size_t size_values = _function_space->element()->space_dimension();
+  std::vector<double> basis(size_basis);
+  std::vector<double> values(size_values);
 
   ufc::cell ufc_cell;
   cell.get_cell_data(ufc_cell);
+  info("here");
 
-  _function_space->element()->evaluate_basis_all(values.data(),
-                                                 _p.coordinates(),
-                                                 coordinate_dofs.data(),
-						 ufc_cell.orientation);
+  std::string msg = "";
+  for (auto& v : values)
+    msg += std::to_string(v) + ", ";
+  info("values:\n" + msg);
+
+  for (std::size_t i = 0; i < size_values/(size_basis); ++i)
+  {
+    _function_space->element()->evaluate_basis(i, basis.data(), _p.coordinates(),
+                           coordinate_dofs.data(),
+                           ufc_cell.orientation);
+    info(std::to_string(*basis.data()));
+    for (std::size_t j = 0; j < rank+1; ++j)
+    {
+      info("i" + std::to_string(i));
+      info("j" + std::to_string(j));
+      values[i+j*size_basis] = *basis.data();
+    }
+
+  }
+
+  msg = "";
+  for (auto& v : values)
+    msg += std::to_string(v) + ", ";
+  info("values, round 2:\n" + msg);
 
   // Scale by magnitude
-  for (std::size_t i = 0; i < _function_space->element()->space_dimension(); i++)
+  for (std::size_t i = 0; i < size_values; i++)
     values[i] *= _magnitude;
+
+  msg = "";
+  for (auto& v : values)
+    msg += std::to_string(v) + ", ";
+  info("values:\n" + msg);
 
   // Compute local-to-global mapping
   dolfin_assert(_function_space->dofmap());
   const ArrayView<const dolfin::la_index> dofs
     = _function_space->dofmap()->cell_dofs(cell.index());
 
-  // Add values to vector
-  dolfin_assert(_function_space->element()->space_dimension()
-                == _function_space->dofmap()->num_element_dofs(cell.index()));
-  b.add_local(values.data(), _function_space->element()->space_dimension(),
-              dofs.data());
-  b.apply("add");
+  msg = "";
+  for (auto& v : dofs)
+    msg += std::to_string(v) + ", ";
+  info("dofs:\n" + msg);
 
+  // Add values to vector
+  //dolfin_assert(_function_space->element()->space_dimension()
+  //              == _function_space->dofmap()->num_element_dofs(cell.index()));
+  b.add_local(values.data(), size_values, dofs.data());
+  b.apply("add");
 }
 //-----------------------------------------------------------------------------
 void PointSource::check_is_scalar(const FunctionSpace& V)
