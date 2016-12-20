@@ -106,6 +106,20 @@ PROBLEM_RENAMES(NonlinearVariational)
                                 const std::vector<double>& coordinate_dofs,
                                 const ufc::cell& cell) const;
 
+
+//-----------------------------------------------------------------------------
+// PETSc/SLEPc backend
+//-----------------------------------------------------------------------------
+#ifdef HAS_PETSC
+
+// Only ignore C++ accessors if petsc4py is enabled
+#ifdef HAS_PETSC4PY
+%ignore dolfin::PETScDMCollection::dm();
+#else
+%ignore dolfin::PETScDMCollection::dm;
+#endif
+
+#endif
 //-----------------------------------------------------------------------------
 // Add a greedy typemap for dolfin::Cell to ufc::cell
 //-----------------------------------------------------------------------------

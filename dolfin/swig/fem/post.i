@@ -26,6 +26,32 @@
 // modules has been loaded.
 // ===========================================================================
 
+
+#ifdef HAS_PETSC
+#ifdef HAS_PETSC4PY
+// Override default .dm() calls.
+// These are wrapped up by petsc4py typemaps so that
+// we see a petsc4py object on the python side.
+
+%feature("docstring") dolfin::PETScDMCollection::dm "Return petsc4py representation of PETSc DM";
+%extend dolfin::PETScDMCollection
+{
+  void dm(DM& dm)
+  { dm = self->dm(); }
+}
+#else
+%extend dolfin::PETScDMCollection {
+    %pythoncode %{
+        def dm(self):
+            common.dolfin_error("dolfin/swig/fem/post.i",
+                                "access PETScDMCollection objects in Python",
+                                "dolfin must be configured with petsc4py enabled")
+            return None
+    %}
+}
+#endif
+#endif
+
 //-----------------------------------------------------------------------------
 // Extend GenericDofMap
 //-----------------------------------------------------------------------------
