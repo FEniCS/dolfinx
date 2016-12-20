@@ -97,9 +97,9 @@ def test_mg_solver_laplace(pushpop_parameters):
     print("---")
     dm_collection.check_ref_count()
 
-    del(solver)
-    print("---")
-    dm_collection.check_ref_count()
+    #del(solver)
+    #print("---")
+    #dm_collection.check_ref_count()
 
     del(dm)
     print("---")
@@ -107,6 +107,10 @@ def test_mg_solver_laplace(pushpop_parameters):
 
     print("---")
     dm_collection.reset(2)
+    dm_collection.check_ref_count()
+
+    print("---")
+    del(solver)
     dm_collection.check_ref_count()
 
    #print("---")
