@@ -46,6 +46,7 @@
 
 #ifdef HAS_PETSC4PY
 %include "petsc4py/petsc4py.i"
+%petsc4py_objreft(DM)
 %petsc4py_objreft(Mat)
 %petsc4py_objreft(Vec)
 %petsc4py_objreft(KSP)
