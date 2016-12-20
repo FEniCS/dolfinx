@@ -32,7 +32,7 @@ namespace dolfin
 
   class FunctionSpace;
 
-  class PETScDMCollection : public PETScObject
+  class PETScDMCollection //: public PETScObject
   {
   public:
 

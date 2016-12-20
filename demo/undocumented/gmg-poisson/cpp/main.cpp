@@ -108,7 +108,6 @@ int main()
   PETScOptions::set("ksp_rtol", 1.0e-10);
   KSPSetFromOptions(ksp);
 
-
   Function u(V2);
   PETScVector& x = u.vector()->down_cast<PETScVector>();
   KSPSetDM(ksp, dm);
