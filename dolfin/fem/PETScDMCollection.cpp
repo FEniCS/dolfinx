@@ -286,6 +286,9 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
     // the processor that owns closest coarse cell to that point will be found,
     // so that even if multiple processes share the cell, we find the one that
     // actually owns it)
+
+    std::cout << curr_point.str(true) << " " << found_ranks.size() <<" \n";
+
     if (found_ranks.empty() || found_ranks.size() > 1)
     {
       // we store fine point coordinates, global row indices and the senders
@@ -413,7 +416,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   std::vector<int> not_found_global_row_indices_flattened;
   std::vector<unsigned int> not_found_points_senders_flattened;
 
-  // we loop over all the processors where a fine point was found
+  // We loop over all the processors where a fine point was found
   // note that from now on, every processor is doing the same check:
   // compute id and distance of the closest owned coarse cell to the
   // fine point, then send the distances to all the processors, so that
@@ -483,12 +486,12 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
       }
     }
 
-    // if the current processor is the one which owns the closest cell,
+    // If the current processor is the one which owns the closest cell,
     // add the fine point and closest coarse cell information to the
     // vectors of found points
     if (min_proc == mpi_rank)
     {
-      // allocate cell id to current worker if distance is minimum
+      // Allocate cell id to current worker if distance is minimum
       unsigned int id = not_found_cell_indices[i];
       found_ids.push_back(id);
       global_row_indices.insert(global_row_indices.end(), &not_found_global_row_indices_flattened[data_size*i],
@@ -595,6 +598,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
     } // end loop over fine dofs associated with this collision
   } // end loop over found points
 
+  // Communicate off-process columns nnz, and flatten to get nnz per row
   std::vector<std::vector<dolfin::la_index>> recv_onnz;
   MPI::all_to_all(mpi_comm, send_onnz, recv_onnz);
   std::vector<int> onnz(m, 0);
@@ -605,6 +609,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
       ++onnz[q - mbegin];
     }
 
+  // Communicate on-process columns nnz, and flatten to get nnz per row
   std::vector<std::vector<dolfin::la_index>> recv_dnnz;
   MPI::all_to_all(mpi_comm, send_dnnz, recv_dnnz);
   std::vector<int> dnnz(m, 0);

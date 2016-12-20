@@ -50,7 +50,7 @@ namespace dolfin
     {
       if (i >= 0)
       {
-        dolfin_assert(i < _dms.size() - 1);
+        dolfin_assert((unsigned int)i < _dms.size() - 1);
         return _dms[i];
       }
       else if (i == -1)
