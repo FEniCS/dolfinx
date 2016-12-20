@@ -1,6 +1,6 @@
 // Copyright (C) 2016 Patrick E. Farrell and Garth N. Wells
 //
-// This file is part of DOLFIN.
+//
 //
 // DOLFIN is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -740,8 +740,6 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(std::shar
     ierr = MatDestroy(&I); CHKERRABORT(PETSC_COMM_WORLD, ierr);
     return ptr;
   }
-
-
 
 //-----------------------------------------------------------------------------
 PETScDMCollection::PETScDMCollection(std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)

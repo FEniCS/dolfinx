@@ -27,9 +27,8 @@ from dolfin import *
 import pytest
 from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_petsc4py, pushpop_parameters
 
-@skip_if_not_PETSc
 @skip_if_not_petsc4py
-def test_mg_solver(pushpop_parameters):
+def test_mg_solver_laplace(pushpop_parameters):
 
     parameters["linear_algebra_backend"] = "PETSc"
 
@@ -95,3 +94,87 @@ def test_mg_solver(pushpop_parameters):
     x_lu = Vector()
     solver.solve(x_lu, b)
     #assert round((x - x_lu).norm("l2"), 10) == 0
+
+
+@skip_if_not_petsc4py
+def test_mg_solver_stokes(pushpop_parameters):
+
+    parameters["linear_algebra_backend"] = "PETSc"
+
+    mesh0 = UnitCubeMesh(2, 2, 2)
+    mesh1 = UnitCubeMesh(4, 4, 4)
+    mesh2 = UnitCubeMesh(8, 8, 8)
+
+    Ve = VectorElement("CG", mesh0.ufl_cell(), 2)
+    Qe = FiniteElement("CG", mesh0.ufl_cell(), 1)
+    Ze = MixedElement([Ve, Qe])
+
+    Z0 = FunctionSpace(mesh0, Ze)
+    Z1 = FunctionSpace(mesh1, Ze)
+    Z2 = FunctionSpace(mesh2, Ze)
+    W  = Z2
+
+    # Boundaries
+    def right(x, on_boundary): return x[0] > (1.0 - DOLFIN_EPS)
+    def left(x, on_boundary): return x[0] < DOLFIN_EPS
+    def top_bottom(x, on_boundary):
+        return x[1] > 1.0 - DOLFIN_EPS or x[1] < DOLFIN_EPS
+
+    # No-slip boundary condition for velocity
+    noslip = Constant((0.0, 0.0, 0.0))
+    bc0 = DirichletBC(W.sub(0), noslip, top_bottom)
+
+    # Inflow boundary condition for velocity
+    inflow = Expression(("-sin(x[1]*pi)", "0.0", "0.0"), degree=2)
+    bc1 = DirichletBC(W.sub(0), inflow, right)
+
+    # Collect boundary conditions
+    bcs = [bc0, bc1]
+
+    # Define variational problem
+    (u, p) = TrialFunctions(W)
+    (v, q) = TestFunctions(W)
+    f = Constant((0.0, 0.0, 0.0))
+    a = inner(grad(u), grad(v))*dx + div(v)*p*dx + q*div(u)*dx
+    L = inner(f, v)*dx
+
+    # Form for use in constructing preconditioner matrix
+    b = inner(grad(u), grad(v))*dx + p*q*dx
+
+    # Assemble system
+    A, bb = assemble_system(a, L, bcs)
+
+    # Assemble preconditioner system
+    P, btmp = assemble_system(b, L, bcs)
+
+    spaces = [Z0, Z1, Z2]
+    dm_collection = PETScDMCollection(spaces)
+
+    solver = PETScKrylovSolver()
+    solver.set_operators(A, P)
+
+    PETScOptions.set("ksp_type", "gcr")
+    PETScOptions.set("pc_type", "mg")
+    PETScOptions.set("pc_mg_levels", 3)
+    PETScOptions.set("pc_mg_galerkin")
+    PETScOptions.set("ksp_monitor_true_residual")
+
+    PETScOptions.set("ksp_atol", 1.0e-10)
+    PETScOptions.set("ksp_rtol", 1.0e-10)
+    solver.set_from_options()
+
+    from petsc4py import PETSc
+
+    ksp = solver.ksp()
+
+    ksp.setDM(dm_collection.dm())
+    ksp.setDMActive(False)
+
+    x = PETScVector()
+    solver.solve(x, bb)
+
+    # Check multigrid solution against LU solver
+    solver = LUSolver(A)
+    x_lu = Vector()
+    solver.solve(x_lu, bb)
+    assert round((x - x_lu).norm("l2"), 10) == 0
