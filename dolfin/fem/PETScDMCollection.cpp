@@ -786,7 +786,12 @@ PETScDMCollection::PETScDMCollection(std::vector<std::shared_ptr<const FunctionS
 PETScDMCollection::~PETScDMCollection()
 {
   for (auto dm : _dms)
+  {
+    PetscInt cnt = 0;
+    PetscObjectGetReference((PetscObject)dm, &cnt);
+    std::cout << "**** dm ref count: " << cnt << std::endl;
     DMDestroy(&dm);
+  }
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)

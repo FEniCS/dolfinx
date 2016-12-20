@@ -18,10 +18,10 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 from dolfin import *
-from petsc4py import PETSc
+#from petsc4py import PETSc
 
-SubSystemsManager.init_petsc()
-PETSc.Sys.popErrorHandler()
+#SubSystemsManager.init_petsc()
+#PETSc.Sys.popErrorHandler()
 
 
 #from dolfin import *
@@ -42,17 +42,23 @@ def test_mg_solver_laplace(pushpop_parameters):
     parameters["use_petsc_signal_handler"] = False
     parameters["linear_algebra_backend"] = "PETSc"
 
-    mesh0 = UnitSquareMesh(5, 5)
-    mesh1 = UnitSquareMesh(16, 16)
-    mesh2 = UnitSquareMesh(32, 132)
+    mesh0 = UnitSquareMesh(16, 16)
+    mesh1 = UnitSquareMesh(32, 32)
+    mesh2 = UnitSquareMesh(64, 64)
 
     V0 = FunctionSpace(mesh0, "Lagrange", 1)
     V1 = FunctionSpace(mesh1, "Lagrange", 1)
     V2 = FunctionSpace(mesh2, "Lagrange", 1)
 
+    bc = DirichletBC(V2, Constant(0.0), "on_boundary")
+
     u, v = TrialFunction(V2), TestFunction(V2)
-    A = assemble(Constant(1.0)*u*v*dx)
-    b = assemble(Constant(1.0)*v*dx)
+    #A = assemble(dot(grad(u), grad(v))*dx)
+    #b = assemble(Constant(1.0)*v*dx)
+    a = dot(grad(u), grad(v))*dx
+    L = v*dx
+    A, b = assemble_system(a, L, bc)
+
 
     spaces = [V0, V1, V2]
     dm_collection = PETScDMCollection(spaces)
@@ -66,9 +72,10 @@ def test_mg_solver_laplace(pushpop_parameters):
 
     PETScOptions.set("pc_mg_galerkin")
     PETScOptions.set("ksp_monitor_true_residual")
+    #PETScOptions.set("mg_levels_ksp_monitor_true_residual")
 
-    PETScOptions.set("ksp_atol", 1.0e-12)
-    PETScOptions.set("ksp_rtol", 1.0e-12)
+    PETScOptions.set("ksp_atol", 1.0e-10)
+    PETScOptions.set("ksp_rtol", 1.0e-10)
     solver.set_from_options()
 
     #from petsc4py import PETSc
@@ -86,6 +93,8 @@ def test_mg_solver_laplace(pushpop_parameters):
 
     x = PETScVector()
     solver.solve(x, b)
+
+    print("Solution vector norm: ", x.norm("l2"))
 
     #print("Solver ref count")
     #print(ksp.refcount)
