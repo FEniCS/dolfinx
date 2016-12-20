@@ -24,13 +24,15 @@
 #include <vector>
 #include <petscdm.h>
 #include <petscvec.h>
-#include <dolfin/la/PETScObject.h>
+//#include <dolfin/la/PETScObject.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/log/log.h>
 
 namespace dolfin
 {
 
   class FunctionSpace;
+  //class PETScMatrix;
 
   class PETScDMCollection //: public PETScObject
   {
