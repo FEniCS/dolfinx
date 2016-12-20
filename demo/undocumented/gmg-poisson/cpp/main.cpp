@@ -51,6 +51,8 @@ PetscErrorCode refine(DM dmc, MPI_Comm comm, DM* dmf)
 
 int main()
 {
+  set_log_level(DEBUG);
+
   // Create meshes and function spaces
   auto mesh0 = std::make_shared<UnitSquareMesh>(16, 16);
   auto V0 = std::make_shared<Poisson::FunctionSpace>(mesh0);
@@ -96,7 +98,7 @@ int main()
   std::vector<std::shared_ptr<const FunctionSpace>> spaces = {V0, V1, V2};
   PETScDMCollection dm_collection(spaces);
 
-  DM dm = dm_collection.fine();
+  DM dm = dm_collection.dm();
 
   KSPSetType(ksp, "richardson");
   PCSetType(pc, "mg");
@@ -114,7 +116,9 @@ int main()
   KSPSetDMActive(ksp, PETSC_FALSE);
   ierr = KSPSolve(ksp, b.vec(), x.vec());CHKERRQ(ierr);
 
-  KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
+  //KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
+
+  KSPDestroy(&ksp);
 
   return 0;
 }
