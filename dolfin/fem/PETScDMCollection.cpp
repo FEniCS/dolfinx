@@ -1,6 +1,6 @@
 // Copyright (C) 2016 Patrick E. Farrell and Garth N. Wells
 //
-// This file is part of DOLFIN.
+//
 //
 // DOLFIN is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -639,7 +639,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(std::shar
       ArrayView<const dolfin::la_index> temp_dofs = coarsemap->cell_dofs(id);
 
       // Loop over the fine dofs associated with this collision
-      for (unsigned k = 0; k < data_size; k++)
+      for (int k = 0; k < data_size; k++)
       {
         // Loop over the coarse dofs and stuff their contributions
         for (unsigned j = 0; j < eldim; j++)
@@ -664,7 +664,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(std::shar
           n_own_begin = global_n_range_recv[sender][0];
           n_own_end = global_n_range_recv[sender][1];
           // check and allocate sparsity pattern
-          if ((n_own_begin <= coarse_dof) && (coarse_dof < n_own_end))
+          if ((n_own_begin <= (std::size_t)coarse_dof)
+              && ((std::size_t)coarse_dof < n_own_end))
           {
             // Add one to the vd_nnz[global_fine_dof]
             ierr = VecSetValue(vd_nnz, global_fine_dof, one, ADD_VALUES); CHKERRABORT(PETSC_COMM_WORLD, ierr);
@@ -693,7 +694,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(std::shar
 
     PetscInt* d_nnz = new PetscInt[m];
     PetscInt* o_nnz = new PetscInt[m];
-    for (dolfin::la_index i = 0; i < m; i++)
+    for (dolfin::la_index i = 0; i < (dolfin::la_index)m; i++)
     {
       d_nnz[i] = (PetscInt) pd_nnz[i];
       o_nnz[i] = (PetscInt) po_nnz[i];
