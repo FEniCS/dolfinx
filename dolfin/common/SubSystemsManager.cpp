@@ -194,12 +194,12 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   #endif
 
   // Avoid using default PETSc signal handler
-  const bool use_petsc_signal_handler = parameters["use_petsc_signal_handler"];
-  if (!use_petsc_signal_handler)
-    PetscPopSignalHandler();
+  //const bool use_petsc_signal_handler = parameters["use_petsc_signal_handler"];
+  //if (!use_petsc_signal_handler)
+  //  PetscPopSignalHandler();
 
   // Use our own error handler so we can pretty print errors from PETSc
-  PetscPushErrorHandler(PetscDolfinErrorHandler, nullptr);
+  //PetscPushErrorHandler(PetscDolfinErrorHandler, nullptr);
 
   // Remember that PETSc has been initialized
   singleton().petsc_initialized = true;

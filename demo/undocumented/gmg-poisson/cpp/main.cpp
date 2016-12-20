@@ -13,9 +13,10 @@ class Source : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    double dx = x[0] - 0.5;
-    double dy = x[1] - 0.5;
-    values[0] = 10*exp(-(dx*dx + dy*dy) / 0.02);
+    //double dx = x[0] - 0.5;
+    //double dy = x[1] - 0.5;
+    //values[0] = 10*exp(-(dx*dx + dy*dy) / 0.02);
+    values[0] = 1.0;
   }
 };
 
@@ -33,24 +34,15 @@ class DirichletBoundary : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
   {
-    return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS;
+    return on_boundary;
+    //return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS;
   }
 };
 
-PetscErrorCode coarsen(DM dmf, MPI_Comm comm, DM* dmc)
-{
-  DMGetCoarseDM(dmf, dmc);
-  return 0;
-}
-
-PetscErrorCode refine(DM dmc, MPI_Comm comm, DM* dmf)
-{
-  DMGetFineDM(dmc, dmf);
-  return 0;
-}
-
 int main()
 {
+  set_log_level(DEBUG);
+
   // Create meshes and function spaces
   auto mesh0 = std::make_shared<UnitSquareMesh>(16, 16);
   auto V0 = std::make_shared<Poisson::FunctionSpace>(mesh0);
@@ -70,9 +62,10 @@ int main()
   Poisson::BilinearForm a(V2, V2);
   Poisson::LinearForm L(V2);
   auto f = std::make_shared<Source>();
-  auto g = std::make_shared<dUdN>();
-  L.f = f;
-  L.g = g;
+  //auto g = std::make_shared<dUdN>();
+  //auto g = std::make_shared<Constant>(0.0);
+  //L.f = f;
+  //L.g = g;
 
   // Compute solution
   //Function u(V);
@@ -91,19 +84,20 @@ int main()
 
   PC pc;
   KSPGetPC(ksp, &pc);
-  PCSetType(pc, "lu");
+  //PCSetType(pc, "lu");
 
   std::vector<std::shared_ptr<const FunctionSpace>> spaces = {V0, V1, V2};
-  PETScDMCollection dm_collection(spaces);
+  {
+    PETScDMCollection dm_collection(spaces);
 
-  DM dm = dm_collection.fine();
+  DM dm = dm_collection.dm();
 
   KSPSetType(ksp, "richardson");
   PCSetType(pc, "mg");
   PCMGSetLevels(pc, 3, NULL);
   PCMGSetGalerkin(pc, PC_MG_GALERKIN_BOTH);
   PETScOptions::set("ksp_monitor_true_residual");
-  PETScOptions::set("mg_levels_ksp_monitor_true_residual");
+  //PETScOptions::set("mg_levels_ksp_monitor_true_residual");
   PETScOptions::set("ksp_atol", 1.0e-10);
   PETScOptions::set("ksp_rtol", 1.0e-10);
   KSPSetFromOptions(ksp);
@@ -114,7 +108,12 @@ int main()
   KSPSetDMActive(ksp, PETSC_FALSE);
   ierr = KSPSolve(ksp, b.vec(), x.vec());CHKERRQ(ierr);
 
-  KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
+  std::cout << "Soln vector norm: " << x.norm("l2") << std::endl;
+
+  //KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
+  }
+
+  KSPDestroy(&ksp);
 
   return 0;
 }

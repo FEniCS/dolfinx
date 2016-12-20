@@ -688,16 +688,18 @@ PETScDMCollection::PETScDMCollection(std::vector<std::shared_ptr<const FunctionS
     //DMSetCoarseDM(dmf, dmc);
     //DMShellSetRefine(dmf, PETScDMCollection::coarsen);
 
-    DMSetCoarseDM(_dms[i],_dms[i - 1]);
+    DMSetCoarseDM(_dms[i], _dms[i - 1]);
     DMShellSetCoarsen(_dms[i], PETScDMCollection::coarsen);
-
   }
 }
 //-----------------------------------------------------------------------------
 PETScDMCollection::~PETScDMCollection()
 {
-  for (auto dm : _dms)
-    DMDestroy(&dm);
+  // Don't destroy all the DMs!
+  // Only destroy the finest one.
+  // This is highly counterintuitive, and possibly a bug in PETSc,
+  // but it took Garth and Patrick an entire day to figure out.
+  DMDestroy(&_dms[_dms.size()-1]);
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
