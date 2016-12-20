@@ -125,3 +125,29 @@ def test_vector_p1_3d():
     diff = Function(Vf)
     diff.assign(Vuc - uf)
     assert diff.vector().norm("l2") < 1.0e-12
+
+@pytest.mark.skip
+def test_taylor_hood_cube():
+    meshc = UnitCubeMesh(2, 2, 2)
+    meshf = UnitCubeMesh(3, 4, 5)
+
+    Ve = VectorElement("CG", mesh0.ufl_cell(), 2)
+    Qe = FiniteElement("CG", mesh0.ufl_cell(), 1)
+    Ze = MixedElement([Ve, Qe])
+
+    Zc = FunctionSpace(meshc, Ze)
+    Zf = FunctionSpace(meshf, Ze)
+
+    z = Expression(("x[0]*x[1]", "x[1]*x[2]", "x[2]*x[0]", "x[0] + 3*x[1] + x[2]"), degree=2)
+    zc = interpolate(z, Zc)
+    zf = interpolate(z, Zf)
+
+    mat = PETScDMCollection.create_transfer_matrix(Zc, Zf)
+    Zuc = Function(Zf)
+    mat.mult(zc.vector(), Zuc.vector())
+    as_backend_type(Zuc.vector()).update_ghost_values()
+
+    diff = Function(Zf)
+    diff.assign(Zuc - zf)
+    assert diff.vector().norm("l2") < 1.0e-12
+
