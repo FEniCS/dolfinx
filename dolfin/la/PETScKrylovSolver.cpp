@@ -26,6 +26,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/fem/PETScDMCollection.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "KrylovSolver.h"
@@ -436,6 +437,14 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
 
   dolfin_assert(_ksp);
   KSPSetNormType(_ksp, ksp_norm_type);
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_dm(PETScDMCollection& dm_collection)
+{
+  dolfin_assert(_ksp);
+  KSPSetDM(_ksp, dm_collection.dm());
+
+  KSPSetDMActive(_ksp, PETSC_FALSE);
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type() const

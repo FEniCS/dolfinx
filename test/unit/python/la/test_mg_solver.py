@@ -23,13 +23,23 @@ from petsc4py import PETSc
 SubSystemsManager.init_petsc()
 PETSc.Sys.popErrorHandler()
 
-from dolfin import *
+
+#from dolfin import *
+#from petsc4py import PETSc
+
+
+#SubSystemsManager.init_petsc()
+#PETSc.Sys.popErrorHandler()
+
+#from dolfin import *
 import pytest
 from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_petsc4py, pushpop_parameters
 
 @skip_if_not_petsc4py
 def test_mg_solver_laplace(pushpop_parameters):
 
+    set_log_level(DEBUG)
+    parameters["use_petsc_signal_handler"] = False
     parameters["linear_algebra_backend"] = "PETSc"
 
     mesh0 = UnitSquareMesh(5, 5)
@@ -64,25 +74,30 @@ def test_mg_solver_laplace(pushpop_parameters):
     PETScOptions.set("ksp_rtol", 1.0e-12)
     solver.set_from_options()
 
-    from petsc4py import PETSc
-    ksp = solver.ksp()
+    #from petsc4py import PETSc
+    #ksp = solver.ksp()
 
-    dm = dm_collection.dm()
+    #dm = dm_collection.dm()
 
-    print("DM ref count (0)")
-    print(type(dm))
-    print(dm.refcount)
+    #print("DM ref count (0)")
+    #print(type(dm))
+    #print(dm.refcount)
 
-    ksp.setDM(dm)
-    ksp.setDMActive(False)
+    #ksp.setDM(dm)
+    solver.set_dm(dm_collection)
+    #ksp.setDMActive(False)
 
     x = PETScVector()
     solver.solve(x, b)
 
-    print("Solver ref count")
-    print(ksp.refcount)
-    del(solver)
-    print(ksp.refcount)
+    #print("Solver ref count")
+    #print(ksp.refcount)
+    #del(solver)
+    #print(ksp.refcount)
+
+    #del(dm_collection)
+
+    print("!End")
 
     #print("DM ref count (1)")
     #print(dm.refcount)
@@ -90,9 +105,9 @@ def test_mg_solver_laplace(pushpop_parameters):
     #print(dm.refcount)
 
     # Check multigrid solution against LU solver
-    solver = LUSolver(A)
-    x_lu = Vector()
-    solver.solve(x_lu, b)
+    #solver = LUSolver(A)
+    #x_lu = Vector()
+    #solver.solve(x_lu, b)
     #assert round((x - x_lu).norm("l2"), 10) == 0
 
 
