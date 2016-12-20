@@ -54,9 +54,6 @@ def test_mg_solver_laplace(pushpop_parameters):
     A = assemble(Constant(1.0)*u*v*dx)
     b = assemble(Constant(1.0)*v*dx)
 
-    norm = 13.0
-
-
     spaces = [V0, V1, V2]
     dm_collection = PETScDMCollection(spaces)
 
