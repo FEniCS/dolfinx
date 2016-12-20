@@ -48,6 +48,10 @@ namespace dolfin
       return _dms.back();
     }
 
+    /// Create the interpolation matrix from the coarse to the fine space
+    static std::shared_ptr<PETScMatrix> create_transfer_matrix
+      (std::shared_ptr<const FunctionSpace> coarse_space,
+       std::shared_ptr<const FunctionSpace> fine_space);
 
   private:
 
