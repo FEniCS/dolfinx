@@ -807,6 +807,7 @@ PETScDMCollection::~PETScDMCollection()
   }
   */
 
+  /*
   for (std::size_t i = 0; i < _dms.size(); ++i)
   {
     PetscInt cnt = 0;
@@ -833,8 +834,26 @@ PETScDMCollection::~PETScDMCollection()
     std::cout << "(B) *** destroy dm: " << cnt << std::endl;
     //DMDestroy(&dm);
   }
+  */
 
-
+}
+//-----------------------------------------------------------------------------
+void PETScDMCollection::check_ref_count() const
+{
+  for (std::size_t i = 0; i < _dms.size(); ++i)
+  {
+    PetscInt cnt = 0;
+    PetscObjectGetReference((PetscObject)_dms[i], &cnt);
+    std::cout << "Ref count " << i << ": " << cnt << std::endl;
+  }
+}
+//-----------------------------------------------------------------------------
+void PETScDMCollection::reset(int i)
+{
+  PetscObjectDereference((PetscObject)_dms[i]);
+  //PetscObjectDereference((PetscObject)_dms.back());
+  //for (std::size_t i = 0; i < _dms.size(); ++i)
+  //  PetscObjectDereference((PetscObject)_dms[i]);
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
