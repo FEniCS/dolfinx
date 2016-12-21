@@ -12,7 +12,7 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
     cmake_policy(SET CMP0012 NEW)
   endif()
 
-# Require and use C++11
+  # Require and use C++11
   set(CMAKE_CXX_STANDARD 11)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   set(CMAKE_CXX_EXTENSIONS OFF)
@@ -28,19 +28,21 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
   endif()
 
   if (@PETSC_FOUND@)
-    set(DOLFIN_SKIP_BUILD_TESTS TRUE)
-    list(APPEND CMAKE_MODULE_PATH
-      "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
-    #find_package(MPI)
-    find_package(PETSc REQUIRED)
+    if (NOT PETSC_FOUND)
+      set(DOLFIN_SKIP_BUILD_TESTS TRUE)
+      list(APPEND CMAKE_MODULE_PATH
+        "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
+      find_package(PETSc REQUIRED QUIET)
+      endif()
   endif()
 
   if (@SLEPC_FOUND@)
-    set(DOLFIN_SKIP_BUILD_TESTS TRUE)
-    list(APPEND CMAKE_MODULE_PATH
-      "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
-    #find_package(MPI)
-    find_package(SLEPc REQUIRED)
+    if (NOT SLEPC_FOUND)
+      set(DOLFIN_SKIP_BUILD_TESTS TRUE)
+      list(APPEND CMAKE_MODULE_PATH
+        "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
+      find_package(SLEPc REQUIRED QUIET)
+    endif()
   endif()
 
   # Import Boost targets, if required
