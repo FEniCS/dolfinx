@@ -112,20 +112,25 @@ void IndexMap::set_local_to_global(const std::vector<std::size_t>& indices)
 
   for (const auto &node : _local_to_global)
   {
-    const std::size_t p
-      = std::upper_bound(_all_ranges.begin(), _all_ranges.end(), node)
-      - _all_ranges.begin() - 1;
-
+    const std::size_t p = global_index_owner(node);
     dolfin_assert(p != _rank);
     _off_process_owner.push_back(p);
   }
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+int IndexMap::global_index_owner(std::size_t index) const
+{
+  const int p
+    = std::upper_bound(_all_ranges.begin(), _all_ranges.end(), index)
+    - _all_ranges.begin() - 1;
+  return p;
+}
+//-----------------------------------------------------------------------------
 const std::vector<int>& IndexMap::off_process_owner() const
 {
   return _off_process_owner;
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 int IndexMap::block_size() const
 {
   return _block_size;
