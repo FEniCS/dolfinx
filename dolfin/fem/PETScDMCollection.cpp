@@ -801,7 +801,6 @@ PETScDMCollection::~PETScDMCollection()
 DM PETScDMCollection::get_dm(int i)
 {
   dolfin_assert(i >= -(int)_dms.size() and i < (int) _dms.size());
-
   const int base = i < 0 ? _dms.size() : 0;
   return _dms[base + i];
 }
