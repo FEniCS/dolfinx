@@ -17,131 +17,65 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+
 from dolfin import *
-from petsc4py import PETSc
-
-#SubSystemsManager.init_petsc()
-#PETSc.Sys.popErrorHandler()
-
-
-#from dolfin import *
-#from petsc4py import PETSc
-
-
-#SubSystemsManager.init_petsc()
-#PETSc.Sys.popErrorHandler()
-
-#from dolfin import *
 import pytest
 from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_petsc4py, pushpop_parameters
 
 @skip_if_not_petsc4py
 def test_mg_solver_laplace(pushpop_parameters):
 
-    set_log_level(DEBUG)
-    parameters["use_petsc_signal_handler"] = False
     parameters["linear_algebra_backend"] = "PETSc"
 
-    mesh0 = UnitSquareMesh(16, 16)
-    mesh1 = UnitSquareMesh(32, 32)
-    mesh2 = UnitSquareMesh(64, 64)
+    # Create meshes and function spaces
+    meshes = [UnitSquareMesh(N, N) for N in [16, 32, 64]]
+    V = [FunctionSpace(mesh, "Lagrange", 1) for mesh in meshes]
 
-    V0 = FunctionSpace(mesh0, "Lagrange", 1)
-    V1 = FunctionSpace(mesh1, "Lagrange", 1)
-    V2 = FunctionSpace(mesh2, "Lagrange", 1)
-
-    bc = DirichletBC(V2, Constant(0.0), "on_boundary")
-
-    u, v = TrialFunction(V2), TestFunction(V2)
+    # Create variational problem on fine grid
+    u, v = TrialFunction(V[-1]), TestFunction(V[-1])
     a = dot(grad(u), grad(v))*dx
     L = v*dx
+    bc = DirichletBC(V[-1], Constant(0.0), "on_boundary")
     A, b = assemble_system(a, L, bc)
 
-    spaces = [V0, V1, V2]
-    dm_collection = PETScDMCollection(spaces)
+    # Create collection of PETSc DM objects
+    dm_collection = PETScDMCollection(V)
 
+    # Create PETSc Krylov solver and set operator
     solver = PETScKrylovSolver()
     solver.set_operator(A)
 
+    # Set PETSc solver type
     PETScOptions.set("ksp_type", "richardson")
     PETScOptions.set("pc_type", "mg")
-    PETScOptions.set("pc_mg_levels", 3)
 
+    # Set PETSc MG type and levels
+    PETScOptions.set("pc_mg_levels", len(V))
     PETScOptions.set("pc_mg_galerkin")
+
+    # Set smoother
+    PETScOptions.set("mg_levels_ksp_type", "chebyshev")
+    PETScOptions.set("mg_levels_pc_type", "jacobi")
+
+    # Set tolerance and monitor residual
     PETScOptions.set("ksp_monitor_true_residual")
-    PETScOptions.set("ksp_atol", 1.0e-10)
-    PETScOptions.set("ksp_rtol", 1.0e-10)
+    PETScOptions.set("ksp_atol", 1.0e-12)
+    PETScOptions.set("ksp_rtol", 1.0e-12)
     solver.set_from_options()
 
-    # Get fine grid DM
-    dm = dm_collection.get_dm(-1)
-
-    # Attach fine grid DM to solver
-    solver.set_dm(dm)
+    # Get fine grid DM and ttach fine grid DM to solver
+    solver.set_dm(dm_collection.get_dm(-1))
     solver.set_dm_active(False)
 
-    print(type(dm), dm.refcount)
-
+    # Solve
     x = PETScVector()
     solver.solve(x, b)
 
-    print("Solution vector norm: ", x.norm("l2"))
-
-    print("*** cnt", dm.refcount)
-
-    #del(dm_collection)
-    print("End collection cleanup")
-    print("*** cnt (1)", dm.refcount)
-    #del(dm)
-
-    print("---")
-    dm_collection.check_ref_count()
-
-    #del(solver)
-    #print("---")
-    #dm_collection.check_ref_count()
-
-    del(dm)
-    print("---")
-    dm_collection.check_ref_count()
-
-    print("---")
-    dm_collection.reset(2)
-    dm_collection.check_ref_count()
-
-    print("---")
-    del(solver)
-    dm_collection.check_ref_count()
-
-   #print("---")
-   #dm_collection.check_ref_count()
-
-
-    #del(dm_collection)
-    #print("Solver ref count")
-    #print(ksp.refcount)
-    #del(solver)
-    #print(ksp.refcount)
-
-    #del(dm_collection)
-
-
-    #print("*** cnt", dm.refcount)
-    #PETSc.DM.destroy(dm)
-    #print("*** cnt", dm.refcount)
-
-    #print("!End")
-
-    #print("DM ref count (1)")
-    #print(dm.refcount)
-    #del(dm)
-    #print(dm.refcount)
-
-    # Check multigrid solution against LU solver
-    #solver = LUSolver(A)
-    #x_lu = Vector()
-    #solver.solve(x_lu, b)
-    #assert round((x - x_lu).norm("l2"), 10) == 0
+    # Check multigrid solution against LU solver solution
+    solver = LUSolver(A)
+    x_lu = Vector()
+    solver.solve(x_lu, b)
+    assert round((x - x_lu).norm("l2"), 10) == 0
 
 
 @skip_if_not_petsc4py

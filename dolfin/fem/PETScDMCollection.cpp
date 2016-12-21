@@ -553,10 +553,12 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(std::shar
       }
     }
 
-    // Now every processor should have the information needed to assemble its portion of the matrix.
-    // The ids of coarse cell owned by each processor are currently stored in found_ids
-    // and their respective global row indices are stored in global_row_indices.
-    // The processors that own the matrix rows relative to the fine point are stored in found_points_senders.
+    // Now every processor should have the information needed to
+    // assemble its portion of the matrix.  The ids of coarse cell
+    // owned by each processor are currently stored in found_ids and
+    // their respective global row indices are stored in
+    // global_row_indices.  The processors that own the matrix rows
+    // relative to the fine point are stored in found_points_senders.
     // One last loop and we are ready to go!
 
     // m_owned is the number of rows the current processor needs to set
@@ -579,7 +581,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(std::shar
     std::size_t n_own_begin;
     std::size_t n_own_end;
 
-    // initialise global sparsity pattern: record on-process and off-process dependencies of fine dofs
+    // initialise global sparsity pattern: record on-process and
+    // off-process dependencies of fine dofs
     Vec vd_nnz;
     Vec vo_nnz;
     if (mpi_size == 0)
@@ -655,8 +658,9 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(std::shar
           // Record which global row we're actually talking about
           fine_row_indices[fine_row] = global_fine_dof;
 
-          // Once we have the global column indices, determine the sparsity pattern.
-          // Which columns are owned by the process that owns the fine point?
+          // Once we have the global column indices, determine the
+          // sparsity pattern.  Which columns are owned by the process
+          // that owns the fine point?
 
           // get the fine point owner processor
           sender = found_points_senders[i];
@@ -678,15 +682,17 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(std::shar
       } // end loop over fine dofs associated with this collision
     } // end loop over found points
 
-    // Now communicate the cached vd_nnz and vo_nnz; PETSc takes care of the gory details
+    // Now communicate the cached vd_nnz and vo_nnz; PETSc takes care
+    // of the gory details
     ierr = VecAssemblyBegin(vd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
     ierr = VecAssemblyBegin(vo_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
     ierr = VecAssemblyEnd(vd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
     ierr = VecAssemblyEnd(vo_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
 
-    // Now copy sparsity pattern into integer arrays (we had to use floats before because
-    // we wanted to store it in a PETSc Vec).
-    // We use new here rather than std::vector because we need to pass this to C.
+    // Now copy sparsity pattern into integer arrays (we had to use
+    // floats before because we wanted to store it in a PETSc Vec).
+    // We use new here rather than std::vector because we need to pass
+    // this to C.
     PetscScalar *pd_nnz;
     PetscScalar *po_nnz;
     ierr = VecGetArray(vd_nnz, &pd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
@@ -758,11 +764,13 @@ PETScDMCollection::PETScDMCollection(std::vector<std::shared_ptr<const FunctionS
     DMShellSetContext(_dms[i], (void*)&_spaces[i]);
 
     // Suppy function to create global vector on DM
-    DMShellSetCreateGlobalVector(_dms[i], PETScDMCollection::create_global_vector);
+    DMShellSetCreateGlobalVector(_dms[i],
+                                 PETScDMCollection::create_global_vector);
 
     // Supply function to create interpolation matrix (coarse-to-fine
     // interpolation, i.e. level n to level n+1)
-    DMShellSetCreateInterpolation(_dms[i], PETScDMCollection::create_interpolation);
+    DMShellSetCreateInterpolation(_dms[i],
+                                  PETScDMCollection::create_interpolation);
   }
 
   for (std::size_t i = 0; i < _spaces.size() - 1; i++)
@@ -784,58 +792,18 @@ PETScDMCollection::~PETScDMCollection()
 {
   // Don't destroy all the DMs!
   // Only destroy the finest one.
-  // This is highly counterintuitive, and possibly a bug in PETSc, but
-  // it took Garth and Patrick an entire day to figure out.
+  // This is highly counter-intuitive, and possibly a bug in PETSc,
+  // but it took Garth and Patrick an entire day to figure out.
+  if (!_dms.empty())
+    DMDestroy(&_dms.back());
+}
+//-----------------------------------------------------------------------------
+DM PETScDMCollection::get_dm(int i)
+{
+  dolfin_assert(i >= -(int)_dms.size() and i < (int) _dms.size());
 
-  //if (!_dms.empty())
-  //  DMDestroy(&_dms.back());
-
-  /*
-  for (std::size_t i = _dms.size(); i > 0; --i)
-  {
-    PetscInt cnt = 0;
-    PetscObjectGetReference((PetscObject)_dms[i-1], &cnt);
-    std::cout << "(A) *** destroy dm: " << cnt << std::endl;
-    if (cnt > 0)
-    {
-      DMDestroy(&_dms[i-1]);
-      cnt = 0;
-      PetscObjectGetReference((PetscObject)_dms[i-1], &cnt);
-      std::cout << "  (P) *** destroy dm: " << cnt << std::endl;
-
-    }
-  }
-  */
-
-  /*
-  for (std::size_t i = 0; i < _dms.size(); ++i)
-  {
-    PetscInt cnt = 0;
-    PetscObjectGetReference((PetscObject)_dms[i], &cnt);
-    std::cout << "(A) *** destroy dm: " << cnt << std::endl;
-    if (cnt > 0)
-    {
-      PetscObjectDereference((PetscObject)_dms[i]);
-      //DMDestroy(&_dms[i]);
-      for (std::size_t j = i; j < _dms.size(); ++j)
-      {
-        cnt = 0;
-        PetscObjectGetReference((PetscObject)_dms[j], &cnt);
-        std::cout << "  (P) *** destroy dm " << j << ", " << cnt << std::endl;
-      }
-
-    }
-  }
-
-  for (std::size_t i = 0; i < _dms.size(); ++i)
-  {
-    PetscInt cnt = 0;
-    PetscObjectGetReference((PetscObject)_dms[i], &cnt);
-    std::cout << "(B) *** destroy dm: " << cnt << std::endl;
-    //DMDestroy(&dm);
-  }
-  */
-
+  const int base = i < 0 ? _dms.size() : 0;
+  return _dms[base + i];
 }
 //-----------------------------------------------------------------------------
 void PETScDMCollection::check_ref_count() const
