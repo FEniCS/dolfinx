@@ -32,13 +32,20 @@ namespace dolfin
 {
 
   class FunctionSpace;
-  //class PETScMatrix;
+
+  /// This class builds and stores of collection of PETSc DM objects
+  /// from a hierarchy of FunctionSpaces objects. The DM objects are
+  /// used to construct multigrid solvers via PETSc.
+  ///
+  /// Warning: This classs is highly experimental and will change
 
   class PETScDMCollection
   {
   public:
 
-    /// Constructor
+    /// Construct PETScDMCollection from a vector of
+    /// FunctionSpaces. The vector of FunctionSpaces is stored from
+    /// coarse to fine.
     PETScDMCollection(std::vector<std::shared_ptr<const FunctionSpace>> function_spaces);
 
     /// Destructor
@@ -53,14 +60,15 @@ namespace dolfin
     void check_ref_count() const;
     void reset(int i);
 
-    /// Create the interpolation matrix from the coarse to the fine space
+    /// Create the interpolation matrix from the coarse to the fine
+    /// space
     static std::shared_ptr<PETScMatrix> create_transfer_matrix
       (std::shared_ptr<const FunctionSpace> coarse_space,
        std::shared_ptr<const FunctionSpace> fine_space);
 
   private:
 
-    // Pointers to functions that are used in PETSc call-backs
+    // Pointers to functions that are used in PETSc DM call-backs
     static PetscErrorCode create_global_vector(DM dm, Vec* vec);
     static PetscErrorCode create_interpolation(DM dmc, DM dmf, Mat *mat,
                                                Vec *vec);

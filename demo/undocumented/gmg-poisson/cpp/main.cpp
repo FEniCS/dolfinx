@@ -1,10 +1,25 @@
+// Copyright (C) 2016 Patrick E. Farrell and Garth N. Wells
+//
+// This file is part of DOLFIN.
+//
+// DOLFIN is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// DOLFIN is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+//
+// This is a highly experimental demo of a geometric multigrid solver
+// using PETSc. It is very likely to change.
+
 #include <dolfin.h>
 #include "Poisson.h"
-
-#include <dolfin/fem/PETScDMCollection.h>
-
-#include <petscdmshell.h>
-#include <petscksp.h>
 
 using namespace dolfin;
 
@@ -12,100 +27,82 @@ using namespace dolfin;
 class Source : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
-  {
-    //double dx = x[0] - 0.5;
-    //double dy = x[1] - 0.5;
-    //values[0] = 10*exp(-(dx*dx + dy*dy) / 0.02);
-    values[0] = 1.0;
-  }
+  { values[0] = 1.0; }
 };
 
 // Normal derivative (Neumann boundary condition)
 class dUdN : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
-  {
-    values[0] = sin(5*x[0]);
-  }
+  { values[0] = sin(5*x[0]); }
 };
 
 // Sub domain for Dirichlet boundary condition
 class DirichletBoundary : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
-  {
-    return on_boundary;
-    //return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS;
-  }
+  { return on_boundary; }
 };
 
 int main()
 {
-  // Create meshes and function spaces
-  auto mesh0 = std::make_shared<UnitSquareMesh>(16, 16);
-  auto V0 = std::make_shared<Poisson::FunctionSpace>(mesh0);
+  // Create hierarchy of meshes
+  std::vector<std::shared_ptr<Mesh>> meshes
+    = {std::make_shared<UnitSquareMesh>(16, 16),
+       std::make_shared<UnitSquareMesh>(32, 32),
+       std::make_shared<UnitSquareMesh>(64, 64)};
 
-  auto mesh1 = std::make_shared<UnitSquareMesh>(32, 32);
-  auto V1 = std::make_shared<Poisson::FunctionSpace>(mesh1);
+  // Create hierarchy of funcrion spaces
+  std::vector<std::shared_ptr<const FunctionSpace>> V;
+  for (auto mesh : meshes)
+    V.push_back(std::make_shared<Poisson::FunctionSpace>(mesh));
 
-  auto mesh2 = std::make_shared<UnitSquareMesh>(64, 64);
-  auto V2 = std::make_shared<Poisson::FunctionSpace>(mesh2);
-
-  // Define boundary condition
+  // Define boundary condition on fine grid
   auto ubc = std::make_shared<Constant>(0.0);
   auto boundary = std::make_shared<DirichletBoundary>();
-  auto bc = std::make_shared<DirichletBC>(V2, ubc, boundary);
+  auto bc = std::make_shared<DirichletBC>(V.back(), ubc, boundary);
 
-  // Define variational forms
-  Poisson::BilinearForm a(V2, V2);
-  Poisson::LinearForm L(V2);
+  // Define variational forms on fine grid
+  Poisson::BilinearForm a(V.back(), V.back());
+  Poisson::LinearForm L(V.back());
   auto f = std::make_shared<Source>();
 
-  PETScMatrix A;
+  // Assemble system
+  auto A = std::make_shared<PETScMatrix>();
   PETScVector b;
-  assemble_system(A, b, a, L, {bc});
+  assemble_system(*A, b, a, L, {bc});
 
-  PetscErrorCode ierr;
+  // Create Krylove solver
+  PETScKrylovSolver solver;
+  solver.set_operator(A);
 
-  KSP ksp;
-  KSPCreate(MPI_COMM_WORLD, &ksp);
-  KSPSetOperators(ksp, A.mat(), A.mat());
-  KSPSetType(ksp, "preonly");
+  // Set PETSc solver type
+  PETScOptions::set("ksp_type", "richardson");
+  PETScOptions::set("pc_type", "mg");
 
-  PC pc;
-  KSPGetPC(ksp, &pc);
+  // Set PETSc MG type and levels
+  PETScOptions::set("pc_mg_levels", V.size());
+  PETScOptions::set("pc_mg_galerkin");
 
-  std::vector<std::shared_ptr<const FunctionSpace>> spaces = {V0, V1, V2};
-  //{
-    // Build DM for each level
-    PETScDMCollection dm_collection(spaces);
+  // Set smoother
+  PETScOptions::set("mg_levels_ksp_type", "chebyshev");
+  PETScOptions::set("mg_levels_pc_type", "jacobi");
 
-    // Get fine level DM
-    DM dm = dm_collection.get_dm(-1);
+  //Set tolerance and monitor residual
+  PETScOptions::set("ksp_monitor_true_residual");
+  PETScOptions::set("ksp_atol", 1.0e-12);
+  PETScOptions::set("ksp_rtol", 1.0e-12);
+  solver.set_from_options();
 
-    KSPSetType(ksp, "richardson");
-    PCSetType(pc, "mg");
-    PCMGSetLevels(pc, 3, NULL);
-    PCMGSetGalerkin(pc, PC_MG_GALERKIN_BOTH);
-    PETScOptions::set("ksp_monitor_true_residual");
-    //PETScOptions::set("mg_levels_ksp_monitor_true_residual");
-    PETScOptions::set("ksp_atol", 1.0e-10);
-    PETScOptions::set("ksp_rtol", 1.0e-10);
-    KSPSetFromOptions(ksp);
+  // Create PETSc DM objects
+  PETScDMCollection dm_collection(V);
 
-    Function u(V2);
-    PETScVector& x = u.vector()->down_cast<PETScVector>();
-    KSPSetDM(ksp, dm);
-    KSPSetDMActive(ksp, PETSC_FALSE);
-    ierr = KSPSolve(ksp, b.vec(), x.vec());CHKERRQ(ierr);
+  // Get fine grid DM and attach fine grid DM to solver
+  solver.set_dm(dm_collection.get_dm(-1));
+  solver.set_dm_active(false);
 
-    std::cout << "Soln vector norm: " << x.norm("l2") << std::endl;
-
-    //KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
-    //}
-  std::cout<< "Destroy ksp" << std::endl;
-  KSPDestroy(&ksp);
-  std::cout<< "End Destroy ksp" << std::endl;
+  Function u(V.back());
+  solver.solve(*u.vector(), b);
 
   return 0;
 }
