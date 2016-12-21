@@ -1,4 +1,5 @@
 from dolfin import *
+from petsc4py import PETSc
 
 # Fine mesh
 meshf = Mesh("../canal.1.xml")
@@ -40,16 +41,46 @@ b = PETScVector()
 assemble_system(a, L, bcs, A_tensor=A, b_tensor=b)
 
 # Define solver
-ksp = PETScKrylovSolver()
-ksp.set_operator(A)
+solver = PETScKrylovSolver()
+solver.set_operator(A)
+
+dm_collection = PETScDMCollection([Zc, Zf])
+solver.set_dm(dm_collection)
 
 PETScOptions.set("ksp_type", "preonly")
 PETScOptions.set("pc_type", "lu")
 PETScOptions.set("pc_factor_mat_solver_package", "mumps")
-ksp.set_from_options()
+solver.set_from_options()
+
+ksp = solver.ksp()
+pc  = ksp.pc
+if pc.type == "fieldsplit":
+    # Assemble the mass matrix and specify it as the approximation to the Schur complement
+    dm  = pc.getDM()
+    (names, ises, dms) = dm.createFieldDecomposition() # fetch subdm corresponding to pressure space
+
+    M = PETScMatrix()
+    assemble(-inner(p, q)*dx, tensor=M)
+    mass = M.mat().getSubMatrix(ises[1], ises[1])
+
+    ksp_mass = PETSc.KSP().create()
+    ksp_mass.setDM(dms[1])
+    ksp_mass.setDMActive(False) # don't try to build the operator from the DM
+    ksp_mass.setOperators(mass) # solve the mass matrix
+    ksp_mass.setOptionsPrefix("mass_")
+    ksp_mass.setFromOptions()
+
+    class SchurApproxInv(object):
+        def mult(self, mat, x, y):
+            ksp_mass.solve(x, y)
+    schurpc = PETSc.Mat()
+    schurpc.createPython(mass.getSizes(), SchurApproxInv())
+    schurpc.setUp()
+
+    pc.setFieldSplitSchurPreType(PETSc.PC.SchurPreType.USER, schurpc)
 
 z = Function(Zf)
-ksp.solve(z.vector(), b)
+solver.solve(z.vector(), b)
 
 File("output/velocity.pvd") << z.split(deepcopy=True)[0]
 File("output/pressure.pvd") << z.split(deepcopy=True)[1]
