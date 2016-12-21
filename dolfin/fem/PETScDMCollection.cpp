@@ -444,20 +444,14 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   std::vector<std::vector<double>> not_found_distances_recv(mpi_size);
   MPI::all_gather(mpi_comm, not_found_distances, not_found_distances_recv);
 
-  // now need to find which processor has a cell which is closest to the not_found points
-
-  // initialise some variables
-  double min_val; // minimum distance
-  unsigned min_proc = 0; // processor that owns the minimum distance cell
-  unsigned int sender; // processor that asked to search for the not found fine point
-
+  // Now need to find which processor has a cell which is closest to the not_found points
   unsigned int how_many = not_found_cell_indices.size();
   for (unsigned int i = 0; i < how_many; ++i)
   {
     // loop over the distances and find the processor who has
     // the point closest to one of its cells
-    min_proc = 0;
-    min_val = not_found_distances_recv[min_proc][i];
+    unsigned int min_proc = 0;
+    double min_val = not_found_distances_recv[min_proc][i];
     for (unsigned proc_it = 1; proc_it < mpi_size; proc_it++)
     {
       if (not_found_distances_recv[proc_it][i] < min_val)
@@ -478,7 +472,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
       global_row_indices.insert(global_row_indices.end(), &not_found_global_row_indices_flattened[data_size*i],
                                 &not_found_global_row_indices_flattened[data_size*i + data_size]);
       found_points.insert(found_points.end(), found_not_found_points.begin() + dim*i, found_not_found_points.begin() + dim*(i+1));
-      sender = not_found_points_senders_flattened[i];
+      unsigned int sender = not_found_points_senders_flattened[i];
       found_points_senders.push_back(sender);
     }
   }
@@ -564,7 +558,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
         // Which columns are owned by the process that owns the fine point?
 
         // get the fine point owner processor
-        sender = found_points_senders[i];
+        unsigned int sender = found_points_senders[i];
         // get its column ownership range
         std::size_t n_own_begin = global_n_range_recv[sender][0];
         std::size_t n_own_end = global_n_range_recv[sender][1];
