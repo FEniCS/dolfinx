@@ -24,7 +24,7 @@
 #include <vector>
 #include <petscdm.h>
 #include <petscvec.h>
-//#include <dolfin/la/PETScObject.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/log/log.h>
 
@@ -34,7 +34,7 @@ namespace dolfin
   class FunctionSpace;
   //class PETScMatrix;
 
-  class PETScDMCollection //: public PETScObject
+  class PETScDMCollection
   {
   public:
 
@@ -45,23 +45,11 @@ namespace dolfin
     ~PETScDMCollection();
 
     /// Return the ith DM objects. The coarest DM has index 0. Use
-    /// i=-1 to get the DM for the finest level.
-    DM get_dm(int i)
-    {
-      if (i >= 0)
-      {
-        dolfin_assert((unsigned int)i < _dms.size() - 1);
-        return _dms[i];
-      }
-      else if (i == -1)
-        return _dms.back();
-      else
-      {
-        // FIXME: throw error
-        return nullptr;
-      }
-    }
+    /// i=-1 to get the DM for the finest level, i=-2 for the DM for
+    /// the second finest level, etc.
+    DM get_dm(int i);
 
+    // These are test/debugging functions that will be removed
     void check_ref_count() const;
     void reset(int i);
 
@@ -72,12 +60,19 @@ namespace dolfin
 
   private:
 
+    // Pointers to functions that are used in PETSc call-backs
     static PetscErrorCode create_global_vector(DM dm, Vec* vec);
-    static PetscErrorCode create_interpolation(DM dmc, DM dmf, Mat *mat, Vec *vec);
+    static PetscErrorCode create_interpolation(DM dmc, DM dmf, Mat *mat,
+                                               Vec *vec);
     static PetscErrorCode coarsen(DM dmf, MPI_Comm comm, DM* dmc);
     static PetscErrorCode refine(DM dmc, MPI_Comm comm, DM* dmf);
 
+
+    // The FunctionSpaces associated with each level, starting with
+    // the coarest space
     std::vector<std::shared_ptr<const FunctionSpace>> _spaces;
+
+    // The PETSc DM objects
     std::vector<DM> _dms;
 
   };

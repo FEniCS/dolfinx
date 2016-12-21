@@ -287,8 +287,6 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
     // so that even if multiple processes share the cell, we find the one that
     // actually owns it)
 
-    std::cout << curr_point.str(true) << " " << found_ranks.size() <<" \n";
-
     if (found_ranks.empty() || found_ranks.size() > 1)
     {
       // we store fine point coordinates, global row indices and the senders
@@ -665,11 +663,13 @@ PETScDMCollection::PETScDMCollection(std::vector<std::shared_ptr<const FunctionS
     DMShellSetContext(_dms[i], (void*)&_spaces[i]);
 
     // Suppy function to create global vector on DM
-    DMShellSetCreateGlobalVector(_dms[i], PETScDMCollection::create_global_vector);
+    DMShellSetCreateGlobalVector(_dms[i],
+                                 PETScDMCollection::create_global_vector);
 
     // Supply function to create interpolation matrix (coarse-to-fine
     // interpolation, i.e. level n to level n+1)
-    DMShellSetCreateInterpolation(_dms[i], PETScDMCollection::create_interpolation);
+    DMShellSetCreateInterpolation(_dms[i],
+                                  PETScDMCollection::create_interpolation);
   }
 
   for (std::size_t i = 0; i < _spaces.size() - 1; i++)
@@ -691,58 +691,17 @@ PETScDMCollection::~PETScDMCollection()
 {
   // Don't destroy all the DMs!
   // Only destroy the finest one.
-  // This is highly counterintuitive, and possibly a bug in PETSc, but
-  // it took Garth and Patrick an entire day to figure out.
-
-  //if (!_dms.empty())
-  //  DMDestroy(&_dms.back());
-
-  /*
-  for (std::size_t i = _dms.size(); i > 0; --i)
-  {
-    PetscInt cnt = 0;
-    PetscObjectGetReference((PetscObject)_dms[i-1], &cnt);
-    std::cout << "(A) *** destroy dm: " << cnt << std::endl;
-    if (cnt > 0)
-    {
-      DMDestroy(&_dms[i-1]);
-      cnt = 0;
-      PetscObjectGetReference((PetscObject)_dms[i-1], &cnt);
-      std::cout << "  (P) *** destroy dm: " << cnt << std::endl;
-
-    }
-  }
-  */
-
-  /*
-  for (std::size_t i = 0; i < _dms.size(); ++i)
-  {
-    PetscInt cnt = 0;
-    PetscObjectGetReference((PetscObject)_dms[i], &cnt);
-    std::cout << "(A) *** destroy dm: " << cnt << std::endl;
-    if (cnt > 0)
-    {
-      PetscObjectDereference((PetscObject)_dms[i]);
-      //DMDestroy(&_dms[i]);
-      for (std::size_t j = i; j < _dms.size(); ++j)
-      {
-        cnt = 0;
-        PetscObjectGetReference((PetscObject)_dms[j], &cnt);
-        std::cout << "  (P) *** destroy dm " << j << ", " << cnt << std::endl;
-      }
-
-    }
-  }
-
-  for (std::size_t i = 0; i < _dms.size(); ++i)
-  {
-    PetscInt cnt = 0;
-    PetscObjectGetReference((PetscObject)_dms[i], &cnt);
-    std::cout << "(B) *** destroy dm: " << cnt << std::endl;
-    //DMDestroy(&dm);
-  }
-  */
-
+  // This is highly counter-intuitive, and possibly a bug in PETSc,
+  // but it took Garth and Patrick an entire day to figure out.
+  if (!_dms.empty())
+    DMDestroy(&_dms.back());
+}
+//-----------------------------------------------------------------------------
+DM PETScDMCollection::get_dm(int i)
+{
+  dolfin_assert(i >= -(int)_dms.size() and i < (int) _dms.size());
+  const int base = i < 0 ? _dms.size() : 0;
+  return _dms[base + i];
 }
 //-----------------------------------------------------------------------------
 void PETScDMCollection::check_ref_count() const
