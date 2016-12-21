@@ -30,6 +30,7 @@
 #include <dolfin/fem/MultiMeshDirichletBC.h>
 #include <dolfin/fem/MultiMeshDofMap.h>
 #include <dolfin/fem/MultiMeshForm.h>
+#include <dolfin/fem/PETScDMCollection.h>
 
 // Move up when ready or merge with Assembler.h
 #include <dolfin/fem/OpenMpAssembler.h>

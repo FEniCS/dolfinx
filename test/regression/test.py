@@ -117,6 +117,8 @@ def main():
     not_implemented = \
       [os.path.join(demodir, 'undocumented', 'projection-interpolation',    'cpp'),
        os.path.join(demodir, 'undocumented', 'interpolation',               'cpp'),
+       os.path.join(demodir, 'undocumented', 'gmg-poisson',                 'python'),
+       os.path.join(demodir, 'undocumented', 'gmg-stokes',                  'python'),
        os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'),
        os.path.join(demodir, 'undocumented', 'multistage-solver',           'cpp'),
        os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'),

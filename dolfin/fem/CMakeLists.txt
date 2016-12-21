@@ -26,6 +26,7 @@ set(HEADERS
   NonlinearVariationalProblem.h
   NonlinearVariationalSolver.h
   OpenMpAssembler.h
+  PETScDMCollection.h
   PointSource.h
   solve.h
   SparsityPatternBuilder.h
@@ -59,6 +60,7 @@ set(SOURCES
   NonlinearVariationalSolver.cpp
   OpenMpAssembler.cpp
   PointSource.cpp
+  PETScDMCollection.cpp
   solve.cpp
   SparsityPatternBuilder.cpp
   SystemAssembler.cpp

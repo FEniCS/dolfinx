@@ -908,14 +908,14 @@ _matrix_vector_mul_map[PETScLinearOperator] = [PETScVector]
 %feature("docstring") dolfin::PETScBaseMatrix::mat "Return petsc4py representation of PETSc Mat";
 %extend dolfin::PETScBaseMatrix
 {
-  void mat(Mat &A)
+  void mat(Mat& A)
   { A = self->mat(); }
 }
 
 %feature("docstring") dolfin::PETScVector::vec "Return petsc4py representation of PETSc Vec";
 %extend dolfin::PETScVector
 {
-  void vec(Vec&v)
+  void vec(Vec& v)
   { v = self->vec(); }
 }
 
