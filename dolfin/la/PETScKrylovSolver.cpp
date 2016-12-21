@@ -445,12 +445,6 @@ void PETScKrylovSolver::set_dm(DM dm)
   KSPSetDM(_ksp, dm);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_dm(PETScDMCollection& dm)
-{
-  dolfin_assert(_ksp);
-  KSPSetDM(_ksp, dm.dm(-1));
-}
-//-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_dm_active(bool val)
 {
   dolfin_assert(_ksp);

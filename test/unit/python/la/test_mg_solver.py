@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 from dolfin import *
-#from petsc4py import PETSc
+from petsc4py import PETSc
 
 #SubSystemsManager.init_petsc()
 #PETSc.Sys.popErrorHandler()
@@ -35,7 +35,7 @@ from dolfin import *
 import pytest
 from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_petsc4py, pushpop_parameters
 
-#@skip_if_not_petsc4py
+@skip_if_not_petsc4py
 def test_mg_solver_laplace(pushpop_parameters):
 
     set_log_level(DEBUG)
@@ -53,12 +53,9 @@ def test_mg_solver_laplace(pushpop_parameters):
     bc = DirichletBC(V2, Constant(0.0), "on_boundary")
 
     u, v = TrialFunction(V2), TestFunction(V2)
-    #A = assemble(dot(grad(u), grad(v))*dx)
-    #b = assemble(Constant(1.0)*v*dx)
     a = dot(grad(u), grad(v))*dx
     L = v*dx
     A, b = assemble_system(a, L, bc)
-
 
     spaces = [V0, V1, V2]
     dm_collection = PETScDMCollection(spaces)
@@ -76,24 +73,51 @@ def test_mg_solver_laplace(pushpop_parameters):
     PETScOptions.set("ksp_rtol", 1.0e-10)
     solver.set_from_options()
 
-    #from petsc4py import PETSc
-    #ksp = solver.ksp()
+    # Get fine grid DM
+    dm = dm_collection.get_dm(-1)
 
-    #dm = dm_collection.dm()
-
-    #print("DM ref count (0)")
-    #print(type(dm))
-    #print(dm.refcount)
-
-    #ksp.setDM(dm)
-    solver.set_dm(dm_collection)
+    # Attach fine grid DM to solver
+    solver.set_dm(dm)
     solver.set_dm_active(False)
+
+    print(type(dm), dm.refcount)
 
     x = PETScVector()
     solver.solve(x, b)
 
     print("Solution vector norm: ", x.norm("l2"))
 
+    print("*** cnt", dm.refcount)
+
+    #del(dm_collection)
+    print("End collection cleanup")
+    print("*** cnt (1)", dm.refcount)
+    #del(dm)
+
+    print("---")
+    dm_collection.check_ref_count()
+
+    #del(solver)
+    #print("---")
+    #dm_collection.check_ref_count()
+
+    del(dm)
+    print("---")
+    dm_collection.check_ref_count()
+
+    print("---")
+    dm_collection.reset(2)
+    dm_collection.check_ref_count()
+
+    print("---")
+    del(solver)
+    dm_collection.check_ref_count()
+
+   #print("---")
+   #dm_collection.check_ref_count()
+
+
+    #del(dm_collection)
     #print("Solver ref count")
     #print(ksp.refcount)
     #del(solver)
@@ -101,7 +125,12 @@ def test_mg_solver_laplace(pushpop_parameters):
 
     #del(dm_collection)
 
-    print("!End")
+
+    #print("*** cnt", dm.refcount)
+    #PETSc.DM.destroy(dm)
+    #print("*** cnt", dm.refcount)
+
+    #print("!End")
 
     #print("DM ref count (1)")
     #print(dm.refcount)
@@ -116,7 +145,7 @@ def test_mg_solver_laplace(pushpop_parameters):
 
 
 @skip_if_not_petsc4py
-def test_mg_solver_stokes(pushpop_parameters):
+def xtest_mg_solver_stokes(pushpop_parameters):
 
     parameters["linear_algebra_backend"] = "PETSc"
 

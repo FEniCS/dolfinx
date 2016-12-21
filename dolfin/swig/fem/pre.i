@@ -114,9 +114,9 @@ PROBLEM_RENAMES(NonlinearVariational)
 
 // Only ignore C++ accessors if petsc4py is enabled
 #ifdef HAS_PETSC4PY
-%ignore dolfin::PETScDMCollection::dm();
+%ignore dolfin::PETScDMCollection::get_dm(int);
 #else
-%ignore dolfin::PETScDMCollection::dm;
+%ignore dolfin::PETScDMCollection::get_dm;
 #endif
 
 #endif

@@ -46,7 +46,7 @@ namespace dolfin
 
     /// Return the ith DM objects. The coarest DM has index 0. Use
     /// i=-1 to get the DM for the finest level.
-    DM dm(int i)
+    DM get_dm(int i)
     {
       if (i >= 0)
       {
@@ -61,6 +61,9 @@ namespace dolfin
         return nullptr;
       }
     }
+
+    void check_ref_count() const;
+    void reset(int i);
 
     /// Create the interpolation matrix from the coarse to the fine space
     static std::shared_ptr<PETScMatrix> create_transfer_matrix

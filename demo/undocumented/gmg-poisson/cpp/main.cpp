@@ -76,12 +76,12 @@ int main()
   KSPGetPC(ksp, &pc);
 
   std::vector<std::shared_ptr<const FunctionSpace>> spaces = {V0, V1, V2};
-  {
+  //{
     // Build DM for each level
     PETScDMCollection dm_collection(spaces);
 
     // Get fine level DM
-    DM dm = dm_collection.dm(-1);
+    DM dm = dm_collection.get_dm(-1);
 
     KSPSetType(ksp, "richardson");
     PCSetType(pc, "mg");
@@ -102,9 +102,10 @@ int main()
     std::cout << "Soln vector norm: " << x.norm("l2") << std::endl;
 
     //KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
-  }
-
+    //}
+  std::cout<< "Destroy ksp" << std::endl;
   KSPDestroy(&ksp);
+  std::cout<< "End Destroy ksp" << std::endl;
 
   return 0;
 }
