@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2011 Garth N. Wells
+// Copyright (C) 2016 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,20 +15,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2010.
-//
-// First added:  2010-11-16
-// Last changed: 2012-11-12
-//
-// This demo colors a given mesh entities such that entities with the
-// same color are not neighbors. 'Neighbors' can be in the sense of shared
-// vertices, edges or facets, or a user-provided tuple defintion.
+// Unit tests for MeshColoring
 
 #include <dolfin.h>
+#include <gtest/gtest.h>
 
 using namespace dolfin;
 
-int main()
+//-----------------------------------------------------------------------------
+TEST(MeshColoring, test_mesh_coloring)
 {
   // Create mesh
   auto mesh = std::make_shared<UnitCubeMesh>(24, 24, 24);
@@ -62,8 +57,11 @@ int main()
   const CellFunction<std::size_t> colors_vertex_2
     = MeshColoring::cell_colors(mesh, coloring_type);
   plot(colors_vertex_2, "Facet-based cell coloring with distance 2");
+}
 
-  interactive();
-
-  return 0;
+// Test all
+int MeshColoring_main(int argc, char **argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

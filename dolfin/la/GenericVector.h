@@ -221,11 +221,12 @@ namespace dolfin
     /// Add values to each entry on local process
     virtual void add_local(const Array<double>& values) = 0;
 
-    /// Gather entries into local vector x
+    /// Gather entries (given by global indices) into local
+    /// vector x
     virtual void gather(GenericVector& x,
                         const std::vector<dolfin::la_index>& indices) const = 0;
 
-    /// Gather entries into x
+    /// Gather entries (given by global indices) into x
     virtual void gather(std::vector<double>& x,
                         const std::vector<dolfin::la_index>& indices) const = 0;
 

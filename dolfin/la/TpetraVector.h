@@ -164,15 +164,20 @@ namespace dolfin
     /// Add values to each entry on local process
     virtual void add_local(const Array<double>& values);
 
-    /// Gather vector entries into a local vector
+    /// Gather entries (given by global indices) into local
+    /// (MPI_COMM_SELF) vector x. Provided x must be empty
+    /// or of correct dimension (same as provided indices).
+    /// This operation is collective
     virtual void gather(GenericVector& y,
                         const std::vector<dolfin::la_index>& indices) const;
 
-    /// Gather entries into x
+    /// Gather entries (given by global indices) into x.
+    /// This operation is collective
     virtual void gather(std::vector<double>& x,
                         const std::vector<dolfin::la_index>& indices) const;
 
-    /// Gather all entries into x on process 0
+    /// Gather all entries into x on process 0.
+    /// This operation is collective
     virtual void gather_on_zero(std::vector<double>& x) const;
 
     /// Add multiple of given vector (AXPY operation)

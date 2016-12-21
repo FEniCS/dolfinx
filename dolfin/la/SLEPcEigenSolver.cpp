@@ -29,6 +29,7 @@
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "SLEPcEigenSolver.h"
+#include "VectorSpaceBasis.h"
 
 using namespace dolfin;
 
@@ -319,6 +320,23 @@ void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
   EPSSetDeflationSpace(_eps, 1, &x);
 }
 //-----------------------------------------------------------------------------
+void SLEPcEigenSolver::set_deflation_space(const VectorSpaceBasis& deflation_space)
+{
+  dolfin_assert(_eps);
+
+  // Get PETSc vector pointers from VectorSpaceBasis
+  std::vector<Vec> petsc_vecs(deflation_space.dim());
+  for (std::size_t i = 0; i < deflation_space.dim(); ++i)
+  {
+    dolfin_assert(deflation_space[i]);
+    petsc_vecs[i] = deflation_space[i]->down_cast<PETScVector>().vec();
+  }
+
+  PetscErrorCode ierr = EPSSetDeflationSpace(_eps, petsc_vecs.size(),
+                                             petsc_vecs.data());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetDeflationSpace");
+}
+//-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_options_prefix(std::string options_prefix)
 {
   // Set options prefix
@@ -490,6 +508,10 @@ void SLEPcEigenSolver::set_solver(std::string solver)
     EPSSetType(_eps, EPSLAPACK);
   else if (solver == "arpack")
     EPSSetType(_eps, EPSARPACK);
+  else if (solver == "jacobi-davidson")
+    EPSSetType(_eps, EPSJD);
+  else if (solver == "generalized-davidson")
+    EPSSetType(_eps, EPSGD);
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",

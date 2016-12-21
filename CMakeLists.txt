@@ -860,10 +860,11 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
-# Generate and install helper file dolfin-version
+# Generate and install helper scripts dolfin-version, fenics-version
 
 # FIXME: not cross-platform compatible
-# Create and install dolfin-version file
+
+# Create and install dolfin-version
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-version.in
                ${CMAKE_BINARY_DIR}/dolfin-version @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
@@ -871,6 +872,15 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
   PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
   OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
   COMPONENT RuntimeExecutables)
+
+# Create and install fenics-version
+configure_file(${DOLFIN_CMAKE_DIR}/templates/fenics-version.in
+               ${CMAKE_BINARY_DIR}/fenics-version @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/fenics-version
+        DESTINATION ${DOLFIN_BIN_DIR}
+  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+        OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+        COMPONENT RuntimeExecutables)
 
 #------------------------------------------------------------------------------
 # Generate and install utility script dolfin-get-demos
@@ -1109,6 +1119,30 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_regressiontests" for running regression tests
   add_custom_target(run_regressiontests
     COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
+    DEPENDS copy_data_test_demo demo demos_source
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+
+  # Add target "run_regressiontests_cpp" for running C++ regression tests
+  add_custom_target(run_regressiontests_cpp
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_PYTHON_TESTING=1 DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
+    DEPENDS copy_data_test_demo demo demos_source
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+
+  # Add target "run_regressiontests_cpp_mpi" for running C++ regression tests with mpi
+  add_custom_target(run_regressiontests_cpp_mpi
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_PYTHON_TESTING=1 DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
+    DEPENDS copy_data_test_demo demo demos_source
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+
+  # Add target "run_regressiontests_py" for running Python regression tests
+  add_custom_target(run_regressiontests_py
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_CPP_TESTING=1 DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
+    DEPENDS copy_data_test_demo demo demos_source
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+
+  # Add target "run_regressiontests_py_mpi" for running Python regression tests with mpi
+  add_custom_target(run_regressiontests_py_mpi
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_CPP_TESTING=1 DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
     DEPENDS copy_data_test_demo demo demos_source
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 

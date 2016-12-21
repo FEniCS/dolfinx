@@ -697,24 +697,32 @@ void PETScVector::gather(GenericVector& y,
   // Down cast to a PETScVector
   PETScVector& _y = as_type<PETScVector>(y);
 
-  // Prepare data for index sets (global indices)
-  std::vector<PetscInt> global_indices(indices.begin(), indices.end());
-
-  // Prepare data for index sets (local indices)
+  // Get number of required entries
   const std::size_t n = indices.size();
 
-  if (_y.empty())
-  {
-    // Initialise vector and make local
-    y.init(MPI_COMM_SELF, n);
-  }
-  else if (y.size() != n || dolfin::MPI::size(y.mpi_comm()))
+  // Check that passed vector is local
+  if (MPI::size(_y.mpi_comm()) != 1)
   {
     dolfin_error("PETScVector.cpp",
                  "gather vector entries",
-                 "Cannot re-initialize gather vector. Must be empty, or have correct size and be a local vector");
+                 "Gather vector must be a local vector (MPI_COMM_SELF)");
   }
 
+  // Initialize vector if empty
+  if (_y.empty())
+    _y.init(MPI_COMM_SELF, n);
+
+  // Check that passed vector has correct size
+  if (_y.size() != n)
+  {
+    dolfin_error("PETScVector.cpp",
+                 "gather vector entries",
+                 "Gather vector must be empty or of correct size "
+                 "(same as provided indices)");
+  }
+
+  // Prepare data for index sets (global indices)
+  std::vector<PetscInt> global_indices(indices.begin(), indices.end());
 
   // PETSc will bail out if it receives a NULL pointer even though m
   // == 0.  Can't return from function since function calls are
