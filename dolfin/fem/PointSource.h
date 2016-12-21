@@ -51,7 +51,7 @@ namespace dolfin
   private:
 
     // Check that function space is scalar
-    void check_is_scalar(const FunctionSpace& V);
+    void check_space_supported(const FunctionSpace& V);
 
     // The function space
     std::shared_ptr<const FunctionSpace> _function_space;

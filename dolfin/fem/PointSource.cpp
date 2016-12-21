@@ -43,7 +43,7 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
   : _function_space(V), _p(p), _magnitude(magnitude)
 {
   // Check that function space is scalar
-  //check_is_scalar(*V);
+  check_space_supported(*V);
 }
 //-----------------------------------------------------------------------------
 PointSource::~PointSource()
@@ -62,7 +62,7 @@ void PointSource::apply(GenericVector& b)
   // functions are continuous but may give unexpected results for DG.
   dolfin_assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();
-  std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
+  const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
   const unsigned int cell_index = tree->compute_first_entity_collision(_p);
 
   // Check that we found the point on at least one processor
@@ -126,10 +126,6 @@ void PointSource::apply(GenericVector& b)
     values[i] = _magnitude*basis_sum;
   }
 
-  // Scale by magnitude
-  //for (std::size_t i = 0; i < dofs_per_cell; i++)
-  //  values[i] *= _magnitude;
-
   // Compute local-to-global mapping
   dolfin_assert(_function_space->dofmap());
   const ArrayView<const dolfin::la_index> dofs
@@ -140,14 +136,14 @@ void PointSource::apply(GenericVector& b)
   b.apply("add");
 }
 //-----------------------------------------------------------------------------
-void PointSource::check_is_scalar(const FunctionSpace& V)
+void PointSource::check_space_supported(const FunctionSpace& V)
 {
   dolfin_assert(V.element());
-  if (V.element()->value_rank() != 0)
+  if (V.element()->value_rank() > 1)
   {
     dolfin_error("PointSource.cpp",
                  "create point source",
-                 "Function is not scalar");
+                 "Function must have rank 0 or 1");
   }
 }
 //-----------------------------------------------------------------------------
