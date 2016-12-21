@@ -91,57 +91,49 @@ def test_pointsource_vector_fs():
             [UnitSquareMesh(10,10), Point(0.5, 0.5)],
             [UnitCubeMesh(10,10,10), Point(0.5, 0.5, 0.5)]]
 
-    for dim in range(1):
+    for dim in range(3):
         mesh = data[dim][0]
         point = data[dim][1]
-        V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
+        V = VectorFunctionSpace(mesh, "CG", 1)
         v = TestFunction(V)
-        b = assemble(dot(Constant((0.0,0.0)),v)*dx)
+        b = assemble(dot(Constant([0.0]*mesh.geometry().dim()),v)*dx)
         ps = PointSource(V, point, 10.0)
         ps.apply(b)
 
-        print b.array()
-
         b_sum = MPI.sum(mesh.mpi_comm(), np.sum(b.array()))
-        print b_sum
-        print 10.0*V.num_sub_spaces()
         assert b_sum == pytest.approx(10.0*V.num_sub_spaces())
 
         v2d = vertex_to_dof_map(V)
         for v in vertices(mesh):
             if near(v.midpoint().distance(point), 0.0):
-                ind = v2d[v.index()]
-                if ind<len(b.array()):
-                    assert b.array()[ind] == pytest.approx(10.0)
+                for spc_idx in range(V.num_sub_spaces()):
+                    ind = v2d[v.index()*V.num_sub_spaces() + spc_idx]
+                    if ind<len(b.array()):
+                        assert b.array()[ind] == pytest.approx(10.0)
 
 
-def test_hangs():
-    """Tests point source when given constructor PointSource(V, point, mag)
-    with a vector """
-    data = [[UnitIntervalMesh(10), Point(0.7)],
+def test_pointsource_mixed_space():
+    """Tests adding a point to a VectorFunctionSpace"""
+    data = [[UnitIntervalMesh(10), Point(0.5)],
             [UnitSquareMesh(10,10), Point(0.5, 0.5)],
-            [UnitCubeMesh(10,10,10), Point(0.5, 0.5, 0.5)]]
+            [UnitCubeMesh(3,3,3), Point(0.5, 0.5, 0.5)]]
 
-    for dim in range(1):
+    for dim in range(3):
         mesh = data[dim][0]
         point = data[dim][1]
-        V = FunctionSpace(mesh, "CG", 1)
+        ele1 = FiniteElement("CG", mesh.ufl_cell(), 1)
+        ele2 = FiniteElement("DG", mesh.ufl_cell(), 2)
+        ele3 = VectorElement("CG", mesh.ufl_cell(), 2)
+        V = FunctionSpace(mesh, MixedElement([ele1, ele2, ele3]))
+        value_dimension = V.element().value_dimension(0)
         v = TestFunction(V)
-        b = assemble(Constant(0.0)*v*dx)
+        b = assemble(dot(Constant([0.0]*value_dimension),v)*dx)
         ps = PointSource(V, point, 10.0)
         ps.apply(b)
-        print b.array()
 
-        b_sum = MPI.sum(mesh.mpi_comm(), np.sum(b.array()))
-        assert b_sum == pytest.approx(10.0)
+        b_sum = b.sum()
+        assert b_sum == pytest.approx(10.0*value_dimension)
 
-        v2d = vertex_to_dof_map(V)
-        for v in vertices(mesh):
-            if near(v.midpoint().distance(point), 0.0):
-                ind = v2d[v.index()]
-                if ind<len(b.array()):
-                    assert b.array()[ind] == pytest.approx(10.0)
-
-#test_pointsource_vector()
+test_pointsource_vector()
 test_pointsource_vector_fs()
-#test_hangs()
+test_pointsource_mixed_space()

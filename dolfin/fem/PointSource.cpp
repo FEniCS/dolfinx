@@ -64,17 +64,16 @@ void PointSource::apply(GenericVector& b)
   const Mesh& mesh = *_function_space->mesh();
   std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
   const unsigned int cell_index = tree->compute_first_entity_collision(_p);
-  std::vector<unsigned int> entities2 = tree->compute_entity_collisions(_p);
-  for(int i=0; i<entities2.size(); i++)
-  {
-    info("Entities" + std::to_string(entities2[i]));
-  }
+
   // Check that we found the point on at least one processor
   int num_found = 0;
-  if (cell_index == std::numeric_limits<unsigned int>::max())
-    num_found = MPI::sum(mesh.mpi_comm(), 0);
-  else
+  const bool cell_found_on_process = cell_index != std::numeric_limits<unsigned int>::max();
+
+  if (cell_found_on_process)
     num_found = MPI::sum(mesh.mpi_comm(), 1);
+  else
+    num_found = MPI::sum(mesh.mpi_comm(), 0);
+
   if (MPI::rank(mesh.mpi_comm()) == 0 && num_found == 0)
   {
     dolfin_error("PointSource.cpp",
@@ -82,8 +81,12 @@ void PointSource::apply(GenericVector& b)
                  "The point is outside of the domain (%s)", _p.str().c_str());
   }
 
+  const int processes_with_cell =
+    cell_found_on_process ? MPI::rank(mesh.mpi_comm()) : -1;
+  const int selected_process = MPI::max(mesh.mpi_comm(), processes_with_cell);
+
   // Return if point not found
-  if (cell_index == std::numeric_limits<unsigned int>::max())
+  if (MPI::rank(mesh.mpi_comm()) != selected_process)
   {
     info("Not found on this processor");
     b.apply("add");
@@ -92,29 +95,6 @@ void PointSource::apply(GenericVector& b)
 
   // Create cell
   const Cell cell(mesh, static_cast<std::size_t>(cell_index));
-
-  // Finds out if any vertices in that cell are shared
-  int shared = 0;
-  for (VertexIterator v(cell); !v.end(); ++v)
-  {
-    if(v->is_shared()==true)
-    {
-      shared = 1;
-    }
-    info("Is it shared?: " + std::to_string(shared));
-  }
-
-  // If shared only apply point source to lowest ranked process.
-  if(shared == 1)
-  {
-    if (MPI::rank(mesh.mpi_comm()) !=
-	MPI::min(mesh.mpi_comm(), MPI::rank(mesh.mpi_comm())))
-    {
-      info("Added on other processor");
-      b.apply("add");
-      return;
-    }
-  }
 
   // Cell coordinates
   std::vector<double> coordinate_dofs;
@@ -133,47 +113,34 @@ void PointSource::apply(GenericVector& b)
 
   info("size basis" + std::to_string(size_basis));
 
-  std::size_t size_values = _function_space->element()->space_dimension();
+  std::size_t dofs_per_cell = _function_space->element()->space_dimension();
   std::vector<double> basis(size_basis);
-  std::vector<double> values(size_values);
+  std::vector<double> values(dofs_per_cell);
 
-  info("value size " + std::to_string(size_values));
+  info("dofs per cell " + std::to_string(dofs_per_cell));
   ufc::cell ufc_cell;
   cell.get_cell_data(ufc_cell);
 
   std::string msg = "";
   for (auto& v : values)
     msg += std::to_string(v) + ", ";
-  info("values:\n" + msg);
+  info("values at dofs:\n" + msg);
 
-  std::size_t tmp0 = 0;
-  std::size_t tmp1 = 0;
-  for (std::size_t i = 0; i < size_values; ++i)
+  for (std::size_t i = 0; i < dofs_per_cell; ++i)
   {
     _function_space->element()->evaluate_basis(i, basis.data(), _p.coordinates(),
                            coordinate_dofs.data(),
                            ufc_cell.orientation);
-    info("shape" + std::to_string(basis.size()));
+    info("basis size: " + std::to_string(basis.size()));
     msg = "";
     for (auto& v : basis)
       msg += std::to_string(v) + ", ";
-    info("values:\n" + msg);
+    info("basis:\n" + msg);
 
-
-    values[i] = basis[tmp0];
-
-    if (tmp1 == size_values/size_basis-1)
-    {
-      tmp0 +=1;
-      tmp1 = 0;
-    }
-    else
-    {
-    tmp1 += 1;
-    }
-
-    info("tmp0:" + std::to_string(tmp0));
-    info("tmp1:" + std::to_string(tmp1));
+    double basis_sum = 0.0;
+    for (const auto& v : basis)
+      basis_sum += v;
+    values[i] = basis_sum;
   }
 
   msg = "";
@@ -182,7 +149,7 @@ void PointSource::apply(GenericVector& b)
   info("values, round 2:\n" + msg);
 
   // Scale by magnitude
-  for (std::size_t i = 0; i < size_values; i++)
+  for (std::size_t i = 0; i < dofs_per_cell; i++)
     values[i] *= _magnitude;
 
   msg = "";
@@ -203,7 +170,7 @@ void PointSource::apply(GenericVector& b)
   // Add values to vector
   //dolfin_assert(_function_space->element()->space_dimension()
   //              == _function_space->dofmap()->num_element_dofs(cell.index()));
-  b.add_local(values.data(), size_values, dofs.data());
+  b.add_local(values.data(), dofs_per_cell, dofs.data());
   b.apply("add");
 }
 //-----------------------------------------------------------------------------
