@@ -46,6 +46,42 @@ def test_scalar_p1():
     diff.assign(Vuc - uf)
     assert diff.vector().norm("l2") < 1.0e-12
 
+def test_scalar_p1_scaled_mesh():
+    # Make coarse mesh smaller than fine mesh
+    meshc = UnitCubeMesh(2, 2, 2)
+    for x in meshc.coordinates():
+        x *= 0.9
+    meshf = UnitCubeMesh(3, 4, 5)
+
+    Vc = FunctionSpace(meshc, "CG", 1)
+    Vf = FunctionSpace(meshf, "CG", 1)
+
+    u = Expression("x[0] + 2*x[1] + 3*x[2]", degree=1)
+    uc = interpolate(u, Vc)
+    uf = interpolate(u, Vf)
+
+    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf)
+    Vuc = Function(Vf)
+    mat.mult(uc.vector(), Vuc.vector())
+    as_backend_type(Vuc.vector()).update_ghost_values()
+
+    diff = Function(Vf)
+    diff.assign(Vuc - uf)
+    print(diff.vector().norm("l2"))
+    assert diff.vector().norm("l2") < 1.0e-12
+
+    # Now make coarse mesh larger than fine mesh
+    for x in meshc.coordinates():
+        x *= 1.5
+    uc = interpolate(u, Vc)
+
+    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf)
+    mat.mult(uc.vector(), Vuc.vector())
+    as_backend_type(Vuc.vector()).update_ghost_values()
+
+    diff.assign(Vuc - uf)
+    assert diff.vector().norm("l2") < 1.0e-12
+
 def test_scalar_p2():
     meshc = UnitCubeMesh(2, 2, 2)
     meshf = UnitCubeMesh(3, 4, 5)
