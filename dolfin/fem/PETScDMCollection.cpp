@@ -170,9 +170,16 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   // We store the ownership range of the fine dofs so that
   // we can communicate it to the other workers.
   // This will be useful to check which dofs are owned by which processor.
-  std::vector<std::size_t> global_n_range(2,0);
-  global_n_range[0] = nbegin;
-  global_n_range[1] = nend;
+  std::vector<std::size_t> global_n_range = {nbegin, nend};
+
+  // We now need to communicate various information to all the processors:
+  // processor column and row ownership
+  std::vector<std::vector<std::size_t>> global_n_range_recv(mpi_size, std::vector<std::size_t>(2));
+  std::vector<std::size_t> global_m(mpi_size);
+  std::vector<std::size_t> global_row_offset(mpi_size);
+  MPI::all_gather(mpi_comm, global_n_range, global_n_range_recv);
+  MPI::all_gather(mpi_comm, m, global_m);
+  MPI::all_gather(mpi_comm, mbegin, global_row_offset);
 
   // Get finite element for the coarse space. This will be needed to evaluate
   // the basis functions for each cell.
@@ -245,15 +252,10 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   std::vector<double> not_found_points;
   std::vector<int> not_found_global_row_indices;
 
-  // same for the found elsewhere points
-  std::vector<double> found_elsewhere;
-  std::vector<int> found_elsewhere_global_row_indices;
-  // which_processor contains the rank of the processor
-  // that owns the coarse cell where the fine point was found
-  std::vector<unsigned int> which_processor;
+  // Send out points which are found in a single process BBox
+  std::vector<std::vector<double>> send_found(mpi_size);
+  std::vector<std::vector<int>> send_found_global_row_indices(mpi_size);
 
-  // Loop over fine points owned by the current processor,
-  // and find out who owns the coarse cell where the fine point lies.
   for (const auto &map_it : coords_to_dofs)
   {
     const std::vector<double>& _x = map_it.first;
@@ -270,109 +272,67 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
     // so that even if multiple processes share the cell, we find the one that
     // actually owns it)
 
-    if (found_ranks.empty() || found_ranks.size() > 1)
+    if (found_ranks.size() == 1)
     {
-      // we store fine point coordinates, global row indices and the senders
-      // this information will be sent to all the processors
-      not_found_points.insert(not_found_points.end(), _x.begin(), _x.end());
-      not_found_global_row_indices.insert(not_found_global_row_indices.end(), map_it.second.begin(), map_it.second.end());
-      not_found_points_senders.push_back(mpi_rank);
+      const int rp = found_ranks[0];
+      send_found[rp].insert(send_found[rp].end(),
+                            _x.begin(), _x.end());
+      send_found_global_row_indices[rp].insert(
+                send_found_global_row_indices[rp].end(),
+                map_it.second.begin(), map_it.second.end());
     }
-    // if the fine point collides with a coarse cell owned by the current processor,
-    // find the coarse cell the fine point lives in
-    else if (found_ranks[0] == mpi_rank)
-    {
-      // find the coarse cell where the fine point lies
-      unsigned int id = treec->compute_first_entity_collision(curr_point);
-
-      // Safety control: if no cell is found on the current processor
-      // mark the point as not_found
-      if (id == std::numeric_limits<unsigned int>::max())
-      {
-        not_found_points.insert(not_found_points.end(), _x.begin(), _x.end());
-        not_found_global_row_indices.insert(not_found_global_row_indices.end(), map_it.second.begin(), map_it.second.end());
-        not_found_points_senders.push_back(mpi_rank);
-      }
-      else
-      {
-        // if a cell is found on the current processor, add the point
-        // and relative information to the various vectors
-        found_ids.push_back(id);
-        found_points.insert(found_points.end(), _x.begin(), _x.end());
-        global_row_indices.insert(global_row_indices.end(), map_it.second.begin(), map_it.second.end());
-        found_points_senders.push_back(mpi_rank);
-      }
-    }
-    // if found elsewhere, store the process where it was found
     else
     {
-      found_elsewhere.insert(found_elsewhere.end(),_x.begin(), _x.end());
-      which_processor.push_back(found_ranks[0]);
-      found_elsewhere_global_row_indices.insert(found_elsewhere_global_row_indices.end(), map_it.second.begin(), map_it.second.end());
+      // Point is either outside the domain, or inside the BoundingBox
+      // of more than one process
+      not_found_points.insert(not_found_points.end(), _x.begin(), _x.end());
+      not_found_global_row_indices.insert(not_found_global_row_indices.end(),
+                                          map_it.second.begin(),
+                                          map_it.second.end());
+      not_found_points_senders.push_back(mpi_rank);
     }
-  } // end for loop
+  }
 
-  // We now need to communicate various information to all the processors:
-  // processor column and row ownership
-  std::vector<std::vector<std::size_t>> global_n_range_recv(mpi_size, std::vector<std::size_t>(2));
-  std::vector<std::size_t> global_m(mpi_size);
-  std::vector<std::size_t> global_row_offset(mpi_size);
-  MPI::all_gather(mpi_comm, global_n_range, global_n_range_recv);
-  MPI::all_gather(mpi_comm, m, global_m);
-  MPI::all_gather(mpi_comm, mbegin, global_row_offset);
-
-  // Ok, now we need to handle the points which have been found elsewhere
-  // We need to communicate these points to the other workers
-  // as well as the relative information
-  std::vector<std::vector<double>> found_elsewhere_recv(mpi_size);
-  std::vector<std::vector<int>> found_elsewhere_global_row_indices_recv(mpi_size);
-  std::vector<std::vector<unsigned int>> which_processor_recv(mpi_size);
-  MPI::all_gather(mpi_comm, found_elsewhere, found_elsewhere_recv);
-  MPI::all_gather(mpi_comm, found_elsewhere_global_row_indices, found_elsewhere_global_row_indices_recv);
-  MPI::all_gather(mpi_comm, which_processor, which_processor_recv);
+  // Send points with one BBox to the process that may have the
+  // containing coarse cells
+  std::vector<std::vector<double>> recv_found(mpi_size);
+  std::vector<std::vector<int>> recv_found_global_row_indices(mpi_size);
+  MPI::all_to_all(mpi_comm, send_found, recv_found);
+  MPI::all_to_all(mpi_comm, send_found_global_row_indices,
+                  recv_found_global_row_indices);
 
   // First, handle the points that were found elsewhere.
   // We loop over the processors that own the fine points that need to be found.
   // We call them senders here.
   for (unsigned int sender = 0; sender < mpi_size; ++sender)
   {
-    // We already searched on the current processor
-    if (sender == mpi_rank)
-      continue;
+    unsigned int n_points = recv_found[sender].size()/dim;
 
-    // How many fine points do we need to check?
-    unsigned int how_many = found_elsewhere_recv[sender].size()/dim;
-    if (how_many == 0)
-      continue;
-
-    // for each fine point, create a Point variable and try to find the
-    // coarse cell it lives in. If we cannot, mark the fine point as not found
-    // for robustness.
-    for (unsigned int i = 0; i < how_many; ++i)
+    for (unsigned int i = 0; i < n_points; ++i)
     {
-      if (which_processor_recv[sender][i] == mpi_rank)
-      {
-        double *_x = &found_elsewhere_recv[sender][i*dim];
-        Point curr_point(dim, _x);
+      double *_x = &recv_found[sender][i*dim];
+      Point curr_point(dim, _x);
 
-        unsigned int id = treec->compute_first_entity_collision(curr_point);
-        // if the point is not found on the current processor
-        // mark it as not found and leave it for later
-        if (id == std::numeric_limits<unsigned int>::max())
-        {
-          not_found_points.insert(not_found_points.end(), _x, _x + dim);
-          not_found_global_row_indices.insert(not_found_global_row_indices.end(), &found_elsewhere_global_row_indices_recv[sender][data_size*i], &found_elsewhere_global_row_indices_recv[sender][data_size*i + data_size]);
-          not_found_points_senders.push_back(sender);
-        }
-        else
-        {
-          // if found, store information
-          found_ids.push_back(id);
-          found_points.insert(found_points.end(), _x , _x + dim);
-          global_row_indices.insert(global_row_indices.end(), &found_elsewhere_global_row_indices_recv[sender][data_size*i],
-                                    &found_elsewhere_global_row_indices_recv[sender][data_size*i + data_size]);
-          found_points_senders.push_back(sender);
-        }
+      unsigned int id = treec->compute_first_entity_collision(curr_point);
+      // If the point is not found on the current processor
+      // mark it as not found and leave it for later
+      if (id == std::numeric_limits<unsigned int>::max())
+      {
+        not_found_points.insert(not_found_points.end(), _x, _x + dim);
+        not_found_global_row_indices.insert(not_found_global_row_indices.end(),
+          &recv_found_global_row_indices[sender][data_size*i],
+          &recv_found_global_row_indices[sender][data_size*i + data_size]);
+        not_found_points_senders.push_back(sender);
+      }
+      else
+      {
+        // if found, store information
+        found_ids.push_back(id);
+        found_points.insert(found_points.end(), _x , _x + dim);
+        global_row_indices.insert(global_row_indices.end(),
+          &recv_found_global_row_indices[sender][data_size*i],
+          &recv_found_global_row_indices[sender][data_size*i + data_size]);
+        found_points_senders.push_back(sender);
       }
     }
   }
@@ -477,10 +437,12 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
     }
   }
 
-  // Now every processor should have the information needed to assemble its portion of the matrix.
-  // The ids of coarse cell owned by each processor are currently stored in found_ids
+  // Now every processor should have the information needed to
+  // assemble its portion of the matrix.  The ids of coarse cell owned
+  // by each processor are currently stored in found_ids
   // and their respective global row indices are stored in global_row_indices.
-  // The processors that own the matrix rows relative to the fine point are stored in found_points_senders.
+  // The processors that own the matrix rows relative to the fine
+  // point are stored in found_points_senders.
   // One last loop and we are ready to go!
 
   // m_owned is the number of rows the current processor needs to set
@@ -489,17 +451,12 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
 
   // Initialise row and column indices and values of the transfer matrix
   // FIXME: replace with boost::multi_array?
-  std::vector<std::vector<int>> col_indices(m_owned);
-  std::vector<std::vector<double>> values(m_owned);
-  for(unsigned i = 0; i < m_owned; ++i)
-  {
-    col_indices[i].resize(eldim);
-    values[i].resize(eldim);
-  }
-  // initialise a single chunk of values (needed for later)
+  std::vector<std::vector<int>> col_indices(m_owned, std::vector<int>(eldim));
+  std::vector<std::vector<double>> values(m_owned, std::vector<double>(eldim));
   std::vector<double> temp_values(eldim*data_size);
 
-  // Initialise global sparsity pattern: record on-process and off-process dependencies of fine dofs
+  // Initialise global sparsity pattern: record on-process and
+  // off-process dependencies of fine dofs
   std::vector<std::vector<dolfin::la_index>> send_dnnz(mpi_size);
   std::vector<std::vector<dolfin::la_index>> send_onnz(mpi_size);
 
