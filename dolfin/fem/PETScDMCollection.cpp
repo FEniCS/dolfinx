@@ -1,6 +1,6 @@
 // Copyright (C) 2016 Patrick E. Farrell and Garth N. Wells
 //
-//
+// This file is part of DOLFIN.
 //
 // DOLFIN is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -89,7 +89,7 @@ namespace
     // Speed up the computations by only visiting (most) dofs once
     const std::size_t local_size = dofmap.ownership_range().second
       - dofmap.ownership_range().first;
-    RangedIndexSet already_visited(std::make_pair(0, local_size));
+    RangedIndexSet already_visited({0, local_size});
 
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
@@ -117,8 +117,8 @@ namespace
           std::copy(coordinates[i].begin(), coordinates[i].end(), coors.begin());
 
           // Add dof to list at this coord
-          const auto ins = coords_to_dofs.insert
-            (std::make_pair(coors, std::vector<std::size_t>{local_to_global[dof]}));
+          const auto ins = coords_to_dofs.insert({coors, {local_to_global[dof]}});
+
           if (!ins.second)
             ins.first->second.push_back(local_to_global[dof]);
         }
@@ -127,626 +127,512 @@ namespace
     return coords_to_dofs;
   }
 }
+//-----------------------------------------------------------------------------
+std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
+(std::shared_ptr<const FunctionSpace> coarse_space,
+ std::shared_ptr<const FunctionSpace> fine_space)
+{
 
-std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(std::shared_ptr<const FunctionSpace> coarse_space,
-                                                      std::shared_ptr<const FunctionSpace> fine_space)
+  // Get coarse mesh and dimension of the domain
+  dolfin_assert(coarse_space->mesh());
+  const Mesh meshc = *coarse_space->mesh();
+  std::size_t dim = meshc.geometry().dim();
+
+  // MPI communicator, size and rank
+  const MPI_Comm mpi_comm = meshc.mpi_comm();
+  const unsigned int mpi_size = MPI::size(mpi_comm);
+  const unsigned int mpi_rank = MPI::rank(mpi_comm);
+
+  // Initialise bounding box tree and dofmaps
+  std::shared_ptr<BoundingBoxTree> treec = meshc.bounding_box_tree();
+  std::shared_ptr<const GenericDofMap> coarsemap = coarse_space->dofmap();
+  std::shared_ptr<const GenericDofMap> finemap = fine_space->dofmap();
+
+  // Create map from coordinates to dofs sharing that coordinate
+  std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
+    coords_to_dofs = tabulate_coordinates_to_dofs(*fine_space);
+
+  // Global dimensions of the dofs and of the transfer matrix (M-by-N, where
+  // M is the fine space dimension, N is the coarse space dimension)
+  std::size_t M = fine_space->dim();
+  std::size_t N = coarse_space->dim();
+
+  // Local dimension of the dofs and of the transfer matrix
+  // we also keep track of the ownership range
+  std::size_t mbegin = finemap->ownership_range().first;
+  std::size_t mend = finemap->ownership_range().second;
+  std::size_t m = finemap->dofs().size();
+
+  std::size_t nbegin = coarsemap->ownership_range().first;
+  std::size_t nend = coarsemap->ownership_range().second;
+  std::size_t n = coarsemap->dofs().size();
+
+  // We store the ownership range of the fine dofs so that
+  // we can communicate it to the other workers.
+  // This will be useful to check which dofs are owned by which processor.
+  std::vector<std::size_t> global_n_range(2,0);
+  global_n_range[0] = nbegin;
+  global_n_range[1] = nend;
+
+  // Get finite element for the coarse space. This will be needed to evaluate
+  // the basis functions for each cell.
+  std::shared_ptr<const FiniteElement> el = coarse_space->element();
+
+  // Check that it is the same kind of element on each space.
   {
-    // Initialise PETSc Mat and error code
-    PetscErrorCode ierr;
-    Mat I;
-
-    // Get coarse mesh and dimension of the domain
-    dolfin_assert(coarse_space->mesh());
-    const Mesh meshc = *coarse_space->mesh();
-    std::size_t dim = meshc.geometry().dim();
-
-    // MPI commpunicator, size and rank
-    const MPI_Comm mpi_comm = meshc.mpi_comm();
-    const unsigned int mpi_size = MPI::size(mpi_comm);
-    const unsigned int mpi_rank = MPI::rank(mpi_comm); // mpi_rank is the rank of the current processor
-
-    // Create and initialise the transfer matrix as MATMPIAIJ/MATSEQAIJ
-    ierr = MatCreate(mpi_comm, &I); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    if (mpi_size > 1)
+    std::shared_ptr<const FiniteElement> elf = fine_space->element();
+    // Check that function ranks match
+    if (el->value_rank() != elf->value_rank())
     {
-      ierr = MatSetType(I, MATMPIAIJ); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    }
-    else
-    {
-      ierr = MatSetType(I, MATSEQAIJ); CHKERRABORT(PETSC_COMM_WORLD, ierr);
+      dolfin_error("create_transfer_matrix",
+                   "Creating interpolation matrix",
+                   "Ranks of function spaces do not match: %d, %d.",
+                   el->value_rank(), elf->value_rank());
     }
 
-    // initialise bounding box tree and dofmaps
-    std::shared_ptr<BoundingBoxTree> treec = meshc.bounding_box_tree();
-    std::shared_ptr<const GenericDofMap> coarsemap = coarse_space->dofmap();
-    std::shared_ptr<const GenericDofMap> finemap = fine_space->dofmap();
-
-    // initialise local to global dof maps (these will be needed to allocate
-    // the entries of the transfer matrix with the correct global indices)
-    std::vector<std::size_t> coarse_local_to_global_dofs;
-    coarsemap->tabulate_local_to_global_dofs(coarse_local_to_global_dofs);
-
-    // Create map from coordinates to dofs sharing that coordinate
-    std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
-      coords_to_dofs = tabulate_coordinates_to_dofs(*fine_space);
-
-    // Global dimensions of the dofs and of the transfer matrix (M-by-N, where
-    // M is the fine space dimension, N is the coarse space dimension)
-    std::size_t M = fine_space->dim();
-    std::size_t N = coarse_space->dim();
-
-    // Local dimension of the dofs and of the transfer matrix
-    // we also keep track of the ownership range
-    std::size_t mbegin = finemap->ownership_range().first;
-    std::size_t m = finemap->dofs().size();
-
-    std::size_t nbegin = coarsemap->ownership_range().first;
-    std::size_t nend = coarsemap->ownership_range().second;
-    std::size_t n = coarsemap->dofs().size();
-
-    // we store the ownership range of the fine dofs so that
-    // we can communicate it to the other workers.
-    // This will be useful to check which dofs are owned by which processor
-    std::vector<std::size_t> global_n_range(2,0);
-    global_n_range[0] = nbegin;
-    global_n_range[1] = nend;
-
-    // Set transfer matrix sizes
-    ierr = MatSetSizes(I, m, n, M, N); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-
-    // Get finite element for the coarse space. This will be needed to evaluate
-    // the basis functions for each cell.
-    std::shared_ptr<const FiniteElement> el = coarse_space->element();
-
-    // Check that it is the same kind of element on each space.
+    // Check that function dims match
+    for (std::size_t i = 0; i < el->value_rank(); ++i)
     {
-      std::shared_ptr<const FiniteElement> elf = fine_space->element();
-      // Check that function ranks match
-      if (el->value_rank() != elf->value_rank())
+      if (el->value_dimension(i) != elf->value_dimension(i))
       {
         dolfin_error("create_transfer_matrix",
                      "Creating interpolation matrix",
-                     "Ranks of function spaces do not match: %d, %d.",
-                     el->value_rank(), elf->value_rank());
-      }
-
-      // Check that function dims match
-      for (std::size_t i = 0; i < el->value_rank(); ++i)
-      {
-        if (el->value_dimension(i) != elf->value_dimension(i))
-        {
-          dolfin_error("create_transfer_matrix",
-                       "Creating interpolation matrix",
-                       "Dimension %d of function space (%d) does not match dimension %d of function space (%d)",
-                       i, el->value_dimension(i), i, elf->value_dimension(i));
-        }
+                     "Dimension %d of function space (%d) does not match dimension %d of function space (%d)",
+                     i, el->value_dimension(i), i, elf->value_dimension(i));
       }
     }
-    // number of dofs per cell for the finite element.
-    std::size_t eldim = el->space_dimension();
-    // Number of dofs associated with each fine point
-    int data_size = 1;
-    for (unsigned data_dim = 0; data_dim < el->value_rank(); data_dim++)
-      data_size *= el->value_dimension(data_dim);
+  }
+  // number of dofs per cell for the finite element.
+  std::size_t eldim = el->space_dimension();
+  // Number of dofs associated with each fine point
+  unsigned int data_size = 1;
+  for (unsigned data_dim = 0; data_dim < el->value_rank(); data_dim++)
+    data_size *= el->value_dimension(data_dim);
 
-    // Miscellaneous initialisations, these will all be needed later
-    Point curr_point; // point variable
-    Cell curr_cell; // cell variable
-    std::vector<double> coordinate_dofs; // cell dofs coordinates vector
-    ufc::cell ufc_cell; // ufc cell
-    unsigned int id = 0; // cell id
+  // The overall idea is: a fine point can be on a coarse cell in the current processor,
+  // on a coarse cell in a different processor, or outside the coarse domain.
+  // If the point is found on the processor, evaluate basis functions,
+  // if found elsewhere, use the other processor to evaluate basis functions,
+  // if not found at all, or if found in multiple processors,
+  // use compute_closest_entity on all processors and find
+  // which coarse cell is the closest entity to the fine point amongst all processors.
 
-    // The overall idea is: a fine point can be on a coarse cell in the current processor,
-    // on a coarse cell in a different processor, or outside the coarse domain.
-    // If the point is found on the processor, evaluate basis functions,
-    // if found elsewhere, use the other processor to evaluate basis functions,
-    // if not found at all, or if found in multiple processors,
-    // use compute_closest_entity on all processors and find
-    // which coarse cell is the closest entity to the fine point amongst all processors.
+  // vector containing the ranks of the processors which might contain a fine point
+  std::vector<unsigned int> found_ranks;
 
-    std::vector<double> _x(dim); // vector with point coordinates
-    // vector containing the ranks of the processors which might contain a fine point
-    std::vector<unsigned int> found_ranks;
+  // the next vectors we are defining here contain information relative to the
+  // fine points for which a corresponding coarse cell owned by the current
+  // processor was found.
+  // found_ids[i] contains the coarse cell id relative to each fine point
+  std::vector<std::size_t> found_ids;
+  found_ids.reserve((std::size_t)M/mpi_size);
+  // found_points[dim*i:dim*i + dim] contains the coordinates of the fine point i
+  std::vector<double> found_points;
+  found_points.reserve((std::size_t)dim*M/mpi_size);
+  // global_row_indices[i] contains the global row indices of the fine point i
+  // global_row_indices[data_size*i:data_size*i + data_size] are the rows associated with
+  // this point
+  std::vector<int> global_row_indices;
+  global_row_indices.reserve((std::size_t) data_size*M/mpi_size);
+  // found_points_senders[i] holds the rank of the process that owns the fine point
+  // this is not strictly needed, but it is useful
+  std::vector<std::size_t> found_points_senders;
+  found_points_senders.reserve((std::size_t)M/mpi_size);
 
-    // the next vectors we are defining here contain information relative to the
-    // fine points for which a corresponding coarse cell owned by the current
-    // processor was found.
-    // found_ids[i] contains the coarse cell id relative to each fine point
-    std::vector<std::size_t> found_ids;
-    found_ids.reserve((std::size_t)M/mpi_size);
-    // found_points[dim*i:dim*i + dim] contains the coordinates of the fine point i
-    std::vector<double> found_points;
-    found_points.reserve((std::size_t)dim*M/mpi_size);
-    // global_row_indices[i] contains the global row indices of the fine point i
-    // global_row_indices[data_size*i:data_size*i + data_size] are the rows associated with
-    // this point
-    std::vector<int> global_row_indices;
-    global_row_indices.reserve((std::size_t) data_size*M/mpi_size);
-    // found_points_senders[i] holds the rank of the process that owns the fine point
-    // this is not strictly needed, but it is useful
-    std::vector<std::size_t> found_points_senders;
-    found_points_senders.reserve((std::size_t)M/mpi_size);
+  // similar stuff for the not found points
+  std::vector<unsigned int> not_found_points_senders;
+  not_found_points_senders.reserve((std::size_t)M/mpi_size);
+  std::vector<double> not_found_points;
+  std::vector<int> not_found_global_row_indices;
 
-    // similar stuff for the not found points
-    std::vector<unsigned int> not_found_points_senders;
-    not_found_points_senders.reserve((std::size_t)M/mpi_size);
-    std::vector<double> not_found_points;
-    std::vector<int> not_found_global_row_indices;
+  // same for the found elsewhere points
+  std::vector<double> found_elsewhere;
+  std::vector<int> found_elsewhere_global_row_indices;
+  // which_processor contains the rank of the processor
+  // that owns the coarse cell where the fine point was found
+  std::vector<unsigned int> which_processor;
 
-    // same for the found elsewhere points
-    std::vector<double> found_elsewhere;
-    std::vector<int> found_elsewhere_global_row_indices;
-    // which_processor contains the rank of the processor
-    // that owns the coarse cell where the fine point was found
-    std::vector<unsigned int> which_processor;
+  // Loop over fine points owned by the current processor,
+  // and find out who owns the coarse cell where the fine point lies.
+  for (const auto &map_it : coords_to_dofs)
+  {
+    const std::vector<double>& _x = map_it.first;
+    Point curr_point(dim, _x.data());
 
-    // Loop over fine points owned by the current processor,
-    // and find out who owns the coarse cell where the fine point lies.
-    for (const auto &map_it : coords_to_dofs)
+    // Compute which processors share ownership of the coarse cell
+    // that contains the fine point
+    found_ranks = treec->compute_process_collisions(curr_point);
+
+    // If the fine point is not in the domain or if more than one
+    // processors share it, mark it as not found
+    // (not found points will be searched by all the processors and
+    // the processor that owns closest coarse cell to that point will be found,
+    // so that even if multiple processes share the cell, we find the one that
+    // actually owns it)
+
+    if (found_ranks.empty() || found_ranks.size() > 1)
     {
-      // Copy coordinates into buffer.
-      std::copy(map_it.first.begin(), map_it.first.end(), _x.begin());
+      // we store fine point coordinates, global row indices and the senders
+      // this information will be sent to all the processors
+      not_found_points.insert(not_found_points.end(), _x.begin(), _x.end());
+      not_found_global_row_indices.insert(not_found_global_row_indices.end(), map_it.second.begin(), map_it.second.end());
+      not_found_points_senders.push_back(mpi_rank);
+    }
+    // if the fine point collides with a coarse cell owned by the current processor,
+    // find the coarse cell the fine point lives in
+    else if (found_ranks[0] == mpi_rank)
+    {
+      // find the coarse cell where the fine point lies
+      unsigned int id = treec->compute_first_entity_collision(curr_point);
 
-      // get the fine point into a Point variable
-      if (dim == 3)
-        curr_point = Point(_x[0], _x[1], _x[2]);
-      else if (dim == 2)
-        curr_point = Point(_x[0], _x[1]);
-      else
-        curr_point = Point(_x[0]);
-
-      // compute which processors share ownership of the coarse cell
-      // that contains the fine point
-      found_ranks = treec->compute_process_collisions(curr_point);
-
-      // if the fine point is not in the domain or if more than one
-      // processors share it, mark it as not found
-      // (not found points will be searched by all the processors and
-      // the processor that owns closest coarse cell to that point will be found,
-      // so that even if multiple processes share the cell, we find the one that
-      // actually owns it)
-      if (found_ranks.empty() || found_ranks.size() > 1)
+      // Safety control: if no cell is found on the current processor
+      // mark the point as not_found
+      if (id == std::numeric_limits<unsigned int>::max())
       {
-        // we store fine point coordinates, global row indices and the senders
-        // this information will be sent to all the processors
         not_found_points.insert(not_found_points.end(), _x.begin(), _x.end());
         not_found_global_row_indices.insert(not_found_global_row_indices.end(), map_it.second.begin(), map_it.second.end());
         not_found_points_senders.push_back(mpi_rank);
       }
-      // if the fine point collides with a coarse cell owned by the current processor,
-      // find the coarse cell the fine point lives in
-      else if (found_ranks[0] == mpi_rank)
+      else
       {
-        // find the coarse cell where the fine point lies
-        id = treec->compute_first_entity_collision(curr_point);
+        // if a cell is found on the current processor, add the point
+        // and relative information to the various vectors
+        found_ids.push_back(id);
+        found_points.insert(found_points.end(), _x.begin(), _x.end());
+        global_row_indices.insert(global_row_indices.end(), map_it.second.begin(), map_it.second.end());
+        found_points_senders.push_back(mpi_rank);
+      }
+    }
+    // if found elsewhere, store the process where it was found
+    else
+    {
+      found_elsewhere.insert(found_elsewhere.end(),_x.begin(), _x.end());
+      which_processor.push_back(found_ranks[0]);
+      found_elsewhere_global_row_indices.insert(found_elsewhere_global_row_indices.end(), map_it.second.begin(), map_it.second.end());
+    }
+  } // end for loop
 
-        // Safety control: if no cell is found on the current processor
-        // mark the point as not_found
+  // We now need to communicate various information to all the processors:
+  // processor column and row ownership
+  std::vector<std::vector<std::size_t>> global_n_range_recv(mpi_size, std::vector<std::size_t>(2));
+  std::vector<std::size_t> global_m(mpi_size);
+  std::vector<std::size_t> global_row_offset(mpi_size);
+  MPI::all_gather(mpi_comm, global_n_range, global_n_range_recv);
+  MPI::all_gather(mpi_comm, m, global_m);
+  MPI::all_gather(mpi_comm, mbegin, global_row_offset);
+
+  // Ok, now we need to handle the points which have been found elsewhere
+  // We need to communicate these points to the other workers
+  // as well as the relative information
+  std::vector<std::vector<double>> found_elsewhere_recv(mpi_size);
+  std::vector<std::vector<int>> found_elsewhere_global_row_indices_recv(mpi_size);
+  std::vector<std::vector<unsigned int>> which_processor_recv(mpi_size);
+  MPI::all_gather(mpi_comm, found_elsewhere, found_elsewhere_recv);
+  MPI::all_gather(mpi_comm, found_elsewhere_global_row_indices, found_elsewhere_global_row_indices_recv);
+  MPI::all_gather(mpi_comm, which_processor, which_processor_recv);
+
+  // First, handle the points that were found elsewhere.
+  // We loop over the processors that own the fine points that need to be found.
+  // We call them senders here.
+  for (unsigned int sender = 0; sender < mpi_size; ++sender)
+  {
+    // We already searched on the current processor
+    if (sender == mpi_rank)
+      continue;
+
+    // How many fine points do we need to check?
+    unsigned int how_many = found_elsewhere_recv[sender].size()/dim;
+    if (how_many == 0)
+      continue;
+
+    // for each fine point, create a Point variable and try to find the
+    // coarse cell it lives in. If we cannot, mark the fine point as not found
+    // for robustness.
+    for (unsigned int i = 0; i < how_many; ++i)
+    {
+      if (which_processor_recv[sender][i] == mpi_rank)
+      {
+        double *_x = &found_elsewhere_recv[sender][i*dim];
+        Point curr_point(dim, _x);
+
+        unsigned int id = treec->compute_first_entity_collision(curr_point);
+        // if the point is not found on the current processor
+        // mark it as not found and leave it for later
         if (id == std::numeric_limits<unsigned int>::max())
         {
-          not_found_points.insert(not_found_points.end(), _x.begin(), _x.end());
-          not_found_global_row_indices.insert(not_found_global_row_indices.end(), map_it.second.begin(), map_it.second.end());
-          not_found_points_senders.push_back(mpi_rank);
+          not_found_points.insert(not_found_points.end(), _x, _x + dim);
+          not_found_global_row_indices.insert(not_found_global_row_indices.end(), &found_elsewhere_global_row_indices_recv[sender][data_size*i], &found_elsewhere_global_row_indices_recv[sender][data_size*i + data_size]);
+          not_found_points_senders.push_back(sender);
         }
         else
         {
-          // if a cell is found on the current processor, add the point
-          // and relative information to the various vectors
+          // if found, store information
           found_ids.push_back(id);
-          found_points.insert(found_points.end(), _x.begin(), _x.end());
-          global_row_indices.insert(global_row_indices.end(), map_it.second.begin(), map_it.second.end());
-          found_points_senders.push_back(mpi_rank);
-        }
-      }
-      // if found elsewhere, store the process where it was found
-      else
-      {
-        found_elsewhere.insert(found_elsewhere.end(),_x.begin(), _x.end());
-        which_processor.push_back(found_ranks[0]);
-        found_elsewhere_global_row_indices.insert(found_elsewhere_global_row_indices.end(), map_it.second.begin(), map_it.second.end());
-      }
-    } // end for loop
-
-    // We now need to communicate various information to all the processors:
-    // processor column and row ownership
-    std::vector<std::vector<std::size_t>> global_n_range_recv(mpi_size, std::vector<std::size_t>(2));
-    std::vector<std::size_t> global_m(mpi_size);
-    std::vector<std::size_t> global_row_offset(mpi_size);
-    MPI::all_gather(mpi_comm, global_n_range, global_n_range_recv);
-    MPI::all_gather(mpi_comm, m, global_m);
-    MPI::all_gather(mpi_comm, mbegin, global_row_offset);
-
-    // Ok, now we need to handle the points which have been found elsewhere
-    // We need to communicate these points to the other workers
-    // as well as the relative information
-    std::vector<std::vector<double>> found_elsewhere_recv(mpi_size);
-    std::vector<std::vector<int>> found_elsewhere_global_row_indices_recv(mpi_size);
-    std::vector<std::vector<unsigned int>> which_processor_recv(mpi_size);
-    MPI::all_gather(mpi_comm, found_elsewhere, found_elsewhere_recv);
-    MPI::all_gather(mpi_comm, found_elsewhere_global_row_indices, found_elsewhere_global_row_indices_recv);
-    MPI::all_gather(mpi_comm, which_processor, which_processor_recv);
-
-    // First, handle the points that were found elsewhere
-    unsigned int how_many = 0;
-    unsigned int receiver = mpi_rank;
-
-    // we loop over the processors that own the fine points that need to be found
-    // we call them senders here.
-    for (unsigned sender=0;sender<mpi_size;sender++)
-    {
-      // We already searched on the current processor
-      if (sender == receiver)
-        continue;
-
-      // how many fine points do we need to check?
-      how_many = found_elsewhere_recv[sender].size()/dim;
-      if (how_many == 0)
-        continue;
-
-      // for each fine point, create a Point variable and try to find the
-      // coarse cell it lives in. If we cannot, mark the fine point as not found
-      // for robustness.
-      for (unsigned i=0; i<how_many;i++)
-      {
-        if (receiver == which_processor_recv[sender][i])
-        {
-          if (dim == 3)
-          {
-            _x[0] = found_elsewhere_recv[sender][i*dim];
-            _x[1] = found_elsewhere_recv[sender][i*dim + 1];
-            _x[2] = found_elsewhere_recv[sender][i*dim + 2];
-            curr_point = Point(_x[0], _x[1], _x[2]);
-          }
-          else if (dim == 2)
-          {
-            _x[0] = found_elsewhere_recv[sender][i*dim];
-            _x[1] = found_elsewhere_recv[sender][i*dim + 1];
-            curr_point = Point(_x[0], _x[1]);
-          }
-          else
-          {
-            _x[0] = found_elsewhere_recv[sender][i*dim];
-            curr_point = Point(_x[0]);
-          }
-
-          id = treec->compute_first_entity_collision(curr_point);
-          // if the point is not found on the current processor
-          // mark it as not found and leave it for later
-          if (id == std::numeric_limits<unsigned int>::max())
-          {
-            not_found_points.insert(not_found_points.end(), _x.begin(), _x.end());
-            not_found_global_row_indices.insert(not_found_global_row_indices.end(), &found_elsewhere_global_row_indices_recv[sender][data_size*i], &found_elsewhere_global_row_indices_recv[sender][data_size*i + data_size]);
-            not_found_points_senders.push_back(sender);
-          }
-          else
-          {
-            // if found, store information
-            found_ids.push_back(id);
-            found_points.insert(found_points.end(), _x.begin(), _x.end());
-            global_row_indices.insert(global_row_indices.end(), &found_elsewhere_global_row_indices_recv[sender][data_size*i],
-                                      &found_elsewhere_global_row_indices_recv[sender][data_size*i + data_size]);
-            found_points_senders.push_back(sender);
-          }
+          found_points.insert(found_points.end(), _x , _x + dim);
+          global_row_indices.insert(global_row_indices.end(), &found_elsewhere_global_row_indices_recv[sender][data_size*i],
+                                    &found_elsewhere_global_row_indices_recv[sender][data_size*i + data_size]);
+          found_points_senders.push_back(sender);
         }
       }
     }
-
-    // communicate the not found list to all the processors
-    std::vector<std::vector<double>> not_found_points_recv(mpi_size);
-    std::vector<std::vector<int>> not_found_global_row_indices_recv(mpi_size);
-    std::vector<std::vector<unsigned int>> not_found_points_senders_recv(mpi_size);
-    MPI::all_gather(mpi_comm, not_found_points, not_found_points_recv);
-    MPI::all_gather(mpi_comm, not_found_global_row_indices, not_found_global_row_indices_recv);
-    MPI::all_gather(mpi_comm, not_found_points_senders, not_found_points_senders_recv);
-
-    // handle not_found points:
-    // we need to compute their distances from the closest owned coarse cell
-    // and the index/id of that cell.
-    std::vector<double> not_found_distances;
-    std::vector<unsigned int> not_found_cell_indices;
-    // we also need to store the fine point coordinates
-    // in case the current processor owns the closest cell
-    std::vector<double> found_not_found_points;
-    // We need to flatten some vectors for further use
-    std::vector<int> not_found_global_row_indices_flattened;
-    std::vector<unsigned int> not_found_points_senders_flattened;
-
-    // we loop over all the processors where a fine point was found
-    // note that from now on, every processor is doing the same check:
-    // compute id and distance of the closest owned coarse cell to the
-    // fine point, then send the distances to all the processors, so that
-    // each processor can determine which processor owns the closest coarse cell
-    for (unsigned int proc=0; proc<mpi_size; proc++)
-    {
-      how_many = not_found_points_recv[proc].size()/dim;
-
-      if (how_many == 0)
-        continue;
-
-      // flattening not_found_global_row_indices_recv one step at a time.
-      not_found_global_row_indices_flattened.insert(not_found_global_row_indices_flattened.end(),
-                                                    not_found_global_row_indices_recv[proc].begin(),
-                                                    not_found_global_row_indices_recv[proc].end());
-      // updating the std::vector of who owns the fine points
-      not_found_points_senders_flattened.insert(not_found_points_senders_flattened.end(),
-                                                not_found_points_senders_recv[proc].begin(),
-                                                not_found_points_senders_recv[proc].end());
-
-      // reserve memory for speed
-      not_found_cell_indices.reserve(not_found_cell_indices.size() + how_many);
-      found_not_found_points.reserve(not_found_points.size() + dim*how_many);
-      not_found_distances.reserve(not_found_distances.size() + how_many);
-
-      // same trick as before, store the fine point coordinates into a Point
-      // variable, then run compute_closest_entity to find the closest owned
-      // cell id and distance from the fine point
-      for (unsigned i=0; i<how_many;i++)
-      {
-        if (dim == 3)
-        {
-          _x[0] = not_found_points_recv[proc][i*dim];
-          _x[1] = not_found_points_recv[proc][i*dim + 1];
-          _x[2] = not_found_points_recv[proc][i*dim + 2];
-          curr_point = Point(_x[0], _x[1], _x[2]);
-        }
-        else if (dim == 2)
-        {
-          _x[0] = not_found_points_recv[proc][i*dim];
-          _x[1] = not_found_points_recv[proc][i*dim + 1];
-          curr_point = Point(_x[0], _x[1]);
-        }
-        else
-        {
-          _x[0] = not_found_points_recv[proc][i*dim];
-          curr_point = Point(_x[0]);
-        }
-
-        std::pair<unsigned int, double> find_point = treec->compute_closest_entity(curr_point);
-        not_found_cell_indices.push_back(find_point.first);
-        not_found_distances.push_back(find_point.second);
-        // store the (now) found, (previously) not found fine point coordinates in a vector
-        found_not_found_points.insert(found_not_found_points.end(), _x.begin(), _x.end());
-      }
-    }
-
-    // communicate all distances to all processor so that each one can tell
-    // which processor owns the closest coarse cell to the not found point
-    std::vector<std::vector<double>> not_found_distances_recv(mpi_size);
-    MPI::all_gather(mpi_comm, not_found_distances, not_found_distances_recv);
-
-    // now need to find which processor has a cell which is closest to the not_found points
-
-    // initialise some variables
-    double min_val; // minimum distance
-    unsigned min_proc=0; // processor that owns the minimum distance cell
-    unsigned int sender; // processor that asked to search for the not found fine point
-
-    how_many = not_found_cell_indices.size();
-    for (unsigned i=0; i<how_many; i++)
-    {
-      // loop over the distances and find the processor who has
-      // the point closest to one of its cells
-      min_proc = 0;
-      min_val = not_found_distances_recv[min_proc][i];
-      for (unsigned proc_it = 1; proc_it<mpi_size; proc_it++)
-      {
-        if (not_found_distances_recv[proc_it][i] < min_val)
-        {
-          min_val = not_found_distances_recv[proc_it][i];
-          min_proc = proc_it;
-        }
-      }
-
-      // if the current processor is the one which owns the closest cell,
-      // add the fine point and closest coarse cell information to the
-      // vectors of found points
-      if (min_proc == mpi_rank)
-      {
-        // allocate cell id to current worker if distance is minimum
-        id = not_found_cell_indices[i];
-        found_ids.push_back(id);
-        global_row_indices.insert(global_row_indices.end(), &not_found_global_row_indices_flattened[data_size*i],
-                                  &not_found_global_row_indices_flattened[data_size*i + data_size]);
-        found_points.insert(found_points.end(), found_not_found_points.begin() + dim*i, found_not_found_points.begin() + dim*(i+1));
-        sender = not_found_points_senders_flattened[i];
-        found_points_senders.push_back(sender);
-      }
-    }
-
-    // Now every processor should have the information needed to
-    // assemble its portion of the matrix.  The ids of coarse cell
-    // owned by each processor are currently stored in found_ids and
-    // their respective global row indices are stored in
-    // global_row_indices.  The processors that own the matrix rows
-    // relative to the fine point are stored in found_points_senders.
-    // One last loop and we are ready to go!
-
-    // m_owned is the number of rows the current processor needs to set
-    // note that the processor might not own these rows
-    std::size_t m_owned = found_ids.size()*data_size;
-
-    // initialise row and column indices and values of the transfer matrix
-    int** col_indices = new int*[m_owned];
-    int*  fine_row_indices = new int[m_owned];
-    double** values = new double*[m_owned];
-    for(unsigned i = 0; i < m_owned; ++i)
-    {
-      col_indices[i] = new int[eldim];
-      values[i] = new double[eldim];
-    }
-    // initialise a single chunk of values (needed for later)
-    std::vector<double> temp_values(eldim*data_size);
-
-    // initialise column ownership range
-    std::size_t n_own_begin;
-    std::size_t n_own_end;
-
-    // initialise global sparsity pattern: record on-process and
-    // off-process dependencies of fine dofs
-    Vec vd_nnz;
-    Vec vo_nnz;
-    if (mpi_size == 0)
-    {
-      ierr = VecCreateSeq(mpi_comm, M, &vd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-      ierr = VecCreateSeq(mpi_comm, M, &vo_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    }
-    else
-    {
-      ierr = VecCreateMPI(mpi_comm, m, M, &vd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-      ierr = VecCreateMPI(mpi_comm, m, M, &vo_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    }
-    ierr = VecSet(vd_nnz, 0); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecSet(vo_nnz, 0); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    const PetscScalar one = 1.0;
-
-    // loop over the found coarse cells
-    for (unsigned i=0; i<found_ids.size(); i++)
-    {
-      // get coarse cell id
-      id = found_ids[i];
-
-      // save fine point coordinates into a Point variable
-      if (dim == 3)
-      {
-        _x[0] = found_points[i*dim];
-        _x[1] = found_points[i*dim + 1];
-        _x[2] = found_points[i*dim + 2];
-        curr_point = Point(_x[0], _x[1], _x[2]);
-      }
-      else if (dim == 2)
-      {
-        _x[0] = found_points[i*dim];
-        _x[1] = found_points[i*dim + 1];
-        curr_point = Point(_x[0], _x[1]);
-      }
-      else
-      {
-        _x[0] = found_points[i*dim];
-        curr_point = Point(_x[0]);
-      }
-
-      // create coarse cell
-      curr_cell = Cell(meshc, static_cast<std::size_t>(id));
-      // get dofs coordinates of the coarse cell
-      curr_cell.get_coordinate_dofs(coordinate_dofs);
-      // save cell information into the ufc cell
-      curr_cell.get_cell_data(ufc_cell);
-      // evaluate the basis functions of the coarse cells
-      // at the fine point and store the values into temp_values
-      el->evaluate_basis_all(temp_values.data(),
-                             curr_point.coordinates(),
-                             coordinate_dofs.data(),
-                             ufc_cell.orientation);
-
-      // Get the coarse dofs associated with this cell
-      ArrayView<const dolfin::la_index> temp_dofs = coarsemap->cell_dofs(id);
-
-      // Loop over the fine dofs associated with this collision
-      for (int k = 0; k < data_size; k++)
-      {
-        // Loop over the coarse dofs and stuff their contributions
-        for (unsigned j = 0; j < eldim; j++)
-        {
-          unsigned fine_row = i*data_size + k;
-          PetscInt global_fine_dof = global_row_indices[fine_row];
-          PetscInt coarse_dof = coarse_local_to_global_dofs[temp_dofs[j]];
-
-          // Set the column
-          col_indices[fine_row][j] = coarse_dof;
-          // Set the value
-          values[fine_row][j] = temp_values[data_size*j + k];
-          // Record which global row we're actually talking about
-          fine_row_indices[fine_row] = global_fine_dof;
-
-          // Once we have the global column indices, determine the
-          // sparsity pattern.  Which columns are owned by the process
-          // that owns the fine point?
-
-          // get the fine point owner processor
-          sender = found_points_senders[i];
-          // get its column ownership range
-          n_own_begin = global_n_range_recv[sender][0];
-          n_own_end = global_n_range_recv[sender][1];
-          // check and allocate sparsity pattern
-          if ((n_own_begin <= (std::size_t)coarse_dof)
-              && ((std::size_t)coarse_dof < n_own_end))
-          {
-            // Add one to the vd_nnz[global_fine_dof]
-            ierr = VecSetValue(vd_nnz, global_fine_dof, one, ADD_VALUES); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-          }
-          else
-          {
-            ierr = VecSetValue(vo_nnz, global_fine_dof, one, ADD_VALUES); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-          }
-        } // end loop over all coarse dofs in the cell
-      } // end loop over fine dofs associated with this collision
-    } // end loop over found points
-
-    // Now communicate the cached vd_nnz and vo_nnz; PETSc takes care
-    // of the gory details
-    ierr = VecAssemblyBegin(vd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecAssemblyBegin(vo_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecAssemblyEnd(vd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecAssemblyEnd(vo_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-
-    // Now copy sparsity pattern into integer arrays (we had to use
-    // floats before because we wanted to store it in a PETSc Vec).
-    // We use new here rather than std::vector because we need to pass
-    // this to C.
-    PetscScalar *pd_nnz;
-    PetscScalar *po_nnz;
-    ierr = VecGetArray(vd_nnz, &pd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecGetArray(vo_nnz, &po_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-
-    PetscInt* d_nnz = new PetscInt[m];
-    PetscInt* o_nnz = new PetscInt[m];
-    for (dolfin::la_index i = 0; i < (dolfin::la_index)m; i++)
-    {
-      d_nnz[i] = (PetscInt) pd_nnz[i];
-      o_nnz[i] = (PetscInt) po_nnz[i];
-    }
-
-    ierr = VecRestoreArray(vd_nnz, &pd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecRestoreArray(vo_nnz, &po_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecDestroy(&vd_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = VecDestroy(&vo_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-
-    if (mpi_size > 1)
-    {
-      ierr = MatMPIAIJSetPreallocation(I, PETSC_DEFAULT, d_nnz, PETSC_DEFAULT, o_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    }
-    else
-    {
-      ierr = MatSeqAIJSetPreallocation(I, PETSC_DEFAULT, d_nnz); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    }
-
-    delete [] d_nnz;
-    delete [] o_nnz;
-
-    // Setting transfer matrix values row by row
-    for (unsigned fine_row = 0; fine_row < m_owned; fine_row++)
-    {
-      PetscInt fine_dof = fine_row_indices[fine_row];
-      ierr = MatSetValues(I, 1, &fine_dof, eldim, col_indices[fine_row], values[fine_row], INSERT_VALUES); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-
-      delete [] col_indices[fine_row];
-      delete [] values[fine_row];
-    }
-
-    delete [] col_indices;
-    delete [] values;
-    delete [] fine_row_indices;
-
-    // Assemble the transfer matrix
-    ierr = MatAssemblyBegin(I, MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = MatAssemblyEnd(I, MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-
-    // create shared pointer and return the pointer to the transfer matrix
-    std::shared_ptr<PETScMatrix> ptr = std::make_shared<PETScMatrix>(I);
-    ierr = MatDestroy(&I); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    return ptr;
   }
 
+  // communicate the not found list to all the processors
+  std::vector<std::vector<double>> not_found_points_recv(mpi_size);
+  std::vector<std::vector<int>> not_found_global_row_indices_recv(mpi_size);
+  std::vector<std::vector<unsigned int>> not_found_points_senders_recv(mpi_size);
+  MPI::all_gather(mpi_comm, not_found_points, not_found_points_recv);
+  MPI::all_gather(mpi_comm, not_found_global_row_indices, not_found_global_row_indices_recv);
+  MPI::all_gather(mpi_comm, not_found_points_senders, not_found_points_senders_recv);
+
+  // handle not_found points:
+  // we need to compute their distances from the closest owned coarse cell
+  // and the index/id of that cell.
+  std::vector<double> not_found_distances;
+  std::vector<unsigned int> not_found_cell_indices;
+  // we also need to store the fine point coordinates
+  // in case the current processor owns the closest cell
+  std::vector<double> found_not_found_points;
+  // We need to flatten some vectors for further use
+  std::vector<int> not_found_global_row_indices_flattened;
+  std::vector<unsigned int> not_found_points_senders_flattened;
+
+  // We loop over all the processors where a fine point was found
+  // note that from now on, every processor is doing the same check:
+  // compute id and distance of the closest owned coarse cell to the
+  // fine point, then send the distances to all the processors, so that
+  // each processor can determine which processor owns the closest coarse cell
+  for (unsigned int proc = 0; proc < mpi_size; ++proc)
+  {
+    unsigned int how_many = not_found_points_recv[proc].size()/dim;
+
+    if (how_many == 0)
+      continue;
+
+    // flattening not_found_global_row_indices_recv one step at a time.
+    not_found_global_row_indices_flattened.insert(not_found_global_row_indices_flattened.end(),
+                                                  not_found_global_row_indices_recv[proc].begin(),
+                                                  not_found_global_row_indices_recv[proc].end());
+    // updating the std::vector of who owns the fine points
+    not_found_points_senders_flattened.insert(not_found_points_senders_flattened.end(),
+                                              not_found_points_senders_recv[proc].begin(),
+                                              not_found_points_senders_recv[proc].end());
+
+    // reserve memory for speed
+    not_found_cell_indices.reserve(not_found_cell_indices.size() + how_many);
+    found_not_found_points.reserve(not_found_points.size() + dim*how_many);
+    not_found_distances.reserve(not_found_distances.size() + how_many);
+
+    // same trick as before, store the fine point coordinates into a Point
+    // variable, then run compute_closest_entity to find the closest owned
+    // cell id and distance from the fine point
+    for (unsigned int i = 0; i < how_many; ++i)
+    {
+      const double *_x = &not_found_points_recv[proc][i*dim];
+      Point curr_point(dim, _x);
+
+      std::pair<unsigned int, double> find_point = treec->compute_closest_entity(curr_point);
+      not_found_cell_indices.push_back(find_point.first);
+      not_found_distances.push_back(find_point.second);
+      // store the (now) found, (previously) not found fine point coordinates in a vector
+      found_not_found_points.insert(found_not_found_points.end(), _x, _x + dim);
+    }
+  }
+
+  // Communicate all distances to all processors so that each one can tell
+  // which processor owns the closest coarse cell to the not found point
+  std::vector<std::vector<double>> not_found_distances_recv(mpi_size);
+  MPI::all_gather(mpi_comm, not_found_distances, not_found_distances_recv);
+
+  // Now need to find which processor has a cell which is closest to the not_found points
+  unsigned int how_many = not_found_cell_indices.size();
+  for (unsigned int i = 0; i < how_many; ++i)
+  {
+    // loop over the distances and find the processor who has
+    // the point closest to one of its cells
+    unsigned int min_proc = 0;
+    double min_val = not_found_distances_recv[min_proc][i];
+    for (unsigned proc_it = 1; proc_it < mpi_size; proc_it++)
+    {
+      if (not_found_distances_recv[proc_it][i] < min_val)
+      {
+        min_val = not_found_distances_recv[proc_it][i];
+        min_proc = proc_it;
+      }
+    }
+
+    // If the current processor is the one which owns the closest cell,
+    // add the fine point and closest coarse cell information to the
+    // vectors of found points
+    if (min_proc == mpi_rank)
+    {
+      // Allocate cell id to current worker if distance is minimum
+      unsigned int id = not_found_cell_indices[i];
+      found_ids.push_back(id);
+      global_row_indices.insert(global_row_indices.end(), &not_found_global_row_indices_flattened[data_size*i],
+                                &not_found_global_row_indices_flattened[data_size*i + data_size]);
+      found_points.insert(found_points.end(), found_not_found_points.begin() + dim*i, found_not_found_points.begin() + dim*(i+1));
+      unsigned int sender = not_found_points_senders_flattened[i];
+      found_points_senders.push_back(sender);
+    }
+  }
+
+  // Now every processor should have the information needed to assemble its portion of the matrix.
+  // The ids of coarse cell owned by each processor are currently stored in found_ids
+  // and their respective global row indices are stored in global_row_indices.
+  // The processors that own the matrix rows relative to the fine point are stored in found_points_senders.
+  // One last loop and we are ready to go!
+
+  // m_owned is the number of rows the current processor needs to set
+  // note that the processor might not own these rows
+  std::size_t m_owned = found_ids.size()*data_size;
+
+  // Initialise row and column indices and values of the transfer matrix
+  // FIXME: replace with boost::multi_array?
+  std::vector<std::vector<int>> col_indices(m_owned);
+  std::vector<std::vector<double>> values(m_owned);
+  for(unsigned i = 0; i < m_owned; ++i)
+  {
+    col_indices[i].resize(eldim);
+    values[i].resize(eldim);
+  }
+  // initialise a single chunk of values (needed for later)
+  std::vector<double> temp_values(eldim*data_size);
+
+  // Initialise global sparsity pattern: record on-process and off-process dependencies of fine dofs
+  std::vector<std::vector<dolfin::la_index>> send_dnnz(mpi_size);
+  std::vector<std::vector<dolfin::la_index>> send_onnz(mpi_size);
+
+  // Get block size of index map (used to calculate dof ownership, below)
+  int bs = finemap->index_map()->block_size();
+
+  // Initialise local to global dof maps (needed to allocate
+  // the entries of the transfer matrix with the correct global indices)
+  std::vector<std::size_t> coarse_local_to_global_dofs;
+  coarsemap->tabulate_local_to_global_dofs(coarse_local_to_global_dofs);
+
+  std::vector<double> coordinate_dofs; // cell dofs coordinates vector
+  ufc::cell ufc_cell; // ufc cell
+
+  // Loop over the found coarse cells
+  for (unsigned int i = 0; i < found_ids.size(); ++i)
+  {
+    // get coarse cell id
+    unsigned int id = found_ids[i];
+
+    double *_x = &found_points[i*dim];
+    Point curr_point(dim, _x);
+
+    // create coarse cell
+    Cell coarse_cell(meshc, static_cast<std::size_t>(id));
+    // get dofs coordinates of the coarse cell
+    coarse_cell.get_coordinate_dofs(coordinate_dofs);
+    // save cell information into the ufc cell
+    coarse_cell.get_cell_data(ufc_cell);
+    // evaluate the basis functions of the coarse cells
+    // at the fine point and store the values into temp_values
+    el->evaluate_basis_all(temp_values.data(),
+                           curr_point.coordinates(),
+                           coordinate_dofs.data(),
+                           ufc_cell.orientation);
+
+    // Get the coarse dofs associated with this cell
+    ArrayView<const dolfin::la_index> temp_dofs = coarsemap->cell_dofs(id);
+
+    // Loop over the fine dofs associated with this collision
+    for (unsigned k = 0; k < data_size; k++)
+    {
+      // Loop over the coarse dofs and stuff their contributions
+      for (unsigned j = 0; j < eldim; j++)
+      {
+        unsigned fine_row = i*data_size + k;
+        std::size_t global_fine_dof = global_row_indices[fine_row];
+        std::size_t coarse_dof = coarse_local_to_global_dofs[temp_dofs[j]];
+
+        // Set the column
+        col_indices[fine_row][j] = coarse_dof;
+        // Set the value
+        values[fine_row][j] = temp_values[data_size*j + k];
+
+        // Once we have the global column indices, determine the sparsity pattern.
+        // Which columns are owned by the process that owns the fine point?
+
+        // get the fine point owner processor
+        unsigned int sender = found_points_senders[i];
+        // get its column ownership range
+        std::size_t n_own_begin = global_n_range_recv[sender][0];
+        std::size_t n_own_end = global_n_range_recv[sender][1];
+        // check and allocate sparsity pattern
+        int p = finemap->index_map()->global_index_owner(global_fine_dof/bs);
+        if ((n_own_begin <= coarse_dof) && (coarse_dof < n_own_end))
+          send_dnnz[p].push_back(global_fine_dof);
+        else
+          send_onnz[p].push_back(global_fine_dof);
+
+      } // end loop over all coarse dofs in the cell
+    } // end loop over fine dofs associated with this collision
+  } // end loop over found points
+
+  // Communicate off-process columns nnz, and flatten to get nnz per row
+  std::vector<std::vector<dolfin::la_index>> recv_onnz;
+  MPI::all_to_all(mpi_comm, send_onnz, recv_onnz);
+  std::vector<int> onnz(m, 0);
+  for (const auto &p : recv_onnz)
+    for (const auto &q : p)
+    {
+      dolfin_assert(q >= (dolfin::la_index)mbegin and q < (dolfin::la_index)mend);
+      ++onnz[q - mbegin];
+    }
+
+  // Communicate on-process columns nnz, and flatten to get nnz per row
+  std::vector<std::vector<dolfin::la_index>> recv_dnnz;
+  MPI::all_to_all(mpi_comm, send_dnnz, recv_dnnz);
+  std::vector<int> dnnz(m, 0);
+  for (const auto &p : recv_dnnz)
+    for (const auto &q : p)
+    {
+      dolfin_assert(q >= (dolfin::la_index)mbegin and q < (dolfin::la_index)mend);
+      ++dnnz[q - mbegin];
+    }
+
+  // Initialise PETSc Mat and error code
+  PetscErrorCode ierr;
+  Mat I;
+
+  // Create and initialise the transfer matrix as MATMPIAIJ/MATSEQAIJ
+  ierr = MatCreate(mpi_comm, &I); CHKERRABORT(PETSC_COMM_WORLD, ierr);
+  if (mpi_size > 1)
+  {
+    ierr = MatSetType(I, MATMPIAIJ); CHKERRABORT(PETSC_COMM_WORLD, ierr);
+    ierr = MatSetSizes(I, m, n, M, N); CHKERRABORT(PETSC_COMM_WORLD, ierr);
+    ierr = MatMPIAIJSetPreallocation(I, PETSC_DEFAULT, dnnz.data(), PETSC_DEFAULT, onnz.data());
+    CHKERRABORT(PETSC_COMM_WORLD, ierr);
+  }
+  else
+  {
+    ierr = MatSetType(I, MATSEQAIJ); CHKERRABORT(PETSC_COMM_WORLD, ierr);
+    ierr = MatSetSizes(I, m, n, M, N); CHKERRABORT(PETSC_COMM_WORLD, ierr);
+    ierr = MatSeqAIJSetPreallocation(I, PETSC_DEFAULT, dnnz.data());
+    CHKERRABORT(PETSC_COMM_WORLD, ierr);
+  }
+
+  // Setting transfer matrix values row by row
+  for (unsigned int fine_row = 0; fine_row < m_owned; ++fine_row)
+  {
+    PetscInt fine_dof = global_row_indices[fine_row];
+    ierr = MatSetValues(I, 1, &fine_dof, eldim, col_indices[fine_row].data(), values[fine_row].data(), INSERT_VALUES);
+    CHKERRABORT(PETSC_COMM_WORLD, ierr);
+  }
+
+  // Assemble the transfer matrix
+  ierr = MatAssemblyBegin(I, MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_WORLD, ierr);
+  ierr = MatAssemblyEnd(I, MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_WORLD, ierr);
+
+  // create shared pointer and return the pointer to the transfer matrix
+  std::shared_ptr<PETScMatrix> ptr = std::make_shared<PETScMatrix>(I);
+  ierr = MatDestroy(&I); CHKERRABORT(PETSC_COMM_WORLD, ierr);
+  return ptr;
+}
 //-----------------------------------------------------------------------------
 PETScDMCollection::PETScDMCollection(std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
   : _spaces(function_spaces), _dms(function_spaces.size(), nullptr)
