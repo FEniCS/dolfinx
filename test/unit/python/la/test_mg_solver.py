@@ -77,6 +77,12 @@ def test_mg_solver_laplace(pushpop_parameters):
     solver.solve(x_lu, b)
     assert round((x - x_lu).norm("l2"), 10) == 0
 
+    # Clear all PETSc options
+    from petsc4py import PETSc
+    opts = PETSc.Options()
+    for key in opts.getAll():
+        opts.delValue(key)
+
 
 @skip_if_not_petsc4py
 def xtest_mg_solver_stokes(pushpop_parameters):
@@ -160,3 +166,8 @@ def xtest_mg_solver_stokes(pushpop_parameters):
     x_lu = Vector()
     solver.solve(x_lu, bb)
     assert round((x - x_lu).norm("l2"), 10) == 0
+
+    # Clear all PETSc options
+    opts = PETSc.Options()
+    for key in opts.getAll():
+        opts.delValue(key)
