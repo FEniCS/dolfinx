@@ -79,21 +79,12 @@ list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${UFC_INCLUDE_DIRS})
 list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${EIGEN3_INCLUDE_DIR})
 
 # Boost
-list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-#target_include_directories(dolfin SYSTEM PUBLIC
-#  $<BUILD_INTERFACE:${Boost::boost}>
-#  $<INSTALL_INTERFACE:${Boost::boost}>)
-#get_target_property(LINK_LIBS Boost::boost INTERFACE_INCLUDE_DIRECTORIES)
-#message("Boost *****: ${LINK_LIBS}")
-
-
+#list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
 foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS_PUBLIC})
   target_link_libraries(dolfin PUBLIC "Boost::${BOOST_PACKAGE}")
-  #target_include_directories(dolfin PUBLIC "Boost::${BOOST_PACKAGE}")
 endforeach()
 foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS_PRIVATE})
   target_link_libraries(dolfin PRIVATE "Boost::${BOOST_PACKAGE}")
-  #target_include_directories(dolfin PRIVATE "Boost::${BOOST_PACKAGE}")
 endforeach()
 
 #------------------------------------------------------------------------------

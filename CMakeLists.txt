@@ -992,10 +992,8 @@ endif()
 # Add demos and install demo source files and mesh files
 
 # Add demo but do not add to default target
-message("**** Add demo dir")
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
 add_subdirectory(demo EXCLUDE_FROM_ALL)
-message("**** End Add demo dir")
 
 # Set make program
 if ("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
