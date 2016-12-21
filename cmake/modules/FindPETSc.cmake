@@ -48,10 +48,10 @@
 
 message(STATUS "Checking for package 'PETSc'")
 
-# Find PETSc pkg-config file
+# Load pkg-config module (provided by CMake)
 find_package(PkgConfig REQUIRED)
 
-# Note: craypetsc_real is on Cray systems
+# Find PETSc pkg-config file. Note: craypetsc_real is on Cray systems
 set(ENV{PKG_CONFIG_PATH} "$ENV{CRAY_PETSC_PREFIX_DIR}/lib/pkgconfig:$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 pkg_search_module(PETSC craypetsc_real PETSc)
 
@@ -77,14 +77,12 @@ if (PETSC_FOUND AND NOT TARGET PETSC::petsc)
   foreach (lib ${PETSC_LIBRARIES})
     find_library(LIB_${lib} NAMES ${lib} PATHS ${PETSC_LIBRARY_DIRS} NO_DEFAULT_PATH)
     list(APPEND _libs ${LIB_${lib}})
-    #message("adding (shared): ${LIB_${lib}}")
   endforeach()
   set_property(TARGET PETSC::petsc PROPERTY INTERFACE_LINK_LIBRARIES "${_libs}")
-
 endif()
 
-# Configure PETSc IMPORT (this involves creating an 'imported' target
-# and attaching 'properties')
+# Configure PETSc 'static' IMPORT (this involves creating an
+# 'imported' target and attaching 'properties')
 if (PETSC_FOUND AND NOT TARGET PETSC::petsc_static)
   add_library(PETSC::petsc_static INTERFACE IMPORTED)
 
@@ -93,25 +91,15 @@ if (PETSC_FOUND AND NOT TARGET PETSC::petsc_static)
   foreach (lib ${PETSC_STATIC_LIBRARIES})
     find_library(LIB_${lib} ${lib} HINTS ${PETSC_STATIC_LIBRARY_DIRS})
     list(APPEND _libs ${LIB_${lib}})
-    #message("adding (static): ${LIB_${lib}}")
   endforeach()
   set_property(TARGET PETSC::petsc_static PROPERTY INTERFACE_LINK_LIBRARIES "${_libs}")
-  #message("*** static petsc libs: ${_PETSC_STATIC_LIBRARIES}")
-
 endif()
-
-#get_target_property(SLINK_LIBS PETSC::petsc_static INTERFACE_LINK_LIBRARIES)
-#message("P(1) *****: ${SLINK_LIBS}")
-#get_target_property(LINK_LIBS PkgConfig::PETSC INTERFACE_INCLUDE_DIRECTORIES)
-#message("P(2) *****: ${LINK_LIBS}")
 
 # Attempt to build and run PETSc test program
 if (DOLFIN_SKIP_BUILD_TESTS)
 
-  # FIXME: Need to add option for linkage type
-  # Assume PETSc works, and assume shared linkage
+  # Assume PETSc works
   set(PETSC_TEST_RUNS TRUE)
-  #set_property(TARGET PETSC::petsc_static PROPERTY INTERFACE_LINK_LIBRARIES)
 
 elseif (PETSC_FOUND)
 
@@ -154,8 +142,7 @@ int main()
     "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
     LINK_LIBRARIES PETSC::petsc
     COMPILE_OUTPUT_VARIABLE PETSC_TEST_LIB_COMPILE_OUTPUT
-    RUN_OUTPUT_VARIABLE PETSC_TEST_LIB_OUTPUT
-    )
+    RUN_OUTPUT_VARIABLE PETSC_TEST_LIB_OUTPUT)
 
   # Check program output
   if (PETSC_TEST_LIB_COMPILED AND PETSC_TEST_LIB_EXITCODE EQUAL 0)
@@ -188,8 +175,7 @@ int main()
       "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
       LINK_LIBRARIES PETSC::petsc PETSC::petsc_static
       COMPILE_OUTPUT_VARIABLE PETSC_TEST_LIB_COMPILE_OUTPUT
-      RUN_OUTPUT_VARIABLE PETSC_TEST_LIB_OUTPUT
-      )
+      RUN_OUTPUT_VARIABLE PETSC_TEST_LIB_OUTPUT)
 
     if (PETSC_TEST_LIB_COMPILED AND PETSC_TEST_LIB_EXITCODE EQUAL 0)
 
@@ -221,8 +207,7 @@ endif()
 include(FindPackageHandleStandardArgs)
 if (PETSC_FOUND)
   find_package_handle_standard_args(PETSc
-    REQUIRED_VARS PETSC_FOUND PETSC_TEST_RUNS
-    VERSION_VAR PETSC_VERSION
+    REQUIRED_VARS PETSC_FOUND PETSC_TEST_RUNS VERSION_VAR PETSC_VERSION
     FAIL_MESSAGE "PETSc could not be found. Be sure to set PETSC_DIR.")
 else()
   find_package_handle_standard_args(PETSc

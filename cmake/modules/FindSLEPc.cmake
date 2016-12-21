@@ -43,18 +43,14 @@
 
 message(STATUS "Checking for package 'SLEPc'")
 
-# Find SLEPc pkg-config file
+# Load CMake pkg-config module
 find_package(PkgConfig REQUIRED)
+
+# Find SLEPc pkg-config file
 set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-
 set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}:$ENV{PETSC_DIR}:$ENV{PKG_CONFIG_PATH}")
-
-message("*** Boo")
-pkg_search_module(PETSC PETSc)
-message("*** Search SLEPc")
 pkg_search_module(SLEPC crayslepc_real SLEPc)
-#message(FATAL_ERROR "*** End search SLEPc")
 
 # Extract major, minor, etc from version string
 if (SLEPC_VERSION)
@@ -63,7 +59,6 @@ if (SLEPC_VERSION)
   list(GET VERSION_LIST 1 SLEPC_VERSION_MINOR)
   list(GET VERSION_LIST 2 SLEPC_VERSION_SUBMINOR)
 endif()
-message("*** version: ${SLEPC_VERSION}")
 
 # Configure SLEPc IMPORT (this involves creating an 'imported' target
 # and attaching 'properties')
@@ -100,11 +95,8 @@ endif()
 # Compile and run test
 if (DOLFIN_SKIP_BUILD_TESTS)
 
-  # FIXME: Need to add option for linkage type
-  # Assume SLEPc works, and assume shared linkage
+  # Assume SLEPc works
   set(SLEPC_TEST_RUNS TRUE)
-  #unset(PETSC_STATIC_LIBRARIES CACHE)
-  #set_property(TARGET SLEPC::slepc_static PROPERTY INTERFACE_LINK_LIBRARIES)
 
 elseif (SLEPC_FOUND)
 
@@ -182,9 +174,6 @@ int main()
       COMPILE_OUTPUT_VARIABLE SLEPC_TEST_STATIC_LIBS_COMPILE_OUTPUT
       RUN_OUTPUT_VARIABLE SLEPC_TEST_STATIC_LIBS_OUTPUT
       )
-    message("*** ${SLEPC_TEST_STATIC_LIBS_COMPILE_OUTPUT}")
-    message("*** ${SLEPC_TEST_STATIC_LIBS_EXITCODE}")
-    message("*** ${SLEPC_TEST_STATIC_LIBS_COMPILE_OUTPUT}")
 
     if (SLEPC_TEST_STATIC_LIBS_COMPILED AND SLEPC_TEST_STATIC_LIBS_EXITCODE EQUAL 0)
 
