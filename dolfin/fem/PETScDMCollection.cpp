@@ -132,9 +132,6 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
 (std::shared_ptr<const FunctionSpace> coarse_space,
  std::shared_ptr<const FunctionSpace> fine_space)
 {
-  // Initialise PETSc Mat and error code
-  PetscErrorCode ierr;
-  Mat I;
 
   // Get coarse mesh and dimension of the domain
   dolfin_assert(coarse_space->mesh());
@@ -145,17 +142,6 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   const MPI_Comm mpi_comm = meshc.mpi_comm();
   const unsigned int mpi_size = MPI::size(mpi_comm);
   const unsigned int mpi_rank = MPI::rank(mpi_comm);
-
-  // Create and initialise the transfer matrix as MATMPIAIJ/MATSEQAIJ
-  ierr = MatCreate(mpi_comm, &I); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-  if (mpi_size > 1)
-  {
-    ierr = MatSetType(I, MATMPIAIJ); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-  }
-  else
-  {
-    ierr = MatSetType(I, MATSEQAIJ); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-  }
 
   // Initialise bounding box tree and dofmaps
   std::shared_ptr<BoundingBoxTree> treec = meshc.bounding_box_tree();
@@ -187,9 +173,6 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   std::vector<std::size_t> global_n_range(2,0);
   global_n_range[0] = nbegin;
   global_n_range[1] = nend;
-
-  // Set transfer matrix sizes
-  ierr = MatSetSizes(I, m, n, M, N); CHKERRABORT(PETSC_COMM_WORLD, ierr);
 
   // Get finite element for the coarse space. This will be needed to evaluate
   // the basis functions for each cell.
@@ -618,13 +601,23 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
       ++dnnz[q - mbegin];
     }
 
+  // Initialise PETSc Mat and error code
+  PetscErrorCode ierr;
+  Mat I;
+
+  // Create and initialise the transfer matrix as MATMPIAIJ/MATSEQAIJ
+  ierr = MatCreate(mpi_comm, &I); CHKERRABORT(PETSC_COMM_WORLD, ierr);
   if (mpi_size > 1)
   {
+    ierr = MatSetType(I, MATMPIAIJ); CHKERRABORT(PETSC_COMM_WORLD, ierr);
+    ierr = MatSetSizes(I, m, n, M, N); CHKERRABORT(PETSC_COMM_WORLD, ierr);
     ierr = MatMPIAIJSetPreallocation(I, PETSC_DEFAULT, dnnz.data(), PETSC_DEFAULT, onnz.data());
     CHKERRABORT(PETSC_COMM_WORLD, ierr);
   }
   else
   {
+    ierr = MatSetType(I, MATSEQAIJ); CHKERRABORT(PETSC_COMM_WORLD, ierr);
+    ierr = MatSetSizes(I, m, n, M, N); CHKERRABORT(PETSC_COMM_WORLD, ierr);
     ierr = MatSeqAIJSetPreallocation(I, PETSC_DEFAULT, dnnz.data());
     CHKERRABORT(PETSC_COMM_WORLD, ierr);
   }
