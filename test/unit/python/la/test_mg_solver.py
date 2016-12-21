@@ -63,7 +63,7 @@ def test_mg_solver_laplace(pushpop_parameters):
     PETScOptions.set("ksp_rtol", 1.0e-12)
     solver.set_from_options()
 
-    # Get fine grid DM and ttach fine grid DM to solver
+    # Get fine grid DM and attach fine grid DM to solver
     solver.set_dm(dm_collection.get_dm(-1))
     solver.set_dm_active(False)
 
