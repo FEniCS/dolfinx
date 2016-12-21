@@ -88,7 +88,6 @@ void PointSource::apply(GenericVector& b)
   // Return if point not found
   if (MPI::rank(mesh.mpi_comm()) != selected_process)
   {
-    info("Not found on this processor");
     b.apply("add");
     return;
   }
@@ -103,73 +102,40 @@ void PointSource::apply(GenericVector& b)
   // Evaluate all basis functions at the point()
   dolfin_assert(_function_space->element());
 
-  // Compute in tensor (one for scalar function, . . .)
   const std::size_t rank = _function_space->element()->value_rank();
-  info("rank " + std::to_string(rank));
-
   std::size_t size_basis = 1;
   for (std::size_t i = 0; i < rank; ++i)
     size_basis *= _function_space->element()->value_dimension(i);
-
-  info("size basis" + std::to_string(size_basis));
 
   std::size_t dofs_per_cell = _function_space->element()->space_dimension();
   std::vector<double> basis(size_basis);
   std::vector<double> values(dofs_per_cell);
 
-  info("dofs per cell " + std::to_string(dofs_per_cell));
   ufc::cell ufc_cell;
   cell.get_cell_data(ufc_cell);
-
-  std::string msg = "";
-  for (auto& v : values)
-    msg += std::to_string(v) + ", ";
-  info("values at dofs:\n" + msg);
 
   for (std::size_t i = 0; i < dofs_per_cell; ++i)
   {
     _function_space->element()->evaluate_basis(i, basis.data(), _p.coordinates(),
                            coordinate_dofs.data(),
                            ufc_cell.orientation);
-    info("basis size: " + std::to_string(basis.size()));
-    msg = "";
-    for (auto& v : basis)
-      msg += std::to_string(v) + ", ";
-    info("basis:\n" + msg);
 
     double basis_sum = 0.0;
     for (const auto& v : basis)
       basis_sum += v;
-    values[i] = basis_sum;
+    values[i] = _magnitude*basis_sum;
   }
 
-  msg = "";
-  for (auto& v : values)
-    msg += std::to_string(v) + ", ";
-  info("values, round 2:\n" + msg);
-
   // Scale by magnitude
-  for (std::size_t i = 0; i < dofs_per_cell; i++)
-    values[i] *= _magnitude;
-
-  msg = "";
-  for (auto& v : values)
-    msg += std::to_string(v) + ", ";
-  info("values:\n" + msg);
+  //for (std::size_t i = 0; i < dofs_per_cell; i++)
+  //  values[i] *= _magnitude;
 
   // Compute local-to-global mapping
   dolfin_assert(_function_space->dofmap());
   const ArrayView<const dolfin::la_index> dofs
     = _function_space->dofmap()->cell_dofs(cell.index());
 
-  msg = "";
-  for (auto& v : dofs)
-    msg += std::to_string(v) + ", ";
-  info("dofs:\n" + msg);
-
   // Add values to vector
-  //dolfin_assert(_function_space->element()->space_dimension()
-  //              == _function_space->dofmap()->num_element_dofs(cell.index()));
   b.add_local(values.data(), dofs_per_cell, dofs.data());
   b.apply("add");
 }

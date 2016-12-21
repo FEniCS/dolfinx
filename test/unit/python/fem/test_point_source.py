@@ -39,7 +39,6 @@ def test_pointsource_vector_node():
         b = assemble(Constant(0.0)*v*dx)
         ps = PointSource(V, point, 10.0)
         ps.apply(b)
-        print b.array()
 
         b_sum = MPI.sum(mesh.mpi_comm(), np.sum(b.array()))
         assert b_sum == pytest.approx(10.0)
@@ -62,7 +61,7 @@ def test_pointsource_vector():
               np.sqrt((1.0/2.0)**2 + 2*(1.0/4.0)**2)]]]
 
 
-    for dim in range(1):
+    for dim in range(3):
         mesh = data[dim][0]
         point = data[dim][1]
         length = data[dim][2]
@@ -75,14 +74,11 @@ def test_pointsource_vector():
         b_sum = MPI.sum(mesh.mpi_comm(), np.sum(b.array()))
         assert b_sum == pytest.approx(10.0)
 
-        print b.array()
         v2d = vertex_to_dof_map(V)
         for i in range(len(length)):
             for v in vertices(mesh):
                 if near(v.midpoint().distance(point), length[i]):
                     ind = v2d[v.index()]
-                    print ind
-                    print b.array()[ind]
                     #assert b.array()[ind] == pytest.approx(10.0/(mesh.geometry().dim()+1))
 
 def test_pointsource_vector_fs():
