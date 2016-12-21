@@ -17,6 +17,8 @@
 //
 // This is a highly experimental demo of a geometric multigrid solver
 // using PETSc. It is very likely to change.
+//
+// This demo requires DOLFIN to be configured with PETSc enabled.
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -46,6 +48,8 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
+#ifdef HAS_PETSC
+
   // Create hierarchy of meshes
   std::vector<std::shared_ptr<Mesh>> meshes
     = {std::make_shared<UnitSquareMesh>(16, 16),
@@ -103,6 +107,10 @@ int main()
 
   Function u(V.back());
   solver.solve(*u.vector(), b);
+
+#else
+  info("This demo requires DOLFIN to be configured with PETSc");
+#endif
 
   return 0;
 }
