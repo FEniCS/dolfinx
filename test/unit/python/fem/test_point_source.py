@@ -2,7 +2,7 @@
 
 """Unit tests for PointSources"""
 
-# Copyright (C) 2011-2012 Ettie Unwin
+# Copyright (C) 2016 Ettie Unwin
 #
 # This file is part of DOLFIN.
 #
@@ -26,10 +26,10 @@ from dolfin import *
 
 def test_pointsource_vector_node():
     """Tests point source when given constructor PointSource(V, point, mag)
-    with a vector """
+    with a vector and when placed at a node for 1D, 2D and 3D. """
     data = [[UnitIntervalMesh(10), Point(0.5)],
             [UnitSquareMesh(10,10), Point(0.5, 0.5)],
-            [UnitCubeMesh(10,10,10), Point(0.5, 0.5, 0.5)]]
+            [UnitCubeMesh(3,3,3), Point(0.5, 0.5, 0.5)]]
 
     for dim in range(3):
         mesh = data[dim][0]
@@ -40,9 +40,11 @@ def test_pointsource_vector_node():
         ps = PointSource(V, point, 10.0)
         ps.apply(b)
 
-        b_sum = MPI.sum(mesh.mpi_comm(), np.sum(b.array()))
+        # Checks array sums to correct value
+        b_sum = b.sum()
         assert b_sum == pytest.approx(10.0)
 
+        # Checks point source is added to correct part of the array
         v2d = vertex_to_dof_map(V)
         for v in vertices(mesh):
             if near(v.midpoint().distance(point), 0.0):
@@ -53,36 +55,29 @@ def test_pointsource_vector_node():
 def test_pointsource_vector():
     """Tests point source when given constructor PointSource(V, point, mag)
     with a vector that isn't placed at a node for 1D, 2D and 3D. """
-    data = [[UnitIntervalMesh(10), Point(0.05), [0.05]],
-            [UnitSquareMesh(10,10), Point(0.2/3.0, 0.1/3.0),
-             [np.sqrt(2*(0.1/3.0)**2), np.sqrt((0.1/3.0)**2+(0.2/3.0)**2)]],
-            [UnitCubeMesh(1,1,1), Point(3.0/4.0, 1.0/2.0, 1.0/4.0),
-             [np.sqrt((3.0/4.0)**2 + (1.0/2.0)**2 + (1.0/4.0)**2),
-              np.sqrt((1.0/2.0)**2 + 2*(1.0/4.0)**2)]]]
-
+    data = [UnitIntervalMesh(10), UnitSquareMesh(10,10), UnitCubeMesh(3,3,3)]
 
     for dim in range(3):
-        mesh = data[dim][0]
-        point = data[dim][1]
-        length = data[dim][2]
+        mesh = data[dim]
+
+        cell = Cell(mesh, 0)
+        point = cell.midpoint()
 
         V = FunctionSpace(mesh, "CG", 1)
         v = TestFunction(V)
         b = assemble(Constant(0.0)*v*dx)
         ps = PointSource(V, point, 10.0)
         ps.apply(b)
-        b_sum = MPI.sum(mesh.mpi_comm(), np.sum(b.array()))
+
+        # Checks array sums to correct value
+        b_sum = b.sum()
         assert b_sum == pytest.approx(10.0)
 
-        v2d = vertex_to_dof_map(V)
-        for i in range(len(length)):
-            for v in vertices(mesh):
-                if near(v.midpoint().distance(point), length[i]):
-                    ind = v2d[v.index()]
-                    #assert b.array()[ind] == pytest.approx(10.0/(mesh.geometry().dim()+1))
 
 def test_pointsource_vector_fs():
-    """Tests adding a point to a VectorFunctionSpace"""
+    """Tests point source when given constructor PointSource(V, point, mag)
+    with a vector for a vector function space that isn't placed at a node for
+    1D, 2D and 3D. """
     data = [[UnitIntervalMesh(10), Point(0.5)],
             [UnitSquareMesh(10,10), Point(0.5, 0.5)],
             [UnitCubeMesh(10,10,10), Point(0.5, 0.5, 0.5)]]
@@ -96,9 +91,11 @@ def test_pointsource_vector_fs():
         ps = PointSource(V, point, 10.0)
         ps.apply(b)
 
-        b_sum = MPI.sum(mesh.mpi_comm(), np.sum(b.array()))
+        # Checks array sums to correct value
+        b_sum = b.sum()
         assert b_sum == pytest.approx(10.0*V.num_sub_spaces())
 
+        # Checks point source is added to correct part of the array
         v2d = vertex_to_dof_map(V)
         for v in vertices(mesh):
             if near(v.midpoint().distance(point), 0.0):
@@ -109,7 +106,9 @@ def test_pointsource_vector_fs():
 
 
 def test_pointsource_mixed_space():
-    """Tests adding a point to a VectorFunctionSpace"""
+    """Tests point source when given constructor PointSource(V, point, mag)
+    with a vector for a mixed function space that isn't placed at a node for
+    1D, 2D and 3D. """
     data = [[UnitIntervalMesh(10), Point(0.5)],
             [UnitSquareMesh(10,10), Point(0.5, 0.5)],
             [UnitCubeMesh(3,3,3), Point(0.5, 0.5, 0.5)]]
@@ -127,9 +126,6 @@ def test_pointsource_mixed_space():
         ps = PointSource(V, point, 10.0)
         ps.apply(b)
 
+        # Checks array sums to correct value
         b_sum = b.sum()
         assert b_sum == pytest.approx(10.0*value_dimension)
-
-test_pointsource_vector()
-test_pointsource_vector_fs()
-test_pointsource_mixed_space()
