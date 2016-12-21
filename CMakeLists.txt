@@ -1050,7 +1050,7 @@ endif()
 
 if (DOLFIN_ENABLE_BENCHMARKS)
   # Add bench but do not add to default target
-  #add_subdirectory(bench EXCLUDE_FROM_ALL)
+  add_subdirectory(bench EXCLUDE_FROM_ALL)
 
   # Add target "bench" for building benchmarks
   add_custom_target(bench
