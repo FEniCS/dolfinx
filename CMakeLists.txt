@@ -440,6 +440,7 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
 
 # Check for PETSc, SLEPc and petsc4py, slepc4py
 set(PETSC_FOUND FALSE)
+set(SLEPC_FOUND FALSE)
 if (DOLFIN_ENABLE_PETSC)
   find_package(PETSc 3.6)
   set_package_properties(PETSc PROPERTIES TYPE OPTIONAL
