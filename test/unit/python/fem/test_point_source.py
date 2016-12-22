@@ -128,3 +128,40 @@ def test_pointsource_mixed_space():
         # Checks array sums to correct value
         b_sum = b.sum()
         assert b_sum == pytest.approx(10.0*value_dimension)
+
+
+def test_point_outside():
+    pass
+
+def test_pointsource_matrix():
+    data = [[UnitIntervalMesh(10), Point(0.5), ([1],[1])],
+            [UnitSquareMesh(2,2), Point(0.5, 0.5), 4],
+            [UnitCubeMesh(2,2,2), Point(0.5, 0.5, 0.5), 6]]
+
+    for dim in range(3):
+        mesh = data[dim][0]
+        point = data[dim][1]
+        V = FunctionSpace(mesh, "CG", 1)
+
+        u,v = TrialFunction(V), TestFunction(V)
+        A = assemble(Constant(0.0)*u*v*dx)
+        ps = PointSource(V, V, point, 10.0)
+        ps.apply(A)
+        print A.array()
+
+        # Checks array sums to correct value
+        a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
+        assert a_sum == pytest.approx(10.0)
+
+        # Checks point source is added to correct part of the array
+        v2d = vertex_to_dof_map(V)
+        for v in vertices(mesh):
+            if near(v.midpoint().distance(point), 0.0):
+                ind = v2d[v.index()]
+                info("ind: " + str(ind))
+                print len(A.array())
+                if ind<len(A.array()):
+                    info("ind: " + str(ind))
+                    assert A.array()[ind][ind] == pytest.approx(10.0)
+
+test_pointsource_matrix()
