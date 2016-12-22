@@ -22,7 +22,6 @@
 import pytest
 import numpy as np
 from dolfin import *
-#parameters["ghost_mode"] = "shared_facet"
 
 def test_pointsource_vector_node():
     """Tests point source when given constructor PointSource(V, point, mag)

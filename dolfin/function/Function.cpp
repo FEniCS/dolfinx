@@ -390,9 +390,6 @@ void Function::eval(Array<double>& values, const Array<double>& x,
 
     for (std::size_t j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
-
-    info(std::to_string(values.size()));
-
   }
 }
 //-----------------------------------------------------------------------------
