@@ -27,6 +27,7 @@ namespace dolfin
   // Forward declarations
   class FunctionSpace;
   class GenericVector;
+  class GenericMatrix;
 
   /// This class provides an easy mechanism for adding a point source
   /// (Dirac delta function) to the right-hand side vector in a
@@ -42,11 +43,20 @@ namespace dolfin
     PointSource(std::shared_ptr<const FunctionSpace> V, const Point& p,
                 double magnitude=1.0);
 
+    /// Create point source at given point of given magnitude
+    PointSource(std::shared_ptr<const FunctionSpace> V0,
+                std::shared_ptr<const FunctionSpace> V1,
+                const Point& p,
+                double magnitude=1.0);
+
     /// Destructor
     ~PointSource();
 
     /// Apply (add) point source to right-hand side vector
     void apply(GenericVector& b);
+
+    /// Apply (add) point source to matrix
+    void apply(GenericMatrix& A);
 
   private:
 
@@ -54,7 +64,8 @@ namespace dolfin
     void check_space_supported(const FunctionSpace& V);
 
     // The function space
-    std::shared_ptr<const FunctionSpace> _function_space;
+    std::shared_ptr<const FunctionSpace> _function_space0;
+    std::shared_ptr<const FunctionSpace> _function_space1;
 
     // The point
     Point _p;
