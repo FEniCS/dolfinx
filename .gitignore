@@ -65,6 +65,9 @@ test/unit/mesh/{cpp,python}/*.{xml,m}
 test/unit/parameter/{cpp,python}/*.{xml,xml.gz}
 bench/**/**/cpp/forms/*.h
 bench/**/**/cpp/*.h
+demo/**/*.py
+demo/**/*.ufl
+demo/**/*.cpp
 test/unit/**/python/*.xml
 test/unit/**/cpp/*.xml
 test/unit/cpp/function/Projection.h
@@ -77,10 +80,6 @@ test/**/.cache/
 demo/**/**/cpp/*.h
 demo/documented/cahn-hilliard/cpp/CahnHilliard2D.cpp
 demo/documented/cahn-hilliard/cpp/CahnHilliard3D.cpp
-
-
-# QT generated code
-moc_*
 
 # Temporaries
 *~
@@ -98,7 +97,7 @@ moc_*
 *.xdmf
 *.bin
 
-# CMake and Make file
+# CMake files
 CMakeLists.txt
 !/CMakeLists.txt
 !dolfin/CMakeLists.txt
