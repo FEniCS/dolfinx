@@ -75,6 +75,4 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
   include_directories(${DOLFIN_INCLUDE_DIRS})
   include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
-  # Add link directories needed to use DOLFIN
-  link_directories(${DOLFIN_3RD_PARTY_LIBRARY_DIRS})
 endif()
