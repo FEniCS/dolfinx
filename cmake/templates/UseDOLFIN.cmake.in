@@ -8,6 +8,10 @@
 if (NOT DOLFIN_USE_FILE_INCLUDED)
   set(DOLFIN_USE_FILE_INCLUDED 1)
 
+  if(POLICY CMP0012)
+    cmake_policy(SET CMP0012 NEW)
+  endif()
+
   # Require and use C++11
   set(CMAKE_CXX_STANDARD 11)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,6 +24,22 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
     find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE QUIET)
     if (VTK_FOUND)
       include(${VTK_USE_FILE})
+    endif()
+  endif()
+
+  if (@PETSC_FOUND@)
+    if (NOT PETSC::petsc)
+      set(DOLFIN_SKIP_BUILD_TESTS TRUE)
+      list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
+      find_package(PETSc REQUIRED QUIET)
+      endif()
+  endif()
+
+  if (@SLEPC_FOUND@)
+    if (NOT SLEPC::slepc)
+      set(DOLFIN_SKIP_BUILD_TESTS TRUE)
+      list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
+      find_package(SLEPc REQUIRED QUIET)
     endif()
   endif()
 
@@ -53,6 +73,4 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
   include_directories(${DOLFIN_INCLUDE_DIRS})
   include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
-  # Add link directories needed to use DOLFIN
-  link_directories(${DOLFIN_3RD_PARTY_LIBRARY_DIRS})
 endif()
