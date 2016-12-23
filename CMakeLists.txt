@@ -439,6 +439,8 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
   URL "https://bitbucket.org/fenics-project/ffc")
 
 # Check for PETSc, SLEPc and petsc4py, slepc4py
+set(PETSC_FOUND FALSE)
+set(SLEPC_FOUND FALSE)
 if (DOLFIN_ENABLE_PETSC)
   find_package(PETSc 3.6)
   set_package_properties(PETSc PROPERTIES TYPE OPTIONAL
@@ -460,6 +462,7 @@ if (DOLFIN_ENABLE_PETSC)
     endif()
   endif()
 
+  set(SLEPC_FOUND FALSE)
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
     find_package(SLEPc 3.6)
     set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
@@ -866,10 +869,10 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-version.in
                ${CMAKE_BINARY_DIR}/dolfin-version @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
-        DESTINATION ${DOLFIN_BIN_DIR}
+  DESTINATION ${DOLFIN_BIN_DIR}
   PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
-        OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-        COMPONENT RuntimeExecutables)
+  OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+  COMPONENT RuntimeExecutables)
 
 # Create and install fenics-version
 configure_file(${DOLFIN_CMAKE_DIR}/templates/fenics-version.in
@@ -884,11 +887,12 @@ install(FILES ${CMAKE_BINARY_DIR}/fenics-version
 # Generate and install utility script dolfin-get-demos
 
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-get-demos.in
-               ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
+  ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
-        DESTINATION ${DOLFIN_BIN_DIR}
-  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-        COMPONENT RuntimeExecutables)
+  DESTINATION ${DOLFIN_BIN_DIR}
+  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+  OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+  COMPONENT RuntimeExecutables)
 
 #------------------------------------------------------------------------------
 # Generate demo files from rst
@@ -946,7 +950,7 @@ foreach(rst_file ${demo_rst_files})
 endforeach()
 
 #------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for bench and demos if not exists
+# Generate CMakeLists.txt files for bench and demos if not existing
 
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
@@ -999,6 +1003,7 @@ endif()
 # Add demos and install demo source files and mesh files
 
 # Add demo but do not add to default target
+set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
 add_subdirectory(demo EXCLUDE_FROM_ALL)
 
 # Set make program

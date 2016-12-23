@@ -194,12 +194,13 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   #endif
 
   // Avoid using default PETSc signal handler
-  //const bool use_petsc_signal_handler = parameters["use_petsc_signal_handler"];
-  //if (!use_petsc_signal_handler)
-  //  PetscPopSignalHandler();
+  const bool use_petsc_signal_handler = parameters["use_petsc_signal_handler"];
+  if (!use_petsc_signal_handler)
+    PetscPopSignalHandler();
 
-  // Use our own error handler so we can pretty print errors from PETSc
-  //PetscPushErrorHandler(PetscDolfinErrorHandler, nullptr);
+  // Use our own error handler so we can pretty print errors from
+  // PETSc
+  PetscPushErrorHandler(PetscDolfinErrorHandler, nullptr);
 
   // Remember that PETSc has been initialized
   singleton().petsc_initialized = true;
@@ -287,9 +288,9 @@ void SubSystemsManager::finalize_petsc()
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::mpi_initialized()
 {
-  // This function not affected if MPI_Finalize has been called. It returns
-  // true if MPI_Init has been called at any point, even if MPI_Finalize has
-  // been called.
+  // This function not affected if MPI_Finalize has been called. It
+  // returns true if MPI_Init has been called at any point, even if
+  // MPI_Finalize has been called.
 
   #ifdef HAS_MPI
   int mpi_initialized;
@@ -319,7 +320,8 @@ PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
   PetscErrorCode n, PetscErrorType p, const char *mess, void *ctx)
 {
   // Store message for printing later (by PETScObject::petsc_error)
-  // only if it's not empty message (passed by PETSc when repeating error)
+  // only if it's not empty message (passed by PETSc when repeating
+  // error)
   std::string _mess = mess;
   boost::algorithm::trim(_mess);
   if (_mess != "")
