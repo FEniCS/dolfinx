@@ -98,16 +98,14 @@ namespace dolfin
     virtual std::shared_ptr<GenericVector> copy() const;
 
     /// Initialize vector to global size N
-    virtual void init(MPI_Comm comm, std::size_t N);
+    virtual void init(std::size_t N);
 
     /// Initialize vector with given ownership range
-    virtual void init(MPI_Comm comm,
-                      std::pair<std::size_t, std::size_t> range);
+    virtual void init(std::pair<std::size_t, std::size_t> range);
 
     /// Initialize vector with given ownership range and with ghost
     /// values
-    virtual void init(MPI_Comm comm,
-                      std::pair<std::size_t, std::size_t> range,
+    virtual void init(std::pair<std::size_t, std::size_t> range,
                       const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index>& ghost_indices);
 

@@ -701,7 +701,7 @@ def la_index_dtype():
                 raise ValueError("Provide a NumPy array with length %d"%self.size(1))
             vec_type = _matrix_vector_mul_map[get_tensor_type(self)][0]
             vec = vec_type()
-            vec.init(self.mpi_comm(), vec_size)
+            vec.init(vec_size)
             vec.set_local(other)
             vec.apply("insert")
             result_vec = vec.copy()

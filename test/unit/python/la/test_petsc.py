@@ -35,7 +35,7 @@ def test_vector():
     x.set_options_prefix(prefix)
 
     assert x.get_options_prefix() == prefix
-    x.init(mpi_comm_world(), 300)
+    x.init(300)
     assert x.get_options_prefix() == prefix
 
 
@@ -125,8 +125,8 @@ def test_options_prefix(pushpop_parameters):
 
     # Test vector
     def init_vector(x):
-        x.init(mpi_comm_world(), 100)
-    x = PETScVector()
+        x.init(100)
+    x = PETScVector(mpi_comm_world())
     run_test(x, init_vector)
 
     # Test matrix

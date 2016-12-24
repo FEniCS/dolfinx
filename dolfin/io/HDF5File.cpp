@@ -195,7 +195,7 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
 
   // Get global dataset size
   const std::vector<std::int64_t> data_shape
-      = HDF5Interface::get_dataset_shape(_hdf5_file_id, dataset_name);
+    = HDF5Interface::get_dataset_shape(_hdf5_file_id, dataset_name);
 
   // Check that rank is 1 or 2
   dolfin_assert(data_shape.size() == 1
@@ -227,10 +227,10 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
       const std::size_t process_num = MPI::rank(_mpi_comm);
       const std::pair<std::size_t, std::size_t>
         local_range(partitions[process_num], partitions[process_num + 1]);
-      x.init(_mpi_comm, local_range);
+      x.init(local_range);
     }
     else
-      x.init(_mpi_comm, data_shape[0]);
+      x.init(data_shape[0]);
   }
   else if ((std::int64_t) x.size() != data_shape[0])
   {
