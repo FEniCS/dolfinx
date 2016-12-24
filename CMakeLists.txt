@@ -442,7 +442,7 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
 set(PETSC_FOUND FALSE)
 set(SLEPC_FOUND FALSE)
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc 3.6)
+  find_package(PETSc 3.7)
   set_package_properties(PETSc PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation"
     URL "https://www.mcs.anl.gov/petsc/"
@@ -464,7 +464,7 @@ if (DOLFIN_ENABLE_PETSC)
 
   set(SLEPC_FOUND FALSE)
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc 3.6)
+    find_package(SLEPc 3.7)
     set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
       DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
       URL "http://slepc.upv.es/")
