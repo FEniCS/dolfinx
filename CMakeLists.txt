@@ -442,7 +442,7 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
 set(PETSC_FOUND FALSE)
 set(SLEPC_FOUND FALSE)
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc VERSION 3.7)
+  find_package(PETSc 3.7)
   set_package_properties(PETSc PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation"
     URL "https://www.mcs.anl.gov/petsc/"
