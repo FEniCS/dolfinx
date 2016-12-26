@@ -4,7 +4,8 @@ Change log
 dev
 ---
 
-- 
+- Remove MPI communicator as argument in GenericVector::init functions
+  (communicator should be passed via constructor)
 
 2016.2.0 [2016-11-30]
 ---------------------
