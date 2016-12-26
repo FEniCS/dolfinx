@@ -256,6 +256,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   std::vector<std::vector<double>> send_found(mpi_size);
   std::vector<std::vector<int>> send_found_global_row_indices(mpi_size);
 
+  std::vector<int> proc_list;
   for (const auto &map_it : coords_to_dofs)
   {
     const std::vector<double>& _x = map_it.first;
@@ -272,16 +273,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
     // so that even if multiple processes share the cell, we find the one that
     // actually owns it)
 
-    if (found_ranks.size() == 1)
-    {
-      const int rp = found_ranks[0];
-      send_found[rp].insert(send_found[rp].end(),
-                            _x.begin(), _x.end());
-      send_found_global_row_indices[rp].insert(
-                send_found_global_row_indices[rp].end(),
-                map_it.second.begin(), map_it.second.end());
-    }
-    else
+    if (found_ranks.empty())
     {
       // Point is either outside the domain, or inside the BoundingBox
       // of more than one process
@@ -291,48 +283,109 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
                                           map_it.second.end());
       not_found_points_senders.push_back(mpi_rank);
     }
+    else
+    {
+      proc_list.push_back(found_ranks.size());
+      for (auto &rp : found_ranks)
+      {
+        proc_list.push_back(rp);
+        send_found[rp].insert(send_found[rp].end(),
+                              _x.begin(), _x.end());
+        send_found_global_row_indices[rp].insert(
+         send_found_global_row_indices[rp].end(),
+         map_it.second.begin(), map_it.second.end());
+      }
+    }
+  }
+  std::vector<std::vector<double>> recv_found(mpi_size);
+  MPI::all_to_all(mpi_comm, send_found, recv_found);
+
+  // Convert received points to ID of containing cell and send back
+  std::vector<std::vector<unsigned int>> send_ids(mpi_size);
+  std::vector<std::vector<unsigned int>> recv_ids(mpi_size);
+  for (unsigned int p = 0; p < mpi_size; ++p)
+  {
+    unsigned int n_points = recv_found[p].size()/dim;
+    for (unsigned int i = 0; i < n_points; ++i)
+    {
+      const Point curr_point(dim, &recv_found[p][i*dim]);
+      send_ids[p].push_back(treec->compute_first_entity_collision(curr_point));
+    }
+  }
+  MPI::all_to_all(mpi_comm, send_ids, recv_ids);
+
+  // Revisit list of sent points
+  std::vector<int> count(mpi_size, 0);
+  for (auto p = proc_list.begin(); p != proc_list.end(); p += (*p + 1))
+  {
+    unsigned int nprocs = *p;
+    int owner = -1;
+    for (unsigned int j = 1; j != (nprocs + 1); ++j)
+    {
+      const int proc = *(p + j);
+      unsigned int id = recv_ids[proc][count[proc]];
+      if (id != std::numeric_limits<unsigned int>::max())
+        owner = proc;
+    }
+
+    if (owner == -1)
+    {
+      // Point not found remotely, so add to not_found list
+      int proc = *(p + 1);
+      not_found_points.insert(not_found_points.end(),
+                              &send_found[proc][count[proc]*dim],
+                              &send_found[proc][(count[proc] + 1)*dim]);
+      not_found_global_row_indices.insert(not_found_global_row_indices.end(),
+            &send_found_global_row_indices[proc][count[proc]*data_size],
+            &send_found_global_row_indices[proc][(count[proc] + 1)*data_size]);
+      not_found_points_senders.push_back(mpi_rank);
+    }
+    else if (nprocs > 1)
+    {
+      for (unsigned int j = 1; j != (nprocs + 1); ++j)
+      {
+        const int proc = *(p + j);
+        // Make sure only one process gets to insert by blanking indices
+        if (proc != owner)
+        {
+          for (unsigned int k = 0; k != data_size; ++k)
+            send_found_global_row_indices[proc]
+              [count[proc]*data_size + k] = -1;
+        }
+      }
+    }
+
+    // Move to next point
+    for (unsigned int j = 1; j != (nprocs + 1); ++j)
+      ++count[*(p + j)];
   }
 
-  // Send points with one BBox to the process that may have the
-  // containing coarse cells
-  std::vector<std::vector<double>> recv_found(mpi_size);
+  // Send indices
   std::vector<std::vector<int>> recv_found_global_row_indices(mpi_size);
-  MPI::all_to_all(mpi_comm, send_found, recv_found);
   MPI::all_to_all(mpi_comm, send_found_global_row_indices,
                   recv_found_global_row_indices);
 
-  // First, handle the points that were found elsewhere.
-  // We loop over the processors that own the fine points that need to be found.
-  // We call them senders here.
-  for (unsigned int sender = 0; sender < mpi_size; ++sender)
+  for (unsigned int p = 0; p != mpi_size; ++p)
   {
-    unsigned int n_points = recv_found[sender].size()/dim;
+    const auto& global_idx_p = recv_found_global_row_indices[p];
+    const auto& point_p = recv_found[p];
+    const auto& id_p = send_ids[p];
+    const unsigned int npoints = id_p.size();
+    dolfin_assert(npoints == point_p.size()/dim);
+    dolfin_assert(npoints == global_idx_p.size()/data_size);
 
-    for (unsigned int i = 0; i < n_points; ++i)
+    for (unsigned int i = 0; i < npoints; ++i)
     {
-      double *_x = &recv_found[sender][i*dim];
-      Point curr_point(dim, _x);
-
-      unsigned int id = treec->compute_first_entity_collision(curr_point);
-      // If the point is not found on the current processor
-      // mark it as not found and leave it for later
-      if (id == std::numeric_limits<unsigned int>::max())
+      if (id_p[i] != std::numeric_limits<unsigned int>::max()
+          and global_idx_p[i*data_size] != -1)
       {
-        not_found_points.insert(not_found_points.end(), _x, _x + dim);
-        not_found_global_row_indices.insert(not_found_global_row_indices.end(),
-          &recv_found_global_row_indices[sender][data_size*i],
-          &recv_found_global_row_indices[sender][data_size*i + data_size]);
-        not_found_points_senders.push_back(sender);
-      }
-      else
-      {
-        // if found, store information
-        found_ids.push_back(id);
-        found_points.insert(found_points.end(), _x , _x + dim);
+        found_ids.push_back(id_p[i]);
         global_row_indices.insert(global_row_indices.end(),
-          &recv_found_global_row_indices[sender][data_size*i],
-          &recv_found_global_row_indices[sender][data_size*i + data_size]);
-        found_points_senders.push_back(sender);
+                                  &global_idx_p[data_size*i],
+                                  &global_idx_p[data_size*i + data_size]);
+        found_points.insert(found_points.end(),
+                            &point_p[dim*i], &point_p[dim*(i + 1)]);
+        found_points_senders.push_back(p);
       }
     }
   }
@@ -551,6 +604,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
       dolfin_assert(q >= (dolfin::la_index)mbegin and q < (dolfin::la_index)mend);
       ++dnnz[q - mbegin];
     }
+
+  std::cout << "PETSc begin\n";
 
   // Initialise PETSc Mat and error code
   PetscErrorCode ierr;
