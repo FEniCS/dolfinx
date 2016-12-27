@@ -126,8 +126,6 @@ namespace dolfin
 
       p.add("monitor_convergence"    , false);
       p.add("report"                 , false);
-      p.add("function_absolute_tol"  , 1.0e-10);
-      p.add("function_relative_tol"  , 1.0e-10);
       p.add("gradient_absolute_tol"  , 1.0e-8);
       p.add("gradient_relative_tol"  , 1.0e-8);
       p.add("gradient_t_tol"         , 0.0);

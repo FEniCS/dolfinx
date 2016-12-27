@@ -99,20 +99,18 @@ std::shared_ptr<GenericVector> PETScVector::copy() const
   return std::make_shared<PETScVector>(*this);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(MPI_Comm comm, std::size_t N)
+void PETScVector::init(std::size_t N)
 {
-  const auto range = dolfin::MPI::local_range(comm, N);
+  const auto range = dolfin::MPI::local_range(this->mpi_comm(), N);
   _init(range, {}, {});
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(MPI_Comm comm,
-                       std::pair<std::size_t, std::size_t> range)
+void PETScVector::init(std::pair<std::size_t, std::size_t> range)
 {
   _init(range, {}, {});
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(MPI_Comm comm,
-                       std::pair<std::size_t, std::size_t> range,
+void PETScVector::init(std::pair<std::size_t, std::size_t> range,
                        const std::vector<std::size_t>& local_to_global_map,
                        const std::vector<la_index>& ghost_indices)
 {
@@ -710,7 +708,7 @@ void PETScVector::gather(GenericVector& y,
 
   // Initialize vector if empty
   if (_y.empty())
-    _y.init(MPI_COMM_SELF, n);
+    _y.init(n);
 
   // Check that passed vector has correct size
   if (_y.size() != n)

@@ -135,22 +135,20 @@ std::shared_ptr<GenericVector> TpetraVector::copy() const
   return std::shared_ptr<GenericVector>(new TpetraVector(*this));
 }
 //-----------------------------------------------------------------------------
-void TpetraVector::init(MPI_Comm comm, std::size_t N)
+void TpetraVector::init(std::size_t N)
 {
   const std::pair<std::int64_t, std::int64_t> range = MPI::local_range(comm, N);
   std::vector<dolfin::la_index> local_to_global_map;
   _init(comm, range, local_to_global_map);
 }
 //-----------------------------------------------------------------------------
-void TpetraVector::init(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range)
+void TpetraVector::init(std::pair<std::size_t, std::size_t> range)
 {
   std::vector<dolfin::la_index> local_to_global_map;
   _init(comm, range, local_to_global_map);
 }
 //-----------------------------------------------------------------------------
-void TpetraVector::init(MPI_Comm comm,
-                        std::pair<std::size_t, std::size_t> range,
+void TpetraVector::init(std::pair<std::size_t, std::size_t> range,
                         const std::vector<std::size_t>& local_to_global_map,
                         const std::vector<la_index>& ghost_indices)
 {
