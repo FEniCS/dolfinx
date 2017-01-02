@@ -57,6 +57,23 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
   check_space_supported(*V0);
   check_space_supported(*V1);
 }
+//----------------------------------------------------------------------------
+PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
+			 std::shared_ptr<const FunctionSpace> V1,
+			 const std::vector<std::pair<const Point*,
+			 double> > sources)
+  : _function_space0(V0), _function_space1(V1)
+{
+  // Copy over from pointers
+  for (auto& p : sources)
+    _sources.push_back({*(p.first), p.second});
+
+
+  // Check that function space is scalar
+  check_space_supported(*V0);
+  check_space_supported(*V1);
+  info("instantiated with list");
+}
 //-----------------------------------------------------------------------------
 PointSource::~PointSource()
 {
@@ -86,6 +103,9 @@ void PointSource::apply(GenericVector& b)
     num_found = MPI::sum(mesh.mpi_comm(), 1);
   else
     num_found = MPI::sum(mesh.mpi_comm(), 0);
+
+  info("Rank" + std::to_string(MPI::rank(mesh.mpi_comm())));
+  info("num_found" + std::to_string(num_found));
 
   if (MPI::rank(mesh.mpi_comm()) == 0 && num_found == 0)
   {

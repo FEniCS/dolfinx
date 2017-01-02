@@ -22,6 +22,7 @@
 import pytest
 import numpy as np
 from dolfin import *
+from dolfin_utils.test import skip_in_parallel
 
 def test_pointsource_vector_node():
     """Tests point source when given constructor PointSource(V, point, mag)
@@ -129,6 +130,7 @@ def test_pointsource_mixed_space():
         b_sum = b.sum()
         assert round(b_sum - 10.0*value_dimension) == 0
 
+@skip_in_parallel
 def test_point_outside():
     mesh = UnitIntervalMesh(10)
     point = Point(1.2)
@@ -137,9 +139,10 @@ def test_point_outside():
     b = assemble(Constant(0.0)*v*dx)
     ps = PointSource(V, point, 10.0)
 
-    print 'here'
-    #with pytest.raises(RuntimeError):
-    #ps.apply(b)
+    #Runtime Error is only produced on one process which causes the whole
+    #fucntion to fail but makes this test hang.
+    with pytest.raises(RuntimeError):
+        ps.apply(b)
 
 def test_pointsource_matrix():
     data = [[UnitIntervalMesh(10), Point(0.5)],
@@ -170,5 +173,3 @@ def test_pointsource_matrix():
                 if ind<len(A.array()):
                     assert round(w.vector()[ind] - 10.0) == 0
                     info("Asserted")
-
-test_point_outside()

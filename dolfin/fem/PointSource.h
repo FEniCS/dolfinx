@@ -49,6 +49,11 @@ namespace dolfin
                 const Point& p,
                 double magnitude=1.0);
 
+    /// Create point source at given point of given magnitude
+    PointSource(std::shared_ptr<const FunctionSpace> V0,
+		std::shared_ptr<const FunctionSpace> V1,
+	        const std::vector<std::pair<const Point*, double> > sources);
+
     /// Destructor
     ~PointSource();
 
@@ -57,6 +62,17 @@ namespace dolfin
 
     /// Apply (add) point source to matrix
     void apply(GenericMatrix& A);
+
+    /// Stores points and magnitudes
+    static void dummy(const std::vector<std::pair<const Point*, double> > pt)
+    {
+      for (auto & p : pt)
+      {
+        std::cout << "Double = " << p.second << "\n";
+        std::cout << "Point = " << *(p.first) << "\n";
+      }
+
+    }
 
   private:
 
@@ -72,6 +88,9 @@ namespace dolfin
 
     // Magnitude
     double _magnitude;
+
+    // Source term - pair of points and magnitude
+    std::vector<std::pair<Point, double> > _sources;
 
   };
 
