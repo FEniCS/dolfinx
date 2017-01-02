@@ -51,8 +51,11 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
 			 std::shared_ptr<const FunctionSpace> V1,
                          const Point& p,
                          double magnitude)
-  : _function_space0(V0), _function_space1(V1), _p(p), _magnitude(magnitude)
+  : _function_space0(V0), _function_space1(V1)
 {
+  // Puts point and magniude data into a vector
+  _sources.push_back({p, magnitude});
+
   // Check that function space is scalar
   check_space_supported(*V0);
   check_space_supported(*V1);
