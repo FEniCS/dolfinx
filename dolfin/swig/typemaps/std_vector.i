@@ -837,3 +837,94 @@ IN_TYPEMAP_STD_VECTOR_OF_ARRAYVIEW_OF_PRIMITIVES(const dolfin::la_index, INT64,
 //  }
 //  $1 = &temp;
 //}
+%define TYPEMAPS_STD_VECTOR_OF_PAIR_POINTERS(TYPE)
+
+//-----------------------------------------------------------------------------
+// Run the macros for the combination of const and no const of
+// {const} std::vector<{const} dolfin::TYPE *>
+//-----------------------------------------------------------------------------
+IN_TYPEMAP_STD_VECTOR_OF_PAIR_POINTERS(TYPE,,)
+IN_TYPEMAP_STD_VECTOR_OF_PAIR_POINTERS(TYPE,const,)
+IN_TYPEMAP_STD_VECTOR_OF_PAIR_POINTERS(TYPE,,const)
+IN_TYPEMAP_STD_VECTOR_OF_PAIR_POINTERS(TYPE,const,const)
+
+%enddef
+
+
+//-----------------------------------------------------------------------------
+// Macro for defining in typemaps for
+// {const} std::vector<std::pair<{const} dolfin::TYPE *, double> >
+// using a Python List of TYPE
+//-----------------------------------------------------------------------------
+%define IN_TYPEMAP_STD_VECTOR_OF_PAIR_POINTERS(TYPE,CONST,CONST_VECTOR)
+
+//-----------------------------------------------------------------------------
+// The typecheck
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_POINTER) CONST_VECTOR std::vector<std::pair<CONST dolfin::TYPE *, double> >
+{
+  $1 = 0;
+
+  // Check input is a list (vector)
+  if (PyList_Check($input))
+  {
+    int count = 0;
+    int size = PyList_Size($input);
+    std::cout << "Got list size = " << size << "\n";
+    PyObject * py_item = 0;
+    for (int i = 0; i < size; i++)
+    {
+      // Check each item is a tuple of size 2
+      py_item = PyList_GetItem($input, i);
+      if (PyTuple_Check(py_item) && PyTuple_Size(py_item) == 2)
+        ++count;
+      // FIXME - need to check if tuple contents are valid
+    }
+    if (count == size)
+      $1 = 1;
+  }
+}
+
+//-----------------------------------------------------------------------------
+// The std::vector<std::pair<Type*, double> > typemap
+//-----------------------------------------------------------------------------
+%typemap (in) CONST_VECTOR std::vector<std::pair<CONST dolfin::TYPE *, double> > (
+std::vector<std::pair<CONST dolfin::TYPE *, double> > tmp_vec,
+std::shared_ptr<dolfin::TYPE> tempshared,
+dolfin::TYPE * arg)
+{
+
+  // IN_TYPEMAP_STD_VECTOR_OF_PAIR_POINTERS(TYPE, CONST, CONST_VECTOR)
+  if (!PyList_Check($input))
+  {
+    SWIG_exception(SWIG_TypeError, "list of tuples of TYPE and double expected");
+  }
+
+  int size = PyList_Size($input);
+  int res = 0;
+  PyObject * py_item = 0;
+  void * itemp = 0;
+  int newmem = 0;
+  tmp_vec.reserve(size);
+  for (int i = 0; i < size; i++)
+  {
+    py_item = PyList_GetItem($input,i);
+
+    // Check that we have a tuple
+    if (!PyTuple_Check(py_item) || PyTuple_Size(py_item) != 2)
+      SWIG_exception(SWIG_TypeError, "expected a tuple of length 2 with TYPE and Float.");
+
+    PyObject* py_first  = PyTuple_GetItem(py_item, 0);
+    PyObject* py_second = PyTuple_GetItem(py_item, 1);
+    res = SWIG_ConvertPtr(py_first, &itemp, $descriptor(dolfin::TYPE *), 0);
+    if (SWIG_IsOK(res))
+      tmp_vec.push_back({reinterpret_cast<dolfin::TYPE *>(itemp), PyFloat_AsDouble(py_second)});
+    // FIXME: do we need to also do shared_ptr conversion if this fails?
+  }
+
+  $1 = tmp_vec;
+}
+
+%enddef
+
+TYPEMAPS_STD_VECTOR_OF_PAIR_POINTERS(Point)
