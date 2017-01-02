@@ -132,6 +132,7 @@ def test_pointsource_mixed_space():
 
 @skip_in_parallel
 def test_point_outside():
+    """Tests point source fails if given a point outside the domain."""
     mesh = UnitIntervalMesh(10)
     point = Point(1.2)
     V = FunctionSpace(mesh, "CG", 1)
@@ -140,11 +141,13 @@ def test_point_outside():
     ps = PointSource(V, point, 10.0)
 
     #Runtime Error is only produced on one process which causes the whole
-    #fucntion to fail but makes this test hang.
+    #function to fail but makes this test hang in parallel.
     with pytest.raises(RuntimeError):
         ps.apply(b)
 
 def test_pointsource_matrix():
+    """Tests point source when given constructor PointSource(V, point, mag)
+    with a vector and when placed at a node for 1D, 2D and 3D. """
     data = [[UnitIntervalMesh(10), Point(0.5)],
             [UnitSquareMesh(2,2), Point(0.5, 0.5)],
             [UnitCubeMesh(2,2,2), Point(0.5, 0.5, 0.5)]]
@@ -157,7 +160,7 @@ def test_pointsource_matrix():
         u, v = TrialFunction(V), TestFunction(V)
         w = Function(V)
         A = assemble(Constant(0.0)*u*v*dx)
-        ps = PointSource(V, V, point, 10.0)
+        ps = PointSource(V, point, 10.0)
         ps.apply(A)
 
         # Checks array sums to correct value
@@ -172,4 +175,51 @@ def test_pointsource_matrix():
                 ind = v2d[v.index()]
                 if ind<len(A.array()):
                     assert round(w.vector()[ind] - 10.0) == 0
-                    info("Asserted")
+
+def test_pointsource_matrix_2():
+    """Tests point source when given constructor PointSource(V1, V2, point,
+    mag) with a vector and when placed at a node for 1D, 2D and 3D. """
+    data = [[UnitIntervalMesh(10), Point(0.5)],
+            [UnitSquareMesh(2,2), Point(0.5, 0.5)],
+            [UnitCubeMesh(2,2,2), Point(0.5, 0.5, 0.5)]]
+
+    for dim in range(3):
+        mesh = data[dim][0]
+        point = data[dim][1]
+        V1 = FunctionSpace(mesh, "CG", 1)
+        V2 = FunctionSpace(mesh, "CG", 2)
+
+        u, v = TrialFunction(V1), TestFunction(V2)
+        w = Function(V1)
+        A = assemble(Constant(0.0)*u*v*dx)
+        ps = PointSource(V1, V2, point, 10.0)
+        ps.apply(A)
+
+        # Checks array sums to correct value
+        a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
+        assert round(a_sum - 10.0) == 0
+
+        # Checks point source is added to correct part of the array
+        A.get_diagonal(w.vector())
+        v2d = vertex_to_dof_map(V)
+        for v in vertices(mesh):
+            if near(v.midpoint().distance(point), 0.0):
+                ind = v2d[v.index()]
+                if ind<len(A.array()):
+                    assert round(w.vector()[ind] - 10.0) == 0
+
+
+def test_multi_ps_vector_node():
+    pass
+
+def test_multi_ps_vector():
+    pass
+
+def test_multi_ps_matrix_node():
+    pass
+
+def test_multi_ps_matrix():
+    pass
+
+
+test_pointsource_matrix_2()

@@ -323,10 +323,19 @@ void PointSource::apply(GenericMatrix& A)
     dofs0 = V0->dofmap()->cell_dofs(cell.index());
     dofs1 = V1->dofmap()->cell_dofs(cell.index());
 
-    // Add values to vector
+    info("here");
+    info("dofs_per_cell0 " + std::to_string(dofs_per_cell0));
+    info("dofs data 0 " + std::to_string(dofs0.size()));
+    info("dofs_per_cell1 " + std::to_string(dofs_per_cell1));
+    info("dofs data 1 " + std::to_string(dofs1.size()));
+    info("values " + std::to_string(values.size()));
+
+    // Add values to matrix
     A.add_local(values.data(),
 		dofs_per_cell0, dofs0.data(),
 		dofs_per_cell1, dofs1.data());
+
+    info("here2");
     A.apply("add");
   }
 }
