@@ -41,8 +41,24 @@ using namespace dolfin;
 PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
                          const Point& p,
                          double magnitude)
-  : _function_space0(V), _p(p), _magnitude(magnitude)
+  : _function_space0(V)
 {
+  // Puts point and magniude data into a vector
+  _sources.push_back({p, magnitude});
+
+  // Check that function space is scalar
+  check_space_supported(*V);
+}
+//-----------------------------------------------------------------------------
+PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
+			 const std::vector<std::pair<const Point*,
+			 double> > sources)
+  : _function_space0(V)
+{
+  // Copy over from pointers
+  for (auto& p : sources)
+    _sources.push_back({*(p.first), p.second});
+
   // Check that function space is scalar
   check_space_supported(*V);
 }
@@ -71,11 +87,9 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
   for (auto& p : sources)
     _sources.push_back({*(p.first), p.second});
 
-
   // Check that function space is scalar
   check_space_supported(*V0);
   check_space_supported(*V1);
-  info("instantiated with list");
 }
 //-----------------------------------------------------------------------------
 PointSource::~PointSource()
@@ -90,87 +104,99 @@ void PointSource::apply(GenericVector& b)
 
   log(PROGRESS, "Applying point source to right-hand side vector.");
 
-  // Find the cell containing the point (may be more than one cell but
-  // we only care about the first). Well-defined if the basis
-  // functions are continuous but may give unexpected results for DG.
   dolfin_assert(_function_space0->mesh());
+  dolfin_assert(_function_space0->element());
+  dolfin_assert(_function_space0->dofmap());
+
   const Mesh& mesh = *_function_space0->mesh();
   const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
-  const unsigned int cell_index = tree->compute_first_entity_collision(_p);
+  unsigned int cell_index;
 
-  // Check that we found the point on at least one processor
-  int num_found = 0;
-  const bool cell_found_on_process = cell_index != std::numeric_limits<unsigned int>::max();
+  // Variables for checking that cell is unique
+  int num_found;
+  bool cell_found_on_process;
+  int processes_with_cell;
+  int selected_process;
 
-  if (cell_found_on_process)
-    num_found = MPI::sum(mesh.mpi_comm(), 1);
-  else
-    num_found = MPI::sum(mesh.mpi_comm(), 0);
-
-  info("Rank" + std::to_string(MPI::rank(mesh.mpi_comm())));
-  info("num_found" + std::to_string(num_found));
-
-  if (MPI::rank(mesh.mpi_comm()) == 0 && num_found == 0)
-  {
-    dolfin_error("PointSource.cpp",
-                 "apply point source to vector",
-                 "The point is outside of the domain (%s)", _p.str().c_str());
-  }
-
-  const int processes_with_cell =
-    cell_found_on_process ? MPI::rank(mesh.mpi_comm()) : -1;
-  const int selected_process = MPI::max(mesh.mpi_comm(), processes_with_cell);
-
-  // Return if point not found
-  if (MPI::rank(mesh.mpi_comm()) != selected_process)
-  {
-    b.apply("add");
-    return;
-  }
-
-  // Create cell
-  const Cell cell(mesh, static_cast<std::size_t>(cell_index));
-
-  // Cell coordinates
+  // Variables for cell information
   std::vector<double> coordinate_dofs;
-  cell.get_coordinate_dofs(coordinate_dofs);
+  ufc::cell ufc_cell;
 
-  // Evaluate all basis functions at the point()
-  dolfin_assert(_function_space0->element());
-
+  // Variables for evaluating basis
   const std::size_t rank = _function_space0->element()->value_rank();
   std::size_t size_basis = 1;
   for (std::size_t i = 0; i < rank; ++i)
     size_basis *= _function_space0->element()->value_dimension(i);
-
   std::size_t dofs_per_cell = _function_space0->element()->space_dimension();
   std::vector<double> basis(size_basis);
   std::vector<double> values(dofs_per_cell);
 
-  ufc::cell ufc_cell;
-  cell.get_cell_data(ufc_cell);
+  // Variables for adding local information to vector
+  double basis_sum;
+  ArrayView<const dolfin::la_index> dofs;
 
-  for (std::size_t i = 0; i < dofs_per_cell; ++i)
+  for (auto & s : _sources)
   {
-    _function_space0->element()->evaluate_basis(i, basis.data(),
-						_p.coordinates(),
-						coordinate_dofs.data(),
-						ufc_cell.orientation);
+    Point& p = s.first;
+    double magnitude = s.second;
+    cell_index = tree->compute_first_entity_collision(p);
 
-    double basis_sum = 0.0;
-    for (const auto& v : basis)
-      basis_sum += v;
-    values[i] = _magnitude*basis_sum;
+    // Check that we found the point on at least one processor
+    num_found = 0;
+    cell_found_on_process = cell_index
+      != std::numeric_limits<unsigned int>::max();
+
+    if (cell_found_on_process)
+      num_found = MPI::sum(mesh.mpi_comm(), 1);
+    else
+      num_found = MPI::sum(mesh.mpi_comm(), 0);
+
+    if (MPI::rank(mesh.mpi_comm()) == 0 && num_found == 0)
+    {
+      dolfin_error("PointSource.cpp",
+		   "apply point source to vector",
+		   "The point is outside of the domain (%s)", p.str().c_str());
+    }
+
+    processes_with_cell =
+      cell_found_on_process ? MPI::rank(mesh.mpi_comm()) : -1;
+    selected_process = MPI::max(mesh.mpi_comm(), processes_with_cell);
+
+    // Return if point not found
+    if (MPI::rank(mesh.mpi_comm()) != selected_process)
+    {
+      b.apply("add");
+      return;
+    }
+
+    // Create cell
+    Cell cell(mesh, static_cast<std::size_t>(cell_index));
+    cell.get_coordinate_dofs(coordinate_dofs);
+
+    // Evaluate all basis functions at the point()
+    cell.get_cell_data(ufc_cell);
+
+    for (std::size_t i = 0; i < dofs_per_cell; ++i)
+    {
+      _function_space0->element()->evaluate_basis(i, basis.data(),
+						  p.coordinates(),
+						  coordinate_dofs.data(),
+						  ufc_cell.orientation);
+
+      basis_sum = 0.0;
+      for (const auto& v : basis)
+	basis_sum += v;
+      values[i] = magnitude*basis_sum;
+    }
+
+    // Compute local-to-global mapping
+
+    dofs = _function_space0->dofmap()->cell_dofs(cell.index());
+
+    // Add values to vector
+    b.add_local(values.data(), dofs_per_cell, dofs.data());
+    b.apply("add");
   }
-
-  // Compute local-to-global mapping
-  dolfin_assert(_function_space0->dofmap());
-  const ArrayView<const dolfin::la_index> dofs
-    = _function_space0->dofmap()->cell_dofs(cell.index());
-
-  // Add values to vector
-  b.add_local(values.data(), dofs_per_cell, dofs.data());
-  b.apply("add");
 }
 //-----------------------------------------------------------------------------
 void PointSource::apply(GenericMatrix& A)
@@ -228,7 +254,6 @@ void PointSource::apply(GenericMatrix& A)
   ArrayView<const dolfin::la_index> dofs0;
   ArrayView<const dolfin::la_index> dofs1;
 
-  info("Starting the for loop");
   for (auto & s : _sources)
   {
     Point& p = s.first;

@@ -43,13 +43,17 @@ namespace dolfin
     PointSource(std::shared_ptr<const FunctionSpace> V, const Point& p,
                 double magnitude=1.0);
 
+    /// Create point sources at given points of given magnitudes
+    PointSource(std::shared_ptr<const FunctionSpace> V,
+	        const std::vector<std::pair<const Point*, double> > sources);
+
     /// Create point source at given point of given magnitude
     PointSource(std::shared_ptr<const FunctionSpace> V0,
                 std::shared_ptr<const FunctionSpace> V1,
                 const Point& p,
                 double magnitude=1.0);
 
-    /// Create point source at given point of given magnitude
+    /// Create point sources at given points of given magnitudes
     PointSource(std::shared_ptr<const FunctionSpace> V0,
 		std::shared_ptr<const FunctionSpace> V1,
 	        const std::vector<std::pair<const Point*, double> > sources);
@@ -82,12 +86,6 @@ namespace dolfin
     // The function space
     std::shared_ptr<const FunctionSpace> _function_space0;
     std::shared_ptr<const FunctionSpace> _function_space1;
-
-    // The point
-    Point _p;
-
-    // Magnitude
-    double _magnitude;
 
     // Source term - pair of points and magnitude
     std::vector<std::pair<Point, double> > _sources;
