@@ -62,7 +62,7 @@ Mesh::Mesh() : Mesh(MPI_COMM_WORLD)
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm) : Variable("mesh", "DOLFIN mesh"),
                             Hierarchical<Mesh>(*this), _ordered(false),
-                            _mpi_comm(comm), _ghost_mode("unknown")
+                            _mpi_comm(comm), _ghost_mode("none")
 {
   // Do nothing
 }
@@ -70,7 +70,7 @@ Mesh::Mesh(MPI_Comm comm) : Variable("mesh", "DOLFIN mesh"),
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                Hierarchical<Mesh>(*this), _ordered(false),
                                _mpi_comm(mesh.mpi_comm()),
-                               _ghost_mode("unknown")
+                               _ghost_mode("none")
 {
   *this = mesh;
 }
@@ -82,7 +82,7 @@ Mesh::Mesh(std::string filename) : Mesh(MPI_COMM_WORLD, filename)
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, std::string filename)
   : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this), _ordered(false),
-  _mpi_comm(comm), _ghost_mode("unknown")
+  _mpi_comm(comm), _ghost_mode("none")
 {
   File file(_mpi_comm, filename);
   file >> *this;
@@ -90,7 +90,7 @@ Mesh::Mesh(MPI_Comm comm, std::string filename)
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
   : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
-  _ordered(false), _mpi_comm(comm), _ghost_mode("unknown")
+  _ordered(false), _mpi_comm(comm), _ghost_mode("none")
 {
   const std::string ghost_mode = parameters["ghost_mode"];
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data, ghost_mode);
@@ -472,7 +472,9 @@ void Mesh::init_cell_orientations(const Expression& global_normal)
 //-----------------------------------------------------------------------------
 std::string Mesh::ghost_mode() const
 {
-  dolfin_assert(_ghost_mode != "unknown");
+  dolfin_assert(_ghost_mode == "none"
+                || _ghost_mode == "shared_vertex"
+                || _ghost_mode == "shared_facet");
   return _ghost_mode;
 }
 //-----------------------------------------------------------------------------
