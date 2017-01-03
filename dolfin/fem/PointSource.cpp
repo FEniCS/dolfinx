@@ -115,8 +115,8 @@ void PointSource::apply(GenericVector& b)
   // Variables for checking that cell is unique
   int num_found;
   bool cell_found_on_process;
-  int processes_with_cell;
-  int selected_process;
+  unsigned int processes_with_cell;
+  unsigned int selected_process;
 
   // Variables for cell information
   std::vector<double> coordinate_dofs;
@@ -229,8 +229,8 @@ void PointSource::apply(GenericMatrix& A)
   // Variables for checking point is unique in cell
   int num_found;
   bool cell_found_on_process;
-  int processes_with_cell;
-  int selected_process;
+  unsigned int processes_with_cell;
+  unsigned int selected_process;
 
   // Variables for cell information
   std::vector<double> coordinate_dofs;

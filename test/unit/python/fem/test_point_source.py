@@ -187,7 +187,7 @@ def test_pointsource_matrix_2():
         mesh = data[dim][0]
         point = data[dim][1]
         V1 = FunctionSpace(mesh, "CG", 1)
-        V2 = FunctionSpace(mesh, "CG", 2)
+        V2 = FunctionSpace(mesh, "CG", 1)
 
         u, v = TrialFunction(V1), TestFunction(V2)
         w = Function(V1)
@@ -201,7 +201,7 @@ def test_pointsource_matrix_2():
 
         # Checks point source is added to correct part of the array
         A.get_diagonal(w.vector())
-        v2d = vertex_to_dof_map(V)
+        v2d = vertex_to_dof_map(V1)
         for v in vertices(mesh):
             if near(v.midpoint().distance(point), 0.0):
                 ind = v2d[v.index()]
