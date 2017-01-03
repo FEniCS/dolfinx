@@ -205,7 +205,6 @@ std::vector<dolfin::la_index> DofMap::entity_closure_dofs(
   // Get some dimensions
   const std::size_t top_dim = mesh.topology().dim();
   const std::size_t dofs_per_entity = num_entity_closure_dofs(entity_dim);
-  const std::size_t num_mesh_entities = mesh.num_entities(entity_dim);
 
   // Initialize entity to cell connections
   mesh.init(entity_dim, top_dim);
