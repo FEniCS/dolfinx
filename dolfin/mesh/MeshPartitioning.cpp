@@ -81,13 +81,17 @@ template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
 {
+  const std::string ghost_mode = parameters["ghost_mode"];
+
+  // Store used ghost mode
+  mesh._ghost_mode = ghost_mode;
+
   if (MPI::size(mesh.mpi_comm()) > 1)
   {
     // Create and distribute local mesh data
     LocalMeshData local_mesh_data(mesh);
 
     // Build distributed mesh
-    const std::string ghost_mode = parameters["ghost_mode"];
     build_distributed_mesh(mesh, local_mesh_data, ghost_mode);
   }
 }
@@ -96,6 +100,9 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
                             const std::vector<int>& cell_destinations,
                             const std::string ghost_mode)
 {
+  // Store used ghost mode
+  mesh._ghost_mode = ghost_mode;
+
   if (MPI::size(mesh.mpi_comm()) > 1)
   {
     // Create and distribute local mesh data
@@ -116,6 +123,9 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   log(PROGRESS, "Building distributed mesh");
 
   Timer timer("Build distributed mesh from local mesh data");
+
+  // Store used ghost mode
+  mesh._ghost_mode = ghost_mode;
 
   // Get mesh partitioner
   const std::string partitioner = parameters["mesh_partitioner"];
@@ -210,6 +220,8 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   log(PROGRESS, "Distribute mesh (cell and vertices)");
 
   Timer timer("Distribute mesh (cells and vertices)");
+
+  dolfin_assert(mesh._ghost_mode == ghost_mode);
 
   // Topological dimension
   const int tdim = mesh_data.topology.dim;

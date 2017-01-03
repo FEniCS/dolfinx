@@ -327,6 +327,13 @@ void Assembler::assemble_interior_facets(
   dolfin_assert(a.mesh());
   const Mesh& mesh = *(a.mesh());
 
+  // Sanity check of ghost mode (proper check in AssemblerBase::check)
+  if (MPI::size(mesh.mpi_comm()) > 1)
+  {
+    dolfin_assert(mesh.ghost_mode() == "shared_vertex"
+                  || mesh.ghost_mode() == "shared_facet");
+  }
+
   // MPI rank
   const int my_mpi_rank = MPI::rank(mesh.mpi_comm());
 

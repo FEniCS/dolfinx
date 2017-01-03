@@ -160,6 +160,22 @@ void AssemblerBase::check(const Form& a)
   const std::vector<std::shared_ptr<const GenericFunction>>
     coefficients = a.coefficients();
 
+  // Check ghost mode for interior facet integrals in parallel
+  if (a.ufc_form()->has_interior_facet_integrals()
+      && MPI::size(mesh.mpi_comm()) > 1)
+  {
+    std::string ghost_mode = mesh.ghost_mode();
+    if (!(ghost_mode == "shared_vertex" || ghost_mode == "shared_facet"))
+    {
+      dolfin_error("AssemblerBase.cpp",
+                   "assemble form",
+                   "Incorrect mesh ghost mode \"%s\" (expected "
+                   "\"shared_vertex\" or \"shared_facet\" for "
+                   "interior facet intergrals in parallel)",
+                   ghost_mode.c_str());
+    }
+  }
+
   // Check that we get the correct number of coefficients
   if (coefficients.size() != a.num_coefficients())
   {

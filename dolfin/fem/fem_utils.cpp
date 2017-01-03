@@ -286,6 +286,8 @@ Mesh dolfin::create_mesh(Function& coordinates)
   const Mesh& mesh0 = *(coordinates.function_space()->mesh());
   Mesh mesh1(mesh0.mpi_comm());
 
+  // FIXME: Share this code with Mesh assignment operaror; a need
+  //        to duplicate its code here is not maintainable
   // Assign all data except geometry
   mesh1._topology = mesh0._topology;
   mesh1._domains = mesh0._domains;
@@ -296,6 +298,7 @@ Mesh dolfin::create_mesh(Function& coordinates)
     mesh1._cell_type.reset();
   mesh1._ordered = mesh0._ordered;
   mesh1._cell_orientations = mesh0._cell_orientations;
+  mesh1._ghost_mode = mesh0._ghost_mode;
 
   // Rename
   mesh1.rename(mesh0.name(), mesh0.label());
