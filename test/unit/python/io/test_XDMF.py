@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 # Copyright (C) 2012 Garth N. Wells
 #
 # This file is part of DOLFIN.
@@ -22,7 +20,7 @@ import os
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 
-# Currently supported XDMF file encoding
+# Supported XDMF file encoding
 encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)
 
 # Data types supported in templating
