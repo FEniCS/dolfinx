@@ -912,20 +912,25 @@ void MeshPartitioning::distribute_vertices(
 
   // Get number of processes
   const int mpi_size = MPI::size(mpi_comm);
+  const int mpi_rank = MPI::rank(mpi_comm);
 
   // Get geometric dimension
   const int gdim = mesh_data.geometry.dim;
 
   // Compute where (process number) the vertices we need are located
-  // using MPI::index_owner()
+  std::vector<std::size_t> ranges(mpi_size);
+  MPI::all_gather(mpi_comm, mesh_data.geometry.vertex_indices.size(), ranges);
+  for (unsigned int i = 1; i != ranges.size(); ++i)
+    ranges[i] += ranges[i - 1];
+  ranges.insert(ranges.begin(), 0);
+
   std::vector<std::vector<std::size_t>> send_vertex_indices(mpi_size);
-  for (auto required_vertex = vertex_indices.begin();
-       required_vertex != vertex_indices.end(); ++required_vertex)
+  for (const auto& required_vertex : vertex_indices)
   {
-    // Get process that has required vertex
-    const std::size_t location = MPI::index_owner(mpi_comm, *required_vertex,
-                                                  mesh_data.geometry.num_global_vertices);
-    send_vertex_indices[location].push_back(*required_vertex);
+    const int location
+      = std::upper_bound(ranges.begin(), ranges.end(), required_vertex)
+      - ranges.begin() - 1;
+    send_vertex_indices[location].push_back(required_vertex);
   }
 
   // Convenience reference
@@ -944,8 +949,7 @@ void MeshPartitioning::distribute_vertices(
 
   // Distribute vertex coordinates
   std::vector<std::vector<double>> send_vertex_coordinates(mpi_size);
-  const std::pair<std::size_t, std::size_t> local_vertex_range
-    = MPI::local_range(mpi_comm, mesh_data.geometry.num_global_vertices);
+  const std::pair<std::size_t, std::size_t> local_vertex_range = {ranges[mpi_rank], ranges[mpi_rank + 1]};
   for (int p = 0; p < mpi_size; ++p)
   {
     send_vertex_coordinates[p].reserve(received_vertex_indices[p].size()*gdim);
