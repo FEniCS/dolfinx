@@ -42,6 +42,10 @@ namespace dolfin
   /// Return sizeof the dolfin::la_index type
   std::size_t sizeof_la_index();
 
+  /// Return true if DOLFIN is compiled in debugging mode,
+  /// i.e., with assertions on
+  bool has_debug();
+
   /// Return true if DOLFIN is compiled with OpenMP
   bool has_openmp();
 
