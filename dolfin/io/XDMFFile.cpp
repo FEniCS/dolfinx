@@ -1263,7 +1263,7 @@ XDMFFile::build_local_mesh_data(LocalMeshData& local_mesh_data,
   dolfin_assert(topology_dataset_node);
   const auto topology_data = get_dataset<std::int64_t>(local_mesh_data.mpi_comm(),
                                                        topology_dataset_node,
-                                                      relative_path);
+                                                       relative_path);
   dolfin_assert(topology_data.size() % num_vertices_per_cell == 0);
 
   // Wrap topology data as multi-dimensional array
@@ -1803,7 +1803,8 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
 
   const std::string format = format_attr.as_string();
   std::vector<T> data_vector;
-  if (format == "XML")
+  // Only read ASCII on process 0
+  if (format == "XML" and MPI::rank(comm) == 0)
   {
     // Read data and trim any leading/trailing whitespace
     pugi::xml_node data_node = dataset_node.first_child();
