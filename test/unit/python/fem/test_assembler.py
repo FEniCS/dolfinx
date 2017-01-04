@@ -174,8 +174,9 @@ def test_ghost_mode_handling(pushpop_parameters):
         assert numpy.isclose(assemble(_form()), 1.0)
     else:
         form = _form()
-        with pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeError) as excinfo:
             assemble(form)
+        assert "Incorrect mesh ghost mode" in excinfo.value.message
 
     # Ghosted meshes work everytime
     parameters["ghost_mode"] = "shared_vertex"
