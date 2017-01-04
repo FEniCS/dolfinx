@@ -34,17 +34,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TpetraVector::TpetraVector(MPI_Comm comm)
+TpetraVector::TpetraVector(MPI_Comm comm) : _mpi_comm(comm)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-TpetraVector::TpetraVector(MPI_Comm comm, std::size_t N)
+TpetraVector::TpetraVector(MPI_Comm comm, std::size_t N) : _mpi_comm(comm)
 {
-  init(comm, N);
+  init(N);
 }
 //-----------------------------------------------------------------------------
-TpetraVector::TpetraVector(const TpetraVector& v)
+TpetraVector::TpetraVector(const TpetraVector& v) : _mpi_comm(v._mpi_comm)
 {
   if (v._x.is_null())
     return;
@@ -109,11 +109,7 @@ void TpetraVector::apply(std::string mode)
 //-----------------------------------------------------------------------------
 MPI_Comm TpetraVector::mpi_comm() const
 {
-  // Unwrap MPI_Comm
-  const Teuchos::RCP<const Teuchos::MpiComm<int>> _mpi_comm
-    = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(_x->getMap()->getComm());
-
-  return *(_mpi_comm->getRawMpiComm());
+  return _mpi_comm;
 }
 //-----------------------------------------------------------------------------
 std::string TpetraVector::str(bool verbose) const
@@ -137,15 +133,15 @@ std::shared_ptr<GenericVector> TpetraVector::copy() const
 //-----------------------------------------------------------------------------
 void TpetraVector::init(std::size_t N)
 {
-  const std::pair<std::int64_t, std::int64_t> range = MPI::local_range(comm, N);
+  const std::pair<std::int64_t, std::int64_t> range = MPI::local_range(_mpi_comm, N);
   std::vector<dolfin::la_index> local_to_global_map;
-  _init(comm, range, local_to_global_map);
+  _init(range, local_to_global_map);
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::init(std::pair<std::size_t, std::size_t> range)
 {
   std::vector<dolfin::la_index> local_to_global_map;
-  _init(comm, range, local_to_global_map);
+  _init(range, local_to_global_map);
 }
 //-----------------------------------------------------------------------------
 void TpetraVector::init(std::pair<std::size_t, std::size_t> range,
@@ -154,7 +150,7 @@ void TpetraVector::init(std::pair<std::size_t, std::size_t> range,
 {
   std::vector<dolfin::la_index> _global_map(local_to_global_map.begin(),
                                             local_to_global_map.end());
-  _init(comm, range, _global_map);
+  _init(range, _global_map);
 }
 //-----------------------------------------------------------------------------
 bool TpetraVector::empty() const
@@ -360,21 +356,21 @@ void TpetraVector::gather(GenericVector& y,
 {
   dolfin_assert(!_x.is_null());
 
-  // FIXME: not working?
+  // FIXME: not working
 
   TpetraVector& _y = as_type<TpetraVector>(y);
 
   const std::pair<std::size_t, std::size_t> range(0, indices.size());
 
   if (_y._x.is_null())
-    _y._init(MPI_COMM_SELF, range, indices);
-  else if (y.size() != indices.size() || MPI::size(y.mpi_comm()) != 0)
+    _y._init(range, indices);
+
+  if (y.size() != indices.size() or MPI::size(y.mpi_comm()) != 1)
   {
     dolfin_error("TpetraVector.cpp",
                  "gather vector entries",
                  "Cannot re-initialize gather vector. Must be empty, or have correct size and be a local vector");
   }
-
 
   Tpetra::Export<vector_type::local_ordinal_type,
                  vector_type::global_ordinal_type, vector_type::node_type>
@@ -494,7 +490,7 @@ double TpetraVector::sum(const Array<std::size_t>& rows) const
 {
   dolfin_assert(!_x.is_null());
 
-  // FIXME - not working in parallel
+  // FIXME - not working in parallel?
 
   Teuchos::ArrayRCP<const double> arr = _x->getData(0);
 
@@ -626,10 +622,10 @@ GenericLinearAlgebraFactory& TpetraVector::factory() const
 }
 //-----------------------------------------------------------------------------
 void
-TpetraVector::_init(MPI_Comm comm,
-                    std::pair<std::int64_t, std::int64_t> local_range,
+TpetraVector::_init(std::pair<std::int64_t, std::int64_t> local_range,
                     const std::vector<dolfin::la_index>& local_to_global_map)
 {
+
   if (!_x.is_null())
   {
     dolfin_error("TpetraVector.h",
@@ -638,11 +634,11 @@ TpetraVector::_init(MPI_Comm comm,
   }
 
   // Make a Trilinos version of the MPI Comm
-  Teuchos::RCP<const Teuchos::Comm<int>> _comm(new Teuchos::MpiComm<int>(comm));
+  Teuchos::RCP<const Teuchos::Comm<int>> _comm(new Teuchos::MpiComm<int>(_mpi_comm));
 
   // Mapping across processes
   std::size_t Nlocal = local_range.second - local_range.first;
-  std::size_t N = MPI::sum(comm, Nlocal);
+  std::size_t N = MPI::sum(_mpi_comm, Nlocal);
 
   Teuchos::RCP<map_type> _map(new map_type(N, Nlocal, 0, _comm));
   Teuchos::RCP<map_type> _ghost_map;
