@@ -20,6 +20,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/la/GenericVector.h>
 
 #include "fem_utils.h"
@@ -105,8 +106,9 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
       = dofmap.cell_dofs(cell.index());
 
     // Tabulate local to local map of dofs on local vertex
-    dofmap.tabulate_entity_dofs(local_to_local_map, 0,
-				local_vertex_ind);
+    dofmap.tabulate_entity_dofs(
+                local_to_local_map,
+				0, local_vertex_ind);
 
     // Fill local dofs for the vertex
     for (std::size_t local_dof = 0; local_dof < dofs_per_vertex; local_dof++)

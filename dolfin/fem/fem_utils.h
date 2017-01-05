@@ -27,7 +27,7 @@ namespace dolfin
 
   class FunctionSpace;
 
-  /// Return a map between dofs indices and vertex indices
+  /// Return a map between dof indices and vertex indices
   ///
   /// Only works for FunctionSpace with dofs exclusively on vertices.
   /// For mixed FunctionSpaces vertex index is offset with the number
@@ -39,7 +39,7 @@ namespace dolfin
   ///
   /// *Arguments*
   ///     space (_FunctionSpace_)
-  ///         The FunctionSpace for what the dof to vertex map should
+  ///         The FunctionSpace for which the dof to vertex map should
   ///         be computed for
   ///
   /// *Returns*
@@ -47,7 +47,7 @@ namespace dolfin
   ///         The dof to vertex map
   std::vector<std::size_t> dof_to_vertex_map(const FunctionSpace& space);
 
-  /// Return a map between vertex indices and dofs indices
+  /// Return a map between vertex indices and dof indices
   ///
   /// Only works for FunctionSpace with dofs exclusively on vertices.
   /// For mixed FunctionSpaces dof index is offset with the number of
@@ -55,7 +55,7 @@ namespace dolfin
   ///
   /// *Arguments*
   ///     space (_FunctionSpace_)
-  ///         The FunctionSpace for what the vertex to dof map should
+  ///         The FunctionSpace for which the vertex to dof map should
   ///         be computed for
   ///
   /// *Returns*

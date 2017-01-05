@@ -168,7 +168,7 @@ class TestVectorForAnyBackend:
 
     def test_gather(self, any_backend):
         # Gather not implemented in Eigen
-        if any_backend == "Eigen":
+        if any_backend == "Eigen" or any_backend == "Tpetra":
             return
 
         # Create distributed vector of local size 1

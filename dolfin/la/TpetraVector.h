@@ -257,8 +257,11 @@ namespace dolfin
 
   private:
 
+    // MPI Communicator
+    MPI_Comm _mpi_comm;
+
     // Initialise Tpetra vector
-    void _init(MPI_Comm comm, std::pair<std::int64_t, std::int64_t> range,
+    void _init(std::pair<std::int64_t, std::int64_t> range,
                const std::vector<dolfin::la_index>& local_to_global);
 
     // Tpetra multivector - actually a view into the ghosted vector,
