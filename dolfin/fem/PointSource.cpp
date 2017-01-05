@@ -139,6 +139,7 @@ void PointSource::apply(GenericVector& b)
   {
     Point& p = s.first;
     double magnitude = s.second;
+
     cell_index = tree->compute_first_entity_collision(p);
 
     // Check that we found the point on at least one processor
@@ -166,36 +167,38 @@ void PointSource::apply(GenericVector& b)
     if (MPI::rank(mesh.mpi_comm()) != selected_process)
     {
       b.apply("add");
-      return;
     }
 
-    // Create cell
-    Cell cell(mesh, static_cast<std::size_t>(cell_index));
-    cell.get_coordinate_dofs(coordinate_dofs);
-
-    // Evaluate all basis functions at the point()
-    cell.get_cell_data(ufc_cell);
-
-    for (std::size_t i = 0; i < dofs_per_cell; ++i)
+    else
     {
-      _function_space0->element()->evaluate_basis(i, basis.data(),
-						  p.coordinates(),
-						  coordinate_dofs.data(),
-						  ufc_cell.orientation);
+      // Create cell
+      Cell cell(mesh, static_cast<std::size_t>(cell_index));
+      cell.get_coordinate_dofs(coordinate_dofs);
 
-      basis_sum = 0.0;
-      for (const auto& v : basis)
-	basis_sum += v;
-      values[i] = magnitude*basis_sum;
+      // Evaluate all basis functions at the point()
+      cell.get_cell_data(ufc_cell);
+
+      for (std::size_t i = 0; i < dofs_per_cell; ++i)
+      {
+	_function_space0->element()->evaluate_basis(i, basis.data(),
+						    p.coordinates(),
+						    coordinate_dofs.data(),
+						    ufc_cell.orientation);
+
+	basis_sum = 0.0;
+	for (const auto& v : basis)
+	  basis_sum += v;
+	values[i] = magnitude*basis_sum;
+      }
+
+      // Compute local-to-global mapping
+
+      dofs = _function_space0->dofmap()->cell_dofs(cell.index());
+
+      // Add values to vector
+      b.add_local(values.data(), dofs_per_cell, dofs.data());
+      b.apply("add");
     }
-
-    // Compute local-to-global mapping
-
-    dofs = _function_space0->dofmap()->cell_dofs(cell.index());
-
-    // Add values to vector
-    b.add_local(values.data(), dofs_per_cell, dofs.data());
-    b.apply("add");
   }
 }
 //-----------------------------------------------------------------------------
@@ -253,11 +256,17 @@ void PointSource::apply(GenericMatrix& A)
   // Variables for adding local data to matrix
   ArrayView<const dolfin::la_index> dofs0;
   ArrayView<const dolfin::la_index> dofs1;
+  MPI::barrier(mesh->mpi_comm());
 
+  int i = 0;
   for (auto & s : _sources)
   {
     Point& p = s.first;
     double magnitude = s.second;
+
+    info("New Point: " + std::to_string(i) + std::to_string(p[0]));
+    MPI::barrier(mesh->mpi_comm());
+
     cell_index = tree->compute_first_entity_collision(p);
 
     // Check that we found the point on at least one processor
@@ -285,58 +294,53 @@ void PointSource::apply(GenericMatrix& A)
     if (MPI::rank(mesh->mpi_comm()) != selected_process)
     {
       A.apply("add");
-      return;
     }
 
-    // Create cell
-    Cell cell(*mesh, static_cast<std::size_t>(cell_index));
-
-    // Cell information
-    cell.get_coordinate_dofs(coordinate_dofs);
-    cell.get_cell_data(ufc_cell);
-
-    for (std::size_t i = 0; i < dofs_per_cell0; ++i)
+    else
     {
-      V0->element()->evaluate_basis(i, basis0.data(),
-				    p.coordinates(),
-				    coordinate_dofs.data(),
-				    ufc_cell.orientation);
-      for (std::size_t j = 0; j < dofs_per_cell0; ++j)
+      // Create cell
+      Cell cell(*mesh, static_cast<std::size_t>(cell_index));
+
+      // Cell information
+      cell.get_coordinate_dofs(coordinate_dofs);
+      cell.get_cell_data(ufc_cell);
+
+      for (std::size_t i = 0; i < dofs_per_cell0; ++i)
       {
-	V1->element()->evaluate_basis(j, basis1.data(),
+	V0->element()->evaluate_basis(i, basis0.data(),
 				      p.coordinates(),
 				      coordinate_dofs.data(),
 				      ufc_cell.orientation);
+	for (std::size_t j = 0; j < dofs_per_cell0; ++j)
+	{
+	  V1->element()->evaluate_basis(j, basis1.data(),
+					p.coordinates(),
+					coordinate_dofs.data(),
+					ufc_cell.orientation);
 
-	basis_sum0 = 0.0;
-	basis_sum1 = 0.0;
-	for (const auto& v : basis0)
-	  basis_sum0 += v;
-	for (const auto& v : basis1)
-	  basis_sum1 += v;
+	  basis_sum0 = 0.0;
+	  basis_sum1 = 0.0;
+	  for (const auto& v : basis0)
+	    basis_sum0 += v;
+	  for (const auto& v : basis1)
+	    basis_sum1 += v;
 
-	values[i][j] = magnitude*basis_sum0*basis_sum1;
+	  values[i][j] = magnitude*basis_sum0*basis_sum1;
+	}
       }
+
+      // Compute local-to-global mapping
+      dofs0 = V0->dofmap()->cell_dofs(cell.index());
+      dofs1 = V1->dofmap()->cell_dofs(cell.index());
+
+      // Add values to matrix
+      A.add_local(values.data(),
+		  dofs_per_cell0, dofs0.data(),
+		  dofs_per_cell1, dofs1.data());
+
+      A.apply("add");
+      i+=1;
     }
-
-    // Compute local-to-global mapping
-    dofs0 = V0->dofmap()->cell_dofs(cell.index());
-    dofs1 = V1->dofmap()->cell_dofs(cell.index());
-
-    info("here");
-    info("dofs_per_cell0 " + std::to_string(dofs_per_cell0));
-    info("dofs data 0 " + std::to_string(dofs0.size()));
-    info("dofs_per_cell1 " + std::to_string(dofs_per_cell1));
-    info("dofs data 1 " + std::to_string(dofs1.size()));
-    info("values " + std::to_string(values.size()));
-
-    // Add values to matrix
-    A.add_local(values.data(),
-		dofs_per_cell0, dofs0.data(),
-		dofs_per_cell1, dofs1.data());
-
-    info("here2");
-    A.apply("add");
   }
 }
 //-----------------------------------------------------------------------------

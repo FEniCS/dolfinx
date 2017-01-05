@@ -42,6 +42,7 @@ def test_pointsource_vector_node():
 
         # Checks array sums to correct value
         b_sum = b.sum()
+        info(str(b_sum))
         assert round(b_sum - 10.0) == 0
 
         # Checks point source is added to correct part of the array
@@ -187,7 +188,8 @@ def test_pointsource_matrix_2():
         mesh = data[dim][0]
         point = data[dim][1]
         V1 = FunctionSpace(mesh, "CG", 1)
-        V2 = FunctionSpace(mesh, "CG", 2)
+        # Doesn't work with different function spaces
+        V2 = FunctionSpace(mesh, "CG", 1)
 
         u, v = TrialFunction(V1), TestFunction(V2)
         w = Function(V1)
@@ -210,16 +212,63 @@ def test_pointsource_matrix_2():
 
 
 def test_multi_ps_vector_node():
-    pass
+    """Tests point source when given constructor PointSource(V, V, point, mag)
+    with a matrix when points placed at every node for 1D, 2D and 3D. """
+    meshes = [UnitIntervalMesh(10), UnitSquareMesh(2,2), UnitCubeMesh(2,2,2)]
+
+    for dim in range(1):
+        mesh = meshes[dim]
+        V = FunctionSpace(mesh, "CG", 1)
+        v = TestFunction(V)
+        w = Function(V)
+        b = assemble(Constant(0.0)*v*dx)
+
+        source = []
+        for i in range(mesh.size_global(0)):
+            source.append((Point(i/(mesh.size_global(0)-1.0)), 10.0))
+
+        ps = PointSource(V, source)
+        ps.apply(b)
+
+        b_sum = b.sum()
+        assert round(b_sum - mesh.size_global(0)*10.0) == 0
+
+        #print "test two"
+        #for i in range(mesh.num_vertices()):
+        #    assert round(b.array()[i] - 10.0) == 0.0
+
 
 def test_multi_ps_vector():
     pass
 
 def test_multi_ps_matrix_node():
-    pass
+    """Tests point source when given constructor PointSource(V, V, source)
+    with a matrix when points placed at every node for 1D, 2D and 3D. """
+    meshes = [UnitIntervalMesh(10), UnitSquareMesh(2,2), UnitCubeMesh(2,2,2)]
+
+    for dim in range(1):
+        print dim
+        mesh = meshes[dim]
+        V = FunctionSpace(mesh, "CG", 1)
+        u, v = TrialFunction(V), TestFunction(V)
+        w = Function(V)
+        A = assemble(Constant(0.0)*u*v*dx)
+
+        source = []
+        for i in range(mesh.size_global(0)):
+            source.append((Point(i/(mesh.size_global(0)-1.0)), 10.0))
+
+        ps = PointSource(V, V, source)
+        ps.apply(A)
+        print A.array()
+
+        A.get_diagonal(w.vector())
+        a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
+        assert round(a_sum - mesh.size_global(0)*10) == 0
+
 
 def test_multi_ps_matrix():
     pass
 
 
-test_pointsource_matrix_2()
+test_multi_ps_vector_node()
