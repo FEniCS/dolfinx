@@ -264,7 +264,6 @@ void PointSource::apply(GenericMatrix& A)
     Point& p = s.first;
     double magnitude = s.second;
 
-    info("New Point: " + std::to_string(i) + std::to_string(p[0]));
     MPI::barrier(mesh->mpi_comm());
 
     cell_index = tree->compute_first_entity_collision(p);
