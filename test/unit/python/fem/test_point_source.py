@@ -266,9 +266,39 @@ def test_multi_ps_matrix_node():
         a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
         assert round(a_sum - mesh.size_global(0)*10) == 0
 
+def test_multi_ps_matrix_node_vector():
+    """Tests point source when given constructor PointSource(V, V, source)
+    with a matrix when points placed at every node for 1D, 2D and 3D. """
+    meshes = [UnitIntervalMesh(1), UnitSquareMesh(2,2), UnitCubeMesh(1,1,1)]
+
+    for dim in range(1):
+        print dim
+        dim=0
+        mesh = meshes[dim]
+        V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
+        #V = FunctionSpace(mesh, "CG", 1)
+        u, v = TrialFunction(V), TestFunction(V)
+        w = Function(V)
+        A = assemble(Constant(0.0)*dot(u, v)*dx)
+        #A = assemble(Constant(0.0)*u*v*dx)
+
+        point = Point(0.0)
+        source = [(point, 10.0), (Point(1.0), 10.0)]
+        #source = []
+        #for i in range(mesh.size_global(0)):
+        #    source.append((Point(i/(mesh.size_global(0)-1.0)), 10.0))
+
+        ps = PointSource(V, V, source)
+        ps.apply(A)
+        print A.array()
+
+        A.get_diagonal(w.vector())
+        a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
+        #assert round(a_sum - mesh.size_global(0)*10) == 0
+        info(str(a_sum))
 
 def test_multi_ps_matrix():
     pass
 
 
-test_multi_ps_vector_node()
+test_multi_ps_matrix_node_vector()
