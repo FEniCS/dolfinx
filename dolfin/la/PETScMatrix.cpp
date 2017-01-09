@@ -41,13 +41,17 @@
 #include "VectorSpaceBasis.h"
 #include "PETScMatrix.h"
 
+
+// Ceiling division of nonnegative integers
+#define dolfin_ceil_div(x, y) (x/y + int(x%y != 0))
+
+
 using namespace dolfin;
 
 const std::map<std::string, NormType> PETScMatrix::norm_types
 = { {"l1",        NORM_1},
     {"linf",      NORM_INFINITY},
     {"frobenius", NORM_FROBENIUS} };
-
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix() : PETScMatrix(MPI_COMM_WORLD)
 {
@@ -143,9 +147,9 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.size()/block_size);
 
   for (std::size_t i = 0; i < _num_nonzeros_diagonal.size(); ++i)
-    _num_nonzeros_diagonal[i] = num_nonzeros_diagonal[block_size*i]/block_size;
+    _num_nonzeros_diagonal[i] = dolfin_ceil_div(num_nonzeros_diagonal[block_size*i], block_size);
   for (std::size_t i = 0; i < _num_nonzeros_off_diagonal.size(); ++i)
-    _num_nonzeros_off_diagonal[i] = num_nonzeros_off_diagonal[block_size*i]/block_size;
+    _num_nonzeros_off_diagonal[i] = dolfin_ceil_div(num_nonzeros_off_diagonal[block_size*i], block_size);
 
   // Allocate space (using data from sparsity pattern)
   ierr = MatXAIJSetPreallocation(_matA, block_size,

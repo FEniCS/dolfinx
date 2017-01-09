@@ -113,7 +113,7 @@ def test_arbitrary_eval(mesh):
     assert round(u3 - u5, 4) == 0
 
     if has_petsc():
-        PETScOptions.set("mat_mumps_icntl_14", 20)
+        PETScOptions.clear("mat_mumps_icntl_14")
 
 
 def test_ufl_eval():

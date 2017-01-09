@@ -115,8 +115,8 @@ class TestVectorForAnyBackend:
     def test_init_range(self, any_backend):
         n = 301
         local_range = MPI.local_range(mpi_comm_world(), n)
-        v0 = Vector()
-        v0.init(mpi_comm_world(), local_range)
+        v0 = Vector(mpi_comm_world())
+        v0.init(local_range)
         assert v0.local_range() == local_range
 
     def test_size(self, any_backend):
@@ -127,8 +127,8 @@ class TestVectorForAnyBackend:
     def test_local_size(self, any_backend):
         n = 301
         local_range = MPI.local_range(mpi_comm_world(), n)
-        v0 = Vector()
-        v0.init(mpi_comm_world(), local_range)
+        v0 = Vector(mpi_comm_world())
+        v0.init(local_range)
         assert v0.local_size() == local_range[1] - local_range[0]
 
     def test_owns_index(self, any_backend):
@@ -168,13 +168,13 @@ class TestVectorForAnyBackend:
 
     def test_gather(self, any_backend):
         # Gather not implemented in Eigen
-        if any_backend == "Eigen":
+        if any_backend == "Eigen" or any_backend == "Tpetra":
             return
 
         # Create distributed vector of local size 1
         x = DefaultFactory().create_vector(mpi_comm_world())
         r = MPI.rank(x.mpi_comm())
-        x.init(x.mpi_comm(), (r, r+1))
+        x.init((r, r+1))
 
         # Create local vector
         y = DefaultFactory().create_vector(mpi_comm_self())
@@ -223,7 +223,7 @@ class TestVectorForAnyBackend:
 
         # Check that gather vector of wrong size is not accepted
         z = DefaultFactory().create_vector(mpi_comm_self())
-        z.init(z.mpi_comm(), 3)
+        z.init(3)
         with pytest.raises(RuntimeError):
             x.gather(z, numpy.array([0], dtype=la_index_dtype()))
 
@@ -377,10 +377,10 @@ class TestVectorForAnyBackend:
             else:
                 local_range1 = (local_range0[0] + 1, local_range0[1] + 1)
 
-            v0 = Vector()
-            v0.init(mpi_comm_world(), local_range0)
-            v1 = Vector()
-            v1.init(mpi_comm_world(), local_range1)
+            v0 = Vector(mpi_comm_world())
+            v0.init(local_range0)
+            v1 = Vector(mpi_comm_world())
+            v1.init(local_range1)
             assert v0.size() == v1.size()
 
             def wrong_assignment(v0, v1):

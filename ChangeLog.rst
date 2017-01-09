@@ -4,7 +4,10 @@ Change log
 dev
 ---
 
-- 
+- Remove MPI communicator as argument in GenericVector::init functions
+  (communicator should be passed via constructor)
+- Remove ``Function::operator[+-*/]`` to prevent memory corruption problems
+  (does not affect Python interface)
 
 2016.2.0 [2016-11-30]
 ---------------------
