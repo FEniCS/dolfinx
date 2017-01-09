@@ -141,7 +141,7 @@ void PETScDMCollection::find_exterior_points(MPI_Comm mpi_comm,
 {
   dolfin_assert(send_indices.size()/data_size == send_points.size()/dim);
   const boost::const_multi_array_ref<int, 2> send_indices_arr(send_indices.data(),
-                                                  boost::extents[send_indices.size()/data_size][data_size]);
+                         boost::extents[send_indices.size()/data_size][data_size]);
 
   unsigned int mpi_rank = MPI::rank(mpi_comm);
   unsigned int mpi_size = MPI::size(mpi_comm);
@@ -294,7 +294,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
       }
     }
   }
-  // number of dofs per cell for the finite element.
+
+  // Number of dofs per cell for the finite element.
   std::size_t eldim = el->space_dimension();
   // Number of dofs associated with each fine point
   unsigned int data_size = 1;
@@ -309,20 +310,16 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   // use compute_closest_entity on all processors and find
   // which coarse cell is the closest entity to the fine point amongst all processors.
 
-  // vector containing the ranks of the processors which might contain
-  // a fine point
 
-  // the next vectors we are defining here contain information relative to the
-  // fine points for which a corresponding coarse cell owned by the current
-  // processor was found.
-  // found_ids[i] contains the coarse cell id relative to each fine point
+  // found_ids[i] contains the coarse cell id for each fine point
   std::vector<std::size_t> found_ids;
   found_ids.reserve((std::size_t)M/mpi_size);
-  // found_points[dim*i:dim*i + dim] contains the coordinates of the fine point i
+
+  // found_points[dim*i:dim*(i + 1)] contain the coordinates of the fine point i
   std::vector<double> found_points;
   found_points.reserve((std::size_t)dim*M/mpi_size);
-  // global_row_indices[i] contains the global row indices of the fine point i
-  // global_row_indices[data_size*i:data_size*i + data_size] are the rows associated with
+
+  // global_row_indices[data_size*i:data_size*(i + 1)] are the rows associated with
   // this point
   std::vector<int> global_row_indices;
   global_row_indices.reserve((std::size_t) data_size*M/mpi_size);
@@ -331,12 +328,16 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   std::vector<double> exterior_points;
   std::vector<int> exterior_global_indices;
 
-  // Send out points which are found in remote BBox
+  // 1. Allocate all points on this process to "Bounding Boxes" based on the
+  // global BoundingBoxTree, and send them to those processes. Any points
+  // which fall outside the global BBTree are collected up separately.
+
   std::vector<std::vector<double>> send_found(mpi_size);
   std::vector<std::vector<int>> send_found_global_row_indices(mpi_size);
 
   std::vector<int> proc_list;
   std::vector<unsigned int> found_ranks;
+  // Iterate through fine points on this process
   for (const auto &map_it : coords_to_dofs)
   {
     const std::vector<double>& _x = map_it.first;
@@ -363,6 +364,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
         proc_list.push_back(rp);
         send_found[rp].insert(send_found[rp].end(),
                               _x.begin(), _x.end());
+        // Also save the indices, but don't send yet.
         send_found_global_row_indices[rp].insert(
          send_found_global_row_indices[rp].end(),
          map_it.second.begin(), map_it.second.end());
@@ -372,8 +374,10 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   std::vector<std::vector<double>> recv_found(mpi_size);
   MPI::all_to_all(mpi_comm, send_found, recv_found);
 
-  // On remote process, convert received points to ID of containing cell and send back
-  // to originating process
+  // 2. On remote process, find the Cell which the point lies inside, if any.
+  // Send back the result to the originating process. In the case that the point
+  // is found inside cells on more than one process, the originating process
+  // will arbitrate.
   std::vector<std::vector<unsigned int>> send_ids(mpi_size);
   for (unsigned int p = 0; p < mpi_size; ++p)
   {
@@ -384,11 +388,11 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
       send_ids[p].push_back(treec->compute_first_entity_collision(curr_point));
     }
   }
-
   std::vector<std::vector<unsigned int>> recv_ids(mpi_size);
   MPI::all_to_all(mpi_comm, send_ids, recv_ids);
 
-  // Revisit original list of sent points in same order
+  // 3. Revisit original list of sent points in the same order as before. Now
+  // we also have the remote cell-id, if any.
   std::vector<int> count(mpi_size, 0);
   for (auto p = proc_list.begin(); p != proc_list.end(); p += (*p + 1))
   {

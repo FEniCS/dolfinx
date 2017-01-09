@@ -70,6 +70,7 @@ namespace dolfin
 
   private:
 
+    // Find the nearest cells to points which lie outside the domain
     static void find_exterior_points(MPI_Comm mpi_comm,
         std::shared_ptr<const BoundingBoxTree> treec,
         int dim, int data_size,
