@@ -182,6 +182,12 @@ namespace dolfin
     // Get/set attributes of an existing dataset
     HDF5Attribute attributes(const std::string dataset_name);
 
+    /// Set the MPI atomicity
+    void set_mpi_atomicity(bool atomic);
+
+    /// Get the MPI atomicity
+    bool get_mpi_atomicity() const;
+
     hid_t h5_id() const
     { return _hdf5_file_id; }
 

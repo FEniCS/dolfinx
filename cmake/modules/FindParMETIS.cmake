@@ -37,12 +37,12 @@
 
 if (MPI_CXX_FOUND)
   find_path(PARMETIS_INCLUDE_DIRS parmetis.h
-    HINTS ${PARMETIS_DIR}/include $ENV{PARMETIS_DIR}/include ${PETSC_DIR}/include ${PETSC_DIR}/${PETSC_ARCH}/include
+    HINTS ${PARMETIS_DIR}/include $ENV{PARMETIS_DIR}/include ${PETSC_INCLUDE_DIRS}
     DOC "Directory where the ParMETIS header files are located"
   )
 
   find_library(PARMETIS_LIBRARY parmetis
-    HINTS ${PARMETIS_DIR}/lib $ENV{PARMETIS_DIR}/lib ${PETSC_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib
+    HINTS ${PARMETIS_DIR}/lib $ENV{PARMETIS_DIR}/lib ${PETSC_LIBRARY_DIRS}
     NO_DEFAULT_PATH
     DOC "Directory where the ParMETIS library is located"
   )
@@ -51,7 +51,7 @@ if (MPI_CXX_FOUND)
   )
 
   find_library(METIS_LIBRARY metis
-    HINTS ${PARMETIS_DIR}/lib $ENV{PARMETIS_DIR}/lib ${PETSC_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib
+    HINTS ${PARMETIS_DIR}/lib $ENV{PARMETIS_DIR}/lib ${PETSC_LIBRARY_DIRS}
     NO_DEFAULT_PATH
     DOC "Directory where the METIS library is located"
   )

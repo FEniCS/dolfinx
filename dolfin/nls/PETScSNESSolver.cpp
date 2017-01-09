@@ -201,12 +201,6 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
     if (parameters["report"])
     {
       PetscErrorCode ierr;
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-      ierr = SNESMonitorSet(_snes, SNESMonitorDefault,
-                            PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes)),
-                            NULL);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "SNESMonitorSet");
-      #else
       PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes));
       PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
       PetscViewerAndFormat *vf;
@@ -216,7 +210,6 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
                             vf,
                             (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
       if (ierr != 0) petsc_error(ierr, __FILE__, "SNESMonitorSet");
-      #endif
     }
   }
 
@@ -258,13 +251,7 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
   if (parameters["report"].is_set())
   {
     if (parameters["report"])
-    {
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-      SNESLineSearchSetMonitor(linesearch, PETSC_TRUE);
-      #else
       SNESLineSearchMonitor(linesearch);
-      #endif
-    }
   }
 
   const std::string line_search_type = std::string(parameters["line_search"]);
@@ -456,9 +443,6 @@ void PETScSNESSolver::set_linear_solver_parameters()
   {
     if (parameters["report"])
     {
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-      KSPMonitorSet(ksp, KSPMonitorDefault, PETSC_VIEWER_STDOUT_(comm), NULL);
-      #else
       PetscViewer viewer = PETSC_VIEWER_STDOUT_(comm);
       PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
       PetscViewerAndFormat *vf;
@@ -467,7 +451,6 @@ void PETScSNESSolver::set_linear_solver_parameters()
                            (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorDefault,
                            vf,
                            (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
-      #endif
     }
   }
   const std::string linear_solver  = parameters["linear_solver"];
@@ -507,12 +490,6 @@ void PETScSNESSolver::set_linear_solver_parameters()
     if (krylov_parameters["monitor_convergence"].is_set()
         && krylov_parameters["monitor_convergence"])
     {
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-      KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm,
-                    PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
-                    NULL);
-
-      #else
       PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
       PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
       PetscViewerAndFormat *vf;
@@ -521,7 +498,6 @@ void PETScSNESSolver::set_linear_solver_parameters()
                          (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
                          vf,
                          (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
-      #endif
     }
 
     // Check if a tolerance has been set

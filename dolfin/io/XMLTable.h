@@ -38,6 +38,10 @@ namespace dolfin
     /// Write the XML file
     static void write(const Table& table, pugi::xml_node xml_node);
 
+    /// Read the XML file
+    static void read(Table& table, pugi::xml_node xml_node);
+
+    
   };
 
 }

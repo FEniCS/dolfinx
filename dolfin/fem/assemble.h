@@ -65,6 +65,8 @@ namespace dolfin
   /// Assemble scalar
   double assemble(const Form& a);
 
+  /// Assemble scalar from multimesh form
+  double assemble_multimesh(const MultiMeshForm& a);
 }
 
 #endif

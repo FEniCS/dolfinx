@@ -1395,7 +1395,7 @@ XDMFFile::build_local_mesh_data(LocalMeshData& local_mesh_data,
   dolfin_assert(topology_dataset_node);
   const auto topology_data = get_dataset<std::int64_t>(local_mesh_data.mpi_comm(),
                                                        topology_dataset_node,
-                                                      relative_path);
+                                                       relative_path);
   dolfin_assert(topology_data.size() % num_vertices_per_cell == 0);
 
   // Wrap topology data as multi-dimensional array
@@ -1935,23 +1935,27 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
 
   const std::string format = format_attr.as_string();
   std::vector<T> data_vector;
+  // Only read ASCII on process 0
   if (format == "XML")
   {
-    // Read data and trim any leading/trailing whitespace
-    pugi::xml_node data_node = dataset_node.first_child();
-    dolfin_assert(data_node);
-    std::string data_str = data_node.value();
-
-    // Split data based on spaces and line breaks
-    std::vector<boost::iterator_range<std::string::iterator>> data_vector_str;
-    boost::split(data_vector_str, data_str, boost::is_any_of(" \n"));
-
-    // Add data to numerical vector
-    data_vector.reserve(data_vector_str.size());
-    for (auto& v : data_vector_str)
+    if (MPI::rank(comm) == 0)
     {
-      if (v.begin() != v.end())
-        data_vector.push_back(boost::lexical_cast<T>(boost::copy_range<std::string>(v)));
+      // Read data and trim any leading/trailing whitespace
+      pugi::xml_node data_node = dataset_node.first_child();
+      dolfin_assert(data_node);
+      std::string data_str = data_node.value();
+
+      // Split data based on spaces and line breaks
+      std::vector<boost::iterator_range<std::string::iterator>> data_vector_str;
+      boost::split(data_vector_str, data_str, boost::is_any_of(" \n"));
+
+      // Add data to numerical vector
+      data_vector.reserve(data_vector_str.size());
+      for (auto& v : data_vector_str)
+      {
+        if (v.begin() != v.end())
+          data_vector.push_back(boost::lexical_cast<T>(boost::copy_range<std::string>(v)));
+      }
     }
   }
   else if (format == "HDF")

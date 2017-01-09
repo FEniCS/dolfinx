@@ -9,12 +9,17 @@
 #  EIGEN3_FOUND - system has eigen lib with correct version
 #  EIGEN3_INCLUDE_DIR - the eigen include directory
 #  EIGEN3_VERSION - eigen version
+#
+# This module reads hints about search locations from
+# the following enviroment variables:
+#
+# EIGEN3_ROOT
+# EIGEN3_ROOT_DIR
 
 # Copyright (c) 2006, 2007 Montel Laurent, <montel@kde.org>
 # Copyright (c) 2008, 2009 Gael Guennebaud, <g.gael@free.fr>
 # Copyright (c) 2009 Benoit Jacob <jacob.benoit.1@gmail.com>
-# Redistribution and use is allowed according to the terms of the
-# 2-clause BSD license.
+# Redistribution and use is allowed according to the terms of the 2-clause BSD license.
 
 # Modified by Garth N. Wells <gnw20@cam.ac.uk> to add EIGEN_DIR to
 # search path
@@ -34,17 +39,13 @@ if(NOT Eigen3_FIND_VERSION)
 endif(NOT Eigen3_FIND_VERSION)
 
 macro(_eigen3_check_version)
-  file(READ "${EIGEN3_INCLUDE_DIR}/Eigen/src/Core/util/Macros.h"
-    _eigen3_version_header)
+  file(READ "${EIGEN3_INCLUDE_DIR}/Eigen/src/Core/util/Macros.h" _eigen3_version_header)
 
-  string(REGEX MATCH "define[ \t]+EIGEN_WORLD_VERSION[ \t]+([0-9]+)"
-    _eigen3_world_version_match "${_eigen3_version_header}")
+  string(REGEX MATCH "define[ \t]+EIGEN_WORLD_VERSION[ \t]+([0-9]+)" _eigen3_world_version_match "${_eigen3_version_header}")
   set(EIGEN3_WORLD_VERSION "${CMAKE_MATCH_1}")
-  string(REGEX MATCH "define[ \t]+EIGEN_MAJOR_VERSION[ \t]+([0-9]+)"
-    _eigen3_major_version_match "${_eigen3_version_header}")
+  string(REGEX MATCH "define[ \t]+EIGEN_MAJOR_VERSION[ \t]+([0-9]+)" _eigen3_major_version_match "${_eigen3_version_header}")
   set(EIGEN3_MAJOR_VERSION "${CMAKE_MATCH_1}")
-  string(REGEX MATCH "define[ \t]+EIGEN_MINOR_VERSION[ \t]+([0-9]+)"
-    _eigen3_minor_version_match "${_eigen3_version_header}")
+  string(REGEX MATCH "define[ \t]+EIGEN_MINOR_VERSION[ \t]+([0-9]+)" _eigen3_minor_version_match "${_eigen3_version_header}")
   set(EIGEN3_MINOR_VERSION "${CMAKE_MATCH_1}")
 
   set(EIGEN3_VERSION ${EIGEN3_WORLD_VERSION}.${EIGEN3_MAJOR_VERSION}.${EIGEN3_MINOR_VERSION})
@@ -55,6 +56,7 @@ macro(_eigen3_check_version)
   endif(${EIGEN3_VERSION} VERSION_LESS ${Eigen3_FIND_VERSION})
 
   if(NOT EIGEN3_VERSION_OK)
+
     message(STATUS "Eigen3 version ${EIGEN3_VERSION} found in ${EIGEN3_INCLUDE_DIR}, "
                    "but at least version ${Eigen3_FIND_VERSION} is required")
   endif(NOT EIGEN3_VERSION_OK)
@@ -68,33 +70,31 @@ if (EIGEN3_INCLUDE_DIR)
 
 else (EIGEN3_INCLUDE_DIR)
 
-  find_path(EIGEN3_INCLUDE_DIR NAMES signature_of_eigen3_matrix_library
-      PATHS
-      ${EIGEN_DIR}
-      $ENV{EIGEN_DIR}
-      ${CMAKE_INSTALL_PREFIX}/include
-      ${KDE4_INCLUDE_DIR}
-      PATH_SUFFIXES eigen3 eigen)
+  # search first if an Eigen3Config.cmake is available in the system,
+  # if successful this would set EIGEN3_INCLUDE_DIR and the rest of
+  # the script will work as usual
+  find_package(Eigen3 ${Eigen3_FIND_VERSION} NO_MODULE QUIET)
+
+  if(NOT EIGEN3_INCLUDE_DIR)
+    find_path(EIGEN3_INCLUDE_DIR NAMES signature_of_eigen3_matrix_library
+        HINTS
+        ${EIGEN_DIR}
+        ENV EIGEN_DIR
+        ENV EIGEN3_ROOT
+        ENV EIGEN3_ROOT_DIR
+        PATHS
+        ${CMAKE_INSTALL_PREFIX}/include
+        ${KDE4_INCLUDE_DIR}
+        PATH_SUFFIXES eigen3 eigen
+      )
+  endif(NOT EIGEN3_INCLUDE_DIR)
 
   if(EIGEN3_INCLUDE_DIR)
     _eigen3_check_version()
-
-    # Check for 'unsupported' header files, which provide some Krylov
-    # solvers
-    find_path(EIGEN3_UNSUPPORTED_HEADERS NAMES SparseExtra PATHS
-      ${EIGEN3_INCLUDE_DIR}
-      PATH_SUFFIXES unsupported/Eigen)
-
-    if(NOT EIGEN3_UNSUPPORTED_HEADERS)
-      message(STATUS "Cannot find Eigen3 'unsupported' header files. "
-        "Make sure you install Eigen3 and not just copy header files.")
-    endif(NOT EIGEN3_UNSUPPORTED_HEADERS)
-
   endif(EIGEN3_INCLUDE_DIR)
 
   include(FindPackageHandleStandardArgs)
-  find_package_handle_standard_args(Eigen3 DEFAULT_MSG EIGEN3_INCLUDE_DIR
-    EIGEN3_VERSION_OK EIGEN3_UNSUPPORTED_HEADERS)
+  find_package_handle_standard_args(Eigen3 DEFAULT_MSG EIGEN3_INCLUDE_DIR EIGEN3_VERSION_OK)
 
   mark_as_advanced(EIGEN3_INCLUDE_DIR)
 

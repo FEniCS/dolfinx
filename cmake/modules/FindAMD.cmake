@@ -38,7 +38,7 @@ message(STATUS "Checking for package 'AMD'")
 
 # Check for header file
 find_path(AMD_INCLUDE_DIRS amd.h
- HINTS ${AMD_DIR}/include $ENV{AMD_DIR}/include $ENV{PETSC_DIR}/include
+ HINTS ${AMD_DIR}/include $ENV{AMD_DIR}/include ${PETSC_INCLUDE_DIRS} $ENV{PETSC_DIR}/include
  PATH_SUFFIXES suitesparse ufsparse
  DOC "Directory where the AMD header is located"
  )
@@ -46,7 +46,7 @@ mark_as_advanced(AMD_INCLUDE_DIRS)
 
 # Check for AMD library
 find_library(AMD_LIBRARIES amd
-  HINTS ${AMD_DIR}/lib $ENV{AMD_DIR}/lib $ENV{PETSC_DIR}/lib
+  HINTS ${AMD_DIR}/lib $ENV{AMD_DIR}/lib ${PETSC_LIBRARY_DIRS} $ENV{PETSC_DIR}/lib
   DOC "The AMD library")
 mark_as_advanced(AMD_LIBRARY)
 

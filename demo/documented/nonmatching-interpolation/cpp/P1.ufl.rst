@@ -1,0 +1,14 @@
+UFL input for P1 finite element
+===============================
+
+We define the finite element in UFL in a separate form file
+:download:`P1.ufl`.  We define the linear finite element::
+
+   element = FiniteElement("Lagrange", triangle, 1)
+
+Before the form file can be used in the C++ program, it must be
+compiled using FFC by running (on the command-line):
+
+.. code-block:: sh
+
+   ffc -l dolfin P1.ufl

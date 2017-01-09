@@ -107,8 +107,6 @@ KrylovSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
 std::size_t KrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(solver);
-  //check_dimensions(solver->get_operator(), x, b);
-
   Timer timer("Krylov solver");
   solver->parameters.update(parameters);
   return solver->solve(x, b);
@@ -119,8 +117,6 @@ std::size_t KrylovSolver::solve(const GenericLinearOperator& A,
                                 const GenericVector& b)
 {
   dolfin_assert(solver);
-  //check_dimensions(A, x, b);
-
   Timer timer("Krylov solver");
   solver->parameters.update(parameters);
   return solver->solve(A, x, b);

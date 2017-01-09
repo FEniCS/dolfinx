@@ -24,27 +24,27 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void PETScOptions::set(std::string option)
 {
-  set<std::string>(option, "");
+  PETScOptions::set<std::string>(option, "");
 }
 //-----------------------------------------------------------------------------
 void PETScOptions::set(std::string option, bool value)
 {
-  set<bool>(option, value);
+  PETScOptions::set<bool>(option, value);
 }
 //-----------------------------------------------------------------------------
 void PETScOptions::set(std::string option, int value)
 {
-  set<int>(option, value);
+  PETScOptions::set<int>(option, value);
 }
 //-----------------------------------------------------------------------------
 void PETScOptions::set(std::string option, double value)
 {
-  set<double>(option, value);
+  PETScOptions::set<double>(option, value);
 }
 //-----------------------------------------------------------------------------
 void PETScOptions::set(std::string option, std::string value)
 {
-  set<std::string>(option, value);
+  PETScOptions::set<std::string>(option, value);
 }
 //-----------------------------------------------------------------------------
 void PETScOptions::clear(std::string option)
@@ -55,13 +55,17 @@ void PETScOptions::clear(std::string option)
     option = '-' + option;
 
   PetscErrorCode ierr;
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-  ierr = PetscOptionsClearValue(option.c_str());
-  #else
   ierr = PetscOptionsClearValue(NULL, option.c_str());
-  #endif
   if (ierr != 0)
     PETScObject::petsc_error(ierr, __FILE__, "PetscOptionsClearValue");
+}
+//-----------------------------------------------------------------------------
+void PETScOptions::clear()
+{
+  SubSystemsManager::init_petsc();
+  PetscErrorCode ierr = PetscOptionsClear(NULL);
+  if (ierr != 0)
+    PETScObject::petsc_error(ierr, __FILE__, "PetscOptionsClear");
 }
 //-----------------------------------------------------------------------------
 

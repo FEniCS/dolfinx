@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Garth N. Wells
+// Copyright (C) 2010-2016 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,9 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2010-2012
-//
-// First added:  2010-02-25
-// Last changed: 2012-04-11
 
 #ifdef HAS_PETSC
 
@@ -65,6 +62,7 @@ PETScPreconditioner::_methods_descr
 = { {"default",          "default preconditioner"},
     {"ilu",              "Incomplete LU factorization"},
     {"icc",              "Incomplete Cholesky factorization"},
+    {"jacobi",           "Jacobi iteration"},
     {"sor",              "Successive over-relaxation"},
     {"petsc_amg",        "PETSc algebraic multigrid"},
 #if PETSC_HAVE_HYPRE
@@ -83,22 +81,6 @@ PETScPreconditioner::preconditioners()
 {
   return PETScPreconditioner::_methods_descr;
 }
-//-----------------------------------------------------------------------------
-/*
-Parameters PETScPreconditioner::default_parameters()
-{
-  Parameters p(KrylovSolver::default_parameters()("preconditioner"));
-  p.rename("petsc_preconditioner");
-
-  // General parameters
-  //p.add("view", false);
-
-  // Prefix for setting options
-  p.add("options_prefix", "default");
-
-  return p;
-}
-*/
 //-----------------------------------------------------------------------------
 void PETScPreconditioner::set_type(PETScKrylovSolver& solver, std::string type)
 {
@@ -136,7 +118,6 @@ PETScPreconditioner::PETScPreconditioner(std::string type) : _type(type),
                                                              gdim(0)
 {
   // Set parameter values
-  //parameters = default_parameters();
 
   // Check that the requested method is known
   if (_methods.count(type) == 0)

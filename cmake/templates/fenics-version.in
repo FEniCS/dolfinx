@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Helper script to print the version of FEniCS
+echo @DOLFIN_VERSION@

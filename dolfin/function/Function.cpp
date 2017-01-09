@@ -28,7 +28,6 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DirichletBC.h>
@@ -216,40 +215,6 @@ Function& Function::operator[] (std::size_t i) const
     _sub_functions.insert(i, new Function(sub_space, _vector));
     return *(_sub_functions.find(i)->second);
   }
-}
-//-----------------------------------------------------------------------------
-FunctionAXPY Function::operator+(std::shared_ptr<const Function> other) const
-{
-  return FunctionAXPY(reference_to_no_delete_pointer(*this), other,
-                      FunctionAXPY::Direction::ADD_ADD);
-}
-//-----------------------------------------------------------------------------
-FunctionAXPY Function::operator+(const FunctionAXPY& axpy) const
-{
-  return FunctionAXPY(axpy, reference_to_no_delete_pointer(*this),
-                      FunctionAXPY::Direction::ADD_ADD);
-}
-//-----------------------------------------------------------------------------
-FunctionAXPY Function::operator-(std::shared_ptr<const Function> other) const
-{
-  return FunctionAXPY(reference_to_no_delete_pointer(*this), other,
-                      FunctionAXPY::Direction::ADD_SUB);
-}
-//-----------------------------------------------------------------------------
-FunctionAXPY Function::operator-(const FunctionAXPY& axpy) const
-{
-  return FunctionAXPY(axpy, reference_to_no_delete_pointer(*this),
-                      FunctionAXPY::Direction::SUB_ADD);
-}
-//-----------------------------------------------------------------------------
-FunctionAXPY Function::operator*(double scalar) const
-{
-  return FunctionAXPY(reference_to_no_delete_pointer(*this), scalar);
-}
-//-----------------------------------------------------------------------------
-FunctionAXPY Function::operator/(double scalar) const
-{
-  return FunctionAXPY(reference_to_no_delete_pointer(*this), 1.0/scalar);
 }
 //-----------------------------------------------------------------------------
 void Function::operator=(const FunctionAXPY& axpy)
