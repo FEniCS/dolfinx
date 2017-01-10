@@ -115,7 +115,7 @@ void PointSource::apply(GenericVector& b)
   // Variables for checking that cell is unique
   int num_found;
   bool cell_found_on_process;
-  unsigned int processes_with_cell;
+  int processes_with_cell;
   unsigned int selected_process;
 
   // Variables for cell information
@@ -146,12 +146,19 @@ void PointSource::apply(GenericVector& b)
     num_found = 0;
     cell_found_on_process = cell_index
       != std::numeric_limits<unsigned int>::max();
-
+    info("cell_found_on_process " + std::to_string(cell_found_on_process));
     if (cell_found_on_process)
-      num_found = MPI::sum(mesh.mpi_comm(), 1);
+      {
+	info("found on process");
+	num_found = MPI::sum(mesh.mpi_comm(), 1);
+      }
     else
-      num_found = MPI::sum(mesh.mpi_comm(), 0);
-
+      {
+	info("not found");
+	num_found = MPI::sum(mesh.mpi_comm(), 0);
+	info("num_found " + std::to_string(num_found));
+      }
+    info("num_found " + std::to_string(num_found));
     if (MPI::rank(mesh.mpi_comm()) == 0 && num_found == 0)
     {
       dolfin_error("PointSource.cpp",
@@ -162,10 +169,13 @@ void PointSource::apply(GenericVector& b)
     processes_with_cell =
       cell_found_on_process ? MPI::rank(mesh.mpi_comm()) : -1;
     selected_process = MPI::max(mesh.mpi_comm(), processes_with_cell);
-
+    info("processes_with_cell " + std::to_string(processes_with_cell));
+    info("selected_process " + std::to_string(selected_process));
     // Return if point not found
+
     if (MPI::rank(mesh.mpi_comm()) != selected_process)
     {
+      info("early add");
       b.apply("add");
     }
 
@@ -232,7 +242,7 @@ void PointSource::apply(GenericMatrix& A)
   // Variables for checking point is unique in cell
   int num_found;
   bool cell_found_on_process;
-  unsigned int processes_with_cell;
+  int processes_with_cell;
   unsigned int selected_process;
 
   // Variables for cell information

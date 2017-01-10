@@ -269,7 +269,7 @@ def test_multi_ps_matrix_node():
 def test_multi_ps_matrix_node_vector():
     """Tests point source when given constructor PointSource(V, V, source)
     with a matrix when points placed at every node for 1D, 2D and 3D. """
-    meshes = [UnitIntervalMesh(1), UnitSquareMesh(2,2), UnitCubeMesh(1,1,1)]
+    meshes = [UnitIntervalMesh(10), UnitSquareMesh(2,2), UnitCubeMesh(1,1,1)]
 
     for dim in range(1):
         print dim
@@ -301,4 +301,5 @@ def test_multi_ps_matrix():
     pass
 
 
-test_multi_ps_matrix_node_vector()
+#test_multi_ps_matrix_node_vector()
+#test_multi_ps_matrix_node()
