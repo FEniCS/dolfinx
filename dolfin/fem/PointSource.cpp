@@ -146,19 +146,14 @@ void PointSource::apply(GenericVector& b)
     num_found = 0;
     cell_found_on_process = cell_index
       != std::numeric_limits<unsigned int>::max();
-    info("cell_found_on_process " + std::to_string(cell_found_on_process));
     if (cell_found_on_process)
       {
-	info("found on process");
 	num_found = MPI::sum(mesh.mpi_comm(), 1);
       }
     else
       {
-	info("not found");
 	num_found = MPI::sum(mesh.mpi_comm(), 0);
-	info("num_found " + std::to_string(num_found));
       }
-    info("num_found " + std::to_string(num_found));
     if (MPI::rank(mesh.mpi_comm()) == 0 && num_found == 0)
     {
       dolfin_error("PointSource.cpp",
@@ -169,17 +164,9 @@ void PointSource::apply(GenericVector& b)
     processes_with_cell =
       cell_found_on_process ? MPI::rank(mesh.mpi_comm()) : -1;
     selected_process = MPI::max(mesh.mpi_comm(), processes_with_cell);
-    info("processes_with_cell " + std::to_string(processes_with_cell));
-    info("selected_process " + std::to_string(selected_process));
-    // Return if point not found
-
-    if (MPI::rank(mesh.mpi_comm()) != selected_process)
-    {
-      info("early add");
-      b.apply("add");
-    }
-
-    else
+   
+    // Adds point source if found on process
+    if (MPI::rank(mesh.mpi_comm()) == selected_process)
     {
       // Create cell
       Cell cell(mesh, static_cast<std::size_t>(cell_index));
@@ -207,8 +194,8 @@ void PointSource::apply(GenericVector& b)
 
       // Add values to vector
       b.add_local(values.data(), dofs_per_cell, dofs.data());
-      b.apply("add");
     }
+    b.apply("add");
   }
 }
 //-----------------------------------------------------------------------------
@@ -266,9 +253,7 @@ void PointSource::apply(GenericMatrix& A)
   // Variables for adding local data to matrix
   ArrayView<const dolfin::la_index> dofs0;
   ArrayView<const dolfin::la_index> dofs1;
-  MPI::barrier(mesh->mpi_comm());
 
-  int i = 0;
   for (auto & s : _sources)
   {
     Point& p = s.first;
@@ -300,12 +285,7 @@ void PointSource::apply(GenericMatrix& A)
     selected_process = MPI::max(mesh->mpi_comm(), processes_with_cell);
 
     // Return if point not found
-    if (MPI::rank(mesh->mpi_comm()) != selected_process)
-    {
-      A.apply("add");
-    }
-
-    else
+    if (MPI::rank(mesh->mpi_comm()) == selected_process)
     {
       // Create cell
       Cell cell(*mesh, static_cast<std::size_t>(cell_index));
@@ -346,10 +326,8 @@ void PointSource::apply(GenericMatrix& A)
       A.add_local(values.data(),
 		  dofs_per_cell0, dofs0.data(),
 		  dofs_per_cell1, dofs1.data());
-
-      A.apply("add");
-      i+=1;
     }
+    A.apply("add");
   }
 }
 //-----------------------------------------------------------------------------
