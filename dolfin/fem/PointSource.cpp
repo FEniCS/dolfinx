@@ -83,7 +83,7 @@ void PointSource::apply(GenericVector& b)
 
   const int processes_with_cell =
     cell_found_on_process ? MPI::rank(mesh.mpi_comm()) : -1;
-  const int selected_process = MPI::max(mesh.mpi_comm(), processes_with_cell);
+  const unsigned int selected_process = MPI::max(mesh.mpi_comm(), processes_with_cell);
 
   // Add point source if found on processor
   if (MPI::rank(mesh.mpi_comm()) == selected_process)

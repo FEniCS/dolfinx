@@ -41,7 +41,7 @@ def test_pointsource_vector_node():
 
         # Checks array sums to correct value
         b_sum = b.sum()
-        assert b_sum == pytest.approx(10.0)
+        assert round(b_sum - 10.0) == 0
 
         # Checks point source is added to correct part of the array
         v2d = vertex_to_dof_map(V)
@@ -49,7 +49,7 @@ def test_pointsource_vector_node():
             if near(v.midpoint().distance(point), 0.0):
                 ind = v2d[v.index()]
                 if ind<len(b.array()):
-                    assert b.array()[ind] == pytest.approx(10.0)
+                    assert round(b.array()[ind]-10.0) == 0
 
 def test_pointsource_vector():
     """Tests point source when given constructor PointSource(V, point, mag)
@@ -70,7 +70,7 @@ def test_pointsource_vector():
 
         # Checks array sums to correct value
         b_sum = b.sum()
-        assert b_sum == pytest.approx(10.0)
+        assert round(b_sum-10.0) == 0
 
 
 def test_pointsource_vector_fs():
@@ -92,7 +92,7 @@ def test_pointsource_vector_fs():
 
         # Checks array sums to correct value
         b_sum = b.sum()
-        assert b_sum == pytest.approx(10.0*V.num_sub_spaces())
+        assert round(b_sum -10.0*V.num_sub_spaces()) == 0
 
         # Checks point source is added to correct part of the array
         v2d = vertex_to_dof_map(V)
@@ -101,7 +101,7 @@ def test_pointsource_vector_fs():
                 for spc_idx in range(V.num_sub_spaces()):
                     ind = v2d[v.index()*V.num_sub_spaces() + spc_idx]
                     if ind<len(b.array()):
-                        assert b.array()[ind] == pytest.approx(10.0)
+                        assert round(b.array()[ind] - 10.0) == 0
 
 
 def test_pointsource_mixed_space():
@@ -127,4 +127,4 @@ def test_pointsource_mixed_space():
 
         # Checks array sums to correct value
         b_sum = b.sum()
-        assert b_sum == pytest.approx(10.0*value_dimension)
+        assert round(b_sum -10.0*value_dimension) == 0
