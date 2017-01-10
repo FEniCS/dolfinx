@@ -51,7 +51,7 @@ namespace dolfin
 
     /// Create empty vector
     std::shared_ptr<GenericVector> create_vector(MPI_Comm comm) const
-    { return std::make_shared<EigenVector>(); }
+    { return std::make_shared<EigenVector>(comm); }
 
     /// Create empty tensor layout
     std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
