@@ -164,7 +164,7 @@ void PointSource::apply(GenericVector& b)
     processes_with_cell =
       cell_found_on_process ? MPI::rank(mesh.mpi_comm()) : -1;
     selected_process = MPI::max(mesh.mpi_comm(), processes_with_cell);
-   
+
     // Adds point source if found on process
     if (MPI::rank(mesh.mpi_comm()) == selected_process)
     {
@@ -251,7 +251,7 @@ void PointSource::apply(GenericMatrix& A)
   double basis_sum1;
 
   std::size_t num_sub_spaces = V0->element()->num_sub_elements();
-  // Making sure scalar function space has 1 sub space 
+  // Making sure scalar function space has 1 sub space
   if (num_sub_spaces == 0)
     num_sub_spaces = 1;
   std::size_t dofs_per_cell0 = V0->element()->space_dimension()/num_sub_spaces;
@@ -274,17 +274,29 @@ void PointSource::apply(GenericMatrix& A)
   ArrayView<const dolfin::la_index> dofs0;
   ArrayView<const dolfin::la_index> dofs1;
 
-  // Check sub spaces are the same
+  // Doesn't work for mixed function spaces with different elements.
   for (std::size_t n=0; n<num_sub_spaces; ++n)
   {
-      if (V0->sub(0) != V0->sub(n))
+    if (V0->sub(0)->element()->signature() != V0->sub(n)->element()->signature())
       {
 	dolfin_error("PointSource.cpp",
 		     "apply point source to vector",
-		     "The sub spaces are not the same. Not currently implemented");
+		     "The mixed elements are not the same. Not currently implemented");
       }
   }
-  
+
+  // Doesn't work for vector elements within vector function space
+  // Could use similar logic.
+  for (std::size_t n=0; n<num_sub_spaces; ++n)
+  {
+    if (V0->sub(n)->element()->num_sub_elements() > 1)
+    {
+      dolfin_error("PointSource.cpp",
+		   "apply point source to vector",
+		   "Have vector elements. Not currently implemented");
+    }
+  }
+
   for (auto & s : _sources)
   {
     Point& p = s.first;
@@ -338,14 +350,14 @@ void PointSource::apply(GenericMatrix& A)
 					    p.coordinates(),
 					    coordinate_dofs.data(),
 					    ufc_cell.orientation);
-	      
+
 	      basis_sum0 = 0.0;
 	      basis_sum1 = 0.0;
 	      for (const auto& v : basis0)
 		basis_sum0 += v;
 	      for (const auto& v : basis1)
 		basis_sum1 += v;
-		
+
 	      values_sub[i][j] = magnitude*basis_sum0*basis_sum1;
 	    }
 	}
