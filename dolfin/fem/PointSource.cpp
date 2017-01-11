@@ -239,16 +239,21 @@ void PointSource::apply(GenericMatrix& A)
   // Variables for evaluating basis
   const std::size_t rank = V0->element()->value_rank();
   std::size_t size_basis;
-  std::size_t dofs_per_cell0 = V0->element()->space_dimension();
-  std::size_t dofs_per_cell1 = V1->element()->space_dimension();
+  double basis_sum0;
+  double basis_sum1;
+  std::size_t num_sub_spaces = V0->element()->num_sub_elements();
+  // A scalar function space has 1 sub space but will show as 0
+  if (num_sub_spaces == 0)
+    num_sub_spaces = 1;
+  std::size_t dofs_per_cell0 = V0->element()->space_dimension()/num_sub_spaces;
+  std::size_t dofs_per_cell1 = V1->element()->space_dimension()/num_sub_spaces;
   size_basis = 1;
   for (std::size_t i = 0; i < rank; ++i)
     size_basis *= V0->element()->value_dimension(i);
   std::vector<double> basis0(size_basis);
   std::vector<double> basis1(size_basis);
-  boost::multi_array<double, 2>  values(boost::extents[dofs_per_cell0][dofs_per_cell1]);
-  double basis_sum0;
-  double basis_sum1;
+  boost::multi_array<double, 2>  values(boost::extents[dofs_per_cell0*num_sub_spaces][dofs_per_cell1*num_sub_spaces]);
+  boost::multi_array<double, 2>  values_sub(boost::extents[dofs_per_cell0][dofs_per_cell1]);
 
   // Variables for adding local data to matrix
   ArrayView<const dolfin::la_index> dofs0;
@@ -294,29 +299,98 @@ void PointSource::apply(GenericMatrix& A)
       cell.get_coordinate_dofs(coordinate_dofs);
       cell.get_cell_data(ufc_cell);
 
-      for (std::size_t i = 0; i < dofs_per_cell0; ++i)
-      {
-	V0->element()->evaluate_basis(i, basis0.data(),
-				      p.coordinates(),
-				      coordinate_dofs.data(),
-				      ufc_cell.orientation);
-	for (std::size_t j = 0; j < dofs_per_cell0; ++j)
+      // If a scalar function space calculate values with
+      // magnitude*basis_sum_0*basis_sum_1
+      if (num_sub_spaces == 0 || num_sub_spaces == 1)
 	{
-	  V1->element()->evaluate_basis(j, basis1.data(),
-					p.coordinates(),
-					coordinate_dofs.data(),
-					ufc_cell.orientation);
+	  for (std::size_t i = 0; i < dofs_per_cell0; ++i)
+	    {
+	      V0->element()->evaluate_basis(i, basis0.data(),
+	                                    p.coordinates(),
+	                                    coordinate_dofs.data(),
+	                                    ufc_cell.orientation);
+	      for (std::size_t j = 0; j < dofs_per_cell0; ++j)
+		{
+	          V1->element()->evaluate_basis(j, basis1.data(),
+				 	        p.coordinates(),
+					        coordinate_dofs.data(),
+					        ufc_cell.orientation);
 
-	  basis_sum0 = 0.0;
-	  basis_sum1 = 0.0;
-	  for (const auto& v : basis0)
-	    basis_sum0 += v;
-	  for (const auto& v : basis1)
-	    basis_sum1 += v;
-
-	  values[i][j] = magnitude*basis_sum0*basis_sum1;
+		  basis_sum0 = 0.0;
+		  basis_sum1 = 0.0;
+		  for (const auto& v : basis0)
+		    basis_sum0 += v;
+		  for (const auto& v : basis1)
+		    basis_sum1 += v;
+		
+		  values[i][j] = magnitude*basis_sum0*basis_sum1;
+	        }
+	     }
 	}
-      }
+
+      // If vector function space when sub spaces are all the same,
+      // calculates the values for a sub space and then manipulates
+      // matrix to add for other sub_spaces
+      if (num_sub_spaces > 1)
+	{
+	  info("Vector");
+	  // Only works if sub spaces are the same
+	  // FIXME: Extend this check to all subspaces.
+	  dolfin_assert(V0->sub(0) = V0->sub(1));
+
+	  // Evaluates basis functions for the first sub space
+	  auto V_sub0 = V0->sub(0);
+	  auto V_sub1 = V1->sub(0);
+	  for (std::size_t i = 0; i < dofs_per_cell0; ++i)
+	    {
+	      V_sub0->element()->evaluate_basis(i, basis0.data(),
+	                                    p.coordinates(),
+	                                    coordinate_dofs.data(),
+	                                    ufc_cell.orientation);
+	      for (std::size_t j = 0; j < dofs_per_cell0; ++j)
+		{
+	          V_sub1->element()->evaluate_basis(j, basis1.data(),
+				 	        p.coordinates(),
+					        coordinate_dofs.data(),
+					        ufc_cell.orientation);
+
+		  basis_sum0 = 0.0;
+		  basis_sum1 = 0.0;
+		  for (const auto& v : basis0)
+		    basis_sum0 += v;
+		  for (const auto& v : basis1)
+		    basis_sum1 += v;
+		  values_sub[i][j] = magnitude*basis_sum0*basis_sum1;
+	        }
+	    }
+
+	  // Uses the values calculated on one subspace mirrors them
+	  // for all
+	  int ii = 0;
+	  int jj;
+
+	  for (std::size_t i =0; i< dofs_per_cell0; ++i)
+	    { jj = 0;
+	      for (std::size_t j = 0; j <dofs_per_cell1; ++j)
+		{
+		  values[i][j] = values_sub[ii][jj];
+		  jj += 1;
+		}
+	      ii +=1;
+	    }
+
+	  ii = 0;
+	  for (std::size_t i =dofs_per_cell0; i< dofs_per_cell0*num_sub_spaces; ++i)
+	    { jj = 0;
+	      for (std::size_t j = dofs_per_cell1; j <dofs_per_cell1*num_sub_spaces; ++j)
+		{
+		  values[i][j] = values_sub[ii][jj];
+		  jj += 1;
+		}
+	      ii +=1;
+
+	    }
+	}
 
       // Compute local-to-global mapping
       dofs0 = V0->dofmap()->cell_dofs(cell.index());
@@ -324,8 +398,8 @@ void PointSource::apply(GenericMatrix& A)
 
       // Add values to matrix
       A.add_local(values.data(),
-		  dofs_per_cell0, dofs0.data(),
-		  dofs_per_cell1, dofs1.data());
+		  dofs_per_cell0*num_sub_spaces, dofs0.data(),
+		  dofs_per_cell1*num_sub_spaces, dofs1.data());
     }
     A.apply("add");
   }
