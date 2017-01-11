@@ -232,16 +232,6 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
     timegrid_node.append_attribute("Name") = "TimeSeries";
     timegrid_node.append_attribute("GridType") = "Collection";
     timegrid_node.append_attribute("CollectionType") = "Temporal";
-
-    //  /Xdmf/Domain/Grid/Time
-    pugi::xml_node time_node = timegrid_node.append_child("Time");
-    dolfin_assert(time_node);
-    time_node.append_attribute("TimeType") = "List";
-    pugi::xml_node timedata_node = time_node.append_child("DataItem");
-    dolfin_assert(timedata_node);
-    timedata_node.append_attribute("Format") = "XML";
-    timedata_node.append_attribute("Dimensions") = "0";
-    timedata_node.append_child(pugi::node_pcdata);
   }
 
   hid_t h5_id = -1;
@@ -280,26 +270,6 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
                  "XDMF file does not contain a TimeSeries");
   }
 
-  pugi::xml_node time_node = timegrid_node.child("Time");
-  dolfin_assert(time_node);
-
-  // Get existing number of timesteps, and values
-  pugi::xml_node timedata_node = time_node.child("DataItem");
-  dolfin_assert(timedata_node);
-  pugi::xml_attribute numsteps_attr = timedata_node.attribute("Dimensions");
-  dolfin_assert(numsteps_attr);
-  pugi::xml_node times_str_node = timedata_node.first_child();
-  dolfin_assert(times_str_node);
-  unsigned int numsteps = std::stoul(numsteps_attr.value());
-  dolfin_assert(numsteps == _counter);
-  std::string times_str(times_str_node.value());
-
-  // Add new values
-  times_str += " " + boost::str((boost::format("%g") % time_step));
-  ++numsteps;
-  numsteps_attr.set_value(numsteps);
-  times_str_node.set_value(times_str.c_str());
-
   // Add the mesh Grid to the time Grid
   if (_counter == 0 or parameters["rewrite_function_mesh"])
   {
@@ -329,6 +299,10 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
 
   pugi::xml_node grid_node = timegrid_node.last_child();
   dolfin_assert(grid_node);
+
+  // Add time value to Grid
+  pugi::xml_node time_node = grid_node.append_child("Time");
+  time_node.append_attribute("Value") = time_step;
 
   // Get Function data values and shape
   std::vector<double> data_values;
