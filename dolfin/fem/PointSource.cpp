@@ -241,24 +241,44 @@ void PointSource::apply(GenericMatrix& A)
   std::size_t size_basis;
   double basis_sum0;
   double basis_sum1;
+
   std::size_t num_sub_spaces = V0->element()->num_sub_elements();
-  // A scalar function space has 1 sub space but will show as 0
+  // Making sure scalar function space has 1 sub space 
   if (num_sub_spaces == 0)
     num_sub_spaces = 1;
   std::size_t dofs_per_cell0 = V0->element()->space_dimension()/num_sub_spaces;
   std::size_t dofs_per_cell1 = V1->element()->space_dimension()/num_sub_spaces;
+
+  //Calculates size of basis
   size_basis = 1;
   for (std::size_t i = 0; i < rank; ++i)
     size_basis *= V0->element()->value_dimension(i);
+
   std::vector<double> basis0(size_basis);
   std::vector<double> basis1(size_basis);
+
+  // Values vector for all sub spaces
   boost::multi_array<double, 2>  values(boost::extents[dofs_per_cell0*num_sub_spaces][dofs_per_cell1*num_sub_spaces]);
+  // Values vector for one subspace.
   boost::multi_array<double, 2>  values_sub(boost::extents[dofs_per_cell0][dofs_per_cell1]);
 
   // Variables for adding local data to matrix
   ArrayView<const dolfin::la_index> dofs0;
   ArrayView<const dolfin::la_index> dofs1;
 
+  // Check sub spaces are the same
+
+  for (std::size_t n=0; n >num_sub_spaces; ++n)
+    {
+      if (V0->sub(0) != V0->sub(n))
+	{
+	  dolfin_error("PointSource.cpp",
+		       "apply point source to vector",
+		       "The sub spaces are not the same. Not implemented in this case.");
+ 
+	}
+    }
+  
   for (auto & s : _sources)
   {
     Point& p = s.first;
@@ -299,96 +319,54 @@ void PointSource::apply(GenericMatrix& A)
       cell.get_coordinate_dofs(coordinate_dofs);
       cell.get_cell_data(ufc_cell);
 
-      // If a scalar function space calculate values with
-      // magnitude*basis_sum_0*basis_sum_1
-      if (num_sub_spaces == 0 || num_sub_spaces == 1)
+      // Calculate values with magnitude*basis_sum_0*basis_sum_1
+      for (std::size_t i = 0; i < dofs_per_cell0; ++i)
 	{
-	  for (std::size_t i = 0; i < dofs_per_cell0; ++i)
+	  V0->element()->evaluate_basis(i, basis0.data(),
+					p.coordinates(),
+					coordinate_dofs.data(),
+					ufc_cell.orientation);
+	  for (std::size_t j = 0; j < dofs_per_cell0; ++j)
 	    {
-	      V0->element()->evaluate_basis(i, basis0.data(),
-	                                    p.coordinates(),
-	                                    coordinate_dofs.data(),
-	                                    ufc_cell.orientation);
-	      for (std::size_t j = 0; j < dofs_per_cell0; ++j)
-		{
-	          V1->element()->evaluate_basis(j, basis1.data(),
-				 	        p.coordinates(),
-					        coordinate_dofs.data(),
-					        ufc_cell.orientation);
-
-		  basis_sum0 = 0.0;
-		  basis_sum1 = 0.0;
-		  for (const auto& v : basis0)
-		    basis_sum0 += v;
-		  for (const auto& v : basis1)
-		    basis_sum1 += v;
+	      V1->element()->evaluate_basis(j, basis1.data(),
+					    p.coordinates(),
+					    coordinate_dofs.data(),
+					    ufc_cell.orientation);
+	      
+	      basis_sum0 = 0.0;
+	      basis_sum1 = 0.0;
+	      for (const auto& v : basis0)
+		basis_sum0 += v;
+	      for (const auto& v : basis1)
+		basis_sum1 += v;
 		
-		  values[i][j] = magnitude*basis_sum0*basis_sum1;
-	        }
-	     }
+	      values_sub[i][j] = magnitude*basis_sum0*basis_sum1;
+	    }
 	}
 
-      // If vector function space when sub spaces are all the same,
-      // calculates the values for a sub space and then manipulates
-      // matrix to add for other sub_spaces
-      if (num_sub_spaces > 1)
+      // If scalar function space, values = values_sub
+      if (num_sub_spaces == 0 || num_sub_spaces == 1)
+	values = values_sub;
+      // If vector function space with repeated sub spaces,
+      // calculates the values_sub for a sub space and then manipulates
+      // values matrix for all sub_spaces.
+      else
 	{
-	  info("Vector");
-	  // Only works if sub spaces are the same
-	  // FIXME: Extend this check to all subspaces.
-	  dolfin_assert(V0->sub(0) = V0->sub(1));
-
-	  // Evaluates basis functions for the first sub space
-	  auto V_sub0 = V0->sub(0);
-	  auto V_sub1 = V1->sub(0);
-	  for (std::size_t i = 0; i < dofs_per_cell0; ++i)
-	    {
-	      V_sub0->element()->evaluate_basis(i, basis0.data(),
-	                                    p.coordinates(),
-	                                    coordinate_dofs.data(),
-	                                    ufc_cell.orientation);
-	      for (std::size_t j = 0; j < dofs_per_cell0; ++j)
-		{
-	          V_sub1->element()->evaluate_basis(j, basis1.data(),
-				 	        p.coordinates(),
-					        coordinate_dofs.data(),
-					        ufc_cell.orientation);
-
-		  basis_sum0 = 0.0;
-		  basis_sum1 = 0.0;
-		  for (const auto& v : basis0)
-		    basis_sum0 += v;
-		  for (const auto& v : basis1)
-		    basis_sum1 += v;
-		  values_sub[i][j] = magnitude*basis_sum0*basis_sum1;
-	        }
-	    }
-
-	  // Uses the values calculated on one subspace mirrors them
-	  // for all
-	  int ii = 0;
+	  int ii;
 	  int jj;
-
-	  for (std::size_t i =0; i< dofs_per_cell0; ++i)
-	    { jj = 0;
-	      for (std::size_t j = 0; j <dofs_per_cell1; ++j)
+	  for (std::size_t k=0; k<num_sub_spaces; ++k)
+	    {
+	      ii = 0;
+	      for (std::size_t i=k*dofs_per_cell0; i<dofs_per_cell0*(k+1); ++i)
 		{
-		  values[i][j] = values_sub[ii][jj];
-		  jj += 1;
+		  jj = 0;
+		  for (std::size_t j=k*dofs_per_cell1; j<dofs_per_cell1*(k+1); ++j)
+		    {
+		      values[i][j] = values_sub[ii][jj];
+		      jj += 1;
+		    }
+		  ii +=1;
 		}
-	      ii +=1;
-	    }
-
-	  ii = 0;
-	  for (std::size_t i =dofs_per_cell0; i< dofs_per_cell0*num_sub_spaces; ++i)
-	    { jj = 0;
-	      for (std::size_t j = dofs_per_cell1; j <dofs_per_cell1*num_sub_spaces; ++j)
-		{
-		  values[i][j] = values_sub[ii][jj];
-		  jj += 1;
-		}
-	      ii +=1;
-
 	    }
 	}
 
