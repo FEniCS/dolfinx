@@ -210,6 +210,14 @@ void PointSource::apply(GenericMatrix& A)
 
   dolfin_assert(_function_space1);
 
+  // Currently only works if V0 and V1 are the same
+  if (_function_space0 != _function_space1)
+  {
+    dolfin_error("PointSource.cpp",
+		 "apply point source to vector",
+		 "The function spaces are different. Not currently implemented");
+  }
+
   std::shared_ptr<const FunctionSpace> V0 = _function_space0;
   std::shared_ptr<const FunctionSpace> V1 = _function_space1;
 
@@ -267,17 +275,15 @@ void PointSource::apply(GenericMatrix& A)
   ArrayView<const dolfin::la_index> dofs1;
 
   // Check sub spaces are the same
-
-  for (std::size_t n=0; n >num_sub_spaces; ++n)
-    {
+  for (std::size_t n=0; n<num_sub_spaces; ++n)
+  {
       if (V0->sub(0) != V0->sub(n))
-	{
-	  dolfin_error("PointSource.cpp",
-		       "apply point source to vector",
-		       "The sub spaces are not the same. Not implemented in this case.");
- 
-	}
-    }
+      {
+	dolfin_error("PointSource.cpp",
+		     "apply point source to vector",
+		     "The sub spaces are not the same. Not currently implemented");
+      }
+  }
   
   for (auto & s : _sources)
   {
@@ -345,7 +351,7 @@ void PointSource::apply(GenericMatrix& A)
 	}
 
       // If scalar function space, values = values_sub
-      if (num_sub_spaces == 0 || num_sub_spaces == 1)
+      if (num_sub_spaces < 2)
 	values = values_sub;
       // If vector function space with repeated sub spaces,
       // calculates the values_sub for a sub space and then manipulates
