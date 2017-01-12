@@ -279,7 +279,6 @@ void PointSource::apply(GenericMatrix& A)
   {
     for (std::size_t n=0; n<num_sub_spaces; ++n)
     {
-      info("n: " + std::to_string(n));
       // Doesn't work for mixed function spaces with different elements.
       if (V0->sub(0)->element()->signature() != V0->sub(n)->element()->signature())
       {
