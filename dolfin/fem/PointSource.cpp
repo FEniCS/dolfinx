@@ -274,28 +274,28 @@ void PointSource::apply(GenericMatrix& A)
   ArrayView<const dolfin::la_index> dofs0;
   ArrayView<const dolfin::la_index> dofs1;
 
-  // Doesn't work for mixed function spaces with different elements.
-  for (std::size_t n=0; n<num_sub_spaces; ++n)
+  // Runs some checks on vector or mixed function spaces
+  if (num_sub_spaces > 1)
   {
-    if (V0->sub(0)->element()->signature() != V0->sub(n)->element()->signature())
+    for (std::size_t n=0; n<num_sub_spaces; ++n)
+    {
+      info("n: " + std::to_string(n));
+      // Doesn't work for mixed function spaces with different elements.
+      if (V0->sub(0)->element()->signature() != V0->sub(n)->element()->signature())
       {
 	dolfin_error("PointSource.cpp",
 		     "apply point source to vector",
 		     "The mixed elements are not the same. Not currently implemented");
       }
-  }
-
-  // Doesn't work for vector elements within vector function space
-  // Could use similar logic.
-  for (std::size_t n=0; n<num_sub_spaces; ++n)
-  {
-    if (V0->sub(n)->element()->num_sub_elements() > 1)
-    {
-      dolfin_error("PointSource.cpp",
-		   "apply point source to vector",
-		   "Have vector elements. Not currently implemented");
+      if (V0->sub(n)->element()->num_sub_elements() > 1)
+      {
+	dolfin_error("PointSource.cpp",
+		     "apply point source to vector",
+		     "Have vector elements. Not currently implemented");
+      }
     }
   }
+
 
   for (auto & s : _sources)
   {
