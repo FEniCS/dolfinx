@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-10-14
+// Last changed: 2017-01-19
 
 #include <cmath>
 #include <algorithm>
@@ -58,8 +58,6 @@ PointIntegralSolver::PointIntegralSolver(std::shared_ptr<MultiStageScheme> schem
   _ufcs(), _coefficient_index(), _recompute_jacobian(),
   _jacobians(), _eta(1.0), _num_jacobian_computations(0)
 {
-  Timer construct_pis("Construct PointIntegralSolver");
-
   // Set parameters
   parameters = default_parameters();
 
@@ -98,6 +96,8 @@ void PointIntegralSolver::step(double dt)
 {
   dolfin_assert(_mesh);
 
+  Timer timer("PointIntegralSolver::step");
+  
   const bool reset_stage_solutions_ = parameters["reset_stage_solutions"];
   const bool reset_newton_solver_
     = parameters("newton_solver")["reset_each_step"];
@@ -109,8 +109,6 @@ void PointIntegralSolver::step(double dt)
   // Check for reseting newtonsolver for each time step
   if (reset_newton_solver_)
     reset_newton_solver();
-
-  Timer t_step("PointIntegralSolver::step");
 
   dolfin_assert(dt > 0.0);
 
@@ -181,8 +179,6 @@ void PointIntegralSolver::step(double dt)
       }
     }
 
-    Timer t_last_stage("Last stage: tabulate_tensor");
-
     // Last stage point integral
     const ufc::vertex_integral& integral
       = *_last_stage_ufc->default_vertex_integral;
@@ -216,6 +212,8 @@ void PointIntegralSolver::step(double dt)
 
   // Update time
   *_scheme->t() = t0 + dt;
+
+  timer.stop();
 }
 //-----------------------------------------------------------------------------
 void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
@@ -223,7 +221,6 @@ void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
                                                 const ufc::cell& ufc_cell,
                                                 const std::vector<double>& coordinate_dofs)
 {
-  Timer t_expl("Explicit stage");
 
   // Local vertex ind
   const unsigned int local_vert = _vertex_map[vert_ind].second;
@@ -233,11 +230,9 @@ void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
     = *_ufcs[stage][0]->default_vertex_integral;
 
   // Tabulate cell tensor
-  Timer t_expl_tt("Explicit stage: tabulate_tensor");
   integral.tabulate_tensor(_ufcs[stage][0]->A.data(), _ufcs[stage][0]->w(),
                            coordinate_dofs.data(), local_vert,
                            ufc_cell.orientation);
-  t_expl_tt.stop();
 
   // Extract vertex dofs from tabulated tensor and put them into the
   // local stage solution vector
@@ -265,8 +260,6 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
                                                 const ufc::cell& ufc_cell,
                                                 const std::vector<double>& coordinate_dofs)
 {
-  Timer t_impl("Implicit stage");
-
   // Do a simplified newton solve
   _simplified_newton_solve(vert_ind, stage, cell, ufc_cell, coordinate_dofs);
 
@@ -318,13 +311,10 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
 {
   const ufc::vertex_integral& J_integral = *loc_ufc.default_vertex_integral;
 
-  //Timer _timer_compute_jac("Implicit stage: Compute jacobian");
-  //Timer t_impl_update("Update_cell");
   // TODO: Pass suitable bool vector here to avoid tabulating all
   // coefficient dofs:
   loc_ufc.update(cell, coordinate_dofs, ufc_cell);
   //J_integral.enabled_coefficients());
-  //t_impl_update.stop();
 
   // If there is a solution coefficient in the Jacobian form
   if (coefficient_index > 0)
@@ -336,15 +326,12 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
   }
 
   // Tabulate Jacobian
-  Timer t_impl_tt_jac("Implicit stage: tabulate_tensor (J)");
   J_integral.tabulate_tensor(loc_ufc.A.data(), loc_ufc.w(),
                              coordinate_dofs.data(),
                              local_vert,
                              ufc_cell.orientation);
-  t_impl_tt_jac.stop();
 
   // Extract vertex dofs from tabulated tensor
-  //Timer t_impl_update_jac("Implicit stage: update_jac");
   for (unsigned int row = 0; row < _system_size; row++)
   {
     for (unsigned int col = 0; col < _system_size; col++)
@@ -354,12 +341,11 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
                     + _local_to_local_dofs[col]];
     }
   }
-  //t_impl_update_jac.stop();
 
   // LU factorize Jacobian
-  //Timer lu_factorize("Implicit stage: LU factorize");
   _lu_factorize(jac);
   _num_jacobian_computations += 1;
+
 }
 //-----------------------------------------------------------------------------
 void PointIntegralSolver::_lu_factorize(std::vector<double>& A)
@@ -601,7 +587,6 @@ void PointIntegralSolver::_simplified_newton_solve(
   std::size_t vert_ind, unsigned int stage, const Cell& cell,
   const ufc::cell& ufc_cell, const std::vector<double>& coordinate_dofs)
 {
-  //Timer _timer_newton_solve("Implicit stage: Newton solve");
   const Parameters& newton_solver_params = parameters("newton_solver");
   const size_t report_vertex = newton_solver_params["report_vertex"];
   const double kappa = newton_solver_params["kappa"];
@@ -649,12 +634,10 @@ void PointIntegralSolver::_simplified_newton_solve(
   do
   {
     // Tabulate residual
-    Timer t_impl_tt_F("Implicit stage: tabulate_tensor (F)");
     F_integral.tabulate_tensor(loc_ufc_F.A.data(), loc_ufc_F.w(),
                                coordinate_dofs.data(),
                                local_vert,
                                ufc_cell.orientation);
-    t_impl_tt_F.stop();
 
     // Extract vertex dofs from tabulated tensor, together with the
     // old stage solution
@@ -687,9 +670,7 @@ void PointIntegralSolver::_simplified_newton_solve(
     }
 
     // Perform linear solve By forward backward substitution
-    //Timer forward_backward_substitution("Implicit stage: fb substitution");
     _forward_backward_subst(jac, _residual, _dx);
-    //forward_backward_substitution.stop();
 
     // Newton_Iterations == 0
     if (newton_iterations == 0)
