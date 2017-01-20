@@ -101,7 +101,7 @@ def test_cell_assembly():
 
 
 @skip_in_parallel
-def test_cell_assembly_multithreaded():
+def test_cell_assembly_multithreaded(pushpop_parameters):
     mesh = UnitCubeMesh(4, 4, 4)
     V = VectorFunctionSpace(mesh, "DG", 1)
 
@@ -122,13 +122,11 @@ def test_cell_assembly_multithreaded():
     parameters["num_threads"] = 4
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
-    parameters["num_threads"] = 0
 
 
-def test_facet_assembly():
+def test_facet_assembly(pushpop_parameters):
     parameters["ghost_mode"] = "shared_facet"
     mesh = UnitSquareMesh(24, 24)
-    parameters["ghost_mode"] = "none"
     V = FunctionSpace(mesh, "DG", 1)
 
     # Define test and trial functions
@@ -160,6 +158,31 @@ def test_facet_assembly():
     # Assemble A and b
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
+
+
+def test_ghost_mode_handling(pushpop_parameters):
+    def _form():
+        # Return form with trivial interior facet integral
+        mesh = UnitSquareMesh(10, 10)
+        ff = FacetFunction('size_t', mesh, 0)
+        AutoSubDomain(lambda x: near(x[0], 0.5)).mark(ff, 1)
+        return Constant(1.0)*dS(domain=mesh, subdomain_data=ff, subdomain_id=1)
+
+    # Not-ghosted mesh won't work in parallel and assembler should raise
+    parameters["ghost_mode"] = "none"
+    if MPI.size(mpi_comm_world()) == 1:
+        assert numpy.isclose(assemble(_form()), 1.0)
+    else:
+        form = _form()
+        with pytest.raises(RuntimeError) as excinfo:
+            assemble(form)
+        assert "Incorrect mesh ghost mode" in excinfo.value.message
+
+    # Ghosted meshes work everytime
+    parameters["ghost_mode"] = "shared_vertex"
+    assert numpy.isclose(assemble(_form()), 1.0)
+    parameters["ghost_mode"] = "shared_facet"
+    assert numpy.isclose(assemble(_form()), 1.0)
 
 
 @skip_in_parallel
@@ -471,7 +494,7 @@ def test_subdomain_assembly_form_2():
 
 
 @skip_in_parallel
-def test_colored_cell_assembly():
+def test_colored_cell_assembly(pushpop_parameters):
 
     old_mesh = UnitCubeMesh(4, 4, 4)
 
@@ -501,7 +524,6 @@ def test_colored_cell_assembly():
     parameters["num_threads"] = 4
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
-    parameters["num_threads"] = 0
 
 
 def test_nonsquare_assembly():
@@ -530,7 +552,7 @@ def test_nonsquare_assembly():
 
 
 @skip_in_parallel
-def test_nonsquare_assembly_multithreaded():
+def test_nonsquare_assembly_multithreaded(pushpop_parameters):
     """Test assembly of a rectangular matrix"""
 
     mesh = UnitSquareMesh(16, 16)
@@ -547,7 +569,6 @@ def test_nonsquare_assembly_multithreaded():
 
     parameters["num_threads"] = 4
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
-    parameters["num_threads"] = 0
 
 
 @skip_in_parallel
@@ -556,7 +577,6 @@ def test_reference_assembly(filedir, pushpop_parameters):
 
     # NOTE: This test is not robust as it relies on specific
     #       DOF order, which cannot be guaranteed
-    reorder_dofs = parameters["reorder_dofs_serial"]
     parameters["reorder_dofs_serial"] = False
 
     # Load reference mesh (just a simple tetrahedron)
