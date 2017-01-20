@@ -171,7 +171,7 @@ void AssemblerBase::check(const Form& a)
                    "assemble form",
                    "Incorrect mesh ghost mode \"%s\" (expected "
                    "\"shared_vertex\" or \"shared_facet\" for "
-                   "interior facet intergrals in parallel)",
+                   "interior facet integrals in parallel)",
                    ghost_mode.c_str());
     }
   }
