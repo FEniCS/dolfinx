@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-19
+// Last changed: 2017-01-05
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -314,18 +314,19 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     return intersection;
 
   // Can we reduce to 1d?
-  for (std::size_t i = 0; i < 2; ++i)
+  for (std::size_t d = 0; d < 2; ++d)
   {
-    const bool reduce = (p0[i] == p1[i] and p1[i] == q0[i] and q0[i] == q1[i]);
+    // Check if coordinates in dimension d is the same
+    const bool reduce = (p0[d] == p1[d] and p1[d] == q0[d] and q0[d] == q1[d]);
     if (reduce)
     {
-      const std::size_t j = (i+1) % 2;
+      const std::size_t j = (d+1) % 2;
       const std::vector<double> intersection_1d =
 	intersection_segment_segment_1d(p0[j], p1[j], q0[j], q1[j]);
       intersection.resize(intersection_1d.size());
       for (std::size_t k = 0; k < intersection.size(); ++k)
       {
-	intersection[k][i] = p0[i];
+	intersection[k][d] = p0[d];
 	intersection[k][j] = intersection_1d[k];
       }
       return intersection;
@@ -472,7 +473,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     // Test Shewchuk
     const Point x0 = p0 + numer / denom * (p1 - p0);
   #ifdef augustdebug
-      std::cout << "  test shewchuk: "<<tools::plot(x0)<<'\n';
+      std::cout << "  test shewchuk p0+numer/denom*(p1-p0): "<<tools::plot(x0)<<'\n';
 #endif
 
     if ((CollisionPredicates::collides_segment_point_1d(p0[0], p1[0], x0[0]) and
@@ -731,6 +732,28 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 	      else
 	      {
 		PPause;
+// #ifdef augustdebug
+// 		std::cout << "test perturb largest point and dim\n";
+// #endif
+// 		std::array<Point, 4> pts = {p0, p1, q0, q1};
+// 		double maxp = p0[0];
+// 		std::size_t point_number = 0; // use 0,1,2,3,4,5,6,7 for p0[0], p0[1], ..., q1[1]
+// 		for (std::size_t i = 0; i < 4; ++i)
+// 		  for (std::size_t d = 0; d < 2; ++d)
+// 		    if (std::abs(pts[i][d]) > maxp)
+// 		    {
+// 		      maxp = std::abs(pts[i][d]);
+// 		      point_number = 2*i + d;
+// 		    }
+// #ifdef augustdebug
+// 		std::cout << "point no " << point_number/2<<" dim " << point_number%2 << std::endl;
+// #endif
+// 		pts[point_number/2][point_number%2] += std::numeric_limits<double>::epsilon();
+// 		std::vector<Point> intersection_perturbed = _intersection_segment_segment_2d(pts[0], pts[1], pts[2], pts[3]);
+
+// 		for (const Point p: intersection_perturbed)
+// 		  std::cout << p<<std::endl;
+// 		PPause;
 	      }
 
 
