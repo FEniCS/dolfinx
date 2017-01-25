@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-16
+// Last changed: 2017-01-25
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -152,11 +152,11 @@ namespace dolfin
 
     /// Compute intersection of triangle p0-p1-p2 with segment q0-q1 (2D version)
     static std::vector<Point>
-    intersection_triangle_segment_3d(const Point& p0,
-                                     const Point& p1,
-                                     const Point& p2,
-                                     const Point& q0,
-                                     const Point& q1)
+    intersection_triangle_segment_3d(Point p0,
+                                     Point p1,
+                                     Point p2,
+                                     Point q0,
+                                     Point q1)
     {
       return _intersection_triangle_segment_3d(p0, p1, p2, q0, q1);
     }
@@ -261,11 +261,11 @@ namespace dolfin
                                       const Point& q1);
 
     static std::vector<Point>
-    _intersection_triangle_segment_3d(const Point& p0,
-                                      const Point& p1,
-                                      const Point& p2,
-                                      const Point& q0,
-                                      const Point& q1);
+    _intersection_triangle_segment_3d(Point p0,
+                                      Point p1,
+                                      Point p2,
+                                      Point q0,
+                                      Point q1);
 
     static std::vector<Point>
     _intersection_triangle_triangle_2d(Point p0,
@@ -301,8 +301,17 @@ namespace dolfin
                                           const Point& q2,
                                           const Point& q3);
 
-    // Utility function
+    // Utility functions
+
+    // Strictly unique points using == operator
     static std::vector<Point> unique_points(std::vector<Point> points);
+
+    // Determinant of 3 x 3 matrix
+    static double det(Point ab, Point dc, Point ec);
+
+    static Point cross_product(Point a,
+			       Point b,
+			       Point c);
 
     //test
     static bool bisection(Point source,

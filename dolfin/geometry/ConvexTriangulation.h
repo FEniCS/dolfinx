@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2016-11-22
+// Last changed: 2017-01-23
 
 #ifndef __CONVEX_TRIANGULATION
 #define __CONVEX_TRIANGULATION
@@ -39,8 +39,10 @@ namespace dolfin
 
     // Triangulate using the Graham scan
     static std::vector<std::vector<Point>>
-    triangulate_graham_scan(std::vector<Point> p,
-			    std::size_t gdim);
+    triangulate_graham_scan_2d(std::vector<Point> pm);
+
+    static std::vector<std::vector<Point>>
+    triangulate_graham_scan_3d(std::vector<Point> pm);
 
     // Triangulate using Bowyer-Watson (Delaunay)
     static std::vector<std::vector<Point>>
