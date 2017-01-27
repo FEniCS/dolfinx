@@ -148,9 +148,6 @@ namespace dolfin
     // invalid.
     static void check_value_range(double value, double lower, double upper);
 
-    // Return a default RGB color map (256 values)
-    static boost::multi_array<float, 2> default_color_map();
-
     // Surface, surface with edges or wireframe
     Representation _representation;
 

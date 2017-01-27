@@ -35,6 +35,26 @@
 
 #include "X3DOM.h"
 
+namespace
+{
+  boost::multi_array<float, 2> default_color_map()
+  {
+    boost::multi_array<float, 2> rgb_map(boost::extents[256][3]);
+
+    // Create RGB palette of 256 colors
+    for (int i = 0; i < 256; ++i)
+    {
+      const double x = (double)i/255.0;
+      const double y = 1.0 - x;
+      rgb_map[i][0] = 4*std::pow(x, 3) - 3*std::pow(x, 4);
+      rgb_map[i][1] = 4*std::pow(x, 2)*(1.0 - std::pow(x, 2));
+      rgb_map[i][2] = 4*std::pow(y, 3) - 3*std::pow(y, 4);
+    }
+
+    return rgb_map;
+  }
+}
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -214,24 +234,6 @@ void X3DOMParameters::check_value_range(double value, double lower,
                  upper);
   }
 }
-//-----------------------------------------------------------------------------
-boost::multi_array<float, 2> X3DOMParameters::default_color_map()
-{
-  boost::multi_array<float, 2> rgb_map(boost::extents[256][3]);
-
-  // Create RGB palette of 256 colors
-  for (int i = 0; i < 256; ++i)
-  {
-    const double x = (double)i/255.0;
-    const double y = 1.0 - x;
-    rgb_map[i][0] = 4*std::pow(x, 3) - 3*std::pow(x, 4);
-    rgb_map[i][1] = 4*std::pow(x, 2)*(1.0 - std::pow(x, 2));
-    rgb_map[i][2] = 4*std::pow(y, 3) - 3*std::pow(y, 4);
-  }
-
-  return rgb_map;
-}
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, X3DOMParameters parameters)
 {
