@@ -28,7 +28,8 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
   set(Boost_NO_BOOST_CMAKE true)
 
   set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
-  find_package(Boost 1.48 QUIET REQUIRED COMPONENTS ${DOLFIN_BOOST_COMPONENTS_PUBLIC})
+  find_package(Boost 1.48 QUIET REQUIRED COMPONENTS
+    @DOLFIN_BOOST_COMPONENTS_PUBLIC@)
 
   # Need to get VTK config because VTK uses advanced VTK features
   # which mean it's not enough to just link to the DOLFIN target. See
