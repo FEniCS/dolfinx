@@ -32,11 +32,8 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STR
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${CLANG_FLAGS}")
 endif()
 
-# Get DOLFIN include directories
-get_property(dolfin_include_dirs TARGET dolfin PROPERTY INCLUDE_DIRECTORIES)
-
 # Set common include directories
-include_directories(${NUMPY_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS} ${CMAKE_BINARY_DIR} ${dolfin_include_dirs})
+include_directories(${NUMPY_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS} ${CMAKE_BINARY_DIR})
 
 # Set add PYTHON defines
 add_definitions(${DOLFIN_PYTHON_DEFINITIONS})
