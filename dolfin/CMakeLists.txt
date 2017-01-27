@@ -79,8 +79,9 @@ list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${UFC_INCLUDE_DIRS})
 list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${EIGEN3_INCLUDE_DIR})
 
 # Boost
+target_link_libraries(dolfin PUBLIC Boost::boost)
 foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS_PUBLIC})
-  target_link_libraries(dolfin PUBLIC "Boost::boost Boost::${BOOST_PACKAGE}")
+  target_link_libraries(dolfin PUBLIC "Boost::${BOOST_PACKAGE}")
 endforeach()
 foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS_PRIVATE})
   target_link_libraries(dolfin PRIVATE "Boost::${BOOST_PACKAGE}")
