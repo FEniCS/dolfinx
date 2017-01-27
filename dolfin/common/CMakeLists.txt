@@ -1,0 +1,34 @@
+set(HEADERS
+  Array.h
+  ArrayView.h
+  constants.h
+  defines.h
+  dolfin_common.h
+  dolfin_doc.h
+  Hierarchical.h
+  IndexSet.h
+  init.h
+  MPI.h
+  NoDeleter.h
+  RangedIndexSet.h
+  Set.h
+  SubSystemsManager.h
+  Timer.h
+  timing.h
+  types.h
+  UniqueIdGenerator.h
+  utils.h
+  Variable.h
+  PARENT_SCOPE)
+
+set(SOURCES
+  defines.cpp
+  init.cpp
+  MPI.cpp
+  SubSystemsManager.cpp
+  Timer.cpp
+  timing.cpp
+  UniqueIdGenerator.cpp
+  utils.cpp
+  Variable.cpp
+  PARENT_SCOPE)

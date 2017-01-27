@@ -74,7 +74,7 @@ def test_layout_and_pattern_interface(backend, V, VV, TH, VR):
         # Test ghosted vector (for use as dofs of FE function)
         t0 = TensorLayout(0, TensorLayout.Sparsity_DENSE)
         t0.init(c, [i], TensorLayout.Ghosts_GHOSTED)
-        x = Vector()
+        x = Vector(c)
         x.init(t0)
         u = Function(V, x)
 

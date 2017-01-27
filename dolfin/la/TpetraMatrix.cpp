@@ -417,7 +417,7 @@ void TpetraMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
   dolfin_assert(!_matA.is_null());
 
   const std::size_t ncols = _matA->getNumEntriesInGlobalRow(row);
-  if (ncols == Tpetra::OrdinalTraits<std::size_t>::invalid())
+  if (ncols == Teuchos::OrdinalTraits<std::size_t>::invalid())
   {
     dolfin_error("TpetraMatrix.cpp",
                  "get TpetraMatrix row",
