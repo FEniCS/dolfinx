@@ -2,14 +2,11 @@
 #
 #     cmake/scripts/generate-cmakefiles
 #
-# Require CMake 2.8
-cmake_minimum_required(VERSION 2.8)
+# Require CMake 3.5
+cmake_minimum_required(VERSION 3.5)
 
 set(PROJECT_NAME demo_multimesh-cgal)
 project(${PROJECT_NAME})
-
-# Set verbose output while testing CMake
-#set(CMAKE_VERBOSE_MAKEFILE 1)
 
 # Set CMake behavior
 cmake_policy(SET CMP0004 NEW)
@@ -26,6 +23,15 @@ if (EXISTS ${DOLFIN_USE_FILE})
     set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
       "Choose the type of build, options are: Debug MinSizeRel Release RelWithDebInfo." FORCE)
   endif()
+
+  # Do not throw error for 'multi-line comments' (these are typical in
+  # rst which includes LaTeX)
+  include(CheckCXXCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
+  if (HAVE_NO_MULTLINE)
+    set(CMAKE_CXX_FLAGS "-Wno-comment ${CMAKE_CXX_FLAGS}")
+  endif()
+
 else()
   # Compiler definitions
   add_definitions(${DOLFIN_CXX_DEFINITIONS})
@@ -33,19 +39,25 @@ else()
   # Compiler flags
   set(CMAKE_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
 
+  # Do not throw error for 'multi-line comments' (these are typical in
+  # rst which includes LaTeX)
+  include(CheckCXXCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
+  if (HAVE_NO_MULTLINE)
+    set(CMAKE_CXX_FLAGS "-Wno-comment ${CMAKE_CXX_FLAGS}")
+  endif()
+
   # Include directories
   include_directories(${DOLFIN_INCLUDE_DIRS})
   include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 endif()
 
 # Executable
-#add_executable(multimesh  main.cpp)
-#add_executable(multimesh2 main2.cpp)
-add_executable(multimesh3 main3.cpp)
-#add_executable(multimesh4 main4.cpp)
+add_executable(demo_main2 main2.cpp)
+add_executable(demo_main3 main3.cpp)
+add_executable(demo_main4 main4.cpp)
 
 # Target libraries
-#target_link_libraries(multimesh "${DOLFIN_LIBRARIES};/home/august/Software/lib/libCGAL.so;/usr/lib/x86_64-linux-gnu/libgmp.so;/usr/lib/x86_64-linux-gnu/libmpfr.so")
-#target_link_libraries(multimesh2 ${DOLFIN_LIBRARIES})
-target_link_libraries(multimesh3 "${DOLFIN_LIBRARIES};/home/august/Software/lib/libCGAL.so;/usr/lib/x86_64-linux-gnu/libgmp.so;/usr/lib/x86_64-linux-gnu/libmpfr.so")
-#target_link_libraries(multimesh4 "${DOLFIN_LIBRARIES};/home/august/Software/lib/libCGAL.so;/usr/lib/x86_64-linux-gnu/libgmp.so;/usr/lib/x86_64-linux-gnu/libmpfr.so")
+target_link_libraries(demo_main2 ${DOLFIN_LIBRARIES})
+target_link_libraries(demo_main3 ${DOLFIN_LIBRARIES})
+target_link_libraries(demo_main4 ${DOLFIN_LIBRARIES})

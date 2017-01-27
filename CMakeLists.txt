@@ -346,6 +346,7 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
 # Note: Check for Python interpreter even when Python is disabled
 #       because it is used to get the installation path for
 #       dolfin_utils
+
 if (DOLFIN_USE_PYTHON3)
   find_package(PythonInterp 3)
 else()
