@@ -187,3 +187,25 @@ def test_homogenize_consistency():
         bc_new = DirichletBC(bc)
         bc_new.homogenize()
         assert bc_new.method() == bc.method()
+
+
+def test_nocaching_values():
+    """There might be caching of dof indices in DirichletBC.
+    But caching of values is _not_ allowed."""
+    mesh = UnitSquareMesh(4, 4)
+    V = FunctionSpace(mesh, "P", 1)
+    u = Function(V)
+    x = u.vector()
+
+    for method in ["topological", "geometric", "pointwise"]:
+        bc = DirichletBC(V, 0.0, lambda x, b: True, method=method)
+
+        x.zero()
+        bc.set_value(Constant(1.0))
+        bc.apply(x)
+        assert numpy.allclose(x.array(), 1.0)
+
+        x.zero()
+        bc.set_value(Constant(2.0))
+        bc.apply(x)
+        assert numpy.allclose(x.array(), 2.0)

@@ -205,7 +205,11 @@ GenericBoundingBoxTree::compute_process_collisions(const Point& point) const
   if (_global_tree)
     return _global_tree->compute_collisions(point);
 
-  return std::vector<unsigned int>(1, 0);
+  std::vector<unsigned int> collision;
+  if (point_in_bbox(point.coordinates(), num_bboxes() - 1))
+    collision.push_back(0);
+
+  return collision;
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<unsigned int>, std::vector<unsigned int>>

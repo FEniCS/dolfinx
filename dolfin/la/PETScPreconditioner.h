@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Garth N. Wells
+// Copyright (C) 2010-2016 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,18 +16,15 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2011
-//
-// First added:  2010-02-25
-// Last changed: 2014-07-09
 
 #ifndef __DOLFIN_PETSC_PRECONDITIONER_H
 #define __DOLFIN_PETSC_PRECONDITIONER_H
 
 #ifdef HAS_PETSC
 
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 #include <petscpc.h>
 
 #include <dolfin/common/types.h>
@@ -81,16 +78,12 @@ namespace dolfin
     /// Return a list of available preconditioners
     static std::map<std::string, std::string> preconditioners();
 
-    /// Default parameter values
-    //static Parameters default_parameters();
-
     friend class PETScSNESSolver;
-
     friend class PETScTAOSolver;
 
   private:
 
-    /// Named preconditioner
+    // Named preconditioner
     std::string _type;
 
     // Available names preconditioners

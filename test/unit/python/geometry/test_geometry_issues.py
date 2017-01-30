@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-12-09
-# Last changed: 2016-11-09
+# Last changed: 2016-12-13
 
 from __future__ import print_function
 import pytest
@@ -113,3 +113,53 @@ def test_collision_robustness_very_slow():
     _test_collision_robustness_2d(4.43, 1e-17,    4.03e-6)
     _test_collision_robustness_2d(  40, 0.5,         1e-6)
     _test_collision_robustness_2d(  10, 0.5 + 1e-16, 1e-7)
+
+@skip_in_parallel
+def test_points_on_line():
+    """Test case from https://bitbucket.org/fenics-project/dolfin/issues/790"""
+    big = 1e6
+    p1 = Point(0.1, 0.06)
+    p3 = Point(big*2.1, big*0.1)
+    p2 = Point(0.0, big*3.0)
+    p0 = Point(big*3.0, 0.0)
+
+    mesh = Mesh()
+    ed = MeshEditor()
+    ed.open(mesh, 2, 2)
+    ed.init_cells(3)
+    ed.init_vertices(4)
+    ed.add_vertex(0, p0)
+    ed.add_vertex(1, p1)
+    ed.add_vertex(2, p2)
+    ed.add_vertex(3, p3)
+
+    ed.add_cell(0, 2, 3, 0)
+    ed.add_cell(1, 0, 1, 3)
+    ed.add_cell(2, 1, 2, 3)
+
+    ed.close()
+
+    # xdmf = XDMFFile("a.xdmf")
+    # xdmf.write(mesh)
+
+    # print mesh.cells()
+    # print mesh.coordinates()
+
+    bb = mesh.bounding_box_tree()
+
+    # Find a point on line somewhere between p3 and p1
+    j = 4
+    pq = (p3*j + p1*(50-j))/50.0
+    c = bb.compute_entity_collisions(pq)
+    # print pq.str(), c
+
+    # Check that the neighbouring points are in the correct cells
+    cell_numbers = [1, 2, 2, 1, 1, 2, 1, 1, 2]
+    step = 1e-6
+    cnt = 0
+    for i in range(-1, 2):
+        for j in range(-1, 2):
+            pt = pq + Point(step*i, step*j)
+            c = bb.compute_entity_collisions(pt)
+            assert c[0] == cell_numbers[cnt]
+            cnt += 1

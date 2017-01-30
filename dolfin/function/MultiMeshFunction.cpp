@@ -30,11 +30,30 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+MultiMeshFunction::MultiMeshFunction() : Variable("u", "a function")
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 MultiMeshFunction::MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V)
   : _function_space(V)
 {
   // Initialize vector
   init_vector();
+}
+//-----------------------------------------------------------------------------
+MultiMeshFunction::MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V,
+                   std::shared_ptr<GenericVector> x)
+  : _function_space(V), _vector(x)
+{
+  // We do not check for a subspace since this constructor is used for
+  // creating subfunctions
+
+  // Assertion uses '<=' to deal with sub-functions
+  dolfin_assert(x);
+  dolfin_assert(V);
+  dolfin_assert(V->dofmap());
+  dolfin_assert(V->dofmap()->global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
 MultiMeshFunction::~MultiMeshFunction()
@@ -113,7 +132,7 @@ void MultiMeshFunction::init_vector()
     std::vector<std::size_t> local_to_global(local_size);
     for (std::size_t i = 0; i < local_size; ++i)
       local_to_global[i] = i;
-    _vector->init(MPI_COMM_WORLD, range, local_to_global, ghost_indices);
+    _vector->init(range, local_to_global, ghost_indices);
   }
   else
   {

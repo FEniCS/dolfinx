@@ -1,0 +1,21 @@
+set(HEADERS
+  BoundingBoxTree1D.h
+  BoundingBoxTree2D.h
+  BoundingBoxTree3D.h
+  BoundingBoxTree.h
+  dolfin_geometry.h
+  GenericBoundingBoxTree.h
+  intersect.h
+  MeshPointIntersection.h
+  Point.h
+  SimplexQuadrature.h
+  PARENT_SCOPE)
+
+set(SOURCES
+  BoundingBoxTree.cpp
+  GenericBoundingBoxTree.cpp
+  intersect.cpp
+  MeshPointIntersection.cpp
+  Point.cpp
+  SimplexQuadrature.cpp
+  PARENT_SCOPE)

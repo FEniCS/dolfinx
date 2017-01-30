@@ -99,7 +99,9 @@ int main()
   };
 
   // Read mesh
-  auto mesh = std::make_shared<Mesh>("../pulley.xml.gz");
+  auto mesh = std::make_shared<Mesh>();
+  XDMFFile file("../pulley.xdmf");
+  file.read(*mesh);
 
   // Create right-hand side loading function
   auto f = std::make_shared<CentripetalLoading>();

@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2016-11-23
+// Last changed: 2016-12-07
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -37,10 +37,6 @@
 #include "BoundaryMesh.h"
 #include "MeshFunction.h"
 #include "MultiMesh.h"
-
-
-// FIXME
-#include </home/august/dolfin_simplex_tools.h>
 
 using namespace dolfin;
 
@@ -234,6 +230,10 @@ void MultiMesh::build(std::size_t quadrature_order)
 
   // Build quadrature rules and normals of the interface
   _build_quadrature_rules_interface(quadrature_order);
+
+  // Make sure that cut cells are actually cut
+  // TODO: Do this while building interface quadrature rules
+  _impose_cut_cell_consistency();
 
   end();
 }
@@ -529,9 +529,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       const unsigned int cut_cell_index = it->first;
       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
 
-      // std::cout << "cut part " << cut_part <<" cut cell no " << cut_cell_index << std::endl
-      // 		<< tools::drawtriangle(cut_cell) << std::endl;
-
       // Get dimensions
       const std::size_t tdim = cut_cell.mesh().topology().dim();
       const std::size_t gdim = cut_cell.mesh().geometry().dim();
@@ -557,12 +554,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
         const std::size_t cutting_part = jt->first;
         const std::size_t cutting_cell_index = jt->second;
         const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
-
-	// std::cout// << "cut part " << cut_part <<" cell no " << cut_cell_index << std::endl
-	// 	  << "cutting part " << cutting_part << " cutting cell no " << cutting_cell_index << std::endl
-	//   //<< tools::drawtriangle(cut_cell)
-	// 	  << tools::drawtriangle(cutting_cell)<<std::endl;
-
 
   	// Only allow same type of cell for now
       	dolfin_assert(cutting_cell.mesh().topology().dim() == tdim);
@@ -599,7 +590,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	for (const double w: qr.second)
 	  vol += w;
       }
-      // std::cout << "net vol for cut part " << cut_part << " cut cell " << cut_cell_index << vol << std::endl;
 
       // Store quadrature rules for cut cell
       _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
@@ -1006,8 +996,6 @@ void MultiMesh::_inclusion_exclusion_overlap
   // previous_intersections data. We only have to intersect if the
   // key doesn't contain the polyhedron.
 
-  // std::cout << '\n'<<__FUNCTION__ << "\n\n";
-
   // Add quadrature rule for stage 0
   quadrature_rule part_qr;
   for (const std::pair<IncExcKey, Polyhedron>& pol_pair: previous_intersections)
@@ -1017,50 +1005,13 @@ void MultiMesh::_inclusion_exclusion_overlap
 	// std::size_t prevsz = part_qr.second.size();
 	_add_quadrature_rule(part_qr, simplex, gdim,
 			     quadrature_order, 1.);
-	// std::cout << tools::drawtriangle(simplex);
-	// quadrature_rule qqqq;
-	// for (std::size_t i = prevsz, j = 0; i < part_qr.second.size(); ++i)
-	// {
-	//   qqqq.first.push_back(part_qr.first[2*i]);
-	//   qqqq.first.push_back(part_qr.first[2*i+1]);
-	//   qqqq.second.push_back(part_qr.second[i]);
-	// }
-	// tools::cout_qr(qqqq);
-
-	// //dolfin_assert(std::abs(tools::area(simplex) - std::abs(tools::area(qqqq))) < DOLFIN_EPS);
-	// const double heron = tools::area(simplex);
-	// const double area_qr = std::abs(tools::area(qqqq));
-	// const double ee = std::abs(heron - area_qr);
-	// if (ee > DOLFIN_EPS)
-	// {
-	//   std::cout << "areas " << heron <<' '<<area_qr << " err " << ee << std::endl;
-	// }
       }
 
   // Add quadrature rule for overlap part
   qr[0] = part_qr;
 
-  // {
-  //   // std::cout << __FUNCTION__<<std::endl;
-  //   // std::cout << "stage 0 polyhedra\n";
-  //   // for (const std::pair<IncExcKey, Polyhedron>& pol_pair: previous_intersections)
-  //   //   for (const Simplex& simplex: pol_pair.second)
-  //   // 	std::cout << tools::drawtriangle(simplex);
-  //   // std::cout << '\n';
-
-  //   // std::cout << "net qr stage " << "0" << std::endl;
-  //   // tools::cout_qr(part_qr);
-  //   double vol = 0;
-  //   for (const double w: part_qr.second)
-  //     vol += w;
-  //   std::cout << "net vol " << vol << " stage 0 " << std::endl;
-  // }
-
   for (std::size_t stage = 1; stage < N; ++stage)
   {
-
-    // std::cout << "\n stage " << stage << std::endl;
-
     // Structure for storing new intersections
     std::vector<std::pair<IncExcKey, Polyhedron> > new_intersections;
 
@@ -1115,9 +1066,6 @@ void MultiMesh::_inclusion_exclusion_overlap
 		  // yet, but rather a std::vector<Simplex> since we
 		  // are still filling the polyhedron with simplices
 
-		  // std::cout << "% collision of\n";
-		  // std::cout << "clf,hold on;"<<tools::drawtriangle(previous_simplex)<<tools::drawtriangle(initial_simplex,"'r'")<<std::endl;
-
 		  // FIXME: We could add only if area is sufficiently
 		  // large
 		  for (const Simplex& simplex: intersection)
@@ -1125,16 +1073,10 @@ void MultiMesh::_inclusion_exclusion_overlap
 		    if (simplex.size() == tdim + 1 and
 			!GeometryPredicates::is_degenerate(simplex, gdim))
 		    {
-		      // std::cout << tools::drawtriangle(simplex,"'g'");
-
 		      new_polyhedron.push_back(simplex);
 		      any_intersections = true;
 		    }
                   }
-
-		  // if (any_intersections)
-		  //   std::cout << std::endl<<"pause;\n";
-
 		}
 	      }
 	    }
@@ -1171,32 +1113,7 @@ void MultiMesh::_inclusion_exclusion_overlap
 	  // std::size_t prevsz = overlap_part_qr.second.size();
 	  _add_quadrature_rule(overlap_part_qr, simplex, gdim,
 			       quadrature_order, sign);
-	  // std::cout << tools::drawtriangle(simplex);
-	  // quadrature_rule qqqq;
-	  // for (std::size_t i = prevsz, j = 0; i < overlap_part_qr.second.size(); ++i)
-	  // {
-	  //   qqqq.first.push_back(overlap_part_qr.first[2*i]);
-	  //   qqqq.first.push_back(overlap_part_qr.first[2*i+1]);
-	  //   qqqq.second.push_back(overlap_part_qr.second[i]);
-	  // }
-	  // tools::cout_qr(qqqq);
-	  // // dolfin_assert(std::abs(tools::area(simplex) - std::abs(tools::area(qqqq))) < DOLFIN_EPS);
-	  // const double heron = tools::area(simplex);
-	  // const double area_qr = std::abs(tools::area(qqqq));
-	  // const double ee = std::abs(heron - area_qr);
-	  // if (ee > DOLFIN_EPS)
-	  // {
-	  //   std::cout << "areas " << heron <<' '<<area_qr << " err " << ee << std::endl;
-	  // }
 	}
-
-    // {
-    //   // tools::cout_qr(overlap_part_qr);
-    //   double vol = 0;
-    //   for (const double w: overlap_part_qr.second)
-    // 	vol += w;
-    //   std::cout << "% net vol " << vol << " stage " << stage << std::endl;
-    // }
 
     // Add quadrature rule for overlap part
     qr[stage] = overlap_part_qr;
@@ -1393,16 +1310,8 @@ void MultiMesh::_inclusion_exclusion_interface
       {
 	if (simplex.size() == tdim_bulk + 1)
 	{
-	  // std::cout << "compute intersection of\n"
-	  // 	    << tools::drawtriangle(Eij)<<tools::drawtriangle(simplex)<<std::endl;
 	  const std::vector<Point> Eij_cap_Tk_points
 	    = IntersectionConstruction::intersection(Eij, simplex, gdim);
-
-	  // std::cout <<"intersection is\n";
-	  // for (const Point p: Eij_cap_Tk_points)
-	  //   std::cout << tools::plot(p);
-	  // std::cout << std::endl;
-
 	  const Polyhedron Eij_cap_Tk
 	    = ConvexTriangulation::triangulate(Eij_cap_Tk_points,
 					       gdim,
@@ -1465,5 +1374,63 @@ MultiMesh::_boundary_facets_to_full_mesh(std::size_t part) const
   }
 
   return full_to_bdry;
+}
+//-----------------------------------------------------------------------------
+void MultiMesh::_impose_cut_cell_consistency()
+{
+  std::vector<std::vector<unsigned int> > new_cut_cells;
+  std::size_t num_cells_covered = 0;
+  std::size_t num_cells_uncut = 0;
+  for (std::size_t part = 0; part < num_parts(); part++)
+  {
+    std::vector<unsigned int> new_cut_cells_part;
+    for (unsigned int cell : _cut_cells[part])
+    {
+      // Decide if cell has quadrature points
+      // TODO: Do this in _build_quadrature_rules_interface
+      bool cell_has_quadrature_points = false;
+      for (quadrature_rule qr : _quadrature_rules_interface[part][cell])
+      {
+        if (qr.first.size() > 0)
+        {
+          cell_has_quadrature_points = true;
+          break;
+        }
+      }
+      if (cell_has_quadrature_points)
+        new_cut_cells_part.push_back(cell);
+      else
+      {
+        // Decide if cell is overlapped or uncut
+        // TODO: Implement decision to allow update before generating all the quadrature rules
+        // For now, we use cut cell and overlap quadrature
+        double overlap_area = 0;
+        for (auto _qr : _quadrature_rules_overlap[part][cell])
+          for (double w : _qr.second)
+            overlap_area += w;
+
+        double cut_cell_area = 0;
+        for (double w : _quadrature_rules_cut_cells[part][cell].second)
+          cut_cell_area += w;
+
+        // Append to _cut_cells or _overlapped_cells
+        // One of cut cell area and overlapped cell area should be zero
+        if (overlap_area > cut_cell_area)
+        {
+          _covered_cells[part].push_back(cell);
+          num_cells_covered++;
+        }
+        else
+        {
+          _uncut_cells[part].push_back(cell);
+          num_cells_uncut++;
+        }
+      }
+    }
+    new_cut_cells.push_back(new_cut_cells_part);
+  }
+  _cut_cells.swap(new_cut_cells);
+  log(PROGRESS, "Identified %d cut cells as covered.", num_cells_covered);
+  log(PROGRESS, "Identified %d cut cells as uncut.", num_cells_uncut);
 }
 //-----------------------------------------------------------------------------

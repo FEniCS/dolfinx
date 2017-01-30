@@ -49,6 +49,15 @@ std::size_t dolfin::sizeof_la_index()
   return sizeof(dolfin::la_index);
 }
 //-------------------------------------------------------------------------
+bool dolfin::has_debug()
+{
+#ifdef DEBUG
+  return true;
+#else
+  return false;
+#endif
+}
+//-------------------------------------------------------------------------
 bool dolfin::has_openmp()
 {
 #ifdef HAS_OPENMP

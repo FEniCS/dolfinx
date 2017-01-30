@@ -26,6 +26,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/fem/PETScDMCollection.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "KrylovSolver.h"
@@ -418,6 +419,7 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
     break;
   case norm_type::default_norm:
     ksp_norm_type = KSP_NORM_DEFAULT;
+    break;
   case norm_type::preconditioned:
     ksp_norm_type = KSP_NORM_PRECONDITIONED;
     break;
@@ -435,6 +437,21 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
 
   dolfin_assert(_ksp);
   KSPSetNormType(_ksp, ksp_norm_type);
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_dm(DM dm)
+{
+  dolfin_assert(_ksp);
+  KSPSetDM(_ksp, dm);
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_dm_active(bool val)
+{
+  dolfin_assert(_ksp);
+  if (val)
+    KSPSetDMActive(_ksp, PETSC_TRUE);
+  else
+    KSPSetDMActive(_ksp, PETSC_FALSE);
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type() const
@@ -471,12 +488,6 @@ void PETScKrylovSolver::monitor(bool monitor_convergence)
   PetscErrorCode ierr;
   if (monitor_convergence)
   {
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-    ierr = KSPMonitorSet(_ksp, KSPMonitorTrueResidualNorm,
-                         PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_ksp)),
-                         NULL);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
-    #else
     PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_ksp));
     PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
     PetscViewerAndFormat *vf;
@@ -486,7 +497,6 @@ void PETScKrylovSolver::monitor(bool monitor_convergence)
                          vf,
                          (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
-    #endif
   }
   else
   {

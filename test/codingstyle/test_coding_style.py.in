@@ -98,7 +98,7 @@ def raise_exception(code, filename):
                   "specialfunctions.py", "function.py",
                   "ordereddict.py", "abaqus.py", "sge.py", "pjobs.py",
                   "generatepythonrst.py", "CppHeaderParser.py",
-                  "subdomains.py", "plotting.py"]
+                  "subdomains.py", "plotting.py", "multimeshfunction.py"]
     if filename in exceptions:
         return True
 

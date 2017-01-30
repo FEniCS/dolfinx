@@ -22,12 +22,14 @@
 #define __MULTI_MESH_DOF_MAP_H
 
 #include "GenericDofMap.h"
+#include <dolfin/mesh/MultiMesh.h>
 
 namespace dolfin
 {
 
   // Forward declarations
   class MultiMeshFunctionSpace;
+  class MultiMesh;
 
   /// This class handles the mapping of degrees of freedom for MultiMesh
   /// function spaces.
@@ -91,6 +93,7 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
+    std::vector<dolfin::la_index> inactive_dofs(MultiMesh multimesh, std::size_t part_id) const;
   private:
 
     // Index Map containing total global dimension (sum of parts)
