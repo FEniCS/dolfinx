@@ -553,7 +553,7 @@ endif()
 # Check for Trilinos and the requires Trilinos packages
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
-  find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR}
+  find_package(Trilinos QUIET PATHS ${TRILINOS_DIR} ${Trilinos_DIR}
     $ENV{TRILINOS_DIR})
   set(DOLFIN_TRILINOS_PACKAGES "Tpetra;Zoltan;MueLu;Amesos2;Ifpack2;Belos")
 
@@ -646,7 +646,7 @@ endif()
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
   # Find all modules
-  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
+  find_package(VTK QUIET HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
   set_package_properties(VTK PROPERTIES TYPE OPTIONAL
     DESCRIPTION "The Visualization Toolkit - A high level 3D visualization library"
     URL "https://www.vtk.org"
