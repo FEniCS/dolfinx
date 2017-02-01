@@ -96,6 +96,18 @@ MultiMeshDirichletBC::MultiMeshDirichletBC(std::shared_ptr<const MultiMeshFuncti
   _bcs.push_back(bc);
 }
 //-----------------------------------------------------------------------------
+MultiMeshDirichletBC::MultiMeshDirichletBC(const MultiMeshDirichletBC& bc)
+{
+  *this = bc;
+
+  // Iterate over boundary conditions and call the copy constructor
+  for (std::size_t part = 0; part < _bcs.size(); part++)
+  {
+    std::shared_ptr<DirichletBC> bc(new DirichletBC(*_bcs[part]));
+    _bcs[part] = bc;
+  }
+}
+//-----------------------------------------------------------------------------
 MultiMeshDirichletBC::~MultiMeshDirichletBC()
 {
   // Do nothing
@@ -243,6 +255,16 @@ void MultiMeshDirichletBC::apply(GenericMatrix& A,
     // Apply the single boundary condition
     _bcs[0]->apply(A, b, x);
   }
+}
+//-----------------------------------------------------------------------------
+void MultiMeshDirichletBC::homogenize()
+{
+  // Iterate over boundary conditions
+  for (std::size_t part = 0; part < _bcs.size(); part++)
+    {
+      // Homogenize boundary condition
+      _bcs[part]->homogenize();
+    }
 }
 //-----------------------------------------------------------------------------
 MultiMeshDirichletBC::MultiMeshSubDomain::MultiMeshSubDomain
