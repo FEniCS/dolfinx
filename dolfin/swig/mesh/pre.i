@@ -351,7 +351,7 @@ SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(std::vector<quadratur
 PyObject* quadrature_rule_##cell_type(std::size_t part)
 {
   PyObject* ret = PyDict_New();
-    
+
   auto qr_map = ($self)->quadrature_rule_##cell_type (part);
   
   for (auto it = qr_map.begin(); it != qr_map.end(); it++)
@@ -367,7 +367,7 @@ PyObject* quadrature_rule_##cell_type(std::size_t part)
 }
 PyObject* quadrature_rule_##cell_type(std::size_t part, unsigned int cell)
 {
-  auto qr_map = ($self)->quadrature_rule_##cell_type(part); 
+  auto qr_map = ($self)->quadrature_rule_##cell_type(part);
   auto qr = qr_map[cell];
   return convert_dolfin_quadrature_rule(qr);
 }
