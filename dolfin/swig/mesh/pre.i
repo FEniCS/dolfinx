@@ -296,12 +296,17 @@ FORWARD_DECLARE_MESHFUNCTIONS(std::size_t, Sizet)
 //-----------------------------------------------------------------------------
 // Add typemap functions for MultiMesh quadrature rules
 //-----------------------------------------------------------------------------
+<<<<<<< 6d880be94a8b1a095fda675c96a32db67797a406
 typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
 %{
 typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
 %}
 %fragment("convert_dolfin_quadrature_rule", "header"){ 
 SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(quadrature_rule qr)
+=======
+%fragment("convert_dolfin_quadrature_rule", "header"){ 
+SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(dolfin::quadrature_rule qr)
+>>>>>>> Revert "Commented out what created an error for CompiledSubdomain, inserted again when Issue #1 is fixed"
 {
   // Typemap Function for dolfin::quadrature_rule 
   npy_intp n0 = qr.first.size();
@@ -326,11 +331,19 @@ SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(quadrature_rule qr)
 }
 }
 %fragment("convert_dolfin_quadrature_rule_vector", "header"){
+<<<<<<< 6d880be94a8b1a095fda675c96a32db67797a406
 SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(std::vector<quadrature_rule> qr_vector)
 {
   // Typemap function for std::vec<quadrature_rule>
   quadrature_rule qr;
   for (quadrature_rule qr_j : qr_vector)
+=======
+SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(std::vector<dolfin::quadrature_rule> qr_vector)
+{
+  // Typemap function for std::vec<dolfin::quadrature_rule>
+  dolfin::quadrature_rule qr;
+  for (dolfin::quadrature_rule qr_j : qr_vector)
+>>>>>>> Revert "Commented out what created an error for CompiledSubdomain, inserted again when Issue #1 is fixed"
   {
     qr.first.insert(qr.first.end(), qr_j.first.begin(), qr_j.first.end());
     qr.second.insert(qr.second.end(), qr_j.second.begin(), qr_j.second.end());
