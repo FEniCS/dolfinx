@@ -296,8 +296,12 @@ FORWARD_DECLARE_MESHFUNCTIONS(std::size_t, Sizet)
 //-----------------------------------------------------------------------------
 // Add typemap functions for MultiMesh quadrature rules
 //-----------------------------------------------------------------------------
+typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
+%{
+typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
+%}
 %fragment("convert_dolfin_quadrature_rule", "header"){ 
-SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(dolfin::quadrature_rule qr)
+SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(quadrature_rule qr)
 {
   // Typemap Function for dolfin::quadrature_rule 
   npy_intp n0 = qr.first.size();
@@ -322,11 +326,11 @@ SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(dolfin::quadrature_ru
 }
 }
 %fragment("convert_dolfin_quadrature_rule_vector", "header"){
-SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(std::vector<dolfin::quadrature_rule> qr_vector)
+SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(std::vector<quadrature_rule> qr_vector)
 {
-  // Typemap function for std::vec<dolfin::quadrature_rule>
-  dolfin::quadrature_rule qr;
-  for (dolfin::quadrature_rule qr_j : qr_vector)
+  // Typemap function for std::vec<quadrature_rule>
+  quadrature_rule qr;
+  for (quadrature_rule qr_j : qr_vector)
   {
     qr.first.insert(qr.first.end(), qr_j.first.begin(), qr_j.first.end());
     qr.second.insert(qr.second.end(), qr_j.second.begin(), qr_j.second.end());
