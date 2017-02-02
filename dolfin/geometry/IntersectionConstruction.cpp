@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-12-09
+// Last changed: 2017-02-02
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -143,7 +143,7 @@ IntersectionConstruction::intersection(const std::vector<Point>& points_0,
                                              points_1[1],
                                              points_1[2]);
 
-  if (d0 == 2 && d1 == 2)
+  if (d0 == 3 && d1 == 3)
     return intersection_tetrahedron_tetrahedron(points_0[0],
                                                 points_0[1],
                                                 points_0[2],
