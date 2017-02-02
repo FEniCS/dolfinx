@@ -25,6 +25,7 @@ import pytest
 from dolfin import *
 from math import sin, cos, exp, tan
 from numpy import array, zeros, float_
+import numpy as np
 
 from dolfin_utils.test import fixture, skip_in_parallel
 
@@ -207,6 +208,26 @@ def test_wrong_eval():
             f(zeros(3), values=zeros(4))
         with pytest.raises(TypeError):
             f(zeros(4), values=zeros(3))
+
+
+@skip_in_parallel
+def test_vector_valued_expression_member_function():
+    mesh = UnitSquareMesh(1, 1)
+    V = FunctionSpace(mesh,'CG',1)
+    W = VectorFunctionSpace(mesh,'CG',1, dim=3)
+    fs = [
+        Expression(("1", "2", "3"), degree=1),
+        Constant((1, 2, 3)),
+        interpolate(Constant((1, 2, 3)), W),
+    ]
+    for f in fs:
+        u = Expression("f[0] + f[1] + f[2]", f=f, degree=1)
+        v = interpolate(u, V)
+        assert np.allclose(v.vector().array(), 6.0)
+        for g in fs:
+            u.f = g
+            v = interpolate(u, V)
+            assert np.allclose(v.vector().array(), 6.0)
 
 
 def test_no_write_to_const_array():
@@ -433,9 +454,9 @@ def test_generic_function_attributes(mesh, V):
 
     # Test wrong kwargs
     with pytest.raises(TypeError):
-        Expression("t", t=Constant((1, 0)), degree=0)
+        Expression("t", t=mesh, degree=0)
     with pytest.raises(TypeError):
-        Expression("t", t=Function(W), degree=0)
+        Expression("t", t=W, degree=0)
 
     # Test non-scalar GenericFunction
     f2 = Function(W)
