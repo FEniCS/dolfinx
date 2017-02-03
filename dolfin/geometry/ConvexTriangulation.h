@@ -16,12 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-01-23
+// Last changed: 2017-02-03
 
 #ifndef __CONVEX_TRIANGULATION
 #define __CONVEX_TRIANGULATION
 
 #include "Point.h"
+#include "CGALExactArithmetic.h"
 #include <vector>
 
 namespace dolfin
@@ -39,23 +40,36 @@ namespace dolfin
 
     // Triangulate using the Graham scan
     static std::vector<std::vector<Point>>
-    triangulate_graham_scan_2d(std::vector<Point> pm);
+    triangulate_graham_scan_2d(std::vector<Point> pm)
+    {
+      // return CHECK_CGAL(_triangulate_graham_scan_2d(pm),
+      // 			cgal_triangulate_2d(pm));
+      return _triangulate_graham_scan_2d(pm);
+    }
 
     static std::vector<std::vector<Point>>
-    triangulate_graham_scan_3d(std::vector<Point> pm);
-
-    // Triangulate using Bowyer-Watson (Delaunay)
-    static std::vector<std::vector<Point>>
-    triangulate_bowyer_watson(std::vector<Point> p,
-			      std::size_t gdim);
-
-    // TODO: Fix this.
-    // static std::vector<std::vector<Point>>
-    // triangulate_3d(std::vector<Point> p);
+    triangulate_graham_scan_3d(std::vector<Point> pm)
+    {
+      // return CHECK_CGAL(_triangulate_graham_scan_3d(pm),
+      // 			cgal_triangulate_3d(pm));
+      return _triangulate_graham_scan_3d(pm);
+    }
 
   private:
 
-    static std::vector<Point> unique_points(const std::vector<Point>& points);
+    // Implementation declarations
+    static std::vector<std::vector<Point>>
+    _triangulate_graham_scan_2d(std::vector<Point> pm);
+
+    static std::vector<std::vector<Point>>
+    _triangulate_graham_scan_3d(std::vector<Point> pm);
+
+    // Triangulate using Bowyer-Watson (Delaunay)
+    static std::vector<std::vector<Point>>
+    _triangulate_bowyer_watson(std::vector<Point> p,
+			       std::size_t gdim);
+
+
 
     // Help class for Bowyer Watson
     struct Edge
@@ -88,6 +102,11 @@ namespace dolfin
       Edge e1;
       Edge e2;
     };
+
+    // Utility function
+    static std::vector<Point> unique_points(const std::vector<Point>& points,
+					    double tol);
+
   };
 
 } // end namespace dolfin

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-01-24
+// Last changed: 2017-02-03
 
 #include "ConvexTriangulation.h"
 #include <algorithm>
@@ -108,7 +108,7 @@ ConvexTriangulation::triangulate(std::vector<Point> p,
 
   if (tdim == 1)
   {
-    const std::vector<Point> unique_p = unique_points(p);
+    const std::vector<Point> unique_p = unique_points(p, DOLFIN_EPS);
 
     if (unique_p.size() > 2)
     {
@@ -132,19 +132,17 @@ ConvexTriangulation::triangulate(std::vector<Point> p,
 }
 //------------------------------------------------------------------------------
 std::vector<std::vector<Point>>
-ConvexTriangulation::triangulate_graham_scan_2d(std::vector<Point> input_points)
+ConvexTriangulation::_triangulate_graham_scan_2d(std::vector<Point> input_points)
 {
   // Make sure the input points are unique
-  std::vector<Point> points = unique_points(input_points);
+  std::vector<Point> points = unique_points(input_points, DOLFIN_EPS);
 
   if (points.size() < 3)
     return std::vector<std::vector<Point>>();
 
-  std::vector<std::vector<Point>> triangulation;
-
   if (points.size() == 3)
   {
-    triangulation.push_back(points);
+    std::vector<std::vector<Point>> triangulation(1, points);
     return triangulation;
   }
 
@@ -174,52 +172,24 @@ ConvexTriangulation::triangulate_graham_scan_2d(std::vector<Point> input_points)
     order.emplace_back(alpha, m);
   }
 
-  // std::vector<std::pair<double, std::size_t>> order;
-  // Point ref = points[0] - pointscenter;
-  // ref /= ref.norm();
-
-  // // Compute normal
-  // Point normal = (points[2] - points[0]).cross(points[1] - points[0]);
-  // const double det = normal.norm();
-  // normal /= det;
-
-  // // Calculate and store angles
-  // for (std::size_t m = 1; m < points.size(); ++m)
-  // {
-  //   const Point v = points[m] - pointscenter;
-  //   const double frac = ref.dot(v) / v.norm();
-  //   double alpha;
-  //   if (frac <= -1)
-  //     alpha = DOLFIN_PI;
-  //   else if (frac >= 1)
-  //     alpha = 0;
-  //   else
-  //   {
-  //     alpha = acos(frac);
-  //     if (v.dot(normal.cross(ref)) < 0)
-  //       alpha = 2*DOLFIN_PI-alpha;
-  //   }
-  //   order.push_back(std::make_pair(alpha, m));
-  // }
-
   // Sort angles
   std::sort(order.begin(), order.end());
 
   // Tessellate
-  triangulation.reserve(order.size() - 1);
+  std::vector<std::vector<Point>> triangulation(order.size() - 1);
   for (std::size_t m = 0; m < order.size()-1; ++m)
   {
     // FIXME: We could consider only triangles with area > tolerance here.
-    triangulation.push_back({ points[0],
-	  points[order[m].second],
-	  points[order[m + 1].second] });
+    triangulation[m] = {{ points[0],
+			  points[order[m].second],
+			  points[order[m + 1].second] }};
   }
 
   return triangulation;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<Point>>
-ConvexTriangulation::triangulate_bowyer_watson(std::vector<Point> input_points,
+ConvexTriangulation::_triangulate_bowyer_watson(std::vector<Point> input_points,
 					       std::size_t gdim)
 {
   // Delaunay triangulation using Bowyer-Watson
@@ -229,7 +199,7 @@ ConvexTriangulation::triangulate_bowyer_watson(std::vector<Point> input_points,
   dolfin_assert(gdim == 2);
 
   // Make sure the input points are unique
-  std::vector<Point> points = unique_points(input_points);
+  std::vector<Point> points = unique_points(input_points, DOLFIN_EPS);
 
   if (points.size() < 3)
     return std::vector<std::vector<Point>>();
@@ -351,12 +321,12 @@ ConvexTriangulation::triangulate_bowyer_watson(std::vector<Point> input_points,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<Point>>
-ConvexTriangulation::triangulate_graham_scan_3d(std::vector<Point> input_points)
+ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points)
 {
   const double coplanar_tol = 1000*DOLFIN_EPS_LARGE;
 
   // Make sure the input points are unique
-  std::vector<Point> points = unique_points(input_points);
+  std::vector<Point> points = unique_points(input_points, DOLFIN_EPS);
 
   std::vector<std::vector<Point>> triangulation;
 
@@ -717,9 +687,10 @@ std::vector<std::vector<Point>> triangulate_3d(std::vector<Point> points)
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-ConvexTriangulation::unique_points(const std::vector<Point>& input_points)
+ConvexTriangulation::unique_points(const std::vector<Point>& input_points,
+				   double tol)
 {
-  // Create a unique list of points in the sense that |p-q|^2 > DOLFIN_EPS
+  // Create a unique list of points in the sense that |p-q|^2 > tol
 
   std::vector<Point> points;
 
@@ -728,7 +699,7 @@ ConvexTriangulation::unique_points(const std::vector<Point>& input_points)
     bool unique = true;
     for (std::size_t j = i+1; j < input_points.size(); ++j)
     {
-      if ((input_points[i] - input_points[j]).squared_norm() < DOLFIN_EPS)
+      if ((input_points[i] - input_points[j]).squared_norm() <= tol)
       {
 	unique = false;
 	break;
