@@ -29,7 +29,6 @@
 // #include <Eigen/Dense>
 // #include <algorithm>
 //#define augustdebug
-#include "/home/august/dolfin_simplex_tools.h"
 
 #ifdef augustdebug
 #include "/home/august/dolfin_simplex_tools.h"
@@ -701,7 +700,25 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 	    }
 	    else
 	    {
-	      PPause;
+	      std::cout<<std::setprecision(std::numeric_limits<long double>::digits10+2)
+		       << "Point p0(" << p0.x()<<','<<p0.y()<<");\n"
+		       << "Point p1(" << p1.x()<<','<<p1.y()<<");\n"
+		       << "Point q0(" << q0.x()<<','<<q0.y()<<");\n"
+		       << "Point q1(" << q1.x()<<','<<q1.y()<<");\n";
+#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+	      const std::vector<Point> cgal_intersection = cgal_intersection_segment_segment_2d(p0,p1,q0,q1);
+	      for (const Point p: cgal_intersection)
+		std::cout << p<<'\n';
+	      dolfin_assert(cgal_intersection.size()==1);
+	      for (const Point p: cgal_intersection)
+		std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2)<< "Point cgal("<<p.x()<<','<<p.y()<<");\n";
+#endif
+	      {
+		char apa;
+		std::cout <<"Paused at "<< __FUNCTION__<<" "<<__LINE__<<std::endl;
+		std::cin >> apa;
+	      }
+
 	      // #ifdef augustdebug
 	      // 		std::cout << "test perturb largest point and dim\n";
 	      // #endif
