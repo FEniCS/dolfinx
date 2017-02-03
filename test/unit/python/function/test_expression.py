@@ -230,6 +230,58 @@ def test_vector_valued_expression_member_function():
             assert np.allclose(v.vector().array(), 6.0)
 
 
+@skip_in_parallel
+def test_meshfunction_expression():
+    mesh = UnitSquareMesh(1, 1)
+    V = FunctionSpace(mesh, "DG", 0)
+
+    c = CellFunctionSizet(mesh)
+    c[0] = 2
+    c[1] = 3
+    e = Expression("(double)c", c=c, degree=0)
+    e.c = c
+
+    h = interpolate(e, V)
+    v = h.vector()
+    assert v[0] == float(c[0])
+    assert v[1] == float(c[1])
+
+    a = MeshFunctionDouble(mesh, 2)
+    a[0] = 2.0
+    a[1] = 4.0
+    e = Expression("a", a=a, degree=0)
+    e.a = a
+
+    h = interpolate(e, V)
+    v = h.vector()
+    assert v[0] == float(a[0])
+    assert v[1] == float(a[1])
+
+    f = Function(V)
+    f.vector()[:] = 2.0
+    g = Constant(3.0)
+    e = Expression("a*(c == 2 ? f: g)", a=1.0, c=c, f=f, g=g, degree=0)
+    e.a = 5.0
+    e.c = c
+    e.f = f
+    e.g = g
+
+    h = interpolate(e, V)
+    v = h.vector()
+    assert v[0] == 5.0 * 2.0
+    assert v[1] == 5.0 * 3.0
+
+    w = Constant((0.0, 1.0, 2.0, 3.0, 4.0, 5.0))
+    e = Expression("w[c]", w=w, c=c, degree=0)
+    e.w = w
+    e.c = c
+
+    h = interpolate(e, V)
+    v = h.vector()
+    assert v[0] == float(c[0])
+    assert v[1] == float(c[1])
+
+
 def test_no_write_to_const_array():
     class F1(Expression):
         def eval(self, values, x):
