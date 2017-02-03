@@ -261,10 +261,10 @@ void MultiMeshDirichletBC::homogenize()
 {
   // Iterate over boundary conditions
   for (std::size_t part = 0; part < _bcs.size(); part++)
-    {
-      // Homogenize boundary condition
-      _bcs[part]->homogenize();
-    }
+  {
+    // Homogenize boundary condition
+    _bcs[part]->homogenize();
+  }
 }
 //-----------------------------------------------------------------------------
 MultiMeshDirichletBC::MultiMeshSubDomain::MultiMeshSubDomain
