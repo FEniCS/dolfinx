@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-02
+// Last changed: 2017-02-03
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -28,7 +28,8 @@
 //#include <ttmath/ttmath.h>
 // #include <Eigen/Dense>
 // #include <algorithm>
-// #define augustdebug
+//#define augustdebug
+#include "/home/august/dolfin_simplex_tools.h"
 
 #ifdef augustdebug
 #include "/home/august/dolfin_simplex_tools.h"
@@ -465,21 +466,11 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
   }
   else if (denom != 0.)
   {
+
     // Follow Shewchuk's Lecture Notes and make sure the intersection
     // point x0 (which is given by x0 = a + numer / denom * (b - a))
     // is closer to a than to b, c or d. Swap points accordingly.
     Point x0 = robust_linear_combination(p0, p1, q0, q1, numer, denom);
-
-    // if (std::abs(numer / denom - 1) < DOLFIN_EPS_LARGE)
-    // {
-    //   // Swap points
-    //   const double denom_q = (q1.x()-q0.x())*(p1.y()-p0.y()) - (q1.y()-q0.y())*(p1.x()-p0.x());
-    //   x0 = q0 + orient2d(p0.coordinates(), p1.coordinates(), q0.coordinates()) /  denom_q * (q1 - q0);
-    // }
-    // else
-    // {
-    //   x0 = p0 + numer / denom * (p1 - p0);
-    // }
 
 #ifdef augustdebug
     std::cout << "  test shewchuk p0+numer/denom*(p1-p0): "<<tools::plot(x0)<<'\n';
@@ -2233,43 +2224,65 @@ Point IntersectionConstruction::robust_linear_combination(Point a,
 							  double numer,
 							  double denom)
 {
-  // Start with a = p0, b = p1, c = q0, d = q1
-  Point x = a + numer / denom * (b - a);
+#ifdef augustdebug
+  std::cout << __FUNCTION__<<'\n';
+#endif
 
-
-
-  const double xa = x.squared_distance(a);
-  const double xb = x.squared_distance(b);
-  const double xc = x.squared_distance(c);
-  const double xd = x.squared_distance(d);
-
-  if (xa <= xb and xa <= xc and xa <= xd)
+  if (std::abs(numer / denom - 1) > DOLFIN_EPS_LARGE)
+  {
+    Point x = a + numer / denom * (b - a);
     return x;
+  }
   else
   {
-    if (xb <= xa and xb <= xc and xb <= xd) // can also use numer/denom \approx 1
-    {
-      // swap a, b: recompute numerator. Flip sign of denominator.
-      double numer_swapped = orient2d(c.coordinates(), d.coordinates(), b.coordinates());
-      Point x = b - numer_swapped / denom * (a - b);
-      return x;
-    }
-    else if (xc <= xa and xc <= xb and xc <= xd)
-    {
-      double denom_c = (b.x()-a.x())*(d.y()-c.y()) - (b.y()-a.y())*(d.x()-c.x());
-      double numer_c = orient2d(a.coordinates(), b.coordinates(), c.coordinates());
-      Point x = c - numer_c / denom_c * (d - c);
-      return x;
-    }
-    else if (xd <= xa and xd <= xb and xd <= xc)
-    {
-      double denom_d = -(b.x()-a.x())*(d.y()-c.y()) + (b.y()-a.y())*(d.x()-c.x());
-      double numer_d = orient2d(a.coordinates(), b.coordinates(), d.coordinates());
-      Point x = d - numer_d / denom_d * (c - d);
-      return x;
-    }
-    else { std::cout << xa <<' '<<xb<<' '<<xc<<' '<<xd; assert(false); PPause; return a; }
+    // swap a and b
+    double numer_swapped = orient2d(c.coordinates(), d.coordinates(), b.coordinates());
+    Point x = b - numer_swapped / denom * (a - b);
+    return x;
   }
+
+
+  // // Start with a = p0, b = p1, c = q0, d = q1
+  // Point x = a + numer / denom * (b - a);
+
+
+  // const double xa = x.squared_distance(a);
+  // const double xb = x.squared_distance(b);
+  // const double xc = x.squared_distance(c);
+  // const double xd = x.squared_distance(d);
+
+  // if (xa <= xb and xa <= xc and xa <= xd)
+  //   return x;
+  // else
+  // {
+  //   if (xb <= xa and xb <= xc and xb <= xd) // can also use numer/denom \approx 1
+  //   {
+  //     // swap a, b: recompute numerator. Flip sign of denominator.
+  //     double numer_swapped = orient2d(c.coordinates(), d.coordinates(), b.coordinates());
+  //     Point x = b - numer_swapped / denom * (a - b);
+
+  //     // std::cout << numer / denom<<std::endl;
+  //     // PPause;
+  //     return x;
+  //   }
+  //   else if (xc <= xa and xc <= xb and xc <= xd)
+  //   {
+  //     double denom_c = (b.x()-a.x())*(d.y()-c.y()) - (b.y()-a.y())*(d.x()-c.x());
+  //     double numer_c = orient2d(a.coordinates(), b.coordinates(), c.coordinates());
+  //     Point x = c - numer_c / denom_c * (d - c);
+  //     PPause;
+  //     return x;
+  //   }
+  //   else if (xd <= xa and xd <= xb and xd <= xc)
+  //   {
+  //     double denom_d = -(b.x()-a.x())*(d.y()-c.y()) + (b.y()-a.y())*(d.x()-c.x());
+  //     double numer_d = orient2d(a.coordinates(), b.coordinates(), d.coordinates());
+  //     Point x = d - numer_d / denom_d * (c - d);
+  //     PPause;
+  //     return x;
+  //   }
+  //   else { std::cout << xa <<' '<<xb<<' '<<xc<<' '<<xd; assert(false); PPause; return a; }
+  // }
 
 }
 //-----------------------------------------------------------------------------
