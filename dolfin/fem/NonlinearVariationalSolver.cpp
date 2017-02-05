@@ -26,6 +26,7 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 #include "Assembler.h"
 #include "Form.h"
 #include "NonlinearVariationalProblem.h"
@@ -87,7 +88,10 @@ std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
 
     // Create Newton solver and set parameters
     if (!newton_solver)
-      newton_solver = std::shared_ptr<NewtonSolver>(new NewtonSolver());
+    {
+      auto comm = u->function_space()->mesh()->mpi_comm();
+      newton_solver = std::shared_ptr<NewtonSolver>(new NewtonSolver(comm));
+    }
 
     // Pass parameters to Newton solver
     newton_solver->parameters.update(parameters("newton_solver"));
