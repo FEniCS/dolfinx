@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-03
+// Last changed: 2017-02-05
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -28,7 +28,7 @@
 //#include <ttmath/ttmath.h>
 // #include <Eigen/Dense>
 // #include <algorithm>
-//#define augustdebug
+// #define augustdebug
 
 #ifdef augustdebug
 #include "/home/august/dolfin_simplex_tools.h"
@@ -498,17 +498,17 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     {
       // Test bisection
       const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
-      // const double alpha = numer / denom;
-      // const Point& ii_intermediate = (1-alpha)*p0 + alpha*p1;
-      // Point& source = use_p ?
-      //   (alpha < .5 ? p0 : p1) :
-      //   (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
-      // Point& target = use_p ?
-      //   (alpha < .5 ? p1 : p0) :
-      //   (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
+      const double alpha = numer / denom;
+      const Point& ii_intermediate = p0 + numer / denom * (p1 - p0);//  (1-alpha)*p0 + alpha*p1;
+      Point& source = use_p ?
+        (alpha < .5 ? p0 : p1) :
+        (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
+      Point& target = use_p ?
+        (alpha < .5 ? p1 : p0) :
+        (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
 
-      Point& source = use_p ? p0 : q0;
-      Point& target = use_p ? p1 : q1;
+      // Point& source = use_p ? p0 : q0;
+      // Point& target = use_p ? p1 : q1;
 
       Point& ref_source = use_p ? q0 : p0;
       Point& ref_target = use_p ? q1 : p1;
