@@ -18,6 +18,7 @@
 // First added:  2014-02-03
 // Last changed: 2017-02-06
 
+#include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
 #include "CollisionPredicates.h"
@@ -1055,12 +1056,12 @@ IntersectionConstruction::_intersection_segment_segment_3d(const Point& p0,
 
   if (denom == 0. and numer == 0)
   {
-    PPause;
+    //PPause;
   }
   else if (denom == 0 and numer != 0)
   {
     // Parallel, disjoint
-    PPause;
+    //PPause;
   }
   else if (denom != 0)
   {
@@ -1924,7 +1925,9 @@ bool IntersectionConstruction::bisection(Point source,
     if (mid_orientation == 0)
     {
       std::cout << mid_orientation;
-      PPause;
+      dolfin_error("IntersectionConstruction.cpp",
+		   "is_orientation_set is true and mid_orientation == 0",
+		   "Not implemented");
     }
     else
     {
@@ -1966,8 +1969,11 @@ bool IntersectionConstruction::bisection(Point source,
 #ifdef augustdebug
 	// need to look at history
 	std::cout << za_orientation<<' '<<zab_orientation << ' '<<orientation<<std::endl;
-#endif
 	PPause;
+#endif
+	dolfin_error("IntersectionConstruction.cpp",
+		     "is_orientation_set is true but orientation uncaught",
+		     "Not implemented");
       }
     }
   }
