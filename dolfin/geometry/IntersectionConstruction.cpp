@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-05
+// Last changed: 2017-02-06
 
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
@@ -315,7 +315,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
   if (!CollisionPredicates::collides_segment_segment_2d(p0, p1, q0, q1))
     return intersection;
 
-  // Can we reduce to 1d?
+  // Can we reduce to axis-aligned 1d?
   for (std::size_t d = 0; d < 2; ++d)
   {
     // Check if coordinates in dimension d is the same
@@ -513,8 +513,6 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
       Point& ref_source = use_p ? q0 : p0;
       Point& ref_target = use_p ? q1 : p1;
 
-      // Test bisection
-
 #ifdef augustdebug
       std::cout << "denom " << denom << " (numer = " << numer << "  alpha = "<<numer/denom<<'\n'
 		<< " source " << tools::plot(source)<<'\n'
@@ -565,7 +563,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
       }
       else
       {
-	// Call bisection again
+	// Call bisection again with swapped input
 	//const bool check_solution = true;
 	// const bool is_orientation_preferred = false;
 	Point z1;
@@ -580,9 +578,9 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 	}
 	else
 	{
-	  // Test truncate the
-
-	  // If z0 and z1 are close to each other, assume it's correct...
+	  // If z0 and z1 are close to each other, assume it is the
+	  // correct point and it's the acceptance criteria in
+	  // bisection that is faulty
 	  if (z0.squared_distance(z1) < DOLFIN_EPS)
 	  {
 #ifdef augustdebug
@@ -592,76 +590,6 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 	  }
 	  else
 	  {
-	    // 	  // Call bisection in interval [~z0, ~z1]. However, z0 \in
-	    // 	  // [source,target] and z1 \in [ref_source,ref_target]. Thus
-	    // 	  // we must project either one onto the other.
-
-	    // 	  std::cout << orient2d(ref_source.coordinates(), ref_target.coordinates(), z0.coordinates())<<' '<<orient2d(ref_source.coordinates(), ref_target.coordinates(), z1.coordinates())<<'\n'
-	    // 		    << orient2d(source.coordinates(), target.coordinates(), z0.coordinates())<<' '<<orient2d(source.coordinates(), target.coordinates(), z1.coordinates())<<'\n';
-	    // 	  // Get height
-	    // 	  const double h0 = orient2d(source.coordinates(), target.coordinates(), z0.coordinates()) / source.distance(target);
-	    // 	  const double h1 = orient2d(ref_source.coordinates(), ref_target.coordinates(), z1.coordinates()) / ref_source.distance(ref_target);
-	    // 	  std::cout << "heights " << h0 <<' ' << h1 << std::endl;
-
-	    // 	  // Project the point with the min distance
-	    // 	  const bool project_z0 = std::abs(h0) < std::abs(h1) ? true : false;
-	    // 	  Point a = project_z0 ? z0 : z1;
-	    // 	  Point b = project_z0 ? ref_source : source;
-	    // 	  Point c = project_z0 ? ref_target : target;
-	    // 	  const Point r = a - c;
-	    // 	  const Point s = b - c;
-	    // 	  Point zproj = c + r.dot(s) / s.squared_norm() * s;
-	    // 	  Point other = project_z0 ? z1 : z0;
-
-	    // 	  // Check orientation
-	    // 	  // if (std::signbit(orient2d(c.coordinates(), d.coordinates(), zproj.coordinates())) !=
-	    // 	  //     std::signbit(orient2d(c.coordinates(), d.coordinates(), other.coordinates())))
-	    // 	  std::cout << orient2d(b.coordinates(), c.coordinates(), zproj.coordinates())<<' '<< orient2d(b.coordinates(), c.coordinates(), other.coordinates())<<std::endl;
-
-	    // 	  Point z01;
-	    // 	  bool z01_ok;
-
-	    // 	  if (std::signbit(orient2d(b.coordinates(), c.coordinates(), zproj.coordinates())) != std::signbit(orient2d(b.coordinates(), c.coordinates(), other.coordinates())))
-	    // 	  {
-	    // #ifdef augustdebug
-	    // 	    std::cout << "bisect using project_z0 " << project_z0 << '\n';
-	    // #endif
-	    // 	    // Call bisection
-	    // 	    z01_ok = bisection(zproj, other, b, c,
-	    // 			       check_solution, z01, is_orientation_preferred);
-	    // 	  }
-	    // 	  else
-	    // 	  {
-	    // #ifdef augustdebug
-	    // 	    std::cout << "bisect using other point\n";
-	    // #endif
-	    // 	    // Take the other point
-	    // 	    Point a = !project_z0 ? z0 : z1;
-	    // 	    Point b = !project_z0 ? ref_source : source;
-	    // 	    Point c = !project_z0 ? ref_target : target;
-	    // 	    const Point r = a - c;
-	    // 	    const Point s = b - c;
-	    // 	    Point zproj = c + r.dot(s) / s.squared_norm() * s;
-	    // 	    Point other = project_z0 ? z1 : z0;
-	    // 	    std::cout << orient2d(b.coordinates(), c.coordinates(), zproj.coordinates())<<' '<< orient2d(b.coordinates(), c.coordinates(), other.coordinates())<<std::endl;
-	    // 	    // Call bisection
-	    // 	    z01_ok = bisection(zproj, other, b, c,
-	    // 			       check_solution, z01, is_orientation_preferred);
-	    // 	  }
-
-	    // 	  if (z01_ok)
-	    // 	  {
-	    // #ifdef augustdebug
-	    // 	    std::cout << "accept z01\n";
-	    // #endif
-	    // 	    intersection.push_back(z01);
-	    // 	  }
-	    // 	  else
-	    // 	  {
-	    // 	    PPause;
-	    // 	  }
-
-
 	    // Call bisection in interval [z0, X], [z1, Y]. z0 \in
 	    // [source,target].
 	    const double z0_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), z0.coordinates());
@@ -718,340 +646,12 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 		std::cout <<"Paused at "<< __FUNCTION__<<" "<<__LINE__<<std::endl;
 		std::cin >> apa;
 	      }
-
-	      // #ifdef augustdebug
-	      // 		std::cout << "test perturb largest point and dim\n";
-	      // #endif
-	      // 		std::array<Point, 4> pts = {p0, p1, q0, q1};
-	      // 		double maxp = p0[0];
-	      // 		std::size_t point_number = 0; // use 0,1,2,3,4,5,6,7 for p0[0], p0[1], ..., q1[1]
-	      // 		for (std::size_t i = 0; i < 4; ++i)
-	      // 		  for (std::size_t d = 0; d < 2; ++d)
-	      // 		    if (std::abs(pts[i][d]) > maxp)
-	      // 		    {
-	      // 		      maxp = std::abs(pts[i][d]);
-	      // 		      point_number = 2*i + d;
-	      // 		    }
-	      // #ifdef augustdebug
-	      // 		std::cout << "point no " << point_number/2<<" dim " << point_number%2 << std::endl;
-	      // #endif
-	      // 		pts[point_number/2][point_number%2] += std::numeric_limits<double>::epsilon();
-	      // 		std::vector<Point> intersection_perturbed = _intersection_segment_segment_2d(pts[0], pts[1], pts[2], pts[3]);
-
-	      // 		for (const Point p: intersection_perturbed)
-	      // 		  std::cout << p<<std::endl;
-	      // 		PPause;
 	    }
-
-
-	    // 	  // z0 and z1 have different orientation
-	    // 	  Point z01;
-	    // 	  bool z01_ok;
-	    // 	  if (std::signbit(orient2d(source.coordinates(), target.coordinates(), z0.coordinates())) !=
-	    // 	      std::signbit(orient2d(source.coordinates(), target.coordinates(), z1.coordinates())))
-	    // 	  {
-	    // #ifdef augustdebug
-	    // 	    std::cout << "try with source and target\n";
-	    // #endif
-	    // 	    z01_ok = bisection(z0, z1, source, target,
-	    // 			       check_solution, z01, is_orientation_preferred);
-	    // 	  }
-	    // 	  else if (std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), z0.coordinates())) !=
-	    // 		   std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), z1.coordinates())))
-	    // 	  {
-	    // #ifdef augustdebug
-	    // 	    std::cout << "try with ref_source and ref_target\n";
-	    // #endif
-	    // 	    z01_ok = bisection(z0, z1, ref_source, ref_target,
-	    // 			       check_solution, z01, is_orientation_preferred);
-	    // 	  }
-	    // 	  else
-	    // 	  {
-	    // 	    PPause;
-	    // 	  }
-
-	    // 	  if (z01_ok)
-	    // 	  {
-	    // #ifdef augustdebug
-	    // 	    std::cout << "accept z01\n";
-	    // #endif
-	    // 	    intersection.push_back(z01);
-	    // 	  }
-	    // 	  else
-	    // 	  {
-	    // 	    PPause;
-	    // 	  }
-
 	  }
 	}
       }
-    } // end if (denom != 0)
-      // else // Not parallel and no intersection
-      // {
-      //   // std::cout << "case 5"<<std::endl;
-      //   return intersection;
-      // }
+    }
   }
-
-
-  //     Point z;
-  //     bisection(source, target, ref_source, ref_target, false, z, false);
-
-  //     // Check the solution z if the lines are almost parallel
-  //     if (std::abs(denom) < DOLFIN_EPS_LARGE)
-  //     {
-  //       // We can check z in a number of ways:
-
-  //       // Is it inside the two domains?  (tempting to assert
-  //       // collides_segment_point_1d or 2d, but this is not possible: if
-  //       // we have a horizontal line it is difficult to assert a point
-  //       // exactly in this direction. Collides segment point 2d is also
-  //       // difficult)
-
-  //       // check that z is inside the smallest interval
-  //       std::vector<std::pair<double,Point> > dists;
-  //       dists.emplace_back(z.squared_distance(p0), p0);
-  //       dists.emplace_back(z.squared_distance(p1), p1);
-  //       dists.emplace_back(z.squared_distance(q0), q0);
-  //       dists.emplace_back(z.squared_distance(q1), q1);
-  //       std::sort(dists.begin(), dists.end(), [](std::pair<double,Point> left,
-  // 					       std::pair<double,Point> right) {
-  // 		  return left.first < right.first;
-  // 		});
-  //       const Point r = (use_p) ? p1 - p0 : q1 - q0;
-  //       const double t0 = r.dot(z-dists[0].second);
-  //       const double t1 = r.dot(z-dists[1].second);
-  //       const double t2 = r.dot(z-dists[2].second);
-  //       const double t3 = r.dot(z-dists[3].second);
-  //       int cnt=0;
-  //       if (t0<0) cnt++;
-  //       if (t1<0) cnt++;
-  //       if (t2<0) cnt++;
-  //       if (t3<0) cnt++;
-  // #ifdef augustdebug
-  //       std::cout << t0<<' '<<t1<<' '<<t2<<' '<<t3<<std::endl;
-  // #endif
-  //       const bool all_inside =
-  // 	CollisionPredicates::collides_segment_point_1d(p0[0],p1[0],z[0]) and
-  // 	CollisionPredicates::collides_segment_point_1d(p0[1],p1[1],z[1]) and
-  // 	CollisionPredicates::collides_segment_point_1d(q0[0],q1[0],z[0]) and
-  // 	CollisionPredicates::collides_segment_point_1d(q0[1],q1[1],z[1]);
-
-  //       if (cnt!=2) {
-  // 	if (std::abs(t0)>DOLFIN_EPS or std::abs(t1)>DOLFIN_EPS or
-  // 	    std::abs(t2)>DOLFIN_EPS or std::abs(t3)>DOLFIN_EPS or
-  // 	    !all_inside)
-  // 	{
-  // 	  //std::cout << tools::generate_test(a,b,c,d,__FUNCTION__)<<std::endl;
-  // 	  //PPause;
-
-  // #ifdef augustdebug
-  // 	  std::cout << "call bisection again with points swapped\n";
-  // #endif
-  // 	  Point z1;
-  // 	  bisection(ref_source, ref_target, source, target, false, z1, false);
-
-  // 	  std::vector<std::pair<double,Point> > dists1;
-  // 	  dists1.emplace_back(z1.squared_distance(p0), p0);
-  // 	  dists1.emplace_back(z1.squared_distance(p1), p1);
-  // 	  dists1.emplace_back(z1.squared_distance(q0), q0);
-  // 	  dists1.emplace_back(z1.squared_distance(q1), q1);
-  // 	  std::sort(dists.begin(), dists.end(), [](std::pair<double,Point> left,
-  // 						   std::pair<double,Point> right) {
-  // 		      return left.first < right.first;
-  // 		    });
-  // 	  const Point r = (use_p) ? p1 - p0 : q1 - q0;
-  // 	  const double t0 = r.dot(z1-dists1[0].second);
-  // 	  const double t1 = r.dot(z1-dists1[1].second);
-  // 	  const double t2 = r.dot(z1-dists1[2].second);
-  // 	  const double t3 = r.dot(z1-dists1[3].second);
-  // 	  int cnt=0;
-  // 	  if (t0<0) cnt++;
-  // 	  if (t1<0) cnt++;
-  // 	  if (t2<0) cnt++;
-  // 	  if (t3<0) cnt++;
-
-  // #ifdef augustdebug
-  // 	  // test collision
-  // 	  for (std::size_t d = 0; d < 2; ++d)
-  // 	    std::cout << CollisionPredicates::collides_segment_point_1d(p0[d],p1[d],z1[d])<<' ';
-  // 	  std::cout << std::endl;
-  // 	  for (std::size_t d = 0; d < 2; ++d)
-  // 	    std::cout << CollisionPredicates::collides_segment_point_1d(q0[d],q1[d],z1[d])<<' ';
-  // 	  std::cout << std::endl;
-  // 	  std::cout << t0<<' '<<t1<<' '<<t2<<' '<<t3<<std::endl;
-  // #endif
-
-  // 	  const bool all_inside =
-  // 	    CollisionPredicates::collides_segment_point_1d(p0[0],p1[0],z1[0]) and
-  // 	    CollisionPredicates::collides_segment_point_1d(p0[1],p1[1],z1[1]) and
-  // 	    CollisionPredicates::collides_segment_point_1d(q0[0],q1[0],z1[0]) and
-  // 	    CollisionPredicates::collides_segment_point_1d(q0[1],q1[1],z1[1]);
-
-  // 	  //dolfin_assert(cnt==2);
-  // 	  if (cnt!=2) {
-  // 	    if (std::abs(t0)>DOLFIN_EPS or std::abs(t1)>DOLFIN_EPS or
-  // 		std::abs(t2)>DOLFIN_EPS or std::abs(t3)>DOLFIN_EPS or
-  // 		!all_inside)
-  // 	    {
-  // #ifdef augustdebug
-  // 	      std::cout << "possible error, take closest which is of distance = " << dists[0].first <<" or " << dists1[0].first << " (points are " << dists[0].second << " and " << dists1[0].second << std::endl;
-  // #endif
-
-  // 	      //dolfin_assert(dists[0].first < DOLFIN_EPS or dists1[0].first < DOLFIN_EPS);
-  // 	      if (dists[0].first < DOLFIN_EPS or dists1[0].first < DOLFIN_EPS)
-  // 	      {
-  // 		z = dists[0].first < dists1[0].first ? z : z1;
-  // 	      }
-  // 	      else
-  // 	      {
-  // 		dists.clear(); dists1.clear();
-
-  // 		// z = z1;
-  // 		// std::cout << "possible error, check what CGAL says\n";
-  // 		// const std::vector<Point> cgal_intersection = cgal_intersection_segment_segment_2d(a,b,c,d);
-  // 		// for (const Point p: cgal_intersection)
-  // 		// 	std::cout << p << std::endl;
-
-  // #ifdef augustdebug
-  // 		std::cout << "do bisection with the points found as start points\n";
-  // #endif
-
-  // 		// Redo previous bisection for z1 and pick a preferred
-  // 		// orientation sign of the point obtained. This is
-  // 		// needed if we need to do the bisection a third time,
-  // 		// using z and z1 as target and source, because they
-  // 		// need to have different orientation. This shouldn't
-  // 		// matter for the actual point obtained (the
-  // 		// difference should be exactly DOLFIN_EPS in the
-  // 		// error b-a, meaning that the difference for the
-  // 		// point should be of the order
-  // 		// DOLFIN_EPS*std::max(point.coordinates())).
-
-  // 		// Should we do z,z1 or z1,z?
-  // 		double z_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), z.coordinates());
-  // 		double z1_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), z1.coordinates());
-  // 		Point z2;
-  // 		if (std::signbit(z_orientation) != std::signbit(z1_orientation))
-  // 		{
-  // 		  bisection(z,z1,ref_source,ref_target,false, z2, false);
-  // 		}
-  // 		else
-  // 		{
-  // 		  // Recompute either z or z1
-  // 		  const bool preferred_orientation_sign = !std::signbit(orient2d(ref_source.coordinates(), ref_target.coordinates(), z.coordinates()));
-  // 		  bisection(ref_source, ref_target, source, target, false,z1,false);
-  // 			    //true, preferred_orientation_sign);
-  // 		  double z_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), z.coordinates());
-  // 		  double z1_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), z1.coordinates());
-  // #ifdef augustdebug
-  // 		  std::cout << z_orientation<<' '<<z1_orientation<<std::endl;
-  // #endif
-  // 		  PPause;
-  // 		}
-
-  // 		std::vector<std::pair<double,Point> > dists2;
-  // 		dists2.emplace_back(z2.squared_distance(p0), p0);
-  // 		dists2.emplace_back(z2.squared_distance(p1), p1);
-  // 		dists2.emplace_back(z2.squared_distance(q0), q0);
-  // 		dists2.emplace_back(z2.squared_distance(q1), q1);
-  // 		std::sort(dists2.begin(), dists2.end(), [](std::pair<double,Point> left,
-  // 							   std::pair<double,Point> right) {
-  // 			    return left.first < right.first;
-  // 			  });
-  // 		const Point r = (use_p) ? p1 - p0 : q1 - q0;
-  // 		const double t0 = r.dot(z2-dists2[0].second);
-  // 		const double t1 = r.dot(z2-dists2[1].second);
-  // 		const double t2 = r.dot(z2-dists2[2].second);
-  // 		const double t3 = r.dot(z2-dists2[3].second);
-  // 		int cnt=0;
-  // 		if (t0<0) cnt++;
-  // 		if (t1<0) cnt++;
-  // 		if (t2<0) cnt++;
-  // 		if (t3<0) cnt++;
-
-  // #ifdef augustdebug
-  // 		// test collision
-  // 		for (std::size_t d = 0; d < 2; ++d)
-  // 		  std::cout << CollisionPredicates::collides_segment_point_1d(p0[d],p1[d],z2[d])<<' ';
-  // 		std::cout << std::endl;
-  // 		for (std::size_t d = 0; d < 2; ++d)
-  // 		  std::cout << CollisionPredicates::collides_segment_point_1d(q0[d],q1[d],z2[d])<<' ';
-  // 		std::cout << std::endl;
-  // 		std::cout << t0<<' '<<t1<<' '<<t2<<' '<<t3<<std::endl;
-  // #endif
-  // 		const bool all_inside =
-  // 		  CollisionPredicates::collides_segment_point_1d(p0[0],p1[0],z2[0]) and
-  // 		  CollisionPredicates::collides_segment_point_1d(p0[1],p1[1],z2[1]) and
-  // 		  CollisionPredicates::collides_segment_point_1d(q0[0],q1[0],z2[0]) and
-  // 		  CollisionPredicates::collides_segment_point_1d(q0[1],q1[1],z2[1]);
-
-  // 		if (cnt!=2) {
-  // 		  if (std::abs(t0)>DOLFIN_EPS or std::abs(t1)>DOLFIN_EPS or
-  // 		      std::abs(t2)>DOLFIN_EPS or std::abs(t3)>DOLFIN_EPS or
-  // 		      !all_inside)
-  // 		  {
-
-  // #ifdef augustdebug
-  // 		    std::cout << "possible error, dists2 min = " << dists2[0].first << std::endl;
-  // #endif
-  // 		    if (dists2[0].first < DOLFIN_EPS)
-  // 		    {
-  // 		      z = z2;
-  // 		    }
-  // 		    else if (std::abs(t0-t1) < DOLFIN_EPS_LARGE)
-  // 		    {
-  // 		      // meaning that these the two closest points found to z are close. Take mean of these
-  // 		      const Point z3 = (dists2[0].second + dists2[1].second) / 2;
-  // 		      const bool all_inside =
-  // 			CollisionPredicates::collides_segment_point_1d(p0[0],p1[0],z3[0]) and
-  // 		    	CollisionPredicates::collides_segment_point_1d(p0[1],p1[1],z3[1]) and
-  // 		    	CollisionPredicates::collides_segment_point_1d(q0[0],q1[0],z3[0]) and
-  // 		    	CollisionPredicates::collides_segment_point_1d(q0[1],q1[1],z3[1]);
-  // 		      dolfin_assert(all_inside);
-  // #ifdef augustdebug
-  // 		      std::cout << "take average\n";
-  // #endif
-  // 		      z = z3;
-  // 		    }
-  // 		    else
-  // 		    {
-  // 		      PPause;
-  // 		    }
-  // 		  }
-  // 		}
-  // 		else
-  // 		{
-  // #ifdef augustdebug
-  // 		  std::cout << "new point z2 accepted\n";
-  // #endif
-  // 		  z = z2;
-  // 		}
-  // 	      }
-
-  // 	    }
-  // 	  }
-  // 	  else
-  // 	  {
-  // #ifdef augustdebug
-  // 	    std::cout << "new point z1 accepted\n";
-  // #endif
-
-  // 	    z = z1;
-  // 	  }
-
-  // 	}
-  //       }
-  //     }
-
-  //     intersection.push_back(z);
-  //   } // end if (denom != 0)
-  // else // Not parallel and no intersection
-  // {
-  //   // std::cout << "case 5"<<std::endl;
-  //   return intersection;
-  // }
-
 
   const std::vector<Point> unique = unique_points(intersection);
 
@@ -1073,44 +673,6 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 #endif
 
   return unique;
-
-  // std::cout << "case 6"<<std::endl;
-  // return intersection;
-
-  // std::cout << __FUNCTION__<< "points " << tools::plot(p0)<<tools::plot(p1)<<tools::plot(q0)<<tools::plot(q1)<<std::endl;
-
-
-  // std::vector<Point> intersection;
-
-  // // Add vertex-vertex collision to the intersection
-  // if (p0 == q0 or p0 == q1)
-  //   intersection.push_back(p0);
-  // if (p1 == q0 or p1 == q1)
-  //   intersection.push_back(p1);
-
-  // // Add vertex-"segment interior" collisions to the intersection
-  // if (CollisionPredicates::collides_interior_point_segment_2d(q0, q1, p0))
-  //   intersection.push_back(p0);
-
-  // if (CollisionPredicates::collides_interior_point_segment_2d(q0, q1, p1))
-  //   intersection.push_back(p1);
-
-  // if (CollisionPredicates::collides_interior_point_segment_2d(p0, p1, q0))
-  //   intersection.push_back(q0);
-
-  // if (CollisionPredicates::collides_interior_point_segment_2d(p0, p1, q1))
-  //   intersection.push_back(q1);
-
-  // if (intersection.empty())
-  // {
-  //   std::cout << ' '<<__FUNCTION__<<" gave empty intersection: must check interior\n";
-
-  //   // No collisions in any vertices, so check interior
-  //   return _intersection_segment_interior_segment_interior_2d(p0, p1, q0, q1);
-  // }
-
-  // return intersection;
-
 }
 // //-----------------------------------------------------------------------------
 // // Note that for parallel segments, only vertex-"edge interior" collisions will
@@ -1422,26 +984,7 @@ IntersectionConstruction::_intersection_segment_segment_3d(const Point& p0,
   if (!CollisionPredicates::collides_segment_segment_3d(p0, p1, q0, q1))
     return intersection;
 
-  // // Can we reduce to 1d?
-  // for (std::size_t d = 0; d < 3; ++d)
-  // {
-  //   // Check if coordinates in dimension d is the same
-  //   const bool reduce = (p0[d] == p1[d] and p1[d] == q0[d] and q0[d] == q1[d]);
-  //   if (reduce)
-  //   {
-  //     const std::size_t j = (d + 1) % 3;
-  //     const std::vector<double> intersection_1d =
-  // 	intersection_segment_segment_1d(p0[j], p1[j], q0[j], q1[j]);
-  //     intersection.resize(intersection_1d.size());
-  //     for (std::size_t k = 0; k < intersection.size(); ++k)
-  //     {
-  // 	intersection[k][d] = p0[d];
-  // 	intersection[k][j] = intersection_1d[k];
-  //     }
-  //     std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-  //     return intersection;
-  //   }
-  // }
+  // FIXME: Can we reduce to 1d?
 
   intersection.reserve(4);
 
