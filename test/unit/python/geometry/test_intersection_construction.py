@@ -101,7 +101,7 @@ def test_triangulate_intersection_2d():
     assert round(volume - exactvolume, 7) == 0, errorstring
 
 @skip_in_parallel
-#@pytest.mark.skipif(True, reason="Not implemented in 3D")
+@pytest.mark.skipif(True, reason="Not implemented in 3D")
 def test_triangulate_intersection_2d_3d():
 
     # Note: this test will fail if the triangle mesh is aligned
