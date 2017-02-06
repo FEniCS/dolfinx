@@ -140,7 +140,7 @@ def test_triangulate_intersection_2d_3d():
     for c0 in cells(mesh_0):
         for c1 in cells(mesh_1):
             intersection = c0.intersection(c1)
-            triangulation = ConvexTriangulation.triangulate(intersection)
+            triangulation = ConvexTriangulation.triangulate(intersection, 3, 2)
             if (triangulation.size>0):
                 tmesh = triangulation_to_mesh_2d_3d(triangulation)
                 for t in cells(tmesh):
@@ -169,7 +169,7 @@ def test_triangulate_intersection_3d():
     for c0 in cells(mesh_0):
         for c1 in cells(mesh_1):
             intersection = c0.intersection(c1)
-            triangulation = ConvexTriangulation.triangulate(intersection)
+            triangulation = ConvexTriangulation.triangulate(intersection, 3, 3)
             if (triangulation.size>0):
                 tmesh = triangulation_to_mesh_3d(triangulation)
                 for t in cells(tmesh):
