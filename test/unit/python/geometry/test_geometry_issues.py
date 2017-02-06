@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-12-09
-# Last changed: 2016-12-13
+# Last changed: 2017-02-06
 
 from __future__ import print_function
 import pytest
@@ -52,7 +52,8 @@ def test_issue_168():
     vx = v(x)
 
 
-@pytest.mark.skipif(True, reason="Not implemented in 3D")
+#@pytest.mark.skipif(True, reason="Not implemented in 3D")
+@skip_in_parallel
 def test_segment_collides_point_3D_2():
     """Test case by Oyvind from https://bitbucket.org/fenics-project/dolfin/issue/296 for segment point collision in 3D"""
     mesh = Mesh()
@@ -81,7 +82,8 @@ def _test_collision_robustness_2d(aspect, y, step):
         assert c < np.uintc(-1)
         x += step
 
-@pytest.mark.skipif(True, reason="Not implemented in 3D")
+#@pytest.mark.skipif(True, reason="Not implemented in 3D")
+@skip_in_parallel
 def _test_collision_robustness_3d(aspect, y, z, step):
     nx = nz = 10
     ny = int(aspect*nx)

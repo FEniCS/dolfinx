@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2016-11-15
+# Last changed: 2017-02-06
 
 import pytest
 from dolfin import *
@@ -223,7 +223,7 @@ def test_tetrahedron_collides_point():
     assert cell.collides(Point(1.5)) == False
 
 @skip_in_parallel
-@pytest.mark.skipif(True, reason="Not implemented in 3D")
+#@pytest.mark.skipif(True, reason="Not implemented in 3D")
 def test_tetrahedron_collides_triangle():
     """Test if point collide with tetrahedron"""
 
@@ -260,7 +260,7 @@ def test_tetrahedron_collides_triangle():
     assert tri0.collides(tet1) == True
 
 @skip_in_parallel
-@pytest.mark.skipif(True, reason="Not implemented in 3D")
+#@pytest.mark.skipif(True, reason="Not implemented in 3D")
 def test_tetrahedron_collides_tetrahedron():
     """Test if point collide with tetrahedron"""
 
