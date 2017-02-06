@@ -104,7 +104,7 @@ def test_collision_robustness_slow():
     _test_collision_robustness_2d(  40, 1e-03,       1e-5)
     _test_collision_robustness_2d( 100, 0.5 + 1e-14, 1e-5)
     _test_collision_robustness_2d(4.43, 0.5,      4.03e-6)
-    #_test_collision_robustness_3d( 100, 1e-14, 1e-14, 1e-5)
+    _test_collision_robustness_3d( 100, 1e-14, 1e-14, 1e-5)
 
 @skip_in_parallel
 @pytest.mark.slow
