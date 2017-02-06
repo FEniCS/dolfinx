@@ -205,10 +205,12 @@ void PointIntegralSolver::step(double dt)
                                              _local_to_global_dofs.data());
   }
 
+  Timer timer_apply("PointIntegralSolver::apply");
   for (unsigned int stage=0; stage<_num_stages; stage++)
     _scheme->stage_solutions()[stage]->vector()->apply("insert");
 
   _scheme->solution()->vector()->apply("insert");
+  timer_apply.stop();
 
   // Update time
   *_scheme->t() = t0 + dt;
