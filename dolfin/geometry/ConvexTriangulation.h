@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-02-03
+// Last changed: 2017-02-06
 
 #ifndef __CONVEX_TRIANGULATION
 #define __CONVEX_TRIANGULATION
@@ -103,10 +103,12 @@ namespace dolfin
       Edge e2;
     };
 
-    // Utility function
+    // Utility functions
     static std::vector<Point> unique_points(const std::vector<Point>& points,
 					    double tol);
-
+    static Point cross_product(Point a,
+			       Point b,
+			       Point c);
   };
 
 } // end namespace dolfin
