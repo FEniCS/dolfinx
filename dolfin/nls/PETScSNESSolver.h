@@ -46,14 +46,10 @@ namespace dolfin
   public:
 
     /// Create SNES solver
-    ///
-    /// *Optional positional arguments*
-    ///     comm (_MPI_Comm_)
-    ///         The MPI communicator. Defaults to MPI_COMM_WORLD.
-    ///     nls_type (_std::string_)
-    ///         The type of solver. Defaults to "default".
-    PETScSNESSolver(MPI_Comm comm=MPI_COMM_WORLD,
-                    std::string nls_type="default");
+    explicit PETScSNESSolver(MPI_Comm comm, std::string nls_type="default");
+
+    /// Create SNES solver on MPI_COMM_WORLD
+    explicit PETScSNESSolver(std::string nls_type="default");
 
     /// Destructor
     virtual ~PETScSNESSolver();

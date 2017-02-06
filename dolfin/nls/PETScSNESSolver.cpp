@@ -116,6 +116,9 @@ PETScSNESSolver::PETScSNESSolver(MPI_Comm comm, std::string nls_type)
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
+PETScSNESSolver::PETScSNESSolver(std::string nls_type)
+  : PETScSNESSolver(MPI_COMM_WORLD, nls_type) { }
+//-----------------------------------------------------------------------------
 PETScSNESSolver::~PETScSNESSolver()
 {
   if (_snes)
