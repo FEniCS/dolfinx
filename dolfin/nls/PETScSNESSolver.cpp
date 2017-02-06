@@ -92,37 +92,24 @@ Parameters PETScSNESSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScSNESSolver::PETScSNESSolver(MPI_Comm comm) : _snes(nullptr),
-                                                  _has_explicit_bounds(false)
+PETScSNESSolver::PETScSNESSolver(MPI_Comm comm, std::string nls_type)
+  : _snes(nullptr), _has_explicit_bounds(false)
 {
   // Create SNES object
   SNESCreate(comm, &_snes);
 
-  // Set parameter values
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
-PETScSNESSolver::PETScSNESSolver(std::string nls_type) : _snes(nullptr),
-                                                         _has_explicit_bounds(false)
-{
-  // Create SNES object
-  SNESCreate(MPI_COMM_WORLD, &_snes);
-
-  const std::map<std::string, std::pair<std::string, const SNESType>>::const_iterator
-    method = _methods.find(nls_type);
-
-  // Check that the requested method is known
-  if (method != _methods.end())
+  // Set type if not default
+  if (nls_type != "default")
   {
-    // Set solver type
-    if (method->first != "default")
-      SNESSetType(_snes, method->second.second);
-  }
-  else
-  {
-    dolfin_error("PETScSNESSolver.cpp",
-                 "create PETSc SNES solver",
-                 "Unknown SNES method \"%s\"", nls_type.c_str());
+    const auto method = _methods.find(nls_type);
+    if (method == _methods.end())
+    {
+      dolfin_error("PETScSNESSolver.cpp",
+                   "create PETSc SNES solver",
+                   "Unknown SNES method \"%s\"", nls_type.c_str());
+    }
+    PetscErrorCode ierr = SNESSetType(_snes, method->second.second);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetType");
   }
 
   // Set parameter values
@@ -306,8 +293,6 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
                        GenericVector& x)
 {
   Timer timer("SNES solver execution");
-  PETScVector f;
-  PETScMatrix A;
   PetscInt its;
   SNESConvergedReason reason;
 

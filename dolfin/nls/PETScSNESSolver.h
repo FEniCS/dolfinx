@@ -41,16 +41,19 @@ namespace dolfin
   /// PETSc's SNES interface. It includes line search and trust region
   /// techniques for globalising the convergence of the nonlinear
   /// iteration.
-
   class PETScSNESSolver : public PETScObject
   {
   public:
 
     /// Create SNES solver
-    explicit PETScSNESSolver(MPI_Comm comm);
-
-    /// Create SNES solver for a particular method
-    PETScSNESSolver(std::string nls_type="default");
+    ///
+    /// *Optional positional arguments*
+    ///     comm (_MPI_Comm_)
+    ///         The MPI communicator. Defaults to MPI_COMM_WORLD.
+    ///     nls_type (_std::string_)
+    ///         The type of solver. Defaults to "default".
+    PETScSNESSolver(MPI_Comm comm=MPI_COMM_WORLD,
+                    std::string nls_type="default");
 
     /// Destructor
     virtual ~PETScSNESSolver();

@@ -109,8 +109,9 @@ std::pair<std::size_t, bool> NonlinearVariationalSolver::solve()
     // Create SNES solver and set parameters
     if (!snes_solver)
     {
-      // Create Newton solver and set parameters
-      snes_solver = std::make_shared<PETScSNESSolver>();
+      dolfin_assert(u->function_space()->mesh());
+      MPI_Comm comm = u->function_space()->mesh()->mpi_comm();
+      snes_solver = std::make_shared<PETScSNESSolver>(comm);
     }
     snes_solver->parameters.update(parameters("snes_solver"));
 
