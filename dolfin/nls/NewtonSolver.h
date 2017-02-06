@@ -130,7 +130,7 @@ namespace dolfin
     ///
     /// *Returns*
     ///     bool
-    ///         Whether convergence occured.
+    ///         Whether convergence occurred.
     virtual bool converged(const GenericVector& r,
                            const NonlinearProblem& nonlinear_problem,
                            std::size_t iteration);

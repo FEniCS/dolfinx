@@ -204,7 +204,7 @@ PETScKrylovSolver::PETScKrylovSolver(KSP ksp) : _ksp(ksp), pc_dolfin(0),
   else
   {
     dolfin_error("PETScKrylovSolver.cpp",
-                 "intialise PETScKrylovSolver with PETSc KSP object",
+                 "initialize PETScKrylovSolver with PETSc KSP object",
                  "PETSc KSP must be initialised (KSPCreate) before wrapping");
   }
 }
