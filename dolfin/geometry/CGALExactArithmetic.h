@@ -24,18 +24,20 @@
 // algorithms using exact arithmetic with CGAL. It is not included in
 // a normal build but is used as a reference for verification and
 // debugging of the inexact DOLFIN collision detection algorithms.
-//
-// Enable by setting the flag
-//
-//   DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
-//
-// This flag should not be defined by default.
+
+/* To enable exact arithmetic testing, set CXXFLAGS to point to an
+   installation of CGAL. A simple option is to point to a build of
+   FEniCS mshr, which includes the necessary CGAL headers:
+
+   export CXXFLAGS="-DDOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC=1 \
+                    -isystem $FENICS_SRC_DIR/mshr/build/CGAL-installdir/include"
+
+   Note that this needs to be set prior to running CMake. You will
+   also need to remove your CMake build directory.
+*/
 
 #ifndef __CGAL_EXACT_ARITHMETIC_H
 #define __CGAL_EXACT_ARITHMETIC_H
-
-// Define or undefine this flag for enabling or disabling CGAL
-//#define DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC 1
 
 #ifndef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
 
@@ -82,7 +84,8 @@ namespace dolfin
     {
       dolfin_error("CGALExactArithmetic.h",
 		   "compute volume of simplex",
-		   "Volume of simplex with %s points not implemented.", s.size());
+		   "Volume of simplex with %s points not implemented.",
+                   simplex.size());
     }
 
     return 0.0;
