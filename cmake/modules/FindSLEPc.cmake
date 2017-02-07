@@ -41,8 +41,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-message(STATUS "Checking for package 'SLEPc'")
-
 # Load CMake pkg-config module
 find_package(PkgConfig REQUIRED)
 
@@ -176,15 +174,11 @@ int main()
       )
 
     if (SLEPC_TEST_STATIC_LIBS_COMPILED AND SLEPC_TEST_STATIC_LIBS_EXITCODE EQUAL 0)
-
       message(STATUS "Test SLEPC_TEST__RUNS with static linking - Success")
       set(SLEPC_TEST_RUNS TRUE)
-
     else()
-
       message(STATUS "Test SLEPC_TETS_RUNS with static linking - Failed")
       set(SLEPC_TEST_RUNS FALSE)
-
     endif()
   endif()
 endif()
@@ -195,7 +189,7 @@ if (SLEPC_FOUND)
   find_package_handle_standard_args(SLEPc
     REQUIRED_VARS SLEPC_FOUND SLEPC_TEST_RUNS
     VERSION_VAR SLEPC_VERSION
-    FAIL_MESSAGE "SLEPc could not be found. Be sure to set SLEPC_DIR.")
+    FAIL_MESSAGE "SLEPc could not be configured.")
 else()
   find_package_handle_standard_args(SLEPc
     REQUIRED_VARS SLEPC_FOUND

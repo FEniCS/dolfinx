@@ -553,7 +553,12 @@ std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
   dolfin_assert(e);
 
   // Ordering convention for edges (order of non-incident vertices)
-  static std::size_t EV[6][2] = {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}};
+  static const std::size_t EV[6][2] = {{0, 1},
+                                       {0, 2},
+                                       {0, 3},
+                                       {1, 2},
+                                       {1, 3},
+                                       {2, 3}};
 
   // Look for edge satisfying ordering convention
   for (std::size_t j = 0; j < 6; j++)
