@@ -897,17 +897,19 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
 #------------------------------------------------------------------------------
 # Generate demo files from rst
 
-message(STATUS "")
-message(STATUS "Generating demo source files from reStructuredText")
-message(STATUS "--------------------------------------------------")
-file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst" "*.ufl.rst")
-foreach(rst_file ${demo_rst_files})
-  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-  #add_custom_command(TARGET demos_source PRE_BUILD
-  #  COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
-  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-endforeach()
+if (PYTHON_FOUND)
+  message(STATUS "")
+  message(STATUS "Generating demo source files from reStructuredText")
+  message(STATUS "--------------------------------------------------")
+  file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst" "*.ufl.rst")
+  foreach(rst_file ${demo_rst_files})
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+      WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+    #add_custom_command(TARGET demos_source PRE_BUILD
+    #  COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+    #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+  endforeach()
+endif()
 
 #------------------------------------------------------------------------------
 # Generate form files for tests, bench, demos and DOLFIN if not exists
@@ -940,14 +942,16 @@ endif()
 #------------------------------------------------------------------------------
 # Generate demo files from rst
 
-message(STATUS "")
-message(STATUS "Generating demo source files")
-message(STATUS "--------------------------------------------------")
-file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
-foreach(rst_file ${demo_rst_files})
-  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-endforeach()
+if (PYTHON_FOUND)
+  message(STATUS "")
+  message(STATUS "Generating demo source files")
+  message(STATUS "--------------------------------------------------")
+  file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
+  foreach(rst_file ${demo_rst_files})
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+      WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+  endforeach()
+endif()
 
 #------------------------------------------------------------------------------
 # Generate CMakeLists.txt files for bench and demos if not existing
@@ -1016,13 +1020,15 @@ endif()
 # Add taget to build .py demo files from Python rst input files, and
 # create a target to build source files from .cpp.rst and .py.rst
 # files (using pylit)
-file(GLOB_RECURSE rst_files "*.py.rst" "*.cpp.rst")
-add_custom_target(demos_source)
-foreach(rst_file ${rst_files})
-  add_custom_command(TARGET demos_source PRE_BUILD
-    COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-endforeach()
+if (PYTHON_FOUND)
+  file(GLOB_RECURSE rst_files "*.py.rst" "*.cpp.rst")
+  add_custom_target(demos_source)
+  foreach(rst_file ${rst_files})
+    add_custom_command(TARGET demos_source PRE_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+  endforeach()
+endif()
 
 # Add target "demo" for building the demos
 add_custom_target(demo
