@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-06
+// Last changed: 2017-02-08
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -29,10 +29,10 @@
 //#include <ttmath/ttmath.h>
 // #include <Eigen/Dense>
 // #include <algorithm>
-// #define augustdebug
+#define augustdebug
 
 #ifdef augustdebug
-#include "/home/august/dolfin_simplex_tools.h"
+#include "dolfin_simplex_tools.h"
 #endif
 
 namespace
@@ -402,13 +402,35 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
   // The intersection is in principle given by p0 + numer / denom *
   // (p1 - p0), but we first identify certain cases where denom==0 and
   // / or numer == 0.
-  const double denom = (p1.x()-p0.x())*(q1.y()-q0.y()) - (p1.y()-p0.y())*(q1.x()-q0.x());
-  const double numer = orient2d(q0.coordinates(), q1.coordinates(), p0.coordinates());
+
+  // Use shortest distance as P0, P1
+  const bool use_p = p0.squared_distance(p1) < q0.squared_distance(q1);
+  Point P0, P1, Q0, Q1;
+  if (use_p)
+  {
+    P0 = p0;
+    P1 = p1;
+    Q0 = q0;
+    Q1 = q1;
+  }
+  else
+  {
+    P0 = q0;
+    P1 = q1;
+    Q0 = p0;
+    Q1 = p1;
+  }
+
+  const double numer = orient2d(Q0.coordinates(), Q1.coordinates(), P0.coordinates());
+  const double denom = (P1.x()-P0.x())*(Q1.y()-Q0.y()) - (P1.y()-P0.y())*(Q1.x()-Q0.x());
+
+#ifdef augustdebug
+  std::cout << "numer=" << numer << " denom="<<denom << " (equal? "<<(numer==denom) <<")\n";
+#endif
 
   if (denom == 0. and numer == 0.)
   {
     // p0, p1 is collinear with q0, q1.
-    // Take the longest distance as p0, p1
     if (p0.squared_distance(p1) < q0.squared_distance(q1))
     {
 #ifdef augustdebug
@@ -417,15 +439,15 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
       std::swap(p0, q0);
       std::swap(p1, q1);
     }
-    const Point r = p1 - p0;
+    const Point r = Q1 - p0;
     const double r2 = r.squared_norm();
     const Point rn = r / std::sqrt(r2);
 
     // FIXME: what to do if small?
     dolfin_assert(r2 > DOLFIN_EPS);
 
-    double t0 = (q0 - p0).dot(r) / r2;
-    double t1 = (q1 - p0).dot(r) / r2;
+    double t0 = (Q0 - P0).dot(r) / r2;
+    double t1 = (Q1 - P0).dot(r) / r2;
     if (t0 > t1)
     {
 #ifdef augustdebug
@@ -437,8 +459,8 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     if (CollisionPredicates::collides_segment_segment_1d(t0, t1, 0, 1))
     {
       // Compute two intersection points
-      const Point z0 = p0 + std::max(0.0, t0)*r;
-      const Point z1 = p0 + std::min(1.0, (q0 - p0).dot(r) / r2 )*r;
+      const Point z0 = P0 + std::max(0.0, t0)*r;
+      const Point z1 = P0 + std::min(1.0, (Q0 - P0).dot(r) / r2 )*r;
 
 #ifdef augustdebug
       std::cout << "case 1a"<<std::endl;
@@ -464,195 +486,263 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     std::cout << denom<<' '<<numer << std::endl;
 #endif
   }
-  else if (denom != 0.)
+  // else if (denom == numer)
+  // {
+  //   // // should be detected above?
+  //   // std::cout << CollisionPredicates::collides_segment_point_2d(Q0, Q1, P1)<<std::endl; //PPause;
+
+  //   // std::cout << "numer=" << numer << " denom="<<denom << " ("<<(numer==1)<<' '<<(denom==1)<<std::endl;
+  //   // std::cout << "flip\n";
+  //   // if (!use_p)
+  //   // {
+  //   //   P0 = p0;
+  //   //   P1 = p1;
+  //   //   Q0 = q0;
+  //   //   Q1 = q1;
+  //   // }
+  //   // else
+  //   // {
+  //   //   P0 = q0;
+  //   //   P1 = q1;
+  //   //   Q0 = p0;
+  //   //   Q1 = p1;
+  //   // }
+
+  //   // const double numer = orient2d(Q0.coordinates(), Q1.coordinates(), P0.coordinates());
+  //   // const double denom = (P1.x()-P0.x())*(Q1.y()-Q0.y()) - (P1.y()-P0.y())*(Q1.x()-Q0.x());
+  //   // std::cout << "numer=" << numer << " denom="<<denom << " ("<<(numer==1)<<' '<<(denom==1)<<std::endl;
+  //   // PPause;
+  //   intersection.push_back(P1);
+  // }
+  else if (std::abs(denom) > DOLFIN_EPS_LARGE and
+	   std::abs(std::abs(denom)-std::abs(numer)) > DOLFIN_EPS_LARGE)
   {
-
-    // Follow Shewchuk's Lecture Notes and make sure the intersection
-    // point x0 (which is given by x0 = a + numer / denom * (b - a))
-    // is closer to a than to b, c or d. Swap points accordingly.
-    Point x0 = robust_linear_combination(p0, p1, q0, q1, numer, denom);
+    Point x0 = P0 + numer / denom * (P1 - P0);
 
 #ifdef augustdebug
-    std::cout << "  test shewchuk p0+numer/denom*(p1-p0): "<<tools::plot(x0)<<'\n';
+    std::cout << "robust_linear_combination gave " << tools::plot(x0)<<std::endl;
 #endif
 
-    if ((CollisionPredicates::collides_segment_point_1d(p0.x(), p1.x(), x0.x()) and
-	 CollisionPredicates::collides_segment_point_1d(p0.y(), p1.y(), x0.y()) and
-	 CollisionPredicates::collides_segment_point_1d(q0.x(), q1.x(), x0.x()) and
-	 CollisionPredicates::collides_segment_point_1d(q0.y(), q1.y(), x0.y())) or
-	(CollisionPredicates::collides_segment_point_2d(p0, p1, x0) and
-	 CollisionPredicates::collides_segment_point_2d(q0, q1, x0)))
-    {
-#ifdef augustdebug
-      std::cout << "  shewchuk std gave: "<<tools::plot(x0)<<'\n';
-      for (std::size_t d = 0; d < 2; ++d)
-	std::cout << CollisionPredicates::collides_segment_point_1d(p0[d],p1[d],x0[d])<<' ';
-      std::cout << '\n';
-      for (std::size_t d = 0; d < 2; ++d)
-	std::cout << CollisionPredicates::collides_segment_point_1d(q0[d],q1[d],x0[d])<<' ';
-      std::cout << '\n';
-      std::cout << CollisionPredicates::collides_segment_point_2d(p0, p1, x0)<<' '<<CollisionPredicates::collides_segment_point_2d(q0, q1, x0)<<'\n';
-#endif
-      intersection.push_back(x0);
-    }
-    else
-    {
-      // Test bisection
-      const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
-      const double alpha = numer / denom;
-      const Point& ii_intermediate = p0 + numer / denom * (p1 - p0);//  (1-alpha)*p0 + alpha*p1;
-      Point& source = use_p ?
-        (alpha < .5 ? p0 : p1) :
-        (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
-      Point& target = use_p ?
-        (alpha < .5 ? p1 : p0) :
-        (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
+    intersection.push_back(x0);
 
-      // Point& source = use_p ? p0 : q0;
-      // Point& target = use_p ? p1 : q1;
-
-      Point& ref_source = use_p ? q0 : p0;
-      Point& ref_target = use_p ? q1 : p1;
-
-#ifdef augustdebug
-      std::cout << "denom " << denom << " (numer = " << numer << "  alpha = "<<numer/denom<<'\n'
-		<< " source " << tools::plot(source)<<'\n'
-		<< " target " << tools::plot(target) << '\n'
-	// << " ii_intermediate " << tools::plot(ii_intermediate) << '\n'
-	// << " r " << tools::plot(r) << '\n'
-		<< " ref_source " << tools::plot(ref_source) << '\n'
-		<< " ref_target " << tools::plot(ref_target) << '\n'
-		<< " orient2d ref source " << orient2d(source.coordinates(),target.coordinates(),ref_source.coordinates()) << '\n'
-		<< " orient2d ref target " << orient2d(source.coordinates(),target.coordinates(),ref_target.coordinates()) << std::endl;
-#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
-      std::cout<< " CGAL says: ";
-      const std::vector<Point> cgal_intersection = cgal_intersection_segment_segment_2d(p0,p1,q0,q1);
-      for (const Point p: cgal_intersection)
-	std::cout <<std::setprecision(std::numeric_limits<long double>::digits10+2)  << tools::plot(p,"'go','markersize',14")<<'\n';
-      std::cout <<" just fyi: is the cgal inside? ";
-      for (std::size_t d = 0; d < 2; ++d)
-	std::cout << CollisionPredicates::collides_segment_point_1d(p0[d],p1[d],cgal_intersection[0][d])<<' ';
-      std::cout << "     ";
-      for (std::size_t d = 0; d < 2; ++d)
-	std::cout << CollisionPredicates::collides_segment_point_1d(q0[d],q1[d],cgal_intersection[0][d])<<' ';
-      std::cout << std::endl;
-      dolfin_assert(cgal_intersection.size() == 1);
-#endif
-
-#endif
-
-      // This should have been picked up earlier
-      dolfin_assert(std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates())) !=
-		    std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates())));
-
-      // Preferred orientation doesn't matter in the first bisection
-      const bool is_orientation_preferred = false;
-
-      // Check solution if the lines are almost parallel
-      const bool check_solution = std::abs(denom) < DOLFIN_EPS_LARGE;
-
-      // Call bisection
-      Point z0;
-      const bool z0_ok = bisection(source, target, ref_source, ref_target,
-				   check_solution, z0, is_orientation_preferred);
-      if (z0_ok)
-      {
-#ifdef augustdebug
-	std::cout << "accept z0\n";
-#endif
-	intersection.push_back(z0);
-      }
-      else
-      {
-	// Call bisection again with swapped input
-	//const bool check_solution = true;
-	// const bool is_orientation_preferred = false;
-	Point z1;
-	const bool z1_ok = bisection(ref_source, ref_target, source, target,
-				     check_solution, z1, is_orientation_preferred);
-	if (z1_ok)
-	{
-#ifdef augustdebug
-	  std::cout << "accept z1\n";
-#endif
-	  intersection.push_back(z1);
-	}
-	else
-	{
-	  // If z0 and z1 are close to each other, assume it is the
-	  // correct point and it's the acceptance criteria in
-	  // bisection that is faulty
-	  if (z0.squared_distance(z1) < DOLFIN_EPS)
-	  {
-#ifdef augustdebug
-	    std::cout << "accept average\n";
-#endif
-	    intersection.push_back((z0 + z1) / 2);
-	  }
-	  else
-	  {
-	    // Call bisection in interval [z0, X], [z1, Y]. z0 \in
-	    // [source,target].
-	    const double z0_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), z0.coordinates());
-	    const double s_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), source.coordinates());
-	    Point& X = (z0_orientation*s_orientation >= 0) ? target : source;
-	    const double z1_orientation = orient2d(source.coordinates(), target.coordinates(), z1.coordinates());
-	    const double rs_orientation = orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates());
-	    Point& Y = (z1_orientation*rs_orientation >= 0) ? ref_target : ref_source;
-
-#ifdef augustdebug
-	    std::cout << "new interval for bisection with orientation\n";
-	    const double t_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), target.coordinates());
-	    std::cout << "z0 s t orientations: " << z0_orientation<<' '<<s_orientation<<' '<<t_orientation << '\n';
-	    const double rt_orientation = orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates());
-	    std::cout << "z1 rs rt orientations: " << z1_orientation <<' '<<rs_orientation<<' '<<rt_orientation << '\n';
-	    std::cout<<"chose X = " << ((X == target) ? "target\n" : " source\n")
-		     <<"chose Y = " << ((Y == ref_target) ? "ref_target\n" : "ref_source\n");
-	    std::cout <<"distances z0 X " << z0.distance(X)<<" z1 Y " << z1.distance(Y)<<'\n';
-	    std::cout << "z1-Y vs z0 and X: "<<orient2d(z1.coordinates(), Y.coordinates(), z0.coordinates())<<' '
-		      <<orient2d(z1.coordinates(), Y.coordinates(), X.coordinates()) << std::endl;
-	    std::cout << " test z1 Y vs source, target, z0: " << orient2d(z1.coordinates(),  Y.coordinates(), source.coordinates())<<' '<<orient2d(z1.coordinates(), Y.coordinates(), target.coordinates())<<' ' << orient2d(z1.coordinates(), Y.coordinates(), z0.coordinates())<<'\n';
-	    std::cout << "s t " << tools::plot(source)<<tools::plot(target)<<'\n'
-		      << "rs rt " << tools::plot(ref_source)<<tools::plot(ref_target) << '\n';
-#endif
-
-
-	    Point z01;
-	    const bool z01_ok = bisection(z0, X, z1, Y,
-					  check_solution, z01, is_orientation_preferred);
-	    if (z01_ok)
-	    {
-#ifdef augustdebug
-	      std::cout << "accept z01\n";
-#endif
-	      intersection.push_back(z01);
-	    }
-	    else
-	    {
-	      std::cout<<std::setprecision(std::numeric_limits<long double>::digits10+2)
-		       << "Point p0(" << p0.x()<<','<<p0.y()<<");\n"
-		       << "Point p1(" << p1.x()<<','<<p1.y()<<");\n"
-		       << "Point q0(" << q0.x()<<','<<q0.y()<<");\n"
-		       << "Point q1(" << q1.x()<<','<<q1.y()<<");\n";
-#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
-	      const std::vector<Point> cgal_intersection = cgal_intersection_segment_segment_2d(p0,p1,q0,q1);
-	      for (const Point p: cgal_intersection)
-		std::cout << p<<'\n';
-	      dolfin_assert(cgal_intersection.size()==1);
-	      for (const Point p: cgal_intersection)
-		std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2)<< "Point cgal("<<p.x()<<','<<p.y()<<");\n";
-#endif
-	      {
-		char apa;
-		std::cout <<"Paused at "<< __FUNCTION__<<" "<<__LINE__<<std::endl;
-		std::cin >> apa;
-	      }
-	    }
-	  }
-	}
-      }
-    }
+//     if (CollisionPredicates::collides_segment_point_1d(p0.x(), p1.x(), x0.x()) and
+// 	CollisionPredicates::collides_segment_point_1d(p0.y(), p1.y(), x0.y()) and
+// 	CollisionPredicates::collides_segment_point_1d(q0.x(), q1.x(), x0.x()) and
+// 	CollisionPredicates::collides_segment_point_1d(q0.y(), q1.y(), x0.y()))
+//     {
+//       intersection.push_back(x0);
+//     }
+//     else
+//     {
+// #ifdef augustdebug
+//       std::cout << CollisionPredicates::collides_segment_point_1d(p0.x(), p1.x(), x0.x()) <<' '<<CollisionPredicates::collides_segment_point_1d(p0.y(), p1.y(), x0.y())<<' '<<CollisionPredicates::collides_segment_point_1d(q0.x(), q1.x(), x0.x())<<' '<<CollisionPredicates::collides_segment_point_1d(q0.y(), q1.y(), x0.y())<<std::endl;
+//       std::cout << tools::plot(x0)<<std::endl;
+// #endif
+//       dolfin_error("IntersectionConstruction.cpp",
+// 		   "compute segment segment intersection",
+// 		   "strange");
+//     }
   }
+  else // denom is small
+  {
+    // Now the line segments are almost collinear. Project on (1,0)
+    // and (0,1) to find the largest projection. Note that Q0, Q1 is
+    // longest.
+    const std::size_t dim = (std::abs(Q0.x() - Q1.x()) > std::abs(Q0.y() - Q1.y())) ? 0 : 1;
+
+    // Sort the points according to dim
+    std::array<Point, 4> points = { P0, P1, Q0, Q1 };
+    std::sort(points.begin(), points.end(), [dim](Point a,
+						  Point b) {
+		return a[dim] < b[dim];
+	      });
+
+    // Return midpoint
+    Point xm = (points[1] + points[2]) / 2;
+#ifdef augustdebug
+    std::cout << "projection intersection with |denom|="<<std::abs(denom)<< " and difference "<< std::abs(std::abs(denom)-std::abs(numer)) <<" using P0, P1, Q0, Q1 " << tools::plot(P0)<<tools::plot(P1)<<tools::plot(Q0)<<tools::plot(Q1)<<"and dim = " << dim<< " gives\n" << tools::plot(xm)<<std::endl;
+#endif
+    intersection.push_back(xm);
+  }
+
+
+//     if ((CollisionPredicates::collides_segment_point_1d(p0.x(), p1.x(), x0.x()) and
+// 	 CollisionPredicates::collides_segment_point_1d(p0.y(), p1.y(), x0.y()) and
+// 	 CollisionPredicates::collides_segment_point_1d(q0.x(), q1.x(), x0.x()) and
+// 	 CollisionPredicates::collides_segment_point_1d(q0.y(), q1.y(), x0.y())) or
+// 	(CollisionPredicates::collides_segment_point_2d(p0, p1, x0) and
+// 	 CollisionPredicates::collides_segment_point_2d(q0, q1, x0)))
+//     {
+// #ifdef augustdebug
+//       std::cout << "  shewchuk std gave: "<<tools::plot(x0)<<'\n';
+//       for (std::size_t d = 0; d < 2; ++d)
+// 	std::cout << CollisionPredicates::collides_segment_point_1d(p0[d],p1[d],x0[d])<<' ';
+//       std::cout << '\n';
+//       for (std::size_t d = 0; d < 2; ++d)
+// 	std::cout << CollisionPredicates::collides_segment_point_1d(q0[d],q1[d],x0[d])<<' ';
+//       std::cout << '\n';
+//       std::cout << CollisionPredicates::collides_segment_point_2d(p0, p1, x0)<<' '<<CollisionPredicates::collides_segment_point_2d(q0, q1, x0)<<'\n';
+// #endif
+//       intersection.push_back(x0);
+//     }
+//     else
+//     {
+//       // Test bisection
+//       const bool use_p = p1.squared_distance(p0) > q1.squared_distance(q0);
+//       const double alpha = numer / denom;
+//       const Point& ii_intermediate = p0 + numer / denom * (p1 - p0);//  (1-alpha)*p0 + alpha*p1;
+//       Point& source = use_p ?
+//         (alpha < .5 ? p0 : p1) :
+//         (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q0 : q1);
+//       Point& target = use_p ?
+//         (alpha < .5 ? p1 : p0) :
+//         (ii_intermediate.squared_distance(q0) < ii_intermediate.squared_distance(q1) ? q1 : q0);
+
+//       // Point& source = use_p ? p0 : q0;
+//       // Point& target = use_p ? p1 : q1;
+
+//       Point& ref_source = use_p ? q0 : p0;
+//       Point& ref_target = use_p ? q1 : p1;
+
+// #ifdef augustdebug
+//       std::cout << "denom " << denom << " (numer = " << numer << "  alpha = "<<numer/denom<<'\n'
+// 		<< " source " << tools::plot(source)<<'\n'
+// 		<< " target " << tools::plot(target) << '\n'
+// 	// << " ii_intermediate " << tools::plot(ii_intermediate) << '\n'
+// 	// << " r " << tools::plot(r) << '\n'
+// 		<< " ref_source " << tools::plot(ref_source) << '\n'
+// 		<< " ref_target " << tools::plot(ref_target) << '\n'
+// 		<< " orient2d ref source " << orient2d(source.coordinates(),target.coordinates(),ref_source.coordinates()) << '\n'
+// 		<< " orient2d ref target " << orient2d(source.coordinates(),target.coordinates(),ref_target.coordinates()) << std::endl;
+// #ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+//       std::cout<< " CGAL says: ";
+//       const std::vector<Point> cgal_intersection = cgal_intersection_segment_segment_2d(p0,p1,q0,q1);
+//       for (const Point p: cgal_intersection)
+// 	std::cout <<std::setprecision(std::numeric_limits<long double>::digits10+2)  << tools::plot(p,"'go','markersize',14")<<'\n';
+//       std::cout <<" just fyi: is the cgal inside? ";
+//       for (std::size_t d = 0; d < 2; ++d)
+// 	std::cout << CollisionPredicates::collides_segment_point_1d(p0[d],p1[d],cgal_intersection[0][d])<<' ';
+//       std::cout << "     ";
+//       for (std::size_t d = 0; d < 2; ++d)
+// 	std::cout << CollisionPredicates::collides_segment_point_1d(q0[d],q1[d],cgal_intersection[0][d])<<' ';
+//       std::cout << std::endl;
+//       dolfin_assert(cgal_intersection.size() == 1);
+// #endif
+
+// #endif
+
+//       // This should have been picked up earlier
+//       dolfin_assert(std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates())) !=
+// 		    std::signbit(orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates())));
+
+//       // Preferred orientation doesn't matter in the first bisection
+//       const bool is_orientation_preferred = false;
+
+//       // Check solution if the lines are almost parallel
+//       const bool check_solution = std::abs(denom) < DOLFIN_EPS_LARGE;
+
+//       // Call bisection
+//       Point z0;
+//       const bool z0_ok = bisection(source, target, ref_source, ref_target,
+// 				   check_solution, z0, is_orientation_preferred);
+//       if (z0_ok)
+//       {
+// #ifdef augustdebug
+// 	std::cout << "accept z0\n";
+// #endif
+// 	intersection.push_back(z0);
+//       }
+//       else
+//       {
+// 	// Call bisection again with swapped input
+// 	//const bool check_solution = true;
+// 	// const bool is_orientation_preferred = false;
+// 	Point z1;
+// 	const bool z1_ok = bisection(ref_source, ref_target, source, target,
+// 				     check_solution, z1, is_orientation_preferred);
+// 	if (z1_ok)
+// 	{
+// #ifdef augustdebug
+// 	  std::cout << "accept z1\n";
+// #endif
+// 	  intersection.push_back(z1);
+// 	}
+// 	else
+// 	{
+// 	  // If z0 and z1 are close to each other, assume it is the
+// 	  // correct point and it's the acceptance criteria in
+// 	  // bisection that is faulty
+// 	  if (z0.squared_distance(z1) < DOLFIN_EPS)
+// 	  {
+// #ifdef augustdebug
+// 	    std::cout << "accept average\n";
+// #endif
+// 	    intersection.push_back((z0 + z1) / 2);
+// 	  }
+// 	  else
+// 	  {
+// 	    // Call bisection in interval [z0, X], [z1, Y]. z0 \in
+// 	    // [source,target].
+// 	    const double z0_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), z0.coordinates());
+// 	    const double s_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), source.coordinates());
+// 	    Point& X = (z0_orientation*s_orientation >= 0) ? target : source;
+// 	    const double z1_orientation = orient2d(source.coordinates(), target.coordinates(), z1.coordinates());
+// 	    const double rs_orientation = orient2d(source.coordinates(), target.coordinates(), ref_source.coordinates());
+// 	    Point& Y = (z1_orientation*rs_orientation >= 0) ? ref_target : ref_source;
+
+// #ifdef augustdebug
+// 	    std::cout << "new interval for bisection with orientation\n";
+// 	    const double t_orientation = orient2d(ref_source.coordinates(), ref_target.coordinates(), target.coordinates());
+// 	    std::cout << "z0 s t orientations: " << z0_orientation<<' '<<s_orientation<<' '<<t_orientation << '\n';
+// 	    const double rt_orientation = orient2d(source.coordinates(), target.coordinates(), ref_target.coordinates());
+// 	    std::cout << "z1 rs rt orientations: " << z1_orientation <<' '<<rs_orientation<<' '<<rt_orientation << '\n';
+// 	    std::cout<<"chose X = " << ((X == target) ? "target\n" : " source\n")
+// 		     <<"chose Y = " << ((Y == ref_target) ? "ref_target\n" : "ref_source\n");
+// 	    std::cout <<"distances z0 X " << z0.distance(X)<<" z1 Y " << z1.distance(Y)<<'\n';
+// 	    std::cout << "z1-Y vs z0 and X: "<<orient2d(z1.coordinates(), Y.coordinates(), z0.coordinates())<<' '
+// 		      <<orient2d(z1.coordinates(), Y.coordinates(), X.coordinates()) << std::endl;
+// 	    std::cout << " test z1 Y vs source, target, z0: " << orient2d(z1.coordinates(),  Y.coordinates(), source.coordinates())<<' '<<orient2d(z1.coordinates(), Y.coordinates(), target.coordinates())<<' ' << orient2d(z1.coordinates(), Y.coordinates(), z0.coordinates())<<'\n';
+// 	    std::cout << "s t " << tools::plot(source)<<tools::plot(target)<<'\n'
+// 		      << "rs rt " << tools::plot(ref_source)<<tools::plot(ref_target) << '\n';
+// #endif
+
+
+// 	    Point z01;
+// 	    const bool z01_ok = bisection(z0, X, z1, Y,
+// 					  check_solution, z01, is_orientation_preferred);
+// 	    if (z01_ok)
+// 	    {
+// #ifdef augustdebug
+// 	      std::cout << "accept z01\n";
+// #endif
+// 	      intersection.push_back(z01);
+// 	    }
+// 	    else
+// 	    {
+// 	      std::cout<<std::setprecision(std::numeric_limits<long double>::digits10+2)
+// 		       << "Point p0(" << p0.x()<<','<<p0.y()<<");\n"
+// 		       << "Point p1(" << p1.x()<<','<<p1.y()<<");\n"
+// 		       << "Point q0(" << q0.x()<<','<<q0.y()<<");\n"
+// 		       << "Point q1(" << q1.x()<<','<<q1.y()<<");\n";
+// #ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+// 	      const std::vector<Point> cgal_intersection = cgal_intersection_segment_segment_2d(p0,p1,q0,q1);
+// 	      for (const Point p: cgal_intersection)
+// 		std::cout << p<<'\n';
+// 	      dolfin_assert(cgal_intersection.size()==1);
+// 	      for (const Point p: cgal_intersection)
+// 		std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2)<< "Point cgal("<<p.x()<<','<<p.y()<<");\n";
+// #endif
+// 	      {
+// 		char apa;
+// 		std::cout <<"Paused at "<< __FUNCTION__<<" "<<__LINE__<<std::endl;
+// 		std::cin >> apa;
+// 	      }
+// 	    }
+// 	  }
+// 	}
+    //  }
+    //}
+  //  }
 
   const std::vector<Point> unique = unique_points(intersection);
 
@@ -1786,7 +1876,7 @@ Point IntersectionConstruction::robust_linear_combination(Point a,
 							  double denom)
 {
 #ifdef augustdebug
-  std::cout << __FUNCTION__<<'\n';
+  std::cout << __FUNCTION__<<" numer="<<numer<<" denom="<<denom<<" fraction="<<numer/denom<<" difference " << std::abs(std::abs(denom) - std::abs(numer)) <<'\n';
 #endif
 
   if (std::abs(numer / denom - 1) > DOLFIN_EPS_LARGE)
@@ -1796,6 +1886,9 @@ Point IntersectionConstruction::robust_linear_combination(Point a,
   }
   else
   {
+#ifdef augustdebug
+    std::cout << __FUNCTION__<<" swap\n";
+#endif
     // swap a and b
     double numer_swapped = orient2d(c.coordinates(), d.coordinates(), b.coordinates());
     Point x = b - numer_swapped / denom * (a - b);
