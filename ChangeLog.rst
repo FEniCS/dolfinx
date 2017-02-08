@@ -4,6 +4,7 @@ Change log
 dev
 ---
 
+- Remove OpenMpAsssmebler
 - Remove MPI communicator as argument in GenericVector::init functions
   (communicator should be passed via constructor)
 - Remove ``Function::operator[+-*/]`` to prevent memory corruption problems

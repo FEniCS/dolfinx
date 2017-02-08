@@ -56,28 +56,6 @@ def test_cell_assembly_1D():
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
 
 
-@skip_in_parallel
-def test_cell_assembly_1D_multithreaded(pushpop_parameters):
-
-    mesh = UnitIntervalMesh(48)
-    V = FunctionSpace(mesh, "CG", 1)
-
-    v = TestFunction(V)
-    u = TrialFunction(V)
-    f = Constant(10.0)
-
-    a = inner(grad(v), grad(u))*dx
-    L = inner(v, f)*dx
-
-    A_frobenius_norm = 811.75365721381274397572
-    b_l2_norm = 1.43583841167606474087
-
-    # Assemble A and b
-    parameters["num_threads"] = 4
-    assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
-    assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
-
-
 def test_cell_assembly():
     mesh = UnitCubeMesh(4, 4, 4)
     V = VectorFunctionSpace(mesh, "DG", 1)
@@ -96,30 +74,6 @@ def test_cell_assembly():
     b_l2_norm = 0.95470326978246278
 
     # Assemble A and b
-    assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
-    assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
-
-
-@skip_in_parallel
-def test_cell_assembly_multithreaded(pushpop_parameters):
-    mesh = UnitCubeMesh(4, 4, 4)
-    V = VectorFunctionSpace(mesh, "DG", 1)
-
-    v = TestFunction(V)
-    u = TrialFunction(V)
-    f = Constant((10, 20, 30))
-
-    def epsilon(v):
-        return 0.5*(grad(v) + grad(v).T)
-
-    a = inner(epsilon(v), epsilon(u))*dx
-    L = inner(v, f)*dx
-
-    A_frobenius_norm = 4.3969686527582512
-    b_l2_norm = 0.95470326978246278
-
-    # Assemble A and b
-    parameters["num_threads"] = 4
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
     assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
 
@@ -185,43 +139,6 @@ def test_ghost_mode_handling(pushpop_parameters):
     assert numpy.isclose(assemble(_form()), 1.0)
 
 
-@skip_in_parallel
-def test_facet_assembly_multithreaded(pushpop_parameters):
-    mesh = UnitSquareMesh(24, 24)
-    V = FunctionSpace(mesh, "DG", 1)
-
-    # Define test and trial functions
-    v = TestFunction(V)
-    u = TrialFunction(V)
-
-    # Define normal component, mesh size and right-hand side
-    n = FacetNormal(mesh)
-    h = CellSize(mesh)
-    h_avg = (h('+') + h('-'))/2
-    f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
-
-    # Define bilinear form
-    a = dot(grad(v), grad(u))*dx \
-        - dot(avg(grad(v)), jump(u, n))*dS \
-        - dot(jump(v, n), avg(grad(u)))*dS \
-        + 4.0/h_avg*dot(jump(v, n), jump(u, n))*dS \
-        - dot(grad(v), u*n)*ds \
-        - dot(v*n, grad(u))*ds \
-        + 8.0/h*v*u*ds
-
-    # Define linear form
-    L = v*f*dx
-
-    # Reference values
-    A_frobenius_norm = 157.867392938645
-    b_l2_norm = 1.48087142738768
-
-    # Assemble A and b
-    parameters["num_threads"] = 4
-    assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
-    assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
-
-
 def test_functional_assembly():
     mesh = UnitSquareMesh(24, 24)
 
@@ -231,22 +148,6 @@ def test_functional_assembly():
 
     M1 = f*ds(mesh)
     assert round(assemble(M1) - 4.0, 7) == 0
-
-
-@skip_in_parallel
-def test_functional_assembly_multithreaded(pushpop_parameters):
-
-    mesh = UnitSquareMesh(24, 24)
-
-    f = Constant(1.0)
-    M0 = f*dx(mesh)
-    assert round(assemble(M0) - 1.0, 7) == 0
-
-    M1 = f*ds(mesh)
-    assert round(assemble(M1) - 4.0, 7) == 0
-
-    parameters["num_threads"] = 4
-    assert round(assemble(M0) - 1.0, 7) == 0
 
 
 def test_subdomain_and_fulldomain_assembly_meshdomains():
@@ -378,83 +279,6 @@ def test_subdomain_assembly_form_1():
     assert round(assemble(b).norm("l2") - reference, 8) == 0
 
 
-@skip_in_parallel
-def test_subdomain_assembly_form_1_multithreaded(pushpop_parameters):
-    "Test assembly over subdomains with markers stored as part of form"
-
-    mesh = UnitSquareMesh(4, 4)
-
-    # Define cell/facet function
-    class Left(SubDomain):
-        def inside(self, x, on_boundary):
-            return x[0] < 0.49
-    subdomains = CellFunction("size_t", mesh)
-    subdomains.set_all(0)
-    left = Left()
-    left.mark(subdomains, 1)
-
-    class RightBoundary(SubDomain):
-        def inside(self, x, on_boundary):
-            return x[0] > 0.95
-    boundaries = FacetFunction("size_t", mesh)
-    boundaries.set_all(0)
-    right = RightBoundary()
-    right.mark(boundaries, 1)
-
-    V = FunctionSpace(mesh, "CG", 2)
-    f = Expression("x[0] + 2", degree=1)
-    g = Expression("x[1] + 1", degree=1)
-
-    f = interpolate(f, V)
-    g = interpolate(g, V)
-
-    mesh1 = subdomains.mesh()
-    mesh2 = boundaries.mesh()
-    assert mesh1.id() == mesh2.id()
-    assert mesh1.ufl_domain().ufl_id() == mesh2.ufl_domain().ufl_id()
-
-    dxs = dx(subdomain_data=subdomains)
-    dss = ds(subdomain_data=boundaries)
-    assert dxs.ufl_domain() == None
-    assert dss.ufl_domain() == None
-    assert dxs.subdomain_data() == subdomains
-    assert dss.subdomain_data() == boundaries
-
-    M = f*f*dxs(0) + g*f*dxs(1) + f*f*dss(1)
-    assert M.ufl_domains() == (mesh.ufl_domain(),)
-    sd = M.subdomain_data()[mesh.ufl_domain()]
-    assert sd["cell"] == subdomains
-    assert sd["exterior_facet"] == boundaries
-
-    # Check that subdomains are respected
-    reference = 15.0
-    assert round(assemble(M) - reference, 10) == 0
-
-    # Assemble form (multi-threaded)
-    parameters["num_threads"] = 4
-    assert round(assemble(M) - reference, 10) == 0
-
-    # Check that the form itself assembles as before
-    assert round(assemble(M) - reference, 10) == 0
-
-    # Assemble form  (multi-threaded)
-    assert round(assemble(M) - reference, 10) == 0
-
-    # Take action of derivative of M on f
-    df = TestFunction(V)
-    L = derivative(M, f, df)
-    dg = TrialFunction(V)
-    F = derivative(L, g, dg)
-    b = action(F, f)
-
-    # Check that domain data carries across transformations:
-    reference = 0.136477465659
-    assert round(assemble(b).norm("l2") - reference, 8) == 0
-
-    # Assemble form  (multi-threaded)
-    assert round(assemble(b).norm("l2") - reference, 8) == 0
-
-
 def test_subdomain_assembly_form_2():
     "Test assembly over subdomains with markers stored as part of form"
 
@@ -493,39 +317,6 @@ def test_subdomain_assembly_form_2():
     assert round(assemble(a1) - 1.0, 7) == 0
 
 
-@skip_in_parallel
-def test_colored_cell_assembly(pushpop_parameters):
-
-    old_mesh = UnitCubeMesh(4, 4, 4)
-
-    # Create mesh, then color and renumber
-    old_mesh.color("vertex")
-    mesh = old_mesh.renumber_by_color()
-
-    V = VectorFunctionSpace(mesh, "DG", 1)
-    v = TestFunction(V)
-    u = TrialFunction(V)
-    f = Constant((10, 20, 30))
-
-    def epsilon(v):
-        return 0.5*(grad(v) + grad(v).T)
-
-    a = inner(epsilon(v), epsilon(u))*dx
-    L = inner(v, f)*dx
-
-    A_frobenius_norm = 4.3969686527582512
-    b_l2_norm = 0.95470326978246278
-
-    # Assemble A and b
-    assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
-    assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
-
-    # Assemble A and b multi-threaded
-    parameters["num_threads"] = 4
-    assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
-    assert round(assemble(L).norm("l2") - b_l2_norm, 10) == 0
-
-
 def test_nonsquare_assembly():
     """Test assembly of a rectangular matrix"""
 
@@ -548,26 +339,6 @@ def test_nonsquare_assembly():
     p = TrialFunction(Q)
     a = inner(grad(p), v)*dx
     A_frobenius_norm = 0.935414346693
-    assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
-
-
-@skip_in_parallel
-def test_nonsquare_assembly_multithreaded(pushpop_parameters):
-    """Test assembly of a rectangular matrix"""
-
-    mesh = UnitSquareMesh(16, 16)
-
-    V = VectorElement("Lagrange", mesh.ufl_cell(), 2)
-    Q = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    W = FunctionSpace(mesh, V*Q)
-
-    (v, q) = TestFunctions(W)
-    (u, p) = TrialFunctions(W)
-
-    a = div(v)*p*dx
-    A_frobenius_norm = 9.6420303878382718e-01
-
-    parameters["num_threads"] = 4
     assert round(assemble(a).norm("frobenius") - A_frobenius_norm, 10) == 0
 
 
