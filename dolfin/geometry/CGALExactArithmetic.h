@@ -352,7 +352,7 @@ namespace dolfin
       }
       else
       {
-	dolfin_error("CGALExactArithmetic.h"
+	dolfin_error("CGALExactArithmetic.h",
 		     "compare volumes between dolfin and cgal",
 		     "Function only implemented for intersection_triangle_triangle_2d");
       }
