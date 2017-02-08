@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-12-19
+// Last changed: 2017-02-08
 //
 // Developer note:
 //
@@ -54,9 +54,8 @@
 #include <sstream>
 
 // FIXME
-#define PPause {char dummycharXohs5su8='a';std::cout<<"\n Pause: "<<__FILE__<<" line "<<__LINE__<<" function "<<__FUNCTION__<<std::endl;std::cin>>dummycharXohs5su8;}
 #include <iomanip>
-// #define debugoutput
+//#define debugoutput
 
 
 // Check that results from DOLFIN and CGAL match
@@ -180,35 +179,6 @@ namespace dolfin
 	alpha += 2*DOLFIN_PI;
       order.emplace_back(alpha, m);
     }
-
-
-    // std::vector<std::pair<double, std::size_t>> order;
-    // Point ref = points[0] - pointscenter;
-    // ref /= ref.norm();
-
-    // // Compute normal
-    // Point normal = (points[2] - points[0]).cross(points[1] - points[0]);
-    // const double det = normal.norm();
-    // normal /= det;
-
-    // // Calculate and store angles
-    // for (std::size_t m = 1; m < points.size(); ++m)
-    // {
-    //   const Point v = points[m] - pointscenter;
-    //   const double frac = ref.dot(v) / v.norm();
-    //   double alpha;
-    //   if (frac <= -1)
-    // 	alpha = DOLFIN_PI;
-    //   else if (frac >= 1)
-    // 	alpha = 0;
-    //   else
-    //   {
-    // 	alpha = acos(frac);
-    // 	if (v.dot(normal.cross(ref)) < 0)
-    // 	  alpha = 2*DOLFIN_PI-alpha;
-    //   }
-    //   order.push_back(std::make_pair(alpha, m));
-    // }
 
     // Sort angles
     std::sort(order.begin(), order.end());
@@ -374,38 +344,21 @@ namespace dolfin
 	if (std::abs(vol_cgal - vol_dolfin) > DOLFIN_EPS_LARGE)
 	{
 	  std::cout << "vol_dolfin " << vol_dolfin <<" vol_cgal " << vol_cgal<<'\n';
-	  PPause;
+	  dolfin_error("CGALExactArithmetic.h",
+		       "compare volumes between dolfin and cgal",
+		       "dolfin volume = %d and cgal volume = %d",
+		       vol_dolfin, vol_cgal);
 	}
+      }
+      else
+      {
+	dolfin_error("CGALExactArithmetic.h"
+		     "compare volumes between dolfin and cgal",
+		     "Function only implemented for intersection_triangle_triangle_2d");
       }
     }
 
     return unique_result_dolfin;
-
-
-    // // compare volume
-    // const double dolfin_volume = volume(result_dolfin);
-    // const double cgal_volume = volume(result_cgal);
-
-    // if (std::abs(dolfin_volume - cgal_volume) > CGAL_CHECK_TOLERANCE)
-    // {
-    //   std::stringstream s_dolfin, s_cgal, s_error;
-    //   s_dolfin.precision(16);
-    //   s_dolfin << dolfin_volume;
-    //   s_cgal.precision(16);
-    //   s_cgal << cgal_volume;
-    //   s_error.precision(16);
-    //   s_error << std::abs(dolfin_volume - cgal_volume);
-
-    //   dolfin_error("CGALExactArithmetic.h",
-    // 		   "verify intersections due to different volumes (single simplex version)",
-    // 		   "Error in function %s\n CGAL volume %s\n DOLFIN volume %s\n error %s\n",
-    // 		   function.c_str(),
-    // 		   s_cgal.str().c_str(),
-    // 		   s_dolfin.str().c_str(),
-    // 		   s_error.str().c_str());
-    // }
-
-    // return result_dolfin;
   }
 
   inline const std::vector<std::vector<Point>>&
