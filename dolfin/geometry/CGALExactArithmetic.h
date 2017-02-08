@@ -216,17 +216,11 @@ namespace dolfin
 	      << "dolfin\n";
     for (const Point& p: unique_result_dolfin)
     {
-      // for (std::size_t d = 0; d < 3; ++d)
-      // 	std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << p[d] << ' ';
-      // std::cout << std::endl;
       std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << "plot("<<p[0]<<','<<p[1]<<",'gx');\n";
     }
     std::cout << " cgal\n";
     for (const Point& p: unique_result_cgal)
     {
-      // for (std::size_t d = 0; d < 3; ++d)
-      // 	std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << p[d] << ' ';
-      // std::cout << std::endl;
       std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << "plot("<<p[0]<<','<<p[1]<<",'mo');\n";
     }
 #endif
@@ -246,100 +240,60 @@ namespace dolfin
       }
       if (!found)
       {
-    	// dolfin_error("CGALExactArithmetic.h",
-    	// 	     "check_cgal",
-    	// 	     "Point in result_dolfin not found.");
-    	// if (function == "intersection_triangle_triangle_2d")
-    	// {
-    	//   PPause;
-    	// }
-	//PPause;
 	difference = true;
       }
     }
 
-    // Make sure all points are found
-    for (std::size_t i = 0; i < unique_result_cgal.size(); ++i)
+    // Make sure all points are found (not needed to check again)
+    if (!difference)
     {
-      bool found = false;
-      for (std::size_t j = 0; j < unique_result_dolfin.size(); ++j)
+      for (std::size_t i = 0; i < unique_result_cgal.size(); ++i)
       {
-    	if ((unique_result_cgal[i] - unique_result_dolfin[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
-    	{
-    	  found = true;
-    	  break;
-    	}
-      }
-      if (!found)
-      {
-    	// dolfin_error("CGALExactArithmetic.h",
-    	// 	     "check_cgal",
-    	// 	     "Point in result_cgal not found.");
-    	// if (function == "intersection_triangle_triangle_2d")
-    	// {
-    	//   PPause;
-    	// }
-	// PPause;
-	difference = true;
+	bool found = false;
+	for (std::size_t j = 0; j < unique_result_dolfin.size(); ++j)
+	{
+	  if ((unique_result_cgal[i] - unique_result_dolfin[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
+	  {
+	    found = true;
+	    break;
+	  }
+	}
+	if (!found)
+	{
+	  difference = true;
+	}
       }
     }
 
     if (difference)
     {
-      // check volume
+      // Check volume: special case for intersection_triangle_triangle_2d
       if (function == "intersection_triangle_triangle_2d")
       {
 	std::vector<std::vector<Point> > tri_dolfin = FIXME_triangulate_polygon_2d(unique_result_dolfin);
+
 	double vol_dolfin;
+	for (const std::vector<Point> tri: tri_dolfin)
+	  vol_dolfin += volume(tri);
+
 #ifdef debugoutput
 	std::cout << "vol dolfin: ";
-#endif
 	for (const std::vector<Point> tri: tri_dolfin)
-	{
-	  vol_dolfin += volume(tri);
-#ifdef debugoutput
 	  std::cout << volume(tri)<<' ';
-#endif
-	}
-#ifdef debugoutput
 	std::cout << "\n";
 #endif
 
 	std::vector<std::vector<Point> > tri_cgal = FIXME_triangulate_polygon_2d(unique_result_cgal);
 	double vol_cgal;
+	for (const std::vector<Point> tri: tri_cgal)
+	  vol_cgal += volume(tri);
+
 #ifdef debugoutput
 	std::cout << "vol cgal: ";
-#endif
 	for (const std::vector<Point> tri: tri_cgal)
-	{
-#ifdef debugoutput
 	  std::cout << volume(tri)<<' ';
-#endif
-	  vol_cgal += volume(tri);
-	}
-#ifdef debugoutput
 	std::cout << "\n";
 #endif
-
-	// double vol_dolfin;
-	// if (unique_result_dolfin.size() < 3)
-	//   vol_dolfin = 0;
-	// else if (unique_result_dolfin.size() == 3)
-	//   vol_dolfin = volume(unique_result_dolfin);
-	// else
-	// {
-	//   PPause;
-	// }
-
-	// double vol_cgal;
-	// if (unique_result_cgal.size() < 3)
-	//   vol_cgal = 0;
-	// else if (unique_result_cgal.size() == 3)
-	//   vol_cgal = volume(unique_result_cgal);
-	// else
-	// {
-	//   PPause;
-	// }
 
 	if (std::abs(vol_cgal - vol_dolfin) > DOLFIN_EPS_LARGE)
 	{
@@ -350,11 +304,22 @@ namespace dolfin
 		       vol_dolfin, vol_cgal);
 	}
       }
+      else if (unique_result_cgal.size() == 1 and
+	       unique_result_dolfin.size() == 1)
+      {
+	std::stringstream s_dolfin, s_cgal;
+	s_dolfin << unique_result_dolfin[0];
+	s_cgal << unique_result_cgal[0];
+	dolfin_error("CGALExactArithmetic.h",
+		     "compare volumes between dolfin and cgal",
+		     "predicate %s gave one point in DOLFIN: %s and in CGAL: %s",
+		     function.c_str(), s_dolfin.str().c_str(), s_cgal.str().c_str());
+      }
       else
       {
 	dolfin_error("CGALExactArithmetic.h",
 		     "compare volumes between dolfin and cgal",
-		     "Function only implemented for intersection_triangle_triangle_2d");
+		     "Not implemented");
       }
     }
 
