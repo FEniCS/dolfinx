@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-01
+// Last changed: 2017-02-08
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -292,22 +292,6 @@ namespace dolfin
     static Point cross_product(Point a,
 			       Point b,
 			       Point c);
-
-    static Point robust_linear_combination(Point a,
-					   Point b,
-					   Point c,
-					   Point d,
-					   double numer,
-					   double denom);
-
-    static bool bisection(Point source,
-			  Point target,
-			  Point ref_source,
-			  Point ref_target,
-			  bool check_solution,
-			  Point& z,
-			  bool is_orientation_set,
-			  bool orientation = false);
 
   };
 }
