@@ -210,9 +210,7 @@ def test_wrong_eval():
             f(zeros(4), values=zeros(3))
 
 
-@skip_in_parallel
-def test_vector_valued_expression_member_function():
-    mesh = UnitSquareMesh(1, 1)
+def test_vector_valued_expression_member_function(mesh):
     V = FunctionSpace(mesh,'CG',1)
     W = VectorFunctionSpace(mesh,'CG',1, dim=3)
     fs = [
@@ -462,6 +460,17 @@ def test_name_space_usage(mesh):
     assert round(assemble(e0*dx(mesh)) - assemble(e1*dx(mesh)), 7) == 0
 
 
+def test_expression_self_assignment(mesh, V):
+    tc = Constant(2.0)
+    te = Expression("value", value=tc, degree=0)
+    e2 = Expression("t", t=te, degree=0)
+
+    # Test self assignment
+    e2.t = e2
+    with pytest.raises(RuntimeError):
+        e2(0, 0)
+
+
 def test_generic_function_attributes(mesh, V):
     tc = Constant(2.0)
     te = Expression("value", value=tc, degree=0)
@@ -514,11 +523,6 @@ def test_generic_function_attributes(mesh, V):
     f2 = Function(W)
     e2.t = f2
 
-    with pytest.raises(RuntimeError):
-        e2(0, 0)
-
-    # Test self assignment
-    e2.t = e2
     with pytest.raises(RuntimeError):
         e2(0, 0)
 
