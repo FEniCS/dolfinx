@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-01-25
+// Last changed: 2017-02-08
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -51,8 +51,11 @@
 #include "Point.h"
 #include "CollisionPredicates.h"
 
-#include "/home/august/dolfin_simplex_tools.h"
 // #define augustdebug
+
+#ifdef augustdebug
+#include "/home/august/dolfin_simplex_tools.h"
+#endif
 
 using namespace dolfin;
 
@@ -905,7 +908,9 @@ bool CollisionPredicates::_collides_triangle_triangle_3d(const Point& p0,
 							 const Point& q1,
 							 const Point& q2)
 {
+#ifdef augustdebug
   std::cout << __FUNCTION__<<std::endl;
+#endif
 
   // Pack points as vectors
   std::array<Point, 3> tri_0({p0, p1, p2});
