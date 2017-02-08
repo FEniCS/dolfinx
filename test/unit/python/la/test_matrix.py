@@ -50,11 +50,11 @@ any_backends = data_backends + no_data_backends
 
 # Fixtures setting up and resetting the global linear algebra backend
 # for a list of backends
-any_backend = set_parameters_fixture("linear_algebra_backend", any_backends, \
+any_backend = set_parameters_fixture("linear_algebra_backend", any_backends,
                                      lambda x: x[0])
-data_backend = set_parameters_fixture("linear_algebra_backend", data_backends, \
+data_backend = set_parameters_fixture("linear_algebra_backend", data_backends,
                                       lambda x: x[0])
-no_data_backend = set_parameters_fixture("linear_algebra_backend", \
+no_data_backend = set_parameters_fixture("linear_algebra_backend",
                                          no_data_backends, lambda x: x[0])
 
 # With and without explicit backend choice
@@ -82,8 +82,12 @@ class TestMatrixForAnyBackend:
         else:
             backend = None
 
+        # Build square matrix with some 'empty' diagonals
         A = assemble(a, backend=backend, keep_diagonal=keep_diagonal)
+
+        # Build non-square matrix
         B = assemble(b, backend=backend, keep_diagonal=keep_diagonal)
+
         return A, B
 
     def test_basic_la_operations(self, use_backend, any_backend):
@@ -222,7 +226,7 @@ class TestMatrixForAnyBackend:
                 A.ident_zeros()
 
         # Assemble matrix A with diagonal entries
-        A, B = self.assemble_matrices(use_backend=use_backend, \
+        A, B = self.assemble_matrices(use_backend=use_backend,
                                       keep_diagonal=True)
 
         # Find zero rows
@@ -284,19 +288,19 @@ class TestMatrixForAnyBackend:
         w.vector()[:] -= b
         assert round(w.vector().norm("l2"), 14) == 0
 
-    #def test_create_from_sparsity_pattern(self):
+    # def test_create_from_sparsity_pattern(self):
 
-    #def test_size(self):
+    # def test_size(self):
 
-    #def test_local_range(self):
+    # def test_local_range(self):
 
-    #def test_zero(self):
+    # def test_zero(self):
 
-    #def test_apply(self):
+    # def test_apply(self):
 
-    #def test_str(self):
+    # def test_str(self):
 
-    #def test_resize(self):
+    # def test_resize(self):
 
 
     # Test the access of the raw data through pointers
