@@ -16,10 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-02-08
+// Last changed: 2017-02-09
 
 #include "ConvexTriangulation.h"
+#include "predicates.h"
 #include <algorithm>
+#include <tuple>
 #include <set>
 
 #ifdef augustdebug
