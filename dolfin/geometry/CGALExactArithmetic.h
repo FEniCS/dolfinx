@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2017-02-07
+// Last changed: 2017-02-08
 //
 // Developer note:
 //
@@ -24,22 +24,12 @@
 // algorithms using exact arithmetic with CGAL. It is not included in
 // a normal build but is used as a reference for verification and
 // debugging of the inexact DOLFIN collision detection algorithms.
-
-/* To enable exact arithmetic testing, set CXXFLAGS to point to an
-   installation of CGAL. A simple option is to point to a build of
-   FEniCS mshr, which includes the necessary CGAL headers:
-
-   export CXXFLAGS="-DDOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC=1 \
-                    -isystem $FENICS_SRC_DIR/mshr/build/CGAL-installdir/include"
-
-   Note that this needs to be set prior to running CMake. You will
-   also need to remove your CMake build directory.
-*/
+// To enable, set the option DOLFIN_ENABLE_GEOMETRY_DEBUGGING.
 
 #ifndef __CGAL_EXACT_ARITHMETIC_H
 #define __CGAL_EXACT_ARITHMETIC_H
 
-#ifndef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+#ifndef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
 
 // Comparison macro just bypasses CGAL and test when not enabled
 #define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) RESULT_DOLFIN
