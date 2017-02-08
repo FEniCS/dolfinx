@@ -111,3 +111,21 @@ def test_calling():
         solve(A, x, b, **kwargs)
 
     # FIXME: Include more tests for this versatile function
+
+
+@use_gc_barrier
+def test_nonlinear_variational_solver_custom_comm():
+    "Check that nonlinear variational solver works on subset of comm_world"
+    if MPI.rank(mpi_comm_world()) == 0:
+        mesh = UnitIntervalMesh(mpi_comm_self(), 2)
+        V = FunctionSpace(mesh, "CG", 1)
+        f = Constant(1)
+        u = Function(V)
+        v = TestFunction(V)
+        F = inner(u, v)*dx - inner(f, v)*dx
+
+        # Check that following does not deadlock
+        solve(F == 0, u)
+        solve(F == 0, u, solver_parameters={"nonlinear_solver": "newton"})
+        if has_petsc():
+            solve(F == 0, u, solver_parameters={"nonlinear_solver": "snes"})
