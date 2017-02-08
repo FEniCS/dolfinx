@@ -196,6 +196,15 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
   target_link_libraries(dolfin PRIVATE ${VTK_LIBRARIES})
 endif()
 
+if (DOLFIN_ENABLE_GEOMETRY_DEBUGGING AND GMP_FOUND AND MPFR_FOUND AND CGAL_FOUND)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC")
+  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${CGAL_INCLUDE_DIRS})
+  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${GMP_INCLUDE_DIRS})
+  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${MPFR_INCLUDE_DIRS})
+  target_link_libraries(dolfin PRIVATE ${GMP_LIBRARIES})
+  target_link_libraries(dolfin PRIVATE ${MPFR_LIBRARIES})
+endif()
+
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 

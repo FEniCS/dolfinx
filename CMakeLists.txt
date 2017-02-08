@@ -150,6 +150,7 @@ list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
 list(APPEND OPTIONAL_PACKAGES "HDF5")
 list(APPEND OPTIONAL_PACKAGES "VTK")
+list(APPEND OPTIONAL_PACKAGES "GEOMETRY_DEBUGGING")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
@@ -682,6 +683,15 @@ if (DOLFIN_ENABLE_VTK)
       message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
     endif()
   endif()
+endif()
+
+if (DOLFIN_ENABLE_GEOMETRY_DEBUGGING)
+  message(STATUS "Enabling geometry debugging")
+  find_package(CGAL)
+  find_package(GMP)
+
+  find_package(MPFR)
+
 endif()
 
 #------------------------------------------------------------------------------
