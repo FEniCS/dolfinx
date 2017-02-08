@@ -897,7 +897,7 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
 #------------------------------------------------------------------------------
 # Generate demo files from rst
 
-if (PYTHON_FOUND)
+if (PYTHONINTERP_FOUND)
   message(STATUS "")
   message(STATUS "Generating demo source files from reStructuredText")
   message(STATUS "--------------------------------------------------")
@@ -942,7 +942,7 @@ endif()
 #------------------------------------------------------------------------------
 # Generate demo files from rst
 
-if (PYTHON_FOUND)
+if (PYTHONINTERP_FOUND)
   message(STATUS "")
   message(STATUS "Generating demo source files")
   message(STATUS "--------------------------------------------------")
@@ -1020,7 +1020,7 @@ endif()
 # Add taget to build .py demo files from Python rst input files, and
 # create a target to build source files from .cpp.rst and .py.rst
 # files (using pylit)
-if (PYTHON_FOUND)
+if (PYTHONINTERP_FOUND)
   file(GLOB_RECURSE rst_files "*.py.rst" "*.cpp.rst")
   add_custom_target(demos_source)
   foreach(rst_file ${rst_files})
