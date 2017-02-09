@@ -207,6 +207,7 @@ IntersectionConstruction::intersection_segment_segment(const Point& p0,
 		 "compute segment-segment collision",
 		 "Unknown dimension %d.", gdim);
   }
+
   return std::vector<Point>();
 }
 //-----------------------------------------------------------------------------
@@ -229,6 +230,7 @@ IntersectionConstruction::intersection_triangle_segment(const Point& p0,
 		 "compute triangle-segment intersection",
 		 "Unknown dimension %d.", gdim);
   }
+
   return std::vector<Point>();
 }
 //-----------------------------------------------------------------------------
@@ -252,6 +254,7 @@ IntersectionConstruction::intersection_triangle_triangle(const Point& p0,
 		 "compute segment-segment collision",
 		 "Unknown dimension %d.", gdim);
   }
+
   return std::vector<Point>();
 }
 //-----------------------------------------------------------------------------
@@ -526,25 +529,8 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     intersection.push_back(xm);
   }
 
+  dolfin_assert(GeometryPredicates::is_finite(intersection));
   const std::vector<Point> unique = unique_points(intersection);
-
-#ifdef augustdebug
-  std::cout << __FUNCTION__<< " gave unique points";
-  std::cout << " (" << intersection.size()-unique.size()<< " duplicate pts found)\n";
-  for (const Point p: unique)
-    std::cout << tools::plot(p);
-  std::cout << std::endl;
-  // {
-  //   std::cout << tools::generate_test(p0,p1,q0,q1,__FUNCTION__)<<std::endl;
-  // }
-#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
-  std::cout<< " CGAL says: ";
-  const std::vector<Point> cgal_intersection = cgal_intersection_segment_segment_2d(p0,p1,q0,q1);
-  for (const Point p: cgal_intersection)
-    std::cout <<std::setprecision(std::numeric_limits<long double>::digits10+2)  << tools::plot(p,"'gx','markersize',14")<<'\n';
-#endif
-#endif
-
   return unique;
 }
 //-----------------------------------------------------------------------------
@@ -662,6 +648,7 @@ IntersectionConstruction::_intersection_segment_segment_3d(const Point& p0,
     intersection.push_back(x0);
   }
 
+  dolfin_assert(GeometryPredicates::is_finite(intersection));
   std::vector<Point> unique = unique_points(intersection);
   return unique;
 }
@@ -705,6 +692,7 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
   // Remove strict duplictes. Use exact equality here. Approximate
   // equality is for ConvexTriangulation.
   // FIXME: This can be avoided if we use interior segment tests.
+  dolfin_assert(GeometryPredicates::is_finite(points));
   const std::vector<Point> unique = unique_points(points);
   return unique;
 }
@@ -748,7 +736,9 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
     // FIXME: Should we require consistency between collision and intersection
     //dolfin_assert(intersection.size());
     points.insert(points.end(), intersection.begin(), intersection.end());
+    dolfin_assert(GeometryPredicates::is_finite(points));
   }
+
   // std::cout <<__FUNCTION__<<' '<<__LINE__<<'\n';
   // for (const Point p: points)
   //   std::cout << tools::plot3(p);
@@ -759,6 +749,7 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
     const std::vector<Point> intersection = intersection_segment_segment_3d(p0, p2, q0, q1);
     //dolfin_assert(intersection.size());
     points.insert(points.end(), intersection.begin(), intersection.end());
+    dolfin_assert(GeometryPredicates::is_finite(points));
   }
   // std::cout <<__FUNCTION__<<' '<<__LINE__<<'\n';
   // for (const Point p: points)
@@ -770,6 +761,7 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
     const std::vector<Point> intersection = intersection_segment_segment_3d(p1, p2, q0, q1);
     //dolfin_assert(intersection.size());
     points.insert(points.end(), intersection.begin(), intersection.end());
+    dolfin_assert(GeometryPredicates::is_finite(points));
   }
   // std::cout <<__FUNCTION__<<' '<<__LINE__<<'\n';
   // for (const Point p: points)
@@ -795,9 +787,7 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
   //std::cout << CollisionPredicates::collides_triangle_point_3d(p0,p1,p2, x)<<'\n';
 
   points.push_back(x);
-
-
-
+  dolfin_assert(GeometryPredicates::is_finite(points));
 
   // // Compute intersection of segment and plane and check if point
   // // found is inside triangle. Let the plane be defined by p0, p1,
@@ -843,7 +833,6 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
   // Remove strict duplictes. Use exact equality here. Approximate
   // equality is for ConvexTriangulation.
   // FIXME: This can be avoided if we use interior segment tests.
-  const std::vector<Point> unique = unique_points(points);
 
   // {
   //   std::cout << __FUNCTION__<<' '<<tools::drawtriangle({p0,p1,p2})<<tools::drawtriangle({q0,q1})<<"   ";
@@ -852,9 +841,10 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
   //   std::cout << std::endl;
   // }
 
+  dolfin_assert(GeometryPredicates::is_finite(points));
+  const std::vector<Point> unique = unique_points(points);
   return unique;
 }
-
 //-----------------------------------------------------------------------------
 std::vector<Point>
 IntersectionConstruction::_intersection_triangle_triangle_2d(Point p0,
@@ -974,7 +964,7 @@ IntersectionConstruction::_intersection_triangle_triangle_2d(Point p0,
 #endif
   }
 
-
+  dolfin_assert(GeometryPredicates::is_finite(points));
   return unique_points(points);
 }
 //-----------------------------------------------------------------------------
@@ -1161,6 +1151,8 @@ IntersectionConstruction::_intersection_tetrahedron_tetrahedron(const Point& p0,
 							tet_1[3],
 							tet_0[i]))
       points.push_back(tet_0[i]);
+
+    dolfin_assert(GeometryPredicates::is_finite(points));
   }
 
   // Edge face intersections
@@ -1193,6 +1185,7 @@ IntersectionConstruction::_intersection_tetrahedron_tetrahedron(const Point& p0,
 					     tet_1[edges[e][0]],
 					     tet_1[edges[e][1]]);
 	points.insert(points.end(), intersection.begin(), intersection.end());
+        dolfin_assert(GeometryPredicates::is_finite(points));
       }
 
       if (CollisionPredicates::collides_triangle_segment_3d(tet_1[faces[f][0]],
@@ -1208,6 +1201,7 @@ IntersectionConstruction::_intersection_tetrahedron_tetrahedron(const Point& p0,
 					     tet_0[edges[e][0]],
 					     tet_0[edges[e][1]]);
 	points.insert(points.end(), intersection.begin(), intersection.end());
+        dolfin_assert(GeometryPredicates::is_finite(points));
       }
     }
   }
@@ -1229,6 +1223,7 @@ IntersectionConstruction::_intersection_tetrahedron_tetrahedron(const Point& p0,
 					    tet_1[edges[j][0]],
 					    tet_1[edges[j][1]]);
 	points.insert(points.end(), intersection.begin(), intersection.end());
+        dolfin_assert(GeometryPredicates::is_finite(points));
       }
     }
   }
@@ -1259,10 +1254,8 @@ IntersectionConstruction::unique_points(std::vector<Point> input_points)
 
   return unique;
 }
-
 //-----------------------------------------------------------------------------
- double IntersectionConstruction::det(Point ab, Point dc, Point ec)
-
+double IntersectionConstruction::det(Point ab, Point dc, Point ec)
 {
   double a = ab.x(), b = ab.y(), c = ab.z();
   double d = dc.x(), e = dc.y(), f = dc.z();
