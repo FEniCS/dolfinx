@@ -26,7 +26,7 @@ import numpy
 from dolfin import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('num_parts', type=int, help='number of meshes', default=10)
+parser.add_argument('--num_parts', type=int, help='number of meshes', default=10)
 parser.add_argument('--N_x', type=int, help='number of mesh divisions (mesh size)', default=2, required=False)
 parser.add_argument('--random_seed', type=float, help='seed for random number generator for creating multimesh', default=1, required=False)
 args = parser.parse_args()
@@ -49,8 +49,8 @@ def build_multimesh(num_parts, N_x):
     # Add N-1 random sized and rotated rectangular meshes
     for _ in range(num_parts-1):
 
-        x0, x1 = numpy.sort(numpy.random.rand(2))
-        y0, y1 = numpy.sort(numpy.random.rand(2))
+        x0, x1 = numpy.sort(numpy.random.rand(2))*0.5 + 0.25
+        y0, y1 = numpy.sort(numpy.random.rand(2))*0.5 + 0.25
         if abs(x1 - x0) < DOLFIN_EPS:
             x1 += DOLFIN_EPS
         if abs(y1 - y0) < DOLFIN_EPS:
@@ -60,7 +60,7 @@ def build_multimesh(num_parts, N_x):
         mesh = RectangleMesh(Point(x0, y0), Point(x1, y1),
                              int(max(abs(x1-x0)*N_x, 1)), int(max(abs(y1-y0)*N_x, 1)))
 
-        #mesh.rotate(numpy.random.rand()*180)
+        mesh.rotate(numpy.random.rand()*180)
         multimesh.add(mesh)
 
     multimesh.build()
