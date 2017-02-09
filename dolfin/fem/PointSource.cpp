@@ -211,7 +211,8 @@ void PointSource::apply(GenericMatrix& A)
   dolfin_assert(_function_space1);
 
   // Currently only works if V0 and V1 are the same
-  if (_function_space0 != _function_space1)
+  if (_function_space0->element()->signature()
+      != _function_space1->element()->signature())
   {
     dolfin_error("PointSource.cpp",
 		 "apply point source to vector",
