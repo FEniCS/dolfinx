@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-08
+// Last changed: 2017-02-09
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -786,7 +786,7 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
   // orthogonal to plane (should be detected above though)
 
   const Point x = q0 + (d - n.dot(q0)) / n.dot(q1-q0) * (q1 - q0);
-  std::cout << CollisionPredicates::collides_triangle_point_3d(p0,p1,p2, x)<<'\n';
+  //std::cout << CollisionPredicates::collides_triangle_point_3d(p0,p1,p2, x)<<'\n';
 
   points.push_back(x);
 
