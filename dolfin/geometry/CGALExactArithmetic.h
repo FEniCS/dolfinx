@@ -86,7 +86,7 @@ namespace dolfin
 
     else if (s.size() == 3)
     {
-      return std::abs(orient2d(s[0].coordinates(),
+      return std::abs(dolfin::orient2d(s[0].coordinates(),
 			       s[1].coordinates(),
 			       s[2].coordinates())) / 2;
     }
@@ -159,9 +159,9 @@ namespace dolfin
     std::vector<std::pair<double, std::size_t>> order;
     for (std::size_t m = 1; m < points.size(); ++m)
     {
-      const double A = orient2d(pointscenter.coordinates(),
-				const_cast<double*>(points[0].coordinates()),
-				const_cast<double*>(points[m].coordinates()));
+      const double A = dolfin::orient2d(pointscenter.coordinates(),
+                                        const_cast<double*>(points[0].coordinates()),
+                                        const_cast<double*>(points[m].coordinates()));
       const Point s = points[m] - pointscenter;
       double alpha = std::atan2(A, s.dot(ref));
       if (alpha < 0)
@@ -661,9 +661,9 @@ namespace
     std::vector<std::pair<double, std::size_t>> order;
     for (std::size_t m = 1; m < points.size(); ++m)
     {
-      const double A = orient2d(pointscenter.coordinates(),
-				const_cast<double*>(points[0].coordinates()),
-				const_cast<double*>(points[m].coordinates()));
+      const double A = dolfin::orient2d(pointscenter.coordinates(),
+                                        const_cast<double*>(points[0].coordinates()),
+                                        const_cast<double*>(points[m].coordinates()));
       const Point s = points[m] - pointscenter;
       double alpha = std::atan2(A, s.dot(ref));
       if (alpha < 0)
