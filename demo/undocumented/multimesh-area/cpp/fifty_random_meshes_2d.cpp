@@ -16,40 +16,27 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2016-11-16
+// Last changed: 2017-02-09
 //
 
 
-//#define CGAL_HEADER_ONLY 1
 #include <dolfin/mesh/MultiMesh.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/math/basic.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/generation/UnitSquareMesh.h>
 
+
+#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
 // We need to use epeck here. Qoutient<MP_FLOAT> as number type gives overflow
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
-
 #include <CGAL/Triangle_2.h>
 #include <CGAL/intersection_2.h>
 #include <CGAL/Boolean_set_operations_2.h>
 #include <CGAL/Polygon_set_2.h>
+#endif
 
 #include "common.h"
-
-typedef CGAL::Epeck ExactKernel;
-typedef ExactKernel::FT FT;
-typedef ExactKernel::Point_2                      Point_2;
-typedef ExactKernel::Triangle_2                   Triangle_2;
-typedef ExactKernel::Line_2                       Line_2;
-typedef CGAL::Polygon_2<ExactKernel>              Polygon_2;
-typedef Polygon_2::Vertex_const_iterator          Vertex_const_iterator;
-typedef CGAL::Polygon_with_holes_2<ExactKernel>   Polygon_with_holes_2;
-typedef Polygon_with_holes_2::Hole_const_iterator Hole_const_iterator;
-typedef CGAL::Polygon_set_2<ExactKernel>          Polygon_set_2;
-
-
-#define MULTIMESH_DEBUG_OUTPUT 0
 
 using namespace dolfin;
 
@@ -57,16 +44,11 @@ using namespace dolfin;
 double rotate(double x, double y, double cx, double cy, double w,
               double& xr, double& yr)
 {
-  // std::cout << "rotate:\n"
-  // 	      << "\t"
-  // 	      << "plot("<<x<<','<<y<<",'b.');plot("<<cx<<','<<cy<<",'o');";
-
   const double v = w*DOLFIN_PI/180.;
   const double dx = x-cx;
   const double dy = y-cy;
   xr = cx + dx*cos(v) - dy*sin(v);
   yr = cy + dx*sin(v) + dy*cos(v);
-  //std::cout << "plot("<<xr<<','<<yr<<",'r.');"<<std::endl;
 }
 //------------------------------------------------------------------------------
 bool rotation_inside(double x,double y, double cx, double cy, double w,
@@ -76,6 +58,7 @@ bool rotation_inside(double x,double y, double cx, double cy, double w,
   if (xr>0 and xr<1 and yr>0 and yr<1) return true;
   else return false;
 }
+
 //------------------------------------------------------------------------------
 std::shared_ptr<MultiMesh> get_test_case(std::size_t num_parts,
                                          std::size_t Nx)
@@ -159,110 +142,71 @@ std::shared_ptr<MultiMesh> get_test_case(std::size_t num_parts,
   std::shared_ptr<MultiMesh> multimesh(new MultiMesh(meshes, quadrature_order));
   return multimesh;
 }
-//-----------------------------------------------------------------------------
-std::shared_ptr<MultiMesh> test_volume_2d_rot(std::size_t /*Nx*/,
-					      std::size_t num_meshes)
-{
-  // Background mesh
-  auto mesh_0  = std::make_shared<UnitSquareMesh>(1, 1);
-  mesh_0->scale(10.0);
-  mesh_0->translate(Point(-5,-5));
-
-  // List of meshes
-  std::vector<std::shared_ptr<const Mesh> > meshes;
-  meshes.reserve(num_meshes + 1);
-  meshes.push_back(mesh_0);
-
-  for (std::size_t i = 0; i < num_meshes; ++i)
-  {
-    auto mesh = std::make_shared<UnitSquareMesh>(1, 1);
-    const double angle = 2*DOLFIN_PI*i / num_meshes;
-    std::cout << i<<' '<<angle << std::endl;
-    mesh->translate(Point(-0.5, -0.5));
-    mesh->scale(2.0);
-    mesh->rotate(180.0*angle / DOLFIN_PI);
-    mesh->translate(Point(cos(angle), sin(angle)));
-    meshes.push_back(mesh);
-  }
-
-  // // Save meshes to file so we can examine them
-  // File('background_mesh.pvd') << mesh_0;
-  // File vtkfile('meshes.pvd');
-  // for (const auto mesh: meshes)
-  //   vtkfile << mesh;
-
-  // Create multimesh
-  const std::size_t quadrature_order = 1;
-  std::shared_ptr<MultiMesh> multimesh(new MultiMesh(meshes, quadrature_order));
-
-  return multimesh;
-}
 
 //-----------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
   // set_log_level(TRACE);
 
-  for (std::size_t Nx = 1; Nx < 2; Nx++)
+  for (std::size_t Nx = 2; Nx < 50; Nx++)
   {
-    for (std::size_t parts = 8; parts < 9; parts++)
+    for (std::size_t parts = 2; parts < 50; parts++)
     {
       std::cout << "\n\nNx = " << Nx << ", numparts = " << parts << std::endl;
 
-      //std::shared_ptr<MultiMesh> m = get_test_case(Nx, parts);
-      std::shared_ptr<MultiMesh> m = test_volume_2d_rot(Nx, parts);
-
+      std::shared_ptr<MultiMesh> m = get_test_case(Nx, parts);
       MultiMesh& multimesh = *m;
-
-      // std::cout << multimesh.plot_matplotlib() << std::endl;
       std::cout << "Done building multimesh" << std::endl;
       /* ---------------- Done creating multimesh ----------------------- */
 
+#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
       // Compute volume of each cell using cgal
       std::vector<std::vector<std::pair<CELL_STATUS, FT>>> cell_status_cgal;
       get_cells_status_cgal(multimesh, cell_status_cgal);
       std::cout << "Done computing volumes with cgal" << std::endl;
+      FT cgal_volume = 0.;
+#endif
 
       // Compute volume of each cell using dolfin::MultiMesh
       std::vector<std::vector<std::pair<CELL_STATUS, double> > > cell_status_multimesh;
       compute_volume(multimesh, cell_status_multimesh);
       std::cout << "Done computing volumes with multimesh" << std::endl;
 
-      FT cgal_volume = 0.;
       double multimesh_volume = 0.;
 
+#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
       dolfin_assert(cell_status_cgal.size() == cell_status_multimesh.size());
-      for (std::size_t i = 0; i < cell_status_cgal.size(); i++)
+#endif
+
+      for (std::size_t i = 0; i < cell_status_multimesh.size(); i++)
       {
+	const std::vector<std::pair<CELL_STATUS, double> >& current_multimesh = cell_status_multimesh[i];
+#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
         const std::vector<std::pair<CELL_STATUS, FT> >& current_cgal = cell_status_cgal[i];
-        const std::vector<std::pair<CELL_STATUS, double> >& current_multimesh = cell_status_multimesh[i];
-
         dolfin_assert(current_cgal.size() == current_multimesh.size());
+#endif
 
-	std::cout << "Cells in part " << i << ": " << std::endl;
-        for (std::size_t j = 0; j < current_cgal.size(); j++)
+        for (std::size_t j = 0; j < current_multimesh.size(); j++)
         {
-          std::cout << "  Cell " << j << std::endl;
-          std::cout << "    Multimesh: " << cell_status_str(current_multimesh[j].first) << " (" << current_multimesh[j].second << ")" << std::endl;
-          std::cout << "    CGAL:      " << cell_status_str(current_cgal[j].first) << " (" << current_cgal[j].second << ")" << std::endl;
-          std::cout << "      Diff:    " << (current_cgal[j].second - current_multimesh[j].second) << std::endl;
+	  multimesh_volume += current_multimesh[j].second;
+#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
           cgal_volume += current_cgal[j].second;
-          multimesh_volume += current_multimesh[j].second;
           dolfin_assert(near(CGAL::to_double(current_cgal[j].second), current_multimesh[j].second, DOLFIN_EPS_LARGE));
-          // dolfin_assert(current_cgal[j].first == current_multimesh[j].first);
+#endif
         }
-        std::cout << std::endl;
       }
 
       // Exact volume is known
-      const FT exact_volume = 100;
+      const double exact_volume = 1;
 
       std::cout << "Total volume" << std::endl;
       std::cout << "------------" << std::endl;
-      std::cout << "Multimesh: " << multimesh_volume << ", error: " << (exact_volume-multimesh_volume) << std::endl;
-      std::cout << "CGAL:      " << cgal_volume << ", error: " << (exact_volume-cgal_volume) << std::endl;
+      std::cout << "Multimesh: " << multimesh_volume << ", error: " << std::abs(exact_volume-multimesh_volume) << std::endl;
+#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+      std::cout << "CGAL:      " << cgal_volume << ", error: " << std::abs(exact_volume-CGAL::to_double(cgal_volume)) << std::endl;
+#endif
 
-      dolfin_assert(near(CGAL::to_double(exact_volume), multimesh_volume, DOLFIN_EPS_LARGE));
+      dolfin_assert(near(exact_volume, multimesh_volume, 1e-10));
     }
   }
 }
