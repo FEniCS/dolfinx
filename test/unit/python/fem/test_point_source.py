@@ -42,7 +42,6 @@ def test_pointsource_vector_node():
 
         # Checks array sums to correct value
         b_sum = b.sum()
-        info(str(b_sum))
         assert round(b_sum - 10.0) == 0
 
         # Checks point source is added to correct part of the array
@@ -51,7 +50,7 @@ def test_pointsource_vector_node():
             if near(v.midpoint().distance(point), 0.0):
                 ind = v2d[v.index()]
                 if ind<len(b.array()):
-                    assert round(b.array()[ind] - 10.0) == 0
+                    assert round(b.array()[ind]-10.0) == 0
 
 def test_pointsource_vector():
     """Tests point source when given constructor PointSource(V, point, mag)
@@ -73,7 +72,6 @@ def test_pointsource_vector():
         # Checks array sums to correct value
         b_sum = b.sum()
         assert round(b_sum - 10.0) == 0
-
 
 def test_pointsource_vector_fs():
     """Tests point source when given constructor PointSource(V, point, mag)
@@ -391,6 +389,3 @@ def test_multi_ps_matrix():
         # Checks b sums to correct value
         a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
         assert round(a_sum - 2*len(c_ids)*10) == 0
-
-
-test_multi_ps_vector()

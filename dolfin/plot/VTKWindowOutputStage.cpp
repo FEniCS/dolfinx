@@ -85,7 +85,7 @@ namespace d_anonymous
     static PrivateVTKInteractorStyle* New();
     vtkTypeMacro(PrivateVTKInteractorStyle, vtkInteractorStyleTrackballCamera)
 
-    virtual void OnKeyPress()
+    virtual void OnKeyPress() override
     {
       // Only call keypressCallback for non-ascii, to avoid calling twice
       const char key = Interactor->GetKeyCode();
@@ -93,7 +93,7 @@ namespace d_anonymous
         vtkInteractorStyleTrackballCamera::OnKeyPress();
     }
 
-    virtual void OnChar()
+    virtual void OnChar() override
     {
       if (!handle_keypress())
         vtkInteractorStyleTrackballCamera::OnChar();
@@ -142,7 +142,7 @@ namespace d_anonymous
     static PrivateVTKBalloonWidget* New();
     vtkTypeMacro(PrivateVTKBalloonWidget, vtkBalloonWidget)
 
-    virtual int SubclassEndHoverAction()
+    virtual int SubclassEndHoverAction() override
     {
       if (_force_visible)
         return 1;

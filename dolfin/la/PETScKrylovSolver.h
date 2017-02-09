@@ -47,6 +47,8 @@ namespace dolfin
   class PETScSNESSolver;
   class VectorSpaceBasis;
 
+  class PETScDMCollection;
+
   /// This class implements Krylov methods for linear systems of the
   /// form Ax = b. It is a wrapper for the Krylov solvers of PETSc.
 
@@ -116,7 +118,7 @@ namespace dolfin
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                       const GenericVector& b);
 
-    /// Use nonzero intial guess for solution function
+    /// Use nonzero initial guess for solution function
     /// (nonzero_guess=true, the solution vector x will not be zeroed
     /// before the solver starts)
     void set_nonzero_guess(bool nonzero_guess);
@@ -173,6 +175,9 @@ namespace dolfin
     /// Return parameter type: "krylov_solver" or "lu_solver"
     std::string parameter_type() const
     { return "krylov_solver"; }
+
+    void set_dm(DM dm);
+    void set_dm_active(bool val);
 
     friend class PETScSNESSolver;
     friend class PETScTAOSolver;

@@ -8,8 +8,8 @@ cmake_minimum_required(VERSION 3.5)
 
 project(DOLFIN)
 set(DOLFIN_VERSION_RELEASE 0)
-set(DOLFIN_VERSION_MAJOR "2016")
-set(DOLFIN_VERSION_MINOR "2")
+set(DOLFIN_VERSION_MAJOR "2017")
+set(DOLFIN_VERSION_MINOR "1")
 set(DOLFIN_VERSION_MICRO "0")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 if (NOT DOLFIN_VERSION_RELEASE)
@@ -318,12 +318,11 @@ find_package(Boost 1.48 QUIET REQUIRED)
 # Boost or CMake. Ubuntu 16.04 requires linking DOLFIN programs with
 # filesystem, whereas Ubuntu 16.10 and macOS (Homebrew) do not.
 if (Boost_VERSION VERSION_LESS 106100)
-  set(DOLFIN_BOOST_COMPONENTS_PUBLIC filesystem)
-  set(DOLFIN_BOOST_COMPONENTS_PRIVATE program_options iostreams timer)
+  set(DOLFIN_BOOST_COMPONENTS_PUBLIC filesystem timer)
+  set(DOLFIN_BOOST_COMPONENTS_PRIVATE program_options iostreams)
 else()
-  set(DOLFIN_BOOST_COMPONENTS_PUBLIC)
-  set(DOLFIN_BOOST_COMPONENTS_PRIVATE filesystem program_options iostreams
-    timer)
+  set(DOLFIN_BOOST_COMPONENTS_PUBLIC timer)
+  set(DOLFIN_BOOST_COMPONENTS_PRIVATE filesystem program_options iostreams)
 endif()
 
 # Find required Boost libraries
@@ -334,6 +333,7 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   URL "http://www.boost.org")
 
 # Check for required package Eigen3
+# NOTE: Check issue #468 when changing required Eigen version
 find_package(Eigen3 3.2.0 REQUIRED)
 set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
@@ -433,14 +433,16 @@ if (DOLFIN_ENABLE_PYTHON)
 endif()
 
 # Check for required package UFC
-find_package(UFC MODULE 2016.2)
+find_package(UFC MODULE 2017.1)
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified language for form-compilers (part of FFC)"
   URL "https://bitbucket.org/fenics-project/ffc")
 
 # Check for PETSc, SLEPc and petsc4py, slepc4py
+set(PETSC_FOUND FALSE)
+set(SLEPC_FOUND FALSE)
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc 3.6)
+  find_package(PETSc 3.7)
   set_package_properties(PETSc PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation"
     URL "https://www.mcs.anl.gov/petsc/"
@@ -460,8 +462,9 @@ if (DOLFIN_ENABLE_PETSC)
     endif()
   endif()
 
+  set(SLEPC_FOUND FALSE)
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc 3.6)
+    find_package(SLEPc 3.7)
     set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
       DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
       URL "http://slepc.upv.es/")
@@ -550,7 +553,7 @@ endif()
 # Check for Trilinos and the requires Trilinos packages
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
-  find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR}
+  find_package(Trilinos QUIET PATHS ${TRILINOS_DIR} ${Trilinos_DIR}
     $ENV{TRILINOS_DIR})
   set(DOLFIN_TRILINOS_PACKAGES "Tpetra;Zoltan;MueLu;Amesos2;Ifpack2;Belos")
 
@@ -643,7 +646,7 @@ endif()
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
   # Find all modules
-  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
+  find_package(VTK QUIET HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
   set_package_properties(VTK PROPERTIES TYPE OPTIONAL
     DESCRIPTION "The Visualization Toolkit - A high level 3D visualization library"
     URL "https://www.vtk.org"
@@ -858,13 +861,23 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
-# Generate and install helper file dolfin-version
+# Generate and install helper scripts dolfin-version, fenics-version
 
 # FIXME: not cross-platform compatible
-# Create and install dolfin-version file
+
+# Create and install dolfin-version
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-version.in
                ${CMAKE_BINARY_DIR}/dolfin-version @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
+  DESTINATION ${DOLFIN_BIN_DIR}
+  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+  OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+  COMPONENT RuntimeExecutables)
+
+# Create and install fenics-version
+configure_file(${DOLFIN_CMAKE_DIR}/templates/fenics-version.in
+               ${CMAKE_BINARY_DIR}/fenics-version @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/fenics-version
         DESTINATION ${DOLFIN_BIN_DIR}
   PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
         OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
@@ -874,26 +887,29 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
 # Generate and install utility script dolfin-get-demos
 
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-get-demos.in
-               ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
+  ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
-        DESTINATION ${DOLFIN_BIN_DIR}
-  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-        COMPONENT RuntimeExecutables)
+  DESTINATION ${DOLFIN_BIN_DIR}
+  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+  OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+  COMPONENT RuntimeExecutables)
 
 #------------------------------------------------------------------------------
 # Generate demo files from rst
 
-message(STATUS "")
-message(STATUS "Generating demo source files from reStructuredText")
-message(STATUS "--------------------------------------------------")
-file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst" "*.ufl.rst")
-foreach(rst_file ${demo_rst_files})
-  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-  #add_custom_command(TARGET demos_source PRE_BUILD
-  #  COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
-  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-endforeach()
+if (PYTHONINTERP_FOUND)
+  message(STATUS "")
+  message(STATUS "Generating demo source files from reStructuredText")
+  message(STATUS "--------------------------------------------------")
+  file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst" "*.ufl.rst")
+  foreach(rst_file ${demo_rst_files})
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+      WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+    #add_custom_command(TARGET demos_source PRE_BUILD
+    #  COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+    #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+  endforeach()
+endif()
 
 #------------------------------------------------------------------------------
 # Generate form files for tests, bench, demos and DOLFIN if not exists
@@ -903,7 +919,7 @@ endforeach()
 set(COPY_DEMO_TEST_DEMO_DATA FALSE)
 if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
   message(STATUS "")
-  message(STATUS "Generating form files in demo, test, bench and dolfin directories. May take some time...")
+  message(STATUS "Generating form files in demo, test and bench directories. May take some time...")
   message(STATUS "----------------------------------------------------------------------------------------")
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-form-files.py
@@ -926,17 +942,19 @@ endif()
 #------------------------------------------------------------------------------
 # Generate demo files from rst
 
-message(STATUS "")
-message(STATUS "Generating demo source files")
-message(STATUS "--------------------------------------------------")
-file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
-foreach(rst_file ${demo_rst_files})
-  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-endforeach()
+if (PYTHONINTERP_FOUND)
+  message(STATUS "")
+  message(STATUS "Generating demo source files")
+  message(STATUS "--------------------------------------------------")
+  file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
+  foreach(rst_file ${demo_rst_files})
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+      WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+  endforeach()
+endif()
 
 #------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for bench and demos if not exists
+# Generate CMakeLists.txt files for bench and demos if not existing
 
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
@@ -989,6 +1007,7 @@ endif()
 # Add demos and install demo source files and mesh files
 
 # Add demo but do not add to default target
+set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
 add_subdirectory(demo EXCLUDE_FROM_ALL)
 
 # Set make program
@@ -1001,13 +1020,15 @@ endif()
 # Add taget to build .py demo files from Python rst input files, and
 # create a target to build source files from .cpp.rst and .py.rst
 # files (using pylit)
-file(GLOB_RECURSE rst_files "*.py.rst" "*.cpp.rst")
-add_custom_target(demos_source)
-foreach(rst_file ${rst_files})
-  add_custom_command(TARGET demos_source PRE_BUILD
-    COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-endforeach()
+if (PYTHONINTERP_FOUND)
+  file(GLOB_RECURSE rst_files "*.py.rst" "*.cpp.rst")
+  add_custom_target(demos_source)
+  foreach(rst_file ${rst_files})
+    add_custom_command(TARGET demos_source PRE_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+  endforeach()
+endif()
 
 # Add target "demo" for building the demos
 add_custom_target(demo
@@ -1105,6 +1126,30 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_regressiontests" for running regression tests
   add_custom_target(run_regressiontests
     COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
+    DEPENDS copy_data_test_demo demo demos_source
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+
+  # Add target "run_regressiontests_cpp" for running C++ regression tests
+  add_custom_target(run_regressiontests_cpp
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_PYTHON_TESTING=1 DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
+    DEPENDS copy_data_test_demo demo demos_source
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+
+  # Add target "run_regressiontests_cpp_mpi" for running C++ regression tests with mpi
+  add_custom_target(run_regressiontests_cpp_mpi
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_PYTHON_TESTING=1 DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
+    DEPENDS copy_data_test_demo demo demos_source
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+
+  # Add target "run_regressiontests_py" for running Python regression tests
+  add_custom_target(run_regressiontests_py
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_CPP_TESTING=1 DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
+    DEPENDS copy_data_test_demo demo demos_source
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+
+  # Add target "run_regressiontests_py_mpi" for running Python regression tests with mpi
+  add_custom_target(run_regressiontests_py_mpi
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_CPP_TESTING=1 DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
     DEPENDS copy_data_test_demo demo demos_source
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 

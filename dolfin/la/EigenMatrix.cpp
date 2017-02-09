@@ -136,7 +136,7 @@ void EigenMatrix::setrow(std::size_t row_idx,
 //----------------------------------------------------------------------------
 void EigenMatrix::init_vector(GenericVector& z, std::size_t dim) const
 {
-  z.init(mpi_comm(), size(dim));
+  z.init(size(dim));
 }
 //----------------------------------------------------------------------------
 void EigenMatrix::set(const double* block, std::size_t m,

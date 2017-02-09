@@ -27,22 +27,24 @@ import shutil
 sub_directories = ['demo', 'test', 'bench']
 
 # Copy all files with the following suffixes
-suffix_patterns = ["py", "h", "cpp", "cpp.rst", "ufl", "ufl.rst", "xml", "xml.gz", "off", "inp", \
-                   "msh", "supp", "rst", "py.rst", "ele", "node", "grid", "edge", "sh"]
+suffix_patterns = ["py", "h", "cpp", "cpp.rst", "ufl", "ufl.rst", "xdmf",
+                   "xml", "xml.gz", "off", "inp", "msh", "supp", "rst",
+                   "py.rst", "ele", "node", "grid", "edge", "sh"]
 
-suffix_pattern = re.compile("(%s),"%("|".join("[\w-]+\.%s" % pattern \
-                                             for pattern in suffix_patterns)))
+suffix_pattern = re.compile("(%s)," % ("|".join("[\w-]+\.%s" % pattern
+                                                for pattern in suffix_patterns)))
 
 script_rel_path = os.sep.join(__file__.split(os.sep)[:-1])
 script_rel_path = script_rel_path or "."
 dolfin_dir = os.path.abspath(os.path.join(script_rel_path, os.pardir, os.pardir))
+
 
 def copy_data(top_destdir):
 
     abs_destdir = top_destdir if os.path.isabs(top_destdir) else os.path.join(dolfin_dir, top_destdir)
 
     if abs_destdir == dolfin_dir:
-        raise RuntimeError("destination directory cannot be the same as "\
+        raise RuntimeError("destination directory cannot be the same as "
                            "the dolfin source directory")
 
     if not os.path.isdir(abs_destdir):
@@ -55,10 +57,10 @@ def copy_data(top_destdir):
             destdir = dirpath.replace(dolfin_dir, abs_destdir)
             if not os.path.isdir(destdir):
                 os.makedirs(destdir)
-            for f in re.findall(suffix_pattern, " ".join(\
-                "%s,"%f for f in filenames)):
+            for f in re.findall(suffix_pattern, " ".join("%s," % f for f in filenames)):
                 srcfile = os.path.join(dirpath, f)
                 shutil.copy(srcfile, destdir)
+
 
 if __name__ == "__main__":
     # Expecting a destination argument

@@ -1,9 +1,18 @@
 Change log
 ==========
 
-
 dev
 ---
+
+- Remove OpenMpAsssmebler
+- Remove MPI communicator as argument in GenericVector::init functions
+  (communicator should be passed via constructor)
+- Remove ``Function::operator[+-*/]`` to prevent memory corruption problems
+  (does not affect Python interface)
+- Add ``PETScSNESSolver`` constructor accepting both communicator and type
+
+2016.2.0 [2016-11-30]
+---------------------
 
 - Updates to XDMFFile interface, now fully supporting MeshFunction and
   MeshValueCollection with multiple named datasets in one file (useful for

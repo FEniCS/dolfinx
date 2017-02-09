@@ -20,6 +20,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/la/GenericVector.h>
 
 #include "fem_utils.h"
@@ -105,8 +106,9 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
       = dofmap.cell_dofs(cell.index());
 
     // Tabulate local to local map of dofs on local vertex
-    dofmap.tabulate_entity_dofs(local_to_local_map, 0,
-				local_vertex_ind);
+    dofmap.tabulate_entity_dofs(
+                local_to_local_map,
+				0, local_vertex_ind);
 
     // Fill local dofs for the vertex
     for (std::size_t local_dof = 0; local_dof < dofs_per_vertex; local_dof++)
@@ -286,6 +288,8 @@ Mesh dolfin::create_mesh(Function& coordinates)
   const Mesh& mesh0 = *(coordinates.function_space()->mesh());
   Mesh mesh1(mesh0.mpi_comm());
 
+  // FIXME: Share this code with Mesh assignment operaror; a need
+  //        to duplicate its code here is not maintainable
   // Assign all data except geometry
   mesh1._topology = mesh0._topology;
   mesh1._domains = mesh0._domains;
@@ -296,6 +300,7 @@ Mesh dolfin::create_mesh(Function& coordinates)
     mesh1._cell_type.reset();
   mesh1._ordered = mesh0._ordered;
   mesh1._cell_orientations = mesh0._cell_orientations;
+  mesh1._ghost_mode = mesh0._ghost_mode;
 
   // Rename
   mesh1.rename(mesh0.name(), mesh0.label());

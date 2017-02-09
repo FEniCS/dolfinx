@@ -66,8 +66,6 @@ Parameters PETScTAOSolver::default_parameters()
 
   p.add("monitor_convergence"    , false);
   p.add("report"                 , false);
-  p.add("function_absolute_tol"  , 1.0e-10);
-  p.add("function_relative_tol"  , 1.0e-10);
   p.add("gradient_absolute_tol"  , 1.0e-08);
   p.add("gradient_relative_tol"  , 1.0e-08);
   p.add("gradient_t_tol"         , 0.0);
@@ -416,19 +414,10 @@ void PETScTAOSolver::set_tao_options()
   set_tao(parameters["method"]);
 
   // Set tolerances
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-  ierr = TaoSetTolerances(_tao, parameters["function_absolute_tol"],
-                                parameters["function_relative_tol"],
-                                parameters["gradient_absolute_tol"],
-                                parameters["gradient_relative_tol"],
-                                parameters["gradient_t_tol"]);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetTolerances");
-  #else
   ierr = TaoSetTolerances(_tao, parameters["gradient_absolute_tol"],
                                 parameters["gradient_relative_tol"],
                                 parameters["gradient_t_tol"]);
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetTolerances");
-  #endif
 
   // Set TAO solver maximum iterations
   int maxits = parameters["maximum_iterations"];
@@ -568,12 +557,6 @@ void PETScTAOSolver::set_ksp_options()
     {
       if (krylov_parameters["monitor_convergence"])
       {
-        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-        ierr = TaoSetMonitor(_tao, TaoDefaultMonitor,
-                             PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_tao)),
-                             NULL);
-        if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetMonitor");
-        #else
         PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
         PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
         PetscViewerAndFormat *vf;
@@ -583,7 +566,6 @@ void PETScTAOSolver::set_ksp_options()
                          vf,
                          (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
         if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
-        #endif
       }
     }
 
