@@ -745,12 +745,16 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
   }
 
   // At this point, we know that the two end points are on different
-  // sides of the triangle plane (o0*o1 < 0). The intersection with
-  // the plane is given by x = q0 + num / den * (q1 - q0) but den may
-  // be close to zero which happens when the segment is almost
-  // parallel to the triangle / plane.
+  // sides of the triangle plane (o0*o1 < 0).
 
-  // Compute inner products
+  // FIXME: We don't check the size of |den|. If it is small then
+  // the computation will be unstable and the point we compute may
+  // happen to end up outside the triangle. On the other hand, we
+  // check that the point is actually inside... So the result if
+  // the plane and the segment are close to parallel is that we
+  // return an empty list. Maybe that is ok?
+
+  // Formula for intersection point: x = q0 + num / den * (q1 - q0)
   const double num = n.dot(p0 - q0);
   const double den = n.dot(q1 - q0);
 
