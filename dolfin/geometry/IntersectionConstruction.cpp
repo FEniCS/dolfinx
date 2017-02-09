@@ -29,7 +29,7 @@
 //#include <ttmath/ttmath.h>
 // #include <Eigen/Dense>
 // #include <algorithm>
-//#define augustdebug
+// #define augustdebug
 
 #ifdef augustdebug
 #include "dolfin_simplex_tools.h"
@@ -486,8 +486,9 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     std::cout << denom<<' '<<numer << std::endl;
 #endif
   }
-  else if (std::abs(denom) > DOLFIN_EPS_LARGE and
-	   std::abs(std::abs(denom)-std::abs(numer)) > DOLFIN_EPS_LARGE)
+  // else if (std::abs(denom) > DOLFIN_EPS_LARGE and
+  // 	   std::abs(std::abs(denom)-std::abs(numer)) > DOLFIN_EPS_LARGE)
+  else if (std::abs(denom*denom) > DOLFIN_EPS_LARGE*std::abs(numer))
   {
     Point x0 = P0 + numer / denom * (P1 - P0);
 
