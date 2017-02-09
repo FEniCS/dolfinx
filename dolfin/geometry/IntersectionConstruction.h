@@ -103,8 +103,9 @@ namespace dolfin
                                     const Point& q0,
                                     const Point& q1)
     {
-      return CHECK_CGAL(_intersection_segment_segment_2d(p0, p1, q0, q1),
-                        cgal_intersection_segment_segment_2d(p0, p1, q0, q1));
+      // return CHECK_CGAL(_intersection_segment_segment_2d(p0, p1, q0, q1),
+      //                   cgal_intersection_segment_segment_2d(p0, p1, q0, q1));
+      return _intersection_segment_segment_2d(p0, p1, q0, q1);
     }
 
     /// Compute intersection of segment p0-p1 with segment q0-q1 (3D version)
@@ -134,8 +135,9 @@ namespace dolfin
                                      const Point& q0,
                                      const Point& q1)
     {
-      return CHECK_CGAL(_intersection_triangle_segment_2d(p0, p1, p2, q0, q1),
-       			cgal_intersection_triangle_segment_2d(p0, p1, p2, q0, q1));
+      // return CHECK_CGAL(_intersection_triangle_segment_2d(p0, p1, p2, q0, q1),
+      //  			cgal_intersection_triangle_segment_2d(p0, p1, p2, q0, q1));
+      return _intersection_triangle_segment_2d(p0, p1, p2, q0, q1);
     }
 
     /// Compute intersection of triangle p0-p1-p2 with segment q0-q1 (2D version)
@@ -168,8 +170,9 @@ namespace dolfin
                                       const Point& q1,
                                       const Point& q2)
     {
-      return CHECK_CGAL(_intersection_triangle_triangle_2d(p0, p1, p2, q0, q1, q2),
-      			cgal_intersection_triangle_triangle_2d(p0, p1, p2, q0, q1, q2));
+      // return CHECK_CGAL(_intersection_triangle_triangle_2d(p0, p1, p2, q0, q1, q2),
+      // 			cgal_intersection_triangle_triangle_2d(p0, p1, p2, q0, q1, q2));
+      return _intersection_triangle_triangle_2d(p0, p1, p2, q0, q1, q2);
     }
 
     /// Compute intersection of triangle p0-p1-p2 with triangle q0-q1-q2 (3D version)
