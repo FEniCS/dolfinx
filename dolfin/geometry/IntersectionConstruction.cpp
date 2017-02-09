@@ -711,65 +711,71 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
 
   std::vector<Point> points;
 
-  // Intersect triangle with each segment end point
-  if (CollisionPredicates::collides_triangle_point_3d(p0, p1, p2, q0))
-    points.push_back(q0);
-  if (CollisionPredicates::collides_triangle_point_3d(p0, p1, p2, q1))
-    points.push_back(q1);
+  const double o0 = orient3d(p0, p1, p2, q0);
+  const double o1 = orient3d(p0, p1, p2, q1);
 
-  // If both end points collide we are done
-  if (points.size() == 2)
+  // q0 and q1 are on the same side
+  if (o0*o1 > 0.)
     return points;
 
-  // Intersect each triangle edge with segment
-  if (CollisionPredicates::collides_segment_segment_3d(p0, p1, q0, q1))
+  // At least one (or both) is in the plane
+  if (o0*o1 == 0.)
   {
-    const std::vector<Point> intersection = intersection_segment_segment_3d(p0, p1, q0, q1);
-    points.insert(points.end(), intersection.begin(), intersection.end());
-    dolfin_assert(GeometryPredicates::is_finite(points));
-  }
-  if (CollisionPredicates::collides_segment_segment_3d(p0, p2, q0, q1))
-  {
-    const std::vector<Point> intersection = intersection_segment_segment_3d(p0, p2, q0, q1);
-    points.insert(points.end(), intersection.begin(), intersection.end());
-    dolfin_assert(GeometryPredicates::is_finite(points));
-  }
-  if (CollisionPredicates::collides_segment_segment_3d(p1, p2, q0, q1))
-  {
-    const std::vector<Point> intersection = intersection_segment_segment_3d(p1, p2, q0, q1);
-    points.insert(points.end(), intersection.begin(), intersection.end());
-    dolfin_assert(GeometryPredicates::is_finite(points));
+    if (o0 == 0.)
+    {
+      if (CollisionPredicates::collides_triangle_point_3d(p0, p1, p2, q0))
+	points.push_back(q0);
+    }
+
+    if (o1 == 0.)
+    {
+      if (CollisionPredicates::collides_triangle_point_3d(p0, p1, p2, q1))
+	points.push_back(q1);
+    }
+
+    return points;
   }
 
-  // Think ray-plane intersection if segment is not in plane (which it
-  // shouldn't be)
+  // Now we know the product is negative
 
-  // normal
-  Point n = cross_product(p0,p1,p2);
-  n /= n.norm();
+  // Plane is given by n.(x-p0) = 0.
 
-  // Eqn for plane is n.x = d
-  const double d = n.dot(p0);
+  // Ray is given by x = q0 + k (q1 - q0), where k = n.dot(p0 - q0) /
+  // n.dot(q1 - q0) gives the intersection of the ray and the plane.
 
-  // Ray is r(t) = q0 + t(q1 - q0). Intersection with plane is at t =
-  // (d - n.dot(q0)) / n.dot(q1-q0). Make sure normal is not
-  // orthogonal to plane (should be detected above though)
+  const Point n = cross_product(p0, p1, p2);
+  const double num = n.dot(p0 - q0);
+  const double den = n.dot(q1 - q0);
 
-  const Point x = q0 + (d - n.dot(q0)) / n.dot(q1-q0) * (q1 - q0);
-  //std::cout << CollisionPredicates::collides_triangle_point_3d(p0,p1,p2, x)<<'\n';
+  // Assume all is well
+  const Point x = q0 + num / den * (q1 - q0);
 
-  std::cout << "q0 = " << q0 << std::endl;
-  std::cout << "q1 = " << q1 << std::endl;
-  std::cout << "n =  " << n << std::endl;
-  std::cout << "x = " << x << std::endl;
-  std::cout << "den = " << n.dot(q1 - q0) << std::endl;
+  // Check that x is in (or near) the triangle
+  Point a = p0, b = p1, c = p2, d = x;
+  if (std::abs(n.y()) >= std::abs(n.z()) and
+      std::abs(n.y()) >= std::abs(n.x()))
+  {
+    a = Point(p0.x(), p0.z());
+    b = Point(p1.x(), p1.z());
+    c = Point(p2.x(), p2.z());
+    d = Point(x.x(), x.z());
+  }
+  else if (std::abs(n.x()) >= std::abs(n.y()) and
+	   std::abs(n.x()) >= std::abs(n.z()))
+  {
+    a = Point(p0.y(), p0.z());
+    b = Point(p1.y(), p1.z());
+    c = Point(p2.y(), p2.z());
+    d = Point(x.y(), x.z());
+  }
 
-  points.push_back(x);
+  if (CollisionPredicates::collides_triangle_point_2d(a, b, c, d))
+  {
+    points.push_back(x);
+  }
+
   dolfin_assert(GeometryPredicates::is_finite(points));
-
-  dolfin_assert(GeometryPredicates::is_finite(points));
-  const std::vector<Point> unique = unique_points(points);
-  return unique;
+  return points;
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
