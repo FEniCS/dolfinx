@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2016-11-17
+// Last changed: 2017-02-09
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -356,7 +356,7 @@ SimplexQuadrature::compute_quadrature_rule_triangle(const std::vector<Point>& co
       double a[] = {coordinates[0].x(), coordinates[0].y()};
       double b[] = {coordinates[1].x(), coordinates[1].y()};
       double c[] = {coordinates[2].x(), coordinates[2].y()};
-      det = orient2d(a,b,c);
+      det = _orient2d(a, b, c);
 
       break;
     }

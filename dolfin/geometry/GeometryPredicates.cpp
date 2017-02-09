@@ -77,9 +77,9 @@ bool GeometryPredicates::_is_degenerate_2d(std::vector<Point> simplex)
       break;
     }
   case 3:
-    is_degenerate = orient2d(simplex[0].coordinates(),
-			     simplex[1].coordinates(),
-			     simplex[2].coordinates()) == 0;
+    is_degenerate = orient2d(simplex[0],
+			     simplex[1],
+			     simplex[2]) == 0;
     break;
   default:
     dolfin_error("GeometryPredicates.cpp",
@@ -99,12 +99,7 @@ bool GeometryPredicates::_is_degenerate_3d(std::vector<Point> simplex)
   switch (simplex.size())
   {
   case 4:
-    dolfin_debug("check");
-    is_degenerate = orient3d(simplex[0].coordinates(),
-			     simplex[1].coordinates(),
-			     simplex[2].coordinates(),
-			     simplex[3].coordinates()) == 0;
-    dolfin_debug("check");
+    is_degenerate = orient3d(simplex[0], simplex[1], simplex[2], simplex[3]) == 0;
     break;
   default:
     dolfin_error("GeometryPredicates.cpp",

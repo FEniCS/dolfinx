@@ -1,3 +1,23 @@
+#include <dolfin/geometry/Point.h>
+#include "predicates.h"
+
+//-----------------------------------------------------------------------------
+double dolfin::orient2d(const Point& a, const Point& b, const Point& c)
+{
+  return dolfin::_orient2d(a.coordinates(),
+                           b.coordinates(),
+                           c.coordinates());
+}
+//-----------------------------------------------------------------------------
+double dolfin::orient3d(const Point& a, const Point& b, const Point& c, const Point& d)
+{
+  return dolfin::_orient3d(a.coordinates(),
+                           b.coordinates(),
+                           c.coordinates(),
+                           d.coordinates());
+}
+//-----------------------------------------------------------------------------
+
 /*****************************************************************************/
 /*                                                                           */
 /*  Routines for Arbitrary Precision Floating-point Arithmetic               */
@@ -112,8 +132,6 @@
 /*    have questions.                                                        */
 /*                                                                           */
 /*****************************************************************************/
-
-#include "predicates.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1534,7 +1552,7 @@ REAL orient2dslow(REAL *pa, REAL *pb, REAL *pc)
   return deter[deterlen - 1];
 }
 
-REAL orient2dadapt(REAL *pa, REAL *pb, REAL *pc, REAL detsum)
+REAL orient2dadapt(const REAL *pa, const REAL *pb, const REAL *pc, const REAL detsum)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -1618,7 +1636,7 @@ REAL orient2dadapt(REAL *pa, REAL *pb, REAL *pc, REAL detsum)
   return(D[Dlength - 1]);
 }
 
-REAL dolfin::orient2d(REAL *pa, REAL *pb, REAL *pc)
+REAL dolfin::_orient2d(const REAL *pa, const REAL *pb, const REAL *pc)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -1885,7 +1903,7 @@ REAL orient3dslow(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
   return deter[deterlen - 1];
 }
 
-REAL orient3dadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL permanent)
+REAL orient3dadapt(const REAL *pa, const REAL *pb, const REAL *pc, const REAL *pd, REAL permanent)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -2290,7 +2308,7 @@ REAL orient3dadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL permanent)
   return finnow[finlength - 1];
 }
 
-REAL dolfin::orient3d(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
+REAL dolfin::_orient3d(const REAL *pa, const REAL *pb, const REAL *pc, const REAL *pd)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */

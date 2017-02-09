@@ -393,7 +393,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
   }
   else if (intersection.size() > 1)
   {
-    std::vector<Point> unique = unique_points(intersection);
+    std::vector<Point> unique = _unique_points(intersection);
 
     // assert that we only have one or two points
     dolfin_assert(intersection.size() == 2 ?
@@ -424,7 +424,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     Q1 = p1;
   }
 
-  const double num = orient2d(Q0.coordinates(), Q1.coordinates(), P0.coordinates());
+  const double num = orient2d(Q0, Q1, P0);
   const double den = (P1.x()-P0.x())*(Q1.y()-Q0.y()) - (P1.y()-P0.y())*(Q1.x()-Q0.x());
 
 #ifdef augustdebug
@@ -530,7 +530,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
   }
 
   dolfin_assert(GeometryPredicates::is_finite(intersection));
-  const std::vector<Point> unique = unique_points(intersection);
+  const std::vector<Point> unique = _unique_points(intersection);
   return unique;
 }
 //-----------------------------------------------------------------------------
@@ -598,7 +598,7 @@ IntersectionConstruction::_intersection_segment_segment_3d(const Point& p0,
   }
   else if (intersection.size() > 1)
   {
-    std::vector<Point> unique = unique_points(intersection);
+    std::vector<Point> unique = _unique_points(intersection);
     dolfin_assert(intersection.size() == 2 ?
     		  (unique.size() == 1 or unique.size() == 2) :
     		  unique.size() == 2);
@@ -649,7 +649,7 @@ IntersectionConstruction::_intersection_segment_segment_3d(const Point& p0,
   }
 
   dolfin_assert(GeometryPredicates::is_finite(intersection));
-  std::vector<Point> unique = unique_points(intersection);
+  std::vector<Point> unique = _unique_points(intersection);
   return unique;
 }
 //-----------------------------------------------------------------------------
@@ -693,7 +693,7 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
   // equality is for ConvexTriangulation.
   // FIXME: This can be avoided if we use interior segment tests.
   dolfin_assert(GeometryPredicates::is_finite(points));
-  const std::vector<Point> unique = unique_points(points);
+  const std::vector<Point> unique = _unique_points(points);
   return unique;
 }
 //-----------------------------------------------------------------------------
@@ -704,72 +704,62 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
 							    Point q0,
 							    Point q1)
 {
-#ifdef augustdebug
-  std::cout << "-----------------\n" << __FUNCTION__<<'\n';
-  std::cout << tools::drawtriangle({p0,p1,p2})<<tools::drawtriangle({q0,q1})<<'\n';
-#endif
-
+  // The list of points (convex hull)
   std::vector<Point> points;
 
+  // Compute orientation of segment end points wrt triangle plane
   const double o0 = orient3d(p0, p1, p2, q0);
   const double o1 = orient3d(p0, p1, p2, q1);
 
-  // q0 and q1 are on the same side
+  // Check if both end points are on the same side --> no intersection
   if (o0*o1 > 0.)
     return points;
 
-  // At least one (or both) is in the plane
+  // Compute major axis of triangle plane
+  const Point n = _cross_product(p0, p1, p2);
+  std::size_t major_axis = _major_axis(n);
+
+  // Project points to major axis plane
+  Point P0 = _project_point(p0, major_axis);
+  Point P1 = _project_point(p1, major_axis);
+  Point P2 = _project_point(p2, major_axis);
+  Point Q0 = _project_point(q0, major_axis);
+  Point Q1 = _project_point(q1, major_axis);
+
+  // Check if at least one is in the plane --> check both end points
   if (o0*o1 == 0.)
   {
     if (o0 == 0.)
     {
-      if (CollisionPredicates::collides_triangle_point_3d(p0, p1, p2, q0))
+      if (CollisionPredicates::collides_triangle_point_2d(P0, P1, P2, Q0))
 	points.push_back(q0);
     }
 
     if (o1 == 0.)
     {
-      if (CollisionPredicates::collides_triangle_point_3d(p0, p1, p2, q1))
+      if (CollisionPredicates::collides_triangle_point_2d(P0, P1, P2, Q1))
 	points.push_back(q1);
     }
 
     return points;
   }
 
-  // Now we know the product is negative
+  // At this point, we know that the two end points are on different
+  // sides of the triangle plane (o0*o1 < 0). The intersection with
+  // the plane is given by x = q0 + num / den * (q1 - q0) but den may
+  // be close to zero which happens when the segment is almost
+  // parallel to the triangle / plane.
 
-  // Plane is given by n.(x-p0) = 0.
-
-  // Ray is given by x = q0 + k (q1 - q0), where k = n.dot(p0 - q0) /
-  // n.dot(q1 - q0) gives the intersection of the ray and the plane.
-
-  const Point n = cross_product(p0, p1, p2);
+  // Compute inner products
   const double num = n.dot(p0 - q0);
   const double den = n.dot(q1 - q0);
 
-  // Assume all is well
+  // Compute intersection point
   const Point x = q0 + num / den * (q1 - q0);
 
-  // Check that x is in (or near) the triangle
-  Point a = p0, b = p1, c = p2, d = x;
-  if (std::abs(n.y()) >= std::abs(n.z()) and
-      std::abs(n.y()) >= std::abs(n.x()))
-  {
-    a = Point(p0.x(), p0.z());
-    b = Point(p1.x(), p1.z());
-    c = Point(p2.x(), p2.z());
-    d = Point(x.x(), x.z());
-  }
-  else if (std::abs(n.x()) >= std::abs(n.y()) and
-	   std::abs(n.x()) >= std::abs(n.z()))
-  {
-    a = Point(p0.y(), p0.z());
-    b = Point(p1.y(), p1.z());
-    c = Point(p2.y(), p2.z());
-    d = Point(x.y(), x.z());
-  }
-
-  if (CollisionPredicates::collides_triangle_point_2d(a, b, c, d))
+  // Check if intersection point is inside the triangle
+  const Point X = _project_point(x, major_axis);
+  if (CollisionPredicates::collides_triangle_point_2d(P0, P1, P2, X))
   {
     points.push_back(x);
   }
@@ -861,14 +851,14 @@ IntersectionConstruction::_intersection_triangle_triangle_2d(Point p0,
 #endif
 
     // Find all vertex-"triangle interior" intersections
-    const int s0 = std::signbit(orient2d(tri_0[0].coordinates(), tri_0[1].coordinates(), tri_0[2].coordinates())) == true ? -1 : 1;
-    const int s1 = std::signbit(orient2d(tri_1[0].coordinates(), tri_1[1].coordinates(), tri_1[2].coordinates())) == true ? -1 : 1;
+    const int s0 = std::signbit(orient2d(tri_0[0], tri_0[1], tri_0[2])) == true ? -1 : 1;
+    const int s1 = std::signbit(orient2d(tri_1[0], tri_1[1], tri_1[2])) == true ? -1 : 1;
 
     for (std::size_t i = 0; i < 3; ++i)
     {
-      const double q0_q1_pi = s1*orient2d(tri_1[0].coordinates(), tri_1[1].coordinates(), tri_0[i].coordinates());
-      const double q1_q2_pi = s1*orient2d(tri_1[1].coordinates(), tri_1[2].coordinates(), tri_0[i].coordinates());
-      const double q2_q0_pi = s1*orient2d(tri_1[2].coordinates(), tri_1[0].coordinates(), tri_0[i].coordinates());
+      const double q0_q1_pi = s1*orient2d(tri_1[0], tri_1[1], tri_0[i]);
+      const double q1_q2_pi = s1*orient2d(tri_1[1], tri_1[2], tri_0[i]);
+      const double q2_q0_pi = s1*orient2d(tri_1[2], tri_1[0], tri_0[i]);
 
       if (q0_q1_pi > 0. and
   	  q1_q2_pi > 0. and
@@ -877,9 +867,9 @@ IntersectionConstruction::_intersection_triangle_triangle_2d(Point p0,
   	points.push_back(tri_0[i]);
       }
 
-      const double p0_p1_qi = s0*orient2d(tri_0[0].coordinates(), tri_0[1].coordinates(), tri_1[i].coordinates());
-      const double p1_p2_qi = s0*orient2d(tri_0[1].coordinates(), tri_0[2].coordinates(), tri_1[i].coordinates());
-      const double p2_p0_qi = s0*orient2d(tri_0[2].coordinates(), tri_0[0].coordinates(), tri_1[i].coordinates());
+      const double p0_p1_qi = s0*orient2d(tri_0[0], tri_0[1], tri_1[i]);
+      const double p1_p2_qi = s0*orient2d(tri_0[1], tri_0[2], tri_1[i]);
+      const double p2_p0_qi = s0*orient2d(tri_0[2], tri_0[0], tri_1[i]);
 
       if (p0_p1_qi > 0. and
   	  p1_p2_qi > 0. and
@@ -897,7 +887,7 @@ IntersectionConstruction::_intersection_triangle_triangle_2d(Point p0,
   }
 
   dolfin_assert(GeometryPredicates::is_finite(points));
-  return unique_points(points);
+  return _unique_points(points);
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -1161,12 +1151,12 @@ IntersectionConstruction::_intersection_tetrahedron_tetrahedron(const Point& p0,
   }
 
   dolfin_assert(GeometryPredicates::is_finite(points));
-  std::vector<Point> unique = unique_points(points);
+  std::vector<Point> unique = _unique_points(points);
   return unique;
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::unique_points(std::vector<Point> input_points)
+IntersectionConstruction::_unique_points(std::vector<Point> input_points)
 {
   std::vector<Point> unique;
   unique.reserve(input_points.size());
@@ -1187,7 +1177,7 @@ IntersectionConstruction::unique_points(std::vector<Point> input_points)
   return unique;
 }
 //-----------------------------------------------------------------------------
-double IntersectionConstruction::det(Point ab, Point dc, Point ec)
+double IntersectionConstruction::_det(Point ab, Point dc, Point ec)
 {
   double a = ab.x(), b = ab.y(), c = ab.z();
   double d = dc.x(), e = dc.y(), f = dc.z();
@@ -1197,9 +1187,7 @@ double IntersectionConstruction::det(Point ab, Point dc, Point ec)
        + c * (d * h - e * g);
 }
 //-----------------------------------------------------------------------------
-Point IntersectionConstruction::cross_product(Point a,
-					      Point b,
-					      Point c)
+Point IntersectionConstruction::_cross_product(Point a, Point b, Point c)
 {
   // Accurate cross product p = (a-c) x (b-c). See Shewchuk Lecture
   // Notes on Geometric Robustness.
@@ -1212,9 +1200,38 @@ Point IntersectionConstruction::cross_product(Point a,
   double axy[2] = {a.x(), a.y()};
   double bxy[2] = {b.x(), b.y()};
   double cxy[2] = {c.x(), c.y()};
-  Point p(orient2d(ayz, byz, cyz),
-	  orient2d(azx, bzx, czx),
-	  orient2d(axy, bxy, cxy));
+  Point p(_orient2d(ayz, byz, cyz),
+	  _orient2d(azx, bzx, czx),
+	  _orient2d(axy, bxy, cxy));
+  return p;
+}
+//-----------------------------------------------------------------------------
+std::size_t IntersectionConstruction::_major_axis(const Point& v)
+{
+  const double vx = std::abs(v.x());
+  const double vy = std::abs(v.y());
+  const double vz = std::abs(v.z());
+  if (vx >= vy && vx >= vz)
+    return 0;
+  if (vy >= vz)
+    return 1;
+  return 2;
+}
+//-----------------------------------------------------------------------------
+Point IntersectionConstruction::_project_point(const Point& p,
+                                               std::size_t major_axis)
+{
+  switch (major_axis)
+  {
+  case 0: return Point(p.y(), p.z());
+  case 1: return Point(p.x(), p.z());
+  case 2: return Point(p.x(), p.y());
+  default:
+    dolfin_error("IntersectionConstruction.cpp",
+		 "project point to major axis",
+		 "Unknown axis %d.", major_axis);
+  }
+
   return p;
 }
 //-----------------------------------------------------------------------------

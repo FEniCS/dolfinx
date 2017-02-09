@@ -169,9 +169,7 @@ ConvexTriangulation::_triangulate_graham_scan_2d(std::vector<Point> input_points
   std::vector<std::pair<double, std::size_t>> order;
   for (std::size_t m = 1; m < points.size(); ++m)
   {
-    const double A = orient2d(pointscenter.coordinates(),
-			      points[0].coordinates(),
-			      points[m].coordinates());
+    const double A = orient2d(pointscenter, points[0], points[m]);
     const Point s = points[m] - pointscenter;
     double alpha = std::atan2(A, s.dot(ref));
     if (alpha < 0)
@@ -397,10 +395,10 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 	    {
 	      if (m != i and m != j and m != k)
 	      {
-		const double orientation = orient3d(points[i].coordinates(),
-						    points[j].coordinates(),
-						    points[k].coordinates(),
-						    points[m].coordinates());
+		const double orientation = orient3d(points[i],
+						    points[j],
+						    points[k],
+						    points[m]);
 		// Save point index if we find coplanar points
 		if (orientation == 0)
 		  coplanar.push_back(m);
@@ -720,9 +718,9 @@ Point ConvexTriangulation::cross_product(Point a,
   double axy[2] = {a.x(), a.y()};
   double bxy[2] = {b.x(), b.y()};
   double cxy[2] = {c.x(), c.y()};
-  Point p(orient2d(ayz, byz, cyz),
-   	  orient2d(azx, bzx, czx),
-	  orient2d(axy, bxy, cxy));
+  Point p(_orient2d(ayz, byz, cyz),
+   	  _orient2d(azx, bzx, czx),
+	  _orient2d(axy, bxy, cxy));
   return p;
 }
 //-----------------------------------------------------------------------------

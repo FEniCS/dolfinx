@@ -9,39 +9,32 @@
 //
 // Code is placed in the public domain.
 
-#ifndef PREDICATES_H
-#define PREDICATES_H
+#ifndef __PREDICATES_H
+#define __PREDICATES_H
 
 namespace dolfin
 {
 
+  class Point;
+
   // Initialize tolerances for exact arithmetic
   void exactinit();
 
-  // Compute relative orientation of points pa, pb, pc. The orientation
-  // is such that orient2d(pa, pb, pc) > 0 if pa, pb, pc are ordered
+  // Compute relative orientation of points a, b, c. The orientation
+  // is such that orient2d(a, b, c) > 0 if a, b, c are ordered
   // counter-clockwise.
-  double orient2d(double* pa, double* pb, double* pc);
+  double _orient2d(const double* a, const double* b, const double* c);
 
-  double orient2d(Point pa, Point pb, Point pc)
-  {
-    return orient2d(pa.coordinates(),
-		    pb.coordinates(),
-		    pc.coordinates());
-  }
+  // Convenience function using dolfin::Point
+  double orient2d(const Point& a, const Point& b, const Point& c);
 
-  // Compute relative orientation of points pa, pb, pc, pd. The
-  // orientation is such that orient3d(pa, pb, pc, pd) > 0 if pa, pb,
-  // pc, pd are oriented according to the left hand rule.
-  double orient3d(double* pa, double* pb, double* pc, double* pd);
+  // Compute relative orientation of points a, b, c, d. The orientation
+  // is such that orient3d(a, b, c, d) > 0 if a, b, c, d are oriented
+  // according to the left hand rule.
+  double _orient3d(const double* a, const double* b, const double* c, const double* d);
 
-  double orient3d(Point pa, Point pb, Point pc, Point pd)
-  {
-    return orient3d(pa.coordinates(),
-		    pb.coordinates(),
-		    pc.coordinates(),
-		    pd.coordinates());
-  }
+  // Convenience function using dolfin::Point
+  double orient3d(const Point& a, const Point& b, const Point& c, const Point& d);
 
   // Class used for automatic initialization of tolerances at startup.
   // A global instance is defined inside predicates.cpp to ensure that

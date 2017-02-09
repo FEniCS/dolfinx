@@ -287,17 +287,25 @@ namespace dolfin
 
     // Utility functions
 
+    // FIXME: Think about passing points by reference
+
     // Strictly unique points using == operator
-    static std::vector<Point> unique_points(std::vector<Point> points);
+    static std::vector<Point> _unique_points(std::vector<Point> points);
 
     // Determinant of 3 x 3 matrix
-    static double det(Point ab, Point dc, Point ec);
+    static double _det(Point ab, Point dc, Point ec);
 
-    static Point cross_product(Point a,
-			       Point b,
-			       Point c);
+    // Numerically robust cross product
+    static Point _cross_product(Point a, Point b, Point c);
+
+    // Major (largest) axis of vector
+    static std::size_t _major_axis(const Point& v);
+
+    // Project point to major axis plane
+    static Point _project_point(const Point& p, std::size_t major_axis);
 
   };
+
 }
 
 #endif
