@@ -156,8 +156,9 @@ int main(int argc, char** argv)
   set_log_level(DBG);
 
   // Simple test case to check 3D implementation that hangs strangely
-  auto m0 = make_shared<UnitCubeMesh>(2, 2, 2);
-  auto m1 = make_shared<UnitCubeMesh>(2, 2, 2);
+  const std::size_t N = 1;
+  auto m0 = make_shared<UnitCubeMesh>(N, N, N);
+  auto m1 = make_shared<UnitCubeMesh>(N, N, N);
 
   Point p(0.25, 0.25);
   m1->scale(0.5);
