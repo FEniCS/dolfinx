@@ -25,7 +25,7 @@
 #include <set>
 
 #ifdef augustdebug
-#include </home/august/dolfin_simplex_tools.h>
+#include "dolfin_simplex_tools.h"
 #endif
 
 //-----------------------------------------------------------------------------

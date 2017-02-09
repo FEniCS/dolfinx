@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-08
+// Last changed: 2017-02-09
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -54,7 +54,7 @@
 // #define augustdebug
 
 #ifdef augustdebug
-#include "/home/august/dolfin_simplex_tools.h"
+#include "dolfin_simplex_tools.h"
 #endif
 
 using namespace dolfin;
