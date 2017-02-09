@@ -58,7 +58,7 @@ def build_multimesh(num_parts, N_x):
         if y0 - y1 < DOLFIN_EPS:
             x1 += DOLFIN_EPS
 
-        print x0, x1, y0, y1
+        print "Add new rectanble mesh ({:.3f}, {:.3f}) x ({:.3f}, {:.3f}).".format(x0, y0, x1, y1)
         mesh = RectangleMesh(Point(x0, x1), Point(y0, y1), 
                              int(max((x1-x0)*N_x, 1)), int(max((y1-y0)*N_x, 1)))
 
@@ -67,7 +67,6 @@ def build_multimesh(num_parts, N_x):
 
     multimesh.build()
     return multimesh
-
 
 if __name__ == "__main__":
 
@@ -90,4 +89,4 @@ if __name__ == "__main__":
     
     print "Computed volume: {}.".format(vol)
     print "Error: {}.".format(abs(1-vol))
-    assert abs(vol-1) < DOLFIN_EPS
+    assert abs(vol-1) < 10e-10
