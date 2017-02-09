@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2016-12-07
+// Last changed: 2017-02-09
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -251,6 +251,39 @@ void MultiMesh::clear()
   _quadrature_rules_cut_cells.clear();
   _quadrature_rules_overlap.clear();
   _quadrature_rules_interface.clear();
+}
+//-----------------------------------------------------------------------------
+double MultiMesh::compute_volume() const
+{
+  // Total volume
+  double volume = 0.0;
+
+  // Compute contribution from all parts
+  for (std::size_t p = 0; p < num_parts(); p++)
+  {
+    // Sum volume of uncut cells (from cell.volume)
+    {
+      const auto& cells = uncut_cells(p);
+      for (auto it = cells.begin(); it != cells.end(); ++it)
+      {
+        const Cell cell(*part(p), *it);
+        volume += cell.volume();
+      }
+    }
+
+    // Sum volume of cut cells (from quadrature rules)
+    {
+      const auto& cells = cut_cells(p);
+      for (auto it = cells.begin(); it != cells.end(); ++it)
+      {
+        const auto& qr = quadrature_rule_cut_cell(p, *it);
+        for (std::size_t i = 0; i < qr.second.size(); ++i)
+          volume += qr.second[i];
+      }
+    }
+  }
+
+  return volume;
 }
 //-----------------------------------------------------------------------------
 std::string MultiMesh::plot_matplotlib(double delta_z) const

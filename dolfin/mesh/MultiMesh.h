@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2016-11-14
+// Last changed: 2017-02-09
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -316,10 +316,6 @@ namespace dolfin
     /// Clear multimesh
     void clear();
 
-    // Create matplotlib string to plot 2D multimesh
-    // Only suitable for smaller meshes
-    std::string plot_matplotlib(double delta_z=1) const;
-
     /// Default parameter values
     static Parameters default_parameters()
     {
@@ -329,6 +325,17 @@ namespace dolfin
 
       return p;
     }
+
+    //--- The functions below are mainly useful for testing/debugging ---
+
+    /// Compute total volume of multimesh by summing up quadrature weights.
+    /// If the volume of the domain mesh is known, this is a good test to
+    /// verify that the mesh-mesh intersections and quadrature are correct.
+    double compute_volume() const;
+
+    /// Create matplotlib string to plot 2D multimesh (small meshes only)
+    std::string plot_matplotlib(double delta_z=1) const;
+
 
   private:
 

@@ -103,7 +103,7 @@ IntersectionConstruction::intersection(const std::vector<Point>& points_0,
   const std::size_t d0 = points_0.size() - 1;
   const std::size_t d1 = points_1.size() - 1;
 
-  // Pick correct specialized implementation
+   // Pick correct specialized implementation
   if (d0 == 1 && d1 == 1)
   {
     return intersection_segment_segment(points_0[0],
@@ -399,9 +399,9 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     return unique;
   }
 
-  // The intersection is in principle given by p0 + numer / denom *
-  // (p1 - p0), but we first identify certain cases where denom==0 and
-  // / or numer == 0.
+  // The intersection is in principle given by p0 + num / den *
+  // (p1 - p0), but we first identify certain cases where den==0 and
+  // / or num == 0.
 
   // Use shortest distance as P0, P1
   const bool use_p = p0.squared_distance(p1) < q0.squared_distance(q1);
@@ -421,14 +421,15 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     Q1 = p1;
   }
 
-  const double numer = orient2d(Q0.coordinates(), Q1.coordinates(), P0.coordinates());
-  const double denom = (P1.x()-P0.x())*(Q1.y()-Q0.y()) - (P1.y()-P0.y())*(Q1.x()-Q0.x());
+  const double num = orient2d(Q0.coordinates(), Q1.coordinates(), P0.coordinates());
+  const double den = (P1.x()-P0.x())*(Q1.y()-Q0.y()) - (P1.y()-P0.y())*(Q1.x()-Q0.x());
 
 #ifdef augustdebug
-  std::cout << "numer=" << numer << " denom="<<denom << " (equal? "<<(numer==denom) <<")\n";
+  std::cout << "num=" << num << " den="<<den << " (equal? "<<(num==den) <<")\n";
 #endif
 
-  if (denom == 0. and numer == 0.)
+  // Case 0 (den = num = 0): segments are collinear
+  if (den == 0. and num == 0.)
   {
     // p0, p1 is collinear with q0, q1.
     if (p0.squared_distance(p1) < q0.squared_distance(q1))
@@ -478,19 +479,22 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 #endif
     }
   }
-  else if (denom == 0. and numer != 0.)
+  // Case 1 (den = 0, num != 0): segments parallel but disjoint
+  else if (den == 0)
   {
+    // FIXME: Check whether we need this, should never reach this code!
+    // Do nothing
     // Parallel, disjoint
 #ifdef augustdebug
     std::cout << "case 2"<<std::endl;
-    std::cout << denom<<' '<<numer << std::endl;
+    std::cout << den<<' '<<num << std::endl;
 #endif
   }
-  // else if (std::abs(denom) > DOLFIN_EPS_LARGE and
-  // 	   std::abs(std::abs(denom)-std::abs(numer)) > DOLFIN_EPS_LARGE)
-  else if (std::abs(denom*denom) > DOLFIN_EPS_LARGE*std::abs(numer))
+  // Case 2 (den != 0, num != 0): segments not nearly paralllel.
+  // This is the main case, just use formula for computing intersection.
+  else if (std::abs(den*den) > DOLFIN_EPS_LARGE*std::abs(num))
   {
-    Point x0 = P0 + numer / denom * (P1 - P0);
+    Point x0 = P0 + num / den * (P1 - P0);
 
 #ifdef augustdebug
     std::cout << "robust_linear_combination gave " << tools::plot(x0)<<std::endl;
@@ -498,7 +502,9 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
 
     intersection.push_back(x0);
   }
-  else // denom is small
+  // Case 3 (den! = 0, num != 0): segments nearly parallel.
+  // Computation very unstable, so instead return something sensible (midpoint).
+  else // den is small
   {
     // Now the line segments are almost collinear. Project on (1,0)
     // and (0,1) to find the largest projection. Note that Q0, Q1 is
@@ -515,7 +521,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
     // Return midpoint
     Point xm = (points[1] + points[2]) / 2;
 #ifdef augustdebug
-    std::cout << "projection intersection with |denom|="<<std::abs(denom)<< " and difference "<< std::abs(std::abs(denom)-std::abs(numer)) <<" using P0, P1, Q0, Q1 " << tools::plot(P0)<<tools::plot(P1)<<tools::plot(Q0)<<tools::plot(Q1)<<"and dim = " << dim<< " gives\n" << tools::plot(xm)<<std::endl;
+    std::cout << "projection intersection with |den|="<<std::abs(den)<< " and difference "<< std::abs(std::abs(den)-std::abs(num)) <<" using P0, P1, Q0, Q1 " << tools::plot(P0)<<tools::plot(P1)<<tools::plot(Q0)<<tools::plot(Q1)<<"and dim = " << dim<< " gives\n" << tools::plot(xm)<<std::endl;
 #endif
     intersection.push_back(xm);
   }
@@ -620,37 +626,37 @@ IntersectionConstruction::_intersection_segment_segment_3d(const Point& p0,
   const Point u = p1 - q1;
   const Point wv = w.cross(v);
   const Point vu = v.cross(u);
-  const double denom = wv.squared_norm();
-  const double numer = wv.dot(vu);
+  const double den = wv.squared_norm();
+  const double num = wv.dot(vu);
 
-  if (denom == 0. and numer == 0)
+  if (den == 0. and num == 0)
   {
     //PPause;
   }
-  else if (denom == 0 and numer != 0)
+  else if (den == 0 and num != 0)
   {
     // Parallel, disjoint
     //PPause;
   }
-  else if (denom != 0)
+  else if (den != 0)
   {
     // Test Shewchuk
 
     // If fraction is close to 1, swap p0 and p1
     Point x0;
 
-    if (std::abs(numer / denom - 1) < DOLFIN_EPS_LARGE)
+    if (std::abs(num / den - 1) < DOLFIN_EPS_LARGE)
     {
       const Point u_swapped = p0 - q1;
       const Point vu_swapped = v.cross(u_swapped);
-      const double numer_swapped = -wv.dot(vu_swapped);
-      x0 = p0 + numer_swapped / denom * (p1 - p0);
+      const double num_swapped = -wv.dot(vu_swapped);
+      x0 = p0 + num_swapped / den * (p1 - p0);
       // std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
     }
     else
     {
       // std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-      x0 = p1 + numer / denom * (p0 - p1);
+      x0 = p1 + num / den * (p0 - p1);
     }
 
     intersection.push_back(x0);
@@ -799,19 +805,19 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
   // // z = orient3d(a,d,e,c) / det(a-b, d-c, e-c)
 
   // // Let a = q0, d = p0, e = p1, c = p2
-  // const double numer = orient3d(q0.coordinates(), p0.coordinates(), p1.coordinates(), p2.coordinates());
-  // const double denom = det(q0 - q1, p0 - p2, p1 - p2);
+  // const double num = orient3d(q0.coordinates(), p0.coordinates(), p1.coordinates(), p2.coordinates());
+  // const double den = det(q0 - q1, p0 - p2, p1 - p2);
 
-  // if (denom == 0 and numer != 0)
+  // if (den == 0 and num != 0)
   // {
   //   // line is parallel to plane
-  //   std::cout << numer << ' '<< denom << "    "<<CollisionPredicates::collides_triangle_segment_3d(p0,p1,p2, q0,q1)<<'\n';
+  //   std::cout << num << ' '<< den << "    "<<CollisionPredicates::collides_triangle_segment_3d(p0,p1,p2, q0,q1)<<'\n';
   //   PPause;
   // }
-  // else if (denom == 0 and numer == 0)
+  // else if (den == 0 and num == 0)
   // {
   //   // line lies in the the plane: this should be taken care of above
-  //   // since numer == 0 means q0 in p0, p1, p2
+  //   // since num == 0 means q0 in p0, p1, p2
 
   //   PPause;
   // }
@@ -820,15 +826,15 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
   //   Point x0;
 
   //   // If fraction is close to 1, swap q0 and q1
-  //   if (std::abs(numer / denom - 1) < DOLFIN_EPS_LARGE)
+  //   if (std::abs(num / den - 1) < DOLFIN_EPS_LARGE)
   //   {
-  //     const double numer_swapped = orient3d(q1.coordinates(), p0.coordinates(), p1.coordinates(), p2.coordinates());
+  //     const double num_swapped = orient3d(q1.coordinates(), p0.coordinates(), p1.coordinates(), p2.coordinates());
   //     // Denominator flips sign
-  //     x0 = q1 - numer_swapped / denom * (q0 - q1);
+  //     x0 = q1 - num_swapped / den * (q0 - q1);
   //   }
   //   else
   //   {
-  //     x0 = q0 + numer / denom * (q1 - q0);
+  //     x0 = q0 + num / den * (q1 - q0);
   //   }
   //   points.push_back(x0);
   // }
