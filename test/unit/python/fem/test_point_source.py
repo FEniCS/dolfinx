@@ -21,7 +21,6 @@
 
 import pytest
 import numpy as np
-from mpi4py import MPI
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
 
@@ -179,8 +178,8 @@ def test_pointsource_matrix():
                     assert round(w.vector()[ind] - 10.0) == 0
 
 def test_pointsource_matrix_second_constructor():
-    """Tests point source when given different constructor 
-    PointSource(V1, V2, point, mag) with a matrix and when placed at a node 
+    """Tests point source when given different constructor
+    PointSource(V1, V2, point, mag) with a matrix and when placed at a node
     for 1D, 2D and 3D. Currently only implemented if V1=V2."""
     data = [[UnitIntervalMesh(10), Point(0.5)],
             [UnitSquareMesh(2,2), Point(0.5, 0.5)],
@@ -255,7 +254,8 @@ def test_multi_ps_vector_node():
                 j+=dim+1
 
 def test_multi_ps_vector():
-    """ """
+    """Tests point source PointSource(V, source) for mulitple point
+    sources applied to a vector for 1D, 2D and 3D. """
     meshes = [UnitIntervalMesh(10), UnitSquareMesh(2,2), UnitCubeMesh(2,2,2)]
 
     c_ids = [0, 1, 2, 3]
@@ -268,38 +268,17 @@ def test_multi_ps_vector():
 
         source = []
         for c_id in c_ids:
-         cell = Cell(mesh, c_id)
-         point = cell.midpoint()
-         source.append((point, 10.0))
+            cell = Cell(mesh, c_id)
+            point = cell.midpoint()
+            source.append((point, 10.0))
         ps = PointSource(V, source)
         ps.apply(b)
 
-        print b.array()
 
         # Checks b sums to correct value
         b_sum = b.sum()
-        print b_sum
         assert round(b_sum - len(c_ids)*10.0) == 0
 
-        # Checks values added to correct part of vector
-        #mesh_coords = V.tabulate_dof_coordinates()
-        #for p in point:
-        #    for i in range(dim+1):
-        #        point_coords[i] = p
-
-         #   print point_coords
-         #   tree = mesh.bounding_box_tree()
-          #  cell_id = tree.compute_first_collision(Point(point_coords))
-           # cell_coords = Cell(mesh, cell_id).get_vertex_coordinates()
-#
- #           print cell_coords
-  #          j = 0
-   #         for i in range(len(mesh_coords)/(dim+1)):
-    #            mesh_coords_check = mesh_coords[j:j+dim+1]
-     #           if np.array_equal(point_coords, mesh_coords_check) == True:
-      #              print "yes"
-       #             assert round(b.array()[j/(dim+1)]-10.0) == 0.0
-        #        j+=dim+1
 
 def test_multi_ps_matrix_node():
     """Tests point source when given constructor PointSource(V, source)
@@ -345,13 +324,13 @@ def test_multi_ps_matrix_node():
                 j+=dim+1
 
 def test_multi_ps_matrix_node_vector_fs():
-    """Tests point source applied to a matrix with given constructor 
-    PointSource(V, source) and a vector function space when points placed 
+    """Tests point source applied to a matrix with given constructor
+    PointSource(V, source) and a vector function space when points placed
     at 3 vertices for 1D, 2D and 3D. """
     meshes = [UnitIntervalMesh(10), UnitSquareMesh(2,2), UnitCubeMesh(2,2,2)]
 
     point = [0.0, 0.5, 1.0]
-    
+
     for dim in range(3):
         mesh = meshes[dim]
         V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
@@ -387,10 +366,31 @@ def test_multi_ps_matrix_node_vector_fs():
                 if np.array_equal(point_coords, mesh_coords_check) == True:
                     assert round(w.vector()[j/(dim+1)]-10.0) == 0.0
                 j+=dim+1
-                
+
 def test_multi_ps_matrix():
-    pass
+    """Tests point source PointSource(V, source) for mulitple point
+    sources applied to a matrix for 1D, 2D and 3D. """
+    meshes = [UnitIntervalMesh(10), UnitSquareMesh(2,2), UnitCubeMesh(2,2,2)]
+
+    c_ids = [0, 1, 2, 3]
+    for dim in range(3):
+        mesh = meshes[dim]
+        V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
+        u, v = TrialFunction(V), TestFunction(V)
+        w = Function(V)
+        A = assemble(Constant(0.0)*dot(u, v)*dx)
+
+        source = []
+        for c_id in c_ids:
+            cell = Cell(mesh, c_id)
+            point = cell.midpoint()
+            source.append((point, 10.0))
+        ps = PointSource(V, source)
+        ps.apply(A)
+
+        # Checks b sums to correct value
+        a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
+        assert round(a_sum - 2*len(c_ids)*10) == 0
 
 
 test_multi_ps_vector()
-#test_multi_ps_matrix()
