@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+#include <dolfin/geometry/IntersectionConstruction.h>
 #include <dolfin/geometry/CollisionPredicates.h>
 #include "Cell.h"
 
@@ -34,5 +35,11 @@ bool Cell::collides(const Point& point) const
 bool Cell::collides(const MeshEntity& entity) const
 {
   return CollisionPredicates::collides(*this, entity);
+}
+//-----------------------------------------------------------------------------
+std::vector<Point>
+Cell::intersection(const MeshEntity& entity) const
+{
+  return IntersectionConstruction::intersection(*this, entity);
 }
 //-----------------------------------------------------------------------------
