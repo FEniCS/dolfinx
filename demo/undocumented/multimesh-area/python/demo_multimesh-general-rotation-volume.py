@@ -64,15 +64,8 @@ if __name__ == "__main__":
         multimesh = test_volume_2d_rot(num_meshes)
 
         # Assemble linear system
-        # FIXME: This does not work yet
-        #vol = assemble_multimesh(1*dx(domain=multimesh))
+        vol = assemble_multimesh(1*dx(domain=multimesh) + 1*dC(domain=multimesh))
 
-        # Alternative volume calculation
-        V = MultiMeshFunctionSpace(multimesh, "Lagrange", 1)
-        f = MultiMeshFunction(V)
-        f.vector()[:] = 1.0
-        vol = assemble_multimesh(f*dX)
-        
         print "Computed volume: {}.".format(vol)
         print "Error: {}.".format(abs(100-vol))
         assert abs(vol-100) < 10e-10
