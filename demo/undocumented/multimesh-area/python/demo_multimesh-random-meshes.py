@@ -76,7 +76,8 @@ if __name__ == "__main__":
     multimesh = build_multimesh(args.num_parts, args.N_x)
 
     # Assemble linear system
-    vol = assemble_multimesh(Constant(1)*dx(domain=multimesh) + Constant(1)*dC(domain=multimesh))
+    dX = dx(domain=multimesh) + dC(domain=multimesh)
+    vol = assemble_multimesh(Constant(1)*dX)
 
     # Alternative volume calculation
     vol_dolfin = multimesh.compute_volume()

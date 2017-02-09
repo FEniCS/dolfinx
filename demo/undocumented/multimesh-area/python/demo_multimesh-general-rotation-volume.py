@@ -64,7 +64,8 @@ if __name__ == "__main__":
         multimesh = test_volume_2d_rot(num_meshes)
 
         # Assemble linear system
-        vol = assemble_multimesh(1*dx(domain=multimesh) + 1*dC(domain=multimesh))
+        dX = dx(domain=multimesh) + dC(domain=multimesh)
+        vol = assemble_multimesh(1*dX)
 
         print "Computed volume: {}.".format(vol)
         print "Error: {}.".format(abs(100-vol))
