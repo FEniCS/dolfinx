@@ -53,14 +53,14 @@ def build_multimesh(num_parts, N_x):
 
         x0, x1 = numpy.sort(numpy.random.rand(2))
         y0, y1 = numpy.sort(numpy.random.rand(2))
-        if x0 - x1 < DOLFIN_EPS:
+        if abs(x1 - x0) < DOLFIN_EPS:
             x1 += DOLFIN_EPS
-        if y0 - y1 < DOLFIN_EPS:
-            x1 += DOLFIN_EPS
+        if abs(y1 - y0) < DOLFIN_EPS:
+            y1 += DOLFIN_EPS
 
         print "Add new rectangle mesh ({:.3f}, {:.3f}) x ({:.3f}, {:.3f}).".format(x0, y0, x1, y1)
-        mesh = RectangleMesh(Point(x0, x1), Point(y0, y1), 
-                             int(max((x1-x0)*N_x, 1)), int(max((y1-y0)*N_x, 1)))
+        mesh = RectangleMesh(Point(x0, y0), Point(x1, y1), 
+                             int(max(abs(x1-x0)*N_x, 1)), int(max(abs(y1-y0)*N_x, 1)))
 
         #mesh.rotate(numpy.random.rand()*180)
         multimesh.add(mesh)
