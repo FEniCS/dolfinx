@@ -16,12 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-11-21
-// Last changed: 2016-11-21
+// Last changed: 2017-02-09
 
 #ifndef __GEOMETRYPREDICATES_H
 #define __GEOMETRYPREDICATES_H
 
 #include <vector>
+#include <dolfin/log/LogStream.h>
 #include "Point.h"
 #include "CGALExactArithmetic.h"
 
@@ -36,23 +37,28 @@ namespace dolfin
     static bool is_degenerate(const std::vector<Point>& simplex,
 			      std::size_t gdim);
 
+
+    /// Check whether 2D simplex is degenerate
     static bool is_degenerate_2d(const std::vector<Point>& simplex)
     {
       return CHECK_CGAL(_is_degenerate_2d(simplex),
 			cgal_is_degenerate_2d(simplex));
     }
 
+    /// Check whether 3D simplex is degenerate
     static bool is_degenerate_3d(const std::vector<Point>& simplex)
     {
       return CHECK_CGAL(_is_degenerate_3d(simplex),
-			cgal_is_degenerate_3d(simplex));
+                        cgal_is_degenerate_3d(simplex));
     }
+
+    /// Check whether simplex is finite (not Inf or NaN)
+    static bool is_finite(const std::vector<Point>& simplex);
 
   private:
 
     // Implementations of is_degenerate
     static bool _is_degenerate_2d(std::vector<Point> simplex);
-
     static bool _is_degenerate_3d(std::vector<Point> simplex);
 
   };

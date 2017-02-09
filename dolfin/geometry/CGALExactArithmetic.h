@@ -539,7 +539,9 @@ namespace
   inline bool is_degenerate_3d(const dolfin::Point& a,
 			       const dolfin::Point& b)
   {
+    dolfin_debug("check");
     const Segment_3 s(convert_to_cgal_3d(a), convert_to_cgal_3d(b));
+    dolfin_debug("check");
     return s.is_degenerate();
   }
   //-----------------------------------------------------------------------------

@@ -156,7 +156,6 @@ int main(int argc, char** argv)
   set_log_level(DBG);
 
   // Simple test case to check 3D implementation that hangs strangely
-
   auto m0 = make_shared<UnitCubeMesh>(2, 2, 2);
   auto m1 = make_shared<UnitCubeMesh>(2, 2, 2);
 

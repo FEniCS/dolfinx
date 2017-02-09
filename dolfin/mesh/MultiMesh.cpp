@@ -566,6 +566,8 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       const std::size_t tdim = cut_cell.mesh().topology().dim();
       const std::size_t gdim = cut_cell.mesh().geometry().dim();
 
+      dolfin_debug("check");
+
       // Data structure for the first intersections (this is the first
       // stage in the inclusion exclusion principle). These are the
       // polyhedra to be used in the exlusion inclusion.
@@ -578,6 +580,8 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       const std::size_t num_cutting_cells = std::distance(cutting_cells.begin(),
 							  cutting_cells.end());
       std::vector<quadrature_rule> overlap_qr(num_cutting_cells);
+
+      dolfin_debug("check");
 
       // Loop over all cutting cells to construct the polyhedra to be
       // used in the inclusion-exclusion principle
@@ -592,26 +596,44 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       	dolfin_assert(cutting_cell.mesh().topology().dim() == tdim);
       	dolfin_assert(cutting_cell.mesh().geometry().dim() == gdim);
 
+        dolfin_debug("check");
+
         // Compute the intersection (a polyhedron)
         // const Polyhedron polyhedron
         //   = IntersectionTriangulation::triangulate(cut_cell, cutting_cell);
         const Polyhedron polyhedron =
           ConvexTriangulation::triangulate(IntersectionConstruction::intersection(cut_cell, cutting_cell), gdim, tdim);
 
+        dolfin_debug("check");
+
 	// FIXME: Flip triangles in polyhedron to maximize minimum angle here?
 	// FIXME: only include large polyhedra
 
 	// Store key and polyhedron but only use polyhedron of same tdim
 	Polyhedron polyhedron_same_tdim;
+        dolfin_debug("check");
 	for (const Simplex& s: polyhedron)
-	  if (s.size() == tdim + 1 and
-	      !GeometryPredicates::is_degenerate(s, gdim))
+        {
+          dolfin_debug("check");
+	  if (s.size() == tdim + 1 and !GeometryPredicates::is_degenerate(s, gdim))
+          {
+            dolfin_debug("check");
 	    polyhedron_same_tdim.push_back(s);
+            dolfin_debug("check");
+          }
+          dolfin_debug("check");
+        }
+
+        dolfin_debug("check");
 
 	// Note that this can be empty
 	initial_polyhedra.emplace_back(initial_polyhedra.size(),
 				       polyhedron_same_tdim);
+
+        dolfin_debug("check");
       }
+
+      dolfin_debug("check");
 
       if (num_cutting_cells > 0)
 	_inclusion_exclusion_overlap(overlap_qr, initial_polyhedra,
@@ -623,6 +645,8 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	for (const double w: qr.second)
 	  vol += w;
       }
+
+      dolfin_debug("check");
 
       // Store quadrature rules for cut cell
       _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;

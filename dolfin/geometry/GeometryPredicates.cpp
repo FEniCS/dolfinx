@@ -16,8 +16,9 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-11-21
-// Last changed: 2017-01-24
+// Last changed: 2017-02-09
 
+#include <cmath>
 #include "GeometryPredicates.h"
 #include "predicates.h"
 
@@ -25,13 +26,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 bool GeometryPredicates::is_degenerate(const std::vector<Point>& simplex,
-					std::size_t gdim)
+                                       std::size_t gdim)
 {
   switch (gdim)
   {
   case 2:
     return is_degenerate_2d(simplex);
   case 3:
+    dolfin_debug("check");
     return is_degenerate_3d(simplex);
   default:
     dolfin_error("GeometryPredicates.cpp",
@@ -82,7 +84,7 @@ bool GeometryPredicates::_is_degenerate_2d(std::vector<Point> simplex)
   default:
     dolfin_error("GeometryPredicates.cpp",
 		 "_is_degenerate_2d",
-		 "Only implemented for simplices of tdim 0, 1 and 2");
+		 "Only implemented for simplices of tdim 0, 1 and 2.");
   }
 
   return is_degenerate;
@@ -90,23 +92,37 @@ bool GeometryPredicates::_is_degenerate_2d(std::vector<Point> simplex)
 //------------------------------------------------------------------------------
 bool GeometryPredicates::_is_degenerate_3d(std::vector<Point> simplex)
 {
+  dolfin_debug("check");
+
   bool is_degenerate = false;
 
   switch (simplex.size())
   {
   case 4:
+    dolfin_debug("check");
     is_degenerate = orient3d(simplex[0].coordinates(),
 			     simplex[1].coordinates(),
 			     simplex[2].coordinates(),
 			     simplex[3].coordinates()) == 0;
+    dolfin_debug("check");
     break;
   default:
     dolfin_error("GeometryPredicates.cpp",
 		 "_is_degenerate_3d",
-		 "Only implemented for simplices of tdim 3");
+		 "Only implemented for simplices of tdim 3.");
   }
 
   return is_degenerate;
 }
-
+//-----------------------------------------------------------------------------
+bool GeometryPredicates::is_finite(const std::vector<Point>& simplex)
+{
+  for (auto p : simplex)
+  {
+    if (!std::isfinite(p.x())) return false;
+    if (!std::isfinite(p.y())) return false;
+    if (!std::isfinite(p.z())) return false;
+  }
+  return true;
+}
 //-----------------------------------------------------------------------------

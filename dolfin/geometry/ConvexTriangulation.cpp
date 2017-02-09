@@ -18,11 +18,12 @@
 // First added:  2016-06-01
 // Last changed: 2017-02-09
 
-#include "ConvexTriangulation.h"
-#include "predicates.h"
 #include <algorithm>
 #include <tuple>
 #include <set>
+#include "predicates.h"
+#include "GeometryPredicates.h"
+#include "ConvexTriangulation.h"
 
 #ifdef augustdebug
 #include "dolfin_simplex_tools.h"
@@ -138,6 +139,8 @@ ConvexTriangulation::triangulate(std::vector<Point> p,
 std::vector<std::vector<Point>>
 ConvexTriangulation::_triangulate_graham_scan_2d(std::vector<Point> input_points)
 {
+  dolfin_assert(GeometryPredicates::is_finite(input_points));
+
   // Make sure the input points are unique
   std::vector<Point> points = unique_points(input_points, DOLFIN_EPS);
 
@@ -196,6 +199,8 @@ std::vector<std::vector<Point>>
 ConvexTriangulation::_triangulate_bowyer_watson(std::vector<Point> input_points,
 					       std::size_t gdim)
 {
+  dolfin_assert(GeometryPredicates::is_finite(input_points));
+
   // Delaunay triangulation using Bowyer-Watson
   // https://en.wikipedia.org/wiki/Bowyer%E2%80%93Watson_algorithm
 
@@ -327,6 +332,12 @@ ConvexTriangulation::_triangulate_bowyer_watson(std::vector<Point> input_points,
 std::vector<std::vector<Point>>
 ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points)
 {
+  dolfin_assert(GeometryPredicates::is_finite(input_points));
+
+  std::cout << "Input to 3D Graham scan:" << std::endl;
+  for (auto p : input_points)
+    std::cout << p << std::endl;
+
   const double coplanar_tol = 1000*DOLFIN_EPS_LARGE;
 
   // Make sure the input points are unique. We assume this has
@@ -337,16 +348,19 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 
   if (points.size() < 4)
   {
+    dolfin_debug("check");
     return triangulation; // empty
   }
   else if (points.size() == 4)
   {
+    dolfin_debug("check");
     // Single tetrahedron
     triangulation.push_back(points);
     return triangulation;
   }
   else
   {
+    dolfin_debug("check");
     // Construct tetrahedra using facet points and a center point
     Point polyhedroncenter = points[0];
     for (const Point& p: points)
@@ -370,6 +384,8 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 	    // hull. Initialize as true for the case of only three
 	    // coplanar points.
 	    bool on_convex_hull = true;
+
+            dolfin_debug("check");
 
 	    // Use orient3d to determine if the plane (i,j,k) is on the
 	    // convex hull.
@@ -406,20 +422,31 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 	      }
 	    }
 
+            dolfin_debug("check");
+
 	    if (on_convex_hull)
 	    {
+              dolfin_debug("check");
 	      if (coplanar.size() == 3)
 	      {
+                dolfin_debug("check");
 		// Form one tetrahedron
 		std::vector<Point> cand = { points[i],
 					    points[j],
 					    points[k],
 					    polyhedroncenter };
+                dolfin_debug("check");
 		// FIXME: Here we could include if determinant is sufficiently large
+                std::cout << "Adding points 1:" << std::endl;
+                for (auto p : cand)
+                  std::cout << " " << p;
+                std::cout << std::endl;
 		triangulation.push_back(cand);
 	      }
 	      else // At least four coplanar points
 	      {
+                dolfin_debug("check");
+
 		// Tessellate as in the triangle-triangle intersection
 		// case: First sort points using a Graham scan, then
 		// connect to form triangles. Finally form tetrahedra
@@ -432,6 +459,8 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 		  pointscenter += points[coplanar[m]];
 		pointscenter /= coplanar.size();
 
+                dolfin_debug("check");
+
 		// Reference
 		Point ref = points[coplanar[0]] - pointscenter;
 		ref /= ref.norm();
@@ -439,6 +468,8 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 		// Normal
 		Point normal = cross_product(points[i], points[j], points[k]);
 		normal /= normal.norm();
+
+                dolfin_debug("check");
 
 		// Calculate and store angles
 		std::vector<std::pair<double, std::size_t>> order;
@@ -472,12 +503,17 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 					      points[coplanar[order[m + 1].second]],
 					      polyhedroncenter };
 		  // FIXME: Possibly only include if tet is large enough
+                  std::cout << "Adding points 2:" << std::endl;
+                  for (auto p : cand)
+                    std::cout << " " << p;
+                  std::cout << std::endl;
 		  triangulation.push_back(cand);
+
+                  dolfin_debug("check");
 		}
 	      }
 	    }
 	  }
-
 	}
       }
     }
