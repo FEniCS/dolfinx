@@ -18,10 +18,8 @@
 # First added:  2017-02-09
 # Last changed: 2017-02-09
 #
-# This demo program solves Poisson's equation on a domain defined by
-# three overlapping and non-matching meshes. The solution is computed
-# on a sequence of rotating meshes to test the multimesh
-# functionality.
+# This demo program creates a layer of meshes over a unit square mesh and checks 
+# that the volume is 1.0.
 
 import argparse
 import numpy 
