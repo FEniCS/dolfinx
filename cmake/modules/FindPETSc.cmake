@@ -46,8 +46,6 @@
 # 2. Test compile and run program using shared library linking
 # 3. If shared library linking fails, test with static library linking
 
-message(STATUS "Checking for package 'PETSc'")
-
 # Load pkg-config module (provided by CMake)
 find_package(PkgConfig REQUIRED)
 
@@ -178,15 +176,11 @@ int main()
       RUN_OUTPUT_VARIABLE PETSC_TEST_LIB_OUTPUT)
 
     if (PETSC_TEST_LIB_COMPILED AND PETSC_TEST_LIB_EXITCODE EQUAL 0)
-
       message(STATUS "Test PETSC_TEST_RUNS static linking - Success")
       set(PETSC_TEST_RUNS TRUE)
-
     else()
-
       message(STATUS "Test PETSC_TEST_RUNS static linking - Failed")
       set(PETSC_TEST_RUNS FALSE)
-
     endif()
 
   endif()
@@ -208,7 +202,7 @@ include(FindPackageHandleStandardArgs)
 if (PETSC_FOUND)
   find_package_handle_standard_args(PETSc
     REQUIRED_VARS PETSC_FOUND PETSC_TEST_RUNS VERSION_VAR PETSC_VERSION
-    FAIL_MESSAGE "PETSc could not be found. Be sure to set PETSC_DIR.")
+    FAIL_MESSAGE "PETSc could not be configured.")
 else()
   find_package_handle_standard_args(PETSc
     REQUIRED_VARS PETSC_FOUND

@@ -79,6 +79,7 @@ list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${UFC_INCLUDE_DIRS})
 list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${EIGEN3_INCLUDE_DIR})
 
 # Boost
+target_link_libraries(dolfin PUBLIC Boost::boost)
 foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS_PUBLIC})
   target_link_libraries(dolfin PUBLIC "Boost::${BOOST_PACKAGE}")
 endforeach()
@@ -193,6 +194,15 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_VTK")
   list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
   target_link_libraries(dolfin PRIVATE ${VTK_LIBRARIES})
+endif()
+
+if (DOLFIN_ENABLE_GEOMETRY_DEBUGGING AND GMP_FOUND AND MPFR_FOUND AND CGAL_FOUND)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_ENABLE_GEOMETRY_DEBUGGING")
+  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${CGAL_INCLUDE_DIRS})
+  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${GMP_INCLUDE_DIRS})
+  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${MPFR_INCLUDE_DIRS})
+  target_link_libraries(dolfin PRIVATE ${GMP_LIBRARIES})
+  target_link_libraries(dolfin PRIVATE ${MPFR_LIBRARIES})
 endif()
 
 #------------------------------------------------------------------------------
@@ -322,6 +332,7 @@ install(
   FILES
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindPETSc.cmake
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
+  ${CMAKE_SOURCE_DIR}/cmake/modules/FindBoost.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
   ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake

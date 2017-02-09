@@ -90,6 +90,7 @@ option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
 option(DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py." OFF)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
+option(DOLFIN_ENABLE_GEOMETRY_DEBUGGING "Enable debugging of computational geometry (developers only)." OFF)
 
 add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFIN with shared libraries.")
 add_feature_info(CMAKE_USE_RELATIVE_PATHS CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects.")
@@ -103,6 +104,7 @@ add_feature_info(DOLFIN_ENABLE_DOCS DOLFIN_ENABLE_DOCS "Enable generation of doc
 add_feature_info(DOLFIN_SKIP_BUILD_TESTS DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
 add_feature_info(DOLFIN_DEPRECATION_ERROR DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors.")
 add_feature_info(DOLFIN_IGNORE_PETSC4PY_VERSION DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py.")
+add_feature_info(DOLFIN_ENABLE_GEOMETRY_DEBUGGING DOLFIN_ENABLE_GEOMETRY_DEBUGGING "Enable debugging of computational geometry (developers only).")
 
 # Add shared library paths so shared libs in non-system paths are found
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
@@ -318,12 +320,11 @@ find_package(Boost 1.48 QUIET REQUIRED)
 # Boost or CMake. Ubuntu 16.04 requires linking DOLFIN programs with
 # filesystem, whereas Ubuntu 16.10 and macOS (Homebrew) do not.
 if (Boost_VERSION VERSION_LESS 106100)
-  set(DOLFIN_BOOST_COMPONENTS_PUBLIC filesystem)
-  set(DOLFIN_BOOST_COMPONENTS_PRIVATE program_options iostreams timer)
+  set(DOLFIN_BOOST_COMPONENTS_PUBLIC filesystem timer)
+  set(DOLFIN_BOOST_COMPONENTS_PRIVATE program_options iostreams)
 else()
-  set(DOLFIN_BOOST_COMPONENTS_PUBLIC)
-  set(DOLFIN_BOOST_COMPONENTS_PRIVATE filesystem program_options iostreams
-    timer)
+  set(DOLFIN_BOOST_COMPONENTS_PUBLIC timer)
+  set(DOLFIN_BOOST_COMPONENTS_PRIVATE filesystem program_options iostreams)
 endif()
 
 # Find required Boost libraries
@@ -555,7 +556,7 @@ endif()
 # Check for Trilinos and the requires Trilinos packages
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
-  find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR}
+  find_package(Trilinos QUIET PATHS ${TRILINOS_DIR} ${Trilinos_DIR}
     $ENV{TRILINOS_DIR})
   set(DOLFIN_TRILINOS_PACKAGES "Tpetra;Zoltan;MueLu;Amesos2;Ifpack2;Belos")
 
@@ -648,7 +649,7 @@ endif()
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
   # Find all modules
-  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
+  find_package(VTK QUIET HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
   set_package_properties(VTK PROPERTIES TYPE OPTIONAL
     DESCRIPTION "The Visualization Toolkit - A high level 3D visualization library"
     URL "https://www.vtk.org"
@@ -683,6 +684,14 @@ if (DOLFIN_ENABLE_VTK)
       message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
     endif()
   endif()
+endif()
+
+# Check for geometry debgging
+if (DOLFIN_ENABLE_GEOMETRY_DEBUGGING)
+  message(STATUS "Enabling geometry debugging")
+  find_package(CGAL)
+  find_package(GMP)
+  find_package(MPFR)
 endif()
 
 #------------------------------------------------------------------------------

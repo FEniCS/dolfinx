@@ -31,6 +31,10 @@
 #include "dolfin/log/log.h"
 #include "pugixml.hpp"
 
+
+// NOTE: Do not include this file in any header files. Otherwise, it
+//       will expose Boost in the DOLFIN public interface.
+
 namespace pugi
 {
   class xml_node;
