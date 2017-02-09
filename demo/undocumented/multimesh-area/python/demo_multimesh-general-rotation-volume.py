@@ -17,8 +17,6 @@
 #
 # First added:  2017-02-09
 # Last changed: 2017-02-09
-#
-# This demo program ...
 
 import argparse
 from dolfin import *
