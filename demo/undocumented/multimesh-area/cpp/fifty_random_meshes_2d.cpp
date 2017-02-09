@@ -199,6 +199,9 @@ int main(int argc, char** argv)
         }
       }
 
+      // Recompute volume using library function (replace above stuff)
+      multimesh_volume = multimesh.compute_volume();
+
       // Exact volume is known
       const double exact_volume = 1;
 
