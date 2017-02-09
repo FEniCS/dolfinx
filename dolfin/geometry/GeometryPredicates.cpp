@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-11-21
-// Last changed: 2016-11-21
+// Last changed: 2017-01-24
 
 #include "GeometryPredicates.h"
 #include "predicates.h"
@@ -90,10 +90,23 @@ bool GeometryPredicates::_is_degenerate_2d(std::vector<Point> simplex)
 //------------------------------------------------------------------------------
 bool GeometryPredicates::_is_degenerate_3d(std::vector<Point> simplex)
 {
-  dolfin_error("GeometryPredicates.cpp",
-	       "_is_degenerate_3d",
-	       "Not implemented");
-  return false;
+  bool is_degenerate = false;
+
+  switch (simplex.size())
+  {
+  case 4:
+    is_degenerate = orient3d(simplex[0].coordinates(),
+			     simplex[1].coordinates(),
+			     simplex[2].coordinates(),
+			     simplex[3].coordinates()) == 0;
+    break;
+  default:
+    dolfin_error("GeometryPredicates.cpp",
+		 "_is_degenerate_3d",
+		 "Only implemented for simplices of tdim 3");
+  }
+
+  return is_degenerate;
 }
 
 //-----------------------------------------------------------------------------

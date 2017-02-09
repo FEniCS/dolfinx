@@ -33,7 +33,6 @@
 #include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
 #include <dolfin/geometry/Point.h>
-#include <dolfin/geometry/IntersectionConstruction.h>
 
 namespace dolfin
 {
@@ -334,8 +333,7 @@ namespace dolfin
     ///         If the size of the vector < tdim-1 then the intersection is
     ///         degenerate, ie. the area of the intersection is 0
     std::vector<Point>
-    intersection(const MeshEntity& entity) const
-    { return IntersectionConstruction::intersection(*this, entity); }
+    intersection(const MeshEntity& entity) const;
 
 
     // FIXME: This function is part of a UFC transition

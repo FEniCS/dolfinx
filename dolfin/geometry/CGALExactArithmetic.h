@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2016-12-07
+// Last changed: 2017-02-09
 //
 // Developer note:
 //
@@ -52,7 +52,11 @@
 #include <vector>
 #include <algorithm>
 #include <sstream>
+
+// FIXME
 #include <iomanip>
+//#define debugoutput
+
 
 // Check that results from DOLFIN and CGAL match
 namespace dolfin
@@ -115,9 +119,10 @@ namespace dolfin
   }
 
   inline std::vector<Point>
-  unique_points(const std::vector<Point>& input_points)
+  unique_points(const std::vector<Point>& input_points,
+		const double tol)
   {
-    // Create a unique list of points in the sense that |p-q|^2 > DOLFIN_EPS
+    // Create a unique list of points in the sense that |p-q|^2 > tol
 
     std::vector<Point> points;
 
@@ -126,7 +131,7 @@ namespace dolfin
       bool unique = true;
       for (std::size_t j = i+1; j < input_points.size(); ++j)
       {
-	if ((input_points[i] - input_points[j]).squared_norm() < DOLFIN_EPS)
+	if ((input_points[i] - input_points[j]).squared_norm() <= tol)
 	{
 	  unique = false;
 	  break;
@@ -138,83 +143,188 @@ namespace dolfin
     return points;
   }
 
+
+  inline
+  std::vector<std::vector<dolfin::Point>>
+  FIXME_triangulate_polygon_2d(const std::vector<dolfin::Point>& points)
+  {
+    using Point = dolfin::Point;
+
+    if (points.size() <= 3)
+      return std::vector<std::vector<Point> >(1, points);
+
+    // Sometimes we can get an extra point on an edge: a-----c--b. This
+    // point c may cause problems for the graham scan. To avoid this,
+    // use an extra center point.  Use this center point and point no 0
+    // as reference for the angle calculation
+    Point pointscenter = points[0];
+    for (std::size_t m = 1; m < points.size(); ++m)
+      pointscenter += points[m];
+    pointscenter /= points.size();
+
+
+    // Reference
+    Point ref = points[0] - pointscenter;
+
+    // Calculate and store angles
+    std::vector<std::pair<double, std::size_t>> order;
+    for (std::size_t m = 1; m < points.size(); ++m)
+    {
+      const double A = orient2d(pointscenter.coordinates(),
+				const_cast<double*>(points[0].coordinates()),
+				const_cast<double*>(points[m].coordinates()));
+      const Point s = points[m] - pointscenter;
+      double alpha = std::atan2(A, s.dot(ref));
+      if (alpha < 0)
+	alpha += 2*DOLFIN_PI;
+      order.emplace_back(alpha, m);
+    }
+
+    // Sort angles
+    std::sort(order.begin(), order.end());
+
+    // Tessellate
+    std::vector<std::vector<Point>> triangulation(order.size() - 1);
+    for (std::size_t m = 0; m < order.size()-1; ++m)
+    {
+      // FIXME: We could consider only triangles with area > tolerance here.
+      triangulation[m] = {{ points[0],
+			    points[order[m].second],
+			    points[order[m + 1].second] }};
+    }
+
+    return triangulation;
+  }
+
+
   //inline const std::vector<Point>&
   inline std::vector<Point>
-  check_cgal(const std::vector<Point>& input_result_dolfin,
-	     const std::vector<Point>& input_result_cgal,
+  check_cgal(const std::vector<Point>& result_dolfin,
+	     const std::vector<Point>& result_cgal,
 	     std::string function)
   {
-    // create unique
-    const std::vector<Point> result_dolfin = unique_points(input_result_dolfin);
-    const std::vector<Point> result_cgal = unique_points(input_result_cgal);
+#ifdef debugoutput
+    std::cout << __FUNCTION__<<" from function " << function << ":\n";
+#endif
+
+    // create semi-unique
+    const std::vector<Point> unique_result_dolfin = unique_points(result_dolfin, DOLFIN_EPS);
+    const std::vector<Point> unique_result_cgal = unique_points(result_cgal, DOLFIN_EPS);
+
+#ifdef debugoutput
+    std::cout << " after unique: "
+	      << "dolfin\n";
+    for (const Point& p: unique_result_dolfin)
+    {
+      std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << "plot("<<p[0]<<','<<p[1]<<",'gx');\n";
+    }
+    std::cout << " cgal\n";
+    for (const Point& p: unique_result_cgal)
+    {
+      std::cout << std::setprecision(std::numeric_limits<long double>::digits10+2) << "plot("<<p[0]<<','<<p[1]<<",'mo');\n";
+    }
+#endif
 
     // Make sure all points are found
-    for (std::size_t i = 0; i < result_dolfin.size(); ++i)
+    bool difference = false;
+    for (std::size_t i = 0; i < unique_result_dolfin.size(); ++i)
     {
       bool found = false;
-      for (std::size_t j = 0; j < result_cgal.size(); ++j)
+      for (std::size_t j = 0; j < unique_result_cgal.size(); ++j)
       {
-	if ((result_dolfin[i] - result_cgal[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
-	{
-	  found = true;
-	  break;
-	}
+    	if ((unique_result_dolfin[i] - unique_result_cgal[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
+    	{
+    	  found = true;
+    	  break;
+    	}
       }
       if (!found)
       {
-	dolfin_error("CGALExactArithmetic.h",
-		     "check_cgal",
-		     "Point in result_dolfin not found.");
+	difference = true;
       }
     }
 
-    // Make sure all points are found
-    for (std::size_t i = 0; i < result_cgal.size(); ++i)
+    // Make sure all points are found (not needed to check again)
+    if (!difference)
     {
-      bool found = false;
-      for (std::size_t j = 0; j < result_dolfin.size(); ++j)
+      for (std::size_t i = 0; i < unique_result_cgal.size(); ++i)
       {
-	if ((result_cgal[i] - result_dolfin[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
+	bool found = false;
+	for (std::size_t j = 0; j < unique_result_dolfin.size(); ++j)
 	{
-	  found = true;
-	  break;
+	  if ((unique_result_cgal[i] - unique_result_dolfin[j]).squared_norm() < CGAL_CHECK_TOLERANCE)
+	  {
+	    found = true;
+	    break;
+	  }
+	}
+	if (!found)
+	{
+	  difference = true;
 	}
       }
-      if (!found)
+    }
+
+    if (difference)
+    {
+      // Check volume: special case for intersection_triangle_triangle_2d
+      if (function == "intersection_triangle_triangle_2d")
+      {
+	std::vector<std::vector<Point> > tri_dolfin = FIXME_triangulate_polygon_2d(unique_result_dolfin);
+
+	double vol_dolfin;
+	for (const std::vector<Point> tri: tri_dolfin)
+	  vol_dolfin += volume(tri);
+
+#ifdef debugoutput
+	std::cout << "vol dolfin: ";
+	for (const std::vector<Point> tri: tri_dolfin)
+	  std::cout << volume(tri)<<' ';
+	std::cout << "\n";
+#endif
+
+	std::vector<std::vector<Point> > tri_cgal = FIXME_triangulate_polygon_2d(unique_result_cgal);
+	double vol_cgal;
+	for (const std::vector<Point> tri: tri_cgal)
+	  vol_cgal += volume(tri);
+
+#ifdef debugoutput
+	std::cout << "vol cgal: ";
+	for (const std::vector<Point> tri: tri_cgal)
+	  std::cout << volume(tri)<<' ';
+	std::cout << "\n";
+#endif
+
+	if (std::abs(vol_cgal - vol_dolfin) > DOLFIN_EPS_LARGE)
+	{
+	  std::cout << "vol_dolfin " << vol_dolfin <<" vol_cgal " << vol_cgal<<'\n';
+	  dolfin_error("CGALExactArithmetic.h",
+		       "compare volumes between dolfin and cgal",
+		       "dolfin volume = %d and cgal volume = %d",
+		       vol_dolfin, vol_cgal);
+	}
+      }
+      else if (unique_result_cgal.size() == 1 and
+	       unique_result_dolfin.size() == 1)
+      {
+	std::stringstream s_dolfin, s_cgal;
+	s_dolfin << unique_result_dolfin[0];
+	s_cgal << unique_result_cgal[0];
+	dolfin_error("CGALExactArithmetic.h",
+		     "compare volumes between dolfin and cgal",
+		     "predicate %s gave one point in DOLFIN: %s and in CGAL: %s",
+		     function.c_str(), s_dolfin.str().c_str(), s_cgal.str().c_str());
+      }
+      else
       {
 	dolfin_error("CGALExactArithmetic.h",
-		     "check_cgal",
-		     "Point in result_cgal not found.");
+		     "compare volumes between dolfin and cgal",
+		     "Predicate %s not implemented",
+		     function.c_str());
       }
     }
 
-    return result_dolfin;
-
-
-    // // compare volume
-    // const double dolfin_volume = volume(result_dolfin);
-    // const double cgal_volume = volume(result_cgal);
-
-    // if (std::abs(dolfin_volume - cgal_volume) > CGAL_CHECK_TOLERANCE)
-    // {
-    //   std::stringstream s_dolfin, s_cgal, s_error;
-    //   s_dolfin.precision(16);
-    //   s_dolfin << dolfin_volume;
-    //   s_cgal.precision(16);
-    //   s_cgal << cgal_volume;
-    //   s_error.precision(16);
-    //   s_error << std::abs(dolfin_volume - cgal_volume);
-
-    //   dolfin_error("CGALExactArithmetic.h",
-    // 		   "verify intersections due to different volumes (single simplex version)",
-    // 		   "Error in function %s\n CGAL volume %s\n DOLFIN volume %s\n error %s\n",
-    // 		   function.c_str(),
-    // 		   s_cgal.str().c_str(),
-    // 		   s_dolfin.str().c_str(),
-    // 		   s_error.str().c_str());
-    // }
-
-    // return result_dolfin;
+    return unique_result_dolfin;
   }
 
   inline const std::vector<std::vector<Point>>&
@@ -559,33 +669,51 @@ namespace
       pointscenter += points[m];
     pointscenter /= points.size();
 
-    std::vector<std::pair<double, std::size_t>> order;
+    // Reference
     Point ref = points[0] - pointscenter;
-    ref /= ref.norm();
-
-    // Compute normal
-    Point normal = (points[2] - points[0]).cross(points[1] - points[0]);
-    const double det = normal.norm();
-    normal /= det;
 
     // Calculate and store angles
+    std::vector<std::pair<double, std::size_t>> order;
     for (std::size_t m = 1; m < points.size(); ++m)
     {
-      const Point v = points[m] - pointscenter;
-      const double frac = ref.dot(v) / v.norm();
-      double alpha;
-      if (frac <= -1)
-	alpha = DOLFIN_PI;
-      else if (frac >= 1)
-	alpha = 0;
-      else
-      {
-	alpha = acos(frac);
-	if (v.dot(normal.cross(ref)) < 0)
-	  alpha = 2*DOLFIN_PI-alpha;
-      }
-      order.push_back(std::make_pair(alpha, m));
+      const double A = orient2d(pointscenter.coordinates(),
+				const_cast<double*>(points[0].coordinates()),
+				const_cast<double*>(points[m].coordinates()));
+      const Point s = points[m] - pointscenter;
+      double alpha = std::atan2(A, s.dot(ref));
+      if (alpha < 0)
+	alpha += 2*DOLFIN_PI;
+      order.emplace_back(alpha, m);
     }
+
+
+    // std::vector<std::pair<double, std::size_t>> order;
+    // Point ref = points[0] - pointscenter;
+    // ref /= ref.norm();
+
+    // // Compute normal
+    // Point normal = (points[2] - points[0]).cross(points[1] - points[0]);
+    // const double det = normal.norm();
+    // normal /= det;
+
+    // // Calculate and store angles
+    // for (std::size_t m = 1; m < points.size(); ++m)
+    // {
+    //   const Point v = points[m] - pointscenter;
+    //   const double frac = ref.dot(v) / v.norm();
+    //   double alpha;
+    //   if (frac <= -1)
+    // 	alpha = DOLFIN_PI;
+    //   else if (frac >= 1)
+    // 	alpha = 0;
+    //   else
+    //   {
+    // 	alpha = acos(frac);
+    // 	if (v.dot(normal.cross(ref)) < 0)
+    // 	  alpha = 2*DOLFIN_PI-alpha;
+    //   }
+    //   order.push_back(std::make_pair(alpha, m));
+    // }
 
     // Sort angles
     std::sort(order.begin(), order.end());
@@ -1109,27 +1237,37 @@ namespace dolfin
     {
       if (const Point_2* p = boost::get<Point_2>(&*ii))
       {
-        //std::cout << "CGAL: Intersection is point" << std::endl;
-        intersection.push_back(convert_from_cgal(*p));;
+#ifdef debugoutput
+        std::cout << "CGAL: Intersection is point\n";
+#endif
+        intersection.push_back(convert_from_cgal(*p));
       }
       else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
       {
-        //std::cout << "CGAL: Intersection is segment: (" << s->source() << ", " << s->target() << ")" << std::endl;
+#ifdef debugoutput
+        std::cout << "CGAL: Intersection is segment: (" << s->source() << ", " << s->target() << ")\n";
+#endif
         intersection = convert_from_cgal(*s);
       }
       else if (const Triangle_2* t = boost::get<Triangle_2>(&*ii))
       {
-        //std::cout << "CGAL: Intersection is triangle" << std::endl;
-        //std::cout << "Area: " << std::abs(CGAL::to_double(t->area())) << std::endl;
+#ifdef debugoutput
+        std::cout << "CGAL: Intersection is triangle\n";
+        std::cout << "Area: " << std::abs(CGAL::to_double(t->area())) << '\n';
+#endif
         intersection = convert_from_cgal(*t);;
       }
       else if (const std::vector<Point_2>* cgal_points = boost::get<std::vector<Point_2>>(&*ii))
       {
-        //std::cout << "CGAL: Intersection is polygon (" << cgal_points->size() << ")" << std::endl;
+#ifdef debugoutput
+        std::cout << "CGAL: Intersection is polygon (" << cgal_points->size() << ")\n";
+#endif
         for (Point_2 p : *cgal_points)
         {
           intersection.push_back(convert_from_cgal(p));
-          //std::cout << p << ", ";
+#ifdef debugoutput
+          std::cout << p << ", ";
+#endif
         }
       }
       else
@@ -1169,26 +1307,36 @@ namespace dolfin
     {
       if (const Point_3* p = boost::get<Point_3>(&*ii))
       {
-	//std::cout << "CGAL: Intersection is point" << std::endl;
-	intersection.push_back(convert_from_cgal(*p));;
+#ifdef debugoutput
+	std::cout << "CGAL: Intersection is point\n";
+#endif
+	intersection.push_back(convert_from_cgal(*p));
       }
       else if (const Segment_3* s = boost::get<Segment_3>(&*ii))
       {
-	//std::cout << "CGAL: Intersection is segment: (" << s->source() << ", " << s->target() << ")" << std::endl;
+#ifdef debugoutput
+	std::cout << "CGAL: Intersection is segment: (" << s->source() << ", " << s->target() << ")\n";
+#endif
 	intersection = convert_from_cgal(*s);
       }
       else if (const Triangle_3* t = boost::get<Triangle_3>(&*ii))
       {
-	//std::cout << "CGAL: Intersection is triangle" << std::endl;
+#ifdef debugoutput
+	std::cout << "CGAL: Intersection is triangle\n";
+#endif
 	intersection = convert_from_cgal(*t);;
       }
       else if (const std::vector<Point_3>* cgal_points = boost::get<std::vector<Point_3>>(&*ii))
       {
-	//std::cout << "CGAL: Intersection is polygon (" << cgal_points->size() << ")" << std::endl;
+#ifdef debugoutput
+	std::cout << "CGAL: Intersection is polygon (" << cgal_points->size() << ")\n";
+#endif
 	for (Point_3 p : *cgal_points)
 	{
 	  intersection.push_back(convert_from_cgal(p));
-	  //std::cout << p << ", ";
+#ifdef debugoutput
+	  std::cout << p << ", ";
+#endif
 	}
       }
       else

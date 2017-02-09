@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-22
+// Last changed: 2017-02-09
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -50,6 +50,12 @@
 #include "predicates.h"
 #include "Point.h"
 #include "CollisionPredicates.h"
+
+// #define augustdebug
+
+#ifdef augustdebug
+#include "dolfin_simplex_tools.h"
+#endif
 
 using namespace dolfin;
 
@@ -329,6 +335,8 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
 						     Point p1,
 						     Point point)
 {
+  // std::cout << tools::drawtriangle({p0,p1})<<tools::plot3(point)<<'\n';
+
   if (point == p0 or point == p1)
     return true;
 
@@ -362,7 +370,12 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
       // std::cout << __FUNCTION__<<" "<<det_yz << std::endl;
 
       if (det_yz == 0.0)
-  	return true;
+      {
+	// Point is aligned with segment
+	const double length = (p0 - p1).squared_norm();
+	return (point-p0).squared_norm() <= length and
+					   (point-p1).squared_norm() <= length;
+      }
     }
   }
 
@@ -421,10 +434,10 @@ bool CollisionPredicates::_collides_segment_segment_2d(Point p0,
 						       Point q0,
 						       Point q1)
 {
-  if (_collides_segment_point_2d(p0, p1, q0)) return true;
-  if (_collides_segment_point_2d(p0, p1, q1)) return true;
-  if (_collides_segment_point_2d(q0, q1, p0)) return true;
-  if (_collides_segment_point_2d(q0, q1, p1)) return true;
+  if (collides_segment_point_2d(p0, p1, q0)) return true;
+  if (collides_segment_point_2d(p0, p1, q1)) return true;
+  if (collides_segment_point_2d(q0, q1, p0)) return true;
+  if (collides_segment_point_2d(q0, q1, p1)) return true;
 
   const double q0_q1_p0 = orient2d(q0.coordinates(),
                                    q1.coordinates(),
@@ -448,42 +461,89 @@ bool CollisionPredicates::_collides_segment_segment_3d(Point p0,
 						       Point q0,
 						       Point q1)
 {
-  // FIXME: possibly look at IntersectionConstruction::_intersection_segment_interior_segment_interior_2d for inspiration
+#ifdef augustdebug
+  std::cout << __FUNCTION__<<std::endl;
+  std::cout << tools::drawtriangle({p0,p1})<<tools::drawtriangle({q0,q1})<<'\n';
+#endif
 
   // Vertex collisions
   if (p0 == q0 || p0 == q1 || p1 == q0 || p1 == q1)
     return true;
+#ifdef augustdebug
+  std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
+#endif
 
   if (collides_segment_point_3d(p0, p1, q0) or
-      collides_segment_point_3d(p0, p1, q1))
+      collides_segment_point_3d(p0, p1, q1) or
+      collides_segment_point_3d(q0, q1, p0) or
+      collides_segment_point_3d(q0, q1, p1))
     return true;
+#ifdef augustdebug
+  std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
+#endif
 
   // Determinant must be zero
   const double det = orient3d(p0.coordinates(),
 			      p1.coordinates(),
 			      q0.coordinates(),
 			      q1.coordinates());
-  // std::cout << __FUNCTION__ << ' ' << det << std::endl;
 
   if (det < 0. or det > 0.)
     return false;
+#ifdef augustdebug
+  std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
+#endif
 
-  // Now we know that the segments are collinear
-  if ((p0-q0).squared_norm() <= (q1-q0).squared_norm() and
-      (p0-q1).squared_norm() <= (q0-q1).squared_norm())
-    return true;
+  // Now we know that the segments are in the same plane. This means
+  // that they can be parallel, or even collinear.
 
-  if ((p1-q0).squared_norm() <= (q1-q0).squared_norm() and
-      (p1-q1).squared_norm() <= (q0-q1).squared_norm())
-    return true;
+  // Check for collinearity
+  const Point u = cross_product(p0, p1, q0);
+  if (u[0] == 0. and u[1] == 0. and u[2] == 0.)
+  {
+    const Point v = cross_product(p0, p1, q1);
+    if (v[0] == 0. and v[1] == 0. and v[2] == 0.)
+    {
+      // Now we know that the segments are collinear
+      if ((p0-q0).squared_norm() <= (q1-q0).squared_norm() and
+	  (p0-q1).squared_norm() <= (q0-q1).squared_norm())
+	return true;
 
-  if ((q0-p0).squared_norm() <= (p1-p0).squared_norm() and
-      (q0-p1).squared_norm() <= (p0-p1).squared_norm())
-    return true;
+      if ((p1-q0).squared_norm() <= (q1-q0).squared_norm() and
+	  (p1-q1).squared_norm() <= (q0-q1).squared_norm())
+	return true;
 
-  if ((q1-p0).squared_norm() <= (p1-p0).squared_norm() and
-      (q1-p1).squared_norm() <= (p0-p1).squared_norm())
-    return true;
+      if ((q0-p0).squared_norm() <= (p1-p0).squared_norm() and
+	  (q0-p1).squared_norm() <= (p0-p1).squared_norm())
+	return true;
+
+      if ((q1-p0).squared_norm() <= (p1-p0).squared_norm() and
+	  (q1-p1).squared_norm() <= (p0-p1).squared_norm())
+	return true;
+    }
+  }
+
+  // Segments are not collinear, but in the same plane
+  // Try to reduce to 2d by elimination
+
+  for (std::size_t d = 0; d < 3; ++d)
+  {
+    if (p0[d] == p1[d] and p0[d] == q0[d] and p0[d] == q1[d])
+    {
+      const std::array<std::array<std::size_t, 2>, 3> dims = {{ {1, 2}, {0, 2}, {0, 1} }};
+      Point p0_2d(p0[dims[d][0]], p0[dims[d][1]]);
+      Point p1_2d(p1[dims[d][0]], p1[dims[d][1]]);
+      Point q0_2d(q0[dims[d][0]], q0[dims[d][1]]);
+      Point q1_2d(q1[dims[d][0]], q1[dims[d][1]]);
+
+      return collides_segment_segment_2d(p0_2d, p1_2d, q0_2d, q1_2d);
+    }
+  }
+
+#ifdef augustdebug
+  std::cout << p0.distance(q0)<<' '<<p0.distance(q1)<<' '<<p1.distance(q0)<<' '<<p1.distance(q1)<<'\n';
+  std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
+#endif
 
   return false;
 }
@@ -508,79 +568,172 @@ bool CollisionPredicates::_collides_triangle_point_3d(Point p0,
 						      Point p2,
 						      Point point)
 {
-  const double det = orient3d(p0.coordinates(),
-			      p1.coordinates(),
-			      p2.coordinates(),
-			      point.coordinates());
+#ifdef augustdebug
+  std::cout << __FUNCTION__ << ' '<< tools::drawtriangle({p0,p1,p2})<<tools::plot3(point)<<'\n';
+#endif
+
+  if (p0 == point or p1 == point or p2 == point)
+    return true;
+
+  const double tet_det = orient3d(p0.coordinates(),
+				  p1.coordinates(),
+				  p2.coordinates(),
+				  point.coordinates());
+#ifdef augustdebug
+  std::cout << __FUNCTION__ << "  tet_det " << tet_det <<std::endl;
+#endif
 
   // FIXME: The determinant should be exactly zero for the point to be
   // in the plane. However, if we take a triangle with vertices
   // (0,0,1), (1,1,1), (0,1,0) and check the point (1./3,2./3,2./3)
   // this gives a determinant of ~5.55112e-17
   //if (std::abs(det) > DOLFIN_EPS)
-  if (det < 0. or det > 0.)
+  if (tet_det < 0. or tet_det > 0.)
     return false;
 
-  // Check that the point is inside the triangle
+  // // Check that the point is inside the triangle using barycentric coords
+  // const double tri_det = cross_product_norm(p0, p1, p2);
+  // std::cout<<std::setprecision(16)<<tri_det << ' '<<((p0-p2).cross(p1-p2)).norm()<<'\n';
 
-  // FIXME
-  // Test: Reduce to 2d problem by taking the projection of the
-  // triangle onto the 2d plane xy, xz or yz that has the largest
-  // determinant
-  const double det_xy = std::abs(orient2d(p0.coordinates(),
-  					  p1.coordinates(),
-  					  p2.coordinates()));
+  // // const double r = cross_product_norm(p0, p1, point);
+  // // std::cout<<std::setprecision(16) << r << "  (r<0) " << (r<0) << " (r>tri_det) " << (r>tri_det)<< '\n';
+  // // if (r < 0 or r > tri_det)
+  // //   return false;
+
+  // // const double s = cross_product_norm(p1, p2, point);
+  // // std::cout<<std::setprecision(16) << s << "  (s<0) " << (s<0) << " (s>tri_det) " << (s>tri_det)<<'\n';
+  // // std::cout<<std::setprecision(16) << (r+s) << "  (r+s<0) " << (r+s<0) << " (r+s>tri_det) " << (r+s>tri_det)<< '\n';
+  // // if (s < 0 or s > tri_det or
+  // //     (r+s) < 0 or (r+s) > tri_det)
+  // //   return false;
+
+  // const double r = cross_product_norm(p0, p1, point);
+  // // std::cout << tools::plot3(p0)<<'\n'
+  // // 	    << tools::plot3(p1)<<'\n'
+  // // 	    << tools::plot3(point)<<'\n';
+  // std::cout<<std::setprecision(16) << r << " (r>tri_det) " << (r>tri_det)<< '\n';
+  // if (r > tri_det)
+  //   return false;
+
+  // const double s = cross_product_norm(p1, p2, point);
+  // // std::cout << tools::plot3(p1)<<'\n'
+  // // 	    << tools::plot3(p2)<<'\n'
+  // // 	    << tools::plot3(point)<<'\n';
+  // std::cout<<std::setprecision(16) << s << " (s>tri_det) " << (s>tri_det)<<'\n';
+  // if (s > tri_det)
+  //   return false;
+
+  // const double t = cross_product_norm(p0, p2, point);
+  // std::cout<<std::setprecision(16) << t << " (t>tri_det) " << (t>tri_det)<<'\n';
+  // std::cout<<std::setprecision(16) << "r+s+t " << r+s+t << '\n';
+  // if (t > tri_det or r+s+t>tri_det)
+  //   return false;
+
+  // return true;
+
+
+
+
+  // const double tri_det_2 = cross_product(p0, p1, p2).squared_norm();
+
+  // std::cout<<std::setprecision(16)<<std::scientific << "permute " << (tri_det_2==cross_product(p0, p2, p1).squared_norm()) <<  ' '<< (tri_det_2==cross_product(p2, p1, p0).squared_norm())<<'\n';
+
+
+  // if (cross_product(p0, p1, point).squared_norm() > tri_det_2)
+  //   return false;
+
+  // if (cross_product(p1, p2, point).squared_norm() > tri_det_2)
+  //   return false;
+
+  // if (cross_product(p0, p2, point).squared_norm() > tri_det_2)
+  //   return false;
+
+  // std::cout<<"sqrt " << std::setprecision(16)<<std::scientific<< cross_product(p0, p1, point).norm()<<' '<< cross_product(p1, p2, point).norm()<<' '<< cross_product(p0, p2, point).norm()<<' '<< std::sqrt(tri_det_2)<<'\n';
+  // std::cout << "sqrt sum < " << std::setprecision(16)<<std::scientific<< cross_product(p0, p1, point).norm()  + cross_product(p1, p2, point).norm()+ cross_product(p0, p2, point).norm()<<' '<< std::sqrt(tri_det_2)<<'\n';
+  // std::cout<<std::setprecision(16)<<std::scientific<< cross_product(p0, p1, point).squared_norm()<<' '<< cross_product(p1, p2, point).squared_norm()<<' '<< cross_product(p0, p2, point).squared_norm()<<' '<< tri_det_2<<'\n';
+
+  // if (cross_product(p0, p1, point).norm()
+  //     + cross_product(p1, p2, point).norm()
+  //     + cross_product(p0, p2, point).norm() > std::sqrt(tri_det_2))
+  //   return false;
+
+  // return true;
+
+
+  // use normal
+  const Point n = cross_product(p0, p1, p2);
+
+#ifdef augustdebug
+  std::cout <<std::setprecision(16)<<std::scientific<<n<<'\n'
+	    << n.dot(cross_product(point, p0, p1))<<' '<<n.dot(cross_product(point, p2, p0)) <<' '<<n.dot(cross_product(point, p1, p2))<<'\n';
+#endif
+
+  if (n.dot(cross_product(point, p0, p1)) < 0 or
+      n.dot(cross_product(point, p2, p0)) < 0 or
+      n.dot(cross_product(point, p1, p2)) < 0)
+    return false;
+  return true;
+
+
+
+  // // FIXME
+  // // Test: Reduce to 2d problem by taking the projection of the
+  // // triangle onto the 2d plane xy, xz or yz that has the largest
+  // // determinant
+  // const double det_xy = std::abs(orient2d(p0.coordinates(),
+  // 					  p1.coordinates(),
+  // 					  p2.coordinates()));
   // std::cout << __FUNCTION__ << "  detxy " << det_xy <<std::endl;
 
-  std::array<Point, 3> xz = { Point(p0.x(), p0.z()),
-  			      Point(p1.x(), p1.z()),
-  			      Point(p2.x(), p2.z()) };
-  const double det_xz = std::abs(orient2d(xz[0].coordinates(),
-  					  xz[1].coordinates(),
-  					  xz[2].coordinates()));
+  // std::array<Point, 3> xz = { Point(p0.x(), p0.z()),
+  // 			      Point(p1.x(), p1.z()),
+  // 			      Point(p2.x(), p2.z()) };
+  // const double det_xz = std::abs(orient2d(xz[0].coordinates(),
+  // 					  xz[1].coordinates(),
+  // 					  xz[2].coordinates()));
   // std::cout << __FUNCTION__ << "  detxz " << det_xz <<std::endl;
 
-  std::array<Point, 3> yz = { Point(p0.y(), p0.z()),
-  			      Point(p1.y(), p1.z()),
-  			      Point(p2.y(), p2.z()) };
-  const double det_yz = std::abs(orient2d(yz[0].coordinates(),
-  					  yz[1].coordinates(),
-  					  yz[2].coordinates()));
+  // std::array<Point, 3> yz = { Point(p0.y(), p0.z()),
+  // 			      Point(p1.y(), p1.z()),
+  // 			      Point(p2.y(), p2.z()) };
+  // const double det_yz = std::abs(orient2d(yz[0].coordinates(),
+  // 					  yz[1].coordinates(),
+  // 					  yz[2].coordinates()));
   // std::cout << __FUNCTION__ << "  detyz " << det_yz <<std::endl;
 
-  // Check for degeneracy
-  dolfin_assert(det_xy > DOLFIN_EPS or
-  		det_xz > DOLFIN_EPS or
-  		det_yz > DOLFIN_EPS);
+  // // Check for degeneracy
+  // dolfin_assert(det_xy > DOLFIN_EPS or
+  // 		det_xz > DOLFIN_EPS or
+  // 		det_yz > DOLFIN_EPS);
 
-  std::array<Point, 3> tri;
-  Point a;
+  // std::array<Point, 3> tri;
+  // Point a;
 
-  if (det_xy > det_xz and det_xy > det_yz)
-  {
-    tri = std::array<Point, 3>{ p0, p1, p2 };
-    a[0] = point[0];
-    a[1] = point[1];
-  }
-  else if (det_xz > det_xy and det_xz > det_yz)
-  {
-    tri = xz;
-    a[0] = point[0];
-    a[1] = point[2];
-  }
-  else
-  {
-    tri = yz;
-    a[0] = point[1];
-    a[1] = point[2];
-  }
+  // if (det_xy > det_xz and det_xy > det_yz)
+  // {
+  //   tri = std::array<Point, 3>{ p0, p1, p2 };
+  //   a[0] = point[0];
+  //   a[1] = point[1];
+  // }
+  // else if (det_xz > det_xy and det_xz > det_yz)
+  // {
+  //   tri = xz;
+  //   a[0] = point[0];
+  //   a[1] = point[2];
+  // }
+  // else
+  // {
+  //   tri = yz;
+  //   a[0] = point[1];
+  //   a[1] = point[2];
+  // }
 
-  // std::cout << tri[0]<<' '<<tri[1]<<' '<<tri[2]<<"    " << ' ' << a << std::endl;
+  // // std::cout << tri[0]<<' '<<tri[1]<<' '<<tri[2]<<"    " << ' ' << a << std::endl;
 
-  // const bool collides_2d = collides_triangle_point_2d(tri[0], tri[1], tri[2], a);
-  // std::cout << "2d collision " << col2d << std::endl;
+  // // const bool collides_2d = collides_triangle_point_2d(tri[0], tri[1], tri[2], a);
+  // // std::cout << "2d collision " << col2d << std::endl;
 
-  return collides_triangle_point_2d(tri[0], tri[1], tri[2], a);
+  // return collides_triangle_point_2d(tri[0], tri[1], tri[2], a);
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_triangle_segment_2d(const Point& p0,
@@ -612,12 +765,8 @@ bool CollisionPredicates::_collides_triangle_segment_3d(Point r,
 							Point a,
 							Point b)
 {
-  // FIXME: maybe we don't need to check this
-  if (_collides_triangle_point_3d(r, s, t, a))
-    return true;
-
-  if (_collides_triangle_point_3d(r, s, t, b))
-    return true;
+  // std::cout << __FUNCTION__<<std::endl;
+  //std::cout << tools::drawtriangle({r,s,t})<<tools::drawtriangle({a,b})<<'\n';
 
   // Compute correspondic tetrahedra determinants
   const double rsta = orient3d(r.coordinates(),
@@ -635,36 +784,70 @@ bool CollisionPredicates::_collides_triangle_segment_3d(Point r,
       (rsta > 0 and rstb > 0))
     return false;
 
-  // Now we know a and b are on different sides. Check if
-  // intersection is in triangle by creating some other tets.
+  // We check triangle point first. We use this below.
+  if (collides_triangle_point_3d(r, s, t, a))
+  {
+    // std::cout << __FUNCTION__<<' '<<__LINE__<<'\n';
+    return true;
+  }
 
-  // Temporarily flip a and b to make sure a is above
-  if (rsta < 0)
-    std::swap(a, b);
+  if (collides_triangle_point_3d(r, s, t, b))
+  {
+    // std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
+    return true;
+  }
 
-  const double rasb = orient3d(r.coordinates(),
-			       a.coordinates(),
-			       s.coordinates(),
-			       b.coordinates());
-  if (rasb < 0)
+  // Now we know a and b are either on different sides or in the same
+  // plane (in which case rsta = rstb = 0). Check if intersection is
+  // in triangle by creating some other tets.
+
+  if (rsta == 0 and rstb == 0)
+  {
+    // Since we have checked that the points does not collide, the
+    // segment is either completely outside the triangle, or we have a
+    // collision over edges.
+
+    // FIXME: To avoid collision over edges, maybe we can test if both
+    // a and b are on the same side of one of the edges rs, rt or st.
+
+    if (collides_segment_segment_3d(r, s, a, b))
+      return true;
+    if (collides_segment_segment_3d(r, t, a, b))
+      return true;
+    if (collides_segment_segment_3d(s, t, a, b))
+      return true;
+
     return false;
+  }
+  else
+  {
+    // Temporarily flip a and b to make sure a is above
+    if (rsta < 0)
+      std::swap(a, b);
 
-  const double satb = orient3d(s.coordinates(),
-			       a.coordinates(),
-			       t.coordinates(),
-			       b.coordinates());
-  if (satb < 0)
-    return false;
+    const double rasb = orient3d(r.coordinates(),
+				 a.coordinates(),
+				 s.coordinates(),
+				 b.coordinates());
+    if (rasb < 0)
+      return false;
 
-  const double tarb = orient3d(t.coordinates(),
-			       a.coordinates(),
-			       r.coordinates(),
-			       b.coordinates());
-  if (tarb < 0)
-    return false;
+    const double satb = orient3d(s.coordinates(),
+				 a.coordinates(),
+				 t.coordinates(),
+				 b.coordinates());
+    if (satb < 0)
+      return false;
+
+    const double tarb = orient3d(t.coordinates(),
+				 a.coordinates(),
+				 r.coordinates(),
+				 b.coordinates());
+    if (tarb < 0)
+      return false;
+  }
 
   return true;
-
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::_collides_triangle_triangle_2d(const Point& p0,
@@ -725,6 +908,10 @@ bool CollisionPredicates::_collides_triangle_triangle_3d(const Point& p0,
 							 const Point& q1,
 							 const Point& q2)
 {
+#ifdef augustdebug
+  std::cout << __FUNCTION__<<std::endl;
+#endif
+
   // Pack points as vectors
   std::array<Point, 3> tri_0({p0, p1, p2});
   std::array<Point, 3> tri_1({q0, q1, q2});
@@ -775,6 +962,8 @@ bool CollisionPredicates::_collides_tetrahedron_point(Point p0,
 						      Point p3,
 						      Point point)
 {
+  // std::cout << __FUNCTION__<<std::endl;
+
   const double ref = orient3d(p0.coordinates(),
 			      p1.coordinates(),
 			      p2.coordinates(),
@@ -838,6 +1027,8 @@ bool CollisionPredicates::_collides_tetrahedron_segment(const Point& p0,
 							const Point& q0,
 							const Point& q1)
 {
+  // std::cout << __FUNCTION__<<std::endl;
+
   // Segment vertex in tetrahedron collision
   if (collides_tetrahedron_point(p0, p1, p2, p3, q0))
     return true;
@@ -866,6 +1057,8 @@ bool CollisionPredicates::_collides_tetrahedron_triangle(const Point& p0,
 							 const Point& q1,
 							 const Point& q2)
 {
+  // std::cout << __FUNCTION__<<std::endl;
+
   // Triangle vertex in tetrahedron collision
   if (collides_tetrahedron_point(p0, p1, p2, p3, q0))
     return true;
@@ -896,485 +1089,567 @@ bool CollisionPredicates::_collides_tetrahedron_tetrahedron(const Point& p0,
 							    const Point& q2,
 							    const Point& q3)
 {
-  // FIXME: Rewrite using orient3d.
+  // std::cout << __FUNCTION__<<std::endl;
 
-  // This algorithm checks whether two tetrahedra intersect.
+  const std::array<Point, 4> tetp = {{p0, p1, p2, p3}};
+  const std::array<Point, 4> tetq = {{q0, q1, q2, q3}};
 
-  // Algorithm and source code from Fabio Ganovelli, Federico Ponchio
-  // and Claudio Rocchini: Fast Tetrahedron-Tetrahedron Overlap
-  // Algorithm, Journal of Graphics Tools, 7(2), 2002. DOI:
-  // 10.1080/10867651.2002.10487557. Source code available at
-  // http://web.archive.org/web/20031130075955/
-  // http://www.acm.org/jgt/papers/GanovelliPonchioRocchini02/tet_a_tet.html
-
-  const std::vector<Point> V1 = {{ p0, p1, p2, p3 }};
-  const std::vector<Point> V2 = {{ q0, q1, q2, q3 }};
-
-  // Get the vectors between V2 and V1[0]
-  std::vector<Point> P_V1(4);
+  // Triangle face collisions
+  const std::array<std::array<std::size_t, 3>, 4> faces = {{ {1, 2, 3},
+							     {0, 2, 3},
+							     {0, 1, 3},
+							     {0, 1, 2} }};
   for (std::size_t i = 0; i < 4; ++i)
-    P_V1[i] = V2[i]-V1[0];
+    for (std::size_t j = 0; j < 4; ++j)
+      if (collides_triangle_triangle_3d(tetp[faces[i][0]], tetp[faces[i][1]], tetp[faces[i][2]],
+					tetq[faces[j][0]], tetq[faces[j][1]], tetq[faces[j][2]]))
+	return true;
 
-  // Data structure for edges of V1 and V2
-  std::vector<Point> e_v1(5), e_v2(5);
-  e_v1[0] = V1[1] - V1[0];
-  e_v1[1] = V1[2] - V1[0];
-  e_v1[2] = V1[3] - V1[0];
-  Point n = e_v1[1].cross(e_v1[0]);
-
-  // Maybe flip normal. Normal should be outward.
-  if (n.dot(e_v1[2]) > 0)
-    n *= -1;
-  std::vector<int> masks(4);
-  std::vector<std::vector<double>> Coord_1(4, std::vector<double>(4));
-  if (separating_plane_face_A_1(P_V1, n, Coord_1[0], masks[0]))
-    return false;
-  n = e_v1[0].cross(e_v1[2]);
-
-  // Maybe flip normal
-  if (n.dot(e_v1[1]) > 0)
-    n *= -1;
-  if (separating_plane_face_A_1(P_V1, n, Coord_1[1], masks[1]))
-    return false;
-  if (separating_plane_edge_A(Coord_1, masks, 0, 1))
-    return false;
-  n = e_v1[2].cross(e_v1[1]);
-
-  // Maybe flip normal
-  if (n.dot(e_v1[0]) > 0)
-    n *= -1;
-  if (separating_plane_face_A_1(P_V1, n, Coord_1[2], masks[2]))
-    return false;
-  if (separating_plane_edge_A(Coord_1, masks, 0, 2))
-    return false;
-  if (separating_plane_edge_A(Coord_1, masks, 1,2))
-    return false;
-  e_v1[4] = V1[3] - V1[1];
-  e_v1[3] = V1[2] - V1[1];
-  n = e_v1[3].cross(e_v1[4]);
-
-  // Maybe flip normal. Note the < since e_v1[0]=v1-v0.
-  if (n.dot(e_v1[0]) < 0)
-    n *= -1;
-  if (separating_plane_face_A_2(V1, V2, n, Coord_1[3], masks[3]))
-    return false;
-  if (separating_plane_edge_A(Coord_1, masks, 0, 3))
-    return false;
-  if (separating_plane_edge_A(Coord_1, masks, 1, 3))
-    return false;
-  if (separating_plane_edge_A(Coord_1, masks, 2, 3))
-    return false;
-  if ((masks[0] | masks[1] | masks[2] | masks[3] )!= 15)
+  // Vertex in tetrahedron collision
+  if (collides_tetrahedron_point(p0, p1, p2, p3, q0))
+    return true;
+  if (collides_tetrahedron_point(p0, p1, p2, p3, q1))
+    return true;
+  if (collides_tetrahedron_point(p0, p1, p2, p3, q2))
+    return true;
+  if (collides_tetrahedron_point(p0, p1, p2, p3, q3))
     return true;
 
-  // From now on, if there is a separating plane, it is parallel to a
-  // face of b.
-  std::vector<Point> P_V2(4);
-  for (std::size_t i = 0; i < 4; ++i)
-    P_V2[i] = V1[i] - V2[0];
-  e_v2[0] = V2[1] - V2[0];
-  e_v2[1] = V2[2] - V2[0];
-  e_v2[2] = V2[3] - V2[0];
-  n = e_v2[1].cross(e_v2[0]);
-
-  // Maybe flip normal
-  if (n.dot(e_v2[2]) > 0)
-    n *= -1;
-  if (separating_plane_face_B_1(P_V2, n))
-    return false;
-  n=e_v2[0].cross(e_v2[2]);
-
-  // Maybe flip normal
-  if (n.dot(e_v2[1]) > 0)
-    n *= -1;
-  if (separating_plane_face_B_1(P_V2, n))
-    return false;
-  n = e_v2[2].cross(e_v2[1]);
-
-  // Maybe flip normal
-  if (n.dot(e_v2[0]) > 0)
-    n *= -1;
-  if (separating_plane_face_B_1(P_V2, n))
-    return false;
-  e_v2[4] = V2[3] - V2[1];
-  e_v2[3] = V2[2] - V2[1];
-  n = e_v2[3].cross(e_v2[4]);
-
-  // Maybe flip normal. Note the < since e_v2[0] = V2[1] - V2[0].
-  if (n.dot(e_v2[0]) < 0)
-    n *= -1;
-  if (separating_plane_face_B_2(V1, V2, n))
-    return false;
-
-  return true;
-}
-//-----------------------------------------------------------------------------
-bool CollisionPredicates::edge_edge_test(int i0,
-					 int i1,
-					 double Ax,
-					 double Ay,
-					 const Point& V0,
-					 const Point& U0,
-					 const Point& U1)
-{
-  // Helper function for triangle triangle collision. Test edge vs
-  // edge.
-
-  // Here we have the option of classifying adjacent edges of two
-  // triangles as colliding by changing > to >= and < to <= below.
-
-  const double Bx = U0[i0] - U1[i0];
-  const double By = U0[i1] - U1[i1];
-  const double Cx = V0[i0] - U0[i0];
-  const double Cy = V0[i1] - U0[i1];
-  const double f = Ay*Bx - Ax*By;
-  const double d = By*Cx - Bx*Cy;
-
-  if ((f > 0 && d >= 0 && d <= f) ||
-      (f < 0 && d <= 0 && d >= f))
-  {
-    const double e = Ax*Cy - Ay*Cx;
-    if (f > 0)
-    {
-      // Allow or not allow adjacent edges as colliding:
-      //if (e >= 0 && e <= f) return true;
-      if (e > 0 && e < f)
-        return true;
-    }
-    else
-    {
-      // Allow or not allow adjacent edges as colliding:
-      //if (e <= 0 && e >= f) return true;
-      if (e < 0 && e > f)
-        return true;
-    }
-  }
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool CollisionPredicates::edge_against_tri_edges(int i0,
-						 int i1,
-						 const Point& V0,
-						 const Point& V1,
-						 const Point& U0,
-						 const Point& U1,
-						 const Point& U2)
-{
-  // Helper function for triangle triangle collision
-  const double Ax = V1[i0] - V0[i0];
-  const double Ay = V1[i1] - V0[i1];
-
-  // Test edge U0,U1 against V0,V1
-  if (edge_edge_test(i0, i1, Ax, Ay, V0, U0, U1))
+  if (collides_tetrahedron_point(q0, q1, q2, q3, p0))
     return true;
-
-  // Test edge U1,U2 against V0,V1
-  if (edge_edge_test(i0, i1, Ax, Ay, V0, U1, U2))
+  if (collides_tetrahedron_point(q0, q1, q2, q3, p1))
     return true;
-
-  // Test edge U2,U1 against V0,V1
-  if (edge_edge_test(i0, i1, Ax, Ay, V0, U2, U0))
+  if (collides_tetrahedron_point(q0, q1, q2, q3, p2))
+    return true;
+  if (collides_tetrahedron_point(q0, q1, q2, q3, p3))
     return true;
 
   return false;
+
+  // // FIXME: Rewrite using orient3d.
+  // PPause;
+
+  // // This algorithm checks whether two tetrahedra intersect.
+
+  // // Algorithm and source code from Fabio Ganovelli, Federico Ponchio
+  // // and Claudio Rocchini: Fast Tetrahedron-Tetrahedron Overlap
+  // // Algorithm, Journal of Graphics Tools, 7(2), 2002. DOI:
+  // // 10.1080/10867651.2002.10487557. Source code available at
+  // // http://web.archive.org/web/20031130075955/
+  // // http://www.acm.org/jgt/papers/GanovelliPonchioRocchini02/tet_a_tet.html
+
+  // const std::vector<Point> V1 = {{ p0, p1, p2, p3 }};
+  // const std::vector<Point> V2 = {{ q0, q1, q2, q3 }};
+
+  // // Get the vectors between V2 and V1[0]
+  // std::vector<Point> P_V1(4);
+  // for (std::size_t i = 0; i < 4; ++i)
+  //   P_V1[i] = V2[i]-V1[0];
+
+  // // Data structure for edges of V1 and V2
+  // std::vector<Point> e_v1(5), e_v2(5);
+  // e_v1[0] = V1[1] - V1[0];
+  // e_v1[1] = V1[2] - V1[0];
+  // e_v1[2] = V1[3] - V1[0];
+  // Point n = e_v1[1].cross(e_v1[0]);
+
+  // // Maybe flip normal. Normal should be outward.
+  // if (n.dot(e_v1[2]) > 0)
+  //   n *= -1;
+  // std::vector<int> masks(4);
+  // std::vector<std::vector<double>> Coord_1(4, std::vector<double>(4));
+  // if (separating_plane_face_A_1(P_V1, n, Coord_1[0], masks[0]))
+  //   return false;
+  // n = e_v1[0].cross(e_v1[2]);
+
+  // // Maybe flip normal
+  // if (n.dot(e_v1[1]) > 0)
+  //   n *= -1;
+  // if (separating_plane_face_A_1(P_V1, n, Coord_1[1], masks[1]))
+  //   return false;
+  // if (separating_plane_edge_A(Coord_1, masks, 0, 1))
+  //   return false;
+  // n = e_v1[2].cross(e_v1[1]);
+
+  // // Maybe flip normal
+  // if (n.dot(e_v1[0]) > 0)
+  //   n *= -1;
+  // if (separating_plane_face_A_1(P_V1, n, Coord_1[2], masks[2]))
+  //   return false;
+  // if (separating_plane_edge_A(Coord_1, masks, 0, 2))
+  //   return false;
+  // if (separating_plane_edge_A(Coord_1, masks, 1,2))
+  //   return false;
+  // e_v1[4] = V1[3] - V1[1];
+  // e_v1[3] = V1[2] - V1[1];
+  // n = e_v1[3].cross(e_v1[4]);
+
+  // // Maybe flip normal. Note the < since e_v1[0]=v1-v0.
+  // if (n.dot(e_v1[0]) < 0)
+  //   n *= -1;
+  // if (separating_plane_face_A_2(V1, V2, n, Coord_1[3], masks[3]))
+  //   return false;
+  // if (separating_plane_edge_A(Coord_1, masks, 0, 3))
+  //   return false;
+  // if (separating_plane_edge_A(Coord_1, masks, 1, 3))
+  //   return false;
+  // if (separating_plane_edge_A(Coord_1, masks, 2, 3))
+  //   return false;
+  // if ((masks[0] | masks[1] | masks[2] | masks[3] )!= 15)
+  //   return true;
+
+  // // From now on, if there is a separating plane, it is parallel to a
+  // // face of b.
+  // std::vector<Point> P_V2(4);
+  // for (std::size_t i = 0; i < 4; ++i)
+  //   P_V2[i] = V1[i] - V2[0];
+  // e_v2[0] = V2[1] - V2[0];
+  // e_v2[1] = V2[2] - V2[0];
+  // e_v2[2] = V2[3] - V2[0];
+  // n = e_v2[1].cross(e_v2[0]);
+
+  // // Maybe flip normal
+  // if (n.dot(e_v2[2]) > 0)
+  //   n *= -1;
+  // if (separating_plane_face_B_1(P_V2, n))
+  //   return false;
+  // n=e_v2[0].cross(e_v2[2]);
+
+  // // Maybe flip normal
+  // if (n.dot(e_v2[1]) > 0)
+  //   n *= -1;
+  // if (separating_plane_face_B_1(P_V2, n))
+  //   return false;
+  // n = e_v2[2].cross(e_v2[1]);
+
+  // // Maybe flip normal
+  // if (n.dot(e_v2[0]) > 0)
+  //   n *= -1;
+  // if (separating_plane_face_B_1(P_V2, n))
+  //   return false;
+  // e_v2[4] = V2[3] - V2[1];
+  // e_v2[3] = V2[2] - V2[1];
+  // n = e_v2[3].cross(e_v2[4]);
+
+  // // Maybe flip normal. Note the < since e_v2[0] = V2[1] - V2[0].
+  // if (n.dot(e_v2[0]) < 0)
+  //   n *= -1;
+  // if (separating_plane_face_B_2(V1, V2, n))
+  //   return false;
+
+  // return true;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::point_in_triangle(int i0,
-					    int i1,
-					    const Point& V0,
-					    const Point& U0,
-					    const Point& U1,
-					    const Point& U2)
+Point CollisionPredicates::cross_product(Point a,
+					 Point b,
+					 Point c)
 {
-  // Helper function for triangle triangle collision
-  // Is T1 completely inside T2?
-  // Check if V0 is inside triangle(U0, U1, U2)
-  double a = U1[i1] - U0[i1];
-  double b = -(U1[i0] - U0[i0]);
-  double c = -a*U0[i0] - b*U0[i1];
-  const double d0 = a*V0[i0] + b*V0[i1] + c;
-
-  a = U2[i1] - U1[i1];
-  b = -(U2[i0] - U1[i0]);
-  c = -a*U1[i0] - b*U1[i1];
-  const double d1 = a*V0[i0] + b*V0[i1] + c;
-
-  a = U0[i1] - U2[i1];
-  b = -(U0[i0] - U2[i0]);
-  c = -a*U2[i0] - b*U2[i1];
-  const double d2 = a*V0[i0] + b*V0[i1] + c;
-
-  if (d0*d1 > 0. && d0*d2 > 0.)
-    return true;
-
-  return false;
+  // Accurate cross product p = (a-c) x (b-c). See Shewchuk Lecture
+  // Notes on Geometric Robustness.
+  double ayz[2] = {a.y(), a.z()};
+  double byz[2] = {b.y(), b.z()};
+  double cyz[2] = {c.y(), c.z()};
+  double azx[2] = {a.z(), a.x()};
+  double bzx[2] = {b.z(), b.x()};
+  double czx[2] = {c.z(), c.x()};
+  double axy[2] = {a.x(), a.y()};
+  double bxy[2] = {b.x(), b.y()};
+  double cxy[2] = {c.x(), c.y()};
+  Point p(orient2d(ayz, byz, cyz),
+   	  orient2d(azx, bzx, czx),
+	  orient2d(axy, bxy, cxy));
+  return p;
 }
+
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::coplanar_tri_tri(const Point& N,
-					   const Point& V0,
-					   const Point& V1,
-					   const Point& V2,
-					   const Point& U0,
-					   const Point& U1,
-					   const Point& U2)
+double CollisionPredicates::cross_product_norm(Point a,
+					       Point b,
+					       Point c)
 {
-  // Helper function for triangle triangle collision
+  // Accurate norm of cross product p = (a-c) x (b-c). See Shewchuk
+  // Lecture Notes on Geometric Robustness.
+  double ayz[2] = {a.y(), a.z()};
+  double byz[2] = {b.y(), b.z()};
+  double cyz[2] = {c.y(), c.z()};
+  double azx[2] = {a.z(), a.x()};
+  double bzx[2] = {b.z(), b.x()};
+  double czx[2] = {c.z(), c.x()};
+  double axy[2] = {a.x(), a.y()};
+  double bxy[2] = {b.x(), b.y()};
+  double cxy[2] = {c.x(), c.y()};
 
-  double A[3];
-  int i0,i1;
-
-  // First project onto an axis-aligned plane, that maximizes the area
-  // of the triangles, compute indices: i0,i1.
-  A[0] = std::abs(N[0]);
-  A[1] = std::abs(N[1]);
-  A[2] = std::abs(N[2]);
-
-  if (A[0] > A[1])
-  {
-    if (A[0] > A[2])
-    {
-      i0 = 1; // A[0] is greatest
-      i1 = 2;
-    }
-    else
-    {
-      i0 = 0; // A[2] is greatest
-      i1 = 1;
-    }
-  }
-  else // A[0] <= A[1]
-  {
-    if (A[2] > A[1])
-    {
-      i0 = 0; // A[2] is greatest
-      i1 = 1;
-    }
-    else
-    {
-      i0 = 0; // A[1] is greatest
-      i1 = 2;
-    }
-  }
-
-  // Test all edges of triangle 1 against the edges of triangle 2
-  if (edge_against_tri_edges(i0, i1, V0, V1, U0, U1, U2))
-    return true;
-  if (edge_against_tri_edges(i0, i1, V1, V2, U0, U1, U2))
-    return true;
-  if (edge_against_tri_edges(i0, i1, V2, V0, U0, U1, U2))
-    return true;
-
-  // Finally, test if tri1 is totally contained in tri2 or vice versa
-  if (point_in_triangle(i0, i1, V0, U0, U1, U2))
-    return true;
-  if (point_in_triangle(i0, i1, U0, V0, V1, V2))
-    return true;
-
-  return false;
+  return std::sqrt(std::pow(orient2d(ayz, byz, cyz), 2)
+		   + std::pow(orient2d(azx, bzx, czx),2)
+		   + std::pow(orient2d(axy, bxy, cxy),2));
 }
-//-----------------------------------------------------------------------------
-bool CollisionPredicates::compute_intervals(double VV0,
-					    double VV1,
-					    double VV2,
-					    double D0,
-					    double D1,
-					    double D2,
-					    double D0D1,
-					    double D0D2,
-					    double& A,
-					    double& B,
-					    double& C,
-					    double& X0,
-					    double& X1)
-{
-  // Helper function for triangle triangle collision
 
-  if (D0D1 > 0.)
-  {
-    // Here we know that D0D2<=0.0, that is D0, D1 are on the same
-    // side, D2 on the other or on the plane
-    A = VV2;
-    B = (VV0 - VV2)*D2;
-    C = (VV1 - VV2)*D2;
-    X0 = D2 - D0;
-    X1 = D2 - D1;
-  }
-  else if (D0D2 > 0.)
-  {
-    // Here we know that d0d1<=0.0
-    A = VV1;
-    B = (VV0 - VV1)*D1;
-    C = (VV2 - VV1)*D1;
-    X0 = D1 - D0;
-    X1 = D1 - D2;
-  }
-  else if (D1*D2 > 0. || D0 != 0.)
-  {
-    // Here we know that d0d1<=0.0 or that D0!=0.0
-    A = VV0;
-    B = (VV1 - VV0)*D0;
-    C = (VV2 - VV0)*D0;
-    X0 = D0 - D1;
-    X1 = D0 - D2;
-  }
-  else if (D1 != 0.)
-  {
-    A = VV1;
-    B = (VV0 - VV1)*D1;
-    C = (VV2 - VV1)*D1;
-    X0 = D1 - D0;
-    X1 = D1 - D2;
-  }
-  else if (D2 != 0.)
-  {
-    A = VV2;
-    B = (VV0 - VV2)*D2;
-    C = (VV1 - VV2)*D2;
-    X0 = D2 - D0;
-    X1 = D2 - D1;
-  }
-  else {
-    // Go to coplanar test
-    return true;
-  }
+// //-----------------------------------------------------------------------------
+// bool CollisionPredicates::edge_edge_test(int i0,
+// 					 int i1,
+// 					 double Ax,
+// 					 double Ay,
+// 					 const Point& V0,
+// 					 const Point& U0,
+// 					 const Point& U1)
+// {
+//   // Helper function for triangle triangle collision. Test edge vs
+//   // edge.
 
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool
-CollisionPredicates::separating_plane_face_A_1(const std::vector<Point>& pv1,
-					       const Point& n,
-					       std::vector<double>& coord,
-					       int&  mask_edges)
-{
-  // Helper function for tetrahedron-tetrahedron collision test:
-  // checks if plane pv1 is a separating plane. Stores local
-  // coordinates and the mask bit mask_edges.
+//   // Here we have the option of classifying adjacent edges of two
+//   // triangles as colliding by changing > to >= and < to <= below.
 
-  mask_edges = 0;
-  const int shifts[4] = {1, 2, 4, 8};
+//   const double Bx = U0[i0] - U1[i0];
+//   const double By = U0[i1] - U1[i1];
+//   const double Cx = V0[i0] - U0[i0];
+//   const double Cy = V0[i1] - U0[i1];
+//   const double f = Ay*Bx - Ax*By;
+//   const double d = By*Cx - Bx*Cy;
 
-  for (std::size_t i = 0; i < 4; ++i)
-  {
-    coord[i] = pv1[i].dot(n);
-    if (coord[i] > 0)
-      mask_edges |= shifts[i];
-  }
+//   if ((f > 0 && d >= 0 && d <= f) ||
+//       (f < 0 && d <= 0 && d >= f))
+//   {
+//     const double e = Ax*Cy - Ay*Cx;
+//     if (f > 0)
+//     {
+//       // Allow or not allow adjacent edges as colliding:
+//       //if (e >= 0 && e <= f) return true;
+//       if (e > 0 && e < f)
+//         return true;
+//     }
+//     else
+//     {
+//       // Allow or not allow adjacent edges as colliding:
+//       //if (e <= 0 && e >= f) return true;
+//       if (e < 0 && e > f)
+//         return true;
+//     }
+//   }
+//   return false;
+// }
+// //-----------------------------------------------------------------------------
+// bool CollisionPredicates::edge_against_tri_edges(int i0,
+// 						 int i1,
+// 						 const Point& V0,
+// 						 const Point& V1,
+// 						 const Point& U0,
+// 						 const Point& U1,
+// 						 const Point& U2)
+// {
+//   // Helper function for triangle triangle collision
+//   const double Ax = V1[i0] - V0[i0];
+//   const double Ay = V1[i1] - V0[i1];
 
-  return (mask_edges == 15);
-}
-//-----------------------------------------------------------------------------
-bool
-CollisionPredicates::separating_plane_face_A_2(const std::vector<Point>& V1,
-					       const std::vector<Point>& V2,
-					       const Point& n,
-					       std::vector<double>& coord,
-					       int&  mask_edges)
-{
-  // Helper function for tetrahedron-tetrahedron collision test:
-  // checks if plane v1,v2 is a separating plane. Stores local
-  // coordinates and the mask bit mask_edges.
+//   // Test edge U0,U1 against V0,V1
+//   if (edge_edge_test(i0, i1, Ax, Ay, V0, U0, U1))
+//     return true;
 
-  mask_edges = 0;
-  const int shifts[4] = {1, 2, 4, 8};
+//   // Test edge U1,U2 against V0,V1
+//   if (edge_edge_test(i0, i1, Ax, Ay, V0, U1, U2))
+//     return true;
 
-  for (std::size_t i = 0; i < 4; ++i)
-  {
-    coord[i] = (V2[i] - V1[1]).dot(n);
-    if (coord[i] > 0)
-      mask_edges |= shifts[i];
-  }
+//   // Test edge U2,U1 against V0,V1
+//   if (edge_edge_test(i0, i1, Ax, Ay, V0, U2, U0))
+//     return true;
 
-  return (mask_edges == 15);
-}
-//-----------------------------------------------------------------------------
-bool CollisionPredicates::separating_plane_edge_A(const std::vector<std::vector<double>>& coord_1,
-						  const std::vector<int>& masks, int f0, int f1)
-{
-  // Helper function for tetrahedron-tetrahedron collision: checks if
-  // edge is in the plane separating faces f0 and f1.
+//   return false;
+// }
+// //-----------------------------------------------------------------------------
+// bool CollisionPredicates::point_in_triangle(int i0,
+// 					    int i1,
+// 					    const Point& V0,
+// 					    const Point& U0,
+// 					    const Point& U1,
+// 					    const Point& U2)
+// {
+//   // Helper function for triangle triangle collision
+//   // Is T1 completely inside T2?
+//   // Check if V0 is inside triangle(U0, U1, U2)
+//   double a = U1[i1] - U0[i1];
+//   double b = -(U1[i0] - U0[i0]);
+//   double c = -a*U0[i0] - b*U0[i1];
+//   const double d0 = a*V0[i0] + b*V0[i1] + c;
 
-  const std::vector<double>& coord_f0 = coord_1[f0];
-  const std::vector<double>& coord_f1 = coord_1[f1];
+//   a = U2[i1] - U1[i1];
+//   b = -(U2[i0] - U1[i0]);
+//   c = -a*U1[i0] - b*U1[i1];
+//   const double d1 = a*V0[i0] + b*V0[i1] + c;
 
-  int maskf0 = masks[f0];
-  int maskf1 = masks[f1];
+//   a = U0[i1] - U2[i1];
+//   b = -(U0[i0] - U2[i0]);
+//   c = -a*U2[i0] - b*U2[i1];
+//   const double d2 = a*V0[i0] + b*V0[i1] + c;
 
-  if ((maskf0 | maskf1) != 15) // if there is a vertex of b
-    return false; // included in (-,-) return false
+//   if (d0*d1 > 0. && d0*d2 > 0.)
+//     return true;
 
-  maskf0 &= (maskf0 ^ maskf1); // exclude the vertices in (+,+)
-  maskf1 &= (maskf0 ^ maskf1);
+//   return false;
+// }
+// //-----------------------------------------------------------------------------
+// bool CollisionPredicates::coplanar_tri_tri(const Point& N,
+// 					   const Point& V0,
+// 					   const Point& V1,
+// 					   const Point& V2,
+// 					   const Point& U0,
+// 					   const Point& U1,
+// 					   const Point& U2)
+// {
+//   // Helper function for triangle triangle collision
 
-  // edge 0: 0--1
-  if ((maskf0 & 1) && // the vertex 0 of b is in (-,+)
-      (maskf1 & 2)) // the vertex 1 of b is in (+,-)
-    if ((coord_f0[1]*coord_f1[0] - coord_f0[0]*coord_f1[1]) > 0)
-      // the edge of b (0,1) intersect (-,-) (see the paper)
-      return false;
+//   double A[3];
+//   int i0,i1;
 
-  if ((maskf0 & 2) &&
-      (maskf1 & 1))
-    if ((coord_f0[1]*coord_f1[0] - coord_f0[0]*coord_f1[1]) < 0)
-      return false;
+//   // First project onto an axis-aligned plane, that maximizes the area
+//   // of the triangles, compute indices: i0,i1.
+//   A[0] = std::abs(N[0]);
+//   A[1] = std::abs(N[1]);
+//   A[2] = std::abs(N[2]);
 
-  // edge 1: 0--2
-  if ((maskf0 & 1) &&
-      (maskf1 & 4))
-    if ((coord_f0[2]*coord_f1[0] - coord_f0[0]*coord_f1[2]) > 0)
-      return false;
+//   if (A[0] > A[1])
+//   {
+//     if (A[0] > A[2])
+//     {
+//       i0 = 1; // A[0] is greatest
+//       i1 = 2;
+//     }
+//     else
+//     {
+//       i0 = 0; // A[2] is greatest
+//       i1 = 1;
+//     }
+//   }
+//   else // A[0] <= A[1]
+//   {
+//     if (A[2] > A[1])
+//     {
+//       i0 = 0; // A[2] is greatest
+//       i1 = 1;
+//     }
+//     else
+//     {
+//       i0 = 0; // A[1] is greatest
+//       i1 = 2;
+//     }
+//   }
 
-  if ((maskf0 & 4) &&
-      (maskf1 & 1))
-    if ((coord_f0[2]*coord_f1[0] - coord_f0[0]*coord_f1[2]) < 0)
-      return false;
+//   // Test all edges of triangle 1 against the edges of triangle 2
+//   if (edge_against_tri_edges(i0, i1, V0, V1, U0, U1, U2))
+//     return true;
+//   if (edge_against_tri_edges(i0, i1, V1, V2, U0, U1, U2))
+//     return true;
+//   if (edge_against_tri_edges(i0, i1, V2, V0, U0, U1, U2))
+//     return true;
 
-  // edge 2: 0--3
-  if ((maskf0 & 1) &&
-      (maskf1 & 8))
-    if ((coord_f0[3]*coord_f1[0] - coord_f0[0]*coord_f1[3]) > 0)
-      return false;
+//   // Finally, test if tri1 is totally contained in tri2 or vice versa
+//   if (point_in_triangle(i0, i1, V0, U0, U1, U2))
+//     return true;
+//   if (point_in_triangle(i0, i1, U0, V0, V1, V2))
+//     return true;
 
-  if ((maskf0 & 8) &&
-      (maskf1 & 1))
-    if ((coord_f0[3]*coord_f1[0] - coord_f0[0]*coord_f1[3]) < 0)
-      return false;
+//   return false;
+// }
+// //-----------------------------------------------------------------------------
+// bool CollisionPredicates::compute_intervals(double VV0,
+// 					    double VV1,
+// 					    double VV2,
+// 					    double D0,
+// 					    double D1,
+// 					    double D2,
+// 					    double D0D1,
+// 					    double D0D2,
+// 					    double& A,
+// 					    double& B,
+// 					    double& C,
+// 					    double& X0,
+// 					    double& X1)
+// {
+//   // Helper function for triangle triangle collision
 
-  // edge 3: 1--2
-  if ((maskf0 & 2) &&
-      (maskf1 & 4))
-    if ((coord_f0[2]*coord_f1[1] - coord_f0[1]*coord_f1[2]) > 0)
-      return false;
+//   if (D0D1 > 0.)
+//   {
+//     // Here we know that D0D2<=0.0, that is D0, D1 are on the same
+//     // side, D2 on the other or on the plane
+//     A = VV2;
+//     B = (VV0 - VV2)*D2;
+//     C = (VV1 - VV2)*D2;
+//     X0 = D2 - D0;
+//     X1 = D2 - D1;
+//   }
+//   else if (D0D2 > 0.)
+//   {
+//     // Here we know that d0d1<=0.0
+//     A = VV1;
+//     B = (VV0 - VV1)*D1;
+//     C = (VV2 - VV1)*D1;
+//     X0 = D1 - D0;
+//     X1 = D1 - D2;
+//   }
+//   else if (D1*D2 > 0. || D0 != 0.)
+//   {
+//     // Here we know that d0d1<=0.0 or that D0!=0.0
+//     A = VV0;
+//     B = (VV1 - VV0)*D0;
+//     C = (VV2 - VV0)*D0;
+//     X0 = D0 - D1;
+//     X1 = D0 - D2;
+//   }
+//   else if (D1 != 0.)
+//   {
+//     A = VV1;
+//     B = (VV0 - VV1)*D1;
+//     C = (VV2 - VV1)*D1;
+//     X0 = D1 - D0;
+//     X1 = D1 - D2;
+//   }
+//   else if (D2 != 0.)
+//   {
+//     A = VV2;
+//     B = (VV0 - VV2)*D2;
+//     C = (VV1 - VV2)*D2;
+//     X0 = D2 - D0;
+//     X1 = D2 - D1;
+//   }
+//   else {
+//     // Go to coplanar test
+//     return true;
+//   }
 
-  if ((maskf0 & 4) &&
-      (maskf1 & 2))
-    if ((coord_f0[2]*coord_f1[1] - coord_f0[1]*coord_f1[2]) < 0)
-      return false;
+//   return false;
+// }
+// //-----------------------------------------------------------------------------
+// bool
+// CollisionPredicates::separating_plane_face_A_1(const std::vector<Point>& pv1,
+// 					       const Point& n,
+// 					       std::vector<double>& coord,
+// 					       int&  mask_edges)
+// {
+//   // Helper function for tetrahedron-tetrahedron collision test:
+//   // checks if plane pv1 is a separating plane. Stores local
+//   // coordinates and the mask bit mask_edges.
 
-  // edge 4: 1--3
-  if ((maskf0 & 2) &&
-      (maskf1 & 8))
-    if ((coord_f0[3]*coord_f1[1] - coord_f0[1]*coord_f1[3]) > 0)
-      return false;
+//   mask_edges = 0;
+//   const int shifts[4] = {1, 2, 4, 8};
 
-  if ((maskf0 & 8) &&
-      (maskf1 & 2))
-    if ((coord_f0[3]*coord_f1[1] - coord_f0[1]*coord_f1[3]) < 0)
-      return false;
+//   for (std::size_t i = 0; i < 4; ++i)
+//   {
+//     coord[i] = pv1[i].dot(n);
+//     if (coord[i] > 0)
+//       mask_edges |= shifts[i];
+//   }
 
-  // edge 5: 2--3
-  if ((maskf0 & 4) &&
-      (maskf1 & 8))
-    if ((coord_f0[3]*coord_f1[2] - coord_f0[2]*coord_f1[3]) > 0)
-      return false;
+//   return (mask_edges == 15);
+// }
+// //-----------------------------------------------------------------------------
+// bool
+// CollisionPredicates::separating_plane_face_A_2(const std::vector<Point>& V1,
+// 					       const std::vector<Point>& V2,
+// 					       const Point& n,
+// 					       std::vector<double>& coord,
+// 					       int&  mask_edges)
+// {
+//   // Helper function for tetrahedron-tetrahedron collision test:
+//   // checks if plane v1,v2 is a separating plane. Stores local
+//   // coordinates and the mask bit mask_edges.
 
-  if ((maskf0 & 8) &&
-      (maskf1 & 4))
-    if ((coord_f0[3]*coord_f1[2] - coord_f0[2]*coord_f1[3]) < 0)
-      return false;
+//   mask_edges = 0;
+//   const int shifts[4] = {1, 2, 4, 8};
 
-  // Now there exists a separating plane supported by the edge shared
-  // by f0 and f1.
-  return true;
-}
-//-----------------------------------------------------------------------------
+//   for (std::size_t i = 0; i < 4; ++i)
+//   {
+//     coord[i] = (V2[i] - V1[1]).dot(n);
+//     if (coord[i] > 0)
+//       mask_edges |= shifts[i];
+//   }
+
+//   return (mask_edges == 15);
+// }
+// //-----------------------------------------------------------------------------
+// bool CollisionPredicates::separating_plane_edge_A(const std::vector<std::vector<double>>& coord_1,
+// 						  const std::vector<int>& masks, int f0, int f1)
+// {
+//   // Helper function for tetrahedron-tetrahedron collision: checks if
+//   // edge is in the plane separating faces f0 and f1.
+
+//   const std::vector<double>& coord_f0 = coord_1[f0];
+//   const std::vector<double>& coord_f1 = coord_1[f1];
+
+//   int maskf0 = masks[f0];
+//   int maskf1 = masks[f1];
+
+//   if ((maskf0 | maskf1) != 15) // if there is a vertex of b
+//     return false; // included in (-,-) return false
+
+//   maskf0 &= (maskf0 ^ maskf1); // exclude the vertices in (+,+)
+//   maskf1 &= (maskf0 ^ maskf1);
+
+//   // edge 0: 0--1
+//   if ((maskf0 & 1) && // the vertex 0 of b is in (-,+)
+//       (maskf1 & 2)) // the vertex 1 of b is in (+,-)
+//     if ((coord_f0[1]*coord_f1[0] - coord_f0[0]*coord_f1[1]) > 0)
+//       // the edge of b (0,1) intersect (-,-) (see the paper)
+//       return false;
+
+//   if ((maskf0 & 2) &&
+//       (maskf1 & 1))
+//     if ((coord_f0[1]*coord_f1[0] - coord_f0[0]*coord_f1[1]) < 0)
+//       return false;
+
+//   // edge 1: 0--2
+//   if ((maskf0 & 1) &&
+//       (maskf1 & 4))
+//     if ((coord_f0[2]*coord_f1[0] - coord_f0[0]*coord_f1[2]) > 0)
+//       return false;
+
+//   if ((maskf0 & 4) &&
+//       (maskf1 & 1))
+//     if ((coord_f0[2]*coord_f1[0] - coord_f0[0]*coord_f1[2]) < 0)
+//       return false;
+
+//   // edge 2: 0--3
+//   if ((maskf0 & 1) &&
+//       (maskf1 & 8))
+//     if ((coord_f0[3]*coord_f1[0] - coord_f0[0]*coord_f1[3]) > 0)
+//       return false;
+
+//   if ((maskf0 & 8) &&
+//       (maskf1 & 1))
+//     if ((coord_f0[3]*coord_f1[0] - coord_f0[0]*coord_f1[3]) < 0)
+//       return false;
+
+//   // edge 3: 1--2
+//   if ((maskf0 & 2) &&
+//       (maskf1 & 4))
+//     if ((coord_f0[2]*coord_f1[1] - coord_f0[1]*coord_f1[2]) > 0)
+//       return false;
+
+//   if ((maskf0 & 4) &&
+//       (maskf1 & 2))
+//     if ((coord_f0[2]*coord_f1[1] - coord_f0[1]*coord_f1[2]) < 0)
+//       return false;
+
+//   // edge 4: 1--3
+//   if ((maskf0 & 2) &&
+//       (maskf1 & 8))
+//     if ((coord_f0[3]*coord_f1[1] - coord_f0[1]*coord_f1[3]) > 0)
+//       return false;
+
+//   if ((maskf0 & 8) &&
+//       (maskf1 & 2))
+//     if ((coord_f0[3]*coord_f1[1] - coord_f0[1]*coord_f1[3]) < 0)
+//       return false;
+
+//   // edge 5: 2--3
+//   if ((maskf0 & 4) &&
+//       (maskf1 & 8))
+//     if ((coord_f0[3]*coord_f1[2] - coord_f0[2]*coord_f1[3]) > 0)
+//       return false;
+
+//   if ((maskf0 & 8) &&
+//       (maskf1 & 4))
+//     if ((coord_f0[3]*coord_f1[2] - coord_f0[2]*coord_f1[3]) < 0)
+//       return false;
+
+//   // Now there exists a separating plane supported by the edge shared
+//   // by f0 and f1.
+//   return true;
+// }
+// //-----------------------------------------------------------------------------

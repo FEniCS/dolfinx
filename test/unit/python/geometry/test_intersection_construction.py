@@ -140,7 +140,7 @@ def test_triangulate_intersection_2d_3d():
     for c0 in cells(mesh_0):
         for c1 in cells(mesh_1):
             intersection = c0.intersection(c1)
-            triangulation = ConvexTriangulation.triangulate(intersection)
+            triangulation = ConvexTriangulation.triangulate(intersection, 3, 2)
             if (triangulation.size>0):
                 tmesh = triangulation_to_mesh_2d_3d(triangulation)
                 for t in cells(tmesh):
@@ -150,7 +150,7 @@ def test_triangulate_intersection_2d_3d():
     assert round(volume - exact_volume, 7) == 0, errorstring
 
 @skip_in_parallel
-@pytest.mark.skipif(True, reason="Not implemented in 3D")
+#@pytest.mark.skipif(True, reason="Not implemented in 3D")
 def test_triangulate_intersection_3d():
 
     # Create two meshes of the unit cube
@@ -169,7 +169,7 @@ def test_triangulate_intersection_3d():
     for c0 in cells(mesh_0):
         for c1 in cells(mesh_1):
             intersection = c0.intersection(c1)
-            triangulation = ConvexTriangulation.triangulate(intersection)
+            triangulation = ConvexTriangulation.triangulate(intersection, 3, 3)
             if (triangulation.size>0):
                 tmesh = triangulation_to_mesh_3d(triangulation)
                 for t in cells(tmesh):
@@ -241,6 +241,7 @@ def test_triangle_segment_2D_1():
 
 
 @skip_in_parallel
+@pytest.mark.skipif(True, reason="This test needs to be updated")
 def test_segment_segment_1():
     "Case that fails CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(-0.50000000000000710543,-0.50000000000000710543)
@@ -261,6 +262,7 @@ def test_segment_segment_1():
 
 
 @skip_in_parallel
+@pytest.mark.skipif(True, reason="This test needs to be updated")
 def test_segment_segment_2():
     "Case that fails CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.70710678118654746172,-0.70710678118654746172)
@@ -281,6 +283,7 @@ def test_segment_segment_2():
 
 
 @skip_in_parallel
+@pytest.mark.skipif(True, reason="This test needs to be updated")
 def test_segment_segment_3():
     "Case that faila CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.70710678118654746172,-0.70710678118654746172)
@@ -301,6 +304,7 @@ def test_segment_segment_3():
 
 
 @skip_in_parallel
+@pytest.mark.skipif(True, reason="This test needs to be updated")
 def test_segment_segment_4():
     "Case that faila CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.70710678118654746172,-0.70710678118654746172)

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2016-11-22
+// Last changed: 2017-01-25
 
 #ifndef __COLLISION_PREDICATES_H
 #define __COLLISION_PREDICATES_H
@@ -412,102 +412,112 @@ namespace dolfin
 
     //--- Utility functions ---
 
-    // Utility function for triangle-triangle collision
-    static bool edge_edge_test(int i0,
-                               int i1,
-                               double Ax,
-                               double Ay,
-			       const Point& V0,
-			       const Point& U0,
-			       const Point& U1);
+    // Utility function for computing the cross product (a-c) x (b-c)
+    // accurately
+    static Point cross_product(Point a,
+			       Point b,
+			       Point c);
+    static double cross_product_norm(Point a,
+				     Point b,
+				     Point c);
 
-    // Utility function for triangle-triangle collision
-    static bool edge_against_tri_edges(int i0,
-                                       int i1,
-				       const Point& V0,
-				       const Point& V1,
-				       const Point& U0,
-				       const Point& U1,
-				       const Point& U2);
 
-    // Utility function for triangle-triangle collision
-    static bool point_in_triangle(int i0,
-                                  int i1,
-                                  const Point& V0,
-                                  const Point& U0,
-                                  const Point& U1,
-                                  const Point& U2);
+    // // Utility function for triangle-triangle collision
+    // static bool edge_edge_test(int i0,
+    //                            int i1,
+    //                            double Ax,
+    //                            double Ay,
+    // 			       const Point& V0,
+    // 			       const Point& U0,
+    // 			       const Point& U1);
 
-    // Utility function for triangle-triangle collision
-    static bool coplanar_tri_tri(const Point& N,
-				 const Point& V0,
-				 const Point& V1,
-				 const Point& V2,
-				 const Point& U0,
-				 const Point& U1,
-				 const Point& U2);
+    // // Utility function for triangle-triangle collision
+    // static bool edge_against_tri_edges(int i0,
+    //                                    int i1,
+    // 				       const Point& V0,
+    // 				       const Point& V1,
+    // 				       const Point& U0,
+    // 				       const Point& U1,
+    // 				       const Point& U2);
 
-    // Utility function for triangle-triangle collision
-    static bool compute_intervals(double VV0,
-                                  double VV1,
-                                  double VV2,
-				  double D0,
-                                  double D1,
-                                  double D2,
-				  double D0D1,
-                                  double D0D2,
-				  double& A,
-                                  double& B,
-                                  double& C,
-				  double& X0,
-                                  double& X1);
+    // // Utility function for triangle-triangle collision
+    // static bool point_in_triangle(int i0,
+    //                               int i1,
+    //                               const Point& V0,
+    //                               const Point& U0,
+    //                               const Point& U1,
+    //                               const Point& U2);
 
-    // Utility function for collides_tetrahedron_tetrahedron: checks if
-    // plane pv1 is a separating plane. Stores local coordinates bc
-    // and the mask bit mask_edges.
-    static bool separating_plane_face_A_1(const std::vector<Point>& pv1,
-					  const Point& n,
-					  std::vector<double>& bc,
-					  int& mask_edges);
+    // // Utility function for triangle-triangle collision
+    // static bool coplanar_tri_tri(const Point& N,
+    // 				 const Point& V0,
+    // 				 const Point& V1,
+    // 				 const Point& V2,
+    // 				 const Point& U0,
+    // 				 const Point& U1,
+    // 				 const Point& U2);
 
-    // Utility function for collides_tetrahedron_tetrahedron: checks if
-    // plane v1, v2 is a separating plane. Stores local coordinates bc
-    // and the mask bit mask_edges.
-    static bool separating_plane_face_A_2(const std::vector<Point>& v1,
-					  const std::vector<Point>& v2,
-					  const Point& n,
-					  std::vector<double>& bc,
-					  int& mask_edges);
+    // // Utility function for triangle-triangle collision
+    // static bool compute_intervals(double VV0,
+    //                               double VV1,
+    //                               double VV2,
+    // 				  double D0,
+    //                               double D1,
+    //                               double D2,
+    // 				  double D0D1,
+    //                               double D0D2,
+    // 				  double& A,
+    //                               double& B,
+    //                               double& C,
+    // 				  double& X0,
+    //                               double& X1);
 
-    // Utility function for collides_tetrahedron_tetrahedron: checks if
-    // plane pv2 is a separating plane.
-    static bool separating_plane_face_B_1(const std::vector<Point>& P_V2,
-					  const Point& n)
-    {
-      return ((P_V2[0].dot(n) > 0) &&
-	      (P_V2[1].dot(n) > 0) &&
-	      (P_V2[2].dot(n) > 0) &&
-	      (P_V2[3].dot(n) > 0));
-    }
+    // // Utility function for collides_tetrahedron_tetrahedron: checks if
+    // // plane pv1 is a separating plane. Stores local coordinates bc
+    // // and the mask bit mask_edges.
+    // static bool separating_plane_face_A_1(const std::vector<Point>& pv1,
+    // 					  const Point& n,
+    // 					  std::vector<double>& bc,
+    // 					  int& mask_edges);
 
-    // Utility function for collides_tetrahedron_tetrahedron: checks if
-    // plane v1, v2 is a separating plane.
-    static bool separating_plane_face_B_2(const std::vector<Point>& V1,
-					  const std::vector<Point>& V2,
-					  const Point& n)
-    {
-      return (((V1[0] - V2[1]).dot(n) > 0) &&
-	      ((V1[1] - V2[1]).dot(n) > 0) &&
-	      ((V1[2] - V2[1]).dot(n) > 0) &&
-	      ((V1[3] - V2[1]).dot(n) > 0));
-    }
+    // // Utility function for collides_tetrahedron_tetrahedron: checks if
+    // // plane v1, v2 is a separating plane. Stores local coordinates bc
+    // // and the mask bit mask_edges.
+    // static bool separating_plane_face_A_2(const std::vector<Point>& v1,
+    // 					  const std::vector<Point>& v2,
+    // 					  const Point& n,
+    // 					  std::vector<double>& bc,
+    // 					  int& mask_edges);
 
-    // Utility function for collides_tetrahedron_tetrahedron: checks if
-    // edge is in the plane separating faces f0 and f1.
-    static bool separating_plane_edge_A(const std::vector<std::vector<double> >& coord_1,
-					const std::vector<int>& masks,
-					int f0,
-					int f1);
+    // // Utility function for collides_tetrahedron_tetrahedron: checks if
+    // // plane pv2 is a separating plane.
+    // static bool separating_plane_face_B_1(const std::vector<Point>& P_V2,
+    // 					  const Point& n)
+    // {
+    //   return ((P_V2[0].dot(n) > 0) &&
+    // 	      (P_V2[1].dot(n) > 0) &&
+    // 	      (P_V2[2].dot(n) > 0) &&
+    // 	      (P_V2[3].dot(n) > 0));
+    // }
+
+    // // Utility function for collides_tetrahedron_tetrahedron: checks if
+    // // plane v1, v2 is a separating plane.
+    // static bool separating_plane_face_B_2(const std::vector<Point>& V1,
+    // 					  const std::vector<Point>& V2,
+    // 					  const Point& n)
+    // {
+    //   return (((V1[0] - V2[1]).dot(n) > 0) &&
+    // 	      ((V1[1] - V2[1]).dot(n) > 0) &&
+    // 	      ((V1[2] - V2[1]).dot(n) > 0) &&
+    // 	      ((V1[3] - V2[1]).dot(n) > 0));
+    // }
+
+    // // Utility function for collides_tetrahedron_tetrahedron: checks if
+    // // edge is in the plane separating faces f0 and f1.
+    // static bool separating_plane_edge_A(const std::vector<std::vector<double> >& coord_1,
+    // 					const std::vector<int>& masks,
+    // 					int f0,
+    // 					int f1);
   };
 
 }

@@ -16,10 +16,17 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2016-12-07
+// Last changed: 2017-02-09
 
 #include "ConvexTriangulation.h"
+#include "predicates.h"
 #include <algorithm>
+#include <tuple>
+#include <set>
+
+#ifdef augustdebug
+#include "dolfin_simplex_tools.h"
+#endif
 
 //-----------------------------------------------------------------------------
 namespace
@@ -93,16 +100,26 @@ ConvexTriangulation::triangulate(std::vector<Point> p,
 
   if (tdim == 2 && gdim == 2)
   {
-    return triangulate_graham_scan(p, gdim);
+    return triangulate_graham_scan_2d(p);
     // return triangulate_bowyer_watson(p, gdim);
+  }
+  else if (tdim == 3 && gdim == 3)
+  {
+    return triangulate_graham_scan_3d(p);
   }
 
   if (tdim == 1)
   {
-    const std::vector<Point> unique_p = unique_points(p);
+    const std::vector<Point> unique_p = unique_points(p, DOLFIN_EPS);
 
     if (unique_p.size() > 2)
     {
+#ifdef augustdebug
+      std::cout << __FUNCTION__<<std::endl;
+      for (const Point p: unique_p)
+	std::cout << tools::plot(p);
+      std::cout << std::endl;
+#endif
       dolfin_error("ConvexTriangulation.cpp",
                    "triangulate convex polyhedron",
                    "a convex polyhedron of topological dimension 1 can not have more then 2 points");
@@ -119,20 +136,17 @@ ConvexTriangulation::triangulate(std::vector<Point> p,
 }
 //------------------------------------------------------------------------------
 std::vector<std::vector<Point>>
-ConvexTriangulation::triangulate_graham_scan(std::vector<Point> input_points,
-                                             std::size_t gdim)
+ConvexTriangulation::_triangulate_graham_scan_2d(std::vector<Point> input_points)
 {
   // Make sure the input points are unique
-  std::vector<Point> points = unique_points(input_points);
+  std::vector<Point> points = unique_points(input_points, DOLFIN_EPS);
 
   if (points.size() < 3)
     return std::vector<std::vector<Point>>();
 
-  std::vector<std::vector<Point>> triangulation;
-
   if (points.size() == 3)
   {
-    triangulation.push_back(points);
+    std::vector<std::vector<Point>> triangulation(1, points);
     return triangulation;
   }
 
@@ -145,52 +159,41 @@ ConvexTriangulation::triangulate_graham_scan(std::vector<Point> input_points,
     pointscenter += points[m];
   pointscenter /= points.size();
 
-  std::vector<std::pair<double, std::size_t>> order;
+  // Reference
   Point ref = points[0] - pointscenter;
-  ref /= ref.norm();
-
-  // Compute normal
-  Point normal = (points[2] - points[0]).cross(points[1] - points[0]);
-  const double det = normal.norm();
-  normal /= det;
 
   // Calculate and store angles
+  std::vector<std::pair<double, std::size_t>> order;
   for (std::size_t m = 1; m < points.size(); ++m)
   {
-    const Point v = points[m] - pointscenter;
-    const double frac = ref.dot(v) / v.norm();
-    double alpha;
-    if (frac <= -1)
-      alpha = DOLFIN_PI;
-    else if (frac >= 1)
-      alpha = 0;
-    else
-    {
-      alpha = acos(frac);
-      if (v.dot(normal.cross(ref)) < 0)
-        alpha = 2*DOLFIN_PI-alpha;
-    }
-    order.push_back(std::make_pair(alpha, m));
+    const double A = orient2d(pointscenter.coordinates(),
+			      points[0].coordinates(),
+			      points[m].coordinates());
+    const Point s = points[m] - pointscenter;
+    double alpha = std::atan2(A, s.dot(ref));
+    if (alpha < 0)
+      alpha += 2*DOLFIN_PI;
+    order.emplace_back(alpha, m);
   }
 
   // Sort angles
   std::sort(order.begin(), order.end());
 
   // Tessellate
-  triangulation.reserve(order.size() - 1);
+  std::vector<std::vector<Point>> triangulation(order.size() - 1);
   for (std::size_t m = 0; m < order.size()-1; ++m)
   {
     // FIXME: We could consider only triangles with area > tolerance here.
-    triangulation.push_back({ points[0],
-	  points[order[m].second],
-	  points[order[m + 1].second] });
+    triangulation[m] = {{ points[0],
+			  points[order[m].second],
+			  points[order[m + 1].second] }};
   }
 
   return triangulation;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<Point>>
-ConvexTriangulation::triangulate_bowyer_watson(std::vector<Point> input_points,
+ConvexTriangulation::_triangulate_bowyer_watson(std::vector<Point> input_points,
 					       std::size_t gdim)
 {
   // Delaunay triangulation using Bowyer-Watson
@@ -200,7 +203,7 @@ ConvexTriangulation::triangulate_bowyer_watson(std::vector<Point> input_points,
   dolfin_assert(gdim == 2);
 
   // Make sure the input points are unique
-  std::vector<Point> points = unique_points(input_points);
+  std::vector<Point> points = unique_points(input_points, DOLFIN_EPS);
 
   if (points.size() < 3)
     return std::vector<std::vector<Point>>();
@@ -321,189 +324,330 @@ ConvexTriangulation::triangulate_bowyer_watson(std::vector<Point> input_points,
   return triangulation;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<Point>> triangulate_3d(std::vector<Point> points)
+std::vector<std::vector<Point>>
+ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points)
 {
-
-  // Tolerance for coplanar points.
-  // How is this chosen?
   const double coplanar_tol = 1000*DOLFIN_EPS_LARGE;
 
-  // Points forming the tetrahedral partitioning of the polyhedron
+  // Make sure the input points are unique. We assume this has
+  // negligble effect on volume
+  std::vector<Point> points = unique_points(input_points, DOLFIN_EPS);
+
   std::vector<std::vector<Point>> triangulation;
 
-  if (points.size() == 4)
+  if (points.size() < 4)
   {
-    // FIXME: Perhaps check that the volume is sufficiently large
-    triangulation.push_back(points);
+    return triangulation; // empty
   }
-  else if (points.size() > 4)
+  else if (points.size() == 4)
   {
-
-    // Tetrahedra are created using the facet points and a center point.
+    // Single tetrahedron
+    triangulation.push_back(points);
+    return triangulation;
+  }
+  else
+  {
+    // Construct tetrahedra using facet points and a center point
     Point polyhedroncenter = points[0];
-    for (std::size_t i = 1; i < points.size(); ++i)
-      polyhedroncenter += points[i];
+    for (const Point& p: points)
+      polyhedroncenter += p;
     polyhedroncenter /= points.size();
 
-    // Data structure for storing checked triangle indices (do this
-    // better with some fancy stl structure?)
-    const std::size_t N = points.size(), N2 = points.size()*points.size();
+    // FIXME: Better data structure than set?
+    std::set<std::tuple<std::size_t, std::size_t, std::size_t> > checked;
 
-    // FIXME: this is expensive
-    std::vector<bool> checked(N*N2 + N2 + N, false);
-
-    // Find coplanar points
-    for (std::size_t i = 0; i < N; ++i)
+    // Loop over all triplets
+    for (std::size_t i = 0; i < points.size(); ++i)
     {
-      for (std::size_t j = i+1; j < N; ++j)
+      for (std::size_t j = i+1; j < points.size(); ++j)
       {
-        for (std::size_t k = 0; k < N; ++k)
+        for (std::size_t k = j+1; k < points.size(); ++k)
         {
-          if (!checked[i*N2 + j*N + k] and k != i and k != j)
-          {
-            Point n = (points[j] - points[i]).cross(points[k] - points[i]);
-            const double tridet = n.norm();
+	  if (checked.emplace(std::make_tuple(i, j, k)).second)
+	  {
+	    // Check whether all other points are on one side of this
+	    // (i,j,k) facet, i.e. we're on the convex
+	    // hull. Initialize as true for the case of only three
+	    // coplanar points.
+	    bool on_convex_hull = true;
 
-            // FIXME: Here we could check that the triangle is sufficiently large
-            // if (tridet < tri_det_tol)
-            //   break;
+	    // Use orient3d to determine if the plane (i,j,k) is on the
+	    // convex hull.
+	    std::vector<std::size_t> coplanar = { i, j, k };
+	    double previous_orientation;
+	    bool first = true;
 
-            // Normalize normal
-            n /= tridet;
+	    for (std::size_t m = 0; m < points.size(); ++m)
+	    {
+	      if (m != i and m != j and m != k)
+	      {
+		const double orientation = orient3d(points[i].coordinates(),
+						    points[j].coordinates(),
+						    points[k].coordinates(),
+						    points[m].coordinates());
+		// Save point index if we find coplanar points
+		if (orientation == 0)
+		  coplanar.push_back(m);
 
-            // Compute triangle center
-            const Point tricenter = (points[i] + points[j] + points[k]) / 3.;
+		if (first)
+		{
+		  previous_orientation = orientation;
+		  first = false;
+		}
+		else
+		{
+		  // Sign change: triangle is not on convex hull
+		  if (previous_orientation * orientation < 0)
+		  {
+		    on_convex_hull = false;
+		    break;
+		  }
+		}
+	      }
+	    }
 
-            // Check whether all other points are on one side of thus
-            // facet. Initialize as true for the case of only three
-            // coplanar points.
-            bool on_convex_hull = true;
+	    if (on_convex_hull)
+	    {
+	      if (coplanar.size() == 3)
+	      {
+		// Form one tetrahedron
+		std::vector<Point> cand = { points[i],
+					    points[j],
+					    points[k],
+					    polyhedroncenter };
+		// FIXME: Here we could include if determinant is sufficiently large
+		triangulation.push_back(cand);
+	      }
+	      else // At least four coplanar points
+	      {
+		// Tessellate as in the triangle-triangle intersection
+		// case: First sort points using a Graham scan, then
+		// connect to form triangles. Finally form tetrahedra
+		// using the center of the polyhedron.
 
-            // Compute dot products to check which side of the plane
-            // (i,j,k) we're on. Note: it seems to be better to compute
-            // n.dot(points[m]-n.dot(tricenter) rather than
-            // n.dot(points[m]-tricenter).
-            std::vector<double> ip(N, -(n.dot(tricenter)));
-            for (std::size_t m = 0; m < N; ++m)
-              ip[m] += n.dot(points[m]);
+		// Use the center of the coplanar points and point no 0
+		// as reference for the angle calculation
+		Point pointscenter = points[coplanar[0]];
+		for (std::size_t m = 1; m < coplanar.size(); ++m)
+		  pointscenter += points[coplanar[m]];
+		pointscenter /= coplanar.size();
 
-            // Check inner products range by finding max & min (this
-            // seemed possibly more numerically stable than checking all
-            // vs all and then break).
-            double minip = 9e99, maxip = -9e99;
-            for (size_t m = 0; m < N; ++m)
-              if (m != i and m != j and m != k)
-              {
-                minip = (minip > ip[m]) ? ip[m] : minip;
-                maxip = (maxip < ip[m]) ? ip[m] : maxip;
-              }
+		// Reference
+		Point ref = points[coplanar[0]] - pointscenter;
+		ref /= ref.norm();
 
-            // Different sign => triangle is not on the convex hull
-            if (minip*maxip < -DOLFIN_EPS)
-              on_convex_hull = false;
+		// Normal
+		Point normal = cross_product(points[i], points[j], points[k]);
+		normal /= normal.norm();
 
-            if (on_convex_hull)
-            {
-              // Find all coplanar points on this facet given the
-              // tolerance coplanar_tol
-              std::vector<std::size_t> coplanar;
-              for (std::size_t m = 0; m < N; ++m)
-                if (std::abs(ip[m]) < coplanar_tol)
-                  coplanar.push_back(m);
+		// Calculate and store angles
+		std::vector<std::pair<double, std::size_t>> order;
+		for (std::size_t m = 1; m < coplanar.size(); ++m)
+		{
+		  const Point v = points[coplanar[m]] - pointscenter;
+		  const double frac = ref.dot(v) / v.norm();
+		  double alpha;
 
-              // Mark this plane (how to do this better?)
-              for (std::size_t m = 0; m < coplanar.size(); ++m)
-                for (std::size_t n = m+1; n < coplanar.size(); ++n)
-                  for (std::size_t o = n+1; o < coplanar.size(); ++o)
-                    checked[coplanar[m]*N2 + coplanar[n]*N + coplanar[o]]
-                      = checked[coplanar[m]*N2 + coplanar[o]*N + coplanar[n]]
-                      = checked[coplanar[n]*N2 + coplanar[m]*N + coplanar[o]]
-                      = checked[coplanar[n]*N2 + coplanar[o]*N + coplanar[m]]
-                      = checked[coplanar[o]*N2 + coplanar[n]*N + coplanar[m]]
-                      = checked[coplanar[o]*N2 + coplanar[m]*N + coplanar[n]]
-                      = true;
+		  if (frac <= -1)
+		    alpha = DOLFIN_PI;
+		  else if (frac >= 1)
+		    alpha = 0;
+		  else
+		  {
+		    alpha = std::acos(frac);
+		    if (v.dot(normal.cross(ref)) < 0)
+		      alpha = 2*DOLFIN_PI - alpha;
+		  }
+		  order.push_back(std::make_pair(alpha, m));
+		}
 
-              // Do the actual tessellation using the coplanar points and
-              // a center point
-              if (coplanar.size() == 3)
-              {
-                // Form one tetrahedron
-                std::vector<Point> cand(4);
-                cand[0] = points[coplanar[0]];
-                cand[1] = points[coplanar[1]];
-                cand[2] = points[coplanar[2]];
-                cand[3] = polyhedroncenter;
+		// Sort angles
+		std::sort(order.begin(), order.end());
 
-                // FIXME: Here we could include if determinant is sufficiently large
-                triangulation.push_back(cand);
-              }
-              else if (coplanar.size() > 3)
-              {
-                // Tessellate as in the triangle-triangle intersection
-                // case: First sort points using a Graham scan, then
-                // connect to form triangles. Finally form tetrahedra
-                // using the center of the polyhedron.
+		// Tessellate
+		for (std::size_t m = 0; m < coplanar.size() - 2; ++m)
+		{
+		  std::vector<Point> cand = { points[coplanar[0]],
+					      points[coplanar[order[m].second]],
+					      points[coplanar[order[m + 1].second]],
+					      polyhedroncenter };
+		  // FIXME: Possibly only include if tet is large enough
+		  triangulation.push_back(cand);
+		}
+	      }
+	    }
+	  }
 
-                // Use the center of the coplanar points and point no 0
-                // as reference for the angle calculation
-                Point pointscenter = points[coplanar[0]];
-                for (std::size_t m = 1; m < coplanar.size(); ++m)
-                  pointscenter += points[coplanar[m]];
-                pointscenter /= coplanar.size();
-
-                std::vector<std::pair<double, std::size_t>> order;
-                Point ref = points[coplanar[0]] - pointscenter;
-                ref /= ref.norm();
-
-                // Calculate and store angles
-                for (std::size_t m = 1; m < coplanar.size(); ++m)
-                {
-                  const Point v = points[coplanar[m]] - pointscenter;
-                  const double frac = ref.dot(v) / v.norm();
-                  double alpha;
-                  if (frac <= -1)
-                    alpha=DOLFIN_PI;
-                  else if (frac>=1)
-                    alpha=0;
-                  else
-                  {
-                    alpha = acos(frac);
-                    if (v.dot(n.cross(ref)) < 0)
-                      alpha = 2*DOLFIN_PI-alpha;
-                  }
-                  order.push_back(std::make_pair(alpha, m));
-                }
-
-                // Sort angles
-                std::sort(order.begin(), order.end());
-
-                // Tessellate
-                for (std::size_t m = 0; m < coplanar.size() - 2; ++m)
-                {
-                  // Candidate tetrahedron:
-                  std::vector<Point> cand(4);
-                  cand[0] = points[coplanar[0]];
-                  cand[1] = points[coplanar[order[m].second]];
-                  cand[2] = points[coplanar[order[m + 1].second]];
-                  cand[3] = polyhedroncenter;
-
-                  // FIXME: Possibly only include if tet is large enough
-                  triangulation.push_back(cand);
-                }
-              }
-            }
-          }
-        }
+	}
       }
     }
+
+    return triangulation;
   }
-  return triangulation;
+
+
+  //   // Data structure for storing checked triangle indices (do this
+  //   // better with some fancy stl structure?)
+  //   const std::size_t N = points.size(), N2 = points.size()*points.size();
+
+  //   // FIXME: this is expensive
+  //   std::vector<bool> checked(N*N2 + N2 + N, false);
+
+  //   // Find coplanar points
+  //   for (std::size_t i = 0; i < N; ++i)
+  //   {
+  //     for (std::size_t j = i+1; j < N; ++j)
+  //     {
+  //       for (std::size_t k = 0; k < N; ++k)
+  //       {
+  //         if (!checked[i*N2 + j*N + k] and k != i and k != j)
+  //         {
+  //           Point n = (points[j] - points[i]).cross(points[k] - points[i]);
+  //           const double tridet = n.norm();
+
+  //           // FIXME: Here we could check that the triangle is sufficiently large
+  //           // if (tridet < tri_det_tol)
+  //           //   break;
+
+  //           // Normalize normal
+  //           n /= tridet;
+
+  //           // Compute triangle center
+  //           const Point tricenter = (points[i] + points[j] + points[k]) / 3.;
+
+  //           // Check whether all other points are on one side of thus
+  //           // facet. Initialize as true for the case of only three
+  //           // coplanar points.
+  //           bool on_convex_hull = true;
+
+  //           // Compute dot products to check which side of the plane
+  //           // (i,j,k) we're on. Note: it seems to be better to compute
+  //           // n.dot(points[m]-n.dot(tricenter) rather than
+  //           // n.dot(points[m]-tricenter).
+  //           std::vector<double> ip(N, -(n.dot(tricenter)));
+  //           for (std::size_t m = 0; m < N; ++m)
+  //             ip[m] += n.dot(points[m]);
+
+  //           // Check inner products range by finding max & min (this
+  //           // seemed possibly more numerically stable than checking all
+  //           // vs all and then break).
+  //           double minip = std::numeric_limits<double>::max();
+  // 	    double maxip = -std::numeric_limits<double>::max();
+  //           for (size_t m = 0; m < N; ++m)
+  //             if (m != i and m != j and m != k)
+  //             {
+  //               minip = (minip > ip[m]) ? ip[m] : minip;
+  //               maxip = (maxip < ip[m]) ? ip[m] : maxip;
+  //             }
+
+  //           // Different sign => triangle is not on the convex hull
+  //           if (minip*maxip < -DOLFIN_EPS)
+  //             on_convex_hull = false;
+
+  //           if (on_convex_hull)
+  //           {
+  //             // Find all coplanar points on this facet given the
+  //             // tolerance coplanar_tol
+  //             std::vector<std::size_t> coplanar;
+  //             for (std::size_t m = 0; m < N; ++m)
+  //               if (std::abs(ip[m]) < coplanar_tol)
+  //                 coplanar.push_back(m);
+
+  //             // Mark this plane (how to do this better?)
+  //             for (std::size_t m = 0; m < coplanar.size(); ++m)
+  //               for (std::size_t n = m+1; n < coplanar.size(); ++n)
+  //                 for (std::size_t o = n+1; o < coplanar.size(); ++o)
+  //                   checked[coplanar[m]*N2 + coplanar[n]*N + coplanar[o]]
+  //                     = checked[coplanar[m]*N2 + coplanar[o]*N + coplanar[n]]
+  //                     = checked[coplanar[n]*N2 + coplanar[m]*N + coplanar[o]]
+  //                     = checked[coplanar[n]*N2 + coplanar[o]*N + coplanar[m]]
+  //                     = checked[coplanar[o]*N2 + coplanar[n]*N + coplanar[m]]
+  //                     = checked[coplanar[o]*N2 + coplanar[m]*N + coplanar[n]]
+  //                     = true;
+
+  //             // Do the actual tessellation using the coplanar points and
+  //             // a center point
+  //             if (coplanar.size() == 3)
+  //             {
+  //               // Form one tetrahedron
+  //               std::vector<Point> cand(4);
+  //               cand[0] = points[coplanar[0]];
+  //               cand[1] = points[coplanar[1]];
+  //               cand[2] = points[coplanar[2]];
+  //               cand[3] = polyhedroncenter;
+
+  //               // FIXME: Here we could include if determinant is sufficiently large
+  //               triangulation.push_back(cand);
+  //             }
+  //             else if (coplanar.size() > 3)
+  //             {
+  //               // Tessellate as in the triangle-triangle intersection
+  //               // case: First sort points using a Graham scan, then
+  //               // connect to form triangles. Finally form tetrahedra
+  //               // using the center of the polyhedron.
+
+  //               // Use the center of the coplanar points and point no 0
+  //               // as reference for the angle calculation
+  //               Point pointscenter = points[coplanar[0]];
+  //               for (std::size_t m = 1; m < coplanar.size(); ++m)
+  //                 pointscenter += points[coplanar[m]];
+  //               pointscenter /= coplanar.size();
+
+  //               std::vector<std::pair<double, std::size_t>> order;
+  //               Point ref = points[coplanar[0]] - pointscenter;
+  //               ref /= ref.norm();
+
+  //               // Calculate and store angles
+  //               for (std::size_t m = 1; m < coplanar.size(); ++m)
+  //               {
+  //                 const Point v = points[coplanar[m]] - pointscenter;
+  //                 const double frac = ref.dot(v) / v.norm();
+  //                 double alpha;
+  //                 if (frac <= -1)
+  //                   alpha=DOLFIN_PI;
+  //                 else if (frac>=1)
+  //                   alpha=0;
+  //                 else
+  //                 {
+  //                   alpha = acos(frac);
+  //                   if (v.dot(n.cross(ref)) < 0)
+  //                     alpha = 2*DOLFIN_PI-alpha;
+  //                 }
+  //                 order.push_back(std::make_pair(alpha, m));
+  //               }
+
+  //               // Sort angles
+  //               std::sort(order.begin(), order.end());
+
+  //               // Tessellate
+  //               for (std::size_t m = 0; m < coplanar.size() - 2; ++m)
+  //               {
+  //                 // Candidate tetrahedron:
+  //                 std::vector<Point> cand(4);
+  //                 cand[0] = points[coplanar[0]];
+  //                 cand[1] = points[coplanar[order[m].second]];
+  //                 cand[2] = points[coplanar[order[m + 1].second]];
+  //                 cand[3] = polyhedroncenter;
+
+  //                 // FIXME: Possibly only include if tet is large enough
+  //                 triangulation.push_back(cand);
+  //               }
+  //             }
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+  //   return triangulation;
+  // }
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-ConvexTriangulation::unique_points(const std::vector<Point>& input_points)
+ConvexTriangulation::unique_points(const std::vector<Point>& input_points,
+				   double tol)
 {
-  // Create a unique list of points in the sense that |p-q|^2 > DOLFIN_EPS
+  // Create a unique list of points in the sense that |p-q|^2 > tol
 
   std::vector<Point> points;
 
@@ -512,7 +656,7 @@ ConvexTriangulation::unique_points(const std::vector<Point>& input_points)
     bool unique = true;
     for (std::size_t j = i+1; j < input_points.size(); ++j)
     {
-      if ((input_points[i] - input_points[j]).squared_norm() < DOLFIN_EPS)
+      if ((input_points[i] - input_points[j]).squared_norm() <= tol)
       {
 	unique = false;
 	break;
@@ -524,5 +668,25 @@ ConvexTriangulation::unique_points(const std::vector<Point>& input_points)
 
   return points;
 }
-
+//-----------------------------------------------------------------------------
+Point ConvexTriangulation::cross_product(Point a,
+					 Point b,
+					 Point c)
+{
+  // Accurate cross product p = (a-c) x (b-c). See Shewchuk Lecture
+  // Notes on Geometric Robustness.
+  double ayz[2] = {a.y(), a.z()};
+  double byz[2] = {b.y(), b.z()};
+  double cyz[2] = {c.y(), c.z()};
+  double azx[2] = {a.z(), a.x()};
+  double bzx[2] = {b.z(), b.x()};
+  double czx[2] = {c.z(), c.x()};
+  double axy[2] = {a.x(), a.y()};
+  double bxy[2] = {b.x(), b.y()};
+  double cxy[2] = {c.x(), c.y()};
+  Point p(orient2d(ayz, byz, cyz),
+   	  orient2d(azx, bzx, czx),
+	  orient2d(axy, bxy, cxy));
+  return p;
+}
 //-----------------------------------------------------------------------------
