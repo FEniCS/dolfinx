@@ -58,7 +58,7 @@ def build_multimesh(num_parts, N_x):
         if y0 - y1 < DOLFIN_EPS:
             x1 += DOLFIN_EPS
 
-        print "Add new rectanble mesh ({:.3f}, {:.3f}) x ({:.3f}, {:.3f}).".format(x0, y0, x1, y1)
+        print "Add new rectangle mesh ({:.3f}, {:.3f}) x ({:.3f}, {:.3f}).".format(x0, y0, x1, y1)
         mesh = RectangleMesh(Point(x0, x1), Point(y0, y1), 
                              int(max((x1-x0)*N_x, 1)), int(max((y1-y0)*N_x, 1)))
 
