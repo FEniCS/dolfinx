@@ -94,20 +94,17 @@ bool GeometryPredicates::_is_degenerate_3d(std::vector<Point> simplex)
 {
   dolfin_debug("check");
 
-  bool is_degenerate = false;
-
   switch (simplex.size())
   {
   case 4:
-    is_degenerate = orient3d(simplex[0], simplex[1], simplex[2], simplex[3]) == 0;
-    break;
+    return orient3d(simplex[0], simplex[1], simplex[2], simplex[3]) == 0;
   default:
     dolfin_error("GeometryPredicates.cpp",
-		 "_is_degenerate_3d",
-		 "Only implemented for simplices of tdim 3.");
+		 "check degeneracy of simplex",
+		 "Only implemented for simplices of tdim 3");
   }
 
-  return is_degenerate;
+  return true;
 }
 //-----------------------------------------------------------------------------
 bool GeometryPredicates::is_finite(const std::vector<Point>& simplex)
