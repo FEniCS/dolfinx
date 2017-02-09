@@ -21,9 +21,9 @@
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
+#include "GeometryPredicates.h"
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"
-
 
 // FIXME august
 //#include <ttmath/ttmath.h>
@@ -938,7 +938,7 @@ IntersectionConstruction::_intersection_triangle_triangle_2d(Point p0,
     std::cout << std::endl;
 #endif
 
-    // Find alle vertex-"triangle interior" intersections
+    // Find all vertex-"triangle interior" intersections
     const int s0 = std::signbit(orient2d(tri_0[0].coordinates(), tri_0[1].coordinates(), tri_0[2].coordinates())) == true ? -1 : 1;
     const int s1 = std::signbit(orient2d(tri_1[0].coordinates(), tri_1[1].coordinates(), tri_1[2].coordinates())) == true ? -1 : 1;
 
@@ -1129,6 +1129,15 @@ IntersectionConstruction::_intersection_tetrahedron_tetrahedron(const Point& p0,
   // center point of the polyhedron. This center point is thus an
   // additional point not found on the polyhedron facets.
 
+  std::cout << "p0 = " << p0 << std::endl;
+  std::cout << "p1 = " << p1 << std::endl;
+  std::cout << "p2 = " << p2 << std::endl;
+  std::cout << "p3 = " << p3 << std::endl;
+  std::cout << "q0 = " << q0 << std::endl;
+  std::cout << "q1 = " << q1 << std::endl;
+  std::cout << "q2 = " << q2 << std::endl;
+  std::cout << "q3 = " << q3 << std::endl;
+
   // Pack points as vectors
   const std::array<Point, 4> tet_0 = {p0, p1, p2, p3};
   const std::array<Point, 4> tet_1 = {q0, q1, q2, q3};
@@ -1165,6 +1174,7 @@ IntersectionConstruction::_intersection_tetrahedron_tetrahedron(const Point& p0,
 							     {0, 2, 3},
 							     {0, 1, 3},
 							     {0, 1, 2} }};
+
   // Loop over edges e and faces f
   for (std::size_t e = 0; e < 6; ++e)
   {
@@ -1223,6 +1233,7 @@ IntersectionConstruction::_intersection_tetrahedron_tetrahedron(const Point& p0,
     }
   }
 
+  dolfin_assert(GeometryPredicates::is_finite(points));
   std::vector<Point> unique = unique_points(points);
   return unique;
 }
