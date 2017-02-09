@@ -113,6 +113,8 @@
 /*                                                                           */
 /*****************************************************************************/
 
+#include "predicates.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -640,7 +642,7 @@ float uniformfloatrand()
 /*                                                                           */
 /*****************************************************************************/
 
-void exactinit()
+void dolfin::exactinit()
 {
   REAL half;
   REAL check, lastcheck;
@@ -1616,7 +1618,7 @@ REAL orient2dadapt(REAL *pa, REAL *pb, REAL *pc, REAL detsum)
   return(D[Dlength - 1]);
 }
 
-REAL orient2d(REAL *pa, REAL *pb, REAL *pc)
+REAL dolfin::orient2d(REAL *pa, REAL *pb, REAL *pc)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -2288,7 +2290,7 @@ REAL orient3dadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL permanent)
   return finnow[finlength - 1];
 }
 
-REAL orient3d(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
+REAL dolfin::orient3d(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
