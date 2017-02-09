@@ -18,11 +18,11 @@
 # First added:  2017-02-09
 # Last changed: 2017-02-09
 #
-# This demo program creates a layer of meshes over a unit square mesh and checks 
+# This demo program creates a layer of meshes over a unit square mesh and checks
 # that the volume is 1.0.
 
 import argparse
-import numpy 
+import numpy
 from dolfin import *
 
 parser = argparse.ArgumentParser()
@@ -46,7 +46,7 @@ def build_multimesh(num_parts, N_x):
     mesh = UnitSquareMesh(N_x, N_x)
     multimesh.add(mesh)
 
-    # Add N-1 random sized and rotated rectangular meshes 
+    # Add N-1 random sized and rotated rectangular meshes
     for _ in range(num_parts-1):
 
         x0, x1 = numpy.sort(numpy.random.rand(2))
@@ -57,7 +57,7 @@ def build_multimesh(num_parts, N_x):
             y1 += DOLFIN_EPS
 
         print "Add new rectangle mesh ({:.3f}, {:.3f}) x ({:.3f}, {:.3f}).".format(x0, y0, x1, y1)
-        mesh = RectangleMesh(Point(x0, y0), Point(x1, y1), 
+        mesh = RectangleMesh(Point(x0, y0), Point(x1, y1),
                              int(max(abs(x1-x0)*N_x, 1)), int(max(abs(y1-y0)*N_x, 1)))
 
         #mesh.rotate(numpy.random.rand()*180)
@@ -84,7 +84,11 @@ if __name__ == "__main__":
     f = MultiMeshFunction(V)
     f.vector()[:] = 1.0
     vol = assemble_multimesh(f*dX)
-    
-    print "Computed volume: {}.".format(vol)
-    print "Error: {}.".format(abs(1-vol))
+
+    vol_dolfin = multimesh.compute_volume()
+
+    print "Computed volume (quadrature): {}.".format(vol_dolfin)
+    print "Computed volume (assemble):   {}.".format(vol)
+    print "Error (quadrature): {}.".format(abs(1-vol_dolfin))
+    print "Error (assemble):   {}.".format(abs(1-vol))
     assert abs(vol-1) < 10e-10
