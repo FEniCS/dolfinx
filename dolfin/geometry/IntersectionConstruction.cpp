@@ -711,63 +711,35 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
 
   std::vector<Point> points;
 
+  // Intersect triangle with each segment end point
   if (CollisionPredicates::collides_triangle_point_3d(p0, p1, p2, q0))
     points.push_back(q0);
-
-  // std::cout <<__FUNCTION__<<' '<<__LINE__<<'\n';
-  // for (const Point p: points)
-  //   std::cout << tools::plot3(p);
-  // std::cout << std::endl;
-
   if (CollisionPredicates::collides_triangle_point_3d(p0, p1, p2, q1))
     points.push_back(q1);
 
-  // std::cout <<__FUNCTION__<<' '<<__LINE__<<'\n';
-  // for (const Point p: points)
-  //   std::cout << tools::plot3(p);
-  // std::cout << std::endl;
+  // If both end points collide we are done
+  if (points.size() == 2)
+    return points;
 
-  // We may finish
-  if (points.size() == 2) return points;
-
+  // Intersect each triangle edge with segment
   if (CollisionPredicates::collides_segment_segment_3d(p0, p1, q0, q1))
   {
     const std::vector<Point> intersection = intersection_segment_segment_3d(p0, p1, q0, q1);
-    // FIXME: Should we require consistency between collision and intersection
-    //dolfin_assert(intersection.size());
     points.insert(points.end(), intersection.begin(), intersection.end());
     dolfin_assert(GeometryPredicates::is_finite(points));
   }
-
-  // std::cout <<__FUNCTION__<<' '<<__LINE__<<'\n';
-  // for (const Point p: points)
-  //   std::cout << tools::plot3(p);
-  // std::cout << std::endl;
-
   if (CollisionPredicates::collides_segment_segment_3d(p0, p2, q0, q1))
   {
     const std::vector<Point> intersection = intersection_segment_segment_3d(p0, p2, q0, q1);
-    //dolfin_assert(intersection.size());
     points.insert(points.end(), intersection.begin(), intersection.end());
     dolfin_assert(GeometryPredicates::is_finite(points));
   }
-  // std::cout <<__FUNCTION__<<' '<<__LINE__<<'\n';
-  // for (const Point p: points)
-  //   std::cout << tools::plot3(p);
-  // std::cout << std::endl;
-
   if (CollisionPredicates::collides_segment_segment_3d(p1, p2, q0, q1))
   {
     const std::vector<Point> intersection = intersection_segment_segment_3d(p1, p2, q0, q1);
-    //dolfin_assert(intersection.size());
     points.insert(points.end(), intersection.begin(), intersection.end());
     dolfin_assert(GeometryPredicates::is_finite(points));
   }
-  // std::cout <<__FUNCTION__<<' '<<__LINE__<<'\n';
-  // for (const Point p: points)
-  //   std::cout << tools::plot3(p);
-  // std::cout << std::endl;
-
 
   // Think ray-plane intersection if segment is not in plane (which it
   // shouldn't be)
@@ -786,60 +758,14 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
   const Point x = q0 + (d - n.dot(q0)) / n.dot(q1-q0) * (q1 - q0);
   //std::cout << CollisionPredicates::collides_triangle_point_3d(p0,p1,p2, x)<<'\n';
 
+  std::cout << "q0 = " << q0 << std::endl;
+  std::cout << "q1 = " << q1 << std::endl;
+  std::cout << "n =  " << n << std::endl;
+  std::cout << "x = " << x << std::endl;
+  std::cout << "den = " << n.dot(q1 - q0) << std::endl;
+
   points.push_back(x);
   dolfin_assert(GeometryPredicates::is_finite(points));
-
-  // // Compute intersection of segment and plane and check if point
-  // // found is inside triangle. Let the plane be defined by p0, p1,
-  // // p2. The intersection point is then given by p = a + z(b-a) where
-  // // z = orient3d(a,d,e,c) / det(a-b, d-c, e-c)
-
-  // // Let a = q0, d = p0, e = p1, c = p2
-  // const double num = orient3d(q0.coordinates(), p0.coordinates(), p1.coordinates(), p2.coordinates());
-  // const double den = det(q0 - q1, p0 - p2, p1 - p2);
-
-  // if (den == 0 and num != 0)
-  // {
-  //   // line is parallel to plane
-  //   std::cout << num << ' '<< den << "    "<<CollisionPredicates::collides_triangle_segment_3d(p0,p1,p2, q0,q1)<<'\n';
-  //   PPause;
-  // }
-  // else if (den == 0 and num == 0)
-  // {
-  //   // line lies in the the plane: this should be taken care of above
-  //   // since num == 0 means q0 in p0, p1, p2
-
-  //   PPause;
-  // }
-  // else
-  // {
-  //   Point x0;
-
-  //   // If fraction is close to 1, swap q0 and q1
-  //   if (std::abs(num / den - 1) < DOLFIN_EPS_LARGE)
-  //   {
-  //     const double num_swapped = orient3d(q1.coordinates(), p0.coordinates(), p1.coordinates(), p2.coordinates());
-  //     // Denominator flips sign
-  //     x0 = q1 - num_swapped / den * (q0 - q1);
-  //   }
-  //   else
-  //   {
-  //     x0 = q0 + num / den * (q1 - q0);
-  //   }
-  //   points.push_back(x0);
-  // }
-
-
-  // Remove strict duplictes. Use exact equality here. Approximate
-  // equality is for ConvexTriangulation.
-  // FIXME: This can be avoided if we use interior segment tests.
-
-  // {
-  //   std::cout << __FUNCTION__<<' '<<tools::drawtriangle({p0,p1,p2})<<tools::drawtriangle({q0,q1})<<"   ";
-  //   for (const Point p: unique)
-  //     std::cout << tools::plot3(p);
-  //   std::cout << std::endl;
-  // }
 
   dolfin_assert(GeometryPredicates::is_finite(points));
   const std::vector<Point> unique = unique_points(points);
