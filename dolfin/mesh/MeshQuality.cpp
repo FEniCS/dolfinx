@@ -152,12 +152,12 @@ void MeshQuality::dihedral_angles(const Cell& cell, std::vector<double>& dh_angl
   // Check cell type
   // dolfin_assert(cell.type()>=4);
 
-  static std::size_t edges[6][2] = {{2, 3},
-                                    {1, 3},
-                                    {1, 2},
-                                    {0, 3},
-                                    {0, 2},
-                                    {0, 1}};
+  static const std::size_t edges[6][2] = {{2, 3},
+                                          {1, 3},
+                                          {1, 2},
+                                          {0, 3},
+                                          {0, 2},
+                                          {0, 1}};
   const Mesh& mesh = cell.mesh();
 
   dh_angle.resize(6);

@@ -315,7 +315,7 @@ std::size_t PETScVector::size() const
   dolfin_assert(_x);
 
   // Return zero if vector type has not been set (Vec has not been
-  // intialised)
+  // initialized)
   VecType vec_type = nullptr;
   VecGetType(_x, &vec_type);
   if (vec_type == nullptr)
@@ -835,7 +835,7 @@ void PETScVector::set_from_options()
   {
     dolfin_error("PETScVector.cpp",
                  "call VecSetFromOptions on PETSc Vec object",
-                 "Vec object has not been intialised");
+                 "Vec object has not been initialized");
   }
 
   VecSetFromOptions(_x);
@@ -866,7 +866,7 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
   {
     dolfin_error("PETScVector.h",
                  "initialize vector",
-                 "Underlying PETSc Vec has not been intialised");
+                 "Underlying PETSc Vec has not been initialized");
   }
 
   PetscErrorCode ierr;

@@ -497,6 +497,11 @@ void SystemAssembler::facet_wise_assembly(
   dolfin_assert(ufc[0]->dolfin_form.mesh());
   const Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
+  // Sanity check of ghost mode (proper check in AssemblerBase::check)
+  dolfin_assert(mesh.ghost_mode() == "shared_vertex"
+                || mesh.ghost_mode() == "shared_facet"
+                || MPI::size(mesh.mpi_comm()) == 1);
+
   // Compute facets and facet - cell connectivity if not already
   // computed
   const std::size_t D = mesh.topology().dim();

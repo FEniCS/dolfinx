@@ -121,15 +121,16 @@ namespace dolfin
     ///         The number of coefficients.
     std::size_t num_coefficients() const;
 
-    /// Return original coefficient position for each coefficient (0 <= i < n)
+    /// Return original coefficient position for each coefficient (0
+    /// <= i < n)
     ///
     /// *Returns*
     ///     std::size_t
     ///         The position of coefficient i in original ufl form coefficients.
     std::size_t original_coefficient_position(std::size_t i) const;
 
-    /// Return coloring type for colored (multi-threaded) assembly of form
-    /// over a mesh entity of a given dimension
+    /// Return coloring type for colored assembly of form over a mesh
+    /// entity of a given dimension
     ///
     /// *Arguments*
     ///     entity_dim (std::size_t)
@@ -140,7 +141,8 @@ namespace dolfin
     ///         Coloring type.
     std::vector<std::size_t> coloring(std::size_t entity_dim) const;
 
-    /// Set mesh, necessary for functionals when there are no function spaces
+    /// Set mesh, necessary for functionals when there are no function
+    /// spaces
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
@@ -284,7 +286,8 @@ namespace dolfin
     /// *Returns*
     ///     std::shared_ptr<_MeshFunction_ <std::size_t>>
     ///         The exterior facet domains.
-    std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains() const;
+    std::shared_ptr<const MeshFunction<std::size_t>>
+      exterior_facet_domains() const;
 
     /// Return interior facet domains (zero pointer if no domains have
     /// been specified)
@@ -292,7 +295,8 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <std::size_t>
     ///         The interior facet domains.
-    std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains() const;
+    std::shared_ptr<const MeshFunction<std::size_t>>
+      interior_facet_domains() const;
 
     /// Return vertex domains (zero pointer if no domains have been
     /// specified)

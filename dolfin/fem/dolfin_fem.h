@@ -32,7 +32,4 @@
 #include <dolfin/fem/MultiMeshForm.h>
 #include <dolfin/fem/PETScDMCollection.h>
 
-// Move up when ready or merge with Assembler.h
-#include <dolfin/fem/OpenMpAssembler.h>
-
 #endif
