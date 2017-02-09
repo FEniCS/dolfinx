@@ -13,5 +13,6 @@
 #include <dolfin/geometry/ConvexTriangulation.h>
 #include <dolfin/geometry/intersect.h>
 #include <dolfin/geometry/GeometryPredicates.h>
+#include <dolfin/geometry/predicates.h>
 
 #endif
