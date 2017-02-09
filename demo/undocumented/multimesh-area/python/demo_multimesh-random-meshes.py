@@ -30,7 +30,7 @@ from dolfin import *
 parser = argparse.ArgumentParser()
 parser.add_argument('num_parts', type=int, help='number of meshes', default=10)
 parser.add_argument('--N_x', type=int, help='number of mesh divisions (mesh size)', default=2, required=False)
-parser.add_argument('--random_seed', type=float, help='seed for random number generator for creating multimesh', default=None, required=False)
+parser.add_argument('--random_seed', type=float, help='seed for random number generator for creating multimesh', default=1.0, required=False)
 args = parser.parse_args()
 
 print("Number of meshes: {}.".format(args.num_parts))
@@ -40,9 +40,8 @@ print("Seed for random number generator for creating multimesh: {}.".format(args
 
 def build_multimesh(num_parts, N_x):
 
-    # Build multimesh
+    # Create multimesh
     multimesh = MultiMesh()
-    h = 1/N_x
 
     # Add background mesh
     mesh = UnitSquareMesh(N_x, N_x)
