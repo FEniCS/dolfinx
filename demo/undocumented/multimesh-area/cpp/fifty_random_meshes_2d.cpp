@@ -148,9 +148,12 @@ int main(int argc, char** argv)
 {
   // set_log_level(TRACE);
 
-  for (std::size_t Nx = 2; Nx < 50; Nx++)
+  // FIXME: Read mesh size and num parts from command-line arguments
+
+
+  for (std::size_t Nx = 2; Nx < 8; Nx++)
   {
-    for (std::size_t parts = 2; parts < 50; parts++)
+    for (std::size_t parts = 2; parts < 10; parts++)
     {
       std::cout << "\n\nNx = " << Nx << ", numparts = " << parts << std::endl;
 
@@ -201,7 +204,7 @@ int main(int argc, char** argv)
 
       std::cout << "Total volume" << std::endl;
       std::cout << "------------" << std::endl;
-      std::cout << "Multimesh: " << multimesh_volume << ", error: " << std::abs(exact_volume-multimesh_volume) << std::endl;
+      std::cout << "Error: " << std::abs(exact_volume-multimesh_volume) << std::endl;
 #ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
       std::cout << "CGAL:      " << cgal_volume << ", error: " << std::abs(exact_volume-CGAL::to_double(cgal_volume)) << std::endl;
 #endif
