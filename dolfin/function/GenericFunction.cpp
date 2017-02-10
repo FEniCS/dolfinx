@@ -63,7 +63,8 @@ double GenericFunction::operator() (double x) const
   }
 
   // Set up Array arguments
-  Array<double> values(1);
+  double values_data[1];
+  Array<double> values(1, values_data);
   const Array<double> _x(1, &x);
 
   // Call eval
@@ -84,10 +85,10 @@ double GenericFunction::operator() (double x, double y) const
   }
 
   // Set up Array arguments
-  Array<double> values(1);
-  Array<double> _x(2);
-  _x[0] = x;
-  _x[1] = y;
+  double values_data[1];
+  Array<double> values(1, values_data);
+  double _x_data[2] = { x, y };
+  const Array<double> _x(2, _x_data);
 
   // Call eval
   eval(values, _x);
@@ -107,11 +108,10 @@ double GenericFunction::operator() (double x, double y, double z) const
   }
 
   // Set up Array arguments
-  Array<double> values(1);
-  Array<double> _x(3);
-  _x[0] = x;
-  _x[1] = y;
-  _x[2] = z;
+  double values_data[1];
+  Array<double> values(1, values_data);
+  double _x_data[3] = { x, y, z };
+  const Array<double> _x(3, _x_data);
 
   // Call eval
   eval(values, _x);
@@ -139,9 +139,8 @@ void GenericFunction::operator() (Array<double>& values,
                                   double x, double y) const
 {
   // Set up Array argument
-  Array<double> _x(2);
-  _x[0] = x;
-  _x[1] = y;
+  double _x_data[2] = { x, y };
+  const Array<double> _x(2, _x_data);
 
   // Call eval
   eval(values, _x);
@@ -151,10 +150,8 @@ void GenericFunction::operator() (Array<double>& values,
                                   double x, double y, double z) const
 {
   // Set up Array argument
-  Array<double> _x(3);
-  _x[0] = x;
-  _x[1] = y;
-  _x[2] = z;
+  double _x_data[3] = { x, y, z };
+  const Array<double> _x(3, _x_data);
 
   // Call eval
   eval(values, _x);

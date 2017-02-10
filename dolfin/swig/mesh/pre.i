@@ -81,6 +81,28 @@ ALL_VALUES(dolfin::MeshFunction<bool>, bool)
 ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 
 //-----------------------------------------------------------------------------
+// Make C++ typename available as MeshFunctionFoo.cpp_value_type()
+//-----------------------------------------------------------------------------
+%define CPP_VALUE_TYPE(name, TYPE_NAME)
+%extend name {
+%pythoncode
+%{
+    @staticmethod
+    def cpp_value_type():
+        return #TYPE_NAME
+%}
+}
+%enddef
+
+//-----------------------------------------------------------------------------
+// Run the macros
+//-----------------------------------------------------------------------------
+CPP_VALUE_TYPE(dolfin::MeshFunction<double>, double)
+CPP_VALUE_TYPE(dolfin::MeshFunction<int>, int)
+CPP_VALUE_TYPE(dolfin::MeshFunction<bool>, bool)
+CPP_VALUE_TYPE(dolfin::MeshFunction<std::size_t>, std::size_t)
+
+//-----------------------------------------------------------------------------
 // Ignore methods that is superseded by extended versions
 //-----------------------------------------------------------------------------
 %ignore dolfin::Mesh::cells;
