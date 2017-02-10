@@ -695,6 +695,8 @@ IntersectionConstruction::_intersection_triangle_segment_3d(const Point& p0,
   if (o0*o1 > 0.)
     return points;
 
+  // FIXME: insert const on some variables here
+
   // Compute major axis of triangle plane
   const Point n = _cross_product(p0, p1, p2);
   std::size_t major_axis = _major_axis(n);
@@ -705,6 +707,13 @@ IntersectionConstruction::_intersection_triangle_segment_3d(const Point& p0,
   Point P2 = _project_point(p2, major_axis);
   Point Q0 = _project_point(q0, major_axis);
   Point Q1 = _project_point(q1, major_axis);
+
+  // FIXME: We are missing the case when q0 and q1 are both in the
+  // plane but outside
+
+  // FIXME: Use collides_triangle_segment_2d
+
+  // FIXME: Add function _unproject_point(p, major_axis)
 
   // Check if at least one is in the plane --> check both end points
   if (o0*o1 == 0.)
