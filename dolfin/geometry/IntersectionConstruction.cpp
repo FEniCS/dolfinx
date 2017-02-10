@@ -259,6 +259,9 @@ IntersectionConstruction::_intersection_segment_segment_1d(double p0,
 							   double q0,
 							   double q1)
 {
+  // FIXME: This function is not topologicaly correct in case where the two segments
+  // overlap only in 1 point
+
   // The list of points (convex hull)
   std::vector<double> intersection;
 
@@ -270,6 +273,7 @@ IntersectionConstruction::_intersection_segment_segment_1d(double p0,
     const double a1 = std::min(q0, q1);
     const double b1 = std::max(q0, q1);
     const double dx = std::min(b0 - a0, b1 - a1);
+
     intersection.resize(2);
     if (b0 - a1 < dx)
     {
