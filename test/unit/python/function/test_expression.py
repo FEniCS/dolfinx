@@ -351,7 +351,7 @@ def test_wrong_sub_classing():
         Expression("a", a="1", degree=1)
 
     def wrongParameterNames0():
-        Expression("long", str=1.0, degree=1)
+        Expression("foo", bar=1.0, degree=1)
 
     def wrongParameterNames1():
         Expression("user_parameters", user_parameters=1.0, degree=1)
@@ -376,6 +376,15 @@ def test_wrong_sub_classing():
         wrongParameterNames0()
     with pytest.raises(RuntimeError):
         wrongParameterNames1()
+
+
+@skip_in_parallel
+def test_fail_expression_compilation():
+    def invalidCppExpression():
+        Expression("/", degree=0)
+
+    with pytest.raises(RuntimeError):
+        invalidCppExpression()
 
 
 def test_element_instantiation():
