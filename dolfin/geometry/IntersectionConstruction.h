@@ -79,6 +79,15 @@ namespace dolfin
 
     //--- Low-level intersection construction functions ---
 
+    // FIXME: Remove all second-level convenience functions like this one.
+    // They are only used internally in the high-level convenience functions.
+
+    // FIXME: Also think about removing the additional wrapper functions
+    // since we don't compare with CGAL here anyway.
+
+    // FIXME: Add comment that there are exactly 9 functions and that
+    // they are all implemented.
+
     /// Compute intersection of segment p0-p1 with segment q0-q1
     static std::vector<Point>
     intersection_segment_segment(const Point& p0,
