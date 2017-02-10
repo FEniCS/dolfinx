@@ -312,6 +312,14 @@ namespace dolfin
     static Point _project_point(const Point& p,
                                 std::size_t major_axis);
 
+    // FIXME: testing
+
+    std::vector<Point>
+    _intersection_segment_segment_2d_new(const Point& p0,
+                                         const Point& p1,
+                                         const Point& q0,
+                                         const Point& q1);
+
   };
 
 }

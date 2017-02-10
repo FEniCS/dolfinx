@@ -301,6 +301,91 @@ IntersectionConstruction::_intersection_segment_segment_1d(double p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
+IntersectionConstruction::_intersection_segment_segment_2d_new(const Point& p0,
+                                                               const Point& p1,
+                                                               const Point& q0,
+                                                               const Point& q1)
+{
+  // The list of points (convex hull)
+  std::vector<Point> points;
+
+  /*
+  // Compute orientation of end points wrt segments
+  const double p0o = orient2d(q0, q1, p0);
+  const double p1o = orient2d(q0, q1, p1);
+  const double q0o = orient2d(p0, p1, q0);
+  const double q1o = orient2d(p0, p1, q1);
+  const double po = p0o*p1o;
+  const double qo = q0o*q1o;
+
+  // Special case: no collision
+  if (po > 0. or qo > 0.)
+    return points;
+
+  // Special case: possible end point collision(s)
+  if (po == 0. or qo == 0.)
+  {
+    // Check for end point strictly inside other segment
+    if (p0o == 0. and strictly_inside) points.push_back(p0);
+    if (p0o == 0. and inside) points.push_back(p0);
+    if (p0o == 0. and inside) points.push_back(p0);
+    if (p0o == 0. and inside) points.push_back(p0);
+
+    // Check for end points colliding exactly
+    if (p0 == q0) points.push_back(p0);
+    if (p0 == q1) points.push_back(p0);
+    if (p1 == q0) points.push_back(p1);
+    if (p1 == q1) points.push_back(p1);
+
+    return points;
+  }
+
+  // At this point, we know that both po < 0 and q0 < 0
+  // which means that we have a collision.
+
+  // FIXME: Consider swapping the segments to base the intersection
+  // computation on the shorted segment.
+
+
+  // FIXME: What do we call the swapped points?
+  // FIXME: What do we call the projected points?
+
+  // The intersection point is given by the formula
+  //
+  // x = p0 + num / den * (p1 - p0)
+  //
+  // but may be unstable when den is small.
+  const double num = p0o;
+  const double den = (p1.x()-p0.x())*(q1.y()-q0.y())
+                   - (p1.y()-p0.y())*(q1.x()-q0.x());
+
+
+  // Special case: almost collinear segments, pick a sensible point...
+  if (std::abs(den*den) < DOLFIN_EPS_LARGE*std::abs(num))
+  {
+    const std::size_t dim = (std::abs(Q0.x() - Q1.x()) > std::abs(Q0.y() - Q1.y())) ? 0 : 1;
+
+    // Sort the points according to dim
+    std::array<Point, 4> _points = { P0, P1, Q0, Q1 };
+    std::sort(points.begin(), points.end(), [dim](Point a, Point b) { return a[dim] < b[dim]; });
+
+    // Return midpoint
+    Point xm = (_points[1] + _points[2]) / 2;
+
+    points.push_back(xm);
+  }
+
+  // Main case: compute collision point
+  const Point x = p0 + num / den * (p1 - p0);
+  points.push_back(x);
+
+  */
+
+  dolfin_assert(points.size() == 1);
+  return points;
+}
+//-----------------------------------------------------------------------------
+std::vector<Point>
 IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
 							   const Point& p1,
 							   const Point& q0,
