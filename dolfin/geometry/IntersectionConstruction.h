@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-09
+// Last changed: 2017-02-10
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -32,10 +32,10 @@ namespace dolfin
   // Forward declarations
   class MeshEntity;
 
-  /// This class implements algorithms for computing pairwise intersections of
-  /// simplices.
-  /// The computed intersection is always convex and represented as a set of
-  /// points s.t. the intersection is the convex hull of these points.
+  /// This class implements algorithms for computing pairwise
+  /// intersections of simplices. The computed intersection is always
+  /// convex and represented as a set of points s.t. the intersection
+  /// is the convex hull of these points.
 
   class IntersectionConstruction
   {
@@ -77,7 +77,7 @@ namespace dolfin
                  const std::vector<Point>& points_1,
                  std::size_t gdim);
 
-    //--- Low-level intersection triangulation functions ---
+    //--- Low-level intersection construction functions ---
 
     /// Compute intersection of segment p0-p1 with segment q0-q1
     static std::vector<Point>
@@ -104,8 +104,6 @@ namespace dolfin
                                     const Point& q0,
                                     const Point& q1)
     {
-      // return CHECK_CGAL(_intersection_segment_segment_2d(p0, p1, q0, q1),
-      //                   cgal_intersection_segment_segment_2d(p0, p1, q0, q1));
       return _intersection_segment_segment_2d(p0, p1, q0, q1);
     }
 
@@ -136,8 +134,6 @@ namespace dolfin
                                      const Point& q0,
                                      const Point& q1)
     {
-      // return CHECK_CGAL(_intersection_triangle_segment_2d(p0, p1, p2, q0, q1),
-      //  			cgal_intersection_triangle_segment_2d(p0, p1, p2, q0, q1));
       return _intersection_triangle_segment_2d(p0, p1, p2, q0, q1);
     }
 
@@ -171,8 +167,6 @@ namespace dolfin
                                       const Point& q1,
                                       const Point& q2)
     {
-      // return CHECK_CGAL(_intersection_triangle_triangle_2d(p0, p1, p2, q0, q1, q2),
-      // 			cgal_intersection_triangle_triangle_2d(p0, p1, p2, q0, q1, q2));
       return _intersection_triangle_triangle_2d(p0, p1, p2, q0, q1, q2);
     }
 
@@ -217,7 +211,7 @@ namespace dolfin
 
   private:
 
-    // Implementation of intersection computation functions
+    // Implementation of intersection construction functions
 
     static std::vector<double>
     _intersection_segment_segment_1d(double p0,
