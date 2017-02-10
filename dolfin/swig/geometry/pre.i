@@ -31,6 +31,8 @@
 //-----------------------------------------------------------------------------
 %ignore dolfin::Point::operator=;
 %ignore dolfin::Point::operator[];
+%ignore dolfin::Point::coordinates;
+%rename ("coordinates") dolfin::Point::array() const;
 
 //-----------------------------------------------------------------------------
 // Ignore reference (to FunctionSpaces) constructors of BoundingBoxTree

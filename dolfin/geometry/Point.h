@@ -151,12 +151,12 @@ namespace dolfin
     const double* coordinates() const
     { return _x.data(); }
 
-    /// Return array (const) for Python interface
+    /// Return array for Python interface
     ///
     /// *Returns*
     ///     list of double
     ///         Coordinate array
-    const std::array<double, 3>& array() const
+    std::array<double, 3> array() const
     {
       return _x;
     }
