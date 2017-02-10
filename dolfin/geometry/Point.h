@@ -151,6 +151,16 @@ namespace dolfin
     const double* coordinates() const
     { return _x.data(); }
 
+    /// Return array (const) for Python interface
+    ///
+    /// *Returns*
+    ///     list of double
+    ///         Coordinate array
+    const std::array<double, 3>& array() const
+    {
+      return _x;
+    }
+
     /// Compute sum of two points
     Point operator+ (const Point& p) const
     { Point q(_x[0] + p._x[0], _x[1] + p._x[1], _x[2] + p._x[2]); return q; }

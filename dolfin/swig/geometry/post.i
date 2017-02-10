@@ -36,7 +36,26 @@
 //-----------------------------------------------------------------------------
 %feature("docstring") dolfin::Point::__getitem__ "Missing docstring";
 %feature("docstring") dolfin::Point::__setitem__ "Missing docstring";
+
+%include "exception.i"
+
+%exception dolfin::Point::__getitem__
+{
+  try
+  {
+    $action
+  }
+  catch (std::range_error &e)
+  {
+    SWIG_exception(SWIG_IndexError, "Index out of bounds");
+  }
+}
+
 %extend dolfin::Point {
-  double __getitem__(int i) { return (*self)[i]; }
+  double __len__() { return 3; }
+  double __getitem__(int i) {
+    if (i > 2)
+      throw std::range_error("");
+    return (*self)[i]; }
   void __setitem__(int i, double val) { (*self)[i] = val; }
 }
