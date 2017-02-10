@@ -192,7 +192,7 @@ namespace dolfin
                                       const Point& q1,
                                       const Point& q2)
     {
-      return _intersection_tetrahedron_triangle(p0, p1, p2, p3, q0, q1, q2);
+      return _intersection_tetrahedron_triangle_3d(p0, p1, p2, p3, q0, q1, q2);
     }
 
     /// Compute intersection of tetrahedron p0-p1-p2-p3 with tetrahedron q0-q1-q2-q3
@@ -206,7 +206,7 @@ namespace dolfin
                                          const Point& q2,
                                          const Point& q3)
     {
-      return _intersection_tetrahedron_tetrahedron(p0, p1, p2, p3, q0, q1, q2, q3);
+      return _intersection_tetrahedron_tetrahedron_3d(p0, p1, p2, p3, q0, q1, q2, q3);
     }
 
   private:
@@ -262,22 +262,22 @@ namespace dolfin
                                        const Point& q2);
 
     static std::vector<Point>
-    _intersection_tetrahedron_triangle(const Point& p0,
-                                       const Point& p1,
-                                       const Point& p2,
-                                       const Point& p3,
-                                       const Point& q0,
-                                       const Point& q1,
-                                       const Point& q2);
-    static std::vector<Point>
-    _intersection_tetrahedron_tetrahedron(const Point& p0,
+    _intersection_tetrahedron_triangle_3d(const Point& p0,
                                           const Point& p1,
                                           const Point& p2,
                                           const Point& p3,
                                           const Point& q0,
                                           const Point& q1,
-                                          const Point& q2,
-                                          const Point& q3);
+                                          const Point& q2);
+    static std::vector<Point>
+    _intersection_tetrahedron_tetrahedron_3d(const Point& p0,
+                                             const Point& p1,
+                                             const Point& p2,
+                                             const Point& p3,
+                                             const Point& q0,
+                                             const Point& q1,
+                                             const Point& q2,
+                                             const Point& q3);
 
     // Utility functions
 

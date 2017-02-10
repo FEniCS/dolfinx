@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-09
+// Last changed: 2017-02-10
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -24,12 +24,6 @@
 #include "GeometryPredicates.h"
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"
-
-// FIXME august
-//#include <ttmath/ttmath.h>
-// #include <Eigen/Dense>
-// #include <algorithm>
-// #define augustdebug
 
 #ifdef augustdebug
 #include "dolfin_simplex_tools.h"
@@ -43,7 +37,6 @@ namespace
     {
       if (p0.x() != p1.x())
 	return p0.x() < p1.x();
-
       return p0.y() < p1.y();
     }
   };
@@ -67,7 +60,7 @@ namespace
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-// High-level intersection triangulation functions
+// High-level intersection construction functions
 //-----------------------------------------------------------------------------
 std::vector<Point>
 IntersectionConstruction::intersection(const MeshEntity& entity_0,
@@ -170,15 +163,15 @@ IntersectionConstruction::intersection(const std::vector<Point>& points_0,
                                                 points_1[2],
                                                 points_1[3]);
 
+  // We should not reach this point
   dolfin_error("IntersectionConstruction.cpp",
                "compute intersection",
                "Not implemented for dimensions %d / %d and geometric dimension %d", d0, d1, gdim);
 
   return std::vector<Point>();
 }
-
 //-----------------------------------------------------------------------------
-// Low-level intersection triangulation functions
+// Low-level intersection construction functions
 //-----------------------------------------------------------------------------
 std::vector<Point>
 IntersectionConstruction::intersection_segment_segment(const Point& p0,
@@ -204,8 +197,8 @@ IntersectionConstruction::intersection_segment_segment(const Point& p0,
     return intersection_segment_segment_3d(p0, p1, q0, q1);
   default:
     dolfin_error("IntersectionConstruction.cpp",
-		 "compute segment-segment collision",
-		 "Unknown dimension %d.", gdim);
+		 "compute segment-segment intersection",
+		 "Unknown dimension %d", gdim);
   }
 
   return std::vector<Point>();
@@ -228,7 +221,7 @@ IntersectionConstruction::intersection_triangle_segment(const Point& p0,
   default:
     dolfin_error("IntersectionConstruction.cpp",
 		 "compute triangle-segment intersection",
-		 "Unknown dimension %d.", gdim);
+		 "Unknown dimension %d", gdim);
   }
 
   return std::vector<Point>();
@@ -251,8 +244,8 @@ IntersectionConstruction::intersection_triangle_triangle(const Point& p0,
     return intersection_triangle_triangle_3d(p0, p1, p2, q0, q1, q2);
   default:
     dolfin_error("IntersectionConstruction.cpp",
-		 "compute segment-segment collision",
-		 "Unknown dimension %d.", gdim);
+		 "compute segment-segment intersection",
+		 "Unknown dimension %d", gdim);
   }
 
   return std::vector<Point>();
@@ -901,13 +894,13 @@ IntersectionConstruction::_intersection_triangle_triangle_3d(const Point& p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::_intersection_tetrahedron_triangle(const Point& p0,
-							     const Point& p1,
-							     const Point& p2,
-							     const Point& p3,
-							     const Point& q0,
-							     const Point& q1,
-							     const Point& q2)
+IntersectionConstruction::_intersection_tetrahedron_triangle_3d(const Point& p0,
+                                                                const Point& p1,
+                                                                const Point& p2,
+                                                                const Point& p3,
+                                                                const Point& q0,
+                                                                const Point& q1,
+                                                                const Point& q2)
 {
   // This code mimics the triangulate_tetrahedron_tetrahedron and the
   // triangulate_tetrahedron_tetrahedron_triangle_codes: we first
@@ -1015,14 +1008,14 @@ IntersectionConstruction::_intersection_tetrahedron_triangle(const Point& p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::_intersection_tetrahedron_tetrahedron(const Point& p0,
-								const Point& p1,
-								const Point& p2,
-								const Point& p3,
-								const Point& q0,
-								const Point& q1,
-								const Point& q2,
-								const Point& q3)
+IntersectionConstruction::_intersection_tetrahedron_tetrahedron_3d(const Point& p0,
+                                                                   const Point& p1,
+                                                                   const Point& p2,
+                                                                   const Point& p3,
+                                                                   const Point& q0,
+                                                                   const Point& q1,
+                                                                   const Point& q2,
+                                                                   const Point& q3)
 {
   // This algorithm computes the intersection of cell_0 and cell_1 by
   // returning a vector<double> with points describing a tetrahedral
