@@ -378,8 +378,12 @@ def test_wrong_sub_classing():
         wrongParameterNames1()
 
 
-@skip_in_parallel
 def test_fail_expression_compilation():
+    # Compilation failure only happens on one process,
+    # and involves a barrier to let the compilation finish
+    # before the other processes loads from disk.
+    # This tests that a failure can be caught without deadlock.
+
     def invalidCppExpression():
         Expression("/", degree=0)
 
