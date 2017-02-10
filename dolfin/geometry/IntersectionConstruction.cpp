@@ -297,10 +297,10 @@ IntersectionConstruction::_intersection_segment_segment_1d(double p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
-							   Point p1,
-							   Point q0,
-							   Point q1)
+IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
+							   const Point& p1,
+							   const Point& q0,
+							   const Point& q1)
 {
   // The list of points (convex hull)
   std::vector<Point> points;
@@ -424,15 +424,6 @@ IntersectionConstruction::_intersection_segment_segment_2d(Point p0,
   // Case 0 (den = num = 0): segments are collinear
   if (den == 0. and num == 0.)
   {
-    // p0, p1 is collinear with q0, q1.
-    if (p0.squared_distance(p1) < q0.squared_distance(q1))
-    {
-#ifdef augustdebug
-      std::cout << "  swapped p0,p1,q0,q1\n";
-#endif
-      std::swap(p0, q0);
-      std::swap(p1, q1);
-    }
     const Point r = Q1 - p0;
     const double r2 = r.squared_norm();
     const Point rn = r / std::sqrt(r2);
@@ -687,11 +678,11 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
-							    Point p1,
-							    Point p2,
-							    Point q0,
-							    Point q1)
+IntersectionConstruction::_intersection_triangle_segment_3d(const Point& p0,
+                                                            const Point& p1,
+							    const Point& p2,
+							    const Point& q0,
+							    const Point& q1)
 {
   // The list of points (convex hull)
   std::vector<Point> points;
@@ -762,12 +753,12 @@ IntersectionConstruction::_intersection_triangle_segment_3d(Point p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::_intersection_triangle_triangle_2d(Point p0,
-							     Point p1,
-							     Point p2,
-							     Point q0,
-							     Point q1,
-							     Point q2)
+IntersectionConstruction::_intersection_triangle_triangle_2d(const Point& p0,
+							     const Point& p1,
+							     const Point& p2,
+							     const Point& q0,
+							     const Point& q1,
+							     const Point& q2)
 {
   // The list of points (convex hull)
   std::vector<Point> points;
@@ -1145,7 +1136,7 @@ IntersectionConstruction::_intersection_tetrahedron_tetrahedron_3d(const Point& 
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::_unique_points(std::vector<Point> input_points)
+IntersectionConstruction::_unique_points(const std::vector<Point>& input_points)
 {
   std::vector<Point> unique;
   unique.reserve(input_points.size());
@@ -1166,7 +1157,7 @@ IntersectionConstruction::_unique_points(std::vector<Point> input_points)
   return unique;
 }
 //-----------------------------------------------------------------------------
-double IntersectionConstruction::_det(Point ab, Point dc, Point ec)
+double IntersectionConstruction::_det(const Point& ab, const Point& dc, const Point& ec)
 {
   double a = ab.x(), b = ab.y(), c = ab.z();
   double d = dc.x(), e = dc.y(), f = dc.z();
@@ -1176,7 +1167,7 @@ double IntersectionConstruction::_det(Point ab, Point dc, Point ec)
        + c * (d * h - e * g);
 }
 //-----------------------------------------------------------------------------
-Point IntersectionConstruction::_cross_product(Point a, Point b, Point c)
+Point IntersectionConstruction::_cross_product(const Point& a, const Point& b, const Point& c)
 {
   // Accurate cross product p = (a-c) x (b-c). See Shewchuk Lecture
   // Notes on Geometric Robustness.

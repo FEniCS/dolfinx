@@ -139,11 +139,11 @@ namespace dolfin
 
     /// Compute intersection of triangle p0-p1-p2 with segment q0-q1 (2D version)
     static std::vector<Point>
-    intersection_triangle_segment_3d(Point p0,
-                                     Point p1,
-                                     Point p2,
-                                     Point q0,
-                                     Point q1)
+    intersection_triangle_segment_3d(const Point& p0,
+                                     const Point& p1,
+                                     const Point& p2,
+                                     const Point& q0,
+                                     const Point q1)
     {
       return _intersection_triangle_segment_3d(p0, p1, p2, q0, q1);
     }
@@ -220,10 +220,10 @@ namespace dolfin
                                      double q1);
 
     static std::vector<Point>
-    _intersection_segment_segment_2d(Point p0,
-                                     Point p1,
-                                     Point q0,
-                                     Point q1);
+    _intersection_segment_segment_2d(const Point& p0,
+                                     const Point& p1,
+                                     const Point& q0,
+                                     const Point& q1);
 
     static std::vector<Point>
     _intersection_segment_segment_3d(const Point& p0,
@@ -239,19 +239,19 @@ namespace dolfin
                                       const Point& q1);
 
     static std::vector<Point>
-    _intersection_triangle_segment_3d(Point p0,
-                                      Point p1,
-                                      Point p2,
-                                      Point q0,
-                                      Point q1);
+    _intersection_triangle_segment_3d(const Point& p0,
+                                      const Point& p1,
+                                      const Point& p2,
+                                      const Point& q0,
+                                      const Point& q1);
 
     static std::vector<Point>
-    _intersection_triangle_triangle_2d(Point p0,
-                                       Point p1,
-                                       Point p2,
-                                       Point q0,
-                                       Point q1,
-                                       Point q2);
+    _intersection_triangle_triangle_2d(const Point& p0,
+                                       const Point& p1,
+                                       const Point& p2,
+                                       const Point& q0,
+                                       const Point& q1,
+                                       const Point& q2);
 
     static std::vector<Point>
     _intersection_triangle_triangle_3d(const Point& p0,
@@ -281,22 +281,27 @@ namespace dolfin
 
     // Utility functions
 
-    // FIXME: Think about passing points by reference
-
     // Strictly unique points using == operator
-    static std::vector<Point> _unique_points(std::vector<Point> points);
+    // TODO: Will the points be unique most of the times? Should this function
+    // filter out inplace?
+    static std::vector<Point> _unique_points(const std::vector<Point>& points);
 
     // Determinant of 3 x 3 matrix
-    static double _det(Point ab, Point dc, Point ec);
+    static double _det(const Point& ab,
+                       const Point& dc,
+                       const Point& ec);
 
     // Numerically robust cross product
-    static Point _cross_product(Point a, Point b, Point c);
+    static Point _cross_product(const Point& a,
+                                const Point& b,
+                                const Point& c);
 
     // Major (largest) axis of vector
     static std::size_t _major_axis(const Point& v);
 
     // Project point to major axis plane
-    static Point _project_point(const Point& p, std::size_t major_axis);
+    static Point _project_point(const Point& p,
+                                std::size_t major_axis);
 
   };
 
