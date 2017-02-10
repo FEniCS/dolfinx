@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2017-02-09
+// Last changed: 2017-02-10
 //
 // Developer note:
 //
@@ -86,16 +86,11 @@ namespace dolfin
 
     else if (s.size() == 3)
     {
-      return std::abs(dolfin::orient2d(s[0].coordinates(),
-			       s[1].coordinates(),
-			       s[2].coordinates())) / 2;
+      return std::abs(dolfin::orient2d(s[0], s[1], s[2])) / 2;
     }
     else if (s.size() == 4)
     {
-      return std::abs(orient3d(s[0].coordinates(),
-			       s[1].coordinates(),
-			       s[2].coordinates(),
-			       s[3].coordinates())) / 6;
+      return std::abs(orient3d(s[0], s[1], s[2], s[3])) / 6;
     }
     else {
 
@@ -151,7 +146,6 @@ namespace dolfin
       pointscenter += points[m];
     pointscenter /= points.size();
 
-
     // Reference
     Point ref = points[0] - pointscenter;
 
@@ -159,9 +153,7 @@ namespace dolfin
     std::vector<std::pair<double, std::size_t>> order;
     for (std::size_t m = 1; m < points.size(); ++m)
     {
-      const double A = dolfin::orient2d(pointscenter.coordinates(),
-                                        const_cast<double*>(points[0].coordinates()),
-                                        const_cast<double*>(points[m].coordinates()));
+      const double A = dolfin::orient2d(pointscenter, points[0], points[m]);
       const Point s = points[m] - pointscenter;
       double alpha = std::atan2(A, s.dot(ref));
       if (alpha < 0)
@@ -663,9 +655,7 @@ namespace
     std::vector<std::pair<double, std::size_t>> order;
     for (std::size_t m = 1; m < points.size(); ++m)
     {
-      const double A = dolfin::orient2d(pointscenter.coordinates(),
-                                        const_cast<double*>(points[0].coordinates()),
-                                        const_cast<double*>(points[m].coordinates()));
+      const double A = dolfin::orient2d(pointscenter, points[0], points[m]);
       const Point s = points[m] - pointscenter;
       double alpha = std::atan2(A, s.dot(ref));
       if (alpha < 0)
