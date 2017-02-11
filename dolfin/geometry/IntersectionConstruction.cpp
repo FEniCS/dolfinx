@@ -639,7 +639,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
 
     // Sort the points according to dim
     std::array<Point, 4> _points = { P0, P1, Q0, Q1 };
-    std::sort(points.begin(), points.end(), [dim](Point a, Point b) { return a[dim] < b[dim]; });
+    std::sort(_points.begin(), _points.end(), [dim](Point a, Point b) { return a[dim] < b[dim]; });
 
     // Return midpoint
     Point xm = (_points[1] + _points[2]) / 2;
