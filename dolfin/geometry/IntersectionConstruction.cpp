@@ -426,7 +426,7 @@ IntersectionConstruction::_intersection_segment_segment_2d_new(const Point& p0,
     const Point x = 0.5*(_points[1] + _points[2]);
     points.push_back(x);
 
-    dolfin_assert(point.size() == 1);
+    dolfin_assert(points.size() == 1);
     return points;
   }
 
