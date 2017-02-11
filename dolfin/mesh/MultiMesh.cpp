@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-02-09
+// Last changed: 2017-02-11
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -616,13 +616,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       if (num_cutting_cells > 0)
 	_inclusion_exclusion_overlap(overlap_qr, initial_polyhedra,
 				     tdim, gdim, quadrature_order);
-
-      double vol = 0;
-      for (const auto qr: overlap_qr)
-      {
-	for (const double w: qr.second)
-	  vol += w;
-      }
 
       // Store quadrature rules for cut cell
       _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
@@ -1221,7 +1214,7 @@ void MultiMesh::_inclusion_exclusion_interface
 	  for (const Simplex& s: Eij_cap_Tk)
 	  {
 	    if (s.size() == tdim_interface + 1 and
-		!GeometryPredicates::is_degenerate(simplex, gdim))
+		!GeometryPredicates::is_degenerate(s, gdim))
 	    {
 	      const std::size_t num_pts
 		= _add_quadrature_rule(qr_stage0, s, gdim,
