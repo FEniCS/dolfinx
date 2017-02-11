@@ -113,7 +113,8 @@ namespace dolfin
                                     const Point& q0,
                                     const Point& q1)
     {
-      return _intersection_segment_segment_2d(p0, p1, q0, q1);
+      //return _intersection_segment_segment_2d(p0, p1, q0, q1);
+      return _intersection_segment_segment_2d_new(p0, p1, q0, q1);
     }
 
     /// Compute intersection of segment p0-p1 with segment q0-q1 (3D version)
@@ -308,7 +309,7 @@ namespace dolfin
 
     // FIXME: testing
 
-    std::vector<Point>
+    static std::vector<Point>
     _intersection_segment_segment_2d_new(const Point& p0,
                                          const Point& p1,
                                          const Point& q0,
