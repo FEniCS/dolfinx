@@ -16,12 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-10
+// Last changed: 2017-02-11
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
 #include "GeometryPredicates.h"
+#include "GeometryTools.h"
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"
 
@@ -309,12 +310,13 @@ IntersectionConstruction::_intersection_segment_segment_2d_new(const Point& p0,
   // The list of points (convex hull)
   std::vector<Point> points;
 
-  /*
-  // Compute orientation of end points wrt segments
+  // Compute orientation of end points wrt other segment
   const double p0o = orient2d(q0, q1, p0);
   const double p1o = orient2d(q0, q1, p1);
   const double q0o = orient2d(p0, p1, q0);
   const double q1o = orient2d(p0, p1, q1);
+
+  // Compute total orientation of segments wrt other segment
   const double po = p0o*p1o;
   const double qo = q0o*q1o;
 
@@ -322,64 +324,115 @@ IntersectionConstruction::_intersection_segment_segment_2d_new(const Point& p0,
   if (po > 0. or qo > 0.)
     return points;
 
-  // Special case: possible end point collision(s)
+  // Special case: end point collision(s)
   if (po == 0. or qo == 0.)
   {
-    // Check for end point strictly inside other segment
-    if (p0o == 0. and strictly_inside) points.push_back(p0);
-    if (p0o == 0. and inside) points.push_back(p0);
-    if (p0o == 0. and inside) points.push_back(p0);
-    if (p0o == 0. and inside) points.push_back(p0);
+    // Indicators to avoid duplicates
+    bool p0i = false, p1i = false, q0i = false, q1i = false;
 
-    // Check for end points colliding exactly
-    if (p0 == q0) points.push_back(p0);
-    if (p0 == q1) points.push_back(p0);
-    if (p1 == q0) points.push_back(p1);
-    if (p1 == q1) points.push_back(p1);
+    // Check point-point collisions
+    if (p0 == q0)
+    {
+      if (!p0i) points.push_back(p0);
+      p0i = q0i = true;
+    }
+    if (p0 == q1)
+    {
+      if (!p0i) points.push_back(p0);
+      p0i = q1i = true;
+    }
+    if (p1 == q0)
+    {
+      if (!p1i) points.push_back(p1);
+      p1i = q0i = true;
+    }
+    if (p1 == q1)
+    {
+      if (!p1i) points.push_back(p1);
+      p1i = q1i = true;
+    }
 
+    // Check end points of first segment
+    if (po == 0.)
+    {
+      // Project to major axis of second segment
+      const std::size_t major_axis = GeometryTools::major_axis_2d(q1 - q0);
+      const double P0 = GeometryTools::project_to_axis_2d(p0, major_axis);
+      const double P1 = GeometryTools::project_to_axis_2d(p1, major_axis);
+      const double Q0 = GeometryTools::project_to_axis_2d(q0, major_axis);
+      const double Q1 = GeometryTools::project_to_axis_2d(q1, major_axis);
+
+      // Check collisions
+      if (!p0i and p0o == 0. and CollisionPredicates::collides_segment_point_1d(Q0, Q1, P0))
+        points.push_back(p0);
+      if (!p1i and p1o == 0. and CollisionPredicates::collides_segment_point_1d(Q0, Q1, P1))
+        points.push_back(p1);
+    }
+
+    // Check end points of second segment
+    if (qo == 0.)
+    {
+      // Project to major axis of first segment
+      const std::size_t major_axis = GeometryTools::major_axis_2d(p1 - p0);
+      const double P0 = GeometryTools::project_to_axis_2d(p0, major_axis);
+      const double P1 = GeometryTools::project_to_axis_2d(p1, major_axis);
+      const double Q0 = GeometryTools::project_to_axis_2d(q0, major_axis);
+      const double Q1 = GeometryTools::project_to_axis_2d(q1, major_axis);
+
+      // Check collisions
+      if (!q0i and q0o == 0. and CollisionPredicates::collides_segment_point_1d(P0, P1, Q0))
+        points.push_back(q0);
+      if (!q1i and q1o == 0. and CollisionPredicates::collides_segment_point_1d(P0, P1, Q1))
+        points.push_back(q1);
+    }
+
+    dolfin_assert(points.size() > 0);
     return points;
   }
 
-  // At this point, we know that both po < 0 and q0 < 0
-  // which means that we have a collision.
+  // At this point, we know that both po < 0 and q0 < 0 which means
+  // that we have an intersection and it is internal to both segments.
+  // This is the main case. The point is given by the formula
+  //
+  //   x = p0 + num / den * (p1 - p0)
+  //
+  // However, the computation may be unstable when the two segments
+  // are nearly collinear (when den is small) so special hanndling is
+  // needed when this happens.
 
   // FIXME: Consider swapping the segments to base the intersection
-  // computation on the shorted segment.
+  // computation on the shortest segment.
 
-
-  // FIXME: What do we call the swapped points?
-  // FIXME: What do we call the projected points?
-
-  // The intersection point is given by the formula
-  //
-  // x = p0 + num / den * (p1 - p0)
-  //
-  // but may be unstable when den is small.
+  // Compute numerator and denominator for intersection formula
   const double num = p0o;
-  const double den = (p1.x()-p0.x())*(q1.y()-q0.y())
-                   - (p1.y()-p0.y())*(q1.x()-q0.x());
+  const double den = (p1.x() - p0.x())*(q1.y() - q0.y())
+                   - (p1.y() - p0.y())*(q1.x() - q0.x());
 
-
-  // Special case: almost collinear segments, pick a sensible point...
+  // Special case: almost collinear segments. Intersection is very
+  // hard to compute so just make sure we pick a sensible point which
+  // we know (almost) belongs to both segments.
   if (std::abs(den*den) < DOLFIN_EPS_LARGE*std::abs(num))
   {
-    const std::size_t dim = (std::abs(Q0.x() - Q1.x()) > std::abs(Q0.y() - Q1.y())) ? 0 : 1;
+    // Compute major axis
+    const std::size_t major_axis = GeometryTools::major_axis_2d(p1 - p0);
 
-    // Sort the points according to dim
-    std::array<Point, 4> _points = { P0, P1, Q0, Q1 };
-    std::sort(points.begin(), points.end(), [dim](Point a, Point b) { return a[dim] < b[dim]; });
+    // Sort the points along major axis
+    std::array<Point, 4> _points = {p0, p1, q0, q1};
+    std::sort(_points.begin(), _points.end(),
+              [major_axis](const Point& a, const Point& b)
+              { return a[major_axis] < b[major_axis]; });
 
-    // Return midpoint
-    Point xm = (_points[1] + _points[2]) / 2;
+    // Compute midpoint
+    const Point x = 0.5*(_points[1] + _points[2]);
+    points.push_back(x);
 
-    points.push_back(xm);
+    dolfin_assert(point.size() == 1);
+    return points;
   }
 
-  // Main case: compute collision point
+  // Main case: compute intersection
   const Point x = p0 + num / den * (p1 - p0);
   points.push_back(x);
-
-  */
 
   dolfin_assert(points.size() == 1);
   return points;
@@ -788,14 +841,14 @@ IntersectionConstruction::_intersection_triangle_segment_3d(const Point& p0,
 
   // Compute major axis of triangle plane
   const Point n = _cross_product(p0, p1, p2);
-  std::size_t major_axis = _major_axis(n);
+  std::size_t major_axis = GeometryTools::major_axis_3d(n);
 
   // Project points to major axis plane
-  Point P0 = _project_point(p0, major_axis);
-  Point P1 = _project_point(p1, major_axis);
-  Point P2 = _project_point(p2, major_axis);
-  Point Q0 = _project_point(q0, major_axis);
-  Point Q1 = _project_point(q1, major_axis);
+  Point P0 = GeometryTools::project_to_plane_3d(p0, major_axis);
+  Point P1 = GeometryTools::project_to_plane_3d(p1, major_axis);
+  Point P2 = GeometryTools::project_to_plane_3d(p2, major_axis);
+  Point Q0 = GeometryTools::project_to_plane_3d(q0, major_axis);
+  Point Q1 = GeometryTools::project_to_plane_3d(q1, major_axis);
 
   // FIXME: We are missing the case when q0 and q1 are both in the
   // plane but outside
@@ -840,7 +893,7 @@ IntersectionConstruction::_intersection_triangle_segment_3d(const Point& p0,
   const Point x = q0 + num / den * (q1 - q0);
 
   // Check if intersection point is inside the triangle
-  const Point X = _project_point(x, major_axis);
+  const Point X = GeometryTools::project_to_plane_3d(x, major_axis);
   if (CollisionPredicates::collides_triangle_point_2d(P0, P1, P2, X))
   {
     points.push_back(x);
@@ -1281,35 +1334,6 @@ Point IntersectionConstruction::_cross_product(const Point& a, const Point& b, c
   Point p(_orient2d(ayz, byz, cyz),
 	  _orient2d(azx, bzx, czx),
 	  _orient2d(axy, bxy, cxy));
-  return p;
-}
-//-----------------------------------------------------------------------------
-std::size_t IntersectionConstruction::_major_axis(const Point& v)
-{
-  const double vx = std::abs(v.x());
-  const double vy = std::abs(v.y());
-  const double vz = std::abs(v.z());
-  if (vx >= vy && vx >= vz)
-    return 0;
-  if (vy >= vz)
-    return 1;
-  return 2;
-}
-//-----------------------------------------------------------------------------
-Point IntersectionConstruction::_project_point(const Point& p,
-                                               std::size_t major_axis)
-{
-  switch (major_axis)
-  {
-  case 0: return Point(p.y(), p.z());
-  case 1: return Point(p.x(), p.z());
-  case 2: return Point(p.x(), p.y());
-  default:
-    dolfin_error("IntersectionConstruction.cpp",
-		 "project point to major axis",
-		 "Unknown axis %d.", major_axis);
-  }
-
   return p;
 }
 //-----------------------------------------------------------------------------

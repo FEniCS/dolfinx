@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-11-21
-// Last changed: 2017-02-09
+// Last changed: 2017-02-11
 
 #ifndef __GEOMETRYPREDICATES_H
 #define __GEOMETRYPREDICATES_H
@@ -38,14 +38,14 @@ namespace dolfin
 			      std::size_t gdim);
 
 
-    /// Check whether 2D simplex is degenerate
+    /// Check whether simplex is degenerate (2D version)
     static bool is_degenerate_2d(const std::vector<Point>& simplex)
     {
       return CHECK_CGAL(_is_degenerate_2d(simplex),
 			cgal_is_degenerate_2d(simplex));
     }
 
-    /// Check whether 3D simplex is degenerate
+    /// Check whether simplex is degenerate (3D version)
     static bool is_degenerate_3d(const std::vector<Point>& simplex)
     {
       return CHECK_CGAL(_is_degenerate_3d(simplex),

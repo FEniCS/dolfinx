@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-01-25
+// Last changed: 2017-02-11
 
 #ifndef __COLLISION_PREDICATES_H
 #define __COLLISION_PREDICATES_H
@@ -84,7 +84,6 @@ namespace dolfin
       // FIXME: Skip CGAL for now
       return _collides_segment_point_1d(p0, p1, point);
     }
-
 
     /// Check whether segment p0-p1 collides with point (2D version)
     static bool collides_segment_point_2d(const Point& p0,

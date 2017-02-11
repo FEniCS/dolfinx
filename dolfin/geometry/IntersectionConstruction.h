@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-10
+// Last changed: 2017-02-11
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -305,12 +305,6 @@ namespace dolfin
                                 const Point& b,
                                 const Point& c);
 
-    // Major (largest) axis of vector
-    static std::size_t _major_axis(const Point& v);
-
-    // Project point to major axis plane
-    static Point _project_point(const Point& p,
-                                std::size_t major_axis);
 
     // FIXME: testing
 

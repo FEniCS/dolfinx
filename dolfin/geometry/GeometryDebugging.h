@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-05
-// Last changed: 2016-05-05
+// Last changed: 2017-02-11
 
 #ifndef __GEOMETRY_DEBUGGING_H
 #define __GEOMETRY_DEBUGGING_H
