@@ -16,11 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2017-02-11
-// Last changed: 2017-02-11
+// Last changed: 2017-02-12
 
 #ifndef __GEOMETRY_TOOLS_H
 #define __GEOMETRY_TOOLS_H
 
+#include "predicates.h"
 #include "Point.h"
 
 namespace dolfin
@@ -31,6 +32,24 @@ namespace dolfin
   class GeometryTools
   {
   public:
+
+    // Compute numerically stable cross product (a - c) x (b - c)
+    static inline Point cross_product(const Point& a, const Point& b, const Point& c)
+    {
+      // See Shewchuk Lecture Notes on Geometric Robustness
+      double ayz[2] = {a.y(), a.z()};
+      double byz[2] = {b.y(), b.z()};
+      double cyz[2] = {c.y(), c.z()};
+      double azx[2] = {a.z(), a.x()};
+      double bzx[2] = {b.z(), b.x()};
+      double czx[2] = {c.z(), c.x()};
+      double axy[2] = {a.x(), a.y()};
+      double bxy[2] = {b.x(), b.y()};
+      double cxy[2] = {c.x(), c.y()};
+      return Point (_orient2d(ayz, byz, cyz),
+                    _orient2d(azx, bzx, czx),
+                    _orient2d(axy, bxy, cxy));
+    }
 
     /// Compute major (largest) axis of vector (2D)
     static inline std::size_t major_axis_2d(const Point& v)

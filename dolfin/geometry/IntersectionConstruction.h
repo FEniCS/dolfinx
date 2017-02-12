@@ -79,6 +79,19 @@ namespace dolfin
 
     //--- Low-level intersection construction functions ---
 
+    // FIXME: Rewrite all low-level functions to follow the template
+    // implementation of segment_segment_2d:
+    //
+    // [ ] _intersection_segment_segment_1d
+    // [x] _intersection_segment_segment_2d
+    // [ ] _intersection_segment_segment_3d
+    // [ ] _intersection_triangle_segment_2d
+    // [ ] _intersection_triangle_segment_3d
+    // [ ] _intersection_triangle_triangle_2d
+    // [ ] _intersection_triangle_triangle_3d
+    // [ ] _intersection_tetrahedron_triangle_3d
+    // [ ] _intersection_tetrahedron_tetrahedron_3d
+
     // FIXME: Remove all second-level convenience functions like this one.
     // They are only used internally in the high-level convenience functions.
 
@@ -87,14 +100,6 @@ namespace dolfin
 
     // FIXME: Add comment that there are exactly 9 functions and that
     // they are all implemented.
-
-    /// Compute intersection of segment p0-p1 with segment q0-q1
-    static std::vector<Point>
-    intersection_segment_segment(const Point& p0,
-                                 const Point& p1,
-                                 const Point& q0,
-                                 const Point& q1,
-                                 std::size_t gdim);
 
     /// Compute intersection of segment p0-p1 with segment q0-q1 (1D version)
     static std::vector<double>
@@ -126,15 +131,6 @@ namespace dolfin
       return _intersection_segment_segment_3d(p0, p1, q0, q1);
     }
 
-    /// Compute intersection of triangle p0-p1-p2 with segment q0-q1
-    static std::vector<Point>
-    intersection_triangle_segment(const Point& p0,
-                                  const Point& p1,
-                                  const Point& p2,
-                                  const Point& q0,
-                                  const Point& q1,
-                                  std::size_t gdim);
-
     /// Compute intersection of triangle p0-p1-p2 with segment q0-q1 (2D version)
     static std::vector<Point>
     intersection_triangle_segment_2d(const Point& p0,
@@ -156,16 +152,6 @@ namespace dolfin
     {
       return _intersection_triangle_segment_3d(p0, p1, p2, q0, q1);
     }
-
-    /// Compute intersection of triangle p0-p1-p2 with triangle q0-q1-q2
-    static std::vector<Point>
-    intersection_triangle_triangle(const Point& p0,
-                                   const Point& p1,
-                                   const Point& p2,
-                                   const Point& q0,
-                                   const Point& q1,
-                                   const Point& q2,
-                                   std::size_t gdim);
 
     /// Compute intersection of triangle p0-p1-p2 with triangle q0-q1-q2 (2D version)
     static std::vector<Point>
@@ -193,27 +179,27 @@ namespace dolfin
 
     /// Compute intersection of tetrahedron p0-p1-p2-p3 with triangle q0-q1-q2
     static std::vector<Point>
-    intersection_tetrahedron_triangle(const Point& p0,
-                                      const Point& p1,
-                                      const Point& p2,
-                                      const Point& p3,
-                                      const Point& q0,
-                                      const Point& q1,
-                                      const Point& q2)
+    intersection_tetrahedron_triangle_3d(const Point& p0,
+                                         const Point& p1,
+                                         const Point& p2,
+                                         const Point& p3,
+                                         const Point& q0,
+                                         const Point& q1,
+                                         const Point& q2)
     {
       return _intersection_tetrahedron_triangle_3d(p0, p1, p2, p3, q0, q1, q2);
     }
 
     /// Compute intersection of tetrahedron p0-p1-p2-p3 with tetrahedron q0-q1-q2-q3
     static std::vector<Point>
-    intersection_tetrahedron_tetrahedron(const Point& p0,
-                                         const Point& p1,
-                                         const Point& p2,
-                                         const Point& p3,
-                                         const Point& q0,
-                                         const Point& q1,
-                                         const Point& q2,
-                                         const Point& q3)
+    intersection_tetrahedron_tetrahedron_3d(const Point& p0,
+                                            const Point& p1,
+                                            const Point& p2,
+                                            const Point& p3,
+                                            const Point& q0,
+                                            const Point& q1,
+                                            const Point& q2,
+                                            const Point& q3)
     {
       return _intersection_tetrahedron_tetrahedron_3d(p0, p1, p2, p3, q0, q1, q2, q3);
     }
@@ -299,11 +285,6 @@ namespace dolfin
     static double _det(const Point& ab,
                        const Point& dc,
                        const Point& ec);
-
-    // Numerically robust cross product
-    static Point _cross_product(const Point& a,
-                                const Point& b,
-                                const Point& c);
 
   };
 
