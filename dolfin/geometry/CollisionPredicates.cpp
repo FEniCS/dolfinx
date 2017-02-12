@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-09
+// Last changed: 2017-02-12
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -329,6 +329,7 @@ namespace
     return a.x() == b.x() && a.y() == b.y() && a.z() == b.z();
   }
 }
+//-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_segment_point_3d(Point p0,
 						     Point p1,
 						     Point point)

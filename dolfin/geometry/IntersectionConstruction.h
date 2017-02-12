@@ -29,6 +29,33 @@
 namespace dolfin
 {
 
+  // Comparison of points
+
+  struct point_strictly_less
+  {
+    bool operator()(const dolfin::Point & p0, const dolfin::Point& p1)
+    {
+      if (p0.x() != p1.x())
+        return p0.x() < p1.x();
+      return p0.y() < p1.y();
+    }
+  };
+
+  inline bool operator==(const dolfin::Point& p0, const dolfin::Point& p1)
+  {
+    return p0.x() == p1.x() and p0.y() == p1.y() and p0.z() == p1.z();
+  }
+
+  inline bool operator!=(const dolfin::Point& p0, const dolfin::Point& p1)
+  {
+    return p0.x() != p1.x() or p0.y() != p1.y() or p0.z() != p1.z();
+  }
+
+  inline bool operator<(const dolfin::Point& p0, const dolfin::Point& p1)
+  {
+    return p0.x() <= p1.x() and p0.y() <= p1.y() and p0.z() <= p1.z();
+  }
+
   // Forward declarations
   class MeshEntity;
 
@@ -275,6 +302,34 @@ namespace dolfin
                                              const Point& q3);
 
     // Utility functions
+
+    // Add point if equal and mark as added
+    static inline void add_if_equal(std::vector<double>& points,
+                                    double p,
+                                    double q,
+                                    bool& pi,
+                                    bool& qi)
+    {
+      if (!pi and p == q)
+      {
+        points.push_back(p);
+        pi = qi = true;
+      }
+    }
+
+    // Add point if equal and mark as added
+    static inline void add_if_equal(std::vector<Point>& points,
+                                    const Point& p,
+                                    const Point& q,
+                                    bool& pi,
+                                    bool& qi)
+    {
+      if (!pi and p == q)
+      {
+        points.push_back(p);
+        pi = qi = true;
+      }
+    }
 
     // Strictly unique points using == operator
     // TODO: Will the points be unique most of the times? Should this function

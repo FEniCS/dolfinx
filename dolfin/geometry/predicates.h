@@ -20,6 +20,9 @@ namespace dolfin
   // Initialize tolerances for exact arithmetic
   void exactinit();
 
+  // Compute relative orientation of point x wrt segment [a, b]
+  double orient1d(double a, double b, double x);
+
   // Compute relative orientation of points a, b, c. The orientation
   // is such that orient2d(a, b, c) > 0 if a, b, c are ordered
   // counter-clockwise.

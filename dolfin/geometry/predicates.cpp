@@ -2,6 +2,13 @@
 #include "predicates.h"
 
 //-----------------------------------------------------------------------------
+double dolfin::orient1d(double a, double b, double x)
+{
+  if (x > std::max(a, b)) return 1.0;
+  if (x < std::min(a, b)) return -1.0;
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
 double dolfin::orient2d(const Point& a, const Point& b, const Point& c)
 {
   return dolfin::_orient2d(a.coordinates(),

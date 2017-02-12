@@ -30,34 +30,6 @@
 #include "dolfin_simplex_tools.h"
 #endif
 
-namespace
-{
-  struct point_strictly_less
-  {
-    bool operator()(const dolfin::Point & p0, const dolfin::Point& p1)
-    {
-      if (p0.x() != p1.x())
-	return p0.x() < p1.x();
-      return p0.y() < p1.y();
-    }
-  };
-
-  inline bool operator==(const dolfin::Point& p0, const dolfin::Point& p1)
-  {
-    return p0.x() == p1.x() and p0.y() == p1.y() and p0.z() == p1.z();
-  }
-
-  inline bool operator!=(const dolfin::Point& p0, const dolfin::Point& p1)
-  {
-    return p0.x() != p1.x() or p0.y() != p1.y() or p0.z() != p1.z();
-  }
-
-  inline bool operator<(const dolfin::Point& p0, const dolfin::Point& p1)
-  {
-    return p0.x() <= p1.x() and p0.y() <= p1.y() and p0.z() <= p1.z();
-  }
-}
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -188,45 +160,39 @@ IntersectionConstruction::_intersection_segment_segment_1d(double p0,
 							   double q0,
 							   double q1)
 {
-  // FIXME: This function is not topologicaly correct in case where the two segments
-  // overlap only in 1 point
-
   // The list of points (convex hull)
-  std::vector<double> intersection;
+  std::vector<double> points;
 
-  if (CollisionPredicates::collides_segment_segment_1d(p0, p1, q0, q1))
-  {
-    // Get range
-    const double a0 = std::min(p0, p1);
-    const double b0 = std::max(p0, p1);
-    const double a1 = std::min(q0, q1);
-    const double b1 = std::max(q0, q1);
-    const double dx = std::min(b0 - a0, b1 - a1);
+  // Compute orientation of segment end points wrt other segment
+  const double p0o = orient1d(q0, q1, p0);
+  const double p1o = orient1d(q0, q1, p1);
+  const double q0o = orient1d(p0, p1, q0);
+  const double q1o = orient1d(p0, p1, q1);
 
-    intersection.resize(2);
-    if (b0 - a1 < dx)
-    {
-      intersection[0] = a1;
-      intersection[1] = b0;
-    }
-    else if (b1 - a0 < dx)
-    {
-      intersection[0] = a0;
-      intersection[1] = b1;
-    }
-    else if (b0 - a0 < b1 - a1)
-    {
-      intersection[0] = a0;
-      intersection[1] = b0;
-    }
-    else
-    {
-      intersection[0] = a1;
-      intersection[1] = b1;
-    }
-  }
+  // Compute total orientation of segments wrt other segment
+  const double po = p0o*p1o;
+  const double qo = q0o*q1o;
 
-  return intersection;
+  // Special case: no collision
+  if (po > 0. or qo > 0.)
+    return points;
+
+  // Indicators to avoid duplicates
+  bool p0i = false, p1i = false, q0i = false, q1i = false;
+
+  // Special case: end point collision
+  add_if_equal(points, p0, q0, p0i, q0i);
+  add_if_equal(points, p0, q1, p0i, q1i);
+  add_if_equal(points, p1, q0, p1i, q0i);
+  add_if_equal(points, p1, q1, p1i, q1i);
+
+  // Main case: interior collisions
+  if (!p0i and p0o == 0.) points.push_back(p0);
+  if (!p1i and p1o == 0.) points.push_back(p1);
+  if (!q0i and q0o == 0.) points.push_back(q0);
+  if (!q1i and q1o == 0.) points.push_back(q1);
+
+  return points;
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -260,26 +226,10 @@ IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
     bool p0i = false, p1i = false, q0i = false, q1i = false;
 
     // Check point-point collisions
-    if (p0 == q0)
-    {
-      if (!p0i) points.push_back(p0);
-      p0i = q0i = true;
-    }
-    if (p0 == q1)
-    {
-      if (!p0i) points.push_back(p0);
-      p0i = q1i = true;
-    }
-    if (p1 == q0)
-    {
-      if (!p1i) points.push_back(p1);
-      p1i = q0i = true;
-    }
-    if (p1 == q1)
-    {
-      if (!p1i) points.push_back(p1);
-      p1i = q1i = true;
-    }
+    add_if_equal(points, p0, q0, p0i, q0i);
+    add_if_equal(points, p0, q1, p0i, q1i);
+    add_if_equal(points, p1, q0, p1i, q0i);
+    add_if_equal(points, p1, q1, p1i, q1i);
 
     // Check end points of first segment
     if (po == 0.)
@@ -314,8 +264,6 @@ IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
       if (!q1i and q1o == 0. and CollisionPredicates::collides_segment_point_1d(P0, P1, Q1))
         points.push_back(q1);
     }
-
-
 
     return points;
   }
