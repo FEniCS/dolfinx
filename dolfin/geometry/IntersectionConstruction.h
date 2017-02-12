@@ -109,7 +109,7 @@ namespace dolfin
     // FIXME: Rewrite all low-level functions to follow the template
     // implementation of segment_segment_2d:
     //
-    // [ ] _intersection_segment_segment_1d
+    // [x] _intersection_segment_segment_1d
     // [x] _intersection_segment_segment_2d
     // [ ] _intersection_segment_segment_3d
     // [ ] _intersection_triangle_segment_2d
@@ -145,7 +145,8 @@ namespace dolfin
                                     const Point& q0,
                                     const Point& q1)
     {
-      return _intersection_segment_segment_2d(p0, p1, q0, q1);
+      //return _intersection_segment_segment_2d(p0, p1, q0, q1);
+      return _intersection_segment_segment_2d_old(p0, p1, q0, q1);
     }
 
     /// Compute intersection of segment p0-p1 with segment q0-q1 (3D version)
@@ -340,6 +341,20 @@ namespace dolfin
     static double _det(const Point& ab,
                        const Point& dc,
                        const Point& ec);
+
+
+    static std::vector<double>
+    _intersection_segment_segment_1d_old(double p0,
+                                         double p1,
+                                         double q0,
+                                         double q1);
+
+    static std::vector<Point>
+    _intersection_segment_segment_2d_old(const Point& p0,
+                                         const Point& p1,
+                                         const Point& q0,
+                                         const Point& q1);
+
 
   };
 
