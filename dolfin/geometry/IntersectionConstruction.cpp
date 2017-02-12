@@ -324,7 +324,8 @@ IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
   if (po > 0. or qo > 0.)
     return points;
 
-  // Special case: end point collision(s)
+  // Special case: *possible* end point collision(s).
+  // Note that two segments may be collinear without colliding.
   if (po == 0. or qo == 0.)
   {
     // Indicators to avoid duplicates
@@ -385,6 +386,8 @@ IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
       if (!q1i and q1o == 0. and CollisionPredicates::collides_segment_point_1d(P0, P1, Q1))
         points.push_back(q1);
     }
+
+
 
     return points;
   }
