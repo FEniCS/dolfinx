@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-11
+// Last changed: 2017-02-12
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -302,10 +302,10 @@ IntersectionConstruction::_intersection_segment_segment_1d(double p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::_intersection_segment_segment_2d_new(const Point& p0,
-                                                               const Point& p1,
-                                                               const Point& q0,
-                                                               const Point& q1)
+IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
+							   const Point& p1,
+							   const Point& q0,
+							   const Point& q1)
 {
   // The list of points (convex hull)
   std::vector<Point> points;
@@ -435,222 +435,6 @@ IntersectionConstruction::_intersection_segment_segment_2d_new(const Point& p0,
 
   dolfin_assert(points.size() == 1);
   return points;
-}
-//-----------------------------------------------------------------------------
-std::vector<Point>
-IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
-							   const Point& p1,
-							   const Point& q0,
-							   const Point& q1)
-{
-  // The list of points (convex hull)
-  std::vector<Point> points;
-
-  // Avoid some unnecessary computations
-  if (!CollisionPredicates::collides_segment_segment_2d(p0, p1, q0, q1))
-    return points;
-
-  // Can we reduce to axis-aligned 1d?
-  for (std::size_t d = 0; d < 2; ++d)
-  {
-    // Check if coordinates in dimension d is the same
-    const bool reduce = (p0[d] == p1[d] and p1[d] == q0[d] and q0[d] == q1[d]);
-    if (reduce)
-    {
-      const std::size_t j = (d+1) % 2;
-      const std::vector<double> intersection_1d =
-	intersection_segment_segment_1d(p0[j], p1[j], q0[j], q1[j]);
-      points.resize(intersection_1d.size());
-      for (std::size_t k = 0; k < points.size(); ++k)
-      {
-	points[k][d] = p0[d];
-	points[k][j] = intersection_1d[k];
-      }
-      return points;
-    }
-  }
-
-  points.reserve(4);
-
-  // Check if the segment is actually a point
-  if (p0 == p1)
-  {
-    if (CollisionPredicates::collides_segment_point_2d(q0, q1, p0))
-    {
-      points.push_back(p0);
-      return points;
-    }
-  }
-
-  if (q0 == q1)
-  {
-    if (CollisionPredicates::collides_segment_point_2d(p0, p1, q0))
-    {
-      points.push_back(q0);
-      return points;
-    }
-  }
-
-  // First test points to match procedure of
-  // _collides_segment_segment_2d.
-  if (CollisionPredicates::collides_segment_point_2d(q0, q1, p0))
-  {
-    points.push_back(p0);
-  }
-  if (CollisionPredicates::collides_segment_point_2d(q0, q1, p1))
-  {
-    points.push_back(p1);
-  }
-  if (CollisionPredicates::collides_segment_point_2d(p0, p1, q0))
-  {
-    points.push_back(q0);
-  }
-  if (CollisionPredicates::collides_segment_point_2d(p0, p1, q1))
-  {
-    points.push_back(q1);
-  }
-
-#ifdef augustdebug
-  std::cout << " after point collisions: " <<points.size()<<" points: ";
-  for (const Point p: points)
-    std::cout << tools::plot(p);
-  std::cout << std::endl;
-#endif
-
-  // Now we may have found all the intersectiosn
-  if (points.size() == 1)
-  {
-    return points;
-  }
-  else if (points.size() > 1)
-  {
-    std::vector<Point> unique = _unique_points(points);
-
-    // assert that we only have one or two points
-    dolfin_assert(points.size() == 2 ?
-    		  (unique.size() == 1 or unique.size() == 2) :
-    		  unique.size() == 2);
-    return unique;
-  }
-
-  // The intersection is in principle given by p0 + num / den *
-  // (p1 - p0), but we first identify certain cases where den==0 and
-  // / or num == 0.
-
-  // Use shortest distance as P0, P1
-  const bool use_p = p0.squared_distance(p1) < q0.squared_distance(q1);
-  Point P0, P1, Q0, Q1;
-  if (use_p)
-  {
-    P0 = p0;
-    P1 = p1;
-    Q0 = q0;
-    Q1 = q1;
-  }
-  else
-  {
-    P0 = q0;
-    P1 = q1;
-    Q0 = p0;
-    Q1 = p1;
-  }
-
-  const double num = orient2d(Q0, Q1, P0);
-  const double den = (P1.x()-P0.x())*(Q1.y()-Q0.y()) - (P1.y()-P0.y())*(Q1.x()-Q0.x());
-
-#ifdef augustdebug
-  std::cout << "num=" << num << " den="<<den << " (equal? "<<(num==den) <<")\n";
-#endif
-
-  // Case 0 (den = num = 0): segments are collinear
-  if (den == 0. and num == 0.)
-  {
-    const Point r = Q1 - p0;
-    const double r2 = r.squared_norm();
-    const Point rn = r / std::sqrt(r2);
-
-    // FIXME: what to do if small?
-    dolfin_assert(r2 > DOLFIN_EPS);
-
-    double t0 = (Q0 - P0).dot(r) / r2;
-    double t1 = (Q1 - P0).dot(r) / r2;
-    if (t0 > t1)
-    {
-#ifdef augustdebug
-      std::cout << "  swapped t0 and t1\n";
-#endif
-      std::swap(t0, t1);
-    }
-
-    if (CollisionPredicates::collides_segment_segment_1d(t0, t1, 0, 1))
-    {
-      // Compute two intersection points
-      const Point z0 = P0 + std::max(0.0, t0)*r;
-      const Point z1 = P0 + std::min(1.0, (Q0 - P0).dot(r) / r2 )*r;
-
-#ifdef augustdebug
-      std::cout << "case 1a"<<std::endl;
-      std::cout.precision(22);
-      std::cout <<"t0="<< t0<<"; t1="<<t1<<"; "<<tools::plot(p0)<<tools::plot(p1)<<" gave:\n"
-      		<<tools::plot(z0,"'r.'")<<tools::plot(z1,"'g.'")<<std::endl;
-#endif
-      points.push_back(z0);
-      points.push_back(z1);
-    }
-    else // Disjoint: no intersection
-    {
-#ifdef augustdebug
-      std::cout << "case 1b"<<std::endl;
-#endif
-    }
-  }
-  // Case 1 (den = 0, num != 0): segments parallel but disjoint
-  else if (den == 0)
-  {
-    // FIXME: Check whether we need this, should never reach this code!
-    // Do nothing
-    // Parallel, disjoint
-#ifdef augustdebug
-    std::cout << "case 2"<<std::endl;
-    std::cout << den<<' '<<num << std::endl;
-#endif
-  }
-  // Case 2 (den != 0, num != 0): segments not nearly paralllel.
-  // This is the main case, just use formula for computing intersection.
-  else if (std::abs(den*den) > DOLFIN_EPS_LARGE*std::abs(num))
-  {
-    Point x0 = P0 + num / den * (P1 - P0);
-
-#ifdef augustdebug
-    std::cout << "robust_linear_combination gave " << tools::plot(x0)<<std::endl;
-#endif
-
-    points.push_back(x0);
-  }
-  // Case 3 (den! = 0, num != 0): segments nearly parallel.
-  // Computation very unstable, so instead return something sensible (midpoint).
-  else // den is small
-  {
-    // Now the line segments are almost collinear. Project on (1,0)
-    // and (0,1) to find the largest projection. Note that Q0, Q1 is
-    // longest.
-    const std::size_t dim = (std::abs(Q0.x() - Q1.x()) > std::abs(Q0.y() - Q1.y())) ? 0 : 1;
-
-    // Sort the points according to dim
-    std::array<Point, 4> _points = { P0, P1, Q0, Q1 };
-    std::sort(_points.begin(), _points.end(), [dim](Point a, Point b) { return a[dim] < b[dim]; });
-
-    // Return midpoint
-    Point xm = (_points[1] + _points[2]) / 2;
-#ifdef augustdebug
-    std::cout << "projection intersection with |den|="<<std::abs(den)<< " and difference "<< std::abs(std::abs(den)-std::abs(num)) <<" using P0, P1, Q0, Q1 " << tools::plot(P0)<<tools::plot(P1)<<tools::plot(Q0)<<tools::plot(Q1)<<"and dim = " << dim<< " gives\n" << tools::plot(xm)<<std::endl;
-#endif
-    points.push_back(xm);
-  }
-
-  dolfin_assert(GeometryPredicates::is_finite(points));
-  const std::vector<Point> unique = _unique_points(points);
-  return unique;
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>

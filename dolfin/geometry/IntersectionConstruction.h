@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-11
+// Last changed: 2017-02-12
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -113,8 +113,7 @@ namespace dolfin
                                     const Point& q0,
                                     const Point& q1)
     {
-      //return _intersection_segment_segment_2d(p0, p1, q0, q1);
-      return _intersection_segment_segment_2d_new(p0, p1, q0, q1);
+      return _intersection_segment_segment_2d(p0, p1, q0, q1);
     }
 
     /// Compute intersection of segment p0-p1 with segment q0-q1 (3D version)
@@ -305,15 +304,6 @@ namespace dolfin
     static Point _cross_product(const Point& a,
                                 const Point& b,
                                 const Point& c);
-
-
-    // FIXME: testing
-
-    static std::vector<Point>
-    _intersection_segment_segment_2d_new(const Point& p0,
-                                         const Point& p1,
-                                         const Point& q0,
-                                         const Point& q1);
 
   };
 
