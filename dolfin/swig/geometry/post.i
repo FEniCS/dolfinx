@@ -49,28 +49,35 @@
   // Implement type and bound checks assuming Point is 3D
   %pythoncode %{
     def __len__(self):
-      return 3
+        return 3
 
     def __getitem__(self, i):
-      "Get i-th coordinate. Only accept integers, not slices."
-      return self._getitem(self._check_index(i))
+        "Get i-th coordinate. Only accept integer, or full slice."
+        if i == slice(None):
+            # TODO: Chris, put here array if you change it back
+            return self.coordinates()
+        else:
+            return self._getitem(self._check_index(i))
 
     def __setitem__(self, i, value):
-      "Set i-th coordinate. Only accept integers, not slices."
-      self._setitem(self._check_index(i), value)
+        "Set i-th coordinate. Only accept integer, or full slice."
+        if i == slice(None):
+            for j, v in enumerate(value):
+                self[j] = v  # Range check in this call
+        else:
+            self._setitem(self._check_index(i), value)
 
     from numpy import uintp
 
     def _check_index(self, i):
-      "Check index is convertible to uintp and in range"
-      # Accept only integral types, not slices
-      i = self.uintp(i)
-
-      # Range check
-      if i > 2:
-        raise IndexError("Dimension of Point is always 3")
-
-      # Return size_t index
-      return i
+        "Check index is convertible to uintp and in range(2)"
+        try:
+            i = self.uintp(i)
+        except TypeError:
+            raise TypeError("Point indexing only supported for "
+                            "integers and full slices")
+        if i > 2:
+            raise IndexError("Dimension of Point is always 3")
+        return i
   %}
 }
