@@ -128,6 +128,23 @@ namespace dolfin
     // FIXME: Add comment that there are exactly 9 functions and that
     // they are all implemented.
 
+    /// Compute intersection of points p0 and q0 (1D)
+    static std::vector<double>
+    intersection_point_point_1d(double p0,
+                                double q0)
+    {
+      return _intersection_point_point_1d(p0, q0);
+    }
+
+    /// Compute intersection of segment p0-p1 with point q0 (1D)
+    static std::vector<double>
+    intersection_segment_point_1d(double p0,
+                                  double p1,
+                                  double q0)
+    {
+      return _intersection_segment_point_1d(p0, p1, q0);
+    }
+
     /// Compute intersection of segment p0-p1 with segment q0-q1 (1D)
     static std::vector<double>
     intersection_segment_segment_1d(double p0,
@@ -136,6 +153,33 @@ namespace dolfin
                                     double q1)
     {
       return _intersection_segment_segment_1d(p0, p1, q0, q1);
+    }
+
+    /// Compute intersection of points p0 and q0 (2D)
+    static std::vector<Point>
+    intersection_point_point_1d(const Point& p0,
+                                const Point q0)
+    {
+      return _intersection_point_point_2d(p0, q0);
+    }
+
+    /// Compute intersection of segment p0-p1 with point q0 (2D)
+    static std::vector<Point>
+    intersection_segment_point_2d(const Point& p0,
+                                  const Point& p1,
+                                  const Point& q0)
+    {
+      return _intersection_segment_point_2d(p0, p1, q0);
+    }
+
+    /// Compute intersection of triangle p0-p1-p2 with point q0 (2D)
+    static std::vector<Point>
+    intersection_triangle_point_2d(const Point& p0,
+                                   const Point& p1,
+                                   const Point& p2,
+                                   const Point& q0)
+    {
+      return _intersection_triangle_point_2d(p0, p1, p2, q0);
     }
 
     /// Compute intersection of segment p0-p1 with segment q0-q1 (2D)
@@ -238,10 +282,34 @@ namespace dolfin
     // Implementation of intersection construction functions
 
     static std::vector<double>
+    _intersection_point_point_1d(double p0,
+                                 double q0);
+
+    static std::vector<double>
+    _intersection_segment_point_1d(double p0,
+                                   double p1,
+                                   double q0);
+
+    static std::vector<double>
     _intersection_segment_segment_1d(double p0,
                                      double p1,
                                      double q0,
                                      double q1);
+
+    static std::vector<Point>
+    _intersection_point_point_2d(const Point& p0,
+                                 const Point& q0);
+
+    static std::vector<Point>
+    _intersection_segment_point_2d(const Point& p0,
+                                   const Point& p1,
+                                   const Point& q0);
+
+    static std::vector<Point>
+    _intersection_triangle_point_2d(const Point& p0,
+                                    const Point& p1,
+                                    const Point& p2,
+                                    const Point& q0);
 
     static std::vector<Point>
     _intersection_segment_segment_2d(const Point& p0,
