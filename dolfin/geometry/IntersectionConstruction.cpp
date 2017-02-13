@@ -459,39 +459,43 @@ IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
   // The list of points (convex hull)
   std::vector<Point> points;
 
-  if (CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q0))
+  // Indicators to avoid duplicates
+  bool p0i = false, p1i = false, p2i = false, q0i = false, q1i = false;
+
+  // Special case: end point collision
+  add_if_equal(points, p0, q0, p0i, q0i);
+  add_if_equal(points, p0, q1, p0i, q1i);
+  add_if_equal(points, p1, q0, p1i, q0i);
+  add_if_equal(points, p1, q1, p1i, q1i);
+  add_if_equal(points, p2, q0, p2i, q0i);
+  add_if_equal(points, p2, q1, p2i, q1i);
+
+  // Special case: segment end points inside triangle
+  if (!q0i and CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q0))
     points.push_back(q0);
-  if (CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q1))
+  if (!q1i and CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q1))
     points.push_back(q1);
 
-  if (CollisionPredicates::collides_segment_segment_2d(p0, p1, q0, q1))
+  // Main case: segment-segment intersections
   {
-    const std::vector<Point> intersection = intersection_segment_segment_2d(p0, p1, q0, q1);
-    // FIXME: Should we require consistency between collision and intersection
-    //dolfin_assert(intersection.size());
-    points.insert(points.end(), intersection.begin(), intersection.end());
+    const std::vector<Point> _points = intersection_segment_segment_2d(p0, p1, q0, q1);
+    points.insert(points.end(), _points.begin(), _points.end());
+  }
+  {
+    const std::vector<Point> _points = intersection_segment_segment_2d(p0, p2, q0, q1);
+    points.insert(points.end(), _points.begin(), _points.end());
+  }
+  {
+    const std::vector<Point> _points = intersection_segment_segment_2d(p1, p2, q0, q1);
+    points.insert(points.end(), _points.begin(), _points.end());
   }
 
-  if (CollisionPredicates::collides_segment_segment_2d(p0, p2, q0, q1))
-  {
-    const std::vector<Point> intersection = intersection_segment_segment_2d(p0, p2, q0, q1);
-    //dolfin_assert(intersection.size());
-    points.insert(points.end(), intersection.begin(), intersection.end());
-  }
+  // FIXME: Don't know how to make sure we don't add duplicates in
+  // segment_segment intersections above without attaching indicators
+  // to all the points...
 
-  if (CollisionPredicates::collides_segment_segment_2d(p1, p2, q0, q1))
-  {
-    const std::vector<Point> intersection = intersection_segment_segment_2d(p1, p2, q0, q1);
-    //dolfin_assert(intersection.size());
-    points.insert(points.end(), intersection.begin(), intersection.end());
-  }
-
-  // Remove strict duplictes. Use exact equality here. Approximate
-  // equality is for ConvexTriangulation.
-  // FIXME: This can be avoided if we use interior segment tests.
   dolfin_assert(GeometryPredicates::is_finite(points));
-  const std::vector<Point> unique = _unique_points(points);
-  return unique;
+  return _unique_points(points);
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -1288,6 +1292,51 @@ IntersectionConstruction::_intersection_segment_segment_2d_old(const Point& p0,
     points.push_back(xm);
   }
 
+  dolfin_assert(GeometryPredicates::is_finite(points));
+  const std::vector<Point> unique = _unique_points(points);
+  return unique;
+}
+
+std::vector<Point>
+IntersectionConstruction::_intersection_triangle_segment_2d_old(const Point& p0,
+                                                                const Point& p1,
+                                                                const Point& p2,
+                                                                const Point& q0,
+                                                                const Point& q1)
+{
+  // The list of points (convex hull)
+  std::vector<Point> points;
+
+  if (CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q0))
+    points.push_back(q0);
+  if (CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q1))
+    points.push_back(q1);
+
+  if (CollisionPredicates::collides_segment_segment_2d(p0, p1, q0, q1))
+  {
+    const std::vector<Point> intersection = intersection_segment_segment_2d(p0, p1, q0, q1);
+    // FIXME: Should we require consistency between collision and intersection
+    //dolfin_assert(intersection.size());
+    points.insert(points.end(), intersection.begin(), intersection.end());
+  }
+
+  if (CollisionPredicates::collides_segment_segment_2d(p0, p2, q0, q1))
+  {
+    const std::vector<Point> intersection = intersection_segment_segment_2d(p0, p2, q0, q1);
+    //dolfin_assert(intersection.size());
+    points.insert(points.end(), intersection.begin(), intersection.end());
+  }
+
+  if (CollisionPredicates::collides_segment_segment_2d(p1, p2, q0, q1))
+  {
+    const std::vector<Point> intersection = intersection_segment_segment_2d(p1, p2, q0, q1);
+    //dolfin_assert(intersection.size());
+    points.insert(points.end(), intersection.begin(), intersection.end());
+  }
+
+  // Remove strict duplictes. Use exact equality here. Approximate
+  // equality is for ConvexTriangulation.
+  // FIXME: This can be avoided if we use interior segment tests.
   dolfin_assert(GeometryPredicates::is_finite(points));
   const std::vector<Point> unique = _unique_points(points);
   return unique;

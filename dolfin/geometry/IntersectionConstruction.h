@@ -112,7 +112,7 @@ namespace dolfin
     // [x] _intersection_segment_segment_1d
     // [x] _intersection_segment_segment_2d
     // [ ] _intersection_segment_segment_3d
-    // [ ] _intersection_triangle_segment_2d
+    // [x] _intersection_triangle_segment_2d
     // [ ] _intersection_triangle_segment_3d
     // [ ] _intersection_triangle_triangle_2d
     // [ ] _intersection_triangle_triangle_3d
@@ -356,6 +356,12 @@ namespace dolfin
                                          const Point& q0,
                                          const Point& q1);
 
+    static std::vector<Point>
+    _intersection_triangle_segment_2d_old(const Point& p0,
+                                          const Point& p1,
+                                          const Point& p2,
+                                          const Point& q0,
+                                          const Point& q1);
 
   };
 
