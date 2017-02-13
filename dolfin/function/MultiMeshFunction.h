@@ -75,16 +75,7 @@ namespace dolfin
     ///         Part mesh assigned to
     ///     V (_Function_)
     ///         The vector
-    void assign_part(std::size_t a, Function& v);
-
-    /// Extract the vector of a MultiMeshFunction to part of a mesh
-    ///
-    /// *Arguments*
-    ///     part (int)
-    ///         Part of function wanted for extraction
-    ///     v (_Function_)
-    ///         Vector to assign put extraction
-    Function extract_vector(std::size_t part, Function& v);
+    void assign_part(std::size_t a, const Function& v);
 
     /// Return function (part) number i
     ///
@@ -93,6 +84,14 @@ namespace dolfin
     ///         Function (part) number i
     std::shared_ptr<const Function> part(std::size_t i) const;
 
+    /// Return a (deepcopy) function (part) number i
+    ///
+    /// *Returns*
+    ///     _Function_
+    ///         Function (part) number i
+    ///         bool deepcopy flag
+    std::shared_ptr<const Function> part(std::size_t i, bool deepcopy) const;
+    
     /// Return vector of expansion coefficients (non-const version)
     ///
     /// *Returns*
