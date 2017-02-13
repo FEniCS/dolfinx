@@ -32,51 +32,45 @@
 //=============================================================================
 
 //-----------------------------------------------------------------------------
-// Extend Point interface with Python selectors
+// Extend Point with Python sequence interface
 //-----------------------------------------------------------------------------
-%feature("docstring") dolfin::Point::__getitem__ "Missing docstring";
-%feature("docstring") dolfin::Point::__setitem__ "Missing docstring";
-
-//-----------------------------------------------------------------------------
-// Macro for exception handler which turn C++ exception into SWIG exception
-//
-// NAME          : Name of the function to be handled
-// CPP_EXC_TYPE  : C++ type of exception to be handled
-// SWIG_EXC_CODE : SWIG code of exception as defined in exception.i
-//-----------------------------------------------------------------------------
-%define CPP_EXC_TO_SWIG(NAME, CPP_EXC_TYPE, SWIG_EXC_CODE)
-%include "exception.i"
-%exception NAME
-{
-  try
-  {
-    $action
-  }
-  catch (CPP_EXC_TYPE &e)
-  {
-    SWIG_exception(SWIG_EXC_CODE, e.what());
-  }
-}
-%enddef
-
-CPP_EXC_TO_SWIG(dolfin::Point::__getitem__, std::range_error, SWIG_IndexError)
-CPP_EXC_TO_SWIG(dolfin::Point::__setitem__, std::range_error, SWIG_IndexError)
-
 %extend dolfin::Point {
-  double __len__()
+  // Wrap operator[] (now without bound checks)
+  double _getitem(std::size_t i)
   {
-    return 3;
-  }
-  double __getitem__(int i)
-  {
-    if (i > 2)
-      throw std::range_error("Dimension of Point is always 3.");
     return (*self)[i];
   }
-  void __setitem__(int i, double val)
+
+  void _setitem(std::size_t i, double val)
   {
-    if (i > 2)
-      throw std::range_error("Dimension of Point is always 3.");
     (*self)[i] = val;
   }
+
+  // Implement type and bound checks assuming Point is 3D
+  %pythoncode %{
+    def __len__(self):
+      return 3
+
+    def __getitem__(self, i):
+      "Get i-th coordinate. Only accept integers, not slices."
+      return self._getitem(self._check_index(i))
+
+    def __setitem__(self, i, value):
+      "Set i-th coordinate. Only accept integers, not slices."
+      self._setitem(self._check_index(i), value)
+
+    from numpy import uintp
+
+    def _check_index(self, i):
+      "Check index is convertible to uintp and in range"
+      # Accept only integral types, not slices
+      i = self.uintp(i)
+
+      # Range check
+      if i > 2:
+        raise IndexError("Dimension of Point is always 3")
+
+      # Return size_t index
+      return i
+  %}
 }
