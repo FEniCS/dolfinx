@@ -280,6 +280,9 @@ IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
 							   const Point& q0,
 							   const Point& q1)
 {
+  // FIXME: This function stil uses add_if_equal and tries to avoid
+  // adding duplicates. Simplify by using add(points, intersection_foo) etc.
+
   // The list of points (convex hull)
   std::vector<Point> points;
 
