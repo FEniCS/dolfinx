@@ -330,6 +330,99 @@ IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
+IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
+							    const Point& p1,
+							    const Point& p2,
+							    const Point& q0,
+							    const Point& q1)
+{
+  // The list of points (convex hull)
+  std::vector<Point> points;
+
+  // Indicators to avoid duplicates
+  bool p0i = false, p1i = false, p2i = false, q0i = false, q1i = false;
+
+  // Special case: end point collision
+  add_if_equal(points, p0, q0, p0i, q0i);
+  add_if_equal(points, p0, q1, p0i, q1i);
+  add_if_equal(points, p1, q0, p1i, q0i);
+  add_if_equal(points, p1, q1, p1i, q1i);
+  add_if_equal(points, p2, q0, p2i, q0i);
+  add_if_equal(points, p2, q1, p2i, q1i);
+
+  // Special case: segment end points inside triangle
+  if (!q0i and CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q0))
+    points.push_back(q0);
+  if (!q1i and CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q1))
+    points.push_back(q1);
+
+  // Special case: segment-segment intersections
+  add(points, intersection_segment_segment_2d(p0, p1, q0, q1));
+  add(points, intersection_segment_segment_2d(p0, p2, q0, q1));
+  add(points, intersection_segment_segment_2d(p1, p2, q0, q1));
+
+  // FIXME: Remove unique here
+
+  dolfin_assert(GeometryPredicates::is_finite(points));
+  return _unique_points(points);
+}
+//-----------------------------------------------------------------------------
+std::vector<Point>
+IntersectionConstruction::_intersection_triangle_triangle_2d(const Point& p0,
+							     const Point& p1,
+							     const Point& p2,
+							     const Point& q0,
+							     const Point& q1,
+							     const Point& q2)
+{
+  // The list of points (convex hull)
+  std::vector<Point> points;
+
+  // Indicators to avoid duplicates
+  bool p0i = false, p1i = false, p2i = false;
+  bool q0i = false, q1i = false, q2i = false;
+
+  // Special case: vertex-vertex collisions
+  add_if_equal(points, p0, q0, p0i, q0i);
+  add_if_equal(points, p0, q1, p0i, q1i);
+  add_if_equal(points, p0, q2, p0i, q2i);
+  add_if_equal(points, p1, q0, p1i, q0i);
+  add_if_equal(points, p1, q1, p1i, q1i);
+  add_if_equal(points, p1, q2, p1i, q2i);
+  add_if_equal(points, p2, q0, p2i, q0i);
+  add_if_equal(points, p2, q1, p2i, q1i);
+  add_if_equal(points, p2, q2, p2i, q2i);
+
+  // Special case: vertex-triangle collisions
+  if (!q0i and CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q0))
+    points.push_back(q0);
+  if (!q1i and CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q1))
+    points.push_back(q1);
+  if (!q2i and CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q2))
+    points.push_back(q2);
+  if (!p0i and CollisionPredicates::collides_triangle_point_2d(q0, q1, q2, p0))
+    points.push_back(p0);
+  if (!p1i and CollisionPredicates::collides_triangle_point_2d(q0, q1, q2, p1))
+    points.push_back(p1);
+  if (!p2i and CollisionPredicates::collides_triangle_point_2d(q0, q1, q2, p2))
+    points.push_back(p2);
+
+  // Special case: segment-segment intersections
+  add(points, intersection_segment_segment_2d(p0, p1, q0, q1));
+  add(points, intersection_segment_segment_2d(p0, p1, q0, q2));
+  add(points, intersection_segment_segment_2d(p0, p1, q1, q2));
+  add(points, intersection_segment_segment_2d(p0, p2, q0, q1));
+  add(points, intersection_segment_segment_2d(p0, p2, q0, q2));
+  add(points, intersection_segment_segment_2d(p0, p2, q1, q2));
+  add(points, intersection_segment_segment_2d(p1, p2, q0, q1));
+  add(points, intersection_segment_segment_2d(p1, p2, q0, q2));
+  add(points, intersection_segment_segment_2d(p1, p2, q1, q2));
+
+  dolfin_assert(GeometryPredicates::is_finite(points));
+  return _unique_points(points);
+}
+//-----------------------------------------------------------------------------
+std::vector<Point>
 IntersectionConstruction::_intersection_segment_segment_3d(const Point& p0,
 							   const Point& p1,
 							   const Point& q0,
@@ -450,44 +543,6 @@ IntersectionConstruction::_intersection_segment_segment_3d(const Point& p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::_intersection_triangle_segment_2d(const Point& p0,
-							    const Point& p1,
-							    const Point& p2,
-							    const Point& q0,
-							    const Point& q1)
-{
-  // The list of points (convex hull)
-  std::vector<Point> points;
-
-  // Indicators to avoid duplicates
-  bool p0i = false, p1i = false, p2i = false, q0i = false, q1i = false;
-
-  // Special case: end point collision
-  add_if_equal(points, p0, q0, p0i, q0i);
-  add_if_equal(points, p0, q1, p0i, q1i);
-  add_if_equal(points, p1, q0, p1i, q0i);
-  add_if_equal(points, p1, q1, p1i, q1i);
-  add_if_equal(points, p2, q0, p2i, q0i);
-  add_if_equal(points, p2, q1, p2i, q1i);
-
-  // Special case: segment end points inside triangle
-  if (!q0i and CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q0))
-    points.push_back(q0);
-  if (!q1i and CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q1))
-    points.push_back(q1);
-
-  // Special case: segment-segment intersections
-  add(points, intersection_segment_segment_2d(p0, p1, q0, q1));
-  add(points, intersection_segment_segment_2d(p0, p2, q0, q1));
-  add(points, intersection_segment_segment_2d(p1, p2, q0, q1));
-
-  // FIXME: Remove unique here
-
-  dolfin_assert(GeometryPredicates::is_finite(points));
-  return _unique_points(points);
-}
-//-----------------------------------------------------------------------------
-std::vector<Point>
 IntersectionConstruction::_intersection_triangle_segment_3d(const Point& p0,
                                                             const Point& p1,
 							    const Point& p2,
@@ -602,61 +657,6 @@ IntersectionConstruction::_intersection_triangle_segment_3d(const Point& p0,
   */
 
   return points;
-}
-//-----------------------------------------------------------------------------
-std::vector<Point>
-IntersectionConstruction::_intersection_triangle_triangle_2d(const Point& p0,
-							     const Point& p1,
-							     const Point& p2,
-							     const Point& q0,
-							     const Point& q1,
-							     const Point& q2)
-{
-  // The list of points (convex hull)
-  std::vector<Point> points;
-
-  // Indicators to avoid duplicates
-  bool p0i = false, p1i = false, p2i = false;
-  bool q0i = false, q1i = false, q2i = false;
-
-  // Special case: vertex-vertex collisions
-  add_if_equal(points, p0, q0, p0i, q0i);
-  add_if_equal(points, p0, q1, p0i, q1i);
-  add_if_equal(points, p0, q2, p0i, q2i);
-  add_if_equal(points, p1, q0, p1i, q0i);
-  add_if_equal(points, p1, q1, p1i, q1i);
-  add_if_equal(points, p1, q2, p1i, q2i);
-  add_if_equal(points, p2, q0, p2i, q0i);
-  add_if_equal(points, p2, q1, p2i, q1i);
-  add_if_equal(points, p2, q2, p2i, q2i);
-
-  // Special case: vertex-triangle collisions
-  if (!q0i and CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q0))
-    points.push_back(q0);
-  if (!q1i and CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q1))
-    points.push_back(q1);
-  if (!q2i and CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q2))
-    points.push_back(q2);
-  if (!p0i and CollisionPredicates::collides_triangle_point_2d(q0, q1, q2, p0))
-    points.push_back(p0);
-  if (!p1i and CollisionPredicates::collides_triangle_point_2d(q0, q1, q2, p1))
-    points.push_back(p1);
-  if (!p2i and CollisionPredicates::collides_triangle_point_2d(q0, q1, q2, p2))
-    points.push_back(p2);
-
-  // Special case: segment-segment intersections
-  add(points, intersection_segment_segment_2d(p0, p1, q0, q1));
-  add(points, intersection_segment_segment_2d(p0, p1, q0, q2));
-  add(points, intersection_segment_segment_2d(p0, p1, q1, q2));
-  add(points, intersection_segment_segment_2d(p0, p2, q0, q1));
-  add(points, intersection_segment_segment_2d(p0, p2, q0, q2));
-  add(points, intersection_segment_segment_2d(p0, p2, q1, q2));
-  add(points, intersection_segment_segment_2d(p1, p2, q0, q1));
-  add(points, intersection_segment_segment_2d(p1, p2, q0, q2));
-  add(points, intersection_segment_segment_2d(p1, p2, q1, q2));
-
-  dolfin_assert(GeometryPredicates::is_finite(points));
-  return _unique_points(points);
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
