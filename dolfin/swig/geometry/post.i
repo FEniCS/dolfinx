@@ -37,25 +37,46 @@
 %feature("docstring") dolfin::Point::__getitem__ "Missing docstring";
 %feature("docstring") dolfin::Point::__setitem__ "Missing docstring";
 
+//-----------------------------------------------------------------------------
+// Macro for exception handler which turn C++ exception into SWIG exception
+//
+// NAME          : Name of the function to be handled
+// CPP_EXC_TYPE  : C++ type of exception to be handled
+// SWIG_EXC_CODE : SWIG code of exception as defined in exception.i
+//-----------------------------------------------------------------------------
+%define CPP_EXC_TO_SWIG(NAME, CPP_EXC_TYPE, SWIG_EXC_CODE)
 %include "exception.i"
-
-%exception dolfin::Point::__getitem__
+%exception NAME
 {
   try
   {
     $action
   }
-  catch (std::range_error &e)
+  catch (CPP_EXC_TYPE &e)
   {
-    SWIG_exception(SWIG_IndexError, "Index out of bounds");
+    SWIG_exception(SWIG_EXC_CODE, e.what());
   }
 }
+%enddef
+
+CPP_EXC_TO_SWIG(dolfin::Point::__getitem__, std::range_error, SWIG_IndexError)
+CPP_EXC_TO_SWIG(dolfin::Point::__setitem__, std::range_error, SWIG_IndexError)
 
 %extend dolfin::Point {
-  double __len__() { return 3; }
-  double __getitem__(int i) {
+  double __len__()
+  {
+    return 3;
+  }
+  double __getitem__(int i)
+  {
     if (i > 2)
-      throw std::range_error("");
-    return (*self)[i]; }
-  void __setitem__(int i, double val) { (*self)[i] = val; }
+      throw std::range_error("Dimension of Point is always 3.");
+    return (*self)[i];
+  }
+  void __setitem__(int i, double val)
+  {
+    if (i > 2)
+      throw std::range_error("Dimension of Point is always 3.");
+    (*self)[i] = val;
+  }
 }
