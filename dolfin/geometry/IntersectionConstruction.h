@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-12
+// Last changed: 2017-02-13
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -145,8 +145,9 @@ namespace dolfin
                                     const Point& q0,
                                     const Point& q1)
     {
-      //return _intersection_segment_segment_2d(p0, p1, q0, q1);
-      return _intersection_segment_segment_2d_old(p0, p1, q0, q1);
+      //return CHECK_CGAL(_intersection_segment_segment_2d(p0, p1, q0, q1),
+      //                  _intersection_segment_segment_2d_old(p0, p1, q0, q1));
+      return _intersection_segment_segment_2d(p0, p1, q0, q1);
     }
 
     /// Compute intersection of segment p0-p1 with segment q0-q1 (3D version)

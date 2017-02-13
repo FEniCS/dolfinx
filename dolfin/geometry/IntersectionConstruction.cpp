@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-12
+// Last changed: 2017-02-13
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
 #include "GeometryPredicates.h"
 #include "GeometryTools.h"
+#include "GeometryDebugging.h"
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"
 
@@ -204,6 +205,8 @@ IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
   // The list of points (convex hull)
   std::vector<Point> points;
 
+  //GeometryDebugging::plot({p0, p1}, {q0, q1});
+
   // Compute orientation of segment end points wrt other segment
   const double p0o = orient2d(q0, q1, p0);
   const double p1o = orient2d(q0, q1, p1);
@@ -276,15 +279,26 @@ IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
   //
   // However, the computation may be unstable when the two segments
   // are nearly collinear (when den is small) so special hanndling is
-  // needed when this happens.
+  // needed when this happens. To improve the chance of the point
+  // ending up inside both segments, we swap the points so that the
+  // computation is based on the shortest segment.
 
-  // FIXME: Consider swapping the segments to base the intersection
-  // computation on the shortest segment.
-
-  // Compute numerator and denominator for intersection formula
-  const double num = p0o;
-  const double den = (p1.x() - p0.x())*(q1.y() - q0.y())
-                   - (p1.y() - p0.y())*(q1.x() - q0.x());
+  // Compute intersection point based on shortes segment
+  double num = 0., den = 0.; Point x;
+  if (p0.squared_distance(p1) < q0.squared_distance(q1))
+  {
+    num = p0o;
+    den = (p1.x() - p0.x())*(q1.y() - q0.y())
+        - (p1.y() - p0.y())*(q1.x() - q0.x());
+    x = p0 + num / den * (p1 - p0);
+  }
+  else
+  {
+    num = q0o;
+    den = (q1.x() - q0.x())*(p1.y() - p0.y())
+        - (q1.y() - q0.y())*(p1.x() - p0.x());
+    x = q0 + num / den * (q1 - q0);
+  }
 
   // Special case: almost collinear segments. Intersection is very
   // hard to compute so just make sure we pick a sensible point which
@@ -308,8 +322,7 @@ IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
     return points;
   }
 
-  // Main case: compute intersection
-  const Point x = p0 + num / den * (p1 - p0);
+  // Main case: add intersection point
   points.push_back(x);
 
   dolfin_assert(points.size() == 1);
@@ -1268,6 +1281,7 @@ IntersectionConstruction::_intersection_segment_segment_2d_old(const Point& p0,
 
     // Return midpoint
     Point xm = (_points[1] + _points[2]) / 2;
+
 #ifdef augustdebug
     std::cout << "projection intersection with |den|="<<std::abs(den)<< " and difference "<< std::abs(std::abs(den)-std::abs(num)) <<" using P0, P1, Q0, Q1 " << tools::plot(P0)<<tools::plot(P1)<<tools::plot(Q0)<<tools::plot(Q1)<<"and dim = " << dim<< " gives\n" << tools::plot(xm)<<std::endl;
 #endif
