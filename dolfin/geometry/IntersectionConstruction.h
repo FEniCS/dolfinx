@@ -114,7 +114,7 @@ namespace dolfin
     // [ ] _intersection_segment_segment_3d
     // [x] _intersection_triangle_segment_2d
     // [ ] _intersection_triangle_segment_3d
-    // [ ] _intersection_triangle_triangle_2d
+    // [x] _intersection_triangle_triangle_2d
     // [ ] _intersection_triangle_triangle_3d
     // [ ] _intersection_tetrahedron_triangle_3d
     // [ ] _intersection_tetrahedron_tetrahedron_3d
@@ -333,6 +333,13 @@ namespace dolfin
       }
     }
 
+    // Add points to vector
+    static inline void add(std::vector<Point>& points,
+                           const std::vector<Point>& _points)
+    {
+      points.insert(points.end(), _points.begin(), _points.end());
+    }
+
     // Strictly unique points using == operator
     // TODO: Will the points be unique most of the times? Should this function
     // filter out inplace?
@@ -362,6 +369,14 @@ namespace dolfin
                                           const Point& p2,
                                           const Point& q0,
                                           const Point& q1);
+
+    static std::vector<Point>
+    _intersection_triangle_triangle_2d_old(const Point& p0,
+                                           const Point& p1,
+                                           const Point& p2,
+                                           const Point& q0,
+                                           const Point& q1,
+                                           const Point& q2);
 
   };
 
