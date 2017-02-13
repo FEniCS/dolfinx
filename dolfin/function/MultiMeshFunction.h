@@ -68,6 +68,24 @@ namespace dolfin
     /// Destructor
     virtual ~MultiMeshFunction();
 
+    /// Assign Function to part of a mesh
+    ///
+    /// *Arguments*
+    ///     a (int)
+    ///         Part mesh assigned to
+    ///     V (_Function_)
+    ///         The vector
+    void assign_part(std::size_t a, Function& v);
+
+    /// Extract the vector of a MultiMeshFunction to part of a mesh
+    ///
+    /// *Arguments*
+    ///     part (int)
+    ///         Part of function wanted for extraction
+    ///     v (_Function_)
+    ///         Vector to assign put extraction
+    Function extract_vector(std::size_t part, Function& v);
+
     /// Return function (part) number i
     ///
     /// *Returns*

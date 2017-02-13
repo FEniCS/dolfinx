@@ -81,6 +81,33 @@ std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i) const
   return _function_parts.find(i)->second;
 }
 //-----------------------------------------------------------------------------
+void MultiMeshFunction::assign_part(std::size_t a, Function& v)
+{
+  // Finding the relevant part of the global vector
+  std::size_t start_vector = 0;
+  for (std::size_t j = 0; j < a; ++j)
+    {
+      start_vector += _function_space->part(j)->dim();
+    }
+  // Replacing old values with new ones
+  for (std::size_t i = 0; i < (v.vector()->size()); ++i)
+      _vector->setitem(i+start_vector,v.vector()->getitem(i));
+}
+//-----------------------------------------------------------------------------
+Function MultiMeshFunction::extract_vector(std::size_t part, Function& v)
+{
+  std::size_t start_vector = 0;
+  for (std::size_t j = 0; j < part; ++j)
+    {
+      start_vector += _function_space->part(j)->dim();
+    }
+  // Developer note: Add check for matching function space in function and MMfunction
+  // Replacing old values with new ones
+  for (std::size_t i = 0; i < (v.vector()->size()); ++i)
+    v.vector()->setitem(i,_vector->getitem(i+start_vector));
+  return v;
+}
+//-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> MultiMeshFunction::vector()
 {
   dolfin_assert(_vector);
