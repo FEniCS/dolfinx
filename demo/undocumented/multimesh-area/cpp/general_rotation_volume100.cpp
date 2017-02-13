@@ -77,8 +77,7 @@ std::shared_ptr<MultiMesh> test_volume_2d_rot(std::size_t num_meshes)
 //-----------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-  // const std::size_t num_meshes = argc == 1 ? 2 : atoi(argv[1]);
-  const std::size_t num_meshes = 8;
+  const std::size_t num_meshes = argc == 1 ? 8 : atoi(argv[1]);
 
   const std::vector<std::size_t> all_num_meshes = { num_meshes };
 
