@@ -99,7 +99,7 @@ std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i, bool deep
   if (not deepcopy)
     return part(i);
 
-  assert(i < _function_space.num_parts());
+  assert(i < _function_space->num_parts());
 
   // Create output function
   std::shared_ptr<const FunctionSpace> V = _function_space->part(i);
