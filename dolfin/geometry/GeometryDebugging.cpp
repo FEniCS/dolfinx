@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-05
-// Last changed: 2016-05-05
+// Last changed: 2017-02-15
 
 #include <sstream>
+#include <iomanip>
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
 #include "GeometryDebugging.h"
@@ -29,25 +30,15 @@ using namespace dolfin;
 void GeometryDebugging::print(std::vector<Point> simplex)
 {
   set_indentation_level(0);
-  cout << "Simplex:";
-  for (const Point p : simplex)
-    cout << " " << p;
-  cout << endl;
+  cout << "Simplex: " << simplex2string(simplex, true) << endl;
 }
 //-----------------------------------------------------------------------------
 void GeometryDebugging::print(std::vector<Point> simplex_0,
                               std::vector<Point> simplex_1)
 {
   set_indentation_level(0);
-  cout << "Simplex 0:";
-  for (const Point p : simplex_0)
-    cout << "-" << point2string(p);
-  cout << endl;
-
-  cout << "Simplex 1:";
-  for (const Point p : simplex_1)
-    cout << "-" << point2string(p);
-  cout << endl;
+  cout << "Simplex 0: " << simplex2string(simplex_0, true) << endl;
+  cout << "Simplex 1: " << simplex2string(simplex_1, true) << endl;
 }
 //-----------------------------------------------------------------------------
 void GeometryDebugging::plot(std::vector<Point> simplex)
@@ -84,31 +75,48 @@ void GeometryDebugging::init_plot()
   cout << endl;
 }
 //-----------------------------------------------------------------------------
-std::string GeometryDebugging::point2string(Point p)
+std::string GeometryDebugging::point2string(const Point& p)
 {
   std::stringstream s;
-  s << "(" << p.x() << "," << p.y() << "," << p.z() << ")";
+  s << std::setprecision(17);
+  s << "[" << p.x() << "," << p.y() << "," << p.z() << "]";
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string GeometryDebugging::simplex2string(std::vector<Point> simplex)
+std::string GeometryDebugging::simplex2string(const std::vector<Point>& simplex,
+                                              bool rowmajor)
 {
   std::size_t n = simplex.size();
   std::stringstream s;
-  s << "[";
-  for (std::size_t i = 0; i < n - 1; i++)
-    s << simplex[i].x() << ",";
-  s << simplex[n - 1].x() << "]";
-  s << ",";
-  s << "[";
-  for (std::size_t i = 0; i < n - 1; i++)
-    s << simplex[i].y() << ",";
-  s << simplex[n - 1].y() << "]";
-  s << ",";
-  s << "[";
-  for (std::size_t i = 0; i < n - 1; i++)
-    s << simplex[i].z() << ",";
-  s << simplex[n - 1].z() << "]";
+  s << std::setprecision(17);
+
+  if (rowmajor)
+  {
+    s << "[";
+    for (std::size_t i = 0; i < n - 1; i ++)
+    {
+      s << point2string(simplex[i]);
+      s << ",";
+    }
+    s << point2string(simplex[n - 1]) << "]";
+  }
+  else
+  {
+    s << "[";
+    for (std::size_t i = 0; i < n - 1; i++)
+      s << simplex[i].x() << ",";
+    s << simplex[n - 1].x() << "]";
+    s << ",";
+    s << "[";
+    for (std::size_t i = 0; i < n - 1; i++)
+      s << simplex[i].y() << ",";
+    s << simplex[n - 1].y() << "]";
+    s << ",";
+    s << "[";
+    for (std::size_t i = 0; i < n - 1; i++)
+      s << simplex[i].z() << ",";
+    s << simplex[n - 1].z() << "]";
+  }
 
   return s.str();
 }

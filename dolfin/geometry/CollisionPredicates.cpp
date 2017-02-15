@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-09
+// Last changed: 2017-02-15
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -49,6 +49,7 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
 #include "Point.h"
+#include "GeometryDebugging.h"
 #include "CollisionPredicates.h"
 
 // #define augustdebug
@@ -331,11 +332,15 @@ namespace
     return a.x() == b.x() && a.y() == b.y() && a.z() == b.z();
   }
 }
+//-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_segment_point_3d(Point p0,
 						     Point p1,
 						     Point point)
 {
   // std::cout << tools::drawtriangle({p0,p1})<<tools::plot3(point)<<'\n';
+
+  GeometryDebugging::print({p0, p1});
+  GeometryDebugging::print({point});
 
   if (point == p0 or point == p1)
     return true;
