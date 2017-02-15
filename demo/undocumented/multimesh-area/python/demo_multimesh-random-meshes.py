@@ -76,15 +76,10 @@ if __name__ == "__main__":
     multimesh = build_multimesh(args.num_parts, args.N_x)
 
     # Assemble linear system
-    # FIXME: This does not work yet
-    #vol = assemble_multimesh(1*dx(domain=multimesh))
+    dX = dx(domain=multimesh) + dC(domain=multimesh)
+    vol = assemble_multimesh(Constant(1)*dX)
 
     # Alternative volume calculation
-    V = MultiMeshFunctionSpace(multimesh, "Lagrange", 1)
-    f = MultiMeshFunction(V)
-    f.vector()[:] = 1.0
-    vol = assemble_multimesh(f*dX)
-
     vol_dolfin = multimesh.compute_volume()
 
     print "Computed volume (quadrature): {}.".format(vol_dolfin)
