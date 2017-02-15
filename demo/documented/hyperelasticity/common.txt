@@ -111,12 +111,12 @@ We use the following definitions of the boundary and boundary conditions:
 
 * :math:`\Gamma_{N} = \partial \Omega \backslash \Gamma_{D}` (Neumann boundary)
 
-* On  :math:`\Gamma_{D_{0}}`
+* On  :math:`\Gamma_{D_{1}}`
     .. math::
         u = (&0, \\
              &(0.5 + (y - 0.5)\cos(\pi/3) - (z - 0.5)\sin(\pi/3) - y)/2, \\
-             &(0.5 + (y - 0.5)\sin(\pi/3) + (z - 0.5)\cos(\pi/3) - x))/2)
-* On :math:`\Gamma_{D_{1}}`:  :math:`u = (0, 0, 0)`
+             &(0.5 + (y - 0.5)\sin(\pi/3) + (z - 0.5)\cos(\pi/3) - z))/2)
+* On :math:`\Gamma_{D_{0}}`:  :math:`u = (0, 0, 0)`
 
 * On :math:`\Gamma_{N}`: :math:`T = (0.1, 0, 0)`
 
