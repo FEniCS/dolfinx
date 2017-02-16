@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-13
+// Last changed: 2017-02-16
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -106,18 +106,29 @@ namespace dolfin
 
     //--- Low-level intersection construction functions ---
 
-    // FIXME: Rewrite all low-level functions to follow the template
-    // implementation of segment_segment_2d:
-    //
-    // [x] _intersection_segment_segment_1d
-    // [x] _intersection_segment_segment_2d
-    // [ ] _intersection_segment_segment_3d
-    // [x] _intersection_triangle_segment_2d
-    // [ ] _intersection_triangle_segment_3d
-    // [x] _intersection_triangle_triangle_2d
-    // [ ] _intersection_triangle_triangle_3d
-    // [ ] _intersection_tetrahedron_triangle_3d
-    // [ ] _intersection_tetrahedron_tetrahedron_3d
+    /* Current status of (re)implementation:
+
+    [ ] intersection_point_point_1d
+    [ ] intersection_point_point_2d
+    [ ] intersection_point_point_3d
+    [ ] intersection_segment_point_1d
+    [ ] intersection_segment_point_2d
+    [ ] intersection_segment_point_3d
+    [ ] intersection_triangle_point_2d
+    [ ] intersection_triangle_point_3d
+    [ ] intersection_tetrahedron_point_3d
+    [ ] intersection_segment_segment_1d
+    [ ] intersection_segment_segment_2d
+    [ ] intersection_segment_segment_3d
+    [ ] intersection_triangle_segment_2d
+    [ ] intersection_triangle_segment_3d
+    [ ] intersection_tetrahedron_segment_3d
+    [ ] intersection_triangle_triangle_2d
+    [ ] intersection_triangle_triangle_3d
+    [ ] intersection_tetrahedron_triangle_3d
+    [ ] intersection_tetrahedron_tetrahedron_3d
+
+    */
 
     // FIXME: Remove all second-level convenience functions like this one.
     // They are only used internally in the high-level convenience functions.
@@ -128,71 +139,85 @@ namespace dolfin
     // FIXME: Add comment that there are exactly 9 functions and that
     // they are all implemented.
 
+    //--- Point intersections: 9 cases ----//
+
     /// Compute intersection of points p0 and q0 (1D)
     static std::vector<double>
     intersection_point_point_1d(double p0,
-                                double q0)
-    {
-      return _intersection_point_point_1d(p0, q0);
-    }
+                                double q0);
+
+    /// Compute intersection of points p0 and q0 (2D)
+    static std::vector<Point>
+    intersection_point_point_2d(const Point& p0,
+                                const Point& q0);
+
+    /// Compute intersection of points p0 and q0 (3D)
+    static std::vector<Point>
+    intersection_point_point_3d(const Point& p0,
+                                const Point& q0);
 
     /// Compute intersection of segment p0-p1 with point q0 (1D)
     static std::vector<double>
     intersection_segment_point_1d(double p0,
                                   double p1,
-                                  double q0)
-    {
-      return _intersection_segment_point_1d(p0, p1, q0);
-    }
-
-    /// Compute intersection of segment p0-p1 with segment q0-q1 (1D)
-    static std::vector<double>
-    intersection_segment_segment_1d(double p0,
-                                    double p1,
-                                    double q0,
-                                    double q1)
-    {
-      return _intersection_segment_segment_1d(p0, p1, q0, q1);
-    }
-
-    /// Compute intersection of points p0 and q0 (2D)
-    static std::vector<Point>
-    intersection_point_point_1d(const Point& p0,
-                                const Point q0)
-    {
-      return _intersection_point_point_2d(p0, q0);
-    }
+                                  double q0);
 
     /// Compute intersection of segment p0-p1 with point q0 (2D)
     static std::vector<Point>
     intersection_segment_point_2d(const Point& p0,
                                   const Point& p1,
-                                  const Point& q0)
-    {
-      return _intersection_segment_point_2d(p0, p1, q0);
-    }
+                                  const Point& q0);
+
+    /// Compute intersection of segment p0-p1 with point q0 (3D)
+    static std::vector<Point>
+    intersection_segment_point_3d(const Point& p0,
+                                  const Point& p1,
+                                  const Point& q0);
 
     /// Compute intersection of triangle p0-p1-p2 with point q0 (2D)
     static std::vector<Point>
     intersection_triangle_point_2d(const Point& p0,
                                    const Point& p1,
                                    const Point& p2,
-                                   const Point& q0)
-    {
-      return _intersection_triangle_point_2d(p0, p1, p2, q0);
-    }
+                                   const Point& q0);
+
+    /// Compute intersection of triangle p0-p1-p2 with point q0 (3D)
+    static std::vector<Point>
+    intersection_triangle_point_3d(const Point& p0,
+                                   const Point& p1,
+                                   const Point& p2,
+                                   const Point& q0);
+
+    /// Compute intersection of tetrahedron p0-p1-p2-p3 with point q0 (3D)
+    static std::vector<Point>
+    intersection_tetrahedron_point_3d(const Point& p0,
+                                      const Point& p1,
+                                      const Point& p2,
+                                      const Point& p3,
+                                      const Point& q0);
+
+    //--- Segment intersections: ?? cases ---//
+
+    /// Compute intersection of segment p0-p1 with segment q0-q1 (1D)
+    static std::vector<double>
+    intersection_segment_segment_1d(double p0,
+                                    double p1,
+                                    double q0,
+                                    double q1);
 
     /// Compute intersection of segment p0-p1 with segment q0-q1 (2D)
     static std::vector<Point>
     intersection_segment_segment_2d(const Point& p0,
                                     const Point& p1,
                                     const Point& q0,
-                                    const Point& q1)
-    {
-      //return CHECK_CGAL(_intersection_segment_segment_2d(p0, p1, q0, q1),
-      //                  _intersection_segment_segment_2d_old(p0, p1, q0, q1));
-      return _intersection_segment_segment_2d(p0, p1, q0, q1);
-    }
+                                    const Point& q1);
+
+    /// Compute intersection of segment p0-p1 with segment q0-q1 (3D)
+    static std::vector<Point>
+    intersection_segment_segment_3d(const Point& p0,
+                                    const Point& p1,
+                                    const Point& q0,
+                                    const Point& q1);
 
     /// Compute intersection of triangle p0-p1-p2 with segment q0-q1 (2D)
     static std::vector<Point>
@@ -200,21 +225,26 @@ namespace dolfin
                                      const Point& p1,
                                      const Point& p2,
                                      const Point& q0,
-                                     const Point& q1)
-    {
-      return _intersection_triangle_segment_2d(p0, p1, p2, q0, q1);
-    }
+                                     const Point& q1);
 
-    /// Compute intersection of triangle p0-p1-p2 with segment q0-q1 (2D)
+    /// Compute intersection of triangle p0-p1-p2 with segment q0-q1 (3D)
     static std::vector<Point>
     intersection_triangle_segment_3d(const Point& p0,
                                      const Point& p1,
                                      const Point& p2,
                                      const Point& q0,
-                                     const Point q1)
-    {
-      return _intersection_triangle_segment_3d(p0, p1, p2, q0, q1);
-    }
+                                     const Point& q1);
+
+    /// Compute intersection of tetrahedron p0-p1-p2-p3 with segment q0-q1 (3D)
+    static std::vector<Point>
+    intersection_tetrahedron_segment_3d(const Point& p0,
+                                        const Point& p1,
+                                        const Point& p2,
+                                        const Point& p3,
+                                        const Point& q0,
+                                        const Point& q1);
+
+    // FIXME: The rest of the functions
 
     /// Compute intersection of triangle p0-p1-p2 with triangle q0-q1-q2 (2D)
     static std::vector<Point>
@@ -223,20 +253,7 @@ namespace dolfin
                                       const Point& p2,
                                       const Point& q0,
                                       const Point& q1,
-                                      const Point& q2)
-    {
-      return _intersection_triangle_triangle_2d(p0, p1, p2, q0, q1, q2);
-    }
-
-    /// Compute intersection of segment p0-p1 with segment q0-q1 (3D version)
-    static std::vector<Point>
-    intersection_segment_segment_3d(const Point& p0,
-                                    const Point& p1,
-                                    const Point& q0,
-                                    const Point& q1)
-    {
-      return _intersection_segment_segment_3d(p0, p1, q0, q1);
-    }
+                                      const Point& q2);
 
     /// Compute intersection of triangle p0-p1-p2 with triangle q0-q1-q2 (3D)
     static std::vector<Point>
@@ -245,10 +262,7 @@ namespace dolfin
                                       const Point& p2,
                                       const Point& q0,
                                       const Point& q1,
-                                      const Point& q2)
-    {
-      return _intersection_triangle_triangle_3d(p0, p1, p2, q0, q1, q2);
-    }
+                                      const Point& q2);
 
     /// Compute intersection of tetrahedron p0-p1-p2-p3 with triangle q0-q1-q2 (3D)
     static std::vector<Point>
@@ -258,10 +272,7 @@ namespace dolfin
                                          const Point& p3,
                                          const Point& q0,
                                          const Point& q1,
-                                         const Point& q2)
-    {
-      return _intersection_tetrahedron_triangle_3d(p0, p1, p2, p3, q0, q1, q2);
-    }
+                                         const Point& q2);
 
     /// Compute intersection of tetrahedron p0-p1-p2-p3 with tetrahedron q0-q1-q2-q3 (3D)
     static std::vector<Point>
@@ -272,104 +283,9 @@ namespace dolfin
                                             const Point& q0,
                                             const Point& q1,
                                             const Point& q2,
-                                            const Point& q3)
-    {
-      return _intersection_tetrahedron_tetrahedron_3d(p0, p1, p2, p3, q0, q1, q2, q3);
-    }
+                                            const Point& q3);
 
   private:
-
-    // Implementation of intersection construction functions
-
-    static std::vector<double>
-    _intersection_point_point_1d(double p0,
-                                 double q0);
-
-    static std::vector<double>
-    _intersection_segment_point_1d(double p0,
-                                   double p1,
-                                   double q0);
-
-    static std::vector<double>
-    _intersection_segment_segment_1d(double p0,
-                                     double p1,
-                                     double q0,
-                                     double q1);
-
-    static std::vector<Point>
-    _intersection_point_point_2d(const Point& p0,
-                                 const Point& q0);
-
-    static std::vector<Point>
-    _intersection_segment_point_2d(const Point& p0,
-                                   const Point& p1,
-                                   const Point& q0);
-
-    static std::vector<Point>
-    _intersection_triangle_point_2d(const Point& p0,
-                                    const Point& p1,
-                                    const Point& p2,
-                                    const Point& q0);
-
-    static std::vector<Point>
-    _intersection_segment_segment_2d(const Point& p0,
-                                     const Point& p1,
-                                     const Point& q0,
-                                     const Point& q1);
-
-    static std::vector<Point>
-    _intersection_triangle_segment_2d(const Point& p0,
-                                      const Point& p1,
-                                      const Point& p2,
-                                      const Point& q0,
-                                      const Point& q1);
-
-    static std::vector<Point>
-    _intersection_triangle_triangle_2d(const Point& p0,
-                                       const Point& p1,
-                                       const Point& p2,
-                                       const Point& q0,
-                                       const Point& q1,
-                                       const Point& q2);
-
-    static std::vector<Point>
-    _intersection_segment_segment_3d(const Point& p0,
-                                     const Point& p1,
-                                     const Point& q0,
-                                     const Point& q1);
-
-    static std::vector<Point>
-    _intersection_triangle_segment_3d(const Point& p0,
-                                      const Point& p1,
-                                      const Point& p2,
-                                      const Point& q0,
-                                      const Point& q1);
-
-    static std::vector<Point>
-    _intersection_triangle_triangle_3d(const Point& p0,
-                                       const Point& p1,
-                                       const Point& p2,
-                                       const Point& q0,
-                                       const Point& q1,
-                                       const Point& q2);
-
-    static std::vector<Point>
-    _intersection_tetrahedron_triangle_3d(const Point& p0,
-                                          const Point& p1,
-                                          const Point& p2,
-                                          const Point& p3,
-                                          const Point& q0,
-                                          const Point& q1,
-                                          const Point& q2);
-    static std::vector<Point>
-    _intersection_tetrahedron_tetrahedron_3d(const Point& p0,
-                                             const Point& p1,
-                                             const Point& p2,
-                                             const Point& p3,
-                                             const Point& q0,
-                                             const Point& q1,
-                                             const Point& q2,
-                                             const Point& q3);
 
     // Utility functions
 
@@ -445,6 +361,25 @@ namespace dolfin
                                            const Point& q0,
                                            const Point& q1,
                                            const Point& q2);
+
+    std::vector<Point>
+    _intersection_tetrahedron_triangle_3d_old(const Point& p0,
+                                              const Point& p1,
+                                              const Point& p2,
+                                              const Point& p3,
+                                              const Point& q0,
+                                              const Point& q1,
+                                              const Point& q2);
+
+    static std::vector<Point>
+    _intersection_tetrahedron_tetrahedron_3d_old(const Point& p0,
+                                                 const Point& p1,
+                                                 const Point& p2,
+                                                 const Point& p3,
+                                                 const Point& q0,
+                                                 const Point& q1,
+                                                 const Point& q2,
+                                                 const Point& q3);
 
   };
 

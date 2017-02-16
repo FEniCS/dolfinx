@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-12
+// Last changed: 2017-02-16
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -94,11 +94,11 @@ bool CollisionPredicates::collides(const MeshEntity& entity,
 				      point);
 
   if (tdim == 3)
-    return collides_tetrahedron_point(g.point(v[0]),
-				      g.point(v[1]),
-				      g.point(v[2]),
-				      g.point(v[3]),
-				      point);
+    return collides_tetrahedron_point_3d(g.point(v[0]),
+                                         g.point(v[1]),
+                                         g.point(v[2]),
+                                         g.point(v[3]),
+                                         point);
 
   dolfin_error("CollisionPredicates.cpp",
                "compute entity-point collision",
@@ -154,32 +154,32 @@ bool CollisionPredicates::collides(const MeshEntity& entity_0,
 				      gdim);
 
   if (d0 == 2 && d1 == 3)
-    return collides_tetrahedron_triangle(g1.point(v1[0]),
-                                         g1.point(v1[1]),
-                                         g1.point(v1[2]),
-                                         g1.point(v1[3]),
-                                         g0.point(v0[0]),
-                                         g0.point(v0[1]),
-                                         g0.point(v0[2]));
+    return collides_tetrahedron_triangle_3d(g1.point(v1[0]),
+                                            g1.point(v1[1]),
+                                            g1.point(v1[2]),
+                                            g1.point(v1[3]),
+                                            g0.point(v0[0]),
+                                            g0.point(v0[1]),
+                                            g0.point(v0[2]));
 
   if (d0 == 3 && d1 == 2)
-    return collides_tetrahedron_triangle(g0.point(v0[0]),
-                                         g0.point(v0[1]),
-                                         g0.point(v0[2]),
-                                         g0.point(v0[3]),
-                                         g1.point(v1[0]),
-                                         g1.point(v1[1]),
-                                         g1.point(v1[2]));
-
-  if (d0 == 3 && d1 == 3)
-    return collides_tetrahedron_tetrahedron(g0.point(v0[0]),
+    return collides_tetrahedron_triangle_3d(g0.point(v0[0]),
                                             g0.point(v0[1]),
                                             g0.point(v0[2]),
                                             g0.point(v0[3]),
                                             g1.point(v1[0]),
                                             g1.point(v1[1]),
-                                            g1.point(v1[2]),
-                                            g1.point(v1[3]));
+                                            g1.point(v1[2]));
+
+  if (d0 == 3 && d1 == 3)
+    return collides_tetrahedron_tetrahedron_3d(g0.point(v0[0]),
+                                               g0.point(v0[1]),
+                                               g0.point(v0[2]),
+                                               g0.point(v0[3]),
+                                               g1.point(v1[0]),
+                                               g1.point(v1[1]),
+                                               g1.point(v1[2]),
+                                               g1.point(v1[3]));
 
   dolfin_error("CollisionPredicates.cpp",
                "compute entity-entity collision",
@@ -943,11 +943,11 @@ bool CollisionPredicates::_collides_triangle_triangle_3d(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_tetrahedron_point(Point p0,
-						      Point p1,
-						      Point p2,
-						      Point p3,
-						      Point point)
+bool CollisionPredicates::_collides_tetrahedron_point_3d(Point p0,
+                                                         Point p1,
+                                                         Point p2,
+                                                         Point p3,
+                                                         Point point)
 {
   // std::cout << __FUNCTION__<<std::endl;
 
@@ -1007,19 +1007,19 @@ bool CollisionPredicates::_collides_tetrahedron_point(Point p0,
   //   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_tetrahedron_segment(const Point& p0,
-							const Point& p1,
-							const Point& p2,
-							const Point& p3,
-							const Point& q0,
-							const Point& q1)
+bool CollisionPredicates::_collides_tetrahedron_segment_3d(const Point& p0,
+                                                           const Point& p1,
+                                                           const Point& p2,
+                                                           const Point& p3,
+                                                           const Point& q0,
+                                                           const Point& q1)
 {
   // std::cout << __FUNCTION__<<std::endl;
 
   // Segment vertex in tetrahedron collision
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q0))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q0))
     return true;
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q1))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q1))
     return true;
 
   // Triangle-segment collision tests
@@ -1036,22 +1036,22 @@ bool CollisionPredicates::_collides_tetrahedron_segment(const Point& p0,
 }
 
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_tetrahedron_triangle(const Point& p0,
-							 const Point& p1,
-							 const Point& p2,
-							 const Point& p3,
-							 const Point& q0,
-							 const Point& q1,
-							 const Point& q2)
+bool CollisionPredicates::_collides_tetrahedron_triangle_3d(const Point& p0,
+                                                            const Point& p1,
+                                                            const Point& p2,
+                                                            const Point& p3,
+                                                            const Point& q0,
+                                                            const Point& q1,
+                                                            const Point& q2)
 {
   // std::cout << __FUNCTION__<<std::endl;
 
   // Triangle vertex in tetrahedron collision
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q0))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q0))
     return true;
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q1))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q1))
     return true;
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q2))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q2))
     return true;
 
   // Triangle-triangle collision tests
@@ -1067,14 +1067,14 @@ bool CollisionPredicates::_collides_tetrahedron_triangle(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_tetrahedron_tetrahedron(const Point& p0,
-							    const Point& p1,
-							    const Point& p2,
-							    const Point& p3,
-							    const Point& q0,
-							    const Point& q1,
-							    const Point& q2,
-							    const Point& q3)
+bool CollisionPredicates::_collides_tetrahedron_tetrahedron_3d(const Point& p0,
+                                                               const Point& p1,
+                                                               const Point& p2,
+                                                               const Point& p3,
+                                                               const Point& q0,
+                                                               const Point& q1,
+                                                               const Point& q2,
+                                                               const Point& q3)
 {
   // std::cout << __FUNCTION__<<std::endl;
 
@@ -1093,22 +1093,22 @@ bool CollisionPredicates::_collides_tetrahedron_tetrahedron(const Point& p0,
 	return true;
 
   // Vertex in tetrahedron collision
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q0))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q0))
     return true;
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q1))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q1))
     return true;
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q2))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q2))
     return true;
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q3))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q3))
     return true;
 
-  if (collides_tetrahedron_point(q0, q1, q2, q3, p0))
+  if (collides_tetrahedron_point_3d(q0, q1, q2, q3, p0))
     return true;
-  if (collides_tetrahedron_point(q0, q1, q2, q3, p1))
+  if (collides_tetrahedron_point_3d(q0, q1, q2, q3, p1))
     return true;
-  if (collides_tetrahedron_point(q0, q1, q2, q3, p2))
+  if (collides_tetrahedron_point_3d(q0, q1, q2, q3, p2))
     return true;
-  if (collides_tetrahedron_point(q0, q1, q2, q3, p3))
+  if (collides_tetrahedron_point_3d(q0, q1, q2, q3, p3))
     return true;
 
   return false;

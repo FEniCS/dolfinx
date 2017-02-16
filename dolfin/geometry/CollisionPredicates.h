@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-11
+// Last changed: 2017-02-16
 
 #ifndef __COLLISION_PREDICATES_H
 #define __COLLISION_PREDICATES_H
@@ -251,57 +251,57 @@ namespace dolfin
 
 
     /// Check whether tetrahedron p0-p1-p2-p3 collides with point
-    static bool collides_tetrahedron_point(const Point& p0,
-					   const Point& p1,
-					   const Point& p2,
-					   const Point& p3,
-					   const Point& point)
+    static bool collides_tetrahedron_point_3d(const Point& p0,
+                                              const Point& p1,
+                                              const Point& p2,
+                                              const Point& p3,
+                                              const Point& point)
     {
-      return CHECK_CGAL(_collides_tetrahedron_point(p0, p1, p2, p3, point),
-			cgal_collides_tetrahedron_point(p0, p1, p2, p3, point));
+      return CHECK_CGAL(_collides_tetrahedron_point_3d(p0, p1, p2, p3, point),
+			cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, point));
     }
 
     /// Check whether tetrahedron p0-p1-p2-p3 collides with segment q0-q1
-    static bool collides_tetrahedron_segment(const Point& p0,
-					     const Point& p1,
-					     const Point& p2,
-					     const Point& p3,
-					     const Point& q0,
-					     const Point& q1)
+    static bool collides_tetrahedron_segment_3d(const Point& p0,
+                                                const Point& p1,
+                                                const Point& p2,
+                                                const Point& p3,
+                                                const Point& q0,
+                                                const Point& q1)
     {
-      return CHECK_CGAL(_collides_tetrahedron_segment(p0, p1, p2, p3, q0, q1),
-			cgal_collides_tetrahedron_segment(p0, p1, p2, p3, q0, q1));
+      return CHECK_CGAL(_collides_tetrahedron_segment_3d(p0, p1, p2, p3, q0, q1),
+			cgal_collides_tetrahedron_segment_3d(p0, p1, p2, p3, q0, q1));
     }
 
     /// Check whether tetrahedron p0-p1-p2-p3 collides with triangle q0-q1-q2
-    static bool collides_tetrahedron_triangle(const Point& p0,
-					      const Point& p1,
-					      const Point& p2,
-					      const Point& p3,
-					      const Point& q0,
-					      const Point& q1,
-					      const Point& q2)
+    static bool collides_tetrahedron_triangle_3d(const Point& p0,
+                                                 const Point& p1,
+                                                 const Point& p2,
+                                                 const Point& p3,
+                                                 const Point& q0,
+                                                 const Point& q1,
+                                                 const Point& q2)
     {
-      return CHECK_CGAL(_collides_tetrahedron_triangle(p0, p1, p2, p3,
-						       q0, q1, q2),
-			cgal_collides_tetrahedron_triangle(p0, p1, p2, p3,
-							   q0, q1, q2));
+      return CHECK_CGAL(_collides_tetrahedron_triangle_3d(p0, p1, p2, p3,
+                                                          q0, q1, q2),
+			cgal_collides_tetrahedron_triangle_3d(p0, p1, p2, p3,
+                                                              q0, q1, q2));
     }
 
     /// Check whether tetrahedron p0-p1-p2-p3 collides with tetrahedron q0-q1-q2
-    static bool collides_tetrahedron_tetrahedron(const Point& p0,
-						 const Point& p1,
-						 const Point& p2,
-						 const Point& p3,
-						 const Point& q0,
-						 const Point& q1,
-						 const Point& q2,
+    static bool collides_tetrahedron_tetrahedron_3d(const Point& p0,
+                                                    const Point& p1,
+                                                    const Point& p2,
+                                                    const Point& p3,
+                                                    const Point& q0,
+                                                    const Point& q1,
+                                                    const Point& q2,
 						 const Point& q3)
     {
-      return CHECK_CGAL(_collides_tetrahedron_tetrahedron(p0, p1, p2, p3,
-							  q0, q1, q2, q3),
-			cgal_collides_tetrahedron_tetrahedron(p0, p1, p2, p3,
-							      q0, q1, q2, q3));
+      return CHECK_CGAL(_collides_tetrahedron_tetrahedron_3d(p0, p1, p2, p3,
+                                                             q0, q1, q2, q3),
+			cgal_collides_tetrahedron_tetrahedron_3d(p0, p1, p2, p3,
+                                                                 q0, q1, q2, q3));
     }
 
   private:
@@ -379,35 +379,35 @@ namespace dolfin
 					       const Point& q1,
 					       const Point& q2);
 
-    static bool _collides_tetrahedron_point(Point p0,
-					    Point p1,
-					    Point p2,
-					    Point p3,
-					    Point point);
+    static bool _collides_tetrahedron_point_3d(Point p0,
+                                               Point p1,
+                                               Point p2,
+                                               Point p3,
+                                               Point point);
 
-    static bool _collides_tetrahedron_segment(const Point& p0,
-					      const Point& p1,
-					      const Point& p2,
-					      const Point& p3,
-					      const Point& q0,
-					      const Point& q1);
+    static bool _collides_tetrahedron_segment_3d(const Point& p0,
+                                                 const Point& p1,
+                                                 const Point& p2,
+                                                 const Point& p3,
+                                                 const Point& q0,
+                                                 const Point& q1);
 
-    static bool _collides_tetrahedron_triangle(const Point& p0,
-					       const Point& p1,
-					       const Point& p2,
-					       const Point& p3,
-					       const Point& q0,
-					       const Point& q1,
-					       const Point& q2);
+    static bool _collides_tetrahedron_triangle_3d(const Point& p0,
+                                                  const Point& p1,
+                                                  const Point& p2,
+                                                  const Point& p3,
+                                                  const Point& q0,
+                                                  const Point& q1,
+                                                  const Point& q2);
 
-    static bool _collides_tetrahedron_tetrahedron(const Point& p0,
-						  const Point& p1,
-						  const Point& p2,
-						  const Point& p3,
-						  const Point& q0,
-						  const Point& q1,
-						  const Point& q2,
-						  const Point& q3);
+    static bool _collides_tetrahedron_tetrahedron_3d(const Point& p0,
+                                                     const Point& p1,
+                                                     const Point& p2,
+                                                     const Point& p3,
+                                                     const Point& q0,
+                                                     const Point& q1,
+                                                     const Point& q2,
+                                                     const Point& q3);
 
     //--- Utility functions ---
 

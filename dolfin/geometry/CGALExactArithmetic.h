@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2017-02-10
+// Last changed: 2017-02-16
 //
 // Developer note:
 //
@@ -803,25 +803,25 @@ namespace dolfin
 			      convert_to_cgal_3d(q0, q1, q2));
   }
   //-----------------------------------------------------------------------------
-  inline bool cgal_collides_tetrahedron_point(const Point& p0,
-					      const Point& p1,
-					      const Point& p2,
-					      const Point& p3,
-					      const Point& q0)
+  inline bool cgal_collides_tetrahedron_point_3d(const Point& p0,
+                                                 const Point& p1,
+                                                 const Point& p2,
+                                                 const Point& p3,
+                                                 const Point& q0)
   {
     const Tetrahedron_3 tet = convert_to_cgal_3d(p0, p1, p2, p3);
     return !tet.has_on_unbounded_side(convert_to_cgal_3d(q0));
   }
   //-----------------------------------------------------------------------------
-  inline bool cgal_collides_tetrahedron_segment(const Point& p0,
-						const Point& p1,
-						const Point& p2,
-						const Point& p3,
-						const Point& q0,
-						const Point& q1)
+  inline bool cgal_collides_tetrahedron_segment_3d(const Point& p0,
+                                                   const Point& p1,
+                                                   const Point& p2,
+                                                   const Point& p3,
+                                                   const Point& q0,
+                                                   const Point& q1)
   {
-    if (cgal_collides_tetrahedron_point(p0, p1, p2, p3, q0) or
-	cgal_collides_tetrahedron_point(p0, p1, p2, p3, q1))
+    if (cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, q0) or
+	cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, q1))
       return true;
 
     if (cgal_collides_triangle_segment_3d(p0, p1, p2, q0, q1) or
@@ -833,36 +833,36 @@ namespace dolfin
     return false;
   }
   //-----------------------------------------------------------------------------
-  inline bool cgal_collides_tetrahedron_triangle(const Point& p0,
-						 const Point& p1,
-						 const Point& p2,
-						 const Point& p3,
-						 const Point& q0,
-						 const Point& q1,
-						 const Point& q2)
+  inline bool cgal_collides_tetrahedron_triangle_3d(const Point& p0,
+                                                    const Point& p1,
+                                                    const Point& p2,
+                                                    const Point& p3,
+                                                    const Point& q0,
+                                                    const Point& q1,
+                                                    const Point& q2)
   {
     return CGAL::do_intersect(convert_to_cgal_3d(p0, p1, p2, p3),
 			      convert_to_cgal_3d(q0, q1, q2));
   }
   //-----------------------------------------------------------------------------
-  inline bool cgal_collides_tetrahedron_tetrahedron(const Point& p0,
-						    const Point& p1,
-						    const Point& p2,
-						    const Point& p3,
-						    const Point& q0,
-						    const Point& q1,
-						    const Point& q2,
-						    const Point& q3)
+  inline bool cgal_collides_tetrahedron_tetrahedron_3d(const Point& p0,
+                                                       const Point& p1,
+                                                       const Point& p2,
+                                                       const Point& p3,
+                                                       const Point& q0,
+                                                       const Point& q1,
+                                                       const Point& q2,
+                                                       const Point& q3)
   {
     // Check volume collisions
-    if (cgal_collides_tetrahedron_point(p0, p1, p2, p3, q0)) return true;
-    if (cgal_collides_tetrahedron_point(p0, p1, p2, p3, q1)) return true;
-    if (cgal_collides_tetrahedron_point(p0, p1, p2, p3, q2)) return true;
-    if (cgal_collides_tetrahedron_point(p0, p1, p2, p3, q3)) return true;
-    if (cgal_collides_tetrahedron_point(q0, q1, q2, q3, p0)) return true;
-    if (cgal_collides_tetrahedron_point(q0, q1, q2, q3, p1)) return true;
-    if (cgal_collides_tetrahedron_point(q0, q1, q2, q3, p2)) return true;
-    if (cgal_collides_tetrahedron_point(q0, q1, q2, q3, p3)) return true;
+    if (cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, q0)) return true;
+    if (cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, q1)) return true;
+    if (cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, q2)) return true;
+    if (cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, q3)) return true;
+    if (cgal_collides_tetrahedron_point_3d(q0, q1, q2, q3, p0)) return true;
+    if (cgal_collides_tetrahedron_point_3d(q0, q1, q2, q3, p1)) return true;
+    if (cgal_collides_tetrahedron_point_3d(q0, q1, q2, q3, p2)) return true;
+    if (cgal_collides_tetrahedron_point_3d(q0, q1, q2, q3, p3)) return true;
 
     Polyhedron_3 tet_a;
     tet_a.make_tetrahedron(convert_to_cgal_3d(p0),
