@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-12-09
-# Last changed: 2017-02-06
+# Last changed: 2017-02-16
 
 from __future__ import print_function
 import pytest
@@ -52,7 +52,7 @@ def test_issue_168():
     vx = v(x)
 
 
-#@pytest.mark.skipif(True, reason="Not implemented in 3D")
+@pytest.mark.skipif(True, reason="Since cell.contains(point) is doing an exact calculation, we cannot assume that the midpoint is exactly in the cell")
 @skip_in_parallel
 def test_segment_collides_point_3D_2():
     """Test case by Oyvind from https://bitbucket.org/fenics-project/dolfin/issue/296 for segment point collision in 3D"""
