@@ -318,8 +318,8 @@ namespace dolfin
     }
 
     // Add points to vector
-    static inline void add(std::vector<Point>& points,
-                           const std::vector<Point>& _points)
+    static inline void _add(std::vector<Point>& points,
+                            const std::vector<Point>& _points)
     {
       points.insert(points.end(), _points.begin(), _points.end());
     }

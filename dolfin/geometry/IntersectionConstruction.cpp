@@ -556,13 +556,13 @@ IntersectionConstruction::intersection_triangle_segment_2d(const Point& p0,
   std::vector<Point> points;
 
   // Add triangle-point intersections
-  add(points, intersection_triangle_point_2d(p0, p1, p2, q0));
-  add(points, intersection_triangle_point_2d(p0, p1, p2, q1));
+  _add(points, intersection_triangle_point_2d(p0, p1, p2, q0));
+  _add(points, intersection_triangle_point_2d(p0, p1, p2, q1));
 
   // Add segment-segment intersections
-  add(points, intersection_segment_segment_2d(p0, p1, q0, q1));
-  add(points, intersection_segment_segment_2d(p0, p2, q0, q1));
-  add(points, intersection_segment_segment_2d(p1, p2, q0, q1));
+  _add(points, intersection_segment_segment_2d(p0, p1, q0, q1));
+  _add(points, intersection_segment_segment_2d(p0, p2, q0, q1));
+  _add(points, intersection_segment_segment_2d(p1, p2, q0, q1));
 
   dolfin_assert(GeometryPredicates::is_finite(points));
   return _unique_points(points);
@@ -713,23 +713,23 @@ IntersectionConstruction::intersection_triangle_triangle_2d(const Point& p0,
   std::vector<Point> points;
 
   // Add triangle-point intersections
-  add(points, intersection_triangle_point_2d(p0, p1, p2, q0));
-  add(points, intersection_triangle_point_2d(p0, p1, p2, q1));
-  add(points, intersection_triangle_point_2d(p0, p1, p2, q2));
-  add(points, intersection_triangle_point_2d(q0, q1, q2, p0));
-  add(points, intersection_triangle_point_2d(q0, q1, q2, p1));
-  add(points, intersection_triangle_point_2d(q0, q1, q2, p2));
+  _add(points, intersection_triangle_point_2d(p0, p1, p2, q0));
+  _add(points, intersection_triangle_point_2d(p0, p1, p2, q1));
+  _add(points, intersection_triangle_point_2d(p0, p1, p2, q2));
+  _add(points, intersection_triangle_point_2d(q0, q1, q2, p0));
+  _add(points, intersection_triangle_point_2d(q0, q1, q2, p1));
+  _add(points, intersection_triangle_point_2d(q0, q1, q2, p2));
 
   // Add segment-segment intersections
-  add(points, intersection_segment_segment_2d(p0, p1, q0, q1));
-  add(points, intersection_segment_segment_2d(p0, p1, q0, q2));
-  add(points, intersection_segment_segment_2d(p0, p1, q1, q2));
-  add(points, intersection_segment_segment_2d(p0, p2, q0, q1));
-  add(points, intersection_segment_segment_2d(p0, p2, q0, q2));
-  add(points, intersection_segment_segment_2d(p0, p2, q1, q2));
-  add(points, intersection_segment_segment_2d(p1, p2, q0, q1));
-  add(points, intersection_segment_segment_2d(p1, p2, q0, q2));
-  add(points, intersection_segment_segment_2d(p1, p2, q1, q2));
+  _add(points, intersection_segment_segment_2d(p0, p1, q0, q1));
+  _add(points, intersection_segment_segment_2d(p0, p1, q0, q2));
+  _add(points, intersection_segment_segment_2d(p0, p1, q1, q2));
+  _add(points, intersection_segment_segment_2d(p0, p2, q0, q1));
+  _add(points, intersection_segment_segment_2d(p0, p2, q0, q2));
+  _add(points, intersection_segment_segment_2d(p0, p2, q1, q2));
+  _add(points, intersection_segment_segment_2d(p1, p2, q0, q1));
+  _add(points, intersection_segment_segment_2d(p1, p2, q0, q2));
+  _add(points, intersection_segment_segment_2d(p1, p2, q1, q2));
 
   dolfin_assert(GeometryPredicates::is_finite(points));
   return _unique_points(points);
@@ -747,23 +747,23 @@ IntersectionConstruction::intersection_triangle_triangle_3d(const Point& p0,
   std::vector<Point> points;
 
   // Add point intersections (3 + 3 = 6)
-  add(points, intersection_triangle_point_3d(p0, p1, p2, q0));
-  add(points, intersection_triangle_point_3d(p0, p1, p2, q1));
-  add(points, intersection_triangle_point_3d(p0, p1, p2, q2));
-  add(points, intersection_triangle_point_3d(q0, q1, q2, p0));
-  add(points, intersection_triangle_point_3d(q0, q1, q2, p1));
-  add(points, intersection_triangle_point_3d(q0, q1, q2, p2));
+  _add(points, intersection_triangle_point_3d(p0, p1, p2, q0));
+  _add(points, intersection_triangle_point_3d(p0, p1, p2, q1));
+  _add(points, intersection_triangle_point_3d(p0, p1, p2, q2));
+  _add(points, intersection_triangle_point_3d(q0, q1, q2, p0));
+  _add(points, intersection_triangle_point_3d(q0, q1, q2, p1));
+  _add(points, intersection_triangle_point_3d(q0, q1, q2, p2));
 
   // Add segment-segment intersections (3 x 3 = 9)
-  add(points, intersection_segment_segment_3d(p0, p1, q0, q1));
-  add(points, intersection_segment_segment_3d(p0, p1, q0, q2));
-  add(points, intersection_segment_segment_3d(p0, p1, q1, q2));
-  add(points, intersection_segment_segment_3d(p0, p2, q0, q1));
-  add(points, intersection_segment_segment_3d(p0, p2, q0, q2));
-  add(points, intersection_segment_segment_3d(p0, p2, q1, q2));
-  add(points, intersection_segment_segment_3d(p1, p2, q0, q1));
-  add(points, intersection_segment_segment_3d(p1, p2, q0, q2));
-  add(points, intersection_segment_segment_3d(p1, p2, q1, q2));
+  _add(points, intersection_segment_segment_3d(p0, p1, q0, q1));
+  _add(points, intersection_segment_segment_3d(p0, p1, q0, q2));
+  _add(points, intersection_segment_segment_3d(p0, p1, q1, q2));
+  _add(points, intersection_segment_segment_3d(p0, p2, q0, q1));
+  _add(points, intersection_segment_segment_3d(p0, p2, q0, q2));
+  _add(points, intersection_segment_segment_3d(p0, p2, q1, q2));
+  _add(points, intersection_segment_segment_3d(p1, p2, q0, q1));
+  _add(points, intersection_segment_segment_3d(p1, p2, q0, q2));
+  _add(points, intersection_segment_segment_3d(p1, p2, q1, q2));
 
   dolfin_assert(GeometryPredicates::is_finite(points));
   return _unique_points(points);
@@ -782,21 +782,21 @@ IntersectionConstruction::intersection_tetrahedron_triangle_3d(const Point& p0,
   std::vector<Point> points;
 
   // Add point intersections (3 + 4 = 7)
-  add(points, intersection_tetrahedron_point_3d(p0, p1, p2, p3, q0));
-  add(points, intersection_tetrahedron_point_3d(p0, p1, p2, p3, q1));
-  add(points, intersection_tetrahedron_point_3d(p0, p1, p2, p3, q2));
-  add(points, intersection_triangle_point_3d(q0, q1, q2, p0));
-  add(points, intersection_triangle_point_3d(q0, q1, q2, p1));
-  add(points, intersection_triangle_point_3d(q0, q1, q2, p2));
-  add(points, intersection_triangle_point_3d(q0, q1, q2, p3));
+  _add(points, intersection_tetrahedron_point_3d(p0, p1, p2, p3, q0));
+  _add(points, intersection_tetrahedron_point_3d(p0, p1, p2, p3, q1));
+  _add(points, intersection_tetrahedron_point_3d(p0, p1, p2, p3, q2));
+  _add(points, intersection_triangle_point_3d(q0, q1, q2, p0));
+  _add(points, intersection_triangle_point_3d(q0, q1, q2, p1));
+  _add(points, intersection_triangle_point_3d(q0, q1, q2, p2));
+  _add(points, intersection_triangle_point_3d(q0, q1, q2, p3));
 
   // Hmm... Should we check segments here instead?
 
   // Add triangle-triangle intersections (4)
-  add(points, intersection_triangle_triangle_3d(p0, p1, p2, q0, q1, q2));
-  add(points, intersection_triangle_triangle_3d(p0, p1, p3, q0, q1, q2));
-  add(points, intersection_triangle_triangle_3d(p0, p2, p3, q0, q1, q2));
-  add(points, intersection_triangle_triangle_3d(p1, p2, p3, q0, q1, q2));
+  _add(points, intersection_triangle_triangle_3d(p0, p1, p2, q0, q1, q2));
+  _add(points, intersection_triangle_triangle_3d(p0, p1, p3, q0, q1, q2));
+  _add(points, intersection_triangle_triangle_3d(p0, p2, p3, q0, q1, q2));
+  _add(points, intersection_triangle_triangle_3d(p1, p2, p3, q0, q1, q2));
 
   dolfin_assert(GeometryPredicates::is_finite(points));
   return _unique_points(points);
@@ -816,24 +816,24 @@ IntersectionConstruction::intersection_tetrahedron_tetrahedron_3d(const Point& p
   std::vector<Point> points;
 
   // Add tetrahedron-point intersections (4 + 4 = 8)
-  add(points, intersection_tetrahedron_point_3d(p0, p1, p2, p3, q0));
-  add(points, intersection_tetrahedron_point_3d(p0, p1, p2, p3, q1));
-  add(points, intersection_tetrahedron_point_3d(p0, p1, p2, p3, q2));
-  add(points, intersection_tetrahedron_point_3d(p0, p1, p2, p3, q3));
-  add(points, intersection_tetrahedron_point_3d(q0, q1, q2, q3, p0));
-  add(points, intersection_tetrahedron_point_3d(q0, q1, q2, q3, p1));
-  add(points, intersection_tetrahedron_point_3d(q0, q1, q2, q3, p2));
-  add(points, intersection_tetrahedron_point_3d(q0, q1, q2, q3, p3));
+  _add(points, intersection_tetrahedron_point_3d(p0, p1, p2, p3, q0));
+  _add(points, intersection_tetrahedron_point_3d(p0, p1, p2, p3, q1));
+  _add(points, intersection_tetrahedron_point_3d(p0, p1, p2, p3, q2));
+  _add(points, intersection_tetrahedron_point_3d(p0, p1, p2, p3, q3));
+  _add(points, intersection_tetrahedron_point_3d(q0, q1, q2, q3, p0));
+  _add(points, intersection_tetrahedron_point_3d(q0, q1, q2, q3, p1));
+  _add(points, intersection_tetrahedron_point_3d(q0, q1, q2, q3, p2));
+  _add(points, intersection_tetrahedron_point_3d(q0, q1, q2, q3, p3));
 
   // Add triangle-triangle intersections (4 x 4 = 16)
-  add(points, intersection_triangle_triangle_3d(p0, p1, p2, q0, q1, q2));
-  add(points, intersection_triangle_triangle_3d(p0, p1, p2, q0, q1, q3));
-  add(points, intersection_triangle_triangle_3d(p0, p1, p2, q0, q2, q3));
-  add(points, intersection_triangle_triangle_3d(p0, p1, p2, q1, q2, q3));
-  add(points, intersection_triangle_triangle_3d(q0, q1, q2, p0, p1, p2));
-  add(points, intersection_triangle_triangle_3d(q0, q1, q2, p0, p1, p3));
-  add(points, intersection_triangle_triangle_3d(q0, q1, q2, p0, p2, p3));
-  add(points, intersection_triangle_triangle_3d(q0, q1, q2, p1, p2, p3));
+  _add(points, intersection_triangle_triangle_3d(p0, p1, p2, q0, q1, q2));
+  _add(points, intersection_triangle_triangle_3d(p0, p1, p2, q0, q1, q3));
+  _add(points, intersection_triangle_triangle_3d(p0, p1, p2, q0, q2, q3));
+  _add(points, intersection_triangle_triangle_3d(p0, p1, p2, q1, q2, q3));
+  _add(points, intersection_triangle_triangle_3d(q0, q1, q2, p0, p1, p2));
+  _add(points, intersection_triangle_triangle_3d(q0, q1, q2, p0, p1, p3));
+  _add(points, intersection_triangle_triangle_3d(q0, q1, q2, p0, p2, p3));
+  _add(points, intersection_triangle_triangle_3d(q0, q1, q2, p1, p2, p3));
 
   dolfin_assert(GeometryPredicates::is_finite(points));
   return _unique_points(points);
@@ -862,7 +862,7 @@ IntersectionConstruction::_unique_points(const std::vector<Point>& input_points)
 }
 //-----------------------------------------------------------------------------
 
-// Old versions kept around for reference
+// FIXME: Old versions kept around for reference, remove when working
 
 std::vector<double>
 IntersectionConstruction::_intersection_segment_segment_1d_old(double p0,
