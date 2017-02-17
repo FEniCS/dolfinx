@@ -106,16 +106,30 @@ namespace dolfin
 
     //--- Low-level intersection construction functions ---
 
+    // There are 19 different intersections to consider. Initially, we have
+    // 4 different entities: point, segment, triangle, tetrahedron, and thus
+    // 16 combinations. Because of symmetry, these are reduced to 10. However,
+    // some of the combination are relevant in both 1D, 2D and 3D, and thus
+    // the total number of intersections lands at 19. The table indicates the
+    // number of versions (1D, 2D, 3D) for each relevant combination.
+    //
+    //     | 0  1  2  3
+    //   --------------
+    //   0 | 3  x  x  x  point-foo       (1D, 2D, 3D)
+    //   1 | 3  3  x  x  segment-foo     (1D, 2D, 3D)
+    //   2 | 2  2  2  x  triangle-foo    (--, 2D, 3D)
+    //   3 | 1  1  1  1  tetrahedron-foo (--, --, 3D)
+
     /* Current status of (re)implementation:
 
-    [ ] intersection_point_point_1d
-    [ ] intersection_point_point_2d
-    [ ] intersection_point_point_3d
-    [ ] intersection_segment_point_1d
-    [ ] intersection_segment_point_2d
-    [ ] intersection_segment_point_3d
-    [ ] intersection_triangle_point_2d
-    [ ] intersection_triangle_point_3d
+    [x] intersection_point_point_1d
+    [x] intersection_point_point_2d
+    [x] intersection_point_point_3d
+    [x] intersection_segment_point_1d
+    [x] intersection_segment_point_2d
+    [x] intersection_segment_point_3d
+    [x] intersection_triangle_point_2d
+    [x] intersection_triangle_point_3d
     [ ] intersection_tetrahedron_point_3d
     [ ] intersection_segment_segment_1d
     [ ] intersection_segment_segment_2d
