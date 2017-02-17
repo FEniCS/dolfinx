@@ -704,7 +704,8 @@ IntersectionConstruction::intersection_tetrahedron_segment_3d(const Point& p0,
   _add(points, intersection_triangle_segment_3d(p0, p2, p3, q0, q1));
   _add(points, intersection_triangle_segment_3d(p1, p2, p3, q0, q1));
 
-  return points;
+  dolfin_assert(GeometryPredicates::is_finite(points));
+  return _unique_points(points);
 }
 //-----------------------------------------------------------------------------
 // Intersections with triangles and tetrahedra: computed by delegation
