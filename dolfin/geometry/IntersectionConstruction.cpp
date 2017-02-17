@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-16
+// Last changed: 2017-02-17
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -859,16 +859,6 @@ IntersectionConstruction::_unique_points(const std::vector<Point>& input_points)
   }
 
   return unique;
-}
-//-----------------------------------------------------------------------------
-double IntersectionConstruction::_det(const Point& ab, const Point& dc, const Point& ec)
-{
-  double a = ab.x(), b = ab.y(), c = ab.z();
-  double d = dc.x(), e = dc.y(), f = dc.z();
-  double g = ec.x(), h = ec.y(), i = ec.z();
-  return a * (e * i - f * h)
-       + b * (f * g - d * i)
-       + c * (d * h - e * g);
 }
 //-----------------------------------------------------------------------------
 

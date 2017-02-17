@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-16
+// Last changed: 2017-02-17
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -329,11 +329,8 @@ namespace dolfin
     // filter out inplace?
     static std::vector<Point> _unique_points(const std::vector<Point>& points);
 
-    // Determinant of 3 x 3 matrix
-    static double _det(const Point& ab,
-                       const Point& dc,
-                       const Point& ec);
-
+    // FIXME: Old implementations below kept around for reference.
+    // Delete when working.
 
     static std::vector<double>
     _intersection_segment_segment_1d_old(double p0,

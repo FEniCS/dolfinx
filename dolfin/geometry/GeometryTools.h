@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2017-02-11
-// Last changed: 2017-02-12
+// Last changed: 2017-02-17
 
 #ifndef __GEOMETRY_TOOLS_H
 #define __GEOMETRY_TOOLS_H
@@ -33,7 +33,7 @@ namespace dolfin
   {
   public:
 
-    // Compute numerically stable cross product (a - c) x (b - c)
+    /// Compute numerically stable cross product (a - c) x (b - c)
     static inline Point cross_product(const Point& a, const Point& b, const Point& c)
     {
       // See Shewchuk Lecture Notes on Geometric Robustness
@@ -49,6 +49,17 @@ namespace dolfin
       return Point (_orient2d(ayz, byz, cyz),
                     _orient2d(azx, bzx, czx),
                     _orient2d(axy, bxy, cxy));
+    }
+
+    /// Compute determinant of 3 x 3 matrix defined by vectors, ab, dc, ec
+    inline double determinan(const Point& ab, const Point& dc, const Point& ec)
+    {
+      const double a = ab.x(), b = ab.y(), c = ab.z();
+      const double d = dc.x(), e = dc.y(), f = dc.z();
+      const double g = ec.x(), h = ec.y(), i = ec.z();
+      return a * (e * i - f * h)
+           + b * (f * g - d * i)
+           + c * (d * h - e * g);
     }
 
     /// Compute major (largest) axis of vector (2D)
