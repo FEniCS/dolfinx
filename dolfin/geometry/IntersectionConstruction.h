@@ -119,41 +119,33 @@ namespace dolfin
     //   1 | 3  3  x  x  segment-foo     (1D, 2D, 3D)
     //   2 | 2  2  2  x  triangle-foo    (--, 2D, 3D)
     //   3 | 1  1  1  1  tetrahedron-foo (--, --, 3D)
-
-    /* Current status of (re)implementation:
-
-    [x] intersection_point_point_1d
-    [x] intersection_point_point_2d
-    [x] intersection_point_point_3d
-    [x] intersection_segment_point_1d
-    [x] intersection_segment_point_2d
-    [x] intersection_segment_point_3d
-    [x] intersection_triangle_point_2d
-    [x] intersection_triangle_point_3d
-    [ ] intersection_tetrahedron_point_3d
-    [ ] intersection_segment_segment_1d
-    [ ] intersection_segment_segment_2d
-    [ ] intersection_segment_segment_3d
-    [ ] intersection_triangle_segment_2d
-    [ ] intersection_triangle_segment_3d
-    [ ] intersection_tetrahedron_segment_3d
-    [ ] intersection_triangle_triangle_2d
-    [ ] intersection_triangle_triangle_3d
-    [ ] intersection_tetrahedron_triangle_3d
-    [ ] intersection_tetrahedron_tetrahedron_3d
-
-    */
-
-    // FIXME: Remove all second-level convenience functions like this one.
-    // They are only used internally in the high-level convenience functions.
-
-    // FIXME: Also think about removing the additional wrapper functions
-    // since we don't compare with CGAL here anyway.
-
-    // FIXME: Add comment that there are exactly 9 functions and that
-    // they are all implemented.
-
-    //--- Point intersections: 9 cases ----//
+    //
+    // The intersection construction functions can be grouped into
+    // three classes:
+    //
+    // [P] Use collision predicate (point collisions)
+    // [C] Compute collision by solving for intersection points
+    // [D] Delegate computation to [P] or [C] for subsimplices
+    //
+    // [P] intersection_point_point_1d               <-- needs review
+    // [P] intersection_point_point_2d               <-- needs review
+    // [P] intersection_point_point_3d               <-- needs review
+    // [P] intersection_segment_point_1d             <-- needs review
+    // [P] intersection_segment_point_2d             <-- needs review
+    // [P] intersection_segment_point_3d             <-- needs review
+    // [P] intersection_triangle_point_2d            <-- needs review
+    // [P] intersection_triangle_point_3d            <-- needs review
+    // [P] intersection_tetrahedron_point_3d         <-- needs review
+    // [C] intersection_segment_segment_1d           <-- needs rewrite
+    // [C] intersection_segment_segment_2d           <-- needs rewrite
+    // [C] intersection_segment_segment_3d           <-- needs rewrite
+    // [D] intersection_triangle_segment_2d          <-- needs review
+    // [C] intersection_triangle_segment_3d          <-- needs rewrite
+    // [D] intersection_tetrahedron_segment_3d       <-- needs review
+    // [D] intersection_triangle_triangle_2d         <-- needs review
+    // [D] intersection_triangle_triangle_3d         <-- needs review
+    // [D] intersection_tetrahedron_triangle_3d      <-- needs review
+    // [D] intersection_tetrahedron_tetrahedron_3d   <-- needs review
 
     /// Compute intersection of points p0 and q0 (1D)
     static std::vector<double>
@@ -210,8 +202,6 @@ namespace dolfin
                                       const Point& p3,
                                       const Point& q0);
 
-    //--- Segment intersections: ?? cases ---//
-
     /// Compute intersection of segment p0-p1 with segment q0-q1 (1D)
     static std::vector<double>
     intersection_segment_segment_1d(double p0,
@@ -257,8 +247,6 @@ namespace dolfin
                                         const Point& p3,
                                         const Point& q0,
                                         const Point& q1);
-
-    // FIXME: The rest of the functions
 
     /// Compute intersection of triangle p0-p1-p2 with triangle q0-q1-q2 (2D)
     static std::vector<Point>
