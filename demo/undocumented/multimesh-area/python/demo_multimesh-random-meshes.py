@@ -30,7 +30,7 @@ from dolfin import *
 parser = argparse.ArgumentParser()
 parser.add_argument('num_parts', type=int, help='number of meshes', default=10)
 parser.add_argument('--N_x', type=int, help='number of mesh divisions (mesh size)', default=2, required=False)
-parser.add_argument('--random_seed', help='seed for random number generator for creating multimesh', default=1, required=False)
+parser.add_argument('--random_seed', type=numpy.uint32, help='seed for random number generator for creating multimesh', default=1, required=False)
 parser.add_argument('--no_random_rotation', action='store_true', help='Do not rotate each mesh with a random angle', default=False, required=False)
 args = parser.parse_args()
 
