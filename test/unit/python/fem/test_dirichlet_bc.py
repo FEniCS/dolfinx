@@ -24,8 +24,12 @@
 # Modified by Martin Alnaes 2012
 
 import os
+import itertools
+
 import pytest
 import numpy
+import six
+
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, datadir
 
@@ -176,6 +180,79 @@ def test_zero():
 
     boundaryIntegral = assemble(u1_zero * ds)
     assert near(boundaryIntegral, 0.0)
+
+
+@skip_in_parallel
+def test_zero_columns_offdiag():
+    """Test zero_columns applied to offdiagonal block"""
+    mesh = UnitSquareMesh(20, 20)
+    V = VectorFunctionSpace(mesh, "P", 2)
+    Q = FunctionSpace(mesh, "P", 1)
+    u = TrialFunction(V)
+    q = TestFunction(Q)
+    a = inner(div(u), q)*dx
+    L = inner(Constant(0), q)*dx
+    A = assemble(a)
+    b = assemble(L)
+
+    bc = DirichletBC(V, Constant((-32.23333, 43243.1)), 'on_boundary')
+
+    # Compute residual with x satisfying bc before zero_columns
+    u = Function(V)
+    x = u.vector()
+    bc.apply(x)
+    r0 = A*x - b
+
+    bc.zero_columns(A, b)
+
+    # Test that A gets zero columns
+    bc_dict = bc.get_boundary_values()
+    for i in six.moves.xrange(*A.local_range(0)):
+        cols, vals = A.getrow(i)
+        for j, v in itertools.izip(cols, vals):
+            if j in bc_dict:
+                assert v == 0.0
+
+    # Compute residual with x satisfying bc after zero_columns
+    # and check that it is preserved
+    r1 = A*x - b
+    assert numpy.isclose((r1-r0).norm('linf'), 0.0)
+
+
+@skip_in_parallel
+def test_zero_columns_square():
+    """Test zero_columns applied to square matrix"""
+    mesh = UnitSquareMesh(20, 20)
+    V = FunctionSpace(mesh, "P", 1)
+    u, v = TrialFunction(V), TestFunction(V)
+    a = inner(grad(u), grad(v))*dx
+    L = Constant(0)*v*dx
+    A = assemble(a)
+    b = assemble(L)
+    u = Function(V)
+    x = u.vector()
+
+    bc = DirichletBC(V, 666.0, 'on_boundary')
+    bc.zero_columns(A, b, 42.0)
+
+    # Check that A gets zeros in bc rows and bc columns and 42 on diagonal
+    bc_dict = bc.get_boundary_values()
+    for i in six.moves.xrange(*A.local_range(0)):
+        cols, vals = A.getrow(i)
+        for j, v in itertools.izip(cols, vals):
+            if i in bc_dict or j in bc_dict:
+                if i == j:
+                    assert numpy.isclose(v, 42.0)
+                else:
+                    assert v == 0.0
+
+    # Check that solution of linear system works
+    solve(A, x, b)
+    assert numpy.isclose((b-A*x).norm('linf'), 0.0)
+    x1 = x.copy()
+    bc.apply(x1)
+    x1 -= x
+    assert numpy.isclose(x1.norm('linf'), 0.0)
 
 
 def test_homogenize_consistency():
