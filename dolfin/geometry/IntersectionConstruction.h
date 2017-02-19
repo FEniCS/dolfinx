@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-17
+// Last changed: 2017-02-19
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -330,55 +330,6 @@ namespace dolfin
     // TODO: Will the points be unique most of the times? Should this function
     // filter out inplace?
     static std::vector<Point> _unique_points(const std::vector<Point>& points);
-
-    // FIXME: Old implementations below kept around for reference.
-    // Delete when working.
-
-    static std::vector<double>
-    _intersection_segment_segment_1d_old(double p0,
-                                         double p1,
-                                         double q0,
-                                         double q1);
-
-    static std::vector<Point>
-    _intersection_segment_segment_2d_old(const Point& p0,
-                                         const Point& p1,
-                                         const Point& q0,
-                                         const Point& q1);
-
-    static std::vector<Point>
-    _intersection_triangle_segment_2d_old(const Point& p0,
-                                          const Point& p1,
-                                          const Point& p2,
-                                          const Point& q0,
-                                          const Point& q1);
-
-    static std::vector<Point>
-    _intersection_triangle_triangle_2d_old(const Point& p0,
-                                           const Point& p1,
-                                           const Point& p2,
-                                           const Point& q0,
-                                           const Point& q1,
-                                           const Point& q2);
-
-    std::vector<Point>
-    _intersection_tetrahedron_triangle_3d_old(const Point& p0,
-                                              const Point& p1,
-                                              const Point& p2,
-                                              const Point& p3,
-                                              const Point& q0,
-                                              const Point& q1,
-                                              const Point& q2);
-
-    static std::vector<Point>
-    _intersection_tetrahedron_tetrahedron_3d_old(const Point& p0,
-                                                 const Point& p1,
-                                                 const Point& p2,
-                                                 const Point& p3,
-                                                 const Point& q0,
-                                                 const Point& q1,
-                                                 const Point& q2,
-                                                 const Point& q3);
 
   };
 
