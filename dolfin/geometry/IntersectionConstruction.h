@@ -123,9 +123,9 @@ namespace dolfin
     // The intersection construction functions can be grouped into
     // three classes:
     //
-    // [P] Use collision predicate (point collisions)
-    // [C] Compute collision by solving for intersection points
-    // [D] Delegate computation to [P] or [C] for subsimplices
+    // [P] Use point collision predicates (9)
+    // [C] Compute collision by solving for intersection points (3)
+    // [D] Delegate computation to [P] or [C] for subsimplices (7)
     //
     // [P] intersection_point_point_1d               <-- needs review
     // [P] intersection_point_point_2d               <-- needs review
@@ -136,7 +136,7 @@ namespace dolfin
     // [P] intersection_triangle_point_2d            <-- needs review
     // [P] intersection_triangle_point_3d            <-- needs review
     // [P] intersection_tetrahedron_point_3d         <-- needs review
-    // [C] intersection_segment_segment_1d           <-- needs rewrite
+    // [D] intersection_segment_segment_1d           <-- needs review
     // [C] intersection_segment_segment_2d           <-- needs rewrite
     // [C] intersection_segment_segment_3d           <-- needs rewrite
     // [D] intersection_triangle_segment_2d          <-- needs review
@@ -320,11 +320,20 @@ namespace dolfin
     }
 
     // Add points to vector
+    static inline void _add(std::vector<double>& points,
+                            const std::vector<double>& _points)
+    {
+      points.insert(points.end(), _points.begin(), _points.end());
+    }
+
+    // Add points to vector
     static inline void _add(std::vector<Point>& points,
                             const std::vector<Point>& _points)
     {
       points.insert(points.end(), _points.begin(), _points.end());
     }
+
+    static std::vector<double> _unique_points(const std::vector<double>& points);
 
     // Strictly unique points using == operator
     // TODO: Will the points be unique most of the times? Should this function

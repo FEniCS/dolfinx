@@ -1,3 +1,4 @@
+//-----------------------------------------------------------------------------
 // Copyright (C) 2014-2016 Anders Logg, August Johansson and Benjamin Kehlet
 //
 // This file is part of DOLFIN.
@@ -255,36 +256,14 @@ IntersectionConstruction::intersection_segment_segment_1d(double p0,
   // The list of points (convex hull)
   std::vector<double> points;
 
-  // Compute orientation of segment end points wrt other segment
-  const double p0o = orient1d(q0, q1, p0);
-  const double p1o = orient1d(q0, q1, p1);
-  const double q0o = orient1d(p0, p1, q0);
-  const double q1o = orient1d(p0, p1, q1);
+  // Add point intersections (2)
+  _add(points, intersection_segment_point_1d(p0, p1, q0));
+  _add(points, intersection_segment_point_1d(p0, p1, q1));
+  _add(points, intersection_segment_point_1d(q0, q1, p0));
+  _add(points, intersection_segment_point_1d(q0, q1, p1));
 
-  // Compute total orientation of segments wrt other segment
-  const double po = p0o*p1o;
-  const double qo = q0o*q1o;
-
-  // Special case: no collision
-  if (po > 0. or qo > 0.)
-    return points;
-
-  // Indicators to avoid duplicates
-  bool p0i = false, p1i = false, q0i = false, q1i = false;
-
-  // Special case: end point collision
-  add_if_equal(points, p0, q0, p0i, q0i);
-  add_if_equal(points, p0, q1, p0i, q1i);
-  add_if_equal(points, p1, q0, p1i, q0i);
-  add_if_equal(points, p1, q1, p1i, q1i);
-
-  // Main case: interior collisions
-  if (!p0i and p0o == 0.) points.push_back(p0);
-  if (!p1i and p1o == 0.) points.push_back(p1);
-  if (!q0i and q0o == 0.) points.push_back(q0);
-  if (!q1i and q1o == 0.) points.push_back(q1);
-
-  return points;
+  dolfin_assert(GeometryPredicates::is_finite(points));
+  return _unique_points(points);
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -897,6 +876,28 @@ IntersectionConstruction::intersection_tetrahedron_tetrahedron_3d(const Point& p
 
   dolfin_assert(GeometryPredicates::is_finite(points));
   return _unique_points(points);
+}
+//-----------------------------------------------------------------------------
+std::vector<double>
+IntersectionConstruction::_unique_points(const std::vector<double>& input_points)
+{
+  std::vector<double> unique;
+  unique.reserve(input_points.size());
+
+  for (std::size_t i = 0; i < input_points.size(); ++i)
+  {
+    bool found = false;
+    for (std::size_t j = i+1; j < input_points.size(); ++j)
+      if (input_points[i] == input_points[j])
+      {
+	found = true;
+	break;
+      }
+    if (!found)
+      unique.push_back(input_points[i]);
+  }
+
+  return unique;
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
