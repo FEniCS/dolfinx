@@ -1,4 +1,3 @@
-//-----------------------------------------------------------------------------
 // Copyright (C) 2014-2016 Anders Logg, August Johansson and Benjamin Kehlet
 //
 // This file is part of DOLFIN.
@@ -28,17 +27,10 @@
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"
 
-#ifdef augustdebug
-#include "dolfin_simplex_tools.h"
-#endif
-
 using namespace dolfin;
-
-  // Filter unique points
 
 namespace dolfin
 {
-
   // Add points to vector
   template <typename T>
   inline void add(std::vector<T>& points,
@@ -71,7 +63,6 @@ namespace dolfin
 
     return _unique;
   }
-
 }
 
 //-----------------------------------------------------------------------------

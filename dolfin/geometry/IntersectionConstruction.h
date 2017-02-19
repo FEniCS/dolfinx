@@ -28,9 +28,7 @@
 
 namespace dolfin
 {
-
   // Comparison of points
-
   struct point_strictly_less
   {
     bool operator()(const dolfin::Point & p0, const dolfin::Point& p1)
@@ -41,16 +39,19 @@ namespace dolfin
     }
   };
 
+  // Comparison of points
   inline bool operator==(const dolfin::Point& p0, const dolfin::Point& p1)
   {
     return p0.x() == p1.x() and p0.y() == p1.y() and p0.z() == p1.z();
   }
 
+  // Comparison of points
   inline bool operator!=(const dolfin::Point& p0, const dolfin::Point& p1)
   {
     return p0.x() != p1.x() or p0.y() != p1.y() or p0.z() != p1.z();
   }
 
+  // Comparison of points
   inline bool operator<(const dolfin::Point& p0, const dolfin::Point& p1)
   {
     return p0.x() <= p1.x() and p0.y() <= p1.y() and p0.z() <= p1.z();
@@ -137,7 +138,7 @@ namespace dolfin
     // [P] intersection_triangle_point_3d            <-- needs review
     // [P] intersection_tetrahedron_point_3d         <-- needs review
     // [D] intersection_segment_segment_1d           <-- needs review
-    // [C] intersection_segment_segment_2d           <-- needs rewrite
+    // [C] intersection_segment_segment_2d           <-- needs review
     // [C] intersection_segment_segment_3d           <-- needs rewrite
     // [D] intersection_triangle_segment_2d          <-- needs review
     // [C] intersection_triangle_segment_3d          <-- needs rewrite
@@ -286,38 +287,6 @@ namespace dolfin
                                             const Point& q1,
                                             const Point& q2,
                                             const Point& q3);
-
-  private:
-
-    // Utility functions
-
-    // Add point if equal and mark as added
-    static inline void add_if_equal(std::vector<double>& points,
-                                    double p,
-                                    double q,
-                                    bool& pi,
-                                    bool& qi)
-    {
-      if (!pi and p == q)
-      {
-        points.push_back(p);
-        pi = qi = true;
-      }
-    }
-
-    // Add point if equal and mark as added
-    static inline void add_if_equal(std::vector<Point>& points,
-                                    const Point& p,
-                                    const Point& q,
-                                    bool& pi,
-                                    bool& qi)
-    {
-      if (!pi and p == q)
-      {
-        points.push_back(p);
-        pi = qi = true;
-      }
-    }
 
   };
 
