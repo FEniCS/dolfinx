@@ -319,27 +319,6 @@ namespace dolfin
       }
     }
 
-    // Add points to vector
-    static inline void _add(std::vector<double>& points,
-                            const std::vector<double>& _points)
-    {
-      points.insert(points.end(), _points.begin(), _points.end());
-    }
-
-    // Add points to vector
-    static inline void _add(std::vector<Point>& points,
-                            const std::vector<Point>& _points)
-    {
-      points.insert(points.end(), _points.begin(), _points.end());
-    }
-
-    static std::vector<double> _unique_points(const std::vector<double>& points);
-
-    // Strictly unique points using == operator
-    // TODO: Will the points be unique most of the times? Should this function
-    // filter out inplace?
-    static std::vector<Point> _unique_points(const std::vector<Point>& points);
-
   };
 
 }
