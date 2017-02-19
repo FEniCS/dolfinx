@@ -51,8 +51,8 @@ namespace dolfin
   template <typename T>
   inline std::vector<T> unique(const std::vector<T>& points)
   {
-    std::vector<T> unique;
-    unique.reserve(points.size());
+    std::vector<T> _unique;
+    _unique.reserve(points.size());
 
     for (std::size_t i = 0; i < points.size(); ++i)
     {
@@ -66,10 +66,10 @@ namespace dolfin
         }
       }
       if (!found)
-        unique.push_back(points[i]);
+        _unique.push_back(points[i]);
     }
 
-    return unique;
+    return _unique;
   }
 
 }
@@ -312,13 +312,18 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
                                                           const Point& q0,
                                                           const Point& q1)
 {
-  // FIXME: This function stil uses add_if_equal and tries to avoid
-  // adding duplicates. Simplify by using add(points, intersection_foo) etc.
-
   // The list of points (convex hull)
   std::vector<Point> points;
 
-  //GeometryDebugging::plot({p0, p1}, {q0, q1});
+  // Add point intersections (2)
+  add(points, intersection_segment_point_2d(p0, p1, q0));
+  add(points, intersection_segment_point_2d(p0, p1, q1));
+  add(points, intersection_segment_point_2d(q0, q1, p0));
+  add(points, intersection_segment_point_2d(q0, q1, p1));
+
+  // If we found at least one point intersection we are done
+  if (points.size() > 0)
+    return unique(points);
 
   // Compute orientation of segment end points wrt other segment
   const double p0o = orient2d(q0, q1, p0);
@@ -330,61 +335,13 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   const double po = p0o*p1o;
   const double qo = q0o*q1o;
 
-  // Special case: no collision
-  if (po > 0. or qo > 0.)
-    return points;
+  // If both points are on the same side we are done. Note that if
+  // po = 0 or qo = 0, we should have found a point collision above,
+  // unless the two segments are only collinear but not colliding.
+  if (po >= 0. or qo >= 0.)
+    return std::vector<Point>();
 
-  // Special case: *possible* end point collision(s).
-  // Note that segments may be collinear without colliding.
-  if (po == 0. or qo == 0.)
-  {
-    // Indicators to avoid duplicates
-    bool p0i = false, p1i = false, q0i = false, q1i = false;
-
-    // Check point-point collisions
-    add_if_equal(points, p0, q0, p0i, q0i);
-    add_if_equal(points, p0, q1, p0i, q1i);
-    add_if_equal(points, p1, q0, p1i, q0i);
-    add_if_equal(points, p1, q1, p1i, q1i);
-
-    // Check end points of first segment
-    if (po == 0.)
-    {
-      // Project points to major axis of second segment
-      const std::size_t major_axis = GeometryTools::major_axis_2d(q1 - q0);
-      const double P0 = GeometryTools::project_to_axis_2d(p0, major_axis);
-      const double P1 = GeometryTools::project_to_axis_2d(p1, major_axis);
-      const double Q0 = GeometryTools::project_to_axis_2d(q0, major_axis);
-      const double Q1 = GeometryTools::project_to_axis_2d(q1, major_axis);
-
-      // Check collisions
-      if (!p0i and p0o == 0. and CollisionPredicates::collides_segment_point_1d(Q0, Q1, P0))
-        points.push_back(p0);
-      if (!p1i and p1o == 0. and CollisionPredicates::collides_segment_point_1d(Q0, Q1, P1))
-        points.push_back(p1);
-    }
-
-    // Check end points of second segment
-    if (qo == 0.)
-    {
-      // Project points to major axis of first segment
-      const std::size_t major_axis = GeometryTools::major_axis_2d(p1 - p0);
-      const double P0 = GeometryTools::project_to_axis_2d(p0, major_axis);
-      const double P1 = GeometryTools::project_to_axis_2d(p1, major_axis);
-      const double Q0 = GeometryTools::project_to_axis_2d(q0, major_axis);
-      const double Q1 = GeometryTools::project_to_axis_2d(q1, major_axis);
-
-      // Check collisions
-      if (!q0i and q0o == 0. and CollisionPredicates::collides_segment_point_1d(P0, P1, Q0))
-        points.push_back(q0);
-      if (!q1i and q1o == 0. and CollisionPredicates::collides_segment_point_1d(P0, P1, Q1))
-        points.push_back(q1);
-    }
-
-    return points;
-  }
-
-  // At this point, we know that both po < 0 and q0 < 0 which means
+  // At this point, we know that both po < 0 and qo < 0 which means
   // that we have an intersection and it is internal to both segments.
   // This is the main case. The point is given by the formula
   //
@@ -429,17 +386,11 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
 
     // Compute midpoint
     const Point x = 0.5*(_points[1] + _points[2]);
-    points.push_back(x);
 
-    dolfin_assert(points.size() == 1);
-    return points;
+    return std::vector<Point>(1, x);
   }
 
-  // Main case: add intersection point
-  points.push_back(x);
-
-  dolfin_assert(points.size() == 1);
-  return unique(points);
+  return std::vector<Point>(1, x);
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
