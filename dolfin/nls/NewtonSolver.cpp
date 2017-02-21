@@ -156,7 +156,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     nonlinear_problem.J_pc(*_matP, x);
 
     // Setup (linear) solver (including set operators)
-    solver_setup(*_solver, _matA, _matP, nonlinear_problem, _newton_iteration);
+    solver_setup(_matA, _matP, nonlinear_problem, _newton_iteration);
 
     // Perform linear solve and update total number of Krylov
     // iterations
@@ -292,16 +292,15 @@ bool NewtonSolver::converged(const GenericVector& r,
     return false;
 }
 //-----------------------------------------------------------------------------
-void NewtonSolver::linear_solver_setup(GenericLinearSolver& linear_solver,
-                                       std::shared_ptr<const GenericMatrix> A,
-                                       std::shared_ptr<const GenericMatrix> P,
-                                       const NonlinearProblem& nonlinear_problem,
-                                       std::size_t interation)
+void NewtonSolver::solver_setup(std::shared_ptr<const GenericMatrix> A,
+                                std::shared_ptr<const GenericMatrix> P,
+                                const NonlinearProblem& nonlinear_problem,
+                                std::size_t interation)
 {
   // Update Jacobian in linear solver (and preconditioner if given)
   if (_matP->empty())
-    _solver->set_operator(_matA);
+    _solver->set_operator(A);
   else
-    _solver->set_operators(_matA, _matP);
+    _solver->set_operators(A, P);
 }
 //-----------------------------------------------------------------------------
