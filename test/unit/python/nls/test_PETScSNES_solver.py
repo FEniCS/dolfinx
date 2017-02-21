@@ -145,6 +145,7 @@ def test_snes_solver_bound_functions(F, u, bcs, J, \
     solver  = NonlinearVariationalSolver(problem)
     solver.parameters.update(snes_solver_parameters_bounds)
     solver.solve()
+    solver.solve()
     assert u.vector().min() >= 0
 
 
@@ -158,5 +159,6 @@ def test_snes_solver_bound_vectors(F, u, bcs, J, snes_solver_parameters_bounds,
 
     solver  = NonlinearVariationalSolver(problem)
     solver.parameters.update(snes_solver_parameters_bounds)
+    solver.solve()
     solver.solve()
     assert u.vector().min() >= 0
