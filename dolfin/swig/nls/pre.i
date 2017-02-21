@@ -34,36 +34,26 @@
 %feature("director") dolfin::NewtonSolver;
 
 //-----------------------------------------------------------------------------
-// Director typemaps for dolfin::GenericFoo
+// Director typemap for dolfin::GenericMatrix&
 //-----------------------------------------------------------------------------
-// FIXME: Why are not the typemaps defined by this macro kicking in?!?!
-%define DIRECTORIN_TYPEMAPS(TYPE,CONST)
-
-%typemap(directorin, fragment="NoDelete") CONST TYPE& {
-  // DIRECTORIN_TYPEMAPS(TYPE,CONST)
-  // director in CONST TYPE&
-  std::shared_ptr< CONST TYPE > *smartresult = new std::shared_ptr< CONST TYPE >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< TYPE > *), SWIG_POINTER_OWN);
-}
-
-%enddef
-
-DIRECTORIN_TYPEMAPS(dofin::GenericMatrix,)
-DIRECTORIN_TYPEMAPS(dofin::GenericVector,)
-DIRECTORIN_TYPEMAPS(dofin::GenericVector,const)
-
 %typemap(directorin, fragment="NoDelete") dolfin::GenericMatrix& {
   // director in dolfin::GenericMatrix&
   std::shared_ptr< dolfin::GenericMatrix > *smartresult = new std::shared_ptr< dolfin::GenericMatrix >(reference_to_no_delete_pointer($1_name));
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::GenericMatrix > *), SWIG_POINTER_OWN);
 }
 
+//-----------------------------------------------------------------------------
+// Director typemap for dolfin::GenericVector&
+//-----------------------------------------------------------------------------
 %typemap(directorin, fragment="NoDelete") dolfin::GenericVector& {
   // director in dolfin::GenericVector&
   std::shared_ptr< dolfin::GenericVector > *smartresult = new std::shared_ptr< dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
 }
 
+//-----------------------------------------------------------------------------
+// Director typemap for const dolfin::GenericVector&
+//-----------------------------------------------------------------------------
 %typemap(directorin, fragment="NoDelete") const dolfin::GenericVector& {
   // director in const dolfin::GenericVector&
   std::shared_ptr< const dolfin::GenericVector > *smartresult = new std::shared_ptr< const dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
