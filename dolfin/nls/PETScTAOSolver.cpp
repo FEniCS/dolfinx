@@ -218,22 +218,6 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   set_tao_options();
   set_ksp_options();
 
-  // Initialise the Hessian matrix during the first call
-  if (!_matH.mat() || !_matP.mat())
-  {
-    // FIXME: Isn't it waste to compute the tensors now?
-    PETScVector g(this->mpi_comm());
-    optimisation_problem.form(_matH, _matP, g, x);
-    optimisation_problem.J(_matH, x);
-    optimisation_problem.J_pc(_matP, x);
-  }
-  dolfin_assert(_matH.mat());
-  dolfin_assert(_matP.mat());
-
-  // Use Hessian as preconditioner if not provided
-  if (_matH->empty())
-    _matH = _matP
-
   // Set initial vector
   ierr = TaoSetInitialVector(_tao, x.vec());
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetInitialVector");
@@ -248,6 +232,9 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   // Set the objective function, gradient and Hessian evaluation routines
   ierr = TaoSetObjectiveAndGradientRoutine(_tao, FormFunctionGradient, &_tao_ctx);
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetObjectiveAndGradientRoutine");
+
+  dolfin_assert(_matH.mat());
+  dolfin_assert(_matP.mat());
   ierr = TaoSetHessianRoutine(_tao, _matH.mat(), _matP.mat(), FormHessian, &_tao_ctx);
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetHessianRoutine");
 
@@ -390,6 +377,16 @@ PetscErrorCode PETScTAOSolver::FormHessian(Tao tao, Vec x, Mat H, Mat P,
   // FIXME: It's waste to eventually compute g here
   optimisation_problem->form(H_wrap, P_wrap, g, x_wrap);
   optimisation_problem->J(H_wrap, x_wrap);
+  optimisation_problem->J_pc(P_wrap, x_wrap);
+
+  // Use Hessian as preconditioner if not provided
+  if (P_wrap.empty())
+  {
+    log(TRACE, "TAO FormHessian: using Hessian as preconditioner matrix");
+    PetscErrorCode ierr = TaoSetHessianRoutine(tao, nullptr, H,
+                                               nullptr, nullptr);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetHessianRoutine");
+  }
 
   return 0;
 }
