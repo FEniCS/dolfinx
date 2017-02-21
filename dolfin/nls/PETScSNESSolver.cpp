@@ -165,6 +165,7 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
 {
   Timer timer("SNES solver init");
   PETScMatrix A(this->mpi_comm());
+  PETScMatrix P(this->mpi_comm());
 
   // Set linear solver parameters
   set_linear_solver_parameters();
@@ -174,14 +175,16 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
   VecDuplicate(_snes_ctx.x->vec(), &_snes_ctx.f_tmp);
 
   // Compute F(u)
+  // FIXME: Isn't it waste to compute here all the tensors?
   PETScVector f(_snes_ctx.f_tmp);
-  nonlinear_problem.form(A, f, x);
+  nonlinear_problem.form(A, P, f, x);
   nonlinear_problem.F(f, x);
   nonlinear_problem.J(A, x);
+  nonlinear_problem.J_pc(P, x);
 
   SNESSetFunction(_snes, _snes_ctx.f_tmp, PETScSNESSolver::FormFunction,
                   &_snes_ctx);
-  SNESSetJacobian(_snes, A.mat(), A.mat(), PETScSNESSolver::FormJacobian,
+  SNESSetJacobian(_snes, A.mat(), P.mat(), PETScSNESSolver::FormJacobian,
                   &_snes_ctx);
   SNESSetObjective(_snes, PETScSNESSolver::FormObjective, &_snes_ctx);
 
@@ -362,7 +365,9 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
 
   // Compute F(u)
   PETScMatrix A(_x->mpi_comm());
-  nonlinear_problem->form(A, f_wrap, *_x);
+  PETScMatrix P(_x->mpi_comm());
+  // FIXME: This is a waste to eventually compute A,P and throw them away
+  nonlinear_problem->form(A, P, f_wrap, *_x);
   nonlinear_problem->F(f_wrap, *_x);
 
   return 0;
@@ -387,27 +392,21 @@ PetscErrorCode PETScSNESSolver::FormObjective(SNES snes, Vec x,
 PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat A, Mat P,
                                              void* ctx)
 {
-  // Interface does not presently support a preconditioner that
-  // differs from operator A
-  if (A != P)
-  {
-    dolfin_error("PETScSNESSolver.cpp",
-                 "for Jacobian",
-                 "Matrix object incompatibility. The Jacobian matrix must not be reset when using PETSc SNES.");
-  }
-
   // Get nonlinear problem object
   auto snes_ctx = static_cast<struct snes_ctx_t*>(ctx);
   NonlinearProblem* nonlinear_problem = snes_ctx->nonlinear_problem;
 
   // Wrap the PETSc objects
   PETScMatrix A_wrap(P);
+  PETScMatrix P_wrap(P);
   PETScVector x_wrap(x);
 
   // Form Jacobian
+  // FIXME: This is a waste to eventually compute f and throw it away
   PETScVector f(x_wrap.mpi_comm());
-  nonlinear_problem->form(A_wrap, f, x_wrap);
+  nonlinear_problem->form(A_wrap, P_wrap, f, x_wrap);
   nonlinear_problem->J(A_wrap, x_wrap);
+  nonlinear_problem->J_pc(P_wrap, x_wrap);
 
   return 0;
 }
