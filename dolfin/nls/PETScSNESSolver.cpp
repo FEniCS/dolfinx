@@ -115,6 +115,10 @@ PETScSNESSolver::PETScSNESSolver(MPI_Comm comm, std::string nls_type)
     if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetType");
   }
 
+  // Set Jacobian and preconditioner only once
+  ierr = SNESSetJacobian(_snes, _matJ.mat(), _matP.mat(), nullptr, nullptr);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetJacobian");
+
   // Set parameter values
   parameters = default_parameters();
 }
@@ -181,14 +185,11 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
   ierr = VecDuplicate(_snes_ctx.x->vec(), &_snes_ctx.f_tmp);
   if (ierr != 0) petsc_error(ierr, __FILE__, "VecDuplicate");
 
-  dolfin_assert(_matJ.mat());
-  dolfin_assert(_matP.mat());
-
   // Set function, Jacobian and objective
   ierr = SNESSetFunction(_snes, _snes_ctx.f_tmp,
                          PETScSNESSolver::FormFunction, &_snes_ctx);
   if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetFunction");
-  ierr = SNESSetJacobian(_snes, _matJ.mat(), _matP.mat(),
+  ierr = SNESSetJacobian(_snes, nullptr, nullptr,
                          PETScSNESSolver::FormJacobian, &_snes_ctx);
   if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetJacobian");
   SNESSetObjective(_snes, PETScSNESSolver::FormObjective, &_snes_ctx);
