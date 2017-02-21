@@ -230,6 +230,10 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   dolfin_assert(_matH.mat());
   dolfin_assert(_matP.mat());
 
+  // Use Hessian as preconditioner if not provided
+  if (_matH->empty())
+    _matH = _matP
+
   // Set initial vector
   ierr = TaoSetInitialVector(_tao, x.vec());
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetInitialVector");

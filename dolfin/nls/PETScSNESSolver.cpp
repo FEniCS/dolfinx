@@ -182,9 +182,12 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
   nonlinear_problem.J(A, x);
   nonlinear_problem.J_pc(P, x);
 
+  // Use Jacobian as preconditioner if not provided
+  PETScMatrix* A_pc = P.empty() ? &A : &P;
+
   SNESSetFunction(_snes, _snes_ctx.f_tmp, PETScSNESSolver::FormFunction,
                   &_snes_ctx);
-  SNESSetJacobian(_snes, A.mat(), P.mat(), PETScSNESSolver::FormJacobian,
+  SNESSetJacobian(_snes, A.mat(), A_pc->mat(), PETScSNESSolver::FormJacobian,
                   &_snes_ctx);
   SNESSetObjective(_snes, PETScSNESSolver::FormObjective, &_snes_ctx);
 
