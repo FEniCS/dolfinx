@@ -51,7 +51,6 @@
 DIRECTORIN_TYPEMAPS(dofin::GenericMatrix,)
 DIRECTORIN_TYPEMAPS(dofin::GenericVector,)
 DIRECTORIN_TYPEMAPS(dofin::GenericVector,const)
-DIRECTORIN_TYPEMAPS(dofin::GenericLinearSolver,)
 
 %typemap(directorin, fragment="NoDelete") dolfin::GenericMatrix& {
   // director in dolfin::GenericMatrix&
@@ -71,12 +70,9 @@ DIRECTORIN_TYPEMAPS(dofin::GenericLinearSolver,)
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
 }
 
-%typemap(directorin, fragment="NoDelete") dolfin::GenericLinearSolver& {
-  // director in dolfin::GenericLinearSolver&
-  std::shared_ptr< dolfin::GenericLinearSolver > *smartresult = new std::shared_ptr< dolfin::GenericLinearSolver >(reference_to_no_delete_pointer($1_name));
-  $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(std::shared_ptr< dolfin::GenericLinearSolver > *), SWIG_POINTER_OWN);
-}
-
+//-----------------------------------------------------------------------------
+// Director typemap for std::shared_ptr<const dolfin::GenericVector>
+//-----------------------------------------------------------------------------
 %typemap(directorin) std::shared_ptr<const dolfin::GenericMatrix> {
   // director in std::shared_ptr<const dolfin::GenericVector>&
   std::shared_ptr< const dolfin::GenericMatrix > *smartresult = new std::shared_ptr< const dolfin::GenericMatrix >($1_name);
