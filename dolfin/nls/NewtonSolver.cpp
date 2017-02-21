@@ -155,9 +155,8 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     nonlinear_problem.J(*_matA, x);
     nonlinear_problem.J_pc(*_matP, x);
 
-    // Setup linear solver (including set operators)
-    linear_solver_setup(*_solver, _matA, _matP, nonlinear_problem,
-                        _newton_iteration);
+    // Setup (linear) solver (including set operators)
+    solver_setup(*_solver, _matA, _matP, nonlinear_problem, _newton_iteration);
 
     // Perform linear solve and update total number of Krylov
     // iterations

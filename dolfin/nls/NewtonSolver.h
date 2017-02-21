@@ -135,19 +135,13 @@ namespace dolfin
                            const NonlinearProblem& nonlinear_problem,
                            std::size_t iteration);
 
-    // FIXME: Think through carefully whether to use references or shared ptrs.
-    //        If nonlinear_problem used shared_ptrs, there would be no need
-    //        to pass A, P here. Note also that references are problematic in
-    //        Python (the same problem in NonlinearProblem). (We could check
-    //        in directorin wrappers that Python refcount is not increased.)
-
-    /// Setup linear solver to be used with system matrix A and preconditioner
-    /// matrix P. It may be overloaded to get finer control over linear solver
-    /// setup.
+    /// Setup solver to be used with system matrix A and preconditioner
+    /// matrix P. It may be overloaded to get finer control over linear
+    /// solver setup, various linesearch tricks, etc. Note that minimal
+    /// implementation should call *set_operators* method of the linear
+    /// solver.
     ///
     /// *Arguments*
-    ///     linear_solver (_GenericLinearSolver)
-    ///         Linear solver used for upcoming Newton step.
     ///     A (_std::shared_ptr<const GenericMatrix>_)
     ///         System Jacobian matrix.
     ///     J (_std::shared_ptr<const GenericMatrix>_)
@@ -156,11 +150,10 @@ namespace dolfin
     ///         The nonlinear problem.
     ///     iteration (std::size_t)
     ///         Newton iteration number.
-    virtual void linear_solver_setup(GenericLinearSolver& linear_solver,
-                                     std::shared_ptr<const GenericMatrix> A,
-                                     std::shared_ptr<const GenericMatrix> P,
-                                     const NonlinearProblem& nonlinear_problem,
-                                     std::size_t interation);
+    virtual void solver_setup(std::shared_ptr<const GenericMatrix> A,
+                              std::shared_ptr<const GenericMatrix> P,
+                              const NonlinearProblem& nonlinear_problem,
+                              std::size_t interation);
 
   private:
 
