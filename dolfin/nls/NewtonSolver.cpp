@@ -66,8 +66,9 @@ Parameters NewtonSolver::default_parameters()
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(MPI_Comm comm)
   : Variable("Newton solver", "unnamed"), _newton_iteration(0), _residual(0.0),
-    _residual0(0.0), _matA(new Matrix(comm)), _dx(new Vector(comm)),
-    _b(new Vector(comm)), _mpi_comm(comm)
+    _residual0(0.0), _solver(nullptr), _matA(std::make_shared<Matrix>(comm)),
+    _matP(std::make_shared<Matrix>(comm)), _dx(std::make_shared<Vector>(comm)),
+    _b(std::make_shared<Vector>(comm)), _mpi_comm(comm)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -78,9 +79,8 @@ NewtonSolver::NewtonSolver(MPI_Comm comm,
                            GenericLinearAlgebraFactory& factory)
   : Variable("Newton solver", "unnamed"), _newton_iteration(0), _residual(0.0),
     _residual0(0.0), _solver(solver), _matA(factory.create_matrix(comm)),
-    _dx(factory.create_vector(comm)),
-    _b(factory.create_vector(comm)),
-    _mpi_comm(comm)
+    _matP(factory.create_matrix(comm)), _dx(factory.create_vector(comm)),
+    _b(factory.create_vector(comm)), _mpi_comm(comm)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -124,8 +124,8 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   _newton_iteration = 0;
 
   // Compute F(u)
+  nonlinear_problem.form(*_matA, *_matP, *_b, x);
   nonlinear_problem.F(*_b, x);
-  nonlinear_problem.form(*_matA, *_b, x);
 
   // Check convergence
   bool newton_converged = false;
@@ -153,9 +153,11 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   {
     // Compute Jacobian
     nonlinear_problem.J(*_matA, x);
+    nonlinear_problem.J_pc(*_matP, x);
 
-    // Update Jacobian in linear solver
-    _solver->set_operator(_matA);
+    // Setup linear solver (including set operators)
+    linear_solver_setup(*_solver, _matA, _matP, nonlinear_problem,
+                        _newton_iteration);
 
     // Perform linear solve and update total number of Krylov
     // iterations
@@ -176,8 +178,8 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     //        this has converged.
     // FIXME: But, this function call may update internal variable, etc.
     // Compute F
+    nonlinear_problem.form(*_matA, *_matP, *_b, x);
     nonlinear_problem.F(*_b, x);
-    nonlinear_problem.form(*_matA, *_b, x);
 
     // Test for convergence
     if (convergence_criterion == "residual")
@@ -289,5 +291,18 @@ bool NewtonSolver::converged(const GenericVector& r,
     return true;
   else
     return false;
+}
+//-----------------------------------------------------------------------------
+void NewtonSolver::linear_solver_setup(GenericLinearSolver& linear_solver,
+                                       std::shared_ptr<const GenericMatrix> A,
+                                       std::shared_ptr<const GenericMatrix> P,
+                                       const NonlinearProblem& nonlinear_problem,
+                                       std::size_t interation)
+{
+  // Update Jacobian in linear solver (and preconditioner if given)
+  if (_matP->empty())
+    _solver->set_operator(_matA);
+  else
+    _solver->set_operators(_matA, _matP);
 }
 //-----------------------------------------------------------------------------
