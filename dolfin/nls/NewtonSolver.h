@@ -135,6 +135,33 @@ namespace dolfin
                            const NonlinearProblem& nonlinear_problem,
                            std::size_t iteration);
 
+    // FIXME: Think through carefully whether to use references or shared ptrs.
+    //        If nonlinear_problem used shared_ptrs, there would be no need
+    //        to pass A, P here. Note also that references are problematic in
+    //        Python (the same problem in NonlinearProblem). (We could check
+    //        in directorin wrappers that Python refcount is not increased.)
+
+    /// Setup linear solver to be used with system matrix A and preconditioner
+    /// matrix P. It may be overloaded to get finer control over linear solver
+    /// setup.
+    ///
+    /// *Arguments*
+    ///     linear_solver (_GenericLinearSolver)
+    ///         Linear solver used for upcoming Newton step.
+    ///     A (_std::shared_ptr<const GenericMatrix>_)
+    ///         System Jacobian matrix.
+    ///     J (_std::shared_ptr<const GenericMatrix>_)
+    ///         System preconditioner matrix.
+    ///     nonlinear_problem (_NonlinearProblem_)
+    ///         The nonlinear problem.
+    ///     iteration (std::size_t)
+    ///         Newton iteration number.
+    virtual void linear_solver_setup(GenericLinearSolver& linear_solver,
+                                     std::shared_ptr<const GenericMatrix> A,
+                                     std::shared_ptr<const GenericMatrix> P,
+                                     const NonlinearProblem& nonlinear_problem,
+                                     std::size_t interation);
+
   private:
 
     // Current number of Newton iterations
@@ -148,6 +175,9 @@ namespace dolfin
 
     // Jacobian matrix
     std::shared_ptr<GenericMatrix> _matA;
+
+    // Preconditioner matrix
+    std::shared_ptr<GenericMatrix> _matP;
 
     // Solution vector
     std::shared_ptr<GenericVector> _dx;
