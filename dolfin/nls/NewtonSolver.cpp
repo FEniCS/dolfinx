@@ -299,8 +299,13 @@ void NewtonSolver::solver_setup(std::shared_ptr<const GenericMatrix> A,
 {
   // Update Jacobian in linear solver (and preconditioner if given)
   if (_matP->empty())
+  {
     _solver->set_operator(A);
+    log(TRACE, "NewtonSolver: using Jacobian as preconditioner matrix");
+  }
   else
+  {
     _solver->set_operators(A, P);
+  }
 }
 //-----------------------------------------------------------------------------

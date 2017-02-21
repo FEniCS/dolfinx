@@ -97,25 +97,25 @@ def ub(V):
 @fixture
 def newton_solver_parameters():
     return{"nonlinear_solver": "newton",
-            "newton_solver": {"linear_solver": "lu",
-            "maximum_iterations": 100,
-            "report": False}}
+           "newton_solver": {"linear_solver": "lu",
+                             "maximum_iterations": 100,
+                             "report": False}}
 
 @fixture
 def snes_solver_parameters_sign():
     return {"nonlinear_solver": "snes",
             "snes_solver": {"linear_solver": "lu",
-            "maximum_iterations": 100,
-            "sign": "nonnegative",
-            "report": True}}
+                            "maximum_iterations": 100,
+                            "sign": "nonnegative",
+                            "report": True}}
 
 @fixture
 def snes_solver_parameters_bounds():
     return {"nonlinear_solver": "snes",
             "snes_solver": {"linear_solver": "lu",
-            "maximum_iterations": 100,
-            "sign": "default",
-            "report": True}}
+                            "maximum_iterations": 100,
+                            "sign": "default",
+                            "report": True}}
 
 @skip_if_not_PETSc
 def test_snes_solver(F, bcs, u, snes_solver_parameters_sign, parameter_degree,\
