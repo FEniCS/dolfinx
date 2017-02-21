@@ -93,10 +93,13 @@ Parameters PETScSNESSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 PETScSNESSolver::PETScSNESSolver(MPI_Comm comm, std::string nls_type)
-  : _snes(nullptr), _has_explicit_bounds(false)
+  : _snes(nullptr), _matJ(comm), _matP(comm), _has_explicit_bounds(false)
 {
+  PetscErrorCode ierr;
+
   // Create SNES object
-  SNESCreate(comm, &_snes);
+  ierr = SNESCreate(comm, &_snes);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESCreate");
 
   // Set type if not default
   if (nls_type != "default")
@@ -108,7 +111,7 @@ PETScSNESSolver::PETScSNESSolver(MPI_Comm comm, std::string nls_type)
                    "create PETSc SNES solver",
                    "Unknown SNES method \"%s\"", nls_type.c_str());
     }
-    PetscErrorCode ierr = SNESSetType(_snes, method->second.second);
+    ierr = SNESSetType(_snes, method->second.second);
     if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetType");
   }
 
@@ -164,39 +167,38 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
                            GenericVector& x)
 {
   Timer timer("SNES solver init");
-  PETScMatrix A(this->mpi_comm());
-  PETScMatrix P(this->mpi_comm());
+  PetscErrorCode ierr;
 
   // Set linear solver parameters
   set_linear_solver_parameters();
 
+  // Prepare context for evaluation routines
   _snes_ctx.nonlinear_problem = &nonlinear_problem;
   _snes_ctx.x = &x.down_cast<PETScVector>();
-  VecDuplicate(_snes_ctx.x->vec(), &_snes_ctx.f_tmp);
+  // FIXME: We are duplicating ghosted vector, while we don't need ghosted
+  // NOTE: Seems that we can get rid of f_tmp and use working vec obtained by
+  //       SNESLineSearchGetVecs
+  ierr = VecDuplicate(_snes_ctx.x->vec(), &_snes_ctx.f_tmp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecDuplicate");
 
-  // Compute F(u)
-  // FIXME: Isn't it waste to compute here all the tensors?
-  PETScVector f(_snes_ctx.f_tmp);
-  nonlinear_problem.form(A, P, f, x);
-  nonlinear_problem.F(f, x);
-  nonlinear_problem.J(A, x);
-  nonlinear_problem.J_pc(P, x);
+  dolfin_assert(_matJ.mat());
+  dolfin_assert(_matP.mat());
 
-  // Use Jacobian as preconditioner if not provided
-  PETScMatrix* A_pc = P.empty() ? &A : &P;
-
-  SNESSetFunction(_snes, _snes_ctx.f_tmp, PETScSNESSolver::FormFunction,
-                  &_snes_ctx);
-  SNESSetJacobian(_snes, A.mat(), A_pc->mat(), PETScSNESSolver::FormJacobian,
-                  &_snes_ctx);
+  // Set function, Jacobian and objective
+  ierr = SNESSetFunction(_snes, _snes_ctx.f_tmp,
+                         PETScSNESSolver::FormFunction, &_snes_ctx);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetFunction");
+  ierr = SNESSetJacobian(_snes, _matJ.mat(), _matP.mat(),
+                         PETScSNESSolver::FormJacobian, &_snes_ctx);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetJacobian");
   SNESSetObjective(_snes, PETScSNESSolver::FormObjective, &_snes_ctx);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetObjective");
 
   // Set some options from the parameters
   if (parameters["report"].is_set())
   {
     if (parameters["report"])
     {
-      PetscErrorCode ierr;
       PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_snes));
       PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
       PetscViewerAndFormat *vf;
@@ -218,7 +220,8 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
   {
     auto it = _methods.find(method);
     dolfin_assert(it != _methods.end());
-    SNESSetType(_snes, it->second.second);
+    ierr = SNESSetType(_snes, it->second.second);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetType");
 
     // Check if bounds/sign are set when VI method requested
     if ((method == "vinewtonrsls" || method == "vinewtonssls") && !is_vi())
@@ -238,31 +241,37 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
     // (most methods do not support bounds)
     auto it = _methods.find("vinewtonssls");
     dolfin_assert(it != _methods.end());
-    SNESSetType(_snes, it->second.second);
+    ierr = SNESSetType(_snes, it->second.second);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetType");
   }
 
   SNESLineSearch linesearch;
-  SNESGetLineSearch(_snes, &linesearch);
+  ierr = SNESGetLineSearch(_snes, &linesearch);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESGetLineSearch");
 
   if (parameters["report"].is_set())
   {
     if (parameters["report"])
-      SNESLineSearchMonitor(linesearch);
+      ierr = SNESLineSearchMonitor(linesearch);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "SNESLineSearchMonitor");
   }
 
   const std::string line_search_type = std::string(parameters["line_search"]);
-  SNESLineSearchSetType(linesearch, line_search_type.c_str());
+  ierr = SNESLineSearchSetType(linesearch, line_search_type.c_str());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESLineSearchSetType");
 
   // Tolerances
   const int max_iters = parameters["maximum_iterations"];
   const int max_residual_evals = parameters["maximum_residual_evaluations"];
-  SNESSetTolerances(_snes, parameters["absolute_tolerance"],
-                    parameters["relative_tolerance"],
-                    parameters["solution_tolerance"],
-                    max_iters, max_residual_evals);
+  ierr = SNESSetTolerances(_snes, parameters["absolute_tolerance"],
+                           parameters["relative_tolerance"],
+                           parameters["solution_tolerance"],
+                           max_iters, max_residual_evals);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetTolerances");
 
   // Set some options
-  SNESSetFromOptions(_snes);
+  ierr = SNESSetFromOptions(_snes);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetFromOptions");
 }
 //-----------------------------------------------------------------------------
 void PETScSNESSolver::set_options_prefix(std::string options_prefix)
@@ -302,25 +311,33 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
                        GenericVector& x)
 {
   Timer timer("SNES solver execution");
+  PetscErrorCode ierr;
   PetscInt its;
   SNESConvergedReason reason;
 
+  PETScVector& _x = x.down_cast<PETScVector>();
+
   this->init(nonlinear_problem, x);
+
   // for line searches, making this copy is necessary:
   // when linesearching, the working space can't be the
   // same as the vector that holds the current solution
   // guess in the dolfin form.
-  PETScVector x_copy(x.down_cast<PETScVector>());
-  SNESSolve(_snes, NULL, x_copy.vec());
-  x.zero();
-  x.axpy(1.0, x_copy);
+  {
+    PETScVector x_copy(_x);
+    ierr = SNESSolve(_snes, NULL, x_copy.vec());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSolve");
+    ierr = VecSwap(_x.vec(), x_copy.vec());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "VecSwap");
+  }
 
   // Update any ghost values
-  PETScVector& _x = x.down_cast<PETScVector>();
   _x.update_ghost_values();
 
-  SNESGetIterationNumber(_snes, &its);
-  SNESGetConvergedReason(_snes, &reason);
+  ierr = SNESGetIterationNumber(_snes, &its);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESGetIterationNumber");
+  ierr = SNESGetConvergedReason(_snes, &reason);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "SNESGetConvergedReason");
 
   const bool report = parameters["report"];
 
@@ -379,10 +396,15 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
 PetscErrorCode PETScSNESSolver::FormObjective(SNES snes, Vec x,
                                               PetscReal* out, void* ctx)
 {
+  PetscErrorCode ierr;
   auto snes_ctx = static_cast<struct snes_ctx_t*>(ctx);
-  PETScSNESSolver::FormFunction(snes, x, snes_ctx->f_tmp, ctx);
+
+  ierr = PETScSNESSolver::FormFunction(snes, x, snes_ctx->f_tmp, ctx);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "PETScSNESSolver::FormFunction");
+
   PetscReal f_norm;
-  VecNorm(snes_ctx->f_tmp, NORM_2, &f_norm);
+  ierr = VecNorm(snes_ctx->f_tmp, NORM_2, &f_norm);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "VecNorm");
 
   if (std::isnan(f_norm) || std::isinf(f_norm))
     *out = 1.0e100;
@@ -400,7 +422,7 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat A, Mat P,
   NonlinearProblem* nonlinear_problem = snes_ctx->nonlinear_problem;
 
   // Wrap the PETSc objects
-  PETScMatrix A_wrap(P);
+  PETScMatrix A_wrap(A);
   PETScMatrix P_wrap(P);
   PETScVector x_wrap(x);
 
@@ -411,6 +433,14 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat A, Mat P,
   nonlinear_problem->J(A_wrap, x_wrap);
   nonlinear_problem->J_pc(P_wrap, x_wrap);
 
+  // Use Jacobian as preconditioner if not provided
+  if (P_wrap.empty())
+  {
+    log(TRACE, "SNES FormJacobian: using Jacobian as preconditioner matrix");
+    PetscErrorCode ierr = SNESSetJacobian(snes, nullptr, A, nullptr, nullptr);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetJacobian");
+  }
+
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -418,8 +448,8 @@ void PETScSNESSolver::set_linear_solver_parameters()
 {
   KSP ksp;
   PC pc;
-
   PetscErrorCode ierr;
+
   ierr = SNESGetKSP(_snes, &ksp);
   if (ierr != 0) petsc_error(ierr, __FILE__, "SNESGetKSP");
 
@@ -437,10 +467,12 @@ void PETScSNESSolver::set_linear_solver_parameters()
       PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
       PetscViewerAndFormat *vf;
       ierr = PetscViewerAndFormatCreate(viewer,format,&vf);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "PetscViewerAndFormatCreate");
       ierr = KSPMonitorSet(ksp,
                            (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorDefault,
                            vf,
                            (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
     }
   }
   const std::string linear_solver  = parameters["linear_solver"];
@@ -454,13 +486,15 @@ void PETScSNESSolver::set_linear_solver_parameters()
   {
     auto  solver_pair = PETScKrylovSolver::_methods.find(linear_solver);
     dolfin_assert(solver_pair != PETScKrylovSolver::_methods.end());
-    KSPSetType(ksp, solver_pair->second);
+    ierr = KSPSetType(ksp, solver_pair->second);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
     if (preconditioner != "default"
         && PETScPreconditioner::_methods.count(preconditioner) != 0)
     {
       auto it = PETScPreconditioner::_methods.find(preconditioner);
       dolfin_assert(it != PETScPreconditioner::_methods.end());
-      PCSetType(pc, it->second);
+      ierr = PCSetType(pc, it->second);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
     }
 
     Parameters krylov_parameters = parameters("krylov_solver");
@@ -470,9 +504,10 @@ void PETScSNESSolver::set_linear_solver_parameters()
     {
       const bool nonzero_guess = krylov_parameters["nonzero_initial_guess"];
       if (nonzero_guess)
-        KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
+        ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
       else
-        KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
+        ierr = KSPSetInitialGuessNonzero(ksp, PETSC_FALSE);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetInitialGuessNonzero");
     }
     // ... otherwise use the default, what has been set before,
     // or directly through PETSc API or parameter system
@@ -484,10 +519,12 @@ void PETScSNESSolver::set_linear_solver_parameters()
       PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
       PetscViewerAndFormat *vf;
       ierr = PetscViewerAndFormatCreate(viewer,format,&vf);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "PetscViewerAndFormatCreate");
       ierr = KSPMonitorSet(ksp,
                          (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
                          vf,
                          (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
     }
 
     // Check if a tolerance has been set
@@ -547,11 +584,14 @@ void PETScSNESSolver::set_linear_solver_parameters()
       }
     }
 
-    KSPSetType(ksp, KSPPREONLY);
-    PCSetType(pc, PCLU);
+    ierr = KSPSetType(ksp, KSPPREONLY);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+    ierr = PCSetType(pc, PCLU);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
     auto it = PETScLUSolver::_methods.find(lu_method);
     dolfin_assert(it != PETScLUSolver::_methods.end());
-    PCFactorSetMatSolverPackage(pc, it->second);
+    ierr = PCFactorSetMatSolverPackage(pc, it->second);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetMatSolverPackage");
   }
   else
   {
@@ -565,6 +605,8 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
 {
   if (is_vi())
   {
+    PetscErrorCode ierr;
+
     dolfin_assert(_snes);
     const std::string sign   = parameters["sign"];
     const std::string method = parameters["method"];
@@ -582,17 +624,23 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
       Vec ub, lb;
 
       PETScVector _x = x.down_cast<PETScVector>();
-      VecDuplicate(_x.vec(), &ub);
-      VecDuplicate(_x.vec(), &lb);
+      ierr = VecDuplicate(_x.vec(), &ub);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "VecDuplicate");
+      ierr = VecDuplicate(_x.vec(), &lb);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "VecDuplicate");
       if (sign == "nonnegative")
       {
-        VecSet(ub, PETSC_INFINITY);
-        VecSet(lb, 0.0);
+        ierr = VecSet(ub, PETSC_INFINITY);
+        if (ierr != 0) petsc_error(ierr, __FILE__, "VecSet");
+        ierr = VecSet(lb, 0.0);
+        if (ierr != 0) petsc_error(ierr, __FILE__, "VecSet");
       }
       else if (sign == "nonpositive")
       {
-        VecSet(ub, 0.0);
-        VecSet(lb, PETSC_INFINITY);
+        ierr = VecSet(ub, 0.0);
+        if (ierr != 0) petsc_error(ierr, __FILE__, "VecSet");
+        ierr = VecSet(lb, PETSC_INFINITY);
+        if (ierr != 0) petsc_error(ierr, __FILE__, "VecSet");
       }
       else
       {
@@ -601,15 +649,19 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
                      "Unknown bound type \"%s\"", sign.c_str());
       }
 
-      SNESVISetVariableBounds(_snes, lb, ub);
-      VecDestroy(&ub);
-      VecDestroy(&lb);
+      ierr = SNESVISetVariableBounds(_snes, lb, ub);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "SNESVISetVariableBounds");
+      ierr = VecDestroy(&ub);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "VecDestroy");
+      ierr = VecDestroy(&lb);
+      if (ierr != 0) petsc_error(ierr, __FILE__, "VecDestroy");
     }
     else if (_has_explicit_bounds)
     {
       const PETScVector* lb = this->lb.get();
       const PETScVector* ub = this->ub.get();
-      SNESVISetVariableBounds(_snes, lb->vec(), ub->vec());
+      ierr = SNESVISetVariableBounds(_snes, lb->vec(), ub->vec());
+      if (ierr != 0) petsc_error(ierr, __FILE__, "SNESVISetVariableBounds");
     }
   }
 }
