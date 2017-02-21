@@ -117,6 +117,7 @@ def snes_solver_parameters_bounds():
                             "sign": "default",
                             "report": True}}
 
+
 @skip_if_not_PETSc
 def test_snes_solver(F, bcs, u, snes_solver_parameters_sign, parameter_degree,\
                      parameter_backend):
@@ -134,15 +135,81 @@ def test_newton_solver(F, u, bcs, newton_solver_parameters, parameter_degree,\
 
 
 @skip_if_not_PETSc
-def test_snes_solver_bound_functions(F, u, bcs, J, \
-                                     snes_solver_parameters_bounds,
-                                     lb, ub, parameter_degree, \
-                                     parameter_backend):
+def test_preconditioner_interface(V, parameter_backend):
+    V = adapt(V)
+    V = adapt(V)
+    V = adapt(V)
+    class Problem(NonlinearProblem):
+        def __init__(self, V):
+            NonlinearProblem.__init__(self)
+            u = Function(V)
+            v_ = TrialFunction(V)
+            v = TestFunction(V)
+            p = Constant(2.2)
+            f = Constant(1.0)
+            S_0 = (grad(u)**2)**(p/2-1)*grad(u)
+            S_1 = (1.0 + grad(u)**2)**(p/2-1)*grad(u)
+            #S = (1.0 + grad(u)**2)**(p/2-1)*grad(u)
+            a = inner(grad(v_), grad(v))*dx
+            F_0 = ( inner(S_0, grad(v)) - f*v )*dx
+            F_1 = ( inner(S_1, grad(v)) - f*v )*dx
+            bdry = AutoSubDomain(lambda x,b:b)
+            bc = DirichletBC(V, 0, bdry)
+            J = derivative(F_0, u)
+            P = derivative(F_1, u)
+            assembler = SystemAssembler(J, F_0, bc)
+            assembler_pc = SystemAssembler(P, F_0, bc)
+            self.u = u
+            self.assembler = assembler
+            self.assembler_pc = assembler_pc
+
+            self.a = a
+            self.bc = bc
+            self.L = f*v*dx
+
+            # FIXME: Bug in memory scope with AutoSubDomain/DirichletBC
+            self.bdry = bdry
+        def solution(self):
+            return self.u
+        def F(self, b, x):
+            self.assembler.assemble(b, x)
+        def J(self, A, x):
+            self.assembler.assemble(A)
+        def J_pc(self, P, x):
+            if P.empty():
+                self.assembler_pc.assemble(P)
+        def set_initial_guess(self):
+            solve(self.a == self.L, self.u, self.bc)
+
+    problem = Problem(V)
+    solver = PETScSNESSolver()
+    #import pdb; pdb.set_trace()
+    solver.parameters["linear_solver"] = "cg"
+    solver.parameters["preconditioner"] = "amg"
+    problem.set_initial_guess()
+    solver.solve(problem, problem.solution().vector())
+    problem.set_initial_guess()
+    solver.solve(problem, problem.solution().vector())
+    solver = NewtonSolver()
+    solver.parameters["linear_solver"] = "cg"
+    solver.parameters["preconditioner"] = "amg"
+    solver.parameters["krylov_solver"]["monitor_convergence"] = True
+    problem.set_initial_guess()
+    solver.solve(problem, problem.solution().vector())
+    problem.set_initial_guess()
+    solver.solve(problem, problem.solution().vector())
+
+
+@skip_if_not_PETSc
+def test_snes_solver_bound_vectors(F, u, bcs, J,
+                                   snes_solver_parameters_bounds,
+                                   lb, ub, parameter_degree,
+                                   parameter_backend):
     u.interpolate(Constant(-1000.0))
     problem = NonlinearVariationalProblem(F, u, bcs, J)
     problem.set_bounds(lb, ub)
 
-    solver  = NonlinearVariationalSolver(problem)
+    solver = NonlinearVariationalSolver(problem)
     solver.parameters.update(snes_solver_parameters_bounds)
     solver.solve()
     solver.solve()
@@ -150,14 +217,15 @@ def test_snes_solver_bound_functions(F, u, bcs, J, \
 
 
 @skip_if_not_PETSc
-def test_snes_solver_bound_vectors(F, u, bcs, J, snes_solver_parameters_bounds,
-                                   lb, ub, parameter_degree, \
+def test_snes_solver_bound_vectors(F, u, bcs, J,
+                                   snes_solver_parameters_bounds,
+                                   lb, ub, parameter_degree,
                                    parameter_backend):
     u.interpolate(Constant(-1000.0))
     problem = NonlinearVariationalProblem(F, u, bcs, J)
     problem.set_bounds(lb, ub)
 
-    solver  = NonlinearVariationalSolver(problem)
+    solver = NonlinearVariationalSolver(problem)
     solver.parameters.update(snes_solver_parameters_bounds)
     solver.solve()
     solver.solve()
