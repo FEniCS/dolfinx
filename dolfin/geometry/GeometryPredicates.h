@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-11-21
-// Last changed: 2017-02-11
+// Last changed: 2017-02-22
 
 #ifndef __GEOMETRYPREDICATES_H
 #define __GEOMETRYPREDICATES_H
@@ -54,6 +54,9 @@ namespace dolfin
 
     /// Check whether simplex is finite (not Inf or NaN)
     static bool is_finite(const std::vector<Point>& simplex);
+
+    /// Check whether simplex is finite (not Inf or NaN)
+    static bool is_finite(const std::vector<double>& simplex);
 
   private:
 
