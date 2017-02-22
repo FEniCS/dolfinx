@@ -51,10 +51,9 @@ Parameters NewtonSolver::default_parameters()
   p.add("relative_tolerance",      1e-9);
   p.add("absolute_tolerance",      1e-10);
   p.add("convergence_criterion",   "residual");
-  p.add("method",                  "full");
-  p.add("relaxation_parameter",    1.0);
   p.add("report",                  true);
   p.add("error_on_nonconvergence", true);
+  p.add<double>("relaxation_parameter");
 
   //p.add("reuse_preconditioner", false);
 
@@ -65,8 +64,9 @@ Parameters NewtonSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(MPI_Comm comm)
-  : Variable("Newton solver", "unnamed"), _newton_iteration(0), _residual(0.0),
-    _residual0(0.0), _solver(nullptr), _matA(std::make_shared<Matrix>(comm)),
+  : Variable("Newton solver", "unnamed"), _newton_iteration(0),
+    _relaxation_parameter(1.0), _residual(0.0), _residual0(0.0),
+    _solver(nullptr), _matA(std::make_shared<Matrix>(comm)),
     _matP(std::make_shared<Matrix>(comm)), _dx(std::make_shared<Vector>(comm)),
     _b(std::make_shared<Vector>(comm)), _mpi_comm(comm)
 {
@@ -77,8 +77,9 @@ NewtonSolver::NewtonSolver(MPI_Comm comm)
 NewtonSolver::NewtonSolver(MPI_Comm comm,
                            std::shared_ptr<GenericLinearSolver> solver,
                            GenericLinearAlgebraFactory& factory)
-  : Variable("Newton solver", "unnamed"), _newton_iteration(0), _residual(0.0),
-    _residual0(0.0), _solver(solver), _matA(factory.create_matrix(comm)),
+  : Variable("Newton solver", "unnamed"), _newton_iteration(0),
+    _relaxation_parameter(1.0), _residual(0.0), _residual0(0.0),
+    _solver(solver), _matA(factory.create_matrix(comm)),
     _matP(factory.create_matrix(comm)), _dx(factory.create_vector(comm)),
     _b(factory.create_vector(comm)), _mpi_comm(comm)
 {
@@ -106,6 +107,8 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   // Extract parameters
   const std::string convergence_criterion = parameters["convergence_criterion"];
   const std::size_t maxiter = parameters["maximum_iterations"];
+  if (parameters["relaxation_parameter"].is_set())
+    set_relaxation_parameter(parameters["relaxation_parameter"]);
 
   // Create linear solver if not already created
   const std::string solver_type = parameters["linear_solver"];
@@ -145,9 +148,6 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                  convergence_criterion.c_str());
   }
 
-  // Get relaxation parameter
-  const double relaxation = parameters["relaxation_parameter"];
-
   // Start iterations
   while (!newton_converged && _newton_iteration < maxiter)
   {
@@ -165,10 +165,10 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     krylov_iterations += _solver->solve(*_dx, *_b);
 
     // Update solution
-    if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
+    if (_relaxation_parameter == 1.0)
       x -= (*_dx);
     else
-      x.axpy(-relaxation, *_dx);
+      x.axpy(-_relaxation_parameter, *_dx);
 
     // Increment iteration count
     _newton_iteration++;

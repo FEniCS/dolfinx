@@ -115,6 +115,24 @@ namespace dolfin
     ///         Parameter values.
     static Parameters default_parameters();
 
+    /// Set relaxation parameter. Default value 1.0 means full
+    /// Newton method, value smaller than 1.0 relaxes the method
+    /// by shrinking effective Newton step size by the given factor.
+    ///
+    /// *Arguments*
+    ///     relaxation_parameter(double)
+    ///         Relaxation parameter value.
+    void set_relaxation_parameter(double relaxation_parameter)
+    { _relaxation_parameter = relaxation_parameter; }
+
+    /// Get relaxation parameter
+    ///
+    /// *Returns*
+    ///     double
+    ///         Relaxation parameter value.
+    double get_relaxation_parameter()
+    { return _relaxation_parameter; }
+
   protected:
 
     /// Convergence test. It may be overloaded using virtual inheritance and
@@ -159,6 +177,9 @@ namespace dolfin
 
     // Current number of Newton iterations
     std::size_t _newton_iteration;
+
+    // Relaxation parameter
+    double _relaxation_parameter;
 
     // Most recent residual and initial residual
     double _residual, _residual0;
