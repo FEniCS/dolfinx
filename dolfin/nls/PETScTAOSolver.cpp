@@ -353,7 +353,6 @@ PetscErrorCode PETScTAOSolver::FormFunctionGradient(Tao tao, Vec x,
   PETScMatrix H(x_wrap.mpi_comm());
   PETScMatrix P(x_wrap.mpi_comm());
   *fobj = optimisation_problem->f(x_wrap);
-  // FIXME: It's waste to eventually compute H, P here
   optimisation_problem->form(H, P, g_wrap, x_wrap);
   optimisation_problem->F(g_wrap, x_wrap);
 
@@ -374,10 +373,10 @@ PetscErrorCode PETScTAOSolver::FormHessian(Tao tao, Vec x, Mat H, Mat P,
 
   // Compute the hessian H(x) = f''(x)
   PETScVector g(x_wrap.mpi_comm());
-  // FIXME: It's waste to eventually compute g here
   optimisation_problem->form(H_wrap, P_wrap, g, x_wrap);
   optimisation_problem->J(H_wrap, x_wrap);
-  optimisation_problem->J_pc(P_wrap, x_wrap);
+  if (H != P)
+    optimisation_problem->J_pc(P_wrap, x_wrap);
 
   // Use Hessian as preconditioner if not provided
   if (P_wrap.empty())
