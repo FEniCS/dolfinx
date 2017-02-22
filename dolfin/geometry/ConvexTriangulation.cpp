@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-02-09
+// Last changed: 2017-02-23
 
 #include <algorithm>
 #include <tuple>
@@ -123,7 +123,7 @@ ConvexTriangulation::triangulate(std::vector<Point> p,
 #endif
       dolfin_error("ConvexTriangulation.cpp",
                    "triangulate convex polyhedron",
-                   "a convex polyhedron of topological dimension 1 can not have more then 2 points");
+                   "a convex polyhedron of topological dimension 1 can not have more than 2 points");
     }
 
     std::vector<std::vector<Point>> t;

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-22
+// Last changed: 2017-02-23
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -141,7 +141,7 @@ namespace dolfin
     // [C] intersection_segment_segment_2d           <-- needs review
     // [C] intersection_segment_segment_3d           <-- not used/implemented
     // [D] intersection_triangle_segment_2d          <-- needs review
-    // [C] intersection_triangle_segment_3d          <-- needs rewrite
+    // [C] intersection_triangle_segment_3d          <-- needs review
     // [D] intersection_tetrahedron_segment_3d       <-- needs review
     // [D] intersection_triangle_triangle_2d         <-- needs review
     // [D] intersection_triangle_triangle_3d         <-- needs review
@@ -224,6 +224,12 @@ namespace dolfin
                                     const Point& p1,
                                     const Point& q0,
                                     const Point& q1);
+
+    static std::vector<Point>
+    intersection_segment_segment_2d_new(const Point& p0,
+                                        const Point& p1,
+                                        const Point& q0,
+                                        const Point& q1);
 
     /// Compute intersection of segment p0-p1 with segment q0-q1 (3D)
     static std::vector<Point>
