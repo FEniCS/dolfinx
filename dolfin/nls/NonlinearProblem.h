@@ -83,7 +83,11 @@ namespace dolfin
 
     /// Compute J_pc used to precondition J. Not implementing this
     /// or leaving P empty results in system matrix A being used
-    /// to construct preconditioner
+    /// to construct preconditioner.
+    ///
+    /// Note that if nonempty P is not assembled on first call
+    /// then a solver implementation may throw away P and not
+    /// call this routine ever again.
     virtual void J_pc(GenericMatrix& P, const GenericVector& x)
     {
       // Do nothing if not supplied by the user

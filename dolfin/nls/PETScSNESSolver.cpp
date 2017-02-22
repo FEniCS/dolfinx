@@ -382,7 +382,6 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   // Compute F(u)
   PETScMatrix A(_x->mpi_comm());
   PETScMatrix P(_x->mpi_comm());
-  // FIXME: This is a waste to eventually compute A,P and throw them away
   nonlinear_problem->form(A, P, f_wrap, *_x);
   nonlinear_problem->F(f_wrap, *_x);
 
@@ -423,11 +422,11 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat A, Mat P,
   PETScVector x_wrap(x);
 
   // Form Jacobian
-  // FIXME: This is a waste to eventually compute f and throw it away
   PETScVector f(x_wrap.mpi_comm());
   nonlinear_problem->form(A_wrap, P_wrap, f, x_wrap);
   nonlinear_problem->J(A_wrap, x_wrap);
-  nonlinear_problem->J_pc(P_wrap, x_wrap);
+  if (A != P)
+    nonlinear_problem->J_pc(P_wrap, x_wrap);
 
   // Use Jacobian as preconditioner if not provided
   if (P_wrap.empty())
