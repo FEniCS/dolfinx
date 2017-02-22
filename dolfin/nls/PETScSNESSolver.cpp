@@ -138,9 +138,6 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
                        const GenericVector& lb,
                        const GenericVector& ub)
 {
-  // Set linear solver parameters
-  set_linear_solver_parameters();
-
   // Check size of the bound vectors
   if (lb.size() != ub.size())
   {
@@ -250,11 +247,10 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
   ierr = SNESGetLineSearch(_snes, &linesearch);
   if (ierr != 0) petsc_error(ierr, __FILE__, "SNESGetLineSearch");
 
-  if (parameters["report"].is_set())
+  if (parameters["report"].is_set() && parameters["report"])
   {
-    if (parameters["report"])
-      ierr = SNESLineSearchMonitor(linesearch);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "SNESLineSearchMonitor");
+    ierr = SNESLineSearchMonitor(linesearch);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "SNESLineSearchMonitor");
   }
 
   const std::string line_search_type = std::string(parameters["line_search"]);
@@ -358,8 +354,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   {
     dolfin_error("PETScSNESSolver.cpp",
                  "solve nonlinear system with PETScSNESSolver",
-                 "Solver did not converge",
-                 "Bummer");
+                 "Solver did not converge");
   }
 
   return std::make_pair(its, reason > 0);
@@ -460,22 +455,6 @@ void PETScSNESSolver::set_linear_solver_parameters()
   // Get MPI communicator
   MPI_Comm comm = mpi_comm();
 
-  if (parameters["report"].is_set())
-  {
-    if (parameters["report"])
-    {
-      PetscViewer viewer = PETSC_VIEWER_STDOUT_(comm);
-      PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
-      PetscViewerAndFormat *vf;
-      ierr = PetscViewerAndFormatCreate(viewer,format,&vf);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "PetscViewerAndFormatCreate");
-      ierr = KSPMonitorSet(ksp,
-                           (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorDefault,
-                           vf,
-                           (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
-    }
-  }
   const std::string linear_solver  = parameters["linear_solver"];
   const std::string preconditioner = parameters["preconditioner"];
 
@@ -522,9 +501,9 @@ void PETScSNESSolver::set_linear_solver_parameters()
       ierr = PetscViewerAndFormatCreate(viewer,format,&vf);
       if (ierr != 0) petsc_error(ierr, __FILE__, "PetscViewerAndFormatCreate");
       ierr = KSPMonitorSet(ksp,
-                         (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
-                         vf,
-                         (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+                           (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
+                           vf,
+                           (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
       if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
     }
 
