@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-19
+// Last changed: 2017-02-22
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -390,117 +390,9 @@ IntersectionConstruction::intersection_segment_segment_3d(const Point& p0,
                                                           const Point& q0,
                                                           const Point& q1)
 {
-  // The list of points (convex hull)
-  std::vector<Point> points;
-
-  // Avoid some unnecessary computations
-  if (!CollisionPredicates::collides_segment_segment_3d(p0, p1, q0, q1))
-    return points;
-
-  // FIXME: Can we reduce to 1d?
-
-  points.reserve(4);
-
-  // Check if the segment is actually a point
-  if (p0 == p1)
-  {
-    if (CollisionPredicates::collides_segment_point_3d(q0, q1, p0))
-    {
-      points.push_back(p0);
-      // std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-      return points;
-    }
-  }
-
-  if (q0 == q1)
-  {
-    if (CollisionPredicates::collides_segment_point_3d(p0, p1, q0))
-    {
-      points.push_back(q0);
-      // std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-      return points;
-    }
-  }
-
-  // First test points to match procedure of
-  // _collides_segment_segment_3d.
-  if (CollisionPredicates::collides_segment_point_3d(q0, q1, p0))
-  {
-    points.push_back(p0);
-  }
-  if (CollisionPredicates::collides_segment_point_3d(q0, q1, p1))
-  {
-    points.push_back(p1);
-  }
-  if (CollisionPredicates::collides_segment_point_3d(p0, p1, q0))
-  {
-    points.push_back(q0);
-  }
-  if (CollisionPredicates::collides_segment_point_3d(p0, p1, q1))
-  {
-    points.push_back(q1);
-  }
-
-  // Now we may have found all the intersections
-  if (points.size() == 1)
-  {
-    // std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-    return points;
-  }
-  else if (points.size() > 1)
-  {
-    std::vector<Point> _unique = unique(points);
-    dolfin_assert(points.size() == 2 ?
-    		  (_unique.size() == 1 or _unique.size() == 2) :
-    		  _unique.size() == 2);
-    // std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-    return _unique;
-  }
-
-  // Follow Shewchuk Lecture Notes on Geometric Robustness
-  const Point w = p0 - p1;
-  const Point v = q0 - q1;
-  const Point u = p1 - q1;
-  const Point wv = w.cross(v);
-  const Point vu = v.cross(u);
-  const double den = wv.squared_norm();
-  const double num = wv.dot(vu);
-
-  if (den == 0. and num == 0)
-  {
-    //PPause;
-  }
-  else if (den == 0 and num != 0)
-  {
-    // Parallel, disjoint
-    //PPause;
-  }
-  else if (den != 0)
-  {
-    // Test Shewchuk
-
-    // If fraction is close to 1, swap p0 and p1
-    Point x0;
-
-    if (std::abs(num / den - 1) < DOLFIN_EPS_LARGE)
-    {
-      const Point u_swapped = p0 - q1;
-      const Point vu_swapped = v.cross(u_swapped);
-      const double num_swapped = -wv.dot(vu_swapped);
-      x0 = p0 + num_swapped / den * (p1 - p0);
-      // std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-    }
-    else
-    {
-      // std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-      x0 = p1 + num / den * (p0 - p1);
-    }
-
-    points.push_back(x0);
-  }
-
-  dolfin_assert(GeometryPredicates::is_finite(points));
-  return unique(points);
+  // This function is not used so no need to spend time on the implementation.
+  dolfin_not_implemented();
+  return std::vector<Point>();
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
