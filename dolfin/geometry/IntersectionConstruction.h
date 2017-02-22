@@ -139,7 +139,7 @@ namespace dolfin
     // [P] intersection_tetrahedron_point_3d         <-- needs review
     // [D] intersection_segment_segment_1d           <-- needs review
     // [C] intersection_segment_segment_2d           <-- needs review
-    // [C] intersection_segment_segment_3d           <-- not implemented/used
+    // [C] intersection_segment_segment_3d           <-- not used/implemented
     // [D] intersection_triangle_segment_2d          <-- needs review
     // [C] intersection_triangle_segment_3d          <-- needs rewrite
     // [D] intersection_tetrahedron_segment_3d       <-- needs review
@@ -147,6 +147,14 @@ namespace dolfin
     // [D] intersection_triangle_triangle_3d         <-- needs review
     // [D] intersection_tetrahedron_triangle_3d      <-- needs review
     // [D] intersection_tetrahedron_tetrahedron_3d   <-- needs review
+    //
+    // Note that intersection_segment_segment_3d is not used/implemented.
+    // In summary, this means that there are only two functions that require
+    // computation, other than simple checks for point collisions or delegation
+    // to lower-level intersection functions. These two functions are:
+    //
+    // [C] intersection_segment_segment_2d
+    // [C] intersection_triangle_segment_3d
 
     /// Compute intersection of points p0 and q0 (1D)
     static std::vector<double>
