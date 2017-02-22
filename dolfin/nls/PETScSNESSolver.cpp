@@ -84,7 +84,6 @@ Parameters PETScSNESSolver::default_parameters()
   p.add("maximum_residual_evaluations", 2000);
   p.remove("convergence_criterion");
   p.remove("relaxation_parameter");
-  p.remove("method");
   p.add("method", "default");
   p.add("line_search", "basic",  {"basic", "bt", "l2", "cp", "nleqerr"});
   p.add("sign", "default", {"default", "nonnegative", "nonpositive"});
