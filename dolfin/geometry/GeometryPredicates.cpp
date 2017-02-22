@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-11-21
-// Last changed: 2017-02-10
+// Last changed: 2017-02-22
 
 #include <cmath>
 #include "GeometryPredicates.h"
@@ -136,6 +136,15 @@ bool GeometryPredicates::is_finite(const std::vector<Point>& simplex)
     if (!std::isfinite(p.x())) return false;
     if (!std::isfinite(p.y())) return false;
     if (!std::isfinite(p.z())) return false;
+  }
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool GeometryPredicates::is_finite(const std::vector<double>& simplex)
+{
+  for (double p : simplex)
+  {
+    if (!std::isfinite(p)) return false;
   }
   return true;
 }
