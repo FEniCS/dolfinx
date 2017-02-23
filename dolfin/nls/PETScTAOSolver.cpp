@@ -89,11 +89,15 @@ PETScTAOSolver::PETScTAOSolver(MPI_Comm comm,
                                std::string tao_type,
                                std::string ksp_type,
                                std::string pc_type)
-  : _tao(nullptr), _has_bounds(false)
+  : _tao(nullptr), _has_bounds(false), _matH(comm), _matP(comm)
 {
   // Create TAO object
   PetscErrorCode ierr = TaoCreate(comm, &_tao);
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoCreate");
+
+  // Set Hessian and preconditioner only once
+  ierr = TaoSetHessianRoutine(_tao, _matH.mat(), _matP.mat(), nullptr, nullptr);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetHessianRoutine");
 
   // Set parameter values
   parameters = default_parameters();
@@ -232,10 +236,7 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   // Set the objective function, gradient and Hessian evaluation routines
   ierr = TaoSetObjectiveAndGradientRoutine(_tao, FormFunctionGradient, &_tao_ctx);
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetObjectiveAndGradientRoutine");
-
-  dolfin_assert(_matH.mat());
-  dolfin_assert(_matP.mat());
-  ierr = TaoSetHessianRoutine(_tao, _matH.mat(), _matP.mat(), FormHessian, &_tao_ctx);
+  ierr = TaoSetHessianRoutine(_tao, nullptr, nullptr, FormHessian, &_tao_ctx);
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetHessianRoutine");
 
   // Clear previous monitors
