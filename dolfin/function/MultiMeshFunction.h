@@ -68,6 +68,15 @@ namespace dolfin
     /// Destructor
     virtual ~MultiMeshFunction();
 
+    /// Assign Function to part of a mesh
+    ///
+    /// *Arguments*
+    ///     a (int)
+    ///         Part mesh assigned to
+    ///     V (_Function_)
+    ///         The vector
+    void assign_part(std::size_t a, const Function& v);
+
     /// Return function (part) number i
     ///
     /// *Returns*
@@ -75,6 +84,14 @@ namespace dolfin
     ///         Function (part) number i
     std::shared_ptr<const Function> part(std::size_t i) const;
 
+    /// Return a (deepcopy) function (part) number i
+    ///
+    /// *Returns*
+    ///     _Function_
+    ///         Function (part) number i
+    ///         bool deepcopy flag
+    std::shared_ptr<const Function> part(std::size_t i, bool deepcopy) const;
+    
     /// Return vector of expansion coefficients (non-const version)
     ///
     /// *Returns*

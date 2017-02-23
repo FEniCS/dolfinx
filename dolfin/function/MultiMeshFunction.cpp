@@ -80,6 +80,44 @@ std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i) const
 
   return _function_parts.find(i)->second;
 }
+void MultiMeshFunction::assign_part(std::size_t i, const Function& v)
+{
+  // Finding the relevant part of the global vector
+  std::size_t start_idx = 0;
+  for (std::size_t j = 0; j < i; ++j)
+    {
+      start_idx += _function_space->part(j)->dim();
+    }
+  // Replacing old values with new ones
+  for (dolfin::la_index i = 0; i < (v.vector()->size()); ++i)
+      _vector->setitem(start_idx+i, v.vector()->getitem(i));
+}
+
+//-----------------------------------------------------------------------------
+std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i, bool deepcopy) const
+{
+  if (not deepcopy)
+    return part(i);
+
+  assert(i < _function_space->num_parts());
+
+  // Create output function
+  std::shared_ptr<const FunctionSpace> V = _function_space->part(i);
+  std::shared_ptr<Function> ui(new Function(V));
+
+  // Finding the relevant part of the global vector
+  std::size_t start_idx = 0;
+  for (std::size_t j = 0; j < i; ++j)
+    {
+      start_idx += _function_space->part(j)->dim();
+    }
+
+  // Copy values into output function
+  for (dolfin::la_index i = 0; i < (ui->vector()->size()); ++i)
+      ui->vector()->setitem(i, _vector->getitem(start_idx+i));
+
+  return ui;
+}
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> MultiMeshFunction::vector()
 {
