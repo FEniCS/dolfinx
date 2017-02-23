@@ -28,9 +28,10 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericLinearSolver.h>
+#include <dolfin/la/DefaultFactory.h>
 #include <dolfin/la/LinearSolver.h>
-#include <dolfin/la/Matrix.h>
-#include <dolfin/la/Vector.h>
+#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/log/log.h>
@@ -63,17 +64,6 @@ Parameters NewtonSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(MPI_Comm comm)
-  : Variable("Newton solver", "unnamed"), _newton_iteration(0),
-    _relaxation_parameter(1.0), _residual(0.0), _residual0(0.0),
-    _solver(nullptr), _matA(std::make_shared<Matrix>(comm)),
-    _matP(std::make_shared<Matrix>(comm)), _dx(std::make_shared<Vector>(comm)),
-    _b(std::make_shared<Vector>(comm)), _mpi_comm(comm)
-{
-  // Set default parameters
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(MPI_Comm comm,
                            std::shared_ptr<GenericLinearSolver> solver,
                            GenericLinearAlgebraFactory& factory)
@@ -86,10 +76,16 @@ NewtonSolver::NewtonSolver(MPI_Comm comm,
   // Set default parameters
   parameters = default_parameters();
 
-  // Store linear solver type
-  parameters["linear_solver"] = "user_defined";
-  parameters["preconditioner"] = "user_defined";
+  // Override linear solver type if solver passed in
+  if (solver)
+  {
+    parameters["linear_solver"] = "user_defined";
+    parameters["preconditioner"] = "user_defined";
+  }
 }
+//-----------------------------------------------------------------------------
+NewtonSolver::NewtonSolver(MPI_Comm comm)
+  : NewtonSolver(comm, nullptr, DefaultFactory::factory()) { }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
 {
