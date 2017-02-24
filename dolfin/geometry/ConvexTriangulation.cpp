@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-02-23
+// Last changed: 2017-02-24
 
 #include <algorithm>
 #include <tuple>
@@ -332,9 +332,9 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 {
   dolfin_assert(GeometryPredicates::is_finite(input_points));
 
-  std::cout << "Input to 3D Graham scan:" << std::endl;
-  for (auto p : input_points)
-    std::cout << p << std::endl;
+  //std::cout << "Input to 3D Graham scan:" << std::endl;
+  //for (auto p : input_points)
+  //  std::cout << p << std::endl;
 
   const double coplanar_tol = 1000*DOLFIN_EPS_LARGE;
 
@@ -435,10 +435,9 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 					    polyhedroncenter };
                 dolfin_debug("check");
 		// FIXME: Here we could include if determinant is sufficiently large
-                std::cout << "Adding points 1:" << std::endl;
-                for (auto p : cand)
-                  std::cout << " " << p;
-                std::cout << std::endl;
+                //for (auto p : cand)
+                //  std::cout << " " << p;
+                //std::cout << std::endl;
 		triangulation.push_back(cand);
 	      }
 	      else // At least four coplanar points
@@ -501,10 +500,9 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 					      points[coplanar[order[m + 1].second]],
 					      polyhedroncenter };
 		  // FIXME: Possibly only include if tet is large enough
-                  std::cout << "Adding points 2:" << std::endl;
-                  for (auto p : cand)
-                    std::cout << " " << p;
-                  std::cout << std::endl;
+                  //for (auto p : cand)
+                  //  std::cout << " " << p;
+                  //std::cout << std::endl;
 		  triangulation.push_back(cand);
 
                   dolfin_debug("check");

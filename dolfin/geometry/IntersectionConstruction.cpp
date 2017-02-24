@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-23
+// Last changed: 2017-02-24
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -610,29 +610,28 @@ IntersectionConstruction::intersection_triangle_segment_3d(const Point& p0,
       points_2d = intersection_triangle_segment_2d(P0, P1, P2, Q0, Q1);
 
     // Unproject points: add back third coordinate
-    const double p0n = p0.dot(n);
     std::vector<Point> points;
     switch (major_axis)
     {
     case 0:
-      for (auto p : points_2d)
+      for (auto P : points_2d)
       {
-        const double x = (p0n - n.y()*p.y() - n.z()*p.z()) / p0n;
-        points.push_back(Point(x, p.y(), p.z()));
+        const double x = p0.x() + ((p0.y() - P.x())*n.y() + (p0.z() - P.y())*n.z()) / n.x();
+        points.push_back(Point(x, P.x(), P.y()));
       }
       break;
     case 1:
-      for (auto p : points_2d)
+      for (auto P : points_2d)
       {
-        const double y = (p0n - n.x()*p.x() - n.z()*p.z()) / p0n;
-        points.push_back(Point(p.x(), y, p.z()));
+        const double y = p0.y() + ((p0.x() - P.x())*n.x() + (p0.z() - P.y())*n.z()) / n.y();
+        points.push_back(Point(P.x(), y, P.y()));
       }
       break;
     default:
-      for (auto p : points_2d)
+      for (auto P : points_2d)
       {
-        const double z = (p0n - n.x()*p.x() - n.y()*p.y()) / p0n;
-        points.push_back(Point(p.x(), p.y(), z));
+        const double z = p0.z() + ((p0.x() - P.x())*n.x() + (p0.y() - P.y())*n.y()) / n.z();
+        points.push_back(Point(P.x(), P.y(), z));
       }
     }
 
