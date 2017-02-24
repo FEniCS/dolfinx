@@ -112,7 +112,6 @@ class C(object):
         sleep(0.05)
         return args, kwargs
 
-
     @classmethod
     @timed
     def method6(cls, *args, **kwargs):
@@ -138,7 +137,7 @@ c = C()
     (C.method5, C.task_method5),
     (C.method6, C.method6.__module__ + '.' + C.method6.__name__),
 ])
-def test_decorator_anonymous_0(fun, task):
+def test_decorator_functionality(fun, task):
     assert fun.__doc__ == "Foo"
     assert fun(1, 2, 3, four=5) == ((1, 2, 3), {'four': 5})
     assert fun(1, 2, 3, four=5) == ((1, 2, 3), {'four': 5})
