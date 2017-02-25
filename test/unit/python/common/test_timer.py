@@ -46,42 +46,16 @@ def test_context_manager_anonymous():
         assert t.elapsed()[0] >= 0.05
 
 
-@timed
-def fun0(*args, **kwargs):
-    "Foo"
-    sleep(0.05)
-    return args, kwargs
-
-
-@timed()
-def fun1(*args, **kwargs):
-    "Foo"
-    sleep(0.05)
-    return args, kwargs
-
-
+# Test case for free function
 fun2_task = get_random_task_name()
-
 @timed(fun2_task)
 def fun2(*args, **kwargs):
     "Foo"
     sleep(0.05)
     return args, kwargs
 
-
 class C(object):
-    @timed
-    def method0(self, *args, **kwargs):
-        "Foo"
-        sleep(0.05)
-        return args, kwargs
-
-    @timed()
-    def method1(self, *args, **kwargs):
-        "Foo"
-        sleep(0.05)
-        return args, kwargs
-
+    # Test case for instancemethod
     task_method2 = get_random_task_name()
     @timed(task_method2)
     def method2(self, *args, **kwargs):
@@ -89,6 +63,7 @@ class C(object):
         sleep(0.05)
         return args, kwargs
 
+    # Test case for staticmethod
     task_method3 = get_random_task_name()
     @staticmethod
     @timed(task_method3)
@@ -97,13 +72,7 @@ class C(object):
         sleep(0.05)
         return args, kwargs
 
-    @staticmethod
-    @timed
-    def method4(*args, **kwargs):
-        "Foo"
-        sleep(0.05)
-        return args, kwargs
-
+    # Test case for classmethod
     task_method5 = get_random_task_name()
     @classmethod
     @timed(task_method5)
@@ -112,30 +81,15 @@ class C(object):
         sleep(0.05)
         return args, kwargs
 
-    @classmethod
-    @timed
-    def method6(cls, *args, **kwargs):
-        "Foo"
-        sleep(0.05)
-        return args, kwargs
-
-c = C()
+o = C()
 
 @pytest.mark.parametrize(("fun", "task"), [
-    (fun0, fun0.__module__ + '.' + fun0.__name__),
-    (fun1, fun1.__module__ + '.' + fun1.__name__),
     (fun2, fun2_task),
-    (c.method0, __name__ + '.' + c.method0.__name__),
-    (c.method1, __name__ + '.' + c.method1.__name__),
-    (c.method2, c.task_method2),
-    (c.method3, c.task_method3),
+    (o.method2, o.task_method2),
+    (o.method3, o.task_method3),
+    (o.method5, o.task_method5),
     (C.method3, C.task_method3),
-    (c.method4, c.method4.__module__ + '.' + c.method4.__name__),
-    (C.method4, C.method4.__module__ + '.' + c.method4.__name__),
-    (c.method5, c.task_method5),
-    (c.method6, c.method6.__module__ + '.' + c.method6.__name__),
     (C.method5, C.task_method5),
-    (C.method6, C.method6.__module__ + '.' + C.method6.__name__),
 ])
 def test_decorator_functionality(fun, task):
     assert fun.__doc__ == "Foo"
@@ -152,35 +106,24 @@ def test_decorator_timer_scope():
     destroyed without usage"""
     task = get_random_task_name()
 
-    @timed(task)
-    def foo():
-        pass
-
-    # Delete function (including eventual timer which should not
-    # exist yet) without usage
-    del foo
-    gc.collect()
-
-    # Check that there's not timing entry
-    with pytest.raises(RuntimeError):
-        timing(task, TimingClear_clear)
-
-
-def test_decorator_taskname_autogeneration():
-    task = has_petsc.__module__ + '.' + has_petsc.__name__
-
-    # Clear eventual timing entry
+    # Delete eventual previous timing
     try:
         timing(task, TimingClear_clear)
     except RuntimeError:
         pass
 
-    # Run timed func
-    func = timed(task)(has_petsc)
-    func()
+    @timed(task)
+    def foo():
+        pass
 
-    # Check for timing entry
-    assert timing(task, TimingClear_clear)[0] == 1
+    # Delete function (including eventual timer which should not
+    # exist yet) before using it
+    del foo
+    gc.collect()
+
+    # Check that there's no timing entry
+    with pytest.raises(RuntimeError):
+        timing(task, TimingClear_clear)
 
 
 def test_decorator_timing_correctness():
