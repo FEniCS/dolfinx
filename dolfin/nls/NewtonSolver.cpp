@@ -161,10 +161,8 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     krylov_iterations += _solver->solve(*_dx, *_b);
 
     // Update solution
-    if (_relaxation_parameter == 1.0)
-      x -= (*_dx);
-    else
-      x.axpy(-_relaxation_parameter, *_dx);
+    update_solution(x, *_dx, _relaxation_parameter,
+                    nonlinear_problem, _newton_iteration);
 
     // Increment iteration count
     _newton_iteration++;
@@ -303,5 +301,16 @@ void NewtonSolver::solver_setup(std::shared_ptr<const GenericMatrix> A,
   {
     _solver->set_operators(A, P);
   }
+}
+//-----------------------------------------------------------------------------
+void NewtonSolver::update_solution(GenericVector& x, const GenericVector& dx,
+                                   double relaxation_parameter,
+                                   const NonlinearProblem& nonlinear_problem,
+                                   std::size_t interation)
+{
+  if (relaxation_parameter == 1.0)
+    x -= dx;
+  else
+    x.axpy(-relaxation_parameter, dx);
 }
 //-----------------------------------------------------------------------------

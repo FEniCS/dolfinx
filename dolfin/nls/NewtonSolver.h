@@ -173,6 +173,28 @@ namespace dolfin
                               const NonlinearProblem& nonlinear_problem,
                               std::size_t interation);
 
+    /// Update solution vector by computed Newton step. Default
+    /// update is given by formula::
+    ///
+    ///   x -= relaxation_parameter*dx
+    ///
+    /// *Arguments*
+    ///     x (_GenericVector>_)
+    ///         The solution vector to be updated.
+    ///     dx (_GenericVector>_)
+    ///         The update vector computed by Newton step.
+    ///     relaxation_parameter (double)
+    ///         Newton relaxation parameter.
+    ///     nonlinear_problem (_NonlinearProblem_)
+    ///         The nonlinear problem.
+    ///     iteration (std::size_t)
+    ///         Newton iteration number.
+    virtual void update_solution(GenericVector& x,
+                                 const GenericVector& dx,
+                                 double relaxation_parameter,
+                                 const NonlinearProblem& nonlinear_problem,
+                                 std::size_t interation);
+
   private:
 
     // Current number of Newton iterations
