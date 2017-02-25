@@ -43,6 +43,7 @@ more complex bounds as GenericVectors or Function.
 from dolfin import *
 import pytest
 import os
+import numbers
 
 from dolfin_utils.test import *
 
@@ -176,7 +177,35 @@ def test_preconditioner_interface(V, parameter_backend):
                 self.assembler_pc.assemble(P)
                 del self.assembler_pc
 
-    for solverclass in [NewtonSolver, PETScSNESSolver]:
+    class MyNewtonSolver(NewtonSolver):
+        def converged(self, r, p, i):
+            self._converged_called = True
+            assert isinstance(r, GenericVector)
+            assert isinstance(p, NonlinearProblem)
+            assert isinstance(i, numbers.Integral)
+            return super(MyNewtonSolver, self).converged(r, p, i)
+        def solver_setup(self, A, J, p, i):
+            self._solver_setup_called = True
+            assert isinstance(A, GenericMatrix)
+            assert isinstance(J, GenericMatrix)
+            assert isinstance(p, NonlinearProblem)
+            assert isinstance(i, numbers.Integral)
+            super(MyNewtonSolver, self).solver_setup(A, J, p, i)
+        def update_solution(self, x, dx, rp, p, i):
+            self._update_solution_called = True
+            assert isinstance(x, GenericVector)
+            assert isinstance(dx, GenericVector)
+            assert isinstance(rp, float)
+            assert isinstance(p, NonlinearProblem)
+            assert isinstance(i, numbers.Integral)
+            super(MyNewtonSolver, self).update_solution(x, dx, rp, p, i)
+        @property
+        def check_overloads_called(self):
+            assert getattr(self, "_converged_called", False)
+            assert getattr(self, "_solver_setup_called", False)
+            assert getattr(self, "_update_solution_called", False)
+
+    for solverclass in [NewtonSolver, MyNewtonSolver, PETScSNESSolver]:
         problem = Problem(V)
         x = problem.u.vector()
 
@@ -190,6 +219,9 @@ def test_preconditioner_interface(V, parameter_backend):
         solver.solve(problem, x)
         x.zero()
         solver.solve(problem, x)
+
+        # Check that overloading NewtonSolver members works
+        getattr(solver, "check_overloads_called", None)
 
 
 @skip_if_not_PETSc
