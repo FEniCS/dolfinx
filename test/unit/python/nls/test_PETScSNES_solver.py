@@ -163,7 +163,6 @@ def test_preconditioner_interface(V, parameter_backend):
             self.u = u
             self.assembler = assembler
             self.assembler_pc = assembler_pc
-            self.bc = bc  # circumvent swig scoping problem
 
         def F(self, b, x):
             self.assembler.assemble(b, x)
