@@ -535,19 +535,6 @@ if (DOLFIN_ENABLE_HDF5)
   set_package_properties(HDF5 PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
     URL "https://www.hdfgroup.org/HDF5")
-
-  # Check that HDF5 has parallel support
-  if (HDF5_FOUND)
-    if (DOLFIN_ENABLE_MPI)
-      if (NOT (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL))
-        message(STATUS "HDF5 has been found, but is missing parallel support. It will not be enabled.")
-        set(HDF5_FOUND false)
-      endif()
-    else()
-      message(STATUS "HDF5 has been found, but MPI support is missing. It will not be enabled.")
-      set(HDF5_FOUND false)
-    endif()
-  endif()
 endif()
 
 # Check for Trilinos and the requires Trilinos packages
