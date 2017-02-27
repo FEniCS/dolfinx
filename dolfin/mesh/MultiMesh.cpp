@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-02-11
+// Last changed: 2017-02-27
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -291,6 +291,8 @@ std::string MultiMesh::plot_matplotlib(double delta_z) const
   dolfin_assert(num_parts() > 0);
   dolfin_assert(part(0)->geometry().dim() == 2);
 
+  const bool do_3d = delta_z != 0.;
+
   std::stringstream ss;
 
   ss << "def plot_multimesh() :\n";
@@ -320,13 +322,30 @@ std::string MultiMesh::plot_matplotlib(double delta_z) const
     for (CellIterator cit(*current); !cit.end(); ++cit)
     {
       const unsigned int* vertices = cit->entities(0);
-      ss << "(" << vertices[0] << ", " << vertices[1] << ", " << vertices[2] << "), ";
+      if (do_3d)
+	ss << "(" << vertices[0] << ", " << vertices[1] << ", " << vertices[2] << "), ";
+      else
+	ss << "(" << vertices[0] << ", " << vertices[1] << "), ";
     }
 
     ss << "), dtype=int)\n";
-    ss << "    z = np.zeros(x.shape) + " << (p*delta_z) << "\n";
-    ss << "    ax.plot_trisurf(x, y, z, triangles=facets, alpha=.4)\n";
+    if (do_3d)
+    {
+      ss << "    z = np.zeros(x.shape) + " << (p*delta_z) << "\n";
+      ss << "    ax.plot_trisurf(x, y, z, triangles=facets, alpha=.4)\n";
+    }
+    else
+    {
+      ss << "    ax.triplot(x, y, triangles=facets, alpha=.4)\n";
+    }
   }
+
+  if (!do_3d)
+  {
+    ss << "    ax.auto_scale_xyz([0,1],[0,1],[0,1])\n";
+    ss << "    ax.view_init(90, 0)\n";
+  }
+
   ss << "    plt.show()\n";
   return ss.str();
 }
