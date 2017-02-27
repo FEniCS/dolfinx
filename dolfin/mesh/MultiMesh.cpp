@@ -617,6 +617,21 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	_inclusion_exclusion_overlap(overlap_qr, initial_polyhedra,
 				     tdim, gdim, quadrature_order);
 
+      // Remove any near-trival quadrature rules
+      // TODO: The tolerance here appears to work ok in 2D with few meshes
+      // TODO: It might not be accurate in 3D or a large number of meshes
+      double tolerance = 2.0 * DOLFIN_EPS * cut_cell.volume() * num_cutting_cells;
+      for (std::size_t i = 0; i < overlap_qr.size(); i++)
+      {
+        quadrature_rule qr_part = overlap_qr[i];
+        double sum_of_weights = std::accumulate(qr_part.second.begin(),
+                                                qr_part.second.end(), 0.0);
+        if (sum_of_weights < tolerance)
+        {
+          overlap_qr[i].first.clear();
+          overlap_qr[i].second.clear();
+        }
+      }
       // Store quadrature rules for cut cell
       _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
     }
