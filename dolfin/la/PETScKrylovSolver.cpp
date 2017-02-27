@@ -250,10 +250,10 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   // Get PETSc operators
   Mat _A, _P;
   KSPGetOperators(_ksp, &_A, &_P);
+  dolfin_assert(_A);
 
-  // Create wrappers
+  // Create wrapper around PETSc Mat object
   PETScBaseMatrix A(_A);
-  PETScBaseMatrix P(_P);
 
   PetscErrorCode ierr;
 
@@ -272,8 +272,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   const bool report = this->parameters["report"].is_set() ? this->parameters["report"] : false;
   if (report and dolfin::MPI::rank(this->mpi_comm()) == 0)
   {
-    info("Solving linear system of size %ld x %ld (PETSc Krylov solver).",
-         M, N);
+    info("Solving linear system of size %ld x %ld (PETSc Krylov solver).", M, N);
   }
 
   // Non-zero initial guess to true/false
@@ -311,9 +310,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     this->set_nonzero_guess(false);
   }
 
-  // FIXME: Improve check for re-setting preconditioner, e.g. if
-  //        parameters change
-  // FIXME: Solve using matrix free matrices fails if no user provided
+  // FIXME: Solve using matrix-free matrices fails if no user provided
   //        Prec is provided
   // Set preconditioner if necessary
   if (_preconditioner && !preconditioner_set)
