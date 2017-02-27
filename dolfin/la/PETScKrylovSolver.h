@@ -60,7 +60,8 @@ namespace dolfin
     /// support all norm types (see
     /// http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPSetNormType.html). Note
     /// that 'default' is a reserved keyword, so we use 'default_norm'
-    enum class norm_type {none, default_norm, preconditioned, unpreconditioned, natural};
+    enum class norm_type {none, default_norm, preconditioned, unpreconditioned,
+        natural};
 
     /// Create Krylov solver for a particular method and named
     /// preconditioner
@@ -218,12 +219,6 @@ namespace dolfin
 
     // Preconditioner
     std::shared_ptr<PETScPreconditioner> _preconditioner;
-
-    // Operator (the matrix)
-    std::shared_ptr<const PETScBaseMatrix> _matA;
-
-    // Matrix used to construct the preconditioner
-    std::shared_ptr<const PETScBaseMatrix> _matP;
 
     bool preconditioner_set;
 
