@@ -60,8 +60,7 @@ namespace dolfin
     /// support all norm types (see
     /// http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPSetNormType.html). Note
     /// that 'default' is a reserved keyword, so we use 'default_norm'
-    enum class norm_type {none, default_norm, preconditioned, unpreconditioned,
-        natural};
+    enum class norm_type {none, default_norm, preconditioned, unpreconditioned, natural};
 
     /// Create Krylov solver for a particular method and named
     /// preconditioner
