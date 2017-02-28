@@ -102,7 +102,7 @@ namespace dolfin
     /// Disable copy construction, to avoid unanticipated sharing or
     /// copying of data. This means that an Array must always be passed as
     /// reference, or as a (possibly shared) pointer.
-    Array(const Array& other) /* leave body undefined */;
+    Array(const Array& other) = delete;
 
   private:
 

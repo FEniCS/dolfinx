@@ -320,7 +320,7 @@ void TAOLinearBoundSolver::set_ksp(std::string ksp_type)
     }
     else
     {
-      log(WARNING, "The selected tao solver does not allow to set a specific "\
+      log(WARNING, "The selected tao solver does not allow one to set a specific "\
       "Krylov solver. Option %s is ignored", ksp_type.c_str());
     }
   }
