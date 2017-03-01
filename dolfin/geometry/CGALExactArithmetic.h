@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2017-02-16
+// Last changed: 2017-03-01
 //
 // Developer note:
 //
@@ -1485,33 +1485,47 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   inline bool cgal_is_degenerate_2d(const std::vector<Point>& s)
   {
+    if (s.size() < 2 or s.size() > 3)
+    {
+      info("Degenerate 2D simplex with %d vertices.", s.size());
+      return true;
+    }
+
     switch (s.size())
     {
-    case 1: return true;
     case 2: return is_degenerate_2d(s[0], s[1]);
     case 3: return is_degenerate_2d(s[0], s[1], s[2]);
-    default:
-      dolfin_error("CGALExactArithmetic.h",
-		   "cgal_is_degenerate_2d",
-		   "Only implemented for simplices of tdim 0, 1 and 2");
     }
-    return false;
+
+    // Shouldn't get here
+    dolfin_error("CGALExactArithmetic.h",
+                 "call cgal_is_degenerate_2d",
+                 "Only implemented for simplices of tdim 0, 1 and 2, not tdim = %d", s.size() - 1);
+
+    return true;
   }
   //-----------------------------------------------------------------------------
   inline bool cgal_is_degenerate_3d(const std::vector<Point>& s)
   {
+    if (s.size() < 2 or s.size() > 4)
+    {
+      info("Degenerate 3D simplex with %d vertices.", s.size());
+      return true;
+    }
+
     switch (s.size())
     {
-    case 1: return true;
     case 2: return is_degenerate_3d(s[0], s[1]);
     case 3: return is_degenerate_3d(s[0], s[1], s[2]);
     case 4: return is_degenerate_3d(s[0], s[1], s[2], s[3]);
-    default:
-      dolfin_error("CGALExactArithmetic.h",
-		   "cgal_is_degenerate_3d",
-		   "Only implemented for simplices of tdim 0, 1, 2 and 3");
     }
-    return false;
+
+    // Shouldn't get here
+    dolfin_error("CGALExactArithmetic.h",
+                 "call cgal_is_degenerate_3d",
+                 "Only implemented for simplices of tdim 0, 1, 2 and 3, not tdim = %d", s.size() - 1);
+
+    return true;
   }
   //-----------------------------------------------------------------------------
 

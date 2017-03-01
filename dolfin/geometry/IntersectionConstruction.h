@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-23
+// Last changed: 2017-03-01
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -224,6 +224,12 @@ namespace dolfin
                                     const Point& p1,
                                     const Point& q0,
                                     const Point& q1);
+
+    static std::vector<Point>
+    intersection_segment_segment_2d_old(const Point& p0,
+                                        const Point& p1,
+                                        const Point& q0,
+                                        const Point& q1);
 
     static std::vector<Point>
     intersection_segment_segment_2d_new(const Point& p0,

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-05
-// Last changed: 2017-02-13
+// Last changed: 2017-03-01
 
 #include <sstream>
 #include <dolfin/log/log.h>
@@ -78,7 +78,7 @@ void GeometryDebugging::plot(const std::vector<Point>& simplex)
   if (simplex.size() >= 3)
     cout << "ax.plot_trisurf(" << simplex2string(simplex) << ")" << endl;
   else
-    cout << "ax.plot(" << simplex2string(simplex) << "marker='o')" << endl;
+    cout << "ax.plot(" << simplex2string(simplex) << ", marker='x')" << endl;
   cout << endl;
 }
 //-----------------------------------------------------------------------------
@@ -129,6 +129,7 @@ std::string GeometryDebugging::point2string(const Point& p)
 std::string GeometryDebugging::simplex2string(const std::vector<Point>& simplex)
 {
   std::size_t n = simplex.size();
+  if (n == 0) return "";
   std::stringstream s;
   s << "[";
   for (std::size_t i = 0; i < n - 1; i++)

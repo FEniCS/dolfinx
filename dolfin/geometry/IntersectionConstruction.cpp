@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-24
+// Last changed: 2017-03-01
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -312,6 +312,29 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
                                                           const Point& q0,
                                                           const Point& q1)
 {
+  //std::vector<Point> pold = intersection_segment_segment_2d_old(p0, p1, q0, q1);
+  std::vector<Point> pnew = intersection_segment_segment_2d_new(p0, p1, q0, q1);
+
+  /*
+  if (pold.size() != pnew.size())
+  {
+    cout << "size_old = " << pold.size() << endl;
+    cout << "size_new = " << pnew.size() << endl;
+    GeometryDebugging::plot({p0, p1}, {q0, q1});
+    GeometryDebugging::plot(pold);
+    GeometryDebugging::plot(pnew);
+  }
+  */
+
+  return pnew;
+}
+//-----------------------------------------------------------------------------
+std::vector<Point>
+IntersectionConstruction::intersection_segment_segment_2d_old(const Point& p0,
+                                                              const Point& p1,
+                                                              const Point& q0,
+                                                              const Point& q1)
+{
   // The list of points (convex hull)
   std::vector<Point> points;
 
@@ -461,7 +484,7 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
   const double Q1 = GeometryTools::project_to_axis_2d(q1, major_axis);
 
   // Case 2: both points on line (or almost)
-  if (q0o == 0. and q1o == 0.)
+  if (std::abs(q0o) < DOLFIN_EPS_LARGE and std::abs(q1o) < DOLFIN_EPS_LARGE)
   {
     // Compute 1D intersection points
     const std::vector<double>
@@ -603,7 +626,7 @@ IntersectionConstruction::intersection_triangle_segment_3d(const Point& p0,
   const Point Q1 = GeometryTools::project_to_plane_3d(q1, major_axis);
 
   // Case 2: both points in plane (or almost)
-  if (q0o == 0. and q1o == 0.)
+  if (std::abs(q0o) < DOLFIN_EPS_LARGE and std::abs(q1o) < DOLFIN_EPS_LARGE)
   {
     // Compute 2D intersection points
     const std::vector<Point>
