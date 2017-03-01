@@ -14,11 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Garth N. Wells, 2009-2010.
-//
-// First added:  2005
-// Last changed: 2011-10-19
 
 #ifndef __DOLFIN_PETSC_LU_SOLVER_H
 #define __DOLFIN_PETSC_LU_SOLVER_H
@@ -83,27 +78,12 @@ namespace dolfin
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
-    std::size_t solve(GenericVector& x, const GenericVector& b,
-                      bool transpose);
-
-    /// Solve linear system Ax = b
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                       const GenericVector& b);
 
     /// Solve linear system Ax = b
     std::size_t solve(const PETScMatrix& A, PETScVector& x,
                       const PETScVector& b);
-
-    /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(GenericVector& x, const GenericVector& b);
-
-    /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(const GenericLinearOperator& A,
-                                GenericVector& x, const GenericVector& b);
-
-    /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(const PETScMatrix& A, PETScVector& x,
-                                const PETScVector& b);
 
     /// Sets the prefix used by PETSc when searching the options
     /// database
