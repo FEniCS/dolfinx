@@ -636,6 +636,21 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	_inclusion_exclusion_overlap(overlap_qr, initial_polyhedra,
 				     tdim, gdim, quadrature_order);
 
+      // Remove any near-trival quadrature rules
+      // TODO: The tolerance here appears to work ok in 2D with few meshes
+      // TODO: It might not be accurate in 3D or a large number of meshes
+      double tolerance = 2.0 * DOLFIN_EPS * cut_cell.volume() * num_cutting_cells;
+      for (std::size_t i = 0; i < overlap_qr.size(); i++)
+      {
+        quadrature_rule qr_part = overlap_qr[i];
+        double sum_of_weights = std::accumulate(qr_part.second.begin(),
+                                                qr_part.second.end(), 0.0);
+        if (sum_of_weights < tolerance)
+        {
+          overlap_qr[i].first.clear();
+          overlap_qr[i].second.clear();
+        }
+      }
       // Store quadrature rules for cut cell
       _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
     }
@@ -1041,20 +1056,17 @@ void MultiMesh::_inclusion_exclusion_overlap
   // previous_intersections data. We only have to intersect if the
   // key doesn't contain the polyhedron.
 
-  // Add quadrature rule for stage 0
-  quadrature_rule part_qr;
+  // Add quadrature rules for stage 0
   for (const std::pair<IncExcKey, Polyhedron>& pol_pair: previous_intersections)
     for (const Simplex& simplex: pol_pair.second)
       if (simplex.size() == tdim + 1)
       {
 	// std::size_t prevsz = part_qr.second.size();
-	_add_quadrature_rule(part_qr, simplex, gdim,
+	_add_quadrature_rule(qr[pol_pair.first[0]], simplex, gdim,
 			     quadrature_order, 1.);
       }
 
-  // Add quadrature rule for overlap part
-  qr[0] = part_qr;
-
+  // Add quadrature rules for overlap part
   for (std::size_t stage = 1; stage < N; ++stage)
   {
     // Structure for storing new intersections
@@ -1149,19 +1161,17 @@ void MultiMesh::_inclusion_exclusion_overlap
 
     // Add quadrature rule with correct sign
     const double sign = std::pow(-1, stage);
-    quadrature_rule overlap_part_qr;
 
     for (const std::pair<IncExcKey, Polyhedron>& polyhedron: new_intersections)
       for (const Simplex& simplex: polyhedron.second)
 	if (simplex.size() == tdim + 1)
 	{
 	  // std::size_t prevsz = overlap_part_qr.second.size();
-	  _add_quadrature_rule(overlap_part_qr, simplex, gdim,
+	  _add_quadrature_rule(qr[polyhedron.first[0]], simplex, gdim,
 			       quadrature_order, sign);
 	}
 
     // Add quadrature rule for overlap part
-    qr[stage] = overlap_part_qr;
   } // end loop over stages
 
   end();
