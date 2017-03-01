@@ -27,7 +27,6 @@
 #include <petscmat.h>
 #include <petscpc.h>
 #include <dolfin/common/MPI.h>
-#include "GenericLUSolver.h"
 #include "PETScKrylovSolver.h"
 
 namespace dolfin

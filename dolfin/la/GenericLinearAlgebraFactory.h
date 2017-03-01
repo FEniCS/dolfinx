@@ -37,7 +37,6 @@ namespace dolfin
 {
 
   class GenericLinearSolver;
-  class GenericLUSolver;
   class GenericMatrix;
   class GenericVector;
   class TensorLayout;

@@ -21,8 +21,7 @@
 
 #ifdef HAS_TRILINOS
 
-#include "GenericLUSolver.h"
-
+#include "GenericLinearSolver.h"
 #include <Amesos2_Factory.hpp>
 
 namespace dolfin
@@ -34,10 +33,10 @@ namespace dolfin
   class TpetraVector;
 
   /// This class implements the direct solution (LU factorization) for
-  /// linear systems of the form Ax = b.
-  /// It is a wrapper for the Trilinos Amesos2 LU solver.
+  /// linear systems of the form Ax = b.  It is a wrapper for the
+  /// Trilinos Amesos2 LU solver.
 
-  class Amesos2LUSolver : public GenericLUSolver
+  class Amesos2LUSolver : public GenericLinearSolver
   {
   public:
 
