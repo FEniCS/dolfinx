@@ -19,10 +19,10 @@
 
 #include <petscpc.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
-#include <dolfin/common/MPI.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "LUSolver.h"
 #include "PETScMatrix.h"
@@ -99,20 +99,20 @@ Parameters PETScLUSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(MPI_Comm comm, std::string method)
-  :  PETScLUSolver(comm, NULL, method)
+  :  PETScLUSolver(comm, nullptr, method)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(std::string method)
-  : PETScLUSolver(MPI_COMM_WORLD, NULL, method)
+  : PETScLUSolver(MPI_COMM_WORLD, nullptr, method)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(MPI_Comm comm,
                              std::shared_ptr<const PETScMatrix> A,
-                             std::string method) : _ksp(NULL), _matA(A)
+                             std::string method) : _ksp(nullptr), _matA(A)
 {
   // Check dimensions
   if (A)
@@ -299,7 +299,7 @@ void PETScLUSolver::set_options_prefix(std::string options_prefix)
 std::string PETScLUSolver::get_options_prefix() const
 {
   dolfin_assert(_ksp);
-  const char* prefix = NULL;
+  const char* prefix = nullptr;
   KSPGetOptionsPrefix(_ksp, &prefix);
   return std::string(prefix);
 }
@@ -406,7 +406,7 @@ const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
       dolfin_error("PETScLUSolver.cpp",
                    "solve linear system using PETSc LU solver",
                    "No suitable solver for parallel LU found. Consider configuring PETSc with MUMPS or SuperLU_dist");
-      #endif
+#endif
     }
     #endif
   }
