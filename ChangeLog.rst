@@ -4,6 +4,8 @@ Change log
 dev
 ---
 
+- Remove redundant ``solve_transpose`` functions (use solve with bool
+  argument instead)
 - Remove OpenMpAsssmebler
 - Remove MPI communicator as argument in GenericVector::init functions
   (communicator should be passed via constructor)

@@ -14,12 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Ola Skavhaug, 2008.
-// Modified by Anders Logg, 2008.
-//
-// First added:  2007-07-03
-// Last changed: 2014-05-27
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -85,7 +79,8 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
-    /// Update solver parameters (pass parameters down to wrapped implementation)
+    /// Update solver parameters (pass parameters down to wrapped
+    /// implementation)
     virtual void update_parameters(const Parameters& parameters)
     {
       this->parameters.update(parameters);
@@ -93,8 +88,8 @@ namespace dolfin
     }
 
     // FIXME: This should not be needed. Need to cleanup linear solver
-    // name jungle: default, lu, iterative, direct, krylov, etc
-    /// Return parameter type: "krylov_solver" or "lu_solver"
+    // name jungle: default, lu, iterative, direct, krylov, etc /
+    // Return parameter type: "krylov_solver" or "lu_solver"
     std::string parameter_type() const
     {
       return "krylov_solver";
