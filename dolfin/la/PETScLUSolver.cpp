@@ -17,6 +17,7 @@
 
 #ifdef HAS_PETSC
 
+#include <petscpc.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
@@ -200,8 +201,12 @@ const GenericLinearOperator& PETScLUSolver::get_operator() const
 //-----------------------------------------------------------------------------
 std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  const bool transpose = false;
-
+  return solve(x, b, false);
+}
+//-----------------------------------------------------------------------------
+std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
+                                 bool transpose)
+{
   Timer timer("PETSc LU solver");
 
   dolfin_assert(_ksp);

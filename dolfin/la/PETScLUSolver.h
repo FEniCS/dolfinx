@@ -24,7 +24,6 @@
 #include <memory>
 #include <string>
 #include <petscksp.h>
-#include <petscpc.h>
 #include <dolfin/common/MPI.h>
 #include "GenericLUSolver.h"
 #include "PETScObject.h"
@@ -77,6 +76,9 @@ namespace dolfin
     /// Solve linear system Ax = b
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
+    /// Solve linear system Ax = b (A^t x = b if transpose is true)
+    std::size_t solve(GenericVector& x, const GenericVector& b, bool transpose);
+
     /// Solve linear system Ax = b
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                       const GenericVector& b);
@@ -128,7 +130,8 @@ namespace dolfin
     static const std::map<std::string, std::string> _methods_descr;
 
     // Select LU solver type
-    static const MatSolverPackage select_solver(MPI_Comm comm, std::string& method);
+    static const MatSolverPackage select_solver(MPI_Comm comm,
+                                                std::string& method);
 
     // Does an LU solver support Cholesky?
     static bool solver_has_cholesky(const MatSolverPackage package);

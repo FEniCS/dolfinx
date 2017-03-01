@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Patrick E. Farrell
+// Copyright (C) 2013-2017 Patrick E. Farrell and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2013-05-29
-// Last changed: 2013-05-29
 
 #ifndef __VECTOR_SPACE_BASIS_H
 #define __VECTOR_SPACE_BASIS_H
@@ -24,15 +21,14 @@
 #include <memory>
 #include <vector>
 
-
 namespace dolfin
 {
 
   class GenericVector;
 
-  /// This class defines a basis for vector spaces,
-  /// typically used for expressing nullspaces, transpose nullspaces
-  /// and near nullspaces of singular operators
+  /// This class defines a basis for vector spaces, typically used for
+  /// expressing nullspaces of singular operators and 'near
+  /// nullspaces' used in smoothed aggregation algebraic multigrid.
 
   class VectorSpaceBasis
   {
