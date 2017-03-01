@@ -33,7 +33,6 @@ bool GeometryPredicates::is_degenerate(const std::vector<Point>& simplex,
   case 2:
     return is_degenerate_2d(simplex);
   case 3:
-    dolfin_debug("check");
     return is_degenerate_3d(simplex);
   default:
     dolfin_error("GeometryPredicates.cpp",

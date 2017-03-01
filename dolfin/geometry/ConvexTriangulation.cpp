@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-02-24
+// Last changed: 2017-03-01
 
 #include <algorithm>
 #include <tuple>
@@ -346,19 +346,17 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 
   if (points.size() < 4)
   {
-    dolfin_debug("check");
-    return triangulation; // empty
+    // Empty
+    return triangulation;
   }
   else if (points.size() == 4)
   {
-    dolfin_debug("check");
     // Single tetrahedron
     triangulation.push_back(points);
     return triangulation;
   }
   else
   {
-    dolfin_debug("check");
     // Construct tetrahedra using facet points and a center point
     Point polyhedroncenter = points[0];
     for (const Point& p: points)
@@ -382,8 +380,6 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 	    // hull. Initialize as true for the case of only three
 	    // coplanar points.
 	    bool on_convex_hull = true;
-
-            dolfin_debug("check");
 
 	    // Use orient3d to determine if the plane (i,j,k) is on the
 	    // convex hull.
@@ -420,20 +416,15 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 	      }
 	    }
 
-            dolfin_debug("check");
-
 	    if (on_convex_hull)
 	    {
-              dolfin_debug("check");
 	      if (coplanar.size() == 3)
 	      {
-                dolfin_debug("check");
 		// Form one tetrahedron
 		std::vector<Point> cand = { points[i],
 					    points[j],
 					    points[k],
 					    polyhedroncenter };
-                dolfin_debug("check");
 		// FIXME: Here we could include if determinant is sufficiently large
                 //for (auto p : cand)
                 //  std::cout << " " << p;
@@ -442,8 +433,6 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 	      }
 	      else // At least four coplanar points
 	      {
-                dolfin_debug("check");
-
 		// Tessellate as in the triangle-triangle intersection
 		// case: First sort points using a Graham scan, then
 		// connect to form triangles. Finally form tetrahedra
@@ -456,8 +445,6 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 		  pointscenter += points[coplanar[m]];
 		pointscenter /= coplanar.size();
 
-                dolfin_debug("check");
-
 		// Reference
 		Point ref = points[coplanar[0]] - pointscenter;
 		ref /= ref.norm();
@@ -465,8 +452,6 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 		// Normal
 		Point normal = cross_product(points[i], points[j], points[k]);
 		normal /= normal.norm();
-
-                dolfin_debug("check");
 
 		// Calculate and store angles
 		std::vector<std::pair<double, std::size_t>> order;
@@ -504,8 +489,6 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
                   //  std::cout << " " << p;
                   //std::cout << std::endl;
 		  triangulation.push_back(cand);
-
-                  dolfin_debug("check");
 		}
 	      }
 	    }
