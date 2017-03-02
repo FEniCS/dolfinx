@@ -149,6 +149,8 @@ namespace dolfin
                       std::size_t part,
                       const ufc::cell& cell) const;
 
+    /// Evaluate at a given point
+    void eval(Array<double>& values, const Array<double>& x) const;
 
     /// Restrict as UFC function (by calling eval)
     void restrict_as_ufc_function(double* w,

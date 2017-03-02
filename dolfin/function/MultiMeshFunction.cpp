@@ -22,6 +22,7 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/fem/MultiMeshDofMap.h>
+#include <dolfin/geometry/BoundingBoxTree.h>
 #include "Function.h"
 #include "FunctionSpace.h"
 #include "MultiMeshFunctionSpace.h"
@@ -235,6 +236,26 @@ void MultiMeshFunction::eval(Array<double>& values,
   }
   else
     this->part(part)->eval(values, x);
+}
+//-----------------------------------------------------------------------------
+void MultiMeshFunction::eval(Array<double>& values,
+                        const Array<double>& x) const
+{
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->multimesh());
+  const MultiMesh& multimesh = *_function_space->multimesh();
+
+  // Iterate over meshes from top to bottom
+  std::size_t part = multimesh.num_parts() - 1;
+  for (;part >= 0; part--)
+  {
+    // Stop if mesh contains point or if mesh number equals 0
+    if (multimesh.part(part)->bounding_box_tree()->collides_entity(Point(x)) or part == 0)
+    {
+      this->part(part)->eval(values, x);
+      break;
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void MultiMeshFunction::restrict_as_ufc_function(double* w,
