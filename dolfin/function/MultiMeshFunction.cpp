@@ -184,6 +184,73 @@ void MultiMeshFunction::init_vector()
   _vector->zero();
 }
 //-----------------------------------------------------------------------------
+void MultiMeshFunction::restrict(double* w, const FiniteElement& element,
+                                 std::size_t part,
+                                 const Cell& dolfin_cell,
+                                 const double* coordinate_dofs,
+                                 const ufc::cell& ufc_cell) const
+{
+  dolfin_assert(w);
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->dofmap());
+  dolfin_assert(part < _function_space->num_parts());
+
+  // Check if we are restricting to an element of this function space
+  if (_function_space->part(part)->has_element(element)
+      && _function_space->part(part)->has_cell(dolfin_cell))
+  {
+    // Get dofmap for cell
+    const GenericDofMap& dofmap = *_function_space->dofmap()->part(part);
+    const ArrayView<const dolfin::la_index> dofs
+      = dofmap.cell_dofs(dolfin_cell.index());
+
+    // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
+    // Pick values from vector(s)
+    _vector->get_local(w, dofs.size(), dofs.data());
+  }
+  else
+  {
+    // Restrict as UFC function (by calling eval)
+    restrict_as_ufc_function(w, element, part, dolfin_cell, 
+                             coordinate_dofs, ufc_cell);
+  }
+}
+//-----------------------------------------------------------------------------
+void MultiMeshFunction::eval(Array<double>& values,
+                        const Array<double>& x,
+                        std::size_t part,
+                        const ufc::cell& ufc_cell) const
+{
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->multimesh());
+  const Mesh& mesh = *_function_space->multimesh()->part(part);
+
+  // Check if UFC cell comes from mesh, otherwise
+  // find the cell which contains the point
+  dolfin_assert(ufc_cell.mesh_identifier >= 0);
+  if (ufc_cell.mesh_identifier == (int) mesh.id())
+  {
+    const Cell cell(mesh, ufc_cell.index);
+    this->part(part)->eval(values, x, cell, ufc_cell);
+  }
+  else
+    this->part(part)->eval(values, x);
+}
+//-----------------------------------------------------------------------------
+void MultiMeshFunction::restrict_as_ufc_function(double* w,
+                                               const FiniteElement& element,
+                                               std::size_t part,
+                                               const Cell& dolfin_cell,
+                                               const double* coordinate_dofs,
+                                               const ufc::cell& ufc_cell) const
+{
+  dolfin_assert(w);
+
+  // Evaluate dofs to get the expansion coefficients
+  element.evaluate_dofs(w, *this->part(part), coordinate_dofs, ufc_cell.orientation,
+                        ufc_cell);
+}
+//-----------------------------------------------------------------------------
 void MultiMeshFunction::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
                                           std::vector<la_index>& ghost_indices) const
 {
