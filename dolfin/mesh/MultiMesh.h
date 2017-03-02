@@ -175,7 +175,7 @@ namespace dolfin
     ///         of a flattened array of quadrature points and a
     ///         corresponding array of quadrature weights.
     const std::map<unsigned int, quadrature_rule >&
-    quadrature_rule_cut_cells(std::size_t part) const;
+    quadrature_rules_cut_cells(std::size_t part) const;
 
     /// Return quadrature rule for a given cut cell on the given part
     ///
@@ -195,8 +195,8 @@ namespace dolfin
     /// Developer note: this function is mainly useful from Python and
     /// could be replaced by a suitable typemap that would make the
     /// previous more general function accessible from Python.
-    quadrature_rule
-    quadrature_rule_cut_cell(std::size_t part, unsigned int cell_index) const;
+    const quadrature_rule
+    quadrature_rules_cut_cells(std::size_t part, unsigned int cell_index) const;
 
     /// Return quadrature rules for the overlap on the given part.
     ///
@@ -213,8 +213,27 @@ namespace dolfin
     ///         a pair of an array of quadrature points and a
     ///         corresponding flattened array of quadrature weights.
     const std::map<unsigned int, std::vector<quadrature_rule> >&
-    quadrature_rule_overlap(std::size_t part) const;
+    quadrature_rules_overlap(std::size_t part) const;
 
+    /// Return quadrature rules for the overlap for a given cell 
+    /// on the given part.
+    ///
+    /// *Arguments*
+    ///     part (std::size_t)
+    ///         The part number
+    //      cell (unsigned int)
+    //          The cell index
+    ///
+    /// *Returns*
+    ///     std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > >
+    ///         A map from cell indices of cut cells to quadrature
+    ///         rules.  A separate quadrature rule is given for each
+    ///         cutting cell and stored in the same order as in the
+    ///         collision map. Each quadrature rule is represented as
+    ///         a pair of an array of quadrature points and a
+    ///         corresponding flattened array of quadrature weights.
+    const std::vector<quadrature_rule> 
+    quadrature_rules_overlap(std::size_t part, unsigned int cell) const;
     /// Return quadrature rules for the interface on the given part
     ///
     /// *Arguments*
@@ -231,10 +250,10 @@ namespace dolfin
     ///         an array of quadrature points and a corresponding
     ///         flattened array of quadrature weights.
     const std::map<unsigned int, std::vector<quadrature_rule> >&
-    quadrature_rule_interface(std::size_t part) const;
+    quadrature_rules_interface(std::size_t part) const;
 
 
-    /// Return quadrature rule for the interface of a given cut cell
+    /// Return quadrature rules for the interface of a given cut cell
     /// on the given part
     ///
     /// *Arguments*
@@ -253,9 +272,9 @@ namespace dolfin
     /// Developer note: this function is mainly useful from Python and
     /// could be replaced by a suitable typemap that would make the
     /// previous more general function accessible from Python.
-    quadrature_rule
-    quadrature_rule_interface_cut_cell(std::size_t part,
-				       unsigned int cell_index) const;
+    const std::vector<quadrature_rule>
+    quadrature_rules_interface(std::size_t part,
+			       unsigned int cell_index) const;
 
 
     /// Return facet normals for the interface on the given part
