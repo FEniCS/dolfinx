@@ -307,10 +307,6 @@ SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(quadrature_rule qr)
   npy_intp n0 = qr.first.size();
   npy_intp n1 = qr.second.size();
 
-  // return None if there are no quadrature points
-  if (n0 == 0)
-    return Py_None;  
-
   PyArrayObject *x0 = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &n0, NPY_DOUBLE));
   PyArrayObject *x1 = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &n1, NPY_DOUBLE));
 
