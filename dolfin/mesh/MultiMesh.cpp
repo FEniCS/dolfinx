@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-02-09
+// Last changed: 2017-03-02
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -825,7 +825,10 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	    = IntersectionConstruction::intersection(cut_cell_i, boundary_cell_j);
 
 	  // Check that the triangulation is not part of the cut cell boundary
-	  if (_is_overlapped_interface(Eij_part_points, cut_cell_i, facet_normal))
+	  // FIXME: How can we avoid is_degenerate warnings in
+	  // _is_overlapped_interface by checking the input?
+	  if (Eij_part_points.size() < tdim_interface + 1 or
+	      _is_overlapped_interface(Eij_part_points, cut_cell_i, facet_normal))
 	    continue;
 
 	  const Polyhedron Eij_part =
