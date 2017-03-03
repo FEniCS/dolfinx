@@ -17,6 +17,7 @@
 
 #ifdef HAS_PETSC
 
+#include <petscksp.h>
 #include <petscpc.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
@@ -26,7 +27,7 @@
 #include <dolfin/parameter/GlobalParameters.h>
 #include "LUSolver.h"
 #include "PETScMatrix.h"
-#include "PETScOptions.h"
+#include "PETScObject.h"
 #include "PETScVector.h"
 #include "PETScLUSolver.h"
 
@@ -141,7 +142,7 @@ PETScLUSolver::PETScLUSolver(std::string method)
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(MPI_Comm comm,
                              std::shared_ptr<const PETScMatrix> A,
-                             std::string method) : PETScKrylovSolver(comm)
+                             std::string method) : _solver(comm)
 {
   // Check dimensions
   if (A)
@@ -158,14 +159,14 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm,
   //parameters = default_parameters();
 
   // Get KSP pointer
-  KSP ksp = PETScKrylovSolver::ksp();
+  KSP ksp = _solver.ksp();
 
   PetscErrorCode ierr;
 
   // Get PC
   PC pc;
   ierr = KSPGetPC(ksp, &pc);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
+  if (ierr != 0) PETScObject::petsc_error(ierr, __FILE__, "KSPGetPC");
 
   // Create solver
   //ierr = KSPCreate(comm, &ksp);
@@ -181,7 +182,7 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm,
   //else
   //{
   ierr = PCSetType(pc, PCLU);
-  //  if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
+  if (ierr != 0) PETScObject::petsc_error(ierr, __FILE__, "PCSetType");
   //}
 
   // Select solver
@@ -189,17 +190,17 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm,
 
   // Set solver package
   ierr = PCFactorSetMatSolverPackage(pc, solver_package);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetMatSolverPackage");
+  if (ierr != 0) PETScObject::petsc_error(ierr, __FILE__, "PCFactorSetMatSolverPackage");
 
   // Make solver preconditioner only
-  ierr = KSPSetType(_ksp, KSPPREONLY);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+  ierr = KSPSetType(ksp, KSPPREONLY);
+  if (ierr != 0) PETScObject::petsc_error(ierr, __FILE__, "KSPSetType");
 
   // Set operator
   if (A)
   {
     ierr = KSPSetOperators(ksp, A->mat(), A->mat());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+    if (ierr != 0) PETScObject::petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
 }
 //-----------------------------------------------------------------------------
@@ -218,13 +219,13 @@ PETScLUSolver::~PETScLUSolver()
 void
 PETScLUSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
 {
-  PETScKrylovSolver::set_operator(A);
+  _solver.set_operator(A);
 }
 //-----------------------------------------------------------------------------
 void
 PETScLUSolver::set_operator(std::shared_ptr<const PETScMatrix> A)
 {
-  PETScKrylovSolver::set_operator(A);
+  _solver.set_operator(A);
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
@@ -235,7 +236,7 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
 std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
                                  bool transpose)
 {
-  return PETScKrylovSolver::solve(x, b);
+  return _solver.solve(x, b);
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScLUSolver::solve(const GenericLinearOperator& A,
@@ -250,27 +251,27 @@ std::size_t PETScLUSolver::solve(const GenericLinearOperator& A,
 std::size_t PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
                                  const PETScVector& b)
 {
-  return PETScKrylovSolver::solve(A, x, b);
+  return _solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_options_prefix(std::string options_prefix)
 {
-  PETScKrylovSolver::set_options_prefix(options_prefix);
+  _solver.set_options_prefix(options_prefix);
 }
 //-----------------------------------------------------------------------------
 std::string PETScLUSolver::get_options_prefix() const
 {
-  return PETScKrylovSolver::get_options_prefix();
+  return _solver.get_options_prefix();
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_from_options() const
 {
-  PETScKrylovSolver::set_from_options();
+  _solver.set_from_options();
 }
 //-----------------------------------------------------------------------------
 MPI_Comm PETScLUSolver::mpi_comm() const
 {
-  return PETScKrylovSolver::mpi_comm();
+  return _solver.mpi_comm();
 }
 //-----------------------------------------------------------------------------
 std::string PETScLUSolver::str(bool verbose) const
@@ -280,8 +281,8 @@ std::string PETScLUSolver::str(bool verbose) const
   if (verbose)
   {
     warning("Verbose output for PETScLUSolver not implemented, calling PETSc KSPView directly.");
-    PetscErrorCode ierr = KSPView(ksp(), PETSC_VIEWER_STDOUT_WORLD);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPView");
+    PetscErrorCode ierr = KSPView(_solver.ksp(), PETSC_VIEWER_STDOUT_WORLD);
+    if (ierr != 0) PETScObject::petsc_error(ierr, __FILE__, "KSPView");
   }
   else
     s << "<PETScLUSolver>";
@@ -291,7 +292,7 @@ std::string PETScLUSolver::str(bool verbose) const
 //-----------------------------------------------------------------------------
 KSP PETScLUSolver::ksp() const
 {
-  return PETScKrylovSolver::ksp();
+  return _solver.ksp();
 }
 //-----------------------------------------------------------------------------
 const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,

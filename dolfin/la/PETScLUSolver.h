@@ -23,7 +23,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <petscksp.h>
 #include <petscmat.h>
 #include <petscpc.h>
 #include <dolfin/common/MPI.h>
@@ -37,13 +36,12 @@ namespace dolfin
   class PETScLinearOperator;
   class PETScMatrix;
   class PETScVector;
-  class PETScSNESSolver;
 
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of PETSc.
 
-  class PETScLUSolver : public PETScKrylovSolver
+  class PETScLUSolver : public GenericLinearSolver
   {
   public:
 
@@ -136,7 +134,9 @@ namespace dolfin
     static const MatSolverPackage select_solver(MPI_Comm comm,
                                                 std::string method);
 
-    /*
+
+    PETScKrylovSolver _solver;
+/*
 
     // Does an LU solver support Cholesky?
     static bool solver_has_cholesky(const MatSolverPackage package);
