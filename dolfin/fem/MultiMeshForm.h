@@ -29,6 +29,7 @@ namespace dolfin
 
   // Forward declarations
   class MultiMeshFunctionSpace;
+  class MultiMeshFunction;
   class MultiMesh;
   class Form;
 
@@ -110,6 +111,19 @@ namespace dolfin
     /// Clear MultiMesh form
     void clear();
 
+    /// Set MultiMeshCoeeficient
+    void set_multimesh_coefficient(std::size_t i,
+                                   std::shared_ptr<const MultiMeshFunction> coefficient);
+
+    /// Get all MultiMesh Coefficients
+    std::map<std::size_t, std::shared_ptr<const MultiMeshFunction> > multimesh_coefficients() const;
+
+    /// Get one multimesh coefficient
+    std::shared_ptr<const MultiMeshFunction> multimesh_coefficient(std::size_t i) const;
+
+    /// get multimesh coefficient keys
+    std::vector<std::size_t> multimesh_coefficient_keys() const;
+
   private:
 
     // The rank of the form
@@ -123,6 +137,10 @@ namespace dolfin
 
     // List of forms (one for each part)
     std::vector<std::shared_ptr<const Form>> _forms;
+
+    // Map of MultiMesh coefficents
+    std::map<std::size_t, std::shared_ptr<const MultiMeshFunction> > _multimesh_coefficients;
+
 
   };
 
