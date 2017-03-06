@@ -218,6 +218,7 @@ namespace dolfin
 	    volume += qr.second[i];
 	    file << qr.first[2*i]<<' '<<qr.first[2*i+1]<<' '<<qr.second[i]<<std::endl;
 	  }
+	  file << "% net volume " << volume << std::endl;
 	  current_cells_status[*it] = std::make_pair(CUT, volume);
 	}
       }
