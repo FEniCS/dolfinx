@@ -40,6 +40,13 @@
 #include "MultiStageScheme.h"
 #include "PointIntegralSolver.h"
 
+#ifdef HAS_PETSC
+#include "dolfin/la/PETScVector.h"
+#include <petscsys.h>
+#include <petscvec.h>
+#endif
+
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -97,7 +104,7 @@ void PointIntegralSolver::step(double dt)
   dolfin_assert(_mesh);
 
   Timer timer("PointIntegralSolver::step");
-  
+
   const bool reset_stage_solutions_ = parameters["reset_stage_solutions"];
   const bool reset_newton_solver_
     = parameters("newton_solver")["reset_each_step"];
@@ -121,6 +128,14 @@ void PointIntegralSolver::step(double dt)
   // Get ownership range
   const dolfin::la_index local_dof_size = _dofmap.ownership_range().second
     - _dofmap.ownership_range().first;
+
+// PETSc performance optimisation: Since we know that we will only set local
+// values, we can tell PETSc to ignore off processor vector entry communication
+// during assembly.
+#ifdef HAS_PETSC
+  auto petsc_vec = as_type<PETScVector>(_scheme->solution()->vector());
+  VecSetOption(petsc_vec->vec(), VEC_IGNORE_OFF_PROC_ENTRIES, PETSC_TRUE);
+#endif
 
   // Iterate over vertices
   ufc::cell ufc_cell;
@@ -214,6 +229,11 @@ void PointIntegralSolver::step(double dt)
 
   // Update time
   *_scheme->t() = t0 + dt;
+
+#ifdef HAS_PETSC
+  // Remove performance optimisation flag
+  VecSetOption(petsc_vec->vec(), VEC_IGNORE_OFF_PROC_ENTRIES, PETSC_FALSE);
+#endif
 
   timer.stop();
 }
