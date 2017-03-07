@@ -312,31 +312,21 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
                                                           const Point& q0,
                                                           const Point& q1)
 {
-  std::vector<Point> pold = intersection_segment_segment_2d_old(p0, p1, q0, q1);
+  //std::vector<Point> pold = intersection_segment_segment_2d_old(p0, p1, q0, q1);
   std::vector<Point> pnew = intersection_segment_segment_2d_new(p0, p1, q0, q1);
 
-
-  // if (pold.size() != pnew.size())
-  // {
-  //   cout << "size_old = " << pold.size() << endl;
-  //   cout << "size_new = " << pnew.size() << endl;
-  //   GeometryDebugging::plot({p0, p1}, {q0, q1});
-  //   GeometryDebugging::plot(pold);
-  //   GeometryDebugging::plot(pnew);
-
-  //   cout << "cgal: ";
-  //   const std::vector<Point> cgal = cgal_intersection_segment_segment_2d(p0,p1,q0,q1);
-  //   GeometryDebugging::plot(cgal);
-
-  //   if (pnew.size() == 0)
-  //   {
-  //     std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-  //     char apa; std::cin >> apa;
-  //   }
-  // }
+  /*
+  if (pold.size() != pnew.size())
+  {
+    cout << "size_old = " << pold.size() << endl;
+    cout << "size_new = " << pnew.size() << endl;
+    GeometryDebugging::plot({p0, p1}, {q0, q1});
+    GeometryDebugging::plot(pold);
+    GeometryDebugging::plot(pnew);
+  }
+  */
 
   return pnew;
-  // return pold;
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -473,8 +463,6 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
   // Compute total orientation of segment wrt line
   const double qo = q0o*q1o;
 
-  // std::cout << "q0o q1o and product "<< q0o<<' '<<q1o<<' '<<qo<<std::endl;
-
   // Case 0: points on the same side --> no intersection
   if (qo > 0.)
     return std::vector<Point>();
@@ -498,25 +486,6 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
   // Case 2: both points on line (or almost)
   if (std::abs(q0o) < DOLFIN_EPS_LARGE and std::abs(q1o) < DOLFIN_EPS_LARGE)
   {
-    // std::cout << __FUNCTION__<<" parallel"<<std::endl;
-
-
-    // // Compute major axis
-    // const std::size_t major_axis = GeometryTools::major_axis_2d(p1 - p0);
-
-    // // Sort the points along major axis
-    // std::array<Point, 4> _points = {p0, p1, q0, q1};
-    // std::sort(_points.begin(), _points.end(),
-    //           [major_axis](const Point& a, const Point& b)
-    //           { return a[major_axis] < b[major_axis]; });
-
-    // // Compute midpoint
-    // const Point x = 0.5*(_points[1] + _points[2]);
-
-    // return std::vector<Point>(1, x);
-
-
-
     // Compute 1D intersection points
     const std::vector<double>
       points_1d = intersection_segment_segment_1d(P0, P1, Q0, Q1);
@@ -528,8 +497,6 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
     case 0:
       for (auto p : points_1d)
       {
-	// std::cout << p0.y()<<" "<<p<<' '<<p0.x()<<' '<<v.y()<<' '<<v.x()<<std::endl;
-
         const double y = p0.y() + (p - p0.x()) * v.y() / v.x();
         points.push_back(Point(p, y));
       }
@@ -546,55 +513,6 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
   }
 
   // Case 3: points on different sides (main case)
-
-  // Compute intersection point x
-
-  // const double num = q0o;
-  // const double den = (q1.x() - q0.x())*v.y() - (q1.y() - q0.y())*v.x();
-  // //const Point x = q0 + num / den * (q1 - q0);
-
-  // Point x;
-  // const double f = num / den;
-
-  // // If f is close to 1, swap for improved accuracy
-  // std::cout << "f = " << f << std::endl;
-  // if (std::abs(f - 1) < 0.1)
-  // {
-  //   // Swapping q0 and q1 means changing numerator and flipping sign
-  //   // of denominator
-  //   std::cout << "swapping"<<std::endl;
-  //   const double num_swapped = q1o;
-  //   x = q1 - num_swapped / den * (q0 - q1);
-  // }
-  // else
-  // {
-  //   x = q0 + num / den * (q1 - q0);
-  // }
-
-  // {
-  //   std::cout << "lengths " << (q0-q1).squared_norm()<<' '<<(p0-p1).squared_norm()<<std::endl;
-  //   std::cout << "num den " << num << ' ' << den << " gives " << x << " with major axis " << major_axis << std::endl;
-  //   const double X = GeometryTools::project_to_axis_2d(x, major_axis);
-  //   std::cout<<std::setprecision(15) << "check major axis " << major_axis << " " <<P0<<' '<<P1<<' '<<X<<std::endl;
-  //   std::cout << "Collision? " << CollisionPredicates::collides_segment_point_1d(P0, P1, X) << std::endl;
-
-  //   // Test use p
-  //   const double num = orient2d(q0, q1, p0);
-  //   const Point v = q1 - q0;
-  //   const double den = (p1.x() - p0.x())*v.y() - (p1.y() - p0.y())*v.x();
-  //   std::cout << "new num den " << num << ' ' << den << std::endl;
-  //   const Point x = p0 + num / den * (p1 - p0);
-  //   const std::size_t major_axis = GeometryTools::major_axis_2d(v);
-  //   const double Y = GeometryTools::project_to_axis_2d(x, major_axis);
-  //   const double P0 = GeometryTools::project_to_axis_2d(p0, major_axis);
-  //   const double P1 = GeometryTools::project_to_axis_2d(p1, major_axis);
-  //   const double Q0 = GeometryTools::project_to_axis_2d(q0, major_axis);
-  //   const double Q1 = GeometryTools::project_to_axis_2d(q1, major_axis);
-  //   std::cout << "Collision? " << CollisionPredicates::collides_segment_point_1d(Q0, Q1, Y) << std::endl;
-
-  // }
-
-  // Test use the smallest numerator
   const double p0o = orient2d(q0, q1, p0);
   const double p1o = orient2d(q0, q1, p1);
   const double den = (q1.x() - q0.x())*v.y() - (q1.y() - q0.y())*v.x();
@@ -610,8 +528,7 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
   switch (it->second)
   {
   case P0O:
-    // Flip sign because den = det(q1 - q0, p1 - p0), but we want
-    // det(q1 - q0, p0 - p1)
+    // Flip sign because den = det(q1 - q0, v), but we want det(q1 - q0, -v)
     x = p0 - p0o / den * v;
     break;
   case P1O:
@@ -627,51 +544,11 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
     break;
   }
 
-
-  // Point a, b;
-  // int sign;
-  // double num;
-  // switch (it->second)
-  // {
-  // case 0: // p0o
-  //   num = p0o;
-  //   a = p0;
-  //   b = p1;
-  //   sign = -1;
-  //   break;
-  // case 1: // p1o
-  //   num = p1o;
-  //   a = p1;
-  //   b = p0;
-  //   sign = 1;
-  //   break;
-  // case 2: // q0o
-  //   num = q0o;
-  //   a = q0;
-  //   b = q1;
-  //   sign = 1;
-  //   break;
-  // case 3: // q1o
-  //   num = q1o;
-  //   a = q1;
-  //   b = q0;
-  //   sign = -1;
-  //   break;
-  // default:
-  //   dolfin_assert(false);
-  // }
-
-  // const Point x = a + sign*num / den * (b - a);
-  // Point x = p0;
-
-  // std::cout << a<<' '<<b<<' '<<num<<' '<<sign*den<<"    "<<x<<std::endl;
-
   // Project point to major axis and check if inside segment
   const double X = GeometryTools::project_to_axis_2d(x, major_axis);
   if (CollisionPredicates::collides_segment_point_1d(P0, P1, X))
     return std::vector<Point>(1, x);
 
-  //std::cout << "empty return"<<std::endl;
   return std::vector<Point>();
 }
 //-----------------------------------------------------------------------------
