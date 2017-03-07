@@ -598,46 +598,71 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
   const double p0o = orient2d(q0, q1, p0);
   const double p1o = orient2d(q0, q1, p1);
   const double den = (q1.x() - q0.x())*v.y() - (q1.y() - q0.y())*v.x();
-  std::array<std::pair<double, std::size_t>, 4> oo = {{ { std::abs(p0o), 0},
-							{ std::abs(p1o), 1},
-							{ std::abs(q0o), 2},
-							{ std::abs(q1o), 3 } }};
+  enum orientation { P0O, P1O, Q0O, Q1O };
+  std::array<std::pair<double, orientation>, 4> oo
+		      = {{ { std::abs(p0o), P0O },
+			   { std::abs(p1o), P1O },
+			   { std::abs(q0o), Q0O },
+			   { std::abs(q1o), Q1O } }};
   const auto it = std::min_element(oo.begin(), oo.end());
+  Point x;
 
-  Point a, b;
-  int sign;
-  double num;
   switch (it->second)
   {
-  case 0: // p0o
-    num = p0o;
-    a = p0;
-    b = p1;
-    sign = -1;
+  case P0O:
+    // Flip sign because den = det(q1 - q0, p1 - p0), but we want
+    // det(q1 - q0, p0 - p1)
+    x = p0 - p0o / den * v;
     break;
-  case 1: // p1o
-    num = p1o;
-    a = p1;
-    b = p0;
-    sign = 1;
+  case P1O:
+    // Flip sign because v = p1 - p0, and we want p0 - p1
+    x = p1 - p1o / den * v;
     break;
-  case 2: // q0o
-    num = q0o;
-    a = q0;
-    b = q1;
-    sign = 1;
+  case Q0O:
+    x = q0 + q0o / den * (q1 - q0);
     break;
-  case 3: // q1o
-    num = q1o;
-    a = q1;
-    b = q0;
-    sign = -1;
+  case Q1O:
+    // Flip sign since den = det(q1 - q0, v), but we want det(q0 - q1, v)
+    x = q1 - q1o / den * (q0 - q1);
     break;
-  default:
-    dolfin_assert(false);
   }
 
-  const Point x = a + sign*num / den * (b - a);
+
+  // Point a, b;
+  // int sign;
+  // double num;
+  // switch (it->second)
+  // {
+  // case 0: // p0o
+  //   num = p0o;
+  //   a = p0;
+  //   b = p1;
+  //   sign = -1;
+  //   break;
+  // case 1: // p1o
+  //   num = p1o;
+  //   a = p1;
+  //   b = p0;
+  //   sign = 1;
+  //   break;
+  // case 2: // q0o
+  //   num = q0o;
+  //   a = q0;
+  //   b = q1;
+  //   sign = 1;
+  //   break;
+  // case 3: // q1o
+  //   num = q1o;
+  //   a = q1;
+  //   b = q0;
+  //   sign = -1;
+  //   break;
+  // default:
+  //   dolfin_assert(false);
+  // }
+
+  // const Point x = a + sign*num / den * (b - a);
+  // Point x = p0;
 
   // std::cout << a<<' '<<b<<' '<<num<<' '<<sign*den<<"    "<<x<<std::endl;
 
