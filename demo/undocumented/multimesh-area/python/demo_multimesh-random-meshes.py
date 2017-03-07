@@ -78,9 +78,6 @@ def build_multimesh(num_parts, N_x, no_random_rotation):
 
         if is_interior:
             print s
-            print " Point( {:.18f}, {:.18f} ), Point({:.18f}, {:.18f}) ,\n".format(x0, y0, x1, y1)
-            print "{:.18f},".format(phi)
-            print N_x_part, N_y_part
             multimesh.add(mesh)
 
     multimesh.build()
