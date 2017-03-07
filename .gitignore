@@ -48,6 +48,7 @@ swigimportinfo.py
 
 # Documentation
 docstrings.i
+generated_rst_files
 
 # Configuration files
 dolfin.conf

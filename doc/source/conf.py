@@ -15,14 +15,23 @@ import subprocess
 import sys
 import os
 
-# Run doxygen on C++ sources, generates XML output for breathe to
-# convert into Sphinx format.
-current_dir = os.getcwd()
-os.chdir("../")
-subprocess.call('doxygen', shell=True)
-# Convert doxygen XML output to SWIG docstrings
-subprocess.call(["python", "./doxy2swig.py", "./doxygen/xml/index.xml", "docstrings.i"])
-os.chdir(current_dir)
+ONLY_SPHINX = os.environ.get('ONLY_SPHINX', False)
+
+if not ONLY_SPHINX:
+    # Doxygen handling in parent directory
+    current_dir = os.getcwd()
+    os.chdir("../")
+
+    # Run doxygen on C++ sources, generates XML output for breathe to convert into Sphinx format.
+    subprocess.call('doxygen', shell=True)
+    
+    # Convert doxygen XML output to SWIG docstrings
+    subprocess.call(["python", "./doxy2swig.py", "./doxygen/xml/index.xml", "docstrings.i"])
+
+    # Convert doxygen XML output to *.rst files per subdirectory
+    subprocess.call(["python", "./generate_api_rst.py"])
+
+    os.chdir(current_dir)
 
 # We can't compile the swig generated headers on RTD.  Instead, we
 # generate the python part as usual, and then mock the cpp objects
