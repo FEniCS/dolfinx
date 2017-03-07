@@ -141,7 +141,9 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
                   < (int) MPI::size(comm));
   }
 
-  if (ghost_procs.empty() && ghost_mode != "none")
+  // Check that we have some ghost information.
+  int all_ghosts = MPI::sum(comm, ghost_procs.size());
+  if (all_ghosts == 0 && ghost_mode != "none")
   {
     // FIXME: need to generate ghost cell information here by doing a
     // facet-matching operation "GraphBuilder" style

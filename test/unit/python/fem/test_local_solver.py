@@ -106,7 +106,7 @@ def test_solve_local_rhs_facet_integrals(ghost_mode):
     # of the rhs are used unlike before where the rhs domains were
     # taken to be the same as the lhs domains
     marker = FacetFunction("size_t", mesh)
-    ds0 = Measure("ds", domain=mesh, subdomain_data=marker, subdomain_id=0) 
+    ds0 = Measure("ds", domain=mesh, subdomain_data=marker, subdomain_id=0)
 
     Vu = VectorFunctionSpace(mesh, 'DG', 1)
     Vv = FunctionSpace(mesh, 'DGT', 1)
@@ -133,8 +133,7 @@ def test_solve_local_rhs_facet_integrals(ghost_mode):
 
 
 def test_local_solver_dg(ghost_mode):
-    # Ghosted mesh in 1D not supported
-    mesh = UnitSquareMesh(50, 1)
+    mesh = UnitIntervalMesh(50)
     U = FunctionSpace(mesh, "DG", 2)
 
     # Set initial values
@@ -172,8 +171,7 @@ def test_local_solver_dg(ghost_mode):
 
 
 def test_solve_local(ghost_mode):
-    # Ghosted mesh in 1D not supported
-    mesh = UnitSquareMesh(50, 1)
+    mesh = UnitIntervalMesh(50)
     U = FunctionSpace(mesh, "DG", 2)
 
     # Set initial values

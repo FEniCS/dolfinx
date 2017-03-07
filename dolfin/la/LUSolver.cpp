@@ -14,11 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Anders Logg 2011-2012
-//
-// First added:  2010-07-11
-// Last changed: 2012-08-20
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/common/NoDeleter.h>
@@ -86,26 +81,6 @@ std::size_t LUSolver::solve(const GenericLinearOperator& A, GenericVector& x,
   Timer timer("LU solver");
   solver->parameters.update(parameters);
   return solver->solve(A, x, b);
-}
-//-----------------------------------------------------------------------------
-std::size_t LUSolver::solve_transpose(GenericVector& x, const GenericVector& b)
-{
-  dolfin_assert(solver);
-
-  Timer timer("LU solver");
-  solver->parameters.update(parameters);
-  return solver->solve_transpose(x, b);
-}
-//-----------------------------------------------------------------------------
-std::size_t LUSolver::solve_transpose(const GenericLinearOperator& A,
-                                      GenericVector& x,
-                                      const GenericVector& b)
-{
-  dolfin_assert(solver);
-
-  Timer timer("LU solver (transpose version)");
-  solver->parameters.update(parameters);
-  return solver->solve_transpose(A, x, b);
 }
 //-----------------------------------------------------------------------------
 void LUSolver::init(MPI_Comm comm, std::string method)
