@@ -90,7 +90,7 @@ void PETScPreconditioner::set_type(PETScKrylovSolver& solver, std::string type)
   {
     dolfin_error("PETScPreconditioner.cpp",
                  "set PETSc preconditioner type",
-                 "PETSc KSP object has not been intialized");
+                 "PETSc KSP object has not been initialized");
   }
 
   // Check that pc type is known

@@ -24,10 +24,17 @@
 import pytest
 import os
 from dolfin import *
-from dolfin_utils.test import skip_if_not_HDF5, fixture, tempdir
-
+from dolfin_utils.test import skip_if_not_HDF5, fixture, tempdir, xfail_with_serial_hdf5_in_parallel
 
 @skip_if_not_HDF5
+@xfail_with_serial_hdf5_in_parallel
+def test_parallel(tempdir):
+    filename = os.path.join(tempdir, "y.h5")
+    have_parallel = has_hdf5_parallel()
+    hdf5 = HDF5File(mpi_comm_world(), filename, "w")
+
+@skip_if_not_HDF5
+@xfail_with_serial_hdf5_in_parallel
 def test_save_vector(tempdir):
     filename = os.path.join(tempdir, "x.h5")
     x = Vector(mpi_comm_world(), 305)
@@ -36,6 +43,7 @@ def test_save_vector(tempdir):
         vector_file.write(x, "/my_vector")
 
 @skip_if_not_HDF5
+@xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_vector(tempdir):
     filename = os.path.join(tempdir, "vector.h5")
 
@@ -53,6 +61,7 @@ def test_save_and_read_vector(tempdir):
         assert (x - y).norm("l1") == 0.0
 
 @skip_if_not_HDF5
+@xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_meshfunction_2D(tempdir):
     filename = os.path.join(tempdir, "meshfn-2d.h5")
 
@@ -80,6 +89,7 @@ def test_save_and_read_meshfunction_2D(tempdir):
                 assert meshfunctions[i][cell] == mf2[cell]
 
 @skip_if_not_HDF5
+@xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_meshfunction_3D(tempdir):
     filename = os.path.join(tempdir, "meshfn-3d.h5")
 
@@ -109,6 +119,7 @@ def test_save_and_read_meshfunction_3D(tempdir):
     mf_file.close()
 
 @skip_if_not_HDF5
+@xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_mesh_value_collection(tempdir):
     ndiv = 5
     filename = os.path.join(tempdir, "mesh_value_collection.h5")
@@ -139,6 +150,7 @@ def test_save_and_read_mesh_value_collection(tempdir):
                 assert val == int(ndiv*sum(mid)) + 1
 
 @skip_if_not_HDF5
+@xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_mesh_value_collection_with_only_one_marked_entity(tempdir):
     ndiv = 5
     filename = os.path.join(tempdir, "mesh_value_collection.h5")
@@ -161,6 +173,7 @@ def test_save_and_read_mesh_value_collection_with_only_one_marked_entity(tempdir
             assert mvc.get_value(0, 0) == 1
 
 @skip_if_not_HDF5
+@xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_function(tempdir):
     filename = os.path.join(tempdir, "function.h5")
 
@@ -185,6 +198,7 @@ def test_save_and_read_function(tempdir):
     hdf5_file.close()
 
 @skip_if_not_HDF5
+@xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_mesh_2D(tempdir):
     filename = os.path.join(tempdir, "mesh2d.h5")
 
@@ -205,6 +219,7 @@ def test_save_and_read_mesh_2D(tempdir):
     assert mesh0.size_global(dim) == mesh1.size_global(dim)
 
 @skip_if_not_HDF5
+@xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_mesh_3D(tempdir):
     filename = os.path.join(tempdir, "mesh3d.h5")
 
@@ -225,6 +240,7 @@ def test_save_and_read_mesh_3D(tempdir):
     assert mesh0.size_global(dim) == mesh1.size_global(dim)
 
 @skip_if_not_HDF5
+@xfail_with_serial_hdf5_in_parallel
 def test_mpi_atomicity(tempdir):
     comm_world = mpi_comm_world()
     if MPI.size(comm_world) > 1:

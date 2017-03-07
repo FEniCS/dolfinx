@@ -23,7 +23,8 @@ import pytest
 import os
 from dolfin import *
 import numpy
-from dolfin_utils.test import skip_if_not_HDF5, fixture, tempdir
+from dolfin_utils.test import skip_if_not_HDF5, fixture, tempdir, \
+    xfail_with_serial_hdf5_in_parallel, skip_with_serial_hdf5_in_parallel
 
 
 @pytest.yield_fixture
@@ -38,30 +39,35 @@ def attr(tempdir):
     del hdf_file
 
 @skip_if_not_HDF5
+@xfail_with_serial_hdf5_in_parallel
 def test_fail_on_accessing_attribute_on_non_existing_dataset(tempdir):
     hdf_file = HDF5File(mpi_comm_world(), os.path.join(tempdir, "hdf_file.h5"), "w")
     with pytest.raises(RuntimeError):
         attr = hdf_file.attributes("/a_vector")
 
 @skip_if_not_HDF5
+@skip_with_serial_hdf5_in_parallel
 def test_read_write_str_attribute(attr):
     attr['name'] = 'Vector'
     assert attr.type_str("name") == "string"
     assert attr['name'] == 'Vector'
 
 @skip_if_not_HDF5
+@skip_with_serial_hdf5_in_parallel
 def test_read_write_float_attribute(attr):
     attr['val'] = -9.2554
     assert attr.type_str("val") == "float"
     assert attr['val'] == -9.2554
 
 @skip_if_not_HDF5
+@skip_with_serial_hdf5_in_parallel
 def test_read_write_int_attribute(attr):
     attr['val'] = 1
     assert attr.type_str("val") == "int"
     assert attr['val'] == 1
 
 @skip_if_not_HDF5
+@skip_with_serial_hdf5_in_parallel
 def test_read_write_vec_float_attribute(attr):
     vec = numpy.array([1,2,3,4.5], dtype='float')
     attr['val'] = vec
@@ -72,6 +78,7 @@ def test_read_write_vec_float_attribute(attr):
         assert val1 == val2
 
 @skip_if_not_HDF5
+@skip_with_serial_hdf5_in_parallel
 def test_read_write_vec_int_attribute(attr):
     vec = numpy.array([1,2,3,4,5], dtype=numpy.uintp)
     attr['val'] = vec
@@ -82,18 +89,19 @@ def test_read_write_vec_int_attribute(attr):
         assert val1 == val2
 
 @skip_if_not_HDF5
+@skip_with_serial_hdf5_in_parallel
 def test_attribute_container_interface(attr):
     names = ["data_0", "data_1", "data_2", "data_3"]
     values = [i for i in range(4)]
-    
+
     for name, value in zip(names, values):
         attr[name] = value
-        
+
     # Added from the vector storage call above
     if "partition" in attr:
         names.append("partition")
         values.append(attr["partition"])
-    
+
     assert(attr.list_attributes()==names)
     assert(attr.to_dict() == dict(zip(names, values)))
 

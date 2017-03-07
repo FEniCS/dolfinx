@@ -4,10 +4,24 @@ Change log
 dev
 ---
 
+- Remove redundant ``solve_transpose`` functions (use solve with bool
+  argument instead)
+- Remove OpenMpAsssmebler
 - Remove MPI communicator as argument in GenericVector::init functions
   (communicator should be passed via constructor)
 - Remove ``Function::operator[+-*/]`` to prevent memory corruption problems
   (does not affect Python interface)
+- Add ``PETScSNESSolver`` and ``PETScTAOSolver`` constructor accepting
+  both communicator and type
+- Expression("f[0]*f[1]", f=obj) notation now supported for non-scalar
+  GenericFunction obj
+- Expression("f", f=obj) notation now supports obj of MeshFunction types
+  (only cell based)
+- Fix MPI deadlock in case of instant compilation failure
+- Allow using ``Timer`` as context manager and add ``timed`` decorator
+  to measure timings of functions and methods
+- Add ``NonlinearProblem::J_pc`` and support preconditioning matrix in
+  ``NewtonSolver``, ``PETScSNESSolver`` and ``PETScTAOSolver``
 
 2016.2.0 [2016-11-30]
 ---------------------

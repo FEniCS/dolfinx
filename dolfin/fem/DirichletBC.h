@@ -409,9 +409,11 @@ namespace dolfin
     // Check if the point is in the same plane as the given facet
     bool on_facet(const double* coordinates, const Facet& facet) const;
 
-    // Check arguments
+    // Check arguments for compatibility of tensors and dofmap,
+    // dim is means an axis to which bc applies
     void check_arguments(GenericMatrix* A, GenericVector* b,
-                         const GenericVector* x) const;
+                         const GenericVector* x,
+                         std::size_t dim) const;
 
     // The function space (possibly a sub function space)
     std::shared_ptr<const FunctionSpace> _function_space;
