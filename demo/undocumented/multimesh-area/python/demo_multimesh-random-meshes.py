@@ -18,7 +18,7 @@
 # Modified by August Johansson 2017
 #
 # First added:  2017-02-09
-# Last changed: 2017-02-18
+# Last changed: 2017-03-06
 #
 # This demo program creates a layer of meshes over a unit square mesh and checks
 # that the volume is 1.0.
@@ -60,10 +60,13 @@ def build_multimesh(num_parts, N_x, no_random_rotation):
         if abs(y1 - y0) < DOLFIN_EPS:
             y1 += DOLFIN_EPS
 
+        N_x_part = int(max(abs(x1-x0)*N_x, 1))
+        N_y_part = int(max(abs(y1-y0)*N_x, 1))
         mesh = RectangleMesh(Point(x0, y0), Point(x1, y1),
-                             int(max(abs(x1-x0)*N_x, 1)), int(max(abs(y1-y0)*N_x, 1)))
+                             N_x_part, N_y_part)
 
         s =  "Add new rectangle mesh ({:.3f}, {:.3f}) x ({:.3f}, {:.3f}).".format(x0, y0, x1, y1)
+
         is_interior = True
 
         if not no_random_rotation:
@@ -75,6 +78,9 @@ def build_multimesh(num_parts, N_x, no_random_rotation):
 
         if is_interior:
             print s
+            print " Point( {:.18f}, {:.18f} ), Point({:.18f}, {:.18f}) ,\n".format(x0, y0, x1, y1)
+            print "{:.18f},".format(phi)
+            print N_x_part, N_y_part
             multimesh.add(mesh)
 
     multimesh.build()

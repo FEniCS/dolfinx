@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-03-02
+// Last changed: 2017-03-07
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -688,6 +688,24 @@ void MultiMesh::_build_quadrature_rules_cut_cells(std::size_t quadrature_order)
       // quadrature rule of the cut cell with flipped sign
       for (std::size_t k = 0; k < qr_overlap.size(); k++)
         _add_quadrature_rule(qr, qr_overlap[k], gdim, -1);
+
+      // {
+      // 	double v=0;
+      // 	//std::cout << "cut part " << cut_part << " cut cell " << cut_cell_index<<'\n';
+      // 	for (std::size_t i=0; i<qr.second.size(); ++i)
+      // 	{
+      // 	  v += qr.second[i];
+      // 	  //std::cout << qr.second[i]<<' ';
+      // 	}
+      // 	//std::cout <<std::endl;
+      // 	//std::cout << "net vol " << v << std::endl;
+      // 	if (cut_part == 0 and cut_cell_index == 3)
+      // 	{
+      // 	  std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
+      // 	  char apa; std::cin>> apa;
+      // 	}
+      // }
+
 
       // Store quadrature rule for cut cell
       _quadrature_rules_cut_cells[cut_part][cut_cell_index] = qr;
