@@ -520,7 +520,7 @@ namespace dolfin
     std::string ghost_mode() const;
 
     // Friend in fem_utils.h
-    friend Mesh create_mesh(Function&);
+    friend Mesh create_mesh(Function& coordinates);
 
   private:
 

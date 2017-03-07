@@ -249,6 +249,8 @@ namespace dolfin
     /// Return the dof indices associated with the closure of all entities of
     /// given dimension
     ///
+    /// @param  mesh (Mesh)
+    ///         Mesh
     /// @param  entity_dim (std::size_t)
     ///         Entity dimension.
     /// @return  std::vector<dolfin::la_index>

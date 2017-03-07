@@ -81,8 +81,8 @@ namespace dolfin
     /// Copy data from mesh
     void extract_mesh_data(const Mesh& mesh);
 
-    // Broadcast mesh data from main process (used when Mesh is
-    // created on one process)
+    /// Broadcast mesh data from main process (used when Mesh is
+    /// created on one process)
     void broadcast_mesh_data(const MPI_Comm mpi_comm);
 
     /// Receive mesh data from main process
@@ -106,8 +106,8 @@ namespace dolfin
       /// Coordinates for all vertices stored on local processor
       boost::multi_array<double, 2> vertex_coordinates;
 
-      // Global vertex indices for all vertices stored on local
-      // processor
+      /// Global vertex indices for all vertices stored on local
+      /// processor
       std::vector<std::int64_t> vertex_indices;
 
       /// Clear data
@@ -123,6 +123,7 @@ namespace dolfin
       void unpack_vertex_coordinates(const std::vector<double>& values);
     };
 
+    /// Geometry data
     Geometry geometry;
 
     /// Holder for topology data
@@ -154,7 +155,7 @@ namespace dolfin
 
       // FIXME: this should replace the need for num_vertices_per_cell
       //        and tdim
-      // Cell type
+      /// Cell type
       CellType::Type cell_type;
 
       /// Clear data
