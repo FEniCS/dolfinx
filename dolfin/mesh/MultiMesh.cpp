@@ -691,14 +691,14 @@ void MultiMesh::_build_quadrature_rules_cut_cells(std::size_t quadrature_order)
 
       // {
       // 	double v=0;
-      // 	//std::cout << "cut part " << cut_part << " cut cell " << cut_cell_index<<'\n';
+      // 	std::cout << "cut part " << cut_part << " cut cell " << cut_cell_index<<'\n';
       // 	for (std::size_t i=0; i<qr.second.size(); ++i)
       // 	{
       // 	  v += qr.second[i];
-      // 	  //std::cout << qr.second[i]<<' ';
+      // 	  std::cout << qr.second[i]<<' ';
       // 	}
-      // 	//std::cout <<std::endl;
-      // 	//std::cout << "net vol " << v << std::endl;
+      // 	std::cout <<std::endl;
+      // 	std::cout << "net vol " << v << std::endl;
       // 	if (cut_part == 0 and cut_cell_index == 3)
       // 	{
       // 	  std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;

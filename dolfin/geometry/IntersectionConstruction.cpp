@@ -312,7 +312,7 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
                                                           const Point& q0,
                                                           const Point& q1)
 {
-  //std::vector<Point> pold = intersection_segment_segment_2d_old(p0, p1, q0, q1);
+  std::vector<Point> pold = intersection_segment_segment_2d_old(p0, p1, q0, q1);
   std::vector<Point> pnew = intersection_segment_segment_2d_new(p0, p1, q0, q1);
 
 
@@ -473,7 +473,7 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
   // Compute total orientation of segment wrt line
   const double qo = q0o*q1o;
 
-  //std::cout << q0o<<' '<<q1o<<' '<<qo<<std::endl;
+  // std::cout << "q0o q1o and product "<< q0o<<' '<<q1o<<' '<<qo<<std::endl;
 
   // Case 0: points on the same side --> no intersection
   if (qo > 0.)
@@ -498,7 +498,7 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
   // Case 2: both points on line (or almost)
   if (std::abs(q0o) < DOLFIN_EPS_LARGE and std::abs(q1o) < DOLFIN_EPS_LARGE)
   {
-    ///std::cout << __FUNCTION__<<" parallel"<<std::endl;
+    // std::cout << __FUNCTION__<<" parallel"<<std::endl;
 
 
     // // Compute major axis
@@ -549,27 +549,27 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
 
   // Compute intersection point x
 
-  const double num = q0o;
-  const double den = (q1.x() - q0.x())*v.y() - (q1.y() - q0.y())*v.x();
-  //const Point x = q0 + num / den * (q1 - q0);
+  // const double num = q0o;
+  // const double den = (q1.x() - q0.x())*v.y() - (q1.y() - q0.y())*v.x();
+  // //const Point x = q0 + num / den * (q1 - q0);
 
-  Point x;
-  const double f = num / den;
+  // Point x;
+  // const double f = num / den;
 
-  // If f is close to 1, swap for improved accuracy
-  //std::cout << "f = " << f << std::endl;
-  if (std::abs(f - 1) < 0.1)
-  {
-    // Swapping q0 and q1 means changing numerator and flipping sign
-    // of denominator
-    //std::cout << "swapping"<<std::endl;
-    const double num_swapped = q1o;
-    x = q1 - num_swapped / den * (q0 - q1);
-  }
-  else
-  {
-    x = q0 + num / den * (q1 - q0);
-  }
+  // // If f is close to 1, swap for improved accuracy
+  // std::cout << "f = " << f << std::endl;
+  // if (std::abs(f - 1) < 0.1)
+  // {
+  //   // Swapping q0 and q1 means changing numerator and flipping sign
+  //   // of denominator
+  //   std::cout << "swapping"<<std::endl;
+  //   const double num_swapped = q1o;
+  //   x = q1 - num_swapped / den * (q0 - q1);
+  // }
+  // else
+  // {
+  //   x = q0 + num / den * (q1 - q0);
+  // }
 
   // {
   //   std::cout << "lengths " << (q0-q1).squared_norm()<<' '<<(p0-p1).squared_norm()<<std::endl;
@@ -594,7 +594,52 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
 
   // }
 
+  // Test use the smallest numerator
+  const double p0o = orient2d(q0, q1, p0);
+  const double p1o = orient2d(q0, q1, p1);
+  const double den = (q1.x() - q0.x())*v.y() - (q1.y() - q0.y())*v.x();
+  std::array<std::pair<double, std::size_t>, 4> oo = {{ { std::abs(p0o), 0},
+							{ std::abs(p1o), 1},
+							{ std::abs(q0o), 2},
+							{ std::abs(q1o), 3 } }};
+  const auto it = std::min_element(oo.begin(), oo.end());
 
+  Point a, b;
+  int sign;
+  double num;
+  switch (it->second)
+  {
+  case 0: // p0o
+    num = p0o;
+    a = p0;
+    b = p1;
+    sign = -1;
+    break;
+  case 1: // p1o
+    num = p1o;
+    a = p1;
+    b = p0;
+    sign = 1;
+    break;
+  case 2: // q0o
+    num = q0o;
+    a = q0;
+    b = q1;
+    sign = 1;
+    break;
+  case 3: // q1o
+    num = q1o;
+    a = q1;
+    b = q0;
+    sign = -1;
+    break;
+  default:
+    dolfin_assert(false);
+  }
+
+  const Point x = a + sign*num / den * (b - a);
+
+  // std::cout << a<<' '<<b<<' '<<num<<' '<<sign*den<<"    "<<x<<std::endl;
 
   // Project point to major axis and check if inside segment
   const double X = GeometryTools::project_to_axis_2d(x, major_axis);

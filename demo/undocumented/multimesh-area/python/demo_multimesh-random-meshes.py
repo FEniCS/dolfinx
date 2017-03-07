@@ -18,7 +18,7 @@
 # Modified by August Johansson 2017
 #
 # First added:  2017-02-09
-# Last changed: 2017-03-06
+# Last changed: 2017-03-07
 #
 # This demo program creates a layer of meshes over a unit square mesh and checks
 # that the volume is 1.0.
@@ -107,8 +107,8 @@ if __name__ == "__main__":
 
     vol_dolfin = multimesh.compute_volume()
 
-    print "Computed volume (quadrature): {}.".format(vol_dolfin)
-    print "Computed volume (assemble):   {}.".format(vol)
-    print "Error (quadrature): {}.".format(abs(1-vol_dolfin))
-    print "Error (assemble):   {}.".format(abs(1-vol))
+    print "Computed volume (quadrature): {}".format(vol_dolfin)
+    print "Computed volume (assemble):   {}".format(vol)
+    print "Error (quadrature): {}".format(abs(1-vol_dolfin))
+    print "Error (assemble):   {}".format(abs(1-vol))
     assert abs(vol-1) < 10e-10
