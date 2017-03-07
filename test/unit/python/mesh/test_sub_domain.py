@@ -24,6 +24,7 @@
 
 import numpy as np
 from dolfin import *
+from dolfin_utils.test import skip_in_parallel
 import pytest
 
 
@@ -35,7 +36,7 @@ def test_compiled_subdomains():
         CompiledSubDomain("a", a="1")
 
     def wrongParameterNames():
-        CompiledSubDomain("long", str=1.0)
+        CompiledSubDomain("foo", bar=1.0)
 
     with pytest.raises(RuntimeError):
         noDefaultValues()
@@ -43,6 +44,14 @@ def test_compiled_subdomains():
         wrongDefaultType()
     with pytest.raises(RuntimeError):
         wrongParameterNames()
+
+
+@skip_in_parallel
+def test_compiled_subdomains_compilation_failure():
+    def invalidCppCode():
+        CompiledSubDomain("/")
+    with pytest.raises(RuntimeError):
+        invalidCppCode()
 
 
 def test_creation_and_marking():
@@ -55,13 +64,39 @@ def test_creation_and_marking():
         def inside(self, x, on_boundary):
             return x[0] > 1.0 - DOLFIN_EPS
 
+    left_cpp = """
+        class Left : public SubDomain
+        {
+        public:
+
+          virtual bool inside(const Array<double>& x, bool on_boundary) const
+          {
+            return x[0] < DOLFIN_EPS;
+          }
+        };
+    """
+
+    right_cpp = """
+        class Right : public SubDomain
+        {
+        public:
+
+          virtual bool inside(const Array<double>& x, bool on_boundary) const
+          {
+            return x[0] > 1.0 - DOLFIN_EPS;
+          }
+        };
+    """
+
     subdomain_pairs = [(Left(), Right()),
                        (AutoSubDomain(lambda x, on_boundary: x[0] < DOLFIN_EPS),
                         AutoSubDomain(lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS)),
                        (CompiledSubDomain("near(x[0], a)", a=0.0),
                         CompiledSubDomain("near(x[0], a)", a=1.0)),
                        (CompiledSubDomain("near(x[0], 0.0)"),
-                        CompiledSubDomain("near(x[0], 1.0)"))]
+                        CompiledSubDomain("near(x[0], 1.0)")),
+                       (CompiledSubDomain(left_cpp),
+                        CompiledSubDomain(right_cpp))]
 
     empty = CompiledSubDomain("false")
     every = CompiledSubDomain("true")

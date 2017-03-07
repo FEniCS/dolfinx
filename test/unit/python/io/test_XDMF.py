@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 # Copyright (C) 2012 Garth N. Wells
 #
 # This file is part of DOLFIN.
@@ -22,7 +20,7 @@ import os
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 
-# Currently supported XDMF file encoding
+# Supported XDMF file encoding
 encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)
 
 # Data types supported in templating
@@ -31,7 +29,8 @@ data_types = (('int', int), ('size_t', int), ('double', float), ('bool', bool))
 
 def invalid_config(encoding):
     return (not has_hdf5() and encoding == XDMFFile.Encoding_HDF5) \
-        or (encoding == XDMFFile.Encoding_ASCII and MPI.size(mpi_comm_world()) > 1)
+        or (encoding == XDMFFile.Encoding_ASCII and MPI.size(mpi_comm_world()) > 1) \
+        or (not has_hdf5_parallel() and MPI.size(mpi_comm_world()) > 1)
 
 
 @pytest.mark.parametrize("encoding", encodings)

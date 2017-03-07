@@ -34,6 +34,9 @@ namespace dolfin
   /// system. The option must not be prefixed by '-', e.g.
   ///
   ///     PETScOptions::set("mat_mumps_icntl_14", 40);
+  ///
+  /// Note: the non-templated functions are to simplify SWIG wapping
+  /// into Python.
 
   class PETScOptions
   {
@@ -64,19 +67,17 @@ namespace dolfin
         option = '-' + option;
 
       PetscErrorCode ierr;
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-      ierr = PetscOptionsSetValue(option.c_str(),
-               boost::lexical_cast<std::string>(value).c_str());
-      #else
       ierr = PetscOptionsSetValue(NULL, option.c_str(),
-               boost::lexical_cast<std::string>(value).c_str());
-      #endif
+                                  boost::lexical_cast<std::string>(value).c_str());
       if (ierr != 0)
         PETScObject::petsc_error(ierr, __FILE__, "PetscOptionsSetValue");
     }
 
-    /// Clear PETSc option
+    /// Clear a PETSc option
     static void clear(std::string option);
+
+    /// Clear PETSc global options database
+    static void clear();
 
   };
 }

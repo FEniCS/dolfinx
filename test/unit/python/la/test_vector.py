@@ -23,6 +23,7 @@
 
 from __future__ import print_function
 import pytest
+import numpy
 from dolfin import *
 
 from dolfin_utils.test import *
@@ -114,8 +115,8 @@ class TestVectorForAnyBackend:
     def test_init_range(self, any_backend):
         n = 301
         local_range = MPI.local_range(mpi_comm_world(), n)
-        v0 = Vector()
-        v0.init(mpi_comm_world(), local_range)
+        v0 = Vector(mpi_comm_world())
+        v0.init(local_range)
         assert v0.local_range() == local_range
 
     def test_size(self, any_backend):
@@ -126,8 +127,8 @@ class TestVectorForAnyBackend:
     def test_local_size(self, any_backend):
         n = 301
         local_range = MPI.local_range(mpi_comm_world(), n)
-        v0 = Vector()
-        v0.init(mpi_comm_world(), local_range)
+        v0 = Vector(mpi_comm_world())
+        v0.init(local_range)
         assert v0.local_size() == local_range[1] - local_range[0]
 
     def test_owns_index(self, any_backend):
@@ -165,7 +166,66 @@ class TestVectorForAnyBackend:
         with pytest.raises(TypeError):
             v0.add_local(data[::2])
 
-    #def test_gather(self, any_backend):
+    def test_gather(self, any_backend):
+        # Gather not implemented in Eigen
+        if any_backend == "Eigen" or any_backend == "Tpetra":
+            return
+
+        # Create distributed vector of local size 1
+        x = DefaultFactory().create_vector(mpi_comm_world())
+        r = MPI.rank(x.mpi_comm())
+        x.init((r, r+1))
+
+        # Create local vector
+        y = DefaultFactory().create_vector(mpi_comm_self())
+
+        # Do the actual test across all rank permutations
+        for target_rank in range(MPI.size(x.mpi_comm())):
+
+            # Set nonzero value on single rank
+            if r == target_rank:
+                x[0] = 42.0  # Set using local index
+            else:
+                x[0] = 0.0  # Set using local index
+            assert numpy.isclose(x.sum(), 42.0)
+
+            # Gather (using global index) and check the result
+            x.gather(y, numpy.array([target_rank], dtype=la_index_dtype()))
+            assert numpy.isclose(y[0], 42.0)
+
+            # NumPy array version
+            out = x.gather(numpy.array([target_rank], dtype=la_index_dtype()))
+            assert out.shape == (1,) and numpy.isclose(out[0], 42.0)
+
+            # Test gather on zero
+            out = x.gather_on_zero()
+            if r == 0:
+                expected = numpy.array([42.0 if i == target_rank else 0.0
+                                        for i in range(x.size())])
+            else:
+                expected = numpy.array([])
+            assert out.shape == expected.shape and numpy.allclose(out, expected)
+
+            # Test also the corner case of empty indices on one process
+            if r == target_rank:
+                out = x.gather(numpy.array([], dtype=la_index_dtype()))
+                expected = numpy.array([])
+            else:
+                out = x.gather(numpy.array([target_rank], dtype=la_index_dtype()))
+                expected = numpy.array([42.0])
+            assert out.shape == expected.shape and numpy.allclose(out, expected)
+
+        # Check that distributed gather vector is not accepted
+        if MPI.size(mpi_comm_world()) > 1:
+            z = DefaultFactory().create_vector(mpi_comm_world())
+            with pytest.raises(RuntimeError):
+                x.gather(z, numpy.array([0], dtype=la_index_dtype()))
+
+        # Check that gather vector of wrong size is not accepted
+        z = DefaultFactory().create_vector(mpi_comm_self())
+        z.init(3)
+        with pytest.raises(RuntimeError):
+            x.gather(z, numpy.array([0], dtype=la_index_dtype()))
 
     def test_axpy(self, any_backend):
         n = 301
@@ -317,10 +377,10 @@ class TestVectorForAnyBackend:
             else:
                 local_range1 = (local_range0[0] + 1, local_range0[1] + 1)
 
-            v0 = Vector()
-            v0.init(mpi_comm_world(), local_range0)
-            v1 = Vector()
-            v1.init(mpi_comm_world(), local_range1)
+            v0 = Vector(mpi_comm_world())
+            v0.init(local_range0)
+            v1 = Vector(mpi_comm_world())
+            v1.init(local_range1)
             assert v0.size() == v1.size()
 
             def wrong_assignment(v0, v1):

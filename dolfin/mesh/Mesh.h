@@ -512,14 +512,22 @@ namespace dolfin
     MPI_Comm mpi_comm() const
     { return _mpi_comm; }
 
-    /// Friend in fem_utils.h
-    ///    friend Mesh create_mesh(Function&);
+    /// Ghost mode used for partitioning. Possible values are
+    /// same as `parameters["ghost_mode"]`.
+    /// WARNING: the interface may change in future without
+    /// deprecation; the method is now intended for internal
+    /// library use.
+    std::string ghost_mode() const;
+
+    // Friend in fem_utils.h
+    friend Mesh create_mesh(Function&);
 
   private:
 
     // Friends
     friend class MeshEditor;
     friend class TopologyComputation;
+    friend class MeshPartitioning;
 
     // Mesh topology
     MeshTopology _topology;
@@ -549,6 +557,9 @@ namespace dolfin
 
     // MPI communicator
     MPI_Comm _mpi_comm;
+
+    // Ghost mode used for partitioning
+    std::string _ghost_mode;
 
   };
 }

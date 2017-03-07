@@ -81,8 +81,6 @@ How to
 * specify various finite element spaces
 
   * :ref:`Brezzi-Douglas-Marini elements for mixed Poisson <demo_mixed_poisson>`
-  * :ref:`discontinuous Raviart-Thomas spaces for dual mixed Poisson
-    <demo_mixed_poisson_dual>`
   * :ref:`the Mini element for Stokes equations <demo_stokes_mini>`
 
 
@@ -92,12 +90,12 @@ Working list of Python demos
 * :doc:`demos/demo_poisson.py`
 * :doc:`demos/demo_eigenvalue.py`
 * :doc:`demos/demo_built-in-meshes.py`
+* :doc:`demos/demo_mixed-poisson.py`
 * :doc:`demos/demo_biharmonic.py`
 * :doc:`demos/demo_auto-adaptive-poisson.py`
 * :doc:`demos/demo_cahn-hilliard.py`
 * :doc:`demos/demo_maxwell-eigenvalues.py`
 * :doc:`demos/demo_built-in-meshes.py`
-* :doc:`demos/demo_eigenvalue.py`
 * :doc:`demos/demo_hyperelasticity.py`
 * :doc:`demos/demo_nonlinear-poisson.py`
 * :doc:`demos/demo_nonmatching-interpolation.py`
@@ -109,6 +107,7 @@ Using the C++ interface
 * :doc:`demos/poisson/main.cpp`
 * :doc:`demos/eigenvalue/main.cpp`
 * :doc:`demos/built-in-meshes/main.cpp`
+* :doc:`demos/mixed-poisson/main.cpp`
 * :doc:`demos/biharmonic/main.cpp`
 * :doc:`demos/auto-adaptive-poisson/main.cpp`
 * :doc:`demos/nonmatching-interpolation/main.cpp`
@@ -137,5 +136,4 @@ Using the C++ interface
    demo_biharmonic
    demo_tensor_weighted_poisson
    demo_mixed_poisson
-   demo_mixed_poisson_dual
    demo_stokes_mini

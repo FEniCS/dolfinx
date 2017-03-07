@@ -37,8 +37,8 @@ PETScBaseMatrix::PETScBaseMatrix(Mat A) : _matA(A)
   else
   {
     dolfin_error("PETScBaseMatrix.cpp",
-                 "intialise with PETSc Mat pointer",
-                 "Cannot wrap PETSc Mat objects that have not been intialized");
+                 "initialize with PETSc Mat pointer",
+                 "Cannot wrap PETSc Mat objects that have not been initialized");
   }
 }
 //-----------------------------------------------------------------------------

@@ -30,7 +30,7 @@ namespace dolfin
   class Function;
   class MeshGeometry;
 
-  /// Return a map between dofs indices and vertex indices
+  /// Return a map between dof indices and vertex indices
   ///
   /// Only works for FunctionSpace with dofs exclusively on vertices.
   /// For mixed FunctionSpaces vertex index is offset with the number
@@ -48,7 +48,7 @@ namespace dolfin
   ///         The dof to vertex map
   std::vector<std::size_t> dof_to_vertex_map(const FunctionSpace& space);
 
-  /// Return a map between vertex indices and dofs indices
+  /// Return a map between vertex indices and dof indices
   ///
   /// Only works for FunctionSpace with dofs exclusively on vertices.
   /// For mixed FunctionSpaces dof index is offset with the number of

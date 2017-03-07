@@ -49,7 +49,7 @@ namespace dolfin
     ///         The y-coordinate.
     /// @param    z (double)
     ///         The z-coordinate.
-    Point(const double x=0.0, const double y=0.0, const double z=0.0)
+    explicit Point(const double x=0.0, const double y=0.0, const double z=0.0)
       : _x({{x, y, z}}) {}
 
     /// Create point from array

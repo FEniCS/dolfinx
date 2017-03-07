@@ -66,7 +66,7 @@ namespace dolfin
     explicit PETScMatrix(MPI_Comm comm);
 
     /// Create a wrapper around a PETSc Mat pointer. The Mat object
-    /// should have been created, e.g. via PETSc MatrCreate.
+    /// should have been created, e.g. via PETSc MatCreate.
     explicit PETScMatrix(Mat A);
 
     /// Copy constructor

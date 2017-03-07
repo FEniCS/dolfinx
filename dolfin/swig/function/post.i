@@ -111,7 +111,7 @@ def compute_vertex_values(self, mesh=None):
 */
 
 //-----------------------------------------------------------------------------
-// Extend Function interace
+// Extend Function interface
 //-----------------------------------------------------------------------------
 %extend dolfin::Function {
 %pythoncode %{
@@ -157,5 +157,31 @@ def parent(self):
     "Return the parent Function in the hierarchy"
     from dolfin.functions.function import Function
     return Function(HierarchicalFunction._parent(self))
+%}
+}
+
+//-----------------------------------------------------------------------------
+// Extend MultiMeshFunction interface
+//-----------------------------------------------------------------------------
+%extend dolfin::MultiMeshFunction {
+%pythoncode %{
+
+def copy(self, deepcopy=False):
+    """
+    Return a copy of itself
+
+    *Arguments*
+        deepcopy (bool)
+            If false (default) the dof vector is shared.
+
+    *Returns*
+         _MultiMeshFunction_
+             The MultiMeshFunction
+
+    """
+    from dolfin.functions.multimeshfunction import MultiMeshFunction
+    if deepcopy:
+        return MultiMeshFunction(self.function_space(), self.vector().copy())
+    return MultiMeshFunction(self.function_space(), self.vector())
 %}
 }

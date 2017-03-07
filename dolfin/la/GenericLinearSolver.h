@@ -14,11 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Anders Logg 2009-2013
-//
-// First added:  2008-08-26
-// Last changed: 2014-05-27
 
 #ifndef __GENERIC_LINEAR_SOLVER_H
 #define __GENERIC_LINEAR_SOLVER_H
@@ -68,34 +63,7 @@ namespace dolfin
     }
 
     /// Solve linear system Ax = b
-    virtual std::size_t solve(GenericVector& x, const GenericVector& b)
-    {
-      dolfin_error("GenericLinearSolver.h",
-                   "solve linear system",
-                   "Not supported by current linear algebra backend. Consider using solve(x, b)");
-      return 0;
-    }
-
-    /// Solve linear system A^Tx = b
-    virtual std::size_t solve_transpose(const GenericLinearOperator& A,
-                                        GenericVector& x,
-                                        const GenericVector& b)
-    {
-      dolfin_error("GenericLinearSolver.h",
-                   "solve linear system transpose",
-                   "Not supported by current linear algebra backend. Consider using solve_transpose(x, b)");
-      return 0;
-    }
-
-    /// Solve linear system A^Tx = b
-    virtual std::size_t solve_transpose(GenericVector& x,
-                                        const GenericVector& b)
-    {
-      dolfin_error("GenericLinearSolver.h",
-                   "solve linear system transpose",
-                   "Not supported by current linear algebra backend. Consider using solve_transpose(x, b)");
-      return 0;
-    }
+    virtual std::size_t solve(GenericVector& x, const GenericVector& b) = 0;
 
     // FIXME: This should not be needed. Need to cleanup linear solver
     // name jungle: default, lu, iterative, direct, krylov, etc
@@ -113,12 +81,12 @@ namespace dolfin
 
   protected:
 
-    // Developer note: The functions here provide similar functionality
-    // as the as_type functions in the LinearAlgebraObject base class. The
-    // difference is that they specifically complain that a matrix is
-    // required, which gives a user a more informative error message
-    // from solvers that don't support matrix-free representation of
-    // linear operators.
+    // Developer note: The functions here provide similar
+    // functionality as the as_type functions in the
+    // LinearAlgebraObject base class. The difference is that they
+    // specifically complain that a matrix is required, which gives a
+    // user a more informative error message from solvers that don't
+    // support matrix-free representation of linear operators.
 
     /// Down-cast GenericLinearOperator to GenericMatrix when an actual
     /// matrix is required, not only a linear operator. This is the
@@ -129,7 +97,8 @@ namespace dolfin
     /// matrix is required, not only a linear operator. This is the
     /// const reference version of the down-cast.
     static std::shared_ptr<const GenericMatrix>
-    require_matrix(std::shared_ptr<const GenericLinearOperator> A);
+      require_matrix(std::shared_ptr<const GenericLinearOperator> A);
+
   };
 
 }

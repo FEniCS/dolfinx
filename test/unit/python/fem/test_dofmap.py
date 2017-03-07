@@ -333,6 +333,35 @@ def test_entity_dofs(mesh):
         assert all(d == cd for d, cd in zip(dofs, cdofs))
 
 
+@skip_in_parallel
+def test_entity_closure_dofs():
+    mesh = UnitSquareMesh(1, 1)
+    tdim = mesh.topology().dim()
+
+    for degree in (1, 2, 3):
+        V = FunctionSpace(mesh, "CG", degree)
+        for d in range(tdim + 1):
+            covered = set()
+            covered2 = set()
+            all_entities = np.array([entity for entity in range(mesh.num_entities(d))], dtype=np.uintp)
+            for entity in all_entities:
+                entities = np.array([entity], dtype=np.uintp)
+                dofs_on_this_entity = V.dofmap().entity_dofs(mesh, d, entities)
+                closure_dofs = V.dofmap().entity_closure_dofs(mesh, d, entities)
+                assert len(dofs_on_this_entity) == V.dofmap().num_entity_dofs(d)
+                assert len(dofs_on_this_entity) <= len(closure_dofs)
+                covered.update(dofs_on_this_entity)
+                covered2.update(closure_dofs)
+            dofs_on_all_entities = V.dofmap().entity_dofs(mesh, d, all_entities)
+            closure_dofs_on_all_entities = V.dofmap().entity_closure_dofs(mesh, d, all_entities)
+            assert len(dofs_on_all_entities) == V.dofmap().num_entity_dofs(d) * mesh.num_entities(d)
+            assert covered == set(dofs_on_all_entities)
+            assert covered2 == set(closure_dofs_on_all_entities)
+        d = tdim
+        all_cells = np.array([entity for entity in range(mesh.num_entities(d))], dtype=np.uintp)
+        assert set(V.dofmap().entity_closure_dofs(mesh, d, all_cells)) == set(range(V.dim()))
+
+
 def test_clear_sub_map_data_scalar(mesh):
     V = FunctionSpace(mesh, "CG", 2)
     with pytest.raises(ValueError):

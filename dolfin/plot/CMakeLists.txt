@@ -1,0 +1,25 @@
+set(HEADERS
+  dolfin_plot.h
+  ExpressionWrapper.h
+  GenericVTKPlottable.h
+  plot.h
+  VTKPlottableDirichletBC.h
+  VTKPlottableGenericFunction1D.h
+  VTKPlottableGenericFunction.h
+  VTKPlottableMeshFunction.h
+  VTKPlottableMesh.h
+  VTKPlotter.h
+  VTKWindowOutputStage.h
+  PARENT_SCOPE)
+
+set(SOURCES
+  ExpressionWrapper.cpp
+  plot.cpp
+  VTKPlottableDirichletBC.cpp
+  VTKPlottableGenericFunction1D.cpp
+  VTKPlottableGenericFunction.cpp
+  VTKPlottableMesh.cpp
+  VTKPlottableMeshFunction.cpp
+  VTKPlotter.cpp
+  VTKWindowOutputStage.cpp
+  PARENT_SCOPE)
