@@ -425,12 +425,11 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
         for (std::size_t i = 0; i < form_rank; i++)
         {
           // Get dofs for cut mesh
-          const auto dofmap_0 = a.function_space(i)->dofmap()->part(part);
+          const auto dofmap_0 = a.function_space(i)->dofmap()->part(part_0);
           const auto dofs_0 = dofmap_0->cell_dofs(cell_0.index());
 
           // Get dofs for cutting mesh
-          const auto dofmap_1
-            = a.function_space(i)->dofmap()->part(cutting_part);
+          const auto dofmap_1 = a.function_space(i)->dofmap()->part(part_1);
           const auto dofs_1 = dofmap_1->cell_dofs(cell_1.index());
 
           // Create space in macro dof vector
@@ -627,11 +626,11 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
         for (std::size_t i = 0; i < form_rank; i++)
         {
           // Get dofs for cut mesh
-          const auto dofmap_0 = a.function_space(i)->dofmap()->part(part);
+          const auto dofmap_0 = a.function_space(i)->dofmap()->part(part_0);
           const auto dofs_0 = dofmap_0->cell_dofs(cell_0.index());
 
           // Get dofs for cutting mesh
-          const auto dofmap_1 = a.function_space(i)->dofmap()->part(cutting_part);
+          const auto dofmap_1 = a.function_space(i)->dofmap()->part(part_1);
           const auto dofs_1 = dofmap_1->cell_dofs(cell_1.index());
 
           // Create space in macro dof vector
