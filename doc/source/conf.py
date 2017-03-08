@@ -496,8 +496,7 @@ epub_exclude_files = ['search.html']
 # Hack to support avoid renaming download files with same names coming
 # from different directories (CMakeLists.txt, Makefile etc)
 
-# From Tormod Landet - see
-# https://github.com/sphinx-doc/sphinx/issues/2720)
+# Fix add_file, see https://github.com/sphinx-doc/sphinx/issues/2720
 from sphinx.util import FilenameUniqDict
 from os import path
 def add_file(self, docname, newfile):
@@ -514,7 +513,8 @@ def add_file(self, docname, newfile):
     return uniquename
 FilenameUniqDict.add_file = add_file
 
-# Hack to support sub-directories within the download directory
+# Hack to support sub-directories within the _download directory
+# see https://github.com/sphinx-doc/sphinx/issues/2720
 from sphinx.builders.html import StandaloneHTMLBuilder, ensuredir, copyfile
 from docutils.utils import relative_path
 from sphinx.util.console import brown
@@ -524,10 +524,10 @@ def copy_download_files(self):
     # copy downloadable files
     if self.env.dlfiles:
         ensuredir(path.join(self.outdir, '_downloads'))
-        for src in self.status_iterator(self.env.dlfiles,  # self.app.status_iterator in master ...
-                                        'copying downloadable files... ',
-                                        brown, len(self.env.dlfiles),
-                                        stringify_func=to_relpath):
+        for src in self.app.status_iterator(self.env.dlfiles,
+                                            'copying downloadable files... ',
+                                            brown, len(self.env.dlfiles),
+                                            stringify_func=to_relpath):
             dest = self.env.dlfiles[src][1]
             subdirs, filename = os.path.split(dest)
             if subdirs:
@@ -539,3 +539,24 @@ def copy_download_files(self):
                 self.warn('cannot copy downloadable file %r: %s' %
                           (path.join(self.srcdir, src), err))
 StandaloneHTMLBuilder.copy_download_files = copy_download_files
+
+# Hack to support sub-directories within the _images directory
+# see https://github.com/sphinx-doc/sphinx/issues/2720
+def copy_image_files(self):
+    # type: () -> None
+    # copy image files
+    if self.images:
+        ensuredir(path.join(self.outdir, self.imagedir))
+        for src in self.app.status_iterator(self.images, 'copying images... ',
+                                            brown, len(self.images)):
+            dest = self.images[src]
+            subdirs, filename = os.path.split(dest)
+            if subdirs:
+                ensuredir(path.join(self.outdir, self.imagedir, subdirs))
+            try:
+                copyfile(path.join(self.srcdir, src),
+                         path.join(self.outdir, self.imagedir, dest))
+            except Exception as err:
+                logger.warning('cannot copy image file %r: %s', path.join(self.srcdir, src), err)
+StandaloneHTMLBuilder.copy_image_files = copy_image_files
+
