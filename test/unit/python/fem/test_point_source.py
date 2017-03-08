@@ -233,11 +233,8 @@ def test_multi_ps_vector_node():
         ps = PointSource(V, source)
         ps.apply(b)
 
-        print b.array()
-
         # Checks b sums to correct value
         b_sum = b.sum()
-        print b_sum
         assert round(b_sum - len(point)*10.0) == 0
 
         # Checks values added to correct part of vector
