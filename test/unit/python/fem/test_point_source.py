@@ -245,7 +245,7 @@ def test_multi_ps_vector_node():
             for i in range(len(mesh_coords)//(dim+1)):
                 mesh_coords_check = mesh_coords[j:j+dim+1]
                 if np.array_equal(point_coords, mesh_coords_check) == True:
-                    assert np.round(b.array()[j/(dim+1)]-10.0) == 0.0
+                    assert np.round(b.array()[j//(dim+1)]-10.0) == 0.0
                 j+=dim+1
 
 def test_multi_ps_vector():
@@ -315,7 +315,7 @@ def test_multi_ps_matrix_node():
             for i in range(len(mesh_coords)//(dim+1)):
                 mesh_coords_check = mesh_coords[j:j+dim+1]
                 if np.array_equal(point_coords, mesh_coords_check) == True:
-                    assert np.round(w.vector()[j/(dim+1)]-10.0) == 0.0
+                    assert np.round(w.vector()[j//(dim+1)]-10.0) == 0.0
                 j+=dim+1
 
 def test_multi_ps_matrix_node_vector_fs():
@@ -359,7 +359,7 @@ def test_multi_ps_matrix_node_vector_fs():
             for i in range(len(mesh_coords)//(dim+1)):
                 mesh_coords_check = mesh_coords[j:j+dim+1]
                 if np.array_equal(point_coords, mesh_coords_check) == True:
-                    assert np.round(w.vector()[j/(dim+1)]-10.0) == 0.0
+                    assert np.round(w.vector()[j//(dim+1)]-10.0) == 0.0
                 j+=dim+1
 
 def test_multi_ps_matrix():
