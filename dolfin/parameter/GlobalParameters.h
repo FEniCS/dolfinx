@@ -71,11 +71,6 @@ namespace dolfin
       // Line width relative to edge length in SVG output
       p.add("relative_line_width", 0.025);
 
-      //-- Threading
-
-      // Number of threads to run, 0 = run serial version
-      p.add("num_threads", 0);
-
       // Print the level of thread support provided by the MPI library
       p.add("print_mpi_thread_support_level", false);
 

@@ -146,48 +146,6 @@ namespace dolfin
     ///         The subfunction.
     Function& operator[] (std::size_t i) const;
 
-    /// Add operator with other function
-    ///
-    /// *Returns*
-    ///     _FunctionAXPY_
-    ///         Return a linear combination of Functions
-    FunctionAXPY operator+(std::shared_ptr<const Function> other) const;
-
-    /// Add operator with other linear combination of functions
-    ///
-    /// *Returns*
-    ///     _FunctionAXPY_
-    ///         Return a linear combination of Functions
-    FunctionAXPY operator+(const FunctionAXPY& axpy) const;
-
-    /// Subtraction operator with other function
-    ///
-    /// *Returns*
-    ///     _FunctionAXPY_
-    ///         Return a linear combination of Functions
-    FunctionAXPY operator-(std::shared_ptr<const Function> other) const;
-
-    /// Subtraction operator with other linear combination of functions
-    ///
-    /// *Returns*
-    ///     _FunctionAXPY_
-    ///         Return a linear combination of Functions
-    FunctionAXPY operator-(const FunctionAXPY& axpy) const;
-
-    /// Scale operator
-    ///
-    /// *Returns*
-    ///     _FunctionAXPY_
-    ///         Return a linear combination of Functions
-    FunctionAXPY operator*(double scalar) const;
-
-    /// Scale operator
-    ///
-    /// *Returns*
-    ///     _FunctionAXPY_
-    ///         Return a linear combination of Functions
-    FunctionAXPY operator/(double scalar) const;
-
     /// Return shared pointer to function space
     ///
     /// *Returns*

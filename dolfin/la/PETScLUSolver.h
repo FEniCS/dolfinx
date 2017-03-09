@@ -14,11 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Garth N. Wells, 2009-2010.
-//
-// First added:  2005
-// Last changed: 2011-10-19
 
 #ifndef __DOLFIN_PETSC_LU_SOLVER_H
 #define __DOLFIN_PETSC_LU_SOLVER_H
@@ -29,7 +24,6 @@
 #include <memory>
 #include <string>
 #include <petscksp.h>
-#include <petscpc.h>
 #include <dolfin/common/MPI.h>
 #include "GenericLUSolver.h"
 #include "PETScObject.h"
@@ -82,9 +76,8 @@ namespace dolfin
     /// Solve linear system Ax = b
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
-    /// Solve linear system Ax = b
-    std::size_t solve(GenericVector& x, const GenericVector& b,
-                      bool transpose);
+    /// Solve linear system Ax = b (A^t x = b if transpose is true)
+    std::size_t solve(GenericVector& x, const GenericVector& b, bool transpose);
 
     /// Solve linear system Ax = b
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
@@ -93,17 +86,6 @@ namespace dolfin
     /// Solve linear system Ax = b
     std::size_t solve(const PETScMatrix& A, PETScVector& x,
                       const PETScVector& b);
-
-    /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(GenericVector& x, const GenericVector& b);
-
-    /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(const GenericLinearOperator& A,
-                                GenericVector& x, const GenericVector& b);
-
-    /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(const PETScMatrix& A, PETScVector& x,
-                                const PETScVector& b);
 
     /// Sets the prefix used by PETSc when searching the options
     /// database
@@ -148,7 +130,8 @@ namespace dolfin
     static const std::map<std::string, std::string> _methods_descr;
 
     // Select LU solver type
-    static const MatSolverPackage select_solver(MPI_Comm comm, std::string& method);
+    static const MatSolverPackage select_solver(MPI_Comm comm,
+                                                std::string& method);
 
     // Does an LU solver support Cholesky?
     static bool solver_has_cholesky(const MatSolverPackage package);

@@ -35,21 +35,33 @@ endforeach()
 #------------------------------------------------------------------------------
 # Install header files
 
-foreach(DIR ${DOLFIN_DIRS})
-  file(GLOB _HEADERS ${DIR}/*.h)
-  list(APPEND HEADERS ${_HEADERS})
-  install(FILES ${_HEADERS} DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
-    COMPONENT Development)
+# Initialize lists
+set(DOLFIN_HEADERS)
+set(DOLFIN_SOURCES)
 
-  file(GLOB _SOURCES ${DIR}/*.cpp)
-  list(APPEND SOURCES ${_SOURCES})
+foreach(DIR ${DOLFIN_DIRS})
+  # Each subdirectory defines HEADERS and SOURCES
+  add_subdirectory(${DIR})
+  set(HEADERS_FULL_PATH)
+  foreach(HEADER_FILE ${HEADERS})
+    list(APPEND HEADERS_FULL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/${HEADER_FILE})
+  endforeach()
+  install(FILES ${HEADERS_FULL_PATH} DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
+    COMPONENT Development)
+  list(APPEND DOLFIN_HEADERS ${HEADERS_FULL_PATH})
+  foreach(SOURCE_FILE ${SOURCES})
+    list(APPEND DOLFIN_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/${SOURCE_FILE})
+  endforeach()
 endforeach()
 
 #------------------------------------------------------------------------------
 # Define libraries
 
-add_library(dolfin ${DOLFIN_H} ${HEADERS} ${SOURCES})
+add_library(dolfin ${DOLFIN_H} ${DOLFIN_HEADERS} ${DOLFIN_SOURCES})
 set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
+
+# Add dependency on the compile_ale_forms target
+add_dependencies(dolfin compile_ale_forms)
 
 #------------------------------------------------------------------------------
 # Add include directories and libs of required packages
@@ -67,7 +79,7 @@ list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${UFC_INCLUDE_DIRS})
 list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${EIGEN3_INCLUDE_DIR})
 
 # Boost
-list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
+target_link_libraries(dolfin PUBLIC Boost::boost)
 foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS_PUBLIC})
   target_link_libraries(dolfin PUBLIC "Boost::${BOOST_PACKAGE}")
 endforeach()
@@ -97,21 +109,15 @@ endif()
 # SLEPC
 if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_SLEPC AND SLEPC_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_SLEPC")
-  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${SLEPC_INCLUDE_DIRS})
-  target_link_libraries(dolfin PUBLIC ${SLEPC_LIBRARIES})
-  if (SLEPC_STATIC_LIBRARIES)
-    target_link_libraries(dolfin PRIVATE ${SLEPC_STATIC_LIBRARIES})
-  endif()
+  target_link_libraries(dolfin PUBLIC SLEPC::slepc)
+  target_link_libraries(dolfin PRIVATE SLEPC::slepc_static)
 endif()
 
 # PETSc
 if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC")
-  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${PETSC_INCLUDE_DIRS})
-  target_link_libraries(dolfin PUBLIC ${PETSC_LIBRARIES})
-  if (PETSC_STATIC_LIBRARIES)
-    target_link_libraries(dolfin PRIVATE ${PETSC_STATIC_LIBRARIES})
-  endif()
+  target_link_libraries(dolfin PUBLIC PETSC::petsc)
+  target_link_libraries(dolfin PRIVATE PETSC::petsc_static)
 endif()
 
 # petsc4py
@@ -315,11 +321,14 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
 
 install(
   FILES
-    ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
-    ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
-    ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake
-    DESTINATION ${DOLFIN_SHARE_DIR}/cmake
-    COMPONENT Development
-    )
+  ${CMAKE_SOURCE_DIR}/cmake/modules/FindPETSc.cmake
+  ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
+  ${CMAKE_SOURCE_DIR}/cmake/modules/FindBoost.cmake
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
+  ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake
+  DESTINATION ${DOLFIN_SHARE_DIR}/cmake
+  COMPONENT Development
+  )
 
 #------------------------------------------------------------------------------

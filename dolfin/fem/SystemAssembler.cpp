@@ -367,6 +367,10 @@ void SystemAssembler::cell_wise_assembly(
     // Loop over lhs and then rhs contributions
     for (std::size_t form = 0; form < 2; ++form)
     {
+      // Don't need to assemble rhs if only system matrix is required
+      if (form == 1 && !tensors[form])
+        continue;
+
       // Get rank (lhs=2, rhs=1)
       const std::size_t rank = (form == 0) ? 2 : 1;
 
@@ -497,6 +501,11 @@ void SystemAssembler::facet_wise_assembly(
   dolfin_assert(ufc[0]->dolfin_form.mesh());
   const Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
+  // Sanity check of ghost mode (proper check in AssemblerBase::check)
+  dolfin_assert(mesh.ghost_mode() == "shared_vertex"
+                || mesh.ghost_mode() == "shared_facet"
+                || MPI::size(mesh.mpi_comm()) == 1);
+
   // Compute facets and facet - cell connectivity if not already
   // computed
   const std::size_t D = mesh.topology().dim();
@@ -615,6 +624,10 @@ void SystemAssembler::facet_wise_assembly(
       // Loop over lhs and then rhs contributions
       for (std::size_t form = 0; form < 2; ++form)
       {
+        // Don't need to assemble rhs if only system matrix is required
+        if (form == 1 && !tensors[form])
+          continue;
+
         // Get rank (lhs=2, rhs=1)
         const std::size_t rank = (form == 0) ? 2 : 1;
 

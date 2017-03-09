@@ -434,3 +434,39 @@ def test_non_square_assembly():
     Anorm2 = A.norm("frobenius")**2
     assert round(1.0 - bnorm1/bnorm2, 10) == 0
     assert round(1.0 - Anorm1/Anorm2, 10) == 0
+
+
+def test_ghost_mode_handling(pushpop_parameters):
+    def _forms():
+        # Return forms with interior facet integral
+        mesh = UnitSquareMesh(10, 10)
+        V = FunctionSpace(mesh, "P", 1)
+        u, v = TrialFunction(V), TestFunction(V)
+        a, L = u('+')*v('+')*dS, v('+')*dS
+        return a, L
+
+    def _check_value(forms):
+        A, b = assemble_system(*forms)
+        # Test by vector of ones; gives length of interior facets
+        x = Vector()
+        A.init_vector(x, 1)
+        x[:] = 1.0
+        assert numpy.isclose(b.inner(x), 18.0+10*2.0**0.5)
+        assert numpy.isclose((A*x).inner(x), 18.0+10*2.0**0.5)
+
+    # Not-ghosted mesh won't work in parallel and assembler should raise
+    parameters["ghost_mode"] = "none"
+    if MPI.size(mpi_comm_world()) == 1:
+        _check_value(_forms())
+    else:
+        assembler = SystemAssembler(*_forms())
+        A, b = Matrix(), Vector()
+        with pytest.raises(RuntimeError) as excinfo:
+            assembler.assemble(A, b)
+        assert "Incorrect mesh ghost mode" in excinfo.value.message
+
+    # Ghosted meshes work everytime
+    parameters["ghost_mode"] = "shared_vertex"
+    _check_value(_forms())
+    parameters["ghost_mode"] = "shared_facet"
+    _check_value(_forms())

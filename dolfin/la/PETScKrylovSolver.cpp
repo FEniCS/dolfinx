@@ -26,6 +26,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/fem/PETScDMCollection.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "KrylovSolver.h"
@@ -203,7 +204,7 @@ PETScKrylovSolver::PETScKrylovSolver(KSP ksp) : _ksp(ksp), pc_dolfin(0),
   else
   {
     dolfin_error("PETScKrylovSolver.cpp",
-                 "intialise PETScKrylovSolver with PETSc KSP object",
+                 "initialize PETScKrylovSolver with PETSc KSP object",
                  "PETSc KSP must be initialised (KSPCreate) before wrapping");
   }
 }
@@ -246,28 +247,32 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 {
   Timer timer("PETSc Krylov solver");
 
-  dolfin_assert(_matA);
-  dolfin_assert(_ksp);
+  // Get PETSc operators
+  Mat _A, _P;
+  KSPGetOperators(_ksp, &_A, &_P);
+  dolfin_assert(_A);
+
+  // Create wrapper around PETSc Mat object
+  PETScBaseMatrix A(_A);
 
   PetscErrorCode ierr;
 
   // Check dimensions
-  const std::size_t M = _matA->size(0);
-  const std::size_t N = _matA->size(1);
-  if (_matA->size(0) != b.size())
+  const std::size_t M = A.size(0);
+  const std::size_t N = A.size(1);
+  if (M != b.size())
   {
     dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",
                  "Non-matching dimensions for linear system (matrix has %ld rows and right-hand side vector has %ld rows)",
-                 _matA->size(0), b.size());
+                 M, b.size());
   }
 
   // Write a message
   const bool report = this->parameters["report"].is_set() ? this->parameters["report"] : false;
   if (report and dolfin::MPI::rank(this->mpi_comm()) == 0)
   {
-    info("Solving linear system of size %ld x %ld (PETSc Krylov solver).",
-         M, N);
+    info("Solving linear system of size %ld x %ld (PETSc Krylov solver).", M, N);
   }
 
   // Non-zero initial guess to true/false
@@ -301,13 +306,11 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   // Initialize solution vector, if necessary
   if (x.empty())
   {
-    _matA->init_vector(x, 1);
+    A.init_vector(x, 1);
     this->set_nonzero_guess(false);
   }
 
-  // FIXME: Improve check for re-setting preconditioner, e.g. if
-  //        parameters change
-  // FIXME: Solve using matrix free matrices fails if no user provided
+  // FIXME: Solve using matrix-free matrices fails if no user provided
   //        Prec is provided
   // Set preconditioner if necessary
   if (_preconditioner && !preconditioner_set)
@@ -334,7 +337,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   if (dolfin::MPI::rank(this->mpi_comm()) == 0)
   {
     log(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.",
-        _matA->size(0), _matA->size(1));
+        M, N);
   }
 
   // Solve system
@@ -418,6 +421,7 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
     break;
   case norm_type::default_norm:
     ksp_norm_type = KSP_NORM_DEFAULT;
+    break;
   case norm_type::preconditioned:
     ksp_norm_type = KSP_NORM_PRECONDITIONED;
     break;
@@ -435,6 +439,21 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
 
   dolfin_assert(_ksp);
   KSPSetNormType(_ksp, ksp_norm_type);
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_dm(DM dm)
+{
+  dolfin_assert(_ksp);
+  KSPSetDM(_ksp, dm);
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_dm_active(bool val)
+{
+  dolfin_assert(_ksp);
+  if (val)
+    KSPSetDMActive(_ksp, PETSC_TRUE);
+  else
+    KSPSetDMActive(_ksp, PETSC_FALSE);
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type() const
@@ -471,12 +490,6 @@ void PETScKrylovSolver::monitor(bool monitor_convergence)
   PetscErrorCode ierr;
   if (monitor_convergence)
   {
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-    ierr = KSPMonitorSet(_ksp, KSPMonitorTrueResidualNorm,
-                         PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_ksp)),
-                         NULL);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
-    #else
     PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_ksp));
     PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
     PetscViewerAndFormat *vf;
@@ -486,7 +499,6 @@ void PETScKrylovSolver::monitor(bool monitor_convergence)
                          vf,
                          (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
-    #endif
   }
   else
   {
@@ -579,15 +591,12 @@ void
 PETScKrylovSolver::_set_operators(std::shared_ptr<const PETScBaseMatrix> A,
                                   std::shared_ptr<const PETScBaseMatrix> P)
 {
-  _matA = A;
-  _matP = P;
-  dolfin_assert(_matA);
-  dolfin_assert(_matP);
+  dolfin_assert(A->mat());
+  dolfin_assert(P->mat());
   dolfin_assert(_ksp);
 
-  dolfin_assert(_ksp);
   PetscErrorCode ierr;
-  ierr = KSPSetOperators(_ksp, _matA->mat(), _matP->mat());
+  ierr = KSPSetOperators(_ksp, A->mat(), P->mat());
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
@@ -595,11 +604,17 @@ std::size_t PETScKrylovSolver::_solve(const PETScBaseMatrix& A, PETScVector& x,
                                       const PETScVector& b)
 {
   // Set operator
-  std::shared_ptr<const PETScBaseMatrix> Atmp(&A, NoDeleter());
-  _set_operator(Atmp);
+  dolfin_assert(_ksp);
+  dolfin_assert(A.mat());
+  KSPSetOperators(_ksp, A.mat(), A.mat());
 
   // Call solve
-  return solve(x, b);
+  std::size_t num_iter = solve(x, b);
+
+  // Clear operators
+  KSPSetOperators(_ksp, nullptr, nullptr);
+
+  return num_iter;
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::write_report(int num_iterations,

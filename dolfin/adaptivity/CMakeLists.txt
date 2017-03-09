@@ -1,0 +1,26 @@
+set(HEADERS
+  adapt.h
+  AdaptiveLinearVariationalSolver.h
+  AdaptiveNonlinearVariationalSolver.h
+  adaptivesolve.h
+  dolfin_adaptivity.h
+  ErrorControl.h
+  Extrapolation.h
+  GenericAdaptiveVariationalSolver.h
+  GoalFunctional.h
+  marking.h
+  TimeSeries.h
+  PARENT_SCOPE)
+
+set(SOURCES
+  adapt.cpp
+  AdaptiveLinearVariationalSolver.cpp
+  AdaptiveNonlinearVariationalSolver.cpp
+  adaptivesolve.cpp
+  ErrorControl.cpp
+  Extrapolation.cpp
+  GenericAdaptiveVariationalSolver.cpp
+  GoalFunctional.cpp
+  marking.cpp
+  TimeSeries.cpp
+  PARENT_SCOPE)

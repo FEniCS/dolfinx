@@ -302,6 +302,16 @@ namespace dolfin
     ///         The value to set all values to.
     void set_all(const T& value);
 
+    /// Get indices where meshfunction is equal to given value
+    ///
+    /// *Arguments*
+    ///     value (T)
+    ///         The value.
+    /// *Returns*
+    ///     std::vector<T>
+    ///         The indices.
+    std::vector<std::size_t> where_equal(T value);
+
     /// Return informal string representation (pretty-print)
     ///
     /// *Arguments*
@@ -664,6 +674,21 @@ namespace dolfin
   {
     dolfin_assert(_values);
     std::fill(_values.get(), _values.get() + _size, value);
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+  std::vector<std::size_t> MeshFunction<T>::where_equal(T value)
+  {
+    dolfin_assert(_values);
+    std::size_t n = std::count(_values.get(), _values.get() + _size, value);
+    std::vector<std::size_t> indices;
+    indices.reserve(n);
+    for (int i = 0; i < size(); ++i)
+    {
+      if (_values[i] == value)
+        indices.push_back(i);
+    }
+    return indices;
   }
   //---------------------------------------------------------------------------
   template <typename T>

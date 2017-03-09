@@ -99,20 +99,18 @@ std::shared_ptr<GenericVector> PETScVector::copy() const
   return std::make_shared<PETScVector>(*this);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(MPI_Comm comm, std::size_t N)
+void PETScVector::init(std::size_t N)
 {
-  const auto range = dolfin::MPI::local_range(comm, N);
+  const auto range = dolfin::MPI::local_range(this->mpi_comm(), N);
   _init(range, {}, {});
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(MPI_Comm comm,
-                       std::pair<std::size_t, std::size_t> range)
+void PETScVector::init(std::pair<std::size_t, std::size_t> range)
 {
   _init(range, {}, {});
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(MPI_Comm comm,
-                       std::pair<std::size_t, std::size_t> range,
+void PETScVector::init(std::pair<std::size_t, std::size_t> range,
                        const std::vector<std::size_t>& local_to_global_map,
                        const std::vector<la_index>& ghost_indices)
 {
@@ -317,7 +315,7 @@ std::size_t PETScVector::size() const
   dolfin_assert(_x);
 
   // Return zero if vector type has not been set (Vec has not been
-  // intialised)
+  // initialized)
   VecType vec_type = nullptr;
   VecGetType(_x, &vec_type);
   if (vec_type == nullptr)
@@ -697,24 +695,32 @@ void PETScVector::gather(GenericVector& y,
   // Down cast to a PETScVector
   PETScVector& _y = as_type<PETScVector>(y);
 
-  // Prepare data for index sets (global indices)
-  std::vector<PetscInt> global_indices(indices.begin(), indices.end());
-
-  // Prepare data for index sets (local indices)
+  // Get number of required entries
   const std::size_t n = indices.size();
 
-  if (_y.empty())
-  {
-    // Initialise vector and make local
-    y.init(MPI_COMM_SELF, n);
-  }
-  else if (y.size() != n || dolfin::MPI::size(y.mpi_comm()))
+  // Check that passed vector is local
+  if (MPI::size(_y.mpi_comm()) != 1)
   {
     dolfin_error("PETScVector.cpp",
                  "gather vector entries",
-                 "Cannot re-initialize gather vector. Must be empty, or have correct size and be a local vector");
+                 "Gather vector must be a local vector (MPI_COMM_SELF)");
   }
 
+  // Initialize vector if empty
+  if (_y.empty())
+    _y.init(n);
+
+  // Check that passed vector has correct size
+  if (_y.size() != n)
+  {
+    dolfin_error("PETScVector.cpp",
+                 "gather vector entries",
+                 "Gather vector must be empty or of correct size "
+                 "(same as provided indices)");
+  }
+
+  // Prepare data for index sets (global indices)
+  std::vector<PetscInt> global_indices(indices.begin(), indices.end());
 
   // PETSc will bail out if it receives a NULL pointer even though m
   // == 0.  Can't return from function since function calls are
@@ -829,7 +835,7 @@ void PETScVector::set_from_options()
   {
     dolfin_error("PETScVector.cpp",
                  "call VecSetFromOptions on PETSc Vec object",
-                 "Vec object has not been intialised");
+                 "Vec object has not been initialized");
   }
 
   VecSetFromOptions(_x);
@@ -860,7 +866,7 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
   {
     dolfin_error("PETScVector.h",
                  "initialize vector",
-                 "Underlying PETSc Vec has not been intialised");
+                 "Underlying PETSc Vec has not been initialized");
   }
 
   PetscErrorCode ierr;

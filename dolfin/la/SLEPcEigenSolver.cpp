@@ -29,6 +29,7 @@
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "SLEPcEigenSolver.h"
+#include "VectorSpaceBasis.h"
 
 using namespace dolfin;
 
@@ -54,7 +55,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(EPS eps) : _eps(eps)
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",
-                 "intialise SLEPcEigenSolver with SLEPc EPS object",
+                 "initialize SLEPcEigenSolver with SLEPc EPS object",
                  "SLEPc EPS must be initialised (EPSCreate) before wrapping");
   }
 
@@ -185,25 +186,11 @@ void SLEPcEigenSolver::solve(std::size_t n)
   {
     if (parameters["verbose"])
     {
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-      KSP ksp;
-      ST st;
-      EPSMonitorSet(_eps, EPSMonitorAll,
-                    PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_eps)),
-                    NULL);
-      EPSGetST(_eps, &st);
-      STGetKSP(st, &ksp);
-      KSPMonitorSet(ksp, KSPMonitorDefault,
-                    PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
-                    NULL);
-      EPSView(_eps, PETSC_VIEWER_STDOUT_SELF);
-      #else
       PetscViewerAndFormat *vf;
       PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD, PETSC_VIEWER_DEFAULT, &vf);
       EPSMonitorSet(_eps,(PetscErrorCode (*)(EPS,PetscInt,PetscInt,PetscScalar*,PetscScalar*,
                                              PetscReal*,PetscInt,void*))EPSMonitorAll,vf,
                     (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
-      #endif
     }
   }
 
@@ -317,6 +304,23 @@ void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
   Vec x = deflation_space.vec();
   dolfin_assert(_eps);
   EPSSetDeflationSpace(_eps, 1, &x);
+}
+//-----------------------------------------------------------------------------
+void SLEPcEigenSolver::set_deflation_space(const VectorSpaceBasis& deflation_space)
+{
+  dolfin_assert(_eps);
+
+  // Get PETSc vector pointers from VectorSpaceBasis
+  std::vector<Vec> petsc_vecs(deflation_space.dim());
+  for (std::size_t i = 0; i < deflation_space.dim(); ++i)
+  {
+    dolfin_assert(deflation_space[i]);
+    petsc_vecs[i] = deflation_space[i]->down_cast<PETScVector>().vec();
+  }
+
+  PetscErrorCode ierr = EPSSetDeflationSpace(_eps, petsc_vecs.size(),
+                                             petsc_vecs.data());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetDeflationSpace");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_options_prefix(std::string options_prefix)
@@ -490,6 +494,10 @@ void SLEPcEigenSolver::set_solver(std::string solver)
     EPSSetType(_eps, EPSLAPACK);
   else if (solver == "arpack")
     EPSSetType(_eps, EPSARPACK);
+  else if (solver == "jacobi-davidson")
+    EPSSetType(_eps, EPSJD);
+  else if (solver == "generalized-davidson")
+    EPSSetType(_eps, EPSGD);
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",

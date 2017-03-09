@@ -23,7 +23,7 @@
 # The bilinear form a(du, v) and linear form L(v) for
 # a hyperelastic model.
 #
-# Compile this form with FFC: ffc -l dolfin -feliminate_zeros -fprecompute_basis_const -fprecompute_ip_const HyperElasticity.ufl
+# Compile this form with FFC: ffc -l dolfin -r uflacs HyperElasticity.ufl
 
 # Function spaces
 element = VectorElement("Lagrange", tetrahedron, 1)

@@ -83,8 +83,7 @@ namespace dolfin
           ghosts[i] = local_to_global[i + nowned];
       }
 
-      init(tensor_layout.mpi_comm(), tensor_layout.local_range(0),
-           local_to_global, ghosts);
+      init(tensor_layout.local_range(0), local_to_global, ghosts);
       zero();
     }
 
@@ -160,17 +159,15 @@ namespace dolfin
     virtual std::shared_ptr<GenericVector> copy() const = 0;
 
     /// Initialize vector to global size N
-    virtual void init(MPI_Comm comm, std::size_t N) = 0;
+    virtual void init(std::size_t N) = 0;
 
     /// Initialize vector with given local ownership range
-    virtual void init(MPI_Comm comm,
-                      std::pair<std::size_t, std::size_t> range) = 0;
+    virtual void init(std::pair<std::size_t, std::size_t> range) = 0;
 
     /// Initialise vector with given ownership range and with ghost
     /// values
     /// FIXME: Reimplement using init(const TensorLayout&) and deprecate
-    virtual void init(MPI_Comm comm,
-                      std::pair<std::size_t, std::size_t> range,
+    virtual void init(std::pair<std::size_t, std::size_t> range,
                       const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index>& ghost_indices) = 0;
 
@@ -221,11 +218,12 @@ namespace dolfin
     /// Add values to each entry on local process
     virtual void add_local(const Array<double>& values) = 0;
 
-    /// Gather entries into local vector x
+    /// Gather entries (given by global indices) into local
+    /// vector x
     virtual void gather(GenericVector& x,
                         const std::vector<dolfin::la_index>& indices) const = 0;
 
-    /// Gather entries into x
+    /// Gather entries (given by global indices) into x
     virtual void gather(std::vector<double>& x,
                         const std::vector<dolfin::la_index>& indices) const = 0;
 
