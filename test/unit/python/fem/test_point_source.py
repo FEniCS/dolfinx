@@ -148,8 +148,8 @@ def test_pointsource_matrix():
     """Tests point source when given constructor PointSource(V, point, mag)
     with a matrix and when placed at a node for 1D, 2D and 3D. """
     data = [[UnitIntervalMesh(10), Point(0.5)],
-            [UnitSquareMesh(2,2), Point(0.5, 0.5)],
-            [UnitCubeMesh(2,2,2), Point(0.5, 0.5, 0.5)]]
+            [UnitSquareMesh(10,10), Point(0.5, 0.5)],
+            [UnitCubeMesh(4,4,4), Point(0.5, 0.5, 0.5)]]
 
     for dim in range(3):
         mesh = data[dim][0]
@@ -180,8 +180,8 @@ def test_pointsource_matrix_second_constructor():
     PointSource(V1, V2, point, mag) with a matrix and when placed at a node
     for 1D, 2D and 3D. Currently only implemented if V1=V2."""
     data = [[UnitIntervalMesh(10), Point(0.5)],
-            [UnitSquareMesh(2,2), Point(0.5, 0.5)],
-            [UnitCubeMesh(2,2,2), Point(0.5, 0.5, 0.5)]]
+            [UnitSquareMesh(10,10), Point(0.5, 0.5)],
+            [UnitCubeMesh(4,4,4), Point(0.5, 0.5, 0.5)]]
 
     for dim in range(3):
         mesh = data[dim][0]
@@ -213,7 +213,7 @@ def test_pointsource_matrix_second_constructor():
 def test_multi_ps_vector_node():
     """Tests point source when given constructor PointSource(V, V, point, mag)
     with a matrix when points placed at 3 node for 1D, 2D and 3D. """
-    meshes = [UnitIntervalMesh(10), UnitSquareMesh(2,2), UnitCubeMesh(2,2,2)]
+    meshes = [UnitIntervalMesh(10), UnitSquareMesh(10,10), UnitCubeMesh(4,4,4)]
 
     point = [0.0, 0.5, 1.0]
     for dim in range(3):
@@ -251,9 +251,9 @@ def test_multi_ps_vector_node():
 def test_multi_ps_vector():
     """Tests point source PointSource(V, source) for mulitple point
     sources applied to a vector for 1D, 2D and 3D. """
-    meshes = [UnitIntervalMesh(10), UnitSquareMesh(2,2), UnitCubeMesh(2,2,2)]
+    meshes = [UnitIntervalMesh(20), UnitSquareMesh(10,10), UnitCubeMesh(4,4,4)]
 
-    c_ids = [0, 1, 2, 3]
+    c_ids = [0, 1, 2]
     for dim in range(3):
         mesh = meshes[dim]
         V = FunctionSpace(mesh, "CG", 1)
@@ -278,7 +278,7 @@ def test_multi_ps_vector():
 def test_multi_ps_matrix_node():
     """Tests point source when given constructor PointSource(V, source)
     with a matrix when points placed at 3 nodes for 1D, 2D and 3D. """
-    meshes = [UnitIntervalMesh(10), UnitSquareMesh(2,2), UnitCubeMesh(2,2,2)]
+    meshes = [UnitIntervalMesh(10), UnitSquareMesh(10,10), UnitCubeMesh(4,4,4)]
 
     point = [0.0, 0.5, 1.0]
     for dim in range(3):
@@ -322,7 +322,7 @@ def test_multi_ps_matrix_node_vector_fs():
     """Tests point source applied to a matrix with given constructor
     PointSource(V, source) and a vector function space when points placed
     at 3 vertices for 1D, 2D and 3D. """
-    meshes = [UnitIntervalMesh(10), UnitSquareMesh(2,2), UnitCubeMesh(2,2,2)]
+    meshes = [UnitIntervalMesh(10), UnitSquareMesh(10,10), UnitCubeMesh(4,4,4)]
 
     point = [0.0, 0.5, 1.0]
 
@@ -365,9 +365,9 @@ def test_multi_ps_matrix_node_vector_fs():
 def test_multi_ps_matrix():
     """Tests point source PointSource(V, source) for mulitple point
     sources applied to a matrix for 1D, 2D and 3D. """
-    meshes = [UnitIntervalMesh(10), UnitSquareMesh(2,2), UnitCubeMesh(2,2,2)]
+    meshes = [UnitIntervalMesh(20), UnitSquareMesh(10,10), UnitCubeMesh(4,4,4)]
 
-    c_ids = [0, 1, 2, 3]
+    c_ids = [0, 1, 2]
     for dim in range(3):
         mesh = meshes[dim]
         V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
