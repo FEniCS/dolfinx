@@ -50,7 +50,7 @@ def test_pointsource_vector_node():
             if near(v.midpoint().distance(point), 0.0):
                 ind = v2d[v.index()]
                 if ind<len(b.array()):
-                    assert round(b.array()[ind]-10.0) == 0
+                    assert np.round(b.array()[ind]-10.0) == 0
 
 def test_pointsource_vector():
     """Tests point source when given constructor PointSource(V, point, mag)
@@ -101,7 +101,7 @@ def test_pointsource_vector_fs():
                 for spc_idx in range(V.num_sub_spaces()):
                     ind = v2d[v.index()*V.num_sub_spaces() + spc_idx]
                     if ind<len(b.array()):
-                        assert round(b.array()[ind] - 10.0) == 0
+                        assert np.round(b.array()[ind] - 10.0) == 0
 
 
 def test_pointsource_mixed_space():
@@ -173,7 +173,7 @@ def test_pointsource_matrix():
             if near(v.midpoint().distance(point), 0.0):
                 ind = v2d[v.index()]
                 if ind<len(A.array()):
-                    assert round(w.vector()[ind] - 10.0) == 0
+                    assert np.round(w.vector()[ind] - 10.0) == 0
 
 def test_pointsource_matrix_second_constructor():
     """Tests point source when given different constructor
@@ -207,7 +207,7 @@ def test_pointsource_matrix_second_constructor():
             if near(v.midpoint().distance(point), 0.0):
                 ind = v2d[v.index()]
                 if ind<len(A.array()):
-                    assert round(w.vector()[ind] - 10.0) == 0
+                    assert np.round(w.vector()[ind] - 10.0) == 0
 
 
 def test_multi_ps_vector_node():
@@ -242,10 +242,10 @@ def test_multi_ps_vector_node():
                 point_coords[i] = p
 
             j = 0
-            for i in range(len(mesh_coords)/(dim+1)):
+            for i in range(len(mesh_coords)//(dim+1)):
                 mesh_coords_check = mesh_coords[j:j+dim+1]
                 if np.array_equal(point_coords, mesh_coords_check) == True:
-                    assert round(b.array()[j/(dim+1)]-10.0) == 0.0
+                    assert np.round(b.array()[j/(dim+1)]-10.0) == 0.0
                 j+=dim+1
 
 def test_multi_ps_vector():
@@ -312,10 +312,10 @@ def test_multi_ps_matrix_node():
                 point_coords[i] = p
 
             j = 0
-            for i in range(len(mesh_coords)/(dim+1)):
+            for i in range(len(mesh_coords)//(dim+1)):
                 mesh_coords_check = mesh_coords[j:j+dim+1]
                 if np.array_equal(point_coords, mesh_coords_check) == True:
-                    assert round(w.vector()[j/(dim+1)]-10.0) == 0.0
+                    assert np.round(w.vector()[j/(dim+1)]-10.0) == 0.0
                 j+=dim+1
 
 def test_multi_ps_matrix_node_vector_fs():
@@ -356,10 +356,10 @@ def test_multi_ps_matrix_node_vector_fs():
                 point_coords[i] = p
 
             j = 0
-            for i in range(len(mesh_coords)/(dim+1)):
+            for i in range(len(mesh_coords)//(dim+1)):
                 mesh_coords_check = mesh_coords[j:j+dim+1]
                 if np.array_equal(point_coords, mesh_coords_check) == True:
-                    assert round(w.vector()[j/(dim+1)]-10.0) == 0.0
+                    assert np.round(w.vector()[j/(dim+1)]-10.0) == 0.0
                 j+=dim+1
 
 def test_multi_ps_matrix():
