@@ -16,19 +16,19 @@ import sys
 import os
 
 ONLY_SPHINX = os.environ.get('ONLY_SPHINX', False)
+ON_RTD = os.environ.get('READTHEDOCS', False)
+has_doxygen_xml = os.path.exists('../doxygen/xml/namespacedolfin.xml')
+run_doxygen = not ONLY_SPHINX or (ON_RTD and has_doxygen_xml)
 
-if not ONLY_SPHINX:
+if run_doxygen:
     # Doxygen handling in parent directory
     current_dir = os.getcwd()
     os.chdir("../")
 
-    # Run doxygen on C++ sources, generates XML output for breathe to convert into Sphinx format.
+    # Run doxygen on C++ sources, generates XML output for us to convert into Sphinx and SWIG formats.
     subprocess.call('doxygen', shell=True)
     
-    # Convert doxygen XML output to SWIG docstrings
-    subprocess.call(["python", "./doxy2swig.py", "./doxygen/xml/index.xml", "docstrings.i"])
-
-    # Convert doxygen XML output to *.rst files per subdirectory
+    # Convert doxygen XML output to *.rst files per subdirectory and make SWIG docstrings.i
     subprocess.call(["python", "./generate_api_rst.py"])
 
     os.chdir(current_dir)
@@ -149,7 +149,6 @@ for subdir in subdirs:
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 # sys.path.insert(0, os.path.abspath('.'))
 
-# sys.path.append(os.path.abspath("./breathe"))
 
 # -- General configuration ------------------------------------------------
 
@@ -164,14 +163,10 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    'breathe' ]
+    'sphinx.ext.napoleon']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
-
-breathe_projects = { "dolfin" : "../doxygen/xml" }
-breathe_default_project = "dolfin"
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
