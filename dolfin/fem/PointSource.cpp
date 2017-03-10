@@ -147,19 +147,13 @@ void PointSource::apply(GenericVector& b)
     cell_found_on_process = cell_index
       != std::numeric_limits<unsigned int>::max();
     if (cell_found_on_process)
-      {
-	num_found = MPI::sum(mesh.mpi_comm(), 1);
-      }
+      num_found = MPI::sum(mesh.mpi_comm(), 1);
     else
-      {
-	num_found = MPI::sum(mesh.mpi_comm(), 0);
-      }
+      num_found = MPI::sum(mesh.mpi_comm(), 0);
     if (MPI::rank(mesh.mpi_comm()) == 0 && num_found == 0)
-    {
       dolfin_error("PointSource.cpp",
 		   "apply point source to vector",
 		   "The point is outside of the domain (%s)", p.str().c_str());
-    }
 
     processes_with_cell =
       cell_found_on_process ? MPI::rank(mesh.mpi_comm()) : -1;
@@ -204,20 +198,17 @@ void PointSource::apply(GenericMatrix& A)
   dolfin_assert(_function_space0);
 
   if (!_function_space1)
-    {
-      _function_space1=_function_space0;
-    }
+    _function_space1=_function_space0;
 
   dolfin_assert(_function_space1);
 
   // Currently only works if V0 and V1 are the same
   if (_function_space0->element()->signature()
       != _function_space1->element()->signature())
-  {
     dolfin_error("PointSource.cpp",
 		 "apply point source to vector",
 		 "The function spaces are different. Not currently implemented");
-  }
+
 
   std::shared_ptr<const FunctionSpace> V0 = _function_space0;
   std::shared_ptr<const FunctionSpace> V1 = _function_space1;
@@ -282,17 +273,14 @@ void PointSource::apply(GenericMatrix& A)
     {
       // Doesn't work for mixed function spaces with different elements.
       if (V0->sub(0)->element()->signature() != V0->sub(n)->element()->signature())
-      {
 	dolfin_error("PointSource.cpp",
 		     "apply point source to vector",
 		     "The mixed elements are not the same. Not currently implemented");
-      }
       if (V0->sub(n)->element()->num_sub_elements() > 1)
-      {
 	dolfin_error("PointSource.cpp",
 		     "apply point source to vector",
 		     "Have vector elements. Not currently implemented");
-      }
+
     }
   }
 
@@ -317,11 +305,9 @@ void PointSource::apply(GenericMatrix& A)
       num_found = MPI::sum(mesh->mpi_comm(), 0);
 
     if (MPI::rank(mesh->mpi_comm()) == 0 && num_found == 0)
-    {
       dolfin_error("PointSource.cpp",
 		   "apply point source to vector",
 		   "The point is outside of the domain (%s)", p.str().c_str());
-    }
 
     processes_with_cell =
       cell_found_on_process ? MPI::rank(mesh->mpi_comm()) : -1;
@@ -339,28 +325,28 @@ void PointSource::apply(GenericMatrix& A)
 
       // Calculate values with magnitude*basis_sum_0*basis_sum_1
       for (std::size_t i = 0; i < dofs_per_cell0; ++i)
+      {
+	V0->element()->evaluate_basis(i, basis0.data(),
+				      p.coordinates(),
+				      coordinate_dofs.data(),
+				      ufc_cell.orientation);
+	for (std::size_t j = 0; j < dofs_per_cell0; ++j)
 	{
-	  V0->element()->evaluate_basis(i, basis0.data(),
+	  V1->element()->evaluate_basis(j, basis1.data(),
 					p.coordinates(),
 					coordinate_dofs.data(),
 					ufc_cell.orientation);
-	  for (std::size_t j = 0; j < dofs_per_cell0; ++j)
-	    {
-	      V1->element()->evaluate_basis(j, basis1.data(),
-					    p.coordinates(),
-					    coordinate_dofs.data(),
-					    ufc_cell.orientation);
 
-	      basis_sum0 = 0.0;
-	      basis_sum1 = 0.0;
-	      for (const auto& v : basis0)
-		basis_sum0 += v;
-	      for (const auto& v : basis1)
-		basis_sum1 += v;
+	  basis_sum0 = 0.0;
+	  basis_sum1 = 0.0;
+	  for (const auto& v : basis0)
+	    basis_sum0 += v;
+	  for (const auto& v : basis1)
+	    basis_sum1 += v;
 
-	      values_sub[i][j] = magnitude*basis_sum0*basis_sum1;
-	    }
+	  values_sub[i][j] = magnitude*basis_sum0*basis_sum1;
 	}
+      }
 
       // If scalar function space, values = values_sub
       if (num_sub_spaces < 2)
@@ -369,24 +355,24 @@ void PointSource::apply(GenericMatrix& A)
       // calculates the values_sub for a sub space and then manipulates
       // values matrix for all sub_spaces.
       else
+      {
+	int ii;
+	int jj;
+	for (std::size_t k=0; k<num_sub_spaces; ++k)
 	{
-	  int ii;
-	  int jj;
-	  for (std::size_t k=0; k<num_sub_spaces; ++k)
+	  ii = 0;
+	  for (std::size_t i=k*dofs_per_cell0; i<dofs_per_cell0*(k+1); ++i)
+	  {
+	    jj = 0;
+	    for (std::size_t j=k*dofs_per_cell1; j<dofs_per_cell1*(k+1); ++j)
 	    {
-	      ii = 0;
-	      for (std::size_t i=k*dofs_per_cell0; i<dofs_per_cell0*(k+1); ++i)
-		{
-		  jj = 0;
-		  for (std::size_t j=k*dofs_per_cell1; j<dofs_per_cell1*(k+1); ++j)
-		    {
-		      values[i][j] = values_sub[ii][jj];
-		      jj += 1;
-		    }
-		  ii +=1;
-		}
+	      values[i][j] = values_sub[ii][jj];
+	      jj += 1;
 	    }
+	    ii +=1;
+	  }
 	}
+      }
 
       // Compute local-to-global mapping
       dofs0 = V0->dofmap()->cell_dofs(cell.index());
@@ -405,10 +391,8 @@ void PointSource::check_space_supported(const FunctionSpace& V)
 {
   dolfin_assert(V.element());
   if (V.element()->value_rank() > 1)
-  {
     dolfin_error("PointSource.cpp",
                  "create point source",
                  "Function must have rank 0 or 1");
-  }
 }
 //-----------------------------------------------------------------------------

@@ -67,17 +67,6 @@ namespace dolfin
     /// Apply (add) point source to matrix
     void apply(GenericMatrix& A);
 
-    /// Stores points and magnitudes
-    static void dummy(const std::vector<std::pair<const Point*, double> > pt)
-    {
-      for (auto & p : pt)
-      {
-        std::cout << "Double = " << p.second << "\n";
-        std::cout << "Point = " << *(p.first) << "\n";
-      }
-
-    }
-
   private:
 
     // Check that function space is scalar
