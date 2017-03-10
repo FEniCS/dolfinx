@@ -46,7 +46,7 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
   // Puts point and magniude data into a vector
   _sources.push_back({p, magnitude});
 
-  // Check that function space is scalar
+  // Check that function space is supported
   check_space_supported(*V);
 }
 //-----------------------------------------------------------------------------
@@ -59,7 +59,7 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
   for (auto& p : sources)
     _sources.push_back({*(p.first), p.second});
 
-  // Check that function space is scalar
+  // Check that function space is supported
   check_space_supported(*V);
 }
 //-----------------------------------------------------------------------------
@@ -72,7 +72,7 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
   // Puts point and magniude data into a vector
   _sources.push_back({p, magnitude});
 
-  // Check that function space is scalar
+  // Check that function spaces are supported
   check_space_supported(*V0);
   check_space_supported(*V1);
 }
@@ -87,7 +87,7 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
   for (auto& p : sources)
     _sources.push_back({*(p.first), p.second});
 
-  // Check that function space is scalar
+  // Check that function spaces are supported
   check_space_supported(*V0);
   check_space_supported(*V1);
 }
@@ -100,7 +100,10 @@ PointSource::~PointSource()
 void PointSource::apply(GenericVector& b)
 {
   dolfin_assert(_function_space0);
-  dolfin_assert(!_function_space1);
+  if (!_function_space1)
+    dolfin_error("PointSource.cpp",
+		 "apply point source to vector",
+		 "Can only have one function space for a vector.");
 
   log(PROGRESS, "Applying point source to right-hand side vector.");
 
@@ -206,7 +209,7 @@ void PointSource::apply(GenericMatrix& A)
   if (_function_space0->element()->signature()
       != _function_space1->element()->signature())
     dolfin_error("PointSource.cpp",
-		 "apply point source to vector",
+		 "apply point source to matrix",
 		 "The function spaces are different. Not currently implemented");
 
 
@@ -274,11 +277,11 @@ void PointSource::apply(GenericMatrix& A)
       // Doesn't work for mixed function spaces with different elements.
       if (V0->sub(0)->element()->signature() != V0->sub(n)->element()->signature())
 	dolfin_error("PointSource.cpp",
-		     "apply point source to vector",
+		     "apply point source to matrix",
 		     "The mixed elements are not the same. Not currently implemented");
       if (V0->sub(n)->element()->num_sub_elements() > 1)
 	dolfin_error("PointSource.cpp",
-		     "apply point source to vector",
+		     "apply point source to matrix",
 		     "Have vector elements. Not currently implemented");
 
     }
@@ -306,7 +309,7 @@ void PointSource::apply(GenericMatrix& A)
 
     if (MPI::rank(mesh->mpi_comm()) == 0 && num_found == 0)
       dolfin_error("PointSource.cpp",
-		   "apply point source to vector",
+		   "apply point source to matrix",
 		   "The point is outside of the domain (%s)", p.str().c_str());
 
     processes_with_cell =
