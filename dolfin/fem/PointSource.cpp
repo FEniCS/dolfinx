@@ -100,10 +100,10 @@ PointSource::~PointSource()
 void PointSource::apply(GenericVector& b)
 {
   dolfin_assert(_function_space0);
-  if (!_function_space1)
+  if (_function_space1)
     dolfin_error("PointSource.cpp",
 		 "apply point source to vector",
-		 "Can only have one function space for a vector.");
+		 "Can only have one function space for a vector");
 
   log(PROGRESS, "Applying point source to right-hand side vector.");
 
