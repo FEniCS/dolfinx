@@ -179,9 +179,10 @@ class NamespaceMember(object):
         
         # Get return type description
         for ss in findall_recursive(dd, 'simplesect'):
+            memory = {'skip_simplesect': False}
             if ss.get('kind', '') == 'return':
-                item.type_description = description_to_string(mtype)
-                
+                item.type_description = description_to_string(ss, memory=memory)
+        
         # Get enum values
         for ev in mdef.findall('enumvalue'):
             ename = get_single_element(ev, 'name').text
@@ -201,7 +202,7 @@ class NamespaceMember(object):
         item = NamespaceMember(name, kind)
         item.hpp_file_name = get_single_element(cdef, 'location').attrib['file']
         item.xml_file_name = xml_file_name
-        item.short_name = name.split('::')[-1]  
+        item.short_name = name.split('::')[-1]
         item._add_doc(cdef)
         
         # Get superclasses with public inheritance
@@ -345,7 +346,11 @@ class NamespaceMember(object):
         return '\n'.join(ret)
     
     def to_swig(self):
-        return self._to_rst_string(indent='', for_swig=True)
+        swigstr = self._to_rst_string(indent='', for_swig=True)
+        # Get rid of repeated newlines
+        for _ in range(4):
+            swigstr = swigstr.replace('\n\n\n', '\n\n')
+        return swigstr
     
     def to_rst(self, indent=''):
         return self._to_rst_string(indent)
@@ -369,7 +374,7 @@ def description_to_rst(element, lines, indent='', skipelems=(), memory=None):
     """
     if lines == []:
         lines.append('')
-    if memory == None:
+    if memory is None:
         memory = dict()
     
     tag = element.tag
@@ -380,19 +385,21 @@ def description_to_rst(element, lines, indent='', skipelems=(), memory=None):
     if tag in ('briefdescription', 'detaileddescription', 'parameterdescription',
                'type', 'highlight'):
         pass
+    elif element in memory:
+        # This element is being re-read, only treat the contained elements
+        pass
     elif tag == 'para':
         if lines[0].strip():
             lines.append(indent)
         postfix_lines.append(indent)
     elif tag == 'codeline':
-        if element not in memory:
-            memory = dict(memory); memory[element] = 1
-            skipelems = set(skipelems); skipelems.add('ref')
-            line = description_to_string(element, indent, skipelems, memory)
-            if line.startswith('*'):
-                line = line[1:]
-            lines.append(indent + line)
-            return
+        memory = dict(memory); memory[element] = 1
+        skipelems = set(skipelems); skipelems.add('ref')
+        line = description_to_string(element, indent, skipelems, memory)
+        if line.startswith('*'):
+            line = line[1:]
+        lines.append(indent + line)
+        return
     elif tag == 'mdash':
         lines[-1] += '---'
     elif tag == 'sp':
@@ -440,13 +447,17 @@ def description_to_rst(element, lines, indent='', skipelems=(), memory=None):
             lines.append(indent)
         postfix_lines.append(indent)
     elif tag == 'listitem':
-        if element not in memory:
-            memory = dict(memory); memory[element] = 1
-            item = description_to_string(element, indent + '   ', skipelems, memory)
-            lines.append(indent + memory['list_item_prefix'] + item)
+        memory = dict(memory); memory[element] = 1
+        item = description_to_string(element, indent + '   ', skipelems, memory)
+        lines.append(indent + memory['list_item_prefix'] + item)
+        return
+    elif tag == 'parameterlist':
+        # We parse these separately in the parameter reading process
+        return
+    elif tag == 'simplesect' and element.get('kind', '') == 'return':
+        # We parse these separately in the return-type reading process
+        if memory.get('skip_simplesect', True):
             return
-    elif tag == 'parameterlist' or tag == 'simplesect' and element.get('kind', '') == 'return':
-        return # We parse these separately in the parameter reading process
     else:
         NOT_IMPLEMENTED_ELEMENTS.add(tag)
         lines.append('<%s %r>' % (tag, element.attrib)) 
@@ -467,11 +478,9 @@ def description_to_rst(element, lines, indent='', skipelems=(), memory=None):
     
     if postfix:
         lines[-1] += postfix
-        
+    
     if postfix_lines:
         lines.extend(postfix_lines)
-    
-    return
 
 
 def get_single_element(parent, name, allow_none=False):
