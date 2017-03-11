@@ -18,6 +18,8 @@ dev
 - Expression("f", f=obj) notation now supports obj of MeshFunction types
   (only cell based)
 - Fix MPI deadlock in case of instant compilation failure
+- Allow using ``Timer`` as context manager and add ``timed`` decorator
+  to measure timings of functions and methods
 - Add ``NonlinearProblem::J_pc`` and support preconditioning matrix in
   ``NewtonSolver``, ``PETScSNESSolver`` and ``PETScTAOSolver``
 
