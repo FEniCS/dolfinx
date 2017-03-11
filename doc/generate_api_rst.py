@@ -15,6 +15,7 @@ DOXYGEN_XML_DIR = 'doxygen/xml'
 API_GEN_DIR = 'generated_rst_files'
 SWIG_DIR = '../dolfin/swig/'
 SWIG_FILE = 'docstrings.i'
+MOCK_PY = 'mock_cpp_modules.py'
 
 
 def get_subdir(hpp_file_name):
@@ -42,6 +43,9 @@ def get_short_path(hpp_file_name):
 
 
 def write_rst(subdir, subdir_members, api_gen_dir):
+    """
+    Write files for Sphinx C++ API documentation
+    """
     rst_name = os.path.join(api_gen_dir, 'api_gen_%s.rst' % subdir)
     print('Generating', rst_name)
     
@@ -86,6 +90,9 @@ def write_rst(subdir, subdir_members, api_gen_dir):
 
 
 def write_swig(subdir, subdir_members, swig_dir, swig_file_name, swig_header=''):
+    """
+    Write files for SWIG so that we get docstrings in Python
+    """
     swig_iface_name = os.path.join(swig_dir, subdir, swig_file_name)
     print('Generating', swig_iface_name)
     
@@ -99,7 +106,68 @@ def write_swig(subdir, subdir_members, swig_dir, swig_file_name, swig_header='')
                 out.write('\n')
 
 
-def parse_doxygen_xml_and_generate_rst_and_swig(xml_dir, api_gen_dir, swig_dir, swig_file_name, swig_header=''):
+def write_mock_modules(namespace_members, mock_py_module):
+    """
+    Write a mock module so that we can create documentation for 
+    dolfin on ReadTheDocs where we cannot compile so that the
+    dolfin.cpp.* module are not available. We fake those, but
+    include the correct docstrings
+    """
+    print('Generating', mock_py_module)
+    
+    mydir = os.path.dirname(os.path.abspath(__file__))
+    swig_module_dir = os.path.join(mydir, '..', 'dolfin', 'swig', 'modules')
+    swig_module_dir = os.path.abspath(swig_module_dir)
+    
+    with open(mock_py_module, 'wt') as out:
+        out.write('#!/usr/bin/env python\n')
+        out.write('#\n')
+        out.write('# This file is AUTO GENERATED!\n')
+        out.write('# This file is fake, full of mock stubs\n')
+        out.write('# This file is made by generate_api_rst.py\n')
+        out.write('#\n\n')
+        out.write('from __future__ import print_function\n')
+        out.write('from types import ModuleType\n')
+        out.write('import sys\n')
+        out.write('\n\nWARNING = "This is a mock object!"\n')
+        
+        # Loop over SWIG modules and generate mock Python modules
+        for module_name in os.listdir(swig_module_dir):
+            module_i = os.path.join(swig_module_dir, module_name, 'module.i')
+            if not os.path.isfile(module_i):
+                continue
+            
+            # Find out which headers are included in this SWIG module
+            included_headers = set()
+            for line in open(module_i):
+                if line.startswith('#include'):
+                    header = line[8:].strip()[1:-1]
+                    included_headers.add(header)
+                elif line.startswith('%import'):
+                    header = line.split(')')[1].strip()[1:-1]
+                    included_headers.add(header)
+            
+            module_py_name = '_' + module_name
+            full_module_py_name = 'dolfin.cpp.' + module_py_name
+            out.write('\n\n' + '#'*80 + '\n')
+            out.write('%s = ModuleType("%s")\n' % (module_py_name, module_py_name))
+            out.write('sys.modules["%s"] = %s\n' % (full_module_py_name, module_py_name))
+            out.write('sys.modules["%s"] = %s\n' % ('dolfin.cpp.' + module_name, module_py_name))
+            out.write('\n')
+            print('    Generating module', full_module_py_name)
+            
+            for member in namespace_members:
+                # Check if this member is included in the given SWIG module
+                hpp_file_name = get_short_path(member.hpp_file_name)
+                if hpp_file_name not in included_headers:
+                    continue
+                
+                out.write(member.to_mock(modulename=module_py_name))
+                out.write('\n\n')
+
+
+def parse_doxygen_xml_and_generate_rst_and_swig(xml_dir, api_gen_dir, swig_dir, swig_file_name,
+                                                swig_header='', mock_py_module=''):
     # Read doxygen XML files and split namespace members into
     # groups based on subdir and kind (class, function, enum etc)
     namespaces = parse_doxygen.read_doxygen_xml_files(xml_dir, ['dolfin'])
@@ -119,6 +187,11 @@ def parse_doxygen_xml_and_generate_rst_and_swig(xml_dir, api_gen_dir, swig_dir, 
                 write_rst(subdir, subdir_members, api_gen_dir)
             if swig_dir:
                 write_swig(subdir, subdir_members, swig_dir, swig_file_name, swig_header)
+    
+    # Generate a mock Python module
+    if mock_py_module:
+        write_mock_modules(sorted_members, mock_py_module)
+
 
 if __name__ == '__main__':
-    parse_doxygen_xml_and_generate_rst_and_swig(DOXYGEN_XML_DIR, API_GEN_DIR, SWIG_DIR, SWIG_FILE)
+    parse_doxygen_xml_and_generate_rst_and_swig(DOXYGEN_XML_DIR, API_GEN_DIR, SWIG_DIR, SWIG_FILE, '', MOCK_PY)

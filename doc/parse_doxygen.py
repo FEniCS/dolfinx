@@ -15,7 +15,14 @@ except ImportError:
     import xml.etree.ElementTree as ET
 
 
-INTERESTING_KINDS = ('enum', 'struct', 'function', 'class')
+MOCK_REPLACEMENTS = {'operator[]': '__getitem__',
+                     'operator()': '__call__',
+                     'in': '_in',
+                     'self': '_self',
+                     'string': 'str',
+                     'false': 'False',
+                     'true': 'True',
+                     'null': 'None'}
 
 
 class Namespace(object):
@@ -23,20 +30,30 @@ class Namespace(object):
     A C++ namespace
     """
     def __init__(self, name):
-        self.name = name
+        self.name = name # We use '' for the global namespace
         self.parent_namespace = None
         self.subspaces = {}
         self.members = {}
-        
+    
     def add(self, item):
+        """
+        Add a member to this namespace
+        """
         if isinstance(item, Namespace):
             self.subspaces[item.name] = item
             item.parent_namespace = self
         else:
             self.members[item.name] = item
             item.namespace = self
-        
+    
     def lookup(self, name):
+        """
+        Find a named member. This is currently only used to find classes
+        in namespaces. We use this to find the superclasses of each class
+        since we only know their names and we need the list their
+        superclasses as well to show only direct superclasses when we
+        generate documentation for each class  
+        """
         item = self.members.get(name, None)
         if item: return item
         
@@ -95,31 +112,33 @@ class Parameter(object):
 class NamespaceMember(object):
     """
     A class, function, enum, struct, or typedef
-    FIXME: It may be cleaner if classes have their own implementation
     """
     
     def __init__(self, name, kind):
+        # Used for every member
         self.name = name
         self.kind = kind  # enum, struct, function or class
         self.namespace = None
         self.docstring = []
         self.short_name = None
-        
+        self.protection = None
         self.hpp_file_name = None
         self.xml_file_name = None
         
-        self.protection = None
+        # Used for functions and variables
         self.type = None
         self.type_description = ''
+
+        # Used for functions
         self.parameters = []
         
-        # Used if kind == class
+        # Used for classes
         self.superclasses = []
         self.members = {}
         
-        # Used if kind == enum
+        # Used for enums
         self.enum_values = []
-        
+    
     def add(self, item):
         """
         Add a member to a class
@@ -131,8 +150,9 @@ class NamespaceMember(object):
     @staticmethod
     def from_memberdef(mdef, name, kind, xml_file_name, namespace_obj):
         """
-        Read a memberdef element from a nameclass file or from
-        a copmoundef (members of a class)
+        Read a memberdef element from a nameclass file (members of
+        the namespace that are not classes) or from a compoundef
+        (members of the class)
         """
         # Make sure we have the required "namespace::" prefix
         required_prefix = '%s::' % namespace_obj.name
@@ -144,6 +164,7 @@ class NamespaceMember(object):
             argsstring = get_single_element(mdef, 'argsstring').text
             name += argsstring
         
+        # Define attributes common to all namespace members
         item = NamespaceMember(name, kind)
         item.short_name = short_name
         item.protection = mdef.attrib['prot']
@@ -253,12 +274,15 @@ class NamespaceMember(object):
                         to_remove.add(sn2)
         return [sn for sn in self.superclasses if sn not in to_remove]
     
-    def _to_rst_string(self, indent, for_swig=False):
+    def _to_rst_string(self, indent, for_swig=False, for_mock=False):
         """
         Create a list of lines on Sphinx (ReStructuredText) format
         The header is included for Sphinx, but not for SWIG docstrings
         """
         ret = []
+        if for_mock:
+            for_swig = True
+        
         if not for_swig:
             ret.append('')
             simple_kinds = {'typedef': 'type', 'enum': 'enum'}
@@ -267,7 +291,7 @@ class NamespaceMember(object):
                 superclasses = self.get_superclasses()
                 supers = ''
                 if superclasses:
-                    supers = ' : public ' + ', '.join(  superclasses)
+                    supers = ' : public ' + ', '.join(superclasses)
                 ret.append(indent + '.. cpp:class:: %s%s' % (self.name, supers))
             elif self.kind in kinds_with_types:
                 rst_kind = kinds_with_types[self.kind]
@@ -333,19 +357,23 @@ class NamespaceMember(object):
             ret.append(indent)
         
         # All: SWIG items are not nested, so we end this one here    
-        if for_swig:
+        if for_swig and not for_mock:
             escaped = [line.replace('\\', '\\\\').replace('"', '\\"') for line in ret]
             ret = ['%%feature("docstring") %s "' % self.name,
                    '\n'.join(escaped).rstrip() + '\n";\n']
             indent = ''
         
         # Classes: add members of a class
-        for member in members:
-            ret.append(member._to_rst_string(indent, for_swig))
+        if not for_mock:
+            for member in members:
+                ret.append(member._to_rst_string(indent, for_swig))
         
         return '\n'.join(ret)
     
     def to_swig(self):
+        """
+        Output SWIG docstring definitions
+        """
         swigstr = self._to_rst_string(indent='', for_swig=True)
         # Get rid of repeated newlines
         for _ in range(4):
@@ -353,7 +381,88 @@ class NamespaceMember(object):
         return swigstr
     
     def to_rst(self, indent=''):
+        """
+        Output Sphinx :cpp:*:: definitions
+        """
         return self._to_rst_string(indent)
+    
+    def to_mock(self, modulename, indent='', _classname=None):
+        """
+        Output mock Python code
+        """
+        # Get swig docstring and get rid of any repeated newlines
+        new_indent = indent + '    '
+        swigdoc = self._to_rst_string(indent=new_indent, for_mock=True)
+        for _ in range(4):
+            swigdoc = swigdoc.replace('\n\n\n', '\n\n')
+        
+        ret = []
+        if self.kind == 'class':
+            superclasses = [sc.split('::')[-1].split('<')[0] for sc in self.get_superclasses()]
+            superclasses = [MOCK_REPLACEMENTS.get(sc, sc) for sc in superclasses]
+            superclasses = [sc for sc in superclasses if sc != self.short_name]
+            ret.append(indent + 'class %s:\n' % (self.short_name))
+            ret.append(new_indent + '"""\n')
+            ret.append(swigdoc.rstrip())
+            ret.append('\n')
+            for sc in superclasses:
+                ret.append(new_indent + 'Superclass: :py:obj:`%s`\n' % sc)
+            ret.append(new_indent + '"""\n')
+            for member in self.members.values():
+                ret.append('\n')
+                ret.append(member.to_mock(modulename, indent=new_indent, _classname=self.short_name))
+        
+        elif self.kind == 'function':
+            fname = MOCK_REPLACEMENTS.get(self.short_name, self.short_name)
+            if fname.startswith('operator'):
+                return ''
+            params = [MOCK_REPLACEMENTS.get(p.name, p.name) for p in self.parameters]
+            if _classname:
+                params = ['self'] + params
+                if _classname == fname:
+                    fname = '__init__'
+                elif '~' + _classname == fname:
+                    fname = '__del__'
+            
+            if self.parameters and self.parameters[-1].type == '...':
+                params[-1] = '*args'
+            args = ', '.join(params)
+            
+            ret.append(indent + 'def %s(%s):\n' % (fname, args))
+            ret.append(new_indent + '"""\n')
+            ret.append(swigdoc.rstrip())
+            ret.append('\n')
+            ret.append(new_indent + '"""\n')
+            ret.append(new_indent + 'print(WARNING)\n')
+        
+        elif self.kind == 'friend':
+            pass
+        
+        elif self.kind == 'enum':
+            ret.append(indent + '# Enumeration %s\n' % self.short_name)
+            for ename, evalue in self.enum_values:
+                ret.append(indent + '#: Enum value %s::%s %s\n' % (self.name, ename, evalue))
+                if not evalue.strip():
+                    evalue = '= None'
+                evalue = MOCK_REPLACEMENTS.get(evalue[1:].strip(), evalue[1:].strip())
+                ret.append(indent + '%s.%s_%s = %s\n' % (modulename, self.short_name, ename, evalue))
+        
+        elif self.kind == 'variable':
+            pass
+            #for line in swigdoc.split('\n'):
+            #    ret.append(indent + '#: %s\n' % line)
+            #ret.append(indent + 'module.%s = None\n' % self.short_name)
+        
+        elif self.kind == 'typedef':
+            pass
+        
+        else:
+            print('WARNING: kind %s not supported by to_mock()' % self.kind)
+        
+        if not _classname and self.kind in ('class', 'function'):
+            ret.append('%s.%s = %s\n' % (modulename, self.short_name, self.short_name))
+
+        return ''.join(ret)
     
     def __str__(self):
         return self.to_rst()
@@ -532,8 +641,6 @@ def read_doxygen_xml_files(xml_directory, namespace_names, verbose=True):
         for c in compounds:
             kind = c.attrib['kind']
             names = c.findall('compoundname')
-            if not names or kind not in INTERESTING_KINDS:
-                continue
             
             assert len(names) == 1
             name = names[0].text

@@ -16,9 +16,7 @@ import sys
 import os
 
 ONLY_SPHINX = os.environ.get('ONLY_SPHINX', False)
-ON_RTD = os.environ.get('READTHEDOCS', False)
-has_doxygen_xml = os.path.exists('../doxygen/xml/namespacedolfin.xml')
-run_doxygen = not ONLY_SPHINX or (ON_RTD and has_doxygen_xml)
+run_doxygen = not ONLY_SPHINX
 
 if run_doxygen:
     # Doxygen handling in parent directory
@@ -33,22 +31,12 @@ if run_doxygen:
 
     os.chdir(current_dir)
 
-# We can't compile the swig generated headers on RTD.  Instead, we
-# generate the python part as usual, and then mock the cpp objects
-# according to the advice given on:
-# https://read-the-docs.readthedocs.io/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
-try:
-    from unittest.mock import MagicMock
-except ImportError:
-    from mock import Mock as MagicMock
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-            return Mock()
-
-MOCK_MODULES = ["_common", "_la", "_function", "_io", "_mesh", "_fem"]
-sys.modules.update(('dolfin.cpp.' + mod_name, Mock()) for mod_name in MOCK_MODULES)
+# We can't compile the swig generated headers on RTD.  Instead, we generate the python part as usual,
+# and then mock the cpp objects by importing a generated module full of stubs that looks enough like
+# what the C++ SWIG modules will look like.
+sys.path.insert(0, '../')
+sys.path.insert(0, '../../site_packages')
+import mock_cpp_modules
 
 # TODO: Copy site-packages/dolfin to tmp-dolfin/
 # Run cmake/scripts/generate-generate-swig-interface.py with output to tmp-swig/
