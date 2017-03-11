@@ -93,7 +93,11 @@ def write_swig(subdir, subdir_members, swig_dir, swig_file_name, swig_header='')
     """
     Write files for SWIG so that we get docstrings in Python
     """
-    swig_iface_name = os.path.join(swig_dir, subdir, swig_file_name)
+    swig_subdir = os.path.join(swig_dir, subdir)
+    if not os.path.isdir(swig_subdir):
+        os.mkdir(swig_subdir)
+    
+    swig_iface_name = os.path.join(swig_subdir, swig_file_name)
     print('Generating', swig_iface_name)
     
     with open(swig_iface_name, 'wt') as out:
