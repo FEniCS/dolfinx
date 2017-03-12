@@ -359,7 +359,12 @@ class NamespaceMember(object):
         # All: SWIG items are not nested, so we end this one here    
         if for_swig and not for_mock:
             escaped = [line.replace('\\', '\\\\').replace('"', '\\"') for line in ret]
-            ret = ['%%feature("docstring") %s "' % self.name,
+            sname = self.name
+            if sname.endswith('=0'):
+                sname = sname[:-2]
+            elif sname.endswith('=delete'):
+                sname = sname[:-7]
+            ret = ['%%feature("docstring") %s "' % sname,
                    '\n'.join(escaped).rstrip() + '\n";\n']
             indent = ''
         

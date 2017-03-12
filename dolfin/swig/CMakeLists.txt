@@ -47,6 +47,9 @@ if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/modules)
     COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-interface.py ${CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
   execute_process(
+    COMMAND doxygen
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}/doc)
+  execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings.py ${CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
 endif()
