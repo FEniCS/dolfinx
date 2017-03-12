@@ -79,8 +79,7 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
 //----------------------------------------------------------------------------
 PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
 			 std::shared_ptr<const FunctionSpace> V1,
-			 const std::vector<std::pair<const Point*,
-			 double> > sources)
+			 const std::vector<std::pair<const Point*, double> > sources)
   : _function_space0(V0), _function_space1(V1)
 {
   // Copy over from pointers
@@ -101,10 +100,11 @@ void PointSource::apply(GenericVector& b)
 {
   dolfin_assert(_function_space0);
   if (_function_space1)
+  {
     dolfin_error("PointSource.cpp",
 		 "apply point source to vector",
 		 "Can only have one function space for a vector");
-
+  }
   log(PROGRESS, "Applying point source to right-hand side vector.");
 
   dolfin_assert(_function_space0->mesh());
@@ -154,9 +154,11 @@ void PointSource::apply(GenericVector& b)
     else
       num_found = MPI::sum(mesh.mpi_comm(), 0);
     if (MPI::rank(mesh.mpi_comm()) == 0 && num_found == 0)
+    {
       dolfin_error("PointSource.cpp",
 		   "apply point source to vector",
 		   "The point is outside of the domain (%s)", p.str().c_str());
+    }
 
     processes_with_cell =
       cell_found_on_process ? MPI::rank(mesh.mpi_comm()) : -1;
@@ -186,7 +188,6 @@ void PointSource::apply(GenericVector& b)
       }
 
       // Compute local-to-global mapping
-
       dofs = _function_space0->dofmap()->cell_dofs(cell.index());
 
       // Add values to vector
@@ -208,10 +209,11 @@ void PointSource::apply(GenericMatrix& A)
   // Currently only works if V0 and V1 are the same
   if (_function_space0->element()->signature()
       != _function_space1->element()->signature())
+  {
     dolfin_error("PointSource.cpp",
 		 "apply point source to matrix",
-		 "The function spaces are different. Not currently implemented");
-
+		 "The elemnts are different. Not currently implemented");
+  }
 
   std::shared_ptr<const FunctionSpace> V0 = _function_space0;
   std::shared_ptr<const FunctionSpace> V1 = _function_space1;
@@ -276,17 +278,19 @@ void PointSource::apply(GenericMatrix& A)
     {
       // Doesn't work for mixed function spaces with different elements.
       if (V0->sub(0)->element()->signature() != V0->sub(n)->element()->signature())
+      {
 	dolfin_error("PointSource.cpp",
 		     "apply point source to matrix",
 		     "The mixed elements are not the same. Not currently implemented");
+      }
       if (V0->sub(n)->element()->num_sub_elements() > 1)
+      {
 	dolfin_error("PointSource.cpp",
 		     "apply point source to matrix",
 		     "Have vector elements. Not currently implemented");
-
+      }
     }
   }
-
 
   for (auto & s : _sources)
   {
@@ -308,10 +312,11 @@ void PointSource::apply(GenericMatrix& A)
       num_found = MPI::sum(mesh->mpi_comm(), 0);
 
     if (MPI::rank(mesh->mpi_comm()) == 0 && num_found == 0)
+    {
       dolfin_error("PointSource.cpp",
 		   "apply point source to matrix",
 		   "The point is outside of the domain (%s)", p.str().c_str());
-
+    }
     processes_with_cell =
       cell_found_on_process ? MPI::rank(mesh->mpi_comm()) : -1;
     selected_process = MPI::max(mesh->mpi_comm(), processes_with_cell);
@@ -394,8 +399,10 @@ void PointSource::check_space_supported(const FunctionSpace& V)
 {
   dolfin_assert(V.element());
   if (V.element()->value_rank() > 1)
+  {
     dolfin_error("PointSource.cpp",
                  "create point source",
                  "Function must have rank 0 or 1");
+  }
 }
 //-----------------------------------------------------------------------------
