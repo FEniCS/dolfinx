@@ -51,8 +51,7 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
-			 const std::vector<std::pair<const Point*,
-			 double> > sources)
+			  const std::vector<std::pair<const Point*, double> > sources)
   : _function_space0(V)
 {
   // Copy over from pointers
