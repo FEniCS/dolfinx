@@ -122,6 +122,11 @@ def write_mock_modules(namespace_members, mock_py_module):
     mydir = os.path.dirname(os.path.abspath(__file__))
     swig_module_dir = os.path.join(mydir, '..', 'dolfin', 'swig', 'modules')
     swig_module_dir = os.path.abspath(swig_module_dir)
+
+    if not os.path.isdir(swig_module_dir):
+        print('SWIG module directory is not present,', swig_module_dir)
+        print('No mock Python code will be generated')
+        return
     
     with open(mock_py_module, 'wt') as out:
         out.write('#!/usr/bin/env python\n')

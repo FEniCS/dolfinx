@@ -356,6 +356,14 @@ class NamespaceMember(object):
             ret.append(indent + '.. cpp:enumerator:: %s::%s %s' % (self.name, ename, evalue))
             ret.append(indent)
         
+        # Remove doubled up blank lines
+        if ret:
+            ret2 = [ret[0]]
+            for line in ret[1:]:
+                if line.strip() or ret2[-1].strip():
+                    ret2.append(line)
+            ret = ret2
+        
         # All: SWIG items are not nested, so we end this one here    
         if for_swig and not for_mock:
             escaped = [line.replace('\\', '\\\\').replace('"', '\\"') for line in ret]
@@ -496,16 +504,22 @@ def description_to_rst(element, lines, indent='', skipelems=(), memory=None):
     postfix = ''
     postfix_lines = []
     
+    # Handle known tags that show up in description type element trees
+    # Tag contents are handled beneath, if the if-branch does not return
+    # Unknown tags are just output unchanged and a WARNING is shown (in main)
     if tag in ('briefdescription', 'detaileddescription', 'parameterdescription',
                'type', 'highlight'):
         pass
+    
     elif element in memory:
         # This element is being re-read, only treat the contained elements
         pass
+    
     elif tag == 'para':
-        if lines[0].strip():
+        if lines[-1].strip():
             lines.append(indent)
         postfix_lines.append(indent)
+    
     elif tag == 'codeline':
         memory = dict(memory); memory[element] = 1
         skipelems = set(skipelems); skipelems.add('ref')
@@ -514,68 +528,105 @@ def description_to_rst(element, lines, indent='', skipelems=(), memory=None):
             line = line[1:]
         lines.append(indent + line)
         return
+    
+    elif tag == 'ndash':
+        lines[-1] += '--'
+    
     elif tag == 'mdash':
         lines[-1] += '---'
+    
     elif tag == 'sp':
         lines[-1] += ' '
+    
     elif tag == 'ref':
         if 'ref' in skipelems:
             lines[-1] += element.text
         else:
             lines[-1] += ':cpp:any:`%s` ' % element.text
         return
+    
     elif tag == 'ulink':
         lines[-1] += '`%s <%s>`_ ' % (element.text, element.get('url'))
         return
+    
     elif tag == 'emphasis':
         if children and children[0].tag != 'ref':
             lines[-1] += '**'
             postfix += '**'
+    
     elif tag == 'computeroutput':
-        if lines[-1].endswith(':math:'):
+        if element.text is None and not list(element):
+            return
+        elif lines[-1].endswith(':math:'):
             lines[-1] += '`'
             postfix += '` '
         else:
             lines[-1] += '``'
             postfix += '`` '
+    
     elif tag in ('verbatim', 'programlisting'):
         if element.text is None and not list(element):
             return
-        if lines[0].strip():
+        if lines[-1].strip():
             lines.append(indent)
         lines.append(indent + '::')
         postfix_lines.append(indent)
         indent += '   '
         lines.append(indent)
         lines.append(indent)
+    
+    elif tag == 'table':
+        lines.extend(xml_table_to_rst(element, indent))
+        lines.append(indent)
+        return # Do not process children
+    
+    elif tag == 'formula':
+        contents = element.text.strip()
+        if contents.startswith(r'\['):
+            if lines[-1].strip():
+                lines.append(indent)
+            lines.append(indent + '.. math::')
+            lines.append(indent + '   ')
+            lines.append(indent + '   ' + contents[2:-2])
+            lines.append(indent)
+            lines.append(indent)
+        else:
+            lines[-1] += ' :math:`' + contents[1:-1] + '` '
+        return
+    
     elif tag == 'itemizedlist':
         memory = dict(memory)
         memory['list_item_prefix'] = '*  '
-        if lines[0].strip():
+        if lines[-1].strip():
             lines.append(indent)
         postfix_lines.append(indent)
+    
     elif tag == 'orderedlist':
         memory = dict(memory)
         memory['list_item_prefix'] = '#. '
-        if lines[0].strip():
+        if lines[-1].strip():
             lines.append(indent)
         postfix_lines.append(indent)
+    
     elif tag == 'listitem':
         memory = dict(memory); memory[element] = 1
         item = description_to_string(element, indent + '   ', skipelems, memory)
         lines.append(indent + memory['list_item_prefix'] + item)
         return
+    
     elif tag == 'parameterlist':
         # We parse these separately in the parameter reading process
         return
+    
     elif tag == 'simplesect' and element.get('kind', '') == 'return':
         # We parse these separately in the return-type reading process
         if memory.get('skip_simplesect', True):
             return
+    
     else:
         NOT_IMPLEMENTED_ELEMENTS.add(tag)
-        lines.append('<%s %r>' % (tag, element.attrib)) 
-        
+        lines.append(ET.tostring(element)) 
+    
     def add_text(text):
         if text is not None and text.strip():
             tl = text.split('\n')
@@ -595,6 +646,44 @@ def description_to_rst(element, lines, indent='', skipelems=(), memory=None):
     
     if postfix_lines:
         lines.extend(postfix_lines)
+
+
+def xml_table_to_rst(table, indent):
+    """
+    Read an XML table element and produce a ReStructuredText table
+    
+    =====  ====
+    Col A  B
+    =====  ====
+    hi     1.00
+    there  3.14
+    =====  ====
+    """
+    rows = int(table.get('rows'))
+    cols = int(table.get('cols'))
+    data = [[''] * cols for row in range(rows)]
+    widths = [0] * cols
+    for i, row in enumerate(table):
+        for j, entry in enumerate(row):
+            memory = {entry: 1}
+            text = description_to_string(entry, indent='', 
+                                         skipelems=('para',),
+                                         memory=memory)
+            widths[j] = max(widths[j], len(text))
+            data[i][j] = text
+    
+    ret = [indent] * (rows + 3)
+    for w in widths:
+        ret[0] += '=' * w + '  '
+        ret[2] += '=' * w + '  '
+        ret[-1] += '=' * w + '  '
+    
+    for i, row in enumerate(data):
+        I = 1 if i == 0 else i + 2
+        for j, text in enumerate(row):
+            ret[I] += text + ' ' * (widths[j] + 2 - len(text))
+    
+    return ret
 
 
 def get_single_element(parent, name, allow_none=False):
@@ -701,6 +790,7 @@ if __name__ == '__main__':
         for member in members:
             out.write(member.to_rst())
             out.write('\n')
+        out.write('\n')
     
     # Make SWIG interface file
     with open('docstrings.i', 'wt') as out:
@@ -708,6 +798,7 @@ if __name__ == '__main__':
         for member in members:
             out.write(member.to_swig())
             out.write('\n')
+        out.write('\n')
     
     for tag in NOT_IMPLEMENTED_ELEMENTS:
         print('WARNING: doxygen XML tag %s is not supported by the parser' % tag)

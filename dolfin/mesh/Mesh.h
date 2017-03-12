@@ -60,23 +60,13 @@ namespace dolfin
   /// dimension-independent, but a concrete interface is also provided
   /// for standard named mesh entities:
   ///
-  /// <tt>
-  ///
-  /// +--------+-----------+-------------+
-  /// | Entity | Dimension | Codimension |
-  /// +========+===========+=============+
-  /// | Vertex |  0        |             |
-  /// +--------+-----------+-------------+
-  /// | Edge   |  1        |             |
-  /// +--------+-----------+-------------+
-  /// | Face   |  2        |             |
-  /// +--------+-----------+-------------+
-  /// | Facet  |           |      1      |
-  /// +--------+-----------+-------------+
-  /// | Cell   |           |      0      |
-  /// +--------+-----------+-------------+
-  ///
-  /// </tt>
+  /// | Entity | Dimension | Codimension  |
+  /// | ------ | --------- | ------------ |
+  /// | Vertex |  0        |              |
+  /// | Edge   |  1        |              |
+  /// | Face   |  2        |              |
+  /// | Facet  |           |      1       |
+  /// | Cell   |           |      0       |
   ///
   /// When working with mesh iterators, all entities and connectivity
   /// are precomputed automatically the first time an iterator is
