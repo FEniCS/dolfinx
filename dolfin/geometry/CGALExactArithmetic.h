@@ -434,6 +434,7 @@ namespace dolfin
 #include <CGAL/Segment_3.h>
 #include <CGAL/Tetrahedron_3.h>
 #include <CGAL/Polyhedron_3.h>
+#include <CGAL/convex_hull_3.h>
 #include <CGAL/intersections.h>
 #include <CGAL/intersection_of_Polyhedra_3.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
@@ -451,6 +452,7 @@ namespace
   typedef ExactKernel::Segment_2         Segment_2;
   typedef ExactKernel::Intersect_2       Intersect_2;
   typedef ExactKernel::Point_3           Point_3;
+  typedef ExactKernel::Vector_3          Vector_3;
   typedef ExactKernel::Triangle_3        Triangle_3;
   typedef ExactKernel::Segment_3         Segment_3;
   typedef ExactKernel::Tetrahedron_3     Tetrahedron_3;
@@ -1528,6 +1530,34 @@ namespace dolfin
     return true;
   }
   //-----------------------------------------------------------------------------
+  // Computes the volume of the convex hull of the given points
+  inline double cgal_polyhedron_volume(const std::vector<Point>& ch)
+  {
+    std::vector<Point_3> exact_points;
+    exact_points.reserve(ch.size());
+    for (const Point p : ch)
+    {
+      exact_points.push_back(Point_3(p.x(), p.y(), p.z()));
+    }
+
+    // Compute the convex hull as a cgal polyhedron_3
+    Polyhedron_3 p;
+    CGAL::convex_hull_3(exact_points.begin(), exact_points.end(), p);
+
+    ExactNumber volume = .0;
+    for (Polyhedron_3::Facet_const_iterator it = p.facets_begin();
+         it != p.facets_end(); it++)
+    {
+      const Polyhedron_3::Halfedge_const_handle h = it->halfedge();
+      const Vector_3 V0 = h->vertex()->point()-CGAL::ORIGIN;
+      const Vector_3 V1 = h->next()->vertex()->point()-CGAL::ORIGIN;
+      const Vector_3 V2 = h->next()->next()->vertex()->point()-CGAL::ORIGIN;
+
+      volume += V0*CGAL::cross_product(V1, V2);
+    }
+
+    return CGAL::to_double(volume/6.0);
+  }
 
 }
 #endif
