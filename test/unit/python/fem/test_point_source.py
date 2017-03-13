@@ -24,110 +24,96 @@ import numpy as np
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
 
-def test_pointsource_vector_node():
+meshes = [UnitIntervalMesh(10), UnitSquareMesh(2,2), UnitCubeMesh(4,4,4)]
+data = [(UnitIntervalMesh(10), Point(0.5)),
+        (UnitSquareMesh(10,10), Point(0.5, 0.5)),
+        (UnitCubeMesh(3,3,3), Point(0.5, 0.5, 0.5))]
+
+@pytest.mark.parametrize("mesh, point", data)
+def test_pointsource_vector_node(mesh, point):
     """Tests point source when given constructor PointSource(V, point, mag)
     with a vector and when placed at a node for 1D, 2D and 3D. """
-    data = [[UnitIntervalMesh(10), Point(0.5)],
-            [UnitSquareMesh(10,10), Point(0.5, 0.5)],
-            [UnitCubeMesh(3,3,3), Point(0.5, 0.5, 0.5)]]
 
-    for dim in range(3):
-        mesh = data[dim][0]
-        point = data[dim][1]
-        V = FunctionSpace(mesh, "CG", 1)
-        v = TestFunction(V)
-        b = assemble(Constant(0.0)*v*dx)
-        ps = PointSource(V, point, 10.0)
-        ps.apply(b)
+    V = FunctionSpace(mesh, "CG", 1)
+    v = TestFunction(V)
+    b = assemble(Constant(0.0)*v*dx)
+    ps = PointSource(V, point, 10.0)
+    ps.apply(b)
 
-        # Checks array sums to correct value
-        b_sum = b.sum()
-        assert round(b_sum - 10.0) == 0
+    # Checks array sums to correct value
+    b_sum = b.sum()
+    assert round(b_sum - 10.0) == 0
 
-        # Checks point source is added to correct part of the array
-        v2d = vertex_to_dof_map(V)
-        for v in vertices(mesh):
-            if near(v.midpoint().distance(point), 0.0):
-                ind = v2d[v.index()]
-                if ind<len(b.array()):
-                    assert np.round(b.array()[ind]-10.0) == 0
+    # Checks point source is added to correct part of the array
+    v2d = vertex_to_dof_map(V)
+    for v in vertices(mesh):
+        if near(v.midpoint().distance(point), 0.0):
+            ind = v2d[v.index()]
+            if ind<len(b.array()):
+                assert np.round(b.array()[ind]-10.0) == 0
 
-def test_pointsource_vector():
+@pytest.mark.parametrize("mesh", meshes)
+def test_pointsource_vector(mesh):
     """Tests point source when given constructor PointSource(V, point, mag)
     with a vector that isn't placed at a node for 1D, 2D and 3D. """
-    data = [UnitIntervalMesh(10), UnitSquareMesh(10,10), UnitCubeMesh(3,3,3)]
 
-    for dim in range(3):
-        mesh = data[dim]
+    cell = Cell(mesh, 0)
+    point = cell.midpoint()
 
-        cell = Cell(mesh, 0)
-        point = cell.midpoint()
+    V = FunctionSpace(mesh, "CG", 1)
+    v = TestFunction(V)
+    b = assemble(Constant(0.0)*v*dx)
+    ps = PointSource(V, point, 10.0)
+    ps.apply(b)
 
-        V = FunctionSpace(mesh, "CG", 1)
-        v = TestFunction(V)
-        b = assemble(Constant(0.0)*v*dx)
-        ps = PointSource(V, point, 10.0)
-        ps.apply(b)
+    # Checks array sums to correct value
+    b_sum = b.sum()
+    assert round(b_sum - 10.0) == 0
 
-        # Checks array sums to correct value
-        b_sum = b.sum()
-        assert round(b_sum - 10.0) == 0
-
-def test_pointsource_vector_fs():
+@pytest.mark.parametrize("mesh, point", data)
+def test_pointsource_vector_fs(mesh, point):
     """Tests point source when given constructor PointSource(V, point, mag)
     with a vector for a vector function space that isn't placed at a node for
     1D, 2D and 3D. """
-    data = [[UnitIntervalMesh(10), Point(0.5)],
-            [UnitSquareMesh(10,10), Point(0.5, 0.5)],
-            [UnitCubeMesh(10,10,10), Point(0.5, 0.5, 0.5)]]
 
-    for dim in range(3):
-        mesh = data[dim][0]
-        point = data[dim][1]
-        V = VectorFunctionSpace(mesh, "CG", 1)
-        v = TestFunction(V)
-        b = assemble(dot(Constant([0.0]*mesh.geometry().dim()),v)*dx)
-        ps = PointSource(V, point, 10.0)
-        ps.apply(b)
+    V = VectorFunctionSpace(mesh, "CG", 1)
+    v = TestFunction(V)
+    b = assemble(dot(Constant([0.0]*mesh.geometry().dim()),v)*dx)
+    ps = PointSource(V, point, 10.0)
+    ps.apply(b)
 
-        # Checks array sums to correct value
-        b_sum = b.sum()
-        assert round(b_sum - 10.0*V.num_sub_spaces()) == 0
+    # Checks array sums to correct value
+    b_sum = b.sum()
+    assert round(b_sum - 10.0*V.num_sub_spaces()) == 0
 
-        # Checks point source is added to correct part of the array
-        v2d = vertex_to_dof_map(V)
-        for v in vertices(mesh):
-            if near(v.midpoint().distance(point), 0.0):
-                for spc_idx in range(V.num_sub_spaces()):
-                    ind = v2d[v.index()*V.num_sub_spaces() + spc_idx]
-                    if ind<len(b.array()):
-                        assert np.round(b.array()[ind] - 10.0) == 0
+    # Checks point source is added to correct part of the array
+    v2d = vertex_to_dof_map(V)
+    for v in vertices(mesh):
+        if near(v.midpoint().distance(point), 0.0):
+            for spc_idx in range(V.num_sub_spaces()):
+                ind = v2d[v.index()*V.num_sub_spaces() + spc_idx]
+                if ind<len(b.array()):
+                    assert np.round(b.array()[ind] - 10.0) == 0
 
-
-def test_pointsource_mixed_space():
+@pytest.mark.parametrize("mesh, point", data)
+def test_pointsource_mixed_space(mesh, point):
     """Tests point source when given constructor PointSource(V, point, mag)
     with a vector for a mixed function space that isn't placed at a node for
     1D, 2D and 3D. """
-    data = [[UnitIntervalMesh(10), Point(0.5)],
-            [UnitSquareMesh(10,10), Point(0.5, 0.5)],
-            [UnitCubeMesh(3,3,3), Point(0.5, 0.5, 0.5)]]
 
-    for dim in range(3):
-        mesh = data[dim][0]
-        point = data[dim][1]
-        ele1 = FiniteElement("CG", mesh.ufl_cell(), 1)
-        ele2 = FiniteElement("DG", mesh.ufl_cell(), 2)
-        ele3 = VectorElement("CG", mesh.ufl_cell(), 2)
-        V = FunctionSpace(mesh, MixedElement([ele1, ele2, ele3]))
-        value_dimension = V.element().value_dimension(0)
-        v = TestFunction(V)
-        b = assemble(dot(Constant([0.0]*value_dimension),v)*dx)
-        ps = PointSource(V, point, 10.0)
-        ps.apply(b)
+    ele1 = FiniteElement("CG", mesh.ufl_cell(), 1)
+    ele2 = FiniteElement("DG", mesh.ufl_cell(), 2)
+    ele3 = VectorElement("CG", mesh.ufl_cell(), 2)
+    V = FunctionSpace(mesh, MixedElement([ele1, ele2, ele3]))
+    value_dimension = V.element().value_dimension(0)
+    v = TestFunction(V)
+    b = assemble(dot(Constant([0.0]*value_dimension),v)*dx)
+    ps = PointSource(V, point, 10.0)
+    ps.apply(b)
 
-        # Checks array sums to correct value
-        b_sum = b.sum()
-        assert round(b_sum - 10.0*value_dimension) == 0
+    # Checks array sums to correct value
+    b_sum = b.sum()
+    assert round(b_sum - 10.0*value_dimension) == 0
 
 @skip_in_parallel
 def test_point_outside():
@@ -144,245 +130,228 @@ def test_point_outside():
     with pytest.raises(RuntimeError):
         ps.apply(b)
 
-def test_pointsource_matrix():
+@pytest.mark.parametrize("mesh, point", data)
+def test_pointsource_matrix(mesh, point):
     """Tests point source when given constructor PointSource(V, point, mag)
     with a matrix and when placed at a node for 1D, 2D and 3D. """
-    data = [[UnitIntervalMesh(10), Point(0.5)],
-            [UnitSquareMesh(10,10), Point(0.5, 0.5)],
-            [UnitCubeMesh(4,4,4), Point(0.5, 0.5, 0.5)]]
 
-    for dim in range(3):
-        mesh = data[dim][0]
-        point = data[dim][1]
-        V = FunctionSpace(mesh, "CG", 1)
+    V = FunctionSpace(mesh, "CG", 1)
 
-        u, v = TrialFunction(V), TestFunction(V)
-        w = Function(V)
-        A = assemble(Constant(0.0)*u*v*dx)
-        ps = PointSource(V, point, 10.0)
-        ps.apply(A)
+    u, v = TrialFunction(V), TestFunction(V)
+    w = Function(V)
+    A = assemble(Constant(0.0)*u*v*dx)
+    ps = PointSource(V, point, 10.0)
+    ps.apply(A)
 
-        # Checks array sums to correct value
-        a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
-        assert round(a_sum - 10.0) == 0
+    # Checks array sums to correct value
+    a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
+    assert round(a_sum - 10.0) == 0
 
-        # Checks point source is added to correct part of the array
-        A.get_diagonal(w.vector())
-        v2d = vertex_to_dof_map(V)
-        for v in vertices(mesh):
-            if near(v.midpoint().distance(point), 0.0):
-                ind = v2d[v.index()]
-                if ind<len(A.array()):
-                    assert np.round(w.vector()[ind] - 10.0) == 0
+    # Checks point source is added to correct part of the array
+    A.get_diagonal(w.vector())
+    v2d = vertex_to_dof_map(V)
+    for v in vertices(mesh):
+        if near(v.midpoint().distance(point), 0.0):
+            ind = v2d[v.index()]
+            if ind<len(A.array()):
+                assert np.round(w.vector()[ind] - 10.0) == 0
 
-def test_pointsource_matrix_second_constructor():
+@pytest.mark.parametrize("mesh, point", data)
+def test_pointsource_matrix_second_constructor(mesh, point):
     """Tests point source when given different constructor
     PointSource(V1, V2, point, mag) with a matrix and when placed at a node
     for 1D, 2D and 3D. Currently only implemented if V1=V2."""
-    data = [[UnitIntervalMesh(10), Point(0.5)],
-            [UnitSquareMesh(10,10), Point(0.5, 0.5)],
-            [UnitCubeMesh(4,4,4), Point(0.5, 0.5, 0.5)]]
 
-    for dim in range(3):
-        mesh = data[dim][0]
-        point = data[dim][1]
-        V1 = FunctionSpace(mesh, "CG", 1)
+    V1 = FunctionSpace(mesh, "CG", 1)
+    V2 = FunctionSpace(mesh, "CG", 1)
 
-        V2 = FunctionSpace(mesh, "CG", 1)
+    u, v = TrialFunction(V1), TestFunction(V2)
+    w = Function(V1)
+    A = assemble(Constant(0.0)*u*v*dx)
+    ps = PointSource(V1, V2, point, 10.0)
+    ps.apply(A)
 
-        u, v = TrialFunction(V1), TestFunction(V2)
-        w = Function(V1)
-        A = assemble(Constant(0.0)*u*v*dx)
-        ps = PointSource(V1, V2, point, 10.0)
-        ps.apply(A)
+    # Checks array sums to correct value
+    a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
+    assert round(a_sum - 10.0) == 0
 
-        # Checks array sums to correct value
-        a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
-        assert round(a_sum - 10.0) == 0
+    # Checks point source is added to correct part of the array
+    A.get_diagonal(w.vector())
+    v2d = vertex_to_dof_map(V1)
+    for v in vertices(mesh):
+        if near(v.midpoint().distance(point), 0.0):
+            ind = v2d[v.index()]
+            if ind<len(A.array()):
+                assert np.round(w.vector()[ind] - 10.0) == 0
 
-        # Checks point source is added to correct part of the array
-        A.get_diagonal(w.vector())
-        v2d = vertex_to_dof_map(V1)
-        for v in vertices(mesh):
-            if near(v.midpoint().distance(point), 0.0):
-                ind = v2d[v.index()]
-                if ind<len(A.array()):
-                    assert np.round(w.vector()[ind] - 10.0) == 0
-
-
-def test_multi_ps_vector_node():
+@pytest.mark.parametrize("mesh", meshes)
+def test_multi_ps_vector_node(mesh):
     """Tests point source when given constructor PointSource(V, V, point, mag)
     with a matrix when points placed at 3 node for 1D, 2D and 3D. """
-    meshes = [UnitIntervalMesh(10), UnitSquareMesh(10,10), UnitCubeMesh(4,4,4)]
+    #meshes = [UnitIntervalMesh(10), UnitSquareMesh(10,10), UnitCubeMesh(4,4,4)]
 
     point = [0.0, 0.5, 1.0]
-    for dim in range(3):
-        mesh = meshes[dim]
-        V = FunctionSpace(mesh, "CG", 1)
-        v = TestFunction(V)
-        b = assemble(Constant(0.0)*v*dx)
 
-        source = []
-        point_coords = np.zeros(dim+1)
-        for p in point:
-            for i in range(dim+1):
-                point_coords[i] = p
-            source.append((Point(point_coords), 10.0))
-        ps = PointSource(V, source)
-        ps.apply(b)
+    V = FunctionSpace(mesh, "CG", 1)
+    v = TestFunction(V)
+    b = assemble(Constant(0.0)*v*dx)
 
-        # Checks b sums to correct value
-        b_sum = b.sum()
-        assert round(b_sum - len(point)*10.0) == 0
+    source = []
+    dim = mesh.geometry().dim()
+    point_coords = np.zeros(dim)
+    for p in point:
+        for i in range(dim):
+            point_coords[i-1] = p
+        print point_coords
+        source.append((Point(point_coords), 10.0))
+    ps = PointSource(V, source)
+    ps.apply(b)
 
-        # Checks values added to correct part of vector
-        mesh_coords = V.tabulate_dof_coordinates()
-        for p in point:
-            for i in range(dim+1):
-                point_coords[i] = p
+    print b.array()
+    # Checks b sums to correct value
+    b_sum = b.sum()
+    assert round(b_sum - len(point)*10.0) == 0
 
-            j = 0
-            for i in range(len(mesh_coords)//(dim+1)):
-                mesh_coords_check = mesh_coords[j:j+dim+1]
-                if np.array_equal(point_coords, mesh_coords_check) == True:
-                    assert np.round(b.array()[j//(dim+1)]-10.0) == 0.0
-                j+=dim+1
+    # Checks values added to correct part of vector
+    mesh_coords = V.tabulate_dof_coordinates()
+    for p in point:
+        for i in range(dim):
+            point_coords[i] = p
 
-def test_multi_ps_vector():
+        j = 0
+        for i in range(len(mesh_coords)//(dim)):
+            mesh_coords_check = mesh_coords[j:j+dim-1]
+            if np.array_equal(point_coords, mesh_coords_check) == True:
+                assert np.round(b.array()[j//(dim)]-10.0) == 0.0
+            j+=dim
+
+@pytest.mark.parametrize("mesh", meshes)
+def test_multi_ps_vector(mesh):
     """Tests point source PointSource(V, source) for mulitple point
     sources applied to a vector for 1D, 2D and 3D. """
-    meshes = [UnitIntervalMesh(20), UnitSquareMesh(10,10), UnitCubeMesh(4,4,4)]
 
     c_ids = [0, 1, 2]
-    for dim in range(3):
-        mesh = meshes[dim]
-        V = FunctionSpace(mesh, "CG", 1)
-        v = TestFunction(V)
-        w = Function(V)
-        b = assemble(Constant(0.0)*v*dx)
+    V = FunctionSpace(mesh, "CG", 1)
+    v = TestFunction(V)
+    w = Function(V)
+    b = assemble(Constant(0.0)*v*dx)
 
-        source = []
-        for c_id in c_ids:
-            cell = Cell(mesh, c_id)
-            point = cell.midpoint()
-            source.append((point, 10.0))
-        ps = PointSource(V, source)
-        ps.apply(b)
+    source = []
+    for c_id in c_ids:
+        cell = Cell(mesh, c_id)
+        point = cell.midpoint()
+        source.append((point, 10.0))
+    ps = PointSource(V, source)
+    ps.apply(b)
 
 
-        # Checks b sums to correct value
-        b_sum = b.sum()
-        assert round(b_sum - len(c_ids)*10.0) == 0
+    # Checks b sums to correct value
+    b_sum = b.sum()
+    assert round(b_sum - len(c_ids)*10.0) == 0
 
-
-def test_multi_ps_matrix_node():
+@pytest.mark.parametrize("mesh", meshes)
+def test_multi_ps_matrix_node(mesh):
     """Tests point source when given constructor PointSource(V, source)
     with a matrix when points placed at 3 nodes for 1D, 2D and 3D. """
-    meshes = [UnitIntervalMesh(10), UnitSquareMesh(10,10), UnitCubeMesh(4,4,4)]
 
     point = [0.0, 0.5, 1.0]
-    for dim in range(3):
-        mesh = meshes[dim]
-        V = FunctionSpace(mesh, "CG", 1)
-        u, v = TrialFunction(V), TestFunction(V)
-        w = Function(V)
-        A = assemble(Constant(0.0)*u*v*dx)
 
-        # Need to make sure that the same source term is seen by
-        # both processors.
-        source = []
-        point_coords = np.zeros(dim+1)
-        for p in point:
-            for i in range(dim+1):
-                point_coords[i] = p
-            source.append((Point(point_coords), 10.0))
-        ps = PointSource(V, source)
-        ps.apply(A)
+    V = FunctionSpace(mesh, "CG", 1)
+    u, v = TrialFunction(V), TestFunction(V)
+    w = Function(V)
+    A = assemble(Constant(0.0)*u*v*dx)
+    dim = mesh.geometry().dim()
+    # Need to make sure that the same source term is seen by
+    # both processors.
+    source = []
+    point_coords = np.zeros(dim)
+    for p in point:
+        for i in range(dim):
+            point_coords[i-1] = p
+        source.append((Point(point_coords), 10.0))
+    ps = PointSource(V, source)
+    ps.apply(A)
 
-        # Checks matrix sums to correct value.
-        A.get_diagonal(w.vector())
-        a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
-        assert round(a_sum - len(point)*10) == 0
+    # Checks matrix sums to correct value.
+    A.get_diagonal(w.vector())
+    a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
+    assert round(a_sum - len(point)*10) == 0
 
-        # Check if coordinates are in portion of mesh and if so check that
-        # diagonal components sum to the correct value.
-        mesh_coords = V.tabulate_dof_coordinates()
-        for p in point:
-            for i in range(dim+1):
-                point_coords[i] = p
+    # Check if coordinates are in portion of mesh and if so check that
+    # diagonal components sum to the correct value.
+    mesh_coords = V.tabulate_dof_coordinates()
+    for p in point:
+        for i in range(dim):
+            point_coords[i-1] = p
 
-            j = 0
-            for i in range(len(mesh_coords)//(dim+1)):
-                mesh_coords_check = mesh_coords[j:j+dim+1]
-                if np.array_equal(point_coords, mesh_coords_check) == True:
-                    assert np.round(w.vector()[j//(dim+1)]-10.0) == 0.0
-                j+=dim+1
+        j = 0
+        for i in range(len(mesh_coords)//(dim)):
+            mesh_coords_check = mesh_coords[j:j+dim-1]
+            if np.array_equal(point_coords, mesh_coords_check) == True:
+                assert np.round(w.vector()[j//(dim)]-10.0) == 0.0
+            j+=dim
 
-def test_multi_ps_matrix_node_vector_fs():
+@pytest.mark.parametrize("mesh", meshes)
+def test_multi_ps_matrix_node_vector_fs(mesh):
     """Tests point source applied to a matrix with given constructor
     PointSource(V, source) and a vector function space when points placed
     at 3 vertices for 1D, 2D and 3D. """
-    meshes = [UnitIntervalMesh(10), UnitSquareMesh(10,10), UnitCubeMesh(4,4,4)]
 
     point = [0.0, 0.5, 1.0]
 
-    for dim in range(3):
-        mesh = meshes[dim]
-        V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
-        u, v = TrialFunction(V), TestFunction(V)
-        w = Function(V)
-        A = assemble(Constant(0.0)*dot(u, v)*dx)
+    V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
+    u, v = TrialFunction(V), TestFunction(V)
+    w = Function(V)
+    A = assemble(Constant(0.0)*dot(u, v)*dx)
+    dim = mesh.geometry().dim()
+    # Make sure that the same source term is seen by all processors.
+    source = []
+    point_coords = np.zeros(dim)
+    for p in point:
+        for i in range(dim):
+            point_coords[i-1] = p
+        source.append((Point(point_coords), 10.0))
+    ps = PointSource(V, source)
+    ps.apply(A)
 
-        # Make sure that the same source term is seen by all processors.
-        source = []
-        point_coords = np.zeros(dim+1)
-        for p in point:
-            for i in range(dim+1):
-                point_coords[i] = p
-            source.append((Point(point_coords), 10.0))
-        ps = PointSource(V, source)
-        ps.apply(A)
+    # Checks array sums to correct value
+    A.get_diagonal(w.vector())
+    a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
+    assert round(a_sum - 2*len(point)*10) == 0
 
-        # Checks array sums to correct value
-        A.get_diagonal(w.vector())
-        a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
-        assert round(a_sum - 2*len(point)*10) == 0
+    # Check if coordinates are in portion of mesh and if so check that
+    # diagonal components sum to the correct value.
+    mesh_coords = V.tabulate_dof_coordinates()
+    for p in point:
+        for i in range(dim):
+            point_coords[i] = p
 
-        # Check if coordinates are in portion of mesh and if so check that
-        # diagonal components sum to the correct value.
-        mesh_coords = V.tabulate_dof_coordinates()
-        for p in point:
-            for i in range(dim+1):
-                point_coords[i] = p
+        j = 0
+        for i in range(len(mesh_coords)//(dim)):
+            mesh_coords_check = mesh_coords[j:j+dim-1]
+            if np.array_equal(point_coords, mesh_coords_check) == True:
+                assert np.round(w.vector()[j//(dim)]-10.0) == 0.0
+            j+=dim
 
-            j = 0
-            for i in range(len(mesh_coords)//(dim+1)):
-                mesh_coords_check = mesh_coords[j:j+dim+1]
-                if np.array_equal(point_coords, mesh_coords_check) == True:
-                    assert np.round(w.vector()[j//(dim+1)]-10.0) == 0.0
-                j+=dim+1
-
-def test_multi_ps_matrix():
+@pytest.mark.parametrize("mesh", meshes)
+def test_multi_ps_matrix(mesh):
     """Tests point source PointSource(V, source) for mulitple point
     sources applied to a matrix for 1D, 2D and 3D. """
-    meshes = [UnitIntervalMesh(20), UnitSquareMesh(10,10), UnitCubeMesh(4,4,4)]
 
     c_ids = [0, 1, 2]
-    for dim in range(3):
-        mesh = meshes[dim]
-        V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
-        u, v = TrialFunction(V), TestFunction(V)
-        w = Function(V)
-        A = assemble(Constant(0.0)*dot(u, v)*dx)
+    V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
+    u, v = TrialFunction(V), TestFunction(V)
+    w = Function(V)
+    A = assemble(Constant(0.0)*dot(u, v)*dx)
 
-        source = []
-        for c_id in c_ids:
-            cell = Cell(mesh, c_id)
-            point = cell.midpoint()
-            source.append((point, 10.0))
-        ps = PointSource(V, source)
-        ps.apply(A)
+    source = []
+    for c_id in c_ids:
+        cell = Cell(mesh, c_id)
+        point = cell.midpoint()
+        source.append((point, 10.0))
+    ps = PointSource(V, source)
+    ps.apply(A)
 
-        # Checks b sums to correct value
-        a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
-        assert round(a_sum - 2*len(c_ids)*10) == 0
+    # Checks b sums to correct value
+    a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
+    assert round(a_sum - 2*len(c_ids)*10) == 0
