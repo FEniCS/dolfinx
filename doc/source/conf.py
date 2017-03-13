@@ -34,9 +34,10 @@ if run_doxygen:
 # We can't compile the swig generated headers on RTD.  Instead, we generate the python part as usual,
 # and then mock the cpp objects by importing a generated module full of stubs that looks enough like
 # what the C++ SWIG modules will look like.
-sys.path.insert(0, '../')
-sys.path.insert(0, '../../site_packages')
-import mock_cpp_modules
+if os.path.isfile('../mock_cpp_modules.py'):
+    sys.path.insert(0, '../')
+    sys.path.insert(0, '../../site_packages')
+    import mock_cpp_modules
 
 # TODO: Copy site-packages/dolfin to tmp-dolfin/
 # Run cmake/scripts/generate-generate-swig-interface.py with output to tmp-swig/

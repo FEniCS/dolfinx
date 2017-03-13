@@ -159,9 +159,8 @@ def write_mock_modules(namespace_members, mock_py_module):
             module_py_name = '_' + module_name
             full_module_py_name = 'dolfin.cpp.' + module_py_name
             out.write('\n\n' + '#'*80 + '\n')
-            out.write('%s = ModuleType("%s")\n' % (module_py_name, module_py_name))
+            out.write('%s = ModuleType("%s")\n' % (module_py_name, full_module_py_name))
             out.write('sys.modules["%s"] = %s\n' % (full_module_py_name, module_py_name))
-            out.write('sys.modules["%s"] = %s\n' % ('dolfin.cpp.' + module_name, module_py_name))
             out.write('\n')
             print('    Generating module', full_module_py_name)
             
