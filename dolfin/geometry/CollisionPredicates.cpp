@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-25
+// Last changed: 2017-02-16
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -95,7 +95,7 @@ bool CollisionPredicates::collides(const MeshEntity& entity,
 				      point);
 
   if (tdim == 3)
-    return collides_tetrahedron_point(g.point(v[0]),
+    return collides_tetrahedron_point_3d(g.point(v[0]),
 				      g.point(v[1]),
 				      g.point(v[2]),
 				      g.point(v[3]),
@@ -155,7 +155,7 @@ bool CollisionPredicates::collides(const MeshEntity& entity_0,
 				      gdim);
 
   if (d0 == 2 && d1 == 3)
-    return collides_tetrahedron_triangle(g1.point(v1[0]),
+    return collides_tetrahedron_triangle_3d(g1.point(v1[0]),
                                          g1.point(v1[1]),
                                          g1.point(v1[2]),
                                          g1.point(v1[3]),
@@ -164,7 +164,7 @@ bool CollisionPredicates::collides(const MeshEntity& entity_0,
                                          g0.point(v0[2]));
 
   if (d0 == 3 && d1 == 2)
-    return collides_tetrahedron_triangle(g0.point(v0[0]),
+    return collides_tetrahedron_triangle_3d(g0.point(v0[0]),
                                          g0.point(v0[1]),
                                          g0.point(v0[2]),
                                          g0.point(v0[3]),
@@ -173,7 +173,7 @@ bool CollisionPredicates::collides(const MeshEntity& entity_0,
                                          g1.point(v1[2]));
 
   if (d0 == 3 && d1 == 3)
-    return collides_tetrahedron_tetrahedron(g0.point(v0[0]),
+    return collides_tetrahedron_tetrahedron_3d(g0.point(v0[0]),
                                             g0.point(v0[1]),
                                             g0.point(v0[2]),
                                             g0.point(v0[3]),
@@ -312,9 +312,7 @@ bool CollisionPredicates::_collides_segment_point_2d(Point p0,
 						     Point p1,
 						     Point point)
 {
-  const double orientation = orient2d(p0.coordinates(),
-                                      p1.coordinates(),
-                                      point.coordinates());
+  const double orientation = orient2d(p0, p1, point);
 
   const Point dp = p1 - p0;
   const double segment_length = dp.squared_norm();
@@ -339,16 +337,11 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
 {
   // std::cout << tools::drawtriangle({p0,p1})<<tools::plot3(point)<<'\n';
 
-  // GeometryDebugging::print({p0, p1});
-  // GeometryDebugging::print({point});
-
   if (point == p0 or point == p1)
     return true;
 
   // Poject to reduce to three 2d problems
-  const double det_xy = orient2d(p0.coordinates(),
-  				 p1.coordinates(),
-  				 point.coordinates());
+  const double det_xy = orient2d(p0, p1, point);
 
   // std::cout << __FUNCTION__<<" "<<det_xy << std::endl;
 
@@ -357,7 +350,7 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
     std::array<std::array<double, 2>, 3> xz = {{ { p0.x(), p0.z() },
   						 { p1.x(), p1.z() },
   						 { point.x(), point.z() } }};
-    const double det_xz = orient2d(xz[0].data(),
+    const double det_xz = _orient2d(xz[0].data(),
   				   xz[1].data(),
   				   xz[2].data());
 
@@ -368,7 +361,7 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
       std::array<std::array<double, 2>, 3> yz = {{ { p0.y(), p0.z() },
   						   { p1.y(), p1.z() },
   						   { point.y(), point.z() } }};
-      const double det_yz = orient2d(yz[0].data(),
+      const double det_yz = _orient2d(yz[0].data(),
   				     yz[1].data(),
   				     yz[2].data());
 
@@ -391,9 +384,7 @@ bool CollisionPredicates::_collides_interior_point_segment_2d(Point q0,
 							      Point q1,
 							      Point p)
 {
-  const double q0_q1_p = orient2d(q0.coordinates(),
-                                  q1.coordinates(),
-                                  p.coordinates());
+  const double q0_q1_p = orient2d(q0, q1, p);
   const Point dq = q1-q0;
   const double segment_length = dq.squared_norm();
 
@@ -444,18 +435,10 @@ bool CollisionPredicates::_collides_segment_segment_2d(Point p0,
   if (collides_segment_point_2d(q0, q1, p0)) return true;
   if (collides_segment_point_2d(q0, q1, p1)) return true;
 
-  const double q0_q1_p0 = orient2d(q0.coordinates(),
-                                   q1.coordinates(),
-                                   p0.coordinates());
-  const double q0_q1_p1 = orient2d(q0.coordinates(),
-                                   q1.coordinates(),
-                                   p1.coordinates());
-  const double p0_p1_q0 = orient2d(p0.coordinates(),
-                                   p1.coordinates(),
-                                   q0.coordinates());
-  const double p0_p1_q1 = orient2d(p0.coordinates(),
-                                   p1.coordinates(),
-                                   q1.coordinates());
+  const double q0_q1_p0 = orient2d(q0, q1, p0);
+  const double q0_q1_p1 = orient2d(q0, q1, p1);
+  const double p0_p1_q0 = orient2d(p0, p1, q0);
+  const double p0_p1_q1 = orient2d(p0, p1, q1);
 
   // Products must be strictly smaller
   return q0_q1_p0*q0_q1_p1 < 0.0 && p0_p1_q0*p0_p1_q1 < 0.0;
@@ -488,10 +471,7 @@ bool CollisionPredicates::_collides_segment_segment_3d(Point p0,
 #endif
 
   // Determinant must be zero
-  const double det = orient3d(p0.coordinates(),
-			      p1.coordinates(),
-			      q0.coordinates(),
-			      q1.coordinates());
+  const double det = orient3d(p0, p1, q0, q1);
 
   if (det < 0. or det > 0.)
     return false;
@@ -558,11 +538,11 @@ bool CollisionPredicates::_collides_triangle_point_2d(Point p0,
 						      Point p2,
 						      Point point)
 {
-  const double ref = orient2d(p0.coordinates(), p1.coordinates(), p2.coordinates());
+  const double ref = orient2d(p0, p1, p2);
 
-  if (ref*orient2d(p0.coordinates(), p1.coordinates(), point.coordinates()) >= 0 and
-      ref*orient2d(p1.coordinates(), p2.coordinates(), point.coordinates()) >= 0 and
-      ref*orient2d(p2.coordinates(), p0.coordinates(), point.coordinates()) >= 0)
+  if (ref*orient2d(p0, p1, point) >= 0 and
+      ref*orient2d(p1, p2, point) >= 0 and
+      ref*orient2d(p2, p0, point) >= 0)
     return true;
   else
     return false;
@@ -580,10 +560,7 @@ bool CollisionPredicates::_collides_triangle_point_3d(Point p0,
   if (p0 == point or p1 == point or p2 == point)
     return true;
 
-  const double tet_det = orient3d(p0.coordinates(),
-				  p1.coordinates(),
-				  p2.coordinates(),
-				  point.coordinates());
+  const double tet_det = orient3d(p0, p1, p2, point);
 #ifdef augustdebug
   std::cout << __FUNCTION__ << "  tet_det " << tet_det <<std::endl;
 #endif
@@ -685,25 +662,25 @@ bool CollisionPredicates::_collides_triangle_point_3d(Point p0,
   // // Test: Reduce to 2d problem by taking the projection of the
   // // triangle onto the 2d plane xy, xz or yz that has the largest
   // // determinant
-  // const double det_xy = std::abs(orient2d(p0.coordinates(),
-  // 					  p1.coordinates(),
-  // 					  p2.coordinates()));
+  // const double det_xy = std::abs(orient2d(p0,
+  // 					  p1,
+  // 					  p2));
   // std::cout << __FUNCTION__ << "  detxy " << det_xy <<std::endl;
 
   // std::array<Point, 3> xz = { Point(p0.x(), p0.z()),
   // 			      Point(p1.x(), p1.z()),
   // 			      Point(p2.x(), p2.z()) };
-  // const double det_xz = std::abs(orient2d(xz[0].coordinates(),
-  // 					  xz[1].coordinates(),
-  // 					  xz[2].coordinates()));
+  // const double det_xz = std::abs(orient2d(xz[0],
+  // 					  xz[1],
+  // 					  xz[2]));
   // std::cout << __FUNCTION__ << "  detxz " << det_xz <<std::endl;
 
   // std::array<Point, 3> yz = { Point(p0.y(), p0.z()),
   // 			      Point(p1.y(), p1.z()),
   // 			      Point(p2.y(), p2.z()) };
-  // const double det_yz = std::abs(orient2d(yz[0].coordinates(),
-  // 					  yz[1].coordinates(),
-  // 					  yz[2].coordinates()));
+  // const double det_yz = std::abs(orient2d(yz[0],
+  // 					  yz[1],
+  // 					  yz[2]));
   // std::cout << __FUNCTION__ << "  detyz " << det_yz <<std::endl;
 
   // // Check for degeneracy
@@ -774,15 +751,9 @@ bool CollisionPredicates::_collides_triangle_segment_3d(Point r,
   //std::cout << tools::drawtriangle({r,s,t})<<tools::drawtriangle({a,b})<<'\n';
 
   // Compute correspondic tetrahedra determinants
-  const double rsta = orient3d(r.coordinates(),
-			       s.coordinates(),
-			       t.coordinates(),
-			       a.coordinates());
+  const double rsta = orient3d(r, s, t, a);
 
-  const double rstb = orient3d(r.coordinates(),
-			       s.coordinates(),
-			       t.coordinates(),
-			       b.coordinates());
+  const double rstb = orient3d(r, s, t, b);
 
   // Check if a and b are on same side of triangle rst
   if ((rsta < 0 and rstb < 0) or
@@ -830,24 +801,15 @@ bool CollisionPredicates::_collides_triangle_segment_3d(Point r,
     if (rsta < 0)
       std::swap(a, b);
 
-    const double rasb = orient3d(r.coordinates(),
-				 a.coordinates(),
-				 s.coordinates(),
-				 b.coordinates());
+    const double rasb = orient3d(r, a, s, b);
     if (rasb < 0)
       return false;
 
-    const double satb = orient3d(s.coordinates(),
-				 a.coordinates(),
-				 t.coordinates(),
-				 b.coordinates());
+    const double satb = orient3d(s, a, t, b);
     if (satb < 0)
       return false;
 
-    const double tarb = orient3d(t.coordinates(),
-				 a.coordinates(),
-				 r.coordinates(),
-				 b.coordinates());
+    const double tarb = orient3d(t, a, r, b);
     if (tarb < 0)
       return false;
   }
@@ -871,19 +833,19 @@ bool CollisionPredicates::_collides_triangle_triangle_2d(const Point& p0,
   double t1[3][2] = {{q0[0], q0[1]}, {q1[0], q1[1]}, {q2[0], q2[1]}};
 
   // Find all vertex-cell collisions
-  const int s0 = std::signbit(orient2d(t0[0], t0[1], t0[2])) == true ? -1 : 1;
-  const int s1 = std::signbit(orient2d(t1[0], t1[1], t1[2])) == true ? -1 : 1;
+  const int s0 = std::signbit(_orient2d(t0[0], t0[1], t0[2])) == true ? -1 : 1;
+  const int s1 = std::signbit(_orient2d(t1[0], t1[1], t1[2])) == true ? -1 : 1;
 
   for (std::size_t i = 0; i < 3; ++i)
   {
-    if (s1*orient2d(t1[0], t1[1], t0[i]) >= 0. and
-  	s1*orient2d(t1[1], t1[2], t0[i]) >= 0. and
-  	s1*orient2d(t1[2], t1[0], t0[i]) >= 0.)
+    if (s1*_orient2d(t1[0], t1[1], t0[i]) >= 0. and
+  	s1*_orient2d(t1[1], t1[2], t0[i]) >= 0. and
+  	s1*_orient2d(t1[2], t1[0], t0[i]) >= 0.)
       return true;
 
-    if (s0*orient2d(t0[0], t0[1], t1[i]) >= 0. and
-  	s0*orient2d(t0[1], t0[2], t1[i]) >= 0. and
-  	s0*orient2d(t0[2], t0[0], t1[i]) >= 0.)
+    if (s0*_orient2d(t0[0], t0[1], t1[i]) >= 0. and
+  	s0*_orient2d(t0[1], t0[2], t1[i]) >= 0. and
+  	s0*_orient2d(t0[2], t0[0], t1[i]) >= 0.)
       return true;
   }
 
@@ -969,27 +931,27 @@ bool CollisionPredicates::_collides_tetrahedron_point(Point p0,
 {
   // std::cout << __FUNCTION__<<std::endl;
 
-  const double ref = orient3d(p0.coordinates(),
-			      p1.coordinates(),
-			      p2.coordinates(),
-			      p3.coordinates());
+  const double ref = orient3d(p0,
+			      p1,
+			      p2,
+			      p3);
 
-  if (ref*orient3d(p0.coordinates(),
-		   p1.coordinates(),
-		   p2.coordinates(),
-		   point.coordinates()) >= 0 and
-      ref*orient3d(p0.coordinates(),
-		   p3.coordinates(),
-		   p1.coordinates(),
-		   point.coordinates()) >= 0 and
-      ref*orient3d(p0.coordinates(),
-		   p2.coordinates(),
-		   p3.coordinates(),
-		   point.coordinates()) >= 0 and
-      ref*orient3d(p1.coordinates(),
-		   p3.coordinates(),
-		   p2.coordinates(),
-		   point.coordinates()) >= 0)
+  if (ref*orient3d(p0,
+		   p1,
+		   p2,
+		   point) >= 0 and
+      ref*orient3d(p0,
+		   p3,
+		   p1,
+		   point) >= 0 and
+      ref*orient3d(p0,
+		   p2,
+		   p3,
+		   point) >= 0 and
+      ref*orient3d(p1,
+		   p3,
+		   p2,
+		   point) >= 0)
     return true;
   else
     return false;
@@ -998,34 +960,34 @@ bool CollisionPredicates::_collides_tetrahedron_point(Point p0,
 
 
   // // Check tetrahedron orientation
-  // const int sign = std::signbit(orient3d(p0.coordinates(),
-  // 					 p1.coordinates(),
-  // 					 p2.coordinates(),
-  // 					 p3.coordinates()));
+  // const int sign = std::signbit(orient3d(p0,
+  // 					 p1,
+  // 					 p2,
+  // 					 p3));
 
   // // The point is inside if all tetrahedra formed have the same orientation
-  // if (sign == std::signbit(orient3d(p0.coordinates(),
-  // 				    p1.coordinates(),
-  // 				    p2.coordinates(),
-  // 				    point.coordinates())) and
-  //     sign == std::signbit(orient3d(p0.coordinates(),
-  // 				    p3.coordinates(),
-  // 				    p1.coordinates(),
-  // 				    point.coordinates())) and
-  //     sign == std::signbit(orient3d(p0.coordinates(),
-  // 				    p2.coordinates(),
-  // 				    p3.coordinates(),
-  // 				    point.coordinates())) and
-  //     sign == std::signbit(orient3d(p1.coordinates(),
-  // 				    p3.coordinates(),
-  // 				    p2.coordinates(),
-  // 				    point.coordinates())))
+  // if (sign == std::signbit(orient3d(p0,
+  // 				    p1,
+  // 				    p2,
+  // 				    point)) and
+  //     sign == std::signbit(orient3d(p0,
+  // 				    p3,
+  // 				    p1,
+  // 				    point)) and
+  //     sign == std::signbit(orient3d(p0,
+  // 				    p2,
+  // 				    p3,
+  // 				    point)) and
+  //     sign == std::signbit(orient3d(p1,
+  // 				    p3,
+  // 				    p2,
+  // 				    point)))
   //   return true;
   // else
   //   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_tetrahedron_segment(const Point& p0,
+bool CollisionPredicates::_collides_tetrahedron_segment_3d(const Point& p0,
 							const Point& p1,
 							const Point& p2,
 							const Point& p3,
@@ -1035,9 +997,9 @@ bool CollisionPredicates::_collides_tetrahedron_segment(const Point& p0,
   // std::cout << __FUNCTION__<<std::endl;
 
   // Segment vertex in tetrahedron collision
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q0))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q0))
     return true;
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q1))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q1))
     return true;
 
   // Triangle-segment collision tests
@@ -1054,7 +1016,7 @@ bool CollisionPredicates::_collides_tetrahedron_segment(const Point& p0,
 }
 
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_tetrahedron_triangle(const Point& p0,
+bool CollisionPredicates::_collides_tetrahedron_triangle_3d(const Point& p0,
 							 const Point& p1,
 							 const Point& p2,
 							 const Point& p3,
@@ -1065,11 +1027,11 @@ bool CollisionPredicates::_collides_tetrahedron_triangle(const Point& p0,
   // std::cout << __FUNCTION__<<std::endl;
 
   // Triangle vertex in tetrahedron collision
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q0))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q0))
     return true;
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q1))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q1))
     return true;
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q2))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q2))
     return true;
 
   // Triangle-triangle collision tests
@@ -1085,7 +1047,7 @@ bool CollisionPredicates::_collides_tetrahedron_triangle(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_tetrahedron_tetrahedron(const Point& p0,
+bool CollisionPredicates::_collides_tetrahedron_tetrahedron_3d(const Point& p0,
 							    const Point& p1,
 							    const Point& p2,
 							    const Point& p3,
@@ -1111,22 +1073,22 @@ bool CollisionPredicates::_collides_tetrahedron_tetrahedron(const Point& p0,
 	return true;
 
   // Vertex in tetrahedron collision
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q0))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q0))
     return true;
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q1))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q1))
     return true;
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q2))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q2))
     return true;
-  if (collides_tetrahedron_point(p0, p1, p2, p3, q3))
+  if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q3))
     return true;
 
-  if (collides_tetrahedron_point(q0, q1, q2, q3, p0))
+  if (collides_tetrahedron_point_3d(q0, q1, q2, q3, p0))
     return true;
-  if (collides_tetrahedron_point(q0, q1, q2, q3, p1))
+  if (collides_tetrahedron_point_3d(q0, q1, q2, q3, p1))
     return true;
-  if (collides_tetrahedron_point(q0, q1, q2, q3, p2))
+  if (collides_tetrahedron_point_3d(q0, q1, q2, q3, p2))
     return true;
-  if (collides_tetrahedron_point(q0, q1, q2, q3, p3))
+  if (collides_tetrahedron_point_3d(q0, q1, q2, q3, p3))
     return true;
 
   return false;
@@ -1260,9 +1222,9 @@ Point CollisionPredicates::cross_product(Point a,
   double axy[2] = {a.x(), a.y()};
   double bxy[2] = {b.x(), b.y()};
   double cxy[2] = {c.x(), c.y()};
-  Point p(orient2d(ayz, byz, cyz),
-   	  orient2d(azx, bzx, czx),
-	  orient2d(axy, bxy, cxy));
+  Point p(_orient2d(ayz, byz, cyz),
+   	  _orient2d(azx, bzx, czx),
+	  _orient2d(axy, bxy, cxy));
   return p;
 }
 
@@ -1283,9 +1245,9 @@ double CollisionPredicates::cross_product_norm(Point a,
   double bxy[2] = {b.x(), b.y()};
   double cxy[2] = {c.x(), c.y()};
 
-  return std::sqrt(std::pow(orient2d(ayz, byz, cyz), 2)
-		   + std::pow(orient2d(azx, bzx, czx),2)
-		   + std::pow(orient2d(axy, bxy, cxy),2));
+  return std::sqrt(std::pow(_orient2d(ayz, byz, cyz), 2)
+                 + std::pow(_orient2d(azx, bzx, czx), 2)
+	         + std::pow(_orient2d(axy, bxy, cxy), 2));
 }
 
 // //-----------------------------------------------------------------------------

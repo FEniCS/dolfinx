@@ -9,7 +9,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/geometry/CGALExactArithmetic.h>
 
-#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+#ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
 // Note that Qoutient<MP_FLOAT> as number type gives overflow
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 
@@ -67,7 +67,7 @@ namespace dolfin
   }
 
   //------------------------------------------------------------------------------
-#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+#ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
   std::pair<Point_2, FT> cgal_compute_quadrature_rule(Triangle_2 t, FT factor)
   {
     const Vector_2 a = t[1]-t[0];
@@ -218,6 +218,7 @@ namespace dolfin
 	    volume += qr.second[i];
 	    file << qr.first[2*i]<<' '<<qr.first[2*i+1]<<' '<<qr.second[i]<<std::endl;
 	  }
+	  file << "% net volume " << volume << std::endl;
 	  current_cells_status[*it] = std::make_pair(CUT, volume);
 	}
       }
@@ -234,7 +235,7 @@ namespace dolfin
     }
     return num_qr;
   }
-#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+#ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
   //-----------------------------------------------------------------------------
   Triangle_2 convert_to_triangle_2(const Cell& cell)
   {
@@ -291,7 +292,7 @@ namespace dolfin
     return simplex;
   }
 
-#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+#ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
   //-----------------------------------------------------------------------------
   double cgal_intersection_volume(const std::vector<Point>& A,
 				  const std::vector<Point>& B)

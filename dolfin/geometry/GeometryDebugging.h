@@ -1,4 +1,4 @@
-// Copyright (C) 2016-2017 Anders Logg
+// Copyright (C) 2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-05
-// Last changed: 2017-02-15
+// Last changed: 2017-02-13
 
 #ifndef __GEOMETRY_DEBUGGING_H
 #define __GEOMETRY_DEBUGGING_H
@@ -36,23 +36,31 @@ namespace dolfin
   {
   public:
 
+    /// Print coordinates of a point.
+    /// Example usage: print(p0)
+    static void print(const Point& point);
+
     /// Print coordinates of a simplex.
-    /// Example usage: print({p0, p1, p2}).
-    static void print(std::vector<Point> simplex);
+    /// Example usage: print({p0, p1, p2})
+    static void print(const std::vector<Point>& simplex);
 
     /// Print coordinates of a pair of simplices.
-    /// Example usage: print({p0, p1, p2}, {q0, q1}).
-    static void print(std::vector<Point> simplex_0,
-                      std::vector<Point> simplex_1);
+    /// Example usage: print({p0, p1, p2}, {q0, q1})
+    static void print(const std::vector<Point>& simplex_0,
+                      const std::vector<Point>& simplex_1);
+
+    /// Plot a point (print matplotlib code).
+    /// Example usage: plot(p0)
+    static void plot(const Point& point);
 
     /// Plot a simplex (print matplotlib code).
-    /// Example usage: plot({p0, p1, p2}).
-    static void plot(std::vector<Point> simplex);
+    /// Example usage: plot({p0, p1, p2})
+    static void plot(const std::vector<Point>& simplex);
 
     /// Plot a pair of simplices (print matplotlib code).
-    /// Example usage: plot({p0, p1, p2}, {q0, q1}).
-    static void plot(std::vector<Point> simplex_0,
-                     std::vector<Point> simplex_1);
+    /// Example usage: plot({p0, p1, p2}, {q0, q1})
+    static void plot(const std::vector<Point>& simplex_0,
+                     const std::vector<Point>& simplex_1);
 
     /// Initialize plotting (print matplotlib code).
     static void init_plot();
@@ -61,7 +69,10 @@ namespace dolfin
     static std::string point2string(const Point& p);
 
     /// Compact simplex to string conversion
-    static std::string simplex2string(const std::vector<Point>& simplex, bool rowmajor=false);
+    static std::string simplex2string(const std::vector<Point>& simplex);
+
+    // Check whether plotting has been initialized
+    static bool _initialized;
 
   };
 

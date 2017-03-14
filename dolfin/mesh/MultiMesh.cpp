@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-02-27
+// Last changed: 2017-03-02
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -291,8 +291,6 @@ std::string MultiMesh::plot_matplotlib(double delta_z) const
   dolfin_assert(num_parts() > 0);
   dolfin_assert(part(0)->geometry().dim() == 2);
 
-  const bool do_3d = delta_z != 0.;
-
   std::stringstream ss;
 
   ss << "def plot_multimesh() :\n";
@@ -322,30 +320,13 @@ std::string MultiMesh::plot_matplotlib(double delta_z) const
     for (CellIterator cit(*current); !cit.end(); ++cit)
     {
       const unsigned int* vertices = cit->entities(0);
-      if (do_3d)
-	ss << "(" << vertices[0] << ", " << vertices[1] << ", " << vertices[2] << "), ";
-      else
-	ss << "(" << vertices[0] << ", " << vertices[1] << "), ";
+      ss << "(" << vertices[0] << ", " << vertices[1] << ", " << vertices[2] << "), ";
     }
 
     ss << "), dtype=int)\n";
-    if (do_3d)
-    {
-      ss << "    z = np.zeros(x.shape) + " << (p*delta_z) << "\n";
-      ss << "    ax.plot_trisurf(x, y, z, triangles=facets, alpha=.4)\n";
-    }
-    else
-    {
-      ss << "    ax.triplot(x, y, triangles=facets, alpha=.4)\n";
-    }
+    ss << "    z = np.zeros(x.shape) + " << (p*delta_z) << "\n";
+    ss << "    ax.plot_trisurf(x, y, z, triangles=facets, alpha=.4)\n";
   }
-
-  if (!do_3d)
-  {
-    ss << "    ax.auto_scale_xyz([0,1],[0,1],[0,1])\n";
-    ss << "    ax.view_init(90, 0)\n";
-  }
-
   ss << "    plt.show()\n";
   return ss.str();
 }
@@ -636,21 +617,13 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	_inclusion_exclusion_overlap(overlap_qr, initial_polyhedra,
 				     tdim, gdim, quadrature_order);
 
-      // Remove any near-trival quadrature rules
-      // TODO: The tolerance here appears to work ok in 2D with few meshes
-      // TODO: It might not be accurate in 3D or a large number of meshes
-      double tolerance = 2.0 * DOLFIN_EPS * cut_cell.volume() * num_cutting_cells;
-      for (std::size_t i = 0; i < overlap_qr.size(); i++)
+      double vol = 0;
+      for (const auto qr: overlap_qr)
       {
-        quadrature_rule qr_part = overlap_qr[i];
-        double sum_of_weights = std::accumulate(qr_part.second.begin(),
-                                                qr_part.second.end(), 0.0);
-        if (sum_of_weights < tolerance)
-        {
-          overlap_qr[i].first.clear();
-          overlap_qr[i].second.clear();
-        }
+	for (const double w: qr.second)
+	  vol += w;
       }
+
       // Store quadrature rules for cut cell
       _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
     }
@@ -828,7 +801,10 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	    = IntersectionConstruction::intersection(cut_cell_i, boundary_cell_j);
 
 	  // Check that the triangulation is not part of the cut cell boundary
-	  if (_is_overlapped_interface(Eij_part_points, cut_cell_i, facet_normal))
+	  // FIXME: How can we avoid is_degenerate warnings in
+	  // _is_overlapped_interface by checking the input?
+	  if (Eij_part_points.size() < tdim_interface + 1 or
+	      _is_overlapped_interface(Eij_part_points, cut_cell_i, facet_normal))
 	    continue;
 
 	  const Polyhedron Eij_part =
@@ -1056,17 +1032,20 @@ void MultiMesh::_inclusion_exclusion_overlap
   // previous_intersections data. We only have to intersect if the
   // key doesn't contain the polyhedron.
 
-  // Add quadrature rules for stage 0
+  // Add quadrature rule for stage 0
+  quadrature_rule part_qr;
   for (const std::pair<IncExcKey, Polyhedron>& pol_pair: previous_intersections)
     for (const Simplex& simplex: pol_pair.second)
       if (simplex.size() == tdim + 1)
       {
 	// std::size_t prevsz = part_qr.second.size();
-	_add_quadrature_rule(qr[pol_pair.first[0]], simplex, gdim,
+	_add_quadrature_rule(part_qr, simplex, gdim,
 			     quadrature_order, 1.);
       }
 
-  // Add quadrature rules for overlap part
+  // Add quadrature rule for overlap part
+  qr[0] = part_qr;
+
   for (std::size_t stage = 1; stage < N; ++stage)
   {
     // Structure for storing new intersections
@@ -1161,17 +1140,19 @@ void MultiMesh::_inclusion_exclusion_overlap
 
     // Add quadrature rule with correct sign
     const double sign = std::pow(-1, stage);
+    quadrature_rule overlap_part_qr;
 
     for (const std::pair<IncExcKey, Polyhedron>& polyhedron: new_intersections)
       for (const Simplex& simplex: polyhedron.second)
 	if (simplex.size() == tdim + 1)
 	{
 	  // std::size_t prevsz = overlap_part_qr.second.size();
-	  _add_quadrature_rule(qr[polyhedron.first[0]], simplex, gdim,
+	  _add_quadrature_rule(overlap_part_qr, simplex, gdim,
 			       quadrature_order, sign);
 	}
 
     // Add quadrature rule for overlap part
+    qr[stage] = overlap_part_qr;
   } // end loop over stages
 
   end();
@@ -1243,7 +1224,7 @@ void MultiMesh::_inclusion_exclusion_interface
 	  for (const Simplex& s: Eij_cap_Tk)
 	  {
 	    if (s.size() == tdim_interface + 1 and
-		!GeometryPredicates::is_degenerate(s, gdim))
+		!GeometryPredicates::is_degenerate(simplex, gdim))
 	    {
 	      const std::size_t num_pts
 		= _add_quadrature_rule(qr_stage0, s, gdim,
