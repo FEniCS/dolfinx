@@ -29,6 +29,7 @@
 #
 # Script for converting between various data formats
 
+from __future__ import print_function
 import getopt
 import sys
 import os
@@ -82,7 +83,7 @@ def main(argv):
 
 def usage():
     "Display usage"
-    print """\
+    print("""\
 Usage: dolfin-convert [OPTIONS] ... input.x output.y
 
 Options:
@@ -126,6 +127,6 @@ be deduced from the suffix:
   .exo  - Exodus II
   .ncdf - ncdump'ed Exodus II
   .vrt and .cell  - starcd
-"""
+""")
 if __name__ == "__main__":
     main(sys.argv[1:])
