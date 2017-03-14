@@ -32,16 +32,21 @@ parser.add_argument('--num_parts', type=int, help='number of meshes', default=10
 parser.add_argument('--N_x', type=int, help='number of mesh divisions (mesh size)', default=2, required=False)
 parser.add_argument('--random_seed', type=numpy.uint32, help='seed for random number generator for creating multimesh', default=1, required=False)
 parser.add_argument('--no_random_rotation', action='store_true', help='Do not rotate each mesh with a random angle', default=False, required=False)
+parser.add_argument('--order', type=int, help='Quadrature rule order', default=1, required=False)
 args = parser.parse_args()
 
 print("Number of meshes: {}.".format(args.num_parts))
 print("Number of mesh devisions: {}.".format(args.N_x))
 print("Seed for random number generator for creating multimesh: {}.".format(args.random_seed))
 print("Do not rotate each mesh with a random angle: {}.".format(args.no_random_rotation))
+print("Quadrature rule order: {}.".format(args.order))
 numpy.random.seed(args.random_seed)
 
 
-def build_multimesh(num_parts, N_x, no_random_rotation):
+def build_multimesh(num_parts,
+                    N_x,
+                    no_random_rotation,
+                    order):
 
     # Create multimesh
     multimesh = MultiMesh()
@@ -80,7 +85,7 @@ def build_multimesh(num_parts, N_x, no_random_rotation):
             print s
             multimesh.add(mesh)
 
-    multimesh.build()
+    multimesh.build(order)
     return multimesh
 
 if __name__ == "__main__":
@@ -90,7 +95,10 @@ if __name__ == "__main__":
         exit(0)
 
     # Build multimesh
-    multimesh = build_multimesh(args.num_parts, args.N_x, args.no_random_rotation)
+    multimesh = build_multimesh(args.num_parts,
+                                args.N_x,
+                                args.no_random_rotation,
+                                args.order)
 
     # Assemble linear system
     # FIXME: This does not work yet
