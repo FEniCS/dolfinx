@@ -24,7 +24,7 @@ from dolfin import *
 import ufl
 
 from dolfin_utils.test import skip_in_parallel, pushpop_parameters, fixture
-from dolfin_utils.test import *
+from dolfin_utils.test import use_gc_barrier, gc_barrier_fixture
 
 
 @fixture
@@ -47,6 +47,7 @@ def W(mesh):
     return VectorFunctionSpace(mesh, 'CG', 1)
 
 
+@use_gc_barrier
 def test_name_argument(W):
     u = Function(W)
     v = Function(W, name="v")
@@ -55,6 +56,7 @@ def test_name_argument(W):
     assert str(v) == "v"
 
 
+@use_gc_barrier
 def test_in_function_space(W):
     u = Function(W)
     v = Function(W)
@@ -65,6 +67,7 @@ def test_in_function_space(W):
         assert usub in W.sub(i)
 
 
+@use_gc_barrier
 def test_compute_vertex_values(V, W, mesh):
     from numpy import zeros, all, array
     u = Function(V)
@@ -79,6 +82,7 @@ def test_compute_vertex_values(V, W, mesh):
     assert all(u_values == 1)
 
 
+@use_gc_barrier
 def test_assign(V, W):
     from ufl.algorithms import replace
 
@@ -154,6 +158,7 @@ def test_assign(V, W):
                 uu.assign(4*u*u1)
 
 
+@use_gc_barrier
 def test_axpy(V, W):
     for V0, V1, vector_space in [(V, W, False), (W, V, True)]:
         u = Function(V0)
@@ -234,6 +239,7 @@ def test_axpy(V, W):
             axpy + u
 
 
+@use_gc_barrier
 def test_call(R, V, W, mesh):
     from numpy import zeros, all, array
     u0 = Function(R)
@@ -271,28 +277,33 @@ def test_call(R, V, W, mesh):
         u0([0, 0])
 
 
+@use_gc_barrier
 def test_constant_float_conversion():
     c = Constant(3.45)
     assert float(c) == 3.45
 
 
+@use_gc_barrier
 def test_real_function_float_conversion1(R):
     c = Function(R)
     assert float(c) == 0.0
 
 
+@use_gc_barrier
 def test_real_function_float_conversion2(R):
     c = Function(R)
     c.assign(Constant(2.34))
     assert float(c) == 2.34
 
 
+@use_gc_barrier
 def test_real_function_float_conversion3(R):
     c = Function(R)
     c.vector()[:] = 1.23
     assert float(c) == 1.23
 
 
+@use_gc_barrier
 def test_scalar_conditions(R):
     c = Function(R)
     c.vector()[:] = 1.5
@@ -318,18 +329,21 @@ def test_scalar_conditions(R):
         not c < 0
 
 
+@use_gc_barrier
 def test_interpolation_mismatch_rank0(W):
     f = Expression("1.0", degree=0)
     with pytest.raises(RuntimeError):
         interpolate(f, W)
 
 
+@use_gc_barrier
 def test_interpolation_mismatch_rank1(W):
     f = Expression(("1.0", "1.0"), degree=0)
     with pytest.raises(RuntimeError):
         interpolate(f, W)
 
 
+@use_gc_barrier
 def test_interpolation_jit_rank0(V):
     f = Expression("1.0", degree=0)
     w = interpolate(f, V)
@@ -338,6 +352,7 @@ def test_interpolation_jit_rank0(V):
     assert x.min() == 1
 
 
+@use_gc_barrier
 @skip_in_parallel
 def test_extrapolation(V, pushpop_parameters):
     original_parameters = parameters["allow_extrapolation"]
@@ -390,6 +405,7 @@ def test_extrapolation(V, pushpop_parameters):
     assert f2.get_allow_extrapolation() is False
 
 
+@use_gc_barrier
 def test_interpolation_jit_rank1(W):
     f = Expression(("1.0", "1.0", "1.0"), degree=0)
     w = interpolate(f, W)
@@ -398,6 +414,7 @@ def test_interpolation_jit_rank1(W):
     assert x.min() == 1
 
 
+@use_gc_barrier
 @skip_in_parallel
 def test_interpolation_old(V, W, mesh):
 
