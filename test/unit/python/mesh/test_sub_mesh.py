@@ -24,22 +24,14 @@ import gc
 import pytest
 from dolfin import *
 import six
-from dolfin_utils.test import skip_in_parallel, datadir
+from dolfin_utils.test import skip_in_parallel, datadir, fixture
 
 
-@pytest.fixture(scope='module', params=range(3))
-def MeshFunc(request):
-    test_mesh = [(UnitIntervalMesh, (10,)),
-                 (UnitSquareMesh, (10, 10)),
-                 (UnitCubeMesh, (10, 10, 10))]
-    yield test_mesh[request.param]
-
-    # Destroy deterministically
-    del test_mesh
-    gc.collect()
-    MPI.barrier(mpi_comm_world())
-
-
+@pytest.mark.parametrize("MeshFunc", [
+    (UnitIntervalMesh, (10,)),
+    (UnitSquareMesh, (10, 10)),
+    (UnitCubeMesh, (10, 10, 10)),
+])
 @skip_in_parallel
 def test_creation(MeshFunc):
     """Create SubMesh."""
