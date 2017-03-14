@@ -35,6 +35,7 @@ def MeshFunc(request):
     yield test_mesh[request.param]
 
     # Destroy deterministically
+    del test_mesh
     gc.collect()
     MPI.barrier(mpi_comm_world())
 

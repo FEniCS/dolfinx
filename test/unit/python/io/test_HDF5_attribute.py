@@ -39,6 +39,7 @@ def attr(tempdir):
 
     # Destroy everything deterministically
     hdf_file.close()
+    del hdf_file, x, attr
     gc.collect()
     MPI.barrier(mpi_comm_world())
 
