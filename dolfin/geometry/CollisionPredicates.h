@@ -16,19 +16,18 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-16
+// Last changed: 2017-03-14
 
 #ifndef __COLLISION_PREDICATES_H
 #define __COLLISION_PREDICATES_H
 
-#include <vector>
-#include "Point.h"
 #include "CGALExactArithmetic.h"
 
 namespace dolfin
 {
 
   // Forward declarations
+  class Point;
   class MeshEntity;
 
   /// This class implements algorithms for detecting pairwise
@@ -167,10 +166,10 @@ namespace dolfin
 					std::size_t gdim);
 
     /// Check whether triangle p0-p1-p2 collides with point (2D version)
-    static bool collides_triangle_point_2d(const Point p0,
-                                           const Point p1,
-                                           const Point p2,
-                                           const Point point)
+    static bool collides_triangle_point_2d(const Point& p0,
+                                           const Point& p1,
+                                           const Point& p2,
+                                           const Point& point)
     {
       return CHECK_CGAL(_collides_triangle_point_2d(p0, p1, p2, point),
                         cgal_collides_triangle_point_2d(p0, p1, p2, point));
@@ -202,7 +201,7 @@ namespace dolfin
 					     const Point& q1)
     {
       return CHECK_CGAL(_collides_triangle_segment_2d(p0, p1, p2, q0, q1),
-                        cgal_collides_triangle_segment_3d(p0, p1, p2, q0, q1));
+                        cgal_collides_triangle_segment_2d(p0, p1, p2, q0, q1));
     }
 
     /// Check whether triangle p0-p1-p2 collides with segment q0-q1 (3D version)
@@ -296,7 +295,7 @@ namespace dolfin
                                                     const Point& q0,
                                                     const Point& q1,
                                                     const Point& q2,
-						 const Point& q3)
+						    const Point& q3)
     {
       return CHECK_CGAL(_collides_tetrahedron_tetrahedron_3d(p0, p1, p2, p3,
                                                              q0, q1, q2, q3),
@@ -312,46 +311,46 @@ namespace dolfin
 					   double p1,
 					   double point);
 
-    static bool _collides_segment_point_2d(Point p0,
-					   Point p1,
-					   Point point);
+    static bool _collides_segment_point_2d(const Point& p0,
+					   const Point& p1,
+					   const Point& point);
 
-    static bool _collides_segment_point_3d(Point p0,
-					   Point p1,
-					   Point point);
+    static bool _collides_segment_point_3d(const Point& p0,
+					   const Point& p1,
+					   const Point& point);
 
     static bool _collides_segment_segment_1d(double p0,
                                              double p1,
                                              double q0,
                                              double q1);
 
-    static bool _collides_segment_segment_2d(Point p0,
-					     Point p1,
-					     Point q0,
-					     Point q1);
+    static bool _collides_segment_segment_2d(const Point& p0,
+					     const Point& p1,
+					     const Point& q0,
+					     const Point& q1);
 
-    static bool _collides_segment_segment_3d(Point p0,
-					     Point p1,
-					     Point q0,
-					     Point q1);
+    static bool _collides_segment_segment_3d(const Point& p0,
+					     const Point& p1,
+					     const Point& q0,
+					     const Point& q1);
 
-    static bool _collides_interior_point_segment_2d(Point q0,
-                                                    Point q1,
-                                                    Point p);
+    static bool _collides_interior_point_segment_2d(const Point& q0,
+                                                    const Point& q1,
+                                                    const Point& p);
 
-    static bool _collides_interior_point_segment_3d(Point q0,
-                                                    Point q1,
-                                                    Point p);
+    static bool _collides_interior_point_segment_3d(const Point& q0,
+                                                    const Point& q1,
+                                                    const Point& p);
 
-    static bool _collides_triangle_point_2d(Point p0,
-					    Point p1,
-					    Point p2,
-					    Point point);
+    static bool _collides_triangle_point_2d(const Point& p0,
+					    const Point& p1,
+					    const Point& p2,
+					    const Point& point);
 
-    static bool _collides_triangle_point_3d(Point p0,
-					    Point p1,
-					    Point p2,
-					    Point point);
+    static bool _collides_triangle_point_3d(const Point& p0,
+					    const Point& p1,
+					    const Point& p2,
+					    const Point& point);
 
     static bool _collides_triangle_segment_2d(const Point& p0,
 					      const Point& p1,
@@ -359,11 +358,11 @@ namespace dolfin
 					      const Point& q0,
 					      const Point& q1);
 
-    static bool _collides_triangle_segment_3d(Point p0,
-					      Point p1,
-					      Point p2,
-					      Point q0,
-					      Point q1);
+    static bool _collides_triangle_segment_3d(const Point& p0,
+					      const Point& p1,
+					      const Point& p2,
+					      const Point& q0,
+					      const Point& q1);
 
     static bool _collides_triangle_triangle_2d(const Point& p0,
 					       const Point& p1,
@@ -379,11 +378,11 @@ namespace dolfin
 					       const Point& q1,
 					       const Point& q2);
 
-    static bool _collides_tetrahedron_point_3d(Point p0,
-                                               Point p1,
-                                               Point p2,
-                                               Point p3,
-                                               Point point);
+    static bool _collides_tetrahedron_point_3d(const Point& p0,
+                                               const Point& p1,
+                                               const Point& p2,
+                                               const Point& p3,
+                                               const Point& point);
 
     static bool _collides_tetrahedron_segment_3d(const Point& p0,
                                                  const Point& p1,
@@ -413,12 +412,12 @@ namespace dolfin
 
     // Utility function for computing the cross product (a-c) x (b-c)
     // accurately
-    static Point cross_product(Point a,
-			       Point b,
-			       Point c);
-    static double cross_product_norm(Point a,
-				     Point b,
-				     Point c);
+    static Point cross_product(const Point& a,
+			       const Point& b,
+			       const Point& c);
+    static double cross_product_norm(const Point& a,
+				     const Point& b,
+				     const Point& c);
 
 
     // // Utility function for triangle-triangle collision

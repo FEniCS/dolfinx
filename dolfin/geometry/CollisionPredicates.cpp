@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-02-16
+// Last changed: 2017-03-14
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -49,14 +49,7 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
 #include "Point.h"
-#include "GeometryDebugging.h"
 #include "CollisionPredicates.h"
-
-// #define augustdebug
-
-#ifdef augustdebug
-#include "dolfin_simplex_tools.h"
-#endif
 
 using namespace dolfin;
 
@@ -96,10 +89,10 @@ bool CollisionPredicates::collides(const MeshEntity& entity,
 
   if (tdim == 3)
     return collides_tetrahedron_point_3d(g.point(v[0]),
-				      g.point(v[1]),
-				      g.point(v[2]),
-				      g.point(v[3]),
-				      point);
+					 g.point(v[1]),
+					 g.point(v[2]),
+					 g.point(v[3]),
+					 point);
 
   dolfin_error("CollisionPredicates.cpp",
                "compute entity-point collision",
@@ -156,31 +149,31 @@ bool CollisionPredicates::collides(const MeshEntity& entity_0,
 
   if (d0 == 2 && d1 == 3)
     return collides_tetrahedron_triangle_3d(g1.point(v1[0]),
-                                         g1.point(v1[1]),
-                                         g1.point(v1[2]),
-                                         g1.point(v1[3]),
-                                         g0.point(v0[0]),
-                                         g0.point(v0[1]),
-                                         g0.point(v0[2]));
+					    g1.point(v1[1]),
+					    g1.point(v1[2]),
+					    g1.point(v1[3]),
+					    g0.point(v0[0]),
+					    g0.point(v0[1]),
+					    g0.point(v0[2]));
 
   if (d0 == 3 && d1 == 2)
     return collides_tetrahedron_triangle_3d(g0.point(v0[0]),
-                                         g0.point(v0[1]),
-                                         g0.point(v0[2]),
-                                         g0.point(v0[3]),
-                                         g1.point(v1[0]),
-                                         g1.point(v1[1]),
-                                         g1.point(v1[2]));
+					    g0.point(v0[1]),
+					    g0.point(v0[2]),
+					    g0.point(v0[3]),
+					    g1.point(v1[0]),
+					    g1.point(v1[1]),
+					    g1.point(v1[2]));
 
   if (d0 == 3 && d1 == 3)
     return collides_tetrahedron_tetrahedron_3d(g0.point(v0[0]),
-                                            g0.point(v0[1]),
-                                            g0.point(v0[2]),
-                                            g0.point(v0[3]),
-                                            g1.point(v1[0]),
-                                            g1.point(v1[1]),
-                                            g1.point(v1[2]),
-                                            g1.point(v1[3]));
+					       g0.point(v0[1]),
+					       g0.point(v0[2]),
+					       g0.point(v0[3]),
+					       g1.point(v1[0]),
+					       g1.point(v1[1]),
+					       g1.point(v1[2]),
+					       g1.point(v1[3]));
 
   dolfin_error("CollisionPredicates.cpp",
                "compute entity-entity collision",
@@ -308,9 +301,9 @@ bool CollisionPredicates::_collides_segment_point_1d(double p0,
   return p0 <= point and point <= p1;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_segment_point_2d(Point p0,
-						     Point p1,
-						     Point point)
+bool CollisionPredicates::_collides_segment_point_2d(const Point& p0,
+						     const Point& p1,
+						     const Point& point)
 {
   const double orientation = orient2d(p0, p1, point);
 
@@ -331,9 +324,9 @@ namespace
   }
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_segment_point_3d(Point p0,
-						     Point p1,
-						     Point point)
+bool CollisionPredicates::_collides_segment_point_3d(const Point& p0,
+						     const Point& p1,
+						     const Point& point)
 {
   // std::cout << tools::drawtriangle({p0,p1})<<tools::plot3(point)<<'\n';
 
@@ -351,8 +344,8 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
   						 { p1.x(), p1.z() },
   						 { point.x(), point.z() } }};
     const double det_xz = _orient2d(xz[0].data(),
-  				   xz[1].data(),
-  				   xz[2].data());
+				    xz[1].data(),
+				    xz[2].data());
 
     // std::cout << __FUNCTION__<<" "<<det_xz << std::endl;
 
@@ -362,8 +355,8 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
   						   { p1.y(), p1.z() },
   						   { point.y(), point.z() } }};
       const double det_yz = _orient2d(yz[0].data(),
-  				     yz[1].data(),
-  				     yz[2].data());
+				      yz[1].data(),
+				      yz[2].data());
 
       // std::cout << __FUNCTION__<<" "<<det_yz << std::endl;
 
@@ -372,7 +365,7 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
 	// Point is aligned with segment
 	const double length = (p0 - p1).squared_norm();
 	return (point-p0).squared_norm() <= length and
-					   (point-p1).squared_norm() <= length;
+	  (point-p1).squared_norm() <= length;
       }
     }
   }
@@ -380,9 +373,9 @@ bool CollisionPredicates::_collides_segment_point_3d(Point p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_interior_point_segment_2d(Point q0,
-							      Point q1,
-							      Point p)
+bool CollisionPredicates::_collides_interior_point_segment_2d(const Point& q0,
+							      const Point& q1,
+							      const Point& p)
 {
   const double q0_q1_p = orient2d(q0, q1, p);
   const Point dq = q1-q0;
@@ -391,9 +384,9 @@ bool CollisionPredicates::_collides_interior_point_segment_2d(Point q0,
   return q0_q1_p == 0 && (p-q0).squared_norm() <= segment_length && (p-q1).squared_norm() <= segment_length && dq.dot(q1-p) > 0 && dq.dot(p-q0) > 0;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_interior_point_segment_3d(Point q0,
-							      Point q1,
-							      Point p)
+bool CollisionPredicates::_collides_interior_point_segment_3d(const Point& q0,
+							      const Point& q1,
+							      const Point& p)
 {
   // FIXME
   dolfin_error("CollisionPredicates",
@@ -425,10 +418,10 @@ bool CollisionPredicates::_collides_segment_segment_1d(double p0,
   return result;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_segment_segment_2d(Point p0,
-						       Point p1,
-						       Point q0,
-						       Point q1)
+bool CollisionPredicates::_collides_segment_segment_2d(const Point& p0,
+						       const Point& p1,
+						       const Point& q0,
+						       const Point& q1)
 {
   if (collides_segment_point_2d(p0, p1, q0)) return true;
   if (collides_segment_point_2d(p0, p1, q1)) return true;
@@ -444,40 +437,26 @@ bool CollisionPredicates::_collides_segment_segment_2d(Point p0,
   return q0_q1_p0*q0_q1_p1 < 0.0 && p0_p1_q0*p0_p1_q1 < 0.0;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_segment_segment_3d(Point p0,
-						       Point p1,
-						       Point q0,
-						       Point q1)
+bool CollisionPredicates::_collides_segment_segment_3d(const Point& p0,
+						       const Point& p1,
+						       const Point& q0,
+						       const Point& q1)
 {
-#ifdef augustdebug
-  std::cout << __FUNCTION__<<std::endl;
-  std::cout << tools::drawtriangle({p0,p1})<<tools::drawtriangle({q0,q1})<<'\n';
-#endif
-
   // Vertex collisions
   if (p0 == q0 || p0 == q1 || p1 == q0 || p1 == q1)
     return true;
-#ifdef augustdebug
-  std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-#endif
 
   if (collides_segment_point_3d(p0, p1, q0) or
       collides_segment_point_3d(p0, p1, q1) or
       collides_segment_point_3d(q0, q1, p0) or
       collides_segment_point_3d(q0, q1, p1))
     return true;
-#ifdef augustdebug
-  std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-#endif
 
   // Determinant must be zero
   const double det = orient3d(p0, p1, q0, q1);
 
   if (det < 0. or det > 0.)
     return false;
-#ifdef augustdebug
-  std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-#endif
 
   // Now we know that the segments are in the same plane. This means
   // that they can be parallel, or even collinear.
@@ -525,18 +504,13 @@ bool CollisionPredicates::_collides_segment_segment_3d(Point p0,
     }
   }
 
-#ifdef augustdebug
-  std::cout << p0.distance(q0)<<' '<<p0.distance(q1)<<' '<<p1.distance(q0)<<' '<<p1.distance(q1)<<'\n';
-  std::cout << __FUNCTION__<<' '<<__LINE__<<std::endl;
-#endif
-
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_triangle_point_2d(Point p0,
-						      Point p1,
-						      Point p2,
-						      Point point)
+bool CollisionPredicates::_collides_triangle_point_2d(const Point& p0,
+						      const Point& p1,
+						      const Point& p2,
+						      const Point& point)
 {
   const double ref = orient2d(p0, p1, p2);
 
@@ -548,22 +522,15 @@ bool CollisionPredicates::_collides_triangle_point_2d(Point p0,
     return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_triangle_point_3d(Point p0,
-						      Point p1,
-						      Point p2,
-						      Point point)
+bool CollisionPredicates::_collides_triangle_point_3d(const Point& p0,
+						      const Point& p1,
+						      const Point& p2,
+						      const Point& point)
 {
-#ifdef augustdebug
-  std::cout << __FUNCTION__ << ' '<< tools::drawtriangle({p0,p1,p2})<<tools::plot3(point)<<'\n';
-#endif
-
   if (p0 == point or p1 == point or p2 == point)
     return true;
 
   const double tet_det = orient3d(p0, p1, p2, point);
-#ifdef augustdebug
-  std::cout << __FUNCTION__ << "  tet_det " << tet_det <<std::endl;
-#endif
 
   // FIXME: The determinant should be exactly zero for the point to be
   // in the plane. However, if we take a triangle with vertices
@@ -644,11 +611,6 @@ bool CollisionPredicates::_collides_triangle_point_3d(Point p0,
 
   // use normal
   const Point n = cross_product(p0, p1, p2);
-
-#ifdef augustdebug
-  std::cout <<std::setprecision(16)<<std::scientific<<n<<'\n'
-	    << n.dot(cross_product(point, p0, p1))<<' '<<n.dot(cross_product(point, p2, p0)) <<' '<<n.dot(cross_product(point, p1, p2))<<'\n';
-#endif
 
   if (n.dot(cross_product(point, p0, p1)) < 0 or
       n.dot(cross_product(point, p2, p0)) < 0 or
@@ -741,11 +703,11 @@ bool CollisionPredicates::_collides_triangle_segment_2d(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_triangle_segment_3d(Point r,
-							Point s,
-							Point t,
-							Point a,
-							Point b)
+bool CollisionPredicates::_collides_triangle_segment_3d(const Point& r,
+							const Point& s,
+							const Point& t,
+							const Point& a,
+							const Point& b)
 {
   // std::cout << __FUNCTION__<<std::endl;
   //std::cout << tools::drawtriangle({r,s,t})<<tools::drawtriangle({a,b})<<'\n';
@@ -798,18 +760,20 @@ bool CollisionPredicates::_collides_triangle_segment_3d(Point r,
   else
   {
     // Temporarily flip a and b to make sure a is above
+    Point _a = a;
+    Point _b = b;
     if (rsta < 0)
-      std::swap(a, b);
+      std::swap(_a, _b);
 
-    const double rasb = orient3d(r, a, s, b);
+    const double rasb = orient3d(r, _a, s, _b);
     if (rasb < 0)
       return false;
 
-    const double satb = orient3d(s, a, t, b);
+    const double satb = orient3d(s, _a, t, _b);
     if (satb < 0)
       return false;
 
-    const double tarb = orient3d(t, a, r, b);
+    const double tarb = orient3d(t, _a, r, _b);
     if (tarb < 0)
       return false;
   }
@@ -875,10 +839,6 @@ bool CollisionPredicates::_collides_triangle_triangle_3d(const Point& p0,
 							 const Point& q1,
 							 const Point& q2)
 {
-#ifdef augustdebug
-  std::cout << __FUNCTION__<<std::endl;
-#endif
-
   // Pack points as vectors
   std::array<Point, 3> tri_0({p0, p1, p2});
   std::array<Point, 3> tri_1({q0, q1, q2});
@@ -923,11 +883,11 @@ bool CollisionPredicates::_collides_triangle_triangle_3d(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_tetrahedron_point(Point p0,
-						      Point p1,
-						      Point p2,
-						      Point p3,
-						      Point point)
+bool CollisionPredicates::_collides_tetrahedron_point_3d(const Point& p0,
+							 const Point& p1,
+							 const Point& p2,
+							 const Point& p3,
+							 const Point& point)
 {
   // std::cout << __FUNCTION__<<std::endl;
 
@@ -988,11 +948,11 @@ bool CollisionPredicates::_collides_tetrahedron_point(Point p0,
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_tetrahedron_segment_3d(const Point& p0,
-							const Point& p1,
-							const Point& p2,
-							const Point& p3,
-							const Point& q0,
-							const Point& q1)
+							   const Point& p1,
+							   const Point& p2,
+							   const Point& p3,
+							   const Point& q0,
+							   const Point& q1)
 {
   // std::cout << __FUNCTION__<<std::endl;
 
@@ -1017,12 +977,12 @@ bool CollisionPredicates::_collides_tetrahedron_segment_3d(const Point& p0,
 
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_tetrahedron_triangle_3d(const Point& p0,
-							 const Point& p1,
-							 const Point& p2,
-							 const Point& p3,
-							 const Point& q0,
-							 const Point& q1,
-							 const Point& q2)
+							    const Point& p1,
+							    const Point& p2,
+							    const Point& p3,
+							    const Point& q0,
+							    const Point& q1,
+							    const Point& q2)
 {
   // std::cout << __FUNCTION__<<std::endl;
 
@@ -1048,13 +1008,13 @@ bool CollisionPredicates::_collides_tetrahedron_triangle_3d(const Point& p0,
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_tetrahedron_tetrahedron_3d(const Point& p0,
-							    const Point& p1,
-							    const Point& p2,
-							    const Point& p3,
-							    const Point& q0,
-							    const Point& q1,
-							    const Point& q2,
-							    const Point& q3)
+							       const Point& p1,
+							       const Point& p2,
+							       const Point& p3,
+							       const Point& q0,
+							       const Point& q1,
+							       const Point& q2,
+							       const Point& q3)
 {
   // std::cout << __FUNCTION__<<std::endl;
 
@@ -1207,9 +1167,9 @@ bool CollisionPredicates::_collides_tetrahedron_tetrahedron_3d(const Point& p0,
   // return true;
 }
 //-----------------------------------------------------------------------------
-Point CollisionPredicates::cross_product(Point a,
-					 Point b,
-					 Point c)
+Point CollisionPredicates::cross_product(const Point& a,
+					 const Point& b,
+					 const Point& c)
 {
   // Accurate cross product p = (a-c) x (b-c). See Shewchuk Lecture
   // Notes on Geometric Robustness.
@@ -1229,9 +1189,9 @@ Point CollisionPredicates::cross_product(Point a,
 }
 
 //-----------------------------------------------------------------------------
-double CollisionPredicates::cross_product_norm(Point a,
-					       Point b,
-					       Point c)
+double CollisionPredicates::cross_product_norm(const Point& a,
+					       const Point& b,
+					       const Point& c)
 {
   // Accurate norm of cross product p = (a-c) x (b-c). See Shewchuk
   // Lecture Notes on Geometric Robustness.
@@ -1246,8 +1206,8 @@ double CollisionPredicates::cross_product_norm(Point a,
   double cxy[2] = {c.x(), c.y()};
 
   return std::sqrt(std::pow(_orient2d(ayz, byz, cyz), 2)
-                 + std::pow(_orient2d(azx, bzx, czx), 2)
-	         + std::pow(_orient2d(axy, bxy, cxy), 2));
+		   + std::pow(_orient2d(azx, bzx, czx), 2)
+		   + std::pow(_orient2d(axy, bxy, cxy), 2));
 }
 
 // //-----------------------------------------------------------------------------

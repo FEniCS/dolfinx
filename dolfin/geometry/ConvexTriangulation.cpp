@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-03-01
+// Last changed: 2017-03-14
 
 #include <algorithm>
 #include <tuple>
@@ -24,10 +24,6 @@
 #include "predicates.h"
 #include "GeometryPredicates.h"
 #include "ConvexTriangulation.h"
-
-#ifdef augustdebug
-#include "dolfin_simplex_tools.h"
-#endif
 
 //-----------------------------------------------------------------------------
 namespace
@@ -115,12 +111,6 @@ ConvexTriangulation::triangulate(std::vector<Point> p,
 
     if (unique_p.size() > 2)
     {
-#ifdef augustdebug
-      std::cout << __FUNCTION__<<std::endl;
-      for (const Point p: unique_p)
-	std::cout << tools::plot(p);
-      std::cout << std::endl;
-#endif
       dolfin_error("ConvexTriangulation.cpp",
                    "triangulate convex polyhedron",
                    "a convex polyhedron of topological dimension 1 can not have more than 2 points");

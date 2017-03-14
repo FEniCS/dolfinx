@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2017-02-09
+// Last changed: 2017-03-14
 //
 
 
@@ -27,7 +27,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/generation/UnitSquareMesh.h>
 
-#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+#ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
 
 // We need to use epeck here. Quotient<MP_FLOAT> as number type gives overflow
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
@@ -94,7 +94,7 @@ int main(int argc, char** argv)
     std::cout << "Done computing volumes with multimesh" << std::endl;
     double multimesh_volume = 0.;
 
-#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+#ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
     // Compute volume of each cell using cgal
     std::vector<std::vector<std::pair<CELL_STATUS, FT>>> cell_status_cgal;
     get_cells_status_cgal(multimesh, cell_status_cgal);
@@ -111,7 +111,7 @@ int main(int argc, char** argv)
       const std::vector<std::pair<CELL_STATUS, double> >& current_multimesh = cell_status_multimesh[i];
       dolfin_assert(current_multimesh.size() == num_qr[i].size());
 
-#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+#ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
       const std::vector<std::pair<CELL_STATUS, FT> >& current_cgal = cell_status_cgal[i];
       dolfin_assert(current_cgal.size() == current_multimesh.size());
 #endif
@@ -122,7 +122,7 @@ int main(int argc, char** argv)
 	std::cout << "  Cell " << j << std::endl;
 	std::cout << "    Multimesh: " << cell_status_str(current_multimesh[j].first) << " (" << current_multimesh[j].second << ")" << std::endl;
 
-#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+#ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
 	const FT error = current_cgal[j].second - current_multimesh[j].second;
 	const double relative_error = std::abs(CGAL::to_double(error / current_cgal[j].second));
 	const double tol = std::max(3*num_qr[i][j]*DOLFIN_EPS, DOLFIN_EPS_LARGE);
@@ -146,7 +146,7 @@ int main(int argc, char** argv)
     std::cout << "Total volume" << std::endl;
     std::cout << "------------" << std::endl;
     std::cout << "Multimesh: " << multimesh_volume << ", error: " << (exact_volume-multimesh_volume) << std::endl;
-#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+#ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
     std::cout << "CGAL:      " << cgal_volume << ", error: " << (exact_volume-cgal_volume) << std::endl;
 #endif
     const double relative_error = std::abs(exact_volume - multimesh_volume) / exact_volume;

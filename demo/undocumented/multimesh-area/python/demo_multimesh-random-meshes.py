@@ -18,7 +18,7 @@
 # Modified by August Johansson 2017
 #
 # First added:  2017-02-09
-# Last changed: 2017-03-07
+# Last changed: 2017-03-14
 #
 # This demo program creates a layer of meshes over a unit square mesh and checks
 # that the volume is 1.0.
@@ -78,7 +78,7 @@ def build_multimesh(num_parts, N_x, no_random_rotation):
 
         if is_interior:
             print s
-        multimesh.add(mesh)
+            multimesh.add(mesh)
 
     multimesh.build()
     return multimesh

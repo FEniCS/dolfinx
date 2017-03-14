@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-10
-// Last changed: 2017-02-09
+// Last changed: 2017-03-14
 //
 
 
@@ -28,7 +28,7 @@
 #include <dolfin/generation/UnitCubeMesh.h>
 #include <dolfin/generation/BoxMesh.h>
 
-#ifdef DOLFIN_ENABLE_CGAL_EXACT_ARITHMETIC
+#ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
 // We need to use epeck here. Qoutient<MP_FLOAT> as number type gives overflow
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Triangle_2.h>
