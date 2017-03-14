@@ -68,7 +68,7 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
                          double magnitude)
   : _function_space0(V0), _function_space1(V1)
 {
-  // Puts point and magniude data into a vector
+  // Puts point and magnitude data into a vector
   _sources.push_back({p, magnitude});
 
   // Check that function spaces are supported
@@ -93,6 +93,95 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
 PointSource::~PointSource()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+void PointSource::distribute_sources(const Mesh& mesh, const std::vector<std::pair<Point, double>>& sources)
+{
+  // Take a list of points, and assign to correct process
+
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
+  const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
+
+  // Collect up any points/values which are not local
+  std::vector<double> remote_points;
+  for (auto & s : sources)
+  {
+    const Point& p = s.first;
+    double magnitude = s.second;
+
+    unsigned int cell_index = tree->compute_first_entity_collision(p);
+
+    if (cell_index == std::numeric_limits<unsigned int>::max())
+    {
+      remote_points.insert(remote_points.end(), p.coordinates(), p.coordinates() + 3);
+      remote_points.push_back(magnitude);
+    }
+    else
+      _sources.push_back({p, magnitude});
+  }
+
+  // Send all non-local points out to all other processes
+  const unsigned int mpi_size = MPI::size(mpi_comm);
+  const unsigned int mpi_rank = MPI::rank(mpi_comm);
+  std::vector<std::vector<double>> remote_points_all(mpi_size);
+  MPI::all_gather(mpi_comm, remote_points, remote_points_all);
+
+  // Should not have sent anything to self
+  dolfin_assert(remote_points_all[mpi_rank].size() == 0);
+
+  // Flatten result back into remote_points vector
+  // All processes will have the same data
+  remote_points.clear();
+  for (auto &q : remote_points_all)
+    remote_points.insert(remote_points.end(), q.begin(), q.end());
+
+  // Go through all received points, looking for any which are local
+  std::vector<int> point_count;
+  for (auto q = remote_points.begin(); q != remote_points.end(); q += 4)
+  {
+    Point p(*q, *(q + 1), *(q + 2));
+    unsigned int cell_index = tree->compute_first_entity_collision(p);
+    point_count.push_back(cell_index != std::numeric_limits<unsigned int>::max());
+  }
+
+  // Send out the results of the search to all processes
+  const unsigned int npoints = point_count.size();
+  info("Finding processes for %d points", npoints);
+  std::vector<std::vector<int>> point_count_all(mpi_size);
+  MPI::all_gather(mpi_comm, point_count, point_count_all);
+
+  // Check the point exists on some process, and prioritise lower rank
+  for (unsigned int i = 0; i != npoints; ++i)
+  {
+    bool found = false;
+    for (unsigned int j = 0; j != mpi_size; ++j)
+    {
+      // Clear higher ranked 'finds' if already found on a lower rank process
+      if (found)
+        point_count_all[j][i] = 0;
+
+      if (point_count_all[j][i] != 0)
+        found = true;
+    }
+    if (!found)
+    {
+      dolfin_error("PointSource.cpp",
+                   "apply point source to vector",
+                   "The point is outside of the domain"); // (%s)", p.str().c_str());
+    }
+  }
+
+  unsigned int i = 0;
+  for (auto q = remote_points.begin(); q != remote_points.end(); q += 4)
+  {
+    if (point_count_all[mpi_rank][i] == 1)
+    {
+      const Point p(*q, *(q + 1), *(q + 2));
+      double val = *(q + 3);
+      _sources.push_back({p, val});
+    }
+    ++i;
+  }
 }
 //-----------------------------------------------------------------------------
 void PointSource::apply(GenericVector& b)
