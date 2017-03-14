@@ -94,10 +94,8 @@ PETScVector::PETScVector(const PETScVector& v) : _x(nullptr)
 //-----------------------------------------------------------------------------
 PETScVector::~PETScVector()
 {
-  if (_x) {
-    PetscErrorCode ierr = VecDestroy(&_x);
-    CHECK_ERROR("VecDestroy");
-  }
+  if (_x)
+    VecDestroy(&_x);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> PETScVector::copy() const
