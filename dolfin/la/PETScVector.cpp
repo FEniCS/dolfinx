@@ -41,7 +41,7 @@ const std::map<std::string, NormType> PETScVector::norm_types
 = { {"l1",   NORM_1}, {"l2",   NORM_2},  {"linf", NORM_INFINITY} };
 
 
-#define CHECK_ERROR(NAME) do { if (ierr != 0) petsc_error(ierr, __FILE__, NAME); } while(0);
+#define CHECK_ERROR(NAME) do { if (ierr != 0) petsc_error(ierr, __FILE__, NAME); } while(0)
 
 
 //-----------------------------------------------------------------------------
