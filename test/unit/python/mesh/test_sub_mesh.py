@@ -20,6 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import gc
 import pytest
 from dolfin import *
 import six
@@ -31,7 +32,11 @@ def MeshFunc(request):
     test_mesh = [(UnitIntervalMesh, (10,)),
                  (UnitSquareMesh, (10, 10)),
                  (UnitCubeMesh, (10, 10, 10))]
-    return test_mesh[request.param]
+    yield test_mesh[request.param]
+
+    # Destroy deterministically
+    gc.collect()
+    MPI.barrier(mpi_comm_world())
 
 
 @skip_in_parallel
