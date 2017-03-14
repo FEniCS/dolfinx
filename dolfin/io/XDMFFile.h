@@ -25,6 +25,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cmath>
 
 #ifdef HAS_HDF5
 #include <hdf5.h>
@@ -433,6 +434,7 @@ namespace dolfin
 
     // Counter for time series
     std::size_t _counter;
+    double _last_time_step = std::nan("");
 
     // The XML document currently representing the XDMF
     // which needs to be kept open for time series etc.
