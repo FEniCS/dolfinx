@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-03-02
+// Last changed: 2017-03-15
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -1224,7 +1224,7 @@ void MultiMesh::_inclusion_exclusion_interface
 	  for (const Simplex& s: Eij_cap_Tk)
 	  {
 	    if (s.size() == tdim_interface + 1 and
-		!GeometryPredicates::is_degenerate(simplex, gdim))
+		!GeometryPredicates::is_degenerate(s, gdim))
 	    {
 	      const std::size_t num_pts
 		= _add_quadrature_rule(qr_stage0, s, gdim,
