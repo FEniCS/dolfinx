@@ -4,6 +4,8 @@ Change log
 dev
 ---
 
+- Switch default Python version to Python 3. Use
+  `-DDOLFIN_USE_PYTHON3=off` to build with Python 2.
 - Remove redundant ``solve_transpose`` functions (use solve with bool
   argument instead)
 - Remove OpenMpAsssmebler
