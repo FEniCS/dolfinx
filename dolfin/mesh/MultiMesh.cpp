@@ -617,13 +617,6 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	_inclusion_exclusion_overlap(overlap_qr, initial_polyhedra,
 				     tdim, gdim, quadrature_order);
 
-      double vol = 0;
-      for (const auto qr: overlap_qr)
-      {
-	for (const double w: qr.second)
-	  vol += w;
-      }
-
       // Store quadrature rules for cut cell
       _quadrature_rules_overlap[cut_part][cut_cell_index] = overlap_qr;
     }
