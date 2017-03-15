@@ -201,9 +201,9 @@ the forms.
      F.mu = mu; F.lmbda = lambda; F.u = u;
      F.B = B; F.T = T;
 
-    // Create jacobian dF = F' (for use in nonlinear solver).
-    HyperElasticity::JacobianForm J(V, V);
-    J.mu = mu; J.lmbda = lambda; J.u = u;
+     // Create Jacobian dF = F' (for use in nonlinear solver).
+     HyperElasticity::JacobianForm J(V, V);
+     J.mu = mu; J.lmbda = lambda; J.u = u;
 
 Now, we have specified the variational forms and can consider the
 solution of the variational problem.
