@@ -23,7 +23,7 @@ import pytest
 from dolfin import *
 import ufl
 
-from dolfin_utils.test import *
+from dolfin_utils.test import skip_in_parallel, pushpop_parameters, fixture
 
 
 @fixture
@@ -338,7 +338,7 @@ def test_interpolation_jit_rank0(V):
 
 
 @skip_in_parallel
-def test_extrapolation(V):
+def test_extrapolation(V, pushpop_parameters):
     original_parameters = parameters["allow_extrapolation"]
 
     f0 = Function(V)
@@ -387,8 +387,6 @@ def test_extrapolation(V):
     assert f2.get_allow_extrapolation() is True
     f2.set_allow_extrapolation(False)
     assert f2.get_allow_extrapolation() is False
-
-    parameters["allow_extrapolation"] = original_parameters
 
 
 def test_interpolation_jit_rank1(W):

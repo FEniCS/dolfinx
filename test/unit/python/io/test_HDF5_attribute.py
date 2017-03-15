@@ -21,6 +21,7 @@
 
 import pytest
 import os
+import gc
 from dolfin import *
 import numpy
 from dolfin_utils.test import skip_if_not_HDF5, fixture, tempdir, \
@@ -36,7 +37,11 @@ def attr(tempdir):
 
     yield attr
 
-    del hdf_file
+    # Destroy everything deterministically
+    hdf_file.close()
+    del hdf_file, x, attr
+    gc.collect()
+    MPI.barrier(mpi_comm_world())
 
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
