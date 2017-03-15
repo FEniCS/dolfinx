@@ -48,18 +48,16 @@ topdir = os.getcwd()
 for subdir in subdirs:
     for root, dirs, files in os.walk(subdir):
 
-        # Check for .py.rst files
-        #extensions = ['.py.rst', '.cpp.py']
-        rstfiles = [f for f in files if len(f) > 7 and (f[-7:] == ".py.rst" or
-                                                        f[-8:] == ".cpp.rst" or
-                                                        f[-8:] == ".ufl.rst")]
-        #print(files)
+        # Build list if rst files
+        rstfiles = [f for f in files if len(f) > 4 and f[-4:] == ".rst"]
         if len(rstfiles) == 0:
             continue
 
-        # Check if we have Python or C++ code
+        # Builds lists of Python, C++/UFL and plain rst files
         cpp_files = [f for f in files if len(f) > 8 and (f[-8:] == ".cpp.rst" or f[-8:] == ".ufl.rst")]
         py_files = [f for f in files if len(f) > 7 and f[-7:] == ".py.rst"]
+        rst_files = set(rstfiles) - set(cpp_files) - set(py_files)
+
 
         if len(cpp_files) > 0 and len(py_files) > 0:
             raise RuntimeError("Ooops, don't know how to handle directiries with C++ and Python demos")
@@ -67,7 +65,6 @@ for subdir in subdirs:
         # Copy files to doc directory, and run pylit on file if required
         print("Converting rst files in in {} ...".format(root))
         for f in files:
-            print(f)
             if py_files:
                 # Copy files into documentation demo directory
                 shutil.copy(os.path.join(root, f), './demos/')
@@ -86,9 +83,6 @@ for subdir in subdirs:
                 demo_name = os.path.split(demo_root)[1]
 
                 # Copy files into documentation demo directory
-                print("Copy")
-                print(f)
-                print('./demos/' + demo_name)
                 demo_dir = './demos/' + demo_name + '/'
                 if not os.path.exists(demo_dir):
                     os.makedirs(demo_dir)
@@ -100,7 +94,11 @@ for subdir in subdirs:
                     ret = os.system(command)
                     if not ret == 0:
                         raise RuntimeError("Unable to convert rst file to a .cpp/py ({})".format(f))
-
+            elif rst_files:
+                if f in rst_files:
+                    if f != "documentation.rst":  # tmp fix
+                        # Copy files into documentation demo directory
+                        shutil.copy(os.path.join(root, f), './demos/')
             else:
                 raise RuntimeError("Ooops")
 
