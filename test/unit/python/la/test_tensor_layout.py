@@ -27,88 +27,82 @@ import numpy as np
 from dolfin_utils.test import *
 
 
-backends = list(linear_algebra_backends().keys())
+backends = sorted(linear_algebra_backends().keys())
 if MPI.size(mpi_comm_world()) > 1 and 'Eigen' in backends:
     backends.remove('Eigen')
 backend = set_parameters_fixture("linear_algebra_backend", backends)
+
 
 @fixture
 def mesh():
     return UnitSquareMesh(10, 10)
 
-@fixture
-def V(mesh):
-    return FunctionSpace(mesh, 'Lagrange', 1)
 
-@fixture
-def VV(mesh):
-    return VectorFunctionSpace(mesh, 'Lagrange', 1)
+@pytest.mark.parametrize("element", [
+    FiniteElement("P", triangle, 1),
+    VectorElement("P", triangle, 1),
+    VectorElement("P", triangle, 2)*FiniteElement("P", triangle, 1),
+    VectorElement("P", triangle, 1)*FiniteElement("R", triangle, 0),
+])
+def test_layout_and_pattern_interface(backend, mesh, element):
+    # Strange Tpetra segfault with Reals in sequential
+    if (backend == "Tpetra"
+        and MPI.size(mesh.mpi_comm()) > 1
+        and element == VectorElement("P", triangle, 1)*FiniteElement("R", triangle, 0)
+       ):
+        pytest.xfail(reason="This test fails segfaults")
 
-@fixture
-def TH(mesh):
-    P2 = VectorElement('Lagrange', mesh.ufl_cell(), 2)
-    P1 = FiniteElement('Lagrange', mesh.ufl_cell(), 1)
-    return FunctionSpace(mesh, P2*P1)
+    V = FunctionSpace(mesh, element)
+    m = V.mesh()
+    c = m.mpi_comm()
+    d = V.dofmap()
+    i = d.index_map()
 
-@fixture
-def VR(mesh):
-    P1 = FiniteElement('Lagrange', mesh.ufl_cell(), 1)
-    R = FiniteElement('Real', mesh.ufl_cell(), 0)
-    return FunctionSpace(mesh, P1*R)
+    # Poisson problem
+    u = TrialFunction(V)
+    v = TestFunction(V)
+    a = inner(grad(u), grad(v))*dx + dot(u, v)*dx
+    f = Expression(np.full(v.ufl_shape, "x[0]*x[1]", dtype=object).tolist(), degree=2)
+    L = inner(f, v)*dx
 
+    # Test ghosted vector (for use as dofs of FE function)
+    t0 = TensorLayout(0, TensorLayout.Sparsity_DENSE)
+    t0.init(c, [i], TensorLayout.Ghosts_GHOSTED)
+    x = Vector(c)
+    x.init(t0)
+    u = Function(V, x)
 
-def test_layout_and_pattern_interface(backend, V, VV, TH, VR):
-    for V in [V, VV, TH]:
-        m = V.mesh()
-        c = m.mpi_comm()
-        d = V.dofmap()
-        i = d.index_map()
+    # Test unghosted vector (for assembly of rhs)
+    t1 = TensorLayout(0, TensorLayout.Sparsity_DENSE)
+    t1.init(c, [i], TensorLayout.Ghosts_UNGHOSTED)
+    b = Vector()
+    b.init(t1)
+    assemble(L, tensor=b)
 
-        # Poisson problem
-        u = TrialFunction(V)
-        v = TestFunction(V)
-        a = inner(grad(u), grad(v))*dx
-        f = Expression(np.full(v.ufl_shape, "x[0]*x[1]", dtype=object).tolist(), degree=2)
-        L = inner(f, v)*dx
+    # Build sparse tensor layout (for assembly of matrix)
+    t2 = TensorLayout(0, TensorLayout.Sparsity_SPARSE)
+    t2.init(c, [i, i], TensorLayout.Ghosts_UNGHOSTED)
+    s2 = t2.sparsity_pattern()
+    s2.init(c, [i, i])
+    SparsityPatternBuilder.build(s2, m, [d, d],
+                                 True, False, False, False,
+                                 False, init=False)
+    A = Matrix()
+    A.init(t2)
+    assemble(a, tensor=A)
 
-        # Test ghosted vector (for use as dofs of FE function)
-        t0 = TensorLayout(0, TensorLayout.Sparsity_DENSE)
-        t0.init(c, [i], TensorLayout.Ghosts_GHOSTED)
-        x = Vector(c)
-        x.init(t0)
-        u = Function(V, x)
+    # Test sparsity pattern consistency
+    diag = s2.num_nonzeros_diagonal()
+    off_diag = s2.num_nonzeros_off_diagonal()
+    # Sequential pattern returns just empty off_diagonal
+    off_diag = off_diag if off_diag.any() else np.zeros(diag.shape, diag.dtype)
+    local = s2.num_local_nonzeros()
+    assert (local == diag + off_diag).all()
+    assert local.sum() == s2.num_nonzeros()
 
-        # Test unghosted vector (for assembly of rhs)
-        t1 = TensorLayout(0, TensorLayout.Sparsity_DENSE)
-        t1.init(c, [i], TensorLayout.Ghosts_UNGHOSTED)
-        b = Vector()
-        b.init(t1)
-        assemble(L, tensor=b)
-
-        # Build sparse tensor layout (for assembly of matrix)
-        t2 = TensorLayout(0, TensorLayout.Sparsity_SPARSE)
-        t2.init(c, [i, i], TensorLayout.Ghosts_UNGHOSTED)
-        s2 = t2.sparsity_pattern()
-        s2.init(c, [i, i])
-        SparsityPatternBuilder.build(s2, m, [d, d],
-                                     True, False, False, False,
-                                     False, init=False)
-        A = Matrix()
-        A.init(t2)
-        assemble(a, tensor=A)
-
-        # Test sparsity pattern consistency
-        diag = s2.num_nonzeros_diagonal()
-        off_diag = s2.num_nonzeros_off_diagonal()
-        # Sequential pattern returns just empty off_diagonal
-        off_diag = off_diag if off_diag.any() else np.zeros(diag.shape, diag.dtype)
-        local = s2.num_local_nonzeros()
-        assert (local == diag + off_diag).all()
-        assert local.sum() == s2.num_nonzeros()
-
-        # Check that solve passes smoothly
-        ud = np.full(v.ufl_shape, 0, dtype=object).tolist()
-        bc = DirichletBC(V, ud, lambda x, b: b)
-        bc.apply(A)
-        bc.apply(b)
-        solve(A, x, b)
+    # Check that solve passes smoothly
+    ud = np.full(v.ufl_shape, 0, dtype=object).tolist()
+    bc = DirichletBC(V, ud, lambda x, b: b)
+    bc.apply(A)
+    bc.apply(b)
+    solve(A, x, b)
