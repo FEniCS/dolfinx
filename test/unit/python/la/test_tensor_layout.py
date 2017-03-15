@@ -27,14 +27,9 @@ import numpy as np
 from dolfin_utils.test import *
 
 
-backends = list(linear_algebra_backends().keys())
+backends = sorted(linear_algebra_backends().keys())
 if MPI.size(mpi_comm_world()) > 1 and 'Eigen' in backends:
     backends.remove('Eigen')
-
-# FIXME: The test tends to segfault/deadlock with Tpetra
-if "Tpetra" in backends:
-    backends.remove("Tpetra")
-
 backend = set_parameters_fixture("linear_algebra_backend", backends)
 
 
@@ -50,6 +45,13 @@ def mesh():
     VectorElement("P", triangle, 1)*FiniteElement("R", triangle, 0),
 ])
 def test_layout_and_pattern_interface(backend, mesh, element):
+    # Strange Tpetra segfault with Reals in sequential
+    if (backend == "Tpetra"
+        and MPI.size(mesh.mpi_comm()) > 1
+        and element == VectorElement("P", triangle, 1)*FiniteElement("R", triangle, 0)
+       ):
+        pytest.xfail(reason="This test fails segfaults")
+
     V = FunctionSpace(mesh, element)
     m = V.mesh()
     c = m.mpi_comm()
