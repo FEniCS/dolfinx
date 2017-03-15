@@ -47,10 +47,10 @@ def mesh():
 def test_layout_and_pattern_interface(backend, mesh, element):
     # Strange Tpetra segfault with Reals in sequential
     if (backend == "Tpetra"
-        and MPI.size(mesh.mpi_comm()) > 1
+        and MPI.size(mesh.mpi_comm()) == 1
         and element == VectorElement("P", triangle, 1)*FiniteElement("R", triangle, 0)
        ):
-        pytest.xfail(reason="This test fails segfaults")
+        pytest.xfail(reason="This testcase segfaults")
 
     V = FunctionSpace(mesh, element)
     m = V.mesh()
