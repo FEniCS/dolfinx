@@ -43,8 +43,14 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
                          double magnitude)
   : _function_space0(V)
 {
+  // Checking meshes exist
+  dolfin_assert(_function_space0->mesh());
+
   // Puts point and magniude data into a vector
-  _sources.push_back({p, magnitude});
+  std::vector<std::pair<Point, double>> sources = {{p, magnitude}};
+
+  const Mesh& mesh0 = *_function_space0->mesh();
+  distribute_sources(mesh0, sources);
 
   // Check that function space is supported
   check_space_supported(*V);
@@ -58,8 +64,12 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
   dolfin_assert(_function_space0->mesh());
 
   // Copy over from pointers
+  std::vector<std::pair<Point, double>> sources_copy;
   for (auto& p : sources)
-    _sources.push_back({*(p.first), p.second});
+    sources_copy.push_back({*(p.first), p.second});
+
+  const Mesh& mesh0 = *_function_space0->mesh();
+  distribute_sources(mesh0, sources_copy);
 
   // Check that function space is supported
   check_space_supported(*V);
@@ -71,8 +81,15 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
                          double magnitude)
   : _function_space0(V0), _function_space1(V1)
 {
+  // Checking meshes exist
+  dolfin_assert(_function_space0->mesh());
+  dolfin_assert(_function_space1->mesh());
+
   // Puts point and magnitude data into a vector
-  _sources.push_back({p, magnitude});
+  std::vector<std::pair<Point, double>> sources = {{p, magnitude}};
+
+  const Mesh& mesh0 = *_function_space0->mesh();
+  distribute_sources(mesh0, sources);
 
   // Check that function spaces are supported
   check_space_supported(*V0);
@@ -88,18 +105,15 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
   dolfin_assert(_function_space0->mesh());
   dolfin_assert(_function_space1->mesh());
 
-  // Do we need to check that the meshes are the same?
+  // FIXME: do we need to check that the meshes are the same?
 
-  // Puts point and magnitude data into a vector
+  // Copy point and magnitude data
+  std::vector<std::pair<Point, double>> source_copy;
   for (auto& p : sources)
-    _sources.push_back({*(p.first), p.second});
+    source_copy.push_back({*(p.first), p.second});
 
   const Mesh& mesh0 = *_function_space0->mesh();
-  distribute_sources(mesh0, _sources);
-
-  // Copy over from pointers
-  //for (auto& p : sources)
-  //  _sources.push_back({*(p.first), p.second});
+  distribute_sources(mesh0, source_copy);
 
   // Check that function spaces are supported
   check_space_supported(*V0);
