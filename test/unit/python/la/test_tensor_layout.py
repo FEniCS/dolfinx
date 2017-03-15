@@ -31,7 +31,7 @@ backends = list(linear_algebra_backends().keys())
 if MPI.size(mpi_comm_world()) > 1 and 'Eigen' in backends:
     backends.remove('Eigen')
 
-# The tends to segfault/deadlock with Tpetra
+# FIXME: The test tends to segfault/deadlock with Tpetra
 if "Tpetra" in backends:
     backends.remove("Tpetra")
 
