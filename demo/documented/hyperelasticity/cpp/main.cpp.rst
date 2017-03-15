@@ -1,13 +1,6 @@
 Hyperelasticity (C++)
 =====================
 
-The implementation is split in two files: a form file containing the
-definition of the variational forms expressed in UFL and the solver
-which is implemented in a C++ file.
-
-Running this demo requires the files: :download:`main.cpp`,
-:download:`HyperElasticity.ufl` and :download:`CMakeLists.txt`.
-
 
 Background
 ----------
@@ -24,7 +17,8 @@ definition of the variational forms expressed in UFL and a C++ file
 containing the actual solver.
 
 Running this demo requires the files: :download:`main.cpp`,
-:download:`Hyperelasticity.ufl` and :download:`CMakeLists.txt`.
+:download:`HyperElasticity.ufl` and :download:`CMakeLists.txt`.
+
 
 UFL form file
 ^^^^^^^^^^^^^
