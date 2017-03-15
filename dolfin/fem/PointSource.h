@@ -38,6 +38,8 @@ namespace dolfin
   class PointSource
   {
   public:
+    /// Create point source at given point of given magnitude
+    PointSource(std::shared_ptr<const FunctionSpace> V);
 
     /// Create point source at given point of given magnitude
     PointSource(std::shared_ptr<const FunctionSpace> V, const Point& p,
@@ -71,7 +73,6 @@ namespace dolfin
 
     // Collective MPI method to distribute sources to correct processes
     void distribute_sources(const Mesh& mesh, std::vector<std::pair<Point, double>>& sources);
-
 
     // Check that function space is scalar
     void check_space_supported(const FunctionSpace& V);

@@ -24,7 +24,7 @@ import numpy as np
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
 
-meshes = [UnitIntervalMesh(10), UnitSquareMesh(2,2), UnitCubeMesh(4,4,4)]
+meshes = [UnitIntervalMesh(10), UnitSquareMesh(10,10), UnitCubeMesh(4,4,4)]
 data = [(UnitIntervalMesh(10), Point(0.5)),
         (UnitSquareMesh(10,10), Point(0.5, 0.5)),
         (UnitCubeMesh(3,3,3), Point(0.5, 0.5, 0.5))]
@@ -34,12 +34,17 @@ def test_pointsource_vector_node(mesh, point):
     """Tests point source when given constructor PointSource(V, point, mag)
     with a vector and when placed at a node for 1D, 2D and 3D. """
 
+    rank = MPI.rank(mesh.mpi_comm())
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
     b = assemble(Constant(0.0)*v*dx)
-    ps = PointSource(V, point, 10.0)
+    if rank == 0:
+        ps = PointSource(V, point, 10.0)
+    else:
+        ps = PointSource(V, [])
     ps.apply(b)
 
+    print b.array()
     # Checks array sums to correct value
     b_sum = b.sum()
     assert round(b_sum - 10.0) == 0
@@ -355,3 +360,8 @@ def test_multi_ps_matrix(mesh):
     # Checks b sums to correct value
     a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
     assert round(a_sum - 2*len(c_ids)*10) == 0
+
+
+mesh = UnitIntervalMesh(2)
+point = Point(0.0)
+test_pointsource_vector_node(mesh, point)

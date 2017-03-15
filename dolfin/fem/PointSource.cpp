@@ -36,15 +36,28 @@
 #include "PointSource.h"
 
 using namespace dolfin;
-
+//-----------------------------------------------------------------------------
+PointSource::PointSource(std::shared_ptr<const FunctionSpace> V)
+  : _function_space0(V)
+{
+  // Check that function space is supported
+  check_space_supported(*V);
+}
 //-----------------------------------------------------------------------------
 PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
                          const Point& p,
                          double magnitude)
   : _function_space0(V)
 {
+  // Checking meshes exist
+  dolfin_assert(_function_space0->mesh());
+
   // Puts point and magniude data into a vector
   _sources.push_back({p, magnitude});
+
+  // Distribute sources
+  const Mesh& mesh0 = *_function_space0->mesh();
+  distribute_sources(mesh0, _sources);
 
   // Check that function space is supported
   check_space_supported(*V);
@@ -61,6 +74,10 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
   for (auto& p : sources)
     _sources.push_back({*(p.first), p.second});
 
+  // Distribute sources
+  const Mesh& mesh0 = *_function_space0->mesh();
+  distribute_sources(mesh0, _sources);
+
   // Check that function space is supported
   check_space_supported(*V);
 }
@@ -71,8 +88,16 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
                          double magnitude)
   : _function_space0(V0), _function_space1(V1)
 {
+  // Checking meshes exist
+  dolfin_assert(_function_space0->mesh());
+  dolfin_assert(_function_space1->mesh());
+
   // Puts point and magnitude data into a vector
   _sources.push_back({p, magnitude});
+
+  // Distribute sources
+  const Mesh& mesh0 = *_function_space0->mesh();
+  distribute_sources(mesh0, _sources);
 
   // Check that function spaces are supported
   check_space_supported(*V0);
@@ -113,6 +138,7 @@ PointSource::~PointSource()
 //-----------------------------------------------------------------------------
 void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Point, double>>& sources)
 {
+  info("Number of point sources initially: " + std::to_string(_sources.size()));
   // Take a list of points, and assign to correct process
   const MPI_Comm mpi_comm = mesh.mpi_comm();
   const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
@@ -130,9 +156,13 @@ void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Poi
     {
       remote_points.insert(remote_points.end(), p.coordinates(), p.coordinates() + 3);
       remote_points.push_back(magnitude);
+      info("spitting out point");
     }
     else
+    {
       _sources.push_back({p, magnitude});
+      info("keeping point");
+    }
   }
 
   // Send all non-local points out to all other processes
@@ -143,6 +173,8 @@ void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Poi
 
   // Should not have sent anything to self
   dolfin_assert(remote_points_all[mpi_rank].size() == 0);
+
+  info("Size of remote points all: " + std::to_string(remote_points_all[mpi_rank].size()));
 
   // Flatten result back into remote_points vector
   // All processes will have the same data
@@ -197,6 +229,7 @@ void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Poi
     }
     ++i;
   }
+  info("Number of point sources at end of distribute: " + std::to_string(_sources.size()));
 }
 //-----------------------------------------------------------------------------
 void PointSource::apply(GenericVector& b)
@@ -214,15 +247,17 @@ void PointSource::apply(GenericVector& b)
   dolfin_assert(_function_space0->element());
   dolfin_assert(_function_space0->dofmap());
 
+  info("Number of point sources in apply: " + std::to_string(_sources.size()));
+
   const Mesh& mesh = *_function_space0->mesh();
   const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
   unsigned int cell_index;
 
   // Variables for checking that cell is unique
-  int num_found;
-  bool cell_found_on_process;
-  int processes_with_cell;
-  unsigned int selected_process;
+  //int num_found;
+  //bool cell_found_on_process;
+  //int processes_with_cell;
+  //unsigned int selected_process;
 
   // Variables for cell information
   std::vector<double> coordinate_dofs;
@@ -249,55 +284,54 @@ void PointSource::apply(GenericVector& b)
     cell_index = tree->compute_first_entity_collision(p);
 
     // Check that we found the point on at least one processor
-    num_found = 0;
-    cell_found_on_process = cell_index
-      != std::numeric_limits<unsigned int>::max();
-    if (cell_found_on_process)
-      num_found = MPI::sum(mesh.mpi_comm(), 1);
-    else
-      num_found = MPI::sum(mesh.mpi_comm(), 0);
-    if (MPI::rank(mesh.mpi_comm()) == 0 && num_found == 0)
-    {
-      dolfin_error("PointSource.cpp",
-		   "apply point source to vector",
-		   "The point is outside of the domain (%s)", p.str().c_str());
-    }
+    //num_found = 0;
+    //cell_found_on_process = cell_index
+    //  != std::numeric_limits<unsigned int>::max();
+    //if (cell_found_on_process)
+    //  num_found = MPI::sum(mesh.mpi_comm(), 1);
+    //else
+    //  num_found = MPI::sum(mesh.mpi_comm(), 0);
+    //if (MPI::rank(mesh.mpi_comm()) == 0 && num_found == 0)
+    //{
+     // dolfin_error("PointSource.cpp",
+//		   "apply point source to vector”,
+//		   "The point is outside of the domain (%s)", p.str().c_str());
+//    }
 
-    processes_with_cell =
-      cell_found_on_process ? MPI::rank(mesh.mpi_comm()) : -1;
-    selected_process = MPI::max(mesh.mpi_comm(), processes_with_cell);
+  //  processes_with_cell =
+   //   cell_found_on_process ? MPI::rank(mesh.mpi_comm()) : -1;
+   // selected_process = MPI::max(mesh.mpi_comm(), processes_with_cell);
 
     // Adds point source if found on process
-    if (MPI::rank(mesh.mpi_comm()) == selected_process)
+  //  if (MPI::rank(mesh.mpi_comm()) == selected_process)
+    //{
+    // Create cell
+    Cell cell(mesh, static_cast<std::size_t>(cell_index));
+    cell.get_coordinate_dofs(coordinate_dofs);
+
+    // Evaluate all basis functions at the point()
+    cell.get_cell_data(ufc_cell);
+
+    for (std::size_t i = 0; i < dofs_per_cell; ++i)
     {
-      // Create cell
-      Cell cell(mesh, static_cast<std::size_t>(cell_index));
-      cell.get_coordinate_dofs(coordinate_dofs);
+      _function_space0->element()->evaluate_basis(i, basis.data(),
+	  					     p.coordinates(),
+						     coordinate_dofs.data(),
+						     ufc_cell.orientation);
 
-      // Evaluate all basis functions at the point()
-      cell.get_cell_data(ufc_cell);
-
-      for (std::size_t i = 0; i < dofs_per_cell; ++i)
-      {
-	_function_space0->element()->evaluate_basis(i, basis.data(),
-						    p.coordinates(),
-						    coordinate_dofs.data(),
-						    ufc_cell.orientation);
-
-	basis_sum = 0.0;
-	for (const auto& v : basis)
-	  basis_sum += v;
-	values[i] = magnitude*basis_sum;
-      }
-
-      // Compute local-to-global mapping
-      dofs = _function_space0->dofmap()->cell_dofs(cell.index());
-
-      // Add values to vector
-      b.add_local(values.data(), dofs_per_cell, dofs.data());
+      basis_sum = 0.0;
+      for (const auto& v : basis)
+        basis_sum += v;
+      values[i] = magnitude*basis_sum;
     }
-    b.apply("add");
+
+    // Compute local-to-global mapping
+    dofs = _function_space0->dofmap()->cell_dofs(cell.index());
+
+    // Add values to vector
+    b.add_local(values.data(), dofs_per_cell, dofs.data());
   }
+  b.apply("add");
 }
 //-----------------------------------------------------------------------------
 void PointSource::apply(GenericMatrix& A)
