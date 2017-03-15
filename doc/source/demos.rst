@@ -111,6 +111,7 @@ Using the C++ interface
 * :doc:`demos/biharmonic/main.cpp`
 * :doc:`demos/auto-adaptive-poisson/main.cpp`
 * :doc:`demos/nonmatching-interpolation/main.cpp`
+* :doc:`demos/hyperelasticity/main.cpp`
 
 .. todo:: Fix the toctree
 

@@ -9,6 +9,13 @@ Running this demo requires the files: :download:`main.cpp`,
 :download:`HyperElasticity.ufl` and :download:`CMakeLists.txt`.
 
 
+Background
+----------
+
+See the section :ref:`hyperelasticity` for some mathematical
+background on this demo.
+
+
 Implementation
 --------------
 
