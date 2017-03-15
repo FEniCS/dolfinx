@@ -54,6 +54,9 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
 			  const std::vector<std::pair<const Point*, double> > sources)
   : _function_space0(V)
 {
+  // Checking meshes exist
+  dolfin_assert(_function_space0->mesh());
+
   // Copy over from pointers
   for (auto& p : sources)
     _sources.push_back({*(p.first), p.second});
@@ -81,9 +84,22 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
 			  const std::vector<std::pair<const Point*, double> > sources)
   : _function_space0(V0), _function_space1(V1)
 {
-  // Copy over from pointers
+  // Checking meshes exist
+  dolfin_assert(_function_space0->mesh());
+  dolfin_assert(_function_space1->mesh());
+
+  // Do we need to check that the meshes are the same?
+
+  // Puts point and magnitude data into a vector
   for (auto& p : sources)
     _sources.push_back({*(p.first), p.second});
+
+  const Mesh& mesh0 = *_function_space0->mesh();
+  distribute_sources(mesh0, _sources);
+
+  // Copy over from pointers
+  //for (auto& p : sources)
+  //  _sources.push_back({*(p.first), p.second});
 
   // Check that function spaces are supported
   check_space_supported(*V0);
@@ -95,10 +111,9 @@ PointSource::~PointSource()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PointSource::distribute_sources(const Mesh& mesh, const std::vector<std::pair<Point, double>>& sources)
+void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Point, double>>& sources)
 {
   // Take a list of points, and assign to correct process
-
   const MPI_Comm mpi_comm = mesh.mpi_comm();
   const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
 
@@ -106,7 +121,7 @@ void PointSource::distribute_sources(const Mesh& mesh, const std::vector<std::pa
   std::vector<double> remote_points;
   for (auto & s : sources)
   {
-    const Point& p = s.first;
+    Point& p = s.first;
     double magnitude = s.second;
 
     unsigned int cell_index = tree->compute_first_entity_collision(p);

@@ -70,7 +70,7 @@ namespace dolfin
   private:
 
     // Collective MPI method to distribute sources to correct processes
-    void distribute_sources(const Mesh& mesh, const std::vector<std::pair<Point, double>>& sources);
+    void distribute_sources(const Mesh& mesh, std::vector<std::pair<Point, double>>& sources);
 
 
     // Check that function space is scalar
