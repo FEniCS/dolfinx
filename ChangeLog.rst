@@ -8,6 +8,8 @@ dev
   (communicator should be passed via constructor)
 - Remove ``Function::operator[+-*/]`` to prevent memory corruption problems
   (does not affect Python interface)
+- Enable XDMF3 output of time series of multiple functions with different
+  meshes and different time steps to one single XDMF file.  
 
 2016.2.0 [2016-11-30]
 ---------------------
