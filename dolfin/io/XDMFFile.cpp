@@ -262,27 +262,38 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
   dolfin_assert(domain_node);
 
   // Look for existing TimeSeries with the same name as the given function
+  bool new_timegrid = false;
   pugi::xml_node timegrid_node;
-  timegrid_node = domain_node.find_child_by_attribute("Grid", "Name", u.name().c_str());
 
-  if (!timegrid_node) {
+  // Search for the time series grid node with the function name
+  int i = 0, timeseries_index = -1;
+  for (pugi::xml_node n : domain_node.children("Grid"))
+  {
+    i++;
+    if (std::string(n.attribute("CollectionType").value()) == "Temporal" &&
+        std::string(n.attribute("GridType").value()) == "Collection" &&
+        std::string(n.attribute("Name").value()) == u.name())
+    {
+      timegrid_node = n;
+      timeseries_index = i;
+      break;
+    }
+  }
+
+  // Check if there was a time series grid node for us
+  if (timeseries_index == -1) {
     //  Create a new TimeSeries with the function name() as Name
     timegrid_node = domain_node.append_child("Grid");
     dolfin_assert(timegrid_node);
     timegrid_node.append_attribute("Name") = u.name().c_str();
     timegrid_node.append_attribute("GridType") = "Collection";
     timegrid_node.append_attribute("CollectionType") = "Temporal";
-  }
-
-  dolfin_assert(timegrid_node);
-  if (std::string(timegrid_node.attribute("CollectionType").value()) != "Temporal")
-  {
-    dolfin_error("XDMFFile.cpp", "add Function to XDMF",
-      "XDMF file contains a non-time series item with the same name as the given function");
+    new_timegrid = true;
+    timeseries_index = i + 1;
   }
 
   // Add the mesh Grid to the time Grid
-  if (_counter == 0 or parameters["rewrite_function_mesh"])
+  if (new_timegrid or parameters["rewrite_function_mesh"])
   {
     add_mesh(_mpi_comm, timegrid_node, h5_id, mesh,
              "/Mesh/" + std::to_string(_counter));
@@ -292,20 +303,19 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
     // Make reference back to first Mesh of the time series
     pugi::xml_node grid_node = timegrid_node.append_child("Grid");
     dolfin_assert(grid_node);
+    std::string xpath;
 
-    // Add topology node (reference)
-    pugi::xml_node topology_node = grid_node.append_child("Topology");
-    dolfin_assert(topology_node);
-    topology_node.append_attribute("Reference") = "XML";
-    topology_node.append_child(pugi::node_pcdata)
-      .set_value("/Xdmf/Domain/Grid/Grid/Topology");
+    // Reference to previous topology
+    xpath = std::string("/1/1/") + std::to_string(timeseries_index) + std::string("/1/1");
+    pugi::xml_node ref_topo = grid_node.append_child("xi:include");
+    dolfin_assert(ref_topo);
+    ref_topo.append_attribute("xpointer") = xpath.c_str();
 
-    // Add geometry node (reference)
-    pugi::xml_node geometry_node = grid_node.append_child("Geometry");
-    dolfin_assert(geometry_node);
-    geometry_node.append_attribute("Reference") = "XML";
-    geometry_node.append_child(pugi::node_pcdata)
-      .set_value("/Xdmf/Domain/Grid/Grid/Geometry");
+    // Reference to previous geometry
+    xpath = std::string("/1/1/") + std::to_string(timeseries_index) + std::string("/1/2");
+    pugi::xml_node ref_geom = grid_node.append_child("xi:include");
+    dolfin_assert(ref_geom);
+    ref_geom.append_attribute("xpointer") = xpath.c_str();
   }
 
   pugi::xml_node grid_node = timegrid_node.last_child();
