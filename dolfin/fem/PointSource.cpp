@@ -127,8 +127,6 @@ PointSource::~PointSource()
 //-----------------------------------------------------------------------------
 void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Point, double>>& sources)
 {
-  ///Distributes sources to ensure that if global sources are provided from one processor, the correct processor knows about them.  Also ensures that when provide local sources, the points only get added once if they lie on a process boundary
-
   // Take a list of points, and assign to correct process
   const MPI_Comm mpi_comm = mesh.mpi_comm();
   const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
@@ -213,7 +211,7 @@ void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Poi
 //-----------------------------------------------------------------------------
 void PointSource::apply(GenericVector& b)
 {
-  /// Applies local point sources.
+  // Applies local point sources.
   dolfin_assert(_function_space0);
   if (_function_space1)
   {
@@ -286,7 +284,7 @@ void PointSource::apply(GenericVector& b)
 //-----------------------------------------------------------------------------
 void PointSource::apply(GenericMatrix& A)
 {
-  /// Applies local point sources.
+  // Applies local point sources.
   dolfin_assert(_function_space0);
 
   if (!_function_space1)

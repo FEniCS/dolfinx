@@ -33,7 +33,8 @@ namespace dolfin
   /// (Dirac delta function) to the right-hand side vector in a
   /// variational problem. The associated function space must be
   /// scalar in order for the inner product with the (scalar) Dirac
-  /// delta function to be well defined.
+  /// delta function to be well defined. For each of the constructors,
+  /// Points passed to PointSource will be copied.
 
   class PointSource
   {
