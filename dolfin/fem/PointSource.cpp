@@ -37,13 +37,6 @@
 
 using namespace dolfin;
 //-----------------------------------------------------------------------------
-PointSource::PointSource(std::shared_ptr<const FunctionSpace> V)
-  : _function_space0(V)
-{
-  // Check that function space is supported
-  check_space_supported(*V);
-}
-//-----------------------------------------------------------------------------
 PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
                          const Point& p,
                          double magnitude)
@@ -55,12 +48,9 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
   // Puts point and magniude data into a vector
   std::vector<std::pair<Point, double>> sources = {{p, magnitude}};
 
-  const Mesh& mesh0 = *_function_space0->mesh();
-  distribute_sources(mesh0, sources);
-
   // Distribute sources
   const Mesh& mesh0 = *_function_space0->mesh();
-  distribute_sources(mesh0, _sources);
+  distribute_sources(mesh0, sources);
 
   // Check that function space is supported
   check_space_supported(*V);
@@ -78,12 +68,9 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
   for (auto& p : sources)
     sources_copy.push_back({*(p.first), p.second});
 
-  const Mesh& mesh0 = *_function_space0->mesh();
-  distribute_sources(mesh0, sources_copy);
-
   // Distribute sources
   const Mesh& mesh0 = *_function_space0->mesh();
-  distribute_sources(mesh0, _sources);
+  distribute_sources(mesh0, sources_copy);
 
   // Check that function space is supported
   check_space_supported(*V);
@@ -102,12 +89,9 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
   // Puts point and magnitude data into a vector
   std::vector<std::pair<Point, double>> sources = {{p, magnitude}};
 
-  const Mesh& mesh0 = *_function_space0->mesh();
-  distribute_sources(mesh0, sources);
-
   // Distribute sources
   const Mesh& mesh0 = *_function_space0->mesh();
-  distribute_sources(mesh0, _sources);
+  distribute_sources(mesh0, sources);
 
   // Check that function spaces are supported
   check_space_supported(*V0);
@@ -145,7 +129,7 @@ PointSource::~PointSource()
 //-----------------------------------------------------------------------------
 void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Point, double>>& sources)
 {
-  info("Number of point sources initially: " + std::to_string(_sources.size()));
+  info("Number of point sources initially: " + std::to_string(sources.size()));
   // Take a list of points, and assign to correct process
   const MPI_Comm mpi_comm = mesh.mpi_comm();
   const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
@@ -179,7 +163,7 @@ void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Poi
   MPI::all_gather(mpi_comm, remote_points, remote_points_all);
 
   // Should not have sent anything to self
-  dolfin_assert(remote_points_all[mpi_rank].size() == 0);
+  //dolfin_assert(remote_points_all[mpi_rank].size() == 0);
 
   info("Size of remote points all: " + std::to_string(remote_points_all[mpi_rank].size()));
 
@@ -260,12 +244,6 @@ void PointSource::apply(GenericVector& b)
   const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
   unsigned int cell_index;
 
-  // Variables for checking that cell is unique
-  //int num_found;
-  //bool cell_found_on_process;
-  //int processes_with_cell;
-  //unsigned int selected_process;
-
   // Variables for cell information
   std::vector<double> coordinate_dofs;
   ufc::cell ufc_cell;
@@ -290,28 +268,6 @@ void PointSource::apply(GenericVector& b)
 
     cell_index = tree->compute_first_entity_collision(p);
 
-    // Check that we found the point on at least one processor
-    //num_found = 0;
-    //cell_found_on_process = cell_index
-    //  != std::numeric_limits<unsigned int>::max();
-    //if (cell_found_on_process)
-    //  num_found = MPI::sum(mesh.mpi_comm(), 1);
-    //else
-    //  num_found = MPI::sum(mesh.mpi_comm(), 0);
-    //if (MPI::rank(mesh.mpi_comm()) == 0 && num_found == 0)
-    //{
-     // dolfin_error("PointSource.cpp",
-//		   "apply point source to vector”,
-//		   "The point is outside of the domain (%s)", p.str().c_str());
-//    }
-
-  //  processes_with_cell =
-   //   cell_found_on_process ? MPI::rank(mesh.mpi_comm()) : -1;
-   // selected_process = MPI::max(mesh.mpi_comm(), processes_with_cell);
-
-    // Adds point source if found on process
-  //  if (MPI::rank(mesh.mpi_comm()) == selected_process)
-    //{
     // Create cell
     Cell cell(mesh, static_cast<std::size_t>(cell_index));
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -375,12 +331,6 @@ void PointSource::apply(GenericMatrix& A)
   const std::shared_ptr<BoundingBoxTree> tree = mesh->bounding_box_tree();
   unsigned int cell_index;
 
-  // Variables for checking point is unique in cell
-  int num_found;
-  bool cell_found_on_process;
-  int processes_with_cell;
-  unsigned int selected_process;
-
   // Variables for cell information
   std::vector<double> coordinate_dofs;
   ufc::cell ufc_cell;
@@ -441,102 +391,75 @@ void PointSource::apply(GenericMatrix& A)
     Point& p = s.first;
     double magnitude = s.second;
 
-    MPI::barrier(mesh->mpi_comm());
-
+    // Create cell
     cell_index = tree->compute_first_entity_collision(p);
+    Cell cell(*mesh, static_cast<std::size_t>(cell_index));
 
-    // Check that we found the point on at least one processor
-    num_found= 0;
-    cell_found_on_process = cell_index
-      != std::numeric_limits<unsigned int>::max();
+    // Cell information
+    cell.get_coordinate_dofs(coordinate_dofs);
+    cell.get_cell_data(ufc_cell);
 
-    if (cell_found_on_process)
-      num_found = MPI::sum(mesh->mpi_comm(), 1);
+    // Calculate values with magnitude*basis_sum_0*basis_sum_1
+    for (std::size_t i = 0; i < dofs_per_cell0; ++i)
+    {
+      V0->element()->evaluate_basis(i, basis0.data(),
+                                    p.coordinates(),
+                                    coordinate_dofs.data(),
+                                    ufc_cell.orientation);
+      for (std::size_t j = 0; j < dofs_per_cell0; ++j)
+      {
+        V1->element()->evaluate_basis(j, basis1.data(),
+                                      p.coordinates(),
+                                      coordinate_dofs.data(),
+                                      ufc_cell.orientation);
+
+        basis_sum0 = 0.0;
+        basis_sum1 = 0.0;
+        for (const auto& v : basis0)
+          basis_sum0 += v;
+        for (const auto& v : basis1)
+          basis_sum1 += v;
+
+        values_sub[i][j] = magnitude*basis_sum0*basis_sum1;
+      }
+    }
+
+    // If scalar function space, values = values_sub
+    if (num_sub_spaces < 2)
+      values = values_sub;
+    // If vector function space with repeated sub spaces,
+    // calculates the values_sub for a sub space and then manipulates
+    // values matrix for all sub_spaces.
     else
-      num_found = MPI::sum(mesh->mpi_comm(), 0);
-
-    if (MPI::rank(mesh->mpi_comm()) == 0 && num_found == 0)
     {
-      dolfin_error("PointSource.cpp",
-		   "apply point source to matrix",
-		   "The point is outside of the domain (%s)", p.str().c_str());
-    }
-    processes_with_cell =
-      cell_found_on_process ? MPI::rank(mesh->mpi_comm()) : -1;
-    selected_process = MPI::max(mesh->mpi_comm(), processes_with_cell);
-
-    // Return if point not found
-    if (MPI::rank(mesh->mpi_comm()) == selected_process)
-    {
-      // Create cell
-      Cell cell(*mesh, static_cast<std::size_t>(cell_index));
-
-      // Cell information
-      cell.get_coordinate_dofs(coordinate_dofs);
-      cell.get_cell_data(ufc_cell);
-
-      // Calculate values with magnitude*basis_sum_0*basis_sum_1
-      for (std::size_t i = 0; i < dofs_per_cell0; ++i)
+      int ii;
+      int jj;
+      for (std::size_t k=0; k<num_sub_spaces; ++k)
       {
-	V0->element()->evaluate_basis(i, basis0.data(),
-				      p.coordinates(),
-				      coordinate_dofs.data(),
-				      ufc_cell.orientation);
-	for (std::size_t j = 0; j < dofs_per_cell0; ++j)
-	{
-	  V1->element()->evaluate_basis(j, basis1.data(),
-					p.coordinates(),
-					coordinate_dofs.data(),
-					ufc_cell.orientation);
-
-	  basis_sum0 = 0.0;
-	  basis_sum1 = 0.0;
-	  for (const auto& v : basis0)
-	    basis_sum0 += v;
-	  for (const auto& v : basis1)
-	    basis_sum1 += v;
-
-	  values_sub[i][j] = magnitude*basis_sum0*basis_sum1;
-	}
+        ii = 0;
+        for (std::size_t i=k*dofs_per_cell0; i<dofs_per_cell0*(k+1); ++i)
+        {
+          jj = 0;
+          for (std::size_t j=k*dofs_per_cell1; j<dofs_per_cell1*(k+1); ++j)
+          {
+            values[i][j] = values_sub[ii][jj];
+            jj += 1;
+          }
+          ii +=1;
+        }
       }
-
-      // If scalar function space, values = values_sub
-      if (num_sub_spaces < 2)
-	values = values_sub;
-      // If vector function space with repeated sub spaces,
-      // calculates the values_sub for a sub space and then manipulates
-      // values matrix for all sub_spaces.
-      else
-      {
-	int ii;
-	int jj;
-	for (std::size_t k=0; k<num_sub_spaces; ++k)
-	{
-	  ii = 0;
-	  for (std::size_t i=k*dofs_per_cell0; i<dofs_per_cell0*(k+1); ++i)
-	  {
-	    jj = 0;
-	    for (std::size_t j=k*dofs_per_cell1; j<dofs_per_cell1*(k+1); ++j)
-	    {
-	      values[i][j] = values_sub[ii][jj];
-	      jj += 1;
-	    }
-	    ii +=1;
-	  }
-	}
-      }
-
-      // Compute local-to-global mapping
-      dofs0 = V0->dofmap()->cell_dofs(cell.index());
-      dofs1 = V1->dofmap()->cell_dofs(cell.index());
-
-      // Add values to matrix
-      A.add_local(values.data(),
-		  dofs_per_cell0*num_sub_spaces, dofs0.data(),
-		  dofs_per_cell1*num_sub_spaces, dofs1.data());
     }
-    A.apply("add");
+
+    // Compute local-to-global mapping
+    dofs0 = V0->dofmap()->cell_dofs(cell.index());
+    dofs1 = V1->dofmap()->cell_dofs(cell.index());
+
+    // Add values to matrix
+    A.add_local(values.data(),
+                dofs_per_cell0*num_sub_spaces, dofs0.data(),
+                dofs_per_cell1*num_sub_spaces, dofs1.data());
   }
+  A.apply("add");
 }
 //-----------------------------------------------------------------------------
 void PointSource::check_space_supported(const FunctionSpace& V)
