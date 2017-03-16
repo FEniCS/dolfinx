@@ -89,6 +89,20 @@ namespace dolfin
     /// Destructor
     ~XDMFFile();
 
+    /// Close the file
+    ///
+    /// This closes any open HDF5 files. In ASCII mode the XML file is
+    /// closed each time it is written to or read from, so close() has
+    /// no effect.
+    ///
+    /// From Python you can also use XDMFFile as a context manager:
+    ///
+    ///     with XDMFFile(mpi_comm_world(), 'name.xdmf') as xdmf:
+    ///         xdmf.write(mesh)
+    ///
+    /// The file is automatically closed at the end of the with block
+    void close();
+
     /// Save a mesh to XDMF format, either using an associated HDF5
     /// file, or storing the data inline as XML Create function on
     /// given function space

@@ -73,7 +73,15 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
 //-----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
 {
-  // Do nothing
+  close();
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::close()
+{
+#ifdef HAS_HDF5
+  // Close the HDF5 file
+  _hdf5_file.reset();
+#endif
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const Mesh& mesh, Encoding encoding)
