@@ -107,8 +107,6 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
   dolfin_assert(_function_space0->mesh());
   dolfin_assert(_function_space1->mesh());
 
-  // FIXME: do we need to check that the meshes are the same?
-
   // Copy point and magnitude data
   std::vector<std::pair<Point, double>> source_copy;
   for (auto& p : sources)
@@ -129,7 +127,8 @@ PointSource::~PointSource()
 //-----------------------------------------------------------------------------
 void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Point, double>>& sources)
 {
-  info("Number of point sources initially: " + std::to_string(sources.size()));
+  ///Distributes sources to ensure that if global sources are provided from one processor, the correct processor knows about them.  Also ensures that when provide local sources, the points only get added once if they lie on a process boundary
+
   // Take a list of points, and assign to correct process
   const MPI_Comm mpi_comm = mesh.mpi_comm();
   const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
@@ -147,13 +146,9 @@ void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Poi
     {
       remote_points.insert(remote_points.end(), p.coordinates(), p.coordinates() + 3);
       remote_points.push_back(magnitude);
-      info("spitting out point");
     }
     else
-    {
       _sources.push_back({p, magnitude});
-      info("keeping point");
-    }
   }
 
   // Send all non-local points out to all other processes
@@ -161,8 +156,6 @@ void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Poi
   const unsigned int mpi_rank = MPI::rank(mpi_comm);
   std::vector<std::vector<double>> remote_points_all(mpi_size);
   MPI::all_gather(mpi_comm, remote_points, remote_points_all);
-
-  info("Size of remote points all: " + std::to_string(remote_points_all[mpi_rank].size()));
 
   // Flatten result back into remote_points vector
   // All processes will have the same data
@@ -181,7 +174,6 @@ void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Poi
 
   // Send out the results of the search to all processes
   const unsigned int npoints = point_count.size();
-  info("Finding processes for %d points", npoints);
   std::vector<std::vector<int>> point_count_all(mpi_size);
   MPI::all_gather(mpi_comm, point_count, point_count_all);
 
@@ -217,11 +209,11 @@ void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Poi
     }
     ++i;
   }
-  info("Number of point sources at end of distribute: " + std::to_string(_sources.size()));
 }
 //-----------------------------------------------------------------------------
 void PointSource::apply(GenericVector& b)
 {
+  /// Applies local point sources.
   dolfin_assert(_function_space0);
   if (_function_space1)
   {
@@ -234,8 +226,6 @@ void PointSource::apply(GenericVector& b)
   dolfin_assert(_function_space0->mesh());
   dolfin_assert(_function_space0->element());
   dolfin_assert(_function_space0->dofmap());
-
-  info("Number of point sources in apply: " + std::to_string(_sources.size()));
 
   const Mesh& mesh = *_function_space0->mesh();
   const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
@@ -296,6 +286,7 @@ void PointSource::apply(GenericVector& b)
 //-----------------------------------------------------------------------------
 void PointSource::apply(GenericMatrix& A)
 {
+  /// Applies local point sources.
   dolfin_assert(_function_space0);
 
   if (!_function_space1)
