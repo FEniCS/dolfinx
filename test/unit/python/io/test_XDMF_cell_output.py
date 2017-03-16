@@ -33,14 +33,12 @@ def test_xdmf_cell_scalar_ghost(cd_tempdir, ghost_mode):
     E = Expression("x[0]", degree=1)
     F.interpolate(E)
 
-    xdmf = XDMFFile(mesh.mpi_comm(), "dg0.xdmf")
-    xdmf.write(F)
-    del xdmf
-
-    hdf = HDF5File(mesh.mpi_comm(), "dg0.h5", "r")
-    vec = Vector()
-    hdf.read(vec, "/VisualisationVector/0", False)
-    del hdf
-
+    with XDMFFile(mesh.mpi_comm(), "dg0.xdmf") as xdmf:
+        xdmf.write(F)
+    
+    with HDF5File(mesh.mpi_comm(), "dg0.h5", "r") as hdf:
+        vec = Vector()
+        hdf.read(vec, "/VisualisationVector/0", False)
+    
     area = MPI.sum(mesh.mpi_comm(), sum(vec.array()))
     assert abs(n*n - area) < 1e-9
