@@ -162,9 +162,6 @@ void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Poi
   std::vector<std::vector<double>> remote_points_all(mpi_size);
   MPI::all_gather(mpi_comm, remote_points, remote_points_all);
 
-  // Should not have sent anything to self
-  //dolfin_assert(remote_points_all[mpi_rank].size() == 0);
-
   info("Size of remote points all: " + std::to_string(remote_points_all[mpi_rank].size()));
 
   // Flatten result back into remote_points vector

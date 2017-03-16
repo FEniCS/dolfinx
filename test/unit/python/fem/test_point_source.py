@@ -255,6 +255,21 @@ def test_multi_ps_vector_node_local(mesh):
     with a matrix when points placed at 3 node for 1D, 2D and 3D. Local points
     given to constructor."""
 
+    dim = mesh.geometry().dim()
+    V = FunctionSpace(mesh, "CG", 1)
+    v = TestFunction(V)
+    b = assemble(Constant(0.0)*v*dx)
+
+    source = []
+    point_coords = mesh.coordinates()[0]
+    source.append((Point(point_coords), 10.0))
+    ps = PointSource(V, source)
+    ps.apply(b)
+
+    # Checks b sums to correct value
+    size = MPI.size(mesh.mpi_comm())
+    b_sum = b.sum()
+    assert round(b_sum - size*10.0) == 0
 
 @pytest.mark.parametrize("mesh", meshes)
 def test_multi_ps_vector(mesh):
@@ -327,6 +342,29 @@ def test_multi_ps_matrix_node(mesh):
             j+=dim
 
 @pytest.mark.parametrize("mesh", meshes)
+def test_multi_ps_matrix_node_local(mesh):
+    """Tests point source when given constructor PointSource(V, V, point, mag)
+    with a matrix when points placed at 3 node for 1D, 2D and 3D. Local points
+    given to constructor."""
+
+    V = FunctionSpace(mesh, "CG", 1)
+    u, v = TrialFunction(V), TestFunction(V)
+    w = Function(V)
+    A = assemble(Constant(0.0)*u*v*dx)
+
+    source = []
+    point_coords = mesh.coordinates()[0]
+    source.append((Point(point_coords), 10.0))
+    ps = PointSource(V, source)
+    ps.apply(A)
+
+    # Checks matrix sums to correct value.
+    A.get_diagonal(w.vector())
+    size = MPI.size(mesh.mpi_comm())
+    a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
+    assert round(a_sum - size*10.0) == 0
+
+@pytest.mark.parametrize("mesh", meshes)
 def test_multi_ps_matrix_node_vector_fs(mesh):
     """Tests point source applied to a matrix with given constructor
     PointSource(V, source) and a vector function space when points placed
@@ -395,3 +433,6 @@ def test_multi_ps_matrix(mesh):
     # Checks b sums to correct value
     a_sum =  MPI.sum(mesh.mpi_comm(), np.sum(A.array()))
     assert round(a_sum - 2*len(c_ids)*10) == 0
+
+#mesh = UnitIntervalMesh(10)
+#test_multi_ps_vector_node_local(mesh)
