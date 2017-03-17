@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2011 Anders Logg
+// Copyright (C) 2005-2017 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -33,6 +33,7 @@
 
 using namespace dolfin;
 
+// Functions in anonymous namespace (local scope)
 namespace
 {
   const MatSolverPackage get_solver_package_type(KSP ksp)
@@ -66,7 +67,7 @@ namespace
     return it->second;
   }
   */
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   const std::map<std::string, std::string> methods_descr
   = { {"default", "default LU solver"},
 #if PETSC_HAVE_UMFPACK || PETSC_HAVE_SUITESPARSE
@@ -114,11 +115,6 @@ std::map<std::string, std::string> PETScLUSolver::methods()
 {
   return methods_descr;
 }
-//-----------------------------------------------------------------------------
-//std::map<std::string, const MatSolverPackage> PETScLUSolver::petsc_methods()
-//{
-//  return _lumethods;
-//}
 //-----------------------------------------------------------------------------
 Parameters PETScLUSolver::default_parameters()
 {
@@ -234,7 +230,6 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
     PETScBaseMatrix A(_A);
 
     const MatSolverPackage solver_type = get_solver_package_type(_solver.ksp());
-
     log(PROGRESS,"Solving linear system of size %ld x %ld (PETSc LU solver, %s).",
         A.size(0), A.size(1), solver_type);
   }

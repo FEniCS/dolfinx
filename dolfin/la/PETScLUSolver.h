@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2011 Anders Logg
+// Copyright (C) 2005-2017 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -105,8 +105,6 @@ namespace dolfin
 
     /// Return a list of available solver methods
     static std::map<std::string, std::string> methods();
-
-    //static std::map<std::string, const MatSolverPackage> petsc_methods();
 
     /// Default parameter values
     static Parameters default_parameters();
