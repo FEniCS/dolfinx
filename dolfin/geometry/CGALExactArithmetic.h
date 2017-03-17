@@ -1556,9 +1556,19 @@ namespace dolfin
       volume += V0*CGAL::cross_product(V1, V2);
     }
 
-    return CGAL::to_double(volume/6.0);
+    return std::abs(CGAL::to_double(volume/6.0));
   }
 
+  // Computes the volume of the convex hull of the given points
+  inline double cgal_tet_volume(const std::vector<Point>& ch)
+  {
+    Tetrahedron_3 tet(Point_3(ch[0].x(), ch[0].y(), ch[0].z()),
+                      Point_3(ch[1].x(), ch[1].y(), ch[1].z()),
+                      Point_3(ch[2].x(), ch[2].y(), ch[2].z()),
+                      Point_3(ch[3].x(), ch[3].y(), ch[3].z()));
+
+    return CGAL::to_double(tet.volume());
+  }
 }
 #endif
 

@@ -705,3 +705,34 @@ Point ConvexTriangulation::cross_product(Point a,
   return p;
 }
 //-----------------------------------------------------------------------------
+std::vector<std::vector<Point>>
+ConvexTriangulation::triangulate_graham_scan_3d(std::vector<Point> pm)
+{
+  std::vector<std::vector<Point>> triangulation =
+    _triangulate_graham_scan_3d(pm);
+
+  #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
+
+  double volume = .0;
+  for (const std::vector<Point>& tet : triangulation)
+  {
+    dolfin_assert(tet.size() == 4);
+    // for (const Point& p : tet)
+    //   std::cout << "(" << p.x() << ", " << p.y() << ", " << p.z() << ")" << std::endl;
+    const double tet_volume = std::abs(orient3d(tet[0], tet[1], tet[2], tet[3]))/6.0;
+    // std::cout << "  vol: " << volume << std::endl;
+    // std::cout << "  ref: " << cgal_tet_volume(tet) << std::endl;
+    volume += tet_volume;
+  }
+
+  const double reference_volume = cgal_polyhedron_volume(pm);
+
+  if (std::abs(volume - reference_volume) > DOLFIN_EPS)
+    dolfin::dolfin_error("ConvexTriangulation.cpp",
+                         "verifying convex triangulation",
+                         "computed volume %f, but reference volume is %f",
+                         volume, reference_volume);
+
+  #endif
+  return triangulation;
+    }

@@ -48,12 +48,7 @@ namespace dolfin
     }
 
     static std::vector<std::vector<Point>>
-    triangulate_graham_scan_3d(std::vector<Point> pm)
-    {
-      // return CHECK_CGAL(_triangulate_graham_scan_3d(pm),
-      // 			cgal_triangulate_3d(pm));
-      return _triangulate_graham_scan_3d(pm);
-    }
+      triangulate_graham_scan_3d(std::vector<Point> pm);
 
   private:
 
