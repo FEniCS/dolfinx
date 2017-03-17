@@ -213,13 +213,8 @@ namespace dolfin
     // Available solvers descriptions
     static const std::map<std::string, std::string> _methods_descr;
 
-
-  protected:
-
     // PETSc solver pointer
     KSP _ksp;
-
-  private:
 
     // DOLFIN-defined PETScUserPreconditioner
     PETScUserPreconditioner* pc_dolfin;
