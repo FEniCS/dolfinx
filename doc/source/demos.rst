@@ -35,82 +35,44 @@ more advanced techniques. We recommend that you take a look at these
 demos for tips and tricks on how to use more advanced or lower-level
 functionality and optimizations.
 
-* Implementing a nonlinear :ref:`hyperelasticity equation
-  <demo_hyperelasticity>`
-
-* Implementing a splitting method for solving the :ref:`incompressible
-  Navier-Stokes equations <demo_navier_stokes>`
+* Implementing a nonlinear :doc:`hyperelasticity equation
+  <demos/hyperelasticity/python/demo_hyperelasticity.py>`
 
 * Using a mixed formulation to solve the time-dependent, nonlinear
-  :ref:`Cahn-Hilliard equation <demo_cahn_hilliard>`
+  :doc:`Cahn-Hilliard equation <demos/cahn-hilliard/python/demo_cahn-hilliard.py>`
 
-* Computing eigenvalues of the :ref:`Maxwell eigenvalue problem
-  <demos/demo_maxwell-eigenvalues.py>`
-
-Demos illustrating specific features
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-How to
-
-* work with :ref:`built-in meshes <demo_built_in_meshes>`
-
-* define and store :ref:`subdomains <demo_subdomains>`
-
-* integrate over :ref:`subdomains <demo_subdomains_poisson>`
-
-* set :ref:`boundary conditions on non-trivial geometries <demo_bcs>`
-
-* solve :ref:`a basic eigenvalue problem <demo_eigenvalue>`
-
-* set :ref:`periodic boundary conditions <demo_periodic>`
-
-* :ref:`de-singularize a pure Neumann problem <demo_singular_poisson>`
-  by specifying the nullspace
-
-* :ref:`de-singularize a pure Neumann problem <demo_neumann_poisson>`
-  by adding a constraint
-
-* use :ref:`automated goal-oriented error control
-  <demo_auto_adaptive_poisson>`
-
-* specify a :ref:`Discontinuous Galerkin formulation <demo_biharmonic>`
-
-* work with :ref:`c++ expressions in Python programs
-  <demo_tensor_weighted_poisson>`
-
-* specify various finite element spaces
-
-  * :ref:`Brezzi-Douglas-Marini elements for mixed Poisson <demo_mixed_poisson>`
-  * :ref:`the Mini element for Stokes equations <demo_stokes_mini>`
+* Computing eigenvalues of the :doc:`Maxwell eigenvalue problem
+  <demos/maxwell-eigenvalues/python/demo_maxwell-eigenvalues.py>`
 
 
 Working list of Python demos
 ----------------------------
 
-* :doc:`demos/demo_poisson.py`
-* :doc:`demos/demo_eigenvalue.py`
-* :doc:`demos/demo_built-in-meshes.py`
-* :doc:`demos/demo_mixed-poisson.py`
-* :doc:`demos/demo_biharmonic.py`
-* :doc:`demos/demo_auto-adaptive-poisson.py`
-* :doc:`demos/demo_cahn-hilliard.py`
-* :doc:`demos/demo_maxwell-eigenvalues.py`
-* :doc:`demos/demo_built-in-meshes.py`
-* :doc:`demos/demo_hyperelasticity.py`
-* :doc:`demos/demo_nonlinear-poisson.py`
-* :doc:`demos/demo_nonmatching-interpolation.py`
+* :doc:`demos/poisson/python/demo_poisson.py`
+* :doc:`demos/eigenvalue/python/demo_eigenvalue.py`
+* :doc:`demos/built-in-meshes/python/demo_built-in-meshes.py`
+* :doc:`demos/mixed-poisson/python/demo_mixed-poisson.py`
+* :doc:`demos/biharmonic/python/demo_biharmonic.py`
+* :doc:`demos/auto-adaptive-poisson/python/demo_auto-adaptive-poisson.py`
+* :doc:`demos/cahn-hilliard/python/demo_cahn-hilliard.py`
+* :doc:`demos/maxwell-eigenvalues/python/demo_maxwell-eigenvalues.py`
+* :doc:`demos/built-in-meshes/python/demo_built-in-meshes.py`
+* :doc:`demos/hyperelasticity/python/demo_hyperelasticity.py`
+* :doc:`demos/nonlinear-poisson/python/demo_nonlinear-poisson.py`
+* :doc:`demos/nonmatching-interpolation/python/demo_nonmatching-interpolation.py`
 
 
 Using the C++ interface
 -----------------------
 
-* :doc:`demos/poisson/main.cpp`
-* :doc:`demos/eigenvalue/main.cpp`
-* :doc:`demos/built-in-meshes/main.cpp`
-* :doc:`demos/mixed-poisson/main.cpp`
-* :doc:`demos/biharmonic/main.cpp`
-* :doc:`demos/auto-adaptive-poisson/main.cpp`
-* :doc:`demos/nonmatching-interpolation/main.cpp`
+* :doc:`demos/poisson/cpp/main.cpp`
+* :doc:`demos/eigenvalue/cpp/main.cpp`
+* :doc:`demos/built-in-meshes/cpp/main.cpp`
+* :doc:`demos/mixed-poisson/cpp/main.cpp`
+* :doc:`demos/biharmonic/cpp/main.cpp`
+* :doc:`demos/auto-adaptive-poisson/cpp/main.cpp`
+* :doc:`demos/nonmatching-interpolation/cpp/main.cpp`
+* :doc:`demos/hyperelasticity/cpp/main.cpp`
 
 .. todo:: Fix the toctree
 
