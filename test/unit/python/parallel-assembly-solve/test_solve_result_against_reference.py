@@ -96,7 +96,6 @@ def print_errors(errors):
                 print("(norm = %.16g, reference = %.16g, relative diff = %.16g)" % (norm, ref, diff))
     MPI.barrier(mpi_comm_world())
 
-@use_gc_barrier
 def test_computed_norms_against_references():
     # Reference values for norm of solution vector
     reference = { ("16x16 unit square", 1): 9.547454087328376 ,

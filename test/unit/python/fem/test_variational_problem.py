@@ -23,7 +23,7 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import *
 
-@use_gc_barrier
+
 def test_linear_construction():
     "Test construction of LinearVariationalProblem"
 
@@ -50,7 +50,6 @@ def test_linear_construction():
     problem = LinearVariationalProblem(a, L, w, [bc, bc])
 
 
-@use_gc_barrier
 def test_nonlinear_construction():
     "Test construction of NonlinearVariationalProblem"
 

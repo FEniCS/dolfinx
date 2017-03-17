@@ -1,3 +1,8 @@
+.. _hyperelasticity:
+
+Hyperelasticity background
+==========================
+
 This example demonstrates the solution of a three-dimensional
 elasticity problem. In addition to illustrating how to use
 FunctionSpaces, Expressions and how to apply Dirichlet boundary
@@ -137,4 +142,3 @@ With the above input the solution for :math:`u` will look as follows:
 .. image:: ../hyperelasticity_u1.png
     :scale: 75
     :align: center
-
