@@ -108,10 +108,8 @@ namespace dolfin
 
     //static std::map<std::string, const MatSolverPackage> petsc_methods();
 
-    /*
     /// Default parameter values
     static Parameters default_parameters();
-    */
 
     // FIXME: These should not be friend classes
     friend class PETScSNESSolver;
@@ -119,32 +117,17 @@ namespace dolfin
 
   private:
 
-    //const MatSolverPackage _solver_package;
-
+    // FIXME: Remove
     // Available LU solvers
-    static std::map<std::string, const MatSolverPackage> _lumethods;
+    static std::map<std::string, const MatSolverPackage> lumethods;
 
-    // Whether those solvers support Cholesky
-    //static std::map<const MatSolverPackage, bool> _methods_cholesky;
-
-    // Available LU solvers descriptions
-    static const std::map<std::string, std::string> _methods_descr;
 
     // Select LU solver type
     static const MatSolverPackage select_solver(MPI_Comm comm,
                                                 std::string method);
 
-
     PETScKrylovSolver _solver;
-/*
 
-    // Does an LU solver support Cholesky?
-    static bool solver_has_cholesky(const MatSolverPackage package);
-
-    // Print pre-solve report
-    void pre_report(const PETScMatrix& A) const;
-
-    */
   };
 
 }

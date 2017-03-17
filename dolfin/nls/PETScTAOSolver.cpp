@@ -486,10 +486,10 @@ void PETScTAOSolver::set_ksp_options()
         if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
       }
     }
-    else if (ksp_type == "lu" || PETScLUSolver::_lumethods.count(ksp_type) != 0)
+    else if (ksp_type == "lu" || PETScLUSolver::lumethods.count(ksp_type) != 0)
     {
       std::string lu_method;
-      if (PETScLUSolver::_lumethods.find(ksp_type) != PETScLUSolver::_lumethods.end())
+      if (PETScLUSolver::lumethods.find(ksp_type) != PETScLUSolver::lumethods.end())
       {
         lu_method = ksp_type;
       }
@@ -532,8 +532,8 @@ void PETScTAOSolver::set_ksp_options()
       ierr = PCSetType(pc, PCLU);
       if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
       std::map<std::string, const MatSolverPackage>::const_iterator lu_pair
-        = PETScLUSolver::_lumethods.find(lu_method);
-      dolfin_assert(lu_pair != PETScLUSolver::_lumethods.end());
+        = PETScLUSolver::lumethods.find(lu_method);
+      dolfin_assert(lu_pair != PETScLUSolver::lumethods.end());
       ierr = PCFactorSetMatSolverPackage(pc, lu_pair->second);
       if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetMatSolverPackage");
     }
