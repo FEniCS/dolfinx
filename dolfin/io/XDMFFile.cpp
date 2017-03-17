@@ -64,6 +64,10 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
   // turned off if the mesh remains constant.
   parameters.add("rewrite_function_mesh", true);
 
+  // Functions share the same mesh for the same time step. The files
+  // produced are smaller and work better in Paraview
+  parameters.add("functions_share_mesh", false);
+
   // FIXME: This is only relevant to HDF5
   // Flush datasets to disk at each timestep. Allows inspection of the
   // HDF5 file whilst running, at some performance cost.
@@ -261,69 +265,68 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
   pugi::xml_node domain_node = xdmf_node.child("Domain");
   dolfin_assert(domain_node);
 
-  // Look for existing TimeSeries with the same name as the given function
+  // Should functions share mesh or not? By default they do not
+  std::string tg_name = "TimeSeries_" + u.name();
+  if (parameters["functions_share_mesh"])
+    tg_name = "TimeSeries";
+
+  // Look for existing time series grid node with Name == tg_name
   bool new_timegrid = false;
-  pugi::xml_node timegrid_node;
+  std::string time_step_str = std::to_string(time_step);
+  pugi::xml_node timegrid_node, mesh_node;
+  timegrid_node = domain_node.find_child_by_attribute("Grid", "Name", tg_name.c_str());
 
-  // Search for the time series grid node with the function name
-  int i = 0, timeseries_index = -1;
-  for (pugi::xml_node n : domain_node.children("Grid"))
+  // Ensure that we have a time series grid node
+  if (timegrid_node)
   {
-    i++;
-    if (std::string(n.attribute("CollectionType").value()) == "Temporal" &&
-        std::string(n.attribute("GridType").value()) == "Collection" &&
-        std::string(n.attribute("Name").value()) == u.name())
-    {
-      timegrid_node = n;
-      timeseries_index = i;
-      break;
-    }
-  }
-
-  // Check if there was a time series grid node for us
-  if (timeseries_index == -1) {
-    //  Create a new TimeSeries with the function name() as Name
-    timegrid_node = domain_node.append_child("Grid");
-    dolfin_assert(timegrid_node);
-    timegrid_node.append_attribute("Name") = u.name().c_str();
-    timegrid_node.append_attribute("GridType") = "Collection";
-    timegrid_node.append_attribute("CollectionType") = "Temporal";
-    new_timegrid = true;
-    timeseries_index = i + 1;
-  }
-
-  // Add the mesh Grid to the time Grid
-  if (new_timegrid or parameters["rewrite_function_mesh"])
-  {
-    add_mesh(_mpi_comm, timegrid_node, h5_id, mesh,
-             "/Mesh/" + std::to_string(_counter));
+    // Get existing mesh grid node with the correct time step if it exist (otherwise null)
+    std::string xpath = std::string("Grid[Time/@Value=\"") + time_step_str + std::string("\"]");
+    mesh_node = timegrid_node.select_node(xpath.c_str()).node();
+    dolfin_assert(std::string(timegrid_node.attribute("CollectionType").value()) == "Temporal");
   }
   else
   {
-    // Make reference back to first Mesh of the time series
-    pugi::xml_node grid_node = timegrid_node.append_child("Grid");
-    dolfin_assert(grid_node);
-    std::string xpath;
-
-    // Reference to previous topology
-    xpath = std::string("/1/1/") + std::to_string(timeseries_index) + std::string("/1/1");
-    pugi::xml_node ref_topo = grid_node.append_child("xi:include");
-    dolfin_assert(ref_topo);
-    ref_topo.append_attribute("xpointer") = xpath.c_str();
-
-    // Reference to previous geometry
-    xpath = std::string("/1/1/") + std::to_string(timeseries_index) + std::string("/1/2");
-    pugi::xml_node ref_geom = grid_node.append_child("xi:include");
-    dolfin_assert(ref_geom);
-    ref_geom.append_attribute("xpointer") = xpath.c_str();
+    //  Create a new time series grid node with Name = tg_name
+    timegrid_node = domain_node.append_child("Grid");
+    dolfin_assert(timegrid_node);
+    timegrid_node.append_attribute("Name") = tg_name.c_str();
+    timegrid_node.append_attribute("GridType") = "Collection";
+    timegrid_node.append_attribute("CollectionType") = "Temporal";
+    new_timegrid = true;
   }
+  
+  // Only add mesh grid node at this time step if no other function has
+  // previously added it (and parameters["functions_share_mesh"] == true)
+  if (!mesh_node)
+  {
+    // Add the mesh grid node to to the time series grid node
+    if (new_timegrid or parameters["rewrite_function_mesh"])
+    {
+      add_mesh(_mpi_comm, timegrid_node, h5_id, mesh,
+        "/Mesh/" + std::to_string(_counter));
+    }
+    else
+    {
+      // Make a grid node that references back to first mesh grid node of the time series
+      pugi::xml_node grid_node = timegrid_node.append_child("Grid");
+      dolfin_assert(grid_node);
 
-  pugi::xml_node grid_node = timegrid_node.last_child();
-  dolfin_assert(grid_node);
+      // Reference to previous topology and geometry document nodes via XInclude
+      std::string xpointer = std::string("xpointer(//Grid[@Name=\"") + tg_name +
+      std::string("\"]/Grid[1]/*[self::Topology or self::Geometry])");
+      pugi::xml_node reference = grid_node.append_child("xi:include");
+      dolfin_assert(reference);
+      reference.append_attribute("xpointer") = xpointer.c_str();
+    }
+    
+    // Get the newly created mesh grid node
+    mesh_node = timegrid_node.last_child();
+    dolfin_assert(mesh_node);
 
-  // Add time value to Grid
-  pugi::xml_node time_node = grid_node.append_child("Time");
-  time_node.append_attribute("Value") = time_step;
+    // Add time value to mesh grid node
+    pugi::xml_node time_node = mesh_node.append_child("Time");
+    time_node.append_attribute("Value") = time_step_str.c_str();
+  }
 
   // Get Function data values and shape
   std::vector<double> data_values;
@@ -335,7 +338,7 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
     data_values = get_point_data_values(u);
 
   // Add attribute node
-  pugi::xml_node attribute_node = grid_node.append_child("Attribute");
+  pugi::xml_node attribute_node = mesh_node.append_child("Attribute");
   dolfin_assert(attribute_node);
   attribute_node.append_attribute("Name") = u.name().c_str();
   attribute_node.append_attribute("AttributeType")

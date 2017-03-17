@@ -130,6 +130,19 @@ namespace dolfin
     /// using an associated HDF5 file, or storing the data inline as
     /// XML.
     ///
+    /// You can control the output with the following boolean
+    /// parameters on the XDMFFile class:
+    /// 
+    /// * rewrite_function_mesh (default true):
+    ///   Controls whether the mesh will be rewritten every timestep. 
+    ///   If the mesh does not change this can be turned off to create
+    ///   smaller files.
+    /// 
+    /// * functions_share_mesh (default false):
+    ///   Controls whether all functions on a single time step share
+    ///   the same mesh. If true the files created will be smaller and
+    ///   also behave better in Paraview, at least in version 5.3.0
+    ///
     /// *Arguments*
     ///     u (_Function_)
     ///         A function to save.
