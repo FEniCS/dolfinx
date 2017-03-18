@@ -83,6 +83,7 @@ if (DOLFIN_FOUND)
   endif()
 
   add_executable(unittests_cpp ${added_files})
+  add_dependencies(unittests_cpp googletest)
   target_link_libraries(unittests_cpp ${DOLFIN_LIBRARIES} gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
 
 else()

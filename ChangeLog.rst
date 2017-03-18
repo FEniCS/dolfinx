@@ -4,12 +4,33 @@ Change log
 dev
 ---
 
+- Remove redundant ``solve_transpose`` functions (use solve with bool
+  argument instead)
+- Remove OpenMpAsssmebler
 - Remove MPI communicator as argument in GenericVector::init functions
   (communicator should be passed via constructor)
 - Remove ``Function::operator[+-*/]`` to prevent memory corruption problems
   (does not affect Python interface)
-- Enable XDMF3 output of time series of multiple functions with different
-  meshes and different time steps to one single XDMF file.  
+- Fix XDMF3 output of time series. The default output method is now to assume
+  that all functions have different meshes, and that the meshes change from
+  time step to time step. Two parameters control the output, one limits each
+  function to only one mesh for the whole time series, turn off the default
+  on parameter ``rewrite_function_mesh`` to enable this. You can also make
+  all functions share the same mesh and time series, which currently is better
+  supported in Paraview than the alternative, turn on ``functions_share_mesh``
+  for this. These two parameters can also be combined in case all functions
+  share the same mesh at all time steps. This creates minimal size files.
+- Add ``PETScSNESSolver`` and ``PETScTAOSolver`` constructor accepting
+  both communicator and type
+- Expression("f[0]*f[1]", f=obj) notation now supported for non-scalar
+  GenericFunction obj
+- Expression("f", f=obj) notation now supports obj of MeshFunction types
+  (only cell based)
+- Fix MPI deadlock in case of instant compilation failure
+- Allow using ``Timer`` as context manager and add ``timed`` decorator
+  to measure timings of functions and methods
+- Add ``NonlinearProblem::J_pc`` and support preconditioning matrix in
+  ``NewtonSolver``, ``PETScSNESSolver`` and ``PETScTAOSolver``
 
 2016.2.0 [2016-11-30]
 ---------------------

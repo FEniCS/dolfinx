@@ -87,8 +87,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
     LocalMeshData local_mesh_data(mesh);
 
     // Build distributed mesh
-    const std::string ghost_mode = parameters["ghost_mode"];
-    build_distributed_mesh(mesh, local_mesh_data, ghost_mode);
+    build_distributed_mesh(mesh, local_mesh_data, parameters["ghost_mode"]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -117,6 +116,11 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 
   Timer timer("Build distributed mesh from local mesh data");
 
+  // Store used ghost mode
+  // NOTE: This is the only place in DOLFIN which eventually sets
+  //       mesh._ghost_mode != "none"
+  mesh._ghost_mode = ghost_mode;
+
   // Get mesh partitioner
   const std::string partitioner = parameters["mesh_partitioner"];
 
@@ -137,7 +141,9 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
                   < (int) MPI::size(comm));
   }
 
-  if (ghost_procs.empty() && ghost_mode != "none")
+  // Check that we have some ghost information.
+  int all_ghosts = MPI::sum(comm, ghost_procs.size());
+  if (all_ghosts == 0 && ghost_mode != "none")
   {
     // FIXME: need to generate ghost cell information here by doing a
     // facet-matching operation "GraphBuilder" style
@@ -210,6 +216,9 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
   log(PROGRESS, "Distribute mesh (cell and vertices)");
 
   Timer timer("Distribute mesh (cells and vertices)");
+
+  // Sanity check
+  dolfin_assert(mesh._ghost_mode == ghost_mode);
 
   // Topological dimension
   const int tdim = mesh_data.topology.dim;

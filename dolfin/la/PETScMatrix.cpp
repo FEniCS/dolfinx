@@ -142,14 +142,20 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   ierr = MatSetFromOptions(_matA);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetFromOptions");
 
-  // Build data to intialise sparsity pattern (modify for block size)
+  // Build data to initialixe sparsity pattern (modify for block size)
   std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.size()/block_size),
     _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.size()/block_size);
 
   for (std::size_t i = 0; i < _num_nonzeros_diagonal.size(); ++i)
-    _num_nonzeros_diagonal[i] = dolfin_ceil_div(num_nonzeros_diagonal[block_size*i], block_size);
+  {
+    _num_nonzeros_diagonal[i]
+      = dolfin_ceil_div(num_nonzeros_diagonal[block_size*i], block_size);
+  }
   for (std::size_t i = 0; i < _num_nonzeros_off_diagonal.size(); ++i)
-    _num_nonzeros_off_diagonal[i] = dolfin_ceil_div(num_nonzeros_off_diagonal[block_size*i], block_size);
+  {
+    _num_nonzeros_off_diagonal[i]
+      = dolfin_ceil_div(num_nonzeros_off_diagonal[block_size*i], block_size);
+  }
 
   // Allocate space (using data from sparsity pattern)
   ierr = MatXAIJSetPreallocation(_matA, block_size,

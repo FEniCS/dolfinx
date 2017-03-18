@@ -25,6 +25,7 @@ from dolfin_utils.test import *
 ghost_mode = set_parameters_fixture("ghost_mode", ["shared_vertex", "none"])
 
 @skip_if_not_HDF5
+@xfail_with_serial_hdf5_in_parallel
 def test_xdmf_cell_scalar_ghost(cd_tempdir, ghost_mode):
     n = 8
     mesh = UnitSquareMesh(n, n)
