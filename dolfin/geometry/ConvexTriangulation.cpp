@@ -713,6 +713,14 @@ ConvexTriangulation::triangulate_graham_scan_3d(std::vector<Point> pm)
 
   #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
 
+  if (cgal_triangulation_overlap(triangulation))
+  {
+    dolfin::dolfin_error("ConvexTriangulation.cpp",
+                         "verifying convex triangulation",
+                         "tets overlap");
+  }
+
+
   double volume = .0;
   for (const std::vector<Point>& tet : triangulation)
   {
@@ -732,6 +740,7 @@ ConvexTriangulation::triangulate_graham_scan_3d(std::vector<Point> pm)
                          "verifying convex triangulation",
                          "computed volume %f, but reference volume is %f",
                          volume, reference_volume);
+
 
   #endif
   return triangulation;
