@@ -175,10 +175,19 @@ def write_mock_modules(namespace_members, mock_py_module):
 
 
 def parse_doxygen_xml_and_generate_rst_and_swig(xml_dir, api_gen_dir, swig_dir, swig_file_name,
-                                                swig_header='', mock_py_module=''):
+                                                swig_header='', mock_py_module='', allow_empty_xml=False):
     # Read doxygen XML files and split namespace members into
     # groups based on subdir and kind (class, function, enum etc)
-    namespaces = parse_doxygen.read_doxygen_xml_files(xml_dir, ['dolfin'])
+    create_subdir_groups_if_missing = False
+    if os.path.isdir(xml_dir):
+        namespaces = parse_doxygen.read_doxygen_xml_files(xml_dir, ['dolfin'])
+    elif allow_empty_xml:
+        namespaces = {'dolfin': parse_doxygen.Namespace('dolfin')} 
+        create_subdir_groups_if_missing = True 
+    else:
+        raise OSError('Missing doxygen XML directory %r' % xml_dir)
+    
+    # Group all documented members into subdir groups (io, la, mesh, fem etc)
     sorted_members = list(namespaces['dolfin'].members.values())
     sorted_members.sort(key=lambda m: m.name)
     all_members = {}
@@ -187,6 +196,15 @@ def parse_doxygen_xml_and_generate_rst_and_swig(xml_dir, api_gen_dir, swig_dir, 
         sd = all_members.setdefault(subdir, {})
         kd = sd.setdefault(member.kind, {})
         kd[member.name] = member
+    
+    # Make sure we output an empty docstrings.i file in all subdirs of dolfin/swig
+    # to enable dolfin to build without doxygen being present
+    if create_subdir_groups_if_missing:
+        for subdir in os.listdir(swig_dir):
+            path = os.path.join(swig_dir, subdir)
+            if not os.path.isdir(path):
+                continue
+            all_members.setdefault(subdir, {})
     
     # Generate Sphinx RST files and SWIG interface files
     for subdir, subdir_members in sorted(all_members.items()):

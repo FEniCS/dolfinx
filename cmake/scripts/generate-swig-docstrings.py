@@ -19,10 +19,18 @@ def generate_docstrings(top_destdir):
     dolfin_dir = os.path.abspath(os.path.join(script_dir, os.pardir,
                                               os.pardir))
 
+    print('--------------------------------------------')
+    print('Running doxygen to generate docstrings:')
+
     # Get doc directory and run doxygen there
     doc_dir = os.path.join(dolfin_dir, 'doc')
     xml_dir = os.path.join(dolfin_dir, 'doc', 'doxygen', 'xml')
-    subprocess.call('doxygen', shell=True, cwd=doc_dir)
+    allow_empty_xml = False
+    try:
+        subprocess.call('doxygen', cwd=doc_dir)
+    except OSError as e:
+        print('ERROR: could not run doxygen:', e)
+        allow_empty_xml = True
 
     top_destdir = top_destdir or dolfin_dir
     abs_destdir = top_destdir if os.path.isabs(top_destdir) else os.path.join(dolfin_dir, top_destdir)
@@ -40,13 +48,21 @@ def generate_docstrings(top_destdir):
     # Get the doxygen parser and docstring formater
     sys.path.insert(0, doc_dir)
     from generate_api_rst import parse_doxygen_xml_and_generate_rst_and_swig
+    
+    print('--------------------------------------------')
+    print('Generating python docstrings in directory')
+    print('  swig_dir = %s' % swig_dir)
 
     # Extract documentation and generate docstrings
     parse_doxygen_xml_and_generate_rst_and_swig(xml_dir=xml_dir,
                                                 api_gen_dir=None,
                                                 swig_dir=swig_dir,
                                                 swig_file_name="docstrings.i",
-                                                swig_header=copyright_info)
+                                                swig_header=copyright_info,
+                                                allow_empty_xml=allow_empty_xml)
+    
+    print('DONE generating docstrings')
+    print('--------------------------------------------')
 
 
 if __name__ == "__main__":
