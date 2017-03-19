@@ -105,8 +105,8 @@ def test_assign(V, W):
         assert uu.vector().sum() == u1.vector().sum()
 
         # Test complex assignment
-        expr = 3*u-4*u1-0.1*4*u*4+u2+3*u0/3./0.5
-        expr_scalar = 3-4*3-0.1*4*4+4.+3*2./3./0.5
+        expr = 3*u - 4*u1 - 0.1*4*u*4 + u2 + 3*u0/3./0.5
+        expr_scalar = 3 - 4*3 - 0.1*4*4+4. + 3*2./3./0.5
         uu.assign(expr)
         assert (round(uu.vector().sum() -
                       float(expr_scalar*uu.vector().size()), 7) == 0)
@@ -218,7 +218,7 @@ def test_axpy(V, W):
                       float(expr_scalar1*u.vector().size()), 7) == 0)
 
         axpy1 = axpy0 - u2
-        u.assign(axpy1)/5.0
+        u.assign(axpy1)
         expr_scalar1 = expr_scalar0 - 4.0
 
         assert (round(u.vector().sum() -
