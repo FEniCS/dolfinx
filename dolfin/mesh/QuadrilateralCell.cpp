@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <dolfin/log/log.h>
+#include <dolfin/common/constants.h>
 #include "Cell.h"
 #include "MeshEditor.h"
 #include "MeshEntity.h"
@@ -125,11 +126,10 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
   else if (geometry.dim() == 3)
   {
     // vertices are coplanar if det(p1-p0 | p2-p0 | p3-p0) is zero
-    const float copl = (p1[0] - p0[0])*( (p2[1] - p0[1])*(p3[2] - p0[2]) - (p2[2] - p0[2])*(p3[1] - p0[1]) )
+    const double copl = (p1[0] - p0[0])*( (p2[1] - p0[1])*(p3[2] - p0[2]) - (p2[2] - p0[2])*(p3[1] - p0[1]) )
                       -(p1[1] - p0[1])*( (p2[0] - p0[0])*(p3[2] - p0[2]) + (p2[2] - p0[2])*(p3[0] - p0[0]) )
                       +(p1[2] - p0[2])*( (p2[0] - p0[0])*(p3[1] - p0[1]) - (p2[1] - p0[1])*(p3[0] - p0[0]) );
-    const float tol = 1e-6;
-    if (copl <= tol) // check coplanarity
+    if (copl < DOLFIN_EPS) // check coplanarity
     {
          const Point c = (p0 - p2).cross(p1 - p3);
          return 0.5 * c.norm();
