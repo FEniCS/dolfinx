@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2017-03-17
-// Last changed: 2012-03-17
+// Last changed: 2012-03-20
 //
 // Unit tests for the mesh library
 
@@ -37,4 +37,24 @@ TEST(ConvexTriangulationTest, testTrivialCase)
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
   ASSERT_EQ(tri.size(), 1);
+}
+
+
+TEST(ConvexTriangulationTest, testFailingCase)
+{
+  std::vector<Point> input {
+    Point(0.7, 0.6, 0.1),
+    Point(0.7, 0.6, 0.5),
+    Point(0.1, 0.1, 0.1),
+    Point(0.8333333333333333, 0.8333333333333333, 0),
+    Point(0.1, 0.15, 0.1),
+    Point(0.1, 0.45, 0.1),
+    Point(0.16, 0.15, 0.1),
+    Point(0.61, 0.525, 0.1),
+    Point(0.46, 0.6, 0.100000000000000006) };
+
+
+  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+
+  // TOOD: Test that no triangles are degenerate and do not overlap
 }

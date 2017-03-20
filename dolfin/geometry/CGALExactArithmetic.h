@@ -1570,6 +1570,25 @@ namespace dolfin
     return CGAL::to_double(tet.volume());
   }
   //-----------------------------------------------------------------------------
+  inline bool cgal_triangulation_has_degenerate(std::vector<std::vector<Point>> triangulation)
+  {
+    for (const std::vector<Point>& t : triangulation)
+    {
+      Tetrahedron_3 tet(Point_3(t[0].x(), t[0].y(), t[0].z()),
+                        Point_3(t[1].x(), t[1].y(), t[1].z()),
+                        Point_3(t[2].x(), t[2].y(), t[2].z()),
+                        Point_3(t[3].x(), t[3].y(), t[3].z()));
+      if (tet.is_degenerate())
+      {
+        std::cout << "Degenerate tet: " << tet << std::endl;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  //-----------------------------------------------------------------------------
   inline bool cgal_triangulation_overlap(std::vector<std::vector<Point>> triangulation)
   {
     std::vector<Tetrahedron_3> tets;
